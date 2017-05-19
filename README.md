@@ -1,2 +1,2 @@
 # dotfiles
-To keep up with my dotfiles
+To keep up with my dotfiles.
