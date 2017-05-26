@@ -1,4 +1,4 @@
-URxvt.font: xft:Space Mono for Powerline:style=Regular:size=13
+URxvt.font: xft:Iosevka:size=16
 URxvt.scrollBar: false
 
 URxvt.perl-ext-common: fullscreen
