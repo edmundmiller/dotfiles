@@ -75,8 +75,8 @@ Plug 'davidhalter/jedi-vim'
 call plug#end()
 
 " ColorScheme
-colorscheme badwolf
-let g:airline_theme='badwolf'
+colorscheme molokai
+let g:airline_theme='molokai'
 
 " Make the gutters darker than the background.
 let g:badwolf_darkgutter = 1
