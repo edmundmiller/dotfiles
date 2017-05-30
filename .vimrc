@@ -51,7 +51,7 @@ let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlP'
 
 " Neocomplete
-Plug 'shougo/neocomplete.vim'
+" Plug 'shougo/neocomplete.vim'
 
 " Color scheme
 Plug 'flazz/vim-colorschemes'
