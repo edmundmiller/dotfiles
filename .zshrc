@@ -1,5 +1,5 @@
 # If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+ export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
   export ZSH=/home/emiller/.oh-my-zsh
@@ -67,7 +67,7 @@ source $ZSH/oh-my-zsh.sh
  if [[ -n $SSH_CONNECTION ]]; then
    export EDITOR='vim'
  else
-   export EDITOR='mvim'
+   export EDITOR='vim'
  fi
 
 # Compilation flags
@@ -89,3 +89,7 @@ alias config='/usr/bin/git --git-dir=/home/emiller/.cfg/ --work-tree=/home/emill
 # Tensorflow
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/cuda/lib64"
 export CUDA_HOME=/opt/cuda/
+# Vim
+export EDITOR=/usr/bin/vim
+export VISUAL=/usr/bin/vim
+# Bowtie
