@@ -2,6 +2,8 @@ if $COLORTERM == 'gnome-terminal'
   set t_Co=256
 endif
 
+set t_Co=256
+
 " Numbers in gutter
 set number
 
