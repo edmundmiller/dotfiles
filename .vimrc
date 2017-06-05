@@ -5,6 +5,9 @@ endif
 " Numbers in gutter
 set number
 
+" Spell checking
+set spell
+
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
