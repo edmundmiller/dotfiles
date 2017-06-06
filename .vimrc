@@ -38,7 +38,7 @@ Plug 'airblade/vim-gitgutter'
 Plug 'nathanaelkane/vim-indent-guides'
 
 " Syntastic
-Plug 'scrooloose/syntastic'
+" Plug 'scrooloose/syntastic'
 
 " Misc Bundle
 Plug 'xolox/vim-misc'
@@ -67,6 +67,9 @@ Plug 'klen/python-mode'
 " Jedi
 Plug 'davidhalter/jedi-vim'
 
+" ALE
+Plug 'w0rp/ale'
+
 " Initialize plugin system
 call plug#end()
 
@@ -93,12 +96,3 @@ let g:airline_skip_empty_sections = 1
 
 " Turn on NERDTree
 map <C-n> :NERDTreeToggle<CR>
-" Syntastic
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
-
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0            
