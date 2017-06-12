@@ -112,3 +112,15 @@ function! LinterStatus() abort
 endfunction
 
 set statusline=%{LinterStatus()}
+
+" Move by 'display lines' rather than 'logical lines' if no v:count was
+" provided.  When a v:count is provided, move by logical lines.
+nnoremap <expr> j v:count > 0 ? 'j' : 'gj'
+xnoremap <expr> j v:count > 0 ? 'j' : 'gj'
+nnoremap <expr> k v:count > 0 ? 'k' : 'gk'
+xnoremap <expr> k v:count > 0 ? 'k' : 'gk'
+" Ensure 'logical line' movement remains accessible.
+nnoremap <silent> gj j
+xnoremap <silent> gj j
+nnoremap <silent> gk k
+xnoremap <silent> gk k
