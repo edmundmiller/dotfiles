@@ -3,7 +3,8 @@ if $COLORTERM == 'gnome-terminal'
 endif
 
 set t_Co=256
-
+" Mouse use
+set mouse=a
 " Numbers in gutter
 set number
 
@@ -69,6 +70,9 @@ Plug 'davidhalter/jedi-vim'
 
 " ALE
 Plug 'w0rp/ale'
+
+" Pencil
+Plug 'reedes/vim-pencil'
 
 " Initialize plugin system
 call plug#end()
