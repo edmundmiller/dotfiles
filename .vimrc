@@ -9,7 +9,7 @@ set spell                  " Spell checking
 set hidden                 " Allows current buffer to be moved to background without writing to disk
 syntax enable              " Turns on Syntax
 runtime macros/matchit.vim " Allows % to switch between if/else/etc.
-set wildmenu=list:longest  " <TAB> in command shows completion
+set wildmode=list:longest  " <TAB> in command shows completion
 let mapleader = "<SPACE>"  " Sets leader to <Space>
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
