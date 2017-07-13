@@ -1,92 +1,57 @@
-if $COLORTERM == 'gnome-terminal'
-  set t_Co=256
-endif
+set nocompatible " Use Vim settings instead of Vi Must be first
+" General Config
 
-set t_Co=256
-" Mouse use
-set mouse=a
-" Numbers in gutter
-set number
+set t_Co=256     " Set Colors to 256
+set mouse=a      " Mouse use
+set number       " Numbers in gutter
+set spell        " Spell checking
+set hidden	 " Allows current buffer to be moved to background without writing to disk
 
-" Spell checking
-set spell
+syntax enable	 " Turns on Syntax
 
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
-" delimitmate
-Plug 'raimondi/delimitmate'
-
-" NERD tree will be loaded on the first invocation of NERDTreeToggle command
-Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' }
-Plug 'jistr/vim-nerdtree-tabs'
-
-" NERD Commenter
-Plug 'scrooloose/nerdcommenter'
-
-" Fugitive for Git
-Plug 'tpope/vim-fugitive'
-
-" Airline
-Plug 'bling/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
-Plug 'bling/vim-bufferline'
-
-" Gitgutter
-Plug 'airblade/vim-gitgutter'
-
-" Indent Guides
-Plug 'nathanaelkane/vim-indent-guides'
-
-" Syntastic
-" Plug 'scrooloose/syntastic'
-
-" Misc Bundle
-Plug 'xolox/vim-misc'
-
-" Easy Tags
-"Plug 'xolox/vim-easytags'
-
-"Plug 'christoomey/vim-tmux-navigator'
-Plug 'christoomey/vim-tmux-navigator'
-
-
-" CtrlP
-Plug 'ctrlpvim/ctrlp.vim'
+Plug 'bling/vim-airline'                               " Airline
+Plug 'vim-airline/vim-airline-themes'                  " Airline Themes
+Plug 'bling/vim-bufferline'                            " Airline Buffer Line
+Plug 'w0rp/ale'                                        " ALE
+Plug 'ctrlpvim/ctrlp.vim'                              " Ctrl P
 let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlP'
+Plug 'raimondi/delimitmate'                            " Delimitmate
+Plug 'tpope/vim-fugitive'                              " Fugitive for Git
+Plug 'airblade/vim-gitgutter'                          " Gitgutter
+Plug 'xolox/vim-misc'                                  " Misc Bundle
+Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' } " NERD tree open on ctrl-n
+Plug 'jistr/vim-nerdtree-tabs'                         " NERD tabs
+Plug 'scrooloose/nerdcommenter'                        " NERD Commenter
+Plug 'reedes/vim-pencil'                               " Pencil
+Plug 'klen/python-mode'                                " Py mode
+Plug 'honza/vim-snippets'                              " Snippets for ultisnips 
+Plug 'altercation/vim-colors-solarized'                " Solarized
+Plug 'godlygeek/tabular'                               " Tabular
+Plug 'SirVer/ultisnips'                                " Ultisnips Engine
+Plug 'christoomey/vim-tmux-navigator'                  " vim-tmux-navigator
 
-" Neocomplete
-" Plug 'shougo/neocomplete.vim'
-
-" Color scheme
-Plug 'flazz/vim-colorschemes'
-
-" Py mode
-Plug 'klen/python-mode'
-
-" Jedi
-Plug 'davidhalter/jedi-vim'
-
-" ALE
-Plug 'w0rp/ale'
-
-" Pencil
-Plug 'reedes/vim-pencil'
-
-" Initialize plugin system
 call plug#end()
 
+" Plug Graveyard
+" Plug 'flazz/vim-colorschemes' " Color schemes
+" Plug 'xolox/vim-easytags'     " Easy Tags
+" Plug 'shougo/neocomplete.vim' " Neocomplete
+" Plug 'scrooloose/syntastic'   " Syntastic
+
 " ColorScheme
-colorscheme molokai
-let g:airline_theme='molokai'
+set background=dark
+colorscheme solarized
+let g:airline_theme='solarized'
+let g:solarized_darkgutter = 1 " Make the gutters darker than the background.
 
-" Make the gutters darker than the background.
-let g:badwolf_darkgutter = 1
+" Airline 
+set ttimeoutlen=10 " Fix the slight delay between switching vim modes
 
-" Fix the slight delay
-set ttimeoutlen=10
-" Fixing airline
+" Fixing airline symbols
 let g:airline_powerline_fonts = 1
 if !exists('g:airline_symbols')
   let g:airline_symbols = {}
@@ -97,9 +62,6 @@ let g:airline_symbols.space = "\ua0"
 set laststatus=2
 
 let g:airline_skip_empty_sections = 1
-
-" Turn on NERDTree
-map <C-n> :NERDTreeToggle<CR>
 
 " ALE & airline
 function! LinterStatus() abort
@@ -117,8 +79,12 @@ endfunction
 
 set statusline=%{LinterStatus()}
 
+" NERDTree
+map <C-n> :NERDTreeToggle<CR> " Turn on with Ctrl-n
+
 " Move by 'display lines' rather than 'logical lines' if no v:count was
 " provided.  When a v:count is provided, move by logical lines.
+" Useful for writing in vim
 nnoremap <expr> j v:count > 0 ? 'j' : 'gj'
 xnoremap <expr> j v:count > 0 ? 'j' : 'gj'
 nnoremap <expr> k v:count > 0 ? 'k' : 'gk'
@@ -128,3 +94,11 @@ nnoremap <silent> gj j
 xnoremap <silent> gj j
 nnoremap <silent> gk k
 xnoremap <silent> gk k
+" Ultisnips
+" Trigger configuration. Do not use <tab> if you use https://github.com/Valloric/YouCompleteMe.
+let g:UltiSnipsExpandTrigger="<tab>"
+let g:UltiSnipsJumpForwardTrigger="<c-b>"
+let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+
+" If you want :UltiSnipsEdit to split your window.
+let g:UltiSnipsEditSplit="vertical"
