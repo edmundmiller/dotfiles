@@ -1,13 +1,13 @@
 set nocompatible " Use Vim settings instead of Vi Must be first
+
 " General Config
-
-set t_Co=256     " Set Colors to 256
-set mouse=a      " Mouse use
-set number       " Numbers in gutter
-set spell        " Spell checking
-set hidden	 " Allows current buffer to be moved to background without writing to disk
-
-syntax enable	 " Turns on Syntax
+set t_Co    = 256   " Set Colors to 256
+set mouse   = a     " Mouse use
+set history = 1000  " Reduce Vim's short term memory loss
+set number          " Numbers in gutter
+set spell           " Spell checking
+set hidden          " Allows current buffer to be moved to background without writing to disk
+syntax enable       " Turns on Syntax
 
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
