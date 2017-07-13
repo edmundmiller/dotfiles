@@ -1,14 +1,16 @@
 set nocompatible " Use Vim settings instead of Vi Must be first
 
 " General Config
-set t_Co    = 256   " Set Colors to 256
-set mouse   = a     " Mouse use
-set history = 1000  " Reduce Vim's short term memory loss
-set number          " Numbers in gutter
-set spell           " Spell checking
-set hidden          " Allows current buffer to be moved to background without writing to disk
-syntax enable       " Turns on Syntax
-
+set t_Co=256               " Set Colors to 256
+set mouse=a                " Mouse use
+set history=1000           " Reduce Vim's short term memory loss
+set number                 " Numbers in gutter
+set spell                  " Spell checking
+set hidden                 " Allows current buffer to be moved to background without writing to disk
+syntax enable              " Turns on Syntax
+runtime macros/matchit.vim " Allows % to switch between if/else/etc.
+set wildmenu=list:longest  " <TAB> in command shows completion
+let mapleader = "<SPACE>"  " Sets leader to <Space>
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
@@ -17,8 +19,6 @@ Plug 'vim-airline/vim-airline-themes'                  " Airline Themes
 Plug 'bling/vim-bufferline'                            " Airline Buffer Line
 Plug 'w0rp/ale'                                        " ALE
 Plug 'ctrlpvim/ctrlp.vim'                              " Ctrl P
-let g:ctrlp_map = '<c-p>'
-let g:ctrlp_cmd = 'CtrlP'
 Plug 'raimondi/delimitmate'                            " Delimitmate
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
 Plug 'airblade/vim-gitgutter'                          " Gitgutter
@@ -42,11 +42,38 @@ call plug#end()
 " Plug 'shougo/neocomplete.vim' " Neocomplete
 " Plug 'scrooloose/syntastic'   " Syntastic
 
+" Remapping keys
+let g:ctrlp_map = '<c-p>'     " CtrlP on Ctrl-P
+let g:ctrlp_cmd = 'CtrlP'     " CtrlP on Ctrl-P
+map <C-n> :NERDTreeToggle<CR> " Turn on NERD with Ctrl-n
+
+" Move by 'display lines' rather than 'logical lines' if no v:count was
+" provided.  When a v:count is provided, move by logical lines.
+" Useful for writing in vim
+nnoremap <expr> j v:count > 0 ? 'j' : 'gj'
+xnoremap <expr> j v:count > 0 ? 'j' : 'gj'
+nnoremap <expr> k v:count > 0 ? 'k' : 'gk'
+xnoremap <expr> k v:count > 0 ? 'k' : 'gk'
+" Ensure 'logical line' movement remains accessible.
+nnoremap <silent> gj j
+xnoremap <silent> gj j
+nnoremap <silent> gk k
+xnoremap <silent> gk k
+" Ultisnips
+" Trigger configuration. Do not use <tab> if you use https://github.com/Valloric/YouCompleteMe.
+let g:UltiSnipsExpandTrigger="<tab>"
+let g:UltiSnipsJumpForwardTrigger="<c-b>"
+let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+" If you want :UltiSnipsEdit to split your window.
+let g:UltiSnipsEditSplit="vertical"
+
 " ColorScheme
 set background=dark
 colorscheme solarized
 let g:airline_theme='solarized'
 let g:solarized_darkgutter = 1 " Make the gutters darker than the background.
+
+" Plugin Mods
 
 " Airline 
 set ttimeoutlen=10 " Fix the slight delay between switching vim modes
@@ -78,27 +105,3 @@ function! LinterStatus() abort
 endfunction
 
 set statusline=%{LinterStatus()}
-
-" NERDTree
-map <C-n> :NERDTreeToggle<CR> " Turn on with Ctrl-n
-
-" Move by 'display lines' rather than 'logical lines' if no v:count was
-" provided.  When a v:count is provided, move by logical lines.
-" Useful for writing in vim
-nnoremap <expr> j v:count > 0 ? 'j' : 'gj'
-xnoremap <expr> j v:count > 0 ? 'j' : 'gj'
-nnoremap <expr> k v:count > 0 ? 'k' : 'gk'
-xnoremap <expr> k v:count > 0 ? 'k' : 'gk'
-" Ensure 'logical line' movement remains accessible.
-nnoremap <silent> gj j
-xnoremap <silent> gj j
-nnoremap <silent> gk k
-xnoremap <silent> gk k
-" Ultisnips
-" Trigger configuration. Do not use <tab> if you use https://github.com/Valloric/YouCompleteMe.
-let g:UltiSnipsExpandTrigger="<tab>"
-let g:UltiSnipsJumpForwardTrigger="<c-b>"
-let g:UltiSnipsJumpBackwardTrigger="<c-z>"
-
-" If you want :UltiSnipsEdit to split your window.
-let g:UltiSnipsEditSplit="vertical"
