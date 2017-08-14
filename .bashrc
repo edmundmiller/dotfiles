@@ -122,3 +122,7 @@ export PATH="/home/edmund/anaconda3/bin:$PATH"
 alias config='/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME'
 # homer
 PATH=$PATH:/home/edmund/homer//bin/
+ #Setting the GEM_PATH and GEM_HOME variables may not be necessary, check 'gem env' output to verify whether both variables already exist
+ GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
+ GEM_PATH=$GEM_HOME
+ export PATH=$PATH:$GEM_HOME/bin
