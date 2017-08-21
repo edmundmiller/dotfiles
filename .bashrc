@@ -121,4 +121,10 @@ export PATH="/home/edmund/anaconda3/bin:$PATH"
 # added for dot file management
 alias config='/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME'
 # homer
+PATH=$PATH:/home/edmund/homer/.//bin/
 PATH=$PATH:/home/edmund/homer//bin/
+# bigWig
+PATH=$PATH:/home/edmund/Browser/
+
+# added by Anaconda3 4.4.0 installer
+export PATH="/home/edmund/anaconda3/bin:$PATH"
