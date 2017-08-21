@@ -6,6 +6,7 @@ set history=1000           " Reduce Vim's short-term memory loss
 set number                 " Numbers in gutter
 set spell                  " Spell checking
 set hidden                 " Allows current buffer to be moved to background without writing to disk
+set termguicolors
 syntax enable              " Turns on Syntax
 runtime macros/matchit.vim " Allows % to switch between if/else/etc.
 set wildmode=list:longest  " <TAB> in command shows completion
@@ -22,6 +23,7 @@ Plug 'ctrlpvim/ctrlp.vim'                              " Ctrl P
 Plug 'raimondi/delimitmate'                            " Delimitmate
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
 Plug 'airblade/vim-gitgutter'                          " Gitgutter
+Plug 'morhetz/gruvbox'				       " Gruvbox
 Plug 'xolox/vim-misc'                                  " Misc Bundle
 Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' } " NERD tree open on ctrl-n
 Plug 'jistr/vim-nerdtree-tabs'                         " NERD tabs
@@ -29,7 +31,6 @@ Plug 'scrooloose/nerdcommenter'                        " NERD Commenter
 Plug 'reedes/vim-pencil'                               " Pencil
 Plug 'klen/python-mode'                                " Py mode
 Plug 'honza/vim-snippets'                              " Snippets for ultisnips 
-Plug 'altercation/vim-colors-solarized'                " Solarized
 Plug 'godlygeek/tabular'                               " Tabular
 Plug 'SirVer/ultisnips'                                " Ultisnips Engine
 Plug 'christoomey/vim-tmux-navigator'                  " vim-tmux-navigator
@@ -39,6 +40,7 @@ Plug 'KabbAmine/vCoolor.vim'			       " vCooler
 call plug#end()
 
 " Plug Graveyard
+" Plug 'altercation/vim-colors-solarized'                " Solarized
 " Plug 'xolox/vim-easytags'     " Easy Tags
 " Plug 'shougo/neocomplete.vim' " Neocomplete
 " Plug 'scrooloose/syntastic'   " Syntastic
@@ -69,13 +71,11 @@ let g:UltiSnipsJumpBackwardTrigger="<c-z>"
 let g:UltiSnipsEditSplit="vertical"
 
 " ColorScheme
-" let g:solarized_termcolors=16
-" set background=dark
-" colorscheme solarized
-let g:airline_theme='solarized'
-let g:solarized_darkgutter = 1 " Make the gutters darker than the background.
-
-" Plugin Mods
+set background=dark
+colorscheme gruvbox
+let g:airline_theme='gruvbox'
+let g:gruvbox_darkgutter = 1 " Make the gutters darker than the background.
+" --------- Plugin Mods -------------
 
 " Airline 
 set ttimeoutlen=10 " Fix the slight delay between switching vim modes
