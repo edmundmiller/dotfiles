@@ -1,16 +1,17 @@
 set nocompatible " Use Vim settings instead of Vi Must be first
 
 " General Config
-set t_Co=256               " Set Colors to 256
 set mouse=a                " Mouse use
-set history=1000           " Reduce Vim's short term memory loss
+set history=1000           " Reduce Vim's short-term memory loss
 set number                 " Numbers in gutter
 set spell                  " Spell checking
 set hidden                 " Allows current buffer to be moved to background without writing to disk
+set termguicolors
 syntax enable              " Turns on Syntax
 runtime macros/matchit.vim " Allows % to switch between if/else/etc.
 set wildmode=list:longest  " <TAB> in command shows completion
 let mapleader = "<SPACE>"  " Sets leader to <Space>
+
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
@@ -22,6 +23,7 @@ Plug 'ctrlpvim/ctrlp.vim'                              " Ctrl P
 Plug 'raimondi/delimitmate'                            " Delimitmate
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
 Plug 'airblade/vim-gitgutter'                          " Gitgutter
+Plug 'morhetz/gruvbox'				       " Gruvbox
 Plug 'xolox/vim-misc'                                  " Misc Bundle
 Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' } " NERD tree open on ctrl-n
 Plug 'jistr/vim-nerdtree-tabs'                         " NERD tabs
@@ -29,15 +31,16 @@ Plug 'scrooloose/nerdcommenter'                        " NERD Commenter
 Plug 'reedes/vim-pencil'                               " Pencil
 Plug 'klen/python-mode'                                " Py mode
 Plug 'honza/vim-snippets'                              " Snippets for ultisnips 
-Plug 'altercation/vim-colors-solarized'                " Solarized
 Plug 'godlygeek/tabular'                               " Tabular
 Plug 'SirVer/ultisnips'                                " Ultisnips Engine
 Plug 'christoomey/vim-tmux-navigator'                  " vim-tmux-navigator
+" Web Dev
+Plug 'KabbAmine/vCoolor.vim'			       " vCooler
 
 call plug#end()
 
 " Plug Graveyard
-" Plug 'flazz/vim-colorschemes' " Color schemes
+" Plug 'altercation/vim-colors-solarized'                " Solarized
 " Plug 'xolox/vim-easytags'     " Easy Tags
 " Plug 'shougo/neocomplete.vim' " Neocomplete
 " Plug 'scrooloose/syntastic'   " Syntastic
@@ -69,11 +72,10 @@ let g:UltiSnipsEditSplit="vertical"
 
 " ColorScheme
 set background=dark
-colorscheme solarized
-let g:airline_theme='solarized'
-let g:solarized_darkgutter = 1 " Make the gutters darker than the background.
-
-" Plugin Mods
+colorscheme gruvbox
+let g:airline_theme='gruvbox'
+let g:gruvbox_darkgutter = 1 " Make the gutters darker than the background.
+" --------- Plugin Mods -------------
 
 " Airline 
 set ttimeoutlen=10 " Fix the slight delay between switching vim modes
@@ -91,17 +93,13 @@ set laststatus=2
 let g:airline_skip_empty_sections = 1
 
 " ALE & airline
-function! LinterStatus() abort
-    let l:counts = ale#statusline#Count(bufnr(''))
+let g:airline#extensions#ale#enabled = 1
 
-    let l:all_errors = l:counts.error + l:counts.style_error
-    let l:all_non_errors = l:counts.total - l:all_errors
-
-    return l:counts.total == 0 ? 'OK' : printf(
-    \   '%dW %dE',
-    \   all_non_errors,
-    \   all_errors
-    \)
-endfunction
-
-set statusline=%{LinterStatus()}
+" ALE
+let g:ale_sign_column_always = 1
+let g:ale_sign_error = '>>'
+let g:ale_sign_warning = '--'
+let g:ale_set_quickfix = 1
+let g:ale_open_list = 1
+let g:ale_lint_on_save = 1
+let g:ale_lint_on_text_changed = 0

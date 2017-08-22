@@ -91,3 +91,7 @@ export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/cuda/lib64"
 export CUDA_HOME=/opt/cuda/
 # Bowtie
 export BT2_HOME=/opt/bin/bowtie2
+ #Setting the GEM_PATH and GEM_HOME variables may not be necessary, check 'gem env' output to verify whether both variables already exist
+ GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
+ GEM_PATH=$GEM_HOME
+ export PATH=$PATH:$GEM_HOME/bin
