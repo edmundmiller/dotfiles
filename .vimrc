@@ -7,6 +7,7 @@ set number                 " Numbers in gutter
 set spell                  " Spell checking
 set hidden                 " Allows current buffer to be moved to background without writing to disk
 set termguicolors
+set clipboard=unnamed
 syntax enable              " Turns on Syntax
 runtime macros/matchit.vim " Allows % to switch between if/else/etc.
 set wildmode=list:longest  " <TAB> in command shows completion
