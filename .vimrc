@@ -12,7 +12,12 @@ syntax enable              " Turns on Syntax
 runtime macros/matchit.vim " Allows % to switch between if/else/etc.
 set wildmode=list:longest  " <TAB> in command shows completion
 let mapleader = "<SPACE>"  " Sets leader to <Space>
-
+" Tabs
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+set expandtab
+set smarttab
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
