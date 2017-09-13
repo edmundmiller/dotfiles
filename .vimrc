@@ -38,6 +38,7 @@ Plug 'scrooloose/nerdcommenter'                        " NERD Commenter
 Plug 'reedes/vim-pencil'                               " Pencil
 Plug 'klen/python-mode'                                " Py mode
 Plug 'honza/vim-snippets'                              " Snippets for ultisnips
+Plug 'tomlion/vim-solidity'                            " Solidity Language Supprt
 Plug 'godlygeek/tabular'                               " Tabular
 Plug 'SirVer/ultisnips'                                " Ultisnips Engine
 Plug 'christoomey/vim-tmux-navigator'                  " vim-tmux-navigator
