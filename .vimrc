@@ -30,6 +30,7 @@ Plug 'raimondi/delimitmate'                            " Delimitmate
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
 Plug 'airblade/vim-gitgutter'                          " Gitgutter
 Plug 'morhetz/gruvbox'                                 " Gruvbox
+Plug 'gregsexton/matchtag'                             " Matchtag
 Plug 'xolox/vim-misc'                                  " Misc Bundle
 Plug 'shougo/neocomplete.vim'                          " Neocomplete
 Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' } " NERD tree open on ctrl-n
@@ -56,7 +57,6 @@ call plug#end()
 let g:ctrlp_map = '<c-p>'     " CtrlP on Ctrl-P
 let g:ctrlp_cmd = 'CtrlP'     " CtrlP on Ctrl-P
 map <C-n> :NERDTreeToggle<CR> " Turn on NERD with Ctrl-n
-
 " Move by 'display lines' rather than 'logical lines' if no v:count was
 " provided.  When a v:count is provided, move by logical lines.
 " Useful for writing in vim
@@ -97,13 +97,20 @@ let g:airline_skip_empty_sections = 1
 " ALE & airline
 let g:airline#extensions#ale#enabled = 1
 " ALE
+map <C-m> :ALEToggle<CR>      " Turn on ALE with Ctrl-m
 let g:ale_sign_column_always = 1
-let g:ale_sign_error = '>>'
-let g:ale_sign_warning = '--'
+let g:ale_sign_error = '●' " Less aggressive than the default '>>'
+let g:ale_sign_warning = '.'
 let g:ale_set_quickfix = 1
 let g:ale_open_list = 1
 let g:ale_lint_on_save = 1
 let g:ale_lint_on_text_changed = 0
+let g:ale_lint_on_enter = 0
+" ALE Fixers
+let g:ale_fixers = {
+\   'javascript': ['eslint'],
+\}
+let g:ale_fix_on_save = 1
 " Neocomplete
 " Disable AutoComplPop.
 let g:acp_enableAtStartup = 0
@@ -130,7 +137,6 @@ let g:neocomplete#keyword_patterns['default'] = '\h\w*'
 " Plugin key-mappings.
 inoremap <expr><C-g>     neocomplete#undo_completion()
 inoremap <expr><C-l>     neocomplete#complete_common_string()
-
 " Recommended key-mappings.
 " <CR>: close popup and save indent.
 inoremap <silent> <CR> <C-r>=<SID>my_cr_function()<CR>
