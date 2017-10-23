@@ -18,16 +18,20 @@ set shiftwidth=4
 set softtabstop=4
 set expandtab
 set smarttab
+set cursorline
+set cursorcolumn
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
+Plug 'mileszs/ack.vim'                                 " ACK
 Plug 'bling/vim-airline'                               " Airline
 Plug 'vim-airline/vim-airline-themes'                  " Airline Themes
 Plug 'bling/vim-bufferline'                            " Airline Buffer Line
 Plug 'w0rp/ale'                                        " ALE
-Plug 'ctrlpvim/ctrlp.vim'                              " Ctrl P
 Plug 'raimondi/delimitmate'                            " Delimitmate
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'                                " fzf
 Plug 'airblade/vim-gitgutter'                          " Gitgutter
 Plug 'morhetz/gruvbox'                                 " Gruvbox
 Plug 'gregsexton/matchtag'                             " Matchtag
@@ -53,6 +57,7 @@ call plug#end()
 " Plug 'xolox/vim-easytags'               " Easy Tags
 " Plug 'scrooloose/syntastic'             " Syntastic
 
+" Plug 'ctrlpvim/ctrlp.vim'               " Ctrl P
 " Remapping keys
 let g:ctrlp_map = '<c-p>'     " CtrlP on Ctrl-P
 let g:ctrlp_cmd = 'CtrlP'     " CtrlP on Ctrl-P
@@ -82,6 +87,10 @@ set background=dark
 colorscheme gruvbox
 let g:airline_theme='gruvbox'
 let g:gruvbox_darkgutter = 1 " Make the gutters darker than the background.
+" fzf
+nmap ; :Buffers<CR>
+nmap <Space>t :Files<CR>
+nmap <Space>r :Tags<CR>
 " --------- Plugin Mods -------------
 " Airline 
 set ttimeoutlen=10 " Fix the slight delay between switching vim modes
@@ -180,3 +189,6 @@ endif
 " For perlomni.vim setting.
 " https://github.com/c9s/perlomni.vim
 let g:neocomplete#sources#omni#input_patterns.perl = '\h\w*->\h\w*\|\h\w*::'
+
+" NERDTree
+let NERDTreeShowHidden=1
