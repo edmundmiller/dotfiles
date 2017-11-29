@@ -11,7 +11,6 @@ set clipboard=unnamed
 syntax enable              " Turns on Syntax
 runtime macros/matchit.vim " Allows % to switch between if/else/etc.
 set wildmode=list:longest  " <TAB> in command shows completion
-let mapleader = "<SPACE>"  " Sets leader to <Space>
 " Tabs
 set tabstop=4
 set shiftwidth=4
@@ -20,6 +19,36 @@ set expandtab
 set smarttab
 set cursorline
 set cursorcolumn
+set relativenumber         " Set relative numbers
+set encoding=utf8
+
+filetype indent plugin on
+" Leader
+nmap <SPACE> <leader>
+nmap <silent> <leader>w :w <CR>
+nmap <silent> <leader>wq :wq <CR>
+nmap <silent> <leader>q :q <CR>
+nmap <silent> <leader>m :ALEToggle <CR>
+nmap <silent> <leader>l :set relativenumber! <CR>
+
+" Only do is autocmd is enabled
+if has("autocmd")
+  " Enable file type detection
+  filetype on
+
+  " Syntax of these languages is fussy over tabs Vs spaces
+  autocmd FileType make setlocal ts=8 sts=8 sw=8 noexpandtab
+  autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
+
+  " Customisations based on house-style (arbitrary)
+  autocmd FileType html setlocal ts=2 sts=2 sw=2 expandtab
+  autocmd FileType css setlocal ts=2 sts=2 sw=2 expandtab
+  autocmd FileType javascript setlocal ts=4 sts=4 sw=4 noexpandtab
+
+  " Treat .rss files as XML
+  autocmd BufNewFile,BufRead *.rss setfiletype xml
+endif
+
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
@@ -29,6 +58,7 @@ Plug 'vim-airline/vim-airline-themes'                  " Airline Themes
 Plug 'bling/vim-bufferline'                            " Airline Buffer Line
 Plug 'w0rp/ale'                                        " ALE
 Plug 'raimondi/delimitmate'                            " Delimitmate
+Plug 'ryanoasis/vim-devicons'                          " DevIcons
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'                                " fzf
@@ -46,6 +76,7 @@ Plug 'honza/vim-snippets'                              " Snippets for ultisnips
 Plug 'tomlion/vim-solidity'                            " Solidity Language Supprt
 Plug 'godlygeek/tabular'                               " Tabular
 Plug 'SirVer/ultisnips'                                " Ultisnips Engine
+Plug 'mbbill/undotree'                                 " UndoTree
 Plug 'christoomey/vim-tmux-navigator'                  " vim-tmux-navigator
                                                        " Web Dev
 Plug 'KabbAmine/vCoolor.vim'                           " vCooler
@@ -59,9 +90,10 @@ call plug#end()
 
 " Plug 'ctrlpvim/ctrlp.vim'               " Ctrl P
 " Remapping keys
-let g:ctrlp_map = '<c-p>'     " CtrlP on Ctrl-P
-let g:ctrlp_cmd = 'CtrlP'     " CtrlP on Ctrl-P
-map <C-n> :NERDTreeToggle<CR> " Turn on NERD with Ctrl-n
+" let g:ctrlp_map = '<c-p>'     " CtrlP on Ctrl-P
+" let g:ctrlp_cmd = 'CtrlP'     " CtrlP on Ctrl-P
+map <C-n> :NERDTreeToggle<CR>  
+nnoremap <C-b> :UndotreeToggle<cr>
 " Move by 'display lines' rather than 'logical lines' if no v:count was
 " provided.  When a v:count is provided, move by logical lines.
 " Useful for writing in vim
@@ -89,8 +121,8 @@ let g:airline_theme='gruvbox'
 let g:gruvbox_darkgutter = 1 " Make the gutters darker than the background.
 " fzf
 nmap ; :Buffers<CR>
-nmap <Space>t :Files<CR>
-nmap <Space>r :Tags<CR>
+nmap <leader>t :Files<CR>
+nmap <leader>r :Tags<CR>
 " --------- Plugin Mods -------------
 " Airline 
 set ttimeoutlen=10 " Fix the slight delay between switching vim modes
@@ -106,7 +138,7 @@ let g:airline_skip_empty_sections = 1
 " ALE & airline
 let g:airline#extensions#ale#enabled = 1
 " ALE
-map <C-m> :ALEToggle<CR>      " Turn on ALE with Ctrl-m
+map <leader>m :ALEToggle<CR>      " Turn on ALE with Ctrl-m
 let g:ale_sign_column_always = 1
 let g:ale_sign_error = '●' " Less aggressive than the default '>>'
 let g:ale_sign_warning = '.'
