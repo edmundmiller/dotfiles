@@ -19,18 +19,26 @@ set expandtab
 set smarttab
 set cursorline
 set cursorcolumn
-set relativenumber         " Set relative numbers
 set encoding=utf8
 
 filetype indent plugin on
 " Leader
+nnoremap <SPACE> <Nop>
 nmap <SPACE> <leader>
+map <space><space> <leader><leader>
 nmap <silent> <leader>w :w <CR>
 nmap <silent> <leader>wq :wq <CR>
 nmap <silent> <leader>q :q <CR>
 nmap <silent> <leader>m :ALEToggle <CR>
 nmap <silent> <leader>l :set relativenumber! <CR>
-
+nmap <silent> <leader>s :Gstatus <CR>
+nmap <silent> <leader>c :Gcommit <CR>
+" fzf
+nmap <leader>; :Buffers<CR>
+nmap <leader>t :Files<CR>
+nmap <leader>r :Tags<CR>
+nmap <leader>y :Commits<CR>
+nmap <leader>u :Commands<CR>
 " Only do is autocmd is enabled
 if has("autocmd")
   " Enable file type detection
@@ -119,10 +127,7 @@ set background=dark
 colorscheme gruvbox
 let g:airline_theme='gruvbox'
 let g:gruvbox_darkgutter = 1 " Make the gutters darker than the background.
-" fzf
-nmap ; :Buffers<CR>
-nmap <leader>t :Files<CR>
-nmap <leader>r :Tags<CR>
+
 " --------- Plugin Mods -------------
 " Airline 
 set ttimeoutlen=10 " Fix the slight delay between switching vim modes
