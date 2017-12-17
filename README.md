@@ -1,10 +1,12 @@
 # dotfiles
 To keep up with my dotfiles.
 
+1. Run this to install
 ```
 curl -Lks https://gist.github.com/Emiller88/20d1dd7a08b165c2ba583697cd92b9bd | /bin/bash
 ```
 
+Which calls this:
 ```  
   git clone --bare https://github.com/Emiller88/dotfiles.git $HOME/.cfg
  function config {
