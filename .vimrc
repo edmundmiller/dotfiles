@@ -29,6 +29,7 @@ map <space><space> <leader><leader>
 nmap <silent> <leader>w :w <CR>
 nmap <silent> <leader>wq :wq <CR>
 nmap <silent> <leader>q :q <CR>
+nmap <silent> <leader><Tab> :bn <CR>
 nmap <silent> <leader>m :ALEToggle <CR>
 nmap <silent> <leader>l :set relativenumber! <CR>
 nmap <silent> <leader>s :Gstatus <CR>
@@ -65,6 +66,7 @@ Plug 'bling/vim-airline'                               " Airline
 Plug 'vim-airline/vim-airline-themes'                  " Airline Themes
 Plug 'bling/vim-bufferline'                            " Airline Buffer Line
 Plug 'w0rp/ale'                                        " ALE
+Plug 'yuttie/comfortable-motion.vim'                   " Motion
 Plug 'raimondi/delimitmate'                            " Delimitmate
 Plug 'ryanoasis/vim-devicons'                          " DevIcons
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
@@ -72,16 +74,20 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'                                " fzf
 Plug 'airblade/vim-gitgutter'                          " Gitgutter
 Plug 'morhetz/gruvbox'                                 " Gruvbox
+Plug 'othree/html5.vim'                                " HTLM5
+Plug 'Yggdroot/indentLine'                             " Indent
 Plug 'gregsexton/matchtag'                             " Matchtag
 Plug 'xolox/vim-misc'                                  " Misc Bundle
 Plug 'shougo/neocomplete.vim'                          " Neocomplete
-Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' } " NERD tree open on ctrl-n
-Plug 'jistr/vim-nerdtree-tabs'                         " NERD tabs
 Plug 'scrooloose/nerdcommenter'                        " NERD Commenter
+Plug 'Xuyuanp/nerdtree-git-plugin'                     " NERD Git
+Plug 'jistr/vim-nerdtree-tabs'                         " NERD tabs
+Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' } " NERD tree open on ctrl-n
 Plug 'reedes/vim-pencil'                               " Pencil
 Plug 'klen/python-mode'                                " Py mode
 Plug 'honza/vim-snippets'                              " Snippets for ultisnips
 Plug 'tomlion/vim-solidity'                            " Solidity Language Supprt
+Plug 'tpope/vim-surround'                              " Surround
 Plug 'godlygeek/tabular'                               " Tabular
 Plug 'SirVer/ultisnips'                                " Ultisnips Engine
 Plug 'mbbill/undotree'                                 " UndoTree
@@ -96,10 +102,10 @@ call plug#end()
 " Plug 'xolox/vim-easytags'               " Easy Tags
 " Plug 'scrooloose/syntastic'             " Syntastic
 
+" Plug 'nathanaelkane/vim-indent-guides'  " Vim Indent
 " Plug 'ctrlpvim/ctrlp.vim'               " Ctrl P
-" Remapping keys
-" let g:ctrlp_map = '<c-p>'     " CtrlP on Ctrl-P
-" let g:ctrlp_cmd = 'CtrlP'     " CtrlP on Ctrl-P
+
+
 map <C-n> :NERDTreeToggle<CR>  
 nnoremap <C-b> :UndotreeToggle<cr>
 " Move by 'display lines' rather than 'logical lines' if no v:count was
@@ -229,3 +235,9 @@ let g:neocomplete#sources#omni#input_patterns.perl = '\h\w*->\h\w*\|\h\w*::'
 
 " NERDTree
 let NERDTreeShowHidden=1
+
+" Indent
+" let g:indent_guides_enable_on_vim_startup = 1
+" set ts=4 sw=4 et
+" let g:indent_guides_start_level=2
+" let g:indent_guides_guide_size=2
