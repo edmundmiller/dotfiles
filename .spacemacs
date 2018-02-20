@@ -83,7 +83,7 @@ This function should only modify configuration layer settings."
      (shell :variables
              shell-default-height 30
              shell-default-position 'bottom
-             shell-default-shell 'eshell
+             shell-default-shell 'ansi-term
              shell-enable-smart-eshell t
              shell-dault-term-shell "/bin/zsh")
      spell-checking
@@ -92,7 +92,18 @@ This function should only modify configuration layer settings."
      spotify
      gnus
      evil-commentary
-     erc
+     (erc :variables
+          erc-server-list
+          '(("irc.freenode.net"
+            :port "6697"
+            :ssl t
+            :nick "EMiller88"
+            :password "secret")
+            ("irc.myworkirc.net"
+            :port "1234"
+            :nick "some-suit"
+            :password "hunter2")))
+
      pdf-tools
      ;; Languages
      vimscript
@@ -128,7 +139,7 @@ This function should only modify configuration layer settings."
    dotspacemacs-frozen-packages '()
 
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '()
+   dotspacemacs-excluded-packages '(exec-path-from-shell)
 
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
@@ -419,7 +430,7 @@ It should only modify the values of Spacemacs settings."
    ;; If non-nil pressing the closing parenthesis `)' key in insert mode passes
    ;; over any automatically added closing parenthesis, bracket, quote, etc…
    ;; This can be temporary disabled by pressing `C-q' before `)'. (default nil)
-   dotspacemacs-smart-closing-parenthesis nil
+   dotspacemacs-smart-closing-parenthesis t
 
    ;; Select a scope to highlight delimiters. Possible values are `any',
    ;; `current', `all' or `nil'. Default is `all' (highlight any scope and
@@ -428,7 +439,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil, advise quit functions to keep server open when quitting.
    ;; (default nil)
-   dotspacemacs-persistent-server nil
+   dotspacemacs-persistent-server t
 
    ;; List of search tool executable names. Spacemacs uses the first installed
    ;; tool of the list. Supported tools are `rg', `ag', `pt', `ack' and `grep'.
@@ -477,7 +488,7 @@ It should only modify the values of Spacemacs settings."
    ;; Run `spacemacs/prettify-org-buffer' when
    ;; visiting README.org files of Spacemacs.
    ;; (default nil)
-   dotspacemacs-pretty-docs nil))
+   dotspacemacs-pretty-docs t))
 
 (defun dotspacemacs/user-init ()
   "Initialization for user code:
@@ -577,21 +588,8 @@ you should place your code here."
       (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync) ))
       (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync) ))
       )
-  (setq-default dotspacemacs-configuration-layers
-                '((erc :variables
-                       erc-server-list
-                       '(("irc.freenode.net"
-                          :port "6697"
-                          :ssl t
-                          :nick "EMiller88"
-                          :password "secret")
-                         ("irc.myworkirc.net"
-                          :port "1234"
-                          :nick "some-suit"
-                          :password "hunter2")))))
-
   ;; Start Edit server for Edit with Emacs
-  (edit-server-start)
+  ;; (edit-server-start)
 )
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
