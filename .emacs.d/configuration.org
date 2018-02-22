@@ -1,13 +1,17 @@
 #+STARTUP: overview
 * Emacs Configuration
 * Use sensible-defaults.el
+
     Use [[https://github.com/emiller/sensible-defaults.el][sensible-defaults.el]] for some basic settings.
+
     #+BEGIN_SRC emacs-lisp
-	(load-file "~/.emacs.d/sensible-defaults.el")
-	(sensible-defaults/use-all-settings)
-	(sensible-defaults/use-all-keybindings)
+				(load-file "~/.emacs.d/sensible-defaults.el")
+				(sensible-defaults/use-all-settings)
+				(sensible-defaults/use-all-keybindings)
     #+END_SRC
+
 * Configure use-package
+
     #+BEGIN_SRC emacs-lisp
 				;; Bootstrap `use-package'
 				(unless (package-installed-p 'use-package)
@@ -26,6 +30,7 @@
 				:config (auto-compile-on-load-mode))
 				(setq load-prefer-newer t)
     #+END_SRC
+
 * Set personal information
   Maybe later
 
@@ -108,6 +113,24 @@
     (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 
     #+END_SRC
+
+	Add el-get to get dired+
+
+	#+BEGIN_SRC emacs-lisp
+		(add-to-list 'load-path "~/.emacs.d/el-get/el-get")
+
+		(unless (require 'el-get nil 'noerror)
+		(require 'package)
+		(add-to-list 'package-archives
+								'("melpa" . "http://melpa.org/packages/"))
+		(package-refresh-contents)
+		(package-initialize)
+		(package-install 'el-get)
+		(require 'el-get))
+
+		(add-to-list 'el-get-recipe-path "~/.emacs.d/el-get-user/recipes")
+		(el-get 'sync)
+	#+END_SRC
 * UI
 ** Themes
 
@@ -284,17 +307,20 @@
 	(add-hook 'vc-dir-mode-hook 'turn-on-diff-hl-mode))
     #+END_SRC
 * Try
-#+BEGIN_SRC emacs-lisp
-(use-package try
-	:ensure t)
-#+END_SRC
+
+		#+BEGIN_SRC emacs-lisp
+				(use-package try
+				:ensure t)
+		#+END_SRC
 * Which key
+
   Brings up some help
+
   #+BEGIN_SRC emacs-lisp
-  (use-package which-key
-	:ensure t
-	:config
-	(which-key-mode))
+		(use-package which-key
+		:ensure t
+		:config
+		(which-key-mode))
   #+END_SRC
 * Programming
 
@@ -448,6 +474,12 @@
 	 Indent 2 spaces.
 	 #+BEGIN_SRC emacs-lisp
 	 (setq python-indent 2)
+	 #+END_SRC
+** R
+	 #+BEGIN_SRC emacs-lisp
+		(use-package ess
+				:ensure t
+				:init (require 'ess-site))
 	 #+END_SRC
 ** Sh
 	 Indent 2 spaces.
@@ -636,8 +668,8 @@ Record the time that a todo was archived.
 		Allow export to markdown and beamer (for presentations).
 
 		#+BEGIN_SRC emacs-lisp
-				(require 'ox-md)
-				(require 'ox-beamer)
+				;; (require 'ox-md)
+				;; (require 'ox-beamer)
 		#+END_SRC
 
 		Allow =babel= to evaluate Emacs lisp, Python, R or Gnuplot code
@@ -646,7 +678,7 @@ Record the time that a todo was archived.
 				'org-babel-load-languages
 				'((emacs-lisp . t)
 				(python . t)
-				(r . t)
+				(R . t)
 				(gnuplot . t)))
 		#+END_SRC
 
@@ -756,24 +788,30 @@ Record the time that a todo was archived.
 
 	This definitely deserves it's own section.
 
-#+BEGIN_SRC emacs-lisp
-  (use-package dired-details)
-  (use-package dired+)
-#+END_SRC
+		#+BEGIN_SRC emacs-lisp
+				(el-get-bundle dired+
+				:ensure t
+				:config
+				(setq diredp-hide-details-initially-flag nil)
+				(setq diredp-hide-details-propagate-flag nil)
+				)
+				(el-get-bundle dired-details
+				:ensure t )
+		#+END_SRC
 
-Open media with the appropriate programs.
+		Open media with the appropriate programs.
 
-#+BEGIN_SRC emacs-lisp
-  (use-package dired-open
-    :config
-    (setq dired-open-extensions
-          '(("pdf" . "evince")
-            ("mkv" . "vlc")
-            ("mp4" . "vlc")
-            ("avi" . "vlc"))))
-#+END_SRC
+		#+BEGIN_SRC emacs-lisp
+		(use-package dired-open
+				:config
+				(setq dired-open-extensions
+						'(("pdf" . "evince")
+								("mkv" . "vlc")
+								("mp4" . "vlc")
+								("avi" . "vlc"))))
+		#+END_SRC
 
-These are the switches that get passed to ls when dired gets a list of files. We’re using:
+		These are the switches that get passed to ls when dired gets a list of files. We’re using:
 
     l: Use the long listing format.
     h: Use human-readable sizes.
@@ -781,7 +819,7 @@ These are the switches that get passed to ls when dired gets a list of files. We
     A: Almost all. Doesn’t include ”.” or ”..”.
 
 		#+BEGIN_SRC emacs-lisp
-		(setq-default dired-listing-switches "-lhvA")
+				(setq-default dired-listing-switches "-lhvA")
 		#+END_SRC
 
 		Kill buffers of files/directories that are deleted in dired.
@@ -816,7 +854,17 @@ These are the switches that get passed to ls when dired gets a list of files. We
 		#+END_SRC
 
 * Editing settings
+** Edit Config
 
+		This binds C-c e to quickly open my Emacs configuration file.
+
+		#+BEGIN_SRC emacs-lisp
+		(defun emiller/visit-emacs-config ()
+				(interactive)
+				(find-file "~/.emacs.d/configuration.org"))
+
+		(global-set-key (kbd "C-c e") 'emiller/visit-emacs-config)
+		#+END_SRC
 ** Quickly visit Emacs configuration
 
 		I futz around with my dotfiles a lot. This binds =C-c e= to quickly open my
@@ -841,13 +889,13 @@ Assume that I always want to kill the current buffer when hitting =C-x k=.
 ** Look for executables in =/usr/local/bin=.
 
 		#+BEGIN_SRC emacs-lisp
-				(emiller/append-to-path "/usr/local/bin")
+			;;	(emiller/append-to-path "/usr/local/bin")
 		#+END_SRC
 
 ** Use =company-mode= everywhere
 
 		#+BEGIN_SRC emacs-lisp
-				(use-package company-mode
+				(use-package company
 								:ensure t
 								:config
 								(add-hook 'after-init-hook 'global-company-mode))
@@ -860,7 +908,7 @@ Assume that I always want to kill the current buffer when hitting =C-x k=.
 		last place I visited.
 
 		#+BEGIN_SRC emacs-lisp
-				(use-package save-place-mode
+				(use-package saveplace
 						:config (save-place-mode t))
 		#+END_SRC
 
@@ -873,13 +921,17 @@ Assume that I always want to kill the current buffer when hitting =C-x k=.
 		#+END_SRC
 ** Configure yasnippet
 
-		I keep my snippets in =~/.emacs/snippets/text-mode=, and I always want =yasnippet=
+		I keep my snippets in =~/.emacs.d/snippets/text-mode=, and I always want =yasnippet=
 		enabled.
 
 		#+BEGIN_SRC emacs-lisp
-				(setq yas-snippet-dirs '("~/.emacs.d/snippets/text-mode"))
-				(yas-global-mode 1)
+    (use-package yasnippet
+        :ensure t
+        :config
+        (setq yas-snippet-dirs '("~/.emacs.d/snippets/text-mode"))
+        (yas-global-mode 1))
 		#+END_SRC
+
 
 		I /don’t/ want =ido= to automatically indent the snippets it inserts. Sometimes
 		this looks pretty bad (when indenting org-mode, for example, or trying to guess
@@ -945,9 +997,11 @@ Assume that I always want to kill the current buffer when hitting =C-x k=.
 ** Configure =wrap-region=
 
 		#+BEGIN_SRC emacs-lisp
+    (use-package wrap-region
+    :ensure t
+    :config
 				(wrap-region-global-mode t)
-				(wrap-region-add-wrapper "/" "/" nil 'ruby-mode)
-				(wrap-region-add-wrapper "`" "`" nil '(markdown-mode ruby-mode))
+				(wrap-region-add-wrapper "`" "`" nil '(markdown-mode)))
 		#+END_SRC
 
 ** Split horizontally for temporary buffers
