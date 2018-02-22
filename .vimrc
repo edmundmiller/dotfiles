@@ -91,6 +91,8 @@ Plug 'reedes/vim-pencil'                               " Pencil
 Plug 'klen/python-mode'                                " Py mode
 Plug 'honza/vim-snippets'                              " Snippets for ultisnips
 Plug 'tomlion/vim-solidity'                            " Solidity Language Supprt
+Plug 'dmdque/solidity.vim'                             " Solidity Compiler
+Plug 'tpope/vim-speeddating'                           " Speed Dating
 Plug 'tpope/vim-surround'                              " Surround
 Plug 'godlygeek/tabular'                               " Tabular
 Plug 'SirVer/ultisnips'                                " Ultisnips Engine
