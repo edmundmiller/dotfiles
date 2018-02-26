@@ -10,6 +10,11 @@
 				(sensible-defaults/use-all-keybindings)
     #+END_SRC
 
+    Add Better Defaults
+    #+BEGIN_SRC emacs-lisp
+    (use-package better-defaults
+    :ensure t)
+    #+END_SRC
 * Configure use-package
 
     #+BEGIN_SRC emacs-lisp
@@ -32,9 +37,16 @@
     #+END_SRC
 
 * Set personal information
-  Maybe later
-
+** Who am I? Where am I?
+   #+BEGIN_SRC emacs-lisp
+     (setq user-full-name "Edmund A. Miller"
+        user-mail-address "Edmund.a.miller@gmail.com"
+        calendar-latitude 32.9
+        calendar-longitude -96.7
+        calendar-location-name "Richardson, TX")
+   #+END_SRC
 * evil-mode
+** Basics
     I'd prefer not to expand abbrevs when I hit escape. That's always jarring and
     usually not what I want. In particular, it makes working with Coq really
     frustrating.
@@ -46,32 +58,51 @@
     Use =evil=.
 
     #+BEGIN_SRC emacs-lisp
-	(use-package evil
-	:ensure t
-	:init
-	(setq evil-want-integration nil)
-	:config
-	(evil-mode 1))
+    (use-package evil
+        :ensure t
+        :init
+        (setq evil-want-integration nil)
+        :config
+        (evil-mode 1))
     #+END_SRC
+** evil-collection
 
     I need =hjkl= everywhere so use [[https://github.com/jojojames/evil-collection][evil-collection]]
 
     #+BEGIN_SRC emacs-lisp
-	(use-package evil-collection
-	:after evil
-	:ensure t
-	:config
-	(evil-collection-init))
+    (use-package evil-collection
+        :after evil
+        :ensure t
+        :config
+        (evil-collection-init))
     #+END_SRC
+** evil-org-mode
+   Not to be confused with org-evil
+
+   Sets =t= to cycle todo
+   #+BEGIN_SRC emacs-lisp
+   (use-package evil-org
+        :ensure t
+        :after org
+        :config
+        (add-hook 'org-mode-hook 'evil-org-mode)
+        (add-hook 'evil-org-mode-hook
+                    (lambda ()
+                    (evil-org-set-key-theme '(calendar todo)))))
+   #+END_SRC
+** evil-bonus
+*** Surround
 
     Enable =surround= everywhere.
 
     #+BEGIN_SRC emacs-lisp
-	(use-package evil-surround
-	:ensure t
-	:config
-	(global-evil-surround-mode 1))
+    (use-package evil-surround
+        :ensure t
+        :config
+        (global-evil-surround-mode 1))
     #+END_SRC
+
+*** =C-p=
 
     Bind =C-p= to fuzzy-finding files in the current project.
 
@@ -79,34 +110,136 @@
     (define-key evil-normal-state-map (kbd "C-p") 'projectile-find-file)
     #+END_SRC
 
-    I need hjkl everywhere so use evil-collection
+*** =evil-leader=
+    Neccessary for nerd-commenter
 
     #+BEGIN_SRC emacs-lisp
-    (use-package evil-collection
-    :after evil
-    :ensure t
-    :config
-    (evil-collection-init))
+    (use-package evil-leader
+        :ensure t
+        :config
+        (global-evil-leader-mode))
+    #+END_SRC
+
+*** =evil-nerd-commenter=
+
+    Great package to make commenting easy
+    #+BEGIN_SRC emacs-lisp
+      (use-package evil-nerd-commenter
+        :ensure t
+        :config;; Vim key bindings
+        (require 'evil-leader)
+        (global-evil-leader-mode)
+        (evil-leader/set-key
+        "ci" 'evilnc-comment-or-uncomment-lines
+        "cl" 'evilnc-quick-comment-or-uncomment-to-the-line
+        "ll" 'evilnc-quick-comment-or-uncomment-to-the-line
+        "cc" 'evilnc-copy-and-comment-lines
+        "cp" 'evilnc-comment-or-uncomment-paragraphs
+        "cr" 'comment-or-uncomment-region
+        "cv" 'evilnc-toggle-invert-comment-line-by-line
+        "."  'evilnc-copy-and-comment-operator
+        "\\" 'evilnc-comment-operator ))
+    #+END_SRC
+*** Neotree
+    #+BEGIN_SRC emacs-lisp
+    (use-package neotree
+        :ensure t
+        :config
+        (global-set-key [f8] 'neotree-toggle)
+        (setq neo-theme (if (display-graphic-p) 'icons 'arrow)))
+    #+END_SRC
+*** Y to y$
+    #+BEGIN_SRC emacs-lisp
+      (setq evil-want-Y-yank-to-eol t)
+    #+END_SRC
+* Utility functions
+    #+BEGIN_SRC emacs-lisp
+    (defun emiller/rename-file (new-name)
+    (interactive "FNew name: ")
+    (let ((filename (buffer-file-name)))
+        (if filename
+            (progn
+            (when (buffer-modified-p)
+                (save-buffer))
+            (rename-file filename new-name t)
+            (kill-buffer (current-buffer))
+            (find-file new-name)
+            (message "Renamed '%s' -> '%s'" filename new-name))
+        (message "Buffer '%s' isn't backed by a file!" (buffer-name)))))
+
+    (defun emillier/generate-scratch-buffer ()
+    "Create and switch to a temporary scratch buffer with a random
+        name."
+    (interactive)
+    (switch-to-buffer (make-temp-name "scratch-")))
+
+    (defun emiller/kill-current-buffer ()
+    "Kill the current buffer without prompting."
+    (interactive)
+    (kill-buffer (current-buffer)))
+
+    (defun emiller/visit-last-dired-file ()
+    "Open the last file in an open dired buffer."
+    (end-of-buffer)
+    (previous-line)
+    (dired-find-file))
+
+    (defun emiller/visit-last-migration ()
+    "Open the last file in 'db/migrate/'. Relies on projectile. Pretty sloppy."
+    (interactive)
+    (dired (expand-file-name "db/migrate" (projectile-project-root)))
+    (emiller/visit-last-dired-file)
+    (kill-buffer "migrate"))
+
+    (defun emiller/add-auto-mode (mode &rest patterns)
+    "Add entries to `auto-mode-alist' to use `MODE' for all given file `PATTERNS'."
+    (dolist (pattern patterns)
+        (add-to-list 'auto-mode-alist (cons pattern mode))))
+
+    (defun emiller/find-file-as-sudo ()
+    (interactive)
+    (let ((file-name (buffer-file-name)))
+        (when file-name
+        (find-alternate-file (concat "/sudo::" file-name)))))
+
+    (defun emiller/region-or-word ()
+    (if mark-active
+        (buffer-substring-no-properties (region-beginning)
+                                        (region-end))
+        (thing-at-point 'word)))
+
+    (defun emiller/append-to-path (path)
+    "Add a path both to the $PATH variable and to Emacs' exec-path."
+    (setenv "PATH" (concat (getenv "PATH") ":" path))
+    (add-to-list 'exec-path path))
     #+END_SRC
 * Use Space as a Leader
   I started with spacemacs and my vim leader key is space.
     #+BEGIN_SRC emacs-lisp
     (use-package general
-    :ensure t
-    :config
-    (setq general-override-states '(insert
-				    emacs
-				    hybrid
-				    normal
-				    visual
-				    motion
-				    operator
-				    replace))
-    (general-override-mode)
-    (general-define-key
-    :states '(normal visual motion)
-    :keymaps 'override
-    "SPC" 'hydra-space/body))
+        :ensure t
+        :config
+        (general-evil-setup t)
+
+        (general-define-key
+        :states '(normal insert emacs)
+        :prefix "C-SPC"
+        :non-normal-prefix "C-SPC"
+        "l" '(avy-goto-line)
+        "a" 'align-regexp
+        )
+
+        ;; (general-define-key
+        ;; :states '(normal motion insert emacs)
+        ;; ;; :prefix "SPC"
+        ;; ;; "SPC" '(M-x)
+        ;; "n" '(neotree)
+        ;; "w" '(evil-window-map)
+        ;; "ar" '(ranger :which-key "call ranger")
+        ;; "g"  '(:ignore t :which-key "Git")
+        ;; "gs" '(magit-status :which-key "git status")
+        ;;)
+    )
     #+END_SRC
 * Repos
     #+BEGIN_SRC emacs-lisp
@@ -131,6 +264,12 @@
 		(add-to-list 'el-get-recipe-path "~/.emacs.d/el-get-user/recipes")
 		(el-get 'sync)
 	#+END_SRC
+** Try
+
+		#+BEGIN_SRC emacs-lisp
+				(use-package try
+				:ensure t)
+		#+END_SRC
 * UI
 ** Themes
 
@@ -214,7 +353,26 @@
 
     (emiller/reset-font-size)
    #+END_SRC
+** Powerline
+
+   Coming from Vim I enjoy a good powerline to let me know some things and for
+   looks. Using the spaceline for the great mode line from spacemacs
+   #+BEGIN_SRC emacs-lisp
+
+   #+END_SRC
+
+   Icons make it feel modern.
+   #+BEGIN_SRC emacs-lisp
+   (use-package spaceline-all-the-icons
+    :after spaceline
+    :config (spaceline-all-the-icons-theme))
+   #+END_SRC
 ** Details
+*** =All the icons=
+    #+BEGIN_SRC emacs-lisp
+     (use-package all-the-icons
+      :ensure t)
+    #+END_SRC
 *** Tweak window chrome
 
    Remove menu and scroll bar
@@ -236,7 +394,7 @@
    Haskell requires pretty lambdas.
 
     #+BEGIN_SRC emacs-lisp
-	(global-prettify-symbols-mode t)
+        (global-prettify-symbols-mode t)
     #+END_SRC
 
 *** Disable Visual Bell
@@ -306,24 +464,35 @@
 	(add-hook 'prog-mode-hook 'turn-on-diff-hl-mode)
 	(add-hook 'vc-dir-mode-hook 'turn-on-diff-hl-mode))
     #+END_SRC
-* Try
+*** Turn off Blinking Cursor
+    #+BEGIN_SRC emacs-lisp
+        (blink-cursor-mode -1)
+    #+END_SRC
+*** Which key
 
-		#+BEGIN_SRC emacs-lisp
-				(use-package try
-				:ensure t)
-		#+END_SRC
-* Which key
+   Brings up some help
 
-  Brings up some help
-
-  #+BEGIN_SRC emacs-lisp
-		(use-package which-key
-		:ensure t
-		:config
-		(which-key-mode))
-  #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+		 (use-package which-key
+         :ensure t
+         :config
+         (which-key-mode))
+   #+END_SRC
+*** Indent Guides
+    #+BEGIN_SRC emacs-lisp
+    (use-package highlight-indent-guides
+        :ensure t
+        :config
+            (setq highlight-indent-guides-method 'character)
+            (setq highlight-indent-guides-character ?\|))
+    #+END_SRC
+*** Line Numbers
+    How will I tell people where my errors are?
+    #+BEGIN_SRC emacs-lisp
+        (global-linum-mode t)
+    #+END_SRC
 * Programming
-
+** Basics
   I like 4 characters on my tabs.
 
   #+BEGIN_SRC emacs-lisp
@@ -374,7 +543,8 @@
 		(add-hook 'haskell-mode-hook
 						(lambda ()
 						(eldoc-mode)
-						(turn-on-haskell-indent))))
+						(turn-on-haskell-indent)
+            (highlight-indent-guides-mode))))
    #+END_SRC
 
 ** JavaScript
@@ -432,6 +602,7 @@
 
 		:config
 		(use-package evil-magit)
+    (use-package magit-popup)
 		(setq magit-push-always-verify nil)
 		(setq git-commit-summary-max-length 50)
 		(add-hook 'git-commit-mode-hook 'turn-on-flyspell)
@@ -490,13 +661,16 @@
                    sh-indentation 2)))
    #+END_SRC
 ** Solidity
+
 	 Setting the standard of 4 spaces
+
 		#+BEGIN_SRC emacs-lisp
 				(setq solidity-indent-level 4)
 		#+END_SRC
 
 	 Use Solidity Mode and set up Solc and Solium for maximum error catching
 	 The stand is also to use =//= and I prefer that anyways
+
 	 #+BEGIN_SRC emacs-lisp
 		(use-package solidity-mode
 		:ensure t
@@ -512,6 +686,24 @@
 
 				(setq solidity-comment-style 'slash))
 	 #+END_SRC
+
+   Every modern text-editor needs to write the code for me. So add a company backend
+
+   #+BEGIN_SRC emacs-lisp
+   (use-package company-solidity
+    :ensure t
+    :after (company))
+   #+END_SRC
+
+   Use local variables too
+
+   #+BEGIN_SRC emacs-lisp
+   (add-hook 'solidity-mode-hook
+    (lambda ()
+    (set (make-local-variable 'company-backends)
+        (append '((company-solidity company-capf company-dabbrev-code))
+        company-backends))))
+   #+END_SRC
 ** Web-mode
 	 - Color colors with rainbow-mode
 	 - Indent 2 spaces.
@@ -521,6 +713,28 @@
             (rainbow-mode)
             (setq web-mode-markup-indent-offset 2)))
 		 #+END_SRC
+* Helm
+  Tried Ivy.
+  To make helm-mode start with Emacs init file:
+  #+BEGIN_SRC emacs-lisp
+    (use-package helm
+        :ensure t
+        :config
+        (helm-mode 1))
+  #+END_SRC
+
+  Helm M-x bind to M-x
+
+  #+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "M-x") 'helm-M-x)
+  #+END_SRC
+
+  Use helm for finding files
+
+    #+BEGIN_SRC emacs-lisp
+        (global-set-key (kbd "C-x C-f") 'helm-find-files)
+    #+END_SRC
+
 * Terminal
 	Use Ansi-term
 	#+BEGIN_SRC emacs-lisp
@@ -529,7 +743,7 @@
 	To be continued...
 * Org mode
 ** Display
-  Org bullets makes things look pretty
+*** Org bullets makes things look pretty
 
 (setenv "BROWSER" "google-chrome-stable")
 		#+BEGIN_SRC emacs-lisp
@@ -541,44 +755,52 @@
 				(setq org-bullets-bullet-list '("■" "◆" "▲" "▶"))
 		#+END_SRC
 
-I found I like a little arrow instead of ellipsis
+*** I found I like a little arrow instead of ellipsis
 
 		#+BEGIN_SRC emacs-lisp
 				(setq org-ellipsis " ▼")
 		#+END_SRC
 
-Syntax highlighting in source blocks
+*** Syntax highlighting in source blocks
 
 		#+BEGIN_SRC emacs-lisp
 				(setq org-src-fontify-natively t)
 		#+END_SRC
 
-Fix TAB as if it were in a normal buffer of the language's major mode
+*** Fix TAB as if it were in a normal buffer of the language's major mode
 
 		#+BEGIN_SRC emacs-lisp
 				(setq org-src-tab-acts-natively t)
 		#+END_SRC
 
-Use the current window when editting a snippet
+*** Use the current window when editting a snippet
 
 		#+BEGIN_SRC emacs-lisp
 				(setq org-src-window-setup 'current-window)
 		#+END_SRC
 
-Quick insert a block of elisp
+*** Quick insert a block of elisp
 
 		#+BEGIN_SRC emacs-lisp
 				(add-to-list 'org-structure-template-alist
 						'("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"))
 		#+END_SRC
 
-Enable spell-checking in Org-mode
+*** Enable spell-checking in Org-mode
 
 		#+BEGIN_SRC emacs-lisp
 				(add-hook 'org-mode-hook 'flyspell-mode)
 		#+END_SRC
+*** Org TODO Keywords
+    I like to add waiting.
+
+    #+BEGIN_SRC emacs-lisp
+     (setq org-todo-keywords
+        '((sequence "TODO" "WAITING" "|" "DONE" "DELEGATED")))
+    #+END_SRC
 
 ** Task and Org-Capture
+*** Storing
 	 Store my files in =~/Dropbox/orgfiles/=
 	 Archive finished tasks in =~/Dropbox/orgfiles/archive.org=
 
@@ -593,6 +815,7 @@ Enable spell-checking in Org-mode
 				(concat (org-file-path "archive.org") "::* From %s"))
 	#+END_SRC
 
+*** Agenda
 	 Setting up my agenda files
 
 	 #+BEGIN_SRC emacs-lisp
@@ -604,6 +827,7 @@ Enable spell-checking in Org-mode
 
 	 #+END_SRC
 
+*** Archiving
 	 Hitting =C-c C-x C-s= will mark a todo as done and move it to an appropriate
 place in the archive.
 
@@ -630,7 +854,7 @@ Record the time that a todo was archived.
 		- Lab Entry goes to =Lab_Notebook.org= under a date tree
 
 		#+BEGIN_SRC emacs-lisp
-		(setq org-capture-templates
+    (setq org-capture-templates
 				'(("a" "Appointment" entry
 				(file  "~/Dropbox/orgfiles/gcal.org" "Appointments")
 				"* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")
@@ -663,6 +887,10 @@ Record the time that a todo was archived.
 		#+END_SRC
 
 *** Keybindings
+**** Capture
+     #+BEGIN_SRC emacs-lisp
+        (define-key global-map "\C-cc" 'org-capture)
+     #+END_SRC
 ** Exporting
 *** Markdown
 		Allow export to markdown and beamer (for presentations).
@@ -708,6 +936,23 @@ Record the time that a todo was archived.
 	 #+BEGIN_SRC emacs-lisp
 				(setq org-enable-github-support t)
 	 #+END_SRC
+** Google Calendar
+
+   I like using Google calendar so I can share it with other non emacs users
+   #+BEGIN_SRC emacs-lisp
+     ;; (use-package org-gcal
+     ;; :ensure t
+     ;; :config
+     ;; (setq org-gcal-client-id "891288798426-io67fcj0069t6k9bldhm4b5mu0pbr0ph.apps.googleusercontent.com"
+     ;;       org-gcal-client-secret "D6dedPByS6mzeCvg_FQyAEuk"
+     ;;       org-gcal-file-alist '(("edmund.a.miller@gmail.com" .  "~/Dropbox/orgfiles/gcal.org") ;; Edmund Miller
+     ;;                             ("buvuk4b1vjghore8gsq6ifbcnk@group.calendar.google.com" .  "~/Dropbox/orgfiles/Lab_schedule.org") ;; Functional Genomics
+     ;;                             ("sgv1ng3qi5erm89f227h4hm02s@group.calendar.google.com" .  "~/Dropbox/orgfiles/schedule.org") ;; Org
+     ;;                             )))
+
+     ;; (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync) ))
+     ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync) ))
+   #+END_SRC
 * Writing
 	I'm probably going to do a lot of writing in the future might as well get some stuff set up now
 ** Look up definitions in Webster 1913
@@ -893,13 +1138,35 @@ Assume that I always want to kill the current buffer when hitting =C-x k=.
 		#+END_SRC
 
 ** Use =company-mode= everywhere
-
+*** Install Company
 		#+BEGIN_SRC emacs-lisp
 				(use-package company
-								:ensure t
-								:config
-								(add-hook 'after-init-hook 'global-company-mode))
+            :ensure t
+            :config
+								(add-hook 'after-init-hook 'global-company-mode)
+                (setq company-idle-delay 0.2
+                company-minimum-prefix-length 3))
 		#+END_SRC
+
+***   Documentation popups are nice
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package company-quickhelp
+       :ensure t
+       :config
+       (company-quickhelp-mode)
+       (setq company-quickhelp-delay 1))
+   #+END_SRC
+*** Statistics
+
+   Use statistics to get better completion recommendations
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package company-statistics
+       :ensure t
+       :config
+        (company-statistics-mode))
+   #+END_SRC
 
 ** Save my location within a file
 
@@ -1029,38 +1296,40 @@ Assume that I always want to kill the current buffer when hitting =C-x k=.
 		Enable [[https://github.com/hrs/engine-mode][engine-mode]] and define a few useful engines.
 
 		#+BEGIN_SRC emacs-lisp
-(use-package engine-mode
-:ensure t
-:init
-		(defengine duckduckgo
-				"https://duckduckgo.com/?q=%s"
-				:keybinding "d")
+    (use-package engine-mode
+    :ensure t
+    :init
+        (defengine duckduckgo
+            "https://duckduckgo.com/?q=%s"
+            :keybinding "d")
 
-		(defengine github
-				"https://github.com/search?ref=simplesearch&q=%s"
-				:keybinding "g")
+        (defengine github
+            "https://github.com/search?ref=simplesearch&q=%s"
+            :keybinding "h")
 
-		(defengine google
-				"http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s")
+        (defengine google
+            "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+            :keybinding "g")
 
-		(defengine rfcs
-				"http://pretty-rfc.herokuapp.com/search?q=%s")
+        (defengine rfcs
+            "http://pretty-rfc.herokuapp.com/search?q=%s")
 
-		(defengine stack-overflow
-				"https://stackoverflow.com/search?q=%s"
-				:keybinding "s")
+        (defengine stack-overflow
+            "https://stackoverflow.com/search?q=%s"
+            :keybinding "s")
 
-		(defengine wikipedia
-				"http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
-				:keybinding "w")
+        (defengine wikipedia
+            "http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
+            :keybinding "w")
 
-		(defengine wiktionary
-				"https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
+        (defengine wiktionary
+            "https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
 
-		(defengine youtube
-				"https://www.youtube.com/results?search_query=%s")
+        (defengine youtube
+            "https://www.youtube.com/results?search_query=%s"
+            :keybinding "y")
 
-		(engine-mode t))
+        (engine-mode t))
 		#+END_SRC
 
 ** =Edit with Emacs=
@@ -1073,8 +1342,43 @@ Assume that I always want to kill the current buffer when hitting =C-x k=.
 		:config
 				(edit-server-start))
 	 #+END_SRC
+** Undo Tree
+   #+BEGIN_SRC emacs-lisp
+     (use-package undo-tree
+          :ensure t
+          :config
+          (global-undo-tree-mode))
+   #+END_SRC
+** Highlight Indentation Guide
+   I like to see my indents to keep stuff looking nice.
+** Tramp
+
+   I do a lot of server work and this was one of the reasons I use emacs over a
+   more modern editor
+
+   #+BEGIN_SRC emacs-lisp
+       (setq tramp-default-method "ssh")
+   #+END_SRC
 * Custom Keybindings
 
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "M-o") 'other-window)
 #+END_SRC
+
+** Edit i.org
+
+  I go to my i.org a lot.
+
+		#+BEGIN_SRC emacs-lisp
+		(defun emiller/visit-i-org ()
+				(interactive)
+				(find-file "~/Dropbox/orgfiles/i.org"))
+
+		(global-set-key (kbd "C-c i") 'emiller/visit-i-org)
+		#+END_SRC
+* Misc
+  For stuff looking for a home
+  #+BEGIN_SRC emacs-lisp
+  ;;  (use-package emacs-async
+  ;;    :ensure t)
+  #+END_SRC
