@@ -126,19 +126,8 @@
     #+BEGIN_SRC emacs-lisp
       (use-package evil-nerd-commenter
         :ensure t
-        :config;; Vim key bindings
-        (require 'evil-leader)
-        (global-evil-leader-mode)
-        (evil-leader/set-key
-        "ci" 'evilnc-comment-or-uncomment-lines
-        "cl" 'evilnc-quick-comment-or-uncomment-to-the-line
-        "ll" 'evilnc-quick-comment-or-uncomment-to-the-line
-        "cc" 'evilnc-copy-and-comment-lines
-        "cp" 'evilnc-comment-or-uncomment-paragraphs
-        "cr" 'comment-or-uncomment-region
-        "cv" 'evilnc-toggle-invert-comment-line-by-line
-        "."  'evilnc-copy-and-comment-operator
-        "\\" 'evilnc-comment-operator ))
+        :config)
+
     #+END_SRC
 *** Neotree
     #+BEGIN_SRC emacs-lisp
@@ -213,34 +202,52 @@
     (setenv "PATH" (concat (getenv "PATH") ":" path))
     (add-to-list 'exec-path path))
     #+END_SRC
+
+    Make Esc quit most minibuffers
+
+    #+BEGIN_SRC emacs-lisp
+    ;;; esc quits
+    (defun minibuffer-keyboard-quit ()
+    "Abort recursive edit.
+    In Delete Selection mode, if the mark is active, just deactivate it;
+    then it takes a second \\[keyboard-quit] to abort the minibuffer."
+    (interactive)
+    (if (and delete-selection-mode transient-mark-mode mark-active)
+        (setq deactivate-mark  t)
+        (when (get-buffer "*Completions*") (delete-windows-on "*Completions*"))
+        (abort-recursive-edit)))
+    (define-key evil-normal-state-map [escape] 'keyboard-quit)
+    (define-key evil-visual-state-map [escape] 'keyboard-quit)
+    (define-key minibuffer-local-map [escape] 'minibuffer-keyboard-quit)
+    (define-key minibuffer-local-ns-map [escape] 'minibuffer-keyboard-quit)
+    (define-key minibuffer-local-completion-map [escape] 'minibuffer-keyboard-quit)
+    (define-key minibuffer-local-must-match-map [escape] 'minibuffer-keyboard-quit)
+    (define-key minibuffer-local-isearch-map [escape] 'minibuffer-keyboard-quit)
+    #+END_SRC
 * Use Space as a Leader
   I started with spacemacs and my vim leader key is space.
     #+BEGIN_SRC emacs-lisp
-    (use-package general
-        :ensure t
-        :config
-        (general-evil-setup t)
-
-        (general-define-key
-        :states '(normal insert emacs)
-        :prefix "C-SPC"
-        :non-normal-prefix "C-SPC"
-        "l" '(avy-goto-line)
-        "a" 'align-regexp
-        )
-
-        ;; (general-define-key
-        ;; :states '(normal motion insert emacs)
-        ;; ;; :prefix "SPC"
-        ;; ;; "SPC" '(M-x)
-        ;; "n" '(neotree)
-        ;; "w" '(evil-window-map)
-        ;; "ar" '(ranger :which-key "call ranger")
-        ;; "g"  '(:ignore t :which-key "Git")
-        ;; "gs" '(magit-status :which-key "git status")
-        ;;)
-    )
+      (use-package general
+          :ensure t
+          :config
+          (general-evil-setup)
+          (setq spaceLeader "SPC"))
     #+END_SRC
+
+    Define Space keys (use =general-describe-keybindings= to see commands)
+
+    #+BEGIN_SRC emacs-lisp
+      (general-nmap :prefix spaceLeader
+            "SPC" 'helm-M-x
+            "bb" 'helm-mini
+            "n" 'neotree
+            "w" 'evil-window-map
+            "g"  '(:ignore t :which-key "Git")
+            "gs" '(magit-status :which-key "git status")
+            "f" '(:ignore t :which-key "File")
+            ";" '(evilnc-comment-or-uncomment-lines :which-key "Comment"))
+    #+END_SRC
+
 * Repos
     #+BEGIN_SRC emacs-lisp
     (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
@@ -353,19 +360,51 @@
 
     (emiller/reset-font-size)
    #+END_SRC
-** Powerline
+** Mode Line
+   Start with Powerline
+
+   #+BEGIN_SRC emacs-lisp
+   (use-package powerline
+    :if window-system
+    :config (setq-default powerline-default-separator 'nil))
+   #+END_SRC
 
    Coming from Vim I enjoy a good powerline to let me know some things and for
    looks. Using the spaceline for the great mode line from spacemacs
-   #+BEGIN_SRC emacs-lisp
 
+   #+BEGIN_SRC emacs-lisp
+     (use-package spaceline
+         :after powerline
+         :ensure t
+         :config
+             (setq spaceline-responsive nil)
+             (setq spaceline-highlight-face-func 'spaceline-highlight-face-evil-state)
+             )
    #+END_SRC
 
-   Icons make it feel modern.
+*** Icons make it feel modern.
+
    #+BEGIN_SRC emacs-lisp
-   (use-package spaceline-all-the-icons
-    :after spaceline
-    :config (spaceline-all-the-icons-theme))
+     (use-package spaceline-all-the-icons
+     :after spaceline
+     :config
+     (setq spaceline-all-the-icons-icon-set-bookmark 'star
+           spaceline-all-the-icons-icon-set-modified 'toggle
+           spaceline-all-the-icons-icon-set-dedicated 'pin
+           spaceline-all-the-icons-icon-set-flycheck-slim 'dots
+           spaceline-all-the-icons-flycheck-alternate t
+           spaceline-all-the-icons-highlight-file-name t
+           spaceline-all-the-icons-hide-long-buffer-path t)
+       (spaceline-toggle-all-the-icons-bookmark-on)
+       (spaceline-all-the-icons--setup-anzu)
+       (spaceline-toggle-all-the-icons-dedicated-on)
+       (spaceline-toggle-all-the-icons-buffer-position-on)
+       (spaceline-all-the-icons--setup-git-ahead)
+       (spaceline-all-the-icons--setup-package-updates)
+       (spaceline-all-the-icons--setup-paradox)
+       ;;(spaceline-toggle-helm-mode-on)
+       (spaceline-all-the-icons--setup-neotree)
+       (spaceline-all-the-icons-theme))
    #+END_SRC
 ** Details
 *** =All the icons=
@@ -489,7 +528,10 @@
 *** Line Numbers
     How will I tell people where my errors are?
     #+BEGIN_SRC emacs-lisp
-        (global-linum-mode t)
+      ;; (use-package nlinum
+      ;;   :ensure t
+      ;;   :config
+      ;;       (nlinum))
     #+END_SRC
 * Programming
 ** Basics
@@ -596,6 +638,14 @@
 	 Enable Spellchecking
 	 Set to insert mode if coming from terminal
 	 Set to insert mode when going to commit
+
+	 Always fuzzy search even if I'm not in a projectile project
+	 #+BEGIN_SRC emacs-lisp
+		(setq projectile-require-project-root nil)
+	 #+END_SRC
+*** Git Gutter
+    I put this here because this is where most of my git config stuff will be
+*** Keybindings
 	 #+BEGIN_SRC emacs-lisp
 	 (use-package magit
 		:bind ("C-x g s" . magit-status)
@@ -607,11 +657,6 @@
 		(setq git-commit-summary-max-length 50)
 		(add-hook 'git-commit-mode-hook 'turn-on-flyspell)
 		(add-hook 'with-editor-mode-hook 'evil-insert-state))
-	 #+END_SRC
-
-	 Always fuzzy search even if I'm not in a projectile project
-	 #+BEGIN_SRC emacs-lisp
-		(setq projectile-require-project-root nil)
 	 #+END_SRC
 ** Markdown
 
@@ -714,26 +759,48 @@
             (setq web-mode-markup-indent-offset 2)))
 		 #+END_SRC
 * Helm
-  Tried Ivy.
+
   To make helm-mode start with Emacs init file:
+
   #+BEGIN_SRC emacs-lisp
-    (use-package helm
-        :ensure t
-        :config
-        (helm-mode 1))
+    ;; (use-package helm
+    ;;     :ensure t
+    ;;     :config
+    ;;     (helm-mode 1))
   #+END_SRC
 
   Helm M-x bind to M-x
 
   #+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "M-x") 'helm-M-x)
+    ;; (global-set-key (kbd "M-x") 'helm-M-x)
   #+END_SRC
 
   Use helm for finding files
 
     #+BEGIN_SRC emacs-lisp
-        (global-set-key (kbd "C-x C-f") 'helm-find-files)
+       ;; (global-set-key (kbd "C-x C-f") 'helm-find-files)
     #+END_SRC
+
+    Helm bindings
+
+    #+BEGIN_SRC emacs-lisp
+      ;; (general-nmap :prefix spaceLeader
+      ;;        "gh" 'helm-ls-git-ls
+      ;;        "ff" 'helm-find-files
+      ;;        "fb" 'helm-bookmarks
+      ;;        "fr" 'helm-recentf)
+    #+END_SRC
+
+    Try Helm-company
+    #+BEGIN_SRC emacs-lisp
+        ;; (use-package helm-company
+        ;;     :ensure t
+        ;;     :config
+        ;;     (define-key company-mode-map (kbd "C-:") 'helm-company)
+        ;;     (define-key company-active-map (kbd "C-:") 'helm-company))
+    #+END_SRC
+  Tried Ivy.
+* Ivy
 
 * Terminal
 	Use Ansi-term
@@ -906,7 +973,6 @@ Record the time that a todo was archived.
 				'org-babel-load-languages
 				'((emacs-lisp . t)
 				(python . t)
-				(R . t)
 				(gnuplot . t)))
 		#+END_SRC
 
