@@ -1,7 +1,7 @@
 ;;; init.el -*- lexical-binding: t; -*-
 ;;
 ;; Author:  Henrik Lissner <henrik@lissner.net>
-;; URL:     https://github.com/hlissner/.emacs.d
+;; URL:     https://github.com/hlissner/doom-emacs
 ;;
 ;;   =================     ===============     ===============   ========  ========
 ;;   \\ . . . . . . .\\   //. . . . . . .\\   //. . . . . . .\\  \\. . .\\// . . //
@@ -30,11 +30,16 @@
 (require 'core (concat user-emacs-directory "core/core"))
 
 (doom! :feature
+       (popup            ; tame sudden yet inevitable temporary windows
+        +all             ; catch all popups that start with an asterix
+        +defaults)       ; default popup rules
       ;debugger          ; FIXME stepping through code, to help you add bugs
        eval              ; run code, run (also, repls)
        evil              ; come to the dark side, we have cookies
        file-templates    ; auto-snippets for empty files
-       jump              ; helping you get around
+       (lookup           ; helps you navigate your code and documentation
+        +devdocs         ; ...on devdocs.io online
+        +docsets)        ; ...or in Dash docsets locally
        services          ; TODO managing external services & code builders
        snippets          ; my elves. They type so I don't have to
        spellcheck        ; tasing you for misspelling mispelling
@@ -59,7 +64,7 @@
       ;unicode           ; extended unicode support for various languages
       ;tabbar            ; FIXME an (incomplete) tab bar for Emacs
        vi-tilde-fringe   ; fringe tildes to mark beyond EOB
-       (window-select +ace-window)  ; visually switch windows
+       window-select     ; visually switch windows
 
        :tools
        dired             ; making dired pretty [functional]
@@ -72,27 +77,29 @@
        make              ; run make tasks from Emacs
        neotree           ; a project drawer, like NERDTree for vim
        password-store    ; password manager for nerds
+       pdf               ; pdf enhancements
        rotate-text       ; cycle region at point between text candidates
        term              ; terminals in Emacs
        tmux              ; an API for interacting with tmux
        upload            ; map local to remote projects via ssh/ftp
 
        :lang
-       ;assembly          ; assembly for fun or debugging
+       assembly          ; assembly for fun or debugging
        cc                ; C/C++/Obj-C madness
-       ;crystal           ; ruby at the speed of c
-       ;clojure           ; java with a lisp
-       ;csharp            ; unity, .NET, and mono shenanigans
+       crystal           ; ruby at the speed of c
+       clojure           ; java with a lisp
+       csharp            ; unity, .NET, and mono shenanigans
        data              ; config/data formats
-       ;elixir            ; erlang done right
-       ;elm               ; care for a cup of TEA?
+       elixir            ; erlang done right
+       elm               ; care for a cup of TEA?
        emacs-lisp        ; drown in parentheses
+       ess               ; emacs speaks statistics
        go                ; the hipster dialect
        (haskell +intero) ; a language that's lazier than I am
-       ;hy                ; readability of scheme w/ speed of python
-       ;(java +meghanada) ; the poster child for carpal tunnel syndrome
+       hy                ; readability of scheme w/ speed of python
+       (java +meghanada) ; the poster child for carpal tunnel syndrome
        javascript        ; all(hope(abandon(ye(who(enter(here))))))
-       ;julia             ; a better, faster MATLAB
+       julia             ; a better, faster MATLAB
        latex             ; writing papers in Emacs has never been so fun
        ledger            ; an accounting system in Emacs
        lua               ; one-based indices? one-based indices
@@ -102,12 +109,11 @@
         +attach          ; custom attachment system
         +babel           ; running code in org
         +capture         ; org-capture in and outside of Emacs
-        +export          ; centralized export system + more backends
+        +export          ; Exporting org to whatever you want
         +present         ; Emacs for presentations
-        ;; TODO +publish
-        )
+        +publish)        ; Emacs+Org as a static site generator
        perl              ; write code no one else can comprehend
-       php               ; make php less awful to work with
+       php               ; perl's insecure younger brother
        plantuml          ; diagrams for confusing people more
        purescript        ; javascript, but functional
        python            ; beautiful is better than ugly
@@ -124,16 +130,23 @@
        ;; toward a specific purpose. They may have additional dependencies and
        ;; should be loaded late.
        :app
-      ;email             ; emacs as an email client
+      ;(email +gmail)    ; emacs as an email client
       ;irc               ; how neckbeards socialize
-      ;rss               ; emacs as an RSS reader
+      ;(rss +org)        ; emacs as an RSS reader
       ;twitter           ; twitter client https://twitter.com/vnought
-      ;write             ; emacs as a word processor (latex + org + markdown)
+      ;(write            ; emacs as a word processor (latex + org + markdown)
+      ; +wordnut         ; wordnet (wn) search
+      ; +langtool)       ; a proofreader (grammar/style check) for Emacs
 
-       ;; Private modules are where you place your personal configuration files.
-       ;; By default, they are not tracked. There is one module included here,
-       ;; the defaults module. It contains a Spacemacs-inspired keybinding
-       ;; scheme and additional ex commands for evil-mode. Use it as a reference
-       ;; for your own.
-       :private default)
+       :config
+       ;; The default module set reasonable defaults for Emacs. It also provides
+       ;; a Spacemacs-inspired keybinding scheme, a custom yasnippet library,
+       ;; and additional ex commands for evil-mode. Use it as a reference for
+       ;; your own modules.
+       (default +bindings +snippets +evil-commands)
+
+       ;; This allows you to store your private module at
+       ;; $XDG_CONFIG_HOME/doom/. Without +xdg it uses ~/.doom.d/. If your
+       ;; config directory doesn't exist, this module does nothing.
+       (private +xdg))
 
