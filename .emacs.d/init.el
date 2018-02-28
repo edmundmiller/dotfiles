@@ -48,7 +48,8 @@
        workspaces        ; tab emulation, persistence & separate workspaces
 
        :completion
-       company           ; the ultimate code completion backend
+       (company           ; the ultimate code completion backend
+        +auto)
        ivy               ; a search engine for love and life
       ;helm              ; the *other* search engine for love and life
       ;ido               ; the other *other* search engine...
@@ -61,7 +62,7 @@
        hl-todo           ; highlight TODO/FIXME/NOTE tags
        nav-flash         ; blink the current line after jumping
        evil-goggles      ; display visual hints when editing in evil
-      ;unicode           ; extended unicode support for various languages
+       unicode           ; extended unicode support for various languages
       ;tabbar            ; FIXME an (incomplete) tab bar for Emacs
        vi-tilde-fringe   ; fringe tildes to mark beyond EOB
        window-select     ; visually switch windows
@@ -86,17 +87,17 @@
        :lang
        assembly          ; assembly for fun or debugging
        cc                ; C/C++/Obj-C madness
-       crystal           ; ruby at the speed of c
-       clojure           ; java with a lisp
-       csharp            ; unity, .NET, and mono shenanigans
+       ;crystal           ; ruby at the speed of c
+       ;clojure           ; java with a lisp
+       ;csharp            ; unity, .NET, and mono shenanigans
        data              ; config/data formats
        elixir            ; erlang done right
-       elm               ; care for a cup of TEA?
+       ;elm               ; care for a cup of TEA?
        emacs-lisp        ; drown in parentheses
        ess               ; emacs speaks statistics
        go                ; the hipster dialect
        (haskell +intero) ; a language that's lazier than I am
-       hy                ; readability of scheme w/ speed of python
+       ;hy                ; readability of scheme w/ speed of python
        (java +meghanada) ; the poster child for carpal tunnel syndrome
        javascript        ; all(hope(abandon(ye(who(enter(here))))))
        julia             ; a better, faster MATLAB
@@ -115,14 +116,14 @@
        perl              ; write code no one else can comprehend
        php               ; perl's insecure younger brother
        plantuml          ; diagrams for confusing people more
-       purescript        ; javascript, but functional
+       ;purescript        ; javascript, but functional
        python            ; beautiful is better than ugly
        rest              ; Emacs as a REST client
        ruby              ; 1.step do {|i| p "Ruby is #{i.even? ? 'love' : 'life'}"}
        rust              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
-       scala             ; java, but good
+       ;scala             ; java, but good
        sh                ; she sells (ba|z)sh shells on the C xor
-       swift             ; who asked for emoji variables?
+       ;swift             ; who asked for emoji variables?
        typescript        ; javascript, but better
        web               ; the tubes
 
@@ -130,13 +131,13 @@
        ;; toward a specific purpose. They may have additional dependencies and
        ;; should be loaded late.
        :app
-      ;(email +gmail)    ; emacs as an email client
+      (email +gmail)    ; emacs as an email client
       ;irc               ; how neckbeards socialize
       ;(rss +org)        ; emacs as an RSS reader
       ;twitter           ; twitter client https://twitter.com/vnought
-      ;(write            ; emacs as a word processor (latex + org + markdown)
-      ; +wordnut         ; wordnet (wn) search
-      ; +langtool)       ; a proofreader (grammar/style check) for Emacs
+      (write            ; emacs as a word processor (latex + org + markdown)
+       +wordnut         ; wordnet (wn) search
+       +langtool)       ; a proofreader (grammar/style check) for Emacs
 
        :config
        ;; The default module set reasonable defaults for Emacs. It also provides
@@ -149,4 +150,3 @@
        ;; $XDG_CONFIG_HOME/doom/. Without +xdg it uses ~/.doom.d/. If your
        ;; config directory doesn't exist, this module does nothing.
        (private +xdg))
-
