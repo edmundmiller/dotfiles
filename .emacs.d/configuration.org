@@ -717,19 +717,18 @@
 	 The stand is also to use =//= and I prefer that anyways
 
 	 #+BEGIN_SRC emacs-lisp
-		(use-package solidity-mode
-		:ensure t
-		:config
-		(setq solidity-solc-path "/home/emiller/node/lib/node_modules/solc/solcjs")
-				(setq solidity-solium-path "/home/emiller/node/lib/node_modules/solium/bin/solium")
+	(use-package solidity-mode
+	  :init
+	    (setq solidity-solc-path "/home/emiller/node/bin/solcjs")
+	    (setq solidity-solium-path "/home/emiller/node/bin/solium")
 
-				(setq solidity-flycheck-solc-checker-active t)
-				(setq solidity-flycheck-solium-checker-active t)
+	    (setq solidity-flycheck-solc-checker-active t)
+	    (setq solidity-flycheck-solium-checker-active t)
 
-				(setq flycheck-solidity-solc-addstd-contracts t)
-				(setq flycheck-solidity-solium-soliumrcfile "~/.soliumrc.json")
-
-				(setq solidity-comment-style 'slash))
+	    (setq flycheck-solidity-solc-addstd-contracts t)
+	    (setq flycheck-solidity-solium-soliumrcfile "/home/emiller/.soliumrc.json")
+	  :config
+	    (setq solidity-comment-style 'slash))
 	 #+END_SRC
 
    Every modern text-editor needs to write the code for me. So add a company backend
