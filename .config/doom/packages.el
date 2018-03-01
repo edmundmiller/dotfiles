@@ -6,5 +6,7 @@
 
 (package! edit-server)
 
+;; (package! tramp-term)
+
 (provide 'packages)
 ;;; packages.el ends here
