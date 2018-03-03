@@ -11,7 +11,20 @@
     ;; Set Bullets to OG
     org-bullets-bullet-list '("■" "◆" "▲" "▶")
     org-ellipsis " ▼ ")
+;; Set up Org
+(setq org-directory "~/Dropbox/orgfiles")
+    (defun org-file-path (filename)
+    "Return the absolute address of an org file, given its relative name."
+    (concat (file-name-as-directory org-directory) filename))
+    (setq org-index-file (org-file-path "i.org"))
+    (setq org-archive-location
+            (concat (org-file-path "archive.org") "::* From %s"))
 
+(setq org-agenda-files (list "~/Dropbox/orgfiles/gcal.org"
+                            "~/Dropbox/orgfiles/i.org"
+                            "~/Dropbox/orgfiles/Lab_Notebook.org"
+                            "~/Dropbox/orgfiles/Lab_schedule.org"
+                            "~/Dropbox/orgfiles/schedule.org"))
 ;; Org Capture Templates
 (setq org-capture-templates
     '(("a" "Appointment" entry
@@ -43,6 +56,10 @@
 
 ;; Bind capture to =C-c c=
 (define-key global-map "\C-cc" 'org-capture)
+
+;; Org-Gcal
+;; (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync) ))
+;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync) ))
 
 ;; Edit i.org
 (defun emiller/visit-i-org ()
