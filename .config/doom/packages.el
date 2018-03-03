@@ -6,7 +6,7 @@
 
 (package! edit-server)
 
-;; (package! tramp-term)
+;; (package! org-gcal)
 
 (provide 'packages)
 ;;; packages.el ends here
