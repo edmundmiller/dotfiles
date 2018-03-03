@@ -100,7 +100,11 @@ Plug 'mbbill/undotree'                                 " UndoTree
 Plug 'christoomey/vim-tmux-navigator'                  " vim-tmux-navigator
                                                        " Web Dev
 Plug 'KabbAmine/vCoolor.vim'                           " vCooler
-
+" Haskell
+" Plug 'eagletmt/ghcmod-vim', {'for': 'haskell'}
+" Plug 'Shougo/vimproc.vim', {'do': 'make'}
+" Plug 'Shougo/neocomplete.vim', {'for': 'haskell'}
+" Plug 'eagletmt/neco-ghc', {'for': 'haskell'}
 call plug#end()
 
 " Plug Graveyard
@@ -242,8 +246,6 @@ let g:neocomplete#sources#omni#input_patterns.perl = '\h\w*->\h\w*\|\h\w*::'
 " NERDTree
 let NERDTreeShowHidden=1
 
-" Indent
-" let g:indent_guides_enable_on_vim_startup = 1
-" set ts=4 sw=4 et
-" let g:indent_guides_start_level=2
-" let g:indent_guides_guide_size=2
+" Haskell
+" Use neco-ghc for completion
+" autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
