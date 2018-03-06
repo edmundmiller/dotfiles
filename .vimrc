@@ -61,6 +61,8 @@ endif
 " Specify a directory for plugins
 call plug#begin('~/.vim/plugged')
 
+Plug 'tpope/vim-sensible'                              " Why not
+
 Plug 'mileszs/ack.vim'                                 " ACK
 Plug 'bling/vim-airline'                               " Airline
 Plug 'vim-airline/vim-airline-themes'                  " Airline Themes
@@ -69,6 +71,7 @@ Plug 'w0rp/ale'                                        " ALE
 Plug 'yuttie/comfortable-motion.vim'                   " Motion
 Plug 'raimondi/delimitmate'                            " Delimitmate
 Plug 'ryanoasis/vim-devicons'                          " DevIcons
+" Plug 'Syntax-for-Fasta'                                " Fasta
 Plug 'tpope/vim-fugitive'                              " Fugitive for Git
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'                                " fzf
@@ -83,10 +86,13 @@ Plug 'scrooloose/nerdcommenter'                        " NERD Commenter
 Plug 'Xuyuanp/nerdtree-git-plugin'                     " NERD Git
 Plug 'jistr/vim-nerdtree-tabs'                         " NERD tabs
 Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' } " NERD tree open on ctrl-n
+Plug 'jceb/vim-orgmode'                                " Org mode
 Plug 'reedes/vim-pencil'                               " Pencil
 Plug 'klen/python-mode'                                " Py mode
 Plug 'honza/vim-snippets'                              " Snippets for ultisnips
 Plug 'tomlion/vim-solidity'                            " Solidity Language Supprt
+Plug 'dmdque/solidity.vim'                             " Solidity Compiler
+Plug 'tpope/vim-speeddating'                           " Speed Dating
 Plug 'tpope/vim-surround'                              " Surround
 Plug 'godlygeek/tabular'                               " Tabular
 Plug 'SirVer/ultisnips'                                " Ultisnips Engine

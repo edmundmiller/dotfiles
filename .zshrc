@@ -95,3 +95,5 @@ export BT2_HOME=/opt/bin/bowtie2
  GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
  GEM_PATH=$GEM_HOME
  export PATH=$PATH:$GEM_HOME/bin
+ # Spacemaces
+ alias e='emacsclient --no-wait'
