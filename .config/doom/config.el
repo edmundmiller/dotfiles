@@ -1,5 +1,15 @@
 ;;; config.el --- description -*- lexical-binding: t; -*-
 
+(defvar xdg-data (getenv "XDG_DATA_HOME"))
+
+(setq +doom-modeline-buffer-file-name-style 'relative-from-project
+      show-trailing-whitespace t)
+
+      ;; mu4e-maildir        (expand-file-name "mail" xdg-data)
+      ;; mu4e-attachment-dir (expand-file-name "attachments" mu4e-maildir))
+
+(add-hook! minibuffer-setup (setq-local show-trailing-whitespace nil))
+
 ;;
 ;; Keybindings
 ;;
@@ -8,11 +18,22 @@
  (:leader
    (:prefix "o"
      :desc "Agenda" :n "a" #'org-agenda
-     :desc "eShell" :n "e" #'eshell)))
-
+     :desc "eShell" :n "e" #'eshell))
+ ;; (:after org
+ ;; (:map org-mode-map
+ ;;   :n "M-j" #'org-metadown
+ ;;   :n "M-k" #'org-metaup))
+)
 ;;
 ;; Modules
 ;;
+
+;; Floobits
+(def-package! floobits)
+;; exec-path-from-shell
+(def-package! exec-path-from-shell
+  :config
+  (exec-path-from-shell-initialize))
 
 ;; Edit Server
 (def-package! edit-server
@@ -152,15 +173,15 @@
             :n "q" #'mu4e-interrupt-update-mail)))
 
 ;; Google Calendar
-    ;; (def-package! org-gcal
-    ;;   :config
-    ;;   (setq org-gcal-client-id "891288798426-io67fcj0069t6k9bldhm4b5mu0pbr0ph.apps.googleusercontent.com"
-    ;;         org-gcal-client-secret "D6dedPByS6mzeCvg_FQyAEuk"
-    ;;         org-gcal-file-alist '(("edmund.a.miller@gmail.com" .  "~/Dropbox/orgfiles/gcal.org") ;; Edmund Miller
-    ;;                               ("buvuk4b1vjghore8gsq6ifbcnk@group.calendar.google.com" .  "~/Dropbox/orgfiles/Lab_schedule.org") ;; Functional Genomics
-    ;;                               ("sgv1ng3qi5erm89f227h4hm02s@group.calendar.google.com" .  "~/Dropbox/orgfiles/schedule.org") ;; Org
-    ;;                               ))
-    ;; )
+    (def-package! org-gcal
+      :config
+      (setq org-gcal-client-id "891288798426-io67fcj0069t6k9bldhm4b5mu0pbr0ph.apps.googleusercontent.com"
+            org-gcal-client-secret "D6dedPByS6mzeCvg_FQyAEuk"
+            org-gcal-file-alist '(("edmund.a.miller@gmail.com" .  "~/Dropbox/orgfiles/gcal.org") ;; Edmund Miller
+                                  ("buvuk4b1vjghore8gsq6ifbcnk@group.calendar.google.com" .  "~/Dropbox/orgfiles/Lab_schedule.org") ;; Functional Genomics
+                                  ("sgv1ng3qi5erm89f227h4hm02s@group.calendar.google.com" .  "~/Dropbox/orgfiles/schedule.org") ;; Org
+                                  ))
+    )
 
 (provide 'config)
 ;;; config.el ends here

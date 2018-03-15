@@ -11,20 +11,22 @@
     ;; Set Bullets to OG
     org-bullets-bullet-list '("■" "◆" "▲" "▶")
     org-ellipsis " ▼ ")
-;; Set up Org
-(setq org-directory "~/Dropbox/orgfiles")
-    (defun org-file-path (filename)
-    "Return the absolute address of an org file, given its relative name."
-    (concat (file-name-as-directory org-directory) filename))
-    (setq org-index-file (org-file-path "i.org"))
-    (setq org-archive-location
-            (concat (org-file-path "archive.org") "::* From %s"))
 
-(setq org-agenda-files (list "~/Dropbox/orgfiles/gcal.org"
-                            "~/Dropbox/orgfiles/i.org"
-                            "~/Dropbox/orgfiles/Lab_Notebook.org"
-                            "~/Dropbox/orgfiles/Lab_schedule.org"
-                            "~/Dropbox/orgfiles/schedule.org"))
+;; Set up Org
+(with-eval-after-load 'org
+    (setq org-directory "~/Dropbox/orgfiles")
+        (defun org-file-path (filename)
+        "Return the absolute address of an org file, given its relative name."
+        (concat (file-name-as-directory org-directory) filename))
+        (setq org-index-file (org-file-path "i.org"))
+        (setq org-archive-location
+                (concat (org-file-path "archive.org") "::* From %s"))
+
+    (setq org-agenda-files (list "~/Dropbox/orgfiles/gcal.org"
+                                "~/Dropbox/orgfiles/i.org"
+                                "~/Dropbox/orgfiles/Lab_Notebook.org"
+                                "~/Dropbox/orgfiles/Lab_schedule.org"
+                                "~/Dropbox/orgfiles/schedule.org")))
 ;; Org Capture Templates
 (setq org-capture-templates
     '(("a" "Appointment" entry
@@ -57,6 +59,9 @@
 ;; Bind capture to =C-c c=
 (define-key global-map "\C-cc" 'org-capture)
 
+;; Fix Flycheck for shellscripts
+(setq flycheck-shellcheck-follow-sources nil)
+
 ;; Org-Gcal
 ;; (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync) ))
 ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync) ))
@@ -67,7 +72,13 @@
 				(find-file "~/Dropbox/orgfiles/i.org"))
 
 		(global-set-key (kbd "C-c i") 'emiller/visit-i-org)
+;; mu4e
+;; (eval-when-compile
+;;   (add-to-list 'load-path "/home/emiller/Git/mu/mu4e")
+;;   (require 'use-package))
+;; (use-package mu4e)
 
+(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu/mu4e")
 
 ;;
 (doom! :feature
@@ -107,6 +118,7 @@
       ;tabbar            ; FIXME an (incomplete) tab bar for Emacs
        vi-tilde-fringe   ; fringe tildes to mark beyond EOB
        window-select     ; visually switch windows
+      ;posframe          ; use child frames where possible (Emacs 26+ only)
 
        :tools
        dired             ; making dired pretty [functional]
