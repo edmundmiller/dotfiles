@@ -63,6 +63,7 @@
 (setq flycheck-shellcheck-follow-sources nil)
 
 ;; Org-Gcal
+;; (run-with-idle-timer 60 t (org-gcal-sync) )
 ;; (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync) ))
 ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync) ))
 
@@ -73,11 +74,6 @@
 
 		(global-set-key (kbd "C-c i") 'emiller/visit-i-org)
 ;; mu4e
-;; (eval-when-compile
-;;   (add-to-list 'load-path "/home/emiller/Git/mu/mu4e")
-;;   (require 'use-package))
-;; (use-package mu4e)
-
 (add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu/mu4e")
 
 ;;
