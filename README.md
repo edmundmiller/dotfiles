@@ -10,9 +10,11 @@ curl -Lks https://gist.github.com/Emiller88/20d1dd7a08b165c2ba583697cd92b9bd | /
 ```
 
 Which calls this:
-```  
-  git clone --bare https://github.com/Emiller88/dotfiles.git $HOME/.cfg
- function config {
+``` 
+git clone https://github.com/hlissner/doom-emacs ~/.emacs.d
+bash emacs26.sh
+git clone --bare https://github.com/Emiller88/dotfiles.git $HOME/.cfg
+function config {
    /usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME $@
 }
 mkdir -p .config-backup
@@ -25,6 +27,8 @@ if [ $? = 0 ]; then
 fi;
 config checkout
 config config status.showUntrackedFiles no
+cd .emacs.d/
+make install
 
 # Install Vim plug
 # https://github.com/junegunn/vim-plug
