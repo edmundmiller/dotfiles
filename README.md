@@ -14,6 +14,7 @@ Which calls this:
 git clone https://github.com/hlissner/doom-emacs ~/.emacs.d
 bash emacs26.sh
 git clone --bare https://github.com/Emiller88/dotfiles.git $HOME/.cfg
+git submodule update --init
 function config {
    /usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME $@
 }
@@ -27,6 +28,8 @@ if [ $? = 0 ]; then
 fi;
 config checkout
 config config status.showUntrackedFiles no
+# Go to my doom branch till I commit to it
+config checkout doom
 cd .emacs.d/
 make install
 
