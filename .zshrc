@@ -1,3 +1,4 @@
+# if [ "$TMUX" = "" ]; then tmux; fi
 # If you come from bash you might have to change your $PATH.
 #export PATH=$HOME/bin:/usr/local/bin:$PATH
 
@@ -51,9 +52,12 @@ ZSH_THEME=agnoster
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(archlinux)
+# plugins=(archlinux)
 plugins=(git)
 plugins=(vi-mode)
+plugins=(npm)
+plugins=(python)
+# plugins=(tmux)
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
@@ -67,7 +71,7 @@ source $ZSH/oh-my-zsh.sh
  if [[ -n $SSH_CONNECTION ]]; then
    export EDITOR='vim'
  else
-   export EDITOR='vim'
+   export EDITOR='emacs -nw'
  fi
 
 # Compilation flags
@@ -96,7 +100,7 @@ GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
 GEM_PATH=$GEM_HOME
 export PATH=$PATH:$GEM_HOME/bin
 # Emacs
-alias e='emacsclient --no-wait'
+alias emacs='emacs -nw'
 # Make multiterm capture current directory
 # if [ -n "$INSIDE_EMACS" ]; then
 #   chpwd() { print -P "\033AnSiTc %d" }
@@ -108,3 +112,8 @@ alias e='emacsclient --no-wait'
 if [ -d "$HOME/.cabal/bin" ] ; then
     PATH="$HOME/.cabal/bin:$PATH"
 fi
+# ssh aliases
+alias promoter='ssh edmund@promoter.utdallas.edu'
+alias greenpi='ssh emiller@192.168.0.104'
+alias faucet='ssh emiller@107.174.236.101'
+alias ada='ssh emiller@165.227.189.186'
