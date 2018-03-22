@@ -47,7 +47,7 @@
 
     ("j" "Lab Entry" entry
     (file+datetree "~/Dropbox/orgfiles/Lab_Notebook.org" "Lab Journal")
-    "** %? %^g \n\n   Entered on %U\n  %i\n\n")
+    "** %? %^g \n\nEntered on %U\n  %i\n\n")
 
     ("d" "Lab To Do" entry
     (file+headline "~/Dropbox/orgfiles/Lab_Notebook.org" "To Do")
@@ -83,7 +83,8 @@
         +defaults)       ; default popup rules
       ;debugger          ; FIXME stepping through code, to help you add bugs
        eval              ; run code, run (also, repls)
-       evil              ; come to the dark side, we have cookies
+       (evil              ; come to the dark side, we have cookies
+        +everywhere)
        file-templates    ; auto-snippets for empty files
        (lookup           ; helps you navigate your code and documentation
         +devdocs         ; ...on devdocs.io online

@@ -1,4 +1,4 @@
-# private/hlissner
+# private/emiller
 
 My custom module for [doom-emacs](https://github.com/hlissner/doom-emacs).
 
