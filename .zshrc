@@ -1,9 +1,9 @@
 # if [ "$TMUX" = "" ]; then tmux; fi
 # If you come from bash you might have to change your $PATH.
-#export PATH=$HOME/bin:/usr/local/bin:$PATH
+export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-  export ZSH=/home/emiller/.oh-my-zsh
+export ZSH=/home/emiller/.oh-my-zsh
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
@@ -99,6 +99,8 @@ export BT2_HOME=/opt/bin/bowtie2
 GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
 GEM_PATH=$GEM_HOME
 export PATH=$PATH:$GEM_HOME/bin
+# Node
+export PATH=$HOME/node/bin:$PATH
 # Emacs
 alias emacs='emacs -nw'
 # Make multiterm capture current directory
@@ -117,3 +119,5 @@ alias promoter='ssh edmund@promoter.utdallas.edu'
 alias greenpi='ssh emiller@192.168.0.104'
 alias faucet='ssh emiller@107.174.236.101'
 alias ada='ssh emiller@165.227.189.186'
+# VPN
+alias school='sudo openconnect https://vpn.utdallas.edu'
