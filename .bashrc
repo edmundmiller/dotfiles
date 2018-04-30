@@ -116,8 +116,6 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# added by Anaconda3 4.4.0 installer
-export PATH="/home/emiller/anaconda3/bin:$PATH"
 # added for dot file management
 alias config='/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME'
 # homer
@@ -138,3 +136,6 @@ fi
 if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
+
+# added by Miniconda3 installer
+export PATH="/home/emiller/miniconda3/bin:$PATH"

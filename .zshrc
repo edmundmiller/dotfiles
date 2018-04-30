@@ -1,4 +1,4 @@
-# if [ "$TMUX" = "" ]; then tmux; fi
+[[ $TERM == "dumb" ]] && unsetopt zle && PS1='$ ' && return
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 
@@ -103,21 +103,41 @@ export PATH=$PATH:$GEM_HOME/bin
 export PATH=$HOME/node/bin:$PATH
 # Emacs
 alias emacs='emacs -nw'
-# Make multiterm capture current directory
-# if [ -n "$INSIDE_EMACS" ]; then
-#   chpwd() { print -P "\033AnSiTc %d" }
-#   print -P "\033AnSiTu %n"
-#   print -P "\033AnSiTc %d"
-# fi
- # Haskell
- # add Cabal's bin directory to the executable search PATH if it exists
+# export ALTERNATE_EDITOR=""
+# export EDITOR=emacsclient
+# Haskell
+# add Cabal's bin directory to the executable search PATH if it exists
 if [ -d "$HOME/.cabal/bin" ] ; then
     PATH="$HOME/.cabal/bin:$PATH"
 fi
 # ssh aliases
 alias promoter='ssh edmund@promoter.utdallas.edu'
-alias greenpi='ssh emiller@192.168.0.104'
-alias faucet='ssh emiller@107.174.236.101'
+alias greenpi='ssh emiller@192.168.0.108'
+alias faucet='ssh emiller@50.2.39.116'
 alias ada='ssh emiller@165.227.189.186'
+alias ardor='ssh emiller@192.168.1.7'
 # VPN
 alias school='sudo openconnect https://vpn.utdallas.edu'
+# TMUX
+# if which tmux >/dev/null 2>&1; then
+#     # if no session is started, start a new session
+#     test -z ${TMUX} && tmux
+
+#     # when quitting tmux, try to attach
+#     while test -z ${TMUX}; do
+#         tmux attach || break
+#     done
+# fi
+# Git
+alias s='git status -s'
+alias co='git checkout'
+export PATH=$HOME/bin:$PATH
+# Docker
+fpath=(~/.zsh/completion $fpath)
+autoload -Uz compinit && compinit -i
+# MPD
+export MPD_HOST="localhost"
+export MPD_PORT="6601"
+# added by Miniconda3 installer
+export PATH="/home/emiller/miniconda3/bin:$PATH"
+export PATH="~/miniconda3/bin/python3.6:$PATH"
