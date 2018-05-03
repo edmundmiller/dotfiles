@@ -116,16 +116,28 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# added by Anaconda3 4.4.0 installer
-export PATH="/home/emiller/anaconda3/bin:$PATH"
 # added for dot file management
 alias config='/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME'
 # homer
 PATH=$PATH:/home/edmund/homer/.//bin/
 PATH=$PATH:/home/edmund/homer//bin/
-# bigWig
-PATH=$PATH:/home/edmund/Browser/
 #Setting the GEM_PATH and GEM_HOME variables may not be necessary, check 'gem env' output to verify whether both variables already exist
 GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
 GEM_PATH=$GEM_HOME
 export PATH=$PATH:$GEM_HOME/bin
+# Node
+export PATH=$HOME/node/bin:$PATH
+# Haskell
+# add Cabal's bin directory to the executable search PATH if it exists
+if [ -d "$HOME/.cabal/bin" ] ; then
+    PATH="$HOME/.cabal/bin:$PATH"
+fi
+
+# add Stack's bin directory to the executable search PATH if it exists
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+
+# added by Miniconda3 installer
+export PATH="/home/emiller/miniconda3/bin:$PATH"
+

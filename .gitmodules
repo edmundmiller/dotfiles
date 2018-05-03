@@ -1,0 +1,3 @@
+[submodule ".config/doom/doom-emacs-private"]
+	path = .config/doom/doom-emacs-private
+	url = git@github.com:Emiller88/doom-emacs-private.git
