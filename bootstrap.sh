@@ -29,4 +29,6 @@ config config status.showUntrackedFiles no
 # https://github.com/junegunn/vim-plug
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-
+# Termite
+# Uncomment if Termite is desired
+# bash termite-install.sh
