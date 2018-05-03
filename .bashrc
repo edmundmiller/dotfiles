@@ -119,6 +119,7 @@ fi
 # added for dot file management
 alias config='/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME'
 # homer
+PATH=$PATH:/home/edmund/homer/.//bin/
 PATH=$PATH:/home/edmund/homer//bin/
 #Setting the GEM_PATH and GEM_HOME variables may not be necessary, check 'gem env' output to verify whether both variables already exist
 GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
@@ -139,3 +140,4 @@ fi
 
 # added by Miniconda3 installer
 export PATH="/home/emiller/miniconda3/bin:$PATH"
+
