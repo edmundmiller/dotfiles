@@ -1,23 +1,10 @@
-# dotfiles
+#!/usr/bin/env bash
 
-Credit: [best-way-to-store-dotfiles-git-bare-repo](https://developer.atlassian.com/blog/2016/02/best-way-to-store-dotfiles-git-bare-repo/)
-
-To keep up with my dotfiles.
-
-1. Run this to install
-```
-bash bootstrap.sh
-```
-
-Which calls this:
-``` 
 git clone https://github.com/hlissner/doom-emacs ~/.emacs.d
 bash emacs26.sh
 git clone --bare https://github.com/Emiller88/dotfiles.git $HOME/.cfg
 git submodule update --init
-function config {
-   /usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME $@
-}
+function config { /usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME $@ }
 mkdir -p .config-backup
 config checkout
 if [ $? = 0 ]; then
@@ -37,4 +24,3 @@ make install
 # https://github.com/junegunn/vim-plug
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-```
