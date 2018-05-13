@@ -1,5 +1,5 @@
 [general]
-accounts = Gmail
+accounts = Gmail, UTD, oldGmail
 pythonfile = ~/.offlineimap.py
 maxsyncaccounts = 2
 
@@ -10,12 +10,19 @@ synclabels = yes
 labelsheader = X-Keywords
 maxconnections = 2
 
-# [Account UTD]
-# localrepository = LocalUTD
-# remoterepository = RepositoryUTD
-# synclabels = yes
-# labelsheader = X-Keywords
-# maxconnections = 2
+[Account UTD]
+localrepository = LocalUTD
+remoterepository = RepositoryUTD
+synclabels = yes
+labelsheader = X-Keywords
+maxconnections = 2
+
+[Account oldGmail]
+localrepository = LocalOldGmail
+remoterepository = RepositoryOldGmail
+synclabels = yes
+labelsheader = X-Keywords
+maxconnections = 2
 
 [Repository LocalGmail]
 type = GmailMaildir
@@ -37,22 +44,43 @@ nametrans = nametrans_reverse
 keepalive = 60
 holdconnectionopen = yes
 
-# [Repository LocalUTD]
-# type = IMAP
-# localfolders = ~/.mail/UTD
-# nametrans = nametrans
+[Repository LocalUTD]
+type = Maildir
+localfolders = ~/.mail/UTD
+nametrans = nametrans
 
-# [Repository RepositoryUTD]
-# type = IMAP
+[Repository RepositoryUTD]
+type = IMAP
+remotehost = outlook.office365.com
 
-# remoteusereval = get_pass("UTD/user")
-# remotepasseval = get_pass("UTD/password")
-# folderfilter = folder_filter
-# realdelete=no
-# ssl = true
-# sslcacertfile = /usr/local/etc/openssl/cert.pem  # This will only work for macOS
-# sslcacertfile = /etc/ssl/certs/ca-certificates.crt
-# nametrans = nametrans_reverse
+remoteusereval = get_pass("UTD/user")
+remotepasseval = get_pass("UTD/password")
+folderfilter = folder_filter
+realdelete=no
+ssl = true
+sslcacertfile = /usr/local/etc/openssl/cert.pem  # This will only work for macOS
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+nametrans = nametrans_reverse
 
-# keepalive = 60
-# holdconnectionopen = yes
+keepalive = 60
+holdconnectionopen = yes
+
+[Repository LocalOldGmail]
+type = GmailMaildir
+localfolders = ~/.mail/oldGmail
+nametrans = nametrans
+
+[Repository RepositoryOldGmail]
+type = Gmail
+
+remoteusereval = get_pass("oldGmail.com/user")
+remotepasseval = get_pass("oldGmail.com/password")
+folderfilter = folder_filter
+realdelete=no
+ssl = true
+sslcacertfile = /usr/local/etc/openssl/cert.pem  # This will only work for macOS
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+nametrans = nametrans_reverse
+
+keepalive = 60
+holdconnectionopen = yes
