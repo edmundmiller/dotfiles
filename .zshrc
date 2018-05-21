@@ -100,7 +100,8 @@ GEM_HOME=$(ls -t -U | ruby -e 'puts Gem.user_dir')
 GEM_PATH=$GEM_HOME
 export PATH=$PATH:$GEM_HOME/bin
 # Node
-export PATH=$HOME/node/bin:$PATH
+export PATH="$HOME/.node_modules/bin:$PATH"
+export npm_config_prefix=~/.node_modules 
 # Emacs
 alias emacs='emacs -nw'
 # export ALTERNATE_EDITOR=""
@@ -141,3 +142,5 @@ export MPD_PORT="6601"
 # added by Miniconda3 installer
 export PATH="/home/emiller/miniconda3/bin:$PATH"
 export PATH="~/miniconda3/bin/python3.6:$PATH"
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
