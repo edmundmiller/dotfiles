@@ -9,7 +9,7 @@ To keep up with my dotfiles.
 
 ## Quick start
 
-`bash <(curl -s https://raw.githubusercontent.com/hlissner/dotfiles/master/bootstrap.sh)`
+`bash <(curl -s https://raw.githubusercontent.com/emiller88/dotfiles/master/bootstrap.sh)`
 
 ## Overview
 
