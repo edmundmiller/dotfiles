@@ -1,0 +1,2 @@
+export GNUPGHOME="$XDG_CONFIG_HOME/gpg"
+export TERMINFO="$XDG_CONFIG_HOME/terminfo"

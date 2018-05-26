@@ -1,0 +1,48 @@
+#!/usr/bin/env zsh
+source ${0:A:h}/../../deploy
+
+install() {
+  if ! nc -z 8.8.8.8 53 >/dev/null 2>&1; then
+    >&2 echo "No internet connection"
+    return 1
+  elif ! sudo pacman -Syu --noconfirm; then
+    >&2 echo "Could not update pacman"
+    return 2
+  fi
+
+  # Core essentials
+  sudo pacman --needed --noconfirm -S wget git curl tree rsync dnsutils
+
+  # Set up pacaur (AUR helper)
+  if ! _is_callable pacaur; then
+    TEMP="$(mktemp -d)"
+    pushd $TEMP
+    for pkg in cower pacaur; do
+      if [[ ! "$(pacman -Qs $pkg)" ]]; then
+        curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=$pkg && \
+          makepkg PKGBUILD --needed --noconfirm --skippgpcheck -sri
+      fi
+    done
+    popd
+    rm -rf $TEMP
+
+    if ! _is_callable pacaur; then
+      >&2 echo "Pacaur was not successfully installed"
+      return 3
+    fi
+  fi
+
+  pacaur --needed --noconfirm --noedit -S ripgrep the_silver_searcher bc cronie
+  sudo systemctl enable cronie
+}
+
+update() {
+  _is_callable pacaur && local pac=pacaur
+  ${pac:-sudo pacman} -Syu --noconfirm
+}
+
+# link() {}
+
+# clean() {}
+
+init "$@"
