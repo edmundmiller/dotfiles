@@ -1,0 +1,35 @@
+#!/usr/bin/env zsh
+source ${0:A:h}/../../deploy
+
+OFFLINEIMAP_HOME="$XDG_CONFIG_HOME/offlineimap"
+
+install() {
+  case "$OSTYPE" in
+    darwin*)
+      brew install offlineimap notmuch
+      # brew install mu --with-emacs
+      ;;
+    linux*)
+      if [[ -f /etc/arch-release ]]; then
+        pacaur --noedit --needed --noconfirm -S offlineimap notmuch
+      elif [[ -f /etc/debian-release ]]; then
+        sudo apt-get install offlineimap notmuch
+      fi
+      ;;
+  esac
+}
+
+#update() {}
+
+link() {
+  mklink config $OFFLINEIMAP_HOME/config
+  mklink postsync.sh $OFFLINEIMAP_HOME/postsync.sh
+  mklink offlineimap.py $OFFLINEIMAP_HOME/offlineimap.py
+}
+
+clean() {
+  rm -fv $OFFLINEIMAP_HOME
+  rmdir $OFFLINEIMAP_HOME
+}
+
+init "$@"
