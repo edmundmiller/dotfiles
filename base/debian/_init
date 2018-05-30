@@ -12,7 +12,7 @@ install() {
 
   # Core essentials
   sudo apt-get -y wget git curl tree rsync dnsutils
-
+}
 
 update() {
   sudo apt-get update
