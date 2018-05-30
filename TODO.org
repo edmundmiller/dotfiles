@@ -1,0 +1,19 @@
+#+TITLE: TODO
+* Things to add
+** TODO Zsh
+** TODO Vim
+** TODO Code
+** TODO mpd
+** TODO Dev
+*** TODO haskell
+*** TODO node
+*** TODO solidity
+*** TODO R
+*** TODO python
+*** TODO zsh
+** DONE emacs
+* Things to test
+** TODO emacs
+** TODO debian
+** TODO debian-desktop
+** DONE notmuch
