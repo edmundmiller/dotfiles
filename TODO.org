@@ -1,6 +1,6 @@
 #+TITLE: TODO
 * Things to add
-** TODO Zsh
+** DONE Zsh
 ** TODO Vim
 ** TODO Code
 ** TODO mpd
@@ -14,6 +14,6 @@
 ** DONE emacs
 * Things to test
 ** TODO emacs
-** TODO debian
+** DONE debian
 ** TODO debian-desktop
 ** DONE notmuch
