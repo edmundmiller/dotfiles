@@ -1,0 +1,66 @@
+hub‐merge(1)  ‐‐  Merge  a  pull  request with a message like the
+GitHub Merge Button.  ===
+
+## SYNOPSIS
+
+‘hub merge‘ <PULLREQ‐URL>
+
+
+## EXAMPLES
+    $ hub merge https://github.com/jingweno/gh/pull/73
+    > git fetch origin refs/pull/73/head
+    > git merge FETCH_HEAD ‐‐no‐ff ‐m  "Merge  pull  request  #73
+from jingweno/feature..."
+
+## SEE ALSO
+
+hub‐checkout(1), hub(1), git‐merge(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

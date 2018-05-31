@@ -1,0 +1,132 @@
+hub‐pr(1) ‐‐ Manage GitHub pull requests for the current project.
+===
+
+## SYNOPSIS
+
+‘hub pr‘ list [‐s <STATE>] [‐h <HEAD>] [‐b <BASE>] [‐o <SORT_KEY>
+[‐^]] [‐L <LIMIT>] ‘hub pr‘ checkout <PR‐NUMBER> [<BRANCH>]
+
+
+## COMMANDS
+
+  * _list_:
+    List pull requests in the current project.
+
+  * _checkout_:
+    Check out the head of a pull request in a new branch.
+
+## OPTIONS
+
+  * ‐s, ‐‐state <STATE>:
+    Display pull requests with state <STATE> (default: "open").
+
+  * ‐f, ‐‐format <FORMAT>:
+    Pretty  print the list of pull requests using format <FORMAT>
+(default:
+    "%sC%>(8)%i%Creset	%t%  l%n"). See the "PRETTY FORMATS" sec‐
+tion of the
+    git‐log  manual for some additional details on how placehold‐
+ers are used in
+    format. The available placeholders are:
+
+    %I: pull request number
+
+    %i: pull request number prefixed with "#"
+
+    %U: the URL of this pull request
+
+    %S: state (i.e. "open", "closed")
+
+    %sC: set color to red or green,  depending	on  pull  request
+state.
+
+    %t: title
+
+    %l: colored labels
+
+    %L: raw, comma‐separated labels
+
+    %b: body
+
+    %B: base branch
+
+    %H: head branch
+
+    %au: login name of author
+
+    %as: comma‐separated list of assignees
+
+    %Mn: milestone number
+
+    %Mt: milestone title
+
+    %NC: number of comments
+
+    %Nc:  number  of  comments	wrapped  in parentheses, or blank
+string if zero.
+
+    %cD: created date‐only (no time of day)
+
+    %cr: created date, relative
+
+    %ct: created date, UNIX timestamp
+
+    %cI: created date, ISO 8601 format
+
+    %uD: updated date‐only (no time of day)
+
+    %ur: updated date, relative
+
+    %ut: updated date, UNIX timestamp
+
+    %uI: updated date, ISO 8601 format
+
+  * ‐o, ‐‐sort <SORT_KEY>:
+    Sort displayed  issues  by	"created"  (default),  "updated",
+"popularity", or "long‐running".
+
+  * ‐^ ‐‐sort‐ascending:
+    Sort by ascending dates instead of descending.
+
+  * ‐L, ‐‐limit <LIMIT>:
+    Display only the first <LIMIT> issues.
+
+## SEE ALSO
+
+hub‐issue(1), hub‐pull‐request(1), hub(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

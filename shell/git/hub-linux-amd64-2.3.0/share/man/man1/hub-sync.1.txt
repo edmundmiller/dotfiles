@@ -1,0 +1,66 @@
+hub‐sync(1) ‐‐ Fetch git objects from upstream and update branch‐
+es.  ===
+
+## SYNOPSIS
+
+‘hub sync‘
+
+
+‐ If the local branch is outdated, fast‐forward it; ‐ If the  lo‐
+cal branch contains unpushed work, warn about it; ‐ If the branch
+seems merged and its upstream branch was deleted, delete it.
+
+If a local branch doesn‘t have any  upstream  configuration,  but
+has a same‐named branch on the remote, treat that as its upstream
+branch.
+
+## SEE ALSO
+
+hub(1), git‐fetch(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

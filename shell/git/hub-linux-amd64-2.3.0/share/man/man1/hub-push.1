@@ -1,0 +1,27 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-PUSH" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-push\fR \- Push a git branch to each of the listed remotes\.
+.
+.SH "SYNOPSIS"
+\fBhub push\fR \fIREMOTE\fR[,\fIREMOTE2\fR\.\.\.] [\fIREF\fR]
+.
+.SH "EXAMPLES"
+.
+.nf
+
+$ hub push origin,staging,qa bert_timeout
+> git push origin bert_timeout
+> git push staging bert_timeout
+> git push qa bert_timeout
+
+$ hub push origin
+> git push origin HEAD
+.
+.fi
+.
+.SH "SEE ALSO"
+hub(1), git\-push(1)

@@ -1,0 +1,93 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-PULL\-REQUEST" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-pull\-request\fR \- Create a GitHub pull request\.
+.
+.SH "SYNOPSIS"
+\fBhub pull\-request\fR [\-focp] [\-b \fIBASE\fR] [\-h \fIHEAD\fR] [\-r \fIREVIEWERS\fR ] [\-a \fIASSIGNEES\fR] [\-M \fIMILESTONE\fR] [\-l \fILABELS\fR]
+.
+.br
+\fBhub pull\-request\fR \-m \fIMESSAGE\fR
+.
+.br
+\fBhub pull\-request\fR \-F \fIFILE\fR [\-\-edit]
+.
+.br
+\fBhub pull\-request\fR \-i \fIISSUE\fR
+.
+.SH "OPTIONS"
+.
+.TP
+\-f, \-\-force
+Skip the check for unpushed commits\.
+.
+.TP
+\-m, \-\-message \fIMESSAGE\fR
+Use the first line of \fIMESSAGE\fR as pull request title, and the rest as pull request description\.
+.
+.TP
+\-F, \-\-file \fIFILE\fR
+Read the pull request title and description from \fIFILE\fR\.
+.
+.TP
+\-e, \-\-edit
+Further edit the contents of \fIFILE\fR in a text editor before submitting\.
+.
+.TP
+\-i, \-\-issue \fIISSUE\fR, \fIISSUE\-URL\fR
+(Deprecated) Convert \fIISSUE\fR to a pull request\.
+.
+.TP
+\-o, \-\-browse
+Open the new pull request in a web browser\.
+.
+.TP
+\-c, \-\-copy
+Put the URL of the new pull request to clipboard instead of printing it\.
+.
+.TP
+\-p, \-\-push
+Push the current branch to \fIHEAD\fR before creating the pull request\.
+.
+.TP
+\-b, \-\-base \fIBASE\fR
+The base branch in "[OWNER:]BRANCH" format\. Defaults to the default branch (usually "master")\.
+.
+.TP
+\-h, \-\-head \fIHEAD\fR
+The head branch in "[OWNER:]BRANCH" format\. Defaults to the current branch\.
+.
+.TP
+\-r, \-\-reviewer \fIUSERS\fR
+A comma\-separated list of GitHub handles to request a review from\.
+.
+.TP
+\-a, \-\-assign \fIUSERS\fR
+A comma\-separated list of GitHub handles to assign to this pull request\.
+.
+.TP
+\-M, \-\-milestone \fINAME\fR
+The milestone name to add to this pull request\. Passing the milestone number is deprecated\.
+.
+.TP
+\-l, \-\-labels \fILABELS\fR
+Add a comma\-separated list of labels to this pull request\.
+.
+.SH "CONFIGURATION"
+HUB_RETRY_TIMEOUT=\fISECONDS\fR
+.
+.IP "" 4
+.
+.nf
+
+The maximum time to keep retrying after HTTP 422 on `\-\-push` (default: 9)\.
+.
+.fi
+.
+.IP "" 0
+.
+.SH "SEE ALSO"
+hub(1), hub\-merge(1), hub\-checkout(1)

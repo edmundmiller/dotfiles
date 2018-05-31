@@ -1,0 +1,36 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-CLONE" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-clone\fR \- Clone a repository from GitHub\.
+.
+.SH "SYNOPSIS"
+\fBhub clone\fR [\-p] [\fIOPTIONS\fR] [\fIUSER\fR/]\fIREPOSITORY\fR [\fIDESTINATION\fR]
+.
+.SH "OPTIONS"
+.
+.TP
+\-p
+(Deprecated) Clone private repositories over SSH\.
+.
+.TP
+[\fIUSER\fR/]\fIREPOSITORY\fR
+\fIUSER\fR defaults to your own GitHub username\.
+.
+.TP
+\fIDESTINATION\fR
+Directory name to clone into (default: \fIREPOSITORY\fR)\.
+.
+.SH "EXAMPLES"
+.
+.nf
+
+$ hub clone rtomayko/ronn
+> git clone git://github\.com/rtomayko/ronn\.git
+.
+.fi
+.
+.SH "SEE ALSO"
+hub\-fork(1), hub(1), git\-clone(1)

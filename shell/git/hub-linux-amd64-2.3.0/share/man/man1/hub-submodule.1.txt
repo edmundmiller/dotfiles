@@ -1,0 +1,66 @@
+hub‐submodule(1)  ‐‐ Add a git submodule for a GitHub repository.
+===
+
+## SYNOPSIS
+
+‘hub submodule‘ add [‐p] [<OPTIONS>] [<USER>/]<REPOSITORY>  <DES‐
+TINATION>
+
+
+## EXAMPLES
+    $ hub submodule add jingweno/gh vendor/gh
+    >  git  submodule  add  git://github.com/jingweno/gh.git ven‐
+dor/gh
+
+## SEE ALSO
+
+hub‐remote(1), hub(1), git‐submodule(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

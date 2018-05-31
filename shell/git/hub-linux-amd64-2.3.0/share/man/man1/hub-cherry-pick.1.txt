@@ -1,0 +1,66 @@
+hub‐cherry‐pick(1) ‐‐ Cherry‐pick a commit from a fork on GitHub.
+===
+
+## SYNOPSIS
+
+‘hub cherry‐pick‘ <COMMIT‐URL> ‘hub cherry‐pick‘ <USER>@<SHA>
+
+
+## SEE ALSO
+
+hub‐am(1), hub(1), git‐cherry‐pick(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

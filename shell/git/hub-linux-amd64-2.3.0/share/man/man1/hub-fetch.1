@@ -1,0 +1,25 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-FETCH" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-fetch\fR \- Add missing remotes prior to performing git fetch\.
+.
+.SH "SYNOPSIS"
+\fBhub fetch\fR \fIUSER\fR[,\fIUSER2\fR\.\.\.]
+.
+.SH "EXAMPLES"
+.
+.nf
+
+$ hub fetch \-\-multiple jingweno mislav
+> git remote add jingweno git://github\.com/jingweno/REPO\.git
+> git remote add jingweno git://github\.com/mislav/REPO\.git
+> git fetch jingweno
+> git fetch mislav
+.
+.fi
+.
+.SH "SEE ALSO"
+hub\-remote(1), hub(1), git\-fetch(1)
