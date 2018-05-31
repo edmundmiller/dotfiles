@@ -1,0 +1,29 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-APPLY" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-apply\fR \- Download a patch from GitHub and apply it locally\.
+.
+.SH "SYNOPSIS"
+\fBhub apply\fR \fIGITHUB\-URL\fR
+.
+.SH "OPTIONS"
+.
+.TP
+\fIGITHUB\-URL\fR
+A URL to a pull request or commit on GitHub\.
+.
+.SH "EXAMPLES"
+.
+.nf
+
+$ hub apply https://github\.com/jingweno/gh/pull/55
+> curl https://github\.com/jingweno/gh/pull/55\.patch \-o /tmp/55\.patch
+> git apply /tmp/55\.patch
+.
+.fi
+.
+.SH "SEE ALSO"
+hub\-am(1), hub(1), git\-apply(1)

@@ -1,0 +1,66 @@
+hub‐compare(1)	‐‐  Open  a GitHub compare page in a web browser.
+===
+
+## SYNOPSIS
+
+‘hub compare‘ [‐u] [‐b <BASE>] [<USER>] [[<START>...]<END>]
+
+
+## OPTIONS
+  * ‐u:
+    Print the URL instead of opening it.
+
+  * ‐b <BASE>:
+    Base branch to compare.
+
+  * [<START>...]<END>:
+    Branch names, tag names, or commit SHAs specifying the  range
+to compare.
+    <END> defaults to the current branch name.
+
+    If a range with two dots (‘A..B‘) is given, it will be trans‐
+formed into a
+    range with three dots.
+
+## EXAMPLES
+    $ hub compare refactor
+    > open https://github.com/USER/REPO/compare/refactor
+
+    $ hub compare v1.0..v1.1
+    > open https://github.com/USER/REPO/compare/v1.0...v1.1
+
+    $ hub compare ‐u jingweno feature
+    > echo https://github.com/jingweno/REPO/compare/feature
+
+## SEE ALSO
+
+hub‐browse(1), hub(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

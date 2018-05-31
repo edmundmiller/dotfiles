@@ -1,0 +1,66 @@
+hub‐create(1)  ‐‐ Create a new repository on GitHub and add a git
+remote for it.	===
+
+## SYNOPSIS
+
+‘hub create‘ [‐poc] [‐d <DESCRIPTION>] [‐h <HOMEPAGE>] [[<ORGANI‐
+ZATION>/]<NAME>]
+
+
+## OPTIONS
+  * ‐p:
+    Create a private repository.
+
+  * ‐d <DESCRIPTION>:
+    Use this text as the description of the GitHub repository.
+
+  * ‐h <HOMEPAGE>:
+    Use this text as the URL of the GitHub repository.
+
+  * ‐o, ‐‐browse:
+    Open the new repository in a web browser.
+
+  * ‐c, ‐‐copy:
+    Put  the  URL  of  the new repository to clipboard instead of
+printing it.
+
+  * [<ORGANIZATION>/]<NAME>:
+    The name for the repository on GitHub (default: name  of  the
+current working
+    directory).
+
+    Optionally, create the repository within <ORGANIZATION>.
+
+## EXAMPLES
+    $ hub create
+    [ repo created on GitHub ]
+    > git remote add ‐f origin git@github.com:USER/REPO.git
+
+    $ hub create sinatra/recipes
+    [ repo created in GitHub organization ]
+    > git remote add ‐f origin git@github.com:sinatra/recipes.git
+
+## SEE ALSO
+
+hub‐init(1), hub(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

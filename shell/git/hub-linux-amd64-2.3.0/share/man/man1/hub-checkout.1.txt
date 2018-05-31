@@ -1,0 +1,66 @@
+hub‐checkout(1)  ‐‐ Check out the head of a pull request as a lo‐
+cal branch.  ===
+
+## SYNOPSIS
+
+‘hub checkout‘ <PULLREQ‐URL> [<BRANCH>]
+
+
+## EXAMPLES
+    $ hub checkout https://github.com/jingweno/gh/pull/73
+    > git fetch origin pull/73/head:jingweno‐feature
+    > git checkout jingweno‐feature
+
+## SEE ALSO
+
+hub‐merge(1), hub‐am(1), hub(1), git‐checkout(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

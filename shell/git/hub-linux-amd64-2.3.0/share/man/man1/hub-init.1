@@ -1,0 +1,32 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-INIT" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-init\fR \- Initialize a git repository and create it on GitHub\.
+.
+.SH "SYNOPSIS"
+\fBhub init\fR \-g
+.
+.SH "OPTIONS"
+.
+.TP
+\-g
+After initializing the repository locally, create a "\fIUSER\fR/\fIREPO\fR" repository on GitHub and add it as the "origin" remote\.
+.
+.IP
+\fIUSER\fR is your GitHub username, while \fIREPO\fR is the name of the current working directory\.
+.
+.SH "EXAMPLES"
+.
+.nf
+
+$ hub init \-g
+> git init
+> git remote add origin git@github\.com:USER/REPO\.git
+.
+.fi
+.
+.SH "SEE ALSO"
+hub\-create(1), hub(1), git\-init(1)

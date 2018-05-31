@@ -1,0 +1,56 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-CREATE" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-create\fR \- Create a new repository on GitHub and add a git remote for it\.
+.
+.SH "SYNOPSIS"
+\fBhub create\fR [\-poc] [\-d \fIDESCRIPTION\fR] [\-h \fIHOMEPAGE\fR] [[\fIORGANIZATION\fR/]\fINAME\fR]
+.
+.SH "OPTIONS"
+.
+.TP
+\-p
+Create a private repository\.
+.
+.TP
+\-d \fIDESCRIPTION\fR
+Use this text as the description of the GitHub repository\.
+.
+.TP
+\-h \fIHOMEPAGE\fR
+Use this text as the URL of the GitHub repository\.
+.
+.TP
+\-o, \-\-browse
+Open the new repository in a web browser\.
+.
+.TP
+\-c, \-\-copy
+Put the URL of the new repository to clipboard instead of printing it\.
+.
+.TP
+[\fIORGANIZATION\fR/]\fINAME\fR
+The name for the repository on GitHub (default: name of the current working directory)\.
+.
+.IP
+Optionally, create the repository within \fIORGANIZATION\fR\.
+.
+.SH "EXAMPLES"
+.
+.nf
+
+$ hub create
+[ repo created on GitHub ]
+> git remote add \-f origin git@github\.com:USER/REPO\.git
+
+$ hub create sinatra/recipes
+[ repo created in GitHub organization ]
+> git remote add \-f origin git@github\.com:sinatra/recipes\.git
+.
+.fi
+.
+.SH "SEE ALSO"
+hub\-init(1), hub(1)

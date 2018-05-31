@@ -1,0 +1,66 @@
+hub‐apply(1)  ‐‐ Download a patch from GitHub and apply it local‐
+ly.  ===
+
+## SYNOPSIS
+
+‘hub apply‘ <GITHUB‐URL>
+
+
+## OPTIONS
+  * <GITHUB‐URL>:
+    A URL to a pull request or commit on GitHub.
+
+## EXAMPLES
+    $ hub apply https://github.com/jingweno/gh/pull/55
+    >	curl   https://github.com/jingweno/gh/pull/55.patch    ‐o
+/tmp/55.patch
+    > git apply /tmp/55.patch
+
+## SEE ALSO
+
+hub‐am(1), hub(1), git‐apply(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

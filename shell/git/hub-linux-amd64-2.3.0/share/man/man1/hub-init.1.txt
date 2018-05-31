@@ -1,0 +1,66 @@
+hub‐init(1)  ‐‐  Initialize  a	git  repository  and create it on
+GitHub.  ===
+
+## SYNOPSIS
+
+‘hub init‘ ‐g
+
+
+## OPTIONS
+  * ‐g:
+    After initializing the repository  locally,  create  a  "<US‐
+ER>/<REPO>"
+    repository on GitHub and add it as the "origin" remote.
+
+    <USER>  is	your GitHub username, while <REPO> is the name of
+the current
+    working directory.
+
+## EXAMPLES
+    $ hub init ‐g
+    > git init
+    > git remote add origin git@github.com:USER/REPO.git
+
+## SEE ALSO
+
+hub‐create(1), hub(1), git‐init(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

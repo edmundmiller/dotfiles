@@ -1,0 +1,180 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HUB\-ISSUE" "1" "May 2018" "GITHUB" "Hub Manual"
+.
+.SH "NAME"
+\fBhub\-issue\fR \- Manage GitHub issues for the current project\.
+.
+.SH "SYNOPSIS"
+\fBhub issue\fR [\-a \fIASSIGNEE\fR] [\-c \fICREATOR\fR] [\-@ \fIUSER\fR] [\-s \fISTATE\fR] [\-f \fIFORMAT\fR] [\-M \fIMILESTONE\fR] [\-l \fILABELS\fR] [\-d \fIDATE\fR] [\-o \fISORT_KEY\fR [\- [\-L \fILIMIT\fR]
+.
+.br
+\fBhub issue\fR create [\-oc] [\-m \fIMESSAGE\fR|\-F \fIFILE\fR] [\-a \fIUSERS\fR] [\-M \fIMILESTONE\fR] [\-l \fILABELS\fR]
+.
+.br
+\fBhub issue\fR labels [\-\-color]
+.
+.SH "COMMANDS"
+With no arguments, show a list of open issues\.
+.
+.TP
+\fIcreate\fR
+Open an issue in the current project\.
+.
+.TP
+\fIlabels\fR
+List the labels available in this repository\.
+.
+.SH "OPTIONS"
+.
+.TP
+\-a, \-\-assignee \fIASSIGNEE\fR
+Display only issues assigned to \fIASSIGNEE\fR\.
+.
+.IP
+When opening an issue, this can be a comma\-separated list of people to assign to the new issue\.
+.
+.TP
+\-c, \-\-creator \fICREATOR\fR
+Display only issues created by \fICREATOR\fR\.
+.
+.TP
+\-@, \-\-mentioned \fIUSER\fR
+Display only issues mentioning \fIUSER\fR\.
+.
+.TP
+\-s, \-\-state \fISTATE\fR
+Display issues with state \fISTATE\fR (default: "open")\.
+.
+.TP
+\-f, \-\-format \fIFORMAT\fR
+Pretty print the contents of the issues using format \fIFORMAT\fR (default: "%sC%>(8)%i%Creset %t% l%n")\. See the "PRETTY FORMATS" section of the git\-log manual for some additional details on how placeholders are used in format\. The available placeholders for issues are:
+.
+.IP
+%I: issue number
+.
+.IP
+%i: issue number prefixed with "#"
+.
+.IP
+%U: the URL of this issue
+.
+.IP
+%S: state (i\.e\. "open", "closed")
+.
+.IP
+%sC: set color to red or green, depending on issue state\.
+.
+.IP
+%t: title
+.
+.IP
+%l: colored labels
+.
+.IP
+%L: raw, comma\-separated labels
+.
+.IP
+%b: body
+.
+.IP
+%au: login name of author
+.
+.IP
+%as: comma\-separated list of assignees
+.
+.IP
+%Mn: milestone number
+.
+.IP
+%Mt: milestone title
+.
+.IP
+%NC: number of comments
+.
+.IP
+%Nc: number of comments wrapped in parentheses, or blank string if zero\.
+.
+.IP
+%cD: created date\-only (no time of day)
+.
+.IP
+%cr: created date, relative
+.
+.IP
+%ct: created date, UNIX timestamp
+.
+.IP
+%cI: created date, ISO 8601 format
+.
+.IP
+%uD: updated date\-only (no time of day)
+.
+.IP
+%ur: updated date, relative
+.
+.IP
+%ut: updated date, UNIX timestamp
+.
+.IP
+%uI: updated date, ISO 8601 format
+.
+.TP
+\-m, \-\-message \fIMESSAGE\fR
+Use the first line of \fIMESSAGE\fR as issue title, and the rest as issue description\.
+.
+.TP
+\-F, \-\-file \fIFILE\fR
+Read the issue title and description from \fIFILE\fR\.
+.
+.TP
+\-e, \-\-edit
+Further edit the contents of \fIFILE\fR in a text editor before submitting\.
+.
+.TP
+\-o, \-\-browse
+Open the new issue in a web browser\.
+.
+.TP
+\-c, \-\-copy
+Put the URL of the new issue to clipboard instead of printing it\.
+.
+.TP
+\-M, \-\-milestone \fIID\fR
+Display only issues for a GitHub milestone with id \fIID\fR\.
+.
+.IP
+When opening an issue, add this issue to a GitHub milestone with id \fIID\fR\.
+.
+.TP
+\-l, \-\-labels \fILABELS\fR
+Display only issues with certain labels\.
+.
+.IP
+When opening an issue, add a comma\-separated list of labels to this issue\.
+.
+.TP
+\-d, \-\-since \fIDATE\fR
+Display only issues updated on or after \fIDATE\fR in ISO 8601 format\.
+.
+.TP
+\-o, \-\-sort \fISORT_KEY\fR
+Sort displayed issues by "created" (default), "updated" or "comments"\.
+.
+.TP
+\-^ \-\-sort\-ascending
+Sort by ascending dates instead of descending\.
+.
+.TP
+\-L, \-\-limit \fILIMIT\fR
+Display only the first \fILIMIT\fR issues\.
+.
+.TP
+\-\-include\-pulls
+Include pull requests as well as issues\.
+.
+.TP
+\-\-color
+Enable colored output for labels list\.
+

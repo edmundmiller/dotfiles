@@ -1,0 +1,66 @@
+hub‐am(1)  ‐‐ Replicate commits from a GitHub pull request local‐
+ly.  ===
+
+## SYNOPSIS
+
+‘hub am‘ [‐3] <GITHUB‐URL>
+
+
+## OPTIONS
+  * ‐3:
+    (Recommended) See git‐am(1).
+
+  * <GITHUB‐URL>:
+    A URL to a pull request or commit on GitHub.
+
+## EXAMPLES
+    $ hub am ‐3 https://github.com/jingweno/gh/pull/55
+    >	curl   https://github.com/jingweno/gh/pull/55.patch    ‐o
+/tmp/55.patch
+    > git am ‐3 /tmp/55.patch
+
+## SEE ALSO
+
+hub‐apply(1), hub‐cherry‐pick(1), hub(1), git‐am(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
