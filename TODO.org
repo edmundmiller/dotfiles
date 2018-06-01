@@ -9,7 +9,7 @@
 *** DONE Go
 *** DONE haskell
 *** DONE node
-*** TODO solidity
+*** DONE solidity
 *** TODO R
 *** TODO python
 *** DONE zsh
