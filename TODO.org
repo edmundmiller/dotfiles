@@ -1,16 +1,18 @@
 #+TITLE: TODO
 * Things to add
+** TODO Clean up repo
 ** DONE Zsh
 ** TODO Vim
 ** TODO Code
 ** TODO mpd
 ** TODO Dev
-*** TODO haskell
-*** TODO node
+*** DONE Go
+*** DONE haskell
+*** DONE node
 *** TODO solidity
 *** TODO R
 *** TODO python
-*** TODO zsh
+*** DONE zsh
 ** DONE emacs
 * Things to test
 ** TODO emacs
