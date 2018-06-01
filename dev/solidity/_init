@@ -3,12 +3,15 @@ source ${0:A:h}/../../deploy
 source env.zsh
 
 install() {
-  case $(_os) in
-    # macos) brew install ;;
-    # arch) ;;
-    debian) npm install -g solc solium truffle
-            ;;
-  esac
+  if command -v 'npm' >/dev/null; then
+    npm install -g solc solium truffle
+  fi
+
+  # case $(_os) in
+  #   # macos) brew install ;;
+  #   # arch) ;;
+  #   # debian) npm install -g solc solium truffle ;;
+  # esac
 }
 
 update() {
