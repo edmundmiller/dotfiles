@@ -10,8 +10,7 @@ install() {
             ;;
     arch)   sudo pacman --needed --noconfirm -S zsh fasd fd
             ;;
-    debian) sudo add-apt-repository ppa:aacebedo/fasd
-            sudo apt-get update && sudo apt-get install -y zsh fasd fd
+    debian) sudo apt-get update && sudo apt-get install -y zsh fasd fd
             ;;
   esac
 
