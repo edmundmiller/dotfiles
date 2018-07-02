@@ -19,7 +19,13 @@ export LESS='-R -i -w -M -z-4'
 export LESSHISTFILE="$XDG_DATA_HOME/lesshst"
 export PASSWORD_STORE_DIR="$XDG_DATA_HOME/password-store"
 
+# TODO Move to python
+export PATH="/home/emiller/.anaconda3/bin:$PATH"
 # initialize enabled topics
 _load_all env.zsh
 
+# TODO Fix node
+PATH="$HOME/.node_modules/bin:$PATH"
+export npm_config_prefix=~/.node_modules
 
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

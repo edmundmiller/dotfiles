@@ -11,6 +11,7 @@ if ! zgen saved; then
   zgen load zdharma/history-search-multi-word
   zgen load zsh-users/zsh-completions src
   zgen load junegunn/fzf shell  # completions
+  zgen load sobolevn/wakatime-zsh-plugin
 
   if [[ -z $SSH_CONNECTION ]]; then
     zgen load zdharma/fast-syntax-highlighting
