@@ -1,2 +1,4 @@
 .cfg
 shell/zsh/functions/_zunit
+base/debian-desktop/termite/
+base/debian-desktop/vte-ng/
