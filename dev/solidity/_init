@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 source ${0:A:h}/../../deploy
-source env.zsh
+#source env.zsh
 
 install() {
   if command -v 'npm' >/dev/null; then
