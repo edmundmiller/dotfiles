@@ -2,3 +2,6 @@
 shell/zsh/functions/_zunit
 base/debian-desktop/termite/
 base/debian-desktop/vte-ng/
+#\ Fonts
+assets/fonts/Sauce\ Code\ Pro\ Nerd\ Font\ Complete\ Mono.ttf
+assets/fonts/Sauce\ Code\ Pro\ Nerd\ Font\ Complete.ttf
