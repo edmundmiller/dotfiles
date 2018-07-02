@@ -2,16 +2,16 @@
 ncmpcpp_directory = ~/.config/ncmpcpp
 
 ## Directory for storing downloaded lyrics.
-lyrics_directory = ~/music/.db/lyrics
+lyrics_directory = ~/Music/.db/lyrics
 
 ##### connection settings #####
-mpd_host = "~/.config/mpd/mpd.sock"
-#mpd_host = "127.0.0.1"
-#mpd_port = 6600
+#mpd_host = "~/.config/mpd/mpd.sock"
+mpd_host = "127.0.0.1"
+mpd_port = 6600
 #mpd_connection_timeout = 5
 
 ## Needed for tag editor and file operations to work.
-mpd_music_dir = ~/music
+mpd_music_dir = ~/Music
 mpd_crossfade_time = 5
 
 ##### music visualizer #####
