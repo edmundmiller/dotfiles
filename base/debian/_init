@@ -6,12 +6,12 @@ install() {
     >&2 echo "No internet connection"
     return 1
   elif ! sudo apt-get -y update; then
-    >&2 echo "Could not update pacman"
+    >&2 echo "Could not update apt"
     return 2
   fi
 
   # Core essentials
-  sudo apt-get -y wget git curl tree rsync dnsutils
+  sudo apt-get install -y wget git curl tree rsync
 }
 
 update() {
