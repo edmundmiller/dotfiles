@@ -2,7 +2,7 @@
 source ${0:A:h}/../../deploy
 source env.zsh
 
-MPD_HOME="${MPD_HOST%/*}"
+MPD_HOME="$XDG_CONFIG_HOME/mpd" #${MPD_HOST%/*}"
 NCMPCPP_HOME="$XDG_CONFIG_HOME/ncmpcpp"
 
 install() {
@@ -11,7 +11,7 @@ install() {
            brew install ncmpcpp --with-clock --with-visualizer --with-outputs
            ;;
     arch)  sudo pacman --needed --noconfirm -S mpd mpc ncmpcpp ;;
-    # debian) ;;
+    debian) sudo apt install -y mpd mpc ncmpcpp
   esac
 }
 

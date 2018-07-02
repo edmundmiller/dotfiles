@@ -59,7 +59,7 @@ case $OSTYPE in
     ;;
   linux*)
     [[ -n $rating ]] && rating="$rating<br />"
-    notify-send --urgency=low --icon="media-playback-start" --app-name="ncmpcpp" "$rating<b>$title</b>" "${artist}\n<i>${album}</i>" &
+    notify-send --urgency=low --icon="media-playback-start" --app-name="ncmpcpp" "$rating $title" "${artist}\n<i>${album}</i>" &
     ;;
 esac >/dev/null 2>&1
 
