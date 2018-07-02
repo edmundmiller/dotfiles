@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+source ${0:A:h}/../../deploy
+source env.zsh
+
+install() {
+  case $(_os) in
+    macos) brew install gfortran R ;;
+    arch) pacaur --needed --noedit --noconfirm -S r ;;
+    debian) sudo apt install -y r-base ;;
+  esac
+}
+
+# update() {}
+
+# link() {}
+
+# clean() {}
+
+init "$@"
