@@ -11,10 +11,11 @@ install() {
   fi
 
   sudo apt-get install -y silversearcher-ag pass borgbackup 
+  termite-install.sh
 
   # install crontab
   # crontab ./crontab
-
+}
 # update() {}
 
 link() {
