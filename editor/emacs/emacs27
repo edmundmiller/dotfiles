@@ -1,12 +1,13 @@
+
 mdkir ~/src/
 mkdir ~/src/emacs
 cd ~/src/
 git clone -b master git://git.sv.gnu.org/emacs.git
 sudo apt-get install build-essential automake texinfo libjpeg-dev libncurses5-dev
 sudo apt-get install libtiff5-dev libgif-dev libpng-dev libxpm-dev libgtk-3-dev libgnutls28-dev 
-cd emacs/
+cd ~/src/emacs/
 ./autogen.sh
-./configure --with-mailutils --with-xwidgets
+./configure --with-mailutils #--with-xwidgets
 make
-src/emacs --version
+~/src/emacs --version
 sudo make install

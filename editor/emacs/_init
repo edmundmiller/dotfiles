@@ -7,7 +7,8 @@ install() {
             brew install emacs-plus --without-spacemacs-icon
             ;;
     arch)   pacaur --needed --noconfirm --noedit -S make emacs ;;
-    debian) sudo apt-get install -y make emacs ;;
+    debian) sudo apt-get install -y make
+            bash emacs27;;
   esac
 
   _ensure_repo emiller88/doom-emacs-private ~/.config/doom
@@ -18,7 +19,6 @@ install() {
 
 update() {
   cd ~/.emacs.d && YES=1 make update
-  cd ~/.emacs.d/cask && git pull
 }
 
 # link() { }
