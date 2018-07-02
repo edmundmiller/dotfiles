@@ -1,7 +1,7 @@
 [general]
 accounts = Gmail, UTD, oldGmail
 pythonfile = ~/.config/offlineimap/offlineimap.py
-maxsyncaccounts = 1
+maxsyncaccounts = 4
 
 [Account Gmail]
 localrepository = LocalGmail
@@ -10,6 +10,8 @@ synclabels = yes
 labelsheader = X-Keywords
 # maxconnections = 2
 postsynchook = ~/.config/offlineimap/postsync.sh
+autorefresh = 0.5
+quick = 5
 
 [Account UTD]
 localrepository = LocalUTD
@@ -18,6 +20,8 @@ synclabels = yes
 labelsheader = X-Keywords
 # maxconnections = 2
 postsynchook = ~/.config/offlineimap/postsync.sh
+autorefresh = 0.5
+quick = 5
 
 [Account oldGmail]
 localrepository = LocalOldGmail
@@ -26,6 +30,18 @@ synclabels = yes
 labelsheader = X-Keywords
 # maxconnections = 2
 postsynchook = ~/.config/offlineimap/postsync.sh
+autorefresh = 0.5
+quick = 5
+
+# [Account olypsis]
+# localrepository = LocalOlypsis
+# remoterepository = RepositoryOlypsis
+# synclabels = yes
+# labelsheader = X-Keywords
+# # maxconnections = 2
+# postsynchook = ~/.config/offlineimap/postsync.sh
+# autorefresh = 0.5
+# quick = 5
 
 [Repository LocalGmail]
 type = GmailMaildir
@@ -85,6 +101,27 @@ ssl = true
 sslcacertfile = /usr/local/etc/openssl/cert.pem  # This will only work for macOS
 sslcacertfile = /etc/ssl/certs/ca-certificates.crt
 # nametrans = nametrans_reverse
+
+# keepalive = 60
+# holdconnectionopen = yes
+
+# [Repository LocalOlypsis]
+# type = GmailMaildir
+# localfolders = ~/.mail/olypsis
+# nametrans = nametrans
+
+# [Repository RepositoryOlypsis]
+# type = Gmail
+# remoteusereval = get_pass("olypsis/user")
+# remotepasseval = get_pass("olypsis/password")
+# # folderfilter = folder_filter
+# folderfilter = lambda foldername: foldername in ['[Gmail]/All Mail']
+# nametrans = lambda foldername: re.sub('^\[Gmail\]/All Mail$', 'all',foldername)
+# realdelete=no
+# ssl = true
+# sslcacertfile = /usr/local/etc/openssl/cert.pem  # This will only work for macOS
+# sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+# # nametrans = nametrans_reverse
 
 # keepalive = 60
 # holdconnectionopen = yes
