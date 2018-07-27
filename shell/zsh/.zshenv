@@ -19,6 +19,9 @@ export LESS='-R -i -w -M -z-4'
 export LESSHISTFILE="$XDG_DATA_HOME/lesshst"
 export PASSWORD_STORE_DIR="$XDG_DATA_HOME/password-store"
 
+# DOOM
+export PATH=/home/emiller/.emacs.d/bin:$PATH
+
 # TODO Move to python
 export PATH="/home/emiller/.anaconda3/bin:$PATH"
 # initialize enabled topics
