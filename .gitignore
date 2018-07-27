@@ -5,3 +5,6 @@ base/debian-desktop/vte-ng/
 #\ Fonts
 assets/fonts/Sauce\ Code\ Pro\ Nerd\ Font\ Complete\ Mono.ttf
 assets/fonts/Sauce\ Code\ Pro\ Nerd\ Font\ Complete.ttf
+# Config
+# TODO Figure out where this is getting made
+.config
