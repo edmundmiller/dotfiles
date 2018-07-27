@@ -12,3 +12,5 @@ shell/git/hub-linux-amd64-2.4.0/
 # Config
 # TODO Figure out where this is getting made
 .config
+# bin
+bin/usbreset
