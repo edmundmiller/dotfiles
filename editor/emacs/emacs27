@@ -1,5 +1,4 @@
-
-mdkir ~/src/
+mkdir ~/src/
 mkdir ~/src/emacs
 cd ~/src/
 git clone -b master git://git.sv.gnu.org/emacs.git
