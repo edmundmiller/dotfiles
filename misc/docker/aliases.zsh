@@ -22,6 +22,7 @@ dk() {
            fi
            ;;
     arch)  systemctl -q is-active docker || sudo systemctl start docker ;;
+    debian) systemctl -q is-active docker || sudo systemctl start docker ;;
   esac
   docker $@
 }; compdef dk=docker
