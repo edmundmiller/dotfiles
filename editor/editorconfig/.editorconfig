@@ -20,3 +20,6 @@ indent_style = tab
 
 [{Makefile,gitconfig}]
 indent_style = tab
+
+[*.tsv]
+indent_style = tab
