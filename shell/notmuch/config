@@ -1,7 +1,7 @@
 [general]
 accounts = Gmail, UTD, oldGmail
 pythonfile = ~/.config/offlineimap/offlineimap.py
-maxsyncaccounts = 4
+maxsyncaccounts = 3
 
 [Account Gmail]
 localrepository = LocalGmail
