@@ -5,7 +5,7 @@ source env.zsh
 install() {
   case $(_os) in
     macos) brew install rustup ;;
-    arch)  pacaur --needed --noconfirm -S rustup ;;
+    arch)  yay --needed --noconfirm -S rustup ;;
     debian) curl https://sh.rustup.rs -sSf | sh ;;
   esac
   rustup install stable

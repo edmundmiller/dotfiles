@@ -5,8 +5,8 @@ source env.zsh
 install() {
   case $(_os) in
     macos) brew install go ;;
-    arch)  pacaur --needed --noconfirm -S go ;;
-    debian) sudo apt-get -y install golang
+    arch)  yay --needed --noconfirm -S go ;;
+    debian) sudo apt-get -y install golang ;;
   esac
 
   update
