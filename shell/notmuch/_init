@@ -11,7 +11,7 @@ install() {
       ;;
     linux*)
       if [[ -f /etc/arch-release ]]; then
-        pacaur --noedit --needed --noconfirm -S offlineimap notmuch
+        yay --needed --noconfirm -S offlineimap notmuch
       elif [[ -f /etc/debian-release ]]; then
         sudo apt-get install offlineimap notmuch msmtp
       fi
