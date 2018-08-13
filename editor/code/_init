@@ -19,7 +19,7 @@ install() {
 
 # TODO add versions and OS support
 update() {
-    code-insiders --list-extensions > $CODEINSIDER_HOME/extensionListInsider 
+    code-insiders --list-extensions > $CODEINSIDER_HOME/extensionListInsider
 }
 
 link() {
