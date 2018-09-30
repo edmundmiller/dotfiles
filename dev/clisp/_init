@@ -1,0 +1,18 @@
+#!/usr/bin/env zsh
+source ${0:A:h}/../../deploy
+
+install() {
+  case $(_os) in
+    macos) brew install clisp ;;
+    arch)  yay --needed --noconfirm -S clisp ;;
+    debian) sudo apt-get -y install clisp ;;
+  esac
+}
+
+# update() {}
+
+# link() {}
+
+# clean() {}
+
+init "$@"
