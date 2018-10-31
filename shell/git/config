@@ -1,6 +1,7 @@
 [user]
     name = Edmund Miller
 	email = edmund.a.miller@gmail.com
+	signingkey = BC10AA9D
 [core]
 	pager = diff-so-fancy | less --tabs=4 -RFX
 	whitespace = trailing-space
@@ -24,12 +25,12 @@
 	orphan = checkout --orphan
 	unadd = reset HEAD
 	undo-commit = reset --soft "HEAD^"
+    mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
 	# data analysis
 	ranked-authors = !git authors | sort | uniq -c | sort -n
 	emails = !git log --format="%aE" | sort -u
 	email-domains = !git log --format="%aE" | awk -F'@' '{print $2}' | sort -u
-[filter "lfs"]
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
-	clean = git-lfs clean -- %f
+[commit]
+	gpgsign = true
+[gpg]
+	program = gpg2
