@@ -8,7 +8,7 @@ assets/fonts/Sauce_Code_Pro_Nerd_Font_Complete_Mono.ttf
 assets/fonts/Sauce\ Code\ Pro\ Nerd\ Font\ Complete.ttf
 assets/fonts/Iosevka/
 # Shell
-shell/git/hub-linux-amd64-2.4.0/
+shell/git/hub-linux-amd64*/
 # Config
 # TODO Figure out where this is getting made
 .config
