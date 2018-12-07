@@ -5,6 +5,15 @@ source env.zsh
 install() {
   _ensure_repo nodenv/nodenv     $NODENV_ROOT
   _ensure_repo nodenv/node-build $NODENV_ROOT/plugins/node-build
+
+  case $(_os) in
+    macos) brew install yarn ;;
+    arch) pacman -S yarn ;;
+    debian) curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+            echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+            sudo apt-get update && sudo apt-get install yarn
+            ;;
+  esac
 }
 
 update() {
