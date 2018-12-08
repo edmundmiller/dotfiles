@@ -1,5 +1,6 @@
 #!/usr/bin/env zsh
 source ${0:A:h}/../../deploy
+source env.zsh
 
 install() {
   case $(_os) in
@@ -15,7 +16,7 @@ install() {
   _ensure_repo emiller88/doom-emacs-private ~/.config/doom
   _ensure_repo emiller88/doom-emacs ~/.emacs.d && \
     cd ~/.emacs.d \
-    && YES=1 make quickstart
+    && YES=1 make install
 }
 
 update() {
