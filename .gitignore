@@ -12,5 +12,4 @@ shell/git/hub-linux-amd64*/
 # Config
 # TODO Figure out where this is getting made
 .config
-# bin
-bin/usbreset
+dev/python/Miniconda3-latest-Linux-x86_64.sh
