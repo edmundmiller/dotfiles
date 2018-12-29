@@ -25,9 +25,8 @@ install() {
 link() {
   mklink mbsyncrc ~/.mbsyncrc
   mklink msmtprc ~/.msmtprc
-  # mklink config $OFFLINEIMAP_HOME/config
-  # mklink postsync.sh $OFFLINEIMAP_HOME/postsync.sh
-  # mklink offlineimap.py $OFFLINEIMAP_HOME/offlineimap.py
+  mklink checkmail.service $XDG_CONFIG_HOME/systemd/user/checkmail.service
+  mklink checkmail.timer $XDG_CONFIG_HOME/systemd/user/checkmail.timer
 }
 
 clean() {
