@@ -13,3 +13,5 @@ shell/git/hub-linux-amd64*/
 # TODO Figure out where this is getting made
 .config
 dev/python/Miniconda3-latest-Linux-x86_64.sh
+/shell/notmuch/.emanmailpass.gpg
+/shell/notmuch/.utdmailpass.gpg
