@@ -27,6 +27,7 @@ link() {
   mklink msmtprc ~/.msmtprc
   mklink checkmail.service $XDG_CONFIG_HOME/systemd/user/checkmail.service
   mklink checkmail.timer $XDG_CONFIG_HOME/systemd/user/checkmail.timer
+  mklink notmuch-config $HOME/.notmuch-config
 }
 
 clean() {

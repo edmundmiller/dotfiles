@@ -28,9 +28,11 @@ Patterns * ![Gmail]* "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"
 # Or include everything
 #Patterns *
 # Automatically create missing mailboxes, both locally and on the server
+Expunge Both
 Create Both
 # Save the synchronization state files in the relevant directory
 SyncState *
+Sync All
 
 
 ######## eman ########
@@ -38,7 +40,7 @@ IMAPAccount eman
 # Address to connect to
 Host imap.gmail.com
 User eman0088@gmail.com
-PassCmd "pass mail/eman"
+PassCmd "gpg2 -q --for-your-eyes-only --no-tty -d ~/.dotfiles/shell/notmuch/.emanmailpass.gpg"
 # Use SSL
 SSLType IMAPS
 # The following line should work. If get certificate errors, uncomment the two following lines and read the "Troubleshooting" section.
@@ -59,13 +61,15 @@ Channel eman
 Master :eman-remote:
 Slave :eman-local:
 # Exclude everything under the internal [Gmail] folder, except the interesting folders
-Patterns * ![Gmail]* "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"
+Patterns * ![Gmail]* "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" "Deleted Items"
 # Or include everything
 #Patterns *
 # Automatically create missing mailboxes, both locally and on the server
 Create Both
+Expunge Both
 # Save the synchronization state files in the relevant directory
 SyncState *
+Sync All
 
 
 ######## UTD ########
@@ -73,7 +77,7 @@ IMAPAccount utd
 # Address to connect to
 Host outlook.office365.com
 User eam150030@utdallas.edu
-PassCmd "pass mail/utd"
+PassCmd "gpg2 -q --for-your-eyes-only --no-tty -d ~/.dotfiles/shell/notmuch/.utdmailpass.gpg"
 # Use SSL
 SSLType IMAPS
 # The following line should work. If get certificate errors, uncomment the two following lines and read the "Troubleshooting" section.
@@ -99,5 +103,7 @@ Slave :utd-local:
 #Patterns *
 # Automatically create missing mailboxes, both locally and on the server
 Create Both
+Expunge Both
 # Save the synchronization state files in the relevant directory
 SyncState *
+Sync All
