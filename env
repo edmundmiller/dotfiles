@@ -77,7 +77,6 @@ function _os {
 }
 
 function _cache {
-  _is_interactive || return 1
   local cache_dir="$XDG_CACHE_HOME/${SHELL##*/}"
   local cache="$cache_dir/$1"
   if [[ ! -f $cache || ! -s $cache ]]; then
