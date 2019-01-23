@@ -7,8 +7,8 @@ primary_email=edmund.a.miller@gmail.com
 other_email=eman0088@gmail.com;eam150030@utdallas.edu;edmund.a.miller@protonmail.com;
 
 [new]
-tags=unread;inbox;
-ignore=Trash
+tags=new
+ignore=Trash;*.json;
 
 [search]
 exclude_tags=trash;deleted;spam;

@@ -7,4 +7,3 @@ After=network.target network-online.target dbus.socket
 [Service]
 Type=oneshot
 ExecStart=/home/emiller/.dotfiles/bin/checkmail.sh
-ExecStartPost=/usr/bin/notmuch new

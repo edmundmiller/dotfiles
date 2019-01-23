@@ -9,8 +9,7 @@ install() {
       ;;
     arch) yay --needed --noconfirm -S offlineimap notmuch
       ;;
-    debian) sudo apt-get install isync notmuch msmtp-mta
-            # sudo snap install bw
+    debian) sudo apt-get install isync notmuch msmtp-mta gmailieer
       ;;
   esac
 
