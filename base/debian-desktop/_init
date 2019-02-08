@@ -10,23 +10,42 @@ install() {
     return 2
   fi
 
-  sudo apt-get install -y silversearcher-ag pass borgbackup 
-  termite-install.sh
+  sudo apt install -y silversearcher-ag pass borgbackup xcape \
+    rxvt-unicode bspwm sxhkd
 
+  # fzf
+  git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+  ~/.fzf/install
+
+
+  # bspwm
+  # polybar
+  sudo apt install -y build-essential git cmake cmake-data pkg-config \
+    libcairo2-dev libxcb1-dev libxcb-util0-dev libxcb-randr0-dev \
+    libxcb-composite0-dev python-xcbgen xcb-proto libxcb-image0-dev \
+    libxcb-ewmh-dev libxcb-icccm4-dev
+  # optional
+  sudo apt install -y libxcb-xkb-dev libxcb-xrm-dev libxcb-cursor-dev \
+    libpulse-dev libmpdclient-dev libcurl4-openssl-dev libnl-genl-3-dev
+
+  wget https://github.com/jaagr/polybar/releases/download/3.3.0/polybar-3.3.0.tar
+  tar xvf polybar-3.3.0.tar
+  cd polybar
+  ./build.sh
   # install crontab
   # crontab ./crontab
 }
 # update() {}
 
 link() {
-  mklink xprofile ~/.xprofile
+  mklink bin/* $XDG_BIN_HOME/
   mklink config/* $XDG_CONFIG_HOME/
-  mklink fonts/* $XDG_DATA_HOME/fonts/
+  mklink Xresources $HOME/.Xresources
+  # mklink fonts/* $XDG_DATA_HOME/fonts/
 }
 
 clean() {
   rm -fv $XDG_DATA_HOME/fonts/*(@N)
-  sudo rm -fv /etc/pacman.d/hooks/*(@N)
 }
 
 init "$@"
