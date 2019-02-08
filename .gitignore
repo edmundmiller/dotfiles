@@ -10,6 +10,8 @@ assets/fonts/Iosevka/
 # Shell
 shell/git/hub-linux-amd64*/
 # Config
+base/debian-desktop/polybar-3.3.0.tar
+base/debian-desktop/polybar/*
 # TODO Figure out where this is getting made
 .config
 dev/python/Miniconda3-latest-Linux-x86_64.sh
