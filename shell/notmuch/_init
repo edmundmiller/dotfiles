@@ -5,10 +5,10 @@ source env.zsh
 
 install() {
   case "$OSTYPE" in
-    macos) brew install offlineimap notmuch
-      ;;
-    arch) yay --needed --noconfirm -S offlineimap notmuch
-      ;;
+    # macos) brew install offlineimap notmuch
+    #   ;;
+    # arch) yay --needed --noconfirm -S offlineimap notmuch
+    #   ;;
     debian) sudo apt-get install isync notmuch msmtp-mta gmailieer
       ;;
   esac

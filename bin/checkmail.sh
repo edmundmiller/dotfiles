@@ -2,6 +2,10 @@
 
 STATE=$(nmcli networking connectivity)
 
+function tagMail {
+  echo "Running tag additions to tag new mail"
+}
+
 if [ $STATE = 'full' ]; then
   echo "Sending mail"
 	~/.dotfiles/bin/msmtp-runqueue.sh
@@ -18,8 +22,10 @@ if [ $STATE = 'full' ]; then
 	mbsync -V utd
   echo "Running notmuch new"
 	notmuch new
-	notmuch tag +inbox -- to:eam150030@utdallas.edu AND not tag:inbox
+  echo "Tagging mail"
+  tagMail
 	exit 0
 fi
 echo "No internet connection."
 exit 0
+
