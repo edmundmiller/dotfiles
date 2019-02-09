@@ -2,7 +2,7 @@
 Description=check mail
 RefuseManualStart=no
 RefuseManualStop=yes
-After=network.target network-online.target dbus.socket
+# After=network.target network-online.target dbus.socket
 
 [Service]
 Type=oneshot
