@@ -6,7 +6,7 @@ install() {
   case $(_os) in
     macos)  brew install tmux ;;
     arch)   sudo pacman --needed --noconfirm -S tmux ;;
-    debian) sudo apt-get install -y tmux ;;
+    debian) sudo apt-get install -y tmux xclip ;;
   esac
 
   [[ -n $TMUXIFIER ]] && _ensure_repo jimeh/tmuxifier $TMUXIFIER

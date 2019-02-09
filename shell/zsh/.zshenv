@@ -21,5 +21,6 @@ export PASSWORD_STORE_DIR="$XDG_DATA_HOME/password-store"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
+# xcape -e 'Control_L=Escape'
 # initialize enabled topics
 _load_all env.zsh
