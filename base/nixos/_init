@@ -1,0 +1,24 @@
+#!/usr/bin/env zsh
+source ${0:A:h}/../../deploy
+
+install() {
+  sudo nixos-rebuild switch
+  home-manager switch
+}
+
+update() {
+  sudo nixos-rebuild switch
+  nix-env -u
+}
+
+link() {
+  mklink config/* $XDG_CONFIG_HOME/
+  mklink configuration.nix /etc/nixos/configuration.nix
+  mklink hardware-configuration.nix /etc/nixos/configuration.nix
+  mklink home.nix $XDG_CONFIG_HOME/nixpkgs/home.nix
+  mklink Xresources $HOME/.Xresources
+}
+
+# clean() {}
+
+init "$@"
