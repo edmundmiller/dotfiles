@@ -11,16 +11,17 @@ install() {
     debian) sudo add-apt-repository ppa:kelleyk/emacs
             sudo apt-get update
             sudo apt-get install emacs26 ;;
+    nixos) ;;
   esac
 
   _ensure_repo emiller88/doom-emacs-private ~/.config/doom
   _ensure_repo emiller88/doom-emacs ~/.emacs.d && \
     cd ~/.emacs.d \
-    && YES=1 make install
+    && YES=1 ./bin/doom install
 }
 
 update() {
-  cd ~/.emacs.d && YES=1 make update
+  cd ~/.emacs.d && YES=1 ./bin/doom update
 }
 
 # link() { }

@@ -6,6 +6,7 @@ install() {
     macos) brew install editorconfig ;;
     arch)  yay --needed --noconfirm -S editorconfig-core-c ;;
     debian) sudo apt-get install -y editorconfig ;;
+    nixos) ;;
   esac
 }
 

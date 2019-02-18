@@ -70,6 +70,7 @@ function _os {
   case $OSTYPE in
     linux*) if   [[ -f /etc/arch-release   ]]; then echo arch
             elif [[ -f /etc/debian_version ]]; then echo debian
+            elif [[ -f /etc/nixos/configuration.nix ]]; then echo nixos
             fi ;;
     darwin*) echo macos ;;
     cygwin*) echo cygwin ;;
