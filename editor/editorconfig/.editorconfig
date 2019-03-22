@@ -23,3 +23,6 @@ indent_style = tab
 
 [*.tsv]
 indent_style = tab
+
+[*.tex]
+indent_style = tab
