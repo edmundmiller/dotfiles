@@ -12,11 +12,11 @@ update() {
 }
 
 link() {
-  mklink config/* $XDG_CONFIG_HOME/
   mklink configuration.nix /etc/nixos/configuration.nix
-  mklink hardware-configuration.nix /etc/nixos/configuration.nix
-  mklink home.nix $XDG_CONFIG_HOME/nixpkgs/home.nix
-  mklink Xresources $HOME/.Xresources
+  mklink modules/* /etc/nixos/modules/*
+  mklink services/* /etc/nixos/services/*
+  mklink machines/* /etc/nixos/machines/*
+  mklink home/* $XDG_CONFIG_HOME/nixpkgs/*
 }
 
 # clean() {}

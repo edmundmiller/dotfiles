@@ -34,4 +34,6 @@ export _FASD_VIMINFO="$XDG_CACHE_HOME/viminfo"
 _cache fasd --init posix-alias zsh-{hook,{c,w}comp{,-install}}
 autopair-init
 
+# yarn quick fix
+export PATH="$(yarn global bin):$PATH"
 # vim:set ft=sh:
