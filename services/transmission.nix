@@ -4,9 +4,8 @@
   services.transmission = {
     enable = true;
     settings = {
-      # FIXME These are broke
-      # download-dir = "/home/emiller/torrents";
-      # incomplete-dir = "/home/emiller/torrents/.incomplete";
+      download-dir = "/home/emiller/torrents";
+      incomplete-dir = "/home/emiller/torrents/.incomplete";
       incomplete-dir-enabled = true;
       rpc-whitelist = "127.0.0.1,192.168.*.*,10.0.0.*";
       rpc-host-whitelist = "*";
