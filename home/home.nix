@@ -43,6 +43,7 @@ in {
     tldr
     bat
     xclip
+    unzip
     gibo
     youtube-dl
     (ncmpcpp.override { visualizerSupport = true; })
@@ -52,9 +53,15 @@ in {
     # Emacs
     ccls
     editorconfig-core-c
+    pandoc
     # Apps
+    atom-beta
+    bookworm
+    weechat
     gnucash
+    libreoffice-fresh
     # keybase-gui
+    calibre
     discord
     dropbox
     gimp
@@ -105,7 +112,6 @@ in {
     nodejs-10_x
     # Rust
     rustup
-    cargo
 
     # Graveyard
     # dunst

@@ -69,10 +69,12 @@
     pv
     binutils
     openvpn
+    openconnect
     xclip
     ((emacsPackagesNgGen emacs).emacsWithPackages
     (epkgs: [ epkgs.emacs-libvterm ]))
     openssl
+    texlive.combined.scheme-full
     # home-manager
   ];
 
