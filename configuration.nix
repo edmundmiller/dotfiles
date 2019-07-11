@@ -103,9 +103,10 @@
   # unfree
   nixpkgs.config.allowUnfree = true;
   # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
+  networking.firewall = {
+    allowedTCPPorts = [ 27036 27037 ];
+    allowedUDPPorts = [ 27031 27036 ];
+  };
   # networking.firewall.enable = false;
 
   # Enable sound.
@@ -131,7 +132,7 @@
         useDefaultShell = true;
         extraGroups =
         [ "wheel" "networkmanager" "docker" "transmission" "mpd" ];
-        packages = [ pkgs.steam ];
+        packages = [ pkgs.steam pkgs.steam-run ];
         openssh = { authorizedKeys.keys = [ "/home/emiller/.ssh/id_rsa" ]; };
       };
     };
