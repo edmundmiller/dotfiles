@@ -70,7 +70,6 @@
     binutils
     openvpn
     xclip
-    emacs
     ((emacsPackagesNgGen emacs).emacsWithPackages
     (epkgs: [ epkgs.emacs-libvterm ]))
     openssl
