@@ -15,13 +15,15 @@
     };
   };
 
-  systemd.services.transmission = {...}: {
+  systemd.services.transmission = { ... }: {
     options = {
       serviceConfig = lib.mkOption {
-        apply = old: old // {
+        apply = old:
+        old // {
           ExecStartPre = pkgs.writeScript "transmission-pre-start-two" ''
             #!${pkgs.runtimeShell}
-            ${old.ExecStartPre}
+             ${old.ExecStartPre}
+             chmod 777 /home/emiller/torrents
           '';
         };
       };
@@ -29,4 +31,3 @@
   };
 
 }
-
