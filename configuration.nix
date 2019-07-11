@@ -75,7 +75,6 @@
     (epkgs: [ epkgs.emacs-libvterm ]))
     openssl
     # home-manager
-    virtualbox
   ];
 
   fonts = {
@@ -136,6 +135,7 @@
         openssh = { authorizedKeys.keys = [ "/home/emiller/.ssh/id_rsa" ]; };
       };
     };
+    groups.vboxusers.members = [ "emiller" ];
   };
 
   # This value determines the NixOS release with which your system is to be
