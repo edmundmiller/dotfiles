@@ -1,5 +1,7 @@
 # dotfiles
 
+[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
+
 Credit: [hlissner/dotfiles](https://github.com/hlissner/dotfiles)
 
 To keep up with my dotfiles.
