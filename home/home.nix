@@ -12,11 +12,21 @@ in {
 
   # services.network-manager-applet.enable = true;
 
+  manual.json.enable = true;
+
   # services.redshift = {
   #   enable = true;
   #   latitude = "42.698";
   #   longitude = "23.323";
   # };
+  # dconf.settings =   {
+  #   "org/gnome/calculator" = {
+  #     button-mode = "programming";
+  #     show-thousands = true;
+  #     base = 10;
+  #     word-size = 64;
+  #   };
+  # }
 
   accounts.email = {
     maildirBasePath = "${maildir}";
@@ -32,7 +42,7 @@ in {
           enable = true;
           create = "both";
           expunge = "both";
-          patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
+          patterns = [ "*" "[Gmail]*" ]; #"[Gmail]/Sent Mail" ];
         };
         realName = "${name}";
         msmtp.enable = true;
@@ -46,10 +56,9 @@ in {
           enable = true;
           create = "both";
           expunge = "both";
-          patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
+          patterns = [ "*" "[Gmail]*" ]; #"[Gmail]/Sent Mail" ];
         };
         realName = "${name}";
-        msmtp.enable = true;
       };
       UTD = {
         address = "Edmund.Miller@utdallas.edu";
@@ -96,6 +105,7 @@ in {
     appimage-run
     cachix
     # CLI utils
+    weechat
     htop
     gitAndTools.hub
     #beets
