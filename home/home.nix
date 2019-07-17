@@ -2,8 +2,13 @@
 
 let
   font = "Iosevka";
+  name = "Edmund Miller";
+  maildir = "/home/emiller/.mail";
+  dotfiles = "/home/emiller/.dotfiles";
+  email = "edmund.a.miller@gmail.com";
+  protonmail = "edmund.a.miller@protonmail.com";
 in {
-  imports = [ ./programs/vscode.nix ./dotfiles/default.nix ];
+  imports = [ ./dotfiles/default.nix ./programs/vscode.nix ];
 
   # services.network-manager-applet.enable = true;
 
@@ -12,6 +17,49 @@ in {
   #   latitude = "42.698";
   #   longitude = "23.323";
   # };
+
+  accounts.email = {
+    maildirBasePath = "${maildir}";
+    accounts = {
+      gmail = {
+        address = "${email}";
+        userName = "${email}";
+        flavor = "gmail.com";
+        passwordCommand = "${pkgs.pass}/bin/pass gmail";
+        primary = true;
+        mbsync = {
+          enable = true;
+          expunge = "both";
+          patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
+        };
+        realName = "${name}";
+      };
+      old = {
+        address = "eman0088@gmail.com";
+        userName = "eman0088@gmail.com";
+        flavor = "gmail.com";
+        passwordCommand = "${pkgs.pass}/bin/pass oldGmail";
+        mbsync = {
+          enable = true;
+          expunge = "both";
+          patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
+        };
+        realName = "${name}";
+      };
+      # utd = {
+      #   address = "jonathan.reeve@columbia.edu";
+      #   userName = "jpr2152@columbia.edu";
+      #   flavor = "gmail.com";
+      #   passwordCommand = "${pkgs.pass}/bin/pass lionmail";
+      #   mbsync = {
+      #     enable = true;
+      #     expunge = "both";
+      #     patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
+      #   };
+      #   realName = "${name}";
+      # };
+    };
+  };
 
   gtk = {
     enable = true;
@@ -38,8 +86,15 @@ in {
     htop
     gitAndTools.hub
     #beets
-    pass
+    # pass.withExtensions ([ext.pass-import])
     nmap
+    aspell
+    aspellDicts.en
+    aspellDicts.en-computers
+    aspellDicts.en-science
+    imagemagick
+    mu
+    isync
     tldr
     bat
     xclip
@@ -49,7 +104,6 @@ in {
     (ncmpcpp.override { visualizerSupport = true; })
     # Terminals
     rxvt_unicode
-    termite
     # Emacs
     ccls
     editorconfig-core-c
@@ -82,13 +136,15 @@ in {
     pavucontrol
     units
     binutils
-    tetex
     okular
     maim
     # Software
     conda
-    docker-compose
+    # docker-compose
     python37
+    python37Packages.black
+    python37Packages.setuptools
+    python37Packages.pyaml
     python27
     gcc
     dpkg
@@ -97,6 +153,7 @@ in {
     gnumake
     cmake
     libtool
+    xonsh
     # haskell
     cabal-install
     cabal2nix
@@ -127,18 +184,50 @@ in {
   };
   programs = {
     # mbsync = { enable = true; };
+    beets.enable = true;
+    browserpass = {
+      enable = true;
+      browsers = [ "firefox" ];
+    };
+
+    texlive.enable = true;
 
     termite = {
       enable = true;
       font = "${font} 13";
-      backgroundColor = "rgba(32, 39, 51, 0.9)";
+      backgroundColor = "rgba(20, 21, 23, 0.9)";
+      foregroundColor = "#c5c8c6";
+      browser = "qutebrowser";
+      allowBold = true;
+      clickableUrl = true;
+      dynamicTitle = true;
+      geometry = "81x20";
+      mouseAutohide = true;
+      colorsExtra = ''
+        color0  = #141517
+        color8  = #969896
+        color1  = #cc6666
+        color9  = #de935f
+        color2  = #b5bd68
+        color10 = #757d28
+        color3  = #f0c674
+        color11 = #f9a03f
+        color4  = #81a2be
+        color12 = #2a8fed
+        color5  = #b294bb
+        color13 = #bc77a8
+        color6  = #8abeb7
+        color14 = #a3685a
+        color7  = #c5c8c6
+        color15 = #ffffff
+      '';
     };
 
     git = {
       enable = true;
       lfs.enable = true;
-      userName = "Edmund Miller";
-      userEmail = "edmund.a.miller@protonmail.com";
+      userName = "${name}";
+      userEmail = "${protonmail}";
       signing.key = "BC10AA9D";
       signing.signByDefault = true;
       aliases = {

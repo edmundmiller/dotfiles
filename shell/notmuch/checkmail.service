@@ -1,9 +1,0 @@
-[Unit]
-Description=check mail
-RefuseManualStart=no
-RefuseManualStop=yes
-# After=network.target network-online.target dbus.socket
-
-[Service]
-Type=oneshot
-ExecStart=/home/emiller/.dotfiles/bin/checkmail.sh
