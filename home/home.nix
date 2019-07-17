@@ -21,43 +21,56 @@ in {
   accounts.email = {
     maildirBasePath = "${maildir}";
     accounts = {
-      gmail = {
+      Gmail = {
         address = "${email}";
         userName = "${email}";
         flavor = "gmail.com";
         passwordCommand = "${pkgs.pass}/bin/pass gmail";
         primary = true;
+        # gpg.encryptByDefault = true;
         mbsync = {
           enable = true;
+          create = "both";
           expunge = "both";
           patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
         };
         realName = "${name}";
+        msmtp.enable = true;
       };
-      old = {
+      Eman = {
         address = "eman0088@gmail.com";
         userName = "eman0088@gmail.com";
         flavor = "gmail.com";
         passwordCommand = "${pkgs.pass}/bin/pass oldGmail";
         mbsync = {
           enable = true;
+          create = "both";
           expunge = "both";
           patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
         };
         realName = "${name}";
+        msmtp.enable = true;
       };
-      # utd = {
-      #   address = "jonathan.reeve@columbia.edu";
-      #   userName = "jpr2152@columbia.edu";
-      #   flavor = "gmail.com";
-      #   passwordCommand = "${pkgs.pass}/bin/pass lionmail";
-      #   mbsync = {
-      #     enable = true;
-      #     expunge = "both";
-      #     patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" ];
-      #   };
-      #   realName = "${name}";
-      # };
+      UTD = {
+        address = "Edmund.Miller@utdallas.edu";
+        userName = "eam150030@utdallas.edu";
+        aliases = ["eam150030@utdallas.edu"];
+        flavor = "plain";
+        passwordCommand = "${pkgs.pass}/bin/pass utd";
+        mbsync = {
+          enable = true;
+          create = "both";
+          expunge = "both";
+          patterns = [ "*" ];
+        };
+        imap = {
+          host = "outlook.office365.com";
+          port = 993;
+          tls.enable = true;
+        };
+        realName = "${name}";
+        msmtp.enable = true;
+      };
     };
   };
 
@@ -86,6 +99,7 @@ in {
     htop
     gitAndTools.hub
     #beets
+    pass
     # pass.withExtensions ([ext.pass-import])
     nmap
     aspell
@@ -183,7 +197,7 @@ in {
     yarn = pkgs.yarn.override { nodejs = pkgs.nodejs-12_x; };
   };
   programs = {
-    # mbsync = { enable = true; };
+    mbsync = { enable = true; };
     beets.enable = true;
     browserpass = {
       enable = true;
@@ -270,4 +284,11 @@ in {
     home-manager.enable = true;
   };
 
+  services = {
+    mbsync = {
+      enable = true;
+      frequency = ":0/15";
+      postExec = "${pkgs.mu}/bin/mu index -m ${maildir}";
+    };
+  };
 }
