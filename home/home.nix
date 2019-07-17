@@ -287,7 +287,7 @@ in {
   services = {
     mbsync = {
       enable = true;
-      frequency = ":0/15";
+      frequency = "*:0/15";
       postExec = "${pkgs.mu}/bin/mu index -m ${maildir}";
     };
   };
