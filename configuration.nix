@@ -1,12 +1,9 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 { config, pkgs, ... }:
 
 {
   imports = [
-    ./machines/omen.nix
+    # <home-manager/nixos>
+    ./hardware-configuration.nix
     ./services/default.nix
     ./modules/steamcontroller.nix
     ./modules/shell.nix
@@ -76,13 +73,14 @@
     openssl
     texlive.combined.scheme-full
     # home-manager
+    docker-compose
   ];
 
   fonts = {
     fontconfig.defaultFonts.monospace = [ "Iosevka" ];
     fonts = with pkgs; [
       fira-code-symbols
-      iosevka
+      iosevka.override #{set = "ss05";})
       noto-fonts
       symbola
       noto-fonts-cjk
@@ -104,10 +102,10 @@
   # unfree
   nixpkgs.config.allowUnfree = true;
   # Open ports in the firewall.
-  networking.firewall = {
-    allowedTCPPorts = [ 27036 27037 ];
-    allowedUDPPorts = [ 27031 27036 ];
-  };
+  # networking.firewall = {
+  #   allowedTCPPorts = [ 27036 27037 ];
+  #   allowedUDPPorts = [ 27031 27036 ];
+  # };
   # networking.firewall.enable = false;
 
   # Enable sound.
@@ -120,7 +118,6 @@
     };
   };
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
   users = {
     defaultUserShell = pkgs.zsh;
     users = {

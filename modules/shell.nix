@@ -3,15 +3,14 @@
 
 let zgen = builtins.fetchTarball "https://github.com/tarjoilija/zgen/archive/master.tar.gz";
 in {
-  environment = {
-    variables = {
+    home.sessionVariables = {
       ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
       ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
       ZGEN_DIR  = "$XDG_CACHE_HOME/zgen";
       ZGEN_SOURCE = "${zgen}/zgen.zsh";
     };
 
-    systemPackages = with pkgs; [
+    home.packages = with pkgs; [
       zsh
       nix-zsh-completions
       fasd
@@ -19,7 +18,6 @@ in {
       fd
       tmux
     ];
-  };
 
   programs.zsh = {
     enable = true;
