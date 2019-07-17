@@ -23,16 +23,15 @@ in {
   home.sessionVariables = { EDITOR = "emacs"; };
   # home.keyboard.options = "caps:escape";
 
-  xdg.configFile = {
-    # link recursively so other modules can link files in this folder,
-    # particularly in zsh/rc.d/*.zsh
-    "zsh" = {
-      source = "${dotfiles}/shell/zsh";
-      recursive = true;
-    };
-    # "doom" = {
-    #   source = doomPrivate;
-    #   recursive = true;
-    # };
-  };
+  # xdg.configFile = {
+  #   # link recursively so other modules can link files in this folder,
+  #   # particularly in zsh/rc.d/*.zsh
+  #   "zsh" = {
+  #     recursive = true;
+  #   };
+  #   "doom" = {
+  #     source = doomPrivate;
+  #     recursive = true;
+  #   };
+  # };
 }

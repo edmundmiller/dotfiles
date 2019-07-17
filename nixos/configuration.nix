@@ -2,11 +2,9 @@
 
 {
   imports = [
-    # <home-manager/nixos>
-    ./hardware-configuration.nix
+    ./machines/omen.nix
     ./services/default.nix
     ./modules/steamcontroller.nix
-    ./modules/shell.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -16,6 +14,7 @@
       grub.useOSProber = true;
       efi.canTouchEfiVariables = true;
     };
+    plymouth.enable = true;
   };
 
   fileSystems."/data" = {
@@ -80,7 +79,7 @@
     fontconfig.defaultFonts.monospace = [ "Iosevka" ];
     fonts = with pkgs; [
       fira-code-symbols
-      iosevka.override #{set = "ss05";})
+      iosevka
       noto-fonts
       symbola
       noto-fonts-cjk
