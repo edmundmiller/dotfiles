@@ -8,10 +8,8 @@
     ./hardware/storage.nix
 
     ./services/default.nix
+    ./modules/dev.nix
     ./modules/steamcontroller.nix
-    ./modules/shell.nix
-    ./modules/editors/emacs.nix
-    ./modules/git.nix
   ];
 
   networking.hostName = "nixos-omen";
