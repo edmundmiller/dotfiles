@@ -24,7 +24,7 @@
   # ];
 
   environment = {
-    systemPackages = with pkgs; [ coreutils git wget vim gnupg unzip bc ];
+    systemPackages = with pkgs; [ coreutils git wget vim gnupg unzip bc (ripgrep.override {withPCRE2 = true;})];
     variables = {
       XDG_CONFIG_HOME = "$HOME/.config";
       XDG_CACHE_HOME = "$HOME/.cache";
