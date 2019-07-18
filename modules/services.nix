@@ -27,29 +27,6 @@
       configDir = "/home/emiller/.config/syncthing";
     };
 
-    mpd = {
-      enable = true;
-      musicDirectory = "/data/emiller/Music/";
-      startWhenNeeded = true;
-      extraConfig = ''
-        input {
-                plugin "curl"
-        }
-
-        audio_output {
-            type        "pulse"
-            name        "pulse audio"
-        }
-
-        audio_output {
-            type        "fifo"
-            name        "mpd_fifo"
-            path        "/tmp/mpd.fifo"
-            format      "44100:16:2"
-        }
-      '';
-    };
-
     # Enable the X11 windowing system.
     xserver = {
       enable = true;
