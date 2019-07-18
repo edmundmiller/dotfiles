@@ -2,14 +2,16 @@
 
 {
   imports = [
-    ./. # import common settings
+    ./.
 
     # Hardware
-    ./machines/omen.nix
+    ./hardware/storage.nix
 
     ./services/default.nix
     ./modules/steamcontroller.nix
-    ./modules/zsh.nix
+    ./modules/shell.nix
+    ./modules/editors/emacs.nix
+    ./modules/git.nix
   ];
 
   networking.hostName = "nixos-omen";
@@ -33,32 +35,6 @@
     automatic = true;
     options = "--delete-older-than 30d";
   };
-
-  # environment.systemPackages = with pkgs; [
-  #   wget
-  #   vim
-  #   git
-  #   (ripgrep.override { withPCRE2 = true; })
-  #   fd
-  #   exa
-  #   firefox
-  #   gnupg
-  #   fzf
-  #   atool
-  #   file
-  #   tmux
-  #   pv
-  #   binutils
-  #   openvpn
-  #   openconnect
-  #   xclip
-  #   ((emacsPackagesNgGen emacs).emacsWithPackages
-  #   (epkgs: [ epkgs.emacs-libvterm ]))
-  #   openssl
-  #   texlive.combined.scheme-full
-  #   # home-manager
-  #   docker-compose
-  # ];
 
   # Monitor backlight control
   programs.light.enable = true;

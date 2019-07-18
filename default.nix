@@ -4,7 +4,7 @@
   imports = [
     <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
     <home-manager/nixos>
-    # /etc/nixos/hardware-configuration.nix
+    /etc/nixos/hardware-configuration.nix
   ];
 
   boot = {
@@ -17,7 +17,6 @@
     plymouth.enable = true;
   };
 
-  # Just the bear necessities~
   nixpkgs.config.allowUnfree = true;
 
   # nixpkgs.overlays = [
@@ -25,15 +24,7 @@
   # ];
 
   environment = {
-    systemPackages = with pkgs; [
-      coreutils
-      git
-      wget
-      vim
-      gnupg
-      unzip
-      bc
-    ];
+    systemPackages = with pkgs; [ coreutils git wget vim gnupg unzip bc ];
     variables = {
       XDG_CONFIG_HOME = "$HOME/.config";
       XDG_CACHE_HOME = "$HOME/.cache";
@@ -53,23 +44,27 @@
   # Block well known bad hosts
   networking.extraHosts = builtins.readFile (builtins.fetchurl {
     name = "blocked_hosts.txt";
-    url = "http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext";
+    url =
+    "http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext";
   });
 
   nix.trustedUsers = [ "root" "@wheel" ];
   nix.nixPath = options.nix.nixPath.default ++ [ "config=${./config}" ];
   users.users.emiller = {
-    home = "/home/emiller";
+    # home = "/home/emiller";
     isNormalUser = true;
     uid = 1000;
-    extraGroups = [ "wheel" "video" ];
+    extraGroups = [ "wheel" "video" "networkmanager" ];
     shell = pkgs.zsh;
     openssh = { authorizedKeys.keys = [ "/home/emiller/.ssh/id_rsa" ]; };
   };
 
   home-manager.users.emiller = {
     xdg.enable = true;
-    home.file."bin" = { source = ./bin; recursive = true; };
+    home.file."bin" = {
+      source = ./bin;
+      recursive = true;
+    };
   };
 
   programs.gnupg.agent = {

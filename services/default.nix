@@ -8,7 +8,6 @@
   #   defaultTarget = "main";
   # };
   services = {
-    emacs.defaultEditor = true;
     # Enable the OpenSSH daemon.
     openssh = {
       enable = true;
