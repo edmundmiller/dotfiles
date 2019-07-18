@@ -1,17 +1,16 @@
 { config, pkgs, libs, ... }:
 
-let zgen = builtins.fetchGit "https://github.com/tarjoilija/zgen";
-in {
+{
   environment = {
     variables = {
       ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
       ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
-      ZGEN_DIR = "$XDG_CACHE_HOME/zgen";
-      ZGEN_SOURCE = "${zgen}/zgen.zsh";
+      ANTIBODY_HOME = "$XDG_CACHE_HOME/antibody";
     };
 
     systemPackages = with pkgs; [
       zsh
+      antibody
       nix-zsh-completions
       fasd
       exa
