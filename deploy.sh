@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 echo "Nixos"
-sudo ln -sf /home/emiller/.dotfiles/nixos /etc/nixos
+sudo nix-channel --add https://github.com/rycee/home-manager/archive/master.tar.gz home-manager
+sudo nix-channel --update
+sudo mkdir -p /etc/nixos
 sudo chown -R emiller:root /etc/nixos
-sudo nixos-rebuild boot
-
-echo "Home-manager"
-ln -sf /home/emiller/.dotfiles/home /home/emiller/.config/nixpkgs
-home-manager switch
+sudo ln -sf /home/emiller/.dotfiles/configuration.omen.nix /etc/nixos/configuration.nix
+echo "NIXOS-REBUILD SWITCH"
+sudo nixos-rebuild switch

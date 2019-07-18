@@ -17,4 +17,5 @@
     "zsh/rc.d/aliases.emacs.zsh".source = <config/emacs/aliases.zsh>;
     "zsh/rc.d/env.emacs.zsh".source = <config/emacs/env.zsh>;
   };
+  # TODO override https://nixos.org/nixos/manual/index.html#sec-customising-packages
 }
