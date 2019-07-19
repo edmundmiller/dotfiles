@@ -35,8 +35,8 @@ in {
       };
     };
 
-    # xdg.configFile = {
-    #   "zsh/rc.d/aliases.git.zsh".source = <config/git/aliases.zsh>;
-    # };
+    xdg.configFile = {
+      "zsh/rc.d/aliases.git.zsh".source = <config/git/aliases.zsh>;
+    };
   };
 }
