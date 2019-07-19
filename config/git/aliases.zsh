@@ -3,11 +3,7 @@
 g() { [[ $# = 0 ]] && git status --short . || git $*; }
 compdef g=hub
 
-if _is_callable hub; then
-  alias git='noglob hub'
-else
-  alias git='noglob git'
-fi
+alias git='noglob hub'
 
 alias gbr='git browse'
 alias gi='git init'
