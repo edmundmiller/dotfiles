@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./keybase.nix ./transmission.nix ];
+  imports = [ ./keybase.nix ./pia.nix ./transmission.nix ];
 
   # services.autorandr = {
   #   enable = true;
