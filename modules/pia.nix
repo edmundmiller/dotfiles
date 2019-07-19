@@ -35,7 +35,7 @@ let pia-config = with pkgs; stdenv.mkDerivation rec {
   fixupPhase = ''
     sed -i "s|crl.rsa.2048.pem|$out/certs/\0|g" "$out"/config/*.ovpn
     sed -i "s|ca.rsa.2048.crt|$out/certs/\0|g" "$out"/config/*.ovpn
-    sed -i "s|auth-user-pass|auth-user-pass /home/emiller/private_secrets/other/pia.conf|g" "$out"/config/*.ovpn
+    sed -i "s|auth-user-pass|auth-user-pass ${./pia-login.conf}|g" "$out"/config/*.ovpn
   '';
 };
 in
