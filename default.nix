@@ -51,9 +51,12 @@
   nix.trustedUsers = [ "root" "@wheel" ];
   nix.nixPath = options.nix.nixPath.default ++ [ "config=${./config}" ];
   users.users.emiller = {
-    # home = "/home/emiller";
+    home = "/home/emiller";
     isNormalUser = true;
     uid = 1000;
+
+    description = "Edmund Miller";
+    name = "emiller";
     extraGroups = [ "wheel" "video" "networkmanager" ];
     shell = pkgs.zsh;
     openssh = { authorizedKeys.keys = [ "/home/emiller/.ssh/id_rsa" ]; };
