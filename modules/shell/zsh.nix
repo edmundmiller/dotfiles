@@ -1,5 +1,6 @@
 { config, pkgs, libs, ... }:
 
+# TODO Auto magically install plugins with antibody
 {
   environment = {
     variables = {
