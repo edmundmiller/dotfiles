@@ -7,11 +7,6 @@ r() {
   sched "$time" "notify-send --urgency=critical 'Reminder' '$@'; ding";
 }; compdef r=sched
 
-# aliases common to all shells
-alias q=exit
-alias clr=clear
-alias sudo='sudo '
-
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'

@@ -1,3 +1,4 @@
+# antibody bundle < zsh_plugins.txt > zsh_plugins.sh
 hlissner/zsh-autopair branch:develop
 zsh-users/zsh-history-substring-search
 zdharma/history-search-multi-word
