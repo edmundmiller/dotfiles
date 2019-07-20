@@ -6,6 +6,7 @@ let
   email = "edmund.a.miller@gmail.com";
   protonmail = "edmund.a.miller@protonmail.com";
 in {
+  environment.systemPackages = with pkgs; [ mu ];
   home-manager.users.emiller = {
     accounts.email = {
       maildirBasePath = "${maildir}";
