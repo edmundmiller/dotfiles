@@ -1,8 +1,9 @@
 { config, pkgs, ... }:
 
 {
-  environment.systemPackages = with pkgs; [ pkgs.steamcontroller-udev-rules ];
-
+  environment.systemPackages = with pkgs; [ steamcontroller-udev-rules steam ];
+  hardware.opengl.driSupport32Bit = true;
+  hardware.pulseaudio.support32Bit = true;
   nixpkgs.config.packageOverrides = pkgs: {
     steamcontroller-udev-rules = pkgs.writeTextFile {
       name = "steamcontroller-udev-rules";
