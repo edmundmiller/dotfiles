@@ -9,7 +9,6 @@
   environment.systemPackages = with pkgs; [
     yarn
     nodejs-12_x
-    python37Packages.nodeenv
   ];
 
   home-manager.users.emiller.xdg.configFile = {
