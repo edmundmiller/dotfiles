@@ -1,6 +1,8 @@
 { config, lib, pkgs, ... }:
 
 {
+  users.users.emiller.extraGroups = [ "transmission" ];
+
   services.transmission = {
     enable = true;
     settings = {

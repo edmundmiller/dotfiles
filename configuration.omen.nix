@@ -59,22 +59,5 @@
     };
   };
 
-  # users = {
-  #   defaultUserShell = pkgs.zsh;
-  #   users = {
-  #     emiller = {
-  #       home = "/home/emiller";
-  #       isNormalUser = true;
-  #       description = "Edmund Miller";
-  #       name = "emiller";
-  #       uid = 1000;
-  #       useDefaultShell = true;
-  #       extraGroups =
-  #       [ "wheel" "networkmanager" "docker" "transmission" "mpd" ];
-  #       packages = [ pkgs.steam pkgs.steam-run ];
-  #       openssh = { authorizedKeys.keys = [ "/home/emiller/.ssh/id_rsa" ]; };
-  #     };
-  #   };
-  #   groups.vboxusers.members = [ "emiller" ];
-  # };
+  users.users.emiller.extraGroups = [ "networkmanager" ];
 }

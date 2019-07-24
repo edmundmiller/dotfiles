@@ -31,6 +31,8 @@
     };
   };
 
+  users.users.emiller.extraGroups = [ "mpd" ];
+
   home-manager.users.emiller = {
     programs = { beets.enable = true; };
 
