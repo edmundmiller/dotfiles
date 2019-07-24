@@ -9,6 +9,7 @@ in {
     gitAndTools.git-hub
     gitAndTools.gitflow
     gitAndTools.hub
+    gitAndTools.pre-commit
   ];
   home-manager.users.emiller = {
     programs = {
