@@ -24,12 +24,22 @@
   # ];
 
   environment = {
-    systemPackages = with pkgs; [ coreutils git wget vim gnupg unzip bc (ripgrep.override {withPCRE2 = true;})];
+    systemPackages = with pkgs; [
+      coreutils
+      git
+      wget
+      vim
+      gnupg
+      unzip
+      bc
+      (ripgrep.override { withPCRE2 = true; })
+    ];
     variables = {
       XDG_CONFIG_HOME = "$HOME/.config";
       XDG_CACHE_HOME = "$HOME/.cache";
       XDG_DATA_HOME = "$HOME/.local/share";
       XDG_BIN_HOME = "$HOME/.local/bin";
+      DOTFILES = "$HOME/.dotfiles";
       # GTK2_RC_FILES = "$HOME/.config/gtk-2.0/gtkrc";
     };
     shellAliases = {
@@ -54,10 +64,9 @@
     home = "/home/emiller";
     isNormalUser = true;
     uid = 1000;
-
     description = "Edmund Miller";
     name = "emiller";
-    extraGroups = [ "wheel" "video" "networkmanager" ];
+    extraGroups = [ "wheel" "video" ];
     shell = pkgs.zsh;
     openssh = { authorizedKeys.keys = [ "/home/emiller/.ssh/id_rsa" ]; };
   };
