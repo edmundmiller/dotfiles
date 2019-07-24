@@ -1,7 +1,12 @@
 { config, pkgs, ... }:
 
 {
-  environment.systemPackages = with pkgs; [ steamcontroller-udev-rules steam ];
+  environment.systemPackages = with pkgs; [
+    steamcontroller-udev-rules
+    steam
+    steam-run
+  ];
+
   hardware.opengl.driSupport32Bit = true;
   hardware.pulseaudio.support32Bit = true;
   nixpkgs.config.packageOverrides = pkgs: {
