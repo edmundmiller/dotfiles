@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./keybase.nix ./pia.nix ./transmission.nix ];
+  imports = [ ./keybase.nix ./pia.nix ./transmission.nix ./syncthing.nix ];
 
   # services.autorandr = {
   #   enable = true;
@@ -18,14 +18,6 @@
     gnome3.chrome-gnome-shell.enable = true;
     localtime.enable = true;
     dbus.packages = with pkgs; [ gnome3.dconf ];
-
-    syncthing = {
-      enable = true;
-      openDefaultPorts = true;
-      user = "emiller";
-      dataDir = "/home/emiller/Sync";
-      configDir = "/home/emiller/.config/syncthing";
-    };
 
     # Enable the X11 windowing system.
     xserver = {
