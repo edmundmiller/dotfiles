@@ -19,49 +19,7 @@
     localtime.enable = true;
     dbus.packages = with pkgs; [ gnome3.dconf ];
 
-    # Enable the X11 windowing system.
     xserver = {
-      enable = true;
-      layout = "us";
-      xkbOptions = "caps:escape";
-      videoDrivers = [ "nvidiaBeta" ];
-      libinput = {
-        enable = true;
-        disableWhileTyping = true;
-        tapping = false;
-      };
-
-      displayManager = {
-        gdm.enable = true;
-        gdm.wayland = false;
-        # lightdm = {
-        #   enable = true;
-        #   greeters.gtk = {
-        #     # extraConfig = ;
-        #     cursorTheme.name = "Adwaita";
-        #     cursorTheme.package = pkgs.gnome3.adwaita-icon-theme;
-        #     iconTheme.name = "Adwaita";
-        #     iconTheme.package = pkgs.gnome3.adwaita-icon-theme;
-        #     theme.name = "Adwaita";
-        #     theme.package = pkgs.gnome3.adwaita-icon-theme;
-        #   };
-        # };
-      };
-      # Gnome desktop
-      # * Slightly more familiar than KDE for people who are used to working with Ubuntu
-      # * Gnome3 works out of the box with xmonad
-      desktopManager = {
-        gnome3 = { enable = true; };
-
-        # default = "xfce";
-        xterm.enable = false;
-        xfce = {
-          enable = true;
-          noDesktop = true;
-          enableXfwm = false;
-        };
-      };
-
       windowManager = {
         default = "xmonad";
         xmonad = {
@@ -76,10 +34,4 @@
       };
     };
   };
-
-  # virtualisation = {
-  #   docker.enable = true;
-  #   docker.autoPrune.enable = true;
-  #   virtualbox.host.enable = true;
-  # };
 }
