@@ -59,11 +59,19 @@ in {
           };
           realName = "${name}";
           msmtp.enable = true;
+          smtp = {
+            host = "smtp.office365.com";
+            port = 587;
+            tls.useStartTls = true;
+          };
         };
       };
     };
 
-    programs = { mbsync = { enable = true; }; };
+    programs = {
+      msmtp.enable = true;
+      mbsync.enable = true;
+    };
 
     services = {
       mbsync = {
