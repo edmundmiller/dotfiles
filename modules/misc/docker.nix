@@ -6,13 +6,9 @@
   virtualisation = {
     docker.enable = true;
     docker.autoPrune.enable = true;
-    virtualbox.host.enable = true;
   };
 
-  users = {
-    users.emiller.extraGroups = [ "docker" ];
-    groups.vboxusers.members = [ "emiller" ];
-  };
+  users.users.emiller.extraGroups = [ "docker" ];
 
   home-manager.users.emiller.xdg.configFile = {
     "zsh/rc.d/aliases.docker.zsh".source = <config/docker/aliases.zsh>;

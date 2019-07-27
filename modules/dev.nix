@@ -8,5 +8,8 @@
     ./shell/ncmpcpp+mpd.nix
     # ./shell/tmux.nix
     ./shell/zsh.nix
+
+    ./misc/docker.nix
+    ./misc/virtualbox.nix
   ];
 }
