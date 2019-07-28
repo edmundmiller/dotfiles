@@ -4,8 +4,12 @@
   environment.systemPackages = with pkgs; [ docker docker-compose ];
 
   virtualisation = {
-    docker.enable = true;
-    docker.autoPrune.enable = true;
+    docker = {
+      enable = true;
+      autoPrune.enable = true;
+      enableOnBoot = false;
+      # listenOptions = [];
+    };
   };
 
   users.users.emiller.extraGroups = [ "docker" ];
