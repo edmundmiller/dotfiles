@@ -10,7 +10,6 @@
     enable = true;
     hooks = {
       postswitch = {
-        # "notify-i3" = "${pkgs.i3}/bin/i3-msg restart";
         # "change-background" = readFile ./change-background.sh;
         "change-dpi" = ''
           case "$AUTORANDR_CURRENT_PROFILE" in
@@ -18,10 +17,10 @@
               DPI=96
               ;;
             home-dual)
-              DPI=164
+              DPI=186
               ;;
             home-single)
-              DPI=164
+              DPI=186
               ;;
             *)
               echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
@@ -30,42 +29,8 @@
 
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
         '';
-        "change-font" = ''
-          case "$AUTORANDR_CURRENT_PROFILE" in
-            mobile)
-              FONTSIZE=13
-              ;;
-            home-dual)
-              FONTSIZE=18
-              ;;
-            home-single)
-              FONTSIZE=18
-              ;;
-            *)
-              echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
-              exit 1
-          esac
-
-          echo "*font: xft:iosevka:size=$FONTSIZE" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
-        '';
-        "change-cursor" = ''
-          case "$AUTORANDR_CURRENT_PROFILE" in
-            mobile)
-              CURSOR=32
-              ;;
-            home-dual)
-              CURSOR=64
-              ;;
-            home-single)
-              CURSOR=64
-              ;;
-            *)
-              echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
-              exit 1
-          esac
-
-          echo "Xcursor.size: $CURSOR" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
-        '';
+        "bspwm" = "${pkgs.bspwm}/bin/bspc wm --restart";
+        "polybar" = "${pkgs.polybar}/bin/polybar -r top &";
       };
     };
     profiles = {
