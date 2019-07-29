@@ -18,20 +18,5 @@
     gnome3.chrome-gnome-shell.enable = true;
     localtime.enable = true;
     dbus.packages = with pkgs; [ gnome3.dconf ];
-
-    xserver = {
-      windowManager = {
-        default = "xmonad";
-        xmonad = {
-          enable = true;
-          enableContribAndExtras = true;
-          extraPackages = haskellPackages: [
-            haskellPackages.xmonad-contrib
-            haskellPackages.xmonad-extras
-            haskellPackages.xmonad
-          ];
-        };
-      };
-    };
   };
 }
