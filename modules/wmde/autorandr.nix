@@ -1,8 +1,73 @@
 { config, lib, pkgs, ... }:
 
 {
+  services.autorandr = {
+    enable = true;
+    defaultTarget = "main";
+  };
+
   home-manager.users.emiller.programs.autorandr = {
     enable = true;
+    hooks = {
+      postswitch = {
+        # "notify-i3" = "${pkgs.i3}/bin/i3-msg restart";
+        # "change-background" = readFile ./change-background.sh;
+        "change-dpi" = ''
+          case "$AUTORANDR_CURRENT_PROFILE" in
+            mobile)
+              DPI=96
+              ;;
+            home-dual)
+              DPI=164
+              ;;
+            home-single)
+              DPI=164
+              ;;
+            *)
+              echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
+              exit 1
+          esac
+
+          echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
+        '';
+        "change-font" = ''
+          case "$AUTORANDR_CURRENT_PROFILE" in
+            mobile)
+              FONTSIZE=13
+              ;;
+            home-dual)
+              FONTSIZE=18
+              ;;
+            home-single)
+              FONTSIZE=18
+              ;;
+            *)
+              echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
+              exit 1
+          esac
+
+          echo "*font: xft:iosevka:size=$FONTSIZE" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
+        '';
+        "change-cursor" = ''
+          case "$AUTORANDR_CURRENT_PROFILE" in
+            mobile)
+              CURSOR=32
+              ;;
+            home-dual)
+              CURSOR=64
+              ;;
+            home-single)
+              CURSOR=64
+              ;;
+            *)
+              echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
+              exit 1
+          esac
+
+          echo "Xcursor.size: $CURSOR" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
+        '';
+      };
+    };
     profiles = {
       home-dual = {
         fingerprint = {
@@ -25,11 +90,6 @@
             position = "0x0";
             rate = "60.00";
             # dpi = 182;
-            scale = {
-              # method = "pixel";
-              x = 0.5;
-              y = 0.5;
-            };
           };
           HDMI-0 = {
             enable = true;
@@ -37,11 +97,6 @@
             position = "3840x0";
             rate = "60.00";
             # dpi = 182;
-            scale = {
-              # method = "pixel";
-              x = 0.5;
-              y = 0.5;
-            };
           };
         };
       };
@@ -57,19 +112,15 @@
         };
         config = {
           DP-0 = { enable = false; };
-          HDMI-0 = { enable = false; };
+          DP-2 = { enable = false; };
+          DP-3 = { enable = false; };
+          DP-4 = { enable = false; };
           DP-1 = {
             enable = true;
             primary = true;
             mode = "3840x2160";
             position = "0x0";
             rate = "60.00";
-            dpi = 182;
-            scale = {
-              # method = "pixel";
-              x = 0.5;
-              y = 0.5;
-            };
           };
         };
       };
@@ -86,11 +137,6 @@
             mode = "1920x1080";
             position = "0x0";
             rate = "60.01";
-            scale = {
-              method = "factor";
-              x = 1;
-              y = 1;
-            };
           };
         };
       };
