@@ -1,0 +1,87 @@
+[colors]
+blk = #141517
+bblk = #969896
+red = #cc6666
+bred = #de935f
+grn = #b5bd68
+bgrn = #757d28
+ylw = #f0c674
+bylw = #f9a03f
+blu = #81a2be
+bblu = #2a8fed
+mag = #b294bb
+bmag = #bc77a8
+cyn = #8abeb7
+bcyn = #a3685a
+wht = #c5c8c6
+bwht = #ffffff
+bg = ${self.blk}
+fg = ${self.wht}
+icons = #555856
+
+[global/wm]
+margin-top = 0
+margin-bottom = 28
+
+[bar/top]
+monitor = DP-1
+top = true
+fixed-center = true
+border-size = 0
+wm-restack = bspwm
+
+width = 100%
+height = 35
+radius = 0
+
+padding-left = 2
+padding-right = 2
+tray-position = left
+
+modules-right = date
+modules-center = bspwm
+# modules-left = cpu memory
+
+background = ${colors.bg}
+foreground = ${colors.fg}
+
+font-0 = "Iosevka:weight=regular:size=15;3"
+font-1 = "FontAwesome:size=10;3"
+
+scroll-up = bspc desktop -f prev.local
+scroll-down = bspc desktop -f next.local
+
+[module/backlight]
+type = internal/xbacklight
+
+[module/bspwm]
+type = internal/bspwm
+format = <label-mode> <label-state>
+index-sort = true
+
+label-focused = [%name%]
+
+label-occupied = %name%
+
+label-urgent =  %name%
+label-urgent-background = ${colors.red}
+
+label-empty = %name%
+label-empty-foreground = #55
+
+[module/date]
+type = internal/date
+date-alt = %A   %H:%M
+date = %A %d/%m/%y   %H:%M:%S
+interval = 1
+
+format-foreground = ${colors.bgrn}
+
+[module/pulseaudio]
+type = internal/pulseaudio
+sink = alsa_output.pci-0000_00_1f.3.analog-stereo
+
+[module/vpn-openvpn-status]
+type = custom/script
+exec = ~/.config/polybar/modules/vpn-openvpn-status.sh
+interval = 5
