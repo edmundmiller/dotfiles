@@ -36,6 +36,9 @@ Print
 super + shift + e
 	bspc quit
 
+super + shift + a
+    autorandr -c
+
 # close and kill
 super + {_,shift + }q
 	bspc node -{c,k}

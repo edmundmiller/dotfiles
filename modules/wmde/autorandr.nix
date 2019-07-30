@@ -14,7 +14,7 @@
         "change-dpi" = ''
           case "$AUTORANDR_CURRENT_PROFILE" in
             mobile)
-              DPI=96
+              DPI=144
               ;;
             home-dual)
               DPI=186
@@ -29,7 +29,7 @@
 
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
         '';
-        "bspwm" = "${pkgs.bspwm}/bin/bspc wm --restart";
+        # "bspwm" = "${pkgs.bspwm}/bin/bspc wm --restart";
         "polybar" = "${pkgs.polybar}/bin/polybar -r top &";
       };
     };
@@ -64,6 +64,10 @@
             # dpi = 182;
           };
         };
+        hooks.postswitch = ''
+          bspc monitor DP-1 -d {1,2,3,4,5}
+          bspc monitor HDMI-0 -d HDMI-O/1
+        '';
       };
 
       home-single = {
@@ -88,6 +92,10 @@
             rate = "60.00";
           };
         };
+        hooks.postswitch = ''
+          bspc monitor DP-1 -d {1,2,3,4,5}
+          bspc monitor HDMI-0 -d {6}
+        '';
       };
 
       mobile = {
@@ -104,6 +112,9 @@
             rate = "60.01";
           };
         };
+        hooks.postswitch = ''
+          bspc monitor DP-0 -d {1,2,3,4,5}
+        '';
       };
     };
   };
