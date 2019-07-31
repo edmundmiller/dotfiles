@@ -30,7 +30,7 @@
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
         '';
         # "bspwm" = "${pkgs.bspwm}/bin/bspc wm --restart";
-        "polybar" = "${pkgs.polybar}/bin/polybar -r top &";
+        "polybar" = "~/.config/polybar/launch.sh";
       };
     };
     profiles = {
@@ -94,7 +94,6 @@
         };
         hooks.postswitch = ''
           bspc monitor DP-1 -d {1,2,3,4,5}
-          bspc monitor HDMI-0 -d {6}
         '';
       };
 
@@ -104,6 +103,10 @@
           "00ffffffffffff000daee71500000000081b0104952213780228659759548e271e505400000001010101010101010101010101010101b43b804a713834405036680058c11000001acd27804a713834405036680058c11000001a00000000000000000000000000000000000000000002000c47ff0b3c6e1314246e00000000b6";
         };
         config = {
+          DP-2 = { enable = false; };
+          DP-3 = { enable = false; };
+          DP-4 = { enable = false; };
+          DP-1 = { enable = false; };
           DP-0 = {
             enable = true;
             primary = true;
