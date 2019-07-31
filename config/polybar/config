@@ -17,6 +17,8 @@ wht = #c5c8c6
 bwht = #ffffff
 bg = ${self.blk}
 fg = ${self.wht}
+bg-alt = #0F1013
+fg-alt = #25282a
 icons = #555856
 
 [global/wm]
@@ -38,15 +40,16 @@ padding-left = 2
 padding-right = 2
 tray-position = left
 
-modules-right = date
+modules-right = vpn-openvpn-status wlan date powermenu
 modules-center = bspwm
-# modules-left = cpu memory
+modules-left = pulseaudio battery
 
 background = ${colors.bg}
 foreground = ${colors.fg}
 
-font-0 = "Iosevka:weight=regular:size=15;3"
-font-1 = "FontAwesome:size=10;3"
+font-0 = "Iosevka:weight=regular:size=17;2"
+font-1 = "Siji:pixelsize=19;2"
+font-2 = "FontAwesome:fontformat=truetype:size=18;1"
 
 scroll-up = bspc desktop -f prev.local
 scroll-down = bspc desktop -f next.local
@@ -72,16 +75,144 @@ label-empty-foreground = #55
 [module/date]
 type = internal/date
 date-alt = %A   %H:%M
-date = %A %d/%m/%y   %H:%M:%S
+date = %A %y/%m/%d   %H:%M:%S
 interval = 1
 
-format-foreground = ${colors.bgrn}
+format-foreground = ${colors.grn}
+
+[module/powermenu]
+type = custom/menu
+
+expand-right = true
+
+; FIXME use icons
+label-open = power
+label-open-foreground = ${colors.red}
+label-open-underline = ${colors.red}
+
+label-close = close
+label-close-foreground = ${colors.wht}
+label-close-underline = ${colors.wht}
+
+menu-0-0 = lock
+menu-0-0-foreground = ${colors.cyn}
+menu-0-0-underline = ${colors.cyn}
+; FIXME
+menu-0-0-exec = betterlockscreen -l
+
+menu-0-1 = logout
+menu-0-1-foreground = ${colors.grn}
+menu-0-1-underline = ${colors.grn}
+menu-0-1-exec = kill -9 -1
+
+menu-0-2 = restart
+menu-0-2-foreground = ${colors.ylw}
+menu-0-2-underline = ${colors.ylw}
+menu-0-2-exec = shutdown -r now
+
+menu-0-3 = shutdown
+menu-0-3-foreground = ${colors.red}
+menu-0-3-underline = ${colors.red}
+menu-0-3-exec = shutdown -h now
 
 [module/pulseaudio]
 type = internal/pulseaudio
 sink = alsa_output.pci-0000_00_1f.3.analog-stereo
 
+; format-volume = <ramp-volume> <bar-volume>
+format-volume = <bar-volume>
+
+; FIXME
+; label-volume-foreground = ${colors.fg}
+; ramp-volume-0 = 🔇
+; ramp-volume-1 = 🔈
+; ramp-volume-2 = 🔉
+; ramp-volume-3 = 🔊
+;
+; format-muted-foreground = ${colors.red}
+; label-muted = 🔇
+
+bar-volume-width = 8
+bar-volume-foreground-0 = ${colors.blu}
+bar-volume-foreground-1 = ${colors.blu}
+bar-volume-foreground-2 = ${colors.blu}
+bar-volume-foreground-3 = ${colors.blu}
+bar-volume-foreground-4 = ${colors.blu}
+bar-volume-foreground-5 = ${colors.blu}
+bar-volume-foreground-6 = ${colors.blu}
+bar-volume-gradient = false
+bar-volume-indicator = |
+bar-volume-indicator-font = 2
+bar-volume-indicator-foreground = #ff
+bar-volume-fill = -
+bar-volume-fill-font = 2
+bar-volume-empty = -
+bar-volume-empty-font = 2
+bar-volume-empty-foreground = ${colors.fg-alt}
+
 [module/vpn-openvpn-status]
 type = custom/script
-exec = ~/.config/polybar/modules/vpn-openvpn-status.sh
+exec = ~/.dotfiles/config/polybar/modules/vpn-openvpn-status.sh
 interval = 5
+
+[module/wlan]
+
+type = internal/network
+interface = wlo1
+interval = 3.0
+
+format-connected = <ramp-signal> <label-connected>
+;format-connected-underline = ${colors.primary}
+label-connected = %essid%
+
+format-disconnected =
+;format-disconnected = <label-disconnected>
+;format-disconnected-underline = ${self.format-connected-underline}
+;label-disconnected = %ifname% disconnected
+;label-disconnected-foreground = ${colors.fg-alt}
+
+ramp-signal-0 = 
+ramp-signal-1 = 
+ramp-signal-2 = 
+ramp-signal-3 = 
+ramp-signal-4 = 
+ramp-signal-foreground = ${colors.fg}
+
+; TODO
+[module/org-clock]
+type = custom/script
+interval = 10;
+exec = ${scripts}/org-clock.sh;
+click-left = emacsclient --eval '(org-clock-out)' && echo ' Stopped!';
+
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = ADP1
+
+format-charging = <animation-charging> <label-charging>
+format-charging-underline = ${colors.grn}
+format-charging-padding = 1
+
+format-discharging = <ramp-capacity> <label-discharging>
+format-discharging-underline = ${colors.ylw}
+format-discharging-padding = 1
+
+format-full =   <label-full>
+format-full-underline = ${self.format-charging-underline}
+format-full-overline = ${self.format-charging-underline}
+format-full-padding = 1
+
+ramp-capacity-0 = 
+ramp-capacity-1 = 
+ramp-capacity-2 = 
+ramp-capacity-foreground = ${colors.wht}
+
+animation-charging-0 = 
+animation-charging-1 = 
+animation-charging-2 = 
+animation-charging-3 = 
+animation-charging-4 = 
+animation-charging-foreground = {colors.wht}
+animation-charging-framerate = 500
