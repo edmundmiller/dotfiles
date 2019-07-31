@@ -85,32 +85,31 @@ type = custom/menu
 
 expand-right = true
 
-; FIXME use icons
-label-open = power
+label-open = "  "
 label-open-foreground = ${colors.red}
 label-open-underline = ${colors.red}
 
-label-close = close
+label-close = "  "
 label-close-foreground = ${colors.wht}
 label-close-underline = ${colors.wht}
 
-menu-0-0 = lock
+menu-0-0 = "  "
 menu-0-0-foreground = ${colors.cyn}
 menu-0-0-underline = ${colors.cyn}
 ; FIXME
 menu-0-0-exec = betterlockscreen -l
 
-menu-0-1 = logout
+menu-0-1 = "  "
 menu-0-1-foreground = ${colors.grn}
 menu-0-1-underline = ${colors.grn}
 menu-0-1-exec = kill -9 -1
 
-menu-0-2 = restart
+menu-0-2 = "  "
 menu-0-2-foreground = ${colors.ylw}
 menu-0-2-underline = ${colors.ylw}
 menu-0-2-exec = shutdown -r now
 
-menu-0-3 = shutdown
+menu-0-3 = "  "
 menu-0-3-foreground = ${colors.red}
 menu-0-3-underline = ${colors.red}
 menu-0-3-exec = shutdown -h now
