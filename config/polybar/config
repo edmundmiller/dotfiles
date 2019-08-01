@@ -25,7 +25,7 @@ icons = #555856
 margin-top = 0
 margin-bottom = 28
 
-[bar/top]
+[bar/main]
 monitor = ${env:MONITOR:}
 top = true
 fixed-center = true
@@ -40,14 +40,39 @@ padding-left = 2
 padding-right = 2
 tray-position = left
 
-modules-right = vpn-openvpn-status wlan date powermenu
+modules-right =  pulseaudio-rofi-input pulseaudio-rofi-output battery date powermenu
 modules-center = bspwm
-modules-left = pulseaudio battery
+modules-left = vpn-openvpn-status wlan
 
 background = ${colors.bg}
 foreground = ${colors.fg}
 
-font-0 = "Iosevka:weight=regular:size=17;2"
+font-0 = "Iosevka:weight=regular:size=17;3"
+font-1 = "FontAwesome:fontformat=truetype:size=18;1"
+
+scroll-up = bspc desktop -f prev.local
+scroll-down = bspc desktop -f next.local
+
+[bar/side]
+monitor = ${env:MONITOR:}
+top = true
+fixed-center = true
+border-size = 0
+wm-restack = bspwm
+
+width = 100%
+height = 35
+radius = 0
+
+padding-left = 2
+padding-right = 2
+
+modules-center = mpd
+
+background = ${colors.bg}
+foreground = ${colors.fg}
+
+font-0 = "Iosevka:weight=regular:size=17;3"
 font-1 = "Siji:pixelsize=19;2"
 font-2 = "FontAwesome:fontformat=truetype:size=18;1"
 
@@ -114,40 +139,24 @@ menu-0-3-foreground = ${colors.red}
 menu-0-3-underline = ${colors.red}
 menu-0-3-exec = shutdown -h now
 
-[module/pulseaudio]
-type = internal/pulseaudio
-sink = alsa_output.pci-0000_00_1f.3.analog-stereo
+[module/pulseaudio-rofi-output]
+type = custom/script
+exec = ~/.config/polybar/modules/pulseaudio-rofi.sh --output_volume_listener
+tail = true
+click-right = ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --output
 
-; format-volume = <ramp-volume> <bar-volume>
-format-volume = <bar-volume>
+click-left = ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --mute
+scroll-up =  ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_up
+scroll-down = ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_down
 
-; FIXME
-; label-volume-foreground = ${colors.fg}
-; ramp-volume-0 = 🔇
-; ramp-volume-1 = 🔈
-; ramp-volume-2 = 🔉
-; ramp-volume-3 = 🔊
-;
-; format-muted-foreground = ${colors.red}
-; label-muted = 🔇
-
-bar-volume-width = 8
-bar-volume-foreground-0 = ${colors.blu}
-bar-volume-foreground-1 = ${colors.blu}
-bar-volume-foreground-2 = ${colors.blu}
-bar-volume-foreground-3 = ${colors.blu}
-bar-volume-foreground-4 = ${colors.blu}
-bar-volume-foreground-5 = ${colors.blu}
-bar-volume-foreground-6 = ${colors.blu}
-bar-volume-gradient = false
-bar-volume-indicator = |
-bar-volume-indicator-font = 2
-bar-volume-indicator-foreground = #ff
-bar-volume-fill = -
-bar-volume-fill-font = 2
-bar-volume-empty = -
-bar-volume-empty-font = 2
-bar-volume-empty-foreground = ${colors.fg-alt}
+[module/pulseaudio-rofi-input]
+type = custom/script
+exec = ~/.config/polybar/modules/pulseaudio-rofi.sh --input_volume_listener
+tail = true
+click-right = ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --input
+click-left = ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --mute_source
+scroll-up =  ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_source_up
+scroll-down = ~/.dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_source_down
 
 [module/vpn-openvpn-status]
 type = custom/script
@@ -161,20 +170,20 @@ interface = wlo1
 interval = 3.0
 
 format-connected = <ramp-signal> <label-connected>
-;format-connected-underline = ${colors.primary}
+format-connected-underline = ${colors.blu}
 label-connected = %essid%
 
-format-disconnected =
-;format-disconnected = <label-disconnected>
-;format-disconnected-underline = ${self.format-connected-underline}
-;label-disconnected = %ifname% disconnected
-;label-disconnected-foreground = ${colors.fg-alt}
+format-packetloss = <animation-packetloss> <label-connected>
+format-disconnected = <label-disconnected>
+format-disconnected-underline = ${self.format-connected-underline}
+label-disconnected = %ifname% disconnected
+label-disconnected-foreground = ${colors.fg}
 
-ramp-signal-0 = 
-ramp-signal-1 = 
-ramp-signal-2 = 
-ramp-signal-3 = 
-ramp-signal-4 = 
+ramp-signal-0 = 
+ramp-signal-1 = 
+ramp-signal-2 = 
+ramp-signal-3 = 
+ramp-signal-4 = 
 ramp-signal-foreground = ${colors.fg}
 
 ; TODO
@@ -198,6 +207,7 @@ format-discharging = <ramp-capacity> <label-discharging>
 format-discharging-underline = ${colors.ylw}
 format-discharging-padding = 1
 
+full-at = 99
 format-full =   <label-full>
 format-full-underline = ${self.format-charging-underline}
 format-full-overline = ${self.format-charging-underline}
@@ -215,3 +225,59 @@ animation-charging-3 = 
 animation-charging-4 = 
 animation-charging-foreground = {colors.wht}
 animation-charging-framerate = 500
+
+; TODO
+[module/mpd]
+type = internal/mpd
+
+host = 127.0.0.1
+port = 6600
+
+
+format-online = <bar-progress> <label-song>
+
+label-song-maxlen = 45
+label-song-ellipsis = true
+; Available tokens:
+;   %artist%
+;   %album-artist%
+;   %album%
+;   %date%
+;   %title%
+; Default: %artist% - %title%
+label-song = %artist% - %title%
+
+; Available tokens:
+;   %elapsed%
+;   %total%
+; Default: %elapsed% / %total%
+;label-time = %elapsed% / %total%
+
+; Available tokens:
+;   None
+label-offline = 🎜 mpd is offline
+
+; Only applies if <icon-X> is used
+; icon-play = play
+; icon-pause = ⏸
+; icon-stop = 
+; icon-prev = ⏮
+; icon-next = ⏭
+; icon-seekb = ⏪
+; icon-seekf = ⏩
+; icon-random = 🔀
+; icon-repeat = 🔁
+; icon-repeatone = 🔂
+; icon-single = 🔂
+; icon-consume = ✀
+
+; Used to display the state of random/repeat/repeatone/single
+; Only applies if <icon-[random|repeat|repeatone|single]> is used
+toggle-on-foreground = #ff
+toggle-off-foreground = #55
+
+; Only applies if <bar-progress> is used
+bar-progress-width = 45
+bar-progress-indicator = |
+bar-progress-fill = ─
+bar-progress-empty = ─

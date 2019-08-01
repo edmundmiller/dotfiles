@@ -2,11 +2,16 @@
 
 {
   environment.systemPackages = with pkgs; [
-    (polybar.override { pulseSupport = true; })
+    (polybar.override {
+      mpdSupport = true;
+      pulseSupport = true;
+      nlSupport = true;
+    })
     killall
   ];
 
-  fonts.fonts = [ pkgs.siji ];
+  # fonts.fonts = [ pkgs.siji ];
+  # fonts.enableFontDir = true;
 
   home-manager.users.emiller.xdg.configFile = {
     "polybar" = {
