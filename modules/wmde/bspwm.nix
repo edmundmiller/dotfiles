@@ -1,9 +1,10 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./polybar.nix ./dunst.nix ];
+  imports = [ ./polybar.nix ./dunst.nix ./lockscreen.nix ];
 
   services.xserver.windowManager.bspwm = { enable = true; };
+  security.pam.services.emiller.enableGnomeKeyring = true;
 
   home-manager.users.emiller = {
     programs.rofi = {
