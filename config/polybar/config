@@ -241,7 +241,7 @@ animation-charging-1 = 
 animation-charging-2 = 
 animation-charging-3 = 
 animation-charging-4 = 
-animation-charging-foreground = {colors.wht}
+animation-charging-foreground = ${colors.wht}
 animation-charging-framerate = 500
 
 ; TODO
