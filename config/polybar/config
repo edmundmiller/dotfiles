@@ -90,15 +90,30 @@ type = internal/bspwm
 format = <label-mode> <label-state>
 index-sort = true
 
-label-focused = [%name%]
+label-focused = %icon%
+label-focused-background = #33000000
+label-focused-foreground = ${colors.grn}
+label-focused-padding = 1
 
-label-occupied = %name%
+label-occupied = %icon%
+label-occupied-foreground = ${colors.icons}
+label-occupied-padding = 1
 
-label-urgent =  %name%
-label-urgent-background = ${colors.red}
+; label-urgent = %icon%
+label-urgent-foreground = ${colors.red}
+; label-urgent-background = ${colors.alert}
+label-urgent-padding = 1
 
-label-empty = %name%
-label-empty-foreground = #55
+label-empty = %icon%
+label-empty-foreground = ${colors.fg-alt}
+label-empty-padding = 1
+
+ws-icon-0 = 1;
+ws-icon-1 = 2;
+ws-icon-2 = 3;
+ws-icon-3 = 4;
+ws-icon-4 = 5;
+ws-icon-default = x
 
 [module/date]
 type = internal/date
