@@ -44,7 +44,8 @@ tray-position = left
 
 modules-right =  pulseaudio-rofi-input pulseaudio-rofi-output battery date powermenu
 modules-center = bspwm
-modules-left = vpn-openvpn-status wlan
+modules-left = vpn-openvpn-status wlan cpu memory
+separator = " "
 
 background = ${colors.bg}
 foreground = ${colors.fg}
@@ -299,3 +300,46 @@ bar-progress-width = 45
 bar-progress-indicator = |
 bar-progress-fill = ─
 bar-progress-empty = ─
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+format = <bar-load>
+format-prefix = "cpu "
+format-foreground = ${colors.icons}
+; format-underline = #f90000
+; label = %percentage%%
+format-padding = 1
+
+bar-load-indicator =
+bar-load-width = 6
+bar-load-foreground-0 = ${colors.grn}
+bar-load-foreground-1 = ${colors.grn}
+bar-load-foreground-2 = ${colors.ylw}
+bar-load-foreground-3 = ${colors.red}
+bar-load-foreground-4 = ${colors.red}
+bar-load-fill = |
+bar-load-empty = ¦
+bar-load-empty-foreground = ${colors.fg-alt}
+
+[module/memory]
+type = internal/memory
+interval = 3
+format = <bar-used>
+format-prefix = "ram "
+format-prefix-foreground = ${colors.icons}
+; format-underline = #4bffdc
+; label = %percentage_used%%
+format-padding-left = 1
+
+; Only applies if <bar-used> is used
+bar-used-indicator =
+bar-used-width = 6
+bar-used-foreground-0 = ${colors.grn}
+bar-used-foreground-1 = ${colors.grn}
+bar-used-foreground-2 = ${colors.ylw}
+bar-used-foreground-3 = ${colors.red}
+bar-used-foreground-4 = ${colors.red}
+bar-used-fill = |
+bar-used-empty = ¦
+bar-used-empty-foreground = ${colors.fg-alt}
