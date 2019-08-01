@@ -31,6 +31,8 @@ top = true
 fixed-center = true
 border-size = 0
 wm-restack = bspwm
+dpi-x = 0
+dpi-y = 0
 
 width = 100%
 height = 35
@@ -47,8 +49,8 @@ modules-left = vpn-openvpn-status wlan
 background = ${colors.bg}
 foreground = ${colors.fg}
 
-font-0 = "Iosevka:weight=regular:size=17;3"
-font-1 = "FontAwesome:fontformat=truetype:size=18;1"
+font-0 = "Iosevka:weight=regular:size=13;3"
+font-1 = "FontAwesome:fontformat=truetype:size=13;1"
 
 scroll-up = bspc desktop -f prev.local
 scroll-down = bspc desktop -f next.local
@@ -59,6 +61,8 @@ top = true
 fixed-center = true
 border-size = 0
 wm-restack = bspwm
+dpi-x = 0
+dpi-y = 0
 
 width = 100%
 height = 35
@@ -72,9 +76,8 @@ modules-center = mpd
 background = ${colors.bg}
 foreground = ${colors.fg}
 
-font-0 = "Iosevka:weight=regular:size=17;3"
-font-1 = "Siji:pixelsize=19;2"
-font-2 = "FontAwesome:fontformat=truetype:size=18;1"
+font-0 = "Iosevka:weight=regular:size=13;3"
+font-1 = "FontAwesome:fontformat=truetype:size=13;1"
 
 scroll-up = bspc desktop -f prev.local
 scroll-down = bspc desktop -f next.local
