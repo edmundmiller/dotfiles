@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+DEFAULT="$DOTFILES/assets/sounds/${1:-LOZ_Get_Rupee}.wav"
+paplay $DEFAULT

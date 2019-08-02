@@ -36,6 +36,17 @@ super + alt + s
      i3lock -i ~/.dotfiles/assets/wallpapers/blue-forest-landscape.2560x1440.jpg && sleep 1 && systemctl suspend
 
 #
+# Media keys
+#
+
+Print
+    ssclip
+super + Print
+    rec -s ~/screenshots/$(date +%F-%T).mp4
+super + shift + ctrl + Print
+    maim ~/screenshots/$(date +%F-%T).png && notify-send "Fullscreen screenshot saved"
+
+#
 # bspwm hotkeys
 #
 

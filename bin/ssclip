@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# A script that takes a screenshot and stores it in the clipboard
+# Adapted from a script by Henrik Lissner
+tmp=$(mktemp)
+if maim --delay=${1:-0} -us >"$tmp"; then
+	xclip -selection clipboard -t image/png "$tmp" &&
+		ding &&
+		notify-send "Screenshot saved"
+else
+	notify-send -u low "Screenshot aborted"
+	ding error
+fi
+rm -f "$tmp"
