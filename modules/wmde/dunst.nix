@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  environment.systemPackages = with pkgs; [ dunst ];
+  environment.systemPackages = with pkgs; [ dunst libnotify ];
 
   home-manager.users.emiller = {
     services.dunst = {
