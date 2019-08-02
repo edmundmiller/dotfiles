@@ -45,6 +45,14 @@ super + Print
     rec -s ~/screenshots/$(date +%F-%T).mp4
 super + shift + ctrl + Print
     maim ~/screenshots/$(date +%F-%T).png && notify-send "Fullscreen screenshot saved"
+XF86Audio{Play,Pause}
+    mpc -q toggle
+XF86Audio{Prev,Next}
+    mpc -q {prev,next}
+XF86Audio{LowerVolume,RaiseVolume}
+    vol {-,+}
+XF86AudioMute
+    vol toggle
 
 #
 # bspwm hotkeys
