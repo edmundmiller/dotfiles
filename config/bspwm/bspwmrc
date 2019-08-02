@@ -6,7 +6,7 @@
 
 exec sxhkd &
 
-autorandr -c
+export MONITOR=$(xrandr -q | grep primary | grep ' connected' | cut -d' ' -f1)
 
 #
 # Aesthetics

@@ -70,7 +70,7 @@
         };
         hooks.postswitch = ''
           bspc monitor DP-1 -d {1,2,3,4,5}
-          bspc monitor HDMI-0 -d HDMI-O/1
+          bspc monitor HDMI-0 -d 6
         '';
       };
 
