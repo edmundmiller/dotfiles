@@ -33,6 +33,7 @@
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
         '';
         # "bspwm" = "${pkgs.bspwm}/bin/bspc wm --restart";
+        "wallpaper" = "feh --bg-scale /home/emiller/.dotfiles/assets/wallpapers/functionalDNA_grey.png";
         "polybar" = "~/.config/polybar/launch.sh";
       };
     };

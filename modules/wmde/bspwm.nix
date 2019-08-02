@@ -5,6 +5,7 @@
 
   services.xserver.windowManager.bspwm = { enable = true; };
   security.pam.services.emiller.enableGnomeKeyring = true;
+  environment.systemPackages = with pkgs; [ feh ];
 
   home-manager.users.emiller = {
     programs.rofi = {

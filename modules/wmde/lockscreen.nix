@@ -1,5 +1,8 @@
 { config, lib, pkgs, ... }:
 
+let
+  lockIMG = "/home/emiller/.dotfiles/assets/wallpapers/functionalDNA_orange.png";
+in
 {
   environment.systemPackages = with pkgs; [ i3lock ];
 
@@ -11,9 +14,9 @@
     '';
     killer = "${pkgs.systemd}/bin/systemctl suspend";
     locker =
-    "${pkgs.i3lock}/bin/i3lock -i ~/.dotfiles/assets/wallpapers/blue-forest-landscape.2560x1440.jpg";
+      "${pkgs.i3lock}/bin/i3lock -i ${lockIMG}";
     nowlocker =
-    "${pkgs.i3lock}/bin/i3lock -i ~/.dotfiles/assets/wallpapers/blue-forest-landscape.2560x1440.jpg";
+      "${pkgs.i3lock}/bin/i3lock -i ${lockIMG}";
     time = 8;
   };
 }
