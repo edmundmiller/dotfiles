@@ -205,6 +205,8 @@ ramp-signal-3 = 
 ramp-signal-4 = 
 ramp-signal-foreground = ${colors.fg}
 
+click-right = nm-applet &
+
 ; TODO
 [module/org-clock]
 type = custom/script
