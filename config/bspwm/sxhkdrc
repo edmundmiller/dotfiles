@@ -30,10 +30,10 @@ Print
   zsh -c rofi-ss
 
 super + alt + a
-     i3lock -i ~/.dotfiles/assets/wallpapers/blue-forest-landscape.2560x1440.jpg && sleep 1
+     i3lock -i ~/.dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1
 
 super + alt + s
-     i3lock -i ~/.dotfiles/assets/wallpapers/blue-forest-landscape.2560x1440.jpg && sleep 1 && systemctl suspend
+     i3lock -i ~/.dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1 && systemctl suspend
 
 #
 # Media keys
