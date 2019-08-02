@@ -1,10 +1,10 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./polybar.nix ./dunst.nix ./lockscreen.nix ];
+  imports =
+  [ ./xserver.nix ./gtk.nix ./polybar.nix ./dunst.nix ./lockscreen.nix ];
 
   services.xserver.windowManager.bspwm = { enable = true; };
-  security.pam.services.emiller.enableGnomeKeyring = true;
   environment.systemPackages = with pkgs; [ feh ];
 
   home-manager.users.emiller = {
@@ -21,9 +21,6 @@
       theme = "Arc-Dark";
     };
 
-    services.screen-locker = {
-      enable = true;
-    };
     services.redshift = {
       enable = true;
       latitude = "32.78306";

@@ -10,10 +10,14 @@
     ./services/default.nix
     ./modules/dev.nix
     ./modules/steamcontroller.nix
+    # ./modules/wmde/gnome.nix
+    ./modules/wmde/bspwm.nix
+    ./modules/wmde/autorandr.nix
   ];
 
   networking.hostName = "nixos-omen";
   # networking.wireless.enable = true;
+  networking.networkmanager.enable = true;
 
   system.autoUpgrade = {
     enable = true;
