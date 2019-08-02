@@ -15,10 +15,10 @@
         rofi.ssh-client: mosh
         rofi.ssh-command: {terminal} -e "{ssh-client} {host}"
         rofi.combi-modi: window,drun,ssh
-        rofi.font: Iosevka 18
+        rofi.font: Iosevka 21
       '';
       terminal = "termite";
-      theme = "Arc-Dark";
+      theme = "flat-orange";
     };
 
     services.redshift = {
@@ -34,6 +34,10 @@
     xdg.configFile = {
       "bspwm/bspwmrc".source = <config/bspwm/bspwmrc>;
       "sxhkd/sxhkdrc".source = <config/bspwm/sxhkdrc>;
+      "rofi" = {
+        source = <config/rofi>;
+        recursive = true;
+      };
     };
   };
 }
