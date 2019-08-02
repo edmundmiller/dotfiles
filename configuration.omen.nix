@@ -11,8 +11,7 @@
     ./modules/dev.nix
     ./modules/steamcontroller.nix
     # ./modules/wmde/gnome.nix
-    ./modules/wmde/bspwm.nix
-    ./modules/wmde/autorandr.nix
+    ./modules/wmde/lightdm.nix
   ];
 
   networking.hostName = "nixos-omen";

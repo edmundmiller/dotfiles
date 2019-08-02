@@ -1,11 +1,19 @@
 { config, lib, pkgs, ... }:
 
-{
-  imports = [ ./gnome.nix ./bspwm.nix ./autorandr.nix ];
+let
+  bg-img = "/home/emiller/.dotfiles/assets/wallpapers/functionalDNA_orange.png";
+in {
+  imports = [ ./bspwm.nix ./autorandr.nix ];
   services.xserver = {
-    displayManager.lightdm = {
+    displayManager.lightdm.greeters.mini = {
       enable = true;
-      # background = false;
+      user = "emiller";
+      extraConfig = ''
+        [greeter]
+        show-password-label = false
+        [greeter-theme]
+        background-image = "${bg-img}"
+      '';
     };
     desktopManager.xterm.enable = false;
   };
