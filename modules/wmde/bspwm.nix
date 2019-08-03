@@ -33,10 +33,6 @@
       latitude = "32.78306";
       longitude = "-96.80667";
     };
-    services.gnome-keyring = {
-      enable = true;
-      components = [ "secrets" ];
-    };
 
     xdg.configFile = {
       "bspwm/bspwmrc".source = <config/bspwm/bspwmrc>;
