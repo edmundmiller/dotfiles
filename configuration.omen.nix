@@ -23,25 +23,36 @@
     channel = "https://nixos.org/channels/nixos-unstable";
   };
 
-  environment.systemPackages = [ pkgs.powertop ];
+  environment.systemPackages = [ pkgs.powertop pkgs.lm_sensors ];
   services.tlp.enable = true;
   powerManagement.powertop.enable = true;
-  # i18n = {
-  #   consoleFont = "Lat2-Terminus16";
-  #   consoleKeyMap = "us";
-  #   defaultLocale = "en_US.UTF-8";
-  # };
+
+  i18n = {
+    consoleFont = "Lat2-Terminus16";
+    consoleKeyMap = "us";
+    defaultLocale = "en_US.UTF-8";
+  };
 
   nix.gc = {
     automatic = true;
-    options = "--delete-older-than 30d";
+    options = "--delete-older-than 15d";
   };
 
   # Monitor backlight control
   programs.light.enable = true;
 
   fonts = {
-    fontconfig.defaultFonts.monospace = [ "Iosevka" ];
+    fontconfig = {
+      enable = true;
+      antialias = true;
+      defaultFonts.monospace = [ "Iosevka" ];
+      allowBitmaps = true;
+      useEmbeddedBitmaps = true;
+      ultimate = {
+        enable = true;
+        substitutions = "combi";
+      };
+    };
     fonts = with pkgs; [
       fira-code-symbols
       iosevka
