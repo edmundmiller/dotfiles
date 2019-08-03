@@ -1,6 +1,9 @@
 { config, lib, pkgs, ... }:
 
 {
+
+  environment.systemPackages = with pkgs; [ qt5.qtbase libsForQt5.vlc ];
+  programs.qt5ct.enable = true;
   home-manager.users.emiller = {
     gtk = {
       enable = true;
@@ -14,10 +17,6 @@
       };
       # Give Termite some internal spacing.
       gtk3.extraCss = ".termite {padding: 20px;}";
-    };
-    qt = {
-      enable = false;
-      useGtkTheme = true;
     };
   };
 }
