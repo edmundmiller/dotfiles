@@ -15,19 +15,22 @@ super + shift + r
 	pkill -USR1 -x sxhkd
 
 super + a
-	zsh -c emacs
+	zsh -c rofimoji
+
+# TODO
+# super + ctrl + shift + grave
+#     emacsclient -e nil && bspc rule -a 'Emacs' -o state=floating && emacs-anywhere
+super + ctrl + grave
+    bspc rule -a 'Emacs' -o state=floating && org-capture
 
 super + w
   firefox
 
 super + e
-  zsh -c rofimoji
+  zsh -c emacs
 
 super + {_,shift + }space
   rofi-pass {_,--insert}
-
-Print
-  zsh -c rofi-ss
 
 super + alt + a
      i3lock -i ~/.dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1
