@@ -10,7 +10,10 @@
   boot = {
     loader = {
       systemd-boot.enable = true;
-      grub.useOSProber = true;
+      grub = {
+        useOSProber = true;
+        configurationLimit = 30;
+      };
       efi.canTouchEfiVariables = true;
     };
     cleanTmpDir = true;
