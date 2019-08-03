@@ -42,7 +42,7 @@ padding-left = 2
 padding-right = 2
 tray-position = left
 
-modules-right =  pulseaudio-rofi-input pulseaudio-rofi-output battery date powermenu
+modules-right =  info-eyestrain pulseaudio-rofi-input pulseaudio-rofi-output battery date powermenu
 modules-center = bspwm
 modules-left = vpn-openvpn-status wlan cpu memory
 separator = " "
@@ -345,3 +345,8 @@ bar-used-foreground-4 = ${colors.red}
 bar-used-fill = |
 bar-used-empty = ¦
 bar-used-empty-foreground = ${colors.fg-alt}
+
+[module/info-eyestrain]
+type = custom/script
+exec = ~/.dotfiles/config/polybar/modules/info-eyestrain.sh
+interval = 60
