@@ -7,11 +7,17 @@
     # Hardware
     ./hardware/storage.nix
 
-    ./services/default.nix
+    ./modules/base.nix
+    ./modules/desktop.nix
     ./modules/dev.nix
-    ./modules/steamcontroller.nix
+
+    ./modules/services/services.nix
+    ./modules/services/steam.nix
+
     # ./modules/wmde/gnome.nix
-    ./modules/wmde/lightdm.nix
+    ./modules/wmde/bspwm.nix
+
+    ./modules/shell/pass.nix
   ];
 
   networking.hostName = "nixos-omen";
@@ -70,6 +76,7 @@
     pulseaudio = {
       enable = true;
       support32Bit = true;
+      package = pkgs.pulseaudioFull;
     };
   };
 
