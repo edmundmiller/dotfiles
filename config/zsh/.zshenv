@@ -14,3 +14,14 @@ export LESSHISTFILE="$XDG_DATA_HOME/lesshst"
 for file in $XDG_CONFIG_HOME/zsh/rc.d/env.*.zsh(N); do
   source $file
 done
+
+function _cache {
+  local cache_dir="$XDG_CACHE_HOME/${SHELL##*/}"
+  local cache="$cache_dir/$1"
+  if [[ ! -f $cache || ! -s $cache ]]; then
+    echo "Caching $1"
+    mkdir -p $cache_dir
+    "$@" >$cache
+  fi
+  source $cache
+}

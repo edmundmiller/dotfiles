@@ -1,7 +1,22 @@
 { config, pkgs, libs, ... }:
 
 # TODO Auto magically install plugins with antibody
-{
+with builtins;
+
+let
+  zsh-config = with pkgs;
+  stdenv.mkDerivation rec {
+    name = "zsh-config";
+
+    buildInputs = [ antibody ];
+
+    installPhase = ''
+      antibody bundle < ${<config/zsh>}/zsh_plugins.txt > ${
+        <config/zsh>
+      }/zsh_plugins.sh
+        '';
+  };
+in {
   environment = {
     variables = {
       ZDOTDIR = "$XDG_CONFIG_HOME/zsh";

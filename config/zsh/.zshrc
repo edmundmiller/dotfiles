@@ -14,6 +14,8 @@ source $ZDOTDIR/aliases.zsh
 #
 export _FASD_DATA="$XDG_CACHE_HOME/fasd"
 export _FASD_VIMINFO="$XDG_CACHE_HOME/viminfo"
+_cache fasd --init posix-alias zsh-{hook,{c,w}comp{,-install}}
+autopair-init
 
 for file in $XDG_CONFIG_HOME/zsh/rc.d/aliases.*.zsh(N); do
   source $file
