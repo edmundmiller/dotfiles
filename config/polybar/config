@@ -22,8 +22,8 @@ fg-alt = #25282a
 icons = #555856
 
 [global/wm]
-margin-top = 0
-margin-bottom = 28
+margin-top = 20
+margin-bottom = 3
 
 [bar/main]
 monitor = ${env:MONITOR:}
@@ -51,7 +51,7 @@ background = ${colors.bg}
 foreground = ${colors.fg}
 
 font-0 = "Iosevka:weight=regular:size=13;3"
-font-1 = "FontAwesome:fontformat=truetype:size=13;1"
+font-1 = "FontAwesome:size=13;1"
 
 scroll-up = bspc desktop -f prev.local
 scroll-down = bspc desktop -f next.local
