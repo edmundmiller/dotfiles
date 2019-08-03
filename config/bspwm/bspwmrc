@@ -5,6 +5,9 @@
 #
 
 nm-applet &
+# TODO Call autorandr -c
+# TODO pulseaudio -k
+# TODO set keybinding to restart wm
 
 export MONITOR=$(xrandr -q | grep primary | grep ' connected' | cut -d' ' -f1)
 bspc monitor $MONITOR -d {1,2,3,4,5}
