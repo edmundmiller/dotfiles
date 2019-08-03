@@ -14,7 +14,7 @@
         "change-dpi" = ''
           case "$AUTORANDR_CURRENT_PROFILE" in
             mobile)
-              DPI=144
+              DPI=110
               ;;
             home-dual)
               DPI=186
