@@ -33,6 +33,7 @@ in {
             ff = onlt
             log = true
         '';
+        ignores = [ ".direnv" ".envrc" ];
       };
     };
 
