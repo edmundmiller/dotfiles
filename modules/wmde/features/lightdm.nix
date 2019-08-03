@@ -3,7 +3,6 @@
 let
   bg-img = "/home/emiller/.dotfiles/assets/wallpapers/functionalDNA_orange.png";
 in {
-  imports = [ ./bspwm.nix ./autorandr.nix ];
   services.xserver = {
     displayManager.lightdm.greeters.mini = {
       enable = true;

@@ -2,12 +2,14 @@
 
 {
   imports = [
-    ./xserver.nix
-    ./gtk.nix
-    ./polybar.nix
-    ./dunst.nix
-    ./lockscreen.nix
-    ./compton.nix
+    ./features/autorandr.nix
+    ./features/xserver.nix
+    ./features/gtk.nix
+    ./features/polybar.nix
+    ./features/dunst.nix
+    ./features/lockscreen.nix
+    ./features/compton.nix
+    ./features/lightdm.nix
   ];
 
   services.xserver.windowManager.bspwm = { enable = true; };
