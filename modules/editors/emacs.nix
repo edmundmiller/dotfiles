@@ -11,6 +11,10 @@
     ccls                            # :lang (cc +lsp)
     imagemagick
     pandoc
+    aspell
+    aspellDicts.en
+    aspellDicts.en-computers
+    aspellDicts.en-science
   ];
 
   fonts.fonts = [ pkgs.emacs-all-the-icons-fonts ];
