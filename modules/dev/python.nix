@@ -11,6 +11,8 @@
     python27
     pipenv
     conda
+    # xonsh
+    (import ./programs/jupyter.nix)
   ];
 
   home-manager.users.emiller.xdg.configFile = {
