@@ -1,10 +1,17 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports =
-  [ ./xserver.nix ./gtk.nix ./polybar.nix ./dunst.nix ./lockscreen.nix ];
+  imports = [
+    ./xserver.nix
+    ./gtk.nix
+    ./polybar.nix
+    ./dunst.nix
+    ./lockscreen.nix
+    ./compton.nix
+  ];
 
   services.xserver.windowManager.bspwm = { enable = true; };
+
   environment.systemPackages = with pkgs; [ feh ];
 
   home-manager.users.emiller = {
