@@ -1,12 +1,13 @@
-#!/usr/bin/env zsh
+#!/bin/sh
 
 #
 # Displays
 #
 
-exec sxhkd &
+nm-applet &
 
 export MONITOR=$(xrandr -q | grep primary | grep ' connected' | cut -d' ' -f1)
+bspc monitor $MONITOR -d {1,2,3,4,5}
 
 #
 # Aesthetics
@@ -69,4 +70,4 @@ bspc rule -a Chromium monitor=L
 bspc rule -a Firefox monitor=L
 bspc rule -a Gimp desktop=^6
 
-bspc rule -a Discord desktop=^3
+bspc rule -a discord desktop=^3
