@@ -25,6 +25,9 @@
             home-single)
               DPI=186
               ;;
+            lab)
+              DPI=96
+              ;;
             *)
               echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
               exit 1
@@ -32,7 +35,8 @@
 
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
         '';
-        "wallpaper" = "feh --bg-scale /home/emiller/.dotfiles/assets/wallpapers/functionalDNA_grey.png";
+        "wallpaper" =
+        "feh --bg-scale /home/emiller/.dotfiles/assets/wallpapers/functionalDNA_grey.png";
         "polybar" = "~/.config/polybar/launch.sh";
       };
     };
@@ -122,11 +126,12 @@
           bspc monitor DP-0 -d {1,2,3,4,5}
         '';
       };
-
-      lab-single = {
+      lab = {
         fingerprint = {
           DP-0 =
           "00ffffffffffff000daee71500000000081b0104952213780228659759548e271e505400000001010101010101010101010101010101b43b804a713834405036680058c11000001acd27804a713834405036680058c11000001a00000000000000000000000000000000000000000002000c47ff0b3c6e1314246e00000000b6";
+          DP-1 =
+          "00ffffffffffff004c2d450b32445a5a161b010380341d782a7dd1a45650a1280f5054bfef80714f81c0810081809500a9c0b3000101023a801871382d40582c450009252100001e011d007251d01e206e28550009252100001e000000fd00324b1e5111000a202020202020000000fc00533234443330300a20202020200191020311b14690041f13120365030c001000011d00bc52d01e20b828554009252100001e8c0ad090204031200c4055000925210000188c0ad08a20e02d10103e9600092521000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051";
           HDMI-0 =
           "00ffffffffffff004c2d450b32445a5a181b010380341d782a7dd1a45650a1280f5054bfef80714f81c0810081809500a9c0b3000101023a801871382d40582c450009252100001e011d007251d01e206e28550009252100001e000000fd00324b1e5111000a202020202020000000fc00533234443330300a2020202020018f020311b14690041f13120365030c001000011d00bc52d01e20b828554009252100001e8c0ad090204031200c4055000925210000188c0ad08a20e02d10103e9600092521000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051";
         };
@@ -135,16 +140,25 @@
           DP-2 = { enable = false; };
           DP-3 = { enable = false; };
           DP-4 = { enable = false; };
-          HDMI-0 = {
+          DP-1 = {
             enable = true;
             primary = true;
             mode = "1920x1080";
             position = "0x0";
             rate = "60.00";
+            # dpi = 182;
+          };
+          HDMI-0 = {
+            enable = true;
+            mode = "1920x1080";
+            position = "1920x0";
+            rate = "60.00";
+            # dpi = 182;
           };
         };
         hooks.postswitch = ''
-          bspc monitor HDMI-0 -d {1,2,3,4,5}
+          bspc monitor DP-1 -d {1,2,3,4,5}
+          bspc monitor HDMI-0 -d 6
         '';
       };
     };
