@@ -52,6 +52,7 @@ foreground = ${colors.fg}
 
 font-0 = "Iosevka:weight=regular:size=13;3"
 font-1 = "FontAwesome:size=13;1"
+font-2 = "Siji:size=18;2"
 
 scroll-up = bspc desktop -f prev.local
 scroll-down = bspc desktop -f next.local
@@ -196,14 +197,18 @@ format-packetloss = <animation-packetloss> <label-connected>
 format-disconnected = <label-disconnected>
 format-disconnected-underline = ${self.format-connected-underline}
 label-disconnected = %ifname% disconnected
-label-disconnected-foreground = ${colors.fg}
+label-disconnected-foreground = ${colors.red}
 
 ramp-signal-0 = 
+ramp-signal-0-foreground = ${colors.red}
 ramp-signal-1 = 
+ramp-signal-1-foreground = ${colors.ylw}
 ramp-signal-2 = 
+ramp-signal-2-foreground = ${colors.ylw}
 ramp-signal-3 = 
+ramp-signal-3-foreground = ${colors.icons}
 ramp-signal-4 = 
-ramp-signal-foreground = ${colors.fg}
+ramp-signal-4-foreground = ${colors.icons}
 
 click-right = nm-applet &
 
