@@ -119,11 +119,18 @@ ws-icon-default = x
 
 [module/date]
 type = internal/date
-date-alt = %A   %H:%M
-date = %A %y/%m/%d   %H:%M:%S
-interval = 1
+interval = 5
 
-format-foreground = ${colors.grn}
+label = %date%  %time%
+date = %A, %h %d
+date-alt = %Y-%m-%d
+time = %I:%M %p
+time-alt = %H:%M:%S
+; format-prefix = ""
+format-prefix-padding = 1
+; format-prefix-background = ${colors.bg-alt}
+format-prefix-foreground = ${colors.icons}
+; format-underline = ${xrdb:color4}
 
 [module/powermenu]
 type = custom/menu
