@@ -6,7 +6,7 @@
   environment.systemPackages = with pkgs; [
     # BROWSERS
     brave
-    # FIXME qutebrowser
+    qutebrowser
     firefox
     # NIX STUFF
     appimage-run
