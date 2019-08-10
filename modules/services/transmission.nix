@@ -17,6 +17,11 @@
     };
   };
 
+  networking.firewall = {
+    allowedTCPPorts = [ 51413 ];
+    allowedUDPPorts = [ 51413 ];
+  };
+
   systemd.services.transmission = { ... }: {
     options = {
       serviceConfig = lib.mkOption {
