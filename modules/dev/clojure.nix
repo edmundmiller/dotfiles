@@ -1,9 +1,6 @@
 { config, lib, pkgs, ... }:
 
 {
-  nixpkgs.config = {
-  };
-
   environment.systemPackages = with pkgs; [
     clojure
     joker

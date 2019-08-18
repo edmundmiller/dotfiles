@@ -6,8 +6,6 @@
     cargo
     rustfmt
     rls
-    # rustPlatform.rustcSrc
-    # rustracer
   ];
 
   home-manager.users.emiller.xdg.configFile = {
