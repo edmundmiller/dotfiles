@@ -78,6 +78,10 @@
       support32Bit = true;
       package = pkgs.pulseaudioFull;
     };
+    bluetooth = {
+      enable = true;
+      powerOnBoot = false;
+    };
   };
 
   users.users.emiller.extraGroups = [ "networkmanager" ];
