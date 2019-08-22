@@ -11,7 +11,7 @@ in
       font = "${font} 13";
       backgroundColor = "rgba(20, 21, 23, 0.9)";
       foregroundColor = "#c5c8c6";
-      browser = "qutebrowser";
+      browser = "firefox";
       allowBold = true;
       clickableUrl = true;
       dynamicTitle = true;

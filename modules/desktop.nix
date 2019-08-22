@@ -2,12 +2,11 @@
 
 # This is for packages that didn't require configuring and would be installed on a desktop
 {
-  imports = [ ./base.nix ];
+  imports = [ ./base.nix ./misc/firefox.nix ];
   environment.systemPackages = with pkgs; [
     # BROWSERS
     brave
     qutebrowser
-    firefox
     # NIX STUFF
     appimage-run
     # APPS
