@@ -22,6 +22,7 @@ in {
             enable = true;
             create = "both";
             expunge = "both";
+            remove = "both";
             patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
           };
           realName = "${name}";
@@ -36,6 +37,7 @@ in {
             enable = true;
             create = "both";
             expunge = "both";
+            remove = "both";
             patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
           };
           realName = "${name}";
@@ -50,6 +52,7 @@ in {
             enable = true;
             create = "both";
             expunge = "both";
+            remove = "both";
             patterns = [ "*" ];
           };
           imap = {
