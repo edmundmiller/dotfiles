@@ -6,7 +6,7 @@ let
   email = "edmund.a.miller@gmail.com";
   protonmail = "edmund.a.miller@protonmail.com";
 in {
-  environment.systemPackages = with pkgs; [ mu ];
+  environment.systemPackages = with pkgs; [ mu isync ];
   home-manager.users.emiller = {
     accounts.email = {
       maildirBasePath = "${maildir}";
@@ -22,7 +22,6 @@ in {
             enable = true;
             create = "both";
             expunge = "both";
-            remove = "both";
             patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
           };
           realName = "${name}";
@@ -37,7 +36,6 @@ in {
             enable = true;
             create = "both";
             expunge = "both";
-            remove = "both";
             patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
           };
           realName = "${name}";
@@ -52,7 +50,6 @@ in {
             enable = true;
             create = "both";
             expunge = "both";
-            remove = "both";
             patterns = [ "*" ];
           };
           imap = {
@@ -80,6 +77,7 @@ in {
       mbsync = {
         enable = true;
         frequency = "*:0/15";
+        preExec = "${pkgs.isync}/bin/mbsync -Ha";
         postExec = "${pkgs.mu}/bin/mu index -m ${maildir}";
       };
     };
