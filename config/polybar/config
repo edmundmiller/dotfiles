@@ -240,7 +240,7 @@ format-discharging = <ramp-capacity> <label-discharging>
 format-discharging-underline = ${colors.ylw}
 format-discharging-padding = 1
 
-full-at = 99
+full-at = 100
 format-full =   <label-full>
 format-full-underline = ${self.format-charging-underline}
 format-full-overline = ${self.format-charging-underline}
@@ -249,6 +249,7 @@ format-full-padding = 1
 ramp-capacity-0 = 
 ramp-capacity-1 = 
 ramp-capacity-2 = 
+ramp-capacity-3 = 
 ramp-capacity-foreground = ${colors.wht}
 
 animation-charging-0 = 
