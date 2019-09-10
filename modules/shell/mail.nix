@@ -6,7 +6,7 @@ let
   email = "edmund.a.miller@gmail.com";
   protonmail = "edmund.a.miller@protonmail.com";
 in {
-  environment.systemPackages = with pkgs; [ mu isync ];
+  environment.systemPackages = with pkgs; [ notmuch isync ];
   home-manager.users.emiller = {
     accounts.email = {
       maildirBasePath = "${maildir}";
@@ -26,6 +26,7 @@ in {
           };
           realName = "${name}";
           msmtp.enable = true;
+          notmuch.enable = true;
         };
         Eman = {
           address = "eman0088@gmail.com";
@@ -39,6 +40,7 @@ in {
             patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
           };
           realName = "${name}";
+          notmuch.enable = true;
         };
         UTD = {
           address = "Edmund.Miller@utdallas.edu";
@@ -64,6 +66,7 @@ in {
             port = 587;
             tls.useStartTls = true;
           };
+          notmuch.enable = true;
         };
       };
     };
@@ -71,14 +74,40 @@ in {
     programs = {
       msmtp.enable = true;
       mbsync.enable = true;
+      notmuch = {
+        enable = true;
+        hooks = { postNew = "${pkgs.afew}/bin/afew --tag --new"; };
+        new = {
+          ignore = [ "trash" "*.json" ];
+          tags = [ "new" ];
+        };
+        search.excludeTags = [ "trash" "deleted" "spam" ];
+        maildir.synchronizeFlags = true;
+      };
+      afew = {
+        enable = true;
+        extraConfig = ''
+          [SpamFilter]
+          [KillThreadsFilter]
+          [ListMailsFilter]
+          [MeFilter]
+          [ArchiveSentMailsFilter]
+          [InboxFilter]
+          [MailMover]
+          folders = Inbox
+          rename = True
+
+          Inbox = 'tag:spam':Spam
+        '';
+      };
     };
 
     services = {
       mbsync = {
         enable = true;
         frequency = "*:0/15";
-        preExec = "${pkgs.isync}/bin/mbsync -Ha";
-        postExec = "${pkgs.mu}/bin/mu index -m ${maildir}";
+        preExec = "${pkgs.afew}/bin/afew --move-mails";
+        postExec = "${pkgs.notmuch}/bin/notmuch new";
       };
     };
   };
