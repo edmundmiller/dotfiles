@@ -1,15 +1,21 @@
 { config, lib, pkgs, ... }:
 
 {
+  environment.variables.EDITOR = "emacs";
   environment.systemPackages = with pkgs; [
+    (lib.mkIf (config.programs.gnupg.agent.enable) pinentry_emacs)
+
     editorconfig-core-c
+    (ripgrep.override {withPCRE2 = true;})
     # Doom Emacs + dependencies
     ((emacsPackagesNgGen emacs).emacsWithPackages
     (epkgs: [ epkgs.emacs-libvterm ]))
-    sqlite                          # :tools (lookup +docsets)
-    texlive.combined.scheme-medium  # :lang org -- for latex previews
-    ccls                            # :lang (cc +lsp)
-    imagemagick
+    sqlite                         # :tools (lookup +docsets)
+    texlive.combined.scheme-medium # :lang org -- for latex previews
+    ccls                           # :lang (cc +lsp)
+    rls                            # :lang (rust +lsp)
+    nodePackages.javascript-typescript-langserver # :lang (javascript +lsp)
+    imagemagickBig
     pandoc
     aspell
     aspellDicts.en
