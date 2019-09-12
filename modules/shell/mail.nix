@@ -5,8 +5,11 @@ let
   maildir = "/home/emiller/.mail";
   email = "edmund.a.miller@gmail.com";
   protonmail = "edmund.a.miller@protonmail.com";
+  notmuchrc = "/home/emiller/.config/notmuch/notmuchrc";
 in {
+  imports = [ ./afew.nix ];
   environment.systemPackages = with pkgs; [ notmuch isync ];
+  environment.variables = { NOTMUCH_CONFIG = "${notmuchrc}"; };
   home-manager.users.emiller = {
     accounts.email = {
       maildirBasePath = "${maildir}";
@@ -76,7 +79,10 @@ in {
       mbsync.enable = true;
       notmuch = {
         enable = true;
-        hooks = { postNew = "${pkgs.afew}/bin/afew --tag --new"; };
+        hooks = {
+          postNew =
+          "${pkgs.afew}/bin/afew -C ${notmuchrc} --tag --new --verbose";
+        };
         new = {
           ignore = [ "trash" "*.json" ];
           tags = [ "new" ];
@@ -84,29 +90,14 @@ in {
         search.excludeTags = [ "trash" "deleted" "spam" ];
         maildir.synchronizeFlags = true;
       };
-      afew = {
-        enable = true;
-        extraConfig = ''
-          [SpamFilter]
-          [KillThreadsFilter]
-          [ListMailsFilter]
-          [MeFilter]
-          [ArchiveSentMailsFilter]
-          [InboxFilter]
-          [MailMover]
-          folders = Inbox
-          rename = True
-
-          Inbox = 'tag:spam':Spam
-        '';
-      };
     };
 
     services = {
       mbsync = {
         enable = true;
         frequency = "*:0/15";
-        preExec = "${pkgs.afew}/bin/afew --move-mails";
+        preExec =
+        "${pkgs.afew}/bin/afew -C ${notmuchrc} --move-mails --verbose";
         postExec = "${pkgs.notmuch}/bin/notmuch new";
       };
     };
