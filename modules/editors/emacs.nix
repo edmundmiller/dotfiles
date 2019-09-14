@@ -1,20 +1,27 @@
 { config, lib, pkgs, ... }:
 
 {
+  nixpkgs.overlays = [
+    (import (builtins.fetchTarball {
+      url =
+      "https://github.com/nix-community/emacs-overlay/archive/master.tar.gz";
+    }))
+  ];
   environment.variables.EDITOR = "emacs";
   environment.systemPackages = with pkgs; [
     (lib.mkIf (config.programs.gnupg.agent.enable) pinentry_emacs)
 
     editorconfig-core-c
-    (ripgrep.override {withPCRE2 = true;})
+    (ripgrep.override { withPCRE2 = true; })
     # Doom Emacs + dependencies
-    ((emacsPackagesNgGen emacs).emacsWithPackages
+    ((emacsPackagesNgGen emacsGit).emacsWithPackages
     (epkgs: [ epkgs.emacs-libvterm ]))
-    sqlite                         # :tools (lookup +docsets)
+    sqlite # :tools (lookup +docsets)
     texlive.combined.scheme-medium # :lang org -- for latex previews
-    ccls                           # :lang (cc +lsp)
-    rls                            # :lang (rust +lsp)
+    ccls # :lang (cc +lsp)
+    rls # :lang (rust +lsp)
     nodePackages.javascript-typescript-langserver # :lang (javascript +lsp)
+    icu
     imagemagickBig
     pandoc
     aspell
@@ -29,6 +36,5 @@
     "zsh/rc.d/aliases.emacs.zsh".source = <config/emacs/aliases.zsh>;
     "zsh/rc.d/env.emacs.zsh".source = <config/emacs/env.zsh>;
   };
-  # TODO override https://nixos.org/nixos/manual/index.html#sec-customising-packages
   # TODO add Doom automagically
 }
