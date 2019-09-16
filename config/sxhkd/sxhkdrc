@@ -43,11 +43,11 @@ super + alt + s
 #
 
 Print
-    ssclip
+	scrcap
 super + Print
-    rec -s ~/screenshots/$(date +%F-%T).mp4
-super + shift + ctrl + Print
-    maim ~/screenshots/$(date +%F-%T).png && notify-send "Fullscreen screenshot saved"
+	scrrec -s ~/recordings/$(date +%F-%T).mp4
+super + ctrl + Print
+	scrcap -f
 XF86Audio{Play,Pause}
     mpc -q toggle
 XF86Audio{Prev,Next}

@@ -1,0 +1,59 @@
+#!/usr/bin/env nix-shell
+#! nix-shell -i bash -p ffmpeg slop
+
+# Select a region and record it.
+#
+# If given a gif, it will record an mp4 and convert it afterwards using the
+# mov2gif script included in this repo (which is powered by gifsicle and
+# ffmpeg).
+#
+# Usage: scrrec somefile.mp4
+#        scrrec another.gif
+
+is_script=
+geom=
+delay=1
+while getopts sg:d: opt; do
+	case $opt in
+	s) is_script=1 ;;
+	g) geom="$OPTARG" ;;
+	d) delay="$OPTARG" ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+if [[ -f /tmp/_stop ]]; then
+	echo q >/tmp/_stop
+	if [[ $is_script ]]; then
+		echo >&2 "Nope"
+	else
+		echo "Stopped previous recording"
+	fi
+	exit 0
+fi
+
+if [[ $geom ]]; then
+	read -r W H X Y <<<"${geom//[x+]/ }"
+else
+	read -r X Y W H < <(slop -n -f "%x %y %w %h")
+fi
+dest=${1:-./rec.mp4}
+if [[ $dest == *.gif ]]; then
+	echo "Detected gif"
+	mp4dest="${dest%.*}.mp4"
+fi
+
+if [[ $is_script ]]; then
+	echo "Starting"
+	touch /tmp/_stop
+	ffmpeg -y -f x11grab -ss $delay -s "$W"x"$H" -i :0.0+$X,$Y -framerate 30 "${mp4dest:-$dest}" </tmp/_stop
+	rm -f /tmp/_stop
+else
+	ffmpeg -y -f x11grab -ss $delay -s "$W"x"$H" -i :0.0+$X,$Y -framerate 30 "${mp4dest:-$dest}"
+fi
+
+if [[ -f $mp4dest ]]; then
+	mov2gif "$mp4dest" "$dest" && rm -fv "$mp4dest"
+fi
+
+echo "Finishing up"
