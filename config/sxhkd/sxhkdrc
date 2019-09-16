@@ -52,10 +52,12 @@ XF86Audio{Play,Pause}
     mpc -q toggle
 XF86Audio{Prev,Next}
     mpc -q {prev,next}
-XF86Audio{LowerVolume,RaiseVolume}
-    vol {-,+}
 XF86AudioMute
-    vol toggle
+	amixer -q set Master toggle
+XF86AudioLowerVolume
+	amixer -q set Master 10%- unmute
+XF86AudioRaiseVolume
+	amixer -q set Master 10%+ unmute
 
 #
 # bspwm hotkeys
