@@ -13,6 +13,7 @@
     conda
     # xonsh
     (import ./programs/jupyter.nix)
+    visidata
   ];
 
   home-manager.users.emiller.xdg.configFile = {
