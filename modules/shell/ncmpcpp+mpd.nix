@@ -19,6 +19,7 @@
         audio_output {
             type        "pulse"
             name        "pulse audio"
+            server      "127.0.0.1"
         }
 
         audio_output {
@@ -29,6 +30,11 @@
         }
       '';
     };
+  };
+
+  hardware.pulseaudio.tcp = {
+    enable = true;
+    anonymousClients.allowedIpRanges = [ "127.0.0.1" ];
   };
 
   users.users.emiller.extraGroups = [ "mpd" ];
