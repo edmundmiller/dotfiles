@@ -13,7 +13,7 @@ let
 
     src = fetchurl {
       url = "https://www.privateinternetaccess.com/openvpn/openvpn.zip";
-      sha256 = "1640xvfas1z8y522glcj3i5j1vl84dhwcqq98kiwd6xhsqskyf66";
+      sha256 = "0p8h8z66h9w74bqcc96fzr9yw17y6waagllif2wcdnibcfjyc7g4";
     };
 
     unpackPhase = ''
