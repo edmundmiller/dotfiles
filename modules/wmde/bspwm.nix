@@ -21,7 +21,7 @@
       enable = true;
       extraConfig = ''
         rofi.modi: window,run,ssh,combi
-        rofi.ssh-client: mosh
+        rofi.ssh-client: ssh
         rofi.ssh-command: {terminal} -e "{ssh-client} {host}"
         rofi.combi-modi: window,drun,ssh
         rofi.font: Iosevka 21
