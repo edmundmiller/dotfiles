@@ -4,7 +4,7 @@
   environment = {
     systemPackages = with pkgs; [
       (pass.withExtensions
-      (exts: [ exts.pass-otp exts.pass-genphrase ext.pass-import ]))
+      (exts: [ exts.pass-otp exts.pass-genphrase exts.pass-import ]))
       (lib.mkIf (config.services.xserver.enable) rofi-pass)
     ];
   };
