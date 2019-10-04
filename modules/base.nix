@@ -8,6 +8,7 @@
     cachix
     # NIX STUFF
     # CLI
+    visidata
     youtube-dl
     xclip
     unzip
@@ -16,5 +17,6 @@
     borgbackup
     bat
     binutils
+    ranger
   ];
 }
