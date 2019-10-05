@@ -2,7 +2,20 @@
 
 {
   programs.browserpass.enable = true;
-  environment.systemPackages = with pkgs; [ firefox ];
+  environment = {
+    sessionVariables = {
+      BROWSER = "firefox";
+      XDG_DESKTOP_DIR = "$HOME"; # prevent firefox creating ~/Desktop
+    };
+
+    systemPackages = with pkgs; [
+      firefox
+      (pkgs.writeScriptBin "firefox-private" ''
+        #! ${pkgs.bash}/bin/bash
+        firefox --private-window "$@"
+      '')
+    ];
+  };
 
   home-manager.users.emiller = {
     xdg.configFile = {
