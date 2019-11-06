@@ -18,5 +18,6 @@
     bat
     binutils
     ranger
+    pb_cli
   ];
 }
