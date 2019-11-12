@@ -1,6 +1,5 @@
-{ config, pkgs, ... }:
+{ config, pkgs, ... }: {
 
-{
   environment.systemPackages = with pkgs; [
     steamcontroller-udev-rules
     steam
