@@ -34,6 +34,7 @@
       enable = true;
       latitude = "32.78306";
       longitude = "-96.80667";
+      temperature = { night = 2500; };
     };
 
     xdg.configFile = {
