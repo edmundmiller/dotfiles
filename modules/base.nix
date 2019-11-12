@@ -5,7 +5,7 @@
   environment.systemPackages = with pkgs; [
     speedtest-cli
     openconnect
-    cachix
+    # cachix
     # NIX STUFF
     # CLI
     visidata
@@ -17,6 +17,11 @@
     borgbackup
     bat
     binutils
+    autoconf
+    automake
+    gnutls
+    gnumake
+    gcc
     ranger
     pb_cli
   ];
