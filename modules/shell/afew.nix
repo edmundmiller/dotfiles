@@ -8,6 +8,8 @@
       [SpamFilter]
       [KillThreadsFilter]
       [ListMailsFilter]
+      [SentMailsFilter]
+      sent_tag = sent
       [ArchiveSentMailsFilter]
       # [FolderNameFilter]
       # folder_blacklist = Eman olypsis UTD 'Gmail/[Gmail]' 'Eman/[Gmail]'
