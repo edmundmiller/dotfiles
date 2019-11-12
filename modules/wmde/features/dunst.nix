@@ -19,7 +19,9 @@
           dmenu = [ "/usr/bin/rofi -dmenu -p dunst:" ];
           follow = [ "none" ];
           font = "Iosevka 12";
-          format = "%s\\n%b";
+          format = ''
+            %s
+            %b'';
           # geometry [{width}]x{height}][+/-{x}+/-{y}]
           geometry = "365x15-21+21";
           history_length = 20;
