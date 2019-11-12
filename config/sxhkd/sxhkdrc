@@ -17,12 +17,6 @@ super + shift + r
 super + a
 	zsh -c rofimoji
 
-# TODO
-# super + ctrl + shift + grave
-#     emacsclient -e nil && bspc rule -a 'Emacs' -o state=floating && emacs-anywhere
-super + ctrl + grave
-    bspc rule -a 'Emacs' -o state=floating && org-capture
-
 super + w
   firefox
 
