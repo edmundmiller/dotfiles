@@ -1,10 +1,8 @@
 { config, lib, pkgs, ... }:
 
-
-let
-  font = "Iosevka";
-in
-{
+let font = "Iosevka";
+in {
+  environment.systemPackages = with pkgs; [ vte ];
   home-manager.users.emiller.programs = {
     termite = {
       enable = true;
