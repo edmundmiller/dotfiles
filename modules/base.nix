@@ -2,6 +2,17 @@
 
 # This is a base of packages that didn't need configuring in their own module
 {
+  imports = [
+    ./editors/emacs.nix
+    ./shell/direnv.nix
+    ./shell/git.nix
+    ./shell/mail.nix
+    ./shell/ncmpcpp+mpd.nix
+    ./shell/gpg.nix
+    ./shell/zsh.nix
+    ./shell/termite.nix
+  ];
+
   environment.systemPackages = with pkgs; [
     speedtest-cli
     openconnect
