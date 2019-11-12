@@ -9,7 +9,7 @@
 
     ./modules/base.nix
     ./modules/desktop.nix
-    ./modules/dev.nix
+    ./modules/dev/default.nix
 
     ./modules/services/services.nix
     ./modules/services/steam.nix
