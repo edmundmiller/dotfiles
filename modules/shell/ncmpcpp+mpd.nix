@@ -47,6 +47,7 @@
       "zsh/rc.d/env.ncmpcpp.zsh".source = <config/ncmpcpp/env.zsh>;
       "ncmpcpp/config".source = <config/ncmpcpp/config>;
       "ncmpcpp/bindings".source = <config/ncmpcpp/bindings>;
+      "ncmpcpp/mpdnotify.conf".source = <config/ncmpcpp/mpdnotify.conf>;
     };
   };
 }

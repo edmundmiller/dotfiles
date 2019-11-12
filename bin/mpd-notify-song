@@ -1,0 +1,81 @@
+#!/usr/bin/env nix-shell
+#! nix-shell -i bash -p mpd mpc_cli libnotify imagemagick7
+
+# A simple notify script for now-playing songs on mpd. This script uses
+# notify-send and mpc to get the current song information.
+
+# Requirements (* = optional)
+# - mpd
+# - mpc
+# - notify-send (libnotify)
+# * ImageMagick (convert)
+
+# Author : Wolfgang Mueller
+# You can use, edit and redistribute this script in any way you like.
+# (Just make sure not to hurt any kittens)
+#
+# Contributors:
+# https://github.com/graysky2/mpdnotify
+
+# make sure env var is setup correctly
+[[ -z "$XDG_CONFIG_HOME" ]] &&
+	XDG_CONFIG_HOME="$HOME/.config"
+
+CFG_FILE="$XDG_CONFIG_HOME/ncmpcpp/mpdnotify.conf"
+
+if [[ ! -f "$CFG_FILE" ]]; then
+	echo " No config file found."
+	echo " Create $XDG_CONFIG_HOME/ncmpcpp/mpdnotify.conf for this user."
+	exit 1
+else
+	. "$CFG_FILE"
+fi
+
+#--------------------------------------------------------------------
+
+escape() {
+	echo "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g;'
+}
+
+# determine file
+file="$(mpc current -f %file%)"
+
+# check if anything is playing at all
+[[ -z $file ]] && exit 1
+
+# Get title info
+title="$(mpc current -f "$A_FORMAT")"
+
+# Get song info
+song="$(mpc current -f "$T_FORMAT")"
+
+# Art directory
+art="$MUSIC_DIR/${file%/*}"
+
+# skip if the art directory does not exist (mpd is playing a stream, etc)
+if [[ -d $art ]]; then
+	# find every file that matches IMG_REG set the first matching file to be the
+	# cover.
+	cover="$(find "$art/" -maxdepth 1 -type f | egrep -i -m1 "$IMG_REG")"
+fi
+
+# when no cover is found, use DEFAULT_ART as cover
+cover="${cover:=$DEFAULT_ART}"
+
+text="$(escape "$title\n$song")"
+
+# check if art is available
+# --hint=int:transient:1 is needed, because gnome-shell will keep the notification in its bar.
+# using 'hint' they'll be removed automatically (gnome-shell 3.01)
+if [[ -n $cover ]]; then
+
+	if [[ -n $COVER_RESIZE ]]; then
+		convert "$cover" -thumbnail $COVER_RESIZE -gravity center \
+			-background "$COVER_BACKGROUND" -extent $COVER_RESIZE "$TEMP_PATH" >>"$LOGFILE" 2>&1
+		cover="$TEMP_PATH"
+	fi
+
+	notify-send -u $URGENCY -t 5000 --hint=int:transient:1 "$NOTIFY_TITLE" "$text" -i "$cover" >>"$LOGFILE" 2>&1
+else
+	notify-send -u $URGENCY -t 5000 --hint=int:transient:1 "$NOTIFY_TITLE" "$text" >>"$LOGFILE" 2>&1
+fi
