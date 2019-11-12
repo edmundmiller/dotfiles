@@ -1,7 +1,8 @@
-with import <nixpkgs> {};
+with import <nixpkgs> { };
 
-python37.withPackages (ps: with ps; [
-  jupyterlab_server
+python37.withPackages (ps:
+with ps; [
+  jupyterlab
   jupyter_core
   jupyter
   ipython
@@ -11,4 +12,5 @@ python37.withPackages (ps: with ps; [
   numpy
   toolz
   pandas
+  rPackages.IRkernel
 ])
