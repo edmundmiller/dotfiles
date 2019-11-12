@@ -23,6 +23,8 @@ in {
         extraConfig = ''
           [github]
             user = emiller88
+          [gitlab]
+            user = emiller88
           [color]
             ui = auto
           [rebase]
