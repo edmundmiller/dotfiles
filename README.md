@@ -6,8 +6,8 @@ Credit: [hlissner/dotfiles](https://github.com/hlissner/dotfiles)
 
 To keep up with my dotfiles.
 
-+ shell: zsh
-+ font: Iosevka
+- shell: zsh
+- font: Iosevka
 
 ## Quick start
 
@@ -34,5 +34,4 @@ shell/     # shell utilities, including zsh + bash
 
 ## Relevant projects
 
-+ [DOOM Emacs](https://github.com/hlissner/doom-emacs) (pulled by `editor/emacs`)
-+ [Henrik's vim config](https://github.com/hlissner/.vim) (pulled by `editor/{neo,}vim`)
+- [DOOM Emacs](https://github.com/hlissner/doom-emacs) (pulled by `editor/emacs`)
