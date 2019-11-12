@@ -14,6 +14,7 @@
         #! ${pkgs.bash}/bin/bash
         firefox --private-window "$@"
       '')
+      tridactyl-native
     ];
   };
 
