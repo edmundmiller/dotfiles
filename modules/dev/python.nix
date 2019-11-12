@@ -7,11 +7,10 @@
     python37Packages.black
     python37Packages.setuptools
     python37Packages.pyaml
-    python37Packages.poetry
-    python27
     pipenv
     conda
     # xonsh
+    jetbrains.pycharm-professional
     (import ./programs/jupyter.nix)
   ];
 
