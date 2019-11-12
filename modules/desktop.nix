@@ -4,6 +4,7 @@
 {
   imports = [ ./base.nix ./misc/firefox.nix ];
   environment.systemPackages = with pkgs; [
+    aseprite-unfree
     # BROWSERS
     brave
     qutebrowser
@@ -18,9 +19,12 @@
     discord
     dropbox
     gimp
+    keybase-gui
+    xst
     spotify
     obs-studio
     screenkey
+    gnome3.nautilus
     transmission
     mpv
     okular
