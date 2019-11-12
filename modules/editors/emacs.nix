@@ -14,10 +14,10 @@
     editorconfig-core-c
     (ripgrep.override { withPCRE2 = true; })
     # Doom Emacs + dependencies
-    ((emacsPackagesNgGen emacsGit).emacsWithPackages
+    ((emacsPackagesNgGen emacs).emacsWithPackages
     (epkgs: [ epkgs.emacs-libvterm ]))
     sqlite # :tools (lookup +docsets)
-    texlive.combined.scheme-medium # :lang org -- for latex previews
+    texlive.combined.scheme-full # :lang org -- for latex previews
     ccls # :lang (cc +lsp)
     rls # :lang (rust +lsp)
     nodePackages.javascript-typescript-langserver # :lang (javascript +lsp)
