@@ -2,18 +2,18 @@
 
 {
   imports = [
-    ./dev/cc.nix
-    ./dev/node.nix
-    ./dev/python.nix
-    ./dev/clojure.nix
-    ./dev/R.nix
-    ./dev/rust.nix
-    ./dev/solidity.nix
-    ./dev/zsh.nix
-    ./dev/terraform.nix
-    ./dev/nixops.nix
+    ./cc.nix
+    ./node.nix
+    ./python.nix
+    ./clojure.nix
+    ./R.nix
+    ./rust.nix
+    ./solidity.nix
+    ./zsh.nix
+    ./terraform.nix
+    ./nixops.nix
 
-    ./misc/docker.nix
-    ./misc/virtualbox.nix
+    ../misc/docker.nix
+    ../misc/virtualbox.nix
   ];
 }
