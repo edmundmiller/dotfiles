@@ -20,21 +20,17 @@ in {
         userEmail = "${protonmail}";
         signing.key = "BC10AA9D";
         signing.signByDefault = true;
-        extraConfig = ''
-          [github]
-            user = emiller88
-          [gitlab]
-            user = emiller88
-          [color]
-            ui = auto
-          [rebase]
-            autosquash = true
-          [push]
-            default = current
-          [merge]
-            ff = onlt
-            log = true
-        '';
+        extraConfig = {
+          github = { user = "emiller88"; };
+          gitlab = { user = "emiller88"; };
+          color = { ui = "auto"; };
+          rebase = { autosquash = "true"; };
+          push = { default = "current"; };
+          merge = {
+            ff = "onlt";
+            log = "true";
+          };
+        };
         ignores = [ ".direnv" ".envrc" ];
       };
     };
