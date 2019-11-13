@@ -11,7 +11,7 @@
     ./modules/desktop.nix
     ./modules/dev/default.nix
 
-    ./modules/services/services.nix
+    ./modules/services/default.nix
     ./modules/services/steam.nix
 
     # ./modules/wmde/gnome.nix
