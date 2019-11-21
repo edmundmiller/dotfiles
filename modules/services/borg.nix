@@ -4,14 +4,16 @@
   services.borgbackup.jobs = {
     homeBackup = {
       paths = "/home/emiller";
-      exclude = [ "/home/*/.cache" ];
+      exclude =
+      [ "/home/*/.cache" "/home/emiller/torrents" "/home/emiller/src" ];
       repo = "/data/emiller/borg";
       encryption = {
         mode = "repokey";
-        passCommand = "pass borg";
+        passCommand = "${pkgs.pass}/bin/pass borg";
       };
       # compression = "auto,lzma";
       startAt = "weekly";
+      user = "emiller";
     };
   };
 }
