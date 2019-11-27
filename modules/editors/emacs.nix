@@ -28,6 +28,8 @@
     aspellDicts.en
     aspellDicts.en-computers
     aspellDicts.en-science
+    languagetool
+    wordnet
   ];
 
   fonts.fonts = [ pkgs.emacs-all-the-icons-fonts ];
