@@ -7,6 +7,8 @@
   ];
 
   hardware.opengl.driSupport32Bit = true;
+  hardware.opengl.extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
+  hardware.opengl.extraPackages = with pkgs; [ libva ];
   hardware.pulseaudio.support32Bit = true;
   nixpkgs.config.packageOverrides = pkgs: {
     steamcontroller-udev-rules = pkgs.writeTextFile {
