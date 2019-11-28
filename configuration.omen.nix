@@ -20,7 +20,7 @@
     ./modules/shell/pass.nix
   ];
 
-  networking.hostName = "nixos-omen";
+  networking.hostName = "omen";
   # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
