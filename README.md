@@ -11,25 +11,16 @@ To keep up with my dotfiles.
 
 ## Quick start
 
-`bash <(curl -s https://raw.githubusercontent.com/emiller88/dotfiles/master/bootstrap.sh)`
-
-`ln -s ~/.dotfiles/configuration.$HOSTNAME.nix /etc/nixos/configuration.nix`
-
-`sudo nixos-rebuild switch`
+```sh
+# Make sure your partitions are set up by this point
+git clone https://github.com/hlissner/dotfiles /etc/dotfiles
+/etc/dotfiles/deploy HOSTNAME   # installs nixos to /mnt
+```
 
 ## Overview
 
 ```sh
-# general
-bin/       # global scripts
-assets/    # wallpapers, sounds, screenshots, etc
-
-# categories
-base/      # provisions my system with the bare essentials
-dev/       # relevant to software development & programming in general
-editor/    # configuration for my text editors
-misc/      # for various apps & tools
-shell/     # shell utilities, including zsh + bash
+TODO
 ```
 
 ## Relevant projects
