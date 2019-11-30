@@ -7,7 +7,7 @@
     enable = true;
     openDefaultPorts = true;
     user = "emiller";
-    dataDir = "/home/emiller/Sync";
     configDir = "/home/emiller/.config/syncthing";
+    dataDir = "/home/emiller/sync";
   };
 }
