@@ -1,36 +1,22 @@
 { config, pkgs, libs, ... }:
 
-# TODO Auto magically install plugins with antibody
-with builtins;
-
-let
-  zsh-config = with pkgs;
-  stdenv.mkDerivation rec {
-    name = "zsh-config";
-
-    buildInputs = [ antibody ];
-
-    installPhase = ''
-      antibody bundle < ${<config/zsh>}/zsh_plugins.txt > ${
-        <config/zsh>
-      }/zsh_plugins.sh
-        '';
-  };
+let zgen = builtins.fetchGit "https://github.com/tarjoilija/zgen";
 in {
   environment = {
     variables = {
       ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
       ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
-      ANTIBODY_HOME = "$XDG_CACHE_HOME/antibody";
+      ZGEN_DIR = "$XDG_CACHE_HOME/zgen";
+      ZGEN_SOURCE = "${zgen}/zgen.zsh";
     };
 
     systemPackages = with pkgs; [
       zsh
-      antibody
       nix-zsh-completions
       fasd
       exa
       fd
+      fzf
       tmux
       htop
       tree

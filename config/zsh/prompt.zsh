@@ -4,7 +4,7 @@ _strlen() { echo ${#${(S%%)1//$~%([BSUbfksu]|([FB]|){*})/}}; }
 
 # fastest possible way to check if repo is dirty
 prompt_git_dirty() {
-  _is_callable git || return
+  command -v git >/dev/null || return
 
   # check if we're in a git repo
   [[ "$(command git rev-parse --is-inside-work-tree 2>/dev/null)" == "true" ]] || return
@@ -28,8 +28,6 @@ prompt_hook_precmd() {
 
 ## Initialization ######################
 prompt_init() {
-  # prevent the extra space in the rprompt
-  [[ -n $EMACS ]] || ZLE_RPROMPT_INDENT=0
   # prevent percentage showing up
   # if output doesn't end with a newline
   export PROMPT_EOL_MARK=
