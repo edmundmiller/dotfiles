@@ -2,7 +2,7 @@
 
 let font = "Iosevka";
 in {
-  environment.systemPackages = with pkgs; [ vte ];
+  programs.zsh.vteIntegration = true;
   home-manager.users.emiller.programs = {
     termite = {
       enable = true;
