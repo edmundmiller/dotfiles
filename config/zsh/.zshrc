@@ -9,7 +9,7 @@ if ! zgen saved; then
   zgen load zsh-users/zsh-completions src
   zgen load junegunn/fzf shell
   zgen load spwhitt/nix-zsh-completions
-  zgen load chisui/zsh-nix-shell
+  zgen load chisui/zsh-nix-shell nix-shell.plugin.zsh
 
   if [[ -z $SSH_CONNECTION ]]; then
     zgen load zdharma/fast-syntax-highlighting
