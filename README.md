@@ -6,14 +6,11 @@ Credit: [hlissner/dotfiles](https://github.com/hlissner/dotfiles)
 
 To keep up with my dotfiles.
 
-- shell: zsh
-- font: Iosevka
-
 ## Quick start
 
 ```sh
 # Make sure your partitions are set up by this point
-git clone https://github.com/hlissner/dotfiles /etc/dotfiles
+git clone https://github.com/emiller88/dotfiles /etc/dotfiles
 /etc/dotfiles/deploy HOSTNAME   # installs nixos to /mnt
 ```
 
