@@ -125,3 +125,7 @@ bindkey -M viins '^X,' _history-complete-newer \
   '^X/' _history-complete-older \
   '^X`' _bash_complete-word
 
+# fzf
+bindkey -M viins '^T' fzf-file-widget
+bindkey -M viins '\ec' fzf-cd-widget
+bindkey -M viins '^R' fzf-history-widget
