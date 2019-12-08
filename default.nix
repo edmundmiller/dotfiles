@@ -20,11 +20,13 @@
     plymouth.enable = true;
   };
 
-  nixpkgs.config.allowUnfree = true;
-
-  # nixpkgs.overlays = [
-  #   (import ./overlays/lorri.nix)
-  # ];
+  nix = {
+    nixPath = options.nix.nixPath.default
+    ++ [ "config=/etc/dotfiles/config" "packages=/etc/dotfiles/packages" ];
+    autoOptimiseStore = true;
+    trustedUsers = [ "root" "@wheel" ];
+  };
+  nixpkgs.config = { allowUnfree = true; };
 
   environment = {
     systemPackages = with pkgs; [
@@ -57,8 +59,6 @@
     "http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext";
   });
 
-  nix.trustedUsers = [ "root" "@wheel" ];
-  nix.nixPath = options.nix.nixPath.default ++ [ "config=${./config}" ];
   users.users.emiller = {
     home = "/home/emiller";
     isNormalUser = true;
