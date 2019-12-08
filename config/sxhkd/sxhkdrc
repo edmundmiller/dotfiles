@@ -41,7 +41,7 @@ Print
 super + Print
 	scrrec -s ~/recordings/$(date +%F-%T).mp4
 super + ctrl + Print
-	scrcap -f
+	scrrec -s ~/recordings/$(date +%F-%T).gif
 XF86Audio{Play,Pause}
     mpc -q toggle
 XF86Audio{Prev,Next}
