@@ -16,7 +16,7 @@
     libreoffice-fresh
     keybase-gui
     calibre
-    discord
+    (callPackage <packages/ripcord.nix> { })
     dropbox
     gimp
     keybase-gui
