@@ -31,4 +31,4 @@ nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs-unstable
 nix-channel --update
 
 nixos-generate-config --root "$PREFIX"
-nixos-install --root "$PREFIX" -I "config=$DOTFILES"
+nixos-install --root "$PREFIX" -I "config=$DOTFILES" -I "packages=$DOTFILES/packages"
