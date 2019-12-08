@@ -46,18 +46,6 @@
       DOTFILES = "$HOME/.dotfiles";
       # GTK2_RC_FILES = "$HOME/.config/gtk-2.0/gtkrc";
     };
-    shellAliases = {
-      q = "exit";
-      clr = "clear";
-      sudo = "sudo ";
-      nix-env = "NIXPKGS_ALLOW_UNFREE=1 nix-env";
-      ne = "nix-env";
-      nu =
-      "sudo nix-channel --update && sudo nixos-rebuild -I config=$HOME/.dotfiles/config switch";
-      nre = "sudo nixos-rebuild -I config=$HOME/.dotfiles/config";
-      ngc = "nix-collect-garbage -d && sudo nix-collect-garbage -d";
-      ns = "nix-shell";
-    };
   };
 
   time.timeZone = "America/Chicago";

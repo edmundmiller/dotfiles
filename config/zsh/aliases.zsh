@@ -1,49 +1,70 @@
-autoload -U zmv
+### ReDefs
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
 
-zman() { PAGER="less -g -s '+/^       "$1"'" man zshall; }
+alias mkdir='mkdir -p'
+alias wget='wget -c'
+alias rg='noglob rg'
+alias bc='bc -lq'
 
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+### convenience
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias -- -='cd -'
 
-alias ln="${aliases[ln]:-ln} -v"  # verbose ln
-alias l='ls -1'
-alias ll='ls -l'
-alias la='LC_COLLATE=C ls -la'
+alias q=exit
+alias clr=clear
+alias sudo='sudo '
 
-# notify me before clobbering files
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
+if command -v exa >/dev/null; then
+	alias exa='exa --group-directories-first'
+	alias l='exa -1'
+	alias ll='exa -l'
+	alias la='LC_COLLATE=C exa -la'
+else
+	alias l='ls -1'
+	alias ll='ls -l'
+fi
 
-alias gurl='curl --compressed'
-alias mkdir='mkdir -p'
-alias rsyncd='rsync -va --delete'   # Hard sync two directories
-alias wget='wget -c'                # Resume dl if possible
-
-# Always enable colored `grep` output
-# Note: `GREP_OPTIONS="--color=auto"` is deprecated, hence the alias usage.
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-
-alias ag="noglob ag -p $XDG_CONFIG_HOME/ag/agignore"
-alias rg='noglob rg'
-
-# For example, to list all directories that contain a certain file: find . -name
-# .gitattributes | map dirname
-alias map="xargs -n1"
-
-# Convenience
-alias kb=keybase
 alias mk=make
-alias exe=exercism
-alias ydl=youtube-dl
-alias ydl-aac='youtube-dl --extract-audio --audio-format aac'
-alias ydl-m4a='youtube-dl --extract-audio --audio-format m4a'
-alias ddg=duckduckgo
-alias bt=transmission-remote
+alias rcp='rsync -vaP --delete'
+alias rmirror='rsync -rtvu --delete'
+alias gurl='curl --compressed'
 
-take() { mkdir "$1" && cd "$1"; }; compdef take=mkdir
-hex()  { echo -n $@ | xxd -psdu; }
+alias y='xclip -selection clipboard -in'
+alias p='xclip -selection clipboard -out'
+
+alias sc=systemctl
+alias ssc='sudo systemctl'
+
+alias nix-env='NIXPKGS_ALLOW_UNFREE=1 nix-env'
+alias ne=nix-env
+alias nc=nix-channel
+alias ngc=nix-garbage-collect
+alias nre=nixos-rebuild
+alias ns=nix-shell
+
+### Tools
+autoload -U zmv
+
+take() {
+	mkdir "$1" && cd "$1"
+}
+compdef take=mkdir
+
+zman() {
+	PAGER="less -g -s '+/^       "$1"'" man zshall
+}
+
+r() {
+	local time=$1
+	shift
+	sched "$time" "notify-send --urgency=critical 'Reminder' '$@'; ding"
+}
+compdef r=sched
