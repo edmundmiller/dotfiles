@@ -1,16 +1,30 @@
 { config, lib, pkgs, ... }:
 
 {
-  environment.systemPackages = with pkgs; [ pinentry_emacs pinentry ];
+  environment = {
+    extraInit = ''
+      export GNUPGHOME="$XDG_CONFIG_HOME/gnupg"
+      if [ ! -d "$GNUPGHOME" ]; then
+         mkdir -p "$GNUPGHOME" -m 700
+      fi
+    '';
 
-  home-manager.users.emiller = {
-    programs.gpg = {
-      enable = true;
-    };
-    services.gpg-agent = {
-      enable = true;
-      defaultCacheTtl = 28800;
-      maxCacheTtl = 28800;
-    };
+    systemPackages = with pkgs; [ gnupg pinentry ];
   };
+
+  programs.gnupg.agent = {
+    enable = true;
+    enableSSHSupport = true;
+  };
+
+  systemd.user.services.gpg-agent.serviceConfig.ExecStart = [
+    ""
+    ''
+      ${pkgs.gnupg}/bin/gpg-agent \
+           --supervised \
+           --allow-emacs-pinentry \
+           --default-cache-ttl 28800 \
+           --pinentry-program ${pkgs.pinentry}/bin/pinentry-gtk-2
+    ''
+  ];
 }
