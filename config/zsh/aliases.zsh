@@ -53,6 +53,16 @@ alias ns=nix-shell
 ### Tools
 autoload -U zmv
 
+# Convenience
+alias kb=keybase
+alias mk=make
+alias exe=exercism
+alias ydl=youtube-dl
+alias ydl-aac='youtube-dl --extract-audio --audio-format aac'
+alias ydl-m4a='youtube-dl --extract-audio --audio-format m4a'
+alias ddg=duckduckgo
+alias bt=transmission-remote
+
 take() {
 	mkdir "$1" && cd "$1"
 }
