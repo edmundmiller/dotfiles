@@ -37,6 +37,11 @@
       message = CI/CD Passed
 
       [Filter.5]
+      query = 'subject:receipt'
+      tags = +receipt
+      message = Receipt
+
+      [Filter.6]
       query = 'tag:"all mail"'
       tags = -all mail;
       message = remove all mail
