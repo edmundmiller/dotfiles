@@ -47,7 +47,7 @@ alias nix-env='NIXPKGS_ALLOW_UNFREE=1 nix-env'
 alias ne=nix-env
 alias nc=nix-channel
 alias ngc=nix-garbage-collect
-alias nre="sudo nixos-rebuild -I config=$DOTFILES -I packages=$DOTFILES/packages"
+alias nre="sudo nixos-rebuild -I config=$DOTFILES/config -I packages=$DOTFILES/packages"
 alias ns=nix-shell
 
 ### Tools
