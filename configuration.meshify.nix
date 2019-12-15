@@ -26,6 +26,9 @@
   };
 
   # environment.systemPackages = [ pkgs.lm_sensors ];
+  boot.supportedFilesystems = [ "zfs" ];
+  boot.loader.grub.copyKernels = true;
+  services.zfs.autoScrub.enable = true;
 
   i18n = {
     consoleFont = "Lat2-Terminus16";
