@@ -10,6 +10,7 @@
     ./modules/base.nix
     ./modules/desktop.nix
     ./modules/dev/default.nix
+    ./modules/editors/vscode.nix
 
     ./modules/services/default.nix
     ./modules/services/steam.nix
