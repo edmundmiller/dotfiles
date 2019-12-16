@@ -17,6 +17,7 @@
   ];
 
   networking.hostName = "meshify";
+  networking.hostId = "3b848ba1";
   # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
