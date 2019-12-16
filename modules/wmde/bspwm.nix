@@ -2,7 +2,6 @@
 
 {
   imports = [
-    ./features/autorandr.nix
     ./features/xserver.nix
     ./features/gtk.nix
     ./features/polybar.nix
