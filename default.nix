@@ -60,14 +60,11 @@
   });
 
   users.users.emiller = {
-    home = "/home/emiller";
     isNormalUser = true;
     uid = 1000;
     description = "Edmund Miller";
-    name = "emiller";
     extraGroups = [ "wheel" "video" ];
     shell = pkgs.zsh;
-    openssh = { authorizedKeys.keys = [ "/home/emiller/.ssh/id_rsa" ]; };
   };
 
   home-manager.users.emiller = {
@@ -76,11 +73,6 @@
       source = ./bin;
       recursive = true;
     };
-  };
-
-  programs.gnupg.agent = {
-    enable = true;
-    enableSSHSupport = true;
   };
 
   # This value determines the NixOS release with which your system is to be
