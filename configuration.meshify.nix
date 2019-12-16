@@ -12,6 +12,7 @@
     ./modules/services/steam.nix
 
     ./modules/wmde/bspwm.nix
+    ./modules/wmde/features/autorandr/meshify.nix
 
     ./modules/shell/pass.nix
   ];
