@@ -9,7 +9,7 @@
     };
 
     systemPackages = with pkgs; [
-      firefox
+      firefox-bin
       (pkgs.writeScriptBin "firefox-private" ''
         #! ${pkgs.bash}/bin/bash
         firefox --private-window "$@"
