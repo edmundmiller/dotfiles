@@ -14,6 +14,7 @@ in {
       zsh
       nix-zsh-completions
       fasd
+      bat
       exa
       fd
       fzf
