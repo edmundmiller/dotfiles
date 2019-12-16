@@ -17,6 +17,7 @@
     keybase-gui
     calibre
     (callPackage <packages/ripcord.nix> { })
+    discord
     dropbox
     gimp
     keybase-gui
