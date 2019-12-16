@@ -4,6 +4,7 @@
     steamcontroller-udev-rules
     steam
     steam-run
+    runelite
   ];
 
   hardware.opengl.driSupport32Bit = true;
