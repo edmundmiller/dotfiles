@@ -12,6 +12,7 @@
   ];
 
   services.xserver.windowManager.bspwm = { enable = true; };
+  services.xserver.windowManager.default = "bspwm";
 
   environment.systemPackages = with pkgs; [ feh ];
 
