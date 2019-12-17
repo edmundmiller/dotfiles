@@ -9,7 +9,7 @@
   services = {
     mpd = {
       enable = true;
-      musicDirectory = "/data/emiller/Music/";
+      musicDirectory = "/data/music";
       startWhenNeeded = true;
       extraConfig = ''
         input {
