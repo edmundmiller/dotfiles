@@ -22,6 +22,11 @@
     ./modules/shell/pass.nix
   ];
 
+  boot.loader.grub = {
+    useOSProber = true;
+    configurationLimit = 30;
+  };
+
   networking.hostName = "omen";
   # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
