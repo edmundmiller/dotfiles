@@ -1,7 +1,6 @@
 { config, lib, pkgs, ... }:
 
-let
-  bg-img = "/home/emiller/.dotfiles/assets/wallpapers/functionalDNA_orange.png";
+let bg-img = "/etc/dotfiles/assets/wallpapers/functionalDNA_orange.png";
 in {
   services.xserver = {
     displayManager.lightdm.greeters.mini = {

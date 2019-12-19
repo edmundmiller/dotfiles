@@ -27,7 +27,7 @@
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
         '';
         "wallpaper" =
-        "feh --bg-scale /home/emiller/.dotfiles/assets/wallpapers/functionalDNA_grey.png";
+        "feh --bg-scale /etc/dotfiles/assets/wallpapers/functionalDNA_grey.png";
         "polybar" = "~/.config/polybar/launch.sh";
       };
     };
