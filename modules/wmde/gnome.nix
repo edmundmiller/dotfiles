@@ -1,8 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports =
-  [ ./features/xserver.nix ./features/gtk.nix ./features/lightdm.nix ];
+  imports = [ ./features/xserver.nix ./features/gtk.nix ];
 
   environment.systemPackages = with pkgs; [
     gnomeExtensions.topicons-plus
@@ -10,11 +9,10 @@
   ];
   services.xserver = {
     desktopManager.gnome3.enable = true;
-    services.gnome3.chrome-gnome-shell.enable = true;
 
-    # displayManager = {
-    #   gdm.enable = true;
-    #   gdm.wayland = false;
-    # };
+    displayManager = {
+      gdm.enable = true;
+      gdm.wayland = false;
+    };
   };
 }
