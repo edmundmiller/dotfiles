@@ -17,6 +17,7 @@
 
     # ./modules/wmde/gnome.nix
     ./modules/wmde/bspwm.nix
+    ./modules/wmde/features/autorandr/omen.nix
 
     ./modules/shell/pass.nix
   ];
