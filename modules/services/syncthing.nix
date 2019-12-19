@@ -13,17 +13,17 @@
       devices = {
         omen = {
           id =
-          "5D6ELCY-YK2GOPP-BNJLVOH-F4OGXUD-D3Z5RCQ-LVGIFSS-MLS6LV5-DYLNYAK";
+            "5D6ELCY-YK2GOPP-BNJLVOH-F4OGXUD-D3Z5RCQ-LVGIFSS-MLS6LV5-DYLNYAK";
           name = "omen";
         };
         oneplus = {
           id =
-          "6EYD6V4-4KPXAVK-PR3GGLT-AYIWQ72-BUWQAUJ-PA7KAH7-QVGXA7Q-SKSL7AD";
+            "6EYD6V4-4KPXAVK-PR3GGLT-AYIWQ72-BUWQAUJ-PA7KAH7-QVGXA7Q-SKSL7AD";
           name = "oneplus";
         };
         meshify = {
           id =
-          "UNRXAI3-KFYH6NM-V2DWNTH-QAXEU5R-I3IVF3S-RZAYYEX-BHNESEF-IGCLGQ4";
+            "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
           name = "meshify";
         };
       };
