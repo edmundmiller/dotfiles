@@ -27,10 +27,10 @@ super + {_,shift + }space
   rofi-pass {_,--insert}
 
 super + alt + a
-     i3lock -i ~/.dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1
+     i3lock -i /etc/dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1
 
 super + alt + s
-     i3lock -i ~/.dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1 && systemctl suspend
+     i3lock -i /etc/dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1 && systemctl suspend
 
 #
 # Media keys
