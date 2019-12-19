@@ -10,10 +10,6 @@
   boot = {
     loader = {
       systemd-boot.enable = true;
-      grub = {
-        useOSProber = true;
-        configurationLimit = 30;
-      };
       efi.canTouchEfiVariables = true;
     };
     cleanTmpDir = true;
@@ -26,27 +22,35 @@
     autoOptimiseStore = true;
     trustedUsers = [ "root" "@wheel" ];
   };
-  nixpkgs.config = { allowUnfree = true; };
+  nixpkgs.config = {
+    allowUnfree = true;
+
+    packageOverrides = pkgs: {
+      unstable = import <nixpkgs-unstable> { config = config.nixpkgs.config; };
+    };
+  };
 
   environment = {
     systemPackages = with pkgs; [
+      # Just the bear necessities~
+      libqalculate
       coreutils
       git
-      wget
-      vim
-      gnupg
+      killall
       unzip
-      bc
-      (ripgrep.override { withPCRE2 = true; })
-      bashmount
+      vim
+      wget
+      # Support for extra filesystems
+      sshfs
+      exfat
+      ntfs3g
+      hfsprogs
     ];
     variables = {
       XDG_CONFIG_HOME = "$HOME/.config";
       XDG_CACHE_HOME = "$HOME/.cache";
       XDG_DATA_HOME = "$HOME/.local/share";
       XDG_BIN_HOME = "$HOME/.local/bin";
-      DOTFILES = "$HOME/.dotfiles";
-      # GTK2_RC_FILES = "$HOME/.config/gtk-2.0/gtkrc";
     };
   };
 
@@ -74,6 +78,8 @@
       recursive = true;
     };
   };
+
+  networking.firewall.enable = true;
 
   # This value determines the NixOS release with which your system is to be
   # compatible, in order to avoid breaking some software such as database
