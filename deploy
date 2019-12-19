@@ -5,7 +5,7 @@ DOTFILES="$(cd $(dirname "${BASH_SOURCE:-${(%):-%x}}") && pwd -P)"
 PREFIX="${PREFIX:-/mnt}"
 NIXOSPREFIX="${PREFIX}/etc/nixos"
 NIXOSFLAGS="-I 'config=$DOTFILES/config' -I 'packages=$DOTFILES/packages'"
-HOST=${1:-${HOST:-kuro}}
+HOST=${1:-${HOST:-meshify}}
 
 if [ $EUID -nq 0 ]; then
   sudo nix-channel --update
