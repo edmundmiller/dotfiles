@@ -5,14 +5,14 @@
     ./.
 
     ./modules/base.nix
-    ./modules/desktop.nix
+    ./modules/default/desktop.nix
     ./modules/dev/default.nix
     ./modules/editors/vscode.nix
 
     ./modules/services/default.nix
 
-    ./modules/wmde/gnome.nix
-    # ./modules/wmde/bspwm.nix
+    ./modules/desktop/gnome.nix
+    # ./modules/desktop/bspwm.nix
 
     ./modules/shell/pass.nix
   ];

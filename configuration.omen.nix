@@ -8,16 +8,18 @@
     ./hardware/storage.nix
 
     ./modules/base.nix
-    ./modules/desktop.nix
+    ./modules/desktop/default.nix
     ./modules/dev/default.nix
     ./modules/editors/vscode.nix
 
-    ./modules/services/default.nix
-    ./modules/services/steam.nix
+    ./modules/audio/ncmpcpp+mpd.nix
 
-    # ./modules/wmde/gnome.nix
-    ./modules/wmde/bspwm.nix
-    ./modules/wmde/features/autorandr/omen.nix
+    ./modules/services/default.nix
+    ./modules/gaming/steam.nix
+
+    # ./modules/desktop/gnome.nix
+    ./modules/desktop/bspwm.nix
+    ./modules/desktop/features/autorandr/omen.nix
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix
