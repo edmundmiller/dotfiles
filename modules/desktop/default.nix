@@ -34,10 +34,47 @@
     networkmanagerapplet
     networkmanager_dmenu
     ffmpeg-full
+    redshift
     # FIXME zoom-us
     # CLI
     maim
     graphviz
     dfu-programmer
   ];
+
+  sound.enable = true;
+  hardware = {
+    opengl.driSupport32Bit = true;
+    pulseaudio = {
+      enable = true;
+      support32Bit = true;
+      package = pkgs.pulseaudioFull;
+    };
+  };
+
+  services = {
+    xserver.enable = true;
+    redshift.enable = true;
+  };
+
+  fonts = {
+    enableFontDir = true;
+    enableGhostscriptFonts = true;
+
+    fonts = with pkgs; [
+      ubuntu_font_family
+      dejavu_fonts
+      fira-code
+      fira-code-symbols
+      iosevka
+      noto-fonts
+      symbola
+      font-awesome_5
+    ];
+
+    fontconfig.defaultFonts = {
+      sansSerif = [ "Ubuntu" ];
+      monospace = [ "Iosevka" ];
+    };
+  };
 }

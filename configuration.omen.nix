@@ -31,7 +31,6 @@
   };
 
   networking.hostName = "omen";
-  # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
   system.autoUpgrade = {
@@ -57,37 +56,7 @@
   # Monitor backlight control
   programs.light.enable = true;
 
-  fonts = {
-    fontconfig = {
-      enable = true;
-      antialias = true;
-      defaultFonts.monospace = [ "Iosevka" ];
-      allowBitmaps = true;
-      useEmbeddedBitmaps = true;
-      ultimate = {
-        enable = true;
-        substitutions = "combi";
-      };
-    };
-    fonts = with pkgs; [
-      fira-code-symbols
-      iosevka
-      noto-fonts
-      symbola
-      noto-fonts-cjk
-      font-awesome_5
-    ];
-  };
-
-  # Enable sound.
-  sound.enable = true;
   hardware = {
-    opengl.driSupport32Bit = true;
-    pulseaudio = {
-      enable = true;
-      support32Bit = true;
-      package = pkgs.pulseaudioFull;
-    };
     bluetooth = {
       enable = true;
       powerOnBoot = false;
