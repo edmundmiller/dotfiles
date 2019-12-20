@@ -4,31 +4,22 @@
   imports = [
     ./.
 
-    # Hardware
-    ./hardware/storage.nix
-
     ./modules/base.nix
     ./modules/desktop.nix
     ./modules/dev/default.nix
     ./modules/editors/vscode.nix
 
     ./modules/services/default.nix
-    ./modules/services/steam.nix
 
-    # ./modules/wmde/gnome.nix
-    ./modules/wmde/bspwm.nix
-    ./modules/wmde/features/autorandr/omen.nix
+    ./modules/wmde/gnome.nix
+    # ./modules/wmde/bspwm.nix
 
     ./modules/shell/pass.nix
-    ./modules/shell/mail.nix
   ];
 
-  boot.loader.grub = {
-    useOSProber = true;
-    configurationLimit = 30;
-  };
+  boot.loader.grub = { configurationLimit = 30; };
 
-  networking.hostName = "omen";
+  networking.hostName = "envy";
   # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
@@ -93,4 +84,11 @@
   };
 
   users.users.emiller.extraGroups = [ "networkmanager" ];
+
+  users.users.lori = {
+    isNormalUser = true;
+    uid = 1001;
+    description = "Lori Miller";
+    extraGroups = [ "video" ];
+  };
 }
