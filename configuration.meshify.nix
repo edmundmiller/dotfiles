@@ -15,6 +15,7 @@
     ./modules/wmde/features/autorandr/meshify.nix
 
     ./modules/shell/pass.nix
+    ./modules/shell/mail.nix
   ];
 
   networking.hostName = "meshify";
