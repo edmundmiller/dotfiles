@@ -5,14 +5,16 @@
     ./.
 
     ./modules/base.nix
-    ./modules/desktop.nix
+    ./modules/desktop/default.nix
     ./modules/dev/default.nix
 
+    ./modules/audio/ncmpcpp+mpd.nix
     ./modules/services/default.nix
-    ./modules/services/steam.nix
+    ./modules/gaming/steam.nix
+    ./modules/gaming/runelite.nix
 
-    ./modules/wmde/bspwm.nix
-    ./modules/wmde/features/autorandr/meshify.nix
+    ./modules/desktop/bspwm.nix
+    ./modules/desktop/features/autorandr/meshify.nix
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix

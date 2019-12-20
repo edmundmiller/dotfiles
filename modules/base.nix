@@ -6,7 +6,6 @@
     ./editors/emacs.nix
     ./shell/direnv.nix
     ./shell/git.nix
-    ./shell/ncmpcpp+mpd.nix
     ./shell/gpg.nix
     ./shell/zsh.nix
     ./shell/termite.nix
