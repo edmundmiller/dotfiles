@@ -9,7 +9,10 @@
     ./modules/dev/default.nix
 
     ./modules/audio/ncmpcpp+mpd.nix
+
     ./modules/services/default.nix
+    ./modules/services/ssh.nix
+
     ./modules/gaming/steam.nix
     ./modules/gaming/runelite.nix
 
