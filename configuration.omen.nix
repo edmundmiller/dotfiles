@@ -5,7 +5,7 @@
     ./.
 
     # Hardware
-    ./hardware/storage.nix
+    ./hardware-configuration.nix
 
     ./modules/base.nix
     ./modules/desktop/default.nix
