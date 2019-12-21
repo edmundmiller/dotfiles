@@ -7,12 +7,19 @@
     gnomeExtensions.topicons-plus
     gnomeExtensions.mediaplayer
   ];
-  services.xserver = {
-    desktopManager.gnome3.enable = true;
 
-    displayManager = {
-      gdm.enable = true;
-      gdm.wayland = false;
+  services = {
+    printing.enable = true;
+    gnome3.chrome-gnome-shell.enable = true;
+    dbus.packages = with pkgs; [ gnome3.dconf ];
+
+    xserver = {
+      desktopManager.gnome3.enable = true;
+
+      displayManager = {
+        gdm.enable = true;
+        gdm.wayland = false;
+      };
     };
   };
 }
