@@ -10,6 +10,7 @@
     ./modules/editors/vscode.nix
 
     ./modules/services/default.nix
+    ./modules/services/ssh.nix
 
     ./modules/desktop/gnome.nix
     # ./modules/desktop/bspwm.nix

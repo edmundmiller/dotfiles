@@ -15,6 +15,8 @@
     ./modules/audio/ncmpcpp+mpd.nix
 
     ./modules/services/default.nix
+    ./modules/services/ssh.nix
+
     ./modules/gaming/steam.nix
 
     # ./modules/desktop/gnome.nix
