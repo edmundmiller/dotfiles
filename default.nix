@@ -55,6 +55,11 @@
   };
 
   time.timeZone = "America/Chicago";
+  location = (if config.time.timeZone == "America/Chicago" then {
+    latitude = 32.98616;
+    longitude = -96.75043;
+  } else
+    { });
 
   # Block well known bad hosts
   networking.extraHosts = builtins.readFile (builtins.fetchurl {
