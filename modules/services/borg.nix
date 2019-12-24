@@ -3,10 +3,10 @@
 {
   services.borgbackup.jobs = {
     homeBackup = {
-      paths = "/home/emiller";
+      paths = "/home";
       exclude =
       [ "/home/*/.cache" "/home/emiller/torrents" "/home/emiller/src" ];
-      repo = "/data/emiller/borg";
+      repo = "/data/borg";
       encryption = {
         mode = "repokey";
         passCommand = "${pkgs.pass}/bin/pass borg";
