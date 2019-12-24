@@ -9,7 +9,9 @@
     ./modules/dev/default.nix
     ./modules/editors/vscode.nix
 
-    ./modules/services/default.nix
+    ./modules/services/borg.nix
+    ./modules/services/keybase.nix
+    ./modules/services/syncthing.nix
     ./modules/services/ssh.nix
 
     ./modules/desktop/gnome.nix

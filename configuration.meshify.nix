@@ -10,8 +10,11 @@
 
     ./modules/audio/ncmpcpp+mpd.nix
 
-    ./modules/services/default.nix
+    ./modules/services/keybase.nix
+    ./modules/services/pia.nix
     ./modules/services/ssh.nix
+    ./modules/services/syncthing.nix
+    ./modules/services/transmission.nix
 
     ./modules/gaming/steam.nix
     ./modules/gaming/runelite.nix

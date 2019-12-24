@@ -11,8 +11,10 @@
 
     ./modules/audio/ncmpcpp+mpd.nix
 
-    ./modules/services/default.nix
+    ./modules/services/keybase.nix
+    ./modules/services/pia.nix
     ./modules/services/ssh.nix
+    ./modules/services/syncthing.nix
 
     ./modules/gaming/steam.nix
 
