@@ -4,9 +4,6 @@
   imports = [
     ./.
 
-    # Hardware
-    ./hardware-configuration.nix
-
     ./modules/base.nix
     ./modules/desktop/default.nix
     ./modules/dev/default.nix
