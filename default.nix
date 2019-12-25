@@ -4,7 +4,6 @@
   imports = [
     <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
     <home-manager/nixos>
-    /etc/nixos/hardware-configuration.nix
   ];
 
   boot = {
