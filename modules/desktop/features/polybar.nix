@@ -11,7 +11,6 @@
   ];
 
   fonts.fonts = [ pkgs.siji ];
-  # fonts.enableFontDir = true;
 
   home-manager.users.emiller.xdg.configFile = {
     "polybar" = {

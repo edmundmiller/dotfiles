@@ -28,7 +28,6 @@
 
   networking.hostName = "meshify";
   networking.hostId = "3b848ba1";
-  # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
   services.xserver.videoDrivers = [ "nvidiaBeta" ];
@@ -38,7 +37,6 @@
     channel = "https://nixos.org/channels/nixos-19.09";
   };
 
-  # environment.systemPackages = [ pkgs.lm_sensors ];
   boot.supportedFilesystems = [ "zfs" ];
   boot.loader.grub.copyKernels = true;
   services.zfs.autoScrub.enable = true;

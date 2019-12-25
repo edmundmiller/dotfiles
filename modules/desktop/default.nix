@@ -6,7 +6,6 @@
   environment.systemPackages = with pkgs; [
     aseprite-unfree
     # BROWSERS
-    brave
     qutebrowser
     # NIX STUFF
     appimage-run
@@ -35,7 +34,6 @@
     networkmanager_dmenu
     ffmpeg-full
     redshift
-    # FIXME zoom-us
     # CLI
     maim
     graphviz

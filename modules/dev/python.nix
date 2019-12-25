@@ -9,7 +9,6 @@
     python37Packages.pyaml
     pipenv
     conda
-    # xonsh
     jetbrains.pycharm-professional
     (import ./programs/jupyter.nix)
   ];
