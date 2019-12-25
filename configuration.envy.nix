@@ -24,7 +24,6 @@
   hardware.cpu.intel.updateMicrocode = true;
 
   networking.hostName = "envy";
-  # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
   # TODO Add optimus

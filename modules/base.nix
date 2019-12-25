@@ -14,9 +14,7 @@
   environment.systemPackages = with pkgs; [
     speedtest-cli
     openconnect
-    # cachix
-    # NIX STUFF
-    # CLI
+    cachix
     visidata
     youtube-dl
     xclip
