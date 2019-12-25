@@ -21,6 +21,7 @@
   ];
 
   boot.loader.grub = { configurationLimit = 30; };
+  hardware.cpu.intel.updateMicrocode = true;
 
   networking.hostName = "envy";
   # networking.wireless.enable = true;
