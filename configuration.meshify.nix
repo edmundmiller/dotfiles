@@ -40,6 +40,18 @@
   boot.supportedFilesystems = [ "zfs" ];
   boot.loader.grub.copyKernels = true;
   services.zfs.autoScrub.enable = true;
+  services.zfs.trim.enable = true;
+  services.znapzend = {
+    enable = true;
+    autoCreation = true;
+    zetup = {
+      "rpool/home" = {
+        plan = "1d=>1h,1m=>1d,1y=>1m";
+        recursive = true;
+        destinations.local = { dataset = "bigdata/backup"; };
+      };
+    };
+  };
 
   i18n = {
     consoleFont = "Lat2-Terminus16";
