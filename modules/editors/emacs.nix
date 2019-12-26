@@ -7,7 +7,6 @@
       "https://github.com/nix-community/emacs-overlay/archive/master.tar.gz";
     }))
   ];
-  environment.variables.EDITOR = "emacs";
   environment.systemPackages = with pkgs; [
     (lib.mkIf (config.programs.gnupg.agent.enable) pinentry_emacs)
 

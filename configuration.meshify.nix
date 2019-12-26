@@ -7,6 +7,7 @@
     ./modules/base.nix
     ./modules/desktop/default.nix
     ./modules/dev/default.nix
+    ./modules/editors/vim.nix
 
     ./modules/audio/ncmpcpp+mpd.nix
 
