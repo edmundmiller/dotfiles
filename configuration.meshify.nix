@@ -31,6 +31,8 @@
   # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
+  services.xserver.videoDrivers = [ "nvidiaBeta" ];
+
   system.autoUpgrade = {
     enable = true;
     channel = "https://nixos.org/channels/nixos-19.09";

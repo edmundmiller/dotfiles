@@ -27,6 +27,8 @@
   # networking.wireless.enable = true;
   networking.networkmanager.enable = true;
 
+  # TODO Add optimus
+
   system.autoUpgrade = {
     enable = true;
     channel = "https://nixos.org/channels/nixos-19.09";
