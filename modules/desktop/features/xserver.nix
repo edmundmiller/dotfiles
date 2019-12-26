@@ -5,7 +5,6 @@
     enable = true;
     layout = "us";
     xkbOptions = "caps:escape";
-    videoDrivers = [ "nvidiaBeta" ];
     libinput = {
       enable = true;
       disableWhileTyping = true;
