@@ -56,6 +56,26 @@
     options = "--delete-older-than 15d";
   };
 
+  # Minimal list of modules to use the EFI system partition and the YubiKey
+  boot.initrd.kernelModules = [ "vfat" "nls_cp437" "nls_iso8859-1" "usbhid" ];
+
+  # Crypto setup, set modules accordingly
+  boot.initrd.luks.cryptoModules = [ "aes" "xts" "sha512" ];
+
+  # Enable support for the YubiKey PBA
+  boot.initrd.luks.yubikeySupport = true;
+
+  # Configuration to use your Luks device
+  boot.initrd.luks.devices = [{
+    name = "nixos-enc";
+    device = "/dev/nvme0np5";
+    preLVM = true;
+    yubikey = {
+      slot = 2;
+      twoFactor = true; # Set to false if you did not set up a user password.
+      storage = { device = "/dev/nvmeon1p1"; };
+    };
+  }];
   # Monitor backlight control
   programs.light.enable = true;
 
