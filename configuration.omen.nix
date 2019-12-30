@@ -66,6 +66,7 @@
 
       # Support for Yubikey PBA
       yubikeySupport = true;
+      reusePassphrases = true;
 
       devices = [
         {
@@ -73,6 +74,22 @@
           device = "/dev/nvme0n1p5";
           preLVM = true;
           allowDiscards = true;
+
+          yubikey = {
+            slot = 2;
+            twoFactor = true; # Set to false for 1FA
+            gracePeriod =
+              30; # Time in seconds to wait for Yubikey to be inserted
+            keyLength = 64; # Set to $KEY_LENGTH/8
+            saltLength = 16; # Set to $SALT_LENGTH
+
+            storage = {
+              device =
+                "/dev/nvme0n1p1"; # Be sure to update this to the correct volume
+              fsType = "vfat";
+              path = "/crypt-storage/default";
+            };
+          };
         }
         {
           name = "encrypted";
