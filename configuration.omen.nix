@@ -56,16 +56,45 @@
     options = "--delete-older-than 15d";
   };
 
-  # Crypto setup, set modules accordingly
-  boot.initrd.luks.cryptoModules = [ "aes" "xts" "sha512" ];
+  boot.initrd = {
+    # Required to open the EFI partition and Yubikey
+    kernelModules = [ "vfat" "nls_cp437" "nls_iso8859-1" "usbhid" ];
 
-  # Configuration to use your Luks device
-  boot.initrd.luks.devices = [{
-    name = "root";
-    device = "/dev/nvme0n1p5";
-    preLVM = true;
-    allowDiscards = true;
-  }];
+    # luks = {
+    #   # Update if necessary
+    #   cryptoModules = [ "aes" "xts" "sha512" ];
+
+    # Support for Yubikey PBA
+    yubikeySupport = true;
+
+    devices = [
+      {
+        name = "root";
+        device = "/dev/nvme0n1p5";
+        preLVM = true;
+        allowDiscards = true;
+      }
+      {
+        name = "encrypted";
+        device = "/dev/sda1"; # Be sure to update this to the correct volume
+
+        yubikey = {
+          slot = 2;
+          twoFactor = true; # Set to false for 1FA
+          gracePeriod = 30; # Time in seconds to wait for Yubikey to be inserted
+          keyLength = 64; # Set to $KEY_LENGTH/8
+          saltLength = 16; # Set to $SALT_LENGTH
+
+          storage = {
+            device =
+              "/dev/nvme0n1p1"; # Be sure to update this to the correct volume
+            fsType = "vfat";
+            path = "/crypt-storage/default";
+          };
+        };
+      }
+    ];
+  };
 
   # Monitor backlight control
   programs.light.enable = true;
