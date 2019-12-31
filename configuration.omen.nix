@@ -107,7 +107,7 @@
               device =
                 "/dev/nvme0n1p1"; # Be sure to update this to the correct volume
               fsType = "vfat";
-              path = "/crypt-storage/default";
+              path = "/crypt-storage/data";
             };
           };
         }
