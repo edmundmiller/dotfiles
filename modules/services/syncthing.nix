@@ -3,6 +3,7 @@
 {
   users.users.emiller.extraGroups = [ "syncthing" ];
 
+  environment = { systemPackages = with pkgs; [ syncthing ]; };
   services.syncthing = {
     enable = true;
     openDefaultPorts = true;
