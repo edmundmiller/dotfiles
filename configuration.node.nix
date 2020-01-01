@@ -10,6 +10,8 @@
     ./modules/services/syncthing.nix
   ];
 
+  boot.loader.grub.device = "/dev/vda";
+
   networking.hostName = "node";
   networking.networkmanager.enable = true;
 
