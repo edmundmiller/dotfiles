@@ -71,5 +71,6 @@ bspc rule -a Chromium monitor=L
 bspc rule -a Brave monitor=L
 bspc rule -a Firefox monitor=L
 
+bspc rule -a discord desktop=^3
 bspc rule -a Ripcord desktop=^3
 bspc rule -a Spotify desktop=^4
