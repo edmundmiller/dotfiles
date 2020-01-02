@@ -24,6 +24,7 @@
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix
+    ./modules/shell/yubikey.nix
   ];
 
   boot.loader.grub = {

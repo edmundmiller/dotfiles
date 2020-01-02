@@ -15,6 +15,7 @@
         firefox --private-window "$@"
       '')
       tridactyl-native
+      libu2f-host
     ];
   };
 
