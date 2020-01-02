@@ -7,7 +7,6 @@
     ./modules/base.nix
     ./modules/default/desktop.nix
     ./modules/dev/default.nix
-    ./modules/editors/vscode.nix
 
     ./modules/services/borg.nix
     ./modules/services/keybase.nix

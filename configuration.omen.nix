@@ -7,7 +7,6 @@
     ./modules/base.nix
     ./modules/desktop/default.nix
     ./modules/dev/default.nix
-    ./modules/editors/vscode.nix
 
     ./modules/audio/ncmpcpp+mpd.nix
 
