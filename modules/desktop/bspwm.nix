@@ -4,48 +4,64 @@
   imports = [
     ./.
 
-    ./features/xserver.nix
-    ./features/gtk.nix
-    ./features/polybar.nix
-    ./features/dunst.nix
-    ./features/lockscreen.nix
-    ./features/compton.nix
-    ./features/lightdm.nix
+    ./rofi.nix
   ];
 
-  services.xserver.windowManager.bspwm = { enable = true; };
-  services.xserver.windowManager.default = "bspwm";
+  environment = {
+    systemPackages = with pkgs; [
+      lightdm
+      bspwm
+      dunst
+      libnotify
+      (polybar.override {
+        pulseSupport = true;
+        nlSupport = true;
+      })
 
-  environment.systemPackages = with pkgs; [ feh ];
+      xst # st + nice-to-have extensions
+      (makeDesktopItem {
+        name = "xst";
+        desktopName = "Suckless Terminal";
+        genericName = "Default terminal";
+        icon = "utilities-terminal";
+        exec = "${xst}/bin/xst";
+        categories = "Development;System;Utility";
+      })
+    ];
+  };
 
-  home-manager.users.emiller = {
-    programs.rofi = {
-      enable = true;
-      extraConfig = ''
-        rofi.modi: window,run,ssh,combi
-        rofi.ssh-client: ssh
-        rofi.ssh-command: {terminal} -e "{ssh-client} {host}"
-        rofi.combi-modi: window,drun,ssh
-        rofi.font: Iosevka 21
-      '';
-      terminal = "termite";
-      theme = "flat-orange";
-    };
+  fonts.fonts = [ pkgs.siji ];
 
-    services.redshift = {
-      enable = true;
-      latitude = "32.78306";
-      longitude = "-96.80667";
-      temperature = { night = 2500; };
-    };
+  programs.zsh.interactiveShellInit = "export TERM=xterm-256color";
 
-    xdg.configFile = {
-      "bspwm/bspwmrc".source = <config/bspwm/bspwmrc>;
-      "sxhkd/sxhkdrc".source = <config/sxhkd/sxhkdrc>;
-      "rofi" = {
-        source = <config/rofi>;
-        recursive = true;
+  services = {
+    xserver = {
+      desktopManager.xterm.enable = false;
+      windowManager.bspwm.enable = true;
+      displayManager.lightdm = {
+        enable = true;
+        greeters.mini = {
+          enable = true;
+          user = "emiller";
+        };
       };
+    };
+
+    compton = {
+      enable = true;
+      backend = "glx";
+      vSync = true;
+    };
+
+  };
+
+  home-manager.users.emiller.xdg.configFile = {
+    "sxhkd".source = <config/sxhkd>;
+
+    # link recursively so other modules can link files in their folders
+    "bspwm" = {
+      source = <config/bspwm>;
+      recursive = true;
     };
   };
 }
