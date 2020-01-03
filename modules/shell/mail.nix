@@ -81,7 +81,7 @@ in {
         enable = true;
         hooks = {
           postNew =
-          "${pkgs.afew}/bin/afew -C ${notmuchrc} --tag --new --verbose";
+            "${pkgs.afew}/bin/afew -C ${notmuchrc} --tag --new --verbose";
         };
         new = {
           ignore = [ "trash" "*.json" ];
@@ -97,7 +97,7 @@ in {
         enable = true;
         frequency = "*:0/15";
         preExec =
-        "${pkgs.afew}/bin/afew -C ${notmuchrc} --move-mails --verbose";
+          "${pkgs.afew}/bin/afew -C ${notmuchrc} --move-mails --verbose";
         postExec = "${pkgs.notmuch}/bin/notmuch new";
       };
     };

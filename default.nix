@@ -17,7 +17,7 @@
 
   nix = {
     nixPath = options.nix.nixPath.default
-    ++ [ "config=/etc/dotfiles/config" "packages=/etc/dotfiles/packages" ];
+      ++ [ "config=/etc/dotfiles/config" "packages=/etc/dotfiles/packages" ];
     autoOptimiseStore = true;
     trustedUsers = [ "root" "@wheel" ];
   };
@@ -68,7 +68,7 @@
   networking.extraHosts = builtins.readFile (builtins.fetchurl {
     name = "blocked_hosts.txt";
     url =
-    "http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext";
+      "http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext";
   });
 
   users.users.emiller = {

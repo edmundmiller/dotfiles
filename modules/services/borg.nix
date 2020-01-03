@@ -5,7 +5,7 @@
     homeBackup = {
       paths = "/home";
       exclude =
-      [ "/home/*/.cache" "/home/emiller/torrents" "/home/emiller/src" ];
+        [ "/home/*/.cache" "/home/emiller/torrents" "/home/emiller/src" ];
       repo = "/data/borg";
       encryption = {
         mode = "repokey";

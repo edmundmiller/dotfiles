@@ -1,8 +1,9 @@
 { config, lib, pkgs, ... }:
 with pkgs;
 let
-  R-with-my-packages =
-  rWrapper.override { packages = with rPackages; [ languageR lintr styler ]; };
+  R-with-my-packages = rWrapper.override {
+    packages = with rPackages; [ languageR lintr styler ];
+  };
 in {
   environment.systemPackages = with pkgs; [ R-with-my-packages ];
 

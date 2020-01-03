@@ -4,7 +4,7 @@
   nixpkgs.overlays = [
     (import (builtins.fetchTarball {
       url =
-      "https://github.com/nix-community/emacs-overlay/archive/master.tar.gz";
+        "https://github.com/nix-community/emacs-overlay/archive/master.tar.gz";
     }))
   ];
   environment.systemPackages = with pkgs; [
@@ -15,7 +15,7 @@
     (ripgrep.override { withPCRE2 = true; })
     # Doom Emacs + dependencies
     ((emacsPackagesNgGen emacs).emacsWithPackages
-    (epkgs: [ epkgs.emacs-libvterm ]))
+      (epkgs: [ epkgs.emacs-libvterm ]))
     sqlite # :tools (lookup +docsets)
     texlive.combined.scheme-full # :lang org -- for latex previews
     ccls # :lang (cc +lsp)
