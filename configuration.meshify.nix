@@ -24,6 +24,8 @@
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix
+
+    ./themes/functional
   ];
 
   networking.hostName = "meshify";
