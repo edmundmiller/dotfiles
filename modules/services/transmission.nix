@@ -26,13 +26,13 @@
     options = {
       serviceConfig = lib.mkOption {
         apply = old:
-        old // {
-          ExecStartPre = pkgs.writeScript "transmission-pre-start-two" ''
-            #!${pkgs.runtimeShell}
-             ${old.ExecStartPre}
-             chmod 777 /home/emiller/torrents
-          '';
-        };
+          old // {
+            ExecStartPre = pkgs.writeScript "transmission-pre-start-two" ''
+              #!${pkgs.runtimeShell}
+               ${old.ExecStartPre}
+               chmod 777 /home/emiller/torrents
+            '';
+          };
       };
     };
   };

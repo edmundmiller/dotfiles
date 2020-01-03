@@ -1,12 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  environment.systemPackages = with pkgs; [
-    rustc
-    cargo
-    rustfmt
-    rls
-  ];
+  environment.systemPackages = with pkgs; [ rustc cargo rustfmt rls ];
 
   home-manager.users.emiller.xdg.configFile = {
     "zsh/rc.d/aliases.rust.zsh".source = <config/rust/aliases.zsh>;
