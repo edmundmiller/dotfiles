@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 export PIP_CONFIG_FILE="$XDG_CONFIG_HOME/pip/pip.conf"
 export PIP_LOG_FILE="$XDG_DATA_HOME/pip/log"
 export PYLINTHOME="$XDG_DATA_HOME/pylint"
