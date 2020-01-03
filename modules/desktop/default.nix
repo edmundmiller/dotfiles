@@ -52,6 +52,16 @@
   services = {
     xserver.enable = true;
     redshift.enable = true;
+
+    xserver = {
+      layout = "us";
+      xkbOptions = "caps:escape";
+      libinput = {
+        enable = true;
+        disableWhileTyping = true;
+        tapping = false;
+      };
+    };
   };
 
   fonts = {
