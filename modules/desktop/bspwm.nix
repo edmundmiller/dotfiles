@@ -56,8 +56,10 @@
   };
 
   home-manager.users.emiller.xdg.configFile = {
-    "sxhkd".source = <config/sxhkd>;
-
+    "sxhkd" = {
+      source = <config/sxhkd>;
+      recursive = true;
+    };
     # link recursively so other modules can link files in their folders
     "bspwm" = {
       source = <config/bspwm>;
