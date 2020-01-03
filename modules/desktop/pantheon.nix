@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./. ./features/xserver.nix ./features/gtk.nix ];
+  imports = [ ./. ];
 
   services = {
     printing.enable = true;
@@ -9,6 +9,7 @@
 
     xserver = {
       desktopManager.pantheon.enable = true;
+      desktopManager.xterm.enable = false;
 
       displayManager.lightdm = {
         enable = true;
