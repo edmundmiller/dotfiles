@@ -47,7 +47,7 @@
       "xtheme/90-theme".source = ./Xresources;
       "dunst/dunstrc".source = ./dunstrc;
       "bspwm/rc.d/theme".source = ./bspwmrc;
-      "bspwm/rc.d/polybar".source = ./polybar/launch.sh;
+      "bspwm/rc.d/polybar".source = ./polybar/run.sh;
       "polybar" = {
         source = ./polybar;
         recursive = true;

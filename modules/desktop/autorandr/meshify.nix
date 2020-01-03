@@ -28,7 +28,7 @@
         '';
         "wallpaper" =
           "feh --bg-scale /etc/dotfiles/assets/wallpapers/functionalDNA_grey.png";
-        "polybar" = "~/.config/polybar/launch.sh";
+        "polybar" = "~/.config/polybar/run.sh";
       };
     };
     profiles = {
