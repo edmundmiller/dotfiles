@@ -168,26 +168,26 @@ menu-0-3-exec = shutdown -h now
 
 [module/pulseaudio-rofi-output]
 type = custom/script
-exec = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --output_volume_listener
+exec = ~/.config/polybar/modules/pulseaudio-rofi.sh --output_volume_listener
 tail = true
-click-right = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --output
+click-right = ~/.config/polybar/modules/pulseaudio-rofi.sh --output
 
-click-left = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --mute
-scroll-up =  /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_up
-scroll-down = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_down
+click-left = ~/.config/polybar/modules/pulseaudio-rofi.sh --mute
+scroll-up =  ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_up
+scroll-down = ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_down
 
 [module/pulseaudio-rofi-input]
 type = custom/script
-exec = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --input_volume_listener
+exec = ~/.config/polybar/modules/pulseaudio-rofi.sh --input_volume_listener
 tail = true
-click-right = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --input
-click-left = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --mute_source
-scroll-up =  /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_source_up
-scroll-down = /etc/dotfiles/config/polybar/modules/pulseaudio-rofi.sh --volume_source_down
+click-right = ~/.config/polybar/modules/pulseaudio-rofi.sh --input
+click-left = ~/.config/polybar/modules/pulseaudio-rofi.sh --mute_source
+scroll-up =  ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_source_up
+scroll-down = ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_source_down
 
 [module/vpn-openvpn-status]
 type = custom/script
-exec = /etc/dotfiles/config/polybar/modules/vpn-openvpn-status.sh
+exec = ~/.config/polybar/modules/vpn-openvpn-status.sh
 interval = 5
 
 [module/wlan]
@@ -361,5 +361,5 @@ bar-used-empty-foreground = ${colors.fg-alt}
 
 [module/info-eyestrain]
 type = custom/script
-exec = /etc/dotfiles/config/polybar/modules/info-eyestrain.sh
+exec = ~/.config/polybar/modules/info-eyestrain.sh
 interval = 60
