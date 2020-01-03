@@ -29,7 +29,7 @@
         };
         node = {
           id =
-            "KG2TTB4-47HTL4N-AGBG6W2-FBBBMKS-IKMECOJ-NEF5J6U-UNZUA24-ALBIAQ2";
+            "SRGN7C5-4PY54GW-3GCJEMR-KEWSFHQ-7FIUIJY-Q3RE7SA-NE7WOID-BOR5SQZ";
           name = "node";
         };
         # envy = {
