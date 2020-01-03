@@ -9,6 +9,7 @@
 
     ./modules/audio/ncmpcpp+mpd.nix
 
+    ./modules/browser/firefox.nix
     ./modules/services/keybase.nix
     ./modules/services/pia.nix
     ./modules/services/ssh.nix
