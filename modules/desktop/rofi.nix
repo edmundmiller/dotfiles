@@ -50,7 +50,7 @@
     ];
   };
 
-  home-manager.users.hlissner.xdg.configFile = {
+  home-manager.users.emiller.xdg.configFile = {
     # link recursively so other modules can link files in its folder
     "rofi" = {
       source = <config/rofi>;
