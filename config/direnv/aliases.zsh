@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 # Python
 show_virtual_env() {
 	if [[ -n "$VIRTUAL_ENV" && -n "$DIRENV_DIR" ]]; then

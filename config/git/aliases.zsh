@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 # g = git status
 # g ... = git $@
 g() { [[ $# = 0 ]] && git status --short . || git $*; }
