@@ -5,7 +5,6 @@
     ./.
 
     ./modules/base.nix
-    ./modules/default/desktop.nix
     ./modules/dev/default.nix
 
     ./modules/services/borg.nix

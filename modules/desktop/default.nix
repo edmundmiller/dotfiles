@@ -2,7 +2,6 @@
 
 # This is for packages that didn't require configuring and would be installed on a desktop
 {
-  imports = [ ../base.nix ../browser/firefox.nix ];
   environment.systemPackages = with pkgs; [
     aseprite-unfree
     # BROWSERS

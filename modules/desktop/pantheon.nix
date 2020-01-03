@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./features/xserver.nix ./features/gtk.nix ];
+  imports = [ ./. ./features/xserver.nix ./features/gtk.nix ];
 
   services = {
     printing.enable = true;
