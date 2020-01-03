@@ -22,6 +22,8 @@
     channel = "https://nixos.org/channels/nixos-19.09";
   };
 
+  # FIXME Declare xterm-termite somehow
+
   i18n = {
     consoleFont = "Lat2-Terminus16";
     consoleKeyMap = "us";
