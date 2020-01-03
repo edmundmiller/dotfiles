@@ -13,7 +13,7 @@
     ./modules/services/syncthing.nix
     ./modules/services/ssh.nix
 
-    ./modules/desktop/gnome.nix
+    ./modules/desktop/pantheon.nix
     # ./modules/desktop/bspwm.nix
 
     ./modules/shell/pass.nix
@@ -32,9 +32,8 @@
     channel = "https://nixos.org/channels/nixos-19.09";
   };
 
-  environment.systemPackages = [ pkgs.powertop pkgs.lm_sensors ];
+  environment.systemPackages = [ pkgs.lm_sensors ];
   services.tlp.enable = true;
-  powerManagement.powertop.enable = true;
 
   i18n = {
     consoleFont = "Lat2-Terminus16";
