@@ -2,6 +2,8 @@
 
 {
   imports = [
+    ./.
+
     ./features/xserver.nix
     ./features/gtk.nix
     ./features/polybar.nix
