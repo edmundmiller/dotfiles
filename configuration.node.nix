@@ -4,7 +4,7 @@
   imports = [
     ./.
 
-    ./modules/base.nix
+    ./modules/editors/vim.nix
 
     ./modules/services/ssh.nix
     ./modules/services/syncthing.nix
