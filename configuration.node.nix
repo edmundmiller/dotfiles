@@ -8,6 +8,8 @@
 
     ./modules/services/ssh.nix
     ./modules/services/syncthing.nix
+
+    ./modules/shell/zsh.nix
   ];
 
   boot.loader.grub.device = "/dev/vda";
