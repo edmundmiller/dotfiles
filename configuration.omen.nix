@@ -18,7 +18,7 @@
 
     # ./modules/desktop/gnome.nix
     ./modules/desktop/bspwm.nix
-    ./modules/desktop/features/autorandr/omen.nix
+    ./modules/desktop/autorandr/omen.nix
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix
