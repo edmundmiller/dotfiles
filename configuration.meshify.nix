@@ -20,7 +20,7 @@
     ./modules/gaming/runelite.nix
 
     ./modules/desktop/bspwm.nix
-    ./modules/desktop/features/autorandr/meshify.nix
+    ./modules/desktop/autorandr/meshify.nix
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix
