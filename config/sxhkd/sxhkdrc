@@ -6,10 +6,6 @@
 super + Return
 	termite
 
-# program launcher
-super + d
-	rofi -show combi
-
 # make sxhkd reload its configuration files:
 super + shift + r
 	pkill -USR1 -x sxhkd
