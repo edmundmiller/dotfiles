@@ -23,8 +23,18 @@ super + w
 super + e
   zsh -c emacs
 
-super + {_,shift + }space
-  rofi-pass {_,--insert}
+super + shift + grave
+	emacsclient -e '(open-scratch-frame)'
+
+super + space
+	~/.config/rofi/bin/rofi-appmenu
+
+super + Tab
+	~/.config/rofi/bin/rofi-windowmenu
+
+super + backslash
+	~/.config/rofi/bin/rofi-passmenu
+
 
 super + alt + a
      i3lock -i /etc/dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1
