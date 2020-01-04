@@ -17,13 +17,14 @@
 
     ./modules/gaming/steam.nix
 
-    # ./modules/desktop/gnome.nix
     ./modules/desktop/bspwm.nix
     ./modules/desktop/autorandr/omen.nix
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix
     ./modules/shell/yubikey.nix
+
+    ./themes/functional
   ];
 
   boot.loader.grub = {
