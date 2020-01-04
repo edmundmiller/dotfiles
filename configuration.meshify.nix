@@ -25,6 +25,7 @@
 
     ./modules/shell/pass.nix
     ./modules/shell/mail.nix
+    ./modules/shell/surfraw.nix
 
     ./themes/functional
   ];
