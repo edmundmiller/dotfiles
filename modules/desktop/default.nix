@@ -26,6 +26,7 @@
     gnome3.nautilus
     transmission
     mpv
+    xdotool
     okular
     pavucontrol
     rxvt_unicode
