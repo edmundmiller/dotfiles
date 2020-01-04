@@ -25,7 +25,7 @@
         desktopName = "Suckless Terminal";
         genericName = "Default terminal";
         icon = "utilities-terminal";
-        exec = "${xst}/bin/xst";
+        exec = ''${xst}/bin/xst -f "Iosevka:size=13"'';
         categories = "Development;System;Utility";
       })
     ];
