@@ -71,6 +71,8 @@
         gtk-xft-rgba=none
       '';
 
+      "gtk-3.0/gtk.css".text = ".termite {padding: 15px;}";
+
       # GTK2 global theme (widget and icon theme)
       "gtk-2.0/gtkrc".text = ''
         gtk-theme-name="Sierra-compact-dark"
