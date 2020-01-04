@@ -11,9 +11,6 @@ super + Return
 super + shift + r
 	pkill -USR1 -x sxhkd
 
-super + a
-	zsh -c rofimoji
-
 super + w
   firefox
 
