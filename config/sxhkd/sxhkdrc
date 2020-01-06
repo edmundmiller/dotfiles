@@ -28,12 +28,8 @@ super + Tab
 super + backslash
 	~/.config/rofi/bin/rofi-passmenu
 
-
-super + alt + a
-     i3lock -i /etc/dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1
-
 super + alt + s
-     i3lock -i /etc/dotfiles/assets/wallpapers/functionalDNA_orange.png && sleep 1 && systemctl suspend
+	zzz -f
 
 #
 # Media keys
