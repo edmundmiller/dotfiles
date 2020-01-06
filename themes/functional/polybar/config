@@ -44,7 +44,7 @@ tray-position = left
 
 modules-right =  info-eyestrain pulseaudio-rofi-input pulseaudio-rofi-output battery date powermenu
 modules-center = bspwm
-modules-left = vpn-openvpn-status wlan cpu memory
+modules-left = syncthing vpn-openvpn-status wlan cpu memory
 separator = " "
 
 background = ${colors.bg}
@@ -363,3 +363,11 @@ bar-used-empty-foreground = ${colors.fg-alt}
 type = custom/script
 exec = ~/.config/polybar/modules/info-eyestrain.sh
 interval = 60
+
+[module/syncthing]
+type = custom/script
+exec = echo 1
+exec-if = systemctl is-active syncthing
+format = ""
+format-foreground = ${colors.icons}
+interval = 30
