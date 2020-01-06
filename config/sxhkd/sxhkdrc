@@ -4,7 +4,6 @@
 
 # terminal emulator
 super + Return
-    # HACK hardprogramming the font
 	xst -f "Iosevka:size=13"
 
 # make sxhkd reload its configuration files:
