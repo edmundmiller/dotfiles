@@ -31,7 +31,7 @@
   };
 
   services.xserver.displayManager.lightdm = {
-    background = "${./wallpaper.orange.png}";
+    background = "${./wallpaper.png}";
     greeters.mini.extraConfig = ''
       text-color = "#bbc2cf"
       password-background-color = "#29323d"
