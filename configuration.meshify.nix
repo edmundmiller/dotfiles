@@ -28,7 +28,7 @@
     ./modules/shell/mail.nix
     ./modules/shell/surfraw.nix
 
-    ./themes/functional
+    ./themes/middle-earth
   ];
 
   networking.hostName = "meshify";
