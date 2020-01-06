@@ -29,6 +29,9 @@ super + w
 super + e
   zsh -c emacs
 
+super + shift + a
+    autorandr -c
+
 super + grave
 	st-scratch
 
@@ -50,9 +53,9 @@ super + Escape
 {Prior,Next}
 	:
 
-# Toggle floating/fullscreen
-super + {_,ctrl + }f
-	bspc node -t ~{floating,fullscreen}
+# set the window state
+super + {i,shift + i,s,f}
+	bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
 
 super + alt + s
 	zzz -f
