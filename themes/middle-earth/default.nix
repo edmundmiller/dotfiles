@@ -15,6 +15,7 @@
     inactiveOpacity = "0.75";
     opacityRules = [
       "100:class_g = 'Firefox'"
+      "100:class_g = 'dota2'"
       "100:class_g = 'Gimp'"
       "100:class_g = 'feh'"
       "100:class_g = 'mpv'"
