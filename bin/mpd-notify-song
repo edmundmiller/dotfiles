@@ -1,5 +1,4 @@
-#!/usr/bin/env nix-shell
-#! nix-shell -i bash -p mpd mpc_cli libnotify imagemagick7
+#!/usr/bin/env bash
 
 # A simple notify script for now-playing songs on mpd. This script uses
 # notify-send and mpc to get the current song information.
