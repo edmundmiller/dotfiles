@@ -9,7 +9,7 @@
   services = {
     mpd = {
       enable = true;
-      musicDirectory = "/data/music";
+      musicDirectory = "/data/media/music";
       startWhenNeeded = true;
       extraConfig = ''
         input {
