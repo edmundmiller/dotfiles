@@ -50,5 +50,8 @@
 
 !! xst
 st.opacity: 200
-st.font: Iosevka:pixelsize=12
-st-scratch.font: Iosevka:pixelsize=15
+st.font: Iosevka:size=13
+st-scratch.font: Iosevka:size=15
+
+font: Iosevka:antialias=True:size=14
+Emacs.font: Iosevka:antialias=True:size=14
