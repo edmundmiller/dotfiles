@@ -17,19 +17,9 @@
 
   networking.hostName = "rock";
   networking.networkmanager.enable = true;
-
   boot.loader.grub.enable = false;
 
-  system.autoUpgrade = {
-    enable = true;
-    channel = "https://nixos.org/channels/nixos-19.09";
-  };
-
-  i18n = {
-    consoleFont = "Lat2-Terminus16";
-    consoleKeyMap = "us";
-    defaultLocale = "en_US.UTF-8";
-  };
+  nixpkgs.config.allowUnsupportedSystem = true;
 
   users.users.emiller.extraGroups = [ "networkmanager" ];
 }
