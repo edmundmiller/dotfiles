@@ -42,7 +42,6 @@
 
   sound.enable = true;
   hardware = {
-    opengl.driSupport32Bit = true;
     pulseaudio = {
       enable = true;
       support32Bit = true;
@@ -51,10 +50,10 @@
   };
 
   services = {
-    xserver.enable = true;
     redshift.enable = true;
 
     xserver = {
+      enable = true;
       layout = "us";
       xkbOptions = "caps:escape";
       libinput = {
