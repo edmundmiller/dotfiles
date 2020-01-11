@@ -13,8 +13,5 @@
     ./terraform.nix
     ./nixops.nix
     ./nix.nix
-
-    ../misc/docker.nix
-    ../misc/virtualbox.nix
   ];
 }
