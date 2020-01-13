@@ -7,6 +7,7 @@
     python37Packages.black
     python37Packages.setuptools
     python37Packages.pyaml
+    python37Packages.virtualenv
     pipenv
     conda
     jetbrains.pycharm-professional
