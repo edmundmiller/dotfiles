@@ -57,8 +57,12 @@ super + Escape
 super + {i,shift + i,s,f}
 	bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
 
+
+super + alt + a
+    zzz
+
 super + alt + s
-	zzz -f
+	slock systemctl suspend -i
 
 #
 # Media keys

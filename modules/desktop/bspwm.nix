@@ -34,6 +34,7 @@
   fonts.fonts = [ pkgs.siji ];
 
   programs.zsh.interactiveShellInit = "export TERM=xterm-256color";
+  programs.slock.enable = true;
 
   services = {
     xserver = {
@@ -45,6 +46,15 @@
           enable = true;
           user = "emiller";
         };
+      };
+      xautolock = {
+        enable = true;
+        enableNotifier = true;
+        notifier = ''
+          ${pkgs.libnotify}/bin/notify-send "Locking in 10 seconds"
+        '';
+        killer = "${pkgs.systemd}/bin/systemctl suspend";
+        locker = "${pkgs.slock}/bin/slock";
       };
     };
 
