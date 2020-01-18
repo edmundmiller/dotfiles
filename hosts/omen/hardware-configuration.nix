@@ -4,34 +4,117 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports =
-    [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
-    ];
+  imports = [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix> ];
 
-  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" "rtsx_pci_sdmmc" ];
-  boot.initrd.kernelModules = [ "dm-snapshot" ];
+  boot.initrd.availableKernelModules =
+    [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" "rtsx_pci_sdmmc" ];
+  boot.initrd.kernelModules = [
+    "dm-snapshot"
+    # Required to open the EFI partition and Yubikey
+    "vfat"
+    "nls_cp437"
+    "nls_iso8859-1"
+    "usbhid"
+  ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
+  # The lone Windows install
+  boot.loader.grub = {
+    useOSProber = true;
+    configurationLimit = 30;
+  };
 
-  fileSystems."/" =
-    { device = "/dev/disk/by-uuid/48df85c5-cc11-4016-bb6d-5300f017e73d";
-      fsType = "ext4";
-    };
-
-  fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/6937-90BD";
-      fsType = "vfat";
-    };
-
-  fileSystems."/data" =
-    { device = "/dev/disk/by-uuid/bb41d0ed-2c41-4503-8414-bc2fff099f3d";
-      fsType = "ext4";
-    };
-
-  swapDevices =
-    [ { device = "/dev/disk/by-uuid/1a39cd0d-59cb-4b8a-8a3b-00fabbe98d93"; }
-    ];
-
+  ## CPU
   nix.maxJobs = lib.mkDefault 12;
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
+
+  ## GPU
+  services.xserver.videoDrivers = [ "nvidiaBeta" ];
+  hardware.opengl.enable = true;
+  # Respect XDG conventions, damn it!
+  environment.systemPackages = with pkgs;
+    [
+      (writeScriptBin "nvidia-settings" ''
+        #!${stdenv.shell}
+        exec ${config.boot.kernelPackages.nvidia_x11}/bin/nvidia-settings --config="$XDG_CONFIG_HOME/nvidia/settings"
+      '')
+    ];
+
+  hardware = {
+    bluetooth = {
+      enable = true;
+      powerOnBoot = false;
+    };
+  };
+
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/48df85c5-cc11-4016-bb6d-5300f017e73d";
+    fsType = "ext4";
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/6937-90BD";
+    fsType = "vfat";
+  };
+
+  fileSystems."/data" = {
+    device = "/dev/disk/by-uuid/bb41d0ed-2c41-4503-8414-bc2fff099f3d";
+    fsType = "ext4";
+  };
+
+  swapDevices =
+    [{ device = "/dev/disk/by-uuid/1a39cd0d-59cb-4b8a-8a3b-00fabbe98d93"; }];
+
+  ## yubikey luks
+  boot.initrd.luks = {
+    # FIXME Update if necessary
+    # cryptoModules = [ "aes" "xts" "sha512" ];
+
+    # Support for Yubikey PBA
+    yubikeySupport = true;
+    reusePassphrases = true;
+
+    devices = [
+      {
+        name = "root";
+        device = "/dev/nvme0n1p5";
+        preLVM = true;
+        allowDiscards = true;
+
+        yubikey = {
+          slot = 2;
+          twoFactor = true; # Set to false for 1FA
+          gracePeriod = 30; # Time in seconds to wait for Yubikey to be inserted
+          keyLength = 64; # Set to $KEY_LENGTH/8
+          saltLength = 16; # Set to $SALT_LENGTH
+
+          storage = {
+            device =
+              "/dev/nvme0n1p1"; # Be sure to update this to the correct volume
+            fsType = "vfat";
+            path = "/crypt-storage/default";
+          };
+        };
+      }
+      {
+        name = "encrypted";
+        device = "/dev/sda1"; # Be sure to update this to the correct volume
+
+        yubikey = {
+          slot = 2;
+          twoFactor = true; # Set to false for 1FA
+          gracePeriod = 30; # Time in seconds to wait for Yubikey to be inserted
+          keyLength = 64; # Set to $KEY_LENGTH/8
+          saltLength = 16; # Set to $SALT_LENGTH
+
+          storage = {
+            device =
+              "/dev/nvme0n1p1"; # Be sure to update this to the correct volume
+            fsType = "vfat";
+            path = "/crypt-storage/data";
+          };
+        };
+      }
+    ];
+  };
 }
