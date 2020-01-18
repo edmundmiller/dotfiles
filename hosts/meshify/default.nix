@@ -2,48 +2,47 @@
 
 {
   imports = [
-    ./.
+    ../personal.nix
+    ./hardware-configuration.nix
 
-    ./modules/base.nix
-    ./modules/dev/default.nix
-    ./modules/editors/vim.nix
+    ## Desktop/shell environment
+    <modules/desktop/bspwm.nix>
 
-    ./modules/audio/ncmpcpp+mpd.nix
+    <modules/browser/firefox.nix>
+    <modules/base.nix> # FIXME
+    <modules/dev/default.nix> # TODO consider individual imports
+    <modules/editors/emacs.nix>
+    <modules/editors/vim.nix>
+    <modules/gaming/steam.nix>
 
-    ./modules/browser/firefox.nix
+    <modules/audio/ncmpcpp+mpd.nix>
+    <modules/shell/pass.nix>
+    <modules/shell/mail.nix>
 
-    ./modules/services/docker.nix
-    ./modules/services/jellyfin.nix
-    ./modules/services/keybase.nix
-    ./modules/services/pia.nix
-    ./modules/services/ssh.nix
-    ./modules/services/syncthing.nix
-    ./modules/services/transmission.nix
-
-    ./modules/gaming/steam.nix
-    ./modules/gaming/runelite.nix
+    ## Services
+    <modules/services/docker.nix>
+    <modules/services/jellyfin.nix>
+    <modules/services/keybase.nix>
+    <modules/services/pia.nix>
+    <modules/services/ssh.nix>
+    <modules/services/syncthing.nix>
+    <modules/services/transmission.nix>
 
     ./modules/desktop/bspwm.nix
     ./modules/desktop/autorandr/meshify.nix
 
-    ./modules/shell/pass.nix
-    ./modules/shell/mail.nix
-    ./modules/shell/surfraw.nix
-
-    ./themes/middle-earth
+    ## Services
+    <modules/services/syncthing.nix>
+    ## Theme
+    <themes/middle-earth>
   ];
 
-  networking.hostName = "meshify";
   networking.hostId = "3b848ba1";
   networking.networkmanager.enable = true;
 
-  services.xserver.videoDrivers = [ "nvidiaBeta" ];
+  time.timeZone = "America/Chicago";
 
-  system.autoUpgrade = {
-    enable = true;
-    channel = "https://nixos.org/channels/nixos-19.09";
-  };
-
+  # ZFS
   boot.supportedFilesystems = [ "zfs" ];
   boot.loader.grub.copyKernels = true;
   services.zfs.autoScrub.enable = true;
@@ -59,24 +58,4 @@
       };
     };
   };
-
-  i18n = {
-    consoleFont = "Lat2-Terminus16";
-    consoleKeyMap = "us";
-    defaultLocale = "en_US.UTF-8";
-  };
-
-  nix.gc = {
-    automatic = true;
-    options = "--delete-older-than 15d";
-  };
-
-  hardware = {
-    bluetooth = {
-      enable = true;
-      powerOnBoot = false;
-    };
-  };
-
-  users.users.emiller.extraGroups = [ "networkmanager" ];
 }

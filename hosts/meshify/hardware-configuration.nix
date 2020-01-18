@@ -4,66 +4,84 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports =
-    [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
-    ];
+  imports = [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix> ];
 
-  boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod" ];
+  boot.initrd.availableKernelModules =
+    [ "nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/" =
-    { device = "rpool/root/nixos";
-      fsType = "zfs";
-    };
+  ## CPU
+  nix.maxJobs = lib.mkDefault 16;
+  powerManagement.cpuFreqGovernor = "performance";
 
-  fileSystems."/home" =
-    { device = "rpool/home";
-      fsType = "zfs";
-    };
+  ## Ergodox
+  my.packages = [ pkgs.teensy-loader-cli ];
+  my.alias.teensyload = "sudo teensy-loader-cli -w -v --mcu=atmega32u4";
 
-  fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/5407-9657";
-      fsType = "vfat";
-    };
+  ## GPU
+  services.xserver.videoDrivers = [ "nvidiaBeta" ];
+  hardware.opengl.enable = true;
+  # Respect XDG conventions, damn it!
+  environment.systemPackages = with pkgs;
+    [
+      (writeScriptBin "nvidia-settings" ''
+        #!${stdenv.shell}
+        exec ${config.boot.kernelPackages.nvidia_x11}/bin/nvidia-settings --config="$XDG_CONFIG_HOME/nvidia/settings"
+      '')
+    ];
 
-  fileSystems."/data/media/movies" =
-    { device = "bigdata/media/movies";
-      fsType = "zfs";
-    };
+  ## Harddrives
+  fileSystems."/" = {
+    device = "rpool/root/nixos";
+    fsType = "zfs";
+  };
 
-  fileSystems."/data/media/music" =
-    { device = "bigdata/media/music";
-      fsType = "zfs";
-    };
+  fileSystems."/home" = {
+    device = "rpool/home";
+    fsType = "zfs";
+  };
 
-  fileSystems."/data/media/shows" =
-    { device = "bigdata/media/shows";
-      fsType = "zfs";
-    };
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/5407-9657";
+    fsType = "vfat";
+  };
 
-  fileSystems."/data/media/torrents" =
-    { device = "bigdata/media/torrents";
-      fsType = "zfs";
-    };
+  fileSystems."/data/media/movies" = {
+    device = "bigdata/media/movies";
+    fsType = "zfs";
+  };
 
-  fileSystems."/data/mail" =
-    { device = "bigdata/mail";
-      fsType = "zfs";
-    };
+  fileSystems."/data/media/music" = {
+    device = "bigdata/media/music";
+    fsType = "zfs";
+  };
 
-  fileSystems."/data/genomics" =
-    { device = "bigdata/genomics";
-      fsType = "zfs";
-    };
+  fileSystems."/data/media/shows" = {
+    device = "bigdata/media/shows";
+    fsType = "zfs";
+  };
 
-  fileSystems."/data/media/books" =
-    { device = "bigdata/media/books";
-      fsType = "zfs";
-    };
+  fileSystems."/data/media/torrents" = {
+    device = "bigdata/media/torrents";
+    fsType = "zfs";
+  };
+
+  fileSystems."/data/mail" = {
+    device = "bigdata/mail";
+    fsType = "zfs";
+  };
+
+  fileSystems."/data/genomics" = {
+    device = "bigdata/genomics";
+    fsType = "zfs";
+  };
+
+  fileSystems."/data/media/books" = {
+    device = "bigdata/media/books";
+    fsType = "zfs";
+  };
 
   swapDevices = [ ];
-
-  nix.maxJobs = lib.mkDefault 16;
 }
