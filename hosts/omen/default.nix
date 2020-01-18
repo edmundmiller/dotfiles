@@ -2,31 +2,28 @@
 
 {
   imports = [
-    ./.
+    ../personal.nix
+    ./hardware-configuration.nix
 
-    ./modules/base.nix
-    ./modules/dev/default.nix
-
+    ## Desktop/shell environment
+    <modules/desktop/bspwm.nix>
     ./modules/audio/ncmpcpp+mpd.nix
 
-    ./modules/browser/firefox.nix
+    <modules/browser/firefox.nix>
+    <modules/base.nix> # FIXME
+    <modules/dev/default.nix> # TODO consider individual imports
+    <modules/editors/emacs.nix>
+    <modules/editors/vim.nix>
+    <modules/gaming/steam.nix>
 
-    ./modules/services/docker.nix
-    ./modules/services/keybase.nix
-    ./modules/services/pia.nix
-    ./modules/services/ssh.nix
-    ./modules/services/syncthing.nix
+    <modules/audio/ncmpcpp+mpd.nix>
+    <modules/shell/pass.nix>
+    <modules/shell/mail.nix>
+    <modules/shell/yubikey.nix>
 
-    ./modules/gaming/steam.nix
+    <modules/desktop/autorandr/omen.nix>
 
-    ./modules/desktop/bspwm.nix
-    ./modules/desktop/autorandr/omen.nix
-
-    ./modules/shell/pass.nix
-    ./modules/shell/mail.nix
-    ./modules/shell/yubikey.nix
-
-    ./themes/functional
+    <themes/functional>
   ];
 
   boot.loader.grub = {

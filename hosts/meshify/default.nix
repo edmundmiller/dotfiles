@@ -28,8 +28,7 @@
     <modules/services/syncthing.nix>
     <modules/services/transmission.nix>
 
-    ./modules/desktop/bspwm.nix
-    ./modules/desktop/autorandr/meshify.nix
+    <modules/desktop/autorandr/meshify.nix> # FIXME
 
     ## Services
     <modules/services/syncthing.nix>
