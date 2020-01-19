@@ -18,6 +18,7 @@
     <modules/shell/pass.nix>
     <modules/shell/mail.nix>
 
+    <modules/graphics.nix>
     <modules/music.nix> # playing music
 
     ## Services
