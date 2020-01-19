@@ -3,7 +3,6 @@
 # This is for packages that didn't require configuring and would be installed on a desktop
 {
   environment.systemPackages = with pkgs; [
-    aseprite-unfree
     # BROWSERS
     qutebrowser
     # NIX STUFF
@@ -17,7 +16,6 @@
     (callPackage <packages/ripcord.nix> { })
     discord
     dropbox
-    gimp
     keybase-gui
     xst
     spotify
