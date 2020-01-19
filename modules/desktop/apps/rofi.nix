@@ -1,18 +1,24 @@
 { config, lib, pkgs, ... }:
 
 {
-  environment = {
-    systemPackages = with pkgs; [
+  my = {
+    env.PATH = [ <config/rofi/bin> ];
+    # link recursively so other modules can link files in its folder
+    home.xdg.configFile."rofi" = {
+      source = <config/rofi>;
+      recursive = true;
+    };
+
+    packages = with pkgs; [
       (writeScriptBin "rofi" ''
         #!${stdenv.shell}
         exec ${rofi}/bin/rofi -terminal xst -m -1 "$@"
-      '')
-      rofi
+        '')
 
       # Fake rofi dmenu entries
       (makeDesktopItem {
         name = "rofi-browsermenu";
-        desktopName = "Open Bookmark in Firefox";
+        desktopName = "Open Bookmark in Browser";
         icon = "bookmark-new-symbolic";
         exec = "${<config/rofi>}/bin/rofi-browsermenu";
       })
@@ -48,13 +54,5 @@
         exec = "systemctl suspend";
       })
     ];
-  };
-
-  home-manager.users.emiller.xdg.configFile = {
-    # link recursively so other modules can link files in its folder
-    "rofi" = {
-      source = <config/rofi>;
-      recursive = true;
-    };
   };
 }
