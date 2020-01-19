@@ -5,31 +5,24 @@
     ./.
 
     ./rofi.nix
+    ./apps/thunar.nix
+    #
+    ./apps/redshift.nix
+    #
+    ./apps/st.nix
   ];
 
-  environment = {
-    systemPackages = with pkgs; [
-      lightdm
-      bspwm
-      dunst
-      libnotify
-      (polybar.override {
-        mpdSupport = true;
-        pulseSupport = true;
-        nlSupport = true;
-      })
-
-      xst # st + nice-to-have extensions
-      (makeDesktopItem {
-        name = "xst";
-        desktopName = "Suckless Terminal";
-        genericName = "Default terminal";
-        icon = "utilities-terminal";
-        exec = ''${xst}/bin/xst -f "Iosevka:size=13"'';
-        categories = "Development;System;Utility";
-      })
-    ];
-  };
+  environment.systemPackages = with pkgs; [
+    lightdm
+    bspwm
+    dunst
+    libnotify
+    (polybar.override {
+      mpdSupport = true;
+      pulseSupport = true;
+      nlSupport = true;
+    })
+  ];
 
   fonts.fonts = [ pkgs.siji ];
 
@@ -44,7 +37,7 @@
         enable = true;
         greeters.mini = {
           enable = true;
-          user = "emiller";
+          user = config.my.username;
         };
       };
       xautolock = {
@@ -57,13 +50,7 @@
         locker = "${pkgs.slock}/bin/slock";
       };
     };
-
-    compton = {
-      enable = true;
-      backend = "glx";
-      vSync = true;
-    };
-
+    compton.enable = true;
   };
 
   home-manager.users.emiller.xdg.configFile = {
