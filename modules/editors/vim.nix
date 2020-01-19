@@ -10,6 +10,11 @@
 
     alias.v = "nvim";
 
-    # TODO Import my config
+    my.home.xdg = {
+      configFile."nvim" = {
+        source = <config/nvim>;
+        recursive = true;
+      };
+    };
   };
 }
