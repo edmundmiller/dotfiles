@@ -15,9 +15,10 @@
     <modules/editors/vim.nix>
     <modules/gaming/steam.nix>
 
-    <modules/audio/ncmpcpp+mpd.nix>
     <modules/shell/pass.nix>
     <modules/shell/mail.nix>
+
+    <modules/music.nix> # playing music
 
     ## Services
     <modules/services/docker.nix>
