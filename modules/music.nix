@@ -4,7 +4,6 @@
 # TODO Jellyfin
 
 { config, lib, pkgs, ... }: {
-  imports = [ <modules/shell/mpd.nix> ];
   # services.spotifyd doesn't work so we'll have to roll our own spotifyd +
   # spotify-tui solution. The dbus interface doesn't work, though, so we have to
   # wait for spotify-tui to implement CLI command for controlling spotify
