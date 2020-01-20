@@ -10,7 +10,7 @@
 
     alias.v = "nvim";
 
-    my.home.xdg = {
+    home.xdg = {
       configFile."nvim" = {
         source = <config/nvim>;
         recursive = true;
