@@ -3,7 +3,7 @@
 { config, lib, pkgs, ... }: {
   imports = [ ../. ]; # Load framework for themes
 
-  theme.wallpaper = ./wallpaper.png;
+  # FIXME theme.wallpaper = ./wallpaper.png;
 
   services.compton = {
     activeOpacity = "0.96";
