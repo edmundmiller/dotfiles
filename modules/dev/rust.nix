@@ -1,10 +1,15 @@
-{ config, lib, pkgs, ... }:
+# modules/dev/rust.nix --- https://rust-lang.org
 
-{
-  environment.systemPackages = with pkgs; [ rustc cargo rustfmt rls ];
+{ pkgs, ... }: {
+  my = {
+    packages = with pkgs; [ rustup ];
 
-  home-manager.users.emiller.xdg.configFile = {
-    "zsh/rc.d/aliases.rust.zsh".source = <config/rust/aliases.zsh>;
-    "zsh/rc.d/env.rust.zsh".source = <config/rust/env.zsh>;
+    env.RUSTUP_HOME = "$XDG_DATA_HOME/rustup";
+    env.CARGO_HOME = "$XDG_DATA_HOME/cargo";
+    env.PATH = [ "$CARGO_HOME/bin" ];
+
+    alias.rs = "rustc";
+    alias.rsp = "rustup";
+    alias.ca = "cargo";
   };
 }

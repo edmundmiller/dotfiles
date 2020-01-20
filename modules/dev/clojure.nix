@@ -1,10 +1,12 @@
-{ config, lib, pkgs, ... }:
+# modules/dev/clojure.nix --- https://clojure.org/
+#
+# I don't use clojure. Perhaps one day...
 
-{
-  environment.systemPackages = with pkgs; [ clojure joker leiningen ];
-
-  home-manager.users.emiller.xdg.configFile = {
-    "zsh/rc.d/aliases.clojure.zsh".source = <config/clojure/aliases.zsh>;
-    "zsh/rc.d/env.clojure.zsh".source = <config/clojure/env.zsh>;
-  };
+{ pkgs, ... }: {
+  imports = [
+    ./.
+    ./java.nix # for being hosted on jvm
+    ./node.nix # for being hosted on nodejs
+  ];
+  my.packages = with pkgs; [ clojure joker leiningen ];
 }

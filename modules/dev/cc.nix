@@ -1,10 +1,7 @@
-{ config, lib, pkgs, ... }:
+# modules/dev/cc.nix --- C & C++
 
-{
-  environment.systemPackages = with pkgs; [ cmake bear gdb ccls ];
+{ pkgs, ... }: {
+  imports = [ ./. ];
 
-  home-manager.users.emiller.xdg.configFile = {
-    # "zsh/rc.d/aliases.cc.zsh".source = <config/cc/aliases.zsh>;
-    # "zsh/rc.d/env.cc.zsh".source = <config/cc/env.zsh>;
-  };
+  my.packages = with pkgs; [ clang gcc bear gdb cmake llvmPackages.libcxx ];
 }

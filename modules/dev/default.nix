@@ -1,17 +1,5 @@
-{ config, lib, pkgs, ... }:
+# modules/dev --- common settings for dev modules
 
-{
-  imports = [
-    ./cc.nix
-    ./node.nix
-    ./python.nix
-    ./clojure.nix
-    ./R.nix
-    ./rust.nix
-    ./solidity.nix
-    ./zsh.nix
-    ./terraform.nix
-    ./nixops.nix
-    ./nix.nix
-  ];
+{ pkgs, ... }: {
+  my.packages = with pkgs; [ gnumake ];
 }
