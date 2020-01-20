@@ -21,4 +21,4 @@ if [ ! -d "$DOTFILES/hosts/$HOST" ]; then
 	echo >&2 "No configuration exists for host '$HOST'"
 	exit 1
 fi
-# make -C "$DOTFILES" install
+make -C "$DOTFILES" install
