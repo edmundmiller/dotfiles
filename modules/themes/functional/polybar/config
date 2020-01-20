@@ -1,100 +1,98 @@
 [colors]
-blk = #141517
-bblk = #969896
-red = #cc6666
-bred = #de935f
-grn = #b5bd68
-bgrn = #757d28
-ylw = #f0c674
-bylw = #f9a03f
-blu = #81a2be
-bblu = #2a8fed
-mag = #b294bb
-bmag = #bc77a8
-cyn = #8abeb7
-bcyn = #a3685a
-wht = #c5c8c6
-bwht = #ffffff
-bg = ${self.blk}
-fg = ${self.wht}
+bg = ${xrdb:background}
+fg = ${xrdb:color4}
+black = ${xrdb:color0}
+bblack = ${xrdb:color8}
+red = ${xrdb:color1}
+bred = ${xrdb:color9}
+green = ${xrdb:color2}
+bgreen = ${xrdb:color10}
+yellow = ${xrdb:color3}
+byellow = ${xrdb:color11}
+blue = ${xrdb:color4}
+bblue = ${xrdb:color12}
+magenta = ${xrdb:color5}
+bmagenta = ${xrdb:color13}
+cyan = ${xrdb:color6}
+bcyan = ${xrdb:color14}
+white = ${xrdb:color7}
+bwhite = ${xrdb:color15}
+
 bg-alt = #0F1013
-fg-alt = #25282a
+fg-alt = #25283a
 icons = #555856
+alert = ${colors.red}
 
 [global/wm]
 margin-top = 20
 margin-bottom = 3
 
 [bar/main]
-monitor = ${env:MONITOR:}
-top = true
-fixed-center = true
-border-size = 0
+monitor = ${env:MONITOR}
+monitor-strict = true
+enable-ipc = true
 wm-restack = bspwm
-dpi-x = 0
-dpi-y = 0
+# REQUIRED to move the window with hideit.sh
+override-redirect = true
+
+background =
+foreground = ${colors.fg}
 
 width = 100%
-height = 35
-radius = 0
+height = 24
+offset-x = 0
+offset-y = 8
+top = 1
+
+overline-size = 0
+overline-color = #f00
+underline-size = 0
+underline-color = #00f
+
+border-bottom-size = 0
 
 padding-left = 2
 padding-right = 2
-tray-position = left
+module-margin-left = 0
+module-margin-right = 0
 
-modules-right =  info-eyestrain pulseaudio-rofi-input pulseaudio-rofi-output battery date powermenu
+font-0 = "Iosevka:weight=regular:size=13;3"
+font-1 = "Wuncon Siji:pixelsize=12;2"
+font-2 = "Siji:pixelsize=10;2"
+
+scroll-up = bspc desktop -f prev.local
+scroll-down = bspc desktop -f next.local
+
+; modules-left = volume pad cpu memory pad pkg mail
+modules-left = volume pad cpu memory
 modules-center = bspwm
-modules-left = syncthing vpn-openvpn-status wlan cpu memory
-separator = " "
+modules-right = battery wlan syncthing redshift pad date
 
-background = ${colors.bg}
-foreground = ${colors.fg}
-
-font-0 = "Iosevka:weight=regular:size=13;3"
-font-1 = "FontAwesome:size=13;1"
-font-2 = "Siji:size=18;2"
-
-scroll-up = bspc desktop -f prev.local
-scroll-down = bspc desktop -f next.local
-
-[bar/side]
-monitor = ${env:MONITOR:}
-top = true
-fixed-center = true
-border-size = 0
-wm-restack = bspwm
-dpi-x = 0
-dpi-y = 0
-
-width = 100%
-height = 35
-radius = 0
-
-padding-left = 2
-padding-right = 2
-
-modules-center = mpd
-
-background = ${colors.bg}
-foreground = ${colors.fg}
-
-font-0 = "Iosevka:weight=regular:size=13;3"
-font-1 = "FontAwesome:fontformat=truetype:size=13;1"
-
-scroll-up = bspc desktop -f prev.local
-scroll-down = bspc desktop -f next.local
-
-[module/backlight]
-type = internal/xbacklight
+;tray-position = center
+;tray-padding = 2
+;tray-transparent = true
+;tray-background = #0063ff
 
 [module/bspwm]
 type = internal/bspwm
-format = <label-mode> <label-state>
-index-sort = true
+pin-workspaces = true
+enable-click = true
+
+ws-icon-0 = 1;
+ws-icon-1 = 2;
+ws-icon-2 = 3;
+ws-icon-3 = 4;
+ws-icon-4 = 5;
+ws-icon-default = x
+
+format = <label-state> <label-mode>
+label-padding = 1
 
 label-focused = %icon%
 label-focused-background = #33000000
 label-focused-foreground = ${colors.grn}
+; label-focused-underline = ${colors.magenta}
+; label-focused-foreground = ${xrdb:color2}
 label-focused-padding = 1
 
 label-occupied = %icon%
@@ -110,13 +108,6 @@ label-empty = %icon%
 label-empty-foreground = ${colors.fg-alt}
 label-empty-padding = 1
 
-ws-icon-0 = 1;
-ws-icon-1 = 2;
-ws-icon-2 = 3;
-ws-icon-3 = 4;
-ws-icon-4 = 5;
-ws-icon-default = x
-
 [module/date]
 type = internal/date
 interval = 5
@@ -126,201 +117,46 @@ date = %A, %h %d
 date-alt = %Y-%m-%d
 time = %I:%M %p
 time-alt = %H:%M:%S
-; format-prefix = ""
+format-prefix = ""
 format-prefix-padding = 1
 ; format-prefix-background = ${colors.bg-alt}
 format-prefix-foreground = ${colors.icons}
 ; format-underline = ${xrdb:color4}
 
-[module/powermenu]
-type = custom/menu
+[module/xwindow]
+type = internal/xwindow
+label = %title:0:80:...%
+label-padding-left = 2
 
-expand-right = true
-
-label-open = "  "
-label-open-foreground = ${colors.red}
-label-open-underline = ${colors.red}
-
-label-close = "  "
-label-close-foreground = ${colors.wht}
-label-close-underline = ${colors.wht}
-
-menu-0-0 = "  "
-menu-0-0-foreground = ${colors.cyn}
-menu-0-0-underline = ${colors.cyn}
-; FIXME
-menu-0-0-exec = betterlockscreen -l
-
-menu-0-1 = "  "
-menu-0-1-foreground = ${colors.grn}
-menu-0-1-underline = ${colors.grn}
-menu-0-1-exec = kill -9 -1
-
-menu-0-2 = "  "
-menu-0-2-foreground = ${colors.ylw}
-menu-0-2-underline = ${colors.ylw}
-menu-0-2-exec = shutdown -r now
-
-menu-0-3 = "  "
-menu-0-3-foreground = ${colors.red}
-menu-0-3-underline = ${colors.red}
-menu-0-3-exec = shutdown -h now
-
-[module/pulseaudio-rofi-output]
-type = custom/script
-exec = ~/.config/polybar/modules/pulseaudio-rofi.sh --output_volume_listener
-tail = true
-click-right = ~/.config/polybar/modules/pulseaudio-rofi.sh --output
-
-click-left = ~/.config/polybar/modules/pulseaudio-rofi.sh --mute
-scroll-up =  ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_up
-scroll-down = ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_down
-
-[module/pulseaudio-rofi-input]
-type = custom/script
-exec = ~/.config/polybar/modules/pulseaudio-rofi.sh --input_volume_listener
-tail = true
-click-right = ~/.config/polybar/modules/pulseaudio-rofi.sh --input
-click-left = ~/.config/polybar/modules/pulseaudio-rofi.sh --mute_source
-scroll-up =  ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_source_up
-scroll-down = ~/.config/polybar/modules/pulseaudio-rofi.sh --volume_source_down
-
-[module/vpn-openvpn-status]
-type = custom/script
-exec = ~/.config/polybar/modules/vpn-openvpn-status.sh
-interval = 5
-
-[module/wlan]
-
-type = internal/network
-interface = wlo1
-interval = 3.0
-
-format-connected = <ramp-signal> <label-connected>
-format-connected-underline = ${colors.blu}
-label-connected = %essid%
-
-format-packetloss = <animation-packetloss> <label-connected>
-format-disconnected = <label-disconnected>
-format-disconnected-underline = ${self.format-connected-underline}
-label-disconnected = %ifname% disconnected
-label-disconnected-foreground = ${colors.red}
-
-ramp-signal-0 = 
-ramp-signal-0-foreground = ${colors.red}
-ramp-signal-1 = 
-ramp-signal-1-foreground = ${colors.ylw}
-ramp-signal-2 = 
-ramp-signal-2-foreground = ${colors.ylw}
-ramp-signal-3 = 
-ramp-signal-3-foreground = ${colors.icons}
-ramp-signal-4 = 
-ramp-signal-4-foreground = ${colors.icons}
-
-click-right = nm-applet &
-
-; TODO
-[module/org-clock]
-type = custom/script
-interval = 10;
-exec = ${scripts}/org-clock.sh;
-click-left = emacsclient --eval '(org-clock-out)' && echo ' Stopped!';
-
-
-[module/battery]
-type = internal/battery
-battery = BAT0
-adapter = ADP1
-
-format-charging = <animation-charging> <label-charging>
-format-charging-underline = ${colors.grn}
-format-charging-padding = 1
-
-format-discharging = <ramp-capacity> <label-discharging>
-format-discharging-underline = ${colors.ylw}
-format-discharging-padding = 1
-
-full-at = 100
-format-full =   <label-full>
-format-full-underline = ${self.format-charging-underline}
-format-full-overline = ${self.format-charging-underline}
-format-full-padding = 1
-
-ramp-capacity-0 = 
-ramp-capacity-1 = 
-ramp-capacity-2 = 
-ramp-capacity-3 = 
-ramp-capacity-foreground = ${colors.wht}
-
-animation-charging-0 = 
-animation-charging-1 = 
-animation-charging-2 = 
-animation-charging-3 = 
-animation-charging-4 = 
-animation-charging-foreground = ${colors.wht}
-animation-charging-framerate = 500
-
-; TODO
-[module/mpd]
-type = internal/mpd
-
-host = 127.0.0.1
-port = 6600
-
-
-format-online = <bar-progress> <label-song>
-
-label-song-maxlen = 45
-label-song-ellipsis = true
-; Available tokens:
-;   %artist%
-;   %album-artist%
-;   %album%
-;   %date%
-;   %title%
-; Default: %artist% - %title%
-label-song = %artist% - %title%
-
-; Available tokens:
-;   %elapsed%
-;   %total%
-; Default: %elapsed% / %total%
-;label-time = %elapsed% / %total%
-
-; Available tokens:
-;   None
-label-offline = 🎜 mpd is offline
-
-; Only applies if <icon-X> is used
-; icon-play = play
-; icon-pause = ⏸
+; [module/mpd]
+; type = internal/mpd
+; host = /home/hlissner/.config/mpd/mpd.sock
+;
+; format-online = <label-song> <toggle>
+; format-padding = 5
+;
+; label-song-maxlen = 45
+; label-song-ellipsis = true
+;
+; icon-prev = 
+; icon-seekb = 
 ; icon-stop = 
-; icon-prev = ⏮
-; icon-next = ⏭
-; icon-seekb = ⏪
-; icon-seekf = ⏩
-; icon-random = 🔀
-; icon-repeat = 🔁
-; icon-repeatone = 🔂
-; icon-single = 🔂
-; icon-consume = ✀
-
-; Used to display the state of random/repeat/repeatone/single
-; Only applies if <icon-[random|repeat|repeatone|single]> is used
-toggle-on-foreground = #ff
-toggle-off-foreground = #55
-
-; Only applies if <bar-progress> is used
-bar-progress-width = 45
-bar-progress-indicator = |
-bar-progress-fill = ─
-bar-progress-empty = ─
+; icon-play = 
+; icon-pause = 
+; icon-next = 
+; icon-seekf = 
+;
+; icon-random = 
+; icon-repeat = 
+;
+; toggle-on-foreground = ${colors.fg}
+; toggle-off-foreground = #66
 
 [module/cpu]
 type = internal/cpu
 interval = 2
 format = <bar-load>
-format-prefix = "cpu "
+format-prefix = ""
 format-foreground = ${colors.icons}
 ; format-underline = #f90000
 ; label = %percentage%%
@@ -328,9 +164,9 @@ format-padding = 1
 
 bar-load-indicator =
 bar-load-width = 6
-bar-load-foreground-0 = ${colors.grn}
-bar-load-foreground-1 = ${colors.grn}
-bar-load-foreground-2 = ${colors.ylw}
+bar-load-foreground-0 = ${colors.green}
+bar-load-foreground-1 = ${colors.green}
+bar-load-foreground-2 = ${colors.yellow}
 bar-load-foreground-3 = ${colors.red}
 bar-load-foreground-4 = ${colors.red}
 bar-load-fill = |
@@ -341,7 +177,7 @@ bar-load-empty-foreground = ${colors.fg-alt}
 type = internal/memory
 interval = 3
 format = <bar-used>
-format-prefix = "ram "
+format-prefix = ""
 format-prefix-foreground = ${colors.icons}
 ; format-underline = #4bffdc
 ; label = %percentage_used%%
@@ -350,19 +186,136 @@ format-padding-left = 1
 ; Only applies if <bar-used> is used
 bar-used-indicator =
 bar-used-width = 6
-bar-used-foreground-0 = ${colors.grn}
-bar-used-foreground-1 = ${colors.grn}
-bar-used-foreground-2 = ${colors.ylw}
+bar-used-foreground-0 = ${colors.green}
+bar-used-foreground-1 = ${colors.green}
+bar-used-foreground-2 = ${colors.yellow}
 bar-used-foreground-3 = ${colors.red}
 bar-used-foreground-4 = ${colors.red}
 bar-used-fill = |
 bar-used-empty = ¦
 bar-used-empty-foreground = ${colors.fg-alt}
 
-[module/info-eyestrain]
+[module/wlan]
+type = internal/network
+interface = ${env:WLP:wlp3s0}
+interval = 3.0
+
+format-connected = <ramp-signal>
+format-disconnected = !
+format-disconnected-foreground = ${colors.red}
+
+; label-connected =
+; label-disconnected = !
+; label-disconnected-foreground = ${colors.red}
+
+ramp-signal-0 = 
+ramp-signal-0-foreground = ${colors.yellow}
+ramp-signal-1 = 
+ramp-signal-1-foreground = ${colors.yellow}
+ramp-signal-2 = 
+ramp-signal-2-foreground = ${colors.yellow}
+ramp-signal-3 = 
+ramp-signal-3-foreground = ${colors.icons}
+ramp-signal-4 = 
+ramp-signal-4-foreground = ${colors.icons}
+
+; [module/eth]
+; type = internal/network
+; interface = ${env:ETH:enp2s0}
+; interval = 4.0
+;
+; ; format-connected-underline = #55aa55
+; ; format-connected-prefix = " "
+; format-connected-foreground-foreground = ${colors.fg-alt}
+; label-connected = %local_ip%
+;
+; format-disconnected-underline = ${self.format-connected-underline}
+; label-disconnected = %ifname% disconnected
+; label-disconnected-foreground = ${colors.fg-alt}
+
+[module/volume]
+type = internal/volume
+
+; format-volume = <label-volume> <bar-volume>
+format-volume = <ramp-volume> <bar-volume>
+; label-volume = " "
+label-volume-foreground = ${colors.fg}
+
+; format-muted-prefix = " "
+format-muted-foreground = ${colors.red}
+label-muted = 
+
+bar-volume-width = 8
+bar-volume-foreground-0 = ${colors.blue}
+bar-volume-foreground-1 = ${colors.blue}
+bar-volume-foreground-2 = ${colors.blue}
+bar-volume-foreground-3 = ${colors.blue}
+bar-volume-foreground-4 = ${colors.blue}
+bar-volume-foreground-5 = ${colors.blue}
+bar-volume-foreground-6 = ${colors.blue}
+bar-volume-gradient = false
+bar-volume-indicator = |
+bar-volume-indicator-font = 2
+bar-volume-indicator-foreground = #ff
+bar-volume-fill = ─
+bar-volume-fill-font = 2
+bar-volume-empty = ─
+bar-volume-empty-font = 2
+bar-volume-empty-foreground = ${colors.fg-alt}
+
+; Only applies if <ramp-volume> is used
+ramp-volume-0 = 
+ramp-volume-1 = 
+ramp-volume-2 = 
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+adapter = ADP1
+full-at = 98
+
+format-charging = <animation-charging> <label-charging>
+format-charging-underline = #ffb52a
+
+format-discharging = <ramp-capacity> <label-discharging>
+format-discharging-underline = ${self.format-charging-underline}
+
+format-full-prefix = " "
+format-full-prefix-foreground = ${colors.fg-alt}
+format-full-underline = ${self.format-charging-underline}
+
+ramp-capacity-0 = 
+ramp-capacity-1 = 
+ramp-capacity-2 = 
+ramp-capacity-foreground = ${colors.fg-alt}
+
+animation-charging-0 = 
+animation-charging-1 = 
+animation-charging-2 = 
+animation-charging-foreground = ${colors.fg-alt}
+animation-charging-framerate = 750
+
+
+;=====================================================
+; Custom scripts
+;=====================================================
+
+[module/vpn-openvpn-status]
 type = custom/script
-exec = ~/.config/polybar/modules/info-eyestrain.sh
+exec = ~/.config/polybar/modules/vpn-openvpn-status.sh
+interval = 5
+
+[module/pad]
+type = custom/text
+content = "   "
+content-foreground = ${colors.fg-alt}
+
+[module/redshift]
+type = custom/script
+exec = ~/.config/polybar/modules/redshift
+exec-if = pgrep -x redshift
 interval = 60
+format-padding = 1
 
 [module/syncthing]
 type = custom/script

@@ -3,6 +3,11 @@
 let font = "Iosevka";
 in {
   programs.zsh.vteIntegration = true;
+
+  my.home.xdg.configFile = {
+    "gtk-3.0/gtk.css".text = ".termite {padding: 15px;}";
+  };
+
   my.home.programs = {
     termite = {
       enable = true;
