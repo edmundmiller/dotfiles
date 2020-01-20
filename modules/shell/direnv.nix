@@ -1,14 +1,12 @@
 { config, lib, pkgs, ... }:
 
 {
-  environment.systemPackages = with pkgs; [
-    direnv
-    (import <nixpkgs-unstable> { }).lorri
-  ];
+  services.lorri.enable = true;
 
-  home-manager.users.emiller = {
-    xdg.configFile = {
-      "zsh/rc.d/aliases.direnv.zsh".source = <config/direnv/aliases.zsh>;
+  my = {
+    packages = [ pkgs.direnv ];
+    zsh.rc = "_cache direnv hook zsh";
+    home.xdg.configFile = {
       "direnv/direnvrc".source = <config/direnv/direnvrc>;
     };
   };
