@@ -2,9 +2,9 @@
 #! nix-shell -i bash -p git gnumake
 
 set -e   # bail if an error occurs
-if [ $EUID -nq 0 ]; then
   >&2 echo "Must be run as root"
   exit 1
+if [ $EUID -ne 0 ]; then
 fi
 
 USER=${USER:-emiller}
