@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-DEFAULT="$DOTFILES/assets/sounds/${1:-ding}.ogg"
-paplay $DEFAULT
