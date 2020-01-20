@@ -9,7 +9,6 @@
     <modules/desktop/bspwm.nix>
 
     <modules/browser/firefox.nix>
-    <modules/base.nix> # FIXME
     <modules/dev/default.nix> # TODO consider individual imports
     <modules/editors/emacs.nix>
     <modules/editors/vim.nix>

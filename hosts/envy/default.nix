@@ -4,7 +4,6 @@
   imports = [
     ./.
 
-    ./modules/base.nix
     ./modules/dev/default.nix
 
     ./modules/services/borg.nix

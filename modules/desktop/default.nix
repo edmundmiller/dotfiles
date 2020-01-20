@@ -13,9 +13,12 @@
       mpv # video player
       networkmanagerapplet
       networkmanager_dmenu
+      openconnect
+      ranger
+      speedtest-cli
       xclip
       xdotool
-
+      visidata
     ];
   };
 
