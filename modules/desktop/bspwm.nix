@@ -4,7 +4,7 @@
   imports = [
     ./.
 
-    ./rofi.nix
+    ./apps/rofi.nix
     ./apps/thunar.nix
     #
     ./apps/redshift.nix
