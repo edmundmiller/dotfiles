@@ -33,7 +33,7 @@
   networking.hostName = "omen";
   networking.networkmanager.enable = true;
 
-  time.timeZone = "America/chicago";
+  time.timeZone = "America/Chicago";
 
   environment.systemPackages = [ pkgs.acpi ];
   powerManagement.powertop.enable = true;
