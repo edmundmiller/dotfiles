@@ -1,7 +1,5 @@
-{ config, lib, pkgs, ... }:
+# modules/dev/zsh.nix --- http://zsh.sourceforge.net/
 
-{
-  environment.systemPackages = with pkgs; [ shfmt shellcheck ];
-  # TODO Revolver
-  # TODO Zunit
+{ pkgs, ... }: {
+  my.packages = with pkgs; [ shellcheck my.zunit ];
 }

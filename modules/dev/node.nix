@@ -1,14 +1,25 @@
-{ config, lib, pkgs, ... }:
+# modules/dev/node.nix --- https://nodejs.org/en/
 
-{
-  nixpkgs.config = {
-    yarn = pkgs.yarn.override { nodejs = pkgs.nodejs-12_x; };
-  };
+{ pkgs, ... }: {
+  imports = [ ./. ];
 
-  environment.systemPackages = with pkgs; [ yarn nodejs-12_x nodejs python27 ];
+  my = {
+    packages = with pkgs; [ nodejs ];
 
-  home-manager.users.emiller.xdg.configFile = {
-    "zsh/rc.d/aliases.node.zsh".source = <config/node/aliases.zsh>;
-    "zsh/rc.d/env.node.zsh".source = <config/node/env.zsh>;
+    env.NPM_CONFIG_USERCONFIG = "$XDG_CONFIG_HOME/npm/config";
+    env.NPM_CONFIG_CACHE = "$XDG_CACHE_HOME/npm";
+    env.NPM_CONFIG_TMP = "$XDG_RUNTIME_DIR/npm";
+    env.NPM_CONFIG_PREFIX = "$XDG_CACHE_HOME/npm";
+    env.NODE_REPL_HISTORY = "$XDG_CACHE_HOME/node/repl_history";
+    env.PATH = [ "$(yarn global bin)" ];
+
+    # Run locally installed bin-script, e.g. n coffee file.coffee
+    alias.n = ''PATH="$(npm bin):$PATH"'';
+    alias.ya = "yarn";
+
+    home.xdg.configFile."npm/config".text = ''
+      cache=$XDG_CACHE_HOME/npm
+      prefix=$XDG_DATA_HOME/npm
+    '';
   };
 }
