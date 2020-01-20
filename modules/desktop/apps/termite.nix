@@ -3,7 +3,7 @@
 let font = "Iosevka";
 in {
   programs.zsh.vteIntegration = true;
-  home-manager.users.emiller.programs = {
+  my.home.programs = {
     termite = {
       enable = true;
       font = "${font} 13";
