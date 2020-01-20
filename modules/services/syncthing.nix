@@ -27,7 +27,7 @@
         deviceType = devices:
           if deviceEnabled devices then "sendreceive" else "receiveonly";
       in {
-        projects = rec {
+        sync = rec {
           devices = [ "omen" "oneplus" "meshify" "node" ];
           path = "/home/${config.my.username}/sync";
           watch = false;
@@ -48,5 +48,4 @@
   };
 
   my.user.extraGroups = [ "syncthing" ];
-
 }
