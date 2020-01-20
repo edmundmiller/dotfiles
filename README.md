@@ -33,7 +33,7 @@ nix-channel --add "https://nixos.org/channels/nixpkgs-unstable" nixpkgs-unstable
 
 # make /etc/nixos/configuration.nix
 nixos-generate-config --root /mnt
-echo "import /etc/dotfiles \"$$(hostname)\"" >/mnt/etc/nixos/configuration.nix
+echo "import /etc/dotfiles \"$(hostname)\"" >/mnt/etc/nixos/configuration.nix
 
 # make secrets.nix
 nix-shell -p gnupg --run "gpg -dq secrets.nix.gpg >secrets.nix"
