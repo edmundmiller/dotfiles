@@ -19,26 +19,6 @@ prompt_git_dirty() {
   echo -n '%f'
 }
 
-# nix-shell: currently running nix-shell
-prompt_nix_shell() {
-  if [[ -n "$IN_NIX_SHELL" ]]; then
-    if [[ -n $NIX_SHELL_PACKAGES ]]; then
-      local package_names=""
-      local packages=($NIX_SHELL_PACKAGES)
-      for package in $packages; do
-        package_names+=" ${package##*.}"
-      done
-      echo -n "%F{green}{$package_names }"
-    elif [[ -n $name ]]; then
-      local cleanName=${name#interactive-}
-      cleanName=${cleanName%-environment}
-      echo -n "%F{green}$cleanName"
-    else # This case is only reached if the nix-shell plugin isn't installed or failed in some way
-      echo -n "%F{red}nix-shell {}"
-    fi
-  fi
-}
-
 ## Hooks ###############################
 prompt_hook_precmd() {
   vcs_info # get git info
@@ -85,7 +65,7 @@ prompt_init() {
   fi
 
   RPROMPT='%F{blue}%~%F{magenta}${vcs_info_msg_0_}$(prompt_git_dirty)%f'
-  PROMPT='%F{blue}$(prompt_nix_shell)${prompt_username}%f${PROMPT_SYMBOL:-$ }'
+  PROMPT='%F{blue}${prompt_username}%f${PROMPT_SYMBOL:-$ }'
 }
 
 prompt_init "$@"

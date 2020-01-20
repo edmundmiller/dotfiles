@@ -1,42 +1,47 @@
-{ config, pkgs, libs, ... }:
+# modules/shell/zsh.nix --- ...
 
-let zgen = builtins.fetchGit "https://github.com/tarjoilija/zgen";
-in {
-  environment = {
-    variables = {
-      ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
-      ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
-      ZGEN_DIR = "$XDG_CACHE_HOME/zgen";
-      ZGEN_SOURCE = "${zgen}/zgen.zsh";
-    };
-
-    systemPackages = with pkgs; [
+{ pkgs, libs, ... }: {
+  my = {
+    packages = with pkgs; [
       zsh
       nix-zsh-completions
-      fasd
       bat
       exa
+      fasd
       fd
       fzf
-      tmux
       htop
+      tldr
       tree
     ];
+    env.ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
+    env.ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
+
+    alias.exa = "exa --group-directories-first";
+    alias.l = "exa -1";
+    alias.ll = "exa -lg";
+    alias.la = "LC_COLLATE=C exa -la";
+    alias.sc = "systemctl";
+    alias.ssc = "sudo systemctl";
+
+    # Write it recursively so other modules can write files to it
+    home.xdg.configFile."zsh" = {
+      source = <config/zsh>;
+      recursive = true;
+    };
   };
 
   programs.zsh = {
     enable = true;
     enableCompletion = true;
-    enableGlobalCompInit = false; # I'll do it myself
+    # I init completion myself, because enableGlobalCompInit initializes it too
+    # soon, which means commands initialized later in my config won't get
+    # completion, and running compinit twice is slow.
+    enableGlobalCompInit = false;
     promptInit = "";
   };
 
-  home-manager.users.emiller.xdg.configFile = {
-    # link recursively so other modules can link files in this folder,
-    # particularly in zsh/rc.d/*.zsh
-    "zsh" = {
-      source = <config/zsh>;
-      recursive = true;
-    };
-  };
+  system.userActivationScripts.cleanupZgen = ''
+    rm -fv $XDG_CACHE_HOME/zsh/*
+  '';
 }
