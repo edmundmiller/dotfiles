@@ -44,7 +44,7 @@ channels:
 
 $(NIXOS_PREFIX)/configuration.nix:
 	@sudo nixos-generate-config --root "$(PREFIX)"
-	@echo "import /etc/dotfiles/hosts/$(hostname)" | sudo tee "$(NIXOS_PREFIX)/configuration.nix"
+	@echo "import /etc/dotfiles \"$(hostname)\"" | sudo tee "$(NIXOS_PREFIX)/configuration.nix"
 
 
 # Convenience aliases
