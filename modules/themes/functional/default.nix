@@ -33,7 +33,7 @@
     paper-icon-theme # for rofi
   ];
   my.zsh.rc = lib.readFile ./zsh/prompt.zsh;
-  my.home.file.".background-image".source = ./wallpaper.png;
+  my.home.home.file.".background-image".source = ./wallpaper.png;
   my.home.xdg.configFile = {
     "bspwm/rc.d/polybar".source = ./polybar/run.sh;
     "bspwm/rc.d/theme".source = ./bspwmrc;

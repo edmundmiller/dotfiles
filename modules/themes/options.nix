@@ -9,7 +9,7 @@ with lib; {
   };
 
   config = {
-    my.home.file.".background-image".source = config.theme.wallpaper;
+    my.home.home.file.".background-image".source = config.theme.wallpaper;
     services.xserver.displayManager.lightdm.background = let
       blurredWallpaper = with pkgs;
         runCommand "blurWallpaper" { buildInputs = [ imagemagick ]; } ''
