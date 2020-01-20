@@ -15,7 +15,7 @@ Emacs][doom-emacs].
 
 ```sh
 # Assumes your partitions are set up and root is mounted on /mnt
-curl https://raw.githubusercontent.com/emiller88/dotfiles/nixos/deploy | sh
+curl https://raw.githubusercontent.com/Emiller88/dotfiles/master/deploy | sh
 ```
 
 This is equivalent to:
