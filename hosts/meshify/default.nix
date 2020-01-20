@@ -4,37 +4,37 @@
   imports = [
     ../personal.nix
     ./hardware-configuration.nix
-
     ## Desktop/shell environment
     <modules/desktop/bspwm.nix>
-
+    <modules/desktop/autorandr/meshify.nix>
+    ## Apps
     <modules/browser/firefox.nix>
-    <modules/dev/default.nix> # TODO consider individual imports
+    <modules/dev>
     <modules/editors/emacs.nix>
     <modules/editors/vim.nix>
     <modules/gaming/steam.nix>
-
+    <modules/shell/direnv.nix>
+    <modules/shell/git.nix>
+    <modules/shell/gnupg.nix>
+    <modules/shell/ncmpcpp.nix>
+    # FIXME <modules/shell/mail.nix>
     <modules/shell/pass.nix>
-    <modules/shell/mail.nix>
-
-    <modules/graphics.nix>
+    <modules/shell/zsh.nix>
+    ## Project-based
     <modules/music.nix> # playing music
-
+    <modules/graphics.nix> # art & design
     ## Services
     <modules/services/docker.nix>
+    <modules/services/grocy.nix>
     <modules/services/jellyfin.nix>
     <modules/services/keybase.nix>
-    <modules/services/pia.nix>
+    # FIXME <modules/services/pia.nix>
     <modules/services/ssh.nix>
     <modules/services/syncthing.nix>
     <modules/services/transmission.nix>
-
-    <modules/desktop/autorandr/meshify.nix> # FIXME
-
-    ## Services
-    <modules/services/syncthing.nix>
+    <modules/services/virtualbox.nix>
     ## Theme
-    <themes/middle-earth>
+    <modules/themes/functional>
   ];
 
   networking.hostId = "3b848ba1";
