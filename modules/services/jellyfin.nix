@@ -2,6 +2,7 @@
 
 {
   # This doesn't work on RockPro64
+  # TODO set this based on CPU
   # services.jellyfin = { enable = true; };
 
   docker-containers = {
@@ -20,4 +21,6 @@
     allowedTCPPorts = [ 8096 ];
     allowedUDPPorts = [ 8096 ];
   };
+
+  my.user.extraGroups = [ "jellyfin" ];
 }
