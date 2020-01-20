@@ -3,7 +3,7 @@
 { config, lib, pkgs, ... }: {
   imports = [ ../. ]; # Load framework for themes
 
-  theme.wallpaper = ./wallpaper.jpg;
+  theme.wallpaper = ./wallpaper.png;
 
   services.compton = {
     activeOpacity = "0.96";
@@ -18,6 +18,7 @@
   };
 
   services.xserver.displayManager.lightdm = {
+    background = "${./wallpaper.png}";
     greeters.mini.extraConfig = ''
       text-color = "#bbc2cf"
       password-background-color = "#29323d"
@@ -32,6 +33,7 @@
     paper-icon-theme # for rofi
   ];
   my.zsh.rc = lib.readFile ./zsh/prompt.zsh;
+  my.home.file.".background-image".source = ./wallpaper.png;
   my.home.xdg.configFile = {
     "bspwm/rc.d/polybar".source = ./polybar/run.sh;
     "bspwm/rc.d/theme".source = ./bspwmrc;

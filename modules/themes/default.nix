@@ -1,7 +1,7 @@
 # modules/themes/default.nix
 
 { config, ... }: {
-  imports = [ ./options.nix ];
+  # imports = [ ./options.nix ];
 
   # Try really hard to get QT to respect my GTK theme.
   my.env.GTK_DATA_PREFIX = [ "${config.system.path}" ];
