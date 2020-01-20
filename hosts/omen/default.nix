@@ -4,25 +4,30 @@
   imports = [
     ../personal.nix
     ./hardware-configuration.nix
-
     ## Desktop/shell environment
     <modules/desktop/bspwm.nix>
-    ./modules/audio/ncmpcpp+mpd.nix
-
+    <modules/desktop/autorandr/omen.nix>
+    ## Apps
     <modules/browser/firefox.nix>
-    <modules/dev/default.nix> # TODO consider individual imports
+    <modules/dev>
     <modules/editors/emacs.nix>
     <modules/editors/vim.nix>
-    <modules/gaming/steam.nix>
-
-    <modules/audio/ncmpcpp+mpd.nix>
+    <modules/shell/direnv.nix>
+    <modules/shell/git.nix>
+    <modules/shell/gnupg.nix>
     <modules/shell/pass.nix>
-    <modules/shell/mail.nix>
     <modules/shell/yubikey.nix>
-
-    <modules/desktop/autorandr/omen.nix>
-
-    <themes/functional>
+    <modules/shell/zsh.nix>
+    ## Project-based
+    <modules/music.nix> # playing music
+    <modules/graphics.nix> # art & design
+    ## Services
+    <modules/services/docker.nix>
+    <modules/services/keybase.nix>
+    # FIXME <modules/services/pia.nix>
+    <modules/services/syncthing.nix>
+    ## Theme
+    <modules/themes/functional>
   ];
 
   networking.hostName = "omen";
