@@ -1,8 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-
-  home-manager.users.emiller.programs.afew = {
+  my.home.programs.afew = {
     enable = true;
     extraConfig = ''
       [SpamFilter]
