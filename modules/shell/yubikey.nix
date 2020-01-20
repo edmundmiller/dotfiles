@@ -1,14 +1,13 @@
 { config, lib, pkgs, ... }:
 
 {
-  environment = {
-    systemPackages = with pkgs; [
-      gnupg
-      yubikey-manager-qt
-      yubikey-manager
-      yubikey-personalization
-    ];
-  };
+  my.packages = with pkgs; [
+    gnupg
+    yubikey-manager-qt
+    yubikey-manager
+    yubikey-personalization
+  ];
+
   services.udev.packages = [ pkgs.yubikey-personalization pkgs.libu2f-host ];
   services.pcscd.enable = true;
 
