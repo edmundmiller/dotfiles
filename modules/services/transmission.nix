@@ -1,8 +1,6 @@
 { config, lib, pkgs, ... }:
 
 {
-  users.users.emiller.extraGroups = [ "transmission" ];
-
   services.transmission = {
     enable = true;
     home = "/data/media/torrents";
@@ -20,4 +18,6 @@
     allowedTCPPorts = [ 51413 ];
     allowedUDPPorts = [ 51413 ];
   };
+
+  my.user.extraGroups = [ "transmission" ];
 }
