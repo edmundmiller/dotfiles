@@ -17,7 +17,7 @@ if [ ! -d /etc/dotfiles ]; then
 fi
 ln -sf "$DOTFILES" /etc/dotfiles
 
-if [ ! -f "$DOTFILES/machines/$HOST.nix" ]; then
+if [ ! -f "$DOTFILES/hosts/$HOST.nix" ]; then
 	echo >&2 "No configuration exists for host '$HOST'"
 	exit 1
 fi
