@@ -74,6 +74,8 @@
       "100:class_g = 'krita'"
       "100:class_g = 'feh'"
       "100:class_g = 'mpv'"
+      # Games
+      "100:class_g = 'dota2'"
     ];
     settings.blur-background-exclude = [
       "window_type = 'dock'"
