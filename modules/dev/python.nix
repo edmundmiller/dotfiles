@@ -11,7 +11,7 @@
       python37Packages.black
       python37Packages.setuptools
       python37Packages.pylint
-      python37Packages.poetry
+      # python37Packages.poetry
     ];
 
     env.IPYTHONDIR = "$XDG_CONFIG_HOME/ipython";
@@ -22,8 +22,6 @@
     env.PYTHONSTARTUP = "$XDG_CONFIG_HOME/python/pythonrc";
     env.PYTHON_EGG_CACHE = "$XDG_CACHE_HOME/python-eggs";
     env.JUPYTER_CONFIG_DIR = "$XDG_CONFIG_HOME/jupyter";
-
-    zsh.rc = lib.readFile <config/python/aliases.zsh>;
 
     alias.py = "python";
     alias.py2 = "python2";
