@@ -18,6 +18,7 @@
     <modules/shell/ncmpcpp.nix>
     # FIXME <modules/shell/mail.nix>
     <modules/shell/pass.nix>
+    <modules/shell/tmux.nix>
     <modules/shell/zsh.nix>
     ## Project-based
     <modules/music.nix> # playing music

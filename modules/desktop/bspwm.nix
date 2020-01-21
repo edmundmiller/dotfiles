@@ -6,6 +6,7 @@
 
     ./apps/rofi.nix
     ./apps/thunar.nix
+    ./apps/termite.nix
     #
     ./apps/redshift.nix
     #
