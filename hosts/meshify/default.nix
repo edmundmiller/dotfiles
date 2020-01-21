@@ -6,7 +6,6 @@
     ./hardware-configuration.nix
     ## Desktop/shell environment
     <modules/desktop/bspwm.nix>
-    <modules/desktop/autorandr/meshify.nix>
     ## Apps
     <modules/browser/firefox.nix>
     <modules/dev>
@@ -41,6 +40,7 @@
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
+  services.xserver.dpi = 186;
 
   # ZFS
   boot.supportedFilesystems = [ "zfs" ];
