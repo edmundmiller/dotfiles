@@ -90,7 +90,7 @@ label-padding = 1
 
 label-focused = %icon%
 label-focused-background = #33000000
-label-focused-foreground = ${colors.grn}
+label-focused-foreground = ${colors.green}
 ; label-focused-underline = ${colors.magenta}
 ; label-focused-foreground = ${xrdb:color2}
 label-focused-padding = 1
