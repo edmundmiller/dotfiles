@@ -13,7 +13,7 @@
       (writeScriptBin "rofi" ''
         #!${stdenv.shell}
         exec ${rofi}/bin/rofi -terminal xst -m -1 "$@"
-        '')
+      '')
 
       # Fake rofi dmenu entries
       (makeDesktopItem {

@@ -2,7 +2,6 @@
 
 # This is for packages that didn't require configuring and would be installed on a desktop
 {
-
   my = {
     packages = with pkgs; [
       calibre # managing my ebooks
