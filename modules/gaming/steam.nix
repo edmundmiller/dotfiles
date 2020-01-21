@@ -11,6 +11,7 @@
       #!${stdenv.shell}
       HOME="$XDG_DATA_HOME/steamlib" exec ${steam-run-native}/bin/steam-run "$@"
     '')
+    steamcontroller-udev-rules
     # xboxdrv # driver for 360 controller
   ];
 
