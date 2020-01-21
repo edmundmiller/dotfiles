@@ -84,4 +84,24 @@
   };
 
   swapDevices = [ ];
+
+  ## Monitors
+  services.xserver.xrandrHeads = [
+    {
+      output = "DP-2";
+      primary = true;
+      monitorConfig = ''
+        DisplaySize 3840 2160
+        Option "dpi" "163"
+      '';
+    }
+    {
+      output = "DP-4";
+      monitorConfig = ''
+        DisplaySize 3840 2160
+        Option "dpi" "163"
+        Option "right-of" "DP-2"
+      '';
+    }
+  ];
 }
