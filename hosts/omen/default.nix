@@ -9,7 +9,9 @@
     <modules/desktop/autorandr/omen.nix>
     ## Apps
     <modules/browser/firefox.nix>
-    <modules/dev>
+    <modules/dev/nix.nix>
+    <modules/dev/node.nix>
+    <modules/dev/python.nix>
     <modules/editors/emacs.nix>
     <modules/editors/vim.nix>
     <modules/shell/direnv.nix>
