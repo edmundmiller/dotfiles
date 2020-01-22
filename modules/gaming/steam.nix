@@ -1,11 +1,12 @@
 { config, pkgs, ... }: {
 
   my.packages = with pkgs; [
+    steam
     # Get steam to keep its garbage out of $HOME
-    (writeScriptBin "steam" ''
-      #!${stdenv.shell}
-      HOME="$XDG_DATA_HOME/steamlib" exec ${steam}/bin/steam "$@"
-    '')
+    # (writeScriptBin "steam" ''
+    #   #!${stdenv.shell}
+    #   HOME="$XDG_DATA_HOME/steamlib" exec ${steam}/bin/steam "$@"
+    # '')
     # for GOG and humblebundle games
     (writeScriptBin "steam-run" ''
       #!${stdenv.shell}
