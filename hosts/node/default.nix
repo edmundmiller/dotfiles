@@ -2,17 +2,16 @@
 
 {
   imports = [
-    ./.
+    ../personal.nix
+    ./hardware-configuration.nix
 
-    ./modules/editors/vim.nix
+    <modules/dev>
+    <modules/editors/vim.nix>
+    <modules/shell/zsh.nix>
 
-    ./modules/services/ssh.nix
-    ./modules/services/syncthing.nix
-
-    ./modules/shell/zsh.nix
+    <modules/services/ssh.nix>
+    <modules/services/syncthing.nix>
   ];
-
-  boot.loader.grub.device = "/dev/vda";
 
   networking.hostName = "node";
   networking.networkmanager.enable = true;
@@ -20,14 +19,6 @@
   system.autoUpgrade = {
     enable = true;
     channel = "https://nixos.org/channels/nixos-19.09";
-  };
-
-  # FIXME Declare xterm-termite somehow
-
-  i18n = {
-    consoleFont = "Lat2-Terminus16";
-    consoleKeyMap = "us";
-    defaultLocale = "en_US.UTF-8";
   };
 
   nix.gc = {
