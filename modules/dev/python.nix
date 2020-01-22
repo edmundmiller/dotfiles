@@ -5,6 +5,7 @@
   imports = [ ./. ];
   my = {
     packages = with pkgs; [
+      conda
       python37
       python37Packages.pip
       python37Packages.ipython
