@@ -58,7 +58,7 @@ module-margin-right = 0
 
 font-0 = "Iosevka:weight=regular:size=13;3"
 font-1 = "Wuncon Siji:pixelsize=12;2"
-font-2 = "Siji:pixelsize=10;2"
+font-2 = "Siji:pixelsize=13;2"
 
 scroll-up = bspc desktop -f prev.local
 scroll-down = bspc desktop -f next.local
@@ -67,6 +67,7 @@ scroll-down = bspc desktop -f next.local
 modules-left = volume pad cpu memory
 modules-center = bspwm
 modules-right = battery wlan syncthing redshift pad date
+tray-position = left
 
 ;tray-position = center
 ;tray-padding = 2
