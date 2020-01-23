@@ -7,6 +7,7 @@
     packages = with pkgs; [
       nodejs
       python27 # For building node-gyp
+      solc
       yarn
     ];
 
