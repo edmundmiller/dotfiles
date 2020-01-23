@@ -6,7 +6,6 @@
     ./hardware-configuration.nix
 
     <modules/dev>
-    <modules/editors/vim.nix>
     <modules/shell/zsh.nix>
 
     <modules/services/ssh.nix>
@@ -25,6 +24,8 @@
     automatic = true;
     options = "--delete-older-than 15d";
   };
+
+  my.packages = with pkgs; [ vim ];
 
   users.users.emiller.extraGroups = [ "networkmanager" ];
 }
