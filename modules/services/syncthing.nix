@@ -30,8 +30,8 @@
         sync = rec {
           devices = [ "omen" "oneplus" "meshify" "node" ];
           path = "/home/${config.my.username}/sync";
-          watch = false;
-          rescanInterval = 3600 * 2;
+          watch = true;
+          rescanInterval = 3600 * 6;
           type = deviceType [ "omen" "meshify" ];
           enable = deviceEnabled devices;
         };
