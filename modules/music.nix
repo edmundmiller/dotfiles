@@ -28,8 +28,8 @@
   systemd.user.services.spotifyd.serviceConfig = let
     spotifydConf = pkgs.writeText "spotifyd.conf" ''
       [global]
-      username = g2qwjcs6334oacg1zg9wrihnn
-      password_cmd = ${pkgs.pass}/bin/pass www/spotify.com | head -n1
+      username = eam150030@utdallas.edu
+      password_cmd = ${pkgs.pass}/bin/pass Entertainment/Spotify | head -n1
       backend = pulseaudio
     '';
   in {
