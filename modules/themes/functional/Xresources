@@ -50,5 +50,8 @@
 
 !! xst
 st.opacity: 200
-st.font: Iosevka:pixelsize=12
-st-scratch.font: Iosevka:pixelsize=15
+st.font: Iosevka:antialias=True:size=13:autohint=true
+st-scratch.font: Iosevka:antialias=True:size=15:autohint=true
+
+font: Iosevka:antialias=True:size=14:autohint=true
+emacs.font: Iosevka:antialias=True:size=13:autohint=true
