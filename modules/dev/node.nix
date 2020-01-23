@@ -4,7 +4,11 @@
   imports = [ ./. ];
 
   my = {
-    packages = with pkgs; [ nodejs ];
+    packages = with pkgs; [
+      nodejs
+      python27 # For building node-gyp
+      yarn
+    ];
 
     env.NPM_CONFIG_USERCONFIG = "$XDG_CONFIG_HOME/npm/config";
     env.NPM_CONFIG_CACHE = "$XDG_CACHE_HOME/npm";
@@ -16,6 +20,7 @@
     # Run locally installed bin-script, e.g. n coffee file.coffee
     alias.n = ''PATH="$(npm bin):$PATH"'';
     alias.ya = "yarn";
+    alias.yart = "yarn start";
 
     home.xdg.configFile."npm/config".text = ''
       cache=$XDG_CACHE_HOME/npm
