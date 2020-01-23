@@ -7,7 +7,7 @@
       calibre # managing my ebooks
       discord # chat
       evince # pdf reader
-      feh # image viewer
+      sxiv # image viewer
       gnucash
       libreoffice-fresh
       mpv # video player
