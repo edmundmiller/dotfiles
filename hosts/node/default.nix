@@ -12,6 +12,8 @@
     <modules/services/syncthing.nix>
   ];
 
+  my.zsh.rc = lib.readFile <modules/themes/functional/zsh/prompt.zsh>;
+
   networking.hostName = "node";
   networking.networkmanager.enable = true;
 
