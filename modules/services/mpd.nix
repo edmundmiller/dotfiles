@@ -2,10 +2,7 @@
 
 {
   my = {
-    packages = with pkgs; [
-      mpc_cli
-      (ncmpcpp.override { visualizerSupport = true; })
-    ];
+    packages = with pkgs; [ mpc_cli ];
 
     user.extraGroups = [ "mpd" ];
 
@@ -19,12 +16,12 @@
       startWhenNeeded = true;
       extraConfig = ''
         input {
-                plugin "curl"
+            plugin      "curl"
         }
 
         audio_output {
             type        "pulse"
-            name        "pulse audio"
+            name        "My MPD PulseAudio Output"
             server      "127.0.0.1"
         }
 
@@ -38,6 +35,8 @@
     };
   };
 
+  # For whatever reason it won't play on pulseaudio without the "Full" pkg
+  hardware.pulseaudio.package = pkgs.pulseaudioFull;
   hardware.pulseaudio.tcp = {
     enable = true;
     anonymousClients.allowedIpRanges = [ "127.0.0.1" ];
