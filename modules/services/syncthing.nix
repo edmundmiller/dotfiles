@@ -32,7 +32,15 @@
           path = "/home/${config.my.username}/sync";
           watch = true;
           rescanInterval = 3600 * 6;
-          type = deviceType [ "omen" "meshify" ];
+          type = deviceType [ "meshify" "omen" ];
+          enable = deviceEnabled devices;
+        };
+        src = rec {
+          devices = [ "omen" "meshify" "node" ];
+          path = "/home/${config.my.username}/src";
+          watch = false;
+          rescanInterval = 3600 * 2;
+          type = deviceType [ "meshify" "omen" ];
           enable = deviceEnabled devices;
         };
         secrets = rec {
@@ -40,7 +48,7 @@
           path = "/home/${config.my.username}/.secrets";
           watch = true;
           rescanInterval = 3600;
-          type = deviceType [ "omen" "meshify" ];
+          type = deviceType [ "meshify" "omen" ];
           enable = deviceEnabled devices;
         };
       };
