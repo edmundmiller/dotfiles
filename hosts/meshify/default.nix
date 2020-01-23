@@ -32,6 +32,7 @@
     <modules/services/grocy.nix>
     <modules/services/jellyfin.nix>
     <modules/services/keybase.nix>
+    <modules/services/mpd.nix>
     # FIXME <modules/services/pia.nix>
     <modules/services/ssh.nix>
     <modules/services/syncthing.nix>
