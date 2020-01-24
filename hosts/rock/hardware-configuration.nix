@@ -13,7 +13,7 @@
   boot.loader.generic-extlinux-compatible.enable = true;
 
   fileSystems."/" = {
-    device = "/dev/disk/by-label/NIXOS_SD";
+    device = "/dev/mmcblk2p2";
     fsType = "ext4";
   };
 
