@@ -46,6 +46,7 @@
       powerOnBoot = false;
     };
   };
+  services.blueman.enable = true;
 
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/48df85c5-cc11-4016-bb6d-5300f017e73d";
