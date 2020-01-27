@@ -29,8 +29,6 @@
     <modules/graphics.nix> # art & design
     ## Services
     <modules/services/docker.nix>
-    <modules/services/grocy.nix>
-    <modules/services/jellyfin.nix>
     <modules/services/keybase.nix>
     <modules/services/mpd.nix>
     # FIXME <modules/services/pia.nix>
