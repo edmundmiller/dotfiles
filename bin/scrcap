@@ -5,14 +5,13 @@
 # capture) and stores it in the clipboard.
 
 tmp=$(mktemp)
+cleanup() { rm -f "$tmp"; }
+trap cleanup EXIT
 
 # Delay for long enough that we can refocus the targeted window
-if maim --delay=${1:-0.6} -us >"$tmp"; then
-	xclip -selection clipboard -t image/png "$tmp" &&
-		ding &&
-		notify-send "Screenshot saved"
+if maim --delay=${2:-1} -us >"$tmp"; then
+  xclip -selection clipboard -t image/png "$tmp" &&
+    notify-send "Screenshot saved"
 else
-	notify-send -u low "Aborted screenshot"
+  notify-send -u low "Aborted screenshot"
 fi
-
-rm -f "$tmp"
