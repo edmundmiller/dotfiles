@@ -8,6 +8,7 @@
     <modules/desktop/bspwm.nix>
     ## Apps
     <modules/browser/firefox.nix>
+    <modules/dev/haskell.nix>
     <modules/dev/nix.nix>
     <modules/dev/node.nix>
     <modules/dev/python.nix>
