@@ -1,5 +1,6 @@
 #!/usr/bin/env zsh
 
+alias tmux='direnv exec / tmux'
 alias ta='tmux attach'
 alias tl='tmux ls'
 
