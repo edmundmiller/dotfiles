@@ -3,6 +3,7 @@
 { pkgs, ... }:
 
 {
+  my.packages = with pkgs; [ keybase-gui ];
   services.kbfs = {
     enable = true;
     mountPoint = "%t/kbfs";
