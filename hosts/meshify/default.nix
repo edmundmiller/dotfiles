@@ -32,7 +32,7 @@
     <modules/services/docker.nix>
     <modules/services/keybase.nix>
     <modules/services/mpd.nix>
-    # FIXME <modules/services/pia.nix>
+    <modules/services/pia.nix>
     <modules/services/ssh.nix>
     <modules/services/syncthing.nix>
     <modules/services/transmission.nix>
