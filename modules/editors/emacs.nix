@@ -2,7 +2,8 @@
   my = {
     packages = with pkgs; [
       ## Doom dependencies
-      emacs
+      ((emacsPackagesNgGen emacs).emacsWithPackages
+        (epkgs: [ epkgs.emacs-libvterm ]))
       git
       (ripgrep.override { withPCRE2 = true; })
 
