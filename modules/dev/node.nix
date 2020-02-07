@@ -21,7 +21,7 @@
     # Run locally installed bin-script, e.g. n coffee file.coffee
     alias.n = ''PATH="$(npm bin):$PATH"'';
     alias.ya = "yarn";
-    alias.yart = "yarn start";
+    alias.yart = "yarn dev || yarn start";
 
     home.xdg.configFile."npm/config".text = ''
       cache=$XDG_CACHE_HOME/npm
