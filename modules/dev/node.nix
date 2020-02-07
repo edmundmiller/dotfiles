@@ -8,7 +8,7 @@
       nodejs
       python27 # For building node-gyp
       solc
-      yarn
+      (yarn.override { nodejs = pkgs.nodejs-12_x; })
     ];
 
     env.NPM_CONFIG_USERCONFIG = "$XDG_CONFIG_HOME/npm/config";
