@@ -27,6 +27,8 @@ setw -g aggressive-resize off
 # For terminals that support them, propagate these events to programs that
 # understand them.
 set  -s focus-events      on
+# Enable mouse + mouse wheel
+set -g mouse on
 
 
 ########################################
