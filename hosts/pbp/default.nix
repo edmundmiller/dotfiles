@@ -4,6 +4,7 @@
   imports = [
     ../personal.nix
     ./hardware-configuration.nix
+    # FIXME Download the repo automatically
     ./wip-pinebook-pro/pinebook_pro.nix
     ## Desktop/shell environment
     <modules/desktop/bspwm.nix>
@@ -38,7 +39,7 @@
 
   time.timeZone = "America/Chicago";
 
-  environment.systemPackages = [ pkgs.acpi ];
+  environment.systemPackages = [ pkgs.acpi pkgs.uBootPinebookProExternalFirst ];
   #
   # Monitor backlight control
   programs.light.enable = true;
