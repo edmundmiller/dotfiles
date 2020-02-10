@@ -16,6 +16,7 @@
     <modules/dev/node.nix>
     <modules/dev/python.nix>
     <modules/dev/R.nix>
+    <modules/dev/rust.nix>
     <modules/dev/zsh.nix>
     <modules/editors/emacs.nix>
     <modules/editors/vim.nix>
@@ -39,7 +40,6 @@
     <modules/services/ssh.nix>
     <modules/services/syncthing.nix>
     <modules/services/transmission.nix>
-    <modules/services/virtualbox.nix>
     ## Theme
     <modules/themes/functional>
   ];
