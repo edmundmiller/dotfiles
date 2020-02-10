@@ -35,6 +35,8 @@
       # :lang rust
       rustfmt
       rls
+      # Org, markdown, everything inbetween
+      pandoc
     ];
 
     env.PATH = [ "$HOME/.emacs.d/bin" ];
