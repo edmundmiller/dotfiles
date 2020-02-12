@@ -6,7 +6,7 @@
 {
   imports = [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix> ];
 
-  boot.initrd.availableKernelModules = [ "nvme" "usbhid" ];
+  boot.initrd.availableKernelModules = [ ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
@@ -15,11 +15,9 @@
   nix.maxJobs = lib.mkDefault 6;
   powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
 
-  hardware = {
-    bluetooth = {
-      enable = true;
-      powerOnBoot = false;
-    };
+  fileSystems."/" = {
+    # FIXME
+    device = "/dev/disk/by-uuid/";
+    fsType = "ext4";
   };
-  services.blueman.enable = true;
 }
