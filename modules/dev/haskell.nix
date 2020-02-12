@@ -7,7 +7,9 @@
     cabal-install
     ghc
     # unstable.haskellPackages.ghc-mod
+    haskellPackages.cabal2nix
     haskellPackages.hoogle
+    haskellPackages.stack
     hlint
   ];
 }
