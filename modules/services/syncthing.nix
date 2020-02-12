@@ -21,6 +21,8 @@
           "DOAM5XZ-GXLXUN6-YIFJW33-PTEHNPQ-OZNQJFP-7ISSOIN-HZ5GNUR-KTT5JQJ";
         rock.id =
           "PGYQ6SB-T7NHUZ7-KSS6VTS-FJSP7WY-WZVQYJV-LHTCCIQ-CBINZA6-3BLUOQV";
+        pbp.id =
+          "QNHHSAS-OA5GIJH-VDOOAM4-NWVS6C3-2BWW57Y-UN5736I-AZBZV2C-TXVLJQX";
         # envy.id =
         # TODO
       };
@@ -30,23 +32,23 @@
           if deviceEnabled devices then "sendreceive" else "receiveonly";
       in {
         sync = rec {
-          devices = [ "omen" "oneplus" "meshify" "node" "rock" ];
+          devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" ];
           path = "/home/${config.my.username}/sync";
           watch = true;
           rescanInterval = 3600 * 6;
-          type = deviceType [ "meshify" "omen" ];
+          type = deviceType [ "meshify" "omen" "pbp" ];
           enable = deviceEnabled devices;
         };
         src = rec {
-          devices = [ "omen" "meshify" "node" "rock" ];
+          devices = [ "omen" "meshify" "node" "rock" "pbp" ];
           path = "/home/${config.my.username}/src";
           watch = false;
           rescanInterval = 3600 * 2;
-          type = deviceType [ "meshify" "omen" ];
+          type = deviceType [ "meshify" "omen" "pbp" ];
           enable = deviceEnabled devices;
         };
         secrets = rec {
-          devices = [ "omen" "oneplus" "meshify" "node" "rock" ];
+          devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" ];
           path = "/home/${config.my.username}/.secrets";
           watch = true;
           rescanInterval = 3600;
