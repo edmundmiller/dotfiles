@@ -15,7 +15,7 @@
   ### Universal defaults
   networking.firewall.enable = true;
   networking.hosts = {
-    "192.168.1.231" = [ "meshify" ];
+    "192.168.1.88" = [ "meshify" ];
     "192.168.1.69" = [ "omen" ];
   };
 
