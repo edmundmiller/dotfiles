@@ -18,5 +18,10 @@
   fileSystems."/" = {
       device = "/dev/disk/by-uuid/44444444-4444-4444-8888-888888888888";
       fsType = "ext4";
-    };
+  };
+
+  fileSystems."/home/emiller/src" = {
+      device = "/dev/disk/by-uuid/9520482a-8ccb-460c-9fd8-49ab06979398";
+      fsType = "ext4";
+  };
 }
