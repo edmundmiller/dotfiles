@@ -27,7 +27,7 @@ set $menu ~/.config/rofi/bin/rofi-appmenu
 ### Output configuration
 #
 # Default wallpaper
-#output * bg ~/.config/sway/backgrounds/Sway_Wallpaper_Blue_1920x1080.png fill
+output * bg ~/.dotfiles/modules/themes/functional/wallpaper.png fill
 #
 # Example configuration:
 #
