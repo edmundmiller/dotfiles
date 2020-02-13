@@ -9,10 +9,10 @@
     ## Desktop/shell environment
     <modules/desktop/bspwm.nix>
     ## Apps
-    <modules/browser/firefox.nix>
-    <modules/dev/nix.nix>
+    #<modules/browser/firefox.nix>
+    #<modules/dev/nix.nix>
     <modules/dev/node.nix>
-    <modules/dev/python.nix>
+    #<modules/dev/python.nix>
     <modules/editors/emacs.nix>
     <modules/editors/vim.nix>
     <modules/shell/direnv.nix>
@@ -40,8 +40,16 @@
   time.timeZone = "America/Chicago";
 
   environment.systemPackages = [ pkgs.acpi pkgs.uBootPinebookProExternalFirst ];
+
   #
   # Monitor backlight control
   programs.light.enable = true;
   programs.sway = { enable = true; };
+  services.xserver.videoDrivers = [ "modesetting"];
+  nixpkgs.config.allowUnsupportedSystem = true;
+  nixpkgs.config.allowBroken = true;
+  # NixOS wants to enable GRUB by default
+  boot.loader.grub.enable = false;
+  # Enables the generation of /boot/extlinux/extlinux.conf
+  boot.loader.generic-extlinux-compatible.enable = true;
 }
