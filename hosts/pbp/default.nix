@@ -5,7 +5,7 @@
     ../personal.nix
     ./hardware-configuration.nix
     ## Desktop/shell environment
-    <modules/desktop/bspwm.nix>
+    <modules/desktop/sway.nix>
     ## Apps
     #<modules/browser/firefox.nix>
     #<modules/dev/nix.nix>
@@ -42,7 +42,6 @@
   #
   # Monitor backlight control
   programs.light.enable = true;
-  programs.sway = { enable = true; };
   services.xserver.videoDrivers = [ "modesetting"];
   nixpkgs.config.allowUnsupportedSystem = true;
   nixpkgs.config.allowBroken = true;
