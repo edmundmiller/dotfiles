@@ -16,8 +16,7 @@
   powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
 
   fileSystems."/" = {
-    # FIXME
-    device = "/dev/disk/by-uuid/";
-    fsType = "ext4";
-  };
+      device = "/dev/disk/by-uuid/44444444-4444-4444-8888-888888888888";
+      fsType = "ext4";
+    };
 }
