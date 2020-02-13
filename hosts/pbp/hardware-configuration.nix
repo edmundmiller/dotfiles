@@ -4,7 +4,13 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix> ];
+  imports = [
+    <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
+    (let nixos-hardware =
+           builtins.fetchGit
+             "https://github.com/samueldr/wip-pinebook-pro";
+     in "${nixos-hardware}/pinebook_pro.nix")
+  ];
 
   boot.initrd.availableKernelModules = [ ];
   boot.initrd.kernelModules = [ ];

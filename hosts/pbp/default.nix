@@ -4,8 +4,6 @@
   imports = [
     ../personal.nix
     ./hardware-configuration.nix
-    # FIXME Download the repo automatically
-    ./wip-pinebook-pro/pinebook_pro.nix
     ## Desktop/shell environment
     <modules/desktop/bspwm.nix>
     ## Apps
