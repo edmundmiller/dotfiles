@@ -7,8 +7,11 @@
   imports = [
     <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
     (let nixos-hardware =
-           builtins.fetchGit
-             "https://github.com/samueldr/wip-pinebook-pro";
+           builtins.fetchGit {
+             url = "https://github.com/theotherjimmy/wip-pinebook-pro";
+             ref = "suspend";
+             rev = "95bd47f1dc8701ac293f4113f732f874bad93d69";
+             };
      in "${nixos-hardware}/pinebook_pro.nix")
   ];
 
