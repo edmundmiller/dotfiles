@@ -1,0 +1,25 @@
+theme = "gruvbox-light"
+icons = "awesome"
+
+[[block]]
+block = "cpu"
+interval = 1
+
+[[block]]
+block = "memory"
+display_type = "memory"
+format_mem = "{Mup}%"
+format_swap = "{SUp}%"
+
+[[block]]
+block = "load"
+interval = 1
+format = "{1m} {5m} {15m}"
+
+[[block]]
+block = "sound"
+
+[[block]]
+block = "time"
+interval = 60
+format = "%a %m/%d %R"

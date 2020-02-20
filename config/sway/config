@@ -29,7 +29,14 @@ set $bgimg ~/.dotfiles/modules/themes/functional/wallpaper.png
 ### Output configuration
 #
 # Default wallpaper
+
 output * bg $bgimg fill
+# Use pactl to adjust volume in PulseAudio.
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10% && $refresh_i3status
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10% && $refresh_i3status
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
+bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
+
 #
 # Example configuration:
 #
@@ -208,18 +215,34 @@ bindsym $mod+r mode "resize"
 #
 # Read `man 5 sway-bar` for more information about this section.
 
-set default_border pixel
+default_border pixel
+titlebar_border_thickness 2
+gaps inner 10
+gaps outer 10
+smart_gaps on
+smart_borders on
+focus_follows_mouse no
+seat * hide_cursor 1000
+client.focused #076678 #fbf1c7 #3c3836 #076678 #076678
+client.focused_inactive #458588 #fbf1c7 #3c3836 #458588 #458588
+client.unfocused #458588  #fbf1c7 #3c3836 #458588 #458588
+title_align center
 
 bar {
-    position top
-
-    # When the status_command prints a new line to stdout, swaybar updates.
-    # The default just shows the current date and time.
-    status_command while date +'%Y-%m-%d %l:%M:%S %p'; do sleep 1; done
-
-    colors {
-        statusline #ffffff
-        background #323232
-        inactive_workspace #32323200 #32323200 #5c5c5c
-    }
+  position top
+  id main
+  status_command i3status-rs .config/sway/status.toml
+  status_edge_padding 10
+  strip_workspace_numbers yes
+  colors {
+    separator #666666
+    background #fbf1c7
+    statusline #3c3836
+    focused_workspace #076678 #f9f5d7 #3c3836
+    inactive_workspace #fbf1c7 #fbf1c7 #3c3836
+    urgent_workspace #cc241d #fbf1c7 #3c3836
+  }
 }
+
+xwayland enable
+for_window [shell=".*"] title_format "%title :: %shell"
