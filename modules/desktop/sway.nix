@@ -29,9 +29,9 @@
 
   services.redshift.package = pkgs.unstable.redshift-wlr;
 
-  environment.systemPackages = with pkgs; [
-    (
-      pkgs.writeTextFile {
+  environment.systemPackages = with pkgs;
+    [
+      (pkgs.writeTextFile {
         name = "startsway";
         destination = "/bin/startsway";
         executable = true;
@@ -43,9 +43,8 @@
           # then start the service
           exec systemctl --user start sway.service
         '';
-      }
-    )
-  ];
+      })
+    ];
 
   systemd.user.targets.sway-session = {
     description = "Sway compositor session";
@@ -93,7 +92,7 @@
   home-manager.users.emiller.xdg.configFile = {
     "sway" = {
       source = <config/sway>;
-        recursive = true;
+      recursive = true;
     };
   };
 }

@@ -37,12 +37,16 @@
 
   time.timeZone = "America/Chicago";
 
-  environment.systemPackages = [ pkgs.acpi pkgs.uBootPinebookProExternalFirst ];
+  environment.systemPackages = with pkgs; [
+    acpi
+    uBootPinebookProExternalFirst
+    firefox
+  ];
 
   #
   # Monitor backlight control
   programs.light.enable = true;
-  services.xserver.videoDrivers = [ "modesetting"];
+  services.xserver.videoDrivers = [ "modesetting" ];
   nixpkgs.config.allowUnsupportedSystem = true;
   nixpkgs.config.allowBroken = true;
   # NixOS wants to enable GRUB by default
