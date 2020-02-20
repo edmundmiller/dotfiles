@@ -24,10 +24,12 @@ set $term xst
 # set $menu dmenu_path | dmenu | xargs swaymsg exec --
 set $menu ~/.config/rofi/bin/rofi-appmenu
 
+set $bgimg ~/.dotfiles/modules/themes/functional/wallpaper.png
+
 ### Output configuration
 #
 # Default wallpaper
-output * bg ~/.dotfiles/modules/themes/functional/wallpaper.png fill
+output * bg $bgimg fill
 #
 # Example configuration:
 #
@@ -40,10 +42,10 @@ output * bg ~/.dotfiles/modules/themes/functional/wallpaper.png fill
 # Example configuration:
 #
 exec swayidle -w \
-         timeout 300 'swaylock -f -c 000000' \
+         timeout 300 'swaylock -e -f -i $bgimg -s center' \
          timeout 600 'swaymsg "output * dpms off"' \
               resume 'swaymsg "output * dpms on"' \
-         before-sleep 'swaylock -f -c 000000'
+         before-sleep 'swaylock -e -f -i $bgimg -s center'
 #
 # This will lock your screen after 300 seconds of inactivity, then turn off
 # your displays after another 300 seconds, and turn your screens back on when
