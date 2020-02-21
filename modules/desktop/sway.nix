@@ -24,6 +24,7 @@
       waybar
       mako
       kanshi
+      i3status-rust
     ];
   };
 
