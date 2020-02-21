@@ -219,14 +219,14 @@ bindsym $mod+r mode "resize"
 # Read `man 5 sway-bar` for more information about this section.
 
 default_border pixel
-titlebar_border_thickness 2
+# titlebar_border_thickness 2
 gaps inner 10
 gaps outer 10
 smart_gaps on
 smart_borders on
 focus_follows_mouse no
 seat * hide_cursor 1000
-client.focused #076678 #fbf1c7 #3c3836 #076678 #076678
+client.focused #fa3604 #fbf1c7 #3c3836 #076678 #076678
 client.focused_inactive #458588 #fbf1c7 #3c3836 #458588 #458588
 client.unfocused #458588  #fbf1c7 #3c3836 #458588 #458588
 title_align center
@@ -239,10 +239,10 @@ bar {
   strip_workspace_numbers yes
   colors {
     separator #666666
-    background #fbf1c7
-    statusline #3c3836
+    background #282828
+    statusline #ebdbb2
     focused_workspace #076678 #f9f5d7 #3c3836
-    inactive_workspace #fbf1c7 #fbf1c7 #3c3836
+    inactive_workspace #282828 #282828 #fbf1c7
     urgent_workspace #cc241d #fbf1c7 #3c3836
   }
 }
