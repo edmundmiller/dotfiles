@@ -1,6 +1,9 @@
 { config, lib, pkgs, ... }:
 
-{
+let
+  url = "https://github.com/colemickens/nixpkgs-wayland/archive/master.tar.gz";
+  waylandOverlay = (import (builtins.fetchTarball url));
+in {
   imports = [
     ./.
 
@@ -10,6 +13,8 @@
     #
     ./apps/st.nix
   ];
+
+  nixpkgs.overlays = [ waylandOverlay ];
 
   fonts.fonts = [ pkgs.siji ];
 
