@@ -30,6 +30,7 @@ in {
       mako
       kanshi
       i3status-rust
+      grim
     ];
   };
 

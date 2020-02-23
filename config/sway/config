@@ -36,6 +36,10 @@ bindsym XF86AudioPlay exec playerctl play-pause
 bindsym XF86AudioNext exec playerctl next
 bindsym XF86AudioPrev exec playerctl previous
 
+# screenshots with grim and slurp
+bindsym $mod+Print exec --no-startup-id grim -g "$(slurp -d)" /home/emiller/screens/$(date \'+%d-%m-%Y--%R:%S\').png
+bindsym $mod+Shift+Print exec --no-startup-id grim -g "$(slurp -d)" - | tee /home/emiller/screens/$(date \'+%d-%m-%Y--%R:%S\').png | wl-copy -t image/png
+
 exec swayidle -w \
          timeout 300 'swaylock -e -f -i $bgimg -s center' \
          timeout 600 'swaymsg "output * dpms off"' \
