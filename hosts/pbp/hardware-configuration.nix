@@ -29,8 +29,9 @@
     fsType = "ext4";
   };
 
-  # fileSystems."/home/emiller/src" = {
-  #   device = "/dev/disk/by-uuid/9520482a-8ccb-460c-9fd8-49ab06979398";
-  #   fsType = "ext4";
-  # };
+  fileSystems."/home" = {
+    device = "/dev/disk/by-uuid/9520482a-8ccb-460c-9fd8-49ab06979398";
+    fsType = "ext4";
+    options = ["nofail"];
+  };
 }
