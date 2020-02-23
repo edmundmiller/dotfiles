@@ -215,9 +215,9 @@ smart_gaps on
 smart_borders on
 focus_follows_mouse no
 seat * hide_cursor 1000
-client.focused #fa3604 #fbf1c7 #3c3836 #076678 #076678
-client.focused_inactive #458588 #fbf1c7 #3c3836 #458588 #458588
-client.unfocused #458588  #fbf1c7 #3c3836 #458588 #458588
+client.focused #B7BBB7 #111314 #cccccc #FFFFFF #527C77
+client.unfocused #B7BBB7 #3a3a3a #a9ada9 #FFFFFF #222222
+client.focused_inactive #B7BBB7 #2d3133 #f2f2f3 #FFFFFF #5f676a
 title_align center
 
 bar {
