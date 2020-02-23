@@ -2,6 +2,12 @@ theme = "gruvbox-dark"
 icons = "awesome"
 
 [[block]]
+block = "net"
+device = "wlan0"
+ssid = true
+interval = 5
+
+[[block]]
 block = "cpu"
 interval = 1
 
