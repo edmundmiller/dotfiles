@@ -11,7 +11,7 @@ in {
     #
     ./apps/redshift.nix
     #
-    ./apps/st.nix
+    ./apps/alacritty.nix
   ];
 
   nixpkgs.overlays = [ waylandOverlay ];
