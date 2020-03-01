@@ -75,6 +75,8 @@
       "100:class_g = 'mpv'"
       # Games
       "100:class_g = 'dota2'"
+      "100:class_g = 'rocketleague.exe'"
+      "100:class_g = 'csgo_linux64'"
     ];
     settings.blur-background-exclude = [
       "window_type = 'dock'"
