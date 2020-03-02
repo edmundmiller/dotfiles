@@ -1,7 +1,16 @@
 { config, lib, pkgs, ... }:
 
 {
-  environment.systemPackages = with pkgs; [ docker docker-compose ];
+  my = {
+    packages = with pkgs; [ docker docker-compose ];
+
+    env.DOCKER_CONFIG = "$XDG_CONFIG_HOME/docker";
+    env.MACHINE_STORAGE_PATH = "$XDG_DATA_HOME/docker/machine";
+
+    user.extraGroups = [ "docker" ];
+
+    zsh.rc = lib.readFile <config/docker/aliases.zsh>;
+  };
 
   virtualisation = {
     docker = {
@@ -10,12 +19,5 @@
       enableOnBoot = false;
       # listenOptions = [];
     };
-  };
-
-  users.users.emiller.extraGroups = [ "docker" ];
-
-  home-manager.users.emiller.xdg.configFile = {
-    "zsh/rc.d/aliases.docker.zsh".source = <config/docker/aliases.zsh>;
-    "zsh/rc.d/env.docker.zsh".source = <config/docker/env.zsh>;
   };
 }
