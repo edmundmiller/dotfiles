@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 
-let font = "Iosevka";
+let font = "Pragmata Pro Mono";
 in {
   programs.zsh.vteIntegration = true;
 
