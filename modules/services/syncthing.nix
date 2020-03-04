@@ -44,7 +44,7 @@
           path = "/home/${config.my.username}/src";
           watch = false;
           rescanInterval = 3600 * 2;
-          type = deviceType [ "meshify" "omen" "pbp" ];
+          type = deviceType [ "meshify" "omen" ];
           enable = deviceEnabled devices;
         };
         secrets = rec {
