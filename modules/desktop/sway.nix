@@ -15,7 +15,7 @@ in {
     ./apps/alacritty.nix
   ];
 
-  nixpkgs.overlays = [ waylandOverlay ];
+  # nixpkgs.overlays = [ waylandOverlay ];
 
   fonts.fonts = [ pkgs.siji ];
 
