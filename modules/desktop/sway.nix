@@ -7,6 +7,7 @@ in {
   imports = [
     ./.
 
+    ./apps/libinput.nix
     ./apps/rofi.nix
     #
     ./apps/redshift.nix
