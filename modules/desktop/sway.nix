@@ -97,7 +97,7 @@ in {
     };
   };
 
-  home-manager.users.emiller.xdg.configFile = {
+  my.home.xdg.configFile = {
     "sway" = {
       source = <config/sway>;
       recursive = true;
