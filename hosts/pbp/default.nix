@@ -40,7 +40,7 @@
   environment.systemPackages = with pkgs; [
     acpi
     uBootPinebookProExternalFirst
-    firefox
+    firefox-wayland
   ];
 
   #
