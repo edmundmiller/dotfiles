@@ -2,7 +2,7 @@
 
 {
   my = {
-    packages = with pkgs; [ alacritty ];
+    packages = with pkgs; [ unstable.alacritty ];
 
     home.xdg.configFile."alacritty" = {
       source = <config/alacritty>;

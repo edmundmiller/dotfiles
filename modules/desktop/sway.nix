@@ -12,7 +12,7 @@ in {
     #
     ./apps/redshift.nix
     #
-    ./apps/alacritty.nix
+    ./apps/termite.nix
   ];
 
   # nixpkgs.overlays = [ waylandOverlay ];
