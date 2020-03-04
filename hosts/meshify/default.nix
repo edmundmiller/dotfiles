@@ -11,6 +11,7 @@
     # <modules/browser/surf.nix>
     <modules/dev/cc.nix>
     <modules/dev/clojure.nix>
+    <modules/dev/elm.nix>
     <modules/dev/haskell.nix>
     <modules/dev/nix.nix>
     <modules/dev/node.nix>
