@@ -40,7 +40,7 @@
           enable = deviceEnabled devices;
         };
         src = rec {
-          devices = [ "omen" "meshify" "node" "rock" "pbp" ];
+          devices = [ "omen" "meshify" "node" "rock" ];
           path = "/home/${config.my.username}/src";
           watch = false;
           rescanInterval = 3600 * 2;
