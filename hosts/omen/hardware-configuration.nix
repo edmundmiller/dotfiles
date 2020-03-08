@@ -49,8 +49,10 @@
   services.blueman.enable = true;
 
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/48df85c5-cc11-4016-bb6d-5300f017e73d";
+    device = "/dev/disk/by-label/nixos";
     fsType = "ext4";
+    options = [ "noatime" ];
+
   };
 
   fileSystems."/boot" = {
@@ -59,62 +61,28 @@
   };
 
   fileSystems."/data" = {
-    device = "/dev/disk/by-uuid/bb41d0ed-2c41-4503-8414-bc2fff099f3d";
+    device = "/dev/disk/by-label/data";
     fsType = "ext4";
+    options = [ "noatime" ];
   };
 
-  swapDevices =
-    [{ device = "/dev/disk/by-uuid/1a39cd0d-59cb-4b8a-8a3b-00fabbe98d93"; }];
+  swapDevices = [{ device = "/dev/disk/by-label/swap"; }];
 
   ## yubikey luks
   boot.initrd.luks = {
-    # FIXME Update if necessary
-    # cryptoModules = [ "aes" "xts" "sha512" ];
-
-    # Support for Yubikey PBA
-    yubikeySupport = true;
     reusePassphrases = true;
-
     devices = [
       {
         name = "root";
         device = "/dev/nvme0n1p5";
         preLVM = true;
         allowDiscards = true;
-
-        yubikey = {
-          slot = 2;
-          twoFactor = true; # Set to false for 1FA
-          gracePeriod = 30; # Time in seconds to wait for Yubikey to be inserted
-          keyLength = 64; # Set to $KEY_LENGTH/8
-          saltLength = 16; # Set to $SALT_LENGTH
-
-          storage = {
-            device =
-              "/dev/nvme0n1p1"; # Be sure to update this to the correct volume
-            fsType = "vfat";
-            path = "/crypt-storage/default";
-          };
-        };
       }
       {
-        name = "encrypted";
-        device = "/dev/sda1"; # Be sure to update this to the correct volume
-
-        yubikey = {
-          slot = 2;
-          twoFactor = true; # Set to false for 1FA
-          gracePeriod = 30; # Time in seconds to wait for Yubikey to be inserted
-          keyLength = 64; # Set to $KEY_LENGTH/8
-          saltLength = 16; # Set to $SALT_LENGTH
-
-          storage = {
-            device =
-              "/dev/nvme0n1p1"; # Be sure to update this to the correct volume
-            fsType = "vfat";
-            path = "/crypt-storage/data";
-          };
-        };
+        name = "data";
+        device = "/dev/sda1";
+        preLVM = true;
+        allowDiscards = true;
       }
     ];
   };
