@@ -33,6 +33,7 @@
     xserver = {
       desktopManager.xterm.enable = false;
       windowManager.bspwm.enable = true;
+      windowManager.default = "bspwm";
       displayManager.lightdm = {
         enable = true;
         greeters.mini = {
