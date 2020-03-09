@@ -4,7 +4,6 @@
 {
   my = {
     packages = with pkgs; [
-      calibre # managing my ebooks
       discord # chat
       evince # pdf reader
       sxiv # image viewer
