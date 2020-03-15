@@ -31,6 +31,7 @@
       # :lang javascript
       nodePackages.javascript-typescript-langserver
       nodePackages.vue-language-server
+      nodePackages.prettier
       # :lang latex & :lang org (latex previews)
       texlive.combined.scheme-medium
       # :lang rust
