@@ -2,7 +2,7 @@
 
 {
   my = {
-    packages = with pkgs; [ kubectl kubernetes-helm k9s ];
+    packages = with pkgs; [ kubectl unstable.kubernetes-helm k9s ];
 
     alias.k = "kubectl";
   };
