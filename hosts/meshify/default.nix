@@ -37,6 +37,7 @@
     ## Services
     <modules/services/docker.nix>
     <modules/services/keybase.nix>
+    <modules/services/kubernetes.nix>
     <modules/services/mpd.nix>
     <modules/services/pia.nix>
     <modules/services/ssh.nix>
