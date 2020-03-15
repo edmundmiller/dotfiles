@@ -9,6 +9,7 @@
     ## Apps
     <modules/browser/firefox.nix>
     # <modules/browser/surf.nix>
+    <modules/chat.nix>
     <modules/dev/cc.nix>
     <modules/dev/clojure.nix>
     <modules/dev/elm.nix>
