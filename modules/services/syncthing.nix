@@ -7,6 +7,7 @@
     enable = true;
     openDefaultPorts = true;
     user = config.my.username;
+    group = "users";
     configDir = "/home/${config.my.username}/.config/syncthing";
     dataDir = "/home/${config.my.username}/.local/share/syncthing";
     declarative = {
@@ -58,6 +59,4 @@
       };
     };
   };
-
-  my.user.extraGroups = [ "syncthing" ];
 }
