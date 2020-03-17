@@ -97,8 +97,8 @@ in {
         mbsync = {
           enable = true;
           frequency = "*:0/15";
-          # preExec =
-          #   "${pkgs.afew}/bin/afew -C ${notmuchrc} --move-mails --verbose";
+          preExec =
+            "${pkgs.afew}/bin/afew -C ${notmuchrc} --move-mails --verbose";
           postExec = "${pkgs.notmuch}/bin/notmuch new";
         };
       };
