@@ -2,7 +2,9 @@
 
 { pkgs, ... }: {
   my = {
-    packages = with pkgs; [ rustup llvmPackages.bintools ];
+      packages = with pkgs; [ rustup
+                              #llvmPackages.bintools
+                            ];
 
     env.RUSTUP_HOME = "$XDG_DATA_HOME/rustup";
     env.CARGO_HOME = "$XDG_DATA_HOME/cargo";
