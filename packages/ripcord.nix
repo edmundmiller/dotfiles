@@ -3,7 +3,7 @@
 
 let
   pname = "ripcord";
-  version = "0.4.23";
+  version = "0.4.24";
   desktopItem = makeDesktopItem {
     name = pname;
     desktopName = "Ripcord";
@@ -17,7 +17,7 @@ in appimageTools.wrapType2 rec {
   name = "${pname}-${version}";
   src = fetchurl {
     url = "https://cancel.fm/dl/Ripcord-${version}-x86_64.AppImage";
-    sha256 = "0395w0pwr1cz8ichcbyrsscmm2p7srgjk4vkqvqgwyx41prm0x2h";
+    sha256 = "0rscmnwxvbdl0vfx1pz7x5gxs9qsjk905zmcad4f330j5l5m227z";
   };
 
   profile = ''
