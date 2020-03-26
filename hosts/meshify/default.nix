@@ -27,7 +27,7 @@
     <modules/shell/git.nix>
     <modules/shell/gnupg.nix>
     <modules/shell/ncmpcpp.nix>
-    # FIXME <modules/shell/mail.nix>
+    <modules/shell/mail.nix>
     <modules/shell/pass.nix>
     <modules/shell/tmux.nix>
     <modules/shell/zsh.nix>
