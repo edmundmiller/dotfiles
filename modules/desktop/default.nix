@@ -18,6 +18,7 @@
       xclip
       xdotool
       visidata
+      zotero
     ];
   };
 
