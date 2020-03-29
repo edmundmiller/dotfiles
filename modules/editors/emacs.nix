@@ -2,7 +2,7 @@
   my = {
     packages = with pkgs; [
       ## Doom dependencies
-      ((emacsPackagesNgGen emacsGit).emacsWithPackages
+      ((emacsPackagesNgGen my.emacs27).emacsWithPackages
         (epkgs: [ epkgs.emacs-libvterm epkgs.emacsql-sqlite ]))
       git
       (ripgrep.override { withPCRE2 = true; })
