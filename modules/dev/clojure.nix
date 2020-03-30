@@ -8,5 +8,11 @@
     ./java.nix # for being hosted on jvm
     ./node.nix # for being hosted on nodejs
   ];
-  my.packages = with pkgs; [ clojure joker leiningen ];
+  my.packages = with pkgs; [
+    clojure
+    # Dev tools
+    leiningen
+    joker
+    unstable.clojure-lsp
+  ];
 }
