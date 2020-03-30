@@ -1,13 +1,14 @@
 { config, lib, pkgs, ... }:
 
 {
-  my.packages = with pkgs; [ syncthing ];
+  my.packages = with pkgs; [ unstable.syncthing ];
 
   services.syncthing = {
     enable = true;
     openDefaultPorts = true;
     user = config.my.username;
     group = "users";
+    package = pkgs.unstable.syncthing;
     configDir = "/home/${config.my.username}/.config/syncthing";
     dataDir = "/home/${config.my.username}/.local/share/syncthing";
     declarative = {
