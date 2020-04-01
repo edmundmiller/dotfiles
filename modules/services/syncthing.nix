@@ -33,6 +33,14 @@
         deviceType = devices:
           if deviceEnabled devices then "sendreceive" else "receiveonly";
       in {
+        archive = rec {
+          devices = [ "meshify" "omen" "node" ];
+          path = "/home/${config.my.username}/archive";
+          watch = false;
+          rescanInterval = 3600 * 6;
+          type = deviceType [ "meshify" ];
+          enable = deviceEnabled devices;
+        };
         sync = rec {
           devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" ];
           path = "/home/${config.my.username}/sync";
