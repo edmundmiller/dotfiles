@@ -36,7 +36,7 @@
       message = CI/CD Passed
 
       [Filter.5]
-      query = 'subject:receipt'
+      query = 'subject:receipt OR subject:billing'
       tags = +receipt
       message = Receipt
 
