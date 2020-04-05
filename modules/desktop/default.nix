@@ -75,9 +75,12 @@
       "100:class_g = 'mpv'"
       # Games
       "100:class_g = 'dota2'"
+      "100:class_g = 'Steam'"
+      "100:class_g = 'hl2_linux'"
+      "100:class_g = 'csgo_linux64'"
+      "100:class_g = 'Tabletop Simulator.x86_64'"
       "100:class_g = 'steam_app_252950'"
       "100:class_g = 'steam_app_435150'"
-      "100:class_g = 'csgo_linux64'"
     ];
     settings.blur-background-exclude = [
       "window_type = 'dock'"
