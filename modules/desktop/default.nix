@@ -12,7 +12,7 @@
       mpv # video player
       networkmanagerapplet
       networkmanager_dmenu
-      openconnect
+      openconnect_pa
       ranger
       speedtest-cli
       xclip
