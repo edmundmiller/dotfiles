@@ -73,9 +73,11 @@
       "100:class_g = 'krita'"
       "100:class_g = 'feh'"
       "100:class_g = 'mpv'"
+      "100:class_g = 'zoom'"
       # Games
       "100:class_g = 'dota2'"
       "100:class_g = 'Steam'"
+      "100:class_g = 'steam'"
       "100:class_g = 'hl2_linux'"
       "100:class_g = 'csgo_linux64'"
       "100:class_g = 'Tabletop Simulator.x86_64'"
