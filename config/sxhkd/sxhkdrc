@@ -38,7 +38,7 @@ super + grave
 	st-scratch
 
 super + shift + grave
-	emacsclient -e '(open-scratch-frame)'
+	org-capture
 
 super + space
 	~/.config/rofi/bin/rofi-appmenu
