@@ -26,6 +26,7 @@
     <modules/graphics.nix> # art & design
     ## Services
     <modules/services/docker.nix>
+    <modules/services/guix.nix>
     <modules/services/keybase.nix>
     # FIXME <modules/services/pia.nix>
     <modules/services/syncthing.nix>
@@ -37,6 +38,8 @@
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
+
+  services.guix.enable = true;
 
   environment.systemPackages = [ pkgs.acpi ];
   powerManagement.powertop.enable = true;

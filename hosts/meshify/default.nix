@@ -34,6 +34,7 @@
     <modules/graphics.nix> # art & design
     ## Services
     <modules/services/docker.nix>
+    <modules/services/guix.nix>
     <modules/services/keybase.nix>
     <modules/services/kubernetes.nix>
     <modules/services/mpd.nix>
@@ -50,6 +51,8 @@
 
   time.timeZone = "America/Chicago";
   services.xserver.dpi = 186;
+
+  services.guix.enable = true;
 
   # ZFS
   boot.supportedFilesystems = [ "zfs" ];
