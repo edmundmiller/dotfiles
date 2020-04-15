@@ -2,7 +2,7 @@
   (self: super:
     with super; {
       my = {
-        emacs27 = (callPackage ./packages/emacs27.nix { });
+        guix = (callPackage ./packages/guix.nix { });
         linode-cli = (callPackage ./packages/linode-cli.nix { });
         ripcord = (callPackage ./packages/ripcord.nix { });
         zunit = (callPackage ./packages/zunit.nix { });
