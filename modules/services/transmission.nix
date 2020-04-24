@@ -4,6 +4,7 @@
   services.transmission = {
     enable = true;
     home = "/data/media/torrents";
+    user = config.my.username;
     settings = {
       incomplete-dir-enabled = true;
       rpc-whitelist = "127.0.0.1,192.168.*.*";
