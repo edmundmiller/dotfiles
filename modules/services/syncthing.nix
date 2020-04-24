@@ -25,8 +25,6 @@
           "PGYQ6SB-T7NHUZ7-KSS6VTS-FJSP7WY-WZVQYJV-LHTCCIQ-CBINZA6-3BLUOQV";
         pbp.id =
           "CRC7IPG-AENABLD-L5MVEUV-KOVM7ZQ-MASB2SB-VSTKS7O-OYFNQCK-D3GTCAA";
-        # envy.id =
-        # TODO
       };
       folders = let
         deviceEnabled = devices: lib.elem config.networking.hostName devices;
