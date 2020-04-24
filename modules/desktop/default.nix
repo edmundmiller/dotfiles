@@ -60,7 +60,7 @@
     };
   };
 
-  services.compton = {
+  services.picom = {
     backend = "glx";
     vSync = true;
     opacityRules = [

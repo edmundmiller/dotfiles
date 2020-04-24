@@ -56,7 +56,7 @@
       enable = true;
       order = [ "audio" "backlight" "battery" "cpu_load" "network" "time" ];
     };
-    compton.enable = true;
+    picom.enable = true;
   };
 
   home-manager.users.emiller.xdg.configFile = {
