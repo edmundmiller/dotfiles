@@ -5,7 +5,7 @@
 
   # FIXME theme.wallpaper = ./wallpaper.png;
 
-  services.compton = {
+  services.picom = {
     activeOpacity = "0.96";
     inactiveOpacity = "0.75";
     settings = {

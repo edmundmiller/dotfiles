@@ -51,7 +51,7 @@
         locker = "${pkgs.slock}/bin/slock";
       };
     };
-    compton.enable = true;
+    picom.enable = true;
   };
 
   home-manager.users.emiller.xdg.configFile = {
