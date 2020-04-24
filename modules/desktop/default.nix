@@ -4,6 +4,7 @@
 {
   my = {
     packages = with pkgs; [
+      cachix
       discord # chat
       evince # pdf reader
       sxiv # image viewer
