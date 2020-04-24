@@ -5,3 +5,14 @@ use_docker-machine(){
 
   eval $(docker-machine env --shell bash $env)
 }
+
+use_guix() {
+  local cache_dir="$(direnv_layout_dir)/.guix-profile"
+  if [[ -e "$cache_dir/etc/profile" ]]; then
+    # shellcheck disable=SC1091
+    source "$cache_dir/etc/profile"
+  else
+    mkdir "$(direnv_layout_dir)"
+    eval "$(guix environment --root="$cache_dir" "$@" --search-paths)"
+  fi
+}
