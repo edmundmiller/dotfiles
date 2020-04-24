@@ -31,9 +31,9 @@
 
   services = {
     xserver = {
-      desktopManager.xterm.enable = false;
       windowManager.bspwm.enable = true;
-      windowManager.default = "bspwm";
+      desktopManager.xterm.enable = false;
+      displayManager.defaultSession = "none+bspwm";
       displayManager.lightdm = {
         enable = true;
         greeters.mini = {

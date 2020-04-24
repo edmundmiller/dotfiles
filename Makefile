@@ -1,4 +1,4 @@
-NIXOS_VERSION := 19.09
+NIXOS_VERSION := 20.03
 NIXOS_PREFIX  := $(PREFIX)/etc/nixos
 COMMAND       := test
 FLAGS         := -I "config=/etc/dotfiles/config" -I "modules=/etc/dotfiles/modules" $(FLAGS)
