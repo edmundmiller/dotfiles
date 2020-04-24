@@ -6,7 +6,7 @@
 
     user.extraGroups = [ "mpd" ];
 
-    home.programs.beets.enable = true;
+    # home.programs.beets.enable = true;
   };
 
   services = {
