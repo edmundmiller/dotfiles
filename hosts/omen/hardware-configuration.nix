@@ -71,20 +71,18 @@
   ## yubikey luks
   boot.initrd.luks = {
     reusePassphrases = true;
-    devices = [
-      {
-        name = "root";
+    devices = {
+      root = {
         device = "/dev/nvme0n1p5";
         preLVM = true;
         allowDiscards = true;
-      }
-      {
-        name = "data";
+      };
+      data = {
         device = "/dev/sda1";
         preLVM = true;
         allowDiscards = true;
-      }
-    ];
+      };
+    };
   };
 
   services.xserver.xrandrHeads = [{
