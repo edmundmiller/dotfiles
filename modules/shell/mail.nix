@@ -7,10 +7,8 @@ let
   protonmail = "edmund.a.miller@protonmail.com";
   notmuchrc = "/home/emiller/.config/notmuch/notmuchrc";
 in {
-  imports = [ ./afew.nix ];
   my = {
-    packages = with pkgs; [ notmuch isync ];
-    env.NOTMUCH_CONFIG = "${notmuchrc}";
+    packages = with pkgs; [ unstable.mu isync ];
     home = {
       accounts.email = {
         maildirBasePath = "${maildir}";
@@ -30,7 +28,6 @@ in {
             };
             realName = "${name}";
             msmtp.enable = true;
-            notmuch.enable = true;
           };
           Eman = {
             address = "eman0088@gmail.com";
@@ -44,7 +41,6 @@ in {
               patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
             };
             realName = "${name}";
-            notmuch.enable = true;
           };
           UTD = {
             address = "Edmund.Miller@utdallas.edu";
@@ -70,7 +66,6 @@ in {
               port = 587;
               tls.useStartTls = true;
             };
-            notmuch.enable = true;
           };
         };
       };
@@ -78,28 +73,14 @@ in {
       programs = {
         msmtp.enable = true;
         mbsync.enable = true;
-        notmuch = {
-          enable = true;
-          hooks = {
-            postNew =
-              "${pkgs.afew}/bin/afew -C ${notmuchrc} --tag --new --verbose";
-          };
-          new = {
-            ignore = [ "trash" "*.json" ];
-            tags = [ "new" ];
-          };
-          search.excludeTags = [ "trash" "deleted" "spam" ];
-          maildir.synchronizeFlags = true;
-        };
       };
 
       services = {
         mbsync = {
           enable = true;
           frequency = "*:0/15";
-          preExec =
-            "${pkgs.afew}/bin/afew -C ${notmuchrc} --move-mails --verbose";
-          postExec = "${pkgs.notmuch}/bin/notmuch new";
+          preExec = "${pkgs.isync}/bin/mbsync -Ha";
+          postExec = "${pkgs.mu}/bin/mu index -m ${maildir}";
         };
       };
     };
