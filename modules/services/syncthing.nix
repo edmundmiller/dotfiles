@@ -25,6 +25,8 @@
           "PGYQ6SB-T7NHUZ7-KSS6VTS-FJSP7WY-WZVQYJV-LHTCCIQ-CBINZA6-3BLUOQV";
         pbp.id =
           "CRC7IPG-AENABLD-L5MVEUV-KOVM7ZQ-MASB2SB-VSTKS7O-OYFNQCK-D3GTCAA";
+        pi.id =
+          "LS2UAFQ-MIFBIPJ-CNNPTJC-PSN7K4Z-67I5F66-3IJDQYT-MQN446A-TSPGDQB";
       };
       folders = let
         deviceEnabled = devices: lib.elem config.networking.hostName devices;
@@ -40,7 +42,7 @@
           enable = deviceEnabled devices;
         };
         sync = rec {
-          devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" ];
+          devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" "pi" ];
           path = "/home/${config.my.username}/sync";
           watch = true;
           rescanInterval = 3600 * 6;
@@ -48,7 +50,7 @@
           enable = deviceEnabled devices;
         };
         src = rec {
-          devices = [ "omen" "meshify" "node" "rock" ];
+          devices = [ "omen" "meshify" "node" "rock" "pi" ];
           path = "/home/${config.my.username}/src";
           watch = false;
           rescanInterval = 3600 * 2;
