@@ -84,6 +84,9 @@
       "100:class_g = 'Tabletop Simulator.x86_64'"
       "100:class_g = 'steam_app_252950'"
       "100:class_g = 'steam_app_435150'"
+      "100:class_g = 'pitfall.exe'"
+      "100:class_g = 'steam_app_464900'"
+      "100:name    = 'Hyper Lighter Drifter'"
     ];
     settings.blur-background-exclude = [
       "window_type = 'dock'"
