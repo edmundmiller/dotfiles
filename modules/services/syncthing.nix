@@ -41,6 +41,14 @@
           type = deviceType [ "meshify" ];
           enable = deviceEnabled devices;
         };
+        elfeed = rec {
+          devices = [ "meshify" "omen" "node" ];
+          path = "/home/${config.my.username}/.emacs.d/.local/elfeed";
+          watch = false;
+          rescanInterval = 3600 * 6;
+          type = deviceType [ "meshify" "omen" ];
+          enable = deviceEnabled devices;
+        };
         sync = rec {
           devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" "pi" ];
           path = "/home/${config.my.username}/sync";
