@@ -10,7 +10,7 @@
     # ./latex.nix
     # ./love2d.nix
     # ./node.nix
-    # ./python.nix
+    ./python.nix
     ./rust.nix
     # ./zsh.nix
   ];
