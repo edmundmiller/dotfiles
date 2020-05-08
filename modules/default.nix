@@ -41,13 +41,6 @@ in {
           else
             (toString v));
       };
-      init = mkOption {
-        type = types.lines;
-        description = ''
-          An init script that runs after the environment has been rebuilt or
-          booted. Anything done here should be idempotent and inexpensive.
-        '';
-      };
 
       alias = mkOption {
         type = with types; nullOr (attrsOf (nullOr (either str path)));
@@ -85,9 +78,11 @@ in {
     environment.extraInit = let
       exportLines = mapAttrsToList (n: v: ''export ${n}="${v}"'') config.my.env;
     in ''
+      export XAUTHORITY=/tmp/Xauthority
+      [ -e ~/.Xauthority ] && mv -f ~/.Xauthority "$XAUTHORITY"
+
       ${concatStringsSep "\n" exportLines}
-      ${config.my.init}
-    '';
+          '';
 
     # I avoid programs.zsh.*Init variables because they initialize too soon. My
     # zsh config is particular about load order.
