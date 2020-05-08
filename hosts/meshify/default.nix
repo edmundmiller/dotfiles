@@ -31,7 +31,12 @@
 
     dev = {
       cc.enable = true;
+      clojure.enable = true;
       common-lisp.enable = true;
+      nixlang.enable = true;
+      node.enable = true;
+      python.enable = true;
+      R.enable = true;
       rust.enable = true;
     };
 
@@ -50,11 +55,12 @@
     };
 
     services = {
-      # docker.enable = true;
-      # keybase.enable = true;
-      # pia.enable = true;
+      docker.enable = true;
+      keybase.enable = true;
+      mpd.enable = true;
+      pia.enable = true;
       syncthing.enable = true;
-      # transmission.enable = true;
+      transmission.enable = true;
     };
 
     themes.functional.enable = true;
