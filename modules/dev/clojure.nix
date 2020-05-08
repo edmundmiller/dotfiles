@@ -2,17 +2,22 @@
 #
 # I don't use clojure. Perhaps one day...
 
-{ pkgs, ... }: {
-  imports = [
-    ./.
-    ./java.nix # for being hosted on jvm
-    ./node.nix # for being hosted on nodejs
-  ];
-  my.packages = with pkgs; [
-    clojure
-    # Dev tools
-    leiningen
-    joker
-    unstable.clojure-lsp
-  ];
+{ config, options, lib, pkgs, ... }:
+with lib; {
+  options.modules.dev.clojure = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
+    };
+  };
+
+  config = mkIf config.modules.dev.clojure.enable {
+    my.packages = with pkgs; [
+      clojure
+      # Dev tools
+      leiningen
+      joker
+      unstable.clojure-lsp
+    ];
+  };
 }

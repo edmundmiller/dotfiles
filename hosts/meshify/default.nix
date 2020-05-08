@@ -1,58 +1,69 @@
-{ config, lib, pkgs, ... }:
+{ config, options, pkgs, ... }:
 
 {
   imports = [
-    ../personal.nix
+    ../personal.nix # common settings
     ./hardware-configuration.nix
-    ## Desktop/shell environment
-    <modules/desktop/bspwm.nix>
-    ## Apps
-    <modules/browser/firefox.nix>
-    # <modules/browser/surf.nix>
-    <modules/chat.nix>
-    <modules/dev/cc.nix>
-    <modules/dev/clojure.nix>
-    <modules/dev/nix.nix>
-    <modules/dev/node.nix>
-    <modules/dev/python.nix>
-    <modules/dev/R.nix>
-    <modules/dev/rust.nix>
-    <modules/dev/zsh.nix>
-    <modules/editors/emacs.nix>
-    <modules/editors/vim.nix>
-    <modules/gaming/steam.nix>
-    <modules/shell/direnv.nix>
-    <modules/shell/git.nix>
-    <modules/shell/gnupg.nix>
-    <modules/shell/ncmpcpp.nix>
-    <modules/shell/mail.nix>
-    <modules/shell/pass.nix>
-    <modules/shell/tmux.nix>
-    <modules/shell/zsh.nix>
-    ## Project-based
-    <modules/music.nix> # playing music
-    <modules/graphics.nix> # art & design
-    ## Services
-    <modules/services/docker.nix>
-    <modules/services/guix.nix>
-    <modules/services/keybase.nix>
-    <modules/services/kubernetes.nix>
-    <modules/services/mpd.nix>
-    <modules/services/pia.nix>
-    <modules/services/ssh.nix>
-    <modules/services/syncthing.nix>
-    <modules/services/transmission.nix>
-    ## Theme
-    <modules/themes/functional>
   ];
+
+  modules = {
+    desktop = {
+      bspwm.enable = true;
+
+      apps.rofi.enable = true;
+      apps.discord.enable = true;
+      apps.graphics.enable = true;
+
+      term.default = "xst";
+      term.st.enable = true;
+
+      browsers.default = "firefox";
+      browsers.firefox.enable = true;
+
+      gaming.steam.enable = true;
+    };
+
+    editors = {
+      default = "nvim";
+      emacs.enable = true;
+      vim.enable = true;
+    };
+
+    dev = {
+      cc.enable = true;
+      common-lisp.enable = true;
+      rust.enable = true;
+    };
+
+    media = { mpv.enable = true; };
+
+    shell = {
+      direnv.enable = true;
+      git.enable = true;
+      gnupg.enable = true;
+      ncmpcpp.enable = true;
+      pass.enable = true;
+      tmux.enable = true;
+      # ranger.enable = true;
+      zsh.enable = true;
+    };
+
+    services = {
+      # docker.enable = true;
+      # keybase.enable = true;
+      # pia.enable = true;
+      syncthing.enable = true;
+      # transmission.enable = true;
+    };
+
+    themes.functional.enable = true;
+  };
 
   networking.hostId = "3b848ba1";
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
   services.xserver.dpi = 186;
-
-  services.guix.enable = true;
 
   # ZFS
   boot.supportedFilesystems = [ "zfs" ];
