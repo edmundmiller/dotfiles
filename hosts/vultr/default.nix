@@ -20,6 +20,8 @@
     };
   };
 
+  my.zsh.rc = lib.readFile <modules/themes/functional/zsh/prompt.zsh>;
+
   networking.networkmanager.enable = true;
 
   nix.gc = {
