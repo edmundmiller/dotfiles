@@ -8,11 +8,14 @@ with lib; {
   };
 
   config = mkIf config.modules.services.syncthing.enable {
+    my.packages = with pkgs; [ unstable.syncthing ];
+
     services.syncthing = {
       enable = true;
       openDefaultPorts = true;
       user = config.my.username;
       group = "users";
+      package = pkgs.unstable.syncthing;
       configDir = "/home/${config.my.username}/.config/syncthing";
       dataDir = "/home/${config.my.username}/.local/share/syncthing";
       declarative = {
@@ -47,7 +50,7 @@ with lib; {
           };
           elfeed = rec {
             devices = [ "meshify" "omen" "node" ];
-            path = "/home/${config.my.username}/.emacs.d/.local/elfeed";
+            path = "/home/${config.my.username}/.config/emacs/.local/elfeed";
             watch = false;
             rescanInterval = 3600 * 6;
             type = deviceType [ "meshify" "omen" ];
