@@ -9,6 +9,7 @@
     # ./haskell.nix
     # ./latex.nix
     ./lua.nix
+    ./nixlang.nix
     ./node.nix
     ./python.nix
     ./rust.nix
