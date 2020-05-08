@@ -2,13 +2,14 @@
   (self: super:
     with super; {
       my = {
-        guix = (callPackage ./packages/guix.nix { });
-        linode-cli = (callPackage ./packages/linode-cli.nix { });
-        ripcord = (callPackage ./packages/ripcord.nix { });
-        zunit = (callPackage ./packages/zunit.nix { });
         cached-nix-shell = (callPackage (builtins.fetchTarball
           "https://github.com/xzfc/cached-nix-shell/archive/master.tar.gz")
           { });
+        emacs27 = (callPackage ./emacs27.nix { });
+        guix = (callPackage ./guix.nix { });
+        linode-cli = (callPackage ./linode-cli.nix { });
+        ripcord = (callPackage ./ripcord.nix { });
+        zunit = (callPackage ./zunit.nix { });
       };
 
       nur = import (builtins.fetchTarball
@@ -18,7 +19,7 @@
 
       # Occasionally, "stable" packages are broken or incomplete, so access to the
       # bleeding edge is necessary, as a last resort.
-      unstable = import <nixpkgs-unstable> { inherit config; };
+      unstable = import <nixos-unstable> { inherit config; };
     })
 
   # emacsGit
