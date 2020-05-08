@@ -7,7 +7,7 @@
     # ./gitea.nix
     # ./jellyfin.nix
     ./keybase.nix
-    # ./mpd.nix
+    ./mpd.nix
     # ./nginx.nix
     ./pia.nix
     # ./ssh.nix
