@@ -8,7 +8,7 @@
     # ./godot.nix
     # ./haskell.nix
     # ./latex.nix
-    # ./love2d.nix
+    ./lua.nix
     # ./node.nix
     ./python.nix
     ./rust.nix
