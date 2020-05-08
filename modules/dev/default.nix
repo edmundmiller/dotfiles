@@ -12,6 +12,7 @@
     ./nixlang.nix
     ./node.nix
     ./python.nix
+    ./R.nix
     ./rust.nix
     ./zsh.nix
   ];
