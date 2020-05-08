@@ -12,6 +12,6 @@
     ./pia.nix
     # ./ssh.nix
     ./syncthing.nix
-    # ./transmission.nix
+    ./transmission.nix
   ];
 }
