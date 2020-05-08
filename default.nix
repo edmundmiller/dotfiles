@@ -3,6 +3,7 @@
 device: username:
 { pkgs, options, lib, config, ... }: {
   networking.hostName = lib.mkDefault device;
+  my.username = username;
 
   imports = [ ./modules "${./hosts}/${device}" ];
 
@@ -18,6 +19,7 @@ device: username:
   nixpkgs.overlays = import ./packages;
   nixpkgs.config.allowUnfree = true; # forgive me Stallman senpai
 
+  # These are the things I want installed on all my systems
   environment.systemPackages = with pkgs; [
     # Just the bear necessities~
     coreutils
@@ -40,8 +42,7 @@ device: username:
     dots = "make -C ~/.dotfiles";
   };
 
-  ### Primary user account
-  my.username = username;
+  # Default settings for primary user account
   my.user = {
     isNormalUser = true;
     uid = 1000;
@@ -53,5 +54,5 @@ device: username:
   # compatible, in order to avoid breaking some software such as database
   # servers. You should change this only after NixOS release notes say you
   # should.
-  system.stateVersion = "19.09"; # Did you read the comment?
+  system.stateVersion = "20.03"; # Did you read the comment?
 }
