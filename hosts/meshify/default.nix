@@ -61,6 +61,7 @@
   };
 
   networking.hostId = "3b848ba1";
+  programs.ssh.startAgent = true;
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";

@@ -34,6 +34,7 @@
     <modules/themes/functional>
   ];
 
+  programs.ssh.startAgent = true;
   networking.hostName = "omen";
   networking.networkmanager.enable = true;
 

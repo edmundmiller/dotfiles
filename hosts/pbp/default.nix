@@ -32,6 +32,7 @@
     <modules/themes/functional>
   ];
 
+  programs.ssh.startAgent = true;
   networking.hostName = "pbp";
   networking.networkmanager.enable = true;
 
