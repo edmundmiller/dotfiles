@@ -31,7 +31,6 @@
   environment.systemPackages = with pkgs; [ inetutils mtr sysstat git ];
 
   imports = [
-    ./common.nix
     <modules/editors/vim.nix>
     <modules/shell/git.nix>
     <modules/shell/zsh.nix>
