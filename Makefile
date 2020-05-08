@@ -1,5 +1,6 @@
 USER := emiller
 HOST := meshify
+HOME := /home/$(USER)
 
 NIXOS_VERSION := 20.03
 NIXOS_PREFIX  := $(PREFIX)/etc/nixos
@@ -13,16 +14,19 @@ FLAGS         := -I "config=$$(pwd)/config" \
 all: channels
 	@sudo nixos-rebuild $(FLAGS) $(COMMAND)
 
-install: channels update config
+install: channels update config move_to_home
 	@sudo nixos-install --root "$(PREFIX)" $(FLAGS)
 
 upgrade: update switch
 
-update:
+update: channels
 	@sudo nix-channel --update
 
 switch:
 	@sudo nixos-rebuild $(FLAGS) switch
+
+build:
+	@sudo nixos-rebuild $(FLAGS) build
 
 boot:
 	@sudo nixos-rebuild $(FLAGS) boot
@@ -36,12 +40,16 @@ dry:
 gc:
 	@nix-collect-garbage -d
 
+vm:
+	@sudo nixos-rebuild $(FLAGS) build-vm
+
 clean:
 	@rm -f result
 
 
 # Parts
 config: $(NIXOS_PREFIX)/configuration.nix
+move_to_home: $(NIXOS_PREFIX)/configuration.nix
 
 channels:
 	@sudo nix-channel --add "https://nixos.org/channels/nixos-${NIXOS_VERSION}" nixos
@@ -53,7 +61,11 @@ $(NIXOS_PREFIX)/configuration.nix:
 	@echo "import /etc/dotfiles \"$${HOST:-$$(hostname)}\" \"$$USER\"" | sudo tee "$(NIXOS_PREFIX)/configuration.nix"
 	@[ -f machines/$(HOST).nix ] || echo "WARNING: hosts/$(HOST)/default.nix does not exist"
 
-
+$(HOME)/.dotfiles:
+	@mkdir -p $(HOME)
+	@[ -e $(HOME)/.dotfiles ] || sudo mv /etc/dotfiles $(HOME)/.dotfiles
+	@[ -e /etc/dotfiles ] || sudo ln -s $(HOME)/.dotfiles /etc/dotfiles
+	@chown $(USER):users $(HOME) $(HOME)/.dotfiles
 
 # Convenience aliases
 i: install
