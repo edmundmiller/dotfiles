@@ -19,7 +19,7 @@
 
       # Occasionally, "stable" packages are broken or incomplete, so access to the
       # bleeding edge is necessary, as a last resort.
-      unstable = import <nixos-unstable> { inherit config; };
+      unstable = import <nixpkgs-unstable> { inherit config; };
     })
 
   # emacsGit
