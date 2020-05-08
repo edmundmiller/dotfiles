@@ -12,7 +12,7 @@
     ./node.nix
     ./python.nix
     ./rust.nix
-    # ./zsh.nix
+    ./zsh.nix
   ];
 
   options = { };
