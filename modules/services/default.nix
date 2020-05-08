@@ -6,7 +6,7 @@
     ./docker.nix
     # ./gitea.nix
     # ./jellyfin.nix
-    # ./keybase.nix
+    ./keybase.nix
     # ./mpd.nix
     # ./nginx.nix
     ./pia.nix
