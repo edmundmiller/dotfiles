@@ -29,10 +29,10 @@ super + w
   firefox
 
 super + e
-  zsh -c emacs
+	zsh -c emacs
 
 super + shift + a
-    autorandr -c
+	autorandr -c
 
 super + grave
 	st-scratch
@@ -61,10 +61,10 @@ super + {i,shift + i,s,f}
 
 
 super + alt + a
-    zzz
+	zzz
 
 super + alt + s
-	slock systemctl suspend -i
+	zzz -f
 
 #
 # Media keys
@@ -91,6 +91,6 @@ XF86AudioRaiseVolume
 	amixer -q set Master 10%+ unmute
 
 XF86Audio{Play,Pause}
-    mpc -q toggle
+	mpc -q toggle
 XF86Audio{Prev,Next}
 	mpc -q {prev,next}
