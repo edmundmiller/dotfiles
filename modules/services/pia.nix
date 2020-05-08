@@ -1,9 +1,9 @@
 # from https://github.com/illegalprime/nix/blob/1eb90ceaa9af14eba9d10d1178076e428994de0d/nixos/pia-system.nix
 
-{ config, pkgs, ... }:
+{ config, options, pkgs, lib, ... }:
 
 with builtins;
-
+with lib;
 let
   pia-config = with pkgs;
     stdenv.mkDerivation rec {
@@ -40,28 +40,36 @@ let
       '';
     };
 in {
-  environment.systemPackages = with pkgs; [ openresolv ];
+  options.modules.services.pia = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
+    };
+  };
+  config = mkIf config.modules.services.pia.enable {
+    environment.systemPackages = with pkgs; [ openresolv ];
 
-  # Configure all our servers
-  # Use with `sudo systemctl start openvpn-us-texas`
-  services.openvpn.servers = let
-    vpn_str = with (import <nixpkgs> { }).lib.strings;
-      file:
-      removeSuffix ".ovpn" (toLower (replaceStrings [ " " ] [ "-" ] file));
-  in foldl' (init: file:
-    init // {
-      "${vpn_str file}" = {
-        config = readFile "${pia-config}/config/${file}";
-        # autoStart = (vpn_str file) == "us-texas";
-        autoStart = false;
-        up =
-          "echo nameserver $nameserver | ${pkgs.openresolv}/sbin/resolvconf -m 0 -a $dev";
-        down = "${pkgs.openresolv}/sbin/resolvconf -d $dev";
-      };
-    }) { } (attrNames (readDir "${pia-config}/config"));
+    # Configure all our servers
+    # Use with `sudo systemctl start openvpn-us-texas`
+    services.openvpn.servers = let
+      vpn_str = with (import <nixpkgs> { }).lib.strings;
+        file:
+        removeSuffix ".ovpn" (toLower (replaceStrings [ " " ] [ "-" ] file));
+    in foldl' (init: file:
+      init // {
+        "${vpn_str file}" = {
+          config = readFile "${pia-config}/config/${file}";
+          # autoStart = (vpn_str file) == "us-texas";
+          autoStart = false;
+          up =
+            "echo nameserver $nameserver | ${pkgs.openresolv}/sbin/resolvconf -m 0 -a $dev";
+          down = "${pkgs.openresolv}/sbin/resolvconf -d $dev";
+        };
+      }) { } (attrNames (readDir "${pia-config}/config"));
 
-  my = {
-    alias.piau = "sudo systemctl start openvpn-us-texas";
-    alias.piad = "sudo systemctl stop openvpn-us-texas";
+    my = {
+      alias.piau = "sudo systemctl start openvpn-us-texas";
+      alias.piad = "sudo systemctl stop openvpn-us-texas";
+    };
   };
 }

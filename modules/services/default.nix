@@ -9,6 +9,7 @@
     # ./keybase.nix
     # ./mpd.nix
     # ./nginx.nix
+    ./pia.nix
     # ./ssh.nix
     ./syncthing.nix
     # ./transmission.nix
