@@ -1,46 +1,68 @@
-{ config, lib, pkgs, ... }:
+{ config, options, pkgs, ... }:
 
 {
   imports = [
-    ../personal.nix
+    ../personal.nix # common settings
     ./hardware-configuration.nix
-    ## Desktop/shell environment
-    <modules/desktop/bspwm.nix>
-    <modules/desktop/autorandr/omen.nix>
-    ## Apps
-    <modules/browser/firefox.nix>
-    <modules/dev/nix.nix>
-    <modules/dev/node.nix>
-    <modules/dev/python.nix>
-    <modules/editors/emacs.nix>
-    <modules/editors/vim.nix>
-    <modules/shell/direnv.nix>
-    <modules/shell/git.nix>
-    <modules/shell/gnupg.nix>
-    <modules/shell/pass.nix>
-    <modules/shell/tmux.nix>
-    <modules/shell/yubikey.nix>
-    <modules/shell/zsh.nix>
-    ## Project-based
-    <modules/music.nix> # playing music
-    <modules/graphics.nix> # art & design
-    ## Services
-    <modules/services/docker.nix>
-    <modules/services/guix.nix>
-    <modules/services/keybase.nix>
-    # FIXME <modules/services/pia.nix>
-    <modules/services/syncthing.nix>
-    ## Theme
-    <modules/themes/functional>
   ];
 
+  modules = {
+    desktop = {
+      bspwm.enable = true;
+
+      apps.rofi.enable = true;
+      apps.discord.enable = true;
+
+      term.default = "xst";
+      term.st.enable = true;
+
+      browsers.default = "firefox";
+      browsers.firefox.enable = true;
+    };
+
+    editors = {
+      default = "nvim";
+      emacs.enable = true;
+      vim.enable = true;
+    };
+
+    dev = {
+      cc.enable = true;
+      nixlang.enable = true;
+      node.enable = true;
+      python.enable = true;
+      R.enable = true;
+    };
+
+    media = { mpv.enable = true; };
+
+    shell = {
+      direnv.enable = true;
+      git.enable = true;
+      gnupg.enable = true;
+      mail.enable = true;
+      ncmpcpp.enable = true;
+      pass.enable = true;
+      tmux.enable = true;
+      ranger.enable = true;
+      zsh.enable = true;
+    };
+
+    services = {
+      docker.enable = true;
+      keybase.enable = true;
+      mpd.enable = true;
+      pia.enable = true;
+      syncthing.enable = true;
+    };
+
+    themes.functional.enable = true;
+  };
+
   programs.ssh.startAgent = true;
-  networking.hostName = "omen";
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
-
-  services.guix.enable = true;
 
   environment.systemPackages = [ pkgs.acpi ];
   powerManagement.powertop.enable = true;
