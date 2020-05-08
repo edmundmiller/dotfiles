@@ -87,6 +87,11 @@
       "100:class_g = 'pitfall.exe'"
       "100:class_g = 'steam_app_464900'"
       "100:name    = 'Hyper Lighter Drifter'"
+      "100:class_g = 'steam_app_6060'"
+      "100:class_g = 'Wine'"
+      "100:class_g = 'steam_app_292030'"
+      "100:class_g = 'witcher3.exe'"
+      "100:class_g = 'steam_app_65800'"
     ];
     settings.blur-background-exclude = [
       "window_type = 'dock'"
