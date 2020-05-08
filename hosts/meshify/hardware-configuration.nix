@@ -15,6 +15,7 @@
   ## CPU
   nix.maxJobs = lib.mkDefault 16;
   powerManagement.cpuFreqGovernor = "performance";
+  # TODO hardware.cpu.amd.updateMicrocode = true;
 
   ## Ergodox
   my.packages = [ pkgs.teensy-loader-cli ];
