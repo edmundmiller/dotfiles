@@ -17,7 +17,8 @@ Emacs][doom-emacs].
 
 ```sh
 # Assumes your partitions are set up and root is mounted on /mnt
-curl https://raw.githubusercontent.com/Emiller88/dotfiles/master/deploy | sh
+git clone https://github.com/emiller88/dotfiles /etc/dotfiles
+USER=emiller HOST=meshify make -C /etc/dotfiles install
 ```
 
 This is equivalent to:
