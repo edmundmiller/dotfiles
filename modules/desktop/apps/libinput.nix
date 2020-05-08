@@ -7,9 +7,7 @@
     user.extraGroups = [ "input" ];
 
     home.xdg.configFile = {
-      "libinput-gestures.conf" = {
-        source = <config/libinput-gestures.conf>;
-      };
+      "libinput-gestures.conf" = { source = <config/libinput-gestures.conf>; };
     };
   };
 }

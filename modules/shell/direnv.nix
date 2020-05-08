@@ -1,14 +1,19 @@
-{ config, lib, pkgs, ... }:
+{ config, options, lib, pkgs, ... }:
 
-{
-  services.lorri.enable = true;
-
-  my = {
-    packages = [ pkgs.direnv ];
-    # FIXME This is slow but it works
-    zsh.rc = ''eval "$(${pkgs.direnv}/bin/direnv hook zsh)"'';
-    home.xdg.configFile = {
-      "direnv/direnvrc".source = <config/direnv/direnvrc>;
+with lib; {
+  options.modules.shell.direnv = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
     };
+  };
+
+  config = mkIf config.modules.shell.direnv.enable {
+    my = {
+      packages = [ pkgs.direnv ];
+      zsh.rc = ''eval "$(direnv hook zsh)"'';
+    };
+
+    services.lorri.enable = true;
   };
 }

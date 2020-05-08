@@ -1,4 +1,4 @@
-# hosts/default.nix --- settings common to all my systems
+# hosts/common.nix --- settings common to all my systems
 
 { pkgs, ... }: {
   environment.systemPackages = with pkgs; [

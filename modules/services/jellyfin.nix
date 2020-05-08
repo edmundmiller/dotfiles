@@ -1,26 +1,22 @@
-{ config, lib, pkgs, ... }:
+# Finally, a decent open alternative to Plex!
 
-{
-  # This doesn't work on RockPro64
-  # TODO set this based on CPU
-  # services.jellyfin = { enable = true; };
-
-  docker-containers = {
-    "jellyfin" = {
-      image = "jellyfin/jellyfin";
-      volumes = [
-        "/var/lib/jellyfin/config:/config"
-        "/var/cache/jellyfin:/cache"
-        "/data/media:/media"
-      ];
-      extraDockerOptions = [ "--net=host" ];
+{ config, options, pkgs, lib, ... }:
+with lib; {
+  options.modules.services.jellyfin = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
     };
   };
 
-  networking.firewall = {
-    allowedTCPPorts = [ 8096 ];
-    allowedUDPPorts = [ 8096 ];
-  };
+  config = mkIf config.modules.services.jellyfin.enable {
+    services.jellyfin.enable = true;
 
-  my.user.extraGroups = [ "jellyfin" ];
+    networking.firewall = {
+      allowedTCPPorts = [ 8096 ];
+      allowedUDPPorts = [ 8096 ];
+    };
+
+    my.user.extraGroups = [ "jellyfin" ];
+  };
 }

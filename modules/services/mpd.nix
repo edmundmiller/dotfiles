@@ -9,6 +9,8 @@
     # home.programs.beets.enable = true;
   };
 
+  my.env.MPD_HOME = "$XDG_CONFIG_HOME/mpd";
+
   services = {
     mpd = {
       enable = true;

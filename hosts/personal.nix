@@ -1,7 +1,7 @@
 # hosts/personal.nix --- settings common to my personal systems
 
 { config, lib, pkgs, ... }: {
-  imports = [ ./. ];
+  imports = [ ./common.nix ];
 
   # Support for more filesystems
   environment.systemPackages = with pkgs; [ exfat ntfs3g hfsprogs ];
