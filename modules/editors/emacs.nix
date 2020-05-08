@@ -39,6 +39,7 @@
       rls
       # Org, markdown, everything inbetween
       pandoc
+      scrot
     ];
 
     env.PATH = [ "$HOME/.emacs.d/bin" ];
