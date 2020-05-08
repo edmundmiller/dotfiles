@@ -1,7 +1,10 @@
 NIXOS_VERSION := 20.03
 NIXOS_PREFIX  := $(PREFIX)/etc/nixos
 COMMAND       := test
-FLAGS         := -I "config=/etc/dotfiles/config" -I "modules=/etc/dotfiles/modules" $(FLAGS)
+FLAGS         := -I "config=$$(pwd)/config" \
+				 -I "modules=$$(pwd)/modules" \
+				 -I "bin=$$(pwd)/bin" \
+				 $(FLAGS)
 
 # The real Labowski
 all: channels
