@@ -13,11 +13,21 @@ device: username:
     "bin=/etc/dotfiles/bin"
     "config=/etc/dotfiles/config"
   ];
+
   # Add custom packages & unstable channel, so they can be accessed via pkgs.*
-  nixpkgs.overlays = import ./overlays.nix;
+  nixpkgs.overlays = import ./packages;
   nixpkgs.config.allowUnfree = true; # forgive me Stallman senpai
 
   environment.systemPackages = with pkgs; [
+    # Just the bear necessities~
+    coreutils
+    git
+    killall
+    unzip
+    vim
+    wget
+    sshfs
+
     gnumake # for our own makefile
     my.cached-nix-shell # for instant nix-shell scripts
   ];
@@ -43,5 +53,5 @@ device: username:
   # compatible, in order to avoid breaking some software such as database
   # servers. You should change this only after NixOS release notes say you
   # should.
-  system.stateVersion = "20.03"; # Did you read the comment?
+  system.stateVersion = "19.09"; # Did you read the comment?
 }
