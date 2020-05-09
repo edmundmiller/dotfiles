@@ -26,7 +26,7 @@ with lib; {
             "6EYD6V4-4KPXAVK-PR3GGLT-AYIWQ72-BUWQAUJ-PA7KAH7-QVGXA7Q-SKSL7AD";
           meshify.id =
             "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
-          node.id =
+          vultr.id =
             "DOAM5XZ-GXLXUN6-YIFJW33-PTEHNPQ-OZNQJFP-7ISSOIN-HZ5GNUR-KTT5JQJ";
           rock.id =
             "PGYQ6SB-T7NHUZ7-KSS6VTS-FJSP7WY-WZVQYJV-LHTCCIQ-CBINZA6-3BLUOQV";
@@ -41,7 +41,7 @@ with lib; {
             if deviceEnabled devices then "sendreceive" else "receiveonly";
         in {
           archive = rec {
-            devices = [ "meshify" "omen" "node" ];
+            devices = [ "meshify" "omen" "vultr" ];
             path = "/home/${config.my.username}/archive";
             watch = false;
             rescanInterval = 3600 * 6;
@@ -49,7 +49,7 @@ with lib; {
             enable = deviceEnabled devices;
           };
           elfeed = rec {
-            devices = [ "meshify" "omen" "node" ];
+            devices = [ "meshify" "omen" "vultr" ];
             path = "/home/${config.my.username}/.config/emacs/.local/elfeed";
             watch = false;
             rescanInterval = 3600 * 6;
@@ -57,7 +57,7 @@ with lib; {
             enable = deviceEnabled devices;
           };
           sync = rec {
-            devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" "pi" ];
+            devices = [ "omen" "oneplus" "meshify" "vultr" "rock" "pbp" "pi" ];
             path = "/home/${config.my.username}/sync";
             watch = true;
             rescanInterval = 3600 * 6;
@@ -65,7 +65,7 @@ with lib; {
             enable = deviceEnabled devices;
           };
           src = rec {
-            devices = [ "omen" "meshify" "node" "rock" "pi" ];
+            devices = [ "omen" "meshify" "vultr" "rock" "pi" ];
             path = "/home/${config.my.username}/src";
             watch = false;
             rescanInterval = 3600 * 2;
@@ -73,7 +73,7 @@ with lib; {
             enable = deviceEnabled devices;
           };
           secrets = rec {
-            devices = [ "omen" "oneplus" "meshify" "node" "rock" "pbp" ];
+            devices = [ "omen" "oneplus" "meshify" "vultr" "rock" "pbp" ];
             path = "/home/${config.my.username}/.secrets";
             watch = true;
             rescanInterval = 3600;
