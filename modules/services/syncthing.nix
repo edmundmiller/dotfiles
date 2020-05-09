@@ -28,8 +28,6 @@ with lib; {
             "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
           vultr.id =
             "54HA52Z-BPYZHKF-IQAQ2TW-RJLCDW7-S3FNTIM-X3ZWM6A-AVSNVVO-XATCEQL";
-          rock.id =
-            "PGYQ6SB-T7NHUZ7-KSS6VTS-FJSP7WY-WZVQYJV-LHTCCIQ-CBINZA6-3BLUOQV";
           pbp.id =
             "CRC7IPG-AENABLD-L5MVEUV-KOVM7ZQ-MASB2SB-VSTKS7O-OYFNQCK-D3GTCAA";
           pi.id =
@@ -57,7 +55,7 @@ with lib; {
             enable = deviceEnabled devices;
           };
           sync = rec {
-            devices = [ "omen" "oneplus" "meshify" "vultr" "rock" "pbp" "pi" ];
+            devices = [ "omen" "oneplus" "meshify" "vultr" "pbp" "pi" ];
             path = "/home/${config.my.username}/sync";
             watch = true;
             rescanInterval = 3600 * 6;
@@ -65,7 +63,7 @@ with lib; {
             enable = deviceEnabled devices;
           };
           src = rec {
-            devices = [ "omen" "meshify" "vultr" "rock" "pi" ];
+            devices = [ "omen" "meshify" "vultr" "pi" ];
             path = "/home/${config.my.username}/src";
             watch = false;
             rescanInterval = 3600 * 2;
@@ -73,7 +71,7 @@ with lib; {
             enable = deviceEnabled devices;
           };
           secrets = rec {
-            devices = [ "omen" "oneplus" "meshify" "vultr" "rock" "pbp" ];
+            devices = [ "omen" "oneplus" "meshify" "vultr" "pbp" ];
             path = "/home/${config.my.username}/.secrets";
             watch = true;
             rescanInterval = 3600;
