@@ -45,6 +45,7 @@
       pass.enable = true;
       tmux.enable = true;
       ranger.enable = true;
+      yubikey.enable = true;
       zsh.enable = true;
     };
 
@@ -59,7 +60,6 @@
     themes.functional.enable = true;
   };
 
-  programs.ssh.startAgent = true;
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";

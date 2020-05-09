@@ -10,6 +10,7 @@
     ./pass.nix
     ./ranger.nix
     ./tmux.nix
+    ./yubikey.nix
     ./zsh.nix
   ];
 }
