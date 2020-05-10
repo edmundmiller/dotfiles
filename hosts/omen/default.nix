@@ -4,6 +4,7 @@
   imports = [
     ../personal.nix # common settings
     ./hardware-configuration.nix
+    ./autorandr.nix
   ];
 
   modules = {
