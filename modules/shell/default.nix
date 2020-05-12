@@ -6,6 +6,7 @@
     ./direnv.nix
     ./git.nix
     ./gnupg.nix
+    ./kubernetes.nix
     ./mail.nix
     ./ncmpcpp.nix
     ./pass.nix
