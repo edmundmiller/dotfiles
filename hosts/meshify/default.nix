@@ -46,6 +46,7 @@
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
+      kubernetes.enable = true;
       mail.enable = true;
       ncmpcpp.enable = true;
       pass.enable = true;
