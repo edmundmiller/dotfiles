@@ -9,7 +9,7 @@ with lib; {
 
   config = mkIf config.modules.shell.kubernetes.enable {
     my = {
-      packages = with pkgs; [ kubectl unstable.kubernetes-helm k9s ];
+      packages = with pkgs; [ kompose kubectl unstable.kubernetes-helm k9s ];
 
       alias.k = "kubectl";
     };
