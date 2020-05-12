@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./aerc.nix
     ./direnv.nix
     ./git.nix
     ./gnupg.nix
