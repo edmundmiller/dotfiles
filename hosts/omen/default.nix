@@ -38,10 +38,10 @@
     media = { mpv.enable = true; };
 
     shell = {
+      aerc.enable = true;
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
-      mail.enable = true;
       ncmpcpp.enable = true;
       pass.enable = true;
       tmux.enable = true;
