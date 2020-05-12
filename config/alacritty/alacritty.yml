@@ -28,3 +28,6 @@ colors:
     magenta: "0xc678dd"
     cyan: "0x56b6c2"
     white: "0xffffff"
+
+font:
+  size: 14.0

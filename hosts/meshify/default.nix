@@ -15,6 +15,7 @@
       apps.graphics.enable = true;
 
       term.default = "xst";
+      term.alacritty.enable = true;
       term.st.enable = true;
 
       browsers.default = "firefox";
