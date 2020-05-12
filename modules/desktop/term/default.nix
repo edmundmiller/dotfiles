@@ -3,7 +3,7 @@ with lib; {
   imports = [
     # ./alacritty.nix
     ./st.nix
-    # ./urxvt.nix
+    ./termite.nix
   ];
 
   options.modules.desktop.term = {
