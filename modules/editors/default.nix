@@ -1,6 +1,11 @@
 { config, options, lib, pkgs, ... }:
 with lib; {
-  imports = [ ./emacs.nix ./vim.nix ];
+  imports = [
+    ./emacs.nix
+    ./kakoune.nix
+    ./vim.nix
+    # ./vscode.nix
+  ];
 
   options.modules.editors = {
     default = mkOption {
