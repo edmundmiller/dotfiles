@@ -13,7 +13,7 @@ with lib; {
         autoComplete = [ "insert" "prompt" ];
         autoInfo = [ "command" "normal" ];
         autoReload = "ask";
-        # colorScheme = "";
+        colorScheme = "gruvbox";
         numberLines = {
           enable = true;
           highlightCursor = true;
