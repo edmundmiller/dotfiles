@@ -12,6 +12,14 @@ with lib; {
     my = {
       packages = with pkgs; [
         aerc
+        (makeDesktopItem {
+          name = "aerc";
+          desktopName = "aerc";
+          genericName = "Open a aerc in xst";
+          icon = "mail";
+          exec = "${xst}/bin/xst aerc";
+          categories = "Email";
+        })
         # HTML rendering
         (lib.mkIf config.services.xserver.enable w3m)
         (lib.mkIf config.services.xserver.enable dante)
