@@ -32,6 +32,8 @@ with lib; {
       };
     };
 
+    programs.slock.enable = true;
+
     # link recursively so other modules can link files in their folders
     my.home.xdg.configFile = {
       "sxhkd".source = <config/sxhkd>;
