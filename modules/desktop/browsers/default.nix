@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 with lib; {
-  imports = [ ./firefox.nix ./qutebrowser.nix ./vivaldi.nix ];
+  imports = [ ./firefox.nix ./next.nix ./qutebrowser.nix ./vivaldi.nix ];
 
   options.modules.desktop.browsers = {
     default = mkOption {
