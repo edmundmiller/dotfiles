@@ -20,6 +20,7 @@
 
       browsers.default = "firefox";
       browsers.firefox.enable = true;
+      browsers.next.enable = true;
 
       gaming.steam.enable = true;
     };
