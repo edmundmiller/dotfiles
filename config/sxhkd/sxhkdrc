@@ -64,7 +64,7 @@ super + alt + a
 	zzz
 
 super + alt + s
-	zzz -f
+	slock systemctl suspend -i
 
 #
 # Media keys
