@@ -32,6 +32,10 @@ with lib; {
         # "aerc/accounts.conf".source = <config/aerc/accounts.conf>;
         "aerc/aerc.conf".source = <config/aerc/aerc.conf>;
         "aerc/binds.conf".source = <config/aerc/binds.conf>;
+        "aerc/templates" = {
+          source = <config/aerc/templates>;
+          recursive = true;
+        };
       };
     };
   };
