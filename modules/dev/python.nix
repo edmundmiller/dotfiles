@@ -23,6 +23,7 @@ with lib; {
         python37Packages.setuptools
         python37Packages.pylint
         python37Packages.poetry
+        conda
       ];
 
       env.IPYTHONDIR = "$XDG_CONFIG_HOME/ipython";
