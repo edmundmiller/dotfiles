@@ -42,6 +42,8 @@ with lib; {
         nodePackages.prettier
         # :lang latex & :lang org (latex previews)
         texlive.combined.scheme-tetex
+        # :lang python
+        unstable.python-language-server
         # :lang rust
         rustfmt
         rls
