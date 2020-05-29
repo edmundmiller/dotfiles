@@ -4,7 +4,7 @@ with lib; {
     ./emacs.nix
     ./kakoune.nix
     ./vim.nix
-    # ./vscode.nix
+    ./vscode.nix
   ];
 
   options.modules.editors = {

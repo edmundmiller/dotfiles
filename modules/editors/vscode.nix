@@ -1,12 +1,31 @@
-{ config, lib, pkgs, ... }:
+{ config, options, lib, pkgs, ... }:
+with lib; {
+  options.modules.editors.vscode = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
+    };
+  };
+  imports = [
+    (fetchTarball "https://github.com/msteen/nixos-vsliveshare/tarball/master")
+  ];
 
-{
-  nixpkgs.config.allowUnfree = true;
-  home-manager.users.emiller = {
-    programs.vscode = {
+  config = mkIf config.modules.editors.vscode.enable {
+
+    nixpkgs.config.allowUnfree = true;
+    my.home = {
+      programs.vscode = {
+        enable = true;
+        package = pkgs.vscodium;
+        userSettings = { };
+      };
+    };
+
+    services.vsliveshare = {
       enable = true;
-      package = pkgs.vscodium;
-      userSettings = { };
+      extensionsDir = "$HOME/.vscode-oss/extensions";
+      nixpkgs = fetchTarball
+        "https://github.com/NixOS/nixpkgs/tarball/61cc1f0dc07c2f786e0acfd07444548486f4153b";
     };
   };
 }
