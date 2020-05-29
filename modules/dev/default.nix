@@ -7,6 +7,7 @@
     ./common-lisp.nix
     # ./godot.nix
     # ./haskell.nix
+    ./java.nix
     # ./latex.nix
     ./lua.nix
     ./nixlang.nix
