@@ -16,6 +16,7 @@ with lib; {
         python27 # For building node-gyp
         solc
         (yarn.override { nodejs = pkgs.nodejs-12_x; })
+        unstable.deno
       ];
 
       env.NPM_CONFIG_USERCONFIG = "$XDG_CONFIG_HOME/npm/config";
