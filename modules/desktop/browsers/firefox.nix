@@ -16,6 +16,7 @@ with lib; {
   config = mkIf config.modules.desktop.browsers.firefox.enable {
     my.packages = with pkgs; [
       firefox-bin
+      tridactyl-native
       (makeDesktopItem {
         name = "firefox-private";
         desktopName = "Firefox (Private)";
@@ -27,6 +28,10 @@ with lib; {
     ];
 
     my.env.XDG_DESKTOP_DIR = "$HOME"; # (try to) prevent ~/Desktop
+
+    # Add tridactyl config
+    my.home.xdg.configFile."tridactyl/tridactylrc".source =
+      <config/tridactyl/tridactylrc>;
 
     # Use a stable profile name so we can target it in themes
     my.home.home.file = let cfg = config.modules.desktop.browsers.firefox;
