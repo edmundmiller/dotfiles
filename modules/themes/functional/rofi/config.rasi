@@ -2,7 +2,6 @@
 configuration {
   icon-theme:       "Paper";
   cycle:            true;
-  hide-scrollbar:   true;
   disable-history:  false;
   monitor:          "-4";
 
@@ -11,42 +10,127 @@ configuration {
   kb-row-down: "Down,Control+n,Control+j";
   kb-remove-to-eol: "";
   kb-row-up: "Up,Control+p,Control+k";
-
 }
 
 * {
-  accent:           #51afef;
-  background:       #101216;
-  background-light: #1f1f1f;
-  background-focus: #282828;
-  foreground:       #888888;
-  foreground-list:  #bbbbbb;
-  on:               #98be65;
-  off:              #ff6c6b;
+  accent:   #bd93f9;
+  bg:       #1E2029FA;
+  bg-light: #1c1c1c;
+  bg-focus: #282a36;
+  bg-dark:  #181a23;
+  fg:       #bbc2cf;
+  fg-list:  #bbc2cf;
+  on:       #8BD49C;
+  off:      #cc6666;
 
-  text-font:        "Fira Sans 16";
-  text-font-mono:   "Fira Mono 16";
-  icon-font:        "Hurmit Nerd Font Mono 60";
-  icon-font-small:  "Hurmit Nerd Font Mono 24";
+  magenta: #bd93f9;
+  blue:    #61bfff;
 
-  /* General */
-  inputbar-margin:                      4px 4px;
-  prompt-padding:                       14px 18px;
-  entry-padding:                        16px 14px 14px 0px;
-  /* list menus: appsmenu, networkmenu and nmvpnmenu */
-  list-element-padding:                 20px;
-  list-element-margin:                  @inputbar-margin;
-  list-element-border:                  0px 0px 0px 8px;
-  list-8-window-padding:                240px 18%;
-  /* appsmenu */
-  apps-textbox-prompt-colon-padding:    16px;
-  /* networkmenu */
-  network-textbox-prompt-colon-padding: 14px 10px 10px 10px;
-  /* nmvpnmenu */
-  nmvpn-textbox-prompt-colon-padding:   @network-textbox-prompt-colon-padding;
+  text-font:      "Fira Sans 15";
+  text-mono-font: "Fira Code 13";
+  icon-font:      "Hurmit Nerd Font Mono 26";
+
+  background-color: transparent;
+  text-color: @fg-list;
+  font: @text-font;
+  border-color: @bg-dark;
 }
 
-#window {
-  width: 100%;
-  height: 100%;
+
+/**** Layout ****/
+window {
+  width:    1000px;
+  y-offset: -50px;
+  anchor:   north;
+  location: center;
+  border: 1px;
+  border-radius: 6px 6px 0 0;
+  children: [ inputbar, listview ];
+
+}
+
+listview {
+  lines: 12;
+  fixed-height: false;
+  /* reverse: true; */
+  columns: 2;
+  scrollbar: true;
+  spacing: 1px;
+  /* Remove strange gap between listview and inputbar */
+  margin: -2px 0 0;
+}
+
+/*
+  TODO Not supported in stable branch of rofi
+  @media only (max-height: 1080px) {
+    window {
+      y-offset: -30%;
+    }
+    listview {
+      lines: 14;
+    }
+  }
+*/
+
+scrollbar {
+  handle-width: 1px;
+}
+inputbar {
+  children: [ textbox-icon, prompt, entry ];
+  border: 0 0 0;
+}
+textbox-icon, prompt {
+  padding: 11px;
+  expand: false;
+  border: 0 1px 0 0;
+  margin: 0 -2px 0 0;
+}
+textbox-icon {
+  padding: 7px -6px 0;
+}
+entry, element {
+  padding: 10px 13px;
+}
+textbox {
+  padding: 24px;
+  margin: 20px;
+}
+
+
+/**** Looks ****/
+scrollbar {
+  background-color: @bg-dark;
+  handle-color: @accent;
+  border-color: @bg-dark;
+}
+listview, inputbar {
+  background-color: @bg-dark;
+}
+textbox-icon, prompt, entry {
+  text-color: @accent;
+}
+prompt, entry {
+  background-color: @bg-focus;
+}
+textbox-icon, prompt {
+  background-color: #2f313d;
+}
+prompt {
+  background-color: @bg-focus;
+}
+textbox-icon {
+  font: @icon-font;
+}
+entry {
+  font: @text-font-mono;
+  text-color: @fg;
+}
+
+element {
+  background-color: @bg;
+  text-color: @fg;
+}
+element selected {
+  background-color: @bg-dark;
+  text-color: @accent;
 }

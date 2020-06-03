@@ -4,25 +4,20 @@
  */
 @import "appmenu.rasi"
 
-#element {
-  padding: 30px;
-  background-color: @background-light;
-}
-#element.selected {
-  background-color: @accent;
-  text-color: @background;
-}
-#window {
-  /* padding: @option-5-window-padding; */
-}
-#listview {
-  /* spacing: @option-5-listview-spacing; */
-  /* lines: 5; */
-  columns: 1;
-}
-#window {
-  children: [ horibox ];
-}
-#horibox {
+window {
   children: [ listview ];
+  width: 500px;
+}
+
+listview {
+  scrollbar: false;
+}
+
+element {
+  padding: 30px;
+  background-color: @bg-light;
+}
+element.selected {
+  background-color: @accent;
+  text-color: @bg;
 }
