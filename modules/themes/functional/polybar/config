@@ -1,6 +1,4 @@
 [colors]
-bg = ${xrdb:background}
-fg = ${xrdb:color4}
 black = ${xrdb:color0}
 bblack = ${xrdb:color8}
 red = ${xrdb:color1}
@@ -18,31 +16,37 @@ bcyan = ${xrdb:color14}
 white = ${xrdb:color7}
 bwhite = ${xrdb:color15}
 
-bg-alt = #0F1013
-fg-alt = #25283a
-icons = #555856
-alert = ${colors.red}
+bg = ${xrdb:background}
+fg = ${colors.magenta}
+bg-alt = #1E2029
+fg-alt = #373844
+bg-dark = #181a23
+
+alert = ${colors.yellow}
+accent = #604c7e
+
 
 [global/wm]
-margin-top = 20
-margin-bottom = 3
+margin-top = 0
+margin-bottom = 34
 
 [bar/main]
-monitor = ${env:MONITOR:DP-0}
+monitor = ${env:MONITOR}
 monitor-strict = true
 enable-ipc = true
 wm-restack = bspwm
 # REQUIRED to move the window with hideit.sh
 override-redirect = true
+fixed-center = true
 
-background =
+background = ${colors.bg}
 foreground = ${colors.fg}
 
 width = 100%
-height = 24
+height = 34
 offset-x = 0
-offset-y = 8
-top = 1
+offset-y = 0
+bottom = true
 
 overline-size = 0
 overline-color = #f00
@@ -50,24 +54,22 @@ underline-size = 0
 underline-color = #00f
 
 border-bottom-size = 0
+border-top-size = 1
+border-color = ${colors.bg-dark}
 
 padding-left = 2
 padding-right = 2
 module-margin-left = 0
 module-margin-right = 0
 
-font-0 = "Iosevka:weight=regular:size=13;3"
+font-0 = "Fira Code:pixelsize=9;2"
 font-1 = "Wuncon Siji:pixelsize=12;2"
-font-2 = "Siji:pixelsize=13;2"
-
-scroll-up = bspc desktop -f prev.local
-scroll-down = bspc desktop -f next.local
+font-2 = "Siji:pixelsize=10;2"
 
 ; modules-left = volume pad cpu memory pad pkg mail
-modules-left = volume pad cpu memory
+modules-left = pulseaudio pad cpu memory
 modules-center = bspwm
-modules-right = battery wlan syncthing redshift pad date
-tray-position = left
+modules-right = wlan syncthing redshift pad battery pad date
 
 ;tray-position = center
 ;tray-padding = 2
@@ -79,29 +81,30 @@ type = internal/bspwm
 pin-workspaces = true
 enable-click = true
 
-ws-icon-0 = 1;
-ws-icon-1 = 2;
-ws-icon-2 = 3;
-ws-icon-3 = 4;
-ws-icon-4 = 5;
-ws-icon-default = x
+# ws-icon-0 = 1;
+# ws-icon-1 = 2;
+# ws-icon-2 = 3;
+# ws-icon-3 = 4;
+# ws-icon-4 = 5;
+# ws-icon-5 = 6;
+ws-icon-default = 
 
 format = <label-state> <label-mode>
 label-padding = 1
 
 label-focused = %icon%
-label-focused-background = #33000000
-label-focused-foreground = ${colors.green}
-; label-focused-underline = ${colors.magenta}
+label-focused-background = ${colors.bg-dark}
+label-focused-foreground = ${colors.fg}
+# label-focused-underline = ${colors.magenta}
 ; label-focused-foreground = ${xrdb:color2}
 label-focused-padding = 1
 
 label-occupied = %icon%
-label-occupied-foreground = ${colors.icons}
+label-occupied-foreground = ${colors.accent}
 label-occupied-padding = 1
 
 ; label-urgent = %icon%
-label-urgent-foreground = ${colors.red}
+label-urgent-foreground = ${colors.alert}
 ; label-urgent-background = ${colors.alert}
 label-urgent-padding = 1
 
@@ -121,7 +124,7 @@ time-alt = %H:%M:%S
 format-prefix = ""
 format-prefix-padding = 1
 ; format-prefix-background = ${colors.bg-alt}
-format-prefix-foreground = ${colors.icons}
+format-prefix-foreground = ${colors.accent}
 ; format-underline = ${xrdb:color4}
 
 [module/xwindow]
@@ -158,18 +161,18 @@ type = internal/cpu
 interval = 2
 format = <bar-load>
 format-prefix = ""
-format-foreground = ${colors.icons}
+format-foreground = ${colors.accent}
 ; format-underline = #f90000
 ; label = %percentage%%
 format-padding = 1
 
 bar-load-indicator =
 bar-load-width = 6
-bar-load-foreground-0 = ${colors.green}
-bar-load-foreground-1 = ${colors.green}
+bar-load-foreground-0 = ${colors.fg}
+bar-load-foreground-1 = ${colors.fg}
 bar-load-foreground-2 = ${colors.yellow}
-bar-load-foreground-3 = ${colors.red}
-bar-load-foreground-4 = ${colors.red}
+bar-load-foreground-3 = ${colors.alert}
+bar-load-foreground-4 = ${colors.alert}
 bar-load-fill = |
 bar-load-empty = ¦
 bar-load-empty-foreground = ${colors.fg-alt}
@@ -179,7 +182,7 @@ type = internal/memory
 interval = 3
 format = <bar-used>
 format-prefix = ""
-format-prefix-foreground = ${colors.icons}
+format-prefix-foreground = ${colors.accent}
 ; format-underline = #4bffdc
 ; label = %percentage_used%%
 format-padding-left = 1
@@ -187,11 +190,11 @@ format-padding-left = 1
 ; Only applies if <bar-used> is used
 bar-used-indicator =
 bar-used-width = 6
-bar-used-foreground-0 = ${colors.green}
-bar-used-foreground-1 = ${colors.green}
+bar-used-foreground-0 = ${colors.fg}
+bar-used-foreground-1 = ${colors.fg}
 bar-used-foreground-2 = ${colors.yellow}
-bar-used-foreground-3 = ${colors.red}
-bar-used-foreground-4 = ${colors.red}
+bar-used-foreground-3 = ${colors.alert}
+bar-used-foreground-4 = ${colors.alert}
 bar-used-fill = |
 bar-used-empty = ¦
 bar-used-empty-foreground = ${colors.fg-alt}
@@ -216,9 +219,9 @@ ramp-signal-1-foreground = ${colors.yellow}
 ramp-signal-2 = 
 ramp-signal-2-foreground = ${colors.yellow}
 ramp-signal-3 = 
-ramp-signal-3-foreground = ${colors.icons}
+ramp-signal-3-foreground = ${colors.accent}
 ramp-signal-4 = 
-ramp-signal-4-foreground = ${colors.icons}
+ramp-signal-4-foreground = ${colors.fg}
 
 ; [module/eth]
 ; type = internal/network
@@ -234,34 +237,34 @@ ramp-signal-4-foreground = ${colors.icons}
 ; label-disconnected = %ifname% disconnected
 ; label-disconnected-foreground = ${colors.fg-alt}
 
-[module/volume]
-type = internal/volume
+[module/pulseaudio]
+type = internal/pulseaudio
 
 ; format-volume = <label-volume> <bar-volume>
 format-volume = <ramp-volume> <bar-volume>
 ; label-volume = " "
-label-volume-foreground = ${colors.fg}
+label-volume-foreground = ${colors.accent}
 
 ; format-muted-prefix = " "
-format-muted-foreground = ${colors.red}
+format-muted-foreground = ${colors.alert}
 label-muted = 
 
 bar-volume-width = 8
-bar-volume-foreground-0 = ${colors.blue}
-bar-volume-foreground-1 = ${colors.blue}
-bar-volume-foreground-2 = ${colors.blue}
-bar-volume-foreground-3 = ${colors.blue}
-bar-volume-foreground-4 = ${colors.blue}
-bar-volume-foreground-5 = ${colors.blue}
-bar-volume-foreground-6 = ${colors.blue}
+# bar-volume-foreground-0 = ${colors.magenta}
+# bar-volume-foreground-1 = ${colors.magenta}
+# bar-volume-foreground-2 = ${colors.magenta}
+# bar-volume-foreground-3 = ${colors.magenta}
+# bar-volume-foreground-4 = ${colors.magenta}
+# bar-volume-foreground-5 = ${colors.magenta}
+# bar-volume-foreground-6 = ${colors.magenta}
 bar-volume-gradient = false
 bar-volume-indicator = |
-bar-volume-indicator-font = 2
+bar-volume-indicator-font = 1
 bar-volume-indicator-foreground = #ff
 bar-volume-fill = ─
-bar-volume-fill-font = 2
+bar-volume-fill-font = 1
 bar-volume-empty = ─
-bar-volume-empty-font = 2
+bar-volume-empty-font = 1
 bar-volume-empty-foreground = ${colors.fg-alt}
 
 ; Only applies if <ramp-volume> is used
@@ -288,23 +291,20 @@ format-full-underline = ${self.format-charging-underline}
 ramp-capacity-0 = 
 ramp-capacity-1 = 
 ramp-capacity-2 = 
-ramp-capacity-foreground = ${colors.fg-alt}
+ramp-capacity-0-foreground = ${colors.red}
+ramp-capacity-1-foreground = #575864
+ramp-capacity-2-foreground = ${colors.fg-alt}
 
 animation-charging-0 = 
 animation-charging-1 = 
 animation-charging-2 = 
-animation-charging-foreground = ${colors.fg-alt}
-animation-charging-framerate = 750
+animation-charging-framerate = 1000
+animation-charging-foreground = ${colors.fg}
 
 
 ;=====================================================
 ; Custom scripts
 ;=====================================================
-
-[module/vpn-openvpn-status]
-type = custom/script
-exec = ~/.config/polybar/modules/vpn-openvpn-status.sh
-interval = 5
 
 [module/pad]
 type = custom/text
@@ -323,5 +323,7 @@ type = custom/script
 exec = echo 1
 exec-if = systemctl is-active syncthing
 format = ""
-format-foreground = ${colors.icons}
+format-foreground = ${colors.fg}
 interval = 30
+
+; vim:ft=dosini

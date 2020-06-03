@@ -1,16 +1,6 @@
 /* -*- mode: css; -*- */
+@import "config.rasi"
 
-@import "appmenu.rasi"
-
-#prompt {
-  background-color: #c678dd;
-}
-
-#entry {
-  text-color: #c678dd;
-}
-
-#element.selected {
-  text-color: #c678dd;
-  border-color: #c678dd;
+textbox-icon {
+  str: "  ";
 }

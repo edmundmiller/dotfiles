@@ -52,7 +52,7 @@ in {
 
     fonts.fonts = [ pkgs.nerdfonts ];
     my.packages = with pkgs; [
-      sierra-gtk-theme
+      my.ant-dracula
       paper-icon-theme # for rofi
     ];
     my.zsh.rc = lib.readFile ./zsh/prompt.zsh;
@@ -60,16 +60,15 @@ in {
     my.home = {
       home.file = mkMerge [
         (mkIf cfg.desktop.browsers.firefox.enable {
-          ".mozilla/firefox/${cfg.desktop.browsers.firefox.profileName}.default/chrome/userChrome.css" =
-            {
-              source = ./firefox/userChrome.css;
-            };
+          ".mozilla/firefox/${cfg.desktop.browsers.firefox.profileName}.default/chrome/userChrome.css" = {
+            source = ./firefox/userChrome.css;
+          };
         })
       ];
 
       xdg.configFile = mkMerge [
         (mkIf config.services.xserver.enable {
-          "xtheme/90-theme".source = ./Xresources;
+          "xtheme/90-theme".source    = ./Xresources;
           # GTK
           "gtk-3.0/settings.ini".text = ''
             [Settings]
@@ -96,40 +95,37 @@ in {
         })
         (mkIf cfg.desktop.bspwm.enable {
           "bspwm/rc.d/polybar".source = ./polybar/run.sh;
-          "bspwm/rc.d/theme".source = ./bspwmrc;
+          "bspwm/rc.d/theme".source   = ./bspwmrc;
         })
         (mkIf cfg.desktop.apps.rofi.enable {
-          "rofi/theme" = {
-            source = ./rofi;
-            recursive = true;
-          };
+          "rofi/theme" = { source = ./rofi; recursive = true; };
         })
         (mkIf (cfg.desktop.bspwm.enable || cfg.desktop.stumpwm.enable) {
-          "polybar" = {
-            source = ./polybar;
-            recursive = true;
-          };
+          "polybar" = { source = ./polybar; recursive = true; };
           "dunst/dunstrc".source = ./dunstrc;
         })
-        (mkIf cfg.shell.tmux.enable { "tmux/theme".source = ./tmux.conf; })
+        (mkIf cfg.shell.tmux.enable {
+          "tmux/theme".source = ./tmux.conf;
+        })
       ];
 
       xdg.dataFile = mkMerge [
         (mkIf cfg.desktop.browsers.qutebrowser.enable {
-          "qutebrowser/userstyles.css".source = let
-            compiledStyles = with pkgs;
-              runCommand "compileUserStyles" { buildInputs = [ sass ]; } ''
-                mkdir "$out"
-                for file in ${./userstyles/qutebrowser}/*.scss; do
-                  scss --sourcemap=none \
-                       --no-cache \
-                       --style compressed \
-                       --default-encoding utf-8 \
-                       "$file" \
-                       >>"$out/userstyles.css"
-                done
-              '';
-          in "${compiledStyles}/userstyles.css";
+          "qutebrowser/userstyles.css".source =
+            let compiledStyles =
+                  with pkgs; runCommand "compileUserStyles"
+                    { buildInputs = [ sass ]; } ''
+                           mkdir "$out"
+                           for file in ${./userstyles/qutebrowser}/*.scss; do
+                             scss --sourcemap=none \
+                                  --no-cache \
+                                  --style compressed \
+                                  --default-encoding utf-8 \
+                                  "$file" \
+                                  >>"$out/userstyles.css"
+                           done
+                         '';
+            in "${compiledStyles}/userstyles.css";
         })
       ];
     };
