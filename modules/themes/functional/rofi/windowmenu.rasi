@@ -1,16 +1,27 @@
 /* -*- mode: css; -*- */
 
-@import "appmenu.rasi"
+@import "config.rasi"
 
-#prompt {
-  background-color: #bbc2cf;
+listview {
+  columns: 1;
 }
 
-#entry {
-  text-color: #bbc2cf;
+inputbar {
+  width: 1100px;
 }
 
-#element.selected {
-  text-color: #bbc2cf;
-  border-color: #bbc2cf;
+textbox-icon {
+  str: " 缾 ";
+}
+
+prompt {
+  enabled: false;
+}
+
+/**
+ * Elements are tab-delimited, which look weird in the default variable-pitch
+ * font, so use a monospace one.
+ */
+element {
+  font: "Fira Code 12";
 }

@@ -1,20 +1,20 @@
 !! Colors
-#define blk  #141517
-#define bblk #969896
-#define red  #cc6666
+#define blk  #1E2029
+#define bblk #282a36
+#define red  #ffb86c
 #define bred #de935f
-#define grn  #b5bd68
-#define bgrn #757d28
+#define grn  #50fa7b
+#define bgrn #0189cc
 #define ylw  #f0c674
 #define bylw #f9a03f
-#define blu  #81a2be
-#define bblu #2a8fed
-#define mag  #b294bb
-#define bmag #bc77a8
-#define cyn  #8abeb7
-#define bcyn #a3685a
-#define wht  #c5c8c6
-#define bwht #ffffff
+#define blu  #61bfff
+#define bblu #8be9fd
+#define mag  #bd93f9
+#define bmag #ff79c6
+#define cyn  #8be9fd
+#define bcyn #0189cc
+#define wht  #f8f8f2
+#define bwht #e2e2dc
 #define bg blk
 #define fg wht
 
@@ -40,18 +40,40 @@
 *.color15: bwht
 
 ! greys
-*.color234: #1d2021
-*.color235: #282828
-*.color236: #32302f
-*.color237: #3c3836
-*.color239: #504945
-*.color240: #544c49
-*.color241: #665c54
+*.color234: #1E2029
+*.color235: #282a36
+*.color236: #373844
+*.color237: #44475a
+*.color239: #565761
+*.color240: #6272a4
+*.color241: #b6b6b2
+
+
+!! general
+scratch.font: Iosevka:size=15:autohint=true
+
 
 !! xst
-st.opacity: 200
-st.font: Iosevka:antialias=True:size=13:autohint=true
-st-scratch.font: Iosevka:antialias=True:size=15:autohint=true
+st.font: Iosevka:size=13:autohint=true
 
-font: Iosevka:antialias=True:size=14:autohint=true
-emacs.font: Iosevka:antialias=True:size=13:autohint=true
+
+!! urxvt
+URxvt*depth:                   32
+URxvt*.background:             blk
+URxvt*.borderless:             1
+URxvt*.buffered:               true
+URxvt*.cursorBlink:            true
+URxvt*.font:                   xft:Fira Code:pixelsize=12
+URxvt*.internalBorder:         10
+URxvt*.letterSpace:            0
+URxvt*.lineSpace:              0
+URxvt*.loginShell:             false
+URxvt*.matcher.button:         1
+URxvt*.matcher.rend.0:         Uline Bold fg5
+URxvt*.saveLines:              5000
+URxvt*.scrollBar:              false
+URxvt*.underlineColor:         grey
+URxvt.clipboard.autocopy:      true
+URxvt.iso14755:                false
+URxvt.iso14755_52:             false
+URxvt.perl-ext-common:         default,matcher
