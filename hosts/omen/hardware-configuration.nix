@@ -8,14 +8,7 @@
 
   boot.initrd.availableKernelModules =
     [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" "rtsx_pci_sdmmc" ];
-  boot.initrd.kernelModules = [
-    "dm-snapshot"
-    # Required to open the EFI partition and Yubikey
-    "vfat"
-    "nls_cp437"
-    "nls_iso8859-1"
-    "usbhid"
-  ];
+  boot.initrd.kernelModules = [ "dm-snapshot" ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
   # The lone Windows install
