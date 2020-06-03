@@ -1,7 +1,7 @@
 { config, options, lib, pkgs, ... }:
 
 with lib; {
-  imports = [ ./functional ];
+  imports = [ ./functional ./fluorescence ];
 
   options.modules.theme = {
     name = mkOption {
