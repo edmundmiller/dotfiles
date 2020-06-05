@@ -50,6 +50,15 @@ with lib; {
         # Org, markdown, everything inbetween
         pandoc
         scrot
+        # Roam
+        (makeDesktopItem {
+          name = "Org-Protocol";
+          desktopName = "Org-Protocol";
+          exec = "emacsclient %u";
+          icon = "emacs";
+          mimeType = "x-scheme-handler/org-protocol";
+          categories = "Email";
+        })
       ];
 
       env.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
