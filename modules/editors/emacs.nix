@@ -10,8 +10,7 @@ with lib; {
     my = {
       packages = with pkgs; [
         ## Doom dependencies
-        ((emacsPackagesNgGen emacsUnstable).emacsWithPackages
-          (epkgs: [ epkgs.emacs-libvterm epkgs.emacsql-sqlite ]))
+        emacsUnstable
         git
         (ripgrep.override { withPCRE2 = true; })
         gnutls # for TLS connectivity
