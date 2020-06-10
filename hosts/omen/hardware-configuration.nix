@@ -8,7 +8,7 @@
 
   boot.initrd.availableKernelModules =
     [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" "rtsx_pci_sdmmc" ];
-  boot.initrd.kernelModules = [ "dm-snapshot" ];
+  boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
   # The lone Windows install
@@ -42,42 +42,41 @@
   };
   services.blueman.enable = true;
 
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
-    options = [ "noatime" ];
 
+  ## ZFS
+  networking.hostId = "12a28d45";
+  boot.supportedFilesystems = [ "zfs" ];
+  boot.loader.grub.copyKernels = true;
+  services.zfs.autoScrub.enable = true;
+  services.zfs.trim.enable = true;
+
+  fileSystems."/" = {
+    device = "tank/system/root";
+    fsType = "zfs";
+  };
+
+  fileSystems."/var" = {
+    device = "tank/system/var";
+    fsType = "zfs";
+  };
+
+  fileSystems."/nix" = {
+    device = "tank/local/nix";
+    fsType = "zfs";
+  };
+
+  fileSystems."/home" = {
+    device = "tank/user/home";
+    fsType = "zfs";
   };
 
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/6937-90BD";
+    device = "/dev/disk/by-uuid/5216-74C6";
     fsType = "vfat";
   };
 
-  fileSystems."/data" = {
-    device = "/dev/disk/by-label/data";
-    fsType = "ext4";
-    options = [ "noatime" ];
-  };
-
-  swapDevices = [{ device = "/dev/disk/by-label/swap"; }];
-
-  ## yubikey luks
-  boot.initrd.luks = {
-    reusePassphrases = true;
-    devices = {
-      root = {
-        device = "/dev/nvme0n1p5";
-        preLVM = true;
-        allowDiscards = true;
-      };
-      data = {
-        device = "/dev/sda1";
-        preLVM = true;
-        allowDiscards = true;
-      };
-    };
-  };
+  swapDevices =
+    [{ device = "/dev/disk/by-uuid/bd5404de-c7bb-46c9-b78a-36a8e17d77ac"; }];
 
   services.xserver.xrandrHeads = [{
     output = "DP-0";
