@@ -8,10 +8,11 @@ with lib; {
   };
 
   config = mkIf config.modules.desktop.apps.discord.enable {
-    my.packages = with pkgs;
-      [
-        discord
-        # ripcord
-      ];
+    my.packages = with pkgs; [
+      discord
+      # ripcord
+      unstable.teams
+      slack
+    ];
   };
 }
