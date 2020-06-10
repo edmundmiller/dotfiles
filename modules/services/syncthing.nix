@@ -21,7 +21,7 @@ with lib; {
       declarative = {
         devices = {
           omen.id =
-            "JCHJHFI-DSCKEDQ-THTQ4BE-GA42KPH-LOTPD6M-GEXXLME-JJHW6GD-PRYRNAZ";
+            "HJV4PMT-ROCGMFH-HXINT57-CKTYJSK-7QE7DH2-CEAYVJ6-NIMMDKA-MEOVNAB";
           oneplus.id =
             "6EYD6V4-4KPXAVK-PR3GGLT-AYIWQ72-BUWQAUJ-PA7KAH7-QVGXA7Q-SKSL7AD";
           meshify.id =
