@@ -194,6 +194,8 @@ c.new_instance_open_target = "tab-silent"
 c.prompt.filebrowser = False
 c.prompt.radius = 0
 # c.qt.args = []
+# TODO Only on meshify
+c.qt.highdpi = True
 # c.qt.force_platform = None
 # c.qt.force_software_rendering = False
 c.scrolling.bar = "when-searching"
