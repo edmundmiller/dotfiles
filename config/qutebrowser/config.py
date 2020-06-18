@@ -253,6 +253,11 @@ config.bind('<Ctrl-g>', 'clear-keychain ;; search ;; fullscreen --leave')
 for mode in ['caret', 'command', 'hint', 'insert', 'passthrough', 'prompt', 'register']:
     config.bind('<Ctrl-g>', 'leave-mode', mode=mode)
 
+config.bind(
+    "<Ctrl-r>",
+    "spawn bash -c 'emacsclient \"org-protocol://roam-ref?template=r&ref={url:pretty}&title={title}\" '",
+)
+
 ## Bindings for normal mode
 # config.bind("'", 'enter-mode jump_mark')
 # config.bind('+', 'zoom-in')
