@@ -26,7 +26,7 @@ super + Return
 	xst -e bash -c "(tmux ls | grep -qEv 'attached|scratch' && tmux at) || tmux"
 
 super + w
-  firefox
+  $BROWSER
 
 super + e
 	zsh -c emacs
