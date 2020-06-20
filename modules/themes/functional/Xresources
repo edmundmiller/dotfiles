@@ -50,11 +50,11 @@
 
 
 !! general
-scratch.font: Iosevka:size=15:autohint=true
+scratch.font: Iosevka:size=15
 
 
 !! xst
-st.font: Iosevka:size=13:autohint=true
+st.font: Iosevka:size=13
 
 
 !! urxvt
