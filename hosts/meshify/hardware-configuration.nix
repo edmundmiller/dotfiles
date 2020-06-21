@@ -21,6 +21,9 @@
   my.packages = [ pkgs.teensy-loader-cli ];
   my.alias.teensyload = "sudo teensy-loader-cli -w -v --mcu=atmega32u4";
 
+  ## Mouse
+  services.xserver.libinput.accelProfile = "flat";
+
   ## GPU
   services.xserver.videoDrivers = [ "nvidiaBeta" ];
   hardware.opengl.enable = true;
@@ -33,7 +36,7 @@
       '')
     ];
 
-  ## Harddrives
+  ## SSD
   fileSystems."/" = {
     device = "rpool/root/nixos";
     fsType = "zfs";
@@ -49,6 +52,7 @@
     fsType = "vfat";
   };
 
+  ## Harddrives
   fileSystems."/data/media/movies" = {
     device = "bigdata/media/movies";
     fsType = "zfs";
