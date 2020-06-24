@@ -58,6 +58,7 @@
     };
 
     services = {
+      calibre.enable = true;
       docker.enable = true;
       keybase.enable = true;
       mpd.enable = true;

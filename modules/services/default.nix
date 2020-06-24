@@ -2,7 +2,7 @@
 
 {
   imports = [
-    # ./calibre.nix
+    ./calibre.nix
     ./docker.nix
     # ./gitea.nix
     # ./jellyfin.nix
