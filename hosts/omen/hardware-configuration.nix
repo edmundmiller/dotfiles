@@ -11,12 +11,6 @@
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
-  # The lone Windows install
-  boot.loader.grub = {
-    useOSProber = true;
-    configurationLimit = 30;
-  };
-
   boot.kernelParams = [ "elevator=none" ];
 
   ## CPU
