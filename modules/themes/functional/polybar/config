@@ -70,6 +70,7 @@ font-2 = "Siji:pixelsize=10;2"
 modules-left = pulseaudio pad cpu memory
 modules-center = bspwm
 modules-right = wlan syncthing redshift pad battery pad date
+tray-position = left
 
 ;tray-position = center
 ;tray-padding = 2
