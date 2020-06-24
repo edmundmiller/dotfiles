@@ -85,7 +85,7 @@
     enable = true;
     autoCreation = true;
     zetup = {
-      "rpool/home" = {
+      "tank/user/home" = {
         plan = "1d=>1h,1m=>1d,1y=>1m";
         recursive = true;
         destinations.local = { dataset = "bigdata/backup"; };
