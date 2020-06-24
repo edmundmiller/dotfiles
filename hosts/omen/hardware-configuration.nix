@@ -17,6 +17,8 @@
     configurationLimit = 30;
   };
 
+  boot.kernelParams = [ "elevator=none" ];
+
   ## CPU
   nix.maxJobs = lib.mkDefault 12;
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";

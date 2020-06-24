@@ -11,6 +11,7 @@
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
+  boot.kernelParams = [ "elevator=none" ];
 
   ## CPU
   nix.maxJobs = lib.mkDefault 16;
@@ -38,17 +39,27 @@
 
   ## SSD
   fileSystems."/" = {
-    device = "rpool/root/nixos";
+    device = "tank/system/root";
+    fsType = "zfs";
+  };
+
+  fileSystems."/nix" = {
+    device = "tank/local/nix";
+    fsType = "zfs";
+  };
+
+  fileSystems."/var" = {
+    device = "tank/system/var";
     fsType = "zfs";
   };
 
   fileSystems."/home" = {
-    device = "rpool/home";
+    device = "tank/user/home";
     fsType = "zfs";
   };
 
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/5407-9657";
+    device = "/dev/disk/by-uuid/C2C7-D952";
     fsType = "vfat";
   };
 
