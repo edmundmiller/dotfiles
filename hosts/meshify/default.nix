@@ -18,9 +18,9 @@
       term.alacritty.enable = true;
       term.st.enable = true;
 
-      browsers.default = "firefox";
+      browsers.default = "qutebrowser";
       browsers.firefox.enable = true;
-      browsers.next.enable = true;
+      browsers.qutebrowser.enable = true;
 
       gaming.steam.enable = true;
     };
