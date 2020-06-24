@@ -13,6 +13,9 @@
   boot.extraModulePackages = [ ];
   boot.kernelParams = [ "elevator=none" ];
 
+  ## The lone Windows install
+  boot.loader.grub.useOSProber = true;
+
   ## CPU
   nix.maxJobs = lib.mkDefault 16;
   powerManagement.cpuFreqGovernor = "performance";
