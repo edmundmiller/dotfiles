@@ -11,15 +11,8 @@ with lib; {
   ];
 
   config = mkIf config.modules.editors.vscode.enable {
-
     nixpkgs.config.allowUnfree = true;
-    my.home = {
-      programs.vscode = {
-        enable = true;
-        package = pkgs.vscodium;
-        userSettings = { };
-      };
-    };
+    my = { packages = with pkgs; [ vscodium ]; };
 
     services.vsliveshare = {
       enable = true;
