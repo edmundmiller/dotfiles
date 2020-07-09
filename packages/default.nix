@@ -7,6 +7,7 @@
           "https://github.com/xzfc/cached-nix-shell/archive/master.tar.gz")
           { });
         emacs27 = (callPackage ./emacs27.nix { });
+        firn = (callPackage ./firn.nix { });
         guix = (callPackage ./guix.nix { });
         linode-cli = (callPackage ./linode-cli.nix { });
         ripcord = (callPackage ./ripcord.nix { });
