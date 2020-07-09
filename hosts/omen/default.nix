@@ -65,8 +65,6 @@
 
   time.timeZone = "America/Chicago";
 
-  environment.systemPackages = [ pkgs.acpi ];
+  environment.systemPackages = [ pkgs.acpi pkgs.xorg.xbacklight ];
   powerManagement.powertop.enable = true;
-  # Monitor backlight control
-  programs.light.enable = true;
 }
