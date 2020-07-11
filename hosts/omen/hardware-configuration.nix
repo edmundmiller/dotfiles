@@ -19,7 +19,7 @@
   hardware.cpu.intel.updateMicrocode = true;
 
   ## GPU
-  services.xserver.videoDrivers = [ "nvidiaBeta" ];
+  services.xserver.videoDrivers = [ "nvidia" ];
   hardware.opengl.enable = true;
   # Respect XDG conventions, damn it!
   environment.systemPackages = with pkgs;
@@ -37,7 +37,6 @@
     };
   };
   services.blueman.enable = true;
-
 
   ## ZFS
   networking.hostId = "12a28d45";
