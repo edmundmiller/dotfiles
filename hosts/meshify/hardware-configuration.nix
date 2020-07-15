@@ -119,8 +119,9 @@
       monitorConfig = ''
         DisplaySize 3840 2160
         Option "dpi" "163"
-        Option "right-of" "DP-2"
+        Option "RightOf" "DP-2"
       '';
+      # NOTE Option "Rotate" "right"
     }
   ];
 }
