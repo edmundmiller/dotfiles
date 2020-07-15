@@ -13,7 +13,7 @@ with lib; {
 
       user.extraGroups = [ "mpd" ];
 
-      # home.programs.beets.enable = true;
+      home.programs.beets.enable = true;
     };
 
     my.env.MPD_HOME = "$XDG_CONFIG_HOME/mpd";
