@@ -18,6 +18,7 @@ with lib; {
         fd
         fzf
         htop
+        sd
         tldr
         tree
       ];
