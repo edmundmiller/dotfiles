@@ -15,6 +15,7 @@ in {
     };
   };
 
+  imports = [ ./davmail.nix ];
   config = mkIf config.modules.shell.mail.enable {
     my = {
       packages = with pkgs; [ unstable.mu isync ];
@@ -62,18 +63,18 @@ in {
                 create = "both";
                 expunge = "both";
                 patterns = [ "*" ];
+                extraConfig.account = { AuthMechs = "LOGIN"; };
               };
               imap = {
-                host = "outlook.office365.com";
-                port = 993;
-                tls.enable = true;
+                host = "127.0.0.1";
+                port = 1143;
+                tls.enable = false;
               };
               realName = "${name}";
               msmtp.enable = true;
               smtp = {
-                host = "smtp.office365.com";
-                port = 587;
-                tls.useStartTls = true;
+                host = "127.0.0.1";
+                port = 1025;
               };
             };
           };
