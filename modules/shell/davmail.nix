@@ -6,7 +6,7 @@
       ""
       ''
         ${pkgs.davmail}/bin/davmail \
-        $XDG_CONFIG_HOME/davmail/davmail.properties
+        /home/emiller/.config/davmail/davmail.properties
       ''
     ];
   };
