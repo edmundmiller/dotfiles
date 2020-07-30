@@ -26,8 +26,8 @@ configuration {
   magenta: #bd93f9;
   blue:    #61bfff;
 
-  text-font:      "Fira Sans 15";
-  text-mono-font: "Fira Code 13";
+  text-font:      "Fira Sans 19";
+  text-mono-font: "Fira Code 17";
   icon-font:      "Hurmit Nerd Font Mono 26";
 
   background-color: transparent;
