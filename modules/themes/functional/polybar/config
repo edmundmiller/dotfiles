@@ -62,9 +62,9 @@ padding-right = 2
 module-margin-left = 0
 module-margin-right = 0
 
-font-0 = "Fira Code:pixelsize=9;2"
-font-1 = "Wuncon Siji:pixelsize=12;2"
-font-2 = "Siji:pixelsize=10;2"
+font-0 = "Fira Code:pixelsize=12;2"
+font-1 = "Wuncon Siji:pixelsize=15;2"
+font-2 = "Siji:pixelsize=13;2"
 
 ; modules-left = volume pad cpu memory pad pkg mail
 modules-left = pulseaudio pad cpu memory

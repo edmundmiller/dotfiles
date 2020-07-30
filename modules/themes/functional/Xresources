@@ -50,12 +50,13 @@
 
 
 !! general
-scratch.font: Iosevka:size=15
+scratch.font: Fira Code:size=15
 
 
 !! xst
-st.font: Iosevka:size=13
+st.font: Fira Code:size=12
 
+XTerm*termName: xterm-direct
 
 !! urxvt
 URxvt*depth:                   32

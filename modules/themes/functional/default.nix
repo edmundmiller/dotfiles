@@ -85,7 +85,7 @@ in {
           "gtk-2.0/gtkrc".text = ''
             gtk-theme-name="Ant-Dracula"
             gtk-icon-theme-name="Paper-Mono-Dark"
-            gtk-font-name="Sans 10"
+            gtk-font-name="Sans 12"
           '';
           # QT4/5 global theme
           "Trolltech.conf".text = ''
