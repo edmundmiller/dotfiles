@@ -31,7 +31,8 @@ with lib; {
         [ ]) ++
 
       # replaces illustrator & indesign
-      (if gfx.enable || gfx.vector.enable then [ inkscape ] else [ ]) ++
+      (if gfx.enable || gfx.vector.enable then [ unstable.inkscape ] else [ ])
+      ++
 
       # Replaces photoshop
       (if gfx.enable || gfx.raster.enable then [
