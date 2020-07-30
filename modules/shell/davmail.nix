@@ -2,13 +2,12 @@
 
 {
   systemd.user.services.davmail = {
-    serviceConfig.ExecStart = [
-      ""
-      ''
-        ${pkgs.davmail}/bin/davmail \
-        /home/emiller/.config/davmail/davmail.properties
-      ''
-    ];
+    wantedBy = [ "default.target" ];
+    serviceConfig.ExecStart = [''
+      ${pkgs.davmail}/bin/davmail \
+      /home/emiller/.config/davmail/davmail.properties
+    ''];
+    serviceConfig.Restart = "always";
   };
 
   my.home.xdg.configFile = {
