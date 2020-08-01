@@ -8,9 +8,9 @@
     <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
     (let
       nixos-hardware = builtins.fetchGit {
-        url = "https://github.com/emiller88/wip-pinebook-pro";
-        ref = "suspend";
-        rev = "2e1d0d6c813834a8d0c30c20e226caa33b586798";
+        url = "https://github.com/samueldr/wip-pinebook-pro";
+        ref = "feature/gfx-u-boot";
+        rev = "d72645f6d5421979a2c452f883907c70a2e28b93";
       };
     in "${nixos-hardware}/pinebook_pro.nix")
   ];
@@ -32,6 +32,6 @@
   fileSystems."/home" = {
     device = "/dev/disk/by-uuid/9520482a-8ccb-460c-9fd8-49ab06979398";
     fsType = "ext4";
-    options = ["nofail"];
+    options = [ "nofail" ];
   };
 }
