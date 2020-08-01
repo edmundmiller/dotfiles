@@ -1,53 +1,70 @@
-{ config, lib, pkgs, ... }:
+{ config, options, pkgs, ... }:
 
 {
   imports = [
-    ../personal.nix
+    ../personal.nix # common settings
     ./hardware-configuration.nix
-    ## Desktop/shell environment
-    <modules/desktop/sway.nix>
-    ## Apps
-    #<modules/browser/firefox.nix>
-    #<modules/dev/nix.nix>
-    <modules/dev/node.nix>
-    #<modules/dev/python.nix>
-    <modules/editors/emacs.nix>
-    <modules/editors/vim.nix>
-    <modules/shell/direnv.nix>
-    <modules/shell/git.nix>
-    <modules/shell/gnupg.nix>
-    <modules/shell/pass.nix>
-    <modules/shell/tmux.nix>
-    <modules/shell/yubikey.nix>
-    <modules/shell/zsh.nix>
-    ## Project-based
-    # <modules/music.nix> # playing music
-    # <modules/graphics.nix> # art & design
-    ## Services
-    <modules/services/docker.nix>
-    <modules/services/keybase.nix>
-    # FIXME <modules/services/pia.nix>
-    <modules/services/syncthing.nix>
-    ## Theme
-    <modules/themes/functional>
+    ./autorandr.nix
   ];
 
+  modules = {
+    desktop = {
+      bspwm.enable = true;
+
+      apps.rofi.enable = true;
+      apps.discord.enable = true;
+
+      term.default = "xst";
+      term.st.enable = true;
+
+      browsers.default = "firefox";
+      browsers.firefox.enable = true;
+    };
+
+    editors = {
+      default = "nvim";
+      emacs.enable = true;
+      vim.enable = true;
+    };
+
+    dev = {
+      cc.enable = true;
+      # nixlang.enable = true;
+      node.enable = true;
+      python.enable = true;
+    };
+
+    media = { mpv.enable = true; };
+
+    shell = {
+      aerc.enable = true;
+      direnv.enable = true;
+      git.enable = true;
+      gnupg.enable = true;
+      ncmpcpp.enable = true;
+      pass.enable = true;
+      tmux.enable = true;
+      ranger.enable = true;
+      yubikey.enable = true;
+      zsh.enable = true;
+    };
+
+    services = {
+      docker.enable = true;
+      pia.enable = true;
+      syncthing.enable = true;
+    };
+
+    themes.fluorescence.enable = true;
+  };
+
+  environment.systemPackages = [ pkgs.acpi pkgs.xorg.xbacklight ];
   programs.ssh.startAgent = true;
   networking.hostName = "pbp";
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
 
-  environment.systemPackages = with pkgs; [
-    acpi
-    uBootPinebookProExternalFirst
-    firefox-wayland
-  ];
-
-  #
-  # Monitor backlight control
-  programs.light.enable = true;
-  services.xserver.videoDrivers = [ "modesetting" ];
   nixpkgs.config.allowUnsupportedSystem = true;
   nixpkgs.config.allowBroken = true;
   # NixOS wants to enable GRUB by default
