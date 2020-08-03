@@ -6,6 +6,7 @@
         cached-nix-shell = (callPackage (builtins.fetchTarball
           "https://github.com/xzfc/cached-nix-shell/archive/master.tar.gz")
           { });
+        clj-kondo = (callPackage ./clj-kondo.nix { });
         emacs27 = (callPackage ./emacs27.nix { });
         firn = (callPackage ./firn.nix { });
         guix = (callPackage ./guix.nix { });
