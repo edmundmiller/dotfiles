@@ -55,13 +55,12 @@
       keybase.enable = true;
       mpd.enable = true;
       pia.enable = true;
+      ssh-agent.enable = true;
       syncthing.enable = true;
     };
 
     themes.functional.enable = true;
   };
-
-  networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
 

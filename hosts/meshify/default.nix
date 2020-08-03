@@ -63,6 +63,7 @@
       keybase.enable = true;
       mpd.enable = true;
       pia.enable = true;
+      ssh-agent.enable = true;
       syncthing.enable = true;
       transmission.enable = true;
     };
@@ -71,7 +72,6 @@
   };
 
   networking.hostId = "3b848ba1";
-  programs.ssh.startAgent = true;
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
