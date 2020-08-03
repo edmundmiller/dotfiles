@@ -11,6 +11,7 @@
     # ./nginx.nix
     ./pia.nix
     ./ssh.nix
+    ./ssh-agent.nix
     ./syncthing.nix
     ./transmission.nix
   ];
