@@ -16,7 +16,7 @@ with lib; {
       clojure
       # Dev tools
       leiningen
-      joker
+      my.clj-kondo
       unstable.clojure-lsp
     ];
   };
