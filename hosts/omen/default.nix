@@ -59,7 +59,7 @@
       syncthing.enable = true;
     };
 
-    themes.functional.enable = true;
+    themes.fluorescence.enable = true;
   };
 
   time.timeZone = "America/Chicago";
