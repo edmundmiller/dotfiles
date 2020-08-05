@@ -38,6 +38,9 @@
   };
   services.blueman.enable = true;
 
+  ## Ledger
+  hardware.ledger.enable = true;
+
   ## ZFS
   networking.hostId = "12a28d45";
   boot.supportedFilesystems = [ "zfs" ];

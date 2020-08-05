@@ -64,6 +64,10 @@
 
   time.timeZone = "America/Chicago";
 
-  environment.systemPackages = [ pkgs.acpi pkgs.xorg.xbacklight ];
+  environment.systemPackages = with pkgs; [
+    acpi
+    xorg.xbacklight
+    ledger-live-desktop
+  ];
   powerManagement.powertop.enable = true;
 }
