@@ -59,7 +59,7 @@
     ];
     fontconfig.defaultFonts = {
       sansSerif = [ "Ubuntu" ];
-      monospace = [ "Iosevka" ];
+      monospace = [ "Fira Code" ];
     };
   };
 
