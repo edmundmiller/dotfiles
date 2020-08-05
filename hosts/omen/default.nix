@@ -62,6 +62,8 @@
     themes.fluorescence.enable = true;
   };
 
+  networking.networkmanager.enable = true;
+
   time.timeZone = "America/Chicago";
 
   environment.systemPackages = with pkgs; [
