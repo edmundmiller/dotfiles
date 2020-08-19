@@ -254,6 +254,7 @@ song_columns_list_format = (3f)[241]{NEr:#} (8f)[5]{l} (22)[6]{a|A:Artist} (40)[
 ## time song changes. Useful for notifications etc.
 ##
 # execute_on_song_change = "mpd-notify-song"
+execute_on_song_change = notify-send --urgency=low "Now Playing" "$(mpc --format '%title% \n%artist% - %album%' current)"
 #playlist_show_mpd_host = no
 playlist_show_remaining_time = yes
 playlist_shorten_total_times = yes
