@@ -92,7 +92,7 @@
       "100:class_g = 'Rofi'"
       "100:class_g = 'Peek'"
       "100:class_g = 'zoom'"
-      "99:_NET_WM_STATE@:32a = '_NET_WM_STATE_FULLSCREEN'"
+      "100:_NET_WM_STATE@:32a = '_NET_WM_STATE_FULLSCREEN'"
       # Games
       "100:class_g = 'dota2'"
       "100:class_g = 'Steam'"
