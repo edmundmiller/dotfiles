@@ -7,7 +7,7 @@ with pkgs;
 with lib;
 let
   R-with-my-packages = rWrapper.override {
-    packages = with rPackages; [ languageR lintr styler ];
+    packages = with rPackages; [ languageR languageserver lintr styler ];
   };
 in {
   options.modules.dev.R = {
