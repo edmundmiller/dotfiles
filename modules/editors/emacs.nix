@@ -46,7 +46,7 @@ with lib; {
         # :lang latex & :lang org (latex previews)
         texlive.combined.scheme-tetex
         # :lang python
-        unstable.python-language-server
+        unstable.nodePackages.pyright
         # :lang rust
         rustfmt
         rls
