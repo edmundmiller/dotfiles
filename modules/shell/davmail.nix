@@ -4,8 +4,7 @@
   systemd.user.services.davmail = {
     wantedBy = [ "default.target" ];
     serviceConfig.ExecStart = [''
-      ${pkgs.davmail}/bin/davmail \
-      /home/emiller/.config/davmail/davmail.properties
+      davmail /home/emiller/.dotfiles/config/davmail/davmail.properties
     ''];
     serviceConfig.Restart = "always";
   };
