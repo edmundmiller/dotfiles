@@ -60,6 +60,7 @@
     services = {
       calibre.enable = true;
       docker.enable = true;
+      guix.enable = true;
       keybase.enable = true;
       mpd.enable = true;
       pia.enable = true;
