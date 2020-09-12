@@ -11,7 +11,8 @@
       bspwm.enable = true;
 
       apps.rofi.enable = true;
-      apps.discord.enable = true;
+      # apps.discord.enable = true;
+      apps.slack.enable = true;
       apps.graphics.enable = true;
 
       term.default = "xst";
