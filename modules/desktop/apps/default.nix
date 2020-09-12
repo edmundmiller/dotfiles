@@ -1,5 +1,5 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./discord.nix ./graphics.nix ./rofi.nix ];
+  imports = [ ./discord.nix ./graphics.nix ./rofi.nix ./slack.nix ];
 }
