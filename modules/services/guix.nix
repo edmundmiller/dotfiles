@@ -8,6 +8,8 @@ with lib; {
     };
   };
 
-  config =
-    mkIf config.modules.services.guix.enable { services.guix.enable = true; };
+  config = mkIf config.modules.services.guix.enable {
+    services.guix.enable = true;
+    my.env.GUIX_PROFILE = "/home/emiller/.guix-profile";
+  };
 }
