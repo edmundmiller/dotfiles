@@ -30,6 +30,7 @@ bspc rule -a mpv state=floating center=on
 bspc rule -a Vlc state=floating monitor=C center=on
 
 bspc rule -a discord desktop=^3
+bspc rule -a Slack desktop=^3
 bspc rule -a Ripcord desktop=^3
 bspc rule -a Spotify desktop=^4
 
