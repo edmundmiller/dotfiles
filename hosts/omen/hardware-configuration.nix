@@ -41,6 +41,9 @@
   ## Ledger
   hardware.ledger.enable = true;
 
+  ## picom lags in emacs and st
+  services.picom.vSync = true;
+
   ## ZFS
   networking.hostId = "12a28d45";
   boot.supportedFilesystems = [ "zfs" ];
