@@ -9,6 +9,7 @@ with lib; {
   };
 
   config = mkIf config.modules.services.keybase.enable {
+    my.packages = [ pkgs.keybase-gui ];
     services.kbfs = {
       enable = true;
       mountPoint = "%t/kbfs";
