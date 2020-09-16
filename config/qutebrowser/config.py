@@ -124,6 +124,7 @@ c.content.host_blocking.lists = [
     # 'http://winhelp2002.mvps.org/hosts.zip',
     # 'http://malwaredomains.lehigh.edu/files/justdomains.zip',
 ]
+c.content.host_blocking.lists.append(str(config.configdir) + "/blockedHosts")
 c.content.host_blocking.whitelist = []
 
 c.downloads.position = "bottom"
