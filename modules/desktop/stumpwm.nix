@@ -17,10 +17,10 @@ with lib; {
       picom.enable = true;
       xserver = {
         enable = true;
-        windowManager.default = "none+stumpwm";
-        windowManager.stumpwm.enable = true;
+        displayManager.defaultSession = "none+stumpwm";
         displayManager.lightdm.enable = true;
         displayManager.lightdm.greeters.mini.enable = true;
+        windowManager.stumpwm.enable = true;
       };
     };
 
