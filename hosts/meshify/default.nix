@@ -77,7 +77,11 @@
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
-  services.xserver.dpi = 186;
+  services.xserver.dpi = 192;
+  fonts.fontconfig.hinting.enable = false;
+
+  environment.systemPackages = with pkgs;
+    [ (gnumake.override { guileSupport = true; }) ];
 
   # ZFS
   boot.supportedFilesystems = [ "zfs" ];
