@@ -3,6 +3,7 @@
 {
   imports = [
     ./bspwm.nix
+    ./gnome.nix
     ./stumpwm.nix
 
     ./apps
