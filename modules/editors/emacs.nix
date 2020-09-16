@@ -44,7 +44,7 @@ with lib; {
         nodePackages.vue-language-server
         nodePackages.prettier
         # :lang latex & :lang org (latex previews)
-        texlive.combined.scheme-tetex
+        (texlive.combine { inherit (texlive) scheme-tetex grffile; })
         # :lang python
         unstable.nodePackages.pyright
         # :lang rust
@@ -53,7 +53,9 @@ with lib; {
         # Org, markdown, everything inbetween
         pandoc
         scrot
+        gnuplot
         # Roam
+        graphviz
         (makeDesktopItem {
           name = "Org-Protocol";
           desktopName = "Org-Protocol";
