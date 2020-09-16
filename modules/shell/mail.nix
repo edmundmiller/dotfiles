@@ -19,7 +19,21 @@ in {
   imports = [ ./davmail.nix ];
   config = mkIf config.modules.shell.mail.enable {
     my = {
-      packages = with pkgs; [ unstable.mu isync imapfilter ];
+      packages = with pkgs; [
+        unstable.mu
+        isync
+        imapfilter
+        (makeDesktopItem {
+          name = "mu4e";
+          desktopName = "mu4e";
+          exec = ''
+            emacsclient -create-frame --alternate-editor="" --no-wait --eval '(progn (x-focus-frame nil) (mu4e-compose-from-mailto "%u"))'
+          '';
+          icon = "emacs";
+          mimeType = "x-scheme-handler/mailto";
+          categories = "Email";
+        })
+      ];
       home = {
         accounts.email = {
           maildirBasePath = "${maildir}";
@@ -76,6 +90,7 @@ in {
               smtp = {
                 host = "127.0.0.1";
                 port = 1025;
+                tls.enable = false;
               };
             };
           };
