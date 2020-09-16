@@ -1,20 +1,20 @@
 !! Colors
-#define blk  #1E2029
-#define bblk #282a36
-#define red  #ffb86c
-#define bred #de935f
-#define grn  #50fa7b
-#define bgrn #0189cc
-#define ylw  #f0c674
-#define bylw #f9a03f
-#define blu  #61bfff
-#define bblu #8be9fd
-#define mag  #bd93f9
-#define bmag #ff79c6
-#define cyn  #8be9fd
-#define bcyn #0189cc
-#define wht  #f8f8f2
-#define bwht #e2e2dc
+#define blk  #000000
+#define bblk #4D4D4D
+#define red  #FF5555
+#define bred #FF6E67
+#define grn  #50FA7B
+#define bgrn #5AF78E
+#define ylw  #F1FA8C
+#define bylw #F4F99D
+#define blu  #BD93F9
+#define bblu #CAA9FA
+#define mag  #FF79C6
+#define bmag #FF92D0
+#define cyn  #8BE9FD
+#define bcyn #9AEDFE
+#define wht  #BFBFBF
+#define bwht #E6E6E6
 #define bg blk
 #define fg wht
 
