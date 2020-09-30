@@ -7,7 +7,6 @@ let
   email = "edmund.a.miller@gmail.com";
   protonmail = "edmund.a.miller@protonmail.com";
   notmuchrc = "/home/emiller/.config/notmuch/notmuchrc";
-  imapfilterconfig = "/home/emiller/.config/imapfilter/config.lua";
 in {
   options.modules.shell.mail = {
     enable = mkOption {
@@ -16,7 +15,7 @@ in {
     };
   };
 
-  imports = [ ./davmail.nix ];
+  imports = [ ./davmail.nix ./imapfilter.nix ];
   config = mkIf config.modules.shell.mail.enable {
     my = {
       packages = with pkgs; [
@@ -105,19 +104,8 @@ in {
           mbsync = {
             enable = true;
             frequency = "*:0/15";
-            preExec = ''
-              ${pkgs.isync}/bin/mbsync -Ha &&\
-              ${pkgs.imapfilter}/bin/imapfilter -c ${imapfilterconfig} -t /etc/ssl/certs/ca-bundle.crt -v
-            '';
             postExec = "${pkgs.unstable.mu}/bin/mu index";
           };
-        };
-      };
-
-      home.xdg.configFile = {
-        "imapfilter" = {
-          source = <config/imapfilter>;
-          recursive = true;
         };
       };
     };
