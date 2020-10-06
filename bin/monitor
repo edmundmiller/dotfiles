@@ -1,13 +1,17 @@
 #!/usr/bin/env zsh
 
 if [[ $1 == game ]]; then
-    echo "game"
-    xrandr --output DP-4 --mode 1920x1080 --rate 240 --dpi 96 --primary \
-    --output DP-0 --off \
-    --output DP-2 --off
+	echo "game"
+	xrandr --output DP-4 --mode 1920x1080 --rate 280 --dpi 96 --primary \
+		--output DP-0 --off \
+		--output DP-2 --off
+
+	source ~/.config/bspwm/bspwmrc
 else
-    echo "work"
-    xrandr --output DP-4 --off \
-    --output DP-0 --mode 3840x2160 --rate 60 --dpi 192 --right-of DP-2 \
-    --output DP-2 --mode 3840x2160 --rate 60 --dpi 192 --primary
+	echo "work"
+	xrandr --output DP-4 --off \
+		--output DP-0 --mode 3840x2160 --rate 60 --dpi 192 --right-of DP-2 \
+		--output DP-2 --mode 3840x2160 --rate 60 --dpi 192 --primary
+
+	source ~/.config/bspwm/bspwmrc
 fi
