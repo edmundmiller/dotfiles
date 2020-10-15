@@ -90,17 +90,25 @@
       primary = true;
       monitorConfig = ''
         DisplaySize 3840 2160
-        Option "dpi" "163"
       '';
     }
     {
-      output = "DP-4";
+      output = "DP-0";
       monitorConfig = ''
         DisplaySize 3840 2160
-        Option "dpi" "163"
         Option "RightOf" "DP-2"
       '';
       # NOTE Option "Rotate" "right"
     }
+    #{
+    #  output = "DP-4";
+    #  monitorConfig = ''
+    #    DisplaySize 1920 1080
+    #    Option "LeftOf" "DP-2"
+    #    Option "Rotate" "right"
+    #    ModeLine "1920x1080     60.00 + 239.76*  144.00   119.93    99.90    84.88    59.94    50.00"
+    #    Option "PreferredMode" "1920x1080"
+    #  '';
+    #}
   ];
 }
