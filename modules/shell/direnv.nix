@@ -1,19 +1,13 @@
 { config, options, lib, pkgs, ... }:
 
-with lib; {
-  options.modules.shell.direnv = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
+with lib;
+with lib.my;
+let cfg = config.modules.shell.direnv;
+in {
+  options.modules.shell.direnv = { enable = mkBoolOpt false; };
 
-  config = mkIf config.modules.shell.direnv.enable {
-    my = {
-      packages = [ pkgs.direnv ];
-      zsh.rc = ''eval "$(direnv hook zsh)"'';
-    };
-
-    services.lorri.enable = true;
+  config = mkIf cfg.enable {
+    user.packages = [ pkgs.direnv ];
+    modules.shell.zsh.rcInit = ''eval "$(direnv hook zsh)"'';
   };
 }

@@ -11,12 +11,11 @@
       bspwm.enable = true;
 
       apps.rofi.enable = true;
-      # apps.discord.enable = true;
+      apps.discord.enable = true;
       apps.slack.enable = true;
       apps.graphics.enable = true;
 
       term.default = "xst";
-      term.alacritty.enable = true;
       term.st.enable = true;
 
       browsers.default = "qutebrowser";
@@ -24,14 +23,25 @@
       browsers.qutebrowser.enable = true;
 
       gaming.steam.enable = true;
+      gaming.steam.hardware.enable = true;
     };
 
     editors = {
-      default = "nvim";
+      default = "emacs -nw";
       emacs.enable = true;
       vim.enable = true;
     };
-
+    hardware = {
+      audio.enable = true;
+      ergodox.enable = true;
+      fs = {
+        enable = true;
+        zfs.enable = true;
+        ssd.enable = true;
+      };
+      nvidia.enable = true;
+      sensors.enable = true;
+    };
     dev = {
       cc.enable = true;
       clojure.enable = true;
@@ -43,15 +53,18 @@
       rust.enable = true;
     };
 
-    media = { mpv.enable = true; };
+    media = {
+      documents.enable = true;
+      graphics.enable = true;
+      mpv.enable = true;
+      recording.enable = true;
+    };
 
     shell = {
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
-      kubernetes.enable = true;
       mail.enable = true;
-      ncmpcpp.enable = true;
       pass.enable = true;
       tmux.enable = true;
       ranger.enable = true;
@@ -65,6 +78,7 @@
       keybase.enable = true;
       mpd.enable = true;
       pia.enable = true;
+      ssh.enable = true;
       ssh-agent.enable = true;
       syncthing.enable = true;
       transmission.enable = true;

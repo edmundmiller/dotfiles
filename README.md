@@ -1,62 +1,81 @@
-# dotfiles
-
-[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
+<div align="center">
+   
 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs)
-[![NixOS 20.03](https://img.shields.io/badge/NixOS-v20.03-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+[![NixOS 20.09](https://img.shields.io/badge/NixOS-v20.09-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
-Credit: [hlissner/dotfiles](https://github.com/hlissner/dotfiles)
+</div>
 
-To keep up with my dotfiles.
+**Hey,** you. You're finally awake. You were trying to configure your OS declaratively, right? Walked right into that NixOS ambush, same as us, and those dotfiles over there.
 
-I've learned a ton from keeping up with @hlissner's configs and use it as a
-technique to improve my own reasoning about software practices and develope my
-young opinions. Give them a read and while you're at it come check out [Doom
-Emacs][doom-emacs].
+<img src="https://raw.githubusercontent.com/hlissner/dotfiles/screenshots/fluorescence/fakebusy.png" width="100%" />
+
+<p align="center">
+<span><img src="/../screenshots/fluorescence/desktop.png" height="178" /></span>
+<span><img src="/../screenshots/fluorescence/rofi.png" height="178" /></span>
+<span><img src="/../screenshots/fluorescence/tiling.png" height="178" /></span>
+</p>
+
+------
+
+| | |
+|-|-|
+| **Shell:** | zsh + zgen |
+| **DM:** | lightdm + lightdm-mini-greeter |
+| **WM:** | bspwm + polybar |
+| **Editor:** | [Doom Emacs][doom-emacs] (and occasionally [vim]) |
+| **Terminal:** | st |
+| **Launcher:** | rofi |
+| **Browser:** | firefox |
+| **GTK Theme:** | [Ant Dracula](https://github.com/EliverLara/Ant-Dracula) |
+
+-----
 
 ## Quick start
 
-```sh
-# Assumes your partitions are set up and root is mounted on /mnt
-git clone https://github.com/emiller88/dotfiles /etc/dotfiles
-USER=emiller HOST=meshify make -C /etc/dotfiles install
-```
+1. Yoink [NixOS 20.09][nixos] (must be newer than Sept 12, 2020 for `nixos-install --flake`).
+2. Boot into the installer.
+3. Do your partitions and mount your root to `/mnt`
+4. `git clone https://github.com/hlissner/dotfiles /etc/nixos`
+5. Install NixOS: `nixos-install --root /mnt --flake #XYZ`, where `XYZ` is your
+   hostname.  Use `#generic` for a simple, universal config.
+6. OPTIONAL: Create a sub-directory in `hosts/` for your device. See [host/kuro]
+   as an example.
+7. Reboot!
 
-This is equivalent to:
+## Management
 
-```sh
-DOTFILES=/home/$USER/.dotfiles
-git clone https://github.com/emiller88/dotfiles $DOTFILES
-ln -s /etc/dotfiles $DOTFILES
-chown -R $USER:users $DOTFILES
+And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO-An4)
 
-# make channels
-nix-channel --add "https://nixos.org/channels/nixos-${NIXOS_VERSION}" nixos
-nix-channel --add "https://github.com/rycee/home-manager/archive/release-${NIXOS_VERSION}.tar.gz" home-manager
-nix-channel --add "https://nixos.org/channels/nixpkgs-unstable" nixpkgs-unstable
+| Command           | Description                                                     |
+|-------------------|-----------------------------------------------------------------|
+| `hey rebuild`     | Rebuild this flake (shortcut: `hey re`)                         |
+| `hey upgrade`     | Update flake lockfile and switch to it (shortcut: `hey up`)     |
+| `hey rollback`    | Roll back to previous system generation                         |
+| `hey gc`          | Runs `nix-collect-garbage -d`. Use sudo to clean system profile |
+| `hey push REMOTE` | Deploy these dotfiles to REMOTE (over ssh)                      |
+| `hey check`       | Run tests and checks for this flake                             |
+| `hey show`        | Show flake outputs of this repo                                 |
 
-# make /etc/nixos/configuration.nix
-nixos-generate-config --root /mnt
-echo "import /etc/dotfiles \"$$HOST\" \"$$USER\"" >/mnt/etc/nixos/configuration.nix
+## Frequently asked questions
 
-# make install
-nixos-install --root /mnt -I "my=/etc/dotfiles"
-```
++ **How do I change the default username?**
 
-### Management
+  1. Set `USER` the first time you run `nixos-install`: `USER=myusername
+     nixos-install --root /mnt --flake #XYZ`
+  2. Or change `"hlissner"` in modules/options.nix.
 
-- `make` = `nixos-rebuild test`
-- `make switch` = `nixos-rebuild switch`
-- `make upgrade` = `nix-channel --update && nixos-rebuild switch`
-- `make install` = `nixos-generate-config --root $PREFIX && nixos-install --root $PREFIX`
-- `make gc` = `nix-collect-garbage -d` (use sudo to clear system profile)
++ **How do I "set up my partitions"?**
 
-## Overview
+  My main host [has a README](hosts/kuro/README.org) you can use as a reference.
+  I set up an EFI+GPT system and partitions with `parted` and `zfs`.
+  
++ **How 2 flakes?**
 
-- OS: NixOS 19.09
-- Shell: zsh
-- DE/WM: bspwm + polybar
-- Editor: [Doom Emacs][doom-emacs] (and occasionally [vim][vimrc])
-- Terminal: st
-- Browser: firefox (waiting for qutebrowser to mature)
+  It wouldn't be the NixOS experience if I gave you all the answers in one,
+  convenient place.
+
 
 [doom-emacs]: https://github.com/hlissner/doom-emacs
+[vim]: https://github.com/hlissner/.vim
+[nixos]: https://releases.nixos.org/?prefix=nixos/20.09-small/
+[host/kuro]: https://github.com/hlissner/dotfiles/tree/master/hosts/kuro

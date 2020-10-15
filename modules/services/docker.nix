@@ -1,22 +1,20 @@
-{ config, options, pkgs, lib, ... }:
-with lib; {
-  options.modules.services.docker = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
+{ options, config, lib, pkgs, ... }:
 
-  config = mkIf config.modules.services.docker.enable {
-    my = {
-      packages = with pkgs; [ docker docker-compose ];
+with lib;
+with lib.my;
+let cfg = config.modules.services.docker;
+in {
+  options.modules.services.docker = { enable = mkBoolOpt false; };
 
-      env.DOCKER_CONFIG = "$XDG_CONFIG_HOME/docker";
-      env.MACHINE_STORAGE_PATH = "$XDG_DATA_HOME/docker/machine";
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [ docker docker-compose ];
 
-      user.extraGroups = [ "docker" ];
-      zsh.rc = lib.readFile <config/docker/aliases.zsh>;
-    };
+    env.DOCKER_CONFIG = "$XDG_CONFIG_HOME/docker";
+    env.MACHINE_STORAGE_PATH = "$XDG_DATA_HOME/docker/machine";
+
+    user.extraGroups = [ "docker" ];
+
+    modules.shell.zsh.rcFiles = [ "${configDir}/docker/aliases.zsh" ];
 
     virtualisation = {
       docker = {

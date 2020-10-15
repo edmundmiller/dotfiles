@@ -1,14 +1,13 @@
 { config, options, pkgs, lib, ... }:
-with lib; {
-  options.modules.shell.ranger = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
 
-  config = mkIf config.modules.shell.ranger.enable {
-    my.packages = with pkgs; [
+with lib;
+with lib.my;
+let cfg = config.modules.shell.ranger;
+in {
+  options.modules.shell.ranger = { enable = mkBoolOpt false; };
+
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [
       ranger
       # For image previews
       (lib.mkIf config.services.xserver.enable w3m)

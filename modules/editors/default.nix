@@ -1,20 +1,10 @@
 { config, options, lib, pkgs, ... }:
-with lib; {
-  imports = [
-    ./emacs.nix
-    ./kakoune.nix
-    ./vim.nix
-    ./vscode.nix
-  ];
 
-  options.modules.editors = {
-    default = mkOption {
-      type = types.str;
-      default = "vi";
-    };
-  };
+with lib;
+with lib.my;
+let cfg = config.modules.editors;
+in {
+  options.modules.editors = { default = mkOpt types.str "vim"; };
 
-  config = mkIf (config.modules.editors.default != null) {
-    my.env.EDITOR = config.modules.editors.default;
-  };
+  config = mkIf (cfg.default != null) { env.EDITOR = cfg.default; };
 }

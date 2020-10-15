@@ -1,32 +1,35 @@
-{ config, options, lib, pkgs, ... }:
-with lib; {
-  imports = [ ./common.nix ];
+{ options, config, lib, pkgs, ... }:
 
+with lib;
+with lib.my;
+let cfg = config.modules.desktop.stumpwm;
+in {
   options.modules.desktop.stumpwm = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
+    enable = mkBoolOpt false;
   };
 
-  config = mkIf config.modules.desktop.stumpwm.enable {
-    environment.systemPackages = with pkgs; [ lightdm dunst libnotify ];
+  config = mkIf cfg.enable {
+    environment.systemPackages = with pkgs; [
+      lightdm
+      dunst
+      libnotify
+    ];
 
+    # master.services.picom.enable = true;
     services = {
       redshift.enable = true;
-      picom.enable = true;
       xserver = {
         enable = true;
-        displayManager.defaultSession = "none+stumpwm";
+        windowManager.default = "stumpwm";
+        windowManager.stumpwm.enable = true;
         displayManager.lightdm.enable = true;
         displayManager.lightdm.greeters.mini.enable = true;
-        windowManager.stumpwm.enable = true;
       };
     };
 
     # link recursively so other modules can link files in their folders
-    my.home.xdg.configFile."stumpwm" = {
-      source = <config/stumpwm>;
+    home.configFile."stumpwm" = {
+      source = "${configDir}/stumpwm";
       recursive = true;
     };
   };

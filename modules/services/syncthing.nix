@@ -1,14 +1,13 @@
-{ config, options, pkgs, lib, ... }:
-with lib; {
-  options.modules.services.syncthing = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
+{ options, config, lib, pkgs, ... }:
 
-  config = mkIf config.modules.services.syncthing.enable {
-    my.packages = with pkgs; [ unstable.syncthing ];
+with lib;
+with lib.my;
+let cfg = config.modules.services.docker;
+in {
+  options.modules.services.docker = { enable = mkBoolOpt false; };
+
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [ docker docker-compose ];
 
     services.syncthing = {
       enable = true;
