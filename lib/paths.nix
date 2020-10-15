@@ -1,15 +1,15 @@
 { self, lib, ... }:
 
 with builtins;
-with lib;
-rec {
+with lib; rec {
   # ...
-  dotFiles   = toString ../.;
-  modulesDir = "${dotFiles}/modules";
-  configDir  = "${dotFiles}/config";
-  binDir     = "${dotFiles}/bin";
-  themeDir   = "${modulesDir}/themes";
-  homeDir = "/home/${let name = getEnv "USERNAME"; in
-                     if elem name [ "" "root" ]
-                     then "hlissner" else name}";
+  dotFilesDir = toString ../.;
+  modulesDir = "${dotFilesDir}/modules";
+  configDir = "${dotFilesDir}/config";
+  binDir = "${dotFilesDir}/bin";
+  themeDir = "${modulesDir}/themes";
+  homeDir = "/home/${
+      let name = getEnv "USERNAME";
+      in if elem name [ "" "root" ] then "hlissner" else name
+    }";
 }
