@@ -2,21 +2,21 @@
 
 with lib;
 with lib.my;
-let cfg = config.modules.services.docker;
+let cfg = config.modules.services.syncthing;
 in {
-  options.modules.services.docker = { enable = mkBoolOpt false; };
+  options.modules.services.syncthing = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [ docker docker-compose ];
+    user.packages = with pkgs; [ syncthing ];
 
     services.syncthing = {
       enable = true;
       openDefaultPorts = true;
-      user = config.my.username;
+      user = config.user.name;
       group = "users";
       package = pkgs.unstable.syncthing;
-      configDir = "/home/${config.my.username}/.config/syncthing";
-      dataDir = "/home/${config.my.username}/.local/share/syncthing";
+      configDir = "/home/${config.user.name}/.config/syncthing";
+      dataDir = "/home/${config.user.name}/.local/share/syncthing";
       declarative = {
         devices = {
           omen.id =
@@ -39,7 +39,7 @@ in {
         in {
           archive = rec {
             devices = [ "meshify" "omen" "vultr" ];
-            path = "/home/${config.my.username}/archive";
+            path = "/home/${config.user.name}/archive";
             watch = false;
             rescanInterval = 3600 * 6;
             type = deviceType [ "meshify" ];
@@ -47,7 +47,7 @@ in {
           };
           elfeed = rec {
             devices = [ "meshify" "omen" "vultr" ];
-            path = "/home/${config.my.username}/.config/emacs/.local/elfeed";
+            path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
             watch = false;
             rescanInterval = 3600 * 6;
             type = deviceType [ "meshify" "omen" ];
@@ -55,7 +55,7 @@ in {
           };
           sync = rec {
             devices = [ "omen" "oneplus" "meshify" "vultr" "pbp" "pi" ];
-            path = "/home/${config.my.username}/sync";
+            path = "/home/${config.user.name}/sync";
             watch = true;
             rescanInterval = 3600 * 6;
             type = deviceType [ "meshify" "omen" "pbp" ];
@@ -63,7 +63,7 @@ in {
           };
           src = rec {
             devices = [ "omen" "meshify" "vultr" "pi" ];
-            path = "/home/${config.my.username}/src";
+            path = "/home/${config.user.name}/src";
             watch = false;
             rescanInterval = 3600 * 2;
             type = deviceType [ "meshify" "omen" ];
@@ -71,7 +71,7 @@ in {
           };
           secrets = rec {
             devices = [ "omen" "oneplus" "meshify" "vultr" "pbp" ];
-            path = "/home/${config.my.username}/.secrets";
+            path = "/home/${config.user.name}/.secrets";
             watch = true;
             rescanInterval = 3600;
             type = deviceType [ "meshify" "omen" ];
