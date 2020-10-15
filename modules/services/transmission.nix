@@ -1,17 +1,15 @@
-{ config, options, pkgs, lib, ... }:
-with lib; {
-  options.modules.services.transmission = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
+{ config, options, pkgs, lib, my, ... }:
 
-  config = mkIf config.modules.services.transmission.enable {
+with lib;
+with lib.my;
+let cfg = config.modules.services.transmission;
+in {
+  options.modules.services.transmission = { enable = mkBoolOpt false; };
+
+  config = mkIf cfg.enable {
     services.transmission = {
       enable = true;
-      home = "/data/media/torrents";
-      user = config.my.username;
+      home = "${homeDir}/torrents";
       settings = {
         incomplete-dir-enabled = true;
         rpc-whitelist = "127.0.0.1,192.168.*.*";
@@ -27,6 +25,6 @@ with lib; {
       allowedUDPPorts = [ 51413 ];
     };
 
-    my.user.extraGroups = [ "transmission" ];
+    user.extraGroups = [ "transmission" ];
   };
 }

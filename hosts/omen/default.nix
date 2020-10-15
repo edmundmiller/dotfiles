@@ -1,11 +1,7 @@
-{ config, options, pkgs, ... }:
+# Omen -- my laptop
 
-{
-  imports = [
-    ../personal.nix # common settings
-    ./hardware-configuration.nix
-    ./autorandr.nix
-  ];
+{ ... }: {
+  imports = [ ./hardware-configuration.nix ./autorandr.nix ];
 
   modules = {
     desktop = {
@@ -22,9 +18,22 @@
     };
 
     editors = {
-      default = "nvim";
+      default = "emacs -nw";
       emacs.enable = true;
       vim.enable = true;
+    };
+
+    hardware = {
+      audio.enable = true;
+      bluetooth.enable = true;
+      ergodox.enable = true;
+      fs = {
+        enable = true;
+        zfs.enable = true;
+        ssd.enable = true;
+      };
+      nvidia.enable = true;
+      sensors.enable = true;
     };
 
     dev = {
@@ -72,4 +81,6 @@
     ledger-live-desktop
   ];
   powerManagement.powertop.enable = true;
+
+  services.compton.backend = "xr_glx_hybrid";
 }

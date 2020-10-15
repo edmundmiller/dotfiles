@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 
 g() { [[ $# = 0 ]] && git status --short . || git $*; }
-compdef g=hub
 
 alias git='noglob hub'
 alias ga='git add'
