@@ -18,29 +18,12 @@
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = true;
 
-  ## GPU
-  services.xserver.videoDrivers = [ "nvidia" ];
-  hardware.opengl.enable = true;
-  # Respect XDG conventions, damn it!
-  environment.systemPackages = with pkgs;
-    [
-      (writeScriptBin "nvidia-settings" ''
-        #!${stdenv.shell}
-        exec ${config.boot.kernelPackages.nvidia_x11}/bin/nvidia-settings --config="$XDG_CONFIG_HOME/nvidia/settings"
-      '')
-    ];
-
   # Power management
   environment.systemPackages = [ pkgs.acpi ];
   powerManagement.powertop.enable = true;
-  programs.light.enable = true; # Monitor backlight control
-
-  # Bluetooth
-  hardware.bluetooth = {
-    enable = true;
-    powerOnBoot = false;
-  };
-  services.blueman.enable = true;
+  # Monitor backlight control
+  programs.light.enable = true;
+  user.extraGroups = [ "video" ];
 
   ## Ledger
   hardware.ledger.enable = true;
