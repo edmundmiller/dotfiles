@@ -1,15 +1,13 @@
-{ config, lib, pkgs, ... }:
+{ options, config, lib, pkgs, ... }:
 
-with lib; {
-  options.modules.services.keybase = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
+with lib;
+with lib.my;
+let cfg = config.modules.services.keybase;
+in {
+  options.modules.services.keybase = { enable = mkBoolOpt false; };
 
-  config = mkIf config.modules.services.keybase.enable {
-    my.packages = [ pkgs.keybase-gui ];
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [ keybase-gui ];
     services.kbfs = {
       enable = true;
       mountPoint = "%t/kbfs";

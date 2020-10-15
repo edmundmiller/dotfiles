@@ -1,13 +1,12 @@
-{ config, options, pkgs, lib, ... }:
-with lib; {
-  options.modules.services.ssh-agent = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
+{ config, options, lib, pkgs, ... }:
 
-  config = mkIf config.modules.services.ssh-agent.enable {
+with lib;
+with lib.my;
+let cfg = config.modules.dev.ssh-agent;
+in {
+  options.modules.dev.ssh-agent = { enable = mkBoolOpt false; };
+
+  config = mkIf cfg.enable {
     programs.ssh.startAgent = true;
     programs.ssh.extraConfig = ''
       Host pubssh
