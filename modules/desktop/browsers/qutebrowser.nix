@@ -32,7 +32,7 @@ in {
         source = "${configDir}/qutebrowser";
         recursive = true;
       };
-      dataFile."qutebrowser/userstyles.css".text = userStyles;
+      # dataFile."qutebrowser/userstyles.css".text = userStyles;
     };
   };
 }

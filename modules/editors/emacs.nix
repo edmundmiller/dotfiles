@@ -19,14 +19,15 @@ in {
 
     user.packages = with pkgs; [
       ## Doom dependencies
-      config.modules.editors.emacs.pkg
+      emacsUnstable # 27.1
       git
       (ripgrep.override { withPCRE2 = true; })
       gnutls # for TLS connectivity
 
+      ## Optional dependencies
       fd # faster projectile indexing
       imagemagick # for image-dired
-      (lib.mkIf (config.programs.gnupg.agent.enable)
+      (mkIf (config.programs.gnupg.agent.enable)
         pinentry_emacs) # in-emacs gnupg prompts
       zstd # for undo-fu-session/undo-tree compression
 
@@ -37,7 +38,7 @@ in {
       languagetool
       # :tools editorconfig
       editorconfig-core-c # per-project style config
-      # :tools lookup
+      # :tools lookup & :lang org +roam
       sqlite
       # :lang cc
       ccls
