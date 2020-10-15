@@ -66,6 +66,11 @@
     fsType = "zfs";
   };
 
+  fileSystems."/data/archive" = {
+    device = "bigdata/archive";
+    fsType = "zfs";
+  };
+
   fileSystems."/data/mail" = {
     device = "bigdata/mail";
     fsType = "zfs";
