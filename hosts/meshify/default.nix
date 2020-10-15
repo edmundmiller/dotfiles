@@ -23,7 +23,6 @@
       browsers.qutebrowser.enable = true;
 
       gaming.steam.enable = true;
-      gaming.steam.hardware.enable = true;
     };
 
     editors = {
