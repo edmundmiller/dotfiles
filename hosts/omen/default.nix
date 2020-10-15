@@ -81,16 +81,12 @@
     themes.fluorescence.enable = true;
   };
 
-  networking.networkmanager.enable = true;
+  services.openssh.startWhenNeeded = true;
+
+  boot.loader.systemd-boot.enable = true;
+  networking.wireless.enable = true;
 
   time.timeZone = "America/Chicago";
 
-  environment.systemPackages = with pkgs; [
-    acpi
-    xorg.xbacklight
-    ledger-live-desktop
-  ];
-  powerManagement.powertop.enable = true;
-
-  services.compton.backend = "xr_glx_hybrid";
+  services.picom.backend = "xr_glx_hybrid";
 }
