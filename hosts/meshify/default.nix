@@ -79,17 +79,18 @@
     themes.functional.enable = true;
   };
 
+  programs.ssh.startAgent = true;
+  services.openssh.startWhenNeeded = true;
+
+  boot.loader.systemd-boot.enable = true;
   networking.hostId = "3b848ba1";
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
+
+  # hiDPI
   services.xserver.dpi = 192;
   fonts.fontconfig.hinting.enable = false;
-
-  # environment.systemPackages = with pkgs;
-  #   [ (gnumake.override { guileSupport = true; }) ];
-
-  boot.loader.systemd-boot.enable = true;
 
   # ZFS
   boot.supportedFilesystems = [ "zfs" ];
