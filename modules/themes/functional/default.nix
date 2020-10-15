@@ -1,18 +1,19 @@
-# modules/themes/fluorescence/default.nix --- a regal dracula-inspired theme
+# modules/themes/functional/default.nix --- a regal dracula-inspired theme
 
 { options, config, lib, pkgs, ... }:
 
 with lib;
 with lib.my;
-let m   = config.modules;
-    cfg = m.themes.fluorescence;
+let
+  m = config.modules;
+  cfg = m.themes.functional;
 in {
-  options.modules.themes.fluorescence = with types; {
+  options.modules.themes.functional = with types; {
     enable = mkBoolOpt false;
     wallpaper = {
       path = mkOpt path ./config/wallpaper.png;
       filter = {
-        enable  = mkBoolOpt true;
+        enable = mkBoolOpt true;
         options = mkOpt str "-gaussian-blur 0x2 -modulate 70 -level 5%";
       };
     };
@@ -21,27 +22,28 @@ in {
   config = mkIf cfg.enable (mkMerge [
     # Desktop-agnostic configuration
     {
-      home.configFile = mkIf m.shell.tmux.enable {
-        "tmux/theme".source = ./config/tmux.conf;
-      };
+      home.configFile =
+        mkIf m.shell.tmux.enable { "tmux/theme".source = ./config/tmux.conf; };
       modules.shell.zsh.rcFiles = [ ./config/zsh/prompt.zsh ];
     }
 
     # Use a blurred+dimmed version of my wallpaper for the login screen
     (mkIf (pathExists cfg.wallpaper.path) {
       services.xserver.displayManager.lightdm.background =
-        if cfg.wallpaper.filter.enable
-        then cfg.wallpaper.path
-        else (let options = cfg.wallpaper.filter.options;
-                  wallpaperPath = cfg.wallpaper.path;
-                  filteredPath = "wallpaper.filtered.png";
-                  filteredWallpaper =
-                    pkgs.runCommand "filterWallpaper"
-                      { buildInputs = [ pkgs.imagemagick ]; } ''
-                        mkdir "$out"
-                        convert ${options} ${wallpaperPath} $out/${filteredPath}
-                      '';
-              in "${filteredWallpaper}/${filteredPath}");
+        if cfg.wallpaper.filter.enable then
+          cfg.wallpaper.path
+        else
+          (let
+            options = cfg.wallpaper.filter.options;
+            wallpaperPath = cfg.wallpaper.path;
+            filteredPath = "wallpaper.filtered.png";
+            filteredWallpaper = pkgs.runCommand "filterWallpaper" {
+              buildInputs = [ pkgs.imagemagick ];
+            } ''
+              mkdir "$out"
+              convert ${options} ${wallpaperPath} $out/${filteredPath}
+            '';
+          in "${filteredWallpaper}/${filteredPath}");
     })
 
     # Desktop (X11) theming
@@ -57,7 +59,7 @@ in {
       services.picom = {
         fade = true;
         fadeDelta = 1;
-        fadeSteps = [ 0.01 0.012 ];
+        fadeSteps = [ 1.0e-2 1.2e-2 ];
         shadow = true;
         shadowOffsets = [ (-10) (-10) ];
         shadowOpacity = 0.22;
@@ -86,41 +88,40 @@ in {
 
         # Use a blurred+dimmed version of my wallpaper for the login screen
         (mkIf (pathExists cfg.wallpaper.path) {
-          background =
-            if cfg.wallpaper.filter.enable
-            then cfg.wallpaper.path
-            else (let options = cfg.wallpaper.filter.options;
-                      wallpaperPath = cfg.wallpaper.path;
-                      filteredPath = "wallpaper.filtered.png";
-                      filteredWallpaper =
-                        pkgs.runCommand "filterWallpaper"
-                          { buildInputs = [ pkgs.imagemagick ]; } ''
-                            mkdir "$out"
-                            convert ${options} ${wallpaperPath} $out/${filteredPath}
-                          '';
-                  in "${filteredWallpaper}/${filteredPath}");
+          background = if cfg.wallpaper.filter.enable then
+            cfg.wallpaper.path
+          else
+            (let
+              options = cfg.wallpaper.filter.options;
+              wallpaperPath = cfg.wallpaper.path;
+              filteredPath = "wallpaper.filtered.png";
+              filteredWallpaper = pkgs.runCommand "filterWallpaper" {
+                buildInputs = [ pkgs.imagemagick ];
+              } ''
+                mkdir "$out"
+                convert ${options} ${wallpaperPath} $out/${filteredPath}
+              '';
+            in "${filteredWallpaper}/${filteredPath}");
 
         })
       ];
 
       modules.desktop.browsers = {
-        firefox.userChrome =
-          readFile ./config/firefox/userChrome.css;
-        qutebrowser.userStyles =
-          with pkgs;
-          let compiledStyles =
-                runCommand "compileUserStyles"
-                  { buildInputs = [ sass ]; } ''
-                    mkdir "$out"
-                    for file in "${./config/userstyles/qutebrowser}"/*.scss; do
-                      scss --sourcemap=none \
-                           --no-cache \
-                           --style compressed \
-                           --default-encoding utf-8 \
-                           "$file" \
-                           >>"$out/userstyles.css"
-                    done
-                  '';
+        firefox.userChrome = readFile ./config/firefox/userChrome.css;
+        qutebrowser.userStyles = with pkgs;
+          let
+            compiledStyles =
+              runCommand "compileUserStyles" { buildInputs = [ sass ]; } ''
+                mkdir "$out"
+                for file in "${./config/userstyles/qutebrowser}"/*.scss; do
+                  scss --sourcemap=none \
+                       --no-cache \
+                       --style compressed \
+                       --default-encoding utf-8 \
+                       "$file" \
+                       >>"$out/userstyles.css"
+                done
+              '';
           in readFile "${compiledStyles}/userstyles.css";
       };
 
@@ -157,14 +158,21 @@ in {
             "bspwm/rc.d/theme".source = ./config/bspwmrc;
           })
           (mkIf m.desktop.apps.rofi.enable {
-            "rofi/theme" = { source = ./config/rofi; recursive = true; };
+            "rofi/theme" = {
+              source = ./config/rofi;
+              recursive = true;
+            };
           })
           (mkIf (m.desktop.bspwm.enable || m.desktop.stumpwm.enable) {
-            "polybar" = { source = ./config/polybar; recursive = true; };
+            "polybar" = {
+              source = ./config/polybar;
+              recursive = true;
+            };
             "dunst/dunstrc".source = ./config/dunstrc;
           })
           (mkIf m.desktop.media.graphics.vector.enable {
-            "inkscape/templates/default.svg".source = ./config/inkscape/default-template.svg;
+            "inkscape/templates/default.svg".source =
+              ./config/inkscape/default-template.svg;
           })
         ];
 
