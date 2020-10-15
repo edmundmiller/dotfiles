@@ -1,10 +1,5 @@
-{ config, options, pkgs, ... }:
-
-{
-  imports = [
-    ../personal.nix # common settings
-    ./hardware-configuration.nix
-  ];
+{ ... }: {
+  imports = [ ./hardware-configuration.nix ];
 
   modules = {
     desktop = {
@@ -12,17 +7,25 @@
 
       apps.rofi.enable = true;
       apps.discord.enable = true;
-      apps.slack.enable = true;
-      apps.graphics.enable = true;
 
-      term.default = "xst";
-      term.st.enable = true;
-
-      browsers.default = "qutebrowser";
-      browsers.firefox.enable = true;
-      browsers.qutebrowser.enable = true;
+      browsers = {
+        default = "firefox";
+        firefox.enable = true;
+      };
 
       gaming.steam.enable = true;
+
+      media = {
+        documents.enable = true;
+        graphics.enable = true;
+        mpv.enable = true;
+        ncmpcpp.enable = true;
+        recording.enable = true;
+      };
+      term = {
+        default = "xst";
+        st.enable = true;
+      };
     };
 
     editors = {
@@ -48,37 +51,27 @@
       nixlang.enable = true;
       node.enable = true;
       python.enable = true;
-      R.enable = true;
+      # R.enable = true;
       rust.enable = true;
-    };
-
-    media = {
-      documents.enable = true;
-      graphics.enable = true;
-      mpv.enable = true;
-      recording.enable = true;
     };
 
     shell = {
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
-      mail.enable = true;
       pass.enable = true;
       tmux.enable = true;
-      ranger.enable = true;
       zsh.enable = true;
     };
 
     services = {
-      calibre.enable = true;
+      # calibre.enable = true;
       docker.enable = true;
-      guix.enable = true;
       keybase.enable = true;
       mpd.enable = true;
-      pia.enable = true;
+      # pia.enable = true;
       ssh.enable = true;
-      ssh-agent.enable = true;
+      # ssh-agent.enable = true;
       syncthing.enable = true;
       transmission.enable = true;
     };
@@ -93,8 +86,10 @@
   services.xserver.dpi = 192;
   fonts.fontconfig.hinting.enable = false;
 
-  environment.systemPackages = with pkgs;
-    [ (gnumake.override { guileSupport = true; }) ];
+  # environment.systemPackages = with pkgs;
+  #   [ (gnumake.override { guileSupport = true; }) ];
+
+  boot.loader.systemd-boot.enable = true;
 
   # ZFS
   boot.supportedFilesystems = [ "zfs" ];
