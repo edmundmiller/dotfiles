@@ -1,15 +1,10 @@
 { config, options, lib, pkgs, ... }:
-with lib; {
-  options.modules.dev.java = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-  };
 
-  config = mkIf config.modules.dev.java.enable {
-    my.packages = with pkgs; [
-        jdk
-    ];
-  };
+with lib;
+with lib.my;
+let cfg = config.modules.dev.java;
+in {
+  options.modules.dev.java = { enable = mkBoolOpt false; };
+
+  config = mkIf cfg.enable { user.packages = with pkgs; [ jdk ]; };
 }

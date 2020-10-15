@@ -2,22 +2,21 @@
 #
 # I don't use clojure. Perhaps one day...
 
-{ config, options, lib, pkgs, ... }:
-with lib; {
+{ config, options, lib, pkgs, my, ... }:
+
+with lib;
+with lib.my;
+let cfg = config.modules.dev.clojure;
+in {
   options.modules.dev.clojure = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
+    enable = mkBoolOpt false;
   };
 
-  config = mkIf config.modules.dev.clojure.enable {
-    my.packages = with pkgs; [
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [
       clojure
-      # Dev tools
+      joker
       leiningen
-      my.clj-kondo
-      unstable.clojure-lsp
     ];
   };
 }

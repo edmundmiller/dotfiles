@@ -1,15 +1,21 @@
 # modules/dev/common-lisp.nix --- https://common-lisp.net/
+#
+# Mostly for my stumpwm config, and the occasional dip into lisp gamedev.
 
 { config, options, lib, pkgs, ... }:
-with lib; {
+
+with lib;
+with lib.my;
+let cfg = config.modules.dev.common-lisp;
+in {
   options.modules.dev.common-lisp = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
+    enable = mkBoolOpt false;
   };
 
-  config = mkIf config.modules.dev.common-lisp.enable {
-    my.packages = with pkgs; [ sbcl lispPackages.quicklisp ];
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [
+      sbcl
+      lispPackages.quicklisp
+    ];
   };
 }
