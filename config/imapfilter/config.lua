@@ -132,7 +132,8 @@ colloquium:is_older(1):move_messages(utd["courses/biol-6193"])
 
 biochem =
     utd.Inbox:contain_subject("3361.001") + utd.Inbox:contain_subject("Biochem I") +
-    utd.Inbox:contain_from("gabriele.meloni@utdallas.edu")
+    utd.Inbox:contain_from("gabriele.meloni@utdallas.edu") +
+    utd.Inbox:contain_from("Rose.Curtis@UTDallas.edu")
 biochem:is_older(1):move_messages(utd["courses/biol-3361"])
 
 -- Functional Genomics
