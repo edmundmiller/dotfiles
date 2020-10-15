@@ -25,7 +25,7 @@ in {
     environment.shellAliases = {
       n = ''PATH="$(npm bin):$PATH"'';
       ya = "yarn";
-      alias.yart = "yarn dev || yarn start";
+      yart = "yarn dev || yarn start";
     };
 
     home.configFile."npm/config".text = ''
