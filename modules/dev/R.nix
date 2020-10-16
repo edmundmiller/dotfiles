@@ -9,8 +9,14 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.dev.R;
-  R-with-my-packages = rWrapper.override {
-    packages = with rPackages; [ languageR languageserver lintr styler ];
+  R-with-my-packages = pkgs.rWrapper.override {
+    packages = with pkgs.rPackages; [
+      ggplot2
+      languageR
+      languageserver
+      lintr
+      styler
+    ];
   };
 in {
   options.modules.dev.R = { enable = mkBoolOpt false; };
