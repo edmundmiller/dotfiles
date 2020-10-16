@@ -51,7 +51,7 @@
       nixlang.enable = true;
       node.enable = true;
       python.enable = true;
-      # R.enable = true;
+      R.enable = true;
       rust.enable = true;
     };
 
