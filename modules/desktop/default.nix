@@ -8,27 +8,23 @@ in {
     assertions = [
       {
         assertion = (countAttrs (n: v: n == "enable" && value) cfg) < 2;
-        message = "Can't have more than one desktop environment enabled at a time";
+        message =
+          "Can't have more than one desktop environment enabled at a time";
       }
       {
-        assertion =
-          let srv = config.services;
-          in srv.xserver.enable ||
-             srv.sway.enable ||
-             !(anyAttrs
-               (n: v: isAttrs v &&
-                      anyAttrs (n: v: isAttrs v && v.enable))
-               cfg);
+        assertion = let srv = config.services;
+        in srv.xserver.enable || srv.sway.enable || !(anyAttrs
+          (n: v: isAttrs v && anyAttrs (n: v: isAttrs v && v.enable)) cfg);
         message = "Can't enable a desktop app without a desktop environment";
       }
     ];
 
     user.packages = with pkgs; [
-      feh       # image viewer
+      feh # image viewer
       xclip
       xdotool
 
-      libqalculate  # calculator cli w/ currency conversion
+      libqalculate # calculator cli w/ currency conversion
       (makeDesktopItem {
         name = "scratch-calc";
         desktopName = "Calculator";
@@ -53,16 +49,17 @@ in {
         siji
       ];
       fontconfig.defaultFonts = {
-        sansSerif = ["Fira Sans"];
-        monospace = ["Fira Code"];
+        sansSerif = [ "Fira Sans" ];
+        monospace = [ "Fira Code" ];
       };
     };
 
     ## Apps/Services
-    services.xserver.displayManager.lightdm.greeters.mini.user = config.user.name;
+    services.xserver.displayManager.lightdm.greeters.mini.user =
+      config.user.name;
 
     services.picom = {
-      backend = "glx";
+      # backend = "glx";
       vSync = true;
       opacityRules = [
         # "100:class_g = 'Firefox'"
@@ -113,11 +110,15 @@ in {
     # Try really hard to get QT to respect my GTK theme.
     env.GTK_DATA_PREFIX = [ "${config.system.path}" ];
     env.QT_QPA_PLATFORMTHEME = "gtk2";
-    qt5 = { style = "gtk2"; platformTheme = "gtk2"; };
+    qt5 = {
+      style = "gtk2";
+      platformTheme = "gtk2";
+    };
     # Also, read xresources files in ~/.config/xtheme/* and init scripts in
     # ~/.config/xsessions/*, so I can centralize my theme config files.
     services.xserver.displayManager.sessionCommands =
-      let cfg = config.services.xserver.desktopManager.wallpaper; in ''
+      let cfg = config.services.xserver.desktopManager.wallpaper;
+      in ''
         export GTK2_RC_FILES="$XDG_CONFIG_HOME/gtk-2.0/gtkrc"
         source "$XDG_CONFIG_HOME"/xsession/*.sh
         xrdb -merge "$XDG_CONFIG_HOME"/xtheme/*
