@@ -25,6 +25,9 @@
   programs.light.enable = true;
   user.extraGroups = [ "video" ];
 
+  services.xserver.libinput.enable = true;
+  services.xserver.libinput.disableWhileTyping = true;
+  services.xserver.xkbOptions = "caps:escape";
   ## Ledger
   hardware.ledger.enable = true;
 
