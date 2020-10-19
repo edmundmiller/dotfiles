@@ -84,7 +84,7 @@
   services.openssh.startWhenNeeded = true;
 
   boot.loader.systemd-boot.enable = true;
-  networking.wireless.enable = true;
+  networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
 
