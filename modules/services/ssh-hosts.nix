@@ -2,12 +2,11 @@
 
 with lib;
 with lib.my;
-let cfg = config.modules.dev.ssh-agent;
+let cfg = config.modules.dev.ssh-hosts;
 in {
-  options.modules.dev.ssh-agent = { enable = mkBoolOpt false; };
+  options.modules.dev.ssh-hosts = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    programs.ssh.startAgent = true;
     programs.ssh.extraConfig = ''
       Host pubssh
           HostName pubssh.utdallas.edu
