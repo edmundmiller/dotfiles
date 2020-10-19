@@ -20,6 +20,7 @@
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixos-hardware.url = "github:nixos/nixos-hardware";
+    guix.url = "github:bqv/guix";
   };
 
   outputs = inputs@{ self, nixos, nixos-unstable, home-manager, ... }:
