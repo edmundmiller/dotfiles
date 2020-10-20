@@ -54,7 +54,7 @@ scratch.font: Fira Code:pixelsize=16
 
 
 !! xst
-st.font: Fira Code:pixelsize=12
+st.font: Fira Code:pixelsize=14
 
 
 !! urxvt
