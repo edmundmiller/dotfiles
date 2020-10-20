@@ -77,6 +77,7 @@
                 nixPath = [
                   "nixpkgs=${nixos}"
                   "nixpkgs-overlays=${dotFilesDir}/overlays"
+                  "home-manager=${home-manager}"
                   "dotfiles=${dotFilesDir}"
                 ];
                 binaryCaches = [
