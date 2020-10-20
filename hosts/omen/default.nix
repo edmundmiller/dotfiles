@@ -73,7 +73,6 @@
       mpd.enable = true;
       # pia.enable = true;
       ssh.enable = true;
-      # ssh-agent.enable = true;
       syncthing.enable = true;
       transmission.enable = true;
     };
