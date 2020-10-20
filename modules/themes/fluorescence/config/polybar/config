@@ -71,9 +71,9 @@ modules-left = pulseaudio pad cpu memory pad fs
 modules-center = bspwm
 modules-right = syncthing redshift wlan pad network-up pad network-down pad battery pad date
 
-;tray-position = center
-;tray-padding = 2
-;tray-transparent = true
+tray-position = left
+tray-padding = 2
+tray-transparent = true
 ;tray-background = #0063ff
 
 [module/bspwm]
