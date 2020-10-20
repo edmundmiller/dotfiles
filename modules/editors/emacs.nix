@@ -19,7 +19,7 @@ in {
 
     user.packages = with pkgs; [
       ## Doom dependencies
-      emacsUnstable # 27.1
+      emacsGcc
       git
       (ripgrep.override { withPCRE2 = true; })
       gnutls # for TLS connectivity
