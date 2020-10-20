@@ -5,24 +5,25 @@
 # program with simpler, more intuitive commands. This script is a rudimentary
 # attempt at giving me that.
 #
-#   dots cd|check      -> nix flake check $DOTFILES
-#   dots sh|show       -> nix flake show $DOTFILES
-#   dots u|update      -> nix flake update --recreate-lock-file $DOTFILES
-#   dots re|rebuild    -> nixos-rebuild --flake $DOTFILES#$HOSTNAME ${1:-build}
-#   dots rollback      -> dots rebuild --rollback switch
-#   dots s|search      -> nix search nixpkgs $@
-#   dots vm            -> dots rebuild vm
-#   dots up|upgrade    -> dots update && dots rebuild switch
-#   dots gc            -> GC user profile, optimise nix store
-#   sudo dots gc       -> GC, optimise nix store, & delete old boot entries
-#   dots push REMOTE   -> push flake to remote (over SSH) and rebuild remotely
-#   dots gen|generations -> explore, manage, diff across generations (WIP)
+#   hey cd|check      -> nix flake check $DOTFILES
+#   hey sh|show       -> nix flake show $DOTFILES
+#   hey u|update      -> nix flake update --recreate-lock-file $DOTFILES
+#   hey re|rebuild    -> nixos-rebuild --flake $DOTFILES#$HOSTNAME ${1:-build}
+#   hey t|test        -> nixos-rebuild --flake $DOTFILES#$HOSTNAME --fast test
+#   hey rollback      -> hey rebuild --rollback switch
+#   hey s|search      -> nix search nixpkgs $@
+#   hey vm            -> hey rebuild vm
+#   hey up|upgrade    -> hey update && hey rebuild switch
+#   hey gc            -> GC user profile, optimise nix store
+#   sudo hey gc       -> GC, optimise nix store, & delete old boot entries
+#   hey push REMOTE   -> push flake to remote (over SSH) and rebuild remotely
+#   hey gen|generations -> explore, manage, diff across generations (WIP)
 #
-# dots (with no sub-command) can also be used as an alternative to nix-env:
+# hey (with no sub-command) can also be used as an alternative to nix-env:
 #
-#   dots -q
-#   dots -iA nixos.htop
-#   dots -e htop
+#   hey -q
+#   hey -iA nixos.htop
+#   hey -e htop
 
 set -e
 REMOTE=${REMOTE:-"~/.config/dotfiles"}
@@ -34,17 +35,21 @@ function main {
 
   ### Helpers
   function _usage {
-    echo "Usage: dots COMMAND [FLAGS...] [ARGS...]"
+    echo "Usage: hey COMMAND [FLAGS...] [ARGS...]"
     echo
     echo "Available commands:"
-    echo "  init               TODO"
-    echo "  upgrade (up)       TODO"
-    echo "  rebuild (re)       TODO"
-    echo "  rollback           TODO"
-    echo "  gc                 TODO"
-    echo "  vm                 TODO"
-    echo "  push               Push thie config to a remote NixOS system and rebuild it"
+    echo "  check (ch)         Same as 'nix flake check \$DOTFILES'"
+    echo "  gc                 Garbage collect and optimize store"
     echo "  generations (gen)  TODO"
+    echo "  push               Push thie config to a remote NixOS system and rebuild it"
+    echo "  rebuild (re)       Rebuild current system flake"
+    echo "  rollback           Roll back to last generation"
+    echo "  search (s)         Searches nixpkgs for a package"
+    echo "  show (sh)          Same as 'nix flake show \$DOTFILES'"
+    echo "  swap               Swap nix-store link (or directory thereof) for tweaking"
+    echo "  test (t)           Quickly rebuild, for quick iteration"
+    echo "  upgrade (up)       Update flake lockfile and rebuild"
+    echo "  vm                 Build flake into a VM image"
   }
 
   function _rebuild {
@@ -56,7 +61,13 @@ function main {
 
   function _update {
     echo "Updating NixOS flake"
-    _do nix flake update --recreate-lock-file "$DOTFILES"
+    if [[ "$@" ]]; then
+      for flake in $@; do
+        _do nix flake update --update-input "$flake" "$DOTFILES"
+      done
+    else
+      _do nix flake update --recreate-lock-file "$DOTFILES"
+    fi
   }
 
   function _gc {
@@ -76,6 +87,38 @@ function main {
     fi
   }
 
+  function _swap {
+    for target in $@; do
+      if [ -d "$target" ]; then
+        files=( "$target"/**/*.nix-store-backup )
+        links=( $(find "$target" -type l) )
+        if [[ "$files" ]]; then
+          echo "There are swapped files here. Unswapping!"
+          for file in $files[@]; do
+            _swap "$link"
+          done
+        else
+          echo "Swapping files in $target"
+          for link in $links[@]; do
+            if [[ "$(readlink $link)" == /nix/store/* ]]; then
+              _swap "$link"
+            fi
+          done
+        fi
+      elif [ -f "$target.nix-store-backup" ]; then
+        echo "Unswapping $target"
+        _do mv -i "$target.nix-store-backup" "$target"
+      elif [ -f "$target" ]; then
+        echo "Swapping $target"
+        _do mv "$target" "$target.nix-store-backup"
+        _do cp "$target.nix-store-backup" "$target"
+      else
+        >&2 echo "Not a valid target: $target"
+        exit 1
+      fi
+    done
+  }
+
   ###
   cmd="$1"
   [[ $# > 0 ]] && shift
@@ -87,6 +130,7 @@ function main {
     ch|check)    _do nix flake check "$DOTFILES";;
     sh|show)     _do nix flake show "$DOTFILES" ;;
 
+    t|test)      _rebuild --fast test "$@"      ;;
     re|rebuild)  _rebuild "${@:-switch}"        ;;
     rollback)    _rebuild --rollback switch     ;;
     vm)          _rebuild "$@" vm               ;;
