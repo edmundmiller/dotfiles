@@ -66,6 +66,26 @@
     fsType = "vfat";
   };
 
+  fileSystems."/data/media/mail" = {
+    device = "datatank/media/mail";
+    fsType = "zfs";
+  };
+
+  fileSystems."/data/media/music" = {
+    device = "datatank/media/music";
+    fsType = "zfs";
+  };
+
+  fileSystems."/data/media/video" = {
+    device = "datatank/media/video";
+    fsType = "zfs";
+  };
+
+  fileSystems."/data/media/archive" = {
+    device = "datatank/media/archive";
+    fsType = "zfs";
+  };
+
   swapDevices =
     [{ device = "/dev/disk/by-uuid/bd5404de-c7bb-46c9-b78a-36a8e17d77ac"; }];
 
