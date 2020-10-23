@@ -1,4 +1,4 @@
-{ options, config, lib, ... }:
+{ options, config, lib, pkgs, ... }:
 
 with lib;
 with lib.my;
@@ -7,6 +7,8 @@ in {
   options.modules.services.ssh = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
+    user.packages = with pkgs; [ sshuttle ];
+
     services.openssh = {
       enable = true;
       challengeResponseAuthentication = false;
@@ -18,6 +20,9 @@ in {
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK3EVc3A55QHe83NXfqrClVohWz2DscDgx0pr4PSlcGO edmund.a.miller@protonmail.com"
     ];
 
+    environment.shellAliases.utd =
+      "sshuttle --dns -r pubssh 10.0.0.0/8 129.110.0.0/16";
+
     programs.ssh.extraConfig = ''
       Host pubssh
           HostName pubssh.utdallas.edu
@@ -26,22 +31,18 @@ in {
       Host ganymede
           HostName ganymede.utdallas.edu
           User eam150030
-          ProxyJump pubssh
 
       Host mz
           HostName mz.utdallas.edu
           User eam150030
-          ProxyJump pubssh
 
       Host mk
           HostName mk.utdallas.edu
           User eam150030
-          ProxyJump pubssh
 
       Host promoter
           HostName promoter.utdallas.edu
           User emiller
-          ProxyJump pubssh
     '';
   };
 }
