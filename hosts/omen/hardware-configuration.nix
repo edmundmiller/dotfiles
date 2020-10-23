@@ -69,21 +69,25 @@
   fileSystems."/data/media/mail" = {
     device = "datatank/media/mail";
     fsType = "zfs";
+    options = [ "nofail" ];
   };
 
   fileSystems."/data/media/music" = {
     device = "datatank/media/music";
     fsType = "zfs";
+    options = [ "nofail" ];
   };
 
   fileSystems."/data/media/video" = {
     device = "datatank/media/video";
     fsType = "zfs";
+    options = [ "nofail" ];
   };
 
   fileSystems."/data/media/archive" = {
     device = "datatank/media/archive";
     fsType = "zfs";
+    options = [ "nofail" ];
   };
 
   swapDevices =
