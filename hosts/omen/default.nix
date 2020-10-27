@@ -53,7 +53,7 @@
       common-lisp.enable = true;
       nixlang.enable = true;
       python.enable = true;
-      # R.enable = true;
+      R.enable = true;
     };
 
     shell = {
