@@ -8,7 +8,7 @@ with lib.my; {
     script = ''
       /run/current-system/sw/bin/davmail /home/emiller/.config/dotfiles/config/davmail/davmail.properties
     '';
-    serviceConfig.Restart = "always";
+    # serviceConfig.Restart = "never";
   };
 
   home.configFile = {
