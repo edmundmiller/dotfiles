@@ -101,9 +101,9 @@ super + ctrl + Print
 	scrrec -s ~/recordings/$(date +%F-%T).gif
 
 XF86MonBrightnessUp
-	light -A 5
+	xbacklight +5
 XF86MonBrightnessDown
-	light -U 5
+	xbacklight -5
 
 XF86AudioMute
 	amixer -q set Master toggle
