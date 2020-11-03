@@ -28,6 +28,10 @@ in {
           HostName pubssh.utdallas.edu
           User eam150030
 
+      Host europa
+          HostName europa.circ.utdallas.edu
+          User eam150030
+
       Host ganymede
           HostName ganymede.utdallas.edu
           User eam150030
