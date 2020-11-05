@@ -19,6 +19,10 @@
   ## Mouse
   services.xserver.libinput.accelProfile = "flat";
 
+  ## Monitors
+  environment.variables.GDK_SCALE = "2";
+  environment.variables.GDK_DPI_SCALE = "0.5";
+
   ## SSD
   fileSystems."/" = {
     device = "tank/system/root";
