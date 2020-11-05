@@ -16,6 +16,7 @@ let
       languageserver
       lintr
       styler
+      tidyverse
     ];
   };
 in {
