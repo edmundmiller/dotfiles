@@ -4,11 +4,10 @@ with lib.my; {
   environment.systemPackages = with pkgs; [ davmail ];
 
   systemd.user.services.davmail = {
-    wantedBy = [ "default.target" ];
+    wantedBy = [ "mbsync.service" ];
     script = ''
       /run/current-system/sw/bin/davmail /home/emiller/.config/dotfiles/config/davmail/davmail.properties
     '';
-    # serviceConfig.Restart = "never";
   };
 
   home.configFile = {
