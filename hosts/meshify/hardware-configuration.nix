@@ -95,19 +95,19 @@
   ## Monitors
   services.xserver.xrandrHeads = [
     {
+      output = "DP-0";
+      monitorConfig = ''
+        DisplaySize 3840 2160
+        Option "LeftOf" "DP-2"
+      '';
+      # NOTE Option "Rotate" "right"
+    }
+    {
       output = "DP-2";
       primary = true;
       monitorConfig = ''
         DisplaySize 3840 2160
       '';
-    }
-    {
-      output = "DP-0";
-      monitorConfig = ''
-        DisplaySize 3840 2160
-        Option "RightOf" "DP-2"
-      '';
-      # NOTE Option "Rotate" "right"
     }
     #{
     #  output = "DP-4";
