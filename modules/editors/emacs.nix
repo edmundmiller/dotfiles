@@ -19,7 +19,7 @@ in {
 
     user.packages = with pkgs; [
       ## Doom dependencies
-      emacsGcc
+      emacsPgtkGcc # 28 + pgtk + native-comp
       git
       (ripgrep.override { withPCRE2 = true; })
       gnutls # for TLS connectivity
@@ -46,7 +46,9 @@ in {
       nodePackages.javascript-typescript-langserver
       nodePackages.prettier
       # :lang latex & :lang org (latex previews)
-      (texlive.combine { inherit (texlive) scheme-medium grffile; })
+      (texlive.combine {
+        inherit (texlive) scheme-full grffile beamertheme-metropolis wrapfig;
+      })
       # :lang python
       unstable.nodePackages.pyright
       # :lang rust
@@ -66,6 +68,8 @@ in {
         mimeType = "x-scheme-handler/org-protocol";
         categories = "Email";
       })
+      # yaml
+      nodePackages.yaml-language-server
     ];
 
     env.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
