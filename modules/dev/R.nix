@@ -17,11 +17,25 @@ let
       lintr
       styler
       tidyverse
+
+      # knitr
+      rmarkdown
+      knitr
+
+      # Bioinformatics
+      DESeq2
+      pheatmap
     ];
   };
 in {
   options.modules.dev.R = { enable = mkBoolOpt false; };
 
-  config =
-    mkIf cfg.enable { user.packages = with pkgs; [ R-with-my-packages ]; };
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [
+      R-with-my-packages
+      # knitr
+      texlive.combined.scheme-full
+      pandoc
+    ];
+  };
 }
