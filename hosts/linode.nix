@@ -69,4 +69,8 @@ in {
     usePredictableInterfaceNames = false;
     interfaces.eth0.useDHCP = true;
   };
+
+  # This is here to appease 'nix flake check' for generic hosts with no
+  # hardware-configuration.nix or fileSystem config.
+  fileSystems."/".device = "/dev/disk/by-label/nixos";
 }
