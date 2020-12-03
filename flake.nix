@@ -14,7 +14,8 @@
     # Core dependencies
     nixos.url = "nixpkgs/nixos-20.09";
     nixos-unstable.url = "nixpkgs/nixos-unstable";
-    home-manager.url = "github:rycee/home-manager/master";
+    home-manager.url =
+      "github:rycee/home-manager?rev=c1faa848c5224452660cd6d2e0f4bd3e8d206419";
     home-manager.inputs.nixpkgs.follows = "nixos-unstable";
 
     # Extras
