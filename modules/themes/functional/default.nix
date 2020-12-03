@@ -53,7 +53,19 @@ in {
         paper-icon-theme # for rofi
       ];
 
-      fonts.fonts = [ pkgs.jetbrains-mono ];
+      fonts = {
+        fonts = with pkgs; [
+          fira-code
+          fira-code-symbols
+          jetbrains-mono
+          siji
+          font-awesome-ttf
+        ];
+        fontconfig.defaultFonts = {
+          sansSerif = [ "Fira Sans" ];
+          monospace = [ "Fira Code" ];
+        };
+      };
 
       # Compositor
       services.picom = {
