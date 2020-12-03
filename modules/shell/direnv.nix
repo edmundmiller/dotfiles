@@ -9,5 +9,12 @@ in {
   config = mkIf cfg.enable {
     user.packages = [ pkgs.direnv ];
     modules.shell.zsh.rcInit = ''eval "$(direnv hook zsh)"'';
+
+    home.configFile = {
+      "direnv" = {
+        source = "${configDir}/direnv";
+        recursive = true;
+      };
+    };
   };
 }
