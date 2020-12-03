@@ -31,7 +31,7 @@
     };
 
     editors = {
-      default = "emacs -nw";
+      default = "nvim";
       emacs.enable = true;
       vim.enable = true;
     };
