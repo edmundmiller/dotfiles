@@ -44,7 +44,7 @@ with inputs; {
   ## Some reasonable, global defaults
   # This is here to appease 'nix flake check' for generic hosts with no
   # hardware-configuration.nix or fileSystem config.
-  fileSystems."/".device = "/dev/disk/by-label/nixos";
+  # fileSystems."/".device = "/dev/disk/by-label/nixos";
 
   # Use the latest kernel
   boot.kernelPackages = pkgs.linuxPackages_5_9;
