@@ -6,7 +6,7 @@ with lib;
 with lib.my;
 let cfg = config.modules.theme;
 in {
-  config = mkIf (cfg.active == "alucard") (mkMerge [
+  config = mkIf (cfg.active == "functional") (mkMerge [
     # Desktop-agnostic configuration
     {
       modules = {
