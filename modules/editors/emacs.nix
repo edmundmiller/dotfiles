@@ -1,6 +1,6 @@
 # https://github.com/hlissner/doom-emacs
 
-{ config, options, lib, pkgs, inputs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 with lib;
 with lib.my;
