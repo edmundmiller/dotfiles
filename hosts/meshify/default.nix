@@ -76,7 +76,7 @@
       transmission.enable = true;
     };
 
-    themes.functional.enable = true;
+    theme.active = "functional";
   };
 
   programs.ssh.startAgent = true;
