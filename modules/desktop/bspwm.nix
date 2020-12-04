@@ -4,12 +4,13 @@ with lib;
 with lib.my;
 let cfg = config.modules.desktop.bspwm;
 in {
-  options.modules.desktop.bspwm = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.bspwm = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    modules.theme.onReload.bspwm = "${pkgs.bspwm}/bin/bspc wm -r";
+    modules.theme.onReload.bspwm = ''
+      ${pkgs.bspwm}/bin/bspc wm -r
+      source $XDG_CONFIG_HOME/bspwm/bspwmrc
+    '';
 
     environment.systemPackages = with pkgs; [
       lightdm
