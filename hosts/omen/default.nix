@@ -77,7 +77,7 @@
       transmission.enable = true;
     };
 
-    themes.fluorescence.enable = true;
+    theme.active = "alucard";
   };
 
   services.openssh.startWhenNeeded = true;

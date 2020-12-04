@@ -17,19 +17,18 @@ setw -g pane-base-index 1
 set  -g display-time 1500
 set  -g display-panes-time 800
 # Address vim-mode switching delay (http://superuser.com/a/252717/65504)
-set  -s escape-time       0
-set -sg repeat-time       600
-set  -g history-limit     10000
+set  -s escape-time   0
+set -sg repeat-time   600
+set  -g history-limit 10000
 # Rather than constraining window size to the maximum size of any client
 # connected to the *session*, constrain window size to the maximum size of any
 # client connected to *that window*. Much more reasonable.
 setw -g aggressive-resize off
 # For terminals that support them, propagate these events to programs that
 # understand them.
-set  -s focus-events      on
+set  -s focus-events on
 # Enable mouse + mouse wheel
-set -g mouse on
-
+set  -g mouse on
 
 ########################################
 # Keybinds                             #
@@ -44,8 +43,9 @@ bind C-c send-prefix
 set -g status-keys vi
 set -g mode-keys   vi
 
-bind v split-window -h
-bind s split-window -v
+bind c new-window      -c "#{pane_current_path}"
+bind v split-window -h -c "#{pane_current_path}"
+bind s split-window -v -c "#{pane_current_path}"
 
 bind h select-pane -L
 bind j select-pane -D
@@ -102,19 +102,23 @@ bind ^r refresh-client
 
 bind Enter copy-mode # enter copy mode
 bind b list-buffers  # list paster buffers
-bind p paste-buffer  # paste from the top pate buffer
-bind P choose-buffer # choose which buffer to paste from
+bind B choose-buffer # choose which buffer to paste from
+bind p paste-buffer  # paste from the top paste buffer
+bind P run "xclip -selection clipboard -o | tmux load-buffer - ; tmux paste-buffer"
 
-bind -T copy-mode-vi v send -X begin-selection
-bind -T copy-mode-vi C-v send -X rectangle-toggle
-bind -T copy-mode-vi y send -X copy-selection
-bind -T copy-mode-vi Escape send -X cancel
-bind -T copy-mode-vi H send -X start-of-line
-bind -T copy-mode-vi L send -X end-of-line
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi C-v send-keys -X rectangle-toggle
+bind -T copy-mode-vi Escape send-keys -X cancel
+bind -T copy-mode-vi C-g send-keys -X cancel
+bind -T copy-mode-vi H send-keys -X start-of-line
+bind -T copy-mode-vi L send-keys -X end-of-line
 
 
 ########################################
 # Local config                         #
 ########################################
-if '[ -f $TMUX_HOME/theme ]' 'source $TMUX_HOME/theme'
+set -g @open-editor 'C-e'
+set -g @open-S 'https://www.duckduckgo.com/'
+
+source $TMUX_HOME/extraInit
 if '[ -f ~/.tmux.conf ]' 'source ~/.tmux.conf'
