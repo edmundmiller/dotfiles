@@ -1,7 +1,7 @@
 # Omen -- my laptop
 
 { ... }: {
-  imports = [ ./hardware-configuration.nix ./autorandr.nix ];
+  imports = [ ../personal.nix ./hardware-configuration.nix ./autorandr.nix ];
 
   modules = {
     desktop = {
@@ -82,7 +82,6 @@
 
   services.openssh.startWhenNeeded = true;
 
-  boot.loader.systemd-boot.enable = true;
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
