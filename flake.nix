@@ -16,15 +16,14 @@
     nixpkgs.url = "nixpkgs/master";
     nixpkgs-unstable.url = "nixpkgs/master";
 
-    home-manager.url =
-      "github:rycee/home-manager?rev=c1faa848c5224452660cd6d2e0f4bd3e8d206419";
+    home-manager.url = "github:rycee/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    guix.url = "github:emiller88/guix";
-    guix.inputs.nixpkgs.follows = "nixos-unstable";
+    guix.url = "/home/emiller/src/dotfiles/guix";
+    guix.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, home-manager, ... }:
