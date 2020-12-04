@@ -10,13 +10,11 @@
 #   vid2gif some-vid.mp4 output.gif
 #   vid2gif -f 10 -s 00:00:10 -t 00:00:05 some-vid.mp4 output.gif
 
-shift # Get rid of extraneous nix-shell argument
-
 set -e
 PALETTE="/tmp/palette.png"
 
 usage() {
-  cat <<EOL
+	cat <<EOL
 Usage: ${0##*/} [-fsSth] SOURCE_FILE [destfile]
 
     -f [FPS]       set frames per second
@@ -33,33 +31,36 @@ trap cleanup EXIT
 #
 fps=30
 while getopts hf:s:t:S: opt; do
-  case $opt in
-    f) fps="$OPTARG" ;;
-    s) start="-ss $OPTARG" ;;
-    S) scale=",scale=$OPTARG:flags=lanczos" ;;
-    t) duration="-t $OPTARG" ;;
-    h) usage
-       exit
-       ;;
-    :) >&2 echo "$OPTARG requires an argument"
-       usage
-       exit 1
-       ;;
-    *) >&2 echo "Not a valid arg: $opt"
-       usage
-       exit 1
-       ;;
-  esac
+	case $opt in
+	f) fps="$OPTARG" ;;
+	s) start="-ss $OPTARG" ;;
+	S) scale=",scale=$OPTARG:flags=lanczos" ;;
+	t) duration="-t $OPTARG" ;;
+	h)
+		usage
+		exit
+		;;
+	:)
+		echo >&2 "$OPTARG requires an argument"
+		usage
+		exit 1
+		;;
+	*)
+		echo >&2 "Not a valid arg: $opt"
+		usage
+		exit 1
+		;;
+	esac
 done
-shift $((OPTIND-1))
+shift $((OPTIND - 1))
 
 #
 if (($# == 0)); then
-  >&2 echo "No movie file specified"
-  exit
+	echo >&2 "No movie file specified"
+	exit
 elif [[ ! -f $1 ]]; then
-  >&2 echo "$1 does not exist"
-  exit
+	echo >&2 "$1 does not exist"
+	exit
 fi
 
 src="$1"
@@ -68,7 +69,7 @@ flags="fps=${fps}$scale"
 
 # stats_mode=full favors motion, causing the resulting palette to better
 # accomodate fades and transitions.
-ffmpeg -v warning $start $duration -i "$src" -vf "$flags,palettegen=stats_mode=full" -y "$PALETTE"
-ffmpeg -v warning $start $duration -i "$src" -i "$PALETTE" -lavfi "$flags [x]; [x][1:v] paletteuse" -y "$dest"
+ffmpeg -v warning $start $duration -i "file:$src" -vf "$flags,palettegen=stats_mode=full" -y "$PALETTE"
+ffmpeg -v warning $start $duration -i "file:$src" -i "$PALETTE" -lavfi "$flags [x]; [x][1:v] paletteuse" -y "$dest"
 
 gifsicle -O3 "$dest" -o "$dest"
