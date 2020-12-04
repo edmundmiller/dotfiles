@@ -15,7 +15,7 @@ in {
       # I avoid programs.steam.enable because it installs another steam binary,
       # which the xdesktop package invokes, instead of my steam shims below.
       hardware.opengl.enable = true;
-      hardware.opengl.driSupport32Bit  = true;
+      hardware.opengl.driSupport32Bit = true;
       hardware.pulseaudio.support32Bit = config.hardware.pulseaudio.enable;
 
       user.packages = with pkgs; [
@@ -46,8 +46,6 @@ in {
       systemd.extraConfig = "DefaultLimitNOFILE=1048576";
     }
 
-    (mkIf cfg.hardware.enable {
-      hardware.steam-hardware.enable = true;
-    })
+    (mkIf cfg.hardware.enable { hardware.steam-hardware.enable = true; })
   ]);
 }

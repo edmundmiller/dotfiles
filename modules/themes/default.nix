@@ -75,7 +75,7 @@ in {
         # QT4/5 global theme
         "Trolltech.conf".text = ''
           [Qt]
-          ${optionalString (cfg.gtk.theme != "") ''style="${cfg.gtk.theme}"''}
+          ${optionalString (cfg.gtk.theme != "") "style=${cfg.gtk.theme}"}
         '';
       };
     }
