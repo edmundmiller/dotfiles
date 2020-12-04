@@ -28,17 +28,15 @@
 { config, lib, pkgs, ... }:
 
 with lib; {
-  imports = filter pathExists [ "/etc/nixos/configuration.nix" ];
-
   environment.systemPackages = with pkgs; [ inetutils mtr sysstat git ];
 
   modules = {
-    # editors = {
-    #   default = "nvim";
-    #   vim.enable = true;
-    # };
+    editors = {
+      default = "nvim";
+      vim.enable = true;
+    };
     shell = {
-      # git.enable = true;
+      git.enable = true;
       zsh.enable = true;
     };
     services.ssh.enable = true;
@@ -68,8 +66,4 @@ with lib; {
     usePredictableInterfaceNames = false;
     interfaces.eth0.useDHCP = true;
   };
-
-  # This is here to appease 'nix flake check' for generic hosts with no
-  # hardware-configuration.nix or fileSystem config.
-  fileSystems."/".device = "/dev/disk/by-label/nixos";
 }

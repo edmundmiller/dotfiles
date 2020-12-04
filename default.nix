@@ -18,11 +18,11 @@ with inputs; {
   # Configure nix and nixpkgs
   environment.variables.NIXPKGS_ALLOW_UNFREE = "1";
   nix = {
-    package = pkgs.unstable.nixFlakes;
+    package = pkgs.nixFlakes;
     extraOptions = "experimental-features = nix-command flakes";
     nixPath = [
-      "nixpkgs=${nixos}"
-      "nixpkgs-unstable=${nixos-unstable}"
+      "nixpkgs=${nixpkgs}"
+      "nixpkgs-unstable=${nixpkgs-unstable}"
       "nixpkgs-overlays=${dotFilesDir}/overlays"
       "home-manager=${home-manager}"
       "dotfiles=${dotFilesDir}"
@@ -33,9 +33,10 @@ with inputs; {
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
     registry = {
-      nixos.flake = nixos;
-      nixpkgs.flake = nixos-unstable;
+      nixos.flake = nixpkgs;
+      nixpkgs.flake = nixpkgs-unstable;
     };
+    useSandbox = true;
   };
   system.configurationRevision = mkIf (self ? rev) self.rev;
   system.stateVersion = "20.09";
@@ -46,7 +47,7 @@ with inputs; {
   fileSystems."/".device = "/dev/disk/by-label/nixos";
 
   # Use the latest kernel
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_5_9;
 
   boot.loader = {
     efi.canTouchEfiVariables = true;
@@ -56,7 +57,7 @@ with inputs; {
 
   # Just the bear necessities...
   environment.systemPackages = with pkgs; [
-    unstable.cached-nix-shell
+    cached-nix-shell
     coreutils
     git
     vim
