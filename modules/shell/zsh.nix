@@ -46,7 +46,7 @@ in {
       htop
       sd
       tldr
-      ytop
+      bottom
     ];
 
     env = {
