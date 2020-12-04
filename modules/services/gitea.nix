@@ -4,9 +4,7 @@ with lib;
 with lib.my;
 let cfg = config.modules.services.gitea;
 in {
-  options.modules.services.gitea = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.services.gitea = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
     # I prefer git@... ssh addresses over gitea@...

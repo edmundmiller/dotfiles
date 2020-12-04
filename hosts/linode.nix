@@ -33,9 +33,9 @@
 #      swapon /dev/sdb
 #      nix-env -iA nixos.git
 #      nix-env -iA nixos.nixFlakes
-#      mkdir -p /mnt/home/hlissner
-#      git clone https://github.com/hlissner/dotfiles /mnt/home/hlissner/.config/dotfiles
-#      nixos-install --root "$(PREFIX)" --flake /mnt/home/hlissner/.config/dotfiles#linode
+#      mkdir -p /mnt/home/emiller
+#      git clone https://github.com/emiller/dotfiles /mnt/home/emiller/.config/dotfiles
+#      nixos-install --root "$(PREFIX)" --flake /mnt/home/emiller/.config/dotfiles#linode
 #
 # 7. Reboot into "Boot" profile.
 

@@ -8,7 +8,5 @@ in {
     default = mkOpt (with types; nullOr str) null;
   };
 
-  config = mkIf (cfg.default != null) {
-    env.BROWSER = cfg.default;
-  };
+  config = mkIf (cfg.default != null) { env.BROWSER = cfg.default; };
 }

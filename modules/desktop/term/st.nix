@@ -9,9 +9,7 @@ with lib;
 with lib.my;
 let cfg = config.modules.desktop.term.st;
 in {
-  options.modules.desktop.term.st = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.term.st = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
     # xst-256color isn't supported over ssh, so revert to a known one
@@ -20,7 +18,7 @@ in {
     '';
 
     user.packages = with pkgs; [
-      xst  # st + nice-to-have extensions
+      xst # st + nice-to-have extensions
       (makeDesktopItem {
         name = "xst";
         desktopName = "Suckless Terminal";

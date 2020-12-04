@@ -16,12 +16,7 @@ in {
       programs.udevil.enable = true;
 
       # Support for more filesystems, mostly to support external drives
-      environment.systemPackages = with pkgs; [
-        sshfs
-        exfat
-        ntfs3g
-        hfsprogs
-      ];
+      environment.systemPackages = with pkgs; [ sshfs exfat ntfs3g hfsprogs ];
     }
 
     (mkIf (!cfg.zfs.enable && cfg.ssd.enable) {
