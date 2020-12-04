@@ -26,22 +26,10 @@ in {
     # Desktop (X11) theming
     (mkIf config.services.xserver.enable {
       user.packages = with pkgs; [
-        unstable.dracula-theme
+        unstable.ant-dracula-theme
         paper-icon-theme # for rofi
       ];
-      fonts = {
-        fonts = with pkgs; [
-          fira-code
-          fira-code-symbols
-          jetbrains-mono
-          siji
-          font-awesome-ttf
-        ];
-        fontconfig.defaultFonts = {
-          sansSerif = [ "Fira Sans" ];
-          monospace = [ "Fira Code" ];
-        };
-      };
+      fonts.fonts = [ pkgs.jetbrains-mono ];
 
       # Compositor
       services.picom = {
@@ -100,7 +88,7 @@ in {
           # GTK
           "gtk-3.0/settings.ini".text = ''
             [Settings]
-            gtk-theme-name=Dracula
+            gtk-theme-name=Ant-Dracula
             gtk-icon-theme-name=Paper
             gtk-fallback-icon-theme=gnome
             gtk-application-prefer-dark-theme=true
@@ -111,14 +99,14 @@ in {
           '';
           # GTK2 global theme (widget and icon theme)
           "gtk-2.0/gtkrc".text = ''
-            gtk-theme-name="Dracula"
+            gtk-theme-name="Ant-Dracula"
             gtk-icon-theme-name="Paper-Mono-Dark"
             gtk-font-name="Sans 10"
           '';
           # QT4/5 global theme
           "Trolltech.conf".text = ''
             [Qt]
-            style=Dracula'';
+            style=Ant-Dracula'';
         }
         (mkIf m.desktop.bspwm.enable {
           "bspwm/rc.d/polybar".source = ./config/polybar/run.sh;
