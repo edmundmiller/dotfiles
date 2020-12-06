@@ -89,6 +89,11 @@ in {
       mbsync.enable = true;
     };
 
+    # Thanks to sparogy
+    systemd.user.services.mbsync.environment = {
+      "PASSWORD_STORE_DIR" = "$HOME/.secrets/password-store";
+    };
+
     services = {
       mbsync = {
         enable = true;
