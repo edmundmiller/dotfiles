@@ -2,11 +2,11 @@
   "nodes": {
     "emacs-overlay": {
       "locked": {
-        "lastModified": 1607012713,
-        "narHash": "sha256-/cQmq5sumewGdHhQl+sX0OoNzN4qUExEdZmFpiKxhDU=",
+        "lastModified": 1607272343,
+        "narHash": "sha256-vlSuX6yd4Sve4raLul4oqJ2HEXdo5mSaX1Edg3NeZf0=",
         "owner": "nix-community",
         "repo": "emacs-overlay",
-        "rev": "afea1153d011efffd35fec951e8eb65c3a560629",
+        "rev": "260e1552aecb42570ed3d6e74733d7248da1c7c8",
         "type": "github"
       },
       "original": {
@@ -18,66 +18,47 @@
     "guix": {
       "inputs": {
         "nixpkgs": [
-          "nixos-unstable"
+          "nixpkgs-unstable"
         ]
       },
       "locked": {
-        "lastModified": 1607013696,
-        "narHash": "sha256-As8/zqycFUIl1siwTabR3F7ku9J2lNkAFS9EOnbV5BQ=",
-        "owner": "emiller88",
-        "repo": "guix",
-        "rev": "3659a8286f9d1528cef2a3d079294bbbc45d7e9a",
-        "type": "github"
+        "narHash": "sha256-VhF0XuvnQYErKIZHvn+9GV06jbOfJVqy0TqAgNZCCcA=",
+        "path": "/home/emiller/src/dotfiles/guix",
+        "type": "path"
       },
       "original": {
-        "owner": "emiller88",
-        "repo": "guix",
-        "type": "github"
+        "path": "/home/emiller/src/dotfiles/guix",
+        "type": "path"
       }
     },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
-          "nixos-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1606691558,
-        "narHash": "sha256-mkLAmBhiQ7kI7Ezw1ken3ymGolBmEfiO881iFWSGrbg=",
+        "lastModified": 1607156297,
+        "narHash": "sha256-rRu3Nq3oRAaDDgJuNQhH7wD+rQfYoviNhrpqXyOlJjI=",
         "owner": "rycee",
         "repo": "home-manager",
-        "rev": "c1faa848c5224452660cd6d2e0f4bd3e8d206419",
+        "rev": "275d1b52126674764f0f3d15c73c2add511bd310",
         "type": "github"
       },
       "original": {
         "owner": "rycee",
+        "ref": "master",
         "repo": "home-manager",
-        "rev": "c1faa848c5224452660cd6d2e0f4bd3e8d206419",
         "type": "github"
-      }
-    },
-    "nixos": {
-      "locked": {
-        "lastModified": 1606789930,
-        "narHash": "sha256-fIDdUZHX6OnErpv+ZXEM/479z8WKNyNX9ALsHQpjoeA=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "2fbcd0b9df95306199407e36a038d2cc3aa24786",
-        "type": "github"
-      },
-      "original": {
-        "id": "nixpkgs",
-        "ref": "nixos-20.09",
-        "type": "indirect"
       }
     },
     "nixos-hardware": {
       "locked": {
-        "lastModified": 1606843035,
-        "narHash": "sha256-KjfBZWyTzLI8/mGgG1zVK4qIsA853HB/8TYkpZdf/ng=",
+        "lastModified": 1607254103,
+        "narHash": "sha256-oU+aVtY3vIY0hGNUJM5RKdhx6ipuFDdn3farszfys/0=",
         "owner": "nixos",
         "repo": "nixos-hardware",
-        "rev": "025c7a2a7efd9edf341879dbd46988d3a65a76dc",
+        "rev": "87522b29a276a4cab5718e5309aa7d74bc7de75a",
         "type": "github"
       },
       "original": {
@@ -86,18 +67,33 @@
         "type": "github"
       }
     },
-    "nixos-unstable": {
+    "nixpkgs": {
       "locked": {
-        "lastModified": 1606725183,
-        "narHash": "sha256-QIdgDJUnT/Gq8vURmQqy1tTVpI0cWryoD9/auCAkQbE=",
+        "lastModified": 1607289603,
+        "narHash": "sha256-iZrZ3X/F2NYajBBvsd5TnikhPf50p35GNaNhQMJjjNc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "24eb3f87fc610f18de7076aee7c5a84ac5591e3e",
+        "rev": "30526f59a11838a45af8031c90ebf818aa74225e",
         "type": "github"
       },
       "original": {
         "id": "nixpkgs",
-        "ref": "nixos-unstable",
+        "ref": "master",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs-unstable": {
+      "locked": {
+        "lastModified": 1607289603,
+        "narHash": "sha256-iZrZ3X/F2NYajBBvsd5TnikhPf50p35GNaNhQMJjjNc=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "30526f59a11838a45af8031c90ebf818aa74225e",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "master",
         "type": "indirect"
       }
     },
@@ -106,9 +102,9 @@
         "emacs-overlay": "emacs-overlay",
         "guix": "guix",
         "home-manager": "home-manager",
-        "nixos": "nixos",
         "nixos-hardware": "nixos-hardware",
-        "nixos-unstable": "nixos-unstable"
+        "nixpkgs": "nixpkgs",
+        "nixpkgs-unstable": "nixpkgs-unstable"
       }
     }
   },
