@@ -16,9 +16,6 @@
   powerManagement.cpuFreqGovernor = "performance";
   hardware.cpu.amd.updateMicrocode = true;
 
-  ## Mouse
-  services.xserver.libinput.accelProfile = "flat";
-
   ## Monitors
   environment.variables.GDK_SCALE = "2";
   environment.variables.GDK_DPI_SCALE = "0.5";
@@ -93,6 +90,14 @@
   swapDevices = [ ];
 
   services.xserver = {
+    ## Mice
+    inputClassSections = [''
+      Identifier "My Mouse"
+      MatchIsPointer "yes"
+      Option "AccelerationProfile" "-1"
+      Option "AccelerationScheme" "none"
+      Option "AccelSpeed" "-1"
+    ''];
 
     ## Monitors
     monitorSection = ''
