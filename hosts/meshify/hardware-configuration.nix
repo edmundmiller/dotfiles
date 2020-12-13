@@ -35,6 +35,11 @@
     fsType = "zfs";
   };
 
+  fileSystems."/gnu" = {
+    device = "tank/local/guix";
+    fsType = "zfs";
+  };
+
   fileSystems."/var" = {
     device = "tank/system/var";
     fsType = "zfs";
