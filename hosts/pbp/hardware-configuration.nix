@@ -7,12 +7,12 @@
   imports = [
     (modulesPath + "/installer/scan/not-detected.nix")
     (let
-      nixos-hardware = builtins.fetchGit {
+      wip-pinebook-pro = builtins.fetchGit {
         url = "https://github.com/samueldr/wip-pinebook-pro";
         ref = "feature/gfx-u-boot";
         rev = "4fe4f4a45db76a38f1e68c7c86bdb64b8cc457c7";
       };
-    in "${nixos-hardware}/pinebook_pro.nix")
+    in "${wip-pinebook-pro}/pinebook_pro.nix")
   ];
 
   boot.initrd.availableKernelModules = [ "nvme" "usbhid" ];
