@@ -30,23 +30,23 @@
     fsType = "zfs";
   };
 
-  fileSystems."/var" = {
-    device = "tank/system/var";
-    fsType = "zfs";
-  };
-
   fileSystems."/nix" = {
     device = "tank/local/nix";
     fsType = "zfs";
   };
 
-  fileSystems."/home" = {
-    device = "tank/user/home";
+  fileSystems."/var" = {
+    device = "tank/system/var";
+    fsType = "zfs";
+  };
+
+  fileSystems."/home/emiller" = {
+    device = "tank/user/home/emiller";
     fsType = "zfs";
   };
 
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/5216-74C6";
+    device = "/dev/disk/by-uuid/4114-A01F";
     fsType = "vfat";
   };
 }
