@@ -12,7 +12,10 @@
       git.enable = true;
       zsh.enable = true;
     };
-    services.ssh.enable = true;
+    services = {
+      ssh.enable = true;
+      syncthing.enable = true;
+    };
   };
 
   time.timeZone = "America/Chicago";
