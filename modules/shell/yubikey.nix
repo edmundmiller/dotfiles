@@ -15,7 +15,9 @@ in {
     ];
 
     services.udev.packages = [ pkgs.yubikey-personalization pkgs.libu2f-host ];
-    services.pcscd.enable = true;
+    # According to https://github.com/NixOS/nixpkgs/issues/85127
+    # This is no longer necessary
+    # services.pcscd.enable = true;
 
     # FIXME
     environment.shellInit = ''
