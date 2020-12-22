@@ -22,6 +22,22 @@ in {
       python37Packages.setuptools
       python37Packages.pylint
       python37Packages.poetry
+      python37Packages.pytest
+      (python37Packages.buildPythonPackage rec {
+        pname = "pytest-workflow";
+        version = "1.5.0";
+        src = python37Packages.fetchPypi {
+          inherit pname version;
+          sha256 = "sha256-6+ZqR4ljvQQ9N+N38gQtWCVKD8a1ybKE1A0oajA+GkQ=";
+        };
+        nativeBuildInputs = [ python37Packages.twine ];
+        propagatedBuildInputs = [
+          python37Packages.pytest
+          python37Packages.pyyaml
+          python37Packages.jsonschema
+        ];
+        doCheck = false;
+      })
     ];
 
     env.IPYTHONDIR = "$XDG_CONFIG_HOME/ipython";
