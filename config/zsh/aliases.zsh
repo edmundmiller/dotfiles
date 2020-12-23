@@ -28,7 +28,7 @@ take() {
 compdef take=mkdir
 
 zman() {
-	PAGER="less -g -s '+/^       "$1"'" man zshall
+	PAGER="less -g -I -s '+/^       "$1"'" man zshall
 }
 
 r() {
