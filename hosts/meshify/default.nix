@@ -11,9 +11,11 @@
       browsers = {
         default = "firefox";
         firefox.enable = true;
+        nyxt.enable = true;
       };
 
       gaming.steam.enable = true;
+      gaming.steam.hardware.enable = true;
 
       media = {
         documents.enable = true;
@@ -59,17 +61,18 @@
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
+      kubernetes.enable = true;
+      nnn.enable = true;
       pass.enable = true;
       tmux.enable = true;
       zsh.enable = true;
     };
 
     services = {
-      # calibre.enable = true;
       docker.enable = true;
+      guix.enable = true;
       keybase.enable = true;
       mpd.enable = true;
-      # pia.enable = true;
       ssh.enable = true;
       # ssh-agent.enable = true;
       syncthing.enable = true;
