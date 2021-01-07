@@ -8,7 +8,7 @@ in {
 
   config = mkIf cfg.enable {
     services.calibre-server.enable = true;
-    services.calibre-server.libraryDir = "/home/emiller/calibre";
+    services.calibre-server.libraries = [ "/home/emiller/calibre" ];
 
     networking.firewall.allowedTCPPorts = [ 8080 ];
   };
