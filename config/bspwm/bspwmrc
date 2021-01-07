@@ -10,10 +10,6 @@ bspc monitor $MONITOR -d {1,2,3,4,5}
 bspc config remove_disabled_monitors true
 bspc config remove_unplugged_monitors true
 
-nm-applet &
-# TODO pulseaudio -k
-# TODO set keybinding to restart wm
-
 bspc rule -r '*'
 
 bspc rule -a Pinentry state=floating center=on
