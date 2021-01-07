@@ -15,8 +15,6 @@
         firefox.enable = true;
       };
 
-      gaming.steam.enable = true;
-
       media = {
         documents.enable = true;
         graphics.enable = true;
