@@ -7,7 +7,7 @@ in {
   options.modules.services.mpd = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [ mpc_cli ];
+    user.packages = with pkgs; [ mpc_cli ncpamixer ];
 
     user.extraGroups = [ "mpd" ];
 
