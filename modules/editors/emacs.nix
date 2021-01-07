@@ -69,7 +69,7 @@ in {
         exec = "emacsclient %u";
         icon = "emacs";
         mimeType = "x-scheme-handler/org-protocol";
-        categories = "Email";
+        categories = "System";
       })
       # yaml
       nodePackages.yaml-language-server
