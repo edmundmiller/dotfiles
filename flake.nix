@@ -24,6 +24,7 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     guix.url = "/home/emiller/src/dotfiles/guix";
     guix.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    k3s-flake.url = "/home/emiller/src/personal/k3s-flake";
   };
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, home-manager, ... }:
