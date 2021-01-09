@@ -15,7 +15,7 @@
 
   ## CPU
   nix.maxJobs = lib.mkDefault 12;
-  powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
+  powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = true;
 
   ## ZFS
@@ -48,5 +48,10 @@
   fileSystems."/boot" = {
     device = "/dev/disk/by-uuid/4114-A01F";
     fsType = "vfat";
+  };
+
+  fileSystems."/data" = {
+    device = "datatank/nfs";
+    fsType = "zfs";
   };
 }
