@@ -13,6 +13,7 @@
       zsh.enable = true;
     };
     services = {
+      k3s.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
     };

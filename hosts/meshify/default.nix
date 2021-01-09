@@ -61,7 +61,6 @@
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
-      kubernetes.enable = true;
       nnn.enable = true;
       pass.enable = true;
       tmux.enable = true;
