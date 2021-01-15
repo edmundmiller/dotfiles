@@ -1,4 +1,4 @@
-{ config, options, lib, pkgs, ... }:
+{ config, options, lib, pkgs, inputs, ... }:
 
 with lib;
 with lib.my;
@@ -7,7 +7,9 @@ in {
   options.modules.editors.vim = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [ editorconfig-core-c neovim ];
+    nixpkgs.overlays = [ inputs.neovim-nightly-overlay.overlay ];
+
+    user.packages = with pkgs; [ editorconfig-core-c neovim-nightly ];
 
     # env.VIMINIT = "let \\$MYVIMRC='\\$XDG_CONFIG_HOME/nvim/init.vim' | source \\$MYVIMRC";
 

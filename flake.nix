@@ -21,6 +21,7 @@
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
+    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     guix.url = "/home/emiller/src/dotfiles/guix";
     guix.inputs.nixpkgs.follows = "nixpkgs-unstable";
