@@ -2,13 +2,13 @@
 
 with lib;
 with lib.my;
-let system = "x86_64-linux";
+let sys = "x86_64-linux";
 in {
   mkHost = path:
-    attrs@{ system ? system, ... }:
+    attrs@{ system ? sys, ... }:
     nixosSystem {
       inherit system;
-      specialArgs = { inherit lib inputs; };
+      specialArgs = { inherit lib inputs system; };
       modules = [
         {
           nixpkgs.pkgs = pkgs;

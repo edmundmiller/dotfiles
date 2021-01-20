@@ -1,12 +1,11 @@
 { inputs, config, lib, pkgs, ... }:
 
 with lib;
-with lib.my;
-with inputs; {
+with lib.my; {
   imports =
     # I use home-manager to deploy files to $HOME; little else
     [
-      home-manager.nixosModules.home-manager
+      inputs.home-manager.nixosModules.home-manager
     ]
     # All my personal modules
     ++ (mapModulesRec' (toString ./modules) import);
@@ -17,40 +16,37 @@ with inputs; {
 
   # Configure nix and nixpkgs
   environment.variables.NIXPKGS_ALLOW_UNFREE = "1";
-  nix = {
+  nix = let
+    filteredInputs = filterAttrs (n: _: n != "self") inputs;
+    nixPathInputs = mapAttrsToList (n: v: "${n}=${v}") filteredInputs;
+    registryInputs = mapAttrs (_: v: { flake = v; }) filteredInputs;
+  in {
     package = pkgs.nixFlakes;
     extraOptions = "experimental-features = nix-command flakes";
-    nixPath = [
-      "nixpkgs=${nixpkgs}"
-      "nixpkgs-unstable=${nixpkgs-unstable}"
+    nixPath = nixPathInputs ++ [
       "nixpkgs-overlays=${dotFilesDir}/overlays"
-      "home-manager=${home-manager}"
       "dotfiles=${dotFilesDir}"
     ];
-    binaryCaches =
-      [ "https://cache.nixos.org/" "https://nix-community.cachix.org" ];
+    binaryCaches = [ "https://nix-community.cachix.org" ];
     binaryCachePublicKeys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
-    registry = {
-      nixos.flake = nixpkgs;
-      nixpkgs.flake = nixpkgs-unstable;
-    };
+    registry = registryInputs // { dotfiles.flake = inputs.self; };
     useSandbox = true;
   };
-  system.configurationRevision = mkIf (self ? rev) self.rev;
+  system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
   system.stateVersion = "20.09";
 
   ## Some reasonable, global defaults
   # This is here to appease 'nix flake check' for generic hosts with no
   # hardware-configuration.nix or fileSystem config.
-  # fileSystems."/".device = "/dev/disk/by-label/nixos";
+  fileSystems."/".device = mkDefault "/dev/disk/by-label/nixos";
 
   # Use the latest kernel
   boot.kernelPackages = pkgs.linuxPackages_5_9;
 
   boot.loader = {
-    efi.canTouchEfiVariables = true;
+    efi.canTouchEfiVariables = mkDefault true;
     systemd-boot.configurationLimit = 10;
     systemd-boot.enable = mkDefault true;
   };
@@ -63,5 +59,6 @@ with inputs; {
     vim
     wget
     gnumake
+    unzip
   ];
 }

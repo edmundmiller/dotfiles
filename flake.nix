@@ -28,9 +28,8 @@
     k3s-flake.url = "/home/emiller/src/personal/k3s-flake";
   };
 
-  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, home-manager, ... }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, ... }:
     let
-      inherit (lib) attrValues;
       inherit (lib.my) mapModules mapModulesRec mapHosts;
 
       system = "x86_64-linux";
@@ -39,10 +38,10 @@
         import pkgs {
           inherit system;
           config.allowUnfree = true; # forgive me Stallman senpai
-          overlays = extraOverlays ++ (attrValues self.overlays);
+          overlays = extraOverlays ++ (lib.attrValues self.overlays);
         };
       pkgs = mkPkgs nixpkgs [ self.overlay ];
-      uPkgs = mkPkgs nixpkgs-unstable [ ];
+      pkgs' = mkPkgs nixpkgs-unstable [ ];
 
       lib = nixpkgs.lib.extend (self: super: {
         my = import ./lib {
@@ -54,8 +53,8 @@
       lib = lib.my;
 
       overlay = final: prev: {
-        unstable = uPkgs;
-        user = self.packages."${system}";
+        unstable = pkgs';
+        my = self.packages."${system}";
       };
 
       overlays = mapModules ./overlays import;
@@ -66,6 +65,14 @@
         dotfiles = import ./.;
       } // mapModulesRec ./modules import;
 
-      nixosConfigurations = mapHosts ./hosts { inherit system; };
+      nixosConfigurations = mapHosts ./hosts { };
+
+      devShell."${system}" = import ./shell.nix { inherit pkgs; };
+
+      templates.hey = {
+        path = ./.;
+        description = "A grossly incandescent nixos framework";
+      };
+      defaultTemplate = self.templates.hey;
     };
 }
