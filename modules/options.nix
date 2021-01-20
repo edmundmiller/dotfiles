@@ -24,12 +24,15 @@ with lib.my; {
   };
 
   config = {
-    user = {
+    user = let
+      user = builtins.getEnv "USER";
+      name = if elem user [ "" "root" ] then "emiller" else user;
+    in {
+      inherit name;
       description = "The primary user account";
       extraGroups = [ "wheel" ];
       isNormalUser = true;
-      name = let name = builtins.getEnv "USER";
-      in if elem name [ "" "root" ] then "emiller" else name;
+      home = "/home/${name}";
       uid = 1000;
     };
 
