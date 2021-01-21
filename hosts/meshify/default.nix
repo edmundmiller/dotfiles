@@ -1,4 +1,4 @@
-{ ... }: {
+{ lib, ... }: {
   imports = [ ../personal.nix ./hardware-configuration.nix ];
 
   modules = {
@@ -93,11 +93,8 @@
   services.xserver.dpi = 192;
   fonts.fontconfig.hinting.enable = false;
 
-  # ZFS
-  boot.supportedFilesystems = [ "zfs" ];
-  boot.loader.grub.copyKernels = true;
-  services.zfs.autoScrub.enable = true;
-  services.zfs.trim.enable = true;
+  # znapzend
+  systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
     autoCreation = true;
@@ -105,7 +102,10 @@
       "tank/user/home" = {
         plan = "1d=>1h,1m=>1d,1y=>1m";
         recursive = true;
-        destinations.local = { dataset = "bigdata/backup"; };
+        destinations.remote = {
+          host = "unas";
+          dataset = "datatank/backup/meshify";
+        };
       };
     };
   };

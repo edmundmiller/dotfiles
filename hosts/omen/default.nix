@@ -1,6 +1,6 @@
 # Omen -- my laptop
 
-{ ... }: {
+{ lib, ... }: {
   imports = [ ../personal.nix ./hardware-configuration.nix ./autorandr.nix ];
 
   modules = {
@@ -85,4 +85,20 @@
   time.timeZone = "America/Chicago";
 
   services.picom.backend = "xr_glx_hybrid";
+
+  systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
+  services.znapzend = {
+    enable = true;
+    autoCreation = true;
+    zetup = {
+      "tank/user/home" = {
+        plan = "1d=>1h,1m=>1d,1y=>1m";
+        recursive = true;
+        destinations.remote = {
+          host = "unas";
+          dataset = "datatank/backup/omen";
+        };
+      };
+    };
+  };
 }
