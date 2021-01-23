@@ -93,12 +93,22 @@
   swapDevices =
     [{ device = "/dev/disk/by-uuid/bd5404de-c7bb-46c9-b78a-36a8e17d77ac"; }];
 
-  services.xserver.xrandrHeads = [{
-    output = "DP-0";
-    primary = true;
-    monitorConfig = ''
-      DisplaySize 1920 1080
-      Option "dpi" "110"
+  services.xserver = {
+    ## Monitors
+    monitorSection = ''
+      VendorName     "Unknown"
+      ModelName      "CMN"
+      HorizSync       45.3 - 67.9
+      VertRefresh     40.0 - 60.0
+      Option         "DPMS"
     '';
-  }];
+    screenSection = ''
+      Option         "Stereo" "0"
+      Option         "nvidiaXineramaInfoOrder" "DFP-1"
+      Option         "metamodes" "nvidia-auto-select +0+0"
+      Option         "SLI" "Off"
+      Option         "MultiGPU" "Off"
+      Option         "BaseMosaic" "off"
+    '';
+  };
 }
