@@ -22,16 +22,15 @@ in {
         shell.zsh.rcFiles = [ ./config/zsh/prompt.zsh ];
         shell.tmux.rcFiles = [ ./config/tmux.conf ];
         desktop.browsers = {
-          firefox.userChrome = concatMapStringsSep "\n" readFile
-            [ ./config/firefox/userChrome.css ];
-          qutebrowser.userStyles = concatMapStringsSep "\n" toCSSFile [
-            ./config/userstyles/qutebrowser/github.scss
-            ./config/userstyles/qutebrowser/monospace-textareas.scss
-            ./config/userstyles/qutebrowser/quora.scss
-            ./config/userstyles/qutebrowser/stackoverflow.scss
-            ./config/userstyles/qutebrowser/xkcd.scss
-            ./config/userstyles/qutebrowser/youtube.scss
+          firefox.userChrome = concatMapStringsSep "\n" readFile [
+            ./config/firefox/userChrome.css
           ];
+          qutebrowser.userStyles = concatMapStringsSep "\n" readFile
+            (map toCSSFile [
+              ./config/qutebrowser/userstyles/monospace-textareas.scss
+              ./config/qutebrowser/userstyles/stackoverflow.scss
+              ./config/qutebrowser/userstyles/xkcd.scss
+            ]);
         };
       };
     }
