@@ -3,19 +3,19 @@
 with builtins;
 with lib; {
   toCSSFile = file:
-    let
-      fileName = baseNameOf file;
-      compiledStyles =
-        pkgs.runCommand "compileScssFile" { buildInputs = [ pkgs.sass ]; } ''
-          mkdir "$out"
-          scss --sourcemap=none \
-               --no-cache \
-               --style compressed \
-               --default-encoding utf-8 \
-               "${file}" \
-               >>"$out/${fileName}.css"
-        '';
-    in "${compiledStyles}/${fileName}";
+    let fileName = removeSuffix ".scss" (baseNameOf file);
+        compiledStyles =
+          pkgs.runCommand "compileScssFile"
+            { buildInputs = [ pkgs.sass ]; } ''
+              mkdir "$out"
+              scss --sourcemap=none \
+                   --no-cache \
+                   --style compressed \
+                   --default-encoding utf-8 \
+                   "${file}" \
+                   >>"$out/${fileName}.css"
+            '';
+    in "${compiledStyles}/${fileName}.css";
 
   toFilteredImage = imageFile: options:
     let
