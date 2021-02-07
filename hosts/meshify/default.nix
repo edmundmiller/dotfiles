@@ -11,6 +11,7 @@
       browsers = {
         default = "firefox";
         firefox.enable = true;
+        qutebrowser.enable = true;
         nyxt.enable = true;
       };
 
