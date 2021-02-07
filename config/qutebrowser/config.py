@@ -2,153 +2,65 @@ import os
 import glob
 
 ## Per-domain settings
-c.content.user_stylesheets = glob.glob(
-    os.path.expanduser("~/.config/qutebrowser/css/*.css")
-)
+c.content.user_stylesheets = glob.glob(os.path.expanduser('~/.local/share/qutebrowser/userstyles.css'))
 
 
 ## General config
 # c.confirm_quit = ['never']
-c.editor.command = ["emacsclient", "-c", "-a", " ", "+{line}:{column}", "{}"]
+c.editor.command = ['emacsclient', '-c', '-a', ' ', '+{line}:{column}', '{}']
 
-## Colors
-# c.colors.completion.category.fg = 'white'
-c.colors.completion.category.bg = "#343537"
-# c.colors.completion.category.border.bottom = 'black'
-c.colors.completion.category.border.top = "#343537"
-# c.colors.completion.fg = 'white'
-c.colors.completion.even.bg = "#141517"
-c.colors.completion.odd.bg = c.colors.completion.even.bg
-c.colors.completion.item.selected.fg = "white"
-c.colors.completion.item.selected.bg = "#545557"
-# c.colors.completion.item.selected.border.bottom = '#bbbb00'
-c.colors.completion.item.selected.border.top = "#545557"
-c.colors.completion.match.fg = "#b5bd68"
-c.colors.completion.scrollbar.fg = "#c678dd"
-c.colors.completion.scrollbar.bg = c.colors.completion.category.bg
-# c.colors.downloads.bar.bg = 'black'
-# c.colors.downloads.error.bg = 'red'
-# c.colors.downloads.error.fg = 'white'
-# c.colors.downloads.start.bg = '#0000aa'
-# c.colors.downloads.start.fg = 'white'
-# c.colors.downloads.stop.bg = '#00aa00'
-# c.colors.downloads.stop.fg = 'white'
-# c.colors.downloads.system.bg = 'rgb'
-# c.colors.downloads.system.fg = 'rgb'
 
-c.colors.hints.bg = "#18191b"
-c.colors.hints.fg = "#ffffff"
-c.colors.hints.match.fg = "#b5bd68"
-
-# c.colors.keyhint.fg = '#FFFFFF'
-# c.colors.keyhint.bg = 'rgba(0, 0, 0, 80%)'
-# c.colors.keyhint.suffix.fg = '#FFFF00'
-
-# c.colors.messages.error.fg = 'white'
-# c.colors.messages.error.bg = 'red'
-# c.colors.messages.error.border = '#bb0000'
-
-# c.colors.messages.info.fg = 'white'
-# c.colors.messages.info.bg = 'black'
-# c.colors.messages.info.border = '#333333'
-
-# c.colors.messages.warning.fg = 'white'
-# c.colors.messages.warning.bg = 'darkorange'
-# c.colors.messages.warning.border = '#d47300'
-
-# c.colors.prompts.bg = '#444444'
-# c.colors.prompts.fg = 'white'
-# c.colors.prompts.selected.bg = 'grey'
-# c.colors.prompts.border = '1px solid gray'
-
-# c.colors.statusbar.caret.bg = 'purple'
-# c.colors.statusbar.caret.fg = 'white'
-# c.colors.statusbar.caret.selection.bg = '#a12dff'
-# c.colors.statusbar.caret.selection.fg = 'white'
-c.colors.statusbar.command.bg = "#1a1b1d"
-# c.colors.statusbar.command.fg = 'white'
-# c.colors.statusbar.command.private.bg = 'grey'
-# c.colors.statusbar.command.private.fg = 'white'
-c.colors.statusbar.normal.bg = "#1a1b1d"
-# c.colors.statusbar.normal.fg = 'white'
-c.colors.statusbar.insert.bg = "darkgreen"
-# c.colors.statusbar.insert.fg = 'white'
-c.colors.statusbar.private.bg = "#2a8fed"
-# c.colors.statusbar.private.fg = 'white'
-# c.colors.statusbar.progress.bg = 'white'
-# c.colors.statusbar.url.fg = 'white'
-c.colors.statusbar.url.success.http.fg = "#b5bd68"
-c.colors.statusbar.url.success.https.fg = "#bc77a8"
-c.colors.statusbar.url.error.fg = "#cc6666"
-c.colors.statusbar.url.warn.fg = "#f0c674"
-c.colors.statusbar.url.hover.fg = "#8abeb7"
-
-c.colors.tabs.even.bg = c.colors.statusbar.command.bg
-c.colors.tabs.even.fg = "white"
-c.colors.tabs.odd.bg = c.colors.statusbar.command.bg
-c.colors.tabs.odd.fg = "white"
-c.colors.tabs.selected.even.bg = "#38393b"
-c.colors.tabs.selected.even.fg = c.colors.statusbar.command.fg
-c.colors.tabs.selected.odd.bg = c.colors.tabs.selected.even.bg
-c.colors.tabs.selected.odd.fg = c.colors.tabs.selected.even.fg
-c.colors.tabs.indicator.error = "#da8548"
-c.colors.tabs.indicator.start = "#c678dd"
-c.colors.tabs.indicator.stop = "#51afef"
-# c.colors.tabs.indicator.system = 'rgb'
-# c.colors.webpage.bg = 'white'
-
-c.completion.height = "30%"
-c.completion.web_history.max_items = 1500
-# c.completion.cmd_history_max_items = 100
-# c.completion.quick = True
-c.completion.scrollbar.padding = 0
-c.completion.scrollbar.width = 6
-# c.completion.show = 'always'
-# c.completion.shrink = False
-# c.completion.timestamp_format = '%Y-%m-%d'
-# c.completion.web_history.max_items = -1
+# c.completion.height = '30%'
+# c.completion.web_history.max_items = 1500
+# # c.completion.cmd_history_max_items = 100
+# # c.completion.quick = True
+# c.completion.scrollbar.padding = 0
+# c.completion.scrollbar.width = 6
+# # c.completion.show = 'always'
+# # c.completion.shrink = False
+# # c.completion.timestamp_format = '%Y-%m-%d'
+# # c.completion.web_history.max_items = -1
 
 # c.content.notifications = False  # unavailable on QtWebEngine
-c.content.mute = True  # mute tabs by default
-c.content.autoplay = False  # don't autoplay videos
-c.content.default_encoding = "utf-8"
+c.content.mute = True        # mute tabs by default
+c.content.autoplay = False   # don't autoplay videos
+c.content.default_encoding = 'utf-8'
 # c.content.developer_extras = True
 c.content.javascript.enabled = True
 c.content.local_storage = True
 c.content.plugins = True
 c.content.host_blocking.lists = [
-    "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
-    "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&mimetype=plaintext"
+    'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',
+    'https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&mimetype=plaintext'
     # 'https://www.malwaredomainlist.com/hostslist/hosts.txt',
     # 'http://someonewhocares.org/hosts/hosts',
     # 'http://winhelp2002.mvps.org/hosts.zip',
     # 'http://malwaredomains.lehigh.edu/files/justdomains.zip',
 ]
-c.content.host_blocking.lists.append(str(config.configdir) + "/blockedHosts")
 c.content.host_blocking.whitelist = []
 
-c.downloads.position = "bottom"
-c.downloads.location.directory = os.path.expanduser("~/Downloads")
+c.downloads.position = 'bottom'
+c.downloads.location.directory = os.path.expanduser("~/dl")
 c.downloads.location.prompt = False
 # c.downloads.location.remember = True
 # c.downloads.location.suggestion = 'path'
 # c.downloads.open_dispatcher = None
 
-c.editor.encoding = "utf-8"
+c.editor.encoding = 'utf-8'
 
-c.fonts.completion.category = "bold 8pt monospace"
-c.fonts.completion.entry = "8pt monospace"
-c.fonts.debug_console = "8pt monospace"
-c.fonts.downloads = "8pt monospace"
-c.fonts.hints = "bold 10pt monospace"
-c.fonts.keyhint = "8pt monospace"
-c.fonts.messages.error = "8pt monospace"
-c.fonts.messages.info = "8pt monospace"
-c.fonts.messages.warning = "8pt monospace"
+c.fonts.completion.category = 'bold 8pt monospace'
+c.fonts.completion.entry = '8pt monospace'
+c.fonts.debug_console = '8pt monospace'
+c.fonts.downloads = '8pt monospace'
+c.fonts.hints = 'bold 10pt monospace'
+c.fonts.keyhint = '8pt monospace'
+c.fonts.messages.error = '8pt monospace'
+c.fonts.messages.info = '8pt monospace'
+c.fonts.messages.warning = '8pt monospace'
 # c.fonts.monospace = '"xos4 Terminus", Terminus, Monospace, "DejaVu Sans Mono", Monaco, "Bitstream Vera Sans Mono", "Andale Mono", "Courier New", Courier, "Liberation Mono", monospace, Fixed, Consolas, Terminal'
-c.fonts.prompts = "8pt sans-serif"
-c.fonts.statusbar = "8pt monospace"
-c.fonts.tabs = "8pt monospace"
+c.fonts.prompts = '8pt sans-serif'
+c.fonts.statusbar = '8pt monospace'
+# c.fonts.tabs = '8pt monospace'
 # c.fonts.web.family.cursive = ''
 # c.fonts.web.family.fantasy = ''
 # c.fonts.web.family.fixed = ''
@@ -162,7 +74,7 @@ c.fonts.tabs = "8pt monospace"
 
 # c.hints.auto_follow = 'unique-match'
 # c.hints.auto_follow_timeout = 0
-c.hints.border = "6px solid #18191b"
+# c.hints.border = '6px solid #18191b'
 # c.hints.chars = 'asdfghjkl'
 # c.hints.dictionary = '/usr/share/dict/words'
 # c.hints.find_implementation = 'python'
@@ -190,29 +102,27 @@ c.input.insert_mode.auto_load = False
 # c.keyhint.delay = 500
 # c.messages.timeout = 2000
 # c.messages.unfocused = False
-c.new_instance_open_target = "tab-silent"
+c.new_instance_open_target = 'tab-silent'
 # c.new_instance_open_target_window = 'last-focused'
 c.prompt.filebrowser = False
 c.prompt.radius = 0
 # c.qt.args = []
-# TODO Only on meshify
-c.qt.highdpi = True
 # c.qt.force_platform = None
 # c.qt.force_software_rendering = False
-c.scrolling.bar = "when-searching"
+c.scrolling.bar = 'when-searching'
 c.scrolling.smooth = False
 # c.session_default_name = None
-c.spellcheck.languages = ["en-US"]
+c.spellcheck.languages = ['en-US']
 c.session.lazy_restore = False
 
-c.statusbar.padding = {"top": 4, "bottom": 4, "left": 4, "right": 4}
+# c.statusbar.padding = {'top': 4, 'bottom': 4, 'left': 4, 'right': 4}
 # c.statusbar.hide = False
 # c.statusbar.position = 'bottom'
 
-c.tabs.background = True
-c.tabs.padding = {"top": 4, "bottom": 4, "left": 0, "right": 3}
-c.tabs.indicator.padding = {"top": 0, "bottom": 0, "left": 0, "right": 5}
-c.tabs.mousewheel_switching = False
+# c.tabs.background = True
+# c.tabs.padding = {'top': 4, 'bottom': 4, 'left': 0, 'right': 3}
+# c.tabs.indicator.padding = {'top': 0, 'bottom': 0, 'left': 0, 'right': 5}
+# c.tabs.mousewheel_switching = False
 # c.tabs.close_mouse_button = 'middle'
 # c.tabs.favicons.scale = 1.0
 # c.tabs.favicons.show = True
@@ -221,9 +131,9 @@ c.tabs.mousewheel_switching = False
 # c.tabs.new_position.unrelated = 'last'
 # c.tabs.position = 'top'
 # c.tabs.select_on_remove = 'next'
-c.tabs.show = "multiple"
-c.tabs.title.format = "{current_title} - {host}"
-c.tabs.title.format_pinned = ""
+c.tabs.show = 'multiple'
+c.tabs.title.format = '{current_title} - {host}'
+c.tabs.title.format_pinned = ''
 c.tabs.indicator.width = 1
 # c.tabs.wrap = True
 
@@ -235,7 +145,7 @@ c.tabs.indicator.width = 1
 # c.url.yank_ignored_parameters = ['ref', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
 
 # c.window.hide_wayland_decoration = False
-c.window.title_format = "{current_title} - {host} - qutebrowser"
+c.window.title_format = '{current_title} - {host} - qutebrowser'
 
 # c.zoom.default = '100%'
 # c.zoom.levels = ['25%', '33%', '50%', '67%', '75%', '90%', '100%', '110%', '125%', '150%', '175%', '200%', '250%', '300%', '400%', '500%']
@@ -248,20 +158,15 @@ c.window.title_format = "{current_title} - {host} - qutebrowser"
 
 
 ## Keybindings
-config.bind("zz", "close")
-config.bind(";m", "tab-mute")
-config.bind(";v", "spawn mpv {url}")
-config.bind(";V", "hint links spawn mpv {hint-url}")
+config.bind('zz', 'close')
+config.bind(';m', 'tab-mute')
+config.bind(';v', 'spawn mpv {url}')
+config.bind(';V', 'hint links spawn mpv {hint-url}')
 
 # Universal Emacsien C-g alias for Escape
-config.bind("<Ctrl-g>", "clear-keychain ;; search ;; fullscreen --leave")
-for mode in ["caret", "command", "hint", "insert", "passthrough", "prompt", "register"]:
-    config.bind("<Ctrl-g>", "leave-mode", mode=mode)
-
-config.bind(
-    "<Ctrl-r>",
-    "spawn bash -c 'emacsclient \"org-protocol://roam-ref?template=r&ref={url:pretty}&title={title}\" '",
-)
+config.bind('<Ctrl-g>', 'clear-keychain ;; search ;; fullscreen --leave')
+for mode in ['caret', 'command', 'hint', 'insert', 'passthrough', 'prompt', 'register']:
+    config.bind('<Ctrl-g>', 'leave-mode', mode=mode)
 
 ## Bindings for normal mode
 # config.bind("'", 'enter-mode jump_mark')
@@ -459,8 +364,8 @@ config.bind(
 # config.bind('<Ctrl-D>', 'completion-item-del', mode='command')
 # config.bind('<Ctrl-E>', 'rl-end-of-line', mode='command')
 # config.bind('<Ctrl-F>', 'rl-forward-char', mode='command')
-config.bind("<Ctrl-B>", "rl-backward-word", mode="command")
-config.bind("<Ctrl-F>", "rl-forward-word", mode="command")
+config.bind('<Ctrl-B>', 'rl-backward-word', mode='command')
+config.bind('<Ctrl-F>', 'rl-forward-word', mode='command')
 # config.bind('<Ctrl-H>', 'rl-backward-delete-char', mode='command')
 # config.bind('<Ctrl-K>', 'rl-kill-line', mode='command')
 # config.bind('<Ctrl-N>', 'command-history-next', mode='command')
@@ -486,7 +391,7 @@ config.bind("<Ctrl-F>", "rl-forward-word", mode="command")
 # config.bind('<Return>', 'follow-hint', mode='hint')
 
 ## Bindings for insert mode
-config.bind("<Ctrl-E>", "open-editor", mode="insert")
+# config.bind('<Ctrl-E>', 'open-editor', mode='insert')
 # config.bind('<Escape>', 'leave-mode', mode='insert')
 # config.bind('<Shift-Ins>', 'insert-text {primary}', mode='insert')
 
@@ -503,8 +408,8 @@ config.bind("<Ctrl-E>", "open-editor", mode="insert")
 # config.bind('<Ctrl-B>', 'rl-backward-char', mode='prompt')
 # config.bind('<Ctrl-E>', 'rl-end-of-line', mode='prompt')
 # config.bind('<Ctrl-F>', 'rl-forward-char', mode='prompt')
-config.bind("<Ctrl-B>", "rl-backward-word", mode="prompt")
-config.bind("<Ctrl-F>", "rl-forward-word", mode="prompt")
+config.bind('<Ctrl-B>', 'rl-backward-word', mode='prompt')
+config.bind('<Ctrl-F>', 'rl-forward-word', mode='prompt')
 # config.bind('<Ctrl-H>', 'rl-backward-delete-char', mode='prompt')
 # config.bind('<Ctrl-K>', 'rl-kill-line', mode='prompt')
 # config.bind('<Ctrl-U>', 'rl-unix-line-discard', mode='prompt')
@@ -522,3 +427,16 @@ config.bind("<Ctrl-F>", "rl-forward-word", mode="prompt")
 
 ## Bindings for register mode
 # config.bind('<Escape>', 'leave-mode', mode='register')
+
+
+## Load theme
+# NixOS symlinks screw up python module scope for this file, so we must load
+# extra config files manually -- if they exists.
+for path in glob.glob(os.path.expanduser('~/.config/qutebrowser/extra/*.py')):
+    try:
+        f = open(path)
+        exec(compile(f.read(), path, 'exec'))
+        theme_init(c)
+        f.close()
+    except IOError:
+        pass

@@ -6,9 +6,9 @@ with lib; {
     let
       fileName = baseNameOf file;
       compiledStyles =
-        pkgs.runCommand "compileScssFile" { buildInputs = [ sass ]; } ''
+        pkgs.runCommand "compileScssFile" { buildInputs = [ pkgs.sass ]; } ''
           mkdir "$out"
-          scss --sourcekkmap=none \
+          scss --sourcemap=none \
                --no-cache \
                --style compressed \
                --default-encoding utf-8 \
