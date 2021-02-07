@@ -24,11 +24,12 @@ in {
         desktop.browsers = {
           firefox.userChrome = concatMapStringsSep "\n" readFile
             [ ./config/firefox/userChrome.css ];
-          qutebrowser.userStyles = concatMapStringsSep "\n" toCSSFile [
-              ./config/qutebrowser/userstyles/monospace-textareas.scss
-              ./config/qutebrowser/userstyles/stackoverflow.scss
-              ./config/qutebrowser/userstyles/xkcd.scss
-          ];
+          # qutebrowser.userStyles = concatMapStringsSep "\n" readFile
+          #   (map toCSSFile [
+          #     ./config/qutebrowser/userstyles/monospace-textareas.scss
+          #     ./config/qutebrowser/userstyles/stackoverflow.scss
+          #     ./config/qutebrowser/userstyles/xkcd.scss
+          #   ]);
         };
       };
     }
