@@ -9,6 +9,7 @@
 
       apps.rofi.enable = true;
       apps.discord.enable = true;
+      apps.evolution.enable = true;
 
       browsers = {
         default = "firefox";
