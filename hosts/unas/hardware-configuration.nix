@@ -54,4 +54,23 @@
     device = "datatank/nfs";
     fsType = "zfs";
   };
+
+  ## NAS
+  fileSystems."/data/media/music" = {
+    device = "datatank/nfs/media/music";
+    fsType = "zfs";
+  };
+
+  fileSystems."/srv/nfs/music" = {
+    device = "/data/media/music";
+    options = [ "bind" ];
+  };
+
+  networking.firewall.allowedTCPPorts = [ 2049 ];
+  services.nfs.server = {
+    enable = true;
+    exports = ''
+      /srv/nfs/music         *(rw,nohide,insecure,no_subtree_check)
+    '';
+  };
 }

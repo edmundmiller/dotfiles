@@ -62,8 +62,12 @@
   };
 
   fileSystems."/data/media/music" = {
-    device = "bigdata/media/music";
-    fsType = "zfs";
+    device = "unas:/srv/nfs/music";
+    fsType = "nfs";
+      options = [
+        "nofail" "noauto" "noatime" "x-systemd.automount" "x-systemd.idle-timeout=5min"
+        "nodev" "nosuid" "noexec"
+      ];
   };
 
   fileSystems."/data/media/shows" = {
