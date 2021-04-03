@@ -32,10 +32,10 @@ with lib.my; {
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
     registry = registryInputs // { dotfiles.flake = inputs.self; };
-    useSandbox = true;
+    autoOptimiseStore = true;
   };
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
-  system.stateVersion = "20.09";
+  system.stateVersion = "21.05";
 
   ## Some reasonable, global defaults
   # This is here to appease 'nix flake check' for generic hosts with no
@@ -53,6 +53,7 @@ with lib.my; {
 
   # Just the bear necessities...
   environment.systemPackages = with pkgs; [
+    bind
     cached-nix-shell
     coreutils
     git
