@@ -115,6 +115,13 @@ config.bind('<Ctrl-g>', 'clear-keychain ;; search ;; fullscreen --leave')
 for mode in ['caret', 'command', 'hint', 'insert', 'passthrough', 'prompt', 'register']:
     config.bind('<Ctrl-g>', 'leave-mode', mode=mode)
 
+# Bitwarden integration
+config.bind(";pp", 'spawn -u qute-bwmenu')
+config.bind(";pu", 'spawn -u qute-bwmenu --field username')
+config.bind(";ps", 'spawn -u qute-bwmenu --field password')
+config.bind(";po", 'spawn -u qute-bwmenu --field otp')
+config.bind(";pl", 'spawn -u qute-bwmenu --last')
+
 ## Bindings for normal mode
 # config.bind("'", 'enter-mode jump_mark')
 # config.bind('+', 'zoom-in')
