@@ -1,5 +1,5 @@
 { lib, ... }: {
-  imports = [ ../personal.nix ./hardware-configuration.nix ];
+  imports = [ ../home.nix ./hardware-configuration.nix ];
 
   modules = {
     desktop = {
