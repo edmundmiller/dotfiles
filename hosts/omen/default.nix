@@ -1,7 +1,7 @@
 # Omen -- my laptop
 
 { lib, ... }: {
-  imports = [ ../personal.nix ./hardware-configuration.nix ./autorandr.nix ];
+  imports = [ ../home.nix ./hardware-configuration.nix ./autorandr.nix ];
 
   modules = {
     desktop = {
