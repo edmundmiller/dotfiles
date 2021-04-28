@@ -1,6 +1,6 @@
 # Omen -- my laptop
 
-{ lib, ... }: {
+{ lib, pkgs, ... }: {
   imports = [ ../home.nix ./hardware-configuration.nix ./autorandr.nix ];
 
   modules = {
@@ -98,6 +98,8 @@
         destinations.remote = {
           host = "unas";
           dataset = "datatank/backup/omen";
+          postsend =
+            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/d010df93-2a9b-4051-89ff-a3319ca91b9b";
         };
       };
     };
