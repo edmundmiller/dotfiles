@@ -15,29 +15,13 @@ in {
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       conda
-      python37
-      python37Packages.pip
-      python37Packages.ipython
-      python37Packages.black
-      python37Packages.setuptools
-      python37Packages.pylint
-      python37Packages.poetry
-      python37Packages.pytest
-      (python37Packages.buildPythonPackage rec {
-        pname = "pytest-workflow";
-        version = "1.5.0";
-        src = python37Packages.fetchPypi {
-          inherit pname version;
-          sha256 = "sha256-6+ZqR4ljvQQ9N+N38gQtWCVKD8a1ybKE1A0oajA+GkQ=";
-        };
-        nativeBuildInputs = [ python37Packages.twine ];
-        propagatedBuildInputs = [
-          python37Packages.pytest
-          python37Packages.pyyaml
-          python37Packages.jsonschema
-        ];
-        doCheck = false;
-      })
+      python3
+      python3Packages.pip
+      python3Packages.ipython
+      python3Packages.black
+      python3Packages.setuptools
+      python3Packages.pylint
+      python3Packages.poetry
     ];
 
     env.IPYTHONDIR = "$XDG_CONFIG_HOME/ipython";
