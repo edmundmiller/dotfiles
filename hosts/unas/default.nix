@@ -13,7 +13,8 @@
       zsh.enable = true;
     };
     services = {
-      k3s.enable = true;
+      docker.enable = true;
+      jellyfin.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
     };
