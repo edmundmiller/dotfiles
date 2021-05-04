@@ -8,6 +8,7 @@
       apps.rofi.enable = true;
       apps.discord.enable = true;
       apps.evolution.enable = true;
+      apps.weechat.enable = true;
 
       browsers = {
         default = "firefox";
