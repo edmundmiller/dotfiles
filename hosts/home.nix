@@ -20,4 +20,7 @@ with lib; {
     longitude = -96.752;
   } else
     { });
+
+  # So the bitwarden CLI knows where to find my server.
+  modules.shell.bitwarden.config.server = "bitwarden.com";
 }
