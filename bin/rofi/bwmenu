@@ -1,5 +1,4 @@
 #!/usr/bin/env cached-nix-shell
-# coding: utf-8
 #! nix-shell -p ruby_2_7 -i "ruby -S"
 
 # A rofi client for bitwarden. Similar to passmenu, but uses rofi. (Badly)
