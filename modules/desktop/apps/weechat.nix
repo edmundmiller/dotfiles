@@ -2,15 +2,21 @@
 
 with lib;
 with lib.my;
-let cfg = config.modules.desktop.apps.weechat;
+let
+  cfg = config.modules.desktop.apps.weechat;
+  weechat = pkgs.wrapWeechat pkgs.weechat-unwrapped {
+    configure = { availablePlugins, ... }: {
+      scripts = with pkgs; [
+        weechatScripts.colorize_nicks
+        weechatScripts.multiline
+        weechatScripts.wee-slack
+        weechatScripts.weechat-notify-send
+        weechatScripts.weechat-autosort
+      ];
+    };
+  };
 in {
   options.modules.desktop.apps.weechat = { enable = mkBoolOpt false; };
 
-  config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      # If not installed from unstable, Weechat will sometimes soft-lock itself
-      # on a "there's an update for weechat" screen.
-      weechat
-    ];
-  };
+  config = mkIf cfg.enable { user.packages = with pkgs; [ weechat ]; };
 }
