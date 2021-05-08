@@ -21,4 +21,8 @@
   };
 
   time.timeZone = "America/Chicago";
+
+  users.users.moni = {
+      isNormalUser = true;
+  };
 }
