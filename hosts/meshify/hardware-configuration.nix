@@ -55,12 +55,6 @@
     fsType = "vfat";
   };
 
-  ## Harddrives
-  fileSystems."/data/media/movies" = {
-    device = "bigdata/media/movies";
-    fsType = "zfs";
-  };
-
   fileSystems."/data/media/music" = {
     device = "unas:/srv/nfs/music";
     fsType = "nfs";
@@ -68,36 +62,6 @@
         "nofail" "noauto" "noatime" "x-systemd.automount" "x-systemd.idle-timeout=5min"
         "nodev" "nosuid" "noexec"
       ];
-  };
-
-  fileSystems."/data/media/shows" = {
-    device = "bigdata/media/shows";
-    fsType = "zfs";
-  };
-
-  fileSystems."/data/media/torrents" = {
-    device = "bigdata/media/torrents";
-    fsType = "zfs";
-  };
-
-  fileSystems."/data/archive" = {
-    device = "bigdata/archive";
-    fsType = "zfs";
-  };
-
-  fileSystems."/data/mail" = {
-    device = "bigdata/mail";
-    fsType = "zfs";
-  };
-
-  fileSystems."/data/genomics" = {
-    device = "bigdata/genomics";
-    fsType = "zfs";
-  };
-
-  fileSystems."/data/media/books" = {
-    device = "bigdata/media/books";
-    fsType = "zfs";
   };
 
   swapDevices = [ ];
