@@ -1,7 +1,7 @@
 # No u nas
 
 { ... }: {
-  imports = [ ../home.nix ./hardware-configuration.nix ];
+  imports = [ ../home.nix ./hardware-configuration.nix ./nas.nix ];
 
   modules = {
     editors = {
