@@ -41,7 +41,7 @@ in {
             type = deviceType [ "meshify" ];
             enable = deviceEnabled devices;
             versioning.type = "simple";
-            versioning.params.keep = "5";
+            versioning.params.keep = "2";
           };
           elfeed = rec {
             devices = [ "meshify" "omen" "unas" ];
