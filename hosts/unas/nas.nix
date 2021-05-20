@@ -43,6 +43,11 @@
     options = [ "bind" ];
   };
 
+  fileSystems."/data/backup/moni" = {
+    device = "datatank/backup/moni";
+    fsType = "zfs";
+  };
+
   fileSystems."/data/media/music" = {
     device = "datatank/nfs/media/music";
     fsType = "zfs";
