@@ -40,4 +40,22 @@
       };
     };
   };
+
+  services.restic.backups = {
+    localsyncbackup = {
+      initialize = true;
+      passwordFile = "/home/emiller/.secrets/restic";
+      paths = [ "/home/emiller/sync" ];
+      repository = "/data/backup/emiller/sync";
+      user = "emiller";
+    };
+    localarchivebackup = {
+      initialize = true;
+      passwordFile = "/home/emiller/.secrets/restic";
+      paths = [ "/home/emiller/archive" ];
+      repository = "/data/backup/emiller/archive";
+      user = "emiller";
+      timerConfig.OnCalendar = "monthly";
+    };
+  };
 }
