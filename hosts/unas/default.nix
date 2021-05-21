@@ -42,20 +42,27 @@
   };
 
   services.restic.backups = {
-    localsyncbackup = {
+    local-sync-backup = {
       initialize = true;
       passwordFile = "/home/emiller/.secrets/restic";
       paths = [ "/home/emiller/sync" ];
       repository = "/data/backup/emiller/sync";
       user = "emiller";
     };
-    localarchivebackup = {
+    local-archive-backup = {
       initialize = true;
       passwordFile = "/home/emiller/.secrets/restic";
       paths = [ "/home/emiller/archive" ];
       repository = "/data/backup/emiller/archive";
       user = "emiller";
       timerConfig.OnCalendar = "monthly";
+    };
+    gdrive-sync-backup = {
+      initialize = true;
+      passwordFile = "/home/emiller/.secrets/restic";
+      paths = [ "/home/emiller/sync" ];
+      repository = "rclone:gdrive:/sync";
+      user = "emiller";
     };
   };
 }
