@@ -1,7 +1,8 @@
 # No u nas
 
 { lib, pkgs, ... }: {
-  imports = [ ../home.nix ./hardware-configuration.nix ./nas.nix ];
+  imports =
+    [ ../home.nix ./hardware-configuration.nix ./backups.nix ./nas.nix ];
 
   modules = {
     editors = {
@@ -38,31 +39,6 @@
             "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/ccb26fbc-95af-45bb-b4e6-38da23db6893";
         };
       };
-    };
-  };
-
-  services.restic.backups = {
-    local-sync-backup = {
-      initialize = true;
-      passwordFile = "/home/emiller/.secrets/restic";
-      paths = [ "/home/emiller/sync" ];
-      repository = "/data/backup/emiller/sync";
-      user = "emiller";
-    };
-    local-archive-backup = {
-      initialize = true;
-      passwordFile = "/home/emiller/.secrets/restic";
-      paths = [ "/home/emiller/archive" ];
-      repository = "/data/backup/emiller/archive";
-      user = "emiller";
-      timerConfig.OnCalendar = "monthly";
-    };
-    gdrive-sync-backup = {
-      initialize = true;
-      passwordFile = "/home/emiller/.secrets/restic";
-      paths = [ "/home/emiller/sync" ];
-      repository = "rclone:gdrive:/sync";
-      user = "emiller";
     };
   };
 }
