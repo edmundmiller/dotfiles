@@ -40,6 +40,10 @@ in {
           HostName mz.utdallas.edu
           User eam150030
 
+      Host sysbio
+          HostName sysbio.utdallas.edu
+          User eam150030
+
       Host zhanggpu?
           HostName %h.utdallas.edu
           User eam150030
