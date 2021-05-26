@@ -86,3 +86,4 @@ alias ydl-aac='youtube-dl --extract-audio --audio-format aac'
 alias ydl-m4a='youtube-dl --extract-audio --audio-format m4a'
 alias ddg=duckduckgo
 alias bt=transmission-remote
+alias tb="nc termbin.com 9999"
