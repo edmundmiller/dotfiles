@@ -10,9 +10,10 @@ in {
     user.packages = with pkgs; [
       # If not installed from unstable, Discord will sometimes soft-lock itself
       # on a "there's an update for discord" screen.
-      # unstable.discord
+      unstable.discord
       teams
       slack
+      unstable.element-desktop
     ];
   };
 }
