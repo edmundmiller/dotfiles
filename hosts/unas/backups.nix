@@ -8,6 +8,10 @@
       paths = [ "/home/emiller/sync" ];
       repository = "/data/backup/emiller/sync";
       user = "emiller";
+      timerConfig = {
+        OnBootSec = "10min";
+        OnUnitActiveSec = "1d";
+      };
     };
     local-archive-backup = {
       initialize = true;
@@ -15,6 +19,10 @@
       paths = [ "/home/emiller/archive" ];
       repository = "/data/backup/emiller/archive";
       user = "emiller";
+      timerConfig = {
+        OnBootSec = "10min";
+        OnUnitActiveSec = "1d";
+      };
     };
     gdrive-sync-backup = {
       initialize = true;
@@ -22,6 +30,10 @@
       paths = [ "/home/emiller/sync" ];
       repository = "rclone:gdrive:/sync";
       user = "emiller";
+      timerConfig = {
+        OnBootSec = "10min";
+        OnUnitActiveSec = "1d";
+      };
     };
   };
 
