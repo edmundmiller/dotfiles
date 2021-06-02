@@ -16,7 +16,6 @@ alias path='echo -e ${PATH//:/\\n}'
 alias ports='netstat -tulanp'
 
 alias mk=make
-alias rcp='rsync -vaP --delete'
 alias rmirror='rsync -rtvu --delete'
 alias gurl='curl --compressed'
 
