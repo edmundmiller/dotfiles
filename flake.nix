@@ -13,7 +13,7 @@
   inputs = {
     # Core dependencies.
     # Two inputs so I can track them separately at different rates.
-    nixpkgs.url = "nixpkgs/master";
+    nixpkgs.url = "nixpkgs/nixos-21.05";
     nixpkgs-unstable.url = "nixpkgs/master";
 
     home-manager.url = "github:rycee/home-manager/master";
