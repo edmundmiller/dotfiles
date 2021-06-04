@@ -39,7 +39,7 @@ in {
     user.packages = with pkgs; [ editorconfig-core-c vscode-with-extensions ];
 
     # For Liveshare
-    services.gnome3.gnome-keyring.enable = true;
+    services.gnome.gnome-keyring.enable = true;
     programs.seahorse.enable = true;
   };
 }
