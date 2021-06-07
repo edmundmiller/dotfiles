@@ -35,6 +35,17 @@
         OnUnitActiveSec = "1d";
       };
     };
+    B2-sync-backup = {
+      initialize = true;
+      passwordFile = "/home/emiller/.secrets/restic";
+      paths = [ "/home/emiller/sync" ];
+      repository = "rclone:B2:sync-restic/";
+      user = "emiller";
+      timerConfig = {
+        OnBootSec = "10min";
+        OnUnitActiveSec = "1d";
+      };
+    };
   };
 
   systemd.services.restic-backups-local-sync-backup.postStop =
