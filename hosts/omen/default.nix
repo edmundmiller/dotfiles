@@ -98,6 +98,8 @@
         destinations.remote = {
           host = "unas";
           dataset = "datatank/backup/omen";
+          presend =
+            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/d010df93-2a9b-4051-89ff-a3319ca91b9b/start";
           postsend =
             "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/d010df93-2a9b-4051-89ff-a3319ca91b9b";
         };
