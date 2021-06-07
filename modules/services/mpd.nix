@@ -11,7 +11,13 @@ in {
 
     user.extraGroups = [ "mpd" ];
 
-    home-manager.users.${config.user.name}.programs.beets.enable = true;
+    home-manager.users.${config.user.name}.programs.beets = {
+      enable = true;
+      settings = {
+        plugins = "missing convert duplicates";
+        asciify_paths = "yes";
+      };
+    };
 
     environment.variables.MPD_HOME = "$XDG_CONFIG_HOME/mpd";
 
