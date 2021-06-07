@@ -109,6 +109,8 @@
         destinations.remote = {
           host = "unas";
           dataset = "datatank/backup/meshify";
+          presend =
+            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/9568367d-ab78-46e8-8301-82a3c61b9595/start";
           postsend =
             "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/9568367d-ab78-46e8-8301-82a3c61b9595";
         };
