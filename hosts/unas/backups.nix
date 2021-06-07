@@ -1,6 +1,12 @@
 { config, lib, pkgs, ... }:
 
-{
+let
+  restic-backups-local-sync-backup-id = "09ae3517-b710-4a3e-ae68-16fe45f3697f";
+  restic-backups-local-archive-backup-id =
+    "773d889a-0ee4-42f7-98c8-7a106874a116";
+  restic-backups-gdrive-sync-backup-id = "bfae5213-4fd4-4700-86e5-3ad6f9a7f62e";
+  restic-backups-B2-sync-backup-id = "422804e7-53c3-4d8b-b02b-2816b1bf3905";
+in {
   services.restic.backups = {
     local-sync-backup = {
       initialize = true;
@@ -48,12 +54,32 @@
     };
   };
 
-  systemd.services.restic-backups-local-sync-backup.postStop =
-    "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/09ae3517-b710-4a3e-ae68-16fe45f3697f";
+  # TODO Generalize
+  systemd.services.restic-backups-local-sync-backup = {
+    preStart =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-sync-backup-id}/start";
+    postStop =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-sync-backup-id}/$EXIT_STATUS";
+  };
 
-  systemd.services.restic-backups-local-archive-backup.postStop =
-    "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/773d889a-0ee4-42f7-98c8-7a106874a116";
+  systemd.services.restic-backups-local-archive-backup = {
+    preStart =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-archive-backup-id}/start";
+    postStop =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-archive-backup-id}/$EXIT_STATUS";
+  };
 
-  systemd.services.restic-backups-gdrive-sync-backup.postStop =
-    "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/bfae5213-4fd4-4700-86e5-3ad6f9a7f62e";
+  systemd.services.restic-backups-gdrive-sync-backup = {
+    preStart =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-gdrive-sync-backup-id}/start";
+    postStop =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-gdrive-sync-backup-id}/$EXIT_STATUS";
+  };
+
+  systemd.services.restic-backups-B2-sync-backup = {
+    preStart =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-B2-sync-backup-id}/start";
+    postStop =
+      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-B2-sync-backup-id}/$EXIT_STATUS";
+  };
 }
