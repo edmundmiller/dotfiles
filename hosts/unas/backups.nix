@@ -9,28 +9,28 @@ let
   restic-backups-B2-archive-backup-id = "b0f29a55-12d3-4f87-a081-5564a223b4d5";
 in {
   services.restic.backups = {
-    local-sync-backup = {
-      initialize = true;
-      passwordFile = "/home/emiller/.secrets/restic";
-      paths = [ "/home/emiller/sync" ];
-      repository = "/data/backup/emiller/sync";
-      user = "emiller";
-      timerConfig = {
-        OnBootSec = "10min";
-        OnUnitActiveSec = "1d";
-      };
-    };
-    local-archive-backup = {
-      initialize = true;
-      passwordFile = "/home/emiller/.secrets/restic";
-      paths = [ "/home/emiller/archive" ];
-      repository = "/data/backup/emiller/archive";
-      user = "emiller";
-      timerConfig = {
-        OnBootSec = "10min";
-        OnUnitActiveSec = "1d";
-      };
-    };
+    # local-sync-backup = {
+    #   initialize = true;
+    #   passwordFile = "/home/emiller/.secrets/restic";
+    #   paths = [ "/home/emiller/sync" ];
+    #   repository = "/data/backup/emiller/sync";
+    #   user = "emiller";
+    #   timerConfig = {
+    #     OnBootSec = "10min";
+    #     OnUnitActiveSec = "1d";
+    #   };
+    # };
+    # local-archive-backup = {
+    #   initialize = true;
+    #   passwordFile = "/home/emiller/.secrets/restic";
+    #   paths = [ "/home/emiller/archive" ];
+    #   repository = "/data/backup/emiller/archive";
+    #   user = "emiller";
+    #   timerConfig = {
+    #     OnBootSec = "10min";
+    #     OnUnitActiveSec = "1d";
+    #   };
+    # };
     gdrive-sync-backup = {
       initialize = true;
       passwordFile = "/home/emiller/.secrets/restic";
@@ -67,19 +67,19 @@ in {
   };
 
   # TODO Generalize
-  systemd.services.restic-backups-local-sync-backup = {
-    preStart =
-      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-sync-backup-id}/start";
-    postStop =
-      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-sync-backup-id}/$EXIT_STATUS";
-  };
+  # systemd.services.restic-backups-local-sync-backup = {
+  #   preStart =
+  #     "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-sync-backup-id}/start";
+  #   postStop =
+  #     "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-sync-backup-id}/$EXIT_STATUS";
+  # };
 
-  systemd.services.restic-backups-local-archive-backup = {
-    preStart =
-      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-archive-backup-id}/start";
-    postStop =
-      "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-archive-backup-id}/$EXIT_STATUS";
-  };
+  # systemd.services.restic-backups-local-archive-backup = {
+  #   preStart =
+  #     "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-archive-backup-id}/start";
+  #   postStop =
+  #     "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backups-local-archive-backup-id}/$EXIT_STATUS";
+  # };
 
   systemd.services.restic-backups-gdrive-sync-backup = {
     preStart =
