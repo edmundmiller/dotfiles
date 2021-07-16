@@ -50,8 +50,8 @@
     fsType = "vfat";
   };
 
-  fileSystems."/data/backup" = {
-    device = "/dev/disk/by-uuid/073c18c1-cb35-439c-94a6-5b49524fd978";
-    options = [ "nosuid" "nodev" "nofail" "x-gvfs-show" ];
-  };
+  # fileSystems."/data/backup" = {
+  #   device = "/dev/disk/by-uuid/073c18c1-cb35-439c-94a6-5b49524fd978";
+  #   options = [ "nosuid" "nodev" "nofail" "x-gvfs-show" ];
+  # };
 }
