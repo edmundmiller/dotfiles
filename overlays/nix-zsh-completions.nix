@@ -1,6 +1,5 @@
-self: super:
-{
-    nix-zsh-completions = super.nix-zsh-completions.overrideAttrs (old: {
+self: super: {
+  nix-zsh-completions = super.nix-zsh-completions.overrideAttrs (old: {
     src = super.fetchFromGitHub {
       owner = "Ma27";
       repo = "nix-zsh-completions";
