@@ -47,6 +47,7 @@ in {
       sd
       tldr
       bottom
+      pueue
     ];
 
     env = {
