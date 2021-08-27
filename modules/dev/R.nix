@@ -21,10 +21,6 @@ let
       # knitr
       rmarkdown
       knitr
-
-      # Bioinformatics
-      DESeq2
-      pheatmap
     ];
   };
 in {
@@ -37,5 +33,6 @@ in {
       texlive.combined.scheme-full
       pandoc
     ];
+    environment.variables.R_PROFILE = "$XDG_CONFIG_HOME/R/Rprofile";
   };
 }
