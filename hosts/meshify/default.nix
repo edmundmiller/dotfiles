@@ -35,6 +35,7 @@
 
     editors = {
       default = "nvim";
+      code.enable = true;
       emacs.enable = true;
       vim.enable = true;
     };
@@ -51,7 +52,7 @@
     };
     dev = {
       cc.enable = true;
-      clojure.enable = true;
+      # clojure.enable = true;
       common-lisp.enable = true;
       nixlang.enable = true;
       node.enable = true;
@@ -73,12 +74,13 @@
 
     services = {
       docker.enable = true;
-      guix.enable = true;
+      # guix.enable = true;
       keybase.enable = true;
       mpd.enable = true;
       ssh.enable = true;
       # ssh-agent.enable = true;
       syncthing.enable = true;
+      tailscale.enable = true;
       transmission.enable = true;
     };
 
