@@ -55,13 +55,20 @@
     fsType = "vfat";
   };
 
+  # TODO Check out https://github.com/Mic92/dotfiles/blob/master/nixos/modules/nfs-dl.nix
   fileSystems."/data/media/music" = {
     device = "unas:/srv/nfs/music";
     fsType = "nfs";
-      options = [
-        "nofail" "noauto" "noatime" "x-systemd.automount" "x-systemd.idle-timeout=5min"
-        "nodev" "nosuid" "noexec"
-      ];
+    options = [
+      "nofail"
+      "noauto"
+      "noatime"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=5min"
+      "nodev"
+      "nosuid"
+      "noexec"
+    ];
   };
 
   swapDevices = [ ];
