@@ -62,7 +62,7 @@ visualizer_in_stereo = no
 ## synchronization problems, set it to lower value.
 ## Keep in mind that sane values start with >=10.
 ##
-visualizer_sync_interval = 30
+# visualizer_sync_interval = 30
 
 ##
 ## Note: To enable spectrum frequency visualization
