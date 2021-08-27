@@ -29,14 +29,15 @@ let
     version = "0.3.0";
     sha256 = "sha256-XLyGG8KoXaMhtbbY3V1r63B/4WFOV2horp184hV74dI=";
   }];
-  vscode-with-extensions =
-    pkgs.vscode-with-extensions.override { vscodeExtensions = extensions; };
+  vscode-with-extensions = pkgs.unstable.vscode-with-extensions.override {
+    vscodeExtensions = extensions;
+  };
 in {
   options.modules.editors.code = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
 
-    user.packages = with pkgs; [ editorconfig-core-c vscode-with-extensions ];
+    user.packages = with pkgs; [ editorconfig-core-c unstable.vscode-fhs ];
 
     # For Liveshare
     services.gnome.gnome-keyring.enable = true;
