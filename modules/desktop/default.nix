@@ -41,6 +41,7 @@ in {
         ubuntu_font_family
         dejavu_fonts
         fira
+        jetbrains-mono
         symbola
         noto-fonts
         noto-fonts-cjk
