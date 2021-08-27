@@ -15,29 +15,29 @@
 <span><img src="/../screenshots/fluorescence/tiling.png" height="178" /></span>
 </p>
 
-------
+---
 
-| | |
-|-|-|
-| **Shell:** | zsh + zgen |
-| **DM:** | lightdm + lightdm-mini-greeter |
-| **WM:** | bspwm + polybar |
-| **Editor:** | [Doom Emacs][doom-emacs] (and occasionally [vim]) |
-| **Terminal:** | st |
-| **Launcher:** | rofi |
-| **Browser:** | firefox |
+|                |                                                          |
+| -------------- | -------------------------------------------------------- |
+| **Shell:**     | zsh + zgen                                               |
+| **DM:**        | lightdm + lightdm-mini-greeter                           |
+| **WM:**        | bspwm + polybar                                          |
+| **Editor:**    | [Doom Emacs][doom-emacs] (and occasionally [vim])        |
+| **Terminal:**  | st                                                       |
+| **Launcher:**  | rofi                                                     |
+| **Browser:**   | firefox                                                  |
 | **GTK Theme:** | [Ant Dracula](https://github.com/EliverLara/Ant-Dracula) |
 
------
+---
 
 ## Quick start
 
 1. Yoink [NixOS 20.09][nixos] (must be newer than Sept 12, 2020 for `nixos-install --flake`).
 2. Boot into the installer.
 3. Do your partitions and mount your root to `/mnt`
-4. `git clone https://github.com/hlissner/dotfiles /etc/nixos`
+4. `git clone https://github.com/emiller88/dotfiles /etc/nixos`
 5. Install NixOS: `nixos-install --root /mnt --flake #XYZ`, where `XYZ` is your
-   hostname.  Use `#generic` for a simple, universal config.
+   hostname. Use `#generic` for a simple, universal config.
 6. OPTIONAL: Create a sub-directory in `hosts/` for your device. See [host/kuro]
    as an example.
 7. Reboot!
@@ -47,7 +47,7 @@
 And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO-An4)
 
 | Command           | Description                                                     |
-|-------------------|-----------------------------------------------------------------|
+| ----------------- | --------------------------------------------------------------- |
 | `hey rebuild`     | Rebuild this flake (shortcut: `hey re`)                         |
 | `hey upgrade`     | Update flake lockfile and switch to it (shortcut: `hey up`)     |
 | `hey rollback`    | Roll back to previous system generation                         |
@@ -58,22 +58,20 @@ And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO
 
 ## Frequently asked questions
 
-+ **How do I change the default username?**
+- **How do I change the default username?**
 
-  1. Set `USER` the first time you run `nixos-install`: `USER=myusername
-     nixos-install --root /mnt --flake #XYZ`
+  1. Set `USER` the first time you run `nixos-install`: `USER=myusername nixos-install --root /mnt --flake #XYZ`
   2. Or change `"hlissner"` in modules/options.nix.
 
-+ **How do I "set up my partitions"?**
+- **How do I "set up my partitions"?**
 
   My main host [has a README](hosts/kuro/README.org) you can use as a reference.
   I set up an EFI+GPT system and partitions with `parted` and `zfs`.
-  
-+ **How 2 flakes?**
+
+- **How 2 flakes?**
 
   It wouldn't be the NixOS experience if I gave you all the answers in one,
   convenient place.
-
 
 [doom-emacs]: https://github.com/hlissner/doom-emacs
 [vim]: https://github.com/hlissner/.vim
