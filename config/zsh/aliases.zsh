@@ -86,3 +86,4 @@ alias ydl-m4a='youtube-dl --extract-audio --audio-format m4a'
 alias ddg=duckduckgo
 alias bt=transmission-remote
 alias tb="nc termbin.com 9999"
+alias nf-core="docker run -itv `pwd`:`pwd` -w `pwd` -u $(id -u):$(id -g) nfcore/tools"
