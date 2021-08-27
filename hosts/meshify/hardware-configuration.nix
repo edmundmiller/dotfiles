@@ -94,7 +94,7 @@
     screenSection = ''
       Option         "Stereo" "0"
       Option         "nvidiaXineramaInfoOrder" "DFP-3"
-      Option         "metamodes" "DP-2: nvidia-auto-select +3840+0, DP-0: nvidia-auto-select +0+0"
+      Option         "metamodes" "DP-2: nvidia-auto-select +2160+840, DP-0: nvidia-auto-select +0+0 {rotation=left}"
       Option         "SLI" "Off"
       Option         "MultiGPU" "Off"
       Option         "BaseMosaic" "off"
