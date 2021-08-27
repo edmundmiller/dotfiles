@@ -26,7 +26,7 @@
 
   users.users.moni = { isNormalUser = true; };
 
-  systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
+  # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
     autoCreation = true;
