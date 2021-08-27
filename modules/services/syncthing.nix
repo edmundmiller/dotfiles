@@ -25,6 +25,8 @@ in {
             "UVAV55V-PAYJHDA-RDLKIGA-PTIKJAZ-7BWJHDW-TMKLGX7-RPYNTFR-LRNKKQC";
           meshify.id =
             "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
+          pbp.id =
+            "PQNQ54X-4WQ32AV-2TWQI4N-KF64EKW-FRFEVAL-WCONWOY-V4BK4PB-JYQGZQO"; # Set up externally
           unas.id =
             "QRDMQKL-RX4PO5I-2VM3SBA-42G3PVX-ZGGRDYU-P3C3AFN-OKLOVK4-BXRJAAN";
         };
@@ -44,15 +46,15 @@ in {
             versioning.params.keep = "2";
           };
           elfeed = rec {
-            devices = [ "meshify" "omen" "unas" ];
+            devices = [ "meshify" "omen" "unas" "pbp" ];
             path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
             watch = false;
             rescanInterval = 3600 * 6;
-            type = deviceType [ "meshify" "omen" ];
+            type = deviceType [ "meshify" "omen" "pbp" ];
             enable = deviceEnabled devices;
           };
           sync = rec {
-            devices = [ "omen" "oneplus" "meshify" "unas" ];
+            devices = [ "omen" "oneplus" "meshify" "unas" "pbp" ];
             path = "/home/${config.user.name}/sync";
             watch = true;
             rescanInterval = 3600 * 6;
@@ -68,11 +70,11 @@ in {
             enable = deviceEnabled devices;
           };
           secrets = rec {
-            devices = [ "omen" "oneplus" "meshify" "unas" ];
+            devices = [ "omen" "oneplus" "meshify" "unas" "pbp" ];
             path = "/home/${config.user.name}/.secrets";
             watch = true;
             rescanInterval = 3600;
-            type = deviceType [ "meshify" "omen" ];
+            type = deviceType [ "meshify" "omen" "pbp" ];
             enable = deviceEnabled devices;
           };
         };
