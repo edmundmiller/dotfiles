@@ -5,36 +5,44 @@ import glob
 config.load_autoconfig()
 
 ## General config
-c.content.default_encoding = 'utf-8'
+c.content.default_encoding = "utf-8"
 c.content.javascript.enabled = True
 c.content.local_storage = True
 c.content.plugins = True
 
 # c.confirm_quit = ['never']
-c.editor.command = ['emacsclient', '-c', '-a', ' ', '+{line}:{column}', '{}']
+c.editor.command = ["emacsclient", "-c", "-a", " ", "+{line}:{column}", "{}"]
 
 ## Security & privacy
-c.content.mute = True        # mute tabs by default
-c.content.autoplay = False   # don't autoplay videos
+c.content.mute = True  # mute tabs by default
+c.content.autoplay = False  # don't autoplay videos
 
 ## Adblocking
 # Use (superior) Brave adblock if available; fall back to host blocking
-c.content.blocking.method = "auto"
+c.content.blocking.method = "both"
+
 c.content.blocking.hosts.lists = [
-    'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',
-    'https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&mimetype=plaintext'
+    "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+    "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&mimetype=plaintext"
     # 'https://www.malwaredomainlist.com/hostslist/hosts.txt',
     # 'http://someonewhocares.org/hosts/hosts',
     # 'http://winhelp2002.mvps.org/hosts.zip',
     # 'http://malwaredomains.lehigh.edu/files/justdomains.zip',
 ]
+c.content.blocking.hosts.lists.append(str(config.configdir) + "/blockedHosts")
 # c.content.blocking.whitelist = []
+c.qt.highdpi = True
 
-c.downloads.position = 'bottom'
+config.bind(
+    "<Ctrl-r>",
+    "spawn bash -c 'emacsclient \"org-protocol://roam-ref?template=r&ref={url:pretty}&title={title}\" '",
+)
+
+c.downloads.position = "bottom"
 c.downloads.location.directory = os.path.expanduser("~/dl")
 c.downloads.location.prompt = False
 
-c.editor.encoding = 'utf-8'
+c.editor.encoding = "utf-8"
 
 
 ## Options
@@ -52,7 +60,7 @@ c.input.insert_mode.auto_load = False
 # c.keyhint.delay = 500
 # c.messages.timeout = 2000
 # c.messages.unfocused = False
-c.new_instance_open_target = 'tab-silent'
+c.new_instance_open_target = "tab-silent"
 # c.new_instance_open_target_window = 'last-focused'
 c.prompt.filebrowser = False
 c.prompt.radius = 0
@@ -61,7 +69,7 @@ c.prompt.radius = 0
 # c.qt.force_software_rendering = False
 c.scrolling.smooth = False
 # c.session_default_name = None
-c.spellcheck.languages = ['en-US']
+c.spellcheck.languages = ["en-US"]
 c.session.lazy_restore = False
 
 # c.statusbar.padding = {'top': 4, 'bottom': 4, 'left': 4, 'right': 4}
@@ -80,9 +88,9 @@ c.session.lazy_restore = False
 # c.tabs.new_position.unrelated = 'last'
 # c.tabs.position = 'top'
 # c.tabs.select_on_remove = 'next'
-c.tabs.show = 'multiple'
-c.tabs.title.format = '{current_title} - {host}'
-c.tabs.title.format_pinned = ''
+c.tabs.show = "multiple"
+c.tabs.title.format = "{current_title} - {host}"
+c.tabs.title.format_pinned = ""
 c.tabs.indicator.width = 1
 # c.tabs.wrap = True
 
@@ -94,7 +102,7 @@ c.tabs.indicator.width = 1
 # c.url.yank_ignored_parameters = ['ref', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
 
 # c.window.hide_wayland_decoration = False
-c.window.title_format = '{current_title} - {host} - qutebrowser'
+c.window.title_format = "{current_title} - {host} - qutebrowser"
 
 # c.zoom.default = '100%'
 # c.zoom.levels = ['25%', '33%', '50%', '67%', '75%', '90%', '100%', '110%', '125%', '150%', '175%', '200%', '250%', '300%', '400%', '500%']
@@ -105,22 +113,22 @@ c.window.title_format = '{current_title} - {host} - qutebrowser'
 #
 ## Keybindings
 
-config.bind('zz', 'close')
-config.bind(';m', 'tab-mute')
-config.bind(';v', 'spawn mpv {url}')
-config.bind(';V', 'hint links spawn mpv {hint-url}')
+config.bind("zz", "close")
+config.bind(";m", "tab-mute")
+config.bind(";v", "spawn mpv {url}")
+config.bind(";V", "hint links spawn mpv {hint-url}")
 
 # Universal Emacsien C-g alias for Escape
-config.bind('<Ctrl-g>', 'clear-keychain ;; search ;; fullscreen --leave')
-for mode in ['caret', 'command', 'hint', 'insert', 'passthrough', 'prompt', 'register']:
-    config.bind('<Ctrl-g>', 'leave-mode', mode=mode)
+config.bind("<Ctrl-g>", "clear-keychain ;; search ;; fullscreen --leave")
+for mode in ["caret", "command", "hint", "insert", "passthrough", "prompt", "register"]:
+    config.bind("<Ctrl-g>", "leave-mode", mode=mode)
 
 # Bitwarden integration
-config.bind(";pp", 'spawn -u qute-bwmenu')
-config.bind(";pu", 'spawn -u qute-bwmenu --field username')
-config.bind(";ps", 'spawn -u qute-bwmenu --field password')
-config.bind(";po", 'spawn -u qute-bwmenu --field otp')
-config.bind(";pl", 'spawn -u qute-bwmenu --last')
+config.bind(";pp", "spawn -u qute-bwmenu")
+config.bind(";pu", "spawn -u qute-bwmenu --field username")
+config.bind(";ps", "spawn -u qute-bwmenu --field password")
+config.bind(";po", "spawn -u qute-bwmenu --field otp")
+config.bind(";pl", "spawn -u qute-bwmenu --last")
 
 ## Bindings for normal mode
 # config.bind("'", 'enter-mode jump_mark')
@@ -318,8 +326,8 @@ config.bind(";pl", 'spawn -u qute-bwmenu --last')
 # config.bind('<Ctrl-D>', 'completion-item-del', mode='command')
 # config.bind('<Ctrl-E>', 'rl-end-of-line', mode='command')
 # config.bind('<Ctrl-F>', 'rl-forward-char', mode='command')
-config.bind('<Ctrl-B>', 'rl-backward-word', mode='command')
-config.bind('<Ctrl-F>', 'rl-forward-word', mode='command')
+config.bind("<Ctrl-B>", "rl-backward-word", mode="command")
+config.bind("<Ctrl-F>", "rl-forward-word", mode="command")
 # config.bind('<Ctrl-H>', 'rl-backward-delete-char', mode='command')
 # config.bind('<Ctrl-K>', 'rl-kill-line', mode='command')
 # config.bind('<Ctrl-N>', 'command-history-next', mode='command')
@@ -362,8 +370,8 @@ config.bind('<Ctrl-F>', 'rl-forward-word', mode='command')
 # config.bind('<Ctrl-B>', 'rl-backward-char', mode='prompt')
 # config.bind('<Ctrl-E>', 'rl-end-of-line', mode='prompt')
 # config.bind('<Ctrl-F>', 'rl-forward-char', mode='prompt')
-config.bind('<Ctrl-B>', 'rl-backward-word', mode='prompt')
-config.bind('<Ctrl-F>', 'rl-forward-word', mode='prompt')
+config.bind("<Ctrl-B>", "rl-backward-word", mode="prompt")
+config.bind("<Ctrl-F>", "rl-forward-word", mode="prompt")
 # config.bind('<Ctrl-H>', 'rl-backward-delete-char', mode='prompt')
 # config.bind('<Ctrl-K>', 'rl-kill-line', mode='prompt')
 # config.bind('<Ctrl-U>', 'rl-unix-line-discard', mode='prompt')
@@ -386,9 +394,11 @@ config.bind('<Ctrl-F>', 'rl-forward-word', mode='prompt')
 # c.aliases["m"] = ":tab-mute"
 
 ## Per-domain settings
-c.content.user_stylesheets = glob.glob(os.path.expanduser('~/.local/share/qutebrowser/userstyles.css'))
+c.content.user_stylesheets = glob.glob(
+    os.path.expanduser("~/.local/share/qutebrowser/userstyles.css")
+)
 
 
 ## Load theme
-for path in glob.glob(os.path.expanduser('~/.config/qutebrowser/extra/*.py')):
+for path in glob.glob(os.path.expanduser("~/.config/qutebrowser/extra/*.py")):
     config.source(path)
