@@ -19,12 +19,14 @@
       minio.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
+      tailscale.enable = true;
     };
   };
 
   time.timeZone = "America/Chicago";
 
   users.users.moni = { isNormalUser = true; };
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
