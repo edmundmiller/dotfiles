@@ -99,6 +99,9 @@
   services.xserver.dpi = 192;
   fonts.fontconfig.hinting.enable = false;
 
+  networking.extraHosts =
+    "192.168.1.150 functioned.dev homer.functioned.dev jellyfin.functioned.dev jackett.functioned.dev qb.functioned.dev sonarr.functioned.dev radarr.functioned.dev prowlarr.functioned.dev lidarr.functioned.dev readarr.functioned.dev ceph.functioned.dev paperless.functioned.dev calibre.functioned.dev";
+
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
