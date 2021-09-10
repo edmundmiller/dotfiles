@@ -16,7 +16,7 @@ in {
       clojure-lsp
       clj-kondo
       leiningen
-      user.firn
+      my.firn
     ];
   };
 }
