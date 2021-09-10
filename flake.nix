@@ -53,7 +53,7 @@
 
       overlay = final: prev: {
         unstable = pkgs';
-        user = self.packages."${system}";
+        my = self.packages."${system}";
       };
 
       overlays = mapModules ./overlays import;
