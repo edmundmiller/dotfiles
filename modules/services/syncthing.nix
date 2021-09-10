@@ -61,6 +61,13 @@ in {
           rescanInterval = 3600 * 6;
           type = deviceType [ "meshify" "omen" "pbp" "xps" ];
           enable = deviceEnabled devices;
+          versioning = {
+            type = "staggered";
+            params = {
+              cleanInterval = "3600";
+              maxAge = "15768000";
+            };
+          };
         };
         src = rec {
           devices = [ "omen" "meshify" "unas" ];
