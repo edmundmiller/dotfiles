@@ -5,6 +5,17 @@ with lib.my; {
   options = with types; {
     user = mkOpt attrs { };
 
+    dotfiles = {
+      dir = mkOpt path (findFirst pathExists (toString ../.) [
+        "${config.user.home}/.config/dotfiles"
+        "/etc/dotfiles"
+      ]);
+      binDir = mkOpt path "${config.dotfiles.dir}/bin";
+      configDir = mkOpt path "${config.dotfiles.dir}/config";
+      modulesDir = mkOpt path "${config.dotfiles.dir}/modules";
+      themesDir = mkOpt path "${config.dotfiles.modulesDir}/themes";
+    };
+
     home = {
       file = mkOpt' attrs { } "Files to place directly in $HOME";
       configFile = mkOpt' attrs { } "Files to place in $XDG_CONFIG_HOME";
@@ -33,6 +44,7 @@ with lib.my; {
       extraGroups = [ "wheel" ];
       isNormalUser = true;
       home = "/home/${name}";
+      group = "users";
       uid = 1000;
     };
 
