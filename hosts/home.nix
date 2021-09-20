@@ -4,6 +4,7 @@ with lib; {
   networking.hosts = let
     hostConfig = {
       "192.168.1.69" = [ "omen" ];
+      "192.168.1.99" = [ "framework" ];
       "192.168.1.88" = [ "meshify" ];
       "192.168.1.101" = [ "unas" ];
     };

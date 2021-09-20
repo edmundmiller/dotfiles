@@ -47,7 +47,7 @@ with lib.my; {
   fileSystems."/".device = mkDefault "/dev/disk/by-label/nixos";
 
   # Use the latest kernel
-  boot.kernelPackages = pkgs.linuxPackages_5_10;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   boot.loader = {
     efi.canTouchEfiVariables = mkDefault true;
