@@ -37,7 +37,7 @@ in {
           if deviceEnabled devices then "sendreceive" else "receiveonly";
       in {
         archive = rec {
-          devices = [ "meshify" "omen" "unas" ];
+          devices = [ "framework" "meshify" "omen" "unas" ];
           path = "/home/${config.user.name}/archive";
           watch = false;
           rescanInterval = 3600 * 6;
@@ -47,19 +47,20 @@ in {
           versioning.params.keep = "2";
         };
         elfeed = rec {
-          devices = [ "meshify" "omen" "unas" "pbp" ];
+          devices = [ "framework" "meshify" "omen" "unas" "pbp" ];
           path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
           watch = false;
           rescanInterval = 3600 * 6;
-          type = deviceType [ "meshify" "omen" "pbp" ];
+          type = deviceType [ "framework" "meshify" "omen" "pbp" ];
           enable = deviceEnabled devices;
         };
         sync = rec {
-          devices = [ "omen" "oneplus" "meshify" "unas" "pbp" "xps" ];
+          devices =
+            [ "framework" "omen" "oneplus" "meshify" "unas" "pbp" "xps" ];
           path = "/home/${config.user.name}/sync";
           watch = true;
           rescanInterval = 3600 * 6;
-          type = deviceType [ "meshify" "omen" "pbp" "xps" ];
+          type = deviceType [ "framework" "meshify" "omen" "pbp" "xps" ];
           enable = deviceEnabled devices;
           versioning = {
             type = "staggered";
@@ -70,19 +71,19 @@ in {
           };
         };
         src = rec {
-          devices = [ "omen" "meshify" "unas" ];
+          devices = [ "framework" "omen" "meshify" "unas" ];
           path = "/home/${config.user.name}/src";
           watch = false;
           rescanInterval = 3600 * 2;
-          type = deviceType [ "meshify" "omen" ];
+          type = deviceType [ "framework" "meshify" "omen" ];
           enable = deviceEnabled devices;
         };
         secrets = rec {
-          devices = [ "omen" "oneplus" "meshify" "unas" "pbp" ];
+          devices = [ "framework" "omen" "oneplus" "meshify" "unas" "pbp" ];
           path = "/home/${config.user.name}/.secrets";
           watch = true;
           rescanInterval = 3600;
-          type = deviceType [ "meshify" "omen" "pbp" ];
+          type = deviceType [ "framework" "meshify" "omen" "pbp" ];
           enable = deviceEnabled devices;
         };
       };
