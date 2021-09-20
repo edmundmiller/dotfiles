@@ -18,6 +18,8 @@ in {
       configDir = "/home/${config.user.name}/.config/syncthing";
       dataDir = "/home/${config.user.name}/.local/share/syncthing";
       devices = {
+        framework.id =
+          "CHWKD4E-A7MZXUT-EGANUVC-YJDNMDN-6WLTMYQ-TLI2RVC-PYBCNAX-UA3LFAC";
         omen.id =
           "HJV4PMT-ROCGMFH-HXINT57-CKTYJSK-7QE7DH2-CEAYVJ6-NIMMDKA-MEOVNAB";
         oneplus.id =
