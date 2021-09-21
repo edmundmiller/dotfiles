@@ -64,7 +64,7 @@
       keybase.enable = true;
       mpd.enable = true;
       ssh.enable = true;
-      # syncthing.enable = true;
+      syncthing.enable = true;
       tailscale.enable = true;
     };
 
@@ -89,9 +89,9 @@
           host = "unas";
           dataset = "datatank/backup/framework";
           presend =
-            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/d010df93-2a9b-4051-89ff-a3319ca91b9b/start";
+            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/bfadc7f9-92d5-4d23-b2b7-a1f39a550f41/start";
           postsend =
-            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/d010df93-2a9b-4051-89ff-a3319ca91b9b";
+            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/bfadc7f9-92d5-4d23-b2b7-a1f39a550f41";
         };
       };
     };
