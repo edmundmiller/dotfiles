@@ -330,8 +330,8 @@ ramp-volume-2 = 
 
 [module/battery]
 type = internal/battery
-battery = BAT0
-adapter = ADP1
+battery = BAT1
+adapter = ACAD
 full-at = 98
 
 format-charging = <animation-charging> <label-charging>
