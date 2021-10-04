@@ -20,7 +20,7 @@
 
   # Power management
   environment.systemPackages = [ pkgs.acpi ];
-  services.tlp.enable = true;
+  services.auto-cpufreq.enable = true;
 
   # Monitor backlight control
   programs.light.enable = true;
