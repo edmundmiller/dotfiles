@@ -9,7 +9,7 @@ in {
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ inputs.neovim-nightly-overlay.overlay ];
 
-    user.packages = with pkgs; [ editorconfig-core-c unstable.neovim ];
+    user.packages = with pkgs; [ editorconfig-core-c neovim-nightly ];
 
     # env.VIMINIT = "let \\$MYVIMRC='\\$XDG_CONFIG_HOME/nvim/init.vim' | source \\$MYVIMRC";
 
