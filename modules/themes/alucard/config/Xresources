@@ -50,11 +50,12 @@
 
 
 !! general
-scratch.font: Fira Code:pixelsize=16
+st.scratch.font: JetBrainsMono:pixelsize=28
 
 
 !! xst
-st.font: Fira Code:pixelsize=14
+st.font: JetBrainsMono:pixelsize=20
+st.borderpx: 10
 
 
 !! urxvt
