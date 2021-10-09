@@ -51,6 +51,7 @@
     };
 
     shell = {
+      bitwarden.enable = true;
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
