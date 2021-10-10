@@ -43,7 +43,7 @@ in {
           path = "/home/${config.user.name}/archive";
           watch = false;
           rescanInterval = 3600 * 6;
-          type = deviceType [ "meshify" ];
+          type = deviceType [ "framework" "meshify" ];
           enable = deviceEnabled devices;
           versioning.type = "simple";
           versioning.params.keep = "2";
