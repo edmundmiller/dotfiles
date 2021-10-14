@@ -8,6 +8,7 @@ if ! zgen saved; then
   zgen load zsh-users/zsh-completions src
   zgen load junegunn/fzf shell
   zgen load emiller88/guix-zsh-completions
+  zgen load sawadashota/go-task-completions
   [ -z "$SSH_CONNECTION" ] && zgen load zdharma/fast-syntax-highlighting
   zgen save
 fi
