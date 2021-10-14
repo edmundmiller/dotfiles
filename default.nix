@@ -73,6 +73,7 @@ with lib.my; {
     git
     vim
     wget
+    go-task
     gnumake
     unzip
   ];
