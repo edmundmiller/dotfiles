@@ -35,6 +35,7 @@
 
   # high-resolution display
   hardware.video.hidpi.enable = lib.mkDefault true;
+  services.xserver.dpi = 200;
 
   ## ZFS
   networking.hostId = "0dd71c1c";
