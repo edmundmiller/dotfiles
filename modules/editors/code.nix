@@ -2,42 +2,16 @@
 
 with lib;
 with lib.my;
-let
-  cfg = config.modules.editors.code;
-  extensions = (with pkgs.vscode-extensions; [
-    bbenoist.Nix
-    eamodio.gitlens
-    vscodevim.vim
-    ms-python.python
-    ms-azuretools.vscode-docker
-    ms-vsliveshare.vsliveshare
-    ms-vscode-remote.remote-ssh
-    ms-kubernetes-tools.vscode-kubernetes-tools
-    redhat.vscode-yaml
-    mikestead.dotenv
-    CoenraadS.bracket-pair-colorizer
-    timonwong.shellcheck
-    esbenp.prettier-vscode
-    file-icons.file-icons
-    mskelton.one-dark-theme
-    donjayamanne.githistory
-    editorconfig.editorconfig
-    yzhang.markdown-all-in-one
-  ]) ++ pkgs.vscode-utils.extensionsFromVscodeMarketplace [{
-    name = "nextflow";
-    publisher = "nextflow";
-    version = "0.3.0";
-    sha256 = "sha256-XLyGG8KoXaMhtbbY3V1r63B/4WFOV2horp184hV74dI=";
-  }];
-  vscode-with-extensions = pkgs.unstable.vscode-with-extensions.override {
-    vscodeExtensions = extensions;
-  };
+let cfg = config.modules.editors.code;
 in {
   options.modules.editors.code = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
 
-    user.packages = with pkgs; [ editorconfig-core-c unstable.vscode-fhs ];
+    home-manager.users.emiller.programs.vscode.enable = true;
+    home-manager.users.emiller.programs.vscode.package =
+      pkgs.vscode-fhsWithPackages
+      (ps: with ps; [ editorconfig-core-c hub neovim-nightly ]);
 
     # For Liveshare
     services.gnome.gnome-keyring.enable = true;
