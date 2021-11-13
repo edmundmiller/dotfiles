@@ -10,8 +10,12 @@ in {
 
     home-manager.users.emiller.programs.vscode.enable = true;
     home-manager.users.emiller.programs.vscode.package =
-      pkgs.vscode-fhsWithPackages
-      (ps: with ps; [ editorconfig-core-c hub neovim-nightly ]);
+      pkgs.unstable.vscode-fhsWithPackages (ps:
+        with ps; [
+          editorconfig-core-c
+          hub
+          # neovim-nightly
+        ]);
 
     # For Liveshare
     services.gnome.gnome-keyring.enable = true;
