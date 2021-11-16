@@ -10,10 +10,10 @@ in {
     services.k3s = {
       enable = true;
       package = pkgs.unstable.k3s;
-      role = "server";
+      role = "agent";
       docker = true;
-      extraFlags = "--no-deploy servicelb --no-deploy traefik";
-      # serverAddr = "https://192.168.1.121:6443";
+      serverAddr = "https://192.168.1.123:6443";
+      tokenFile = /home/emiller/.tokenfile;
     };
 
     networking.firewall.allowedTCPPorts = [
