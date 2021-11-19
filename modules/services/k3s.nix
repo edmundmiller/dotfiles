@@ -11,21 +11,20 @@ in {
       enable = true;
       package = pkgs.unstable.k3s;
       role = "agent";
-      docker = true;
+      docker = false;
       serverAddr = "https://192.168.1.123:6443";
       tokenFile = /home/emiller/.tokenfile;
     };
 
-    networking.firewall.allowedTCPPorts = [
-      80
-      443 # nginx
-      6443 # k8s
-    ];
-    networking.firewall.allowedUDPPorts = [ 8472 ];
-    networking.firewall.extraCommands = ''
-      iptables -I INPUT 3 -s 10.42.0.0/16 -j ACCEPT
-      iptables -I INPUT 3 -d 10.42.0.0/16 -j ACCEPT
-    '';
+    # Containerd
+    virtualisation.containerd.enable = true;
+    services.k3s.extraFlags = toString
+      [ "--container-runtime-endpoint unix:///run/containerd/containerd.sock" ];
+    systemd.services.containerd.serviceConfig = {
+      ExecStartPre = [
+        "-${pkgs.zfs}/bin/zfs create -o mountpoint=/var/lib/containerd/io.containerd.snapshotter.v1.zfs tank/containerd"
+      ];
+    };
 
     # Ceph
     boot.kernelModules = [ "ceph" "rbd" ];
