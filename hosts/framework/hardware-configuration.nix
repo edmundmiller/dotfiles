@@ -37,6 +37,9 @@
   hardware.video.hidpi.enable = lib.mkDefault true;
   services.xserver.dpi = 200;
 
+  # WiFi
+  boot.extraModprobeConfig = "options iwlwifi disable_11ax=Y";
+
   ## ZFS
   networking.hostId = "0dd71c1c";
   boot.supportedFilesystems = [ "zfs" ];
