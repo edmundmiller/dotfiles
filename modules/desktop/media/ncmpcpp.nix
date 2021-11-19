@@ -13,6 +13,10 @@ in {
     user.packages = with pkgs;
       [ (ncmpcpp.override { visualizerSupport = true; }) ];
 
+    environment.shellAliases = {
+      ncm = "ncmpcpp";
+    };
+
     env.NCMPCPP_HOME = "$XDG_CONFIG_HOME/ncmpcpp";
 
     # Symlink these one at a time because ncmpcpp writes other files to
