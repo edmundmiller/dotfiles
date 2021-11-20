@@ -14,29 +14,27 @@ in {
       docker = false;
       serverAddr = "https://192.168.1.123:6443";
       tokenFile = /home/emiller/.tokenfile;
+      extraFlags = toString [
+        "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
+      ];
     };
 
-    # Containerd
     virtualisation.containerd.enable = true;
-    services.k3s.extraFlags = toString
-      [ "--container-runtime-endpoint unix:///run/containerd/containerd.sock" ];
+    virtualisation.containerd.settings = {
+      plugins.cri.cni = {
+        bin_dir = "/opt/cni/bin/";
+      };
+    };
     systemd.services.containerd.serviceConfig = {
       ExecStartPre = [
         "-${pkgs.zfs}/bin/zfs create -o mountpoint=/var/lib/containerd/io.containerd.snapshotter.v1.zfs tank/containerd"
       ];
     };
 
-    virtualisation.containers.enable = true;
-    virtualisation.containers.containersConf.cniPlugins = ''
-      [
-        pkgs.my.calico
-        pkgs.my.calicoctl
-      ]
-    '';
-
     # Ceph
     boot.kernelModules = [ "ceph" "rbd" ];
     environment.systemPackages = [ pkgs.lvm2 ];
+    networking.firewall.enable = false;
 
     user.extraGroups = [ "568" ];
   };
