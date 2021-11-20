@@ -26,6 +26,14 @@ in {
       ];
     };
 
+    virtualisation.containers.enable = true;
+    virtualisation.containers.containersConf.cniPlugins = ''
+      [
+        pkgs.my.calico
+        pkgs.my.calicoctl
+      ]
+    '';
+
     # Ceph
     boot.kernelModules = [ "ceph" "rbd" ];
     environment.systemPackages = [ pkgs.lvm2 ];
