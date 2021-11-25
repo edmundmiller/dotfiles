@@ -73,6 +73,11 @@
     fsType = "zfs";
   };
 
+  fileSystems."/srv/nfs/minio" = {
+    device = "/data/media/minio";
+    options = [ "bind" ];
+  };
+
   fileSystems."/data/backup/moni" = {
     device = "datatank/backup/moni";
     fsType = "zfs";
@@ -124,6 +129,7 @@
       /srv/nfs/downloads     *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/docs          *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/mail          *(rw,nohide,insecure,no_subtree_check)
+      /srv/nfs/minio          *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/music         *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/photos        *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/video         *(rw,nohide,insecure,no_subtree_check)
