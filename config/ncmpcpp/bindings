@@ -1,3 +1,4 @@
+# https://cht.sh/ncmpcpp
 # the t key isn't used and it's easier to press than /, so lets use it
 def_key "t"
     find
