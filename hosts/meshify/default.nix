@@ -13,8 +13,6 @@
       browsers = {
         default = "firefox";
         firefox.enable = true;
-        qutebrowser.enable = true;
-        nyxt.enable = true;
       };
 
       gaming.steam.enable = true;
@@ -52,10 +50,9 @@
     };
     dev = {
       cc.enable = true;
-      # clojure.enable = true;
-      common-lisp.enable = true;
       nixlang.enable = true;
       node.enable = true;
+      node.enableGlobally = true;
       python.enable = true;
       R.enable = true;
       rust.enable = true;
@@ -66,7 +63,6 @@
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
-      nnn.enable = true;
       pass.enable = true;
       tmux.enable = true;
       zsh.enable = true;
@@ -74,14 +70,11 @@
 
     services = {
       docker.enable = true;
-      # guix.enable = true;
       keybase.enable = true;
       mpd.enable = true;
       ssh.enable = true;
-      # ssh-agent.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
-      transmission.enable = true;
     };
 
     theme.active = "functional";
@@ -95,12 +88,8 @@
 
   time.timeZone = "America/Chicago";
 
-  # hiDPI
-  services.xserver.dpi = 192;
-  fonts.fontconfig.hinting.enable = false;
-
-  networking.extraHosts =
-    "192.168.1.150 functioned.dev homer.functioned.dev jellyfin.functioned.dev jackett.functioned.dev qb.functioned.dev sonarr.functioned.dev radarr.functioned.dev prowlarr.functioned.dev lidarr.functioned.dev readarr.functioned.dev ceph.functioned.dev paperless.functioned.dev calibre.functioned.dev";
+  # networking.extraHosts =
+  #   "192.168.1.150 functioned.dev homer.functioned.dev jellyfin.functioned.dev jackett.functioned.dev qb.functioned.dev sonarr.functioned.dev radarr.functioned.dev prowlarr.functioned.dev lidarr.functioned.dev readarr.functioned.dev ceph.functioned.dev paperless.functioned.dev calibre.functioned.dev";
 
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
