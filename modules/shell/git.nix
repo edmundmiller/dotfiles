@@ -12,6 +12,7 @@ in {
       gitAndTools.git-open
       gitAndTools.diff-so-fancy
       (mkIf config.modules.shell.gnupg.enable gitAndTools.git-crypt)
+      pre-commit
     ];
 
     home.configFile = {
