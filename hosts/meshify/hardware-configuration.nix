@@ -17,11 +17,13 @@
   hardware.cpu.amd.updateMicrocode = true;
 
   ## HiDPI Monitors
-  console.font = "${pkgs.terminus_font}/share/consolefonts/ter-u28n.psf.gz";
+  hardware.video.hidpi.enable = lib.mkDefault true;
+  services.xserver.dpi = 192;
+  fonts.fontconfig.hinting.enable = false;
   environment.variables = {
     GDK_SCALE = "2";
     GDK_DPI_SCALE = "0.5";
-    _JAVA_OPTIONS = "-Dsun.java2d.uiScale=2 -Dawt.useSystemAAFontSettings=lcd";
+    _JAVA_OPTIONS = "-Dsun.java2d.uiScale=2";
   };
 
   ## SSD
