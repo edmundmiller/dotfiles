@@ -23,6 +23,7 @@ in {
         };
         original_date = true;
         import.move = true;
+        import.copy = false;
         lastgenre.count = 10;
       };
     };
