@@ -59,3 +59,10 @@ config.codekit
 *.so
 *.dll
 *.pyc
+
+# Editor Stuff #
+################
+.dir-locals.el
+.direnv/
+.nvimlog
+.venv/
