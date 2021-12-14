@@ -21,6 +21,7 @@ in {
         enable = true;
         autoPrune.enable = true;
         enableOnBoot = false;
+        storageDriver = "zfs";
         # listenOptions = [];
       };
     };
