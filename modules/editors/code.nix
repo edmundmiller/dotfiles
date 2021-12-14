@@ -14,7 +14,7 @@ in {
         with ps; [
           editorconfig-core-c
           hub
-          # neovim-nightly
+          neovim
         ]);
 
     # For Liveshare
