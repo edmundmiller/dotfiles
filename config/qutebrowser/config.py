@@ -1,5 +1,7 @@
 import os
 import glob
+import subprocess
+import socket
 
 ## Load settings applied with :set
 config.load_autoconfig()
@@ -31,7 +33,20 @@ c.content.blocking.hosts.lists = [
 ]
 c.content.blocking.hosts.lists.append(str(config.configdir) + "/blockedHosts")
 # c.content.blocking.whitelist = []
-c.qt.highdpi = True
+
+
+if socket.gethostname() == "framework":
+    command = ["autorandr"]
+    process = subprocess.Popen(
+        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    stdout, stderr = process.communicate()
+    if "lab (detected)" in str(stdout):
+        c.qt.highdpi = False
+    else:
+        c.qt.highdpi = True
+else:
+    c.qt.highdpi = True
 
 config.bind(
     "<Ctrl-r>",
