@@ -46,18 +46,8 @@ with lib.my; {
   # hardware-configuration.nix or fileSystem config.
   fileSystems."/".device = mkDefault "/dev/disk/by-label/nixos";
 
-  # HACK Use the 5.12.15 kernel
   # https://community.frame.work/t/using-the-ax210-with-linux-on-the-framework-laptop/1844/64
-  boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linux_5_10.override {
-    argsOverride = rec {
-      src = pkgs.fetchurl {
-        url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-        sha256 = "sha256-R/zqmWwMAeWKxfhS/Cltd6NJbFUPMDQVL+536Drjj9o=";
-      };
-      version = "5.12.15";
-      modDirVersion = "5.12.15";
-    };
-  });
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   boot.loader = {
     efi.canTouchEfiVariables = mkDefault true;
