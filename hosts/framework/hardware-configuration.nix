@@ -36,6 +36,12 @@
   # high-resolution display
   hardware.video.hidpi.enable = lib.mkDefault true;
   services.xserver.dpi = 200;
+  fonts.fontconfig.hinting.enable = false;
+  environment.variables = {
+    GDK_SCALE = "2";
+    GDK_DPI_SCALE = "0.5";
+    _JAVA_OPTIONS = "-Dsun.java2d.uiScale=2";
+  };
 
   # WiFi
   boot.extraModprobeConfig = "options iwlwifi disable_11ax=Y";
