@@ -25,7 +25,7 @@
 
   time.timeZone = "America/Chicago";
 
-  users.users.moni = { isNormalUser = true; };
+  users.users.mmiller = { isNormalUser = true; };
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
