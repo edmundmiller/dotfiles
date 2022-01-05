@@ -12,6 +12,6 @@ in {
       dataDir = [ "/data/minio" ];
       # package = "unstable.minio";
     };
-    networking.firewall.allowedTCPPorts = [ 9000 ];
+    networking.firewall.allowedTCPPorts = [ 9000 9001 ];
   };
 }
