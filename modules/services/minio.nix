@@ -1,4 +1,3 @@
-
 { options, config, lib, pkgs, ... }:
 
 with lib;
@@ -8,12 +7,11 @@ in {
   options.modules.services.minio = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-	  services.minio = {
-		  enable = true;
-		  dataDir = ["/data/minio"];
-		  # package = "unstable.minio";
-	  };
-	  networking.firewall.allowedTCPPorts = [ 9000 ];
-
+    services.minio = {
+      enable = true;
+      dataDir = [ "/data/minio" ];
+      # package = "unstable.minio";
+    };
+    networking.firewall.allowedTCPPorts = [ 9000 ];
   };
 }
