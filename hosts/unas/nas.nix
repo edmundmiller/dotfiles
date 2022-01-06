@@ -74,7 +74,7 @@
   };
 
   fileSystems."/srv/nfs/minio" = {
-    device = "/data/media/minio";
+    device = "/data/minio";
     options = [ "bind" ];
   };
 
