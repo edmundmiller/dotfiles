@@ -25,7 +25,13 @@
 
   time.timeZone = "America/Chicago";
 
-  users.users.mmiller = { isNormalUser = true; };
+  users.users.mmiller = {
+    isNormalUser = true;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIO/gdHAayVgaF1Vmm2RKe+Ign2I4Ue3cbt2HTD/POm9 monicadd4@gmail.com"
+    ];
+  };
+
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
