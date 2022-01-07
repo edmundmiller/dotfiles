@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.editors.vim;
-in {
+in
+{
   options.modules.editors.vim = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

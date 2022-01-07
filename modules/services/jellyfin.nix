@@ -5,7 +5,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.jellyfin;
-in {
+in
+{
   options.modules.services.jellyfin = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

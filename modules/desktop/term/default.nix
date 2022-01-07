@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.term;
-in {
+in
+{
   options.modules.desktop.term = { default = mkOpt types.str "xterm"; };
 
   config = {

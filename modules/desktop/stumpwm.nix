@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.stumpwm;
-in {
+in
+{
   options.modules.desktop.stumpwm = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

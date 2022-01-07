@@ -8,7 +8,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.vm.virtualbox;
-in {
+in
+{
   options.modules.desktop.vm.virtualbox = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

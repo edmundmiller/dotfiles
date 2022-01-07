@@ -10,7 +10,8 @@ with lib.my;
 let
   cfg = config.modules.dev.node;
   node = pkgs.nodejs_latest;
-in {
+in
+{
   options.modules.dev.node = {
     enable = mkBoolOpt false;
     enableGlobally = mkBoolOpt false;
