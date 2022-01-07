@@ -1,9 +1,16 @@
 # No u nas
 
 { lib, pkgs, ... }: {
-  imports =
-    [ ../home.nix ./hardware-configuration.nix ./backups.nix ./nas.nix ];
+  imports = [
+    ../home.nix
+    ./hardware-configuration.nix
 
+    ./backups.nix
+    ./nas.nix
+    ./modules/minio.nix
+  ];
+
+  ## Modules
   modules = {
     editors = {
       default = "nvim";
@@ -16,7 +23,6 @@
     services = {
       docker.enable = true;
       k3s.enable = true;
-      minio.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;

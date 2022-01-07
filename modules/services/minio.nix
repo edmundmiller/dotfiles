@@ -7,11 +7,7 @@ in {
   options.modules.services.minio = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    services.minio = {
-      enable = true;
-      dataDir = [ "/data/minio" ];
-      # package = "unstable.minio";
-    };
+    services.minio.enable = true;
     networking.firewall.allowedTCPPorts = [ 9000 9001 ];
   };
 }
