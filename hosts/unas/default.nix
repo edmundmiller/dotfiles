@@ -22,7 +22,6 @@
     };
     services = {
       docker.enable = true;
-      k3s.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
