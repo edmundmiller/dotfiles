@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.ssh;
-in {
+in
+{
   options.modules.services.ssh = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

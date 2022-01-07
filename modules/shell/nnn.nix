@@ -8,7 +8,8 @@ let
   #   url = "https://github.com/jarun/nnn/releases/download/v3.5/nnn-v3.5.tar.gz";
   #   sha256 = "1ww18vvfjkvi36rcamw8kpix4bhk71w5bw9kmnh158crah1x8dp6";
   # };
-in {
+in
+{
   options.modules.shell.nnn = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

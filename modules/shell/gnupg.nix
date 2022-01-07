@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.shell.gnupg;
-in {
+in
+{
   options.modules.shell.gnupg = with types; {
     enable = mkBoolOpt false;
     cacheTTL = mkOpt int 3600; # 1hr

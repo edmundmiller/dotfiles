@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.k3s;
-in {
+in
+{
   options.modules.services.k3s = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

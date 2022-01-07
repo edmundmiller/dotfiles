@@ -1,8 +1,10 @@
 { lib, stdenv, luajit, my, ... }:
 
-let name = "fennel";
-    version = "0.9.2";
-in stdenv.mkDerivation {
+let
+  name = "fennel";
+  version = "0.9.2";
+in
+stdenv.mkDerivation {
   inherit name version;
 
   src = fetchTarball {
@@ -28,6 +30,6 @@ in stdenv.mkDerivation {
     description = "Lua Lisp Language";
     license = lib.licenses.mit;
     platforms = [ "x86_64-linux" ];
-    maintainers = [];
+    maintainers = [ ];
   };
 }

@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.hardware.ergodox;
-in {
+in
+{
   options.modules.hardware.ergodox = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

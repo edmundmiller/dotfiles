@@ -15,7 +15,8 @@ let
       ];
     };
   };
-in {
+in
+{
   options.modules.desktop.apps.weechat = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable { user.packages = with pkgs; [ weechat ]; };

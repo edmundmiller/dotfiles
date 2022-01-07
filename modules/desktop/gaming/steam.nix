@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.gaming.steam;
-in {
+in
+{
   options.modules.desktop.gaming.steam = with types; {
     enable = mkBoolOpt false;
     hardware.enable = mkBoolOpt false;

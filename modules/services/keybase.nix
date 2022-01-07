@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.keybase;
-in {
+in
+{
   options.modules.services.keybase = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

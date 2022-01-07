@@ -1,10 +1,18 @@
-{ stdenv, fetchurl, alsaLib, unzip, openssl_1_0_2, zlib, libjack2
-, autoPatchelfHook }:
+{ stdenv
+, fetchurl
+, alsaLib
+, unzip
+, openssl_1_0_2
+, zlib
+, libjack2
+, autoPatchelfHook
+}:
 
 let
   pname = "firn";
   version = "0.0.10";
-in stdenv.mkDerivation rec {
+in
+stdenv.mkDerivation rec {
   name = "${pname}-${version}";
 
   src = fetchurl {
