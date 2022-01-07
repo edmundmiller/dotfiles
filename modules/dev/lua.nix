@@ -10,7 +10,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.dev.lua;
-in {
+in
+{
   options.modules.dev.lua = {
     enable = mkBoolOpt false;
     love2D.enable = mkBoolOpt false;

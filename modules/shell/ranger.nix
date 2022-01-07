@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.shell.ranger;
-in {
+in
+{
   options.modules.shell.ranger = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

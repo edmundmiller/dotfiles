@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.transmission;
-in {
+in
+{
   options.modules.services.transmission = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

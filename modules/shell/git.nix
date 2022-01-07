@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.shell.git;
-in {
+in
+{
   options.modules.shell.git = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

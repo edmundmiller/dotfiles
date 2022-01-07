@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.apps.skype;
-in {
+in
+{
   options.modules.desktop.apps.skype = { enable = mkEnableOption false; };
 
   config = mkIf cfg.enable {

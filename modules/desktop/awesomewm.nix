@@ -2,9 +2,11 @@
 
 with lib;
 with lib.my;
-let cfg = config.modules.desktop.awesomewm;
-    configDir = config.dotfiles.configDir;
-in {
+let
+  cfg = config.modules.desktop.awesomewm;
+  configDir = config.dotfiles.configDir;
+in
+{
   options.modules.desktop.awesomewm = {
     enable = mkBoolOpt false;
   };
@@ -28,7 +30,7 @@ in {
         enable = true;
         displayManager = {
           lightdm.enable = true;
-        #  lightdm.greeters.mini.enable = true;
+          #  lightdm.greeters.mini.enable = true;
         };
         windowManager.awesome.enable = true;
       };

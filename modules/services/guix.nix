@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.guix;
-in {
+in
+{
   imports = [ inputs.guix.nixosModules.guix ];
   options.modules.services.guix = { enable = mkBoolOpt false; };
 

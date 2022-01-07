@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.hardware.wacom;
-in {
+in
+{
   options.modules.hardware.wacom = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

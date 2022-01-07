@@ -7,7 +7,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.theme;
-in {
+in
+{
   options.modules.theme = with types; {
     active = mkOption {
       type = nullOr str;
@@ -40,12 +41,15 @@ in {
   config = mkIf (cfg.active != null) (mkMerge [
     # Read xresources files in ~/.config/xtheme/* to allow modular
     # configuration of Xresources.
-    (let
-      xrdb = ''${pkgs.xorg.xrdb}/bin/xrdb -merge "$XDG_CONFIG_HOME"/xtheme/*'';
-    in {
-      services.xserver.displayManager.sessionCommands = xrdb;
-      modules.theme.onReload.xtheme = xrdb;
-    })
+    (
+      let
+        xrdb = ''${pkgs.xorg.xrdb}/bin/xrdb -merge "$XDG_CONFIG_HOME"/xtheme/*'';
+      in
+      {
+        services.xserver.displayManager.sessionCommands = xrdb;
+        modules.theme.onReload.xtheme = xrdb;
+      }
+    )
 
     {
       home.configFile = {
@@ -80,45 +84,51 @@ in {
       };
     }
 
-    (mkIf (cfg.wallpaper != null) (let
-      wCfg = config.services.xserver.desktopManager.wallpaper;
-      command = ''
-        if [ -e "$XDG_DATA_HOME/wallpaper" ]; then
-          ${pkgs.feh}/bin/feh --bg-${wCfg.mode} \
-            ${optionalString wCfg.combineScreens "--no-xinerama"} \
-            --no-fehbg \
-            $XDG_DATA_HOME/wallpaper
-        fi
-      '';
-    in {
-      # Set the wallpaper ourselves so we don't need .background-image and/or
-      # .fehbg polluting $HOME
-      services.xserver.displayManager.sessionCommands = command;
-      modules.theme.onReload.wallpaper = command;
+    (mkIf (cfg.wallpaper != null) (
+      let
+        wCfg = config.services.xserver.desktopManager.wallpaper;
+        command = ''
+          if [ -e "$XDG_DATA_HOME/wallpaper" ]; then
+            ${pkgs.feh}/bin/feh --bg-${wCfg.mode} \
+              ${optionalString wCfg.combineScreens "--no-xinerama"} \
+              --no-fehbg \
+              $XDG_DATA_HOME/wallpaper
+          fi
+        '';
+      in
+      {
+        # Set the wallpaper ourselves so we don't need .background-image and/or
+        # .fehbg polluting $HOME
+        services.xserver.displayManager.sessionCommands = command;
+        modules.theme.onReload.wallpaper = command;
 
-      home.dataFile =
-        mkIf (cfg.wallpaper != null) { "wallpaper".source = cfg.wallpaper; };
-    }))
+        home.dataFile =
+          mkIf (cfg.wallpaper != null) { "wallpaper".source = cfg.wallpaper; };
+      }
+    ))
 
     (mkIf (cfg.loginWallpaper != null) {
       services.xserver.displayManager.lightdm.background = cfg.loginWallpaper;
     })
 
-    (mkIf (cfg.onReload != { }) (let
-      reloadTheme = with pkgs;
-        (writeScriptBin "reloadTheme" ''
-          #!${stdenv.shell}
-          echo "Reloading current theme: ${cfg.active}"
-          ${concatStringsSep "\n" (mapAttrsToList (name: script: ''
-            echo "[${name}]"
-            ${script}
-          '') cfg.onReload)}
-        '');
-    in {
-      user.packages = [ reloadTheme ];
-      system.userActivationScripts.reloadTheme = ''
-        [ -z "$NORELOAD" ] && ${reloadTheme}/bin/reloadTheme
-      '';
-    }))
+    (mkIf (cfg.onReload != { }) (
+      let
+        reloadTheme = with pkgs;
+          (writeScriptBin "reloadTheme" ''
+            #!${stdenv.shell}
+            echo "Reloading current theme: ${cfg.active}"
+            ${concatStringsSep "\n" (mapAttrsToList (name: script: ''
+              echo "[${name}]"
+              ${script}
+            '') cfg.onReload)}
+          '');
+      in
+      {
+        user.packages = [ reloadTheme ];
+        system.userActivationScripts.reloadTheme = ''
+          [ -z "$NORELOAD" ] && ${reloadTheme}/bin/reloadTheme
+        '';
+      }
+    ))
   ]);
 }

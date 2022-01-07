@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.mpd;
-in {
+in
+{
   options.modules.services.mpd = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

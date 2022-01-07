@@ -77,13 +77,15 @@
 
   services.xserver = {
     ## Mice
-    inputClassSections = [''
-      Identifier "My Mouse"
-      MatchIsPointer "yes"
-      Option "AccelerationProfile" "-1"
-      Option "AccelerationScheme" "none"
-      Option "AccelSpeed" "-1"
-    ''];
+    inputClassSections = [
+      ''
+        Identifier "My Mouse"
+        MatchIsPointer "yes"
+        Option "AccelerationProfile" "-1"
+        Option "AccelerationScheme" "none"
+        Option "AccelSpeed" "-1"
+      ''
+    ];
 
     ## Monitors
     monitorSection = ''

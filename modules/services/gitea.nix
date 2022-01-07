@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.gitea;
-in {
+in
+{
   options.modules.services.gitea = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

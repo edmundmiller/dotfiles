@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.tailscale;
-in {
+in
+{
   options.modules.services.tailscale = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

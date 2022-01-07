@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.editors.code;
-in {
+in
+{
   options.modules.editors.code = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

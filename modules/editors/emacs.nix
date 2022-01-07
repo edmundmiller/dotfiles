@@ -5,7 +5,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.editors.emacs;
-in {
+in
+{
   options.modules.editors.emacs = {
     enable = mkBoolOpt false;
     doom = {

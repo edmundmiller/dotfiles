@@ -3,7 +3,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.shell.yubikey;
-in {
+in
+{
   options.modules.shell.yubikey = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

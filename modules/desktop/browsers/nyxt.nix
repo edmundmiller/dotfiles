@@ -5,7 +5,8 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.browsers.nyxt;
-in {
+in
+{
   options.modules.desktop.browsers.nyxt = with types; {
     enable = mkBoolOpt false;
     userStyles = mkOpt lines "";
