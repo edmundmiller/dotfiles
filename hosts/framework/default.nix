@@ -42,6 +42,7 @@
         zfs.enable = true;
         ssd.enable = true;
       };
+      printing.enable = true;
       sensors.enable = true;
     };
     dev = {

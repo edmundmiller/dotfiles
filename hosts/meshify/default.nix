@@ -46,6 +46,7 @@
         ssd.enable = true;
       };
       nvidia.enable = true;
+      printing.enable = true;
       sensors.enable = true;
     };
     dev = {
