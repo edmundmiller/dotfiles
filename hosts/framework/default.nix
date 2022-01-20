@@ -78,6 +78,8 @@
   services.openssh.startWhenNeeded = true;
 
   networking.networkmanager.enable = true;
+  programs.nm-applet.enable = true;
+  users.users.emiller.extraGroups = [ "networkmanager" ];
 
   time.timeZone = "America/Chicago";
 
