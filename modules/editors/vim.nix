@@ -10,7 +10,7 @@ in
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ inputs.neovim-nightly-overlay.overlay ];
 
-    user.packages = with pkgs; [ editorconfig-core-c neovim-nightly ctags ];
+    user.packages = with pkgs; [ editorconfig-core-c neovim-nightly ctags sumneko-lua-language-server];
 
     # env.VIMINIT = "let \\$MYVIMRC='\\$XDG_CONFIG_HOME/nvim/init.vim' | source \\$MYVIMRC";
 
