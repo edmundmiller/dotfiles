@@ -15,6 +15,7 @@ in
       teams
       slack
       unstable.element-desktop
+      zoom-us
     ];
   };
 }
