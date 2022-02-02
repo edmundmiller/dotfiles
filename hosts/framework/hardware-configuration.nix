@@ -4,7 +4,10 @@
 { config, lib, pkgs, inputs, modulesPath, ... }:
 
 {
-  imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
+  imports = [
+    (modulesPath + "/installer/scan/not-detected.nix")
+    inputs.nixos-hardware.nixosModules.framework
+  ];
 
   boot.initrd.availableKernelModules =
     [ "xhci_pci" "thunderbolt" "nvme" "usb_storage" "sd_mod" ];
@@ -30,21 +33,8 @@
   services.xserver.libinput.touchpad.disableWhileTyping = true;
   services.xserver.xkbOptions = "caps:escape";
 
-  # For fingerprint support
-  services.fprintd.enable = true;
-
   # high-resolution display
-  hardware.video.hidpi.enable = lib.mkDefault true;
-  services.xserver.dpi = 200;
   fonts.fontconfig.hinting.enable = false;
-  environment.variables = {
-    GDK_SCALE = "2";
-    GDK_DPI_SCALE = "0.5";
-    _JAVA_OPTIONS = "-Dsun.java2d.uiScale=2";
-  };
-
-  # WiFi
-  boot.extraModprobeConfig = "options iwlwifi disable_11ax=Y";
 
   ## ZFS
   networking.hostId = "0dd71c1c";
