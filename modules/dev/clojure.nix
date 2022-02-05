@@ -17,7 +17,6 @@ in
       clojure-lsp
       clj-kondo
       leiningen
-      my.firn
     ];
   };
 }
