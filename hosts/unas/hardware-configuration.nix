@@ -20,10 +20,7 @@
 
   ## ZFS
   networking.hostId = "13e53d45";
-  boot.supportedFilesystems = [ "zfs" ];
   boot.loader.grub.copyKernels = true;
-  services.zfs.autoScrub.enable = true;
-  services.zfs.trim.enable = true;
 
   fileSystems."/" = {
     device = "tank/system/root";
