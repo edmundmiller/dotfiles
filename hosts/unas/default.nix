@@ -16,6 +16,13 @@
       default = "nvim";
       vim.enable = true;
     };
+    hardware = {
+      fs = {
+        enable = true;
+        zfs.enable = true;
+        ssd.enable = true;
+      };
+    };
     shell = {
       git.enable = true;
       zsh.enable = true;
