@@ -36,10 +36,6 @@ in
       zstd # for undo-fu-session/undo-tree compression
 
       ## Module dependencies
-      # :lang beancount
-      beancount
-      nodePackages.beancount-langserver
-      unstable.fava  # HACK Momentarily broken on nixos-unstable
       # :checkers spell
       (aspellWithDicts (ds: with ds; [ en en-computers en-science ]))
       # :checkers grammar
