@@ -16,9 +16,13 @@
             mobile)
               DPI=196
               MONITOR="eDP-1"
+              NEW_GDK_SCALE="2"
+              NEW_GDK_DPI_SCALE="0.5"
               ;;
             lab)
               DPI=144
+              NEW_GDK_SCALE="1"
+              NEW_GDK_DPI_SCALE="1"
               ;;
             *)
               echo "Unknown profle: $AUTORANDR_CURRENT_PROFILE"
@@ -26,6 +30,8 @@
           esac
 
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
+          GDK_SCALE=$NEW_GDK_SCALE
+          GDK_DPI_SCALE=$NEW_GDK_DPI_SCALE
         '';
         "wallpaper" =
           "feh --bg-scale /etc/dotfiles/assets/wallpapers/functionalDNA_grey.png";
