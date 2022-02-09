@@ -2,6 +2,16 @@
 
 {
   ## NAS
+  fileSystems."/data/backup/longhorn" = {
+    device = "datatank/backup/longhorn";
+    fsType = "zfs";
+  };
+
+  fileSystems."/srv/nfs/longhorn" = {
+    device = "/data/backup/longhorn";
+    options = [ "bind" ];
+  };
+
   fileSystems."/data/media/mail" = {
     device = "datatank/nfs/media/mail";
     fsType = "zfs";
@@ -130,6 +140,7 @@
       /srv/nfs/configs       *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/downloads     *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/docs          *(rw,nohide,insecure,no_subtree_check)
+      /srv/nfs/longhorn      *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/mail          *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/minio         *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/music         *(rw,nohide,insecure,no_subtree_check)
