@@ -48,6 +48,8 @@
     dev = {
       cc.enable = true;
       nixlang.enable = true;
+      node.enable = true;
+      node.enableGlobally = true;
       python.enable = true;
       R.enable = true;
     };
