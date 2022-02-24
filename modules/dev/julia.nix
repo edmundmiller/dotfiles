@@ -11,5 +11,9 @@ in
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [ julia-bin ];
+
+    # TODO
+    # home.configFile = {
+    # };
   };
 }
