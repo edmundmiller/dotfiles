@@ -23,8 +23,7 @@
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
-    # HACK Move this back once https://github.com/NixOS/nixos-hardware/pull/372 is closed
-    nixos-hardware.url = "github:emiller88/nixos-hardware/framework";
+    nixos-hardware.url = "github:nixos/nixos-hardware";
     guix.url = "github:emiller88/guix";
     guix.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
