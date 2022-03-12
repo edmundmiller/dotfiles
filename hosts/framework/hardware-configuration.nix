@@ -35,6 +35,16 @@
 
   # high-resolution display
   fonts.fontconfig.hinting.enable = false;
+  hardware.video.hidpi.enable = lib.mkDefault true;
+
+  # Fix font sizes in X
+  services.xserver.dpi = 200;
+
+  # Fix sizes of GTK/GNOME ui elements
+  environment.variables = {
+    GDK_SCALE = lib.mkDefault "2";
+    GDK_DPI_SCALE = lib.mkDefault "0.5";
+  };
 
   ## ZFS
   networking.hostId = "0dd71c1c";
