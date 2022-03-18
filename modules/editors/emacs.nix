@@ -50,7 +50,8 @@ in
       # :lang cc
       ccls
       # :lang javascript
-      nodePackages.javascript-typescript-langserver
+      nodePackages.typescript-language-server
+      nodePackages.typescript
       nodePackages.prettier
       # :lang latex & :lang org (latex previews)
       (texlive.combine {
