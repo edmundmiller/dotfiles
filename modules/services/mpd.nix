@@ -35,33 +35,18 @@ in
       mpd = {
         enable = true;
         musicDirectory = "/data/media/music";
-        startWhenNeeded = true;
+        user = "${config.user.name}";
         extraConfig = ''
-          input {
-              plugin      "curl"
-          }
-
           audio_output {
-              type        "pulse"
-              name        "My MPD PulseAudio Output"
-              server      "127.0.0.1"
-          }
-
-          audio_output {
-              type        "fifo"
-              name        "mpd_fifo"
-              path        "/tmp/mpd.fifo"
-              format      "44100:16:2"
+            type "pipewire"
+            name "My PipeWire Output"
           }
         '';
       };
     };
-
-    # For whatever reason it won't play on pulseaudio without the "Full" pkg
-    hardware.pulseaudio.package = pkgs.pulseaudioFull;
-    hardware.pulseaudio.tcp = {
-      enable = true;
-      anonymousClients.allowedIpRanges = [ "127.0.0.1" ];
+    systemd.services.mpd.environment = {
+        # https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/609
+        XDG_RUNTIME_DIR = "/run/user/1000"; # User-id 1000 must match above user. MPD will look inside this directory for the PipeWire socket.
     };
   };
 }
