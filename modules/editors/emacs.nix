@@ -73,8 +73,8 @@ in
         desktopName = "Org-Protocol";
         exec = "emacsclient %u";
         icon = "emacs";
-        mimeType = "x-scheme-handler/org-protocol";
-        categories = "System";
+        mimeTypes = [ "x-scheme-handler/org-protocol" ];
+        categories = [ "System" ];
       })
       # yaml
       nodePackages.yaml-language-server

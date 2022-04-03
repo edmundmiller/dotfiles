@@ -16,7 +16,7 @@ in
         genericName = "Open a aerc in xst";
         icon = "mail";
         exec = "${xst}/bin/xst aerc";
-        categories = "Email";
+        categories = [ "Email" ];
       })
       # HTML rendering
       (lib.mkIf config.services.xserver.enable w3m)

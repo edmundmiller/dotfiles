@@ -28,7 +28,7 @@ in
         genericName = "Open a private Qutebrowser window";
         icon = "qutebrowser";
         exec = ''${pkg}/bin/qutebrowser ":open -p"'';
-        categories = "Network";
+        categories = [ "Network" ];
       })
       python39Packages.adblock
     ];
