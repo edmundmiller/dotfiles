@@ -26,7 +26,7 @@ in
         genericName = "Default terminal";
         icon = "utilities-terminal";
         exec = "${xst}/bin/xst";
-        categories = "Development;System;Utility";
+        categories = [ "Development" "System" "Utility" ];
       })
     ];
   };

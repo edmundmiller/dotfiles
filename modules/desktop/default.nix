@@ -34,7 +34,7 @@ in
         desktopName = "Calculator";
         icon = "calc";
         exec = ''scratch "${tmux}/bin/tmux new-session -s calc -n calc qalc"'';
-        categories = "Development";
+        categories = [ "Development" ];
       })
     ];
 

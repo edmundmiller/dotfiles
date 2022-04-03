@@ -5,8 +5,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.browsers.nyxt;
-in
-{
+in {
   options.modules.desktop.browsers.nyxt = with types; {
     enable = mkBoolOpt false;
     userStyles = mkOpt lines "";
@@ -21,7 +20,7 @@ in
         #   desktopName = "Nyxt (Private)";
         #   genericName = "Open a private Nyxt window";
         #   icon = "nyxt";
-        #   categories = "Network";
+        #   categories = ["Network"];
         # })
       ];
 
