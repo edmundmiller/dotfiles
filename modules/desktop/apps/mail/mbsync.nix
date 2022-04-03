@@ -27,8 +27,8 @@ in
       #     emacsclient -create-frame --alternate-editor="" --no-wait --eval '(progn (x-focus-frame nil) (mu4e-compose-from-mailto "%u"))'
       #   '';
       #   icon = "emacs";
-      #   mimeType = "x-scheme-handler/mailto";
-      #   categories = "Email";
+      #   mimeTypes = ["x-scheme-handler/mailto"];
+      #   categories = [ "Email" ];
       # })
     ];
     home-manager.users.${config.user.name} = {
