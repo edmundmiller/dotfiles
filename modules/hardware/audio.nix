@@ -16,7 +16,7 @@ in {
 
     security.rtkit.enable = true;
 
-    environment.systemPackages = with pkgs; [ easyeffects ];
+    environment.systemPackages = with pkgs; [ easyeffects pamixer ];
 
     # HACK Prevents ~/.esd_auth files by disabling the esound protocol module
     #      for pulseaudio, which I likely don't need. Is there a better way?
