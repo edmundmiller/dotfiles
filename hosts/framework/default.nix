@@ -29,6 +29,7 @@
 
     editors = {
       default = "nvim";
+      code.enable = true;
       emacs.enable = true;
       vim.enable = true;
     };
