@@ -16,7 +16,6 @@ alias path='echo -e ${PATH//:/\\n}'
 alias ports='netstat -tulanp'
 
 alias mk=make
-alias rmirror='rsync -rtvu --delete'
 alias gurl='curl --compressed'
 
 alias shutdown='sudo shutdown'
@@ -53,24 +52,35 @@ alias ssc='sudo systemctl'
 
 if command -v exa >/dev/null; then
   alias exa="exa --group-directories-first --git";
-  alias l="exa -1";
-  alias ll="exa -lg";
-  alias la="LC_COLLATE=C exa -la";
+  alias l="exa -blF";
+  alias ll="exa -abghilmu";
+  alias llm='ll --sort=modified'
+  alias la="LC_COLLATE=C exa -ablF";
+  alias tree='exa --tree'
+fi
+
+if (( $+commands[fasd] )); then
+  # fuzzy completion with 'z' when called without args
+  unalias z 2>/dev/null
+  function z {
+    [ $# -gt 0 ] && _z "$*" && return
+    cd "$(_z -l 2>&1 | fzf --height 40% --nth 2.. --reverse --inline-info +s --tac --query "${*##-* }" | sed 's/^[0-9,.]* *//')"
+  }
 fi
 
 autoload -U zmv
 
-take() {
+function take() {
 	mkdir "$1" && cd "$1"
 }
 compdef take=mkdir
 
-zman() {
+function zman() {
 	PAGER="less -g -I -s '+/^       "$1"'" man zshall
 }
 
 # Create a reminder with human-readable durations, e.g. 15m, 1h, 40s, etc
-r() {
+function r() {
 	local time=$1
 	shift
 	sched "$time" "notify-send --urgency=critical 'Reminder' '$@'; ding"
