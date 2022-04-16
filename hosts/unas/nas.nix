@@ -84,13 +84,13 @@
   };
 
 
-  fileSystems."/data/nfs/docs" = {
+  fileSystems."/data/media/docs" = {
     device = "datatank/nfs/media/docs";
     fsType = "zfs";
   };
 
   fileSystems."/srv/nfs/docs" = {
-    device = "/data/nfs/docs";
+    device = "/data/media/docs";
     options = [ "bind" ];
   };
 
