@@ -33,6 +33,8 @@
       syncthing.enable = true;
       tailscale.enable = true;
     };
+
+    theme.active = "alucard";
   };
 
   time.timeZone = "America/Chicago";
