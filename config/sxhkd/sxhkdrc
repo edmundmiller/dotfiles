@@ -114,7 +114,7 @@ XF86MonBrightnessDown
 	light -U 5
 
 XF86AudioMute
-	amixer -q set Master toggle
+	pamixer --toggle-mute
 XF86AudioLowerVolume
     pamixer -d 10
 XF86AudioRaiseVolume
