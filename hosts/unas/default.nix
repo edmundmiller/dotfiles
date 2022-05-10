@@ -39,10 +39,10 @@
 
   time.timeZone = "America/Chicago";
 
-  users.users.mmiller = {
+  users.users.monimiller = {
     isNormalUser = true;
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIO/gdHAayVgaF1Vmm2RKe+Ign2I4Ue3cbt2HTD/POm9 monicadd4@gmail.com"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIjADG7vmI/moup3J2UyFjj51CNpV4VVo+f9oOr/n4r4 monicadd4@gmail.com"
     ];
   };
 

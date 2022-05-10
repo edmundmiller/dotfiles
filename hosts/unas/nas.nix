@@ -42,6 +42,11 @@
     fsType = "zfs";
   };
 
+  fileSystems."/srv/nfs/backup/moni" = {
+    device = "/data/backup/moni";
+    options = [ "bind" ];
+  };
+
   ## nfs
   fileSystems."/data/backup/app" = {
     device = "datatank/backup/app";
@@ -136,6 +141,7 @@
       /srv/nfs               *(rw,insecure,no_subtree_check)
       /srv/nfs/backup/app    *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/backup/k10    *(rw,nohide,insecure,no_subtree_check)
+      /srv/nfs/backup/moni   *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/books         *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/configs       *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/downloads     *(rw,nohide,insecure,no_subtree_check)
