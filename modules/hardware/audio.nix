@@ -32,5 +32,9 @@ in {
     in mkIf config.hardware.pulseaudio.enable "${paConfigFile}/default.pa";
 
     user.extraGroups = [ "audio" ];
+
+    systemd.user.services.easyeffects = {
+      script = "${pkgs.easyeffects}/bin/easyeffects --gapplication-service";
+    };
   };
 }
