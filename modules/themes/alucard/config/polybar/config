@@ -71,9 +71,9 @@ modules-left = pulseaudio pad cpu memory pad fs
 modules-center = bspwm
 modules-right = syncthing redshift wlan pad network-up pad network-down pad battery pad date
 
-tray-position = left
-tray-padding = 2
-tray-transparent = true
+;tray-position = center
+;tray-padding = 2
+;tray-transparent = true
 ;tray-background = #0063ff
 
 [module/bspwm]
@@ -176,7 +176,7 @@ label-padding-left = 2
 
 ; [module/mpd]
 ; type = internal/mpd
-; host = /home/emiller/.config/mpd/mpd.sock
+; host = /home/hlissner/.config/mpd/mpd.sock
 ;
 ; format-online = <label-song> <toggle>
 ; format-padding = 5
@@ -330,8 +330,8 @@ ramp-volume-2 = 
 
 [module/battery]
 type = internal/battery
-battery = BAT1
-adapter = ACAD
+battery = BAT0
+adapter = ADP1
 full-at = 98
 
 format-charging = <animation-charging> <label-charging>
