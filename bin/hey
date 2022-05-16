@@ -69,10 +69,9 @@ module Hey
       return result
     end
   end
-  def self.rebuild(*args, sudo: false, host: nil)
-    host ||= ENV['HOST'] || `hostname`.rstrip
+  def self.rebuild(*args, sudo: false)
     sh ["nixos-rebuild",
-        "--flake", "#{@@opts[:flake]}##{host}",
+        "--flake", "#{@@opts[:flake]}##{@@opts[:host]}",
         "--option", "pure-eval", "no",
         *args], sudo: sudo
   end
@@ -95,6 +94,20 @@ module Hey
     desc "Run 'nix flake check' on your dotfiles"
     lambda do |args|
       sh ["nix", "flake", "check", @@opts[:flake]]
+    end
+  end
+
+  defcmd :info do
+    desc "Retrieve details (including SHA) for a REPO."
+    opts '--type VCS', "What version control system to use (default is git)"
+    args "REPO", "[QUERY]"
+    lambda do |args|
+      user_error "No repo specified" unless args.length > 0
+      repo, query = args
+      repo, commit = repo.split ":"
+      repo = "https://github.com/#{repo}" if repo.match /^[^\/]+\/[^\/]+$/
+      sh ["nix-shell", "-p" "nix-prefetch-git", "--run",
+          "nix-prefetch-#{@@opts[:type] || :git}", "--quiet", repo, commit]
     end
   end
 
@@ -136,8 +149,7 @@ module Hey
                 @@opts[:fast]  ? "--fast"       : nil,
                 @@opts[:debug] ? "--show-trace" : nil,
                 *args,
-                sudo: !@@opts[:user],
-                host: @@opts[:host])
+                sudo: !@@opts[:user])
       end
     end
   end
@@ -155,10 +167,10 @@ module Hey
     lambda do |args|
       if args.empty?
         puts "Updating all flakes.."
-        sh ["nix", "flake", "update", @@opts[:flake]]
+        sh ["nix", "flake", "update", @@opts[:flake], "--impure"]
       else
         puts "Trying to update flakes: #{args.join ' '}"
-        sh ["nix", "flake", "lock"]
+        sh ["nix", "flake", "lock", "--impure"]
              .concat(args.map { |f| [ "--update-input", f ]}.flatten)
              .concat([@@opts[:flake]])
       end
@@ -207,6 +219,7 @@ module Hey
           puts "Swapping #{target}"
           sh [:mv, target, "#{target}.nix-store-backup"]
           sh [:cp, "#{target}.nix-store-backup", target]
+          sh [:chmod, "u+rw", target]
         else
           puts "Not a valid target: #{target}"
           exit 1
@@ -336,11 +349,15 @@ module Hey
     if cmd
       @@commands[cmd].fn.call args
     elsif command
-      puts "Couldn't recognize command '#{command}'"
-      exit 1
+      user_error "Couldn't recognize command '#{command}'"
     else
       raise UsageError
     end
+  end
+
+  def self.user_error message
+    puts "\e[31m#{message}\e[0m"
+    exit 1
   end
 
   def self.run args=[]
@@ -353,7 +370,7 @@ module Hey
                        .map { |c| "  %-22s %s\n" % ["#{c.name} #{c.args.join ' '}",
                                                     c.desc[0]]})
       opt.separator "\nOptions:"
-      opt.on '-d', '--dryrun',    "Don't change anything; preform dry run"
+      opt.on '-d', '--dryrun',    "Don't change anything; perform dry run"
       opt.on '-D', '--debug',     "Show trace on nix errors"
       opt.on '-f', '--flake URI', "Change target flake to URI"
       opt.on '-h', '--help',      "Display this help, or help for a specific command"
@@ -363,8 +380,11 @@ module Hey
     if @@opts[:flake] and @@opts[:flake].include? "#"
       @@opts[:flake], @@opts[:host] = @@opts[:flake].split '#'
     end
-    if not @@opts[:flake] or @@opts[:flake].empty?
-      @@opts[:flake] = File.expand_path('../', File.dirname(__FILE__))
+    @@opts[:host] ||= ENV['HOST'] || `hostname`.rstrip
+    @@opts[:flake] ||= File.expand_path('../', File.dirname(__FILE__))
+    @@opts[:flake] = File.expand_path(@@opts[:flake])
+    if File.symlink?(@@opts[:flake])
+      @@opts[:flake] = File.readlink(@@opts[:flake])
     end
 
     begin
@@ -373,6 +393,10 @@ module Hey
         puts "Error: No command specified!"
         puts
         raise UsageError
+      elsif not @@opts[:flake] || @@opts[:flake].empty?
+        user_error "No flake specified"
+      elsif not @@opts[:host] || @opts[:host].empty?
+        user_error "No host specified"
       else
         call args.first, args.drop(1)
       end
