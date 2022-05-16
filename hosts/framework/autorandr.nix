@@ -40,7 +40,7 @@
           export GDK_DPI_SCALE=$NEW_GDK_DPI_SCALE
         '';
         "wallpaper" =
-          "feh --bg-scale /etc/dotfiles/assets/wallpapers/functionalDNA_grey.png";
+          "feh --bg-scale /etc/nixos/modules/themes/functional/config/wallpaper.png";
         "polybar" = "~/.config/polybar/run.sh";
       };
     };
