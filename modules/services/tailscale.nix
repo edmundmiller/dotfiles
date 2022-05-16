@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.tailscale;
-in
-{
+in {
   options.modules.services.tailscale = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
@@ -13,6 +12,7 @@ in
     networking.firewall = {
       allowedTCPPorts = [ 41641 ];
       allowedUDPPorts = [ 41641 ];
+      checkReversePath = "loose";
     };
   };
 }
