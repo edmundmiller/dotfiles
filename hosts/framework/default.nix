@@ -74,7 +74,7 @@
       tailscale.enable = true;
     };
 
-    theme.active = "alucard";
+    theme.active = "functional";
   };
 
   programs.ssh.startAgent = true;
