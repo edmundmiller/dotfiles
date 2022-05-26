@@ -87,6 +87,9 @@
         };
         hooks.postswitch = ''
           source ~/.config/bspwm/bspwmrc
+          for file in $XDG_CONFIG_HOME/bspwm/rc.d/*; do
+            source "$file"
+          done
         '';
       };
       home = {
