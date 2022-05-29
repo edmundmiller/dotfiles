@@ -82,6 +82,7 @@ in {
         mimeTypes = [ "x-scheme-handler/org-protocol" ];
         categories = [ "System" ];
       })
+      # FIXME unstable.vale
       # yaml
       nodePackages.yaml-language-server
     ];
