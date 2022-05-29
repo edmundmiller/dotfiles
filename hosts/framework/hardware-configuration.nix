@@ -46,14 +46,6 @@
     GDK_DPI_SCALE = lib.mkDefault "0.5";
   };
 
-  ## ZFS
-  networking.hostId = "0dd71c1c";
-  boot.supportedFilesystems = [ "zfs" ];
-  boot.loader.grub.copyKernels = true;
-  boot.zfs.enableUnstable = true;
-  services.zfs.autoScrub.enable = true;
-  services.zfs.trim.enable = true;
-
   fileSystems."/" = {
     device = "tank/system/root";
     fsType = "zfs";
