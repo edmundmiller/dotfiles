@@ -80,6 +80,7 @@
   programs.ssh.startAgent = true;
   services.openssh.startWhenNeeded = true;
 
+  networking.hostId = "0dd71c1c";
   networking.networkmanager.enable = true;
   programs.nm-applet.enable = true;
   users.users.emiller.extraGroups = [ "networkmanager" ];
