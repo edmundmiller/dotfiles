@@ -4,8 +4,9 @@
 
 with lib;
 with lib.my;
-let cfg = config.modules.editors.emacs;
-    configDir = config.dotfiles.configDir;
+let
+  cfg = config.modules.editors.emacs;
+  configDir = config.dotfiles.configDir;
 in {
   options.modules.editors.emacs = {
     enable = mkBoolOpt false;
@@ -13,7 +14,8 @@ in {
       enable = mkBoolOpt false;
       forgeUrl = mkOpt types.str "https://github.com";
       repoUrl = mkOpt types.str "${forgeUrl}/hlissner/doom-emacs";
-      configRepoUrl = mkOpt types.str "${forgeUrl}/emiller88/doom-emacs-private";
+      configRepoUrl =
+        mkOpt types.str "${forgeUrl}/emiller88/doom-emacs-private";
     };
   };
 
