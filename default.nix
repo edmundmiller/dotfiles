@@ -48,8 +48,7 @@ with lib.my; {
   # hardware-configuration.nix or fileSystem config.
   fileSystems."/".device = mkDefault "/dev/disk/by-label/nixos";
 
-  # https://community.frame.work/t/using-the-ax210-with-linux-on-the-framework-laptop/1844/64
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
 
   boot.loader = {
     efi.canTouchEfiVariables = mkDefault true;
