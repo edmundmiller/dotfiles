@@ -3,8 +3,7 @@
 let
   name = "fennel";
   version = "0.9.2";
-in
-stdenv.mkDerivation {
+in stdenv.mkDerivation {
   inherit name version;
 
   src = fetchTarball {
@@ -12,9 +11,7 @@ stdenv.mkDerivation {
     sha256 = "0p9zr2vb9gq877advb5jvybx6dmqzmxqh4i7yzdr7fwvz7xzd2jv";
   };
 
-  buildInputs = [
-    luajit
-  ];
+  buildInputs = [ luajit ];
 
   phases = "installPhase";
   installPhase = ''

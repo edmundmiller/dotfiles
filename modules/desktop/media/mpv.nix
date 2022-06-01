@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.media.mpv;
-in
-{
+in {
   options.modules.desktop.media.mpv = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

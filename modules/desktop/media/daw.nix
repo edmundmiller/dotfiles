@@ -10,8 +10,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.media.daw;
-in
-{
+in {
   options.modules.desktop.media.daw = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

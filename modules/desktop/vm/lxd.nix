@@ -5,8 +5,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.vm.lxd;
-in
-{
+in {
   options.modules.desktop.vm.lxd = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

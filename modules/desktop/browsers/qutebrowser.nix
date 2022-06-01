@@ -10,8 +10,7 @@ with lib.my;
 let
   cfg = config.modules.desktop.browsers.qutebrowser;
   pkg = pkgs.unstable.qutebrowser;
-in
-{
+in {
   options.modules.desktop.browsers.qutebrowser = with types; {
     enable = mkBoolOpt false;
     userStyles = mkOpt lines "";
@@ -45,13 +44,12 @@ in
     };
 
     # Install language dictionaries for spellcheck backends
-    system.userActivationScripts.qutebrowserInstallDicts =
-      concatStringsSep "\\\n" (map
-        (lang: ''
-          if ! find "$XDG_DATA_HOME/qutebrowser/qtwebengine_dictionaries" -type d -maxdepth 1 -name "${lang}*" 2>/dev/null | grep -q .; then
-            ${pkgs.python3}/bin/python ${pkg}/share/qutebrowser/scripts/dictcli.py install ${lang}
-          fi
-        '')
-        cfg.dicts);
+    system.userActivationScripts.qutebrowserInstallDicts = concatStringsSep ''
+      \
+    '' (map (lang: ''
+      if ! find "$XDG_DATA_HOME/qutebrowser/qtwebengine_dictionaries" -type d -maxdepth 1 -name "${lang}*" 2>/dev/null | grep -q .; then
+        ${pkgs.python3}/bin/python ${pkg}/share/qutebrowser/scripts/dictcli.py install ${lang}
+      fi
+    '') cfg.dicts);
   };
 }

@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.syncthing;
-in
-{
+in {
   options.modules.services.syncthing = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
@@ -34,64 +33,69 @@ in
         xps_unbuntu.id =
           "2HGJP7E-4RPH7UM-3CKCRQ2-H7SOUTL-3ZI65IE-JRZCXMJ-NJD23HZ-6CJ3HQ5";
       };
-      folders =
-        let
-          deviceEnabled = devices: lib.elem config.networking.hostName devices;
-          deviceType = devices:
-            if deviceEnabled devices then "sendreceive" else "receiveonly";
-        in
-        {
-          archive = rec {
-            devices = [ "framework" "meshify" "unas" ];
-            path = "/home/${config.user.name}/archive";
-            watch = false;
-            rescanInterval = 3600 * 6;
-            type = deviceType [ "framework" "meshify" ];
-            enable = deviceEnabled devices;
-            versioning.type = "simple";
-            versioning.params.keep = "2";
-          };
-          elfeed = rec {
-            devices = [ "framework" "meshify" "unas" "pbp" ];
-            path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
-            watch = false;
-            rescanInterval = 3600 * 6;
-            type = deviceType [ "framework" "meshify" "pbp" ];
-            enable = deviceEnabled devices;
-          };
-          sync = rec {
-            devices =
-              [ "framework" "oneplus" "meshify" "unas" "pbp" "xps" "xps_unbuntu" ];
-            path = "/home/${config.user.name}/sync";
-            watch = true;
-            rescanInterval = 3600 * 6;
-            type = deviceType [ "framework" "meshify" "pbp" "xps_ubuntu" ];
-            enable = deviceEnabled devices;
-            versioning = {
-              type = "staggered";
-              params = {
-                cleanInterval = "3600";
-                maxAge = "15768000";
-              };
+      folders = let
+        deviceEnabled = devices: lib.elem config.networking.hostName devices;
+        deviceType = devices:
+          if deviceEnabled devices then "sendreceive" else "receiveonly";
+      in {
+        archive = rec {
+          devices = [ "framework" "meshify" "unas" ];
+          path = "/home/${config.user.name}/archive";
+          watch = false;
+          rescanInterval = 3600 * 6;
+          type = deviceType [ "framework" "meshify" ];
+          enable = deviceEnabled devices;
+          versioning.type = "simple";
+          versioning.params.keep = "2";
+        };
+        elfeed = rec {
+          devices = [ "framework" "meshify" "unas" "pbp" ];
+          path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
+          watch = false;
+          rescanInterval = 3600 * 6;
+          type = deviceType [ "framework" "meshify" "pbp" ];
+          enable = deviceEnabled devices;
+        };
+        sync = rec {
+          devices = [
+            "framework"
+            "oneplus"
+            "meshify"
+            "unas"
+            "pbp"
+            "xps"
+            "xps_unbuntu"
+          ];
+          path = "/home/${config.user.name}/sync";
+          watch = true;
+          rescanInterval = 3600 * 6;
+          type = deviceType [ "framework" "meshify" "pbp" "xps_ubuntu" ];
+          enable = deviceEnabled devices;
+          versioning = {
+            type = "staggered";
+            params = {
+              cleanInterval = "3600";
+              maxAge = "15768000";
             };
           };
-          src = rec {
-            devices = [ "framework" "meshify" "unas" ];
-            path = "/home/${config.user.name}/src";
-            watch = false;
-            rescanInterval = 3600 * 2;
-            type = deviceType [ "framework" "meshify" ];
-            enable = deviceEnabled devices;
-          };
-          secrets = rec {
-            devices = [ "framework" "oneplus" "meshify" "unas" "pbp" ];
-            path = "/home/${config.user.name}/.secrets";
-            watch = true;
-            rescanInterval = 3600;
-            type = deviceType [ "framework" "meshify" "pbp" ];
-            enable = deviceEnabled devices;
-          };
         };
+        src = rec {
+          devices = [ "framework" "meshify" "unas" ];
+          path = "/home/${config.user.name}/src";
+          watch = false;
+          rescanInterval = 3600 * 2;
+          type = deviceType [ "framework" "meshify" ];
+          enable = deviceEnabled devices;
+        };
+        secrets = rec {
+          devices = [ "framework" "oneplus" "meshify" "unas" "pbp" ];
+          path = "/home/${config.user.name}/.secrets";
+          watch = true;
+          rescanInterval = 3600;
+          type = deviceType [ "framework" "meshify" "pbp" ];
+          enable = deviceEnabled devices;
+        };
+      };
     };
   };
 }

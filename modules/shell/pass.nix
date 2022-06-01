@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.shell.pass;
-in
-{
+in {
   options.modules.shell.pass = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

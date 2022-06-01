@@ -88,7 +88,6 @@
     options = [ "bind" ];
   };
 
-
   fileSystems."/data/media/docs" = {
     device = "datatank/nfs/media/docs";
     fsType = "zfs";

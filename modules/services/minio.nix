@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.minio;
-in
-{
+in {
   options.modules.services.minio = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
