@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.apps.discord;
-in
-{
+in {
   options.modules.desktop.apps.discord = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

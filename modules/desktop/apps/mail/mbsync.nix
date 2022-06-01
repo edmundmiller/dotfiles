@@ -10,8 +10,7 @@ let
   notmuchrc = "/home/emiller/.config/notmuch/notmuchrc";
 
   cfg = config.modules.desktop.apps.mail.mbsync;
-in
-{
+in {
 
   options.modules.desktop.apps.mail.mbsync = { enable = mkBoolOpt false; };
 

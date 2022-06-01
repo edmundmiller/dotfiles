@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.vm.qemu;
-in
-{
+in {
   options.modules.desktop.vm.qemu = { enable = mkBoolOpt false; };
 
   config =

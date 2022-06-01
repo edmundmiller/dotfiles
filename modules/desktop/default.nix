@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop;
-in
-{
+in {
   config = mkIf config.services.xserver.enable {
     assertions = [
       {
@@ -13,12 +12,9 @@ in
           "Can't have more than one desktop environment enabled at a time";
       }
       {
-        assertion =
-          let srv = config.services;
-          in
-          srv.xserver.enable || srv.sway.enable || !(anyAttrs
-            (n: v: isAttrs v && anyAttrs (n: v: isAttrs v && v.enable))
-            cfg);
+        assertion = let srv = config.services;
+        in srv.xserver.enable || srv.sway.enable || !(anyAttrs
+          (n: v: isAttrs v && anyAttrs (n: v: isAttrs v && v.enable)) cfg);
         message = "Can't enable a desktop app without a desktop environment";
       }
     ];

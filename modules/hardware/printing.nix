@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.hardware.printing;
-in
-{
+in {
   options.modules.hardware.printing = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

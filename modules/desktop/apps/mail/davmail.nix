@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.apps.mail.davmail;
-in
-{
+in {
   options.modules.desktop.apps.mail.davmail = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

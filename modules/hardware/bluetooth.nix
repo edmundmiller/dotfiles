@@ -5,8 +5,7 @@ with lib.my;
 let
   hwCfg = config.modules.hardware;
   cfg = hwCfg.bluetooth;
-in
-{
+in {
   options.modules.hardware.bluetooth = {
     enable = mkBoolOpt false;
     audio.enable = mkBoolOpt false;

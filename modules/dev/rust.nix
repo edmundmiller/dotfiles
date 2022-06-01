@@ -12,8 +12,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.dev.rust;
-in
-{
+in {
   options.modules.dev.rust = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

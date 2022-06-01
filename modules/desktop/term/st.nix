@@ -8,8 +8,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.desktop.term.st;
-in
-{
+in {
   options.modules.desktop.term.st = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

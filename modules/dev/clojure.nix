@@ -7,16 +7,10 @@
 with lib;
 with lib.my;
 let cfg = config.modules.dev.clojure;
-in
-{
+in {
   options.modules.dev.clojure = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      clojure
-      clojure-lsp
-      clj-kondo
-      leiningen
-    ];
+    user.packages = with pkgs; [ clojure clojure-lsp clj-kondo leiningen ];
   };
 }
