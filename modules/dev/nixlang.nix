@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.dev.nixlang;
-in
-{
+in {
   options.modules.dev.nixlang = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

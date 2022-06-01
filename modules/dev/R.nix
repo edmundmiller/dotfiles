@@ -23,8 +23,7 @@ let
       knitr
     ];
   };
-in
-{
+in {
   options.modules.dev.R = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

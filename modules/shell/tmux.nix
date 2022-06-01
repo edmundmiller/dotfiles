@@ -11,8 +11,7 @@ let
     #!${pkgs.stdenv.shell}
     exec ${pkgs.tmux}/bin/tmux -f "$TMUX_HOME/config" "$@"
   '');
-in
-{
+in {
   options.modules.shell.tmux = with types; {
     enable = mkBoolOpt false;
     rcFiles = mkOpt (listOf (either str path)) [ ];

@@ -15,19 +15,16 @@ with lib; {
                "${file}" \
                >>"$out/${fileName}.css"
         '';
-    in
-    "${compiledStyles}/${fileName}.css";
+    in "${compiledStyles}/${fileName}.css";
 
   toFilteredImage = imageFile: options:
     let
       result = "result.png";
-      filteredImage = pkgs.runCommand "filterWallpaper"
-        {
-          buildInputs = [ pkgs.imagemagick ];
-        } ''
+      filteredImage = pkgs.runCommand "filterWallpaper" {
+        buildInputs = [ pkgs.imagemagick ];
+      } ''
         mkdir "$out"
         convert ${options} ${imageFile} $out/${result}
       '';
-    in
-    "${filteredImage}/${result}";
+    in "${filteredImage}/${result}";
 }

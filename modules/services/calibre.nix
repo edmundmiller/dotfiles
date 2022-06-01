@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.calibre;
-in
-{
+in {
   options.modules.services.calibre = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

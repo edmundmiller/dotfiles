@@ -3,8 +3,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.services.nginx;
-in
-{
+in {
   options.modules.services.nginx = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {

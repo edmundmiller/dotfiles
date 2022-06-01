@@ -10,8 +10,7 @@
 with lib;
 with lib.my;
 let cfg = config.modules.dev.shell;
-in
-{
+in {
   options.modules.dev.shell = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable { user.packages = with pkgs; [ shellcheck ]; };
