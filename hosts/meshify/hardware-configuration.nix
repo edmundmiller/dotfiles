@@ -88,15 +88,15 @@
     ## Monitors
     monitorSection = ''
       VendorName     "Unknown"
-      ModelName      "LG Electronics LG Ultra HD"
-      HorizSync       30.0 - 135.0
-      VertRefresh     56.0 - 61.0
+      ModelName      "GBT Gigabyte M32U"
+      HorizSync       255.0 - 255.0
+      VertRefresh     48.0 - 144.0
       Option         "DPMS"
     '';
     screenSection = ''
       Option         "Stereo" "0"
       Option         "nvidiaXineramaInfoOrder" "DFP-3"
-      Option         "metamodes" "DP-2: nvidia-auto-select +0+840, HDMI-0: nvidia-auto-select +3840+0 {rotation=right}"
+      Option         "metamodes" "DP-2: 3840x2160_144 +0+840, HDMI-0: nvidia-auto-select +3840+0 {rotation=right}"
       Option         "SLI" "Off"
       Option         "MultiGPU" "Off"
       Option         "BaseMosaic" "off"
