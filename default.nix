@@ -61,6 +61,7 @@ with lib.my; {
     coreutils
     git
     vim
+    visidata
     wget
     go-task
     gnumake
