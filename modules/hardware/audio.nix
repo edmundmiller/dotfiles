@@ -35,6 +35,7 @@ in {
 
     systemd.user.services.easyeffects = {
       script = "${pkgs.easyeffects}/bin/easyeffects --gapplication-service";
+      wantedBy = [ "multi-user.target" ];
     };
   };
 }
