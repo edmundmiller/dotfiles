@@ -39,6 +39,11 @@
           echo "Xft.dpi: $DPI" | ${pkgs.xorg.xrdb}/bin/xrdb -merge
           export GDK_SCALE=$NEW_GDK_SCALE
           export GDK_DPI_SCALE=$NEW_GDK_DPI_SCALE
+
+          source ~/.config/bspwm/bspwmrc
+          for file in $XDG_CONFIG_HOME/bspwm/rc.d/*; do
+            source "$file"
+          done
         '';
         "wallpaper" =
           "feh --bg-scale /etc/nixos/modules/themes/functional/config/wallpaper.png";
@@ -64,9 +69,6 @@
             rate = "60.00";
           };
         };
-        hooks.postswitch = ''
-          bspc monitor eDP-1 -d {1,2,3,4,5}
-        '';
       };
       lab = {
         fingerprint = {
@@ -85,12 +87,6 @@
           };
           eDP-1.enable = false;
         };
-        hooks.postswitch = ''
-          source ~/.config/bspwm/bspwmrc
-          for file in $XDG_CONFIG_HOME/bspwm/rc.d/*; do
-            source "$file"
-          done
-        '';
       };
       home = {
         fingerprint = {
@@ -108,9 +104,6 @@
           };
           eDP-1.enable = false;
         };
-        hooks.postswitch = ''
-          bspc monitor DP-3-3 -d {1,2,3,4,5}
-        '';
       };
     };
   };
