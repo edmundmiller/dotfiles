@@ -3,7 +3,7 @@
 {
   services.autorandr = {
     enable = true;
-    defaultTarget = "main";
+    defaultTarget = "mobile";
   };
 
   home-manager.users.emiller.programs.autorandr = {
