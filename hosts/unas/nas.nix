@@ -17,11 +17,6 @@
     fsType = "zfs";
   };
 
-  fileSystems."/srv/nfs/mail" = {
-    device = "/data/media/mail";
-    options = [ "bind" ];
-  };
-
   fileSystems."/data/backup/google" = {
     device = "datatank/backup/google";
     fsType = "zfs";
@@ -32,19 +27,9 @@
     fsType = "zfs";
   };
 
-  fileSystems."/srv/nfs/minio" = {
-    device = "/data/minio";
-    options = [ "bind" ];
-  };
-
   fileSystems."/data/backup/moni" = {
     device = "datatank/backup/moni";
     fsType = "zfs";
-  };
-
-  fileSystems."/srv/nfs/backup/moni" = {
-    device = "/data/backup/moni";
-    options = [ "bind" ];
   };
 
   ## nfs
@@ -140,14 +125,11 @@
       /srv/nfs               *(rw,insecure,no_subtree_check)
       /srv/nfs/backup/app    *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/backup/k10    *(rw,nohide,insecure,no_subtree_check)
-      /srv/nfs/backup/moni   *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/books         *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/configs       *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/downloads     *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/docs          *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/longhorn      *(rw,nohide,insecure,no_subtree_check)
-      /srv/nfs/mail          *(rw,nohide,insecure,no_subtree_check)
-      /srv/nfs/minio         *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/music         *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/photos        *(rw,nohide,insecure,no_subtree_check)
       /srv/nfs/video         *(rw,nohide,insecure,no_subtree_check)
