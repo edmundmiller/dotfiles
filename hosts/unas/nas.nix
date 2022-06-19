@@ -32,6 +32,11 @@
     fsType = "zfs";
   };
 
+  fileSystems."/data/backup/tdmiller" = {
+    device = "datatank/backup/tdmiller";
+    fsType = "zfs";
+  };
+
   ## nfs
   fileSystems."/data/backup/app" = {
     device = "datatank/backup/app";
