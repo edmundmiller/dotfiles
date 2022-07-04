@@ -18,7 +18,7 @@
 
   ## HiDPI Monitors
   hardware.video.hidpi.enable = lib.mkDefault true;
-  services.xserver.dpi = 192;
+  services.xserver.dpi = 140;
   fonts.fontconfig.hinting.enable = false;
   environment.variables = {
     GDK_SCALE = "2";
