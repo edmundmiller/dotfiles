@@ -16,5 +16,6 @@ in {
     # For Liveshare
     services.gnome.gnome-keyring.enable = true;
     programs.seahorse.enable = true;
+    programs.dconf.enable = true;
   };
 }
