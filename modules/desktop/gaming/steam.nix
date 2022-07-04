@@ -46,6 +46,11 @@ in {
       systemd.extraConfig = "DefaultLimitNOFILE=1048576";
     }
 
-    (mkIf cfg.hardware.enable { hardware.steam-hardware.enable = true; })
+    (mkIf cfg.hardware.enable {
+      hardware.steam-hardware.enable = true;
+      # Xbox controller support
+      hardware.xpadneo.enable = true;
+    })
+
   ]);
 }
