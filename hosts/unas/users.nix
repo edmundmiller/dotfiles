@@ -13,6 +13,7 @@
       isNormalUser = true;
       createHome = true;
       shell = pkgs.bashInteractive;
+      openssh.authorizedKeys.keyFiles = [ "/home/tdmiller/.ssh/id_tailscale.pub" ];
     };
   };
 }
