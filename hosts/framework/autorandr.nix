@@ -20,13 +20,13 @@
               NEW_GDK_DPI_SCALE=0.5
               ;;
             lab)
-              DPI=192
+              DPI=138
               MONITOR="DP-2-1"
               NEW_GDK_SCALE=2
               NEW_GDK_DPI_SCALE=0.5
               ;;
             home)
-              DPI=192
+              DPI=140
               MONITOR="DP-3-3"
               NEW_GDK_SCALE=2
               NEW_GDK_DPI_SCALE=0.5
