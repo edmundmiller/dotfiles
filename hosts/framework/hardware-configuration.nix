@@ -38,7 +38,7 @@
   hardware.video.hidpi.enable = lib.mkDefault true;
 
   # Fix font sizes in X
-  services.xserver.dpi = 200;
+  services.xserver.dpi = 201;
 
   # Fix sizes of GTK/GNOME ui elements
   environment.variables = {
