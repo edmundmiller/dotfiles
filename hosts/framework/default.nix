@@ -48,6 +48,7 @@
     };
     dev = {
       cc.enable = true;
+      java.enable = true;
       julia.enable = true;
       nixlang.enable = true;
       node.enable = true;
