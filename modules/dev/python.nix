@@ -14,7 +14,7 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      conda
+      unstable.micromamba
       python3
       python3Packages.pip
       python3Packages.ipython
@@ -40,6 +40,7 @@ in {
       po = "poetry";
       ipy = "ipython --no-banner";
       ipylab = "ipython --pylab=qt5 --no-banner";
+      mm = "micromamba";
     };
   };
 }
