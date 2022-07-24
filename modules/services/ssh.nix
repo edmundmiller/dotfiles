@@ -29,8 +29,8 @@ in {
           User eam150030
 
       Host europa
-          HostName europa.circ.utdallas.edu
-          User eam150030
+          HostName europa.trecis.cloud
+          User emiller
 
       Host ganymede
           HostName ganymede.utdallas.edu
