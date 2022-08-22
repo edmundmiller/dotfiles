@@ -79,8 +79,8 @@ with lib.my; {
 
     nix = let users = [ "root" config.user.name ];
     in {
-      trustedUsers = users;
-      allowedUsers = users;
+      settings.trusted-users = users;
+      settings.allowed-users = users;
     };
 
     # must already begin with pre-existing PATH. Also, can't use binDir here,
