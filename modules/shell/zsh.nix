@@ -41,6 +41,7 @@ in {
       zsh
       nix-zsh-completions
       bat
+      btop
       exa
       fasd
       fd
