@@ -45,7 +45,7 @@ in {
       exa
       fasd
       fd
-      fzf
+      unstable.fzf
       tldr
       ripgrep
     ];
