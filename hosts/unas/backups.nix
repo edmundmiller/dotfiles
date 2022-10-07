@@ -44,6 +44,7 @@ in {
     };
     B2-sync-backup = {
       initialize = true;
+      package = pkgs.unstable.restic;
       passwordFile = "/home/emiller/.secrets/restic";
       paths = [ "/home/emiller/sync" ];
       repository = "rclone:B2:sync-restic/";
@@ -55,6 +56,7 @@ in {
     };
     B2-archive-backup = {
       initialize = true;
+      package = pkgs.unstable.restic;
       passwordFile = "/home/emiller/.secrets/restic";
       paths = [ "/home/emiller/archive" ];
       repository = "rclone:B2:archive-restic/";
