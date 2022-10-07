@@ -47,6 +47,7 @@ in {
       fd
       unstable.fzf
       tldr
+      unstable.rclone
       ripgrep
     ];
 
