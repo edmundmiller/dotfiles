@@ -90,6 +90,10 @@
 
   time.timeZone = "America/Chicago";
 
+  services.mullvad-vpn.enable = true;
+
+  environment.systemPackages = with pkgs; [ mullvad ];
+
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
