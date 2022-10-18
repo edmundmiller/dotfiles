@@ -18,11 +18,13 @@ in {
   config = mkIf cfg.enable (mkMerge [
     {
       user.packages = with pkgs; [
+        conda
         python3
         python3Packages.pip
         python3Packages.black
         python3Packages.isort
         python3Packages.ipython
+        python3Packages.jupyterlab
         python3Packages.setuptools
         python3Packages.pylint
         python3Packages.poetry
