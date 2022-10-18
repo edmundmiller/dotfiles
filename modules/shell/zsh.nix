@@ -43,12 +43,12 @@ in {
       bat
       btop
       exa
-      fasd
       fd
       unstable.fzf
       tldr
       unstable.rclone
       ripgrep
+      sd
     ];
 
     env = {
