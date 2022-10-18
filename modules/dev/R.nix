@@ -32,6 +32,7 @@ in {
       # knitr
       texlive.combined.scheme-full
       pandoc
+      unstable.quarto
     ];
     environment.variables.R_PROFILE = "$XDG_CONFIG_HOME/R/Rprofile";
   };
