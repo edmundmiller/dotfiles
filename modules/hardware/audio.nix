@@ -35,8 +35,12 @@ in {
 
     programs.dconf.enable = true;
     systemd.user.services.easyeffects = {
-      script = "${pkgs.easyeffects}/bin/easyeffects --gapplication-service";
+      enable = true;
+      description = "";
       wantedBy = [ "default.target" ];
+      serviceConfig.Restart = "always";
+      serviceConfig.RestartSec = 2;
+      serviceConfig.ExecStart = "${pkgs.easyeffects}/bin/easyeffects --gapplication-service";
     };
   };
 }
