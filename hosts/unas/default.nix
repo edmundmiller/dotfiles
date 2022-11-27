@@ -8,6 +8,7 @@
     ./backups.nix
     ./nas.nix
     ./modules/minio.nix
+    ./modules/paperless.nix
     ./users.nix
   ];
 
