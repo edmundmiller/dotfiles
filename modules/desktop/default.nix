@@ -53,7 +53,6 @@ in {
       config.user.name;
 
     services.picom = {
-      experimentalBackends = true;
       backend = "glx";
       vSync = true;
       opacityRules = [

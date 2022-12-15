@@ -8,7 +8,7 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      mpv-with-scripts
+      (mpv.override { scripts = [ mpvScripts.mpris ]; })
       mpvc # CLI controller for mpv
       (mkIf config.services.xserver.enable celluloid) # nice GTK GUI for mpv
     ];
