@@ -20,8 +20,8 @@ in {
       devices = {
         framework.id =
           "CHWKD4E-A7MZXUT-EGANUVC-YJDNMDN-6WLTMYQ-TLI2RVC-PYBCNAX-UA3LFAC";
-        oneplus.id =
-          "3CJC4PH-7ZIAKIP-5N2H56K-YVF762X-53TEPYK-GGCP7VO-5YFF62W-QVCTFAD";
+        pixel.id =
+          "UV3UWHG-GCKHIFV-6ORBZSE-Z3IP2CN-NO2FBYE-6BDIAPC-6FJZ4AO-BGH5LQZ";
         meshify.id =
           "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
         pbp.id =
@@ -59,7 +59,7 @@ in {
         sync = rec {
           devices = [
             "framework"
-            "oneplus"
+            "pixel"
             "meshify"
             "unas"
             "pbp"
@@ -88,7 +88,7 @@ in {
           enable = deviceEnabled devices;
         };
         secrets = rec {
-          devices = [ "framework" "oneplus" "meshify" "unas" "pbp" ];
+          devices = [ "framework" "pixel" "meshify" "unas" "pbp" ];
           path = "/home/${config.user.name}/.secrets";
           watch = true;
           rescanInterval = 3600;
