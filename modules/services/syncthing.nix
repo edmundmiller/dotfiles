@@ -57,15 +57,8 @@ in {
           enable = deviceEnabled devices;
         };
         sync = rec {
-          devices = [
-            "framework"
-            "pixel"
-            "meshify"
-            "unas"
-            "pbp"
-            "xps"
-            "xps_unbuntu"
-          ];
+          devices =
+            [ "framework" "pixel" "meshify" "unas" "pbp" "xps" "xps_unbuntu" ];
           path = "/home/${config.user.name}/sync";
           watch = true;
           rescanInterval = 3600 * 6;
