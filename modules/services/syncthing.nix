@@ -88,6 +88,14 @@ in {
           type = deviceType [ "framework" "meshify" "pbp" ];
           enable = deviceEnabled devices;
         };
+        seedvault = rec {
+          devices = [ "pixel" "unas" ];
+          path = "/home/${config.user.name}/.seedvault";
+          watch = false;
+          rescanInterval = 3600;
+          type = deviceType [ "pixel" ];
+          enable = deviceEnabled devices;
+        };
       };
     };
   };
