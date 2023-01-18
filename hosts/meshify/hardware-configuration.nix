@@ -16,6 +16,9 @@
   powerManagement.cpuFreqGovernor = "performance";
   hardware.cpu.amd.updateMicrocode = true;
 
+  ## Sway Nvidia
+  hardware.nvidia.modesetting.enable = true;
+
   ## HiDPI Monitors
   hardware.video.hidpi.enable = lib.mkDefault true;
   services.xserver.dpi = 140;
