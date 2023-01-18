@@ -10,5 +10,17 @@ in {
     programs.sway.enable = true;
     programs.sway.wrapperFeatures.gtk = true;
 
+    fonts = {
+      fonts = with pkgs; [
+        fira-code
+        fira-code-symbols
+        open-sans
+        jetbrains-mono
+        siji
+        font-awesome
+        noto-fonts-cjk-sans
+        noto-fonts-cjk-serif
+      ];
+    };
   };
 }
