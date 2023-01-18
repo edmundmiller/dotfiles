@@ -22,5 +22,7 @@ in {
         noto-fonts-cjk-serif
       ];
     };
+
+    services.xserver.displayManager.gdm.enable = true;
   };
 }
