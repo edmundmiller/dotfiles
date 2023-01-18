@@ -3,7 +3,7 @@
 
   modules = {
     desktop = {
-      bspwm.enable = true;
+      sway.enable = true;
 
       apps.rofi.enable = true;
       apps.discord.enable = true;
@@ -51,6 +51,7 @@
     };
     dev = {
       cc.enable = true;
+      java.enable = true;
       julia.enable = true;
       nixlang.enable = true;
       node.enable = true;
@@ -90,6 +91,8 @@
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Chicago";
+
+  programs.sway.extraOptions = [ "--debug" "--unsupported-gpu" ];
 
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
