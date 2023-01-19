@@ -7,8 +7,10 @@ in {
   options.modules.desktop.sway = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
-    programs.sway.enable = true;
-    programs.sway.wrapperFeatures.gtk = true;
+    home-manager.users.emiller = {
+      wayland.windowManager.sway.enable = true;
+      services.swayidle.enable = true;
+    };
 
     fonts = {
       fonts = with pkgs; [
