@@ -11,6 +11,7 @@ in {
       wayland.windowManager.sway.enable = true;
       services.swayidle.enable = true;
       programs.foot.enable = true;
+      wayland.windowManager.sway.config.modifier = "Mod4";
     };
 
     fonts = {
