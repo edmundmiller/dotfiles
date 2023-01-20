@@ -10,6 +10,7 @@ in {
     home-manager.users.emiller = {
       wayland.windowManager.sway.enable = true;
       services.swayidle.enable = true;
+      programs.foot.enable = true;
     };
 
     fonts = {
