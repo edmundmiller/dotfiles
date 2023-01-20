@@ -12,6 +12,11 @@ in {
       services.swayidle.enable = true;
       programs.foot.enable = true;
       wayland.windowManager.sway.config.modifier = "Mod4";
+      wayland.windowManager.sway.extraConfig = ''
+        input "type:keyboard" {
+            xkb_options caps:escape
+        }
+      '';
     };
 
     fonts = {
