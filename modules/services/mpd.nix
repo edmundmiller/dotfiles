@@ -18,7 +18,7 @@ in {
       home-manager.users.${config.user.name}.programs.beets = {
         enable = true;
         settings = {
-          plugins = "missing convert duplicates fetchart embedart lastgenre";
+          plugins = "missing chroma convert duplicates fetchart embedart lastgenre";
           directory = "/data/media/music";
           library = "/data/media/music/beets.db";
           paths = {
