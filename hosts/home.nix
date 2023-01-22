@@ -3,9 +3,9 @@
 with lib; {
   networking.hosts = let
     hostConfig = {
-      "192.168.42.99" = [ "framework" ];
-      "192.168.42.88" = [ "meshify" ];
-      "192.168.42.101" = [ "unas" ];
+      "192.168.1.99" = [ "framework" ];
+      "192.168.1.88" = [ "meshify" ];
+      "192.168.1.101" = [ "unas" ];
     };
     hosts = flatten (attrValues hostConfig);
     hostName = config.networking.hostName;
