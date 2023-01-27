@@ -9,7 +9,6 @@ in {
   config = mkIf cfg.enable {
     home-manager.users.emiller = {
       wayland.windowManager.sway.enable = true;
-      services.swayidle.enable = true;
       programs.foot.enable = true;
       wayland.windowManager.sway.config.modifier = "Mod4";
       wayland.windowManager.sway.extraConfig = ''
@@ -17,6 +16,42 @@ in {
             xkb_options caps:escape
         }
       '';
+
+      services.swayidle = {
+        enable = true;
+        events = [
+          {
+            event = "before-sleep";
+            command = "${pkgs.swaylock}/bin/swaylock";
+          }
+          {
+            event = "lock";
+            command = "lock";
+          }
+        ];
+        timeouts = [{
+          timeout = 10;
+          command = "${pkgs.swaylock}/bin/swaylock -fF";
+        }];
+      };
+
+      home.packages = with pkgs; [
+        # wayland env requirements
+        qt5.qtwayland
+        qt6.qtwayland
+
+        # wayland adjacent
+        sirula # launcher
+        wayout # display on/off
+        wl-clipboard # wl-{copy,paste}
+        wtype # virtual keystroke insertion
+
+        # misc utils
+        # imv
+        # oculante
+        grim
+        slurp
+      ];
     };
 
     fonts = {
