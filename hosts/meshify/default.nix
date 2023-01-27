@@ -105,7 +105,6 @@
       export WLR_NO_HARDWARE_CURSORS=1
     '';
   };
-  services.xserver.displayManager.gdm.enable = true;
 
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
