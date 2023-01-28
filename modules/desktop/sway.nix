@@ -91,5 +91,12 @@ in {
         auth include login
       '';
     };
+
+    home-manager.users.emiller.wayland.windowManager.sway = {
+      extraSessionCommands = ''
+        export WLR_NO_HARDWARE_CURSORS=1
+      '';
+    };
+
   };
 }
