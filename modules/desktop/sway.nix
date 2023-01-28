@@ -44,6 +44,16 @@ in {
         show-failed-attempts = true;
       };
 
+      home.pointerCursor = {
+        name = "Adwaita";
+        package = pkgs.gnome.adwaita-icon-theme;
+        size = 24;
+        x11 = {
+          enable = true;
+          defaultCursor = "Adwaita";
+        };
+      };
+
       home.packages = with pkgs; [
         # wayland env requirements
         qt5.qtwayland
