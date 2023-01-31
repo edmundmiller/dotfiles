@@ -64,6 +64,7 @@
   fileSystems."/home/emiller" = {
     device = "tank/user/home/emiller";
     fsType = "zfs";
+    neededForBoot = true;
   };
 
   fileSystems."/boot" = {

@@ -53,6 +53,7 @@
   fileSystems."/home" = {
     device = "tank/user/home";
     fsType = "zfs";
+    neededForBoot = true;
   };
 
   fileSystems."/boot" = {
