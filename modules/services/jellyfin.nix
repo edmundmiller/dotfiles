@@ -10,11 +10,7 @@ in {
 
   config = mkIf cfg.enable {
     services.jellyfin.enable = true;
-
-    networking.firewall = {
-      allowedTCPPorts = [ 8096 ];
-      allowedUDPPorts = [ 8096 ];
-    };
+    services.jellyfin.openFirewall = true;
 
     user.extraGroups = [ "jellyfin" ];
   };
