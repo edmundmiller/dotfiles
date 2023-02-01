@@ -10,7 +10,52 @@ in {
     home-manager.users.emiller = {
       wayland.windowManager.sway.enable = true;
       programs.foot.enable = true;
-      wayland.windowManager.sway.config.modifier = "Mod4";
+      wayland.windowManager.sway.config = rec {
+        modifier = "Mod4";
+        terminal = "foot";
+        focus.followMouse = "always";
+        colors = let
+          # from gruvbox image:
+          red = "#cc241d";
+          pink = "#d3869b";
+          blue = "#458588";
+          green = "#b8bb26";
+          yellow = "#d79921";
+          orange = "#fe8019";
+          # bgcolor = "#2c2c2c";
+          bgcolor = "#000000";
+          _f = red;
+        in {
+          "focused" = {
+            border = _f;
+            background = _f;
+            text = "#ffffff";
+            indicator = "#ffffff";
+            childBorder = _f;
+          };
+          "unfocused" = {
+            border = bgcolor;
+            background = bgcolor;
+            text = "#888888";
+            indicator = "#ffffff";
+            childBorder = bgcolor;
+          };
+        };
+        gaps = {
+          inner = 2;
+          outer = 2;
+        };
+        window.border = 4;
+        window.titlebar = false;
+
+        keybindings = lib.mkOptionDefault {
+          "${modifier}+Return" = "exec ${terminal}";
+          # "${modifier}+space" = "\${pkgs.dmenu}/bin/dmenu_path | \${pkgs.dmenu}/bin/dmenu | \${pkgs.findutils}/bin/xargs swaymsg exec --";
+          "XF86AudioMute" = "exec pamixer --toggle-mute";
+          "XF86AudioLowerVolume" = "exec pamixer -d 10";
+          "XF86AudioRaiseVolume" = "exec pamixer -i 10";
+        };
+      };
       wayland.windowManager.sway.extraConfig = ''
         input "type:keyboard" {
             xkb_options caps:escape
