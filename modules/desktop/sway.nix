@@ -49,7 +49,9 @@ in {
         window.titlebar = false;
 
         keybindings = lib.mkOptionDefault {
-          "${modifier}+Return" = "exec ${terminal}";
+          "${modifier}+Return" = ''
+            exec ${terminal} -e bash -c "(tmux ls | grep -qEv 'attached|scratch' && tmux at) || tmux"
+          '';
           # "${modifier}+space" = "\${pkgs.dmenu}/bin/dmenu_path | \${pkgs.dmenu}/bin/dmenu | \${pkgs.findutils}/bin/xargs swaymsg exec --";
           "XF86AudioMute" = "exec pamixer --toggle-mute";
           "XF86AudioLowerVolume" = "exec pamixer -d 10";
