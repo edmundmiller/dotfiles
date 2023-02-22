@@ -62,6 +62,8 @@ in {
         input "type:keyboard" {
             xkb_options caps:escape
         }
+        output HDMI-A-1 disable
+        output DP-2 disable
       '';
 
       services.swayidle = {
@@ -77,7 +79,7 @@ in {
           }
         ];
         timeouts = [{
-          timeout = 180;
+          timeout = 300;
           command = "${pkgs.swaylock}/bin/swaylock -fF";
         }];
       };
@@ -91,15 +93,15 @@ in {
         show-failed-attempts = true;
       };
 
-      home.pointerCursor = {
-        name = "Adwaita";
-        package = pkgs.gnome.adwaita-icon-theme;
-        size = 24;
-        x11 = {
-          enable = true;
-          defaultCursor = "Adwaita";
-        };
-      };
+      # home.pointerCursor = {
+      #   name = "Adwaita";
+      #   package = pkgs.gnome.adwaita-icon-theme;
+      #   size = 24;
+      #   x11 = {
+      #     enable = true;
+      #     defaultCursor = "Adwaita";
+      #   };
+      # };
 
       home.packages = with pkgs; [
         # wayland env requirements
@@ -133,16 +135,16 @@ in {
       ];
     };
 
-    services.greetd = {
-      enable = true;
-      settings = {
-
-        default_session = {
-          command = "${pkgs.greetd.greetd}/bin/agreety --cmd sway";
-        };
-
-      };
-    };
+    # services.greetd = {
+    #   enable = true;
+    #   settings = {
+    #
+    #     default_session = {
+    #       command = "${pkgs.greetd.greetd}/bin/agreety --cmd sway";
+    #     };
+    #
+    #   };
+    # };
     security.pam.services.swaylock = {
       text = ''
         auth include login
@@ -155,6 +157,18 @@ in {
         export NIXOS_OZONE_WL=1
       '';
     };
+        environment.sessionVariables = {
+      WLR_DRM_NO_ATOMIC = "1";
+      LIBVA_DRIVER_NAME = "nvidia";
+      MOZ_DISABLE_RDD_SANDBOX = "1";
+      EGL_PLATFORM = "wayland";
+    };
 
+    services.xserver.screenSection = ''
+      Option         "metamodes" "nvidia-auto-select +0+0 {ForceFullCompositionPipeline=On}"
+      Option         "AllowIndirectGLXProtocol" "off"
+      Option         "TripleBuffer" "on"
+    '';
+    hardware.nvidia.powerManagement.enable = false;
   };
 }
