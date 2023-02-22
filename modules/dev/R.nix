@@ -17,10 +17,6 @@ let
       lintr
       styler
       tidyverse
-
-      # knitr
-      rmarkdown
-      knitr
     ];
   };
 in {
