@@ -3,7 +3,7 @@
 
   modules = {
     desktop = {
-      sway.enable = true;
+      bspwm.enable = true;
 
       apps.rofi.enable = true;
       apps.discord.enable = true;
