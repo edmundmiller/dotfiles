@@ -13,7 +13,8 @@ in {
       editorconfig-core-c
       neovim-nightly
       ctags
-      sumneko-lua-language-server
+      unstable.lua-language-server
+      lazygit
     ];
 
     # env.VIMINIT = "let \\$MYVIMRC='\\$XDG_CONFIG_HOME/nvim/init.vim' | source \\$MYVIMRC";
