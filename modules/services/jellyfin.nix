@@ -12,6 +12,7 @@ in {
     services.jellyfin.enable = true;
     services.jellyfin.openFirewall = true;
 
+    services.jellyfin.user = "kah";
     user.extraGroups = [ "jellyfin" ];
   };
 }
