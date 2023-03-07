@@ -7,7 +7,7 @@
     netatalk = {
       enable = true;
 
-      volumes = {
+      settings = {
         "moni-time-machine" = {
           "time machine" = "yes";
           path = "/data/backup/moni/time-machine";
