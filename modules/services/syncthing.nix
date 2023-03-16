@@ -89,7 +89,7 @@ in {
           enable = deviceEnabled devices;
         };
         seedvault = rec {
-          devices = [ "pixel" "unas" ];
+          devices = [ "pixel" "unas" "meshify" ];
           path = "/home/${config.user.name}/.seedvault";
           watch = false;
           rescanInterval = 3600;
