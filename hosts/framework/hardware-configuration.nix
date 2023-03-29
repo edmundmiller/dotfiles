@@ -35,7 +35,6 @@
 
   # high-resolution display
   fonts.fontconfig.hinting.enable = false;
-  hardware.video.hidpi.enable = lib.mkDefault true;
 
   # Fix font sizes in X
   services.xserver.dpi = 201;

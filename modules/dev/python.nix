@@ -27,7 +27,7 @@ in {
         python3Packages.jupyterlab
         python3Packages.setuptools
         python3Packages.pylint
-        python3Packages.poetry
+        poetry
       ];
 
       env.IPYTHONDIR = "$XDG_CONFIG_HOME/ipython";

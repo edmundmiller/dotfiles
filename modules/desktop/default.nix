@@ -104,7 +104,7 @@ in {
     # Try really hard to get QT to respect my GTK theme.
     env.GTK_DATA_PREFIX = [ "${config.system.path}" ];
     env.QT_QPA_PLATFORMTHEME = "gtk2";
-    qt5 = {
+    qt = {
       style = "gtk2";
       platformTheme = "gtk2";
     };

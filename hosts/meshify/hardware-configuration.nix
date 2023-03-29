@@ -20,7 +20,6 @@
   hardware.nvidia.modesetting.enable = true;
 
   ## HiDPI Monitors
-  hardware.video.hidpi.enable = lib.mkDefault true;
   services.xserver.dpi = 140;
   fonts.fontconfig.hinting.enable = false;
   environment.variables = {
