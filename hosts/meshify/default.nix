@@ -20,7 +20,7 @@
 
       media = {
         documents.enable = true;
-        graphics.enable = true;
+        # graphics.enable = true;
         mpv.enable = true;
         ncmpcpp.enable = true;
         recording.enable = true;
