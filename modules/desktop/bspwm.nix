@@ -34,6 +34,15 @@ in {
         };
         windowManager.bspwm.enable = true;
       };
+      autosuspend = {
+        enable = true;
+        settings = {
+          enable = true;
+          interval = 30;
+          idle_time = 600;
+        };
+        checks.idle.class = "XIdleTime";
+      };
     };
 
     systemd.user.services."dunst" = {
