@@ -35,7 +35,7 @@ in {
         windowManager.bspwm.enable = true;
       };
       autosuspend = {
-        enable = true;
+        enable = false;
         settings = {
           enable = true;
           interval = 30;
