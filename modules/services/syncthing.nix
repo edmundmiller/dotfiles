@@ -69,7 +69,7 @@ in {
           };
         };
         src = rec {
-          devices = [ "framework" "meshify" "unas" ];
+          devices = [ "framework" "meshify" "unas" "pbp" ];
           path = "/home/${config.user.name}/src";
           watch = false;
           rescanInterval = 3600 * 2;
