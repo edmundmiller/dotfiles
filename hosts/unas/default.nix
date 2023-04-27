@@ -8,7 +8,6 @@
     ./backups.nix
     ./nas.nix
     ./modules/minio.nix
-    ./modules/paperless.nix
     ./modules/time-machine.nix
     ./users.nix
   ];
