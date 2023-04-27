@@ -21,17 +21,13 @@ in {
         framework.id =
           "CHWKD4E-A7MZXUT-EGANUVC-YJDNMDN-6WLTMYQ-TLI2RVC-PYBCNAX-UA3LFAC";
         pixel.id =
-          "UV3UWHG-GCKHIFV-6ORBZSE-Z3IP2CN-NO2FBYE-6BDIAPC-6FJZ4AO-BGH5LQZ";
+          "UV3UWHG-GCKHIFV-6ORBZSE-Z3IP2CN-NO2FBYE-6BDIAPC-6FJZ4AO-BGH5LQZ"; # Set up externally
         meshify.id =
           "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
         pbp.id =
           "PQNQ54X-4WQ32AV-2TWQI4N-KF64EKW-FRFEVAL-WCONWOY-V4BK4PB-JYQGZQO"; # Set up externally
         unas.id =
           "QRDMQKL-RX4PO5I-2VM3SBA-42G3PVX-ZGGRDYU-P3C3AFN-OKLOVK4-BXRJAAN";
-        xps.id =
-          "VEXEG7A-7KC2HAK-B6WDY6C-MPHLFUR-MB2OHPT-RM4HTJF-IE6D5SH-UJQVCQH"; # Set up externally
-        xps_unbuntu.id =
-          "2HGJP7E-4RPH7UM-3CKCRQ2-H7SOUTL-3ZI65IE-JRZCXMJ-NJD23HZ-6CJ3HQ5";
       };
       folders = let
         deviceEnabled = devices: lib.elem config.networking.hostName devices;
@@ -58,11 +54,11 @@ in {
         };
         sync = rec {
           devices =
-            [ "framework" "pixel" "meshify" "unas" "pbp" "xps" "xps_unbuntu" ];
+            [ "framework" "pixel" "meshify" "unas" "pbp" ];
           path = "/home/${config.user.name}/sync";
           watch = true;
           rescanInterval = 3600 * 6;
-          type = deviceType [ "framework" "meshify" "pbp" "xps_ubuntu" ];
+          type = deviceType [ "framework" "meshify" "pbp" ];
           enable = deviceEnabled devices;
           versioning = {
             type = "staggered";
