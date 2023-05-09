@@ -7,7 +7,6 @@
 
     ./backups.nix
     ./nas.nix
-    ./modules/minio.nix
     ./modules/time-machine.nix
     ./users.nix
   ];
@@ -31,7 +30,6 @@
     };
     services = {
       docker.enable = true;
-      jellyfin.enable = true;
       qb.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
