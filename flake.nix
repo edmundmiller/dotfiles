@@ -23,6 +23,7 @@
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
+    hyprland.url = "github:hyprwm/Hyprland";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nickel.url = "github:tweag/nickel";
     nixos-hardware.url = "github:nixos/nixos-hardware";
