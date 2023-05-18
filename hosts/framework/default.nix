@@ -5,7 +5,7 @@
 
   modules = {
     desktop = {
-      bspwm.enable = true;
+      hyprland.enable = true;
 
       apps.rofi.enable = true;
       apps.discord.enable = true;
@@ -22,8 +22,8 @@
         ncmpcpp.enable = true;
       };
       term = {
-        default = "xst";
-        st.enable = true;
+        default = "kitty";
+        kitty.enable = true;
       };
     };
 
