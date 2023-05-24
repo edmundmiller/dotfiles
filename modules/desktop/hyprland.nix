@@ -28,9 +28,12 @@ in {
       dunst
       libnotify
       (waybar.override {
-        wireplumberSupport= true;
+        wireplumberSupport = true;
         nlSupport = true;
       })
+      grim
+      slurp
+      wf-recorder
     ];
 
     systemd.user.services."dunst" = {
