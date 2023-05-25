@@ -22,8 +22,8 @@
         ncmpcpp.enable = true;
       };
       term = {
-        default = "kitty";
-        kitty.enable = true;
+        default = "wezterm";
+        wezterm.enable = true;
       };
     };
 
