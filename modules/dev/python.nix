@@ -8,7 +8,9 @@
 
 with lib;
 with lib.my;
-let cfg = config.modules.dev.python;
+let
+  cfg = config.modules.dev.python;
+  my-python-packages = p: with p; [ pandas requests seaborn ];
 in {
   options.modules.dev.python = {
     enable = mkBoolOpt false;
@@ -19,7 +21,7 @@ in {
     {
       user.packages = with pkgs; [
         conda
-        python3
+        (pkgs.python3.withPackages my-python-packages)
         python3Packages.pip
         python3Packages.black
         python3Packages.isort
