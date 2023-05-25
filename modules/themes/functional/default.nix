@@ -72,6 +72,7 @@ in {
           fira-code-symbols
           open-sans
           jetbrains-mono
+          ia-writer-duospace
           siji
           font-awesome
         ];
