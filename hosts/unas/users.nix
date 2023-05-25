@@ -1,5 +1,6 @@
 { pkgs, ... }: {
   users.users = {
+    emiller.extraGroups = [ 568 ];
     monimiller = {
       isNormalUser = true;
       createHome = true;
@@ -13,7 +14,8 @@
       isNormalUser = true;
       createHome = true;
       shell = pkgs.bashInteractive;
-      openssh.authorizedKeys.keyFiles = [ "/home/tdmiller/.ssh/id_tailscale.pub" ];
+      openssh.authorizedKeys.keyFiles =
+        [ "/home/tdmiller/.ssh/id_tailscale.pub" ];
     };
   };
 }
