@@ -26,7 +26,6 @@ in {
     user.packages = with pkgs; [
       R-with-my-packages
       # knitr
-      texlive.combined.scheme-full
       pandoc
       unstable.quarto
     ];
