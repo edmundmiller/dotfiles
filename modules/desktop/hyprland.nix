@@ -49,11 +49,9 @@ in {
       enable = true;
 
       settings = {
-        default_session.command =
-          "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd 'Hyprland'";
-
-        initial_session = {
-          command = "Hyprland";
+        default_session = {
+          command =
+            "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd 'Hyprland' --remember --asterisks --user-menu";
           user = "emiller";
         };
       };
