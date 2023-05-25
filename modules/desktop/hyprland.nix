@@ -34,6 +34,7 @@ in {
       grim
       slurp
       wf-recorder
+      wlsunset
     ];
 
     systemd.user.services."dunst" = {
