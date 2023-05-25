@@ -1,4 +1,4 @@
-{ options, config, lib, pkgs, ... }:
+{ options, config, lib, pkgs, inputs, ... }:
 
 with lib;
 with lib.my;
@@ -24,18 +24,18 @@ in {
 
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
-    environment.systemPackages = with pkgs; [
-      dunst
-      libnotify
-      (waybar.override {
-        wireplumberSupport = true;
-        nlSupport = true;
-      })
-      grim
-      slurp
-      wf-recorder
-      wlsunset
-    ];
+    environment.systemPackages = with pkgs;
+      with inputs.hyprland-contrib.packages.${pkgs.system}; [
+        dunst
+        libnotify
+        (waybar.override {
+          wireplumberSupport = true;
+          nlSupport = true;
+        })
+        grimblast
+        wf-recorder
+        wlsunset
+      ];
 
     systemd.user.services."dunst" = {
       enable = true;
