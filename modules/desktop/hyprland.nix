@@ -54,6 +54,7 @@ in {
       grimblast
       wf-recorder
       wlsunset
+      scratchpad
     ];
 
     systemd.user.services."dunst" = {
