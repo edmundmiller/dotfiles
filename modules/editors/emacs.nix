@@ -1,10 +1,13 @@
 # https://github.com/hlissner/doom-emacs
-
-{ config, lib, pkgs, inputs, ... }:
-
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   cfg = config.modules.editors.emacs;
   configDir = config.dotfiles.configDir;
 in {
@@ -20,17 +23,17 @@ in {
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = [ inputs.emacs-overlay.overlay ];
+    nixpkgs.overlays = [inputs.emacs-overlay.overlay];
 
     user.packages = with pkgs; [
       ## Emacs itself
       binutils # native-comp needs 'as', provided by this
       ((emacsPackagesFor emacsPgtk).emacsWithPackages
-        (epkgs: [ epkgs.vterm ]))
+        (epkgs: [epkgs.vterm]))
 
       ## Doom dependencies
       git
-      (ripgrep.override { withPCRE2 = true; })
+      (ripgrep.override {withPCRE2 = true;})
       gnutls # for TLS connectivity
 
       ## Optional dependencies
@@ -42,7 +45,7 @@ in {
 
       ## Module dependencies
       # :checkers spell
-      (aspellWithDicts (ds: with ds; [ en en-computers en-science ]))
+      (aspellWithDicts (ds: with ds; [en en-computers en-science]))
       # :checkers grammar
       languagetool
       # :tools editorconfig
@@ -69,7 +72,7 @@ in {
       scrot
       gnuplot
       # required by +jupyter
-      (python3.withPackages (ps: with ps; [ jupyter ]))
+      (python3.withPackages (ps: with ps; [jupyter]))
       # Roam
       anystyle-cli
       graphviz
@@ -78,19 +81,19 @@ in {
         desktopName = "Org-Protocol";
         exec = "emacsclient %u";
         icon = "emacs";
-        mimeTypes = [ "x-scheme-handler/org-protocol" ];
-        categories = [ "System" ];
+        mimeTypes = ["x-scheme-handler/org-protocol"];
+        categories = ["System"];
       })
       # FIXME unstable.vale
       # yaml
       nodePackages.yaml-language-server
     ];
 
-    env.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
+    env.PATH = ["$XDG_CONFIG_HOME/emacs/bin"];
 
-    modules.shell.zsh.rcFiles = [ "${configDir}/emacs/aliases.zsh" ];
+    modules.shell.zsh.rcFiles = ["${configDir}/emacs/aliases.zsh"];
 
-    fonts.fonts = [ pkgs.emacs-all-the-icons-fonts ];
+    fonts.fonts = [pkgs.emacs-all-the-icons-fonts];
 
     system.userActivationScripts = mkIf cfg.doom.enable {
       installDoomEmacs = ''

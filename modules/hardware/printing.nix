@@ -1,13 +1,18 @@
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.hardware.printing;
+with lib.my; let
+  cfg = config.modules.hardware.printing;
 in {
-  options.modules.hardware.printing = { enable = mkBoolOpt false; };
+  options.modules.hardware.printing = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     services.printing.enable = true;
-    services.printing.drivers = [ pkgs.brlaser ];
+    services.printing.drivers = [pkgs.brlaser];
   };
 }

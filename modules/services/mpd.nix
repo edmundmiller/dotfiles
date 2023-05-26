@@ -1,8 +1,14 @@
-{ options, config, lib, pkgs, home-manager, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  home-manager,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.services.mpd;
+with lib.my; let
+  cfg = config.modules.services.mpd;
 in {
   options.modules.services.mpd = {
     enable = mkBoolOpt false;
@@ -11,9 +17,9 @@ in {
 
   config = mkIf cfg.enable (mkMerge [
     {
-      user.packages = with pkgs; [ mpc_cli ncpamixer ];
+      user.packages = with pkgs; [mpc_cli ncpamixer];
 
-      user.extraGroups = [ "mpd" ];
+      user.extraGroups = ["mpd"];
 
       home-manager.users.${config.user.name}.programs.beets = {
         enable = true;
@@ -49,8 +55,7 @@ in {
       };
       systemd.services.mpd.environment = {
         # https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/609
-        XDG_RUNTIME_DIR =
-          "/run/user/1000"; # User-id 1000 must match above user. MPD will look inside this directory for the PipeWire socket.
+        XDG_RUNTIME_DIR = "/run/user/1000"; # User-id 1000 must match above user. MPD will look inside this directory for the PipeWire socket.
       };
     }
 

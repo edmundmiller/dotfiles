@@ -4,12 +4,16 @@
 # difficult to replace and its open source alternatives don't *quite* cut it,
 # but enough that I can do a fraction of it on Linux. For the rest I have a
 # second computer dedicated to design work (and gaming).
-
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.media.graphics;
+with lib.my; let
+  cfg = config.modules.desktop.media.graphics;
 in {
   options.modules.desktop.media.graphics = {
     enable = mkBoolOpt false;
@@ -21,26 +25,40 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs;
-      (if cfg.tools.enable then [
-        font-manager # so many damned fonts...
-        imagemagick # for image manipulation from the shell
-      ] else
-        [ ]) ++
-
+      (
+        if cfg.tools.enable
+        then [
+          font-manager # so many damned fonts...
+          imagemagick # for image manipulation from the shell
+        ]
+        else []
+      )
+      ++
       # replaces illustrator & indesign
-      (if cfg.vector.enable then [ inkscape ] else [ ]) ++
-
+      (
+        if cfg.vector.enable
+        then [inkscape]
+        else []
+      )
+      ++
       # Replaces photoshop
-      (if cfg.raster.enable then [
-        krita
-        # FIXME https://github.com/NixOS/nixpkgs/issues/210098
-        # gimp
-        # gimpPlugins.resynthesizer2 # content-aware scaling in gimp
-      ] else
-        [ ]) ++
-
+      (
+        if cfg.raster.enable
+        then [
+          krita
+          # FIXME https://github.com/NixOS/nixpkgs/issues/210098
+          # gimp
+          # gimpPlugins.resynthesizer2 # content-aware scaling in gimp
+        ]
+        else []
+      )
+      ++
       # Sprite sheets & animation
-      (if cfg.sprites.enable then [ aseprite-unfree ] else [ ]);
+      (
+        if cfg.sprites.enable
+        then [aseprite-unfree]
+        else []
+      );
 
     home.configFile = mkIf cfg.raster.enable {
       "GIMP/2.10" = {

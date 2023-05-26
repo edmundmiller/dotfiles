@@ -1,12 +1,17 @@
-{ config, lib, pkgs, modulesPath, ... }: {
-  imports = [ "${modulesPath}/installer/scan/not-detected.nix" ];
+{
+  config,
+  lib,
+  pkgs,
+  modulesPath,
+  ...
+}: {
+  imports = ["${modulesPath}/installer/scan/not-detected.nix"];
 
-  boot.initrd.availableKernelModules =
-    [ "nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod" ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ "kvm-amd" ];
-  boot.extraModulePackages = [ ];
-  boot.kernelParams = [ "elevator=none" ];
+  boot.initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod"];
+  boot.initrd.kernelModules = [];
+  boot.kernelModules = ["kvm-amd"];
+  boot.extraModulePackages = [];
+  boot.kernelParams = ["elevator=none"];
 
   ## The lone Windows install
   boot.loader.grub.useOSProber = true;
@@ -76,17 +81,19 @@
     ];
   };
 
-  swapDevices = [ ];
+  swapDevices = [];
 
   services.xserver = {
     ## Mice
-    inputClassSections = [''
-      Identifier "My Mouse"
-      MatchIsPointer "yes"
-      Option "AccelerationProfile" "-1"
-      Option "AccelerationScheme" "none"
-      Option "AccelSpeed" "-1"
-    ''];
+    inputClassSections = [
+      ''
+        Identifier "My Mouse"
+        MatchIsPointer "yes"
+        Option "AccelerationProfile" "-1"
+        Option "AccelerationScheme" "none"
+        Option "AccelSpeed" "-1"
+      ''
+    ];
 
     ## Monitors
     monitorSection = ''

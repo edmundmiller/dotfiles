@@ -1,10 +1,15 @@
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.apps.mail.aerc;
+with lib.my; let
+  cfg = config.modules.desktop.apps.mail.aerc;
 in {
-  options.modules.desktop.apps.mail.aerc = { enable = mkBoolOpt false; };
+  options.modules.desktop.apps.mail.aerc = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
@@ -15,7 +20,7 @@ in {
         genericName = "Open a aerc in xst";
         icon = "mail";
         exec = "${xst}/bin/xst aerc";
-        categories = [ "Email" ];
+        categories = ["Email"];
       })
       # HTML rendering
       (lib.mkIf config.services.xserver.enable w3m)

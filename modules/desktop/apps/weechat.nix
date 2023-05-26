@@ -1,11 +1,15 @@
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   cfg = config.modules.desktop.apps.weechat;
   weechat = pkgs.wrapWeechat pkgs.weechat-unwrapped {
-    configure = { availablePlugins, ... }: {
+    configure = {availablePlugins, ...}: {
       scripts = with pkgs; [
         weechatScripts.colorize_nicks
         weechatScripts.multiline
@@ -16,7 +20,7 @@ let
     };
   };
 in {
-  options.modules.desktop.apps.weechat = { enable = mkBoolOpt false; };
+  options.modules.desktop.apps.weechat = {enable = mkBoolOpt false;};
 
-  config = mkIf cfg.enable { user.packages = with pkgs; [ weechat ]; };
+  config = mkIf cfg.enable {user.packages = with pkgs; [weechat];};
 }

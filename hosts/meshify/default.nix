@@ -1,5 +1,9 @@
-{ lib, pkgs, ... }: {
-  imports = [ ../home.nix ./hardware-configuration.nix ];
+{
+  lib,
+  pkgs,
+  ...
+}: {
+  imports = [../home.nix ./hardware-configuration.nix];
 
   modules = {
     desktop = {
@@ -93,7 +97,7 @@
   time.timeZone = "America/Chicago";
 
   home-manager.users.emiller.wayland.windowManager.sway = {
-    extraOptions = [ "--debug" "--unsupported-gpu" ];
+    extraOptions = ["--debug" "--unsupported-gpu"];
     extraSessionCommands = ''
       # export SDL_VIDEODRIVER=wayland
       # needs qt5.qtwayland in systemPackages
@@ -118,10 +122,8 @@
         destinations.remote = {
           host = "unas";
           dataset = "datatank/backup/meshify";
-          presend =
-            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/9568367d-ab78-46e8-8301-82a3c61b9595/start";
-          postsend =
-            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/9568367d-ab78-46e8-8301-82a3c61b9595";
+          presend = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/9568367d-ab78-46e8-8301-82a3c61b9595/start";
+          postsend = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/9568367d-ab78-46e8-8301-82a3c61b9595";
         };
       };
     };

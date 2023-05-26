@@ -2,12 +2,15 @@
 #
 # Bioinformatics/computational biology uses a lot of R. We're slowly moving away
 # from it. But R isn't too bad. If you manage it with nix it's quite nice.
-
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   cfg = config.modules.dev.R;
   R-with-my-packages = pkgs.rWrapper.override {
     packages = with pkgs.rPackages; [
@@ -20,7 +23,7 @@ let
     ];
   };
 in {
-  options.modules.dev.R = { enable = mkBoolOpt false; };
+  options.modules.dev.R = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [

@@ -1,7 +1,10 @@
 # Framework -- my laptop
-
-{ lib, pkgs, ... }: {
-  imports = [ ../home.nix ./hardware-configuration.nix ./autorandr.nix ];
+{
+  lib,
+  pkgs,
+  ...
+}: {
+  imports = [../home.nix ./hardware-configuration.nix ./autorandr.nix];
 
   modules = {
     desktop = {
@@ -86,13 +89,13 @@
   networking.hostId = "0dd71c1c";
   networking.networkmanager.enable = true;
   programs.nm-applet.enable = true;
-  users.users.emiller.extraGroups = [ "networkmanager" ];
+  users.users.emiller.extraGroups = ["networkmanager"];
 
   time.timeZone = "America/Chicago";
 
   services.mullvad-vpn.enable = true;
 
-  environment.systemPackages = with pkgs; [ mullvad ];
+  environment.systemPackages = with pkgs; [mullvad];
 
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
@@ -105,10 +108,8 @@
         destinations.remote = {
           host = "unas";
           dataset = "datatank/backup/framework";
-          presend =
-            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/bfadc7f9-92d5-4d23-b2b7-a1f39a550f41/start";
-          postsend =
-            "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/bfadc7f9-92d5-4d23-b2b7-a1f39a550f41";
+          presend = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/bfadc7f9-92d5-4d23-b2b7-a1f39a550f41/start";
+          postsend = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/bfadc7f9-92d5-4d23-b2b7-a1f39a550f41";
         };
       };
     };

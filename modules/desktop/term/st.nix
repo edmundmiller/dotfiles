@@ -2,14 +2,18 @@
 #
 # I like (x)st. This appears to be a controversial opinion; don't tell anyone,
 # mkay?
-
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.term.st;
+with lib.my; let
+  cfg = config.modules.desktop.term.st;
 in {
-  options.modules.desktop.term.st = { enable = mkBoolOpt false; };
+  options.modules.desktop.term.st = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     # xst-256color isn't supported over ssh, so revert to a known one
@@ -25,7 +29,7 @@ in {
         genericName = "Default terminal";
         icon = "utilities-terminal";
         exec = "${xst}/bin/xst";
-        categories = [ "Development" "System" "Utility" ];
+        categories = ["Development" "System" "Utility"];
       })
     ];
   };

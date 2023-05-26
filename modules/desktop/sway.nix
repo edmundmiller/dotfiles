@@ -1,10 +1,15 @@
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.sway;
+with lib.my; let
+  cfg = config.modules.desktop.sway;
 in {
-  options.modules.desktop.sway = { enable = mkBoolOpt false; };
+  options.modules.desktop.sway = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     home-manager.users.emiller = {
@@ -78,10 +83,12 @@ in {
             command = "lock";
           }
         ];
-        timeouts = [{
-          timeout = 300;
-          command = "${pkgs.swaylock}/bin/swaylock -fF";
-        }];
+        timeouts = [
+          {
+            timeout = 300;
+            command = "${pkgs.swaylock}/bin/swaylock -fF";
+          }
+        ];
       };
 
       programs.swaylock.settings = {
@@ -157,7 +164,7 @@ in {
         export NIXOS_OZONE_WL=1
       '';
     };
-        environment.sessionVariables = {
+    environment.sessionVariables = {
       WLR_DRM_NO_ATOMIC = "1";
       LIBVA_DRIVER_NAME = "nvidia";
       MOZ_DISABLE_RDD_SANDBOX = "1";

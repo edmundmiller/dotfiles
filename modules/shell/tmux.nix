@@ -1,31 +1,34 @@
-{ config, options, pkgs, lib, ... }:
-
+{
+  config,
+  options,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   cfg = config.modules.shell.tmux;
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
-  tmux = (pkgs.writeScriptBin "tmux" ''
+  tmux = pkgs.writeScriptBin "tmux" ''
     #!${pkgs.stdenv.shell}
     exec ${pkgs.tmux}/bin/tmux -f "$TMUX_HOME/config" "$@"
-  '');
+  '';
 in {
   options.modules.shell.tmux = with types; {
     enable = mkBoolOpt false;
-    rcFiles = mkOpt (listOf (either str path)) [ ];
+    rcFiles = mkOpt (listOf (either str path)) [];
   };
 
   config = mkIf cfg.enable {
-    user.packages = [ tmux ];
+    user.packages = [tmux];
 
-    modules.theme.onReload.tmux =
-      "${tmux}/bin/tmux source-file $TMUX_HOME/extraInit";
+    modules.theme.onReload.tmux = "${tmux}/bin/tmux source-file $TMUX_HOME/extraInit";
 
     modules.shell.zsh = {
       rcInit = "_cache tmuxifier init -";
-      rcFiles = [ "${configDir}/tmux/aliases.zsh" ];
+      rcFiles = ["${configDir}/tmux/aliases.zsh"];
     };
 
     home.configFile = {
@@ -40,13 +43,14 @@ in {
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
 
         ${concatMapStrings (path: ''
-          source '${path}'
-        '') cfg.rcFiles}
+            source '${path}'
+          '')
+          cfg.rcFiles}
       '';
     };
 
     env = {
-      PATH = [ "$TMUXIFIER/bin" ];
+      PATH = ["$TMUXIFIER/bin"];
       TMUX_HOME = "$XDG_CONFIG_HOME/tmux";
       TMUXIFIER = "$XDG_DATA_HOME/tmuxifier";
       TMUXIFIER_LAYOUT_PATH = "$XDG_DATA_HOME/tmuxifier";
