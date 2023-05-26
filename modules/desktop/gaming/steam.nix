@@ -1,8 +1,13 @@
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.gaming.steam;
+with lib.my; let
+  cfg = config.modules.desktop.gaming.steam;
 in {
   options.modules.desktop.gaming.steam = with types; {
     enable = mkBoolOpt false;
@@ -36,8 +41,8 @@ in {
           icon = "steam";
           exec = "steam";
           terminal = false;
-          mimeTypes = [ "x-scheme-handler/steam" ];
-          categories = [ "Network" "FileTransfer" "Game" ];
+          mimeTypes = ["x-scheme-handler/steam"];
+          categories = ["Network" "FileTransfer" "Game"];
         })
       ];
       system.userActivationScripts.setupSteamDir = ''mkdir -p "${cfg.libDir}"'';
@@ -51,6 +56,5 @@ in {
       # Xbox controller support
       hardware.xpadneo.enable = true;
     })
-
   ]);
 }

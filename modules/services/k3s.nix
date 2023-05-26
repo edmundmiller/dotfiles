@@ -1,10 +1,16 @@
-{ options, config, lib, pkgs, inputs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.services.k3s;
+with lib.my; let
+  cfg = config.modules.services.k3s;
 in {
-  options.modules.services.k3s = { enable = mkBoolOpt false; };
+  options.modules.services.k3s = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     services.k3s = {
@@ -21,7 +27,7 @@ in {
 
     virtualisation.containerd.enable = true;
     virtualisation.containerd.settings = {
-      plugins.cri.cni = { bin_dir = "/opt/cni/bin/"; };
+      plugins.cri.cni = {bin_dir = "/opt/cni/bin/";};
     };
     systemd.services.containerd.serviceConfig = {
       ExecStartPre = [
@@ -30,10 +36,10 @@ in {
     };
 
     # Ceph
-    boot.kernelModules = [ "ceph" "rbd" ];
-    environment.systemPackages = [ pkgs.lvm2 ];
+    boot.kernelModules = ["ceph" "rbd"];
+    environment.systemPackages = [pkgs.lvm2];
     networking.firewall.enable = false;
 
-    user.extraGroups = [ "568" ];
+    user.extraGroups = ["568"];
   };
 }

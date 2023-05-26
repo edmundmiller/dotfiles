@@ -1,6 +1,9 @@
-{ config, lib, pkgs, ... }:
-
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   ## NAS
   fileSystems."/data/backup/longhorn" = {
     device = "datatank/backup/longhorn";
@@ -9,7 +12,7 @@
 
   fileSystems."/srv/nfs/longhorn" = {
     device = "/data/backup/longhorn";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/media/mail" = {
@@ -45,7 +48,7 @@
 
   fileSystems."/srv/nfs/backup/app" = {
     device = "/data/backup/app";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/backup/k10" = {
@@ -55,7 +58,7 @@
 
   fileSystems."/srv/nfs/backup/k10" = {
     device = "/data/backup/k10";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/media/books" = {
@@ -65,7 +68,7 @@
 
   fileSystems."/srv/nfs/books" = {
     device = "/data/media/books";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/media/downloads" = {
@@ -75,7 +78,7 @@
 
   fileSystems."/srv/nfs/downloads" = {
     device = "/data/media/downloads";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/media/docs" = {
@@ -85,7 +88,7 @@
 
   fileSystems."/srv/nfs/docs" = {
     device = "/data/media/docs";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/media/music" = {
@@ -95,7 +98,7 @@
 
   fileSystems."/srv/nfs/music" = {
     device = "/data/media/music";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/media/photos" = {
@@ -105,7 +108,7 @@
 
   fileSystems."/srv/nfs/photos" = {
     device = "/data/media/photos";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/data/media/video" = {
@@ -115,15 +118,15 @@
 
   fileSystems."/srv/nfs/video" = {
     device = "/data/media/video";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/srv/nfs/media" = {
     device = "/data/media";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
-  networking.firewall.allowedTCPPorts = [ 2049 ];
+  networking.firewall.allowedTCPPorts = [2049];
   services.nfs.server = {
     enable = true;
     exports = ''

@@ -1,8 +1,13 @@
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.hardware.fs;
+with lib.my; let
+  cfg = config.modules.hardware.fs;
 in {
   options.modules.hardware.fs = {
     enable = mkBoolOpt false;
@@ -16,7 +21,7 @@ in {
       programs.udevil.enable = true;
 
       # Support for more filesystems, mostly to support external drives
-      environment.systemPackages = with pkgs; [ sshfs exfat ntfs3g hfsprogs ];
+      environment.systemPackages = with pkgs; [sshfs exfat ntfs3g hfsprogs];
     }
 
     (mkIf (!cfg.zfs.enable && cfg.ssd.enable) {
@@ -26,7 +31,7 @@ in {
     (mkIf cfg.zfs.enable (mkMerge [
       {
         boot.loader.grub.copyKernels = true;
-        boot.supportedFilesystems = [ "zfs" ];
+        boot.supportedFilesystems = ["zfs"];
         boot.zfs.devNodes = "/dev/disk/by-partuuid";
         services.zfs.autoScrub.enable = true;
       }

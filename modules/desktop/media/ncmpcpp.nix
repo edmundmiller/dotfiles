@@ -1,8 +1,13 @@
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.media.ncmpcpp;
+with lib.my; let
+  cfg = config.modules.desktop.media.ncmpcpp;
 in {
   options.modules.desktop.media.ncmpcpp = {
     enable = mkBoolOpt false;
@@ -10,10 +15,9 @@ in {
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs;
-      [ (ncmpcpp.override { visualizerSupport = true; }) ];
+    user.packages = with pkgs; [(ncmpcpp.override {visualizerSupport = true;})];
 
-    environment.shellAliases = { ncm = "ncmpcpp"; };
+    environment.shellAliases = {ncm = "ncmpcpp";};
 
     env.NCMPCPP_HOME = "$XDG_CONFIG_HOME/ncmpcpp";
 

@@ -1,21 +1,26 @@
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.services.keybase;
+with lib.my; let
+  cfg = config.modules.services.keybase;
 in {
-  options.modules.services.keybase = { enable = mkBoolOpt false; };
+  options.modules.services.keybase = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [ keybase-gui ];
+    user.packages = with pkgs; [keybase-gui];
     services.kbfs = {
       enable = true;
       mountPoint = "%t/kbfs";
-      extraFlags = [ "-label %u" ];
+      extraFlags = ["-label %u"];
     };
 
     systemd.user.services.kbfs = {
-      environment = { KEYBASE_RUN_MODE = "prod"; };
+      environment = {KEYBASE_RUN_MODE = "prod";};
       serviceConfig.Slice = "keybase.slice";
     };
   };

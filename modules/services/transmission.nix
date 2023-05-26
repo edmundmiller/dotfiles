@@ -1,10 +1,16 @@
-{ config, options, pkgs, lib, my, ... }:
-
+{
+  config,
+  options,
+  pkgs,
+  lib,
+  my,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.services.transmission;
+with lib.my; let
+  cfg = config.modules.services.transmission;
 in {
-  options.modules.services.transmission = { enable = mkBoolOpt false; };
+  options.modules.services.transmission = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     services.transmission = {
@@ -21,10 +27,10 @@ in {
     };
 
     networking.firewall = {
-      allowedTCPPorts = [ 51413 ];
-      allowedUDPPorts = [ 51413 ];
+      allowedTCPPorts = [51413];
+      allowedUDPPorts = [51413];
     };
 
-    user.extraGroups = [ "transmission" ];
+    user.extraGroups = ["transmission"];
   };
 }

@@ -1,10 +1,15 @@
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.editors;
+with lib.my; let
+  cfg = config.modules.editors;
 in {
-  options.modules.editors = { default = mkOpt types.str "vim"; };
+  options.modules.editors = {default = mkOpt types.str "vim";};
 
-  config = mkIf (cfg.default != null) { env.EDITOR = cfg.default; };
+  config = mkIf (cfg.default != null) {env.EDITOR = cfg.default;};
 }

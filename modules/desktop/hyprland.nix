@@ -1,14 +1,33 @@
-{ options, config, lib, pkgs, inputs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.hyprland;
+with lib.my; let
+  cfg = config.modules.desktop.hyprland;
 in {
-  options.modules.desktop.hyprland = { enable = mkBoolOpt false; };
+  options.modules.desktop.hyprland = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    programs.hyprland.enable = true;
-    programs.hyprland.xwayland.hidpi = true;
+    # homeConfigurations.emiller =
+    #   inputs.home-manager.lib.homeManagerConfiguration {
+    #     modules = [
+    #       hyprland.homeManagerModules.default
+
+    #     ];
+    #   };
+
+    programs.hyprland = {
+      enable = true;
+      xwayland.enable = true;
+      xwayland.hidpi = true;
+      # systemdIntegration = true;
+      # recommendedEnvironment = true;
+    };
 
     fonts = {
       fonts = with pkgs; [
@@ -25,37 +44,44 @@ in {
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
     environment.systemPackages = with pkgs;
-      with inputs.hyprland-contrib.packages.${pkgs.system}; [
-        dunst
-        libnotify
-        (waybar.override {
-          wireplumberSupport = true;
-          nlSupport = true;
-        })
-        grimblast
-        wf-recorder
-        wlsunset
-      ];
+    with inputs.hyprland-contrib.packages.${pkgs.system}; [
+      dunst
+      libnotify
+      (waybar.override {
+        wireplumberSupport = true;
+        nlSupport = true;
+      })
+      grimblast
+      wf-recorder
+      wlsunset
+    ];
 
     systemd.user.services."dunst" = {
       enable = true;
       description = "";
-      wantedBy = [ "default.target" ];
+      wantedBy = ["default.target"];
       serviceConfig.Restart = "always";
       serviceConfig.RestartSec = 2;
       serviceConfig.ExecStart = "${pkgs.dunst}/bin/dunst";
     };
 
+    # systemd.user.services.swayidle.Install.WantedBy =
+    #   lib.mkForce [ "hyprland-session.target" ];
+
     services.greetd = {
       enable = true;
-
       settings = {
         default_session = {
-          command =
-            "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd 'Hyprland' --remember --asterisks --user-menu";
+          command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd 'Hyprland' --remember --asterisks --user-menu";
           user = "emiller";
         };
       };
+    };
+
+    security.pam.services.swaylock = {
+      text = ''
+        auth include login
+      '';
     };
   };
 }
