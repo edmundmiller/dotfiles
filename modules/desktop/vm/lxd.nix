@@ -1,12 +1,16 @@
 # Inspired by https://www.srid.ca/2012301.html
-
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.desktop.vm.lxd;
+with lib.my; let
+  cfg = config.modules.desktop.vm.lxd;
 in {
-  options.modules.desktop.vm.lxd = { enable = mkBoolOpt false; };
+  options.modules.desktop.vm.lxd = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     virtualisation.lxd.enable = true;

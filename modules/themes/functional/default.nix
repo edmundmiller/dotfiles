@@ -1,10 +1,14 @@
 # modules/themes/functional/default.nix --- For functional genomics/programming
-
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.theme;
+with lib.my; let
+  cfg = config.modules.theme;
 in {
   config = mkIf (cfg.active == "functional") (mkMerge [
     # Desktop-agnostic configuration
@@ -45,12 +49,14 @@ in {
           };
         };
 
-        shell.zsh.rcFiles = [ ./config/zsh/prompt.zsh ];
-        shell.tmux.rcFiles = [ ./config/tmux.conf ];
+        shell.zsh.rcFiles = [./config/zsh/prompt.zsh];
+        shell.tmux.rcFiles = [./config/tmux.conf];
         desktop.browsers = {
-          firefox.userChrome = concatMapStringsSep "\n" readFile
-            [ ./config/firefox/userChrome.css ];
-          qutebrowser.userStyles = concatMapStringsSep "\n" readFile
+          firefox.userChrome =
+            concatMapStringsSep "\n" readFile
+            [./config/firefox/userChrome.css];
+          qutebrowser.userStyles =
+            concatMapStringsSep "\n" readFile
             (map toCSSFile [
               ./config/qutebrowser/userstyles/monospace-textareas.scss
               ./config/qutebrowser/userstyles/stackoverflow.scss
@@ -82,9 +88,9 @@ in {
       services.picom = {
         fade = true;
         fadeDelta = 1;
-        fadeSteps = [ 1.0e-2 1.2e-2 ];
+        fadeSteps = [1.0e-2 1.2e-2];
         shadow = true;
-        shadowOffsets = [ (-10) (-10) ];
+        shadowOffsets = [(-10) (-10)];
         shadowOpacity = 0.22;
         # activeOpacity = "1.00";
         # inactiveOpacity = "0.92";
@@ -131,8 +137,7 @@ in {
             "dunst/dunstrc".text = import ./config/dunstrc cfg;
             "Dracula-purple-solid-kvantum" = {
               recursive = true;
-              source =
-                "${pkgs.unstable.dracula-theme}/share/themes/Dracula/kde/kvantum/Dracula-purple-solid";
+              source = "${pkgs.unstable.dracula-theme}/share/themes/Dracula/kde/kvantum/Dracula-purple-solid";
               target = "Kvantum/Dracula-purple-solid";
             };
             "kvantum.kvconfig" = {

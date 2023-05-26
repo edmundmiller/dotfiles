@@ -3,14 +3,18 @@
 # Python's ecosystem repulses me. The list of environment "managers" exhausts
 # me. The Py2->3 transition make trainwrecks jealous. But SciPy, NumPy, iPython
 # and Jupyter can have my babies. Every single one.
-
-{ config, options, lib, pkgs, my, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  my,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   cfg = config.modules.dev.python;
-  my-python-packages = p: with p; [ pandas requests seaborn ];
+  my-python-packages = p: with p; [pandas requests seaborn];
 in {
   options.modules.dev.python = {
     enable = mkBoolOpt false;
@@ -52,7 +56,7 @@ in {
     }
 
     (mkIf cfg.conda.enable {
-      user.packages = with pkgs; [ unstable.micromamba ];
+      user.packages = with pkgs; [unstable.micromamba];
 
       env.MAMBA_ROOT_PREFIX = "$XDG_DATA_HOME/mamba";
 

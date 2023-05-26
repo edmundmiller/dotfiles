@@ -1,8 +1,12 @@
-{ config, home-manager, lib, pkgs, ... }:
-
+{
+  config,
+  home-manager,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   name = "Edmund Miller";
   maildir = "/home/emiller/.mail";
   email = "edmund.a.miller@gmail.com";
@@ -11,8 +15,7 @@ let
 
   cfg = config.modules.desktop.apps.mail.mbsync;
 in {
-
-  options.modules.desktop.apps.mail.mbsync = { enable = mkBoolOpt false; };
+  options.modules.desktop.apps.mail.mbsync = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
@@ -45,7 +48,7 @@ in {
               enable = true;
               create = "both";
               expunge = "both";
-              patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
+              patterns = ["*" "[Gmail]*"]; # "[Gmail]/Sent Mail" ];
             };
             realName = "${name}";
             msmtp.enable = true;
@@ -59,22 +62,22 @@ in {
               enable = true;
               create = "both";
               expunge = "both";
-              patterns = [ "*" "[Gmail]*" ]; # "[Gmail]/Sent Mail" ];
+              patterns = ["*" "[Gmail]*"]; # "[Gmail]/Sent Mail" ];
             };
             realName = "${name}";
           };
           UTD = {
             address = "Edmund.Miller@utdallas.edu";
             userName = "eam150030@utdallas.edu";
-            aliases = [ "eam150030@utdallas.edu" ];
+            aliases = ["eam150030@utdallas.edu"];
             flavor = "plain";
             passwordCommand = "${pkgs.pass}/bin/pass utd";
             mbsync = {
               enable = true;
               create = "both";
               expunge = "both";
-              patterns = [ "*" ];
-              extraConfig.account = { AuthMechs = "LOGIN"; };
+              patterns = ["*"];
+              extraConfig.account = {AuthMechs = "LOGIN";};
             };
             imap = {
               host = "127.0.0.1";

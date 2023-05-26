@@ -1,10 +1,15 @@
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.shell.git;
+with lib.my; let
+  cfg = config.modules.shell.git;
 in {
-  options.modules.shell.git = { enable = mkBoolOpt false; };
+  options.modules.shell.git = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
@@ -20,6 +25,6 @@ in {
       "git/ignore".source = "${configDir}/git/ignore";
     };
 
-    modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
+    modules.shell.zsh.rcFiles = ["${configDir}/git/aliases.zsh"];
   };
 }

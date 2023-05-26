@@ -1,23 +1,27 @@
-{ options, config, lib, pkgs, ... }:
-
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   cfg = config.modules.desktop.awesomewm;
   configDir = config.dotfiles.configDir;
 in {
-  options.modules.desktop.awesomewm = { enable = mkBoolOpt false; };
+  options.modules.desktop.awesomewm = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
     nixpkgs.overlays = [
       (self: super:
         with super; {
           awesome =
-            super.awesome.override { luaPackages = super.luajitPackages; };
+            super.awesome.override {luaPackages = super.luajitPackages;};
         })
     ];
 
-    environment.systemPackages = with pkgs; [ luajit my.fennel ];
+    environment.systemPackages = with pkgs; [luajit my.fennel];
 
     services = {
       picom.enable = true;

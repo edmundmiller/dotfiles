@@ -1,13 +1,19 @@
-{ config, options, lib, pkgs, inputs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
-with lib.my;
-let cfg = config.modules.editors.vim;
+with lib.my; let
+  cfg = config.modules.editors.vim;
 in {
-  options.modules.editors.vim = { enable = mkBoolOpt false; };
+  options.modules.editors.vim = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = [ inputs.neovim-nightly-overlay.overlay ];
+    nixpkgs.overlays = [inputs.neovim-nightly-overlay.overlay];
 
     user.packages = with pkgs; [
       editorconfig-core-c

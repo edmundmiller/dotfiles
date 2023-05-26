@@ -1,9 +1,14 @@
-{ config, options, lib, home-manager, ... }:
-
+{
+  config,
+  options,
+  lib,
+  home-manager,
+  ...
+}:
 with lib;
 with lib.my; {
   options = with types; {
-    user = mkOpt attrs { };
+    user = mkOpt attrs {};
 
     dotfiles = {
       dir = mkOpt path (findFirst pathExists (toString ../.) [
@@ -17,19 +22,18 @@ with lib.my; {
     };
 
     home = {
-      file = mkOpt' attrs { } "Files to place directly in $HOME";
-      configFile = mkOpt' attrs { } "Files to place in $XDG_CONFIG_HOME";
-      dataFile = mkOpt' attrs { } "Files to place in $XDG_DATA_HOME";
+      file = mkOpt' attrs {} "Files to place directly in $HOME";
+      configFile = mkOpt' attrs {} "Files to place in $XDG_CONFIG_HOME";
+      dataFile = mkOpt' attrs {} "Files to place in $XDG_DATA_HOME";
     };
 
     env = mkOption {
-      type = attrsOf (oneOf [ str path (listOf (either str path)) ]);
+      type = attrsOf (oneOf [str path (listOf (either str path))]);
       apply = mapAttrs (n: v:
-        if isList v then
-          concatMapStringsSep ":" (x: toString x) v
-        else
-          (toString v));
-      default = { };
+        if isList v
+        then concatMapStringsSep ":" (x: toString x) v
+        else (toString v));
+      default = {};
       description = "TODO";
     };
   };
@@ -37,11 +41,14 @@ with lib.my; {
   config = {
     user = let
       user = builtins.getEnv "USER";
-      name = if elem user [ "" "root" ] then "emiller" else user;
+      name =
+        if elem user ["" "root"]
+        then "emiller"
+        else user;
     in {
       inherit name;
       description = "The primary user account";
-      extraGroups = [ "wheel" ];
+      extraGroups = ["wheel"];
       isNormalUser = true;
       home = "/home/${name}";
       group = "users";
@@ -77,7 +84,8 @@ with lib.my; {
 
     users.users.${config.user.name} = mkAliasDefinitions options.user;
 
-    nix = let users = [ "root" config.user.name ];
+    nix = let
+      users = ["root" config.user.name];
     in {
       settings.trusted-users = users;
       settings.allowed-users = users;
@@ -85,9 +93,10 @@ with lib.my; {
 
     # must already begin with pre-existing PATH. Also, can't use binDir here,
     # because it contains a nix store path.
-    env.PATH = [ "$DOTFILES_BIN" "$XDG_BIN_HOME" "$PATH" ];
+    env.PATH = ["$DOTFILES_BIN" "$XDG_BIN_HOME" "$PATH"];
 
-    environment.extraInit = concatStringsSep "\n"
+    environment.extraInit =
+      concatStringsSep "\n"
       (mapAttrsToList (n: v: ''export ${n}="${v}"'') config.env);
   };
 }

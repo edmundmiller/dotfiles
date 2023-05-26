@@ -2,12 +2,15 @@
 #
 # JS is one of those "when it's good, it's alright, when it's bad, it's a
 # disaster" languages.
-
-{ config, options, lib, pkgs, ... }:
-
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
-with lib.my;
-let
+with lib.my; let
   cfg = config.modules.dev.node;
   node = pkgs.nodejs_latest;
 in {
@@ -18,7 +21,7 @@ in {
 
   config = mkIf cfg.enable (mkMerge [
     (mkIf cfg.enableGlobally {
-      user.packages = with pkgs; [ node yarn ];
+      user.packages = with pkgs; [node yarn];
 
       # Run locally installed bin-script, e.g. n coffee file.coffee
       environment.shellAliases = {
@@ -26,7 +29,7 @@ in {
         ya = "yarn";
       };
 
-      env.PATH = [ "$(${pkgs.yarn}/bin/yarn global bin)" ];
+      env.PATH = ["$(${pkgs.yarn}/bin/yarn global bin)"];
     })
 
     {
