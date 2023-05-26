@@ -30,7 +30,7 @@
   services.auto-cpufreq.enable = true;
 
   # Monitor backlight control
-  programs.light.enable = true;
+  hardware.brillo.enable = true;
   user.extraGroups = ["video"];
 
   services.xserver.libinput.enable = true;
