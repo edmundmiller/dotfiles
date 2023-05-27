@@ -10,6 +10,9 @@ with lib;
 with lib.my; let
   cfg = config.modules.desktop.hyprland;
 in {
+  imports = [
+    ./eww.nix
+  ];
   options.modules.desktop.hyprland = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
