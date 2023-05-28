@@ -12,17 +12,11 @@ with lib.my; let
 in {
   imports = [
     ./eww.nix
+    inputs.hyprland.nixosModules.default
   ];
   options.modules.desktop.hyprland = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    # homeConfigurations.emiller =
-    #   inputs.home-manager.lib.homeManagerConfiguration {
-    #     modules = [
-    #       hyprland.homeManagerModules.default
-
-    #     ];
-    #   };
 
     programs.hyprland = {
       enable = true;
