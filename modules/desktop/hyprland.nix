@@ -54,6 +54,7 @@ in {
       wlsunset
       scratchpad
       wofi
+      hyprpicker
     ];
 
     systemd.user.services."dunst" = {
