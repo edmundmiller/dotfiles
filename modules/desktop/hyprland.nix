@@ -53,6 +53,7 @@ in {
       wf-recorder
       wlsunset
       scratchpad
+      wofi
     ];
 
     systemd.user.services."dunst" = {
