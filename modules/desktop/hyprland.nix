@@ -48,6 +48,7 @@ in {
         wireplumberSupport = true;
         nlSupport = true;
       })
+      wl-clipboard
       grimblast
       wf-recorder
       wlsunset
