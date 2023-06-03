@@ -7,7 +7,7 @@
 
   modules = {
     desktop = {
-      bspwm.enable = true;
+      hyprland.enable = true;
 
       apps.rofi.enable = true;
       apps.discord.enable = true;
