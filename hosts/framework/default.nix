@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: {
-  imports = [../home.nix ./hardware-configuration.nix ./autorandr.nix];
+  imports = [../home.nix ./hardware-configuration.nix];
 
   modules = {
     desktop = {
