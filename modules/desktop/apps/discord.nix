@@ -16,7 +16,7 @@ in {
       # If not installed from unstable, Discord will sometimes soft-lock itself
       # on a "there's an update for discord" screen.
       unstable.discord
-      teams
+      teams-for-linux
       slack
       unstable.element-desktop
       zoom-us
