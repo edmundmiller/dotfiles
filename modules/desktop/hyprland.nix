@@ -40,7 +40,7 @@ in {
       with inputs.hyprland-contrib.packages.${pkgs.system}; [
         dunst
         libnotify
-        (waybar.override {
+        (inputs.hyprland.packages."x86_64-linux".waybar-hyprland.override {
           wireplumberSupport = true;
           nlSupport = true;
         })
