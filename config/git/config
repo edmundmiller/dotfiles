@@ -41,3 +41,5 @@
     insteadOf = gist:
 [url "https://bitbucket.org/"]
     insteadOf = bb:
+[init]
+  defaultBranch = main
