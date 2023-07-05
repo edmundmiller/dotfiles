@@ -1,6 +1,6 @@
 {pkgs, ...}: {
   users.users = {
-    emiller.extraGroups = [568];
+    emiller.extraGroups = ["568"];
     monimiller = {
       isNormalUser = true;
       createHome = true;
