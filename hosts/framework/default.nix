@@ -73,7 +73,6 @@
 
     services = {
       docker.enable = true;
-      keybase.enable = true;
       mpd.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
@@ -89,13 +88,31 @@
   networking.hostId = "0dd71c1c";
   networking.networkmanager.enable = true;
   programs.nm-applet.enable = true;
+  # NextDNS
+  # networking.networkmanager.dns = "systemd-resolved";
+  # networking.nameservers = [
+  #   "45.90.28.0#framework-3c7bf6.dns.nextdns.io"
+  #   "2a07:a8c0::#framework-3c7bf6.dns.nextdns.io"
+  #   "45.90.30.0#framework-3c7bf6.dns.nextdns.io"
+  #   "2a07:a8c1::#framework-3c7bf6.dns.nextdns.io"
+  # ];
+
+  # services.resolved = {
+  #   enable = true;
+  #   dnssec = "true";
+  #   domains = ["~."];
+  #   fallbackDns = ["1.1.1.1"];
+  #   extraConfig = ''
+  #     DNSOverTLS=yes
+  #     ResolveUnicastSingleLabel=yes
+  #   '';
+  # };
+
   users.users.emiller.extraGroups = ["networkmanager"];
 
   time.timeZone = "America/Chicago";
 
   services.mullvad-vpn.enable = true;
-
-  environment.systemPackages = with pkgs; [mullvad];
 
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
