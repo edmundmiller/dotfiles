@@ -22,6 +22,7 @@
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     hyprland.url = "github:hyprwm/Hyprland";
+    hyprland.inputs.nixpkgs.follows = "nixpkgs-unstable";
     hyprland-contrib.url = "github:hyprwm/contrib";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nickel.url = "github:tweag/nickel";
