@@ -61,7 +61,7 @@ in {
       initialize = true;
       package = pkgs.unstable.restic;
       passwordFile = "/home/emiller/.secrets/restic";
-      paths = ["/home/emiller/archive"];
+      paths = ["/data/minio/archive"];
       repository = "rclone:B2:archive-restic/";
       user = "emiller";
       timerConfig = {
