@@ -21,6 +21,10 @@
 
       media = {
         documents.enable = true;
+        documents.pdf.enable = true;
+        graphics.enable = true;
+        graphics.raster.enable = false;
+        graphics.sprites.enable = false;
         mpv.enable = true;
         ncmpcpp.enable = true;
       };
