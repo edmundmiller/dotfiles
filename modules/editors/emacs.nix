@@ -28,7 +28,7 @@ in {
     user.packages = with pkgs; [
       ## Emacs itself
       binutils # native-comp needs 'as', provided by this
-      ((emacsPackagesFor (emacs-unstable.override {withPgtk = true;})).emacsWithPackages
+      ((emacsPackagesFor emacs-unstable-pgtk).emacsWithPackages
         (epkgs: [epkgs.vterm]))
 
       ## Doom dependencies
