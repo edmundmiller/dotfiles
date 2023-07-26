@@ -80,8 +80,14 @@ in {
           auth include login
         '';
       };
-    }
 
+      home.configFile = {
+        "hypr" = {
+          source = "${configDir}/hypr";
+          recursive = true;
+        };
+      };
+    }
     # Nvidia
     (mkIf config.modules.hardware.nvidia.enable {
       programs.hyprland.nvidiaPatches = true;

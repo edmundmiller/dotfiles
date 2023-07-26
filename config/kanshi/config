@@ -1,0 +1,10 @@
+# Mobile
+profile {
+    output "eDP-1" enable scale 1.5
+    # output "BOE 0x095F" enable scale 2
+}
+
+profile {
+	output LVDS-1 disable
+	output "Some Company ASDF 4242" mode 1600x900 position 0,0
+}
