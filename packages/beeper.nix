@@ -39,13 +39,3 @@ in
       maintainers = ["emiller88"];
     };
   }
-# [Desktop Entry]
-# Name=Beeper
-# Exec=AppRun --no-sandbox %U
-# Terminal=false
-# Type=Application
-# Icon=beeper
-# StartupWMClass=Beeper
-# X-AppImage-Version=2307192q06wwc12
-# Comment=Beeper: Unified Messenger
-# Categories=Utility;
