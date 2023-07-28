@@ -5,11 +5,11 @@
   ...
 }: let
   pname = "beeper";
-  version = "3.65.19";
+  version = "3.66.24";
   name = "${pname}-${version}";
   src = fetchurl {
     url = "https://download.beeper.com/linux/appImage/x64";
-    hash = "sha256-jcLNAbfXScHwUMDTuDwICNxETKXl3sROPKhLt1MswZk=";
+    hash = "sha256-48VRjhGVIKdmMsepbmTih8Lb4vJeCIAp6E1CfD06Tx8=";
     name = "${name}.AppImage";
   };
 in
