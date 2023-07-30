@@ -29,7 +29,11 @@ in {
       ## Emacs itself
       binutils # native-comp needs 'as', provided by this
       ((emacsPackagesFor emacs-unstable-pgtk).emacsWithPackages
-        (epkgs: [epkgs.vterm]))
+        (epkgs:
+          with epkgs; [
+            vterm
+            treesit-grammars.with-all-grammars
+          ]))
 
       ## Doom dependencies
       git
