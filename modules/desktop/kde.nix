@@ -17,5 +17,8 @@ in {
     services.xserver.desktopManager.plasma5.enable = true;
     programs.dconf.enable = true;
     services.xserver.displayManager.defaultSession = "plasmawayland";
+    services.xserver.desktopManager.plasma5.useQtScaling = true;
+    # TODO environment.plasma5.excludePackages
+    programs.kdeconnect.enable = true;
   };
 }
