@@ -117,6 +117,11 @@
 
   services.mullvad-vpn.enable = true;
 
+  # Random laptop specific packages that don't need a whole module
+  user.packages = with pkgs; [
+    tauon
+  ];
+
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
