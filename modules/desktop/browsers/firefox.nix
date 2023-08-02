@@ -80,7 +80,7 @@ in {
         "media.videocontrols.picture-in-picture.video-toggle.enabled" = false;
         "extensions.htmlaboutaddons.recommendations.enabled" = false;
         "extensions.htmlaboutaddons.discover.enabled" = false;
-        "extensions.pocket.enabled" = false;
+        "extensions.pocket.enabled" = true;
         "app.normandy.enabled" = false;
         "app.normandy.api_url" = "";
         "extensions.shield-recipe-client.enabled" = false;
