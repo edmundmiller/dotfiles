@@ -120,6 +120,7 @@
   # Random laptop specific packages that don't need a whole module
   user.packages = with pkgs; [
     tauon
+    morgen
   ];
 
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
