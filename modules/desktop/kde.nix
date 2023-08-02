@@ -20,5 +20,9 @@ in {
     services.xserver.desktopManager.plasma5.useQtScaling = true;
     # TODO environment.plasma5.excludePackages
     programs.kdeconnect.enable = true;
+
+    user.packages = with pkgs; [
+      libsForQt5.bismuth
+    ];
   };
 }
