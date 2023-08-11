@@ -49,6 +49,9 @@
     GDK_DPI_SCALE = lib.mkDefault "0.5";
   };
 
+  # Framework firmware
+  services.fwupd.enable = true;
+
   fileSystems."/" = {
     device = "tank/system/root";
     fsType = "zfs";
