@@ -23,6 +23,7 @@ in {
 
     user.packages = with pkgs; [
       libsForQt5.bismuth
+      darkman
     ];
   };
 }
