@@ -50,6 +50,7 @@ in {
       ## Module dependencies
       # :checkers spell
       (aspellWithDicts (ds: with ds; [en en-computers en-science]))
+      nuspell
       # :checkers grammar
       languagetool
       # :tools editorconfig
