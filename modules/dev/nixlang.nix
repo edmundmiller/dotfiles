@@ -17,5 +17,9 @@ in {
       nil
       # nixops
     ];
+
+    environment.shellAliases = {
+      devenv-init = "nix flake init --template github:cachix/devenv && ${pkgs.direnv}/bin/direnv allow";
+    };
   };
 }
