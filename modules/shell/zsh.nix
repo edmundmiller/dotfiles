@@ -49,6 +49,7 @@ in {
       exa
       fd
       unstable.fzf
+      hub # FIXME Remove this
       tldr
       unstable.rclone
       ripgrep
