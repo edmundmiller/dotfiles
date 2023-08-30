@@ -98,7 +98,7 @@ in {
 
     modules.shell.zsh.rcFiles = ["${configDir}/emacs/aliases.zsh"];
 
-    fonts.fonts = [pkgs.emacs-all-the-icons-fonts];
+    fonts.fonts = [pkgs.emacs-all-the-icons-fonts pkgs.nerdfonts];
 
     system.userActivationScripts = mkIf cfg.doom.enable {
       installDoomEmacs = ''
