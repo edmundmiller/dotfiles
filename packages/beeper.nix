@@ -9,7 +9,7 @@
   name = "${pname}-${version}";
   src = fetchurl {
     url = "https://download.beeper.com/linux/appImage/x64";
-    hash = "sha256-X724MKuXr/iJ/lb6GkuUA/xfWsNWoDqWYgY56H4wNYs=";
+    hash = "sha256-xmb43pRl8GA+ErXVjBi/fx2O/NGcDuueUEzkD/PVtBk=";
     name = "${name}.AppImage";
   };
 in
