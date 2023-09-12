@@ -19,7 +19,7 @@ in {
       openDefaultPorts = true;
       user = config.user.name;
       group = "users";
-      package = pkgs.unstable.syncthing;
+      package = pkgs.syncthing;
       configDir = "/home/${config.user.name}/.config/syncthing";
       dataDir = "/home/${config.user.name}/.local/share/syncthing";
       devices = {
