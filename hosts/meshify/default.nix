@@ -7,12 +7,9 @@
 
   modules = {
     desktop = {
-      hyprland.enable = true;
+      kde.enable = true;
 
-      apps.rofi.enable = true;
       apps.discord.enable = true;
-      apps.evolution.enable = true;
-      apps.weechat.enable = true;
 
       browsers = {
         default = "firefox";
@@ -37,7 +34,6 @@
 
     editors = {
       default = "nvim";
-      code.enable = true;
       emacs.enable = true;
       vim.enable = true;
     };
