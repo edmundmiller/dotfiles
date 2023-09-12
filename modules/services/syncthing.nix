@@ -59,7 +59,7 @@ in {
           path = "/home/${config.user.name}/sync";
           watch = true;
           rescanInterval = 3600 * 6;
-          type = deviceType ["framework" "meshify" "pbp"];
+          type = deviceType ["framework" "meshify" "pixel"];
           enable = deviceEnabled devices;
           versioning = {
             type = "staggered";
