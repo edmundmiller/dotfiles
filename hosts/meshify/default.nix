@@ -7,7 +7,7 @@
 
   modules = {
     desktop = {
-      kde.enable = true;
+      gnome.enable = true;
 
       apps.discord.enable = true;
 
