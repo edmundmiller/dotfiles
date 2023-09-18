@@ -5,6 +5,7 @@
   appimageTools,
   libsecret,
   makeWrapper,
+  hicolor-icon-theme,
 }: let
   pname = "beeper";
   version = "3.75.16";
@@ -28,6 +29,9 @@ in
 
     nativeBuildInputs = [makeWrapper];
 
+    # Used in AUR https://aur.archlinux.org/packages/beeper-latest-bin
+    buildInputs = [hicolor-icon-theme];
+
     installPhase = ''
       runHook preInstall
 
@@ -39,7 +43,11 @@ in
       mkdir -p $out/share/${pname}
       cp -a ${appimageContents}/locales $out/share/${pname}
       cp -a ${appimageContents}/resources $out/share/${pname}
-      cp -a ${appimageContents}/usr/share/icons $out/share/
+      for s in 16 32 48 64 128 256 512 1024 ; do
+        install -vDm0644 \
+        "${appimageContents}/usr/share/icons/hicolor/''${s}x''${s}/apps/beeper.png" \
+        -t "$out/share/icons/hicolor/''${s}x''${s}/apps"
+      done
       install -Dm 644 ${appimageContents}/${pname}.desktop -t $out/share/applications/
 
       substituteInPlace $out/share/applications/${pname}.desktop --replace "AppRun" "${pname}"
