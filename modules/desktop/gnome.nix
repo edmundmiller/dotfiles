@@ -22,6 +22,9 @@ in {
     environment.systemPackages = with pkgs; [
       gnome.gnome-tweaks
       gnome.adwaita-icon-theme
+      # Material-shell
+      plata-theme
+      tela-icon-theme
     ];
 
     # Throws an error without
