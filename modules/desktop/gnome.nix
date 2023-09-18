@@ -33,5 +33,8 @@ in {
 
     # Throws an error without
     hardware.pulseaudio.enable = false;
+
+    # Trying to fix graphical errors after standby
+    hardware.nvidia.powerManagement.enable = true;
   };
 }
