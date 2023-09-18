@@ -106,6 +106,10 @@
     '';
   };
 
+  user.packages = with pkgs; [
+    obsidian
+  ];
+
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
