@@ -21,11 +21,15 @@ in {
 
     environment.systemPackages = with pkgs; [
       gnome.gnome-tweaks
+      gnomeExtensions.appindicator
       gnome.adwaita-icon-theme
       # Material-shell
       plata-theme
       tela-icon-theme
     ];
+
+    # Systray Icons
+    services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
 
     # Throws an error without
     hardware.pulseaudio.enable = false;
