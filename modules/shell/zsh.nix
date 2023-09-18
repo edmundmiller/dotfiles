@@ -54,6 +54,7 @@ in {
       unstable.rclone
       ripgrep
       sd
+      unstable.yazi
     ];
 
     env = {
