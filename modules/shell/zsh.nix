@@ -51,6 +51,7 @@ in {
       unstable.fzf
       hub # FIXME Remove this
       tldr
+      thefuck
       unstable.rclone
       ripgrep
       sd
