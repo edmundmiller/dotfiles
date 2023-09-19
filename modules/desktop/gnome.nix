@@ -36,5 +36,12 @@ in {
 
     # Trying to fix graphical errors after standby
     hardware.nvidia.powerManagement.enable = true;
+
+    # https://nixos.wiki/wiki/GNOME/Calendar
+    services.gnome.evolution-data-server.enable = true;
+    # optional to use google/nextcloud calendar
+    services.gnome.gnome-online-accounts.enable = true;
+    # optional to use google/nextcloud calendar
+    services.gnome.gnome-keyring.enable = true;
   };
 }
