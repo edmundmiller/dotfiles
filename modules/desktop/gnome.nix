@@ -42,6 +42,10 @@ in {
     # optional to use google/nextcloud calendar
     services.gnome.gnome-keyring.enable = true;
 
+    # programs.firefox.nativeMessagingHosts.gsconnect = true;
+    programs.kdeconnect.enable = true;
+    programs.kdeconnect.package = pkgs.gnomeExtensions.gsconnect;
+
     env.GTK_THEME = "palenight";
     home-manager.users.emiller = {
       ## GTK
@@ -106,6 +110,7 @@ in {
             "dash-to-panel@jderose9.github.com"
             "sound-output-device-chooser@kgshank.net"
             "space-bar@luchrioh"
+            "gsconnect@andyholmes.github.io"
 
             # gnome-shell
             "user-theme@gnome-shell-extensions.gcampax.github.com"
@@ -126,6 +131,7 @@ in {
       gnomeExtensions.dash-to-panel
       gnomeExtensions.sound-output-device-chooser
       gnomeExtensions.space-bar
+      gnomeExtensions.gsconnect
       # gnome-shell
       gnomeExtensions.user-themes
       palenight-theme
