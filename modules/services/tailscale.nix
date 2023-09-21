@@ -20,5 +20,9 @@ in {
       allowedUDPPorts = [41641];
       checkReversePath = "loose";
     };
+
+    # MagicDNS
+    networking.nameservers = ["100.100.100.100" "8.8.8.8" "1.1.1.1"];
+    networking.search = ["tailff8ca.ts.net"];
   };
 }
