@@ -13,7 +13,7 @@ in {
   options.modules.desktop.term.wezterm = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [wezterm];
+    user.packages = with pkgs; [unstable.wezterm];
 
     # TODO Waiting for config to stablize
     # home.configFile = {
