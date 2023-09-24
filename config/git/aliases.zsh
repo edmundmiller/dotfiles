@@ -2,7 +2,6 @@
 
 g() { [[ $# = 0 ]] && git status --short . || git $*; }
 
-alias git='noglob hub'
 alias ga='git add'
 alias gap='git add --patch'
 alias gb='git branch'
