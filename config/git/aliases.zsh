@@ -26,3 +26,8 @@ alias gss='git status'
 alias gst='git stash'
 alias gr='git reset HEAD'
 alias grv='git rev-parse'
+
+# gh cli
+ghf() {
+	gh repo fork $1 --clone=true --remote=true
+}
