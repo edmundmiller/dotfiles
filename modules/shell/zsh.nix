@@ -49,7 +49,7 @@ in {
       exa
       fd
       unstable.fzf
-      hub # FIXME Remove this
+      gh
       tldr
       thefuck
       unstable.rclone
