@@ -86,7 +86,7 @@ in {
           favorite-apps = [
             "firefox.desktop"
             "emacs.desktop"
-            "org.gnome.Terminal.desktop"
+            "kitty.desktop"
             "beeper.desktop"
           ];
         };
@@ -126,6 +126,7 @@ in {
 
     user.packages = with pkgs; [
       # ...
+      # TODO Add Tailscale
       gnomeExtensions.tray-icons-reloaded
       gnomeExtensions.vitals
       gnomeExtensions.dash-to-panel
