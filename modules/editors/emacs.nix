@@ -42,6 +42,7 @@ in {
 
       ## Optional dependencies
       fd # faster projectile indexing
+      ffmpeg # whisper.el
       imagemagick # for image-dired
       (mkIf (config.programs.gnupg.agent.enable)
         pinentry_emacs) # in-emacs gnupg prompts
