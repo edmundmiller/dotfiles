@@ -52,6 +52,9 @@
   # Framework firmware
   services.fwupd.enable = true;
 
+  # Dell WD19TB Dock
+  services.hardware.bolt.enable = true;
+
   fileSystems."/" = {
     device = "tank/system/root";
     fsType = "zfs";
