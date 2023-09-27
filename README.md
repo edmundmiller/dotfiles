@@ -77,3 +77,20 @@ And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO
 [vim]: https://github.com/hlissner/.vim
 [nixos]: https://releases.nixos.org/?prefix=nixos/20.09-small/
 [host/kuro]: https://github.com/hlissner/dotfiles/tree/master/hosts/kuro
+
+## Usage as a flake
+
+[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/Emiller88/dotfiles/badge)](https://flakehub.com/flake/Emiller88/dotfiles)
+
+Add dotfiles to your `flake.nix`:
+
+```nix
+{
+  inputs.dotfiles.url = "https://flakehub.com/f/Emiller88/dotfiles/*.tar.gz";
+
+  outputs = { self, dotfiles }: {
+    # Use in your outputs
+  };
+}
+
+```
