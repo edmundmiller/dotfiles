@@ -162,6 +162,7 @@ in {
 
       # tridactyl
       # FIXME https://github.com/NixOS/nixpkgs/issues/47340
+      # https://github.com/tridactyl/tridactyl/wiki/Exemplar-.tridactylrc-files
       programs.firefox.nativeMessagingHosts.tridactyl = true;
       home.configFile = {
         "tridactyl/tridactylrc".source = "${configDir}/tridactyl/tridactylrc";
