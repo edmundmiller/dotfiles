@@ -159,6 +159,13 @@ in {
         "${cfgPath}/${cfg.profileName}.default/chrome/userContent.css" =
           mkIf (cfg.userContent != "") {text = cfg.userContent;};
       };
+
+      # tridactyl
+      # FIXME https://github.com/NixOS/nixpkgs/issues/47340
+      programs.firefox.nativeMessagingHosts.tridactyl = true;
+      home.configFile = {
+        "tridactyl/tridactylrc".source = "${configDir}/tridactyl/tridactylrc";
+      };
     }
   ]);
 }
