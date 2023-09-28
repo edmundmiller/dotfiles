@@ -48,6 +48,7 @@ in {
       bat
       btop
       exa
+      fcp
       fd
       unstable.fzf
       gh
