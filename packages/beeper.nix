@@ -8,11 +8,11 @@
   hicolor-icon-theme,
 }: let
   pname = "beeper";
-  version = "3.78.22";
+  version = "3.78.23";
   name = "${pname}-${version}";
   src = fetchurl {
     url = "https://download.todesktop.com/2003241lzgn20jd/beeper-${version}.AppImage";
-    hash = "sha512-YBFiyFYk2F5t+erLCGRZO/ktthO1piGXYOss5XJza6HGA9UOFOQ3caQAVJkITFwOJ7/X22/U8tpcshe4R5xjHA==";
+    hash = "sha512-UfRGFJm5oq/2rpRORLxCNEAWYgk28upyn1AWgZg35IlSS++D/aezqk0pdm8GSq5hQGtx5pv/v6fmpVUorpD1WQ==";
   };
   appimage = appimageTools.wrapType2 {
     inherit version pname src;
