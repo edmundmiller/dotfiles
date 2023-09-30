@@ -50,8 +50,9 @@ in {
     hardware.pulseaudio.enable = false;
 
     # Trying to fix graphical errors after standby
-    hardware.nvidia.powerManagement.enable = true;
+    # hardware.nvidia.powerManagement.enable = true;
     hardware.nvidia.modesetting.enable = true;
+    hardware.nvidia.open = true;
 
     programs.evolution.enable = true;
     programs.evolution.plugins = [pkgs.evolution-ews];
