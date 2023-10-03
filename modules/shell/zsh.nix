@@ -51,7 +51,6 @@ in {
       fcp
       fd
       unstable.fzf
-      unstable.gh
       tldr
       thefuck
       unstable.rclone
