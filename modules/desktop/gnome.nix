@@ -115,9 +115,14 @@ in {
           enable-hot-corners = false;
         };
         "org/gnome/desktop/wm/preferences" = {
+          button-layout = "appmenu:minimize,maximize,close";
+          num-workspaces = "5";
+          titlebar-font = "Cantarell Bold 14";
           workspace-names = ["Web" "Editor" "Terminal" "Chat" "Scratch"];
         };
-        # TODO Add number of workspaces
+        "org/gnome/shell/app-switcher" = {
+          current-workspace-only = true;
+        };
 
         "org/gnome/shell" = {
           disable-user-extensions = false;
@@ -136,9 +141,25 @@ in {
             "user-theme@gnome-shell-extensions.gcampax.github.com"
           ];
 
-          # FIXME
+          # FIXME Configure extensions
           # "org/gnome/shell/extensions/user-theme" = {
           #   name = "palenight";
+          # };
+          #
+          # "org/gnome/shell/extensions/space-bar/shortcuts" = {
+          #   enable-move-to-workspace-shortcuts = true;
+          # };
+          # "org/gnome/shell/extensions/dash-to-panel" = {
+          #   trans-use-custom-bg = true;
+          #   trans-use-custom-opacity = true;
+          #   intellihide-use-pressure = true;
+          #   # FIXME
+          #   # trans-panel-opacity = "0.4";
+          #   # panel-sizes = "{\"0\":24}";
+          #   # intellihide-behaviour = "ALL_WINDOWS";
+          #   # FIXME I'd like to have this but it breaks workspace switching
+          #   isolate-workspaces = false;
+          #   hot-keys = true;
           # };
         };
       };
