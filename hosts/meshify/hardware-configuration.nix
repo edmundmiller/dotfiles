@@ -11,7 +11,7 @@
   boot.initrd.kernelModules = [];
   boot.kernelModules = ["kvm-amd"];
   boot.extraModulePackages = [];
-  boot.kernelParams = ["elevator=none"];
+  boot.kernelParams = ["elevator=none" "mem_sleep_default=deep"];
 
   ## The lone Windows install
   boot.loader.grub.useOSProber = true;
