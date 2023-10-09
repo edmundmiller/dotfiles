@@ -43,7 +43,6 @@ in {
 
     user.packages = with pkgs; [
       zsh
-      nix-zsh-completions
       atuin
       bat
       btop
