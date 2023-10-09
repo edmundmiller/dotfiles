@@ -21,13 +21,8 @@
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
-    hyprland.url = "github:hyprwm/Hyprland";
-    hyprland-contrib.url = "github:hyprwm/contrib";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
-    nickel.url = "github:tweag/nickel";
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    guix.url = "github:emiller88/guix";
-    guix.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
   outputs = inputs @ {

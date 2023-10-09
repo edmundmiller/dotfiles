@@ -8,7 +8,7 @@
   hicolor-icon-theme,
 }: let
   pname = "beeper";
-  version = "3.78.23";
+  version = "3.79.17";
   name = "${pname}-${version}";
   src = fetchurl {
     url = "https://download.todesktop.com/2003241lzgn20jd/beeper-${version}.AppImage";

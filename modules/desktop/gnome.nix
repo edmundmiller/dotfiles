@@ -137,6 +137,8 @@ in {
             "space-bar@luchrioh"
             "gsconnect@andyholmes.github.io"
 
+            # TODO Enable only on meshify
+            "ionutbortis/gnome-bedtime-mode"
             # gnome-shell
             "user-theme@gnome-shell-extensions.gcampax.github.com"
           ];

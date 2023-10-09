@@ -66,50 +66,50 @@
   };
 
   # TODO Check out https://github.com/Mic92/dotfiles/blob/master/nixos/modules/nfs-dl.nix
-  fileSystems."/data/media/music" = {
-    device = "unas:/srv/nfs/music";
-    fsType = "nfs";
-    options = [
-      "nofail"
-      "noauto"
-      "noatime"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=5min"
-      "nodev"
-      "nosuid"
-      "noexec"
-    ];
-  };
+  # fileSystems."/data/media/music" = {
+  #   device = "unas:/srv/nfs/music";
+  #   fsType = "nfs";
+  #   options = [
+  #     "nofail"
+  #     "noauto"
+  #     "noatime"
+  #     "x-systemd.automount"
+  #     "x-systemd.idle-timeout=5min"
+  #     "nodev"
+  #     "nosuid"
+  #     "noexec"
+  #   ];
+  # };
 
   swapDevices = [];
 
-  services.xserver = {
-    ## Mice
-    inputClassSections = [
-      ''
-        Identifier "My Mouse"
-        MatchIsPointer "yes"
-        Option "AccelerationProfile" "-1"
-        Option "AccelerationScheme" "none"
-        Option "AccelSpeed" "-1"
-      ''
-    ];
+  # services.xserver = {
+  #   ## Mice
+  #   inputClassSections = [
+  #     ''
+  #       Identifier "My Mouse"
+  #       MatchIsPointer "yes"
+  #       Option "AccelerationProfile" "-1"
+  #       Option "AccelerationScheme" "none"
+  #       Option "AccelSpeed" "-1"
+  #     ''
+  #   ];
 
-    ## Monitors
-    monitorSection = ''
-      VendorName     "Unknown"
-      ModelName      "GBT Gigabyte M32U"
-      HorizSync       255.0 - 255.0
-      VertRefresh     48.0 - 144.0
-      Option         "DPMS"
-    '';
-    screenSection = ''
-      Option         "Stereo" "0"
-      Option         "nvidiaXineramaInfoOrder" "DFP-3"
-      Option         "metamodes" "DP-2: 3840x2160_144 +0+840, HDMI-0: nvidia-auto-select +3840+0 {rotation=right}"
-      Option         "SLI" "Off"
-      Option         "MultiGPU" "Off"
-      Option         "BaseMosaic" "off"
-    '';
-  };
+  #   ## Monitors
+  #   monitorSection = ''
+  #     VendorName     "Unknown"
+  #     ModelName      "GBT Gigabyte M32U"
+  #     HorizSync       255.0 - 255.0
+  #     VertRefresh     48.0 - 144.0
+  #     Option         "DPMS"
+  #   '';
+  #   screenSection = ''
+  #     Option         "Stereo" "0"
+  #     Option         "nvidiaXineramaInfoOrder" "DFP-3"
+  #     Option         "metamodes" "DP-2: 3840x2160_144 +0+840, HDMI-0: nvidia-auto-select +3840+0 {rotation=right}"
+  #     Option         "SLI" "Off"
+  #     Option         "MultiGPU" "Off"
+  #     Option         "BaseMosaic" "off"
+  #   '';
+  # };
 }
