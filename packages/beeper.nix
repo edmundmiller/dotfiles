@@ -11,8 +11,8 @@
   version = "3.79.17";
   name = "${pname}-${version}";
   src = fetchurl {
-    url = "https://download.todesktop.com/2003241lzgn20jd/beeper-${version}.AppImage";
-    hash = "sha512-UfRGFJm5oq/2rpRORLxCNEAWYgk28upyn1AWgZg35IlSS++D/aezqk0pdm8GSq5hQGtx5pv/v6fmpVUorpD1WQ==";
+    url = "https://download.todesktop.com/2003241lzgn20jd/beeper-3.79.17-build-231004eglj00sp6.AppImage";
+    hash = "sha256-lBw+IlBdSI7gELbCL0nY74inZF8iL3fBtOJzZaD8t9Y=";
   };
   appimage = appimageTools.wrapType2 {
     inherit version pname src;
