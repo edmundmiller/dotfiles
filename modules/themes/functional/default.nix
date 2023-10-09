@@ -129,7 +129,7 @@ in {
               recursive = true;
             };
           })
-          (mkIf (desktop.bspwm.enable || desktop.stumpwm.enable) {
+          (mkIf desktop.bspwm.enable {
             "polybar" = {
               source = ./config/polybar;
               recursive = true;
