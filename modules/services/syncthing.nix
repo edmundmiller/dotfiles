@@ -39,8 +39,8 @@ in {
         archive = rec {
           devices = ["framework" "meshify" "unas"];
           path = "/home/${config.user.name}/archive";
-          watch = false;
-          rescanInterval = 3600 * 6;
+          fsWatcherEnabled = false;
+          rescanIntervalS = 3600 * 6;
           type = deviceType ["framework" "meshify"];
           enable = deviceEnabled devices;
           versioning.type = "simple";
@@ -49,16 +49,16 @@ in {
         elfeed = rec {
           devices = ["framework" "meshify" "unas" "pbp"];
           path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
-          watch = false;
-          rescanInterval = 3600 * 6;
+          fsWatcherEnabled = false;
+          rescanIntervalS = 3600 * 6;
           type = deviceType ["framework" "meshify" "pbp"];
           enable = deviceEnabled devices;
         };
         sync = rec {
           devices = ["framework" "pixel" "meshify" "unas" "pbp"];
           path = "/home/${config.user.name}/sync";
-          watch = true;
-          rescanInterval = 3600 * 6;
+          fsWatcherEnabled = true;
+          rescanIntervalS = 3600 * 6;
           type = deviceType ["framework" "meshify" "pixel"];
           enable = deviceEnabled devices;
           versioning = {
@@ -72,24 +72,24 @@ in {
         src = rec {
           devices = ["framework" "meshify" "unas" "pbp"];
           path = "/home/${config.user.name}/src";
-          watch = false;
-          rescanInterval = 3600 * 2;
+          fsWatcherEnabled = false;
+          rescanIntervalS = 3600 * 2;
           type = deviceType ["framework" "meshify"];
           enable = deviceEnabled devices;
         };
         secrets = rec {
           devices = ["framework" "pixel" "meshify" "unas" "pbp"];
           path = "/home/${config.user.name}/.secrets";
-          watch = true;
-          rescanInterval = 3600;
+          fsWatcherEnabled = true;
+          rescanIntervalS = 3600;
           type = deviceType ["framework" "meshify" "pbp"];
           enable = deviceEnabled devices;
         };
         seedvault = rec {
           devices = ["pixel" "unas" "meshify"];
           path = "/home/${config.user.name}/.seedvault";
-          watch = false;
-          rescanInterval = 3600;
+          fsWatcherEnabled = false;
+          rescanIntervalS = 3600;
           type = deviceType ["pixel"];
           enable = deviceEnabled devices;
         };

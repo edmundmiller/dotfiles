@@ -46,7 +46,7 @@ in {
       atuin
       bat
       btop
-      exa
+      eza
       fcp
       fd
       unstable.fzf
