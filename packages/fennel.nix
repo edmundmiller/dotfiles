@@ -2,7 +2,6 @@
   lib,
   stdenv,
   luajit,
-  my,
   ...
 }: let
   name = "fennel";

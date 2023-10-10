@@ -18,12 +18,12 @@ in {
           networking.hostName =
             mkDefault (removeSuffix ".nix" (baseNameOf path));
         }
-        (filterAttrs (n: v: !elem n ["system"]) attrs)
+        (filterAttrs (n: _v: !elem n ["system"]) attrs)
         ../.
         (import path)
       ];
     };
 
-  mapHosts = dir: attrs @ {system ? system, ...}:
+  mapHosts = dir: attrs @ { ...}:
     mapModules dir (hostPath: mkHost hostPath attrs);
 }
