@@ -1,11 +1,7 @@
 {
-  config,
-  lib,
   pkgs,
   ...
 }: let
-  restic-backups-local-sync-backup-id = "09ae3517-b710-4a3e-ae68-16fe45f3697f";
-  restic-backups-local-archive-backup-id = "773d889a-0ee4-42f7-98c8-7a106874a116";
   restic-backups-gdrive-sync-backup-id = "bfae5213-4fd4-4700-86e5-3ad6f9a7f62e";
   restic-backups-B2-sync-backup-id = "422804e7-53c3-4d8b-b02b-2816b1bf3905";
   restic-backups-B2-archive-backup-id = "b0f29a55-12d3-4f87-a081-5564a223b4d5";

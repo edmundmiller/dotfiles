@@ -44,7 +44,7 @@
     pkgs = mkPkgs nixpkgs [self.overlay];
     pkgs' = mkPkgs nixpkgs-unstable [];
 
-    lib = nixpkgs.lib.extend (self: super: {
+    lib = nixpkgs.lib.extend (self: _super: {
       my = import ./lib {
         inherit pkgs inputs;
         lib = self;
@@ -53,7 +53,7 @@
   in {
     lib = lib.my;
 
-    overlay = final: prev: {
+    overlay = _final: _prev: {
       unstable = pkgs';
       my = self.packages."${system}";
     };

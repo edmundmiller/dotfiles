@@ -1,6 +1,5 @@
 # modules/themes/alucard/default.nix --- a regal dracula-inspired theme
 {
-  options,
   config,
   lib,
   pkgs,
