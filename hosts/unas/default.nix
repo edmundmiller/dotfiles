@@ -1,6 +1,5 @@
 # No u nas
 {
-  lib,
   pkgs,
   ...
 }: {

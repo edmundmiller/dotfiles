@@ -10,8 +10,6 @@ with lib.my; let
   name = "Edmund Miller";
   maildir = "/home/emiller/.mail";
   email = "edmund.a.miller@gmail.com";
-  protonmail = "edmund.a.miller@protonmail.com";
-  notmuchrc = "/home/emiller/.config/notmuch/notmuchrc";
 
   cfg = config.modules.desktop.apps.mail.mbsync;
 in {

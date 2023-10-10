@@ -3,7 +3,6 @@
   options,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;

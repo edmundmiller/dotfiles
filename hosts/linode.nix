@@ -39,7 +39,6 @@
 #
 # 7. Reboot into "Boot" profile.
 {
-  config,
   lib,
   pkgs,
   ...

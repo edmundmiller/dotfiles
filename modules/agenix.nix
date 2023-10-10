@@ -4,7 +4,6 @@
   config,
   inputs,
   lib,
-  pkgs,
   ...
 }:
 with builtins;

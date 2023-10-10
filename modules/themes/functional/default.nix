@@ -1,6 +1,5 @@
 # modules/themes/functional/default.nix --- For functional genomics/programming
 {
-  options,
   config,
   lib,
   pkgs,
