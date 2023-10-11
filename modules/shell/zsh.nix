@@ -50,7 +50,9 @@ in {
       fcp
       fd
       unstable.fzf
+      navi
       tldr
+      cheat
       thefuck
       unstable.rclone
       ripgrep
