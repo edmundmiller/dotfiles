@@ -20,6 +20,7 @@ in {
     user.packages = with pkgs; [
       (mkIf cfg.ebook.enable calibre)
       (mkIf cfg.pdf.enable evince)
+      (mkIf cfg.pdf.enable sioyek)
       # zathura
     ];
 
