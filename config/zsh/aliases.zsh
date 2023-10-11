@@ -50,13 +50,13 @@ alias jc='journalctl -xe'
 alias sc=systemctl
 alias ssc='sudo systemctl'
 
-if command -v exa >/dev/null; then
-  alias exa="exa --group-directories-first --git";
-  alias l="exa -blF";
-  alias ll="exa -abghilmu";
+if command -v eza >/dev/null; then
+  alias eza="eza --group-directories-first --git";
+  alias l="eza -blF";
+  alias ll="eza -abghilmu";
   alias llm='ll --sort=modified'
-  alias la="LC_COLLATE=C exa -ablF";
-  alias tree='exa --tree'
+  alias la="LC_COLLATE=C eza -ablF";
+  alias tree='eza --tree'
 fi
 
 if (( $+commands[fasd] )); then
