@@ -2,25 +2,8 @@
 {
   lib,
   modulesPath,
-  pkgs,
   ...
 }: {
-  environment.systemPackages = with pkgs; [inetutils mtr sysstat git];
-
-  modules = {
-    editors = {
-      default = "nvim";
-      vim.enable = true;
-    };
-    shell = {
-      git.enable = true;
-      zsh.enable = true;
-    };
-    services.ssh.enable = true;
-  };
-
-  # BOILERPLATE
-  # This is the configuration required to run NixOS on GandiCloud.
   imports = [
     (modulesPath + "/virtualisation/openstack-config.nix")
   ];
