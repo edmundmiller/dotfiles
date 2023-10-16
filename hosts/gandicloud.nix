@@ -4,9 +4,6 @@
   modulesPath,
   ...
 }: {
-  imports = [
-    (modulesPath + "/virtualisation/openstack-config.nix")
-  ];
   config = {
     boot.initrd.kernelModules = [
       "xen-blkfront"
