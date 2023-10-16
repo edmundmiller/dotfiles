@@ -114,9 +114,14 @@ in {
           color-scheme = "prefer-dark";
           enable-hot-corners = false;
         };
+
+        # Workspaces
+        "org/gnome/mutter" = {
+          dynamic-workspaces = false;
+        };
         "org/gnome/desktop/wm/preferences" = {
           button-layout = "appmenu:minimize,maximize,close";
-          num-workspaces = "5";
+          num-workspaces = 5;
           titlebar-font = "Cantarell Bold 14";
           workspace-names = ["Web" "Editor" "Terminal" "Chat" "Scratch"];
         };
