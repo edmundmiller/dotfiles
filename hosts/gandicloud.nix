@@ -39,11 +39,5 @@
 
     # This is required to get an IPv6 address on our infrastructure
     networking.tempAddresses = "disabled";
-
-    nix.extraOptions = ''
-      experimental-features = nix-command flakes
-    '';
-
-    system.stateVersion = "23.05";
   };
 }
