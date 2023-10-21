@@ -4,7 +4,6 @@
 #   'org-capture'
 # /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name
 #   'org-capture'
-{}
 # [org/gnome/settings-daemon/plugins/media-keys]
 # custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']
 # [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0]
@@ -134,3 +133,15 @@
 #   ['<Shift><Super>KP_9']
 # /org/gnome/shell/extensions/dash-to-panel/hotkey-prefix-text
 #   'Super'
+#
+{
+  home-manager.users.emiller = {
+    dconf.settings = {
+      "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+        binding = "<Super>c";
+        command = "org-capture";
+        name = "org-capture";
+      };
+    };
+  };
+}
