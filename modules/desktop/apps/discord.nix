@@ -15,7 +15,7 @@ in {
     user.packages = with pkgs; [
       # If not installed from unstable, Discord will sometimes soft-lock itself
       # on a "there's an update for discord" screen.
-      my.beeper
+      unstable.beeper
       unstable.discord
       teams-for-linux
       slack
