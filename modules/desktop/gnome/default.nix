@@ -10,7 +10,7 @@ with lib.my; let
   cfg = config.modules.desktop.gnome;
 in {
   options.modules.desktop.gnome = {enable = mkBoolOpt false;};
-  imports = [./dconf.nix ./gtk.nix ./keybinds.nix];
+  imports = [./dconf.nix ./keybinds.nix];
 
   config = mkIf cfg.enable {
     services.xserver.enable = true;
