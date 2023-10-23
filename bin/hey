@@ -289,7 +289,7 @@ module Hey
           end
         end
       else
-        command = "nix run github:hlissner/dotfiles -- #{command}"
+        command = "nix run github:emiller88/dotfiles -- #{command}"
         puts "Running '#{command}' on #{target}"
         sh ["ssh", "-t", target, command]
       end
