@@ -104,7 +104,7 @@
     obsidian
     tauon
     unstable.thunderbird
-    unstable.morgen
+    # unstable.morgen FIXME https://github.com/NixOS/nixpkgs/issues/262730
   ];
 
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";

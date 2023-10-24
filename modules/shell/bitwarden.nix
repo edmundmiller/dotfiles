@@ -15,7 +15,10 @@ in {
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [bitwarden bitwarden-cli];
+    user.packages = with pkgs; [
+      # bitwarden FIXME https://github.com/NixOS/nixpkgs/issues/262730
+      bitwarden-cli
+    ];
 
     modules.shell.zsh.rcInit = "_cache bw completion --shell zsh; compdef _bw bw;";
 
