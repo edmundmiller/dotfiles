@@ -94,6 +94,8 @@
   users.users.emiller.extraGroups = ["networkmanager"];
 
   time.timeZone = "America/Chicago";
+  time.hardwareClockInLocalTime = true;
+  location.provider = "geoclue2";
 
   services.mullvad-vpn.enable = true;
 
