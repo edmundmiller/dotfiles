@@ -4,7 +4,7 @@
     disk = {
       x = {
         type = "disk";
-        device = "/dev/sda";
+        device = "/dev/disk/by-id/ata-SATA_SSD_21111524000111";
         content = {
           type = "gpt";
           partitions = {
