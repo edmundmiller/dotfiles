@@ -1,5 +1,8 @@
-{inputs}: {
-  imports = [inputs.disko.nixosModules.disko];
+{inputs, ...}: {
+  # inputs is made accessible by passing it as a specialArg to nixosSystem{}
+  imports = [
+    inputs.disko.nixosModules.disko
+  ];
   disko.devices = {
     disk = {
       x = {
