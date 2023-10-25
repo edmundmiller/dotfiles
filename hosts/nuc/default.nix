@@ -3,6 +3,7 @@
   imports = [
     ../home.nix
     ./hardware-configuration.nix
+    ./disko.nix
   ];
 
   ## Modules

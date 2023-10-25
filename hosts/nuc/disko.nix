@@ -1,9 +1,10 @@
-{
+{inputs}: {
+  imports = [inputs.disko.nixosModules.disko];
   disko.devices = {
     disk = {
       x = {
         type = "disk";
-        device = "/dev/sdx";
+        device = "/dev/sda";
         content = {
           type = "gpt";
           partitions = {
@@ -26,74 +27,37 @@
           };
         };
       };
-      y = {
-        type = "disk";
-        device = "/dev/sdy";
-        content = {
-          type = "gpt";
-          partitions = {
-            zfs = {
-              size = "100%";
-              content = {
-                type = "zfs";
-                pool = "zroot";
-              };
-            };
-          };
-        };
-      };
     };
     zpool = {
       zroot = {
         type = "zpool";
-        mode = "mirror";
         rootFsOptions = {
           compression = "zstd";
           "com.sun:auto-snapshot" = "false";
         };
-        mountpoint = "/";
         postCreateHook = "zfs snapshot zroot@blank";
-
         datasets = {
-          zfs_fs = {
+          "system" = {
             type = "zfs_fs";
-            mountpoint = "/zfs_fs";
-            options."com.sun:auto-snapshot" = "true";
+            mountpoint = "none";
           };
-          zfs_unmounted_fs = {
+          "system/root" = {
             type = "zfs_fs";
-            options.mountpoint = "none";
+            mountpoint = "/";
           };
-          zfs_legacy_fs = {
+          "system/var" = {
             type = "zfs_fs";
-            options.mountpoint = "legacy";
-            mountpoint = "/zfs_legacy_fs";
+            mountpoint = "/var";
           };
-          zfs_testvolume = {
-            type = "zfs_volume";
-            size = "10M";
-            content = {
-              type = "filesystem";
-              format = "ext4";
-              mountpoint = "/ext4onzfs";
-            };
-          };
-          encrypted = {
+          "local/nix" = {
             type = "zfs_fs";
-            options = {
-              mountpoint = "none";
-              encryption = "aes-256-gcm";
-              keyformat = "passphrase";
-              keylocation = "file:///tmp/secret.key";
-            };
-            # use this to read the key during boot
-            # postCreateHook = ''
-            #   zfs set keylocation="prompt" "zroot/$name";
-            # '';
+            mountpoint = "/nix";
           };
-          "encrypted/test" = {
+
+          "user/home/emiller" = {
             type = "zfs_fs";
-            mountpoint = "/zfs_crypted";
+            mountpoint = "/home/emiller";
+            # TODO neededForBoot = true;
           };
         };
       };
