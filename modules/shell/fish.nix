@@ -19,6 +19,8 @@ in {
       fishPlugins.async-prompt
       fishPlugins.colored-man-pages
       fishPlugins.done
+      jq
+      libnotify
       fishPlugins.fzf-fish
       fishPlugins.forgit
       fishPlugins.hydro
