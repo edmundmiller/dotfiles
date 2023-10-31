@@ -15,11 +15,15 @@ in {
     programs.fish.enable = true;
 
     environment.systemPackages = with pkgs; [
+      fishPlugins.autopair
+      fishPlugins.async-prompt
+      fishPlugins.colored-man-pages
       fishPlugins.done
       fishPlugins.fzf-fish
       fishPlugins.forgit
       fishPlugins.hydro
       fzf
+      fishPlugins.github-copilot-cli-fish
       fishPlugins.grc
       grc
     ];
