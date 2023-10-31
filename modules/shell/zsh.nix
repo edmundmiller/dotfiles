@@ -51,6 +51,8 @@ in {
       fd
       unstable.fzf
       navi
+      unstable.ollama
+      openai-whisper-cpp
       tldr
       cheat
       thefuck
