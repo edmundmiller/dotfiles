@@ -14,7 +14,7 @@ in {
 
   config = mkIf cfg.enable {
     # kitty isn't supported over ssh, so revert to a known one
-    environment.shellAliases = {s = "kitty +kitten ssh";};
+    environment.shellAliases = {s = "kitten ssh";};
 
     user.packages = with pkgs; [kitty];
   };
