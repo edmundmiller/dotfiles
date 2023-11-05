@@ -28,7 +28,13 @@
     };
 
     # The device exposed by Xen
-    boot.loader.grub.device = lib.mkForce "/dev/xvda";
+    boot.loader = {
+      grub.device = lib.mkForce "/dev/xvda";
+
+      # Disable globals
+      systemd-boot.enable = false;
+      efi.canTouchEfiVariables = false;
+    };
 
     # This is to get a prompt via the "openstack console url show" command
     systemd.services."getty@tty1" = {
