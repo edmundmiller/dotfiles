@@ -16,7 +16,7 @@ in {
 
     environment.systemPackages = with pkgs; [
       fishPlugins.autopair
-      fishPlugins.async-prompt
+      # FIXME fishPlugins.async-prompt
       fishPlugins.colored-man-pages
       fishPlugins.done
       jq
