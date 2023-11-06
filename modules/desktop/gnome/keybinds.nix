@@ -136,12 +136,12 @@
 #
 {
   home-manager.users.emiller = {
-    dconf.settings = {
-      "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
-        binding = "<Super>c";
-        command = "org-capture";
-        name = "org-capture";
-      };
-    };
+    # dconf.settings = {
+    #   "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+    #     binding = "<Super>c";
+    #     command = "org-capture";
+    #     name = "org-capture";
+    #   };
+    # };
   };
 }
