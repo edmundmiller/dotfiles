@@ -24,7 +24,7 @@ in {
       dataDir = "/home/${config.user.name}/.local/share/syncthing";
       settings.devices = {
         framework.id = "CHWKD4E-A7MZXUT-EGANUVC-YJDNMDN-6WLTMYQ-TLI2RVC-PYBCNAX-UA3LFAC";
-        pixel.id = "UV3UWHG-GCKHIFV-6ORBZSE-Z3IP2CN-NO2FBYE-6BDIAPC-6FJZ4AO-BGH5LQZ"; # Set up externally
+        pixel.id = "Z4SFA3U-QLJCEOR-53XAXJH-UB56CYG-XPW6U5Q-RTAPTQ5-NHIPSUI-6LUMDAZ"; # Set up externally
         meshify.id = "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
         pbp.id = "PQNQ54X-4WQ32AV-2TWQI4N-KF64EKW-FRFEVAL-WCONWOY-V4BK4PB-JYQGZQO"; # Set up externally
         unas.id = "QRDMQKL-RX4PO5I-2VM3SBA-42G3PVX-ZGGRDYU-P3C3AFN-OKLOVK4-BXRJAAN";
