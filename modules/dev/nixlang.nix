@@ -14,12 +14,14 @@ in {
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       alejandra
+      manix
       nil
       # nixops
     ];
 
     environment.shellAliases = {
       devenv-init = "nix flake init --template github:cachix/devenv && ${pkgs.direnv}/bin/direnv allow";
+      manfzf = "manix \"\" | grep '^# ' | sed 's/^# \(.*\) (.*/\1/;s/ (.*//;s/^# //' | fzf --preview=\"manix '{}'\" | xargs manix";
     };
   };
 }
