@@ -10,7 +10,7 @@ with lib.my; let
   cfg = config.modules.desktop.gnome;
 in {
   options.modules.desktop.gnome = {enable = mkBoolOpt false;};
-  imports = [./dconf.nix ./keybinds.nix];
+  imports = [./dconf.nix];
 
   config = mkIf cfg.enable {
     services.xserver.enable = true;
@@ -24,7 +24,7 @@ in {
       ++ (with pkgs.gnome; [
         cheese # webcam tool
         gnome-music
-        gedit # text editor
+        # gedit # text editor
         epiphany # web browser
         geary # email reader
         gnome-characters
