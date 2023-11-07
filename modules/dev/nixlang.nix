@@ -14,7 +14,7 @@ in {
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       alejandra
-      manix
+      unstable.manix
       nil
       # nixops
     ];
