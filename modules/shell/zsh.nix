@@ -53,6 +53,7 @@ in {
       navi
       unstable.ollama
       openai-whisper-cpp
+      tailspin
       tldr
       cheat
       thefuck
