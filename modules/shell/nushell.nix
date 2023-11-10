@@ -19,6 +19,7 @@ in {
         enable = true;
         # The config.nu can be anywhere you want if you like to edit your Nushell with Nu
         # configFile.source = ./.../config.nu;
+        envFile.source = ../../config/nushell/env.nu;
         # for editing directly to config.nu
         extraConfig = ''
           let carapace_completer = {|spans|
@@ -47,8 +48,8 @@ in {
           )
         '';
         shellAliases = {
-          vim = hx;
-          nano = hx;
+          vim = "hx";
+          nano = "hx";
         };
       };
       carapace.enable = true;
