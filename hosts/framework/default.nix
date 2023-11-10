@@ -67,7 +67,7 @@
     shell = {
       bitwarden.enable = true;
       direnv.enable = true;
-      fish.enable = true;
+      nushell.enable = true;
       git.enable = true;
       gnupg.enable = true;
       pass.enable = true;
