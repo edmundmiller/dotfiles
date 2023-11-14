@@ -18,7 +18,7 @@ in {
       nushell = {
         enable = true;
         # The config.nu can be anywhere you want if you like to edit your Nushell with Nu
-        # configFile.source = ./.../config.nu;
+        configFile.source = ../../config/nushell/config.nu;
         envFile.source = ../../config/nushell/env.nu;
         # for editing directly to config.nu
         extraConfig = ''
@@ -47,6 +47,8 @@ in {
           nano = "hx";
         };
       };
+      atuin.enable = true;
+      atuin.enableNushellIntegration = true;
       carapace.enable = true;
       carapace.enableNushellIntegration = true;
 
