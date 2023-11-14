@@ -49,6 +49,7 @@ in {
       };
       atuin.enable = true;
       atuin.enableNushellIntegration = true;
+      atuin.package = pkgs.my.atuin;
       carapace.enable = true;
       carapace.enableNushellIntegration = true;
 
