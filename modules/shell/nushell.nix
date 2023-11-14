@@ -41,11 +41,6 @@ in {
              }
            }
           }
-          $env.PATH = ($env.PATH |
-          split row (char esep) |
-          prepend /home/myuser/.apps |
-          append /usr/bin/env
-          )
         '';
         shellAliases = {
           vim = "hx";
