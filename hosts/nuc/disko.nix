@@ -42,7 +42,7 @@
         datasets = {
           "system" = {
             type = "zfs_fs";
-            mountpoint = "none";
+            mountpoint = null;
           };
           "system/root" = {
             type = "zfs_fs";
