@@ -92,22 +92,9 @@
 
   time.timeZone = "America/Chicago";
 
-  home-manager.users.emiller.wayland.windowManager.sway = {
-    extraOptions = ["--debug" "--unsupported-gpu"];
-    extraSessionCommands = ''
-      # export SDL_VIDEODRIVER=wayland
-      # needs qt5.qtwayland in systemPackages
-      # export QT_QPA_PLATFORM=wayland
-      # export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
-      # Fix for some Java AWT applications (e.g. Android Studio),
-      # use this if they aren't displayed properly:
-      # export _JAVA_AWT_WM_NONREPARENTING=1
-      export WLR_NO_HARDWARE_CURSORS=1
-    '';
-  };
-
   user.packages = with pkgs; [
     obsidian
+    unstable.ticktick
   ];
 
   # znapzend
