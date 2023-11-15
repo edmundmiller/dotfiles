@@ -29,6 +29,8 @@ in {
         nuc.id = "2CEF42E-4M4E3SU-VUCZFPI-ZUGHL5V-2RBZ3D7-AUUJEUN-RDJJF5I-I3ZCOAK";
         unas.id = "QRDMQKL-RX4PO5I-2VM3SBA-42G3PVX-ZGGRDYU-P3C3AFN-OKLOVK4-BXRJAAN";
       };
+      overrideFolders = true;
+      overrideDevices = true;
       settings.folders = let
         deviceEnabled = devices: lib.elem config.networking.hostName devices;
         deviceType = devices:
