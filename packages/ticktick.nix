@@ -64,6 +64,9 @@ stdenv.mkDerivation (finalAttrs: {
     substituteInPlace "$out/share/applications/${finalAttrs.pname}.desktop" \
       --replace "Exec=/opt/TickTick/ticktick" "Exec=$out/bin/${finalAttrs.pname}"
 
+    wrapProgram $out/bin/${finalAttrs.pname} \
+      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=wayland --enable-features=WaylandWindowDecorations}} --no-update"
+
     runHook postInstall
   '';
 
