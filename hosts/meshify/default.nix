@@ -94,7 +94,13 @@
 
   user.packages = with pkgs; [
     obsidian
-    unstable.ticktick
+    (makeDesktopItem {
+      name = "ticktick";
+      desktopName = "TickTick";
+      icon = "ticktick";
+      exec = "${my.ticktick}/bin/ticktick --disable-gpu";
+      # categories = ["Development"];
+    })
   ];
 
   # znapzend
