@@ -4,7 +4,7 @@
   ...
 }:
 with lib; {
-  imports = [./gandicloud.nix];
+  imports = [./gandicloud.nix ./server.nix];
 
   modules = {
     editors = {
