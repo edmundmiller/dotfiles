@@ -3,26 +3,30 @@
   lib,
   ...
 }:
-with lib; {
-  networking.hosts = let
-    hostConfig = {
-      "192.168.1.99" = ["framework"];
-      "192.168.1.88" = ["meshify"];
-      "192.168.1.101" = ["unas"];
-    };
-    hosts = flatten (attrValues hostConfig);
-    hostName = config.networking.hostName;
-  in
-    mkIf (builtins.elem hostName hosts) hostConfig;
+with builtins;
+with lib; let
+  blocklist = fetchurl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts;
+in {
+  networking.extraHosts = ''
+    192.168.1.1   router.home
+
+    # Hosts
+    192.168.1.99   framework.home
+    192.168.1.88   meshify.home
+    192.168.1.101  unas.home
+
+    # Block garbage
+    ${optionalString config.services.xserver.enable (readFile blocklist)}
+  '';
 
   ## Location config
-  time.timeZone = lib.mkDefault "America/Chicago";
-  i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
+  time.timeZone = mkDefault "America/Chicago";
+  i18n.defaultLocale = mkDefault "en_US.UTF-8";
   # For redshift, mainly
   location =
     if config.time.timeZone == "America/Chicago"
     then {
-      latitude = 32.9837;
+      latitude = 32.983;
       longitude = -96.752;
     }
     else {};
