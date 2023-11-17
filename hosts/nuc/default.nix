@@ -1,6 +1,7 @@
 # Go nuc yourself
 {pkgs, ...}: {
   imports = [
+    ../server.nix
     ../home.nix
     ./hardware-configuration.nix
     ./disko.nix

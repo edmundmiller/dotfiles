@@ -1,9 +1,7 @@
 # No u nas
-{
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [
+    ../server.nix
     ../home.nix
     ./hardware-configuration.nix
 
