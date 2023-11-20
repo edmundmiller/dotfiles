@@ -13,8 +13,10 @@ in {
   options.modules.desktop.term.wezterm = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [unstable.wezterm];
-
+    home-manager.users.${config.user.name}.programs.wezterm = {
+      enable = true;
+      # default_prog = { "zsh", "--login", "-c", "tmux attach -t dev || tmux new -s dev" },
+    };
     # TODO Waiting for config to stablize
     # home.configFile = {
     #   "wezterm/wezterm.lua".source = "${configDir}/wezterm/wezterm.lua";
