@@ -21,4 +21,6 @@
     monospace.name = "JetBrains Mono";
   };
   stylix.targets.gnome.enable = true;
+
+  boot.plymouth.enable = true;
 }
