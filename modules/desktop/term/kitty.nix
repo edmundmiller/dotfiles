@@ -16,6 +16,14 @@ in {
     # kitty isn't supported over ssh, so revert to a known one
     environment.shellAliases = {s = "kitten ssh";};
 
-    user.packages = with pkgs; [kitty];
+    home-manager.users.${config.user.name}.programs.kitty = {
+      enable = true;
+      settings = {
+        scrollback_lines = 10000;
+        enable_audio_bell = false;
+        update_check_interval = 0;
+        hide_window_decorations = true;
+      };
+    };
   };
 }
