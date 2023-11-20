@@ -30,6 +30,7 @@ in {
 
     (mkIf cfg.zfs.enable (mkMerge [
       {
+        boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
         boot.loader.grub.copyKernels = true;
         boot.supportedFilesystems = ["zfs"];
         boot.zfs.devNodes = "/dev/disk/by-partuuid";
