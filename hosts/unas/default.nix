@@ -43,6 +43,8 @@
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
+  services.smartd.enable = true;
+
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
