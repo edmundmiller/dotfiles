@@ -38,6 +38,7 @@
           compression = "zstd";
           "com.sun:auto-snapshot" = "false";
         };
+        mountpoint = "/";
         postCreateHook = "zfs snapshot zroot@blank";
         datasets = {
           "system" = {
