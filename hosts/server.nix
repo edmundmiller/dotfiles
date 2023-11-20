@@ -8,7 +8,7 @@
   pkgs,
   ...
 }: {
-  boot.kernelPackages = pkgs.linuxKernel.packages.linux_5_15_hardened;
+  boot.kernelPackages = lib.mkForce pkgs.linuxKernel.packages.linux_6_1_hardened;
 
   nix.gc = {
     automatic = true;

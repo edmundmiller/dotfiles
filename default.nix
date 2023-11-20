@@ -54,12 +54,13 @@ with lib.my; {
   # hardware-configuration.nix or fileSystem config.
   fileSystems."/".device = mkDefault "/dev/disk/by-label/nixos";
 
-  boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
-
-  boot.loader = {
-    efi.canTouchEfiVariables = mkDefault true;
-    systemd-boot.configurationLimit = 10;
-    systemd-boot.enable = mkDefault true;
+  boot = {
+    kernelPackages = mkDefault pkgs.linuxKernel.packages.linux_6_1;
+    loader = {
+      efi.canTouchEfiVariables = mkDefault true;
+      systemd-boot.configurationLimit = 10;
+      systemd-boot.enable = mkDefault true;
+    };
   };
 
   # Just the bear necessities...
