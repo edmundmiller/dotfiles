@@ -11,5 +11,5 @@ with lib.my; let
 in {
   options.modules.dev.java = {enable = mkBoolOpt false;};
 
-  config = mkIf cfg.enable {user.packages = with pkgs; [jdk17];};
+  config = mkIf cfg.enable {user.packages = with pkgs; [jdk];};
 }
