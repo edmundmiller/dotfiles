@@ -50,10 +50,6 @@ in {
     # Throws an error without
     hardware.pulseaudio.enable = false;
 
-    # Trying to fix graphical errors after standby
-    hardware.nvidia.powerManagement.enable = true;
-    hardware.nvidia.modesetting.enable = true;
-
     programs.evolution.enable = true;
     programs.evolution.plugins = [pkgs.evolution-ews];
     # https://nixos.wiki/wiki/GNOME/Calendar
