@@ -42,10 +42,6 @@ in {
            }
           }
         '';
-        shellAliases = {
-          vim = "hx";
-          nano = "hx";
-        };
       };
       atuin.enable = true;
       atuin.enableNushellIntegration = true;
@@ -62,6 +58,10 @@ in {
             error_symbol = "[λ](bold red)";
           };
         };
+      };
+      yazi = {
+        enable = true;
+        enableNushellIntegration = true;
       };
     };
   };
