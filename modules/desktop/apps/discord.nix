@@ -20,7 +20,7 @@ in {
       teams-for-linux
       slack
       unstable.element-desktop
-      zoom-us
+      unstable.zoom-us
     ];
   };
 }
