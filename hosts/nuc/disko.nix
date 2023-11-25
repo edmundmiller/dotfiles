@@ -35,10 +35,11 @@
       zroot = {
         type = "zpool";
         rootFsOptions = {
-          compression = "zstd";
+          compression = "on";
           "com.sun:auto-snapshot" = "false";
+          mountpoint = "none";
+          canmount = "off";
         };
-        mountpoint = "/";
         postCreateHook = "zfs snapshot zroot@blank";
         datasets = {
           "system" = {
@@ -52,6 +53,10 @@
           "system/var" = {
             type = "zfs_fs";
             mountpoint = "/var";
+            options = {
+              xattr = "sa";
+              acltype = "posixacl";
+            };
           };
           "local/nix" = {
             type = "zfs_fs";
