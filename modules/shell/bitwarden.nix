@@ -16,7 +16,7 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      # bitwarden FIXME https://github.com/NixOS/nixpkgs/issues/262730
+      bitwarden
       bitwarden-cli
     ];
 
