@@ -26,7 +26,7 @@
     };
     services = {
       docker.enable = true;
-      qb.enable = true;
+      qb.enable = false;
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
