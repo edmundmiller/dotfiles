@@ -39,7 +39,7 @@ in {
           else "receiveonly";
       in {
         archive = rec {
-          devices = ["framework" "meshify" "unas"];
+          devices = ["framework" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/archive";
           fsWatcherEnabled = false;
           rescanIntervalS = 3600 * 6;
@@ -49,7 +49,7 @@ in {
           versioning.params.keep = "2";
         };
         elfeed = rec {
-          devices = ["framework" "meshify" "unas"];
+          devices = ["framework" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
           fsWatcherEnabled = false;
           rescanIntervalS = 3600 * 6;
@@ -57,7 +57,7 @@ in {
           enable = deviceEnabled devices;
         };
         sync = rec {
-          devices = ["framework" "pixel" "meshify" "unas"];
+          devices = ["framework" "pixel" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/sync";
           fsWatcherEnabled = true;
           rescanIntervalS = 3600 * 6;
@@ -72,7 +72,7 @@ in {
           };
         };
         src = rec {
-          devices = ["framework" "meshify" "unas"];
+          devices = ["framework" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/src";
           fsWatcherEnabled = false;
           rescanIntervalS = 3600 * 2;
@@ -80,7 +80,7 @@ in {
           enable = deviceEnabled devices;
         };
         secrets = rec {
-          devices = ["framework" "pixel" "meshify" "unas"];
+          devices = ["framework" "pixel" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/.secrets";
           fsWatcherEnabled = true;
           rescanIntervalS = 3600;
@@ -88,7 +88,7 @@ in {
           enable = deviceEnabled devices;
         };
         seedvault = rec {
-          devices = ["pixel" "unas" "meshify"];
+          devices = ["pixel" "nuc" "unas" "meshify"];
           path = "/home/${config.user.name}/.seedvault";
           fsWatcherEnabled = false;
           rescanIntervalS = 3600;
