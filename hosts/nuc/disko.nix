@@ -7,7 +7,7 @@
     disk = {
       x = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-SATA_SSD_21111524000111";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_1TB_S59ANM0W302035F";
         content = {
           type = "gpt";
           partitions = {
