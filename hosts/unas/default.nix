@@ -44,6 +44,8 @@
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
   services.smartd.enable = true;
+  # FIXME https://discourse.nixos.org/t/logrotate-config-fails-due-to-missing-group-30000/28501/7
+  services.logrotate.checkConfig = false;
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
