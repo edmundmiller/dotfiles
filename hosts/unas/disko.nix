@@ -4,9 +4,9 @@
   ];
   disko.devices = {
     disk = {
-      x = {
+      nvme = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_1TB_S59ANM0W302035F";
+        device = "/dev/disk/by-id/nvme-PCIe_SSD_20092410240085";
         content = {
           type = "gpt";
           partitions = {
@@ -65,6 +65,16 @@
           "user/home/emiller" = {
             type = "zfs_fs";
             mountpoint = "/home/emiller";
+            # TODO neededForBoot = true;
+          };
+          "user/home/monimiller" = {
+            type = "zfs_fs";
+            mountpoint = "/home/monimiller";
+            # TODO neededForBoot = true;
+          };
+          "user/home/tdmiller" = {
+            type = "zfs_fs";
+            mountpoint = "/home/tdmiller";
             # TODO neededForBoot = true;
           };
         };

@@ -22,35 +22,4 @@
   ## ZFS
   networking.hostId = "13e53d45";
   boot.loader.grub.copyKernels = true;
-
-  fileSystems."/" = {
-    device = "tank/system/root";
-    fsType = "zfs";
-  };
-
-  fileSystems."/nix" = {
-    device = "tank/local/nix";
-    fsType = "zfs";
-  };
-
-  fileSystems."/var" = {
-    device = "tank/system/var";
-    fsType = "zfs";
-  };
-
-  fileSystems."/home/emiller" = {
-    device = "tank/user/home/emiller";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
-
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/4114-A01F";
-    fsType = "vfat";
-  };
-
-  # fileSystems."/data/backup" = {
-  #   device = "/dev/disk/by-uuid/073c18c1-cb35-439c-94a6-5b49524fd978";
-  #   options = [ "nosuid" "nodev" "nofail" "x-gvfs-show" ];
-  # };
 }
