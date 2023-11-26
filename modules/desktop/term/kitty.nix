@@ -20,6 +20,7 @@ in {
       enable = true;
       settings = {
         scrollback_lines = 10000;
+        scrollback_pager = ''nvim -c 'setlocal nonumber nolist showtabline=0 foldcolumn=0|Man!' -c "autocmd VimEnter * normal G" -'';
         enable_audio_bell = false;
         update_check_interval = 0;
         hide_window_decorations = true;
