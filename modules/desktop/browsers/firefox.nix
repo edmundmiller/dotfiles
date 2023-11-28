@@ -46,7 +46,6 @@ in {
         };
         profiles."profile0" = {
           extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-            aria2-integration
             bitwarden
             buster-captcha-solver
             clearurls
