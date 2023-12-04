@@ -14,7 +14,7 @@
     # Two inputs so I can track them separately at different rates.
     nixpkgs.url = "nixpkgs/nixos-23.11"; # primary nixpkgs
     nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable"; # for packages on the edge
-    home-manager.url = "github:nix-community/home-manager/master";
+    home-manager.url = "github:nix-community/home-manager/release-23.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = "github:nix-community/NUR";
 
