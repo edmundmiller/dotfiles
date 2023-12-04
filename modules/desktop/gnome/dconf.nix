@@ -1,6 +1,6 @@
 # Generated via dconf2nix: https://github.com/gvolpe/dconf2nix
 {lib, ...}:
-with lib.hm.gvariant; {
+with lib.gvariant; {
   dconf.settings = {
     "com/github/wwmm/easyeffects" = {
       last-used-input-preset = "Presets";
