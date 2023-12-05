@@ -45,6 +45,8 @@ in {
       wl-clipboard
     ];
 
+    hardware.nvidia.modesetting.enable = true;
+
     # Systray Icons
     services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
 
