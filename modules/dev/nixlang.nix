@@ -16,6 +16,8 @@ in {
       alejandra
       unstable.manix
       nil
+      nix-update
+      nixpkgs-review
       # nixops
     ];
 
