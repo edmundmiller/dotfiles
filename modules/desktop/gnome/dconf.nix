@@ -1031,19 +1031,6 @@ with lib.gvariant; {
       migrated-config = true;
     };
 
-    "org/gnome/control-center" = {
-      last-panel = "keyboard";
-      window-state = mkTuple [709 501 true];
-    };
-
-    "org/gnome/desktop/a11y/applications" = {
-      screen-reader-enabled = false;
-    };
-
-    "org/gnome/desktop/app-folders" = {
-      folder-children = ["Utilities" "YaST"];
-    };
-
     "org/gnome/desktop/app-folders/folders/Utilities" = {
       apps = ["gnome-abrt.desktop" "gnome-system-log.desktop" "nm-connection-editor.desktop" "org.gnome.baobab.desktop" "org.gnome.Connections.desktop" "org.gnome.DejaDup.desktop" "org.gnome.Dictionary.desktop" "org.gnome.DiskUtility.desktop" "org.gnome.eog.desktop" "org.gnome.Evince.desktop" "org.gnome.FileRoller.desktop" "org.gnome.fonts.desktop" "org.gnome.seahorse.Application.desktop" "org.gnome.tweaks.desktop" "org.gnome.Usage.desktop" "vinagre.desktop"];
       categories = ["X-GNOME-Utilities"];
