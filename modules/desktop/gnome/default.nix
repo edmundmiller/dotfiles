@@ -10,6 +10,7 @@ with lib.my; let
   cfg = config.modules.desktop.gnome;
 in {
   options.modules.desktop.gnome = {enable = mkBoolOpt false;};
+  imports = [./dconf];
 
   config = mkIf cfg.enable {
     services.xserver.enable = true;
