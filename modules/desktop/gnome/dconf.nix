@@ -1325,22 +1325,6 @@ with lib.gvariant; {
       y = 0;
     };
 
-    "org/gnome/font-manager" = {
-      compare-background-color = "rgb(255,255,255)";
-      compare-foreground-color = "rgb(0,0,0)";
-      compare-list = [];
-      content-pane-position = 155;
-      google-fonts-background-color = "rgb(255,255,255)";
-      google-fonts-foreground-color = "rgb(0,0,0)";
-      is-maximized = true;
-      language-filter-list = [];
-      preview-page = 2;
-      selected-category = "0";
-      selected-font = "0";
-      window-position = mkTuple [34 24];
-      window-size = mkTuple [1917 1018];
-    };
-
     "org/gnome/font-manager/font-viewer" = {
       window-position = mkTuple [34 24];
       window-size = mkTuple [600 400];
