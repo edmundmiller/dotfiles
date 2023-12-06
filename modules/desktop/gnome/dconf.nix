@@ -1031,12 +1031,6 @@ with lib.gvariant; {
       migrated-config = true;
     };
 
-    "org/gnome/calendar" = {
-      active-view = "month";
-      window-maximized = true;
-      window-size = mkTuple [768 600];
-    };
-
     "org/gnome/control-center" = {
       last-panel = "keyboard";
       window-state = mkTuple [709 501 true];
