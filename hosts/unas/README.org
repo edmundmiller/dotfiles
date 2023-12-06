@@ -1,0 +1,48 @@
+#+title: Unas
+
+#+begin_src log
+~ λ l /dev/disk/by-id                                                                                               emiller@unas
+lrwxrwxrwx  8,32 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39DZLK1 -> ../../sdc
+lrwxrwxrwx  8,33 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39DZLK1-part1 -> ../../sdc1
+lrwxrwxrwx  8,16 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39DZY9L -> ../../sdb
+lrwxrwxrwx  8,17 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39DZY9L-part1 -> ../../sdb1
+lrwxrwxrwx   8,0 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39PLU0K -> ../../sda
+lrwxrwxrwx   8,1 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39PLU0K-part1 -> ../../sda1
+lrwxrwxrwx  8,48 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX31D49KSJ83 -> ../../sdd
+lrwxrwxrwx  8,49 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX31D49KSJ83-part1 -> ../../sdd1
+lrwxrwxrwx  8,96 root 25 Nov 11:22 ata-WDC_WD120EDAZ-11F3RA0_5PK7HZAF -> ../../sdg
+lrwxrwxrwx  8,97 root 25 Nov 11:22 ata-WDC_WD120EDAZ-11F3RA0_5PK7HZAF-part1 -> ../../sdg1
+lrwxrwxrwx 8,105 root 25 Nov 11:22 ata-WDC_WD120EDAZ-11F3RA0_5PK7HZAF-part9 -> ../../sdg9
+lrwxrwxrwx  8,64 root 25 Nov 11:22 ata-WDC_WD120EDAZ-11F3RA0_5PK8T7RF -> ../../sde
+lrwxrwxrwx  8,65 root 25 Nov 11:22 ata-WDC_WD120EDAZ-11F3RA0_5PK8T7RF-part1 -> ../../sde1
+lrwxrwxrwx  8,73 root 25 Nov 11:22 ata-WDC_WD120EDAZ-11F3RA0_5PK8T7RF-part9 -> ../../sde9
+lrwxrwxrwx  8,80 root 25 Nov 11:22 ata-WDC_WD180EDGZ-11B2DA0_3FH06MJT -> ../../sdf
+lrwxrwxrwx  8,81 root 25 Nov 11:22 ata-WDC_WD180EDGZ-11B2DA0_3FH06MJT-part1 -> ../../sdf1
+lrwxrwxrwx  8,89 root 25 Nov 11:22 ata-WDC_WD180EDGZ-11B2DA0_3FH06MJT-part9 -> ../../sdf9
+lrwxrwxrwx 259,0 root 25 Nov 11:22 nvme-nvme.1987-3230303932343130323430303835-5043496520535344-00000001 -> ../../nvme0n1
+lrwxrwxrwx 259,1 root 25 Nov 11:22 nvme-nvme.1987-3230303932343130323430303835-5043496520535344-00000001-part1 -> ../../nvme0n1p1
+lrwxrwxrwx 259,2 root 25 Nov 11:22 nvme-nvme.1987-3230303932343130323430303835-5043496520535344-00000001-part2 -> ../../nvme0n1p2
+lrwxrwxrwx 259,0 root 25 Nov 11:22 nvme-PCIe_SSD_20092410240085 -> ../../nvme0n1
+lrwxrwxrwx 259,1 root 25 Nov 11:22 nvme-PCIe_SSD_20092410240085-part1 -> ../../nvme0n1p1
+lrwxrwxrwx 259,2 root 25 Nov 11:22 nvme-PCIe_SSD_20092410240085-part2 -> ../../nvme0n1p2
+lrwxrwxrwx 259,0 root 25 Nov 11:22 nvme-PCIe_SSD_20092410240085_1 -> ../../nvme0n1
+lrwxrwxrwx 259,1 root 25 Nov 11:22 nvme-PCIe_SSD_20092410240085_1-part1 -> ../../nvme0n1p1
+lrwxrwxrwx 259,2 root 25 Nov 11:22 nvme-PCIe_SSD_20092410240085_1-part2 -> ../../nvme0n1p2
+lrwxrwxrwx  8,80 root 25 Nov 11:22 wwn-0x5000cca2c2ce3064 -> ../../sdf
+lrwxrwxrwx  8,81 root 25 Nov 11:22 wwn-0x5000cca2c2ce3064-part1 -> ../../sdf1
+lrwxrwxrwx  8,89 root 25 Nov 11:22 wwn-0x5000cca2c2ce3064-part9 -> ../../sdf9
+lrwxrwxrwx  8,96 root 25 Nov 11:22 wwn-0x5000cca291edb117 -> ../../sdg
+lrwxrwxrwx  8,97 root 25 Nov 11:22 wwn-0x5000cca291edb117-part1 -> ../../sdg1
+lrwxrwxrwx 8,105 root 25 Nov 11:22 wwn-0x5000cca291edb117-part9 -> ../../sdg9
+lrwxrwxrwx  8,64 root 25 Nov 11:22 wwn-0x5000cca291ee4482 -> ../../sde
+lrwxrwxrwx  8,65 root 25 Nov 11:22 wwn-0x5000cca291ee4482-part1 -> ../../sde1
+lrwxrwxrwx  8,73 root 25 Nov 11:22 wwn-0x5000cca291ee4482-part9 -> ../../sde9
+lrwxrwxrwx  8,48 root 25 Nov 11:22 wwn-0x50014ee2bbe2e556 -> ../../sdd
+lrwxrwxrwx  8,49 root 25 Nov 11:22 wwn-0x50014ee2bbe2e556-part1 -> ../../sdd1
+lrwxrwxrwx   8,0 root 25 Nov 11:22 wwn-0x50014ee21137b4f3 -> ../../sda
+lrwxrwxrwx   8,1 root 25 Nov 11:22 wwn-0x50014ee21137b4f3-part1 -> ../../sda1
+lrwxrwxrwx  8,32 root 25 Nov 11:22 wwn-0x50014ee21137b63d -> ../../sdc
+lrwxrwxrwx  8,33 root 25 Nov 11:22 wwn-0x50014ee21137b63d-part1 -> ../../sdc1
+lrwxrwxrwx  8,16 root 25 Nov 11:22 wwn-0x50014ee21137e858 -> ../../sdb
+lrwxrwxrwx  8,17 root 25 Nov 11:22 wwn-0x50014ee21137e858-part1 -> ../../sdb1
+#+end_src
