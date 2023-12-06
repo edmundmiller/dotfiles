@@ -52,6 +52,17 @@ with lib.gvariant; {
         switch-to-workspace-right = [];
         unmaximize = [];
       };
+
+      "org/gnome/shell/keybindings" = {
+        focus-active-notification = [];
+        shift-overview-down = [];
+        shift-overview-up = [];
+        switch-to-application-1 = [];
+        switch-to-application-2 = [];
+        switch-to-application-3 = [];
+        switch-to-application-4 = [];
+        switch-to-application-5 = [];
+      };
     };
   };
 }
