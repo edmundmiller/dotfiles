@@ -28,13 +28,10 @@ python3.pkgs.buildPythonApplication rec {
     jsonschema
     markdown
     packaging
-    pre-commit
     prompt-toolkit
     pytest
-    pytest-workflow
     pyyaml
     questionary
-    refgenie
     requests
     requests-cache
     rich
@@ -42,7 +39,7 @@ python3.pkgs.buildPythonApplication rec {
     tabulate
   ];
 
-  pythonImportsCheck = ["tools"];
+  pythonImportsCheck = ["nf_core"];
 
   meta = with lib; {
     description = "Python package with helper tools for the nf-core community";
