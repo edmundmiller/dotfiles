@@ -25,6 +25,7 @@ in {
       user.packages = with pkgs; [
         conda
         (pkgs.python3.withPackages my-python-packages)
+        my.multiqc
         my.nf-core
         python3Packages.pip
         python3Packages.black
