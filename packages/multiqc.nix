@@ -17,8 +17,28 @@ python3.pkgs.buildPythonApplication rec {
   };
 
   nativeBuildInputs = [
+    python3.pkgs.importlib-metadata
     python3.pkgs.setuptools
     python3.pkgs.wheel
+  ];
+
+  propagatedBuildInputs = with python3.pkgs; [
+    matplotlib
+    networkx
+    numpy
+    click
+    coloredlogs
+    future
+    jinja2
+    markdown
+    packaging
+    pyyaml
+    requests
+    rich
+    rich-click
+    # FIXME spectra
+    humanize
+    # FIXME pyaml-env
   ];
 
   pythonImportsCheck = ["multiqc"];
