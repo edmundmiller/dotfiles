@@ -8,7 +8,6 @@
   options,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;
@@ -26,6 +25,7 @@ in {
       user.packages = with pkgs; [
         conda
         (pkgs.python3.withPackages my-python-packages)
+        my.nf-core
         python3Packages.pip
         python3Packages.black
         python3Packages.isort
