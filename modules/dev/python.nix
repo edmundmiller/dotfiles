@@ -35,6 +35,7 @@ in {
         python3Packages.setuptools
         python3Packages.pylint
         poetry
+        ruff
       ];
 
       env.IPYTHONDIR = "$XDG_CONFIG_HOME/ipython";
