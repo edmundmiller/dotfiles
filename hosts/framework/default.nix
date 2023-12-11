@@ -15,7 +15,6 @@
       browsers = {
         default = "firefox";
         firefox.enable = true;
-        qutebrowser.enable = true;
       };
 
       media = {
@@ -42,6 +41,7 @@
 
     hardware = {
       audio.enable = true;
+      audio.easyeffects.enable = true;
       bluetooth.enable = true;
       ergodox.enable = true;
       fs = {
@@ -62,6 +62,7 @@
       python.enable = true;
       python.conda.enable = true;
       R.enable = true;
+      rust.enable = true;
     };
 
     shell = {
@@ -77,7 +78,6 @@
 
     services = {
       docker.enable = true;
-      mpd.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
@@ -103,6 +103,7 @@
     obsidian
     tauon
     unstable.thunderbird
+    my.ticktick
   ];
 
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
