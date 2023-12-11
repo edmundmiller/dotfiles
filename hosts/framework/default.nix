@@ -98,8 +98,6 @@
   time.hardwareClockInLocalTime = true;
   location.provider = "geoclue2";
 
-  services.mullvad-vpn.enable = true;
-
   # Random laptop specific packages that don't need a whole module
   user.packages = with pkgs; [
     obsidian
