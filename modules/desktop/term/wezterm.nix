@@ -4,6 +4,8 @@
   config,
   lib,
   pkgs,
+  inputs,
+  system,
   ...
 }:
 with lib;
@@ -15,6 +17,7 @@ in {
   config = mkIf cfg.enable {
     home-manager.users.${config.user.name}.programs.wezterm = {
       enable = true;
+      package = inputs.wezterm.packages."${system}".default;
       # default_prog = { "zsh", "--login", "-c", "tmux attach -t dev || tmux new -s dev" },
     };
     # TODO Waiting for config to stablize
