@@ -11,18 +11,26 @@ in {
   options.modules.services.hass = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    virtualisation.oci-containers = {
-      # backend = "podman";
-      containers.homeassistant = {
-        autoStart = true;
-        volumes = ["home-assistant:/config"];
-        environment.TZ = "America/Chicago";
-        image = "ghcr.io/home-assistant/home-assistant:stable"; # Warning: if the tag does not change, the image will not be updated
-        extraOptions = [
-          "--network=host"
-          "--device=/dev/ttyACM0:/dev/ttyACM0" # Example, change this to match your own hardware
-        ];
+    services.home-assistant = {
+      enable = true;
+      config = {
+        http = {
+          use_x_forwarded_for = true;
+          trusted_proxies = ["127.0.0.1" "::1"];
+        };
+
+        homeassistant = {
+          unit_system = "imperial";
+          time_zone = "America/Chicago";
+          temperature_unit = "C";
+          name = "home";
+          latitude = 32.983;
+          longitude = -96.752;
+        };
+        http.server_port = 8123;
       };
+
+      openFirewall = true;
     };
   };
 }
