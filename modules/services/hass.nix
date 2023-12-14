@@ -20,6 +20,11 @@ in {
         #   trusted_proxies = ["127.0.0.1" "::1"];
         # };
 
+        icloud = {};
+        frontend = {};
+        sun = {};
+        mobile_app = {};
+        default_config = {};
         homeassistant = {
           unit_system = "imperial";
           time_zone = "America/Chicago";
