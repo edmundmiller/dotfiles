@@ -18,7 +18,6 @@ in {
   config = mkIf cfg.enable (mkMerge [
     {
       hardware.bluetooth.enable = true;
-      services.blueman.enable = true;
     }
 
     (mkIf cfg.audio.enable {
@@ -35,6 +34,8 @@ in {
         [General]
         Enable=Source,Sink,Media,Socket
       '';
+
+      services.blueman.enable = true;
     })
   ]);
 }
