@@ -38,7 +38,6 @@
   };
 
   time.timeZone = "America/Chicago";
-  networking.hostId = "8425e349";
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
