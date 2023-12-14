@@ -14,10 +14,11 @@ in {
     services.home-assistant = {
       enable = true;
       config = {
-        http = {
-          use_x_forwarded_for = true;
-          trusted_proxies = ["127.0.0.1" "::1"];
-        };
+        # TODO
+        # http = {
+        #   use_x_forwarded_for = true;
+        #   trusted_proxies = ["127.0.0.1" "::1"];
+        # };
 
         homeassistant = {
           unit_system = "imperial";
@@ -30,6 +31,7 @@ in {
         http.server_port = 8123;
       };
 
+      # TODO
       openFirewall = true;
     };
   };
