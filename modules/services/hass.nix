@@ -36,6 +36,8 @@ in {
         http.server_port = 8123;
       };
 
+      extraComponents = ["backup" "zha"];
+
       # TODO
       openFirewall = true;
     };
