@@ -34,7 +34,7 @@
       tailscale.enable = true;
     };
 
-    theme.active = "alucard";
+    # theme.active = "alucard";
   };
 
   time.timeZone = "America/Chicago";
