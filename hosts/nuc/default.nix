@@ -14,6 +14,7 @@
       vim.enable = true;
     };
     hardware = {
+      bluetooth.enable = true;
       fs = {
         enable = true;
         zfs.enable = true;
