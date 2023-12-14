@@ -14,6 +14,7 @@ in {
     virtualisation.oci-containers = {
       # backend = "podman";
       containers.homeassistant = {
+        autoStart = true;
         volumes = ["home-assistant:/config"];
         environment.TZ = "America/Chicago";
         image = "ghcr.io/home-assistant/home-assistant:stable"; # Warning: if the tag does not change, the image will not be updated
