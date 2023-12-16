@@ -1,19 +1,11 @@
 <div align="center">
    
 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs)
-[![NixOS 20.09](https://img.shields.io/badge/NixOS-v20.09-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+[![NixOS 23.11](https://img.shields.io/badge/NixOS-v23.11-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
 </div>
 
 **Hey,** you. You're finally awake. You were trying to configure your OS declaratively, right? Walked right into that NixOS ambush, same as us, and those dotfiles over there.
-
-<img src="https://raw.githubusercontent.com/hlissner/dotfiles/screenshots/fluorescence/fakebusy.png" width="100%" />
-
-<p align="center">
-<span><img src="/../screenshots/fluorescence/desktop.png" height="178" /></span>
-<span><img src="/../screenshots/fluorescence/rofi.png" height="178" /></span>
-<span><img src="/../screenshots/fluorescence/tiling.png" height="178" /></span>
-</p>
 
 ---
 
