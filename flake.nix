@@ -23,6 +23,7 @@
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     stylix.url = "github:danth/stylix";
 
     # Extras
@@ -33,6 +34,7 @@
   };
 
   outputs = inputs @ {
+    flake-parts,
     self,
     nixpkgs,
     nixpkgs-unstable,
@@ -57,43 +59,51 @@
         lib = self;
       };
     });
-  in {
-    lib = lib.my;
+  in
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      flake = {
+        lib = lib.my;
 
-    overlay = _final: _prev: {
-      unstable = pkgs';
-      my = self.packages."${system}";
-    };
+        overlay = _final: _prev: {
+          unstable = pkgs';
+          my = self.packages."${system}";
+        };
 
-    overlays = mapModules ./overlays import;
+        overlays = mapModules ./overlays import;
 
-    packages."${system}" = mapModules ./packages (p: pkgs.callPackage p {});
+        packages."${system}" = mapModules ./packages (p: pkgs.callPackage p {});
 
-    nixosModules =
-      {
-        dotfiles = import ./.;
-      }
-      // mapModulesRec ./modules import;
+        nixosModules =
+          {
+            dotfiles = import ./.;
+          }
+          // mapModulesRec ./modules import;
 
-    nixosConfigurations = mapHosts ./hosts {};
+        nixosConfigurations = mapHosts ./hosts {};
 
-    devShell."${system}" = import ./shell.nix {inherit pkgs;};
+        devShell."${system}" = import ./shell.nix {inherit pkgs;};
 
-    templates = {
-      full = {
-        path = ./.;
-        description = "A grossly incandescent nixos config";
+        templates = {
+          full = {
+            path = ./.;
+            description = "A grossly incandescent nixos config";
+          };
+          minimal = {
+            path = ./templates/minimal;
+            description = "A grossly incandescent and minimal nixos config";
+          };
+        };
+        defaultTemplate = self.templates.minimal;
+
+        defaultApp."${system}" = {
+          type = "app";
+          program = ./bin/hey;
+        };
       };
-      minimal = {
-        path = ./templates/minimal;
-        description = "A grossly incandescent and minimal nixos config";
+      systems = [
+        "x86_64-linux"
+      ];
+      perSystem = {config, ...}: {
       };
     };
-    defaultTemplate = self.templates.minimal;
-
-    defaultApp."${system}" = {
-      type = "app";
-      program = ./bin/hey;
-    };
-  };
 }
