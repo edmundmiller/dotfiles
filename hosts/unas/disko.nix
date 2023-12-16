@@ -47,7 +47,7 @@
       };
       hdd1 = {
         type = "disk";
-        device = "/dev/disk/by-id/wwn-0x50014ee21137e858";
+        device = "/dev/disk/by-id/ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39DZY9L";
         content = {
           type = "gpt";
           partitions = {
@@ -127,7 +127,7 @@
       };
       hdd6 = {
         type = "disk";
-        device = "/dev/disk/by-id/wwn-0x5000cca291edb117";
+        device = "/dev/disk/by-id/ata-WDC_WD120EDAZ-11F3RA0_5PK7HZAF";
         content = {
           type = "gpt";
           partitions = {
