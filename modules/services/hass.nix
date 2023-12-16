@@ -24,5 +24,7 @@ in {
         "--privileged"
       ];
     };
+
+    networking.firewall.allowedTCPPorts = [8123];
   };
 }
