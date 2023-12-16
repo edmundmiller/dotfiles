@@ -1,16 +1,21 @@
 [qb-domain$="xkcd.com"] {
     body {
         background: #161616 !important;
-        color: #FAFAFA !important;
+        color: #fafafa !important;
     }
 
-    img, div[class="self"] {
+    img,
+    div[class="self"] {
         filter: hue-rotate(180deg) invert(100%) !important;
         -webkit-filter: hue-rotate(180deg) invert(100%) !important;
     }
 
     /*Exceptions*/
-    img[alt="Stargazing"], img[alt="Flashlights"], img[alt="Google Maps"], img[alt="Alternative Energy Revolution"], img[alt="Man Page"] {
+    img[alt="Stargazing"],
+    img[alt="Flashlights"],
+    img[alt="Google Maps"],
+    img[alt="Alternative Energy Revolution"],
+    img[alt="Man Page"] {
         filter: invert(0%) !important;
         -webkit-filter: invert(0%) !important;
     }
@@ -20,14 +25,14 @@
     }
 
     #topLeft a {
-        color: #CCCCCC !important;
+        color: #cccccc !important;
     }
 
     ul.comicNav li a {
-        background: transparent linear-gradient(#3C3C3C, #2E2E2E) repeat scroll 0% 0% !important;
+        background: transparent linear-gradient(#3c3c3c, #2e2e2e) repeat scroll
+            0% 0% !important;
     }
 }
-
 
 [qb-domain="imgs.xkcd.com"] {
     img {
@@ -40,12 +45,12 @@
     img[alt="https://imgs.xkcd.com/comics/flashlights.png"],
     img[alt="https://imgs.xkcd.com/comics/google_maps.png"],
     img[alt="https://imgs.xkcd.com/comics/alternative_energy_revolution.jpg"],
-    img[alt="https://imgs.xkcd.com/comics/man_page.png"] {
+    img[alt="https://imgs.xkcd.com/comics/man_page.png"]
+    {
         filter: invert(0%) !important;
         -webkit-filter: invert(0%) !important;
     }
 }
-
 
 [qb-domain="m-xkcd.com"] {
     body {
@@ -53,24 +58,25 @@
     }
 
     #title {
-        color: #FAFAFA !important;
+        color: #fafafa !important;
     }
 
     #altTextLink {
-        color: #CCCCCC !important;
+        color: #cccccc !important;
     }
 
     #news {
-        color: #FAFAFA !important;
+        color: #fafafa !important;
     }
 
     ul#footerLinks li a {
-        background: transparent linear-gradient(#3C3C3C, #2E2E2E) repeat scroll 0% 0% !important;
+        background: transparent linear-gradient(#3c3c3c, #2e2e2e) repeat scroll
+            0% 0% !important;
     }
 
     #altText {
         background: #131313 !important;
-        color: #FAFAFA !important;
+        color: #fafafa !important;
     }
 
     img {
@@ -79,7 +85,11 @@
     }
 
     /*Exceptions*/
-    img[alt="Stargazing"], img[alt="Flashlights"], img[alt="Google Maps"], img[alt="Alternative Energy Revolution"], img[alt="Man Page"] {
+    img[alt="Stargazing"],
+    img[alt="Flashlights"],
+    img[alt="Google Maps"],
+    img[alt="Alternative Energy Revolution"],
+    img[alt="Man Page"] {
         filter: invert(0%) !important;
         -webkit-filter: invert(0%) !important;
     }

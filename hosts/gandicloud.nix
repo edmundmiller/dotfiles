@@ -1,9 +1,5 @@
 # This is the configuration required to run NixOS on GandiCloud.
-{
-  lib,
-  modulesPath,
-  ...
-}: {
+{lib, ...}: {
   config = {
     boot.initrd.kernelModules = [
       "xen-blkfront"

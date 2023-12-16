@@ -1,10 +1,4 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   home-manager.users.emiller = {
     dconf.settings = {
       "org/gnome/shell" = {
