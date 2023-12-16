@@ -206,43 +206,43 @@
           "media/books/audiobooks" = {
             type = "zfs_fs";
             mountpoint = "/data/media/books/audiobooks";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
           "media/books/ebooks" = {
             type = "zfs_fs";
             mountpoint = "/data/media/books/ebooks";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
           "docs" = {
             type = "zfs_fs";
             mountpoint = "/data/docs";
             options."com.sun:auto-snapshot" = "true";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
           "media/downloads" = {
             type = "zfs_fs";
             mountpoint = "/data/media/downloads";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
           "media/video/shows" = {
             type = "zfs_fs";
             mountpoint = "/data/media/video/shows";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
           "media/video/movies" = {
             type = "zfs_fs";
             mountpoint = "/data/media/video/movies";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
           "media/music" = {
             type = "zfs_fs";
             mountpoint = "/data/media/music";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
           "media/photos" = {
             type = "zfs_fs";
             mountpoint = "/data/media/photos";
-            options.sharenfs = true;
+            options.sharenfs = "on";
           };
         };
       };
