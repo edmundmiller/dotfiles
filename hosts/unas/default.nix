@@ -4,9 +4,9 @@
     ../server.nix
     ../home.nix
     ./hardware-configuration.nix
+    ./disko.nix
 
     ./backups.nix
-    ./nas.nix
     ./modules/time-machine.nix
     ./users.nix
   ];
