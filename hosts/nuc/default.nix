@@ -28,6 +28,7 @@
     services = {
       docker.enable = true;
       hass.enable = true;
+      prowlarr.enable = true;
       qb.enable = false;
       ssh.enable = true;
       syncthing.enable = true;
