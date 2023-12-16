@@ -30,6 +30,7 @@
       hass.enable = true;
       prowlarr.enable = true;
       qb.enable = false;
+      radarr.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
