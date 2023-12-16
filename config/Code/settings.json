@@ -50,5 +50,5 @@
     "vim.easymotion": true,
     "vim.sneak": true,
     "vim.sneakReplacesF": true,
-    "vim.useSystemClipboard": true,
+    "vim.useSystemClipboard": true
 }

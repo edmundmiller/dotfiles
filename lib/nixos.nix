@@ -24,6 +24,6 @@ in {
       ];
     };
 
-  mapHosts = dir: attrs @ { ...}:
+  mapHosts = dir: attrs @ {...}:
     mapModules dir (hostPath: mkHost hostPath attrs);
 }
