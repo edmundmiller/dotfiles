@@ -1,7 +1,4 @@
-{
-  config,
-  ...
-}: {
+{config, ...}: {
   modules.services.paperless.enable = true;
 
   services.paperless = {

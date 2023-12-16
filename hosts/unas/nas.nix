@@ -1,6 +1,4 @@
-{
-  ...
-}: {
+{...}: {
   ## NAS
   fileSystems."/data/backup/longhorn" = {
     device = "datatank/backup/longhorn";

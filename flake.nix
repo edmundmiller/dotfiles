@@ -108,7 +108,7 @@
       systems = [
         "x86_64-linux"
       ];
-      perSystem = {config, ...}: {
+      perSystem = {...}: {
         treefmt = {
           projectRootFile = ".git/config";
           programs.alejandra.enable = true;

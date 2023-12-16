@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}: let
+{pkgs, ...}: let
   restic-backups-gdrive-sync-backup-id = "bfae5213-4fd4-4700-86e5-3ad6f9a7f62e";
   restic-backups-B2-sync-backup-id = "422804e7-53c3-4d8b-b02b-2816b1bf3905";
   restic-backups-B2-archive-backup-id = "b0f29a55-12d3-4f87-a081-5564a223b4d5";
