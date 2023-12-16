@@ -29,5 +29,7 @@
   };
   stylix.targets.gnome.enable = true;
 
+  stylix.opacity.terminal = 0.97;
+
   boot.plymouth.enable = true;
 }
