@@ -28,6 +28,7 @@
     services = {
       docker.enable = true;
       hass.enable = true;
+      jellyfin.enable = true;
       prowlarr.enable = true;
       qb.enable = false;
       radarr.enable = true;
