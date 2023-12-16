@@ -25,6 +25,7 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     stylix.url = "github:danth/stylix";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
@@ -61,6 +62,10 @@
     });
   in
     flake-parts.lib.mkFlake {inherit inputs;} {
+      imports = [
+        inputs.treefmt-nix.flakeModule
+      ];
+
       flake = {
         lib = lib.my;
 
@@ -104,6 +109,12 @@
         "x86_64-linux"
       ];
       perSystem = {config, ...}: {
+        treefmt = {
+          projectRootFile = ".git/config";
+          programs.alejandra.enable = true;
+          programs.deadnix.enable = true;
+          programs.prettier.enable = true;
+        };
       };
     };
 }
