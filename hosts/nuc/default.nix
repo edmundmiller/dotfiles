@@ -31,6 +31,7 @@
       prowlarr.enable = true;
       qb.enable = false;
       radarr.enable = true;
+      sonarr.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
