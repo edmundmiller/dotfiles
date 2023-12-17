@@ -137,7 +137,7 @@
           mountpoint = "none";
           canmount = "off";
         };
-        postCreateHook = "zfs snapshot zroot@blank";
+        postCreateHook = "zfs snapshot datatank@blank";
         datasets = {
           "media/books/audiobooks" = {
             type = "zfs_fs";
