@@ -51,8 +51,8 @@
     };
     dev = {
       cc.enable = true;
-      java.enable = true;
       julia.enable = true;
+      nextflow.enable = true;
       nixlang.enable = true;
       node.enable = true;
       node.enableGlobally = true;
