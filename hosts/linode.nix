@@ -65,7 +65,6 @@ with lib; {
       timeout = 10;
       grub = {
         enable = true;
-        version = 2;
         device = "nodev";
         copyKernels = true;
         fsIdentifier = "provided";
