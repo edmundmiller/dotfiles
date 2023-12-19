@@ -38,11 +38,15 @@ in {
       # https://bugzilla.mozilla.org/show_bug.cgi?id=1082717
       env.XDG_DESKTOP_DIR = "$HOME/";
 
+      services.gnome.gnome-browser-connector.enable = true;
+
       home-manager.users.${config.user.name}.programs.firefox = {
         enable = true;
         package = pkgs.firefox.override {
-          cfg.enableTridactylNative = true;
-          cfg.gnome-browser-connector = true;
+          nativeMessagingHosts = [
+            pkgs.tridactyl-native
+            pkgs.gnome-browser-connector
+          ];
         };
         profiles."profile0" = {
           extensions = with pkgs.nur.repos.rycee.firefox-addons; [
