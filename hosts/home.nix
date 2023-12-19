@@ -1,12 +1,11 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with builtins;
-with lib; let
-  blocklist = fetchurl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts;
-in {
+with lib; {
   networking.extraHosts = ''
     192.168.1.1   router.home
 
@@ -16,7 +15,7 @@ in {
     192.168.1.101  unas.home
 
     # Block garbage
-    ${optionalString config.services.xserver.enable (readFile blocklist)}
+    ${optionalString config.services.xserver.enable (readFile "${pkgs.stevenblack-blocklist}/hosts")}
   '';
 
   ## Location config
