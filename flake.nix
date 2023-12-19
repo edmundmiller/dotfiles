@@ -95,10 +95,10 @@
             path = ./templates/minimal;
             description = "A grossly incandescent and minimal nixos config";
           };
+          default = self.templates.minimal;
         };
-        defaultTemplate = self.templates.minimal;
 
-        defaultApp."${system}" = {
+        apps."${system}".default = {
           type = "app";
           program = ./bin/hey;
         };
