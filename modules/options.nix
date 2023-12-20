@@ -31,7 +31,7 @@ with lib.my; {
       type = attrsOf (oneOf [str path (listOf (either str path))]);
       apply = mapAttrs (_n: v:
         if isList v
-        then concatMapStringsSep ":" (x: toString x) v
+        then concatMapStringsSep ":" toString v
         else (toString v));
       default = {};
       description = "TODO";
@@ -76,7 +76,7 @@ with lib.my; {
           file = mkAliasDefinitions options.home.file;
           # Necessary for home-manager to work with flakes, otherwise it will
           # look for a nixpkgs channel.
-          stateVersion = config.system.stateVersion;
+          inherit (config.system) stateVersion;
         };
         xdg = {
           configFile = mkAliasDefinitions options.home.configFile;

@@ -1,4 +1,4 @@
-{...}: {
+_: {
   ## System security tweaks
   boot.tmp.useTmpfs = true;
   security.protectKernelImage = true;
