@@ -26,6 +26,7 @@
       zsh.enable = true;
     };
     services = {
+      audiobookshelf.enable = true;
       docker.enable = true;
       hass.enable = true;
       jellyfin.enable = true;
