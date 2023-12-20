@@ -24,4 +24,55 @@
   ## ZFS
   networking.hostId = "13e53d45";
   boot.loader.grub.copyKernels = true;
+
+  ## NFS
+  services.rpcbind.enable = true;
+  fileSystems = {
+    "/data/docs" = {
+      device = "unas.home:/data/docs";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+
+    "/data/media/books/audiobooks" = {
+      device = "unas.home:/data/media/books/audiobooks";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+    "/data/media/books/ebooks" = {
+      device = "unas.home:/data/media/books/audiobooks";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+
+    "/data/media/downloads" = {
+      device = "unas.home:/data/media/downloads";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+
+    "/data/media/video/shows" = {
+      device = "unas.home:/data/media/video/shows";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+
+    "/data/media/video/movies" = {
+      device = "unas.home:/data/media/video/movies";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+
+    "/data/media/photos" = {
+      device = "unas.home:/data/media/photos";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+
+    "/data/media/music" = {
+      device = "unas.home:/data/media/music";
+      fsType = "nfs";
+      options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
+    };
+  };
 }
