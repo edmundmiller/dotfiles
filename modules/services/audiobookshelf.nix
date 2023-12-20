@@ -13,6 +13,7 @@ in {
   config = mkIf cfg.enable {
     services.audiobookshelf.enable = true;
     services.audiobookshelf.openFirewall = true;
+    services.audiobookshelf.host = "0.0.0.0";
 
     user.extraGroups = ["audiobookshelf"];
   };
