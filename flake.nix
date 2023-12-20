@@ -106,12 +106,13 @@
       systems = [
         "x86_64-linux"
       ];
-      perSystem = {...}: {
+      perSystem = _: {
         treefmt = {
           projectRootFile = ".git/config";
           programs.alejandra.enable = true;
           programs.deadnix.enable = true;
           programs.prettier.enable = true;
+          programs.statix.enable = true;
         };
       };
     };

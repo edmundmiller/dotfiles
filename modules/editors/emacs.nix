@@ -9,7 +9,7 @@
 with lib;
 with lib.my; let
   cfg = config.modules.editors.emacs;
-  configDir = config.dotfiles.configDir;
+  inherit (config.dotfiles) configDir;
 in {
   options.modules.editors.emacs = {
     enable = mkBoolOpt false;
@@ -44,7 +44,7 @@ in {
       fd # faster projectile indexing
       ffmpeg # whisper.el
       imagemagick # for image-dired
-      (mkIf (config.programs.gnupg.agent.enable)
+      (mkIf config.programs.gnupg.agent.enable
         pinentry-emacs) # in-emacs gnupg prompts
       zstd # for undo-fu-session/undo-tree compression
 
