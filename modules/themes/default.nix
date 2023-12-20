@@ -175,7 +175,7 @@ in {
             ''gtk-theme-name="${cfg.gtk.theme}"''}
           ${optionalString (cfg.gtk.iconTheme != "")
             ''gtk-icon-theme-name="${cfg.gtk.iconTheme}"''}
-          gtk-font-name="Sans ${toString (cfg.fonts.sans.size)}"
+          gtk-font-name="Sans ${toString cfg.fonts.sans.size}"
         '';
         # QT4/5 global theme
         "Trolltech.conf".text = ''

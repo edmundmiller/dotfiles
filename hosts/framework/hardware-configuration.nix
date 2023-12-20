@@ -41,7 +41,7 @@
   # https://github.com/NixOS/nixpkgs/issues/171136#issuecomment-1627779037
   security.pam.services.login.fprintAuth = false;
   # similarly to how other distributions handle the fingerprinting login
-  security.pam.services.gdm-fingerprint = lib.mkIf (config.services.fprintd.enable) {
+  security.pam.services.gdm-fingerprint = lib.mkIf config.services.fprintd.enable {
     text = ''
       auth       required                    pam_shells.so
       auth       requisite                   pam_nologin.so
