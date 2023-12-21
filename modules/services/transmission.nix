@@ -14,20 +14,18 @@ in {
   config = mkIf cfg.enable {
     services.transmission = {
       enable = true;
-      home = "${config.user.home}/torrents";
       settings = {
+        download-dir = "/data/media/downloads";
         incomplete-dir-enabled = true;
-        rpc-whitelist = "127.0.0.1,192.168.*.*";
-        rpc-host-whitelist = "*";
-        rpc-host-whitelist-enabled = true;
         ratio-limit = 0;
         ratio-limit-enabled = true;
+        rpc-bind-address = "0.0.0.0";
+        rpc-host-whitelist = "*";
+        rpc-host-whitelist-enabled = true;
+        rpc-whitelist = "127.0.0.1,192.168.*.*";
       };
-    };
-
-    networking.firewall = {
-      allowedTCPPorts = [51413];
-      allowedUDPPorts = [51413];
+      openRPCPort = true;
+      openPeerPorts = true;
     };
 
     user.extraGroups = ["transmission"];
