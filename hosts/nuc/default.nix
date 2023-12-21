@@ -37,6 +37,7 @@
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
+      transmission.enable = true;
     };
 
     # theme.active = "alucard";
