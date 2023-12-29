@@ -51,6 +51,8 @@ in {
         fira
         jetbrains-mono
         symbola
+        commit-mono
+        monaspace
         noto-fonts
         noto-fonts-cjk
       ];

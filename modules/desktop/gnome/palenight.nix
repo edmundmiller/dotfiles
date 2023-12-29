@@ -17,8 +17,8 @@
     sansSerif.package = pkgs.fira;
     sansSerif.name = "Fira Sans";
 
-    monospace.package = pkgs.jetbrains-mono;
-    monospace.name = "JetBrains Mono";
+    monospace.package = pkgs.commit-mono;
+    monospace.name = "Commit Mono";
 
     sizes = {
       applications = 14;
