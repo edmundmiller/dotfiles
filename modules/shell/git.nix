@@ -15,7 +15,7 @@ in {
     user.packages = with pkgs; [
       unstable.gh
       git-open
-      diff-so-fancy
+      difftastic
       (mkIf config.modules.shell.gnupg.enable git-crypt)
       git-lfs
       pre-commit
