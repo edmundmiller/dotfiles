@@ -101,7 +101,6 @@
 
   # Random laptop specific packages that don't need a whole module
   user.packages = with pkgs; [
-    obsidian
     tauon
     unstable.thunderbird
     my.ticktick
