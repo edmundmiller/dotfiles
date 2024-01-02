@@ -2,6 +2,7 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
+  pkgs,
 }:
 buildGoModule rec {
   pname = "goldwarden";
@@ -17,6 +18,10 @@ buildGoModule rec {
   vendorHash = "sha256-1Px60+f23qoP5eEOUC3WG5vKJYjbD3bPOrDyBpXlMT0=";
 
   ldflags = ["-s" "-w"];
+
+  buildInputs = [
+    pkgs.libfido2
+  ];
 
   meta = with lib; {
     description = "A feature-packed Bitwarden compatible desktop integration";
