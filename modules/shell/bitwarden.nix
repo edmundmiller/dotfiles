@@ -18,6 +18,7 @@ in {
     user.packages = with pkgs; [
       bitwarden
       bitwarden-cli
+      my.goldwarden
     ];
 
     modules.shell.zsh.rcInit = "_cache bw completion --shell zsh; compdef _bw bw;";
