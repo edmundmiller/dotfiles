@@ -1,8 +1,8 @@
-{ lib
-, buildGoModule
-, fetchFromGitHub
+{
+  lib,
+  buildGoModule,
+  fetchFromGitHub,
 }:
-
 buildGoModule rec {
   pname = "goldwarden";
   version = "0.2.7";
@@ -16,13 +16,13 @@ buildGoModule rec {
 
   vendorHash = "sha256-1Px60+f23qoP5eEOUC3WG5vKJYjbD3bPOrDyBpXlMT0=";
 
-  ldflags = [ "-s" "-w" ];
+  ldflags = ["-s" "-w"];
 
   meta = with lib; {
     description = "A feature-packed Bitwarden compatible desktop integration";
     homepage = "https://github.com/quexten/goldwarden";
     license = licenses.mit;
-    maintainers = with maintainers; [ ];
+    maintainers = with maintainers; [];
     mainProgram = "goldwarden";
   };
 }
