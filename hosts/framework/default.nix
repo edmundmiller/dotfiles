@@ -103,6 +103,7 @@
   user.packages = with pkgs; [
     tauon
     unstable.thunderbird
+    my.catgpt
     my.ticktick
   ];
 
