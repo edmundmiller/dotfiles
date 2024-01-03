@@ -5,7 +5,7 @@
 }:
 python3.pkgs.buildPythonApplication rec {
   pname = "nf-core";
-  version = "2.10";
+  version = "2.11.1";
   pyproject = true;
 
   src = fetchFromGitHub {
