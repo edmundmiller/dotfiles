@@ -19,7 +19,7 @@ in {
 
     programs.gnupg.agent.enable = true;
 
-    user.packages = [pkgs.tomb pkgs.rage];
+    user.packages = [pkgs.tomb];
 
     # HACK Without this config file you get "No pinentry program" on 20.03.
     #      programs.gnupg.agent.pinentryFlavor doesn't appear to work, and this
