@@ -23,6 +23,8 @@ buildGoModule rec {
     pkgs.libfido2
   ];
 
+  # TODO install service
+
   meta = with lib; {
     description = "A feature-packed Bitwarden compatible desktop integration";
     homepage = "https://github.com/quexten/goldwarden";
