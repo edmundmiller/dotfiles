@@ -67,6 +67,7 @@
     };
 
     shell = {
+      age.enable = true;
       bitwarden.enable = true;
       direnv.enable = true;
       nushell.enable = true;
@@ -75,6 +76,7 @@
       pass.enable = true;
       tmux.enable = true;
       zsh.enable = true;
+      yubikey.enable = true;
     };
 
     services = {
