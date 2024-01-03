@@ -1,11 +1,17 @@
 [user]
 	name = Edmund Miller
-	email = edmund.a.miller@protonmail.com
-	signingkey = BD387FF7BC10AA9D
+	email = git@edmundmiller.dev
+	signingkey = ~/.ssh/id_ed25519_sk.pub
 [commit]
 	gpgsign = true
+[tag]
+	gpgSign = true
+[gpg]
+	format = ssh
 [core]
 	whitespace = trailing-space
+[init]
+	defaultBranch = main
 [github]
 	user = edmundmiller
 [gitlab]
@@ -41,5 +47,3 @@
     insteadOf = gist:
 [url "https://bitbucket.org/"]
     insteadOf = bb:
-[init]
-  defaultBranch = main

@@ -13,7 +13,7 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      gnupg
+      age-plugin-yubikey
       yubikey-manager-qt
       yubikey-manager
       yubikey-personalization
@@ -23,20 +23,5 @@ in {
     # According to https://github.com/NixOS/nixpkgs/issues/85127
     # This is no longer necessary
     # services.pcscd.enable = true;
-
-    # FIXME
-    environment.shellInit = ''
-      export GPG_TTY="$(tty)"
-      gpg-connect-agent /bye
-      export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-    '';
-
-    programs = {
-      ssh.startAgent = false;
-      gnupg.agent = {
-        enable = true;
-        enableSSHSupport = true;
-      };
-    };
   };
 }
