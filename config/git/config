@@ -7,7 +7,7 @@
 [core]
 	whitespace = trailing-space
 [github]
-	user = emiller88
+	user = edmundmiller
 [gitlab]
 	user = emiller88
 [rebase]
@@ -33,7 +33,7 @@
 	clean = git-lfs clean -- %f
 [url "https://github.com/"]
     insteadOf = gh:
-[url "git@github.com:emiller88/"]
+[url "git@github.com:edmundmiller/"]
     insteadOf = gh:/
 [url "https://gitlab.com/"]
     insteadOf = gl:
