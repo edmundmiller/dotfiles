@@ -4,7 +4,7 @@
   fetchFromGitHub,
 }: let
   pname = "nf-core";
-  version = "2.10";
+  version = "2.11.1";
 in
   python3.pkgs.buildPythonApplication rec {
     inherit pname version;
@@ -14,7 +14,7 @@ in
       owner = "nf-core";
       repo = "tools";
       rev = version;
-      hash = "sha256-1yk8PWOUoz1f2sGsPTbgKHn40tjoSgrTx/GgoQzlveo=";
+      hash = "sha256-gycGeUX6pZwmKOlAc9rNWea9yLtgczjm9C0cJango54=";
     };
 
     nativeBuildInputs = [
