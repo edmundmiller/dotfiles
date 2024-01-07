@@ -12,7 +12,8 @@ in {
   options.modules.shell.nushell = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    # users.defaultUserShell = pkgs.nushell;
+    users.defaultUserShell = lib.mkForce pkgs.nushell;
+
     user.packages = with pkgs; [
       atuin
       bat
@@ -68,6 +69,8 @@ in {
       atuin.package = pkgs.my.atuin;
       carapace.enable = true;
       carapace.enableNushellIntegration = true;
+      direnv.enableNushellIntegration = true;
+      skim.enable = true;
 
       starship = {
         enable = true;
@@ -81,8 +84,10 @@ in {
       };
       yazi = {
         enable = true;
-        enableNushellIntegration = true;
+        # enableNushellIntegration = true;
       };
+      zoxide.enable = true;
+      zoxide.enableNushellIntegration = true;
     };
   };
 }
