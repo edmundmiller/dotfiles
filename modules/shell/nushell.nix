@@ -13,6 +13,26 @@ in {
 
   config = mkIf cfg.enable {
     # users.defaultUserShell = pkgs.nushell;
+    user.packages = with pkgs; [
+      atuin
+      bat
+      btop
+      eza
+      fcp
+      fd
+      unstable.fzf
+      navi
+      unstable.ollama
+      openai-whisper-cpp
+      tailspin
+      tldr
+      cheat
+      thefuck
+      unstable.rclone
+      ripgrep
+      sd
+      unstable.yazi
+    ];
 
     home-manager.users.${config.user.name}.programs = {
       nushell = {
