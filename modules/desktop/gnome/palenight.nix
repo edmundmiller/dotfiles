@@ -27,7 +27,6 @@
       terminal = 14;
     };
   };
-  stylix.targets.gnome.enable = true;
 
   stylix.opacity.terminal = 0.97;
 
