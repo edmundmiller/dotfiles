@@ -10,11 +10,8 @@ with lib.my; let
   cfg = config.modules.desktop.kde;
 in {
   options.modules.desktop.kde = {enable = mkBoolOpt false;};
-  imports = [../gnome/palenight.nix];
 
   config = mkIf cfg.enable {
-    stylix.targets.kde.enable = true;
-
     services.xserver.enable = true;
     services.xserver.displayManager.gdm.enable = true;
     services.xserver.desktopManager.plasma5.enable = true;

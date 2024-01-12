@@ -30,6 +30,7 @@
         default = "kitty";
         kitty.enable = true;
       };
+      themes.palenight.enable = true;
     };
 
     editors = {

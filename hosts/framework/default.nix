@@ -32,6 +32,7 @@
         kitty.enable = true;
         wezterm.enable = true;
       };
+      themes.palenight.enable = true;
     };
 
     editors = {
