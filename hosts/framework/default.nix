@@ -25,6 +25,7 @@
         graphics.sprites.enable = false;
         mpv.enable = true;
         ncmpcpp.enable = true;
+        spotify.enable = true;
       };
       term = {
         default = "kitty";
