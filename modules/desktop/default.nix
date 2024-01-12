@@ -53,6 +53,7 @@ in {
         symbola
         commit-mono
         monaspace
+        (unstable.nerdfonts.override {fonts = ["Monaspace"];})
         noto-fonts
         noto-fonts-cjk
       ];
