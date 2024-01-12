@@ -62,6 +62,7 @@
     };
 
     shell = {
+      age.enable = true;
       bitwarden.enable = true;
       direnv.enable = true;
       git.enable = true;
