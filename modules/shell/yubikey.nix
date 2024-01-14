@@ -20,8 +20,7 @@ in {
     ];
 
     services.udev.packages = [pkgs.yubikey-personalization pkgs.libu2f-host];
-    # According to https://github.com/NixOS/nixpkgs/issues/85127
-    # This is no longer necessary
-    # services.pcscd.enable = true;
+    # Needed for age-plugin-yubikey
+    services.pcscd.enable = true;
   };
 }
