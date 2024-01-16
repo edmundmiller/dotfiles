@@ -21,6 +21,7 @@ in {
 
     services.udev.packages = [pkgs.yubikey-personalization pkgs.libu2f-host];
     # Needed for age-plugin-yubikey
+    # TODO mkIf (config.modules.shell.age.enable == true) {
     services.pcscd.enable = true;
   };
 }
