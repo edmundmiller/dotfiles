@@ -79,6 +79,7 @@
       keybase.enable = true;
       mpd.enable = true;
       mpd.scrobbling.enable = true;
+      ollama.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
