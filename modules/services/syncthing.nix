@@ -24,7 +24,7 @@ in {
       dataDir = "/home/${config.user.name}/.local/share/syncthing";
       settings.devices = {
         framework.id = "CHWKD4E-A7MZXUT-EGANUVC-YJDNMDN-6WLTMYQ-TLI2RVC-PYBCNAX-UA3LFAC";
-        pixel.id = "Z4SFA3U-QLJCEOR-53XAXJH-UB56CYG-XPW6U5Q-RTAPTQ5-NHIPSUI-6LUMDAZ"; # Set up externally
+        iphone.id = "S4UUK5M-MV6EGGH-GAW7KGW-4LOHO24-4K3BOKV-7TVOAIJ-AYZY5FA-DJY7FAV"; # Set up externally
         meshify.id = "BNE2NYW-PLPCOLI-Z2T6Y5X-YICNTZO-RLFCSMN-VJ4QFPD-XJILLSQ-34XERAQ";
         nuc.id = "AUP2DGW-DVFZ5CT-D3TU2OH-SR7AO4A-WGAVWUE-Z2WWUTE-C67Z3KO-ERF4LQN";
         unas.id = "2W7D5OL-A54CCNH-K2QGMWW-4M3HTCK-YUL5TMD-EQUFFFW-NTEYJZT-JJE33AT";
@@ -57,11 +57,11 @@ in {
           enable = deviceEnabled devices;
         };
         sync = rec {
-          devices = ["framework" "pixel" "meshify" "nuc" "unas"];
+          devices = ["framework" "iphone" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/sync";
           fsWatcherEnabled = true;
           rescanIntervalS = 3600 * 6;
-          type = deviceType ["framework" "meshify" "pixel"];
+          type = deviceType ["framework" "meshify" "iphone"];
           enable = deviceEnabled devices;
           versioning = {
             type = "staggered";
@@ -80,7 +80,7 @@ in {
           enable = deviceEnabled devices;
         };
         secrets = rec {
-          devices = ["framework" "pixel" "meshify" "nuc" "unas"];
+          devices = ["framework" "iphone" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/.secrets";
           fsWatcherEnabled = true;
           rescanIntervalS = 3600;
@@ -88,11 +88,11 @@ in {
           enable = deviceEnabled devices;
         };
         seedvault = rec {
-          devices = ["pixel" "nuc" "unas" "meshify"];
+          devices = ["iphone" "nuc" "unas" "meshify"];
           path = "/home/${config.user.name}/.seedvault";
           fsWatcherEnabled = false;
           rescanIntervalS = 3600;
-          type = deviceType ["pixel"];
+          type = deviceType ["iphone"];
           enable = deviceEnabled devices;
         };
       };
