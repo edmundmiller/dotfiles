@@ -12,7 +12,7 @@ in {
   options.modules.shell.nushell = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    users.defaultUserShell = lib.mkForce pkgs.nushell;
+    users.defaultUserShell = lib.mkForce pkgs.nushellFull;
 
     user.packages = with pkgs; [
       atuin
@@ -38,6 +38,7 @@ in {
     home-manager.users.${config.user.name}.programs = {
       nushell = {
         enable = true;
+        package = pkgs.nushellFull;
         # The config.nu can be anywhere you want if you like to edit your Nushell with Nu
         configFile.source = ../../config/nushell/config.nu;
         envFile.source = ../../config/nushell/env.nu;
@@ -63,12 +64,14 @@ in {
            }
           }
         '';
+        # TODO Add nu_scripts https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/shells/nushell/nu_scripts/default.nix#L30
       };
       atuin.enable = true;
       atuin.enableNushellIntegration = true;
       atuin.package = pkgs.my.atuin;
       carapace.enable = true;
       carapace.enableNushellIntegration = true;
+      # TODO if direnv
       direnv.enableNushellIntegration = true;
       skim.enable = true;
 

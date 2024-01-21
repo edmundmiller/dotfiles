@@ -72,7 +72,7 @@
       age.enable = true;
       bitwarden.enable = true;
       direnv.enable = true;
-      nushell.enable = true;
+      nushell.enable = false;
       git.enable = true;
       gnupg.enable = true;
       pass.enable = true;
