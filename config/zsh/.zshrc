@@ -49,6 +49,6 @@ if [[ $TERM != dumb ]]; then
   # If you have host-local configuration, put it here
   _source $ZDOTDIR/local.zshrc
 
-  _cache fasd --init posix-alias zsh-{hook,{c,w}comp{,-install}}
+  _cache zoxide init zsh
   autopair-init
 fi
