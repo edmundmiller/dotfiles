@@ -61,6 +61,7 @@ in {
       ripgrep
       sd
       unstable.yazi
+      zoxide
     ];
 
     env = {
