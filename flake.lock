@@ -702,22 +702,6 @@
         "type": "github"
       }
     },
-    "nixpkgs_6": {
-      "locked": {
-        "lastModified": 1698266953,
-        "narHash": "sha256-jf72t7pC8+8h8fUslUYbWTX5rKsRwOzRMX8jJsGqDXA=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "75a52265bda7fd25e06e3a67dee3f0354e73243c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nur": {
       "locked": {
         "lastModified": 1704113324,
@@ -887,23 +871,24 @@
         "freetype2": "freetype2",
         "harfbuzz": "harfbuzz",
         "libpng": "libpng",
-        "nixpkgs": "nixpkgs_6",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
         "rust-overlay": "rust-overlay",
         "zlib": "zlib"
       },
       "locked": {
         "dir": "nix",
-        "lastModified": 1701646233,
-        "narHash": "sha256-0YCkOFFZSyivYZv1Dwf9EZsUhQ1XjwOGg281HYGfUyw=",
-        "owner": "happenslol",
+        "lastModified": 1705885335,
+        "narHash": "sha256-fH/fb+Bprm0SUhb0Z4An/3CykI3CUwxjqG0u3g9clnI=",
+        "owner": "wez",
         "repo": "wezterm",
-        "rev": "12fae0d739a16a59eafd501a51609e379677fa88",
+        "rev": "76028ca15404c049866692b06411f654d544ce2b",
         "type": "github"
       },
       "original": {
         "dir": "nix",
-        "owner": "happenslol",
-        "ref": "add-nix-flake",
+        "owner": "wez",
         "repo": "wezterm",
         "type": "github"
       }
