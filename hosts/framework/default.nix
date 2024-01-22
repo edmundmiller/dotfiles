@@ -111,6 +111,14 @@
     my.ticktick
   ];
 
+  # Mount iPhone
+  services.usbmuxd.enable = true;
+
+  environment.systemPackages = with pkgs; [
+    libimobiledevice
+    ifuse # optional, to mount using 'ifuse'
+  ];
+
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
