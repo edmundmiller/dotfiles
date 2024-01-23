@@ -30,11 +30,15 @@ autocmd DocStart ^http(s?)://www.reddit.com js tri.excmds.urlmodify("-t", "www",
 " Mosquito nets won't make themselves
 " autocmd DocStart ^http(s?)://www.amazon.co.uk js tri.excmds.urlmodify("-t", "www", "smile")
 
-set newtab about:blank
+set newtab kagi.com
 
 " Only hint search results on DDG
 bindurl ^https://duckduckgo.com f hint -Jc [class=result__a]
 bindurl ^https://duckduckgo.com F hint -Jbc [class=result__a]
+
+" Only hint search results on kagi
+bindurl ^https://kagi.com f hint -Jc [class=__sri_title_link]
+bindurl ^https://kagi.com F hint -Jbc [class=__sri_title_link]
 
 " Allow Ctrl-a to select all in the commandline
 unbind --mode=ex <C-a>
