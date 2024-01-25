@@ -9,7 +9,7 @@ in {
     daily = {
       initialize = true;
 
-      environmentFile = config.age.secrets."restic/env".path;
+      rcloneConfigFile = config.age.secrets."restic/rclone".path;
       repositoryFile = config.age.secrets."restic/repo".path;
       passwordFile = config.age.secrets."restic/password".path;
 
