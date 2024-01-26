@@ -87,14 +87,6 @@ in {
           type = deviceType ["framework" "meshify"];
           enable = deviceEnabled devices;
         };
-        seedvault = rec {
-          devices = ["iphone" "nuc" "unas" "meshify"];
-          path = "/home/${config.user.name}/.seedvault";
-          fsWatcherEnabled = false;
-          rescanIntervalS = 3600;
-          type = deviceType ["iphone"];
-          enable = deviceEnabled devices;
-        };
       };
     };
   };
