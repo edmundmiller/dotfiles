@@ -42,7 +42,7 @@ in {
 
       home-manager.users.${config.user.name}.programs.firefox = {
         enable = true;
-        package = pkgs.firefox.override {
+        package = pkgs.floorp.override {
           nativeMessagingHosts = [
             pkgs.tridactyl-native
             pkgs.gnome-browser-connector
