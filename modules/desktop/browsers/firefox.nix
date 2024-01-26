@@ -144,6 +144,7 @@ in {
             "datareporting.healthreport.uploadEnabled" = false;
             "datareporting.healthreport.service.enabled" = false;
             "datareporting.policy.dataSubmissionEnabled" = false;
+            "browser.urlbar.update2.engineAliasRefresh" = true;
           };
         };
       };
