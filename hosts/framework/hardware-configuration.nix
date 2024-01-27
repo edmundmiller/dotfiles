@@ -28,6 +28,7 @@
   # Power management
   environment.systemPackages = [pkgs.acpi];
   services.auto-cpufreq.enable = true;
+  services.thermald.enable = true;
 
   # Monitor backlight control
   hardware.brillo.enable = true;
