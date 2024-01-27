@@ -13,7 +13,7 @@
       apps.discord.enable = true;
 
       browsers = {
-        default = "firefox";
+        default = "floorp";
         firefox.enable = true;
       };
 
