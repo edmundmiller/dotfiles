@@ -23,6 +23,5 @@ in {
     # Needed for age-plugin-yubikey
     # TODO mkIf (config.modules.shell.age.enable == true) {
     services.pcscd.enable = true;
-    programs.ssh.enableAskPassword = true;
   };
 }
