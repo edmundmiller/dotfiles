@@ -1,4 +1,5 @@
 {
+  inputs,
   options,
   config,
   lib,
@@ -11,12 +12,14 @@ with lib.my; let
 in {
   options.modules.desktop.kde = {enable = mkBoolOpt false;};
 
+  imports = [inputs.kde2nix.nixosModules.plasma6];
+
   config = mkIf cfg.enable {
     services.xserver.enable = true;
     services.xserver.displayManager.gdm.enable = true;
-    services.xserver.desktopManager.plasma5.enable = true;
-    services.xserver.desktopManager.plasma5.useQtScaling = true;
+    services.xserver.desktopManager.plasma6.enable = true;
 
+    services.xserver.displayManager.defaultSession = "plasma";
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
     environment.systemPackages = with pkgs; [

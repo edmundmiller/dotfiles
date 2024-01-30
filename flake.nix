@@ -12,11 +12,13 @@
   inputs = {
     # Core dependencies.
     # Two inputs so I can track them separately at different rates.
-    nixpkgs.url = "nixpkgs/nixos-23.11"; # primary nixpkgs
+    nixpkgs.url = "nixpkgs/nixpkgs-unstable"; # primary nixpkgs
     nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable"; # for packages on the edge
-    home-manager.url = "github:nix-community/home-manager/release-23.11";
+    home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = "github:nix-community/NUR";
+    kde2nix.url = "github:nix-community/kde2nix";
+    kde2nix.inputs.nixpkgs.follows = "nixpkgs";
 
     # Utils
     agenix.url = "github:ryantm/agenix";
