@@ -27,6 +27,7 @@ in {
     ];
 
     hardware.nvidia.modesetting.enable = true;
+    hardware.nvidia.powerManagement.enable = true;
 
     # programs.firefox.nativeMessagingHosts.gsconnect = true;
     programs.kdeconnect.enable = true;
