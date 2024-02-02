@@ -47,6 +47,9 @@
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
+  # HACK https://github.com/danth/stylix/issues/200
+  stylix.image = ../../modules/themes/functional/config/wallpaper.png;
+
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
