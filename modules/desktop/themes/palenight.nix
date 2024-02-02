@@ -25,6 +25,8 @@ in {
 
       monospace.package = pkgs.commit-mono;
       monospace.name = "Commit Mono";
+      # TODO https://github.com/danth/stylix/issues/166
+      # stylix.fonts.monospace.package = pkgs.nerdfonts.override {fonts = ["FiraCode"];};
 
       sizes = {
         applications = 14;
