@@ -14,7 +14,7 @@ in {
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       jdk17
-      my.nf-core
+      # my.nf-core
     ];
 
     environment.shellAliases = {
