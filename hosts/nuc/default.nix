@@ -52,7 +52,8 @@
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
-    enable = true;
+    # FIXME
+    enable = false;
     autoCreation = true;
     zetup = {
       "tank/user/home" = {
