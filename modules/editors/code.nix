@@ -14,6 +14,7 @@ in {
   config = mkIf cfg.enable {
     home-manager.users.emiller.programs.vscode = {
       enable = true;
+      package = pkgs.unstable.vscodium;
       extensions = with pkgs.vscode-extensions; [
         ms-toolsai.jupyter
         # nf-core.nf-core-extensionpack
