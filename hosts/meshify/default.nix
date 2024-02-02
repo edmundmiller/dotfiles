@@ -70,8 +70,8 @@
       git.enable = true;
       gnupg.enable = true;
       pass.enable = true;
-      tmux.enable = true;
       yubikey.enable = true;
+      zellij.enable = true;
       zsh.enable = true;
     };
 
