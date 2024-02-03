@@ -8,6 +8,8 @@
 	gpgSign = true
 [gpg]
 	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = "~/.config/git/allowed_signers"
 [core]
 	whitespace = trailing-space
 [init]
