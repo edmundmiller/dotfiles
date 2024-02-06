@@ -30,11 +30,8 @@ autocmd DocStart ^http(s?)://www.reddit.com js tri.excmds.urlmodify("-t", "www",
 " Mosquito nets won't make themselves
 " autocmd DocStart ^http(s?)://www.amazon.co.uk js tri.excmds.urlmodify("-t", "www", "smile")
 
-set newtab kagi.com
-
-" Only hint search results on DDG
-bindurl ^https://duckduckgo.com f hint -Jc [class=result__a]
-bindurl ^https://duckduckgo.com F hint -Jbc [class=result__a]
+" FIXME Really painful because it starts typing before the url
+" set newtab kagi.com
 
 " Only hint search results on kagi
 bindurl ^https://kagi.com f hint -Jc [class=__sri_title_link]
