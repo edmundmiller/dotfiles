@@ -69,6 +69,7 @@
     };
 
     shell = {
+      "1password".enable = true;
       age.enable = true;
       bitwarden.enable = true;
       direnv.enable = true;
