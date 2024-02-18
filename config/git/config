@@ -1,7 +1,7 @@
 [user]
 	name = Edmund Miller
 	email = git@edmundmiller.dev
-	signingkey = "~/.ssh/id_ed25519.pub"
+    signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC edmundmiller"
 [commit]
 	gpgsign = true
 [tag]
@@ -10,6 +10,7 @@
 	format = ssh
 [gpg "ssh"]
 	allowedSignersFile = "~/.config/git/allowed_signers"
+    program = op-ssh-sign
 [core]
 	whitespace = trailing-space
 [init]
