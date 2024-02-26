@@ -104,7 +104,7 @@
       name = "ticktick";
       desktopName = "TickTick";
       icon = "ticktick";
-      exec = "${my.ticktick}/bin/ticktick --disable-gpu";
+      exec = "${unstable.ticktick}/bin/ticktick --disable-gpu";
       # categories = ["Development"];
     })
   ];
