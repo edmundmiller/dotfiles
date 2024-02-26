@@ -110,7 +110,7 @@
     tauon
     unstable.thunderbird
     my.catgpt
-    my.ticktick
+    unstable.ticktick
   ];
 
   # Mount iPhone
