@@ -14,7 +14,7 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      warp-terminal
+      my.warp
     ];
   };
 }

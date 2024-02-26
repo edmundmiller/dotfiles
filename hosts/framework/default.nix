@@ -30,6 +30,7 @@
       term = {
         default = "kitty";
         kitty.enable = true;
+        warp.enable = true;
         wezterm.enable = true;
       };
       themes.palenight.enable = true;
