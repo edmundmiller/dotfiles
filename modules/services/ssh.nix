@@ -12,6 +12,8 @@ in {
   options.modules.services.ssh = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
+    user.packages = with pkgs; [my.sshuttle];
+
     services.openssh = {
       enable = true;
       settings.KbdInteractiveAuthentication = false;
@@ -25,7 +27,7 @@ in {
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK3EVc3A55QHe83NXfqrClVohWz2DscDgx0pr4PSlcGO edmund.a.miller@protonmail.com"
     ];
 
-    environment.shellAliases.utd = "${pkgs.my.sshuttle}/bin/sshuttle --dns -r pubssh 10.0.0.0/8 129.110.0.0/16";
+    environment.shellAliases.utd = "sshuttle --dns -r pubssh 10.0.0.0/8 129.110.0.0/16";
 
     programs.ssh.extraConfig = ''
       Host *
