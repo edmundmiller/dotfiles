@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 with builtins;
@@ -32,4 +33,21 @@ with lib; {
 
   # So the bitwarden CLI knows where to find my server.
   modules.shell.bitwarden.config.server = "bitwarden.com";
+
+  imports = [inputs.comin.nixosModules.comin];
+
+  services.comin = {
+    enable = true;
+    remotes = [
+      {
+        name = "local";
+        url = "/home/emiller/.config/dotfiles/";
+      }
+
+      {
+        name = "origin";
+        url = "https://github.com/edmundmiller/dotfiles";
+      }
+    ];
+  };
 }
