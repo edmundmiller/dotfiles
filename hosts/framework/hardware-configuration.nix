@@ -36,7 +36,7 @@
 
   services.xserver.libinput.enable = true;
   services.xserver.libinput.touchpad.disableWhileTyping = true;
-  services.xserver.xkbOptions = "caps:escape";
+  services.xserver.xkb.options = "caps:escape";
 
   # Fingerprint gnome fix
   # https://github.com/NixOS/nixpkgs/issues/171136#issuecomment-1627779037
