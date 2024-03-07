@@ -5,6 +5,7 @@
     ../home.nix
     ./hardware-configuration.nix
     ./disko.nix
+    ./backups.nix
   ];
 
   ## Modules
