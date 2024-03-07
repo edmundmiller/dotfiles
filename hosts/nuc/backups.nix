@@ -15,13 +15,18 @@ in {
       user = "emiller";
       paths = [
         "${config.users.users.emiller.home}/sync"
-        "${config.users.users.emiller.home}/archive"
+        # "${config.users.users.emiller.home}/archive"
       ];
 
       pruneOpts = [
         "--keep-daily 7"
         "--keep-weekly 5"
         "--keep-monthly 12"
+      ];
+
+      exclude = [
+        "*/.stversions"
+        "*/.git"
       ];
 
       backupPrepareCommand = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backup-id}/start";
