@@ -77,6 +77,7 @@
     };
 
     services = {
+      comin.enable = true;
       docker.enable = true;
       keybase.enable = true;
       mpd.enable = true;
