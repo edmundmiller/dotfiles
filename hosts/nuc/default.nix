@@ -27,6 +27,7 @@
     };
     services = {
       audiobookshelf.enable = true;
+      comin.enable = true;
       docker.enable = true;
       hass.enable = true;
       jellyfin.enable = true;
