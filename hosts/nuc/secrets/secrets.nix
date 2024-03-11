@@ -4,4 +4,5 @@ let
 in {
   "restic/repo.age".publicKeys = [edmundmiller nuc];
   "restic/password.age".publicKeys = [edmundmiller nuc];
+  "emiller_password.age".publicKeys = [nuc];
 }
