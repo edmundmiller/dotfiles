@@ -1,5 +1,9 @@
 # Go nuc yourself
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ../server.nix
     ../home.nix
@@ -48,6 +52,8 @@
   time.timeZone = "America/Chicago";
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+
+  users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
   # HACK https://github.com/danth/stylix/issues/200
   stylix.image = ../../modules/themes/functional/config/wallpaper.png;
