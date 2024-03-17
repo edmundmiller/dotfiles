@@ -47,6 +47,9 @@
   # FIXME https://discourse.nixos.org/t/logrotate-config-fails-due-to-missing-group-30000/28501/7
   services.logrotate.checkConfig = false;
 
+  # HACK https://github.com/danth/stylix/issues/200
+  stylix.image = ../../modules/themes/functional/config/wallpaper.png;
+
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     enable = true;
