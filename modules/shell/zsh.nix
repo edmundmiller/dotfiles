@@ -54,7 +54,7 @@ in {
       unstable.ollama
       openai-whisper-cpp
       tailspin
-      tldr
+      tlrc
       cheat
       thefuck
       unstable.rclone
