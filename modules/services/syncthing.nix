@@ -48,14 +48,6 @@ in {
           versioning.type = "simple";
           versioning.params.keep = "2";
         };
-        elfeed = rec {
-          devices = ["framework" "meshify" "nuc" "unas"];
-          path = "/home/${config.user.name}/.config/emacs/.local/elfeed";
-          fsWatcherEnabled = false;
-          rescanIntervalS = 3600 * 6;
-          type = deviceType ["framework" "meshify"];
-          enable = deviceEnabled devices;
-        };
         sync = rec {
           devices = ["framework" "iphone" "meshify" "nuc" "unas"];
           path = "/home/${config.user.name}/sync";
