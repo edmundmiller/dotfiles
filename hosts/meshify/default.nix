@@ -37,6 +37,7 @@
       default = "nvim";
       code.enable = true;
       emacs.enable = true;
+      helix.enable = true;
       vim.enable = true;
     };
     hardware = {
