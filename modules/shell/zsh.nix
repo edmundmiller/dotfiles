@@ -43,7 +43,6 @@ in {
 
     user.packages = with pkgs; [
       zsh
-      unstable.atuin # TODO Add Key
       bat
       btop
       eza
