@@ -65,6 +65,3 @@ bindkey -M viins '^x^l' history-beginning-search-backward-then-append
 
 # Navi
 eval "$(navi widget zsh)"
-
-# https://github.com/atuinsh/atuin/issues/68#issuecomment-1567410629
-# Use atuin with fzf
