@@ -17,7 +17,7 @@ in {
       # on a "there's an update for discord" screen.
       unstable.beeper
       unstable.discord
-      teams-for-linux
+      unstable.teams-for-linux
       slack
       unstable.element-desktop
       unstable.zoom-us
