@@ -43,6 +43,7 @@ in {
 
     user.packages = with pkgs; [
       zsh
+      my.atuin
       bat
       btop
       eza
