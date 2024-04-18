@@ -43,7 +43,7 @@ in {
 
     user.packages = with pkgs; [
       zsh
-      my.atuin
+      unstable.atuin
       bat
       btop
       eza
@@ -107,5 +107,21 @@ in {
       rm -rf $ZSH_CACHE
       rm -fv $ZGEN_DIR/init.zsh{,.zwc}
     '';
+
+    systemd.user.timers.atuin-sync = {
+      description = "Atuin auto sync";
+      timerConfig.OnUnitActiveSec = "1h";
+      wantedBy = ["timers.target"];
+    };
+
+    systemd.user.services.atuin-sync = {
+      description = "Atuin auto sync";
+
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.unstable.atuin}/bin/atuin sync";
+        IOSchedulingClass = "idle";
+      };
+    };
   };
 }
