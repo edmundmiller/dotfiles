@@ -16,9 +16,9 @@ in {
     doom = rec {
       enable = mkBoolOpt false;
       forgeUrl = mkOpt types.str "https://github.com";
-      repoUrl = mkOpt types.str "${forgeUrl}/hlissner/doom-emacs";
+      repoUrl = mkOpt types.str "${forgeUrl}/doomemacs/doomemacs";
       configRepoUrl =
-        mkOpt types.str "${forgeUrl}/emiller88/doom-emacs-private";
+        mkOpt types.str "${forgeUrl}/edmundmiller/.doom.d";
     };
   };
 
