@@ -23,6 +23,9 @@ in {
         enable_audio_bell = false;
         update_check_interval = 0;
         hide_window_decorations = true;
+        notify_on_cmd_finish = "invisible 15.0";
+        linux_display_server = "wayland";
+        tab_bar_align = "left";
       };
     };
   };
