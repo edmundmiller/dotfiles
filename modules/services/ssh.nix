@@ -12,7 +12,7 @@ in {
   options.modules.services.ssh = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [my.sshuttle];
+    user.packages = with pkgs; [unstable.sshuttle];
 
     services.openssh = {
       enable = true;
