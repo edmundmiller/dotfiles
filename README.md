@@ -1,7 +1,7 @@
 <div align="center">
    
 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs)
-[![NixOS 23.11](https://img.shields.io/badge/NixOS-v23.11-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+[![NixOS 24.05](https://img.shields.io/badge/NixOS-v24.05-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
 </div>
 
@@ -67,7 +67,7 @@ And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO
 
 [doom-emacs]: https://github.com/hlissner/doom-emacs
 [vim]: https://github.com/hlissner/.vim
-[nixos]: https://releases.nixos.org/?prefix=nixos/20.09-small/
+[nixos]: https://releases.nixos.org/?prefix=nixos/24.05-small/
 [host/kuro]: https://github.com/hlissner/dotfiles/tree/master/hosts/kuro
 
 ## Usage as a flake

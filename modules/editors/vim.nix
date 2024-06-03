@@ -13,11 +13,9 @@ in {
   options.modules.editors.vim = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = [inputs.neovim-nightly-overlay.overlay];
-
     user.packages = with pkgs; [
       editorconfig-core-c
-      neovim-nightly
+      inputs.neovim-nightly-overlay.packages.${pkgs.system}.default
       ctags
       unstable.lua-language-server
       lazygit
