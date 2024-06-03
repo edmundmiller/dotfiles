@@ -21,7 +21,7 @@ in {
 
   config = mkIf cfg.enable (mkMerge [
     (mkIf cfg.enableGlobally {
-      user.packages = with pkgs; [node yarn];
+      user.packages = with pkgs; [bun node yarn nodePackages_latest.pnpm];
 
       # Run locally installed bin-script, e.g. n coffee file.coffee
       environment.shellAliases = {
