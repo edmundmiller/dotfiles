@@ -12,9 +12,9 @@
   inputs = {
     # Core dependencies.
     # Two inputs so I can track them separately at different rates.
-    nixpkgs.url = "nixpkgs/nixpkgs-unstable"; # primary nixpkgs
+    nixpkgs.url = "nixpkgs/nixos-24.05"; # primary nixpkgs
     nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable"; # for packages on the edge
-    home-manager.url = "github:nix-community/home-manager";
+    home-manager.url = "github:nix-community/home-manager/release-24.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = "github:nix-community/NUR";
 
