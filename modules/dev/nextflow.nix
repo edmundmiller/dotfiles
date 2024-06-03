@@ -13,7 +13,7 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      jdk17
+      jdk19
       # my.nf-core
       my.gxf2bed
     ];
