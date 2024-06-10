@@ -38,6 +38,7 @@
           "sound-output-device-chooser@kgshank.net"
           "space-bar@luchrioh"
           "gsconnect@andyholmes.github.io"
+          # TODO https://extensions.gnome.org/extension/4548/tactile/
 
           # TODO Enable only on meshify
           "ionutbortis/gnome-bedtime-mode"
