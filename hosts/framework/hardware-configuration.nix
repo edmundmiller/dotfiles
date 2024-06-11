@@ -106,5 +106,11 @@
     fsType = "vfat";
   };
 
+  # FIXME Use user
+  fileSystems."/home/emiller/.local/share/atuin" = {
+    device = "tank/system/atuin";
+    fsType = "ext4";
+  };
+
   swapDevices = [];
 }
