@@ -60,6 +60,12 @@
     fsType = "vfat";
   };
 
+  # FIXME Use user
+  fileSystems."/home/emiller/.local/share/atuin" = {
+    device = "tank/system/atuin";
+    fsType = "ext4";
+  };
+
   # TODO Check out https://github.com/Mic92/dotfiles/blob/master/nixos/modules/nfs-dl.nix
   # fileSystems."/data/media/music" = {
   #   device = "unas:/srv/nfs/music";
