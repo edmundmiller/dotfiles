@@ -113,6 +113,7 @@
     unstable.thunderbird
     my.catgpt
     unstable.ticktick
+    unstable.zed-editor
   ];
 
   # Mount iPhone
