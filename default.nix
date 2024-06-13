@@ -74,6 +74,7 @@ with lib.my; {
     wget
     go-task
     gnumake
+    just
     unzip
   ];
 }
