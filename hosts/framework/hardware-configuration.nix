@@ -108,7 +108,7 @@
 
   # FIXME Use user
   fileSystems."/home/emiller/.local/share/atuin" = {
-    device = "tank/system/atuin";
+    device = "/dev/zvol/tank/system/atuin ";
     fsType = "ext4";
   };
 
