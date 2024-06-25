@@ -23,8 +23,8 @@ in {
       sansSerif.package = pkgs.fira;
       sansSerif.name = "Fira Sans";
 
-      monospace.package = pkgs.commit-mono;
-      monospace.name = "Commit Mono";
+      monospace.package = pkgs.jetbrains-mono;
+      monospace.name = "JetBrains Mono";
       # TODO https://github.com/danth/stylix/issues/166
       # stylix.fonts.monospace.package = pkgs.nerdfonts.override {fonts = ["FiraCode"];};
 
