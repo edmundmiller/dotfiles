@@ -28,6 +28,17 @@ in {
       clipboard.register = "unnamedplus";
       vimAlias = true;
       editorconfig.enable = true;
+      extraPlugins = [
+        (pkgs.vimUtils.buildVimPlugin {
+          name = "nextflow-vim";
+          src = pkgs.fetchFromGitHub {
+            owner = "Mxrcon";
+            repo = "nextflow-vim";
+            rev = "77a349ad259f536c03fe2888ed9137249fa7d40e";
+            hash = "sha256-+w2LFWfeuur1t5kNvA3SAyF9mxPfEL7SW/vXXXsVnSc=";
+          };
+        })
+      ];
     };
     # env.VIMINIT = "let \\$MYVIMRC='\\$XDG_CONFIG_HOME/nvim/init.vim' | source \\$MYVIMRC";
 
