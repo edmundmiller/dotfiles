@@ -32,7 +32,8 @@
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
-    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    nixvim.url = "github:nix-community/nixvim/nixos-24.05";
+    nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
