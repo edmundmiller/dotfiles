@@ -18,6 +18,9 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
+                mountOptions = [
+                  "defaults"
+                ];
               };
             };
             zfs = {
@@ -29,7 +32,7 @@
             };
           };
         };
-      };
+      }; # nvme
       hdd4 = {
         type = "disk";
         device = "/dev/disk/by-id/ata-WDC_WD120EDAZ-11F3RA0_5PK8T7RF";
@@ -96,10 +99,12 @@
           };
           "system/root" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/";
           };
           "system/var" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/var";
             options = {
               xattr = "sa";
@@ -108,21 +113,25 @@
           };
           "local/nix" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/nix";
           };
 
           "user/home/emiller" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/home/emiller";
             # TODO neededForBoot = true;
           };
           "user/home/monimiller" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/home/monimiller";
             # TODO neededForBoot = true;
           };
           "user/home/tdmiller" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/home/tdmiller";
             # TODO neededForBoot = true;
           };
@@ -183,6 +192,6 @@
           };
         };
       };
-    };
+    }; # zpool
   };
 }
