@@ -25,10 +25,8 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    stylix.url = "github:danth/stylix";
+    stylix.url = "github:danth/stylix/release-24.05";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    nix-snapd.url = "github:io12/nix-snapd";
-    nix-snapd.inputs.nixpkgs.follows = "nixpkgs";
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
