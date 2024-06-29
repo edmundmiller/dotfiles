@@ -19,3 +19,6 @@ common_subcommands = [
   "nextflow",
   "nf-test",
 ]
+
+[daemon]
+enabled = true
