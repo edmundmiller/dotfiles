@@ -108,6 +108,8 @@ in {
       rm -fv $ZGEN_DIR/init.zsh{,.zwc}
     '';
 
+    home.configFile."atuin/config.toml".source = "${configDir}/atuin/config.toml";
+
     # FIXME
     # systemd.user.sockets.atuin = {
     #   Unit.Description = "Atuin daemon";
