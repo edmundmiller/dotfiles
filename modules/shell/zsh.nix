@@ -108,19 +108,16 @@ in {
       rm -fv $ZGEN_DIR/init.zsh{,.zwc}
     '';
 
-    systemd.user.timers.atuin-sync = {
-      description = "Atuin auto sync";
-      timerConfig.OnUnitActiveSec = "1h";
-      wantedBy = ["timers.target"];
-    };
-
-    systemd.user.services.atuin-sync = {
-      description = "Atuin auto sync";
-
+    systemd.user.services."atuin-daemon" = {
+      enable = true;
+      description = "Atuin Daemon";
+      wantedBy = ["default.target"];
+      after = ["network.target"];
       serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${pkgs.unstable.atuin}/bin/atuin sync";
-        IOSchedulingClass = "idle";
+        Restart = "on-failure";
+        RestartSec = 2;
+        ExecStart = "${pkgs.unstable.atuin}/bin/atuin daemon";
+        Environment = ["ATUIN_LOG=info"];
       };
     };
   };
