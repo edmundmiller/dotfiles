@@ -13,6 +13,7 @@ in {
   imports = [inputs.stylix.nixosModules.stylix];
 
   config = mkIf cfg.enable {
+    stylix.enable = true;
     stylix.image = ../../themes/functional/config/wallpaper.png;
     stylix.polarity = "dark";
     stylix.base16Scheme = "${pkgs.base16-schemes}/share/themes/material-palenight.yaml";

@@ -70,7 +70,7 @@ in {
         inherit (texlive) scheme-full grffile beamertheme-metropolis wrapfig;
       })
       # :lang python
-      unstable.nodePackages.pyright
+      pyright
       # :lang rust
       rustfmt
       unstable.rust-analyzer
