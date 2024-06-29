@@ -108,6 +108,13 @@ in {
       rm -fv $ZGEN_DIR/init.zsh{,.zwc}
     '';
 
+    # FIXME
+    # systemd.user.sockets.atuin = {
+    #   Unit.Description = "Atuin daemon";
+    #   Socket.ListenStream = "%h/.local/share/atuin/atuin.sock"; # Default value for atuin
+    #   Install.WantedBy = ["sockets.target"];
+    # };
+
     systemd.user.services."atuin-daemon" = {
       enable = true;
       description = "Atuin Daemon";
