@@ -33,25 +33,10 @@
           };
         };
       }; # nvme
-      hdd4 = {
+      hdd1 = {
+        # In slot 1
         type = "disk";
-        device = "/dev/disk/by-id/ata-WDC_WD120EDAZ-11F3RA0_5PK8T7RF";
-        content = {
-          type = "gpt";
-          partitions = {
-            zfs = {
-              size = "100%";
-              content = {
-                type = "zfs";
-                pool = "datatank";
-              };
-            };
-          };
-        };
-      };
-      hdd5 = {
-        type = "disk";
-        device = "/dev/disk/by-id/ata-WDC_WD180EDGZ-11B2DA0_3FH06MJT";
+        device = "/dev/disk/by-id/ata-WDC_WD160EDGZ-11B2DA0_2PHTEHKT";
         content = {
           type = "gpt";
           partitions = {
@@ -66,8 +51,9 @@
         };
       };
       hdd6 = {
+        # In slot 6
         type = "disk";
-        device = "/dev/disk/by-id/ata-WDC_WD120EDAZ-11F3RA0_5PK7HZAF";
+        device = "/dev/disk/by-id/ata-WDC_WD160EDGZ-11B2DA0_3HGZMWEN";
         content = {
           type = "gpt";
           partitions = {
@@ -81,7 +67,7 @@
           };
         };
       };
-    };
+    }; # disk
     zpool = {
       zroot = {
         type = "zpool";
@@ -151,42 +137,50 @@
         datasets = {
           "media/books/audiobooks" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/media/books/audiobooks";
             options.sharenfs = "on";
           };
           "media/books/ebooks" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/media/books/ebooks";
             options.sharenfs = "on";
           };
           "docs" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/docs";
             options."com.sun:auto-snapshot" = "true";
             options.sharenfs = "on";
           };
           "media/downloads" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/media/downloads";
             options.sharenfs = "on";
           };
           "media/video/shows" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/media/video/shows";
             options.sharenfs = "on";
           };
           "media/video/movies" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/media/video/movies";
             options.sharenfs = "on";
           };
           "media/music" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/media/music";
             options.sharenfs = "on";
           };
           "media/photos" = {
             type = "zfs_fs";
+            options.mountpoint = "legacy";
             mountpoint = "/data/media/photos";
             options.sharenfs = "on";
           };
