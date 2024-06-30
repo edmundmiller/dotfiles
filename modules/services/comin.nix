@@ -16,11 +16,6 @@ in {
       enable = true;
       remotes = [
         {
-          name = "local";
-          url = "/home/emiller/.config/dotfiles/";
-        }
-
-        {
           name = "origin";
           url = "https://github.com/edmundmiller/dotfiles.git";
           branches.main.name = "main";
