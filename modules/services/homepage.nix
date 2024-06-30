@@ -17,6 +17,30 @@ in {
     services.homepage-dashboard = {
       enable = true;
       listenPort = homepagePort;
+      openFirewall = true;
+      widgets = [
+        {
+          audiobookshelf = {
+            url = "http://audiobookshelf.host.or.ip:port";
+            key = "audiobookshelflapikey";
+          };
+        }
+        # TODO Bazaar
+        # TODO Calendar
+        # TODO Health checks
+        # TODO Home assistant
+        # TODO Jellyfin
+        # TODO Jellyseer
+        # TODO NextDNS
+        # TODO Paperless
+        # TODO Radarr
+        # TODO Scrutiny
+        # TODO Speedtest tracker
+        # TODO Tailscale
+        # TODO romm
+        # TODO sonarr
+        # TODO transmission
+      ];
     };
 
     environment.systemPackages = [config.services.homepage-dashboard.package];
