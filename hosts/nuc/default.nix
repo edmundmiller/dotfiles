@@ -35,6 +35,7 @@
       comin.enable = true;
       docker.enable = true;
       hass.enable = true;
+      homepage.enable = true;
       jellyfin.enable = true;
       prowlarr.enable = true;
       qb.enable = false;
