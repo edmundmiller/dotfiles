@@ -22,7 +22,8 @@ in {
 
         {
           name = "origin";
-          url = "https://github.com/edmundmiller/dotfiles";
+          url = "https://github.com/edmundmiller/dotfiles.git";
+          branches.main.name = "main";
         }
       ];
     };
