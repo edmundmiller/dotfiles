@@ -16,6 +16,7 @@ in {
       jdk19
       # my.nf-core
       my.gxf2bed
+      my.snakefmt
     ];
 
     environment.shellAliases = {
