@@ -1,8 +1,8 @@
-{ lib
-, python3
-, fetchFromGitHub
+{
+  lib,
+  python3,
+  fetchFromGitHub,
 }:
-
 python3.pkgs.buildPythonApplication rec {
   pname = "snakefmt";
   version = "0.10.2";
@@ -26,14 +26,14 @@ python3.pkgs.buildPythonApplication rec {
     toml
   ];
 
-  pythonImportsCheck = [ "snakefmt" ];
+  pythonImportsCheck = ["snakefmt"];
 
   meta = with lib; {
     description = "The uncompromising Snakemake code formatter";
     homepage = "https://github.com/snakemake/snakefmt";
     changelog = "https://github.com/snakemake/snakefmt/blob/${src.rev}/CHANGELOG.md";
     license = licenses.mit;
-    maintainers = with maintainers; [ edmundmiller ];
+    maintainers = with maintainers; [edmundmiller];
     mainProgram = "snakefmt";
   };
 }
