@@ -3,7 +3,8 @@
   pkgs,
   ...
 }: let
-  restic-backup-id = "c351536f-39a4-4725-9d92-04fcb26b6306";
+  restic-backup-id = "96db4aad6dac4ac48bf8c066122a7ecf";
+  monitor-key = "restic-sync";
 in {
   services.restic.backups = {
     daily = {
@@ -29,8 +30,8 @@ in {
         "*/.git"
       ];
 
-      backupPrepareCommand = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backup-id}/start";
-      backupCleanupCommand = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backup-id}/$EXIT_STATUS";
+      backupPrepareCommand = "${pkgs.curl}/bin/curl -m 5 --retry 5 https://cronitor.link/p/${restic-backup-id}/${monitor-key}?state=run&host=$HOST";
+      backupCleanupCommand = "${pkgs.curl}/bin/curl -m 5 --retry 5 https://cronitor.link/p/${restic-backup-id}/${monitor-key}?status_code=$EXIT_STATUS&host=$HOST";
     };
   };
 }
