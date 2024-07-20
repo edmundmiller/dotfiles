@@ -31,7 +31,7 @@ in {
       ];
 
       backupPrepareCommand = "${pkgs.curl}/bin/curl -m 5 --retry 5 https://cronitor.link/p/${restic-backup-id}/${monitor-key}?state=run&host=$HOST";
-      backupCleanupCommand = "${pkgs.curl}/bin/curl -m 5 --retry 5 https://cronitor.link/p/${restic-backup-id}/${monitor-key}?status_code=$EXIT_STATUS&host=$HOST";
+      backupCleanupCommand = "${pkgs.curl}/bin/curl -m 5 --retry 5 https://cronitor.link/p/${restic-backup-id}/${monitor-key}?state=\${$EXIT_STATUS:+fail}\${$EXIT_STATUS:-complete}&status_code=$EXIT_STATUS&host=$HOST";
     };
   };
 }
