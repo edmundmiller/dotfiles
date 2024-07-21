@@ -24,7 +24,12 @@ in {
 
     programs._1password-shell-plugins = {
       enable = true;
-      plugins = with pkgs; [gh awscli2 cachix];
+      plugins = with pkgs; [
+        unstable.gh # if shell/git
+        awscli2
+        # cachix
+        unstable.pulumi-bin
+      ];
     };
     programs.zsh = {
       enable = true;
