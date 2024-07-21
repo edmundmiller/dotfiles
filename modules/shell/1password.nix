@@ -1,16 +1,14 @@
 {
   config,
-  options,
   lib,
   ...
 }:
 with lib;
 with lib.my; let
-  cfg = config.modules.shell.bitwarden;
+  cfg = config.modules.shell."1password";
 in {
-  options.modules.shell."1password" = with types; {
+  options.modules.shell."1password" = {
     enable = mkBoolOpt false;
-    config = mkOpt attrs {};
   };
 
   config = mkIf cfg.enable {
