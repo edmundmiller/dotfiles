@@ -34,6 +34,7 @@ in {
 
     home-manager.users.emiller.programs.aerc = {
       enable = true;
+      extraConfig.general.unsafe-accounts-conf = true;
       #   # FIXME Still doesn't have the right permissions
       #   # "aerc/accounts.conf".source = <config/aerc/accounts.conf>;
       #   extraConfig = "${configDir}/aerc/aerc.conf";
