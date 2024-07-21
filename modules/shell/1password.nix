@@ -15,12 +15,19 @@ in {
 
   imports = [inputs._1password-shell-plugins.nixosModules.default];
   config = mkIf cfg.enable {
-    # user.packages = with pkgs; [
-    # ];
-
     programs._1password.enable = true;
     programs._1password-gui.enable = true;
     programs._1password-gui.polkitPolicyOwners = ["emiller"];
+
+    environment.etc = {
+      "1password/custom_allowed_browsers" = {
+        text = ''
+          .floorp-wrapped
+          floorp
+        '';
+        mode = "0755";
+      };
+    };
 
     programs._1password-shell-plugins = {
       enable = true;
