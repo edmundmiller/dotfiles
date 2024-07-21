@@ -39,6 +39,7 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
+    _1password-shell-plugins.url = "github:1Password/shell-plugins";
   };
 
   outputs = inputs @ {
