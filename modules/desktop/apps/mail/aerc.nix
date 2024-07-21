@@ -12,32 +12,35 @@ in {
   options.modules.desktop.apps.mail.aerc = {enable = mkBoolOpt false;};
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      aerc
-      (makeDesktopItem {
-        name = "aerc";
-        desktopName = "aerc";
-        genericName = "Open a aerc in xst";
-        icon = "mail";
-        exec = "${xst}/bin/xst aerc";
-        categories = ["Email"];
-      })
-      # HTML rendering
-      (lib.mkIf config.services.xserver.enable w3m)
-      (lib.mkIf config.services.xserver.enable dante)
-    ];
+    home-manager.users.emiller.accounts.email = {
+      accounts = {
+        Gmail.aerc = {
+          enable = true;
+        };
 
-    # Symlink these one at a time because aerc doesn't let you do bad things
-    # like have globally readable files with plain text passwords
-    home.configFile = {
-      # FIXME Still doesn't have the right permissions
-      # "aerc/accounts.conf".source = <config/aerc/accounts.conf>;
-      "aerc/aerc.conf".source = "${configDir}/aerc/aerc.conf";
-      "aerc/binds.conf".source = "${configDir}/aerc/binds.conf";
-      "aerc/templates" = {
-        source = "${configDir}/aerc/templates";
-        recursive = true;
+        UTD.aerc = {
+          enable = true;
+          imapAuth = "imaps+oauthbearer";
+          # NOTE https://atlas.utdallas.edu/TDClient/30/Portal/KB/ArticleDet?ID=301
+          imapOauth2Params = {
+            client_id = "8d281d1d-9c4d-4bf7-b16e-032d15de9f6c"; # Tenant
+            client_secret = "a9170526-040b-453c-aac5-36155cba7a26"; # Application ID
+            # scope = "";
+            token_endpoint = "https://outlook.office365.com/EWS/Exchange.asmx";
+          };
+        };
       };
     };
+
+    # home-manager.users.emiller.programs.aerc = {
+    #   # FIXME Still doesn't have the right permissions
+    #   # "aerc/accounts.conf".source = <config/aerc/accounts.conf>;
+    #   extraConfig = "${configDir}/aerc/aerc.conf";
+    #   "aerc/binds.conf".source = "${configDir}/aerc/binds.conf";
+    #   "aerc/templates" = {
+    #     source = "${configDir}/aerc/templates";
+    #     recursive = true;
+    #   };
+    # };
   };
 }
