@@ -22,9 +22,18 @@ in {
           address = "${email}";
           userName = "${email}";
           flavor = "gmail.com";
-          primary = true;
           passwordCommand = "op read 'op://Moni and Ed/Edmund Google/password'";
           realName = "${name}";
+          # msmtp.enable = true;
+        };
+        fastmail = {
+          address = "me@edmundmiller.dev";
+          userName = "me@edmundmiller.dev";
+          aliases = ["hello@edmundmiller.dev"];
+          flavor = "fastmail.com";
+          passwordCommand = "op read 'op://Private/Fastmail/new-password '";
+          realName = "${name}";
+          primary = true;
           # msmtp.enable = true;
         };
         UTD = {
