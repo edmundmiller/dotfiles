@@ -13,7 +13,6 @@ in {
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      unstable.gh
       git-open
       difftastic
       (mkIf config.modules.shell.gnupg.enable git-crypt)
