@@ -11,6 +11,8 @@
       gnome.enable = true;
 
       apps.discord.enable = true;
+      apps.mail.accounts.enable = true;
+      apps.mail.aerc.enable = true;
 
       browsers = {
         default = "floorp";
