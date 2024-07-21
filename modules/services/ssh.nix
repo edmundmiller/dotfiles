@@ -8,6 +8,8 @@
 with lib;
 with lib.my; let
   cfg = config.modules.services.ssh;
+  # onePassPath = "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
+  onePassPath = "~/.1password/agent.sock";
 in {
   options.modules.services.ssh = {enable = mkBoolOpt false;};
 
@@ -31,7 +33,7 @@ in {
 
     programs.ssh.extraConfig = ''
       Host *
-        IdentityAgent ~/.1password/agent.sock
+          IdentityAgent ${onePassPath}
 
       Host pubssh
           HostName pubssh.utdallas.edu
