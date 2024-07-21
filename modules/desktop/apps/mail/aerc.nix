@@ -32,15 +32,16 @@ in {
       };
     };
 
-    # home-manager.users.emiller.programs.aerc = {
-    #   # FIXME Still doesn't have the right permissions
-    #   # "aerc/accounts.conf".source = <config/aerc/accounts.conf>;
-    #   extraConfig = "${configDir}/aerc/aerc.conf";
-    #   "aerc/binds.conf".source = "${configDir}/aerc/binds.conf";
-    #   "aerc/templates" = {
-    #     source = "${configDir}/aerc/templates";
-    #     recursive = true;
-    #   };
-    # };
+    home-manager.users.emiller.programs.aerc = {
+      enable = true;
+      #   # FIXME Still doesn't have the right permissions
+      #   # "aerc/accounts.conf".source = <config/aerc/accounts.conf>;
+      #   extraConfig = "${configDir}/aerc/aerc.conf";
+      #   "aerc/binds.conf".source = "${configDir}/aerc/binds.conf";
+      #   "aerc/templates" = {
+      #     source = "${configDir}/aerc/templates";
+      #     recursive = true;
+      #   };
+    };
   };
 }
