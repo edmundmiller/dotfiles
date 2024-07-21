@@ -1,6 +1,8 @@
 {
   config,
+  inputs,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -11,6 +13,7 @@ in {
     enable = mkBoolOpt false;
   };
 
+  imports = [inputs._1password-shell-plugins.nixosModules.default];
   config = mkIf cfg.enable {
     # user.packages = with pkgs; [
     # ];
@@ -18,5 +21,13 @@ in {
     programs._1password.enable = true;
     programs._1password-gui.enable = true;
     programs._1password-gui.polkitPolicyOwners = ["emiller"];
+
+    programs._1password-shell-plugins = {
+      enable = true;
+      plugins = with pkgs; [gh awscli2 cachix];
+    };
+    programs.zsh = {
+      enable = true;
+    };
   };
 }
