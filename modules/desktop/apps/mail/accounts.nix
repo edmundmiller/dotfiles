@@ -22,7 +22,7 @@ in {
           address = "${email}";
           userName = "${email}";
           flavor = "gmail.com";
-          passwordCommand = "${lib.getExe' pkgs._1password "op read op://Moni and Ed/Edmund Google/password"}";
+          passwordCommand = "${lib.getExe' pkgs._1password "op"} read op://Moni and Ed/Edmund Google/password";
           primary = true;
           realName = "${name}";
           # msmtp.enable = true;
@@ -32,7 +32,7 @@ in {
           userName = "eam150030@utdallas.edu";
           aliases = ["eam150030@utdallas.edu"];
           flavor = "outlook.office365.com";
-          passwordCommand = "${lib.getExe' pkgs._1password "op read op://Moni and Ed/UTDallas/password"}";
+          passwordCommand = "${lib.getExe' pkgs._1password "op"} read op://Moni and Ed/UTDallas/password";
           realName = "${name}";
           # msmtp.enable = true;
         };

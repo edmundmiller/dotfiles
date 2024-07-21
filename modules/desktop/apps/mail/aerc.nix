@@ -20,7 +20,7 @@ in {
 
         UTD.aerc = {
           enable = true;
-          imapAuth = "imaps+oauthbearer";
+          imapAuth = "oauthbearer";
           # NOTE https://atlas.utdallas.edu/TDClient/30/Portal/KB/ArticleDet?ID=301
           imapOauth2Params = {
             client_id = "8d281d1d-9c4d-4bf7-b16e-032d15de9f6c"; # Tenant
