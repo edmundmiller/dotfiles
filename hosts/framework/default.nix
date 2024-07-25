@@ -30,9 +30,9 @@
         spotify.enable = true;
       };
       term = {
-        default = "kitty";
+        default = "ghostty";
         kitty.enable = true;
-        warp.enable = true;
+        ghostty.enable = true;
         wezterm.enable = true;
       };
       themes.palenight.enable = true;
