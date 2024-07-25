@@ -3,10 +3,10 @@
     dconf.settings = {
       "org/gnome/shell" = {
         favorite-apps = [
-          "firefox.desktop"
+          "floorp.desktop"
           "emacs.desktop"
-          "kitty.desktop"
-          "beeper.desktop"
+          "ghostty.desktop"
+          "1password.desktop"
         ];
       };
       "org/gnome/desktop/interface" = {
@@ -41,7 +41,7 @@
           # TODO https://extensions.gnome.org/extension/4548/tactile/
 
           # TODO Enable only on meshify
-          "ionutbortis/gnome-bedtime-mode"
+          # "ionutbortis/gnome-bedtime-mode"
           # gnome-shell
           "user-theme@gnome-shell-extensions.gcampax.github.com"
         ];
