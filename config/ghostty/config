@@ -3,3 +3,14 @@ theme = PaleNightHC
 
 keybind = ctrl+z=close_surface
 keybind = ctrl+d=new_split:right
+
+mouse-hide-while-typing = false
+fullscreen = true
+# (I guess palenight is a light theme?)
+window-theme = system
+confirm-close-surface = false
+shell-integration-features = no-cursor,no-sudo,title
+
+gtk-titlebar = false
+gtk-tabs-location = bottom
+# gtk-wide-tabs = false
