@@ -17,6 +17,7 @@ in {
     stylix.image = ../../themes/functional/config/wallpaper.png;
     stylix.polarity = "dark";
     stylix.base16Scheme = "${pkgs.base16-schemes}/share/themes/material-palenight.yaml";
+    stylix.autoEnable = true;
     stylix.fonts = {
       serif.package = pkgs.dejavu_fonts;
       serif.name = "DejaVu Serif";
