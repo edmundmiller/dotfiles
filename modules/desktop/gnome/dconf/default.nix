@@ -5,7 +5,7 @@
         favorite-apps = [
           "floorp.desktop"
           "emacs.desktop"
-          "ghostty.desktop"
+          "com.mitchellh.ghostty.desktop"
           "1password.desktop"
         ];
       };
