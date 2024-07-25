@@ -1,3 +1,6 @@
+if [ -n "${GHOSTTY_RESOURCES_DIR}" ]; then
+    ${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration
+fi
 # Stop TRAMP (in Emacs) from hanging or term/shell from echoing back commands
 if [[ $TERM == dumb || -n $INSIDE_EMACS ]]; then
   unsetopt zle prompt_cr prompt_subst
