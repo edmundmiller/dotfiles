@@ -16,11 +16,6 @@ in {
       inputs.ghostty.packages.x86_64-linux.default
     ];
 
-    home.configFile = {
-      "ghostty" = {
-        source = "${configDir}/ghostty";
-        recursive = true;
-      };
-    };
+    home.configFile."ghostty".source = "${configDir}/ghostty";
   };
 }
