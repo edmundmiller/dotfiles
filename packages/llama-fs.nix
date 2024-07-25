@@ -1,8 +1,8 @@
-{ lib
-, stdenv
-, fetchFromGitHub
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
 }:
-
 stdenv.mkDerivation rec {
   pname = "llama-fs";
   version = "unstable-2024-05-31";
@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
     description = "";
     homepage = "https://github.com/iyaja/llama-fs";
     license = licenses.mit;
-    maintainers = with maintainers; [ edmundmiller ];
+    maintainers = with maintainers; [edmundmiller];
     mainProgram = "llama-fs";
     platforms = platforms.all;
   };
