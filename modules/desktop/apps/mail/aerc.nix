@@ -18,16 +18,19 @@ in {
           enable = true;
         };
 
-        UTD.aerc = {
+        fastmail.aerc = {
           enable = true;
+        };
+        UTD.aerc = {
+          enable = false;
           imapAuth = "oauthbearer";
           # NOTE https://atlas.utdallas.edu/TDClient/30/Portal/KB/ArticleDet?ID=301
-          imapOauth2Params = {
-            client_id = "8d281d1d-9c4d-4bf7-b16e-032d15de9f6c"; # Tenant
-            client_secret = "a9170526-040b-453c-aac5-36155cba7a26"; # Application ID
-            # scope = "";
-            token_endpoint = "https://outlook.office365.com/EWS/Exchange.asmx";
-          };
+          # imapOauth2Params = {
+          #   client_id = "8d281d1d-9c4d-4bf7-b16e-032d15de9f6c"; # Tenant
+          #   client_secret = "a9170526-040b-453c-aac5-36155cba7a26"; # Application ID
+          #   scope = "";
+          #   token_endpoint = "https://outlook.office365.com/EWS/Exchange.asmx";
+          # };
         };
       };
     };
