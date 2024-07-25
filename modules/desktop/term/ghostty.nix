@@ -15,6 +15,7 @@ in {
     user.packages = [
       inputs.ghostty.packages.x86_64-linux.default
     ];
+    # TODO alias ghostcopy = "infocmp -x | ssh YOUR-SERVER -- tic -x -"
 
     home.configFile."ghostty".source = "${configDir}/ghostty";
   };
