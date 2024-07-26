@@ -23,10 +23,10 @@ in {
   config = mkIf cfg.enable (mkMerge [
     {
       user.packages = with pkgs; [
-        conda
         (pkgs.python3.withPackages my-python-packages)
         # FIXME my.multiqc
         # my.nf-core
+        pixi
         python3Packages.pip
         python3Packages.black
         python3Packages.isort
@@ -63,6 +63,17 @@ in {
       env.MAMBA_ROOT_PREFIX = "$XDG_DATA_HOME/mamba";
 
       environment.shellAliases.mm = "micromamba";
+      environment.shellAliases.px = "pixi";
+
+      programs = {
+        nix-ld = {
+          enable = true;
+          package = pkgs.nix-ld-rs;
+          libraries = [
+            pkgs.pixi
+          ];
+        };
+      };
     })
   ]);
 }
