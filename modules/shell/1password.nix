@@ -13,7 +13,7 @@ in {
     enable = mkBoolOpt false;
   };
 
-  imports = [inputs._1password-shell-plugins.nixosModules.default];
+  imports = [inputs.op-shell-plugins.nixosModules.default];
   config = mkIf cfg.enable {
     programs._1password.enable = true;
     programs._1password-gui.enable = true;

@@ -40,7 +40,7 @@
     ghostty.url = "git+ssh://git@github.com/ghostty-org/ghostty";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
-    _1password-shell-plugins.url = "github:1Password/shell-plugins";
+    "op-shell-plugins".url = "github:1Password/shell-plugins";
   };
 
   outputs = inputs @ {
