@@ -1,16 +1,29 @@
 font-family = JetBrains Mono
 theme = PaleNightHC
 
-keybind = ctrl+z=close_surface
-keybind = ctrl+d=new_split:right
-
-mouse-hide-while-typing = false
 fullscreen = true
 # (I guess palenight is a light theme?)
-window-theme = system
+# auto, and system didn't work
+window-decoration = false
+window-theme = dark
 confirm-close-surface = false
 shell-integration-features = no-cursor,no-sudo,title
 
+clipboard-read = "allow"
+clipboard-paste-protection = false
+
 gtk-titlebar = false
 gtk-tabs-location = bottom
-# gtk-wide-tabs = false
+gtk-wide-tabs = true
+
+# Misc
+cursor-style-blink = false
+focus-follows-mouse = true
+mouse-hide-while-typing = true
+quit-after-last-window-closed = true
+
+keybind = ctrl+s=new_split:down
+keybind = ctrl+v=new_split:right
+keybind = ctrl+tab=next_tab
+keybind = ctrl+w=close_surface
+keybind = ctrl+shift+w=close_window
