@@ -46,8 +46,6 @@ in {
       Host ganymede
           HostName ganymede.utdallas.edu
           User eam150030
-      # TODO If ghostty
-          SetEnv TERM=xterm-256color
 
       Host mz
           HostName mz.utdallas.edu
