@@ -18,6 +18,12 @@ stdenv.mkDerivation rec {
     rev = "v${version}";
     hash = "sha256-MmHCPdux0hiz9aguH07yYpdXvOFOOSICgZW4WE37WPE=";
   };
+  skia = fetchFromGitHub {
+    owner = "JetBrains";
+    repo = "skia-build";
+    rev = "m93-87e8842e8c";
+    hash = "sha256-kyaQS8KHNHj7zJGEsZu90mgdNbCvu8wofLDi1iAXpM0=";
+  };
 
   # https://kcleal.github.io/gw/docs/install/Linux.html#building-from-source
   buildInputs = [
@@ -28,9 +34,9 @@ stdenv.mkDerivation rec {
     curl
   ];
 
-  preBuild = ''
-    make prep
-  '';
+  # preBuild = ''
+  #   make prep
+  # '';
 
   # cp gw /usr/local/bin
   meta = with lib; {
