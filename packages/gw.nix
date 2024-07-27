@@ -6,6 +6,7 @@
   fontconfig,
   htslib,
   glfw,
+  curl,
 }:
 stdenv.mkDerivation rec {
   pname = "gw";
@@ -24,6 +25,7 @@ stdenv.mkDerivation rec {
     fontconfig # libfontconfig-dev
     htslib # libhts-dev
     glfw
+    curl
   ];
 
   preBuild = ''
