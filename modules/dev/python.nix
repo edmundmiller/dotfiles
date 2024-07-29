@@ -26,7 +26,7 @@ in {
         (pkgs.python3.withPackages my-python-packages)
         # FIXME my.multiqc
         # my.nf-core
-        pixi
+        unstable.pixi
         python3Packages.pip
         python3Packages.black
         python3Packages.isort
@@ -70,7 +70,7 @@ in {
           enable = true;
           package = pkgs.nix-ld-rs;
           libraries = [
-            pkgs.pixi
+            pkgs.unstable.pixi
           ];
         };
       };
