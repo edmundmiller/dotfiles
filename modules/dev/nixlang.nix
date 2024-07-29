@@ -15,7 +15,7 @@ in {
     user.packages = with pkgs; [
       alejandra
       unstable.manix
-      nil
+      unstable.nixd
       nix-update
       nixpkgs-review
       # nixops
