@@ -13,12 +13,7 @@ in {
 
   config = mkIf cfg.enable {
     services.tailscale.enable = true;
-
-    networking.firewall = {
-      allowedTCPPorts = [41641];
-      allowedUDPPorts = [41641];
-      checkReversePath = "loose";
-    };
+    services.tailscale.openFirewall = true;
 
     # MagicDNS
     networking.nameservers = ["100.100.100.100" "8.8.8.8" "1.1.1.1"];
