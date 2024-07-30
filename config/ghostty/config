@@ -1,4 +1,5 @@
 font-family = JetBrains Mono
+font-size = 14
 theme = PaleNightHC
 
 fullscreen = true
@@ -25,5 +26,5 @@ quit-after-last-window-closed = true
 keybind = ctrl+s=new_split:down
 keybind = ctrl+v=new_split:right
 keybind = ctrl+tab=next_tab
-keybind = ctrl+w=close_surface
-keybind = ctrl+shift+w=close_window
+keybind = ctrl+shift+s=close_surface
+keybind = ctrl+shift+q=close_window
