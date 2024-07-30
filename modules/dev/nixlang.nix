@@ -18,7 +18,8 @@ in {
       unstable.nixd
       nix-update
       nixpkgs-review
-      # nixops
+      nix-search-cli
+      nix-index
     ];
 
     environment.shellAliases = {
