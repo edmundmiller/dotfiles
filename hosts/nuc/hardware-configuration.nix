@@ -29,48 +29,48 @@
   services.rpcbind.enable = true;
   fileSystems = {
     "/data/docs" = {
-      device = "unas.home:/data/docs";
+      device = "unas:/data/docs";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
 
     "/data/media/books/audiobooks" = {
-      device = "unas.home:/data/media/books/audiobooks";
+      device = "unas:/data/media/books/audiobooks";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
     "/data/media/books/ebooks" = {
-      device = "unas.home:/data/media/books/audiobooks";
+      device = "unas:/data/media/books/audiobooks";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
 
     "/data/media/downloads" = {
-      device = "unas.home:/data/media/downloads";
+      device = "unas:/data/media/downloads";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
 
     "/data/media/video/shows" = {
-      device = "unas.home:/data/media/video/shows";
+      device = "unas:/data/media/video/shows";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
 
     "/data/media/video/movies" = {
-      device = "unas.home:/data/media/video/movies";
+      device = "unas:/data/media/video/movies";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
 
     "/data/media/photos" = {
-      device = "unas.home:/data/media/photos";
+      device = "unas:/data/media/photos";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
 
     "/data/media/music" = {
-      device = "unas.home:/data/media/music";
+      device = "unas:/data/media/music";
       fsType = "nfs";
       options = ["x-systemd.automount" "noauto" "x-systemd.idle-timeout=600"];
     };
