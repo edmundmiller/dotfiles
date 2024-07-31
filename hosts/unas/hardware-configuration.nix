@@ -22,8 +22,4 @@
   ## ZFS
   networking.hostId = "13e53d45";
   boot.loader.grub.copyKernels = true;
-
-  ## NFS
-  services.nfs.server.enable = true;
-  networking.firewall.allowedTCPPorts = [2049];
 }

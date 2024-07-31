@@ -4,6 +4,7 @@
     ../server.nix
     ../home.nix
     ./hardware-configuration.nix
+    ./nas.nix
     ./disko.nix
 
     ./backups.nix
