@@ -81,7 +81,6 @@
       gnupg.enable = true;
       pass.enable = true;
       tmux.enable = true;
-      yubikey.enable = true;
       zsh.enable = true;
     };
 
