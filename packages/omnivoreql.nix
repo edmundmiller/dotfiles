@@ -1,16 +1,10 @@
 {
   lib,
-  buildPythonPackage,
   fetchFromGitHub,
-  setuptools,
-  wheel,
-  gql,
-  python-dotenv,
-  requests-toolbelt,
+  python3,
 }:
-
-buildPythonPackage rec {
-  pname = "omnivore-ql";
+python3.pkgs.buildPythonPackage rec {
+  pname = "omnivoreql";
   version = "0.3.4";
   pyproject = true;
 
@@ -22,14 +16,14 @@ buildPythonPackage rec {
   };
 
   build-system = [
-    setuptools
-    wheel
+    python3.pkgs.setuptools
+    python3.pkgs.wheel
   ];
 
   dependencies = [
-    gql
-    python-dotenv
-    requests-toolbelt
+    python3.pkgs.gql
+    python3.pkgs.python-dotenv
+    python3.pkgs.requests-toolbelt
   ];
 
   pythonImportsCheck = [
@@ -40,6 +34,6 @@ buildPythonPackage rec {
     description = "Omnivore-app API client for Python";
     homepage = "https://github.com/yazdipour/OmnivoreQL";
     license = licenses.mit;
-    maintainers = with maintainers; [ edmundmiller ];
+    maintainers = with maintainers; [edmundmiller];
   };
 }
