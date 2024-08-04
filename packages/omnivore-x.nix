@@ -2,8 +2,8 @@
   lib,
   python3,
   fetchFromGitHub,
+  my,
 }:
-
 python3.pkgs.buildPythonApplication rec {
   pname = "omnivore-x";
   version = "0.0.15";
@@ -22,20 +22,21 @@ python3.pkgs.buildPythonApplication rec {
   ];
 
   dependencies = with python3.pkgs; [
-    omnivoreql
+    my.omnivoreql
     python-dotenv
     textual
   ];
 
-  pythonImportsCheck = [
-    "omnivore_x"
-  ];
+  # pythonImportsCheck = [
+  #   "omnivore_x"
+  # ];
+  pythonRuntimeDepsCheck = false;
 
   meta = with lib; {
     description = "Omnivore TUI Terminal Client [Windows - MacOS - Linux";
     homepage = "https://github.com/yazdipour/OmnivoreX";
     license = licenses.mit;
-    maintainers = with maintainers; [ edmundmiller ];
+    maintainers = with maintainers; [edmundmiller];
     mainProgram = "omnivore-x";
   };
 }

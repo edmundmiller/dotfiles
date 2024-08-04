@@ -27,7 +27,7 @@ python3.pkgs.buildPythonPackage rec {
   ];
 
   pythonImportsCheck = [
-    "omnivore_ql"
+    "omnivoreql"
   ];
 
   meta = with lib; {
