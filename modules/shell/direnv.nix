@@ -6,13 +6,17 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.direnv;
-in {
-  options.modules.shell.direnv = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.shell.direnv = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
-    user.packages = [pkgs.direnv];
+    user.packages = [ pkgs.direnv ];
     modules.shell.zsh.rcInit = ''eval "$(direnv hook zsh)"'';
 
     home.configFile = {

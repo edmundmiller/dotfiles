@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
     description = "";
     homepage = "https://github.com/iyaja/llama-fs";
     license = licenses.mit;
-    maintainers = with maintainers; [edmundmiller];
+    maintainers = with maintainers; [ edmundmiller ];
     mainProgram = "llama-fs";
     platforms = platforms.all;
   };

@@ -8,17 +8,27 @@
   inputs,
   modulesPath,
   ...
-}: {
+}:
+{
   imports = [
     (modulesPath + "/installer/scan/not-detected.nix")
     inputs.nixos-hardware.nixosModules.framework-11th-gen-intel
   ];
 
-  boot.initrd.availableKernelModules = ["xhci_pci" "thunderbolt" "nvme" "usb_storage" "sd_mod"];
-  boot.initrd.kernelModules = [];
-  boot.kernelModules = ["kvm-intel"];
-  boot.extraModulePackages = [];
-  boot.kernelParams = ["elevator=none" "mem_sleep_default=deep"];
+  boot.initrd.availableKernelModules = [
+    "xhci_pci"
+    "thunderbolt"
+    "nvme"
+    "usb_storage"
+    "sd_mod"
+  ];
+  boot.initrd.kernelModules = [ ];
+  boot.kernelModules = [ "kvm-intel" ];
+  boot.extraModulePackages = [ ];
+  boot.kernelParams = [
+    "elevator=none"
+    "mem_sleep_default=deep"
+  ];
 
   ## CPU
   nix.settings.max-jobs = lib.mkDefault 8;
@@ -26,13 +36,13 @@
   hardware.cpu.intel.updateMicrocode = true;
 
   # Power management
-  environment.systemPackages = [pkgs.acpi];
+  environment.systemPackages = [ pkgs.acpi ];
   services.auto-cpufreq.enable = true;
   services.thermald.enable = true;
 
   # Monitor backlight control
   hardware.brillo.enable = true;
-  user.extraGroups = ["video"];
+  user.extraGroups = [ "video" ];
 
   services.libinput.enable = true;
   services.libinput.touchpad.disableWhileTyping = true;
@@ -106,5 +116,5 @@
     fsType = "vfat";
   };
 
-  swapDevices = [];
+  swapDevices = [ ];
 }

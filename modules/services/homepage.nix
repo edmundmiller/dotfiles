@@ -5,10 +5,12 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.homepage;
   homepagePort = 8082;
-in {
+in
+{
   options.modules.services.homepage = {
     enable = mkBoolOpt false;
   };
@@ -43,6 +45,6 @@ in {
       ];
     };
 
-    environment.systemPackages = [config.services.homepage-dashboard.package];
+    environment.systemPackages = [ config.services.homepage-dashboard.package ];
   };
 }

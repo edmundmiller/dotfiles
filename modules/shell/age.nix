@@ -6,14 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.age;
-in {
+in
+{
   options.modules.shell.age = with types; {
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
-    user.packages = [pkgs.rage];
-  };
+  config = mkIf cfg.enable { user.packages = [ pkgs.rage ]; };
 }

@@ -10,7 +10,8 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.dev.R;
   R-with-my-packages = pkgs.rWrapper.override {
     packages = with pkgs.rPackages; [
@@ -22,8 +23,11 @@ with lib.my; let
       tidyverse
     ];
   };
-in {
-  options.modules.dev.R = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.dev.R = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [

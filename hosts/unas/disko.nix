@@ -1,8 +1,7 @@
 # FIXME https://github.com/KornelJahn/nixos-disko-zfs-test/blob/main/hosts/testhost-disko.nix
-{inputs, ...}: {
-  imports = [
-    inputs.disko.nixosModules.disko
-  ];
+{ inputs, ... }:
+{
+  imports = [ inputs.disko.nixosModules.disko ];
   disko.devices = {
     disk = {
       nvme = {
@@ -18,9 +17,7 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [
-                  "defaults"
-                ];
+                mountOptions = [ "defaults" ];
               };
             };
             zfs = {

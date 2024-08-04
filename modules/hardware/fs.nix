@@ -6,9 +6,11 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.hardware.fs;
-in {
+in
+{
   options.modules.hardware.fs = {
     enable = mkBoolOpt false;
     zfs.enable = mkBoolOpt false;
@@ -21,18 +23,21 @@ in {
       programs.udevil.enable = true;
 
       # Support for more filesystems, mostly to support external drives
-      environment.systemPackages = with pkgs; [sshfs exfat ntfs3g hfsprogs];
+      environment.systemPackages = with pkgs; [
+        sshfs
+        exfat
+        ntfs3g
+        hfsprogs
+      ];
     }
 
-    (mkIf (!cfg.zfs.enable && cfg.ssd.enable) {
-      services.fstrim.enable = true;
-    })
+    (mkIf (!cfg.zfs.enable && cfg.ssd.enable) { services.fstrim.enable = true; })
 
     (mkIf cfg.zfs.enable (mkMerge [
       {
         boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
         boot.loader.grub.copyKernels = true;
-        boot.supportedFilesystems = ["zfs"];
+        boot.supportedFilesystems = [ "zfs" ];
         boot.zfs.devNodes = "/dev/disk/by-partuuid";
         services.zfs.autoScrub.enable = true;
       }

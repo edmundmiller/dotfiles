@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.fish;
-in {
-  options.modules.shell.fish = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.shell.fish = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     programs.fish.enable = true;

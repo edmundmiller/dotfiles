@@ -7,9 +7,11 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.mpd;
-in {
+in
+{
   options.modules.services.mpd = {
     enable = mkBoolOpt false;
     scrobbling.enable = mkBoolOpt false;
@@ -17,9 +19,12 @@ in {
 
   config = mkIf cfg.enable (mkMerge [
     {
-      user.packages = with pkgs; [mpc_cli ncpamixer];
+      user.packages = with pkgs; [
+        mpc_cli
+        ncpamixer
+      ];
 
-      user.extraGroups = ["mpd"];
+      user.extraGroups = [ "mpd" ];
 
       home-manager.users.${config.user.name}.programs.beets = {
         enable = true;

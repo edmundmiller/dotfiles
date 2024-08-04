@@ -5,9 +5,11 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop;
-in {
+in
+{
   config = mkIf config.services.xserver.enable {
     assertions = [
       {
@@ -15,14 +17,13 @@ in {
         message = "Can't have more than one desktop environment enabled at a time";
       }
       {
-        assertion = let
-          srv = config.services;
-        in
+        assertion =
+          let
+            srv = config.services;
+          in
           srv.xserver.enable
           || srv.sway.enable
-          || !(anyAttrs
-            (_n: v: isAttrs v && anyAttrs (_n: v: isAttrs v && v.enable))
-            cfg);
+          || !(anyAttrs (_n: v: isAttrs v && anyAttrs (_n: v: isAttrs v && v.enable)) cfg);
         message = "Can't enable a desktop app without a desktop environment";
       }
     ];
@@ -38,7 +39,7 @@ in {
         desktopName = "Calculator";
         icon = "calc";
         exec = ''scratch "${tmux}/bin/tmux new-session -s calc -n calc qalc"'';
-        categories = ["Development"];
+        categories = [ "Development" ];
       })
     ];
 
@@ -53,15 +54,14 @@ in {
         symbola
         commit-mono
         monaspace
-        (unstable.nerdfonts.override {fonts = ["Monaspace"];})
+        (unstable.nerdfonts.override { fonts = [ "Monaspace" ]; })
         noto-fonts
         noto-fonts-cjk
       ];
     };
 
     ## Apps/Services
-    services.xserver.displayManager.lightdm.greeters.mini.user =
-      config.user.name;
+    services.xserver.displayManager.lightdm.greeters.mini.user = config.user.name;
 
     services.picom = {
       backend = "glx";
@@ -113,7 +113,7 @@ in {
     };
 
     # Try really hard to get QT to respect my GTK theme.
-    env.GTK_DATA_PREFIX = ["${config.system.path}"];
+    env.GTK_DATA_PREFIX = [ "${config.system.path}" ];
     env.QT_QPA_PLATFORMTHEME = "gtk2";
     qt = {
       style = "gtk2";

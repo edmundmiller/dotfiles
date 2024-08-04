@@ -6,15 +6,19 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.ssh;
   # onePassPath = "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   onePassPath = "~/.1password/agent.sock";
-in {
-  options.modules.services.ssh = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.ssh = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [unstable.sshuttle];
+    user.packages = with pkgs; [ unstable.sshuttle ];
 
     services.openssh = {
       enable = true;

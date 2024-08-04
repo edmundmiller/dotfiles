@@ -7,37 +7,38 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.editors.emacs;
   inherit (config.dotfiles) configDir;
-in {
+in
+{
   options.modules.editors.emacs = {
     enable = mkBoolOpt false;
     doom = rec {
       enable = mkBoolOpt false;
       forgeUrl = mkOpt types.str "https://github.com";
       repoUrl = mkOpt types.str "${forgeUrl}/doomemacs/doomemacs";
-      configRepoUrl =
-        mkOpt types.str "${forgeUrl}/edmundmiller/.doom.d";
+      configRepoUrl = mkOpt types.str "${forgeUrl}/edmundmiller/.doom.d";
     };
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = [inputs.emacs-overlay.overlay];
+    nixpkgs.overlays = [ inputs.emacs-overlay.overlay ];
 
     user.packages = with pkgs; [
       ## Emacs itself
       binutils # native-comp needs 'as', provided by this
-      ((emacsPackagesFor emacs-pgtk).emacsWithPackages
-        (epkgs:
-          with epkgs; [
-            vterm
-            treesit-grammars.with-all-grammars
-          ]))
+      ((emacsPackagesFor emacs-pgtk).emacsWithPackages (
+        epkgs: with epkgs; [
+          vterm
+          treesit-grammars.with-all-grammars
+        ]
+      ))
 
       ## Doom dependencies
       git
-      (ripgrep.override {withPCRE2 = true;})
+      (ripgrep.override { withPCRE2 = true; })
       gnutls # for TLS connectivity
 
       ## Optional dependencies
@@ -45,14 +46,19 @@ in {
       whisper-ctranslate2 # whisper.el
       ffmpeg # whisper.el
       imagemagick # for image-dired
-      (mkIf config.programs.gnupg.agent.enable
-        pinentry-emacs) # in-emacs gnupg prompts
+      (mkIf config.programs.gnupg.agent.enable pinentry-emacs) # in-emacs gnupg prompts
       zstd # for undo-fu-session/undo-tree compression
 
       ## Module dependencies
       # :checkers spell
       enchant
-      (aspellWithDicts (ds: with ds; [en en-computers en-science]))
+      (aspellWithDicts (
+        ds: with ds; [
+          en
+          en-computers
+          en-science
+        ]
+      ))
       nuspell
       # :checkers grammar
       languagetool
@@ -68,7 +74,12 @@ in {
       nodePackages.prettier
       # :lang latex & :lang org (latex previews)
       (texlive.combine {
-        inherit (texlive) scheme-full grffile beamertheme-metropolis wrapfig;
+        inherit (texlive)
+          scheme-full
+          grffile
+          beamertheme-metropolis
+          wrapfig
+          ;
       })
       # :lang python
       pyright
@@ -80,7 +91,7 @@ in {
       scrot
       gnuplot
       # required by +jupyter
-      (python3.withPackages (ps: with ps; [jupyter]))
+      (python3.withPackages (ps: with ps; [ jupyter ]))
       # Roam
       anystyle-cli
       graphviz
@@ -89,19 +100,22 @@ in {
         desktopName = "Org-Protocol";
         exec = "emacsclient %u";
         icon = "emacs";
-        mimeTypes = ["x-scheme-handler/org-protocol"];
-        categories = ["System"];
+        mimeTypes = [ "x-scheme-handler/org-protocol" ];
+        categories = [ "System" ];
       })
       # FIXME unstable.vale
       # yaml
       nodePackages.yaml-language-server
     ];
 
-    env.PATH = ["$XDG_CONFIG_HOME/emacs/bin"];
+    env.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
 
-    modules.shell.zsh.rcFiles = ["${configDir}/emacs/aliases.zsh"];
+    modules.shell.zsh.rcFiles = [ "${configDir}/emacs/aliases.zsh" ];
 
-    fonts.packages = [pkgs.emacs-all-the-icons-fonts pkgs.nerdfonts];
+    fonts.packages = [
+      pkgs.emacs-all-the-icons-fonts
+      pkgs.nerdfonts
+    ];
 
     system.userActivationScripts = mkIf cfg.doom.enable {
       installDoomEmacs = ''

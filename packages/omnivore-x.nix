@@ -36,7 +36,7 @@ python3.pkgs.buildPythonApplication rec {
     description = "Omnivore TUI Terminal Client [Windows - MacOS - Linux";
     homepage = "https://github.com/yazdipour/OmnivoreX";
     license = licenses.mit;
-    maintainers = with maintainers; [edmundmiller];
+    maintainers = with maintainers; [ edmundmiller ];
     mainProgram = "omnivore-x";
   };
 }

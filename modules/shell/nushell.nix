@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.nushell;
-in {
-  options.modules.shell.nushell = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.shell.nushell = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     users.defaultUserShell = lib.mkForce pkgs.nushellFull;

@@ -16,7 +16,10 @@ buildGoModule rec {
 
   vendorHash = "sha256-0K2aq0jmbaVfK0TosAYpkQOQDpyn8LNeJVqY62Zzt+A=";
 
-  ldflags = ["-s" "-w"];
+  ldflags = [
+    "-s"
+    "-w"
+  ];
 
   # HACK
   prePatch = ''
@@ -27,7 +30,7 @@ buildGoModule rec {
     description = "Catgpt` is a command-line tool that uses the OpenAI model to generate text based on user input";
     homepage = "https://github.com/ibuildthecloud/catgpt";
     license = licenses.asl20;
-    maintainers = with maintainers; [];
+    maintainers = with maintainers; [ ];
     mainProgram = "catgpt";
   };
 }

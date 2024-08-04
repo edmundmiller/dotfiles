@@ -11,10 +11,17 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.dev.python;
-  my-python-packages = p: with p; [pandas requests seaborn];
-in {
+  my-python-packages =
+    p: with p; [
+      pandas
+      requests
+      seaborn
+    ];
+in
+{
   options.modules.dev.python = {
     enable = mkBoolOpt false;
     conda.enable = mkBoolOpt false;
@@ -58,7 +65,7 @@ in {
     }
 
     (mkIf cfg.conda.enable {
-      user.packages = with pkgs; [unstable.micromamba];
+      user.packages = with pkgs; [ unstable.micromamba ];
 
       env.MAMBA_ROOT_PREFIX = "$XDG_DATA_HOME/mamba";
 
@@ -69,9 +76,7 @@ in {
         nix-ld = {
           enable = true;
           package = pkgs.nix-ld-rs;
-          libraries = [
-            pkgs.unstable.pixi
-          ];
+          libraries = [ pkgs.unstable.pixi ];
         };
       };
     })

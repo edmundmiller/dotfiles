@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.dev.nextflow;
-in {
-  options.modules.dev.nextflow = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.dev.nextflow = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [

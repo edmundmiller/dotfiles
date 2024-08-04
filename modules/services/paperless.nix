@@ -5,13 +5,17 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.paperless;
-in {
-  options.modules.services.paperless = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.paperless = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     services.paperless.enable = true;
-    networking.firewall.allowedTCPPorts = [28981];
+    networking.firewall.allowedTCPPorts = [ 28981 ];
   };
 }

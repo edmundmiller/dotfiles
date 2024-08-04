@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.transmission;
-in {
-  options.modules.services.transmission = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.transmission = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     services.transmission = {
@@ -28,6 +32,6 @@ in {
       openPeerPorts = true;
     };
 
-    user.extraGroups = ["transmission"];
+    user.extraGroups = [ "transmission" ];
   };
 }

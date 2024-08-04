@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.apps.rofi;
-in {
-  options.modules.desktop.apps.rofi = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.apps.rofi = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     # link recursively so other modules can link files in its folder

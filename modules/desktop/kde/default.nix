@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.kde;
-in {
-  options.modules.desktop.kde = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.kde = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     services.xserver.enable = true;
@@ -20,9 +24,7 @@ in {
     services.xserver.displayManager.defaultSession = "plasma";
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
-    environment.systemPackages = with pkgs; [
-      wl-clipboard
-    ];
+    environment.systemPackages = with pkgs; [ wl-clipboard ];
 
     hardware.nvidia.modesetting.enable = true;
     hardware.nvidia.powerManagement.enable = true;

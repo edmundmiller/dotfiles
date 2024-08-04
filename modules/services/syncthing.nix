@@ -6,13 +6,17 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.syncthing;
-in {
-  options.modules.services.syncthing = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.syncthing = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [syncthing];
+    user.packages = with pkgs; [ syncthing ];
 
     services.syncthing = {
       enable = true;
@@ -31,55 +35,89 @@ in {
       };
       overrideFolders = true;
       overrideDevices = true;
-      settings.folders = let
-        deviceEnabled = devices: lib.elem config.networking.hostName devices;
-        deviceType = devices:
-          if deviceEnabled devices
-          then "sendreceive"
-          else "receiveonly";
-      in {
-        archive = rec {
-          devices = ["framework" "meshify" "nuc" "unas"];
-          path = "/home/${config.user.name}/archive";
-          fsWatcherEnabled = false;
-          rescanIntervalS = 3600 * 6;
-          type = deviceType ["framework" "meshify"];
-          enable = deviceEnabled devices;
-          versioning.type = "simple";
-          versioning.params.keep = "2";
-        };
-        sync = rec {
-          devices = ["framework" "iphone" "meshify" "nuc" "unas"];
-          path = "/home/${config.user.name}/sync";
-          fsWatcherEnabled = true;
-          rescanIntervalS = 3600 * 6;
-          type = deviceType ["framework" "meshify" "iphone"];
-          enable = deviceEnabled devices;
-          versioning = {
-            type = "staggered";
-            params = {
-              cleanInterval = "3600";
-              maxAge = "15768000";
+      settings.folders =
+        let
+          deviceEnabled = devices: lib.elem config.networking.hostName devices;
+          deviceType = devices: if deviceEnabled devices then "sendreceive" else "receiveonly";
+        in
+        {
+          archive = rec {
+            devices = [
+              "framework"
+              "meshify"
+              "nuc"
+              "unas"
+            ];
+            path = "/home/${config.user.name}/archive";
+            fsWatcherEnabled = false;
+            rescanIntervalS = 3600 * 6;
+            type = deviceType [
+              "framework"
+              "meshify"
+            ];
+            enable = deviceEnabled devices;
+            versioning.type = "simple";
+            versioning.params.keep = "2";
+          };
+          sync = rec {
+            devices = [
+              "framework"
+              "iphone"
+              "meshify"
+              "nuc"
+              "unas"
+            ];
+            path = "/home/${config.user.name}/sync";
+            fsWatcherEnabled = true;
+            rescanIntervalS = 3600 * 6;
+            type = deviceType [
+              "framework"
+              "meshify"
+              "iphone"
+            ];
+            enable = deviceEnabled devices;
+            versioning = {
+              type = "staggered";
+              params = {
+                cleanInterval = "3600";
+                maxAge = "15768000";
+              };
             };
           };
+          src = rec {
+            devices = [
+              "framework"
+              "meshify"
+              "nuc"
+              "unas"
+            ];
+            path = "/home/${config.user.name}/src";
+            fsWatcherEnabled = false;
+            rescanIntervalS = 3600 * 2;
+            type = deviceType [
+              "framework"
+              "meshify"
+            ];
+            enable = deviceEnabled devices;
+          };
+          secrets = rec {
+            devices = [
+              "framework"
+              "iphone"
+              "meshify"
+              "nuc"
+              "unas"
+            ];
+            path = "/home/${config.user.name}/.secrets";
+            fsWatcherEnabled = true;
+            rescanIntervalS = 3600;
+            type = deviceType [
+              "framework"
+              "meshify"
+            ];
+            enable = deviceEnabled devices;
+          };
         };
-        src = rec {
-          devices = ["framework" "meshify" "nuc" "unas"];
-          path = "/home/${config.user.name}/src";
-          fsWatcherEnabled = false;
-          rescanIntervalS = 3600 * 2;
-          type = deviceType ["framework" "meshify"];
-          enable = deviceEnabled devices;
-        };
-        secrets = rec {
-          devices = ["framework" "iphone" "meshify" "nuc" "unas"];
-          path = "/home/${config.user.name}/.secrets";
-          fsWatcherEnabled = true;
-          rescanIntervalS = 3600;
-          type = deviceType ["framework" "meshify"];
-          enable = deviceEnabled devices;
-        };
-      };
     };
   };
 }

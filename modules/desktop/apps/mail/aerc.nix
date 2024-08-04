@@ -5,10 +5,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.apps.mail.aerc;
-in {
-  options.modules.desktop.apps.mail.aerc = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.apps.mail.aerc = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     home-manager.users.emiller.accounts.email = {

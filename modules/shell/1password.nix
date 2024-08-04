@@ -6,18 +6,20 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell."1password";
-in {
+in
+{
   options.modules.shell."1password" = {
     enable = mkBoolOpt false;
   };
 
-  imports = [inputs.op-shell-plugins.nixosModules.default];
+  imports = [ inputs.op-shell-plugins.nixosModules.default ];
   config = mkIf cfg.enable {
     programs._1password.enable = true;
     programs._1password-gui.enable = true;
-    programs._1password-gui.polkitPolicyOwners = ["emiller"];
+    programs._1password-gui.polkitPolicyOwners = [ "emiller" ];
 
     environment.etc = {
       "1password/custom_allowed_browsers" = {

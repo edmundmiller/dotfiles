@@ -5,12 +5,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.browsers;
-in {
+in
+{
   options.modules.desktop.browsers = {
     default = mkOpt (with types; nullOr str) null;
   };
 
-  config = mkIf (cfg.default != null) {env.BROWSER = cfg.default;};
+  config = mkIf (cfg.default != null) { env.BROWSER = cfg.default; };
 }

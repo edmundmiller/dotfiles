@@ -5,10 +5,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.hass;
-in {
-  options.modules.services.hass = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.hass = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     virtualisation.oci-containers.containers."homeassistant" = {
@@ -25,6 +29,6 @@ in {
       ];
     };
 
-    networking.firewall.allowedTCPPorts = [8123];
+    networking.firewall.allowedTCPPorts = [ 8123 ];
   };
 }

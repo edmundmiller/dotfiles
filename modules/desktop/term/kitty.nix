@@ -6,14 +6,20 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.term.kitty;
-in {
-  options.modules.desktop.term.kitty = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.term.kitty = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     # kitty isn't supported over ssh, so revert to a known one
-    environment.shellAliases = {s = "kitten ssh";};
+    environment.shellAliases = {
+      s = "kitten ssh";
+    };
 
     home-manager.users.${config.user.name}.programs.kitty = {
       enable = true;

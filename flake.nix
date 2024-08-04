@@ -43,37 +43,40 @@
     "op-shell-plugins".url = "github:1Password/shell-plugins";
   };
 
-  outputs = inputs @ {
-    flake-parts,
-    self,
-    nixpkgs,
-    nixpkgs-unstable,
-    ...
-  }: let
-    inherit (lib.my) mapModules mapModulesRec mapHosts;
+  outputs =
+    inputs@{
+      flake-parts,
+      self,
+      nixpkgs,
+      nixpkgs-unstable,
+      ...
+    }:
+    let
+      inherit (lib.my) mapModules mapModulesRec mapHosts;
 
-    system = "x86_64-linux";
+      system = "x86_64-linux";
 
-    mkPkgs = pkgs: extraOverlays:
-      import pkgs {
-        inherit system;
-        config.allowUnfree = true; # forgive me Stallman senpai
-        overlays = extraOverlays ++ (lib.attrValues self.overlays);
-      };
-    pkgs = mkPkgs nixpkgs [self.overlay];
-    pkgs' = mkPkgs nixpkgs-unstable [];
+      mkPkgs =
+        pkgs: extraOverlays:
+        import pkgs {
+          inherit system;
+          config.allowUnfree = true; # forgive me Stallman senpai
+          overlays = extraOverlays ++ (lib.attrValues self.overlays);
+        };
+      pkgs = mkPkgs nixpkgs [ self.overlay ];
+      pkgs' = mkPkgs nixpkgs-unstable [ ];
 
-    lib = nixpkgs.lib.extend (self: _super: {
-      my = import ./lib {
-        inherit pkgs inputs;
-        lib = self;
-      };
-    });
-  in
-    flake-parts.lib.mkFlake {inherit inputs;} {
-      imports = [
-        inputs.treefmt-nix.flakeModule
-      ];
+      lib = nixpkgs.lib.extend (
+        self: _super: {
+          my = import ./lib {
+            inherit pkgs inputs;
+            lib = self;
+          };
+        }
+      );
+    in
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ inputs.treefmt-nix.flakeModule ];
 
       flake = {
         lib = lib.my;
@@ -85,15 +88,13 @@
 
         overlays = mapModules ./overlays import;
 
-        packages."${system}" = mapModules ./packages (p: pkgs.callPackage p {});
+        packages."${system}" = mapModules ./packages (p: pkgs.callPackage p { });
 
-        nixosModules =
-          {
-            dotfiles = import ./.;
-          }
-          // mapModulesRec ./modules import;
+        nixosModules = {
+          dotfiles = import ./.;
+        } // mapModulesRec ./modules import;
 
-        nixosConfigurations = mapHosts ./hosts {};
+        nixosConfigurations = mapHosts ./hosts { };
 
         templates = {
           full = {
@@ -112,14 +113,12 @@
           program = ./bin/hey;
         };
       };
-      systems = [
-        "x86_64-linux"
-      ];
+      systems = [ "x86_64-linux" ];
       perSystem = _: {
         treefmt = {
           projectRootFile = ".git/config";
-          programs.alejandra.enable = true;
           programs.deadnix.enable = true;
+          programs.nixfmt-rfc-style.enable = true;
           programs.prettier.enable = true;
           programs.statix.enable = true;
         };

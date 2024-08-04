@@ -1,4 +1,5 @@
-{pkgs, ...}: {
+{ pkgs, ... }:
+{
   env.GTK_THEME = "palenight";
   home-manager.users.emiller = {
     ## GTK
