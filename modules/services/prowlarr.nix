@@ -5,10 +5,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.prowlarr;
-in {
-  options.modules.services.prowlarr = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.prowlarr = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     services.prowlarr.enable = true;

@@ -1,10 +1,8 @@
-{
-  config,
-  pkgs,
-  ...
-}: let
+{ config, pkgs, ... }:
+let
   restic-backup-id = "c351536f-39a4-4725-9d92-04fcb26b6306";
-in {
+in
+{
   services.restic.backups = {
     daily = {
       initialize = true;

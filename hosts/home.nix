@@ -5,7 +5,8 @@
   ...
 }:
 with builtins;
-with lib; {
+with lib;
+{
   networking.extraHosts = ''
     192.168.1.1   router.home
 
@@ -24,12 +25,13 @@ with lib; {
   i18n.defaultLocale = mkDefault "en_US.UTF-8";
   # For redshift, mainly
   location =
-    if config.time.timeZone == "America/Chicago"
-    then {
-      latitude = 32.983;
-      longitude = -96.752;
-    }
-    else {};
+    if config.time.timeZone == "America/Chicago" then
+      {
+        latitude = 32.983;
+        longitude = -96.752;
+      }
+    else
+      { };
 
   # So the bitwarden CLI knows where to find my server.
   modules.shell.bitwarden.config.server = "bitwarden.com";

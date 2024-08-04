@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.editors.code;
-in {
-  options.modules.editors.code = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.editors.code = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     home-manager.users.emiller.programs.vscode = {

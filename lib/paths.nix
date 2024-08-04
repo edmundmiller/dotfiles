@@ -1,6 +1,7 @@
-{lib, ...}:
+{ lib, ... }:
 with builtins;
-with lib; rec {
+with lib;
+rec {
   # ...
   dotFilesDir = toString ../.;
   modulesDir = "${dotFilesDir}/modules";

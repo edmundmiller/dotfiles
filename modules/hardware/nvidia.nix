@@ -6,22 +6,27 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.hardware.nvidia;
 
   nvStable = config.boot.kernelPackages.nvidiaPackages.stable;
   nvBeta = config.boot.kernelPackages.nvidiaPackages.beta;
   nvidiaPkg =
-    if (lib.versionOlder nvBeta.version nvStable.version)
-    then config.boot.kernelPackages.nvidiaPackages.stable
-    else config.boot.kernelPackages.nvidiaPackages.beta;
-in {
-  options.modules.hardware.nvidia = {enable = mkBoolOpt false;};
+    if (lib.versionOlder nvBeta.version nvStable.version) then
+      config.boot.kernelPackages.nvidiaPackages.stable
+    else
+      config.boot.kernelPackages.nvidiaPackages.beta;
+in
+{
+  options.modules.hardware.nvidia = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     hardware.opengl.enable = true;
 
-    services.xserver.videoDrivers = ["nvidia"];
+    services.xserver.videoDrivers = [ "nvidia" ];
 
     hardware.nvidia.package = nvidiaPkg;
     hardware.nvidia.powerManagement.enable = true;

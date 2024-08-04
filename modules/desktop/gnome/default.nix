@@ -6,11 +6,15 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.gnome;
-in {
-  options.modules.desktop.gnome = {enable = mkBoolOpt false;};
-  imports = [./dconf];
+in
+{
+  options.modules.desktop.gnome = {
+    enable = mkBoolOpt false;
+  };
+  imports = [ ./dconf ];
 
   config = mkIf cfg.enable {
     services.xserver.enable = true;
@@ -48,13 +52,13 @@ in {
     hardware.nvidia.modesetting.enable = true;
 
     # Systray Icons
-    services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
+    services.udev.packages = with pkgs; [ gnome.gnome-settings-daemon ];
 
     # Throws an error without
     hardware.pulseaudio.enable = false;
 
     programs.evolution.enable = true;
-    programs.evolution.plugins = [pkgs.evolution-ews];
+    programs.evolution.plugins = [ pkgs.evolution-ews ];
     # https://nixos.wiki/wiki/GNOME/Calendar
     services.gnome.evolution-data-server.enable = true;
     # optional to use google/nextcloud calendar

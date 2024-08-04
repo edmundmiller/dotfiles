@@ -1,9 +1,9 @@
+{ lib, pkgs, ... }:
 {
-  lib,
-  pkgs,
-  ...
-}: {
-  imports = [../home.nix ./hardware-configuration.nix];
+  imports = [
+    ../home.nix
+    ./hardware-configuration.nix
+  ];
 
   modules = {
     desktop = {

@@ -1,5 +1,6 @@
 # This is the configuration required to run NixOS on GandiCloud.
-{lib, ...}: {
+{ lib, ... }:
+{
   config = {
     boot.initrd.kernelModules = [
       "xen-blkfront"
@@ -16,10 +17,10 @@
     boot.kernel.sysctl."kernel.printk" = "4 4 1 7";
 
     # For "openstack console log show"
-    boot.kernelParams = ["console=ttyS0"];
+    boot.kernelParams = [ "console=ttyS0" ];
     systemd.services."serial-getty@ttyS0" = {
       enable = true;
-      wantedBy = ["multi-user.target"];
+      wantedBy = [ "multi-user.target" ];
       serviceConfig.Restart = "always";
     };
 
@@ -35,7 +36,7 @@
     # This is to get a prompt via the "openstack console url show" command
     systemd.services."getty@tty1" = {
       enable = lib.mkForce true;
-      wantedBy = ["multi-user.target"];
+      wantedBy = [ "multi-user.target" ];
       serviceConfig.Restart = "always";
     };
 

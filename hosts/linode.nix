@@ -38,13 +38,15 @@
 #      nixos-install --root "$(PREFIX)" --flake /mnt/home/emiller/.config/dotfiles#linode
 #
 # 7. Reboot into "Boot" profile.
+{ lib, pkgs, ... }:
+with lib;
 {
-  lib,
-  pkgs,
-  ...
-}:
-with lib; {
-  environment.systemPackages = with pkgs; [inetutils mtr sysstat git];
+  environment.systemPackages = with pkgs; [
+    inetutils
+    mtr
+    sysstat
+    git
+  ];
 
   modules = {
     editors = {
@@ -60,7 +62,7 @@ with lib; {
 
   # GRUB
   boot = {
-    kernelParams = ["console=ttyS0"];
+    kernelParams = [ "console=ttyS0" ];
     loader = {
       timeout = 10;
       grub = {

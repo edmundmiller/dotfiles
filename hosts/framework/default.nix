@@ -1,10 +1,10 @@
 # Framework -- my laptop
+{ lib, pkgs, ... }:
 {
-  lib,
-  pkgs,
-  ...
-}: {
-  imports = [../home.nix ./hardware-configuration.nix];
+  imports = [
+    ../home.nix
+    ./hardware-configuration.nix
+  ];
 
   modules = {
     desktop = {
@@ -101,7 +101,10 @@
   networking.hostId = "0dd71c1c";
   networking.networkmanager.enable = true;
   programs.nm-applet.enable = true;
-  users.users.emiller.extraGroups = ["input" "networkmanager"];
+  users.users.emiller.extraGroups = [
+    "input"
+    "networkmanager"
+  ];
 
   time.timeZone = "America/Chicago";
   time.hardwareClockInLocalTime = true;

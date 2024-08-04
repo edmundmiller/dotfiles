@@ -30,7 +30,7 @@ python3.pkgs.buildPythonApplication rec {
     description = "";
     homepage = "https://github.com/harishkrupo/oauth2ms";
     license = licenses.asl20;
-    maintainers = with maintainers; [];
+    maintainers = with maintainers; [ ];
     mainProgram = "oauth2ms";
     platforms = platforms.all;
   };

@@ -1,17 +1,17 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ config, lib, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   name = "Edmund Miller";
   maildir = "/home/emiller/.mail";
   email = "edmund.a.miller@gmail.com";
 
   cfg = config.modules.desktop.apps.mail.accounts;
-in {
-  options.modules.desktop.apps.mail.accounts = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.apps.mail.accounts = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     home-manager.users.emiller.accounts.email = {
@@ -28,7 +28,7 @@ in {
         fastmail = {
           address = "me@edmundmiller.dev";
           userName = "me@edmundmiller.dev";
-          aliases = ["hello@edmundmiller.dev"];
+          aliases = [ "hello@edmundmiller.dev" ];
           flavor = "fastmail.com";
           passwordCommand = "op read 'op://Private/Fastmail/new-password '";
           realName = "${name}";
@@ -38,7 +38,7 @@ in {
         UTD = {
           address = "Edmund.Miller@utdallas.edu";
           userName = "eam150030@utdallas.edu";
-          aliases = ["eam150030@utdallas.edu"];
+          aliases = [ "eam150030@utdallas.edu" ];
           flavor = "outlook.office365.com";
           passwordCommand = "op read 'op://Moni and Ed/UTDallas/password'";
           realName = "${name}";

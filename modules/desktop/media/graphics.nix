@@ -12,9 +12,11 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.media.graphics;
-in {
+in
+{
   options.modules.desktop.media.graphics = {
     enable = mkBoolOpt false;
     tools.enable = mkBoolOpt true;
@@ -24,41 +26,36 @@ in {
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs;
+    user.packages =
+      with pkgs;
       (
-        if cfg.tools.enable
-        then [
-          font-manager # so many damned fonts...
-          imagemagick # for image manipulation from the shell
-        ]
-        else []
+        if cfg.tools.enable then
+          [
+            font-manager # so many damned fonts...
+            imagemagick # for image manipulation from the shell
+          ]
+        else
+          [ ]
       )
       ++
-      # replaces illustrator & indesign
-      (
-        if cfg.vector.enable
-        then [inkscape]
-        else []
-      )
+        # replaces illustrator & indesign
+        (if cfg.vector.enable then [ inkscape ] else [ ])
       ++
-      # Replaces photoshop
-      (
-        if cfg.raster.enable
-        then [
-          krita
-          # FIXME https://github.com/NixOS/nixpkgs/issues/210098
-          # gimp
-          # gimpPlugins.resynthesizer2 # content-aware scaling in gimp
-        ]
-        else []
-      )
+        # Replaces photoshop
+        (
+          if cfg.raster.enable then
+            [
+              krita
+              # FIXME https://github.com/NixOS/nixpkgs/issues/210098
+              # gimp
+              # gimpPlugins.resynthesizer2 # content-aware scaling in gimp
+            ]
+          else
+            [ ]
+        )
       ++
-      # Sprite sheets & animation
-      (
-        if cfg.sprites.enable
-        then [aseprite-unfree]
-        else []
-      );
+        # Sprite sheets & animation
+        (if cfg.sprites.enable then [ aseprite-unfree ] else [ ]);
 
     home.configFile = mkIf cfg.raster.enable {
       "GIMP/2.10" = {
