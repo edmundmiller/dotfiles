@@ -1,4 +1,5 @@
-{pkgs, ...}: {
+{ pkgs, ... }:
+{
   home-manager.users.emiller = {
     dconf.settings = {
       "org/gnome/shell" = {
@@ -20,7 +21,13 @@
       "org/gnome/desktop/wm/preferences" = {
         button-layout = "appmenu:minimize,maximize,close";
         num-workspaces = 5;
-        workspace-names = ["Web" "Editor" "Terminal" "Chat" "Scratch"];
+        workspace-names = [
+          "Web"
+          "Editor"
+          "Terminal"
+          "Chat"
+          "Scratch"
+        ];
       };
       "org/gnome/shell/app-switcher" = {
         current-workspace-only = true;

@@ -7,11 +7,15 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.editors.vim;
-in {
-  options.modules.editors.vim = {enable = mkBoolOpt false;};
-  imports = [inputs.nixvim.nixosModules.nixvim];
+in
+{
+  options.modules.editors.vim = {
+    enable = mkBoolOpt false;
+  };
+  imports = [ inputs.nixvim.nixosModules.nixvim ];
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [

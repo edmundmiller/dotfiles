@@ -5,13 +5,20 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.nginx;
-in {
-  options.modules.services.nginx = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.nginx = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
-    networking.firewall.allowedTCPPorts = [80 443];
+    networking.firewall.allowedTCPPorts = [
+      80
+      443
+    ];
 
     services.nginx = {
       enable = true;

@@ -5,9 +5,11 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.zellij;
-in {
+in
+{
   options.modules.shell.zellij = with types; {
     enable = mkBoolOpt false;
   };

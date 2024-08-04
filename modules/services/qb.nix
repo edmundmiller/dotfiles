@@ -5,10 +5,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.qb;
-in {
-  options.modules.services.qb = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.services.qb = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     virtualisation.oci-containers.containers = {
@@ -20,14 +24,14 @@ in {
           "8388:8388/udp" # Shadowsocks
           "8090:8090" # port for qbittorrent
         ];
-        environmentFiles = [config.age.secrets.qb.path];
+        environmentFiles = [ config.age.secrets.qb.path ];
         # Give the container NET_ADMIN
-        extraOptions = ["--cap-add=NET_ADMIN"];
+        extraOptions = [ "--cap-add=NET_ADMIN" ];
       };
 
       qbittorrent = {
         image = "linuxserver/qbittorrent";
-        dependsOn = ["gluetun"];
+        dependsOn = [ "gluetun" ];
         user = "568:568";
         environment = {
           PUID = "568";
@@ -35,8 +39,11 @@ in {
           TZ = "America/Chicago";
           WEBUI_PORT = "8090";
         };
-        volumes = ["/home/emiller/gluetun/config:/config" "/srv/nfs:/media"];
-        extraOptions = ["--network=container:gluetun"];
+        volumes = [
+          "/home/emiller/gluetun/config:/config"
+          "/srv/nfs:/media"
+        ];
+        extraOptions = [ "--network=container:gluetun" ];
       };
     };
   };

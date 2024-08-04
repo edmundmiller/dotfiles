@@ -32,13 +32,13 @@ python3.pkgs.buildPythonApplication rec {
     typing-extensions
   ];
 
-  pythonImportsCheck = ["odmpy"];
+  pythonImportsCheck = [ "odmpy" ];
 
   meta = with lib; {
     description = "A simple command line manager for OverDrive/Libby loans. Download your library loans from the command line";
     homepage = "https://github.com/ping/odmpy";
     license = licenses.gpl3Only;
-    maintainers = with maintainers; [];
+    maintainers = with maintainers; [ ];
     mainProgram = "odmpy";
   };
 }

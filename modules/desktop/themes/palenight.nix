@@ -6,11 +6,15 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.themes.palenight;
-in {
-  options.modules.desktop.themes.palenight = {enable = mkBoolOpt false;};
-  imports = [inputs.stylix.nixosModules.stylix];
+in
+{
+  options.modules.desktop.themes.palenight = {
+    enable = mkBoolOpt false;
+  };
+  imports = [ inputs.stylix.nixosModules.stylix ];
 
   config = mkIf cfg.enable {
     stylix.enable = true;

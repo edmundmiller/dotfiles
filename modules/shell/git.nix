@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.git;
-in {
-  options.modules.shell.git = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.shell.git = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
@@ -26,6 +30,6 @@ in {
       "git/allowed_signers".source = "${configDir}/git/allowed_signers";
     };
 
-    modules.shell.zsh.rcFiles = ["${configDir}/git/aliases.zsh"];
+    modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
   };
 }

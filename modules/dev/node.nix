@@ -10,10 +10,12 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.dev.node;
   node = pkgs.nodejs_latest;
-in {
+in
+{
   options.modules.dev.node = {
     enable = mkBoolOpt false;
     enableGlobally = mkBoolOpt false;
@@ -21,7 +23,12 @@ in {
 
   config = mkIf cfg.enable (mkMerge [
     (mkIf cfg.enableGlobally {
-      user.packages = with pkgs; [bun node yarn nodePackages_latest.pnpm];
+      user.packages = with pkgs; [
+        bun
+        node
+        yarn
+        nodePackages_latest.pnpm
+      ];
 
       # Run locally installed bin-script, e.g. n coffee file.coffee
       environment.shellAliases = {
@@ -29,7 +36,7 @@ in {
         ya = "yarn";
       };
 
-      env.PATH = ["$(${pkgs.yarn}/bin/yarn global bin)"];
+      env.PATH = [ "$(${pkgs.yarn}/bin/yarn global bin)" ];
     })
 
     {

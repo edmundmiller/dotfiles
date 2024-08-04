@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.apps.discord;
-in {
-  options.modules.desktop.apps.discord = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.apps.discord = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [

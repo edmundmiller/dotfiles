@@ -9,10 +9,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.vm.virtualbox;
-in {
-  options.modules.desktop.vm.virtualbox = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.vm.virtualbox = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     virtualisation.virtualbox.host = {
@@ -21,6 +25,6 @@ in {
       # enableExtensionPack = true;
     };
 
-    user.extraGroups = ["vboxusers"];
+    user.extraGroups = [ "vboxusers" ];
   };
 }

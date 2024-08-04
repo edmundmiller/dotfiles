@@ -6,10 +6,14 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.bspwm;
-in {
-  options.modules.desktop.bspwm = {enable = mkBoolOpt false;};
+in
+{
+  options.modules.desktop.bspwm = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     modules.theme.onReload.bspwm = ''
@@ -53,7 +57,7 @@ in {
     systemd.user.services."dunst" = {
       enable = true;
       description = "";
-      wantedBy = ["default.target"];
+      wantedBy = [ "default.target" ];
       serviceConfig.Restart = "always";
       serviceConfig.RestartSec = 2;
       serviceConfig.ExecStart = "${pkgs.dunst}/bin/dunst";

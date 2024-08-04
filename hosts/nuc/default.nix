@@ -1,9 +1,6 @@
 # Go nuc yourself
+{ config, pkgs, ... }:
 {
-  config,
-  pkgs,
-  ...
-}: {
   imports = [
     ../server.nix
     ../home.nix

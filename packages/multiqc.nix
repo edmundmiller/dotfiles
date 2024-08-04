@@ -41,14 +41,14 @@ python3.pkgs.buildPythonApplication rec {
     # FIXME pyaml-env
   ];
 
-  pythonImportsCheck = ["multiqc"];
+  pythonImportsCheck = [ "multiqc" ];
 
   meta = with lib; {
     description = "Aggregate results from bioinformatics analyses across many samples into a single report";
     homepage = "https://github.com/ewels/MultiQC";
     changelog = "https://github.com/ewels/MultiQC/blob/${src.rev}/CHANGELOG.md";
     license = licenses.gpl3Only;
-    maintainers = with maintainers; [emiller88];
+    maintainers = with maintainers; [ emiller88 ];
     mainProgram = "multiqc";
   };
 }

@@ -26,14 +26,12 @@ python3.pkgs.buildPythonPackage rec {
     python3.pkgs.requests-toolbelt
   ];
 
-  pythonImportsCheck = [
-    "omnivoreql"
-  ];
+  pythonImportsCheck = [ "omnivoreql" ];
 
   meta = with lib; {
     description = "Omnivore-app API client for Python";
     homepage = "https://github.com/yazdipour/OmnivoreQL";
     license = licenses.mit;
-    maintainers = with maintainers; [edmundmiller];
+    maintainers = with maintainers; [ edmundmiller ];
   };
 }

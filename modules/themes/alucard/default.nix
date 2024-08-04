@@ -6,9 +6,11 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.theme;
-in {
+in
+{
   config = mkIf (cfg.active == "alucard") (mkMerge [
     # Desktop-agnostic configuration
     {
@@ -48,19 +50,17 @@ in {
           };
         };
 
-        shell.zsh.rcFiles = [./config/zsh/prompt.zsh];
-        shell.tmux.rcFiles = [./config/tmux.conf];
+        shell.zsh.rcFiles = [ ./config/zsh/prompt.zsh ];
+        shell.tmux.rcFiles = [ ./config/tmux.conf ];
         desktop.browsers = {
-          firefox.userChrome =
-            concatMapStringsSep "\n" readFile
-            [./config/firefox/userChrome.css];
-          qutebrowser.userStyles =
-            concatMapStringsSep "\n" readFile
-            (map toCSSFile [
+          firefox.userChrome = concatMapStringsSep "\n" readFile [ ./config/firefox/userChrome.css ];
+          qutebrowser.userStyles = concatMapStringsSep "\n" readFile (
+            map toCSSFile [
               ./config/qutebrowser/userstyles/monospace-textareas.scss
               ./config/qutebrowser/userstyles/stackoverflow.scss
               ./config/qutebrowser/userstyles/xkcd.scss
-            ]);
+            ]
+          );
         };
       };
     }
@@ -86,9 +86,15 @@ in {
       services.picom = {
         fade = true;
         fadeDelta = 1;
-        fadeSteps = [1.0e-2 1.2e-2];
+        fadeSteps = [
+          1.0e-2
+          1.2e-2
+        ];
         shadow = true;
-        shadowOffsets = [(-10) (-10)];
+        shadowOffsets = [
+          (-10)
+          (-10)
+        ];
         shadowOpacity = 0.22;
         # activeOpacity = "1.00";
         # inactiveOpacity = "0.92";
@@ -111,7 +117,8 @@ in {
       '';
 
       # Other dotfiles
-      home.configFile = with config.modules;
+      home.configFile =
+        with config.modules;
         mkMerge [
           {
             # Sourced from sessionCommands in modules/themes/default.nix
@@ -144,8 +151,7 @@ in {
             };
           })
           (mkIf desktop.media.graphics.vector.enable {
-            "inkscape/templates/default.svg".source =
-              ./config/inkscape/default-template.svg;
+            "inkscape/templates/default.svg".source = ./config/inkscape/default-template.svg;
           })
           (mkIf desktop.browsers.qutebrowser.enable {
             "qutebrowser/extra/theme.py".source = ./config/qutebrowser/theme.py;

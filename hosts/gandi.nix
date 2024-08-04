@@ -1,10 +1,10 @@
+{ lib, pkgs, ... }:
+with lib;
 {
-  lib,
-  pkgs,
-  ...
-}:
-with lib; {
-  imports = [./gandicloud.nix ./server.nix];
+  imports = [
+    ./gandicloud.nix
+    ./server.nix
+  ];
 
   modules = {
     editors = {
@@ -22,5 +22,10 @@ with lib; {
     };
   };
 
-  environment.systemPackages = with pkgs; [inetutils mtr sysstat git];
+  environment.systemPackages = with pkgs; [
+    inetutils
+    mtr
+    sysstat
+    git
+  ];
 }

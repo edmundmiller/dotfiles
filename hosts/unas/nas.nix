@@ -1,8 +1,5 @@
-{
-  config,
-  lib,
-  ...
-}: let
+{ config, lib, ... }:
+let
   join = lib.concatStringsSep " ";
   isMounted = path: lib.hasAttr path config.fileSystems;
 
@@ -23,16 +20,15 @@
   ];
 
   # Tempalte NFS config
-  fsExports =
-    map (fs: ''
-      ${fs} ${join (map (r: "${r}(rw,no_subtree_check)") allowIpRanges)}
-    '')
-    fileSystems;
-in {
+  fsExports = map (fs: ''
+    ${fs} ${join (map (r: "${r}(rw,no_subtree_check)") allowIpRanges)}
+  '') fileSystems;
+in
+{
   # Firewall
   # networking.firewall.interfaces."zt*".allowedTCPPorts = [ 111 2049 4000 4001 4002 ];
   # networking.firewall.interfaces."zt*".allowedUDPPorts = [ 111 2049 4000 4001 4002 ];
-  networking.firewall.allowedTCPPorts = [2049];
+  networking.firewall.allowedTCPPorts = [ 2049 ];
 
   # Daemon
   services.nfs.server = {

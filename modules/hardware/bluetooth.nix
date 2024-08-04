@@ -6,19 +6,19 @@
   ...
 }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   hwCfg = config.modules.hardware;
   cfg = hwCfg.bluetooth;
-in {
+in
+{
   options.modules.hardware.bluetooth = {
     enable = mkBoolOpt false;
     audio.enable = mkBoolOpt false;
   };
 
   config = mkIf cfg.enable (mkMerge [
-    {
-      hardware.bluetooth.enable = true;
-    }
+    { hardware.bluetooth.enable = true; }
 
     (mkIf cfg.audio.enable {
       hardware.pulseaudio = {
@@ -27,7 +27,7 @@ in {
         # support, so it must be selected here.
         package = pkgs.pulseaudioFull;
         # Enable additional codecs
-        extraModules = [pkgs.pulseaudio-modules-bt];
+        extraModules = [ pkgs.pulseaudio-modules-bt ];
       };
 
       hardware.bluetooth.extraConfig = ''

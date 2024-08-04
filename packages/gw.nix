@@ -43,7 +43,7 @@ stdenv.mkDerivation rec {
     description = "Genome browser and variant annotation";
     homepage = "https://github.com/kcleal/gw";
     license = licenses.mit;
-    maintainers = with maintainers; [edmundmiller];
+    maintainers = with maintainers; [ edmundmiller ];
     mainProgram = "gw";
     platforms = platforms.all;
   };
