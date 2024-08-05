@@ -32,6 +32,14 @@ in
       clipboard.register = "unnamedplus";
       vimAlias = true;
       editorconfig.enable = true;
+      globals.mapleader = "SPC";
+      plugins = {
+        copilot-chat.enable = true;
+        copilot-lua.enable = true;
+        harpoon.enable = true;
+        harpoon.enableTelescope = true;
+        telescope.enable = true;
+      };
       extraPlugins = [
         (pkgs.vimUtils.buildVimPlugin {
           name = "nextflow-vim";
