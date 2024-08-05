@@ -8,7 +8,7 @@
 
   modules = {
     desktop = {
-      kde.enable = true;
+      gnome.enable = true;
 
       apps.discord.enable = true;
 
@@ -68,7 +68,6 @@
     shell = {
       "1password".enable = true;
       age.enable = true;
-      bitwarden.enable = true;
       direnv.enable = true;
       git.enable = true;
       gnupg.enable = true;
@@ -81,9 +80,6 @@
     services = {
       comin.enable = true;
       docker.enable = true;
-      keybase.enable = true;
-      mpd.enable = true;
-      mpd.scrobbling.enable = true;
       ollama.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
@@ -101,16 +97,7 @@
 
   time.timeZone = "America/Chicago";
 
-  user.packages = with pkgs; [
-    obsidian
-    (makeDesktopItem {
-      name = "ticktick";
-      desktopName = "TickTick";
-      icon = "ticktick";
-      exec = "${unstable.ticktick}/bin/ticktick --disable-gpu";
-      # categories = ["Development"];
-    })
-  ];
+  user.packages = with pkgs; [ obsidian ];
 
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
