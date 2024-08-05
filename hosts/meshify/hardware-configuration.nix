@@ -35,38 +35,6 @@
     _JAVA_OPTIONS = "-Dsun.java2d.uiScale=2";
   };
 
-  ## SSD
-  fileSystems."/" = {
-    device = "tank/system/root";
-    fsType = "zfs";
-  };
-
-  fileSystems."/nix" = {
-    device = "tank/local/nix";
-    fsType = "zfs";
-  };
-
-  fileSystems."/gnu" = {
-    device = "tank/local/guix";
-    fsType = "zfs";
-  };
-
-  fileSystems."/var" = {
-    device = "tank/system/var";
-    fsType = "zfs";
-  };
-
-  fileSystems."/home" = {
-    device = "tank/user/home";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
-
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/C2C7-D952";
-    fsType = "vfat";
-  };
-
   # TODO Check out https://github.com/Mic92/dotfiles/blob/master/nixos/modules/nfs-dl.nix
   # fileSystems."/data/media/music" = {
   #   device = "unas:/srv/nfs/music";
