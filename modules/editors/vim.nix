@@ -38,7 +38,11 @@ in
         copilot-lua.enable = true;
         harpoon.enable = true;
         harpoon.enableTelescope = true;
+        neoscroll.enable = true;
+        neotest.enable = true;
         telescope.enable = true;
+        surround.enable = true;
+        todo-comments.enable = true;
       };
       extraPlugins = [
         (pkgs.vimUtils.buildVimPlugin {
