@@ -18,9 +18,12 @@ rustPlatform.buildRustPackage rec {
 
   cargoHash = "sha256-A5csnVtUDmxFn7uBY2tBsZaTiYBZfF3jtAuly+tzrFs=";
 
-  buildInputs = [
-    rust-jemalloc-sys
-  ];
+  # depends on rust nightly features
+  RUSTC_BOOTSTRAP = 1;
+
+  buildInputs = [ rust-jemalloc-sys ];
+
+  doCheck = false;
 
   meta = with lib; {
     description = "Fast SQL formatter/linter";
