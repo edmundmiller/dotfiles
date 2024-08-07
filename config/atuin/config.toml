@@ -20,5 +20,8 @@ common_subcommands = [
   "nf-test",
 ]
 
+[sync]
+records = true
+
 [daemon]
 enabled = true
