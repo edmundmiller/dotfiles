@@ -29,7 +29,6 @@ in
         (filterAttrs (n: _v: !elem n [ "system" ]) attrs)
         ../.
         (import path)
-        inputs.lix-module.nixosModules.default
       ];
     };
 
