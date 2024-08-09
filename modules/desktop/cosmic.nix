@@ -20,5 +20,12 @@ in
   config = mkIf cfg.enable {
     services.displayManager.cosmic-greeter.enable = true;
     services.desktopManager.cosmic.enable = true;
+    services.flatpak.enable = true;
+
+    environment.systemPackages = [
+      pkgs.drm_info
+      pkgs.cosmic-emoji-picker
+      pkgs.cosmic-tasks
+    ];
   };
 }
