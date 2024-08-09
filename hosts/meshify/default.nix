@@ -78,7 +78,6 @@
     };
 
     services = {
-      comin.enable = true;
       docker.enable = true;
       ollama.enable = true;
       ssh.enable = true;
