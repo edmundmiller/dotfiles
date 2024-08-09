@@ -14,7 +14,7 @@ in
   options.modules.desktop.gnome = {
     enable = mkBoolOpt false;
   };
-  imports = [ ./dconf ];
+  imports = [ ./gnome/dconf ];
 
   config = mkIf cfg.enable {
     services.xserver.enable = true;
