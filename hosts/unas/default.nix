@@ -31,7 +31,6 @@
       zsh.enable = true;
     };
     services = {
-      comin.enable = true;
       docker.enable = true;
       ssh.enable = true;
       syncthing.enable = true;
