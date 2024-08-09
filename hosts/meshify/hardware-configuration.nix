@@ -51,8 +51,6 @@
   #   ];
   # };
 
-  swapDevices = [ ];
-
   # services.xserver = {
   #   ## Mice
   #   inputClassSections = [

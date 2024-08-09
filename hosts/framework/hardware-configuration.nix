@@ -89,32 +89,4 @@
 
   # Dell WD19TB Dock
   services.hardware.bolt.enable = true;
-
-  fileSystems."/" = {
-    device = "tank/system/root";
-    fsType = "zfs";
-  };
-
-  fileSystems."/var" = {
-    device = "tank/system/var";
-    fsType = "zfs";
-  };
-
-  fileSystems."/nix" = {
-    device = "tank/local/nix";
-    fsType = "zfs";
-  };
-
-  fileSystems."/home/emiller" = {
-    device = "tank/user/home/emiller";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
-
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/D788-4E8A";
-    fsType = "vfat";
-  };
-
-  swapDevices = [ ];
 }
