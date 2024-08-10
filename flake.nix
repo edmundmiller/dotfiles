@@ -43,10 +43,11 @@
 
   outputs =
     inputs@{
-      flake-parts,
       self,
       nixpkgs,
       nixpkgs-unstable,
+      flake-parts,
+      deploy-rs,
       ...
     }:
     let
@@ -93,6 +94,16 @@
         } // mapModulesRec ./modules import;
 
         nixosConfigurations = mapHosts ./hosts { };
+
+        deploy.nodes.nuc = {
+          hostname = "nuc";
+          user = "root";
+          sshUser = "emiller";
+          interactiveSudo = true;
+          profiles.system = {
+            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
+          };
+        };
 
         templates = {
           full = {
