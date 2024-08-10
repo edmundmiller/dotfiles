@@ -27,7 +27,7 @@ in
       configDir = "/home/${config.user.name}/.config/syncthing";
       dataDir = "/home/${config.user.name}/.local/share/syncthing";
       settings.devices = {
-        framework.id = "CHWKD4E-A7MZXUT-EGANUVC-YJDNMDN-6WLTMYQ-TLI2RVC-PYBCNAX-UA3LFAC";
+        framework.id = "YLGMFGU-DYU3KRI-UIJVSOK-DFWPDJ2-Y73BYZF-GOQSB7O-XUMCJ3Y-PWLE4AR";
         iphone.id = "S4UUK5M-MV6EGGH-GAW7KGW-4LOHO24-4K3BOKV-7TVOAIJ-AYZY5FA-DJY7FAV"; # Set up externally
         meshify.id = "CQADMRG-ZDIC4C7-MDGHVTZ-QSVJMVR-MAYJJED-OIOXCIT-HXRPH66-RLG47QU";
         nuc.id = "AUP2DGW-DVFZ5CT-D3TU2OH-SR7AO4A-WGAVWUE-Z2WWUTE-C67Z3KO-ERF4LQN";
