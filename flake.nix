@@ -116,7 +116,7 @@
         treefmt = {
           projectRootFile = ".git/config";
           programs.deadnix.enable = true;
-          programs.nixfmt-rfc-style.enable = true;
+          programs.nixfmt.enable = true;
           programs.prettier.enable = true;
           programs.statix.enable = true;
         };
