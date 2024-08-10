@@ -52,9 +52,6 @@
 
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
-  # HACK https://github.com/danth/stylix/issues/200
-  stylix.image = ../../modules/themes/functional/config/wallpaper.png;
-
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     # FIXME

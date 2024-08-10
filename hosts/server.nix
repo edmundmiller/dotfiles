@@ -26,4 +26,7 @@
       timerConfig.OnCalendar = "weekly UTC";
     };
   };
+
+  # HACK https://github.com/danth/stylix/issues/200
+  stylix.image = ../modules/themes/functional/config/wallpaper.png;
 }
