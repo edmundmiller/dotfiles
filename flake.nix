@@ -34,7 +34,7 @@
     nixvim.url = "github:nix-community/nixvim/nixos-24.05";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    # ghostty.url = "git+ssh://git@github.com/ghostty-org/ghostty";
+    ghostty.url = "git+ssh://git@github.com/ghostty-org/ghostty";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
