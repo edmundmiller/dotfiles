@@ -35,4 +35,7 @@ with lib;
 
   # So the bitwarden CLI knows where to find my server.
   modules.shell.bitwarden.config.server = "bitwarden.com";
+
+  # HACK https://github.com/danth/stylix/issues/200
+  stylix.image = ../modules/themes/functional/config/wallpaper.png;
 }
