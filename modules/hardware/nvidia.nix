@@ -29,7 +29,7 @@ in
     services.xserver.videoDrivers = [ "nvidia" ];
 
     hardware.nvidia.package = nvidiaPkg;
-    hardware.nvidia.powerManagement.enable = true;
+    hardware.nvidia.powerManagement.enable = false;
 
     environment.systemPackages = with pkgs; [
       # Respect XDG conventions, damn it!
