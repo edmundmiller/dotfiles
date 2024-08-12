@@ -95,13 +95,24 @@
 
         nixosConfigurations = mapHosts ./hosts { };
 
-        deploy.nodes.nuc = {
-          hostname = "nuc";
+        deploy = {
           user = "root";
           sshUser = "emiller";
           interactiveSudo = true;
-          profiles.system = {
-            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
+
+          nodes = {
+            nuc = {
+              hostname = "nuc";
+              profiles.system = {
+                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
+              };
+            };
+            unas = {
+              hostname = "unas";
+              profiles.system = {
+                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.unas;
+              };
+            };
           };
         };
 
