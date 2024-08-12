@@ -15,8 +15,8 @@ let
   ];
 
   allowIpRanges = [
-    # "10.2.2.0/8" # Zerotier VPNC
-    "192.168.1.0/8" # Local Network
+    "100.100.100.100/8" # Tailscale
+    "192.168.0.0/8" # Local Network
   ];
 
   # Tempalte NFS config
