@@ -33,7 +33,6 @@ in
         (pkgs.python3.withPackages my-python-packages)
         # FIXME my.multiqc
         # my.nf-core
-        unstable.pixi
         python3Packages.pip
         python3Packages.black
         python3Packages.isort
@@ -65,11 +64,10 @@ in
     }
 
     (mkIf cfg.conda.enable {
-      user.packages = with pkgs; [ unstable.micromamba ];
+      user.packages = with pkgs; [ unstable.pixi ];
 
-      env.MAMBA_ROOT_PREFIX = "$XDG_DATA_HOME/mamba";
+      env.PATH = [ "/home/emiller/.pixi/bin/" ];
 
-      environment.shellAliases.mm = "micromamba";
       environment.shellAliases.px = "pixi";
 
       programs = {
