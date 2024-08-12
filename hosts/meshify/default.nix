@@ -61,6 +61,7 @@
       node.enable = true;
       node.enableGlobally = true;
       python.enable = true;
+      python.conda.enable = true;
       R.enable = true;
       rust.enable = true;
     };
