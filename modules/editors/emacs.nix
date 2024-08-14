@@ -43,7 +43,7 @@ in
 
       ## Optional dependencies
       fd # faster projectile indexing
-      whisper-ctranslate2 # whisper.el
+      unstable.whisper-ctranslate2 # whisper.el
       ffmpeg # whisper.el
       imagemagick # for image-dired
       (mkIf config.programs.gnupg.agent.enable pinentry-emacs) # in-emacs gnupg prompts

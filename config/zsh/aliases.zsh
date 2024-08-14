@@ -54,7 +54,7 @@ if command -v eza >/dev/null; then
   alias eza="eza --group-directories-first --git";
   alias l="eza -blF";
   alias ll="eza -abghilmu";
-  alias llm='ll --sort=modified'
+  alias llmod='ll --sort=modified'
   alias la="LC_COLLATE=C eza -ablF";
   alias tree='eza --tree'
 fi
