@@ -76,6 +76,7 @@
 
     shell = {
       "1password".enable = true;
+      ai.enable = true;
       age.enable = true;
       direnv.enable = true;
       nushell.enable = false;
