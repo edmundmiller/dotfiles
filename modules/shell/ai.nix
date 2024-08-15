@@ -14,5 +14,15 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable { user.packages = [ pkgs.unstable.llm ]; };
+  config = mkIf cfg.enable {
+    user.packages = with pkgs; [
+      unstable.llm.withPlugins
+      ([
+        inputs.llm-prompt.packages.${system}.llm-prompt
+        my.llm-claude-3
+      ])
+      unstable.chatblade
+      unstable.aichat
+    ];
+  };
 }
