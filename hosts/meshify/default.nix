@@ -97,7 +97,7 @@
 
   time.timeZone = "America/Chicago";
 
-  user.packages = with pkgs; [ obsidian ];
+  user.packages = with pkgs; [ unstable.anytype ];
 
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
