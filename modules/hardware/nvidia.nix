@@ -31,6 +31,9 @@ in
     hardware.nvidia.package = nvidiaPkg;
     hardware.nvidia.powerManagement.enable = false;
 
+    # TODO If docker
+    hardware.nvidia-container-toolkit.enable = true;
+
     environment.systemPackages = with pkgs; [
       # Respect XDG conventions, damn it!
       (writeScriptBin "nvidia-settings" ''
