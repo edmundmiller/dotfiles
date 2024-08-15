@@ -103,6 +103,18 @@
           interactiveSudo = true;
 
           nodes = {
+            framework = {
+              hostname = "framework";
+              profiles.system = {
+                path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.framework;
+              };
+            };
+            meshify = {
+              hostname = "meshify";
+              profiles.system = {
+                path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.framework;
+              };
+            };
             nuc = {
               hostname = "nuc";
               profiles.system = {
