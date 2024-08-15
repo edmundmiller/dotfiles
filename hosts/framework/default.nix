@@ -35,7 +35,6 @@
         default = "ghostty";
         kitty.enable = true;
         ghostty.enable = true;
-        wezterm.enable = true;
       };
       themes.palenight.enable = true;
     };
