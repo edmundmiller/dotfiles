@@ -127,6 +127,7 @@
   environment.systemPackages = with pkgs; [
     libimobiledevice
     ifuse # optional, to mount using 'ifuse'
+    unstable.anytype
   ];
 
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
