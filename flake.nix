@@ -39,6 +39,8 @@
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
+    llm-prompt.url = "github:aldoborrero/llm-prompt";
+    llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
