@@ -8,7 +8,7 @@
 
   modules = {
     desktop = {
-      cosmic.enable = true;
+      gnome.enable = true;
 
       apps.discord.enable = true;
 
@@ -102,7 +102,7 @@
   # znapzend
   systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
-    enable = true;
+    enable = false;
     autoCreation = true;
     zetup = {
       "tank/user/home" = {

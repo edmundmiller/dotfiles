@@ -10,7 +10,6 @@
   modules = {
     desktop = {
       gnome.enable = true;
-      cosmic.enable = true;
 
       apps.discord.enable = true;
       apps.mail.accounts.enable = true;

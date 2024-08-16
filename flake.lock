@@ -334,22 +334,6 @@
       }
     },
     "flake-compat_3": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1717312683,
-        "narHash": "sha256-FrlieJH50AuvagamEvWMIE6D2OAnERuDboFDYAED/dE=",
-        "owner": "nix-community",
-        "repo": "flake-compat",
-        "rev": "38fd3954cf65ce6faf3d0d45cd26059e059f07ea",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "flake-compat",
-        "type": "github"
-      }
-    },
-    "flake-compat_4": {
       "locked": {
         "lastModified": 1696426674,
         "narHash": "sha256-kvjfFW7WAETZlt09AgDn1MrtKzP7t90Vf7vypd3OL1U=",
@@ -363,7 +347,7 @@
         "url": "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz"
       }
     },
-    "flake-compat_5": {
+    "flake-compat_4": {
       "flake": false,
       "locked": {
         "lastModified": 1696426674,
@@ -379,7 +363,7 @@
         "type": "github"
       }
     },
-    "flake-compat_6": {
+    "flake-compat_5": {
       "flake": false,
       "locked": {
         "lastModified": 1673956053,
@@ -671,7 +655,7 @@
     },
     "git-hooks": {
       "inputs": {
-        "flake-compat": "flake-compat_5",
+        "flake-compat": "flake-compat_4",
         "gitignore": "gitignore_2",
         "nixpkgs": [
           "nixvim",
@@ -961,29 +945,6 @@
         "type": "github"
       }
     },
-    "nixos-cosmic": {
-      "inputs": {
-        "flake-compat": "flake-compat_3",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-stable": "nixpkgs-stable_3",
-        "rust-overlay": "rust-overlay"
-      },
-      "locked": {
-        "lastModified": 1723763231,
-        "narHash": "sha256-g2J3SeGog8bufJzZMM/yRO2m52BmE7CfCBwZlS5GwtQ=",
-        "owner": "lilyinstarlight",
-        "repo": "nixos-cosmic",
-        "rev": "67106952f4c8b35665303fb5e356fd9741047ab2",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lilyinstarlight",
-        "repo": "nixos-cosmic",
-        "type": "github"
-      }
-    },
     "nixos-hardware": {
       "locked": {
         "lastModified": 1723149858,
@@ -1055,22 +1016,6 @@
       "original": {
         "owner": "nixos",
         "ref": "release-23.05",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs-stable_3": {
-      "locked": {
-        "lastModified": 1723556749,
-        "narHash": "sha256-+CHVZnTnIYRLYsARInHYoWkujzcRkLY/gXm3s5bE52o=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "4a92571f9207810b559c9eac203d1f4d79830073",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-24.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -1188,7 +1133,7 @@
     "nixvim": {
       "inputs": {
         "devshell": "devshell_3",
-        "flake-compat": "flake-compat_4",
+        "flake-compat": "flake-compat_3",
         "flake-parts": "flake-parts_4",
         "git-hooks": "git-hooks",
         "home-manager": "home-manager_3",
@@ -1257,7 +1202,6 @@
         "ghostty": "ghostty",
         "home-manager": "home-manager_2",
         "llm-prompt": "llm-prompt",
-        "nixos-cosmic": "nixos-cosmic",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-unstable": "nixpkgs-unstable_2",
@@ -1270,27 +1214,6 @@
       }
     },
     "rust-overlay": {
-      "inputs": {
-        "nixpkgs": [
-          "nixos-cosmic",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1723602049,
-        "narHash": "sha256-Z/noCSn9WPkv7O77dWKLcBxe4Ub4bWyNzsL5JhjaQfw=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "ea0bf33a11a26a62c60123c49d96011da396602c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
-      }
-    },
-    "rust-overlay_2": {
       "inputs": {
         "nixpkgs": [
           "wezterm",
@@ -1320,7 +1243,7 @@
         "base16-kitty": "base16-kitty",
         "base16-tmux": "base16-tmux",
         "base16-vim": "base16-vim",
-        "flake-compat": "flake-compat_6",
+        "flake-compat": "flake-compat_5",
         "gnome-shell": "gnome-shell",
         "home-manager": "home-manager_4",
         "nixpkgs": "nixpkgs_5"
@@ -1599,7 +1522,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "rust-overlay": "rust-overlay_2",
+        "rust-overlay": "rust-overlay",
         "zlib": "zlib"
       },
       "locked": {
