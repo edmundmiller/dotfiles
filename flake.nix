@@ -111,18 +111,21 @@
             };
             meshify = {
               hostname = "meshify";
+              remoteBuild = true;
               profiles.system = {
                 path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.framework;
               };
             };
             nuc = {
               hostname = "nuc";
+              remoteBuild = true;
               profiles.system = {
                 path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
               };
             };
             unas = {
               hostname = "unas";
+              remoteBuild = true;
               profiles.system = {
                 path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.unas;
               };
