@@ -29,8 +29,6 @@
     treefmt-nix.url = "github:numtide/treefmt-nix";
 
     # Extras
-    nixos-cosmic.url = "github:lilyinstarlight/nixos-cosmic";
-    nixos-cosmic.inputs.nixpkgs.follows = "nixpkgs";
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixvim.url = "github:nix-community/nixvim/nixos-24.05";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
@@ -106,14 +104,14 @@
             framework = {
               hostname = "framework";
               profiles.system = {
-                path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.framework;
+                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.framework;
               };
             };
             meshify = {
               hostname = "meshify";
               remoteBuild = true;
               profiles.system = {
-                path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.framework;
+                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.meshify;
               };
             };
             nuc = {
@@ -132,6 +130,7 @@
             };
           };
         };
+        checks = builtins.mapAttrs (_system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
         templates = {
           full = {
