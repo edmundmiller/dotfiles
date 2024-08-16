@@ -37,7 +37,6 @@
 
   # https://discourse.nixos.org/t/deployment-tools-evaluating-nixops-deploy-rs-and-vanilla-nix-rebuild/36388/12?u=emiller88
   system.autoUpgrade.enable = true;
-  system.autoUpgrade.dates = "*-*-* *:20:00";
   system.autoUpgrade.flake = "github:edmundmiller/dotfiles#${config.networking.hostName}";
   system.autoUpgrade.flags = [ "--refresh" ];
   system.autoUpgrade.randomizedDelaySec = "5m";
