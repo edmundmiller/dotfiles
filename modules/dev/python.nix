@@ -66,7 +66,7 @@ in
     (mkIf cfg.conda.enable {
       user.packages = with pkgs; [ unstable.pixi ];
 
-      env.PATH = [ "/home/emiller/.pixi/bin/" ];
+      env.PATH = [ "/home/emiller/.pixi/bin" ];
 
       environment.shellAliases.px = "pixi";
 
