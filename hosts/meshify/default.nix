@@ -85,8 +85,6 @@
       syncthing.enable = true;
       tailscale.enable = true;
     };
-
-    theme.active = "functional";
   };
 
   programs.ssh.startAgent = true;
