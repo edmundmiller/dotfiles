@@ -120,7 +120,7 @@ in
     # };
 
     systemd.user.services."atuin-daemon" = {
-      enable = true;
+      enable = false;
       description = "Atuin Daemon";
       wantedBy = [ "default.target" ];
       after = [ "network.target" ];

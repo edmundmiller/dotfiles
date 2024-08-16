@@ -16,10 +16,9 @@ in
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      unstable.llm.withPlugins
-      ([
-        inputs.llm-prompt.packages.${system}.llm-prompt
-        my.llm-claude-3
+      (unstable.llm.withPlugins [
+        # inputs.llm-prompt.packages.${system}.llm-prompt
+        # my.llm-claude-3
       ])
       unstable.chatblade
       unstable.aichat

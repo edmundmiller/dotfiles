@@ -9,14 +9,6 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.hardware.nvidia;
-
-  nvStable = config.boot.kernelPackages.nvidiaPackages.stable;
-  nvBeta = config.boot.kernelPackages.nvidiaPackages.beta;
-  nvidiaPkg =
-    if (lib.versionOlder nvBeta.version nvStable.version) then
-      config.boot.kernelPackages.nvidiaPackages.stable
-    else
-      config.boot.kernelPackages.nvidiaPackages.beta;
 in
 {
   options.modules.hardware.nvidia = {
@@ -28,7 +20,7 @@ in
 
     services.xserver.videoDrivers = [ "nvidia" ];
 
-    hardware.nvidia.package = nvidiaPkg;
+    hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
     hardware.nvidia.powerManagement.enable = false;
 
     # TODO If docker
