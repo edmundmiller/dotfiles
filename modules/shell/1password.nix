@@ -38,6 +38,7 @@ in
         awscli2
         # cachix
         unstable.pulumi-bin
+        python3Packages.huggingface-hub
       ];
     };
     programs.zsh = {
