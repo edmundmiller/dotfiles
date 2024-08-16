@@ -190,28 +190,5 @@ in
         monospace = [ cfg.fonts.mono.name ];
       };
     }
-
-    (mkIf (cfg.onReload != { }) (
-      let
-        reloadTheme =
-          with pkgs;
-          (writeScriptBin "reloadTheme" ''
-            #!${stdenv.shell}
-            echo "Reloading current theme: ${cfg.active}"
-            ${concatStringsSep "\n" (
-              mapAttrsToList (name: script: ''
-                echo "[${name}]"
-                ${script}
-              '') cfg.onReload
-            )}
-          '');
-      in
-      {
-        user.packages = [ reloadTheme ];
-        system.userActivationScripts.reloadTheme = ''
-          [ -z "$NORELOAD" ] && ${reloadTheme}/bin/reloadTheme
-        '';
-      }
-    ))
   ]);
 }
