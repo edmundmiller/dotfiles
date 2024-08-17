@@ -20,6 +20,7 @@ in
     services.tailscale.openFirewall = true;
 
     # MagicDNS
+    services.resolved.enable = true;
     networking.nameservers = [
       "100.100.100.100"
       "8.8.8.8"
@@ -31,6 +32,7 @@ in
       ts = "tailscale";
       tsu = "tailscale up";
       tsd = "tailscale down";
+      tss = "tailscale status";
     };
   };
 }
