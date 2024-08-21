@@ -21,7 +21,8 @@ in
   };
 
   # tridactyl
-  home.configFile = {
-    "tridactyl/tridactylrc".source = "${configDir}/tridactyl/tridactylrc";
-  };
+  # TODO Also in firefox
+  # home.configFile = {
+  #   "tridactyl/tridactylrc".source = "${configDir}/tridactyl/tridactylrc";
+  # };
 }
