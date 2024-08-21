@@ -26,6 +26,7 @@ in
         text = ''
           .floorp-wrapped
           floorp
+          .zen-wrapped
         '';
         mode = "0755";
       };

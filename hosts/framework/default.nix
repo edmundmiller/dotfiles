@@ -16,8 +16,9 @@
       apps.mail.aerc.enable = true;
 
       browsers = {
-        default = "floorp";
+        default = "zen";
         firefox.enable = true;
+        zen.enable = true;
       };
 
       media = {
