@@ -25,7 +25,10 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    # NOTE https://github.com/danth/stylix/issues/359
     stylix.url = "github:danth/stylix/release-24.05";
+    stylix.inputs.nixpkgs.follows = "nixpkgs";
+    stylix.inputs.home-manager.follows = "home-manager";
     treefmt-nix.url = "github:numtide/treefmt-nix";
 
     # Extras
