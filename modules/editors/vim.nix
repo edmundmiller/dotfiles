@@ -32,7 +32,8 @@ in
       clipboard.register = "unnamedplus";
       vimAlias = true;
       editorconfig.enable = true;
-      globals.mapleader = "SPC";
+      globals.mapleader = "<Space>";
+      # filetype =  { "markdown", "Avante" };
       plugins = {
         copilot-chat.enable = true;
         copilot-lua.enable = true;
@@ -42,6 +43,9 @@ in
         neoscroll.enable = true;
         neotest.enable = true;
         telescope.enable = true;
+        treesitter.enable = true;
+        treesitter.folding = true;
+        treesitter-textobjects.enable = true;
         surround.enable = true;
         todo-comments.enable = true;
       };
