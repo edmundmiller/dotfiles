@@ -32,11 +32,17 @@ in
       clipboard.register = "unnamedplus";
       vimAlias = true;
       editorconfig.enable = true;
-      globals.mapleader = "<Space>";
+      globals.mapleader = "<space>";
       # filetype =  { "markdown", "Avante" };
+      opts = {
+        # Avante
+        laststatus = 3;
+        splitkeep = "screen";
+      };
       plugins = {
         copilot-chat.enable = true;
         copilot-lua.enable = true;
+        direnv.enable = true;
         dressing.enable = true;
         harpoon.enable = true;
         harpoon.enableTelescope = true;
@@ -87,10 +93,14 @@ in
         vimPlugins.nvim-web-devicons
         vimPlugins.plenary-nvim
         vimPlugins.nui-nvim
-        unstable.vimPlugins.render-markdown
+        {
+          plugin = unstable.vimPlugins.render-markdown;
+          # config = ''
+          # require('render-markdown').setup({file_types = { 'markdown', 'vimwiki' },})
+          # '';
+        }
         # end avante
       ];
-      # TODO extraPlugins.render-markdown.config = "require('render-markdown').setup({file_types = { 'markdown', 'vimwiki' },})";
     };
     # env.VIMINIT = "let \\$MYVIMRC='\\$XDG_CONFIG_HOME/nvim/init.vim' | source \\$MYVIMRC";
 
