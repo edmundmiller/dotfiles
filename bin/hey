@@ -13,11 +13,16 @@
 # serves as a reference.
 
 FLAKE := "."
-# FIXME
-HOST := "framework"
+HOST := env_var('HOST')
 
 alias re := rebuild
 
+# opts       '--build-host HOST',  "Where to build the flake"
+# opts       '--target-host HOST', "Where to deploy the built derivations"
+# opts       '--host HOST',        "The target nixosConfiguration to build"
+# opts       '--user',             "Rebuild as user, rather than root"
+# opts       '--fast',             "Equivalent to --no-build-nix --show-trace for quick rebuilding"
+[doc("Rebuild the current system's flake")]
 rebuild +ARGS='switch':
   #!/usr/bin/env bash
   # Rebuild the current system's flake
