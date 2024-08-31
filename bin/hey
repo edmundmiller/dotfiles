@@ -12,44 +12,11 @@
 # are often and easily forgotten. This spares me that fumbling phase and also
 # serves as a reference.
 
-set flake := env_var_or_default('FLAKE', '.')
-set host  := env_var_or_default('HOST', `hostname`)
+FLAKE := "."
+# FIXME
+HOST := "framework"
 
-repl:
-  #!/usr/bin/env bash
-  # Open a nix-repl with nixpkgs and dotfiles preloaded
-  tempfile="/tmp/dotfiles-repl.nix"
-  echo "(builtins.getFlake \"$flake\")" > $tempfile
-  nix repl "<nixpkgs>" $tempfile
-
-check:
-  # Run 'nix flake check' on your dotfiles
-  nix flake check {{flake}}
-
-@info REPO *QUERY:
-  # Retrieve details (including SHA) for a REPO.
-  repo="{{REPO}}"
-  commit=""
-  if [[ $repo == *":"* ]]; then
-    repo="{{REPO%:*}}"
-    commit="{{REPO#*:}}"
-  fi
-  if [[ $repo =~ ^[^/]+/[^/]+$ ]]; then
-    repo="https://github.com/$repo"
-  fi
-  nix-shell -p nix-prefetch-git --run "nix-prefetch-git --quiet $repo $commit"
-
-show:
-  # Run 'nix flake show' on your dotfiles
-  nix flake show {{flake}}
-
-@theme THEME_NAME:
-  # Quickly swap to another theme module
-  THEME="{{THEME_NAME}}" rebuild --fast test
-
-@test +ARGS='':
-  # Quickly rebuild, for quick iteration
-  rebuild --fast test {{ARGS}}
+alias re := rebuild
 
 rebuild +ARGS='switch':
   #!/usr/bin/env bash
@@ -76,25 +43,60 @@ rebuild +ARGS='switch':
     shift
   fi
   set -x
-  nixos-rebuild --flake "$flake#$host" --option pure-eval no $args "$@"
+  sudo nixos-rebuild --flake "{{FLAKE}}#{{HOST}}" --option pure-eval no {{ARGS}} "$@"
+
+repl:
+  #!/usr/bin/env bash
+  # Open a nix-repl with nixpkgs and dotfiles preloaded
+  tempfile="/tmp/dotfiles-repl.nix"
+  echo "(builtins.getFlake \"$flake\")" > $tempfile
+  nix repl "<nixpkgs>" $tempfile
+
+check:
+  # Run 'nix flake check' on your dotfiles
+  nix flake check {{FLAKE}}
+
+@info REPO *QUERY:
+  # Retrieve details (including SHA) for a REPO.
+  # repo="{{REPO}}"
+  # commit=""
+  # if [[ $repo == *":"* ]]; then
+  # fi
+  # if [[ $repo =~ ^[^/]+/[^/]+$ ]]; then
+  #   repo="https://github.com/$repo"
+  # fi
+  # nix-shell -p nix-prefetch-git --run "nix-prefetch-git --quiet $repo $commit"
+
+show:
+  # Run 'nix flake show' on your dotfiles
+  nix flake show {{FLAKE}}
+
+@theme THEME_NAME:
+  # Quickly swap to another theme module
+  THEME="{{THEME_NAME}}" rebuild --fast test
+
+@test +ARGS='':
+  # Quickly rebuild, for quick iteration
+  rebuild --fast test {{ARGS}}
 
 rollback:
   # Roll back to last generation
   rebuild --rollback switch
 
-update +FLAKES='':
-  # Update specific flakes or all of them
-  if [ -z "{{FLAKES}}" ]; then
-    echo "Updating all flakes.."
-    nix flake update {{flake}} --impure
-  else
-    echo "Trying to update flakes: {{FLAKES}}"
-    nix flake update --impure {{flakes}} {{flake}}
-  fi
+# update +FLAKES='':
+#     # Update specific flakes or all of them
+#     if [ -z "{{FLAKES}}" ]; then
+#         echo "Updating all flakes.."
+#         nix flake update {{flake}} --impure
+#     fi
+#     if
+#         echo "Trying to update flakes: {{FLAKES}}"
+#         nix flake update --impure {{flakes}} {{flake}}
+#     fi
 
-upgrade: update
-  # Update all flakes and rebuild system
-  rebuild switch
+# upgrade: update
+#   # Update all flakes and rebuild system
+#   rebuild switch
 
 @search QUERY:
   # Search nixpkgs for a package
