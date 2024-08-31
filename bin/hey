@@ -12,8 +12,9 @@
 # are often and easily forgotten. This spares me that fumbling phase and also
 # serves as a reference.
 
-FLAKE := "."
-HOST := env_var('HOST')
+FLAKE := "../"
+HOST := ""
+# FIXME HOST := env_var('HOST')
 
 alias re := rebuild
 
@@ -25,7 +26,6 @@ alias re := rebuild
 [doc("Rebuild the current system's flake")]
 rebuild +ARGS='switch':
   #!/usr/bin/env bash
-  # Rebuild the current system's flake
   args=""
   if [[ $1 == "--build-host" ]]; then
     args+=" --build-host $2"
@@ -48,7 +48,9 @@ rebuild +ARGS='switch':
     shift
   fi
   set -x
-  sudo nixos-rebuild --flake "{{FLAKE}}#{{HOST}}" --option pure-eval no {{ARGS}} "$@"
+  sudo nixos-rebuild \
+    --flake {{FLAKE}} \
+    --option pure-eval no {{ARGS}} "$@"
 
 repl:
   #!/usr/bin/env bash
