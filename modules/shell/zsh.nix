@@ -110,7 +110,7 @@ in
       rm -fv $ZGEN_DIR/init.zsh{,.zwc}
     '';
 
-    home.configFile."atuin/config.toml".source = "${configDir}/atuin/config.toml";
+    # home.configFile."atuin/config.toml".source = "${configDir}/atuin/config.toml";
 
     # FIXME
     # systemd.user.sockets.atuin = {
@@ -119,17 +119,17 @@ in
     #   Install.WantedBy = ["sockets.target"];
     # };
 
-    systemd.user.services."atuin-daemon" = {
-      enable = false;
-      description = "Atuin Daemon";
-      wantedBy = [ "default.target" ];
-      after = [ "network.target" ];
-      serviceConfig = {
-        Restart = "on-failure";
-        RestartSec = 2;
-        ExecStart = "${pkgs.unstable.atuin}/bin/atuin daemon";
-        Environment = [ "ATUIN_LOG=info" ];
-      };
-    };
+    # systemd.user.services."atuin-daemon" = {
+    #   enable = false;
+    #   description = "Atuin Daemon";
+    #   wantedBy = [ "default.target" ];
+    #   after = [ "network.target" ];
+    #   serviceConfig = {
+    #     Restart = "on-failure";
+    #     RestartSec = 2;
+    #     ExecStart = "${pkgs.unstable.atuin}/bin/atuin daemon";
+    #     Environment = [ "ATUIN_LOG=info" ];
+    #   };
+    # };
   };
 }
