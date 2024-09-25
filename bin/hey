@@ -91,16 +91,18 @@ rollback:
   # Roll back to last generation
   rebuild --rollback switch
 
-# update +FLAKES='':
-#     # Update specific flakes or all of them
-#     if [ -z "{{FLAKES}}" ]; then
-#         echo "Updating all flakes.."
-#         nix flake update {{flake}} --impure
-#     fi
-#     if
-#         echo "Trying to update flakes: {{FLAKES}}"
-#         nix flake update --impure {{flakes}} {{flake}}
-#     fi
+alias u := update
+
+update +FLAKES='':
+  #!/usr/bin/env bash
+  # Update specific flakes or all of them
+  if [[ -z "{{FLAKES}}" ]]; then
+    echo "Updating all flakes.."
+    nix flake update {{FLAKE}} --impure
+  else
+    echo "Trying to update flakes: {{FLAKES}}"
+    nix flake lock --impure --update-input {{FLAKES}}
+  fi
 
 # upgrade: update
 #   # Update all flakes and rebuild system
