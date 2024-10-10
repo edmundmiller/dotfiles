@@ -65,41 +65,6 @@ in
             hash = "sha256-+w2LFWfeuur1t5kNvA3SAyF9mxPfEL7SW/vXXXsVnSc=";
           };
         })
-
-        # avante
-        (vimUtils.buildVimPlugin {
-          name = "avante-vim";
-          src = pkgs.fetchFromGitHub {
-            owner = "yetone";
-            repo = "avante.nvim";
-            rev = "b87404588545c26b297f776919255ad0a53eafe0";
-            hash = "sha256-QHWQY4703YcAEZ5qIRI3KKoK6EIMuyZL6oSfgheKmNA=";
-          };
-          #   dependencies = {
-          #     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
-          #     "stevearc/dressing.nvim",
-          #     "nvim-lua/plenary.nvim",
-          #     "MunifTanjim/nui.nvim",
-          #     --- The below is optional, make sure to setup it properly if you have lazy=true
-          #     {
-          #       'MeanderingProgrammer/render-markdown.nvim',
-          #       opts = {
-          #         file_types = { "markdown", "Avante" },
-          #       },
-          #       ft = { "markdown", "Avante" },
-          #     },
-          #   },
-        })
-        vimPlugins.nvim-web-devicons
-        vimPlugins.plenary-nvim
-        vimPlugins.nui-nvim
-        {
-          plugin = unstable.vimPlugins.render-markdown;
-          # config = ''
-          # require('render-markdown').setup({file_types = { 'markdown', 'vimwiki' },})
-          # '';
-        }
-        # end avante
       ];
     };
     # env.VIMINIT = "let \\$MYVIMRC='\\$XDG_CONFIG_HOME/nvim/init.vim' | source \\$MYVIMRC";
