@@ -2,13 +2,14 @@ font-family = JetBrains Mono
 font-size = 14
 theme = PaleNightHC
 
-fullscreen = true
+# fullscreen = true
 # (I guess palenight is a light theme?)
 # auto, and system didn't work
-window-decoration = false
-window-theme = dark
+window-decoration = true
+window-theme = auto
 confirm-close-surface = false
 shell-integration-features = no-cursor,no-sudo,title
+desktop-notifications = true
 
 clipboard-read = "allow"
 clipboard-paste-protection = false
@@ -20,7 +21,7 @@ gtk-wide-tabs = true
 # Misc
 cursor-style-blink = false
 focus-follows-mouse = true
-mouse-hide-while-typing = true
+mouse-hide-while-typing = false
 quit-after-last-window-closed = true
 
 keybind = ctrl+s=new_split:down
@@ -28,3 +29,8 @@ keybind = ctrl+v=new_split:right
 keybind = ctrl+tab=next_tab
 keybind = ctrl+shift+s=close_surface
 keybind = ctrl+shift+q=close_window
+
+# https://github.com/ghostty-org/ghostty/discussions/2363
+macos-non-native-fullscreen = true
+macos-titlebar-style = tabs
+window-save-state = never
