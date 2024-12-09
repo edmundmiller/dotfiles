@@ -17,6 +17,8 @@
     home-manager.url = "github:nix-community/home-manager/release-24.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = "github:nix-community/NUR";
+    nix-darwin.url = "github:LnL7/nix-darwin";
+    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     # Utils
     agenix.url = "github:ryantm/agenix";
@@ -48,6 +50,7 @@
   outputs =
     inputs@{
       self,
+      nix-darwin,
       nixpkgs,
       nixpkgs-unstable,
       flake-parts,
@@ -98,6 +101,9 @@
         } // mapModulesRec ./modules import;
 
         nixosConfigurations = mapHosts ./hosts { };
+        darwinConfigurations."MacTraitor-Pro" = nix-darwin.lib.darwinSystem {
+            modules = [ ./hosts/MacTraitor-Pro/default.nix ];
+        };
 
         deploy = {
           user = "root";
