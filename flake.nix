@@ -23,7 +23,6 @@
     # Utils
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
-    deploy-rs.url = "github:serokell/deploy-rs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -54,7 +53,6 @@
       nixpkgs,
       nixpkgs-unstable,
       flake-parts,
-      deploy-rs,
       ...
     }:
     let
@@ -104,43 +102,6 @@
         darwinConfigurations."MacTraitor-Pro" = nix-darwin.lib.darwinSystem {
             modules = [ ./hosts/MacTraitor-Pro/default.nix ];
         };
-
-        deploy = {
-          user = "root";
-          sshUser = "emiller";
-          interactiveSudo = true;
-
-          nodes = {
-            framework = {
-              hostname = "framework";
-              profiles.system = {
-                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.framework;
-              };
-            };
-            meshify = {
-              hostname = "meshify";
-              remoteBuild = true;
-              profiles.system = {
-                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.meshify;
-              };
-            };
-            nuc = {
-              hostname = "nuc";
-              remoteBuild = true;
-              profiles.system = {
-                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
-              };
-            };
-            unas = {
-              hostname = "unas";
-              remoteBuild = true;
-              profiles.system = {
-                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.unas;
-              };
-            };
-          };
-        };
-        checks = builtins.mapAttrs (_system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
         templates = {
           full = {
