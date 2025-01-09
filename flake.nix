@@ -131,13 +131,15 @@
         # Add Darwin configuration
         darwinConfigurations."Seqeratop" = nix-darwin.lib.darwinSystem {
           system = darwinSystem;
-          specialArgs = { inherit inputs lib; };
+          specialArgs = {
+            inherit inputs lib;
+          };
           modules = [
             # Define module options first
             {
               options.modules = lib.mkOption {
                 type = lib.types.attrs;
-                default = {};
+                default = { };
                 description = "Modules configuration options";
               };
             }
@@ -151,7 +153,10 @@
             # Basic Darwin settings
             {
               services.nix-daemon.enable = true;
-              nix.settings.experimental-features = [ "nix-command" "flakes" ];
+              nix.settings.experimental-features = [
+                "nix-command"
+                "flakes"
+              ];
               system.stateVersion = 4;
 
               home-manager.useGlobalPkgs = true;
