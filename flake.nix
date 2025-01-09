@@ -44,6 +44,12 @@
     llm-prompt.url = "github:aldoborrero/llm-prompt";
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
+
+    # Darwin-specific input
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -53,12 +59,14 @@
       nixpkgs,
       nixpkgs-unstable,
       flake-parts,
+      nix-darwin,
       ...
     }:
     let
       inherit (lib.my) mapModules mapModulesRec mapHosts;
 
       system = "x86_64-linux";
+      darwinSystem = "aarch64-darwin";  # or x86_64-darwin for Intel Macs
 
       mkPkgs =
         pkgs: extraOverlays:
@@ -119,8 +127,26 @@
           type = "app";
           program = ./bin/hey;
         };
+
+        # Add Darwin configuration
+        darwinConfigurations."your-hostname" = nix-darwin.lib.darwinSystem {
+          system = darwinSystem;
+          modules = [
+            {
+              services.nix-daemon.enable = true;
+              nix.settings.experimental-features = [ "nix-command" "flakes" ];
+              system.stateVersion = 4;
+
+              environment.systemPackages = with pkgs; [
+                (callPackage ./packages/gw.nix {})
+              ];
+
+              programs.zsh.enable = true;
+            }
+          ];
+        };
       };
-      systems = [ "x86_64-linux" ];
+      systems = [ "x86_64-linux" "aarch64-darwin" ];
       perSystem = _: {
         treefmt = {
           projectRootFile = ".git/config";
