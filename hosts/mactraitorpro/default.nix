@@ -31,6 +31,18 @@
     homebrew = {
       enable = true;
 
+      taps = [ ];
+      brews = [
+        "duckdb"
+        "gh"
+        "fzf"
+        "fd"
+        "ripgrep"
+        "neovim"
+        "ruff"
+        "uv"
+        "seqeralabs/tap/wave-cli"
+      ];
       casks = [
         "1password"
         "1password-cli"
@@ -59,10 +71,6 @@
       ];
 
       #   masApps = {
-      #     "Drafts" = 1435957248;
-      #     "Reeder" = 1529448980;
-      #     "Things" = 904280696;
-      #     "Timery" = 1425368544;
       #   };
     };
 
