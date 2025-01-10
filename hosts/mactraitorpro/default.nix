@@ -70,8 +70,11 @@
         "zoom"
       ];
 
-      #   masApps = {
-      #   };
+      masApps = {
+          "Keynote" = 409183694;
+          "Numbers" = 409203825;
+          "Xcode" = 497799835;
+      };
     };
 
     # set some OSX preferences that I always end up hunting down and changing.
