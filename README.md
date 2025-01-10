@@ -7,6 +7,10 @@
 
 **Hey,** you. You're finally awake. You were trying to configure your OS declaratively, right? Walked right into that NixOS ambush, same as us, and those dotfiles over there.
 
+```sh
+nix run nix-darwin --experimental-feature nix-command --experimental-feature flakes -- switch --flake ~/.config/nix
+```
+
 ---
 
 |                |                                                          |
