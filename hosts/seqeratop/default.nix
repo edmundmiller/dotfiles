@@ -45,12 +45,12 @@
         # "wezterm"
       ];
 
-    #   masApps = {
-    #     "Drafts" = 1435957248;
-    #     "Reeder" = 1529448980;
-    #     "Things" = 904280696;
-    #     "Timery" = 1425368544;
-    #   };
+      #   masApps = {
+      #     "Drafts" = 1435957248;
+      #     "Reeder" = 1529448980;
+      #     "Things" = 904280696;
+      #     "Timery" = 1425368544;
+      #   };
     };
 
     # set some OSX preferences that I always end up hunting down and changing.
