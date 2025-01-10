@@ -44,18 +44,11 @@
     llm-prompt.url = "github:aldoborrero/llm-prompt";
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
-
-    # Darwin-specific input
-    nix-darwin = {
-      url = "github:LnL7/nix-darwin";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
     inputs@{
       self,
-      nix-darwin,
       nixpkgs,
       nixpkgs-unstable,
       flake-parts,
@@ -107,9 +100,6 @@
         } // mapModulesRec ./modules import;
 
         nixosConfigurations = mapHosts ./hosts { };
-        darwinConfigurations."MacTraitor-Pro" = nix-darwin.lib.darwinSystem {
-            modules = [ ./hosts/MacTraitor-Pro/default.nix ];
-        };
 
         templates = {
           full = {
@@ -129,6 +119,42 @@
         };
 
         # Add Darwin configuration
+        darwinConfigurations."MacTraitor-Pro" = nix-darwin.lib.darwinSystem {
+
+          system = darwinSystem;
+          specialArgs = {
+            inherit inputs lib;
+          };
+          modules = [
+            # Define module options first
+            {
+              options.modules = lib.mkOption {
+                type = lib.types.attrs;
+                default = { };
+                description = "Modules configuration options";
+              };
+            }
+
+            # Import your module system
+            ./hosts/mactraitorpro/default.nix
+
+            # Add home-manager module
+            inputs.home-manager.darwinModules.home-manager
+
+            # Basic Darwin settings
+            {
+              services.nix-daemon.enable = true;
+              nix.settings.experimental-features = [
+                "nix-command"
+                "flakes"
+              ];
+              system.stateVersion = 4;
+
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+            }
+          ];
+        };
         darwinConfigurations."Seqeratop" = nix-darwin.lib.darwinSystem {
           system = darwinSystem;
           specialArgs = {
