@@ -31,26 +31,43 @@
     homebrew = {
       enable = true;
 
-      casks = [
-        # "1password"
-        "bartender"
-        # "brave-browser"
-        # "fantastical"
-        # "firefox"
-        # "hammerspoon"
-        # "karabiner-elements"
-        # "obsidian"
-        "raycast"
-        "soundsource"
-        # "wezterm"
+      taps = [ "d12frosted/emacs-plus" ];
+      brews = [
+        "duckdb"
+        "gh"
+        "fzf"
+        "neovim"
+        "ruff"
+        "uv"
+        "tldr"
+        "seqeralabs/tap/wave-cli"
+        # Doom
+        "git"
+        "ripgrep"
+        "coreutils"
+        "fd"
+        "tree-sitter"
       ];
-
-      #   masApps = {
-      #     "Drafts" = 1435957248;
-      #     "Reeder" = 1529448980;
-      #     "Things" = 904280696;
-      #     "Timery" = 1425368544;
-      #   };
+      casks = [
+        "1password-cli"
+        "cursor"
+        "logi-options+"
+        "spotify"
+        "bartender"
+        "notion"
+        "sunsama"
+        "betterdisplay"
+        "font-jetbrains-mono"
+        "positron"
+        "ghostty"
+        "raycast"
+        "claude"
+        "gitify"
+        "soundsource"
+      ];
+      masApps = {
+        "Xcode" = 497799835;
+      };
     };
 
     # set some OSX preferences that I always end up hunting down and changing.
