@@ -31,17 +31,22 @@
     homebrew = {
       enable = true;
 
-      taps = [ ];
+      taps = [ "d12frosted/emacs-plus" ];
       brews = [
         "duckdb"
         "gh"
         "fzf"
-        "fd"
-        "ripgrep"
         "neovim"
         "ruff"
         "uv"
         "seqeralabs/tap/wave-cli"
+        "tldr"
+        # Doom
+        "git"
+        "ripgrep"
+        "coreutils"
+        "fd"
+        "tree-sitter"
       ];
       casks = [
         "1password"
