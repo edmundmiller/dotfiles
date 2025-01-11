@@ -77,6 +77,9 @@
       };
     };
 
+    # Enable sudo authentication with Touch ID.
+    security.pam.enableSudoTouchIdAuth = true;
+
     # set some OSX preferences that I always end up hunting down and changing.
     system.defaults = {
       # minimal dock
