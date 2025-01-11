@@ -89,6 +89,29 @@
         show-process-indicators = false;
         show-recents = false;
         static-only = true;
+        # TODO: Make this user-specific
+        # "/Users/${username}/Applications/Home Manager Apps/Telegram.app"
+        persistent-apps = [
+          # "/Applications/Brave Browser.app"
+          # "/Applications/Wavebox.app"
+          # "/Users/edmundmiller/Applications/Home Manager Apps/Telegram.app"
+          # "/Users/edmundmiller/Applications/Home Manager Apps/Discord.app"
+          # "/Users/edmundmiller/Applications/Home Manager Apps/Cinny.app"
+          # "/Applications/Halloy.app"
+          # "/Users/edmundmiller/Applications/Home Manager Apps/Visual Studio Code.app"
+          # "/Users/edmundmiller/Applications/Home Manager Apps/GitKraken.app"
+          # "/Users/edmundmiller/Applications/Home Manager Apps/Alacritty.app"
+          # "/System/Applications/Music.app"
+          # "/Applications/Heynote.app"
+          # "/Applications/Joplin.app"
+          # "/System/Applications/Launchpad.app"
+        ];
+        tilesize = 36;
+        # Disable hot corners
+        wvous-bl-corner = 1;
+        wvous-br-corner = 1;
+        wvous-tl-corner = 1;
+        wvous-tr-corner = 1;
       };
       # a finder that tells me what I want to know and lets me work
       finder = {
