@@ -34,6 +34,7 @@
       taps = [ "d12frosted/emacs-plus" ];
       brews = [
         "duckdb"
+        "dvc"
         "gh"
         "fzf"
         "neovim"
@@ -46,12 +47,12 @@
         "ripgrep"
         "coreutils"
         "fd"
+        # Doom Extra
         "tree-sitter"
       ];
       casks = [
         "1password-cli"
         "cursor"
-        "logi-options+"
         "spotify"
         "bartender"
         "notion"
