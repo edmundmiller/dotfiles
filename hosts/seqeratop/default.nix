@@ -42,6 +42,8 @@
         "uv"
         "tldr"
         "seqeralabs/tap/wave-cli"
+        "pulumi/tap/pulumi"
+        "awscli"
         # Doom
         "git"
         "ripgrep"
