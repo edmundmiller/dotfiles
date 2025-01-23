@@ -52,6 +52,7 @@
         "1password"
         "1password-cli"
         "bartender"
+        "boltai"
         "raycast"
         "soundsource"
         "ghostty"
@@ -65,6 +66,7 @@
         "subler"
         "sunsama"
 
+        "mendeley-reference-manager"
         "microsoft-teams"
         "visual-studio-code"
         "claude"
@@ -72,6 +74,8 @@
         "discord"
         "orion"
         "font-ia-writer-duo"
+        "vivaldi"
+        "zen-browser"
         "zoom"
       ];
 
