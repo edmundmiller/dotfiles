@@ -1,0 +1,7 @@
+#+title: Notes
+
+* Mac Emacs install
+#+begin_src bash
+brew reinstall emacs-plus@30 --with-native-comp --with-imagemagick --with-c9rgreen-sonoma-icon
+  osascript -e 'tell application "Finder" to make alias file to posix file "/opt/homebrew/opt/emacs-plus@30/Emacs.app" at posix file "/Applications" with properties {name:"Emacs.app"}'
+#+end_src
