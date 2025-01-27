@@ -31,7 +31,7 @@
     homebrew = {
       enable = true;
 
-      taps = [ "d12frosted/emacs-plus" ];
+      # TODO taps = [ "d12frosted/emacs-plus" ];
       brews = [
         "duckdb"
         "dvc"
