@@ -51,6 +51,10 @@ in
           HostName ganymede.utdallas.edu
           User eam150030
 
+      Host juno
+          HostName juno.hpcre.utdallas.edu
+          User eam150030
+
       Host mz
           HostName mz.utdallas.edu
           User eam150030
