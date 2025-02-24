@@ -31,7 +31,7 @@
     homebrew = {
       enable = true;
 
-      taps = [ "d12frosted/emacs-plus" ];
+      taps = [ "jimeh/emacs-builds" ];
       brews = [
         "duckdb"
         "gh"
@@ -66,6 +66,7 @@
         "subler"
         "sunsama"
 
+        "emacs-app-pretest"
         "mendeley-reference-manager"
         "microsoft-teams"
         "visual-studio-code"
