@@ -25,6 +25,7 @@ import sys
 import time
 import threading
 import signal
+from busylight.lights import Light
 from busylight.manager import LightManager
 
 # Global variables for cleanup
@@ -46,13 +47,13 @@ def signal_handler(signum, frame):
         try:
             light.off()
             print("Light turned off")
-        except:
+        except Exception:
             pass
 
     if manager:
         try:
             manager.off()
-        except:
+        except Exception:
             pass
 
     sys.exit(0)
@@ -100,14 +101,19 @@ def main():
     keep_alive_statuses = {'busy', 'dnd', 'meeting', 'call', 'calendar', 'presenting'}
 
     try:
-        # Initialize the light manager
+        # Initialize the light manager (recommended for Kuando devices)
         manager = LightManager()
 
         if not manager.lights:
             print("No busylight devices found!")
+            print("Please check that your busylight is:")
+            print("1. Connected via USB")
+            print("2. Not being used by another application")
+            print("3. Properly recognized by your system")
             sys.exit(1)
 
         light = manager.lights[0]  # Get the first available light
+        print(f"Found busylight: {light.name}")
 
         if status not in status_colors:
             print(f"Unknown status: {status}")
@@ -159,9 +165,17 @@ def main():
 
     except Exception as e:
         print(f"Error: {e}")
-        if status in keep_alive_statuses:
-            signal_handler(signal.SIGTERM, None)
         sys.exit(1)
+
+    finally:
+        # Clean up references but don't turn off light for short-duration statuses
+        if light and status in keep_alive_statuses:
+            try:
+                light.off()
+            except Exception:
+                pass
+        light = None
+        manager = None
 
 if __name__ == "__main__":
     main()
