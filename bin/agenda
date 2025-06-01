@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title Agenda
+# @raycast.mode silent
+
+# Optional parameters:
+# @raycast.icon 📅
+
+# Documentation:
+# @raycast.description Show Org mode agenda
+# @raycast.author Matthew Kennard
+# @raycast.authorURL https://mken.weblog.lol/2023/01/showing-my-org-mode-agenda-using-raycast
+
+emacsclient -e "(+emiller/show-agenda)"
