@@ -285,21 +285,27 @@ return {
   {
     "folke/which-key.nvim",
     opts = function(_, opts)
-      local wk = require("which-key")
-      wk.add({
-        { "<leader>tp", group = "typst" },
-        { "<leader>tpc", "<cmd>!typst compile %<cr>", desc = "Compile Typst document", ft = "typst" },
-        { "<leader>tpw", "<cmd>!typst watch %<cr>", desc = "Watch Typst document", ft = "typst" },
-        { "<leader>tpo", function()
-          local file = vim.fn.expand("%:r") .. ".pdf"
-          if vim.fn.has("mac") == 1 then
-            vim.cmd("!open " .. file)
-          elseif vim.fn.has("unix") == 1 then
-            vim.cmd("!xdg-open " .. file)
-          else
-            vim.cmd("!start " .. file)
-          end
-        end, desc = "Open compiled PDF", ft = "typst" },
+      -- Set up typst keymaps in autocmd for filetype-specific bindings
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "typst",
+        callback = function()
+          local wk = require("which-key")
+          wk.add({
+            { "<leader>tp", group = "typst", buffer = true },
+            { "<leader>tpc", "<cmd>!typst compile %<cr>", desc = "Compile Typst document", buffer = true },
+            { "<leader>tpw", "<cmd>!typst watch %<cr>", desc = "Watch Typst document", buffer = true },
+            { "<leader>tpo", function()
+              local file = vim.fn.expand("%:r") .. ".pdf"
+              if vim.fn.has("mac") == 1 then
+                vim.cmd("!open " .. file)
+              elseif vim.fn.has("unix") == 1 then
+                vim.cmd("!xdg-open " .. file)
+              else
+                vim.cmd("!start " .. file)
+              end
+            end, desc = "Open compiled PDF", buffer = true },
+          })
+        end,
       })
       return opts
     end,

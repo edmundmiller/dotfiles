@@ -102,14 +102,4 @@ return {
   },
   
   -- Enhanced which-key groups for testing
-  {
-    "folke/which-key.nvim",
-    opts = function(_, opts)
-      local wk = require("which-key")
-      wk.add({
-        { "<leader>t", group = "test/nf-test" },
-      })
-      return opts
-    end,
-  },
 }
