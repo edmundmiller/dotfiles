@@ -111,13 +111,14 @@ return {
     "stevearc/conform.nvim",
     opts = {
       formatters_by_ft = {
-        nextflow = { "groovy_format" },
+        nextflow = { "nextflow_lint" },
       },
       formatters = {
-        groovy_format = {
-          command = "npm-groovy-lint",
-          args = { "--format", "--stdin" },
-          stdin = true,
+        nextflow_lint = {
+          command = "nextflow",
+          args = { "lint", "-format", "-spaces", "4", "$FILENAME" },
+          stdin = false,
+          require_cwd = true,
         },
       },
     },
