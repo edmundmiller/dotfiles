@@ -3,9 +3,21 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     opts = function(_, opts)
-      -- Add Groovy parser (Nextflow is based on Groovy)
-      vim.list_extend(opts.ensure_installed, {
-        "groovy",
+      -- Configure tree-sitter-nextflow parser
+      local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+      parser_config.nextflow = {
+        install_info = {
+          url = "https://github.com/nextflow-io/tree-sitter-nextflow",
+          files = {"src/parser.c"},
+          branch = "update-grammar", -- Use PR #13 branch with improved grammar
+          generate_requires_npm = false,
+        },
+        filetype = "nextflow",
+      }
+
+      -- Add Nextflow parser to ensure_installed
+      vim.list_extend(opts.ensure_installed or {}, {
+        "nextflow",
       })
     end,
   },
