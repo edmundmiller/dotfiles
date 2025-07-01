@@ -55,6 +55,35 @@ return {
           root_dir = function(fname)
             return require("lspconfig.util").root_pattern("nextflow.config", ".git")(fname)
           end,
+          settings = {
+            nextflow = {
+              -- Formatting preferences
+              formatting = {
+                harshilAlignment = true,      -- Use Harshil Alignment for better formatting
+                sortDeclarations = true,      -- Sort script declarations
+                maheshForm = false,           -- Keep default process output placement
+              },
+              -- Error reporting level
+              errorReportingMode = "warnings",
+              -- File exclusions
+              files = {
+                exclude = { ".git", ".nf-test", "work", ".nextflow" }
+              },
+              -- Completion settings
+              completion = {
+                extended = true,              -- Enable extended completions from outside current script
+                maxItems = 50,               -- Reasonable limit for suggestions
+              },
+              -- Debug mode
+              debug = false,
+              -- Language version
+              languageVersion = "25.04",
+              -- Telemetry
+              telemetry = {
+                enabled = false,
+              },
+            }
+          }
         },
       },
     },
