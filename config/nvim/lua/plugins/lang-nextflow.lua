@@ -24,8 +24,10 @@ return {
   {
     "williamboman/mason-lspconfig.nvim",
     opts = {
-      ensure_installed = {
-        "nextflow_ls",
+      handlers = {
+        nextflow_ls = function()
+          require("lspconfig").nextflow_ls.setup({})
+        end,
       },
     },
   },
