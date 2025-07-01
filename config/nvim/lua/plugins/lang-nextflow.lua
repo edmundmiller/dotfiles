@@ -10,23 +10,37 @@ return {
     end,
   },
 
-  -- LSP configuration for Groovy (used by Nextflow)
+  -- Mason LSP configuration
+  {
+    "williamboman/mason.nvim",
+    opts = {
+      ensure_installed = {
+        "nextflow-language-server",
+      },
+    },
+  },
+
+  -- Mason LSP Config
+  {
+    "williamboman/mason-lspconfig.nvim",
+    opts = {
+      ensure_installed = {
+        "nextflow_ls",
+      },
+    },
+  },
+
+  -- LSP configuration for Nextflow
   {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        -- Use groovy-language-server for Nextflow files
-        groovyls = {
-          cmd = { "java", "-jar", vim.fn.expand("~/.local/share/groovy-language-server/groovy-language-server-all.jar") },
-          filetypes = { "groovy", "nextflow" },
+        -- Use official Nextflow Language Server
+        nextflow_ls = {
+          filetypes = { "nextflow" },
           root_dir = function(fname)
-            return require("lspconfig.util").root_pattern("nextflow.config", "main.nf", ".git")(fname)
+            return require("lspconfig.util").root_pattern("nextflow.config", ".git")(fname)
           end,
-          settings = {
-            groovy = {
-              classpath = {},
-            },
-          },
         },
       },
     },
