@@ -1,6 +1,7 @@
 {
   "FixCursorHold.nvim": { "branch": "master", "commit": "1900f89dc17c603eec29960f57c00bd9ae696495" },
   "LazyVim": { "branch": "main", "commit": "25abbf546d564dc484cf903804661ba12de45507" },
+  "LuaSnip": { "branch": "master", "commit": "eda5be8f0ce9816278671f0b578cdbb8b762c701" },
   "SchemaStore.nvim": { "branch": "main", "commit": "e4f80f37cd11ed58a6e914cc30850749f021b6a7" },
   "blink.cmp": { "branch": "main", "commit": "9bcb14b43852a6f2bfd5ac9ef29cb5cf09b1b39b" },
   "bufferline.nvim": { "branch": "main", "commit": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3" },
@@ -54,6 +55,7 @@
   "tokyonight.nvim": { "branch": "main", "commit": "057ef5d260c1931f1dffd0f052c685dcd14100a3" },
   "trouble.nvim": { "branch": "main", "commit": "85bedb7eb7fa331a2ccbecb9202d8abba64d37b3" },
   "ts-comments.nvim": { "branch": "main", "commit": "1bd9d0ba1d8b336c3db50692ffd0955fe1bb9f0c" },
+  "typst.vim": { "branch": "main", "commit": "323539709e29a537ff39dfce6c05f175a8921504" },
   "venv-selector.nvim": { "branch": "regexp", "commit": "c677caa1030808a9f90092e522de7cc20c1390dd" },
   "vim-dadbod": { "branch": "master", "commit": "e95afed23712f969f83b4857a24cf9d59114c2e6" },
   "vim-dadbod-completion": { "branch": "master", "commit": "a8dac0b3cf6132c80dc9b18bef36d4cf7a9e1fe6" },
