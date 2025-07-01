@@ -103,9 +103,57 @@ return {
 - `vim.g.snacks_animate` - Enable/disable UI animations
 - `vim.g.lazygit_config` - Auto-configure lazygit theme
 
+## Custom Features
+
+### Doom Emacs Keybindings
+This configuration includes comprehensive Doom Emacs-style keybindings configured in `lua/config/keymaps.lua`. All keybindings use `<Space>` as the leader key and follow Doom's organizational structure:
+- `SPC f` - File operations
+- `SPC b` - Buffer management  
+- `SPC w` - Window management
+- `SPC s` - Search operations
+- `SPC p` - Project management
+- `SPC g` - Git operations
+- `SPC t` - Testing and toggles
+- `SPC c` - Code operations
+- `SPC h` - Help operations
+
+### Custom Plugins
+- **claude-code.nvim** - Integration with Claude Code CLI (`lua/plugins/claude-code.lua`)
+- **obsidian.nvim** - Note-taking with Obsidian integration (`lua/plugins/obsidian.lua`)
+- **neotest-nftest** - Custom adapter for nf-test (Nextflow testing framework)
+
+### nf-test Testing Framework
+A custom neotest adapter for nf-test (Nextflow testing framework) is included:
+- **Location**: `lua/neotest-nftest/`
+- **Test Discovery**: Automatically finds `.nf.test` files and `nextflow_*` test blocks
+- **Supported Test Types**: `nextflow_process`, `nextflow_workflow`, `nextflow_pipeline`, `nextflow_function`
+- **Key Bindings**:
+  - `<leader>tt` - Run nearest test
+  - `<leader>tf` - Run file tests  
+  - `<leader>ta` - Run all tests
+  - `<leader>ts` - Toggle test summary
+  - `<leader>tn` - Run with nf-test profile
+  - `<leader>td` - Run with debug output
+
+### Testing Commands
+```bash
+# Prerequisites for nf-test adapter
+nf-test --version  # Verify nf-test is installed
+nextflow -version  # Verify Nextflow is available
+
+# Initialize nf-test in a project
+nf-test init
+
+# Generate test templates
+nf-test generate process PROCESS_NAME
+nf-test generate workflow WORKFLOW_NAME
+```
+
 ## Notes
 
 - This is a starter configuration meant to be customized
 - The example plugin file (`lua/plugins/example.lua`) is disabled by default but shows common customization patterns
 - Plugin updates are checked periodically (configured in `lua/config/lazy.lua`)
 - The configuration uses the Tokyo Night colorscheme by default with Habamax as fallback
+- Includes comprehensive Doom Emacs-style keybindings for familiar workflow
+- Custom nf-test adapter enables testing of Nextflow pipelines directly from Neovim
