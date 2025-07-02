@@ -116,13 +116,23 @@ return {
         { "<leader>dr", "<cmd>DBUIRenameBuffer<cr>", desc = "Rename DB buffer" },
         { "<leader>dl", "<cmd>DBUILastQueryInfo<cr>", desc = "Last query info" },
         { "<leader>da", "<cmd>DBUIAddConnection<cr>", desc = "Add DB connection" },
-        
-        -- SQL specific bindings (only in SQL buffers)
-        { mode = { "n", "v" }, "<leader>de", group = "execute", ft = { "sql", "mysql", "plsql" } },
-        { mode = "n", "<leader>dee", "<Plug>(DBUI_ExecuteQuery)", desc = "Execute query", ft = { "sql", "mysql", "plsql" } },
-        { mode = "v", "<leader>dee", "<Plug>(DBUI_ExecuteQuery)", desc = "Execute selection", ft = { "sql", "mysql", "plsql" } },
-        { mode = "n", "<leader>des", "<Plug>(DBUI_SaveQuery)", desc = "Save query", ft = { "sql", "mysql", "plsql" } },
-        { mode = "n", "<leader>dE", "<Plug>(DBUI_EditBindParameters)", desc = "Edit bind parameters", ft = { "sql", "mysql", "plsql" } },
+      })
+      
+      -- SQL specific bindings (only in SQL buffers) - set up via autocmd
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = { "sql", "mysql", "plsql" },
+        callback = function()
+          wk.add({
+            { "<leader>de", group = "execute", buffer = true },
+            { "<leader>dee", "<Plug>(DBUI_ExecuteQuery)", desc = "Execute query", buffer = true },
+            { "<leader>des", "<Plug>(DBUI_SaveQuery)", desc = "Save query", buffer = true },
+            { "<leader>dE", "<Plug>(DBUI_EditBindParameters)", desc = "Edit bind parameters", buffer = true },
+          })
+          -- Visual mode binding
+          wk.add({
+            { mode = "v", "<leader>dee", "<Plug>(DBUI_ExecuteQuery)", desc = "Execute selection", buffer = true },
+          })
+        end,
       })
       
       return opts
