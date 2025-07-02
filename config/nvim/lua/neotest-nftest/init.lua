@@ -50,7 +50,38 @@ end
 --- @param file_path string
 --- @return neotest.Tree|nil
 function M.discover_positions(file_path)
-  local query = [[
+  -- Try to use native nextflow parser first, fall back to groovy
+  local lang = "nextflow"
+  local parsers = require("nvim-treesitter.parsers")
+  if not parsers.has_parser("nextflow") then
+    lang = "groovy"
+  end
+  
+  local query_nextflow = [[
+    (function_call
+      function: (identifier) @func_name (#match? @func_name "^nextflow_(process|workflow|pipeline|function)$")
+      arguments: (argument_list
+        (closure
+          (block
+            (expression_statement
+              (function_call
+                function: (field_access
+                  object: (identifier)
+                  field: (identifier) @test_type (#eq? @test_type "test")
+                )
+                arguments: (argument_list
+                  (string_literal) @test_name
+                  (closure) @test_body
+                )
+              )
+            )
+          )*
+        )
+      )
+    ) @test_block
+  ]]
+  
+  local query_groovy = [[
     (call_expression
       function: (identifier) @func_name (#match? @func_name "^nextflow_(process|workflow|pipeline|function)$")
       arguments: (arguments
@@ -73,7 +104,9 @@ function M.discover_positions(file_path)
       )
     ) @test_block
   ]]
-
+  
+  local query = lang == "nextflow" and query_nextflow or query_groovy
+  
   local positions = lib.treesitter.parse_positions(file_path, query, {
     nested_tests = true,
     require_namespaces = false,
