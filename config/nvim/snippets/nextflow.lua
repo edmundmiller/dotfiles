@@ -248,7 +248,7 @@ process {} {{
     i(8, "tool_command --input ${reads} --output output.txt"),
   })),
 
-  -- nf-test block
+  -- nf-test process block
   s("nftest", fmt([[
 nextflow_process {{
     name "Test Process {}"
@@ -274,6 +274,118 @@ nextflow_process {{
     i(1, "PROCESS_NAME"),
     rep(1),
     i(2, "[ 'test_sample', file('test_data.txt') ]"),
+  })),
+
+  -- nf-test workflow block
+  s("nftestworkflow", fmt([[
+nextflow_workflow {{
+    name "Test Workflow {}"
+    script "../main.nf"
+    workflow "{}"
+
+    test("Should run without failures") {{
+        when {{
+            workflow {{
+                """
+                input[0] = {}
+                """
+            }}
+        }}
+
+        then {{
+            assert workflow.success
+            assert snapshot(workflow.out).match()
+        }}
+    }}
+}}
+]], {
+    i(1, "WORKFLOW_NAME"),
+    rep(1),
+    i(2, "Channel.of('sample1', 'sample2')"),
+  })),
+
+  -- nf-test pipeline block
+  s("nftestpipeline", fmt([[
+nextflow_pipeline {{
+    name "Test Pipeline {}"
+    script "../main.nf"
+
+    test("Should run without failures") {{
+        when {{
+            params {{
+                {}
+            }}
+        }}
+
+        then {{
+            assert workflow.success
+            assert snapshot(workflow.out).match()
+        }}
+    }}
+}}
+]], {
+    i(1, "PIPELINE_NAME"),
+    i(2, "input: 'test_data.txt'\noutdir: 'results'"),
+  })),
+
+  -- nf-test function block
+  s("nftestfunction", fmt([[
+nextflow_function {{
+    name "Test Function {}"
+    script "../main.nf"
+    function "{}"
+
+    test("Should return expected result") {{
+        when {{
+            function {{
+                {}
+            }}
+        }}
+
+        then {{
+            assert function.success
+            assert function.result == {}
+        }}
+    }}
+}}
+]], {
+    i(1, "FUNCTION_NAME"),
+    rep(1),
+    i(2, "// function parameters"),
+    i(3, "expected_result"),
+  })),
+
+  -- nf-test assertion patterns
+  s("nftestassert", fmt([[
+assert {}
+]], {
+    c(1, {
+      t("process.success"),
+      t("workflow.success"),
+      t("function.success"),
+      fmt("process.out.{}.size() == {}", { i(1, "channel_name"), i(2, "1") }),
+      fmt("snapshot(process.out.{}).match()", { i(1, "output") }),
+      fmt("process.out.{}.get(0).contains('{}')", { i(1, "channel"), i(2, "expected_content") }),
+      fmt("workflow.trace.tasks().size() == {}", { i(1, "3") }),
+    }),
+  })),
+
+  -- nf-test mock
+  s("nftestmock", fmt([[
+mock({}) {{
+    {}
+}}
+]], {
+    i(1, "process: 'MOCK_PROCESS'"),
+    i(2, "// mock implementation"),
+  })),
+
+  -- nf-test stub
+  s("nfteststub", fmt([[
+stub:
+{}
+]], {
+    i(1, "echo 'stubbed output'"),
   })),
 
   -- Params block
