@@ -227,17 +227,66 @@ function M.parse_junit_xml(xml_path)
     return results
   end
   
-  -- Simple XML parsing for JUnit format
-  -- This is a basic implementation - could be enhanced with proper XML parser
-  for testcase in content:gmatch('<testcase[^>]*name="([^"]*)"[^>]*>.-</testcase>') do
-    local test_name = testcase:match('name="([^"]*)"')
-    local failure = testcase:match('<failure[^>]*>(.-)</failure>')
-    local error = testcase:match('<error[^>]*>(.-)</error>')
+  -- Enhanced XML parsing for JUnit format
+  -- Parse testsuite information
+  local testsuite_pattern = '<testsuite[^>]*>'
+  local testsuite_info = content:match(testsuite_pattern)
+  local total_tests = testsuite_info and testsuite_info:match('tests="([^"]*)"') or "0"
+  local failures = testsuite_info and testsuite_info:match('failures="([^"]*)"') or "0"
+  local errors = testsuite_info and testsuite_info:match('errors="([^"]*)"') or "0"
+  local time = testsuite_info and testsuite_info:match('time="([^"]*)"') or "0"
+  
+  -- Parse individual test cases
+  for testcase_block in content:gmatch('<testcase[^>]*>.-</testcase>') do
+    local test_name = testcase_block:match('name="([^"]*)"')
+    local classname = testcase_block:match('classname="([^"]*)"')
+    local test_time = testcase_block:match('time="([^"]*)"')
+    local failure = testcase_block:match('<failure[^>]*>(.-)</failure>')
+    local error = testcase_block:match('<error[^>]*>(.-)</error>')
+    local system_out = testcase_block:match('<system%-out>(.-)</system%-out>')
+    local system_err = testcase_block:match('<system%-err>(.-)</system%-err>')
     
     if test_name then
+      local status = "passed"
+      local errors_list = {}
+      
+      if failure then
+        status = "failed"
+        table.insert(errors_list, {
+          message = "Test failed",
+          long_message = failure,
+        })
+      end
+      
+      if error then
+        status = "failed"
+        table.insert(errors_list, {
+          message = "Test error",
+          long_message = error,
+        })
+      end
+      
+      -- Build output string
+      local output_parts = {}
+      if system_out and system_out ~= "" then
+        table.insert(output_parts, "STDOUT:\n" .. system_out)
+      end
+      if system_err and system_err ~= "" then
+        table.insert(output_parts, "STDERR:\n" .. system_err)
+      end
+      if failure then
+        table.insert(output_parts, "FAILURE:\n" .. failure)
+      end
+      if error then
+        table.insert(output_parts, "ERROR:\n" .. error)
+      end
+      
       results[test_name] = {
-        status = (failure or error) and "failed" or "passed",
-        errors = failure and { { message = failure } } or error and { { message = error } } or nil,
+        status = status,
+        errors = #errors_list > 0 and errors_list or nil,
+        output = table.concat(output_parts, "\n\n"),
+        short = classname and (classname .. "::" .. test_name) or test_name,
+        time = tonumber(test_time) or 0,
       }
     end
   end

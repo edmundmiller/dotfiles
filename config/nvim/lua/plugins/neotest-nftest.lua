@@ -1,7 +1,8 @@
 return {
-  -- Custom nf-test adapter for neotest
+  -- Custom nf-test adapter for neotest (disabled - using enhanced version)
   {
     "nvim-neotest/neotest",
+    enabled = false,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "antoinemadec/FixCursorHold.nvim",
