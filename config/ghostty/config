@@ -1,36 +1,59 @@
+# Font Configuration
 font-family = JetBrains Mono
 font-size = 14
-theme = PaleNightHC
 
-# fullscreen = true
-# (I guess palenight is a light theme?)
-# auto, and system didn't work
+# Theme & Colors
+theme = PaleNightHC
+window-colorspace = display-p3
+
+# Window Appearance
 window-decoration = true
 window-theme = auto
-confirm-close-surface = false
-shell-integration-features = no-cursor,no-sudo,title
-desktop-notifications = true
+window-save-state = never
+background-opacity = 0.95
+window-padding-x = 8
+window-padding-y = 8
 
-clipboard-read = "allow"
+# Terminal Behavior
+confirm-close-surface = false
+shell-integration-features = cursor,sudo,title
+desktop-notifications = true
+scrollback-limit = 100000
+working-directory = follow
+copy-on-select = true
+
+# Updates
+auto-update = check
+
+# Quick Terminal
+quick-terminal = true
+
+# Clipboard
+clipboard-read = allow
 clipboard-paste-protection = false
 
+# Cursor & Mouse
+cursor-style-blink = false
+focus-follows-mouse = true
+mouse-hide-while-typing = false
+
+# Window Management
+quit-after-last-window-closed = true
+
+# GTK Settings (Linux)
 gtk-titlebar = false
 gtk-tabs-location = bottom
 gtk-wide-tabs = true
 
-# Misc
-cursor-style-blink = false
-focus-follows-mouse = true
-mouse-hide-while-typing = false
-quit-after-last-window-closed = true
+# macOS Settings
+macos-non-native-fullscreen = true
+macos-titlebar-style = tabs
+macos-option-as-alt = true
+macos-secure-keyboard-entry = false
 
+# Custom Keybindings
 keybind = ctrl+s=new_split:down
 keybind = ctrl+v=new_split:right
 keybind = ctrl+tab=next_tab
 keybind = ctrl+shift+s=close_surface
 keybind = ctrl+shift+q=close_window
-
-# https://github.com/ghostty-org/ghostty/discussions/2363
-macos-non-native-fullscreen = true
-macos-titlebar-style = tabs
-window-save-state = never
