@@ -1,0 +1,46 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/task-validator.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|Read|Bash|Task",
+        "hooks": [
+          {
+            "type": "command", 
+            "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/time-tracker.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/session-summary.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  },
+  "slash_commands": {
+    "tasks": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/tasks.md",
+    "task-add": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/task-add.md", 
+    "task-done": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/task-done.md",
+    "timew": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/timew.md",
+    "timew-report": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/timew-report.md"
+  }
+}

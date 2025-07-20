@@ -2,12 +2,12 @@ return {
   -- Modern org mode for Neovim
   {
     "nvim-orgmode/orgmode",
-    dependencies = {
-      "nvim-treesitter/nvim-treesitter",
-      "nvim-cmp",
-    },
     event = "VeryLazy",
+    ft = "org",
     config = function()
+      -- Setup treesitter
+      require("orgmode").setup_ts_grammar()
+
       -- Setup orgmode
       require("orgmode").setup({
         org_agenda_files = { "~/org/**/*", "~/Documents/org/**/*" },
@@ -121,82 +121,7 @@ return {
           },
         },
       })
-      
-      -- Load treesitter grammar after setup
-      require("orgmode").setup_ts_grammar()
-      
-      -- Setup treesitter highlighting for org
-      require("nvim-treesitter.configs").setup({
-        highlight = {
-          enable = true,
-          additional_vim_regex_highlighting = { "org" },
-        },
-      })
     end,
-  },
-
-  -- Better bullet points
-  {
-    "akinsho/org-bullets.nvim",
-    config = function()
-      require("org-bullets").setup({
-        concealcursor = false,
-        symbols = {
-          headlines = { "◉", "○", "✸", "✿" },
-          checkboxes = {
-            half = { "", "OrgTSCheckboxHalfChecked" },
-            done = { "✓", "OrgDone" },
-            todo = { "˟", "OrgTODO" },
-          },
-        },
-      })
-    end,
-  },
-
-  -- Headlines (visual improvements)
-  {
-    "lukas-reineke/headlines.nvim",
-    dependencies = "nvim-treesitter/nvim-treesitter",
-    config = function()
-      require("headlines").setup({
-        org = {
-          headline_highlights = {
-            "Headline1",
-            "Headline2",
-            "Headline3",
-            "Headline4",
-            "Headline5",
-            "Headline6",
-          },
-          codeblock_highlight = "CodeBlock",
-          dash_highlight = "Dash",
-          quote_highlight = "Quote",
-          quote_string = "┃",
-          fat_headlines = true,
-          fat_headline_upper_string = "▄",
-          fat_headline_lower_string = "▀",
-        },
-      })
-
-      -- Define custom highlight groups
-      vim.cmd([[
-        highlight Headline1 guifg=#ff79c6 guibg=#44475a gui=bold
-        highlight Headline2 guifg=#bd93f9 guibg=#44475a gui=bold
-        highlight Headline3 guifg=#8be9fd guibg=#44475a gui=bold
-        highlight Headline4 guifg=#50fa7b guibg=#44475a gui=bold
-        highlight Headline5 guifg=#f1fa8c guibg=#44475a gui=bold
-        highlight Headline6 guifg=#ffb86c guibg=#44475a gui=bold
-        highlight CodeBlock guibg=#282a36
-        highlight Dash guifg=#6272a4
-        highlight Quote guifg=#f1fa8c
-      ]])
-    end,
-  },
-
-  -- Org-roam like functionality
-  {
-    "nvim-neorg/neorg",
-    enabled = false, -- Disable for now, as we're using orgmode
   },
 
   -- Table support
@@ -208,12 +133,6 @@ return {
       vim.g.table_mode_corner_corner = "|"
       vim.g.table_mode_header_fillchar = "-"
     end,
-  },
-
-  -- Export to various formats
-  {
-    "jghauser/follow-md-links.nvim",
-    ft = { "org", "markdown" },
   },
 
   -- Calendar integration
