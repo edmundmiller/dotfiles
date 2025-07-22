@@ -101,28 +101,16 @@ uda.subgoal_id.label=Subgoal ID
 # =============================================================================
 # CONTEXTS
 # =============================================================================
-# Main workspace contexts (Motion areas)
-context.seqera.read=project.startswith:seqera
-context.seqera.write=project.startswith:seqera +seqera
-
-context.nfcore.read=project.startswith:nf-core  
-context.nfcore.write=project.startswith:nf-core +nf-core
-
-context.functional_genomics.read=project.startswith:functional_genomics
-context.functional_genomics.write=project.startswith:functional_genomics +funlab
-
-context.personal.read=project.startswith:personal
-context.personal.write=project.startswith:personal +personal
-
-context.family.read=project.startswith:family
-context.family.write=project.startswith:family +family
-
-# Grouped contexts for broader views
-context.work.read=project.startswith:seqera or project.startswith:nf-core
-context.work.write=project.startswith:seqera or project.startswith:nf-core
+# Main workspace contexts
+context.work.read=project.startswith:seqera or project.startswith:nfcore
+context.work.write=project.startswith:seqera or project.startswith:nfcore
 
 context.home.read=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
 context.home.write=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
+
+# Individual workspace contexts  
+context.functional_genomics.read=project.startswith:functional_genomics
+context.functional_genomics.write=project.startswith:functional_genomics +funlab
 
 # =============================================================================
 # REPORTS
