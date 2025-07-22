@@ -1,0 +1,127 @@
+# [Created by task 3.4.1 5/26/2025 11:48:09]
+data.location=/Users/emiller/.task
+news.version=3.4.1
+
+# To use the default location of the XDG directories,
+# move this configuration file from ~/.taskrc to ~/.config/task/taskrc and update location config as follows:
+
+#data.location=~/.local/share/task
+#hooks.location=~/.config/task/hooks
+
+# Color theme (uncomment one to use)
+#include light-16.theme
+#include light-256.theme
+#include bubblegum-256.theme
+#include dark-16.theme
+#include dark-256.theme
+#include dark-red-256.theme
+#include dark-green-256.theme
+#include dark-blue-256.theme
+#include dark-violets-256.theme
+#include dark-yellow-green.theme
+#include dark-gray-256.theme
+#include dark-gray-blue-256.theme
+#include solarized-dark-256.theme
+#include solarized-light-256.theme
+#include no-color.theme
+
+uda.priority.values=H,M,,L
+
+# Workspace organization (similar to Motion)
+uda.workspace.type=string
+uda.workspace.label=Workspace
+uda.workspace.values=Personal,Family,Seqera,FunLab,nf-core
+
+uda.folder.type=string
+uda.folder.label=Folder
+
+# Jira board information
+uda.jiraproject.type=string
+uda.jiraproject.label=Jira Project
+uda.jiraboard.type=string
+uda.jiraboard.label=Jira Board
+
+# Contexts for different workspaces
+context.seqera.read=workspace:Seqera or tag.contains:seqera or tag.contains:jira
+context.seqera.write=workspace:Seqera +seqera
+context.nfcore.read=workspace:nf-core or tag.contains:nf-core or tag.contains:github
+context.nfcore.write=workspace:nf-core +nf-core
+context.funlab.read=workspace:FunLab or tag.contains:funlab or tag.contains:phd or tag.contains:utd
+context.funlab.write=workspace:FunLab +funlab
+context.personal.read=workspace:Personal or tag.contains:personal
+context.personal.write=workspace:Personal +personal
+context.family.read=workspace:Family or tag.contains:family
+context.family.write=workspace:Family +family
+
+# Legacy contexts (keeping for compatibility)
+context.work.read=tag.contains:nf-core or tag.contains:seqera
+context.work.write=tag.contains:nf-core or tag.contains:seqera
+context.home.read=+personal or +family
+context.home.write=+family or +family
+context.phd.read=+funlab or +phd or +utd
+context.phd.write=+funlab or +phd or +utd
+
+recurrence.confirmation=no
+uda.motion_id.type=string
+uda.motion_id.label=Motion ID
+uda.motion_id.values=
+
+data.location=~/Library/Mobile Documents/iCloud~com~mav~taskchamp/Documents/task
+uda.days_of_week.type=string
+uda.days_of_week.label=Days
+uda.schedule_priority.label=Sched Pri
+uda.schedule_priority.type=numeric
+uda.goal_id.type=string
+uda.goal_id.label=Goal ID
+uda.subgoal_id.type=string
+uda.subgoal_id.label=Subgoal ID
+uda.estimated_time.type=numeric
+uda.estimated_time.label=Est Time
+uda.work_hours_only.type=string
+uda.work_hours_only.label=Work Hours
+uda.start_time.type=string
+uda.start_time.label=Start Time
+uda.is_flexible.type=string
+uda.is_flexible.label=Flexible
+uda.schedule_id.type=string
+uda.schedule_id.label=Schedule
+uda.schedule_type.type=string
+uda.schedule_type.label=Sched Type
+uda.actual_time.type=numeric
+uda.actual_time.label=Act Time
+uda.time_block_id.type=string
+uda.time_block_id.label=Time Block
+uda.end_time.label=End Time
+uda.end_time.type=string
+color.calendar.due.today=black on yellow
+color.calendar.overdue=white on red
+color.calendar.weekend=color8
+uda.taskwarrior-tui.backend=taskchampion
+uda.taskwarrior-tui.taskchampion.data-dir=\/Users\/emiller\/Library\/Mobile Documents\/iCloud~com~mav~taskchamp\/Documents\/task
+report.motion.columns=priority,urgency,due,estimate,totalactivetime,description.truncated,project.parent,project,scheduled
+report.motion.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
+report.motion.sort=priority-,urgency-,due+
+report.motion.filter=status:pending
+uda.estimate.type=duration
+uda.estimate.label=Estimate
+
+# Default next report (before Motion Dashboard customization):
+# report.next.columns=id,start.active,entry.age,urgency,priority,project,tag,recur,scheduled.countdown,due.relative,until.remaining,description,uuid.short
+# report.next.labels=ID,Active,Age,Urgency,Pri,Project,Tag,Recur,S,Due,Until,Description,UUID
+# report.next.sort=start-,urgency-
+# report.next.filter=status:pending limit:page
+
+# Customized next report using Motion Dashboard layout:
+report.next.columns=priority,urgency,due,estimate,totalactivetime,description.truncated,project.parent,project,scheduled
+report.next.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
+uda.timewarrior.enabled=true
+uda.totalactivetime.type=duration
+# default.command=motion
+uda.taskwarrior-tui.default-report=motion
+default.command=next
+uda.totalactivetime.label=Total Active Time
+confirmation=off
+bulk=0
+report.next.sort=priority-,urgency-,due+
+report.next.filter=status:pending
+recurrence.limit=0
