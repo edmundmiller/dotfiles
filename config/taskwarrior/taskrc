@@ -10,7 +10,6 @@ news.version=3.4.1
 # Taskwarrior-TUI Configuration
 uda.taskwarrior-tui.backend=taskchampion
 uda.taskwarrior-tui.taskchampion.data-dir=\/Users\/emiller\/Library\/Mobile Documents\/iCloud~com~mav~taskchamp\/Documents\/task
-uda.taskwarrior-tui.default-report=motion
 
 # =============================================================================
 # BASIC BEHAVIOR
@@ -32,18 +31,14 @@ uda.priority.values=H,M,,L
 # =============================================================================
 # WORKSPACE ORGANIZATION
 # =============================================================================
-# User Defined Attributes for workspace organization (similar to Motion)
+# User Defined Attributes for workspace organization
 uda.workspace.type=string
 uda.workspace.label=Workspace
-uda.workspace.values=Personal,Family,Seqera,FunLab,nf-core
-
-uda.folder.type=string
-uda.folder.label=Folder
+uda.workspace.values=seqera,nfcore,functional_genomics,personal,family
 
 # Motion App Integration
 uda.motion_id.type=string
 uda.motion_id.label=Motion ID
-uda.motion_id.values=
 
 # =============================================================================
 # JIRA INTEGRATION
@@ -70,29 +65,8 @@ uda.actual_time.type=numeric
 uda.actual_time.label=Act Time
 
 # =============================================================================
-# SCHEDULING & PLANNING
+# GOAL TRACKING  
 # =============================================================================
-# Scheduling attributes
-uda.days_of_week.type=string
-uda.days_of_week.label=Days
-uda.schedule_priority.label=Sched Pri
-uda.schedule_priority.type=numeric
-uda.work_hours_only.type=string
-uda.work_hours_only.label=Work Hours
-uda.start_time.type=string
-uda.start_time.label=Start Time
-uda.end_time.type=string
-uda.end_time.label=End Time
-uda.is_flexible.type=string
-uda.is_flexible.label=Flexible
-uda.schedule_id.type=string
-uda.schedule_id.label=Schedule
-uda.schedule_type.type=string
-uda.schedule_type.label=Sched Type
-uda.time_block_id.type=string
-uda.time_block_id.label=Time Block
-
-# Goal tracking
 uda.goal_id.type=string
 uda.goal_id.label=Goal ID
 uda.subgoal_id.type=string
@@ -102,8 +76,8 @@ uda.subgoal_id.label=Subgoal ID
 # CONTEXTS
 # =============================================================================
 # Main workspace contexts
-context.work.read=project.startswith:seqera or project.startswith:nfcore
-context.work.write=project.startswith:seqera or project.startswith:nfcore
+context.work.read=project.startswith:seqera or project.startswith:nf-core
+context.work.write=project.startswith:seqera or project.startswith:nf-core
 
 context.home.read=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
 context.home.write=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
