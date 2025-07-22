@@ -101,25 +101,28 @@ uda.subgoal_id.label=Subgoal ID
 # =============================================================================
 # CONTEXTS
 # =============================================================================
-# Primary workspace contexts
-context.seqera.read=workspace:Seqera or tag.contains:seqera or tag.contains:jira
-context.seqera.write=workspace:Seqera +seqera
-context.nfcore.read=workspace:nf-core or tag.contains:nf-core or tag.contains:github
-context.nfcore.write=workspace:nf-core +nf-core
-context.funlab.read=workspace:FunLab or tag.contains:funlab or tag.contains:phd or tag.contains:utd
-context.funlab.write=workspace:FunLab +funlab
-context.personal.read=workspace:Personal or tag.contains:personal
-context.personal.write=workspace:Personal +personal
-context.family.read=workspace:Family or tag.contains:family
-context.family.write=workspace:Family +family
+# Main workspace contexts (Motion areas)
+context.seqera.read=project.startswith:seqera
+context.seqera.write=project.startswith:seqera +seqera
 
-# Legacy contexts (keeping for compatibility)
-context.work.read=tag.contains:nf-core or tag.contains:seqera
-context.work.write=tag.contains:nf-core or tag.contains:seqera
-context.home.read=+personal or +family
-context.home.write=+family or +family
-context.phd.read=+funlab or +phd or +utd
-context.phd.write=+funlab or +phd or +utd
+context.nfcore.read=project.startswith:nf-core  
+context.nfcore.write=project.startswith:nf-core +nf-core
+
+context.functional_genomics.read=project.startswith:functional_genomics
+context.functional_genomics.write=project.startswith:functional_genomics +funlab
+
+context.personal.read=project.startswith:personal
+context.personal.write=project.startswith:personal +personal
+
+context.family.read=project.startswith:family
+context.family.write=project.startswith:family +family
+
+# Grouped contexts for broader views
+context.work.read=project.startswith:seqera or project.startswith:nf-core
+context.work.write=project.startswith:seqera or project.startswith:nf-core
+
+context.home.read=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
+context.home.write=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
 
 # =============================================================================
 # REPORTS
