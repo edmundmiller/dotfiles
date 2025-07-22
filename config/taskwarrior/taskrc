@@ -1,33 +1,38 @@
+# Taskwarrior Configuration
 # [Created by task 3.4.1 5/26/2025 11:48:09]
-data.location=/Users/emiller/.task
+
+# =============================================================================
+# DATA LOCATION & SYNC
+# =============================================================================
+data.location=~/Library/Mobile Documents/iCloud~com~mav~taskchamp/Documents/task
 news.version=3.4.1
 
-# To use the default location of the XDG directories,
-# move this configuration file from ~/.taskrc to ~/.config/task/taskrc and update location config as follows:
+# Taskwarrior-TUI Configuration
+uda.taskwarrior-tui.backend=taskchampion
+uda.taskwarrior-tui.taskchampion.data-dir=\/Users\/emiller\/Library\/Mobile Documents\/iCloud~com~mav~taskchamp\/Documents\/task
+uda.taskwarrior-tui.default-report=motion
 
-#data.location=~/.local/share/task
-#hooks.location=~/.config/task/hooks
+# =============================================================================
+# BASIC BEHAVIOR
+# =============================================================================
+default.command=next
+confirmation=off
+bulk=0
+recurrence.confirmation=no
+recurrence.limit=0
 
-# Color theme (uncomment one to use)
-#include light-16.theme
-#include light-256.theme
-#include bubblegum-256.theme
-#include dark-16.theme
-#include dark-256.theme
-#include dark-red-256.theme
-#include dark-green-256.theme
-#include dark-blue-256.theme
-#include dark-violets-256.theme
-#include dark-yellow-green.theme
-#include dark-gray-256.theme
-#include dark-gray-blue-256.theme
-#include solarized-dark-256.theme
-#include solarized-light-256.theme
-#include no-color.theme
+# Timewarrior Integration
+uda.timewarrior.enabled=true
 
+# =============================================================================
+# PRIORITY SYSTEM
+# =============================================================================
 uda.priority.values=H,M,,L
 
-# Workspace organization (similar to Motion)
+# =============================================================================
+# WORKSPACE ORGANIZATION
+# =============================================================================
+# User Defined Attributes for workspace organization (similar to Motion)
 uda.workspace.type=string
 uda.workspace.label=Workspace
 uda.workspace.values=Personal,Family,Seqera,FunLab,nf-core
@@ -35,13 +40,68 @@ uda.workspace.values=Personal,Family,Seqera,FunLab,nf-core
 uda.folder.type=string
 uda.folder.label=Folder
 
-# Jira board information
+# Motion App Integration
+uda.motion_id.type=string
+uda.motion_id.label=Motion ID
+uda.motion_id.values=
+
+# =============================================================================
+# JIRA INTEGRATION
+# =============================================================================
 uda.jiraproject.type=string
 uda.jiraproject.label=Jira Project
 uda.jiraboard.type=string
 uda.jiraboard.label=Jira Board
 
-# Contexts for different workspaces
+# =============================================================================
+# TIME TRACKING & ESTIMATION
+# =============================================================================
+# Time estimation and tracking
+uda.estimate.type=duration
+uda.estimate.label=Estimate
+
+uda.totalactivetime.type=duration
+uda.totalactivetime.label=Total Active Time
+
+# Legacy time tracking fields (from Motion import)
+uda.estimated_time.type=numeric
+uda.estimated_time.label=Est Time
+uda.actual_time.type=numeric
+uda.actual_time.label=Act Time
+
+# =============================================================================
+# SCHEDULING & PLANNING
+# =============================================================================
+# Scheduling attributes
+uda.days_of_week.type=string
+uda.days_of_week.label=Days
+uda.schedule_priority.label=Sched Pri
+uda.schedule_priority.type=numeric
+uda.work_hours_only.type=string
+uda.work_hours_only.label=Work Hours
+uda.start_time.type=string
+uda.start_time.label=Start Time
+uda.end_time.type=string
+uda.end_time.label=End Time
+uda.is_flexible.type=string
+uda.is_flexible.label=Flexible
+uda.schedule_id.type=string
+uda.schedule_id.label=Schedule
+uda.schedule_type.type=string
+uda.schedule_type.label=Sched Type
+uda.time_block_id.type=string
+uda.time_block_id.label=Time Block
+
+# Goal tracking
+uda.goal_id.type=string
+uda.goal_id.label=Goal ID
+uda.subgoal_id.type=string
+uda.subgoal_id.label=Subgoal ID
+
+# =============================================================================
+# CONTEXTS
+# =============================================================================
+# Primary workspace contexts
 context.seqera.read=workspace:Seqera or tag.contains:seqera or tag.contains:jira
 context.seqera.write=workspace:Seqera +seqera
 context.nfcore.read=workspace:nf-core or tag.contains:nf-core or tag.contains:github
@@ -61,49 +121,15 @@ context.home.write=+family or +family
 context.phd.read=+funlab or +phd or +utd
 context.phd.write=+funlab or +phd or +utd
 
-recurrence.confirmation=no
-uda.motion_id.type=string
-uda.motion_id.label=Motion ID
-uda.motion_id.values=
-
-data.location=~/Library/Mobile Documents/iCloud~com~mav~taskchamp/Documents/task
-uda.days_of_week.type=string
-uda.days_of_week.label=Days
-uda.schedule_priority.label=Sched Pri
-uda.schedule_priority.type=numeric
-uda.goal_id.type=string
-uda.goal_id.label=Goal ID
-uda.subgoal_id.type=string
-uda.subgoal_id.label=Subgoal ID
-uda.estimated_time.type=numeric
-uda.estimated_time.label=Est Time
-uda.work_hours_only.type=string
-uda.work_hours_only.label=Work Hours
-uda.start_time.type=string
-uda.start_time.label=Start Time
-uda.is_flexible.type=string
-uda.is_flexible.label=Flexible
-uda.schedule_id.type=string
-uda.schedule_id.label=Schedule
-uda.schedule_type.type=string
-uda.schedule_type.label=Sched Type
-uda.actual_time.type=numeric
-uda.actual_time.label=Act Time
-uda.time_block_id.type=string
-uda.time_block_id.label=Time Block
-uda.end_time.label=End Time
-uda.end_time.type=string
-color.calendar.due.today=black on yellow
-color.calendar.overdue=white on red
-color.calendar.weekend=color8
-uda.taskwarrior-tui.backend=taskchampion
-uda.taskwarrior-tui.taskchampion.data-dir=\/Users\/emiller\/Library\/Mobile Documents\/iCloud~com~mav~taskchamp\/Documents\/task
+# =============================================================================
+# REPORTS
+# =============================================================================
+# Motion Dashboard Report - ADHD-optimized task list
 report.motion.columns=priority,urgency,due,estimate,totalactivetime,description.truncated,project.parent,project,scheduled
 report.motion.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
 report.motion.sort=priority-,urgency-,due+
 report.motion.filter=status:pending
-uda.estimate.type=duration
-uda.estimate.label=Estimate
+report.motion.description=Motion Dashboard - Task list optimized for ADHD users
 
 # Default next report (before Motion Dashboard customization):
 # report.next.columns=id,start.active,entry.age,urgency,priority,project,tag,recur,scheduled.countdown,due.relative,until.remaining,description,uuid.short
@@ -114,14 +140,39 @@ uda.estimate.label=Estimate
 # Customized next report using Motion Dashboard layout:
 report.next.columns=priority,urgency,due,estimate,totalactivetime,description.truncated,project.parent,project,scheduled
 report.next.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
-uda.timewarrior.enabled=true
-uda.totalactivetime.type=duration
-# default.command=motion
-uda.taskwarrior-tui.default-report=motion
-default.command=next
-uda.totalactivetime.label=Total Active Time
-confirmation=off
-bulk=0
 report.next.sort=priority-,urgency-,due+
 report.next.filter=status:pending
-recurrence.limit=0
+
+# =============================================================================
+# COLOR THEMES
+# =============================================================================
+# Calendar colors
+color.calendar.due.today=black on yellow
+color.calendar.overdue=white on red
+color.calendar.weekend=color8
+
+# Available color themes (uncomment one to use)
+#include light-16.theme
+#include light-256.theme
+#include bubblegum-256.theme
+#include dark-16.theme
+#include dark-256.theme
+#include dark-red-256.theme
+#include dark-green-256.theme
+#include dark-blue-256.theme
+#include dark-violets-256.theme
+#include dark-yellow-green.theme
+#include dark-gray-256.theme
+#include dark-gray-blue-256.theme
+#include solarized-dark-256.theme
+#include solarized-light-256.theme
+#include no-color.theme
+
+# =============================================================================
+# XDG DIRECTORIES (Alternative setup)
+# =============================================================================
+# To use the default location of the XDG directories,
+# move this configuration file from ~/.taskrc to ~/.config/task/taskrc 
+# and update location config as follows:
+#data.location=~/.local/share/task
+#hooks.location=~/.config/task/hooks
