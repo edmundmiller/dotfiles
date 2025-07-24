@@ -7,6 +7,9 @@
 data.location=~/Library/Mobile Documents/iCloud~com~mav~taskchamp/Documents/task
 news.version=3.4.1
 
+# Force CLI taskwarrior to use TaskChampion backend too
+taskd.use_taskchampion=yes
+
 # Taskwarrior-TUI Configuration
 uda.taskwarrior-tui.backend=taskchampion
 uda.taskwarrior-tui.taskchampion.data-dir=\/Users\/emiller\/Library\/Mobile Documents\/iCloud~com~mav~taskchamp\/Documents\/task
@@ -141,3 +144,8 @@ color.calendar.weekend=color8
 # and update location config as follows:
 #data.location=~/.local/share/task
 #hooks.location=~/.config/task/hooks
+sync.encryption_secret=taskwarrior-sync-secret-1753159270
+sync.aws.region=us-east-1
+sync.aws.bucket=emiller-taskchampion-sync
+sync.aws.access_key_id=
+sync.aws.secret_access_key=
