@@ -1,46 +1,138 @@
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/task-validator.py",
-            "timeout": 30
-          }
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Write|Edit|MultiEdit",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/task-validator.py",
+                        "timeout": 30
+                    }
+                ]
+            }
+        ],
+        "PostToolUse": [
+            {
+                "matcher": "Write|Edit|MultiEdit|Read|Bash|Task",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/time-tracker.py",
+                        "timeout": 15
+                    }
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/session-summary.py",
+                        "timeout": 30
+                    }
+                ]
+            }
         ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit|Read|Bash|Task",
-        "hooks": [
-          {
-            "type": "command", 
-            "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/time-tracker.py",
-            "timeout": 15
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/hooks/session-summary.py",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
-  },
-  "slash_commands": {
-    "tasks": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/tasks.md",
-    "task-add": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/task-add.md", 
-    "task-done": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/task-done.md",
-    "timew": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/timew.md",
-    "timew-report": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/timew-report.md"
-  }
+    },
+    "slash_commands": {
+        "tasks": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/tasks.md",
+        "task-add": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/task-add.md",
+        "task-done": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/task-done.md",
+        "timew": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/timew.md",
+        "timew-report": "/Users/emiller/.config/dotfiles/config/claude/taskwarrior-hooks/commands/timew-report.md"
+    },
+    "additionalDirectories": ["~/.claude"],
+    "permissions": {
+        "allow": [
+            "Read(**)",
+            "Edit(**)",
+            "MultiEdit(**)",
+            "Write(**)",
+            "Glob(**)",
+            "Grep(**)",
+            "LS(**)",
+            "WebSearch(**)",
+            "TodoRead()",
+            "TodoWrite(**)",
+            "Task(**)",
+
+            "Bash(git status*)",
+            "Bash(git log*)",
+            "Bash(git diff*)",
+            "Bash(git show*)",
+            "Bash(git blame*)",
+            "Bash(git branch*)",
+            "Bash(git remote -v*)",
+            "Bash(git config --get*)",
+
+            "Bash(ls*)",
+            "Bash(cat *)",
+            "Bash(less *)",
+            "Bash(head*)",
+            "Bash(tail*)",
+            "Bash(grep*)",
+            "Bash(find*)",
+            "Bash(tree*)",
+            "Bash(pwd*)",
+            "Bash(wc*)",
+            "Bash(diff *)",
+
+            "Bash(sed -n*)",
+            "Bash(awk*)",
+            "Bash(cut*)",
+            "Bash(sort*)",
+            "Bash(uniq*)",
+
+            "Bash(basename *)",
+            "Bash(dirname *)",
+            "Bash(realpath *)",
+            "Bash(readlink *)",
+
+            "Bash(curl*)",
+            "Bash(jq*)",
+            "Bash(yq eval*)",
+
+            "Bash(python*)",
+            "Bash(python3*)",
+            "Bash(node*)",
+            "Bash(npm list*)",
+            "Bash(npm run*)",
+            "Bash(npx*)",
+
+            "Bash(black --check*)",
+            "Bash(black --diff*)",
+            "Bash(pylint*)",
+            "Bash(flake8*)",
+            "Bash(mypy*)",
+            "Bash(eslint*)",
+
+            "Bash(pytest*)",
+            "Bash(make test*)",
+            "Bash(npm test*)",
+
+            "Bash(make -n*)",
+
+            "Bash(man *)",
+            "Bash(pydoc*)",
+            "Bash(which *)",
+            "Bash(type *)",
+
+            "Bash(echo *)",
+            "Bash(printf *)",
+            "Bash(test *)",
+            "Bash(true*)",
+            "Bash(false*)",
+
+            "Bash(* | grep*)",
+            "Bash(* | jq*)",
+            "Bash(* | head*)",
+            "Bash(* | tail*)",
+            "Bash(* | wc*)",
+            "Bash(* | sort*)",
+            "Bash(* | uniq*)"
+        ],
+        "deny": []
+    }
 }
