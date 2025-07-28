@@ -1,6 +1,5 @@
 #!/usr/bin/env cached-nix-shell
-#! nix-shell -i "just --justfile" --quiet
-#! nix-shell -p just
+#! nix-shell -p just -i "just --justfile" --quiet
 
 # Nix's CLI has a poor user story, in my opinion. It could be better; Guix is a
 # good role model here. I wrote this script to abstract the more common
@@ -13,7 +12,7 @@
 # are often and easily forgotten. This spares me that fumbling phase and also
 # serves as a reference.
 
-FLAKE := "../"
+FLAKE := "."
 HOST := ""
 # FIXME HOST := env_var('HOST')
 
@@ -49,9 +48,15 @@ rebuild +ARGS='switch':
     shift
   fi
   set -x
-  sudo nixos-rebuild \
-    --flake {{FLAKE}} \
-    --option pure-eval no {{ARGS}} "$@"
+  if [[ "$(uname)" == "Darwin" ]]; then
+    sudo darwin-rebuild \
+      -I darwin={{FLAKE}} \
+      {{ARGS}} "$@"
+  else
+    sudo nixos-rebuild \
+      --flake {{FLAKE}} \
+      --option pure-eval no {{ARGS}} "$@"
+  fi
 
 repl:
   #!/usr/bin/env bash
@@ -88,8 +93,17 @@ show:
   rebuild --fast test {{ARGS}}
 
 rollback:
+  #!/usr/bin/env bash
   # Roll back to last generation
-  rebuild --rollback switch
+  if [[ "$(uname)" == "Darwin" ]]; then
+    sudo darwin-rebuild --rollback
+  else
+    rebuild --rollback switch
+  fi
+
+gc:
+  # Run garbage collection
+  nix-collect-garbage -d
 
 alias u := update
 
@@ -111,6 +125,10 @@ update +FLAKES='':
 @search QUERY:
   # Search nixpkgs for a package
   nix search nixpkgs {{QUERY}}
+
+@shell PACKAGE:
+  # Start nix shell with package
+  nix shell nixpkgs#{{PACKAGE}}
 
 @swap PATHS:
   #!/usr/bin/env bash
