@@ -159,3 +159,5 @@ keybind = ctrl+c>backspace=goto_split:previous
 # Window management
 keybind = ctrl+c>m=new_window
 keybind = ctrl+c>&=close_window
+# Claude Code
+keybind = shift+enter=text:\n
