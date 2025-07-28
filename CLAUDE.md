@@ -10,9 +10,10 @@ This is a Nix-based dotfiles repository using Flakes for managing system configu
 
 ## Essential Commands
 
-All system management is done through the `hey` command (located in `bin/hey`), which wraps a justfile:
+System management can be done through the `hey` command (located in `bin/hey`) or directly with darwin-rebuild:
 
 ```bash
+# Using hey wrapper (if available):
 hey rebuild      # Rebuild and switch to new configuration (alias: hey re)
 hey upgrade      # Update flake inputs and rebuild
 hey rollback     # Roll back to previous generation
@@ -20,13 +21,20 @@ hey gc           # Run garbage collection
 hey check        # Run flake checks
 hey show         # Show flake outputs
 hey test         # Quick rebuild without adding to bootloader
+
+# Direct darwin-rebuild commands:
+sudo darwin-rebuild switch -I darwin=.  # Rebuild and switch to new configuration
+sudo darwin-rebuild switch --flake .    # Alternative flake syntax
+darwin-rebuild --list-generations       # List available generations
+sudo darwin-rebuild --rollback          # Roll back to previous generation
+nix-collect-garbage -d                  # Garbage collection
 ```
 
 For development:
 ```bash
-hey shell <package>  # Start nix shell with package
-hey repl            # Start nix repl with flake
-hey search <term>   # Search for packages
+hey shell <package>  # Start nix shell with package (or: nix shell nixpkgs#<package>)
+hey repl            # Start nix repl with flake (or: nix repl)
+hey search <term>   # Search for packages (or: nix search nixpkgs <term>)
 ```
 
 ## Architecture
@@ -76,14 +84,14 @@ in {
 
 ### Testing Configuration Changes
 1. Make changes to relevant files
-2. Run `hey test` for quick testing (doesn't update boot)
-3. Run `hey rebuild` to apply permanently
-4. If issues occur: `hey rollback`
+2. Run `sudo darwin-rebuild switch -I darwin=.` to rebuild and switch
+3. If issues occur: `sudo darwin-rebuild --rollback`
 
 ### Updating Dependencies
 ```bash
-hey upgrade          # Update all flake inputs
-nix flake update    # Update specific input
+nix flake update                               # Update all flake inputs
+nix flake update <input>                       # Update specific input
+sudo darwin-rebuild switch -I darwin=.        # Apply updates
 ```
 
 ### Adding New Packages
@@ -108,7 +116,8 @@ nix flake update    # Update specific input
 
 ## Notes
 
-- The `hey` command must be run from the repository root
-- After major updates, run `hey gc` to clean old generations
+- Commands must be run from the repository root
+- After major updates, run `nix-collect-garbage -d` to clean old generations
 - Host-specific settings override module defaults
 - The system uses home-manager for user-level configuration
+- The `hey` command (if available) provides convenient wrappers for common operations
