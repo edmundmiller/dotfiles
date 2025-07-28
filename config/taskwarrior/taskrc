@@ -4,7 +4,6 @@
 # =============================================================================
 # DATA LOCATION & SYNC
 # =============================================================================
-data.location=~/Library/Mobile Documents/iCloud~com~mav~taskchamp/Documents/task
 news.version=3.4.1
 
 # Force CLI taskwarrior to use TaskChampion backend too
@@ -12,7 +11,12 @@ taskd.use_taskchampion=yes
 
 # Taskwarrior-TUI Configuration
 uda.taskwarrior-tui.backend=taskchampion
-uda.taskwarrior-tui.taskchampion.data-dir=\/Users\/emiller\/Library\/Mobile Documents\/iCloud~com~mav~taskchamp\/Documents\/task
+
+# TUI Report Configuration
+uda.taskwarrior-tui.task-report.next.filter=status:pending
+uda.taskwarrior-tui.task-report.show-info=true
+uda.taskwarrior-tui.task-report.looping=true
+uda.taskwarrior-tui.task-report.jump-on-task-add=true
 
 # =============================================================================
 # BASIC BEHAVIOR
@@ -79,8 +83,8 @@ uda.subgoal_id.label=Subgoal ID
 # CONTEXTS
 # =============================================================================
 # Main workspace contexts
-context.work.read=project.startswith:seqera or project.startswith:nf-core
-context.work.write=project.startswith:seqera or project.startswith:nf-core
+context.work.read=project.startswith:seqera or project.startswith:nfcore
+context.work.write=project.startswith:seqera or project.startswith:nfcore
 
 context.home.read=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
 context.home.write=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
@@ -89,15 +93,18 @@ context.home.write=project.startswith:personal or project.startswith:family or p
 context.functional_genomics.read=project.startswith:functional_genomics
 context.functional_genomics.write=project.startswith:functional_genomics +funlab
 
+# Writing context - shows only dissertation content work
+context.writing.read=project.startswith:functional_genomics +writing
+
 # =============================================================================
 # REPORTS
 # =============================================================================
-# Motion Dashboard Report - ADHD-optimized task list
+# Motion Dashboard Report - Optimized task list
 report.motion.columns=priority,urgency,due,estimate,totalactivetime,description.truncated,project.parent,project,scheduled
 report.motion.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
 report.motion.sort=priority-,urgency-,due+
 report.motion.filter=status:pending
-report.motion.description=Motion Dashboard - Task list optimized for ADHD users
+report.motion.description=Motion Dashboard - Optimized Task list
 
 # Default next report (before Motion Dashboard customization):
 # report.next.columns=id,start.active,entry.age,urgency,priority,project,tag,recur,scheduled.countdown,due.relative,until.remaining,description,uuid.short
@@ -110,6 +117,54 @@ report.next.columns=priority,urgency,due,estimate,totalactivetime,description.tr
 report.next.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
 report.next.sort=priority-,urgency-,due+
 report.next.filter=status:pending
+
+# Writing progress report - friendly layout
+report.writing.description=Dissertation writing progress
+report.writing.columns=priority,due.relative,description.truncated
+report.writing.filter=+writing status:pending
+report.writing.sort=priority-,due+
+
+# Crisis Mode - High priority overdue tasks that need immediate attention
+report.crisis.description=Critical overdue tasks requiring immediate action
+report.crisis.columns=priority,due.relative,urgency,description.truncated,project
+report.crisis.filter=status:pending priority:H due.before:today
+report.crisis.sort=due+,urgency-
+
+# Daily Focus - Today's tasks and urgent items
+report.today.description=Today's scheduled tasks and urgent items
+report.today.columns=priority,scheduled.relative,due.relative,description.truncated,project
+report.today.filter=status:pending and (scheduled.before:tomorrow or due.before:tomorrow or priority:H)
+report.today.sort=priority-,due+,scheduled+
+
+# Project Health - Overview of project completion rates
+report.health.description=Project health and completion overview
+report.health.columns=project,description.truncated
+report.health.filter=status:pending
+report.health.sort=project+
+
+# Admin Tasks - Administrative and clerical work
+report.admin.description=Administrative and clerical tasks
+report.admin.columns=priority,due.relative,description.truncated,project
+report.admin.filter=+admin status:pending
+report.admin.sort=due+,priority-
+
+# Waiting Tasks - Tasks blocked by dependencies or external factors
+report.blocked.description=Tasks waiting on dependencies or external factors
+report.blocked.columns=depends,wait.remaining,description.truncated,project
+report.blocked.filter=status:waiting
+report.blocked.sort=wait+
+
+# Quick Wins - Low effort tasks you can knock out quickly
+report.quick.description=Quick low-effort tasks for momentum building
+report.quick.columns=priority,due.relative,description.truncated,project
+report.quick.filter=status:pending and (estimate.under:1h or priority:L) and due.none:
+report.quick.sort=priority-,urgency-
+
+# Overdue Backlog - All overdue tasks for systematic cleanup
+report.overdue.description=All overdue tasks requiring attention
+report.overdue.columns=priority,due.relative,description.truncated,project,entry.age
+report.overdue.filter=status:pending due.before:today
+report.overdue.sort=priority-,due+
 
 # =============================================================================
 # COLOR THEMES
@@ -147,5 +202,14 @@ color.calendar.weekend=color8
 sync.encryption_secret=taskwarrior-sync-secret-1753159270
 sync.aws.region=us-east-1
 sync.aws.bucket=emiller-taskchampion-sync
-sync.aws.access_key_id=
-sync.aws.secret_access_key=
+# AWS credentials removed for security
+uda.reviewed.type=date
+uda.reviewed.label=Reviewed
+report._reviewed.description=Tasksh review report. Adjust the filter to your needs.
+report._reviewed.columns=uuid
+report._reviewed.sort=reviewed+,modified+
+report._reviewed.filter=( reviewed.none: or reviewed.before:now-6days ) and ( +PENDING or +WAITING )
+color.active=bold white on red
+color.overdue=bold red on black
+color.due.today=bold yellow
+uda.taskwarrior-tui.default-view=tasks
