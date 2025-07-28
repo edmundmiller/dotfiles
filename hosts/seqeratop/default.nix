@@ -16,6 +16,7 @@
       shell = {
         "1password".enable = true;
         ai.enable = true;
+        claude.enable = true;
         direnv.enable = true;
         git.enable = true;
         tmux.enable = true;
