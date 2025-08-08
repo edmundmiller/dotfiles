@@ -49,7 +49,7 @@ return {
     },
 
     -- Optional, configure key mappings. These are the defaults. If you don't want to set any keymappings this
-    -- way then set 'mappings = {}'.
+    -- way then set 'mappings = {}'. Using buffer-local mappings for markdown files only.
     mappings = {
       -- Overrides the 'gf' mapping to work on markdown/wiki links within your vault.
       ["gf"] = {
@@ -57,13 +57,6 @@ return {
           return require("obsidian").util.gf_passthrough()
         end,
         opts = { noremap = false, expr = true, buffer = true },
-      },
-      -- Toggle check-boxes.
-      ["<leader>ch"] = {
-        action = function()
-          return require("obsidian").util.toggle_checkbox()
-        end,
-        opts = { buffer = true },
       },
       -- Smart action depending on context, either follow link or toggle checkbox.
       ["<cr>"] = {
