@@ -8,9 +8,12 @@
 
 **Hey,** you. You're finally awake. You were trying to configure your OS declaratively, right? Walked right into that NixOS ambush, same as us, and those dotfiles over there.
 
+> **Good news, traveler!** These dotfiles now work on both NixOS and macOS. One config to rule them all, and in the darkness bind them.
+
 ```sh
-# Nix got you surrounded? Good thing it works on macOS too.
-nix run nix-darwin -- switch --flake ~/.config/dotfiles  # (flakes enabled by default now!)
+# Quick taste of what you're in for:
+nix run nix-darwin -- switch --flake ~/.config/dotfiles  # macOS
+nixos-rebuild switch --flake .#hostname                   # NixOS
 ```
 
 ---
@@ -44,7 +47,11 @@ nix run nix-darwin -- switch --flake ~/.config/dotfiles  # (flakes enabled by de
 
 ### macOS? Let me guess, someone stole your sweetroll.
 
-1. Install [Nix](https://nixos.org/download.html#nix-install-macos) (the single-user install works fine)
+1. Install Nix using the [Determinate Systems installer](https://github.com/DeterminateSystems/nix-installer) (it's like the official installer, but actually works):
+   ```sh
+   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+   ```
+   Why this installer? It handles macOS quirks, enables flakes by default, and won't leave you troubleshooting for hours.
 2. `git clone https://github.com/emiller88/dotfiles ~/.config/dotfiles`
 3. `cd ~/.config/dotfiles`
 4. `./bin/hey re` (or if `hey` isn't in your PATH yet: `nix run .#darwinConfigurations.HOSTNAME.system.build.darwin-rebuild -- switch --flake .`)
