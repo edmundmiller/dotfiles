@@ -2,6 +2,7 @@
   config,
   options,
   lib,
+  pkgs,
   home-manager,
   ...
 }:
@@ -66,12 +67,16 @@ with lib.my;
             "Edmund Miller"
           else
             "The primary user account";
+        # Determine home directory based on platform
+        homeBase = if lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux") 
+                   then "/Users" 
+                   else "/home";
       in
       {
         inherit name description;
         extraGroups = [ "wheel" ];
         isNormalUser = true;
-        home = "/home/${name}";
+        home = "${homeBase}/${name}";
         group = "users";
         uid = 1000;
       };
