@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, inputs, ... }:
 {
   config = {
     modules = {
@@ -30,7 +30,7 @@
     };
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
-      enable = true;
+      enable = false;  # Disabled because darwin-rebuild runs as root
 
       taps = [ "jimeh/emacs-builds" ];
       brews = [
