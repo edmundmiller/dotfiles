@@ -113,12 +113,7 @@ map("n", "gi", "<cmd>Telescope lsp_implementations<cr>", { desc = "Go to impleme
 map("n", "gt", "<cmd>Telescope lsp_type_definitions<cr>", { desc = "Go to type definition" })
 
 -- Notes operations (Doom: SPC n ...)
--- Obsidian-specific (for markdown notes)
-map("n", "<leader>nn", "<cmd>ObsidianNew<cr>", { desc = "New note" })
-map("n", "<leader>no", "<cmd>ObsidianOpen<cr>", { desc = "Open in Obsidian" })
-map("n", "<leader>ns", "<cmd>ObsidianSearch<cr>", { desc = "Search notes" })
-map("n", "<leader>nq", "<cmd>ObsidianQuickSwitch<cr>", { desc = "Quick switch notes" })
-map("n", "<leader>nt", "<cmd>ObsidianToday<cr>", { desc = "Today's note" })
+-- Obsidian keybindings are now in lua/plugins/obsidian.lua with Doom-style <leader>nr prefix
 
 -- Org mode operations (Doom: SPC o ...)
 map("n", "<leader>oa", function()
