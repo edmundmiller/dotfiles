@@ -10,7 +10,8 @@ with lib.my;
 {
   imports =
     # I use home-manager to deploy files to $HOME; little else
-    [ inputs.home-manager.nixosModules.home-manager ]
+    (lib.optional (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) 
+      inputs.home-manager.nixosModules.home-manager)
     # All my personal modules
     ++ (mapModulesRec' (toString ./modules) import);
 
@@ -53,14 +54,15 @@ with lib.my;
       settings.auto-optimise-store = true;
     };
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
-  system.stateVersion = "24.05";
+  # Only set stateVersion on NixOS
+  system.stateVersion = mkIf (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) "24.05";
 
   ## Some reasonable, global defaults
   # This is here to appease 'nix flake check' for generic hosts with no
   # hardware-configuration.nix or fileSystem config.
-  fileSystems."/".device = mkDefault "/dev/disk/by-label/nixos";
+  fileSystems."/".device = mkIf (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) (mkDefault "/dev/disk/by-label/nixos");
 
-  boot = {
+  boot = mkIf (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) {
     kernelPackages = mkDefault pkgs.linuxKernel.packages.linux_6_1;
     loader = {
       efi.canTouchEfiVariables = mkDefault true;
