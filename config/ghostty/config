@@ -4,7 +4,9 @@ font-size = 14
 font-feature = "+liga"
 
 # Theme & Colors
-theme = PaleNightHC
+# This is how you can make Ghostty follow the macOS system theme.
+# https://fredrikaverpil.github.io/blog/2024/12/04/ghostty-on-macos/
+theme = light:rose-pine-dawn,dark:PaleNightHC
 window-colorspace = display-p3
 
 # Performance
