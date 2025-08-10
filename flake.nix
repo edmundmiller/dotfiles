@@ -58,23 +58,30 @@
     let
       inherit (lib.my) mapModules mapModulesRec mapHosts;
 
-      system = "x86_64-linux";
+      # System architectures
+      linuxSystem = "x86_64-linux";
       darwinSystem = "aarch64-darwin"; # or x86_64-darwin for Intel Macs
 
       mkPkgs =
-        pkgs: extraOverlays:
+        pkgs: extraOverlays: system:
         import pkgs {
           inherit system;
           config.allowUnfree = true; # forgive me Stallman senpai
           overlays = extraOverlays ++ (lib.attrValues self.overlays);
         };
-      pkgs = mkPkgs nixpkgs [ self.overlay ];
-      pkgs' = mkPkgs nixpkgs-unstable [ ];
+      
+      # Linux packages
+      pkgs = mkPkgs nixpkgs [ self.overlay ] linuxSystem;
+      pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
+      
+      # Darwin packages  
+      darwinPkgs = mkPkgs nixpkgs [ self.overlay ] darwinSystem;
 
       lib = nixpkgs.lib.extend (
         self: _super: {
           my = import ./lib {
-            inherit pkgs inputs;
+            pkgs = pkgs;  # Linux packages for the lib functions
+            inherit inputs;
             lib = self;
           };
         }
@@ -86,14 +93,16 @@
       flake = {
         lib = lib.my;
 
-        overlay = _final: _prev: {
-          unstable = pkgs';
-          my = self.packages."${system}";
+        overlay = final: _prev: {
+          unstable = if final.stdenv.isDarwin 
+                     then mkPkgs nixpkgs-unstable [ ] final.system
+                     else pkgs';
+          my = self.packages.${final.system} or {};
         };
 
         overlays = mapModules ./overlays import;
 
-        packages."${system}" = mapModules ./packages (p: pkgs.callPackage p { });
+        packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
 
         nixosModules = {
           dotfiles = import ./.;
@@ -113,7 +122,12 @@
           default = self.templates.minimal;
         };
 
-        apps."${system}".default = {
+        apps."${linuxSystem}".default = {
+          type = "app";
+          program = ./bin/hey;
+        };
+        
+        apps."${darwinSystem}".default = {
           type = "app";
           program = ./bin/hey;
         };
@@ -126,32 +140,70 @@
             inherit inputs lib;
           };
           modules = [
-            # Define module options first
+            # Add home-manager module first
+            inputs.home-manager.darwinModules.home-manager
+            
+            # Import host-specific configuration
+            ./hosts/mactraitorpro/default.nix
+
+            # Basic Darwin settings
             {
+              # Define base options
               options.modules = lib.mkOption {
                 type = lib.types.attrs;
                 default = { };
                 description = "Modules configuration options";
               };
-            }
+              
+              config = {
+                # Set the dotfiles directory
+                environment.variables.DOTFILES = toString ./.;
+                environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
+                
+                services.nix-daemon.enable = true;
+                # Use the correct nixpkgs
+                nixpkgs.pkgs = darwinPkgs;
+                
+                nix = {
+                  package = darwinPkgs.nixFlakes;
+                  settings = {
+                    experimental-features = [ "nix-command" "flakes" ];
+                    substituters = [
+                      "https://nix-community.cachix.org"
+                      "https://hyprland.cachix.org"
+                      "https://cosmic.cachix.org/"
+                    ];
+                    trusted-public-keys = [
+                      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+                      "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
+                    ];
+                  };
+                  optimise = {
+                    automatic = true;
+                    user = "root";
+                  };
+                };
+                
+                system.stateVersion = 4;
 
-            # Import your module system
-            ./hosts/mactraitorpro/default.nix
-
-            # Add home-manager module
-            inputs.home-manager.darwinModules.home-manager
-
-            # Basic Darwin settings
-            {
-              services.nix-daemon.enable = true;
-              nix.settings.experimental-features = [
-                "nix-command"
-                "flakes"
-              ];
-              system.stateVersion = 4;
-
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
+                home-manager.useGlobalPkgs = true;
+                home-manager.useUserPackages = true;
+                
+                # User configuration
+                users.users.emiller = {
+                  home = "/Users/emiller";
+                  shell = darwinPkgs.zsh;
+                };
+                
+                # Basic packages
+                environment.systemPackages = with darwinPkgs; [
+                  git
+                  vim
+                  wget
+                  just
+                ];
+              };
             }
           ];
         };
@@ -161,32 +213,70 @@
             inherit inputs lib;
           };
           modules = [
-            # Define module options first
+            # Add home-manager module first
+            inputs.home-manager.darwinModules.home-manager
+            
+            # Import host-specific configuration
+            ./hosts/seqeratop/default.nix
+
+            # Basic Darwin settings
             {
+              # Define base options
               options.modules = lib.mkOption {
                 type = lib.types.attrs;
                 default = { };
                 description = "Modules configuration options";
               };
-            }
+              
+              config = {
+                # Set the dotfiles directory
+                environment.variables.DOTFILES = toString ./.;
+                environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
+                
+                services.nix-daemon.enable = true;
+                # Use the correct nixpkgs
+                nixpkgs.pkgs = darwinPkgs;
+                
+                nix = {
+                  package = darwinPkgs.nixFlakes;
+                  settings = {
+                    experimental-features = [ "nix-command" "flakes" ];
+                    substituters = [
+                      "https://nix-community.cachix.org"
+                      "https://hyprland.cachix.org"
+                      "https://cosmic.cachix.org/"
+                    ];
+                    trusted-public-keys = [
+                      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+                      "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
+                    ];
+                  };
+                  optimise = {
+                    automatic = true;
+                    user = "root";
+                  };
+                };
+                
+                system.stateVersion = 4;
 
-            # Import your module system
-            ./hosts/seqeratop/default.nix
-
-            # Add home-manager module
-            inputs.home-manager.darwinModules.home-manager
-
-            # Basic Darwin settings
-            {
-              services.nix-daemon.enable = true;
-              nix.settings.experimental-features = [
-                "nix-command"
-                "flakes"
-              ];
-              system.stateVersion = 4;
-
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
+                home-manager.useGlobalPkgs = true;
+                home-manager.useUserPackages = true;
+                
+                # User configuration
+                users.users.emiller = {
+                  home = "/Users/emiller";
+                  shell = darwinPkgs.zsh;
+                };
+                
+                # Basic packages
+                environment.systemPackages = with darwinPkgs; [
+                  git
+                  vim
+                  wget
+                  just
+                ];
+              };
             }
           ];
         };
