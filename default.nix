@@ -32,7 +32,7 @@ with lib.my;
       registryInputs = mapAttrs (_: v: { flake = v; }) filteredInputs;
     in
     {
-      package = pkgs.nixFlakes;
+      package = pkgs.nixVersions.stable;
       extraOptions = "experimental-features = nix-command flakes";
       nixPath = nixPathInputs ++ [
         "nixpkgs-overlays=${dotFilesDir}/overlays"
@@ -55,7 +55,7 @@ with lib.my;
     };
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
   # Only set stateVersion on NixOS
-  system.stateVersion = mkIf (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) "24.05";
+  system.stateVersion = mkIf (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) "24.11";
 
   ## Some reasonable, global defaults
   # This is here to appease 'nix flake check' for generic hosts with no

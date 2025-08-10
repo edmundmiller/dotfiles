@@ -12,12 +12,12 @@
   inputs = {
     # Core dependencies.
     # Two inputs so I can track them separately at different rates.
-    nixpkgs.url = "nixpkgs/nixos-24.05"; # primary nixpkgs
+    nixpkgs.url = "nixpkgs/nixos-24.11"; # primary nixpkgs
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
-    home-manager.url = "github:nix-community/home-manager/release-24.05";
+    home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = "github:nix-community/NUR";
-    nix-darwin.url = "github:LnL7/nix-darwin";
+    nix-darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-24.11";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     # Utils
@@ -27,14 +27,14 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     # NOTE https://github.com/danth/stylix/issues/359
-    stylix.url = "github:danth/stylix/release-24.05";
+    stylix.url = "github:danth/stylix/release-24.11";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
     stylix.inputs.home-manager.follows = "home-manager";
     treefmt-nix.url = "github:numtide/treefmt-nix";
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
-    nixvim.url = "github:nix-community/nixvim/nixos-24.05";
+    nixvim.url = "github:nix-community/nixvim/nixos-24.11";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     ghostty.url = "git+ssh://git@github.com/ghostty-org/ghostty";
@@ -44,6 +44,7 @@
     llm-prompt.url = "github:aldoborrero/llm-prompt";
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
   };
 
   outputs =
@@ -165,7 +166,7 @@
                 nixpkgs.pkgs = darwinPkgs;
                 
                 nix = {
-                  package = darwinPkgs.nixFlakes;
+                  package = darwinPkgs.nixVersions.stable;
                   settings = {
                     experimental-features = [ "nix-command" "flakes" ];
                     substituters = [
@@ -203,6 +204,7 @@
                   wget
                   just
                 ];
+                
               };
             }
           ];
@@ -238,7 +240,7 @@
                 nixpkgs.pkgs = darwinPkgs;
                 
                 nix = {
-                  package = darwinPkgs.nixFlakes;
+                  package = darwinPkgs.nixVersions.stable;
                   settings = {
                     experimental-features = [ "nix-command" "flakes" ];
                     substituters = [
@@ -276,6 +278,7 @@
                   wget
                   just
                 ];
+                
               };
             }
           ];

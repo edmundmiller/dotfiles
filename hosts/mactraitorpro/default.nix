@@ -30,7 +30,14 @@
     };
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
-      enable = false;  # Disabled because darwin-rebuild runs as root
+      enable = true;
+      
+      # Homebrew configuration
+      onActivation = {
+        autoUpdate = false;  # Don't auto-update during activation
+        cleanup = "none";     # Don't remove anything for now
+        upgrade = false;     # Don't upgrade formulae during activation
+      };
 
       taps = [ "jimeh/emacs-builds" ];
       brews = [
