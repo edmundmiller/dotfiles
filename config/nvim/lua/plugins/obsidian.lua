@@ -3,6 +3,59 @@ return {
   version = "*", -- recommended, use latest release instead of latest commit
   lazy = true,
   ft = "markdown",
+  cmd = {
+    "ObsidianOpen",
+    "ObsidianNew",
+    "ObsidianQuickSwitch",
+    "ObsidianFollowLink",
+    "ObsidianBacklinks",
+    "ObsidianTags",
+    "ObsidianToday",
+    "ObsidianYesterday",
+    "ObsidianTomorrow",
+    "ObsidianDailies",
+    "ObsidianTemplate",
+    "ObsidianSearch",
+    "ObsidianLink",
+    "ObsidianLinkNew",
+    "ObsidianLinks",
+    "ObsidianExtractNote",
+    "ObsidianWorkspace",
+    "ObsidianPasteImg",
+    "ObsidianRename",
+    "ObsidianToggleCheckbox",
+    "ObsidianNewFromTemplate",
+    "ObsidianTOC",
+  },
+  -- Doom Emacs-style keybindings with common operations under <leader>n
+  keys = {
+    -- Primary note operations under <leader>n
+    { "<leader>nn", "<cmd>ObsidianNew<cr>", desc = "New note" },
+    { "<leader>no", "<cmd>ObsidianOpen<cr>", desc = "Open in Obsidian" },
+    { "<leader>ns", "<cmd>ObsidianSearch<cr>", desc = "Search notes" },
+    { "<leader>nq", "<cmd>ObsidianQuickSwitch<cr>", desc = "Quick switch notes" },
+    { "<leader>nt", "<cmd>ObsidianToday<cr>", desc = "Today's note" },
+    { "<leader>ny", "<cmd>ObsidianYesterday<cr>", desc = "Yesterday's note" },
+    { "<leader>nT", "<cmd>ObsidianTomorrow<cr>", desc = "Tomorrow's note" },
+    { "<leader>nd", "<cmd>ObsidianDailies<cr>", desc = "Daily notes" },
+    { "<leader>nb", "<cmd>ObsidianBacklinks<cr>", desc = "Show backlinks" },
+    { "<leader>nl", "<cmd>ObsidianLinks<cr>", desc = "Show links" },
+    { "<leader>ng", "<cmd>ObsidianTags<cr>", desc = "Find by tag" },
+    { "<leader>nc", "<cmd>ObsidianToggleCheckbox<cr>", desc = "Toggle checkbox" },
+    { "<leader>np", "<cmd>ObsidianPasteImg<cr>", desc = "Paste image" },
+    { "<leader>nP", "<cmd>ObsidianTemplate<cr>", desc = "Insert template" },
+    { "<leader>nx", "<cmd>ObsidianExtractNote<cr>", desc = "Extract note", mode = "v" },
+    { "<leader>nw", "<cmd>ObsidianWorkspace<cr>", desc = "Switch workspace" },
+    
+    -- Org-roam style operations under <leader>nr
+    { "<leader>nrf", "<cmd>ObsidianQuickSwitch<cr>", desc = "Find note" },
+    { "<leader>nrF", "<cmd>ObsidianSearch<cr>", desc = "Find note (content)" },
+    { "<leader>nri", "<cmd>ObsidianNew<cr>", desc = "Insert new note" },
+    { "<leader>nrI", "<cmd>ObsidianLinkNew<cr>", desc = "Insert new note (with title)" },
+    { "<leader>nrr", "<cmd>ObsidianRename<cr>", desc = "Rename note" },
+    { "<leader>nrN", "<cmd>ObsidianNewFromTemplate<cr>", desc = "New note from template" },
+    { "<leader>nr<leader>", "<cmd>ObsidianQuickSwitch<cr>", desc = "Find note (quick)" },
+  },
   -- Replace the above line with this if you only want to load obsidian.nvim for markdown files in your vault:
   -- event = {
   --   -- If you want to use the home shortcut '~' here you need to call 'vim.fn.expand'.
@@ -244,4 +297,14 @@ return {
       end,
     },
   },
+  config = function(_, opts)
+    require("obsidian").setup(opts)
+    
+    -- Set up which-key groups for Doom-style organization
+    local wk = require("which-key")
+    wk.add({
+      { "<leader>n", group = "notes" },
+      { "<leader>nr", group = "roam (obsidian)" },
+    })
+  end,
 }
