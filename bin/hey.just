@@ -50,9 +50,16 @@ rebuild +ARGS='switch':
       nix build {{FLAKE}}#darwinConfigurations.$flake_host.system
       # Then use the darwin-rebuild from the result
       if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
-        sudo ./result/sw/bin/darwin-rebuild \
-          --flake {{FLAKE}}#$flake_host \
-          {{ARGS}} "$@"
+        # Check if we have a terminal for sudo
+        if [[ -t 0 ]]; then
+          sudo ./result/sw/bin/darwin-rebuild \
+            --flake {{FLAKE}}#$flake_host \
+            {{ARGS}} "$@"
+        else
+          echo "Build succeeded!"
+          echo "To complete activation, run:"
+          echo "  sudo ./result/sw/bin/darwin-rebuild --flake {{FLAKE}}#$flake_host {{ARGS}} $@"
+        fi
       else
         echo "Error: darwin-rebuild not found in build result"
         exit 1
