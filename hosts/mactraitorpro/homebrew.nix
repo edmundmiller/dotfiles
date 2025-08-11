@@ -4,6 +4,7 @@
 
   taps = [
     "jimeh/emacs-builds"
+    "seqeralabs/tap"
   ];
 
   brews = [
@@ -123,7 +124,7 @@
     "mise"
     "pngpaste"
     "usage"
-    "wave-cli"
+    "seqeralabs/tap/wave-cli"
     "wimlib"
     "yabai"
     "z3"
