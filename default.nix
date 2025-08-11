@@ -55,7 +55,7 @@ with lib.my;
     };
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
   # Only set stateVersion on NixOS
-  system.stateVersion = mkIf (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) "24.11";
+  system.stateVersion = mkIf (!lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) "25.05";
 
   ## Some reasonable, global defaults
   # This is here to appease 'nix flake check' for generic hosts with no

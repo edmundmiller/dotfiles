@@ -12,12 +12,12 @@
   inputs = {
     # Core dependencies.
     # Two inputs so I can track them separately at different rates.
-    nixpkgs.url = "nixpkgs/nixos-24.11"; # primary nixpkgs
+    nixpkgs.url = "nixpkgs/nixos-unstable"; # Using unstable for 25.05 compatibility
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
-    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = "github:nix-community/NUR";
-    nix-darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-24.11";
+    nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     # Utils
@@ -27,14 +27,14 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     # NOTE https://github.com/danth/stylix/issues/359
-    stylix.url = "github:danth/stylix/release-24.11";
+    stylix.url = "github:danth/stylix/master";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
     stylix.inputs.home-manager.follows = "home-manager";
     treefmt-nix.url = "github:numtide/treefmt-nix";
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
-    nixvim.url = "github:nix-community/nixvim/nixos-24.11";
+    nixvim.url = "github:nix-community/nixvim";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     ghostty.url = "git+ssh://git@github.com/ghostty-org/ghostty";
