@@ -43,6 +43,12 @@ in
       promptInit = "";
     };
 
+    # Create symlinks for zsh configuration files in home directory
+    home.file = {
+      ".zshenv".source = "${config.dotfiles.configDir}/zsh/.zshenv";
+      ".zshrc".source = "${config.dotfiles.configDir}/zsh/.zshrc";
+    };
+
     user.packages = with pkgs; [
       zsh
       unstable.atuin
