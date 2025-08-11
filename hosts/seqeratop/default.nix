@@ -50,7 +50,8 @@
         "neovim"
         "ruff"
         "uv"
-        "tldr"
+        "tealdeer"
+        "seqeralabs/tap/tw"
         "seqeralabs/tap/wave-cli"
         "pulumi/tap/pulumi"
         "awscli"
@@ -64,12 +65,11 @@
       ];
       casks = [
         "1password-cli"
-        "cursor"
         "spotify"
         "bartender"
-        "notion"
         "sunsama"
-        "betterdisplay"
+
+        "repo-prompt"
         "font-jetbrains-mono"
         "positron"
         "ghostty"

@@ -29,7 +29,6 @@
     # NOTE https://github.com/danth/stylix/issues/359
     stylix.url = "github:danth/stylix/master";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
-    stylix.inputs.home-manager.follows = "home-manager";
     treefmt-nix.url = "github:numtide/treefmt-nix";
 
     # Extras
