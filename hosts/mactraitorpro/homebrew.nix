@@ -61,8 +61,6 @@
     "tealdeer"
     "terminal-notifier"
     "thefuck"
-    "tldr"
-    "tlrc"
     "tmux"
     "tree"
     "tree-sitter"
