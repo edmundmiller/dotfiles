@@ -1,0 +1,3 @@
+#+title: Notes
+
+[[https://github.com/dustinlyons/nixos-config/blob/main/modules/darwin/dock/default.nix][Declarative dock]]

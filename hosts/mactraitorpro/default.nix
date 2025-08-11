@@ -28,6 +28,15 @@
         ssh.enable = true;
       };
     };
+
+    # Configure nix-homebrew for proper privilege management
+    nix-homebrew = {
+      enable = true;
+      user = "emiller";
+      enableRosetta = true;  # Apple Silicon + Intel compatibility
+      autoMigrate = true;    # Migrate existing homebrew installation
+    };
+
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
       enable = true;
@@ -96,7 +105,7 @@
     };
 
     # Enable sudo authentication with Touch ID.
-    security.pam.enableSudoTouchIdAuth = true;
+    security.pam.services.sudo_local.touchIdAuth = true;
 
     # set some OSX preferences that I always end up hunting down and changing.
     system.defaults = {

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+#
+# Install automated sync jobs for taskwarrior and bugwarrior
+#
+
+set -euo pipefail
+
+DOTFILES_DIR="$HOME/.config/dotfiles"
+LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
+
+echo "📦 Installing sync job launchd plists..."
+
+# Create necessary directories
+mkdir -p "$HOME/.local/share/taskwarrior" "$HOME/.local/share/bugwarrior" "$LAUNCH_AGENTS_DIR"
+
+# Create symlinks
+ln -sf "$DOTFILES_DIR/config/launchd/com.user.taskwarrior-sync.plist" "$LAUNCH_AGENTS_DIR/"
+ln -sf "$DOTFILES_DIR/config/launchd/com.user.bugwarrior-pull.plist" "$LAUNCH_AGENTS_DIR/"
+
+# Load the jobs
+if launchctl load "$LAUNCH_AGENTS_DIR/com.user.taskwarrior-sync.plist"; then
+    echo "✅ Taskwarrior sync job loaded (runs every 15 minutes)"
+else
+    echo "⚠️  Failed to load taskwarrior sync job"
+fi
+
+if launchctl load "$LAUNCH_AGENTS_DIR/com.user.bugwarrior-pull.plist"; then
+    echo "✅ Bugwarrior pull job loaded (runs every 30 minutes)"
+else
+    echo "⚠️  Failed to load bugwarrior pull job"
+fi
+
+# Create symlink for bugwarriorrc if it doesn't exist
+if [[ ! -e "$HOME/.config/bugwarrior/bugwarriorrc" ]]; then
+    mkdir -p "$HOME/.config/bugwarrior"
+    ln -sf "$DOTFILES_DIR/config/bugwarrior/bugwarriorrc" "$HOME/.config/bugwarrior/"
+    echo "✅ Bugwarrior config symlinked"
+fi
+
+echo ""
+echo "🎉 Sync jobs installation complete!"
+echo ""
+echo "Management commands:"
+echo "  launchctl list | grep com.user     # Check status"
+echo "  launchctl start com.user.*         # Manual trigger"
+echo "  task-sync-logs                     # View taskwarrior logs"
+echo "  bugwarrior-logs                    # View bugwarrior logs"
+echo ""
+echo "Logs are written to:"
+echo "  ~/.local/share/taskwarrior/"
+echo "  ~/.local/share/bugwarrior/"

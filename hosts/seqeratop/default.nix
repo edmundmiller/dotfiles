@@ -28,6 +28,15 @@
         ssh.enable = true;
       };
     };
+
+    # Configure nix-homebrew for proper privilege management
+    nix-homebrew = {
+      enable = true;
+      user = "emiller";
+      enableRosetta = true;  # Apple Silicon + Intel compatibility
+      autoMigrate = true;    # Migrate existing homebrew installation
+    };
+
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
       enable = true;
