@@ -5,11 +5,11 @@ description: Create a git commit using MCP git server
 
 ## Context
 
-- Current git status: !`mcp__git__git_status(repo_path=".")`
-- Unstaged changes: !`mcp__git__git_diff_unstaged(repo_path=".")`
-- Staged changes: !`mcp__git__git_diff_staged(repo_path=".")`
-- Current branch: !`mcp__git__git_branch(repo_path=".", branch_type="local")`
-- Recent commits: !`mcp__git__git_log(repo_path=".", max_count=10)`
+- Current git status: !`git status`
+- Unstaged changes: !`git diff`
+- Staged changes: !`git diff --staged`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -10`
 
 ## Your task
 
