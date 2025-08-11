@@ -22,9 +22,9 @@ hey check        # Run flake checks
 hey show         # Show flake outputs
 hey test         # Quick rebuild without adding to bootloader
 
-# Direct darwin-rebuild commands:
-sudo darwin-rebuild switch -I darwin=.  # Rebuild and switch to new configuration
-sudo darwin-rebuild switch --flake .    # Alternative flake syntax
+# Direct darwin-rebuild commands (using flake syntax):
+sudo ./result/sw/bin/darwin-rebuild --flake .#MacTraitor-Pro switch  # Rebuild and switch
+sudo ./result/sw/bin/darwin-rebuild --flake .#Seqeratop switch       # For Seqeratop host
 darwin-rebuild --list-generations       # List available generations
 sudo darwin-rebuild --rollback          # Roll back to previous generation
 nix-collect-garbage -d                  # Garbage collection
@@ -84,14 +84,15 @@ in {
 
 ### Testing Configuration Changes
 1. Make changes to relevant files
-2. Run `sudo darwin-rebuild switch -I darwin=.` to rebuild and switch
-3. If issues occur: `sudo darwin-rebuild --rollback`
+2. Run `hey re` or build with `nix build .#darwinConfigurations.<HOST>.system`
+3. Activate with `sudo ./result/sw/bin/darwin-rebuild --flake .#<HOST> switch`
+4. If issues occur: `sudo darwin-rebuild --rollback`
 
 ### Updating Dependencies
 ```bash
 nix flake update                               # Update all flake inputs
 nix flake update <input>                       # Update specific input
-sudo darwin-rebuild switch -I darwin=.        # Apply updates
+hey re                                         # Apply updates using hey wrapper
 ```
 
 ### Adding New Packages
@@ -114,6 +115,14 @@ sudo darwin-rebuild switch -I darwin=.        # Apply updates
 - Flake outputs: `hey show`
 - Repl for testing: `hey repl`
 
+## Homebrew Management
+
+This repository uses `nix-homebrew` for proper homebrew integration:
+- Homebrew runs with appropriate user privileges (not root)
+- Configured with `enableRosetta` for Apple Silicon + Intel compatibility
+- `autoMigrate` enabled to migrate existing homebrew installations
+- Managed through the `homebrew` section in host configurations
+
 ## Notes
 
 - Commands must be run from the repository root
@@ -121,3 +130,4 @@ sudo darwin-rebuild switch -I darwin=.        # Apply updates
 - Host-specific settings override module defaults
 - The system uses home-manager for user-level configuration
 - The `hey` command (if available) provides convenient wrappers for common operations
+- Uses nix-darwin 25.05 with `system.primaryUser` set for proper user context
