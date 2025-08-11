@@ -5,8 +5,8 @@ description: Help with git bisect to find problematic commits
 
 ## Context
 
-- Current status: !`mcp__git__git_status(repo_path=".")`
-- Recent commits: !`mcp__git__git_log(repo_path=".", max_count=20)`
+- Current status: !`git status`
+- Recent commits: !`git log --oneline -20`
 
 ## Your task
 

@@ -5,10 +5,10 @@ description: Help with git rebase operations
 
 ## Context
 
-- Current status: !`mcp__git__git_status(repo_path=".")`
-- Current branch: !`mcp__git__git_branch(repo_path=".", branch_type="local")`
-- Recent commits on current branch: !`mcp__git__git_log(repo_path=".", max_count=10)`
-- All branches: !`mcp__git__git_branch(repo_path=".", branch_type="all")`
+- Current status: !`git status`
+- Current branch: !`git branch --show-current`
+- Recent commits on current branch: !`git log --oneline -10`
+- All branches: !`git branch -a`
 
 ## Your task
 
