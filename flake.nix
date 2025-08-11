@@ -193,6 +193,9 @@
                 # Set primary user for nix-darwin 25.05
                 system.primaryUser = "emiller";
                 
+                # Fix nixbld group ID mismatch
+                ids.gids.nixbld = 350;
+                
                 # User configuration
                 users.users.emiller = {
                   home = "/Users/emiller";
@@ -268,6 +271,9 @@
                 
                 # Set primary user for nix-darwin 25.05
                 system.primaryUser = "emiller";
+                
+                # Fix nixbld group ID mismatch
+                ids.gids.nixbld = 350;
                 
                 # User configuration
                 users.users.emiller = {
