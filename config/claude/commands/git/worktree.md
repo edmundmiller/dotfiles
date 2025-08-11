@@ -6,8 +6,8 @@ description: Create and manage git worktrees for parallel development
 ## Context
 
 - Current directory: !`pwd`
-- Current git status: !`mcp__git__git_status(repo_path=".")`
-- Available branches: !`mcp__git__git_branch(repo_path=".", branch_type="all")`
+- Current git status: !`git status`
+- Available branches: !`git branch -a`
 - Existing worktrees: !`git worktree list`
 
 ## Your task
