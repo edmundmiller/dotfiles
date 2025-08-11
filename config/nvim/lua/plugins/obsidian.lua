@@ -284,5 +284,27 @@ return {
       { "<leader>n", group = "notes" },
       { "<leader>nr", group = "roam (obsidian)" },
     })
+    
+    -- Reduce visual clutter for Obsidian vault files only
+    vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
+      pattern = vim.fn.expand("~") .. "/Documents/vault/*.md",
+      callback = function()
+        -- Disable concealment that might be causing visual issues
+        vim.opt_local.conceallevel = 0
+        vim.opt_local.concealcursor = ""
+        
+        -- Reduce diagnostic visual noise (but keep them available)
+        vim.diagnostic.config({
+          virtual_text = false,  -- No inline text
+          signs = true,          -- Keep gutter signs
+          underline = false,     -- No underlines
+          update_in_insert = false,
+          float = {
+            border = "rounded",
+            source = "always",
+          },
+        }, vim.api.nvim_get_current_buf())
+      end,
+    })
   end,
 }
