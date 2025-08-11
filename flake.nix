@@ -144,6 +144,9 @@
             # Add home-manager module first
             inputs.home-manager.darwinModules.home-manager
             
+            # Add nix-homebrew module for proper homebrew management
+            inputs.nix-homebrew.darwinModules.nix-homebrew
+            
             # Import host-specific configuration
             ./hosts/mactraitorpro/default.nix
 
@@ -161,7 +164,6 @@
                 environment.variables.DOTFILES = toString ./.;
                 environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
                 
-                services.nix-daemon.enable = true;
                 # Use the correct nixpkgs
                 nixpkgs.pkgs = darwinPkgs;
                 
@@ -180,16 +182,16 @@
                       "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
                     ];
                   };
-                  optimise = {
-                    automatic = true;
-                    user = "root";
-                  };
+                  optimise.automatic = true;
                 };
                 
                 system.stateVersion = 4;
 
                 home-manager.useGlobalPkgs = true;
                 home-manager.useUserPackages = true;
+                
+                # Set primary user for nix-darwin 25.05
+                system.primaryUser = "emiller";
                 
                 # User configuration
                 users.users.emiller = {
@@ -218,6 +220,9 @@
             # Add home-manager module first
             inputs.home-manager.darwinModules.home-manager
             
+            # Add nix-homebrew module for proper homebrew management
+            inputs.nix-homebrew.darwinModules.nix-homebrew
+            
             # Import host-specific configuration
             ./hosts/seqeratop/default.nix
 
@@ -235,7 +240,6 @@
                 environment.variables.DOTFILES = toString ./.;
                 environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
                 
-                services.nix-daemon.enable = true;
                 # Use the correct nixpkgs
                 nixpkgs.pkgs = darwinPkgs;
                 
@@ -254,16 +258,16 @@
                       "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
                     ];
                   };
-                  optimise = {
-                    automatic = true;
-                    user = "root";
-                  };
+                  optimise.automatic = true;
                 };
                 
                 system.stateVersion = 4;
 
                 home-manager.useGlobalPkgs = true;
                 home-manager.useUserPackages = true;
+                
+                # Set primary user for nix-darwin 25.05
+                system.primaryUser = "emiller";
                 
                 # User configuration
                 users.users.emiller = {

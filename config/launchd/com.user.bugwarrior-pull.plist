@@ -25,6 +25,8 @@
     <dict>
         <key>PATH</key>
         <string>/Users/emiller/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>OP_SERVICE_ACCOUNT_TOKEN</key>
+        <string>ops_YOUR_TOKEN_HERE</string>
     </dict>
 </dict>
 </plist>

@@ -90,8 +90,8 @@ context.home.read=project.startswith:personal or project.startswith:family or pr
 context.home.write=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
 
 # Individual workspace contexts  
-context.functional_genomics.read=project.startswith:functional_genomics
-context.functional_genomics.write=project.startswith:functional_genomics +funlab
+context.phd.read=project.startswith:functional_genomics
+context.phd.write=project.startswith:functional_genomics +funlab
 
 # Writing context - shows only dissertation content work
 context.writing.read=project.startswith:functional_genomics +writing
@@ -202,7 +202,8 @@ color.calendar.weekend=color8
 sync.encryption_secret=taskwarrior-sync-secret-1753159270
 sync.aws.region=us-east-1
 sync.aws.bucket=emiller-taskchampion-sync
-# AWS credentials removed for security
+sync.aws.access_key_id=
+sync.aws.secret_access_key=
 uda.reviewed.type=date
 uda.reviewed.label=Reviewed
 report._reviewed.description=Tasksh review report. Adjust the filter to your needs.
@@ -213,3 +214,4 @@ color.active=bold white on red
 color.overdue=bold red on black
 color.due.today=bold yellow
 uda.taskwarrior-tui.default-view=tasks
+context=phd
