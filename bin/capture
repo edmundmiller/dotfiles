@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title org-capture
+# @raycast.mode silent
+
+# Optional parameters:
+# @raycast.icon 🎣
+
+# Documentation:
+# @raycast.description Invoking the org-capture frame from outside Emacs
+# @raycast.author Edmund Miller
+# @raycast.authorURL https://edmundmiller.dev
+
+# TODO Add "" and argument for initial capture
+sh ~/.config/emacs/bin/org-capture -k m

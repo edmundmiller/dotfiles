@@ -59,10 +59,6 @@ rebuild +ARGS='switch':
           echo "Build succeeded!"
           echo "To complete activation, run:"
           echo "  sudo ./result/sw/bin/darwin-rebuild --flake {{FLAKE}}#$flake_host {{ARGS}} $@"
-          echo ""
-          echo "Note: If you get a homebrew error, run these commands separately:"
-          echo "  1. sudo ./result/sw/bin/darwin-rebuild --flake {{FLAKE}}#$flake_host {{ARGS}} $@ || true"
-          echo "  2. ./bin/activate-homebrew"
         fi
       else
         echo "Error: darwin-rebuild not found in build result"
