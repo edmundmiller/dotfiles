@@ -5,9 +5,6 @@ return {
     event = "VeryLazy",
     ft = "org",
     config = function()
-      -- Setup treesitter
-      require("orgmode").setup_ts_grammar()
-
       -- Setup orgmode
       require("orgmode").setup({
         org_agenda_files = { "~/org/**/*", "~/Documents/org/**/*" },
@@ -141,19 +138,5 @@ return {
     cmd = "Calendar",
   },
 
-  -- Completion source for orgmode
-  {
-    "hrsh7th/nvim-cmp",
-    dependencies = {
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-    },
-    opts = function(_, opts)
-      local cmp = require("cmp")
-      opts.sources = cmp.config.sources(vim.list_extend(opts.sources or {}, {
-        { name = "orgmode" },
-      }))
-      return opts
-    end,
-  },
+  -- Note: Orgmode completion is handled by blink.cmp in LazyVim
 }
