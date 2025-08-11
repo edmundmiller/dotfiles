@@ -1,5 +1,5 @@
 if [ -n "${GHOSTTY_RESOURCES_DIR}" ]; then
-    ${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration
+    source "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration" 2>/dev/null || true
 fi
 # Stop TRAMP (in Emacs) from hanging or term/shell from echoing back commands
 if [[ $TERM == dumb || -n $INSIDE_EMACS ]]; then
@@ -10,10 +10,6 @@ if [[ $TERM == dumb || -n $INSIDE_EMACS ]]; then
 fi
 
 ## Plugins
-# zgen
-# we handle compinit ourselves...
-export ZGEN_AUTOLOAD_COMPINIT=0
-
 # zsh-vi-mode
 export ZVM_INIT_MODE=sourcing
 export ZVM_VI_INSERT_ESCAPE_BINDKEY=jk
