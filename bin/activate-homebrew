@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Manual homebrew activation script to run after darwin-rebuild
+
+set -e
+
+echo "Running homebrew activation as user..."
+
+# Check if homebrew is installed
+if ! command -v brew &> /dev/null; then
+    echo "Error: Homebrew is not installed"
+    exit 1
+fi
+
+# Find the Brewfile in the nix store
+BREWFILE=$(find /nix/store -name "Brewfile" -path "*/darwin-system*/etc/*" 2>/dev/null | head -1)
+
+if [ -z "$BREWFILE" ]; then
+    echo "Error: Could not find Brewfile in nix store"
+    echo "Try running 'darwin-rebuild build' first"
+    exit 1
+fi
+
+echo "Found Brewfile at: $BREWFILE"
+echo "Running brew bundle..."
+
+# Run brew bundle
+brew bundle --file="$BREWFILE" --no-lock
+
+echo "Homebrew activation complete!"
