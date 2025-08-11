@@ -47,54 +47,7 @@
         cleanup = "none";     # Don't remove anything for now
         upgrade = false;     # Don't upgrade formulae during activation
       };
-
-      taps = [ "jimeh/emacs-builds" ];
-      brews = [
-        "duckdb"
-        "gh"
-        "fzf"
-        "neovim"
-        "ruff"
-        "uv"
-        "seqeralabs/tap/wave-cli"
-        "tealdeer"
-        # Doom
-        "git"
-        "ripgrep"
-        "coreutils"
-        "fd"
-        "tree-sitter"
-      ];
-      casks = [
-        "1password"
-        "1password-cli"
-        "raycast"
-        "soundsource"
-        "ghostty"
-        "font-jetbrains-mono"
-        "font-juliamono"
-        "slack"
-        "spotify"
-        "gitify"
-        "sunsama"
-
-        "emacs-app-pretest"
-        "microsoft-teams"
-        "visual-studio-code"
-        "claude"
-        "vlc"
-        "legcord"
-        "orion"
-        "font-ia-writer-duo"
-        "zoom"
-      ];
-
-      masApps = {
-        "Keynote" = 409183694;
-        "Numbers" = 409203825;
-        "Xcode" = 497799835;
-      };
-    };
+    } // import ./homebrew.nix;
 
     # Enable sudo authentication with Touch ID.
     security.pam.services.sudo_local.touchIdAuth = true;
