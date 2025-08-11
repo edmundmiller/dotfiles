@@ -1,5 +1,5 @@
 return {
-  "epwalsh/obsidian.nvim",
+  "obsidian-nvim/obsidian.nvim",  -- Fork with blink.cmp support
   version = "*", -- recommended, use latest release instead of latest commit
   lazy = true,
   ft = "markdown",
@@ -89,32 +89,14 @@ return {
       template = nil
     },
 
-    -- Optional, completion of wiki links, local markdown links, and tags using nvim-cmp.
+    -- Optional, completion of wiki links, local markdown links, and tags using blink.cmp.
     completion = {
-      -- Set to false to disable completion.
-      nvim_cmp = true,
-      -- Trigger completion at 2 chars.
+      nvim_cmp = false,  -- Disable nvim-cmp since we use blink.cmp
+      blink = true,      -- Enable blink.cmp support
       min_chars = 2,
     },
 
-    -- Optional, configure key mappings. These are the defaults. If you don't want to set any keymappings this
-    -- way then set 'mappings = {}'. Using buffer-local mappings for markdown files only.
-    mappings = {
-      -- Overrides the 'gf' mapping to work on markdown/wiki links within your vault.
-      ["gf"] = {
-        action = function()
-          return require("obsidian").util.gf_passthrough()
-        end,
-        opts = { noremap = false, expr = true, buffer = true },
-      },
-      -- Smart action depending on context, either follow link or toggle checkbox.
-      ["<cr>"] = {
-        action = function()
-          return require("obsidian").util.smart_action()
-        end,
-        opts = { buffer = true, expr = true },
-      }
-    },
+    -- Mappings are now deprecated, use callbacks or autocmds instead
 
     -- Where to put new notes. Valid options are
     --  * "current_dir" - put new notes in same directory as the current buffer.
@@ -228,12 +210,12 @@ return {
       -- vim.cmd(':silent exec "!start ' .. url .. '"') -- Windows
     end,
 
-    -- Optional, set to true if you use the Obsidian Advanced URI plugin.
-    -- https://github.com/Vinzent03/obsidian-advanced-uri
-    use_advanced_uri = false,
-
-    -- Optional, set to true to force ':ObsidianOpen' to bring the app to the foreground.
-    open_app_foreground = false,
+    -- Configure how to open notes in Obsidian app
+    open = {
+      func = function(uri)
+        vim.ui.open(uri, { cmd = { "open", "-a", "/Applications/Obsidian.app" } })
+      end
+    },
 
     picker = {
       -- Set your preferred picker. Can be one of 'telescope.nvim', 'fzf-lua', or 'mini.pick'.
