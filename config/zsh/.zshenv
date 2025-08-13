@@ -9,5 +9,5 @@ export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 export ZSH_CACHE="$XDG_CACHE_HOME/zsh"
 
-# Source the actual zshenv from dotfiles
-[[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
+# Add ~/.local/bin to PATH if it exists
+[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
