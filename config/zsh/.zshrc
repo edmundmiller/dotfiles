@@ -1,3 +1,4 @@
 #!/usr/bin/env zsh
-# This file is now managed by Nix - see modules/shell/zsh.nix
-# The actual .zshrc will be generated at ~/.zshrc
+# This sources the actual zshrc from the dotfiles
+# The real configuration is in ~/.config/zsh/.zshrc
+[[ -f "$ZDOTDIR/.zshrc" ]] && source "$ZDOTDIR/.zshrc"
