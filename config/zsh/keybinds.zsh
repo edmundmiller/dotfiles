@@ -63,5 +63,7 @@ history-beginning-search-backward-then-append() {
 zle -N history-beginning-search-backward-then-append
 bindkey -M viins '^x^l' history-beginning-search-backward-then-append
 
-# Navi
-eval "$(navi widget zsh)"
+# Navi (if available)
+if (( $+commands[navi] )); then
+  eval "$(navi widget zsh)"
+fi
