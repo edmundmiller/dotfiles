@@ -23,8 +23,11 @@ in
 
     home.file = {
       ".claude/settings.json".source = "${configDir}/claude/settings.json";
+      ".claude/settings.local.json".source = "${configDir}/claude/.claude/settings.local.json";
       ".claude/slash_commands".source = "${configDir}/claude/slash_commands";
       ".claude/agents".source = "${configDir}/claude/agents";
+      ".claude/commands".source = "${configDir}/claude/commands";
+      ".claude/config".source = "${configDir}/claude/config";
     };
   };
 }
