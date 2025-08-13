@@ -55,7 +55,7 @@ let
       owner = "marlonrichert";
       repo = "zsh-snap";
       rev = "25754a45d9ceafe6d7d082c9ebe40a08cb85a4f0";  # Latest commit as of Dec 2024
-      sha256 = "0by6k6skc3wlmc5s56pz7i89z6n0i3yrgm0lw4r7aqx5manlvp60";
+      sha256 = "sha256-iunAF4hXQ5vC5u3nXPB+q1xLWaFsYKcbsGijrDHGVQo=";
     };
     
     installPhase = ''
@@ -108,14 +108,33 @@ in
         export ZDOTDIR="''${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
         export ZSH_CACHE="''${ZSH_CACHE:-$XDG_CACHE_HOME/zsh}"
         
+        # Helper functions
+        function _source {
+          [[ -f "$1" ]] && source "$1"
+        }
+        
+        function _cache {
+          local cache_dir="$XDG_CACHE_HOME/zsh"
+          local cache_file="$cache_dir/$1.zsh"
+          
+          if [[ ! -f "$cache_file" ]] || [[ "$commands[$1]" -nt "$cache_file" ]]; then
+            mkdir -p "$cache_dir"
+            "$@" > "$cache_file"
+          fi
+          source "$cache_file"
+        }
+        
         # Source configuration
         source $ZDOTDIR/config.zsh
         
         ${znapInit}
         
+        # Load p10k config if it exists
+        [[ -f $ZDOTDIR/.p10k.zsh ]] && source $ZDOTDIR/.p10k.zsh
+        
         ## Bootstrap interactive sessions
         if [[ $TERM != dumb ]]; then
-          autoload -Uz compinit && compinit -u -d $ZSH_CACHE/zcompdump
+          autoload -Uz compinit && compinit -i -u -d $ZSH_CACHE/zcompdump
         
           source $ZDOTDIR/keybinds.zsh
           source $ZDOTDIR/completion.zsh
@@ -127,10 +146,14 @@ in
           _source $ZDOTDIR/local.zshrc
         
           # Initialize zoxide with caching
-          _cache zoxide init zsh
+          if (( $+commands[zoxide] )); then
+            _cache zoxide init zsh
+          fi
           
           # Initialize autopair
-          autopair-init
+          if (( $+functions[autopair-init] )); then
+            autopair-init
+          fi
         fi
       '';
     };
@@ -271,6 +294,6 @@ in
       dclo = "docker-compose logs -f";
     };
 
-    modules.shell.zsh.rcFiles = [ "${configDir}/zsh/rc.extra.zsh" ];
+    modules.shell.zsh.rcFiles = [ ];
   };
 }
