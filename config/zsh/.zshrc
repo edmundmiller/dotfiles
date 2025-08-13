@@ -2,3 +2,5 @@
 # This sources the actual zshrc from the dotfiles
 # The real configuration is in ~/.config/zsh/.zshrc
 [[ -f "$ZDOTDIR/.zshrc" ]] && source "$ZDOTDIR/.zshrc"
+
+export PATH="/Users/emiller/.pixi/bin:$PATH"
