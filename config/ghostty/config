@@ -59,10 +59,10 @@ mouse-hide-while-typing = false
 # Window Management
 quit-after-last-window-closed = true
 
-# GTK Settings (Linux)
-gtk-titlebar = false
-gtk-tabs-location = bottom
-gtk-wide-tabs = true
+# GTK Settings (Linux) - commented out for macOS
+# gtk-titlebar = false
+# gtk-tabs-location = bottom
+# gtk-wide-tabs = true
 
 # macOS Settings
 macos-non-native-fullscreen = true
