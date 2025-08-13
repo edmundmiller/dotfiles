@@ -49,6 +49,9 @@
       };
     } // import ./homebrew.nix;
 
+    # Override the primary user for this host
+    system.primaryUser = "emiller";
+
     # Enable sudo authentication with Touch ID.
     security.pam.services.sudo_local.touchIdAuth = true;
 
