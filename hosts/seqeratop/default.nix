@@ -29,10 +29,13 @@
       };
     };
 
+    # Override the primary user for this host
+    system.primaryUser = "edmundmiller";
+
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {
       enable = true;
-      user = "emiller";
+      user = "edmundmiller";
       enableRosetta = true;  # Apple Silicon + Intel compatibility
       autoMigrate = true;    # Migrate existing homebrew installation
     };
