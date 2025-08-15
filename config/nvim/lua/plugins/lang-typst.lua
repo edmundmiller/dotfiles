@@ -3,7 +3,6 @@ return {
   {
     "kaarmu/typst.vim",
     ft = "typst",
-    lazy = false,
     config = function()
       -- Typst-specific settings
       vim.g.typst_pdf_viewer = "skim"  -- Change to your preferred PDF viewer
@@ -54,11 +53,11 @@ return {
   -- Mason support for installing tinymist
   {
     "williamboman/mason.nvim",
-    opts = {
-      ensure_installed = {
-        "tinymist",
-      },
-    },
+    opts = function(_, opts)
+      opts.ensure_installed = opts.ensure_installed or {}
+      vim.list_extend(opts.ensure_installed, { "tinymist" })
+      return opts
+    end,
   },
 
   -- File type and basic configuration
@@ -87,13 +86,13 @@ return {
           vim.bo.shiftwidth = 2
           vim.bo.tabstop = 2
           vim.bo.expandtab = true
-          vim.bo.wrap = true
-          vim.bo.linebreak = true
+          vim.wo.wrap = true
+          vim.wo.linebreak = true
           vim.bo.textwidth = 80
           
           -- Enable spell checking for Typst documents
           vim.wo.spell = true
-          vim.bo.spelllang = "en_us"
+          vim.opt_local.spelllang = "en_us"
           
           -- Set up folding
           vim.wo.foldmethod = "expr"
@@ -108,39 +107,39 @@ return {
   -- Formatter support
   {
     "stevearc/conform.nvim",
-    opts = {
-      formatters_by_ft = {
-        typst = { "typstfmt" },
-      },
-      formatters = {
-        typstfmt = {
-          command = "typstfmt",
-          args = { "--stdin" },
-          stdin = true,
-        },
-      },
-    },
+    opts = function(_, opts)
+      opts.formatters_by_ft = opts.formatters_by_ft or {}
+      opts.formatters_by_ft.typst = { "typstfmt" }
+      
+      opts.formatters = opts.formatters or {}
+      opts.formatters.typstfmt = {
+        command = "typstfmt",
+        args = { "--stdin" },
+        stdin = true,
+      }
+      return opts
+    end,
   },
 
   -- Enhanced file explorer support
   {
     "nvim-tree/nvim-web-devicons",
-    opts = {
-      override_by_extension = {
-        ["typ"] = {
-          icon = "📄",
-          color = "#239DAD",
-          cterm_color = "31",
-          name = "Typst",
-        },
-        ["typst"] = {
-          icon = "📝",
-          color = "#239DAD", 
-          cterm_color = "31",
-          name = "Typst",
-        },
-      },
-    },
+    opts = function(_, opts)
+      opts.override_by_extension = opts.override_by_extension or {}
+      opts.override_by_extension["typ"] = {
+        icon = "📄",
+        color = "#239DAD",
+        cterm_color = "31",
+        name = "Typst",
+      }
+      opts.override_by_extension["typst"] = {
+        icon = "📝",
+        color = "#239DAD", 
+        cterm_color = "31",
+        name = "Typst",
+      }
+      return opts
+    end,
   },
 
   -- Snippets for Typst
