@@ -1,4 +1,11 @@
 #!/usr/bin/env zsh
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # Ensure essential environment variables are set
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -26,19 +33,40 @@ function _cache {
 source $ZDOTDIR/config.zsh
 
 # Initialize antidote (managed by Nix)
-for antidote_file in /nix/store/*antidote*/share/antidote/antidote.zsh; do
-  if [[ -f "$antidote_file" ]]; then
-    source "$antidote_file"
-    break
-  fi
-done
+# Cache antidote path for faster startup
+_antidote_cache_file="$ZSH_CACHE/antidote_path"
+if [[ -f "$_antidote_cache_file" ]]; then
+  _antidote_path="$(cat "$_antidote_cache_file")"
+else
+  # Find and cache antidote path
+  for antidote_file in /nix/store/*antidote*/share/antidote/antidote.zsh; do
+    if [[ -f "$antidote_file" ]]; then
+      _antidote_path="$antidote_file"
+      mkdir -p "$(dirname "$_antidote_cache_file")"
+      echo "$_antidote_path" > "$_antidote_cache_file"
+      break
+    fi
+  done
+fi
+
+# Source antidote if path exists
+[[ -f "$_antidote_path" ]] && source "$_antidote_path"
 
 # Load plugins from .zsh_plugins.txt
 antidote load "$ZDOTDIR/.zsh_plugins.txt"
 
 ## Bootstrap interactive sessions
 if [[ $TERM != dumb ]]; then
-  autoload -Uz compinit && compinit -i -u -d $ZSH_CACHE/zcompdump
+  # Smart compinit - only regenerate if dump is stale (>24h) or missing
+  autoload -Uz compinit
+  _comp_dump="$ZSH_CACHE/zcompdump"
+  if [[ $_comp_dump(#qNmh+24) ]]; then
+    # Dump is older than 24 hours, regenerate with security checks
+    compinit -i -u -d "$_comp_dump"
+  else
+    # Dump is fresh, load quickly without checks
+    compinit -C -d "$_comp_dump"
+  fi
 
   source $ZDOTDIR/keybinds.zsh
   source $ZDOTDIR/completion.zsh
@@ -52,15 +80,18 @@ if [[ $TERM != dumb ]]; then
   # Load p10k config if it exists
   [[ -f $ZDOTDIR/.p10k.zsh ]] && source $ZDOTDIR/.p10k.zsh
 
-  # Initialize zoxide with caching
+  # Initialize zoxide with caching (needed for aliases)
   if (( $+commands[zoxide] )); then
     _cache zoxide init zsh
   fi
   
-  # Initialize autopair
-  if (( $+functions[autopair-init] )); then
-    autopair-init
-  fi
+  # Defer only autopair which is not immediately needed
+  {
+    # Initialize autopair (deferred - happens when plugins are fully loaded)
+    if (( $+functions[autopair-init] )); then
+      autopair-init
+    fi
+  } &!
 fi
 
 export PATH="/Users/emiller/.pixi/bin:$PATH"
