@@ -201,42 +201,75 @@ return {
     end,
   },
 
-  -- Zen mode for distraction-free writing
+  -- Configure snacks.nvim zen mode (LazyVim default) with Ghostty font support
   {
-    "folke/zen-mode.nvim",
-    opts = {
-      window = {
-        backdrop = 0.95,
+    "folke/snacks.nvim",
+    opts = function(_, opts)
+      local function ghostty_font_change(increment)
+        if not vim.env.GHOSTTY_RESOURCES_DIR then
+          return
+        end
+        
+        local stdout = vim.loop.new_tty(1, false)
+        if stdout then
+          -- Send OSC sequence for Ghostty font changes
+          stdout:write(string.format("\x1b]1337;ZenMode=%s;FontChange=%d\x07", 
+            increment > 0 and "on" or "off", math.abs(increment)))
+          stdout:write(string.format("\x1b]777;notify;Zen Mode;Font size %s\x07",
+            increment > 0 and "increased" or "restored"))
+        end
+      end
+
+      opts.zen = opts.zen or {}
+      opts.zen.toggles = {
+        dim = true,
+        git_signs = false,
+        mini_diff_signs = false,
+      }
+      opts.zen.show = {
+        statusline = false,
+        tabline = false,
+      }
+      opts.zen.win = {
         width = 120,
-        height = 1,
-        options = {
-          signcolumn = "no",
-          number = false,
-          relativenumber = false,
-          cursorline = false,
-          cursorcolumn = false,
-          foldcolumn = "0",
-          list = false,
-        },
-      },
-      plugins = {
-        options = {
-          enabled = true,
-          ruler = false,
-          showcmd = false,
-          laststatus = 0,
-        },
-        twilight = { enabled = true },
-        gitsigns = { enabled = false },
-        tmux = { enabled = false },
-        kitty = {
-          enabled = false,
-          font = "+4",
-        },
-      },
-    },
+        height = 0,
+      }
+      opts.zen.on_open = function()
+        -- Increase font size for GUI Neovim
+        if vim.g.neovide then
+          vim.g.neovide_scale_factor = (vim.g.neovide_scale_factor or 1.0) * 1.25
+        end
+        -- Increase font size using Neovim's guifont option
+        if vim.opt.guifont:get() ~= "" then
+          local current_font = vim.opt.guifont:get()
+          local font_name, size = current_font:match("([^:]+):h(%d+)")
+          if font_name and size then
+            vim.opt.guifont = font_name .. ":h" .. (tonumber(size) + 4)
+          end
+        end
+        -- Ghostty font increase
+        ghostty_font_change(4)
+      end
+      opts.zen.on_close = function()
+        -- Restore font size for GUI Neovim
+        if vim.g.neovide then
+          vim.g.neovide_scale_factor = (vim.g.neovide_scale_factor or 1.0) / 1.25
+        end
+        -- Restore original font size
+        if vim.opt.guifont:get() ~= "" then
+          local current_font = vim.opt.guifont:get()
+          local font_name, size = current_font:match("([^:]+):h(%d+)")
+          if font_name and size then
+            vim.opt.guifont = font_name .. ":h" .. (tonumber(size) - 4)
+          end
+        end
+        -- Ghostty font restore
+        ghostty_font_change(-4)
+      end
+      return opts
+    end,
     keys = {
-      { "<leader>tz", "<cmd>ZenMode<cr>", desc = "Toggle Zen Mode" },
+      { "<leader>tz", function() Snacks.zen() end, desc = "Toggle Zen Mode" },
     },
   },
 
