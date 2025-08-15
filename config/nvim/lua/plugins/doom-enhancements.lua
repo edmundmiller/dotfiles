@@ -239,14 +239,16 @@ return {
         if vim.g.neovide then
           vim.g.neovide_scale_factor = (vim.g.neovide_scale_factor or 1.0) * 1.25
         end
-        -- Increase font size using Neovim's guifont option
-        local current_font = vim.opt.guifont:get()
-        if current_font and current_font ~= "" then
-          local font_name, size = current_font:match("([^:]+):h(%d+)")
-          if font_name and size then
-            vim.opt.guifont = font_name .. ":h" .. (tonumber(size) + 4)
+        -- Increase font size using Neovim's guifont option (with error handling)
+        pcall(function()
+          local current_font = vim.opt.guifont:get()
+          if current_font and type(current_font) == "string" and current_font ~= "" then
+            local font_name, size = current_font:match("([^:]+):h(%d+)")
+            if font_name and size then
+              vim.opt.guifont = font_name .. ":h" .. (tonumber(size) + 4)
+            end
           end
-        end
+        end)
         -- Ghostty font increase
         ghostty_font_change(4)
       end
@@ -255,14 +257,16 @@ return {
         if vim.g.neovide then
           vim.g.neovide_scale_factor = (vim.g.neovide_scale_factor or 1.0) / 1.25
         end
-        -- Restore original font size
-        local current_font = vim.opt.guifont:get()
-        if current_font and current_font ~= "" then
-          local font_name, size = current_font:match("([^:]+):h(%d+)")
-          if font_name and size then
-            vim.opt.guifont = font_name .. ":h" .. (tonumber(size) - 4)
+        -- Restore original font size (with error handling)
+        pcall(function()
+          local current_font = vim.opt.guifont:get()
+          if current_font and type(current_font) == "string" and current_font ~= "" then
+            local font_name, size = current_font:match("([^:]+):h(%d+)")
+            if font_name and size then
+              vim.opt.guifont = font_name .. ":h" .. (tonumber(size) - 4)
+            end
           end
-        end
+        end)
         -- Ghostty font restore
         ghostty_font_change(-4)
       end
