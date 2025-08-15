@@ -240,8 +240,8 @@ return {
           vim.g.neovide_scale_factor = (vim.g.neovide_scale_factor or 1.0) * 1.25
         end
         -- Increase font size using Neovim's guifont option
-        if vim.opt.guifont:get() ~= "" then
-          local current_font = vim.opt.guifont:get()
+        local current_font = vim.opt.guifont:get()
+        if current_font and current_font ~= "" then
           local font_name, size = current_font:match("([^:]+):h(%d+)")
           if font_name and size then
             vim.opt.guifont = font_name .. ":h" .. (tonumber(size) + 4)
@@ -256,8 +256,8 @@ return {
           vim.g.neovide_scale_factor = (vim.g.neovide_scale_factor or 1.0) / 1.25
         end
         -- Restore original font size
-        if vim.opt.guifont:get() ~= "" then
-          local current_font = vim.opt.guifont:get()
+        local current_font = vim.opt.guifont:get()
+        if current_font and current_font ~= "" then
           local font_name, size = current_font:match("([^:]+):h(%d+)")
           if font_name and size then
             vim.opt.guifont = font_name .. ":h" .. (tonumber(size) - 4)
