@@ -1,0 +1,30 @@
+# Antidote Plugin Configuration
+# This file defines all zsh plugins to be loaded by antidote
+
+# Prompt theme - load early
+romkatv/powerlevel10k
+
+# FZF integration for fuzzy finding
+junegunn/fzf path:shell/key-bindings.zsh
+junegunn/fzf path:shell/completion.zsh
+
+# Vi mode for zsh
+jeffreytse/zsh-vi-mode
+
+# Syntax highlighting (load after compinit)
+zdharma-continuum/fast-syntax-highlighting kind:defer
+
+# Completions system
+zsh-users/zsh-completions kind:fpath path:src
+
+# Auto-suggestions (load after compinit)
+zsh-users/zsh-autosuggestions kind:defer
+
+# History substring search
+zsh-users/zsh-history-substring-search kind:defer
+
+# Atuin for shell history sync
+atuinsh/atuin
+
+# Auto-pairing brackets/quotes
+hlissner/zsh-autopair path:autopair.zsh
