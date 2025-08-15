@@ -96,6 +96,7 @@ in
       "zsh/config.zsh".source = "${configDir}/zsh/config.zsh";
       "zsh/keybinds.zsh".source = "${configDir}/zsh/keybinds.zsh";
       "zsh/.zsh_plugins.txt".source = "${configDir}/zsh/.zsh_plugins.txt";
+      "zsh/.p10k.zsh".source = "${configDir}/zsh/.p10k.zsh";
 
       # Main zsh configuration file
       "zsh/.zshrc".text = ''
