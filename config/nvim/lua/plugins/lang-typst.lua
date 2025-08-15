@@ -35,27 +35,28 @@ return {
     end,
   },
 
-  -- LSP support via typst-lsp
+  -- LSP support via tinymist
   {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        typst_lsp = {
+        tinymist = {
+          single_file_support = true,
           settings = {
             exportPdf = "onType",  -- Export PDF on type, save, or never
-            serverPath = "",       -- Path to typst-lsp binary (auto-detected if empty)
+            outputPath = "$root/target/$dir/$name",
           },
         },
       },
     },
   },
 
-  -- Mason support for installing typst-lsp
+  -- Mason support for installing tinymist
   {
     "williamboman/mason.nvim",
     opts = {
       ensure_installed = {
-        "typst-lsp",
+        "tinymist",
       },
     },
   },
