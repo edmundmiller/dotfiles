@@ -11,3 +11,6 @@ export ZSH_CACHE="$XDG_CACHE_HOME/zsh"
 
 # Add ~/.local/bin to PATH if it exists
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
+
+# Add dotfiles bin directory to PATH
+[[ -d "$XDG_CONFIG_HOME/dotfiles/bin" ]] && export PATH="$XDG_CONFIG_HOME/dotfiles/bin:$PATH"
