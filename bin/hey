@@ -1,332 +1,168 @@
 #!/usr/bin/env bash
-# Nix's CLI has a poor user story, in my opinion. It could be better; Guix is a
-# good role model here. I wrote this script to abstract the more common
-# workflows, like rebuilding (nixos-rebuild), cleaning up (nix-collect-garbage),
-# package/env management (nix-env), updating, rolling back, etc. As well as some
-# utility operations (like managing generations, building remotely, or swapping
-# themes on the fly).
-#
-# Because I can go months without shaving yaks in NixOS, exact flags or details
-# are often and easily forgotten. This spares me that fumbling phase and also
-# serves as a reference.
+# A simple interface to nix-darwin/nixos operations
+# Inspired by Henrik Lissner's dotfiles
 
-# Check if just is available, if not use nix shell
-if ! command -v just >/dev/null 2>&1; then
-  exec nix shell nixpkgs#just -c just --justfile <(cat <<'EOF'
-FLAKE := "."
-HOST := ""
-# FIXME HOST := env_var('HOST')
+set -euo pipefail
 
-alias re := rebuild
+FLAKE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+COMMAND="${1:-help}"
 
-# opts       '--build-host HOST',  "Where to build the flake"
-# opts       '--target-host HOST', "Where to deploy the built derivations"
-# opts       '--host HOST',        "The target nixosConfiguration to build"
-# opts       '--user',             "Rebuild as user, rather than root"
-# opts       '--fast',             "Equivalent to --no-build-nix --show-trace for quick rebuilding"
-[doc("Rebuild the current system's flake")]
-rebuild +ARGS='switch':
-  #!/usr/bin/env bash
-  args=""
-  if [[ $1 == "--build-host" ]]; then
-    args+=" --build-host $2"
-    shift 2
-  fi
-  if [[ $1 == "--target-host" ]]; then
-    args+=" --target-host $2"
-    shift 2
-  fi
-  if [[ $1 == "--host" ]]; then
-    args+=" --host $2"
-    shift 2
-  fi
-  if [[ $1 == "--user" ]]; then
-    args+=" --user"
-    shift
-  fi
-  if [[ $1 == "--fast" ]]; then
-    args+=" --fast"
-    shift
-  fi
-  set -x
-  if [[ "$(uname)" == "Darwin" ]]; then
-    # Map hostname to flake configuration name
-    host_name=$(hostname -s)
-    if [[ "$host_name" == "Mac" ]]; then
-      flake_host="MacTraitor-Pro"
+# Helper function to get the correct flake configuration name
+get_flake_host() {
+  local host_name
+  host_name=$(hostname -s)
+  case "$host_name" in
+    "Mac")
+      echo "MacTraitor-Pro"
+      ;;
+    *)
+      echo "$host_name"
+      ;;
+  esac
+}
+
+# Helper function to run darwin-rebuild with proper fallback
+run_darwin_rebuild() {
+  local flake_host
+  flake_host=$(get_flake_host)
+  
+  if command -v darwin-rebuild >/dev/null 2>&1; then
+    sudo darwin-rebuild --flake "$FLAKE_DIR#$flake_host" "$@"
+  else
+    echo "darwin-rebuild not found in PATH, building via nix..."
+    cd "$FLAKE_DIR"
+    nix build ".#darwinConfigurations.$flake_host.system"
+    if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
+      sudo ./result/sw/bin/darwin-rebuild --flake ".#$flake_host" "$@"
     else
-      flake_host="$host_name"
+      echo "Error: darwin-rebuild not found in build result"
+      exit 1
     fi
+  fi
+}
+
+case "$COMMAND" in
+  rebuild|re)
+    shift
+    if [[ "$(uname)" == "Darwin" ]]; then
+      run_darwin_rebuild "${@:-switch}"
+    else
+      sudo nixos-rebuild --flake "$FLAKE_DIR" "${@:-switch}"
+    fi
+    ;;
     
-    # Check if darwin-rebuild is available in PATH
-    if ! command -v darwin-rebuild >/dev/null 2>&1; then
-      echo "darwin-rebuild not found in PATH, running via nix..."
-      # First build the configuration
-      nix build {{FLAKE}}#darwinConfigurations.$flake_host.system
-      # Then use the darwin-rebuild from the result
-      if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
-        # Check if we have a terminal for sudo
-        if [[ -t 0 ]]; then
-          sudo ./result/sw/bin/darwin-rebuild \
-            --flake {{FLAKE}}#$flake_host \
-            {{ARGS}} "$@"
-        else
-          echo "Build succeeded!"
-          echo "To complete activation, run:"
-          echo "  sudo ./result/sw/bin/darwin-rebuild --flake {{FLAKE}}#$flake_host {{ARGS}} $@"
-        fi
-      else
-        echo "Error: darwin-rebuild not found in build result"
-        exit 1
-      fi
-    else
-      sudo darwin-rebuild \
-        --flake {{FLAKE}}#$flake_host \
-        {{ARGS}} "$@"
-    fi
-  else
-    sudo nixos-rebuild \
-      --flake {{FLAKE}} \
-      --option pure-eval no {{ARGS}} "$@"
-  fi
-
-repl:
-  #!/usr/bin/env bash
-  # Open a nix-repl with nixpkgs and dotfiles preloaded
-  tempfile="/tmp/dotfiles-repl.nix"
-  echo "(builtins.getFlake \"$flake\")" > $tempfile
-  nix repl "<nixpkgs>" $tempfile
-
-check:
-  # Run 'nix flake check' on your dotfiles
-  nix flake check {{FLAKE}}
-
-@info REPO *QUERY:
-  # Retrieve details (including SHA) for a REPO.
-  # repo="{{REPO}}"
-  # commit=""
-  # if [[ $repo == *":"* ]]; then
-  # fi
-  # if [[ $repo =~ ^[^/]+/[^/]+$ ]]; then
-  #   repo="https://github.com/$repo"
-  # fi
-  # nix-shell -p nix-prefetch-git --run "nix-prefetch-git --quiet $repo $commit"
-
-show:
-  # Run 'nix flake show' on your dotfiles
-  nix flake show {{FLAKE}}
-
-@theme THEME_NAME:
-  # Quickly swap to another theme module
-  THEME="{{THEME_NAME}}" rebuild --fast test
-
-@test +ARGS='':
-  # Quickly rebuild, for quick iteration
-  rebuild --fast test {{ARGS}}
-
-rollback:
-  #!/usr/bin/env bash
-  # Roll back to last generation
-  if [[ "$(uname)" == "Darwin" ]]; then
-    sudo darwin-rebuild --rollback
-  else
-    rebuild --rollback switch
-  fi
-
-gc:
-  # Run garbage collection
-  nix-collect-garbage -d
-
-alias u := update
-
-update +FLAKES='':
-  #!/usr/bin/env bash
-  # Update specific flakes or all of them
-  if [[ -z "{{FLAKES}}" ]]; then
-    echo "Updating all flakes.."
-    nix flake update {{FLAKE}} --impure
-  else
-    echo "Trying to update flakes: {{FLAKES}}"
-    nix flake lock --impure --update-input {{FLAKES}}
-  fi
-
-# upgrade: update
-#   # Update all flakes and rebuild system
-#   rebuild switch
-
-@search QUERY:
-  # Search nixpkgs for a package
-  nix search nixpkgs {{QUERY}}
-
-@shell PACKAGE:
-  # Start nix shell with package
-  nix shell nixpkgs#{{PACKAGE}}
-
-@swap PATHS:
-  #!/usr/bin/env bash
-  # Recursively swap nix-store symlinks with copies (or back).
-  #
-  # The purpose is so you can have copies of your dotfiles that can be modified in
-  # place (so you can iterate
-EOF
-) --working-directory "$(dirname "$0")/.." "$@"
-else
-  exec just --justfile <(cat <<'EOF'
-FLAKE := "."
-HOST := ""
-# FIXME HOST := env_var('HOST')
-
-alias re := rebuild
-
-# opts       '--build-host HOST',  "Where to build the flake"
-# opts       '--target-host HOST', "Where to deploy the built derivations"
-# opts       '--host HOST',        "The target nixosConfiguration to build"
-# opts       '--user',             "Rebuild as user, rather than root"
-# opts       '--fast',             "Equivalent to --no-build-nix --show-trace for quick rebuilding"
-[doc("Rebuild the current system's flake")]
-rebuild +ARGS='switch':
-  #!/usr/bin/env bash
-  args=""
-  if [[ $1 == "--build-host" ]]; then
-    args+=" --build-host $2"
-    shift 2
-  fi
-  if [[ $1 == "--target-host" ]]; then
-    args+=" --target-host $2"
-    shift 2
-  fi
-  if [[ $1 == "--host" ]]; then
-    args+=" --host $2"
-    shift 2
-  fi
-  if [[ $1 == "--user" ]]; then
-    args+=" --user"
+  test)
     shift
-  fi
-  if [[ $1 == "--fast" ]]; then
-    args+=" --fast"
-    shift
-  fi
-  set -x
-  if [[ "$(uname)" == "Darwin" ]]; then
-    # Map hostname to flake configuration name
-    host_name=$(hostname -s)
-    if [[ "$host_name" == "Mac" ]]; then
-      flake_host="MacTraitor-Pro"
+    if [[ "$(uname)" == "Darwin" ]]; then
+      run_darwin_rebuild test "$@"
     else
-      flake_host="$host_name"
+      sudo nixos-rebuild --flake "$FLAKE_DIR" test "$@"
     fi
+    ;;
     
-    # Check if darwin-rebuild is available in PATH
-    if ! command -v darwin-rebuild >/dev/null 2>&1; then
-      echo "darwin-rebuild not found in PATH, running via nix..."
-      # First build the configuration
-      nix build {{FLAKE}}#darwinConfigurations.$flake_host.system
-      # Then use the darwin-rebuild from the result
-      if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
-        # Check if we have a terminal for sudo
-        if [[ -t 0 ]]; then
-          sudo ./result/sw/bin/darwin-rebuild \
-            --flake {{FLAKE}}#$flake_host \
-            {{ARGS}} "$@"
-        else
-          echo "Build succeeded!"
-          echo "To complete activation, run:"
-          echo "  sudo ./result/sw/bin/darwin-rebuild --flake {{FLAKE}}#$flake_host {{ARGS}} $@"
-        fi
-      else
-        echo "Error: darwin-rebuild not found in build result"
-        exit 1
-      fi
+  rollback)
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sudo darwin-rebuild --rollback
     else
-      sudo darwin-rebuild \
-        --flake {{FLAKE}}#$flake_host \
-        {{ARGS}} "$@"
+      sudo nixos-rebuild --rollback
     fi
-  else
-    sudo nixos-rebuild \
-      --flake {{FLAKE}} \
-      --option pure-eval no {{ARGS}} "$@"
-  fi
+    ;;
+    
+  update|u)
+    shift
+    cd "$FLAKE_DIR"
+    if [[ $# -eq 0 ]]; then
+      echo "Updating all flake inputs..."
+      nix flake update
+    else
+      echo "Updating flake inputs: $*"
+      for input in "$@"; do
+        nix flake lock --update-input "$input"
+      done
+    fi
+    ;;
+    
+  upgrade)
+    cd "$FLAKE_DIR"
+    echo "Updating flake inputs..."
+    nix flake update
+    echo "Rebuilding system..."
+    if [[ "$(uname)" == "Darwin" ]]; then
+      run_darwin_rebuild switch
+    else
+      sudo nixos-rebuild --flake "$FLAKE_DIR" switch
+    fi
+    ;;
+    
+  gc)
+    nix-collect-garbage -d
+    ;;
+    
+  check)
+    cd "$FLAKE_DIR"
+    nix flake check
+    ;;
+    
+  show)
+    cd "$FLAKE_DIR"
+    nix flake show
+    ;;
+    
+  repl)
+    cd "$FLAKE_DIR"
+    tempfile="/tmp/dotfiles-repl.nix"
+    echo "(builtins.getFlake \"$FLAKE_DIR\")" > "$tempfile"
+    nix repl '<nixpkgs>' "$tempfile"
+    ;;
+    
+  search)
+    shift
+    if [[ $# -eq 0 ]]; then
+      echo "Usage: $0 search <query>"
+      exit 1
+    fi
+    nix search nixpkgs "$@"
+    ;;
+    
+  shell)
+    shift
+    if [[ $# -eq 0 ]]; then
+      echo "Usage: $0 shell <package>"
+      exit 1
+    fi
+    nix shell "nixpkgs#$1"
+    ;;
+    
+  help|--help|-h)
+    cat <<EOF
+Usage: $0 <command> [args...]
 
-repl:
-  #!/usr/bin/env bash
-  # Open a nix-repl with nixpkgs and dotfiles preloaded
-  tempfile="/tmp/dotfiles-repl.nix"
-  echo "(builtins.getFlake \"$flake\")" > $tempfile
-  nix repl "<nixpkgs>" $tempfile
+Commands:
+  rebuild, re [args]    Rebuild the system (default: switch)
+  test [args]          Build and activate but don't add to boot menu
+  rollback             Roll back to previous generation
+  update, u [inputs]   Update flake inputs (all if none specified)
+  upgrade              Update inputs and rebuild system
+  gc                   Run garbage collection
+  check                Run flake checks
+  show                 Show flake outputs
+  repl                 Open nix repl with flake loaded
+  search <query>       Search nixpkgs for packages
+  shell <package>      Start shell with package available
+  help                 Show this help message
 
-check:
-  # Run 'nix flake check' on your dotfiles
-  nix flake check {{FLAKE}}
-
-@info REPO *QUERY:
-  # Retrieve details (including SHA) for a REPO.
-  # repo="{{REPO}}"
-  # commit=""
-  # if [[ $repo == *":"* ]]; then
-  # fi
-  # if [[ $repo =~ ^[^/]+/[^/]+$ ]]; then
-  #   repo="https://github.com/$repo"
-  # fi
-  # nix-shell -p nix-prefetch-git --run "nix-prefetch-git --quiet $repo $commit"
-
-show:
-  # Run 'nix flake show' on your dotfiles
-  nix flake show {{FLAKE}}
-
-@theme THEME_NAME:
-  # Quickly swap to another theme module
-  THEME="{{THEME_NAME}}" rebuild --fast test
-
-@test +ARGS='':
-  # Quickly rebuild, for quick iteration
-  rebuild --fast test {{ARGS}}
-
-rollback:
-  #!/usr/bin/env bash
-  # Roll back to last generation
-  if [[ "$(uname)" == "Darwin" ]]; then
-    sudo darwin-rebuild --rollback
-  else
-    rebuild --rollback switch
-  fi
-
-gc:
-  # Run garbage collection
-  nix-collect-garbage -d
-
-alias u := update
-
-update +FLAKES='':
-  #!/usr/bin/env bash
-  # Update specific flakes or all of them
-  if [[ -z "{{FLAKES}}" ]]; then
-    echo "Updating all flakes.."
-    nix flake update {{FLAKE}} --impure
-  else
-    echo "Trying to update flakes: {{FLAKES}}"
-    nix flake lock --impure --update-input {{FLAKES}}
-  fi
-
-# upgrade: update
-#   # Update all flakes and rebuild system
-#   rebuild switch
-
-@search QUERY:
-  # Search nixpkgs for a package
-  nix search nixpkgs {{QUERY}}
-
-@shell PACKAGE:
-  # Start nix shell with package
-  nix shell nixpkgs#{{PACKAGE}}
-
-@swap PATHS:
-  #!/usr/bin/env bash
-  # Recursively swap nix-store symlinks with copies (or back).
-  #
-  # The purpose is so you can have copies of your dotfiles that can be modified in
-  # place (so you can iterate
+Examples:
+  $0 rebuild           # Rebuild and switch
+  $0 test              # Test build without switching
+  $0 update nixpkgs    # Update only nixpkgs input
+  $0 search firefox    # Search for firefox packages
+  $0 shell hello       # Start shell with hello package
 EOF
-) --working-directory "$(dirname "$0")/.." "$@"
-fi
+    ;;
+    
+  *)
+    echo "Unknown command: $COMMAND"
+    echo "Run '$0 help' for usage information"
+    exit 1
+    ;;
+esac
