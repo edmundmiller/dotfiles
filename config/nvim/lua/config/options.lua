@@ -62,6 +62,9 @@ opt.foldenable = true
 -- Doom Emacs-like variables
 vim.g.autoformat = true -- Enable auto-formatting (can be toggled with SPC t f)
 
+-- Use snacks picker as the default picker (faster than telescope)
+vim.g.lazyvim_picker = "snacks"
+
 -- Disable some built-in plugins that Doom doesn't use
 vim.g.loaded_gzip = 1
 vim.g.loaded_zip = 1
