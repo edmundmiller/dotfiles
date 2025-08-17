@@ -35,8 +35,8 @@ hey repl            # Start nix repl with flake
 sudo ./result/sw/bin/darwin-rebuild --flake .#MacTraitor-Pro switch  # Rebuild and switch
 sudo ./result/sw/bin/darwin-rebuild --flake .#Seqeratop switch       # For Seqeratop host
 darwin-rebuild --list-generations       # List available generations
-sudo darwin-rebuild --rollback          # Roll back to previous generation
-nix-collect-garbage -d                  # Garbage collection
+hey rollback                            # Roll back to previous generation
+hey gc                                  # Garbage collection
 ```
 
 
@@ -53,6 +53,29 @@ The repository follows a modular architecture:
 
 Configuration flow:
 - `flake.nix` → `lib/hosts.nix` → `hosts/<hostname>/default.nix` → enabled modules
+
+## Hey Command Architecture
+
+The `hey` command is implemented as a modular JustScript system that provides the primary interface to nix-darwin operations:
+
+**Main Script:**
+- `bin/hey` - Executable JustScript with shebang `#!/usr/bin/env -S just --justfile`
+- Uses `just` task runner for clean, maintainable command organization
+- Imports modular components for different command categories
+
+**Modular Structure (`bin/hey.d/`):**
+- `common.just` - Shared variables, hostname mapping, and utility functions
+- `rebuild.just` - System rebuild commands (`rebuild`, `test`, `rollback`)
+- `flake.just` - Flake management (`update`, `upgrade`, `check`, `show`)
+- `nix.just` - General nix utilities (`gc`, `repl`, `search`, `shell`)
+
+**Key Features:**
+- Automatic hostname mapping (Mac → MacTraitor-Pro)
+- Darwin-rebuild fallback mechanism when not in PATH
+- Platform detection (Darwin vs NixOS)
+- Built-in help system with examples
+- Command aliases (`re` for rebuild, `u` for update)
+- Shows current flake host and platform in help output
 
 ## Key Patterns
 
@@ -102,6 +125,26 @@ hey upgrade                                   # Update inputs and rebuild system
 2. For permanent installation, add to host config or relevant module
 3. Custom packages go in `packages/`
 
+### Working with Hey Commands
+All commands support help via `hey help` and show the current flake host and platform:
+
+```bash
+hey help                    # Show all available commands with examples
+hey rebuild                 # Standard rebuild and switch
+hey re                      # Alias for rebuild
+hey test                    # Test build without switching to boot menu
+hey update                  # Update all flake inputs
+hey u nixpkgs              # Update specific input (alias for update)
+hey upgrade                 # Update inputs and rebuild in one command
+hey rollback               # Roll back to previous generation
+hey check                  # Run flake checks for validation
+hey show                   # Display flake outputs
+hey gc                     # Clean up old generations
+hey repl                   # Open nix repl with flake loaded
+hey search firefox         # Search for packages in nixpkgs
+hey shell python3          # Start temporary shell with package
+```
+
 ## Important Conventions
 
 1. **Aliases** are defined in `config/<tool>/aliases.zsh`
@@ -112,10 +155,43 @@ hey upgrade                                   # Update inputs and rebuild system
 
 ## Debugging
 
-- Check current generation: `darwin-rebuild --list-generations`
+### System Information
+- Check current generation: `darwin-rebuild --list-generations` or `hey help` for current host
 - View logs: `log show --last 10m | grep -i darwin`
 - Flake outputs: `hey show`
-- Repl for testing: `hey repl`
+- Current flake host and platform: `hey help` (shown at bottom)
+- Verify hey availability: `which hey` or `echo $DOTFILES_BIN`
+
+### Hey Command Issues
+- **Hey not found after rebuild**: Start a new terminal session to pick up updated environment variables
+- **Check hey path**: The `$DOTFILES_BIN` environment variable should point to the nix store path containing hey
+- **Verify just is available**: `which just` (required for JustScript execution)
+- **Debug mode**: Add `-v` flag to just commands for verbose output
+
+### Development Tools
+- Nix repl with flake: `hey repl`
+- Package search: `hey search <term>`
+- Temporary package shell: `hey shell <package>`
+- Flake validation: `hey check`
+
+## Troubleshooting
+
+### Common Issues
+
+**Antidote not found warnings:**
+- Antidote is installed at system level via `environment.systemPackages`
+- After rebuilds, restart terminal to pick up new environment
+- Check installation: antidote should be available in `/run/current-system/sw/bin/`
+
+**Hey command not in PATH:**
+- After system rebuild, the `$DOTFILES_BIN` environment variable may need a new shell session
+- The hey script is managed through nix and available via `$DOTFILES_BIN/hey`
+- Fallback: Use `./bin/hey` from repository root
+
+**Environment variable issues:**
+- Restart terminal after `hey rebuild` to pick up new environment variables
+- Check `echo $PATH` includes `/run/current-system/sw/bin` and nix paths
+- Verify `echo $DOTFILES_BIN` points to correct nix store path
 
 ## Homebrew Management
 
@@ -128,7 +204,7 @@ This repository uses `nix-homebrew` for proper homebrew integration:
 ## Notes
 
 - Commands must be run from the repository root
-- After major updates, run `nix-collect-garbage -d` to clean old generations
+- After major updates, run `hey gc` to clean old generations
 - Host-specific settings override module defaults
 - The system uses home-manager for user-level configuration
 - **ALWAYS use the `hey` command** - it's a modular JustScript system that provides the primary interface to all nix-darwin operations
