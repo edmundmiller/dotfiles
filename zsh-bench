@@ -1,0 +1,783 @@
+#!/usr/bin/env zsh
+
+'builtin' 'emulate' '-L' 'zsh' '-o' 'no_aliases' '-o' 'err_return' || 'builtin' 'exit'
+setopt no_unset extended_glob typeset_silent no_multi_byte \
+       prompt_percent no_prompt_subst warn_create_global pipe_fail
+
+() {
+
+if [[ ${ZSH_VERSION-} != (5.<8->*|<6->.*) ]]; then
+  print -ru2 -- "${ZSH_SCRIPT:t}: zsh >= 5.8 is required to execute this script"
+  return 1
+fi
+
+autoload zmathfunc
+zmathfunc
+
+local IFS=$' \t\n\C-@'
+local NULLCMD=cat
+
+local -r self_dir=${ZSH_SCRIPT:A:h}
+
+zmodload zsh/zutil zsh/system zsh/zselect
+
+local -a help
+local -a config_dir
+local -a scratch_dir
+local -a standalone
+local -a isolation
+local -a raw
+local -a iters=(--iters 16)
+local -a git=(--git yes)
+local -a login=(--login yes)
+
+zparseopts -D -K -F --          \
+  {h,-help}=help                \
+  {r,-raw}=raw                  \
+  {l,-login}:=login             \
+  {s,-standalone}=standalone    \
+  {I,-isolation}:=isolation     \
+  {c,-config-dir}:=config_dir   \
+  {d,-scratch-dir}:=scratch_dir \
+  {i,-iters}:=iters             \
+  {g,-git}:=git
+
+if (( $#help )); then
+  print -r -- "usage: ${ZSH_SCRIPT:t} [OPTION].. [CONFIG].."
+  print -r --
+  print -r -- 'OPTIONS'
+  print -r -- '  -h,--help'
+  print -r -- '  -i,--iters <NUM> [default=16]'
+  print -r -- '  -l,--login <yes|no> [default=yes]'
+  print -r -- '  -g,--git <yes|no|empty> [default=yes]'
+  print -r -- '  -c,--config-dir <directory> [default=<zsh-bench-dir>/configs]'
+  print -r -- '  -d,--scratch-dir <directory>'
+  print -r -- '  -I,--isolation <docker|user>'
+  print -r -- '  -s,--standalone'
+  print -r -- '  -r,--raw'
+  return
+fi
+
+if [[ $iters[2] != <1-> ]]; then
+  print -ru2 -- "${ZSH_SCRIPT:t}: not a positive integer: ${(q-)iters[2]}"
+  return 1
+fi
+
+if [[ $git[2] != (yes|no|empty) ]]; then
+  print -ru2 -- "${ZSH_SCRIPT:t}: invalid value of --git: ${(q-)git[2]}"
+  return 1
+fi
+
+if [[ $login[2] != (yes|no) ]]; then
+  print -ru2 -- "${ZSH_SCRIPT:t}: invalid value of --login: ${(q-)login[2]}"
+  return 1
+fi
+
+if [[ $#isolation -ne 0 && $isolation[2] != (docker|user) ]]; then
+  print -ru2 -- "${ZSH_SCRIPT:t}: invalid value of --isolation: ${(q-)isolation[2]}"
+  return 1
+fi
+
+if [[ $#scratch_dir -ne 0 && -z $scratch_dir[2] ]]; then
+  print -ru2 -- "${ZSH_SCRIPT:t}: --scratch-dir cannot have empty value"
+  return 1
+fi
+
+if [[ -r /proc/1/cpuset(#qN-.) &&
+      "$(</proc/1/cpuset)" == /docker/[[:xdigit:]](#c64) ]]; then
+  local -ri in_docker=1
+else
+  local -ri in_docker=0
+fi
+
+if (( ARGC )); then
+  if (( ! $#isolation )); then
+    if (( in_docker )); then
+      local -a isolation=(--isolation user)
+    else
+      local -a isolation=(--isolation docker)
+    fi
+  fi
+
+  if (( $#scratch_dir )); then
+    print -ru2 -- "${ZSH_SCRIPT:t}: ${scratch_dir[1]} is incompatible with positional arguments"
+    return 1
+  fi
+
+  (( $#config_dir )) || config_dir=(--config-dir $self_dir/configs)
+
+  () {
+    local cfg
+    for cfg; do
+      if [[ -z $cfg || $cfg == */* ]]; then
+        print -ru2 -- "${ZSH_SCRIPT:t}: invalid config name: ${(q-)cfg}"
+        return 1
+      fi
+      if [[ ! -e $config_dir[2]/$cfg ]]; then
+        print -ru2 -- "${ZSH_SCRIPT:t}: directory does not exist: $config_dir[2]/$cfg"
+        return 1
+      fi
+      if [[ ! -e $config_dir[2]/$cfg/setup ]]; then
+        print -ru2 -- "${ZSH_SCRIPT:t}: file does not exist: $config_dir[2]/$cfg/setup"
+        return 1
+      fi
+      if [[ ! -f $config_dir[2]/$cfg/setup || ! -x $config_dir[2]/$cfg/setup ]]; then
+        print -ru2 -- "${ZSH_SCRIPT:t}: not an executable file: $config_dir[2]/$cfg/setup"
+        return 1
+      fi
+    done
+  } "$@"
+
+  case $isolation[2] in
+    docker)
+      () {
+        local cmd
+        for cmd in docker tar; do
+          if [[ ! -v commands[$cmd] ]]; then
+            print -ru2 -- "${ZSH_SCRIPT:t}: command not found: ${(q-)cmd}"
+            return 1
+          fi
+        done
+      }
+
+      local -r img=ubuntu:22.04
+
+      function docker-run() {
+        DOCKER_CONTENT_TRUST=1 command docker run -e LC_ALL=C.UTF-8 --rm -i --init -- \
+          $img sh -uec "$1"
+      }
+
+      if ! docker-run true; then
+        print -ru2 -- "${ZSH_SCRIPT:t}: cannot run docker; try with sudo?"
+        return 1
+      fi
+
+      local self configs
+      self=${"$(cd -q -- $self_dir && command tar -cz -- ^(.git|configs) && print -n x)"[1,-2]}
+      configs=${"$(cd -q -- $config_dir[2] && command tar -cz -- $@ && print -n x)"[1,-2]}
+
+      print -r -- "==> starting $img in docker ..."
+
+      local args=($iters $git $standalone $login $raw -- $@)
+      local cmd=(
+        'cpuset="$(cat /proc/1/cpuset)"'
+        'printf "==> docker container ID: %.12s\\n" "${cpuset##*/}"'
+        'mkdir ~/zsh-bench'
+        'cd ~/zsh-bench'
+        'head -c '$#self' | tar -xzm'
+        'mkdir configs'
+        'cd configs'
+        'head -c '$#configs' | tar -xzm'
+        'cd ..'
+        '( ( cat <&3 >/dev/null || true; /bin/kill -TERM -- -$$; ) & ) 3<&0'
+        './internal/install-deps'
+        './internal/benchmark-many '${(j: :)${(@qqq)args}})
+
+      local stdout
+      exec {stdout}>&1
+
+      {
+        exec {stdout}>&-
+        print -r -- $sysparams[pid]
+        print -rn -- $self
+        print -rn -- $configs
+        trap 'exit 0' TERM PIPE
+        while true; do
+          zselect -t 360000 || true
+          print 2>/dev/null || exit 0
+        done
+      } | {
+        local pid
+        IFS= read -r pid
+        print -r -- $pid
+        docker-run ${(j: && :)cmd} >&$stdout
+      } | {
+        exec {stdout}>&-
+        local pid dummy
+        IFS= read -r pid
+        {
+          IFS= read -r dummy && return 'error()'
+          return 0
+        } always {
+          kill -- $pid 2>/dev/null || true
+        }
+      }
+    ;;
+
+    user)
+      if (( EUID )); then
+        if (( in_docker )); then
+          print -ru2 -- "${ZSH_SCRIPT:t}: you must be root for --isolation user"
+        else
+          print -ru2 -- "${ZSH_SCRIPT:t}: you must be root for --isolation user; try with sudo"
+        fi
+        return 1
+      fi
+      $self_dir/internal/benchmark-many $config_dir $iters $git $standalone $login $raw -- $@
+    ;;
+
+    *)
+      return 'error()'
+    ;;
+  esac
+
+  return
+fi
+
+if (( $#config_dir )); then
+  print -ru2 -- "${ZSH_SCRIPT:t}: --config-dir cannot be used without positional arguments"
+  return 1
+fi
+
+if (( $#isolation )); then
+  print -ru2 -- "${ZSH_SCRIPT:t}: --isolation cannot be used without positional arguments"
+  return 1
+fi
+
+case $login[2] in
+  yes)
+    local loginopt=l
+    print -r -- "==> benchmarking login shell ${USER:+of user $USER }..."
+  ;;
+  no)
+    local loginopt=
+    print -r -- "==> benchmarking interactive shell ${USER:+of user $USER }..."
+  ;;
+  *)
+    return 'error()'
+  ;;
+esac
+
+zmodload zsh/datetime
+
+local -r stats=(
+  creates_tty
+  has_compsys
+  has_syntax_highlighting
+  has_autosuggestions
+  has_git_prompt
+  first_prompt_lag_ms
+  first_command_lag_ms
+  command_lag_ms
+  input_lag_ms
+  exit_time_ms)
+
+local -- $stats
+unset -- $stats
+
+function record-metric() {
+  local t=$1
+  local name=$2
+  local -$t val=$3
+  if (( $#raw )); then
+    typeset -ga $name
+    set -A $name ${(P)name} $val
+  elif [[ ! -v $name || val -lt $name ]]; then
+    typeset -g$t $name=$val
+  fi
+}
+
+() {
+  local cmd
+  for cmd in cat cp git ln mkdir mkfifo mktemp rm script touch zsh mv xargs; do
+    if [[ ! -v commands[$cmd] ]]; then
+      print -ru2 -- "${ZSH_SCRIPT:t}: command not found: ${(q-)cmd}"
+      return 1
+    fi
+  done
+}
+
+local script_version
+if script_version=$(LC_ALL=C script -V 2>/dev/null) &&
+   [[ $script_version == 'script from util-linux'* ]]; then
+  local -ir bsd_script=0
+
+  function script() {
+    with-env command script -fqec "${(j: :)@:2}" -- "$1" >/dev/null
+  }
+else
+  local -ir bsd_script=1
+
+  function script() {
+    with-env command script -rqt0 -- "${(@Q)@}" >/dev/null
+  }
+
+  () {
+    local x
+    printf -v x '%x' -1
+    if (( $#x < 16 )); then
+      print -ru2 -- "${ZSH_SCRIPT:t}: 32-bit zsh is not supported when using BSD script"
+      return 1
+    fi
+  }
+
+  function make-int() {
+    if (( #2 )); then
+      set -- ${@:3} $1
+    else
+      set -- ${(Oa)@:3} $1
+    fi
+    (( ARGC <= 9 && (ARGC < 9 || #1 < 128) )) || return 'error()'
+    typeset -gi ${@[-1]}=0
+    while (( ARGC > 1 )); do
+      (( ${@[-1]} = ${@[-1]} << 8 | #1, 1 ))
+      shift
+    done
+  }
+
+  function scr-record() {
+    local header
+    while true; do
+      local -i n=$((24 - $#header))
+      (( n )) || break
+      sysread -s $n 'header[$#header+1]' || return 'error()'
+    done
+    header=(${(s::)header})
+    make-int scr_len       $header[-1] $header[1,8]
+    make-int scr_sec       $header[-1] $header[9,16]
+    make-int scr_usec      $header[-1] $header[17,20]
+    make-int scr_direction $header[-1] $header[21,24]
+    typeset -g scr_data=
+    while (( $#scr_data != scr_len )); do
+      sysread -s $((scr_len - $#scr_data)) 'scr_data[$#scr_data+1]' || return 'error()'
+    done
+  }
+
+  function scr-convert() {
+    scr-record
+    (( scr_direction == 115 )) || return 'error()'
+    local -F last t
+    local -F6 dt
+    (( last = scr_sec + 1e-6 * scr_usec, 1 ))
+    print -ru1 -- 'Script started'
+    while true; do
+      scr-record
+      if (( scr_direction == 111 )); then
+        (( (t = scr_sec + 1e-6 * scr_usec), (dt = t - last), (last = t), 1 ))
+        print -ru3 -- $dt $#scr_data
+        print -nru1 -- $scr_data
+      elif (( scr_direction == 101 )); then
+        print -u1 -- '\nScript done'
+        break
+      else
+        (( scr_direction == 105 )) || return 'error()'
+      fi
+    done
+    local REPLY
+    sysread && return 'error()'
+    (( $? == 5 )) || return 'error()'
+  }
+fi
+
+function error() {
+  local -i ret=$?
+  print -Pru2 -- '%F{2}'${${ZSH_SCRIPT:t}//\%/%%}'%f: %F{1}fatal error%f'
+  print -Pru2 -- '%F{3}--- stack trace (most recent call first) ---%f'
+  print -lru2 -- "${funcfiletrace[@]}"
+  print -Pru2 -- '%F{3}--- end of stack trace ---%f'
+  return $(( ret ? ret : 1 ))
+}
+functions -Ms error
+
+if (( $#scratch_dir )); then
+  local -r _zb_tmpdir=${scratch_dir[2]:a}
+  command rm -rf -- $_zb_tmpdir
+  if [[ -e $_zb_tmpdir ]]; then
+    print -ru2 -- "${ZSH_SCRIPT:t}: cannot delete scratch dir: ${(q-)_zb_tmpdir}"
+    return 1
+  fi
+  command mkdir -p -- $_zb_tmpdir
+else
+  unset _zb_tmpdir _zb_fd
+
+  function cleanup() {
+    if [[ $1 != EXIT ]]; then
+      print -ru2 -- "${ZSH_SCRIPT:t}: SIG$1: cleaning up..."
+    fi
+    if [[ -n ${_zb_fd-} ]]; then
+      exec {_zb_fd}>&- 2>/dev/null || true
+    fi
+    if [[ -n ${_zb_tmpdir-} ]]; then
+      cd -q -- /
+      local -i delay
+      for delay in {0..4}; do
+        zselect -t $((100 * ((1 << delay) - 1))) || true
+        command rm -rf -- $_zb_tmpdir 2>/dev/null || true
+        [[ -e $_zb_tmpdir ]] || break
+      done
+    fi
+    [[ $1 == EXIT ]] || exit $((127 + ${signals[(Ie)$1]}))
+  }
+
+  local sig trapped=(${${(A)=:-INT TERM HUP EXIT}:*signals})
+  for sig in $trapped; do
+    trap "trap - $trapped; cleanup $sig" $sig
+  done
+  unset sig trapped
+
+  typeset -g _zb_tmpdir
+  _zb_tmpdir=$(command mktemp -d ${TMPDIR:-/tmp}/zsh-bench-XXXXXXXXXX)
+  typeset -gr _zb_tmpdir
+fi
+
+cd -q -- $_zb_tmpdir
+
+function make-pat() {
+  local name=$1
+  shift
+  local word words=() junk=$'(\e''(\(B|\[m|\[<->m))#'
+  for word; do
+    words+=("(${(pj:$junk:)${(@b)${(@s::)word}}})")
+  done
+  typeset -gr $name="(${(j:|:)words})"
+}
+
+local -r zsh_version_file=$_zb_tmpdir/zsh_version
+local -r info_file=$_zb_tmpdir/info
+local -r fifo_file=$_zb_tmpdir/fifo
+local -r out_file=$_zb_tmpdir/out
+local -r timing_file=$_zb_tmpdir/timing
+local -r merged_file=$_zb_tmpdir/merged
+
+local -r prefix=ZB${(l:5::0:)RANDOM}-
+local -r start=$'\e[H\e[J'${prefix}start$'\e[H\e[J'
+local -r msg=${(qqq)prefix}${(qqq):-msg}
+local -r cwd=${prefix}cwd
+local -r host=${prefix}host
+local -r git_branch=${prefix}branch
+local -r src=./s
+
+local -r bench_input_file=$self_dir/internal/-zb-benchmark-input
+local -r bench_prompt_file=$self_dir/internal/-zb-benchmark-prompt
+
+local -ri bench_input_iters=2
+local -r bench_prompt_max_iters=1000
+
+local bench_input_buf=' \abc'
+repeat 5 bench_input_buf+=$bench_input_buf
+bench_input_buf+="'"
+local -r bench_input_buf
+
+make-pat prompt_pat $cwd $host
+make-pat msg_pat    ${(Q)msg}
+make-pat branch_pat $git_branch
+
+command mkfifo -- $fifo_file
+command mkdir -- $cwd
+cd -q -- $cwd
+
+() {
+  local -a info_bits=(
+      '"${(qqq)TERM-}"'
+      '"${+functions[compinit]}${+functions[compdef]}"'
+      '"${+_ZSH_AUTOSUGGEST_BIND_COUNTS}"'
+      '"${+ZSH_HIGHLIGHT_VERSION}${+FAST_HIGHLIGHT_VERSION}"')
+
+  print -r  -- '"builtin" "print" '$msg
+  print -r  -- '"builtin" "[" "$?" "-eq" "0" "]" || "builtin" "exit"'
+  print -rn -- '"builtin" "autoload" "-Uz" "--" '${(qqq)bench_input_file}
+  print -rn -- ' && "builtin" "autoload" "-Uz" "--" '${(qqq)bench_prompt_file}
+  print -rn -- ' && "builtin" "print" "-rn" "--" '$info_bits' >| '${(qqq)info_file}
+  print -rn -- ' && "builtin" "typeset" "-gr" _zb_benchmark_prompt_output_file='${(qqq)info_file}
+  print -rn -- ' && "builtin" "typeset" "-gir" _zb_benchmark_prompt_max_iters='${(qqq)bench_prompt_max_iters}
+  print -rn -- " && ${(qqq)bench_input_file:t} ${(qqq)info_file} ${(qqq)fifo_file} ${(qqq)bench_input_buf} ${(qqq)bench_input_iters}"
+  print -r  -- ' || "builtin" "exit"'
+} >$src
+
+unset -m 'GIT_*|TMUX*' || true
+
+() {
+  case $git[2] in
+    yes)
+      print -rC1 -- {1..10}/{1..10}/{1..10}         | command xargs mkdir -p --
+      print -rC1 -- {1..10}/{1..10}/{1..10}/{1..10} | command xargs touch --
+    ;;
+    no) return;;
+    empty) ;;
+    *) return 'error()';;
+  esac
+
+  local -x GIT_CONFIG_NOSYSTEM=1 HOME=$_zb_tmpdir
+  local err=$_zb_tmpdir/git.log
+  {
+    command git init
+    command git config user.name "Your Name"
+    command git config user.email "you@example.com"
+    if [[ $git[2] == yes ]]; then
+      zselect -t 100 || true
+      command git add .
+      command git commit --quiet --allow-empty --allow-empty-message --no-gpg-sign -m ''
+      command git status
+    fi
+    command git checkout -b $git_branch
+  } >/dev/null 2>$err || {
+    <$err >&2
+    return 1
+  }
+}
+
+if (( LINES )); then
+  local -ri lines=LINES
+else
+  local -ri lines=20
+fi
+if (( COLUMNS )); then
+  local -ri columns=COLUMNS
+else
+  local -ri columns=80
+fi
+
+function with-env() {
+  unsetopt xtrace
+  HOST=${host} TERM=xterm-256color LINES=$lines COLUMNS=$columns "$@"
+}
+
+function mask-shell-integration() {
+  local e=$'\e' a=$'\a'
+  local begin=$e'(\](0|1|2|7|1337);|k)'
+  local end='('$e'\\|'$a')'
+  local mid='[^'$e$a']#'
+  local pat=${begin}${mid}${end}
+  local MATCH MBEGIN MEND
+  out=${(S)out//(#m)$~pat/${MATCH//?/X}}
+}
+
+() {
+  local out
+  out=$(with-env command zsh -${loginopt}ic '"builtin" "exit"' 2>&1 </dev/null || true)
+  mask-shell-integration
+  if [[ $out == *${~prompt_pat}* ]]; then
+    print -ru2 -- "${ZSH_SCRIPT:t}: zsh is printing hostname or the last part of the current directory"
+    print -ru2 -- $out
+    return 1
+  fi
+}
+
+() {
+  local cmd='"builtin" "printf" "%s\n" "${ZSH_VERSION-}" >'${(qqq)zsh_version_file}
+  if ! script /dev/null ${(qqq)commands[zsh]} '"-c"' ${(qqq)cmd} </dev/null ||
+     [[ ! -e $zsh_version_file ]]; then
+    print -ru2 -- "${ZSH_SCRIPT:t}: either 'script' or 'zsh' is broken"
+    return 1
+  fi
+
+  local zsh_version
+  zsh_version=$(<$zsh_version_file)
+  if [[ $zsh_version != (5.<8->*|<6->.*) ]]; then
+    print -ru2 -- "${ZSH_SCRIPT:t}: zsh >= 5.8 is required"
+    return 1
+  fi
+}
+
+typeset -g _zb_fd
+sysopen -ao cloexec -u _zb_fd >(
+  exec 2>/dev/null
+  {
+    {
+      print -rn -- ' "builtin" ":" >>'${(qqq)fifo_file}
+      print -rn -- ' && "builtin" ":" <'${(qqq)fifo_file}
+      print -r  -- ' || "builtin" "exit"'
+      local REPLY
+      sysread || true
+      print -r -- ' "builtin" "exit" "0"'
+    } | script /dev/null ${(qqq)commands[zsh]} ${(qqq):-"-${loginopt}i"}
+  } &!
+)
+
+: <$fifo_file
+: >>$fifo_file
+zselect -t 100 || true
+
+if (( $#standalone )); then
+  exec {_zb_fd}>&-
+  unset _zb_fd
+  zselect -t 100 || true
+fi
+
+repeat $iters[2]; do
+  command rm -f -- $info_file $merged_file {$timing_file,$out_file}{,.orig}
+
+  {
+    print -r  -- ' "builtin" "." '${(qqq)src}
+    : <$fifo_file
+    : >>$fifo_file
+    
+    repeat $bench_input_iters; do
+      print -rn -- $bench_input_buf[1,-2]
+      : <$fifo_file
+      : >>$fifo_file
+      print -rn -- $bench_input_buf[-1]
+      : <$fifo_file
+      : >>$fifo_file
+    done
+
+    print -r  -- ${(pl:$bench_prompt_max_iters::\n:):-}
+  } | {
+    if (( bsd_script )); then
+      local -a reply
+      zselect -r 0
+      script $merged_file $commands[zsh] ${loginopt:+-$loginopt}
+    else
+      local cmd='"builtin" "emulate" "-R" "zsh"'
+      cmd+=' && "builtin" "zmodload" "zsh/zselect"'
+      cmd+=' && "builtin" "zselect" "-r" "0"'
+      cmd+=' && "builtin" "print" "-rn" "--" '${(qqqq)start}
+      cmd+=' && "builtin" "exec" "--" '${(qqq)commands[zsh]}' '${(qqq):-"-${loginopt}i"}
+      script /dev/null '"command"' '"script"' -fqet${(qqq)timing_file} \
+        '"-c"' ${(qqq)cmd} ${(qqq)out_file}
+    fi
+  }
+
+  if (( bsd_script )); then
+    scr-convert <$merged_file >$out_file 3>$timing_file
+  fi
+
+  local -a timing
+  timing=($(<$timing_file))
+  (( $#timing % 2 == 0 )) || return 'error()'
+
+  local out
+  out=$(<$out_file)
+  [[ $out == *$'\n'*$'\n'* ]] || return 'error()'
+  out=${${out#*$'\n'}%$'\n'*}
+
+  () {
+    local -i p
+    local dt dp
+    for dt dp in $timing; do
+      [[ $dt == <->(|.<->) ]] || return 'error()'
+      [[ $dp == <1->       ]] || return 'error()'
+      (( p += dp ))
+    done
+    (( p == $#out )) || return 'error()'
+  }
+
+  () {
+    (( bsd_script )) && return
+    command mv -- $timing_file $timing_file.orig
+    command mv -- $out_file $out_file.orig
+    local suf=${out#*$start}
+    local -i drop=$(($#out - $#suf))
+    (( drop )) || return 'error()'
+    local -r intro=$'\e[H\e[J'
+    local -i i p dp
+    local dt
+    for i in {1..$#timing..2}; do
+      dt=$timing[i]
+      dp='timing[i+1]'
+      (( p += dp ))
+      (( p < drop )) && continue
+      if (( p - dp < drop )); then
+        printf '%.6f %d\n' 0 $#intro
+        if (( p > drop )); then
+          printf '%.6f %d\n' 0 $((p - drop))
+        fi
+      else
+        printf '%s %s\n' $dt $dp
+      fi
+    done >$timing_file
+    timing=($(<$timing_file))
+    out=$intro$suf
+    print -rC1 -- 'Script started' $out 'Script done' >$out_file
+  }
+
+  mask-shell-integration
+
+  function timeat() {
+    [[ ARGC -eq 1 && $1 == <1-> ]] || return 'error()'
+    local -ir needle=$1
+    local -F t dt
+    local -i p dp
+    for dt dp in $timing; do
+      (( t += dt, p += dp ))
+      if (( p >= needle )); then
+        typeset -g REPLY=$((1e3 * t))
+        return 0
+      fi
+    done
+    return 1
+  }
+
+  function timeof() {
+    [[ ARGC -eq 1 && -n $1 ]] || return 'error()'
+    local -r pat=$1
+    local suf=${out#*${~pat}}
+    local -i pos=$(($#out - $#suf))
+    (( pos )) || return
+    timeat $pos
+  }
+
+  local REPLY
+
+  if ! timeof $prompt_pat; then
+    print -ru2 -- "${ZSH_SCRIPT:t}: cannot find prompt; make sure it contains hostname or the last part of the current directory"
+    return 1
+  fi
+  record-metric F3 first_prompt_lag_ms REPLY
+
+  if ! timeof $msg_pat; then
+    print -ru2 -- "${ZSH_SCRIPT:t}: cannot find the output of the first command"
+    return 1
+  fi
+  record-metric F3 first_command_lag_ms REPLY
+
+  local -F first_cmd=REPLY
+  if timeof $branch_pat && (( REPLY <= first_cmd )); then
+    record-metric i has_git_prompt 1
+  else
+    record-metric i has_git_prompt 0
+  fi
+
+  if [[ ! -e $info_file ]]; then
+    print -ru2 -- "${ZSH_SCRIPT:t}: cannot find the info file"
+    return 1
+  fi
+
+  local info
+  info=$(<$info_file)
+  info=(${(@Q)${(z)info}})
+  (( $#info == 7 )) || return 'error()'
+
+  if [[ $info[1] == (screen|tmux)* ]]; then
+    record-metric i creates_tty 1
+  else
+    record-metric i creates_tty 0
+  fi
+
+  [[ $info[2] == <0-1><0-1> ]] || return 'error()'
+  record-metric i has_compsys $(( info[2] == 11 ))
+
+  [[ $info[3] == <0-1> ]] || return 'error()'
+  record-metric i has_autosuggestions $(( info[3] != 0 ))
+
+  [[ $info[4] == <0-1><0-1> ]] || return 'error()'
+  record-metric i has_syntax_highlighting $(( info[4] != 0 ))
+
+  [[ $info[5] == <->.<-> ]] || return 'error()'
+  [[ $info[6] == <->.<-> ]] || return 'error()'
+  record-metric F3 input_lag_ms 'min(info[5], info[6])'
+
+  [[ $info[7] == <->.<-> ]] || return 'error()'
+  record-metric F3 command_lag_ms 'info[7]'
+
+  local -F start_s=EPOCHREALTIME
+  command zsh -${loginopt}ic '"builtin" "exit"' </dev/null &>/dev/null || true
+  record-metric F3 exit_time_ms '1e3 * (EPOCHREALTIME - start_s)'
+
+  zselect -t 10 || true
+done
+
+() {
+  local name
+  for name in $stats; do
+    [[ -v $name ]] || continue
+    print -rn -- $name=
+    if [[ $parameters[$name] == array* ]]; then
+      print -r -- "( ${(j: :)${(@q-)${(P)name}}} )"
+    else
+      print -r -- "${(q-)${(P)name}}"
+    fi
+  done
+}
+
+} "$@"
