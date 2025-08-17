@@ -10,19 +10,28 @@ This is a Nix-based dotfiles repository using Flakes for managing system configu
 
 ## Essential Commands
 
-System management can be done through the `hey` command (located in `bin/hey`) or directly with darwin-rebuild:
+**ALWAYS use the `hey` command** (located in `bin/hey`) as the primary interface to this system. The `hey` command is a modular JustScript that provides a clean, consistent interface to all nix-darwin operations.
 
 ```bash
-# Using hey wrapper (if available):
+# Primary hey commands (ALWAYS USE THESE):
 hey rebuild      # Rebuild and switch to new configuration (alias: hey re)
+hey test         # Build and activate but don't add to boot menu
 hey upgrade      # Update flake inputs and rebuild
 hey rollback     # Roll back to previous generation
 hey gc           # Run garbage collection
 hey check        # Run flake checks
 hey show         # Show flake outputs
-hey test         # Quick rebuild without adding to bootloader
+hey update       # Update flake inputs (alias: hey u)
 
-# Direct darwin-rebuild commands (using flake syntax):
+# Development commands:
+hey search <term>    # Search for packages
+hey shell <package>  # Start nix shell with package
+hey repl            # Start nix repl with flake
+```
+
+**Fallback commands** (only use if `hey` is unavailable):
+```bash
+# Direct darwin-rebuild commands (use only as fallback):
 sudo ./result/sw/bin/darwin-rebuild --flake .#MacTraitor-Pro switch  # Rebuild and switch
 sudo ./result/sw/bin/darwin-rebuild --flake .#Seqeratop switch       # For Seqeratop host
 darwin-rebuild --list-generations       # List available generations
@@ -30,12 +39,6 @@ sudo darwin-rebuild --rollback          # Roll back to previous generation
 nix-collect-garbage -d                  # Garbage collection
 ```
 
-For development:
-```bash
-hey shell <package>  # Start nix shell with package (or: nix shell nixpkgs#<package>)
-hey repl            # Start nix repl with flake (or: nix repl)
-hey search <term>   # Search for packages (or: nix search nixpkgs <term>)
-```
 
 ## Architecture
 
@@ -84,19 +87,18 @@ in {
 
 ### Testing Configuration Changes
 1. Make changes to relevant files
-2. Run `hey re` or build with `nix build .#darwinConfigurations.<HOST>.system`
-3. Activate with `sudo ./result/sw/bin/darwin-rebuild --flake .#<HOST> switch`
-4. If issues occur: `sudo darwin-rebuild --rollback`
+2. Run `hey rebuild` (or `hey re` for short)
+3. If issues occur: `hey rollback`
 
 ### Updating Dependencies
 ```bash
-nix flake update                               # Update all flake inputs
-nix flake update <input>                       # Update specific input
-hey re                                         # Apply updates using hey wrapper
+hey update                                     # Update all flake inputs
+hey update <input>                            # Update specific input
+hey upgrade                                   # Update inputs and rebuild system
 ```
 
 ### Adding New Packages
-1. For temporary use: `nix shell nixpkgs#<package>`
+1. For temporary use: `hey shell <package>`
 2. For permanent installation, add to host config or relevant module
 3. Custom packages go in `packages/`
 
@@ -129,5 +131,5 @@ This repository uses `nix-homebrew` for proper homebrew integration:
 - After major updates, run `nix-collect-garbage -d` to clean old generations
 - Host-specific settings override module defaults
 - The system uses home-manager for user-level configuration
-- The `hey` command (if available) provides convenient wrappers for common operations
+- **ALWAYS use the `hey` command** - it's a modular JustScript system that provides the primary interface to all nix-darwin operations
 - Uses nix-darwin 25.05 with `system.primaryUser` set for proper user context

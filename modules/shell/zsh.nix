@@ -60,7 +60,6 @@ in
 
     user.packages = with pkgs; [
       zsh
-      antidote
       unstable.atuin
       bat
       btop
@@ -81,6 +80,11 @@ in
       sd
       unstable.yazi
       zoxide
+    ];
+
+    # Install antidote at system level for nix-darwin
+    environment.systemPackages = with pkgs; [
+      antidote
     ];
 
     env = {
