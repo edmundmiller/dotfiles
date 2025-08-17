@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Nix-based dotfiles repository using Flakes for managing system configurations across macOS (nix-darwin) and NixOS. The primary hosts in use are:
 - **Seqeratop**: Work macOS machine with development tools
-- **mactraitorpro**: Personal macOS machine
+- **MacTraitor-Pro**: Personal macOS machine
 
 ## Essential Commands
 
@@ -35,8 +35,8 @@ hey repl            # Start nix repl with flake
 sudo ./result/sw/bin/darwin-rebuild --flake .#MacTraitor-Pro switch  # Rebuild and switch
 sudo ./result/sw/bin/darwin-rebuild --flake .#Seqeratop switch       # For Seqeratop host
 darwin-rebuild --list-generations       # List available generations
-hey rollback                            # Roll back to previous generation
-hey gc                                  # Garbage collection
+sudo darwin-rebuild --rollback          # Roll back to previous generation
+nix-collect-garbage -d                  # Garbage collection
 ```
 
 
@@ -125,24 +125,12 @@ hey upgrade                                   # Update inputs and rebuild system
 2. For permanent installation, add to host config or relevant module
 3. Custom packages go in `packages/`
 
-### Working with Hey Commands
-All commands support help via `hey help` and show the current flake host and platform:
-
+### Command Examples
 ```bash
 hey help                    # Show all available commands with examples
-hey rebuild                 # Standard rebuild and switch
-hey re                      # Alias for rebuild
-hey test                    # Test build without switching to boot menu
-hey update                  # Update all flake inputs
-hey u nixpkgs              # Update specific input (alias for update)
-hey upgrade                 # Update inputs and rebuild in one command
-hey rollback               # Roll back to previous generation
-hey check                  # Run flake checks for validation
-hey show                   # Display flake outputs
-hey gc                     # Clean up old generations
-hey repl                   # Open nix repl with flake loaded
 hey search firefox         # Search for packages in nixpkgs
 hey shell python3          # Start temporary shell with package
+hey u nixpkgs              # Update specific input (alias for update)
 ```
 
 ## Important Conventions
