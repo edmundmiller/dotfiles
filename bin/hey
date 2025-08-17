@@ -1,168 +1,42 @@
-#!/usr/bin/env bash
-# A simple interface to nix-darwin/nixos operations
+#!/usr/bin/env -S just --justfile
+# A modular interface to nix-darwin/nixos operations using JustScripts
 # Inspired by Henrik Lissner's dotfiles
 
-set -euo pipefail
+import 'hey.d/common.just'
+import 'hey.d/rebuild.just'
+import 'hey.d/flake.just'
+import 'hey.d/nix.just'
 
-FLAKE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-COMMAND="${1:-help}"
+# Default recipe - show help
+default: help
 
-# Helper function to get the correct flake configuration name
-get_flake_host() {
-  local host_name
-  host_name=$(hostname -s)
-  case "$host_name" in
-    "Mac")
-      echo "MacTraitor-Pro"
-      ;;
-    *)
-      echo "$host_name"
-      ;;
-  esac
-}
-
-# Helper function to run darwin-rebuild with proper fallback
-run_darwin_rebuild() {
-  local flake_host
-  flake_host=$(get_flake_host)
-  
-  if command -v darwin-rebuild >/dev/null 2>&1; then
-    sudo darwin-rebuild --flake "$FLAKE_DIR#$flake_host" "$@"
-  else
-    echo "darwin-rebuild not found in PATH, building via nix..."
-    cd "$FLAKE_DIR"
-    nix build ".#darwinConfigurations.$flake_host.system"
-    if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
-      sudo ./result/sw/bin/darwin-rebuild --flake ".#$flake_host" "$@"
-    else
-      echo "Error: darwin-rebuild not found in build result"
-      exit 1
-    fi
-  fi
-}
-
-case "$COMMAND" in
-  rebuild|re)
-    shift
-    if [[ "$(uname)" == "Darwin" ]]; then
-      run_darwin_rebuild "${@:-switch}"
-    else
-      sudo nixos-rebuild --flake "$FLAKE_DIR" "${@:-switch}"
-    fi
-    ;;
-    
-  test)
-    shift
-    if [[ "$(uname)" == "Darwin" ]]; then
-      run_darwin_rebuild test "$@"
-    else
-      sudo nixos-rebuild --flake "$FLAKE_DIR" test "$@"
-    fi
-    ;;
-    
-  rollback)
-    if [[ "$(uname)" == "Darwin" ]]; then
-      sudo darwin-rebuild --rollback
-    else
-      sudo nixos-rebuild --rollback
-    fi
-    ;;
-    
-  update|u)
-    shift
-    cd "$FLAKE_DIR"
-    if [[ $# -eq 0 ]]; then
-      echo "Updating all flake inputs..."
-      nix flake update
-    else
-      echo "Updating flake inputs: $*"
-      for input in "$@"; do
-        nix flake lock --update-input "$input"
-      done
-    fi
-    ;;
-    
-  upgrade)
-    cd "$FLAKE_DIR"
-    echo "Updating flake inputs..."
-    nix flake update
-    echo "Rebuilding system..."
-    if [[ "$(uname)" == "Darwin" ]]; then
-      run_darwin_rebuild switch
-    else
-      sudo nixos-rebuild --flake "$FLAKE_DIR" switch
-    fi
-    ;;
-    
-  gc)
-    nix-collect-garbage -d
-    ;;
-    
-  check)
-    cd "$FLAKE_DIR"
-    nix flake check
-    ;;
-    
-  show)
-    cd "$FLAKE_DIR"
-    nix flake show
-    ;;
-    
-  repl)
-    cd "$FLAKE_DIR"
-    tempfile="/tmp/dotfiles-repl.nix"
-    echo "(builtins.getFlake \"$FLAKE_DIR\")" > "$tempfile"
-    nix repl '<nixpkgs>' "$tempfile"
-    ;;
-    
-  search)
-    shift
-    if [[ $# -eq 0 ]]; then
-      echo "Usage: $0 search <query>"
-      exit 1
-    fi
-    nix search nixpkgs "$@"
-    ;;
-    
-  shell)
-    shift
-    if [[ $# -eq 0 ]]; then
-      echo "Usage: $0 shell <package>"
-      exit 1
-    fi
-    nix shell "nixpkgs#$1"
-    ;;
-    
-  help|--help|-h)
-    cat <<EOF
-Usage: $0 <command> [args...]
-
-Commands:
-  rebuild, re [args]    Rebuild the system (default: switch)
-  test [args]          Build and activate but don't add to boot menu
-  rollback             Roll back to previous generation
-  update, u [inputs]   Update flake inputs (all if none specified)
-  upgrade              Update inputs and rebuild system
-  gc                   Run garbage collection
-  check                Run flake checks
-  show                 Show flake outputs
-  repl                 Open nix repl with flake loaded
-  search <query>       Search nixpkgs for packages
-  shell <package>      Start shell with package available
-  help                 Show this help message
-
-Examples:
-  $0 rebuild           # Rebuild and switch
-  $0 test              # Test build without switching
-  $0 update nixpkgs    # Update only nixpkgs input
-  $0 search firefox    # Search for firefox packages
-  $0 shell hello       # Start shell with hello package
-EOF
-    ;;
-    
-  *)
-    echo "Unknown command: $COMMAND"
-    echo "Run '$0 help' for usage information"
-    exit 1
-    ;;
-esac
+# Show help message
+help:
+    @echo "Usage: hey <command> [args...] (powered by just)"
+    @echo ""
+    @echo "System Commands:"
+    @echo "  rebuild, re [args]    Rebuild the system (default: switch)"
+    @echo "  test [args]          Build and activate but don't add to boot menu"
+    @echo "  rollback             Roll back to previous generation"
+    @echo ""
+    @echo "Flake Commands:"
+    @echo "  update, u [inputs]   Update flake inputs (all if none specified)"
+    @echo "  upgrade              Update inputs and rebuild system"
+    @echo "  check                Run flake checks"
+    @echo "  show                 Show flake outputs"
+    @echo ""
+    @echo "Nix Commands:"
+    @echo "  gc                   Run garbage collection"
+    @echo "  repl                 Open nix repl with flake loaded"
+    @echo "  search <query>       Search nixpkgs for packages"
+    @echo "  shell <package>      Start shell with package available"
+    @echo ""
+    @echo "Examples:"
+    @echo "  hey rebuild          # Rebuild and switch"
+    @echo "  hey test             # Test build without switching"
+    @echo "  hey update nixpkgs   # Update only nixpkgs input"
+    @echo "  hey search firefox   # Search for firefox packages"
+    @echo "  hey shell hello      # Start shell with hello package"
+    @echo ""
+    @echo "Current flake host: {{flake_host}}"
+    @echo "Platform: $(if {{is_darwin}}; then echo Darwin; else echo NixOS; fi)"
