@@ -70,7 +70,7 @@ macos-titlebar-style = tabs
 macos-option-as-alt = true
 macos-auto-secure-input = false
 macos-secure-input-indication = true
-macos-titlebar-proxy-icon = hidden
+# macos-titlebar-proxy-icon = hidden
 macos-window-shadow = true
 
 # Custom Keybindings - Tmux-style

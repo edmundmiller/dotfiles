@@ -79,11 +79,20 @@ map("n", "<leader>gV", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history"
 map("n", "<leader>gH", "<cmd>DiffviewFileHistory<cr>", { desc = "Full history" })
 map("n", "<leader>gC", "<cmd>DiffviewClose<cr>", { desc = "Close diffview" })
 map("n", "<leader>gB", "<cmd>Gitsigns blame_line<cr>", { desc = "Git blame line" })
-map("n", "<leader>gr", "<cmd>Gitsigns reset_hunk<cr>", { desc = "Reset hunk" })
-map("n", "<leader>gR", "<cmd>Gitsigns reset_buffer<cr>", { desc = "Reset buffer" })
-map("n", "<leader>gp", "<cmd>Gitsigns preview_hunk<cr>", { desc = "Preview hunk" })
-map("n", "<leader>gS", "<cmd>Gitsigns stage_hunk<cr>", { desc = "Stage hunk" })
-map("n", "<leader>gu", "<cmd>Gitsigns undo_stage_hunk<cr>", { desc = "Undo stage hunk" })
+-- Git hunk operations (moved to gh prefix to avoid conflict with Octo)
+map("n", "<leader>ghr", "<cmd>Gitsigns reset_hunk<cr>", { desc = "Reset hunk" })
+map("n", "<leader>ghR", "<cmd>Gitsigns reset_buffer<cr>", { desc = "Reset buffer" })
+map("n", "<leader>ghp", "<cmd>Gitsigns preview_hunk<cr>", { desc = "Preview hunk" })
+map("n", "<leader>ghS", "<cmd>Gitsigns stage_hunk<cr>", { desc = "Stage hunk" })
+map("n", "<leader>ghu", "<cmd>Gitsigns undo_stage_hunk<cr>", { desc = "Undo stage hunk" })
+
+-- GitHub operations via Octo (LazyVim extra provides these automatically):
+-- <leader>gi - List Issues
+-- <leader>gI - Search Issues  
+-- <leader>gp - List PRs
+-- <leader>gP - Search PRs
+-- <leader>gr - List Repos
+-- <leader>gS - General Search
 
 -- Code operations (Doom: SPC c ...)
 map("n", "<leader>cf", function()

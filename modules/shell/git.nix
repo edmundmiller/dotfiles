@@ -24,29 +24,11 @@ in
       pre-commit
     ];
 
-    # Use home-manager's programs.git for better integration
+    # Use home-manager's xdg.configFile directly for proper activation
     home-manager.users.${config.user.name} = {
-      programs.git = {
-        enable = true;
-        package = pkgs.git;
-        
-        # Include the main config file which has all settings
-        includes = [
-          { path = "${configDir}/git/config"; }
-        ];
-        
-        # Set up the ignore file
-        ignores = lib.splitString "\n" (builtins.readFile "${configDir}/git/ignore");
-        
-        # Fix the SSH signing program path
-        extraConfig = {
-          gpg.ssh.program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign";
-        };
-      };
-      
-      # Also create direct symlinks for git config files
-      # This ensures they're available at the expected paths
       xdg.configFile = {
+        "git/config".source = "${configDir}/git/config";
+        "git/ignore".source = "${configDir}/git/ignore";
         "git/allowed_signers".source = "${configDir}/git/allowed_signers";
       };
     };
