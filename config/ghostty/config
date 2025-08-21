@@ -20,7 +20,7 @@ window-colorspace = display-p3
 # Window Appearance
 window-decoration = true
 window-theme = auto
-window-save-state = never
+window-save-state = default
 background-opacity = 0.95
 window-padding-x = 8
 window-padding-y = 8
