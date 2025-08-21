@@ -10,6 +10,7 @@
 	format = ssh
 [gpg "ssh"]
 	allowedSignersFile = "~/.config/git/allowed_signers"
+    program = op-ssh-sign
 [core]
 	whitespace = trailing-space
 [init]
