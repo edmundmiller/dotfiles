@@ -66,3 +66,4 @@ config.codekit
 .direnv/
 .nvimlog
 .venv/
+**/.claude/settings.local.json

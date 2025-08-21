@@ -197,3 +197,4 @@ This repository uses `nix-homebrew` for proper homebrew integration:
 - The system uses home-manager for user-level configuration
 - **ALWAYS use the `hey` command** - it's a modular JustScript system that provides the primary interface to all nix-darwin operations
 - Uses nix-darwin 25.05 with `system.primaryUser` set for proper user context
+- Stop manually symlinking things as a workaround
