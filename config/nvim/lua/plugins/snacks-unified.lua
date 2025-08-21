@@ -98,8 +98,8 @@ return {
           local in_git = Snacks.git.get_root() ~= nil
           local cmds = {
             {
-              title = "GitHub Status",
-              cmd = "gh status",
+              title = "My GitHub",
+              cmd = "echo 'Assigned PRs:' && gh pr list --assignee @me -L 3 && echo '' && echo 'Assigned Issues:' && gh issue list --assignee @me -L 3",
               action = function()
                 vim.ui.open("https://github.com/notifications")
               end,
@@ -109,30 +109,19 @@ return {
               enabled = true,
             },
             {
-              title = "Open Issues",
-              cmd = "gh issue list -L 3",
-              key = "i",
+              icon = " ",
+              title = "Git Changes",
+              cmd = "git --no-pager diff --stat -B -M -C || echo 'No changes'",
               action = function()
-                vim.fn.jobstart("gh issue list --web", { detach = true })
+                if pcall(vim.cmd, "DiffviewOpen") then
+                  -- DiffviewOpen succeeded
+                else
+                  -- Fallback to built-in diff
+                  vim.cmd("vertical Git")
+                end
               end,
-              icon = " ",
-              height = 7,
-            },
-            {
-              icon = " ",
-              title = "Open PRs",
-              cmd = "gh pr list -L 3",
-              key = "P",
-              action = function()
-                vim.fn.jobstart("gh pr list --web", { detach = true })
-              end,
-              height = 7,
-            },
-            {
-              icon = " ",
-              title = "Git Status",
-              cmd = "git --no-pager diff --stat -B -M -C",
-              height = 10,
+              key = "d",
+              height = 6,
             },
           }
           return vim.tbl_map(function(cmd)
