@@ -77,64 +77,26 @@ return {
       enabled = true,
     }
     
-    -- Dashboard configuration with GitHub integration (from snacks.nvim documentation)
+    -- Simplified dashboard configuration
     opts.dashboard = {
-      width = 60,
-      pane_gap = 4,
+      preset = {
+        keys = {
+          { icon = " ", key = "f", desc = "Find File", action = ":lua Snacks.picker.files()" },
+          { icon = " ", key = "n", desc = "New File", action = ":ene | startinsert" },
+          { icon = " ", key = "g", desc = "Find Text", action = ":lua Snacks.picker.grep()" },
+          { icon = " ", key = "r", desc = "Recent Files", action = ":lua Snacks.picker.recent()" },
+          { icon = " ", key = "c", desc = "Config", action = ":lua Snacks.picker.files({cwd = vim.fn.stdpath('config')})" },
+          { icon = " ", key = "s", desc = "Restore Session", action = [[<cmd>lua require("persistence").load()<cr>]] },
+          { icon = " ", key = "d", desc = "Open Diffview", action = function() vim.cmd("DiffviewOpen") end },
+          { icon = " ", key = "o", desc = "Open Octo", action = function() vim.cmd("Octo issue list") end },
+          { icon = "󰒲 ", key = "L", desc = "Lazy", action = ":Lazy" },
+          { icon = " ", key = "q", desc = "Quit", action = ":qa" },
+        },
+      },
       sections = {
         { section = "header" },
         { section = "keys", gap = 1, padding = 1 },
-        {
-          pane = 2,
-          icon = " ",
-          desc = "Browse Repo",
-          padding = 1,
-          key = "b",
-          action = function()
-            Snacks.gitbrowse()
-          end,
-        },
-        function()
-          local in_git = Snacks.git.get_root() ~= nil
-          local cmds = {
-            {
-              title = "My GitHub",
-              cmd = "echo 'Assigned PRs:' && gh pr list --assignee @me -L 3 && echo '' && echo 'Assigned Issues:' && gh issue list --assignee @me -L 3",
-              action = function()
-                vim.ui.open("https://github.com/notifications")
-              end,
-              key = "n",
-              icon = " ",
-              height = 8,
-              enabled = true,
-            },
-            {
-              icon = " ",
-              title = "Git Changes",
-              cmd = "git --no-pager diff --stat -B -M -C || echo 'No changes'",
-              action = function()
-                if pcall(vim.cmd, "DiffviewOpen") then
-                  -- DiffviewOpen succeeded
-                else
-                  -- Fallback to built-in diff
-                  vim.cmd("vertical Git")
-                end
-              end,
-              key = "d",
-              height = 6,
-            },
-          }
-          return vim.tbl_map(function(cmd)
-            return vim.tbl_extend("force", {
-              pane = 2,
-              section = "terminal",
-              enabled = in_git,
-              padding = 1,
-              ttl = 5 * 60,
-              indent = 3,
-            }, cmd)
-          end, cmds)
-        end,
+        { section = "recent_files", limit = 5, padding = 1 },
         { section = "startup" },
       },
     }
