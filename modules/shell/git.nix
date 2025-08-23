@@ -30,6 +30,9 @@ in
         "git/config".source = "${configDir}/git/config";
         "git/ignore".source = "${configDir}/git/ignore";
         "git/allowed_signers".source = "${configDir}/git/allowed_signers";
+        # GitHub CLI config
+        "gh/config.yml".source = "${configDir}/gh/config.yml";
+        "gh/hosts.yml".source = "${configDir}/gh/hosts.yml";
       };
     };
 
