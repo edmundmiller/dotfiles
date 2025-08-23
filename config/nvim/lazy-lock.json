@@ -57,6 +57,7 @@
   "render-markdown.nvim": { "branch": "main", "commit": "ca86b5941a56b04ac140837ee7a366cf3fa5cd88" },
   "smear-cursor.nvim": { "branch": "main", "commit": "12a70b24438ce246579a5a45d3b77c03b47f9359" },
   "snacks.nvim": { "branch": "main", "commit": "bc0630e43be5699bb94dadc302c0d21615421d93" },
+  "split.nvim": { "branch": "main", "commit": "12c4fb27a9c617e0291ef0ae1609662ae409c9f8" },
   "telescope-terraform-doc.nvim": { "branch": "main", "commit": "877339c221617dbdbbddcfddea888913fd21057b" },
   "telescope-terraform.nvim": { "branch": "main", "commit": "072c97023797ca1a874668aaa6ae0b74425335df" },
   "telescope.nvim": { "branch": "master", "commit": "b4da76be54691e854d3e0e02c36b0245f945c2c7" },
