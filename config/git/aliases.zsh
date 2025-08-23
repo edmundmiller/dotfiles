@@ -31,3 +31,22 @@ alias grv='git rev-parse'
 ghf() {
 	gh repo fork $1 --clone=true --remote=true
 }
+
+# Quick PR status overview
+ghprs() {
+	echo "=== PRs requesting your review ==="
+	gh lr || echo "No PRs requesting review"
+	echo "\n=== Your assigned PRs ==="
+	gh lpr || echo "No assigned PRs"
+	echo "\n=== Your recent PRs ==="
+	gh pr list --author @me -L 5 || echo "No recent PRs"
+}
+
+# Merge PR and cleanup
+ghmr() {
+	if [ -z "$1" ]; then
+		echo "Usage: ghmr <PR-number>"
+		return 1
+	fi
+	gh pr merge $1 --squash --delete-branch && git pull
+}
