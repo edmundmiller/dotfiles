@@ -19,6 +19,7 @@ with lib;
     # Add darwin-rebuild to system packages
     environment.systemPackages = with pkgs; [
       inputs.nix-darwin.packages.${pkgs.system}.darwin-rebuild
+      difftastic  # Syntax-aware diff tool
     ];
     
     # Configure home-manager for Darwin
