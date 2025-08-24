@@ -101,6 +101,18 @@ return {
       },
     }
     
+    -- Smooth scrolling configuration
+    opts.scroll = {
+      animate = {
+        duration = { step = 15, total = 250 },
+        easing = "linear",
+      },
+      -- Filter to disable for terminal buffers
+      filter = function(buf)
+        return vim.bo[buf].buftype ~= "terminal"
+      end,
+    }
+    
     return opts
   end,
   keys = {
