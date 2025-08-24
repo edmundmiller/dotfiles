@@ -53,6 +53,10 @@ opt.timeoutlen = 300 -- Time to wait for mapped sequence (like which-key delay)
 opt.splitbelow = true -- Split below current window
 opt.splitright = true -- Split to the right of current window
 
+-- Mouse and trackpad behavior
+opt.mouse = "a" -- Enable mouse support
+opt.mousescroll = "ver:3,hor:0" -- Reduce horizontal scroll sensitivity (0 = disable)
+
 -- Folding (for nvim-ufo)
 opt.foldcolumn = "1"
 opt.foldlevel = 99
