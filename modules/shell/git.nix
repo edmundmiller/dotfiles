@@ -33,6 +33,8 @@ in
         # GitHub CLI config
         "gh/config.yml".source = "${configDir}/gh/config.yml";
         "gh/hosts.yml".source = "${configDir}/gh/hosts.yml";
+        # GitHub Dashboard config
+        "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
       };
     };
 
