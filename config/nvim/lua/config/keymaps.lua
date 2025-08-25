@@ -66,8 +66,11 @@ map("n", "<leader>pD", "<cmd>Oil<cr>", { desc = "Open project root" })
 map("n", "<leader>p/", function() LazyVim.pick("live_grep")() end, { desc = "Search in project" })
 
 -- Git operations (Doom: SPC g ...)
-map("n", "<leader>gg", "<cmd>Neogit<cr>", { desc = "Neogit (Magit-like)" })
-map("n", "<leader>gn", "<cmd>LazyGit<cr>", { desc = "LazyGit" })
+map("n", "<leader>gg", "<cmd>LazyGit<cr>", { desc = "LazyGit" })
+map("n", "<leader>gf", "<cmd>Git<cr>", { desc = "Fugitive (stable git interface)" })
+map("n", "<leader>gt", function() LazyVim.pick("git_status")() end, { desc = "Git status (Telescope)" })
+-- Neogit disabled due to SIGSEGV issues with interactive rebase
+-- map("n", "<leader>gn", "<cmd>Neogit<cr>", { desc = "Neogit (Magit-like)" })
 map("n", "<leader>gs", function() LazyVim.pick("git_status")() end, { desc = "Git status" })
 map("n", "<leader>gb", function() LazyVim.pick("git_branches")() end, { desc = "Git branches" })
 map("n", "<leader>gl", function() LazyVim.pick("git_commits")() end, { desc = "Git log" })
