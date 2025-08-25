@@ -1,8 +1,12 @@
 -- Git workflow enhancements with Magit-like interface
 return {
   -- Neogit: Magit-like Git interface for Neovim
+  -- DISABLED: Causing SIGSEGV during interactive rebase operations
   {
     "NeogitOrg/neogit",
+    enabled = false,  -- Disabled due to SIGSEGV issues with interactive rebase
+    -- Pin to a known stable version to avoid SIGSEGV issues
+    commit = "069cbb9d737f9813e86dcff20f53cc3eacc33bb5",
     dependencies = {
       "nvim-lua/plenary.nvim",
       "sindrets/diffview.nvim",
@@ -12,6 +16,12 @@ return {
       require("neogit").setup({
         -- Disable signs to avoid conflicts with gitsigns
         disable_signs = false,
+        -- Disable auto-refresh to prevent SIGSEGV issues
+        auto_refresh = false,
+        -- Disable file watcher to prevent crashes
+        filewatcher = {
+          enabled = false,
+        },
         -- Use telescope for selections
         use_telescope = true,
         -- Integrate with diffview
@@ -49,8 +59,6 @@ return {
             hidden = false,
           },
         },
-        -- Auto refresh
-        auto_refresh = true,
         -- Console output
         disable_builtin_notifications = false,
       })
