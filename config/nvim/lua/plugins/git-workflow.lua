@@ -1,10 +1,9 @@
 -- Git workflow enhancements with Magit-like interface
 return {
   -- Neogit: Magit-like Git interface for Neovim
-  -- DISABLED: Causing SIGSEGV during interactive rebase operations
   {
     "NeogitOrg/neogit",
-    enabled = false,  -- Disabled due to SIGSEGV issues with interactive rebase
+    enabled = true,  -- Re-enabled with fix for difftastic conflict
     -- Pin to a known stable version to avoid SIGSEGV issues
     commit = "069cbb9d737f9813e86dcff20f53cc3eacc33bb5",
     dependencies = {
@@ -16,7 +15,7 @@ return {
       require("neogit").setup({
         -- Disable signs to avoid conflicts with gitsigns
         disable_signs = false,
-        -- Disable auto-refresh to prevent SIGSEGV issues
+        -- Disable auto-refresh to prevent SIGSEGV issues with external diff
         auto_refresh = false,
         -- Disable file watcher to prevent crashes
         filewatcher = {
@@ -28,6 +27,16 @@ return {
         integrations = {
           diffview = true,
         },
+        -- Disable external diff to avoid conflicts with difftastic
+        disable_builtin_notifications = false,
+        git_services = {
+          ["github.com"] = "https://github.com/${owner}/${repository}/compare/${branch_name}?expand=1",
+          ["gitlab.com"] = "https://gitlab.com/${owner}/${repository}/merge_requests/new?merge_request[source_branch]=${branch_name}"
+        },
+        -- Use internal diff to avoid difftastic SIGSEGV
+        use_default_keymaps = true,
+        disable_context_highlighting = false,
+        disable_commit_confirmation = false,
         -- Sections order
         sections = {
           untracked = {

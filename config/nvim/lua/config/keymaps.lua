@@ -69,8 +69,25 @@ map("n", "<leader>p/", function() LazyVim.pick("live_grep")() end, { desc = "Sea
 map("n", "<leader>gg", "<cmd>LazyGit<cr>", { desc = "LazyGit" })
 map("n", "<leader>gf", "<cmd>Git<cr>", { desc = "Fugitive (stable git interface)" })
 map("n", "<leader>gt", function() LazyVim.pick("git_status")() end, { desc = "Git status (Telescope)" })
--- Neogit disabled due to SIGSEGV issues with interactive rebase
--- map("n", "<leader>gn", "<cmd>Neogit<cr>", { desc = "Neogit (Magit-like)" })
+-- Neogit with workaround for difftastic conflict
+map("n", "<leader>gn", function()
+  -- Temporarily disable difftastic to prevent SIGSEGV
+  local old_git_external_diff = vim.env.GIT_EXTERNAL_DIFF
+  vim.env.GIT_EXTERNAL_DIFF = ""
+  
+  local ok, err = pcall(function() 
+    vim.cmd("Neogit")
+  end)
+  
+  -- Restore original setting after Neogit opens
+  vim.defer_fn(function()
+    vim.env.GIT_EXTERNAL_DIFF = old_git_external_diff
+  end, 100)
+  
+  if not ok then
+    vim.notify("Neogit crashed. Try <leader>gg for LazyGit instead", vim.log.levels.ERROR)
+  end
+end, { desc = "Neogit (Magit-like)" })
 map("n", "<leader>gs", function() LazyVim.pick("git_status")() end, { desc = "Git status" })
 map("n", "<leader>gb", function() LazyVim.pick("git_branches")() end, { desc = "Git branches" })
 map("n", "<leader>gl", function() LazyVim.pick("git_commits")() end, { desc = "Git log" })
