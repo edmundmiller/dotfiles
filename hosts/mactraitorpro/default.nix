@@ -128,7 +128,9 @@
       dev.zed.Zed .scss all
       dev.zed.Zed .sass all
       dev.zed.Zed .less all
-      dev.zed.Zed .svg all
+      # Use Gapplin for SVG files instead of text editor
+      com.wolfrosch.Gapplin .svg all
+      com.wolfrosch.Gapplin public.svg-image all
       dev.zed.Zed .xml all
       dev.zed.Zed .csv all
       dev.zed.Zed .sql all
