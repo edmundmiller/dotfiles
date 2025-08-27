@@ -29,5 +29,8 @@ in
       ".claude/commands".source = "${configDir}/claude/commands";
       ".claude/config".source = "${configDir}/claude/config";
     };
+
+    # Source Claude aliases in zsh
+    modules.shell.zsh.rcFiles = [ "${configDir}/claude/aliases.zsh" ];
   };
 }
