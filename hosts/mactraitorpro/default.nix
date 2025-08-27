@@ -58,7 +58,7 @@
     ];
     
     # Create a duti configuration file and apply it on activation
-    system.activationScripts.postUserActivation.text = ''
+    system.activationScripts.dutiConfiguration.text = ''
       echo "Configuring default text editor file associations..."
       
       # Create duti configuration
@@ -136,9 +136,9 @@
       dev.zed.Zed .sql all
       EOF
       
-      # Apply the duti configuration
+      # Apply the duti configuration as the primary user
       if command -v duti >/dev/null 2>&1; then
-        duti /tmp/duti-config.txt
+        sudo -u emiller duti /tmp/duti-config.txt
         echo "File associations configured successfully"
       else
         echo "Warning: duti not found, skipping file association configuration"
