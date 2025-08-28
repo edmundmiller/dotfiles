@@ -21,7 +21,8 @@ window-colorspace = display-p3
 window-decoration = true
 window-theme = auto
 window-save-state = default
-background-opacity = 0.95
+# FIXME: https://github.com/ghostty-org/ghostty/issues/3049
+# background-opacity = 0.95
 window-padding-x = 8
 window-padding-y = 8
 window-width = 1200
