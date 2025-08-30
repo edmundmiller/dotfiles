@@ -51,6 +51,7 @@ in
 
     user.packages = with pkgs; [
       zsh
+      antidote
       unstable.atuin
       bat
       btop
