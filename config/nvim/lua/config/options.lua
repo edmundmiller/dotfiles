@@ -69,6 +69,9 @@ vim.g.autoformat = true -- Enable auto-formatting (can be toggled with SPC t f)
 -- Use snacks picker as the default picker (faster than telescope)
 vim.g.lazyvim_picker = "snacks"
 
+-- Snacks animations (required for LazyVim colorscheme)
+vim.g.snacks_animate = false
+
 -- Disable some built-in plugins that Doom doesn't use
 vim.g.loaded_gzip = 1
 vim.g.loaded_zip = 1
