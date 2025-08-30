@@ -99,6 +99,30 @@ map("n", "<leader>gV", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history"
 map("n", "<leader>gH", "<cmd>DiffviewFileHistory<cr>", { desc = "Full history" })
 map("n", "<leader>gC", "<cmd>DiffviewClose<cr>", { desc = "Close diffview" })
 map("n", "<leader>gB", "<cmd>Gitsigns blame_line<cr>", { desc = "Git blame line" })
+-- Git worktree operations (Doom: SPC g w ...)
+map("n", "<leader>gww", function() require("telescope").extensions.git_worktree.git_worktrees() end, { desc = "Switch worktree" })
+map("n", "<leader>gwc", function() require("telescope").extensions.git_worktree.create_git_worktree() end, { desc = "Create worktree" })
+map("n", "<leader>gwl", function() require("telescope").extensions.git_worktree.git_worktrees() end, { desc = "List worktrees" })
+map("n", "<leader>gwd", function()
+  -- Delete worktree with custom picker
+  local worktree = require("git-worktree")
+  local telescope = require("telescope")
+  telescope.extensions.git_worktree.git_worktrees({
+    attach_mappings = function(_, map_fn)
+      map_fn("i", "<CR>", function(prompt_bufnr)
+        local selection = require("telescope.actions.state").get_selected_entry()
+        require("telescope.actions").close(prompt_bufnr)
+        if selection then worktree.delete_worktree(selection.value) end
+      end)
+      map_fn("n", "<CR>", function(prompt_bufnr)
+        local selection = require("telescope.actions.state").get_selected_entry()
+        require("telescope.actions").close(prompt_bufnr)
+        if selection then worktree.delete_worktree(selection.value) end
+      end)
+      return true
+    end,
+  })
+end, { desc = "Delete worktree" })
 -- Git hunk operations (moved to gh prefix to avoid conflict with Octo)
 map("n", "<leader>ghr", "<cmd>Gitsigns reset_hunk<cr>", { desc = "Reset hunk" })
 map("n", "<leader>ghR", "<cmd>Gitsigns reset_buffer<cr>", { desc = "Reset buffer" })
