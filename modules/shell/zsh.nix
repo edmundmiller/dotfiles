@@ -31,22 +31,19 @@ in
   };
 
   config = mkIf cfg.enable {
+    # Set zsh as default shell at system level - this is the nix-darwin way
     users.defaultUserShell = pkgs.zsh;
+    
+    # Add zsh to available shells
+    environment.shells = [ pkgs.zsh ];
 
+    # Enable zsh at system level - this creates /etc/zshrc that loads nix-darwin environment
     programs.zsh = {
       enable = true;
       enableCompletion = true;
-      # I init completion myself, because enableGlobalCompInit initializes it
-      # too soon, which means commands initialized later in my config won't get
-      # completion, and running compinit twice is slow.
-      enableGlobalCompInit = false;
+      # Let nix-darwin handle completion initialization
+      enableGlobalCompInit = true;
       promptInit = "";
-    };
-
-    # Create symlinks for zsh configuration files in home directory
-    home.file = {
-      ".zshenv".source = "${config.dotfiles.configDir}/zsh/.zshenv";
-      ".zshrc".source = "${config.dotfiles.configDir}/zsh/.zshrc";
     };
 
     user.packages = with pkgs; [
@@ -74,18 +71,23 @@ in
       zoxide
     ];
 
-
     env = {
       ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
       ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
     };
 
     home.configFile = {
-      # Write it recursively so other modules can write files to it
-      "zsh" = {
-        source = "${configDir}/zsh";
-        recursive = true;
-      };
+      # Main zsh configuration files
+      "zsh/.zshenv".source = "${configDir}/zsh/.zshenv";
+      "zsh/.zshrc".source = "${configDir}/zsh/.zshrc";
+      
+      # Additional zsh config files
+      "zsh/config.zsh".source = "${configDir}/zsh/config.zsh";
+      "zsh/aliases.zsh".source = "${configDir}/zsh/aliases.zsh";
+      "zsh/completion.zsh".source = "${configDir}/zsh/completion.zsh"; 
+      "zsh/keybinds.zsh".source = "${configDir}/zsh/keybinds.zsh";
+      "zsh/.zsh_plugins.txt".source = "${configDir}/zsh/.zsh_plugins.txt";
+      "zsh/.p10k.zsh".source = "${configDir}/zsh/.p10k.zsh";
 
       # Why am I creating extra.zsh{rc,env} when I could be using extraInit?
       # Because extraInit generates those files in /etc/profile, and mine just
