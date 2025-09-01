@@ -74,6 +74,7 @@ in
     env = {
       ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
       ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
+      PATH = [ "$DOTFILES_BIN" ];
     };
 
     home.configFile = {
