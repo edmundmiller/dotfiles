@@ -21,7 +21,7 @@ return {
         filewatcher = {
           enabled = false,
         },
-        -- Use telescope for selections
+        -- Use telescope for selections (older option; harmless if ignored)
         use_telescope = true,
         -- Integrate with diffview
         integrations = {
@@ -29,6 +29,11 @@ return {
         },
         -- Disable external diff to avoid conflicts with difftastic
         disable_builtin_notifications = false,
+        -- Skip post-commit signature verification to avoid gpg/ssh verify errors
+        -- with SSH-signed commits (1Password op-ssh-sign)
+        commit_view = {
+          verify_commit = false,
+        },
         git_services = {
           ["github.com"] = "https://github.com/${owner}/${repository}/compare/${branch_name}?expand=1",
           ["gitlab.com"] = "https://gitlab.com/${owner}/${repository}/merge_requests/new?merge_request[source_branch]=${branch_name}"
