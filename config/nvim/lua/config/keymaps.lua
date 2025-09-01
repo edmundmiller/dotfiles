@@ -71,19 +71,18 @@ map("n", "<leader>gf", "<cmd>Git<cr>", { desc = "Fugitive (stable git interface)
 map("n", "<leader>gt", function() LazyVim.pick("git_status")() end, { desc = "Git status (Telescope)" })
 -- Neogit with workaround for difftastic conflict
 map("n", "<leader>gn", function()
-  -- Temporarily disable difftastic to prevent SIGSEGV
+  -- Prefer internal diff to avoid external diff issues (difftastic)
   local old_git_external_diff = vim.env.GIT_EXTERNAL_DIFF
   vim.env.GIT_EXTERNAL_DIFF = ""
-  
-  local ok, err = pcall(function() 
-    vim.cmd("Neogit")
+
+  local ok = pcall(function()
+    require("neogit").open({ kind = "tab" })
   end)
-  
-  -- Restore original setting after Neogit opens
+
   vim.defer_fn(function()
     vim.env.GIT_EXTERNAL_DIFF = old_git_external_diff
   end, 100)
-  
+
   if not ok then
     vim.notify("Neogit crashed. Try <leader>gg for LazyGit instead", vim.log.levels.ERROR)
   end
