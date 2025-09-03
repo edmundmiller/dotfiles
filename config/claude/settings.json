@@ -114,6 +114,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bun x ccusage statusline"
+    "command": "bun x ccusage statusline",
+    "padding": 0
   }
 }
