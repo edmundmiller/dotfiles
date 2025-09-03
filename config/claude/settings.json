@@ -103,7 +103,12 @@
       "mcp__git__git_checkout",
       "mcp__git__git_show",
       "mcp__git__git_init",
-      "mcp__git__git_branch"
+      "mcp__git__git_branch",
+
+      "Bash(nextflow:*)",
+      "Bash(wave:*)",
+      "Bash(nf-test:*)",
+      "Bash(tw:*)"
     ],
     "deny": []
   },
