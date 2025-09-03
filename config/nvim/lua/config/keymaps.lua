@@ -6,7 +6,7 @@ local map = vim.keymap.set
 local LazyVim = require("lazyvim.util")
 
 -- File operations (Doom: SPC f ...)
-map("n", "<leader>.", function() LazyVim.pick("files")() end, { desc = "Browse files" })
+map("n", "<leader>.", function() require("snacks").explorer() end, { desc = "Browse files (explorer)" })
 map("n", "<leader>ff", function() LazyVim.pick("files")() end, { desc = "Find file" })
 map("n", "<leader>fr", function() LazyVim.pick("oldfiles")() end, { desc = "Recent files" })
 map("n", "<leader>fR", function() LazyVim.pick("oldfiles", { cwd = vim.uv.cwd() })() end, { desc = "Recent files (project)" })
