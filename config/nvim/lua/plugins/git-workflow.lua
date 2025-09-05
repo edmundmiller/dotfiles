@@ -3,46 +3,71 @@ return {
   -- Neogit: Magit-like Git interface for Neovim
   {
     "NeogitOrg/neogit",
-    enabled = true,  -- Re-enabled with fix for difftastic conflict
-    -- Pin to a known stable version to avoid SIGSEGV issues
-    commit = "069cbb9d737f9813e86dcff20f53cc3eacc33bb5",
+    enabled = true,
     dependencies = {
-      "nvim-lua/plenary.nvim",
-      "sindrets/diffview.nvim",
-      "nvim-telescope/telescope.nvim",
+      "nvim-lua/plenary.nvim",         -- required
+      "sindrets/diffview.nvim",        -- optional - Diff integration
+      "nvim-telescope/telescope.nvim", -- optional
+      "folke/snacks.nvim",             -- optional
     },
     config = function()
       require("neogit").setup({
-        -- Disable signs to avoid conflicts with gitsigns
+        -- Disable hints at the top of the status buffer
+        disable_hint = false,
+        -- Disable changing buffer highlights based on cursor position
+        disable_context_highlighting = false,
+        -- Disable signs for sections/items/hunks
         disable_signs = false,
-        -- Disable auto-refresh to prevent SIGSEGV issues with external diff
-        auto_refresh = false,
-        -- Disable file watcher to prevent crashes
+        -- Auto-insert mode for empty commit messages
+        disable_insert_on_commit = "auto",
+        -- File watcher for auto-refresh
         filewatcher = {
-          enabled = false,
+          interval = 1000,
+          enabled = true,
         },
-        -- Use telescope for selections (older option; harmless if ignored)
-        use_telescope = true,
-        -- Integrate with diffview
-        integrations = {
-          diffview = true,
+        -- Graph style
+        graph_style = "ascii",
+        -- Use default keymaps
+        use_default_keymaps = true,
+        -- Auto refresh status buffer
+        auto_refresh = true,
+        -- Sort branches by commit date descending
+        sort_branches = "-committerdate",
+        -- Default way of opening neogit
+        kind = "tab",
+        -- Console output settings
+        console_timeout = 2000,
+        auto_show_console = true,
+        auto_close_console = true,
+        -- Status buffer settings
+        status = {
+          show_head_commit_hash = true,
+          recent_commit_count = 10,
         },
-        -- Disable external diff to avoid conflicts with difftastic
-        disable_builtin_notifications = false,
-        -- Skip post-commit signature verification to avoid gpg/ssh verify errors
-        -- with SSH-signed commits (1Password op-ssh-sign)
+        -- Commit editor settings
+        commit_editor = {
+          kind = "tab",
+          show_staged_diff = true,
+          staged_diff_split_kind = "split",
+          spell_check = true,
+        },
+        -- Commit view settings - disable verification for SSH-signed commits
         commit_view = {
-          verify_commit = false,
+          kind = "vsplit",
+          verify_commit = false, -- Avoid gpg/ssh verify errors with 1Password op-ssh-sign
         },
+        -- Git services for pull request creation
         git_services = {
           ["github.com"] = "https://github.com/${owner}/${repository}/compare/${branch_name}?expand=1",
-          ["gitlab.com"] = "https://gitlab.com/${owner}/${repository}/merge_requests/new?merge_request[source_branch]=${branch_name}"
+          ["gitlab.com"] = "https://gitlab.com/${owner}/${repository}/merge_requests/new?merge_request[source_branch]=${branch_name}",
         },
-        -- Use internal diff to avoid difftastic SIGSEGV
-        use_default_keymaps = true,
-        disable_context_highlighting = false,
-        disable_commit_confirmation = false,
-        -- Sections order
+        -- Integrations
+        integrations = {
+          telescope = true,    -- Use telescope for menu selection
+          diffview = true,     -- Enable diffview integration
+          snacks = true,       -- Use snacks.picker for menu selection
+        },
+        -- Sections configuration
         sections = {
           untracked = {
             folded = false,
@@ -60,11 +85,19 @@ return {
             folded = true,
             hidden = false,
           },
-          unpulled = {
+          unpulled_upstream = {
             folded = true,
             hidden = false,
           },
-          unmerged = {
+          unmerged_upstream = {
+            folded = false,
+            hidden = false,
+          },
+          unpulled_pushRemote = {
+            folded = true,
+            hidden = false,
+          },
+          unmerged_pushRemote = {
             folded = false,
             hidden = false,
           },
@@ -73,8 +106,6 @@ return {
             hidden = false,
           },
         },
-        -- Console output
-        disable_builtin_notifications = false,
       })
     end,
   },
