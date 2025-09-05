@@ -7,8 +7,7 @@ return {
     dependencies = {
       "nvim-lua/plenary.nvim",         -- required
       "sindrets/diffview.nvim",        -- optional - Diff integration
-      "nvim-telescope/telescope.nvim", -- optional
-      "folke/snacks.nvim",             -- optional
+      "folke/snacks.nvim",             -- optional - for picker UI
     },
     config = function()
       require("neogit").setup({
@@ -25,8 +24,8 @@ return {
           interval = 1000,
           enabled = true,
         },
-        -- Graph style
-        graph_style = "ascii",
+        -- Graph style - kitty for better visual representation
+        graph_style = "kitty",
         -- Use default keymaps
         use_default_keymaps = true,
         -- Auto refresh status buffer
@@ -51,21 +50,19 @@ return {
           staged_diff_split_kind = "split",
           spell_check = true,
         },
-        -- Commit view settings - disable verification for SSH-signed commits
+        -- Commit view settings
         commit_view = {
           kind = "vsplit",
-          verify_commit = false, -- Avoid gpg/ssh verify errors with 1Password op-ssh-sign
+          verify_commit = true, -- Enable signature verification
         },
         -- Git services for pull request creation
         git_services = {
           ["github.com"] = "https://github.com/${owner}/${repository}/compare/${branch_name}?expand=1",
-          ["gitlab.com"] = "https://gitlab.com/${owner}/${repository}/merge_requests/new?merge_request[source_branch]=${branch_name}",
         },
         -- Integrations
         integrations = {
-          telescope = true,    -- Use telescope for menu selection
           diffview = true,     -- Enable diffview integration
-          snacks = true,       -- Use snacks.picker for menu selection
+          snacks = true,       -- Use snacks.picker for menu selection (preferred over telescope)
         },
         -- Sections configuration
         sections = {
