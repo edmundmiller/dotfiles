@@ -2,6 +2,11 @@
 return {
   "folke/snacks.nvim",
   opts = {
+    explorer = {
+      -- Configure explorer behavior
+      replace_netrw = true,
+      close_on_select = true, -- Close explorer when selecting a file
+    },
     picker = {
       sources = {
         explorer = {
