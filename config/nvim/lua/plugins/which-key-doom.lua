@@ -13,7 +13,10 @@ return {
     },
     spec = {
       -- Add only groups that LazyVim doesn't already define
-      { "<leader>o", group = "obsidian/notes" },
+      { "<leader>o", group = "open/apps" },
+      { "<leader>ot", group = "terminal" },
+      { "<leader>ct", group = "code/test" },
+      { "<leader>gm", group = "git/merge" },
       { "<leader>n", group = "notes" },
       { "<leader>i", group = "insert" },
       { "<leader>e", group = "error" },
@@ -21,7 +24,7 @@ return {
       { "<leader>r", group = "refactor" },
       { "<leader>v", group = "version control" },
       { "<leader>T", group = "treesitter" },
-      { "<leader>t", group = "test/toggle" },
+      { "<leader>t", group = "todo" },
       { "<leader>j", group = "jump/harpoon" },
       { "<leader>y", group = "yank" },
     },

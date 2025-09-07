@@ -26,7 +26,7 @@ return {
           -- Task management
           vim.keymap.set("n", "<cr>", "<Plug>(TodoTxtToggleState)", 
             vim.tbl_extend("force", buf_opts, { desc = "Toggle task state" }))
-          vim.keymap.set("n", "<c-c>n", "<Plug>(TodoTxtCyclePriority)", 
+          vim.keymap.set("n", "<leader>tp", "<Plug>(TodoTxtCyclePriority)", 
             vim.tbl_extend("force", buf_opts, { desc = "Cycle priority" }))
           vim.keymap.set("n", "<leader>tm", "<Plug>(TodoTxtMoveDone)", 
             vim.tbl_extend("force", buf_opts, { desc = "Move done tasks" }))

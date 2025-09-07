@@ -154,47 +154,47 @@ return {
     end,
     keys = {
       -- Core test operations
-      { "<leader>tt", function() require("neotest").run.run() end, desc = "Run nearest test" },
-      { "<leader>tf", function() require("neotest").run.run(vim.fn.expand("%")) end, desc = "Run file tests" },
-      { "<leader>ta", function() require("neotest").run.run(vim.fn.getcwd()) end, desc = "Run all tests" },
-      { "<leader>tl", function() require("neotest").run.run_last() end, desc = "Run last test" },
-      { "<leader>tL", function() require("neotest").run.run_last({ strategy = "dap" }) end, desc = "Debug last test" },
+      { "<leader>ctt", function() require("neotest").run.run() end, desc = "Run nearest test" },
+      { "<leader>ctf", function() require("neotest").run.run(vim.fn.expand("%")) end, desc = "Run file tests" },
+      { "<leader>cta", function() require("neotest").run.run(vim.fn.getcwd()) end, desc = "Run all tests" },
+      { "<leader>ctl", function() require("neotest").run.run_last() end, desc = "Run last test" },
+      { "<leader>ctL", function() require("neotest").run.run_last({ strategy = "dap" }) end, desc = "Debug last test" },
       
       -- Test UI and output
-      { "<leader>ts", function() require("neotest").summary.toggle() end, desc = "Toggle test summary" },
-      { "<leader>to", function() require("neotest").output.open({ enter = true, auto_close = true }) end, desc = "Show test output" },
-      { "<leader>tO", function() require("neotest").output_panel.toggle() end, desc = "Toggle output panel" },
-      { "<leader>tq", function() require("neotest").quickfix.open() end, desc = "Open quickfix" },
+      { "<leader>cts", function() require("neotest").summary.toggle() end, desc = "Toggle test summary" },
+      { "<leader>cto", function() require("neotest").output.open({ enter = true, auto_close = true }) end, desc = "Show test output" },
+      { "<leader>ctO", function() require("neotest").output_panel.toggle() end, desc = "Toggle output panel" },
+      { "<leader>ctq", function() require("neotest").quickfix.open() end, desc = "Open quickfix" },
       
       -- Test control
-      { "<leader>tS", function() require("neotest").run.stop() end, desc = "Stop test" },
-      { "<leader>tw", function() require("neotest").watch.toggle(vim.fn.expand("%")) end, desc = "Watch file" },
-      { "<leader>tW", function() require("neotest").watch.toggle(vim.fn.getcwd()) end, desc = "Watch all" },
+      { "<leader>ctS", function() require("neotest").run.stop() end, desc = "Stop test" },
+      { "<leader>ctw", function() require("neotest").watch.toggle(vim.fn.expand("%")) end, desc = "Watch file" },
+      { "<leader>ctW", function() require("neotest").watch.toggle(vim.fn.getcwd()) end, desc = "Watch all" },
       
       -- nf-test specific operations
-      { "<leader>tn", function() 
+      { "<leader>ctn", function() 
         local profile = vim.fn.input("nf-test profile: ", "", "file")
         if profile ~= "" then
           require("neotest").run.run({ extra_args = { "--profile", profile } })
         end
       end, desc = "Run with nf-test profile" },
       
-      { "<leader>tc", function() 
+      { "<leader>ctc", function() 
         local config = vim.fn.input("nf-test config: ", "nf-test.config", "file")
         if config ~= "" then
           require("neotest").run.run({ extra_args = { "--config", config } })
         end
       end, desc = "Run with custom config" },
       
-      { "<leader>td", function() 
+      { "<leader>ctd", function() 
         require("neotest").run.run({ extra_args = { "--debug" } })
       end, desc = "Run with debug output" },
       
-      { "<leader>tv", function() 
+      { "<leader>ctv", function() 
         require("neotest").run.run({ extra_args = { "--verbose" } })
       end, desc = "Run with verbose output" },
       
-      { "<leader>tT", function() 
+      { "<leader>ctT", function() 
         local tag = vim.fn.input("nf-test tag: ")
         if tag ~= "" then
           require("neotest").run.run({ extra_args = { "--tag", tag } })
@@ -208,7 +208,7 @@ return {
       { "[T", function() require("neotest").jump.prev() end, desc = "Previous test" },
       
       -- Debugging and inspection
-      { "<leader>ti", function()
+      { "<leader>cti", function()
         local neotest = require("neotest")
         local tree = neotest.state.positions()
         if tree then
@@ -218,7 +218,7 @@ return {
         end
       end, desc = "Inspect discovered tests" },
       
-      { "<leader>tr", function()
+      { "<leader>ctr", function()
         -- Refresh test discovery
         require("neotest").summary.refresh()
         print("Refreshed test discovery")
@@ -232,7 +232,7 @@ return {
     opts = function(_, opts)
       local wk = require("which-key")
       wk.add({
-        { "<leader>t", group = "test/nf-test" },
+        { "<leader>ct", group = "code/test" },
       })
       return opts
     end,

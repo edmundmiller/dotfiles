@@ -170,12 +170,12 @@ return {
       local wk = require("which-key")
       wk.add({
         -- Terminal keybindings
-        { "<leader>t", group = "terminal/test/toggle" },
-        { "<leader>tt", "<cmd>ToggleTerm<cr>", desc = "Toggle terminal" },
-        { "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", desc = "Float terminal" },
-        { "<leader>th", "<cmd>ToggleTerm size=15 direction=horizontal<cr>", desc = "Horizontal terminal" },
-        { "<leader>tv", "<cmd>ToggleTerm size=80 direction=vertical<cr>", desc = "Vertical terminal" },
-        { "<leader>tg", "<cmd>lua _LAZYGIT_TOGGLE()<cr>", desc = "LazyGit terminal" },
+        { "<leader>ot", group = "open/terminal" },
+        { "<leader>ott", "<cmd>ToggleTerm<cr>", desc = "Toggle terminal" },
+        { "<leader>otf", "<cmd>ToggleTerm direction=float<cr>", desc = "Float terminal" },
+        { "<leader>oth", "<cmd>ToggleTerm size=15 direction=horizontal<cr>", desc = "Horizontal terminal" },
+        { "<leader>otv", "<cmd>ToggleTerm size=80 direction=vertical<cr>", desc = "Vertical terminal" },
+        { "<leader>otg", "<cmd>lua _LAZYGIT_TOGGLE()<cr>", desc = "LazyGit terminal" },
         
         -- REPL keybindings
         { "<leader>r", group = "repl" },
@@ -203,12 +203,12 @@ return {
       vim.keymap.set("t", "<C-`>", "<cmd>ToggleTerm<cr>", { desc = "Toggle terminal" })
       
       -- Terminal send commands
-      vim.keymap.set("n", "<leader>ts", function()
+      vim.keymap.set("n", "<leader>ots", function()
         local line = vim.api.nvim_get_current_line()
         require("toggleterm").send_lines_to_terminal("single_line", true, { args = vim.v.count })
       end, { desc = "Send line to terminal" })
       
-      vim.keymap.set("v", "<leader>ts", function()
+      vim.keymap.set("v", "<leader>ots", function()
         require("toggleterm").send_lines_to_terminal("visual_selection", true, { args = vim.v.count })
       end, { desc = "Send selection to terminal" })
       
