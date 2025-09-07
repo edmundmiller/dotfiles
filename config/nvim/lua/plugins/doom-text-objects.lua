@@ -62,7 +62,9 @@ return {
     "chrisgrieser/nvim-various-textobjs",
     event = "VeryLazy",
     opts = {
-      useDefaultKeymaps = false,
+      keymaps = {
+        useDefaults = false,
+      },
     },
     config = function(_, opts)
       require("various-textobjs").setup(opts)
