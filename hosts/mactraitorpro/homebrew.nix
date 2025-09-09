@@ -410,6 +410,7 @@
     "font-jetbrains-mono"
     "font-juliamono"
     "font-ia-writer-duo"
+    "font-maple-mono"
   ];
 
   masApps = {
