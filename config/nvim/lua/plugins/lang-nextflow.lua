@@ -3,11 +3,26 @@ return {
   -- Treesitter configuration for Nextflow
   {
     "nvim-treesitter/nvim-treesitter",
-    dependencies = { "nvim-treesitter/nvim-treesitter" },
-    opts_extend = { "ensure_installed" },
-    opts = {
-      ensure_installed = { "groovy" }, -- Groovy for fallback, nextflow will be installed manually
-    },
+    build = ":TSUpdate",
+    opts = function(_, opts)
+      -- Register the Nextflow parser with rewrite branch
+      local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+      parser_config.nextflow = {
+        install_info = {
+          url = "https://github.com/nextflow-io/tree-sitter-nextflow",
+          files = { "src/parser.c" },
+          branch = "rewrite",
+          generate_requires_npm = false,
+        },
+        filetype = "nextflow",
+      }
+      
+      -- Add groovy for fallback support
+      opts.ensure_installed = opts.ensure_installed or {}
+      vim.list_extend(opts.ensure_installed, { "groovy" })
+      
+      return opts
+    end,
   },
 
   -- Mason LSP configuration
@@ -20,24 +35,11 @@ return {
     },
   },
 
-  -- Mason LSP Config
-  {
-    "williamboman/mason-lspconfig.nvim",
-    opts = {
-      handlers = {
-        nextflow_ls = function()
-          require("lspconfig").nextflow_ls.setup({})
-        end,
-      },
-    },
-  },
-
   -- LSP configuration for Nextflow
   {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        -- Use official Nextflow Language Server
         nextflow_ls = {
           filetypes = { "nextflow" },
           root_dir = function(fname)
@@ -47,9 +49,9 @@ return {
             nextflow = {
               -- Formatting preferences
               formatting = {
-                harshilAlignment = true, -- Use Harshil Alignment for better formatting
-                sortDeclarations = true, -- Sort script declarations
-                maheshForm = false, -- Keep default process output placement
+                harshilAlignment = true,
+                sortDeclarations = true,
+                maheshForm = false,
               },
               -- Error reporting level
               errorReportingMode = "warnings",
@@ -59,8 +61,8 @@ return {
               },
               -- Completion settings
               completion = {
-                extended = true, -- Enable extended completions from outside current script
-                maxItems = 50, -- Reasonable limit for suggestions
+                extended = true,
+                maxItems = 50,
               },
               -- Debug mode
               debug = false,
@@ -124,96 +126,7 @@ return {
     },
   },
 
-  -- Snippets for Nextflow
-  {
-    "L3MON4D3/LuaSnip",
-    config = function()
-      local ls = require("luasnip")
-      local s = ls.snippet
-      local t = ls.text_node
-      local i = ls.insert_node
-      local c = ls.choice_node
-
-      ls.add_snippets("nextflow", {
-        s("process", {
-          t({ "process " }),
-          i(1, "PROCESS_NAME"),
-          t({ " {" }),
-          t({ "", "    " }),
-          c(2, {
-            t("label 'process_low'"),
-            t("label 'process_medium'"),
-            t("label 'process_high'"),
-          }),
-          t({ "", "" }),
-          t({ "", "    input:" }),
-          t({ "", "    " }),
-          i(3, "val meta"),
-          t({ "", "    " }),
-          i(4, "path reads"),
-          t({ "", "" }),
-          t({ "", "    output:" }),
-          t({ "", "    " }),
-          i(5, "tuple val(meta), path('*.out')"),
-          t({ "", "" }),
-          t({ "", "    script:" }),
-          t({ "", '    """' }),
-          t({ "", "    " }),
-          i(6, "echo 'Processing ${meta.id}'"),
-          t({ "", '    """' }),
-          t({ "", "}" }),
-        }),
-
-        s("workflow", {
-          t({ "workflow " }),
-          i(1, "WORKFLOW_NAME"),
-          t({ " {" }),
-          t({ "", "    take:" }),
-          t({ "", "    " }),
-          i(2, "input_ch"),
-          t({ "", "" }),
-          t({ "", "    main:" }),
-          t({ "", "    " }),
-          i(3, "// workflow logic"),
-          t({ "", "" }),
-          t({ "", "    emit:" }),
-          t({ "", "    " }),
-          i(4, "output_ch"),
-          t({ "", "}" }),
-        }),
-
-        s("channel", {
-          t({ "Channel" }),
-          t({ "", "    ." }),
-          c(1, {
-            t("from"),
-            t("of"),
-            t("fromPath"),
-            t("fromFilePairs"),
-            t("fromSRA"),
-          }),
-          t({ "(" }),
-          i(2, "data"),
-          t({ ")" }),
-        }),
-
-        s("publishDir", {
-          t({ "publishDir '" }),
-          i(1, "results"),
-          t({ "', mode: '" }),
-          c(2, {
-            t("copy"),
-            t("symlink"),
-            t("move"),
-            t("link"),
-          }),
-          t({ "'" }),
-        }),
-      })
-    end,
-  },
-
-  -- Additional Nextflow-specific keybindings (optional compilation commands)
+  -- Nextflow-specific keybindings
   {
     "folke/which-key.nvim",
     opts = function(_, opts)
