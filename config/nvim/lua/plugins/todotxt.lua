@@ -1,7 +1,9 @@
 -- todotxt.nvim configuration for todo.txt management
 return {
   {
-    "phrmendes/todotxt.nvim",
+    "edmundmiller/todotxt.nvim",
+    ft = { "todotxt" },  -- Load on todotxt filetype
+    event = "VeryLazy",  -- Also load on VeryLazy to ensure it's available
     cmd = { "TodoTxt", "DoneTxt" },
     keys = {
       { "<leader>tn", "<cmd>TodoTxt new<cr>", desc = "New todo entry" },
@@ -50,12 +52,9 @@ return {
   -- Ensure treesitter has todotxt parser
   {
     "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      -- Extend the ensure_installed list with todotxt
-      vim.list_extend(opts.ensure_installed or {}, {
-        "todotxt",
-      })
-      return opts
-    end,
+    opts_extend = { "ensure_installed" },
+    opts = {
+      ensure_installed = { "todotxt" },
+    },
   },
 }
