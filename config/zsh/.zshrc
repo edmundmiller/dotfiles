@@ -100,3 +100,17 @@ export PATH="$HOME/.local/bin:$PATH"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# todo.txt configuration (centralized in ~/.todo.actions.d)
+export TODOTXT_CFG_FILE="$HOME/.todo.actions.d/todo.cfg"
+export TODO_CFG_FILE="$HOME/.todo.actions.d/todo.cfg"  # compatibility with some variants
+if [ -r "$TODOTXT_CFG_FILE" ]; then
+  source "$TODOTXT_CFG_FILE"
+fi
+
+alias t="todo.sh"
+alias ta="t add"
+alias td="t do"
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
