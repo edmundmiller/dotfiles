@@ -49,6 +49,32 @@ opt.showmode = false -- Don't show mode in command line (shown in statusline)
 opt.updatetime = 250 -- Faster completion (4000ms default)
 opt.timeoutlen = 300 -- Time to wait for mapped sequence (like which-key delay)
 
+-- Filetype detection for todotxt
+vim.filetype.add({
+  filename = {
+    ["todo.txt"] = "todotxt",
+    ["done.txt"] = "todotxt",
+  },
+  pattern = {
+    [".*/todo%.txt$"] = "todotxt",
+    [".*/done%.txt$"] = "todotxt",
+  },
+})
+
+-- Filetype detection for Nextflow
+vim.filetype.add({
+  extension = {
+    nf = "nextflow",
+  },
+  filename = {
+    ["nextflow.config"] = "nextflow",
+    ["main.nf"] = "nextflow",
+  },
+  pattern = {
+    ["%.nf%.test"] = "nextflow",
+  },
+})
+
 -- Window behavior
 opt.splitbelow = true -- Split below current window
 opt.splitright = true -- Split to the right of current window
