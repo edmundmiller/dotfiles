@@ -37,6 +37,7 @@ return {
     opts = {
       servers = {
         nextflow_ls = {
+          cmd = { vim.fn.expand("~/.local/share/nvim/mason/packages/nextflow-language-server/nextflow-language-server") },
           filetypes = { "nextflow" },
           root_dir = function(fname)
             return require("lspconfig.util").root_pattern("nextflow.config", ".git")(fname)
