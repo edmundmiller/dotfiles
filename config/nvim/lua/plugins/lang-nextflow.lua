@@ -1,25 +1,13 @@
+-- Nextflow language support
 return {
-  -- Nextflow language support
+  -- Treesitter configuration for Nextflow
   {
     "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      -- Configure tree-sitter-nextflow parser
-      local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-      parser_config.nextflow = {
-        install_info = {
-          url = "https://github.com/nextflow-io/tree-sitter-nextflow",
-          files = {"src/parser.c"},
-          branch = "update-grammar", -- Use PR #13 branch with improved grammar
-          generate_requires_npm = false,
-        },
-        filetype = "nextflow",
-      }
-
-      -- Add Nextflow parser to ensure_installed
-      vim.list_extend(opts.ensure_installed or {}, {
-        "nextflow",
-      })
-    end,
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    opts_extend = { "ensure_installed" },
+    opts = {
+      ensure_installed = { "groovy" }, -- Groovy for fallback, nextflow will be installed manually
+    },
   },
 
   -- Mason LSP configuration
@@ -59,20 +47,20 @@ return {
             nextflow = {
               -- Formatting preferences
               formatting = {
-                harshilAlignment = true,      -- Use Harshil Alignment for better formatting
-                sortDeclarations = true,      -- Sort script declarations
-                maheshForm = false,           -- Keep default process output placement
+                harshilAlignment = true, -- Use Harshil Alignment for better formatting
+                sortDeclarations = true, -- Sort script declarations
+                maheshForm = false, -- Keep default process output placement
               },
               -- Error reporting level
               errorReportingMode = "warnings",
               -- File exclusions
               files = {
-                exclude = { ".git", ".nf-test", "work", ".nextflow" }
+                exclude = { ".git", ".nf-test", "work", ".nextflow" },
               },
               -- Completion settings
               completion = {
-                extended = true,              -- Enable extended completions from outside current script
-                maxItems = 50,               -- Reasonable limit for suggestions
+                extended = true, -- Enable extended completions from outside current script
+                maxItems = 50, -- Reasonable limit for suggestions
               },
               -- Debug mode
               debug = false,
@@ -82,57 +70,11 @@ return {
               telemetry = {
                 enabled = false,
               },
-            }
-          }
+            },
+          },
         },
       },
     },
-  },
-
-  -- File type detection and basic configuration
-  {
-    "nvim-treesitter/nvim-treesitter",
-    config = function(_, opts)
-      -- Setup treesitter
-      require("nvim-treesitter.configs").setup(opts)
-      
-      -- Custom file type detection for Nextflow
-      vim.filetype.add({
-        extension = {
-          nf = "nextflow",
-        },
-        filename = {
-          ["nextflow.config"] = "nextflow",
-          ["main.nf"] = "nextflow",
-        },
-        pattern = {
-          ["%.nf%.test"] = "nextflow",
-        },
-      })
-      
-      -- Set up Nextflow-specific settings
-      vim.api.nvim_create_autocmd("FileType", {
-        pattern = "nextflow",
-        callback = function()
-          vim.bo.commentstring = "// %s"
-          vim.bo.shiftwidth = 4
-          vim.bo.tabstop = 4
-          vim.bo.expandtab = true
-          
-          -- Set up basic syntax highlighting using Groovy
-          vim.cmd("runtime! syntax/groovy.vim")
-          
-          -- Additional Nextflow-specific syntax highlights
-          vim.cmd([[
-            syntax keyword nextflowKeyword process workflow channel from into
-            syntax keyword nextflowKeyword input output script shell exec
-            syntax keyword nextflowKeyword when filter map collect
-            syntax keyword nextflowKeyword publishDir container
-            hi def link nextflowKeyword Keyword
-          ]])
-        end,
-      })
-    end,
   },
 
   -- Formatter support
@@ -194,54 +136,71 @@ return {
 
       ls.add_snippets("nextflow", {
         s("process", {
-          t({ "process " }), i(1, "PROCESS_NAME"), t({ " {" }),
-          t({ "", "    " }), c(2, {
+          t({ "process " }),
+          i(1, "PROCESS_NAME"),
+          t({ " {" }),
+          t({ "", "    " }),
+          c(2, {
             t("label 'process_low'"),
             t("label 'process_medium'"),
             t("label 'process_high'"),
           }),
           t({ "", "" }),
           t({ "", "    input:" }),
-          t({ "", "    " }), i(3, "val meta"),
-          t({ "", "    " }), i(4, "path reads"),
+          t({ "", "    " }),
+          i(3, "val meta"),
+          t({ "", "    " }),
+          i(4, "path reads"),
           t({ "", "" }),
           t({ "", "    output:" }),
-          t({ "", "    " }), i(5, "tuple val(meta), path('*.out')"),
+          t({ "", "    " }),
+          i(5, "tuple val(meta), path('*.out')"),
           t({ "", "" }),
           t({ "", "    script:" }),
           t({ "", '    """' }),
-          t({ "", "    " }), i(6, "echo 'Processing ${meta.id}'"),
+          t({ "", "    " }),
+          i(6, "echo 'Processing ${meta.id}'"),
           t({ "", '    """' }),
           t({ "", "}" }),
         }),
 
         s("workflow", {
-          t({ "workflow " }), i(1, "WORKFLOW_NAME"), t({ " {" }),
+          t({ "workflow " }),
+          i(1, "WORKFLOW_NAME"),
+          t({ " {" }),
           t({ "", "    take:" }),
-          t({ "", "    " }), i(2, "input_ch"),
+          t({ "", "    " }),
+          i(2, "input_ch"),
           t({ "", "" }),
           t({ "", "    main:" }),
-          t({ "", "    " }), i(3, "// workflow logic"),
+          t({ "", "    " }),
+          i(3, "// workflow logic"),
           t({ "", "" }),
           t({ "", "    emit:" }),
-          t({ "", "    " }), i(4, "output_ch"),
+          t({ "", "    " }),
+          i(4, "output_ch"),
           t({ "", "}" }),
         }),
 
         s("channel", {
           t({ "Channel" }),
-          t({ "", "    ." }), c(1, {
+          t({ "", "    ." }),
+          c(1, {
             t("from"),
             t("of"),
             t("fromPath"),
             t("fromFilePairs"),
             t("fromSRA"),
           }),
-          t({ "(" }), i(2, "data"), t({ ")" }),
+          t({ "(" }),
+          i(2, "data"),
+          t({ ")" }),
         }),
 
         s("publishDir", {
-          t({ "publishDir '" }), i(1, "results"), t({ "', mode: '" }), 
+          t({ "publishDir '" }),
+          i(1, "results"),
+          t({ "', mode: '" }),
           c(2, {
             t("copy"),
             t("symlink"),
@@ -251,6 +210,55 @@ return {
           t({ "'" }),
         }),
       })
+    end,
+  },
+
+  -- Additional Nextflow-specific keybindings (optional compilation commands)
+  {
+    "folke/which-key.nvim",
+    opts = function(_, opts)
+      -- Set up nextflow keymaps in autocmd for filetype-specific bindings
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "nextflow",
+        callback = function()
+          local wk = require("which-key")
+          wk.add({
+            { "<leader>nr", group = "nextflow run", buffer = true },
+            {
+              "<leader>nrr",
+              "<cmd>!nextflow run %<cr>",
+              desc = "Run current Nextflow script",
+              buffer = true,
+            },
+            {
+              "<leader>nrl",
+              "<cmd>!nextflow run % -resume<cr>",
+              desc = "Run with resume",
+              buffer = true,
+            },
+            {
+              "<leader>nrt",
+              "<cmd>!nf-test test %<cr>",
+              desc = "Run nf-test on current file",
+              buffer = true,
+            },
+            { "<leader>nl", group = "nextflow log", buffer = true },
+            {
+              "<leader>nll",
+              "<cmd>!nextflow log<cr>",
+              desc = "Show Nextflow log",
+              buffer = true,
+            },
+            {
+              "<leader>nlc",
+              "<cmd>!nextflow clean -f<cr>",
+              desc = "Clean work directory",
+              buffer = true,
+            },
+          })
+        end,
+      })
+      return opts
     end,
   },
 }
