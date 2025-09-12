@@ -111,6 +111,7 @@ fi
 alias t="todo.sh"
 alias ta="t add"
 alias td="t do"
+alias ttoday="t today"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
