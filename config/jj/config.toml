@@ -1,11 +1,11 @@
 [user]
 name = "Edmund Miller"
-email = "edmund.miller@seqera.io"
+email = "git@edmundmiller.dev"
 
 [signing]
 behavior = "own"
 backend = "ssh"
-key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty"
+key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC edmundmiller"
 
 [signing.backends.ssh]
 program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
@@ -22,7 +22,7 @@ ranked-authors = ["log", "--template", "author"]
 
 [ui]
 default-command = "log"
-diff-editor = "code --wait --diff"
+diff-editor = "nvim --wait --diff"
 
 [core]
 whitespace = "trailing-space"
