@@ -116,5 +116,18 @@
     "type": "command",
     "command": "bun x ccusage statusline",
     "padding": 0
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jj show"
+          }
+        ]
+      }
+    ]
   }
 }
