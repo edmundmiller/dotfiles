@@ -1,0 +1,35 @@
+[user]
+name = "Edmund Miller"
+email = "edmund.miller@seqera.io"
+
+[signing]
+behavior = "own"
+backend = "ssh"
+key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty"
+
+[signing.backends.ssh]
+program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+
+[aliases]
+# Common git-like aliases
+amend = ["describe", "--edit"]
+lg = ["log", "--graph", "--color=always"]
+ls = ["files"]
+st = ["status"]
+
+# Custom aliases matching your git setup
+ranked-authors = ["log", "--template", "author"]
+
+[ui]
+default-command = "log"
+diff-editor = "code --wait --diff"
+
+[core]
+whitespace = "trailing-space"
+
+[git]
+push-branch-prefix = "push-"
+
+[revsets]
+# Equivalent to git's push.default=current
+trunk = "main@origin"
