@@ -73,6 +73,7 @@
 
   # Right prompt segments.
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
+    custom_jj_desc            # jj description (show on command)
     custom_todo               # todo.txt task count
     command_execution_time    # previous command duration
     python_version            # python version
@@ -333,6 +334,23 @@ function prompt_custom_vcs() {
   
   return 1
 }
+
+# JJ description function for right prompt
+function prompt_jj_desc() {
+  if jj root >/dev/null 2>&1; then
+    local jj_desc
+    jj_desc=$(jj log -r @ --no-graph -T 'if(description, description.first_line().substr(0, 50), "")' 2>/dev/null)
+    
+    if [[ -n "$jj_desc" ]]; then
+      echo -n "$jj_desc"
+    fi
+  fi
+}
+
+# Define custom JJ description segment with Show On Command
+typeset -g POWERLEVEL9K_CUSTOM_JJ_DESC="prompt_jj_desc"
+typeset -g POWERLEVEL9K_CUSTOM_JJ_DESC_FOREGROUND=244  # Gray color
+typeset -g POWERLEVEL9K_CUSTOM_JJ_DESC_SHOW_ON_COMMAND='jj'
 
 # Tell `p10k configure` which file it should overwrite.
 typeset -g POWERLEVEL9K_CONFIG_FILE=${${(%):-%x}:a}

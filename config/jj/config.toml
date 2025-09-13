@@ -19,6 +19,7 @@ st = ["status"]
 
 # Custom aliases matching your git setup
 ranked-authors = ["log", "--template", "author"]
+lm = ["log", "-r", "::@ | ::main"]
 
 [ui]
 default-command = "log"
