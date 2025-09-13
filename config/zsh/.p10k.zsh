@@ -295,34 +295,19 @@ function prompt_todo() {
 function prompt_custom_vcs() {
   # Use jj to check if we're in a jj repo (more efficient than directory traversal)
   if jj root >/dev/null 2>&1; then
-    # We're in a jj repo - get comprehensive status
-    local jj_change_id jj_desc jj_status_info
+    # We're in a jj repo - show just change ID
+    local jj_change_id
+    jj_change_id=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null) || jj_change_id=""
     
-    # Get change ID and description in one call for efficiency
-    local jj_info_raw
-    jj_info_raw=$(jj log -r @ --no-graph -T 'change_id.short(8) ++ " " ++ if(empty, "(empty)", if(description, description.first_line(), "(no description)"))' 2>/dev/null) || jj_info_raw=""
-    
-    if [[ -n "$jj_info_raw" ]]; then
-      # Split the result
-      jj_change_id="${jj_info_raw%% *}"
-      jj_desc="${jj_info_raw#* }"
-      
-      # Truncate description intelligently at word boundaries
-      if [[ ${#jj_desc} -gt 25 ]]; then
-        jj_desc="${jj_desc:0:22}..."
+    if [[ -n "$jj_change_id" ]]; then
+      # Check for working copy changes
+      local jj_status=""
+      if jj status --no-pager 2>/dev/null | grep -q "Working copy changes:"; then
+        jj_status="*"
       fi
       
-      # Use jj status for more reliable change detection
-      local status_indicators=""
-      if jj_status_info=$(jj status --no-pager 2>/dev/null); then
-        if echo "$jj_status_info" | grep -q "Working copy changes:"; then
-          status_indicators=" ●"  # Modified files
-        fi
-        # Could add more indicators here for staged, conflicts, etc.
-      fi
-      
-      # For P10k custom segments, just echo the output
-      echo -n " ${jj_change_id} ${jj_desc}${status_indicators}"
+      # For P10k custom segments, just echo the output - minimal format
+      echo -n "${jj_change_id}${jj_status}"
       return 0
     fi
   fi
@@ -331,27 +316,17 @@ function prompt_custom_vcs() {
   if git rev-parse --git-dir >/dev/null 2>&1; then
     # Get git branch
     local branch
-    branch=$(git symbolic-ref --short HEAD 2>/dev/null || git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD 2>/dev/null) || branch=""
+    branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null) || branch=""
     
     if [[ -n "$branch" ]]; then
-      # Check git status
+      # Check git status (simplified)
       local git_status=""
-      
-      # Check for uncommitted changes
-      if ! git diff --quiet >/dev/null 2>&1; then
-        git_status="${git_status}●"  # modified
-      fi
-      if ! git diff --cached --quiet >/dev/null 2>&1; then
-        git_status="${git_status}✚"  # staged
-      fi
-      local untracked
-      untracked=$(git ls-files --others --exclude-standard 2>/dev/null) || untracked=""
-      if [[ -n "$untracked" ]]; then
-        git_status="${git_status}?"  # untracked
+      if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+        git_status="*"
       fi
       
-      # For P10k custom segments, just echo the output
-      echo -n " ${branch}${git_status:+ $git_status}"
+      # Output for git - minimal format to match jj
+      echo -n "${branch}${git_status}"
       return 0
     fi
   fi
