@@ -1,81 +1,39 @@
 ---
 allowed-tools: Bash(jj squash*), Bash(jj status*), Bash(jj log*), Bash(jj diff*), Bash(jj show*)
-description: Help combine changes into parent commits
+description: Complete work via squash workflow
 ---
 
-## Context
+## Current Status
+!`jj status`
+!`jj log -r ::@ --limit 3 --no-graph`
 
-- Current working copy: !`jj log -r @ --no-graph`
-- Parent commit: !`jj log -r @- --no-graph`
-- Current changes: !`jj status`
-- Commit chain: !`jj log -r ::@ --limit 5`
+## Squash Workflow
 
-## Your task
+The squash workflow in jj: **Describe → New → Implement → Squash**
 
-Help the user squash (combine) changes into parent commits. This is useful for cleaning up incremental work or combining related changes.
+I'll help you complete your current work by squashing changes into the parent commit.
 
-### Squash Operations
+### What would you like to do?
 
-#### 1. Basic Squash (into parent)
-```bash
-jj squash           # Squash current changes into parent
-jj squash -m "msg"  # Squash with new message
-```
+1. **Quick squash** - Move all current changes into parent
+   ```bash
+   jj squash
+   ```
 
-#### 2. Interactive Squash
-```bash
-jj squash -i        # Choose which changes to squash
-```
-Opens diff editor to select specific changes to move into parent
+2. **Interactive squash** - Choose specific changes
+   ```bash
+   jj squash -i  # Opens editor to select hunks
+   ```
 
-#### 3. Squash Specific Files
-```bash
-jj squash path/to/file.js    # Squash only specific files
-jj squash -i src/            # Interactive squash from directory
-```
+3. **Squash with message** - Update commit message while squashing
+   ```bash
+   jj squash -m "feat: completed feature"
+   ```
 
-#### 4. Squash Into Non-Parent
-```bash
-jj squash --into TARGET_REV   # Squash into a different commit
-jj squash --from REV --into TARGET  # Move changes between commits
-```
+### Current changes to squash:
+!`jj diff --summary`
 
-### Common Claude + jj Workflows
-
-**Clean up incremental fixes:**
-```bash
-# After Claude makes several small fixes
-jj log -r ::@              # Review commit chain
-jj squash                  # Combine with parent
-jj describe -m "fix: complete solution"
-```
-
-**Partial squash:**
-```bash
-# When only some changes belong together
-jj squash -i               # Interactive selection
-jj describe -r @-          # Update combined commit message
-```
-
-**Squash before push:**
-```bash
-# Clean history before sharing
-jj squash                  # Combine work
-jj log -r @                # Verify result
-jj git push --change @     # Push to remote
-```
-
-### Important Considerations
-- Squashing rewrites history - don't squash already-pushed commits
-- Empty commits are automatically abandoned
-- Use `jj op undo` if squash goes wrong
-- Interactive squash uses your configured diff editor (hunk.nvim)
-
-### When to Squash vs Split
-- **Squash**: Combining related changes, cleaning up WIP commits
-- **Split**: Separating unrelated changes, organizing by feature
-
-Ask the user:
-- Should we squash everything or select specific changes?
-- Do they want to update the commit message?
-- Is this preparing for a push to remote?
+Let me know if you want to:
+- Squash everything into the parent commit
+- Select specific changes interactively
+- Update the commit message first
