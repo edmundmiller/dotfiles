@@ -8,6 +8,10 @@ This is a Nix-based dotfiles repository using Flakes for managing system configu
 - **Seqeratop**: Work macOS machine with development tools
 - **MacTraitor-Pro**: Personal macOS machine
 
+## Critical File Editing Rules
+
+**ALWAYS write over the source file you're editing. Don't make "_enhanced", "_fixed", "_updated", or "_v2" versions.** We use Git for version control - that's why everything is tracked. When in doubt, commit first if you want to preserve the original, but always overwrite the actual file.
+
 ## Essential Commands
 
 **ALWAYS use the `hey` command** (located in `bin/hey`) as the primary interface to this system. The `hey` command is a modular JustScript that provides a clean, consistent interface to all nix-darwin operations.
@@ -189,6 +193,38 @@ This repository uses `nix-homebrew` for proper homebrew integration:
 - `autoMigrate` enabled to migrate existing homebrew installations
 - Managed through the `homebrew` section in host configurations
 
+## Jujutsu (JJ) Version Control
+
+This repository uses jujutsu (jj) for version control. JJ is a Git-compatible VCS with a more intuitive model.
+
+### Core JJ Workflows
+
+**The Squash Workflow** - Describe → New → Implement → Squash:
+1. `jj describe -m "what you're about to do"`
+2. `jj new` (creates empty change)
+3. Make your changes
+4. `jj squash` (moves changes into parent)
+
+**The Edit Workflow** - Edit any commit directly:
+- `jj edit <change-id>` to edit any previous commit
+- Changes automatically rebase
+- No checkout dance needed
+
+### Quick JJ Commands
+- `/jj-status` - Smart overview of repository state
+- `/jj-new` - Start new work properly
+- `@squash` - Complete work via squash workflow (use the command shortcut)
+- `@split` - Split mixed changes into focused commits
+- `@undo` - Safety net for any operation
+
+### Key JJ Principles
+- **Everything is undoable**: `jj op log` shows all operations, `jj undo` reverses them
+- **No staging area**: Changes are always in commits, just move them around
+- **Automatic rebasing**: Edit any commit, descendants follow automatically
+- **Conflicts don't block**: Conflicts are stored in commits, not working directory
+
+When working with jj, think in terms of moving changes between commits rather than staging/unstaging. Use `jj status` and `jj log` frequently to understand state.
+
 ## Notes
 
 - Commands must be run from the repository root
@@ -197,4 +233,4 @@ This repository uses `nix-homebrew` for proper homebrew integration:
 - The system uses home-manager for user-level configuration
 - **ALWAYS use the `hey` command** - it's a modular JustScript system that provides the primary interface to all nix-darwin operations
 - Uses nix-darwin 25.05 with `system.primaryUser` set for proper user context
-- Stop manually symlinking things as a workaround
+- **ALWAYS overwrite files directly** - never create underscore versions
