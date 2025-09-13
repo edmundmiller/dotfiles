@@ -1,14 +1,13 @@
 # Font Configuration
-font-family = Maple Mono
+font-family = Maple Mono NF
 font-size = 14
 font-feature = "+liga"
 
-# Theme & Colors
-# This is how you can make Ghostty follow the macOS system theme.
-# https://fredrikaverpil.github.io/blog/2024/12/04/ghostty-on-macos/
-theme = light:Melange_light,dark:Melange_dark
+# Theme & Colors - Using built-in Atom One themes
+theme = light:AtomOneLight,dark:AtomOneDark
 
-# Alternative theme combinations:
+# Alternative theme combinations (commented out):
+# theme = light:Melange_light,dark:Melange_dark
 # theme = light:catppuccin-latte,dark:catppuccin-mocha
 # theme = light:GitHub-Light-Default,dark:tokyonight
 # theme = light:tokyonight-day,dark:nord
