@@ -46,11 +46,105 @@
   local cyan='#9AEDFE'
   local white='#F1F1F0'
 
+  # Custom todo.txt segment - shows pending task count
+  function prompt_todo() {
+    local todo_file="${TODO_FILE:-$HOME/Documents/todo/todo.txt}"
+    
+    if [[ -f "$todo_file" ]]; then
+      # Count non-completed tasks (lines not starting with 'x ')
+      local pending_count
+      pending_count=$(grep -c '^[^x]' "$todo_file" 2>/dev/null) || pending_count=0
+      
+      if [[ $pending_count -gt 0 ]]; then
+        # Color based on task count
+        local color
+        if [[ $pending_count -le 5 ]]; then
+          color="$blue"  # Few tasks
+        elif [[ $pending_count -le 10 ]]; then
+          color="$yellow"  # Moderate tasks
+        else
+          color="$red"  # Many tasks
+        fi
+        
+        # Fixed p10k segment usage with proper quoting
+        p10k segment -f "$color" -i '✓' -t "$pending_count"
+        return 0
+      fi
+    fi
+    
+    return 1
+  }
+
+  # Custom VCS function for JJ with Git fallback
+  function prompt_custom_vcs() {
+    # Check if we're in a jj repo
+    local dir="$PWD"
+    local jj_root=""
+    while [[ "$dir" != "/" ]]; do
+      if [[ -d "$dir/.jj" ]]; then
+        jj_root="$dir"
+        break
+      fi
+      dir="${dir:h}"
+    done
+    
+    if [[ -n "$jj_root" ]]; then
+      # We're in a jj repo - get jj status
+      local jj_info
+      jj_info=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null) || jj_info=""
+      local jj_desc
+      jj_desc=$(jj log -r @ --no-graph -T 'if(empty, "(empty)", if(description, description.first_line().substr(0, 30), "(no description)"))' 2>/dev/null) || jj_desc=""
+      
+      if [[ -n "$jj_info" ]]; then
+        # Check for modifications
+        local has_changes=""
+        if jj diff --stat 2>/dev/null | grep -q "file" 2>/dev/null; then
+          has_changes=" ●"
+        fi
+        
+        # Fixed p10k segment usage with direct color value
+        p10k segment -f 208 -i '⌥' -t "${jj_info} ${jj_desc}${has_changes}"
+        return 0
+      fi
+    fi
+    
+    # Fall back to git - check if we're in a git repo
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+      # Get git branch
+      local branch
+      branch=$(git symbolic-ref --short HEAD 2>/dev/null || git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD 2>/dev/null) || branch=""
+      
+      if [[ -n "$branch" ]]; then
+        # Check git status
+        local git_status=""
+        
+        # Check for uncommitted changes
+        if ! git diff --quiet >/dev/null 2>&1; then
+          git_status="${git_status}●"  # modified
+        fi
+        if ! git diff --cached --quiet >/dev/null 2>&1; then
+          git_status="${git_status}✚"  # staged
+        fi
+        local untracked
+        untracked=$(git ls-files --others --exclude-standard 2>/dev/null) || untracked=""
+        if [[ -n "$untracked" ]]; then
+          git_status="${git_status}?"  # untracked
+        fi
+        
+        # Fixed p10k segment usage with direct color value and proper text
+        p10k segment -f 242 -t "${branch}${git_status:+ $git_status}"
+        return 0
+      fi
+    fi
+    
+    return 1
+  }
+
   # Left prompt segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # context                 # user@host
     dir                       # current directory
-    vcs                       # git status
+    custom_vcs                # jj or git status (custom)
     nix_shell                 # nix development environment
     virtualenv                # python virtual environment
     node_version              # node.js version for projects
@@ -64,6 +158,7 @@
 
   # Right prompt segments.
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
+    todo                      # todo.txt task count
     command_execution_time    # previous command duration
     python_version            # python version
     background_jobs           # running background jobs
