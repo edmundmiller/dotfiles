@@ -2,6 +2,11 @@
 name = "Edmund Miller"
 email = "git@edmundmiller.dev"
 
+# Override email for ~/src/fg repositories
+[[conditional-includes]]
+condition = 'working_copy.path ~ "~/src/fg"'
+file = "~/.config/jj/fg-config.toml"
+
 [signing]
 behavior = "own"
 backend = "ssh"
