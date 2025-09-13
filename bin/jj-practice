@@ -1,0 +1,245 @@
+#!/usr/bin/env bash
+#
+# jj Practice Script - Interactive exercises to learn Jujutsu with Claude Code
+# Run this in a test directory to practice jj commands safely
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+BOLD='\033[1m'
+
+practice_dir="$HOME/jj-practice-repo"
+
+print_header() {
+    echo -e "\n${BLUE}${BOLD}═══════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}${BOLD}  $1${NC}"
+    echo -e "${BLUE}${BOLD}═══════════════════════════════════════════════════${NC}\n"
+}
+
+print_step() {
+    echo -e "${GREEN}▶${NC} $1"
+}
+
+print_command() {
+    echo -e "${YELLOW}  \$ $1${NC}"
+}
+
+wait_for_user() {
+    echo -e "\n${BOLD}Press Enter to continue...${NC}"
+    read -r
+}
+
+run_command() {
+    print_command "$1"
+    eval "$1"
+}
+
+cleanup() {
+    echo -e "\n${YELLOW}Cleaning up practice repository...${NC}"
+    cd "$HOME"
+    rm -rf "$practice_dir"
+    echo -e "${GREEN}✓ Cleanup complete${NC}"
+}
+
+# Setup
+print_header "Jujutsu (jj) Practice Session"
+
+echo -e "${BOLD}This script will create a practice repository at:${NC}"
+echo -e "  ${BLUE}$practice_dir${NC}"
+echo -e "\nYou can safely experiment here without affecting your real work."
+echo -e "${YELLOW}The repository will be deleted at the end.${NC}"
+wait_for_user
+
+# Clean up any existing practice repo
+if [ -d "$practice_dir" ]; then
+    echo "Removing existing practice repository..."
+    rm -rf "$practice_dir"
+fi
+
+# Exercise 1: Basic Setup
+print_header "Exercise 1: Creating a jj Repository"
+print_step "Creating practice directory and initializing jj repo"
+run_command "mkdir -p $practice_dir"
+run_command "cd $practice_dir"
+run_command "jj init --git ."
+
+print_step "Checking initial status"
+run_command "jj status"
+run_command "jj log"
+wait_for_user
+
+# Exercise 2: Making Your First Changes
+print_header "Exercise 2: Working Copy as a Commit"
+print_step "Creating a file (notice how jj automatically tracks it)"
+run_command "echo '# My Project' > README.md"
+run_command "jj status"
+
+print_step "No need to 'add' - changes are already tracked!"
+run_command "jj diff"
+
+print_step "Adding a description to our working copy"
+run_command "jj describe -m 'Initial README'"
+run_command "jj log"
+wait_for_user
+
+# Exercise 3: Committing and Continuing
+print_header "Exercise 3: The Commit Workflow"
+print_step "Committing our changes (this creates a new empty working copy)"
+run_command "jj commit -m 'docs: add initial README'"
+run_command "jj log"
+
+print_step "Notice @ is now a new empty commit, and our README commit is @-"
+run_command "jj status"
+
+print_step "Let's add more content"
+run_command "echo '## Features' >> README.md"
+run_command "echo '- Fast' >> README.md"
+run_command "jj diff"
+wait_for_user
+
+# Exercise 4: Editing History
+print_header "Exercise 4: Editing Previous Commits"
+print_step "Let's say we forgot something in our first commit"
+print_step "First, let's see our current log"
+run_command "jj log --limit 3"
+
+print_step "Save our current work with a description"
+run_command "jj describe -m 'feat: add features section'"
+
+print_step "Now edit the first commit (the one with README)"
+echo -e "${YELLOW}  # Note the commit ID from the log above${NC}"
+first_commit=$(jj log --no-graph -r '@--' -T 'commit_id' --no-pager)
+run_command "jj edit $first_commit"
+
+print_step "We're now editing that commit! Let's add a description"
+run_command "echo 'A practice repository for learning jj' >> README.md"
+run_command "jj diff"
+
+print_step "Return to our latest work"
+run_command "jj new @"
+run_command "jj log --limit 3"
+wait_for_user
+
+# Exercise 5: Squashing Changes
+print_header "Exercise 5: Squashing Changes"
+print_step "Make a small fix"
+run_command "echo '- Intuitive' >> README.md"
+run_command "jj diff"
+
+print_step "Squash this into the previous commit"
+run_command "jj squash -m 'feat: add more features'"
+run_command "jj log --limit 3"
+
+print_step "The changes are now part of the features commit!"
+wait_for_user
+
+# Exercise 6: Splitting Commits
+print_header "Exercise 6: Splitting Commits"
+print_step "Let's make multiple unrelated changes"
+run_command "echo '## Installation' >> README.md"
+run_command "echo 'TODO: Add installation instructions' >> README.md"
+run_command "echo '# TODO List' > TODO.md"
+run_command "echo '- [ ] Write tests' >> TODO.md"
+
+print_step "Check what we changed"
+run_command "jj diff"
+
+print_step "This should be two commits. Let's split interactively"
+echo -e "${YELLOW}  In the editor, select files for the first commit${NC}"
+echo -e "${YELLOW}  (This would open your editor in real usage)${NC}"
+# In practice, this would be: jj split
+# For demo, we'll use a simpler approach
+run_command "jj commit -m 'docs: add installation section'"
+run_command "jj describe -m 'chore: add TODO list'"
+run_command "jj log --limit 4"
+wait_for_user
+
+# Exercise 7: The Operation Log
+print_header "Exercise 7: Operation Log - Your Safety Net"
+print_step "Every jj command is recorded. Let's see our history"
+run_command "jj op log --limit 10"
+
+print_step "Let's 'accidentally' squash everything"
+run_command "jj squash --from '@-' --into '@--'"
+run_command "jj log --limit 3"
+
+print_step "Oops! But we can undo"
+run_command "jj undo"
+run_command "jj log --limit 4"
+echo -e "${GREEN}✓ Changes restored!${NC}"
+wait_for_user
+
+# Exercise 8: Bookmarks (Branches)
+print_header "Exercise 8: Working with Bookmarks (Branches)"
+print_step "Create a bookmark pointing to our current work"
+run_command "jj bookmark create my-feature"
+run_command "jj bookmark list"
+
+print_step "Start new work from the root"
+run_command "jj new root()"
+run_command "echo '# .gitignore' > .gitignore"
+run_command "echo 'node_modules/' >> .gitignore"
+run_command "jj commit -m 'chore: add gitignore'"
+
+print_step "See how our commits relate"
+run_command "jj log"
+wait_for_user
+
+# Exercise 9: Practical Workflow
+print_header "Exercise 9: Real-World Workflow"
+print_step "Simulate working on a feature with interruptions"
+
+echo -e "\n${BOLD}Scenario: You're working on a feature when an urgent fix is needed${NC}"
+run_command "jj new my-feature"
+run_command "echo 'export FEATURE_FLAG=true' > feature.sh"
+run_command "jj describe -m 'WIP: new feature'"
+
+print_step "Urgent fix needed! Save work and switch context"
+run_command "jj new root()"
+run_command "echo '#!/bin/bash' > fix.sh"
+run_command "echo 'echo \"Fixed!\"' >> fix.sh"
+run_command "jj commit -m 'fix: urgent production issue'"
+
+print_step "Back to feature work"
+feature_commit=$(jj log --no-graph -r 'description(\"WIP: new feature\")' -T 'commit_id' --no-pager)
+run_command "jj new $feature_commit"
+run_command "echo 'export ANOTHER_VAR=123' >> feature.sh"
+run_command "jj squash -m 'feat: add feature flags'"
+
+run_command "jj log"
+wait_for_user
+
+# Summary
+print_header "Practice Complete! 🎉"
+
+echo -e "${BOLD}Key Takeaways:${NC}"
+echo -e "  ${GREEN}✓${NC} Working directory is always a commit (@)"
+echo -e "  ${GREEN}✓${NC} No staging area - all changes auto-tracked"
+echo -e "  ${GREEN}✓${NC} Edit any commit directly with 'jj edit'"
+echo -e "  ${GREEN}✓${NC} Operation log means everything is undoable"
+echo -e "  ${GREEN}✓${NC} Commits are lightweight - create many!"
+
+echo -e "\n${BOLD}Useful commands to remember:${NC}"
+echo -e "  ${BLUE}jj status${NC}    - Check current state"
+echo -e "  ${BLUE}jj diff${NC}      - See your changes"
+echo -e "  ${BLUE}jj log${NC}       - View commit graph"
+echo -e "  ${BLUE}jj new${NC}       - Start new work"
+echo -e "  ${BLUE}jj commit${NC}    - Finalize current work"
+echo -e "  ${BLUE}jj squash${NC}    - Combine with parent"
+echo -e "  ${BLUE}jj edit${NC}      - Modify any commit"
+echo -e "  ${BLUE}jj undo${NC}      - Undo last operation"
+echo -e "  ${BLUE}jj op log${NC}    - See operation history"
+
+echo -e "\n${BOLD}Next steps:${NC}"
+echo -e "  1. Try these commands in your real repository"
+echo -e "  2. Read ${BLUE}$HOME/.config/dotfiles/docs/jj-claude-tutorial.md${NC}"
+echo -e "  3. Experiment - you can't break anything with jj's operation log!"
+
+wait_for_user
+cleanup
+
+echo -e "\n${GREEN}${BOLD}Happy version controlling with jj! 🚀${NC}"

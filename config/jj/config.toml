@@ -22,7 +22,9 @@ ranked-authors = ["log", "--template", "author"]
 
 [ui]
 default-command = "log"
-diff-editor = "nvim --wait --diff"
+diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
+# Use delta for beautiful diff output
+pager = "delta"
 
 [core]
 whitespace = "trailing-space"
