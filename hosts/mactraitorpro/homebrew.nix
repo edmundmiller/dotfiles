@@ -46,6 +46,7 @@
     "bat"
     "btop"
     "coreutils"
+    "delta"
     "direnv"
     "eza"
     "fd"
