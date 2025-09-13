@@ -55,6 +55,11 @@
   typeset -g POWERLEVEL9K_CUSTOM_TODO_FOREGROUND=$cyan
   typeset -g POWERLEVEL9K_CUSTOM_TODO_BACKGROUND=''
   
+  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW="prompt_nextflow"
+  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_FOREGROUND=$blue  # Blue for workflow tool
+  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_BACKGROUND=''
+  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_SHOW_ON_COMMAND='nextflow|nf'
+  
   # Left prompt segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # context                 # user@host
@@ -63,6 +68,7 @@
     nix_shell                 # nix development environment
     virtualenv                # python virtual environment
     node_version              # node.js version for projects
+    custom_nextflow           # nextflow version for projects
     package                   # package.json version
     terraform                 # terraform workspace
     aws                       # aws profile
@@ -288,6 +294,30 @@ function prompt_todo() {
     if [[ $pending_count -gt 0 ]]; then
       # For P10k custom segments, just echo the output
       echo -n "✓ $pending_count"
+    fi
+  fi
+}
+
+# Custom Nextflow segment - shows version when in Nextflow project or typing Nextflow commands
+function prompt_nextflow() {
+  # Check if we should show Nextflow version
+  local show_nextflow=0
+  
+  # Show if in Nextflow project directory
+  if [[ -f "main.nf" ]] || [[ -f "nextflow.config" ]] || [[ -d "modules" ]] || [[ -d "workflows" ]] || [[ -n *.nf(#qN) ]]; then
+    show_nextflow=1
+  fi
+  
+  # Also show when typing nextflow commands (P10k handles this via SHOW_ON_COMMAND)
+  # but we need to make sure the function works in all cases
+  if [[ $show_nextflow -eq 1 ]] || command -v nextflow >/dev/null 2>&1; then
+    # Get Nextflow version
+    local nf_version
+    nf_version=$(nextflow -version 2>/dev/null | sed -n '2s/.*version \([^ ]*\).*/\1/p')
+    
+    if [[ -n "$nf_version" ]]; then
+      # Show compact version format
+      echo -n "nf $nf_version"
     fi
   fi
 }
