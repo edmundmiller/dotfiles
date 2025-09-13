@@ -4,7 +4,7 @@ font-size = 14
 font-feature = "+liga"
 
 # Theme & Colors - Using built-in Atom One themes
-theme = light:AtomOneLight,dark:AtomOneDark
+theme = light:AtomOneLight,dark:Atom
 
 # Alternative theme combinations (commented out):
 # theme = light:Melange_light,dark:Melange_dark
