@@ -1,0 +1,277 @@
+#!/bin/bash
+#
+# Todo.sh Format Action - Comprehensive formatting for todo.txt files
+#
+# Usage: todo.sh format [options]
+#
+# This action provides a clean interface to todo.txt formatting with automatic
+# fallback between Go binary and shell-based formatters.
+#
+
+set -euo pipefail
+
+# Action description for todo.sh help system
+ACTION="format"
+if [[ "${1:-}" == "usage" ]]; then
+    echo "    format [OPTIONS]:"
+    echo "        Format and normalize todo.txt and done.txt files"
+    echo "        OPTIONS:"
+    echo "          --simple       Use simple formatter (faster, fewer features)"
+    echo "          --comprehensive Use comprehensive formatter (full features)"
+    echo "          --dry-run|-n   Preview changes without applying them"
+    echo "          --verbose|-v   Show detailed processing information"
+    echo "          --quiet|-q     Suppress non-essential output"
+    echo "          --check-only   Validate and report without making changes"
+    echo "          --help|-h      Show detailed help"
+    echo ""
+    exit 0
+fi
+
+# Skip the action name argument if it was passed by todo.sh
+if [[ "${1:-}" == "format" ]]; then
+    shift
+fi
+
+# Get the directory where this script resides (should be ~/.todo.actions.d)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RESET='\033[0m'
+
+echo_info() { echo -e "${GREEN}INFO:${RESET} $*" >&2; }
+echo_warning() { echo -e "${YELLOW}WARNING:${RESET} $*" >&2; }
+echo_error() { echo -e "${RED}ERROR:${RESET} $*" >&2; }
+
+# Show detailed help
+show_help() {
+    cat << 'EOF'
+Todo.sh Format Action - Comprehensive formatting for todo.txt files
+
+USAGE:
+    todo.sh format [OPTIONS]
+
+DESCRIPTION:
+    Formats and normalizes your todo.txt and done.txt files according to the
+    official specification. The formatter fixes common issues like priority
+    placement, date formats, context/project positioning, and metadata spacing.
+
+OPTIONS:
+    --simple            Use simple formatter (faster, fewer features)
+    --comprehensive     Use comprehensive formatter (full features, default)
+    --dry-run, -n       Preview changes without applying them  
+    --verbose, -v       Show detailed processing information
+    --quiet, -q         Suppress non-essential output
+    --check-only        Validate and report without making changes
+    --help, -h          Show this help message
+
+FORMATTING FEATURES:
+    ✓ Priority validation and placement: (A) at start of line
+    ✓ Date normalization: YYYY-MM-DD format for all dates
+    ✓ Context (@) and project (+) repositioning after description
+    ✓ Metadata spacing: key:value format standardization  
+    ✓ Completed task validation: proper x YYYY-MM-DD format
+    ✓ Comment and blank line preservation
+    ✓ Section-based sorting (comprehensive mode)
+    ✓ Atomic file updates with timestamped backups
+    ✓ File locking to prevent concurrent modifications
+
+MODES:
+    Simple:        Minimal changes, normalize priorities, dates, spacing only
+    Comprehensive: Full formatting including tag repositioning and sorting
+
+FORMATTERS:
+    This action automatically detects and uses the best available formatter:
+    1. Go binary (todotxtfmt) - preferred for speed and robustness
+    2. Comprehensive shell formatter - full-featured fallback
+    3. Simple shell formatter - minimal fallback
+
+EXAMPLES:
+    todo.sh format                    # Format using best available method
+    todo.sh format --simple           # Use simple mode
+    todo.sh format --dry-run          # Preview changes
+    todo.sh format --comprehensive -v # Full formatting with verbose output
+
+EXIT CODES:
+    0    Success: Files processed and updated (or confirmed clean)
+    1    Error: Processing failed, files not updated  
+    2    Check mode: Issues found but no changes made
+
+SPECIFICATION:
+    Follows the official todo.txt specification:
+    https://github.com/todotxt/todo.txt
+
+EOF
+}
+
+# Detect available formatters
+detect_formatters() {
+    # Check for Go binary first
+    if command -v todotxtfmt >/dev/null 2>&1; then
+        echo "go"
+        return
+    fi
+    
+    # Check for todotxtfmt in same directory as this script
+    if [[ -x "$SCRIPT_DIR/todotxtfmt" ]]; then
+        echo "go-local"
+        return
+    fi
+    
+    # Check for comprehensive formatter
+    if [[ -x "$SCRIPT_DIR/formatter" ]]; then
+        echo "comprehensive"
+        return
+    fi
+    
+    # Check for simple formatter
+    if [[ -x "$SCRIPT_DIR/formatter-simple" ]]; then
+        echo "simple"
+        return
+    fi
+    
+    echo "none"
+}
+
+# Parse arguments
+USE_MODE=""
+FORMATTER_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --simple)
+            USE_MODE="simple"
+            shift
+            ;;
+        --comprehensive)
+            USE_MODE="comprehensive"
+            shift
+            ;;
+        --dry-run|-n)
+            FORMATTER_ARGS+=("--dry-run")
+            shift
+            ;;
+        --verbose|-v)
+            FORMATTER_ARGS+=("--verbose")
+            shift
+            ;;
+        --quiet|-q)
+            FORMATTER_ARGS+=("--quiet")
+            shift
+            ;;
+        --check-only)
+            FORMATTER_ARGS+=("--check-only")
+            shift
+            ;;
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo_error "Unknown option: $1"
+            echo "Use 'todo.sh format --help' for usage information."
+            exit 1
+            ;;
+    esac
+done
+
+# Detect best formatter
+FORMATTER_TYPE=$(detect_formatters)
+
+if [[ "$FORMATTER_TYPE" == "none" ]]; then
+    echo_error "No formatter found. Please install todotxtfmt or ensure formatter scripts are available."
+    exit 1
+fi
+
+# Determine mode if not specified
+if [[ -z "$USE_MODE" ]]; then
+    case "$FORMATTER_TYPE" in
+        go|go-local|comprehensive) USE_MODE="comprehensive" ;;
+        simple) USE_MODE="simple" ;;
+    esac
+fi
+
+# Build command based on formatter type and mode
+case "$FORMATTER_TYPE" in
+    go)
+        FORMATTER_CMD="todotxtfmt --mode $USE_MODE"
+        echo_info "Using Go formatter (system)"
+        ;;
+    go-local)
+        FORMATTER_CMD="$SCRIPT_DIR/todotxtfmt --mode $USE_MODE"
+        echo_info "Using Go formatter (local)"
+        ;;
+    comprehensive)
+        if [[ "$USE_MODE" == "simple" ]]; then
+            # Use simple formatter if available
+            if [[ -x "$SCRIPT_DIR/formatter-simple" ]]; then
+                FORMATTER_CMD="$SCRIPT_DIR/formatter-simple"
+                echo_info "Using simple shell formatter"
+            else
+                FORMATTER_CMD="$SCRIPT_DIR/formatter"
+                echo_info "Using comprehensive shell formatter (simple mode requested but not available)"
+            fi
+        else
+            FORMATTER_CMD="$SCRIPT_DIR/formatter"
+            echo_info "Using comprehensive shell formatter"
+        fi
+        ;;
+    simple)
+        FORMATTER_CMD="$SCRIPT_DIR/formatter-simple"
+        echo_info "Using simple shell formatter"
+        if [[ "$USE_MODE" == "comprehensive" ]]; then
+            echo_warning "Comprehensive mode requested but only simple formatter available"
+        fi
+        ;;
+esac
+
+# Add file arguments for Go formatter
+if [[ "$FORMATTER_TYPE" == "go" || "$FORMATTER_TYPE" == "go-local" ]]; then
+    # Go formatter uses environment variables or flags
+    FORMATTER_CMD="$FORMATTER_CMD"
+    
+    # Convert shell formatter args to Go formatter args
+    for arg in "${FORMATTER_ARGS[@]:-}"; do
+        case "$arg" in
+            --dry-run) FORMATTER_CMD="$FORMATTER_CMD --dry-run" ;;
+            --verbose) FORMATTER_CMD="$FORMATTER_CMD --verbose" ;;
+            --quiet) FORMATTER_CMD="$FORMATTER_CMD --quiet" ;;
+            --check-only) FORMATTER_CMD="$FORMATTER_CMD --dry-run" ;; # Go uses --dry-run
+        esac
+    done
+    
+    # Add backup flag (Go formatter handles this differently)
+    FORMATTER_CMD="$FORMATTER_CMD --backup ."
+    
+else
+    # Shell formatters
+    if [[ "$FORMATTER_TYPE" == "simple" ]]; then
+        # Convert shell formatter args to simple formatter args
+        DRY_RUN="false"
+        for arg in "${FORMATTER_ARGS[@]:-}"; do
+            case "$arg" in
+                --dry-run|--check-only) DRY_RUN="true" ;;
+                --verbose) echo_warning "Simple formatter doesn't support --verbose, ignoring" ;;
+                --quiet) echo_warning "Simple formatter doesn't support --quiet, ignoring" ;;
+            esac
+        done
+        
+        # Simple formatter takes positional arguments
+        FORMATTER_CMD="$FORMATTER_CMD \"\$TODO_FILE\" \"\$DONE_FILE\" \"$DRY_RUN\""
+    else
+        # Comprehensive formatter
+        FORMATTER_CMD="$FORMATTER_CMD --todo \"\$TODO_FILE\" --done \"\$DONE_FILE\""
+        
+        # Add other arguments
+        for arg in "${FORMATTER_ARGS[@]:-}"; do
+            FORMATTER_CMD="$FORMATTER_CMD $arg"
+        done
+    fi
+fi
+
+# Execute the formatter
+echo_info "Formatting todo.txt files..."
+eval "$FORMATTER_CMD"
