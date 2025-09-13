@@ -1,0 +1,6 @@
+github.com/1set/gut v0.0.0-20201117175203-a82363231997 h1:za2jSkE1Rx56hTzBko3ZZ4gA/nq+rA/jVovWuAF4jyo=
+github.com/1set/gut v0.0.0-20201117175203-a82363231997/go.mod h1:DpCCAL0dgBMQdiqPUIIRpdU9zNcIZwJjW+L/8Mb30mw=
+github.com/1set/todotxt v0.0.4 h1:A8DpMwGxctq7oT3s/2uC26RkLMKHRnG1E7x/cD8IeSI=
+github.com/1set/todotxt v0.0.4/go.mod h1:FILY0dppcGIZzNbr4WUZ1d2bd1YWTCllmGIuXt3MP9Y=
+github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
+github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=

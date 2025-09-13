@@ -1,0 +1,8 @@
+# Metadata and issue tracking test cases
+Submit report due:2025-02-15
+Fix bug issue:BUG-123 priority:high assignee:developer
+Fix authentication bug issue:AUTH-001
+Deploy feature issue:FEAT-456 pr:789 reviewer:admin
+Implement feature epic:user-management story-points:5
+Research topic sprint:2025-Q1 velocity:8 complexity:medium
+Update system status:in-progress owner:team-alpha deadline:2025-03-01
