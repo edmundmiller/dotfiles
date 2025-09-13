@@ -32,3 +32,26 @@ vim.api.nvim_create_autocmd("FileType", {
     end, 50)
   end,
 })
+
+-- Enable text wrapping for prose formats
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown", "org", "typst", "text", "tex", "rst" },
+  callback = function()
+    -- Enable soft wrapping
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true -- Wrap at word boundaries
+    vim.opt_local.textwidth = 0 -- Disable hard wrapping
+    vim.opt_local.wrapmargin = 0
+    
+    -- Better navigation for wrapped lines
+    vim.keymap.set("n", "j", "gj", { buffer = true, desc = "Move down through wrapped lines" })
+    vim.keymap.set("n", "k", "gk", { buffer = true, desc = "Move up through wrapped lines" })
+    vim.keymap.set("n", "0", "g0", { buffer = true, desc = "Move to beginning of wrapped line" })
+    vim.keymap.set("n", "$", "g$", { buffer = true, desc = "Move to end of wrapped line" })
+    
+    -- Optional: Set conceallevel for better markdown rendering
+    if vim.bo.filetype == "markdown" then
+      vim.opt_local.conceallevel = 2
+    end
+  end,
+})
