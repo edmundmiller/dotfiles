@@ -88,6 +88,10 @@ function r() {
 compdef r=sched
 
 # Convenience
+# Editor aliases
+alias vi='nvim'
+alias nv='nvim'
+
 alias kb=keybase
 alias exe=exercism
 alias ydl=youtube-dl
@@ -96,3 +100,53 @@ alias ydl-m4a='youtube-dl --extract-audio --audio-format m4a'
 alias ddg=duckduckgo
 alias bt=transmission-remote
 alias tb="nc termbin.com 9999"
+
+# Jujutsu (jj) shortcuts
+alias jn='jj new'           # Start new work
+alias js='jj squash'        # Squash changes into parent
+alias jd='jj describe'      # Describe current commit
+alias jl='jj log'           # Show log
+alias jst='jj status'       # Show status
+alias jp='jj prev'          # Go to previous commit
+alias jnx='jj next'         # Go to next commit
+alias je='jj edit'          # Edit a commit
+alias jr='jj rebase'        # Rebase commits
+alias jb='jj bookmark'      # Manage bookmarks
+alias jdiff='jj diff'       # Show differences
+alias jshow='jj show'       # Show commit details
+
+# JJ workflow helpers
+jnew() {
+  jj describe -m "${1:-WIP}" && jj new
+}
+
+# Quick squash with message
+jsquash() {
+  if [[ -n "$1" ]]; then
+    jj squash -m "$1"
+  else
+    jj squash
+  fi
+}
+
+# Clean up jj history
+jclean() {
+  echo "Cleaning up empty commits..."
+  jj tidy
+  echo "Current work status:"
+  jj work
+}
+
+# Show only active work
+jwork() {
+  jj log -r 'mine() & ~empty() & ~immutable()'
+}
+
+# Quick abandon current if empty and go to previous
+jback() {
+  if [[ -z $(jj diff) ]]; then
+    jj abandon @ && jj edit @-
+  else
+    echo "Current commit has changes, use 'jj abandon' explicitly if you want to lose them"
+  fi
+}

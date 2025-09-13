@@ -73,5 +73,11 @@ in
       vim = "nvim";
       v = "nvim";
     };
+
+    # Set nvim as the default editor
+    env = {
+      EDITOR = "nvim";
+      VISUAL = "nvim";
+    };
   };
 }

@@ -26,18 +26,71 @@ st = ["status"]
 ranked-authors = ["log", "--template", "author"]
 lm = ["log", "-r", "::@ | ::main"]
 
+# Workflow shortcuts
+l = ["log", "-r", "(main..@):: | (main..@)-"]  # Recent changes relative to main
+uncommit = ["backout", "-r", "@"]  # Undo last commit keeping changes
+sync = ["git", "fetch", "--all-remotes"]  # Fetch from all remotes
+wip = ["describe", "-m", "WIP"]  # Quick work-in-progress commit
+pp = ["log", "--template", "builtin_log_detailed"]  # Pretty print with full descriptions
+recent = ["log", "-r", "::@ ~ ::trunk()"]  # Recent commits not in trunk
+evolve = ["evolve", "--quiet"]  # Quietly evolve commits
+
+# Quick navigation
+p = ["prev", "--edit"]  # Go to previous commit in edit mode
+n = ["next", "--edit"]  # Go to next commit in edit mode
+
+# Cleanup aliases for maintaining clean history
+cleanup = ["abandon", "-r", "empty() & ~@"]  # Clean up all empty commits except current
+work = ["log", "-r", "(mine() & ~empty()) | @"]  # Show only meaningful work
+orphans = ["log", "-r", "mine() & ~::trunk() & ~::@"]  # Show orphaned branches
+abandon-empty = ["abandon", "-r", "empty() & description(\"\")"]  # Remove empty unnamed commits
+tidy = ["abandon", "-r", "empty() & description(\"\") & ~@"]  # Safe cleanup of empty commits
+
 [ui]
 default-command = "log"
 diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
 # Use delta for beautiful diff output
 pager = "delta"
+editor = "nvim"
+# Enable word wrapping in logs for better readability
+log-word-wrap = true
+# Change graph style for cleaner visualization
+graph.style = "square"
+# Show relative timestamps
+relative-timestamps = true
+# Paginate long outputs automatically
+paginate = "auto"
+# Automatically abandon empty commits on certain operations
+allow-filesets = true
+
+[ui.movement]
+# Make edit mode default for prev/next commands
+edit = true
 
 [core]
 whitespace = "trailing-space"
 
 [git]
 push-branch-prefix = "push-"
+# Don't create unnecessary local bookmarks when cloning
+track-default-bookmark-on-clone = false
+# Allow pushing new bookmarks to remote
+push-bookmarks-prefix = "emiller/"
 
 [revsets]
 # Equivalent to git's push.default=current
 trunk = "main@origin"
+# Useful revset aliases for common queries
+log = "@ | ancestors(immutable_heads().., 2) | trunk()"  # Default log view
+mine = "author(exact:\"Edmund Miller\")"  # Your commits
+recent-changes = "::@ & ~::trunk()"  # Changes not yet in trunk
+stale = "committer_date().before(\"2 weeks ago\") & mine() & ~::trunk()"  # Old unmerged work
+# Cleaner log views
+clean-log = "@ | ancestors(@ | trunk(), 2) | trunk()"  # Simplified default log
+active = "mine() & ~empty() & ~immutable()"  # Active work in progress
+
+[snapshot]
+# Automatically track new files in src directories
+auto-track = "glob:**/*.js|glob:**/*.ts|glob:**/*.tsx|glob:**/*.jsx|glob:**/*.py|glob:**/*.rs|glob:**/*.go|glob:**/*.java|glob:**/*.c|glob:**/*.cpp|glob:**/*.h|glob:**/*.hpp|glob:**/*.nix|glob:**/*.toml|glob:**/*.yaml|glob:**/*.yml|glob:**/*.json|glob:**/*.md"
+# Maximum file size to auto-track (10MB)
+max-new-file-size = "10MB"
