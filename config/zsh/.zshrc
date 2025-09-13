@@ -81,6 +81,17 @@ fi
 if [[ $TERM != dumb ]]; then
   # nix-darwin handles compinit via enableGlobalCompInit = true
   # so we don't need to manually initialize it here
+  
+  # Add custom completions directory before sourcing other configs
+  fpath=($ZDOTDIR/completions $fpath)
+
+  # JJ completion setup - choose one method:
+  # Option 1: Fast static completion (current, ~6ms)
+  # (already loaded via fpath/_jj_fast)
+
+  # Option 2: Official dynamic completion (~9ms, more features)
+  # Uncomment to use dynamic completion instead of static:
+  # eval "$(COMPLETE=zsh jj)" 2>/dev/null
 
   source $ZDOTDIR/keybinds.zsh
   source $ZDOTDIR/completion.zsh
@@ -121,9 +132,9 @@ export PATH="$HOME/.local/bin:$PATH"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# todo.txt configuration (centralized in ~/.todo.actions.d)
-export TODOTXT_CFG_FILE="$HOME/.todo.actions.d/todo.cfg"
-export TODO_CFG_FILE="$HOME/.todo.actions.d/todo.cfg"  # compatibility with some variants
+# todo.txt configuration (managed in dotfiles, symlinked to ~/.todo.actions.d)
+export TODOTXT_CFG_FILE="$HOME/.config/dotfiles/config/todotxt/todo.cfg"
+export TODO_CFG_FILE="$HOME/.config/dotfiles/config/todotxt/todo.cfg"  # compatibility with some variants
 if [ -r "$TODOTXT_CFG_FILE" ]; then
   source "$TODOTXT_CFG_FILE"
 fi

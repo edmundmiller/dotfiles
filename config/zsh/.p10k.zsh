@@ -285,12 +285,25 @@
 # Custom todo.txt segment - shows pending task count
 function prompt_todo() {
   local todo_file="${TODO_FILE:-$HOME/Documents/todo/todo.txt}"
-  
+
   if [[ -f "$todo_file" ]]; then
-    # Count non-completed tasks (lines not starting with 'x ')
-    local pending_count
-    pending_count=$(grep -c '^[^x]' "$todo_file" 2>/dev/null) || pending_count=0
-    
+    # Use cached count to improve performance on large todo files
+    local cache_file="$XDG_CACHE_HOME/zsh/todo_count"
+    local pending_count=""
+
+    # Check if cache is newer than todo file (or less than 30 seconds old)
+    if [[ -f "$cache_file" ]] && [[ "$cache_file" -nt "$todo_file" ]] ||
+       [[ -f "$cache_file" && $(( $(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || echo 0) )) -lt 30 ]]; then
+      pending_count=$(cat "$cache_file" 2>/dev/null)
+    else
+      # Update cache with current count
+      pending_count=$(grep -c '^[^x]' "$todo_file" 2>/dev/null) || pending_count=0
+      if [[ -n "$pending_count" ]]; then
+        mkdir -p "$(dirname "$cache_file")"
+        echo "$pending_count" > "$cache_file"
+      fi
+    fi
+
     if [[ $pending_count -gt 0 ]]; then
       # For P10k custom segments, just echo the output
       echo -n "✓ $pending_count"
@@ -300,80 +313,79 @@ function prompt_todo() {
 
 # Custom Nextflow segment - shows version when in Nextflow project or typing Nextflow commands
 function prompt_nextflow() {
-  # Check if we should show Nextflow version
-  local show_nextflow=0
-  
-  # Show if in Nextflow project directory
+  # Only show if in Nextflow project directory (file-based detection only)
+  # P10k's SHOW_ON_COMMAND handles showing when typing nextflow commands
   if [[ -f "main.nf" ]] || [[ -f "nextflow.config" ]] || [[ -d "modules" ]] || [[ -d "workflows" ]] || [[ -n *.nf(#qN) ]]; then
-    show_nextflow=1
-  fi
-  
-  # Also show when typing nextflow commands (P10k handles this via SHOW_ON_COMMAND)
-  # but we need to make sure the function works in all cases
-  if [[ $show_nextflow -eq 1 ]] || command -v nextflow >/dev/null 2>&1; then
-    # Get Nextflow version
-    local nf_version
-    nf_version=$(nextflow -version 2>/dev/null | sed -n '2s/.*version \([^ ]*\).*/\1/p')
-    
+    # Use cached version to avoid slow nextflow -version call (nextflow takes ~600ms!)
+    local cache_file="$XDG_CACHE_HOME/zsh/nextflow_version"
+    local nf_version=""
+
+    # Check if cache exists and is newer than 24 hours
+    if [[ -f "$cache_file" && $(( $(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || echo 0) )) -lt 86400 ]]; then
+      nf_version=$(cat "$cache_file" 2>/dev/null)
+    else
+      # Async update: spawn background process to update cache
+      if command -v nextflow >/dev/null 2>&1; then
+        # Use existing cache immediately if available
+        if [[ -f "$cache_file" ]]; then
+          nf_version=$(cat "$cache_file" 2>/dev/null)
+        fi
+
+        # Update cache in background
+        {
+          local new_version
+          new_version=$(nextflow -version 2>/dev/null | sed -n '2s/.*version \([^ ]*\).*/\1/p')
+          if [[ -n "$new_version" ]]; then
+            mkdir -p "$(dirname "$cache_file")"
+            echo "$new_version" > "$cache_file"
+          fi
+        } &!
+      fi
+    fi
+
     if [[ -n "$nf_version" ]]; then
-      # Show compact version format
       echo -n "nf $nf_version"
+    else
+      # Fallback: just show "nf" if nextflow is available but no version cached yet
+      if command -v nextflow >/dev/null 2>&1; then
+        echo -n "nf"
+      fi
     fi
   fi
 }
 
 # Custom VCS function for JJ with Git fallback
 function prompt_custom_vcs() {
-  # Use jj to check if we're in a jj repo (more efficient than directory traversal)
-  if jj root >/dev/null 2>&1; then
-    # We're in a jj repo - show just change ID
-    local jj_change_id
-    jj_change_id=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null) || jj_change_id=""
-    
-    if [[ -n "$jj_change_id" ]]; then
-      # Check for working copy changes
-      local jj_status=""
-      if jj status --no-pager 2>/dev/null | grep -q "Working copy changes:"; then
-        jj_status="*"
-      fi
-      
-      # For P10k custom segments, just echo the output - minimal format
-      echo -n "${jj_change_id}${jj_status}"
-      return 0
-    fi
+  # Ultra-fast version: single JJ call, no status checks
+  local vcs_info
+
+  # Try JJ first - single fast call, skip root check
+  vcs_info=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null)
+
+  if [[ -n "$vcs_info" ]]; then
+    echo -n "$vcs_info"
+    return 0
   fi
-  
-  # Fall back to git - check if we're in a git repo
-  if git rev-parse --git-dir >/dev/null 2>&1; then
-    # Get git branch
-    local branch
-    branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null) || branch=""
-    
-    if [[ -n "$branch" ]]; then
-      # Check git status (simplified)
-      local git_status=""
-      if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
-        git_status="*"
-      fi
-      
-      # Output for git - minimal format to match jj
-      echo -n "${branch}${git_status}"
-      return 0
-    fi
+
+  # Fall back to git - also optimized, no status check
+  vcs_info=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
+
+  if [[ -n "$vcs_info" ]]; then
+    echo -n "$vcs_info"
+    return 0
   fi
-  
+
   return 1
 }
 
 # JJ description function for right prompt
 function prompt_jj_desc() {
-  if jj root >/dev/null 2>&1; then
-    local jj_desc
-    jj_desc=$(jj log -r @ --no-graph -T 'if(description, description.first_line().substr(0, 50), "")' 2>/dev/null)
-    
-    if [[ -n "$jj_desc" ]]; then
-      echo -n "$jj_desc"
-    fi
+  # Skip the root check for speed - just try to get description
+  local jj_desc
+  jj_desc=$(jj log -r @ --no-graph -T 'if(description, description.first_line().substr(0, 50), "")' 2>/dev/null)
+
+  if [[ -n "$jj_desc" ]]; then
+    echo -n "$jj_desc"
   fi
 }
 
