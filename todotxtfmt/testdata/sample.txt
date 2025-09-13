@@ -1,0 +1,7 @@
+(C)     Get a gym bag for my car @personal  +fitness    
+Fix    critical    bug +webapp due:2025-12-31
+x (A) 2025-09-06 Fill 30 prescription due:2025-09-07 t:2025-09-07
+   (B)  2025-09-08  Reschedule Amy @personal +meetings  due:2025-09-13  
+# Some comment
+Write documentation    @work   +project due:2025-12-01
+x 2025-09-10 2025-09-09 Review chapter @phd +dissertation
