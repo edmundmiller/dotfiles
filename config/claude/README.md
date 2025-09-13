@@ -153,3 +153,16 @@ To add a new slash command:
 - The `allowed-tools` field restricts what operations Claude can perform
 - Commands are designed to be composable and work together
 - All jj operations are safe due to the operation log
+
+
+## Claude Code Version Issue
+If slash commands aren't working, this Reddit comment mentions Claude Code v1.0.88 worked better:
+https://www.reddit.com/r/ClaudeAI/comments/1ndafeq/comment/ndfazn5/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+
+```bash
+# Downgrade to working version
+curl -O https://raw.githubusercontent.com/Homebrew/homebrew-cask/b7821349a0cd7186157cc5e2ae4e3ef1e52eddb2/Casks/c/claude-code.rb && brew install claude-code.rb
+
+# Disable auto-updates to prevent upgrading
+claude config set -g autoUpdates false
+```

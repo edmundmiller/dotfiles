@@ -1,0 +1,5 @@
+#compdef jj
+# Dynamic JJ completion using the official method from JJ docs
+
+# Use JJ's built-in dynamic completion engine
+eval "$(COMPLETE=zsh jj)"

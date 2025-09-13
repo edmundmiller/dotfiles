@@ -225,6 +225,33 @@ This repository uses jujutsu (jj) for version control. JJ is a Git-compatible VC
 
 When working with jj, think in terms of moving changes between commits rather than staging/unstaging. Use `jj status` and `jj log` frequently to understand state.
 
+### JJ Editor Commands for Claude Code
+
+When Claude Code needs to run JJ commands that normally open an editor, always use one of these approaches:
+
+1. **Use -m flag for messages:**
+   ```bash
+   jj describe -m "commit message"
+   jj squash -m "message"
+   ```
+
+2. **Use JJ_EDITOR environment variable for interactive commands:**
+   ```bash
+   JJ_EDITOR="echo 'commit message'" jj describe
+   JJ_EDITOR="echo 'commit message'" jj split
+   ```
+
+3. **For heredoc messages:**
+   ```bash
+   jj describe -m "$(cat <<'EOF'
+   Multi-line commit message
+   with details
+   EOF
+   )"
+   ```
+
+**Never run:** `jj describe`, `jj split`, `jj squash` without specifying the message, as this will hang in an interactive editor that Claude Code cannot control.
+
 ## Notes
 
 - Commands must be run from the repository root
