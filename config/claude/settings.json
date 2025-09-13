@@ -108,7 +108,20 @@
       "Bash(nextflow:*)",
       "Bash(wave:*)",
       "Bash(nf-test:*)",
-      "Bash(tw:*)"
+      "Bash(tw:*)",
+
+      "Bash(jj status:*)",
+      "Bash(jj log:*)",
+      "Bash(jj diff:*)",
+      "Bash(jj show:*)",
+      "Bash(jj new:*)",
+      "Bash(jj describe:*)",
+      "Bash(jj split:*)",
+      "Bash(jj undo:*)",
+      "Bash(jj op log:*)",
+      "Bash(jj op restore:*)",
+      "Bash(jj branch:*)",
+      "Bash(jj git fetch:*)"
     ],
     "deny": []
   },
