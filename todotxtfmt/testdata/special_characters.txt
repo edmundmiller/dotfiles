@@ -1,8 +1,0 @@
-# Special characters and complex values
-Check documentation url:https://example.com/docs?page=1&sort=date
-Contact client email:client@company.com phone:+1-800-555-0123
-Monitor system uptime:99.9% threshold:95% alerts:enabled
-Deploy to server host:web-01.prod.example.com port:8080 ssl:enabled
-Review branch:feature/auth-improvements commits:15 lines:+234/-89
-Schedule meeting time:2025-01-20T14:30:00Z timezone:UTC-5 duration:1h
-Process file path:/var/log/app.log size:2.3GB format:json compressed:true
