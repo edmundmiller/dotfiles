@@ -1,6 +1,7 @@
 ---
-allowed-tools: Bash(jj op log*), Bash(jj op restore*), Bash(jj undo*), Bash(jj status*), Bash(jj log*)
+allowed-tools: Bash(jj op log:*), Bash(jj op restore:*), Bash(jj undo:*), Bash(jj status:*), Bash(jj log:*)
 description: Safety net - undo any operation
+model: claude-sonnet-4-20250514
 ---
 
 ## Recent Operations

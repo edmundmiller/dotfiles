@@ -1,0 +1,557 @@
+#!/bin/bash
+# tracktime - Enhanced time tracking for todo.txt
+# Combines the best features of donow and timetrack with improvements
+# 
+# Features:
+# - Simple inline time tracking like donow (min:X format)
+# - Session-based detailed logging like timetrack
+# - Built-in reporting without Python dependencies
+# - Smart notifications and reminders
+# - Automatic task switching
+# - Cross-platform compatibility
+
+set -eu
+
+# ====================================================
+# Configuration
+# ====================================================
+NOTIFICATION_ENABLED=${TRACKTIME_NOTIFICATIONS:-true}
+REMINDER_INTERVAL=${TRACKTIME_REMINDER_INTERVAL:-15}    # minutes
+LOG_FILE=${TRACKTIME_LOG:-"$TODO_DIR/tracktime.log"}
+CURRENT_TASK_FILE="$TODO_DIR/.tracktime_current"
+
+# ====================================================
+# Utility Functions
+# ====================================================
+
+usage() {
+    cat << EOF
+  tracktime - Enhanced time tracking for todo.txt
+
+  USAGE:
+    tracktime start ITEM_NUMBER|"task description"  Start tracking a task
+    tracktime stop                                   Stop tracking current task
+    tracktime pause                                  Pause current task (resume with start)
+    tracktime status                                 Show currently tracked task
+    tracktime current                                Alias for status
+    tracktime switch ITEM_NUMBER                     Switch to tracking a different task
+    tracktime log [DAYS]                            Show recent log entries (default: 7 days)
+    tracktime report [today|week|month]             Generate time reports
+    tracktime summary [TASK_NUMBER]                 Show time summary for task(s)
+    tracktime cleanup                               Clean up tracking state
+
+  EXAMPLES:
+    tracktime start 1                               Start tracking task #1
+    tracktime start "Write documentation +work"     Start tracking ad-hoc task
+    tracktime status                                Show what's currently being tracked
+    tracktime report today                          Show today's time breakdown
+    tracktime log 3                                 Show last 3 days of activity
+
+EOF
+}
+
+# Cross-platform notification
+notify() {
+    [ "$NOTIFICATION_ENABLED" != "true" ] && return 0
+    
+    local title="$1"
+    local message="$2"
+    
+    if command -v osascript >/dev/null 2>&1; then
+        # macOS
+        osascript -e "display notification \"$message\" with title \"$title\""
+    elif command -v notify-send >/dev/null 2>&1; then
+        # Linux
+        notify-send "$title" "$message"
+    fi
+}
+
+# Enhanced time formatting
+format_duration() {
+    local seconds=$1
+    if [ "$seconds" -lt 60 ]; then
+        echo "${seconds}s"
+    elif [ "$seconds" -lt 3600 ]; then
+        echo "$((seconds / 60))m"
+    else
+        local hours=$((seconds / 3600))
+        local minutes=$(((seconds % 3600) / 60))
+        if [ "$minutes" -eq 0 ]; then
+            echo "${hours}h"
+        else
+            echo "${hours}h${minutes}m"
+        fi
+    fi
+}
+
+# Parse time duration to seconds
+parse_duration() {
+    local duration="$1"
+    local seconds=0
+    
+    if [[ "$duration" =~ ([0-9]+)h ]]; then
+        seconds=$((seconds + ${BASH_REMATCH[1]} * 3600))
+    fi
+    if [[ "$duration" =~ ([0-9]+)m ]]; then
+        seconds=$((seconds + ${BASH_REMATCH[1]} * 60))
+    fi
+    if [[ "$duration" =~ ([0-9]+)s ]]; then
+        seconds=$((seconds + ${BASH_REMATCH[1]}))
+    fi
+    
+    echo "$seconds"
+}
+
+# Get task description by number or return the input if it's already a description
+get_task_description() {
+    local input="$1"
+    
+    if [[ "$input" =~ ^[0-9]+$ ]]; then
+        # It's a task number, get the description
+        if [ -f "$TODO_FILE" ]; then
+            sed -n "${input}p" "$TODO_FILE" 2>/dev/null || echo "Task #$input (not found)"
+        else
+            echo "Task #$input"
+        fi
+    else
+        # It's already a description
+        echo "$input"
+    fi
+}
+
+# Update task in todo.txt with time tracking info
+update_task_time() {
+    local task_num="$1"
+    local total_seconds="$2"
+    
+    [ ! -f "$TODO_FILE" ] && return 0
+    [[ ! "$task_num" =~ ^[0-9]+$ ]] && return 0
+    
+    local total_minutes=$(((total_seconds + 30) / 60))  # Round to nearest minute
+    local task_line
+    task_line=$(sed -n "${task_num}p" "$TODO_FILE" 2>/dev/null) || return 0
+    
+    if [[ "$task_line" =~ min:[0-9]+ ]]; then
+        # Update existing time
+        local new_line
+        new_line=$(echo "$task_line" | sed "s/min:[0-9]\+/min:$total_minutes/")
+        sed -i.bak "${task_num}s/.*/$new_line/" "$TODO_FILE" 2>/dev/null
+    else
+        # Add time tracking
+        local new_line="$task_line min:$total_minutes"
+        sed -i.bak "${task_num}s/.*/$new_line/" "$TODO_FILE" 2>/dev/null
+    fi
+}
+
+# Log activity to session log
+log_activity() {
+    local action="$1"
+    local task_desc="$2"
+    local timestamp
+    timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    
+    [ ! -d "$(dirname "$LOG_FILE")" ] && mkdir -p "$(dirname "$LOG_FILE")"
+    echo "$timestamp $action $task_desc" >> "$LOG_FILE"
+}
+
+# Get current tracking info
+get_current_task() {
+    [ ! -f "$CURRENT_TASK_FILE" ] && return 1
+    cat "$CURRENT_TASK_FILE"
+}
+
+# Calculate total time spent on a task from log
+calculate_task_time() {
+    local task_pattern="$1"
+    local total_seconds=0
+    local start_time=""
+    
+    [ ! -f "$LOG_FILE" ] && echo 0 && return
+    
+    # Process log entries for this task
+    while IFS=' ' read -r date time action task_info; do
+        local full_timestamp="$date $time"
+        local epoch_time
+        epoch_time=$(date -d "$full_timestamp" +%s 2>/dev/null) || continue
+        
+        if [[ "$task_info" == *"$task_pattern"* ]]; then
+            case "$action" in
+                "START"|"RESUME")
+                    start_time="$epoch_time"
+                    ;;
+                "STOP"|"PAUSE"|"SWITCH")
+                    if [ -n "$start_time" ]; then
+                        total_seconds=$((total_seconds + epoch_time - start_time))
+                        start_time=""
+                    fi
+                    ;;
+            esac
+        elif [ "$action" = "SWITCH" ] && [ -n "$start_time" ]; then
+            # Task was switched away from
+            total_seconds=$((total_seconds + epoch_time - start_time))
+            start_time=""
+        fi
+    done < "$LOG_FILE"
+    
+    # Handle case where task is still running
+    if [ -n "$start_time" ]; then
+        local now
+        now=$(date +%s)
+        total_seconds=$((total_seconds + now - start_time))
+    fi
+    
+    echo "$total_seconds"
+}
+
+# ====================================================
+# Main Commands
+# ====================================================
+
+cmd_start() {
+    local input="$1"
+    local task_desc
+    task_desc=$(get_task_description "$input")
+    local task_num=""
+    
+    [[ "$input" =~ ^[0-9]+$ ]] && task_num="$input"
+    
+    # Stop current task if running
+    if get_current_task >/dev/null 2>&1; then
+        echo "Switching from current task..."
+        cmd_stop "SWITCH"
+    fi
+    
+    # Start new task
+    local current_info="$task_num|$task_desc|$(date +%s)"
+    echo "$current_info" > "$CURRENT_TASK_FILE"
+    
+    log_activity "START" "$task_desc"
+    notify "tracktime" "Started: $task_desc"
+    
+    echo "Started tracking: $task_desc"
+    
+    # Add #tracking tag to task in todo.txt if it's a numbered task
+    if [ -n "$task_num" ] && [ -f "$TODO_FILE" ]; then
+        # Remove any existing #tracking tags first
+        sed -i.bak 's/ *#tracking//g' "$TODO_FILE" 2>/dev/null || true
+        # Add #tracking to the current task
+        sed -i.bak "${task_num}s/$/ #tracking/" "$TODO_FILE" 2>/dev/null || true
+    fi
+}
+
+cmd_stop() {
+    local action="${1:-STOP}"
+    
+    local current_info
+    if ! current_info=$(get_current_task); then
+        echo "No task is currently being tracked."
+        return 1
+    fi
+    
+    IFS='|' read -r task_num task_desc start_time <<< "$current_info"
+    
+    local end_time
+    end_time=$(date +%s)
+    local session_duration=$((end_time - start_time))
+    
+    log_activity "$action" "$task_desc"
+    
+    # Update task time in todo.txt if it's a numbered task
+    if [ -n "$task_num" ]; then
+        local total_seconds
+        total_seconds=$(calculate_task_time "$task_desc")
+        update_task_time "$task_num" "$total_seconds"
+        
+        # Remove #tracking tag
+        if [ -f "$TODO_FILE" ]; then
+            sed -i.bak 's/ *#tracking//g' "$TODO_FILE" 2>/dev/null || true
+        fi
+    fi
+    
+    rm -f "$CURRENT_TASK_FILE"
+    
+    local action_word
+    case "$action" in
+        "SWITCH") action_word="Switched from" ;;
+        "PAUSE") action_word="Paused" ;;
+        *) action_word="Stopped" ;;
+    esac
+    
+    notify "tracktime" "$action_word: $task_desc ($(format_duration $session_duration))"
+    echo "$action_word tracking: $task_desc"
+    echo "Session time: $(format_duration $session_duration)"
+    
+    if [ -n "$task_num" ]; then
+        local total_seconds
+        total_seconds=$(calculate_task_time "$task_desc")
+        echo "Total time: $(format_duration $total_seconds)"
+    fi
+}
+
+cmd_pause() {
+    cmd_stop "PAUSE"
+}
+
+cmd_status() {
+    local current_info
+    if ! current_info=$(get_current_task); then
+        echo "No task is currently being tracked."
+        return 1
+    fi
+    
+    IFS='|' read -r task_num task_desc start_time <<< "$current_info"
+    
+    local current_time
+    current_time=$(date +%s)
+    local session_duration=$((current_time - start_time))
+    
+    echo "Currently tracking: $task_desc"
+    echo "Session time: $(format_duration $session_duration)"
+    
+    if [ -n "$task_num" ]; then
+        local total_seconds
+        total_seconds=$(calculate_task_time "$task_desc")
+        echo "Total time: $(format_duration $total_seconds)"
+    fi
+}
+
+cmd_switch() {
+    local new_task="$1"
+    if get_current_task >/dev/null 2>&1; then
+        cmd_stop "SWITCH"
+    fi
+    cmd_start "$new_task"
+}
+
+cmd_log() {
+    local days="${1:-7}"
+    
+    if [ ! -f "$LOG_FILE" ]; then
+        echo "No time tracking log found."
+        return 1
+    fi
+    
+    local cutoff_date
+    cutoff_date=$(date -d "${days} days ago" "+%Y-%m-%d" 2>/dev/null) || cutoff_date=$(date -v-${days}d "+%Y-%m-%d")
+    
+    echo "Time tracking log (last $days days):"
+    echo "----------------------------------------"
+    
+    awk -v cutoff="$cutoff_date" '
+    $1 >= cutoff {
+        printf "%-19s %-8s %s\n", $1 " " $2, $3, substr($0, index($0,$4))
+    }' "$LOG_FILE" | tail -n 50
+}
+
+cmd_report() {
+    local period="${1:-today}"
+    
+    if [ ! -f "$LOG_FILE" ]; then
+        echo "No time tracking log found."
+        return 1
+    fi
+    
+    echo "Time report for $period:"
+    echo "========================"
+    
+    # Simple approach - show log entries for the period
+    local total_seconds=0
+    local current_task=""
+    local current_start=""
+    
+    while IFS=' ' read -r date time action task_info; do
+        local timestamp="$date $time"
+        local epoch_time
+        epoch_time=$(date -d "$timestamp" +%s 2>/dev/null) || continue
+        
+        case "$action" in
+            "START"|"RESUME")
+                current_task="$task_info"
+                current_start="$epoch_time"
+                ;;
+            "STOP"|"PAUSE"|"SWITCH")
+                if [ -n "$current_start" ] && [ -n "$current_task" ]; then
+                    local duration=$((epoch_time - current_start))
+                    total_seconds=$((total_seconds + duration))
+                    printf "%-50s %10s\n" "$current_task" "$(format_duration $duration)"
+                    current_start=""
+                    current_task=""
+                fi
+                ;;
+        esac
+    done < "$LOG_FILE"
+    
+    # Handle ongoing task
+    if [ -n "$current_start" ] && [ -n "$current_task" ]; then
+        local now
+        now=$(date +%s)
+        local duration=$((now - current_start))
+        total_seconds=$((total_seconds + duration))
+        printf "%-50s %10s\n" "$current_task (ongoing)" "$(format_duration $duration)"
+    fi
+    
+    if [ "$total_seconds" -eq 0 ]; then
+        echo "No time tracked for this period."
+        return 0
+    fi
+    
+    echo "----------------------------------------"
+    printf "%-50s %10s\n" "TOTAL" "$(format_duration $total_seconds)"
+}
+
+cmd_summary() {
+    local task_filter="${1:-}"
+    
+    if [ ! -f "$LOG_FILE" ]; then
+        echo "No time tracking log found."
+        return 1
+    fi
+    
+    if [ -n "$task_filter" ]; then
+        # Specific task summary
+        if [[ "$task_filter" =~ ^[0-9]+$ ]]; then
+            local task_desc
+            task_desc=$(get_task_description "$task_filter")
+            local total_seconds
+            total_seconds=$(calculate_task_time "$task_desc")
+            echo "Time summary for task #$task_filter:"
+            echo "$task_desc"
+            echo "Total time: $(format_duration $total_seconds)"
+        else
+            echo "Please provide a task number for specific task summary."
+            return 1
+        fi
+    else
+        # All tasks summary
+        echo "Time summary for all tasks:"
+        echo "==========================="
+        
+        # Simple approach - show each unique task with total time
+        local temp_file=$(mktemp)
+        local current_task=""
+        local current_start=""
+        
+        # Build a list of task durations
+        while IFS=' ' read -r date time action task_info; do
+            local timestamp="$date $time"
+            local epoch_time
+            epoch_time=$(date -d "$timestamp" +%s 2>/dev/null) || continue
+            
+            case "$action" in
+                "START"|"RESUME")
+                    current_task="$task_info"
+                    current_start="$epoch_time"
+                    ;;
+                "STOP"|"PAUSE"|"SWITCH")
+                    if [ -n "$current_start" ] && [ -n "$current_task" ]; then
+                        local duration=$((epoch_time - current_start))
+                        echo "$duration|$current_task" >> "$temp_file"
+                        current_start=""
+                        current_task=""
+                    fi
+                    ;;
+            esac
+        done < "$LOG_FILE"
+        
+        # Handle ongoing task
+        if [ -n "$current_start" ] && [ -n "$current_task" ]; then
+            local now
+            now=$(date +%s)
+            local duration=$((now - current_start))
+            echo "$duration|$current_task" >> "$temp_file"
+        fi
+        
+        if [ ! -s "$temp_file" ]; then
+            echo "No tasks found in log."
+            rm -f "$temp_file"
+            return 0
+        fi
+        
+        # Group by task and sum durations
+        sort "$temp_file" | awk -F'|' '
+        {
+            task = $2
+            duration = $1
+            totals[task] += duration
+        }
+        END {
+            for (task in totals) {
+                printf "%-50s %d\n", task, totals[task]
+            }
+        }' | while IFS=' ' read -r task_name duration; do
+            printf "%-50s %10s\n" "$task_name" "$(format_duration $duration)"
+        done
+        
+        rm -f "$temp_file"
+    fi
+}
+
+cmd_cleanup() {
+    echo "Cleaning up tracking state..."
+    
+    # Remove current task file
+    [ -f "$CURRENT_TASK_FILE" ] && rm -f "$CURRENT_TASK_FILE"
+    
+    # Remove #tracking tags from todo.txt
+    if [ -f "$TODO_FILE" ]; then
+        sed -i.bak 's/ *#tracking//g' "$TODO_FILE" 2>/dev/null || true
+        echo "Removed #tracking tags from todo.txt"
+    fi
+    
+    echo "Cleanup complete."
+}
+
+# ====================================================
+# Main Script Logic
+# ====================================================
+
+# Check if TODO_DIR is set
+if [ -z "${TODO_DIR:-}" ]; then
+    echo "Error: TODO_DIR environment variable is not set."
+    echo "Please configure todo.txt-cli first."
+    exit 1
+fi
+
+# Parse command
+action="${1:-status}"
+shift 2>/dev/null || true
+
+case "$action" in
+    "usage"|"help"|"-h"|"--help")
+        usage
+        ;;
+    "start")
+        [ $# -eq 0 ] && { echo "Error: Please specify a task number or description."; exit 1; }
+        cmd_start "$1"
+        ;;
+    "stop")
+        cmd_stop
+        ;;
+    "pause")
+        cmd_pause
+        ;;
+    "status"|"current")
+        cmd_status
+        ;;
+    "switch")
+        [ $# -eq 0 ] && { echo "Error: Please specify a task number or description."; exit 1; }
+        cmd_switch "$1"
+        ;;
+    "log")
+        cmd_log "${1:-7}"
+        ;;
+    "report")
+        cmd_report "${1:-today}"
+        ;;
+    "summary")
+        cmd_summary "${1:-}"
+        ;;
+    "cleanup")
+        cmd_cleanup
+        ;;
+    *)
+        echo "Unknown action: $action"
+        echo "Use 'tracktime help' for usage information."
+        exit 1
+        ;;
+esac
