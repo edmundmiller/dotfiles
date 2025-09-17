@@ -1,36 +1,90 @@
 ---
 allowed-tools: Bash(jj rebase:*), Bash(jj status:*), Bash(jj log:*), Bash(jj branch:*), Bash(jj op log:*)
-description: Reorganize commits with automatic rebasing
+argument-hint: [destination]
+description: Reorganize commits with automatic rebasing (conflicts don't block!)
 model: claude-sonnet-4-20250514
 ---
 
 ## Current Structure
-!`jj log -r ::@ --limit 5`
+!`jj log -r ::@ --limit 8`
 
-## Rebase Workflow
+## Rebase Operations 🔄
 
-I'll help you reorganize your commits. In jj, rebasing is always safe and reversible.
+Reorganize your commit structure. Unlike Git, jj rebasing never fails or blocks.
 
-### Common Operations:
+!if [ -n "$ARGUMENTS" ]; then
+  echo "### Rebasing onto: $ARGUMENTS"
+  echo ""
+  echo "Moving current commit to new base:"
+  echo "\`\`\`bash"
+  echo "jj rebase -d $ARGUMENTS"
+  echo "\`\`\`"
+  echo ""
+  echo "**What happens:**"
+  echo "- Current commit moves to new base"
+  echo "- All descendants follow automatically"
+  echo "- Conflicts are handled gracefully"
+else
+  echo "### Common Rebase Operations"
+  echo ""
+  echo "**1. Update with main branch**"
+  echo "   \`\`\`bash"
+  echo "   jj rebase -d main  # Move current commit onto main"
+  echo "   \`\`\`"
+  echo ""
+  echo "**2. Rebase onto parent's parent**"
+  echo "   \`\`\`bash"
+  echo "   jj rebase -d @--  # Skip intermediate commit"
+  echo "   \`\`\`"
+  echo ""
+  echo "**3. Move specific commit**"
+  echo "   \`\`\`bash"
+  echo "   jj rebase -r <commit-id> -d <new-parent>"
+  echo "   \`\`\`"
+  echo ""
+  echo "**4. Rebase specific commit onto current**"
+  echo "   \`\`\`bash"
+  echo "   jj rebase -r <commit-id> -d @"
+  echo "   \`\`\`"
+fi
 
-1. **Update with main**
-   ```bash
-   jj rebase -d main
-   ```
+### Jujutsu's Rebase Superpowers:
 
-2. **Move current commit**
-   ```bash
-   jj rebase -d <destination>
-   ```
+🚀 **Always succeeds**: Conflicts never block rebasing
+🔄 **Automatic descendants**: Children follow automatically
+🛡️ **Conflict storage**: Conflicts stored in commits, not working directory
+⚡ **No interactive mode**: No complex conflict resolution flow
+🎯 **Precise control**: Rebase any commit to any destination
 
-3. **Reorganize history**
-   ```bash
-   jj rebase -r <commit> -d <new-parent>
-   ```
+### Understanding Conflict Handling:
 
-### Key Benefits:
-- **Always succeeds** - conflicts don't block rebasing
-- **Automatic** - descendants follow automatically
-- **Reversible** - use `jj undo` if needed
+Unlike Git, jj handles conflicts elegantly:
+- **Rebasing never fails**: Operation always completes
+- **Conflicts in commits**: Stored as conflict markers in commit content
+- **Working directory clean**: Conflicts don't pollute your workspace
+- **Gradual resolution**: Resolve conflicts when you're ready
 
-Where would you like to rebase your commits?
+### Common Scenarios:
+
+📈 **Update feature branch**:
+```bash
+jj rebase -d main  # Get latest main changes
+```
+
+🔧 **Reorganize commits**:
+```bash
+jj rebase -r <commit> -d <new-base>  # Move specific commit
+```
+
+🧹 **Clean up history**:
+```bash
+jj rebase -d @--  # Skip intermediate commit
+```
+
+### Available branches:
+!`jj branch list`
+
+### Safety reminder:
+Everything is undoable with `@undo` or `jj op restore`!
+
+**Philosophy**: In jj, rebasing is a safe, everyday operation for organizing your work.
