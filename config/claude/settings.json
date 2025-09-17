@@ -150,6 +150,9 @@
     ],
     "deny": []
   },
+  "env": {
+    "JJ_EDITOR": "echo"
+  },
   "statusLine": {
     "type": "command",
     "command": "bun x ccusage statusline",
