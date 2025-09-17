@@ -1,9 +1,0 @@
-# Basic formatting test cases
-Buy groceries
-(A) Important task
-Fix    bug    in    code
-x 2025-01-01 Completed task
-  Task  with  leading  spaces  
-(B)   Priority   with   spaces   
-Call dentist @personal
-Review code @work +webapp

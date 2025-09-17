@@ -9,9 +9,6 @@
 action=$1
 shift
 
-# Handle the special case of "usage"
-[ "$action" = "usage" ] && usage
-
 # Urgency coefficients (based on Taskwarrior defaults)
 readonly COEFF_PRIORITY_A=6.0
 readonly COEFF_PRIORITY_B=3.9
@@ -60,6 +57,9 @@ function usage() {
     echo ""
     exit
 }
+
+# Handle the special case of "usage"
+[ "$action" = "usage" ] && usage
 
 # Date utility functions using Python 3 for cross-platform compatibility
 function today_epoch_days() {
