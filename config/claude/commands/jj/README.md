@@ -1,140 +1,192 @@
-# Jujutsu (jj) Workflows for Claude Code
+# Jujutsu (jj) Commands for Claude Code
 
-This document analyzes the two main jj workflows and provides recommendations for AI-assisted development with Claude Code.
+## Overview
 
-## Workflow Comparison
+Complete command set for jujutsu workflows, built from the official tutorials and optimized for AI-assisted development.
+
+**Key Resources:**
+- [Squash Workflow Tutorial](https://steveklabnik.github.io/jujutsu-tutorial/real-world-workflows/the-squash-workflow.html)
+- [Edit Workflow Tutorial](https://steveklabnik.github.io/jujutsu-tutorial/real-world-workflows/the-edit-workflow.html)
+- [Jujutsu Tutorial Recap](https://steveklabnik.github.io/jujutsu-tutorial/hello-world/recap.html)
+
+## Two Main Workflows
 
 ### The Squash Workflow ⭐ **RECOMMENDED**
 
 **Pattern**: Describe → New → Implement → Squash
 
+Perfect for focused development and AI-assisted coding:
+
 ```bash
-jj describe -m "what you're about to do"    # 1. Describe the work
-jj new                                      # 2. Create empty change
-# Make your changes                        # 3. Implement
+jj describe -m "feat: implement user auth"  # 1. Describe intent
+jj new                                      # 2. Create workspace
+# Make your changes...                     # 3. Implement
 jj squash                                   # 4. Complete work
 ```
 
-**Advantages for Claude Code:**
-- **Matches AI working style**: Claude works on focused tasks and completes them
-- **Clear staging metaphor**: Changes accumulate in current commit until ready
-- **Better error recovery**: Mistakes stay in working commit, easy to undo
-- **Simpler mental model**: Linear progression that maps to task execution
-- **Safe by default**: Nothing is finalized until explicit squash
+**Why it's ideal for Claude Code:**
+- Maps to task-oriented AI development
+- Creates focused, reviewable commits
+- Simple linear progression
+- Safe by default (everything undoable)
 
-### The Edit Workflow
+### The Edit Workflow 🔧 **ADVANCED**
 
-**Pattern**: Dynamic change manipulation with `jj edit` and insertion
+**Pattern**: Dynamic navigation and insertion between changes
+
+Best for complex features requiring multiple related commits:
 
 ```bash
-jj new                           # Create change
-jj new -B                        # Insert change before current
-jj edit <change-id>              # Edit any change
-jj next --edit                   # Navigate and edit
+jj new -m "feat: start feature"           # Start work
+jj new -B @ -m "feat: add prerequisite"   # Insert dependency
+jj edit <change-id>                       # Navigate to any change
+jj next --edit                            # Move through sequence
 ```
 
-**Why it's less suitable for Claude:**
-- **Too dynamic**: Complex navigation between changes confuses AI reasoning
-- **Overkill for most tasks**: Claude typically works on one focused task
-- **More complex state tracking**: Requires sophisticated change management
-- **Non-linear workflow**: Doesn't match Claude's sequential task approach
+**When to use:**
+- Complex features needing multiple commits
+- When you discover prerequisites mid-development
+- Building layered functionality
 
-## Current Implementation
+## Complete Command Set
 
-Our Claude commands implement the **Squash Workflow**:
+### Workflow Commands
+- **`@squash-workflow`** - Complete guided squash workflow with intelligent state detection
+- **`@edit-workflow`** - Advanced multi-commit workflow for complex features
+- **`@new`** - Start new work (with workflow recommendations)
+- **`@status`** - Enhanced status with workflow context and next-action suggestions
 
-### Available Commands
-
-- **`@squash`** - Complete work via squash workflow
-- **`@describe`** - Write clear commit messages
+### Core Operations
+- **`@squash`** - Complete current work (final step of squash workflow)
+- **`@describe`** - Write commit messages (emphasizes describing intent first)
 - **`@split`** - Split mixed changes into focused commits
-- **`@undo`** - Safety net for any operation
-- **`@rebase`** - Reorganize commits
+- **`@navigate`** - Move between and edit changes in history
+- **`@abandon`** - Safely discard unwanted changes
+- **`@undo`** - Safety net (everything is undoable)
+- **`@rebase`** - Reorganize commits (conflicts don't block)
 
-### Command Features
+### Key Features
 
-All commands support:
-- **Argument passing**: `@squash "commit message"`
-- **Interactive fallback**: Show options when no arguments provided
-- **Claude 4 Sonnet**: Upgraded model for better reasoning
-- **Proper permissions**: Fixed colon syntax for all jj operations
+✨ **Intelligent guidance**: Commands analyze your current state and suggest next actions
+🧠 **Tutorial-based**: Built from official jujutsu tutorials and best practices
+🛡️ **Safety-first**: Emphasizes jj's "everything is undoable" philosophy
+🎯 **Workflow-aware**: Commands understand where you are in the squash/edit workflows
 
-## Workflow in Practice
+## Complete Workflow Examples
 
-### Typical Claude Code Session
+### Squash Workflow (Recommended)
 
-1. **Start new work**:
-   ```bash
-   @describe "feat: implement user authentication"
-   jj new
-   ```
-
-2. **Claude implements changes**:
-   - Reads files, understands requirements
-   - Makes code changes across multiple files
-   - Tests and validates implementation
-
-3. **Complete work**:
-   ```bash
-   @squash "feat: implement user authentication
-
-   - Add login/logout endpoints
-   - Implement JWT token handling
-   - Add user session management
-   - Include comprehensive tests"
-   ```
-
-### Handling Mistakes
-
-If something goes wrong:
+**Traditional approach:**
 ```bash
-@undo                    # Undo last operation
-jj op log               # See operation history
-jj op restore <id>      # Time-travel to any point
+@describe "feat: implement user authentication"    # 1. Describe intent
+@new                                              # 2. Create workspace
+# Implement your changes...                      # 3. Build what you described
+@squash                                           # 4. Complete work
 ```
 
-### Mixed Changes
-
-When working on multiple concerns:
+**Guided approach:**
 ```bash
-@split                  # Split into focused commits
-@describe "fix: bug"    # Describe each part
-@describe "feat: new"   # Separately
+@squash-workflow "feat: implement user authentication"  # All-in-one guided workflow
+# Follow the step-by-step guidance provided
 ```
 
-## Best Practices
+**Auto-guidance:**
+```bash
+@squash-workflow auto    # Analyzes current state and suggests next step
+@status                  # Enhanced status with workflow recommendations
+```
 
-### For Claude Code Development
+### Edit Workflow (Advanced)
 
-1. **Always describe first**: Use `@describe` to set clear intent
-2. **One feature per workflow**: Don't mix unrelated changes
-3. **Use squash for completion**: Finalize work only when fully tested
-4. **Leverage safety**: `@undo` is always available
-5. **Split when needed**: Keep commits focused and atomic
+**For complex multi-commit features:**
+```bash
+@edit-workflow start                    # Begin complex feature
+@edit-workflow insert                   # Add prerequisite changes
+@edit-workflow navigate                 # Move between changes
+```
 
-### Integration with Development Tools
+### Recovery and Safety
 
-- **Testing**: Run tests before squashing
-- **Linting**: Validate code quality in working commit
-- **Review**: Use `jj show` to review changes before squash
-- **Documentation**: Update docs as part of the same workflow
+**Everything is undoable:**
+```bash
+@undo                          # Undo last operation
+@undo <operation-id>           # Restore to specific point
+@status                        # Get current state and recommendations
+```
 
-## Why This Matters
+## Philosophy and Best Practices
 
-The choice of workflow affects:
-- **AI effectiveness**: How well Claude can reason about changes
-- **Error recovery**: How easily mistakes can be corrected
-- **Code quality**: How focused and reviewable commits become
-- **Development speed**: How quickly tasks can be completed
+### Jujutsu's Core Principles
 
-The **Squash Workflow** optimizes all these factors for AI-assisted development.
+🛡️ **Everything is undoable**: No operation is ever destructive
+🔄 **Automatic rebasing**: Descendants follow when you edit parents
+🚀 **Conflicts don't block**: Operations always succeed, conflicts stored safely
+🎯 **Describe intent first**: Plan what you'll build before building it
+📝 **Focused commits**: Each commit tells one clear story
 
-## References
+### For AI-Assisted Development
 
-- [Squash Workflow Tutorial](https://steveklabnik.github.io/jujutsu-tutorial/real-world-workflows/the-squash-workflow.html)
-- [Edit Workflow Tutorial](https://steveklabnik.github.io/jujutsu-tutorial/real-world-workflows/the-edit-workflow.html)
-- [Jujutsu Documentation](https://jj-vcs.github.io/jj/)
+1. **Start with intent**: Use `@describe` or `@squash-workflow` to clarify goals
+2. **Let Claude implement**: AI excels at focused, described tasks
+3. **Use safety freely**: `@undo` any mistakes immediately
+4. **Split when mixed**: Separate concerns for cleaner history
+5. **Complete workflows**: Follow through to polished commits
+
+### Common Patterns
+
+**Quick fixes:**
+```bash
+@squash-workflow "fix: resolve login timeout"  # Describe → implement → squash
+```
+
+**Feature development:**
+```bash
+@squash-workflow "feat: add user dashboard"    # For focused features
+@edit-workflow start                           # For complex multi-commit work
+```
+
+**Mixed changes:**
+```bash
+@split              # Separate concerns
+@describe "fix: ..." # Describe each part
+@navigate next       # Move to next change
+@describe "feat: ..."
+```
+
+**Recovery:**
+```bash
+@undo               # Fix immediate mistakes
+@status             # Get guidance on current state
+```
+
+## Integration Tips
+
+### With Development Tools
+- Run tests before `@squash` to ensure quality
+- Use `@split` to separate implementation from tests when reviewing
+- Leverage `@status` for project state awareness
+- Use `@undo` freely during experimentation
+
+### With Claude Code
+- Commands provide contextual guidance based on current state
+- Intelligent workflows adapt to where you are in the process
+- Safety-first design encourages experimentation
+- Tutorial-based approach teaches jj philosophy alongside commands
+
+## Why These Workflows Matter
+
+**For AI Development:**
+- Clear intent → better AI understanding
+- Focused commits → easier code review
+- Safety nets → confident experimentation
+- Workflow guidance → consistent patterns
+
+**For Code Quality:**
+- Describe-first approach creates intentional commits
+- Split functionality keeps changes focused
+- Automatic rebasing maintains clean history
+- Everything undoable encourages iteration
 
 ---
 
-*This analysis confirms that our current squash workflow implementation is optimal for Claude Code usage.*
+*These commands implement the official jujutsu tutorial workflows, optimized for AI-assisted development with Claude Code.*
