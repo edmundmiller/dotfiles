@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# Source the todo.cfg to get color definitions
+source "$HOME/.todo.actions.d/todo.cfg"
+
+echo "🎨 TODO.TXT COLOR SCHEME TEST"
+echo "=============================="
+echo
+
+echo "PRIORITY COLORS:"
+echo -e "  ${PRI_A}(A) URGENT task - needs immediate attention${COLOR_END}"
+echo -e "  ${PRI_B}(B) IMPORTANT task - schedule appropriately${COLOR_END}"  
+echo -e "  ${PRI_C}(C) NORMAL task - systematic work${COLOR_END}"
+echo -e "  ${PRI_D}(D) LOW priority - nice to have${COLOR_END}"
+echo -e "  ${PRI_X}(X) UNSET priority - needs triage${COLOR_END}"
+echo
+
+echo "TOKEN COLORS:"
+echo -e "  ${COLOR_PROJECT}+project${COLOR_END} ${COLOR_CONTEXT}@context${COLOR_END} ${COLOR_DATE}2025-09-08${COLOR_END} ${COLOR_META}due:2025-09-10${COLOR_END}"
+echo -e "  ${COLOR_DONE}x 2025-09-07 Completed task (archived)${COLOR_END}"
+echo
+
+echo "SAMPLE TODO LIST:"
+echo -e "${COLOR_NUMBER}1${COLOR_END} ${PRI_A}(A)${COLOR_END} Fix critical bug ${COLOR_PROJECT}+webapp${COLOR_END} ${COLOR_CONTEXT}@work${COLOR_END} ${COLOR_META}due:today${COLOR_END}"
+echo -e "${COLOR_NUMBER}2${COLOR_END} ${PRI_B}(B)${COLOR_END} Review pull request ${COLOR_PROJECT}+development${COLOR_END} ${COLOR_CONTEXT}@office${COLOR_END}"
+echo -e "${COLOR_NUMBER}3${COLOR_END} ${PRI_C}(C)${COLOR_END} Update documentation ${COLOR_PROJECT}+docs${COLOR_END} ${COLOR_CONTEXT}@home${COLOR_END}"
+echo -e "${COLOR_NUMBER}4${COLOR_END} ${PRI_D}(D)${COLOR_END} Refactor legacy code ${COLOR_PROJECT}+cleanup${COLOR_END} ${COLOR_CONTEXT}@anywhere${COLOR_END}"
+echo -e "${COLOR_NUMBER}5${COLOR_END} ${PRI_X}Call dentist${COLOR_END} ${COLOR_CONTEXT}@phone${COLOR_END} ${COLOR_PROJECT}+personal${COLOR_END}"
+echo
+
+echo "Terminal color support:"
+echo "  TERM: $TERM"
+echo "  COLORTERM: $COLORTERM"
+if [[ $COLORTERM == *"256"* ]] || [[ $TERM == *"256"* ]]; then
+    echo "  ✅ Enhanced 256-color mode enabled"
+else
+    echo "  📱 Standard 16-color mode"
+fi

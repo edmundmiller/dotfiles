@@ -1,0 +1,49 @@
+#+title: Ideas
+
+Yeah, there's just a lot out there, but I think this might be the way forward if it's simply enough. And then I can get agents to build on those and work on it. Those are our little prioritization tools, graphing and whatnot.
+
+* Organized Summary
+
+So basically what I'm thinking is:
+- todo.txt as the simple foundation (keep it text-based)
+- AI agents to enhance it (auto-tagging, prioritization, breakdown big tasks)
+- Visual stuff for analytics and graphing dependencies
+- Integration with my existing actions and tools
+
+The rough flow: ideas.org → AI agents → todo.txt → analytics → dashboard
+Plus calendar integration and terminal UI for daily workflow
+
+Key pieces from the links below:
+- Use the existing add-on ecosystem but enhance with AI
+- Focus on prioritization and graphing (that's the main gap)
+- Keep the agents modular so they can work offline too
+- Build on what I already have in .todo.actions.d
+
+Main agent types needed:
+- Ingestion: pull from ideas.org and GitHub issues
+- Enrichment: add metadata, tags, estimates 
+- Breakdown: split big tasks into smaller ones
+- Prioritization: score and rank everything
+- Scheduling: fit tasks into calendar
+- Visualization: generate insights and charts
+
+Then integrate with the tools I found:
+
+Todo.sh Add on Directory · todotxt/todo.txt-cli Wiki
+https://github.com/todotxt/todo.txt-cli/wiki/Todo.sh-Add-on-Directory#recur-intelligently-add-recurring-tasks
+
+Home · rameshg87/todo.txt-weekly-planner Wiki
+https://github.com/rameshg87/todo.txt-weekly-planner/wiki
+
+todo.txt-cli/todo.actions.d/nav at extras · doegox/todo.txt-cli
+https://github.com/doegox/todo.txt-cli/blob/extras/todo.actions.d/nav
+
+todo.txt-cli/schedule at extensions · FND/todo.txt-cli
+https://github.com/FND/todo.txt-cli/blob/extensions/schedule
+
+https://github.com/Bassmann/raycast-scripts/blob/master/add-todotxt-task.sh
+
+https://github.com/fniessink/next-action
+
+https://github.com/timpulver/todo.txt-graph
+

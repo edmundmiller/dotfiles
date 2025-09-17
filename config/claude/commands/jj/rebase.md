@@ -1,6 +1,7 @@
 ---
-allowed-tools: Bash(jj rebase*), Bash(jj status*), Bash(jj log*), Bash(jj branch list*), Bash(jj op log*)
+allowed-tools: Bash(jj rebase:*), Bash(jj status:*), Bash(jj log:*), Bash(jj branch:*), Bash(jj op log:*)
 description: Reorganize commits with automatic rebasing
+model: claude-sonnet-4-20250514
 ---
 
 ## Current Structure
