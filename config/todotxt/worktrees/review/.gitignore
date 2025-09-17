@@ -1,9 +1,0 @@
-# Backup files created by task.sh
-*.bak.*
-
-# Test artifacts
-.env
-
-# Temporary files
-*.tmp
-*.temp
