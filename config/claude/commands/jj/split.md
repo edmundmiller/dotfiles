@@ -1,6 +1,7 @@
 ---
-allowed-tools: Bash(jj split*), Bash(jj status*), Bash(jj log*), Bash(jj diff*)
+allowed-tools: Bash(jj split:*), Bash(jj status:*), Bash(jj log:*), Bash(jj diff:*)
 description: Split changes into focused commits
+model: claude-sonnet-4-20250514
 ---
 
 ## Current Status

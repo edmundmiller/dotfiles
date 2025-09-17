@@ -1,0 +1,46 @@
+#!/bin/bash
+
+action=$1
+shift
+
+
+[ "$action" = "usage" ] && {
+  echo "  Add with the tags of most recent addition:"
+  curcmd=`basename $0`
+  echo "    $curcmd \"THING I NEED TO DO +project @context\""
+  echo "      Append the tags of the most recently added item"
+  echo "      to this item."
+  echo ""
+  exit
+}
+
+
+
+# get the last line added and extract context
+lastadded=`sed -n '$ =' "$TODO_FILE"`
+"$TODO_FULL_SH" command add "$1"
+newest=`sed -n '$ =' "$TODO_FILE"`
+
+REGEX='[@|+][A-Za-z0-9]*'
+
+echo "Appending:" $(sed $lastadded"q;d" "$TODO_FILE" | grep -o "$REGEX")
+
+# add contexts and projects
+sed $lastadded"q;d" "$TODO_FILE" | grep -o "$REGEX" | while read -r app
+do 
+    "$TODO_FULL_SH" command append "$newest" "$app"
+done
+
+# set priority
+# PRIREGEX='\(([A-Z])\)'
+# matchpri=`sed $lastadded"q;d" "$TODO_FILE" | grep -o "$PRIREGEX"`
+
+# # if there is a proiority on the last one
+# count=`echo $matchpri | wc -l`
+# if [ $count -ne 0 ]; then
+# 	# remove parentheses
+# 	matchpri=`echo $matchpri | sed 's/[)(]//g'`
+
+# 	echo "Prioritizing:" $matchpri
+# 	"$TODO_FULL_SH" command pri "$newest" "$matchpri"
+# fi

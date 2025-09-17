@@ -1,0 +1,35 @@
+# Large realistic project with dependencies and hierarchies
+(A) Launch mobile app v2.0 id:launch @product due:2025-12-15
+
+# Phase 1: Planning
+(A) Product requirements id:requirements sup:launch @planning
+(A) Technical design dep:requirements id:tech-design sup:launch @architecture  
+(B) UI/UX mockups dep:requirements id:mockups sup:launch @design
+(B) Project timeline dep:tech-design,mockups id:timeline sup:launch @planning
+
+# Phase 2: Development
+(B) Backend API dep:tech-design id:backend sup:launch @backend
+(B) Mobile frontend dep:mockups,backend id:mobile sup:launch @mobile
+(B) Admin dashboard dep:backend id:admin sup:launch @frontend
+(C) Integration tests dep:backend,mobile,admin id:integration sup:launch @qa
+
+# Phase 3: Release
+(C) Beta testing dep:integration id:beta sup:launch @qa
+(B) Performance optimization dep:beta id:perf sup:launch @optimization
+(A) Production deployment dep:perf id:deploy sup:launch @ops
+x 2025-09-01 Setup development environment id:devenv @setup
+
+# Sub-tasks for backend
+(B) Database schema dep:devenv id:database sup:backend @backend
+(B) API endpoints dep:database id:api sup:backend @backend
+(C) Authentication dep:api id:auth sup:backend @security
+
+# Sub-tasks for mobile
+(C) React Native setup dep:devenv id:rn-setup sup:mobile @mobile
+(B) UI components dep:mockups,rn-setup id:ui-components sup:mobile @mobile
+(C) State management dep:ui-components id:state sup:mobile @mobile
+
+# Anonymous tasks (no IDs)
+(C) Write deployment documentation @docs
+(B) Setup monitoring @ops
+Regular task without priority or context
