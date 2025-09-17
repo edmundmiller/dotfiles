@@ -144,29 +144,18 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Determine which formatter to use and build command
-GO_FORMATTER="$SCRIPT_DIR/todotxtfmt"
+# Look for Go formatter in bin directory relative to dotfiles
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+GO_FORMATTER="$DOTFILES_DIR/bin/todotxtfmt/todotxtfmt"
 
 if [[ $USE_SIMPLE == true ]]; then
-    # Use simple formatter if explicitly requested
-    FORMATTER_CMD="$SCRIPT_DIR/formatter-simple"
-    
-    # Convert comprehensive formatter args to simple formatter args
-    DRY_RUN="false"
-    for arg in "${FORMATTER_ARGS[@]:-}"; do
-        case "$arg" in
-            --dry-run) DRY_RUN="true" ;;
-            --verbose) echo_warning "Simple formatter doesn't support --verbose, ignoring" ;;
-            --quiet) echo_warning "Simple formatter doesn't support --quiet, ignoring" ;;
-            --check-only) echo_warning "Simple formatter doesn't support --check-only, using --dry-run instead"; DRY_RUN="true" ;;
-        esac
-    done
-    
-    # Simple formatter takes positional arguments
-    FORMATTER_CMD="$FORMATTER_CMD \"\$TODO_FILE\" \"\$DONE_FILE\" \"$DRY_RUN\""
+    echo_error "Simple formatter has been deprecated. Use --dry-run for preview mode instead."
+    echo_error "Run: todo.sh format --dry-run"
+    exit 1
 elif [[ -x "$GO_FORMATTER" ]]; then
-    # Use Go-based formatter if available (preferred)
+    # Use Go-based formatter (now the only option)
     FORMATTER_CMD="$GO_FORMATTER"
-    
+
     # Add arguments compatible with Go formatter
     for arg in "${FORMATTER_ARGS[@]:-}"; do
         case "$arg" in
@@ -176,51 +165,25 @@ elif [[ -x "$GO_FORMATTER" ]]; then
             --check-only) FORMATTER_CMD="$FORMATTER_CMD --dry-run --diff" ;;
         esac
     done
-    
+
     # Go formatter uses environment variables automatically
     # No need to explicitly pass TODO_FILE
 else
-    # Fallback to bash comprehensive formatter
-    FORMATTER_CMD="$SCRIPT_DIR/formatter"
-    
-    # Add todo/done file paths
-    FORMATTER_CMD="$FORMATTER_CMD --todo \"\$TODO_FILE\" --done \"\$DONE_FILE\""
-    
-    # Add other arguments
-    for arg in "${FORMATTER_ARGS[@]:-}"; do
-        FORMATTER_CMD="$FORMATTER_CMD $arg"
-    done
+    echo_error "Go formatter not found at: $GO_FORMATTER"
+    echo_error "Make sure the todotxtfmt binary is built and available."
+    echo_error "Run: cd '$DOTFILES_DIR/bin/todotxtfmt' && go build -o todotxtfmt cmd/todotxtfmt/main.go"
+    exit 1
 fi
 
-# Check that the selected formatter exists
-FORMATTER_PATH="$SCRIPT_DIR/formatter"
-FORMATTER_SIMPLE_PATH="$SCRIPT_DIR/formatter-simple"
-
-if [[ $USE_SIMPLE == true ]]; then
-    if [[ ! -x "$FORMATTER_SIMPLE_PATH" ]]; then
-        echo_error "Simple formatter not found or not executable: $FORMATTER_SIMPLE_PATH"
-        exit 1
-    fi
-elif [[ -x "$GO_FORMATTER" ]]; then
-    # Go formatter is available and will be used
-    true
-else
-    if [[ ! -x "$FORMATTER_PATH" ]]; then
-        echo_error "No formatter available. Need either:"
-        echo_error "  - Go formatter: $GO_FORMATTER"
-        echo_error "  - Bash formatter: $FORMATTER_PATH"
-        exit 1
-    fi
+# Check that the Go formatter exists
+if [[ ! -x "$GO_FORMATTER" ]]; then
+    echo_error "Go formatter not found or not executable: $GO_FORMATTER"
+    echo_error "Build it with: cd '$DOTFILES_DIR/bin/todotxtfmt' && go build -o todotxtfmt cmd/todotxtfmt/main.go"
+    exit 1
 fi
 
 # Inform user which formatter is being used
-if [[ $USE_SIMPLE == true ]]; then
-    echo_info "Using simple formatter"
-elif [[ -x "$GO_FORMATTER" ]]; then
-    echo_info "Using Go-based formatter (preferred)"
-else
-    echo_info "Using bash comprehensive formatter (fallback)"
-fi
+echo_info "Using Go-based formatter"
 
 # Execute the formatter
 eval "$FORMATTER_CMD"
