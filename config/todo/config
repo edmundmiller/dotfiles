@@ -10,7 +10,7 @@ export DONE_FILE="$TODO_DIR/done.txt"
 export REPORT_FILE="$TODO_DIR/report.txt"
 
 # You can customize your actions directory location
-#export TODO_ACTIONS_DIR="$HOME/.todo.actions.d"
+#export TODO_ACTIONS_DIR="$HOME/.config/todo"
 
 # == EDIT FILE LOCATIONS ABOVE ===
 
@@ -106,7 +106,7 @@ export TODOTXT_DEFAULT_ACTION=today
 # just before the list output is displayed.
 #
 # export TODOTXT_FINAL_FILTER='cat'
-export TODOTXT_FINAL_FILTER="$HOME/.todo.actions.d/futureTasks"
+export TODOTXT_FINAL_FILTER="$HOME/.config/todo/futureTasks"
 
 # === ULTRA-OPTIMIZED TODO.TXT COLOR CONFIGURATION ===
 #
@@ -126,7 +126,7 @@ export TODOTXT_FINAL_FILTER="$HOME/.todo.actions.d/futureTasks"
 #
 # ---
 # Ensure the actions directory is explicitly set (helps custom actions discovery).
-export TODO_ACTIONS_DIR="$HOME/.todo.actions.d"
+export TODO_ACTIONS_DIR="$HOME/.config/todo"
 
 # Enable colors (0 = colors enabled; 1 = disabled in many builds).
 export TODOTXT_DISABLE_COLOR=0
