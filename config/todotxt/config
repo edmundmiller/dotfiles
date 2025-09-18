@@ -2,7 +2,7 @@
 
 # Your todo.txt directory (this should be an absolute path)
 #export TODO_DIR="/Users/gina/Documents/todo"
-export TODO_DIR=${HOME:-$USERPROFILE}/Documents/todo
+export TODO_DIR="${HOME:-$USERPROFILE}/Library/Mobile Documents/com~apple~CloudDocs/Documents/todo/"
 
 # Your todo/done/report.txt locations
 export TODO_FILE="$TODO_DIR/todo.txt"
@@ -112,13 +112,13 @@ export TODOTXT_FINAL_FILTER="$HOME/.todo.actions.d/futureTasks"
 #
 # DESIGN PHILOSOPHY:
 # 1. Color Psychology: Red=urgent, Orange=important, Blue=systematic, Green=contextual
-# 2. Cognitive Load: Minimize competing bright colors, use muted tones for metadata  
+# 2. Cognitive Load: Minimize competing bright colors, use muted tones for metadata
 # 3. Hierarchy: Visual intensity should match task urgency
 # 4. Accessibility: Support for colorblind users and high contrast needs
 # 5. Semantic Meaning: Colors should have logical associations
 #
 # PRIORITY SYSTEM:
-# (A) = Red: "Stop what you're doing, handle this now" 
+# (A) = Red: "Stop what you're doing, handle this now"
 # (B) = Orange: "Important but not urgent, schedule appropriately"
 # (C) = Blue: "Systematic work, handle in order"
 # (D) = Cyan: "Nice to have, fill-in work"
@@ -154,7 +154,7 @@ export TODOTXT_DISABLE_COLOR=0
 # Based on urgency hierarchy: Red (urgent) > Orange (important) > Blue (normal)
 # Uses color psychology: Red = stop/urgent, Orange = caution, Blue = calm/systematic
 export PRI_A="$LIGHT_RED"     # 🔥 URGENT: Bright red for immediate attention
-export PRI_B="$YELLOW"        # ⚡ IMPORTANT: Yellow/orange for high priority  
+export PRI_B="$YELLOW"        # ⚡ IMPORTANT: Yellow/orange for high priority
 export PRI_C="$LIGHT_BLUE"    # 📋 NORMAL: Cool blue for systematic work
 export PRI_D="$CYAN"          # 💭 LOW: Cyan for nice-to-have items
 export PRI_X="$LIGHT_GREY"    # ⚪ UNSET: Muted for unpriorized items
@@ -162,7 +162,7 @@ export PRI_X="$LIGHT_GREY"    # ⚪ UNSET: Muted for unpriorized items
 # SEMANTIC TOKEN COLORS
 # Projects (+): Purple for creative/strategic work identification
 export COLOR_PROJECT="$LIGHT_PURPLE"
-# Contexts (@): Green for environmental/location awareness  
+# Contexts (@): Green for environmental/location awareness
 export COLOR_CONTEXT="$GREEN"
 # Dates: Subdued but readable for temporal info
 export COLOR_DATE="$DARK_GREY"
@@ -189,7 +189,7 @@ fi
 # ACCESSIBILITY OPTIONS
 # Uncomment for high contrast mode (good for bright terminals)
 # export PRI_A="$WHITE\033[41m"     # White text on red background
-# export PRI_B="$BLACK\033[43m"     # Black text on yellow background  
+# export PRI_B="$BLACK\033[43m"     # Black text on yellow background
 # export PRI_C="$WHITE\033[44m"     # White text on blue background
 
 # Uncomment for colorblind-friendly mode (uses shape + color)
