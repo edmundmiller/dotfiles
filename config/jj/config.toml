@@ -2,15 +2,29 @@
 name = "Edmund Miller"
 email = "git@edmundmiller.dev"
 
-# Override email for ~/src/fg repositories
+# Override for Seqera projects
 [[conditional-includes]]
-condition = 'working_copy.path ~ "~/src/fg"'
+condition = 'working_copy.path ~ "/Users/edmundmiller/src/seqera"'
+file = "~/.config/jj/seqera-config.toml"
+
+[[conditional-includes]]
+condition = "glob_matches(current_working_directory(), \"/Users/edmundmiller/src/nextflow\")"
+file = "~/.config/jj/seqera-config.toml"
+
+# Override for nf-core projects
+[[conditional-includes]]
+condition = 'working_copy.path ~ "/Users/edmundmiller/src/nf-core"'
+file = "~/.config/jj/nfcore-config.toml"
+
+# Override for UTD academic projects
+[[conditional-includes]]
+condition = 'working_copy.path ~ "/Users/edmundmiller/src/fg"'
 file = "~/.config/jj/fg-config.toml"
 
 [signing]
 behavior = "own"
 backend = "ssh"
-key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC edmundmiller"
+key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC"
 
 [signing.backends.ssh]
 program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
@@ -94,3 +108,6 @@ active = "mine() & ~empty() & ~immutable()"  # Active work in progress
 auto-track = "glob:**/*.js|glob:**/*.ts|glob:**/*.tsx|glob:**/*.jsx|glob:**/*.py|glob:**/*.rs|glob:**/*.go|glob:**/*.java|glob:**/*.c|glob:**/*.cpp|glob:**/*.h|glob:**/*.hpp|glob:**/*.nix|glob:**/*.toml|glob:**/*.yaml|glob:**/*.yml|glob:**/*.json|glob:**/*.md"
 # Maximum file size to auto-track (10MB)
 max-new-file-size = "10MB"
+
+[signature]
+sign-off = true

@@ -1,5 +1,5 @@
 return {
-  "obsidian-nvim/obsidian.nvim",  -- Fork with blink.cmp support
+  "obsidian-nvim/obsidian.nvim", -- Fork with blink.cmp support
   version = "*", -- recommended, use latest release instead of latest commit
   lazy = true,
   ft = "markdown",
@@ -46,7 +46,7 @@ return {
     { "<leader>nP", "<cmd>ObsidianTemplate<cr>", desc = "Insert template" },
     { "<leader>nx", "<cmd>ObsidianExtractNote<cr>", desc = "Extract note", mode = "v" },
     { "<leader>nw", "<cmd>ObsidianWorkspace<cr>", desc = "Switch workspace" },
-    
+
     -- Org-roam style operations under <leader>nr
     { "<leader>nrf", "<cmd>ObsidianQuickSwitch<cr>", desc = "Find note" },
     { "<leader>nrF", "<cmd>ObsidianSearch<cr>", desc = "Find note (content)" },
@@ -73,7 +73,7 @@ return {
     workspaces = {
       {
         name = "main",
-        path = "~/Documents/vault",
+        path = "~/sync/vault",
       },
     },
 
@@ -86,13 +86,13 @@ return {
       -- Optional, if you want to change the date format of the default alias of daily notes.
       alias_format = "%B %-d, %Y",
       -- Optional, if you want to automatically insert a template from your template directory like 'daily.md'
-      template = nil
+      template = nil,
     },
 
     -- Optional, completion of wiki links, local markdown links, and tags using blink.cmp.
     completion = {
-      nvim_cmp = false,  -- Disable nvim-cmp since we use blink.cmp
-      blink = true,      -- Enable blink.cmp support
+      nvim_cmp = false, -- Disable nvim-cmp since we use blink.cmp
+      blink = true, -- Enable blink.cmp support
       min_chars = 2,
     },
 
@@ -196,7 +196,7 @@ return {
     ---@param url string
     follow_url_func = function(url)
       -- Open the URL in the default web browser.
-      vim.fn.jobstart({"open", url})  -- Mac OS
+      vim.fn.jobstart({ "open", url }) -- Mac OS
       -- vim.fn.jobstart({"xdg-open", url})  -- linux
       -- vim.cmd(':silent exec "!start ' .. url .. '"') -- Windows
     end,
@@ -205,7 +205,7 @@ return {
     -- file it will be ignored but you can customize this behavior here.
     ---@param img string
     follow_img_func = function(img)
-      vim.fn.jobstart({"qlmanage", "-p", img})  -- Mac OS quick look preview
+      vim.fn.jobstart({ "qlmanage", "-p", img }) -- Mac OS quick look preview
       -- vim.fn.jobstart({"xdg-open", url})  -- linux
       -- vim.cmd(':silent exec "!start ' .. url .. '"') -- Windows
     end,
@@ -214,7 +214,7 @@ return {
     open = {
       func = function(uri)
         vim.ui.open(uri, { cmd = { "open", "-a", "/Applications/Obsidian.app" } })
-      end
+      end,
     },
 
     picker = {
@@ -254,7 +254,7 @@ return {
     -- Specify how to handle attachments.
     attachments = {
       -- The default folder to place new attachments in.
-      img_folder = "assets/imgs",  -- This is the default
+      img_folder = "assets/imgs", -- This is the default
 
       -- Optional, customize the default name or prefix when pasting images via `:ObsidianPasteImg`.
       ---@return string
@@ -277,7 +277,7 @@ return {
   },
   config = function(_, opts)
     require("obsidian").setup(opts)
-    
+
     -- Set up which-key groups for Doom-style organization
     local wk = require("which-key")
     wk.add({
