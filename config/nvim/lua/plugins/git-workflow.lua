@@ -57,7 +57,11 @@ return {
         },
         -- Git services for pull request creation
         git_services = {
-          ["github.com"] = "https://github.com/${owner}/${repository}/compare/${branch_name}?expand=1",
+          ["github.com"] = {
+            ["tree"] = "https://github.com/${owner}/${repository}/tree/${branch_name}",
+            ["commit"] = "https://github.com/${owner}/${repository}/commit/${commit}",
+            ["pull_request"] = "https://github.com/${owner}/${repository}/compare/${branch_name}?expand=1",
+          },
         },
         -- Integrations
         integrations = {

@@ -11,8 +11,8 @@ return {
       { "<leader>td", "<cmd>DoneTxt<cr>", desc = "Toggle done.txt" },
     },
     opts = {
-      todotxt = "/Users/emiller/Documents/todo/todo.txt",
-      donetxt = "/Users/emiller/Documents/todo/done.txt",
+      todotxt = "/Users/edmundmiller/Documents/todo/todo.txt",
+      donetxt = "/Users/edmundmiller/Documents/todo/done.txt",
       create_commands = true,
     },
     config = function(_, opts)
