@@ -12,7 +12,6 @@
       "TodoRead",
       "TodoWrite(**)",
       "Task(**)",
-
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git diff:*)",
@@ -21,7 +20,6 @@
       "Bash(git branch:*)",
       "Bash(git remote -v:*)",
       "Bash(git config --get:*)",
-
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(less:*)",
@@ -34,22 +32,18 @@
       "Bash(pwd:*)",
       "Bash(wc:*)",
       "Bash(diff:*)",
-
       "Bash(sed -n:*)",
       "Bash(awk:*)",
       "Bash(cut:*)",
       "Bash(sort:*)",
       "Bash(uniq:*)",
-
       "Bash(basename:*)",
       "Bash(dirname:*)",
       "Bash(realpath:*)",
       "Bash(readlink:*)",
-
       "Bash(curl:*)",
       "Bash(jq:*)",
       "Bash(yq eval:*)",
-
       "Bash(python:*)",
       "Bash(python3:*)",
       "Bash(uv:*)",
@@ -57,31 +51,25 @@
       "Bash(npm list:*)",
       "Bash(npm run:*)",
       "Bash(npx:*)",
-
       "Bash(black --check:*)",
       "Bash(black --diff:*)",
       "Bash(pylint:*)",
       "Bash(flake8:*)",
       "Bash(mypy:*)",
       "Bash(eslint:*)",
-
       "Bash(pytest:*)",
       "Bash(make test:*)",
       "Bash(npm test:*)",
-
       "Bash(make -n:*)",
-
       "Bash(man:*)",
       "Bash(pydoc:*)",
       "Bash(which:*)",
       "Bash(type:*)",
-
       "Bash(echo:*)",
       "Bash(printf:*)",
       "Bash(test:*)",
       "Bash(true:*)",
       "Bash(false:*)",
-
       "Bash(:* | grep:*)",
       "Bash(:* | rg:*)",
       "Bash(:* | jq:*)",
@@ -90,7 +78,6 @@
       "Bash(:* | wc:*)",
       "Bash(:* | sort:*)",
       "Bash(:* | uniq:*)",
-
       "mcp__git__git_status",
       "mcp__git__git_diff_unstaged",
       "mcp__git__git_diff_staged",
@@ -104,12 +91,10 @@
       "mcp__git__git_show",
       "mcp__git__git_init",
       "mcp__git__git_branch",
-
       "Bash(nextflow:*)",
       "Bash(wave:*)",
       "Bash(nf-test:*)",
       "Bash(tw:*)",
-
       "Bash(jj status:*)",
       "Bash(jj log:*)",
       "Bash(jj diff:*)",
@@ -131,7 +116,6 @@
       "Bash(jj workspace:*)",
       "Bash(jj root:*)",
       "Bash(jj git fetch:*)",
-
       "mcp__RepoPrompt__list_windows",
       "mcp__RepoPrompt__select_window",
       "mcp__RepoPrompt__manage_workspaces",
@@ -155,7 +139,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bun x ccusage statusline",
+    "command": "bunx -y ccstatusline@latest",
     "padding": 0
   },
   "hooks": {
