@@ -145,6 +145,25 @@ map("n", "]c", function()
   end
 end, { desc = "Next hunk/change" })
 
+-- Visual mode hunk operations
+map("v", "<leader>ghs", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Stage selected hunk" })
+
+map("v", "<leader>ghr", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Reset selected hunk" })
+
 -- GitHub operations via Octo (LazyVim extra provides these automatically):
 -- <leader>gi - List Issues
 -- <leader>gI - Search Issues  
