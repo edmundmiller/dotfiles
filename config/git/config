@@ -14,6 +14,7 @@
     program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
 [core]
 	whitespace = trailing-space
+	excludesfile = ~/.config/git/ignore
 [init]
 	defaultBranch = main
 [github]
