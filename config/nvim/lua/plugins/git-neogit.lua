@@ -135,12 +135,21 @@ return {
     "sindrets/diffview.nvim",
     cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },
     keys = {
+      -- Interactive diff operations
       { "<leader>go", function() require("util.git").open_diff_interactive() end, desc = "Open diff (interactive)" },
       { "<leader>gf", function() require("util.git").file_history_interactive() end, desc = "File history (interactive)" },
       { "<leader>gv", "<cmd>DiffviewOpen<cr>", desc = "View working changes" },
       { "<leader>gV", "<cmd>DiffviewOpen HEAD<cr>", desc = "View last commit" },
       { "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "Quit diffview" },
       { "<leader>gP", function() require("util.git").review_pr_changes() end, desc = "Review PR changes" },
+
+      -- History operations (from blog post)
+      { "<leader>ghh", function() require("util.git").repo_history() end, desc = "Repo history" },
+      { "<leader>ghm", function() require("util.git").diff_against_default() end, desc = "Diff against parent branch (dev/main)" },
+      { "<leader>ghv", function() require("util.git").visual_selection_history() end, mode = "v", desc = "Visual selection history" },
+      { "<leader>ghl", function() require("util.git").line_history() end, desc = "Line history" },
+      { "<leader>ghc", function() require("util.git").compare_with_clipboard() end, desc = "Compare with clipboard" },
+      { "<leader>ghC", function() require("util.git").compare_with_clipboard() end, mode = "v", desc = "Compare selection with clipboard" },
     },
     config = function()
       require("diffview").setup({
