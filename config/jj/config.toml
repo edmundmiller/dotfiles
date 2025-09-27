@@ -48,6 +48,7 @@ wip = ["describe", "-m", "WIP"]  # Quick work-in-progress commit
 pp = ["log", "--template", "builtin_log_detailed"]  # Pretty print with full descriptions
 recent = ["log", "-r", "::@ ~ ::trunk()"]  # Recent commits not in trunk
 evolve = ["evolve", "--quiet"]  # Quietly evolve commits
+tug = ["bookmark", "move", "--from", "closest_bookmark(@-)", "--to", "@-"]
 
 # Quick navigation
 p = ["prev", "--edit"]  # Go to previous commit in edit mode
