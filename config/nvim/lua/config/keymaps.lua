@@ -71,14 +71,7 @@ map("n", "<leader>gs", function() LazyVim.pick("git_status")() end, { desc = "Gi
 map("n", "<leader>gb", function() LazyVim.pick("git_branches")() end, { desc = "Git branches" })
 map("n", "<leader>gl", function() LazyVim.pick("git_commits")() end, { desc = "Git log" })
 map("n", "<leader>glb", function() LazyVim.pick("git_bcommits")() end, { desc = "Git log (buffer)" })
-map("n", "<leader>gd", function()
-  local ok, gitsigns = pcall(require, "gitsigns")
-  if ok then
-    gitsigns.diffthis()
-  else
-    vim.notify("Gitsigns not available", vim.log.levels.WARN)
-  end
-end, { desc = "Git diff" })
+map("n", "<leader>gd", "<cmd>DiffviewOpen<cr>", { desc = "Git diff (Diffview)" })
 map("n", "<leader>gbl", function()
   local ok, gitsigns = pcall(require, "gitsigns")
   if ok then
@@ -128,6 +121,29 @@ map("n", "<leader>ghu", function()
     vim.notify("Gitsigns not available", vim.log.levels.WARN)
   end
 end, { desc = "Undo stage hunk" })
+
+-- Hunk navigation (standard vim diff navigation)
+map("n", "[c", function()
+  if vim.wo.diff then
+    vim.cmd("normal! [c")
+  else
+    local ok, gitsigns = pcall(require, "gitsigns")
+    if ok then
+      gitsigns.prev_hunk()
+    end
+  end
+end, { desc = "Previous hunk/change" })
+
+map("n", "]c", function()
+  if vim.wo.diff then
+    vim.cmd("normal! ]c")
+  else
+    local ok, gitsigns = pcall(require, "gitsigns")
+    if ok then
+      gitsigns.next_hunk()
+    end
+  end
+end, { desc = "Next hunk/change" })
 
 -- GitHub operations via Octo (LazyVim extra provides these automatically):
 -- <leader>gi - List Issues
