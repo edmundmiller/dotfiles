@@ -2,24 +2,43 @@
 name = "Edmund Miller"
 email = "git@edmundmiller.dev"
 
-# Override for Seqera projects
-[[conditional-includes]]
-condition = 'working_copy.path ~ "/Users/edmundmiller/src/seqera"'
-file = "~/.config/jj/seqera-config.toml"
+# CONDITIONAL INCLUDES - Currently not working as expected in jj 0.33.0
+#
+# Issue: Despite trying multiple patterns, conditional includes are not being applied:
+# - working_copy.path ~ "/path" (substring matching)
+# - working_copy.path.contains("/path/") (string contains)
+# - working_copy.path.starts_with("/path") (string starts_with)
+# - glob_matches(working_copy.path, "/path/*") (glob pattern)
+# - glob_matches(current_working_directory(), "/path") (cwd glob)
+#
+# All patterns are being parsed correctly (show up in `jj config list`) but
+# conditions evaluate to false for unknown reasons. May be related to:
+# - Path resolution differences (symlinks, canonical paths)
+# - Version compatibility issues with jj 0.33.0
+# - Working copy path format differences
+#
+# WORKAROUND: Using per-repository email configuration with:
+# `jj config set --repo user.email "email@domain.com"`
+# This approach is more reliable and provides immediate results.
 
-[[conditional-includes]]
-condition = "glob_matches(current_working_directory(), \"/Users/edmundmiller/src/nextflow\")"
-file = "~/.config/jj/seqera-config.toml"
+# Override for Seqera projects (disabled - see above)
+# [[conditional-includes]]
+# condition = "glob_matches(working_copy.path, \"/Users/edmundmiller/src/seqera/*\")"
+# file = "~/.config/jj/seqera-config.toml"
 
-# Override for nf-core projects
-[[conditional-includes]]
-condition = 'working_copy.path ~ "/Users/edmundmiller/src/nf-core"'
-file = "~/.config/jj/nfcore-config.toml"
+# [[conditional-includes]]
+# condition = "glob_matches(current_working_directory(), \"/Users/edmundmiller/src/nextflow\")"
+# file = "~/.config/jj/seqera-config.toml"
 
-# Override for UTD academic projects
-[[conditional-includes]]
-condition = 'working_copy.path ~ "/Users/edmundmiller/src/fg"'
-file = "~/.config/jj/fg-config.toml"
+# Override for nf-core projects (disabled - see above)
+# [[conditional-includes]]
+# condition = 'working_copy.path ~ "/Users/edmundmiller/src/nf-core"'
+# file = "~/.config/jj/nfcore-config.toml"
+
+# Override for UTD academic projects (disabled - see above)
+# [[conditional-includes]]
+# condition = "glob_matches(working_copy.path, \"/Users/edmundmiller/src/fg/*\")"
+# file = "~/.config/jj/fg-config.toml"
 
 [signing]
 behavior = "own"
