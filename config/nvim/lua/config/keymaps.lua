@@ -66,62 +66,13 @@ map("n", "<leader>pD", "<cmd>Oil<cr>", { desc = "Open project root" })
 map("n", "<leader>p/", function() LazyVim.pick("live_grep")() end, { desc = "Search in project" })
 
 -- Git operations (Doom: SPC g ...)
-map("n", "<leader>gg", "<cmd>LazyGit<cr>", { desc = "LazyGit" })
-map("n", "<leader>gf", "<cmd>Git<cr>", { desc = "Fugitive (stable git interface)" })
 map("n", "<leader>gt", function() LazyVim.pick("git_status")() end, { desc = "Git status (Telescope)" })
--- Neogit with workaround for difftastic conflict
-map("n", "<leader>gn", function()
-  -- Prefer internal diff to avoid external diff issues (difftastic)
-  local old_git_external_diff = vim.env.GIT_EXTERNAL_DIFF
-  vim.env.GIT_EXTERNAL_DIFF = ""
-
-  local ok = pcall(function()
-    require("neogit").open({ kind = "tab" })
-  end)
-
-  vim.defer_fn(function()
-    vim.env.GIT_EXTERNAL_DIFF = old_git_external_diff
-  end, 100)
-
-  if not ok then
-    vim.notify("Neogit crashed. Try <leader>gg for LazyGit instead", vim.log.levels.ERROR)
-  end
-end, { desc = "Neogit (Magit-like)" })
 map("n", "<leader>gs", function() LazyVim.pick("git_status")() end, { desc = "Git status" })
 map("n", "<leader>gb", function() LazyVim.pick("git_branches")() end, { desc = "Git branches" })
 map("n", "<leader>gl", function() LazyVim.pick("git_commits")() end, { desc = "Git log" })
 map("n", "<leader>gL", function() LazyVim.pick("git_bcommits")() end, { desc = "Git log (buffer)" })
 map("n", "<leader>gd", "<cmd>Gitsigns diffthis<cr>", { desc = "Git diff" })
-map("n", "<leader>gD", "<cmd>DiffviewOpen<cr>", { desc = "Diffview open" })
-map("n", "<leader>gv", "<cmd>DiffviewOpen<cr>", { desc = "View diff" })
-map("n", "<leader>gV", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history" })
-map("n", "<leader>gH", "<cmd>DiffviewFileHistory<cr>", { desc = "Full history" })
-map("n", "<leader>gC", "<cmd>DiffviewClose<cr>", { desc = "Close diffview" })
 map("n", "<leader>gB", "<cmd>Gitsigns blame_line<cr>", { desc = "Git blame line" })
--- Git worktree operations (Doom: SPC g w ...)
-map("n", "<leader>gww", function() require("telescope").extensions.git_worktree.git_worktrees() end, { desc = "Switch worktree" })
-map("n", "<leader>gwc", function() require("telescope").extensions.git_worktree.create_git_worktree() end, { desc = "Create worktree" })
-map("n", "<leader>gwl", function() require("telescope").extensions.git_worktree.git_worktrees() end, { desc = "List worktrees" })
-map("n", "<leader>gwd", function()
-  -- Delete worktree with custom picker
-  local worktree = require("git-worktree")
-  local telescope = require("telescope")
-  telescope.extensions.git_worktree.git_worktrees({
-    attach_mappings = function(_, map_fn)
-      map_fn("i", "<CR>", function(prompt_bufnr)
-        local selection = require("telescope.actions.state").get_selected_entry()
-        require("telescope.actions").close(prompt_bufnr)
-        if selection then worktree.delete_worktree(selection.value) end
-      end)
-      map_fn("n", "<CR>", function(prompt_bufnr)
-        local selection = require("telescope.actions.state").get_selected_entry()
-        require("telescope.actions").close(prompt_bufnr)
-        if selection then worktree.delete_worktree(selection.value) end
-      end)
-      return true
-    end,
-  })
-end, { desc = "Delete worktree" })
 -- Git hunk operations (moved to gh prefix to avoid conflict with Octo)
 map("n", "<leader>ghr", "<cmd>Gitsigns reset_hunk<cr>", { desc = "Reset hunk" })
 map("n", "<leader>ghR", "<cmd>Gitsigns reset_buffer<cr>", { desc = "Reset buffer" })
