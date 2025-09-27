@@ -61,10 +61,11 @@ abandon-empty = ["abandon", "-r", "empty() & description(\"\")"]  # Remove empty
 tidy = ["abandon", "-r", "empty() & description(\"\") & ~@"]  # Safe cleanup of empty commits
 
 [ui]
-default-command = "log"
-diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
+default-command = "status"
+# diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
 # Use delta for beautiful diff output
 pager = "delta"
+diff-formatter = ":git"
 editor = "nvim"
 # Enable word wrapping in logs for better readability
 log-word-wrap = true
