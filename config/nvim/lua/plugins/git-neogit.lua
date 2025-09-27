@@ -9,6 +9,7 @@ return {
       "sindrets/diffview.nvim",        -- optional - Diff integration
       "folke/snacks.nvim",             -- optional - for picker UI
     },
+    cmd = "Neogit",
     keys = {
       { "<leader>gg", "<cmd>Neogit<cr>", desc = "Neogit (Magit-like)" },
       { "<leader>gnt", "<cmd>Neogit kind=tab<cr>", desc = "Neogit in new tab" },
@@ -124,61 +125,22 @@ return {
   },
 
   -- Diffview: Enhanced diff viewing and merge conflict resolution
+  -- Usage patterns:
+  -- - File history: . (all), % (current file), path/to/file
+  -- - Revisions: HEAD, HEAD~3, main..HEAD, @-..@ (jj)
+  -- - Ranges: rev1..rev2 (exclusive), rev1...rev2 (from common ancestor)
+  -- - Useful: HEAD (last commit), HEAD~n (n commits ago), main..HEAD (feature branch changes)
+  -- - JJ: @ (current), @- (parent), main@origin (remote main)
   {
     "sindrets/diffview.nvim",
+    cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },
     keys = {
-      { "<leader>gv", "<cmd>DiffviewOpen<cr>", desc = "View diff" },
-      { "<leader>gf", "<cmd>DiffviewFileHistory %<cr>", desc = "File history" },
-      { "<leader>ga", "<cmd>DiffviewFileHistory<cr>", desc = "Full history (all)" },
-      { "<leader>gc", "<cmd>DiffviewClose<cr>", desc = "Close diffview" },
-      {
-        "<leader>gP",
-        function()
-          -- Review PR changes - show all changes from the fork point
-          -- First, check if we're in a jj repo
-          local jj_root = vim.fn.system("jj root 2>/dev/null"):gsub("%s+", "")
-          local is_jj = vim.v.shell_error == 0 and jj_root ~= ""
-
-          if is_jj then
-            -- For jj, show diff from main branch to current change
-            -- Get the main bookmark's commit ID
-            local main_commit = vim.fn.system("jj log --no-graph -r 'main' -T 'commit_id' --limit 1 2>/dev/null"):gsub("%s+", "")
-
-            if vim.v.shell_error == 0 and main_commit ~= "" then
-              -- Show diff from main to current HEAD
-              vim.cmd("DiffviewOpen " .. main_commit .. "..HEAD")
-            else
-              -- Fallback: try to get main@origin
-              main_commit = vim.fn.system("jj log --no-graph -r 'main@origin' -T 'commit_id' --limit 1 2>/dev/null"):gsub("%s+", "")
-              if vim.v.shell_error == 0 and main_commit ~= "" then
-                vim.cmd("DiffviewOpen " .. main_commit .. "..HEAD")
-              else
-                -- Final fallback: show diff from parent to current
-                vim.cmd("DiffviewOpen HEAD~..HEAD")
-              end
-            end
-          else
-            -- For git, find the merge base with main/master
-            local main_branch = vim.fn.system("git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'"):gsub("%s+", "")
-            if main_branch == "" then
-              main_branch = "main"
-              -- Try master if main doesn't exist
-              local branch_exists = vim.fn.system("git rev-parse --verify " .. main_branch .. " 2>/dev/null")
-              if vim.v.shell_error ~= 0 then
-                main_branch = "master"
-              end
-            end
-
-            local merge_base = vim.fn.system("git merge-base HEAD " .. main_branch):gsub("%s+", "")
-            if vim.v.shell_error == 0 and merge_base ~= "" then
-              vim.cmd("DiffviewOpen " .. merge_base .. "..HEAD")
-            else
-              vim.notify("Could not find merge base with " .. main_branch, vim.log.levels.ERROR)
-            end
-          end
-        end,
-        desc = "Review PR changes",
-      },
+      { "<leader>go", function() require("util.git").open_diff_interactive() end, desc = "Open diff (interactive)" },
+      { "<leader>gf", function() require("util.git").file_history_interactive() end, desc = "File history (interactive)" },
+      { "<leader>gv", "<cmd>DiffviewOpen<cr>", desc = "View working changes" },
+      { "<leader>gV", "<cmd>DiffviewOpen HEAD<cr>", desc = "View last commit" },
+      { "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "Quit diffview" },
+      { "<leader>gP", function() require("util.git").review_pr_changes() end, desc = "Review PR changes" },
     },
     config = function()
       require("diffview").setup({
