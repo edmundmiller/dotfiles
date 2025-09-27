@@ -40,6 +40,7 @@ Thumbs.db
 ###############
 .svn
 .git
+.jj-workspaces/
 .swp
 .idea
 .*.swp
@@ -66,4 +67,8 @@ config.codekit
 .direnv/
 .nvimlog
 .venv/
+
+# Claude Code local files #
+############################
 **/.claude/settings.local.json
+CLAUDE.local.md
