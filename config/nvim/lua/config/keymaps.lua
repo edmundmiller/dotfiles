@@ -70,15 +70,64 @@ map("n", "<leader>gt", function() LazyVim.pick("git_status")() end, { desc = "Gi
 map("n", "<leader>gs", function() LazyVim.pick("git_status")() end, { desc = "Git status" })
 map("n", "<leader>gb", function() LazyVim.pick("git_branches")() end, { desc = "Git branches" })
 map("n", "<leader>gl", function() LazyVim.pick("git_commits")() end, { desc = "Git log" })
-map("n", "<leader>gL", function() LazyVim.pick("git_bcommits")() end, { desc = "Git log (buffer)" })
-map("n", "<leader>gd", "<cmd>Gitsigns diffthis<cr>", { desc = "Git diff" })
-map("n", "<leader>gB", "<cmd>Gitsigns blame_line<cr>", { desc = "Git blame line" })
+map("n", "<leader>glb", function() LazyVim.pick("git_bcommits")() end, { desc = "Git log (buffer)" })
+map("n", "<leader>gd", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.diffthis()
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Git diff" })
+map("n", "<leader>gbl", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.blame_line()
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Git blame line" })
 -- Git hunk operations (moved to gh prefix to avoid conflict with Octo)
-map("n", "<leader>ghr", "<cmd>Gitsigns reset_hunk<cr>", { desc = "Reset hunk" })
-map("n", "<leader>ghR", "<cmd>Gitsigns reset_buffer<cr>", { desc = "Reset buffer" })
-map("n", "<leader>ghp", "<cmd>Gitsigns preview_hunk<cr>", { desc = "Preview hunk" })
-map("n", "<leader>ghS", "<cmd>Gitsigns stage_hunk<cr>", { desc = "Stage hunk" })
-map("n", "<leader>ghu", "<cmd>Gitsigns undo_stage_hunk<cr>", { desc = "Undo stage hunk" })
+map("n", "<leader>ghr", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.reset_hunk()
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Reset hunk" })
+map("n", "<leader>ghb", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.reset_buffer()
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Reset buffer" })
+map("n", "<leader>ghp", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.preview_hunk()
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Preview hunk" })
+map("n", "<leader>ghs", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.stage_hunk()
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Stage hunk" })
+map("n", "<leader>ghu", function()
+  local ok, gitsigns = pcall(require, "gitsigns")
+  if ok then
+    gitsigns.undo_stage_hunk()
+  else
+    vim.notify("Gitsigns not available", vim.log.levels.WARN)
+  end
+end, { desc = "Undo stage hunk" })
 
 -- GitHub operations via Octo (LazyVim extra provides these automatically):
 -- <leader>gi - List Issues
