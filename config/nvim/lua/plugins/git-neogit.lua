@@ -11,6 +11,15 @@ return {
     },
     keys = {
       { "<leader>gg", "<cmd>Neogit<cr>", desc = "Neogit (Magit-like)" },
+      { "<leader>gnt", "<cmd>Neogit kind=tab<cr>", desc = "Neogit in new tab" },
+      { "<leader>gll", "<cmd>Neogit log<cr>", desc = "Git log (Neogit)" },
+      -- Commit operations
+      { "<leader>gcc", "<cmd>Neogit commit<cr>", desc = "Git commit" },
+      { "<leader>gca", function() require("neogit").open({ "commit", "amend" }) end, desc = "Git commit amend" },
+      { "<leader>gcw", function() require("neogit").open({ "commit", "reword" }) end, desc = "Git commit reword" },
+      -- Pull/Push operations
+      { "<leader>gpp", "<cmd>Neogit push<cr>", desc = "Git push" },
+      { "<leader>gpf", "<cmd>Neogit pull<cr>", desc = "Git pull/fetch" },
     },
     config = function()
       require("neogit").setup({
