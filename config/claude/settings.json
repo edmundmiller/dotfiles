@@ -1,4 +1,7 @@
 {
+  "env": {
+    "JJ_EDITOR": "echo"
+  },
   "permissions": {
     "allow": [
       "Read(**)",
@@ -134,14 +137,6 @@
     ],
     "deny": []
   },
-  "env": {
-    "JJ_EDITOR": "echo"
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "bunx -y ccstatusline@latest",
-    "padding": 0
-  },
   "hooks": {
     "Stop": [
       {
@@ -154,5 +149,10 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bunx -y ccstatusline@latest",
+    "padding": 0
   }
 }
