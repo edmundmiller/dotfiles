@@ -60,12 +60,21 @@ orphans = ["log", "-r", "mine() & ~::trunk() & ~::@"]  # Show orphaned branches
 abandon-empty = ["abandon", "-r", "empty() & description(\"\")"]  # Remove empty unnamed commits
 tidy = ["abandon", "-r", "empty() & description(\"\") & ~@"]  # Safe cleanup of empty commits
 
+[diff]
+tool = "delta"
+
+# These options allow for `jj diff` and `jj show` to clear the output from the terminal after closing the pager.
+[[--scope]]
+--when.commands = ["diff", "show"]
+
+[--scope.ui]
+pager = "delta"
+
 [ui]
 default-command = "status"
+diff-formatter = ":git" # required by `delta`
+pager=["delta", "--pager", "less -FRX"] # Keeps output from the terminal after closing the pager
 # diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
-# Use delta for beautiful diff output
-pager = "delta"
-diff-formatter = ":git"
 editor = "nvim"
 # Enable word wrapping in logs for better readability
 log-word-wrap = true
