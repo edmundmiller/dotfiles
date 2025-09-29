@@ -5,25 +5,29 @@ return {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
     opts = function(_, opts)
-      -- Register the Nextflow parser with rewrite branch
-      local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-      parser_config.nextflow = {
-        install_info = {
-          url = "https://github.com/nextflow-io/tree-sitter-nextflow",
-          files = { "src/parser.c" },
-          branch = "rewrite",
-          generate_requires_npm = false,
-        },
-        filetype = "nextflow",
-      }
-      
+      -- Add nextflow to ensure_installed if needed
+      vim.list_extend(opts.ensure_installed or {}, { "nextflow" })
       return opts
+    end,
+    config = function()
+      -- Register filetype for nextflow (LazyVim handles treesitter setup)
+      vim.filetype.add({
+        extension = {
+          nf = "nextflow",
+        },
+        pattern = {
+          [".*%.nextflow"] = "nextflow",
+        },
+      })
+
+      -- Register language for treesitter
+      vim.treesitter.language.register("nextflow", "nextflow")
     end,
   },
 
   -- Mason LSP configuration
   {
-    "williamboman/mason.nvim",
+    "mason-org/mason.nvim",
     opts = {
       ensure_installed = {
         "nextflow-language-server",

@@ -10,7 +10,7 @@ return {
       "MunifTanjim/nui.nvim",
       -- Optional: for file icons (one of these)
       { "nvim-tree/nvim-web-devicons", optional = true },
-      { "echasnovski/mini.icons", optional = true },
+      { "nvim-mini/mini.icons", optional = true },
     },
     config = function()
       require("hunk").setup({

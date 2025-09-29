@@ -5,7 +5,7 @@ return {
   -- Extend mini.ai with custom text objects
   -- LazyVim already includes mini.ai, so we're just extending its configuration
   {
-    "echasnovski/mini.ai",
+    "nvim-mini/mini.ai",
     event = "VeryLazy",
     opts = function(_, opts)
       local ai = require("mini.ai")
