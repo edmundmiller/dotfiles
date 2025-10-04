@@ -96,7 +96,9 @@ if [[ $TERM != dumb ]]; then
   source $ZDOTDIR/keybinds.zsh
   source $ZDOTDIR/completion.zsh
   source $ZDOTDIR/aliases.zsh
-  
+
+  alias jj="jj --config width=$(tput cols)" 
+
   # Source Claude-specific aliases if claude module is enabled
   _source /Users/emiller/.config/dotfiles/config/claude/aliases.zsh
 
@@ -143,6 +145,8 @@ alias t="todo.sh"
 alias ta="t add"
 alias td="t do"
 alias ttoday="t today"
+
+eval "$(fnm env --use-on-cd --shell zsh)"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
