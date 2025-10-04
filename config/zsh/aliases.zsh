@@ -153,3 +153,6 @@ jback() {
     echo "Current commit has changes, use 'jj abandon' explicitly if you want to lose them"
   fi
 }
+
+# Claude Code
+alias cc="claude --dangerously-skip-permissions"
