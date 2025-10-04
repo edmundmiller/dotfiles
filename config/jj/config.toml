@@ -2,43 +2,10 @@
 name = "Edmund Miller"
 email = "git@edmundmiller.dev"
 
-# CONDITIONAL INCLUDES - Currently not working as expected in jj 0.33.0
-#
-# Issue: Despite trying multiple patterns, conditional includes are not being applied:
-# - working_copy.path ~ "/path" (substring matching)
-# - working_copy.path.contains("/path/") (string contains)
-# - working_copy.path.starts_with("/path") (string starts_with)
-# - glob_matches(working_copy.path, "/path/*") (glob pattern)
-# - glob_matches(current_working_directory(), "/path") (cwd glob)
-#
-# All patterns are being parsed correctly (show up in `jj config list`) but
-# conditions evaluate to false for unknown reasons. May be related to:
-# - Path resolution differences (symlinks, canonical paths)
-# - Version compatibility issues with jj 0.33.0
-# - Working copy path format differences
-#
-# WORKAROUND: Using per-repository email configuration with:
-# `jj config set --repo user.email "email@domain.com"`
-# This approach is more reliable and provides immediate results.
-
-# Override for Seqera projects (disabled - see above)
-# [[conditional-includes]]
-# condition = "glob_matches(working_copy.path, \"/Users/edmundmiller/src/seqera/*\")"
-# file = "~/.config/jj/seqera-config.toml"
-
-# [[conditional-includes]]
-# condition = "glob_matches(current_working_directory(), \"/Users/edmundmiller/src/nextflow\")"
-# file = "~/.config/jj/seqera-config.toml"
-
-# Override for nf-core projects (disabled - see above)
-# [[conditional-includes]]
-# condition = 'working_copy.path ~ "/Users/edmundmiller/src/nf-core"'
-# file = "~/.config/jj/nfcore-config.toml"
-
-# Override for UTD academic projects (disabled - see above)
-# [[conditional-includes]]
-# condition = "glob_matches(working_copy.path, \"/Users/edmundmiller/src/fg/*\")"
-# file = "~/.config/jj/fg-config.toml"
+# Context-specific email configs are in ~/.config/jj/conf.d/
+# - seqera.toml: Work repos (~/src/seqera, ~/src/nextflow)
+# - nfcore.toml: nf-core repos (~/src/nf-core)
+# - fg.toml: UTD academic repos (~/src/fg)
 
 [signing]
 behavior = "own"
@@ -138,6 +105,3 @@ active = "mine() & ~empty() & ~immutable()"  # Active work in progress
 auto-track = "glob:**/*.js|glob:**/*.ts|glob:**/*.tsx|glob:**/*.jsx|glob:**/*.py|glob:**/*.rs|glob:**/*.go|glob:**/*.java|glob:**/*.c|glob:**/*.cpp|glob:**/*.h|glob:**/*.hpp|glob:**/*.nix|glob:**/*.toml|glob:**/*.yaml|glob:**/*.yml|glob:**/*.json|glob:**/*.md"
 # Maximum file size to auto-track (10MB)
 max-new-file-size = "10MB"
-
-[signature]
-sign-off = true
