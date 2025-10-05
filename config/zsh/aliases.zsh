@@ -23,22 +23,23 @@ alias reboot='sudo reboot'
 
 # An rsync that respects gitignore
 rcp() {
-  # -a = -rlptgoD
-  #   -r = recursive
-  #   -l = copy symlinks as symlinks
-  #   -p = preserve permissions
-  #   -t = preserve mtimes
-  #   -g = preserve owning group
-  #   -o = preserve owner
-  # -z = use compression
-  # -P = show progress on transferred file
-  # -J = don't touch mtimes on symlinks (always errors)
-  rsync -azPJ \
-    --include=.git/ \
-    --filter=':- .gitignore' \
-    --filter=":- $XDG_CONFIG_HOME/git/ignore" \
-    "$@"
-}; compdef rcp=rsync
+    # -a = -rlptgoD
+    #   -r = recursive
+    #   -l = copy symlinks as symlinks
+    #   -p = preserve permissions
+    #   -t = preserve mtimes
+    #   -g = preserve owning group
+    #   -o = preserve owner
+    # -z = use compression
+    # -P = show progress on transferred file
+    # -J = don't touch mtimes on symlinks (always errors)
+    rsync -azPJ \
+        --include=.git/ \
+        --filter=':- .gitignore' \
+        --filter=":- $XDG_CONFIG_HOME/git/ignore" \
+        "$@"
+}
+compdef rcp=rsync
 alias rcpd='rcp --delete --delete-after'
 alias rcpu='rcp --chmod=go='
 alias rcpdu='rcpd --chmod=go='
@@ -54,39 +55,39 @@ alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mo
 alias ssc='sudo systemctl'
 
 if command -v eza >/dev/null; then
-  alias eza="eza --group-directories-first --git";
-  alias l="eza -blF";
-  alias ll="eza -abghilmu";
-  alias llmod='ll --sort=modified'
-  alias la="LC_COLLATE=C eza -ablF";
-  alias tree='eza --tree'
+    alias eza="eza --group-directories-first --git"
+    alias l="eza -blF"
+    alias ll="eza -abghilmu"
+    alias llmod='ll --sort=modified'
+    alias la="LC_COLLATE=C eza -ablF"
+    alias tree='eza --tree'
 fi
 
-if (( $+commands[fasd] )); then
-  # fuzzy completion with 'z' when called without args
-  unalias z 2>/dev/null
-  function z {
-    [ $# -gt 0 ] && _z "$*" && return
-    cd "$(_z -l 2>&1 | fzf --height 40% --nth 2.. --reverse --inline-info +s --tac --query "${*##-* }" | sed 's/^[0-9,.]* *//')"
-  }
+if (($ + commands[fasd])); then
+    # fuzzy completion with 'z' when called without args
+    unalias z 2>/dev/null
+    function z {
+        [ $# -gt 0 ] && _z "$*" && return
+        cd "$(_z -l 2>&1 | fzf --height 40% --nth 2.. --reverse --inline-info +s --tac --query "${*##-* }" | sed 's/^[0-9,.]* *//')"
+    }
 fi
 
 autoload -U zmv
 
 function take() {
-	mkdir "$1" && cd "$1"
+    mkdir "$1" && cd "$1"
 }
 compdef take=mkdir
 
 function zman() {
-	PAGER="less -g -I -s '+/^       "$1"'" man zshall
+    PAGER="less -g -I -s '+/^       "$1"'" man zshall
 }
 
 # Create a reminder with human-readable durations, e.g. 15m, 1h, 40s, etc
 function r() {
-	local time=$1
-	shift
-	sched "$time" "notify-send --urgency=critical 'Reminder' '$@'; ding"
+    local time=$1
+    shift
+    sched "$time" "notify-send --urgency=critical 'Reminder' '$@'; ding"
 }
 compdef r=sched
 
@@ -105,53 +106,54 @@ alias bt=transmission-remote
 alias tb="nc termbin.com 9999"
 
 # Jujutsu (jj) shortcuts
-alias jn='jj new'           # Start new work
-alias js='jj squash'        # Squash changes into parent
-alias jd='jj describe'      # Describe current commit
-alias jl='jj log'           # Show log
-alias jst='jj status'       # Show status
-alias jp='jj prev'          # Go to previous commit
-alias jnx='jj next'         # Go to next commit
-alias je='jj edit'          # Edit a commit
-alias jr='jj rebase'        # Rebase commits
-alias jb='jj bookmark'      # Manage bookmarks
-alias jdiff='jj diff'       # Show differences
-alias jshow='jj show'       # Show commit details
+alias jj="jj --config width=$(tput cols)"
+alias jn='jj new'      # Start new work
+alias js='jj squash'   # Squash changes into parent
+alias jd='jj describe' # Describe current commit
+alias jl='jj log'      # Show log
+alias jst='jj status'  # Show status
+alias jp='jj prev'     # Go to previous commit
+alias jnx='jj next'    # Go to next commit
+alias je='jj edit'     # Edit a commit
+alias jr='jj rebase'   # Rebase commits
+alias jb='jj bookmark' # Manage bookmarks
+alias jdiff='jj diff'  # Show differences
+alias jshow='jj show'  # Show commit details
 
 # JJ workflow helpers
 jnew() {
-  jj describe -m "${1:-WIP}" && jj new
+    jj describe -m "${1:-WIP}" && jj new
 }
 
 # Quick squash with message
 jsquash() {
-  if [[ -n "$1" ]]; then
-    jj squash -m "$1"
-  else
-    jj squash
-  fi
+    if [[ -n "$1" ]]; then
+        jj squash -m "$1"
+    else
+        jj squash
+    fi
 }
 
 # Clean up jj history
 jclean() {
-  echo "Cleaning up empty commits..."
-  jj tidy
-  echo "Current work status:"
-  jj work
+    echo "Cleaning up empty commits..."
+    jj tidy
+    echo "Current work status:"
+    jj work
 }
 
 # Show only active work
 jwork() {
-  jj log -r 'mine() & ~empty() & ~immutable()'
+    jj log -r 'mine() & ~empty() & ~immutable()'
 }
 
 # Quick abandon current if empty and go to previous
 jback() {
-  if [[ -z $(jj diff) ]]; then
-    jj abandon @ && jj edit @-
-  else
-    echo "Current commit has changes, use 'jj abandon' explicitly if you want to lose them"
-  fi
+    if [[ -z $(jj diff) ]]; then
+        jj abandon @ && jj edit @-
+    else
+        echo "Current commit has changes, use 'jj abandon' explicitly if you want to lose them"
+    fi
 }
 
 # Claude Code
