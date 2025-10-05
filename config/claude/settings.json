@@ -119,6 +119,7 @@
       "Bash(jj workspace:*)",
       "Bash(jj root:*)",
       "Bash(jj git fetch:*)",
+      "Bash(jj files:*)",
       "mcp__RepoPrompt__list_windows",
       "mcp__RepoPrompt__select_window",
       "mcp__RepoPrompt__manage_workspaces",
@@ -175,7 +176,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if jj workspace root 2>/dev/null | grep -q 'claude-'; then workspace=$(jj workspace root 2>/dev/null | grep -o 'claude-[^/]*' || echo 'unknown'); echo \"\\n---\\n📦 Workspace: $workspace\"; jj log -r @ -T 'Change: {change_id.short()}\\nDescription: {description}\\nFiles: {files.len()}\\n' --no-graph 2>/dev/null || jj show; else jj show; fi"
+            "command": "if jj workspace root 2>/dev/null | grep -q 'claude-'; then workspace=$(jj workspace root 2>/dev/null | grep -o 'claude-[^/]*' || echo 'unknown'); echo \"\\n---\\n📦 Workspace: $workspace\\n\"; echo \"**Commit stack:**\"; jj log -r '::@' --limit 5 -T '{change_id.short()}: {description}' --no-graph 2>/dev/null; echo \"\"; echo \"💡 **Curation tips:**\"; echo \"- \\`/jj:commit [msg]\\` - Stack another commit\"; echo \"- \\`/jj:squash [rev]\\` - Merge commits\"; echo \"- \\`/jj:split <pattern>\\` - Split by pattern (test, docs, etc)\"; echo \"- \\`/jj:cleanup\\` - Remove empty workspaces\"; else jj log -r ::@ --limit 3 -T '{change_id.short()}: {description}' --no-graph 2>/dev/null || jj show; fi"
           }
         ]
       }
