@@ -6,6 +6,7 @@
 python3.pkgs.buildPythonApplication rec {
   pname = "oauth2ms";
   version = "unstable-2021-07-10";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "harishkrupo";
@@ -14,10 +15,13 @@ python3.pkgs.buildPythonApplication rec {
     hash = "sha256-xPSWlHJAXhhj5I6UMjUtH1EZqCZWHJMFWTu3a4k1ETc=";
   };
 
-  nativeBuildInputs = [
-    python3.pkgs.importlib-metadata
+  build-system = [
     python3.pkgs.setuptools
     python3.pkgs.wheel
+  ];
+
+  nativeBuildInputs = [
+    python3.pkgs.importlib-metadata
   ];
 
   propagatedBuildInputs = with python3.pkgs; [
