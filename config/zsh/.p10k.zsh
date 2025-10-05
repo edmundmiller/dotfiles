@@ -50,6 +50,8 @@
   typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS="prompt_custom_vcs"
   typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS_FOREGROUND=208  # Orange for JJ
   typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS_BACKGROUND=''
+  # Visual identifier for JJ segment
+  typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS_VISUAL_IDENTIFIER_EXPANSION='${P9K_VISUAL_IDENTIFIER}'
   
   typeset -g POWERLEVEL9K_CUSTOM_TODO="prompt_todo"
   typeset -g POWERLEVEL9K_CUSTOM_TODO_FOREGROUND=$cyan
@@ -79,7 +81,6 @@
 
   # Right prompt segments.
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
-    custom_jj_desc            # jj description (show on command)
     custom_todo               # todo.txt task count
     command_execution_time    # previous command duration
     python_version            # python version
@@ -354,45 +355,121 @@ function prompt_nextflow() {
   fi
 }
 
-# Custom VCS function for JJ with Git fallback
+# Global variables for async JJ prompt
+typeset -g _jj_prompt_async_output=""
+typeset -g _jj_prompt_async_workspace=""
+
+# Async worker function - runs in background
+function _jj_prompt_async_worker() {
+  local workspace="$1"
+
+  # Check if we're in a JJ repo - fast check first
+  if ! jj root &>/dev/null; then
+    # Fall back to git
+    local git_info
+    git_info=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
+    if [[ -n "$git_info" ]]; then
+      echo "git:$git_info"
+    fi
+    return
+  fi
+
+  # JJ repository - gather comprehensive info
+  local bookmark change_id files_status
+
+  # Get closest bookmark (if any)
+  bookmark=$(jj log --no-graph --limit 1 -r "coalesce(closest_bookmark(@), '')" -T 'if(bookmarks, bookmarks.join(" "), "")' 2>/dev/null)
+
+  # Get change ID (always present)
+  change_id=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null)
+
+  # Get file change summary using diff.summary()
+  files_status=$(jj log -r @ -T 'diff.summary()' 2>/dev/null | awk '
+    BEGIN {a=0; d=0; m=0}
+    /^A / {a++}
+    /^D / {d++}
+    /^M / {m++}
+    END {
+      out=""
+      if (a > 0) out = out " +" a
+      if (m > 0) out = out " ~" m
+      if (d > 0) out = out " -" d
+      print out
+    }
+  ')
+
+  # Build output string
+  local output=""
+
+  # Add bookmark if present
+  if [[ -n "$bookmark" ]]; then
+    output="$bookmark "
+  fi
+
+  # Add change ID (always present in jj)
+  output="${output}${change_id}"
+
+  # Add file status if present
+  if [[ -n "$files_status" ]]; then
+    output="${output}${files_status}"
+  fi
+
+  # Return the formatted output
+  echo "jj:$output"
+}
+
+# Async callback - handles results from worker
+function _jj_prompt_async_callback() {
+  local job=$1
+  local return_code=$2
+  local stdout=$3
+  local workspace=$_jj_prompt_async_workspace
+
+  # Only update if we're still in the same workspace
+  if [[ "$PWD" == "$workspace" ]]; then
+    _jj_prompt_async_output="$stdout"
+    # Trigger prompt refresh
+    p10k display -r
+  fi
+}
+
+# Main VCS prompt function with async support
 function prompt_custom_vcs() {
-  # Ultra-fast version: single JJ call, no status checks
-  local vcs_info
+  # Use cached output if available and workspace hasn't changed
+  if [[ "$PWD" == "$_jj_prompt_async_workspace" && -n "$_jj_prompt_async_output" ]]; then
+    local type="${_jj_prompt_async_output%%:*}"
+    local content="${_jj_prompt_async_output#*:}"
 
-  # Try JJ first - single fast call, skip root check
-  vcs_info=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null)
-
-  if [[ -n "$vcs_info" ]]; then
-    echo -n "$vcs_info"
+    if [[ "$type" == "jj" ]]; then
+      # Color for JJ - orange
+      echo -n "$content"
+    elif [[ "$type" == "git" ]]; then
+      # Use default color for git
+      echo -n "$content"
+    fi
     return 0
   fi
 
-  # Fall back to git - also optimized, no status check
-  vcs_info=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-
-  if [[ -n "$vcs_info" ]]; then
-    echo -n "$vcs_info"
-    return 0
-  fi
-
-  return 1
-}
-
-# JJ description function for right prompt
-function prompt_jj_desc() {
-  # Skip the root check for speed - just try to get description
-  local jj_desc
-  jj_desc=$(jj log -r @ --no-graph -T 'if(description, description.first_line().substr(0, 50), "")' 2>/dev/null)
-
-  if [[ -n "$jj_desc" ]]; then
-    echo -n "$jj_desc"
+  # Start async job if available
+  if (( $+functions[async_job] )); then
+    _jj_prompt_async_workspace="$PWD"
+    async_job _jj_prompt_worker _jj_prompt_async_worker "$PWD"
+  else
+    # Fallback to synchronous if async not available
+    local result
+    result=$(_jj_prompt_async_worker "$PWD")
+    local type="${result%%:*}"
+    local content="${result#*:}"
+    echo -n "$content"
   fi
 }
 
-# Define custom JJ description segment with Show On Command
-typeset -g POWERLEVEL9K_CUSTOM_JJ_DESC="prompt_jj_desc"
-typeset -g POWERLEVEL9K_CUSTOM_JJ_DESC_FOREGROUND=244  # Gray color
-typeset -g POWERLEVEL9K_CUSTOM_JJ_DESC_SHOW_ON_COMMAND='jj'
+# Initialize async worker for JJ prompt (if zsh-async is available)
+if (( $+functions[async_init] )); then
+  async_init
+  async_start_worker _jj_prompt_worker -n
+  async_register_callback _jj_prompt_worker _jj_prompt_async_callback
+fi
 
 # Tell `p10k configure` which file it should overwrite.
 typeset -g POWERLEVEL9K_CONFIG_FILE=${${(%):-%x}:a}
