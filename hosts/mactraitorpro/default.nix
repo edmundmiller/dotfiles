@@ -55,6 +55,7 @@
     # Add duti for managing file associations
     environment.systemPackages = with pkgs; [
       duti
+      my.jj-spr
     ];
     
     # Create a duti configuration file and apply it on activation
