@@ -4,6 +4,9 @@
 # Prompt theme - load early for instant prompt
 romkatv/powerlevel10k
 
+# Async support for non-blocking prompt updates (used by jj prompt)
+mafredri/zsh-async
+
 # Completions system - load early as fpath
 zsh-users/zsh-completions kind:fpath path:src
 
