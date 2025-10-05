@@ -103,6 +103,7 @@
         overlays = mapModules ./overlays import;
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
+        packages."${darwinSystem}" = mapModules ./packages (p: darwinPkgs.callPackage p { });
 
         nixosModules = {
           dotfiles = import ./.;
