@@ -48,6 +48,9 @@ orphans = ["log", "-r", "mine() & ~::trunk() & ~::@"]  # Show orphaned branches
 abandon-empty = ["abandon", "-r", "empty() & description(\"\")"]  # Remove empty unnamed commits
 tidy = ["abandon", "-r", "empty() & description(\"\") & ~@"]  # Safe cleanup of empty commits
 
+# GitHub Pull Request management
+spr = ["util", "exec", "--", "jj-spr"]  # Stacked pull requests with jj-spr
+
 [diff]
 tool = "delta"
 
@@ -111,3 +114,18 @@ max-new-file-size = "10MB"
 [templates]
 log_node = "credits_roll_node"
 log = "credits_roll(0, 'none()')"
+
+[template-aliases]
+# Prompt template for shell integration - optimized for performance
+'prompt' = '''
+separate(" ",
+  format_short_change_id_with_hidden_and_divergent_info(self),
+  format_short_commit_id(commit_id),
+  if(empty, label("empty", "(empty)"), ""),
+  if(description == "", label("description placeholder", "(no description)"), "")
+)
+'''
+
+[revset-aliases]
+# Find the closest bookmark in the ancestry of a given revision
+'closest_bookmark(to)' = 'heads(::to & bookmarks())'
