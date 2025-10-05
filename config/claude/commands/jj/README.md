@@ -1,192 +1,191 @@
-# Jujutsu (jj) Commands for Claude Code
+# Jujutsu (JJ) Commands for Claude Code
 
 ## Overview
 
-Complete command set for jujutsu workflows, built from the official tutorials and optimized for AI-assisted development.
+**Autonomous commit stacking and curation** for Claude Code. Make messy commits during development, then clean them up—all autonomously.
 
-**Key Resources:**
-- [Squash Workflow Tutorial](https://steveklabnik.github.io/jujutsu-tutorial/real-world-workflows/the-squash-workflow.html)
-- [Edit Workflow Tutorial](https://steveklabnik.github.io/jujutsu-tutorial/real-world-workflows/the-edit-workflow.html)
-- [Jujutsu Tutorial Recap](https://steveklabnik.github.io/jujutsu-tutorial/hello-world/recap.html)
+Based on: [Parallel Claude Code with Jujutsu](https://slavakurilyak.com/posts/parallel-claude-code-with-jujutsu/)
 
-## Two Main Workflows
+## Command Set (4 total)
 
-### The Squash Workflow ⭐ **RECOMMENDED**
+### `/jj:commit [message]` - Stack commits
+Create focused commits as you work. Each commit stacks on top of the previous one.
 
-**Pattern**: Describe → New → Implement → Squash
+**Auto-generation**: Without a message, detects commit type from files:
+- Test files → `test:`
+- Documentation → `docs:`
+- Bug fixes → `fix:`
+- Multiple files → `feat:`
 
-Perfect for focused development and AI-assisted coding:
-
+**Usage:**
 ```bash
-jj describe -m "feat: implement user auth"  # 1. Describe intent
-jj new                                      # 2. Create workspace
-# Make your changes...                     # 3. Implement
-jj squash                                   # 4. Complete work
+/jj:commit                         # Auto-generate message
+/jj:commit "feat: add user auth"   # Custom message
 ```
 
-**Why it's ideal for Claude Code:**
-- Maps to task-oriented AI development
-- Creates focused, reviewable commits
-- Simple linear progression
-- Safe by default (everything undoable)
+**What it does**: `jj describe -m "msg" && jj new` - Commits current work and creates fresh working copy
 
-### The Edit Workflow 🔧 **ADVANCED**
+### `/jj:squash [revision]` - Merge commits
+Combine commits in your stack.
 
-**Pattern**: Dynamic navigation and insertion between changes
-
-Best for complex features requiring multiple related commits:
-
+**Usage:**
 ```bash
-jj new -m "feat: start feature"           # Start work
-jj new -B @ -m "feat: add prerequisite"   # Insert dependency
-jj edit <change-id>                       # Navigate to any change
-jj next --edit                            # Move through sequence
+/jj:squash           # Merge current @ into parent
+/jj:squash abc123    # Merge specific revision
 ```
 
-**When to use:**
-- Complex features needing multiple commits
-- When you discover prerequisites mid-development
-- Building layered functionality
+### `/jj:split <pattern>` - Split by pattern
+Separate mixed commits using smart patterns.
 
-## Complete Command Set
+**Common patterns:**
+- `test` / `tests` - Test files
+- `docs` / `doc` - Documentation
+- `config` - Configuration files
+- `*.md` - Markdown files
+- `*.test.ts` - TypeScript tests
 
-### Workflow Commands
-- **`@squash-workflow`** - Complete guided squash workflow with intelligent state detection
-- **`@edit-workflow`** - Advanced multi-commit workflow for complex features
-- **`@new`** - Start new work (with workflow recommendations)
-- **`@status`** - Enhanced status with workflow context and next-action suggestions
-
-### Core Operations
-- **`@squash`** - Complete current work (final step of squash workflow)
-- **`@describe`** - Write commit messages (emphasizes describing intent first)
-- **`@split`** - Split mixed changes into focused commits
-- **`@navigate`** - Move between and edit changes in history
-- **`@abandon`** - Safely discard unwanted changes
-- **`@undo`** - Safety net (everything is undoable)
-- **`@rebase`** - Reorganize commits (conflicts don't block)
-
-### Key Features
-
-✨ **Intelligent guidance**: Commands analyze your current state and suggest next actions
-🧠 **Tutorial-based**: Built from official jujutsu tutorials and best practices
-🛡️ **Safety-first**: Emphasizes jj's "everything is undoable" philosophy
-🎯 **Workflow-aware**: Commands understand where you are in the squash/edit workflows
-
-## Complete Workflow Examples
-
-### Squash Workflow (Recommended)
-
-**Traditional approach:**
+**Usage:**
 ```bash
-@describe "feat: implement user authentication"    # 1. Describe intent
-@new                                              # 2. Create workspace
-# Implement your changes...                      # 3. Build what you described
-@squash                                           # 4. Complete work
+/jj:split test        # Split tests from implementation
+/jj:split docs        # Split documentation
+/jj:split "*.test.*"  # Split by glob pattern
 ```
 
-**Guided approach:**
+**How it works**: Moves matching files back to parent commit, effectively splitting them out
+
+### `/jj:cleanup` - Remove empty workspaces
+Maintenance command to remove stale workspaces.
+
 ```bash
-@squash-workflow "feat: implement user authentication"  # All-in-one guided workflow
-# Follow the step-by-step guidance provided
+/jj:cleanup   # Removes empty workspaces, keeps active ones
 ```
 
-**Auto-guidance:**
+## Autonomous Workflow
+
+### Phase 1: Implementation (Make the mess)
 ```bash
-@squash-workflow auto    # Analyzes current state and suggests next step
-@status                  # Enhanced status with workflow recommendations
+# Claude works and commits frequently
+/jj:commit "wip: add authentication"
+/jj:commit "add input validation"
+/jj:commit "fix edge case"
+/jj:commit "add tests"
+
+# Result: Stack of 4 commits
 ```
 
-### Edit Workflow (Advanced)
-
-**For complex multi-commit features:**
+### Phase 2: Curation (Clean it up)
 ```bash
-@edit-workflow start                    # Begin complex feature
-@edit-workflow insert                   # Add prerequisite changes
-@edit-workflow navigate                 # Move between changes
+# Claude analyzes and curates autonomously
+/jj:split test               # Separate tests
+/jj:squash                   # Merge fixup commits
+
+# Result: 2 clean commits (implementation + tests)
 ```
 
-### Recovery and Safety
+### Phase 3: Session End (Stop hook shows state)
+```
+📦 Workspace: claude-1234
 
-**Everything is undoable:**
-```bash
-@undo                          # Undo last operation
-@undo <operation-id>           # Restore to specific point
-@status                        # Get current state and recommendations
+**Commit stack:**
+abc: feat: authentication implementation
+def: test: authentication tests
+
+💡 **Curation tips:**
+- `/jj:commit [msg]` - Stack another commit
+- `/jj:squash [rev]` - Merge commits
+- `/jj:split <pattern>` - Split by pattern
+- `/jj:cleanup` - Remove empty workspaces
 ```
 
-## Philosophy and Best Practices
+## Multi-Session Workflow
 
-### Jujutsu's Core Principles
+JJ workspaces enable **truly parallel Claude Code sessions**:
 
-🛡️ **Everything is undoable**: No operation is ever destructive
-🔄 **Automatic rebasing**: Descendants follow when you edit parents
-🚀 **Conflicts don't block**: Operations always succeed, conflicts stored safely
-🎯 **Describe intent first**: Plan what you'll build before building it
-📝 **Focused commits**: Each commit tells one clear story
-
-### For AI-Assisted Development
-
-1. **Start with intent**: Use `@describe` or `@squash-workflow` to clarify goals
-2. **Let Claude implement**: AI excels at focused, described tasks
-3. **Use safety freely**: `@undo` any mistakes immediately
-4. **Split when mixed**: Separate concerns for cleaner history
-5. **Complete workflows**: Follow through to polished commits
-
-### Common Patterns
-
-**Quick fixes:**
+**Window 1: Feature development**
 ```bash
-@squash-workflow "fix: resolve login timeout"  # Describe → implement → squash
+# Auto-creates workspace: claude-1234
+/jj:commit "feat: add login UI"
+/jj:commit "feat: add validation"
 ```
 
-**Feature development:**
+**Window 2: Bug fix (parallel)**
 ```bash
-@squash-workflow "feat: add user dashboard"    # For focused features
-@edit-workflow start                           # For complex multi-commit work
+# Auto-creates workspace: claude-1235
+/jj:commit "fix: handle timeout"
 ```
 
-**Mixed changes:**
+**Later: Merge to main**
 ```bash
-@split              # Separate concerns
-@describe "fix: ..." # Describe each part
-@navigate next       # Move to next change
-@describe "feat: ..."
+# From any workspace
+jj squash -m "Complete feature"  # Manual merge to parent
 ```
 
-**Recovery:**
+## Automatic Behavior (Hooks)
+
+**On session start** (UserPromptSubmit):
+- Auto-creates isolated workspace if not in one
+- Each session gets `.jj-workspaces/claude-<timestamp>/`
+
+**On file edits** (PostToolUse):
+- Auto-updates commit description with changed files
+- Format: `WIP: file1.js, file2.py, ...`
+
+**On session end** (Stop):
+- Shows commit stack
+- Displays curation tips
+
+## Key Principles
+
+**Everything is undoable**
+- Use `jj op log` to see all operations
+- Use `jj undo` to reverse any operation
+
+**No staging area**
+- Changes are always in commits
+- Move changes between commits with squash/split
+
+**Stacked commits**
+- Each `/jj:commit` creates a new commit on top
+- Build a stack of focused commits
+- Curate the stack before merging
+
+**Pattern-based splitting**
+- No interactive mode needed
+- Claude can autonomously recognize patterns
+- Smart defaults for common cases
+
+## Advanced Manual Operations
+
+For complex scenarios, use raw `jj` commands:
+
 ```bash
-@undo               # Fix immediate mistakes
-@status             # Get guidance on current state
+jj log                    # Browse commit history
+jj diff                   # See current changes
+jj undo                   # Undo last operation
+jj rebase -d target       # Rebase stack
+jj abandon                # Discard bad commits
+jj workspace list         # See all workspaces
 ```
 
-## Integration Tips
+## Philosophy
 
-### With Development Tools
-- Run tests before `@squash` to ensure quality
-- Use `@split` to separate implementation from tests when reviewing
-- Leverage `@status` for project state awareness
-- Use `@undo` freely during experimentation
+**Autonomous Curation** - Claude should be able to:
+1. Make commits while implementing (messy is OK)
+2. Recognize when commits are mixed
+3. Split commits by logical concerns
+4. Merge WIP/fixup commits
+5. End with clean, focused commit history
 
-### With Claude Code
-- Commands provide contextual guidance based on current state
-- Intelligent workflows adapt to where you are in the process
-- Safety-first design encourages experimentation
-- Tutorial-based approach teaches jj philosophy alongside commands
+**Pattern Recognition** - Instead of explicit file lists:
+- "These files are tests" → `/jj:split test`
+- "These are docs" → `/jj:split docs`
+- "These are configs" → `/jj:split config`
 
-## Why These Workflows Matter
-
-**For AI Development:**
-- Clear intent → better AI understanding
-- Focused commits → easier code review
-- Safety nets → confident experimentation
-- Workflow guidance → consistent patterns
-
-**For Code Quality:**
-- Describe-first approach creates intentional commits
-- Split functionality keeps changes focused
-- Automatic rebasing maintains clean history
-- Everything undoable encourages iteration
+**Workspace Isolation** - Each Claude session works independently:
+- No conflicts between parallel sessions
+- Shared history, separate working copies
+- Automatic workspace creation via hooks
 
 ---
 
-*These commands implement the official jujutsu tutorial workflows, optimized for AI-assisted development with Claude Code.*
+*Built on JJ's workspace feature for autonomous commit curation with Claude Code.*

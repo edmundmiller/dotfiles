@@ -22,64 +22,84 @@ It can just be run with `uv run`
 
 ## Jujutsu (JJ) Version Control
 
-This project uses jujutsu (jj), a Git-compatible VCS with a more intuitive model. Think in terms of **moving changes between commits** rather than staging/unstaging.
+This project uses jujutsu (jj), a Git-compatible VCS. Claude Code is configured with **autonomous commit stacking and curation**.
 
-### Core Workflows
+### Autonomous Workflow
 
-**Squash Workflow** ⭐ **RECOMMENDED** (Describe → New → Implement → Squash):
-1. `jj describe -m "what you're doing"` - Describe current work
-2. `jj new` - Create empty change for new work
-3. Make changes
-4. `jj squash` - Move changes into parent commit
+**Phase 1: Implementation** - Make commits as you work:
+```bash
+/jj:commit "feat: add login UI"      # Stack commits
+/jj:commit "add validation logic"    # Keep stacking
+/jj:commit "add tests"               # Auto-generated or custom messages
+```
 
-**Edit Workflow** 🔧 **ADVANCED** (Edit any commit directly):
-- `jj edit <change-id>` - Edit any previous commit
-- Changes automatically rebase
-- No checkout dance needed
+**Phase 2: Curation** - Clean up your commits:
+```bash
+/jj:split test        # Separate tests from implementation
+/jj:squash            # Merge WIP/fixup commits
+```
 
-### Essential Commands
+**Phase 3: Session End** - Stop hook shows your stack:
+```
+📦 Workspace: claude-1234
+**Commit stack:**
+abc: feat: authentication implementation
+def: test: authentication tests
+```
 
-- `jj status` - Show current state
-- `jj log` - Browse commit history
-- `jj diff` - See current changes
-- `jj new` - Start new work
-- `jj describe -m "msg"` - Write commit message
-- `jj squash` - Complete work (move to parent)
-- `jj split` - Split mixed changes
-- `jj undo` - Undo last operation
-- `jj op log` - View operation history
-- `jj op restore <id>` - Time-travel to any point
+### Commands (4 total)
+
+**`/jj:commit [message]`** - Stack a commit
+- Auto-generates message from file patterns (test/docs/fix/feat)
+- Creates new commit on top of stack
+- Usage: `/jj:commit` or `/jj:commit "feat: add auth"`
+
+**`/jj:squash [revision]`** - Merge commits
+- Default: merges current @ into parent
+- With revision: merges specific commit
+- Usage: `/jj:squash` or `/jj:squash abc123`
+
+**`/jj:split <pattern>`** - Split by pattern
+- Smart patterns: `test`, `docs`, `config`, `*.md`, `*.test.ts`
+- Moves matching files to separate commit
+- Usage: `/jj:split test` or `/jj:split docs`
+
+**`/jj:cleanup`** - Remove empty workspaces
+- Maintenance command for workspace cleanup
+
+### Automatic Behavior
+
+**On session start:**
+- Auto-creates isolated workspace in `.jj-workspaces/claude-<timestamp>/`
+- Enables parallel Claude sessions without conflicts
+
+**On file edits:**
+- Auto-updates commit description: `WIP: file1.js, file2.py, ...`
+
+**On session end:**
+- Shows commit stack with curation tips
 
 ### Key Principles
 
-- **Everything is undoable** - Use `jj op log` and `jj undo`/`jj op restore`
-- **No staging area** - Changes are always in commits, just move them around
-- **Automatic rebasing** - Edit any commit, descendants follow automatically
-- **Conflicts don't block** - Conflicts stored in commits, not working directory
+- **Stack commits** - Each `/jj:commit` creates new commit on top
+- **Pattern-based split** - Use descriptions, not file lists
+- **Autonomous curation** - Recognize and fix messy commits
+- **Everything undoable** - Use `jj undo` for any mistakes
+- **Workspace isolation** - Parallel sessions work independently
 
-### Claude Commands (Tutorial-Based)
+### Manual JJ Commands
 
-**Workflow Commands:**
-- `@squash-workflow` - Complete guided squash workflow with intelligent state detection
-- `@edit-workflow` - Advanced multi-commit workflow for complex features
-- `@new` - Start new work with workflow recommendations
-- `@status` - Enhanced status with workflow context and next-action suggestions
-
-**Core Operations:**
-- `@squash` - Complete current work (final step of squash workflow)
-- `@describe` - Write commit messages (emphasizes describing intent first)
-- `@split` - Split mixed changes into focused commits
-- `@navigate` - Move between and edit changes in history
-- `@abandon` - Safely discard unwanted changes
-- `@undo` - Safety net (everything is undoable)
-- `@rebase` - Reorganize commits (conflicts don't block)
-
-**Quick Examples:**
+For advanced operations:
 ```bash
-@squash-workflow "feat: implement user auth"  # Guided workflow
-@squash-workflow auto                         # Auto-detect next step
-@status                                       # Get workflow recommendations
-@undo                                         # Fix any mistakes
+jj log           # Browse commit history
+jj diff          # See current changes
+jj undo          # Undo last operation
+jj rebase        # Reorganize commits
+jj abandon       # Discard bad commits
 ```
 
-When working with jj, use `jj status` and `jj log` frequently to understand state.
+**When to curate:**
+- Multiple WIP commits for same feature → `/jj:squash`
+- Tests mixed with implementation → `/jj:split test`
+- Docs mixed with code → `/jj:split docs`
+- End of session → Clean up the stack
