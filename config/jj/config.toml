@@ -2,10 +2,11 @@
 name = "Edmund Miller"
 email = "git@edmundmiller.dev"
 
-# Context-specific email configs are in ~/.config/jj/conf.d/
+# Additional configs are in conf.d/
 # - seqera.toml: Work repos (~/src/seqera, ~/src/nextflow)
 # - nfcore.toml: nf-core repos (~/src/nf-core)
 # - fg.toml: UTD academic repos (~/src/fg)
+# - fix.toml: Code formatting tools (jj fix)
 
 [signing]
 behavior = "own"
@@ -58,7 +59,7 @@ tool = "delta"
 pager = "delta"
 
 [ui]
-default-command = "status"
+# default-command = "status"
 diff-formatter = ":git" # required by `delta`
 pager=["delta", "--pager", "less -FRX"] # Keeps output from the terminal after closing the pager
 # diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
@@ -73,6 +74,7 @@ relative-timestamps = true
 paginate = "auto"
 # Automatically abandon empty commits on certain operations
 allow-filesets = true
+default-command = "log"
 
 [ui.movement]
 # Make edit mode default for prev/next commands
@@ -109,48 +111,3 @@ max-new-file-size = "10MB"
 [templates]
 log_node = "credits_roll_node"
 log = "credits_roll(0, 'none()')"
-
-# Fix tools for automatic code formatting
-# Run with: jj fix
-# Run on specific revisions: jj fix -r 'main..@'
-
-[fix.tools.ruff]
-command = ["ruff", "format", "--stdin-filename=$path", "-"]
-patterns = ["glob:'**/*.py'"]
-
-[fix.tools.ruff-check]
-command = ["ruff", "check", "--fix", "--stdin-filename=$path", "-"]
-patterns = ["glob:'**/*.py'"]
-
-[fix.tools.snakefmt]
-command = ["snakefmt", "-"]
-patterns = ["glob:'**/Snakefile'", "glob:'**/*.smk'"]
-
-[fix.tools.nextflow-lint]
-command = ["nextflow", "lint", "-"]
-patterns = ["glob:'**/*.nf'", "glob:'**/nextflow.config'"]
-
-[fix.tools.prettier]
-command = ["prettier", "--stdin-filepath=$path"]
-patterns = [
-    "glob:'**/*.md'",
-    "glob:'**/*.json'",
-    "glob:'**/*.yaml'",
-    "glob:'**/*.yml'",
-]
-
-[fix.tools.biome]
-command = ["biome", "format", "--stdin-file-path=$path"]
-patterns = [
-    "glob:'**/*.js'",
-    "glob:'**/*.jsx'",
-    "glob:'**/*.ts'",
-    "glob:'**/*.tsx'",
-]
-
-[fix.tools.intellij-format]
-# IntelliJ IDEA command-line formatter for Groovy
-# Adjust path to your IDE installation (idea, webstorm, etc.)
-# Note: This requires the file to be written to disk, not stdin
-command = ["idea", "format", "$path"]
-patterns = ["glob:'**/*.groovy'", "glob:'**/*.gradle'"]
