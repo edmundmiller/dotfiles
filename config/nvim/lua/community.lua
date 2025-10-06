@@ -33,4 +33,26 @@ return {
 
   -- Colorscheme
   { import = "astrocommunity.colorscheme.catppuccin" },
+
+  -- Additional language packs
+  { import = "astrocommunity.pack.python" },
+  { import = "astrocommunity.pack.julia" },
+
+  -- Productivity & Workflow
+  { import = "astrocommunity.editing-support.todo-comments-nvim" },
+  { import = "astrocommunity.motion.flash-nvim" },
+  { import = "astrocommunity.project.project-nvim" },
+
+  -- Development tools
+  { import = "astrocommunity.editing-support.refactoring-nvim" },
+  { import = "astrocommunity.editing-support.yanky-nvim" },
+  { import = "astrocommunity.search.grug-far-nvim" },
+  { import = "astrocommunity.markdown-and-latex.render-markdown-nvim" },
+
+  -- Optional enhancements
+  { import = "astrocommunity.editing-support.zen-mode-nvim" },
+  { import = "astrocommunity.lsp.inc-rename-nvim" },
+
+  -- Icon system
+  { import = "astrocommunity.icon.mini-icons" },
 }
