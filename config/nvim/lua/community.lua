@@ -24,4 +24,14 @@ return {
 
   -- Note taking
   { import = "astrocommunity.note-taking.obsidian-nvim" },
+  { import = "astrocommunity.note-taking.neorg" }, -- Org-mode alternative
+
+  -- Testing
+  { import = "astrocommunity.test.neotest" },
+
+  -- Terminal integration
+  { import = "astrocommunity.terminal-integration.toggleterm-manager-nvim" },
+
+  -- Colorscheme
+  { import = "astrocommunity.colorscheme.catppuccin" },
 }
