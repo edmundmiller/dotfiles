@@ -24,7 +24,6 @@ return {
 
   -- Note taking
   { import = "astrocommunity.note-taking.obsidian-nvim" },
-  { import = "astrocommunity.note-taking.neorg" }, -- Org-mode alternative
 
   -- Testing
   { import = "astrocommunity.test.neotest" },
