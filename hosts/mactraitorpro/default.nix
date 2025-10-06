@@ -55,7 +55,9 @@
     # Add duti for managing file associations
     environment.systemPackages = with pkgs; [
       duti
-      my.jj-spr
+      (inputs.jj-spr.packages.${pkgs.system}.default.overrideAttrs (old: {
+        buildInputs = (old.buildInputs or []) ++ [ zlib ];
+      }))
     ];
     
     # Create a duti configuration file and apply it on activation

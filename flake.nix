@@ -44,6 +44,7 @@
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    jj-spr.url = "github:LucioFranco/jj-spr";
   };
 
   outputs =
