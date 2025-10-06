@@ -4,6 +4,130 @@
 return {
   -- == AstroCommunity Plugin Customizations ==
 
+  -- Catppuccin colorscheme - Configure for light theme (latte)
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000,
+    opts = {
+      flavour = "latte", -- latte, frappe, macchiato, mocha
+      background = {
+        light = "latte",
+        dark = "latte", -- Use latte even in dark mode
+      },
+      transparent_background = false,
+      show_end_of_buffer = false,
+      term_colors = true,
+      dim_inactive = {
+        enabled = false,
+        shade = "dark",
+        percentage = 0.15,
+      },
+      styles = {
+        comments = { "italic" },
+        conditionals = { "italic" },
+        loops = {},
+        functions = {},
+        keywords = {},
+        strings = {},
+        variables = {},
+        numbers = {},
+        booleans = {},
+        properties = {},
+        types = {},
+        operators = {},
+      },
+      integrations = {
+        blink_cmp = true,
+        gitsigns = true,
+        nvimtree = true,
+        treesitter = true,
+        notify = true,
+        mini = {
+          enabled = true,
+          indentscope_color = "",
+        },
+        telescope = {
+          enabled = true,
+        },
+        which_key = true,
+        dashboard = true,
+        neogit = true,
+        vim_sneak = false,
+        fern = false,
+        barbar = false,
+        markdown = true,
+        mason = true,
+        neotest = true,
+        noice = true,
+        semantic_tokens = true,
+      },
+    },
+  },
+
+  -- Neotest configuration
+  {
+    "nvim-neotest/neotest",
+    optional = true,
+    opts = function(_, opts)
+      -- Configure neotest settings for better integration
+      opts.discovery = vim.tbl_extend("force", opts.discovery or {}, {
+        enabled = true,
+        concurrent = 1, -- Can be resource intensive
+      })
+
+      opts.running = vim.tbl_extend("force", opts.running or {}, {
+        concurrent = true,
+      })
+
+      opts.summary = vim.tbl_extend("force", opts.summary or {}, {
+        enabled = true,
+        animated = true,
+        follow = true,
+        expand_errors = true,
+      })
+
+      opts.output = vim.tbl_extend("force", opts.output or {}, {
+        enabled = true,
+        open_on_run = "short",
+      })
+
+      opts.output_panel = vim.tbl_extend("force", opts.output_panel or {}, {
+        enabled = true,
+        open = "botright split | resize 15",
+      })
+
+      opts.quickfix = vim.tbl_extend("force", opts.quickfix or {}, {
+        enabled = true,
+        open = false,
+      })
+
+      opts.status = vim.tbl_extend("force", opts.status or {}, {
+        enabled = true,
+        virtual_text = true,
+        signs = true,
+      })
+
+      return opts
+    end,
+    keys = {
+      -- Doom Emacs-style test keybindings
+      { "<leader>T", desc = "Test" },
+      { "<leader>Tt", function() require("neotest").run.run() end, desc = "Run nearest test" },
+      { "<leader>Tf", function() require("neotest").run.run(vim.fn.expand("%")) end, desc = "Run file tests" },
+      { "<leader>Ta", function() require("neotest").run.run(vim.fn.getcwd()) end, desc = "Run all tests" },
+      { "<leader>Ts", function() require("neotest").summary.toggle() end, desc = "Toggle test summary" },
+      { "<leader>To", function() require("neotest").output.open({ enter = true, auto_close = true }) end, desc = "Show test output" },
+      { "<leader>TO", function() require("neotest").output_panel.toggle() end, desc = "Toggle output panel" },
+      { "<leader>TS", function() require("neotest").run.stop() end, desc = "Stop test" },
+      { "<leader>Tw", function() require("neotest").watch.toggle(vim.fn.expand("%")) end, desc = "Watch file" },
+
+      -- Navigation
+      { "]t", function() require("neotest").jump.next({ status = "failed" }) end, desc = "Next failed test" },
+      { "[t", function() require("neotest").jump.prev({ status = "failed" }) end, desc = "Previous failed test" },
+    },
+  },
+
   -- Obsidian.nvim - Configure vault location
   {
     "obsidian.nvim",
