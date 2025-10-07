@@ -27,23 +27,15 @@ return {
         -- },
       })
     end,
-    cmd = {
-      "J",           -- Run jj commands
-      "JjStatus",    -- Show status
-      "JjLog",       -- Show log
-      "JjDescribe",  -- Describe change
-      "JjNew",       -- Create new change
-      "JjEdit",      -- Edit change
-      "JjDiff",      -- Show diff
-    },
+    cmd = "J", -- Only the main :J command exists
     keys = {
       { "<leader>j", desc = "Jujutsu (jj)" },
-      { "<leader>js", "<cmd>JjStatus<cr>", desc = "JJ status picker" },
-      { "<leader>jl", "<cmd>JjLog<cr>", desc = "JJ log viewer" },
-      { "<leader>jd", "<cmd>JjDiff<cr>", desc = "JJ diff viewer" },
-      { "<leader>jD", "<cmd>JjDescribe<cr>", desc = "JJ describe (edit message)" },
-      { "<leader>jc", "<cmd>JjNew<cr>", desc = "JJ create new change" },
-      { "<leader>je", "<cmd>JjEdit<cr>", desc = "JJ edit change" },
+      { "<leader>js", "<cmd>J status<cr>", desc = "JJ status (press Enter to open, X to restore)" },
+      { "<leader>jl", "<cmd>J log<cr>", desc = "JJ log (press 'd' for diff, Enter to edit)" },
+      { "<leader>jd", "<cmd>J diff<cr>", desc = "JJ diff (@-..@)" },
+      { "<leader>jD", "<cmd>J describe<cr>", desc = "JJ describe (edit message)" },
+      { "<leader>jn", "<cmd>J new<cr>", desc = "JJ new change" },
+      { "<leader>je", "<cmd>J edit<cr>", desc = "JJ edit change" },
       { "<leader>j:", "<cmd>J ", desc = "JJ command" },
     },
   },
