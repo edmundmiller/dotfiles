@@ -47,69 +47,34 @@ if [ -n "$ARGUMENTS" ]; then
   exit 0
 fi
 
-## Context for Claude
+## Context
 
-Below is the current state of your jujutsu repository. Analyze the changes and create an appropriate commit message.
-
-### Current Status
-!`jj status`
-
-### Current Changes
-!`jj diff -r @`
-
-### Recent Commits (for context and style)
-!`jj log -r 'ancestors(@, 5)' -T 'concat(change_id.short(), ": ", description)' --no-graph`
-
-### Current Commit State
-!`jj log -r @ -T 'concat("Change ID: ", change_id.short(), "\nDescription: ", if(description, description, "(none)"), "\nFiles: ", files.map(|f| f.path()).join(", "))'  --no-graph`
-
----
+- Current status: !`jj status`
+- Current changes: !`jj diff -r @`
+- Recent commits: !`jj log -r 'ancestors(@, 5)' -T 'concat(change_id.short(), ": ", description)' --no-graph`
+- Current state: !`jj log -r @ --no-graph -T 'if(description, "has description", "needs description")'`
 
 ## Your Task
 
-Based on the above changes, you need to create a commit in this jujutsu repository.
+Based on the above changes, create a commit in this jujutsu repository.
 
-**Workflow Decision:**
-- Current commit state: !`jj log -r @ --no-graph -T 'if(description, "has description", "needs description")'`
-- If current commit already has a description: Use `jj new -m "message"` to create a new commit on top
-- If current commit needs description: Use `jj describe -m "message"` to describe the current commit
+**Workflow:**
+- If current commit has description → use `jj new -m "message"` to create new commit on top
+- If current commit needs description → use `jj describe -m "message"` to describe current commit
 
-**Commit Message Guidelines:**
+**Conventional Commit Types:**
+- `feat(scope):` new features
+- `fix(scope):` bug fixes
+- `docs(scope):` documentation
+- `refactor(scope):` code restructuring
+- `test(scope):` tests
+- `chore(scope):` maintenance
 
-Analyze the changes carefully and determine the appropriate conventional commit type:
-- `feat:` for new features or capabilities
-- `fix:` for bug fixes
-- `docs:` for documentation changes
-- `style:` for formatting changes (code style, not CSS)
-- `refactor:` for code restructuring without behavior change
-- `test:` for test additions/changes
-- `chore:` for maintenance tasks, dependency updates, etc.
-- `perf:` for performance improvements
+**Guidelines:**
+- Be specific about WHAT changed and WHY (not just which files)
+- Keep first line under 72 characters
+- Use heredoc for multi-line: `jj describe -m "$(cat <<'EOF' ... EOF)"`
+- Match style of recent commits
+- Always use `-m` flag (never open editor)
 
-For scoped commits, use the format: `type(scope): message`
-- Example: `feat(nvim): add sidekick plugin configuration`
-- Example: `fix(zsh): correct alias definition for git status`
-
-**Message Quality:**
-- Be specific about WHAT changed and WHY (not just WHICH files)
-- Focus on the semantic meaning, not the mechanical changes
-- Keep the first line under 72 characters
-- Add bullet points in the body if multiple distinct changes
-- Look at recent commits for style consistency
-
-**Important:**
-- Use the `-m` flag with a heredoc for multi-line messages:
-  ```bash
-  jj describe -m "$(cat <<'EOF'
-  fix(nvim): Change sidekick toggle to Ctrl+Space
-
-  - Avoid conflict with existing Ctrl+K keybinding
-  - Provides more ergonomic access to sidekick panel
-  EOF
-  )"
-  ```
-- For single-line messages, use: `jj describe -m "type(scope): message"`
-- Never run `jj describe` or `jj new` without the `-m` flag
-
-After creating the commit, show the result with:
-!`jj log -r @ -T 'concat(change_id.short(), ": ", description)' --no-graph`
+Show result: !`jj log -r @ -T 'concat(change_id.short(), ": ", description)' --no-graph`
