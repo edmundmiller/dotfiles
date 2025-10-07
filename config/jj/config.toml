@@ -54,6 +54,15 @@ spr = ["util", "exec", "--", "jj-spr"]  # Stacked pull requests with jj-spr
 [diff]
 tool = "delta"
 
+# Merge conflict resolution tool
+[merge-tools.diffconflicts]
+program = "nvim"
+merge-args = [
+    "-c", "let g:jj_diffconflicts_marker_length=$marker_length",
+    "-c", "JJDiffConflicts!", "$output", "$base", "$left", "$right",
+]
+merge-tool-edits-conflict-markers = true
+
 # These options allow for `jj diff` and `jj show` to clear the output from the terminal after closing the pager.
 [[--scope]]
 --when.commands = ["diff", "show"]
