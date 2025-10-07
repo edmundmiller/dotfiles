@@ -1,6 +1,7 @@
 ---
 allowed-tools: Bash(git worktree*), mcp__git__git_branch, mcp__git__git_status, mcp__git__git_log, Bash(ls*), Bash(pwd)
 description: Create and manage git worktrees for parallel development
+model: sonnet
 ---
 
 ## Context

@@ -2,7 +2,7 @@
 allowed-tools: Bash(jj log:*), Bash(jj files:*), Bash(jj squash:*), Bash(jj describe:*), Bash(jj new:*)
 argument-hint: <pattern>
 description: Split commit by pattern (tests, docs, config, etc)
-model: claude-sonnet-4-20250514
+model: sonnet
 ---
 
 !# Split commit using pattern matching
