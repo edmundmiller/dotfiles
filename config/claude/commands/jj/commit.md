@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(jj log:*), Bash(jj diff:*), Bash(jj describe:*), Bash(jj new:*), Bash(jj workspace:*), Bash(jj status:*)
+allowed-tools: Bash(jj log:*), Bash(jj diff:*), Bash(jj describe:*), Bash(jj new:*), Bash(jj status:*)
 argument-hint: [message]
 description: Stack a commit with intelligent message generation
 model: claude-sonnet-4-20250514
