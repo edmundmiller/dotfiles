@@ -12,13 +12,9 @@ return {
       { "<leader>td", "<cmd>DoneTxt<cr>", desc = "Toggle done.txt" },
     },
     opts = {
-      todotxt = vim.fn.expand("~/Documents/Todo/todo.txt"),
-      donetxt = vim.fn.expand("~/Documents/Todo/done.txt"),
-      create_commands = true,
+      todo_file = vim.fn.expand("~/Documents/Todo/todo.txt"),
     },
-    config = function(_, opts)
-      require("todotxt").setup(opts)
-
+    init = function()
       -- Additional keymappings for todotxt buffers
       -- These will only work when in a todotxt buffer
       vim.api.nvim_create_autocmd("FileType", {

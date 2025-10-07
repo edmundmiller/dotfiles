@@ -123,4 +123,46 @@ return {
       })
     end,
   },
+
+  -- Hunk.nvim - Interactive diff editor for jj
+  {
+    "julienvincent/hunk.nvim",
+    dependencies = {
+      "MunifTanjim/nui.nvim",
+      "nvim-tree/nvim-web-devicons",
+    },
+    cmd = "DiffEditor",
+    keys = {
+      { "<leader>jh", "<cmd>DiffEditor<cr>", desc = "JJ hunk diff editor" },
+    },
+    opts = {
+      -- Key mappings
+      keys = {
+        global = {
+          quit = { "q", "<Esc>" },
+          accept = { "<leader><CR>" },
+          focus_tree = { "<leader>e" },
+        },
+        tree = {
+          expand_node = { "l", "<Right>" },
+          collapse_node = { "h", "<Left>" },
+          open_file = { "<CR>" },
+        },
+        diff = {
+          toggle_line = { "a" },      -- Toggle accept line
+          prev_hunk = { "[h" },        -- Previous hunk
+          next_hunk = { "]h" },        -- Next hunk
+          reset_hunk = { "r" },        -- Reset hunk
+        },
+      },
+      -- UI configuration
+      ui = {
+        layout = "vertical",
+        tree = {
+          mode = "nested",
+          width = 35,
+        },
+      },
+    },
+  },
 }
