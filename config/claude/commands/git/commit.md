@@ -1,6 +1,7 @@
 ---
 allowed-tools: mcp__git__git_status, mcp__git__git_diff_unstaged, mcp__git__git_diff_staged, mcp__git__git_diff, mcp__git__git_add, mcp__git__git_commit, mcp__git__git_log, mcp__git__git_branch
 description: Create a git commit using MCP git server
+model: sonnet
 ---
 
 ## Context
