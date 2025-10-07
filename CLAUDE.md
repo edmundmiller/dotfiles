@@ -10,7 +10,9 @@ This is a Nix-based dotfiles repository using Flakes for managing system configu
 
 ## Critical File Editing Rules
 
-**ALWAYS write over the source file you're editing. Don't make "_enhanced", "_fixed", "_updated", or "_v2" versions.** We use Git for version control - that's why everything is tracked. When in doubt, commit first if you want to preserve the original, but always overwrite the actual file.
+- We use jj for version control
+- **ALWAYS write over the source file you're editing. Don't make "_enhanced", "_fixed", "_updated", or "_v2" versions.** We use version control - that's why everything is tracked. When in doubt, commit first if you want to preserve the original, but always overwrite the actual file.
+- Don't make PRs in this repo. Just use the main bookmark.
 
 ## Essential Commands
 
