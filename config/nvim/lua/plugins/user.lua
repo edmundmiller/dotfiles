@@ -108,6 +108,10 @@ return {
         signs = true,
       })
 
+      -- Add nf-test adapter for Nextflow testing
+      opts.adapters = opts.adapters or {}
+      table.insert(opts.adapters, require("neotest-nftest"))
+
       return opts
     end,
     keys = {
