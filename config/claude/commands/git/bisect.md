@@ -1,6 +1,7 @@
 ---
 allowed-tools: Bash(git bisect*), mcp__git__git_log, mcp__git__git_show, mcp__git__git_diff, mcp__git__git_status, mcp__git__git_checkout
 description: Help with git bisect to find problematic commits
+model: sonnet
 ---
 
 ## Context

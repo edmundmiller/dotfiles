@@ -2,7 +2,7 @@
 allowed-tools: Bash(jj log:*), Bash(jj squash:*), Bash(jj workspace:*)
 argument-hint: [revision]
 description: Merge commits in the stack
-model: claude-sonnet-4-20250514
+model: sonnet
 ---
 
 !# Squash (merge) commits

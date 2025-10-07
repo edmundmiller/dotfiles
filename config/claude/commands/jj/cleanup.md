@@ -1,7 +1,7 @@
 ---
 allowed-tools: Bash(jj workspace:*), Bash(jj log:*), Bash(jj abandon:*)
 description: Remove empty or stale workspaces
-model: claude-sonnet-4-20250514
+model: sonnet
 ---
 
 !# Cleanup empty workspaces

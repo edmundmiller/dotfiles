@@ -1,18 +1,31 @@
--- Nextflow language support for AstroNvim
--- Provides treesitter, LSP, formatting, and keybindings for Nextflow development
-
----@type LazySpec
+-- Nextflow language support
+-- Using official tree-sitter-nextflow parser from rewrite branch
 return {
   -- Treesitter configuration for Nextflow
   {
     "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
     opts = function(_, opts)
       -- Add nextflow to ensure_installed
-      opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, { "nextflow" })
+      vim.list_extend(opts.ensure_installed or {}, { "nextflow" })
+      return opts
     end,
-    config = function(plugin, opts)
-      -- Call the default AstroNvim treesitter config
-      require("astronvim.plugins.configs.nvim-treesitter")(plugin, opts)
+    config = function(_, opts)
+      -- Setup treesitter with opts
+      require("nvim-treesitter.configs").setup(opts)
+
+      -- Register custom parser for nextflow from rewrite branch
+      local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+      parser_config.nextflow = {
+        install_info = {
+          url = "https://github.com/nextflow-io/tree-sitter-nextflow",
+          files = { "src/parser.c" },
+          branch = "rewrite",
+          generate_requires_npm = false,
+          requires_generate_from_grammar = false,
+        },
+        filetype = "nextflow",
+      }
 
       -- Register filetype for nextflow
       vim.filetype.add({
@@ -29,21 +42,23 @@ return {
     end,
   },
 
-  -- Mason tool installer for nextflow-language-server
+  -- Mason LSP configuration
   {
-    "WhoIsSethDaniel/mason-tool-installer.nvim",
+    "williamboman/mason.nvim",
     opts = function(_, opts)
-      opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, {
+      opts.ensure_installed = opts.ensure_installed or {}
+      vim.list_extend(opts.ensure_installed, {
         "nextflow-language-server",
       })
+      return opts
     end,
   },
 
   -- LSP configuration for Nextflow
   {
-    "AstroNvim/astrolsp",
+    "neovim/nvim-lspconfig",
     opts = {
-      config = {
+      servers = {
         nextflow_ls = {
           cmd = { vim.fn.expand("~/.local/share/nvim/mason/packages/nextflow-language-server/nextflow-language-server") },
           filetypes = { "nextflow" },
@@ -84,6 +99,25 @@ return {
     },
   },
 
+  -- Formatter support
+  {
+    "stevearc/conform.nvim",
+    optional = true,
+    opts = function(_, opts)
+      opts.formatters_by_ft = opts.formatters_by_ft or {}
+      opts.formatters_by_ft.nextflow = { "nextflow_lint" }
+
+      opts.formatters = opts.formatters or {}
+      opts.formatters.nextflow_lint = {
+        command = "nextflow",
+        args = { "lint", "-format", "-spaces", "4", "$FILENAME" },
+        stdin = false,
+        require_cwd = true,
+      }
+      return opts
+    end,
+  },
+
   -- Enhanced file explorer support
   {
     "nvim-tree/nvim-web-devicons",
@@ -115,29 +149,51 @@ return {
 
   -- Nextflow-specific keybindings
   {
-    "AstroNvim/astrocore",
+    "folke/which-key.nvim",
+    optional = true,
     opts = function(_, opts)
-      -- Create autocmd for Nextflow-specific keybindings
+      -- Set up nextflow keymaps in autocmd for filetype-specific bindings
       vim.api.nvim_create_autocmd("FileType", {
         pattern = "nextflow",
-        callback = function(args)
-          local bufnr = args.buf
-          local maps = require("astrocore").empty_map_table()
-
-          -- Nextflow run commands
-          maps.n["<Leader>nr"] = { desc = "Nextflow run" }
-          maps.n["<Leader>nrr"] = { "<Cmd>!nextflow run %<CR>", desc = "Run current Nextflow script" }
-          maps.n["<Leader>nrl"] = { "<Cmd>!nextflow run % -resume<CR>", desc = "Run with resume" }
-          maps.n["<Leader>nrt"] = { "<Cmd>!nf-test test %<CR>", desc = "Run nf-test on current file" }
-
-          -- Nextflow log commands
-          maps.n["<Leader>nl"] = { desc = "Nextflow log" }
-          maps.n["<Leader>nll"] = { "<Cmd>!nextflow log<CR>", desc = "Show Nextflow log" }
-          maps.n["<Leader>nlc"] = { "<Cmd>!nextflow clean -f<CR>", desc = "Clean work directory" }
-
-          require("astrocore").set_mappings(maps, { buffer = bufnr })
+        callback = function()
+          local wk = require("which-key")
+          wk.add({
+            { "<leader>nr", group = "nextflow run", buffer = true },
+            {
+              "<leader>nrr",
+              "<cmd>!nextflow run %<cr>",
+              desc = "Run current Nextflow script",
+              buffer = true,
+            },
+            {
+              "<leader>nrl",
+              "<cmd>!nextflow run % -resume<cr>",
+              desc = "Run with resume",
+              buffer = true,
+            },
+            {
+              "<leader>nrt",
+              "<cmd>!nf-test test %<cr>",
+              desc = "Run nf-test on current file",
+              buffer = true,
+            },
+            { "<leader>nl", group = "nextflow log", buffer = true },
+            {
+              "<leader>nll",
+              "<cmd>!nextflow log<cr>",
+              desc = "Show Nextflow log",
+              buffer = true,
+            },
+            {
+              "<leader>nlc",
+              "<cmd>!nextflow clean -f<cr>",
+              desc = "Clean work directory",
+              buffer = true,
+            },
+          })
         end,
       })
+      return opts
     end,
   },
 }
