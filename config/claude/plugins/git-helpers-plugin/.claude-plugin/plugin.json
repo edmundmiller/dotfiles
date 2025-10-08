@@ -1,0 +1,8 @@
+{
+  "name": "git-helpers-plugin",
+  "version": "0.1.0",
+  "description": "Advanced Git workflow helpers for worktrees, rebasing, bisecting, and commits",
+  "author": "emiller",
+  "keywords": ["git", "workflow", "worktree", "rebase", "bisect", "version-control"],
+  "license": "MIT"
+}

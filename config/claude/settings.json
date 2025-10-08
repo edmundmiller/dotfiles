@@ -139,17 +139,6 @@
     "deny": []
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if ! jj workspace root 2>/dev/null | grep -q 'claude-'; then session_id=\"${CLAUDE_SESSION_ID:-$(date +%s)}\"; workspace_name=\"claude-$session_id\"; workspace_root=$(jj root 2>/dev/null || echo ''); if [ -n \"$workspace_root\" ]; then mkdir -p \"$workspace_root/.jj-workspaces\"; workspace_dir=\"$workspace_root/.jj-workspaces/$workspace_name\"; jj workspace add \"$workspace_dir\" 2>/dev/null || true; fi; fi"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Edit|MultiEdit",
@@ -157,15 +146,6 @@
           {
             "type": "command",
             "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.js || \"$CLAUDE_TOOL_FILE_PATH\" == *.ts || \"$CLAUDE_TOOL_FILE_PATH\" == *.jsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.tsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.json || \"$CLAUDE_TOOL_FILE_PATH\" == *.css || \"$CLAUDE_TOOL_FILE_PATH\" == *.html ]]; then npx prettier --write \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.py ]]; then black \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.go ]]; then gofmt -w \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.rs ]]; then rustfmt \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.php ]]; then php-cs-fixer fix \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|MultiEdit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if jj workspace root 2>/dev/null | grep -q 'claude-'; then files=$(jj log -r @ -T '{files.map(f => f.path()).join(\", \")}' --no-graph 2>/dev/null | head -c 100); if [ -n \"$files\" ]; then jj describe -m \"WIP: $files\" 2>/dev/null || true; fi; fi"
           }
         ]
       }
@@ -176,7 +156,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if jj workspace root 2>/dev/null | grep -q 'claude-'; then workspace=$(jj workspace root 2>/dev/null | grep -o 'claude-[^/]*' || echo 'unknown'); echo \"\\n---\\n📦 Workspace: $workspace\\n\"; echo \"**Commit stack:**\"; jj log -r '::@' --limit 5 -T '{change_id.short()}: {description}' --no-graph 2>/dev/null; echo \"\"; echo \"💡 **Curation tips:**\"; echo \"- \\`/jj:commit [msg]\\` - Stack another commit\"; echo \"- \\`/jj:squash [rev]\\` - Merge commits\"; echo \"- \\`/jj:split <pattern>\\` - Split by pattern (test, docs, etc)\"; echo \"- \\`/jj:cleanup\\` - Remove empty workspaces\"; else jj log -r ::@ --limit 3 -T '{change_id.short()}: {description}' --no-graph 2>/dev/null || jj show; fi"
+            "command": "jj show"
           }
         ]
       }
