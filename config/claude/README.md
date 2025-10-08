@@ -2,18 +2,60 @@
 
 This directory contains custom slash commands, agents, and configurations for Claude Code to enhance productivity and provide specialized assistance.
 
+## Plugins
+
+Claude Code plugins provide a standardized way to package and distribute commands, agents, and configurations. This repository includes:
+
+### Available Plugins
+
+**[jj-workflow-plugin](plugins/jj-workflow-plugin/)** - Autonomous commit stacking and curation workflow for Jujutsu
+- `/jj:commit` - Stack commits with intelligent message generation
+- `/jj:split` - Split commits by pattern (test, docs, config)
+- `/jj:squash` - Merge commits in the stack
+- `/jj:cleanup` - Remove empty workspaces
+
+**[git-helpers-plugin](plugins/git-helpers-plugin/)** - Advanced Git workflow helpers
+- `/git:commit` - Create commits using MCP git server
+- `/git:worktree` - Manage git worktrees for parallel development
+- `/git:rebase` - Interactive rebasing and history editing
+- `/git:bisect` - Binary search for bug introduction
+
+### Plugin vs Standalone Commands
+
+**Plugins** (in `plugins/`):
+- Proper Claude Code plugin format with manifests
+- Can be extracted to separate repos for sharing
+- Versioned independently
+- Include comprehensive documentation
+
+**Standalone Commands** (in `commands/`):
+- Original command location (kept for backward compatibility)
+- Project-specific commands
+- Commands still under development
+
+Both work identically - use whichever you prefer. Plugins are recommended for mature, reusable commands.
+
 ## Directory Structure
 
 ```
 config/claude/
-├── README.md           # This file
-├── agents/            # Specialized agent configurations
-├── commands/          # Slash commands organized by tool/workflow
-│   ├── docs/         # Documentation workflow commands
-│   ├── git/          # Git operations (worktree, rebase, bisect)
-│   ├── jj/           # Jujutsu version control commands
-│   └── nf/           # Nextflow pipeline commands
-└── slash_commands/    # Task management commands
+├── README.md              # This file
+├── plugins/              # Claude Code plugins
+│   ├── jj-workflow-plugin/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── commands/
+│   │   └── README.md
+│   └── git-helpers-plugin/
+│       ├── .claude-plugin/
+│       │   └── plugin.json
+│       ├── commands/
+│       └── README.md
+├── agents/               # Specialized agent configurations
+├── commands/             # Standalone slash commands (legacy)
+│   ├── git/             # Git operations
+│   └── jj/              # Jujutsu commands
+└── slash_commands/       # Task management commands
 ```
 
 ## Slash Commands
@@ -136,6 +178,51 @@ claude mcp add-json -s user github '{"command":"docker","args":["run","-i","--rm
 2. **Let commands gather context** - Commands auto-collect relevant information
 3. **Chain operations** - Commands work well in sequence (split → describe → squash)
 4. **Leverage undo** - jj's operation log makes everything reversible
+
+## Using Plugins
+
+### Loading Plugins
+
+Plugins in `plugins/` are automatically discovered by Claude Code when placed in:
+1. **This repository**: `config/claude/plugins/` (current location)
+2. **User config**: `~/.claude/plugins/`
+3. **Project-specific**: `.claude/plugins/` in any project
+
+### Sharing Plugins
+
+To share a plugin with the community:
+
+1. **Extract to separate repository:**
+   ```bash
+   # Example: Extract jj-workflow-plugin
+   cd /tmp
+   cp -r ~/.config/dotfiles/config/claude/plugins/jj-workflow-plugin .
+   cd jj-workflow-plugin
+   git init
+   git add .
+   git commit -m "Initial commit"
+   ```
+
+2. **Publish to GitHub:**
+   ```bash
+   gh repo create my-username/jj-workflow-plugin --public
+   git push -u origin main
+   ```
+
+3. **Users install via:**
+   ```bash
+   # Clone to their plugins directory
+   git clone https://github.com/my-username/jj-workflow-plugin ~/.claude/plugins/jj-workflow-plugin
+   ```
+
+### Plugin Development
+
+When developing plugins:
+- Test in `config/claude/plugins/` first (local dotfiles)
+- Use `claude --debug` to verify plugin loading
+- Bump version in `plugin.json` when making changes
+- Document breaking changes in plugin README
+- Consider extracting to separate repo when stable
 
 ## Adding New Commands
 

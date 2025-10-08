@@ -22,30 +22,27 @@ It can just be run with `uv run`
 
 ## Jujutsu (JJ) Version Control
 
-This project uses jujutsu (jj), a Git-compatible VCS. Claude Code is configured with **autonomous commit stacking and curation**.
+This project uses jujutsu (jj), a Git-compatible VCS. Claude Code is configured with **commit stacking and curation** commands.
 
-### Autonomous Workflow
+### Workflow
 
-**Phase 1: Implementation** - Make commits as you work:
+**Stack commits as you work:**
 ```bash
 /jj:commit "feat: add login UI"      # Stack commits
 /jj:commit "add validation logic"    # Keep stacking
 /jj:commit "add tests"               # Auto-generated or custom messages
 ```
 
-**Phase 2: Curation** - Clean up your commits:
+**Curate your commits:**
 ```bash
 /jj:split test        # Separate tests from implementation
 /jj:squash            # Merge WIP/fixup commits
 ```
 
-**Phase 3: Session End** - Stop hook shows your stack:
-```
-📦 Workspace: claude-1234
-**Commit stack:**
-abc: feat: authentication implementation
-def: test: authentication tests
-```
+**Session end:**
+- Stop hook runs `jj show` to display current working copy snapshot
+- Use `jj op log` to see all operations
+- Use `jj op restore` to restore to any previous state
 
 ### Commands (4 total)
 
@@ -67,25 +64,22 @@ def: test: authentication tests
 **`/jj:cleanup`** - Remove empty workspaces
 - Maintenance command for workspace cleanup
 
-### Automatic Behavior
+### Automatic Snapshotting
 
-**On session start:**
-- Auto-creates isolated workspace in `.jj-workspaces/claude-<timestamp>/`
-- Enables parallel Claude sessions without conflicts
+Jj automatically snapshots your working copy when running commands like `jj show`, `jj log`, etc. This means:
 
-**On file edits:**
-- Auto-updates commit description: `WIP: file1.js, file2.py, ...`
-
-**On session end:**
-- Shows commit stack with curation tips
+- **No manual commits needed** - Changes are tracked automatically
+- **Full history preserved** - Every operation is in `jj op log`
+- **Easy restoration** - `jj op restore` to go back to any state
+- **Cleaner commit history** - No WIP commits cluttering your log
 
 ### Key Principles
 
 - **Stack commits** - Each `/jj:commit` creates new commit on top
 - **Pattern-based split** - Use descriptions, not file lists
-- **Autonomous curation** - Recognize and fix messy commits
-- **Everything undoable** - Use `jj undo` for any mistakes
-- **Workspace isolation** - Parallel sessions work independently
+- **Leverage snapshots** - Use `jj op log` and `jj op restore` for time travel
+- **Everything undoable** - Operation log makes everything reversible
+- **Clean history** - Curate before pushing, work however you want locally
 
 ### Manual JJ Commands
 
