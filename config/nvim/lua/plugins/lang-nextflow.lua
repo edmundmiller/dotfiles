@@ -6,15 +6,10 @@ return {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
     opts = function(_, opts)
-      -- Add nextflow to ensure_installed
-      vim.list_extend(opts.ensure_installed or {}, { "nextflow" })
-      return opts
-    end,
-    config = function(_, opts)
-      -- Setup treesitter with opts
-      require("nvim-treesitter.configs").setup(opts)
+      -- Ensure opts.ensure_installed exists
+      opts.ensure_installed = opts.ensure_installed or {}
 
-      -- Register custom parser for nextflow from rewrite branch
+      -- Register custom parser for nextflow BEFORE adding to ensure_installed
       local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
       parser_config.nextflow = {
         install_info = {
@@ -26,6 +21,15 @@ return {
         },
         filetype = "nextflow",
       }
+
+      -- Now add nextflow to ensure_installed (will auto-install on startup)
+      vim.list_extend(opts.ensure_installed, { "nextflow" })
+
+      return opts
+    end,
+    config = function(_, opts)
+      -- Setup treesitter with opts (includes ensure_installed)
+      require("nvim-treesitter.configs").setup(opts)
 
       -- Register filetype for nextflow
       vim.filetype.add({
