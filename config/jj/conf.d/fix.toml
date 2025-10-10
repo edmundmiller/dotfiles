@@ -25,6 +25,8 @@ patterns = [
     "glob:'**/*.json'",
     "glob:'**/*.yaml'",
     "glob:'**/*.yml'",
+    "glob:'**/*.css'",
+    "glob:'**/*.html'",
 ]
 
 [fix.tools.biome]
@@ -42,3 +44,11 @@ patterns = [
 # Note: This requires the file to be written to disk, not stdin
 command = ["idea", "format", "$path"]
 patterns = ["glob:'**/*.groovy'", "glob:'**/*.gradle'"]
+
+[fix.tools.rustfmt]
+command = ["rustfmt", "--edition=2021"]
+patterns = ["glob:'**/*.rs'"]
+
+[fix.tools.gofmt]
+command = ["gofmt"]
+patterns = ["glob:'**/*.go'"]
