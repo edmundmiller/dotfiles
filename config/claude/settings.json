@@ -138,40 +138,10 @@
     ],
     "deny": []
   },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jj fix -s @ 2>/dev/null || true"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jj show"
-          }
-        ]
-      }
-    ]
-  },
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
     "padding": 0
-  },
-  "enabledPlugins": {
-    "nextflow-pipeline-development@seqera-templates": true,
-    "support-ticket-kit@seqera-templates": true,
-    "nextflow-plugin-development@seqera-templates": false,
-    "jj-workflow-plugin@dotfiles-plugins": true
   },
   "alwaysThinkingEnabled": true
 }
