@@ -6,13 +6,12 @@
   },
   "metadata": {
     "description": "Version control workflow plugins for Jujutsu and Git",
-    "version": "0.1.0",
-    "pluginRoot": "./config/claude/plugins"
+    "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "jj-workflow-plugin",
-      "source": "./config/claude/plugins/jj-workflow-plugin",
+      "source": "./plugins/jj-workflow-plugin",
       "description": "Autonomous commit stacking and curation workflow for Jujutsu (jj) version control",
       "version": "0.1.0",
       "author": {
@@ -25,7 +24,7 @@
     },
     {
       "name": "git-helpers-plugin",
-      "source": "./config/claude/plugins/git-helpers-plugin",
+      "source": "./plugins/git-helpers-plugin",
       "description": "Advanced Git workflow helpers for worktrees, rebasing, bisecting, and commits",
       "version": "0.1.0",
       "author": {

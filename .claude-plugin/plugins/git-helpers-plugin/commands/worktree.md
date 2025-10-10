@@ -18,6 +18,7 @@ Help the user create and manage git worktrees. Worktrees allow working on multip
 ### Git Worktree Commands:
 
 #### 1. Create a New Worktree
+
 ```bash
 # Create worktree for existing branch
 git worktree add <path> <branch>
@@ -30,18 +31,21 @@ git worktree add --detach <path> <commit>
 ```
 
 #### 2. List Worktrees
+
 ```bash
 git worktree list           # List all worktrees
 git worktree list --porcelain  # Machine-readable format
 ```
 
 #### 3. Remove Worktree
+
 ```bash
 git worktree remove <path>  # Remove a worktree
 git worktree remove --force <path>  # Force removal
 ```
 
 #### 4. Maintenance Commands
+
 ```bash
 git worktree prune          # Clean up stale worktrees
 git worktree lock <path>    # Prevent automatic pruning
@@ -51,6 +55,7 @@ git worktree unlock <path>  # Allow pruning again
 ### Common Use Cases:
 
 1. **Hotfix while working on feature**:
+
    ```bash
    git worktree add ../hotfix main
    cd ../hotfix
@@ -58,6 +63,7 @@ git worktree unlock <path>  # Allow pruning again
    ```
 
 2. **Review PR without losing work**:
+
    ```bash
    git worktree add ../review origin/pr-branch
    ```
@@ -68,12 +74,14 @@ git worktree unlock <path>  # Allow pruning again
    ```
 
 ### Best Practices:
+
 - Use descriptive paths that match branch names
 - Clean up worktrees when done (`git worktree remove`)
 - Don't create worktrees inside existing worktrees
 - Consider a dedicated directory for all worktrees (e.g., `../worktrees/`)
 
 Ask the user:
+
 - Do they want to create a new worktree or manage existing ones?
 - What branch do they want to work on?
 - Where should the worktree be created?
