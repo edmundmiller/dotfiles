@@ -9,6 +9,10 @@ export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 export ZSH_CACHE="$XDG_CACHE_HOME/zsh"
 
+# Set up Homebrew environment (needed for all shells, including doom env)
+# This ensures /opt/homebrew/bin is in PATH for Emacs and non-login shells
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
 # Add ~/.local/bin to PATH if it exists
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
 

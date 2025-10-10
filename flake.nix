@@ -269,19 +269,19 @@
 
                 home-manager.useGlobalPkgs = true;
                 home-manager.useUserPackages = true;
-                
+
                 # Set primary user for nix-darwin 25.05
-                system.primaryUser = "emiller";
-                
+                system.primaryUser = "edmundmiller";
+
                 # Fix nixbld group ID mismatch
                 ids.gids.nixbld = 350;
-                
+
                 # User configuration
-                users.users.emiller = {
-                  home = "/Users/emiller";
+                users.users.edmundmiller = {
+                  home = "/Users/edmundmiller";
                   shell = darwinPkgs.zsh;
                 };
-                
+
                 # Basic packages
                 environment.systemPackages = with darwinPkgs; [
                   git
@@ -289,7 +289,7 @@
                   wget
                   just
                 ];
-                
+
               };
             }
           ];
