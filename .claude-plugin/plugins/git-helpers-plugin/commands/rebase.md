@@ -1,7 +1,6 @@
 ---
 allowed-tools: Bash(git rebase*), Bash(git rebase --*), mcp__git__git_log, mcp__git__git_status, mcp__git__git_branch, mcp__git__git_diff, mcp__git__git_show
 description: Help with git rebase operations
-model: sonnet
 ---
 
 ## Context
