@@ -4,5 +4,6 @@
   "description": "Advanced Git workflow helpers for worktrees, rebasing, bisecting, and commits",
   "author": "emiller",
   "keywords": ["git", "workflow", "worktree", "rebase", "bisect", "version-control"],
-  "license": "MIT"
+  "license": "MIT",
+  "commands": "./commands"
 }

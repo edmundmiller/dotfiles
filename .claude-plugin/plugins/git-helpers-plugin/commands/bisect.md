@@ -18,7 +18,7 @@ Help the user perform a git bisect to identify which commit introduced a bug or 
 1. **Start bisect**: `git bisect start`
 2. **Mark current commit as bad**: `git bisect bad`
 3. **Mark a known good commit**: `git bisect good <commit-hash>`
-4. **Test and mark commits**: 
+4. **Test and mark commits**:
    - `git bisect good` if the test passes
    - `git bisect bad` if the test fails
 5. **Skip untestable commit**: `git bisect skip`
@@ -36,6 +36,7 @@ Help the user perform a git bisect to identify which commit introduced a bug or 
 7. Reset when done
 
 Ask the user:
+
 - What issue are they trying to track down?
 - Do they know a good commit where the issue didn't exist?
 - Do they have a test command to verify if the issue is present?

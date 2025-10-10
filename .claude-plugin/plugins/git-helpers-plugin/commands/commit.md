@@ -18,13 +18,13 @@ Based on the above changes, create a single git commit.
 
 Analyze the changes and determine the appropriate conventional commit type:
 
-   - `feat:` for new features
-   - `fix:` for bug fixes
-   - `docs:` for documentation changes
-   - `style:` for formatting changes
-   - `refactor:` for code refactoring
-   - `test:` for test additions/changes
-   - `chore:` for maintenance tasks
+- `feat:` for new features
+- `fix:` for bug fixes
+- `docs:` for documentation changes
+- `style:` for formatting changes
+- `refactor:` for code refactoring
+- `test:` for test additions/changes
+- `chore:` for maintenance tasks
 
 Remember: This project follows Conventional Commits specification.
 

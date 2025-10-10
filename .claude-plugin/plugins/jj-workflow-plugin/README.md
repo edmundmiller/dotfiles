@@ -5,56 +5,68 @@ Autonomous commit stacking and curation workflow for Jujutsu (jj) version contro
 ## Commands
 
 ### `/jj:commit [message]`
+
 Stack a commit with intelligent message generation.
 
 **Usage:**
+
 - `/jj:commit` - Auto-generate commit message based on changes
 - `/jj:commit "feat: add login UI"` - Create commit with explicit message
 
 **Workflow:**
+
 - If current commit has description → creates new commit on top
 - If current commit needs description → describes current commit
 - Supports conventional commit format (feat:, fix:, docs:, etc.)
 
 **Features:**
+
 - Auto-generates messages from file patterns (test/docs/fix/feat)
 - Keeps first line under 72 characters
 - Matches style of recent commits
 - Never opens editor (uses `-m` flag)
 
 ### `/jj:split <pattern>`
+
 Split commit by pattern (tests, docs, config, etc).
 
 **Usage:**
+
 - `/jj:split test` - Split test files into separate commit
 - `/jj:split docs` - Split documentation changes
 - `/jj:split "*.md"` - Split by file pattern
 
 **Common Patterns:**
+
 - `test` - Test and spec files
-- `docs` - Documentation (*.md, README, CHANGELOG)
-- `config` - Config files (*.json, *.yaml, *.toml)
+- `docs` - Documentation (\*.md, README, CHANGELOG)
+- `config` - Config files (_.json, _.yaml, \*.toml)
 - Custom glob patterns supported
 
 **How it works:**
 Moves matched files to parent commit, effectively splitting them out from current work.
 
 ### `/jj:squash [revision]`
+
 Merge commits in the stack.
 
 **Usage:**
+
 - `/jj:squash` - Merge current commit into parent
 - `/jj:squash abc123` - Merge specific revision
 
 **When to use:**
+
 - Multiple WIP commits for same feature
 - Cleaning up incremental work
 - Combining related changes before sharing
 
 ### `/jj:cleanup`
+
 Remove empty or stale workspaces.
 
 **Usage:**
+
 - `/jj:cleanup` - Clean up empty jj workspaces
 
 Maintenance command for removing empty jj workspaces across your repository. Useful when you've created multiple workspaces for parallel development and want to clean up the ones that are no longer needed.
@@ -62,6 +74,7 @@ Maintenance command for removing empty jj workspaces across your repository. Use
 ## Workflow Example
 
 **Stack commits as you work:**
+
 ```bash
 /jj:commit "feat: add login UI"      # Stack commits
 /jj:commit "add validation logic"    # Keep stacking
@@ -69,12 +82,14 @@ Maintenance command for removing empty jj workspaces across your repository. Use
 ```
 
 **Curate your commits:**
+
 ```bash
 /jj:split test        # Separate tests from implementation
 /jj:squash            # Merge WIP/fixup commits
 ```
 
 **Use automatic snapshotting:**
+
 ```bash
 jj op log            # See all operations and snapshots
 jj op restore <id>   # Restore to any previous state
@@ -104,6 +119,7 @@ Jj automatically snapshots your working copy when running commands. This means:
 This plugin works with Claude Code hooks:
 
 **On session end:**
+
 - Stop hook runs `jj show` to display current working copy snapshot
 
 ### hunk.nvim
@@ -115,6 +131,7 @@ Commands work seamlessly with hunk.nvim as the diff editor for interactive split
 This plugin is part of the dotfiles configuration. It's automatically available when using Claude Code from the repository.
 
 To enable in other projects:
+
 1. Copy plugin directory to `.claude/plugins/jj-workflow-plugin/`
 2. Commands will be available as `/jj:*`
 
@@ -127,15 +144,18 @@ To enable in other projects:
 ## Troubleshooting
 
 **Commands not showing up:**
+
 - Verify plugin structure: `.claude-plugin/plugin.json` exists
 - Check Claude Code plugin loading: `claude --debug`
 - Ensure jj is in PATH: `which jj`
 
 **"Not a jj repo" errors:**
+
 - Initialize jj: `jj git init --colocate` (in Git repo)
 - Or: `jj init` (new jj repo)
 
 **Editor opens instead of using -m flag:**
+
 - Set `JJ_EDITOR=echo` in Claude settings
 - Commands always use `-m` to avoid editor prompts
 
