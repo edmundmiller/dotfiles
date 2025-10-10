@@ -1,0 +1,40 @@
+{
+  "name": "dotfiles-plugins",
+  "owner": {
+    "name": "emiller",
+    "email": "claude@edmundmiller.dev"
+  },
+  "metadata": {
+    "description": "Version control workflow plugins for Jujutsu and Git",
+    "version": "0.1.0",
+    "pluginRoot": "./config/claude/plugins"
+  },
+  "plugins": [
+    {
+      "name": "jj-workflow-plugin",
+      "source": "./config/claude/plugins/jj-workflow-plugin",
+      "description": "Autonomous commit stacking and curation workflow for Jujutsu (jj) version control",
+      "version": "0.1.0",
+      "author": {
+        "name": "emiller"
+      },
+      "keywords": ["jujutsu", "jj", "version-control", "workflow", "commit-stacking"],
+      "license": "MIT",
+      "category": "version-control",
+      "tags": ["jujutsu", "workflow", "git-compatible"]
+    },
+    {
+      "name": "git-helpers-plugin",
+      "source": "./config/claude/plugins/git-helpers-plugin",
+      "description": "Advanced Git workflow helpers for worktrees, rebasing, bisecting, and commits",
+      "version": "0.1.0",
+      "author": {
+        "name": "emiller"
+      },
+      "keywords": ["git", "workflow", "worktree", "rebase", "bisect", "version-control"],
+      "license": "MIT",
+      "category": "version-control",
+      "tags": ["git", "workflow", "productivity"]
+    }
+  ]
+}
