@@ -1,0 +1,34 @@
+{
+  "name": "markdown-cleanup-plugin",
+  "version": "0.1.0",
+  "description": "Automatically cleans up stray markdown files created during Claude Code sessions",
+  "author": {
+    "name": "emiller"
+  },
+  "keywords": ["markdown", "cleanup", "file-management", "automation"],
+  "license": "MIT",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/track-session-start.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/cleanup-stray-markdown.py"
+          }
+        ]
+      }
+    ]
+  }
+}
