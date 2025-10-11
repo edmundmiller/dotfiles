@@ -252,6 +252,61 @@ return {
 
   -- == Example Plugin Configurations (kept for reference) ==
 
+  -- Better-escape configuration - Remove jj mapping, keep only jk
+  {
+    "max397574/better-escape.nvim",
+    opts = {
+      timeout = 300,
+      default_mappings = false,
+      mappings = {
+        i = { j = { k = "<Esc>" } }, -- Only jk, not jj
+      },
+    },
+  },
+
+  -- Oil.nvim - File explorer that lets you edit your filesystem like a buffer
+  {
+    "stevearc/oil.nvim",
+    lazy = false,
+    opts = {
+      default_file_explorer = false, -- Keep neotree as default, use oil for <Leader>.
+      columns = {
+        "icon",
+        "permissions",
+        "size",
+        "mtime",
+      },
+      keymaps = {
+        ["g?"] = "actions.show_help",
+        ["<CR>"] = "actions.select",
+        ["<C-v>"] = "actions.select_vsplit",
+        ["<C-s>"] = "actions.select_split",
+        ["<C-t>"] = "actions.select_tab",
+        ["<C-p>"] = "actions.preview",
+        ["<C-c>"] = "actions.close",
+        ["<C-l>"] = "actions.refresh",
+        ["-"] = "actions.parent",
+        ["_"] = "actions.open_cwd",
+        ["`"] = "actions.cd",
+        ["~"] = "actions.tcd",
+        ["gs"] = "actions.change_sort",
+        ["gx"] = "actions.open_external",
+        ["g."] = "actions.toggle_hidden",
+        ["g\\"] = "actions.toggle_trash",
+      },
+      view_options = {
+        show_hidden = true,
+        is_hidden_file = function(name, bufnr)
+          return vim.startswith(name, ".")
+        end,
+        is_always_hidden = function(name, bufnr)
+          return false
+        end,
+      },
+    },
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
+
   -- LuaSnip configuration example
   {
     "L3MON4D3/LuaSnip",
