@@ -8,14 +8,6 @@ email = "git@edmundmiller.dev"
 # - fg.toml: UTD academic repos (~/src/fg)
 # - fix.toml: Code formatting tools (jj fix)
 
-[signing]
-behavior = "own"
-backend = "ssh"
-key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC"
-
-[signing.backends.ssh]
-program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-
 [aliases]
 # Common git-like aliases
 amend = ["describe", "--edit"]
@@ -99,7 +91,17 @@ edit = true
 [core]
 whitespace = "trailing-space"
 
+[signing]
+behavior = "own"
+backend = "ssh"
+key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC"
+
+[signing.backends.ssh]
+program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+
 [git]
+# lazily signing only on push.
+sign-on-push = true
 push-branch-prefix = "push-"
 # Don't create unnecessary local bookmarks when cloning
 track-default-bookmark-on-clone = false
