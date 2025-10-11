@@ -1,5 +1,5 @@
 {
-  "name": "jj-workflow-plugin",
+  "name": "jj",
   "version": "0.1.0",
   "description": "Autonomous commit stacking and curation workflow for Jujutsu (jj) version control",
   "author": "emiller",

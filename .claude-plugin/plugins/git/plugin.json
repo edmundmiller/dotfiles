@@ -1,5 +1,5 @@
 {
-  "name": "git-helpers-plugin",
+  "name": "git",
   "version": "0.1.0",
   "description": "Advanced Git workflow helpers for worktrees, rebasing, bisecting, and commits",
   "author": "emiller",
