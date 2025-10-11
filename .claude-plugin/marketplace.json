@@ -5,26 +5,39 @@
     "email": "claude@edmundmiller.dev"
   },
   "metadata": {
-    "description": "Version control workflow plugins for Jujutsu and Git",
+    "description": "Version control workflow plugins for Jujutsu and Git, plus development utilities",
     "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "jj-workflow-plugin",
-      "source": "./plugins/jj-workflow-plugin",
-      "description": "Autonomous commit stacking and curation workflow for Jujutsu (jj) version control",
+      "source": "./config/claude/plugins/jj-workflow-plugin",
+      "description": "Stable Jujutsu workflow for commit stacking and curation. Commands: /jj:commit (stack commits), /jj:split (pattern-based split), /jj:squash (merge commits), /jj:cleanup (remove workspaces). Includes automatic git-to-jj translation hook. Battle-tested workflow for jj version control.",
       "version": "0.1.0",
       "author": {
         "name": "emiller"
       },
-      "keywords": ["jujutsu", "jj", "version-control", "workflow", "commit-stacking"],
+      "keywords": ["jujutsu", "jj", "version-control", "workflow", "commit-stacking", "git-translation", "hooks"],
       "license": "MIT",
       "category": "version-control",
-      "tags": ["jujutsu", "workflow", "git-compatible"]
+      "tags": ["jujutsu", "workflow", "git-compatible", "stable"]
+    },
+    {
+      "name": "jj-advanced-plugin",
+      "source": "./config/claude/plugins/jj-advanced-plugin",
+      "description": "Advanced Jujutsu commands (BETA): /jj:bookmark (manage bookmarks), /jj:push (auto-bookmark push), /jj:evolog (evolution history), /jj:abandon (remove commits), /jj:restore (recover files). Built from FAQ pain points. Experimental features for power users.",
+      "version": "0.1.0-beta",
+      "author": {
+        "name": "emiller"
+      },
+      "keywords": ["jujutsu", "jj", "bookmarks", "evolution", "recovery", "beta", "experimental"],
+      "license": "MIT",
+      "category": "version-control",
+      "tags": ["jujutsu", "advanced", "beta", "bookmarks", "push"]
     },
     {
       "name": "git-helpers-plugin",
-      "source": "./plugins/git-helpers-plugin",
+      "source": "./config/claude/plugins/git-helpers-plugin",
       "description": "Advanced Git workflow helpers for worktrees, rebasing, bisecting, and commits",
       "version": "0.1.0",
       "author": {
@@ -34,6 +47,19 @@
       "license": "MIT",
       "category": "version-control",
       "tags": ["git", "workflow", "productivity"]
+    },
+    {
+      "name": "markdown-cleanup-plugin",
+      "source": "./config/claude/plugins/markdown-cleanup-plugin",
+      "description": "Automatically cleans up stray markdown files created during Claude Code sessions. Uses Stop hook to remove temporary files from /tmp while preserving important documentation. Silent operation with smart file detection.",
+      "version": "0.1.0",
+      "author": {
+        "name": "emiller"
+      },
+      "keywords": ["markdown", "cleanup", "file-management", "automation", "hooks"],
+      "license": "MIT",
+      "category": "development-utilities",
+      "tags": ["cleanup", "automation", "productivity"]
     }
   ]
 }
