@@ -1,6 +1,28 @@
-# Git Helpers Plugin
+# Git Plugin
 
-Advanced Git workflow helpers for worktrees, rebasing, bisecting, and commits. This plugin provides Claude Code with specialized commands for common Git operations using the MCP git server.
+Git workflow helpers and direct git operations for Claude Code. This plugin provides both **slash commands** for guided workflows and **MCP tools** for direct git operations.
+
+## Two Ways to Use Git
+
+This plugin provides two complementary interfaces:
+
+### Slash Commands (Guided Workflows)
+High-level, interactive commands for complex Git workflows:
+- `/git:commit` - Guided commit creation with conventional commits
+- `/git:worktree` - Worktree management and setup
+- `/git:rebase` - Interactive rebase assistance
+- `/git:bisect` - Bug hunting with binary search
+
+### MCP Tools (Direct Operations)
+Direct access to git operations for programmatic use:
+- `git_status`, `git_diff_unstaged`, `git_diff_staged`, `git_diff`
+- `git_commit`, `git_add`, `git_reset`
+- `git_log`, `git_show`, `git_branch`
+- `git_create_branch`, `git_checkout`
+
+**When to use each:**
+- **Slash commands**: Complex workflows, learning, interactive help
+- **MCP tools**: Quick operations, scripting, automation
 
 ## Commands
 
@@ -142,19 +164,31 @@ Binary search for bug introduction.
 # Claude helps you set up and run git bisect
 ```
 
-## Integration
+## MCP Tools Reference
 
-### MCP Git Server
+The plugin bundles the `mcp-server-git` MCP server, providing direct access to git operations:
 
-All commands use the MCP git server for reliable operations:
+### Status and Diff Tools
+- **`git_status`** - Shows working tree status
+- **`git_diff_unstaged`** - Shows unstaged changes
+- **`git_diff_staged`** - Shows staged changes
+- **`git_diff`** - Compares branches or commits
 
-- `mcp__git__git_status`
-- `mcp__git__git_diff_unstaged`
-- `mcp__git__git_diff_staged`
-- `mcp__git__git_add`
-- `mcp__git__git_commit`
-- `mcp__git__git_log`
-- `mcp__git__git_branch`
+### Commit Operations
+- **`git_add`** - Stages file contents for commit
+- **`git_commit`** - Records changes to the repository
+- **`git_reset`** - Unstages all staged changes
+
+### History and Inspection
+- **`git_log`** - Shows commit logs with optional date filtering (supports ISO 8601, relative dates, and absolute dates)
+- **`git_show`** - Shows contents of a specific commit
+
+### Branch Management
+- **`git_branch`** - Lists Git branches (local, remote, or all)
+- **`git_create_branch`** - Creates a new branch from an optional base branch
+- **`git_checkout`** - Switches branches
+
+**Usage:** These tools are available automatically when the plugin is enabled. Claude can use them directly without special configuration.
 
 ### Dynamic Context
 
@@ -172,34 +206,36 @@ This plugin is part of the dotfiles configuration. It's automatically available 
 
 To enable in other projects:
 
-1. Copy plugin directory to `.claude/plugins/git-helpers-plugin/`
-2. Ensure MCP git server is configured
-3. Commands will be available as `/git:*`
+1. Copy plugin directory to `.claude/plugins/git/`
+2. Plugin includes bundled MCP server (no additional configuration needed)
+3. Commands available as `/git:*` and tools as `git_*`
 
 ## Requirements
 
 - Git installed and repository initialized
-- Claude Code v1.0.88 or later
-- MCP git server configured in Claude settings
+- Claude Code v2.0.12 or later (plugin system support)
+- `uvx` available for running the MCP server
 - Basic familiarity with Git concepts
 
 ## Configuration
 
-The plugin uses MCP git server which should be configured in your Claude settings. The commands have appropriate tool permissions:
+The plugin bundles its own MCP server via `.mcp.json`:
 
 ```json
 {
-  "allowed-tools": [
-    "mcp__git__git_status",
-    "mcp__git__git_diff_unstaged",
-    "mcp__git__git_diff_staged",
-    "mcp__git__git_add",
-    "mcp__git__git_commit",
-    "mcp__git__git_log",
-    "mcp__git__git_branch"
-  ]
+  "mcpServers": {
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git"],
+      "env": {
+        "GIT_REPOSITORY": "${CWD}"
+      }
+    }
+  }
 }
 ```
+
+**No user configuration needed** - the MCP server starts automatically when the plugin is enabled and operates in the current working directory.
 
 ## Troubleshooting
 
@@ -211,9 +247,10 @@ The plugin uses MCP git server which should be configured in your Claude setting
 
 **MCP git server errors:**
 
-- Verify MCP server is configured: Check Claude settings
+- Verify uvx is available: `which uvx`
 - Test git operations manually: `git status`
 - Check repository is initialized: `git rev-parse --git-dir`
+- Check MCP server logs in Claude Code debug output
 
 **Commit command not working:**
 
