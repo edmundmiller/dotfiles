@@ -20,32 +20,58 @@ ranked-authors = ["log", "--template", "author"]
 lm = ["log", "-r", "::@ | ::main"]
 
 # Workflow shortcuts
-l = ["log", "-r", "(main..@):: | (main..@)-"]  # Recent changes relative to main
-uncommit = ["backout", "-r", "@"]  # Undo last commit keeping changes
-sync = ["git", "fetch", "--all-remotes"]  # Fetch from all remotes
-wip = ["describe", "-m", "WIP"]  # Quick work-in-progress commit
-pp = ["log", "--template", "builtin_log_detailed"]  # Pretty print with full descriptions
-recent = ["log", "-r", "::@ ~ ::trunk()"]  # Recent commits not in trunk
-evolve = ["evolve", "--quiet"]  # Quietly evolve commits
-# Tug: Move the closest ancestor bookmark to current change
+l = ["log", "-r", "(main..@):: | (main..@)-"] # Recent changes relative to main
+uncommit = ["backout", "-r", "@"] # Undo last commit keeping changes
+sync = ["git", "fetch", "--all-remotes"] # Fetch from all remotes
+wip = ["describe", "-m", "WIP"] # Quick work-in-progress commit
+pp = [
+  "log",
+  "--template",
+  "builtin_log_detailed",
+] # Pretty print with full descriptions
+recent = ["log", "-r", "::@ ~ ::trunk()"] # Recent commits not in trunk
+evolve = ["evolve", "--quiet"] # Quietly evolve commits
+# Move the closest bookmark to the current commit. This is useful when
+# working on a named branch, creating a bunch of commits, and then needing
+# to update the bookmark before pushing.
 # References:
 # - https://shaddy.dev/notes/jj-tug/
 # - https://github.com/jj-vcs/jj/discussions/5568
 tug = ["bookmark", "move", "--from", "heads(::@- & bookmarks())", "--to", "@-"]
 
+# Rebase the current branch onto the trunk.
+retrunk = ["rebase", "-d", "trunk()"]
+
 # Quick navigation
-p = ["prev", "--edit"]  # Go to previous commit in edit mode
-n = ["next", "--edit"]  # Go to next commit in edit mode
+p = ["prev", "--edit"] # Go to previous commit in edit mode
+n = ["next", "--edit"] # Go to next commit in edit mode
 
 # Cleanup aliases for maintaining clean history
-cleanup = ["abandon", "-r", "empty() & ~@"]  # Clean up all empty commits except current
-work = ["log", "-r", "(mine() & ~empty()) | @"]  # Show only meaningful work
-orphans = ["log", "-r", "mine() & ~::trunk() & ~::@"]  # Show orphaned branches
-abandon-empty = ["abandon", "-r", "empty() & description(\"\")"]  # Remove empty unnamed commits
-tidy = ["abandon", "-r", "empty() & description(\"\") & ~@"]  # Safe cleanup of empty commits
+cleanup = [
+  "abandon",
+  "-r",
+  "empty() & ~@",
+] # Clean up all empty commits except current
+work = ["log", "-r", "(mine() & ~empty()) | @"] # Show only meaningful work
+orphans = ["log", "-r", "mine() & ~::trunk() & ~::@"] # Show orphaned branches
+abandon-empty = [
+  "abandon",
+  "-r",
+  "empty() & description(\"\")",
+] # Remove empty unnamed commits
+tidy = [
+  "abandon",
+  "-r",
+  "empty() & description(\"\") & ~@",
+] # Safe cleanup of empty commits
 
 # GitHub Pull Request management
-spr = ["util", "exec", "--", "jj-spr"]  # Stacked pull requests with jj-spr
+spr = ["util", "exec", "--", "jj-spr"] # Stacked pull requests with jj-spr
+
+[revset-aliases]
+# Find the closest bookmark in the ancestry of a given revision
+'closest_bookmark(to)' = 'heads(::to & bookmarks())'
+"fork_history(to, from)" = "fork_point(to | from)..@"
 
 [diff]
 tool = "delta"
@@ -54,8 +80,14 @@ tool = "delta"
 [merge-tools.diffconflicts]
 program = "nvim"
 merge-args = [
-    "-c", "let g:jj_diffconflicts_marker_length=$marker_length",
-    "-c", "JJDiffConflicts!", "$output", "$base", "$left", "$right",
+  "-c",
+  "let g:jj_diffconflicts_marker_length=$marker_length",
+  "-c",
+  "JJDiffConflicts!",
+  "$output",
+  "$base",
+  "$left",
+  "$right",
 ]
 merge-tool-edits-conflict-markers = true
 
@@ -69,8 +101,12 @@ pager = "delta"
 [ui]
 # default-command = "status"
 diff-formatter = ":git" # required by `delta`
-pager=["delta", "--pager", "less -FRX"] # Keeps output from the terminal after closing the pager
-# diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
+pager = [
+  "delta",
+  "--pager",
+  "less -FRX",
+] # Keeps output from the terminal after closing the pager
+diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
 editor = "nvim"
 # Enable word wrapping in logs for better readability
 log-word-wrap = true
@@ -112,13 +148,13 @@ push-bookmarks-prefix = "emiller/"
 # Equivalent to git's push.default=current
 trunk = "main@origin"
 # Useful revset aliases for common queries
-log = "@ | ancestors(immutable_heads().., 2) | trunk()"  # Default log view
-mine = "author(exact:\"Edmund Miller\")"  # Your commits
-recent-changes = "::@ & ~::trunk()"  # Changes not yet in trunk
-stale = "committer_date().before(\"2 weeks ago\") & mine() & ~::trunk()"  # Old unmerged work
+log = "@ | ancestors(immutable_heads().., 2) | trunk()"                  # Default log view
+mine = "author(exact:\"Edmund Miller\")"                                 # Your commits
+recent-changes = "::@ & ~::trunk()"                                      # Changes not yet in trunk
+stale = "committer_date().before(\"2 weeks ago\") & mine() & ~::trunk()" # Old unmerged work
 # Cleaner log views
-clean-log = "@ | ancestors(@ | trunk(), 2) | trunk()"  # Simplified default log
-active = "mine() & ~empty() & ~immutable()"  # Active work in progress
+clean-log = "@ | ancestors(@ | trunk(), 2) | trunk()" # Simplified default log
+active = "mine() & ~empty() & ~immutable()"           # Active work in progress
 
 [snapshot]
 # Automatically track new files in src directories
@@ -140,7 +176,3 @@ separate(" ",
   if(description == "", label("description placeholder", "(no description)"), "")
 )
 '''
-
-[revset-aliases]
-# Find the closest bookmark in the ancestry of a given revision
-'closest_bookmark(to)' = 'heads(::to & bookmarks())'
