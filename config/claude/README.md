@@ -9,26 +9,24 @@ Claude Code plugins provide a standardized way to package and distribute command
 ### Available Plugins
 
 **[jj-workflow-plugin](plugins/jj-workflow-plugin/)** - Autonomous commit stacking and curation workflow for Jujutsu
+
 - `/jj:commit` - Stack commits with intelligent message generation
 - `/jj:split` - Split commits by pattern (test, docs, config)
 - `/jj:squash` - Merge commits in the stack
 - `/jj:cleanup` - Remove empty workspaces
-
-**[git-helpers-plugin](plugins/git-helpers-plugin/)** - Advanced Git workflow helpers
-- `/git:commit` - Create commits using MCP git server
-- `/git:worktree` - Manage git worktrees for parallel development
-- `/git:rebase` - Interactive rebasing and history editing
-- `/git:bisect` - Binary search for bug introduction
+- Includes git-to-jj command translator hook
 
 ### Plugin vs Standalone Commands
 
 **Plugins** (in `plugins/`):
+
 - Proper Claude Code plugin format with manifests
 - Can be extracted to separate repos for sharing
 - Versioned independently
 - Include comprehensive documentation
 
 **Standalone Commands** (in `commands/`):
+
 - Original command location (kept for backward compatibility)
 - Project-specific commands
 - Commands still under development
@@ -61,6 +59,7 @@ config/claude/
 ## Slash Commands
 
 ### Jujutsu (jj) Commands
+
 Located in `commands/jj/`, these commands help Claude assist with jujutsu version control:
 
 - **`/jj/split`** - Split mixed changes into separate commits interactively
@@ -70,6 +69,7 @@ Located in `commands/jj/`, these commands help Claude assist with jujutsu versio
 - **`/jj/rebase`** - Reorganize commits and resolve conflicts
 
 ### Git Commands
+
 Located in `commands/git/`, for traditional git workflows:
 
 - **`/git/worktree`** - Manage git worktrees for parallel development
@@ -77,6 +77,7 @@ Located in `commands/git/`, for traditional git workflows:
 - **`/git/bisect`** - Binary search for bug introduction
 
 ### Nextflow Commands
+
 Located in `commands/nf/`, for bioinformatics pipeline development:
 
 - **`/nf/process`** - Create Nextflow process definitions
@@ -84,6 +85,7 @@ Located in `commands/nf/`, for bioinformatics pipeline development:
 - **`/nf/subworkflow`** - Design reusable subworkflows
 
 ### Task Management Commands
+
 Located in `slash_commands/`:
 
 - **`/tasks`** - View and manage Taskwarrior tasks
@@ -93,6 +95,7 @@ Located in `slash_commands/`:
 - **`/timew-report`** - Generate time reports
 
 ### Documentation Commands
+
 Located in `commands/docs/`:
 
 - **`/docs/start-project`** - Initialize project documentation
@@ -105,14 +108,16 @@ Each command file follows this structure:
 
 ```markdown
 ---
-allowed-tools: Tool1, Tool2  # Tools Claude can use
+allowed-tools: Tool1, Tool2 # Tools Claude can use
 description: Brief description of command purpose
 ---
 
 ## Context
+
 - Dynamic context gathering using !`shell commands`
 
 ## Your task
+
 Detailed instructions for Claude to follow
 ```
 
@@ -155,13 +160,17 @@ Specialized agents in `agents/`:
 ## Integration with Tools
 
 ### Jujutsu + hunk.nvim
+
 The jj commands are configured to work with hunk.nvim as the diff editor:
+
 - Interactive splitting and squashing
 - Visual diff selection
 - Configured via `config/jj/config.toml`
 
 ### Task Management
+
 Commands integrate with:
+
 - Taskwarrior for task tracking
 - Timewarrior for time logging
 - Obsidian sync for note integration
@@ -184,6 +193,7 @@ claude mcp add-json -s user github '{"command":"docker","args":["run","-i","--rm
 ### Loading Plugins
 
 Plugins in `plugins/` are automatically discovered by Claude Code when placed in:
+
 1. **This repository**: `config/claude/plugins/` (current location)
 2. **User config**: `~/.claude/plugins/`
 3. **Project-specific**: `.claude/plugins/` in any project
@@ -193,6 +203,7 @@ Plugins in `plugins/` are automatically discovered by Claude Code when placed in
 To share a plugin with the community:
 
 1. **Extract to separate repository:**
+
    ```bash
    # Example: Extract jj-workflow-plugin
    cd /tmp
@@ -204,6 +215,7 @@ To share a plugin with the community:
    ```
 
 2. **Publish to GitHub:**
+
    ```bash
    gh repo create my-username/jj-workflow-plugin --public
    git push -u origin main
@@ -218,6 +230,7 @@ To share a plugin with the community:
 ### Plugin Development
 
 When developing plugins:
+
 - Test in `config/claude/plugins/` first (local dotfiles)
 - Use `claude --debug` to verify plugin loading
 - Bump version in `plugin.json` when making changes
@@ -241,8 +254,8 @@ To add a new slash command:
 - Commands are designed to be composable and work together
 - All jj operations are safe due to the operation log
 
-
 ## Claude Code Version Issue
+
 If slash commands aren't working, this Reddit comment mentions Claude Code v1.0.88 worked better:
 https://www.reddit.com/r/ClaudeAI/comments/1ndafeq/comment/ndfazn5/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
 
