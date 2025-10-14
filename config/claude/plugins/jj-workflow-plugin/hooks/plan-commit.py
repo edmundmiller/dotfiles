@@ -15,17 +15,14 @@ import json
 import re
 import subprocess
 import sys
-from typing import Optional, Tuple
+from typing import Tuple
 
 
 def run_jj_command(args):
     """Run a jj command and return output."""
     try:
         result = subprocess.run(
-            ["jj"] + args,
-            capture_output=True,
-            text=True,
-            check=False
+            ["jj"] + args, capture_output=True, text=True, check=False
         )
         return result.stdout.strip(), result.returncode
     except Exception as e:
@@ -35,17 +32,15 @@ def run_jj_command(args):
 def check_current_state():
     """Check if @ has description and changes."""
     # Check if @ has description
-    desc_output, _ = run_jj_command([
-        "log", "-r", "@", "--no-graph",
-        "-T", "if(description, 'has', 'none')"
-    ])
+    desc_output, _ = run_jj_command(
+        ["log", "-r", "@", "--no-graph", "-T", "if(description, 'has', 'none')"]
+    )
     has_description = desc_output.strip() == "has"
 
     # Check if @ is empty
-    empty_output, _ = run_jj_command([
-        "log", "-r", "@", "--no-graph",
-        "-T", "if(empty, 'empty', 'has_changes')"
-    ])
+    empty_output, _ = run_jj_command(
+        ["log", "-r", "@", "--no-graph", "-T", "if(empty, 'empty', 'has_changes')"]
+    )
     is_empty = empty_output.strip() == "empty"
 
     return has_description, is_empty
@@ -69,10 +64,10 @@ def is_substantial_task(prompt: str) -> bool:
 
     # Question patterns (don't need plan commits)
     question_patterns = [
-        r'^(what|why|how|when|where|who|which|can you explain)',
-        r'^(is |are |does |do |did |has |have |will |would |could |should )',
-        r'\?$',  # Ends with question mark
-        r'^(tell me|show me|explain)',
+        r"^(what|why|how|when|where|who|which|can you explain)",
+        r"^(is |are |does |do |did |has |have |will |would |could |should )",
+        r"\?$",  # Ends with question mark
+        r"^(tell me|show me|explain)",
     ]
 
     for pattern in question_patterns:
@@ -81,9 +76,9 @@ def is_substantial_task(prompt: str) -> bool:
 
     # Task patterns (need plan commits)
     task_patterns = [
-        r'\b(add|create|implement|build|make|write|fix|update|refactor|change|modify)\b',
-        r'\b(remove|delete|clean|optimize|improve|enhance)\b',
-        r'\b(install|configure|setup|integrate)\b',
+        r"\b(add|create|implement|build|make|write|fix|update|refactor|change|modify)\b",
+        r"\b(remove|delete|clean|optimize|improve|enhance)\b",
+        r"\b(install|configure|setup|integrate)\b",
     ]
 
     for pattern in task_patterns:
@@ -141,10 +136,7 @@ def main():
             success, message = create_plan_commit(prompt)
 
             if success:
-                response = {
-                    "continue": True,
-                    "system_message": message
-                }
+                response = {"continue": True, "system_message": message}
             else:
                 response = {"continue": True}
 
@@ -157,10 +149,14 @@ def main():
 
     except Exception as e:
         # On any error, allow execution to continue (fail open)
-        print(json.dumps({
-            "continue": True,
-            "system_message": f"Plan commit hook error: {str(e)}"
-        }))
+        print(
+            json.dumps(
+                {
+                    "continue": True,
+                    "system_message": f"Plan commit hook error: {str(e)}",
+                }
+            )
+        )
         sys.exit(0)
 
 

@@ -10,8 +10,8 @@
   },
   "plugins": [
     {
-      "name": "jj",
-      "source": "./config/claude/plugins/jj",
+      "name": "jj-workflow-plugin",
+      "source": "./config/claude/plugins/jj-workflow-plugin",
       "description": "Stable Jujutsu workflow for commit stacking and curation. Commands: /jj:commit (stack commits), /jj:split (pattern-based split), /jj:squash (merge commits), /jj:cleanup (remove workspaces). Includes automatic git-to-jj translation hook. Battle-tested workflow for jj version control.",
       "version": "0.1.0",
       "author": {
@@ -21,19 +21,6 @@
       "license": "MIT",
       "category": "version-control",
       "tags": ["jujutsu", "workflow", "git-compatible", "stable"]
-    },
-    {
-      "name": "jj-advanced-plugin",
-      "source": "./config/claude/plugins/jj-advanced-plugin",
-      "description": "Advanced Jujutsu commands (BETA): /jj:bookmark (manage bookmarks), /jj:push (auto-bookmark push), /jj:evolog (evolution history), /jj:abandon (remove commits), /jj:restore (recover files). Built from FAQ pain points. Experimental features for power users.",
-      "version": "0.1.0-beta",
-      "author": {
-        "name": "emiller"
-      },
-      "keywords": ["jujutsu", "jj", "bookmarks", "evolution", "recovery", "beta", "experimental"],
-      "license": "MIT",
-      "category": "version-control",
-      "tags": ["jujutsu", "advanced", "beta", "bookmarks", "push"]
     },
     {
       "name": "git",
@@ -49,7 +36,7 @@
       "tags": ["git", "workflow", "productivity"]
     },
     {
-      "name": "markdown-cleanup",
+      "name": "markdown-cleanup-plugin",
       "source": "./config/claude/plugins/markdown-cleanup-plugin",
       "description": "Automatically cleans up stray markdown files created during Claude Code sessions. Uses Stop hook to remove temporary files from /tmp while preserving important documentation. Silent operation with smart file detection.",
       "version": "0.1.0",

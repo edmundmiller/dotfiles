@@ -3,63 +3,77 @@
 Autonomous commit stacking and curation workflow for Jujutsu (jj) version control. This plugin provides Claude Code with specialized commands for managing commits in a jj repository using a stack-based workflow.
 
 **Features:**
+
 - **Commit stacking** - `/jj:commit`, `/jj:split`, `/jj:squash`, `/jj:cleanup`
-- **Git translation** - Automatic hook to suggest jj equivalents
-- **Advanced commands** - See [jj-advanced-plugin](../jj-advanced-plugin) for bookmark management, smart push, and recovery tools (beta)
+- **Git translation** - Automatic hook to suggest jj equivalents and block git commands
+- **Plan-driven workflow** - Automatic commit planning and validation hooks
+- **Auto-formatting** - Runs `jj fix` after edits to format code automatically
 
 ## Commands
 
 ### `/jj:commit [message]`
+
 Stack a commit with intelligent message generation.
 
 **Usage:**
+
 - `/jj:commit` - Auto-generate commit message based on changes
 - `/jj:commit "feat: add login UI"` - Create commit with explicit message
 
 **Workflow:**
+
 - If current commit has description → creates new commit on top
 - If current commit needs description → describes current commit, then automatically creates new empty commit on top (unless described commit is empty)
 - Supports conventional commit format (feat:, fix:, docs:, etc.)
 
 **Features:**
+
 - Auto-generates messages from file patterns (test/docs/fix/feat)
 - Keeps first line under 72 characters
 - Matches style of recent commits
 - Never opens editor (uses `-m` flag)
 
 ### `/jj:split <pattern>`
+
 Split commit by pattern (tests, docs, config, etc).
 
 **Usage:**
+
 - `/jj:split test` - Split test files into separate commit
 - `/jj:split docs` - Split documentation changes
 - `/jj:split "*.md"` - Split by file pattern
 
 **Common Patterns:**
+
 - `test` - Test and spec files
-- `docs` - Documentation (*.md, README, CHANGELOG)
-- `config` - Config files (*.json, *.yaml, *.toml)
+- `docs` - Documentation (\*.md, README, CHANGELOG)
+- `config` - Config files (_.json, _.yaml, \*.toml)
 - Custom glob patterns supported
 
 **How it works:**
 Moves matched files to parent commit, effectively splitting them out from current work.
 
 ### `/jj:squash [revision]`
+
 Merge commits in the stack.
 
 **Usage:**
+
 - `/jj:squash` - Merge current commit into parent
 - `/jj:squash abc123` - Merge specific revision
 
 **When to use:**
+
 - Multiple WIP commits for same feature
 - Cleaning up incremental work
 - Combining related changes before sharing
 
 ### `/jj:cleanup`
+
 Remove empty or stale workspaces.
 
 **Usage:**
+
 - `/jj:cleanup` - Clean up empty jj workspaces
 
 Maintenance command for removing empty jj workspaces across your repository. Useful when you've created multiple workspaces for parallel development and want to clean up the ones that are no longer needed.
@@ -67,6 +81,7 @@ Maintenance command for removing empty jj workspaces across your repository. Use
 ## Workflow Example
 
 **Stack commits as you work:**
+
 ```bash
 /jj:commit "feat: add login UI"      # Stack commits
 /jj:commit "add validation logic"    # Keep stacking
@@ -74,12 +89,14 @@ Maintenance command for removing empty jj workspaces across your repository. Use
 ```
 
 **Curate your commits:**
+
 ```bash
 /jj:split test        # Separate tests from implementation
 /jj:squash            # Merge WIP/fixup commits
 ```
 
 **Use automatic snapshotting:**
+
 ```bash
 jj op log            # See all operations and snapshots
 jj op restore <id>   # Restore to any previous state
@@ -90,17 +107,20 @@ jj op restore <id>   # Restore to any previous state
 The plugin supports a plan-driven workflow where Claude commits intent BEFORE work begins:
 
 **1. Task starts (automatic):**
+
 ```bash
 # User: "Add authentication to the API"
 # → Plugin creates: "plan: Add authentication to the API"
 ```
 
 **2. Work happens:**
+
 - Claude implements the feature
 - Files are modified
 - TodoWrite may track progress
 
 **3. Session ends (automatic validation):**
+
 ```bash
 # Plugin detects "plan:" commit with actual work
 # → Suggests: Update description to reflect what was actually done
@@ -108,6 +128,7 @@ The plugin supports a plan-driven workflow where Claude commits intent BEFORE wo
 ```
 
 **With TodoWrite integration:**
+
 ```bash
 # User: "Implement user management system"
 # → "plan: Implement user management system"
@@ -145,24 +166,28 @@ Jj automatically snapshots your working copy when running commands. This means:
 This plugin provides several Claude Code hooks for seamless jj integration:
 
 **Plan-Driven Workflow (UserPromptSubmit):**
+
 - Creates "plan:" commit when receiving substantial tasks
 - Describes INTENT before work begins
 - Enables plan validation at session end
 - Silent for simple questions and clarifications
 
 **Git-to-JJ Translation (PreToolUse):**
+
 - Automatically intercepts git commands
 - Suggests jj equivalent with explanation
 - Prevents accidental git usage in jj repositories
 - Works for both MCP git tools and Bash git commands
 
 **Auto-formatting (PostToolUse):**
+
 - Runs `jj fix -s @` after Edit/MultiEdit operations
 - Automatically formats code using configured formatters (prettier, black, etc.)
 - Applies fixes to current commit without creating conflicts
 - Silent operation (errors suppressed)
 
 **Session End Validation (Stop):**
+
 - Validates plan vs actual work
 - Detects "plan:" commits that now contain real work
 - Suggests updating description to reflect reality
@@ -170,6 +195,7 @@ This plugin provides several Claude Code hooks for seamless jj integration:
 - Helps maintain clean, accurate commit history
 
 The git translation hook maps common git commands:
+
 - `git status` → `jj st`
 - `git diff` → `jj diff`
 - `git commit` → `jj commit`
@@ -187,6 +213,7 @@ Commands work seamlessly with hunk.nvim as the diff editor for interactive split
 This plugin is part of the dotfiles configuration. It's automatically available when using Claude Code from the repository.
 
 To enable in other projects:
+
 1. Copy plugin directory to `.claude/plugins/jj-workflow-plugin/`
 2. Commands will be available as `/jj:*`
 
@@ -199,24 +226,29 @@ To enable in other projects:
 ## Troubleshooting
 
 **Commands not showing up:**
+
 - Verify plugin structure: `.claude-plugin/plugin.json` exists
 - Check Claude Code plugin loading: `claude --debug`
 - Ensure jj is in PATH: `which jj`
 
 **"Not a jj repo" errors:**
+
 - Initialize jj: `jj git init --colocate` (in Git repo)
 - Or: `jj init` (new jj repo)
 
 **Editor opens instead of using -m flag:**
+
 - Set `JJ_EDITOR=echo` in Claude settings
 - Commands always use `-m` to avoid editor prompts
 
 **Git commands being blocked:**
+
 - This is expected! The hook redirects git → jj
 - To temporarily disable: Comment out `PreToolUse` section in `config/claude/settings.json`
 - To allow specific git commands: Add them to read-only list (git show, git blame, etc.)
 
 **Hook not working:**
+
 - Check hook is executable: `chmod +x config/claude/plugins/jj-workflow-plugin/hooks/git-to-jj-translator.py`
 - Verify Python/uv is available: `which uv`
 - Test hook manually: `echo '{"tool":{"name":"Bash","params":{"command":"git status"}}}' | ./hooks/git-to-jj-translator.py`
