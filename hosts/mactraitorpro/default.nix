@@ -6,6 +6,10 @@
         default = "nvim";
         emacs.enable = true;
         vim.enable = true;
+        file-associations = {
+          enable = true;
+          editor = "zed";
+        };
       };
       dev = {
         python.enable = true;
@@ -51,105 +55,13 @@
 
     # Override the primary user for this host
     system.primaryUser = "emiller";
-    
-    # Add duti for managing file associations
+
+    # Additional system packages
     environment.systemPackages = with pkgs; [
-      duti
       (inputs.jj-spr.packages.${pkgs.system}.default.overrideAttrs (old: {
         buildInputs = (old.buildInputs or []) ++ [ zlib ];
       }))
     ];
-    
-    # Create a duti configuration file and apply it on activation
-    system.activationScripts.dutiConfiguration.text = ''
-      echo "Configuring default text editor file associations..."
-      
-      # Create duti configuration
-      cat > /tmp/duti-config.txt <<EOF
-      # Zed as default text editor
-      # Format: bundle_id UTI role
-      
-      # Text files
-      dev.zed.Zed public.plain-text all
-      dev.zed.Zed public.text all
-      dev.zed.Zed public.source-code all
-      dev.zed.Zed public.script all
-      dev.zed.Zed public.shell-script all
-      dev.zed.Zed public.python-script all
-      dev.zed.Zed public.ruby-script all
-      dev.zed.Zed public.perl-script all
-      dev.zed.Zed public.json all
-      dev.zed.Zed public.xml all
-      dev.zed.Zed public.html all
-      dev.zed.Zed com.netscape.javascript-source all
-      dev.zed.Zed net.daringfireball.markdown all
-      
-      # File extensions
-      dev.zed.Zed .txt all
-      dev.zed.Zed .md all
-      dev.zed.Zed .markdown all
-      dev.zed.Zed .nix all
-      dev.zed.Zed .log all
-      dev.zed.Zed .conf all
-      dev.zed.Zed .config all
-      dev.zed.Zed .toml all
-      dev.zed.Zed .yaml all
-      dev.zed.Zed .yml all
-      dev.zed.Zed .json all
-      dev.zed.Zed .js all
-      dev.zed.Zed .ts all
-      dev.zed.Zed .jsx all
-      dev.zed.Zed .tsx all
-      dev.zed.Zed .py all
-      dev.zed.Zed .rb all
-      dev.zed.Zed .sh all
-      dev.zed.Zed .bash all
-      dev.zed.Zed .zsh all
-      dev.zed.Zed .fish all
-      dev.zed.Zed .c all
-      dev.zed.Zed .h all
-      dev.zed.Zed .cpp all
-      dev.zed.Zed .hpp all
-      dev.zed.Zed .rs all
-      dev.zed.Zed .go all
-      dev.zed.Zed .java all
-      dev.zed.Zed .swift all
-      dev.zed.Zed .m all
-      dev.zed.Zed .mm all
-      dev.zed.Zed .php all
-      dev.zed.Zed .lua all
-      dev.zed.Zed .pl all
-      dev.zed.Zed .env all
-      dev.zed.Zed .gitignore all
-      dev.zed.Zed .gitconfig all
-      dev.zed.Zed .editorconfig all
-      dev.zed.Zed .dockerfile all
-      dev.zed.Zed .makefile all
-      dev.zed.Zed .html all
-      dev.zed.Zed .htm all
-      dev.zed.Zed .css all
-      dev.zed.Zed .scss all
-      dev.zed.Zed .sass all
-      dev.zed.Zed .less all
-      # Use Gapplin for SVG files instead of text editor
-      com.wolfrosch.Gapplin .svg all
-      com.wolfrosch.Gapplin public.svg-image all
-      dev.zed.Zed .xml all
-      dev.zed.Zed .csv all
-      dev.zed.Zed .sql all
-      EOF
-      
-      # Apply the duti configuration as the primary user
-      if command -v duti >/dev/null 2>&1; then
-        sudo -u emiller duti /tmp/duti-config.txt
-        echo "File associations configured successfully"
-      else
-        echo "Warning: duti not found, skipping file association configuration"
-      fi
-      
-      # Clean up
-      rm -f /tmp/duti-config.txt
-    '';
 
     # Enable sudo authentication with Touch ID.
     security.pam.services.sudo_local.touchIdAuth = true;

@@ -63,7 +63,6 @@ config.codekit
 
 # Editor Stuff #
 ################
-.dir-locals.el
 .direnv/
 .nvimlog
 .venv/
