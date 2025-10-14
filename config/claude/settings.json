@@ -140,8 +140,17 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bunx -y ccstatusline@latest",
+    "command": "/Users/edmundmiller/.claude/statusline-command.sh",
     "padding": 0
+  },
+  "enabledPlugins": {
+    "nextflow-pipeline-development@seqera-templates": true,
+    "support-ticket-kit@seqera-templates": false,
+    "nextflow-plugin-development@seqera-templates": false,
+    "jj-workflow-plugin@dotfiles-plugins": true,
+    "seqera-mcp@seqera-templates": true,
+    "jj@dotfiles-plugins": true,
+    "markdown-cleanup-plugin@dotfiles-plugins": true
   },
   "alwaysThinkingEnabled": true
 }

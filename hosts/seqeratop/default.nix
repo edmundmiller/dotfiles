@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 {
   config = {
     modules = {
@@ -6,6 +6,10 @@
         default = "nvim";
         emacs.enable = true;
         vim.enable = true;
+        file-associations = {
+          enable = true;
+          editor = "zed";
+        };
       };
       dev = {
         python.enable = true;
