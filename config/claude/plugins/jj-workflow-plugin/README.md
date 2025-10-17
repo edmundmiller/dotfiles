@@ -1,10 +1,11 @@
 # Jujutsu Workflow Plugin
 
-Autonomous commit stacking and curation workflow for Jujutsu (jj) version control. This plugin provides Claude Code with specialized commands for managing commits in a jj repository using a stack-based workflow.
+Autonomous commit stacking and curation workflow for Jujutsu (jj) version control. This plugin provides Claude Code with specialized commands, Skills, and hooks for managing commits in a jj repository using a stack-based workflow.
 
 **Features:**
 
-- **Commit stacking** - `/jj:commit`, `/jj:split`, `/jj:squash`, `/jj:cleanup`
+- **Slash Commands** - `/jj:commit`, `/jj:split`, `/jj:squash`, `/jj:cleanup` for explicit user actions
+- **Agent Skills** - Autonomous JJ workflow understanding, commit curation, and message generation
 - **Git translation** - Automatic hook to suggest jj equivalents and block git commands
 - **Plan-driven workflow** - Automatic commit planning and validation hooks
 - **Auto-formatting** - Runs `jj fix` after edits to format code automatically
@@ -149,6 +150,74 @@ The plugin supports a plan-driven workflow where Claude commits intent BEFORE wo
 - **Leverage snapshots** - Use `jj op log` and `jj op restore` for time travel
 - **Everything undoable** - Operation log makes everything reversible
 - **Clean history** - Curate before pushing, work however you want locally
+
+## Agent Skills
+
+This plugin includes three Agent Skills that Claude autonomously uses to understand and work with jj workflows. Skills are **model-invoked** - Claude automatically activates them based on context, unlike slash commands which require explicit user invocation.
+
+### Working with Jujutsu Version Control
+
+**When activated:** When user mentions commits, changes, version control, or working with jj repositories.
+
+**What it provides:**
+- Core jj concepts and mental model (change-based, automatic snapshotting, stack-based workflow)
+- Working copy state management (`@`, `@-`, ancestors)
+- Plan-driven workflow guidance
+- When to suggest jj commands vs slash commands
+- Git-to-JJ translation knowledge
+- Best practices for jj workflows
+
+**Example:** User says "I need to commit these changes" → Claude understands jj workflow, suggests `/jj:commit`, explains plan-driven approach if applicable.
+
+### Curating Jujutsu Commits
+
+**When activated:** When working with multiple commits, WIP changes, or preparing work for sharing.
+
+**What it provides:**
+- Pattern recognition for split opportunities (tests+code, docs+code, config+code)
+- WIP and fixup commit detection
+- When to suggest `/jj:split` vs `/jj:squash`
+- File type pattern matching (test, docs, config)
+- Curation workflow guidance
+- Avoiding over-curation
+
+**Example:** User makes changes mixing test files and implementation → Claude suggests: "Your changes mix tests and implementation. Consider: `/jj:split test`"
+
+### Generating JJ Commit Messages
+
+**When activated:** When creating commits, describing changes, or when user asks for commit message help.
+
+**What it provides:**
+- Conventional commit format (type, scope, description)
+- Project-specific commit style matching
+- Plan-to-reality pattern for plan-driven workflow
+- Message writing guidelines (imperative mood, specificity, what/why)
+- Auto-generation from file patterns
+- Length and formatting best practices
+
+**Example:** User runs `/jj:commit` without message → Claude analyzes changes, generates: "feat(auth): implement JWT-based authentication"
+
+### Skills vs Slash Commands
+
+**Skills (model-invoked):**
+- Claude automatically uses when relevant
+- Provide knowledge and understanding
+- Guide workflow decisions
+- Suggest appropriate commands
+
+**Slash Commands (user-invoked):**
+- User explicitly types `/jj:commit`, `/jj:split`, etc.
+- Execute specific actions
+- Provide consistent interface
+- Work whether Skills active or not
+
+**Example workflow:**
+1. User: "I added login and some tests"
+2. **Skill activates:** Claude understands mixed changes
+3. **Skill suggests:** `/jj:split test` to separate concerns
+4. User: `/jj:split test`
+5. **Command executes:** Splits tests into separate commit
+6. **Skill activates:** Claude generates commit messages for both commits
 
 ## Integration
 
