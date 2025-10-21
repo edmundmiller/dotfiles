@@ -17,6 +17,11 @@ require("lazy").setup({
   -- Configure any other `lazy.nvim` configuration options here
   install = { colorscheme = { "astrotheme", "habamax" } },
   ui = { backdrop = 100 },
+  dev = {
+    path = "~/src/emacs", -- Where local dev plugins are stored
+    patterns = { "edmundmiller" }, -- GitHub username for dev plugins
+    fallback = true, -- Fallback to GitHub if local not found
+  },
   performance = {
     rtp = {
       -- disable some rtp plugins, add more to your liking

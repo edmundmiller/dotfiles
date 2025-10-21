@@ -1,5 +1,31 @@
 -- Jujutsu (jj) version control integration
 return {
+  -- NeoJJ - Neogit-inspired interactive UI for Jujutsu
+  {
+    "edmundmiller/neojj.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+    },
+    dev = true, -- Use local ~/src/emacs/neojj.nvim when available
+    config = function()
+      require("neojj").setup({
+        disable_signs = false,
+        -- Additional NeoJJ configuration as needed
+      })
+    end,
+    cmd = "NeoJJ", -- Lazy-load on :NeoJJ command
+    keys = {
+      -- Main NeoJJ status view
+      { "<leader>jg", "<cmd>lua require('neojj').open()<cr>", desc = "NeoJJ status view" },
+
+      -- NeoJJ-specific popup keybindings (Phase 2 Priority 3 features)
+      { "<leader>jD", "<cmd>lua require('neojj.popups').open('describe')()<cr>", desc = "NeoJJ describe popup" },
+      { "<leader>jN", "<cmd>lua require('neojj.popups').open('new')()<cr>", desc = "NeoJJ new change popup" },
+      { "<leader>jQ", "<cmd>lua require('neojj.popups').open('squash')()<cr>", desc = "NeoJJ squash popup" },
+      { "<leader>jE", "<cmd>lua require('neojj.popups').open('edit')()<cr>", desc = "NeoJJ edit change popup" },
+    },
+  },
+
   -- Core jj integration with terminal-based commands and pickers
   {
     "NicolasGB/jj.nvim",
@@ -33,7 +59,7 @@ return {
       { "<leader>js", "<cmd>J status<cr>", desc = "JJ status (press Enter to open, X to restore)" },
       { "<leader>jl", "<cmd>J log<cr>", desc = "JJ log (press 'd' for diff, Enter to edit)" },
       { "<leader>jd", "<cmd>J diff<cr>", desc = "JJ diff (@-..@)" },
-      { "<leader>jD", "<cmd>J describe<cr>", desc = "JJ describe (edit message)" },
+      -- { "<leader>jD", "<cmd>J describe<cr>", desc = "JJ describe (edit message)" }, -- Replaced by NeoJJ popup
       { "<leader>jn", "<cmd>J new<cr>", desc = "JJ new change" },
       { "<leader>je", "<cmd>J edit<cr>", desc = "JJ edit change" },
       { "<leader>j:", "<cmd>J ", desc = "JJ command" },
