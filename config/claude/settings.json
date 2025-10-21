@@ -146,10 +146,9 @@
   "enabledPlugins": {
     "nextflow-pipeline-development@seqera-templates": true,
     "support-ticket-kit@seqera-templates": false,
-    "nextflow-plugin-development@seqera-templates": false,
+    "nextflow-plugin-development@seqera-templates": true,
     "jj-workflow-plugin@dotfiles-plugins": true,
     "seqera-mcp@seqera-templates": true,
-    "jj@dotfiles-plugins": true,
     "markdown-cleanup-plugin@dotfiles-plugins": true
   },
   "alwaysThinkingEnabled": true
