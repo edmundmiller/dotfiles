@@ -110,7 +110,7 @@ return {
         ["<Leader>gc"] = { function() require("telescope.builtin").git_commits() end, desc = "Git commits" },
         ["<Leader>gC"] = { function() require("telescope.builtin").git_bcommits() end, desc = "Git buffer commits" },
         ["<Leader>gd"] = { function() require("diffview").open() end, desc = "Git diff" },
-        ["<Leader>gh"] = { function() require("diffview").file_history() end, desc = "Git file history" },
+        ["<Leader>gH"] = { function() require("diffview").file_history() end, desc = "Git file history" },
         ["<Leader>gl"] = { function() vim.cmd("Git log --oneline") end, desc = "Git log" },
         ["<Leader>gf"] = { function() require("telescope.builtin").git_files() end, desc = "Git files" },
         ["<Leader>gs"] = { function() require("telescope.builtin").git_status() end, desc = "Git status (telescope)" },
