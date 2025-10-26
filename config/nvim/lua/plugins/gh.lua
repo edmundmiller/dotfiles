@@ -7,6 +7,7 @@ return {
   -- litee.nvim - Required framework for gh.nvim
   {
     "ldelossa/litee.nvim",
+    event = "VeryLazy", -- Load with gh.nvim
     config = function()
       require("litee.lib").setup({
         tree = {
@@ -26,6 +27,7 @@ return {
     dependencies = {
       "ldelossa/litee.nvim",
     },
+    event = "VeryLazy", -- Load shortly after startup to ensure commands exist
     config = function()
       require("litee.gh").setup({
         -- Disable keymaps to define our own
@@ -83,6 +85,7 @@ return {
     dependencies = {
       "ldelossa/litee.nvim",
     },
+    event = "VeryLazy", -- Load with gh.nvim
     config = function()
       require("litee.gh").setup()
     end,
