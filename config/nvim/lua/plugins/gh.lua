@@ -38,31 +38,27 @@ return {
       })
     end,
     keys = {
-      -- PR Management
-      { "<leader>ghc", "<cmd>GHCloseCommit<cr>", desc = "Close commit" },
-      { "<leader>ghC", "<cmd>GHCollapseCommit<cr>", desc = "Collapse commit" },
-      { "<leader>ghd", "<cmd>GHExpandCommit<cr>", desc = "Expand commit" },
-      { "<leader>ghe", "<cmd>GHOpenToCommit<cr>", desc = "Open to commit" },
-      { "<leader>ghp", "<cmd>GHPopOutCommit<cr>", desc = "Pop out commit" },
-      { "<leader>ghz", "<cmd>GHCollapseCommit<cr>", desc = "Collapse commit" },
+      -- === GitHub Panel Operations (gh.nvim) ===
+      -- Panel-based UI for deep PR reviews (complements octo.nvim buffer-based UI)
+      -- Using <Leader>gH (capital H) to avoid conflicts with octo.nvim
 
-      -- PR Review Navigation
-      { "<leader>ght", "<cmd>GHToggleThreads<cr>", desc = "Toggle threads panel" },
+      { "<leader>gH", group = "GitHub Panels" },
 
-      -- PR Operations
-      { "<leader>ghpr", "<cmd>GHOpenPR<cr>", desc = "Open PR" },
-      { "<leader>ghrr", "<cmd>GHRefreshPR<cr>", desc = "Refresh PR" },
+      -- PR Panel & Navigation
+      { "<leader>gHo", "<cmd>GHOpenPR<cr>", desc = "Open PR panel" },
+      { "<leader>gHr", "<cmd>GHRefreshPR<cr>", desc = "Refresh PR" },
+      { "<leader>gHt", "<cmd>GHToggleThreads<cr>", desc = "Toggle threads" },
+      { "<leader>gHP", "<cmd>GHTogglePR<cr>", desc = "Toggle PR panel" },
 
-      -- Comment and Review
-      { "<leader>ghs", "<cmd>GHStartReview<cr>", desc = "Start review" },
-      { "<leader>ghr", "<cmd>GHSubmitReview<cr>", desc = "Submit review" },
+      -- Commit Navigation (in panel)
+      { "<leader>gHc", "<cmd>GHCloseCommit<cr>", desc = "Close commit" },
+      { "<leader>gHe", "<cmd>GHExpandCommit<cr>", desc = "Expand commit" },
+      { "<leader>gHC", "<cmd>GHCollapseCommit<cr>", desc = "Collapse commit" },
+      { "<leader>gHp", "<cmd>GHPopOutCommit<cr>", desc = "Pop out commit" },
 
-      -- Panels
-      { "<leader>ghT", "<cmd>GHToggleThreads<cr>", desc = "Toggle threads" },
-      { "<leader>ghP", "<cmd>GHTogglePR<cr>", desc = "Toggle PR panel" },
-
-      -- Navigation groups
-      { "<leader>gh", group = "GitHub (gh.nvim)" },
+      -- Review (in panel)
+      { "<leader>gHs", "<cmd>GHStartReview<cr>", desc = "Start review" },
+      { "<leader>gHS", "<cmd>GHSubmitReview<cr>", desc = "Submit review" },
     },
     cmd = {
       "GHCloseCommit",
