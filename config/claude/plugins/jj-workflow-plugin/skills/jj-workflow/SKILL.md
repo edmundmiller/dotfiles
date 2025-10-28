@@ -15,6 +15,7 @@ description: Understand and work with Jujutsu (jj) version control system. Use w
 - **Everything is undoable**: All operations recorded in `jj op log`, use `jj op restore` to time travel
 
 **Key differences from Git:**
+
 - No staging area (changes are always in commits)
 - Edit any commit directly with `jj edit`
 - Conflicts stored in commits, not blocking
@@ -36,6 +37,7 @@ jj log -r 'ancestors(@, 5)'
 ```
 
 **State tracking:**
+
 - If `@` is empty with no description → Fresh start, ready for changes
 - If `@` has changes but no description → Work done, needs description
 - If `@` has description and changes → Can stack with `jj new`
@@ -44,12 +46,16 @@ jj log -r 'ancestors(@, 5)'
 ## Stack-Based Workflow
 
 **Building the stack:**
-1. Make changes in `@`
+
+1. Make changes in `@` (including new files - they'll be tracked automatically)
 2. Describe with `jj describe -m "message"` (or `/jj:commit`)
 3. Create new commit on top with `jj new`
 4. Repeat
 
+**Note:** New untracked files are automatically tracked when using `/jj:commit`, so you don't need to manually run `jj file track`.
+
 **Why stack commits:**
+
 - Review commits individually
 - Reorder/reorganize commits easily
 - Ship commits incrementally
@@ -64,6 +70,7 @@ This repository uses a **plan-first** approach:
 3. **Describe reality (end)**: Replace "plan:" with actual work done using `/jj:commit`
 
 **TodoWrite integration:**
+
 - One commit per major todo item
 - Use `jj new` when moving to next todo
 - Creates atomic, reviewable commits
@@ -78,6 +85,7 @@ Every `jj` command automatically snapshots the working copy:
 - **Time travel**: Restore to any previous state
 
 **Examples:**
+
 ```bash
 jj op log              # View all operations
 jj op restore abc123   # Restore to specific operation
@@ -87,22 +95,27 @@ jj undo                # Undo last operation
 ## When to Suggest JJ Commands
 
 **Viewing state:**
+
 - `jj status` - Check working copy changes
 - `jj log` - View commit history
 - `jj show` - Show specific commit
 - `jj diff` - Show changes in working copy
 
 **Creating commits:**
+
 - Use `/jj:commit` command (don't run `jj describe` directly unless in command context)
 - Suggest when user has made substantial changes
 - Suggest when plan needs updating to reflect reality
+- New untracked files are automatically tracked before committing
 
 **Organizing commits:**
+
 - Use `/jj:split <pattern>` when changes mix concerns (e.g., tests + implementation)
 - Use `/jj:squash` when multiple WIP commits for same feature
 - Don't suggest curation for simple, focused changes
 
 **Undoing mistakes:**
+
 - `jj undo` - Undo last operation
 - `jj op restore` - Restore to earlier state
 - `jj abandon` - Discard bad commits
@@ -117,6 +130,7 @@ This plugin provides user-invoked slash commands:
 - **`/jj:cleanup`** - Remove empty workspaces
 
 **When to mention slash commands:**
+
 - User asks "how do I commit" → Mention `/jj:commit`
 - User has mixed changes → Suggest `/jj:split test` or similar
 - User mentions WIP commits → Suggest `/jj:squash`
@@ -136,6 +150,7 @@ This repository **blocks git commands** via hook. If user tries `git`:
 ## Best Practices
 
 **Do:**
+
 - Stack commits as you work
 - Describe changes clearly (what and why)
 - Use plan-driven workflow for substantial tasks
@@ -143,6 +158,7 @@ This repository **blocks git commands** via hook. If user tries `git`:
 - Split mixed concerns into separate commits
 
 **Don't:**
+
 - Mix git and jj commands (hooks prevent this)
 - Leave substantial work undescribed at session end
 - Create monolithic commits with unrelated changes
@@ -151,6 +167,7 @@ This repository **blocks git commands** via hook. If user tries `git`:
 ## Common Operations
 
 **Check current state:**
+
 ```bash
 jj status           # Working copy changes
 jj log -r @         # Current commit
@@ -158,6 +175,7 @@ jj diff             # Uncommitted changes
 ```
 
 **Stack new commit:**
+
 ```bash
 # Using slash command (preferred)
 /jj:commit "feat: add login"
@@ -168,6 +186,7 @@ jj new
 ```
 
 **Fix mistakes:**
+
 ```bash
 jj undo                    # Undo last operation
 jj op restore <operation>  # Restore to earlier point
@@ -175,6 +194,7 @@ jj edit @-                 # Edit parent commit
 ```
 
 **Reorganize commits:**
+
 ```bash
 /jj:split test      # Split tests from implementation
 /jj:squash          # Merge current into parent
@@ -184,6 +204,7 @@ jj rebase -r @ -d X # Move commit to different base
 ## When This Skill Activates
 
 Use this Skill when:
+
 - User mentions commits, committing, or version control
 - User asks about jj commands or workflow
 - Working with changes that need organizing

@@ -145,12 +145,14 @@
   },
   "enabledPlugins": {
     "nextflow-pipeline-development@seqera-templates": true,
-    "nextflow-plugin-development@seqera-templates": true,
+    "nextflow-plugin-development@seqera-templates": false,
     "jj-workflow-plugin@dotfiles-plugins": true,
     "seqera-mcp@seqera-templates": true,
     "markdown-cleanup-plugin@dotfiles-plugins": true,
-    "fusion-debugging@seqera-templates": true,
-    "nextflow-debugging@seqera-templates": true
+    "fusion-debugging@seqera-templates": false,
+    "nextflow-debugging@seqera-templates": true,
+    "creating-multiqc-template@multiqc-dev-tools": true,
+    "skill-creator@seqera-templates": true
   },
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": false
 }
