@@ -28,6 +28,10 @@ echo "💡 **Tip:** Make some changes first, then use \`/jj:commit\` to describe
 exit 0
 fi
 
+!# Track any untracked files before committing
+
+jj file track . 2>/dev/null || true
+
 !# Determine action based on user argument
 
 if [ -n "$ARGUMENTS" ]; then
@@ -70,6 +74,8 @@ fi
 ## Your Task
 
 Based on the above changes, create a commit in this jujutsu repository.
+
+**Note:** Untracked files are automatically tracked before committing, so new files will be included in the commit.
 
 **Plan-Driven Workflow:**
 

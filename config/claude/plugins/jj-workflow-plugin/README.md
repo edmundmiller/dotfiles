@@ -9,6 +9,7 @@ Autonomous commit stacking and curation workflow for Jujutsu (jj) version contro
 - **Git translation** - Automatic hook to suggest jj equivalents and block git commands
 - **Plan-driven workflow** - Automatic commit planning and validation hooks
 - **Auto-formatting** - Runs `jj fix` after edits to format code automatically
+- **Automatic file tracking** - Tracks new untracked files before committing
 
 ## Commands
 
@@ -29,6 +30,7 @@ Stack a commit with intelligent message generation.
 
 **Features:**
 
+- Automatically tracks new untracked files before committing
 - Auto-generates messages from file patterns (test/docs/fix/feat)
 - Keeps first line under 72 characters
 - Matches style of recent commits
@@ -84,10 +86,12 @@ Maintenance command for removing empty jj workspaces across your repository. Use
 **Stack commits as you work:**
 
 ```bash
-/jj:commit "feat: add login UI"      # Stack commits
+/jj:commit "feat: add login UI"      # Stack commits (new files tracked automatically)
 /jj:commit "add validation logic"    # Keep stacking
 /jj:commit "add tests"               # Auto-generated or custom messages
 ```
+
+**Note:** New untracked files are automatically tracked before each commit - no need to run `jj file track` manually.
 
 **Curate your commits:**
 
@@ -160,6 +164,7 @@ This plugin includes three Agent Skills that Claude autonomously uses to underst
 **When activated:** When user mentions commits, changes, version control, or working with jj repositories.
 
 **What it provides:**
+
 - Core jj concepts and mental model (change-based, automatic snapshotting, stack-based workflow)
 - Working copy state management (`@`, `@-`, ancestors)
 - Plan-driven workflow guidance
@@ -174,6 +179,7 @@ This plugin includes three Agent Skills that Claude autonomously uses to underst
 **When activated:** When working with multiple commits, WIP changes, or preparing work for sharing.
 
 **What it provides:**
+
 - Pattern recognition for split opportunities (tests+code, docs+code, config+code)
 - WIP and fixup commit detection
 - When to suggest `/jj:split` vs `/jj:squash`
@@ -188,6 +194,7 @@ This plugin includes three Agent Skills that Claude autonomously uses to underst
 **When activated:** When creating commits, describing changes, or when user asks for commit message help.
 
 **What it provides:**
+
 - Conventional commit format (type, scope, description)
 - Project-specific commit style matching
 - Plan-to-reality pattern for plan-driven workflow
@@ -200,18 +207,21 @@ This plugin includes three Agent Skills that Claude autonomously uses to underst
 ### Skills vs Slash Commands
 
 **Skills (model-invoked):**
+
 - Claude automatically uses when relevant
 - Provide knowledge and understanding
 - Guide workflow decisions
 - Suggest appropriate commands
 
 **Slash Commands (user-invoked):**
+
 - User explicitly types `/jj:commit`, `/jj:split`, etc.
 - Execute specific actions
 - Provide consistent interface
 - Work whether Skills active or not
 
 **Example workflow:**
+
 1. User: "I added login and some tests"
 2. **Skill activates:** Claude understands mixed changes
 3. **Skill suggests:** `/jj:split test` to separate concerns
