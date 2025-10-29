@@ -66,49 +66,19 @@ fi
 
 ## Context
 
-- Current status: !`jj status`
-- Current changes: !`jj diff -r @`
-- Recent commits: !`jj log -r 'ancestors(@, 5)' -T 'concat(change_id.short(), ": ", description)' --no-graph`
-- Current state: !`jj log -r @ --no-graph -T 'if(description, "has description", "needs description")'`
+- Status: !`jj status`
+- Changes: !`jj diff -r @`
 
-## Your Task
+## Task
 
-Based on the above changes, create a commit in this jujutsu repository.
-
-**Note:** Untracked files are automatically tracked before committing, so new files will be included in the commit.
-
-**Plan-Driven Workflow:**
-
-1. **Plan created** (UserPromptSubmit): If this is a substantial task, a "plan:" commit was created describing intent
-2. **Work done**: Now you're here, work has been completed
-3. **Describe reality**: Replace the plan with what actually happened
+Create commit for changes above. New files already tracked.
 
 **Workflow:**
 
-- If current commit has description starting with "plan:" → Update it with actual work done using `jj describe -m "message"`
-- If current commit has other description → use `jj new -m "message"` to create new commit on top
-- If current commit needs description → use `jj describe -m "message"` to describe current commit, then automatically `jj new` (unless commit is empty)
+- Has "plan:" description → Update with actual work: `jj describe -m "message"`
+- Has other description → Stack new commit: `jj new -m "message"`
+- Needs description → Describe current: `jj describe -m "message"` (auto-`jj new` if has changes)
 
-**TodoWrite Integration:**
+Use conventional commit (feat/fix/refactor/docs/test/chore), under 72 chars, `-m` flag.
 
-- If you created a todo list, complete each todo then use `jj new` to move to next commit
-- This creates a commit per major step in the work
-
-**Conventional Commit Types:**
-
-- `feat(scope):` new features
-- `fix(scope):` bug fixes
-- `docs(scope):` documentation
-- `refactor(scope):` code restructuring
-- `test(scope):` tests
-- `chore(scope):` maintenance
-
-**Guidelines:**
-
-- Be specific about WHAT changed and WHY (not just which files)
-- Keep first line under 72 characters
-- Use heredoc for multi-line: `jj describe -m "$(cat <<'EOF' ... EOF)"`
-- Match style of recent commits
-- Always use `-m` flag (never open editor)
-
-Show result: !`jj log -r @ -T 'concat(change_id.short(), ": ", description)' --no-graph`
+Result: !`jj log -r @ -T 'concat(change_id.short(), ": ", description)' --no-graph`
