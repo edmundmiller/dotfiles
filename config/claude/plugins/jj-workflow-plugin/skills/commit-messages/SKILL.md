@@ -39,75 +39,16 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ## Conventional Commit Types
 
-**feat**: New features or capabilities
-
-```
-feat(auth): implement JWT-based authentication
-feat(api): add user profile endpoint
-```
-
-**fix**: Bug fixes
-
-```
-fix(login): correct password validation logic
-fix(api): handle null response in user fetch
-```
-
-**refactor**: Code restructuring without behavior change
-
-```
-refactor(auth): extract token validation to helper
-refactor(editors): abstract file associations into shared module
-```
-
-**docs**: Documentation changes
-
-```
-docs(api): update authentication endpoint examples
-docs(readme): add installation instructions
-```
-
-**test**: Adding or modifying tests
-
-```
-test(auth): add unit tests for login flow
-test(api): add integration tests for user endpoints
-```
-
-**chore**: Maintenance tasks, dependencies, build changes
-
-```
-chore: update dependencies
-chore(deps): upgrade to Python 3.12
-```
-
-**style**: Code style, formatting (no logic changes)
-
-```
-style(auth): format with black
-style: apply prettier to all JS files
-```
-
-**perf**: Performance improvements
-
-```
-perf(db): optimize user query with index
-perf(api): cache frequent user lookups
-```
-
-**ci**: CI/CD configuration changes
-
-```
-ci: add automated testing workflow
-ci(actions): update deployment pipeline
-```
-
-**build**: Build system or external dependencies
-
-```
-build: update webpack config
-build(nix): update flake inputs
-```
+- **feat**: New features - `feat(auth): implement JWT authentication`
+- **fix**: Bug fixes - `fix(login): correct password validation`
+- **refactor**: Code restructuring - `refactor(auth): extract token helper`
+- **docs**: Documentation - `docs(api): update auth examples`
+- **test**: Tests - `test(auth): add login flow tests`
+- **chore**: Maintenance - `chore(deps): upgrade to Python 3.12`
+- **style**: Formatting - `style(auth): format with black`
+- **perf**: Performance - `perf(db): optimize query with index`
+- **ci**: CI/CD - `ci: add automated testing workflow`
+- **build**: Build system - `build(nix): update flake inputs`
 
 ## Message Writing Guidelines
 
@@ -158,126 +99,35 @@ Updates database schema for user tokens.
 
 **Key principle:** Describe what **actually happened**, not what you planned
 
-## Examples from This Project
+## Example Commit
 
-### Example 1: Feature with Details
+**Complex feature with details:**
 
 ```
 feat(claude): Add bundled MCP server to git plugin
 
-Integrate mcp-server-git directly into the git plugin for seamless git
-operations:
-
-**MCP Integration:**
+Integrate mcp-server-git directly into plugin for seamless operations:
 - Created .mcp.json to bundle mcp-server-git
-- MCP server starts automatically when plugin is enabled
-- Uses uvx to run mcp-server-git without additional setup
+- Auto-starts when plugin enabled, uses uvx
+- Adds 12 git tools: status, diff, add, commit, reset, etc.
 
-**12 New Git Tools:**
-Status & Diff:
-- git_status, git_diff_unstaged, git_diff_staged, git_diff
-
-Commit Operations:
-- git_add, git_commit, git_reset
-
-**Benefits:**
-- No user MCP configuration needed
-- Slash commands for complex workflows
-- MCP tools for quick, direct operations
+Benefits: No user MCP config needed, unified git workflow.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-### Example 2: Refactoring
-
-```
-refactor(editors): Abstract file associations into shared module
-
-- Create modules/editors/file-associations.nix for reusable duti configuration
-- Remove duplicate duti setup from hosts/mactraitorpro and hosts/seqeratop
-- Add file-associations module to both hosts with zed as default
-- Supports easy editor switching (zed, neovide, vscode, or custom bundle ID)
-- Reduces code duplication by ~180 lines across host configs
-```
-
-### Example 3: Fix with Context
-
-```
-fix(claude): Rename plugin to 'jj' for cleaner namespace
-
-User requested shorter plugin name for better UX:
-
-**Changed:**
-- plugin.json: "jj-workflow-plugin" → "jj"
-- marketplace.json: "jj-workflow-plugin" → "jj"
-
-**Kept:**
-- Directory name stays as jj-workflow-plugin (implementation detail)
-- All functionality and commands unchanged
-
-**Benefits:**
-- Cleaner plugin identifier in marketplace
-- Simpler plugin name for users
-- Commands show as /jj:* instead of /jj-workflow-plugin:*
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-### Example 4: Simple Change
-
-```
-chore: Add skills docs
-```
+**Simple changes:** `chore: Add skills docs` or `fix(login): correct validation`
 
 ## Message Generation Process
 
-**Note:** The `/jj:commit` command automatically tracks new untracked files before committing, so all files in your working copy changes will be included.
-
-**1. Analyze changes:**
-
-```bash
-jj status        # See what files changed
-jj diff          # Review actual changes
-```
-
-**2. Identify change type:**
-
-- New functionality? → `feat`
-- Bug fix? → `fix`
-- Restructuring? → `refactor`
-- Documentation? → `docs`
-- Tests? → `test`
-- Maintenance? → `chore`
-
-**3. Determine scope:**
-
-- Component name (auth, api, ui)
-- Area of codebase (claude, jj, nvim)
-- Module name (editors, shell)
-- Leave empty if project-wide
-
-**4. Write summary:**
-
-- Start with type(scope):
-- Imperative mood verb
-- Brief but specific
-- Under 72 characters
-
-**5. Add body if needed:**
-
-- Complex changes need explanation
-- Multiple related changes need bullets
-- Breaking changes need details
-- Simple changes can skip body
-
-**6. Include footer:**
-
-- Always add Claude Code attribution
-- Co-authored-by line
+1. **Analyze changes** - `jj status` and `jj diff` show what changed
+2. **Identify type** - feat/fix/refactor/docs/test/chore
+3. **Determine scope** - Component/area/module name, or empty if project-wide
+4. **Write summary** - type(scope): imperative verb + brief description, <72 chars
+5. **Add body if complex** - Multiple changes, breaking changes, or detailed explanation
+6. **Include footer** - Claude Code attribution + co-authored-by
 
 ## Auto-Generation from File Patterns
 
@@ -345,47 +195,9 @@ jj log -r 'ancestors(@, 10)' -T 'concat(change_id.short(), ": ", description)' -
 
 ## Common Patterns
 
-### Multiple Related Changes
-
-**Use bullets for clarity:**
-
-```
-refactor(module): improve error handling
-
-- Extract error handling to dedicated helper
-- Add specific error types for different cases
-- Update tests to verify error messages
-- Add logging for debugging
-```
-
-### Breaking Changes
-
-**Highlight in body:**
-
-```
-feat(api): redesign authentication endpoint
-
-BREAKING CHANGE: /auth/login now requires email field instead of username.
-
-Migration:
-- Update client code to send email instead of username
-- Existing usernames mapped to emails in database
-```
-
-### Work with Multiple Todos
-
-**One commit per major todo:**
-
-```
-# Todo 1 completed
-feat(auth): add login endpoint
-
-# Todo 2 completed (next commit)
-feat(auth): add token validation middleware
-
-# Todo 3 completed (next commit)
-test(auth): add authentication tests
-```
+- **Multiple changes**: Use bulleted body for clarity
+- **Breaking changes**: Add "BREAKING CHANGE:" in body with migration steps
+- **TodoWrite integration**: One commit per major todo (use `jj new` between todos)
 
 ## When to Suggest Messages
 
@@ -420,14 +232,3 @@ test(auth): add authentication tests
 - Mix unrelated changes (suggest split)
 - Skip context for complex changes
 - Forget the imperative mood
-
-## When This Skill Activates
-
-Use this Skill when:
-
-- User uses `/jj:commit` without message argument
-- User asks "how should I describe this commit"
-- Generating commit message from changes
-- Plan commit needs converting to reality
-- User asks for commit message help
-- Reviewing changes and suggesting description
