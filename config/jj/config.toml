@@ -67,6 +67,7 @@ tidy = [
 
 # GitHub Pull Request management
 spr = ["util", "exec", "--", "nix", "run", "/Users/edmundmiller/.config/dotfiles#jj-spr", "--"] # Stacked pull requests with jj-spr
+nd = ["util", "exec", "--", "/Users/edmundmiller/.config/dotfiles/bin/jj-nd", "--"] # Open diff in neovim (PR preview)
 
 [revset-aliases]
 # Find the closest bookmark in the ancestry of a given revision

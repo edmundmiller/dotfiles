@@ -77,28 +77,7 @@
       "Bash(wave:*)",
       "Bash(nf-test:*)",
       "Bash(tw:*)",
-      "Bash(jj status:*)",
-      "Bash(jj log:*)",
-      "Bash(jj diff:*)",
-      "Bash(jj show:*)",
-      "Bash(jj new:*)",
-      "Bash(jj describe:*)",
-      "Bash(jj split:*)",
-      "Bash(jj squash:*)",
-      "Bash(jj undo:*)",
-      "Bash(jj op log:*)",
-      "Bash(jj op restore:*)",
-      "Bash(jj op undo:*)",
-      "Bash(jj branch:*)",
-      "Bash(jj edit:*)",
-      "Bash(jj restore:*)",
-      "Bash(jj abandon:*)",
-      "Bash(jj rebase:*)",
-      "Bash(jj move:*)",
-      "Bash(jj workspace:*)",
-      "Bash(jj root:*)",
-      "Bash(jj git fetch:*)",
-      "Bash(jj files:*)",
+      "Bash(jj:*:*)",
       "mcp__RepoPrompt__list_windows",
       "mcp__RepoPrompt__select_window",
       "mcp__RepoPrompt__manage_workspaces",
@@ -115,10 +94,7 @@
       "mcp__RepoPrompt__chat_send",
       "mcp__RepoPrompt__chats"
     ],
-    "deny": [
-      "Bash(git:*)",
-      "mcp__git__*"
-    ]
+    "deny": ["Bash(git:*)", "mcp__git__*"]
   },
   "statusLine": {
     "type": "command",
