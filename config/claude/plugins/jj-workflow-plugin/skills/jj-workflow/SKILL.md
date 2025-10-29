@@ -7,19 +7,14 @@ description: Understand and work with Jujutsu (jj) version control system. Use w
 
 ## Core Concepts
 
-**Jujutsu (jj)** is a Git-compatible version control system with a different mental model:
+**Jujutsu (jj)** is Git-compatible VCS with:
 
-- **Change-based, not commit-based**: Every change has a unique ID that persists through rewrites
-- **Automatic snapshotting**: Working copy is automatically snapshotted before each operation
-- **Stack-based workflow**: Build commits on top of each other in a stack
-- **Everything is undoable**: All operations recorded in `jj op log`, use `jj op restore` to time travel
+- **Change-based**: Unique IDs persist through rewrites
+- **Auto-snapshotting**: Working copy snapshotted before each operation
+- **Stack-based**: Build commits in a stack
+- **Undoable**: All ops in `jj op log`, use `jj op restore` to time travel
 
-**Key differences from Git:**
-
-- No staging area (changes are always in commits)
-- Edit any commit directly with `jj edit`
-- Conflicts stored in commits, not blocking
-- Automatic working copy management
+**vs Git:** No staging area, edit any commit (`jj edit`), conflicts stored in commits, auto working copy mgmt
 
 ## Working Copy Model
 
@@ -77,20 +72,7 @@ This repository uses a **plan-first** approach:
 
 ## Automatic Snapshotting
 
-Every `jj` command automatically snapshots the working copy:
-
-- **No manual saves needed**: Changes tracked automatically
-- **Full operation history**: `jj op log` shows everything
-- **Easy undo**: `jj undo` or `jj op restore`
-- **Time travel**: Restore to any previous state
-
-**Examples:**
-
-```bash
-jj op log              # View all operations
-jj op restore abc123   # Restore to specific operation
-jj undo                # Undo last operation
-```
+Every `jj` command auto-snapshots working copy. Use `jj op log` to view history, `jj undo` for last op, or `jj op restore <id>` for time travel.
 
 ## When to Suggest JJ Commands
 
@@ -166,48 +148,7 @@ This repository **blocks git commands** via hook. If user tries `git`:
 
 ## Common Operations
 
-**Check current state:**
-
-```bash
-jj status           # Working copy changes
-jj log -r @         # Current commit
-jj diff             # Uncommitted changes
-```
-
-**Stack new commit:**
-
-```bash
-# Using slash command (preferred)
-/jj:commit "feat: add login"
-
-# Manual (in command context)
-jj describe -m "feat: add login"
-jj new
-```
-
-**Fix mistakes:**
-
-```bash
-jj undo                    # Undo last operation
-jj op restore <operation>  # Restore to earlier point
-jj edit @-                 # Edit parent commit
-```
-
-**Reorganize commits:**
-
-```bash
-/jj:split test      # Split tests from implementation
-/jj:squash          # Merge current into parent
-jj rebase -r @ -d X # Move commit to different base
-```
-
-## When This Skill Activates
-
-Use this Skill when:
-
-- User mentions commits, committing, or version control
-- User asks about jj commands or workflow
-- Working with changes that need organizing
-- User asks "how do I" questions about version control
-- Need to explain jj concepts or suggest best practices
-- Translating git knowledge to jj equivalents
+- **Check state**: `jj status`, `jj log -r @`, `jj diff`
+- **Stack commit**: `/jj:commit "message"` or `jj describe -m "..." && jj new`
+- **Fix mistakes**: `jj undo`, `jj op restore <id>`, `jj edit @-`
+- **Reorganize**: `/jj:split test`, `/jj:squash`, `jj rebase -r @ -d X`
