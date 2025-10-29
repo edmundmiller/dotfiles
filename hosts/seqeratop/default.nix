@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 {
   config = {
     modules = {
@@ -35,6 +35,13 @@
 
     # Override the primary user for this host
     system.primaryUser = "edmundmiller";
+
+    # Additional system packages
+    environment.systemPackages = with pkgs; [
+      (inputs.jj-spr.packages.${pkgs.system}.default.overrideAttrs (old: {
+        buildInputs = (old.buildInputs or []) ++ [ zlib ];
+      }))
+    ];
 
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {
