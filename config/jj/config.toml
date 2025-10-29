@@ -66,7 +66,7 @@ tidy = [
 ] # Safe cleanup of empty commits
 
 # GitHub Pull Request management
-spr = ["util", "exec", "--", "jj-spr"] # Stacked pull requests with jj-spr
+spr = ["util", "exec", "--", "nix", "run", "/Users/edmundmiller/.config/dotfiles#jj-spr", "--"] # Stacked pull requests with jj-spr
 
 [revset-aliases]
 # Find the closest bookmark in the ancestry of a given revision
