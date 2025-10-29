@@ -191,4 +191,80 @@ return {
       },
     },
   },
+
+  -- JJ Workspace - Workspace management for jj
+  {
+    "edmundmiller/jj-workspace.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+    dev = true, -- Use local ~/src/emacs/jj-workspace.nvim when available
+    config = function()
+      require("jj-workspace").setup({
+        -- Automatically change to the root of the jj repo when switching workspaces
+        change_directory_command = "cd",
+        -- Update current buffer when switching workspaces
+        update_on_change = true,
+        -- Update all buffers when switching workspaces
+        update_on_change_command = "e .",
+        -- Clear jumps when switching workspaces
+        clearjumps_on_change = true,
+        -- Don't confirm deletions in telescope (use <c-f> to force)
+        confirm_telescope_deletions = false,
+        -- Default sparse pattern mode: "copy", "full", or "empty"
+        default_sparse_patterns = "copy",
+        -- Don't prompt for revision when creating via API
+        prompt_for_revision = false,
+      })
+
+      -- Load telescope extension after telescope is available
+      local telescope_ok, telescope = pcall(require, "telescope")
+      if telescope_ok then
+        telescope.load_extension("jj_workspace")
+      end
+
+      -- Hooks for workspace operations (optional)
+      local Workspace = require("jj-workspace")
+      Workspace.on_tree_change(function(op, metadata)
+        if op == Workspace.Operations.Switch then
+          vim.notify("Switched to workspace: " .. metadata.path, vim.log.levels.INFO)
+        elseif op == Workspace.Operations.Create then
+          vim.notify("Created workspace: " .. metadata.path, vim.log.levels.INFO)
+        elseif op == Workspace.Operations.Delete then
+          vim.notify("Deleted workspace", vim.log.levels.INFO)
+        elseif op == Workspace.Operations.Rename then
+          vim.notify("Renamed workspace to: " .. metadata.new_name, vim.log.levels.INFO)
+        end
+      end)
+    end,
+    event = "VeryLazy",
+    keys = {
+      { "<leader>jw", desc = "JJ Workspace" },
+      { "<leader>jww", function()
+        local telescope_ok = pcall(require, "telescope")
+        if telescope_ok then
+          require("telescope").extensions.jj_workspace.jj_workspaces()
+        else
+          vim.notify("Telescope not available", vim.log.levels.WARN)
+        end
+      end, desc = "Switch workspace" },
+      { "<leader>jwc", function()
+        local telescope_ok = pcall(require, "telescope")
+        if telescope_ok then
+          require("telescope").extensions.jj_workspace.create_jj_workspace()
+        else
+          vim.notify("Telescope not available", vim.log.levels.WARN)
+        end
+      end, desc = "Create workspace" },
+      { "<leader>jwl", function()
+        local telescope_ok = pcall(require, "telescope")
+        if telescope_ok then
+          require("telescope").extensions.jj_workspace.jj_workspaces()
+        else
+          vim.notify("Telescope not available", vim.log.levels.WARN)
+        end
+      end, desc = "List workspaces" },
+    },
+  },
 }
