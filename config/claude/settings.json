@@ -94,7 +94,10 @@
       "mcp__RepoPrompt__chat_send",
       "mcp__RepoPrompt__chats"
     ],
-    "deny": ["Bash(git:*)", "mcp__git__*"]
+    "deny": [
+      "Bash(git:*)",
+      "mcp__git__*"
+    ]
   },
   "statusLine": {
     "type": "command",
@@ -112,5 +115,5 @@
     "creating-multiqc-template@multiqc-dev-tools": true,
     "skill-creator@seqera-templates": true
   },
-  "alwaysThinkingEnabled": false
+  "alwaysThinkingEnabled": true
 }
