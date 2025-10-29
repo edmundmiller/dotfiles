@@ -104,7 +104,11 @@
         overlays = mapModules ./overlays import;
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
-        packages."${darwinSystem}" = mapModules ./packages (p: darwinPkgs.callPackage p { });
+        packages."${darwinSystem}" = (mapModules ./packages (p: darwinPkgs.callPackage p { })) // {
+          jj-spr = inputs.jj-spr.packages.${darwinSystem}.default.overrideAttrs (old: {
+            buildInputs = (old.buildInputs or []) ++ [ darwinPkgs.zlib ];
+          });
+        };
 
         nixosModules = {
           dotfiles = import ./.;
