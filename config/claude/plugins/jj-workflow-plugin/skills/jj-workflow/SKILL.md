@@ -7,148 +7,86 @@ description: Understand and work with Jujutsu (jj) version control system. Use w
 
 ## Core Concepts
 
-**Jujutsu (jj)** is Git-compatible VCS with:
+**Jujutsu (jj)** - Git-compatible VCS with:
 
 - **Change-based**: Unique IDs persist through rewrites
 - **Auto-snapshotting**: Working copy snapshotted before each operation
 - **Stack-based**: Build commits in a stack
 - **Undoable**: All ops in `jj op log`, use `jj op restore` to time travel
 
-**vs Git:** No staging area, edit any commit (`jj edit`), conflicts stored in commits, auto working copy mgmt
+**vs Git:** No staging area, edit any commit (`jj edit`), conflicts stored in commits
 
-## Working Copy Model
+## Working Copy (`@`)
 
-The **working copy** (`@`) is always a commit:
+Current commit is always `@`:
 
-```bash
-# Current commit
-jj log -r @
+- `jj log -r @` - Current commit
+- `jj log -r @-` - Parent commit
+- `jj log -r 'ancestors(@, 5)'` - Recent stack
 
-# Parent commit
-jj log -r @-
+**State:**
 
-# Stack of recent commits
-jj log -r 'ancestors(@, 5)'
-```
-
-**State tracking:**
-
-- If `@` is empty with no description → Fresh start, ready for changes
-- If `@` has changes but no description → Work done, needs description
-- If `@` has description and changes → Can stack with `jj new`
-- If `@` has description, no changes → Already stacked, ready for new work
+- Empty, no description → Ready for changes
+- Has changes, no description → Needs description
+- Has description + changes → Can stack with `jj new`
+- Has description, no changes → Ready for new work
 
 ## Stack-Based Workflow
 
-**Building the stack:**
-
-1. Make changes in `@` (including new files - they'll be tracked automatically)
-2. Describe with `jj describe -m "message"` (or `/jj:commit`)
-3. Create new commit on top with `jj new`
+1. Make changes in `@` (new files tracked automatically via `/jj:commit`)
+2. Describe: `jj describe -m "message"` or `/jj:commit`
+3. Stack: `jj new`
 4. Repeat
 
-**Note:** New untracked files are automatically tracked when using `/jj:commit`, so you don't need to manually run `jj file track`.
-
-**Why stack commits:**
-
-- Review commits individually
-- Reorder/reorganize commits easily
-- Ship commits incrementally
-- Keep clean, focused history
+**Why stack:** Individual review, easy reordering, incremental shipping, clean history
 
 ## Plan-Driven Workflow
 
-This repository uses a **plan-first** approach:
+1. **Start**: Create "plan:" commit describing intent
+2. **Work**: Implement the plan
+3. **End**: Replace "plan:" with actual work using `/jj:commit`
 
-1. **Plan created (start)**: When starting substantial work, create "plan:" commit describing intent
-2. **Work happens**: Implement the plan, changes tracked in `@`
-3. **Describe reality (end)**: Replace "plan:" with actual work done using `/jj:commit`
-
-**TodoWrite integration:**
-
-- One commit per major todo item
-- Use `jj new` when moving to next todo
-- Creates atomic, reviewable commits
+**TodoWrite:** One commit per major todo, `jj new` between todos
 
 ## Automatic Snapshotting
 
-Every `jj` command auto-snapshots working copy. Use `jj op log` to view history, `jj undo` for last op, or `jj op restore <id>` for time travel.
+Every `jj` command auto-snapshots. Use `jj op log`, `jj undo`, or `jj op restore <id>` for time travel.
 
-## When to Suggest JJ Commands
+## When to Suggest Commands
 
-**Viewing state:**
-
-- `jj status` - Check working copy changes
-- `jj log` - View commit history
-- `jj show` - Show specific commit
-- `jj diff` - Show changes in working copy
+**Viewing state:** `jj status`, `jj log`, `jj show`, `jj diff`
 
 **Creating commits:**
 
-- Use `/jj:commit` command (don't run `jj describe` directly unless in command context)
-- Suggest when user has made substantial changes
-- Suggest when plan needs updating to reflect reality
-- New untracked files are automatically tracked before committing
+- Use `/jj:commit` (not `jj describe` directly)
+- Suggest when user has substantial changes or plan needs updating
 
 **Organizing commits:**
 
-- Use `/jj:split <pattern>` when changes mix concerns (e.g., tests + implementation)
-- Use `/jj:squash` when multiple WIP commits for same feature
-- Don't suggest curation for simple, focused changes
+- `/jj:split <pattern>` when mixing concerns (tests+code)
+- `/jj:squash` for multiple WIP commits
+- Don't suggest for simple, focused changes
 
-**Undoing mistakes:**
+**Undoing:** `jj undo`, `jj op restore`, `jj abandon`
 
-- `jj undo` - Undo last operation
-- `jj op restore` - Restore to earlier state
-- `jj abandon` - Discard bad commits
+## Slash Commands
 
-## Slash Commands Available
-
-This plugin provides user-invoked slash commands:
-
-- **`/jj:commit [message]`** - Stack a commit with intelligent message generation
-- **`/jj:split <pattern>`** - Split commit by pattern (test, docs, config)
-- **`/jj:squash [revision]`** - Merge commits in the stack
-- **`/jj:cleanup`** - Remove empty workspaces
-
-**When to mention slash commands:**
-
-- User asks "how do I commit" → Mention `/jj:commit`
-- User has mixed changes → Suggest `/jj:split test` or similar
-- User mentions WIP commits → Suggest `/jj:squash`
+- `/jj:commit [message]` - Stack commit with message generation
+- `/jj:split <pattern>` - Split by pattern (test, docs, config)
+- `/jj:squash [revision]` - Merge commits
+- `/jj:cleanup` - Remove empty workspaces
 
 ## Git Translation
 
-This repository **blocks git commands** via hook. If user tries `git`:
+Repository blocks git write commands via hook. Prefer jj equivalents:
 
-- Read-only commands allowed (status, log, diff, show, blame)
-- Write commands blocked with jj suggestion
-- Always prefer jj equivalents:
-  - `git status` → `jj status`
-  - `git commit` → `/jj:commit`
-  - `git log` → `jj log`
-  - `git checkout` → `jj new`
+- `git status` → `jj status`
+- `git commit` → `/jj:commit`
+- `git log` → `jj log`
+- `git checkout` → `jj new`
 
 ## Best Practices
 
-**Do:**
+**Do:** Stack commits, describe clearly (what/why), use plan-driven workflow, leverage `jj op log`, split mixed concerns
 
-- Stack commits as you work
-- Describe changes clearly (what and why)
-- Use plan-driven workflow for substantial tasks
-- Leverage `jj op log` for safety
-- Split mixed concerns into separate commits
-
-**Don't:**
-
-- Mix git and jj commands (hooks prevent this)
-- Leave substantial work undescribed at session end
-- Create monolithic commits with unrelated changes
-- Forget that everything is undoable
-
-## Common Operations
-
-- **Check state**: `jj status`, `jj log -r @`, `jj diff`
-- **Stack commit**: `/jj:commit "message"` or `jj describe -m "..." && jj new`
-- **Fix mistakes**: `jj undo`, `jj op restore <id>`, `jj edit @-`
-- **Reorganize**: `/jj:split test`, `/jj:squash`, `jj rebase -r @ -d X`
+**Don't:** Mix git/jj, leave work undescribed, create monolithic commits, forget everything is undoable

@@ -5,287 +5,106 @@ description: Help curate and organize commits in jujutsu repositories. Use when 
 
 # Curating Jujutsu Commits
 
-## Purpose
-
-Help organize commits into clean, reviewable, atomic units before sharing. This Skill provides guidance on when and how to curate commits in a jujutsu repository.
-
 ## When to Curate
 
-**Good times to suggest curation:**
-- Before sharing work (PR, pushing to remote)
-- After completing a feature with multiple incremental commits
-- When commits mix unrelated concerns
-- When you notice WIP, fixup, or temporary commits
+**Suggest curation:**
 
-**Don't suggest curation when:**
-- Changes are simple and focused
-- Single commit addresses one concern
-- Work is still in early exploration
-- User explicitly wants incremental history
+- Before sharing work (PR, pushing)
+- Commits mix unrelated concerns (tests+code, docs+code, config+code)
+- WIP, fixup, or temporary commits present
 
-## Split Pattern Recognition
+**Don't suggest when:**
 
-Suggest `/jj:split <pattern>` when commits mix concerns:
+- Changes simple and focused
+- Single commit, one concern
+- Early exploration phase
 
-### Test Files Mixed with Implementation
+## Split Patterns
 
-**Pattern:** Changes include both source code and test files
+Use `/jj:split <pattern>` when mixing concerns:
 
-**Indicators:**
-- Files matching: `*test*.{py,js,ts}`, `*spec*.{py,js,ts}`, `test_*.py`, `*Test.java`
-- Mixed with implementation in same commit
+**Tests + implementation:**
 
-**Suggestion:**
 ```
-Your changes include both implementation and tests. Consider splitting:
+Your changes include both implementation and tests. Consider:
 /jj:split test
 ```
 
-**Why:** Tests and implementation are easier to review separately
+**Docs + code:**
 
-### Documentation Mixed with Code
-
-**Pattern:** Changes include both code and documentation
-
-**Indicators:**
-- Files matching: `*.md`, `README*`, `CHANGELOG*`, `docs/**/*`
-- Mixed with code changes
-
-**Suggestion:**
 ```
-Your changes mix code and documentation. Consider splitting:
+Your changes mix code and documentation. Consider:
 /jj:split docs
 ```
 
-**Why:** Documentation and code changes reviewed by different people/processes
+**Config + features:**
 
-### Configuration Mixed with Features
-
-**Pattern:** Changes include both config and feature code
-
-**Indicators:**
-- Files matching: `*.json`, `*.yaml`, `*.toml`, `*.ini`, `.env*`, `*config*`
-- Mixed with feature implementation
-
-**Suggestion:**
 ```
-Your changes include configuration updates. Consider splitting:
+Your changes include configuration. Consider:
 /jj:split config
 ```
 
-**Why:** Config changes often need separate security/ops review
+**Common patterns:** `test`, `docs`, `config`, `*.{ext}`, custom globs
 
-### File Type Patterns
+## Squash Patterns
 
-**Common split patterns:**
-- `test` → Test and spec files
-- `docs` → Documentation (*.md, README, CHANGELOG)
-- `config` → Config files (*.json, *.yaml, *.toml)
-- `*.{ext}` → Specific file types
-- Custom glob patterns
+Use `/jj:squash` when combining commits:
 
-## Squash Pattern Recognition
+**Multiple WIP commits:**
 
-Suggest `/jj:squash` when commits should be combined:
-
-### Multiple WIP Commits
-
-**Pattern:** Sequential commits with WIP, fixup, or similar messages
-
-**Indicators:**
-- Messages like "WIP", "wip", "fixup", "temp", "checkpoint"
-- Multiple commits for same logical change
-- Sequential commits touching same files
-
-**Suggestion:**
 ```
-You have multiple WIP commits for the same feature. Consider squashing:
+You have multiple WIP commits for same feature. Consider:
 /jj:squash
 ```
 
-**Why:** Clean up incremental work into cohesive commits
+Indicators: "WIP", "wip", "fixup", "temp", "checkpoint" messages
 
-### Fixup Commits
+**Fixup commits:**
 
-**Pattern:** Later commits fix earlier commits
-
-**Indicators:**
-- Messages like "fix typo", "fix tests", "fix formatting"
-- Touching same files as recent commit
-- Small changes that belong with earlier work
-
-**Suggestion:**
 ```
-This looks like a fixup for your previous commit. Consider squashing:
+This looks like a fixup for your previous commit. Consider:
 /jj:squash
 ```
 
-**Why:** Fixes should be part of original commit in shared history
+Indicators: "fix typo", "fix tests", "fix formatting" messages
 
-### Related Small Changes
+**Related small changes:**
 
-**Pattern:** Multiple small commits that logically belong together
-
-**Indicators:**
-- Same feature/scope in multiple commits
-- Commits from same work session
-- Would be clearer as single commit
-
-**Suggestion:**
 ```
-These commits are closely related. Consider combining:
+These commits are closely related. Consider:
 /jj:squash
 ```
 
-**Why:** Atomic commits easier to review and understand
+Indicators: Same feature/scope, same work session
 
 ## Curation Workflow
 
-**Typical curation sequence:**
-
-1. **Review current stack:**
-   ```bash
-   jj log
-   ```
-
-2. **Identify mixed concerns** → Use `/jj:split <pattern>`
-
-3. **Identify WIP commits** → Use `/jj:squash`
-
-4. **Verify result:**
-   ```bash
-   jj log
-   jj diff -r <commit>
-   ```
-
-5. **Update descriptions if needed** → Use `/jj:commit` or `jj describe`
-
-## Examples
-
-### Example 1: Mixed Test and Implementation
-
-**Before:**
-```
-@ abc123: Add login feature and tests
-  - src/auth/login.py       (new)
-  - src/auth/test_login.py  (new)
-  - src/auth/config.yaml    (new)
-```
-
-**Suggest:**
-```
-Your commit mixes implementation, tests, and config. Consider:
-
-1. /jj:split test        # Separate tests
-2. /jj:split config      # Separate config
-
-Result: Three focused commits
-```
-
-### Example 2: WIP Commits
-
-**Before:**
-```
-@ abc123: WIP: fix validation
-@ def456: WIP: add validation
-@ ghi789: Add user form
-```
-
-**Suggest:**
-```
-You have two WIP commits for validation. Consider:
-
-jj edit def456           # Edit the first validation commit
-/jj:squash               # Squash abc123 into def456
-
-Result: Clean commit history
-```
-
-### Example 3: Documentation Update
-
-**Before:**
-```
-@ abc123: Implement OAuth and update README
-  - src/oauth.py    (new)
-  - README.md       (modified)
-  - docs/oauth.md   (new)
-```
-
-**Suggest:**
-```
-Your commit mixes OAuth implementation and documentation. Consider:
-
-/jj:split docs
-
-Result:
-- Commit 1: Implement OAuth (code only)
-- Commit 2: Document OAuth (docs only)
-```
-
-## Change Pattern Analysis
-
-**Analyzing current changes:**
-```bash
-jj status                    # See what's changed
-jj diff                      # Review changes
-jj log -r 'ancestors(@, 5)'  # View recent stack
-```
-
-**Questions to ask:**
-1. Do changes serve multiple purposes?
-2. Could parts be reviewed separately?
-3. Do file types suggest natural splits?
-4. Are there WIP or fixup commits?
-5. Would this be easier to understand as multiple commits?
+1. Review stack: `jj log`
+2. Split mixed concerns: `/jj:split <pattern>`
+3. Squash WIP commits: `/jj:squash`
+4. Verify: `jj log`, `jj diff -r <commit>`
+5. Update descriptions: `/jj:commit` or `jj describe`
 
 ## Avoiding Over-Curation
 
-**Don't suggest curation when:**
+**Don't suggest when:**
 
-- **Single purpose changes**: All files work toward one goal
-- **Tightly coupled changes**: Splitting would break logical cohesion
-- **Already atomic**: Commit is focused and clear
-- **Early exploration**: User is still figuring things out
+- Single purpose changes (all files work toward one goal)
+- Tightly coupled changes (splitting breaks logical cohesion)
+- Already atomic (commit focused and clear)
+- Early exploration phase
 
-**Examples of good single commits:**
-- "Refactor authentication module" (all auth files together)
-- "Add user profile page" (template + route + tests together)
-- "Fix memory leak in data processor" (investigation + fix together)
+**Good single commits:** "Refactor auth module", "Add user profile page" (template+route+tests), "Fix memory leak" (investigation+fix)
 
-## Integration with TodoWrite
+## TodoWrite Integration
 
-When user has TodoWrite todos:
-
-**Pattern:** One commit per major todo completion
-
-**Workflow:**
-1. Complete todo
-2. Use `/jj:commit` to describe work
-3. `jj new` for next todo
-4. Repeat
-
-**Don't suggest splitting** if commits align with todo structure (already organized)
-
-## Best Practices
-
-**Do:**
-- Suggest curation before sharing work
-- Recognize common file patterns (test, docs, config)
-- Explain why splitting helps review
-- Provide specific `/jj:split` or `/jj:squash` commands
-
-**Don't:**
-- Over-curate working commits
-- Split tightly coupled changes
-- Suggest curation during active development
-- Make curation feel mandatory
+One commit per major todo completion. Use `jj new` between todos. Don't suggest splitting if commits already align with todo structure.
 
 ## When This Skill Activates
 
-Use this Skill when:
-- User has multiple commits to organize
-- Changes mix different file types or concerns
-- User mentions preparing work for PR/sharing
-- WIP or fixup commits are present
+- Multiple commits to organize
+- Changes mix file types or concerns
+- User mentions preparing for PR/sharing
+- WIP or fixup commits present
 - User asks about organizing commits
 - Before suggesting pushing or creating PRs
