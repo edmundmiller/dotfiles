@@ -119,6 +119,10 @@ alias jr='jj rebase'   # Rebase commits
 alias jb='jj bookmark' # Manage bookmarks
 alias jdiff='jj diff'  # Show differences
 alias jshow='jj show'  # Show commit details
+# Open diff in neovim (PR preview) - wraps jj nd
+jnd() {
+    jj nd "$@"
+}
 
 # JJ workflow helpers
 jnew() {
