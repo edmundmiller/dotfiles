@@ -1,6 +1,7 @@
 ---
 allowed-tools: Bash(jj workspace:*), Bash(jj log:*)
 description: Remove empty or stale jj workspaces
+model: claude-haiku-4-5
 ---
 
 ## Context
