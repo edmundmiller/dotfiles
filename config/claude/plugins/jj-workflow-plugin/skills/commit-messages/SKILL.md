@@ -1,6 +1,7 @@
 ---
 name: Generating JJ Commit Messages
 description: Generate descriptive commit messages for jujutsu repositories. Use when creating commits, describing changes, or when the user asks for commit message help. Follows conventional commit format and project conventions.
+allowed-tools: Bash(jj status:*), Bash(jj diff:*), Bash(jj log:*)
 ---
 
 # Generating JJ Commit Messages
