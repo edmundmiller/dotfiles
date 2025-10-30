@@ -1,6 +1,7 @@
 ---
 name: Curating Jujutsu Commits
 description: Help curate and organize commits in jujutsu repositories. Use when working with multiple commits, WIP changes, or preparing work for sharing. Suggests when to split, squash, or reorganize commits based on change patterns.
+allowed-tools: Bash(jj log:*), Bash(jj status:*), Bash(jj diff:*)
 ---
 
 # Curating Jujutsu Commits
