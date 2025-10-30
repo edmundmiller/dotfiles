@@ -2,6 +2,7 @@
 allowed-tools: Bash(jj log:*), Bash(jj diff:*), Bash(jj describe:*), Bash(jj new:*), Bash(jj status:*)
 argument-hint: [message]
 description: Stack a commit with intelligent message generation
+model: claude-haiku-4-5
 ---
 
 !# Determine workflow state

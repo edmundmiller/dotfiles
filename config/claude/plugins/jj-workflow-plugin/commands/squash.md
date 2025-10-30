@@ -2,6 +2,7 @@
 allowed-tools: Bash(jj log:*), Bash(jj diff:*), Bash(jj status:*), Bash(jj squash:*)
 argument-hint: [revision]
 description: Merge commits in the stack
+model: claude-haiku-4-5
 ---
 
 ## Context

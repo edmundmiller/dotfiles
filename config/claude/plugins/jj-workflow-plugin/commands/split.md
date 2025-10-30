@@ -2,6 +2,7 @@
 allowed-tools: Bash(jj log:*), Bash(jj diff:*), Bash(jj status:*), Bash(jj split:*)
 argument-hint: <pattern>
 description: Split commit by pattern (tests, docs, config, etc)
+model: claude-haiku-4-5
 ---
 
 !# Validate pattern argument
