@@ -1,16 +1,34 @@
 # gh-dash Configuration
 # This file is managed by nix-darwin and symlinked from ~/.config/dotfiles/config/gh-dash/
 # A powerful GitHub dashboard for managing PRs and issues across multiple organizations
+#
+# Configuration follows best practices from "CLI-Based GitHub PR Review Tools: A Practical Guide"
+# Key features:
+# - Priority-based PR sections (urgent, needs review, recently updated)
+# - Optimal workflow integration: gh-dash for triage + Neovim (gh.nvim) for deep review
+# - tmux integration for parallel PR reviews
+# - Size-aware review workflow (guide recommends <200 lines for quick reviews)
+# - SLA-based organization (critical <2h, high <4h, normal <24h)
 
 # Pull Request Sections - Organized by priority and workflow
 prSections:
   # High Priority - Your Work
+  - title: "🚨 Urgent - Needs My Review"
+    filters: "is:open review-requested:@me label:urgent sort:updated-desc"
+    limit: 10
+    type: null
+
   - title: "📝 My Open PRs"
     filters: "is:open author:@me sort:updated-desc"
     type: null
 
-  - title: "👁️ Needs My Review"  
+  - title: "👁️ Needs My Review"
     filters: "is:open review-requested:@me sort:updated-desc"
+    type: null
+
+  - title: "🔄 Recently Updated (Last Week)"
+    filters: "is:open involves:@me updated:>={{ nowModify \"-1w\" }} sort:updated-desc"
+    limit: 15
     type: null
 
   - title: "🚧 Draft PRs"
@@ -141,45 +159,70 @@ keybindings:
     # Quick checkout PR locally
     - key: "O"
       builtin: "checkout"
-    
+
     # Open PR in browser
-    - key: "o"  
+    - key: "o"
       builtin: "open"
-    
+
+    # Open PR in Neovim with gh.nvim (optimal workflow from guide)
+    - key: "C"
+      name: "review in nvim"
+      command: >
+        if command -v tmux &> /dev/null && [ -n "$TMUX" ]; then
+          tmux new-window -c {{.RepoPath}} "gh pr checkout {{.PrNumber}} && nvim -c 'GHOpenPR'";
+        else
+          (cd {{.RepoPath}} && gh pr checkout {{.PrNumber}} && nvim -c 'GHOpenPR');
+        fi
+
     # Quick approve with comment
     - key: "a"
       name: "approve"
       command: "gh pr review --repo {{.RepoName}} --approve --body 'LGTM! ✅' {{.PrNumber}}"
-    
+
     # Approve with custom comment
     - key: "A"
       name: "approve with comment"
       command: "gh pr review --repo {{.RepoName}} --approve --body \"$(echo 'Approval comment:' && read comment && echo $comment)\" {{.PrNumber}}"
-    
+
     # Request changes
     - key: "r"
       name: "request changes"
       command: "gh pr review --repo {{.RepoName}} --request-changes {{.PrNumber}}"
-    
+
     # Quick merge (squash)
     - key: "m"
       name: "merge (squash)"
       command: "gh pr merge --squash --repo {{.RepoName}} {{.PrNumber}}"
-    
+
+    # Quick merge (rebase) - useful for small PRs
+    - key: "M"
+      name: "merge (rebase)"
+      command: "gh pr merge --rebase --repo {{.RepoName}} {{.PrNumber}}"
+
     # Mark as ready (convert from draft)
     - key: "R"
-      name: "ready for review"  
+      name: "ready for review"
       command: "gh pr ready --repo {{.RepoName}} {{.PrNumber}}"
-    
+
     # View diff in nvim
     - key: "d"
       name: "view diff"
       command: "gh pr diff --repo {{.RepoName}} {{.PrNumber}} | nvim -R -"
-    
+
+    # View diff with delta pager
+    - key: "D"
+      name: "view diff (delta)"
+      command: "gh pr diff --repo {{.RepoName}} {{.PrNumber}} | delta"
+
     # Comment on PR
     - key: "c"
       name: "comment"
       command: "gh pr comment --repo {{.RepoName}} {{.PrNumber}}"
+
+    # View PR checks/CI status
+    - key: "s"
+      name: "view checks"
+      command: "gh pr checks --repo {{.RepoName}} {{.PrNumber}}"
 
   # Issue-specific keybindings  
   issues:
