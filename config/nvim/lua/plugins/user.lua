@@ -212,14 +212,46 @@ return {
     },
   },
 
-  -- Diffview.nvim - Better diff viewing
+  -- Diffview.nvim - Better diff viewing with LSP support
   {
     "sindrets/diffview.nvim",
     opts = {
       use_icons = true,
+      enhanced_diff_hl = true,
+      default_args = {
+        DiffviewOpen = { "--imply-local" }, -- Always enable LSP in diffs
+      },
       view = {
         merge_tool = {
           layout = "diff3_mixed",
+        },
+      },
+      keymaps = {
+        view = {
+          { "n", "<tab>", "<cmd>lua require('diffview.actions').select_next_entry()<CR>", { desc = "Next file" } },
+          {
+            "n",
+            "<s-tab>",
+            "<cmd>lua require('diffview.actions').select_prev_entry()<CR>",
+            { desc = "Prev file" },
+          },
+          { "n", "gf", "<cmd>lua require('diffview.actions').goto_file_edit()<CR>", { desc = "Open file" } },
+          {
+            "n",
+            "<C-w>gf",
+            "<cmd>lua require('diffview.actions').goto_file_split()<CR>",
+            { desc = "Open in split" },
+          },
+          { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
+        },
+        file_panel = {
+          { "n", "j", "<cmd>lua require('diffview.actions').next_entry()<CR>", { desc = "Next entry" } },
+          { "n", "k", "<cmd>lua require('diffview.actions').prev_entry()<CR>", { desc = "Prev entry" } },
+          { "n", "<cr>", "<cmd>lua require('diffview.actions').select_entry()<CR>", { desc = "Open file" } },
+          { "n", "o", "<cmd>lua require('diffview.actions').select_entry()<CR>", { desc = "Open file" } },
+          { "n", "R", "<cmd>lua require('diffview.actions').refresh_files()<CR>", { desc = "Refresh" } },
+          { "n", "<tab>", "<cmd>lua require('diffview.actions').select_next_entry()<CR>", { desc = "Next file" } },
+          { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close" } },
         },
       },
     },
