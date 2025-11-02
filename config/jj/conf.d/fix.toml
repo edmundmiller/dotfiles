@@ -52,3 +52,7 @@ patterns = ["glob:'**/*.rs'"]
 [fix.tools.gofmt]
 command = ["gofmt"]
 patterns = ["glob:'**/*.go'"]
+
+[fix.tools.gh-dash-validate]
+command = ["uvx", "check-jsonschema", "--schemafile", "https://gh-dash.dev/schema.json", "-"]
+patterns = ["glob:'**/config/gh-dash/*.yml'", "glob:'**/config/gh-dash/*.yaml'"]

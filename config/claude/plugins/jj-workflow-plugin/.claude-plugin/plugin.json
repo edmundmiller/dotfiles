@@ -19,6 +19,16 @@
             "command": "jj fix -s @ 2>/dev/null || true"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "condition": "args.command matches '(jj (describe|new|commit)|/jj:(commit|new))'",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jj fix -s @ && echo '✓ Formatting applied' || echo '⚠️  Formatting failed but continuing'"
+          }
+        ]
       }
     ]
   }
