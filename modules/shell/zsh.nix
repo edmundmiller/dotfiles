@@ -63,7 +63,7 @@ in
       lazygit
       neovim
       procs
-      delta
+      difftastic
       hyperfine
       just
       sd
