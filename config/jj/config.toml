@@ -74,9 +74,6 @@ nd = ["util", "exec", "--", "/Users/edmundmiller/.config/dotfiles/bin/jj-nd", "-
 'closest_bookmark(to)' = 'heads(::to & bookmarks())'
 "fork_history(to, from)" = "fork_point(to | from)..@"
 
-[diff]
-tool = "delta"
-
 # Merge conflict resolution tool
 [merge-tools.diffconflicts]
 program = "nvim"
@@ -92,21 +89,10 @@ merge-args = [
 ]
 merge-tool-edits-conflict-markers = true
 
-# These options allow for `jj diff` and `jj show` to clear the output from the terminal after closing the pager.
-[[--scope]]
---when.commands = ["diff", "show"]
-
-[--scope.ui]
-pager = "delta"
-
 [ui]
 # default-command = "status"
-diff-formatter = ":git" # required by `delta`
-pager = [
-  "delta",
-  "--pager",
-  "less -FRX",
-] # Keeps output from the terminal after closing the pager
+diff-formatter = ["difft", "--color=always", "$left", "$right"]
+pager = "less -FRX"
 diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
 editor = "nvim"
 # Enable word wrapping in logs for better readability
@@ -142,6 +128,8 @@ sign-on-push = true
 push-branch-prefix = "push-"
 # Don't create unnecessary local bookmarks when cloning
 track-default-bookmark-on-clone = false
+# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
+auto-local-bookmark = true
 # Allow pushing new bookmarks to remote
 push-bookmarks-prefix = "emiller/"
 
