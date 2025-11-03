@@ -68,10 +68,6 @@ prSections:
     filters: org:seqeralabs involves:@me is:open sort:updated-desc
     limit: 25
 
-  - title: "Applied Genomics PRs"
-    filters: org:Applied-Genomics-UTD is:open sort:updated-desc
-    limit: 15
-
   # Maintenance
   - title: "Dependabot PRs"
     filters: author:app/dependabot involves:@me is:open sort:created-desc
@@ -98,10 +94,6 @@ issuesSections:
     filters: org:seqeralabs involves:@me is:open sort:updated-desc
     limit: 15
 
-  - title: "Student Issues"
-    filters: org:Applied-Genomics-UTD involves:@me is:open sort:updated-desc
-    limit: 10
-
   - title: "Hot Issues"
     filters: involves:@me is:open sort:reactions-desc
     limit: 10
@@ -118,9 +110,14 @@ defaults:
 repoPaths:
   nf-core/*: ~/src/nf-core/*
   seqeralabs/*: ~/src/seqera/*
-  Applied-Genomics-UTD/*: ~/src/teaching/*
+  seqera-services/*: ~/src/seqera/*
   nextflow-io/*: ~/src/nextflow/*
   ":owner/:repo": ~/src/:owner/:repo
+
+# Quick Search Patterns (use with / key):
+# Seqera work: org:seqeralabs OR org:seqera-services OR org:nextflow-io
+# nf-core work: org:nf-core
+# Combined: (org:seqeralabs OR org:nf-core) involves:@me
 
 keybindings:
   universal:
