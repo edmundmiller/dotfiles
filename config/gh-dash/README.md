@@ -9,7 +9,7 @@ gh-dash is a GitHub CLI extension that displays a configurable dashboard of pull
 - **Graphite-style priority inbox** - Organized by review status and urgency
 - **Stacked PR workflow** - Track dependent PRs and branch relationships
 - **jj-spr integration** - Native support for jujutsu stacked PR workflows
-- **Multi-org management** - Work across nf-core, Seqera, Applied Genomics, and Nextflow
+- **Multi-org management** - Work across nf-core, Seqera, and Nextflow organizations
 
 ## Quick Start
 
@@ -70,24 +70,96 @@ gh-dash now includes dedicated sections for managing stacked PRs:
 
 ### Organization-Specific
 
-| Section                 | Purpose                | Filters                              |
-| ----------------------- | ---------------------- | ------------------------------------ |
-| 🧬 nf-core PRs          | nf-core ecosystem work | `org:nf-core involves:@me`           |
-| ⚡ Nextflow PRs         | Core Nextflow work     | `org:nextflow-io involves:@me`       |
-| 🏢 Seqera PRs           | Seqera platform work   | `org:seqeralabs involves:@me`        |
-| 🎓 Applied Genomics PRs | Student/teaching work  | `org:Applied-Genomics-UTD`           |
-| 🤖 Dependabot PRs       | Automated updates      | `author:app/dependabot involves:@me` |
+| Section           | Purpose                | Filters                              |
+| ----------------- | ---------------------- | ------------------------------------ |
+| 🧬 nf-core PRs    | nf-core ecosystem work | `org:nf-core involves:@me`           |
+| ⚡ Nextflow PRs   | Core Nextflow work     | `org:nextflow-io involves:@me`       |
+| 🏢 Seqera PRs     | Seqera platform work   | `org:seqeralabs involves:@me`        |
+| 🤖 Dependabot PRs | Automated updates      | `author:app/dependabot involves:@me` |
 
 ## Issue Sections
 
-| Section           | Purpose                           | Filters                                 |
-| ----------------- | --------------------------------- | --------------------------------------- |
-| 🐛 My Issues      | Issues you created                | `author:@me`                            |
-| ✅ Assigned to Me | Issues assigned to you            | `assignee:@me`                          |
-| 🧬 nf-core Issues | nf-core ecosystem issues          | `org:nf-core involves:@me`              |
-| 🏢 Seqera Issues  | Seqera platform issues            | `org:seqeralabs involves:@me`           |
-| 🎓 Student Issues | Teaching-related issues           | `org:Applied-Genomics-UTD involves:@me` |
-| 🔥 Hot Issues     | Popular issues you're involved in | `involves:@me sort:reactions-desc`      |
+| Section           | Purpose                           | Filters                            |
+| ----------------- | --------------------------------- | ---------------------------------- |
+| 🐛 My Issues      | Issues you created                | `author:@me`                       |
+| ✅ Assigned to Me | Issues assigned to you            | `assignee:@me`                     |
+| 🧬 nf-core Issues | nf-core ecosystem issues          | `org:nf-core involves:@me`         |
+| 🏢 Seqera Issues  | Seqera platform issues            | `org:seqeralabs involves:@me`      |
+| 🔥 Hot Issues     | Popular issues you're involved in | `involves:@me sort:reactions-desc` |
+
+## Using the `/` Search Feature
+
+gh-dash has a powerful built-in search feature that lets you dynamically filter any section using GitHub's query syntax.
+
+### How It Works
+
+1. **Navigate to any section** using `h/l` or arrow keys
+2. **Press `/`** to activate search mode
+3. **Type your search query** using GitHub search syntax
+4. **Press Enter** to apply the filter
+5. **Navigate away or press `r`** to refresh and clear the filter
+
+### Quick Search Patterns for Your Work
+
+**Filter by Seqera Organizations:**
+
+```
+org:seqeralabs OR org:seqera-services OR org:nextflow-io
+```
+
+**Filter by nf-core:**
+
+```
+org:nf-core
+```
+
+**Combine Multiple Orgs:**
+
+```
+(org:seqeralabs OR org:nf-core) involves:@me
+```
+
+**Add Time Filters:**
+
+```
+org:seqeralabs updated:>2024-01-01
+```
+
+**Filter by Labels:**
+
+```
+org:nf-core label:bug status:failure
+```
+
+### Pro Tips
+
+- **Filters stack with section filters**: If you're in "Needs My Review" and search `org:nf-core`, you'll see only nf-core PRs that need your review
+- **Use parentheses for OR logic**: `(org:foo OR org:bar) label:urgent`
+- **Negate with minus**: `-label:wontfix` excludes items with that label
+- **Combine anything**: `org:seqeralabs author:@me -is:draft updated:>2024-10-01`
+
+### Common Workflows
+
+**Focus on Seqera Work:**
+
+1. Go to "Awaiting My Review" section
+2. Press `/`
+3. Type: `org:seqeralabs OR org:seqera-services OR org:nextflow-io`
+4. Now you only see Seqera-related PRs needing review
+
+**Check nf-core Community Work:**
+
+1. Go to any section (like "Mentioned Me")
+2. Press `/`
+3. Type: `org:nf-core`
+4. View only nf-core items in that category
+
+**Find Stale PRs for Specific Org:**
+
+1. Go to "My Open PRs (Active)"
+2. Press `/`
+3. Type: `org:nf-core updated:<2024-10-01`
+4. See old nf-core PRs needing attention
 
 ## Keybindings
 
@@ -95,6 +167,8 @@ gh-dash now includes dedicated sections for managing stacked PRs:
 
 - `b` - Open repository in browser
 - `y` - Copy current URL to clipboard
+- `/` - **Search/filter current section** (GitHub query syntax)
+- `r` - Refresh section (clears search filter)
 - `q` - Quit
 - `?` - Show help
 
@@ -180,10 +254,11 @@ gh-dash now includes dedicated sections for managing stacked PRs:
 
 ### Organization-Specific Work
 
-1. Navigate to org-specific section (🧬, ⚡, 🏢, 🎓)
-2. Use `y` to copy URLs for sharing
-3. Use `@` to assign issues to yourself
-4. Use `c` to add comments and feedback
+1. Navigate to org-specific section (🧬, ⚡, 🏢)
+2. Use `/` to filter by specific orgs: `org:seqeralabs OR org:seqera-services`
+3. Use `y` to copy URLs for sharing
+4. Use `@` to assign issues to yourself
+5. Use `c` to add comments and feedback
 
 ## Configuration Details
 
@@ -209,7 +284,7 @@ Configured for quick local checkout:
 repoPaths:
   nf-core/*: ~/src/nf-core/*
   seqeralabs/*: ~/src/seqera/*
-  Applied-Genomics-UTD/*: ~/src/teaching/*
+  seqera-services/*: ~/src/seqera/*
   nextflow-io/*: ~/src/nextflow/*
   :owner/:repo: ~/src/:owner/:repo # Fallback pattern
 ```
@@ -338,13 +413,15 @@ Use GitHub's full search syntax:
 ## Tips
 
 1. **Master the priority inbox**: Start each day with "🚨 Needs My Review"
-2. **Leverage stacked sections**: Use "📚 My Stacks" to track complex work
-3. **Use quick actions**: `a`, `m`, and `O` are your friends
-4. **Copy URLs freely**: `y` makes sharing easy in Slack/email
-5. **Preview mode**: Keep preview open to scan PR details quickly
-6. **jj-spr integration**: Use `J` and `ctrl+j` for stack management
-7. **Watch for staleness**: Check "💤 Stale PRs" weekly
-8. **Org-specific focus**: Navigate directly to relevant org sections
+2. **Use `/` search liberally**: Quickly filter any section by org, label, or date
+3. **Leverage stacked sections**: Use "📚 My Stacks" to track complex work
+4. **Use quick actions**: `a`, `m`, and `O` are your friends
+5. **Copy URLs freely**: `y` makes sharing easy in Slack/email
+6. **Preview mode**: Keep preview open to scan PR details quickly
+7. **jj-spr integration**: Use `J` and `ctrl+j` for stack management
+8. **Watch for staleness**: Check "💤 Stale PRs" weekly
+9. **Org-specific focus**: Use search patterns like `org:seqeralabs OR org:seqera-services OR org:nextflow-io`
+10. **Combine filters**: Stack section filters with your searches (e.g., "Needs Review" + `org:nf-core`)
 
 ## Resources
 
