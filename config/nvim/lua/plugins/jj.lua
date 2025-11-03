@@ -28,7 +28,8 @@ return {
 
   -- Core jj integration with terminal-based commands and pickers
   {
-    "NicolasGB/jj.nvim",
+    "edmundmiller/jj.nvim",
+    dev = true, -- Use local ~/src/emacs/jj.nvim when available
     dependencies = {
       "folke/snacks.nvim", -- For picker integration
     },
