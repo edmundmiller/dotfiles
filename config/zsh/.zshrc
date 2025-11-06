@@ -148,5 +148,6 @@ alias ttoday="t today"
 
 eval "$(fnm env --use-on-cd --shell zsh)"
 
+export NXF_SYNTAX_PARSER=v2
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
