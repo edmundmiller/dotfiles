@@ -124,6 +124,7 @@ return {
   -- Conflict resolution tool for jj
   {
     "rafikdraoui/jj-diffconflicts",
+    lazy = false, -- Load immediately so jj resolve can invoke it
     cmd = "JJDiffConflicts",
     keys = {
       { "<leader>jC", "<cmd>JJDiffConflicts<cr>", desc = "JJ resolve conflicts" },

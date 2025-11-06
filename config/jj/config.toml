@@ -94,6 +94,7 @@ merge-tool-edits-conflict-markers = true
 diff-formatter = ["difft", "--color=always", "$left", "$right"]
 pager = "less -FRX"
 diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
+merge-editor = "diffconflicts"
 editor = "nvim"
 # Enable word wrapping in logs for better readability
 log-word-wrap = true
