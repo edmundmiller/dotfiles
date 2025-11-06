@@ -1,6 +1,6 @@
 ---
 name: Undoing Operations in Jujutsu
-description: Help users undo mistakes and recover from errors in jj. Use when the user mentions mistakes, wrong changes, need to undo, revert, go back, or recover from errors. Covers quick undo, multiple undo scenarios, and redo workflows.
+description: Help users undo mistakes and recover from errors in jj. Use when the user explicitly mentions 'jj undo', 'undo operation', or 'restore operation'. Covers quick undo, multiple undo scenarios, and redo workflows.
 allowed-tools: Bash(jj undo:*), Bash(jj op log:*), Bash(jj op restore:*), Bash(jj log:*), Bash(jj status:*), Bash(jj diff:*)
 ---
 

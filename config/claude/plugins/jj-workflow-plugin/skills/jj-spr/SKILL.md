@@ -1,6 +1,6 @@
 ---
 name: Submitting Stacked PRs with jj-spr
-description: Work with jj-spr for submitting and updating stacked GitHub Pull Requests. Use when the user mentions PRs, pull requests, submitting work, stacked reviews, or sharing code for review. Integrates with jj commit workflow.
+description: Work with jj-spr for submitting and updating stacked GitHub Pull Requests. Use when the user explicitly mentions 'jj-spr', 'jj spr', 'stack pull request', 'stacked PR', or 'submit for review'. Integrates with jj commit workflow.
 allowed-tools: Bash(jj log:*), Bash(jj status:*), Bash(jj diff:*), Bash(jj spr:*), Bash(gh pr:*)
 ---
 

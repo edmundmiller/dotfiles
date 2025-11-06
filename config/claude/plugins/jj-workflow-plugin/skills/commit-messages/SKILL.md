@@ -12,7 +12,7 @@ allowed-tools: Bash(jj status:*), Bash(jj diff:*), Bash(jj log:*)
 
 **Body (optional):** Blank line, then detailed explanation with bullets
 
-**Footer (optional):**
+**Footer:**
 
 ```
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -35,67 +35,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 | **ci**       | CI/CD              | `ci: add automated testing workflow`       |
 | **build**    | Build system       | `build(nix): update flake inputs`          |
 
-## Writing Guidelines
+## Quick Guidelines
 
-**Imperative mood:** "Add" not "Added" or "Adds"
-**Be specific:** "Fix memory leak in data processor" not "Fix bug"
-**Explain what and why:** "Refactor auth to support OAuth providers"
-**One change per commit:** Suggest split if multiple unrelated changes
-
-## Plan-to-Reality Pattern
-
-Replace "plan:" commits with actual work done:
-
-**Before:** `plan: Add user authentication system`
-
-**After:**
-
-```
-feat(auth): implement JWT-based authentication
-
-Add login endpoint with JWT token generation:
-- POST /auth/login endpoint with email/password
-- JWT token generation with 24h expiration
-- Token validation middleware
-```
-
-## Generation Process
-
-1. Analyze changes (`jj status`, `jj diff`)
-2. Identify type (feat/fix/refactor/docs/test/chore)
-3. Determine scope (component/area, or omit if project-wide)
-4. Write summary: `type(scope): imperative verb + description` (<72 chars)
-5. Add body if complex (bullets for multiple changes)
-6. Include Claude Code footer
-
-## File Pattern Auto-Generation
-
-**Tests:** `test(component): add unit tests for feature`
-**Docs:** `docs(section): update documentation`
-**Config:** `chore(config): update configuration`
-**Mixed:** Describe primary purpose, list secondary in body
-
-## Match Project Style
-
-Check recent commits for conventions:
-
-```bash
-jj log -r 'ancestors(@, 10)' -T 'concat(change_id.short(), ": ", description)' --no-graph
-```
-
-Observe: scope naming, detail level, body formatting, emoji usage, footer pattern
-
-## When to Activate
-
-**Suggest message when:**
-
-- User completes substantial work
-- Changes ready to describe
-- Plan commit needs updating
-- User asks for help
-
-**Don't auto-generate when:**
-
-- User provides explicit message
-- Work still in progress
-- Changes minimal/unclear
+- Use imperative mood: "Add" not "Added"
+- Be specific: "Fix memory leak in parser" not "Fix bug"
+- Scope is optional but helpful: `feat(auth): ...` or just `feat: ...`
+- Keep summary under 72 characters
+- Add body with bullets for complex changes
