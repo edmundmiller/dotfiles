@@ -1,6 +1,6 @@
 ---
 name: Exploring Operation History in Jujutsu
-description: Help users explore operation history and time travel in jj. Use when the user wants to browse history, find past state, restore to specific operation, understand what changed, or explore the operation log. Covers jj op log, --at-op flag, op restore, and operation exploration.
+description: Help users explore operation history and time travel in jj. Use when the user explicitly mentions 'operation log', 'op log', 'jj op', or 'operation history'. Covers jj op log, --at-op flag, op restore, and operation exploration.
 allowed-tools: Bash(jj op log:*), Bash(jj op show:*), Bash(jj op restore:*), Bash(jj op diff:*), Bash(jj log --at-op:*), Bash(jj status:*), Bash(jj diff --at-op:*), Read(*/jj-operations/*.md)
 ---
 
