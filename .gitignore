@@ -1,2 +1,8 @@
 result
 todotxtfmt/todotxtfmt
+
+# JJ workspaces and git worktrees
+.workspaces/
+workspaces/
+.worktrees/
+worktrees/
