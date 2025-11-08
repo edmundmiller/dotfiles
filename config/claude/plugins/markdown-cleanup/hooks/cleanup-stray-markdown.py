@@ -118,6 +118,7 @@ def get_session_start_time() -> float:
 
     # If no timestamp file, consider files from last hour
     import time
+
     return time.time() - 3600
 
 
@@ -226,11 +227,7 @@ def cleanup_files(files: List[Path]) -> dict:
         except Exception as e:
             errors.append(f"{file_path}: {str(e)}")
 
-    return {
-        "removed": removed,
-        "errors": errors,
-        "count": len(removed)
-    }
+    return {"removed": removed, "errors": errors, "count": len(removed)}
 
 
 def main():
@@ -255,7 +252,7 @@ def main():
 
         sys.exit(0)
 
-    except Exception as e:
+    except Exception:
         # On any error, fail silently to avoid breaking Claude
         # Uncomment for debugging: print(f"Markdown cleanup error: {str(e)}")
         sys.exit(0)
