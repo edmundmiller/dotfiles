@@ -1,0 +1,23 @@
+{
+  "name": "json-to-toon-plugin",
+  "version": "1.0.0",
+  "description": "Claude Code plugin for converting JSON to TOON format",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "json",
+    "toon",
+    "token-optimization"
+  ],
+  "author": "edmundmiller",
+  "license": "MIT",
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}
