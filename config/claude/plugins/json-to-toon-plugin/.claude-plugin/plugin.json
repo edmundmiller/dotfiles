@@ -1,0 +1,22 @@
+{
+  "name": "json-to-toon",
+  "version": "1.0.0",
+  "description": "Automatically converts JSON in Claude Code prompts to TOON format for 30-60% token savings",
+  "author": {
+    "name": "edmundmiller"
+  },
+  "keywords": ["json", "toon", "token-optimization", "compression"],
+  "license": "MIT",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node {{pluginDir}}/hooks/json-to-toon.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}
