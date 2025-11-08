@@ -8,13 +8,17 @@ Claude Code plugins provide a standardized way to package and distribute command
 
 ### Available Plugins
 
-**[jj-workflow-plugin](plugins/jj-workflow-plugin/)** - Autonomous commit stacking and curation workflow for Jujutsu
+**[jj](plugins/jj/)** - Autonomous commit stacking and curation workflow for Jujutsu
 
 - `/jj:commit` - Stack commits with intelligent message generation
 - `/jj:split` - Split commits by pattern (test, docs, config)
 - `/jj:squash` - Merge commits in the stack
 - `/jj:cleanup` - Remove empty workspaces
 - Includes git-to-jj command translator hook
+
+**[markdown-cleanup](plugins/markdown-cleanup/)** - Automatically cleans up stray markdown files
+
+**[json-to-toon](plugins/json-to-toon/)** - Converts JSON to TOON format for 30-60% token savings
 
 ### Plugin vs Standalone Commands
 
@@ -39,11 +43,19 @@ Both work identically - use whichever you prefer. Plugins are recommended for ma
 config/claude/
 ├── README.md              # This file
 ├── plugins/              # Claude Code plugins
-│   ├── jj-workflow-plugin/
+│   ├── jj/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── commands/
 │   │   └── README.md
+│   ├── markdown-cleanup/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── hooks/
+│   ├── json-to-toon/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── hooks/
 │   └── git-helpers-plugin/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
@@ -205,10 +217,10 @@ To share a plugin with the community:
 1. **Extract to separate repository:**
 
    ```bash
-   # Example: Extract jj-workflow-plugin
+   # Example: Extract jj plugin
    cd /tmp
-   cp -r ~/.config/dotfiles/config/claude/plugins/jj-workflow-plugin .
-   cd jj-workflow-plugin
+   cp -r ~/.config/dotfiles/config/claude/plugins/jj .
+   cd jj
    git init
    git add .
    git commit -m "Initial commit"
@@ -217,14 +229,14 @@ To share a plugin with the community:
 2. **Publish to GitHub:**
 
    ```bash
-   gh repo create my-username/jj-workflow-plugin --public
+   gh repo create my-username/jj-plugin --public
    git push -u origin main
    ```
 
 3. **Users install via:**
    ```bash
    # Clone to their plugins directory
-   git clone https://github.com/my-username/jj-workflow-plugin ~/.claude/plugins/jj-workflow-plugin
+   git clone https://github.com/my-username/jj-plugin ~/.claude/plugins/jj
    ```
 
 ### Plugin Development

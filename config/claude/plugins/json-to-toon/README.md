@@ -9,16 +9,18 @@ TOON (Token-Oriented Object Notation) is a compact data format optimized for LLM
 **Example:**
 
 JSON (117 tokens):
+
 ```json
 {
   "products": [
-    {"sku": "A123", "name": "Widget", "price": 9.99},
-    {"sku": "B456", "name": "Gadget", "price": 19.99}
+    { "sku": "A123", "name": "Widget", "price": 9.99 },
+    { "sku": "B456", "name": "Gadget", "price": 19.99 }
   ]
 }
 ```
 
 TOON (49 tokens - 58% reduction):
+
 ```
 products[2]{sku,name,price}:
   A123,Widget,9.99
@@ -88,6 +90,7 @@ If your `settings.json` already has a `hooks` section, merge the `UserPromptSubm
 The hook runs automatically before each prompt is sent to Claude:
 
 1. **Detects JSON** in your prompt:
+
    - JSON code blocks with ` ```json ` identifier
    - Plain code blocks containing valid JSON
    - Inline JSON objects/arrays (30+ characters)
@@ -95,6 +98,7 @@ The hook runs automatically before each prompt is sent to Claude:
 2. **Converts to TOON** format using the toon library
 
 3. **Preserves non-JSON content**:
+
    - JavaScript/TypeScript code (detected via keywords)
    - Plain text
    - Other code blocks
@@ -106,7 +110,8 @@ The hook runs automatically before each prompt is sent to Claude:
 ### Example 1: JSON Code Block
 
 **You type:**
-```
+
+````
 Analyze this data:
 \```json
 {
@@ -116,26 +121,29 @@ Analyze this data:
   ]
 }
 \```
-```
+````
 
 **Claude receives:**
-```
+
+````
 Analyze this data:
 \```
 users[2]{id,name,active}:
   1,Alice,true
   2,Bob,false
 \```
-```
+````
 
 ### Example 2: Inline JSON
 
 **You type:**
+
 ```
 Process this: {"products": [{"sku": "A123", "name": "Widget", "price": 9.99}], "total": 1}
 ```
 
 **Claude receives:**
+
 ```
 Process this: products[1]{sku,name,price}:
   A123,Widget,9.99
@@ -145,6 +153,7 @@ total: 1
 ### Example 3: JavaScript Code (Not Converted)
 
 **You type:**
+
 ```javascript
 function getData() {
   return { users: [] };
@@ -152,6 +161,7 @@ function getData() {
 ```
 
 **Claude receives:** (unchanged)
+
 ```javascript
 function getData() {
   return { users: [] };
@@ -174,6 +184,7 @@ echo '{"prompt": "Test: {\"key\": \"value\", \"items\": [{\"a\": 1}, {\"a\": 2}]
 ```
 
 Expected output:
+
 ```
 Test: key: value
 items[2]{a}:

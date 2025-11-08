@@ -62,7 +62,7 @@ Skills activate automatically based on context. Slash commands require explicit 
 
 ## Installation
 
-Part of dotfiles configuration. To use in other projects: Copy plugin directory to `.claude/plugins/jj-workflow-plugin/`
+Part of dotfiles configuration. To use in other projects: Copy plugin directory to `.claude/plugins/jj/`
 
 ## Requirements
 
