@@ -1,5 +1,5 @@
 {
-  "name": "markdown-cleanup-plugin",
+  "name": "markdown-cleanup",
   "version": "0.1.0",
   "description": "Automatically cleans up stray markdown files created during Claude Code sessions",
   "author": {

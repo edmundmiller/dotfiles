@@ -122,10 +122,7 @@
       "mcp__RepoPrompt__chat_send",
       "mcp__RepoPrompt__chats"
     ],
-    "deny": [
-      "Bash(git:*)",
-      "mcp__git__*"
-    ]
+    "deny": ["Bash(git:*)", "mcp__git__*"]
   },
   "statusLine": {
     "type": "command",
@@ -135,9 +132,10 @@
   "enabledPlugins": {
     "nextflow-pipeline-development@seqera-templates": true,
     "nextflow-plugin-development@seqera-templates": true,
-    "jj-workflow-plugin@dotfiles-plugins": true,
+    "jj@dotfiles-plugins": true,
     "seqera-mcp@seqera-templates": true,
-    "markdown-cleanup-plugin@dotfiles-plugins": true,
+    "markdown-cleanup@dotfiles-plugins": true,
+    "json-to-toon@dotfiles-plugins": true,
     "fusion-debugging@seqera-templates": false,
     "nextflow-debugging@seqera-templates": true,
     "creating-multiqc-template@multiqc-dev-tools": true,

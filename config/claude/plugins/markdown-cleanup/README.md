@@ -20,11 +20,13 @@ This plugin runs a cleanup hook at session end to prevent accumulation of stray 
 The plugin uses two hooks:
 
 ### UserPromptSubmit Hook (Session Start)
+
 1. Records the current timestamp when the session begins
 2. Stores timestamp in `/tmp/.claude_session_start`
 3. Only runs once per session (doesn't overwrite existing timestamp)
 
 ### Stop Hook (Session End)
+
 1. Reads the session start timestamp
 2. Scans the repository root for markdown files created after session start
 3. Scans temporary directories (`/tmp`, `/private/tmp`) for new files
@@ -49,19 +51,25 @@ The following files are **never** deleted:
 ## Detection Logic
 
 ### Time-Based Detection
+
 Files are identified by creation/modification time:
+
 - Files created or modified **during the current session** are candidates for removal
 - Session start time is tracked via UserPromptSubmit hook
 - If no session timestamp exists, considers files from the last hour
 
 ### Protected Files
+
 Files are **never** deleted if they:
+
 - Have important names: `README`, `CHANGELOG`, `LICENSE`, `CONTRIBUTING` (case-insensitive patterns)
 - Are in the exact safelist: `CLAUDE.md`, `TODO.md`, `NOTES.md`, `INDEX.md`
 - Are in documentation directories: `docs/`, `documentation/`, `.github/`, `wiki/`
 
 ### Removal Logic
+
 Files are removed if:
+
 1. Created/modified during current session AND
 2. Not in protected file list AND
 3. Not in documentation directory
@@ -102,6 +110,7 @@ The plugin runs automatically with two hooks:
 ```
 
 ### Session Tracking
+
 - Session start time stored in `/tmp/.claude_session_start`
 - Automatically created on first user prompt
 - Persists across the session

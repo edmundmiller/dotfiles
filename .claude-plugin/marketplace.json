@@ -10,8 +10,8 @@
   },
   "plugins": [
     {
-      "name": "jj-workflow-plugin",
-      "source": "./config/claude/plugins/jj-workflow-plugin",
+      "name": "jj",
+      "source": "./config/claude/plugins/jj",
       "description": "Basic Jujutsu workflow for commit stacking and curation. Commands: /jj:commit (stack commits), /jj:split (pattern-based split), /jj:squash (merge commits), /jj:cleanup (remove workspaces). Includes auto-formatting hook.",
       "version": "0.2.0",
       "author": {
@@ -23,8 +23,8 @@
       "tags": ["jujutsu", "workflow", "git-compatible"]
     },
     {
-      "name": "markdown-cleanup-plugin",
-      "source": "./config/claude/plugins/markdown-cleanup-plugin",
+      "name": "markdown-cleanup",
+      "source": "./config/claude/plugins/markdown-cleanup",
       "description": "Automatically cleans up stray markdown files created during Claude Code sessions. Uses Stop hook to remove temporary files from /tmp while preserving important documentation. Silent operation with smart file detection.",
       "version": "0.1.0",
       "author": {
@@ -34,6 +34,19 @@
       "license": "MIT",
       "category": "development-utilities",
       "tags": ["cleanup", "automation", "productivity"]
+    },
+    {
+      "name": "json-to-toon",
+      "source": "./config/claude/plugins/json-to-toon",
+      "description": "Automatically converts JSON in Claude Code prompts to TOON format for 30-60% token savings. Uses UserPromptSubmit hook to transparently optimize prompts without user intervention.",
+      "version": "1.0.0",
+      "author": {
+        "name": "edmundmiller"
+      },
+      "keywords": ["json", "toon", "token-optimization", "compression"],
+      "license": "MIT",
+      "category": "development-utilities",
+      "tags": ["optimization", "tokens", "automation"]
     }
   ]
 }

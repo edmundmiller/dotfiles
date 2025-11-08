@@ -8,7 +8,7 @@ allowed-tools: Bash(jj log:*), Bash(jj status:*), Bash(jj diff:*), Bash(jj spr:*
 
 ## Purpose
 
-Submit and manage stacked GitHub PRs using jj-spr. Integrates with jj-workflow-plugin's commit stacking workflow for sharing curated commits as reviewable PRs.
+Submit and manage stacked GitHub PRs using jj-spr. Integrates with jj plugin's commit stacking workflow for sharing curated commits as reviewable PRs.
 
 ## Integration with jj-workflow
 
