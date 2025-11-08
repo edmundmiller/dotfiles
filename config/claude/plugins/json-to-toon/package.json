@@ -4,9 +4,8 @@
   "description": "Claude Code plugin for converting JSON to TOON format",
   "type": "module",
   "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "keywords": [
     "claude-code",
@@ -16,8 +15,5 @@
     "token-optimization"
   ],
   "author": "edmundmiller",
-  "license": "MIT",
-  "devDependencies": {
-    "vitest": "^2.1.8"
-  }
+  "license": "MIT"
 }
