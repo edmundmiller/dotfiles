@@ -66,7 +66,8 @@
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # context                 # user@host
     dir                       # current directory
-    custom_jj_vcs             # jj or git status (custom)
+    custom_jj_vcs             # jj status (custom, hides vcs when active)
+    vcs                       # git status (hidden when in jj repo)
     nix_shell                 # nix development environment
     virtualenv                # python virtual environment
     node_version              # node.js version for projects
@@ -356,15 +357,15 @@ function prompt_nextflow() {
 }
 
 # Global variables for async JJ prompt
-typeset -g _jj_prompt_async_output=""
-typeset -g _jj_prompt_async_workspace=""
+typeset -g _my_jj_display=""
+typeset -g _my_jj_workspace=""
 
 # Async worker function - runs in background
-function _jj_prompt_async_worker() {
+function _my_jj_async() {
   local workspace="$1"
 
   # Check if we're in a JJ repo - fast check first
-  if ! jj root &>/dev/null; then
+  if ! jj workspace root &>/dev/null; then
     # Fall back to git
     local git_info
     git_info=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
@@ -374,44 +375,72 @@ function _jj_prompt_async_worker() {
     return
   fi
 
-  # JJ repository - gather comprehensive info
-  local bookmark change_id files_status
+  # JJ repository - gather comprehensive info using templates and revsets
+  local revision bookmark distance file_status
 
-  # Get closest bookmark (if any)
-  bookmark=$(jj log --no-graph --limit 1 -r "coalesce(closest_bookmark(@), '')" -T 'if(bookmarks, bookmarks.join(" "), "")' 2>/dev/null)
+  # Get revision info using the prompt template (includes change ID, commit ID, conflicts, etc.)
+  revision=$(jj log --repository "$workspace" --ignore-working-copy \
+    --no-graph --limit 1 --color always \
+    --revisions @ -T 'prompt' 2>/dev/null)
 
-  # Get change ID (always present)
-  change_id=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null)
+  # Get closest bookmark
+  bookmark=$(jj log --repository "$workspace" --ignore-working-copy \
+    --no-graph --limit 1 --color always \
+    -r "closest_bookmark(@)" -T 'bookmarks.join(" ")' 2>/dev/null)
 
-  # Get file change summary using diff.summary()
-  files_status=$(jj log -r @ -T 'diff.summary()' 2>/dev/null | awk '
-    BEGIN {a=0; d=0; m=0}
-    /^A / {a++}
-    /^D / {d++}
-    /^M / {m++}
-    END {
-      out=""
-      if (a > 0) out = out " +" a
-      if (m > 0) out = out " ~" m
-      if (d > 0) out = out " -" d
-      print out
-    }
-  ')
-
-  # Build output string
-  local output=""
-
-  # Add bookmark if present
+  # Calculate distance from closest bookmark
   if [[ -n "$bookmark" ]]; then
-    output="$bookmark "
+    distance=$(jj log --repository "$workspace" --ignore-working-copy \
+      --no-graph --color never \
+      -r "closest_bookmark(@)..@" \
+      -T 'change_id ++ "\n"' 2>/dev/null | wc -l | tr -d ' ')
+    # Only show distance if > 0
+    if [[ "$distance" -eq 0 ]]; then
+      distance=""
+    fi
   fi
 
-  # Add change ID (always present in jj)
-  output="${output}${change_id}"
+  # Get file status using diff.files()
+  file_status=$(jj log --repository "$workspace" --ignore-working-copy \
+    --no-graph --color never --revisions @ \
+    -T 'self.diff().files().map(|f| f.status()).join("\n")' 2>/dev/null | \
+    sort | uniq -c | awk '
+      BEGIN { parts[0]="" }
+      /modified/ { parts[++i] = "%F{cyan}~" $1 "%f" }
+      /added/ { parts[++i] = "%F{green}+" $1 "%f" }
+      /removed/ { parts[++i] = "%F{red}-" $1 "%f" }
+      END {
+        if (i > 0) {
+          result = ""
+          for (j = 1; j <= i; j++) {
+            if (j > 1) result = result " "
+            result = result parts[j]
+          }
+          print " " result
+        }
+      }
+    ')
+
+  # Build output string with proper zsh color wrapping
+  local output=""
+
+  # Add bookmark and distance if present
+  if [[ -n "$bookmark" ]]; then
+    output="%F{blue}$bookmark%f"
+    if [[ -n "$distance" && "$distance" -gt 0 ]]; then
+      output="$output%F{242}+$distance%f"
+    fi
+    output="$output "
+  fi
+
+  # Add revision info (contains change ID, etc. - already has ANSI colors from jj)
+  # Wrap ANSI codes for zsh prompt
+  local wrapped_revision=$(echo "$revision" | sed 's/\x1b\[[0-9;]*m/%{&%}/g')
+  output="${output}${wrapped_revision}"
 
   # Add file status if present
-  if [[ -n "$files_status" ]]; then
-    output="${output}${files_status}"
+  if [[ -n "$file_status" ]]; then
+    output="${output}${file_status}"
   fi
 
   # Return the formatted output
@@ -419,56 +448,65 @@ function _jj_prompt_async_worker() {
 }
 
 # Async callback - handles results from worker
-function _jj_prompt_async_callback() {
-  local job=$1
-  local return_code=$2
-  local stdout=$3
-  local workspace=$_jj_prompt_async_workspace
+function _my_jj_callback() {
+  local job_name=$1
+  local exit_code=$2
+  local output=$3
+  local execution_time=$4
+  local stderr=$5
 
-  # Only update if we're still in the same workspace
-  if [[ "$PWD" == "$workspace" ]]; then
-    _jj_prompt_async_output="$stdout"
-    # Trigger prompt refresh
-    p10k display -r
+  if [[ $exit_code == 0 ]]; then
+    _my_jj_display="$output"
+  else
+    _my_jj_display="$output %F{red}$stderr%f"
   fi
+
+  # Trigger prompt refresh
+  p10k display -r
 }
 
 # Main VCS prompt function with async support
 function prompt_custom_vcs() {
-  # Use cached output if available and workspace hasn't changed
-  if [[ "$PWD" == "$_jj_prompt_async_workspace" && -n "$_jj_prompt_async_output" ]]; then
-    local type="${_jj_prompt_async_output%%:*}"
-    local content="${_jj_prompt_async_output#*:}"
+  # Detect if we're in a jj workspace
+  local workspace
+  if workspace=$(jj workspace root 2>/dev/null); then
+    # Hide git VCS segment when in JJ workspace
+    p10k display "*/vcs=hide"
 
-    if [[ "$type" == "jj" ]]; then
-      # Color for JJ - orange
-      echo -n "$content"
-    elif [[ "$type" == "git" ]]; then
-      # Use default color for git
-      echo -n "$content"
+    # Check if workspace changed or we need to start async update
+    if [[ "$workspace" != "$_my_jj_workspace" ]]; then
+      _my_jj_workspace="$workspace"
+      _my_jj_display=""
     fi
-    return 0
-  fi
 
-  # Start async job if available
-  if (( $+functions[async_job] )); then
-    _jj_prompt_async_workspace="$PWD"
-    async_job _jj_prompt_worker _jj_prompt_async_worker "$PWD"
+    # Display cached output if available
+    if [[ -n "$_my_jj_display" ]]; then
+      local type="${_my_jj_display%%:*}"
+      local content="${_my_jj_display#*:}"
+
+      if [[ "$type" == "jj" ]]; then
+        # Use -e flag to enable reinterpretation of escape codes
+        p10k segment -e -t "$content"
+      fi
+    fi
+
+    # Start async update if zsh-async is available
+    if (( $+functions[async_job] )); then
+      async_job _my_jj_worker _my_jj_async "$workspace"
+    fi
   else
-    # Fallback to synchronous if async not available
-    local result
-    result=$(_jj_prompt_async_worker "$PWD")
-    local type="${result%%:*}"
-    local content="${result#*:}"
-    echo -n "$content"
+    # Not in JJ workspace - show git VCS segment
+    p10k display "*/vcs=show"
+    _my_jj_workspace=""
+    _my_jj_display=""
   fi
 }
 
 # Initialize async worker for JJ prompt (if zsh-async is available)
 if (( $+functions[async_init] )); then
   async_init
-  async_start_worker _jj_prompt_worker -n
-  async_register_callback _jj_prompt_worker _jj_prompt_async_callback
+  async_start_worker _my_jj_worker -n
+  async_register_callback _my_jj_worker _my_jj_callback
 fi
 
 # Tell `p10k configure` which file it should overwrite.

@@ -7,6 +7,9 @@ romkatv/powerlevel10k
 # Async support for non-blocking prompt updates (used by jj prompt)
 mafredri/zsh-async
 
+# JJ (Jujutsu) integration for vcs_info and prompt
+rkh/zsh-jj
+
 # Completions system - load early as fpath
 zsh-users/zsh-completions kind:fpath path:src
 
