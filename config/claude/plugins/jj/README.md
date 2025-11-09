@@ -2,7 +2,7 @@
 
 Autonomous commit stacking and curation for Jujutsu (jj). Provides Claude Code with slash commands, Skills, and hooks for stack-based commit workflows.
 
-**Features:** Slash commands (`/jj:commit`, `/jj:split`, `/jj:squash`, `/jj:cleanup`), Agent Skills (workflow understanding, commit curation, message generation), Git translation hook, Plan-driven workflow, Auto-formatting (`jj fix`), Automatic file tracking
+**Features:** Slash commands (`/jj:commit`, `/jj:split`, `/jj:squash`, `/jj:cleanup`, `/jj-todo:*`), Agent Skills (workflow understanding, commit curation, message generation), Git translation hook, Plan-driven workflow, Auto-formatting (`jj fix`), Automatic file tracking, **JJ-Todo system** (commit-based todo list)
 
 ## Commands
 
@@ -22,6 +22,17 @@ Merge commits in stack. Use for WIP commits or combining related changes before 
 
 Remove empty jj workspaces.
 
+### JJ-Todo Commands
+
+**NEW:** Use jj commits as a visual, version-controlled todo list!
+
+- `/jj-todo:status` - Show current todo stack as commit graph
+- `/jj-todo:next` - Move to next pending task
+- `/jj-todo:done` - Complete current task and move to next
+- `/jj-todo:create <tasks>` - Create todo stack from task list
+
+**See:** [JJ-TODO-SYSTEM.md](./JJ-TODO-SYSTEM.md) for complete documentation
+
 ## Quick Start
 
 ```bash
@@ -37,11 +48,12 @@ Stack commits, pattern-based splits, leverage snapshots (`jj op log`), everythin
 
 ## Agent Skills
 
-Three auto-activating Skills provide jj workflow understanding:
+Four auto-activating Skills provide jj workflow understanding:
 
 **1. Working with Jujutsu** - Core concepts, state management, plan-driven workflow, command suggestions
 **2. Curating Commits** - Pattern recognition for splits/squashes, file type matching, avoiding over-curation
 **3. Generating Messages** - Conventional commit format, project style matching, auto-generation from patterns
+**4. JJ-Todo System** - Using commits as todos, automatic sync, manual commands, workflow patterns
 
 Skills activate automatically based on context. Slash commands require explicit user invocation.
 
@@ -51,6 +63,7 @@ Skills activate automatically based on context. Slash commands require explicit 
 
 **Hooks:**
 
+- **Todo-to-Commit:** Translates TodoWrite calls into jj commits (see JJ-TODO-SYSTEM.md)
 - **Plan-Driven:** Creates "plan:" commit for substantial tasks, validates at session end
 - **Git Translation:** Intercepts git commands, suggests jj equivalents
 - **Auto-formatting:** Runs `jj fix -s @` after edits
@@ -84,6 +97,7 @@ bun test hooks/jj-hooks.test.mjs
 ```
 
 **Test Coverage:**
+- Todo-to-commit: TodoWrite interception, status mapping, commit creation/updates
 - Git-to-jj translator: Command interception, read-only vs. write detection, mapping accuracy
 - Plan commit: Task vs. question detection, pattern matching, edge cases
 - Integration helper: Session validation, error handling

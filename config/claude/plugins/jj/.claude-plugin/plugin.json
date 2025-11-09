@@ -12,6 +12,16 @@
   "hooks": {
     "PostToolUse": [
       {
+        "matcher": "TodoWrite",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/config/claude/plugins/jj/hooks/todo-to-commit.py",
+            "timeout": 30
+          }
+        ]
+      },
+      {
         "matcher": "Edit|MultiEdit",
         "hooks": [
           {
