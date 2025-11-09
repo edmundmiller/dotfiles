@@ -364,18 +364,8 @@ typeset -g _my_jj_workspace=""
 function _my_jj_async() {
   local workspace="$1"
 
-  # Check if we're in a JJ repo - fast check first
-  if ! jj workspace root &>/dev/null; then
-    # Fall back to git
-    local git_info
-    git_info=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-    if [[ -n "$git_info" ]]; then
-      echo "git:$git_info"
-    fi
-    return
-  fi
-
-  # JJ repository - gather comprehensive info using templates and revsets
+  # Trust that caller has validated workspace - use it directly with --repository flag
+  # If jj commands fail, variables will be empty and we'll output minimal "jj:" which is handled gracefully
   local revision bookmark distance file_status
 
   # Get revision info using the prompt template (includes change ID, commit ID, conflicts, etc.)
