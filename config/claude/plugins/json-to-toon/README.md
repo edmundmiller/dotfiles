@@ -32,6 +32,8 @@ products[2]{sku,name,price}:
 - ✅ Automatically detects and converts JSON in prompts
 - ✅ Handles JSON code blocks (` ```json `)
 - ✅ Handles inline JSON objects/arrays
+- ✅ Converts CSV data to TOON format
+- ✅ Converts Markdown tables to TOON format
 - ✅ Smart detection: preserves JavaScript/TypeScript code
 - ✅ Safe: fails gracefully, never breaks prompts
 - ✅ Zero configuration after setup
@@ -89,15 +91,15 @@ If your `settings.json` already has a `hooks` section, merge the `UserPromptSubm
 
 The hook runs automatically before each prompt is sent to Claude:
 
-1. **Detects JSON** in your prompt:
+1. **Detects structured data** in your prompt:
 
-   - JSON code blocks with ` ```json ` identifier
-   - Plain code blocks containing valid JSON
-   - Inline JSON objects/arrays (30+ characters)
+   - **JSON**: Code blocks with ` ```json ` identifier, plain code blocks containing valid JSON, or inline JSON objects/arrays (30+ characters)
+   - **CSV**: Code blocks with ` ```csv ` identifier or plain code blocks with comma/tab/pipe-delimited data
+   - **Markdown tables**: Standard markdown table syntax with header, separator, and data rows
 
-2. **Converts to TOON** format using the toon library
+2. **Converts to TOON** format using optimized parsing
 
-3. **Preserves non-JSON content**:
+3. **Preserves non-data content**:
 
    - JavaScript/TypeScript code (detected via keywords)
    - Plain text
@@ -166,6 +168,57 @@ function getData() {
 function getData() {
   return { users: [] };
 }
+```
+
+### Example 4: CSV Data
+
+**You type:**
+
+````
+Analyze this sales data:
+\```csv
+product,quantity,revenue
+Widget,150,1485.00
+Gadget,89,1780.11
+Tool,234,3510.00
+\```
+````
+
+**Claude receives:**
+
+````
+Analyze this sales data:
+\```
+[3]{product,quantity,revenue}:
+  Widget,150,1485
+  Gadget,89,1780.11
+  Tool,234,3510
+\```
+````
+
+### Example 5: Markdown Tables
+
+**You type:**
+
+```
+Compare these database options:
+
+| Database  | Type      | Max Connections |
+|-----------|-----------|-----------------|
+| PostgreSQL| Relational| 100             |
+| MongoDB   | Document  | 500             |
+| Redis     | Key-Value | 10000           |
+```
+
+**Claude receives:**
+
+```
+Compare these database options:
+
+[3]{Database,Type,Max Connections}:
+  PostgreSQL,Relational,100
+  MongoDB,Document,500
+  Redis,Key-Value,10000
 ```
 
 ## Troubleshooting
