@@ -22,6 +22,10 @@ Merge commits in stack. Use for WIP commits or combining related changes before 
 
 Remove empty jj workspaces.
 
+### `/todo-squash [base-revision]`
+
+Clean up JJ changes created by the todo-commit hook. Provides strategies for squashing todo changes into meaningful commits. See [Todo-Commit Workflow](./TODO-COMMIT-WORKFLOW.md) for details.
+
 ## Quick Start
 
 ```bash
@@ -51,6 +55,7 @@ Skills activate automatically based on context. Slash commands require explicit 
 
 **Hooks:**
 
+- **Todo-Commit Automation:** Creates JJ changes for each todo, auto-switches as work progresses. See [Todo-Commit Workflow](./TODO-COMMIT-WORKFLOW.md)
 - **Plan-Driven:** Creates "plan:" commit for substantial tasks, validates at session end
 - **Git Translation:** Intercepts git commands, suggests jj equivalents
 - **Auto-formatting:** Runs `jj fix -s @` after edits
