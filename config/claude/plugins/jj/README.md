@@ -72,6 +72,27 @@ Part of dotfiles configuration. To use in other projects: Copy plugin directory 
 
 Jujutsu (jj) installed, Claude Code v1.0.88+, basic jj familiarity
 
+## Testing
+
+The plugin includes comprehensive test coverage for all hooks.
+
+```bash
+# Run tests once
+bun test
+
+# Run tests in watch mode
+bun test:watch
+
+# Run specific test file
+bun test hooks/jj-hooks.test.mjs
+```
+
+**Test Coverage:**
+- Git-to-jj translator: Command interception, read-only vs. write detection, mapping accuracy
+- Plan commit: Task vs. question detection, pattern matching, edge cases
+- Integration helper: Session validation, error handling
+- Workflow scenarios: Real-world command sequences
+
 ## Troubleshooting
 
 **Commands not showing:** Verify `.claude-plugin/plugin.json` exists, check `which jj`
