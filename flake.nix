@@ -303,13 +303,45 @@
         "x86_64-linux"
         "aarch64-darwin"
       ];
-      perSystem = _: {
+      perSystem = { pkgs, system, ... }: {
         treefmt = {
           projectRootFile = ".git/config";
           programs.deadnix.enable = true;
           programs.nixfmt.enable = true;
           programs.prettier.enable = true;
           programs.statix.enable = true;
+        };
+
+        # Add claudelint checks for Claude Code plugins
+        checks = {
+          validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" {
+            buildInputs = [ pkgs.python312 ];
+          } ''
+            # Create a temporary directory for the check
+            mkdir -p $out
+
+            # Copy plugin files to temporary location
+            cp -r ${./.} /tmp/dotfiles-check
+            cd /tmp/dotfiles-check
+
+            # Install uv
+            export HOME=/tmp
+            ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
+            export PATH="$HOME/.cargo/bin:$PATH"
+
+            # Run claudelint on each plugin directory
+            echo "Validating Claude Code plugins..."
+
+            for plugin in config/claude/plugins/*/; do
+              if [ -d "$plugin" ]; then
+                echo "Checking $plugin..."
+                uvx claudelint "$plugin" || exit 1
+              fi
+            done
+
+            # Create success marker
+            echo "All plugins validated successfully" > $out/result
+          '';
         };
       };
     };
