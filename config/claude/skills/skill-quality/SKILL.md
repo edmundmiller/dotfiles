@@ -195,7 +195,7 @@ priority: 5
 - Keep under 100 characters
 - Use terms users naturally say
 
-📖 See [examples.md](./examples.md#description-quality) for good/bad examples
+📖 See [EXAMPLES.md](./EXAMPLES.md#description-quality) for good/bad examples
 
 ### 2. Content Structure
 
@@ -247,7 +247,7 @@ Most common cases with examples
 - Explain synonyms when first used
 - Don't mix related terms without explanation
 
-📖 See [examples.md](./examples.md#terminology-consistency) for patterns
+📖 See [EXAMPLES.md](./EXAMPLES.md#terminology-consistency) for patterns
 
 ### 4. Concrete Examples
 
@@ -260,7 +260,7 @@ Examples must:
 - Include expected output
 - Demonstrate the principle
 
-📖 See [examples.md](./examples.md#concrete-examples) for good/bad examples
+📖 See [EXAMPLES.md](./EXAMPLES.md#concrete-examples) for good/bad examples
 
 ### 5. File Reference Depth
 
@@ -289,7 +289,7 @@ Use ast-grep for syntax-aware searches
 Previously, ripgrep was used...
 ```
 
-📖 See [examples.md](./examples.md#time-sensitive-information) for deprecation patterns
+📖 See [EXAMPLES.md](./EXAMPLES.md#time-sensitive-information) for deprecation patterns
 
 ## Code and Script Quality
 
@@ -335,7 +335,7 @@ Required:
 Verify: `which ast-grep`
 ```
 
-📖 See [examples.md](./examples.md#code-and-script-quality) for detailed patterns
+📖 See [EXAMPLES.md](./EXAMPLES.md#code-and-script-quality) for detailed patterns
 
 ## Workflow Quality
 
@@ -367,7 +367,7 @@ Verify: `ls my-dir`
 **Need both?** → Use A then B
 ````
 
-📖 See [examples.md](./examples.md#workflow-quality) for patterns
+📖 See [EXAMPLES.md](./EXAMPLES.md#workflow-quality) for patterns
 
 ## Testing
 
@@ -377,7 +377,7 @@ Every skill needs testing across:
 - **Scenarios**: Simple, edge case, complex
 - **Real usage**: New project, no external help
 
-📖 See [testing.md](./testing.md) for detailed testing guidelines
+📖 See [TESTING.md](./TESTING.md) for detailed testing guidelines
 
 ## Troubleshooting
 
@@ -387,7 +387,7 @@ Common issues:
 - Too broad → Split into focused skills
 - Too abstract → Add concrete examples
 
-📖 See [troubleshooting.md](./troubleshooting.md) for complete guide
+📖 See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for complete guide
 
 ## Quality Self-Check
 
@@ -480,6 +480,6 @@ Test this skill with these scenarios to ensure it works effectively:
 
 ## Additional Resources
 
-- [examples.md](./examples.md) - Detailed good/bad examples for all principles
-- [testing.md](./testing.md) - Complete testing guidelines
-- [troubleshooting.md](./troubleshooting.md) - Common issues and fixes
+- [EXAMPLES.md](./EXAMPLES.md) - Detailed good/bad examples for all principles
+- [TESTING.md](./TESTING.md) - Complete testing guidelines
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and fixes
