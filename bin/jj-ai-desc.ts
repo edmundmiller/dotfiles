@@ -83,7 +83,48 @@ const main = async () => {
 
   spinner.success({ text: "Got diff" });
 
-  // Step 2: Generate commit message
+  // Step 2: Get recent commit history for context
+  spinner.start({ text: "Getting commit context..." });
+
+  const { stdout: logText, exitCode: logExitCode } = await runCommand([
+    "jj",
+    "log",
+    "--no-graph",
+    "-r",
+    "ancestors(@-)",
+    "--limit",
+    "5",
+    "-T",
+    'commit_id.short() ++ "\\t" ++ description.first_line() ++ "\\n"',
+  ]);
+
+  let commitContext = "";
+  if (logExitCode === 0 && logText.trim()) {
+    // Parse the log output and format as JSON for TOON conversion
+    const commits = logText
+      .trim()
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => {
+        const [id, ...messageParts] = line.split("\t");
+        return {
+          id: id.trim(),
+          message: messageParts.join("\t").trim(),
+        };
+      });
+
+    if (commits.length > 0) {
+      const recentCommits = { recent_commits: commits };
+      commitContext = `Recent commit history for context:\n\`\`\`json\n${JSON.stringify(recentCommits, null, 2)}\n\`\`\`\n\n`;
+      spinner.success({ text: `Got ${commits.length} recent commits` });
+    } else {
+      spinner.warn({ text: "No recent commits found" });
+    }
+  } else {
+    spinner.warn({ text: "Could not get commit history" });
+  }
+
+  // Step 3: Generate commit message
   spinner.start({ text: "Generating commit message..." });
 
   const claudePath = join(homedir(), ".local", "bin", "claude");
@@ -99,12 +140,15 @@ const main = async () => {
   }
 
   try {
+    // Combine commit context and diff for Claude
+    const claudeInput = commitContext + `Here is the diff to describe:\n\n${diffText}`;
+
     const { stdout: claudeOutput, stderr: claudeError, exitCode: claudeExitCode } =
       await runCommand(
         [
           claudePath,
           "-p",
-          "Generate ONLY a conventional commit message (feat/fix/refactor/docs/test/chore/style/perf) for this diff. Output the message and nothing else. Keep it under 72 chars.",
+          "Generate ONLY a conventional commit message (feat/fix/refactor/docs/test/chore/style/perf) for this diff. Consider the style and context of recent commits. Output the message and nothing else. Keep it under 72 chars.",
           "--model",
           "haiku",
           "--output-format",
@@ -112,7 +156,7 @@ const main = async () => {
           "--tools",
           "",
         ],
-        { stdin: diffText }
+        { stdin: claudeInput }
       );
 
     if (claudeExitCode !== 0) {
