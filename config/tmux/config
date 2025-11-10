@@ -47,6 +47,12 @@ bind c new-window      -c "#{pane_current_path}"
 bind v split-window -h -c "#{pane_current_path}"
 bind s split-window -v -c "#{pane_current_path}"
 
+# Split and launch jjui
+bind u split-window -v -c "#{pane_current_path}" "jjui"
+bind U split-window -h -c "#{pane_current_path}" "jjui"
+# Generic command in new split
+bind C command-prompt -p "Command:" "split-window -v -c '#{pane_current_path}' '%%'"
+
 bind h select-pane -L
 bind j select-pane -D
 bind k select-pane -U
