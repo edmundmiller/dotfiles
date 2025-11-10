@@ -7,6 +7,27 @@
 # ]
 # ///
 
+# =============================================================================
+# AI-NAVIGATION: Use ast-grep for precise structural search
+# =============================================================================
+# Find specific functions and code structures:
+#
+#   ast-grep --pattern 'def main($$$)' jj-ai-desc.py
+#   ast-grep --pattern 'def strip_markdown_fences($$$)' jj-ai-desc.py
+#   ast-grep --pattern 'def run_command($$$)' jj-ai-desc.py
+#   ast-grep --pattern '@app.command()' jj-ai-desc.py
+#   ast-grep --pattern 'if __name__ == "__main__"' jj-ai-desc.py
+#
+# List all function definitions:
+#   ast-grep --pattern 'def $FUNC($$$)' jj-ai-desc.py
+#
+# Section markers (use with Read tool + line offset):
+#   Line 86:  # AI-SEARCH: HELPERS (helper functions)
+#   Line 135: # AI-SEARCH: MAIN (main CLI logic)
+#   Line 291: # AI-SEARCH: TESTS (35 test functions)
+#   Line 565: # AI-SEARCH: ENTRY (entry point)
+# =============================================================================
+
 """
 jj-ai-desc - AI-Powered Commit Message Generator for Jujutsu
 
@@ -62,6 +83,7 @@ console = Console()
 
 
 # ============================================================================
+# AI-SEARCH: HELPERS
 # Testable Helper Functions
 # ============================================================================
 
@@ -110,6 +132,7 @@ def run_command(
 
 
 # ============================================================================
+# AI-SEARCH: MAIN
 # Main Application Logic
 # ============================================================================
 
@@ -265,6 +288,7 @@ def main(
 
 
 # ============================================================================
+# AI-SEARCH: TESTS
 # Tests (discovered by pytest, ignored during normal execution)
 # ============================================================================
 
@@ -538,6 +562,7 @@ def test_run_command_failure():
 
 
 # ============================================================================
+# AI-SEARCH: ENTRY
 # Entry Point
 # ============================================================================
 
