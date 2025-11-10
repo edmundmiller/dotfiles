@@ -10,6 +10,18 @@
   "commands": "./commands/",
   "skills": "./skills/",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "condition": "args.command matches '^git '",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "../hooks/git-to-jj-translator.py"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|MultiEdit",
@@ -27,6 +39,28 @@
           {
             "type": "command",
             "command": "jj fix -s @ && echo '✓ Formatting applied' || echo '⚠️  Formatting failed but continuing'"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "./hooks/user-prompt-commit.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "./hooks/stop-auto-commit.py",
+            "timeout": 30
           }
         ]
       }
