@@ -1,0 +1,130 @@
+name: Validate Claude Plugins
+
+on:
+  push:
+    paths:
+      - "config/claude/plugins/**"
+      - "config/claude/skills/**"
+      - ".claudelint.toml"
+      - ".github/workflows/validate-plugins.yml"
+  pull_request:
+    paths:
+      - "config/claude/plugins/**"
+      - "config/claude/skills/**"
+      - ".claudelint.toml"
+      - ".github/workflows/validate-plugins.yml"
+
+jobs:
+  validate:
+    name: Validate Claude Code Plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for changed files detection
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache claudelint
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Get changed plugin files
+        id: changed-files
+        run: |
+          # Get list of changed files in plugin directories
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            # For push events, compare with previous commit
+            BASE_SHA="${{ github.event.before }}"
+          fi
+
+          # If BASE_SHA is all zeros (new branch), compare with main
+          if [ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="origin/main"
+          fi
+
+          # Get changed files in plugin directories
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD | grep -E '^config/claude/(plugins|skills)/' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No plugin files changed, skipping validation"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            echo "skip=false" >> $GITHUB_OUTPUT
+            # Store changed files for next step
+            echo "$CHANGED_FILES" > changed_files.txt
+          fi
+
+      - name: Run claudelint on changed files
+        if: steps.changed-files.outputs.skip != 'true'
+        run: |
+          # Add uv to PATH
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+          # Get plugin directories that have changes
+          PLUGIN_DIRS=$(cat changed_files.txt | grep -o 'config/claude/plugins/[^/]*' | sort -u || true)
+
+          if [ -n "$PLUGIN_DIRS" ]; then
+            echo "Validating plugin directories:"
+            echo "$PLUGIN_DIRS"
+
+            # Run claudelint on each changed plugin directory
+            EXIT_CODE=0
+            for PLUGIN_DIR in $PLUGIN_DIRS; do
+              echo "::group::Validating $PLUGIN_DIR"
+              if uvx claudelint "$PLUGIN_DIR"; then
+                echo "✅ $PLUGIN_DIR passed validation"
+              else
+                echo "❌ $PLUGIN_DIR failed validation"
+                EXIT_CODE=1
+              fi
+              echo "::endgroup::"
+            done
+
+            exit $EXIT_CODE
+          else
+            echo "No plugin directories changed, skipping validation"
+          fi
+
+      - name: Run claudelint on standalone skills
+        if: steps.changed-files.outputs.skip != 'true'
+        run: |
+          # Add uv to PATH
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+          # Check if any standalone skills changed
+          SKILL_FILES=$(cat changed_files.txt | grep '^config/claude/skills/.*\.md$' || true)
+
+          if [ -n "$SKILL_FILES" ]; then
+            echo "Validating standalone skill files:"
+            echo "$SKILL_FILES"
+
+            # Note: claudelint validates full directories, so we validate the skills directory
+            echo "::group::Validating config/claude/skills/"
+            uvx claudelint config/claude/skills/ || true
+            echo "::endgroup::"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.changed-files.outputs.skip }}" == "true" ]; then
+            echo "✅ No plugin files changed - validation skipped"
+          else
+            echo "✅ Plugin validation complete"
+            echo "Changed files were validated with claudelint"
+          fi

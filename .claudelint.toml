@@ -1,0 +1,114 @@
+# claudelint configuration for dotfiles repository
+# Validates Claude Code plugins in config/claude/plugins/
+
+[general]
+# Target directories for plugin validation
+plugin_dirs = [
+    "config/claude/plugins/jj",
+    "config/claude/plugins/json-to-toon",
+    "config/claude/plugins/markdown-cleanup"
+]
+
+# Standalone skills directory
+skills_dir = "config/claude/skills"
+
+# Strict mode: validate for new changes only
+# Warnings won't fail the build, only errors will
+fail_on_warnings = false
+
+[rules]
+# Plugin metadata validation
+check_plugin_json = true
+check_marketplace_json = false  # We don't publish to marketplace yet
+
+# File structure validation
+check_required_files = true
+check_file_naming = true
+
+# Command validation
+check_command_files = true
+check_command_frontmatter = true
+
+# Skill validation
+check_skill_files = true
+check_skill_frontmatter = true
+
+# Hook validation
+check_hook_executability = true
+check_hook_shebangs = true
+
+# Semantic versioning
+check_semver = true
+
+# Cross-reference validation
+check_cross_references = true
+
+[naming]
+# Allow our existing naming conventions
+# We use kebab-case for plugin names
+plugin_name_pattern = "^[a-z][a-z0-9-]*$"
+
+# Command files use kebab-case
+command_name_pattern = "^[a-z][a-z0-9-]*\\.md$"
+
+# Skill directories use kebab-case
+skill_name_pattern = "^[a-z][a-z0-9-]*$"
+
+[hooks]
+# Validate Python hooks with UV shebang pattern
+python_shebang_pattern = "^#!/usr/bin/env -S uv run"
+
+# Validate Bun/Node.js hooks
+javascript_shebang_pattern = "^#!/usr/bin/env (bun|node)"
+
+# Require executable bit on all hooks
+require_executable = true
+
+[frontmatter]
+# Required fields in command markdown files
+required_command_fields = [
+    "description",
+    "allowed-tools",
+    "arguments"
+]
+
+# Required fields in skill markdown files
+required_skill_fields = [
+    "description",
+    "priority"
+]
+
+[plugin_json]
+# Required fields in plugin.json
+required_fields = [
+    "name",
+    "version",
+    "description",
+    "author"
+]
+
+# Validate hook definitions
+validate_hooks = true
+validate_hook_paths = true
+
+# Validate command definitions
+validate_commands = true
+validate_command_paths = true
+
+# Validate skill definitions
+validate_skills = true
+validate_skill_paths = true
+
+[output]
+# Use colored output for better readability
+use_color = true
+
+# Show file paths relative to repository root
+relative_paths = true
+
+# Show context lines for errors
+show_context = true
+context_lines = 2
+
+# Detailed error messages
+verbose = true
