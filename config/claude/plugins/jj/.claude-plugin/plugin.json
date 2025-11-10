@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "../hooks/git-to-jj-translator.py"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/git-to-jj-translator.py"
           }
         ]
       }
@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "./hooks/user-prompt-commit.py",
+            "prompt": "${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-commit.py",
             "timeout": 30
           }
         ]
@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "./hooks/stop-auto-commit.py",
+            "prompt": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-auto-commit.py",
             "timeout": 30
           }
         ]

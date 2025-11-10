@@ -36,6 +36,11 @@ scrollback-limit = 1000000
 working-directory = follow
 copy-on-select = true
 
+# Visual Bell
+visual-bell-animation = linear
+visual-bell-duration = 0.1
+visual-bell-color = red
+
 # Updates
 auto-update = check
 
