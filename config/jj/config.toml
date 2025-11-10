@@ -148,7 +148,7 @@ active = "mine() & ~empty() & ~immutable()"           # Active work in progress
 
 [snapshot]
 # Automatically track new files in src directories
-auto-track = "glob:**/*.js|glob:**/*.ts|glob:**/*.tsx|glob:**/*.jsx|glob:**/*.py|glob:**/*.rs|glob:**/*.go|glob:**/*.java|glob:**/*.c|glob:**/*.cpp|glob:**/*.h|glob:**/*.hpp|glob:**/*.nix|glob:**/*.toml|glob:**/*.yaml|glob:**/*.yml|glob:**/*.json|glob:**/*.md"
+auto-track = "(glob:**/*.js|glob:**/*.ts|glob:**/*.tsx|glob:**/*.jsx|glob:**/*.py|glob:**/*.rs|glob:**/*.go|glob:**/*.java|glob:**/*.c|glob:**/*.cpp|glob:**/*.h|glob:**/*.hpp|glob:**/*.nix|glob:**/*.toml|glob:**/*.yaml|glob:**/*.yml|glob:**/*.json|glob:**/*.md) & ~glob:**/node_modules/** & ~glob:**/.nextflow/** & ~glob:**/work/** & ~glob:**/results/** & ~glob:**/.lineage"
 # Maximum file size to auto-track (10MB)
 max-new-file-size = "10MB"
 
