@@ -1,0 +1,7 @@
+# jjui configuration
+# See: https://idursun.github.io/jjui/
+
+# Leader key bindings (press \ then the key)
+[leader.a]
+help = "AI-generated commit message"
+send = [":", "aid", "enter"]
