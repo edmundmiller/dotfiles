@@ -5,3 +5,7 @@
 [leader.a]
 help = "AI-generated commit message"
 send = [":", "aid", "enter"]
+
+[leader.e]
+help = "AI-generated commit message (with edit)"
+send = [":", "aide", "enter"]
