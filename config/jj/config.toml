@@ -69,6 +69,10 @@ tidy = [
 spr = ["util", "exec", "--", "nix", "run", "/Users/edmundmiller/.config/dotfiles#jj-spr", "--"] # Stacked pull requests with jj-spr
 nd = ["util", "exec", "--", "/Users/edmundmiller/.config/dotfiles/bin/jj-nd", "--"] # Open diff in neovim (PR preview)
 
+# AI-powered commit message generation
+ai-desc = ["util", "exec", "--", "bash", "-c", "jj diff | /Users/emiller/.local/bin/claude -p 'Generate ONLY a conventional commit message (feat/fix/refactor/docs/test/chore/style/perf) for this diff. Output the message and nothing else. Keep it under 72 chars.' --model haiku --output-format text --tools '' | jj describe --stdin"]
+aid = ["util", "exec", "--", "bash", "-c", "jj diff | /Users/emiller/.local/bin/claude -p 'Generate ONLY a conventional commit message (feat/fix/refactor/docs/test/chore/style/perf) for this diff. Output the message and nothing else. Keep it under 72 chars.' --model haiku --output-format text --tools '' | jj describe --stdin"] # Short alias for ai-desc
+
 [revset-aliases]
 # Find the closest bookmark in the ancestry of a given revision
 'closest_bookmark(to)' = 'heads(::to & bookmarks())'
