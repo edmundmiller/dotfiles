@@ -2,6 +2,23 @@
 
 Detailed good/bad examples for all skill quality principles. Referenced from SKILL.md.
 
+## Contents
+
+- [Description Quality](#description-quality) - Writing effective skill descriptions
+- [Terminology Consistency](#terminology-consistency) - Using consistent terms
+- [Concrete Examples](#concrete-examples) - Runnable vs abstract examples
+- [File Reference Depth](#file-reference-depth) - Keeping references one level deep
+- [Time-Sensitive Information](#time-sensitive-information) - Handling version-specific content
+- [Code and Script Quality](#code-and-script-quality) - Writing robust scripts
+  - [Scripts Should Solve Problems](#scripts-should-solve-problems)
+  - [Error Handling](#error-handling)
+  - [No Voodoo Constants](#no-voodoo-constants)
+  - [Package Verification](#package-verification)
+  - [Path Conventions](#path-conventions)
+  - [Validation Steps](#validation-steps-for-critical-operations)
+  - [Feedback Loops](#feedback-loops-for-quality)
+- [Workflow Quality](#workflow-quality) - Clear steps and decision trees
+
 ## Description Quality
 
 ### Good Descriptions

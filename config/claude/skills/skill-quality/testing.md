@@ -2,6 +2,19 @@
 
 Complete testing guidelines for validating Claude Code skills. Referenced from SKILL.md.
 
+## Contents
+
+- [Overview](#overview) - Three dimensions of testing
+- [Create Evaluation Scenarios](#create-evaluation-scenarios) - Test case templates
+- [Model Testing](#model-testing) - Testing across Haiku, Sonnet, and Opus
+  - [Haiku (Fast, Basic Reasoning)](#haiku-fast-basic-reasoning)
+  - [Sonnet (Balanced)](#sonnet-balanced)
+  - [Opus (Complex Reasoning)](#opus-complex-reasoning)
+- [Real Usage Testing](#real-usage-testing) - Actual workflow testing
+- [Testing Checklist](#testing-checklist) - Complete verification checklist
+- [Continuous Testing](#continuous-testing) - Ongoing improvement
+- [Testing Anti-Patterns](#testing-anti-patterns) - What to avoid
+
 ## Overview
 
 Every skill must be tested across three dimensions:
