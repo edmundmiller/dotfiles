@@ -6,3 +6,13 @@ todotxtfmt/todotxtfmt
 workspaces/
 .worktrees/
 worktrees/
+
+# Node.js dependencies
+node_modules/
+
+# Nextflow
+.nextflow/
+.nextflow.log*
+work/
+results/
+.lineage
