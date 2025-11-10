@@ -2,6 +2,19 @@
 
 Common issues when creating Claude Code skills and how to fix them. Referenced from SKILL.md.
 
+## Contents
+
+- [Skill Not Being Invoked](#skill-not-being-invoked) - Description and metadata issues
+- [Skill Too Broad](#skill-too-broad) - When to split skills
+- [Skill Too Abstract](#skill-too-abstract) - Adding concrete guidance
+- [Quality Self-Check Failures](#quality-self-check-failures) - Fixing common issues
+  - [Can't use without follow-up questions](#can-someone-use-this-without-follow-up-questions)
+  - [Won't work in 6 months](#would-this-work-in-6-months)
+  - [Examples not runnable](#are-examples-copy-pasteable-and-runnable)
+  - [Can't find guidance quickly](#can-you-find-guidance-in--30-seconds)
+  - [Error messages unclear](#are-error-messages-helpful-enough)
+- [Maintenance Issues](#maintenance-issues) - Keeping skills up-to-date
+
 ## Skill Not Being Invoked
 
 **Problem:** Skill exists but Claude doesn't use it

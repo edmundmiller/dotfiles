@@ -1,19 +1,31 @@
 ---
-description: "Apply best practices checklist when creating or reviewing Claude Code skills"
+description: "Validates Claude Code skills against best practices for structure, content quality, and effectiveness. Use when creating new skills, reviewing existing skills, debugging skill invocation issues, or preparing skills for publication."
 priority: 5
 ---
 
 # Skill Quality Validation
 
-Use this skill when creating new Claude Code skills or reviewing existing ones to ensure they follow best practices and are effective for users.
+Ensures Claude Code skills follow best practices for discoverability, structure, content quality, and effectiveness. This skill provides checklists, patterns, and validation criteria for creating high-quality skills.
 
 ## When to Use This Skill
 
-- Creating a new skill from scratch
-- Reviewing an existing skill for quality improvements
-- Debugging why a skill isn't being invoked correctly
-- Preparing a skill for sharing or publication
-- After receiving feedback that a skill isn't working well
+Use this skill when you see these patterns:
+
+### ✅ Yes, use this skill for:
+
+- "Create a new skill for [topic]"
+- "Review this skill for quality"
+- "Why isn't my skill being invoked?"
+- "Improve this skill's structure"
+- "Prepare this skill for sharing"
+- "Debug skill invocation issues"
+- "Make this skill more effective"
+
+### ❌ No, use different skills for:
+
+- Writing skill content (use topic-specific skills)
+- Testing specific functionality (use testing skills)
+- Code review (use code-review skills)
 
 ## Quick Reference
 
@@ -35,20 +47,95 @@ Use this skill when creating new Claude Code skills or reviewing existing ones t
 - ❌ Mixing terminology (e.g., "commit" and "change" without explanation)
 - ❌ Time-sensitive info (e.g., "new tool just released")
 
-### Quality Checklist
+### Quality Checklist Workflow
 
-Before finalizing a skill:
+When creating or reviewing a skill, copy this checklist and follow the steps:
 
-- [ ] Description includes key trigger words
+```
+Skill Quality Review Progress:
+- [ ] Step 1: Verify description and metadata
+- [ ] Step 2: Check structure and organization
+- [ ] Step 3: Validate content quality
+- [ ] Step 4: Review code and scripts (if applicable)
+- [ ] Step 5: Test across models
+- [ ] Step 6: Perform real usage testing
+```
+
+#### Step 1: Verify Description and Metadata
+
+Check the YAML frontmatter:
+
+- [ ] Description includes specific trigger keywords (what users will say)
+- [ ] Description explains WHAT the skill does and WHEN to use it
+- [ ] Description is in third person ("Validates...", not "Apply...")
+- [ ] Description under 1024 characters
+- [ ] Priority is set appropriately (5-7 for most skills)
+- [ ] Name uses lowercase, hyphens, no reserved words
+
+**If checks fail:** Update frontmatter before proceeding.
+
+#### Step 2: Check Structure and Organization
+
+Review file organization:
+
 - [ ] SKILL.md is under 500 lines
+- [ ] Uses directory structure if over 500 lines
+- [ ] "When to Use This Skill" section exists and is clear
+- [ ] Progressive disclosure: most important content first
+- [ ] Headers are descriptive and scannable
+- [ ] File references are one level deep maximum
+
+**If checks fail:** Reorganize content or split into supporting files.
+
+#### Step 3: Validate Content Quality
+
+Review the skill content:
+
 - [ ] Examples are concrete and copy-pasteable
-- [ ] Terminology is consistent
-- [ ] File structure follows conventions (see below)
+- [ ] All code examples are runnable
+- [ ] Terminology is consistent throughout
+- [ ] No time-sensitive information (or properly isolated)
+- [ ] Workflows have clear numbered steps
+- [ ] Decision trees for complex choices
+- [ ] All placeholders are explained or replaced
+
+**If checks fail:** Add missing examples or clarify instructions.
+
+#### Step 4: Review Code and Scripts
+
+If skill includes executable code:
+
 - [ ] Scripts solve problems (don't punt to Claude)
 - [ ] Error handling is explicit with helpful messages
-- [ ] No "voodoo constants" - all values justified
-- [ ] Tested with Haiku, Sonnet, and Opus
-- [ ] Real usage testing completed
+- [ ] All constants are justified (no "voodoo constants")
+- [ ] Dependencies are listed with install instructions
+- [ ] Paths use forward slashes (not backslashes)
+- [ ] Validation/feedback loops for critical operations
+
+**If checks fail:** Improve error handling and documentation.
+
+#### Step 5: Test Across Models
+
+Test with all Claude models:
+
+- [ ] Tested with Haiku (simple case works)
+- [ ] Tested with Sonnet (moderate complexity works)
+- [ ] Tested with Opus (complex case works)
+- [ ] Skill invoked correctly in all cases
+- [ ] Responses follow skill guidance consistently
+
+**If checks fail:** Adjust description or add more explicit guidance.
+
+#### Step 6: Perform Real Usage Testing
+
+Test in actual workflows:
+
+- [ ] Fresh start test (new project, no external docs)
+- [ ] Colleague test (someone else uses it)
+- [ ] Different project test (verify it's project-agnostic)
+- [ ] Error path test (intentionally trigger failures)
+
+**If checks fail:** Update skill based on observed issues.
 
 ## File Structure
 
@@ -304,26 +391,92 @@ Common issues:
 
 ## Quality Self-Check
 
-Before considering a skill complete:
+Before considering a skill complete, copy this checklist and verify each item:
 
-1. **Can someone use this without follow-up questions?**
+```
+Skill Quality Verification:
+- [ ] Can someone use this without follow-up questions?
+- [ ] Would this work in 6 months?
+- [ ] Are examples copy-pasteable and runnable?
+- [ ] Can you find guidance in < 30 seconds?
+- [ ] Are error messages helpful enough?
+- [ ] Does the description include key trigger terms?
+- [ ] Is SKILL.md under 500 lines?
+- [ ] Are file references one level deep?
+- [ ] Is terminology consistent throughout?
+```
 
-   - If no: Add more concrete examples
+**If any check fails:**
 
-2. **Would this work in 6 months?**
+1. **Can't use without follow-up questions** → Add more concrete examples
+2. **Won't work in 6 months** → Isolate time-sensitive info in "Current Best Practice" sections
+3. **Examples not copy-pasteable** → Complete all placeholders and add setup steps
+4. **Can't find guidance quickly** → Improve headers and add table of contents
+5. **Error messages unclear** → Add context, hints, and recovery steps
+6. **Description lacks triggers** → Add specific terms users naturally say
+7. **SKILL.md too long** → Split into directory with reference files
+8. **Deep file references** → Consolidate or flatten structure
+9. **Inconsistent terminology** → Choose one term and use everywhere
 
-   - If no: Isolate time-sensitive info
+## Evaluation Scenarios
 
-3. **Are examples copy-pasteable and runnable?**
+Test this skill with these scenarios to ensure it works effectively:
 
-   - If no: Complete all examples
+### Scenario 1: Simple Case - New Skill Creation
 
-4. **Can you find guidance in < 30 seconds?**
+**Input:** "Help me create a new skill for managing Docker containers"
 
-   - If no: Improve structure and headers
+**Expected behavior:**
 
-5. **Are error messages helpful enough?**
-   - If no: Add more context and hints
+- Skill is invoked and recognized
+- Provides description template with trigger keywords
+- Suggests file structure (single file vs directory)
+- Offers checklist for required sections
+- Reminds about concrete examples requirement
+
+**Verify:**
+
+- Skill invocation happens automatically
+- Response includes specific checklist items
+- Guidance is actionable and clear
+
+### Scenario 2: Edge Case - Skill Not Being Invoked
+
+**Input:** "My skill exists but Claude never uses it"
+
+**Expected behavior:**
+
+- Skill is invoked and recognized
+- Diagnoses common invocation issues
+- Checks description for trigger keywords
+- Verifies file location and frontmatter format
+- Suggests testing phrases
+
+**Verify:**
+
+- Troubleshooting steps are provided
+- Specific fixes offered for each issue
+- Testing methodology explained
+
+### Scenario 3: Complex Case - Comprehensive Skill Review
+
+**Input:** "Review my python-scripts skill for quality and best practices"
+
+**Expected behavior:**
+
+- Skill is invoked and recognized
+- Provides complete quality checklist
+- Reviews description, structure, examples, and testing
+- Identifies specific gaps or issues
+- Suggests prioritized improvements
+- References relevant sections of examples.md
+
+**Verify:**
+
+- All quality dimensions covered
+- Specific, actionable feedback provided
+- Prioritization of issues clear
+- References to supporting documentation included
 
 ## Additional Resources
 
