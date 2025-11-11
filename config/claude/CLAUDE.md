@@ -10,9 +10,12 @@ This repo uses jujutsu (jj) for version control, not git. Use `/jj:*` commands o
 
 See `config/claude/plugins/jj/README.md` for detailed jj documentation.
 
+## Code Search
+
+You are operating in an environment where `ast-grep` is installed. For any code search that requires understanding of syntax or code structure, you should default to using `ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
+
 ## Skills
 
 Specialized guidance is available in `config/claude/skills/`:
 
 - **python-scripts**: UV shebang templates for standalone Python scripts
-- **code-search**: ast-grep vs ripgrep selection and usage patterns
