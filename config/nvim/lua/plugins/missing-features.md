@@ -5,6 +5,7 @@ This document tracks features from the old Neovim configuration that haven't bee
 ## ✅ Successfully Migrated
 
 ### From AstroCommunity
+
 - **Catppuccin** - Configured with latte (light) theme
 - **Neogit** - Git integration
 - **Git-blame.nvim** - Git blame information
@@ -27,21 +28,24 @@ This document tracks features from the old Neovim configuration that haven't bee
 - **Inc-rename.nvim** - Preview rename operations
 
 ### Custom Plugins Added
-- **Avante.nvim** - AI assistant with Claude integration (`lua/plugins/avante.lua`)
+
+- **Claudecode.nvim** - Official Claude Code integration (`lua/plugins/claudecode.lua`)
 - **Toggleterm.nvim** - Persistent terminal management (`lua/plugins/terminal-repl.lua`)
 - **Iron.nvim** - REPL integration for Python/R/Julia/Nextflow (`lua/plugins/terminal-repl.lua`)
 - **Git-worktree.nvim** - Git worktree management (`lua/plugins/git-worktree.lua`)
-- **Todotxt.nvim** - Todo.txt management (`lua/plugins/todotxt.lua`)
 
 ## 🚧 Not Yet Migrated
 
 ### AI/LLM Tools
+
 - **CodeCompanion.nvim** - Alternative AI companion
   - Status: ✅ Available in AstroCommunity (`astrocommunity.editing-support.codecompanion-nvim`)
-  - Currently using Avante.nvim instead, but available as alternative
+  - Currently using Claudecode.nvim instead, but available as alternative
 
 ### Org-mode Ecosystem
+
 - **nvim-orgmode/orgmode** - Full org-mode implementation
+
   - Reason: Using Neorg as alternative (available in AstroCommunity)
   - Features missing from Neorg:
     - GTD-style TODO keywords (TODO/NEXT/WAITING/DONE/CANCELLED)
@@ -50,18 +54,21 @@ This document tracks features from the old Neovim configuration that haven't bee
     - Logbook drawer functionality
 
 - **org-roam.nvim** - Zettelkasten for org-mode
+
   - Reason: Would require full org-mode; consider using Obsidian or Neorg equivalents
 
 - **vim-table-mode** - Table support for org/markdown
   - Status: May add if needed for markdown tables
 
 ### Testing
+
 - **Custom nf-test adapter** - Nextflow test integration
   - Located in old config: `lua/neotest-nftest/`
   - Status: Needs to be ported as a custom neotest adapter
   - Priority: Medium (important for bioinformatics work)
 
 ### Doom Emacs Features
+
 - **doom-notifications.lua** - Doom-style notifications
 - **doom-enhancements.lua** - Various Doom Emacs enhancements
 - **doom-motion.lua** - Doom-style motion commands
@@ -71,18 +78,22 @@ This document tracks features from the old Neovim configuration that haven't bee
   - Status: Consider if current keybindings are insufficient
 
 ### Session Management
+
 - **session-management.lua** - Custom session management
   - Status: Check if AstroNvim's built-in session management is sufficient
 
 ### Database
+
 - **database.lua** - Database integration
   - Status: Add if database work becomes necessary
 
 ### Language-specific
+
 - **vale.lua** - Prose linting with Vale
   - Status: Add if writing documentation frequently
 
 ### UI/UX
+
 - **snacks-zen.lua** - Zen mode from Snacks.nvim
   - Status: ✅ Zen-mode.nvim added from AstroCommunity as alternative
 - **snacks-picker.lua** - Enhanced picker
@@ -90,6 +101,7 @@ This document tracks features from the old Neovim configuration that haven't bee
   - Note: AstroNvim uses neo-tree by default
 
 ### Other Themes
+
 - **melange.lua** - Melange colorscheme
 - **onedark.lua** - OneDark colorscheme
   - Status: Available in AstroCommunity if needed
@@ -99,12 +111,14 @@ This document tracks features from the old Neovim configuration that haven't bee
 ### To Add a Missing Feature
 
 1. Check if it's available in AstroCommunity first:
+
    ```lua
    -- In lua/community.lua
    { import = "astrocommunity.category.plugin-name" }
    ```
 
 2. If not in AstroCommunity, create a custom plugin file:
+
    ```lua
    -- In lua/plugins/feature-name.lua
    return {
@@ -121,9 +135,11 @@ This document tracks features from the old Neovim configuration that haven't bee
 ### Priority Order for Future Additions
 
 1. **High Priority**
+
    - Custom nf-test adapter (essential for Nextflow development)
 
 2. **Medium Priority**
+
    - Org-mode features not covered by Neorg
    - Vale for prose linting
    - Session management enhancements
@@ -141,6 +157,7 @@ This document tracks features from the old Neovim configuration that haven't bee
 - **To be migrated**: ~7 (mainly custom adapters and Doom-specific features)
 
 ### Recent Additions from AstroCommunity:
+
 - Python and Julia language packs for complete development environment
 - Enhanced navigation with Flash.nvim
 - Project management with Project.nvim

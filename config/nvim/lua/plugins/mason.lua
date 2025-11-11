@@ -11,7 +11,6 @@ return {
       ensure_installed = {
         -- install language servers
         "lua-language-server",
-        "copilot-language-server", -- Required for sidekick.nvim
 
         -- install formatters
         "stylua",
