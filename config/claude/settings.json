@@ -120,7 +120,9 @@
       "mcp__RepoPrompt__apply_edits",
       "mcp__RepoPrompt__list_models",
       "mcp__RepoPrompt__chat_send",
-      "mcp__RepoPrompt__chats"
+      "mcp__RepoPrompt__chats",
+      "mcp__plugin_context7_context7__get-library-docs",
+      "mcp__plugin_context7_context7__resolve-library-id"
     ],
     "deny": ["Bash(git:*)", "mcp__git__*"]
   },
