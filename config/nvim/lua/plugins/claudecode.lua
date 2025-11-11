@@ -12,12 +12,7 @@ return {
         -- Check if this is a Claude terminal
         if bufname:match("claude") then
           local buf = event.buf
-          -- Navigate out of terminal
-          vim.keymap.set("t", "<C-h>", "<C-\\><C-n><C-w>h", { buffer = buf, desc = "Navigate left" })
-          vim.keymap.set("t", "<C-j>", "<C-\\><C-n><C-w>j", { buffer = buf, desc = "Navigate down" })
-          vim.keymap.set("t", "<C-k>", "<C-\\><C-n><C-w>k", { buffer = buf, desc = "Navigate up" })
-          vim.keymap.set("t", "<C-l>", "<C-\\><C-n><C-w>l", { buffer = buf, desc = "Navigate right" })
-          -- Quick hide terminal
+          -- Quick hide terminal (navigation handled by AstroCore global mappings)
           vim.keymap.set("t", "<C-;>", "<cmd>close<cr>", { buffer = buf, desc = "Hide terminal" })
         end
       end,
