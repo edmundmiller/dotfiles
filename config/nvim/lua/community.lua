@@ -30,6 +30,7 @@ return {
 
   -- Terminal integration
   { import = "astrocommunity.terminal-integration.toggleterm-manager-nvim" },
+  { import = "astrocommunity.terminal-integration.vim-tmux-navigator" },
 
   -- Colorscheme
   { import = "astrocommunity.colorscheme.catppuccin" },
