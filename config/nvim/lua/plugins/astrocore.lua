@@ -160,15 +160,6 @@ return {
         ["<Leader>ca"] = { function() vim.lsp.buf.code_action() end, desc = "Code action" },
         ["<Leader>cf"] = { function() vim.lsp.buf.format() end, desc = "Format selection" },
       },
-
-      -- Terminal mode mappings
-      t = {
-        -- Terminal navigation
-        ["<C-h>"] = { "<C-\\><C-n><C-w>h", desc = "Window left" },
-        ["<C-j>"] = { "<C-\\><C-n><C-w>j", desc = "Window below" },
-        ["<C-k>"] = { "<C-\\><C-n><C-w>k", desc = "Window above" },
-        ["<C-l>"] = { "<C-\\><C-n><C-w>l", desc = "Window right" },
-      },
     },
   },
 }
