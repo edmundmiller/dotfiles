@@ -1,7 +1,28 @@
 return {
   "coder/claudecode.nvim",
   dependencies = { "folke/snacks.nvim" },
-  config = true,
+  config = function(_, opts)
+    require("claudecode").setup(opts)
+
+    -- Set up terminal keybindings for Claude Code terminal
+    vim.api.nvim_create_autocmd("TermOpen", {
+      pattern = "term://*",
+      callback = function(event)
+        local bufname = vim.api.nvim_buf_get_name(event.buf)
+        -- Check if this is a Claude terminal
+        if bufname:match("claude") then
+          local buf = event.buf
+          -- Navigate out of terminal
+          vim.keymap.set("t", "<C-h>", "<C-\\><C-n><C-w>h", { buffer = buf, desc = "Navigate left" })
+          vim.keymap.set("t", "<C-j>", "<C-\\><C-n><C-w>j", { buffer = buf, desc = "Navigate down" })
+          vim.keymap.set("t", "<C-k>", "<C-\\><C-n><C-w>k", { buffer = buf, desc = "Navigate up" })
+          vim.keymap.set("t", "<C-l>", "<C-\\><C-n><C-w>l", { buffer = buf, desc = "Navigate right" })
+          -- Quick hide terminal
+          vim.keymap.set("t", "<C-;>", "<cmd>close<cr>", { buffer = buf, desc = "Hide terminal" })
+        end
+      end,
+    })
+  end,
   opts = {
     -- Use your installed Claude CLI
     terminal_cmd = "/Users/emiller/.local/bin/claude",
@@ -34,10 +55,14 @@ return {
       auto_close_on_accept = true,
       vertical_split = true,
       open_in_current_tab = true,
+      keep_terminal_focus = false, -- Jump to diff when opened
     },
   },
 
   keys = {
+    -- Quick toggle (global)
+    { "<M-c>", "<cmd>ClaudeCodeFocus<cr>", mode = { "n", "t" }, desc = "Quick toggle Claude Code" },
+
     -- Main commands
     { "<leader>aa", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude Code" },
     { "<leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = "Focus Claude Code" },
