@@ -70,9 +70,9 @@ spr = ["util", "exec", "--", "nix", "run", "/Users/edmundmiller/.config/dotfiles
 nd = ["util", "exec", "--", "/Users/edmundmiller/.config/dotfiles/bin/jj-nd", "--"] # Open diff in neovim (PR preview)
 
 # AI-powered commit message generation
-ai-desc = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.ts"]
-aid = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.ts"] # Short alias for ai-desc
-aide = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.ts", "--edit"] # AI-desc with editor
+ai-desc = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py"]
+aid = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py"] # Short alias for ai-desc
+aide = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py", "--edit"] # AI-desc with editor
 
 [revset-aliases]
 # Find the closest bookmark in the ancestry of a given revision
