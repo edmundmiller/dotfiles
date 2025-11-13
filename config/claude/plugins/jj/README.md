@@ -37,11 +37,15 @@ Stack commits, pattern-based splits, leverage snapshots (`jj op log`), everythin
 
 ## Agent Skills
 
-Three auto-activating Skills provide jj workflow understanding:
+Seven auto-activating Skills provide comprehensive jj workflow understanding:
 
 **1. Working with Jujutsu** - Core concepts, state management, plan-driven workflow, command suggestions
 **2. Curating Commits** - Pattern recognition for splits/squashes, file type matching, avoiding over-curation
 **3. Generating Messages** - Conventional commit format, project style matching, auto-generation from patterns
+**4. Resolving Conflicts** - Identify and resolve conflicts, safe `jj restore` usage with path specifications, handling deletion conflicts
+**5. Operation History** - Time travel with `jj op restore`, exploring operation log, understanding jj's event sourcing
+**6. Undo Operations** - Recovering from mistakes, multiple undo scenarios, redo workflows
+**7. Stacked PRs** - Working with jj-spr for submitting and updating GitHub Pull Requests
 
 Skills activate automatically based on context. Slash commands require explicit user invocation.
 
