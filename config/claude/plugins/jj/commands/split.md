@@ -1,7 +1,7 @@
 ---
-allowed-tools: Bash(jj log:*), Bash(jj diff:*), Bash(jj status:*), Bash(jj split:*)
+allowed-tools: Bash(jj log:*), Bash(jj diff:*), Bash(jj status:*), Bash(jj new:*), Bash(jj move:*), Bash(jj describe:*), Bash(~/bin/jj-ai-desc.py:*)
 argument-hint: <pattern>
-description: Split commit by pattern (tests, docs, config, etc)
+description: Split unwanted changes into new child commit with AI description
 model: claude-haiku-4-5
 ---
 
@@ -14,11 +14,16 @@ echo "**Usage:** \`/jj:split <pattern>\`"
 echo ""
 echo "**Common patterns:**"
 echo "- \`test\` - Test and spec files"
-echo "- \`docs\` - Documentation (_.md, README, CHANGELOG)"
-echo "- \`config\` - Config files (_.json, _.yaml, _.toml)"
-echo "- Custom glob patterns (e.g., \`_.md\`, \`src/\*\*/_.test.ts\`)"
+echo "- \`docs\` - Documentation (*.md, README, CHANGELOG)"
+echo "- \`config\` - Config files (*.json, *.yaml, *.toml)"
+echo "- Custom glob patterns (e.g., \`*.md\`, \`src/**/*.test.ts\`)"
 echo ""
-echo "**Example:** \`/jj:split test\`"
+echo "**What it does:**"
+echo "1. Keeps wanted changes in current commit (@)"
+echo "2. Moves unwanted (matching pattern) changes to new child commit"
+echo "3. Auto-generates description for child commit"
+echo ""
+echo "**Example:** \`/jj:split test\` - splits test files into new child commit"
 exit 0
 fi
 
@@ -26,11 +31,11 @@ fi
 
 - Current status: !`jj status`
 - Current commit: !`jj log -r @ --no-graph -T 'concat(change_id.short(), ": ", description)'`
-- Parent commit: !`jj log -r @- --no-graph -T 'concat(change_id.short(), ": ", description)'`
+- Changed files: !`jj diff -r @ --summary`
 
 ## Your Task
 
-Split the current commit (@) by moving files matching the pattern "$ARGUMENTS" to the parent commit (@-).
+Split unwanted changes matching pattern "$ARGUMENTS" from current commit (@) into a new child commit with an AI-generated description.
 
 **Pattern Expansion:**
 
@@ -39,37 +44,47 @@ Split the current commit (@) by moving files matching the pattern "$ARGUMENTS" t
 - `config` → Match config files: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.conf`, `.*.rc`, `.*ignore`
 - Custom patterns → Use as-is (glob syntax)
 
-**How jj split works:**
+**Workflow:**
 
-1. Moves matching files from current commit (@) to parent commit (@-)
-2. Leaves non-matching files in current commit (@)
-3. Effectively "splits out" the matching files into a separate commit
+1. **Identify matching files** - Show which files in current commit match the pattern
+2. **Create child commit** - `jj new @` to create empty child where split changes will go
+3. **Move matching changes** - `jj move --from @- -p 'glob:pattern'` to move unwanted files from parent to child
+4. **Generate description** - Use `~/bin/jj-ai-desc.py @` to analyze split changes and generate commit message
+5. **Show result** - Display final commit structure
 
-**Steps:**
+**Result structure:**
+```
+@ (new child): unwanted changes with AI description
+@- (original): wanted changes, original description preserved
+```
 
-1. First, show what files match the pattern by analyzing the current changes
-2. Explain what will be moved to the parent commit
-3. Use `jj split` with appropriate glob pattern(s)
-4. Show the result with `jj log` and `jj status`
+**Important notes:**
 
-**Important:**
+- Use multiple `-p` flags for multiple patterns: `jj move --from @- -p 'glob:*.md' -p 'glob:README*'`
+- Always quote glob patterns: `'glob:pattern'`
+- The original commit description stays intact, only the unwanted changes move
+- If no files match, inform user and suggest alternatives
+- After moving, the AI will analyze what was split and generate an appropriate description
 
-- Use `-p` flag with glob patterns: `jj split -p 'glob:pattern'`
-- For multiple patterns, use multiple `-p` flags: `jj split -p 'glob:*.md' -p 'glob:README*'`
-- Always quote glob patterns to prevent shell expansion
-- If no files match, inform the user and suggest alternatives
-
-**Example commands:**
+**Example execution:**
 
 ```bash
 # Split test files
-jj split -p 'glob:**/*test*.py' -p 'glob:**/*_test.py'
+jj new @
+jj move --from @- -p 'glob:**/*test*.py' -p 'glob:**/*_test.py'
+~/bin/jj-ai-desc.py @
 
 # Split documentation
-jj split -p 'glob:*.md' -p 'glob:README*' -p 'glob:docs/**'
+jj new @
+jj move --from @- -p 'glob:*.md' -p 'glob:README*' -p 'glob:docs/**'
+~/bin/jj-ai-desc.py @
 
 # Split config files
-jj split -p 'glob:*.json' -p 'glob:*.yaml' -p 'glob:*.toml'
+jj new @
+jj move --from @- -p 'glob:*.json' -p 'glob:*.yaml' -p 'glob:*.toml'
+~/bin/jj-ai-desc.py @
 ```
 
-Show result: !`jj log -r '@|@-' --no-graph -T 'concat(change_id.short(), ": ", description)'`
+**Final verification:**
+
+Show the result: !`jj log -r '@|@-' -T 'concat(change_id.short(), ": ", description)'`
