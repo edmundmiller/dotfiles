@@ -14,8 +14,19 @@ See `config/claude/plugins/jj/README.md` for detailed jj documentation.
 
 You are operating in an environment where `ast-grep` is installed. For any code search that requires understanding of syntax or code structure, you should default to using `ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
 
+## Testing Philosophy
+
+**DON'T write comprehensive test suites proactively.** Only write tests when:
+
+1. Something breaks - write a test that reproduces the bug, then fix it
+2. You're asked to add tests for specific functionality
+3. A test would prevent a real issue you've already encountered
+
+**Reason:** Unnecessary tests consume context windows and slow iteration. Tests should document actual failures and prevent regressions, not hypothetical edge cases.
+
 ## Skills
 
 Specialized guidance is available in `config/claude/skills/`:
 
 - **python-scripts**: UV shebang templates for standalone Python scripts
+- **test-claude-hooks**: Testing patterns for Claude Code plugin hooks with pytest
