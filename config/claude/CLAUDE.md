@@ -16,13 +16,14 @@ You are operating in an environment where `ast-grep` is installed. For any code 
 
 ## Testing Philosophy
 
-**DON'T write comprehensive test suites proactively.** Only write tests when:
+Write two kinds of tests:
 
-1. Something breaks - write a test that reproduces the bug, then fix it
-2. You're asked to add tests for specific functionality
-3. A test would prevent a real issue you've already encountered
+1. **Spec tests** - Document intended feature behavior (what the feature should do)
+2. **Regression tests** - Reproduce and prevent actual bugs that occurred
 
-**Reason:** Unnecessary tests consume context windows and slow iteration. Tests should document actual failures and prevent regressions, not hypothetical edge cases.
+**Skip:** Hypothetical edge cases and exhaustive coverage that bloat context windows.
+
+Tests are living documentation of what should work and what broke before, not comprehensive safety nets for every possibility.
 
 ## Skills
 
