@@ -272,19 +272,31 @@ def main(
 
     # Step 4: Apply the commit message
     with console.status("[bold green]Applying commit message..."):
-        jj_cmd = ["jj", "describe", "-r", revision]
-        if edit:
-            jj_cmd.append("--edit")
-        jj_cmd.append("--stdin")
-
-        stdout, stderr, exit_code = run_command(jj_cmd, stdin_input=commit_message)
+        # Use 'jj commit' for @ (working copy), 'jj describe' for other revisions
+        # jj commit doesn't support -r, so we fallback to describe for non-@ revisions
+        if revision == "@":
+            jj_cmd = ["jj", "commit", "-m", commit_message]
+            if edit:
+                jj_cmd.append("--edit")
+            stdout, stderr, exit_code = run_command(jj_cmd)
+        else:
+            jj_cmd = ["jj", "describe", "-r", revision]
+            if edit:
+                jj_cmd.append("--edit")
+            jj_cmd.append("--stdin")
+            stdout, stderr, exit_code = run_command(jj_cmd, stdin_input=commit_message)
 
         if exit_code != 0:
             console.print("[bold red]Error:[/bold red] Failed to apply commit message")
             console.print(f"[red]{stderr}[/red]")
             raise typer.Exit(1)
 
-    console.print("[bold green]✓[/bold green] Commit message applied")
+    if revision == "@":
+        console.print(
+            "[bold green]✓[/bold green] Committed and created new working copy"
+        )
+    else:
+        console.print("[bold green]✓[/bold green] Commit message applied")
 
 
 # ============================================================================
