@@ -105,6 +105,58 @@ def generate_task_id() -> str:
     return datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
+def create_task_note(
+    task_id: str, description: str, workspace_path: Path, agent: str, repo_root: Path
+) -> bool:
+    """
+    Create a TaskNote in Obsidian vault for tracking agent work.
+
+    Returns True if note was created successfully, False otherwise.
+    """
+    vault_path = Path.home() / "sync" / "claude-vault" / "00_Inbox" / "Agents"
+
+    # Check if vault exists
+    if not vault_path.exists():
+        console.print(
+            f"[yellow]Warning: Obsidian vault not found at {vault_path}[/yellow]"
+        )
+        console.print("[dim]Skipping TaskNote creation[/dim]")
+        return False
+
+    # Create agents directory if it doesn't exist
+    vault_path.mkdir(parents=True, exist_ok=True)
+
+    # Create note file
+    note_path = vault_path / f"agent-{task_id}.md"
+    created_time = datetime.now().isoformat()
+    relative_workspace = workspace_path.relative_to(repo_root)
+
+    note_content = f"""---
+task_id: {task_id}
+created: {created_time}
+agent: {agent}
+status: running
+workspace: {relative_workspace}
+---
+
+# {description}
+
+## Workspace
+`{relative_workspace}`
+
+## Notes
+(Agent work tracked here)
+"""
+
+    try:
+        note_path.write_text(note_content)
+        console.print(f"[green]✓[/green] TaskNote created: {note_path.name}")
+        return True
+    except Exception as e:
+        console.print(f"[yellow]Warning: Could not create TaskNote:[/yellow] {e}")
+        return False
+
+
 # =============================================================================
 # JJ Workspace Operations
 # =============================================================================
@@ -181,7 +233,8 @@ def create(
     Create a new workspace and launch an agent.
 
     Creates a JJ workspace in .worktrees/, saves the task metadata,
-    and launches the specified agent with the task description.
+    creates a TaskNote in your Obsidian vault, and launches the
+    specified agent with the task description.
     """
     repo_root = get_repo_root()
     worktrees_dir = ensure_worktrees_dir(repo_root)
@@ -209,6 +262,10 @@ def create(
     save_state(repo_root, state)
 
     console.print(f"[green]✓[/green] Workspace created at: {workspace_path}")
+
+    # Create TaskNote in Obsidian vault
+    create_task_note(task_id, description, workspace_path, agent, repo_root)
+
     console.print(f"[cyan]Launching {agent}...[/cyan]\n")
 
     # Change to workspace directory
@@ -343,6 +400,77 @@ def cleanup(
     # Save updated state
     save_state(repo_root, state)
     console.print(f"[green]✓[/green] Cleaned up {len(workspaces_to_clean)} workspace(s)")
+
+
+@app.command(epilog="Made with :heart: by the agent-fleet crew")
+def diff(
+    workspace_name: str = typer.Argument(
+        ..., help="Workspace name to show diff for (e.g., agent-20250116-123456)"
+    ),
+):
+    """
+    Show diff of changes in a workspace.
+
+    Displays the changes made in the specified workspace compared to the
+    parent commit. This is useful for reviewing agent work before merging
+    or cleaning up.
+
+    Future implementation will:
+    - Run `jj diff -r <workspace>@` to get changes
+    - Display with syntax highlighting
+    - Support different diff formats (unified, side-by-side)
+    - Allow filtering by file path
+    """
+    console.print(
+        "[yellow]⚠ Coming soon![/yellow] The diff command is not yet implemented."
+    )
+    console.print("\n[dim]Planned features:[/dim]")
+    console.print("  • View changes made by the agent")
+    console.print("  • Syntax-highlighted diff output")
+    console.print("  • Filter by file path")
+    console.print("  • Multiple diff formats\n")
+    raise typer.Exit(1)
+
+
+@app.command(epilog="Made with :heart: by the agent-fleet crew")
+def note(
+    workspace_name: str = typer.Argument(
+        ..., help="Workspace name to manage note for (e.g., agent-20250116-123456)"
+    ),
+    action: str = typer.Option(
+        "view",
+        "--action",
+        "-a",
+        help="Action to perform: view, update",
+    ),
+):
+    """
+    View or update TaskNotes in Obsidian vault.
+
+    TaskNotes are automatically created when you run 'agent-fleet create'.
+    This command lets you view or update existing notes.
+
+    Note location: ~/sync/claude-vault/00_Inbox/Agents/
+
+    Future implementation will:
+    - Open note in default editor (view)
+    - Update note status (mark complete, add notes)
+    - Show note preview in terminal
+
+    Actions:
+    - view: Open note in default editor
+    - update: Update note status or add notes
+    """
+    console.print(
+        "[yellow]⚠ Coming soon![/yellow] The note command is not yet implemented."
+    )
+    console.print("\n[dim]Planned features:[/dim]")
+    console.print("  • Open TaskNote in editor")
+    console.print("  • Update task status")
+    console.print("  • Add notes and observations")
+    console.print("  • Preview note in terminal\n")
+    console.print("[dim]Note: TaskNotes are auto-created with 'agent-fleet create'[/dim]\n")
+    raise typer.Exit(1)
 
 
 # =============================================================================
