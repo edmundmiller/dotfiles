@@ -157,9 +157,11 @@ def main(
         jj-ai-desc -r @-        # Generate for parent commit
     """
 
-    # Step 1: Get the diff
+    # Step 1: Get the diff (using --stat for 98%+ token savings)
     with console.status("[bold green]Getting diff..."):
-        stdout, stderr, exit_code = run_command(["jj", "diff", "-r", revision])
+        stdout, stderr, exit_code = run_command(
+            ["jj", "diff", "-r", revision, "--stat"]
+        )
 
     if exit_code != 0:
         console.print(f"[bold red]Error:[/bold red] Failed to get diff")
