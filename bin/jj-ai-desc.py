@@ -4,6 +4,7 @@
 # dependencies = [
 #     "typer",
 #     "rich",
+#     "toon-format @ git+https://github.com/toon-format/toon-python.git",
 # ]
 # ///
 
@@ -77,6 +78,7 @@ from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
+from toon_format import encode as toon_encode
 
 app = typer.Typer()
 console = Console()
@@ -190,7 +192,7 @@ def main(
 
     commit_context = ""
     if exit_code == 0 and stdout.strip():
-        # Parse the log output and format as JSON
+        # Parse the log output and format as TOON (40-60% token savings vs JSON)
         commits = []
         for line in stdout.strip().split("\n"):
             if not line.strip():
@@ -207,9 +209,10 @@ def main(
 
         if commits:
             recent_commits = {"recent_commits": commits}
+            toon_output = toon_encode(recent_commits)
             commit_context = (
-                "Recent commit history for context:\n"
-                f"```json\n{json.dumps(recent_commits, indent=2)}\n```\n\n"
+                "Recent commit history for context (TOON format):\n"
+                f"```\n{toon_output}\n```\n\n"
             )
             console.print(
                 f"[bold green]✓[/bold green] Got {len(commits)} recent commits"
