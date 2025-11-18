@@ -59,7 +59,7 @@ fi
 ## Context
 
 - Status: !`jj status`
-- Changes: !`jj diff -r @`
+- Changes: !`jj diff -r @ --stat`
 
 ## Task
 
