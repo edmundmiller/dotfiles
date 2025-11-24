@@ -4,6 +4,7 @@
   lib,
   pkgs,
   home-manager,
+  isDarwin ? false,
   ...
 }:
 with lib;
@@ -13,16 +14,12 @@ with lib.my;
     user = mkOpt attrs { };
 
     dotfiles = {
-      dir = mkOpt path (
-        findFirst pathExists (toString ../.) [
-          "${config.user.home}/.config/dotfiles"
-          "/etc/dotfiles"
-        ]
-      );
-      binDir = mkOpt path "${config.dotfiles.dir}/bin";
-      configDir = mkOpt path "${config.dotfiles.dir}/config";
-      modulesDir = mkOpt path "${config.dotfiles.dir}/modules";
-      themesDir = mkOpt path "${config.dotfiles.modulesDir}/themes";
+      # Use static path to avoid self-referential infinite recursion
+      dir = mkOpt path (toString ../.);
+      binDir = mkOpt path "${toString ../.}/bin";
+      configDir = mkOpt path "${toString ../.}/config";
+      modulesDir = mkOpt path "${toString ../.}/modules";
+      themesDir = mkOpt path "${toString ../.}/modules/themes";
     };
 
     home = {
@@ -68,8 +65,8 @@ with lib.my;
           else
             "The primary user account";
         # Determine home directory based on platform
-        homeBase = if lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux") 
-                   then "/Users" 
+        homeBase = if isDarwin
+                   then "/Users"
                    else "/home";
       in
       {

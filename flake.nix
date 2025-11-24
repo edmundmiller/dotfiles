@@ -144,78 +144,74 @@
           system = darwinSystem;
           specialArgs = {
             inherit inputs lib;
+            isDarwin = true;
           };
           modules = [
-            # Add home-manager module first
+            # Set nixpkgs first, before importing modules that need it
+            {
+              nixpkgs.pkgs = darwinPkgs;
+            }
+
+            # Add home-manager module
             inputs.home-manager.darwinModules.home-manager
-            
+
             # Add nix-homebrew module for proper homebrew management
             inputs.nix-homebrew.darwinModules.nix-homebrew
-            
+
+            # Import the module system (provides user.packages, home.configFile, etc.)
+            ./.
+
             # Import host-specific configuration
             ./hosts/mactraitorpro/default.nix
 
             # Basic Darwin settings
             {
-              # Define base options
-              options.modules = lib.mkOption {
-                type = lib.types.attrs;
-                default = { };
-                description = "Modules configuration options";
-              };
-              
-              config = {
-                # Set the dotfiles directory
-                environment.variables.DOTFILES = toString ./.;
-                environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
-                
-                # Use the correct nixpkgs
-                nixpkgs.pkgs = darwinPkgs;
-                
-                nix = {
-                  package = darwinPkgs.nixVersions.stable;
-                  settings = {
-                    experimental-features = [ "nix-command" "flakes" ];
-                    substituters = [
-                      "https://nix-community.cachix.org"
-                      "https://hyprland.cachix.org"
-                      "https://cosmic.cachix.org/"
-                    ];
-                    trusted-public-keys = [
-                      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-                      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-                      "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
-                    ];
-                  };
-                  optimise.automatic = true;
-                };
-                
-                system.stateVersion = 4;
+              # Set the dotfiles directory
+              environment.variables.DOTFILES = toString ./.;
+              environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
 
-                home-manager.useGlobalPkgs = true;
-                home-manager.useUserPackages = true;
-                
-                # Set primary user for nix-darwin 25.05
-                system.primaryUser = "emiller";
-                
-                # Fix nixbld group ID mismatch
-                ids.gids.nixbld = 350;
-                
-                # User configuration
-                users.users.emiller = {
-                  home = "/Users/emiller";
-                  shell = darwinPkgs.zsh;
+              nix = {
+                package = darwinPkgs.nixVersions.stable;
+                settings = {
+                  experimental-features = [ "nix-command" "flakes" ];
+                  substituters = [
+                    "https://nix-community.cachix.org"
+                    "https://hyprland.cachix.org"
+                    "https://cosmic.cachix.org/"
+                  ];
+                  trusted-public-keys = [
+                    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                    "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+                    "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
+                  ];
                 };
-                
-                # Basic packages
-                environment.systemPackages = with darwinPkgs; [
-                  git
-                  vim
-                  wget
-                  just
-                ];
-                
+                optimise.automatic = true;
               };
+
+              system.stateVersion = 4;
+
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+
+              # Set primary user for nix-darwin 25.05
+              system.primaryUser = "emiller";
+
+              # Fix nixbld group ID mismatch
+              ids.gids.nixbld = 350;
+
+              # User configuration
+              users.users.emiller = {
+                home = "/Users/emiller";
+                shell = darwinPkgs.zsh;
+              };
+
+              # Basic packages
+              environment.systemPackages = with darwinPkgs; [
+                git
+                vim
+                wget
+                just
+              ];
             }
           ];
         };
@@ -223,78 +219,74 @@
           system = darwinSystem;
           specialArgs = {
             inherit inputs lib;
+            isDarwin = true;
           };
           modules = [
-            # Add home-manager module first
+            # Set nixpkgs first, before importing modules that need it
+            {
+              nixpkgs.pkgs = darwinPkgs;
+            }
+
+            # Add home-manager module
             inputs.home-manager.darwinModules.home-manager
-            
+
             # Add nix-homebrew module for proper homebrew management
             inputs.nix-homebrew.darwinModules.nix-homebrew
-            
+
+            # Import the module system (provides user.packages, home.configFile, etc.)
+            ./.
+
             # Import host-specific configuration
             ./hosts/seqeratop/default.nix
 
             # Basic Darwin settings
             {
-              # Define base options
-              options.modules = lib.mkOption {
-                type = lib.types.attrs;
-                default = { };
-                description = "Modules configuration options";
-              };
-              
-              config = {
-                # Set the dotfiles directory
-                environment.variables.DOTFILES = toString ./.;
-                environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
-                
-                # Use the correct nixpkgs
-                nixpkgs.pkgs = darwinPkgs;
-                
-                nix = {
-                  package = darwinPkgs.nixVersions.stable;
-                  settings = {
-                    experimental-features = [ "nix-command" "flakes" ];
-                    substituters = [
-                      "https://nix-community.cachix.org"
-                      "https://hyprland.cachix.org"
-                      "https://cosmic.cachix.org/"
-                    ];
-                    trusted-public-keys = [
-                      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-                      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-                      "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
-                    ];
-                  };
-                  optimise.automatic = true;
+              # Set the dotfiles directory
+              environment.variables.DOTFILES = toString ./.;
+              environment.variables.DOTFILES_BIN = "$DOTFILES/bin";
+
+              nix = {
+                package = darwinPkgs.nixVersions.stable;
+                settings = {
+                  experimental-features = [ "nix-command" "flakes" ];
+                  substituters = [
+                    "https://nix-community.cachix.org"
+                    "https://hyprland.cachix.org"
+                    "https://cosmic.cachix.org/"
+                  ];
+                  trusted-public-keys = [
+                    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                    "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+                    "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
+                  ];
                 };
-                
-                system.stateVersion = 4;
-
-                home-manager.useGlobalPkgs = true;
-                home-manager.useUserPackages = true;
-
-                # Set primary user for nix-darwin 25.05
-                system.primaryUser = "edmundmiller";
-
-                # Fix nixbld group ID mismatch
-                ids.gids.nixbld = 350;
-
-                # User configuration
-                users.users.edmundmiller = {
-                  home = "/Users/edmundmiller";
-                  shell = darwinPkgs.zsh;
-                };
-
-                # Basic packages
-                environment.systemPackages = with darwinPkgs; [
-                  git
-                  vim
-                  wget
-                  just
-                ];
-
+                optimise.automatic = true;
               };
+
+              system.stateVersion = 4;
+
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+
+              # Set primary user for nix-darwin 25.05
+              system.primaryUser = "edmundmiller";
+
+              # Fix nixbld group ID mismatch
+              ids.gids.nixbld = 350;
+
+              # User configuration
+              users.users.edmundmiller = {
+                home = "/Users/edmundmiller";
+                shell = darwinPkgs.zsh;
+              };
+
+              # Basic packages
+              environment.systemPackages = with darwinPkgs; [
+                git
+                vim
+                wget
+                just
+              ];
             }
           ];
         };
