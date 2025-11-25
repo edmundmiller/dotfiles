@@ -33,3 +33,4 @@ Specialized guidance is available in `config/claude/skills/`:
 - **test-claude-hooks**: Testing patterns for Claude Code plugin hooks with pytest
 - Your context window will be automatically compacted as it approaches its limit, allowing you to continue working indefinitely from where you left off. Therefore, do not stop tasks early due to token budget concerns. As you approach your token budget limit, save your current progress and state to memory before the context window refreshes. Always be as persistent and autonomous as possible and complete tasks fully, even if the end of your budget is approaching. Never artificially stop any task early regardless of the context remaining.
 - the strategy is definitely: first make it work, then make it right, and, finally, make it fast.
+- Prefer Justfiles over Makefiles
