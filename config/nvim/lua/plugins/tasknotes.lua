@@ -2,9 +2,17 @@
 -- Each task is a markdown file with YAML frontmatter
 return {
   {
+    dir = "~/src/emacs/bases.nvim", -- bases.nvim - Obsidian Bases integration
+    name = "bases.nvim",
+    dependencies = {
+      "MunifTanjim/nui.nvim", -- Required for table views
+    },
+  },
+  {
     "edmundmiller/tasknotes.nvim",
     dev = true, -- Use local ~/src/emacs/tasknotes.nvim when available
     dependencies = {
+      "bases.nvim", -- Required for Bases views
       "MunifTanjim/nui.nvim", -- Required for UI components
       "nvim-telescope/telescope.nvim", -- Optional but recommended for browsing
       "nvim-lua/plenary.nvim", -- Optional but recommended
@@ -38,12 +46,21 @@ return {
         auto_save_interval = 60, -- seconds
       },
 
+      -- Views configuration (Obsidian Bases)
+      -- Views are loaded from TaskNotes/Views/*.base files in your vault
+      views = {
+        keymaps = {
+          view_selector = "<C-v>", -- In picker
+        },
+      },
+
       -- Keymaps (using plugin defaults)
       keymaps = {
         browse = "<leader>tb",
         new_task = "<leader>tn",
         edit_task = "<leader>te",
         toggle_timer = "<leader>tt",
+        view_selector = "<leader>tv", -- Open view selector
       },
     },
     cmd = {
@@ -52,6 +69,10 @@ return {
       "TaskNotesNew",
       "TaskNotesEdit",
       "TaskNotesRescan",
+
+      -- View commands (Bases integration)
+      "TaskNotesView",
+      "TaskNotesListViews",
 
       -- Time tracking commands
       "TaskNotesTimerToggle",
@@ -68,6 +89,7 @@ return {
       { "<leader>tn", desc = "New task" },
       { "<leader>te", desc = "Edit task" },
       { "<leader>tt", desc = "Toggle timer" },
+      { "<leader>tv", desc = "Open view selector" },
     },
   },
 }
