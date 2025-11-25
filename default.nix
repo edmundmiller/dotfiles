@@ -3,7 +3,7 @@
   config,
   lib,
   pkgs,
-  isDarwin ? false,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,8 +14,25 @@ with lib.my;
     # Note: For darwin, home-manager is imported in flake.nix as darwinModules
     (lib.optional (!isDarwin)
       inputs.home-manager.nixosModules.home-manager)
-    # All my personal modules
-    ++ (mapModulesRec' (toString ./modules) import);
+    # All my personal modules (filtered for platform compatibility)
+    ++ (let
+      modulesPath = toString ./modules;
+      allModulePaths = mapModulesRec' modulesPath id;
+      # Filter out NixOS-only directories on Darwin
+      nixosOnlyDirs = [ "hardware" "desktop" ];
+      nixosOnlyFiles = [ "security.nix" ];
+      isNixOSOnly = path:
+        let pathStr = toString path; in
+        lib.any (dir:
+          lib.hasInfix "/modules/${dir}/" pathStr ||  # Files inside directory
+          lib.hasSuffix "/modules/${dir}" pathStr     # Directory itself
+        ) nixosOnlyDirs
+        || lib.any (file: lib.hasSuffix file pathStr) nixosOnlyFiles;
+    in
+    map import (if isDarwin then filter (p: !isNixOSOnly p) allModulePaths else allModulePaths));
+
+  # Propagate isDarwin to all sub-modules so they can guard platform-specific options
+  _module.args.isDarwin = isDarwin;
 
   # Common config for all nixos machines; and to ensure the flake operates
   # soundly
