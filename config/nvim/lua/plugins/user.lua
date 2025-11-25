@@ -132,29 +132,6 @@ return {
     },
   },
 
-  -- Obsidian.nvim - Configure vault location
-  {
-    "obsidian.nvim",
-    opts = {
-      workspaces = {
-        {
-          name = "vault",
-          path = "~/sync/vault",
-        },
-      },
-      -- Optional: Additional Obsidian settings
-      mappings = {}, -- Keep empty to use default AstroNvim mappings
-      daily_notes = {
-        folder = "daily",
-        date_format = "%Y-%m-%d",
-      },
-      completion = {
-        nvim_cmp = false, -- We're using blink.cmp
-        min_chars = 2,
-      },
-    },
-  },
-
   -- Blink.cmp - Modern completion configuration
   {
     "saghen/blink.cmp",

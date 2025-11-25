@@ -4,7 +4,7 @@
   lib,
   pkgs,
   home-manager,
-  isDarwin ? false,
+  isDarwin,
   ...
 }:
 with lib;

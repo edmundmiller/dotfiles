@@ -22,9 +22,6 @@ return {
   -- Comment
   { import = "astrocommunity.comment.mini-comment" },
 
-  -- Note taking
-  { import = "astrocommunity.note-taking.obsidian-nvim" },
-
   -- Testing
   { import = "astrocommunity.test.neotest" },
 
