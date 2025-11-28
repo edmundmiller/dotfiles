@@ -21,6 +21,12 @@ return {
       -- Path to TaskNotes vault directory
       vault_path = vim.fn.expand "~/obsidian-vault/",
 
+      -- Obsidian integration - import settings from Obsidian TaskNotes plugin
+      obsidian = {
+        enabled = true,
+        vault_path = vim.fn.expand "~/obsidian-vault", -- Root vault path (no trailing slash)
+      },
+
       -- Task identification method
       task_identification_method = "property", -- "tag" or "property"
       task_property_name = "type",

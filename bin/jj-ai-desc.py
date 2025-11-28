@@ -107,6 +107,51 @@ def strip_markdown_fences(text: str) -> str:
     return result.strip()
 
 
+def extract_commit_message(text: str) -> str:
+    """
+    Extract conventional commit message from potentially verbose output.
+
+    Handles cases where Claude includes explanation before the actual commit.
+    Finds lines matching conventional commit format and returns the best match.
+
+    Args:
+        text: Potentially verbose output containing a commit message
+
+    Returns:
+        The extracted commit message, or the last non-empty line if no pattern found
+
+    Examples:
+        >>> extract_commit_message("Based on the changes...\\n\\ntest: improve coverage")
+        'test: improve coverage'
+        >>> extract_commit_message("feat: add feature")
+        'feat: add feature'
+    """
+    # Pattern for conventional commits: type(scope)?: message
+    # Matches: feat, fix, refactor, docs, test, chore, style, perf
+    # With optional scope: (api), (ui), etc.
+    # With optional breaking change indicator: !
+    pattern = r"^(feat|fix|refactor|docs|test|chore|style|perf)(\([^)]+\))?!?:\s*.+"
+
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+
+    # Find all lines matching conventional commit format
+    matches = []
+    for line in lines:
+        if re.match(pattern, line):
+            matches.append(line)
+
+    # Return the first match (most likely the actual commit message)
+    if matches:
+        return matches[0]
+
+    # Fallback: return the last non-empty line
+    # This handles cases where output is already just the commit message
+    if lines:
+        return lines[-1]
+
+    return text.strip()
+
+
 def run_command(
     cmd: list[str], stdin_input: Optional[str] = None
 ) -> tuple[str, str, int]:
@@ -245,9 +290,12 @@ def main(
             [
                 str(claude_path),
                 "-p",
-                "Generate ONLY a conventional commit message (feat/fix/refactor/docs/test/chore/style/perf) "
-                "for this diff. Consider the style and context of recent commits. "
-                "Output the message and nothing else. Keep it under 72 chars.",
+                "CRITICAL: Output ONLY the commit message itself with NO explanation or context.\n\n"
+                "Generate a conventional commit message (feat/fix/refactor/docs/test/chore/style/perf) "
+                "for this diff. Keep it under 72 chars.\n\n"
+                "CORRECT: test: improve cache test coverage\n"
+                "WRONG: Based on the changes, I recommend: test: improve cache test coverage\n\n"
+                "Output format: Just the single-line commit message, nothing else.",
                 "--model",
                 "haiku",
                 "--output-format",
@@ -266,6 +314,7 @@ def main(
             raise typer.Exit(1)
 
         commit_message = strip_markdown_fences(stdout)
+        commit_message = extract_commit_message(commit_message)
 
         if not commit_message:
             console.print(
@@ -576,6 +625,79 @@ def test_run_command_failure():
     """Should handle command failure"""
     stdout, stderr, exit_code = run_command(["false"])
     assert exit_code != 0
+
+
+def test_extract_from_verbose_output():
+    """Should extract commit message from verbose output with explanation"""
+    verbose_output = """Based on the git status information provided at the start, the file `tests/test_cache.lua` has modifications (M). Given the context of recent
+commits which include "feat: add cache system with vault move detection" and "fix: resolve Lua string delimiter conflicts in tests", and that the change
+shows +12/-4 lines with additions and modifications, the most likely scenario is a test enhancement or fix for the cache system.
+
+test: improve cache test coverage"""
+    expected = "test: improve cache test coverage"
+    assert extract_commit_message(verbose_output) == expected
+
+
+def test_extract_with_explanation_before():
+    """Should extract commit message when explanation comes before"""
+    text = "I analyzed the changes and here's what I recommend:\n\nfeat: add new authentication system"
+    expected = "feat: add new authentication system"
+    assert extract_commit_message(text) == expected
+
+
+def test_extract_with_explanation_after():
+    """Should extract commit message when explanation comes after"""
+    text = "fix: resolve memory leak\n\nThis addresses the issue mentioned in the previous commit."
+    expected = "fix: resolve memory leak"
+    assert extract_commit_message(text) == expected
+
+
+def test_extract_multiple_commit_lines():
+    """Should extract first commit message when multiple are present"""
+    text = "feat: add feature A\nfix: fix bug B\nchore: update dependencies"
+    expected = "feat: add feature A"
+    assert extract_commit_message(text) == expected
+
+
+def test_extract_with_scope():
+    """Should extract conventional commit with scope"""
+    text = "After reviewing the API changes:\n\nfeat(api): add new endpoint for user profiles"
+    expected = "feat(api): add new endpoint for user profiles"
+    assert extract_commit_message(text) == expected
+
+
+def test_extract_with_breaking_change():
+    """Should extract conventional commit with breaking change indicator"""
+    text = "This is a major change:\n\nfeat!: completely redesign authentication flow"
+    expected = "feat!: completely redesign authentication flow"
+    assert extract_commit_message(text) == expected
+
+
+def test_extract_fallback_last_line():
+    """Should fallback to last line when no conventional commit pattern found"""
+    text = "Here's my suggestion\nThis looks good\nUpdate the configuration file"
+    expected = "Update the configuration file"
+    assert extract_commit_message(text) == expected
+
+
+def test_extract_no_match_returns_input():
+    """Should return trimmed input when single line with no conventional pattern"""
+    text = "Just a simple message"
+    expected = "Just a simple message"
+    assert extract_commit_message(text) == expected
+
+
+def test_extract_concise_output():
+    """Should handle already-concise conventional commit (backward compatibility)"""
+    text = "refactor: simplify database queries"
+    assert extract_commit_message(text) == text
+
+
+def test_extract_with_extra_whitespace():
+    """Should handle commit message with extra whitespace"""
+    text = "\n\nSome explanation text\n\n   chore: update dependencies   \n\n"
+    expected = "chore: update dependencies"
+    assert extract_commit_message(text) == expected
 
 
 # ============================================================================
