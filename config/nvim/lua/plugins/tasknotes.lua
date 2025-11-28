@@ -19,7 +19,7 @@ return {
     },
     opts = {
       -- Path to TaskNotes vault directory
-      vault_path = vim.fn.expand("~/sync/claude-vault"),
+      vault_path = vim.fn.expand "~/obsidian-vault/",
 
       -- Task identification method
       task_identification_method = "property", -- "tag" or "property"
