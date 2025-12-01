@@ -45,14 +45,14 @@
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
       enable = true;
-      
+
       # Homebrew configuration
       onActivation = {
         autoUpdate = false;  # Don't auto-update during activation
         cleanup = "none";     # Don't remove anything for now
         upgrade = false;     # Don't upgrade formulae during activation
       };
-    } // import ./homebrew.nix;
+    } // (import ./homebrew.nix);
 
     # Override the primary user for this host
     system.primaryUser = "emiller";
