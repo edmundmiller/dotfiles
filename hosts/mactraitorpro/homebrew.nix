@@ -3,7 +3,7 @@
   # This file contains all brew packages and casks
 
   taps = [
-    "jimeh/emacs-builds"
+    # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
     "seqeralabs/tap"
   ];
 
@@ -62,7 +62,7 @@
     "tealdeer"
     "terminal-notifier"
     "thefuck"
-    "tmux"
+    # "tmux"  # Using Nix-managed tmux for custom config
     "tree"
     "tree-sitter"
     "wget"
@@ -354,7 +354,7 @@
     "visual-studio-code"
     "claude"
     "repo-prompt"
-    "emacs-app-pretest"
+    # "emacs-app-pretest"  # Conflicts with emacs-app, using Nix version instead
     "positron"
     "zed"
     "warp@preview"
