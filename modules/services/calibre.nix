@@ -2,6 +2,7 @@
   options,
   config,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,10 +15,11 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
+  # NixOS-only service
+  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
     services.calibre-server.enable = true;
     services.calibre-server.libraries = [ "/home/emiller/calibre" ];
 
     networking.firewall.allowedTCPPorts = [ 8080 ];
-  };
+  });
 }

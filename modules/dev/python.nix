@@ -8,6 +8,7 @@
   options,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -63,20 +64,25 @@ in
       };
     }
 
-    (mkIf cfg.conda.enable {
-      user.packages = with pkgs; [ unstable.pixi ];
+    (mkIf cfg.conda.enable (mkMerge [
+      {
+        user.packages = with pkgs; [ unstable.pixi ];
 
-      env.PATH = [ "/home/emiller/.pixi/bin" ];
+        env.PATH = [ "${config.user.home}/.pixi/bin" ];
 
-      environment.shellAliases.px = "pixi";
+        environment.shellAliases.px = "pixi";
+      }
 
-      programs = {
-        nix-ld = {
-          enable = true;
-          package = pkgs.nix-ld-rs;
-          libraries = [ pkgs.unstable.pixi ];
+      # NixOS-specific nix-ld configuration
+      (optionalAttrs (!isDarwin) {
+        programs = {
+          nix-ld = {
+            enable = true;
+            package = pkgs.nix-ld-rs;
+            libraries = [ pkgs.unstable.pixi ];
+          };
         };
-      };
-    })
+      })
+    ]))
   ]);
 }

@@ -3,6 +3,7 @@
   options,
   pkgs,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -30,9 +31,8 @@ in
     envFiles = mkOpt (listOf (either str path)) [ ];
   };
 
-  config = mkIf cfg.enable {
-    # Set zsh as default shell at system level - this is the nix-darwin way
-    users.defaultUserShell = pkgs.zsh;
+  config = mkIf cfg.enable (mkMerge [
+    {
     
     # Add zsh to available shells
     environment.shells = [ pkgs.zsh ];
@@ -190,5 +190,11 @@ in
     };
 
     modules.shell.zsh.rcFiles = [ ];
-  };
+    }
+
+    # NixOS-only shell configuration
+    (optionalAttrs (!isDarwin) {
+      users.defaultUserShell = pkgs.zsh;
+    })
+  ]);
 }
