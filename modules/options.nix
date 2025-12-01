@@ -12,12 +12,15 @@ with lib.my;
 {
   options = with types; {
     user = mkOpt attrs { };
+    # Add user.packages option for aliasing to home-manager
+    "user.packages" = mkOpt (listOf package) [];
 
     dotfiles = {
       # Use static path to avoid self-referential infinite recursion
       dir = mkOpt path (toString ../.);
       binDir = mkOpt path "${toString ../.}/bin";
       configDir = mkOpt path "${toString ../.}/config";
+      configFile = mkOpt path "${toString ../.}/config";
       modulesDir = mkOpt path "${toString ../.}/modules";
       themesDir = mkOpt path "${toString ../.}/modules/themes";
     };
@@ -71,11 +74,14 @@ with lib.my;
       in
       {
         inherit name description;
+        home = "${homeBase}/${name}";
+        uid = 1000;
+      }
+      # NixOS-specific user options
+      // optionalAttrs (!isDarwin) {
         extraGroups = [ "wheel" ];
         isNormalUser = true;
-        home = "${homeBase}/${name}";
         group = "users";
-        uid = 1000;
       };
 
     # Install user packages to /etc/profiles instead. Necessary for
@@ -91,12 +97,15 @@ with lib.my;
       #   home.file        ->  home-manager.users.emiller.home.file
       #   home.configFile  ->  home-manager.users.emiller.home.xdg.configFile
       #   home.dataFile    ->  home-manager.users.emiller.home.xdg.dataFile
+      #   user.packages    ->  home-manager.users.emiller.home.packages
       users.${config.user.name} = {
         home = {
           file = mkAliasDefinitions options.home.file;
+          packages = mkAliasDefinitions options."user.packages";
           # Necessary for home-manager to work with flakes, otherwise it will
           # look for a nixpkgs channel.
-          inherit (config.system) stateVersion;
+          # On Darwin, system.stateVersion is a number; home-manager needs a string
+          stateVersion = if isDarwin then "24.11" else config.system.stateVersion;
         };
         xdg = {
           configFile = mkAliasDefinitions options.home.configFile;

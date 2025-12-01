@@ -2,6 +2,7 @@
   options,
   config,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,11 +15,12 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
+  # NixOS-only service
+  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
     services.audiobookshelf.enable = true;
     services.audiobookshelf.openFirewall = true;
     services.audiobookshelf.host = "0.0.0.0";
 
     user.extraGroups = [ "audiobookshelf" ];
-  };
+  });
 }
