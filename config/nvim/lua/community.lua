@@ -49,9 +49,6 @@ return {
   { import = "astrocommunity.search.grug-far-nvim" },
   { import = "astrocommunity.markdown-and-latex.render-markdown-nvim" },
 
-  -- ai
-  { import = "astrocommunity.editing-support.codecompanion-nvim" },
-
   -- Optional enhancements
   { import = "astrocommunity.editing-support.zen-mode-nvim" },
   { import = "astrocommunity.lsp.inc-rename-nvim" },
