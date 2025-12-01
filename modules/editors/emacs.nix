@@ -91,11 +91,13 @@ in
       # Org, markdown, everything inbetween
       pandoc
       gnuplot
-      # required by +jupyter
-      (python3.withPackages (ps: with ps; [ jupyter ]))
       # Roam
       anystyle-cli
       graphviz
+    ]
+    # required by +jupyter (only if python module is not enabled)
+    ++ optionals (!config.modules.dev.python.enable) [
+      (python3.withPackages (ps: with ps; [ jupyter ]))
     ]
     ++ optionals (!isDarwin) [
       # Linux-only packages

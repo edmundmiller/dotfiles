@@ -24,6 +24,8 @@ with lib;
           "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
           "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
         ];
+        # Increase download buffer size for large derivations (e.g., texlive)
+        download-buffer-size = 134217728; # 128MB (default is 64MB)
       };
       optimise.automatic = true;
     };
