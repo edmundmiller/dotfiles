@@ -20,7 +20,33 @@ with lib.my;
       allModulePaths = mapModulesRec' modulesPath id;
       # Filter out NixOS-only directories on Darwin
       nixosOnlyDirs = [ "hardware" "desktop" ];
-      nixosOnlyFiles = [ "security.nix" ];
+      nixosOnlyFiles = [
+        "security.nix"
+        "nixos-base.nix"
+        "fonts-nixos.nix"
+        "browsers-nixos.nix"
+        # NixOS-only hardware/shell modules
+        "nushell.nix"
+        "yubikey.nix"
+        # NixOS-only services
+        "audiobookshelf.nix"
+        "calibre.nix"
+        "gitea.nix"
+        "hass.nix"
+        "homepage.nix"
+        "jellyfin.nix"
+        "keybase.nix"
+        "mpd.nix"
+        "nginx.nix"
+        "ollama.nix"
+        "paperless.nix"
+        "prowlarr.nix"
+        "qb.nix"
+        "radarr.nix"
+        "sonarr.nix"
+        "syncthing.nix"
+        "transmission.nix"
+      ];
       isNixOSOnly = path:
         let pathStr = toString path; in
         lib.any (dir:
@@ -70,25 +96,8 @@ with lib.my;
       registry = registryInputs // {
         dotfiles.flake = inputs.self;
       };
-      settings.auto-optimise-store = true;
     };
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
-  # Only set stateVersion on NixOS
-  system.stateVersion = mkIf (!isDarwin) "25.05";
-
-  ## Some reasonable, global defaults
-  # This is here to appease 'nix flake check' for generic hosts with no
-  # hardware-configuration.nix or fileSystem config.
-  fileSystems."/".device = mkIf (!isDarwin) (mkDefault "/dev/disk/by-label/nixos");
-
-  boot = mkIf (!isDarwin) {
-    kernelPackages = mkDefault pkgs.linuxKernel.packages.linux_6_1;
-    loader = {
-      efi.canTouchEfiVariables = mkDefault true;
-      systemd-boot.configurationLimit = 10;
-      systemd-boot.enable = mkDefault true;
-    };
-  };
 
   # Just the bear necessities...
   environment.systemPackages = with pkgs; [

@@ -54,7 +54,7 @@ in
         symbola
         commit-mono
         monaspace
-        (unstable.nerdfonts.override { fonts = [ "Monaspace" ]; })
+        unstable.nerd-fonts.monaspace
         noto-fonts
         noto-fonts-cjk
       ];

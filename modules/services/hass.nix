@@ -2,6 +2,7 @@
   options,
   config,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,7 +15,8 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
+  # NixOS-only service (OCI containers)
+  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
     virtualisation.oci-containers.containers."homeassistant" = {
       autoStart = true;
       image = "ghcr.io/home-assistant/home-assistant:stable";
@@ -30,5 +32,5 @@ in
     };
 
     networking.firewall.allowedTCPPorts = [ 8123 ];
-  };
+  });
 }

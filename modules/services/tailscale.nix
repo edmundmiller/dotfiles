@@ -3,6 +3,7 @@
   options,
   lib,
   my,
+  isDarwin,
   ...
 }:
 with lib;
@@ -15,24 +16,30 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
-    services.tailscale.enable = true;
-    services.tailscale.openFirewall = true;
+  config = mkIf cfg.enable (mkMerge [
+    {
+      services.tailscale.enable = true;
 
-    # MagicDNS
-    services.resolved.enable = true;
-    networking.nameservers = [
-      "100.100.100.100"
-      "8.8.8.8"
-      "1.1.1.1"
-    ];
-    networking.search = [ "cinnamon-rooster.ts.net" ];
+      environment.shellAliases = {
+        ts = "tailscale";
+        tsu = "tailscale up";
+        tsd = "tailscale down";
+        tss = "tailscale status";
+      };
+    }
 
-    environment.shellAliases = {
-      ts = "tailscale";
-      tsu = "tailscale up";
-      tsd = "tailscale down";
-      tss = "tailscale status";
-    };
-  };
+    # NixOS-specific networking configuration
+    (optionalAttrs (!isDarwin) {
+      services.tailscale.openFirewall = true;
+
+      # MagicDNS
+      services.resolved.enable = true;
+      networking.nameservers = [
+        "100.100.100.100"
+        "8.8.8.8"
+        "1.1.1.1"
+      ];
+      networking.search = [ "cinnamon-rooster.ts.net" ];
+    })
+  ]);
 }

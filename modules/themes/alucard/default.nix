@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -52,21 +53,11 @@ in
 
         shell.zsh.rcFiles = [ ./config/zsh/prompt.zsh ];
         shell.tmux.rcFiles = [ ./config/tmux.conf ];
-        desktop.browsers = {
-          firefox.userChrome = concatMapStringsSep "\n" readFile [ ./config/firefox/userChrome.css ];
-          qutebrowser.userStyles = concatMapStringsSep "\n" readFile (
-            map toCSSFile [
-              ./config/qutebrowser/userstyles/monospace-textareas.scss
-              ./config/qutebrowser/userstyles/stackoverflow.scss
-              ./config/qutebrowser/userstyles/xkcd.scss
-            ]
-          );
-        };
       };
     }
 
-    # Desktop (X11) theming
-    (mkIf config.services.xserver.enable {
+    # Desktop (X11) theming (NixOS only)
+    (optionalAttrs (!isDarwin) (mkIf (config.services.xserver.enable or false) {
       user.packages = with pkgs; [
         unstable.dracula-theme
         paper-icon-theme # for rofi
@@ -116,15 +107,17 @@ in
         border-color = "${cfg.colors.types.border}"
       '';
 
-      # Other dotfiles
-      home.configFile =
-        with config.modules;
-        mkMerge [
-          {
-            # Sourced from sessionCommands in modules/themes/default.nix
-            "xtheme/90-theme".source = ./config/Xresources;
-          }
-          (mkIf desktop.bspwm.enable {
+      # Other dotfiles (NixOS-specific desktop configurations)
+      home.configFile = mkMerge [
+        # Basic theme file (works on all platforms)
+        {
+          "xtheme/90-theme".source = ./config/Xresources;
+        }
+        # Desktop-specific configurations (NixOS only)
+        (mkIf (!isDarwin) (
+          with config.modules;
+          mkMerge [
+            (mkIf desktop.bspwm.enable {
             "bspwm/rc.d/00-theme".source = ./config/bspwmrc;
             "bspwm/rc.d/95-polybar".source = ./config/polybar/run.sh;
           })
@@ -156,7 +149,9 @@ in
           (mkIf desktop.browsers.qutebrowser.enable {
             "qutebrowser/extra/theme.py".source = ./config/qutebrowser/theme.py;
           })
-        ];
-    })
+          ]
+        ))
+      ];
+    }))
   ]);
 }

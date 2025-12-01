@@ -4,6 +4,7 @@
   lib,
   pkgs,
   inputs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -23,7 +24,8 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf cfg.enable (mkMerge [
+    {
     nixpkgs.overlays = [ inputs.emacs-overlay.overlay ];
 
     user.packages = with pkgs; [
@@ -88,13 +90,16 @@ in
       unstable.rust-analyzer
       # Org, markdown, everything inbetween
       pandoc
-      scrot
       gnuplot
       # required by +jupyter
       (python3.withPackages (ps: with ps; [ jupyter ]))
       # Roam
       anystyle-cli
       graphviz
+    ]
+    ++ optionals (!isDarwin) [
+      # Linux-only packages
+      scrot
       (makeDesktopItem {
         name = "Org-Protocol";
         desktopName = "Org-Protocol";
@@ -103,6 +108,8 @@ in
         mimeTypes = [ "x-scheme-handler/org-protocol" ];
         categories = [ "System" ];
       })
+    ]
+    ++ [
       # FIXME unstable.vale
       # yaml
       nodePackages.yaml-language-server
@@ -114,16 +121,19 @@ in
 
     fonts.packages = [
       pkgs.emacs-all-the-icons-fonts
-      pkgs.nerdfonts
-    ];
+    ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+    }
 
-    system.userActivationScripts = mkIf cfg.doom.enable {
-      installDoomEmacs = ''
-        if [ ! -d "$XDG_CONFIG_HOME/emacs" ]; then
-           git clone --depth=1 --single-branch "${cfg.doom.repoUrl}" "$XDG_CONFIG_HOME/emacs"
-           git clone "${cfg.doom.configRepoUrl}" "$XDG_CONFIG_HOME/doom"
-        fi
-      '';
-    };
-  };
+    # NixOS-only activation scripts
+    (optionalAttrs (!isDarwin && cfg.doom.enable) {
+      system.userActivationScripts = {
+        installDoomEmacs = ''
+          if [ ! -d "$XDG_CONFIG_HOME/emacs" ]; then
+             git clone --depth=1 --single-branch "${cfg.doom.repoUrl}" "$XDG_CONFIG_HOME/emacs"
+             git clone "${cfg.doom.configRepoUrl}" "$XDG_CONFIG_HOME/doom"
+          fi
+        '';
+      };
+    })
+  ]);
 }

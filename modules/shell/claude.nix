@@ -23,10 +23,9 @@ in
 
     home.file = {
       ".claude/settings.json".source = "${configDir}/claude/settings.json";
-      ".claude/settings.local.json".source = "${configDir}/claude/.claude/settings.local.json";
-      ".claude/slash_commands".source = "${configDir}/claude/slash_commands";
+      # Note: settings.local.json, slash_commands, and commands are not tracked in git
+      # and therefore not available in the nix store. Manage these locally if needed.
       ".claude/agents".source = "${configDir}/claude/agents";
-      ".claude/commands".source = "${configDir}/claude/commands";
       ".claude/config".source = "${configDir}/claude/config";
     };
 

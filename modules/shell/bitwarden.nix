@@ -3,6 +3,7 @@
   options,
   pkgs,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -16,19 +17,24 @@ in
     config = mkOpt attrs { };
   };
 
-  config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      bitwarden
-      bitwarden-cli
-      unstable.goldwarden
-    ];
+  config = mkIf cfg.enable (mkMerge [
+    {
+      user.packages = with pkgs; [
+        bitwarden
+        bitwarden-cli
+        unstable.goldwarden
+      ];
 
-    modules.shell.zsh.rcInit = "_cache bw completion --shell zsh; compdef _bw bw;";
+      modules.shell.zsh.rcInit = "_cache bw completion --shell zsh; compdef _bw bw;";
+    }
 
-    system.userActivationScripts = mkIf (cfg.config != { }) {
-      initBitwarden = ''
-        ${concatStringsSep "\n" (mapAttrsToList (n: v: "bw config ${n} ${v}") cfg.config)}
-      '';
-    };
-  };
+    # NixOS-only activation scripts
+    (optionalAttrs (!isDarwin && cfg.config != { }) {
+      system.userActivationScripts = {
+        initBitwarden = ''
+          ${concatStringsSep "\n" (mapAttrsToList (n: v: "bw config ${n} ${v}") cfg.config)}
+        '';
+      };
+    })
+  ]);
 }

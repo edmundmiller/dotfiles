@@ -2,6 +2,7 @@
   config,
   options,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,20 +15,25 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
-    networking.firewall.allowedTCPPorts = [
-      80
-      443
-    ];
+  config = mkIf cfg.enable (mkMerge [
+    {
+      services.nginx = {
+        enable = true;
 
-    services.nginx = {
-      enable = true;
+        # Use recommended settings
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+      };
+    }
 
-      # Use recommended settings
-      recommendedGzipSettings = true;
-      recommendedOptimisation = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-    };
-  };
+    # Firewall configuration (NixOS only)
+    (optionalAttrs (!isDarwin) {
+      networking.firewall.allowedTCPPorts = [
+        80
+        443
+      ];
+    })
+  ]);
 }
