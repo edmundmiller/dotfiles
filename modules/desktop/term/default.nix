@@ -2,6 +2,7 @@
   options,
   config,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,9 +15,14 @@ in
     default = mkOpt types.str "xterm";
   };
 
-  config = {
-    services.xserver.desktopManager.xterm.enable = mkDefault (cfg.default == "xterm");
+  config = mkMerge [
+    {
+      env.TERMINAL = cfg.default;
+    }
 
-    env.TERMINAL = cfg.default;
-  };
+    # NixOS-only X11 desktop manager configuration
+    (optionalAttrs (!isDarwin) {
+      services.xserver.desktopManager.xterm.enable = mkDefault (cfg.default == "xterm");
+    })
+  ];
 }

@@ -3,12 +3,15 @@
   config,
   inputs,
   lib,
+  pkgs,
+  isDarwin,
   ...
 }:
 with lib;
 with lib.my;
 let
   cfg = config.modules.desktop.term.ghostty;
+  inherit (config.dotfiles) configDir;
 in
 {
   options.modules.desktop.term.ghostty = {
@@ -16,9 +19,17 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = [ inputs.ghostty.packages.x86_64-linux.default ];
-    # TODO alias ghostcopy = "infocmp -x | ssh YOUR-SERVER -- tic -x -"
+    # On macOS, ghostty is installed via Homebrew cask
+    # On Linux, use the Nix package
+    user.packages = optionals (!isDarwin) [ inputs.ghostty.packages.x86_64-linux.default ];
 
-    home.configFile."ghostty".source = "${configDir}/ghostty";
+    # Symlink ghostty config directory
+    home.configFile."ghostty" = {
+      source = "${configDir}/ghostty";
+      recursive = true;
+    };
+
+    # TODO: Add shell alias for copying terminfo
+    # alias ghostcopy = "infocmp -x | ssh YOUR-SERVER -- tic -x -"
   };
 }
