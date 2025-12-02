@@ -4,6 +4,8 @@
 # =============================================================================
 # DATA LOCATION & SYNC
 # =============================================================================
+data.location=~/.local/share/task
+sync.local.server_dir=~/Library/Mobile Documents/iCloud~com~mav~taskchamp/Documents/taskchamp
 news.version=3.4.1
 
 # Force CLI taskwarrior to use TaskChampion backend too
@@ -199,11 +201,11 @@ color.calendar.weekend=color8
 # and update location config as follows:
 #data.location=~/.local/share/task
 #hooks.location=~/.config/task/hooks
-sync.encryption_secret=taskwarrior-sync-secret-1753159270
-sync.aws.region=us-east-1
-sync.aws.bucket=emiller-taskchampion-sync
-sync.aws.access_key_id=
-sync.aws.secret_access_key=
+# sync.encryption_secret=taskwarrior-sync-secret-1753159270
+# sync.aws.region=us-east-1
+# sync.aws.bucket=emiller-taskchampion-sync
+# sync.aws.access_key_id=
+# sync.aws.secret_access_key=
 uda.reviewed.type=date
 uda.reviewed.label=Reviewed
 report._reviewed.description=Tasksh review report. Adjust the filter to your needs.
@@ -214,4 +216,3 @@ color.active=bold white on red
 color.overdue=bold red on black
 color.due.today=bold yellow
 uda.taskwarrior-tui.default-view=tasks
-context=phd
