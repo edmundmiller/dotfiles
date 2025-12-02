@@ -43,7 +43,8 @@ uda.priority.values=H,M,,L
 # User Defined Attributes for workspace organization
 uda.workspace.type=string
 uda.workspace.label=Workspace
-uda.workspace.values=seqera,nfcore,functional_genomics,personal,family
+uda.workspace.values=seqera,nfcore,phd,personal,family
+uda.workspace.default=personal
 
 # Motion App Integration
 uda.motion_id.type=string
@@ -82,28 +83,43 @@ uda.subgoal_id.type=string
 uda.subgoal_id.label=Subgoal ID
 
 # =============================================================================
-# CONTEXTS
+# CONTEXTS - Workspace Organization
 # =============================================================================
-# Main workspace contexts
-context.work.read=project.startswith:seqera or project.startswith:nfcore
-context.work.write=project.startswith:seqera or project.startswith:nfcore
 
-context.home.read=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
-context.home.write=project.startswith:personal or project.startswith:family or project.startswith:functional_genomics
+# Individual workspaces
+context.personal.read=workspace:personal
+context.personal.write=workspace:personal
 
-# Individual workspace contexts  
-context.phd.read=project.startswith:functional_genomics
-context.phd.write=project.startswith:functional_genomics +funlab
+context.family.read=workspace:family
+context.family.write=workspace:family
 
-# Writing context - shows only dissertation content work
-context.writing.read=project.startswith:functional_genomics +writing
+context.phd.read=workspace:phd
+context.phd.write=workspace:phd
+
+context.nfcore.read=workspace:nfcore
+context.nfcore.write=workspace:nfcore
+
+context.seqera.read=workspace:seqera
+context.seqera.write=workspace:seqera
+
+# Combined work context (nf-core + Seqera)
+context.work.read=workspace:seqera or workspace:nfcore
+context.work.write=workspace:seqera or workspace:nfcore
+
+# Combined home context (personal + family + phd)
+context.home.read=workspace:personal or workspace:family or workspace:phd
+context.home.write=workspace:personal or workspace:family or workspace:phd
+
+# Writing context - dissertation-specific work
+context.writing.read=workspace:phd +writing
+context.writing.write=workspace:phd +writing
 
 # =============================================================================
 # REPORTS
 # =============================================================================
 # Motion Dashboard Report - Optimized task list
-report.motion.columns=priority,urgency,due,estimate,totalactivetime,description.truncated,project.parent,project,scheduled
-report.motion.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
+report.motion.columns=workspace,priority,urgency,due,estimate,totalactivetime,description.truncated,project,scheduled
+report.motion.labels=Workspace,Priority,Urgency,Due,Estimate,Active Time,Description,Project,Scheduled
 report.motion.sort=priority-,urgency-,due+
 report.motion.filter=status:pending
 report.motion.description=Motion Dashboard - Optimized Task list
@@ -115,8 +131,8 @@ report.motion.description=Motion Dashboard - Optimized Task list
 # report.next.filter=status:pending limit:page
 
 # Customized next report using Motion Dashboard layout:
-report.next.columns=priority,urgency,due,estimate,totalactivetime,description.truncated,project.parent,project,scheduled
-report.next.labels=Priority,Urgency,Due,Estimate,Active Time,Description,Area,Project,Scheduled
+report.next.columns=workspace,priority,urgency,due,estimate,totalactivetime,description.truncated,project,scheduled
+report.next.labels=Workspace,Priority,Urgency,Due,Estimate,Active Time,Description,Project,Scheduled
 report.next.sort=priority-,urgency-,due+
 report.next.filter=status:pending
 
@@ -216,3 +232,90 @@ color.active=bold white on red
 color.overdue=bold red on black
 color.due.today=bold yellow
 uda.taskwarrior-tui.default-view=tasks
+
+# =============================================================================
+# TASKCHECK INTEGRATION
+# =============================================================================
+# Taskcheck UDAs for automatic scheduling
+uda.time_map.type=string
+uda.time_map.label=Time Map
+uda.time_map.default=work
+
+uda.estimated.type=duration
+uda.estimated.label=Estimated Time
+
+uda.completion_date.type=date
+uda.completion_date.label=Expected Completion Date
+
+uda.scheduling.type=string
+uda.scheduling.label=Scheduling
+
+uda.min_block.type=numeric
+uda.min_block.label=Minimum Time Block
+uda.min_block.default=2
+
+# Urgency coefficients for estimated time (logarithmic scaling)
+urgency.uda.estimated.PT1H.coefficient=1
+urgency.uda.estimated.PT2H.coefficient=2.32
+urgency.uda.estimated.PT3H.coefficient=3.67
+urgency.uda.estimated.PT4H.coefficient=4.64
+urgency.uda.estimated.PT5H.coefficient=5.39
+urgency.uda.estimated.PT6H.coefficient=6.02
+urgency.uda.estimated.PT7H.coefficient=6.56
+urgency.uda.estimated.PT8H.coefficient=7.03
+urgency.uda.estimated.PT9H.coefficient=7.45
+urgency.uda.estimated.PT10H.coefficient=7.82
+urgency.uda.estimated.PT11H.coefficient=8.16
+urgency.uda.estimated.PT12H.coefficient=8.47
+urgency.uda.estimated.PT13H.coefficient=8.75
+urgency.uda.estimated.PT14H.coefficient=9.01
+urgency.uda.estimated.PT15H.coefficient=9.25
+urgency.uda.estimated.PT16H.coefficient=9.47
+urgency.uda.estimated.PT17H.coefficient=9.68
+urgency.uda.estimated.PT18H.coefficient=9.87
+urgency.uda.estimated.PT19H.coefficient=10.05
+urgency.uda.estimated.PT20H.coefficient=10.22
+urgency.uda.estimated.PT21H.coefficient=10.38
+urgency.uda.estimated.PT22H.coefficient=10.53
+urgency.uda.estimated.PT23H.coefficient=10.67
+urgency.uda.estimated.P1D.coefficient=10.80
+urgency.uda.estimated.P1DT1H.coefficient=10.93
+urgency.uda.estimated.P1DT2H.coefficient=11.05
+urgency.uda.estimated.P1DT3H.coefficient=11.16
+urgency.uda.estimated.P1DT4H.coefficient=11.27
+urgency.uda.estimated.P1DT5H.coefficient=11.37
+urgency.uda.estimated.P1DT6H.coefficient=11.47
+urgency.uda.estimated.P1DT7H.coefficient=11.56
+urgency.uda.estimated.P1DT8H.coefficient=11.65
+urgency.uda.estimated.P1DT9H.coefficient=11.73
+urgency.uda.estimated.P1DT10H.coefficient=11.81
+urgency.uda.estimated.P1DT11H.coefficient=11.89
+urgency.uda.estimated.P1DT12H.coefficient=11.96
+
+# Recommended urgency settings for taskcheck
+urgency.inherit=1
+urgency.blocked.coefficient=0
+urgency.blocking.coefficient=0
+urgency.waiting.coefficient=0
+urgency.scheduled.coefficient=0
+
+# Better ready report for taskcheck
+report.ready.columns=id,start.age,entry.age,depends.indicator,priority,project,tags,recur.indicator,scheduled.relative,due.relative,until.remaining,description,urgency
+
+# Disable journal info printing
+journal.info=0
+
+# =============================================================================
+# TASKVANGUARD INTEGRATION
+# =============================================================================
+# TaskVanguard UDA for goal linking
+uda.goal.type=string
+uda.goal.label=Goal
+uda.goal.values=
+
+# TaskVanguard semantic tags urgency boost
+urgency.user.tag.sb.coefficient=1.3
+urgency.user.tag.cut.coefficient=1.2
+urgency.user.tag.key.coefficient=1.2
+urgency.user.tag.fast.coefficient=1.2
+urgency.user.tag.ai.coefficient=1.0

@@ -135,19 +135,21 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 # todo.txt configuration (managed in dotfiles, symlinked to ~/.todo.actions.d)
-export TODOTXT_CFG_FILE="$HOME/.config/dotfiles/config/todotxt/todo.cfg"
-export TODO_CFG_FILE="$HOME/.config/dotfiles/config/todotxt/todo.cfg"  # compatibility with some variants
-if [ -r "$TODOTXT_CFG_FILE" ]; then
-  source "$TODOTXT_CFG_FILE"
-fi
+# export TODOTXT_CFG_FILE="$HOME/.config/dotfiles/config/todotxt/todo.cfg"
+# export TODO_CFG_FILE="$HOME/.config/dotfiles/config/todotxt/todo.cfg"  # compatibility with some variants
+# if [ -r "$TODOTXT_CFG_FILE" ]; then
+#   source "$TODOTXT_CFG_FILE"
+# fi
 
-alias t="todo.sh"
-alias ta="t add"
-alias td="t do"
-alias ttoday="t today"
+# alias t="todo.sh"
+# alias ta="t add"
+# alias td="t do"
+# alias ttoday="t today"
 
 eval "$(fnm env --use-on-cd --shell zsh)"
+eval "$(try init ~/src/tries)"
 
 export NXF_SYNTAX_PARSER=v2
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+alias vanguard="$(go env GOPATH)/bin/vanguard"
