@@ -28,6 +28,8 @@
         zsh.enable = true;
       };
 
+      desktop.term.ghostty.enable = true;
+
       services = {
         docker.enable = true;
         ssh.enable = true;

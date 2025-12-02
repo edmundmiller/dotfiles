@@ -19,12 +19,18 @@ with lib.my;
       modulesPath = toString ./modules;
       allModulePaths = mapModulesRec' modulesPath id;
       # Filter out NixOS-only directories on Darwin
-      nixosOnlyDirs = [ "hardware" "desktop" ];
+      nixosOnlyDirs = [ "hardware" ];
+      # NixOS-only subdirectories within desktop (allow desktop/term for ghostty)
+      nixosOnlyDesktopDirs = [ "desktop/browsers" "desktop/media" "desktop/apps" "desktop/themes" "desktop/gaming" "desktop/vm" "desktop/gnome" ];
       nixosOnlyFiles = [
         "security.nix"
         "nixos-base.nix"
         "fonts-nixos.nix"
         "browsers-nixos.nix"
+        "desktop/default.nix"  # X11-specific desktop config
+        "desktop/gnome.nix"    # GNOME desktop environment
+        "desktop/kde.nix"      # KDE desktop environment
+        "desktop/bspwm.nix"    # BSPWM window manager
         # NixOS-only hardware/shell modules
         "nushell.nix"
         "yubikey.nix"
@@ -52,8 +58,11 @@ with lib.my;
         lib.any (dir:
           lib.hasInfix "/modules/${dir}/" pathStr ||  # Files inside directory
           lib.hasSuffix "/modules/${dir}" pathStr     # Directory itself
-        ) nixosOnlyDirs
-        || lib.any (file: lib.hasSuffix file pathStr) nixosOnlyFiles;
+        ) (nixosOnlyDirs ++ nixosOnlyDesktopDirs)
+        || lib.any (file:
+          lib.hasSuffix file pathStr ||               # Exact file match
+          lib.hasSuffix "/${lib.removeSuffix "/default.nix" file}" pathStr  # Directory with default.nix
+        ) nixosOnlyFiles;
     in
     map import (if isDarwin then filter (p: !isNixOSOnly p) allModulePaths else allModulePaths));
 
