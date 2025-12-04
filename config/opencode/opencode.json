@@ -1,0 +1,38 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Model configuration - using Claude as primary
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "small_model": "anthropic/claude-3-5-haiku-20241022",
+
+  // Provider configuration
+  "provider": {
+    "anthropic": {
+      "apiKey": "{env:ANTHROPIC_API_KEY}"
+    }
+  },
+
+  // Autoupdate - notify but don't auto-update
+  "autoupdate": "notify",
+
+  // Permission configuration
+  // OpenCode uses simpler permission model than Claude Code
+  "permission": {
+    "edit": "allow",
+    "bash": "allow",
+    "webfetch": "allow",
+    "external_directory": "ask"
+  },
+
+  // Tools configuration
+  "tools": {
+    "bash": true,
+    "edit": true
+  },
+
+  // Instructions - global rules from AGENTS.md
+  "instructions": ["~/.config/opencode/AGENTS.md"],
+
+  // MCP servers (if any - translate from Claude settings)
+  "mcp": {}
+}
