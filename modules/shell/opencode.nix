@@ -26,6 +26,7 @@ in
       "opencode/opencode.json".source = "${configDir}/opencode/opencode.json";
       "opencode/AGENTS.md".source = "${configDir}/opencode/AGENTS.md";
       "opencode/agent".source = "${configDir}/opencode/agent";
+      "opencode/command".source = "${configDir}/opencode/command";
       "opencode/tool".source = "${configDir}/opencode/tool";
     };
   };
