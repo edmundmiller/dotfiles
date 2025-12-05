@@ -1,0 +1,459 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "typer>=0.9.0",
+#     "rich>=13.0.0",
+# ]
+# ///
+"""
+tw-projects: TaskWarrior Project Registry CLI
+
+Manage project metadata (start/end dates, status, workspace) for TaskWarrior projects.
+Projects are stored in a SQLite database alongside TaskWarrior data.
+"""
+
+import json
+import os
+import sqlite3
+import subprocess
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+import typer
+from rich import print as rprint
+from rich.console import Console
+from rich.table import Table
+
+app = typer.Typer(
+    name="tw-projects",
+    help="Manage TaskWarrior project metadata (dates, status, workspace)",
+    no_args_is_help=True,
+)
+
+console = Console()
+
+# Database location
+DB_PATH = Path(os.environ.get("TASK_DATA", Path.home() / ".local/share/task")) / "projects.sqlite3"
+
+
+def get_db() -> sqlite3.Connection:
+    """Get database connection and ensure schema exists."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS projects (
+            name TEXT PRIMARY KEY,
+            display_name TEXT,
+            workspace TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            status TEXT DEFAULT 'active',
+            description TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_projects_workspace ON projects(workspace)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_projects_end_date ON projects(end_date)")
+    conn.commit()
+    return conn
+
+
+def humanize_project_name(name: str) -> str:
+    """Convert project name to display name."""
+    display = name.replace(".", " ").replace("-", " ").replace("_", " ")
+    return display.title()
+
+
+def get_task_counts() -> dict[str, dict[str, int]]:
+    """Get pending and completed task counts per project from TaskWarrior."""
+    counts: dict[str, dict[str, int]] = {}
+    
+    try:
+        # Get all tasks with projects
+        result = subprocess.run(
+            ["task", "rc.verbose=nothing", "rc.json.array=on", "export"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tasks = json.loads(result.stdout) if result.stdout.strip() else []
+        
+        for task in tasks:
+            project = task.get("project")
+            if not project:
+                continue
+            
+            if project not in counts:
+                counts[project] = {"pending": 0, "completed": 0}
+            
+            status = task.get("status", "")
+            if status == "pending":
+                counts[project]["pending"] += 1
+            elif status == "completed":
+                counts[project]["completed"] += 1
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        pass
+    
+    return counts
+
+
+@app.command()
+def list(
+    workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Filter by workspace"),
+    status: Optional[str] = typer.Option(None, "--status", "-s", help="Filter by status (active, completed, cancelled, planned)"),
+    as_json: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """List all projects with metadata."""
+    conn = get_db()
+    
+    query = "SELECT * FROM projects WHERE 1=1"
+    params: list = []
+    
+    if workspace:
+        query += " AND workspace = ?"
+        params.append(workspace)
+    if status:
+        query += " AND status = ?"
+        params.append(status)
+    
+    query += " ORDER BY end_date ASC NULLS LAST, name ASC"
+    
+    cursor = conn.execute(query, params)
+    projects = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    if as_json:
+        print(json.dumps(projects, indent=2))
+        return
+    
+    if not projects:
+        rprint("[yellow]No projects found.[/yellow]")
+        return
+    
+    # Get task counts
+    task_counts = get_task_counts()
+    
+    table = Table(title="Projects")
+    table.add_column("Name", style="cyan")
+    table.add_column("Display Name", style="white")
+    table.add_column("Workspace", style="magenta")
+    table.add_column("Status", style="green")
+    table.add_column("Start", style="blue")
+    table.add_column("End", style="yellow")
+    table.add_column("Tasks", style="white")
+    
+    for p in projects:
+        counts = task_counts.get(p["name"], {"pending": 0, "completed": 0})
+        task_str = f"{counts['pending']}P / {counts['completed']}C"
+        
+        # Color status
+        status_str = p["status"] or "active"
+        if status_str == "completed":
+            status_str = f"[green]{status_str}[/green]"
+        elif status_str == "cancelled":
+            status_str = f"[red]{status_str}[/red]"
+        elif status_str == "planned":
+            status_str = f"[blue]{status_str}[/blue]"
+        
+        # Highlight overdue end dates
+        end_str = p["end_date"] or ""
+        if end_str and p["status"] not in ("completed", "cancelled"):
+            try:
+                end_date = datetime.fromisoformat(end_str)
+                if end_date.date() < datetime.now().date():
+                    end_str = f"[red]{end_str}[/red]"
+            except ValueError:
+                pass
+        
+        table.add_row(
+            p["name"],
+            p["display_name"] or "",
+            p["workspace"] or "",
+            status_str,
+            p["start_date"] or "",
+            end_str,
+            task_str,
+        )
+    
+    console.print(table)
+
+
+@app.command()
+def show(name: str = typer.Argument(..., help="Project name")):
+    """Show details for a single project."""
+    conn = get_db()
+    cursor = conn.execute("SELECT * FROM projects WHERE name = ?", (name,))
+    project = cursor.fetchone()
+    conn.close()
+    
+    if not project:
+        rprint(f"[red]Project not found: {name}[/red]")
+        raise typer.Exit(1)
+    
+    p = dict(project)
+    task_counts = get_task_counts().get(name, {"pending": 0, "completed": 0})
+    
+    rprint(f"\n[bold cyan]{p['name']}[/bold cyan]")
+    rprint(f"  Display Name: {p['display_name'] or '(not set)'}")
+    rprint(f"  Workspace:    {p['workspace'] or '(not set)'}")
+    rprint(f"  Status:       {p['status'] or 'active'}")
+    rprint(f"  Start Date:   {p['start_date'] or '(not set)'}")
+    rprint(f"  End Date:     {p['end_date'] or '(not set)'}")
+    rprint(f"  Description:  {p['description'] or '(not set)'}")
+    rprint(f"  Tasks:        {task_counts['pending']} pending, {task_counts['completed']} completed")
+    rprint(f"  Created:      {p['created_at']}")
+    rprint(f"  Updated:      {p['updated_at']}")
+    rprint()
+
+
+@app.command("set")
+def set_project(
+    name: str = typer.Argument(..., help="Project name"),
+    display_name: Optional[str] = typer.Option(None, "--display-name", "-n", help="Human-readable display name"),
+    workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Workspace (seqera, personal, etc.)"),
+    start: Optional[str] = typer.Option(None, "--start", "-s", help="Start date (YYYY-MM-DD)"),
+    end: Optional[str] = typer.Option(None, "--end", "-e", help="End date (YYYY-MM-DD)"),
+    status: Optional[str] = typer.Option(None, "--status", help="Status (active, completed, cancelled, planned)"),
+    description: Optional[str] = typer.Option(None, "--description", "-d", help="Project description"),
+):
+    """Update project metadata."""
+    conn = get_db()
+    
+    # Check if project exists
+    cursor = conn.execute("SELECT 1 FROM projects WHERE name = ?", (name,))
+    if not cursor.fetchone():
+        # Create new project
+        rprint(f"[yellow]Project '{name}' not found. Creating new project.[/yellow]")
+        conn.execute(
+            "INSERT INTO projects (name, display_name, status) VALUES (?, ?, 'active')",
+            (name, humanize_project_name(name))
+        )
+        conn.commit()
+    
+    # Build update query
+    updates = []
+    params = []
+    
+    if display_name is not None:
+        updates.append("display_name = ?")
+        params.append(display_name)
+    if workspace is not None:
+        updates.append("workspace = ?")
+        params.append(workspace)
+    if start is not None:
+        updates.append("start_date = ?")
+        params.append(start)
+    if end is not None:
+        updates.append("end_date = ?")
+        params.append(end)
+    if status is not None:
+        if status not in ("active", "completed", "cancelled", "planned"):
+            rprint(f"[red]Invalid status: {status}. Use: active, completed, cancelled, planned[/red]")
+            raise typer.Exit(1)
+        updates.append("status = ?")
+        params.append(status)
+    if description is not None:
+        updates.append("description = ?")
+        params.append(description)
+    
+    if not updates:
+        rprint("[yellow]No updates specified.[/yellow]")
+        raise typer.Exit(0)
+    
+    updates.append("updated_at = ?")
+    params.append(datetime.now().isoformat())
+    params.append(name)
+    
+    query = f"UPDATE projects SET {', '.join(updates)} WHERE name = ?"
+    conn.execute(query, params)
+    conn.commit()
+    conn.close()
+    
+    rprint(f"[green]Updated project: {name}[/green]")
+
+
+@app.command()
+def complete(name: str = typer.Argument(..., help="Project name")):
+    """Mark a project as completed."""
+    conn = get_db()
+    cursor = conn.execute("SELECT 1 FROM projects WHERE name = ?", (name,))
+    if not cursor.fetchone():
+        rprint(f"[red]Project not found: {name}[/red]")
+        raise typer.Exit(1)
+    
+    conn.execute(
+        "UPDATE projects SET status = 'completed', updated_at = ? WHERE name = ?",
+        (datetime.now().isoformat(), name)
+    )
+    conn.commit()
+    conn.close()
+    
+    rprint(f"[green]Marked project as completed: {name}[/green]")
+
+
+@app.command()
+def cancel(name: str = typer.Argument(..., help="Project name")):
+    """Mark a project as cancelled."""
+    conn = get_db()
+    cursor = conn.execute("SELECT 1 FROM projects WHERE name = ?", (name,))
+    if not cursor.fetchone():
+        rprint(f"[red]Project not found: {name}[/red]")
+        raise typer.Exit(1)
+    
+    conn.execute(
+        "UPDATE projects SET status = 'cancelled', updated_at = ? WHERE name = ?",
+        (datetime.now().isoformat(), name)
+    )
+    conn.commit()
+    conn.close()
+    
+    rprint(f"[yellow]Marked project as cancelled: {name}[/yellow]")
+
+
+@app.command()
+def timeline(
+    workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Filter by workspace"),
+    as_json: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """Show projects ordered by end date (timeline view)."""
+    conn = get_db()
+    
+    query = """
+        SELECT * FROM projects 
+        WHERE status IN ('active', 'planned')
+        AND end_date IS NOT NULL
+    """
+    params: list = []
+    
+    if workspace:
+        query += " AND workspace = ?"
+        params.append(workspace)
+    
+    query += " ORDER BY end_date ASC"
+    
+    cursor = conn.execute(query, params)
+    projects = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    if as_json:
+        print(json.dumps(projects, indent=2))
+        return
+    
+    if not projects:
+        rprint("[yellow]No projects with end dates found.[/yellow]")
+        return
+    
+    task_counts = get_task_counts()
+    today = datetime.now().date()
+    
+    rprint("\n[bold]Project Timeline[/bold]\n")
+    
+    for p in projects:
+        end_date = datetime.fromisoformat(p["end_date"]).date()
+        days_until = (end_date - today).days
+        
+        counts = task_counts.get(p["name"], {"pending": 0, "completed": 0})
+        
+        # Color based on urgency
+        if days_until < 0:
+            date_str = f"[red]{p['end_date']} ({abs(days_until)}d overdue)[/red]"
+        elif days_until <= 7:
+            date_str = f"[yellow]{p['end_date']} ({days_until}d)[/yellow]"
+        elif days_until <= 30:
+            date_str = f"[blue]{p['end_date']} ({days_until}d)[/blue]"
+        else:
+            date_str = f"[green]{p['end_date']} ({days_until}d)[/green]"
+        
+        rprint(f"  {date_str}")
+        rprint(f"    [cyan]{p['name']}[/cyan] - {p['display_name'] or ''}")
+        rprint(f"    Tasks: {counts['pending']} pending, {counts['completed']} completed")
+        rprint()
+
+
+@app.command("import-existing")
+def import_existing():
+    """Import existing projects from TaskWarrior into the registry."""
+    conn = get_db()
+    
+    # Get all unique projects from TaskWarrior
+    try:
+        result = subprocess.run(
+            ["task", "rc.verbose=nothing", "rc.json.array=on", "export"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tasks = json.loads(result.stdout) if result.stdout.strip() else []
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
+        rprint(f"[red]Failed to export tasks from TaskWarrior: {e}[/red]")
+        raise typer.Exit(1)
+    
+    # Collect unique projects with their workspace info
+    projects: dict[str, str | None] = {}
+    for task in tasks:
+        project = task.get("project")
+        if project and project not in projects:
+            # Get workspace from task
+            workspace = task.get("workspace") or task.get("time_map")
+            projects[project] = workspace
+    
+    if not projects:
+        rprint("[yellow]No projects found in TaskWarrior.[/yellow]")
+        return
+    
+    # Import each project
+    imported = 0
+    skipped = 0
+    now = datetime.now().isoformat()
+    
+    for name, workspace in sorted(projects.items()):
+        cursor = conn.execute("SELECT 1 FROM projects WHERE name = ?", (name,))
+        if cursor.fetchone():
+            skipped += 1
+            continue
+        
+        display_name = humanize_project_name(name)
+        conn.execute("""
+            INSERT INTO projects (name, display_name, workspace, status, created_at, updated_at)
+            VALUES (?, ?, ?, 'active', ?, ?)
+        """, (name, display_name, workspace, now, now))
+        imported += 1
+        rprint(f"  [green]Imported:[/green] {name}")
+    
+    conn.commit()
+    conn.close()
+    
+    rprint(f"\n[bold]Summary:[/bold] {imported} imported, {skipped} already existed")
+
+
+@app.command()
+def delete(
+    name: str = typer.Argument(..., help="Project name"),
+    force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation"),
+):
+    """Delete a project from the registry (does not affect tasks)."""
+    conn = get_db()
+    cursor = conn.execute("SELECT 1 FROM projects WHERE name = ?", (name,))
+    if not cursor.fetchone():
+        rprint(f"[red]Project not found: {name}[/red]")
+        raise typer.Exit(1)
+    
+    if not force:
+        confirm = typer.confirm(f"Delete project '{name}' from registry?")
+        if not confirm:
+            raise typer.Abort()
+    
+    conn.execute("DELETE FROM projects WHERE name = ?", (name,))
+    conn.commit()
+    conn.close()
+    
+    rprint(f"[yellow]Deleted project from registry: {name}[/yellow]")
+    rprint("[dim]Note: Tasks with this project are not affected.[/dim]")
+
+
+if __name__ == "__main__":
+    app()
