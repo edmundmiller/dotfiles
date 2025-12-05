@@ -371,3 +371,4 @@ urgency.user.tag.cut.coefficient=1.2
 urgency.user.tag.key.coefficient=1.2
 urgency.user.tag.fast.coefficient=1.2
 urgency.user.tag.ai.coefficient=1.0
+uda.tasknote-tui.active_filter=test
