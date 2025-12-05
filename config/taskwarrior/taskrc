@@ -138,8 +138,8 @@ report.next.filter=status:pending
 
 # Focus Report - Beautiful optimized view of actionable tasks
 report.focus.description=Beautiful focused view of actionable tasks
-report.focus.columns=id,start.age,entry.age,priority,project,tags,due.relative,description.count,urgency
-report.focus.labels=ID,Active,Age,P,Project,Tags,Due,Description,Urg
+report.focus.columns=id,workspace,start.age,entry.age,priority,project,tags,due.relative,description.count,urgency
+report.focus.labels=ID,Workspace,Active,Age,P,Project,Tags,Due,Description,Urg
 report.focus.sort=urgency-,due+,project+
 report.focus.filter=status:pending -WAITING -BLOCKED
 
