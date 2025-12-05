@@ -153,3 +153,6 @@ export NXF_SYNTAX_PARSER=v2
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 alias vanguard="$(go env GOPATH)/bin/vanguard"
+
+# try - ephemeral workspace manager
+eval "$(~/.local/bin/try init ~/src/tries)"
