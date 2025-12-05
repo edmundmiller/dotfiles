@@ -29,6 +29,7 @@
       };
 
       desktop.term.ghostty.enable = true;
+      desktop.term.kitty.enable = true;
 
       services = {
         docker.enable = true;
