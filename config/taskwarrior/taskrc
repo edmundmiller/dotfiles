@@ -23,7 +23,7 @@ uda.taskwarrior-tui.task-report.jump-on-task-add=true
 # =============================================================================
 # BASIC BEHAVIOR
 # =============================================================================
-default.command=next
+default.command=focus
 confirmation=off
 bulk=0
 recurrence.confirmation=no
@@ -75,7 +75,7 @@ uda.actual_time.type=numeric
 uda.actual_time.label=Act Time
 
 # =============================================================================
-# GOAL TRACKING  
+# GOAL TRACKING
 # =============================================================================
 uda.goal_id.type=string
 uda.goal_id.label=Goal ID
@@ -136,6 +136,13 @@ report.next.labels=Workspace,Priority,Urgency,Due,Estimate,Active Time,Descripti
 report.next.sort=priority-,urgency-,due+
 report.next.filter=status:pending
 
+# Focus Report - Beautiful optimized view of actionable tasks
+report.focus.description=Beautiful focused view of actionable tasks
+report.focus.columns=id,start.age,entry.age,priority,project,tags,due.relative,description.count,urgency
+report.focus.labels=ID,Active,Age,P,Project,Tags,Due,Description,Urg
+report.focus.sort=urgency-,due+,project+
+report.focus.filter=status:pending -WAITING -BLOCKED
+
 # Writing progress report - friendly layout
 report.writing.description=Dissertation writing progress
 report.writing.columns=priority,due.relative,description.truncated
@@ -144,15 +151,17 @@ report.writing.sort=priority-,due+
 
 # Crisis Mode - High priority overdue tasks that need immediate attention
 report.crisis.description=Critical overdue tasks requiring immediate action
-report.crisis.columns=priority,due.relative,urgency,description.truncated,project
+report.crisis.columns=id,priority,due.relative,urgency,description.count,project
+report.crisis.labels=ID,P,Due,Urg,Description,Project
 report.crisis.filter=status:pending priority:H due.before:today
-report.crisis.sort=due+,urgency-
+report.crisis.sort=urgency-,due+
 
 # Daily Focus - Today's tasks and urgent items
 report.today.description=Today's scheduled tasks and urgent items
-report.today.columns=priority,scheduled.relative,due.relative,description.truncated,project
+report.today.columns=id,priority,urgency,scheduled.relative,due.relative,description.count,project,tags
+report.today.labels=ID,P,Urg,Sched,Due,Description,Project,Tags
 report.today.filter=status:pending and (scheduled.before:tomorrow or due.before:tomorrow or priority:H)
-report.today.sort=priority-,due+,scheduled+
+report.today.sort=urgency-,priority-,due+,scheduled+
 
 # Project Health - Overview of project completion rates
 report.health.description=Project health and completion overview
@@ -213,7 +222,7 @@ color.calendar.weekend=color8
 # XDG DIRECTORIES (Alternative setup)
 # =============================================================================
 # To use the default location of the XDG directories,
-# move this configuration file from ~/.taskrc to ~/.config/task/taskrc 
+# move this configuration file from ~/.taskrc to ~/.config/task/taskrc
 # and update location config as follows:
 #data.location=~/.local/share/task
 #hooks.location=~/.config/task/hooks
@@ -228,10 +237,47 @@ report._reviewed.description=Tasksh review report. Adjust the filter to your nee
 report._reviewed.columns=uuid
 report._reviewed.sort=reviewed+,modified+
 report._reviewed.filter=( reviewed.none: or reviewed.before:now-6days ) and ( +PENDING or +WAITING )
-color.active=bold white on red
-color.overdue=bold red on black
-color.due.today=bold yellow
+# =============================================================================
+# CATPPUCCIN MOCHA COLOR SCHEME
+# =============================================================================
+# Base colors from Catppuccin Mocha palette
+# Base: rgb(30,30,46), Blue: rgb(137,180,250), Peach: rgb(250,179,135)
+# Yellow: rgb(249,226,175), Red: rgb(243,139,168), Sapphire: rgb(116,199,236)
+# Sky: rgb(137,220,235), Text: rgb(205,214,244)
+
+# Active task highlighting - Bold white on Blue background
+color.active=bold rgb255 on rgb137,180,250
+
+# Due date coloring - Peach -> Yellow -> Red progression
+color.due=rgb250,179,135
+color.due.today=rgb249,226,175
+color.overdue=rgb243,139,168
+
+# Priority coloring
+color.pri.H=rgb243,139,168
+color.pri.M=rgb249,226,175
+color.pri.L=rgb137,220,235
+
+# Special tag highlighting
+color.tag.next=bold rgb243,139,168
+
+# Header and labels
+color.header=rgb116,199,236
+
+# Calendar colors (preserve existing but enhance)
+color.calendar.due.today=black on rgb249,226,175
+color.calendar.overdue=white on rgb243,139,168
+color.calendar.weekend=color8
 uda.taskwarrior-tui.default-view=tasks
+
+# =============================================================================
+# VISUAL LAYOUT & FORMATTING
+# =============================================================================
+verbose=blank,header,footnote,label,new-id,affected,edit,special,project,sync,unwait,recur
+print.empty.columns=off
+defaultwidth=0
+row.padding=1
+color.alternate=on gray2
 
 # =============================================================================
 # TASKCHECK INTEGRATION
@@ -298,6 +344,12 @@ urgency.blocked.coefficient=0
 urgency.blocking.coefficient=0
 urgency.waiting.coefficient=0
 urgency.scheduled.coefficient=0
+
+# Optimized urgency coefficients
+# These override defaults to prioritize finishing active tasks
+urgency.user.tag.next.coefficient=15.0
+urgency.due.coefficient=12.0
+urgency.active.coefficient=8.0
 
 # Better ready report for taskcheck
 report.ready.columns=id,start.age,entry.age,depends.indicator,priority,project,tags,recur.indicator,scheduled.relative,due.relative,until.remaining,description,urgency
