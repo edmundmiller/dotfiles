@@ -240,33 +240,33 @@ report._reviewed.filter=( reviewed.none: or reviewed.before:now-6days ) and ( +P
 # =============================================================================
 # CATPPUCCIN MOCHA COLOR SCHEME
 # =============================================================================
-# Base colors from Catppuccin Mocha palette
-# Base: rgb(30,30,46), Blue: rgb(137,180,250), Peach: rgb(250,179,135)
-# Yellow: rgb(249,226,175), Red: rgb(243,139,168), Sapphire: rgb(116,199,236)
-# Sky: rgb(137,220,235), Text: rgb(205,214,244)
+# Base colors from Catppuccin Mocha palette (converted to Taskwarrior 0-5 RGB scale)
+# Blue: rgb(137,180,250) → rgb345, Peach: rgb(250,179,135) → rgb543
+# Yellow: rgb(249,226,175) → rgb543, Red: rgb(243,139,168) → rgb533
+# Sapphire: rgb(116,199,236) → rgb245, Sky: rgb(137,220,235) → rgb345
 
 # Active task highlighting - Bold white on Blue background
-color.active=bold rgb255 on rgb137,180,250
+color.active=bold white on rgb345
 
 # Due date coloring - Peach -> Yellow -> Red progression
-color.due=rgb250,179,135
-color.due.today=rgb249,226,175
-color.overdue=rgb243,139,168
+color.due=rgb543
+color.due.today=rgb543
+color.overdue=rgb533
 
 # Priority coloring
-color.pri.H=rgb243,139,168
-color.pri.M=rgb249,226,175
-color.pri.L=rgb137,220,235
+color.pri.H=rgb533
+color.pri.M=rgb543
+color.pri.L=rgb345
 
 # Special tag highlighting
-color.tag.next=bold rgb243,139,168
+color.tag.next=bold rgb533
 
 # Header and labels
-color.header=rgb116,199,236
+color.header=rgb245
 
 # Calendar colors (preserve existing but enhance)
-color.calendar.due.today=black on rgb249,226,175
-color.calendar.overdue=white on rgb243,139,168
+color.calendar.due.today=black on rgb543
+color.calendar.overdue=white on rgb533
 color.calendar.weekend=color8
 uda.taskwarrior-tui.default-view=tasks
 
