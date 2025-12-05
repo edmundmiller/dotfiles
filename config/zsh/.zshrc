@@ -21,7 +21,7 @@ function _source {
 function _cache {
   local cache_dir="$XDG_CACHE_HOME/zsh"
   local cache_file="$cache_dir/$1.zsh"
-  
+
   if [[ ! -f "$cache_file" ]] || [[ "$commands[$1]" -nt "$cache_file" ]]; then
     mkdir -p "$cache_dir"
     "$@" > "$cache_file"
@@ -81,7 +81,7 @@ fi
 if [[ $TERM != dumb ]]; then
   # nix-darwin handles compinit via enableGlobalCompInit = true
   # so we don't need to manually initialize it here
-  
+
   # Add custom completions directory before sourcing other configs
   fpath=($ZDOTDIR/completions $fpath)
 
@@ -97,7 +97,7 @@ if [[ $TERM != dumb ]]; then
   source $ZDOTDIR/completion.zsh
   source $ZDOTDIR/aliases.zsh
 
-  alias jj="jj --config width=$(tput cols)" 
+  alias jj="jj --config width=$(tput cols)"
 
   # Source Claude-specific aliases if claude module is enabled
   _source /Users/emiller/.config/dotfiles/config/claude/aliases.zsh
@@ -114,7 +114,7 @@ if [[ $TERM != dumb ]]; then
   if (( $+commands[zoxide] )); then
     _cache zoxide init zsh
   fi
-  
+
   # Defer only autopair which is not immediately needed
   {
     # Initialize autopair (deferred - happens when plugins are fully loaded)
@@ -147,8 +147,15 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 # alias ttoday="t today"
 
 eval "$(fnm env --use-on-cd --shell zsh)"
+export NXF_SYNTAX_PARSER=v2
+
 # try - ephemeral workspace manager
-if [[ -x "$HOME/.local/bin/try" ]]; then
-  eval "$($HOME/.local/bin/try init ~/src/tries)"
+if [[ -x "$HOME/src/personal/try/try.rb" ]]; then
+  eval "$($HOME/src/personal/try/try.rb init ~/src/tries)"
 fi
+
+alias vanguard="$(go env GOPATH)/bin/vanguard"
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
