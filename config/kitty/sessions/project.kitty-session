@@ -1,0 +1,18 @@
+# Multi-tab project template
+# Tab 1: Editor + Shell
+new_tab Editor
+layout splits
+launch --title="Editor" --var window=main
+launch --location=vsplit --title="Shell"
+focus_matching_window var:window=main
+
+# Tab 2: Tests
+new_tab Tests
+launch --title="Test Runner"
+
+# Tab 3: Logs
+new_tab Logs
+launch --title="Application Logs"
+
+# Return to first tab
+focus_tab 1
