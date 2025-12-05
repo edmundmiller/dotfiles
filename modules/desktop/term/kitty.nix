@@ -29,10 +29,25 @@ in
         scrollback_pager = ''nvim -c 'setlocal nonumber nolist showtabline=0 foldcolumn=0|Man!' -c "autocmd VimEnter * normal G" -'';
         enable_audio_bell = false;
         update_check_interval = 0;
-        hide_window_decorations = true;
         notify_on_cmd_finish = "invisible 15.0";
         linux_display_server = "wayland";
         tab_bar_align = "left";
+
+        # macOS-specific settings for native feel
+        macos_titlebar_color = "system";
+        macos_option_as_alt = "yes";
+        macos_quit_when_last_window_closed = true;
+        macos_show_window_title_in = "window";
+        macos_traditional_fullscreen = false;
+        macos_colorspace = "srgb";
+
+        # Window appearance
+        hide_window_decorations = "titlebar-only";
+        window_padding_width = 4;
+        window_margin_width = 0;
+
+        # Confirm close on quit
+        confirm_os_window_close = 0;
       };
       extraConfig = ''
         # Session Management Keybindings (Ctrl+A prefix, tmux-style)
