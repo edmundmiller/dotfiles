@@ -26,7 +26,7 @@ The kitty module uses **home-manager's `programs.kitty` module** to generate con
 
 ### Current Configuration
 
-The module is configured with these settings (from `kitty.nix:26-35`):
+The module is configured with these settings (from `kitty.nix:27-51`):
 
 ```nix
 home-manager.users.${config.user.name}.programs.kitty = {
@@ -36,10 +36,22 @@ home-manager.users.${config.user.name}.programs.kitty = {
     scrollback_pager = ''nvim -c 'setlocal nonumber nolist showtabline=0 foldcolumn=0|Man!' -c "autocmd VimEnter * normal G" -'';
     enable_audio_bell = false;
     update_check_interval = 0;
-    hide_window_decorations = true;
     notify_on_cmd_finish = "invisible 15.0";
     linux_display_server = "wayland";
     tab_bar_align = "left";
+
+    # macOS-specific settings for native feel
+    macos_titlebar_color = "system";  # Match system appearance (light/dark)
+    macos_option_as_alt = "yes";  # Use Option key as Alt
+    macos_quit_when_last_window_closed = true;  # Quit when last window closes
+    macos_show_window_title_in = "window";  # Show title in window titlebar
+    macos_traditional_fullscreen = false;  # Use native macOS fullscreen
+    macos_colorspace = "srgb";  # Proper color rendering
+
+    # Window appearance
+    hide_window_decorations = "titlebar-only";  # Show native macOS controls
+    window_padding_width = 4;  # Internal padding for cleaner look
+    confirm_os_window_close = 0;  # Don't confirm on close
   };
 };
 ```
