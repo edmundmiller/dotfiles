@@ -1,0 +1,16 @@
+# Development session with editor, shell, and test runner
+new_tab Development
+layout splits
+
+# Main editor window
+launch --title="Editor" --var window=editor
+focus
+
+# Shell on the right
+launch --location=vsplit --title="Shell"
+
+# Bottom test/log panel
+launch --location=hsplit --bias=30 --title="Tests/Logs"
+
+# Focus back to editor
+focus_matching_window var:window=editor
