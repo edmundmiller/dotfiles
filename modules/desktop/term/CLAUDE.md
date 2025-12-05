@@ -47,6 +47,7 @@ home-manager.users.${config.user.name}.programs.kitty = {
 ### Shell Aliases
 
 The module adds an SSH alias:
+
 ```nix
 environment.shellAliases = {
   s = "kitten ssh";  # Use kitty's SSH kitten for better integration
@@ -87,6 +88,82 @@ home-manager.users.${config.user.name}.programs.kitty = {
 };
 ```
 
+### Session Management
+
+**Status**: Fully implemented with hybrid approach combining session persistence and dynamic project creation.
+
+#### Session Files
+
+Session files are located in `config/kitty/sessions/` and define complete terminal layouts:
+
+- **`default.kitty-session`** - Auto-save/restore session (automatically updated when you save)
+- **`minimal.kitty-session`** - Single-window layout
+- **`dev.kitty-session`** - Development layout (editor + shell + test panel)
+- **`project.kitty-session`** - Multi-tab template (editor, tests, logs)
+
+#### Session Keybindings
+
+All keybindings use **Ctrl+A** as the prefix key (tmux-style).
+
+**Session Management:**
+
+- `Ctrl+A > S` - Save current layout to default session
+- `Ctrl+A > D` - Load default session
+- `Ctrl+A > M` - Load minimal session
+- `Ctrl+A > P` - Load dev session
+- `Ctrl+A > /` - Browse all sessions
+- `Ctrl+A > -` - Previous session
+
+**Window/Tab Management:**
+
+- `Ctrl+A > Enter` - New tab in current directory
+- `Ctrl+A > N` - New tab with cwd
+- `Ctrl+A > W` - Close tab
+- `Ctrl+A > Minus` - Horizontal split
+- `Ctrl+A > |` - Vertical split
+
+**Window Navigation (vim-style):**
+
+- `Ctrl+A > H/J/K/L` - Navigate windows (left/down/up/right)
+- `Ctrl+A > Arrows` - Resize windows
+
+**Dynamic Project Creation:**
+
+- `Ctrl+A > 1` - Create 1-window project tab
+- `Ctrl+A > 2` - Create 2-window project tab (editor + shell)
+- `Ctrl+A > 3` - Create 3-window project tab (editor + shell + logs)
+
+#### Custom Project Kitten
+
+The `new_project.py` kitten (`config/kitty/new_project.py`) provides dynamic project-based tab creation inspired by andrew.hau.st's workflow. It creates new tabs with predefined layouts based on the number key pressed.
+
+**Future enhancements:**
+
+- Integration with autojump/zoxide for project selection
+- Session picker TUI
+- Workspace-specific sessions (seqera, nfcore, phd, etc.)
+- Auto-launch nvim in editor windows
+
+#### Session Workflow
+
+**Typical workflow:**
+
+1. Arrange your windows/tabs as desired
+2. Press `Ctrl+A > S` to save to default session
+3. Close kitty - session will auto-restore on next launch
+4. Switch between saved sessions with `Ctrl+A > [D/M/P]`
+5. Create new project layouts on-the-fly with `Ctrl+A > [1/2/3]`
+
+**Session files** support:
+
+- Multiple tabs with custom titles
+- Complex window layouts using splits
+- Custom working directories per window
+- Window focus management
+- Environment variable expansion
+
+See [Kitty Sessions Documentation](https://sw.kovidgoyal.net/kitty/sessions/) for advanced session file syntax.
+
 ### Theme Integration
 
 **Current Status**: Theme integration is **not** implemented.
@@ -100,6 +177,7 @@ The static config at `config/kitty/kitty.conf` previously referenced `current-th
 3. Use `programs.kitty.settings` to set theme colors dynamically
 
 Example theme integration:
+
 ```nix
 # In modules/theme/default.nix or theme-specific module
 home-manager.users.${config.user.name}.programs.kitty.settings = {

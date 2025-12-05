@@ -9,6 +9,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.desktop.term.kitty;
+  inherit (config.dotfiles) configDir;
 in
 {
   options.modules.desktop.term.kitty = {
@@ -33,6 +34,59 @@ in
         linux_display_server = "wayland";
         tab_bar_align = "left";
       };
+      extraConfig = ''
+        # Session Management Keybindings (Ctrl+A prefix, tmux-style)
+        # Save current layout to default session
+        map ctrl+a>s save_as_session --use-foreground-process --relocatable ~/.config/kitty/sessions/default.kitty-session
+
+        # Quick session switching
+        map ctrl+a>d goto_session ~/.config/kitty/sessions/default.kitty-session
+        map ctrl+a>m goto_session ~/.config/kitty/sessions/minimal.kitty-session
+        map ctrl+a>p goto_session ~/.config/kitty/sessions/dev.kitty-session
+        map ctrl+a>/ goto_session  # Browse all sessions
+        map ctrl+a>- goto_session -1  # Previous session
+
+        # Window/tab management
+        map ctrl+a>enter launch --cwd=current --type=tab
+        map ctrl+a>n new_tab_with_cwd
+        map ctrl+a>w close_tab
+
+        # Split windows
+        map ctrl+a>minus launch --cwd=current --location=hsplit
+        map ctrl+a>| launch --cwd=current --location=vsplit
+
+        # Window navigation (vim-style)
+        map ctrl+a>h neighboring_window left
+        map ctrl+a>j neighboring_window down
+        map ctrl+a>k neighboring_window up
+        map ctrl+a>l neighboring_window right
+
+        # Resize windows
+        map ctrl+a>left resize_window narrower
+        map ctrl+a>right resize_window wider
+        map ctrl+a>up resize_window taller
+        map ctrl+a>down resize_window shorter
+
+        # Custom project creation kitten
+        map ctrl+a>1 kitten new_project.py 1
+        map ctrl+a>2 kitten new_project.py 2
+        map ctrl+a>3 kitten new_project.py 3
+
+        # Session display in tab bar
+        tab_title_template {session_name} · {title}
+
+        # Auto-restore default session on startup
+        startup_session ~/.config/kitty/sessions/default.kitty-session
+      '';
+    };
+
+    # Link session files and custom kitten
+    home.configFile = {
+      "kitty/sessions/default.kitty-session".source = "${configDir}/kitty/sessions/default.kitty-session";
+      "kitty/sessions/minimal.kitty-session".source = "${configDir}/kitty/sessions/minimal.kitty-session";
+      "kitty/sessions/dev.kitty-session".source = "${configDir}/kitty/sessions/dev.kitty-session";
+      "kitty/sessions/project.kitty-session".source = "${configDir}/kitty/sessions/project.kitty-session";
+      "kitty/new_project.py".source = "${configDir}/kitty/new_project.py";
     };
   };
 }
