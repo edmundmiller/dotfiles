@@ -40,7 +40,7 @@
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
-      taskchampion-sync.enable = true;
+      taskchampion.enable = true;
       transmission.enable = true;
     };
 
