@@ -127,7 +127,7 @@ in
     }
 
     # NixOS-only activation scripts
-    (optionalAttrs (!isDarwin && cfg.doom.enable) {
+    (mkIf (!isDarwin && cfg.doom.enable) {
       system.userActivationScripts = {
         installDoomEmacs = ''
           if [ ! -d "$XDG_CONFIG_HOME/emacs" ]; then
