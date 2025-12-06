@@ -25,7 +25,7 @@ in
 {
   imports = if isDarwin then [ agenix.darwinModules.age ] else [ agenix.nixosModules.age ];
 
-  environment.systemPackages = [ agenix.packages.${pkgs.system}.default ];
+  environment.systemPackages = [ agenix.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 
   age = mkMerge [
     # NixOS-only secrets configuration
