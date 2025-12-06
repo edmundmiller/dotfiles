@@ -7,7 +7,8 @@ _: {
   # nixpkgs/nixos/modules/system/boot/loader/systemd-boot/systemd-boot.nix
   boot.loader.systemd-boot.editor = false;
 
-  # Change me later!
-  user.initialPassword = "nix";
-  users.users.root.initialPassword = "nix";
+  # NOTE: Removed initialPassword to avoid conflict with hashedPasswordFile
+  # If you need a default password for new hosts, add to the host config:
+  # user.initialPassword = "nix";
+  # users.users.root.initialPassword = "nix";
 }
