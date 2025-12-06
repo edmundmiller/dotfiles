@@ -9,7 +9,7 @@
 with lib;
 {
   # Only apply these configs on Darwin systems
-  config = mkIf (lib.hasSuffix "darwin" (pkgs.system or "x86_64-linux")) {
+  config = mkIf (lib.hasSuffix "darwin" (pkgs.stdenv.hostPlatform.system or "x86_64-linux")) {
     # Import home-manager's darwin module
     imports = [ inputs.home-manager.darwinModules.home-manager ];
     
@@ -18,7 +18,7 @@ with lib;
     
     # Add darwin-rebuild to system packages
     environment.systemPackages = with pkgs; [
-      inputs.nix-darwin.packages.${pkgs.system}.darwin-rebuild
+      inputs.nix-darwin.packages.${pkgs.stdenv.hostPlatform.system}.darwin-rebuild
       difftastic  # Syntax-aware diff tool
     ];
     

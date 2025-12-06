@@ -17,7 +17,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [ inputs.zen-browser.packages."${system}".default ];
+    user.packages = with pkgs; [ inputs.zen-browser.packages."${pkgs.stdenv.hostPlatform.system}".default ];
   };
 
   # tridactyl

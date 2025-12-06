@@ -94,9 +94,9 @@
 
         overlay = final: _prev: {
           unstable = if final.stdenv.isDarwin 
-                     then mkPkgs nixpkgs-unstable [ ] final.system
+                     then mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
                      else pkgs';
-          my = self.packages.${final.system} or {};
+          my = self.packages.${final.stdenv.hostPlatform.system} or {};
         };
 
         overlays = mapModules ./overlays import;

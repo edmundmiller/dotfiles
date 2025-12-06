@@ -39,7 +39,7 @@
 
     # Additional system packages
     environment.systemPackages = with pkgs; [
-      (inputs.jj-spr.packages.${pkgs.system}.default.overrideAttrs (old: {
+      (inputs.jj-spr.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
         buildInputs = (old.buildInputs or []) ++ [ zlib ];
       }))
     ];
