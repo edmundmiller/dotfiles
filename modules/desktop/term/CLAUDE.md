@@ -44,12 +44,12 @@ home-manager.users.${config.user.name}.programs.kitty = {
     macos_titlebar_color = "system";  # Match system appearance (light/dark)
     macos_option_as_alt = "yes";  # Use Option key as Alt
     macos_quit_when_last_window_closed = true;  # Quit when last window closes
-    macos_show_window_title_in = "window";  # Show title in window titlebar
+    macos_show_window_title_in = "menubar";  # Show title in menubar (valid: menubar, titlebar, none)
     macos_traditional_fullscreen = false;  # Use native macOS fullscreen
     macos_colorspace = "srgb";  # Proper color rendering
 
     # Window appearance
-    hide_window_decorations = "titlebar-only";  # Show native macOS controls
+    hide_window_decorations = "no";  # Show full native macOS titlebar and controls
     window_padding_width = 4;  # Internal padding for cleaner look
     confirm_os_window_close = 0;  # Don't confirm on close
   };
