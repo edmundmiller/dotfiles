@@ -35,7 +35,9 @@ in
 
     (mkIf cfg.zfs.enable (mkMerge [
       {
-        boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
+        # Use the default kernel packages which are ZFS-compatible
+        # Note: For non-LTS kernels, you may need to pin a specific version
+        boot.kernelPackages = pkgs.linuxPackages;
         boot.loader.grub.copyKernels = true;
         boot.supportedFilesystems = [ "zfs" ];
         boot.zfs.devNodes = "/dev/disk/by-partuuid";
