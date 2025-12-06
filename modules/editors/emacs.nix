@@ -126,8 +126,8 @@ in
     ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
     }
 
-    # NixOS-only activation scripts
-    (mkIf (!isDarwin && cfg.doom.enable) {
+    # NixOS-only activation scripts (optionalAttrs on isDarwin to avoid defining non-existent options)
+    (optionalAttrs (!isDarwin) (mkIf cfg.doom.enable {
       system.userActivationScripts = {
         installDoomEmacs = ''
           if [ ! -d "$XDG_CONFIG_HOME/emacs" ]; then
@@ -136,6 +136,6 @@ in
           fi
         '';
       };
-    })
+    }))
   ]);
 }
