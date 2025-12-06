@@ -28,13 +28,13 @@ in
       modules.shell.zsh.rcInit = "_cache bw completion --shell zsh; compdef _bw bw;";
     }
 
-    # NixOS-only activation scripts
-    (mkIf (!isDarwin && cfg.config != { }) {
+    # NixOS-only activation scripts (optionalAttrs on isDarwin to avoid defining non-existent options)
+    (optionalAttrs (!isDarwin) (mkIf (cfg.config != { }) {
       system.userActivationScripts = {
         initBitwarden = ''
           ${concatStringsSep "\n" (mapAttrsToList (n: v: "bw config ${n} ${v}") cfg.config)}
         '';
       };
-    })
+    }))
   ]);
 }
