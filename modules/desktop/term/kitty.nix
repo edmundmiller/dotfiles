@@ -26,23 +26,23 @@ in
       enable = true;
       settings = {
         scrollback_lines = 10000;
-        scrollback_pager = ''nvim -c 'setlocal nonumber nolist showtabline=0 foldcolumn=0|Man!' -c "autocmd VimEnter * normal G" -'';
+        scrollback_pager = ''nvim -c 'setlocal nonumber nolist showtabline=0 foldcolline=0|Man!' -c "autocmd VimEnter * normal G" -'';
         enable_audio_bell = false;
         update_check_interval = 0;
         notify_on_cmd_finish = "invisible 15.0";
-        linux_display_server = "wayland";
+        # linux_display_server = "wayland";  # Linux-only, commented out for macOS
         tab_bar_align = "left";
 
         # macOS-specific settings for native feel
         macos_titlebar_color = "system";
         macos_option_as_alt = "yes";
         macos_quit_when_last_window_closed = true;
-        macos_show_window_title_in = "window";
+        macos_show_window_title_in = "menubar";  # Show title in menubar (standard macOS)
         macos_traditional_fullscreen = false;
         macos_colorspace = "srgb";
 
         # Window appearance
-        hide_window_decorations = "titlebar-only";
+        hide_window_decorations = "no";
         window_padding_width = 4;
         window_margin_width = 0;
 
