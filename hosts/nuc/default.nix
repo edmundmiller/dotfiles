@@ -51,6 +51,9 @@
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
+  # FIXME https://discourse.nixos.org/t/logrotate-config-fails-due-to-missing-group-30000/28501/7
+  services.logrotate.checkConfig = false;
+
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";

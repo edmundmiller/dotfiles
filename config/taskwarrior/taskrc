@@ -133,7 +133,7 @@ report.motion.description=Motion Dashboard - Optimized Task list
 # Customized next report using Motion Dashboard layout:
 report.next.columns=workspace,priority,urgency,due,estimate,totalactivetime,description.truncated,project,scheduled
 report.next.labels=Workspace,Priority,Urgency,Due,Estimate,Active Time,Description,Project,Scheduled
-report.next.sort=priority-,urgency-,due+
+report.next.sort=urgency-
 report.next.filter=status:pending
 
 # Focus Report - Beautiful optimized view of actionable tasks
