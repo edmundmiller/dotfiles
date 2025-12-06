@@ -29,7 +29,7 @@ in
     }
 
     # NixOS-only activation scripts
-    (optionalAttrs (!isDarwin && cfg.config != { }) {
+    (mkIf (!isDarwin && cfg.config != { }) {
       system.userActivationScripts = {
         initBitwarden = ''
           ${concatStringsSep "\n" (mapAttrsToList (n: v: "bw config ${n} ${v}") cfg.config)}

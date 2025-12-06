@@ -20,6 +20,7 @@ in
       inherit system;
       specialArgs = {
         inherit lib inputs system;
+        isDarwin = false;
       };
       modules = [
         {
