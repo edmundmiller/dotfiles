@@ -37,12 +37,12 @@ in
         macos_titlebar_color = "system";
         macos_option_as_alt = "yes";
         macos_quit_when_last_window_closed = true;
-        macos_show_window_title_in = "menubar";  # Show title in menubar (standard macOS)
+        macos_show_window_title_in = "menubar";  # Valid: menubar, titlebar, none
         macos_traditional_fullscreen = false;
         macos_colorspace = "srgb";
 
         # Window appearance
-        hide_window_decorations = "no";
+        hide_window_decorations = "no";  # Show full native macOS titlebar
         window_padding_width = 4;
         window_margin_width = 0;
 
