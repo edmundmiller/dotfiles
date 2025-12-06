@@ -2,6 +2,7 @@
   config,
   options,
   lib,
+  pkgs,
   my,
   ...
 }:
@@ -18,6 +19,7 @@ in
   config = mkIf cfg.enable {
     services.transmission = {
       enable = true;
+      package = pkgs.transmission_4;
       settings = {
         download-dir = "/data/media/downloads";
         incomplete-dir-enabled = true;

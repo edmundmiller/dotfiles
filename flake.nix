@@ -33,8 +33,6 @@
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
-    nixvim.url = "github:nix-community/nixvim";
-    nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     ghostty.url = "git+ssh://git@github.com/ghostty-org/ghostty";
     wezterm.url = "github:wez/wezterm?dir=nix";
