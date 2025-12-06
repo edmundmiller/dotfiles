@@ -34,7 +34,7 @@
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    ghostty.url = "git+ssh://git@github.com/ghostty-org/ghostty";
+    ghostty.url = "github:ghostty-org/ghostty";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
