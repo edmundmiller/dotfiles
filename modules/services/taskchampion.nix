@@ -8,10 +8,10 @@
 with lib;
 with lib.my;
 let
-  cfg = config.modules.services.taskchampion-sync;
+  cfg = config.modules.services.taskchampion;
 in
 {
-  options.modules.services.taskchampion-sync = {
+  options.modules.services.taskchampion = {
     enable = mkBoolOpt false;
   };
 
