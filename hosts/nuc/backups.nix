@@ -13,6 +13,7 @@ in
       user = "emiller";
       paths = [
         "${config.users.users.emiller.home}/sync"
+        "${config.users.users.emiller.home}/taskchampion-sync-server"
         # "${config.users.users.emiller.home}/archive"
       ];
 
