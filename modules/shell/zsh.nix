@@ -53,7 +53,6 @@ in
       bat
       btop
       eza
-      fcp
       fd
       unstable.fzf
       gh
