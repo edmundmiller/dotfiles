@@ -24,6 +24,7 @@
         direnv.enable = true;
         git.enable = true;
         jj.enable = true;
+        ssh.enable = true;
         tmux.enable = true;
         zsh.enable = true;
       };

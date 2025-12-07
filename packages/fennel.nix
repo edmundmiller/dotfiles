@@ -31,7 +31,7 @@ stdenv.mkDerivation {
     homepage = "https://github.com/bakpakin/Fennel";
     description = "Lua Lisp Language";
     license = lib.licenses.mit;
-    platforms = [ "x86_64-linux" ];
+    platforms = lib.platforms.unix;
     maintainers = [ ];
   };
 }
