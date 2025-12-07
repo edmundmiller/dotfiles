@@ -46,16 +46,6 @@
   local cyan='#9AEDFE'
   local white='#F1F1F0'
 
-  # Define custom segments using P10k's custom segment feature
-  typeset -g POWERLEVEL9K_CUSTOM_TODO="prompt_todo"
-  typeset -g POWERLEVEL9K_CUSTOM_TODO_FOREGROUND=$cyan
-  typeset -g POWERLEVEL9K_CUSTOM_TODO_BACKGROUND=''
-  
-  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW="prompt_nextflow"
-  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_FOREGROUND=$blue  # Blue for workflow tool
-  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_BACKGROUND=''
-  typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_SHOW_ON_COMMAND='nextflow|nf'
-  
   # Left prompt segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # context                 # user@host
@@ -65,7 +55,6 @@
     nix_shell                 # nix development environment
     virtualenv                # python virtual environment
     node_version              # node.js version for projects
-    custom_nextflow           # nextflow version for projects
     package                   # package.json version
     terraform                 # terraform workspace
     aws                       # aws profile
@@ -76,7 +65,6 @@
 
   # Right prompt segments.
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
-    custom_todo               # todo.txt task count
     command_execution_time    # previous command duration
     python_version            # python version
     background_jobs           # running background jobs
@@ -525,78 +513,6 @@
   # If p10k is already loaded, reload configuration.
   # This works even with POWERLEVEL9K_DISABLE_HOT_RELOAD=true.
   (( ! $+functions[p10k] )) || p10k reload
-}
-
-# Custom todo.txt segment - shows pending task count
-function prompt_todo() {
-  local todo_file="${TODO_FILE:-$HOME/Documents/todo/todo.txt}"
-
-  if [[ -f "$todo_file" ]]; then
-    # Use cached count to improve performance on large todo files
-    local cache_file="$XDG_CACHE_HOME/zsh/todo_count"
-    local pending_count=""
-
-    # Check if cache is newer than todo file (or less than 30 seconds old)
-    if [[ -f "$cache_file" ]] && [[ "$cache_file" -nt "$todo_file" ]] ||
-       [[ -f "$cache_file" && $(( $(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || echo 0) )) -lt 30 ]]; then
-      pending_count=$(cat "$cache_file" 2>/dev/null)
-    else
-      # Update cache with current count
-      pending_count=$(grep -c '^[^x]' "$todo_file" 2>/dev/null) || pending_count=0
-      if [[ -n "$pending_count" ]]; then
-        mkdir -p "$(dirname "$cache_file")"
-        echo "$pending_count" > "$cache_file"
-      fi
-    fi
-
-    if [[ $pending_count -gt 0 ]]; then
-      # For P10k custom segments, just echo the output
-      echo -n "✓ $pending_count"
-    fi
-  fi
-}
-
-# Custom Nextflow segment - shows version when in Nextflow project or typing Nextflow commands
-function prompt_nextflow() {
-  # Only show if in Nextflow project directory (file-based detection only)
-  # P10k's SHOW_ON_COMMAND handles showing when typing nextflow commands
-  if [[ -f "main.nf" ]] || [[ -f "nextflow.config" ]] || [[ -d "modules" ]] || [[ -d "workflows" ]] || [[ -n *.nf(#qN) ]]; then
-    # Use cached version to avoid slow nextflow -version call (nextflow takes ~600ms!)
-    local cache_file="$XDG_CACHE_HOME/zsh/nextflow_version"
-    local nf_version=""
-
-    # Check if cache exists and is newer than 24 hours
-    if [[ -f "$cache_file" && $(( $(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || echo 0) )) -lt 86400 ]]; then
-      nf_version=$(cat "$cache_file" 2>/dev/null)
-    else
-      # Async update: spawn background process to update cache
-      if command -v nextflow >/dev/null 2>&1; then
-        # Use existing cache immediately if available
-        if [[ -f "$cache_file" ]]; then
-          nf_version=$(cat "$cache_file" 2>/dev/null)
-        fi
-
-        # Update cache in background
-        {
-          local new_version
-          new_version=$(nextflow -version 2>/dev/null | sed -n '2s/.*version \([^ ]*\).*/\1/p')
-          if [[ -n "$new_version" ]]; then
-            mkdir -p "$(dirname "$cache_file")"
-            echo "$new_version" > "$cache_file"
-          fi
-        } &!
-      fi
-    fi
-
-    if [[ -n "$nf_version" ]]; then
-      echo -n "nf $nf_version"
-    else
-      # Fallback: just show "nf" if nextflow is available but no version cached yet
-      if command -v nextflow >/dev/null 2>&1; then
-        echo -n "nf"
-      fi
-    fi
-  fi
 }
 
 # Tell `p10k configure` which file it should overwrite.
