@@ -53,9 +53,31 @@ fi
 [[ -f "$_antidote_path" ]] && source "$_antidote_path"
 
 # Load plugins from .zsh_plugins.txt
-# Use cache directory for compiled plugin file since ZDOTDIR might be read-only
-ANTIDOTE_STATIC_FILE="$ZSH_CACHE/.zsh_plugins.zsh"
-antidote load "$ZDOTDIR/.zsh_plugins.txt"
+# Static file goes in cache since ZDOTDIR may be read-only (Nix symlinks)
+_antidote_bundlefile="$ZDOTDIR/.zsh_plugins.txt"
+_antidote_staticfile="$ZSH_CACHE/.zsh_plugins.zsh"
+
+# Handle Nix store files: mtime is epoch 1, so antidote's freshness check fails.
+# Instead, track the symlink target and regenerate when it changes.
+if [[ -L "$_antidote_bundlefile" ]]; then
+  _antidote_target=$(readlink "$_antidote_bundlefile")
+  _antidote_marker="$ZSH_CACHE/.zsh_plugins.target"
+  if [[ ! -f "$_antidote_marker" ]] || [[ "$(cat "$_antidote_marker" 2>/dev/null)" != "$_antidote_target" ]]; then
+    # Symlink target changed - force regeneration
+    rm -f "$_antidote_staticfile" "$_antidote_staticfile.zwc"
+    mkdir -p "$ZSH_CACHE"
+    echo "$_antidote_target" > "$_antidote_marker"
+  fi
+fi
+
+antidote load "$_antidote_bundlefile" "$_antidote_staticfile"
+
+# Compile static file for faster loading (background, non-blocking)
+if [[ ! -f "$_antidote_staticfile.zwc" ]] || [[ "$_antidote_staticfile" -nt "$_antidote_staticfile.zwc" ]]; then
+  zcompile "$_antidote_staticfile" &!
+fi
+
+unset _antidote_bundlefile _antidote_staticfile _antidote_target _antidote_marker
 
 # Ensure Powerlevel10k is loaded (fallback if antidote didn't load it)
 # Always try to load P10k, even if p10k command exists (might be a stub)
