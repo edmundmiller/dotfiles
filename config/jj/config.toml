@@ -121,7 +121,9 @@ edit = true
 whitespace = "trailing-space"
 
 [signing]
-behavior = "own"
+# Use "drop" to avoid 1Password signing prompts during normal work
+# Commits will be signed in batch when pushing (see git.sign-on-push below)
+behavior = "drop"
 backend = "ssh"
 key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC"
 
