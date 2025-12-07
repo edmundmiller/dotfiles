@@ -603,23 +603,14 @@ function prompt_jj() {
   async_job jj_status_worker jj_status $PWD
 }
 
-# Instant prompt support - shows cached jj status during instant prompt
-function instant_prompt_jj() {
-  # During instant prompt, just show the cached status if available
-  [[ -n $p10k_jj_status ]] || return
-  p10k segment -e -t '$p10k_jj_status'
-}
+# Initialize async worker for jj status
+# zsh-async must be loaded before p10k (see .zsh_plugins.txt load order)
+async_start_worker        jj_status_worker -u
+async_unregister_callback jj_status_worker
+async_register_callback   jj_status_worker jj_status_callback
 
 # Tell `p10k configure` which file it should overwrite.
 typeset -g POWERLEVEL9K_CONFIG_FILE=${${(%):-%x}:a}
 
 (( ${#p10k_config_opts} )) && setopt ${p10k_config_opts[@]}
 'builtin' 'unset' 'p10k_config_opts'
-
-# Initialize async worker for jj status (must be outside the () block)
-# This runs after p10k is fully initialized
-if (( $+functions[async_start_worker] )); then
-  async_start_worker        jj_status_worker -u
-  async_unregister_callback jj_status_worker
-  async_register_callback   jj_status_worker jj_status_callback
-fi
