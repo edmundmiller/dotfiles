@@ -37,5 +37,6 @@ with lib;
   modules.shell.bitwarden.config.server = "bitwarden.com";
 
   # HACK https://github.com/danth/stylix/issues/200
-  stylix.image = ../modules/themes/functional/config/wallpaper.png;
+  # Disabled for headless servers to avoid dconf/GTK dependencies
+  # stylix.image = ../modules/themes/functional/config/wallpaper.png;
 }
