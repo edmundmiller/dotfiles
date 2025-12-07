@@ -8,6 +8,7 @@ This is a Nix-based dotfiles repository using Flakes for managing system configu
 
 - **Seqeratop**: Work macOS machine with development tools
 - **MacTraitor-Pro**: Personal macOS machine
+- **NUC**: NixOS home server (deployed remotely via `hey nuc`)
 
 ## Critical File Editing Rules
 
@@ -29,6 +30,14 @@ hey gc           # Run garbage collection
 hey check        # Run flake checks
 hey show         # Show flake outputs
 hey update       # Update flake inputs (alias: hey u)
+
+# Remote deployment commands:
+hey nuc          # Deploy to NUC server (will prompt for sudo password)
+hey nuc-test     # Test NUC config without adding to boot menu
+hey nuc-status   # Show NUC system status
+hey nuc-ssh      # SSH into NUC
+hey nuc-service <name>  # Check service status on NUC
+hey nuc-rollback # Roll back NUC to previous generation
 
 # Development commands:
 hey search <term>    # Search for packages
@@ -78,6 +87,7 @@ The `hey` command is implemented as a modular JustScript system that provides th
 - `rebuild.just` - System rebuild commands (`rebuild`, `test`, `rollback`)
 - `flake.just` - Flake management (`update`, `upgrade`, `check`, `show`)
 - `nix.just` - General nix utilities (`gc`, `repl`, `search`, `shell`)
+- `remote.just` - Remote deployment commands for NixOS hosts (`nuc`, `nuc-test`, etc.)
 
 **Key Features:**
 
@@ -152,6 +162,115 @@ hey search firefox         # Search for packages in nixpkgs
 hey shell python3          # Start temporary shell with package
 hey u nixpkgs              # Update specific input (alias for update)
 ```
+
+## Remote NixOS Deployment
+
+The repository includes a full remote deployment system for NixOS hosts, starting with the NUC server.
+
+### Quick Start
+
+```bash
+# Deploy to NUC (interactive sudo password required)
+hey nuc
+
+# Check deployment status
+hey nuc-status
+
+# Roll back if needed
+hey nuc-rollback
+```
+
+### How Remote Deployment Works
+
+1. **Push changes**: Local commits pushed to GitHub (`jj git push`)
+2. **SSH to target**: Connects to NUC via SSH (uses 1Password SSH agent)
+3. **Update repository**: Pulls latest changes from GitHub on NUC
+4. **Remote build**: Runs `nixos-rebuild` on NUC (native x86_64, fast)
+5. **Interactive sudo**: Prompts for password (security best practice)
+
+### Available Remote Commands
+
+**Deployment:**
+- `hey nuc` - Full deploy (recommended)
+- `hey rebuild-nuc` - Alias for `hey nuc`
+- `hey nuc-test` - Test without adding to boot menu
+
+**Management:**
+- `hey nuc-ssh` - SSH into NUC
+- `hey nuc-status` - Show system status
+- `hey nuc-service <name>` - Check service (e.g., `hey nuc-service docker`)
+- `hey nuc-logs [unit]` - View system logs
+- `hey nuc-rollback` - Roll back to previous generation
+- `hey nuc-generations` - List all generations
+
+**Advanced:**
+- `hey nuc-local` - Build locally (slow cross-compile, testing only)
+
+### NUC Configuration
+
+**SSH Setup** (`modules/shell/ssh.nix`):
+```nix
+"nuc" = {
+  hostname = "192.168.1.222";
+  user = "emiller";
+  forwardAgent = true;
+};
+```
+
+**Host Config** (`hosts/nuc/default.nix`):
+- Enable/disable modules like other hosts
+- Services: docker, taskchampion, jellyfin, etc.
+- See `hosts/nuc/DEPLOY.md` for detailed documentation
+
+### Deployment Workflow Example
+
+```bash
+# 1. Make changes to NUC configuration
+vim hosts/nuc/default.nix
+
+# 2. Test locally for syntax errors
+hey check
+
+# 3. Deploy to NUC
+hey nuc
+# Enter sudo password when prompted
+
+# 4. Verify service is running
+hey nuc-service taskchampion-sync-server
+
+# 5. If issues, roll back
+hey nuc-rollback
+```
+
+### Why Remote Builds?
+
+- **Fast**: Native x86_64 build vs. slow ARM→x86_64 cross-compile
+- **Simple**: No cross-compilation complexity or emulation
+- **Secure**: Interactive sudo prevents unauthorized deployments
+- **Reliable**: Build on the actual target hardware
+
+### Troubleshooting
+
+**SSH connection fails:**
+```bash
+ssh nuc  # Test SSH host alias
+ssh emiller@192.168.1.222  # Test direct connection
+```
+
+**Repository not found:**
+The `hey nuc` command auto-clones on first run. If needed:
+```bash
+hey nuc-ssh
+git clone https://github.com/edmundmiller/dotfiles.git ~/dotfiles-deploy
+```
+
+**Build failures:**
+```bash
+hey nuc-logs nixos-rebuild 100  # View build logs
+hey nuc-rollback                # Restore previous working state
+```
+
+See `hosts/nuc/DEPLOY.md` for comprehensive deployment documentation.
 
 ## Claude Code Plugin Validation
 
