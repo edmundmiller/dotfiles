@@ -27,6 +27,7 @@
         taskwarrior = {
           enable = true;
           syncUrl = "http://192.168.1.222:8080";
+          defaultContext = "work";
         };
         tmux.enable = true;
         zsh.enable = true;
