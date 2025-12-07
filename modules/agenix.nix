@@ -13,8 +13,9 @@ with lib;
 with lib.my;
 let
   inherit (inputs) agenix;
-  # On Darwin, agenix might not be fully compatible yet - skip secrets loading
-  # On NixOS, use the hostname-based secrets directory
+  # Shared secrets directory (cross-platform, for secrets used on multiple hosts)
+  sharedSecretsDir = "${toString ../hosts}/shared/secrets";
+  # NixOS host-specific secrets directory
   secretsDir =
     if isDarwin then ""
     else "${toString ../hosts}/${config.networking.hostName}/secrets";
@@ -49,4 +50,26 @@ in
         ]);
     })
   ];
+
+  # Darwin: use home-manager's age module for user-level secrets
+  # Use fixed paths so taskwarrior can reference them (no shell expansion needed)
+  home-manager.users.${config.user.name} = mkIf isDarwin {
+    imports = [ agenix.homeManagerModules.age ];
+
+    age = {
+      # Fixed mount points (taskwarrior include directive doesn't support shell expansion)
+      secretsDir = "${config.user.home}/.local/share/agenix";
+      secretsMountPoint = "${config.user.home}/.local/share/agenix.d";
+
+      # SSH key used for decryption
+      identityPaths = [ "${config.user.home}/.ssh/id_ed25519" ];
+
+      # Shared secrets (available on all Darwin hosts)
+      secrets = {
+        taskchampion-sync = {
+          file = "${sharedSecretsDir}/taskchampion-sync.age";
+        };
+      };
+    };
+  };
 }

@@ -7,12 +7,11 @@
 data.location=~/.local/share/task
 news.version=3.4.1
 
-# TaskChampion sync server (via Tailscale)
-# Credentials stored in sync.rc (and 1Password: "TaskChampion Sync Server")
+# TaskChampion sync configuration
+# - Credentials: encrypted with agenix, decrypted at login
+# - URL: configured per-host in modules/shell/taskwarrior.nix
+# - 1Password backup: "TaskChampion Sync Server" in Private vault
 include ~/.config/task/sync.rc
-
-# Old iCloud sync (disabled - now using TaskChampion server)
-# sync.local.server_dir=~/Library/Mobile Documents/iCloud~com~mav~taskchamp/Documents/taskchamp
 
 # Force CLI taskwarrior to use TaskChampion backend too
 taskd.use_taskchampion=yes

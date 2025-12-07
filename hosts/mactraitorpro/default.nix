@@ -25,6 +25,10 @@
         git.enable = true;
         jj.enable = true;
         ssh.enable = true;
+        taskwarrior = {
+          enable = true;
+          syncUrl = "http://nuc.cinnamon-rooster.ts.net:8080";
+        };
         tmux.enable = true;
         zsh.enable = true;
       };
@@ -80,23 +84,8 @@
         show-process-indicators = false;
         show-recents = false;
         static-only = true;
-        # TODO: Make this user-specific
-        # "/Users/${username}/Applications/Home Manager Apps/Telegram.app"
-        persistent-apps = [
-          # "/Applications/Brave Browser.app"
-          # "/Applications/Wavebox.app"
-          # "/Users/edmundmiller/Applications/Home Manager Apps/Telegram.app"
-          # "/Users/edmundmiller/Applications/Home Manager Apps/Discord.app"
-          # "/Users/edmundmiller/Applications/Home Manager Apps/Cinny.app"
-          # "/Applications/Halloy.app"
-          # "/Users/edmundmiller/Applications/Home Manager Apps/Visual Studio Code.app"
-          # "/Users/edmundmiller/Applications/Home Manager Apps/GitKraken.app"
-          # "/Users/edmundmiller/Applications/Home Manager Apps/Alacritty.app"
-          # "/System/Applications/Music.app"
-          # "/Applications/Heynote.app"
-          # "/Applications/Joplin.app"
-          # "/System/Applications/Launchpad.app"
-        ];
+        # TODO: persistent-apps disabled due to nix-darwin type issue
+        # See: https://github.com/nix-darwin/nix-darwin/issues/1428
         tilesize = 36;
         # Disable hot corners
         wvous-bl-corner = 1;
