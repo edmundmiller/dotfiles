@@ -492,7 +492,7 @@
     else
       typeset -g p10k_jj_status="$3"
     fi
-    typeset -g p10k_jj_status_stale= p10k_jj_status_updated=1
+    typeset -g p10k_jj_status_stale= p10k_jj_status_updated=1 p10k_jj_placeholder=
     p10k display -r
   }
 
@@ -504,9 +504,25 @@
     emulate -L zsh -o extended_glob
     (( $+commands[jj] )) || return
     [[ -n ./(../)#(.jj)(#qN/) ]] || return
+
     typeset -g p10k_jj_status_stale=1 p10k_jj_status_updated=
+
+    # Set placeholder if no cached status yet
+    if [[ -z $p10k_jj_status ]]; then
+      typeset -g p10k_jj_placeholder=1
+      typeset -g p10k_jj_quick=$(jj --ignore-working-copy --no-pager log --no-graph --limit 1 -r "@" \
+        -T 'separate(" ", coalesce(bookmarks, ""), change_id.shortest(4))' 2>/dev/null)
+      [[ -z $p10k_jj_quick ]] && typeset -g p10k_jj_quick="jj"
+      typeset -g p10k_jj_quick+=" ▶▶▶"  # Distinctive marker to verify it changes
+    fi
+
+    # Show placeholder if no cache (cleared by callback)
+    p10k segment -f grey -c '$p10k_jj_placeholder' -e -t '$p10k_jj_quick'
+    # Show stale cached status while updating
     p10k segment -f grey -c '$p10k_jj_status_stale' -e -t '$p10k_jj_status'
+    # Show fresh status when async completes
     p10k segment -c '$p10k_jj_status_updated' -e -t '$p10k_jj_status'
+
     async_job jj_status_worker jj_status $PWD
   }
 
