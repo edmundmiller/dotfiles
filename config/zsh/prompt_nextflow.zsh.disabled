@@ -1,0 +1,57 @@
+# Custom Nextflow segment - shows version when in Nextflow project or typing Nextflow commands
+# 
+# To enable, add to .p10k.zsh:
+# 1. Add these lines in the custom segments section:
+#    typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW="prompt_nextflow"
+#    typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_FOREGROUND=$blue
+#    typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_BACKGROUND=''
+#    typeset -g POWERLEVEL9K_CUSTOM_NEXTFLOW_SHOW_ON_COMMAND='nextflow|nf'
+#
+# 2. Add 'custom_nextflow' to POWERLEVEL9K_LEFT_PROMPT_ELEMENTS
+#
+# 3. Source this file from .zshrc or add the function to .p10k.zsh
+#
+# NOTE: This segment has performance implications - it does file existence checks
+# on every prompt. Consider making it fully async like the jj segment.
+
+function prompt_nextflow() {
+  # Only show if in Nextflow project directory (file-based detection only)
+  # P10k's SHOW_ON_COMMAND handles showing when typing nextflow commands
+  if [[ -f "main.nf" ]] || [[ -f "nextflow.config" ]] || [[ -d "modules" ]] || [[ -d "workflows" ]] || [[ -n *.nf(#qN) ]]; then
+    # Use cached version to avoid slow nextflow -version call (nextflow takes ~600ms!)
+    local cache_file="$XDG_CACHE_HOME/zsh/nextflow_version"
+    local nf_version=""
+
+    # Check if cache exists and is newer than 24 hours
+    if [[ -f "$cache_file" && $(( $(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || echo 0) )) -lt 86400 ]]; then
+      nf_version=$(cat "$cache_file" 2>/dev/null)
+    else
+      # Async update: spawn background process to update cache
+      if command -v nextflow >/dev/null 2>&1; then
+        # Use existing cache immediately if available
+        if [[ -f "$cache_file" ]]; then
+          nf_version=$(cat "$cache_file" 2>/dev/null)
+        fi
+
+        # Update cache in background
+        {
+          local new_version
+          new_version=$(nextflow -version 2>/dev/null | sed -n '2s/.*version \([^ ]*\).*/\1/p')
+          if [[ -n "$new_version" ]]; then
+            mkdir -p "$(dirname "$cache_file")"
+            echo "$new_version" > "$cache_file"
+          fi
+        } &!
+      fi
+    fi
+
+    if [[ -n "$nf_version" ]]; then
+      echo -n "nf $nf_version"
+    else
+      # Fallback: just show "nf" if nextflow is available but no version cached yet
+      if command -v nextflow >/dev/null 2>&1; then
+        echo -n "nf"
+      fi
+    fi
+  fi
+}
