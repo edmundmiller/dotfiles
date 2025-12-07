@@ -60,35 +60,35 @@
       ];
     };
 
-    "/data/media/downloads" = {
-      device = "unas:/data/media/downloads";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
+    # "/data/media/downloads" = {
+    #   device = "unas:/data/media/downloads";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
 
-    "/data/media/video/shows" = {
-      device = "unas:/data/media/video/shows";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
+    # "/data/media/video/shows" = {
+    #   device = "unas:/data/media/video/shows";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
 
-    "/data/media/video/movies" = {
-      device = "unas:/data/media/video/movies";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
+    # "/data/media/video/movies" = {
+    #   device = "unas:/data/media/video/movies";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
 
     "/data/media/photos" = {
       device = "unas:/data/media/photos";

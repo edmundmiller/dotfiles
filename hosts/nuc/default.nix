@@ -30,7 +30,7 @@
     services = {
       audiobookshelf.enable = true;
       docker.enable = true;
-      hass.enable = true;
+      hass.enable = false;
       homepage.enable = true;
       jellyfin.enable = true;
       prowlarr.enable = true;
@@ -38,10 +38,10 @@
       radarr.enable = true;
       sonarr.enable = true;
       ssh.enable = true;
-      syncthing.enable = true;
+      syncthing.enable = false;
       tailscale.enable = true;
       taskchampion.enable = true;
-      transmission.enable = true;
+      transmission.enable = false;
     };
 
     # theme.active = "alucard";

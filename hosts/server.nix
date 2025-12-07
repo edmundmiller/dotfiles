@@ -33,7 +33,8 @@
   };
 
   # HACK https://github.com/danth/stylix/issues/200
-  stylix.image = ../modules/themes/functional/config/wallpaper.png;
+  # Disabled for headless servers to avoid dconf/GTK dependencies
+  # stylix.image = ../modules/themes/functional/config/wallpaper.png;
 
   # https://discourse.nixos.org/t/deployment-tools-evaluating-nixops-deploy-rs-and-vanilla-nix-rebuild/36388/12?u=emiller88
   system.autoUpgrade.enable = true;

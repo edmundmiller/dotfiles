@@ -17,6 +17,21 @@ in
 
   # NixOS-only service (OCI containers)
   config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
+    # Enable podman for OCI containers
+    virtualisation.podman = {
+      enable = true;
+      # Required for containers to communicate via DNS
+      defaultNetwork.settings.dns_enabled = true;
+    };
+
+    # Explicitly use podman backend for OCI containers
+    virtualisation.oci-containers.backend = "podman";
+
+    # Ensure data directory exists with correct permissions
+    systemd.tmpfiles.rules = [
+      "d /home/emiller/taskchampion-sync-server 0750 emiller users -"
+    ];
+
     virtualisation.oci-containers.containers."taskchampion-sync-server" = {
       autoStart = true;
       image = "ghcr.io/gothenburgbitfactory/taskchampion-sync-server:latest";
