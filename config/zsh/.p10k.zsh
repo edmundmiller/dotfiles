@@ -47,12 +47,6 @@
   local white='#F1F1F0'
 
   # Define custom segments using P10k's custom segment feature
-  typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS="prompt_custom_vcs"
-  typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS_FOREGROUND=208  # Orange for JJ
-  typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS_BACKGROUND=''
-  # Visual identifier for JJ segment
-  typeset -g POWERLEVEL9K_CUSTOM_JJ_VCS_VISUAL_IDENTIFIER_EXPANSION='${P9K_VISUAL_IDENTIFIER}'
-  
   typeset -g POWERLEVEL9K_CUSTOM_TODO="prompt_todo"
   typeset -g POWERLEVEL9K_CUSTOM_TODO_FOREGROUND=$cyan
   typeset -g POWERLEVEL9K_CUSTOM_TODO_BACKGROUND=''
@@ -66,7 +60,8 @@
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # context                 # user@host
     dir                       # current directory
-    custom_jj_vcs             # jj or git status (custom)
+    vcs                       # git status (disabled in jj repos via my_git_formatter)
+    jj                        # jj status (André Arko's async implementation)
     nix_shell                 # nix development environment
     virtualenv                # python virtual environment
     node_version              # node.js version for projects
@@ -239,8 +234,94 @@
   typeset -g POWERLEVEL9K_VCS_OUTGOING_CHANGES_ICON=':⇡'
   # Don't show the number of commits next to the ahead/behind arrows.
   typeset -g POWERLEVEL9K_VCS_{COMMITS_AHEAD,COMMITS_BEHIND}_MAX_NUM=1
-  # Remove space between '⇣' and '⇡' and all trailing spaces.
-  typeset -g POWERLEVEL9K_VCS_CONTENT_EXPANSION='${${${P9K_CONTENT/⇣* :⇡/⇣⇡}// }//:/ }'
+
+  # Custom git formatter that disables git status in jj repos
+  # This prevents showing both git and jj status in colocated repos
+  function my_git_formatter() {
+    emulate -L zsh -o extended_glob
+
+    # Skip git status in jj repositories - let jj segment handle it
+    if [[ -n ./(../)#(.jj)(#qN/) ]]; then
+      typeset -g my_git_format=""
+      return
+    fi
+
+    if [[ -n $P9K_CONTENT ]]; then
+      typeset -g my_git_format=$P9K_CONTENT
+      return
+    fi
+
+    if (( $1 )); then
+      local       meta='%244F'
+      local      clean='%2F'
+      local   modified='%178F'
+      local  untracked='%39F'
+      local conflicted='%196F'
+    else
+      local       meta='%244F'
+      local      clean='%244F'
+      local   modified='%244F'
+      local  untracked='%244F'
+      local conflicted='%244F'
+    fi
+
+    local status_color
+    if (( VCS_STATUS_NUM_UNTRACKED )); then
+      status_color='%3F'
+    elif (( VCS_STATUS_COMMITS_AHEAD && VCS_STATUS_COMMITS_BEHIND )); then
+      status_color='%1F'
+    elif (( VCS_STATUS_COMMITS_AHEAD )); then
+      status_color='%6F'
+    elif (( VCS_STATUS_COMMITS_BEHIND )); then
+      status_color='%5F'
+    else
+      status_color='%2F'
+    fi
+
+    local res
+    local where
+    if [[ -n $VCS_STATUS_LOCAL_BRANCH ]]; then
+      res+="${status_color}"
+      where=${(V)VCS_STATUS_LOCAL_BRANCH}
+    elif [[ -n $VCS_STATUS_TAG ]]; then
+      res+="${meta}#"
+      where=${(V)VCS_STATUS_TAG}
+    fi
+
+    (( $#where > 32 )) && where[13,-13]="…"
+    res+="${where//\%/%%}"
+
+    if [[ -z $where ]]; then
+      local name
+      name=$(command git name-rev --name-only --no-undefined --always HEAD)
+      name="${name#tags/}"
+      name="${name#remotes/}"
+      res+="${status_color}${(V)name}"
+    fi
+
+    if [[ -n ${VCS_STATUS_REMOTE_BRANCH:#$VCS_STATUS_LOCAL_BRANCH} ]]; then
+      res+="${meta}:${clean}${(V)VCS_STATUS_REMOTE_BRANCH//\%/%%}"
+    fi
+
+    (( VCS_STATUS_COMMITS_BEHIND )) && res+=" ${clean}⇣${VCS_STATUS_COMMITS_BEHIND}"
+    (( VCS_STATUS_COMMITS_AHEAD && !VCS_STATUS_COMMITS_BEHIND )) && res+=" "
+    (( VCS_STATUS_COMMITS_AHEAD  )) && res+="${clean}⇡${VCS_STATUS_COMMITS_AHEAD}"
+    (( VCS_STATUS_STASHES        )) && res+=" ${clean}*${VCS_STATUS_STASHES}"
+    [[ -n $VCS_STATUS_ACTION     ]] && res+=" ${conflicted}${VCS_STATUS_ACTION}"
+    (( VCS_STATUS_NUM_CONFLICTED )) && res+=" ${conflicted}~${VCS_STATUS_NUM_CONFLICTED}"
+    (( VCS_STATUS_NUM_STAGED     )) && res+=" ${modified}+${VCS_STATUS_NUM_STAGED}"
+    (( VCS_STATUS_NUM_UNSTAGED   )) && res+=" ${modified}!${VCS_STATUS_NUM_UNSTAGED}"
+    (( VCS_STATUS_NUM_UNTRACKED  )) && res+=" ${untracked}?${VCS_STATUS_NUM_UNTRACKED}"
+
+    typeset -g my_git_format=$res
+  }
+  functions -M my_git_formatter 2>/dev/null
+
+  # Use custom git formatter
+  typeset -g POWERLEVEL9K_VCS_DISABLE_GITSTATUS_FORMATTING=true
+  typeset -g POWERLEVEL9K_VCS_CONTENT_EXPANSION='${$((my_git_formatter(1)))+${my_git_format}}'
+  typeset -g POWERLEVEL9K_VCS_LOADING_CONTENT_EXPANSION='${$((my_git_formatter(0)))+${my_git_format}}'
+  typeset -g POWERLEVEL9K_VCS_{STAGED,UNSTAGED,UNTRACKED,CONFLICTED,COMMITS_AHEAD,COMMITS_BEHIND}_MAX_NUM=-1
 
   # Grey current time.
   typeset -g POWERLEVEL9K_TIME_FOREGROUND=$grey
@@ -355,124 +436,190 @@ function prompt_nextflow() {
   fi
 }
 
-# Global variables for async JJ prompt
-typeset -g _jj_prompt_async_output=""
-typeset -g _jj_prompt_async_workspace=""
+# ==============================================================================
+# JJ (Jujutsu) Async Prompt - based on André Arko's implementation
+# https://andre.arko.net/2025/06/20/a-jj-prompt-for-powerlevel10k/
+# ==============================================================================
+#
+# Prompt sections (comment out sections you don't want):
+# - jj_add:    snapshot changes to jj (no output)
+# - jj_at:     bookmark name and distance from @  | main›1
+# - jj_remote: count changes ahead/behind remote  | ⇣2⇡1
+# - jj_change: the current jj change ID           | kkor
+# - jj_desc:   current change description         | first line (or pencil icon)
+# - jj_status: counts of added/removed/modified   | +1 -4 ^2
+# - jj_op:     the current jj operation ID        | b44825e56a5a (disabled by default)
 
-# Async worker function - runs in background
-function _jj_prompt_async_worker() {
-  local workspace="$1"
+function jj_status() {
+  emulate -L zsh
+  cd "$1"
 
-  # Check if we're in a JJ repo - fast check first
-  if ! jj root &>/dev/null; then
-    # Fall back to git
-    local git_info
-    git_info=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-    if [[ -n "$git_info" ]]; then
-      echo "git:$git_info"
-    fi
-    return
+  local grey='%244F'
+  local green='%2F'
+  local blue='%39F'
+  local red='%196F'
+  local yellow='%3F'
+  local cyan='%6F'
+  local magenta='%5F'
+
+  ## jj_add - snapshot changes (updates working copy to reflect filesystem)
+  # Note: This may fail silently in non-interactive shells with SSH signing enabled
+  # but subsequent commands with --ignore-working-copy will still work
+  jj --at-operation=@ debug snapshot 2>/dev/null || true
+
+
+  ## jj_at - find closest bookmark and distance from @
+  local branch=$(jj --ignore-working-copy --at-op=@ --no-pager log --no-graph --limit 1 -r "
+    coalesce(
+      heads(::@ & (bookmarks() | remote_bookmarks() | tags())),
+      heads(@:: & (bookmarks() | remote_bookmarks() | tags())),
+      trunk()
+    )" -T "separate(' ', bookmarks, tags)" 2> /dev/null | cut -d ' ' -f 1)
+
+  if [[ -n $branch ]]; then
+    [[ $branch =~ "\*$" ]] && branch=${branch::-1}
+
+    local VCS_STATUS_COMMITS_AFTER=$(jj --ignore-working-copy --at-op=@ --no-pager log --no-graph -r "$branch..@ & (~empty() | merges())" -T '"n"' 2> /dev/null | wc -c | tr -d ' ')
+    local VCS_STATUS_COMMITS_BEFORE=$(jj --ignore-working-copy --at-op=@ --no-pager log --no-graph -r "@..$branch & (~empty() | merges())" -T '"n"' 2> /dev/null | wc -c | tr -d ' ')
+
+    # Get remote tracking info
+    local counts=($(jj --ignore-working-copy --at-op=@ --no-pager bookmark list -r $branch -T '
+      if(remote,
+        separate(" ",
+          name ++ "@" ++ remote,
+          coalesce(tracking_ahead_count.exact(), tracking_ahead_count.lower()),
+          coalesce(tracking_behind_count.exact(), tracking_behind_count.lower()),
+          if(tracking_ahead_count.exact(), "0", "+"),
+          if(tracking_behind_count.exact(), "0", "+"),
+        ) ++ "\n"
+      )
+    ' 2>/dev/null))
+
+    local VCS_STATUS_LOCAL_BRANCH=$branch
+    local VCS_STATUS_COMMITS_AHEAD=$counts[2]
+    local VCS_STATUS_COMMITS_BEHIND=$counts[3]
+    local VCS_STATUS_COMMITS_AHEAD_PLUS=$counts[4]
+    local VCS_STATUS_COMMITS_BEHIND_PLUS=$counts[5]
   fi
 
-  # JJ repository - gather comprehensive info
-  local bookmark change_id files_status
+  # Color bookmark based on sync status with remote
+  local status_color=${green}
+  (( VCS_STATUS_COMMITS_AHEAD )) && status_color=${cyan}
+  (( VCS_STATUS_COMMITS_BEHIND )) && status_color=${magenta}
+  (( VCS_STATUS_COMMITS_AHEAD && VCS_STATUS_COMMITS_BEHIND )) && status_color=${red}
 
-  # Get closest bookmark (if any)
-  bookmark=$(jj log --no-graph --limit 1 -r "coalesce(closest_bookmark(@), '')" -T 'if(bookmarks, bookmarks.join(" "), "")' 2>/dev/null)
+  local res
+  local where=${(V)VCS_STATUS_LOCAL_BRANCH}
+  # Truncate long branch names: first 12 … last 12
+  (( $#where > 32 )) && where[13,-13]="…"
+  res+="${status_color}${where//\%/%%}"
 
-  # Get change ID (always present)
-  change_id=$(jj log -r @ --no-graph -T 'change_id.short(8)' 2>/dev/null)
+  # ‹42 if before the local bookmark
+  (( VCS_STATUS_COMMITS_BEFORE )) && res+="‹${VCS_STATUS_COMMITS_BEFORE}"
+  # ›42 if beyond the local bookmark
+  (( VCS_STATUS_COMMITS_AFTER )) && res+="›${VCS_STATUS_COMMITS_AFTER}"
 
-  # Get file change summary using diff.summary()
-  files_status=$(jj log -r @ -T 'diff.summary()' 2>/dev/null | awk '
-    BEGIN {a=0; d=0; m=0}
-    /^A / {a++}
-    /^D / {d++}
-    /^M / {m++}
-    END {
-      out=""
-      if (a > 0) out = out " +" a
-      if (m > 0) out = out " ~" m
-      if (d > 0) out = out " -" d
-      print out
-    }
-  ')
 
-  # Build output string
-  local output=""
+  ## jj_remote - ahead/behind remote (uncomment to enable)
+  # # ⇣42 if behind the remote
+  # (( VCS_STATUS_COMMITS_BEHIND )) && res+=" ${green}⇣${VCS_STATUS_COMMITS_BEHIND}"
+  # (( VCS_STATUS_COMMITS_BEHIND_PLUS )) && res+="${VCS_STATUS_COMMITS_BEHIND_PLUS}"
+  # # ⇡42 if ahead of the remote
+  # (( VCS_STATUS_COMMITS_AHEAD && !VCS_STATUS_COMMITS_BEHIND )) && res+=" "
+  # (( VCS_STATUS_COMMITS_AHEAD  )) && res+="${green}⇡${VCS_STATUS_COMMITS_AHEAD}"
+  # (( VCS_STATUS_COMMITS_AHEAD_PLUS )) && res+="${VCS_STATUS_COMMITS_AHEAD_PLUS}"
 
-  # Add bookmark if present
-  if [[ -n "$bookmark" ]]; then
-    output="$bookmark "
-  fi
 
-  # Add change ID (always present in jj)
-  output="${output}${change_id}"
+  ## jj_change - change ID with color coding
+  IFS="#" local change=($(jj --ignore-working-copy --at-op=@ --no-pager log --no-graph --limit 1 -r "@" -T '
+    separate("#",
+      change_id.shortest(4).prefix(),
+      coalesce(change_id.shortest(4).rest(), "\0"),
+      commit_id.shortest(4).prefix(),
+      coalesce(commit_id.shortest(4).rest(), "\0"),
+      concat(
+        if(conflict, "💥"),
+        if(divergent, "🚧"),
+        if(hidden, "👻"),
+        if(immutable, "🔒"),
+      ),
+    )' 2>/dev/null))
+  local VCS_STATUS_CHANGE=($change[1] $change[2])
+  local VCS_STATUS_COMMIT=($change[3] $change[4])
+  local VCS_STATUS_ACTION=$change[5]
 
-  # Add file status if present
-  if [[ -n "$files_status" ]]; then
-    output="${output}${files_status}"
-  fi
+  # Change ID: magenta bold prefix + grey rest
+  res+=" ${magenta}${VCS_STATUS_CHANGE[1]}${grey}${VCS_STATUS_CHANGE[2]}"
+  # Status icons: 💥🚧👻🔒
+  [[ -n $VCS_STATUS_ACTION ]] && res+=" ${red}${VCS_STATUS_ACTION}"
+  # Commit ID (uncomment to show): blue bold prefix + grey rest
+  # res+=" ${blue}${VCS_STATUS_COMMIT[1]}${grey}${VCS_STATUS_COMMIT[2]}"
 
-  # Return the formatted output
-  echo "jj:$output"
+
+  ## jj_desc - description or pencil icon if empty but has changes
+  local VCS_STATUS_MESSAGE=$(jj --ignore-working-copy --at-op=@ --no-pager log --no-graph --limit 1 -r "@" -T "coalesce(description.first_line(), if(!empty, '\Uf040 '))" 2>/dev/null)
+  [[ -n $VCS_STATUS_MESSAGE ]] && res+=" ${green}${VCS_STATUS_MESSAGE}"
+
+
+  ## jj_status - file change counts
+  local VCS_STATUS_CHANGES=($(jj log --ignore-working-copy --at-op=@ --no-graph --no-pager -r @ -T "diff.summary()" 2> /dev/null | awk 'BEGIN {a=0;d=0;m=0} /^A / {a++} /^D / {d++} /^M / {m++} /^R / {m++} /^C / {a++} END {print(a,d,m)}'))
+  (( VCS_STATUS_CHANGES[1] )) && res+=" %F{green}+${VCS_STATUS_CHANGES[1]}"
+  (( VCS_STATUS_CHANGES[2] )) && res+=" %F{red}-${VCS_STATUS_CHANGES[2]}"
+  (( VCS_STATUS_CHANGES[3] )) && res+=" ${yellow}^${VCS_STATUS_CHANGES[3]}"
+
+
+  ## jj_op - operation ID (uncomment to enable)
+  # local VCS_STATUS_OP=$(jj --ignore-working-copy --at-op=@ --no-pager op log --limit 1 --no-graph -T "id.short()" 2>/dev/null)
+  # [[ -n $VCS_STATUS_OP ]] && res+=" ${blue}${VCS_STATUS_OP}"
+
+
+  echo $res
 }
 
-# Async callback - handles results from worker
-function _jj_prompt_async_callback() {
-  local job=$1
-  local return_code=$2
-  local stdout=$3
-  local workspace=$_jj_prompt_async_workspace
-
-  # Only update if we're still in the same workspace
-  if [[ "$PWD" == "$workspace" ]]; then
-    _jj_prompt_async_output="$stdout"
-    # Trigger prompt refresh
-    p10k display -r
-  fi
-}
-
-# Main VCS prompt function with async support
-function prompt_custom_vcs() {
-  # Use cached output if available and workspace hasn't changed
-  if [[ "$PWD" == "$_jj_prompt_async_workspace" && -n "$_jj_prompt_async_output" ]]; then
-    local type="${_jj_prompt_async_output%%:*}"
-    local content="${_jj_prompt_async_output#*:}"
-
-    if [[ "$type" == "jj" ]]; then
-      # Color for JJ - orange
-      echo -n "$content"
-    elif [[ "$type" == "git" ]]; then
-      # Use default color for git
-      echo -n "$content"
-    fi
-    return 0
-  fi
-
-  # Start async job if available
-  if (( $+functions[async_job] )); then
-    _jj_prompt_async_workspace="$PWD"
-    async_job _jj_prompt_worker _jj_prompt_async_worker "$PWD"
+function jj_status_callback() {
+  emulate -L zsh
+  if [[ $2 -ne 0 ]]; then
+    typeset -g p10k_jj_status=
   else
-    # Fallback to synchronous if async not available
-    local result
-    result=$(_jj_prompt_async_worker "$PWD")
-    local type="${result%%:*}"
-    local content="${result#*:}"
-    echo -n "$content"
+    typeset -g p10k_jj_status="$3"
   fi
+  typeset -g p10k_jj_status_stale= p10k_jj_status_updated=1
+  p10k display -r
 }
 
-# Initialize async worker for JJ prompt (if zsh-async is available)
-if (( $+functions[async_init] )); then
-  async_init
-  async_start_worker _jj_prompt_worker -n
-  async_register_callback _jj_prompt_worker _jj_prompt_async_callback
-fi
+function prompt_jj() {
+  emulate -L zsh -o extended_glob
+  # Skip if jj not installed
+  (( $+commands[jj] )) || return
+  # Skip if not in a jj repository
+  [[ -n ./(../)#(.jj)(#qN/) ]] || return
+
+  typeset -g p10k_jj_status_stale=1 p10k_jj_status_updated=
+  # Show stale (grey) status while updating
+  p10k segment -f grey -c '$p10k_jj_status_stale' -e -t '$p10k_jj_status'
+  # Show fresh status when updated
+  p10k segment -c '$p10k_jj_status_updated' -e -t '$p10k_jj_status'
+  # Trigger async update
+  async_job jj_status_worker jj_status $PWD
+}
+
+# Instant prompt support - shows cached jj status during instant prompt
+function instant_prompt_jj() {
+  # During instant prompt, just show the cached status if available
+  [[ -n $p10k_jj_status ]] || return
+  p10k segment -e -t '$p10k_jj_status'
+}
 
 # Tell `p10k configure` which file it should overwrite.
 typeset -g POWERLEVEL9K_CONFIG_FILE=${${(%):-%x}:a}
 
 (( ${#p10k_config_opts} )) && setopt ${p10k_config_opts[@]}
 'builtin' 'unset' 'p10k_config_opts'
+
+# Initialize async worker for jj status (must be outside the () block)
+# This runs after p10k is fully initialized
+if (( $+functions[async_start_worker] )); then
+  async_start_worker        jj_status_worker -u
+  async_unregister_callback jj_status_worker
+  async_register_callback   jj_status_worker jj_status_callback
+fi
