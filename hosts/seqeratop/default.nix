@@ -24,6 +24,10 @@
         direnv.enable = true;
         git.enable = true;
         jj.enable = true;
+        taskwarrior = {
+          enable = true;
+          syncUrl = "http://192.168.1.222:8080";
+        };
         tmux.enable = true;
         zsh.enable = true;
       };
