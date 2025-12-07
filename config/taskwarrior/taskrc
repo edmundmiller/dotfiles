@@ -19,6 +19,10 @@ taskd.use_taskchampion=yes
 # Taskwarrior-TUI Configuration
 uda.taskwarrior-tui.backend=taskchampion
 
+# Background sync - runs every 60 seconds while TUI is open
+uda.taskwarrior-tui.background_process=task sync
+uda.taskwarrior-tui.background_process_period=60
+
 # TUI Report Configuration
 uda.taskwarrior-tui.task-report.next.filter=status:pending
 uda.taskwarrior-tui.task-report.show-info=true
