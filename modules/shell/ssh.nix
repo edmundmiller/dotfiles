@@ -20,15 +20,18 @@ in
     home-manager.users.${config.user.name} = {
       programs.ssh = {
         enable = true;
+        enableDefaultConfig = false;
         
-        # Global SSH configuration
-        extraConfig = ''
-          # Use 1Password SSH agent
-          IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-        '';
-
         # Host-specific configurations
         matchBlocks = {
+          # Default host config (required when using extraConfig)
+          "*" = {
+            # Use 1Password SSH agent
+            extraOptions = {
+              IdentityAgent = "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
+            };
+          };
+
           # NUC server
           "nuc" = {
             hostname = "192.168.1.222";
