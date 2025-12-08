@@ -42,7 +42,8 @@
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
-    jj-spr.url = "github:LucioFranco/jj-spr";
+    # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
+    # jj-spr.url = "github:LucioFranco/jj-spr";
   };
 
   outputs =
@@ -102,11 +103,8 @@
         overlays = mapModules ./overlays import;
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
-        packages."${darwinSystem}" = (mapModules ./packages (p: darwinPkgs.callPackage p { })) // {
-          jj-spr = inputs.jj-spr.packages.${darwinSystem}.default.overrideAttrs (old: {
-            buildInputs = (old.buildInputs or []) ++ [ darwinPkgs.zlib ];
-          });
-        };
+        # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
+        packages."${darwinSystem}" = mapModules ./packages (p: darwinPkgs.callPackage p { });
 
         nixosModules = {
           dotfiles = import ./.;
