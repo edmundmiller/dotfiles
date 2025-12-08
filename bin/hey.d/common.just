@@ -7,6 +7,8 @@ FLAKE_DIR := justfile_directory() / ".."
 # Use FLAKE_HOST env var if set, otherwise map known hostnames
 flake_host := env_var_or_default('FLAKE_HOST', if `hostname -s` == "Mac" {
     "MacTraitor-Pro"
+} else if `hostname -s` == "L19W56QXR4" {
+    "Seqeratop"
 } else {
     `hostname -s`
 })
