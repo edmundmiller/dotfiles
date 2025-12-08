@@ -289,7 +289,9 @@
 
     if [[ -z $where ]]; then
       local name
-      name=$(command git name-rev --name-only --no-undefined --always HEAD)
+      # Suppress stderr as defensive fix - this function shouldn't be called
+      # outside a git repo, but prevent error output if it somehow is
+      name=$(command git name-rev --name-only --no-undefined --always HEAD 2>/dev/null)
       name="${name#tags/}"
       name="${name#remotes/}"
       res+="${status_color}${(V)name}"
@@ -521,7 +523,7 @@
       typeset -g p10k_jj_quick=$(jj --ignore-working-copy --no-pager log --no-graph --limit 1 -r "@" \
         -T 'separate(" ", coalesce(bookmarks, ""), change_id.shortest(4))' 2>/dev/null)
       [[ -z $p10k_jj_quick ]] && typeset -g p10k_jj_quick="jj"
-      typeset -g p10k_jj_quick+=" ▶▶▶"  # Distinctive marker to verify it changes
+      p10k_jj_quick+=" ▶▶▶"  # Distinctive marker to verify it changes
     fi
 
     # Show placeholder if no cache (cleared by callback)
