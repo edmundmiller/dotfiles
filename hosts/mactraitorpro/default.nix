@@ -66,11 +66,8 @@
     system.primaryUser = "emiller";
 
     # Additional system packages
-    environment.systemPackages = with pkgs; [
-      (inputs.jj-spr.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
-        buildInputs = (old.buildInputs or []) ++ [ zlib ];
-      }))
-    ];
+    # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
+    environment.systemPackages = [ ];
 
     # Enable sudo authentication with Touch ID.
     security.pam.services.sudo_local.touchIdAuth = true;

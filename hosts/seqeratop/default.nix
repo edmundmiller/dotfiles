@@ -43,11 +43,13 @@
     system.primaryUser = "edmundmiller";
 
     # Additional system packages
-    environment.systemPackages = with pkgs; [
-      (inputs.jj-spr.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
-        buildInputs = (old.buildInputs or []) ++ [ zlib ];
-      }))
-    ];
+    # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
+    # environment.systemPackages = with pkgs; [
+    #   (inputs.jj-spr.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
+    #     buildInputs = (old.buildInputs or []) ++ [ zlib ];
+    #   }))
+    # ];
+    environment.systemPackages = [ ];
 
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {
