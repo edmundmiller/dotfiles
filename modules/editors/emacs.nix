@@ -45,8 +45,6 @@ in
 
       ## Optional dependencies
       fd # faster projectile indexing
-      unstable.whisper-ctranslate2 # whisper.el
-      ffmpeg # whisper.el
       imagemagick # for image-dired
       (mkIf config.programs.gnupg.agent.enable pinentry-emacs) # in-emacs gnupg prompts
       zstd # for undo-fu-session/undo-tree compression
