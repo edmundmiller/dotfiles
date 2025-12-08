@@ -65,6 +65,7 @@
 
   # Right prompt segments.
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
+    taskwarrior               # taskwarrior pending/overdue count
     command_execution_time    # previous command duration
     python_version            # python version
     background_jobs           # running background jobs
@@ -170,6 +171,13 @@
   typeset -g POWERLEVEL9K_PYTHON_VERSION_VISUAL_IDENTIFIER_EXPANSION='🐍'
   typeset -g POWERLEVEL9K_PACKAGE_VISUAL_IDENTIFIER_EXPANSION='📦'
   typeset -g POWERLEVEL9K_BACKGROUND_JOBS_VISUAL_IDENTIFIER_EXPANSION='⚙️'
+
+  # ==[ TASKWARRIOR SEGMENT ]==
+  # Show pending task count with overdue indicator
+  typeset -g POWERLEVEL9K_TASKWARRIOR_FOREGROUND=$cyan
+  typeset -g POWERLEVEL9K_TASKWARRIOR_VISUAL_IDENTIFIER_EXPANSION='󰱒'
+  # Format: "!3/28" if overdue tasks exist, otherwise just "28"
+  typeset -g POWERLEVEL9K_TASKWARRIOR_CONTENT_EXPANSION='${P9K_TASKWARRIOR_OVERDUE_COUNT:+"!$P9K_TASKWARRIOR_OVERDUE_COUNT/"}$P9K_TASKWARRIOR_PENDING_COUNT'
 
   # Don't show Python version in virtualenv (we have separate python_version segment)
   typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_PYTHON_VERSION=false
