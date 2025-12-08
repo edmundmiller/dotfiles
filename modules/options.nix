@@ -47,6 +47,8 @@ with lib.my;
     user =
       let
         user = builtins.getEnv "USER";
+        # Use system.primaryUser as fallback when $USER is root/empty (e.g., during sudo darwin-rebuild)
+        # This ensures the correct username is used on hosts with different usernames (e.g., edmundmiller on Seqeratop)
         name =
           if
             elem user [
@@ -54,7 +56,7 @@ with lib.my;
               "root"
             ]
           then
-            "emiller"
+            config.system.primaryUser
           else
             user;
         description =
@@ -91,13 +93,13 @@ with lib.my;
 
       # I only need a subset of home-manager's capabilities. That is, access to
       # its home.file, home.xdg.configFile and home.xdg.dataFile so I can deploy
-      # files easily to my $HOME, but 'home-manager.users.emiller.home.file.*'
+      # files easily to my $HOME, but 'home-manager.users.<user>.home.file.*'
       # is much too long and harder to maintain, so I've made aliases in:
       #
-      #   home.file        ->  home-manager.users.emiller.home.file
-      #   home.configFile  ->  home-manager.users.emiller.home.xdg.configFile
-      #   home.dataFile    ->  home-manager.users.emiller.home.xdg.dataFile
-      #   user.packages    ->  home-manager.users.emiller.home.packages
+      #   home.file        ->  home-manager.users.<user>.home.file
+      #   home.configFile  ->  home-manager.users.<user>.home.xdg.configFile
+      #   home.dataFile    ->  home-manager.users.<user>.home.xdg.dataFile
+      #   user.packages    ->  home-manager.users.<user>.home.packages
       users.${config.user.name} = {
         home = {
           file = mkAliasDefinitions options.home.file;
