@@ -89,6 +89,7 @@
         "rlwrap"
         "task"
         "taskopen"
+        "tasksh"
         "taskwarrior-tui"
         "timewarrior"
       ];
