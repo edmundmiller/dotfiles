@@ -38,7 +38,7 @@ uda.taskwarrior-tui.task-report.jump-on-task-add=true
 # =============================================================================
 # BASIC BEHAVIOR
 # =============================================================================
-default.command=focus
+default.command=next
 confirmation=off
 bulk=0
 recurrence.confirmation=no
@@ -114,31 +114,12 @@ context.home.write=workspace:personal
 # =============================================================================
 # REPORTS
 # =============================================================================
-# Motion Dashboard Report - Optimized task list
-report.motion.columns=workspace,priority,urgency,due,estimate,totalactivetime,description.truncated,project,scheduled
-report.motion.labels=Workspace,Priority,Urgency,Due,Estimate,Active Time,Description,Project,Scheduled
-report.motion.sort=priority-,urgency-,due+
-report.motion.filter=status:pending
-report.motion.description=Motion Dashboard - Optimized Task list
-
-# Default next report (before Motion Dashboard customization):
-# report.next.columns=id,start.active,entry.age,urgency,priority,project,tag,recur,scheduled.countdown,due.relative,until.remaining,description,uuid.short
-# report.next.labels=ID,Active,Age,Urgency,Pri,Project,Tag,Recur,S,Due,Until,Description,UUID
-# report.next.sort=start-,urgency-
-# report.next.filter=status:pending limit:page
-
-# Customized next report using Motion Dashboard layout:
-report.next.columns=workspace,priority,urgency,due,estimate,totalactivetime,description.truncated,project,scheduled
-report.next.labels=Workspace,Priority,Urgency,Due,Estimate,Active Time,Description,Project,Scheduled
-report.next.sort=urgency-
-report.next.filter=status:pending
-
-# Focus Report - Beautiful optimized view of actionable tasks
-report.focus.description=Beautiful focused view of actionable tasks
-report.focus.columns=id,workspace,start.age,entry.age,priority,project,tags,due.relative,description.count,urgency
-report.focus.labels=ID,Workspace,Active,Age,P,Project,Tags,Due,Description,Urg
-report.focus.sort=urgency-,due+,project+
-report.focus.filter=status:pending -WAITING -BLOCKED
+# Primary triage report - optimized for 120+ char terminal
+report.next.description=Triage view - actionable tasks sorted by urgency
+report.next.columns=id,start.active,priority,due.relative,entry.age,estimate,totalactivetime,description.truncated_count,project.parent,tags.count
+report.next.labels=ID,A,P,Due,Age,Est,Act,Description,Project,Tags
+report.next.sort=urgency-,due+
+report.next.filter=status:pending -WAITING -BLOCKED
 
 # Writing progress report - friendly layout
 report.writing.description=Dissertation writing progress
@@ -247,13 +228,19 @@ color.active=bold white on rgb345
 
 # Due date coloring - Peach -> Yellow -> Red progression
 color.due=rgb543
-color.due.today=rgb543
-color.overdue=rgb533
+color.due.today=bold rgb543
+color.overdue=bold rgb533
 
-# Priority coloring
-color.pri.H=rgb533
+# Priority coloring - bold for emphasis on high priority
+color.pri.H=bold rgb533
 color.pri.M=rgb543
 color.pri.L=rgb345
+color.pri.none=
+
+# Override default UDA priority colors (conflicts with color.pri.*)
+color.uda.priority.H=
+color.uda.priority.M=
+color.uda.priority.L=
 
 # Special tag highlighting
 color.tag.next=bold rgb533
