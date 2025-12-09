@@ -9,6 +9,9 @@ merge_tags = true
 [my_reminders]
 service = "applereminders"
 description_template = "{{applereminderstitle}}"
+# Only pull from Reminders list for now
+lists = ["Reminders"]
+# TODO: Add Family list once only_if_assigned support is implemented for applereminders service
 
 [personal_github]
 service = "github"
