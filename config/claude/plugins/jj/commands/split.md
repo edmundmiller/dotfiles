@@ -10,6 +10,8 @@ model: claude-haiku-4-5
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../hooks/jj-state.sh"
 source "$SCRIPT_DIR/../hooks/jj-templates.sh"
+source "$SCRIPT_DIR/../hooks/jj-diff-context.sh"
+source "$SCRIPT_DIR/../hooks/pattern-expand.sh"
 
 !# Validate pattern argument
 
@@ -37,18 +39,20 @@ fi
 
 - Current status: !`jj status`
 - Current commit: !`format_commit_short`
-- Changed files: !`jj diff -r @ --summary`
+- Changed files: !`get_diff_summary`
 
 ## Your Task
 
 Split unwanted changes matching pattern "$ARGUMENTS" from current commit (@) into a new child commit with an AI-generated description.
 
-**Pattern Expansion:**
+**Pattern Expansion (handled by expand_pattern function):**
 
-- `test` → Match test files: `*test*.{py,js,ts,jsx,tsx,java,go,rs,cpp,c,h}`, `*spec*.{py,js,ts,jsx,tsx}`, `test_*.py`, `*_test.go`, `*Test.java`
-- `docs` → Match documentation: `*.md`, `README*`, `CHANGELOG*`, `LICENSE*`, `docs/**/*`
-- `config` → Match config files: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.conf`, `.*.rc`, `.*ignore`
+- `test` → Test files: `*test*.{py,js,ts,jsx,tsx,java,go,rs,cpp,c,h}`, `*spec*`, `test_*`, `*_test.*`
+- `docs` → Documentation: `*.md`, `README*`, `CHANGELOG*`, `LICENSE*`, `docs/**/*`
+- `config` → Config files: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.conf`, `.*rc`, `.*ignore`
 - Custom patterns → Use as-is (glob syntax)
+
+Use: `PATTERNS=$(expand_pattern "$ARGUMENTS")` to get the appropriate jj move flags.
 
 **Workflow:**
 
@@ -76,19 +80,28 @@ Split unwanted changes matching pattern "$ARGUMENTS" from current commit (@) int
 **Example execution:**
 
 ```bash
+# Get patterns using expand_pattern function
+PATTERNS=$(expand_pattern "$ARGUMENTS")
+
 # Split test files
 jj new @
-jj move --from @- -p 'glob:**/*test*.py' -p 'glob:**/*_test.py'
+eval "jj move --from @- $PATTERNS"  # eval needed to expand the pattern flags
+~/bin/jj-ai-desc.py @
+
+# Or manually for specific cases:
+# Split test files
+jj new @
+jj move --from @- $(expand_pattern "test")
 ~/bin/jj-ai-desc.py @
 
 # Split documentation
 jj new @
-jj move --from @- -p 'glob:*.md' -p 'glob:README*' -p 'glob:docs/**'
+jj move --from @- $(expand_pattern "docs")
 ~/bin/jj-ai-desc.py @
 
 # Split config files
 jj new @
-jj move --from @- -p 'glob:*.json' -p 'glob:*.yaml' -p 'glob:*.toml'
+jj move --from @- $(expand_pattern "config")
 ~/bin/jj-ai-desc.py @
 ```
 
