@@ -5,15 +5,21 @@ description: Stack a commit with intelligent message generation
 model: claude-haiku-4-5
 ---
 
+!# Source utility scripts
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../hooks/jj-state.sh"
+source "$SCRIPT_DIR/../hooks/jj-templates.sh"
+
 !# Determine workflow state
 
 # Check if current commit has a description
 
-has_description=$(jj log -r @ --no-graph -T 'if(description, "has", "none")')
+has_description=$(get_commit_state)
 
 # Check if current commit is empty
 
-is_empty=$(jj log -r @ --no-graph -T 'if(empty, "empty", "has_changes")')
+is_empty=$(is_empty_commit)
 
 !# Handle workflow logic
 
@@ -23,7 +29,7 @@ if [ "$is_empty" = "empty" ] && [ "$has_description" = "none" ]; then
 
 echo "ℹ️ **Current commit is empty with no description**"
 echo ""
-jj log -r @ -T 'concat("Current: ", change_id.short(), " (empty)")' --no-graph
+echo "Current: $(format_commit_short) (empty)"
 echo ""
 echo "💡 **Tip:** Make some changes first, then use \`/jj:commit\` to describe and stack"
 exit 0
@@ -74,4 +80,4 @@ Create commit for changes above. New files already tracked.
 Use conventional commit (feat/fix/refactor/docs/test/chore), under 72 chars, `-m` flag.
 Note: `jj commit` describes @ and creates new working copy in one command.
 
-Result: !`jj log -r @ -T 'concat(change_id.short(), ": ", description)' --no-graph`
+Result: !`format_commit_short`

@@ -64,6 +64,61 @@ Skills activate automatically based on context. Slash commands require explicit 
 
 **hunk.nvim:** Works as diff editor for interactive splitting
 
+## Utility Scripts
+
+The plugin includes reusable bash utility scripts that provide a clean API for common jj operations:
+
+### `hooks/jj-state.sh`
+
+State inspection functions for checking commit status:
+
+```bash
+# Source the script
+source "$SCRIPT_DIR/../hooks/jj-state.sh"
+
+# Check if commit has description
+has_desc=$(get_commit_state)  # Returns: "has" or "none"
+
+# Check if commit is empty
+is_empty=$(is_empty_commit)  # Returns: "empty" or "has_changes"
+
+# Get working copy status
+status=$(get_working_copy_status)  # Returns: jj status output
+```
+
+### `hooks/jj-templates.sh`
+
+Template formatting functions for consistent commit display:
+
+```bash
+# Source the script
+source "$SCRIPT_DIR/../hooks/jj-templates.sh"
+
+# Format single commit (current by default)
+commit=$(format_commit_short)      # Returns: "abc123: commit message"
+parent=$(format_commit_short '@-')  # Format specific revision
+
+# Format multiple commits as list
+list=$(format_commit_list '@|@-')  # Returns multi-line list
+
+# Format ancestor chain
+ancestors=$(format_ancestors 3)    # Returns: last 3 ancestors
+```
+
+**Benefits:**
+
+- DRY principle: Eliminates ~15 lines of duplication across commands
+- Single source of truth for state detection and formatting
+- Testable: Comprehensive pytest coverage (19 tests)
+- Reusable: Easy to integrate into new commands
+
+**Testing:**
+
+```bash
+# Run utility script tests
+uvx pytest test_hook_scripts.py -v
+```
+
 ## Installation
 
 Part of dotfiles configuration. To use in other projects: Copy plugin directory to `.claude/plugins/jj/`
@@ -88,10 +143,12 @@ bun test hooks/jj-hooks.test.mjs
 ```
 
 **Test Coverage:**
+
 - Git-to-jj translator: Command interception, read-only vs. write detection, mapping accuracy
 - Plan commit: Task vs. question detection, pattern matching, edge cases
 - Integration helper: Session validation, error handling
 - Workflow scenarios: Real-world command sequences
+- Utility scripts: State inspection, template formatting, script structure validation (19 tests)
 
 ## Troubleshooting
 
