@@ -171,11 +171,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 eval "$(fnm env --use-on-cd --shell zsh)"
 export NXF_SYNTAX_PARSER=v2
 
-# try - ephemeral workspace manager
-if [[ -x "$HOME/src/personal/try/try.rb" ]]; then
-  eval "$($HOME/src/personal/try/try.rb init ~/src/tries)"
-fi
-
 alias vanguard="$(go env GOPATH)/bin/vanguard"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
