@@ -46,6 +46,22 @@ def jj_templates_script(plugin_dir):
     return script
 
 
+@pytest.fixture
+def jj_diff_context_script(plugin_dir):
+    """Get path to jj-diff-context.sh script."""
+    script = plugin_dir / "hooks" / "jj-diff-context.sh"
+    assert script.exists(), f"jj-diff-context.sh not found at {script}"
+    return script
+
+
+@pytest.fixture
+def pattern_expand_script(plugin_dir):
+    """Get path to pattern-expand.sh script."""
+    script = plugin_dir / "hooks" / "pattern-expand.sh"
+    assert script.exists(), f"pattern-expand.sh not found at {script}"
+    return script
+
+
 def run_bash_function(script_path: Path, function_name: str, *args) -> str:
     """
     Run a bash function from a script and return its output.
@@ -206,6 +222,159 @@ class TestJjTemplates:
 
 
 # ============================================================================
+# TESTS: jj-diff-context.sh
+# ============================================================================
+
+
+class TestJjDiffContext:
+    """Tests for jj-diff-context.sh utility functions."""
+
+    def test_get_diff_summary_default(self, jj_diff_context_script):
+        """Test get_diff_summary with default revision."""
+        mock_summary = "M file1.py\\nA file2.js"
+        output = mock_jj_command(
+            jj_diff_context_script, "get_diff_summary", mock_summary
+        )
+        assert "file1.py" in output or "file2.js" in output
+
+    def test_get_diff_summary_custom_revision(self, jj_diff_context_script):
+        """Test get_diff_summary accepts custom revision parameter."""
+        bash_cmd = f"""
+        source {jj_diff_context_script}
+        declare -F get_diff_summary
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        assert result.returncode == 0
+
+    def test_get_diff_stats_default(self, jj_diff_context_script):
+        """Test get_diff_stats with default revision."""
+        mock_stats = "file1.py | 10 ++++++----\\n 1 file changed, 6 insertions(+), 4 deletions(-)"
+        output = mock_jj_command(jj_diff_context_script, "get_diff_stats", mock_stats)
+        assert "file1.py" in output or "file changed" in output
+
+    def test_extract_changed_files(self, jj_diff_context_script):
+        """Test extract_changed_files parses diff output."""
+        # Mock jj diff --summary output
+        bash_cmd = f"""
+        jj() {{
+            echo "M file1.py"
+            echo "A file2.js"
+            echo "D file3.ts"
+        }}
+        export -f jj
+        source {jj_diff_context_script}
+        extract_changed_files
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        output = result.stdout.strip()
+        assert "file1.py" in output
+        assert "file2.js" in output
+        assert "file3.ts" in output
+
+    def test_format_diff_for_ai(self, jj_diff_context_script):
+        """Test format_diff_for_ai creates formatted output."""
+        mock_output = "M file1.py"
+        output = mock_jj_command(
+            jj_diff_context_script, "format_diff_for_ai", mock_output
+        )
+        assert "Diff Summary" in output or "Diff Statistics" in output
+
+
+# ============================================================================
+# TESTS: pattern-expand.sh
+# ============================================================================
+
+
+class TestPatternExpand:
+    """Tests for pattern-expand.sh utility functions."""
+
+    def test_expand_test_pattern(self, pattern_expand_script):
+        """Test expand_test_pattern returns test file globs."""
+        output = run_bash_function(pattern_expand_script, "expand_test_pattern")
+        assert "glob:**/*test*" in output
+        assert "glob:**/*spec*" in output
+        assert "glob:**/test_*" in output
+
+    def test_expand_docs_pattern(self, pattern_expand_script):
+        """Test expand_docs_pattern returns documentation globs."""
+        output = run_bash_function(pattern_expand_script, "expand_docs_pattern")
+        assert "glob:**.md" in output
+        assert "glob:**/README*" in output
+        assert "glob:**/CHANGELOG*" in output
+
+    def test_expand_config_pattern(self, pattern_expand_script):
+        """Test expand_config_pattern returns config file globs."""
+        output = run_bash_function(pattern_expand_script, "expand_config_pattern")
+        assert "glob:**.json" in output
+        assert "glob:**.yaml" in output
+        assert "glob:**.toml" in output
+
+    def test_expand_custom_pattern(self, pattern_expand_script):
+        """Test expand_custom_pattern wraps custom glob."""
+        bash_cmd = f"""
+        source {pattern_expand_script}
+        expand_custom_pattern "*.md"
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        output = result.stdout.strip()
+        assert "glob:*.md" in output
+
+    def test_expand_pattern_test_keyword(self, pattern_expand_script):
+        """Test expand_pattern routes 'test' to expand_test_pattern."""
+        bash_cmd = f"""
+        source {pattern_expand_script}
+        expand_pattern "test"
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        output = result.stdout.strip()
+        assert "glob:**/*test*" in output
+
+    def test_expand_pattern_docs_keyword(self, pattern_expand_script):
+        """Test expand_pattern routes 'docs' to expand_docs_pattern."""
+        bash_cmd = f"""
+        source {pattern_expand_script}
+        expand_pattern "docs"
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        output = result.stdout.strip()
+        assert "glob:**.md" in output
+
+    def test_expand_pattern_config_keyword(self, pattern_expand_script):
+        """Test expand_pattern routes 'config' to expand_config_pattern."""
+        bash_cmd = f"""
+        source {pattern_expand_script}
+        expand_pattern "config"
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        output = result.stdout.strip()
+        assert "glob:**.json" in output
+
+    def test_expand_pattern_custom(self, pattern_expand_script):
+        """Test expand_pattern routes unknown patterns to expand_custom_pattern."""
+        bash_cmd = f"""
+        source {pattern_expand_script}
+        expand_pattern "**/*.tsx"
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        output = result.stdout.strip()
+        assert "glob:**/*.tsx" in output
+
+
+# ============================================================================
 # TESTS: Script Structure and Conventions
 # ============================================================================
 
@@ -247,6 +416,42 @@ class TestScriptStructure:
         content = jj_templates_script.read_text()
         assert "set -euo pipefail" in content, "Should use strict error handling"
 
+    def test_jj_diff_context_is_executable(self, jj_diff_context_script):
+        """Test jj-diff-context.sh has executable permissions."""
+        import os
+
+        assert os.access(jj_diff_context_script, os.X_OK), (
+            "jj-diff-context.sh should be executable"
+        )
+
+    def test_jj_diff_context_has_shebang(self, jj_diff_context_script):
+        """Test jj-diff-context.sh has proper bash shebang."""
+        first_line = jj_diff_context_script.read_text().split("\n")[0]
+        assert first_line == "#!/usr/bin/env bash", "Should have bash shebang"
+
+    def test_jj_diff_context_has_set_flags(self, jj_diff_context_script):
+        """Test jj-diff-context.sh uses set -euo pipefail for safety."""
+        content = jj_diff_context_script.read_text()
+        assert "set -euo pipefail" in content, "Should use strict error handling"
+
+    def test_pattern_expand_is_executable(self, pattern_expand_script):
+        """Test pattern-expand.sh has executable permissions."""
+        import os
+
+        assert os.access(pattern_expand_script, os.X_OK), (
+            "pattern-expand.sh should be executable"
+        )
+
+    def test_pattern_expand_has_shebang(self, pattern_expand_script):
+        """Test pattern-expand.sh has proper bash shebang."""
+        first_line = pattern_expand_script.read_text().split("\n")[0]
+        assert first_line == "#!/usr/bin/env bash", "Should have bash shebang"
+
+    def test_pattern_expand_has_set_flags(self, pattern_expand_script):
+        """Test pattern-expand.sh uses set -euo pipefail for safety."""
+        content = pattern_expand_script.read_text()
+        assert "set -euo pipefail" in content, "Should use strict error handling"
+
 
 # ============================================================================
 # INTEGRATION TESTS
@@ -263,6 +468,29 @@ class TestIntegration:
         source {jj_templates_script}
         declare -F get_commit_state
         declare -F format_commit_short
+        """
+        result = subprocess.run(
+            ["bash", "-c", bash_cmd], capture_output=True, text=True
+        )
+        assert result.returncode == 0
+
+    def test_can_source_all_four_scripts(
+        self,
+        jj_state_script,
+        jj_templates_script,
+        jj_diff_context_script,
+        pattern_expand_script,
+    ):
+        """Test that all four utility scripts can be sourced together without conflicts."""
+        bash_cmd = f"""
+        source {jj_state_script}
+        source {jj_templates_script}
+        source {jj_diff_context_script}
+        source {pattern_expand_script}
+        declare -F get_commit_state
+        declare -F format_commit_short
+        declare -F get_diff_summary
+        declare -F expand_pattern
         """
         result = subprocess.run(
             ["bash", "-c", bash_cmd], capture_output=True, text=True

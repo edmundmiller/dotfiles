@@ -105,18 +105,70 @@ list=$(format_commit_list '@|@-')  # Returns multi-line list
 ancestors=$(format_ancestors 3)    # Returns: last 3 ancestors
 ```
 
+### `hooks/jj-diff-context.sh`
+
+Diff operations and analysis for AI consumption:
+
+```bash
+# Source the script
+source "$SCRIPT_DIR/../hooks/jj-diff-context.sh"
+
+# Get diff summary
+summary=$(get_diff_summary)  # Changed files for current commit
+parent_summary=$(get_diff_summary '@-')  # For specific revision
+
+# Get diff statistics
+stats=$(get_diff_stats)  # Line change statistics
+
+# Extract changed files
+files=$(extract_changed_files)  # Newline-separated file list
+echo "$files" | while read -r file; do
+    echo "Changed: $file"
+done
+
+# Format for AI consumption
+ai_context=$(format_diff_for_ai)  # Formatted diff summary + stats
+```
+
+### `hooks/pattern-expand.sh`
+
+Pattern expansion for split operations:
+
+```bash
+# Source the script
+source "$SCRIPT_DIR/../hooks/pattern-expand.sh"
+
+# Expand pattern keywords
+test_patterns=$(expand_pattern "test")    # Test file globs
+docs_patterns=$(expand_pattern "docs")    # Documentation globs
+config_patterns=$(expand_pattern "config") # Config file globs
+custom_patterns=$(expand_pattern "*.md")  # Custom glob
+
+# Use in jj move command
+jj new @
+eval "jj move --from @- $test_patterns"  # Move test files to child commit
+```
+
+**Supported patterns:**
+
+- `test` - Test and spec files (_.test._, _.spec._, test\_*, *Test.\*)
+- `docs` - Documentation (_.md, README_, CHANGELOG*, docs/\*\*/*)
+- `config` - Configuration (_.json, _.yaml, *.toml, .*rc, .\*ignore)
+- Custom - Any glob pattern (e.g., "_.tsx", "src/\*\*/_.py")
+
 **Benefits:**
 
-- DRY principle: Eliminates ~15 lines of duplication across commands
-- Single source of truth for state detection and formatting
-- Testable: Comprehensive pytest coverage (19 tests)
+- DRY principle: Eliminates duplication across commands
+- Single source of truth for state, formatting, diffs, and patterns
+- Testable: Comprehensive pytest coverage (39 tests)
 - Reusable: Easy to integrate into new commands
+- Consistent: Pattern expansion logic centralized
 
 **Testing:**
 
 ```bash
-# Run utility script tests
-uvx pytest test_hook_scripts.py -v
+# Run all utility script tests
+uvx pytest test_hook_scripts.py -v  # 39 tests covering all 4 scripts
 ```
 
 ## Installation
@@ -148,7 +200,13 @@ bun test hooks/jj-hooks.test.mjs
 - Plan commit: Task vs. question detection, pattern matching, edge cases
 - Integration helper: Session validation, error handling
 - Workflow scenarios: Real-world command sequences
-- Utility scripts: State inspection, template formatting, script structure validation (19 tests)
+- Utility scripts (39 tests total):
+  - State inspection: commit state, emptiness checks (5 tests)
+  - Template formatting: commit display, lists, ancestors (6 tests)
+  - Diff operations: summary, stats, file extraction, AI formatting (5 tests)
+  - Pattern expansion: test/docs/config patterns, custom globs (9 tests)
+  - Script structure: shebangs, permissions, error handling (12 tests)
+  - Integration: multi-script sourcing, directory independence (2 tests)
 
 ## Troubleshooting
 

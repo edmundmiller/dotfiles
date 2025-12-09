@@ -10,6 +10,7 @@ model: claude-haiku-4-5
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../hooks/jj-state.sh"
 source "$SCRIPT_DIR/../hooks/jj-templates.sh"
+source "$SCRIPT_DIR/../hooks/jj-diff-context.sh"
 
 !# Determine workflow state
 
@@ -65,7 +66,7 @@ fi
 ## Context
 
 - Status: !`jj status`
-- Changes: !`jj diff -r @ --stat`
+- Changes: !`get_diff_stats`
 
 ## Task
 
