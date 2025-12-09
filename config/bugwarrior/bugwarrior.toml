@@ -1,5 +1,16 @@
 [general]
-targets = ["my_reminders", "github_assigned_issues", "github_assigned_prs", "work_linear"]
+targets = [
+    "my_reminders",
+    "work_linear",
+    "github_nfcore_issues",
+    "github_nfcore_prs",
+    "github_seqera_issues",
+    "github_seqera_prs",
+    "github_personal_issues",
+    "github_personal_prs",
+    "github_phd_issues",
+    "github_phd_prs",
+]
 taskrc = "~/.taskrc"
 log_level = "INFO"
 annotation_links = true
@@ -12,32 +23,137 @@ description_template = "{{applereminderstitle}}"
 # Only pull from Reminders list for now
 lists = ["Reminders"]
 # TODO: Add Family list once only_if_assigned support is implemented for applereminders service
+workspace_template = "personal"
 
-[github_assigned_issues]
+[work_linear]
+service = "linear"
+api_token = "@oracle:eval:op read \"op://Private/Linear Bugwarrior/credential\""
+only_if_assigned = "edmund.a.miller@gmail.com"
+status_types = ["unstarted", "started"]
+import_labels_as_tags = true
+add_tags = ["linear"]
+default_priority = "M"
+workspace_template = "family"
+
+# =============================================================================
+# GitHub Targets - Grouped by Workspace
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# nf-core workspace: nf-core, bioinformaticsorphanage, bioconda
+# -----------------------------------------------------------------------------
+[github_nfcore_issues]
 service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
 description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
-# Only issues assigned to me, open, updated in last 3 months
-query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 -repo:edmundmiller/mill-docs"
+query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:nf-core org:bioinformaticsorphanage org:bioconda"
 include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "assigned"]
 default_priority = "L"
+workspace_template = "nfcore"
 
-[github_assigned_prs]
+[github_nfcore_prs]
 service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
 description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
-# Only PRs assigned to me, open, updated in last 3 months, exclude bots
-query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 -author:app/renovate -author:app/dependabot"
+query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nf-core org:bioinformaticsorphanage org:bioconda -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "assigned", "pr"]
 default_priority = "L"
+workspace_template = "nfcore"
+
+# -----------------------------------------------------------------------------
+# seqera workspace: nextflow-io, seqeralabs, seqera-services
+# -----------------------------------------------------------------------------
+[github_seqera_issues]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflow-io org:seqeralabs org:seqera-services"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "assigned"]
+default_priority = "L"
+workspace_template = "seqera"
+
+[github_seqera_prs]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflow-io org:seqeralabs org:seqera-services -author:app/renovate -author:app/dependabot"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "assigned", "pr"]
+default_priority = "L"
+workspace_template = "seqera"
+
+# -----------------------------------------------------------------------------
+# personal workspace: edmundmiller, BioJulia
+# -----------------------------------------------------------------------------
+[github_personal_issues]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 user:edmundmiller org:BioJulia -repo:edmundmiller/mill-docs"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "assigned"]
+default_priority = "L"
+workspace_template = "personal"
+
+[github_personal_prs]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 user:edmundmiller org:BioJulia -author:app/renovate -author:app/dependabot"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "assigned", "pr"]
+default_priority = "L"
+workspace_template = "personal"
+
+# -----------------------------------------------------------------------------
+# phd workspace: Functional-Genomics-Lab
+# -----------------------------------------------------------------------------
+[github_phd_issues]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:Functional-Genomics-Lab"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "assigned"]
+default_priority = "L"
+workspace_template = "phd"
+
+[github_phd_prs]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:Functional-Genomics-Lab -author:app/renovate -author:app/dependabot"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "assigned", "pr"]
+default_priority = "L"
+workspace_template = "phd"
 
 # TODO: Add PR reviews target - uncomment when ready
 # [github_reviews]
@@ -52,12 +168,3 @@ default_priority = "L"
 # include_user_repos = false
 # add_tags = ["github", "review"]
 # default_priority = "H"
-
-[work_linear]
-service = "linear"
-api_token = "@oracle:eval:op read \"op://Private/Linear Bugwarrior/credential\""
-only_if_assigned = "edmund.a.miller@gmail.com"
-status_types = ["unstarted", "started"]
-import_labels_as_tags = true
-add_tags = ["linear"]
-default_priority = "M"
