@@ -101,15 +101,17 @@ Managed in `modules/shell/ssh.nix`:
 ### 2. Repository Sync
 
 - Changes pushed to `github.com/edmundmiller/dotfiles` (main branch)
-- NUC clones/updates from GitHub at `~/dotfiles-deploy`
-- Ensures Mac and NUC are always in sync
+- NUC repository at `~/dotfiles-deploy` is **always reset** to match GitHub
+- Uses `git reset --hard origin/main` to handle force-pushes and divergence
+- `git clean -fd` removes any untracked files
+- **NUC repository is read-only** - all changes happen on Mac and push to GitHub
 
 ### 3. Remote Build
 
 The `hey nuc` command:
 1. Pushes local commits to GitHub (`jj git push`)
 2. SSHs to NUC with TTY allocation (`ssh -t`)
-3. Updates repository on NUC (`git pull`)
+3. Force-resets repository on NUC (`git reset --hard origin/main`)
 4. Runs `sudo nixos-rebuild switch --flake .#nuc`
 5. Prompts for your sudo password interactively
 
@@ -141,15 +143,22 @@ echo $SSH_AUTH_SOCK
 # Should point to: ~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock
 ```
 
-### Repository Not Found
+### Repository Divergence or Conflicts
+
+The deployment automatically handles divergent branches and force-pushes:
 
 ```bash
-# Manually set up repository
-ssh nuc
-git clone https://github.com/edmundmiller/dotfiles.git ~/dotfiles-deploy
+# Repository is always force-reset to match GitHub
+git reset --hard origin/main
+git clean -fd
 ```
 
-The `hey nuc` command will automatically clone on first run.
+**No manual intervention needed** - the NUC repository always mirrors GitHub exactly.
+
+If you accidentally made changes on the NUC:
+- They will be discarded on next `hey nuc`
+- This is intentional - all changes should happen on Mac
+- Use NixOS generations to roll back if needed, not git history
 
 ### Sudo Password Issues
 
