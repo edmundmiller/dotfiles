@@ -1,5 +1,5 @@
 [general]
-targets = ["my_reminders", "personal_github", "work_linear"]
+targets = ["my_reminders", "github_assigned_issues", "github_assigned_prs", "work_linear"]
 taskrc = "~/.taskrc"
 log_level = "INFO"
 annotation_links = true
@@ -13,17 +13,45 @@ description_template = "{{applereminderstitle}}"
 lists = ["Reminders"]
 # TODO: Add Family list once only_if_assigned support is implemented for applereminders service
 
-[personal_github]
+[github_assigned_issues]
 service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "{% if githubtype == 'pull_request' %}PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}{% else %}{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}{% endif %}"
-only_if_assigned = "edmundmiller"
-include_user_issues = true
+description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+# Only issues assigned to me, open, updated in last 3 months
+query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 -repo:edmundmiller/mill-docs"
+include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "personal"]
+add_tags = ["github", "assigned"]
 default_priority = "L"
+
+[github_assigned_prs]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+# Only PRs assigned to me, open, updated in last 3 months, exclude bots
+query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 -author:app/renovate -author:app/dependabot"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "assigned", "pr"]
+default_priority = "L"
+
+# TODO: Add PR reviews target - uncomment when ready
+# [github_reviews]
+# service = "github"
+# login = "edmundmiller"
+# token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+# username = "edmundmiller"
+# description_template = "Review: {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+# # PRs requesting your review that aren't drafts
+# query = "is:pr review-requested:edmundmiller is:open draft:false"
+# include_user_issues = false
+# include_user_repos = false
+# add_tags = ["github", "review"]
+# default_priority = "H"
 
 [work_linear]
 service = "linear"
