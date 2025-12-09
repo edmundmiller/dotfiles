@@ -30,6 +30,7 @@
           defaultContext = "work";
         };
         tmux.enable = true;
+        try.enable = true;
         zsh.enable = true;
       };
 
