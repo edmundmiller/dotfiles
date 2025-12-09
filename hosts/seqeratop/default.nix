@@ -84,6 +84,13 @@
         "fd"
         # Doom Extra
         "tree-sitter"
+
+        # Task management
+        "rlwrap"
+        "task"
+        "taskopen"
+        "taskwarrior-tui"
+        "timewarrior"
       ];
       casks = [
         "1password-cli"
