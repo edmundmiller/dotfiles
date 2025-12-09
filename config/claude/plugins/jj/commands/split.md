@@ -5,6 +5,12 @@ description: Split unwanted changes into new child commit with AI description
 model: claude-haiku-4-5
 ---
 
+!# Source utility scripts
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../hooks/jj-state.sh"
+source "$SCRIPT_DIR/../hooks/jj-templates.sh"
+
 !# Validate pattern argument
 
 if [ -z "$ARGUMENTS" ]; then
@@ -14,9 +20,9 @@ echo "**Usage:** \`/jj:split <pattern>\`"
 echo ""
 echo "**Common patterns:**"
 echo "- \`test\` - Test and spec files"
-echo "- \`docs\` - Documentation (*.md, README, CHANGELOG)"
-echo "- \`config\` - Config files (*.json, *.yaml, *.toml)"
-echo "- Custom glob patterns (e.g., \`*.md\`, \`src/**/*.test.ts\`)"
+echo "- \`docs\` - Documentation (_.md, README, CHANGELOG)"
+echo "- \`config\` - Config files (_.json, _.yaml, _.toml)"
+echo "- Custom glob patterns (e.g., \`_.md\`, \`src/\*\*/_.test.ts\`)"
 echo ""
 echo "**What it does:**"
 echo "1. Keeps wanted changes in current commit (@)"
@@ -30,7 +36,7 @@ fi
 ## Context
 
 - Current status: !`jj status`
-- Current commit: !`jj log -r @ --no-graph -T 'concat(change_id.short(), ": ", description)'`
+- Current commit: !`format_commit_short`
 - Changed files: !`jj diff -r @ --summary`
 
 ## Your Task
@@ -53,6 +59,7 @@ Split unwanted changes matching pattern "$ARGUMENTS" from current commit (@) int
 5. **Show result** - Display final commit structure
 
 **Result structure:**
+
 ```
 @ (new child): unwanted changes with AI description
 @- (original): wanted changes, original description preserved
@@ -87,4 +94,4 @@ jj move --from @- -p 'glob:*.json' -p 'glob:*.yaml' -p 'glob:*.toml'
 
 **Final verification:**
 
-Show the result: !`jj log -r '@|@-' -T 'concat(change_id.short(), ": ", description)'`
+Show the result: !`format_commit_list '@|@-'`
