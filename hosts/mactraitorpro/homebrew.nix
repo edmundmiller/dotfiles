@@ -69,6 +69,7 @@
     "zoxide"
 
     # Task management
+    "rlwrap"
     "task"
     "taskopen"
     "taskwarrior-tui"

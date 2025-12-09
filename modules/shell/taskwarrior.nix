@@ -31,6 +31,7 @@ in
   };
 
   config = mkIf cfg.enable {
+    modules.shell.zsh.rcFiles = [ "${configDir}/taskwarrior/aliases.zsh" ];
     # Generate sync.rc with agenix secret path interpolated
     # The agenix secret is configured in modules/agenix.nix
     home-manager.users.${config.user.name} = { config, ... }: {
