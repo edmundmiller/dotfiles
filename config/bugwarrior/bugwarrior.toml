@@ -1,0 +1,32 @@
+[general]
+targets = ["my_reminders", "personal_github", "work_linear"]
+taskrc = "~/.taskrc"
+log_level = "INFO"
+annotation_links = true
+merge_annotations = true
+merge_tags = true
+
+[my_reminders]
+service = "applereminders"
+description_template = "{{applereminderstitle}}"
+
+[personal_github]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "{% if githubtype == 'pull_request' %}PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}{% else %}{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}{% endif %}"
+only_if_assigned = "edmundmiller"
+include_user_issues = true
+include_user_repos = false
+add_tags = ["github", "personal"]
+default_priority = "L"
+
+[work_linear]
+service = "linear"
+api_token = "@oracle:eval:op read \"op://Private/Linear Bugwarrior/credential\""
+only_if_assigned = "edmund.a.miller@gmail.com"
+status_types = ["unstarted", "started"]
+import_labels_as_tags = true
+add_tags = ["linear"]
+default_priority = "M"
