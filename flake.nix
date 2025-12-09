@@ -42,6 +42,8 @@
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    try.url = "github:edmundmiller/try";
+    try.inputs.nixpkgs.follows = "nixpkgs";
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
   };
