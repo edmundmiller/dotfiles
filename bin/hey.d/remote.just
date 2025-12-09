@@ -28,8 +28,9 @@ nuc MESSAGE="": _nuc-ensure-repo
     
     echo "Updating repository..."
     git fetch origin
-    git checkout main
-    git pull origin main
+    echo "Resetting to origin/main ($(git rev-parse --short origin/main))"
+    git reset --hard origin/main
+    git clean -fd
     
     echo ""
     echo "Current commit:"
@@ -114,9 +115,11 @@ nuc-test: _nuc-ensure-repo
     set -euo pipefail
     cd ~/{{NUC_REPO}}
     
+    echo "Updating repository..."
     git fetch origin
-    git checkout main
-    git pull origin main
+    echo "Resetting to origin/main ($(git rev-parse --short origin/main))"
+    git reset --hard origin/main
+    git clean -fd
     
     echo ""
     echo "Testing configuration (won't add to boot menu)..."
