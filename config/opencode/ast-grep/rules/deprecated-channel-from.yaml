@@ -1,0 +1,10 @@
+id: deprecated-channel-from
+language: nextflow
+severity: warning
+message: "Channel.from() is deprecated. Use Channel.of() or Channel.fromList() instead."
+note: |
+  Channel.from() was deprecated in Nextflow DSL2.
+  - Use Channel.of() for individual items: Channel.of(1, 2, 3)
+  - Use Channel.fromList() for lists: Channel.fromList([1, 2, 3])
+rule:
+  pattern: Channel.from(___)

@@ -18,13 +18,154 @@
   // Autoupdate - notify but don't auto-update
   "autoupdate": "notify",
 
-  // Permission configuration
-  // OpenCode uses simpler permission model than Claude Code
+  // Nextflow Language Server
+  "lsp": {
+    "nextflow": {
+      "command": [
+        "java",
+        "-jar",
+        "{env:HOME}/.local/share/opencode/bin/nextflow-language-server/language-server-all.jar"
+      ],
+      "extensions": [".nf", ".config"]
+    }
+  },
+
+  // MCP servers
+  "mcp": {
+    "seqera-platform": {
+      "type": "remote",
+      "url": "https://mcp.seqera.io/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:SEQERA_TOKEN}"
+      },
+      "timeout": 10000
+    }
+  },
+
+  // Permission configuration - merged existing + Nextflow ecosystem
   "permission": {
+    "bash": {
+      // Nextflow commands
+      "nextflow config": "allow",
+      "nextflow log *": "allow",
+      "nextflow lint *": "allow",
+      "nextflow info *": "allow",
+      "nextflow list *": "allow",
+      "nextflow view *": "allow",
+      "nextflow run *": "allow",
+      "nextflow pull *": "allow",
+      "nextflow drop *": "allow",
+      "nextflow clean *": "ask",
+
+      // nf-test commands
+      "nf-test test *": "allow",
+      "nf-test list *": "allow",
+      "nf-test generate *": "allow",
+
+      // nf-core commands
+      "nf-core list": "allow",
+      "nf-core info *": "allow",
+      "nf-core modules list *": "allow",
+      "nf-core subworkflows list *": "allow",
+      "nf-core pipelines list": "allow",
+      "nf-core lint *": "allow",
+      "nf-core download *": "ask",
+      "nf-core create *": "ask",
+      "nf-core modules install *": "ask",
+      "nf-core modules update *": "ask",
+      "nf-core modules remove *": "ask",
+      "nf-core subworkflows install *": "ask",
+      "nf-core launch *": "ask",
+
+      // Seqera Platform (tw) commands
+      "tw info *": "allow",
+      "tw workspaces list": "allow",
+      "tw pipelines list *": "allow",
+      "tw runs list *": "allow",
+      "tw runs view *": "allow",
+      "tw datasets list *": "allow",
+      "tw compute-envs list *": "allow",
+      "tw credentials list": "allow",
+      "tw organizations list": "allow",
+      "tw pipelines create *": "ask",
+      "tw pipelines delete *": "ask",
+      "tw pipelines update *": "ask",
+      "tw runs launch *": "ask",
+      "tw runs cancel *": "ask",
+      "tw runs delete *": "ask",
+      "tw datasets create *": "ask",
+      "tw datasets delete *": "ask",
+      "tw compute-envs create *": "ask",
+      "tw compute-envs delete *": "ask",
+
+      // Wave commands
+      "wave --version": "allow",
+      "wave --help": "allow",
+      "wave *": "ask",
+
+      // ast-grep commands
+      "ast-grep -p *": "allow",
+      "ast-grep --pattern *": "allow",
+      "ast-grep scan *": "allow",
+      "ast-grep --config *": "allow",
+      "sg *": "allow"
+    },
     "edit": "allow",
-    "bash": "allow",
+    "write": "allow",
     "webfetch": "allow",
     "external_directory": "ask"
+  },
+
+  // Nextflow development agents
+  "agent": {
+    "nextflow-dev": {
+      "description": "Primary Nextflow pipeline development agent with enhanced permissions for workflow development",
+      "mode": "primary",
+      "temperature": 0.3,
+      "permission": {
+        "bash": {
+          "nextflow clean *": "allow",
+          "nf-core download *": "allow"
+        },
+        "edit": "allow",
+        "write": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "nextflow-debug": {
+      "description": "Debugging agent for Nextflow - read-focused with work directory inspection capabilities",
+      "mode": "subagent",
+      "temperature": 0.1,
+      "permission": {
+        "bash": {
+          "nextflow log *": "allow",
+          "nextflow config": "allow",
+          "nf-test list *": "allow"
+        },
+        "edit": "deny",
+        "write": "deny",
+        "webfetch": "allow"
+      }
+    },
+    "pipeline-review": {
+      "description": "Code review agent - read-only with static analysis and linting capabilities",
+      "mode": "subagent",
+      "temperature": 0.2,
+      "permission": {
+        "bash": {
+          "nextflow config *": "allow",
+          "nextflow lint *": "allow",
+          "nf-core lint *": "allow",
+          "nf-test list": "allow",
+          "ast-grep scan *": "allow",
+          "ast-grep -p *": "allow"
+        },
+        "edit": "deny",
+        "write": "deny",
+        "webfetch": "ask"
+      }
+    }
   },
 
   // Tools configuration
@@ -34,8 +175,5 @@
   },
 
   // Instructions - global rules from AGENTS.md
-  "instructions": ["~/.config/opencode/AGENTS.md"],
-
-  // MCP servers (if any - translate from Claude settings)
-  "mcp": {}
+  "instructions": ["~/.config/opencode/AGENTS.md"]
 }

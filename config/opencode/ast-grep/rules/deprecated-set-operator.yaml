@@ -1,0 +1,12 @@
+id: deprecated-set-operator
+language: nextflow
+severity: warning
+message: "The .set{} operator is deprecated in DSL2. Use variable assignment or emit: block."
+note: |
+  In DSL2, instead of:
+    channel.set { my_channel }
+  Use direct assignment:
+    my_channel = channel
+  Or in workflows, use the emit: block for outputs.
+rule:
+  pattern: .set { ___ }

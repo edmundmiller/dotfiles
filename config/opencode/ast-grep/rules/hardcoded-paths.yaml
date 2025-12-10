@@ -1,0 +1,12 @@
+id: hardcoded-paths
+language: nextflow
+severity: warning
+message: "Avoid hardcoded absolute paths. Use params, projectDir, or launchDir instead."
+note: |
+  Hardcoded paths reduce portability. Use:
+  - params.input for user-configurable paths
+  - projectDir for paths relative to the pipeline
+  - launchDir for paths relative to where pipeline was launched
+  - workDir for work directory paths
+rule:
+  regex: '"/(?:home|usr|opt|data|scratch|tmp)/[^"]*"'
