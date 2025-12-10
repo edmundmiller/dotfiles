@@ -62,7 +62,7 @@ login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
 description_template = "Review {{githubtitle}}"
-project_template = "{{githubnamespace}}.{{githubrepo}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nf-core org:bioinformaticsorphanage org:bioconda -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
@@ -92,7 +92,7 @@ login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
 description_template = "Review {{githubtitle}}"
-project_template = "{{githubnamespace}}.{{githubrepo}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflow-io org:seqeralabs org:seqera-services -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
@@ -122,7 +122,7 @@ login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
 description_template = "Review {{githubtitle}}"
-project_template = "{{githubnamespace}}.{{githubrepo}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 user:edmundmiller org:BioJulia -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
@@ -152,7 +152,7 @@ login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
 description_template = "Review {{githubtitle}}"
-project_template = "{{githubnamespace}}.{{githubrepo}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:Functional-Genomics-Lab -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
@@ -167,7 +167,7 @@ workspace_template = "phd"
 # token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 # username = "edmundmiller"
 # description_template = "Review {{githubtitle}}"
-# project_template = "{{githubnamespace}}.{{githubrepo}}"
+# project_template = "{{githubrepo|replace('/', '.')}}"
 # # PRs requesting your review that aren't drafts
 # query = "is:pr review-requested:edmundmiller is:open draft:false"
 # include_user_issues = false
