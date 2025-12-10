@@ -362,3 +362,4 @@ uda.tasknote-tui.active_filter=test
 # =============================================================================
 uda.bead.type=string
 uda.bead.label=Bead ID
+context=home
