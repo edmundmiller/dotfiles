@@ -2,7 +2,8 @@
 -- Each task is a markdown file with YAML frontmatter
 return {
   {
-    dir = "~/src/emacs/bases.nvim", -- bases.nvim - Obsidian Bases integration
+    "edmundmiller/bases.nvim",
+    dev = true, -- Use local ~/src/emacs/bases.nvim when available, fallback to GitHub
     name = "bases.nvim",
     dependencies = {
       "MunifTanjim/nui.nvim", -- Required for table views
