@@ -249,7 +249,7 @@ color.active=bold color15 on color59
 # Due date progression: upcoming -> today -> overdue
 color.due=color216
 color.due.today=bold color223
-color.overdue=bold color211
+color.overdue=bold white
 
 # Priority colors - foreground only, no backgrounds
 color.pri.H=bold color211
