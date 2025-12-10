@@ -1,0 +1,16 @@
+id: channel-value-in-process
+language: nextflow
+severity: hint
+message: "Consider using Channel.value() for single-value channels to allow process reuse."
+note: |
+  When passing a single value that should be reused across multiple process invocations,
+  wrap it in Channel.value() to create a value channel that can be consumed multiple times.
+
+  Example:
+    reference = Channel.value(params.reference)
+    PROCESS(samples, reference)  // reference reused for each sample
+rule:
+  all:
+    - kind: channel_value
+    - inside:
+        kind: workflow_definition
