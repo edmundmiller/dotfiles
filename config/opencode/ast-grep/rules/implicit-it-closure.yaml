@@ -1,0 +1,22 @@
+id: implicit-it-closure
+language: nextflow
+severity: hint
+message: "Consider using explicit closure parameters instead of implicit 'it' for clarity."
+note: |
+  While 'it' works as an implicit parameter, explicit parameters improve readability:
+
+  Instead of:
+    channel.map { it.name }
+
+  Consider:
+    channel.map { file -> file.name }
+
+  This makes the code more self-documenting.
+rule:
+  all:
+    - kind: closure
+    - has:
+        pattern: it
+    - not:
+        has:
+          kind: closure_parameter

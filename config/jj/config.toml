@@ -136,10 +136,12 @@ sign-on-push = true
 push-branch-prefix = "push-"
 # Don't create unnecessary local bookmarks when cloning
 track-default-bookmark-on-clone = false
-# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
-auto-local-bookmark = true
 # Allow pushing new bookmarks to remote
 push-bookmarks-prefix = "emiller/"
+
+[remotes.origin]
+# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
+auto-track-bookmarks = "glob:*"
 
 [revsets]
 # Equivalent to git's push.default=current

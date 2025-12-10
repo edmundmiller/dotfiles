@@ -1,0 +1,22 @@
+# AST-Grep Configuration for Nextflow
+# Installed by Seqera OpenCode installer
+# https://ast-grep.github.io/advanced/custom-language.html
+
+ruleDirs:
+  - rules
+
+customLanguages:
+  nextflow:
+    # Path to the compiled tree-sitter parser library
+    # Platform-specific builds are provided in lib/ directory
+    libraryPath:
+      aarch64-apple-darwin: lib/macos-arm64/libnextflow.dylib
+      x86_64-unknown-linux-gnu: lib/linux-x64/libnextflow.so
+
+    # File extensions for Nextflow files
+    extensions: [nf, config]
+
+    # expandoChar: Replace $ with _ in patterns
+    # Since Nextflow uses $ for string interpolation ($var, ${expr}),
+    # use _ in ast-grep patterns instead (e.g., _VAR instead of $VAR)
+    expandoChar: _
