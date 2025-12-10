@@ -35,6 +35,16 @@ uda.taskwarrior-tui.task-report.show-info=true
 uda.taskwarrior-tui.task-report.looping=true
 uda.taskwarrior-tui.task-report.jump-on-task-add=true
 
+# TUI User-defined shortcuts
+# Managed by modules/shell/taskwarrior.nix (symlinks scripts to ~/.config/taskwarrior-tui/shortcut-scripts/)
+# Timewarrior integration uses the on-modify.timewarrior hook (triggered by 's' key start/stop)
+uda.taskwarrior-tui.shortcuts.1=~/.config/taskwarrior-tui/shortcut-scripts/try-workspace.sh
+uda.taskwarrior-tui.shortcuts.2=~/.config/taskwarrior-tui/shortcut-scripts/taskopen.sh
+
+# Custom keybindings for shortcuts
+# 1 = try (default key), o = taskopen
+uda.taskwarrior-tui.keyconfig.shortcut2=o
+
 # =============================================================================
 # BASIC BEHAVIOR
 # =============================================================================
