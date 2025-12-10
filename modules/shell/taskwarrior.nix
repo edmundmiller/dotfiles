@@ -60,7 +60,7 @@ in
       '';
 
       # Taskwarrior-TUI shortcut scripts
-      # Keybindings: 1=try, o=taskopen
+      # Keybindings: 1=try, o=taskopen, b=beads
       # Timewarrior integration uses the on-modify.timewarrior hook (triggered by 's' key)
       xdg.configFile."taskwarrior-tui/shortcut-scripts/taskopen.sh" = mkIf cfg.shortcuts.enable {
         source = "${shortcutScriptsDir}/taskopen.sh";
@@ -68,6 +68,10 @@ in
       };
       xdg.configFile."taskwarrior-tui/shortcut-scripts/try-workspace.sh" = mkIf cfg.shortcuts.enable {
         source = "${shortcutScriptsDir}/try-workspace.sh";
+        executable = true;
+      };
+      xdg.configFile."taskwarrior-tui/shortcut-scripts/beads-send.sh" = mkIf cfg.shortcuts.enable {
+        source = "${shortcutScriptsDir}/beads-send.sh";
         executable = true;
       };
 
