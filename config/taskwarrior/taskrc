@@ -40,10 +40,12 @@ uda.taskwarrior-tui.task-report.jump-on-task-add=true
 # Timewarrior integration uses the on-modify.timewarrior hook (triggered by 's' key start/stop)
 uda.taskwarrior-tui.shortcuts.1=~/.config/taskwarrior-tui/shortcut-scripts/try-workspace.sh
 uda.taskwarrior-tui.shortcuts.2=~/.config/taskwarrior-tui/shortcut-scripts/taskopen.sh
+uda.taskwarrior-tui.shortcuts.3=~/.config/taskwarrior-tui/shortcut-scripts/beads-send.sh
 
 # Custom keybindings for shortcuts
-# 1 = try (default key), o = taskopen
+# 1 = try (default key), o = taskopen, b = beads
 uda.taskwarrior-tui.keyconfig.shortcut2=o
+uda.taskwarrior-tui.keyconfig.shortcut3=b
 
 # =============================================================================
 # BASIC BEHAVIOR
