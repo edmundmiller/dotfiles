@@ -28,6 +28,7 @@ workspace_template = "personal"
 [work_linear]
 service = "linear"
 api_token = "@oracle:eval:op read \"op://Private/Linear Bugwarrior/credential\""
+description_template = "{{linearidentifier}} - {{lineartitle}}"
 only_if_assigned = "edmund.a.miller@gmail.com"
 status_types = ["unstarted", "started"]
 import_labels_as_tags = true
@@ -60,11 +61,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "Review {{githubtitle}}"
+project_template = "{{githubnamespace}}.{{githubrepo}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nf-core org:bioinformaticsorphanage org:bioconda -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned", "pr"]
+add_tags = ["PR", "github", "bw"]
 default_priority = "L"
 workspace_template = "nfcore"
 
@@ -89,11 +91,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "Review {{githubtitle}}"
+project_template = "{{githubnamespace}}.{{githubrepo}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflow-io org:seqeralabs org:seqera-services -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned", "pr"]
+add_tags = ["PR", "github", "bw"]
 default_priority = "L"
 workspace_template = "seqera"
 
@@ -118,11 +121,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "Review {{githubtitle}}"
+project_template = "{{githubnamespace}}.{{githubrepo}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 user:edmundmiller org:BioJulia -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned", "pr"]
+add_tags = ["PR", "github", "bw"]
 default_priority = "L"
 workspace_template = "personal"
 
@@ -147,11 +151,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "PR {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "Review {{githubtitle}}"
+project_template = "{{githubnamespace}}.{{githubrepo}}"
 query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:Functional-Genomics-Lab -author:app/renovate -author:app/dependabot"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned", "pr"]
+add_tags = ["PR", "github", "bw"]
 default_priority = "L"
 workspace_template = "phd"
 
@@ -161,10 +166,11 @@ workspace_template = "phd"
 # login = "edmundmiller"
 # token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 # username = "edmundmiller"
-# description_template = "Review: {{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+# description_template = "Review {{githubtitle}}"
+# project_template = "{{githubnamespace}}.{{githubrepo}}"
 # # PRs requesting your review that aren't drafts
 # query = "is:pr review-requested:edmundmiller is:open draft:false"
 # include_user_issues = false
 # include_user_repos = false
-# add_tags = ["github", "review"]
+# add_tags = ["PR", "github", "bw"]
 # default_priority = "H"
