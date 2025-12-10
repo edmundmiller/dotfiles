@@ -48,11 +48,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "{{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:nf-core org:bioinformaticsorphanage org:bioconda"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned"]
+add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
 workspace_template = "nfcore"
 
@@ -78,11 +79,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "{{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflow-io org:seqeralabs org:seqera-services"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned"]
+add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
 workspace_template = "seqera"
 
@@ -108,11 +110,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "{{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 user:edmundmiller org:BioJulia -repo:edmundmiller/mill-docs"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned"]
+add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
 workspace_template = "personal"
 
@@ -138,11 +141,12 @@ service = "github"
 login = "edmundmiller"
 token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
 username = "edmundmiller"
-description_template = "{{githubnamespace}}/{{githubrepo}}: {{githubtitle}}"
+description_template = "{{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
 query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:Functional-Genomics-Lab"
 include_user_issues = false
 include_user_repos = false
-add_tags = ["github", "assigned"]
+add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
 workspace_template = "phd"
 
