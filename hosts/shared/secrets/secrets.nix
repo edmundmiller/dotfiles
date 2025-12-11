@@ -1,7 +1,10 @@
 let
-  # Edmund's SSH key - used on MacTraitor-Pro, Seqeratop, and for encrypting shared secrets
-  edmundmiller = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC";
+  # Edmund's SSH keys - used for encrypting shared secrets
+  # MacTraitor-Pro
+  mactraitor = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC";
+  # Seqeratop
+  seqeratop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty";
 in
 {
-  "taskchampion-sync.age".publicKeys = [ edmundmiller ];
+  "taskchampion-sync.age".publicKeys = [ mactraitor seqeratop ];
 }
