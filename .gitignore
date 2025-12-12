@@ -1,6 +1,9 @@
 result
 todotxtfmt/todotxtfmt
 
+# Home-manager managed files (prevent symlink issues)
+config/jj/config.toml
+
 # JJ workspaces and git worktrees
 .workspaces/
 workspaces/

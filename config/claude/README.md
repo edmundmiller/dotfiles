@@ -16,8 +16,6 @@ Claude Code plugins provide a standardized way to package and distribute command
 - `/jj:cleanup` - Remove empty workspaces
 - Includes git-to-jj command translator hook
 
-**[markdown-cleanup](plugins/markdown-cleanup/)** - Automatically cleans up stray markdown files
-
 **[json-to-toon](plugins/json-to-toon/)** - Converts JSON to TOON format for 30-60% token savings
 
 ### Plugin vs Standalone Commands
@@ -48,10 +46,6 @@ config/claude/
 │   │   │   └── plugin.json
 │   │   ├── commands/
 │   │   └── README.md
-│   ├── markdown-cleanup/
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   └── hooks/
 │   ├── json-to-toon/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json

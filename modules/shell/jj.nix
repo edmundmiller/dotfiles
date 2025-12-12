@@ -9,6 +9,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.shell.jj;
+  inherit (config.dotfiles) configDir;
 in
 {
   options.modules.shell.jj = {

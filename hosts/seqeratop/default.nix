@@ -25,6 +25,7 @@
         direnv.enable = true;
         git.enable = true;
         jj.enable = true;
+        opencode.enable = true;
         taskwarrior = {
           enable = true;
           syncUrl = "http://192.168.1.222:8080";
