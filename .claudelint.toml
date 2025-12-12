@@ -5,8 +5,7 @@
 # Target directories for plugin validation
 plugin_dirs = [
     "config/claude/plugins/jj",
-    "config/claude/plugins/json-to-toon",
-    "config/claude/plugins/markdown-cleanup"
+    "config/claude/plugins/json-to-toon"
 ]
 
 # Standalone skills directory
