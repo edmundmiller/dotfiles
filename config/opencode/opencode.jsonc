@@ -4,6 +4,13 @@
   // Theme - Catppuccin Mocha for consistency with Ghostty/Neovim/Taskwarrior
   "theme": "catppuccin",
 
+  // TUI settings
+  "tui": {
+    "scroll_acceleration": {
+      "enabled": true
+    }
+  },
+
   // Model configuration - using Claude as primary
   "model": "anthropic/claude-sonnet-4-20250514",
   "small_model": "anthropic/claude-3-5-haiku-20241022",
@@ -11,12 +18,17 @@
   // Provider configuration
   "provider": {
     "anthropic": {
-      "apiKey": "{env:ANTHROPIC_API_KEY}"
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+      }
     }
   },
 
   // Autoupdate - notify but don't auto-update
   "autoupdate": "notify",
+
+  // Plugins
+  "plugin": ["opencode-skills"],
 
   // Nextflow Language Server
   "lsp": {
@@ -40,6 +52,14 @@
         "Authorization": "Bearer {env:SEQERA_TOKEN}"
       },
       "timeout": 10000
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true,
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+      }
     }
   },
 
@@ -120,8 +140,8 @@
   // Nextflow development agents
   "agent": {
     "nextflow-dev": {
-      "description": "Primary Nextflow pipeline development agent with enhanced permissions for workflow development",
-      "mode": "primary",
+      "description": "Nextflow pipeline development agent with enhanced permissions for workflow development",
+      "mode": "subagent",
       "temperature": 0.3,
       "permission": {
         "bash": {

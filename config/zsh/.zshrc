@@ -79,26 +79,6 @@ fi
 
 unset _antidote_bundlefile _antidote_staticfile _antidote_target _antidote_marker
 
-# Ensure Powerlevel10k is loaded (fallback if antidote didn't load it)
-# Always try to load P10k, even if p10k command exists (might be a stub)
-P10K_LOADED=0
-for p10k_path in \
-  "$HOME/.local/share/zsh/plugins/romkatv/powerlevel10k/powerlevel10k.zsh-theme" \
-  "/nix/store/"*"powerlevel10k"*"/share/zsh/powerlevel10k/powerlevel10k.zsh-theme" \
-  "$HOME/.cache/antidote/https-COLON--SLASH--SLASH-github.com-SLASH-romkatv-SLASH-powerlevel10k/powerlevel10k.zsh-theme"
-do
-  if [[ -f "$p10k_path" ]]; then
-    source "$p10k_path"
-    P10K_LOADED=1
-    break
-  fi
-done
-
-# If we loaded P10k, load the config immediately
-if [[ $P10K_LOADED -eq 1 ]] && [[ -f $ZDOTDIR/.p10k.zsh ]]; then
-  source $ZDOTDIR/.p10k.zsh
-fi
-
 ## Bootstrap interactive sessions
 if [[ $TERM != dumb ]]; then
   # nix-darwin handles compinit via enableGlobalCompInit = true

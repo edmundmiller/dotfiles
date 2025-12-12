@@ -38,11 +38,13 @@ uda.taskwarrior-tui.task-report.jump-on-task-add=true
 uda.taskwarrior-tui.shortcuts.1=~/.config/taskwarrior-tui/shortcut-scripts/try-workspace.sh
 uda.taskwarrior-tui.shortcuts.2=~/.config/taskwarrior-tui/shortcut-scripts/taskopen.sh
 uda.taskwarrior-tui.shortcuts.3=~/.config/taskwarrior-tui/shortcut-scripts/beads-send.sh
+uda.taskwarrior-tui.shortcuts.4=~/.config/taskwarrior-tui/shortcut-scripts/schedule-today.sh
 
 # Custom keybindings for shortcuts
-# 1 = try (default key), o = taskopen, b = beads
+# 1 = try (default key), o = taskopen, b = beads, t = schedule today
 uda.taskwarrior-tui.keyconfig.shortcut2=o
 uda.taskwarrior-tui.keyconfig.shortcut3=b
+uda.taskwarrior-tui.keyconfig.shortcut4=t
 
 # =============================================================================
 # BASIC BEHAVIOR
@@ -62,13 +64,14 @@ uda.timewarrior.enabled=true
 uda.priority.values=H,M,,L
 
 # =============================================================================
-# WORKSPACE ORGANIZATION
+# AREA ORGANIZATION (PARA Method)
 # =============================================================================
-# User Defined Attributes for workspace organization
-uda.workspace.type=string
-uda.workspace.label=Workspace
-uda.workspace.values=seqera,nfcore,phd,personal,family
-uda.workspace.default=personal
+# User Defined Attributes for PARA area organization
+# Areas are ongoing responsibilities (never "done") - use for filtering, not burndown
+uda.area.type=string
+uda.area.label=Area
+uda.area.values=seqera,nfcore,phd,personal,family
+uda.area.default=personal
 
 # Motion App Integration
 uda.motion_id.type=string
@@ -107,18 +110,18 @@ uda.subgoal_id.type=string
 uda.subgoal_id.label=Subgoal ID
 
 # =============================================================================
-# CONTEXTS - Workspace Organization
+# CONTEXTS - PARA Area Organization
 # =============================================================================
-# Read filters use 'or' to show tasks from multiple workspaces
-# Write filters set the default workspace for new tasks in that context
+# Read filters use 'or' to show tasks from multiple areas
+# Write filters set the default area for new tasks in that context
 
 # Combined work context (nf-core + Seqera)
-context.work.read=workspace:seqera or workspace:nfcore
-context.work.write=workspace:seqera
+context.work.read=(area:seqera or area:nfcore) githubtype.isnt:issue
+context.work.write=area:seqera
 
 # Combined home context (personal + family + phd)
-context.home.read=workspace:personal or workspace:family or workspace:phd
-context.home.write=workspace:personal
+context.home.read=(area:personal or area:family or area:phd) githubtype.none:
+context.home.write=area:personal
 
 # =============================================================================
 # REPORTS

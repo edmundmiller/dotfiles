@@ -13,18 +13,18 @@ ID  A P Due   Age    Est  Act  Description                    Project     Tags
  35 * M -1d     2d   30m  15m   Fill out Rocketlane timecard              [3]
 ```
 
-| Column | Field | Purpose |
-|--------|-------|---------|
-| ID | `id` | Task ID for quick action |
-| A | `start.active` | Shows `*` when task is actively being worked on |
-| P | `priority` | H/M/L priority level |
-| Due | `due.relative` | Relative due date (`-3d`, `2h`, `1w`) |
-| Age | `entry.age` | How long the task has existed (spot stale tasks) |
-| Est | `estimate` | Time estimate (duration) for capacity planning |
-| Act | `totalactivetime` | Actual time spent on task |
-| Description | `description.truncated_count` | Task description with annotation count `[3]` |
-| Project | `project.parent` | Top-level project only (saves space) |
-| Tags | `tags.count` | Tag count `[2]` rather than full tag names |
+| Column      | Field                         | Purpose                                          |
+| ----------- | ----------------------------- | ------------------------------------------------ |
+| ID          | `id`                          | Task ID for quick action                         |
+| A           | `start.active`                | Shows `*` when task is actively being worked on  |
+| P           | `priority`                    | H/M/L priority level                             |
+| Due         | `due.relative`                | Relative due date (`-3d`, `2h`, `1w`)            |
+| Age         | `entry.age`                   | How long the task has existed (spot stale tasks) |
+| Est         | `estimate`                    | Time estimate (duration) for capacity planning   |
+| Act         | `totalactivetime`             | Actual time spent on task                        |
+| Description | `description.truncated_count` | Task description with annotation count `[3]`     |
+| Project     | `project.parent`              | Top-level project only (saves space)             |
+| Tags        | `tags.count`                  | Tag count `[2]` rather than full tag names       |
 
 ### Design Decisions
 
@@ -54,14 +54,14 @@ Shows only actionable tasks - excludes waiting and blocked tasks.
 
 Uses Catppuccin Mocha palette with semantic meaning:
 
-| Element | Color | Meaning |
-|---------|-------|---------|
-| High priority | Bold red (`rgb533`) | Urgent attention needed |
-| Medium priority | Peach (`rgb543`) | Normal priority |
-| Low priority | Blue (`rgb345`) | Can wait |
-| Due today | Bold peach | Action needed today |
-| Overdue | Bold red | Past due - triage immediately |
-| Active task | White on blue | Currently being worked on |
+| Element         | Color               | Meaning                       |
+| --------------- | ------------------- | ----------------------------- |
+| High priority   | Bold red (`rgb533`) | Urgent attention needed       |
+| Medium priority | Peach (`rgb543`)    | Normal priority               |
+| Low priority    | Blue (`rgb345`)     | Can wait                      |
+| Due today       | Bold peach          | Action needed today           |
+| Overdue         | Bold red            | Past due - triage immediately |
+| Active task     | White on blue       | Currently being worked on     |
 
 ## Capacity Planning
 
@@ -80,10 +80,48 @@ The `totalactivetime` field is populated automatically by Timewarrior integratio
 
 ## Related Reports
 
-| Report | Purpose |
-|--------|---------|
-| `next` | Primary triage (default) |
-| `today` | Today's scheduled + urgent items |
-| `crisis` | High priority overdue only |
-| `overdue` | All overdue for cleanup |
-| `quick` | Low-effort tasks for momentum |
+| Report    | Purpose                          |
+| --------- | -------------------------------- |
+| `next`    | Primary triage (default)         |
+| `today`   | Today's scheduled + urgent items |
+| `crisis`  | High priority overdue only       |
+| `overdue` | All overdue for cleanup          |
+| `quick`   | Low-effort tasks for momentum    |
+
+## Taskwarrior-TUI Shortcuts
+
+Interactive keybindings available in `taskwarrior-tui`:
+
+| Key | Shortcut       | Description                                                    |
+| --- | -------------- | -------------------------------------------------------------- |
+| `1` | try-workspace  | Launch try workspace for selected task                         |
+| `o` | taskopen       | Open task annotations (URLs, files)                            |
+| `b` | beads          | Send task to beads (create bead in try workspace)              |
+| `t` | schedule-today | Schedule task for today                                        |
+| `s` | start/stop     | Start or stop time tracking (built-in Timewarrior integration) |
+
+### Shortcut Details
+
+**try-workspace** (`1`): Creates or opens a temporary workspace for the task. Useful for code changes, experiments, or focused work.
+
+**taskopen** (`o`): Opens URLs or files referenced in task annotations. Supports GitHub issues, Linear tickets, Freshdesk, and custom URLs.
+
+**beads** (`b`): Creates a bead issue in the task's project repository and links it to the task. Automatically infers workspace from project name.
+
+**schedule-today** (`t`): Sets the task's `scheduled` date to today. Press again on an already-scheduled task to see current schedule. Provides feedback:
+
+- "Scheduled for today: <description>"
+- "Rescheduled for today: <description> (was: YYYY-MM-DD)"
+- "Task already scheduled for today: <description>"
+
+**start/stop** (`s`): Toggle time tracking via Timewarrior. Uses the `on-modify.timewarrior` hook to automatically start/stop intervals.
+
+### Implementation
+
+Shortcuts are bash scripts in `config/taskwarrior/shortcut-scripts/`:
+
+- Registered in `taskrc` via `uda.taskwarrior-tui.shortcuts.N`
+- Keybindings defined with `uda.taskwarrior-tui.keyconfig.shortcutN`
+- Symlinked to `~/.config/taskwarrior-tui/shortcut-scripts/` by Nix module
+
+Scripts receive the task UUID as their first argument and use `task` CLI to extract metadata and perform actions.
