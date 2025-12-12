@@ -1,27 +1,27 @@
 # Bugwarrior Integration
 
-This dotfiles configuration includes bugwarrior setup for syncing issues from Jira and GitHub into Taskwarrior, with secure credential management via 1Password.
+This dotfiles configuration includes bugwarrior setup for syncing issues from Jira, GitHub, Linear, and Apple Reminders into Taskwarrior, with secure credential management via 1Password.
 
 ## Overview
 
 Bugwarrior automatically pulls issues from:
-- ✅ **Seqera Jira** - Assigned issues and work items
-- ✅ **Seqera GitHub** - Issues from organization repositories  
-- ✅ **Personal GitHub** - Issues from your personal repositories
-- ✅ **1Password Integration** - Secure credential storage
-- ✅ **Automated Sync** - Optional scheduled updates
+- **Seqera Jira** - Assigned/reported issues with priority mapping
+- **Linear** - Work tasks from Linear
+- **GitHub** - Issues and PRs from multiple workspaces (nf-core, seqera, personal, phd)
+- **Apple Reminders** - Personal reminders
+- **1Password Integration** - Secure credential storage
 
 ## Quick Setup
 
 ### 1. Install & Configure
 ```bash
-# Install bugwarrior (already done)
+# Install bugwarrior
 uv tool install bugwarrior
 
-# Set up 1Password credentials
+# Set up 1Password credentials (if needed)
 setup-bugwarrior-credentials
 
-# Configure taskwarrior UDAs and test config
+# Configure taskwarrior UDAs
 setup-bugwarrior
 ```
 
@@ -34,50 +34,53 @@ bugwarrior-pull --dry-run
 bugwarrior-pull
 ```
 
-### 3. Optional: Automated Sync
-```bash
-# Set up automatic syncing every 30 minutes
-setup-bugwarrior-sync
-```
-
 ## Configuration Details
 
 ### Services Configured
 
-1. **Seqera Jira** (`seqera_jira`)
+1. **Apple Reminders** (`my_reminders`)
+   - Syncs from "Reminders" list
+   - Workspace: `personal`
+
+2. **Linear** (`work_linear`)
+   - Assigned issues with unstarted/started status
+   - Imports labels as tags
+   - Workspace: `family`
+
+3. **Seqera Jira** (`seqera_jira`)
    - URL: `https://seqera.atlassian.net`
-   - Imports assigned, unresolved issues
-   - Tags: `jira`, `seqera`
+   - Query: Assigned to you OR reported by you, unresolved
+   - Priority: Maps Jira priority to Taskwarrior (High→H, Medium→M, Low→L)
    - Imports labels and sprints as tags
+   - Project: Uses Jira project key (e.g., `PLAT`, `WAVE`)
+   - Tags: `jira`, `bw`
+   - Workspace: `seqera`
 
-2. **Seqera GitHub** (`seqera_github`)
-   - Organization: `seqeralabs`
-   - Repos: `platform`, `tower-cli`, `wave`, `fusion`, `nf-tower`
-   - Imports issues where you're involved
-   - Tags: `github`, `seqera`
-
-3. **Personal GitHub** (`personal_github`)
-   - Your personal repositories
-   - All issues where you're involved
-   - Tags: `github`, `personal`
+4. **GitHub** (8 targets: issues + PRs for each workspace)
+   - **nf-core**: `nf-core`, `bioinformaticsorphanage`, `bioconda` orgs
+   - **seqera**: `nextflow-io`, `seqeralabs`, `seqera-services` orgs
+   - **personal**: `edmundmiller` user, `BioJulia` org
+   - **phd**: `Functional-Genomics-Lab` org
+   - Tags: `github`, `bw`, `assigned` (+ `PR` for pull requests)
 
 ### 1Password Items Required
 
-The setup creates these 1Password items:
-
-- **"Seqera Jira"** - Jira username and API token
-- **"GitHub Token"** - GitHub username and personal access token (for Seqera repos)
-- **"GitHub Personal Token"** - Token for personal repositories
+| Service | Vault | Item | Fields |
+|---------|-------|------|--------|
+| Jira | Work | `Bugwarrior Jira` | `username`, `credential` |
+| Linear | Private | `Linear Bugwarrior` | `credential` |
+| GitHub | Private | `GitHub Personal Access Token` | `token` |
 
 ### Taskwarrior Integration
 
 Bugwarrior creates User Defined Attributes (UDAs) in Taskwarrior:
 
 #### Jira Fields
-- `jiracreatedts` - Issue creation timestamp
-- `jiradescription` - Issue description  
+- `jiraid` - Issue ID (e.g., PLAT-123)
+- `jirasummary` - Issue summary
 - `jirastatus` - Current status
 - `jiraurl` - Direct link to issue
+- `jiracreatedts` - Creation timestamp
 
 #### GitHub Fields
 - `githubrepo` - Repository name
@@ -85,29 +88,28 @@ Bugwarrior creates User Defined Attributes (UDAs) in Taskwarrior:
 - `githuburl` - Direct link to issue
 - `githubtype` - Issue or Pull Request
 
+#### Linear Fields
+- `linearid` - Issue ID
+- `lineartitle` - Issue title
+- `linearurl` - Direct link to issue
+
 ## Usage
 
-### Quick Commands (Fish Aliases)
+### Shell Aliases (Zsh)
+
 ```bash
 # Sync commands
 bw              # Full sync (bugwarrior-pull)
 bw-dry          # Dry run test
-bw-sync         # Safe sync with logging
 
-# View tasks
-bw-tasks        # All bugwarrior tasks
-bw-jira         # Jira issues only
-bw-github       # GitHub issues only  
-bw-seqera       # Seqera-related tasks
+# View tasks by source
+bw-tasks        # All bugwarrior tasks (+bw tag)
+bw-linear       # Linear issues only
+bw-github       # GitHub issues only
 
-# Logs and debugging
-bw-log          # Follow sync log
-bw-errors       # Follow error log
-
-# Setup commands
-bw-setup        # Configure bugwarrior
-bw-creds        # Set up 1Password items
-bw-auto         # Set up automation
+# Logs
+bw-log          # View bugwarrior log
+bw-errors       # View error log
 ```
 
 ### Direct Commands
@@ -118,72 +120,72 @@ bugwarrior-pull
 # Test configuration
 bugwarrior-pull --dry-run
 
-# Safe sync with logging
-bugwarrior-sync
+# Debug mode
+bugwarrior-pull --dry-run --debug
 ```
 
 ### Taskwarrior Queries
 ```bash
 # Show all imported issues
-task project:bugwarrior list
+task +bw list
 
 # Show by service
 task +jira list
 task +github list
+task +linear list
 
-# Show by organization  
-task +seqera list
-task +personal list
+# Show by workspace
+task workspace:seqera list
+task workspace:nfcore list
+task workspace:personal list
 
-# Show specific repo issues
-task description.contains:"platform" list
+# Show Jira issues by project
+task project:PLAT list
+task project:WAVE list
 ```
 
 ## File Locations
 
 ### Configuration
-- **Main config**: `~/.config/dotfiles/config/bugwarrior/bugwarriorrc`
-- **Symlinked to**: `~/.config/bugwarrior/bugwarriorrc`
-- **Fish aliases**: `~/.config/dotfiles/config/bugwarrior/aliases.fish`
+- **Main config**: `~/.config/dotfiles/config/bugwarrior/bugwarrior.toml`
+- **Symlinked to**: `~/.config/bugwarrior/bugwarrior.toml`
+- **Zsh aliases**: `~/.config/dotfiles/config/bugwarrior/aliases.zsh`
 
 ### Scripts
 - `bin/setup-bugwarrior-credentials` - 1Password setup
 - `bin/setup-bugwarrior` - Main configuration
-- `bin/setup-bugwarrior-sync` - Automation setup
-- `~/.local/bin/bugwarrior-sync` - Safe sync wrapper
-
-### Logs
-- `~/.local/share/bugwarrior/sync.log` - Sync activity
-- `~/.local/share/bugwarrior/launchd.log` - Automation logs  
-- `~/.local/share/bugwarrior/launchd-error.log` - Error logs
 
 ## Customization
 
-### Adding Repositories
-Edit `~/.config/dotfiles/config/bugwarrior/bugwarriorrc`:
-
-```toml
-[seqera_github]
-# Add repos to this list
-include_repos = platform, tower-cli, wave, fusion, nf-tower, new-repo
-```
-
 ### Custom Jira Queries
+Edit `config/bugwarrior/bugwarrior.toml`:
+
 ```toml
 [seqera_jira]
-# Example: Include issues in specific projects
-query = project in (PLATFORM, WAVE) AND assignee = currentUser() AND resolution = Unresolved
+# Example: Only specific projects
+query = "project in (PLAT, WAVE) AND assignee = currentUser() AND resolution is null"
+
+# Example: Include specific statuses
+query = "assignee = currentUser() AND status in ('To Do', 'In Progress')"
 ```
 
-### Additional GitHub Organizations
-Add new sections:
+### Adding GitHub Organizations
+Add new sections following the existing pattern:
+
 ```toml
-[another_org]
-service = github
-login = @oracle:eval:op item get "GitHub Token" --fields label=username
-token = @oracle:eval:op item get "GitHub Token" --fields label=token
-username = another-org
-add_tags = github, another-org
+[github_neworg_issues]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:op read \"op://Private/GitHub Personal Access Token/token\""
+username = "edmundmiller"
+description_template = "{{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
+query = "is:issue assignee:edmundmiller is:open org:neworg"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "bw", "assigned"]
+default_priority = "L"
+workspace_template = "neworg"
 ```
 
 ## Troubleshooting
@@ -191,8 +193,8 @@ add_tags = github, another-org
 ### Authentication Issues
 ```bash
 # Test 1Password access
-op item get "Seqera Jira" --fields label=username
-op item get "GitHub Token" --fields label=token
+op read "op://Work/Bugwarrior Jira/username"
+op read "op://Private/GitHub Personal Access Token/token"
 
 # Check 1Password session
 op account list
@@ -203,11 +205,8 @@ op account list
 # Verbose dry run
 bugwarrior-pull --dry-run --debug
 
-# Check logs
-tail -f ~/.local/share/bugwarrior/sync.log
-
-# Test individual services
-bugwarrior-pull --dry-run --only-if-assigned
+# Check specific service output
+bugwarrior-pull --dry-run 2>&1 | grep -A5 "seqera_jira"
 ```
 
 ### Taskwarrior UDA Issues
@@ -219,46 +218,18 @@ bugwarrior-uda
 task config | grep uda
 ```
 
-## Automation Management
-
-### Enable/Disable Automation
-```bash
-# Disable
-launchctl unload ~/Library/LaunchAgents/com.user.bugwarrior.plist
-
-# Enable  
-launchctl load ~/Library/LaunchAgents/com.user.bugwarrior.plist
-
-# Check status
-launchctl list | grep bugwarrior
-```
-
-### Change Sync Frequency
-Edit `~/Library/LaunchAgents/com.user.bugwarrior.plist`:
-```xml
-<key>StartInterval</key>
-<integer>3600</integer>  <!-- 1 hour instead of 30 minutes -->
-```
-
-Then reload:
-```bash
-launchctl unload ~/Library/LaunchAgents/com.user.bugwarrior.plist
-launchctl load ~/Library/LaunchAgents/com.user.bugwarrior.plist
-```
-
 ## Security Notes
 
 - Credentials are stored securely in 1Password
-- API tokens are retrieved at runtime, never stored in plaintext
-- Sync logs are local only
-- Consider using separate GitHub tokens for different access levels
+- API tokens are retrieved at runtime via `@oracle:eval`, never stored in plaintext
+- Jira token is in Work vault, GitHub/Linear tokens in Private vault
 
 ## Integration with Other Tools
 
 ### With Obsidian-Taskwarrior Sync
 Bugwarrior tasks will automatically appear in your Obsidian vault when using the obsidian-taskwarrior-sync integration.
 
-### With Timewarrior  
+### With Timewarrior
 Start tracking time on bugwarrior tasks:
 ```bash
 task 123 start  # Starts timewarrior tracking via hook

@@ -2,6 +2,7 @@
 targets = [
     "my_reminders",
     "work_linear",
+    "seqera_jira",
     "github_nfcore_issues",
     "github_nfcore_prs",
     "github_seqera_issues",
@@ -35,6 +36,25 @@ import_labels_as_tags = true
 add_tags = ["linear"]
 default_priority = "M"
 workspace_template = "family"
+
+# =============================================================================
+# Jira Targets
+# =============================================================================
+
+[seqera_jira]
+service = "jira"
+base_uri = "https://seqera.atlassian.net"
+username = "@oracle:eval:op read \"op://Work/Bugwarrior Jira/username\""
+password = "@oracle:eval:op read \"op://Work/Bugwarrior Jira/credential\""
+description_template = "{{jirasummary}}"
+project_template = "{{jiraproject}}"
+query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution is null"
+import_labels_as_tags = true
+import_sprints_as_tags = true
+label_template = "{{label}}"
+priority_template = "{% if jirapriority == 'Highest' or jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
+add_tags = ["jira", "bw"]
+workspace_template = "seqera"
 
 # =============================================================================
 # GitHub Targets - Grouped by Workspace
