@@ -1,0 +1,6 @@
+# Add terms that Vale should flag as incorrect
+# One term per line
+# Example misspellings or discouraged terms
+teh
+recieve
+occured

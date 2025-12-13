@@ -1,0 +1,22 @@
+# Add project-specific terms that Vale should accept
+# One term per line
+Neovim
+LazyVim
+LSP
+nvim
+dotfiles
+config
+CLI
+API
+GitHub
+macOS
+NixOS
+Nix
+Flake
+Flakes
+darwin
+homebrew
+jj
+jujutsu
+Vale
+vale-ls
