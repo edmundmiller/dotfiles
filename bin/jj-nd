@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# jj nd - Open diff in neovim with diffview.nvim comparing a revision to trunk
+#
+# Usage:
+#   jj nd           # Diff current change (@) vs trunk
+#   jj nd <rev>     # Diff <rev> vs trunk
+#   jj nd mybranch  # Diff mybranch vs trunk
+
+# Use first argument as target revision, default to @ (current change)
+target="${1:-@}"
+
+# Get git commit hashes for trunk and target
+# Use 'command' to bypass the jj alias wrapper
+trunk_hash=$(command jj log -r 'trunk()' --no-graph -T 'commit_id' | head -1)
+target_hash=$(command jj log -r "$target" --no-graph -T 'commit_id' | head -1)
+
+# Check if target is already up to date with trunk
+if [ "$trunk_hash" = "$target_hash" ]; then
+    echo "✓ Already up to date with trunk (no changes to show)"
+    exit 0
+fi
+
+# Open neovim with diffview comparing the two commits
+nvim -c "DiffviewOpen ${trunk_hash}..${target_hash}"
