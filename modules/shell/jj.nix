@@ -21,10 +21,10 @@ in
       jujutsu
     ];
 
-    # Use home-manager's xdg.configFile directly for proper activation
+    # Use home-manager's xdg.configFile with text to avoid source symlink issues
     home-manager.users.${config.user.name} = {
       xdg.configFile = {
-        "jj/config.toml".source = "${configDir}/jj/config.toml";
+        "jj/config.toml".text = builtins.readFile "${configDir}/jj/config.toml";
       };
     };
 
