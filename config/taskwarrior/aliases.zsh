@@ -23,3 +23,6 @@ alias tsh='rlwrap -i -r -C tasksh tasksh'
 
 # Taskwarrior TUI
 alias tt="taskwarrior-tui"
+
+# Quick view - top 10 urgent tasks
+alias t="task next limit:10"

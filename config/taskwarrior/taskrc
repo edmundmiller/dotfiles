@@ -113,11 +113,11 @@ uda.subgoal_id.label=Subgoal ID
 # Write filters set the default workspace for new tasks in that context
 
 # Combined work context (nf-core + Seqera)
-context.work.read=workspace:seqera or workspace:nfcore
+context.work.read=(workspace:seqera or workspace:nfcore) githubtype.isnt:issue
 context.work.write=workspace:seqera
 
 # Combined home context (personal + family + phd)
-context.home.read=workspace:personal or workspace:family or workspace:phd
+context.home.read=(workspace:personal or workspace:family or workspace:phd) githubtype.none:
 context.home.write=workspace:personal
 
 # =============================================================================
