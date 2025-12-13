@@ -475,8 +475,9 @@
     # res+=" ${blue}${VCS_STATUS_COMMIT[1]}${grey}${VCS_STATUS_COMMIT[2]}"
 
 
-    ## jj_desc - description or pencil icon if empty but has changes
+    ## jj_desc - description or pencil icon if empty but has changes (truncated to 30 chars)
     local VCS_STATUS_MESSAGE=$(jj --ignore-working-copy --at-op=@ --no-pager log --no-graph --limit 1 -r "@" -T "coalesce(description.first_line(), if(!empty, '\Uf040 '))")
+    (( $#VCS_STATUS_MESSAGE > 30 )) && VCS_STATUS_MESSAGE="${VCS_STATUS_MESSAGE:0:30}…"
     [[ -n $VCS_STATUS_MESSAGE ]] && res+=" ${green}${VCS_STATUS_MESSAGE}"
 
 
