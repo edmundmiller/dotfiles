@@ -17,6 +17,7 @@ log_level = "INFO"
 annotation_links = true
 merge_annotations = true
 merge_tags = true
+reopen_completed_tasks = false
 
 [my_reminders]
 service = "applereminders"
