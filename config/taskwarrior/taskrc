@@ -38,11 +38,13 @@ uda.taskwarrior-tui.task-report.jump-on-task-add=true
 uda.taskwarrior-tui.shortcuts.1=~/.config/taskwarrior-tui/shortcut-scripts/try-workspace.sh
 uda.taskwarrior-tui.shortcuts.2=~/.config/taskwarrior-tui/shortcut-scripts/taskopen.sh
 uda.taskwarrior-tui.shortcuts.3=~/.config/taskwarrior-tui/shortcut-scripts/beads-send.sh
+uda.taskwarrior-tui.shortcuts.4=~/.config/taskwarrior-tui/shortcut-scripts/schedule-today.sh
 
 # Custom keybindings for shortcuts
-# 1 = try (default key), o = taskopen, b = beads
+# 1 = try (default key), o = taskopen, b = beads, t = schedule today
 uda.taskwarrior-tui.keyconfig.shortcut2=o
 uda.taskwarrior-tui.keyconfig.shortcut3=b
+uda.taskwarrior-tui.keyconfig.shortcut4=t
 
 # =============================================================================
 # BASIC BEHAVIOR

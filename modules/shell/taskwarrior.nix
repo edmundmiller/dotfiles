@@ -74,7 +74,7 @@ EOF
       '';
 
       # Taskwarrior-TUI shortcut scripts
-      # Keybindings: 1=try, o=taskopen, b=beads
+      # Keybindings: 1=try, o=taskopen, b=beads, t=schedule-today
       # Timewarrior integration uses the on-modify.timewarrior hook (triggered by 's' key)
       xdg.configFile."taskwarrior-tui/shortcut-scripts/taskopen.sh" = mkIf cfg.shortcuts.enable {
         source = "${shortcutScriptsDir}/taskopen.sh";
@@ -86,6 +86,10 @@ EOF
       };
       xdg.configFile."taskwarrior-tui/shortcut-scripts/beads-send.sh" = mkIf cfg.shortcuts.enable {
         source = "${shortcutScriptsDir}/beads-send.sh";
+        executable = true;
+      };
+      xdg.configFile."taskwarrior-tui/shortcut-scripts/schedule-today.sh" = mkIf cfg.shortcuts.enable {
+        source = "${shortcutScriptsDir}/schedule-today.sh";
         executable = true;
       };
 
