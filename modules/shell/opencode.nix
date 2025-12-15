@@ -23,7 +23,7 @@ in
 
     home.configFile = {
       # OpenCode uses XDG config directory: ~/.config/opencode/
-      "opencode/opencode.json".source = "${configDir}/opencode/opencode.json";
+      "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
       "opencode/AGENTS.md".source = "${configDir}/opencode/AGENTS.md";
       "opencode/agent".source = "${configDir}/opencode/agent";
       "opencode/command".source = "${configDir}/opencode/command";
