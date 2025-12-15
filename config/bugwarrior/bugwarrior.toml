@@ -25,7 +25,7 @@ description_template = "{{applereminderstitle}}"
 # Only pull from Reminders list for now
 lists = ["Reminders"]
 # TODO: Add Family list once only_if_assigned support is implemented for applereminders service
-workspace_template = "personal"
+area_template = "personal"
 
 [work_linear]
 service = "linear"
@@ -36,7 +36,7 @@ status_types = ["unstarted", "started"]
 import_labels_as_tags = true
 add_tags = ["linear"]
 default_priority = "M"
-workspace_template = "family"
+area_template = "family"
 
 # =============================================================================
 # Jira Targets
@@ -55,7 +55,7 @@ import_sprints_as_tags = true
 label_template = "{{label}}"
 priority_template = "{% if jirapriority == 'Highest' or jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
 add_tags = ["jira", "bw"]
-workspace_template = "seqera"
+area_template = "seqera"
 
 # =============================================================================
 # GitHub Targets - Grouped by Workspace
@@ -76,7 +76,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
-workspace_template = "nfcore"
+area_template = "nfcore"
 
 [github_nfcore_prs]
 service = "github"
@@ -90,7 +90,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["PR", "github", "bw"]
 default_priority = "L"
-workspace_template = "nfcore"
+area_template = "nfcore"
 
 # -----------------------------------------------------------------------------
 # seqera workspace: nextflow-io, seqeralabs, seqera-services
@@ -107,7 +107,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
-workspace_template = "seqera"
+area_template = "seqera"
 
 [github_seqera_prs]
 service = "github"
@@ -121,7 +121,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["PR", "github", "bw"]
 default_priority = "L"
-workspace_template = "seqera"
+area_template = "seqera"
 
 # -----------------------------------------------------------------------------
 # personal workspace: edmundmiller, BioJulia
@@ -138,7 +138,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
-workspace_template = "personal"
+area_template = "personal"
 
 [github_personal_prs]
 service = "github"
@@ -152,7 +152,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["PR", "github", "bw"]
 default_priority = "L"
-workspace_template = "personal"
+area_template = "personal"
 
 # -----------------------------------------------------------------------------
 # phd workspace: Functional-Genomics-Lab
@@ -169,7 +169,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "bw", "assigned"]
 default_priority = "L"
-workspace_template = "phd"
+area_template = "phd"
 
 [github_phd_prs]
 service = "github"
@@ -183,7 +183,7 @@ include_user_issues = false
 include_user_repos = false
 add_tags = ["PR", "github", "bw"]
 default_priority = "L"
-workspace_template = "phd"
+area_template = "phd"
 
 # TODO: Add PR reviews target - uncomment when ready
 # [github_reviews]
