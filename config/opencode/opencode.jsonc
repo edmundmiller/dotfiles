@@ -18,6 +18,9 @@
   // Autoupdate - notify but don't auto-update
   "autoupdate": "notify",
 
+  // Plugins
+  "plugin": ["opencode-skills"],
+
   // Nextflow Language Server
   "lsp": {
     "nextflow": {
