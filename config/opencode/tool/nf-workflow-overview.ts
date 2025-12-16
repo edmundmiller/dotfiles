@@ -2,7 +2,7 @@
 // Custom tool for OpenCode that provides high-level pipeline structure analysis
 import { tool } from "@opencode-ai/plugin"
 
-const AST_GREP_DIR = `${process.env.HOME}/.local/share/opencode/ast-grep`
+const AST_GREP_DIR = `${process.env.HOME}/.config/opencode/ast-grep`
 
 /**
  * Get a comprehensive overview of a Nextflow pipeline
