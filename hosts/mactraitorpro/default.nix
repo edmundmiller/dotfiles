@@ -25,6 +25,7 @@
         direnv.enable = true;
         git.enable = true;
         jj.enable = true;
+        opencode.enable = true;
         ssh.enable = true;
         taskwarrior = {
           enable = true;
