@@ -140,8 +140,8 @@
   // Nextflow development agents
   "agent": {
     "nextflow-dev": {
-      "description": "Primary Nextflow pipeline development agent with enhanced permissions for workflow development",
-      "mode": "primary",
+      "description": "Nextflow pipeline development agent with enhanced permissions for workflow development",
+      "mode": "subagent",
       "temperature": 0.3,
       "permission": {
         "bash": {
