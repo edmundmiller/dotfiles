@@ -28,6 +28,8 @@ in
       "opencode/agent".source = "${configDir}/opencode/agent";
       "opencode/command".source = "${configDir}/opencode/command";
       "opencode/tool".source = "${configDir}/opencode/tool";
+      "opencode/plugin".source = "${configDir}/opencode/plugin";
+      "opencode/ast-grep".source = "${configDir}/opencode/ast-grep";
     };
   };
 }
