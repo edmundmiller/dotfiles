@@ -56,7 +56,7 @@ with lib.my;
               "root"
             ]
           then
-            config.system.primaryUser
+            config.system.primaryUser or "emiller"  # Fallback for NixOS systems
           else
             user;
         description =
