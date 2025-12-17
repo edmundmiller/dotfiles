@@ -129,7 +129,17 @@
       "ast-grep --pattern *": "allow",
       "ast-grep scan *": "allow",
       "ast-grep --config *": "allow",
-      "sg *": "allow"
+      "sg *": "allow",
+
+      // Nix/Darwin commands
+      "nix flake *": "allow",
+      "nix build *": "allow",
+      "nix search *": "allow",
+      "nix shell *": "allow",
+      "nix eval *": "allow",
+      "nix-collect-garbage *": "ask",
+      "darwin-rebuild *": "ask",
+      "hey *": "allow"
     },
     "edit": "allow",
     "write": "allow",
