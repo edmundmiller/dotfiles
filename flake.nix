@@ -38,6 +38,7 @@
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
+    opnix.url = "github:brizzbuzz/opnix";
     llm-prompt.url = "github:aldoborrero/llm-prompt";
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
@@ -153,6 +154,9 @@
             # Add nix-homebrew module for proper homebrew management
             inputs.nix-homebrew.darwinModules.nix-homebrew
 
+            # Add opnix for 1Password secrets integration
+            inputs.opnix.darwinModules.default
+
             # Import the module system (provides user.packages, home.configFile, etc.)
             ./.
 
@@ -178,6 +182,9 @@
 
             # Add nix-homebrew module for proper homebrew management
             inputs.nix-homebrew.darwinModules.nix-homebrew
+
+            # Add opnix for 1Password secrets integration
+            inputs.opnix.darwinModules.default
 
             # Import the module system (provides user.packages, home.configFile, etc.)
             ./.
