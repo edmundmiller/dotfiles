@@ -28,6 +28,15 @@ in
           text = builtins.readFile "${configDir}/jj/config.toml";
           force = true;
         };
+        # Include conf.d files for additional configuration (credits_roll templates, etc.)
+        "jj/conf.d/credits_roll.toml" = {
+          text = builtins.readFile "${configDir}/jj/conf.d/credits_roll.toml";
+          force = true;
+        };
+        "jj/conf.d/fix.toml" = {
+          text = builtins.readFile "${configDir}/jj/conf.d/fix.toml";
+          force = true;
+        };
       };
     };
 
