@@ -524,7 +524,7 @@
       typeset -g p10k_jj_quick=$(jj --ignore-working-copy --no-pager log --no-graph --limit 1 -r "@" \
         -T 'separate(" ", coalesce(bookmarks, ""), change_id.shortest(4))' 2>/dev/null)
       [[ -z $p10k_jj_quick ]] && typeset -g p10k_jj_quick="jj"
-      p10k_jj_quick+=" ▶▶▶"  # Distinctive marker to verify it changes
+      p10k_jj_quick+=" …"  # Loading indicator
     fi
 
     # Show placeholder if no cache (cleared by callback)
