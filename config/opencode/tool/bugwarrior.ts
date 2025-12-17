@@ -224,7 +224,7 @@ function generateTargetConfig(args: {
   if (args.service === "github") {
     lines.push(`login = "edmundmiller"`)
     lines.push(
-      `token = "@oracle:eval:op read \\"op://Private/GitHub Personal Access Token/token\\""`
+      `token = "@oracle:eval:cat /usr/local/var/opnix/secrets/bugwarrior-github-token"`
     )
     lines.push(`username = "edmundmiller"`)
 
@@ -263,7 +263,7 @@ function generateTargetConfig(args: {
     lines.push(`default_priority = "L"`)
   } else if (args.service === "linear") {
     lines.push(
-      `api_token = "@oracle:eval:op read \\"op://Private/Linear Bugwarrior/credential\\""`
+      `api_token = "@oracle:eval:cat /usr/local/var/opnix/secrets/bugwarrior-linear-token"`
     )
     lines.push(`only_if_assigned = "edmund.a.miller@gmail.com"`)
     lines.push(`status_types = ["unstarted", "started"]`)
