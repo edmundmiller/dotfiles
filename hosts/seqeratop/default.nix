@@ -16,6 +16,7 @@
         python.conda.enable = true;
         R.enable = true;
       };
+      desktop.term.ghostty.enable = true;
 
       shell = {
         "1password".enable = true;
