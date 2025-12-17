@@ -18,7 +18,7 @@ fi
 echo
 
 echo "=== Checking Config File ==="
-CONFIG_FILE="/Users/emiller/.config/dotfiles/config/zsh/.p10k.zsh"
+CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/config/zsh/.p10k.zsh"
 if [[ -f "$CONFIG_FILE" ]]; then
     echo "✓ Config file exists: $CONFIG_FILE"
     echo "File size: $(wc -c < "$CONFIG_FILE") bytes"
