@@ -2,6 +2,7 @@
 
 ## Critical Instructions
 
+- In all interactions, plans, and commit messages, be extremely concise and sacrifice grammar for the sake of concision.
 - **ALWAYS write over the source file you're editing.** Don't make "\_enhanced", "\_fixed", "\_updated", or "\_v2" versions. We use JJ for version control. If unsure, commit first then overwrite.
 - Don't make "dashboards" or figures with a lot of plots in one image file. It's hard for AIs to figure out what all is going on.
 - When the user requests code examples, setup or configuration steps, or library/API documentation, search the web for current docs.
