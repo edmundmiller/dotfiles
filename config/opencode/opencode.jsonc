@@ -44,15 +44,15 @@
 
   // MCP servers
   "mcp": {
-    "seqera-platform": {
-      "type": "remote",
-      "url": "https://mcp.seqera.io/mcp",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer {env:SEQERA_TOKEN}"
-      },
-      "timeout": 10000
-    },
+    // "seqera-platform": {
+    //   "type": "remote",
+    //   "url": "https://mcp.seqera.io/mcp",
+    //   "enabled": true,
+    //   "headers": {
+    //     "Authorization": "Bearer {env:SEQERA_TOKEN}"
+    //   },
+    //   "timeout": 10000
+    // },
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",
