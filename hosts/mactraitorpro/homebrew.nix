@@ -4,6 +4,7 @@
 
   taps = [
     # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
+    "rockorager/tap"  # Prise terminal multiplexer
     "seqeralabs/tap"
   ];
 
@@ -42,6 +43,7 @@
 
     # Shell and terminal tools
     "asciinema"
+    "rockorager/tap/prise"  # Modern terminal multiplexer
     "bash"
     "bat"
     "btop"
