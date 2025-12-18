@@ -1,3 +1,6 @@
+
+In all interactions, plans, and commit messages, be extremely concise and sacrifice grammar for the sake of concision.
+
 ## Critical Instructions
 
 - **ALWAYS write over the source file you're editing.** Don't make "\_enhanced", "\_fixed", "\_updated", or "\_v2" versions. We use JJ for version control. If unsure, commit first then overwrite.
