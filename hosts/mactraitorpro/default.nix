@@ -31,6 +31,7 @@
           enable = true;
           syncUrl = "http://nuc.cinnamon-rooster.ts.net:8080";
         };
+        prise.enable = true;
         tmux.enable = true;
         try.enable = true;
         zsh.enable = true;
