@@ -12,8 +12,8 @@
   },
 
   // Model configuration - using Claude as primary
-  "model": "anthropic/claude-sonnet-4-20250514",
-  "small_model": "anthropic/claude-3-5-haiku-20241022",
+  "model": "anthropic/claude-sonnet-4-5",
+  "small_model": "anthropic/claude-haiku-4-5",
 
   // Provider configuration
   "provider": {
@@ -149,6 +149,23 @@
 
   // Nextflow development agents
   "agent": {
+    // Built-in agent overrides
+    "build": {
+      "mode": "primary",
+      "model": "anthropic/claude-opus-4-5",
+      "description": "Full development work with all tools enabled"
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-5",
+      "description": "Analysis and planning without making changes",
+      "permission": {
+        "edit": "ask",
+        "bash": "ask",
+        "write": "ask"
+      }
+    },
+
     "nextflow-dev": {
       "description": "Nextflow pipeline development agent with enhanced permissions for workflow development",
       "mode": "subagent",
