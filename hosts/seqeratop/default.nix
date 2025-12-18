@@ -33,6 +33,7 @@
           syncUrl = "http://192.168.1.222:8080";
           defaultContext = "work";
         };
+        prise.enable = true;
         tmux.enable = true;
         try.enable = true;
         zsh.enable = true;
@@ -68,9 +69,12 @@
     homebrew = {
       enable = true;
 
-      # TODO taps = [ "d12frosted/emacs-plus" ];
+      taps = [
+        "rockorager/tap"  # Prise terminal multiplexer
+      ];
       brews = [
         "duckdb"
+        "rockorager/tap/prise"  # Modern terminal multiplexer
         "dvc"
         "gh"
         "fzf"
