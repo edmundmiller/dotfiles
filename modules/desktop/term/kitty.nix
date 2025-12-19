@@ -3,6 +3,7 @@
   options,
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -10,6 +11,16 @@ with lib.my;
 let
   cfg = config.modules.desktop.term.kitty;
   inherit (config.dotfiles) configDir;
+
+  # Catppuccin theme files
+  catppuccinMocha = pkgs.fetchurl {
+    url = "https://raw.githubusercontent.com/catppuccin/kitty/main/themes/mocha.conf";
+    hash = "sha256:094mj07fi3gq5j3gxgxh6aa7cxw8p3s6mfx4pczj8r1yqc0xvz4j";
+  };
+  catppuccinLatte = pkgs.fetchurl {
+    url = "https://raw.githubusercontent.com/catppuccin/kitty/main/themes/latte.conf";
+    hash = "sha256:137yfzqz09mnc8xis0cdxlz93jirgbh4j4cfcxzq1g8fg0n1v0jj";
+  };
 in
 {
   options.modules.desktop.term.kitty = {
@@ -25,6 +36,13 @@ in
     home-manager.users.${config.user.name}.programs.kitty = {
       enable = true;
       settings = {
+        # Font Configuration (synced from Ghostty)
+        font_family = "Maple Mono NF";
+        bold_font = "auto";
+        italic_font = "auto";
+        bold_italic_font = "auto";
+        font_size = 14;
+
         scrollback_lines = 10000;
         scrollback_pager = ''nvim -c 'setlocal nonumber nolist showtabline=0 foldcolline=0|Man!' -c "autocmd VimEnter * normal G" -'';
         enable_audio_bell = false;
@@ -39,17 +57,35 @@ in
         macos_quit_when_last_window_closed = true;
         macos_show_window_title_in = "menubar";  # Valid: menubar, titlebar, none
         macos_traditional_fullscreen = false;
-        macos_colorspace = "srgb";
+        macos_colorspace = "displayp3";  # Match Ghostty's display-p3
 
-        # Window appearance
+        # Window appearance (synced from Ghostty)
         hide_window_decorations = "no";  # Show full native macOS titlebar
-        window_padding_width = 4;
+        window_padding_width = 8;  # Match Ghostty's 8px padding
         window_margin_width = 0;
+
+        # Initial window size (synced from Ghostty)
+        remember_window_size = false;
+        initial_window_width = 1200;
+        initial_window_height = 800;
+
+        # TODO: Enable background opacity when Ghostty bug is fixed
+        # https://github.com/ghostty-org/ghostty/issues/3049
+        # background_opacity = 0.95;
+        dynamic_background_opacity = true;
 
         # Confirm close on quit
         confirm_os_window_close = 0;
       };
       extraConfig = ''
+        # Font features - enable ligatures (synced from Ghostty)
+        font_features Maple Mono NF +liga
+
+        # Theme: Catppuccin Mocha (dark)
+        # TODO: Implement auto light/dark switching like Ghostty's
+        # theme = light:Catppuccin Latte,dark:Catppuccin Mocha
+        include themes/mocha.conf
+
         # Session Management Keybindings (Ctrl+A prefix, tmux-style)
         # Save current layout to default session
         map ctrl+a>s save_as_session --use-foreground-process --relocatable ~/.config/kitty/sessions/default.kitty-session
@@ -95,13 +131,17 @@ in
       '';
     };
 
-    # Link session files and custom kitten
+    # Link session files, custom kitten, and themes
     home.configFile = {
       "kitty/sessions/default.kitty-session".source = "${configDir}/kitty/sessions/default.kitty-session";
       "kitty/sessions/minimal.kitty-session".source = "${configDir}/kitty/sessions/minimal.kitty-session";
       "kitty/sessions/dev.kitty-session".source = "${configDir}/kitty/sessions/dev.kitty-session";
       "kitty/sessions/project.kitty-session".source = "${configDir}/kitty/sessions/project.kitty-session";
       "kitty/new_project.py".source = "${configDir}/kitty/new_project.py";
+
+      # Catppuccin themes (synced with Ghostty)
+      "kitty/themes/mocha.conf".source = catppuccinMocha;
+      "kitty/themes/latte.conf".source = catppuccinLatte;
     };
   };
 }
