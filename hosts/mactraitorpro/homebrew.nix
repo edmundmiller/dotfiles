@@ -339,7 +339,7 @@
 
   casks = [
     # Core productivity
-    "1password@beta"
+    "1password"
     "1password-cli"
     "raycast"
     "bartender"
