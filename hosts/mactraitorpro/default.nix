@@ -20,7 +20,10 @@
       shell = {
         "1password".enable = true;
         ai.enable = true;
-        bugwarrior.enable = true;
+        bugwarrior = {
+          enable = true;
+          flavor = "personal";
+        };
         claude.enable = true;
         direnv.enable = true;
         git.enable = true;
