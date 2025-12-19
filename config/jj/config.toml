@@ -140,8 +140,9 @@ track-default-bookmark-on-clone = false
 push-bookmarks-prefix = "emiller/"
 
 [remotes.origin]
-# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
-auto-track-bookmarks = "glob:*"
+# Only auto-track your own bookmarks + shared branches (reduces clutter from team branches)
+# Use `jj bookmark track <name>@origin` to manually track others when needed
+auto-track-bookmarks = "glob:emiller/* | exact:main | exact:master | exact:dev"
 
 [revsets]
 # Equivalent to git's push.default=current
