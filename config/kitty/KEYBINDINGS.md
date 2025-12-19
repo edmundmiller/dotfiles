@@ -1,6 +1,6 @@
 # Kitty Keybindings (Tmux-Style)
 
-Prefix: `ctrl+a` (like tmux with C-c prefix)
+Prefix: `ctrl+c` (matches tmux, press twice to send SIGINT)
 
 Based on [hlissner/dotfiles tmux.conf](https://github.com/hlissner/dotfiles/blob/master/config/tmux/tmux.conf)
 
@@ -10,68 +10,68 @@ Based on [hlissner/dotfiles tmux.conf](https://github.com/hlissner/dotfiles/blob
 
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+a>c` | New tab | `C-c c` |
-| `ctrl+a>ctrl+n` | Next tab | `C-c C-n` |
-| `ctrl+a>ctrl+p` | Previous tab | `C-c C-p` |
-| `ctrl+a>ctrl+w` | Last tab | `C-c C-w` |
-| `ctrl+a>1-9` | Go to tab N | `C-c 1-9` |
-| `ctrl+a>shift+w` | Choose window | `C-c W` |
-| `ctrl+a>.` | Choose window | `C-c .` |
-| `ctrl+a>shift+x` | Close tab | `C-c X` |
+| `ctrl+c>c` | New tab | `C-c c` |
+| `ctrl+c>ctrl+n` | Next tab | `C-c C-n` |
+| `ctrl+c>ctrl+p` | Previous tab | `C-c C-p` |
+| `ctrl+c>ctrl+w` | Last tab | `C-c C-w` |
+| `ctrl+c>1-9` | Go to tab N | `C-c 1-9` |
+| `ctrl+c>shift+w` | Choose window | `C-c W` |
+| `ctrl+c>.` | Choose window | `C-c .` |
+| `ctrl+c>shift+x` | Close tab | `C-c X` |
 
 ### Pane/Split Management
 
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+a>v` | Vertical split | `C-c v` |
-| `ctrl+a>s` | Horizontal split | `C-c s` |
-| `ctrl+a>h/j/k/l` | Navigate panes | `C-c h/j/k/l` |
-| `ctrl+a>x` | Close pane | `C-c x` |
-| `ctrl+a>o` | Zoom pane | `C-c o` |
-| `ctrl+a>-` | Break pane to new tab | `C-c -` |
+| `ctrl+c>v` | Vertical split | `C-c v` |
+| `ctrl+c>s` | Horizontal split | `C-c s` |
+| `ctrl+c>h/j/k/l` | Navigate panes | `C-c h/j/k/l` |
+| `ctrl+c>x` | Close pane | `C-c x` |
+| `ctrl+c>o` | Zoom pane | `C-c o` |
+| `ctrl+c>-` | Break pane to new tab | `C-c -` |
 
 ### Layout
 
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+a>shift+\` | Rotate layout | `C-c \|` |
-| `ctrl+a>=` | Reset sizes | `C-c =` |
+| `ctrl+c>shift+\` | Rotate layout | `C-c \|` |
+| `ctrl+c>=` | Reset sizes | `C-c =` |
 
 ### Resize
 
 | Binding | Action |
 |---------|--------|
-| `ctrl+a>left` | Narrower |
-| `ctrl+a>right` | Wider |
-| `ctrl+a>up` | Taller |
-| `ctrl+a>down` | Shorter |
+| `ctrl+c>left` | Narrower |
+| `ctrl+c>right` | Wider |
+| `ctrl+c>up` | Taller |
+| `ctrl+c>down` | Shorter |
 
 ### Session Management
 
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+a>shift+s` | Browse sessions | `C-c S` |
-| `ctrl+a>/` | Browse sessions | `C-c /` |
-| `ctrl+a>d` | Default session | `C-c d` (detach) |
-| `ctrl+a>m` | Minimal session | - |
-| `ctrl+a>ctrl+shift+p` | Dev session | - |
-| `ctrl+a>q` | Close window | `C-c q` |
+| `ctrl+c>shift+s` | Browse sessions | `C-c S` |
+| `ctrl+c>/` | Browse sessions | `C-c /` |
+| `ctrl+c>d` | Default session | `C-c d` (detach) |
+| `ctrl+c>m` | Minimal session | - |
+| `ctrl+c>ctrl+shift+p` | Dev session | - |
+| `ctrl+c>q` | Close window | `C-c q` |
 
 ### Copy Mode & Misc
 
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+a>enter` | Scrollback/copy mode | `C-c Enter` |
-| `ctrl+a>r` | Reload config | `C-c r` |
-| `ctrl+a>ctrl+r` | Clear/refresh | `C-c C-r` |
+| `ctrl+c>enter` | Scrollback/copy mode | `C-c Enter` |
+| `ctrl+c>r` | Reload config | `C-c r` |
+| `ctrl+c>ctrl+r` | Clear/refresh | `C-c C-r` |
 
 ### Custom (Project Scripts)
 
 | Binding | Action |
 |---------|--------|
-| `ctrl+a>shift+1` | Project script 1 |
-| `ctrl+a>shift+2` | Project script 2 |
-| `ctrl+a>shift+3` | Project script 3 |
+| `ctrl+c>shift+1` | Project script 1 |
+| `ctrl+c>shift+2` | Project script 2 |
+| `ctrl+c>shift+3` | Project script 3 |
 
 ## Philosophy
 
@@ -83,5 +83,5 @@ Based on [hlissner/dotfiles tmux.conf](https://github.com/hlissner/dotfiles/blob
 ## Future Enhancements
 
 - [ ] Vim-aware `C-h/j/k/l` navigation (no prefix)
-- [ ] `ctrl+a>u/U` for jjui splits
-- [ ] `ctrl+a>shift+c` for custom command prompt
+- [ ] `ctrl+c>u/U` for jjui splits
+- [ ] `ctrl+c>shift+c` for custom command prompt

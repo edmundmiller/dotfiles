@@ -89,67 +89,68 @@ in
         ########################################
         # Tmux-Style Keybindings               #
         ########################################
-        # Prefix: ctrl+a (mimics tmux C-c prefix workflow)
+        # Prefix: ctrl+c (matches tmux config, press twice to send SIGINT)
         # Based on: https://github.com/hlissner/dotfiles/blob/master/config/tmux/tmux.conf
+        map ctrl+c>ctrl+c send_text all \x03
 
         ## Window/Tab Management
-        map ctrl+a>c new_tab_with_cwd
-        map ctrl+a>ctrl+n next_tab
-        map ctrl+a>ctrl+p previous_tab
-        map ctrl+a>ctrl+w goto_tab -1
-        map ctrl+a>1 goto_tab 1
-        map ctrl+a>2 goto_tab 2
-        map ctrl+a>3 goto_tab 3
-        map ctrl+a>4 goto_tab 4
-        map ctrl+a>5 goto_tab 5
-        map ctrl+a>6 goto_tab 6
-        map ctrl+a>7 goto_tab 7
-        map ctrl+a>8 goto_tab 8
-        map ctrl+a>9 goto_tab 9
-        map ctrl+a>shift+w select_tab
-        map ctrl+a>. select_tab
-        map ctrl+a>shift+x close_tab
+        map ctrl+c>c new_tab_with_cwd
+        map ctrl+c>ctrl+n next_tab
+        map ctrl+c>ctrl+p previous_tab
+        map ctrl+c>ctrl+w goto_tab -1
+        map ctrl+c>1 goto_tab 1
+        map ctrl+c>2 goto_tab 2
+        map ctrl+c>3 goto_tab 3
+        map ctrl+c>4 goto_tab 4
+        map ctrl+c>5 goto_tab 5
+        map ctrl+c>6 goto_tab 6
+        map ctrl+c>7 goto_tab 7
+        map ctrl+c>8 goto_tab 8
+        map ctrl+c>9 goto_tab 9
+        map ctrl+c>shift+w select_tab
+        map ctrl+c>. select_tab
+        map ctrl+c>shift+x close_tab
 
         ## Pane/Split Management
-        map ctrl+a>v launch --cwd=current --location=vsplit
-        map ctrl+a>s launch --cwd=current --location=hsplit
-        map ctrl+a>h neighboring_window left
-        map ctrl+a>j neighboring_window down
-        map ctrl+a>k neighboring_window up
-        map ctrl+a>l neighboring_window right
-        map ctrl+a>x close_window
-        map ctrl+a>o toggle_layout stack
-        map ctrl+a>minus detach_window new-tab
+        map ctrl+c>v launch --cwd=current --location=vsplit
+        map ctrl+c>s launch --cwd=current --location=hsplit
+        map ctrl+c>h neighboring_window left
+        map ctrl+c>j neighboring_window down
+        map ctrl+c>k neighboring_window up
+        map ctrl+c>l neighboring_window right
+        map ctrl+c>x close_window
+        map ctrl+c>o toggle_layout stack
+        map ctrl+c>minus detach_window new-tab
 
         ## Layout Management
-        map ctrl+a>shift+\ layout_action rotate
-        map ctrl+a>equal reset_window_sizes
+        map ctrl+c>shift+\ layout_action rotate
+        map ctrl+c>equal reset_window_sizes
 
         ## Session Management
-        map ctrl+a>shift+s goto_session
-        map ctrl+a>/ goto_session
-        map ctrl+a>d goto_session ~/.config/kitty/sessions/default.kitty-session
-        map ctrl+a>m goto_session ~/.config/kitty/sessions/minimal.kitty-session
-        map ctrl+a>ctrl+shift+p goto_session ~/.config/kitty/sessions/dev.kitty-session
-        map ctrl+a>q close_os_window
+        map ctrl+c>shift+s goto_session
+        map ctrl+c>/ goto_session
+        map ctrl+c>d goto_session ~/.config/kitty/sessions/default.kitty-session
+        map ctrl+c>m goto_session ~/.config/kitty/sessions/minimal.kitty-session
+        map ctrl+c>ctrl+shift+p goto_session ~/.config/kitty/sessions/dev.kitty-session
+        map ctrl+c>q close_os_window
 
         ## Copy Mode & Scrollback
-        map ctrl+a>enter show_scrollback
+        map ctrl+c>enter show_scrollback
 
         ## Misc/Utility
-        map ctrl+a>r load_config_file
-        map ctrl+a>ctrl+r clear_terminal reset active
+        map ctrl+c>r load_config_file
+        map ctrl+c>ctrl+r clear_terminal reset active
 
         ## Resize (not in tmux config, but useful)
-        map ctrl+a>left resize_window narrower
-        map ctrl+a>right resize_window wider
-        map ctrl+a>up resize_window taller
-        map ctrl+a>down resize_window shorter
+        map ctrl+c>left resize_window narrower
+        map ctrl+c>right resize_window wider
+        map ctrl+c>up resize_window taller
+        map ctrl+c>down resize_window shorter
 
         ## Custom Project Creation (unique to your workflow)
-        map ctrl+a>shift+1 kitten new_project.py 1
-        map ctrl+a>shift+2 kitten new_project.py 2
-        map ctrl+a>shift+3 kitten new_project.py 3
+        map ctrl+c>shift+1 kitten new_project.py 1
+        map ctrl+c>shift+2 kitten new_project.py 2
+        map ctrl+c>shift+3 kitten new_project.py 3
 
         ########################################
         # Session Display & Startup            #
