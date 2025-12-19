@@ -146,12 +146,12 @@ report.crisis.labels=ID,P,Due,Urg,Description,Project
 report.crisis.filter=status:pending priority:H due.before:today
 report.crisis.sort=urgency-,due+
 
-# Daily Focus - Today's tasks and urgent items
-report.today.description=Today's scheduled tasks and urgent items
-report.today.columns=id,priority,urgency,scheduled.relative,due.relative,description.count,project,tags
-report.today.labels=ID,P,Urg,Sched,Due,Description,Project,Tags
-report.today.filter=status:pending and (scheduled.before:tomorrow or due.before:tomorrow or priority:H)
-report.today.sort=urgency-,priority-,due+,scheduled+
+# Daily Focus - Today's actionable items
+report.today.description=Today's focus - next, overdue, due today, and high priority tasks
+report.today.columns=id,priority,urgency,due.relative,description.count,project,tags
+report.today.labels=ID,P,Urg,Due,Description,Project,Tags
+report.today.filter=status:pending and (+next or +OVERDUE or due:today or priority:H) limit:10
+report.today.sort=urgency-,due+
 
 # Project Health - Overview of project completion rates
 report.health.description=Project health and completion overview
