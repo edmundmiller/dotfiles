@@ -16,3 +16,10 @@
 {"id":"dotfiles-umx","title":"Handle +bw tag in beads-send to link to external ref","description":"If task has +bw (bugwarrior) tag, link to existing external ref instead of creating new bead","status":"open","priority":3,"issue_type":"feature","created_at":"2025-12-10T09:15:45.453857-06:00","updated_at":"2025-12-10T09:17:18.80607-06:00"}
 {"id":"dotfiles-v7s","title":"Fix taskopen for Linear issues","description":"taskopen needs to handle Linear issue URLs/references properly","status":"open","priority":1,"issue_type":"task","created_at":"2025-12-10T09:15:28.759352-06:00","updated_at":"2025-12-10T09:17:26.977609-06:00","labels":["taskopen"]}
 {"id":"dotfiles-vzz","title":"Fix tui not using context correctly","description":"","status":"open","priority":2,"issue_type":"bug","created_at":"2025-12-14T21:22:14.300792-06:00","updated_at":"2025-12-14T21:22:14.300792-06:00","labels":["taskwarrior"]}
+{"id":"dotfiles-l6h","title":"Configure bugwarrior Gmail service for work","description":"Set up bugwarrior Gmail integration for work email. Requires:
+1. Create Google Cloud project and OAuth credentials
+2. Download client secret to ~/.gmail_client_secret.json
+3. Run bugwarrior-pull once to complete OAuth flow
+4. Uncomment work_gmail target in bugwarrior-work.toml
+
+Docs: https://bugwarrior.readthedocs.io/en/latest/services/gmail.html","status":"open","priority":3,"issue_type":"task","created_at":"2025-12-19T14:00:00.000000-06:00","updated_at":"2025-12-19T14:00:00.000000-06:00","labels":["bugwarrior"]}

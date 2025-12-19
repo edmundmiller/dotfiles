@@ -22,7 +22,10 @@
       shell = {
         "1password".enable = true;
         ai.enable = true;
-        bugwarrior.enable = true;
+        bugwarrior = {
+          enable = true;
+          flavor = "work";
+        };
         claude.enable = true;
         direnv.enable = true;
         git.enable = true;
