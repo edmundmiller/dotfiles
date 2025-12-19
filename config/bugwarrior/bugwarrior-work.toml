@@ -1,0 +1,121 @@
+# Bugwarrior configuration for work machine (Seqeratop)
+# Credentials via manual files in ~/.config/bugwarrior/secrets/
+
+[general]
+targets = [
+    "seqera_jira",
+    "github_seqera_issues",
+    "github_seqera_prs",
+    "github_nfcore_issues",
+    "github_nfcore_prs",
+    # "work_gmail",  # TODO: requires OAuth setup (see bead dotfiles-l6h)
+]
+taskrc = "~/.taskrc"
+log_level = "INFO"
+annotation_links = true
+merge_annotations = true
+merge_tags = true
+reopen_completed_tasks = false
+
+# =============================================================================
+# Jira
+# =============================================================================
+
+[seqera_jira]
+service = "jira"
+base_uri = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-host"
+username = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-username"
+password = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-password"
+description_template = "{{jirasummary}}"
+project_template = "{{jiraproject}}"
+query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution is null"
+import_labels_as_tags = true
+import_sprints_as_tags = true
+label_template = "{{label}}"
+priority_template = "{% if jirapriority == 'Highest' or jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
+add_tags = ["jira", "bw"]
+area_template = "seqera"
+
+# =============================================================================
+# GitHub - Seqera (nextflow-io, seqeralabs, seqera-services)
+# =============================================================================
+
+[github_seqera_issues]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:cat ~/.config/bugwarrior/secrets/github-work-token"
+username = "edmundmiller"
+description_template = "{{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
+query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflow-io org:seqeralabs org:seqera-services"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "bw", "assigned"]
+default_priority = "L"
+area_template = "seqera"
+
+[github_seqera_prs]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:cat ~/.config/bugwarrior/secrets/github-work-token"
+username = "edmundmiller"
+description_template = "Review {{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
+query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflow-io org:seqeralabs org:seqera-services -author:app/renovate -author:app/dependabot"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["PR", "github", "bw"]
+default_priority = "L"
+area_template = "seqera"
+
+# =============================================================================
+# GitHub - nf-core (nf-core, bioinformaticsorphanage, bioconda)
+# =============================================================================
+
+[github_nfcore_issues]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:cat ~/.config/bugwarrior/secrets/github-work-token"
+username = "edmundmiller"
+description_template = "{{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
+query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:nf-core org:bioinformaticsorphanage org:bioconda"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["github", "bw", "assigned"]
+default_priority = "L"
+area_template = "nfcore"
+
+[github_nfcore_prs]
+service = "github"
+login = "edmundmiller"
+token = "@oracle:eval:cat ~/.config/bugwarrior/secrets/github-work-token"
+username = "edmundmiller"
+description_template = "Review {{githubtitle}}"
+project_template = "{{githubrepo|replace('/', '.')}}"
+query = "is:pr assignee:edmundmiller is:open updated:>=2025-09-09 org:nf-core org:bioinformaticsorphanage org:bioconda -author:app/renovate -author:app/dependabot"
+include_user_issues = false
+include_user_repos = false
+add_tags = ["PR", "github", "bw"]
+default_priority = "L"
+area_template = "nfcore"
+
+# =============================================================================
+# Gmail (TODO)
+# =============================================================================
+
+# TODO: Configure work Gmail integration
+# Requires OAuth setup - see https://bugwarrior.readthedocs.io/en/latest/services/gmail.html
+# 1. Create Google Cloud project
+# 2. Enable Gmail API
+# 3. Create OAuth credentials
+# 4. Download client secret to ~/.gmail_client_secret.json
+# 5. Run bugwarrior-pull once to complete OAuth flow
+# 6. Uncomment target below and add to targets list
+#
+# [work_gmail]
+# service = "gmail"
+# query = "label:action OR label:todo"
+# login_name = "edmund.miller@seqera.io"
+# add_tags = ["gmail", "bw"]
+# area_template = "seqera"
