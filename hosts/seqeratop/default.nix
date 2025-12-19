@@ -36,7 +36,6 @@
           syncUrl = "http://192.168.1.222:8080";
           defaultContext = "work";
         };
-        prise.enable = true;
         tmux.enable = true;
         try.enable = true;
         zsh.enable = true;
@@ -73,11 +72,11 @@
       enable = true;
 
       taps = [
-        "rockorager/tap"  # Prise terminal multiplexer
+        # "rockorager/tap"  # Prise terminal multiplexer
       ];
       brews = [
         "duckdb"
-        "rockorager/tap/prise"  # Modern terminal multiplexer
+        # "rockorager/tap/prise"  # Modern terminal multiplexer
         "dvc"
         "gh"
         "fzf"
