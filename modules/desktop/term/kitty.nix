@@ -94,7 +94,8 @@ in
         map ctrl+c>ctrl+c send_text all \x03
 
         ## Window/Tab Management
-        map ctrl+c>c new_tab_with_cwd
+        map ctrl+c>c launch --cwd=current --type=tab
+        map ctrl+c>n launch --cwd=current --type=os-window
         map ctrl+c>ctrl+n next_tab
         map ctrl+c>ctrl+p previous_tab
         map ctrl+c>ctrl+w goto_tab -1
