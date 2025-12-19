@@ -18,7 +18,8 @@
       };
 
       shell = {
-        "1password".enable = true;
+        # FIXME: Conflicts with Homebrew 1password@beta cask - using Homebrew for now
+        "1password".enable = false;
         ai.enable = true;
         bugwarrior = {
           enable = true;
