@@ -8,9 +8,12 @@ Based on [hlissner/dotfiles tmux.conf](https://github.com/hlissner/dotfiles/blob
 
 ### Window/Tab Management
 
+All new tabs/windows inherit the current working directory.
+
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+c>c` | New tab | `C-c c` |
+| `ctrl+c>c` | New tab (same cwd) | `C-c c` |
+| `ctrl+c>n` | New OS window (same cwd) | - |
 | `ctrl+c>ctrl+n` | Next tab | `C-c C-n` |
 | `ctrl+c>ctrl+p` | Previous tab | `C-c C-p` |
 | `ctrl+c>ctrl+w` | Last tab | `C-c C-w` |
@@ -21,10 +24,12 @@ Based on [hlissner/dotfiles tmux.conf](https://github.com/hlissner/dotfiles/blob
 
 ### Pane/Split Management
 
+Splits inherit the current working directory.
+
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+c>v` | Vertical split | `C-c v` |
-| `ctrl+c>s` | Horizontal split | `C-c s` |
+| `ctrl+c>v` | Vertical split (same cwd) | `C-c v` |
+| `ctrl+c>s` | Horizontal split (same cwd) | `C-c s` |
 | `ctrl+c>h/j/k/l` | Navigate panes | `C-c h/j/k/l` |
 | `ctrl+c>x` | Close pane | `C-c x` |
 | `ctrl+c>o` | Zoom pane | `C-c o` |
