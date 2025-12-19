@@ -86,42 +86,74 @@ in
         # theme = light:Catppuccin Latte,dark:Catppuccin Mocha
         include themes/mocha.conf
 
-        # Session Management Keybindings (Ctrl+A prefix, tmux-style)
-        # Save current layout to default session
-        map ctrl+a>s save_as_session --use-foreground-process --relocatable ~/.config/kitty/sessions/default.kitty-session
+        ########################################
+        # Tmux-Style Keybindings               #
+        ########################################
+        # Prefix: ctrl+a (mimics tmux C-c prefix workflow)
+        # Based on: https://github.com/hlissner/dotfiles/blob/master/config/tmux/tmux.conf
 
-        # Quick session switching
-        map ctrl+a>d goto_session ~/.config/kitty/sessions/default.kitty-session
-        map ctrl+a>m goto_session ~/.config/kitty/sessions/minimal.kitty-session
-        map ctrl+a>p goto_session ~/.config/kitty/sessions/dev.kitty-session
-        map ctrl+a>/ goto_session  # Browse all sessions
-        map ctrl+a>- goto_session -1  # Previous session
+        ## Window/Tab Management
+        map ctrl+a>c new_tab_with_cwd
+        map ctrl+a>ctrl+n next_tab
+        map ctrl+a>ctrl+p previous_tab
+        map ctrl+a>ctrl+w goto_tab -1
+        map ctrl+a>1 goto_tab 1
+        map ctrl+a>2 goto_tab 2
+        map ctrl+a>3 goto_tab 3
+        map ctrl+a>4 goto_tab 4
+        map ctrl+a>5 goto_tab 5
+        map ctrl+a>6 goto_tab 6
+        map ctrl+a>7 goto_tab 7
+        map ctrl+a>8 goto_tab 8
+        map ctrl+a>9 goto_tab 9
+        map ctrl+a>shift+w select_tab
+        map ctrl+a>. select_tab
+        map ctrl+a>shift+x close_tab
 
-        # Window/tab management
-        map ctrl+a>enter launch --cwd=current --type=tab
-        map ctrl+a>n new_tab_with_cwd
-        map ctrl+a>w close_tab
-
-        # Split windows
-        map ctrl+a>minus launch --cwd=current --location=hsplit
-        map ctrl+a>| launch --cwd=current --location=vsplit
-
-        # Window navigation (vim-style)
+        ## Pane/Split Management
+        map ctrl+a>v launch --cwd=current --location=vsplit
+        map ctrl+a>s launch --cwd=current --location=hsplit
         map ctrl+a>h neighboring_window left
         map ctrl+a>j neighboring_window down
         map ctrl+a>k neighboring_window up
         map ctrl+a>l neighboring_window right
+        map ctrl+a>x close_window
+        map ctrl+a>o toggle_layout stack
+        map ctrl+a>minus detach_window new-tab
 
-        # Resize windows
+        ## Layout Management
+        map ctrl+a>shift+\ layout_action rotate
+        map ctrl+a>equal reset_window_sizes
+
+        ## Session Management
+        map ctrl+a>shift+s goto_session
+        map ctrl+a>/ goto_session
+        map ctrl+a>d goto_session ~/.config/kitty/sessions/default.kitty-session
+        map ctrl+a>m goto_session ~/.config/kitty/sessions/minimal.kitty-session
+        map ctrl+a>ctrl+shift+p goto_session ~/.config/kitty/sessions/dev.kitty-session
+        map ctrl+a>q close_os_window
+
+        ## Copy Mode & Scrollback
+        map ctrl+a>enter show_scrollback
+
+        ## Misc/Utility
+        map ctrl+a>r load_config_file
+        map ctrl+a>ctrl+r clear_terminal reset active
+
+        ## Resize (not in tmux config, but useful)
         map ctrl+a>left resize_window narrower
         map ctrl+a>right resize_window wider
         map ctrl+a>up resize_window taller
         map ctrl+a>down resize_window shorter
 
-        # Custom project creation kitten
-        map ctrl+a>1 kitten new_project.py 1
-        map ctrl+a>2 kitten new_project.py 2
-        map ctrl+a>3 kitten new_project.py 3
+        ## Custom Project Creation (unique to your workflow)
+        map ctrl+a>shift+1 kitten new_project.py 1
+        map ctrl+a>shift+2 kitten new_project.py 2
+        map ctrl+a>shift+3 kitten new_project.py 3
+
+        ########################################
+        # Session Display & Startup            #
+        ########################################
 
         # Session display in tab bar
         tab_title_template {session_name} · {title}
