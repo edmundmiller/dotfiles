@@ -71,11 +71,14 @@ in
 include ${configDir}/taskwarrior/taskrc
 context=${cfg.defaultContext}
 EOF
+        else
+          # Update include path to current nix store on each rebuild
+          ${pkgs.gnused}/bin/sed -i "s|^include /nix/store/.*/config/taskwarrior/taskrc|include ${configDir}/taskwarrior/taskrc|" "$taskrc"
         fi
       '';
 
       # Taskwarrior-TUI shortcut scripts
-      # Keybindings: 1=try, o=taskopen, b=beads, t=schedule-today
+      # Keybindings: 1=try, o=taskopen, b=beads, S=schedule-today
       # Timewarrior integration uses the on-modify.timewarrior hook (triggered by 's' key)
       xdg.configFile."taskwarrior-tui/shortcut-scripts/taskopen.sh" = mkIf cfg.shortcuts.enable {
         source = "${shortcutScriptsDir}/taskopen.sh";

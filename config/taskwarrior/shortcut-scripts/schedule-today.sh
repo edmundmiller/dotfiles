@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Schedule task for today
 # Called from taskwarrior-tui with task UUID as argument
-# Keybinding: t
+# Keybinding: S
 
 set -e
 
