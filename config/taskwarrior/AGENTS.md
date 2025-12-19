@@ -97,7 +97,7 @@ Interactive keybindings available in `taskwarrior-tui`:
 | `1` | try-workspace  | Launch try workspace for selected task                         |
 | `o` | taskopen       | Open task annotations (URLs, files)                            |
 | `b` | beads          | Send task to beads (create bead in try workspace)              |
-| `t` | schedule-today | Schedule task for today                                        |
+| `S` | schedule-today | Schedule task for today (Shift+s)                              |
 | `s` | start/stop     | Start or stop time tracking (built-in Timewarrior integration) |
 
 ### Shortcut Details
@@ -108,7 +108,7 @@ Interactive keybindings available in `taskwarrior-tui`:
 
 **beads** (`b`): Creates a bead issue in the task's project repository and links it to the task. Automatically infers workspace from project name.
 
-**schedule-today** (`t`): Sets the task's `scheduled` date to today. Press again on an already-scheduled task to see current schedule. Provides feedback:
+**schedule-today** (`S`): Sets the task's `scheduled` date to today. Press again on an already-scheduled task to see current schedule. Provides feedback:
 
 - "Scheduled for today: <description>"
 - "Rescheduled for today: <description> (was: YYYY-MM-DD)"
