@@ -41,10 +41,10 @@ uda.taskwarrior-tui.shortcuts.3=~/.config/taskwarrior-tui/shortcut-scripts/beads
 uda.taskwarrior-tui.shortcuts.4=~/.config/taskwarrior-tui/shortcut-scripts/schedule-today.sh
 
 # Custom keybindings for shortcuts
-# 1 = try (default key), o = taskopen, b = beads, t = schedule today
+# 1 = try (default key), o = taskopen, b = beads, S = schedule today
 uda.taskwarrior-tui.keyconfig.shortcut2=o
 uda.taskwarrior-tui.keyconfig.shortcut3=b
-uda.taskwarrior-tui.keyconfig.shortcut4=t
+uda.taskwarrior-tui.keyconfig.shortcut4=S
 
 # =============================================================================
 # BASIC BEHAVIOR
