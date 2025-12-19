@@ -33,7 +33,7 @@ ui.setup({
     -- Pane borders (box mode with rounded corners)
     borders = {
         enabled = true,
-        mode = "box",                 -- Full borders around panes
+        mode = "separator",           -- tmux-style borders between panes only
         style = "rounded",            -- Rounded corners
         focused_color = "#89b4fa",    -- Blue for active pane
         unfocused_color = "#585b70",  -- Gray for inactive panes
@@ -49,6 +49,9 @@ ui.setup({
     tab_bar = {
         show_single_tab = false,      -- Hide tab bar with single tab
     },
+
+    -- macOS Option key behavior
+    macos_option_as_alt = "true",     -- Use Option as Alt for keybindings
 
     -- Default leader key is Super+k (Cmd+k on macOS)
     -- Default keybindings:

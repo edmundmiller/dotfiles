@@ -3,6 +3,30 @@
 # Prise - Terminal Multiplexer Aliases
 # https://github.com/rockorager/prise
 
+# Fix prise session files that contain URL-formatted cwd paths
+# This is a workaround for a prise bug where OSC 7 URLs are stored
+# in session files and cause ChdirFailed errors on restore
+_prise_fix_session_cwds() {
+  local sessions_dir="${HOME}/.local/state/prise/sessions"
+  [[ -d "$sessions_dir" ]] || return 0
+  
+  for f in "$sessions_dir"/*.json(N); do
+    # Check if file contains URL-formatted cwd
+    if grep -q '"cwd": *"[a-z-]*://' "$f" 2>/dev/null; then
+      # Strip URL protocol and hostname, keep just the path
+      # kitty-shell-cwd://hostname/path -> /path
+      # file://hostname/path -> /path
+      sed -i.bak -E 's#"cwd": *"[a-z-]+://[^/]*(/.*)?"#"cwd": "\1"#g' "$f"
+      rm -f "${f}.bak"
+    fi
+  done
+}
+
+# Run fix on shell startup (outside prise only)
+if [[ -z $PRISE_SESSION ]]; then
+  _prise_fix_session_cwds
+fi
+
 # Basic prise commands
 alias pa='prise'
 alias pal='prise session list'
