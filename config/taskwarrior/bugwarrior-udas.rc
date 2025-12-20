@@ -2,7 +2,23 @@
 # BUGWARRIOR UDAs
 # =============================================================================
 # Generated for bugwarrior service integration
-# Services: Apple Reminders, GitHub, Linear
+# Services: Apple Reminders, GitHub, JIRA, Linear
+
+# JIRA UDAs
+uda.jiraid.type=string
+uda.jiraid.label=JIRA ID
+uda.jirasummary.type=string
+uda.jirasummary.label=JIRA Summary
+uda.jiradescription.type=string
+uda.jiradescription.label=JIRA Description
+uda.jiraurl.type=string
+uda.jiraurl.label=JIRA URL
+uda.jirastatus.type=string
+uda.jirastatus.label=JIRA Status
+uda.jiraissuetype.type=string
+uda.jiraissuetype.label=JIRA Issue Type
+uda.jiraparent.type=string
+uda.jiraparent.label=JIRA Parent
 
 # Apple Reminders UDAs
 uda.applereminderstitle.type=string

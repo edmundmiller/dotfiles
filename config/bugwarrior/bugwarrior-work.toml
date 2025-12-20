@@ -3,7 +3,8 @@
 
 [general]
 targets = [
-    "seqera_jira",
+    "seqera_jira_sdoc",
+    "seqera_jira_other",
     "github_seqera_issues",
     "github_seqera_authored_prs",
     "github_seqera_review_requests",
@@ -25,19 +26,36 @@ reopen_completed_tasks = false
 # Jira
 # =============================================================================
 
-[seqera_jira]
+# SDOC and SH projects - active work, show in work context
+[seqera_jira_sdoc]
 service = "jira"
 base_uri = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-host"
 username = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-username"
 password = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-password"
 description_template = "{{jirasummary}}"
 project_template = "{{jiraproject}}"
-query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution is null"
+query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution is null AND project in (SDOC, SH)"
 import_labels_as_tags = true
 import_sprints_as_tags = true
 label_template = "{{label}}"
 priority_template = "{% if jirapriority == 'Highest' or jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
-add_tags = ["jira", "bw"]
+add_tags = ["jira", "jira_active", "bw"]
+area_template = "seqera"
+
+# Other JIRA projects - bulk cleanup needed, hide from work context
+[seqera_jira_other]
+service = "jira"
+base_uri = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-host"
+username = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-username"
+password = "@oracle:eval:cat ~/.config/bugwarrior/secrets/jira-password"
+description_template = "{{jirasummary}}"
+project_template = "{{jiraproject}}"
+query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution is null AND project not in (SDOC, SH)"
+import_labels_as_tags = true
+import_sprints_as_tags = true
+label_template = "{{label}}"
+priority_template = "{% if jirapriority == 'Highest' or jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
+add_tags = ["jira", "jira_cleanup", "bw"]
 area_template = "seqera"
 
 # =============================================================================
