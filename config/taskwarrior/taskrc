@@ -116,9 +116,9 @@ uda.subgoal_id.label=Subgoal ID
 # Write filters set the default area for new tasks in that context
 
 # Combined work context (nf-core + Seqera)
-# Shows: JIRA tasks, GitHub PRs, non-GitHub tasks (Linear, manual)
-# Hides: GitHub issues
-context.work.read=area.any:seqera,nfcore and ( +jira or githubtype:pull_request or githubtype.none: )
+# Shows: GitHub PRs (all roles), non-GitHub tasks (Linear, manual)
+# Hides: GitHub issues, JIRA tasks (until bulk cleanup)
+context.work.read=area.any:seqera,nfcore and ( githubtype:pull_request or githubtype.none: ) and -jira
 context.work.write=area:seqera
 
 # Combined home context (personal + family + phd)  
