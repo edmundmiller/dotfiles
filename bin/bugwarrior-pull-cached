@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 
-# Bugwarrior pull with 1Password session caching
+# Bugwarrior pull with 1Password session caching and post-import hooks
 #
 
 set -euo pipefail
@@ -18,4 +18,16 @@ export $(env | grep '^OP_SESSION_' || true)
 
 # Change to bugwarrior directory and run
 cd ~/src/personal/taskagent/bugwarrior
-exec uv run bugwarrior pull "$@"
+uv run bugwarrior pull "$@"
+
+# =============================================================================
+# Post-import hooks (bugwarrior only supports pre_import, so we run these after)
+# =============================================================================
+
+# Linear: Mark Triage/Backlog tasks as waiting (1 year from now)
+# These are planned but not ready to work on
+task +linear \( linearstatus:Triage or linearstatus:Backlog \) status:pending modify wait:1year 2>/dev/null || true
+
+# Linear: Auto-complete tasks marked Done in Linear
+# This handles the case where issues are closed in Linear but still pending in TW
+task +linear linearstatus:Done status:pending done 2>/dev/null || true

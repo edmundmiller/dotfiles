@@ -22,7 +22,10 @@ The nix module (`modules/shell/bugwarrior.nix`) symlinks the appropriate TOML ba
 
 **Services:**
 - `my_reminders` - Apple Reminders (personal tasks)
-- `work_linear` - Linear (family/personal projects)
+- `linear_family` - Linear family planning board
+  - Syncs: Triage, Backlog, Todo, In Progress, In Review
+  - Auto-waits: Triage/Backlog tasks (wait:1year)
+  - Auto-completes: Done tasks (via post-import hook in bugwarrior-pull-cached)
 - `github_personal_issues/prs` - edmundmiller, BioJulia
 - `github_phd_issues/prs` - Functional-Genomics-Lab
 - `github_nfcore_issues/prs` - nf-core, bioinformaticsorphanage, bioconda
