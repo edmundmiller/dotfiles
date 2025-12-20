@@ -4,7 +4,7 @@
 [general]
 targets = [
     "my_reminders",
-    "work_linear",
+    "linear_family",
     "github_personal_issues",
     "github_personal_prs",
     "github_phd_issues",
@@ -30,17 +30,19 @@ lists = ["Reminders"]
 area_template = "personal"
 
 # =============================================================================
-# Linear
+# Linear - Family Planning Board
 # =============================================================================
 
-[work_linear]
+[linear_family]
 service = "linear"
 api_token = "@oracle:eval:cat /usr/local/var/opnix/secrets/bugwarrior-linear-token"
 description_template = "{{linearidentifier}} - {{lineartitle}}"
 only_if_assigned = "edmund.a.miller@gmail.com"
-status_types = ["unstarted", "started"]
+# Use exact status names (case-sensitive) instead of status_types
+# Excluded: Done, Canceled, Duplicate (completed/inactive)
+statuses = ["Triage", "Backlog", "Todo", "In Progress", "In Review"]
 import_labels_as_tags = true
-add_tags = ["linear"]
+add_tags = ["linear", "family"]
 default_priority = "M"
 area_template = "family"
 
