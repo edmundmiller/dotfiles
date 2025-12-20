@@ -118,11 +118,11 @@ uda.subgoal_id.label=Subgoal ID
 # Combined work context (nf-core + Seqera)
 # Shows: GitHub PRs (all roles), non-GitHub tasks (Linear, manual), SDOC/SH JIRA tickets (+jira_active)
 # Hides: GitHub issues, other JIRA projects (+jira_cleanup, bulk cleanup scheduled)
-context.work.read=area.any:seqera,nfcore and ( githubtype:pull_request or githubtype.none: or +jira_active ) and -jira_cleanup
+context.work.read=( area:seqera or area:nfcore ) and ( githubtype:pull_request or githubtype.none: or +jira_active ) and -jira_cleanup
 context.work.write=area:seqera
 
 # Combined home context (personal + family + phd)  
-context.home.read=area.any:personal,family,phd githubtype.none:
+context.home.read=( area:personal or area:family or area:phd ) and githubtype.none:
 context.home.write=area:personal
 
 # =============================================================================
