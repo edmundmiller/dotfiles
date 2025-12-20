@@ -67,6 +67,8 @@ uda.githubstate.type=string
 uda.githubstate.label=GitHub State
 uda.githubdraft.type=numeric
 uda.githubdraft.label=GitHub Draft
+uda.githubrequestedreviewers.type=string
+uda.githubrequestedreviewers.label=Github Requested Reviewers
 
 # Linear UDAs
 uda.linearurl.type=string
