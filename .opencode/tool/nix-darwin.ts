@@ -1,11 +1,12 @@
 // nix-darwin.ts - Rebuild nix-darwin configuration
+// STATUS: BROKEN - nix-darwin rebuild currently failing, use manual rebuild
 import { tool } from "@opencode-ai/plugin"
 
 const DOTFILES_DIR = process.env.DOTFILES || `${Bun.env.HOME}/.config/dotfiles`
 
 export default tool({
   description:
-    "Rebuild and switch to a new nix-darwin configuration. Equivalent to 'hey rebuild'. Use this after making changes to nix configuration files.",
+    "[BROKEN] Rebuild and switch to a new nix-darwin configuration. Currently broken - use 'hey rebuild' manually instead.",
   args: {
     show_trace: tool.schema
       .boolean()
