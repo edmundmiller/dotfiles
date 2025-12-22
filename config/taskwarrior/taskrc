@@ -61,7 +61,13 @@ uda.timewarrior.enabled=true
 # =============================================================================
 # PRIORITY SYSTEM
 # =============================================================================
-uda.priority.values=H,M,,L
+uda.priority.values=ASAP,H,M,,L
+
+# Urgency coefficients for priority levels
+urgency.uda.priority.ASAP.coefficient=10.0
+urgency.uda.priority.H.coefficient=6.0
+urgency.uda.priority.M.coefficient=3.9
+urgency.uda.priority.L.coefficient=1.8
 
 # =============================================================================
 # AREA ORGANIZATION (PARA Method)
@@ -256,12 +262,15 @@ color.due.today=bold color223
 color.overdue=bold white
 
 # Priority colors - foreground only, no backgrounds
+# TODO: Iterate on ASAP color scheme - still workshopping visual treatment
+color.pri.ASAP=bold white on color211
 color.pri.H=bold color211
 color.pri.M=color216
 color.pri.L=color116
 color.pri.none=
 
 # Clear UDA priority colors to prevent conflicts
+color.uda.priority.ASAP=
 color.uda.priority.H=
 color.uda.priority.M=
 color.uda.priority.L=
