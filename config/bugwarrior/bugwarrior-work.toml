@@ -38,6 +38,8 @@ query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution i
 import_labels_as_tags = true
 import_sprints_as_tags = true
 label_template = "{{label}}"
+# Import priority field from Jira (priority.name contains: Highest, High, Medium, Low, Lowest)
+extra_fields = ["jirapriority:priority.name"]
 priority_template = "{% if jirapriority == 'Highest' %}ASAP{% elif jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
 add_tags = ["jira", "jira_active", "bw"]
 area_template = "seqera"
@@ -54,6 +56,8 @@ query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution i
 import_labels_as_tags = true
 import_sprints_as_tags = true
 label_template = "{{label}}"
+# Import priority field from Jira (priority.name contains: Highest, High, Medium, Low, Lowest)
+extra_fields = ["jirapriority:priority.name"]
 priority_template = "{% if jirapriority == 'Highest' %}ASAP{% elif jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
 add_tags = ["jira", "jira_cleanup", "bw"]
 area_template = "seqera"

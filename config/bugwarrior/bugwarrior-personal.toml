@@ -43,8 +43,11 @@ only_if_assigned = "edmund.a.miller@gmail.com"
 statuses = ["Triage", "Backlog", "Todo", "In Progress", "In Review"]
 import_labels_as_tags = true
 add_tags = ["linear", "family"]
-# Linear priority: 1=Urgent, 2=High, 3=Normal, 4=Low, 0=None
-priority_template = "{% if linearpriority == 1 %}ASAP{% elif linearpriority == 2 %}H{% elif linearpriority == 3 %}M{% elif linearpriority == 4 %}L{% else %}{% endif %}"
+# NOTE: Linear priority mapping not working - bugwarrior's Linear service doesn't export
+# priority field. Would need a bugwarrior PR to add linearpriority UDA.
+# Linear priority values: 1=Urgent, 2=High, 3=Normal, 4=Low, 0=None
+# For now, using default_priority as fallback
+default_priority = "M"
 area_template = "family"
 
 # =============================================================================
