@@ -38,7 +38,7 @@ query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution i
 import_labels_as_tags = true
 import_sprints_as_tags = true
 label_template = "{{label}}"
-priority_template = "{% if jirapriority == 'Highest' or jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
+priority_template = "{% if jirapriority == 'Highest' %}ASAP{% elif jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
 add_tags = ["jira", "jira_active", "bw"]
 area_template = "seqera"
 
@@ -54,7 +54,7 @@ query = "(assignee = currentUser() OR reporter = currentUser()) AND resolution i
 import_labels_as_tags = true
 import_sprints_as_tags = true
 label_template = "{{label}}"
-priority_template = "{% if jirapriority == 'Highest' or jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
+priority_template = "{% if jirapriority == 'Highest' %}ASAP{% elif jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
 add_tags = ["jira", "jira_cleanup", "bw"]
 area_template = "seqera"
 
@@ -73,6 +73,7 @@ query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 org:nextflo
 include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "bw", "assigned"]
+# TODO: Review GitHub default priorities - should these be higher?
 default_priority = "L"
 area_template = "seqera"
 
@@ -103,6 +104,7 @@ query = "is:pr review-requested:edmundmiller is:open org:nextflow-io org:seqeral
 include_user_issues = false
 include_user_repos = false
 add_tags = ["review_request", "github", "bw"]
+# TODO: Should review requests be H since people are waiting on you?
 default_priority = "M"
 area_template = "seqera"
 

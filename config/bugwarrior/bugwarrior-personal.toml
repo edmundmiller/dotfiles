@@ -43,7 +43,8 @@ only_if_assigned = "edmund.a.miller@gmail.com"
 statuses = ["Triage", "Backlog", "Todo", "In Progress", "In Review"]
 import_labels_as_tags = true
 add_tags = ["linear", "family"]
-default_priority = "M"
+# Linear priority: 1=Urgent, 2=High, 3=Normal, 4=Low, 0=None
+priority_template = "{% if linearpriority == 1 %}ASAP{% elif linearpriority == 2 %}H{% elif linearpriority == 3 %}M{% elif linearpriority == 4 %}L{% else %}{% endif %}"
 area_template = "family"
 
 # =============================================================================
@@ -61,6 +62,7 @@ query = "is:issue assignee:edmundmiller is:open updated:>=2025-09-09 user:edmund
 include_user_issues = false
 include_user_repos = false
 add_tags = ["github", "bw", "assigned"]
+# TODO: Review GitHub default priorities - should these be higher?
 default_priority = "L"
 area_template = "personal"
 

@@ -109,3 +109,5 @@ uda.linearupdated.type=date
 uda.linearupdated.label=Issue Updated
 uda.linearclosed.type=date
 uda.linearclosed.label=Issue Closed
+uda.linearpriority.type=numeric
+uda.linearpriority.label=Linear Priority
