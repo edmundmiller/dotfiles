@@ -13,8 +13,11 @@ news.version=3.4.1
 # - 1Password backup: "TaskChampion Sync Server" in Private vault
 include ~/.config/task/sync.rc
 
-# Bugwarrior UDAs (GitHub, Linear, Apple Reminders)
-include ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas.rc
+# Bugwarrior UDAs - Two-file system (see config/bugwarrior/UDAS.md)
+# Auto-generated: regenerate with `bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc`
+include ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc
+# Custom UDAs for extra_fields and manual additions (tracked in git)
+include ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-custom.rc
 
 # Force CLI taskwarrior to use TaskChampion backend too
 taskd.use_taskchampion=yes
