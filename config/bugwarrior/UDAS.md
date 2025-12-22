@@ -1,14 +1,20 @@
 # Bugwarrior UDA Management
 
-Bugwarrior uses User Defined Attributes (UDAs) to store service-specific fields in Taskwarrior. This system uses two files to manage UDAs.
+Bugwarrior uses User Defined Attributes (UDAs) to store service-specific fields in Taskwarrior.
 
-## Two-File System
+> See [README.md](README.md) for architecture overview and setup instructions.
 
-### `bugwarrior-udas-auto.rc` (Auto-generated)
+## Per-Host UDA System
 
-- **Location:** `config/taskwarrior/bugwarrior-udas-auto.rc`
-- **Tracked in git:** No (in `.gitignore`)
-- **Contains:** All service-defined UDAs from active bugwarrior services
+### Host-Specific Files (Auto-generated)
+
+| File | Host | Tracked |
+|------|------|---------|
+| `bugwarrior-udas-seqeratop.rc` | Seqeratop | No |
+| `bugwarrior-udas-mactraitorpro.rc` | MacTraitor-Pro | No |
+
+- **Location:** `config/taskwarrior/`
+- **Contains:** All service-defined UDAs from that host's bugwarrior services
 - **Regenerate:** After adding/removing services or changing bugwarrior config
 
 ### `bugwarrior-udas-custom.rc` (Manual)
@@ -19,15 +25,19 @@ Bugwarrior uses User Defined Attributes (UDAs) to store service-specific fields 
   - `jirapriority` - From Jira `extra_fields` config
   - Future custom fields
 
-## Regenerating Auto UDAs
+## Regenerating UDAs
 
-Run after:
+Run on the appropriate host after:
 - Adding/removing bugwarrior service targets
 - Changing `extra_fields` configuration
 - First-time setup on a new machine
 
 ```bash
-bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc
+# On Seqeratop:
+bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-seqeratop.rc
+
+# On MacTraitor-Pro:
+bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-mactraitorpro.rc
 ```
 
 ## Adding Custom UDAs
@@ -51,24 +61,30 @@ uda.jirapriority.label=JIRA Priority
 |-----|------|--------|---------|
 | `jirapriority` | string | Jira `extra_fields` | Maps to ASAP/H/M/L priority |
 
-## Limitations
-
-### Linear Priority
-
-Bugwarrior's Linear service doesn't export priority. Would need a bugwarrior PR to add `linearpriority` UDA. For now, Linear tasks use `default_priority = "M"`.
-
 ## Troubleshooting
 
 ### "Service-defined UDAs exist" Warning
 
-Regenerate the auto file:
-
-```bash
-bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc
-```
+Regenerate the UDA file for this host (see above).
 
 ### Missing UDA Errors
 
-1. Check if UDA is in auto file: `grep uda.fieldname bugwarrior-udas-auto.rc`
+1. Check if UDA is in host file: `grep uda.fieldname bugwarrior-udas-*.rc`
 2. If using `extra_fields`, add to custom file
-3. Regenerate auto file after config changes
+3. Regenerate UDA file after config changes
+
+### "Could not read include file" Error
+
+UDA files don't exist. See [README.md](README.md) for first-time setup.
+
+### Bootstrap Problem
+
+Circular dependency: taskrc includes UDA files, but bugwarrior needs taskrc to generate them.
+
+**Solution:** Create empty placeholders first:
+```bash
+touch ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-seqeratop.rc
+touch ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-mactraitorpro.rc
+```
+
+Then generate UDAs normally.
