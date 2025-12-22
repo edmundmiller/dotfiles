@@ -1,6 +1,10 @@
 # modules/shell/bugwarrior.nix
 # Bugwarrior configuration for syncing issues from GitHub, Linear, etc. to Taskwarrior
 # Two flavors: personal (opnix/1Password) and work (manual file-based secrets)
+#
+# TODO: Auto-generate bugwarrior-udas-auto.rc during activation
+# Currently manual: bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc
+# See config/bugwarrior/UDAS.md for details
 {
   config,
   options,

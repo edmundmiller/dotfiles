@@ -109,7 +109,15 @@ modules.shell.bugwarrior = {
 1. Determine which flavor(s) need the service
 2. Add target section to appropriate TOML file(s)
 3. Add any new secrets to credential setup (opnix for personal, manual for work)
-4. Update this doc
+4. Regenerate UDAs (see [UDAS.md](UDAS.md))
+5. Update this doc
+
+## UDA Management
+
+See [UDAS.md](UDAS.md) for:
+- Two-file UDA system (auto-generated vs custom)
+- Regenerating UDAs after config changes
+- Adding custom UDAs for `extra_fields`
 
 ## Future Work
 

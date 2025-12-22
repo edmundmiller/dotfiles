@@ -4,6 +4,9 @@ todotxtfmt/todotxtfmt
 # Home-manager managed files (prevent symlink issues)
 config/jj/config.toml
 
+# Bugwarrior auto-generated UDAs (regenerate with: bugwarrior uda > config/taskwarrior/bugwarrior-udas-auto.rc)
+config/taskwarrior/bugwarrior-udas-auto.rc
+
 # JJ workspaces and git worktrees
 .workspaces/
 workspaces/
