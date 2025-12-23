@@ -119,7 +119,14 @@ in
         e = "$EDITOR";
         http = "xh";
         dsize = "du -hs";
-        rcp = "rsync -avh --progress";
+        # rcp: rsync that respects gitignore
+        # -a = archive mode (-rlptgoD: recursive, symlinks, permissions, times, group, owner)
+        # -z = compression
+        # -P = --partial --progress (show progress, keep partial files)
+        # -J = omit symlink mtimes (prevents errors)
+        # --include=.git/ = include git directories
+        # --filter = respect .gitignore files
+        rcp = "rsync -azPJ --include=.git/ --filter=':- .gitignore' --filter=':- $XDG_CONFIG_HOME/git/ignore'";
         weather = "curl -s 'wttr.in/Ft+Worth?m&format=3'";
 
         # taskwarrior
