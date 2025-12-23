@@ -1,8 +1,5 @@
 # Seqera/Nextflow work repositories
---when.repositories = [
-  "~/src/seqera",
-  "~/src/nextflow"
-]
+--when.repositories = ["~/src/seqera", "~/src/nextflow"]
 
 [user]
 email = "edmund.miller@seqera.io"
