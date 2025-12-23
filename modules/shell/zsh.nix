@@ -16,8 +16,6 @@ in
   options.modules.shell.zsh = with types; {
     enable = mkBoolOpt false;
 
-    aliases = mkOpt (attrsOf (either str path)) { };
-
     rcInit = mkOpt' lines "" ''
       Zsh lines to be written to $XDG_CONFIG_HOME/zsh/extra.zshrc and sourced by
       $XDG_CONFIG_HOME/zsh/.zshrc
@@ -33,162 +31,150 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-    
-    # Add zsh to available shells
-    environment.shells = [ pkgs.zsh ];
+      # Add zsh to available shells
+      environment.shells = [ pkgs.zsh ];
 
-    # Enable zsh at system level - this creates /etc/zshrc that loads nix-darwin environment
-    programs.zsh = {
-      enable = true;
-      enableCompletion = true;
-      # Let nix-darwin handle completion initialization
-      enableGlobalCompInit = true;
-      promptInit = "";
-    };
+      # Enable zsh at system level - this creates /etc/zshrc that loads nix-darwin environment
+      programs.zsh = {
+        enable = true;
+        # I init completion myself, because enableGlobalCompInit initializes it
+        # too soon, which means commands initialized later in my config won't get
+        # completion, and running compinit twice is slow.
+        enableCompletion = true;
+        enableGlobalCompInit = false;
+        # I configure the prompt myself, so disable the default.
+        promptInit = "";
+      };
 
-    user.packages = with pkgs; [
-      zsh
-      antidote
-      unstable.atuin
-      bat
-      btop
-      eza
-      fd
-      unstable.fzf
-      gh
-      git-lfs
-      glow
-      (ripgrep.override { withPCRE2 = true; })
-      lazygit
-      neovim
-      procs
-      difftastic
-      hyperfine
-      just
-      sd
-      unstable.yazi
-      zoxide
-    ];
+      user.packages = with pkgs; [
+        zsh
+        antidote
+        unstable.atuin
+        bat
+        btop
+        eza
+        fd
+        unstable.fzf
+        gh
+        git-lfs
+        glow
+        (ripgrep.override { withPCRE2 = true; })
+        lazygit
+        neovim
+        procs
+        difftastic
+        hyperfine
+        just
+        sd
+        unstable.yazi
+        zoxide
+      ];
 
-    env = {
-      ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
-      ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
-      PATH = [ "$DOTFILES_BIN" ];
-    };
+      env = {
+        ZDOTDIR = "$XDG_CONFIG_HOME/zsh";
+        ZSH_CACHE = "$XDG_CACHE_HOME/zsh";
+        PATH = [ "$DOTFILES_BIN" ];
+      };
 
-    home.configFile = {
-      # Main zsh configuration files
-      "zsh/.zshenv".source = "${configDir}/zsh/.zshenv";
-      "zsh/.zshrc".source = "${configDir}/zsh/.zshrc";
-      
-      # Additional zsh config files
-      "zsh/config.zsh".source = "${configDir}/zsh/config.zsh";
-      "zsh/aliases.zsh".source = "${configDir}/zsh/aliases.zsh";
-      "zsh/completion.zsh".source = "${configDir}/zsh/completion.zsh"; 
-      "zsh/keybinds.zsh".source = "${configDir}/zsh/keybinds.zsh";
-      "zsh/.zsh_plugins.txt".source = "${configDir}/zsh/.zsh_plugins.txt";
-      "zsh/.p10k.zsh".source = "${configDir}/zsh/.p10k.zsh";
+      environment.shellAliases = {
+        # zoxide
+        cd = "z";
+        cdi = "zi";
 
-      # Why am I creating extra.zsh{rc,env} when I could be using extraInit?
-      # Because extraInit generates those files in /etc/profile, and mine just
-      # write the files to ~/.config/zsh; where it's easier to edit and tweak
-      # them in case of issues or when experimenting.
-      "zsh/extra.zshrc".text =
-        let
-          aliasLines = mapAttrsToList (n: v: ''alias ${n}="${v}"'') cfg.aliases;
-        in
-        ''
+        # file operations
+        chmod = "chmod -v";
+        cp = "cp -iv";
+        ln = "ln -v";
+        mkdir = "mkdir -vp";
+        mv = "mv -iv";
+        rm = "rm -v";
+        rmdir = "rmdir -v";
+
+        # shell
+        rst = "exec $SHELL";
+        sudo = "sudo ";
+        su = "sudo su";
+
+        # nix
+        scrap = "nix-collect-garbage -d && sudo nix-collect-garbage -d";
+        rebuild = "sudo nixos-rebuild switch";
+        reflake = "sudo nixos-rebuild switch --recreate-lock-file";
+        nix-clean = "nix-collect-garbage -d";
+
+        # ls (eza)
+        ls = "eza --group-directories-first --git";
+        la = "ll -a";
+        ll = "ls -l";
+        l = "ls -1A";
+
+        # ripgrep
+        rg = "rg --color=auto";
+        rga = "rg -uuu";
+        rgf = "rg --files";
+
+        # misc
+        q = "exit";
+        c = "clear";
+        cat = "bat --style=plain";
+        e = "$EDITOR";
+        http = "xh";
+        dsize = "du -hs";
+        rcp = "rsync -avh --progress";
+        weather = "curl -s 'wttr.in/Ft+Worth?m&format=3'";
+
+        # taskwarrior
+        t = "task";
+        ta = "task add";
+        td = "task done";
+        tm = "task modify";
+        ts = "task sync";
+        to = "taskopen";
+        tn = "task-note";
+        tp = "task +PENDING";
+        tb = "task burndown.daily";
+        tsw = "task start";
+        tst = "task stop";
+        bug = "taskopen -n";
+        td1 = "task done +1";
+        td2 = "task done +2";
+        td3 = "task done +3";
+        td4 = "task done +4";
+
+        # docker-compose
+        dcup = "docker-compose up -d";
+        dcdw = "docker-compose down";
+        dcre = "docker-compose restart";
+        dclo = "docker-compose logs -f";
+      };
+
+      home.configFile = {
+        # Link zsh directory recursively, so other modules (or the user) can
+        # write files there later.
+        "zsh" = {
+          source = "${configDir}/zsh";
+          recursive = true;
+        };
+
+        # Why extra.zsh{rc,env} when I could be using extraInit? Because extraInit
+        # generates those files in /etc/profile, and mine just write the files to
+        # ~/.config/zsh; where it's easier to edit and tweak them in case of
+        # issues or when experimenting.
+        "zsh/extra.zshrc".text = ''
           # This file was autogenerated, do not edit it!
-          ${concatStringsSep "\n" aliasLines}
           ${concatMapStrings (path: ''
             source '${path}'
           '') cfg.rcFiles}
           ${cfg.rcInit}
         '';
 
-      "zsh/extra.zshenv".text = ''
-        # This file is autogenerated, do not edit it!
-        ${concatMapStrings (path: ''
-          source '${path}'
-        '') cfg.envFiles}
-        ${cfg.envInit}
-      '';
-    };
-
-    modules.shell.zsh.aliases = {
-      # aliases
-      cd = "z";
-      cdi = "zi";
-
-      chmod = "chmod -v";
-      cp = "cp -iv";
-      ln = "ln -v";
-      mkdir = "mkdir -vp";
-      mv = "mv -iv";
-      rm = "rm -v";
-      rmdir = "rmdir -v";
-
-      rst = "exec $SHELL";
-      sudo = "sudo ";
-      su = "sudo su";
-
-      # nix
-      scrap = "nix-collect-garbage -d && sudo nix-collect-garbage -d";
-      rebuild = "sudo nixos-rebuild switch";
-      reflake = "sudo nixos-rebuild switch --recreate-lock-file";
-      nix-clean = "nix-collect-garbage -d";
-
-      # ls
-      ls = "eza --group-directories-first --git";
-      la = "ll -a";
-      ll = "ls -l";
-      l = "ls -1A";
-
-      # ripgrep
-      rg = "rg --color=auto";
-      rga = "rg -uuu";
-      rgf = "rg --files";
-
-      # other
-      q = "exit";
-      c = "clear";
-      cat = "bat --style=plain";
-      e = "$EDITOR";
-      v = "$EDITOR";
-      vi = "$EDITOR";
-      vim = "$EDITOR";
-      nvim = "$EDITOR";
-      http = "xh";
-      dsize = "du -hs";
-      rcp = "rsync -avh --progress";
-      weather = "curl -s 'wttr.in/Ft+Worth?m&format=3'";
-
-      # taskwarrior
-      t = "task";
-      ta = "task add";
-      td = "task done";
-      tm = "task modify";
-      ts = "task sync";
-      to = "taskopen";
-      tn = "task-note";
-      tp = "task +PENDING";
-      tb = "task burndown.daily";
-      tsw = "task start";
-      tst = "task stop";
-      bug = "taskopen -n";
-      td1 = "task done +1";
-      td2 = "task done +2";
-      td3 = "task done +3";
-      td4 = "task done +4";
-
-      # docker-compose
-      dcup = "docker-compose up -d";
-      dcdw = "docker-compose down";
-      dcre = "docker-compose restart";
-      dclo = "docker-compose logs -f";
-    };
-
-    modules.shell.zsh.rcFiles = [ ];
+        "zsh/extra.zshenv".text = ''
+          # This file is autogenerated, do not edit it!
+          ${concatMapStrings (path: ''
+            source '${path}'
+          '') cfg.envFiles}
+          ${cfg.envInit}
+        '';
+      };
     }
 
     # NixOS-only shell configuration
