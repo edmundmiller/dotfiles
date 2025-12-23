@@ -4,9 +4,8 @@ todotxtfmt/todotxtfmt
 # Home-manager managed files (prevent symlink issues)
 config/jj/config.toml
 
-# Bugwarrior UDAs: auto.rc is tracked (union of all services)
-# Regenerate on Seqeratop: bugwarrior uda > config/taskwarrior/bugwarrior-udas-auto.rc
-# See config/bugwarrior/UDAS.md
+# Bugwarrior UDAs: per-host files are tracked (see config/bugwarrior/UDAS.md)
+# Regenerate: bugwarrior uda > config/taskwarrior/bugwarrior-udas-<hostname>.rc
 
 # JJ workspaces and git worktrees
 .workspaces/
