@@ -28,13 +28,26 @@ in
           text = builtins.readFile "${configDir}/jj/config.toml";
           force = true;
         };
-        # Include conf.d files for additional configuration (credits_roll templates, etc.)
+        # Include conf.d files for additional configuration
         "jj/conf.d/credits_roll.toml" = {
           text = builtins.readFile "${configDir}/jj/conf.d/credits_roll.toml";
           force = true;
         };
         "jj/conf.d/fix.toml" = {
           text = builtins.readFile "${configDir}/jj/conf.d/fix.toml";
+          force = true;
+        };
+        # Conditional configs for work/project-specific settings
+        "jj/conf.d/seqera.toml" = {
+          text = builtins.readFile "${configDir}/jj/conf.d/seqera.toml";
+          force = true;
+        };
+        "jj/conf.d/nfcore.toml" = {
+          text = builtins.readFile "${configDir}/jj/conf.d/nfcore.toml";
+          force = true;
+        };
+        "jj/conf.d/fg.toml" = {
+          text = builtins.readFile "${configDir}/jj/conf.d/fg.toml";
           force = true;
         };
       };
