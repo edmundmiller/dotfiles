@@ -7,7 +7,16 @@ const BUGWARRIOR_CONFIG = (
   `${Bun.env.HOME}/.config/bugwarrior/bugwarrior.toml`
 )
 const DOTFILES = process.env.DOTFILES || `${Bun.env.HOME}/.config/dotfiles`
-const UDA_FILE = `${DOTFILES}/config/taskwarrior/bugwarrior-udas-auto.rc`
+
+// Get hostname for per-host UDA files
+async function getHostname(): Promise<string> {
+  const result = await Bun.$`hostname -s`.text()
+  const hostname = result.trim().toLowerCase()
+  // Map common hostname patterns
+  if (hostname.includes("seqeratop")) return "seqeratop"
+  if (hostname.includes("mactraitor")) return "mactraitorpro"
+  return hostname
+}
 
 /**
  * Sync tasks from external services (GitHub, Linear, Apple Reminders) to Taskwarrior
@@ -115,20 +124,23 @@ export const add_target = tool({
 })
 
 /**
- * Regenerate bugwarrior UDAs (union of all services)
- * Run on Seqeratop for complete UDA set including Jira
+ * Regenerate bugwarrior UDAs for the current host
+ * Per-host system: each host generates its own file, both tracked in git
  */
 export const regen_udas = tool({
   description:
-    "Regenerate bugwarrior UDAs from all configured services. Creates union of all UDAs for consistent task display across hosts. Run on Seqeratop for complete set including Jira.",
+    "Regenerate bugwarrior UDAs for the current host. Each host has its own UDA file (seqeratop.rc, mactraitorpro.rc), both tracked in git and included by taskrc.",
   args: {},
   async execute() {
     try {
+      const hostname = await getHostname()
+      const udaFile = `${DOTFILES}/config/taskwarrior/bugwarrior-udas-${hostname}.rc`
+      
       // Generate UDAs
       const result = await Bun.$`bugwarrior uda`.text()
       
       // Write to file
-      await Bun.write(UDA_FILE, result)
+      await Bun.write(udaFile, result)
       
       // Count UDAs
       const udaCount = result.split("\n").filter(line => line.startsWith("uda.")).length
@@ -140,13 +152,14 @@ export const regen_udas = tool({
         if (match) services.add(match[1])
       }
       
-      return `Regenerated ${udaCount} UDAs from services: ${[...services].sort().join(", ")}
+      return `Regenerated ${udaCount} UDAs for ${hostname}
+Services: ${[...services].sort().join(", ")}
 
-Updated: ${UDA_FILE}
+Updated: ${udaFile}
 
 Next steps:
   1. Review changes: jj diff
-  2. Commit: jj describe -m "chore(bugwarrior): regenerate UDAs"
+  2. Commit: jj describe -m "chore(bugwarrior): regenerate UDAs for ${hostname}"
   3. Push: jj git push`
     } catch (error: any) {
       return `Error regenerating UDAs: ${error.message}\n\nStderr: ${error.stderr?.toString() || "none"}`
