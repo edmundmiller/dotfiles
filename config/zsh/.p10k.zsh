@@ -37,14 +37,15 @@
   # Zsh >= 5.1 is required.
   [[ $ZSH_VERSION == (5.<1->*|<6->.*) ]] || return
 
-  # Prompt colors.
+  # Prompt colors - use terminal palette (0-15) for theme adaptability
+  # These colors will automatically adapt to light/dark kitty themes
   local grey='242'
-  local red='#FF5C57'
-  local yellow='#F3F99D'
-  local blue='#57C7FF'
-  local magenta='#FF6AC1'
-  local cyan='#9AEDFE'
-  local white='#F1F1F0'
+  local red='1'       # terminal red (adapts to theme)
+  local yellow='3'    # terminal yellow
+  local blue='4'      # terminal blue
+  local magenta='5'   # terminal magenta
+  local cyan='6'      # terminal cyan
+  local white='7'     # terminal white
 
   # Left prompt segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(

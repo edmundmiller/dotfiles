@@ -190,9 +190,10 @@ in
 
       # Auto light/dark theme switching (kitty 0.38+)
       # These files are auto-detected by kitty based on OS appearance
-      "kitty/dark-theme.auto.conf".source = catppuccinMocha;
-      "kitty/light-theme.auto.conf".source = catppuccinLatte;
-      "kitty/no-preference-theme.auto.conf".source = catppuccinMocha;
+      # Must use text content, not symlinks - kitty needs actual files in config dir
+      "kitty/dark-theme.auto.conf".text = builtins.readFile catppuccinMocha;
+      "kitty/light-theme.auto.conf".text = builtins.readFile catppuccinLatte;
+      "kitty/no-preference-theme.auto.conf".text = builtins.readFile catppuccinMocha;
     };
   };
 }
