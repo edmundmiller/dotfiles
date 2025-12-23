@@ -156,3 +156,6 @@ alias vanguard="$(go env GOPATH)/bin/vanguard"
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
+
+# Amp CLI
+export PATH="/Users/emiller/.amp/bin:$PATH"
