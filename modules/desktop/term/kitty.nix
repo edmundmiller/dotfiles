@@ -87,10 +87,8 @@ in
         # Font features - enable ligatures (synced from Ghostty)
         font_features Maple Mono NF +liga
 
-        # Theme: Catppuccin Mocha (dark)
-        # TODO: Implement auto light/dark switching like Ghostty's
-        # theme = light:Catppuccin Latte,dark:Catppuccin Mocha
-        include themes/mocha.conf
+        # Theme: Auto light/dark switching (kitty 0.38+)
+        # Uses dark-theme.auto.conf and light-theme.auto.conf based on OS appearance
 
         ########################################
         # Tmux-Style Keybindings               #
@@ -189,6 +187,12 @@ in
       # Catppuccin themes (synced with Ghostty)
       "kitty/themes/mocha.conf".source = catppuccinMocha;
       "kitty/themes/latte.conf".source = catppuccinLatte;
+
+      # Auto light/dark theme switching (kitty 0.38+)
+      # These files are auto-detected by kitty based on OS appearance
+      "kitty/dark-theme.auto.conf".source = catppuccinMocha;
+      "kitty/light-theme.auto.conf".source = catppuccinLatte;
+      "kitty/no-preference-theme.auto.conf".source = catppuccinMocha;
     };
   };
 }
