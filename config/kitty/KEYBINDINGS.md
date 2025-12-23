@@ -13,9 +13,9 @@ All new tabs/windows inherit the current working directory.
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
 | `ctrl+c>c` | New tab (same cwd) | `C-c c` |
-| `ctrl+c>n` | New OS window (same cwd) | - |
-| `ctrl+c>ctrl+n` | Next tab | `C-c C-n` |
-| `ctrl+c>ctrl+p` | Previous tab | `C-c C-p` |
+| `ctrl+c>shift+n` | New OS window (same cwd) | - |
+| `ctrl+c>n` or `ctrl+c>ctrl+n` | Next tab | `C-c C-n` |
+| `ctrl+c>p` or `ctrl+c>ctrl+p` | Previous tab | `C-c C-p` |
 | `ctrl+c>ctrl+w` | Last tab | `C-c C-w` |
 | `ctrl+c>1-9` | Go to tab N | `C-c 1-9` |
 | `ctrl+c>shift+w` | Choose window | `C-c W` |
@@ -28,8 +28,8 @@ Splits inherit the current working directory.
 
 | Binding | Action | Tmux Equivalent |
 |---------|--------|-----------------|
-| `ctrl+c>v` | Vertical split (same cwd) | `C-c v` |
-| `ctrl+c>s` | Horizontal split (same cwd) | `C-c s` |
+| `ctrl+c>v` | Vertical split (stacked windows) | `C-c v` |
+| `ctrl+c>s` | Horizontal split (side-by-side) | `C-c s` |
 | `ctrl+c>h/j/k/l` | Navigate panes | `C-c h/j/k/l` |
 | `ctrl+c>x` | Close pane | `C-c x` |
 | `ctrl+c>o` | Zoom pane | `C-c o` |
