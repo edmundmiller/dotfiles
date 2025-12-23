@@ -6,6 +6,8 @@ const BUGWARRIOR_CONFIG = (
   process.env.BUGWARRIOR_CONFIG ||
   `${Bun.env.HOME}/.config/bugwarrior/bugwarrior.toml`
 )
+const DOTFILES = process.env.DOTFILES || `${Bun.env.HOME}/.config/dotfiles`
+const UDA_FILE = `${DOTFILES}/config/taskwarrior/bugwarrior-udas-auto.rc`
 
 /**
  * Sync tasks from external services (GitHub, Linear, Apple Reminders) to Taskwarrior
@@ -108,6 +110,46 @@ export const add_target = tool({
       return `Added target [${args.name}] to ${BUGWARRIOR_CONFIG}:\n\n${newSection}`
     } catch (error: any) {
       return `Error adding target: ${error.message}`
+    }
+  },
+})
+
+/**
+ * Regenerate bugwarrior UDAs (union of all services)
+ * Run on Seqeratop for complete UDA set including Jira
+ */
+export const regen_udas = tool({
+  description:
+    "Regenerate bugwarrior UDAs from all configured services. Creates union of all UDAs for consistent task display across hosts. Run on Seqeratop for complete set including Jira.",
+  args: {},
+  async execute() {
+    try {
+      // Generate UDAs
+      const result = await Bun.$`bugwarrior uda`.text()
+      
+      // Write to file
+      await Bun.write(UDA_FILE, result)
+      
+      // Count UDAs
+      const udaCount = result.split("\n").filter(line => line.startsWith("uda.")).length
+      
+      // Extract service names from UDAs
+      const services = new Set<string>()
+      for (const line of result.split("\n")) {
+        const match = line.match(/^uda\.([a-z]+)/)
+        if (match) services.add(match[1])
+      }
+      
+      return `Regenerated ${udaCount} UDAs from services: ${[...services].sort().join(", ")}
+
+Updated: ${UDA_FILE}
+
+Next steps:
+  1. Review changes: jj diff
+  2. Commit: jj describe -m "chore(bugwarrior): regenerate UDAs"
+  3. Push: jj git push`
+    } catch (error: any) {
+      return `Error regenerating UDAs: ${error.message}\n\nStderr: ${error.stderr?.toString() || "none"}`
     }
   },
 })
