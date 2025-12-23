@@ -100,6 +100,7 @@ in
         map ctrl+c>ctrl+c send_text all \x03
 
         ## Window/Tab Management
+        map cmd+t launch --cwd=current --type=tab
         map ctrl+c>c launch --cwd=current --type=tab
         map ctrl+c>shift+n launch --cwd=current --type=os-window
         map ctrl+c>ctrl+n next_tab
