@@ -21,25 +21,14 @@ alias gurl='curl --compressed'
 alias shutdown='sudo shutdown'
 alias reboot='sudo reboot'
 
-# An rsync that respects gitignore
-rcp() {
-    # -a = -rlptgoD
-    #   -r = recursive
-    #   -l = copy symlinks as symlinks
-    #   -p = preserve permissions
-    #   -t = preserve mtimes
-    #   -g = preserve owning group
-    #   -o = preserve owner
-    # -z = use compression
-    # -P = show progress on transferred file
-    # -J = don't touch mtimes on symlinks (always errors)
-    rsync -azPJ \
-        --include=.git/ \
-        --filter=':- .gitignore' \
-        --filter=":- $XDG_CONFIG_HOME/git/ignore" \
-        "$@"
-}
-compdef rcp=rsync
+# rcp: rsync that respects gitignore
+# -a = archive mode (-rlptgoD: recursive, symlinks, permissions, times, group, owner)
+# -z = compression
+# -P = --partial --progress (show progress, keep partial files)
+# -J = omit symlink mtimes (prevents errors)
+# --include=.git/ = include git directories
+# --filter = respect .gitignore files
+alias rcp="rsync -azPJ --include=.git/ --filter=':- .gitignore' --filter=':- \$XDG_CONFIG_HOME/git/ignore'"
 alias rcpd='rcp --delete --delete-after'
 alias rcpu='rcp --chmod=go='
 alias rcpdu='rcpd --chmod=go='
