@@ -76,6 +76,12 @@ in
 
         # Confirm close on quit
         confirm_os_window_close = 0;
+
+        # Shell integration - required for --cwd=current to work
+        shell_integration = "enabled";
+
+        # Remote control - stops directory approval prompts
+        allow_remote_control = "yes";
       };
       extraConfig = ''
         # Font features - enable ligatures (synced from Ghostty)
@@ -95,9 +101,11 @@ in
 
         ## Window/Tab Management
         map ctrl+c>c launch --cwd=current --type=tab
-        map ctrl+c>n launch --cwd=current --type=os-window
+        map ctrl+c>shift+n launch --cwd=current --type=os-window
         map ctrl+c>ctrl+n next_tab
+        map ctrl+c>n next_tab
         map ctrl+c>ctrl+p previous_tab
+        map ctrl+c>p previous_tab
         map ctrl+c>ctrl+w goto_tab -1
         map ctrl+c>1 goto_tab 1
         map ctrl+c>2 goto_tab 2
@@ -113,8 +121,12 @@ in
         map ctrl+c>shift+x close_tab
 
         ## Pane/Split Management
-        map ctrl+c>v launch --cwd=current --location=vsplit
-        map ctrl+c>s launch --cwd=current --location=hsplit
+        # Note: kitty's vsplit/hsplit refer to split LINE direction, not window arrangement
+        # vsplit = vertical line = windows side-by-side (horizontal arrangement)
+        # hsplit = horizontal line = windows stacked (vertical arrangement)
+        # We swap them so v=vertical stacking, s=side-by-side (more intuitive)
+        map ctrl+c>v launch --cwd=current --location=hsplit
+        map ctrl+c>s launch --cwd=current --location=vsplit
         map ctrl+c>h neighboring_window left
         map ctrl+c>j neighboring_window down
         map ctrl+c>k neighboring_window up
