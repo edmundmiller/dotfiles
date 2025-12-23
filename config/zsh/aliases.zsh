@@ -1,41 +1,28 @@
+# Navigation aliases (not in nix config)
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias -- -='cd -'
 alias cdg='cd `git rev-parse --show-toplevel`'
 
-alias q=exit
+# Utilities not in nix config
 alias clr=clear
-alias sudo='sudo '
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-alias mkdir='mkdir -p'
 alias wget='wget -c'
 alias path='echo -e ${PATH//:/\\n}'
 alias ports='netstat -tulanp'
-
 alias mk=make
 alias gurl='curl --compressed'
-
 alias shutdown='sudo shutdown'
 alias reboot='sudo reboot'
 
-# rcp: rsync that respects gitignore
-# -a = archive mode (-rlptgoD: recursive, symlinks, permissions, times, group, owner)
-# -z = compression
-# -P = --partial --progress (show progress, keep partial files)
-# -J = omit symlink mtimes (prevents errors)
-# --include=.git/ = include git directories
-# --filter = respect .gitignore files
-alias rcp="rsync -azPJ --include=.git/ --filter=':- .gitignore' --filter=':- \$XDG_CONFIG_HOME/git/ignore'"
+# rcp variants (base rcp alias is in nix config)
 alias rcpd='rcp --delete --delete-after'
 alias rcpu='rcp --chmod=go='
 alias rcpdu='rcpd --chmod=go='
 
+# Linux-only aliases
 alias y='xclip -selection clipboard -in'
 alias p='xclip -selection clipboard -out'
-
 alias jc='journalctl -xe'
 alias sc=systemctl
 
