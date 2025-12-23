@@ -141,8 +141,8 @@ context.home.write=area:personal
 # =============================================================================
 # Primary triage report - optimized for 120+ char terminal
 report.next.description=Triage view - actionable tasks sorted by urgency
-report.next.columns=id,start.active,priority,due.relative,entry.age,estimate,totalactivetime,description.truncated_count,project.parent,tags.count
-report.next.labels=ID,A,P,Due,Age,Est,Act,Description,Project,Tags
+report.next.columns=id,start.active,priority,due.relative,entry.age,estimate,totalactivetime,description.truncated_count,project.parent,area,tags
+report.next.labels=ID,A,P,Due,Age,Est,Act,Description,Project,Area,Tags
 report.next.sort=urgency-,due+
 report.next.filter=status:pending -WAITING -BLOCKED
 
@@ -340,7 +340,7 @@ uda.taskwarrior-tui.default-view=tasks
 # VISUAL LAYOUT & FORMATTING
 # =============================================================================
 verbose=blank,header,footnote,label,new-id,affected,edit,special,project,sync,unwait,recur
-print.empty.columns=off
+print.empty.columns=on
 defaultwidth=0
 row.padding=1
 color.alternate=on color236
