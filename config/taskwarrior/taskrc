@@ -13,9 +13,11 @@ news.version=3.4.1
 # - 1Password backup: "TaskChampion Sync Server" in Private vault
 include ~/.config/task/sync.rc
 
-# Bugwarrior UDAs - Two-file system (see config/bugwarrior/UDAS.md)
-# Auto-generated UDAs (not tracked in git, regenerate with: bugwarrior uda > bugwarrior-udas-auto.rc)
-include ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc
+# Bugwarrior UDAs - Per-host system (see config/bugwarrior/UDAS.md)
+# Each host generates its own file, both included for union of all UDAs
+# Regenerate: bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-<hostname>.rc
+include ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-seqeratop.rc
+include ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-mactraitorpro.rc
 # Custom UDAs for extra_fields and manual additions (tracked in git)
 include ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-custom.rc
 

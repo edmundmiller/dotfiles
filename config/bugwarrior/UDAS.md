@@ -1,13 +1,19 @@
 # Bugwarrior UDA Management
 
-## Two-File System
+## Per-Host System
 
-### `bugwarrior-udas-auto.rc` (Union of All Services)
+Each host generates its own UDA file, both tracked in git. Taskrc includes both for union of all UDAs.
 
-- **Location**: `config/taskwarrior/bugwarrior-udas-auto.rc`
+### Per-Host Files (Auto-generated)
+
+| File | Host | Services |
+|------|------|----------|
+| `bugwarrior-udas-seqeratop.rc` | Seqeratop | Jira, GitHub |
+| `bugwarrior-udas-mactraitorpro.rc` | MacTraitor-Pro | Linear, GitHub, Apple Reminders |
+
+- **Location**: `config/taskwarrior/`
 - **Tracked in git**: Yes
-- **Contains**: Union of all UDAs from all services across all hosts
-- **Regenerate when**: Adding/removing bugwarrior service targets
+- **Regenerate when**: Adding/removing bugwarrior services on that host
 
 ### `bugwarrior-udas-custom.rc` (Manual Extensions)
 
@@ -15,44 +21,42 @@
 - **Tracked in git**: Yes
 - **Contains**: Custom UDAs from `extra_fields` (e.g., `jirapriority`)
 
-## Current Services & UDAs
-
-| Service         | Host           | Examples                                       |
-| --------------- | -------------- | ---------------------------------------------- |
-| Apple Reminders | Both           | `applereminderstitle`, `appleremindersduedate` |
-| Linear          | Both           | `linearidentifier`, `linearstatus`             |
-| GitHub          | Both           | `githuburl`, `githubnumber`, `githubtype`      |
-| Jira            | Seqeratop only | `jiraurl`, `jirasummary`, `jirastatus`         |
-
 ## Regenerating UDAs
 
 ### When to Regenerate
 
-- Added a new bugwarrior service
+- Added a new bugwarrior service on this host
 - Removed a service
-- First-time setup on Seqeratop (to capture Jira UDAs)
+- First-time setup on a new machine
 
 ### How to Regenerate
 
-Run on **Seqeratop** (has all services including Jira):
-
+On **Seqeratop**:
 ```bash
-bugwarrior-regen-udas
+bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-seqeratop.rc
 ```
 
-Or manually:
-
+On **MacTraitor-Pro**:
 ```bash
-bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc
-jj describe -m "chore(bugwarrior): regenerate UDAs after adding [service]"
+bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-mactraitorpro.rc
+```
+
+Then commit and push:
+```bash
+jj describe -m "chore(bugwarrior): regenerate UDAs for [hostname]"
 jj git push
 ```
 
-On **MacTraitor-Pro**, pull the updates:
+### Bootstrap Problem
 
+If taskrc includes a UDA file that doesn't exist, bugwarrior will fail to generate UDAs.
+
+**Solution**: Create empty placeholder first:
 ```bash
-jj git fetch && jj new main@origin
+touch ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-<hostname>.rc
 ```
+
+Then generate UDAs normally.
 
 ## Adding Custom UDAs
 
@@ -71,10 +75,10 @@ uda.jirapriority.label=JIRA Priority
 
 ## Troubleshooting
 
-### Missing Jira UDAs
+### "Could not read include file"
 
-Regenerate on Seqeratop which has Jira configured.
+UDA file doesn't exist. See Bootstrap Problem above.
 
 ### "Service-defined UDAs exist" Warning
 
-Regenerate the auto file after adding new services.
+Regenerate the UDA file for this host.
