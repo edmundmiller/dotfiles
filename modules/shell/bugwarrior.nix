@@ -2,9 +2,8 @@
 # Bugwarrior configuration for syncing issues from GitHub, Linear, etc. to Taskwarrior
 # Two flavors: personal (opnix/1Password) and work (manual file-based secrets)
 #
-# TODO: Auto-generate bugwarrior-udas-auto.rc during activation
-# Currently manual: bugwarrior uda > ~/.config/dotfiles/config/taskwarrior/bugwarrior-udas-auto.rc
-# See config/bugwarrior/UDAS.md for details
+# UDAs are tracked in git (union of all services)
+# Regenerate on Seqeratop when adding services - see config/bugwarrior/UDAS.md
 {
   config,
   options,
