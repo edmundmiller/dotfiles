@@ -18,6 +18,14 @@ Claude Code plugins provide a standardized way to package and distribute command
 
 **[json-to-toon](plugins/json-to-toon/)** - Converts JSON to TOON format for 30-60% token savings
 
+**[claude-code-wakatime@wakatime](https://github.com/wakatime/claude-code-wakatime)** - Automatic time tracking and productivity metrics
+
+- Tracks coding time in Claude Code sessions
+- Project and language statistics
+- Integration with WakaTime dashboard
+- API key securely managed via agenix
+- See [WAKATIME.md](WAKATIME.md) for details
+
 ### Plugin vs Standalone Commands
 
 **Plugins** (in `plugins/`):
