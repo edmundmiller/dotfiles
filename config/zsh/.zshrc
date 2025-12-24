@@ -124,13 +124,24 @@ if [[ $TERM != dumb ]]; then
       autopair-init
     fi
   } &!
+
+  # Defer external tool initialization to avoid p10k instant prompt I/O warning
+  {
+    # fnm (Fast Node Manager)
+    if (( $+commands[fnm] )); then
+      eval "$(fnm env --use-on-cd --shell zsh)"
+    fi
+
+    # bun completions
+    [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
+    # sdkman (must be last per sdkman docs)
+    [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+  } &!
 fi
 
 export PATH="$HOME/.pixi/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
-
-# bun completions
-[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
@@ -148,14 +159,9 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 # alias td="t do"
 # alias ttoday="t today"
 
-eval "$(fnm env --use-on-cd --shell zsh)"
 export NXF_SYNTAX_PARSER=v2
 
 alias vanguard="$(go env GOPATH)/bin/vanguard"
-
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
 
 # Amp CLI
 export PATH="/Users/emiller/.amp/bin:$PATH"
