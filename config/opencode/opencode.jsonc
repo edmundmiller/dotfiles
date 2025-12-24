@@ -139,12 +139,117 @@
       "nix eval *": "allow",
       "nix-collect-garbage *": "ask",
       "darwin-rebuild *": "ask",
-      "hey *": "allow"
+      "hey *": "allow",
+
+      // Build tools - all operations
+      "make *": "allow",
+      "make": "allow",
+      "cargo *": "allow",
+      "go build *": "allow",
+      "go test *": "allow",
+      "go run *": "allow",
+      "go vet *": "allow",
+      "mvn *": "allow",
+      "gradle *": "allow",
+
+      // Python ecosystem
+      "pip list *": "allow",
+      "pip show *": "allow",
+      "uv run *": "allow",
+      "uv sync *": "allow",
+      "uv *": "allow",
+      "poetry run *": "allow",
+      "poetry show *": "allow",
+      "poetry *": "allow",
+      "ruff *": "allow",
+      "black *": "allow",
+      "mypy *": "allow",
+      "pytest *": "allow",
+
+      // Node ecosystem
+      "npm run *": "allow",
+      "npm run build": "allow",
+      "npm run test": "allow",
+      "npm run lint": "allow",
+      "npm run dev": "allow",
+      "npm list *": "allow",
+      "yarn *": "allow",
+      "pnpm *": "allow",
+      "npx *": "allow",
+      "eslint *": "allow",
+      "prettier *": "allow",
+
+      // JJ operations (all safe with undo)
+      "jj *": "allow",
+
+      // File operations
+      "mkdir *": "allow",
+      "touch *": "allow",
+      "chmod *": "allow",
+      "cp *": "allow",
+      "mv *": "allow",
+      "ln *": "allow",
+      "rm *": "allow",
+
+      // System info
+      "date *": "allow",
+      "date": "allow",
+      "env": "allow",
+      "printenv *": "allow",
+      "hostname": "allow",
+      "whoami": "allow",
+      "id": "allow",
+      "uname *": "allow",
+      "ps *": "allow",
+      "top -l *": "allow",
+
+      // Network info (read-only)
+      "ping -c *": "allow",
+      "curl *": "allow",
+      "wget *": "allow",
+      "dig *": "allow",
+      "nslookup *": "allow",
+      "host *": "allow",
+
+      // Package managers (read operations)
+      "brew list *": "allow",
+      "brew info *": "allow",
+      "brew search *": "allow",
+      "apt list *": "allow",
+      "dnf list *": "allow",
+
+      // Text processing
+      "jq *": "allow",
+      "yq *": "allow",
+      "awk *": "allow",
+      "sed *": "allow",
+      "sort *": "allow",
+      "uniq *": "allow",
+      "cut *": "allow",
+      "tr *": "allow",
+
+      // File readers
+      "bat *": "allow",
+      "less *": "allow",
+      "more *": "allow",
+
+      // Search tools
+      "ag *": "allow",
+      "ack *": "allow",
+      "rg *": "allow",
+
+      // Server/dev commands
+      "docker *": "allow",
+      "docker-compose *": "allow",
+      "kubectl get *": "allow",
+      "kubectl describe *": "allow",
+      "kubectl logs *": "allow"
     },
     "edit": "allow",
     "write": "allow",
     "webfetch": "allow",
-    "external_directory": "ask"
+    "doom_loop": "allow",
+    "external_directory": "allow"
   },
 
   // Nextflow development agents
@@ -163,7 +268,7 @@
         "edit": "ask",
         "write": "ask",
         "bash": {
-          // Read-only safe commands
+          // File reading - comprehensive
           "ls *": "allow",
           "cat *": "allow",
           "head *": "allow",
@@ -173,13 +278,18 @@
           "stat *": "allow",
           "which *": "allow",
           "type *": "allow",
+          "less *": "allow",
+          "more *": "allow",
+          "bat *": "allow",
 
-          // Search/grep
+          // Search/grep - comprehensive
           "rg *": "allow",
           "grep *": "allow",
           "find *": "allow",
           "fd *": "allow",
           "fzf *": "allow",
+          "ag *": "allow",
+          "ack *": "allow",
 
           // Git read-only
           "git status *": "allow",
@@ -188,34 +298,95 @@
           "git show *": "allow",
           "git branch *": "allow",
           "git remote *": "allow",
+          "git blame *": "allow",
+          "git ls-files *": "allow",
 
-          // JJ read-only
-          "jj status *": "allow",
-          "jj log *": "allow",
-          "jj diff *": "allow",
-          "jj show *": "allow",
-          "jj branch *": "allow",
-          "jj git *": "allow",
-          "jj op log *": "allow",
+          // JJ - all operations (safe with undo)
+          "jj *": "allow",
+
+          // Build tools (check/dry-run modes)
+          "make -n *": "allow",
+          "make": "allow",
+          "make test *": "allow",
+          "cargo check *": "allow",
+          "cargo clippy *": "allow",
+          "cargo test *": "allow",
+          "cargo build *": "allow",
+          "go vet *": "allow",
+          "go build *": "allow",
+          "go test *": "allow",
+
+          // Linters/formatters
+          "ruff *": "allow",
+          "black *": "allow",
+          "prettier *": "allow",
+          "eslint *": "allow",
+          "pylint *": "allow",
+          "mypy *": "allow",
+          "pytest *": "allow",
+
+          // Package info
+          "npm list *": "allow",
+          "npm run *": "allow",
+          "pip list *": "allow",
+          "pip show *": "allow",
+          "cargo tree *": "allow",
+          "go list *": "allow",
+          "uv *": "allow",
+          "poetry *": "allow",
+
+          // Nextflow ecosystem
+          "nextflow *": "allow",
+          "nf-core *": "allow",
+          "nf-test *": "allow",
+          "ast-grep *": "allow",
+          "tw *": "allow",
 
           // Nix read-only
-          "nix flake show *": "allow",
-          "nix flake metadata *": "allow",
+          "nix flake *": "allow",
           "nix eval *": "allow",
           "nix search *": "allow",
+          "nix-store *": "allow",
+          "hey *": "allow",
 
-          // Task read-only
+          // Task/project management
           "task *": "allow",
+          "just *": "allow",
 
-          // Nextflow read-only (inherit from global)
-          "nextflow config *": "allow",
-          "nextflow log *": "allow",
-          "nextflow info *": "allow",
-          "nextflow view *": "allow",
-          "nf-core lint *": "allow",
-          "nf-core list *": "allow",
-          "nf-core info *": "allow",
-          "ast-grep *": "allow",
+          // System info
+          "uname *": "allow",
+          "env": "allow",
+          "printenv *": "allow",
+          "date *": "allow",
+          "date": "allow",
+          "pwd": "allow",
+          "whoami": "allow",
+          "id": "allow",
+          "ps *": "allow",
+
+          // Text processing
+          "jq *": "allow",
+          "yq *": "allow",
+          "awk *": "allow",
+          "sed *": "allow",
+          "sort *": "allow",
+          "uniq *": "allow",
+          "cut *": "allow",
+          "tr *": "allow",
+
+          // Network (read-only)
+          "curl *": "allow",
+          "wget *": "allow",
+          "dig *": "allow",
+          "ping *": "allow",
+
+          // Docker/k8s read
+          "docker ps *": "allow",
+          "docker logs *": "allow",
+          "docker images *": "allow",
+          "kubectl get *": "allow",
+          "kubectl describe *": "allow",
+          "kubectl logs *": "allow",
 
           // Everything else asks
           "*": "ask"
