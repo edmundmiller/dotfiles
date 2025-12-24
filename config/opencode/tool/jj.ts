@@ -1,10 +1,6 @@
 // Custom jj (jujutsu) tools for non-interactive version control operations
 import { tool } from "@opencode-ai/plugin"
 
-// TODO: Add status - show repo state (working copy, conflicts, bookmarks)
-// TODO: Add log - show revision history with optional filters and limit
-// TODO: Add edit - edit specific revision directly (less common workflow)
-
 export const split = tool({
   description:
     "Split the current jj working copy by moving specified files into a new commit. " +
@@ -106,6 +102,66 @@ export const bookmark_set = tool({
     const cmd = ["jj", "bookmark", "set", args.name]
     if (args.revision) cmd.push("-r", args.revision)
     if (args.allowBackwards) cmd.push("-B")
+
+    const result = await Bun.$`${cmd}`.text()
+    return result.trim()
+  },
+})
+
+export const status = tool({
+  description:
+    "Show high-level repo status: working copy, parents, changes summary, conflicts, bookmarks.",
+  args: {
+    paths: tool.schema
+      .array(tool.schema.string())
+      .optional()
+      .describe("Restrict status to these paths"),
+  },
+  async execute(args) {
+    // NOTE: Add error handling here
+    const cmd = ["jj", "status"]
+    if (args.paths) cmd.push(...args.paths)
+
+    const result = await Bun.$`${cmd}`.text()
+    return result.trim()
+  },
+})
+
+export const log = tool({
+  description:
+    "Show revision history as graph. Default shows mutable revisions. " +
+    "Use revisions arg for custom revset (e.g. '::' for all).",
+  args: {
+    revisions: tool.schema.string().optional().describe("Revset to show (default: mutable)"),
+    limit: tool.schema.number().optional().describe("Max revisions to show"),
+    patch: tool.schema.boolean().optional().describe("Show patch/diff"),
+    summary: tool.schema.boolean().optional().describe("Show change summary per path"),
+    noGraph: tool.schema.boolean().optional().describe("Flat list instead of graph"),
+  },
+  async execute(args) {
+    // NOTE: Add error handling here
+    const cmd = ["jj", "log"]
+    if (args.revisions) cmd.push("-r", args.revisions)
+    if (args.limit) cmd.push("-n", String(args.limit))
+    if (args.patch) cmd.push("-p")
+    if (args.summary) cmd.push("-s")
+    if (args.noGraph) cmd.push("--no-graph")
+
+    const result = await Bun.$`${cmd}`.text()
+    return result.trim()
+  },
+})
+
+export const edit = tool({
+  description:
+    "Set revision as working copy. Changes automatically rebase. " +
+    "Generally prefer jj_new + squash workflow instead.",
+  args: {
+    revision: tool.schema.string().describe("The revision to edit"),
+  },
+  async execute(args) {
+    // NOTE: Add error handling here
+    const cmd = ["jj", "edit", args.revision]
 
     const result = await Bun.$`${cmd}`.text()
     return result.trim()
