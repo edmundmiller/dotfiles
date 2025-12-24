@@ -81,8 +81,8 @@ unset _antidote_bundlefile _antidote_staticfile _antidote_target _antidote_marke
 
 ## Bootstrap interactive sessions
 if [[ $TERM != dumb ]]; then
-  # nix-darwin handles compinit via enableGlobalCompInit = true
-  # so we don't need to manually initialize it here
+  # Note: compinit is called in completion.zsh after fpath setup
+  # (we use manual init instead of nix-darwin's enableGlobalCompInit)
 
   # Add custom completions directory before sourcing other configs
   fpath=($ZDOTDIR/completions $fpath)

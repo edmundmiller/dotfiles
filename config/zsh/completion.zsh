@@ -1,5 +1,23 @@
 fpath+=( $ZDOTDIR/completions )
 
+# Initialize completion system
+# Note: We manually call compinit here instead of using nix-darwin's
+# enableGlobalCompInit to control timing - compinit needs to run after
+# fpath is configured with our custom completions directory.
+autoload -Uz compinit
+
+# Use a cache file in ZSH_CACHE for faster startup
+# Only regenerate once per day (check file age)
+_comp_cache="$ZSH_CACHE/zcompdump"
+if [[ -n $_comp_cache(#qNmh-24) ]]; then
+  # Cache is less than 24 hours old, use it without checking
+  compinit -C -d "$_comp_cache"
+else
+  # Cache is old or missing, regenerate with full checks
+  compinit -i -d "$_comp_cache"
+fi
+unset _comp_cache
+
 # Don't offer history completion; we have fzf, C-r, and
 # zsh-history-substring-search for that.
 ZSH_AUTOSUGGEST_STRATEGY=(completion)
