@@ -200,7 +200,8 @@
     "fusion-debugging@seqera-templates": false,
     "nextflow-debugging@seqera-templates": true,
     "creating-multiqc-template@multiqc-dev-tools": true,
-    "skill-creator@seqera-templates": true
+    "skill-creator@seqera-templates": true,
+    "claude-code-wakatime@wakatime": true
   },
   "alwaysThinkingEnabled": true
 }

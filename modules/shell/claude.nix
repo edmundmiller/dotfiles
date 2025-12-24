@@ -27,6 +27,14 @@ in
       # and therefore not available in the nix store. Manage these locally if needed.
       ".claude/agents".source = "${configDir}/claude/agents";
       ".claude/config".source = "${configDir}/claude/config";
+
+      # WakaTime configuration (references agenix-decrypted secret)
+      ".wakatime.cfg" = mkIf pkgs.stdenv.isDarwin {
+        text = ''
+          [settings]
+          api_key_vault_cmd = cat ${config.home-manager.users.${config.user.name}.age.secretsDir}/wakatime-api-key
+        '';
+      };
     };
 
     # Source Claude aliases in zsh

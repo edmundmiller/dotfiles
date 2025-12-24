@@ -69,6 +69,9 @@ in
         taskchampion-sync = {
           file = "${sharedSecretsDir}/taskchampion-sync.age";
         };
+        wakatime-api-key = {
+          file = "${sharedSecretsDir}/wakatime-api-key.age";
+        };
       };
     };
   };

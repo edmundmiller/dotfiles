@@ -7,4 +7,5 @@ let
 in
 {
   "taskchampion-sync.age".publicKeys = [ mactraitor seqeratop ];
+  "wakatime-api-key.age".publicKeys = [ mactraitor seqeratop ];
 }
