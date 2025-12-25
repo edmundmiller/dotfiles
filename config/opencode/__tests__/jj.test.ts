@@ -6,7 +6,7 @@
 // Since Bun.$ is readonly, we test by extracting and verifying command arrays.
 
 import { test, expect, describe } from "bun:test"
-import { mockResponses, withWhitespace } from "../tool/__fixtures__/jj-responses"
+import { mockResponses, withWhitespace } from "./__fixtures__/jj-responses"
 
 // ============================================================================
 // HELPER: Build command arrays matching tool logic
