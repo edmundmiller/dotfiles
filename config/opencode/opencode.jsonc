@@ -390,7 +390,8 @@
 
           // Everything else asks
           "*": "ask"
-        }
+        },
+        "list": "allow"
       }
     },
 
