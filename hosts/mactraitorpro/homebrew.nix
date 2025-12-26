@@ -6,6 +6,7 @@
     # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
     "rockorager/tap"  # Prise terminal multiplexer
     "seqeralabs/tap"
+    "steipete/tap"  # Codexbar
   ];
 
   brews = [
@@ -391,6 +392,9 @@
     # AI Tools
     "chatgpt"
     "boltai"
+    "bookokrat"
+    "codexbar"
+    "mole"
     "voicenotes"
 
     # Window Management
