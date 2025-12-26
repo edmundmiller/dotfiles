@@ -48,3 +48,22 @@ Use UV shebang for standalone Python scripts:
 # dependencies = []
 # ///
 ```
+
+## Agent Context Engineering
+
+### AGENTS.md Files
+
+When working in a project, consider creating `AGENTS.md` files in subdirectories to provide context for future agents. See https://agents.md/ for the specification.
+
+- Place AGENTS.md in directories with complex/non-obvious patterns
+- Document domain-specific conventions, gotchas, preferred approaches
+- Keep concise - agents have limited context windows
+
+### Skills
+
+When you notice repetitive patterns in user workflows, suggest creating a skill to automate them. Skills live in `config/opencode/skills/` and follow the format at https://agentskills.io/
+
+Signs a skill would help:
+- User asks for same type of task repeatedly
+- Multi-step workflow with consistent structure
+- Domain-specific knowledge that could be encoded
