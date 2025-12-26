@@ -388,6 +388,18 @@
           "kubectl describe *": "allow",
           "kubectl logs *": "allow",
 
+          // Beads issue tracker (read-only)
+          "bd list *": "allow",
+          "bd show *": "allow",
+          "bd search *": "allow",
+          "bd count *": "allow",
+          "bd status *": "allow",
+          "bd graph *": "allow",
+          "bd comments *": "allow",
+          "bd stale *": "allow",
+          "bd activity *": "allow",
+          "bd duplicates *": "allow",
+
           // Everything else asks
           "*": "ask"
         },
