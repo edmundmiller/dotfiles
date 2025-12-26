@@ -18,6 +18,9 @@ annotation_links = true
 merge_annotations = true
 merge_tags = true
 reopen_completed_tasks = false
+# Preserve local status changes - hooks manage status mapping from jirastatus/linearstatus/githubstate
+# TODO: Remove this once bugwarrior native status_map is implemented (see bead in ~/src/task-management/bugwarrior)
+static_fields = ["priority", "status"]
 
 # =============================================================================
 # Apple Reminders
