@@ -18,9 +18,8 @@ annotation_links = true
 merge_annotations = true
 merge_tags = true
 reopen_completed_tasks = false
-# Preserve local status changes - hooks manage status mapping from jirastatus/linearstatus/githubstate
-# TODO: Remove this once bugwarrior native status_map is implemented (see bead in ~/src/task-management/bugwarrior)
-static_fields = ["priority", "status"]
+# Preserve local priority changes; status now managed by native status_map per-service
+static_fields = ["priority"]
 
 # =============================================================================
 # Apple Reminders
@@ -52,6 +51,14 @@ add_tags = ["linear", "family"]
 # For now, using default_priority as fallback
 default_priority = "M"
 area_template = "family"
+# Map Linear status to TaskWarrior status
+status_map = [
+    { upstream = "Triage", taskwarrior = "waiting" },
+    { upstream = "Backlog", taskwarrior = "waiting" },
+    { upstream = "Todo", taskwarrior = "pending" },
+    { upstream = "In Progress", taskwarrior = "pending" },
+    { upstream = "In Review", taskwarrior = "pending" },
+]
 
 # =============================================================================
 # GitHub - Personal (edmundmiller, BioJulia)

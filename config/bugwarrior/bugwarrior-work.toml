@@ -43,6 +43,14 @@ extra_fields = ["jirapriority:priority.name"]
 priority_template = "{% if jirapriority == 'Highest' %}ASAP{% elif jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
 add_tags = ["jira", "jira_active", "bw"]
 area_template = "seqera"
+# Map Jira status to TaskWarrior status
+status_map = [
+    { upstream = "Backlog", taskwarrior = "waiting" },
+    { upstream = "To Do", taskwarrior = "pending" },
+    { upstream = "In Progress", taskwarrior = "pending" },
+    { upstream = "In Review", taskwarrior = "pending" },
+    { upstream = "Blocked", taskwarrior = "waiting" },
+]
 
 # Other JIRA projects - bulk cleanup needed, hide from work context
 [seqera_jira_other]
@@ -61,6 +69,14 @@ extra_fields = ["jirapriority:priority.name"]
 priority_template = "{% if jirapriority == 'Highest' %}ASAP{% elif jirapriority == 'High' %}H{% elif jirapriority == 'Low' or jirapriority == 'Lowest' %}L{% else %}M{% endif %}"
 add_tags = ["jira", "jira_cleanup", "bw"]
 area_template = "seqera"
+# Map Jira status to TaskWarrior status
+status_map = [
+    { upstream = "Backlog", taskwarrior = "waiting" },
+    { upstream = "To Do", taskwarrior = "pending" },
+    { upstream = "In Progress", taskwarrior = "pending" },
+    { upstream = "In Review", taskwarrior = "pending" },
+    { upstream = "Blocked", taskwarrior = "waiting" },
+]
 
 # =============================================================================
 # GitHub - Seqera (nextflow-io, seqeralabs, seqera-services)
