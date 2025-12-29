@@ -56,6 +56,8 @@ in
 
       # Create writable ~/.taskrc wrapper that includes repo config
       # This allows `task context` to write to ~/.taskrc without polluting the repo
+      # Context filters are defined here (not in taskrc) because taskwarrior's config
+      # file parser strips parentheses - setting via CLI preserves them correctly
       home.activation.taskwarriorConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         taskrc="$HOME/.taskrc"
         # Remove symlink if it exists (migration from old setup)
@@ -64,17 +66,24 @@ in
         fi
         # Create wrapper taskrc if it doesn't exist
         if [ ! -f "$taskrc" ]; then
-          cat > "$taskrc" << 'EOF'
-# Taskwarrior wrapper config - created by modules/shell/taskwarrior.nix
-# This file can be modified by `task context` and other runtime commands
-# Main configuration is included from the dotfiles repo
-include ${configDir}/taskwarrior/taskrc
-context=${cfg.defaultContext}
-EOF
+          cat > "$taskrc" << EOF
+        # Taskwarrior wrapper config - created by modules/shell/taskwarrior.nix
+        # This file can be modified by \`task context\` and other runtime commands
+        # Main configuration is included from the dotfiles repo
+        include ${configDir}/taskwarrior/taskrc
+        context=${cfg.defaultContext}
+        EOF
         else
           # Update include path to current nix store on each rebuild
           ${pkgs.gnused}/bin/sed -i "s|^include /nix/store/.*/config/taskwarrior/taskrc|include ${configDir}/taskwarrior/taskrc|" "$taskrc"
         fi
+
+        # Set context filters via CLI to preserve parentheses
+        # (taskrc file parsing strips parens, but CLI config preserves them)
+        ${pkgs.taskwarrior3}/bin/task config context.work.read '( area:seqera or area:nfcore ) and ( githubtype:pull_request or githubtype.none: or +jira_active ) and -jira_cleanup' 2>/dev/null || true
+        ${pkgs.taskwarrior3}/bin/task config context.work.write 'area:seqera' 2>/dev/null || true
+        ${pkgs.taskwarrior3}/bin/task config context.home.read '( area:personal or area:family or area:phd ) and githubtype.none:' 2>/dev/null || true
+        ${pkgs.taskwarrior3}/bin/task config context.home.write 'area:personal' 2>/dev/null || true
       '';
 
       # Taskwarrior-TUI shortcut scripts
