@@ -165,3 +165,8 @@ alias vanguard="$(go env GOPATH)/bin/vanguard"
 
 # Amp CLI
 export PATH="/Users/emiller/.amp/bin:$PATH"
+
+# Goose terminal integration
+if (( $+commands[goose] )); then
+  eval "$(goose term init zsh)"
+fi
