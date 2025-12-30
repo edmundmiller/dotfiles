@@ -1,0 +1,163 @@
+#!/usr/bin/env bun
+/**
+ * TaskWarrior on-modify hook: Update totalactivetime from timewarrior.
+ *
+ * When a task is stopped (or modified), queries timewarrior for total time
+ * tracked with this task's description and updates the totalactivetime UDA.
+ *
+ * This works alongside the standard on-modify.timewarrior hook that handles
+ * starting/stopping timewarrior tracking.
+ *
+ * Note: The standard timewarrior hook tags entries with description + project,
+ * so we query by description to find matching entries.
+ */
+
+interface TaskwarriorTask {
+  uuid: string;
+  description: string;
+  status: "pending" | "completed" | "deleted" | "waiting" | "recurring";
+  start?: string;
+  totalactivetime?: string;
+  [key: string]: unknown;
+}
+
+interface TimewarriorEntry {
+  id: number;
+  start: string;
+  end?: string;
+  tags?: string[];
+}
+
+/**
+ * Query timewarrior for entries matching a tag.
+ * Returns parsed entries or empty array on failure.
+ */
+function queryTimewarrior(tag: string): TimewarriorEntry[] {
+  try {
+    const result = Bun.spawnSync(["timew", "export", tag], {
+      timeout: 5000,
+    });
+
+    if (!result.success) return [];
+
+    const stdout = result.stdout.toString().trim();
+    if (!stdout) return [];
+
+    return JSON.parse(stdout);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get total tracked time for a task by description from timewarrior.
+ * Tries multiple tag formats since timewarrior behavior has changed over versions:
+ * - Current (1.9+): Uses description as-is
+ * - Legacy: Converts spaces to underscores and wraps in quotes
+ * Returns duration in seconds.
+ */
+function getTimewarriorDuration(description: string): number {
+  if (!description) return 0;
+
+  // Try raw description first (current timewarrior behavior)
+  let entries = queryTimewarrior(description);
+
+  // Fall back to legacy underscore format if no results
+  if (entries.length === 0) {
+    const legacyTag = `"${description.replace(/ /g, "_")}"`;
+    entries = queryTimewarrior(legacyTag);
+  }
+
+  let totalSeconds = 0;
+
+  for (const entry of entries) {
+    if (!entry.start) continue;
+
+    // Parse ISO format timestamps (timewarrior uses YYYYMMDDTHHMMSSZ)
+    const start = parseTimewDate(entry.start);
+    const end = entry.end ? parseTimewDate(entry.end) : new Date();
+
+    const duration = (end.getTime() - start.getTime()) / 1000;
+    totalSeconds += Math.max(0, duration);
+  }
+
+  return Math.floor(totalSeconds);
+}
+
+/**
+ * Parse timewarrior date format: YYYYMMDDTHHMMSS or YYYYMMDDTHHMMSSZ
+ */
+function parseTimewDate(dateStr: string): Date {
+  // Remove trailing Z if present
+  const clean = dateStr.replace(/Z$/, "");
+
+  // Parse YYYYMMDDTHHMMSS format
+  const year = parseInt(clean.slice(0, 4), 10);
+  const month = parseInt(clean.slice(4, 6), 10) - 1; // 0-indexed
+  const day = parseInt(clean.slice(6, 8), 10);
+  const hour = parseInt(clean.slice(9, 11), 10);
+  const minute = parseInt(clean.slice(11, 13), 10);
+  const second = parseInt(clean.slice(13, 15), 10);
+
+  return new Date(Date.UTC(year, month, day, hour, minute, second));
+}
+
+/**
+ * Format seconds as ISO 8601 duration for taskwarrior.
+ * Examples: 3600 -> PT1H, 5400 -> PT1H30M, 90 -> PT1M30S
+ */
+function formatDurationISO(seconds: number): string {
+  if (seconds <= 0) return "PT0S";
+
+  const hours = Math.floor(seconds / 3600);
+  const remainder = seconds % 3600;
+  const minutes = Math.floor(remainder / 60);
+  const secs = remainder % 60;
+
+  const parts = ["PT"];
+  if (hours) parts.push(`${hours}H`);
+  if (minutes) parts.push(`${minutes}M`);
+  if (secs || (!hours && !minutes)) parts.push(`${secs}S`);
+
+  return parts.join("");
+}
+
+async function main(): Promise<void> {
+  // on-modify receives TWO lines: original task, then modified task
+  const input = await Bun.stdin.text();
+  const lines = input.trim().split("\n");
+
+  if (lines.length < 2) {
+    // Not enough input, just pass through
+    console.log(lines[0] || "{}");
+    process.exit(0);
+  }
+
+  const original: TaskwarriorTask = JSON.parse(lines[0]);
+  const modified: TaskwarriorTask = JSON.parse(lines[1]);
+
+  const description = modified.description || "";
+
+  // Check if task was just stopped (had start, no longer has start)
+  const wasActive = "start" in original;
+  const isActive = "start" in modified;
+  const taskStopped = wasActive && !isActive;
+
+  // Update duration when task is stopped or completed/deleted
+  const status = modified.status || "pending";
+  const shouldUpdate =
+    taskStopped || status === "completed" || status === "deleted";
+
+  if (shouldUpdate && description) {
+    const durationSeconds = getTimewarriorDuration(description);
+    if (durationSeconds > 0) {
+      modified.totalactivetime = formatDurationISO(durationSeconds);
+    }
+  }
+
+  // Output the modified task
+  console.log(JSON.stringify(modified));
+  process.exit(0);
+}
+
+main();
