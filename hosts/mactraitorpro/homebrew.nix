@@ -195,9 +195,6 @@
     "codexbar"
     "voicenotes"
 
-    # Window Management
-    "aerospace"
-
     # Utilities
     "gitify"
     "calibre"
