@@ -28,7 +28,7 @@
   "autoupdate": "notify",
 
   // Plugins
-  "plugin": ["opencode-skills"],
+  "plugin": ["opencode-skills", "opencode-pty"],
 
   // Nextflow Language Server
   "lsp": {
