@@ -7,10 +7,10 @@ description: >
   "create task for", "what's ready to work on", "show task", "track this work", "what's blocking", or
   "update status".
 license: MIT
+allowed-tools: Read Bash(bd:*)
 metadata:
   version: "0.34.0"
   author: "Steve Yegge <https://github.com/steveyegge>"
-  allowed-tools: "Read,Bash(bd:*)"
 ---
 
 # Beads - Persistent Task Memory for AI Agents
