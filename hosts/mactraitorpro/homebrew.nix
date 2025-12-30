@@ -127,7 +127,10 @@
     "z3"
 
     # Additional tools
+    "block-goose-cli"
+    "bookokrat"
     "claude-squad"
+    "mole"
     "crush"
     "dataline"
     "eask-cli"
@@ -185,11 +188,8 @@
     "granola"
 
     # AI Tools
-    "chatgpt"
-    "boltai"
-    "bookokrat"
+    "block-goose"
     "codexbar"
-    "mole"
     "voicenotes"
 
     # Window Management
