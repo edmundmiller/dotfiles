@@ -64,9 +64,9 @@
 
       # Homebrew configuration
       onActivation = {
-        autoUpdate = false;  # Don't auto-update during activation
-        cleanup = "none";     # Don't remove anything for now
-        upgrade = false;     # Don't upgrade formulae during activation
+        autoUpdate = true;
+        cleanup = "zap";
+        upgrade = true;
       };
     } // (import ./homebrew.nix);
 
