@@ -6,10 +6,11 @@ description: >
   complex dependencies, or needs persistent context across compaction cycles. Trigger with phrases like
   "create task for", "what's ready to work on", "show task", "track this work", "what's blocking", or
   "update status".
-allowed-tools: "Read,Bash(bd:*)"
-version: "0.34.0"
-author: "Steve Yegge <https://github.com/steveyegge>"
-license: "MIT"
+license: MIT
+metadata:
+  version: "0.34.0"
+  author: "Steve Yegge <https://github.com/steveyegge>"
+  allowed-tools: "Read,Bash(bd:*)"
 ---
 
 # Beads - Persistent Task Memory for AI Agents
