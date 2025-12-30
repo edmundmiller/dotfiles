@@ -106,10 +106,15 @@ in
         executable = true;
       };
 
-      # Timewarrior integration hook
-      # Automatically starts/stops time tracking when task start/stop is used
+      # Timewarrior integration hooks
+      # on-modify.timewarrior: starts/stops time tracking when task start/stop is used
+      # on-modify-timewarrior-duration.py: updates totalactivetime UDA when task is stopped
       home.file.".local/share/task/hooks/on-modify.timewarrior" = mkIf cfg.timewarriorHook.enable {
         source = "${pkgs.timewarrior}/share/doc/timew/ext/on-modify.timewarrior";
+        executable = true;
+      };
+      home.file.".local/share/task/hooks/on-modify-timewarrior-duration.py" = mkIf cfg.timewarriorHook.enable {
+        source = "${configDir}/taskwarrior/hooks/on-modify-timewarrior-duration.py";
         executable = true;
       };
     };
