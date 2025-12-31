@@ -12,6 +12,7 @@
 
   brews = [
     # Development tools
+    "actionlint"
     "autoconf"
     "automake"
     "cmake"
