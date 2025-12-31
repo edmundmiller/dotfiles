@@ -23,6 +23,7 @@
     "git-lfs"
     "gh"
     "go"
+    "jjui"
     "libtool"
     "llvm"
     "m4"
