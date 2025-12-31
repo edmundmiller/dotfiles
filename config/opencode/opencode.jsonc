@@ -28,7 +28,22 @@
   "autoupdate": "notify",
 
   // Plugins
-  "plugin": ["opencode-pty"],
+  // - opencode-pty: PTY support for interactive terminal sessions
+  // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
+  // - opencode-md-table-formatter: Auto-format markdown tables on completion
+  // - opencode-notifier: Desktop notifications + sounds on events
+  // - jj-opencode: Enforce JJ describe-before-implement workflow
+  // - opencode-direnv: Auto-load .envrc environment variables at session start
+  // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
+  "plugin": [
+    "opencode-pty",
+    "@simonwjackson/opencode-direnv",
+    "opencode-wakatime",
+    "@franlol/opencode-md-table-formatter@latest",
+    "@mohak34/opencode-notifier",
+    "jj-opencode",
+    "@tarquinen/opencode-dcp@latest"
+  ],
 
   // Nextflow Language Server
   "lsp": {
@@ -463,5 +478,9 @@
   },
 
   // Instructions - global rules from AGENTS.md
-  "instructions": ["~/.config/opencode/AGENTS.md"]
+  // - shell-strategy: Teaches LLM to use non-interactive shell flags (prevents TTY hangs)
+  "instructions": [
+    "~/.config/opencode/AGENTS.md",
+    "~/.config/opencode/plugin/shell-strategy/shell_strategy.md"
+  ]
 }
