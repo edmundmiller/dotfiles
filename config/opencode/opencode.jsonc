@@ -43,7 +43,7 @@
     "@franlol/opencode-md-table-formatter@latest",
     "@mohak34/opencode-notifier",
     "jj-opencode",
-    "@joshuadavidthomas/opencode-beads",
+    "opencode-beads",
     "@tarquinen/opencode-dcp@latest"
   ],
 
