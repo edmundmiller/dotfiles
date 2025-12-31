@@ -142,7 +142,6 @@
     "jnsahaj/lumen/lumen"
     "opencode"
     "steveyegge/beads/bd"
-    "claude-code"
   ];
 
   casks = [
@@ -196,6 +195,7 @@
 
     # AI Tools
     "block-goose"
+    "claude-code"
     "codexbar"
     "voicenotes"
 
