@@ -9,6 +9,7 @@
     "seqeralabs/tap"
     "steipete/tap"  # Codexbar
     "steveyegge/beads"  # Beads debugging tool
+    "tw93/tap"  # Mole
   ];
 
   brews = [
