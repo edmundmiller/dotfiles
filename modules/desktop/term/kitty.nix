@@ -57,7 +57,7 @@ in
         macos_quit_when_last_window_closed = true;
         macos_show_window_title_in = "menubar";  # Valid: menubar, titlebar, none
         macos_traditional_fullscreen = false;
-        macos_colorspace = "displayp3";  # Match Ghostty's display-p3
+        macos_colorspace = "srgb";  # Default, matches web browsers
 
         # Window appearance (synced from Ghostty)
         hide_window_decorations = "no";  # Show full native macOS titlebar
