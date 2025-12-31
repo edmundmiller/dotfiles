@@ -35,6 +35,7 @@
   // - jj-opencode: Enforce JJ describe-before-implement workflow
   // - opencode-direnv: Auto-load .envrc environment variables at session start
   // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
+  // - opencode-beads: Beads issue tracker integration
   "plugin": [
     "opencode-pty",
     "@simonwjackson/opencode-direnv",
@@ -42,6 +43,7 @@
     "@franlol/opencode-md-table-formatter@latest",
     "@mohak34/opencode-notifier",
     "jj-opencode",
+    "@joshuadavidthomas/opencode-beads",
     "@tarquinen/opencode-dcp@latest"
   ],
 
