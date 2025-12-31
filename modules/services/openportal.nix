@@ -1,6 +1,6 @@
 # OpenPortal - Mobile-first web UI for OpenCode
 # Access via Tailscale IP at http://[tailscale-ip]:3000
-{ options, config, lib, pkgs, ... }:
+{ options, config, lib, pkgs, isDarwin, ... }:
 
 with lib;
 with lib.my;
@@ -16,7 +16,8 @@ in {
     portalPort = mkOpt types.port 3000;
   };
 
-  config = mkIf cfg.enable {
+  # NixOS-only service (uses podman/systemd)
+  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
     # Ensure podman is available
     virtualisation.podman.enable = true;
     virtualisation.oci-containers.backend = "podman";
@@ -70,5 +71,5 @@ in {
 
     # Open firewall ports (Tailscale traffic)
     networking.firewall.allowedTCPPorts = [ cfg.openCodePort cfg.portalPort ];
-  };
+  });
 }
