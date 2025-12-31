@@ -169,6 +169,7 @@
     "positron"
     "zed"
     "warp@preview"
+    "termius@beta"
     "tuist"
 
     # Browsers

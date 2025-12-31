@@ -1,488 +1,445 @@
 {
-  "$schema": "https://opencode.ai/config.json",
-
-  // Theme - Catppuccin Mocha for consistency with Ghostty/Neovim/Taskwarrior
-  "theme": "catppuccin",
-
-  // TUI settings
-  "tui": {
-    "scroll_acceleration": {
-      "enabled": true
-    }
-  },
-
-  // Model configuration - using Claude as primary
-  "model": "anthropic/claude-sonnet-4-5",
-  "small_model": "anthropic/claude-haiku-4-5",
-
-  // Provider configuration
-  "provider": {
-    "anthropic": {
-      "options": {
-        "apiKey": "{env:ANTHROPIC_API_KEY}"
-      }
-    }
-  },
-
-  // Autoupdate - notify but don't auto-update
-  "autoupdate": "notify",
-
-  // Plugins
-  // - opencode-pty: PTY support for interactive terminal sessions
-  // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
-  // - opencode-md-table-formatter: Auto-format markdown tables on completion
-  // - opencode-notifier: Desktop notifications + sounds on events
-  // - jj-opencode: Enforce JJ describe-before-implement workflow
-  // - opencode-direnv: Auto-load .envrc environment variables at session start
-  // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
-  // - opencode-beads: Beads issue tracker integration
-  "plugin": [
-    "opencode-pty",
-    "@simonwjackson/opencode-direnv",
-    "opencode-wakatime",
-    "@franlol/opencode-md-table-formatter@latest",
-    "@mohak34/opencode-notifier",
-    "jj-opencode",
-    "opencode-beads",
-    "@tarquinen/opencode-dcp@latest"
-  ],
-
-  // Nextflow Language Server
-  "lsp": {
-    "nextflow": {
-      "command": [
-        "java",
-        "-jar",
-        "{env:HOME}/.local/share/opencode/bin/nextflow-language-server/language-server-all.jar"
-      ],
-      "extensions": [".nf", ".config"]
-    }
-  },
-
-  // MCP servers
-  "mcp": {
-    // "seqera-platform": {
-    //   "type": "remote",
-    //   "url": "https://mcp.seqera.io/mcp",
-    //   "enabled": true,
-    //   "headers": {
-    //     "Authorization": "Bearer {env:SEQERA_TOKEN}"
-    //   },
-    //   "timeout": 10000
-    // },
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "enabled": true,
-      "headers": {
-        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
-      }
-    }
-  },
-
-  // Permission configuration - merged existing + Nextflow ecosystem
-  "permission": {
-    "bash": {
-      // Nextflow commands
-      "nextflow config": "allow",
-      "nextflow log *": "allow",
-      "nextflow lint *": "allow",
-      "nextflow info *": "allow",
-      "nextflow list *": "allow",
-      "nextflow view *": "allow",
-      "nextflow run *": "allow",
-      "nextflow pull *": "allow",
-      "nextflow drop *": "allow",
-      "nextflow clean *": "ask",
-
-      // nf-test commands
-      "nf-test test *": "allow",
-      "nf-test list *": "allow",
-      "nf-test generate *": "allow",
-
-      // nf-core commands
-      "nf-core list": "allow",
-      "nf-core info *": "allow",
-      "nf-core modules list *": "allow",
-      "nf-core subworkflows list *": "allow",
-      "nf-core pipelines list": "allow",
-      "nf-core lint *": "allow",
-      "nf-core download *": "ask",
-      "nf-core create *": "ask",
-      "nf-core modules install *": "ask",
-      "nf-core modules update *": "ask",
-      "nf-core modules remove *": "ask",
-      "nf-core subworkflows install *": "ask",
-      "nf-core launch *": "ask",
-
-      // Seqera Platform (tw) commands
-      "tw info *": "allow",
-      "tw workspaces list": "allow",
-      "tw pipelines list *": "allow",
-      "tw runs list *": "allow",
-      "tw runs view *": "allow",
-      "tw datasets list *": "allow",
-      "tw compute-envs list *": "allow",
-      "tw credentials list": "allow",
-      "tw organizations list": "allow",
-      "tw pipelines create *": "ask",
-      "tw pipelines delete *": "ask",
-      "tw pipelines update *": "ask",
-      "tw runs launch *": "ask",
-      "tw runs cancel *": "ask",
-      "tw runs delete *": "ask",
-      "tw datasets create *": "ask",
-      "tw datasets delete *": "ask",
-      "tw compute-envs create *": "ask",
-      "tw compute-envs delete *": "ask",
-
-      // Wave commands
-      "wave --version": "allow",
-      "wave --help": "allow",
-      "wave *": "ask",
-
-      // ast-grep commands
-      "ast-grep -p *": "allow",
-      "ast-grep --pattern *": "allow",
-      "ast-grep scan *": "allow",
-      "ast-grep --config *": "allow",
-      "sg *": "allow",
-
-      // Nix/Darwin commands
-      "nix flake *": "allow",
-      "nix build *": "allow",
-      "nix search *": "allow",
-      "nix shell *": "allow",
-      "nix eval *": "allow",
-      "nix-collect-garbage *": "ask",
-      "darwin-rebuild *": "ask",
-      "hey *": "allow",
-
-      // Build tools - all operations
-      "make *": "allow",
-      "make": "allow",
-      "cargo *": "allow",
-      "go build *": "allow",
-      "go test *": "allow",
-      "go run *": "allow",
-      "go vet *": "allow",
-      "mvn *": "allow",
-      "gradle *": "allow",
-
-      // Python ecosystem
-      "pip list *": "allow",
-      "pip show *": "allow",
-      "uv run *": "allow",
-      "uv sync *": "allow",
-      "uv *": "allow",
-      "poetry run *": "allow",
-      "poetry show *": "allow",
-      "poetry *": "allow",
-      "ruff *": "allow",
-      "black *": "allow",
-      "mypy *": "allow",
-      "pytest *": "allow",
-
-      // Node ecosystem
-      "npm run *": "allow",
-      "npm run build": "allow",
-      "npm run test": "allow",
-      "npm run lint": "allow",
-      "npm run dev": "allow",
-      "npm list *": "allow",
-      "yarn *": "allow",
-      "pnpm *": "allow",
-      "npx *": "allow",
-      "eslint *": "allow",
-      "prettier *": "allow",
-
-      // JJ operations (all safe with undo)
-      "jj *": "allow",
-
-      // File operations
-      "mkdir *": "allow",
-      "touch *": "allow",
-      "chmod *": "allow",
-      "cp *": "allow",
-      "mv *": "allow",
-      "ln *": "allow",
-      "rm *": "allow",
-
-      // System info
-      "date *": "allow",
-      "date": "allow",
-      "env": "allow",
-      "printenv *": "allow",
-      "hostname": "allow",
-      "whoami": "allow",
-      "id": "allow",
-      "uname *": "allow",
-      "ps *": "allow",
-      "top -l *": "allow",
-
-      // Network info (read-only)
-      "ping -c *": "allow",
-      "curl *": "allow",
-      "wget *": "allow",
-      "dig *": "allow",
-      "nslookup *": "allow",
-      "host *": "allow",
-
-      // Package managers (read operations)
-      "brew list *": "allow",
-      "brew info *": "allow",
-      "brew search *": "allow",
-      "apt list *": "allow",
-      "dnf list *": "allow",
-
-      // Text processing
-      "jq *": "allow",
-      "yq *": "allow",
-      "awk *": "allow",
-      "sed *": "allow",
-      "sort *": "allow",
-      "uniq *": "allow",
-      "cut *": "allow",
-      "tr *": "allow",
-
-      // File readers
-      "bat *": "allow",
-      "less *": "allow",
-      "more *": "allow",
-
-      // Search tools
-      "ag *": "allow",
-      "ack *": "allow",
-      "rg *": "allow",
-
-      // Server/dev commands
-      "docker *": "allow",
-      "docker-compose *": "allow",
-      "kubectl get *": "allow",
-      "kubectl describe *": "allow",
-      "kubectl logs *": "allow"
+    "$schema": "https://opencode.ai/config.json",
+    // Theme - Catppuccin Mocha for consistency with Ghostty/Neovim/Taskwarrior
+    "theme": "catppuccin",
+    // TUI settings
+    "tui": {
+        "scroll_acceleration": {
+            "enabled": true
+        }
     },
-    "edit": "allow",
-    "write": "allow",
-    "webfetch": "allow",
-    "doom_loop": "allow",
-    "external_directory": "allow"
-  },
-
-  // Nextflow development agents
-  "agent": {
-    // Built-in agent overrides
-    "build": {
-      "mode": "primary",
-      "model": "anthropic/claude-opus-4-5",
-      "description": "Full development work with all tools enabled"
+    // Model configuration - using Claude as primary
+    "model": "anthropic/claude-sonnet-4-5",
+    "small_model": "anthropic/claude-haiku-4-5",
+    // Provider configuration
+    "provider": {
+        "anthropic": {
+            "options": {
+                "apiKey": "{env:ANTHROPIC_API_KEY}"
+            }
+        }
     },
-    "plan": {
-      "mode": "primary",
-      "model": "anthropic/claude-sonnet-4-5",
-      "description": "Analysis and planning without making changes",
-      "permission": {
-        "edit": "ask",
-        "write": "ask",
-        "bash": {
-          // File reading - comprehensive
-          "ls *": "allow",
-          "cat *": "allow",
-          "head *": "allow",
-          "tail *": "allow",
-          "wc *": "allow",
-          "file *": "allow",
-          "stat *": "allow",
-          "which *": "allow",
-          "type *": "allow",
-          "less *": "allow",
-          "more *": "allow",
-          "bat *": "allow",
-
-          // Search/grep - comprehensive
-          "rg *": "allow",
-          "grep *": "allow",
-          "find *": "allow",
-          "fd *": "allow",
-          "fzf *": "allow",
-          "ag *": "allow",
-          "ack *": "allow",
-
-          // Git read-only
-          "git status *": "allow",
-          "git diff *": "allow",
-          "git log *": "allow",
-          "git show *": "allow",
-          "git branch *": "allow",
-          "git remote *": "allow",
-          "git blame *": "allow",
-          "git ls-files *": "allow",
-
-          // JJ - all operations (safe with undo)
-          "jj *": "allow",
-
-          // Build tools (check/dry-run modes)
-          "make -n *": "allow",
-          "make": "allow",
-          "make test *": "allow",
-          "cargo check *": "allow",
-          "cargo clippy *": "allow",
-          "cargo test *": "allow",
-          "cargo build *": "allow",
-          "go vet *": "allow",
-          "go build *": "allow",
-          "go test *": "allow",
-
-          // Linters/formatters
-          "ruff *": "allow",
-          "black *": "allow",
-          "prettier *": "allow",
-          "eslint *": "allow",
-          "pylint *": "allow",
-          "mypy *": "allow",
-          "pytest *": "allow",
-
-          // Package info
-          "npm list *": "allow",
-          "npm run *": "allow",
-          "pip list *": "allow",
-          "pip show *": "allow",
-          "cargo tree *": "allow",
-          "go list *": "allow",
-          "uv *": "allow",
-          "poetry *": "allow",
-
-          // Nextflow ecosystem
-          "nextflow *": "allow",
-          "nf-core *": "allow",
-          "nf-test *": "allow",
-          "ast-grep *": "allow",
-          "tw *": "allow",
-
-          // Nix read-only
-          "nix flake *": "allow",
-          "nix eval *": "allow",
-          "nix search *": "allow",
-          "nix-store *": "allow",
-          "hey *": "allow",
-
-          // Task/project management
-          "task *": "allow",
-          "just *": "allow",
-
-          // System info
-          "uname *": "allow",
-          "env": "allow",
-          "printenv *": "allow",
-          "date *": "allow",
-          "date": "allow",
-          "pwd": "allow",
-          "whoami": "allow",
-          "id": "allow",
-          "ps *": "allow",
-
-          // Text processing
-          "jq *": "allow",
-          "yq *": "allow",
-          "awk *": "allow",
-          "sed *": "allow",
-          "sort *": "allow",
-          "uniq *": "allow",
-          "cut *": "allow",
-          "tr *": "allow",
-
-          // Network (read-only)
-          "curl *": "allow",
-          "wget *": "allow",
-          "dig *": "allow",
-          "ping *": "allow",
-
-          // Docker/k8s read
-          "docker ps *": "allow",
-          "docker logs *": "allow",
-          "docker images *": "allow",
-          "kubectl get *": "allow",
-          "kubectl describe *": "allow",
-          "kubectl logs *": "allow",
-
-          // Beads issue tracker (read-only)
-          "bd list *": "allow",
-          "bd show *": "allow",
-          "bd search *": "allow",
-          "bd count *": "allow",
-          "bd status *": "allow",
-          "bd graph *": "allow",
-          "bd comments *": "allow",
-          "bd stale *": "allow",
-          "bd activity *": "allow",
-          "bd duplicates *": "allow",
-
-          // Everything else asks
-          "*": "ask"
+    // Autoupdate - notify but don't auto-update
+    "autoupdate": "notify",
+    // Plugins
+    // - opencode-pty: PTY support for interactive terminal sessions
+    // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
+    // - opencode-md-table-formatter: Auto-format markdown tables on completion
+    // - opencode-notifier: Desktop notifications + sounds on events
+    // - jj-opencode: Enforce JJ describe-before-implement workflow
+    // - opencode-direnv: Auto-load .envrc environment variables at session start
+    // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
+    // - opencode-beads: Beads issue tracker integration
+    "plugin": [
+        "opencode-pty",
+        "@simonwjackson/opencode-direnv",
+        "opencode-wakatime",
+        "@franlol/opencode-md-table-formatter@latest",
+        "@mohak34/opencode-notifier",
+        "jj-opencode",
+        "opencode-beads",
+        "@tarquinen/opencode-dcp@latest"
+    ],
+    // Nextflow Language Server
+    "lsp": {
+        "nextflow": {
+            "command": [
+                "java",
+                "-jar",
+                "{env:HOME}/.local/share/opencode/bin/nextflow-language-server/language-server-all.jar"
+            ],
+            "extensions": [
+                ".nf",
+                ".config"
+            ]
+        }
+    },
+    // MCP servers
+    "mcp": {
+        "seqera-platform": {
+            "type": "remote",
+            "url": "https://mcp.seqera.io/mcp",
+            "enabled": false,
+            "headers": {
+                "Authorization": "Bearer {env:SEQERA_TOKEN}"
+            },
+            "timeout": 10000
         },
-        "list": "allow"
-      }
+        "context7": {
+            "type": "remote",
+            "url": "https://mcp.context7.com/mcp",
+            "enabled": true,
+            "headers": {
+                "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+            }
+        }
     },
-
-    "nextflow-dev": {
-      "description": "Nextflow pipeline development agent with enhanced permissions for workflow development",
-      "mode": "subagent",
-      "temperature": 0.3,
-      "permission": {
+    // Permission configuration - merged existing + Nextflow ecosystem
+    "permission": {
         "bash": {
-          "nextflow clean *": "allow",
-          "nf-core download *": "allow"
+            // Nextflow commands
+            "nextflow config": "allow",
+            "nextflow log *": "allow",
+            "nextflow lint *": "allow",
+            "nextflow info *": "allow",
+            "nextflow list *": "allow",
+            "nextflow view *": "allow",
+            "nextflow run *": "allow",
+            "nextflow pull *": "allow",
+            "nextflow drop *": "allow",
+            "nextflow clean *": "ask",
+            // nf-test commands
+            "nf-test test *": "allow",
+            "nf-test list *": "allow",
+            "nf-test generate *": "allow",
+            // nf-core commands
+            "nf-core list": "allow",
+            "nf-core info *": "allow",
+            "nf-core modules list *": "allow",
+            "nf-core subworkflows list *": "allow",
+            "nf-core pipelines list": "allow",
+            "nf-core lint *": "allow",
+            "nf-core download *": "ask",
+            "nf-core create *": "ask",
+            "nf-core modules install *": "ask",
+            "nf-core modules update *": "ask",
+            "nf-core modules remove *": "ask",
+            "nf-core subworkflows install *": "ask",
+            "nf-core launch *": "ask",
+            // Seqera Platform (tw) commands
+            "tw info *": "allow",
+            "tw workspaces list": "allow",
+            "tw pipelines list *": "allow",
+            "tw runs list *": "allow",
+            "tw runs view *": "allow",
+            "tw datasets list *": "allow",
+            "tw compute-envs list *": "allow",
+            "tw credentials list": "allow",
+            "tw organizations list": "allow",
+            "tw pipelines create *": "ask",
+            "tw pipelines delete *": "ask",
+            "tw pipelines update *": "ask",
+            "tw runs launch *": "ask",
+            "tw runs cancel *": "ask",
+            "tw runs delete *": "ask",
+            "tw datasets create *": "ask",
+            "tw datasets delete *": "ask",
+            "tw compute-envs create *": "ask",
+            "tw compute-envs delete *": "ask",
+            // Wave commands
+            "wave --version": "allow",
+            "wave --help": "allow",
+            "wave *": "ask",
+            // ast-grep commands
+            "ast-grep -p *": "allow",
+            "ast-grep --pattern *": "allow",
+            "ast-grep scan *": "allow",
+            "ast-grep --config *": "allow",
+            "sg *": "allow",
+            // Nix/Darwin commands
+            "nix flake *": "allow",
+            "nix build *": "allow",
+            "nix search *": "allow",
+            "nix shell *": "allow",
+            "nix eval *": "allow",
+            "nix-collect-garbage *": "ask",
+            "darwin-rebuild *": "ask",
+            "hey *": "allow",
+            // Build tools - all operations
+            "make *": "allow",
+            "make": "allow",
+            "cargo *": "allow",
+            "go build *": "allow",
+            "go test *": "allow",
+            "go run *": "allow",
+            "go vet *": "allow",
+            "mvn *": "allow",
+            "gradle *": "allow",
+            // Python ecosystem
+            "pip list *": "allow",
+            "pip show *": "allow",
+            "uv run *": "allow",
+            "uv sync *": "allow",
+            "uv *": "allow",
+            "poetry run *": "allow",
+            "poetry show *": "allow",
+            "poetry *": "allow",
+            "ruff *": "allow",
+            "black *": "allow",
+            "mypy *": "allow",
+            "pytest *": "allow",
+            // Node ecosystem
+            "npm run *": "allow",
+            "npm run build": "allow",
+            "npm run test": "allow",
+            "npm run lint": "allow",
+            "npm run dev": "allow",
+            "npm list *": "allow",
+            "yarn *": "allow",
+            "pnpm *": "allow",
+            "npx *": "allow",
+            "eslint *": "allow",
+            "prettier *": "allow",
+            // JJ operations (all safe with undo)
+            "jj *": "allow",
+            // File operations
+            "mkdir *": "allow",
+            "touch *": "allow",
+            "chmod *": "allow",
+            "cp *": "allow",
+            "mv *": "allow",
+            "ln *": "allow",
+            "rm *": "allow",
+            // System info
+            "date *": "allow",
+            "date": "allow",
+            "env": "allow",
+            "printenv *": "allow",
+            "hostname": "allow",
+            "whoami": "allow",
+            "id": "allow",
+            "uname *": "allow",
+            "ps *": "allow",
+            "top -l *": "allow",
+            // Network info (read-only)
+            "ping -c *": "allow",
+            "curl *": "allow",
+            "wget *": "allow",
+            "dig *": "allow",
+            "nslookup *": "allow",
+            "host *": "allow",
+            // Package managers (read operations)
+            "brew list *": "allow",
+            "brew info *": "allow",
+            "brew search *": "allow",
+            "apt list *": "allow",
+            "dnf list *": "allow",
+            // Text processing
+            "jq *": "allow",
+            "yq *": "allow",
+            "awk *": "allow",
+            "sed *": "allow",
+            "sort *": "allow",
+            "uniq *": "allow",
+            "cut *": "allow",
+            "tr *": "allow",
+            // File readers
+            "bat *": "allow",
+            "less *": "allow",
+            "more *": "allow",
+            // Search tools
+            "ag *": "allow",
+            "ack *": "allow",
+            "rg *": "allow",
+            // Server/dev commands
+            "docker *": "allow",
+            "docker-compose *": "allow",
+            "kubectl get *": "allow",
+            "kubectl describe *": "allow",
+            "kubectl logs *": "allow"
         },
         "edit": "allow",
         "write": "allow",
-        "webfetch": "allow"
-      }
+        "webfetch": "allow",
+        "doom_loop": "allow",
+        "external_directory": "allow"
     },
-    "nextflow-debug": {
-      "description": "Debugging agent for Nextflow - read-focused with work directory inspection capabilities",
-      "mode": "subagent",
-      "temperature": 0.1,
-      "permission": {
-        "bash": {
-          "nextflow log *": "allow",
-          "nextflow config": "allow",
-          "nf-test list *": "allow"
+    // Nextflow development agents
+    "agent": {
+        // Built-in agent overrides
+        "build": {
+            "mode": "primary",
+            "model": "anthropic/claude-opus-4-5",
+            "description": "Full development work with all tools enabled"
         },
-        "edit": "deny",
-        "write": "deny",
-        "webfetch": "allow"
-      }
+        "plan": {
+            "mode": "primary",
+            "model": "anthropic/claude-sonnet-4-5",
+            "description": "Analysis and planning without making changes",
+            "permission": {
+                "edit": "ask",
+                "write": "ask",
+                "bash": {
+                    // File reading - comprehensive
+                    "ls *": "allow",
+                    "cat *": "allow",
+                    "head *": "allow",
+                    "tail *": "allow",
+                    "wc *": "allow",
+                    "file *": "allow",
+                    "stat *": "allow",
+                    "which *": "allow",
+                    "type *": "allow",
+                    "less *": "allow",
+                    "more *": "allow",
+                    "bat *": "allow",
+                    // Search/grep - comprehensive
+                    "rg *": "allow",
+                    "grep *": "allow",
+                    "find *": "allow",
+                    "fd *": "allow",
+                    "fzf *": "allow",
+                    "ag *": "allow",
+                    "ack *": "allow",
+                    // Git read-only
+                    "git status *": "allow",
+                    "git diff *": "allow",
+                    "git log *": "allow",
+                    "git show *": "allow",
+                    "git branch *": "allow",
+                    "git remote *": "allow",
+                    "git blame *": "allow",
+                    "git ls-files *": "allow",
+                    // JJ - all operations (safe with undo)
+                    "jj *": "allow",
+                    // Build tools (check/dry-run modes)
+                    "make -n *": "allow",
+                    "make": "allow",
+                    "make test *": "allow",
+                    "cargo check *": "allow",
+                    "cargo clippy *": "allow",
+                    "cargo test *": "allow",
+                    "cargo build *": "allow",
+                    "go vet *": "allow",
+                    "go build *": "allow",
+                    "go test *": "allow",
+                    // Linters/formatters
+                    "ruff *": "allow",
+                    "black *": "allow",
+                    "prettier *": "allow",
+                    "eslint *": "allow",
+                    "pylint *": "allow",
+                    "mypy *": "allow",
+                    "pytest *": "allow",
+                    // Package info
+                    "npm list *": "allow",
+                    "npm run *": "allow",
+                    "pip list *": "allow",
+                    "pip show *": "allow",
+                    "cargo tree *": "allow",
+                    "go list *": "allow",
+                    "uv *": "allow",
+                    "poetry *": "allow",
+                    // Nextflow ecosystem
+                    "nextflow *": "allow",
+                    "nf-core *": "allow",
+                    "nf-test *": "allow",
+                    "ast-grep *": "allow",
+                    "tw *": "allow",
+                    // Nix read-only
+                    "nix flake *": "allow",
+                    "nix eval *": "allow",
+                    "nix search *": "allow",
+                    "nix-store *": "allow",
+                    "hey *": "allow",
+                    // Task/project management
+                    "task *": "allow",
+                    "just *": "allow",
+                    // System info
+                    "uname *": "allow",
+                    "env": "allow",
+                    "printenv *": "allow",
+                    "date *": "allow",
+                    "date": "allow",
+                    "pwd": "allow",
+                    "whoami": "allow",
+                    "id": "allow",
+                    "ps *": "allow",
+                    // Text processing
+                    "jq *": "allow",
+                    "yq *": "allow",
+                    "awk *": "allow",
+                    "sed *": "allow",
+                    "sort *": "allow",
+                    "uniq *": "allow",
+                    "cut *": "allow",
+                    "tr *": "allow",
+                    // Network (read-only)
+                    "curl *": "allow",
+                    "wget *": "allow",
+                    "dig *": "allow",
+                    "ping *": "allow",
+                    // Docker/k8s read
+                    "docker ps *": "allow",
+                    "docker logs *": "allow",
+                    "docker images *": "allow",
+                    "kubectl get *": "allow",
+                    "kubectl describe *": "allow",
+                    "kubectl logs *": "allow",
+                    // Beads issue tracker (read-only)
+                    "bd list *": "allow",
+                    "bd show *": "allow",
+                    "bd search *": "allow",
+                    "bd count *": "allow",
+                    "bd status *": "allow",
+                    "bd graph *": "allow",
+                    "bd comments *": "allow",
+                    "bd stale *": "allow",
+                    "bd activity *": "allow",
+                    "bd duplicates *": "allow",
+                    // Everything else asks
+                    "*": "ask"
+                },
+                "list": "allow"
+            }
+        },
+        "nextflow-dev": {
+            "description": "Nextflow pipeline development agent with enhanced permissions for workflow development",
+            "mode": "subagent",
+            "temperature": 0.3,
+            "permission": {
+                "bash": {
+                    "nextflow clean *": "allow",
+                    "nf-core download *": "allow"
+                },
+                "edit": "allow",
+                "write": "allow",
+                "webfetch": "allow"
+            }
+        },
+        "nextflow-debug": {
+            "description": "Debugging agent for Nextflow - read-focused with work directory inspection capabilities",
+            "mode": "subagent",
+            "temperature": 0.1,
+            "permission": {
+                "bash": {
+                    "nextflow log *": "allow",
+                    "nextflow config": "allow",
+                    "nf-test list *": "allow"
+                },
+                "edit": "deny",
+                "write": "deny",
+                "webfetch": "allow"
+            }
+        },
+        "pipeline-review": {
+            "description": "Code review agent - read-only with static analysis and linting capabilities",
+            "mode": "subagent",
+            "temperature": 0.2,
+            "permission": {
+                "bash": {
+                    "nextflow config *": "allow",
+                    "nextflow lint *": "allow",
+                    "nf-core lint *": "allow",
+                    "nf-test list": "allow",
+                    "ast-grep scan *": "allow",
+                    "ast-grep -p *": "allow"
+                },
+                "edit": "deny",
+                "write": "deny",
+                "webfetch": "ask"
+            }
+        }
     },
-    "pipeline-review": {
-      "description": "Code review agent - read-only with static analysis and linting capabilities",
-      "mode": "subagent",
-      "temperature": 0.2,
-      "permission": {
-        "bash": {
-          "nextflow config *": "allow",
-          "nextflow lint *": "allow",
-          "nf-core lint *": "allow",
-          "nf-test list": "allow",
-          "ast-grep scan *": "allow",
-          "ast-grep -p *": "allow"
-        },
-        "edit": "deny",
-        "write": "deny",
-        "webfetch": "ask"
-      }
-    }
-  },
-
-  // Tools configuration
-  "tools": {
-    "bash": true,
-    "edit": true
-  },
-
-  // Instructions - global rules from AGENTS.md
-  // - shell-strategy: Teaches LLM to use non-interactive shell flags (prevents TTY hangs)
-  "instructions": [
-    "~/.config/opencode/AGENTS.md",
-    "~/.config/opencode/plugin/shell-strategy/shell_strategy.md"
-  ]
+    // Tools configuration
+    "tools": {
+        "bash": true,
+        "edit": true
+    },
+    // Instructions - global rules from AGENTS.md
+    // - shell-strategy: Teaches LLM to use non-interactive shell flags (prevents TTY hangs)
+    "instructions": [
+        "~/.config/opencode/AGENTS.md",
+        "~/.config/opencode/plugin/shell-strategy/shell_strategy.md"
+    ]
 }
