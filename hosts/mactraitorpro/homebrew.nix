@@ -8,6 +8,7 @@
     "rockorager/tap"  # Prise terminal multiplexer
     "seqeralabs/tap"
     "steipete/tap"  # Codexbar
+    "steveyegge/beads"  # Beads debugging tool
   ];
 
   brews = [
@@ -140,6 +141,8 @@
     "html2markdown"
     "jnsahaj/lumen/lumen"
     "opencode"
+    "steveyegge/beads/bd"
+    "claude-code"
   ];
 
   casks = [
