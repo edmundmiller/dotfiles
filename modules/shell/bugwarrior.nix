@@ -48,8 +48,8 @@ in
     # Darwin-only: Configure opnix secrets service for personal flavor
     # Work flavor uses manual file-based secrets in ~/.config/bugwarrior/secrets/
     # Using optionalAttrs to prevent NixOS from seeing the Darwin-only option
-    (optionalAttrs isDarwin {
-      services.onepassword-secrets = mkIf (cfg.flavor == "personal") {
+    (optionalAttrs (isDarwin && cfg.flavor == "personal") {
+      services.onepassword-secrets = {
         enable = true;
         tokenFile = "/etc/opnix-token";
 
