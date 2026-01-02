@@ -96,6 +96,9 @@
         # Doom Extra
         "tree-sitter"
 
+        # AI
+        "block-goose-cli"
+
         # Task management
         "rlwrap"
         "task"
@@ -118,6 +121,7 @@
         "claude"
         "gitify"
         "soundsource"
+        "block-goose"
       ];
       masApps = {
         "Xcode" = 497799835;
