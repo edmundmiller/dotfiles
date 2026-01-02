@@ -1,3 +1,14 @@
+# Headless Obsidian Sync via LinuxServer Docker container
+#
+# Setup (one-time, after first deploy):
+# 1. SSH tunnel: ssh -L 3000:localhost:3000 nuc
+# 2. Open http://localhost:3000 in browser
+# 3. Click "Open folder as vault" -> select /config/vault
+# 4. Settings -> Sync -> Log in to Obsidian account
+# 5. Connect to existing remote vault
+# 6. Wait for sync to complete
+#
+# Access vault via SSH: ssh nuc && cd ~/obsidian-vault
 {
   options,
   config,
@@ -26,6 +37,9 @@ in
     };
 
     virtualisation.oci-containers.backend = "podman";
+
+    # Enable unprivileged user namespaces for rootless podman containers
+    boot.kernel.sysctl."kernel.unprivileged_userns_clone" = 1;
 
     # Ensure directories exist with correct permissions
     systemd.tmpfiles.rules = [
