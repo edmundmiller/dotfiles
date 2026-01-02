@@ -40,9 +40,6 @@ in
         "127.0.0.1:3000:3000" # Bind to localhost only - access via SSH tunnel
       ];
       volumes = [
-        # Mount vault directly to where Obsidian Sync creates "vault" directory
-        # This avoids ~/obsidian-vault/vault nesting
-        "${cfg.vaultPath}:/config/vaults/vault:rw"
         "/home/${cfg.user}/.config/obsidian-headless:/config:rw"
       ];
       environment = {
