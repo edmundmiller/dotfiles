@@ -21,7 +21,7 @@ in
       services.tailscale.enable = true;
 
       environment.shellAliases = {
-        ts = "tailscale";
+        tsc = "tailscale";
         tsu = "tailscale up";
         tsd = "tailscale down";
         tss = "tailscale status";
