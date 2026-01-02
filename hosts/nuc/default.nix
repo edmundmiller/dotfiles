@@ -55,7 +55,6 @@
       openportal.enable = true;
       timew_sync.enable = true;
       transmission.enable = false;
-      obsidian-sync.enable = true;
     };
 
     # theme.active = "alucard";
