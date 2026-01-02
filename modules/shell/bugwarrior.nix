@@ -30,44 +30,49 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    # Bugwarrior requires taskwarrior
-    modules.shell.taskwarrior.enable = true;
+  config = mkIf cfg.enable (mkMerge [
+    {
+      # Bugwarrior requires taskwarrior
+      modules.shell.taskwarrior.enable = true;
 
-    # Configure opnix secrets service for personal flavor only (Darwin)
+      # Zsh aliases for bugwarrior commands
+      modules.shell.zsh.rcFiles = [ "${configDir}/bugwarrior/aliases.zsh" ];
+
+      # Symlink appropriate bugwarrior.toml based on flavor
+      home-manager.users.${config.user.name} = {
+        xdg.configFile."bugwarrior/bugwarrior.toml".source =
+          "${configDir}/bugwarrior/bugwarrior-${cfg.flavor}.toml";
+      };
+    }
+
+    # Darwin-only: Configure opnix secrets service for personal flavor
     # Work flavor uses manual file-based secrets in ~/.config/bugwarrior/secrets/
-    services.onepassword-secrets = mkIf (isDarwin && cfg.flavor == "personal") {
-      enable = true;
-      tokenFile = "/etc/opnix-token";
+    # Using optionalAttrs to prevent NixOS from seeing the Darwin-only option
+    (optionalAttrs isDarwin {
+      services.onepassword-secrets = mkIf (cfg.flavor == "personal") {
+        enable = true;
+        tokenFile = "/etc/opnix-token";
 
-      secrets = {
-        # Linear API Token
-        bugwarriorLinearToken = {
-          reference = "op://Private/Linear Bugwarrior/credential";
-          path = "${opnixSecretsDir}/bugwarrior-linear-token";
-          owner = config.user.name;
-          group = "staff";
-          mode = "0600";
-        };
+        secrets = {
+          # Linear API Token
+          bugwarriorLinearToken = {
+            reference = "op://Private/Linear Bugwarrior/credential";
+            path = "${opnixSecretsDir}/bugwarrior-linear-token";
+            owner = config.user.name;
+            group = "staff";
+            mode = "0600";
+          };
 
-        # GitHub Personal Access Token
-        bugwarriorGithubToken = {
-          reference = "op://Private/GitHub Personal Access Token/token";
-          path = "${opnixSecretsDir}/bugwarrior-github-token";
-          owner = config.user.name;
-          group = "staff";
-          mode = "0600";
+          # GitHub Personal Access Token
+          bugwarriorGithubToken = {
+            reference = "op://Private/GitHub Personal Access Token/token";
+            path = "${opnixSecretsDir}/bugwarrior-github-token";
+            owner = config.user.name;
+            group = "staff";
+            mode = "0600";
+          };
         };
       };
-    };
-
-    # Zsh aliases for bugwarrior commands
-    modules.shell.zsh.rcFiles = [ "${configDir}/bugwarrior/aliases.zsh" ];
-
-    # Symlink appropriate bugwarrior.toml based on flavor
-    home-manager.users.${config.user.name} = {
-      xdg.configFile."bugwarrior/bugwarrior.toml".source =
-        "${configDir}/bugwarrior/bugwarrior-${cfg.flavor}.toml";
-    };
-  };
+    })
+  ]);
 }
