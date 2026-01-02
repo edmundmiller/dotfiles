@@ -29,8 +29,12 @@
     shell = {
       git.enable = true;
       zsh.enable = true;
-      # taskwarrior disabled - requires agenix secrets not configured on NUC
-      # taskwarrior3 package still available in environment.systemPackages
+      taskwarrior = {
+        enable = true;
+        syncUrl = "http://localhost:8080";
+        shortcuts.enable = false;
+        timewarriorHook.enable = false;
+      };
     };
     services = {
       audiobookshelf.enable = true;
