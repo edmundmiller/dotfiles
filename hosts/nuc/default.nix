@@ -24,6 +24,7 @@
       };
     };
     shell = {
+      bugwarrior.enable = false;
       git.enable = true;
       zsh.enable = true;
     };
