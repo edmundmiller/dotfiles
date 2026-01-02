@@ -44,9 +44,6 @@ in
         enableGlobalCompInit = false;
         # I configure the prompt myself, so disable the default.
         promptInit = "";
-        # nix-darwin puts aliases in /etc/zprofile (login shells only), not /etc/zshrc.
-        # This means non-login interactive shells miss them. Load them here too.
-        interactiveShellInit = config.system.build.setAliases.text;
       };
 
       user.packages = with pkgs; [
@@ -186,6 +183,12 @@ in
         '';
       };
     }
+
+    # Darwin-only: nix-darwin puts aliases in /etc/zprofile (login shells only).
+    # Load them in interactive shells too. This option doesn't exist on NixOS.
+    (optionalAttrs isDarwin {
+      programs.zsh.interactiveShellInit = config.system.build.setAliases.text;
+    })
 
     # NixOS-only shell configuration
     (optionalAttrs (!isDarwin) {
