@@ -21,7 +21,8 @@ in
       services.tailscale.enable = true;
 
       environment.shellAliases = {
-        ts = "tailscale";
+        # Note: 'ts' conflicts with 'task sync' alias in zsh.nix
+        tsc = "tailscale";
         tsu = "tailscale up";
         tsd = "tailscale down";
         tss = "tailscale status";
