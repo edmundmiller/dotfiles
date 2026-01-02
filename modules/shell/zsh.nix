@@ -189,9 +189,8 @@ in
     (optionalAttrs isDarwin {
       programs.zsh.interactiveShellInit = config.system.build.setAliases.text;
     })
-
     # NixOS-only shell configuration
-    (optionalAttrs (!isDarwin) {
+    (mkIf (!isDarwin) {
       users.defaultUserShell = pkgs.zsh;
     })
   ]);

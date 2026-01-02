@@ -27,6 +27,7 @@
       };
     };
     shell = {
+      bugwarrior.enable = false;
       git.enable = true;
       zsh.enable = true;
       taskwarrior = {
@@ -50,6 +51,7 @@
       syncthing.enable = false;
       tailscale.enable = true;
       taskchampion.enable = true;
+      obsidian-sync.enable = true;
       openportal.enable = true;
       timew_sync.enable = true;
       transmission.enable = false;
