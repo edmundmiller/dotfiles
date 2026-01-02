@@ -1,6 +1,8 @@
 # Go nuc yourself
 { config, pkgs, ... }:
 {
+  # Disable dconf on headless server - no dbus session available
+  home-manager.users.${config.user.name}.dconf.enable = false;
   environment.systemPackages = with pkgs; [
     taskwarrior3
   ];
