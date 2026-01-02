@@ -41,6 +41,7 @@ in
       ];
       volumes = [
         "/home/${cfg.user}/.config/obsidian-headless:/config:rw"
+        "${cfg.vaultPath}:/config/vault:rw"
       ];
       environment = {
         PUID = "1000";
