@@ -1,6 +1,9 @@
 # Go nuc yourself
 { config, pkgs, ... }:
 {
+  environment.systemPackages = with pkgs; [
+    taskwarrior3
+  ];
   imports = [
     ../server.nix
     ../home.nix
@@ -27,6 +30,13 @@
       bugwarrior.enable = false;
       git.enable = true;
       zsh.enable = true;
+      taskwarrior = {
+        enable = true;
+        syncUrl = "http://localhost:8080";
+        defaultContext = "";
+        shortcuts.enable = false;
+        timewarriorHook.enable = false;
+      };
     };
     services = {
       audiobookshelf.enable = true;
