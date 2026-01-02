@@ -4,8 +4,10 @@ let
   mactraitor = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC";
   # Seqeratop
   seqeratop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty";
+  # NUC
+  nuc = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICBPG2vvh8XkVObXANO9/CBfczftZrmpbjg2w5onK/Tv";
 in
 {
-  "taskchampion-sync.age".publicKeys = [ mactraitor seqeratop ];
+  "taskchampion-sync.age".publicKeys = [ mactraitor seqeratop nuc ];
   "wakatime-api-key.age".publicKeys = [ mactraitor seqeratop ];
 }

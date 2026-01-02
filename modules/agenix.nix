@@ -32,16 +32,29 @@ in
     # NixOS-only secrets configuration
     (optionalAttrs (!isDarwin) {
       secrets =
-        if secretsFile != "" && pathExists secretsFile then
-          mapAttrs' (
-            n: _:
-            nameValuePair (removeSuffix ".age" n) {
-              file = "${secretsDir}/${n}";
-              owner = mkDefault config.user.name;
-            }
-          ) (import secretsFile)
-        else
-          { };
+        let
+          # Host-specific secrets from secrets.nix
+          hostSecrets =
+            if secretsFile != "" && pathExists secretsFile then
+              mapAttrs' (
+                n: _:
+                nameValuePair (removeSuffix ".age" n) {
+                  file = "${secretsDir}/${n}";
+                  owner = mkDefault config.user.name;
+                }
+              ) (import secretsFile)
+            else
+              { };
+          # Shared secrets (taskchampion-sync for taskwarrior)
+          sharedSecrets = optionalAttrs config.modules.shell.taskwarrior.enable {
+            taskchampion-sync = {
+              file = "${sharedSecretsDir}/taskchampion-sync.age";
+              owner = config.user.name;
+              mode = "0400";
+            };
+          };
+        in
+        hostSecrets // sharedSecrets;
       identityPaths =
         options.age.identityPaths.default
         ++ (filter pathExists [
