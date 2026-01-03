@@ -57,6 +57,7 @@
       openportal.enable = false;
       timew_sync.enable = false;
       transmission.enable = false;
+      deploy-rs.enable = true;
     };
   };
 
@@ -68,16 +69,6 @@
   services.logrotate.checkConfig = false;
 
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
-
-  # Passwordless sudo for deploy-rs activation (agentic deployments)
-  security.sudo.extraRules = [
-    {
-      users = [ "emiller" ];
-      commands = [
-        { command = "ALL"; options = [ "NOPASSWD" ]; }
-      ];
-    }
-  ];
 
   services.znapzend = {
     enable = false;
