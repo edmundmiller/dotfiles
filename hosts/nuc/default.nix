@@ -31,6 +31,7 @@
     shell = {
       bugwarrior.enable = false;
       git.enable = true;
+      opencode.enable = true;
       zsh.enable = true;
       taskwarrior = {
         enable = true;
