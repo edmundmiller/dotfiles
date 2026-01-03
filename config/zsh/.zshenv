@@ -11,7 +11,12 @@ export ZSH_CACHE="$XDG_CACHE_HOME/zsh"
 
 # Set up Homebrew environment (needed for all shells, including doom env)
 # This ensures /opt/homebrew/bin is in PATH for Emacs and non-login shells
-eval "$(/opt/homebrew/bin/brew shellenv)"
+[[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# Set up terminfo for NixOS (needed for TUI apps like opencode)
+if [[ -d /run/current-system/sw/share/terminfo ]]; then
+  export TERMINFO_DIRS="/run/current-system/sw/share/terminfo${TERMINFO_DIRS:+:$TERMINFO_DIRS}"
+fi
 
 # Add ~/.local/bin to PATH if it exists
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
