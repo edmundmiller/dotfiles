@@ -56,7 +56,7 @@ with lib.my;
               "root"
             ]
           then
-            config.system.primaryUser or "emiller"  # Fallback for NixOS systems
+            "emiller"  # Static fallback - hosts override via system.primaryUser
           else
             user;
         description =

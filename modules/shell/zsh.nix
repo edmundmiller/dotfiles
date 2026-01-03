@@ -190,7 +190,7 @@ in
       programs.zsh.interactiveShellInit = config.system.build.setAliases.text;
     })
     # NixOS-only shell configuration
-    (mkIf (!isDarwin) {
+    (optionalAttrs (!isDarwin) {
       users.defaultUserShell = pkgs.zsh;
     })
   ]);
