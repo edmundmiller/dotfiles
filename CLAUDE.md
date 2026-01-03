@@ -492,6 +492,24 @@ When Claude Code needs to run JJ commands that normally open an editor, always u
 
 **Never run:** `jj describe`, `jj split`, `jj squash` without specifying the message, as this will hang in an interactive editor that Claude Code cannot control.
 
+## OpenCode Configuration
+
+OpenCode configuration is managed through nix-darwin with one exception:
+
+**Plugin Management:**
+- Plugins are NOT managed by nix (user-managed in `~/.config/opencode/plugin/`)
+- See `config/opencode/README.md` for setup instructions
+- See `config/opencode/AGENTS.md` for agent-facing documentation
+
+**Required Plugins:**
+- `opencode-jj` - https://github.com/edmundmiller/opencode-jj
+- `boomerang-notify` - https://github.com/edmundmiller/boomerang-notify
+
+**After `hey rebuild`:**
+- Symlinked config files update automatically
+- Tools get re-synced to `~/.config/opencode/tool/`
+- Plugins are untouched (manual management)
+
 ## Notes
 
 - Commands must be run from the repository root
