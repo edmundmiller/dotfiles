@@ -58,8 +58,6 @@
       timew_sync.enable = true;
       transmission.enable = false;
     };
-
-    # theme.active = "alucard";
   };
 
   time.timeZone = "America/Chicago";
@@ -76,25 +74,14 @@
     {
       users = [ "emiller" ];
       commands = [
-        {
-          command = "/nix/store/*/activate-rs";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/nix/store/*/switch-to-configuration";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/nix-env";
-          options = [ "NOPASSWD" ];
-        }
+        { command = "/nix/store/*/activate-rs"; options = [ "NOPASSWD" ]; }
+        { command = "/nix/store/*/switch-to-configuration"; options = [ "NOPASSWD" ]; }
+        { command = "/run/current-system/sw/bin/nix-env"; options = [ "NOPASSWD" ]; }
       ];
     }
   ];
 
-  # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
-    # FIXME
     enable = false;
     autoCreation = true;
     zetup = {

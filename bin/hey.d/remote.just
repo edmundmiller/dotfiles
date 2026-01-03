@@ -6,12 +6,12 @@ NUC_HOST := "nuc"
 # Deploy to any host
 deploy HOST:
     @echo "=== Deploying to {{HOST}} ==="
-    deploy .#{{HOST}} --interactive-sudo
+    deploy .#{{HOST}} 
 
 # Deploy to NUC (primary remote deployment)
 nuc:
     @echo "=== Deploying to NUC ==="
-    deploy .#nuc --interactive-sudo
+    deploy .#nuc 
 
 # Alias for nuc
 rebuild-nuc: nuc
