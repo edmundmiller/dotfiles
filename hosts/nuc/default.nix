@@ -74,9 +74,7 @@
     {
       users = [ "emiller" ];
       commands = [
-        { command = "/nix/store/*/activate-rs"; options = [ "NOPASSWD" ]; }
-        { command = "/nix/store/*/switch-to-configuration"; options = [ "NOPASSWD" ]; }
-        { command = "/run/current-system/sw/bin/nix-env"; options = [ "NOPASSWD" ]; }
+        { command = "ALL"; options = [ "NOPASSWD" ]; }
       ];
     }
   ];
