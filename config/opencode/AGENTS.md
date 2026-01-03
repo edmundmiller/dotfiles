@@ -1,69 +1,59 @@
-# Global OpenCode Rules
+# OpenCode Configuration - Agent Reference
 
-## Critical Instructions
+## Configuration Structure
 
-- In all interactions, plans, and commit messages, be extremely concise and sacrifice grammar for the sake of concision.
-- **ALWAYS write over the source file you're editing.** Don't make "\_enhanced", "\_fixed", "\_updated", or "\_v2" versions. We use JJ for version control. If unsure, commit first then overwrite.
-- Don't make "dashboards" or figures with a lot of plots in one image file. It's hard for AIs to figure out what all is going on.
-- When the user requests code examples, setup or configuration steps, or library/API documentation, search the web for current docs.
+This directory contains OpenCode configuration managed via nix-darwin.
 
-## Version Control
+### Nix-Managed (Read-Only Symlinks)
+- `opencode.jsonc` - Main configuration
+- `AGENTS.md` - This file (directory agent instructions)
+- `GLOBAL_INSTRUCTIONS.md` - Global agent instructions
+- `rules/` - Rule files (shell-strategy, etc.)
+- `command/` - Slash commands
+- `skills/` - Agent skills
+- `agent/` - Custom agent definitions
+- `ast-grep/` - AST-grep configuration
 
-This repo uses jujutsu (jj) for version control, not git.
+### Nix-Managed (Copied via Activation Script)
+- `tool/` - Custom tools (copied so bun can resolve node_modules)
+- `package.json` - Dependencies for tools/plugins
+- `node_modules/` - Installed via bun install in activation script
 
-### JJ Quick Reference
+### User-Managed (NOT in Nix)
+- `plugin/` - **Manually managed** plugin directory
 
-- `jj status` - Show working copy status
-- `jj log` - Show commit history
-- `jj describe -m "message"` - Set commit message
-- `jj new` - Create new empty commit
-- `jj squash` - Move changes to parent commit
-- `jj split -p <file>` - Split commit by file
+## Plugin Management
 
-**Important:** Never run jj commands that open an editor (like bare `jj describe` or `jj split`). Always use `-m` flag or `JJ_EDITOR="echo 'message'"` prefix.
+**Why plugins aren't in nix:**
+- TypeScript plugins need build steps (`bun run build`)
+- Development workflow requires flexibility without `hey rebuild`
+- OpenCode expects user-managed plugin directory
 
-## Code Search
+**Important:** Local plugins must be explicitly registered in `opencode.jsonc` `plugins` array.
+Auto-discovery from `~/.config/opencode/plugin/` does NOT work.
 
-You are operating in an environment where `ast-grep` is installed. For any code search that requires understanding of syntax or code structure, you should default to using `ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific programming language.
+**Working with plugins:**
 
-## Testing Philosophy
+When user asks about installing/updating plugins:
+1. Direct them to clone to `~/.config/opencode/plugin/`
+2. For TypeScript plugins: run `bun run build` (do NOT run `bun install` - use global deps)
+3. Add plugin to `opencode.jsonc` `plugins` array: `"./plugin/<plugin-name>"`
 
-Write two kinds of tests:
+**Required plugins:**
+- `opencode-jj` - https://github.com/edmundmiller/opencode-jj (TypeScript, needs build)
+- `boomerang-notify` - https://github.com/edmundmiller/boomerang-notify
 
-1. **Spec tests** - Document intended feature behavior (what the feature should do)
-2. **Regression tests** - Reproduce and prevent actual bugs that occurred
+## Rebuild Workflow
 
-**Skip:** Hypothetical edge cases and exhaustive coverage that bloat context windows.
+After `hey rebuild`:
+- Symlinked files update automatically
+- `tool/` directory re-syncs
+- `bun install` runs for dependencies
+- `plugin/` is UNTOUCHED (user-managed)
 
-Tests are living documentation of what should work and what broke before, not comprehensive safety nets for every possibility.
+## Modifying Configuration
 
-## Python Scripts
-
-Use UV shebang for standalone Python scripts:
-
-```python
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = []
-# ///
-```
-
-## Agent Context Engineering
-
-### AGENTS.md Files
-
-When working in a project, consider creating `AGENTS.md` files in subdirectories to provide context for future agents. See https://agents.md/ for the specification.
-
-- Place AGENTS.md in directories with complex/non-obvious patterns
-- Document domain-specific conventions, gotchas, preferred approaches
-- Keep concise - agents have limited context windows
-
-### Skills
-
-When you notice repetitive patterns in user workflows, suggest creating a skill to automate them. Skills live in `config/opencode/skills/` and follow the format at https://agentskills.io/
-
-Signs a skill would help:
-- User asks for same type of task repeatedly
-- Multi-step workflow with consistent structure
-- Domain-specific knowledge that could be encoded
+To modify nix-managed files:
+1. Edit in `~/.config/dotfiles/config/opencode/`
+2. Run `hey rebuild`
+3. Changes take effect immediately
