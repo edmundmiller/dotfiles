@@ -18,7 +18,7 @@ in
 {
   options.modules.desktop.browsers.firefox = with types; {
     enable = mkBoolOpt false;
-    profileName = mkOpt types.str config.user.name;
+    profileName = mkOpt types.str null;
 
     settings =
       mkOpt'
@@ -39,7 +39,9 @@ in
     userContent = mkOpt' lines "" "Global CSS Styles for websites";
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf cfg.enable (let
+    profileName = if cfg.profileName != null then cfg.profileName else config.user.name;
+  in {
     nixpkgs.overlays = [ inputs.nur.overlay ];
     services.psd.enable = true;
 
@@ -168,7 +170,7 @@ in
           [Profile0]
           Name=default
           IsRelative=1
-          Path=${cfg.profileName}.default
+          Path=${profileName}.default
           Default=1
 
           [General]
@@ -176,7 +178,7 @@ in
           Version=2
         '';
 
-        "${cfgPath}/${cfg.profileName}.default/user.js" =
+        "${cfgPath}/${profileName}.default/user.js" =
           mkIf (cfg.settings != { } || cfg.extraConfig != "")
             {
               text = ''
@@ -189,11 +191,11 @@ in
               '';
             };
 
-        "${cfgPath}/${cfg.profileName}.default/chrome/userChrome.css" = mkIf (cfg.userChrome != "") {
+        "${cfgPath}/${profileName}.default/chrome/userChrome.css" = mkIf (cfg.userChrome != "") {
           text = cfg.userChrome;
         };
 
-        "${cfgPath}/${cfg.profileName}.default/chrome/userContent.css" = mkIf (cfg.userContent != "") {
+        "${cfgPath}/${profileName}.default/chrome/userContent.css" = mkIf (cfg.userContent != "") {
           text = cfg.userContent;
         };
       };
@@ -202,5 +204,5 @@ in
     home.configFile = {
       "tridactyl/tridactylrc".source = "${configDir}/tridactyl/tridactylrc";
     };
-  };
+  });
 }
