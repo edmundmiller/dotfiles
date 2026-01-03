@@ -56,9 +56,9 @@ in
 
     # Configure opnix secrets service for personal flavor only (Darwin)
     # Work flavor uses manual file-based secrets in ~/.config/bugwarrior/secrets/
-    # FIXME: optionalAttrs is required here because services.onepassword-secrets
-    # doesn't exist on NixOS and mkIf still causes evaluation errors
-    (optionalAttrs (isDarwin && cfg.flavor == "personal") {
+    # optionalAttrs guards Darwin-only option path, mkIf guards flavor check
+    # (evaluating cfg.flavor in optionalAttrs causes infinite recursion)
+    (optionalAttrs isDarwin (mkIf (cfg.flavor == "personal") {
       services.onepassword-secrets = {
         enable = true;
         tokenFile = "/etc/opnix-token";
@@ -83,6 +83,6 @@ in
           };
         };
       };
-    })
+    }))
   ]);
 }

@@ -9,7 +9,7 @@ let
 in {
   options.modules.services.openportal = {
     enable = mkBoolOpt false;
-    projectDir = mkOpt types.str "${config.user.home}/src";
+    projectDir = mkOpt types.str null;
     openCodeImage = mkOpt types.str "ghcr.io/sst/opencode:1.0.162";
     portalImage = mkOpt types.str "ghcr.io/hosenur/portal:latest";
     openCodePort = mkOpt types.port 4000;
@@ -17,21 +17,23 @@ in {
   };
 
   # NixOS-only service (uses podman/systemd)
-  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
+  config = optionalAttrs (!isDarwin) (mkIf cfg.enable (let
+    projectDir = if cfg.projectDir != null then cfg.projectDir else "${config.user.home}/src";
+  in {
     # Ensure podman is available
     virtualisation.podman.enable = true;
     virtualisation.oci-containers.backend = "podman";
 
     # Create project directory if it doesn't exist
     systemd.tmpfiles.rules = [
-      "d ${cfg.projectDir} 0755 ${config.user.name} users -"
+      "d ${projectDir} 0755 ${config.user.name} users -"
     ];
 
     # OpenCode server container
     virtualisation.oci-containers.containers.portal-opencode = {
       autoStart = true;
       image = cfg.openCodeImage;
-      volumes = [ "${cfg.projectDir}:/app" ];
+      volumes = [ "${projectDir}:/app" ];
       extraOptions = [ "--network=host" ];
       # Detect Tailscale IP at runtime and bind to it
       entrypoint = "/bin/sh";
@@ -71,5 +73,5 @@ in {
 
     # Open firewall ports (Tailscale traffic)
     networking.firewall.allowedTCPPorts = [ cfg.openCodePort cfg.portalPort ];
-  });
+  }));
 }
