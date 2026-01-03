@@ -54,8 +54,8 @@
       tailscale.enable = true;
       taskchampion.enable = true;
       obsidian-sync.enable = true;
-      openportal.enable = true;
-      timew_sync.enable = true;
+      openportal.enable = false;
+      timew_sync.enable = false;
       transmission.enable = false;
     };
   };
