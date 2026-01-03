@@ -36,9 +36,11 @@
         "opencode-wakatime",
         "@franlol/opencode-md-table-formatter@latest",
         "@mohak34/opencode-notifier",
-        "github:edmundmiller/opencode-jj",
         "opencode-beads",
-        "@tarquinen/opencode-dcp@latest"
+        "@tarquinen/opencode-dcp@latest",
+        // Local plugins (in ~/.config/opencode/plugin/)
+        "./plugin/opencode-jj",
+        "./plugin/boomerang-notify"
     ],
     // Nextflow Language Server
     "lsp": {
@@ -436,10 +438,10 @@
         "bash": true,
         "edit": true
     },
-    // Instructions - global rules from AGENTS.md
-    // - shell-strategy: Teaches LLM to use non-interactive shell flags (prevents TTY hangs)
+    // Instructions - global rules
+    // - GLOBAL_INSTRUCTIONS.md: References rule files (shell-strategy, etc.)
     "instructions": [
         "~/.config/opencode/AGENTS.md",
-        "~/.config/opencode/plugin/shell-strategy/shell_strategy.md"
+        "~/.config/opencode/GLOBAL_INSTRUCTIONS.md"
     ]
 }
