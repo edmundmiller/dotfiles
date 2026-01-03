@@ -36,7 +36,7 @@
         "opencode-wakatime",
         "@franlol/opencode-md-table-formatter@latest",
         "@mohak34/opencode-notifier",
-        "jj-opencode",
+        "github:edmundmiller/opencode-jj",
         "opencode-beads",
         "@tarquinen/opencode-dcp@latest"
     ],
