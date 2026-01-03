@@ -1,51 +1,35 @@
-# Remote deployment commands for NixOS hosts
+# Remote deployment commands using deploy-rs
 
 # Remote host configurations
 NUC_HOST := "nuc"
-NUC_USER := "emiller"
-NUC_REPO := "dotfiles-deploy"
 
-# Deploy to NUC (remote build and switch)
-nuc MESSAGE="": _nuc-ensure-repo
-    #!/usr/bin/env bash
-    set -euo pipefail
-    
-    echo "=== Deploying to NUC ==="
-    echo ""
-    
-    # Push local changes to GitHub
-    echo "Pushing changes to GitHub..."
-    cd {{FLAKE_DIR}}
-    jj git push --bookmark main 2>&1 || echo "No changes to push"
-    
-    echo ""
-    echo "Connecting to NUC..."
-    
-    # Update repository and rebuild on NUC
-    ssh -t {{NUC_HOST}} << 'ENDSSH'
-    set -euo pipefail
-    cd ~/{{NUC_REPO}}
-    
-    echo "Updating repository..."
-    git fetch origin
-    echo "Resetting to origin/main ($(git rev-parse --short origin/main))"
-    git reset --hard origin/main
-    git clean -fd
-    
-    echo ""
-    echo "Current commit:"
-    git log -1 --oneline
-    
-    echo ""
-    echo "Rebuilding NixOS configuration..."
-    sudo nixos-rebuild switch --flake .#nuc
-    
-    echo ""
-    echo "=== Deployment complete! ==="
-    ENDSSH
+# Deploy to any host
+deploy HOST:
+    @echo "=== Deploying to {{HOST}} ==="
+    deploy .#{{HOST}} --interactive-sudo
+
+# Deploy to NUC (primary remote deployment)
+nuc:
+    @echo "=== Deploying to NUC ==="
+    deploy .#nuc --interactive-sudo
 
 # Alias for nuc
-rebuild-nuc MESSAGE="": (nuc MESSAGE)
+rebuild-nuc: nuc
+
+# Dry-run deployment (check what would change)
+deploy-dry HOST:
+    @echo "=== Dry-run deploy to {{HOST}} ==="
+    deploy .#{{HOST}} --dry-activate
+
+# Test NUC configuration (dry-run)
+nuc-test:
+    @echo "=== Testing NUC Configuration (dry-run) ==="
+    deploy .#nuc --dry-activate
+
+# Check all deploy configurations
+deploy-check:
+    @echo "=== Checking all deploy configurations ==="
+    nix flake check
 
 # SSH into NUC
 nuc-ssh:
@@ -63,15 +47,6 @@ nuc-status:
     echo ""
     echo "Current Generation:"
     sudo nix-env --list-generations --profile /nix/var/nix/profiles/system | tail -1
-    echo ""
-    echo "Repository Status:"
-    if [ -d ~/dotfiles-deploy ]; then
-        cd ~/dotfiles-deploy
-        echo "Branch: $(git branch --show-current)"
-        echo "Commit: $(git log -1 --oneline)"
-    else
-        echo "Repository not cloned yet"
-    fi
     ENDSSH
 
 # Check service status on NUC
@@ -97,48 +72,3 @@ nuc-rollback:
 nuc-generations:
     @echo "=== NUC System Generations ==="
     @ssh {{NUC_HOST}} "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system"
-
-# Test NUC configuration (build and activate, but don't add to boot menu)
-nuc-test: _nuc-ensure-repo
-    #!/usr/bin/env bash
-    set -euo pipefail
-    
-    echo "=== Testing NUC Configuration ==="
-    echo ""
-    
-    # Push local changes
-    cd {{FLAKE_DIR}}
-    jj git push --bookmark main 2>&1 || echo "No changes to push"
-    
-    # Update and test on NUC
-    ssh -t {{NUC_HOST}} << 'ENDSSH'
-    set -euo pipefail
-    cd ~/{{NUC_REPO}}
-    
-    echo "Updating repository..."
-    git fetch origin
-    echo "Resetting to origin/main ($(git rev-parse --short origin/main))"
-    git reset --hard origin/main
-    git clean -fd
-    
-    echo ""
-    echo "Testing configuration (won't add to boot menu)..."
-    sudo nixos-rebuild test --flake .#nuc
-    ENDSSH
-
-# Build NUC configuration locally (cross-compile from Mac)
-nuc-local:
-    @echo "Building NUC configuration locally..."
-    @echo "Note: This will be slow on ARM Mac for x86_64 target"
-    @cd {{FLAKE_DIR}} && nix build .#nixosConfigurations.nuc.config.system.build.toplevel
-
-# Internal: Ensure NUC repository is set up
-_nuc-ensure-repo:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    
-    # Check if repository exists on NUC, clone if not
-    if ! ssh {{NUC_HOST}} "[ -d ~/{{NUC_REPO}} ]"; then
-        echo "Setting up repository on NUC..."
-        ssh {{NUC_HOST}} "git clone https://github.com/edmundmiller/dotfiles.git ~/{{NUC_REPO}}"
-    fi
