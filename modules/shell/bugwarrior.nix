@@ -36,10 +36,11 @@ in
     };
   };
 
-  # FIXME: Use mkMerge with optionalAttrs to completely hide Darwin-only options from NixOS
-  # The mkIf pattern doesn't work because NixOS still tries to evaluate the option path
-  config = mkIf (cfg.enable && isDarwin) (mkMerge [
-    {
+  # FIXME: mkIf doesn't prevent NixOS from seeing Darwin-only option paths.
+  # Using optionalAttrs to completely hide Darwin-only config from NixOS evaluation.
+  config = mkIf cfg.enable (mkMerge [
+    # Common config for all platforms (but module is Darwin-only for now)
+    (optionalAttrs isDarwin {
       # Bugwarrior requires taskwarrior
       modules.shell.taskwarrior.enable = true;
 
@@ -51,11 +52,13 @@ in
         xdg.configFile."bugwarrior/bugwarrior.toml".source =
           "${configDir}/bugwarrior/bugwarrior-${cfg.flavor}.toml";
       };
-    }
+    })
 
-    # Configure opnix secrets service for personal flavor only
+    # Configure opnix secrets service for personal flavor only (Darwin)
     # Work flavor uses manual file-based secrets in ~/.config/bugwarrior/secrets/
-    (mkIf (cfg.flavor == "personal") {
+    # FIXME: optionalAttrs is required here because services.onepassword-secrets
+    # doesn't exist on NixOS and mkIf still causes evaluation errors
+    (optionalAttrs (isDarwin && cfg.flavor == "personal") {
       services.onepassword-secrets = {
         enable = true;
         tokenFile = "/etc/opnix-token";
