@@ -71,6 +71,27 @@
 
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
+  # Passwordless sudo for deploy-rs activation (agentic deployments)
+  security.sudo.extraRules = [
+    {
+      users = [ "emiller" ];
+      commands = [
+        {
+          command = "/nix/store/*/activate-rs";
+          options = [ "NOPASSWD" ];
+        }
+        {
+          command = "/nix/store/*/switch-to-configuration";
+          options = [ "NOPASSWD" ];
+        }
+        {
+          command = "/run/current-system/sw/bin/nix-env";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
+
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     # FIXME

@@ -17,19 +17,19 @@ hey nuc-ssh
 
 ## Architecture
 
-The remote deployment system:
-- **Builds on NUC**: Configuration is built on the target system (not cross-compiled)
-- **Uses SSH**: Leverages 1Password SSH agent for authentication
-- **Auto-syncs**: Pushes changes to GitHub, pulls on NUC, then rebuilds
-- **Interactive sudo**: Requires your password for `nixos-rebuild` (security best practice)
+The remote deployment uses **deploy-rs**:
+- **Builds on NUC**: `remoteBuild = true` - no cross-compilation
+- **Magic rollback**: Auto-reverts if SSH dies during deploy
+- **Interactive sudo**: Requires password for security
+- **Direct push**: Nix closure pushed via SSH (no GitHub roundtrip)
 
 ## Available Commands
 
 ### Deployment
 
-- `hey nuc` - Full deploy (push, pull, rebuild)
-- `hey rebuild-nuc` - Alias for `hey nuc`
-- `hey nuc-test` - Test configuration without adding to boot menu
+- `hey nuc` - Deploy to NUC via deploy-rs
+- `hey deploy HOST` - Deploy to any configured host
+- `hey deploy-check` - Dry-run all deploy configs
 
 ### Management
 
@@ -39,10 +39,6 @@ The remote deployment system:
 - `hey nuc-logs [unit] [lines]` - View system logs
 - `hey nuc-rollback` - Roll back to previous generation
 - `hey nuc-generations` - List all system generations
-
-### Advanced
-
-- `hey nuc-local` - Build NUC config locally (slow on ARM Mac, useful for testing)
 
 ## Deployment Workflow
 
@@ -63,31 +59,44 @@ hey nuc-service some-service  # Verify it's running
 ### Testing Before Deployment
 
 ```bash
-# Test locally (check for syntax errors)
+# Check flake syntax/evaluation
 hey check
 
-# Test on NUC (activate but don't add to boot menu)
-hey nuc-test
+# Dry-run deploy (checks config without applying)
+hey deploy-check
 
-# If good, make it permanent
+# If good, deploy
 hey nuc
 ```
 
-### Rollback on Issues
+### Rollback
 
+deploy-rs has **magic rollback**: if SSH becomes unreachable after activation, it automatically reverts to the previous generation.
+
+Manual rollback:
 ```bash
-# Quick rollback to previous generation
 hey nuc-rollback
-
-# Or choose a specific generation
-hey nuc-generations  # Find the generation number
-hey nuc-ssh
-sudo nixos-rebuild switch --rollback --flake .#nuc --profile-name system-<generation>
 ```
 
 ## How It Works
 
-### 1. SSH Configuration
+### deploy-rs Configuration
+
+Defined in `flake.nix`:
+```nix
+deploy.nodes.nuc = {
+  hostname = "nuc";
+  sshUser = "emiller";
+  user = "root";
+  interactiveSudo = true;
+  remoteBuild = true;  # Build on NUC, not Mac
+  
+  profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
+    self.nixosConfigurations.nuc;
+};
+```
+
+### SSH Configuration
 
 Managed in `modules/shell/ssh.nix`:
 ```nix
@@ -98,34 +107,13 @@ Managed in `modules/shell/ssh.nix`:
 };
 ```
 
-### 2. Repository Sync
+### What `hey nuc` Does
 
-- Changes pushed to `github.com/edmundmiller/dotfiles` (main branch)
-- NUC repository at `~/dotfiles-deploy` is **always reset** to match GitHub
-- Uses `git reset --hard origin/main` to handle force-pushes and divergence
-- `git clean -fd` removes any untracked files
-- **NUC repository is read-only** - all changes happen on Mac and push to GitHub
-
-### 3. Remote Build
-
-The `hey nuc` command:
-1. Pushes local commits to GitHub (`jj git push`)
-2. SSHs to NUC with TTY allocation (`ssh -t`)
-3. Force-resets repository on NUC (`git reset --hard origin/main`)
-4. Runs `sudo nixos-rebuild switch --flake .#nuc`
-5. Prompts for your sudo password interactively
-
-### 4. Build Location
-
-**Remote builds** (default):
-- Fast: Builds on native x86_64 hardware
-- Simple: No cross-compilation complexity
-- Secure: Requires interactive sudo password
-
-**Local builds** (`hey nuc-local`):
-- Slow: ARM Mac cross-compiling to x86_64
-- Useful: For testing without deploying
-- Optional: Not needed for normal workflow
+1. Evaluates NUC config locally
+2. SSHs to NUC and builds the derivation there (`remoteBuild = true`)
+3. Prompts for sudo password (`interactiveSudo = true`)
+4. Activates new configuration
+5. Confirms activation (magic rollback if this fails)
 
 ## Troubleshooting
 
@@ -140,41 +128,12 @@ ssh emiller@192.168.1.222
 
 # Check 1Password SSH agent
 echo $SSH_AUTH_SOCK
-# Should point to: ~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock
 ```
-
-### Repository Divergence or Conflicts
-
-The deployment automatically handles divergent branches and force-pushes:
-
-```bash
-# Repository is always force-reset to match GitHub
-git reset --hard origin/main
-git clean -fd
-```
-
-**No manual intervention needed** - the NUC repository always mirrors GitHub exactly.
-
-If you accidentally made changes on the NUC:
-- They will be discarded on next `hey nuc`
-- This is intentional - all changes should happen on Mac
-- Use NixOS generations to roll back if needed, not git history
-
-### Sudo Password Issues
-
-The deployment requires your password for security. This is intentional and recommended.
-
-**If you want passwordless deployment** (less secure), see Phase 6 below.
 
 ### Build Failures
 
 ```bash
-# Check what changed
-hey nuc-ssh
-cd ~/dotfiles-deploy
-git log -5 --oneline
-
-# View build logs
+# View logs on NUC
 hey nuc-logs nixos-rebuild
 
 # Roll back to last working generation
@@ -189,34 +148,7 @@ hey nuc-service <service-name>
 
 # View service logs
 hey nuc-logs <service-name> 100
-
-# SSH in and debug
-hey nuc-ssh
-sudo systemctl status <service-name>
-journalctl -u <service-name> -n 100
 ```
-
-## Future Enhancements (Phase 6)
-
-### Optional: Passwordless Deployment
-
-To enable passwordless `nixos-rebuild` (less secure):
-
-1. Add to `hosts/nuc/default.nix`:
-```nix
-security.sudo.extraRules = [{
-  users = [ "emiller" ];
-  commands = [{
-    command = "/run/current-system/sw/bin/nixos-rebuild";
-    options = [ "NOPASSWD" ];
-  }];
-}];
-```
-
-2. Deploy once with password: `hey nuc`
-3. Future deployments won't need password
-
-**Trade-off**: Convenience vs. security. Current approach (password required) is more secure.
 
 ## See Also
 

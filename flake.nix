@@ -45,6 +45,8 @@
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
+    deploy-rs.url = "github:serokell/deploy-rs";
+    deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
   };
@@ -56,6 +58,7 @@
       nixpkgs-unstable,
       flake-parts,
       nix-darwin,
+      deploy-rs,
       ...
     }:
     let
@@ -143,6 +146,7 @@
           specialArgs = {
             inherit inputs lib;
             isDarwin = true;
+            hostName = "mactraitorpro";
           };
           modules = [
             # Set nixpkgs first, before importing modules that need it
@@ -172,6 +176,7 @@
           specialArgs = {
             inherit inputs lib;
             isDarwin = true;
+            hostName = "seqeratop";
           };
           modules = [
             # Set nixpkgs first, before importing modules that need it
@@ -196,6 +201,41 @@
             { system.primaryUser = "edmundmiller"; }
           ];
         };
+
+        # deploy-rs configuration
+        deploy.nodes = {
+          # NixOS host - remote deployment with magic rollback
+          nuc = {
+            hostname = "nuc";
+            sshUser = "emiller";
+            user = "root";
+            interactiveSudo = false;
+            remoteBuild = true;
+            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
+              self.nixosConfigurations.nuc;
+          };
+
+          # Darwin hosts - local deployment only (no magic rollback on macOS)
+          MacTraitor-Pro = {
+            hostname = "localhost";
+            profiles.system = {
+              user = "emiller";
+              path = deploy-rs.lib.aarch64-darwin.activate.custom
+                self.darwinConfigurations."MacTraitor-Pro".system
+                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
+            };
+          };
+
+          Seqeratop = {
+            hostname = "localhost";
+            profiles.system = {
+              user = "edmundmiller";
+              path = deploy-rs.lib.aarch64-darwin.activate.custom
+                self.darwinConfigurations."Seqeratop".system
+                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
+            };
+          };
+        };
       };
       systems = [
         "x86_64-linux"
@@ -212,6 +252,8 @@
 
         # Add claudelint checks for Claude Code plugins
         checks = {
+          # deploy-rs checks - validates deployment configurations
+          deploy-rs = deploy-rs.lib.${system}.deployChecks self.deploy;
           validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" {
             buildInputs = [ pkgs.python312 ];
           } ''

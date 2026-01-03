@@ -1,6 +1,8 @@
 { config, pkgs, inputs, ... }:
 {
   config = {
+    # Hostname for per-host secrets (Darwin doesn't have networking.hostName)
+
     modules = {
       editors = {
         default = "nvim";
