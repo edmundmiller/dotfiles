@@ -3,7 +3,13 @@
 # https://github.com/hlissner/dotfiles
 ########################################
 
-set  -g default-terminal "xterm-256color"
+# Use ghostty terminfo when available, fall back to xterm-256color
+set  -g default-terminal "ghostty"
+set -ga terminal-overrides ",ghostty:Tc"
+
+# Enable extended keys for proper modifier key support (Shift+Enter, etc.)
+set -s extended-keys on
+set -as terminal-features ',ghostty:extkeys'
 
 new-session     # spawn session if attaching when none are running
 
@@ -130,8 +136,8 @@ set -g status-justify centre
 set -g status-bg colour0
 set -g status-fg colour5
 set -g status-left '#{prefix_highlight}#[fg=colour238]|―――――――――――――――――|'
-set -g status-right '#[fg=colour238]|―――――――――――――――――――――――|'
-set -g status-right-length 30
+set -g status-right '#[fg=colour5]#{opencode_status}#[fg=colour238]|―――――――――――――――――|'
+set -g status-right-length 35
 set -g status-left-length 30
 
 # The messages

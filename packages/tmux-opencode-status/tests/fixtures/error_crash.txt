@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/opencode/main.py", line 42, in run
+    await self.process_message(msg)
+  File "/usr/local/lib/python3.11/site-packages/opencode/handler.py", line 128, in process_message
+    raise RuntimeError("Connection lost")
+RuntimeError: Connection lost
+
+Process exited with code 1

@@ -10,11 +10,23 @@ with lib.my;
 let
   cfg = config.modules.shell.tmux;
   inherit (config.dotfiles) configDir;
+
+  # Enhanced tmux-opencode-status with finished state detection
+  # See packages/tmux-opencode-status/AGENTS.md for details
+  tmux-opencode-status = pkgs.callPackage ../../packages/tmux-opencode-status { };
+
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
+  # Export environment variables with fallback defaults for when they aren't
+  # set (e.g., ghostty launching with --noprofile --norc). These are needed
+  # by the tmux config file itself for sourcing extraInit, swap-pane scripts,
+  # and the reload binding.
   tmux = pkgs.writeScriptBin "tmux" ''
     #!${pkgs.stdenv.shell}
+    export TMUX_HOME="''${TMUX_HOME:-$HOME/.config/tmux}"
+    export DOTFILES="''${DOTFILES:-$HOME/.config/dotfiles}"
+    export DOTFILES_BIN="''${DOTFILES_BIN:-$DOTFILES/bin}"
     exec ${pkgs.tmux}/bin/tmux -f "$TMUX_HOME/config" "$@"
   '';
 in
@@ -44,6 +56,14 @@ in
         run-shell ${pkgs.tmuxPlugins.copycat}/share/tmux-plugins/copycat/copycat.tmux
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
+        run-shell ${tmux-opencode-status}/opencode-status.tmux
+
+        # tmux-window-name: Smart automatic window naming based on path and running program
+        set -g @tmux_window_name_shells "['zsh', 'bash', 'sh', 'fish']"
+        set -g @tmux_window_name_dir_programs "['nvim', 'vim', 'vi', 'git', 'jjui', 'opencode', 'claude']"
+        set -g @tmux_window_name_use_tilde "True"
+        set -g @tmux_window_name_max_name_len "30"
+        run-shell ${pkgs.my.tmux-window-name}/share/tmux-plugins/tmux-window-name/tmux_window_name.tmux
 
         ${concatMapStrings (path: ''
           source '${path}'
