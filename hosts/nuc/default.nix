@@ -54,6 +54,7 @@
       syncthing.enable = false;
       tailscale.enable = true;
       taskchampion.enable = true;
+      goose.enable = true;
       obsidian-sync.enable = true;
       openportal.enable = false;
       timew_sync.enable = false;
