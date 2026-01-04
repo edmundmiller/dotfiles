@@ -11,9 +11,9 @@ with lib.my;
 let
   cfg = config.modules.services.goose;
 
-  # Goose config with claude-code provider
+  # Goose config with Anthropic provider
   gooseConfig = pkgs.writeText "goose-config.yaml" ''
-    GOOSE_PROVIDER: claude-code
+    GOOSE_PROVIDER: anthropic
     GOOSE_MODEL: claude-sonnet-4-20250514
   '';
 in
@@ -25,7 +25,7 @@ in
   };
 
   config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
-    # Secret auto-loaded from hosts/nuc/secrets/secrets.nix via modules/agenix.nix
+    # Secrets auto-loaded from hosts/nuc/secrets/secrets.nix via modules/agenix.nix
 
     # Ensure goose config directory exists with provider config
     systemd.tmpfiles.rules = [
@@ -42,18 +42,19 @@ in
         "systemd-tmpfiles-setup.service"
       ];
       wants = [ "tailscaled.service" ];
-      environment = {
-        HOME = "/home/emiller";
-        XDG_CONFIG_HOME = "/home/emiller/.config";
-      };
       serviceConfig = {
         ExecStart = "${pkgs.writeShellScript "goose-web" ''
+          export ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path})
           AUTH_TOKEN=$(cat ${config.age.secrets.goose-auth-token.path})
           exec ${lib.getExe pkgs.goose-cli} web --port ${toString cfg.port} --host ${cfg.host} --auth-token "$AUTH_TOKEN"
         ''}";
         User = "emiller";
         Group = "users";
         WorkingDirectory = "/home/emiller";
+        Environment = [
+          "HOME=/home/emiller"
+          "XDG_CONFIG_HOME=/home/emiller/.config"
+        ];
         Restart = "on-failure";
         RestartSec = "10s";
       };
