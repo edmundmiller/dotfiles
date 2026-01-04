@@ -12,7 +12,7 @@ This directory contains OpenCode configuration managed via nix-darwin.
 - `command/` - Slash commands
 - `skills/` - Agent skills
 - `agent/` - Custom agent definitions
-- `ast-grep/` - AST-grep configuration
+
 
 ### Nix-Managed (Copied via Activation Script)
 - `tool/` - Custom tools (copied so bun can resolve node_modules)

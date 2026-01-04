@@ -23,13 +23,15 @@ in
     # On Linux, use the Nix package
     user.packages = optionals (!isDarwin) [ inputs.ghostty.packages.x86_64-linux.default ];
 
+    # ghostty terminfo isn't supported over ssh, so revert to a known one
+    modules.shell.zsh.rcInit = ''
+      [ "$TERM" = ghostty ] && [ -n "$SSH_CONNECTION" ] && export TERM=xterm-256color
+    '';
+
     # Symlink ghostty config directory
     home.configFile."ghostty" = {
       source = "${configDir}/ghostty";
       recursive = true;
     };
-
-    # TODO: Add shell alias for copying terminfo
-    # alias ghostcopy = "infocmp -x | ssh YOUR-SERVER -- tic -x -"
   };
 }

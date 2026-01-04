@@ -79,7 +79,10 @@ aide = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py
 'closest_bookmark(to)' = 'heads(::to & bookmarks())'
 "fork_history(to, from)" = "fork_point(to | from)..@"
 
-# Merge conflict resolution tool
+# Merge conflict resolution tools
+#
+# Default: diffconflicts (nvim-based)
+# For .beads/ files: use `jj resolve --tool=beads-merge`
 [merge-tools.diffconflicts]
 program = "nvim"
 merge-args = [
@@ -93,6 +96,14 @@ merge-args = [
   "$right",
 ]
 merge-tool-edits-conflict-markers = true
+
+# Beads merge tool for .beads/issues.jsonl conflicts
+# Uses bd's field-level 3-way merge algorithm
+# Invoke with: jj resolve --tool=beads-merge
+[merge-tools.beads-merge]
+program = "bd"
+merge-args = ["merge", "$output", "$base", "$left", "$right"]
+merge-conflict-exit-codes = [1]
 
 [ui]
 # default-command = "status"

@@ -12,4 +12,12 @@ in
     nuc
   ];
   "emiller_password.age".publicKeys = [ nuc ];
+  "goose-auth-token.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "anthropic-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 }

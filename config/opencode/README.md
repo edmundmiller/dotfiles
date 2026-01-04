@@ -12,7 +12,7 @@ This directory contains OpenCode configuration for the dotfiles repository.
 - `command/` - Slash commands
 - `skills/` - Agent skills
 - `agent/` - Custom agent definitions
-- `ast-grep/` - AST-grep linting rules
+
 
 ### Managed by Nix (via activation script)
 - `tool/` - Custom tools
