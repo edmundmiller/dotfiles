@@ -16,6 +16,8 @@ export ZSH_CACHE="$XDG_CACHE_HOME/zsh"
 # Set up terminfo for NixOS (needed for TUI apps like opencode)
 if [[ -d /run/current-system/sw/share/terminfo ]]; then
   export TERMINFO_DIRS="/run/current-system/sw/share/terminfo${TERMINFO_DIRS:+:$TERMINFO_DIRS}"
+  # Set default TERM if empty (prevents TUI crashes in non-interactive SSH)
+  [[ -z "$TERM" ]] && export TERM=xterm-256color
 fi
 
 # Add ~/.local/bin to PATH if it exists
