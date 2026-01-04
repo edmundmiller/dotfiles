@@ -1,4 +1,5 @@
 # Goose AI agent web server for iOS app connectivity
+# Uses Tailscale serve for HTTPS termination (required for iOS App Transport Security)
 {
   config,
   lib,
@@ -21,7 +22,8 @@ in
   options.modules.services.goose = {
     enable = mkBoolOpt false;
     port = mkOpt types.port 3000;
-    host = mkOpt types.str "0.0.0.0"; # Bind to all interfaces for Tailscale access
+    httpsPort = mkOpt types.port 3002; # External HTTPS port via Tailscale serve
+    host = mkOpt types.str "127.0.0.1"; # Bind to localhost, Tailscale serve handles external access
   };
 
   config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
@@ -33,6 +35,7 @@ in
       "L+ /home/emiller/.config/goose/config.yaml - - - - ${gooseConfig}"
     ];
 
+    # Main goose web server (HTTP on localhost)
     systemd.services.goose = {
       wantedBy = [ "multi-user.target" ];
       description = "Goose AI agent web server";
@@ -60,9 +63,23 @@ in
       };
     };
 
+    # Tailscale serve for HTTPS termination (required for iOS)
+    # Proxies https://<tailscale-hostname>:3002 -> http://localhost:3000
+    systemd.services.goose-tailscale-serve = {
+      wantedBy = [ "multi-user.target" ];
+      description = "Tailscale HTTPS proxy for Goose";
+      after = [ "goose.service" "tailscaled.service" ];
+      wants = [ "goose.service" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --https ${toString cfg.httpsPort} http://localhost:${toString cfg.port}";
+        ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+    };
+
     environment.systemPackages = [ pkgs.goose-cli ];
 
-    # Firewall opened for Tailscale access
-    networking.firewall.allowedTCPPorts = [ cfg.port ];
+    # No need to open firewall - Tailscale handles it
   });
 }
