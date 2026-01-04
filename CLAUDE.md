@@ -492,6 +492,29 @@ When Claude Code needs to run JJ commands that normally open an editor, always u
 
 **Never run:** `jj describe`, `jj split`, `jj squash` without specifying the message, as this will hang in an interactive editor that Claude Code cannot control.
 
+### Beads Merge Integration
+
+JJ is configured with automatic merge tool selection via `jj-smart-merge`:
+
+- **`.beads/` files**: Automatically use `bd merge` (field-level 3-way merge)
+- **All other files**: Use `diffconflicts` (nvim)
+
+This means `jj resolve` automatically picks the right tool based on the conflicted file path.
+
+**Manual tool override** (if needed):
+```bash
+jj resolve --tool=beads-merge    # Force beads merge for current conflict
+jj resolve --tool=diffconflicts  # Force nvim for current conflict
+```
+
+**Why field-level merge matters for beads:**
+Beads stores issues as JSON objects in `.beads/issues.jsonl`. Line-based merge would conflict when two people edit different fields of the same issue. Field-level merge combines changes intelligently:
+- You change `status: "open"` → `"in_progress"`
+- Coworker changes `priority: 2` → `3`
+- Result: Both changes preserved, no conflict
+
+See `config/jj/README.md` for detailed documentation.
+
 ## OpenCode Configuration
 
 OpenCode configuration is managed through nix-darwin with one exception:

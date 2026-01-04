@@ -54,8 +54,12 @@
       syncthing.enable = false;
       tailscale.enable = true;
       taskchampion.enable = true;
+      goose = {
+        enable = true;
+        port = 3002;  # 3000 used by obsidian-sync, 3001 by its secondary port
+      };
       obsidian-sync.enable = true;
-      openportal.enable = false;
+      openportal.enable = true;
       timew_sync.enable = false;
       transmission.enable = false;
       deploy-rs.enable = true;
