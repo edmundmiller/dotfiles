@@ -10,6 +10,12 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.goose;
+
+  # Goose config with claude-code provider
+  gooseConfig = pkgs.writeText "goose-config.yaml" ''
+    GOOSE_PROVIDER: claude-code
+    GOOSE_MODEL: claude-sonnet-4-20250514
+  '';
 in
 {
   options.modules.services.goose = {
@@ -21,12 +27,19 @@ in
   config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
     # Secret auto-loaded from hosts/nuc/secrets/secrets.nix via modules/agenix.nix
 
+    # Ensure goose config directory exists with provider config
+    systemd.tmpfiles.rules = [
+      "d /home/emiller/.config/goose 0755 emiller users -"
+      "L+ /home/emiller/.config/goose/config.yaml - - - - ${gooseConfig}"
+    ];
+
     systemd.services.goose = {
       wantedBy = [ "multi-user.target" ];
       description = "Goose AI agent web server";
       after = [
         "network.target"
         "tailscaled.service"
+        "systemd-tmpfiles-setup.service"
       ];
       wants = [ "tailscaled.service" ];
       environment = {
