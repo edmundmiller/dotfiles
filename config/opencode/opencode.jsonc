@@ -441,7 +441,6 @@
     // Instructions - global rules
     // - GLOBAL_INSTRUCTIONS.md: References rule files (shell-strategy, etc.)
     "instructions": [
-        "~/.config/opencode/AGENTS.md",
         "~/.config/opencode/GLOBAL_INSTRUCTIONS.md"
     ]
 }
