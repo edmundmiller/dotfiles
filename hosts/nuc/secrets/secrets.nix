@@ -16,4 +16,8 @@ in
     edmundmiller
     nuc
   ];
+  "anthropic-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 }
