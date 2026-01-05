@@ -10,6 +10,15 @@ with lib.my;
 let
   cfg = config.modules.shell.tmux;
   inherit (config.dotfiles) configDir;
+
+  # Fetch tmux-opencode-status plugin
+  tmux-opencode-status = pkgs.fetchFromGitHub {
+    owner = "IFAKA";
+    repo = "tmux-opencode-status";
+    rev = "d1cfa0e7663b0c9c4e6a51a1585986096f46ce8c";
+    sha256 = "sha256-ZoXNJPDsggi5d+5jcPAOUdTTOecIsfZrfSmE4nZSkNY=";
+  };
+
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
@@ -44,6 +53,7 @@ in
         run-shell ${pkgs.tmuxPlugins.copycat}/share/tmux-plugins/copycat/copycat.tmux
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
+        run-shell ${tmux-opencode-status}/opencode-status.tmux
 
         ${concatMapStrings (path: ''
           source '${path}'
