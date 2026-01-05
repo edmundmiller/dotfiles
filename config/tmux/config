@@ -7,6 +7,10 @@
 set  -g default-terminal "ghostty"
 set -ga terminal-overrides ",ghostty:Tc"
 
+# Enable extended keys for proper modifier key support (Shift+Enter, etc.)
+set -s extended-keys on
+set -as terminal-features ',ghostty:extkeys'
+
 new-session     # spawn session if attaching when none are running
 
 setw -g automatic-rename on      # rename window after current program
