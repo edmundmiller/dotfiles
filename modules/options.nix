@@ -56,7 +56,7 @@ with lib.my;
               "root"
             ]
           then
-            "emiller"  # Static fallback - hosts override via system.primaryUser
+            "edmundmiller"  # Static fallback - hosts override via system.primaryUser
           else
             user;
         description =
