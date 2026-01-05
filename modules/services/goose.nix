@@ -48,8 +48,7 @@ in
       serviceConfig = {
         ExecStart = "${pkgs.writeShellScript "goose-web" ''
           export ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path})
-          AUTH_TOKEN=$(cat ${config.age.secrets.goose-auth-token.path})
-          exec ${lib.getExe pkgs.goose-cli} web --port ${toString cfg.port} --host ${cfg.host} --auth-token "$AUTH_TOKEN"
+          exec ${lib.getExe pkgs.goose-cli} web --port ${toString cfg.port} --host ${cfg.host}
         ''}";
         User = "emiller";
         Group = "users";
