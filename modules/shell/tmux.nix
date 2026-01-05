@@ -22,8 +22,15 @@ let
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
+  # Export environment variables with fallback defaults for when they aren't
+  # set (e.g., ghostty launching with --noprofile --norc). These are needed
+  # by the tmux config file itself for sourcing extraInit, swap-pane scripts,
+  # and the reload binding.
   tmux = pkgs.writeScriptBin "tmux" ''
     #!${pkgs.stdenv.shell}
+    export TMUX_HOME="''${TMUX_HOME:-$HOME/.config/tmux}"
+    export DOTFILES="''${DOTFILES:-$HOME/.config/dotfiles}"
+    export DOTFILES_BIN="''${DOTFILES_BIN:-$DOTFILES/bin}"
     exec ${pkgs.tmux}/bin/tmux -f "$TMUX_HOME/config" "$@"
   '';
 in
