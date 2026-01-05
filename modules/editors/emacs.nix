@@ -73,14 +73,15 @@ in
       nodePackages.typescript
       nodePackages.prettier
       # :lang latex & :lang org (latex previews)
-      (texlive.combine {
-        inherit (texlive)
-          scheme-full
-          grffile
-          beamertheme-metropolis
-          wrapfig
-          ;
-      })
+      # TODO: Re-enable when needed - texlive-combined is very large
+      # (texlive.combine {
+      #   inherit (texlive)
+      #     scheme-full
+      #     grffile
+      #     beamertheme-metropolis
+      #     wrapfig
+      #     ;
+      # })
       # :lang python
       pyright
       # :lang rust
