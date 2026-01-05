@@ -9,7 +9,7 @@ let
 in {
   options.modules.services.openportal = {
     enable = mkBoolOpt false;
-    projectDir = mkOpt types.str null;
+    projectDir = mkOpt (types.nullOr types.str) null;
     openCodeImage = mkOpt types.str "ghcr.io/sst/opencode:1.0.162";
     portalImage = mkOpt types.str "ghcr.io/hosenur/portal:latest";
     openCodePort = mkOpt types.port 4000;
