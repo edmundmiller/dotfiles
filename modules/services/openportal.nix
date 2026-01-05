@@ -22,29 +22,41 @@ in {
   in {
     # Ensure podman is available
     virtualisation.podman.enable = true;
-    virtualisation.oci-containers.backend = "podman";
 
     # Create project directory if it doesn't exist
     systemd.tmpfiles.rules = [
       "d ${projectDir} 0755 ${config.user.name} users -"
     ];
 
-    # OpenCode server container
-    virtualisation.oci-containers.containers.portal-opencode = {
-      autoStart = true;
-      image = cfg.openCodeImage;
-      volumes = [ "${projectDir}:/app" ];
-      extraOptions = [ "--network=host" ];
-      # Detect Tailscale IP at runtime and bind to it
-      # Use grep -E for portability instead of -P (Perl regex)
-      entrypoint = "/bin/sh";
-      cmd = [
-        "-c"
-        ''TS_IP=$(cat /proc/net/fib_trie | grep -oE '100\.[0-9]+\.[0-9]+\.[0-9]+' | head -1); exec opencode serve --hostname $TS_IP --port ${toString cfg.openCodePort}''
-      ];
+    # OpenCode server container - manual systemd service for dynamic Tailscale IP detection
+    systemd.services.podman-portal-opencode = {
+      description = "OpenCode Server";
+      after = [ "network-online.target" "tailscaled.service" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        Type = "simple";
+        Restart = "always";
+        RestartSec = "10s";
+      };
+
+      script = ''
+        TS_IP=$(${pkgs.tailscale}/bin/tailscale ip -4)
+        ${pkgs.podman}/bin/podman run --rm \
+          --name portal-opencode \
+          --network=host \
+          -v "${projectDir}:/app" \
+          ${cfg.openCodeImage} \
+          serve --hostname "$TS_IP" --port ${toString cfg.openCodePort}
+      '';
+
+      preStop = ''
+        ${pkgs.podman}/bin/podman stop portal-opencode || true
+      '';
     };
 
-    # Portal UI container - needs wrapper script for dynamic Tailscale IP
+    # Portal UI container - wrapper script for dynamic Tailscale IP
     systemd.services.podman-portal-ui = {
       description = "OpenPortal Web UI";
       after = [ "network-online.target" "podman-portal-opencode.service" ];
