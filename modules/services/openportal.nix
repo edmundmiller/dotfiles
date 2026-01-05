@@ -36,10 +36,11 @@ in {
       volumes = [ "${projectDir}:/app" ];
       extraOptions = [ "--network=host" ];
       # Detect Tailscale IP at runtime and bind to it
+      # Use grep -E for portability instead of -P (Perl regex)
       entrypoint = "/bin/sh";
       cmd = [
         "-c"
-        ''TS_IP=$(cat /proc/net/fib_trie | grep -oP '100\.\d+\.\d+\.\d+' | head -1); exec opencode serve --hostname $TS_IP --port ${toString cfg.openCodePort}''
+        ''TS_IP=$(cat /proc/net/fib_trie | grep -oE '100\.[0-9]+\.[0-9]+\.[0-9]+' | head -1); exec opencode serve --hostname $TS_IP --port ${toString cfg.openCodePort}''
       ];
     };
 
