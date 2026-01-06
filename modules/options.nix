@@ -44,47 +44,21 @@ with lib.my;
   };
 
   config = {
-    user =
-      let
-        user = builtins.getEnv "USER";
-        # Use system.primaryUser as fallback when $USER is root/empty (e.g., during sudo darwin-rebuild)
-        # This ensures the correct username is used on hosts with different usernames (e.g., edmundmiller on Seqeratop)
-        name =
-          if
-            elem user [
-              ""
-              "root"
-            ]
-          then
-            "emiller"  # Static fallback - hosts override via system.primaryUser
-          else
-            user;
-        description =
-          if
-            elem user [
-              ""
-              "root"
-            ]
-          then
-            "Edmund Miller"
-          else
-            "The primary user account";
-        # Determine home directory based on platform
-        homeBase = if isDarwin
-                   then "/Users"
-                   else "/home";
-      in
-      {
-        inherit name description;
-        home = "${homeBase}/${name}";
-        uid = 1000;
-      }
-      # NixOS-specific user options
-      // optionalAttrs (!isDarwin) {
-        extraGroups = [ "wheel" ];
-        isNormalUser = true;
-        group = "users";
-      };
+    # user.name must be set by each host; other fields have sensible defaults
+    user = {
+      description = "Edmund Miller";
+      # home is computed from the final user.name value
+      home = if isDarwin
+             then "/Users/${config.user.name}"
+             else "/home/${config.user.name}";
+      uid = 1000;
+    }
+    # NixOS-specific user options
+    // optionalAttrs (!isDarwin) {
+      extraGroups = [ "wheel" ];
+      isNormalUser = true;
+      group = "users";
+    };
 
     # Install user packages to /etc/profiles instead. Necessary for
     # nixos-rebuild build-vm to work.

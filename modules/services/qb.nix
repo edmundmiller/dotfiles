@@ -8,6 +8,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.qb;
+  homeDir = config.users.users.${config.user.name}.home;
 in
 {
   options.modules.services.qb = {
@@ -40,7 +41,7 @@ in
           WEBUI_PORT = "8090";
         };
         volumes = [
-          "/home/emiller/gluetun/config:/config"
+          "${homeDir}/gluetun/config:/config"
           "/srv/nfs:/media"
         ];
         extraOptions = [ "--network=container:gluetun" ];

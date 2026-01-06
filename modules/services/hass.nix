@@ -9,6 +9,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.hass;
+  homeDir = config.users.users.${config.user.name}.home;
 in
 {
   options.modules.services.hass = {
@@ -21,7 +22,7 @@ in
       autoStart = true;
       image = "ghcr.io/home-assistant/home-assistant:stable";
       volumes = [
-        "/home/emiller/HomeAssistant:/config"
+        "${homeDir}/HomeAssistant:/config"
         "/etc/localtime:/etc/localtime:ro"
       ];
       extraOptions = [

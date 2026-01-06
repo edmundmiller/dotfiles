@@ -1,6 +1,7 @@
 # Framework -- my laptop
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 {
+  user.name = "emiller";
   imports = [
     ../home.nix
     ./disko.nix
@@ -102,7 +103,7 @@
   networking.hostId = "0dd71c1c";
   networking.networkmanager.enable = true;
   programs.nm-applet.enable = true;
-  users.users.emiller.extraGroups = [
+  users.users.${config.user.name}.extraGroups = [
     "input"
     "networkmanager"
   ];
@@ -129,7 +130,7 @@
     unstable.anytype
   ];
 
-  systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
+  systemd.services.znapzend.serviceConfig.User = lib.mkForce config.user.name;
   services.znapzend = {
     enable = true;
     autoCreation = true;

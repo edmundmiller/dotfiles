@@ -20,12 +20,13 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.obsidian-sync;
+  homeDir = config.users.users.${config.user.name}.home;
 in
 {
   options.modules.services.obsidian-sync = {
     enable = mkBoolOpt false;
-    vaultPath = mkOpt types.str "/home/emiller/obsidian-vault";
-    user = mkOpt types.str "emiller";
+    vaultPath = mkOpt types.str "${config.users.users.${config.user.name}.home}/obsidian-vault";
+    user = mkOpt types.str config.user.name;
   };
 
   # NixOS-only service (OCI containers)

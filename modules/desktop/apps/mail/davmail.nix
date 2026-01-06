@@ -20,7 +20,7 @@ in
     systemd.user.services.davmail = {
       wantedBy = [ "mbsync.service" ];
       script = ''
-        /run/current-system/sw/bin/davmail /home/emiller/.config/dotfiles/config/davmail/davmail.properties
+        /run/current-system/sw/bin/davmail ${config.users.users.${config.user.name}.home}/.config/dotfiles/config/davmail/davmail.properties
       '';
     };
 

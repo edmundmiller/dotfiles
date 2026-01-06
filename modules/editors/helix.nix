@@ -16,7 +16,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home-manager.users.emiller.programs.helix = {
+    home-manager.users.${config.user.name}.programs.helix = {
       enable = true;
       extraPackages = [ pkgs.marksman ];
       languages = {

@@ -1,8 +1,8 @@
 # Generated via dconf2nix: https://github.com/gvolpe/dconf2nix
-{ lib, ... }:
+{ config, lib, ... }:
 with lib.gvariant;
 {
-  home-manager.users.emiller = {
+  home-manager.users.${config.user.name} = {
     dconf.settings = {
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
         binding = "<Super>e";

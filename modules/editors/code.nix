@@ -18,7 +18,7 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      home-manager.users.emiller.programs.vscode = {
+      home-manager.users.${config.user.name}.programs.vscode = {
         enable = true;
         package = pkgs.unstable.vscode.fhs;
         extensions = with pkgs.vscode-extensions; [
