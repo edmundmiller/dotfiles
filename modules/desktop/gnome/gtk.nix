@@ -1,7 +1,7 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   env.GTK_THEME = "palenight";
-  home-manager.users.emiller = {
+  home-manager.users.${config.user.name} = {
     ## GTK
     gtk = {
       enable = true;

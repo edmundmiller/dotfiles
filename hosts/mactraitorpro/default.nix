@@ -1,7 +1,8 @@
 { config, pkgs, inputs, ... }:
 {
   config = {
-    # Hostname for per-host secrets (Darwin doesn't have networking.hostName)
+    # Set username for this host
+    user.name = "emiller";
 
     modules = {
       editors = {

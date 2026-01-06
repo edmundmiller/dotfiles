@@ -3,7 +3,8 @@ with lib;
 with lib.my;
 let
   name = "Edmund Miller";
-  maildir = "/home/emiller/.mail";
+  homeDir = config.users.users.${config.user.name}.home;
+  maildir = "${homeDir}/.mail";
   email = "edmund.a.miller@gmail.com";
 
   cfg = config.modules.desktop.apps.mail.accounts;
@@ -14,7 +15,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home-manager.users.emiller.accounts.email = {
+    home-manager.users.${config.user.name}.accounts.email = {
       maildirBasePath = "${maildir}";
       accounts = {
         Gmail = {

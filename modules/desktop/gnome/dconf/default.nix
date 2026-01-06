@@ -16,7 +16,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home-manager.users.emiller = {
+    home-manager.users.${config.user.name} = {
       dconf.settings = {
         "org/gnome/shell" = {
           favorite-apps = [

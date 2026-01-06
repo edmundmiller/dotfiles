@@ -7,7 +7,8 @@
 with lib;
 with lib.my;
 let
-  imapfilterconfig = "/home/emiller/.config/imapfilter/config.lua";
+  homeDir = config.users.users.${config.user.name}.home;
+  imapfilterconfig = "${homeDir}/.config/imapfilter/config.lua";
 
   cfg = config.modules.desktop.apps.mail.imapfilter;
 in

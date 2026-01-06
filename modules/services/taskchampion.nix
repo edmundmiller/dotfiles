@@ -9,6 +9,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.taskchampion;
+  homeDir = config.users.users.${config.user.name}.home;
 in
 {
   options.modules.services.taskchampion = {
@@ -29,7 +30,7 @@ in
 
     # Ensure data directory exists with correct permissions
     systemd.tmpfiles.rules = [
-      "d /home/emiller/taskchampion-sync-server 0750 emiller users -"
+      "d ${homeDir}/taskchampion-sync-server 0750 ${config.user.name} users -"
     ];
 
     virtualisation.oci-containers.containers."taskchampion-sync-server" = {
@@ -37,7 +38,7 @@ in
       image = "ghcr.io/gothenburgbitfactory/taskchampion-sync-server:latest";
       ports = [ "8080:8080" ];
       volumes = [
-        "/home/emiller/taskchampion-sync-server:/var/lib/taskchampion-sync-server/data"
+        "${homeDir}/taskchampion-sync-server:/var/lib/taskchampion-sync-server/data"
       ];
       environment = {
         RUST_LOG = "info";

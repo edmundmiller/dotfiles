@@ -9,7 +9,8 @@ with lib;
 with lib.my;
 let
   name = "Edmund Miller";
-  maildir = "/home/emiller/.mail";
+  homeDir = config.users.users.${config.user.name}.home;
+  maildir = "${homeDir}/.mail";
   email = "edmund.a.miller@gmail.com";
 
   cfg = config.modules.desktop.apps.mail.mbsync;

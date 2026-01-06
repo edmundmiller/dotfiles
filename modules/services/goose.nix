@@ -11,6 +11,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.goose;
+  homeDir = config.users.users.${config.user.name}.home;
 
   # Goose config with Anthropic provider
   gooseConfig = pkgs.writeText "goose-config.yaml" ''
@@ -31,8 +32,8 @@ in
 
     # Ensure goose config directory exists with provider config
     systemd.tmpfiles.rules = [
-      "d /home/emiller/.config/goose 0755 emiller users -"
-      "L+ /home/emiller/.config/goose/config.yaml - - - - ${gooseConfig}"
+      "d ${homeDir}/.config/goose 0755 ${config.user.name} users -"
+      "L+ ${homeDir}/.config/goose/config.yaml - - - - ${gooseConfig}"
     ];
 
     # Main goose web server (HTTP on localhost)
@@ -50,12 +51,12 @@ in
           export ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path})
           exec ${lib.getExe pkgs.goose-cli} web --port ${toString cfg.port} --host ${cfg.host}
         ''}";
-        User = "emiller";
+        User = config.user.name;
         Group = "users";
-        WorkingDirectory = "/home/emiller";
+        WorkingDirectory = homeDir;
         Environment = [
-          "HOME=/home/emiller"
-          "XDG_CONFIG_HOME=/home/emiller/.config"
+          "HOME=${homeDir}"
+          "XDG_CONFIG_HOME=${homeDir}/.config"
         ];
         Restart = "on-failure";
         RestartSec = "10s";
