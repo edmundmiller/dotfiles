@@ -137,6 +137,11 @@ if [[ $TERM != dumb ]]; then
 
     # sdkman (must be last per sdkman docs)
     [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+    # Goose terminal integration (deferred to avoid p10k instant prompt warning)
+    if (( $+commands[goose] )); then
+      eval "$(goose term init zsh)"
+    fi
   } &!
 fi
 
@@ -166,7 +171,4 @@ alias vanguard="$(go env GOPATH)/bin/vanguard"
 # Amp CLI
 export PATH="/Users/emiller/.amp/bin:$PATH"
 
-# Goose terminal integration
-if (( $+commands[goose] )); then
-  eval "$(goose term init zsh)"
-fi
+

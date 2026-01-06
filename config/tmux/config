@@ -129,44 +129,8 @@ bind -T copy-mode-vi L send-keys -X end-of-line
 ########################################
 # Theme                                #
 ########################################
-
-# The statusbar
-set -g status-position bottom
-set -g status-justify centre
-set -g status-bg colour0
-set -g status-fg colour5
-set -g status-left '#{prefix_highlight}#[fg=colour238]|―――――――――――――――――|'
-set -g status-right '#[fg=colour5]#{opencode_status}#[fg=colour238]|―――――――――――――――――|'
-set -g status-right-length 35
-set -g status-left-length 30
-
-# The messages
-set -g message-style fg=magenta,bg=colour236
-set -g message-command-style fg=blue,bg=black
-
-# loud or quiet?
-set-option -g visual-activity off
-set-option -g visual-bell off
-set-option -g visual-silence off
-set-window-option -g monitor-activity on
-set-option -g bell-action none
-
-# The modes
-setw -g clock-mode-colour colour135
-
-# The panes
-set -g pane-border-style fg=colour235
-set -g pane-active-border-style fg=colour5
-
-# Window status
-setw -g window-status-format ' #W '
-
-# Plugin settings
-set -g @prefix_highlight_fg 'colour0'
-set -g @prefix_highlight_bg 'colour5'
-set -g @prefix_highlight_copy_mode_attr 'fg=colour0,bg=color4'
-set -g @prefix_highlight_prefix_prompt 'C-c'
-set -g @prefix_highlight_show_copy_mode 'on'
+# Theme configuration is in theme.conf (Catppuccin + auto-hide status bar)
+# Loaded via nix module rcFiles
 
 
 ########################################
