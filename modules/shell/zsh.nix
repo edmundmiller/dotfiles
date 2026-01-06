@@ -77,9 +77,9 @@ in
       };
 
       environment.shellAliases = {
-        # zoxide
-        cd = "z";
-        cdi = "zi";
+        # zoxide is initialized via zshrc init, no need for alias
+        # cd = "z";  (zoxide init zsh handles this)
+        # cdi = "zi";
 
         # file operations
         chmod = "chmod -v";

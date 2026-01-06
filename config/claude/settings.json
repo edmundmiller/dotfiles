@@ -184,7 +184,7 @@
       "mcp__plugin_context7_context7__get-library-docs",
       "mcp__plugin_context7_context7__resolve-library-id"
     ],
-    "deny": ["Bash(git:*)", "mcp__git__*"]
+    "deny": ["mcp__git__*"]
   },
   "statusLine": {
     "type": "command",
