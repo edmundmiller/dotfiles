@@ -106,6 +106,7 @@
         "tasksh"
         "taskwarrior-tui"
         "timewarrior"
+        "opencode"
       ];
       casks = [
         "1password-cli"
