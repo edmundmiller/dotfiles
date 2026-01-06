@@ -19,7 +19,7 @@ in
     user.packages = with pkgs; [
       neovim
       editorconfig-core-c
-      ctags
+      # ctags provided by emacs package
       unstable.lua-language-server
       lazygit
     ];
