@@ -33,7 +33,7 @@ in
 {
   options.modules.shell.tmux = with types; {
     enable = mkBoolOpt false;
-    rcFiles = mkOpt (listOf (either str path)) [ ];
+    rcFiles = mkOpt (listOf (either str path)) [ "${configDir}/tmux/theme.conf" ];
   };
 
   config = mkIf cfg.enable {
@@ -56,6 +56,7 @@ in
         run-shell ${pkgs.tmuxPlugins.copycat}/share/tmux-plugins/copycat/copycat.tmux
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
+        run-shell ${pkgs.tmuxPlugins.catppuccin}/share/tmux-plugins/catppuccin/catppuccin.tmux
         run-shell ${tmux-opencode-status}/opencode-status.tmux
 
         # tmux-window-name: Smart automatic window naming based on path and running program
