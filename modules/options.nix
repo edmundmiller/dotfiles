@@ -11,9 +11,19 @@ with lib;
 with lib.my;
 {
   options = with types; {
-    user = mkOpt attrs { };
-    # Add user.packages option for aliasing to home-manager
-    "user.packages" = mkOpt (listOf package) [];
+    user = mkOption {
+      type = types.submodule {
+        freeformType = types.attrs;
+        options = {
+          name = mkOpt str "";
+          description = mkOpt str "";
+          home = mkOpt str "";
+          uid = mkOpt int 1000;
+          packages = mkOpt (listOf package) [];
+        };
+      };
+      default = {};
+    };
 
     dotfiles = {
       # Use static path to avoid self-referential infinite recursion
@@ -77,7 +87,7 @@ with lib.my;
       users.${config.user.name} = {
         home = {
           file = mkAliasDefinitions options.home.file;
-          packages = mkAliasDefinitions options."user.packages";
+          packages = config.user.packages;
           # Necessary for home-manager to work with flakes, otherwise it will
           # look for a nixpkgs channel.
           # On Darwin, system.stateVersion is a number; home-manager needs a string

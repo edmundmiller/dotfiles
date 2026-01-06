@@ -114,7 +114,7 @@ if [[ $TERM != dumb ]]; then
 
   # Initialize zoxide with caching (needed for aliases)
   if (( $+commands[zoxide] )); then
-    _cache zoxide init zsh
+    _cache zoxide init zsh || true
   fi
 
   # Defer only autopair which is not immediately needed
