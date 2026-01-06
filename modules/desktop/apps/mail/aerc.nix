@@ -15,7 +15,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home-manager.users.emiller.accounts.email = {
+    home-manager.users.${config.user.name}.accounts.email = {
       accounts = {
         Gmail.aerc = {
           enable = true;
@@ -38,7 +38,7 @@ in
       };
     };
 
-    home-manager.users.emiller.programs.aerc = {
+    home-manager.users.${config.user.name}.programs.aerc = {
       enable = true;
       extraConfig.general.unsafe-accounts-conf = true;
       #   # FIXME Still doesn't have the right permissions

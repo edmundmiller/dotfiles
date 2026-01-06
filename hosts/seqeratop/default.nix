@@ -51,6 +51,7 @@
 
     # Override the primary user for this host
     system.primaryUser = "edmundmiller";
+    user.name = "edmundmiller";
 
     # Additional system packages
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
