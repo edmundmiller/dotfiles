@@ -18,9 +18,9 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      unstable.opencode
-    ];
+    # On Darwin, opencode is installed via homebrew for better integration
+    user.packages = with pkgs;
+      lib.optionals (!pkgs.stdenv.isDarwin) [ unstable.opencode ];
 
     home.configFile = {
       # OpenCode uses XDG config directory: ~/.config/opencode/
