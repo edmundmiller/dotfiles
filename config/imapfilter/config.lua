@@ -13,7 +13,7 @@ options.subscribe = true
 options.timeout = 120
 
 -- Gets password from pass
-status, gpassword = pipe_from("/etc/profiles/per-user/emiller/bin/pass show Email/GmailApp")
+status, gpassword = pipe_from("pass show Email/GmailApp")
 -- Setup an imap account called work
 gmail =
     IMAP {
@@ -24,7 +24,7 @@ gmail =
     ssl = "auto"
 }
 
-status, upassword = pipe_from("/etc/profiles/per-user/emiller/bin/pass show utd")
+status, upassword = pipe_from("pass show utd")
 utd =
     IMAP {
     server = "127.0.0.1",
