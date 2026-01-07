@@ -26,7 +26,7 @@
     // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
     // - opencode-md-table-formatter: Auto-format markdown tables on completion
     // - opencode-notifier: Desktop notifications + sounds on events
-    // - jj-opencode: Enforce JJ describe-before-implement workflow
+    // - opencode-jj: Enforce JJ describe-before-implement workflow
     // - opencode-direnv: Auto-load .envrc environment variables at session start
     // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
     // - opencode-beads: Beads issue tracker integration
@@ -238,7 +238,9 @@
             "docker-compose *": "allow",
             "kubectl get *": "allow",
             "kubectl describe *": "allow",
-            "kubectl logs *": "allow"
+            "kubectl logs *": "allow",
+            // Beads issue tracker
+            "bd *": "allow"
         },
         "edit": "allow",
         "write": "allow",
@@ -379,6 +381,9 @@
                     "bd stale *": "allow",
                     "bd activity *": "allow",
                     "bd duplicates *": "allow",
+                    "bd ready *": "allow",
+                    "bd stats *": "allow",
+                    "bd doctor *": "allow",
                     // Everything else asks
                     "*": "ask"
                 },
@@ -432,11 +437,6 @@
                 "webfetch": "ask"
             }
         }
-    },
-    // Tools configuration
-    "tools": {
-        "bash": true,
-        "edit": true
     },
     // Instructions - global rules
     // - GLOBAL_INSTRUCTIONS.md: References rule files (shell-strategy, etc.)
