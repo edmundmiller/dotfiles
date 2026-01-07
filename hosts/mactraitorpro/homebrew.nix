@@ -5,6 +5,7 @@
   taps = [
     # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
     "jnsahaj/lumen"  # AI-powered CLI explanations
+    "keith/formulae"  # reminders-cli
     "rockorager/tap"  # Prise terminal multiplexer
     "seqeralabs/tap"
     "steipete/tap"  # Codexbar
@@ -144,6 +145,7 @@
     "jnsahaj/lumen/lumen"
     "opencode"
     "steveyegge/beads/bd"
+    "reminders-cli"
   ];
 
   casks = [
