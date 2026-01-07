@@ -439,8 +439,8 @@
         }
     },
     // Instructions - global rules
-    // - GLOBAL_INSTRUCTIONS.md: References rule files (shell-strategy, etc.)
     "instructions": [
-        "~/.config/opencode/GLOBAL_INSTRUCTIONS.md"
+        "~/.config/opencode/GLOBAL_INSTRUCTIONS.md",
+        "~/.config/opencode/rules/*.md"
     ]
 }
