@@ -29,6 +29,8 @@ in
     home-manager.users.${config.user.name} = {
       xdg.configFile = {
         "git/config".source = "${configDir}/git/config";
+        "git/config-seqera".source = "${configDir}/git/config-seqera";
+        "git/config-nfcore".source = "${configDir}/git/config-nfcore";
         "git/ignore".source = "${configDir}/git/ignore";
         "git/allowed_signers".source = "${configDir}/git/allowed_signers";
         # GitHub CLI config

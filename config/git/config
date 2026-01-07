@@ -61,3 +61,11 @@
 	cmd = difft "$LOCAL" "$REMOTE"
 [pager]
 	difftool = true
+
+# Conditional includes for work contexts
+[includeIf "gitdir:~/src/seqera/**"]
+    path = ~/.config/git/config-seqera
+[includeIf "gitdir:~/src/nextflow/**"]
+    path = ~/.config/git/config-seqera
+[includeIf "gitdir:~/src/nf-core/**"]
+    path = ~/.config/git/config-nfcore
