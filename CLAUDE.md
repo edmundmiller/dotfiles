@@ -137,8 +137,14 @@ in {
 ### Testing Configuration Changes
 
 1. Make changes to relevant files
-2. Run `hey rebuild` (or `hey re` for short)
-3. If issues occur: `hey rollback`
+2. **Ensure git is in sync with jj:** Nix flakes read from git, not jj. If you've made changes via jj, ensure the git `main` branch points to the correct commit:
+   ```bash
+   git checkout main          # Ensure git is on main branch
+   jj log -r 'main | @'       # Verify jj main bookmark has your changes
+   ```
+   If git is in detached HEAD state or behind jj, the rebuild will use stale code.
+3. Run `hey rebuild` (or `hey re` for short)
+4. If issues occur: `hey rollback`
 
 ### Updating Dependencies
 
