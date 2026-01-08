@@ -56,7 +56,7 @@ in
 
         # Source theme config FIRST (sets @catppuccin_* options before plugin runs)
         ${concatMapStrings (path: ''
-          source '${path}'
+          source "${path}"
         '') cfg.rcFiles}
 
         # Plugins (catppuccin must run AFTER options are set)
@@ -72,10 +72,6 @@ in
         set -g @tmux_window_name_use_tilde "True"
         set -g @tmux_window_name_max_name_len "30"
         run-shell ${pkgs.my.tmux-window-name}/share/tmux-plugins/tmux-window-name/tmux_window_name.tmux
-
-        ${concatMapStrings (path: ''
-          source ${path}
-        '') cfg.rcFiles}
       '';
     };
 
