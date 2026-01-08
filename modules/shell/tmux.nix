@@ -33,7 +33,7 @@ in
 {
   options.modules.shell.tmux = with types; {
     enable = mkBoolOpt false;
-    rcFiles = mkOpt (listOf (either str path)) [ "${configDir}/tmux/theme.conf" ];
+    rcFiles = mkOpt (listOf str) [ "$HOME/.config/tmux/theme.conf" ];
   };
 
   config = mkIf cfg.enable {
@@ -72,6 +72,10 @@ in
         set -g @tmux_window_name_use_tilde "True"
         set -g @tmux_window_name_max_name_len "30"
         run-shell ${pkgs.my.tmux-window-name}/share/tmux-plugins/tmux-window-name/tmux_window_name.tmux
+
+        ${concatMapStrings (path: ''
+          source ${path}
+        '') cfg.rcFiles}
       '';
     };
 
