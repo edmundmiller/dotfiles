@@ -24,6 +24,7 @@
     "git-lfs"
     "gh"
     "go"
+    "gitu"
     "jjui"
     "libtool"
     "llvm"
