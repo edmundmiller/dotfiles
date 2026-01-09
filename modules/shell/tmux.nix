@@ -11,10 +11,6 @@ let
   cfg = config.modules.shell.tmux;
   inherit (config.dotfiles) configDir;
 
-  # Enhanced tmux-opencode-status with finished state detection
-  # See packages/tmux-opencode-status/AGENTS.md for details
-  tmux-opencode-status = pkgs.callPackage ../../packages/tmux-opencode-status { };
-
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
@@ -27,6 +23,7 @@ let
     export TMUX_HOME="''${TMUX_HOME:-$HOME/.config/tmux}"
     export DOTFILES="''${DOTFILES:-$HOME/.config/dotfiles}"
     export DOTFILES_BIN="''${DOTFILES_BIN:-$DOTFILES/bin}"
+    export TMUX_WINDOW_NAME_SCRIPT="${pkgs.my.tmux-window-name}/share/tmux-plugins/tmux-window-name/scripts/rename_session_windows.py"
     exec ${pkgs.tmux}/bin/tmux -f "$TMUX_HOME/config" "$@"
   '';
 in
@@ -43,7 +40,7 @@ in
 
     modules.shell.zsh = {
       rcInit = "_cache tmuxifier init -";
-      rcFiles = [ "${configDir}/tmux/aliases.zsh" ];
+      rcFiles = [ "${configDir}/tmux/aliases.zsh" "${configDir}/zsh/tmux-hooks.zsh" ];
     };
 
     home.configFile = {
@@ -64,13 +61,14 @@ in
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
         run-shell ${pkgs.tmuxPlugins.catppuccin}/share/tmux-plugins/catppuccin/catppuccin.tmux
-        run-shell ${tmux-opencode-status}/opencode-status.tmux
 
         # tmux-window-name: Smart automatic window naming based on path and running program
         set -g @tmux_window_name_shells "['zsh', 'bash', 'sh', 'fish']"
         set -g @tmux_window_name_dir_programs "['nvim', 'vim', 'vi', 'git', 'jjui', 'opencode', 'claude']"
         set -g @tmux_window_name_use_tilde "True"
         set -g @tmux_window_name_max_name_len "30"
+        set -g @tmux_window_name_substitute_sets "[('.*node.*opencode.*', 'opencode'), ('.*node.*claude.*', 'claude'), ('^(/usr)?/bin/(.+)', '\\g<2>')]"
+        set -g @tmux_window_name_custom_icons "{'opencode': '⚡', 'claude': '🧠'}"
         run-shell ${pkgs.my.tmux-window-name}/share/tmux-plugins/tmux-window-name/tmux_window_name.tmux
       '';
     };

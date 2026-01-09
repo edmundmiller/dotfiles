@@ -1,8 +1,0 @@
-  ┃
-  ┃  Tool: Reading file /Users/emiller/.config/dotfiles/packages/tmux-opencode-status/opencode_status.sh
-  ┃
-  ┃
-  ┃
-  ┃  Plan  Claude Sonnet 4.5 (latest) Anthropic                                                                      ~/.config/dotfiles:HEAD
-  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-   ⬝⬝■■■■⬝⬝  esc interrupt                                                      tab switch agent  ctrl+p commands    • OpenCode 1.1.3
