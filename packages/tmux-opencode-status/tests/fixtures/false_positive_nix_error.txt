@@ -1,9 +1,0 @@
-  ┃
-  ┃  $ nix build .#test
-  ┃  error: undefined variable 'BASH_SOURCE'
-  ┃         at /nix/store/xxx-source/default.nix:15:5
-  ┃
-  ┃
-  ┃  Plan  Claude Sonnet 4.5 (latest) Anthropic                                                                      ~/.config/dotfiles:HEAD
-  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-   ⬝⬝⬝⬝⬝⬝⬝⬝  esc interrupt                                                      tab switch agent  ctrl+p commands    • OpenCode 1.1.3

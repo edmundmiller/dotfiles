@@ -1,8 +1,0 @@
-  ┃
-  ┃  I've completed the task. The changes have been applied successfully.
-  ┃
-  ┃
-  ┃
-  ┃  Plan  Claude Sonnet 4.5 (latest) Anthropic                                                                      ~/.config/dotfiles:HEAD
-  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-   ⬝⬝⬝⬝⬝⬝⬝⬝  esc interrupt                                                      tab switch agent  ctrl+p commands    • OpenCode 1.1.3
