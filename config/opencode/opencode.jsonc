@@ -42,7 +42,8 @@
         "opencode-gemini-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
         "./plugin/opencode-jj",
-        "./plugin/boomerang-notify"
+        "./plugin/boomerang-notify",
+        "./plugin/opencode-canvas"
     ],
     // Nextflow Language Server
     "lsp": {
