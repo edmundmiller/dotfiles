@@ -3,7 +3,7 @@ with lib;
 {
   imports = [
     ./gandicloud.nix
-    ../server.nix
+    ../_server.nix
   ];
 
   modules = {
