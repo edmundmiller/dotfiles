@@ -9,8 +9,8 @@
     taskwarrior3
   ];
   imports = [
-    ../server.nix
-    ../home.nix
+    ../_server.nix
+    ../_home.nix
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
