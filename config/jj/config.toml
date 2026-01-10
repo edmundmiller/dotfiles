@@ -181,8 +181,8 @@ log = "credits_roll(0, 'none()')"
 # Prompt template for shell integration - optimized for performance
 'prompt' = '''
 separate(" ",
-  format_short_change_id_with_hidden_and_divergent_info(self),
-  format_short_commit_id(commit_id),
+  change_id.shortest(8),
+  commit_id.shortest(8),
   if(empty, label("empty", "(empty)"), ""),
   if(description == "", label("description placeholder", "(no description)"), "")
 )

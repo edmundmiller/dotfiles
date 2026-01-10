@@ -65,6 +65,10 @@ summary = { fg = "bright black" }
 "format_short_id(id)" = '''
   id.shortest(config("width").as_integer()/20)
 '''
+# Replacement for deprecated format_short_change_id_with_hidden_and_divergent_info
+"format_short_change_id(change)" = '''
+  change.change_id().shortest(config("width").as_integer()/20)
+'''
 "credits_roll_w(width, max_summary_lines, statted_revset)" = '''
   label(separate(" ",
           if(current_working_copy, "current_working_copy"),
@@ -75,7 +79,7 @@ summary = { fg = "bright black" }
           if(self.contained_in("trunk()"), "trunk"),
         ),
     separate(label("mark", ' '),
-      format_short_change_id_with_hidden_and_divergent_info(self),
+      format_short_change_id(self),
         coalesce(
           if(self.contained_in("left_pin"), label("pin","⚑")),
           if(self.contained_in("left_pin::"), label("mark","↓")),
@@ -160,7 +164,6 @@ credits_roll_node = '''
       if(!self, "🮀"),
       if(root, "┴"),
       if(conflict, "×"),
-      if(git_head, if(immutable, "◈", "◉")),
       if(empty, if(immutable, "◇", "○")),
       if(immutable, "◆"),
       "●"
