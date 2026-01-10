@@ -241,9 +241,10 @@
             }
         }
     },
-    // Instructions - global rules
+    // Instructions - consolidated (reduced from ~287 to ~70 lines)
     "instructions": [
-        "~/.config/opencode/GLOBAL_INSTRUCTIONS.md",
-        "~/.config/opencode/rules/*.md"
+        "~/.config/opencode/INSTRUCTIONS.md",
+        "~/.config/opencode/rules/jj-beads-merge.md",
+        "~/.config/opencode/rules/skill-locations.md"
     ]
 }
