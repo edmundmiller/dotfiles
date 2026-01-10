@@ -17,7 +17,7 @@ in
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      jdk19
+      jdk
       # my.nf-core
       my.gxf2bed
       my.snakefmt
