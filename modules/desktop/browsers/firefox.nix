@@ -42,7 +42,7 @@ in
   config = mkIf cfg.enable (let
     profileName = if cfg.profileName != null then cfg.profileName else config.user.name;
   in {
-    nixpkgs.overlays = [ inputs.nur.overlay ];
+    nixpkgs.overlays = [ inputs.nur.overlays.default ];
     services.psd.enable = true;
 
     # Prevent auto-creation of ~/Desktop. The trailing slash is necessary; see
