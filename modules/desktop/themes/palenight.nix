@@ -41,8 +41,9 @@ in
         terminal = 14;
       };
     };
-    stylix.cursor.package = pkgs.catppuccin-cursors;
-    stylix.cursor.name = "frappeDark";
+    stylix.cursor.package = pkgs.catppuccin-cursors.frappeDark;
+    stylix.cursor.name = "catppuccin-frappe-dark-cursors";
+    stylix.cursor.size = 24;
 
     stylix.opacity.terminal = 0.97;
 
