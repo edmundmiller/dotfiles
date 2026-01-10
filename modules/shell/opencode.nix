@@ -40,7 +40,8 @@ in
       # These can be symlinked (no node module resolution needed)
       "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
       "opencode/AGENTS.md".source = "${configDir}/opencode/AGENTS.md";
-      "opencode/GLOBAL_INSTRUCTIONS.md".source = "${configDir}/opencode/GLOBAL_INSTRUCTIONS.md";
+      "opencode/INSTRUCTIONS.md".source = "${configDir}/opencode/INSTRUCTIONS.md";
+      "opencode/reference".source = "${configDir}/opencode/reference";
       "opencode/rules".source = "${configDir}/opencode/rules";
       "opencode/agent".source = "${configDir}/opencode/agent";
       "opencode/command".source = "${configDir}/opencode/command";
