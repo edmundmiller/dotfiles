@@ -18,7 +18,7 @@ in
 {
   options.modules.desktop.browsers.firefox = with types; {
     enable = mkBoolOpt false;
-    profileName = mkOpt types.str null;
+    profileName = mkOpt (nullOr str) null;
 
     settings =
       mkOpt'
@@ -53,7 +53,7 @@ in
 
     home-manager.users.${config.user.name}.programs.firefox = {
       enable = true;
-      package = pkgs.floorp.override {
+      package = pkgs.floorp-bin.override {
         nativeMessagingHosts = [
           pkgs.tridactyl-native
           pkgs.gnome-browser-connector
