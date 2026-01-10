@@ -2,8 +2,8 @@
 { pkgs, ... }:
 {
   imports = [
-    ../server.nix
-    ../home.nix
+    ../_server.nix
+    ../_home.nix
     ./hardware-configuration.nix
     ./nas.nix
     ./disko.nix

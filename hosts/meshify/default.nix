@@ -1,7 +1,7 @@
 { lib, pkgs, ... }:
 {
   imports = [
-    ../home.nix
+    ../_home.nix
     ./disko.nix
     ./hardware-configuration.nix
   ];
