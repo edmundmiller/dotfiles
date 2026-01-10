@@ -47,6 +47,10 @@
     try.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
+    
+    opencode.url = "github:anomalyco/opencode/dev";
+    opencode.inputs.nixpkgs.follows = "nixpkgs";
+
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
   };
