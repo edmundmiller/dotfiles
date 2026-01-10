@@ -1022,6 +1022,27 @@
         "type": "github"
       }
     },
+    "opencode": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1768011522,
+        "narHash": "sha256-QktE5m7RmrGq3Z8z7u8e8VDrNQwqNlA26Za9x9kyzN4=",
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "rev": "e30562d5f4e7bf4b76c6453fa3904d0dc753081d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "ref": "dev",
+        "repo": "opencode",
+        "type": "github"
+      }
+    },
     "opnix": {
       "inputs": {
         "flake-utils": "flake-utils_2",
@@ -1058,6 +1079,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nur": "nur",
         "op-shell-plugins": "op-shell-plugins",
+        "opencode": "opencode",
         "opnix": "opnix",
         "stylix": "stylix",
         "treefmt-nix": "treefmt-nix_3",

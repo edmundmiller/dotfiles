@@ -3,6 +3,7 @@
   options,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 with lib;
@@ -11,6 +12,18 @@ let
   cfg = config.modules.shell.opencode;
   inherit (config.dotfiles) configDir;
   opencodeConfigDir = "${config.user.home}/.config/opencode";
+  opencodePkg = inputs.opencode.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
+    postPatch =
+      (old.postPatch or "")
+      + ''
+        substituteInPlace packages/opencode/src/session/prompt.ts \
+          --replace 'tools[item.id]' 'tools[`oc_''${item.id}`]' \
+          --replace 'id: item.id' 'id: `oc_''${item.id}`'
+        # Strip prefix from incoming tool names
+        substituteInPlace packages/opencode/src/session/processor.ts \
+          --replace 'value.toolName' 'value.toolName.replace(/^oc_/, "")'
+      '';
+  });
 in
 {
   options.modules.shell.opencode = {
@@ -19,8 +32,8 @@ in
 
   config = mkIf cfg.enable {
     # On Darwin, opencode is installed via homebrew for better integration
-    user.packages = with pkgs;
-      lib.optionals (!pkgs.stdenv.isDarwin) [ unstable.opencode ];
+    # But we need the patched version from the flake
+    user.packages = with pkgs; [ opencodePkg ];
 
     home.configFile = {
       # OpenCode uses XDG config directory: ~/.config/opencode/
