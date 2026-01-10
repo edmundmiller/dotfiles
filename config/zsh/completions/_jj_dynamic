@@ -1,5 +1,1 @@
-#compdef jj
-# Dynamic JJ completion using the official method from JJ docs
-
-# Use JJ's built-in dynamic completion engine
-eval "$(COMPLETE=zsh jj)"
+/nix/store/7d0fmk1jmkga6l9j62kcgska384in8c9-home-manager-files/.config/zsh/completions/_jj_dynamic
