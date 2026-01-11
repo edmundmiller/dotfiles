@@ -36,11 +36,10 @@ stdenv.mkDerivation rec {
     cp scripts/*.py $out/share/tmux-plugins/tmux-window-name/scripts/
     chmod +x $out/share/tmux-plugins/tmux-window-name/scripts/*.py
 
-    # Wrap the Python scripts to use our Python with libtmux
-    for script in $out/share/tmux-plugins/tmux-window-name/scripts/*.py; do
-      wrapProgram "$script" \
-        --set PATH "${pythonWithLibtmux}/bin:$PATH"
-    done
+    # Wrap ONLY the main entry point script (not library modules like path_utils.py)
+    # wrapProgram adds shell headers which corrupt Python module imports
+    wrapProgram "$out/share/tmux-plugins/tmux-window-name/scripts/rename_session_windows.py" \
+      --set PATH "${pythonWithLibtmux}/bin:$PATH"
 
     chmod +x $out/share/tmux-plugins/tmux-window-name/tmux_window_name.tmux
 
