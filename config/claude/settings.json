@@ -106,10 +106,7 @@
       "Bash(jj config get:*)",
       "Bash(jj config list:*)",
       "Bash(jj config set:*)",
-      "Bash(jj squash:*)",
       "Bash(jj split:*)",
-      "Bash(jj abandon:*)",
-      "Bash(jj undo:*)",
       "Bash(jj commit:*)",
       "Bash(jj amend:*)",
       "Bash(jj absorb:*)",
@@ -185,6 +182,19 @@
       "mcp__plugin_context7_context7__resolve-library-id"
     ],
     "deny": ["mcp__git__*"]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jj show"
+          }
+        ]
+      }
+    ]
   },
   "statusLine": {
     "type": "command",

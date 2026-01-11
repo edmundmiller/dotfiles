@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# Claude Code statusline with comprehensive jj information
+
+set -euo pipefail
+
+# Colors and formatting
+RESET='\033[0m'
+BOLD='\033[1m'
+DIM='\033[2m'
+CYAN='\033[36m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+RED='\033[31m'
+BLUE='\033[34m'
+MAGENTA='\033[35m'
+
+# Check if we're in a jj repository
+if ! command -v jj &> /dev/null; then
+    echo -e "${DIM}jj not available${RESET}"
+    exit 0
+fi
+
+# Get jj info
+JJ_ROOT=$(jj root 2>/dev/null || echo "")
+if [[ -z "$JJ_ROOT" ]]; then
+    echo -e "${DIM}not a jj repo${RESET}"
+    exit 0
+fi
+
+# Get abbreviated path relative to home
+PWD_SHORT="${PWD/#$HOME/\~}"
+# Further abbreviate: ~/foo/bar/baz -> ~/f/b/baz (keep last component full)
+if [[ "$PWD_SHORT" =~ ^(~)/(.+)/([^/]+)$ ]]; then
+    PREFIX="${BASH_REMATCH[1]}"
+    MIDDLE="${BASH_REMATCH[2]}"
+    LAST="${BASH_REMATCH[3]}"
+    # Abbreviate middle parts
+    MIDDLE_SHORT=$(echo "$MIDDLE" | sed -E 's|([^/])[^/]*/|\1/|g')
+    PWD_SHORT="${PREFIX}/${MIDDLE_SHORT}/${LAST}"
+fi
+
+# Get current change info
+CHANGE_ID=$(jj log -r @ --no-graph -T 'change_id.short()' 2>/dev/null || echo "")
+DESCRIPTION=$(jj log -r @ --no-graph -T 'description.first_line()' 2>/dev/null || echo "")
+IS_EMPTY=$(jj log -r @ --no-graph -T 'if(empty, "true", "false")' 2>/dev/null || echo "false")
+BOOKMARKS=$(jj log -r @ --no-graph -T 'bookmarks' 2>/dev/null || echo "")
+
+# Get closest bookmark and distance (for commits ahead/behind)
+# Find the closest ancestor with a bookmark
+CLOSEST_BOOKMARK=""
+COMMITS_AHEAD=0
+if [[ -n "$BOOKMARKS" && "$BOOKMARKS" != " " ]]; then
+    CLOSEST_BOOKMARK="$BOOKMARKS"
+else
+    # Find closest bookmark in ancestors
+    CLOSEST_BOOKMARK=$(jj log -r 'ancestors(@) & bookmarks()' --limit 1 --no-graph -T 'bookmarks' 2>/dev/null || echo "")
+    if [[ -n "$CLOSEST_BOOKMARK" && "$CLOSEST_BOOKMARK" != " " ]]; then
+        # Count commits between @ and the bookmark
+        BOOKMARK_REVSET=$(echo "$CLOSEST_BOOKMARK" | tr -d ' ')
+        COMMITS_AHEAD=$(jj log -r "$BOOKMARK_REVSET..@" --no-graph -T 'commit_id' 2>/dev/null | wc -l || echo "0")
+        COMMITS_AHEAD=$(echo "$COMMITS_AHEAD" | tr -d '[:space:]')
+    fi
+fi
+
+# Get file statistics from jj status
+ADDED=$(jj status 2>/dev/null | grep -c '^A ' || echo "0")
+MODIFIED=$(jj status 2>/dev/null | grep -c '^M ' || echo "0")
+DELETED=$(jj status 2>/dev/null | grep -c '^D ' || echo "0")
+# Trim whitespace and ensure numeric
+ADDED=$(echo "$ADDED" | tr -d '[:space:]')
+MODIFIED=$(echo "$MODIFIED" | tr -d '[:space:]')
+DELETED=$(echo "$DELETED" | tr -d '[:space:]')
+ADDED=${ADDED:-0}
+MODIFIED=${MODIFIED:-0}
+DELETED=${DELETED:-0}
+
+# Check for conflicts
+HAS_CONFLICTS=$(jj log -r @ --no-graph -T 'if(conflict, "true", "false")' 2>/dev/null || echo "false")
+
+# Truncate description (max 35 chars to leave room for other info)
+MAX_DESC_LEN=35
+if [[ ${#DESCRIPTION} -gt $MAX_DESC_LEN ]]; then
+    DESCRIPTION="${DESCRIPTION:0:$MAX_DESC_LEN}…"
+fi
+
+# Build statusline
+STATUSLINE="${DIM}${PWD_SHORT}${RESET}"
+
+# Add bookmark info
+if [[ -n "$CLOSEST_BOOKMARK" && "$CLOSEST_BOOKMARK" != " " ]]; then
+    BOOKMARK_DISPLAY=$(echo "$CLOSEST_BOOKMARK" | tr -d ' ')
+    if [[ $COMMITS_AHEAD -gt 0 ]]; then
+        STATUSLINE="${STATUSLINE} ${BLUE}${BOOKMARK_DISPLAY}${RESET}${YELLOW}@+${COMMITS_AHEAD}${RESET}"
+    else
+        STATUSLINE="${STATUSLINE} ${BLUE}${BOOKMARK_DISPLAY}${RESET}"
+    fi
+fi
+
+# Add change ID
+STATUSLINE="${STATUSLINE} ${MAGENTA}${CHANGE_ID}${RESET}"
+
+# Add description
+if [[ -n "$DESCRIPTION" ]]; then
+    STATUSLINE="${STATUSLINE} ${CYAN}\"${DESCRIPTION}\"${RESET}"
+else
+    STATUSLINE="${STATUSLINE} ${DIM}(no description)${RESET}"
+fi
+
+# Add empty indicator
+if [[ "$IS_EMPTY" == "true" ]]; then
+    STATUSLINE="${STATUSLINE} ${DIM}∅${RESET}"
+fi
+
+# Add file stats if there are changes
+if [[ $ADDED -gt 0 ]] || [[ $MODIFIED -gt 0 ]] || [[ $DELETED -gt 0 ]]; then
+    STATUSLINE="${STATUSLINE} ${DIM}[${RESET}"
+    [[ $ADDED -gt 0 ]] && STATUSLINE="${STATUSLINE}${GREEN}+${ADDED}${RESET}"
+    [[ $MODIFIED -gt 0 ]] && STATUSLINE="${STATUSLINE}${YELLOW}~${MODIFIED}${RESET}"
+    [[ $DELETED -gt 0 ]] && STATUSLINE="${STATUSLINE}${RED}-${DELETED}${RESET}"
+    STATUSLINE="${STATUSLINE}${DIM}]${RESET}"
+fi
+
+# Add conflict indicator
+if [[ "$HAS_CONFLICTS" == "true" ]]; then
+    STATUSLINE="${STATUSLINE} ${RED}✗${RESET}"
+fi
+
+echo -e "$STATUSLINE"

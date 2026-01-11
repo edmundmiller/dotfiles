@@ -7,6 +7,9 @@ mafredri/zsh-async
 # Prompt theme - load after zsh-async for async jj support
 romkatv/powerlevel10k
 
+# JJ (Jujutsu) integration for vcs_info and prompt
+rkh/zsh-jj
+
 # Completions system - load early as fpath
 zsh-users/zsh-completions kind:fpath path:src
 

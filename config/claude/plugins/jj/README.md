@@ -22,6 +22,10 @@ Merge commits in stack. Use for WIP commits or combining related changes before 
 
 Remove empty jj workspaces.
 
+### `/todo-squash [base-revision]`
+
+Clean up JJ changes created by the todo-commit hook. Provides strategies for squashing todo changes into meaningful commits. See [Todo-Commit Workflow](./TODO-COMMIT-WORKFLOW.md) for details.
+
 ## Quick Start
 
 ```bash
@@ -55,6 +59,7 @@ Skills activate automatically based on context. Slash commands require explicit 
 
 **Hooks:**
 
+- **Todo-Commit Automation:** Creates JJ changes for each todo, auto-switches as work progresses. See [Todo-Commit Workflow](./TODO-COMMIT-WORKFLOW.md)
 - **Plan-Driven:** Creates "plan:" commit for substantial tasks, validates at session end
 - **Git Translation:** Intercepts git commands, suggests jj equivalents
 - **Auto-formatting:** Runs `jj fix -s @` after edits
@@ -63,113 +68,6 @@ Skills activate automatically based on context. Slash commands require explicit 
 **Git translation:** `git status` → `jj st`, `git commit` → `jj commit`, `git log` → `jj log`, `git checkout` → `jj new`, etc.
 
 **hunk.nvim:** Works as diff editor for interactive splitting
-
-## Utility Scripts
-
-The plugin includes reusable bash utility scripts that provide a clean API for common jj operations:
-
-### `hooks/jj-state.sh`
-
-State inspection functions for checking commit status:
-
-```bash
-# Source the script
-source "$SCRIPT_DIR/../hooks/jj-state.sh"
-
-# Check if commit has description
-has_desc=$(get_commit_state)  # Returns: "has" or "none"
-
-# Check if commit is empty
-is_empty=$(is_empty_commit)  # Returns: "empty" or "has_changes"
-
-# Get working copy status
-status=$(get_working_copy_status)  # Returns: jj status output
-```
-
-### `hooks/jj-templates.sh`
-
-Template formatting functions for consistent commit display:
-
-```bash
-# Source the script
-source "$SCRIPT_DIR/../hooks/jj-templates.sh"
-
-# Format single commit (current by default)
-commit=$(format_commit_short)      # Returns: "abc123: commit message"
-parent=$(format_commit_short '@-')  # Format specific revision
-
-# Format multiple commits as list
-list=$(format_commit_list '@|@-')  # Returns multi-line list
-
-# Format ancestor chain
-ancestors=$(format_ancestors 3)    # Returns: last 3 ancestors
-```
-
-### `hooks/jj-diff-context.sh`
-
-Diff operations and analysis for AI consumption:
-
-```bash
-# Source the script
-source "$SCRIPT_DIR/../hooks/jj-diff-context.sh"
-
-# Get diff summary
-summary=$(get_diff_summary)  # Changed files for current commit
-parent_summary=$(get_diff_summary '@-')  # For specific revision
-
-# Get diff statistics
-stats=$(get_diff_stats)  # Line change statistics
-
-# Extract changed files
-files=$(extract_changed_files)  # Newline-separated file list
-echo "$files" | while read -r file; do
-    echo "Changed: $file"
-done
-
-# Format for AI consumption
-ai_context=$(format_diff_for_ai)  # Formatted diff summary + stats
-```
-
-### `hooks/pattern-expand.sh`
-
-Pattern expansion for split operations:
-
-```bash
-# Source the script
-source "$SCRIPT_DIR/../hooks/pattern-expand.sh"
-
-# Expand pattern keywords
-test_patterns=$(expand_pattern "test")    # Test file globs
-docs_patterns=$(expand_pattern "docs")    # Documentation globs
-config_patterns=$(expand_pattern "config") # Config file globs
-custom_patterns=$(expand_pattern "*.md")  # Custom glob
-
-# Use in jj move command
-jj new @
-eval "jj move --from @- $test_patterns"  # Move test files to child commit
-```
-
-**Supported patterns:**
-
-- `test` - Test and spec files (_.test._, _.spec._, test\_*, *Test.\*)
-- `docs` - Documentation (_.md, README_, CHANGELOG*, docs/\*\*/*)
-- `config` - Configuration (_.json, _.yaml, *.toml, .*rc, .\*ignore)
-- Custom - Any glob pattern (e.g., "_.tsx", "src/\*\*/_.py")
-
-**Benefits:**
-
-- DRY principle: Eliminates duplication across commands
-- Single source of truth for state, formatting, diffs, and patterns
-- Testable: Comprehensive pytest coverage (39 tests)
-- Reusable: Easy to integrate into new commands
-- Consistent: Pattern expansion logic centralized
-
-**Testing:**
-
-```bash
-# Run all utility script tests
-uvx pytest test_hook_scripts.py -v  # 39 tests covering all 4 scripts
-```
 
 ## Installation
 
@@ -195,18 +93,10 @@ bun test hooks/jj-hooks.test.mjs
 ```
 
 **Test Coverage:**
-
 - Git-to-jj translator: Command interception, read-only vs. write detection, mapping accuracy
 - Plan commit: Task vs. question detection, pattern matching, edge cases
 - Integration helper: Session validation, error handling
 - Workflow scenarios: Real-world command sequences
-- Utility scripts (39 tests total):
-  - State inspection: commit state, emptiness checks (5 tests)
-  - Template formatting: commit display, lists, ancestors (6 tests)
-  - Diff operations: summary, stats, file extraction, AI formatting (5 tests)
-  - Pattern expansion: test/docs/config patterns, custom globs (9 tests)
-  - Script structure: shebangs, permissions, error handling (12 tests)
-  - Integration: multi-script sourcing, directory independence (2 tests)
 
 ## Troubleshooting
 
