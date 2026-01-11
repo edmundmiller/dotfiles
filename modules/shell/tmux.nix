@@ -11,14 +11,6 @@ let
   cfg = config.modules.shell.tmux;
   inherit (config.dotfiles) configDir;
 
-  # Fetch tmux-opencode-status plugin
-  tmux-opencode-status = pkgs.fetchFromGitHub {
-    owner = "IFAKA";
-    repo = "tmux-opencode-status";
-    rev = "d1cfa0e7663b0c9c4e6a51a1585986096f46ce8c";
-    sha256 = "sha256-ZoXNJPDsggi5d+5jcPAOUdTTOecIsfZrfSmE4nZSkNY=";
-  };
-
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
@@ -60,13 +52,15 @@ in
         run-shell ${pkgs.tmuxPlugins.copycat}/share/tmux-plugins/copycat/copycat.tmux
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
-        run-shell ${tmux-opencode-status}/opencode-status.tmux
-
         # tmux-window-name: Smart automatic window naming based on path and running program
+        # Abbreviations: OC=opencode, CC=claude, V=vim/nvim, G=git, JJ=jjui, λ=shell
         set -g @tmux_window_name_shells "['zsh', 'bash', 'sh', 'fish']"
         set -g @tmux_window_name_dir_programs "['nvim', 'vim', 'vi', 'git', 'jjui', 'opencode', 'claude']"
         set -g @tmux_window_name_use_tilde "True"
-        set -g @tmux_window_name_max_name_len "30"
+        set -g @tmux_window_name_max_name_len "24"
+        set -g @tmux_window_name_substitute_sets "[('.*node.*opencode.*', 'opencode'), ('.*node.*claude.*', 'claude'), ('^(/usr)?/bin/(.+)', '\\\\g<2>')]"
+        set -g @tmux_window_name_icon_style "icon"
+        set -g @tmux_window_name_custom_icons "{'opencode': 'OC', 'claude': 'CC', 'nvim': 'V', 'vim': 'V', 'vi': 'V', 'git': 'G', 'jjui': 'JJ', 'zsh': 'λ', 'bash': 'λ', 'sh': 'λ', 'fish': 'λ'}"
         run-shell ${pkgs.my.tmux-window-name}/share/tmux-plugins/tmux-window-name/tmux_window_name.tmux
 
         ${concatMapStrings (path: ''
