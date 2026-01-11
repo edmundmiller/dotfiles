@@ -13,7 +13,7 @@ set -as terminal-features ',ghostty:extkeys'
 
 new-session     # spawn session if attaching when none are running
 
-setw -g automatic-rename on      # rename window after current program
+setw -g automatic-rename off      # rename window after current program
 set  -g renumber-windows on      # renumber windows when one is closed
 # Zero-based indexing is fine in programming languages, but not so much in a
 # multiplexer when zero is on the other side of the keyboard.

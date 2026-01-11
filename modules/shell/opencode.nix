@@ -39,9 +39,9 @@ in
       # OpenCode uses XDG config directory: ~/.config/opencode/
       # These can be symlinked (no node module resolution needed)
       "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
+      "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
       "opencode/AGENTS.md".source = "${configDir}/opencode/AGENTS.md";
-      "opencode/INSTRUCTIONS.md".source = "${configDir}/opencode/INSTRUCTIONS.md";
-      "opencode/reference".source = "${configDir}/opencode/reference";
+      "opencode/GLOBAL_INSTRUCTIONS.md".source = "${configDir}/opencode/GLOBAL_INSTRUCTIONS.md";
       "opencode/rules".source = "${configDir}/opencode/rules";
       "opencode/agent".source = "${configDir}/opencode/agent";
       "opencode/command".source = "${configDir}/opencode/command";

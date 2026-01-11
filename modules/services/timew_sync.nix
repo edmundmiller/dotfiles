@@ -9,7 +9,6 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.timew_sync;
-  homeDir = config.users.users.${config.user.name}.home;
 in
 {
   options.modules.services.timew_sync = {
@@ -17,7 +16,7 @@ in
   };
 
   # NixOS-only service (OCI containers)
-  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
+  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
     # Enable podman for OCI containers
     virtualisation.podman = {
       enable = true;
@@ -30,8 +29,8 @@ in
 
     # Ensure data directory exists with correct permissions
     systemd.tmpfiles.rules = [
-      "d ${homeDir}/timew-sync-server 0750 ${config.user.name} users -"
-      "d ${homeDir}/timew-sync-server/authorized_keys 0750 ${config.user.name} users -"
+      "d /home/emiller/timew-sync-server 0750 emiller users -"
+      "d /home/emiller/timew-sync-server/authorized_keys 0750 emiller users -"
     ];
 
     virtualisation.oci-containers.containers."timew-sync-server" = {
@@ -39,7 +38,7 @@ in
       image = "timewarrior-synchronize/timew-sync-server:latest";
       ports = [ "8081:8080" ];
       volumes = [
-        "${homeDir}/timew-sync-server:/app/data"
+        "/home/emiller/timew-sync-server:/app/data"
       ];
       # TODO: Remove --no-auth after testing and add proper authentication
       cmd = [ "start" "--port" "8080" "--no-auth" "--keys-location" "/app/data/authorized_keys" ];

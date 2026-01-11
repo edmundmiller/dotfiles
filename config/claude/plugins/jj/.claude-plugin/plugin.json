@@ -24,6 +24,15 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "TodoWrite",
+        "hooks": [
+          {
+            "type": "script",
+            "script": "./hooks/todo-commit-hook.py"
+          }
+        ]
+      },
+      {
         "matcher": "Edit|MultiEdit",
         "hooks": [
           {

@@ -37,13 +37,11 @@
         "@franlol/opencode-md-table-formatter@latest",
         "@mohak34/opencode-notifier",
         "opencode-beads",
-        "@tarquinen/opencode-smart-title",
         "@tarquinen/opencode-dcp@latest",
         "opencode-gemini-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
         "./plugin/opencode-jj",
-        "./plugin/boomerang-notify",
-        "./plugin/opencode-canvas"
+        "./plugin/boomerang-notify"
     ],
     // Nextflow Language Server
     "lsp": {
@@ -79,71 +77,177 @@
             }
         }
     },
-    // Permission configuration - permissive default with targeted safety guards
+    // Permission configuration - merged existing + Nextflow ecosystem
     "permission": {
         "bash": {
-            // Default: allow most commands (we use JJ, everything is undoable)
-            "*": "allow",
-
-            // === INTERACTIVE COMMANDS (will hang - block them) ===
-            // Git interactive
-            "git add -i *": "deny",
-            "git add -p *": "deny",
-            "git add --interactive *": "deny",
-            "git add --patch *": "deny",
-            "git rebase -i *": "deny",
-            "git rebase --interactive *": "deny",
-            "git commit": "deny",
-            "git commit -a": "deny",
-            // JJ interactive (editors)
-            "jj describe": "deny",
-            "jj split": "deny",
-            "jj squash": "deny",
-            "jj commit": "deny",
-            // Editors/pagers (will hang)
-            "vim *": "deny",
-            "vi *": "deny",
-            "nano *": "deny",
-            "emacs *": "deny",
-            "less": "deny",
-            "more": "deny",
-            "man *": "deny",
-
-            // === DESTRUCTIVE OPERATIONS (ask first) ===
-            // System destruction
-            "rm -rf /": "deny",
-            "rm -rf /*": "deny",
-            "sudo rm -rf *": "ask",
-            "chmod -R 777 *": "ask",
-            // Git force operations
-            "git push --force *": "ask",
-            "git push -f *": "ask",
-            "git reset --hard *": "ask",
-            // Nix/Darwin system changes
-            "nix-collect-garbage *": "ask",
-            "darwin-rebuild *": "ask",
-            // Docker cleanup
-            "docker system prune *": "ask",
-            // Package removal
-            "brew uninstall *": "ask",
-            "pip uninstall *": "ask",
-            "npm uninstall -g *": "ask",
-            // Seqera Platform destructive
-            "tw pipelines delete *": "ask",
-            "tw runs delete *": "ask",
-            "tw datasets delete *": "ask",
-            "tw compute-envs delete *": "ask",
-            // nf-core modifications
+            // Nextflow commands
+            "nextflow config": "allow",
+            "nextflow log *": "allow",
+            "nextflow lint *": "allow",
+            "nextflow info *": "allow",
+            "nextflow list *": "allow",
+            "nextflow view *": "allow",
+            "nextflow run *": "allow",
+            "nextflow pull *": "allow",
+            "nextflow drop *": "allow",
+            "nextflow clean *": "ask",
+            // nf-test commands
+            "nf-test test *": "allow",
+            "nf-test list *": "allow",
+            "nf-test generate *": "allow",
+            // nf-core commands
+            "nf-core list": "allow",
+            "nf-core info *": "allow",
+            "nf-core modules list *": "allow",
+            "nf-core subworkflows list *": "allow",
+            "nf-core pipelines list": "allow",
+            "nf-core lint *": "allow",
+            "nf-core download *": "ask",
             "nf-core create *": "ask",
             "nf-core modules install *": "ask",
+            "nf-core modules update *": "ask",
             "nf-core modules remove *": "ask",
-            "nf-core launch *": "ask"
+            "nf-core subworkflows install *": "ask",
+            "nf-core launch *": "ask",
+            // Seqera Platform (tw) commands
+            "tw info *": "allow",
+            "tw workspaces list": "allow",
+            "tw pipelines list *": "allow",
+            "tw runs list *": "allow",
+            "tw runs view *": "allow",
+            "tw datasets list *": "allow",
+            "tw compute-envs list *": "allow",
+            "tw credentials list": "allow",
+            "tw organizations list": "allow",
+            "tw pipelines create *": "ask",
+            "tw pipelines delete *": "ask",
+            "tw pipelines update *": "ask",
+            "tw runs launch *": "ask",
+            "tw runs cancel *": "ask",
+            "tw runs delete *": "ask",
+            "tw datasets create *": "ask",
+            "tw datasets delete *": "ask",
+            "tw compute-envs create *": "ask",
+            "tw compute-envs delete *": "ask",
+            // Wave commands
+            "wave --version": "allow",
+            "wave --help": "allow",
+            "wave *": "ask",
+            // ast-grep commands
+            "ast-grep -p *": "allow",
+            "ast-grep --pattern *": "allow",
+            "ast-grep scan *": "allow",
+            "ast-grep --config *": "allow",
+            "sg *": "allow",
+            // Nix/Darwin commands
+            "nix flake *": "allow",
+            "nix build *": "allow",
+            "nix search *": "allow",
+            "nix shell *": "allow",
+            "nix eval *": "allow",
+            "nix-collect-garbage *": "ask",
+            "darwin-rebuild *": "ask",
+            "hey *": "allow",
+            // Build tools - all operations
+            "make *": "allow",
+            "make": "allow",
+            "cargo *": "allow",
+            "go build *": "allow",
+            "go test *": "allow",
+            "go run *": "allow",
+            "go vet *": "allow",
+            "mvn *": "allow",
+            "gradle *": "allow",
+            // Python ecosystem
+            "pip list *": "allow",
+            "pip show *": "allow",
+            "uv run *": "allow",
+            "uv sync *": "allow",
+            "uv *": "allow",
+            "poetry run *": "allow",
+            "poetry show *": "allow",
+            "poetry *": "allow",
+            "ruff *": "allow",
+            "black *": "allow",
+            "mypy *": "allow",
+            "pytest *": "allow",
+            // Node ecosystem
+            "npm run *": "allow",
+            "npm run build": "allow",
+            "npm run test": "allow",
+            "npm run lint": "allow",
+            "npm run dev": "allow",
+            "npm list *": "allow",
+            "yarn *": "allow",
+            "pnpm *": "allow",
+            "npx *": "allow",
+            "eslint *": "allow",
+            "prettier *": "allow",
+            // JJ operations (all safe with undo)
+            "jj *": "allow",
+            // File operations
+            "mkdir *": "allow",
+            "touch *": "allow",
+            "chmod *": "allow",
+            "cp *": "allow",
+            "mv *": "allow",
+            "ln *": "allow",
+            "rm *": "allow",
+            // System info
+            "date *": "allow",
+            "date": "allow",
+            "env": "allow",
+            "printenv *": "allow",
+            "hostname": "allow",
+            "whoami": "allow",
+            "id": "allow",
+            "uname *": "allow",
+            "ps *": "allow",
+            "top -l *": "allow",
+            // Network info (read-only)
+            "ping -c *": "allow",
+            "curl *": "allow",
+            "wget *": "allow",
+            "dig *": "allow",
+            "nslookup *": "allow",
+            "host *": "allow",
+            // Package managers (read operations)
+            "brew list *": "allow",
+            "brew info *": "allow",
+            "brew search *": "allow",
+            "apt list *": "allow",
+            "dnf list *": "allow",
+            // Text processing
+            "jq *": "allow",
+            "yq *": "allow",
+            "awk *": "allow",
+            "sed *": "allow",
+            "sort *": "allow",
+            "uniq *": "allow",
+            "cut *": "allow",
+            "tr *": "allow",
+            // File readers
+            "bat *": "allow",
+            "less *": "allow",
+            "more *": "allow",
+            // Search tools
+            "ag *": "allow",
+            "ack *": "allow",
+            "rg *": "allow",
+            // Server/dev commands
+            "docker *": "allow",
+            "docker-compose *": "allow",
+            "kubectl get *": "allow",
+            "kubectl describe *": "allow",
+            "kubectl logs *": "allow",
+            // Beads issue tracker
+            "bd *": "allow"
         },
         "edit": "allow",
         "write": "allow",
         "webfetch": "allow",
         "doom_loop": "allow",
-        "external_directory": "ask"
+        "external_directory": "allow"
     },
     // Nextflow development agents
     "agent": {
@@ -161,35 +265,128 @@
                 "edit": "ask",
                 "write": "ask",
                 "bash": {
-                    // Default allow for read operations
-                    "*": "allow",
-                    // Block file modifications
-                    "rm *": "ask",
-                    "mv *": "ask",
-                    "cp *": "ask",
-                    "mkdir *": "ask",
-                    "touch *": "ask",
-                    "chmod *": "ask",
-                    // Block git/jj writes
-                    "git add *": "ask",
-                    "git commit *": "ask",
-                    "git push *": "ask",
-                    "git merge *": "ask",
-                    "jj new *": "ask",
-                    "jj describe *": "ask",
-                    "jj squash *": "ask",
-                    // Block package installs
-                    "npm install *": "ask",
-                    "pip install *": "ask",
-                    "brew install *": "ask",
-                    // Block docker writes
-                    "docker run *": "ask",
-                    "docker build *": "ask",
-                    "docker rm *": "ask",
-                    // Block beads modifications
-                    "bd create *": "ask",
-                    "bd update *": "ask",
-                    "bd close *": "ask"
+                    // File reading - comprehensive
+                    "ls *": "allow",
+                    "cat *": "allow",
+                    "head *": "allow",
+                    "tail *": "allow",
+                    "wc *": "allow",
+                    "file *": "allow",
+                    "stat *": "allow",
+                    "which *": "allow",
+                    "type *": "allow",
+                    "less *": "allow",
+                    "more *": "allow",
+                    "bat *": "allow",
+                    // Search/grep - comprehensive
+                    "rg *": "allow",
+                    "grep *": "allow",
+                    "find *": "allow",
+                    "fd *": "allow",
+                    "fzf *": "allow",
+                    "ag *": "allow",
+                    "ack *": "allow",
+                    // Git read-only
+                    "git status *": "allow",
+                    "git diff *": "allow",
+                    "git log *": "allow",
+                    "git show *": "allow",
+                    "git branch *": "allow",
+                    "git remote *": "allow",
+                    "git blame *": "allow",
+                    "git ls-files *": "allow",
+                    // JJ - all operations (safe with undo)
+                    "jj *": "allow",
+                    // Build tools (check/dry-run modes)
+                    "make -n *": "allow",
+                    "make": "allow",
+                    "make test *": "allow",
+                    "cargo check *": "allow",
+                    "cargo clippy *": "allow",
+                    "cargo test *": "allow",
+                    "cargo build *": "allow",
+                    "go vet *": "allow",
+                    "go build *": "allow",
+                    "go test *": "allow",
+                    // Linters/formatters
+                    "ruff *": "allow",
+                    "black *": "allow",
+                    "prettier *": "allow",
+                    "eslint *": "allow",
+                    "pylint *": "allow",
+                    "mypy *": "allow",
+                    "pytest *": "allow",
+                    // Package info
+                    "npm list *": "allow",
+                    "npm run *": "allow",
+                    "pip list *": "allow",
+                    "pip show *": "allow",
+                    "cargo tree *": "allow",
+                    "go list *": "allow",
+                    "uv *": "allow",
+                    "poetry *": "allow",
+                    // Nextflow ecosystem
+                    "nextflow *": "allow",
+                    "nf-core *": "allow",
+                    "nf-test *": "allow",
+                    "ast-grep *": "allow",
+                    "tw *": "allow",
+                    // Nix read-only
+                    "nix flake *": "allow",
+                    "nix eval *": "allow",
+                    "nix search *": "allow",
+                    "nix-store *": "allow",
+                    "hey *": "allow",
+                    // Task/project management
+                    "task *": "allow",
+                    "just *": "allow",
+                    // System info
+                    "uname *": "allow",
+                    "env": "allow",
+                    "printenv *": "allow",
+                    "date *": "allow",
+                    "date": "allow",
+                    "pwd": "allow",
+                    "whoami": "allow",
+                    "id": "allow",
+                    "ps *": "allow",
+                    // Text processing
+                    "jq *": "allow",
+                    "yq *": "allow",
+                    "awk *": "allow",
+                    "sed *": "allow",
+                    "sort *": "allow",
+                    "uniq *": "allow",
+                    "cut *": "allow",
+                    "tr *": "allow",
+                    // Network (read-only)
+                    "curl *": "allow",
+                    "wget *": "allow",
+                    "dig *": "allow",
+                    "ping *": "allow",
+                    // Docker/k8s read
+                    "docker ps *": "allow",
+                    "docker logs *": "allow",
+                    "docker images *": "allow",
+                    "kubectl get *": "allow",
+                    "kubectl describe *": "allow",
+                    "kubectl logs *": "allow",
+                    // Beads issue tracker (read-only)
+                    "bd list *": "allow",
+                    "bd show *": "allow",
+                    "bd search *": "allow",
+                    "bd count *": "allow",
+                    "bd status *": "allow",
+                    "bd graph *": "allow",
+                    "bd comments *": "allow",
+                    "bd stale *": "allow",
+                    "bd activity *": "allow",
+                    "bd duplicates *": "allow",
+                    "bd ready *": "allow",
+                    "bd stats *": "allow",
+                    "bd doctor *": "allow",
+                    // Everything else asks
+                    "*": "ask"
                 },
                 "list": "allow"
             }
@@ -242,10 +439,9 @@
             }
         }
     },
-    // Instructions - consolidated (reduced from ~287 to ~70 lines)
+    // Instructions - global rules
     "instructions": [
-        "~/.config/opencode/INSTRUCTIONS.md",
-        "~/.config/opencode/rules/jj-beads-merge.md",
-        "~/.config/opencode/rules/skill-locations.md"
+        "~/.config/opencode/GLOBAL_INSTRUCTIONS.md",
+        "~/.config/opencode/rules/*.md"
     ]
 }

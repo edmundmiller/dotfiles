@@ -1,5 +1,10 @@
 if [ -n "${GHOSTTY_RESOURCES_DIR}" ]; then
     source "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration" 2>/dev/null || true
+    # Disable OSC 7 working directory reporting - incompatible with prise multiplexer
+    # Prise receives kitty-shell-cwd:// URLs and fails to chdir, killing splits
+    if [[ -n "$PRISE" ]]; then
+        _ghostty_report_pwd() { : }
+    fi
 fi
 # Stop TRAMP (in Emacs) from hanging or term/shell from echoing back commands
 if [[ $TERM == dumb || -n $INSIDE_EMACS ]]; then

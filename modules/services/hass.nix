@@ -9,7 +9,6 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.hass;
-  homeDir = config.users.users.${config.user.name}.home;
 in
 {
   options.modules.services.hass = {
@@ -17,12 +16,12 @@ in
   };
 
   # NixOS-only service (OCI containers)
-  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
+  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
     virtualisation.oci-containers.containers."homeassistant" = {
       autoStart = true;
       image = "ghcr.io/home-assistant/home-assistant:stable";
       volumes = [
-        "${homeDir}/HomeAssistant:/config"
+        "/home/emiller/HomeAssistant:/config"
         "/etc/localtime:/etc/localtime:ro"
       ];
       extraOptions = [

@@ -1,16 +1,15 @@
 # Go nuc yourself
 { config, pkgs, ... }:
 {
-  user.name = "emiller";
-
   # Disable dconf on headless server - no dbus session available
   home-manager.users.${config.user.name}.dconf.enable = false;
   environment.systemPackages = with pkgs; [
     taskwarrior3
+    sqlite
   ];
   imports = [
-    ../_server.nix
-    ../_home.nix
+    ../server.nix
+    ../home.nix
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
@@ -33,7 +32,6 @@
     shell = {
       bugwarrior.enable = false;
       git.enable = true;
-      opencode.enable = true;
       zsh.enable = true;
       taskwarrior = {
         enable = true;
@@ -56,16 +54,13 @@
       syncthing.enable = false;
       tailscale.enable = true;
       taskchampion.enable = true;
-      goose = {
-        enable = true;
-        port = 3002;  # 3000 used by obsidian-sync, 3001 by its secondary port
-      };
       obsidian-sync.enable = true;
       openportal.enable = true;
-      timew_sync.enable = false;
+      timew_sync.enable = true;
       transmission.enable = false;
-      deploy-rs.enable = true;
     };
+
+    # theme.active = "alucard";
   };
 
   time.timeZone = "America/Chicago";
@@ -77,7 +72,9 @@
 
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
+  # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
+    # FIXME
     enable = false;
     autoCreation = true;
     zetup = {

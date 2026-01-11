@@ -67,7 +67,7 @@ summary = { fg = "bright black" }
 '''
 # Replacement for deprecated format_short_change_id_with_hidden_and_divergent_info
 "format_short_change_id(change)" = '''
-  change.shortest(config("width").as_integer()/20)
+  change.change_id().shortest(config("width").as_integer()/20)
 '''
 "credits_roll_w(width, max_summary_lines, statted_revset)" = '''
   label(separate(" ",
@@ -79,7 +79,7 @@ summary = { fg = "bright black" }
           if(self.contained_in("trunk()"), "trunk"),
         ),
     separate(label("mark", ' '),
-      format_short_change_id(self.change_id()),
+      format_short_change_id(self),
         coalesce(
           if(self.contained_in("left_pin"), label("pin","⚑")),
           if(self.contained_in("left_pin::"), label("mark","↓")),

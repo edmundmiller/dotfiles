@@ -15,25 +15,21 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable (mkMerge [
-    {
-      services.nginx = {
-        enable = true;
+  # NixOS-only service
+  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
+    services.nginx = {
+      enable = true;
 
-        # Use recommended settings
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-      };
-    }
+      # Use recommended settings
+      recommendedGzipSettings = true;
+      recommendedOptimisation = true;
+      recommendedProxySettings = true;
+      recommendedTlsSettings = true;
+    };
 
-    # Firewall configuration (NixOS only)
-    (optionalAttrs (!isDarwin) {
-      networking.firewall.allowedTCPPorts = [
-        80
-        443
-      ];
-    })
-  ]);
+    networking.firewall.allowedTCPPorts = [
+      80
+      443
+    ];
+  });
 }
