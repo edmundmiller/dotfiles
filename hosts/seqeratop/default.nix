@@ -76,6 +76,7 @@
 
       taps = [
         # "rockorager/tap"  # Prise terminal multiplexer
+        "quarylabs/quary" # sqruff SQL linter
       ];
       brews = [
         "duckdb"
