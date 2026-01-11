@@ -390,7 +390,7 @@ ${jjEquivalent}
 
 // Run if this is the main module
 if (import.meta.main) {
-  main();
+  main().catch(console.error);
 }
 
 // Export for testing

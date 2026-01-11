@@ -15,7 +15,7 @@ in
   };
 
   # Only apply on NixOS - Darwin doesn't use sudo for activation
-  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
+  config = mkIf (cfg.enable && !isDarwin) {
     # Passwordless sudo for deploy-rs activation (agentic deployments)
     security.sudo.extraRules = [
       {
@@ -25,5 +25,5 @@ in
         ];
       }
     ];
-  });
+  };
 }

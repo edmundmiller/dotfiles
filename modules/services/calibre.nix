@@ -9,7 +9,6 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.calibre;
-  homeDir = config.users.users.${config.user.name}.home;
 in
 {
   options.modules.services.calibre = {
@@ -17,9 +16,9 @@ in
   };
 
   # NixOS-only service
-  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
+  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
     services.calibre-server.enable = true;
-    services.calibre-server.libraries = [ "${homeDir}/calibre" ];
+    services.calibre-server.libraries = [ "/home/emiller/calibre" ];
 
     networking.firewall.allowedTCPPorts = [ 8080 ];
   });

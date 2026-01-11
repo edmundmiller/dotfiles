@@ -16,7 +16,7 @@ in
   };
 
   # NixOS-only service
-  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
+  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
     services.paperless.enable = true;
 
     networking.firewall.allowedTCPPorts = [ 28981 ];

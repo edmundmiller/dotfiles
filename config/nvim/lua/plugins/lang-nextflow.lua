@@ -1,15 +1,11 @@
 -- Nextflow language support
--- Using official tree-sitter-nextflow parser from rewrite branch
 return {
   -- Treesitter configuration for Nextflow
   {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
     opts = function(_, opts)
-      -- Ensure opts.ensure_installed exists
-      opts.ensure_installed = opts.ensure_installed or {}
-
-      -- Register custom parser for nextflow BEFORE adding to ensure_installed
+      -- Register the Nextflow parser with rewrite branch
       local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
       parser_config.nextflow = {
         install_info = {
@@ -17,45 +13,22 @@ return {
           files = { "src/parser.c" },
           branch = "rewrite",
           generate_requires_npm = false,
-          requires_generate_from_grammar = false,
         },
         filetype = "nextflow",
       }
-
-      -- Now add nextflow to ensure_installed (will auto-install on startup)
-      vim.list_extend(opts.ensure_installed, { "nextflow" })
-
+      
       return opts
-    end,
-    config = function(_, opts)
-      -- Setup treesitter with opts (includes ensure_installed)
-      require("nvim-treesitter.configs").setup(opts)
-
-      -- Register filetype for nextflow
-      vim.filetype.add({
-        extension = {
-          nf = "nextflow",
-        },
-        pattern = {
-          [".*%.nextflow"] = "nextflow",
-        },
-      })
-
-      -- Register language for treesitter
-      vim.treesitter.language.register("nextflow", "nextflow")
     end,
   },
 
   -- Mason LSP configuration
   {
-    "williamboman/mason.nvim",
-    opts = function(_, opts)
-      opts.ensure_installed = opts.ensure_installed or {}
-      vim.list_extend(opts.ensure_installed, {
+    "mason-org/mason.nvim",
+    opts = {
+      ensure_installed = {
         "nextflow-language-server",
-      })
-      return opts
-    end,
+      },
+    },
   },
 
   -- LSP configuration for Nextflow
@@ -106,20 +79,19 @@ return {
   -- Formatter support
   {
     "stevearc/conform.nvim",
-    optional = true,
-    opts = function(_, opts)
-      opts.formatters_by_ft = opts.formatters_by_ft or {}
-      opts.formatters_by_ft.nextflow = { "nextflow_lint" }
-
-      opts.formatters = opts.formatters or {}
-      opts.formatters.nextflow_lint = {
-        command = "nextflow",
-        args = { "lint", "-format", "-spaces", "4", "$FILENAME" },
-        stdin = false,
-        require_cwd = true,
-      }
-      return opts
-    end,
+    opts = {
+      formatters_by_ft = {
+        nextflow = { "nextflow_lint" },
+      },
+      formatters = {
+        nextflow_lint = {
+          command = "nextflow",
+          args = { "lint", "-format", "-spaces", "4", "$FILENAME" },
+          stdin = false,
+          require_cwd = true,
+        },
+      },
+    },
   },
 
   -- Enhanced file explorer support
@@ -154,7 +126,6 @@ return {
   -- Nextflow-specific keybindings
   {
     "folke/which-key.nvim",
-    optional = true,
     opts = function(_, opts)
       -- Set up nextflow keymaps in autocmd for filetype-specific bindings
       vim.api.nvim_create_autocmd("FileType", {

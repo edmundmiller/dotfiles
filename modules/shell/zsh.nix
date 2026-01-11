@@ -182,6 +182,12 @@ in
           '') cfg.envFiles}
           ${cfg.envInit}
         '';
+
+        # Ensure completion scripts are sourced from tracked backups to avoid
+        # nix-store symlink churn in the repo.
+        "zsh/completions/_hey".source = "${configDir}/zsh/completions/_hey.bkup";
+        "zsh/completions/_jj_fast".source = "${configDir}/zsh/completions/_jj_fast.bkup";
+        "zsh/completions/_jj_dynamic".source = "${configDir}/zsh/completions/_jj_dynamic.bkup";
       };
     }
 

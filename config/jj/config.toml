@@ -79,10 +79,7 @@ aide = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py
 'closest_bookmark(to)' = 'heads(::to & bookmarks())'
 "fork_history(to, from)" = "fork_point(to | from)..@"
 
-# Merge conflict resolution tools
-#
-# Default: diffconflicts (nvim-based)
-# For .beads/ files: use `jj resolve --tool=beads-merge`
+# Merge conflict resolution tool
 [merge-tools.diffconflicts]
 program = "nvim"
 merge-args = [
@@ -96,14 +93,6 @@ merge-args = [
   "$right",
 ]
 merge-tool-edits-conflict-markers = true
-
-# Beads merge tool for .beads/issues.jsonl conflicts
-# Uses bd's field-level 3-way merge algorithm
-# Invoke with: jj resolve --tool=beads-merge
-[merge-tools.beads-merge]
-program = "bd"
-merge-args = ["merge", "$output", "$base", "$left", "$right"]
-merge-conflict-exit-codes = [1]
 
 [ui]
 # default-command = "status"
@@ -147,13 +136,10 @@ sign-on-push = true
 push-branch-prefix = "push-"
 # Don't create unnecessary local bookmarks when cloning
 track-default-bookmark-on-clone = false
+# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
+auto-local-bookmark = true
 # Allow pushing new bookmarks to remote
 push-bookmarks-prefix = "emiller/"
-
-[remotes.origin]
-# Only auto-track your own bookmarks + shared branches (reduces clutter from team branches)
-# Use `jj bookmark track <name>@origin` to manually track others when needed
-auto-track-bookmarks = "glob:emiller/* | exact:main | exact:master | exact:dev"
 
 [revsets]
 # Equivalent to git's push.default=current
@@ -179,11 +165,14 @@ log = "credits_roll(0, 'none()')"
 
 [template-aliases]
 # Prompt template for shell integration - optimized for performance
+'format_short_change_id(id)' = 'id.shortest(4)'
+
 'prompt' = '''
 separate(" ",
-  change_id.shortest(8),
-  commit_id.shortest(8),
-  if(empty, label("empty", "(empty)"), ""),
-  if(description == "", label("description placeholder", "(no description)"), "")
+  format_short_change_id_with_hidden_and_divergent_info(self),
+  format_short_commit_id(commit_id),
+  if(empty, label("empty", "∅"), ""),
+  if(conflict, label("conflict", "✖"), ""),
+  if(description == "", label("description placeholder", "✏"), "")
 )
 '''

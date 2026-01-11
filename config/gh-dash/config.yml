@@ -1,208 +1,294 @@
-# yaml-language-server: $schema=https://gh-dash.dev/schema.json
-# GitHub Dashboard Configuration
-# Graphite-inspired PR inbox with stacked PR support and jj-spr integration
+# gh-dash Configuration
+# This file is managed by nix-darwin and symlinked from ~/.config/dotfiles/config/gh-dash/
+# A powerful GitHub dashboard for managing PRs and issues across multiple organizations
+#
+# Configuration follows best practices from "CLI-Based GitHub PR Review Tools: A Practical Guide"
+# Key features:
+# - Priority-based PR sections (urgent, needs review, recently updated)
+# - Optimal workflow integration: gh-dash for triage + Neovim (gh.nvim) for deep review
+# - tmux integration for parallel PR reviews
+# - Size-aware review workflow (guide recommends <200 lines for quick reviews)
+# - SLA-based organization (critical <2h, high <4h, normal <24h)
 
+# Pull Request Sections - Organized by priority and workflow
 prSections:
-  # Immediate Action Required
-  - title: "Needs My Review (Urgent)"
-    filters: review-requested:@me is:open sort:updated-asc
+  # High Priority - Your Work
+  - title: "🚨 Urgent - Needs My Review"
+    filters: "is:open review-requested:@me label:urgent sort:updated-desc"
     limit: 10
+    type: null
 
-  - title: "Changes Requested (My PRs)"
-    filters: author:@me is:open review:changes_requested sort:updated-desc
+  - title: "📝 My Open PRs"
+    filters: "is:open author:@me sort:updated-desc"
+    type: null
+
+  - title: "👁️ Needs My Review"
+    filters: "is:open review-requested:@me sort:updated-desc"
+    type: null
+
+  - title: "🔄 Recently Updated (Last Week)"
+    filters: "is:open involves:@me updated:>={{ nowModify \"-1w\" }} sort:updated-desc"
     limit: 15
+    type: null
 
-  - title: "Approved & Ready to Merge"
-    filters: author:@me is:open review:approved status:success -is:draft sort:updated-desc
-    limit: 10
+  - title: "🚧 Draft PRs"
+    filters: "is:open is:draft author:@me sort:updated-desc"
+    type: null
 
-  # Stacked PR Tracking
-  - title: "My Stacks (Base: main)"
-    filters: author:@me is:open base:main sort:created-desc
-    limit: 20
+  # Organization-Specific Sections
+  - title: "🧬 nf-core PRs"
+    filters: "is:open org:nf-core -author:@me involves:@me sort:updated-desc"
+    type: null
 
-  - title: "Dependent PRs (Stacked)"
-    filters: author:@me is:open -base:main -base:master sort:updated-desc
-    limit: 20
+  - title: "⚡ Nextflow PRs"
+    filters: "is:open org:nextflow-io -author:@me involves:@me sort:updated-desc"
+    type: null
 
-  - title: "Stack Activity (Recent)"
-    filters: author:@me is:open sort:updated-desc
-    limit: 15
+  - title: "🎓 Applied Genomics PRs"
+    filters: "is:open org:Applied-Genomics-UTD -author:@me sort:updated-desc"
+    type: null
 
-  # Active Work
-  - title: "My Open PRs (Active)"
-    filters: author:@me is:open -is:draft sort:updated-desc
-    limit: 25
-
-  - title: "My Drafts"
-    filters: is:draft author:@me sort:updated-desc
-    limit: 10
-
-  # Team Coordination
-  - title: "Awaiting My Review"
-    filters: review-requested:@me is:open sort:updated-desc
-    limit: 30
-
-  - title: "My PRs Awaiting Review"
-    filters: author:@me is:open review:none draft:false sort:updated-desc
-    limit: 15
-
-  - title: "Mentioned Me"
-    filters: mentions:@me -author:@me is:open sort:updated-desc
-    limit: 15
-
-  - title: "Team Discussions"
-    filters: involves:@me comments:>3 is:open sort:comments-desc
-    limit: 10
-
-  # Organization-Specific
-  - title: "nf-core PRs"
-    filters: org:nf-core involves:@me is:open sort:updated-desc
-    limit: 25
-
-  - title: "Nextflow PRs"
-    filters: org:nextflow-io involves:@me is:open sort:updated-desc
-    limit: 20
-
-  - title: "Seqera PRs"
-    filters: org:seqeralabs involves:@me is:open sort:updated-desc
-    limit: 25
+  - title: "🏢 Seqera PRs"
+    filters: "is:open org:seqeralabs -author:@me involves:@me sort:updated-desc"
+    type: null
 
   # Maintenance
-  - title: "Dependabot PRs"
-    filters: author:app/dependabot involves:@me is:open sort:created-desc
-    limit: 25
+  - title: "🤖 Dependabot PRs"
+    filters: "is:open author:app/dependabot involves:@me sort:updated-desc"
+    type: null
 
-  - title: "Stale PRs"
-    filters: author:@me is:open sort:updated-asc
-    limit: 10
+  - title: "📋 All Involved"
+    filters: "is:open involves:@me -author:@me -author:app/dependabot sort:updated-desc"
+    type: null
 
+# Issue Sections - Focus on actionable items  
 issuesSections:
-  - title: "My Issues"
-    filters: author:@me is:open sort:updated-desc
-    limit: 15
+  - title: "🐛 My Issues"
+    filters: "is:open author:@me sort:updated-desc"
 
-  - title: "Assigned to Me"
-    filters: assignee:@me is:open sort:updated-desc
-    limit: 20
+  - title: "✅ Assigned to Me"
+    filters: "is:open assignee:@me sort:updated-desc"
 
-  - title: "nf-core Issues"
-    filters: org:nf-core involves:@me is:open sort:reactions-desc
-    limit: 20
+  - title: "🧬 nf-core Issues"
+    filters: "is:open org:nf-core involves:@me -author:@me sort:reactions-desc"
 
-  - title: "Seqera Issues"
-    filters: org:seqeralabs involves:@me is:open sort:updated-desc
-    limit: 15
+  - title: "🎓 Student Issues"
+    filters: "is:open org:Applied-Genomics-UTD involves:@me -author:@me sort:updated-desc"
 
-  - title: "Hot Issues"
-    filters: involves:@me is:open sort:reactions-desc
-    limit: 10
+  - title: "🔥 Hot Issues"
+    filters: "is:open involves:@me sort:reactions-desc"
 
+# Repository refresh settings
+repo:
+  branchesRefetchIntervalSeconds: 30
+  prsRefetchIntervalSeconds: 60
+
+# Default behavior and view settings
 defaults:
+  # Start with PR view (most common workflow)
   view: prs
-  prsLimit: 25
-  issuesLimit: 20
-  refetchIntervalMinutes: 30
+  
+  # Preview settings
   preview:
     open: true
     width: 55
 
-repoPaths:
-  nf-core/*: ~/src/nf-core/*
-  seqeralabs/*: ~/src/seqera/*
-  seqera-services/*: ~/src/seqera/*
-  nextflow-io/*: ~/src/nextflow/*
-  ":owner/:repo": ~/src/:owner/:repo
+  # Limits to prevent overwhelming interface
+  prsLimit: 25
+  issuesLimit: 20
+  
+  # Quick approve comment
+  prApproveComment: "LGTM! ✅"
+  
+  # Auto-refresh every 5 minutes for active development
+  refetchIntervalMinutes: 5
 
-# Quick Search Patterns (use with / key):
-# Seqera work: org:seqeralabs OR org:seqera-services OR org:nextflow-io
-# nf-core work: org:nf-core
-# Combined: (org:seqeralabs OR org:nf-core) involves:@me
+  # Layout configuration for better readability
+  layout:
+    prs:
+      updatedAt:
+        width: 8
+      createdAt:
+        width: 8  
+        hidden: false
+      repo:
+        width: 25
+      author:
+        width: 12
+      authorIcon:
+        hidden: false
+      assignees:
+        width: 15
+        hidden: false
+      base:
+        width: 12
+        hidden: false
+      lines:
+        width: 8
+    issues:
+      updatedAt:
+        width: 8
+      createdAt:
+        width: 8
+      repo:
+        width: 20
+      creator:
+        width: 12
+      creatorIcon:
+        hidden: false
+      assignees:
+        width: 15
+        hidden: false
 
+# Custom keybindings for enhanced productivity
 keybindings:
+  # Universal commands (work in all contexts)
   universal:
-    - key: b
-      command: open https://github.com/{{.RepoName}}
-      name: Open repo in browser
-
+    # Open repository in browser
+    - key: "b"
+      name: "browser"
+      command: "open https://github.com/{{.RepoName}}"
+    
+    # Copy current URL to clipboard  
     - key: "y"
-      command: echo "https://github.com/{{.RepoName}}/pull/{{.PrNumber}}" | pbcopy
-      name: Copy PR URL
+      name: "copy url"
+      command: "echo '{{.Url}}' | pbcopy"
 
+  # PR-specific keybindings
   prs:
-    - key: o
-      command: open https://github.com/{{.RepoName}}/pull/{{.PrNumber}}
-      name: Open PR in browser
+    # Quick checkout PR locally
+    - key: "O"
+      builtin: "checkout"
 
-    - key: O
-      command: cd {{.RepoPath}} && gh pr checkout {{.PrNumber}}
-      name: Checkout PR locally
+    # Open PR in browser
+    - key: "o"
+      builtin: "open"
 
-    - key: a
-      command: gh pr review {{.PrNumber}} --repo {{.RepoName}} --approve --body "LGTM! ✅"
-      name: Quick approve
+    # Open PR in Neovim with gh.nvim (optimal workflow from guide)
+    - key: "C"
+      name: "review in nvim"
+      command: >
+        if command -v tmux &> /dev/null && [ -n "$TMUX" ]; then
+          tmux new-window -c {{.RepoPath}} "gh pr checkout {{.PrNumber}} && nvim -c 'GHOpenPR'";
+        else
+          (cd {{.RepoPath}} && gh pr checkout {{.PrNumber}} && nvim -c 'GHOpenPR');
+        fi
 
-    - key: A
-      command: gh pr review {{.PrNumber}} --repo {{.RepoName}} --approve
-      name: Approve with comment
+    # Quick approve with comment
+    - key: "a"
+      name: "approve"
+      command: "gh pr review --repo {{.RepoName}} --approve --body 'LGTM! ✅' {{.PrNumber}}"
 
-    - key: r
-      command: gh pr review {{.PrNumber}} --repo {{.RepoName}} --request-changes
-      name: Request changes
+    # Approve with custom comment
+    - key: "A"
+      name: "approve with comment"
+      command: "gh pr review --repo {{.RepoName}} --approve --body \"$(echo 'Approval comment:' && read comment && echo $comment)\" {{.PrNumber}}"
 
-    - key: m
-      command: gh pr merge {{.PrNumber}} --repo {{.RepoName}} --squash
-      name: Merge with squash
+    # Request changes
+    - key: "r"
+      name: "request changes"
+      command: "gh pr review --repo {{.RepoName}} --request-changes {{.PrNumber}}"
 
-    - key: R
-      command: gh pr ready {{.PrNumber}} --repo {{.RepoName}}
-      name: Mark draft as ready
+    # Quick merge (squash)
+    - key: "m"
+      name: "merge (squash)"
+      command: "gh pr merge --squash --repo {{.RepoName}} {{.PrNumber}}"
 
-    - key: d
-      command: GH_FORCE_TTY=1 gh pr diff {{.PrNumber}} --repo {{.RepoName}} | delta
-      name: View diff
+    # Quick merge (rebase) - useful for small PRs
+    - key: "M"
+      name: "merge (rebase)"
+      command: "gh pr merge --rebase --repo {{.RepoName}} {{.PrNumber}}"
 
-    - key: c
-      command: gh pr comment {{.PrNumber}} --repo {{.RepoName}}
-      name: Add comment
+    # Mark as ready (convert from draft)
+    - key: "R"
+      name: "ready for review"
+      command: "gh pr ready --repo {{.RepoName}} {{.PrNumber}}"
 
-    - key: J
-      command: cd {{.RepoPath}} && jj-spr land {{.PrNumber}}
-      name: Land PR with jj-spr
+    # View diff in nvim
+    - key: "d"
+      name: "view diff"
+      command: "gh pr diff --repo {{.RepoName}} {{.PrNumber}} | nvim -R -"
 
-    - key: S
-      command: cd {{.RepoPath}} && jj-spr status
-      name: Show stack status
+    # View diff with delta pager
+    - key: "D"
+      name: "view diff (delta)"
+      command: "gh pr diff --repo {{.RepoName}} {{.PrNumber}} | delta"
 
+    # Comment on PR
+    - key: "c"
+      name: "comment"
+      command: "gh pr comment --repo {{.RepoName}} {{.PrNumber}}"
+
+    # View PR checks/CI status
+    - key: "s"
+      name: "view checks"
+      command: "gh pr checks --repo {{.RepoName}} {{.PrNumber}}"
+
+  # Issue-specific keybindings  
   issues:
-    - key: o
-      command: open https://github.com/{{.RepoName}}/issues/{{.IssueNumber}}
-      name: Open issue in browser
+    # Open issue in browser
+    - key: "o"
+      builtin: "open"
+    
+    # Comment on issue
+    - key: "c"
+      name: "comment"
+      command: "gh issue comment --repo {{.RepoName}} {{.IssueNumber}}"
+    
+    # Close issue
+    - key: "x"
+      name: "close"
+      command: "gh issue close --repo {{.RepoName}} {{.IssueNumber}}"
+    
+    # Assign to yourself
+    - key: "@"
+      name: "assign to me"
+      command: "gh issue edit --repo {{.RepoName}} --add-assignee @me {{.IssueNumber}}"
 
-    - key: c
-      command: gh issue comment {{.IssueNumber}} --repo {{.RepoName}}
-      name: Add comment
+  # Branch-specific keybindings (if needed)
+  branches: []
 
-    - key: x
-      command: gh issue close {{.IssueNumber}} --repo {{.RepoName}}
-      name: Close issue
+# Repository paths (for local operations)
+repoPaths: {}
 
-    - key: X
-      command: gh issue reopen {{.IssueNumber}} --repo {{.RepoName}}
-      name: Reopen issue
-
+# Catppuccin Mocha Theme - matches terminal colorscheme
 theme:
+  ui:
+    # Show count of items in each section
+    sectionsShowCount: true
+    table:
+      # Show separators between sections
+      showSeparator: true
+      # Use compact layout for more information density
+      compact: false
+
   colors:
     text:
-      primary: "#cdd6f4"
-      secondary: "#a6adc8"
-      inverted: "#1e1e2e"
-      faint: "#6c7086"
-      warning: "#f9e2af"
-      success: "#a6e3a1"
+      # Catppuccin Mocha colors
+      primary: "#cdd6f4"      # Text
+      secondary: "#a6adc8"    # Subtext1
+      inverted: "#1e1e2e"     # Base
+      faint: "#6c7086"        # Overlay0
+      warning: "#f9e2af"      # Yellow
+      success: "#a6e3a1"      # Green
+    
     background:
-      selected: "#45475a"
+      selected: "#45475a"     # Surface1
+    
     border:
-      primary: "#6c7086"
-      secondary: "#45475a"
-      faint: "#313244"
+      primary: "#6c7086"      # Overlay0
+      secondary: "#45475a"    # Surface1
+      faint: "#313244"        # Surface0
+
+# Pager settings for viewing diffs
+pager:
+  diff: "delta"
+
+# Confirm before quitting (prevent accidental exits)
+confirmQuit: false
+
+# Show author icons for quick visual recognition
+showAuthorIcons: true
+
+# Enable smart filtering at launch
+smartFilteringAtLaunch: true
