@@ -40,4 +40,52 @@ if command -v wt >/dev/null 2>&1; then
   alias wthook='wt hook'
   alias wthook-ls='wt hook list'               # List project hooks
   alias wthook-run='wt hook run'               # Manually run a hook
+  
+  # JSON output for scripting/dashboards
+  alias wtj='wt list --format=json'
+  
+  # Stacked branches - branch from current HEAD instead of main
+  alias wtstack='wt switch -c --base=@'        # Create branch from current HEAD
+  
+  # Agent handoffs - spawn worktree with agent in background tmux session
+  # This lets one Claude session hand off work to another that runs in parallel
+  alias wtcc-bg='_wt_spawn_agent_tmux claude'
+  alias wtco-bg='_wt_spawn_agent_tmux opencode'
+  
+  # Helper function for spawning agents in background tmux sessions
+  # Usage: wtcc-bg <branch-name> [prompt]
+  # Example: wtcc-bg fix-auth-bug "Fix authentication timeout issue"
+  function _wt_spawn_agent_tmux() {
+    local agent="$1"
+    shift
+    local branch="$1"
+    shift
+    local prompt="$*"
+    
+    if [[ -z "$branch" ]]; then
+      echo "Error: branch name required"
+      echo "Usage: wtcc-bg <branch> [prompt]"
+      return 1
+    fi
+    
+    # Check if tmux is available
+    if ! command -v tmux >/dev/null 2>&1; then
+      echo "Error: tmux not found. Install tmux or use wtcc/wtco instead."
+      return 1
+    fi
+    
+    # Build the command to run in tmux
+    local cmd="wt switch --create \"$branch\" -x $agent"
+    if [[ -n "$prompt" ]]; then
+      cmd="$cmd -- \"$prompt\""
+    fi
+    
+    # Spawn tmux session in background
+    tmux new-session -d -s "$branch" "$cmd"
+    
+    echo "✨ Spawned $agent on branch '$branch' in background tmux session"
+    echo "   Attach with: tmux attach -t $branch"
+    echo "   List sessions: tmux ls"
+    echo "   Kill session: tmux kill-session -t $branch"
+  }
 fi

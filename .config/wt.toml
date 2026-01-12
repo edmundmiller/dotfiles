@@ -4,6 +4,9 @@
 # Post-Create: Runs after worktree creation, BLOCKS until complete
 # Use for: installing dependencies, setting up environment
 [post-create]
+# Copy gitignored files from main worktree (eliminates cold starts)
+# This copies caches, build artifacts, .env files, etc.
+copy = "wt step copy-ignored"
 info = "echo '🚀 Dotfiles worktree created: {{ worktree_path }}'"
 
 # Post-Switch: Runs in BACKGROUND after every switch (parallel)
