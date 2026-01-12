@@ -26,7 +26,6 @@
     // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
     // - opencode-md-table-formatter: Auto-format markdown tables on completion
     // - opencode-notifier: Desktop notifications + sounds on events
-    // - opencode-jj: Enforce JJ describe-before-implement workflow
     // - opencode-direnv: Auto-load .envrc environment variables at session start
     // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
     // - opencode-beads: Beads issue tracker integration
@@ -40,7 +39,6 @@
         "@tarquinen/opencode-dcp@latest",
         "opencode-gemini-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
-        // "./plugin/opencode-jj",
         "./plugin/boomerang-notify"
     ],
     // Nextflow Language Server
