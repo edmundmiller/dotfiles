@@ -12,6 +12,7 @@
     "steveyegge/beads"  # Beads debugging tool
     "tw93/tap"  # Mole
     "anomalyco/tap" # Opencode
+    "max-sixty/worktrunk"  # Git worktree management for parallel AI agents
   ];
 
   brews = [
@@ -72,6 +73,7 @@
     "tree"
     "tree-sitter"
     "wget"
+    "wt"
     "zoxide"
 
     # Task management
