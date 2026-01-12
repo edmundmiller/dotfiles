@@ -44,48 +44,7 @@
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
       enable = true;
-
-      # TODO taps = [ "d12frosted/emacs-plus" ];
-      brews = [
-        "duckdb"
-        "dvc"
-        "gh"
-        "fzf"
-        "neovim"
-        "ruff"
-        "uv"
-        "tealdeer"
-        "seqeralabs/tap/tw"
-        "seqeralabs/tap/wave-cli"
-        "pulumi/tap/pulumi"
-        "awscli"
-        # Doom
-        "git"
-        "ripgrep"
-        "coreutils"
-        "fd"
-        # Doom Extra
-        "tree-sitter"
-      ];
-      casks = [
-        "1password-cli"
-        "spotify"
-        "bartender"
-        "sunsama"
-
-        "repo-prompt"
-        "font-jetbrains-mono"
-        "positron"
-        "ghostty@tip"
-        "raycast"
-        "claude"
-        "gitify"
-        "soundsource"
-      ];
-      masApps = {
-        "Xcode" = 497799835;
-      };
-    };
+    } // (import ./homebrew.nix);
 
     # set some OSX preferences that I always end up hunting down and changing.
     system.defaults = {
