@@ -163,6 +163,7 @@
       "Bash(hey:*)",
       "Bash(nix:*)",
       "Bash(nix-store:*)",
+      "Bash(wt:*)",
       "mcp__RepoPrompt__list_windows",
       "mcp__RepoPrompt__select_window",
       "mcp__RepoPrompt__manage_workspaces",
@@ -198,7 +199,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "/Users/edmundmiller/.claude/statusline-command.sh",
+    "command": "wt list statusline --claude-code",
     "padding": 0
   },
   "enabledPlugins": {

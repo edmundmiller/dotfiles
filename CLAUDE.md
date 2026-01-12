@@ -521,6 +521,229 @@ Beads stores issues as JSON objects in `.beads/issues.jsonl`. Line-based merge w
 
 See `config/jj/README.md` for detailed documentation.
 
+## Worktrunk (Git Worktree Management)
+
+**Purpose:** CLI for managing git worktrees, designed for running AI agents in parallel.
+
+Worktrunk simplifies git worktree management with features like parallel agent tracking, LLM commit messages, CI status monitoring, and automated project hooks.
+
+### Core Commands
+
+```bash
+wt switch <branch>              # Switch to worktree (creates if needed)
+wt switch -c <branch>           # Create worktree + branch
+wt switch -c -x claude <branch> # Create + launch Claude
+wt switch -c -x opencode <branch> # Create + launch OpenCode
+wt list                         # List all worktrees with status
+wt list --full                  # Include CI status and diffstat
+wt merge                        # Merge, squash, rebase, clean up
+wt remove                       # Remove current worktree
+wt select                       # Interactive worktree picker (fzf-like)
+```
+
+**Aliases available:**
+- `wtl` → `wt list`
+- `wts` → `wt switch`
+- `wtm` → `wt merge`
+- `wtr` → `wt remove`
+- `wtcc` → `wt switch -c -x claude` (create + launch Claude)
+- `wtco` → `wt switch -c -x opencode` (create + launch OpenCode)
+
+### Key Features
+
+**Parallel AI Agents:**
+Run multiple Claude/OpenCode sessions on different branches simultaneously:
+```bash
+wt switch -c -x claude agent-1
+wt switch -c -x opencode agent-2
+wt list  # Shows agent activity: 🤖 (working) or 💬 (waiting)
+```
+
+**Activity Tracking:**
+- 🤖 — AI agent is working
+- 💬 — AI agent is waiting for input
+- Integrates with Claude Code plugin for automatic status updates
+
+**LLM Commit Messages:**
+Auto-generate commit messages using Claude Haiku:
+```bash
+wt merge  # Generates commit message from diff, runs hooks, merges
+```
+
+**CI Status Monitoring:**
+```bash
+wt list --full
+# Shows:
+#   ✓ — CI passed
+#   ● — CI running
+#   ✗ — CI failed
+#   ⚠ — Merge conflicts
+```
+
+**Project Hooks:**
+Automate workflows with lifecycle hooks in `.config/wt.toml`:
+- `post-create` — Setup after worktree creation
+- `post-start` — Background processes (dev servers)
+- `post-switch` — Terminal title updates
+- `pre-commit` — Formatters, linters
+- `pre-merge` — Tests, build verification
+- `post-merge` — Notifications, deployment
+
+### Configuration
+
+**User config:** `~/.config/worktrunk/config.toml` (managed via nix)
+```toml
+# Worktree path template
+worktree-path = "../{{ repo }}.{{ branch | sanitize }}"
+
+# LLM commit messages
+[commit-generation]
+command = "llm"
+args = ["-m", "claude-haiku-4.5"]
+
+# Merge defaults
+[merge]
+squash = true
+rebase = true
+remove = true
+```
+
+**Project hooks:** `.config/wt.toml` (git-tracked)
+```toml
+[post-create]
+info = "echo 'Worktree created: {{ branch }}'"
+
+[pre-merge]
+check = "hey check"  # Run flake checks before merge
+
+[post-merge]
+notify = "terminal-notifier -title 'Merged' -message '{{ branch }} → {{ target }}'"
+```
+
+### Worktree Path Patterns
+
+**Default pattern:** `../<repo>.<branch-sanitized>`
+
+Example for `~/.config/dotfiles` on branch `feature/auth`:
+- Creates: `~/.config/dotfiles.feature-auth`
+
+**Alternative patterns:**
+```toml
+# Inside repo (like beads)
+worktree-path = ".worktrees/{{ branch | sanitize }}"
+
+# Namespaced
+worktree-path = "../worktrees/{{ repo }}/{{ branch | sanitize }}"
+
+# Bare repo style
+worktree-path = "../{{ branch | sanitize }}"
+```
+
+### Integration with Beads
+
+Both `wt` and `bd worktree` manage worktrees but serve different purposes:
+
+**Use `wt` for:**
+- Parallel AI agent workflows
+- General feature development with CI tracking
+- Team workflows with standardized hooks
+
+**Use `bd worktree` for:**
+- Beads issue-specific workflows
+- Issue-driven development
+
+**Important:** When using beads in wt-managed worktrees, always use `--no-daemon`:
+```bash
+cd ~/code/myproject.feature-auth
+bd --no-daemon list
+bd --no-daemon work issue-123
+```
+
+See `docs/worktrunk-beads-integration.md` for detailed integration guide.
+
+### Claude Code Plugin
+
+**Installation (manual):**
+```bash
+claude plugin marketplace add max-sixty/worktrunk
+claude plugin install worktrunk@worktrunk
+```
+
+**Features:**
+- Configuration skill (documentation Claude can read)
+- Activity tracking (🤖/💬 markers in `wt list`)
+- Automatic status updates during sessions
+
+**OpenCode:** Plugin compatibility TBD - may require separate installation.
+
+### Troubleshooting
+
+**wt command not found:**
+```bash
+hey rebuild  # Installs via homebrew
+exec zsh     # Reload shell
+```
+
+**Can't change directory with `wt switch`:**
+Shell integration not loaded. Should be automatic after `hey rebuild`, but can manually run:
+```bash
+eval "$(wt config shell init zsh)"
+```
+
+**Beads commands hang in worktree:**
+Use `--no-daemon` flag:
+```bash
+bd --no-daemon list
+```
+
+**Want different worktree path pattern:**
+Edit `~/.config/worktrunk/config.toml` and change `worktree-path` template.
+
+### Common Workflows
+
+**Parallel feature development:**
+```bash
+# Create multiple feature worktrees
+wt switch -c feature/api
+wt switch -c feature/ui
+wt switch -c feature/auth
+
+# Check all statuses
+wt list --full
+
+# Work in each, then merge when ready
+cd ~/code/myproject.feature-api
+# ... make changes ...
+wt merge  # Auto-generates commit, runs tests, merges, removes worktree
+```
+
+**AI agent workflows:**
+```bash
+# Launch Claude on new feature
+wt switch -c -x claude feature/refactor
+
+# Launch OpenCode on another
+wt switch -c -x opencode feature/optimization
+
+# Monitor both agents
+wt list
+#   feature/refactor     🤖↑   (Claude working)
+#   feature/optimization 💬↑   (OpenCode waiting)
+```
+
+**Quick branch switching:**
+```bash
+wt switch main           # Jump to main
+wt switch -              # Switch to previous worktree
+wt switch feature/test   # Jump to existing worktree
+```
+
+### See Also
+
+- [Worktrunk Documentation](https://worktrunk.dev)
+- [Claude Code Integration](https://worktrunk.dev/claude-code/)
+- [Worktrunk + Beads Integration](docs/worktrunk-beads-integration.md)
+
 ## OpenCode Configuration
 
 OpenCode configuration is managed through nix-darwin with one exception:

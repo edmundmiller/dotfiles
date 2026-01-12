@@ -1,0 +1,28 @@
+# Worktrunk Project Configuration for Dotfiles Repository
+# Lifecycle hooks for development workflows
+
+# Post-Create: Runs after worktree creation, BLOCKS until complete
+# Use for: installing dependencies, setting up environment
+[post-create]
+info = "echo '🚀 Dotfiles worktree created: {{ worktree_path }}'"
+
+# Post-Switch: Runs in BACKGROUND after every switch (parallel)
+# Use for: terminal tab naming, tmux window titles, IDE notifications
+# Updates terminal/tab title with current branch
+post-switch = "echo -ne '\\033]0;dotfiles: {{ branch }}\\007'"
+
+# Pre-Merge: Runs before merging to target, BLOCKS (fail-fast)
+# Use for: tests, build verification
+# Ensures flake is valid before merging changes
+[pre-merge]
+check = "hey check"
+
+# Post-Merge: Runs after successful merge, BLOCKS
+# Use for: deployment, notifications
+# Sends desktop notification on successful merge
+post-merge = "terminal-notifier -title 'Worktrunk' -message 'Merged {{ branch }} to {{ target }}' -sound default || true"
+
+# Pre-Remove: Runs before worktree removal, BLOCKS (fail-fast)
+# Use for: cleanup, stopping services
+# Note: Not needed for dotfiles repo (no background services)
+# pre-remove = "echo 'Cleaning up {{ branch }} worktree'"
