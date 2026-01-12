@@ -28,6 +28,10 @@
         docker.enable = true;
         ssh.enable = true;
       };
+
+      desktop = {
+        term.ghostty.enable = true;
+      };
     };
 
     # Override the primary user for this host
