@@ -3,7 +3,6 @@ todotxtfmt/todotxtfmt
 
 # Home-manager managed files (prevent symlink issues)
 config/jj/config.toml
-config/zsh/completions/*.bkup
 
 # Bugwarrior UDAs: per-host files are tracked (see config/bugwarrior/UDAS.md)
 # Regenerate: bugwarrior uda > config/taskwarrior/bugwarrior-udas-<hostname>.rc
