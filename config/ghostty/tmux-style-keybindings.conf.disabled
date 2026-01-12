@@ -1,0 +1,126 @@
+# Ghostty Tmux-Style Keybindings (DISABLED)
+#
+# This file contains Ghostty native keybindings that use ctrl+c as a prefix key
+# (similar to tmux's prefix key pattern).
+#
+# WHY DISABLED:
+# These bindings conflict with tmux when using ctrl+c as the tmux prefix.
+# Ghostty intercepts ctrl+c before it reaches tmux, breaking tmux functionality.
+#
+# CURRENT SETUP:
+# - Tmux uses ctrl+c as its prefix key
+# - Ghostty passes ctrl+c through to tmux (no interception)
+# - All split/tab/window management handled by tmux
+#
+# TO RE-ENABLE:
+# If you want to use Ghostty's native splits/tabs instead of tmux:
+# 1. Change tmux prefix to something else (e.g., ctrl+b or ctrl+a)
+# 2. Rename this file to remove .disabled extension
+# 3. Include it in config: uncomment the line below
+#
+# config-file = /Users/emiller/.config/dotfiles/config/ghostty/tmux-style-keybindings.conf
+
+# ============================================================================
+# TMUX-STYLE PREFIX BINDINGS (ctrl+c>*)
+# ============================================================================
+
+# Tab/Split Creation
+keybind = ctrl+c>c=new_tab
+keybind = ctrl+c>v=new_split:right
+keybind = ctrl+c>s=new_split:down
+
+# Vi-style pane navigation with prefix
+keybind = ctrl+c>h=goto_split:left
+keybind = ctrl+c>j=goto_split:down
+keybind = ctrl+c>k=goto_split:up
+keybind = ctrl+c>right=goto_split:right
+
+# Window/tab navigation (like tmux)
+keybind = ctrl+c>n=next_tab
+keybind = ctrl+c>p=previous_tab
+keybind = ctrl+c>1=goto_tab:1
+keybind = ctrl+c>2=goto_tab:2
+keybind = ctrl+c>3=goto_tab:3
+keybind = ctrl+c>4=goto_tab:4
+keybind = ctrl+c>5=goto_tab:5
+keybind = ctrl+c>6=goto_tab:6
+keybind = ctrl+c>7=goto_tab:7
+keybind = ctrl+c>8=goto_tab:8
+keybind = ctrl+c>9=goto_tab:9
+
+# Pane/split management
+keybind = ctrl+c>x=close_surface
+keybind = ctrl+c>z=toggle_split_zoom
+keybind = ctrl+c>o=toggle_split_zoom
+keybind = ctrl+c>equal=equalize_splits
+
+# Copy mode (similar to tmux)
+keybind = ctrl+c>enter=copy_to_clipboard
+keybind = ctrl+c>p=paste_from_clipboard
+keybind = ctrl+c>u=copy_url_to_clipboard
+keybind = ctrl+c>a=select_all
+
+# Scrolling and navigation
+keybind = ctrl+c>page_up=scroll_page_up
+keybind = ctrl+c>page_down=scroll_page_down
+keybind = ctrl+c>home=scroll_to_top
+keybind = ctrl+c>end=scroll_to_bottom
+
+# Tab management enhancements
+keybind = ctrl+c>shift+left=move_tab:-1
+keybind = ctrl+c>shift+right=move_tab:1
+keybind = ctrl+c>w=close_tab
+
+# Last pane/window toggle (tmux-like)
+keybind = ctrl+c>semicolon=goto_split:previous
+keybind = ctrl+c>l=last_tab
+
+# Prompt navigation (shell integration)
+keybind = ctrl+c>ctrl+p=jump_to_prompt:-1
+keybind = ctrl+c>ctrl+n=jump_to_prompt:1
+
+# Configuration management
+keybind = ctrl+c>r=reload_config
+
+# Enhanced copy (context-aware)
+keybind = ctrl+c>y=copy_to_clipboard
+
+# Enhanced navigation
+keybind = ctrl+c>space=goto_split:next
+keybind = ctrl+c>backspace=goto_split:previous
+
+# Window management
+keybind = ctrl+c>m=new_window
+keybind = ctrl+c>&=close_window
+
+# ============================================================================
+# DIRECT VIM-TMUX NAVIGATOR BINDINGS (WITHOUT PREFIX)
+# ============================================================================
+# NOTE: These conflict with vim-tmux-navigator pattern
+# The recommended approach is to unbind these in Ghostty (see keybindings.conf)
+# and let tmux + vim-tmux-navigator handle seamless navigation
+
+keybind = ctrl+h=goto_split:left
+keybind = ctrl+j=goto_split:down
+keybind = ctrl+k=goto_split:up
+keybind = ctrl+l=goto_split:right
+
+# ============================================================================
+# RESIZE BINDINGS
+# ============================================================================
+# These are duplicated in keybindings.conf and should stay active there
+
+keybind = ctrl+shift+h=resize_split:left,10
+keybind = ctrl+shift+j=resize_split:down,10
+keybind = ctrl+shift+k=resize_split:up,10
+keybind = ctrl+shift+l=resize_split:right,10
+
+# ============================================================================
+# QUICK ACTIONS
+# ============================================================================
+# These are duplicated in keybindings.conf and should stay active there
+
+keybind = ctrl+shift+q=close_window
+keybind = ctrl+shift+s=close_surface
+keybind = ctrl+shift+c=copy_to_clipboard
+keybind = ctrl+shift+v=paste_from_clipboard
