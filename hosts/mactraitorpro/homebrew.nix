@@ -73,7 +73,7 @@
     "tree"
     "tree-sitter"
     "wget"
-    "wt"
+    "max-sixty/worktrunk/wt"
     "zoxide"
 
     # Task management
