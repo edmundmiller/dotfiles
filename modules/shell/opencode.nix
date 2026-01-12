@@ -68,6 +68,11 @@ in
         # Ensure plugin directory exists (user-managed, not synced)
         mkdir -p "${opencodeConfigDir}/plugin"
 
+        # TODO: Verify that required plugins are installed:
+        #   - boomerang-notify (~/.config/opencode/plugin/boomerang-notify)
+        #   - opencode-jj (~/.config/opencode/plugin/opencode-jj)
+        #   See config/opencode/README.md for installation instructions
+
         # Copy package.json for bun/npm install
         cp -f "${configDir}/opencode/package.json" "${opencodeConfigDir}/package.json"
 

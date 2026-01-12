@@ -17,6 +17,7 @@
         "1password".enable = true;
         ai.enable = true;
         claude.enable = true;
+        opencode.enable = true;
         direnv.enable = true;
         git.enable = true;
         tmux.enable = true;
