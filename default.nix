@@ -35,6 +35,7 @@ with lib.my;
         "nushell.nix"
         "yubikey.nix"
         # NixOS-only services
+        "services/deploy-rs.nix"
         "audiobookshelf.nix"
         "calibre.nix"
         "gitea.nix"
