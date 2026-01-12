@@ -76,7 +76,7 @@
         "repo-prompt"
         "font-jetbrains-mono"
         "positron"
-        "ghostty"
+        "ghostty@tip"
         "raycast"
         "claude"
         "gitify"
