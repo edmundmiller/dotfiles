@@ -39,7 +39,9 @@
         "@tarquinen/opencode-dcp@latest",
         "opencode-gemini-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
-        "./plugin/boomerang-notify"
+        "./plugin/boomerang-notify",
+        "./plugin/opencode-worktrunk",
+        "./plugin/opencode-canvas"
     ],
     // Nextflow Language Server
     "lsp": {
