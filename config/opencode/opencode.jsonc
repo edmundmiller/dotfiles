@@ -40,7 +40,7 @@
         "@tarquinen/opencode-dcp@latest",
         "opencode-gemini-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
-        "./plugin/opencode-jj",
+        // "./plugin/opencode-jj",
         "./plugin/boomerang-notify"
     ],
     // Nextflow Language Server
