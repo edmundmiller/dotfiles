@@ -20,6 +20,7 @@
         direnv.enable = true;
         git.enable = true;
         tmux.enable = true;
+        wt.enable = true;
         zsh.enable = true;
       };
 
