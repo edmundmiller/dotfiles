@@ -391,57 +391,9 @@
                 "list": "allow"
             }
         },
-        "nextflow-dev": {
-            "description": "Nextflow pipeline development agent with enhanced permissions for workflow development",
-            "mode": "subagent",
-            "temperature": 0.3,
-            "permission": {
-                "bash": {
-                    "nextflow clean *": "allow",
-                    "nf-core download *": "allow"
-                },
-                "edit": "allow",
-                "write": "allow",
-                "webfetch": "allow"
-            }
-        },
-        "nextflow-debug": {
-            "description": "Debugging agent for Nextflow - read-focused with work directory inspection capabilities",
-            "mode": "subagent",
-            "temperature": 0.1,
-            "permission": {
-                "bash": {
-                    "nextflow log *": "allow",
-                    "nextflow config": "allow",
-                    "nf-test list *": "allow"
-                },
-                "edit": "deny",
-                "write": "deny",
-                "webfetch": "allow"
-            }
-        },
-        "pipeline-review": {
-            "description": "Code review agent - read-only with static analysis and linting capabilities",
-            "mode": "subagent",
-            "temperature": 0.2,
-            "permission": {
-                "bash": {
-                    "nextflow config *": "allow",
-                    "nextflow lint *": "allow",
-                    "nf-core lint *": "allow",
-                    "nf-test list": "allow",
-                    "ast-grep scan *": "allow",
-                    "ast-grep -p *": "allow"
-                },
-                "edit": "deny",
-                "write": "deny",
-                "webfetch": "ask"
-            }
-        }
     },
     // Instructions - global rules
     "instructions": [
-        "~/.config/opencode/GLOBAL_INSTRUCTIONS.md",
         "~/.config/opencode/rules/*.md"
     ]
 }
