@@ -548,6 +548,10 @@ wt select                       # Interactive worktree picker (fzf-like)
 - `wtr` → `wt remove`
 - `wtcc` → `wt switch -c -x claude` (create + launch Claude)
 - `wtco` → `wt switch -c -x opencode` (create + launch OpenCode)
+- `wtcc-bg` → spawn Claude in background tmux session
+- `wtco-bg` → spawn OpenCode in background tmux session
+- `wtj` → `wt list --format=json` (JSON output for scripting)
+- `wtstack` → `wt switch -c --base=@` (create branch from current HEAD)
 
 ### Key Features
 
@@ -736,6 +740,84 @@ wt list
 wt switch main           # Jump to main
 wt switch -              # Switch to previous worktree
 wt switch feature/test   # Jump to existing worktree
+```
+
+**Agent handoffs (background execution):**
+```bash
+# Spawn Claude in background tmux session
+wtcc-bg fix-auth-bug "Fix authentication timeout issue"
+
+# Spawn OpenCode in background
+wtco-bg optimize-perf "Optimize database query performance"
+
+# List background sessions
+tmux ls
+
+# Attach to agent session
+tmux attach -t fix-auth-bug
+```
+
+This spawns AI agents in detached tmux sessions, allowing true parallel execution. One Claude session can hand off work to another that runs independently in the background.
+
+**Stacked branches (incremental features):**
+```bash
+# Create feature-part1
+wt switch -c feature-part1
+
+# Work on part 1, then branch from current state
+wtstack feature-part2  # Builds on feature-part1
+```
+
+**Cold start elimination:**
+The `.config/wt.toml` post-create hook includes `wt step copy-ignored`, which copies gitignored files (caches, build artifacts, `.env`) from the main worktree. This dramatically speeds up new worktree creation.
+
+To copy only specific patterns, create `.worktreeinclude`:
+```gitignore
+# .worktreeinclude — limits what gets copied
+.env
+.cache/
+node_modules/
+target/
+```
+
+**JSON output for scripting:**
+```bash
+wtj  # Alias for wt list --format=json
+
+# Example: Count worktrees with uncommitted changes
+wtj | jq '[.worktrees[] | select(.has_changes)] | length'
+
+# Example: Get all branch names
+wtj | jq -r '.worktrees[].branch'
+```
+
+### Advanced Patterns
+
+**Dev server per worktree** (for web projects):
+Each worktree gets a deterministic port using the `{{ branch | hash_port }}` template:
+```toml
+# .config/wt.toml (web projects)
+[post-start]
+server = "npm run dev -- --port {{ branch | hash_port }}"
+
+[list]
+url = "http://localhost:{{ branch | hash_port }}"
+```
+
+**Bare repository layout** (alternative structure):
+Instead of sibling directories (`../repo.branch`), use a bare repo with worktrees as subdirectories:
+```bash
+git clone --bare <url> myproject/.git
+cd myproject
+
+# Configure worktrunk
+cat > ~/.config/worktrunk/config.toml <<EOF
+worktree-path = "{{ branch | sanitize }}"
+EOF
+
+# Create worktrees
+wt switch -c main      # Creates myproject/main/
+wt switch -c feature   # Creates myproject/feature/
 ```
 
 ### See Also
