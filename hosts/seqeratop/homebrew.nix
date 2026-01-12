@@ -18,7 +18,7 @@
     "ruff"
     "uv"
     "tealdeer"
-    "wt"
+    "max-sixty/worktrunk/wt"
     "seqeralabs/tap/tw"
     "seqeralabs/tap/wave-cli"
     "pulumi/tap/pulumi"
