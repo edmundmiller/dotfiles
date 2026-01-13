@@ -111,6 +111,37 @@ modules = {
 };
 ```
 
+### Module Directory Pattern
+
+For modules that need documentation, use a directory structure instead of a single `.nix` file:
+
+```
+modules/shell/wt/
+├── default.nix   # Module definition (nix code)
+├── README.md     # Human documentation (installation, usage, troubleshooting)
+└── AGENTS.md     # AI agent documentation (brief, module-specific facts)
+```
+
+**When to use this pattern:**
+- Module has non-obvious setup or troubleshooting steps
+- External dependencies (homebrew, manual installation)
+- Complex configuration options worth documenting
+- Aliases or commands that benefit from a reference table
+
+**README.md should include:**
+- Installation/enable instructions
+- What the module provides (files, integrations)
+- Configuration options and examples
+- Troubleshooting section for common issues
+
+**AGENTS.md should include:**
+- Module purpose (1-2 sentences)
+- Directory/file structure
+- Key facts an AI needs to know (dependencies, gotchas)
+- Related files in other parts of the repo
+
+**Example:** See `modules/shell/wt/` for a reference implementation.
+
 ### Module System
 
 Modules are defined in `modules/` with options in `modules/options.nix`. They follow the pattern:
