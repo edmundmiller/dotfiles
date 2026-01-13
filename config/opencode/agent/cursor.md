@@ -1,7 +1,8 @@
 ---
 name: gpt-5
 description: Use this agent when you need to use gpt-5 for deep research, second opinion or fixing a bug. Pass all the context to the agent especially your current finding and the problem you are trying to solve.
-tools: Bash
+# FIXME
+# tools: Bash
 model: sonnet
 ---
 
