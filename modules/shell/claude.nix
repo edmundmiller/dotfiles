@@ -20,8 +20,9 @@ in
     home.file = {
       # Note: settings.json is NOT symlinked because Claude Code needs write access for plugin management.
       # Copy manually: cp ~/.config/dotfiles/config/claude/settings.json ~/.claude/settings.json
-      ".claude/agents".source = "${configDir}/claude/agents";
-      ".claude/skills".source = "${configDir}/claude/skills";
+      # Skills and agents are shared with OpenCode - single source of truth
+      ".claude/agents".source = "${configDir}/opencode/agent";
+      ".claude/skills".source = "${configDir}/opencode/skill";
       ".claude/CLAUDE.md".source = "${configDir}/claude/CLAUDE.md";
 
       # WakaTime configuration (references agenix-decrypted secret)
