@@ -391,7 +391,7 @@ ast-grep scan --rule /tmp/async-error-handling.yaml /tmp/example.js
 ```bash
 # Use the existing rule via nf-ast-grep tools
 # Or run directly:
-ast-grep scan --rule config/opencode/ast-grep/rules/implicit-it-closure.yaml
+ast-grep scan --rule config/opencode/skills/ast-grep/rules/implicit-it-closure.yaml
 ```
 
 **Rule explanation** (`implicit-it-closure.yaml`):

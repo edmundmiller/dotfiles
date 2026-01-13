@@ -4,7 +4,7 @@ Nextflow-specific patterns and configuration for ast-grep.
 
 ## Configuration
 
-Nextflow support requires a custom tree-sitter parser. The configuration in `config/opencode/ast-grep/sgconfig.yml`:
+Nextflow support requires a custom tree-sitter parser. The configuration in `config/opencode/skills/ast-grep/sgconfig.yml`:
 
 ```yaml
 customLanguages:
@@ -31,7 +31,7 @@ customLanguages:
 ast-grep run --pattern 'Channel.from(___)' --lang nextflow
 
 # Scan with rules
-ast-grep scan --rule config/opencode/ast-grep/rules/
+ast-grep scan --rule config/opencode/skills/ast-grep/rules/
 
 # Debug AST structure
 ast-grep run --pattern '___' --debug-query=ast workflow.nf
