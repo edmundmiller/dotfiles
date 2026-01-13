@@ -25,3 +25,6 @@ fi
 
 # Add dotfiles bin directory to PATH
 [[ -d "$XDG_CONFIG_HOME/dotfiles/bin" ]] && export PATH="$XDG_CONFIG_HOME/dotfiles/bin:$PATH"
+
+# Source nix-darwin generated environment (envFiles from modules)
+[[ -f "$ZDOTDIR/extra.zshenv" ]] && source "$ZDOTDIR/extra.zshenv"
