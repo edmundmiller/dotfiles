@@ -12,16 +12,23 @@
 #
 # Paths are relative to the main worktree root (original repository directory).
 #
-# Example paths created (repo at /Users/emiller/code/myproject, branch feature/auth):
-#   "../{{ repo }}.{{ branch | sanitize }}" → /Users/emiller/code/myproject.feature-auth
-#   ".worktrees/{{ branch | sanitize }}"    → /Users/emiller/code/myproject/.worktrees/feature-auth
-#   "../worktrees/{{ repo }}/{{ branch | sanitize }}" → /Users/emiller/code/worktrees/myproject/feature-auth
+# Bare Repository Layout (default)
+# Clone with: gcl <url> myproject  (creates myproject/.git bare repo)
+# Structure:
+#   myproject/
+#   ├── .git/       # bare repository
+#   ├── main/       # main branch worktree
+#   ├── feature/    # feature branch worktree
+#   └── bugfix/     # bugfix branch worktree
+#
+# Example: repo at /Users/emiller/code/myproject/.git, branch feature/auth
+#   "../{{ branch | sanitize }}" → /Users/emiller/code/myproject/feature-auth
 
-worktree-path = "../{{ repo }}.{{ branch | sanitize }}"
+worktree-path = "../{{ branch | sanitize }}"
 
-# Alternative patterns (uncomment to use):
+# Alternative patterns:
+# Sibling directories: worktree-path = "../{{ repo }}.{{ branch | sanitize }}"
 # Inside repo (like beads): worktree-path = ".worktrees/{{ branch | sanitize }}"
-# Bare repo style: worktree-path = "../{{ branch | sanitize }}"
 # Namespaced: worktree-path = "../worktrees/{{ repo }}/{{ branch | sanitize }}"
 
 # LLM Commit Message Generation

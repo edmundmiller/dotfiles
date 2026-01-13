@@ -1,4 +1,7 @@
 # Worktrunk Project Configuration for Dotfiles Repository
+# Note: This repo uses sibling worktree layout via .envrc override
+# Most repos use bare layout (see config/wt/config.toml)
+#
 # Lifecycle hooks for development workflows
 
 # Post-Create: Runs after worktree creation, BLOCKS until complete

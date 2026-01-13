@@ -534,8 +534,10 @@ Automate workflows with lifecycle hooks in `.config/wt.toml`:
 
 **User config:** `~/.config/worktrunk/config.toml` (managed via nix)
 ```toml
-# Worktree path template
-worktree-path = "../{{ repo }}.{{ branch | sanitize }}"
+# Bare repository layout (default)
+# Clone with: gcl <url> myproject
+# Structure: myproject/.git/ (bare), myproject/main/, myproject/feature/
+worktree-path = "../{{ branch | sanitize }}"
 
 # LLM commit messages
 [commit-generation]
@@ -563,22 +565,24 @@ notify = "terminal-notifier -title 'Merged' -message '{{ branch }} → {{ target
 
 ### Worktree Path Patterns
 
-**Default pattern:** `../<repo>.<branch-sanitized>`
+**Default pattern (bare repo layout):** `../<branch-sanitized>`
 
-Example for `~/.config/dotfiles` on branch `feature/auth`:
-- Creates: `~/.config/dotfiles.feature-auth`
+Example for `~/code/myproject` (cloned via `gcl`) on branch `feature/auth`:
+- Structure: `myproject/.git/` (bare), `myproject/main/`, `myproject/feature-auth/`
 
 **Alternative patterns:**
 ```toml
+# Sibling directories (legacy, used by dotfiles repo)
+worktree-path = "../{{ repo }}.{{ branch | sanitize }}"
+
 # Inside repo (like beads)
 worktree-path = ".worktrees/{{ branch | sanitize }}"
 
 # Namespaced
 worktree-path = "../worktrees/{{ repo }}/{{ branch | sanitize }}"
-
-# Bare repo style
-worktree-path = "../{{ branch | sanitize }}"
 ```
+
+**Note:** The dotfiles repo uses sibling layout via `.envrc` override for historical reasons.
 
 ### Integration with Beads
 
@@ -644,6 +648,10 @@ Edit `~/.config/worktrunk/config.toml` and change `worktree-path` template.
 
 **Parallel feature development:**
 ```bash
+# Clone as bare repo
+gcl https://github.com/user/myproject
+cd myproject && wt switch -c main
+
 # Create multiple feature worktrees
 wt switch -c feature/api
 wt switch -c feature/ui
@@ -653,7 +661,7 @@ wt switch -c feature/auth
 wt list --full
 
 # Work in each, then merge when ready
-cd ~/code/myproject.feature-api
+cd ~/code/myproject/feature-api
 # ... make changes ...
 wt merge  # Auto-generates commit, runs tests, merges, removes worktree
 ```
@@ -741,20 +749,22 @@ server = "npm run dev -- --port {{ branch | hash_port }}"
 url = "http://localhost:{{ branch | hash_port }}"
 ```
 
-**Bare repository layout** (alternative structure):
-Instead of sibling directories (`../repo.branch`), use a bare repo with worktrees as subdirectories:
+**Bare repository layout** (now the default):
+All new repos use bare layout. Clone with `gcl`:
 ```bash
-git clone --bare <url> myproject/.git
+gcl https://github.com/user/myproject  # Creates myproject/.git (bare)
 cd myproject
-
-# Configure worktrunk
-cat > ~/.config/worktrunk/config.toml <<EOF
-worktree-path = "{{ branch | sanitize }}"
-EOF
-
-# Create worktrees
 wt switch -c main      # Creates myproject/main/
 wt switch -c feature   # Creates myproject/feature/
+```
+
+Structure:
+```
+myproject/
+├── .git/       # bare repository
+├── main/       # main branch worktree
+├── feature/    # feature branch worktree
+└── bugfix/     # bugfix branch worktree
 ```
 
 ### See Also
