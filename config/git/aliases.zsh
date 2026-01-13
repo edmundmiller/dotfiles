@@ -11,7 +11,20 @@ alias gc='git commit'
 alias gcm='git commit -m'
 alias gca='git commit --amend'
 alias gcf='git commit --fixup'
-alias gcl='git clone'
+# gcl: Clone as bare repo for worktrunk workflow
+# Usage: gcl <url> [name]
+# Creates: name/.git (bare repo), ready for wt switch -c main
+gcl() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: gcl <url> [directory]"
+    echo "Creates a bare repository for use with worktrunk"
+    return 1
+  fi
+  local url=$1
+  local name=${2:-$(basename "$url" .git)}
+  git clone --bare "$url" "${name}/.git" && \
+    echo "Bare repo created. Next: cd $name && wt switch -c main"
+}
 alias gco='git checkout'
 alias gcoo='git checkout --'
 alias gf='git fetch'
