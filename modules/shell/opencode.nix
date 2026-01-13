@@ -40,13 +40,10 @@ in
       # These can be symlinked (no node module resolution needed)
       "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
       "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
-      "opencode/AGENTS.md".source = "${configDir}/opencode/AGENTS.md";
-      "opencode/GLOBAL_INSTRUCTIONS.md".source = "${configDir}/opencode/GLOBAL_INSTRUCTIONS.md";
       "opencode/rules".source = "${configDir}/opencode/rules";
       "opencode/agent".source = "${configDir}/opencode/agent";
       "opencode/command".source = "${configDir}/opencode/command";
       "opencode/skills".source = "${configDir}/opencode/skills";
-      "opencode/ast-grep".source = "${configDir}/opencode/ast-grep";
 
       # Tool files need to be COPIED (not symlinked) so they can
       # resolve @opencode-ai/plugin from ~/.config/opencode/node_modules/
