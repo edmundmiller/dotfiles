@@ -1,29 +1,14 @@
 {
   config,
-  options,
   lib,
   pkgs,
-  inputs,
   ...
 }:
-with lib;
-with lib.my;
 let
+  inherit (lib) mkIf;
+  inherit (lib.my) mkBoolOpt;
   cfg = config.modules.shell.opencode;
   inherit (config.dotfiles) configDir;
-  opencodeConfigDir = "${config.user.home}/.config/opencode";
-  opencodePkg = inputs.opencode.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
-    postPatch =
-      (old.postPatch or "")
-      + ''
-        substituteInPlace packages/opencode/src/session/prompt.ts \
-          --replace 'tools[item.id]' 'tools[`oc_''${item.id}`]' \
-          --replace 'id: item.id' 'id: `oc_''${item.id}`'
-        # Strip prefix from incoming tool names
-        substituteInPlace packages/opencode/src/session/processor.ts \
-          --replace 'value.toolName' 'value.toolName.replace(/^oc_/, "")'
-      '';
-  });
 in
 {
   options.modules.shell.opencode = {
@@ -31,51 +16,58 @@ in
   };
 
   config = mkIf cfg.enable {
-    # On Darwin, opencode is installed via homebrew for better integration
-    # But we need the patched version from the flake
-    user.packages = with pkgs; [ opencodePkg ];
+    # OpenCode is installed via homebrew (not nix) for better macOS integration
+    # See: brew install opencode
 
-    home.configFile = {
-      # OpenCode uses XDG config directory: ~/.config/opencode/
-      # These can be symlinked (no node module resolution needed)
-      "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
-      "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
-      "opencode/rules".source = "${configDir}/opencode/rules";
-      "opencode/agent".source = "${configDir}/opencode/agent";
-      "opencode/command".source = "${configDir}/opencode/command";
-      "opencode/skills".source = "${configDir}/opencode/skills";
+    home-manager.users.${config.user.name} = { config, lib, ... }:
+    let
+      opencodeConfigDir = "${config.home.homeDirectory}/.config/opencode";
+    in
+    {
+      # Symlink config files
+      home.configFile = {
+        "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
+        "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
 
-      # Tool files need to be COPIED (not symlinked) so they can
-      # resolve @opencode-ai/plugin from ~/.config/opencode/node_modules/
-      # When symlinked to Nix store, Node.js can't find the modules.
-      #
-      # Plugin directory is NOT managed by nix - users install plugins manually
-      # to ~/.config/opencode/plugin/ (supports TypeScript plugins that need build steps)
-    };
+        # Directories need recursive = true
+        "opencode/rules" = {
+          source = "${configDir}/opencode/rules";
+          recursive = true;
+        };
+        "opencode/agent" = {
+          source = "${configDir}/opencode/agent";
+          recursive = true;
+        };
+        "opencode/skills" = {
+          source = "${configDir}/opencode/skills";
+          recursive = true;
+        };
+        "opencode/command" = {
+          source = "${configDir}/opencode/command";
+          recursive = true;
+        };
+        "opencode/tool" = {
+          source = "${configDir}/opencode/tool";
+          recursive = true;
+        };
+      };
 
-    # Use home-manager activation to copy tool files
-    # This ensures files are at the actual path where node_modules can be resolved
-    home-manager.users.${config.user.name} = { lib, ... }: {
       home.activation.opencode-setup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        # Copy tool files (not symlink) so Node can resolve modules
-        ${pkgs.rsync}/bin/rsync -a --delete \
-          "${configDir}/opencode/tool/" \
-          "${opencodeConfigDir}/tool/"
-
         # Ensure plugin directory exists (user-managed, not synced)
-        mkdir -p "${opencodeConfigDir}/plugin"
+        ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/plugin"
 
-        # TODO: Verify that required plugins are installed:
-        #   - boomerang-notify (~/.config/opencode/plugin/boomerang-notify)
-        #   - opencode-jj (~/.config/opencode/plugin/opencode-jj)
-        #   See config/opencode/README.md for installation instructions
-
-        # Copy package.json for bun/npm install
-        cp -f "${configDir}/opencode/package.json" "${opencodeConfigDir}/package.json"
+        # Copy package.json (can't symlink - bun install modifies lockfile location)
+        ${pkgs.coreutils}/bin/cp -f "${configDir}/opencode/package.json" "${opencodeConfigDir}/package.json"
 
         # Install dependencies if bun is available
         if command -v bun &> /dev/null; then
-          cd "${opencodeConfigDir}" && bun install --silent 2>/dev/null || true
+          cd "${opencodeConfigDir}"
+
+          # Only run if dependencies likely changed
+          if [ ! -d node_modules ] || [ ! -f bun.lockb ]; then
+            echo "Running bun install for OpenCode dependencies..."
+            bun install --silent || echo "Warning: bun install failed; OpenCode plugins may be incomplete."
+          fi
         fi
       '';
     };
