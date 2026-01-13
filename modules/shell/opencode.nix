@@ -46,18 +46,20 @@ in
           source = "${configDir}/opencode/command";
           recursive = true;
         };
-        "opencode/tool" = {
-          source = "${configDir}/opencode/tool";
-          recursive = true;
-        };
+        # Note: tool/ is copied via activation script (not symlinked)
+        # because TypeScript tools need to resolve node_modules from ~/.config/opencode/
       };
 
       home.activation.opencode-setup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         # Ensure plugin directory exists (user-managed, not synced)
         ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/plugin"
+        ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/tool"
 
         # Copy package.json (can't symlink - bun install modifies lockfile location)
         ${pkgs.coreutils}/bin/cp -f "${configDir}/opencode/package.json" "${opencodeConfigDir}/package.json"
+
+        # Copy tool/ directory (can't symlink - TypeScript needs to resolve node_modules)
+        ${pkgs.rsync}/bin/rsync -a --delete "${configDir}/opencode/tool/" "${opencodeConfigDir}/tool/"
 
         # Install dependencies if bun is available
         if command -v bun &> /dev/null; then
