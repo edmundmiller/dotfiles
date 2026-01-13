@@ -12,9 +12,9 @@ This is a Nix-based dotfiles repository using Flakes for managing system configu
 
 ## Critical File Editing Rules
 
-- We use jj for version control
+- We use git for version control
 - **ALWAYS write over the source file you're editing. Don't make "\_enhanced", "\_fixed", "\_updated", or "\_v2" versions.** We use version control - that's why everything is tracked. When in doubt, commit first if you want to preserve the original, but always overwrite the actual file.
-- Don't make PRs in this repo. Just use the main bookmark.
+- Don't make PRs in this repo. Just commit directly to main.
 
 ## Essential Commands
 
@@ -137,14 +137,8 @@ in {
 ### Testing Configuration Changes
 
 1. Make changes to relevant files
-2. **Ensure git is in sync with jj:** Nix flakes read from git, not jj. If you've made changes via jj, ensure the git `main` branch points to the correct commit:
-   ```bash
-   git checkout main          # Ensure git is on main branch
-   jj log -r 'main | @'       # Verify jj main bookmark has your changes
-   ```
-   If git is in detached HEAD state or behind jj, the rebuild will use stale code.
-3. Run `hey rebuild` (or `hey re` for short)
-4. If issues occur: `hey rollback`
+2. Run `hey rebuild` (or `hey re` for short)
+3. If issues occur: `hey rollback`
 
 ### Updating Dependencies
 
@@ -188,7 +182,7 @@ hey nuc-rollback
 
 ### How Remote Deployment Works
 
-1. **Push changes**: Local commits pushed to GitHub (`jj git push`)
+1. **Push changes**: Local commits pushed to GitHub (`git push`)
 2. **SSH to target**: Connects to NUC via SSH (uses 1Password SSH agent)
 3. **Update repository**: Pulls latest changes from GitHub on NUC
 4. **Remote build**: Runs `nixos-rebuild` on NUC (native x86_64, fast)
@@ -432,94 +426,6 @@ This repository uses `nix-homebrew` for proper homebrew integration:
 - Configured with `enableRosetta` for Apple Silicon + Intel compatibility
 - `autoMigrate` enabled to migrate existing homebrew installations
 - Managed through the `homebrew` section in host configurations
-
-## Jujutsu (JJ) Version Control
-
-This repository uses jujutsu (jj) for version control. JJ is a Git-compatible VCS with a more intuitive model.
-
-### Core JJ Workflows
-
-**The Squash Workflow** - Describe → New → Implement → Squash:
-
-1. `jj describe -m "what you're about to do"`
-2. `jj new` (creates empty change)
-3. Make your changes
-4. `jj squash` (moves changes into parent)
-
-**The Edit Workflow** - Edit any commit directly:
-
-- `jj edit <change-id>` to edit any previous commit
-- Changes automatically rebase
-- No checkout dance needed
-
-### Quick JJ Commands
-
-- `/jj-status` - Smart overview of repository state
-- `/jj-new` - Start new work properly
-- `@squash` - Complete work via squash workflow (use the command shortcut)
-- `@split` - Split mixed changes into focused commits
-- `@undo` - Safety net for any operation
-
-### Key JJ Principles
-
-- **Everything is undoable**: `jj op log` shows all operations, `jj undo` reverses them
-- **No staging area**: Changes are always in commits, just move them around
-- **Automatic rebasing**: Edit any commit, descendants follow automatically
-- **Conflicts don't block**: Conflicts are stored in commits, not working directory
-
-When working with jj, think in terms of moving changes between commits rather than staging/unstaging. Use `jj status` and `jj log` frequently to understand state.
-
-### JJ Editor Commands for Claude Code
-
-When Claude Code needs to run JJ commands that normally open an editor, always use one of these approaches:
-
-1. **Use -m flag for messages:**
-
-   ```bash
-   jj describe -m "commit message"
-   jj squash -m "message"
-   ```
-
-2. **Use JJ_EDITOR environment variable for interactive commands:**
-
-   ```bash
-   JJ_EDITOR="echo 'commit message'" jj describe
-   JJ_EDITOR="echo 'commit message'" jj split
-   ```
-
-3. **For heredoc messages:**
-   ```bash
-   jj describe -m "$(cat <<'EOF'
-   Multi-line commit message
-   with details
-   EOF
-   )"
-   ```
-
-**Never run:** `jj describe`, `jj split`, `jj squash` without specifying the message, as this will hang in an interactive editor that Claude Code cannot control.
-
-### Beads Merge Integration
-
-JJ is configured with automatic merge tool selection via `jj-smart-merge`:
-
-- **`.beads/` files**: Automatically use `bd merge` (field-level 3-way merge)
-- **All other files**: Use `diffconflicts` (nvim)
-
-This means `jj resolve` automatically picks the right tool based on the conflicted file path.
-
-**Manual tool override** (if needed):
-```bash
-jj resolve --tool=beads-merge    # Force beads merge for current conflict
-jj resolve --tool=diffconflicts  # Force nvim for current conflict
-```
-
-**Why field-level merge matters for beads:**
-Beads stores issues as JSON objects in `.beads/issues.jsonl`. Line-based merge would conflict when two people edit different fields of the same issue. Field-level merge combines changes intelligently:
-- You change `status: "open"` → `"in_progress"`
-- Coworker changes `priority: 2` → `3`
-- Result: Both changes preserved, no conflict
-
-See `config/jj/README.md` for detailed documentation.
 
 ## Worktrunk (Git Worktree Management)
 
