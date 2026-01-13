@@ -191,30 +191,21 @@
         "command": "wt list statusline --claude-code",
         "padding": 0
     },
-    "extraKnownMarketplaces": [
-    {
-      "name": "worktrunk",
-      "source": {
-        "source": "github",
-        "repo": "max-sixty/worktrunk"
-      }
+    "extraKnownMarketplaces": {
+        "worktrunk": {
+            "source": "github",
+            "repo": "max-sixty/worktrunk"
+        },
+        "wakatime": {
+            "source": "github",
+            "repo": "wakatime/claude-code-wakatime"
+        },
+        "dotfiles-plugins": {
+            "source": "github",
+            "repo": "edmundmiller/dotfiles"
+        }
     },
-    {
-      "name": "wakatime",
-      "source": {
-        "source": "github",
-        "repo": "wakatime/claude-code-wakatime"
-      }
-    },
-    {
-      "name": "dotfiles-plugins",
-      "source": {
-        "source": "github",
-        "repo": "edmundmiller/dotfiles"
-      }
-    }
-  ],
-  "enabledPlugins": {
+    "enabledPlugins": {
         "worktrunk@worktrunk": true,
         "nextflow-pipeline-development@seqera-templates": false,
         "nextflow-plugin-development@seqera-templates": false,
