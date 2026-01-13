@@ -38,8 +38,8 @@ in
           source = "${configDir}/opencode/agent";
           recursive = true;
         };
-        "opencode/skills" = {
-          source = "${configDir}/opencode/skills";
+        "opencode/skill" = {
+          source = "${configDir}/opencode/skill";
           recursive = true;
         };
         "opencode/command" = {
