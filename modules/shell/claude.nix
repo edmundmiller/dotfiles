@@ -17,16 +17,12 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      # Add claude-related packages if any
-    ];
-
     home.file = {
-      ".claude/settings.json".source = "${configDir}/claude/settings.json";
-      # Note: settings.local.json, slash_commands, and commands are not tracked in git
-      # and therefore not available in the nix store. Manage these locally if needed.
+      # Note: settings.json is NOT symlinked because Claude Code needs write access for plugin management.
+      # Copy manually: cp ~/.config/dotfiles/config/claude/settings.json ~/.claude/settings.json
       ".claude/agents".source = "${configDir}/claude/agents";
-      ".claude/config".source = "${configDir}/claude/config";
+      ".claude/skills".source = "${configDir}/claude/skills";
+      ".claude/CLAUDE.md".source = "${configDir}/claude/CLAUDE.md";
 
       # WakaTime configuration (references agenix-decrypted secret)
       ".wakatime.cfg" = mkIf pkgs.stdenv.isDarwin {
@@ -36,8 +32,5 @@ in
         '';
       };
     };
-
-    # Source Claude aliases in zsh
-    modules.shell.zsh.rcFiles = [ "${configDir}/claude/aliases.zsh" ];
   };
 }

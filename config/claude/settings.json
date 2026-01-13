@@ -182,7 +182,9 @@
       "mcp__plugin_context7_context7__get-library-docs",
       "mcp__plugin_context7_context7__resolve-library-id"
     ],
-    "deny": ["mcp__git__*"]
+    "deny": [
+      "mcp__git__*"
+    ]
   },
   "hooks": {
     "Stop": [
@@ -203,16 +205,28 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "nextflow-pipeline-development@seqera-templates": true,
-    "nextflow-plugin-development@seqera-templates": true,
-    "jj@dotfiles-plugins": true,
-    "seqera-mcp@seqera-templates": true,
+    "nextflow-pipeline-development@seqera-templates": false,
+    "nextflow-plugin-development@seqera-templates": false,
+    "jj@dotfiles-plugins": false,
+    "seqera-mcp@seqera-templates": false,
     "json-to-toon@dotfiles-plugins": true,
     "fusion-debugging@seqera-templates": false,
-    "nextflow-debugging@seqera-templates": true,
-    "creating-multiqc-template@multiqc-dev-tools": true,
-    "skill-creator@seqera-templates": true,
-    "claude-code-wakatime@wakatime": true
+    "nextflow-debugging@seqera-templates": false,
+    "creating-multiqc-template@multiqc-dev-tools": false,
+    "skill-creator@seqera-templates": false,
+    "claude-code-wakatime@wakatime": true,
+    "frontend-design@claude-plugins-official": false,
+    "context7@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": false,
+    "atlassian@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": false,
+    "hookify@claude-plugins-official": false,
+    "ralph-loop@claude-plugins-official": true,
+    "circleback@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true
 }
