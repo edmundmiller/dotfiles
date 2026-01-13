@@ -158,16 +158,22 @@
     },
     "extraKnownMarketplaces": {
         "worktrunk": {
-            "source": "github",
-            "repo": "max-sixty/worktrunk"
+            "source": {
+                "source": "github",
+                "repo": "max-sixty/worktrunk"
+            }
         },
         "wakatime": {
-            "source": "github",
-            "repo": "wakatime/claude-code-wakatime"
+            "source": {
+                "source": "github",
+                "repo": "wakatime/claude-code-wakatime"
+            }
         },
         "dotfiles-plugins": {
-            "source": "github",
-            "repo": "edmundmiller/dotfiles"
+            "source": {
+                "source": "github",
+                "repo": "edmundmiller/dotfiles"
+            }
         }
     },
     "enabledPlugins": {
