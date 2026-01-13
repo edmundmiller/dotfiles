@@ -24,8 +24,8 @@ in
       opencodeConfigDir = "${config.home.homeDirectory}/.config/opencode";
     in
     {
-      # Symlink config files
-      home.configFile = {
+      # Symlink config files to ~/.config/opencode/
+      xdg.configFile = {
         "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
         "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
 
