@@ -18,12 +18,11 @@ in
 
   config = mkIf cfg.enable {
     home.file = {
-      # Note: settings.json is NOT symlinked because Claude Code needs write access for plugin management.
-      # Copy manually: cp ~/.config/dotfiles/config/claude/settings.json ~/.claude/settings.json
       # Skills and agents are shared with OpenCode - single source of truth
       ".claude/agents".source = "${configDir}/opencode/agent";
       ".claude/skills".source = "${configDir}/opencode/skill";
       ".claude/CLAUDE.md".source = "${configDir}/claude/CLAUDE.md";
+      ".claude/settings.json".source = "${configDir}/claude/settings.json";
 
       # WakaTime configuration (references agenix-decrypted secret)
       ".wakatime.cfg" = mkIf pkgs.stdenv.isDarwin {
