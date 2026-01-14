@@ -54,11 +54,27 @@ echo
 CMD=(bd create --title "$TITLE" --type "$TYPE" --priority "$PRIORITY")
 [[ -n "$DESC" ]] && CMD+=(--description "$DESC")
 
+# Confirmation summary
+SUMMARY="Title: $TITLE
+Type: $TYPE
+Priority: $PRIORITY"
+[[ -n "$DESC" ]] && SUMMARY+=$'\n'"Description: $DESC"
+
+gum style --border rounded --padding "0 1" --border-foreground "$DIM" "$SUMMARY"
+echo
+
+if ! gum confirm "Create this issue?"; then
+    gum style --foreground "$DIM" "Cancelled"
+    sleep 1
+    exit 0
+fi
+
 # Create issue with spinner
 if OUTPUT=$(gum spin --spinner dot --title "Creating issue..." -- "${CMD[@]}" 2>&1); then
     ISSUE_ID=$(echo "$OUTPUT" | grep -oE 'beads-[0-9]+' | head -1)
     if [[ -n "$ISSUE_ID" ]]; then
-        gum style --foreground "$GREEN" --bold "Created: $ISSUE_ID"
+        echo "$ISSUE_ID" | pbcopy
+        gum style --foreground "$GREEN" --bold "Created: $ISSUE_ID (copied to clipboard)"
     else
         gum style --foreground "$GREEN" --bold "Issue created"
         echo "$OUTPUT"
