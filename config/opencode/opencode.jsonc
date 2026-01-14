@@ -243,7 +243,16 @@
             "kubectl describe *": "allow",
             "kubectl logs *": "allow",
             // Beads issue tracker
-            "bd *": "allow"
+            "bd *": "allow",
+            // Git commit - allow normal commits (with GPG signing), block bypass flags
+            "git commit --no-gpg-sign *": "deny",
+            "git commit * --no-gpg-sign": "deny",
+            "git commit * --no-gpg-sign *": "deny",
+            "git commit --no-verify *": "deny",
+            "git commit * --no-verify": "deny",
+            "git commit * --no-verify *": "deny",
+            "git commit *": "allow",
+            "git add *": "allow"
         },
         "edit": "allow",
         "write": "allow",

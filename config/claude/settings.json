@@ -129,6 +129,10 @@
             "Bash(nix:*)",
             "Bash(nix-store:*)",
             "Bash(wt:*)",
+            "Bash(git commit:*)",
+            "Bash(git commit -m:*)",
+            "Bash(git commit -am:*)",
+            "Bash(git add:*)",
             "mcp__RepoPrompt__list_windows",
             "mcp__RepoPrompt__select_window",
             "mcp__RepoPrompt__manage_workspaces",
@@ -148,7 +152,13 @@
             "mcp__plugin_context7_context7__resolve-library-id"
         ],
         "deny": [
-            "mcp__git__*"
+            "mcp__git__*",
+            "Bash(git commit --no-gpg-sign:*)",
+            "Bash(git commit * --no-gpg-sign:*)",
+            "Bash(git commit * --no-gpg-sign *:*)",
+            "Bash(git commit --no-verify:*)",
+            "Bash(git commit * --no-verify:*)",
+            "Bash(git commit * --no-verify *:*)"
         ]
     },
     "statusLine": {
