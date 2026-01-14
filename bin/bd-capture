@@ -4,6 +4,15 @@
 
 set -euo pipefail
 
+# Parse args
+QUICK_MODE=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -q|--quick) QUICK_MODE=true; shift ;;
+        *) shift ;;
+    esac
+done
+
 # Colors
 RED=196
 GREEN=82
@@ -21,21 +30,28 @@ fi
 TITLE=$(gum input --placeholder "Issue title..." --width 70 --header "Title")
 [[ -z "$TITLE" ]] && exit 0
 
-# Type selection with task as default
-TYPE=$(gum choose --header "Type" --selected "task" \
-    "task" "bug" "feature" "epic" "chore")
+if $QUICK_MODE; then
+    # Quick mode: use defaults
+    TYPE="task"
+    PRIORITY="P2"
+    DESC=""
+else
+    # Type selection with task as default
+    TYPE=$(gum choose --header "Type" --selected "task" \
+        "task" "bug" "feature" "epic" "chore")
 
-# Priority selection with P2 as default
-PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
-    "P0 (Critical)" \
-    "P1 (High)" \
-    "P2 (Medium)" \
-    "P3 (Low)" \
-    "P4 (Backlog)")
-PRIORITY=$(echo "$PRIORITY_FULL" | cut -d' ' -f1)
+    # Priority selection with P2 as default
+    PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
+        "P0 (Critical)" \
+        "P1 (High)" \
+        "P2 (Medium)" \
+        "P3 (Low)" \
+        "P4 (Backlog)")
+    PRIORITY=$(echo "$PRIORITY_FULL" | cut -d' ' -f1)
 
-# Description (optional - just press Enter to skip)
-DESC=$(gum input --header "Description (optional)" --placeholder "Add details..." --width 70)
+    # Description (optional - just press Enter to skip)
+    DESC=$(gum input --header "Description (optional)" --placeholder "Add details..." --width 70)
+fi
 
 # Build command
 CMD=(bd create --title "$TITLE" --type "$TYPE" --priority "$PRIORITY")
@@ -46,11 +62,20 @@ if OUTPUT=$("${CMD[@]}" 2>&1); then
     ISSUE_ID=$(echo "$OUTPUT" | grep -oE 'beads-[0-9]+' | head -1)
     if [[ -n "$ISSUE_ID" ]]; then
         gum style --foreground "$GREEN" --bold "Created: $ISSUE_ID"
+        
+        # Offer to start working
+        if gum confirm "Start working on this issue?"; then
+            if bd update "$ISSUE_ID" --status in_progress >/dev/null 2>&1; then
+                gum style --foreground "$GREEN" "Status: in_progress"
+            else
+                gum style --foreground "$RED" "Failed to update status"
+            fi
+        fi
     else
         gum style --foreground "$GREEN" --bold "Issue created"
         echo "$OUTPUT"
     fi
-    sleep 2
+    sleep 1
 else
     gum style --foreground "$RED" --bold "Error creating issue:"
     echo "$OUTPUT"
