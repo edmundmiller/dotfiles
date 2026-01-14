@@ -53,21 +53,11 @@ if [[ "${1:-}" == "--format-only" ]]; then
       else "0"
       end;
     
-    def priority_color:
-      if . <= 1 then "31"
-      elif . == 2 then "33"
-      else "34"
-      end;
-    
-    def type_icon:
-      if . == "bug" then "B"
-      elif . == "feature" then "F"
-      elif . == "task" then "T"
-      else "?"
-      end;
+    def extract_hash:
+      split("-") | last;
     
     .[] |
-    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m[\(.repo_name)]\u001b[0m \u001b[1m\(.id)\u001b[0m | \(.title // "untitled") | \u001b[\(.status | status_color)m\(.status)\u001b[0m | \u001b[\(.priority | priority_color)mP\(.priority)\u001b[0m | \(.issue_type // "task" | type_icon)"
+    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m\(.repo_name)\u001b[0m \u001b[90m│\u001b[0m \(.title // "untitled") \u001b[90m│\u001b[0m \u001b[\(.status | status_color)m\(.id | extract_hash)\u001b[0m"
   '
   exit 0
 fi
@@ -201,21 +191,11 @@ format_for_fzf() {
       else "0"
       end;
     
-    def priority_color:
-      if . <= 1 then "31"   # red for P0-P1
-      elif . == 2 then "33" # yellow for P2
-      else "34"             # blue for P3-P4
-      end;
-    
-    def type_icon:
-      if . == "bug" then "B"
-      elif . == "feature" then "F"
-      elif . == "task" then "T"
-      else "?"
-      end;
+    def extract_hash:
+      split("-") | last;
     
     .[] |
-    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m[\(.repo_name)]\u001b[0m \u001b[1m\(.id)\u001b[0m | \(.title // "untitled") | \u001b[\(.status | status_color)m\(.status)\u001b[0m | \u001b[\(.priority | priority_color)mP\(.priority)\u001b[0m | \(.issue_type // "task" | type_icon)"
+    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m\(.repo_name)\u001b[0m \u001b[90m│\u001b[0m \(.title // "untitled") \u001b[90m│\u001b[0m \u001b[\(.status | status_color)m\(.id | extract_hash)\u001b[0m"
   '
 }
 
