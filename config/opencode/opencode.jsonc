@@ -276,83 +276,19 @@
                 "edit": "ask",
                 "write": "ask",
                 "bash": {
-                    // Default allow for read-only operations (MUST BE FIRST - last match wins)
+                    // Default allow (MUST BE FIRST - last match wins)
                     "*": "allow",
                     
-                    // Block file modifications
+                    // Only block truly destructive/irreversible operations
                     "rm *": "ask",
-                    "mv *": "ask",
-                    "cp *": "ask",
-                    "mkdir *": "ask",
-                    "touch *": "ask",
-                    "chmod *": "ask",
-                    "chown *": "ask",
-                    
-                    // Block git writes (reads are allowed by default)
-                    "git add *": "ask",
-                    "git commit *": "ask",
                     "git push *": "ask",
-                    "git pull *": "ask",
-                    "git merge *": "ask",
-                    "git rebase *": "ask",
-                    "git cherry-pick *": "ask",
-                    "git reset *": "ask",
-                    "git checkout *": "ask",
-                    "git switch *": "ask",
-                    "git restore *": "ask",
-                    "git stash *": "ask",
-                    "git clean *": "ask",
-                    
-                    // Block package installs
-                    "npm install *": "ask",
-                    "npm uninstall *": "ask",
-                    "npm ci *": "ask",
-                    "pip install *": "ask",
-                    "pip uninstall *": "ask",
-                    "brew install *": "ask",
-                    "brew uninstall *": "ask",
-                    "brew upgrade *": "ask",
-                    "cargo install *": "ask",
-                    "uv pip install *": "ask",
-                    "poetry add *": "ask",
-                    "poetry remove *": "ask",
-                    
-                    // Block docker writes
-                    "docker run *": "ask",
-                    "docker build *": "ask",
-                    "docker rm *": "ask",
-                    "docker rmi *": "ask",
-                    "docker push *": "ask",
-                    "docker exec *": "ask",
-                    "docker-compose up *": "ask",
-                    "docker-compose down *": "ask",
-                    
-                    // Block system changes
+                    "git push": "ask",
                     "sudo *": "ask",
-                    "systemctl *": "ask",
-                    "launchctl *": "ask",
-                    
-                    // Block beads modifications (reads allowed by default)
-                    "bd create *": "ask",
-                    "bd update *": "ask",
-                    "bd close *": "ask",
-                    "bd work *": "ask",
-                    "bd reopen *": "ask",
-                    "bd delete *": "ask",
-                    "bd comment *": "ask",
-                    
-                    // Block worktrunk modifications
-                    "wt create *": "ask",
                     "wt remove *": "ask",
-                    "wt merge *": "ask",
-                    "wt switch *": "ask",
-                    
-                    // Block nix system changes
+                    "docker push *": "ask",
                     "darwin-rebuild *": "ask",
                     "nixos-rebuild *": "ask",
-                    "nix-collect-garbage *": "ask",
-                    "hey rebuild *": "ask",
-                    "hey upgrade *": "ask"
+                    "hey rebuild *": "ask"
                 },
                 "list": "allow"
             }
