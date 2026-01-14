@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# bd-capture: Interactive beads issue capture via gum
+# Launched from tmux popup (prefix + i)
+
+set -euo pipefail
+
+# Colors
+RED=196
+GREEN=82
+DIM=245
+
+# Check beads initialized
+if [[ ! -d .beads ]]; then
+    gum style --foreground "$RED" --bold "Error: Not in a beads-initialized directory"
+    gum style --foreground "$DIM" "Run 'bd init' to initialize beads here"
+    read -n 1 -s -r -p "Press any key to close..."
+    exit 1
+fi
+
+# Title (required)
+TITLE=$(gum input --placeholder "Issue title..." --width 70 --header "Title")
+[[ -z "$TITLE" ]] && exit 0
+
+# Type selection with task as default
+TYPE=$(gum choose --header "Type" --selected "task" \
+    "task" "bug" "feature" "epic" "chore")
+
+# Priority selection with P2 as default
+PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
+    "P0 (Critical)" \
+    "P1 (High)" \
+    "P2 (Medium)" \
+    "P3 (Low)" \
+    "P4 (Backlog)")
+PRIORITY=$(echo "$PRIORITY_FULL" | cut -d' ' -f1)
+
+# Description (optional)
+gum style --foreground "$DIM" "Description (optional, Ctrl+D to skip):"
+DESC=$(gum write --width 70 --height 5 --placeholder "Add details..." 2>/dev/null || echo "")
+
+# Build command
+CMD=(bd create --title "$TITLE" --type "$TYPE" --priority "$PRIORITY")
+[[ -n "$DESC" ]] && CMD+=(--description "$DESC")
+
+# Create issue
+if OUTPUT=$("${CMD[@]}" 2>&1); then
+    ISSUE_ID=$(echo "$OUTPUT" | grep -oE 'beads-[0-9]+' | head -1)
+    if [[ -n "$ISSUE_ID" ]]; then
+        gum style --foreground "$GREEN" --bold "Created: $ISSUE_ID"
+    else
+        gum style --foreground "$GREEN" --bold "Issue created"
+        echo "$OUTPUT"
+    fi
+    sleep 2
+else
+    gum style --foreground "$RED" --bold "Error creating issue:"
+    echo "$OUTPUT"
+    read -n 1 -s -r -p "Press any key to close..."
+    exit 1
+fi
