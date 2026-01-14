@@ -243,15 +243,15 @@ fi
 
 # Format output with selective fields
 echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-echo -e "\033[1m$(echo "$ISSUE" | jq -r '.title // "untitled"')\033[0m"
+echo -e "\033[1m$(echo "$ISSUE" | jq -r '.[0].title // "untitled"')\033[0m"
 echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 echo ""
 
 # Status and metadata
-STATUS=$(echo "$ISSUE" | jq -r '.status // "unknown"')
-PRIORITY=$(echo "$ISSUE" | jq -r '.priority // 2')
-TYPE=$(echo "$ISSUE" | jq -r '.issue_type // "task"')
-ASSIGNEE=$(echo "$ISSUE" | jq -r '.assignee // "unassigned"')
+STATUS=$(echo "$ISSUE" | jq -r '.[0].status // "unknown"')
+PRIORITY=$(echo "$ISSUE" | jq -r '.[0].priority // 2')
+TYPE=$(echo "$ISSUE" | jq -r '.[0].issue_type // "task"')
+ASSIGNEE=$(echo "$ISSUE" | jq -r '.[0].assignee // "unassigned"')
 
 echo -e "\033[90mID:\033[0m       $ID"
 echo -e "\033[90mStatus:\033[0m   $STATUS"
@@ -262,7 +262,7 @@ echo -e "\033[90mRepo:\033[0m     $REPO_PATH"
 echo ""
 
 # Description
-DESC=$(echo "$ISSUE" | jq -r '.description // ""')
+DESC=$(echo "$ISSUE" | jq -r '.[0].description // ""')
 if [[ -n "$DESC" && "$DESC" != "null" ]]; then
   echo -e "\033[1mDescription:\033[0m"
   echo "$DESC" | head -20
@@ -270,30 +270,30 @@ if [[ -n "$DESC" && "$DESC" != "null" ]]; then
 fi
 
 # Dependencies
-DEP_COUNT=$(echo "$ISSUE" | jq -r '.dependency_count // 0')
+DEP_COUNT=$(echo "$ISSUE" | jq -r '.[0].dependency_count // 0')
 if [[ "$DEP_COUNT" -gt 0 ]]; then
   echo -e "\033[1mBlocked by:\033[0m ($DEP_COUNT)"
-  echo "$ISSUE" | jq -r '.dependencies[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
+  echo "$ISSUE" | jq -r '.[0].dependencies[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
   echo ""
 fi
 
 # Dependents
-DENT_COUNT=$(echo "$ISSUE" | jq -r '.dependent_count // 0')
+DENT_COUNT=$(echo "$ISSUE" | jq -r '.[0].dependent_count // 0')
 if [[ "$DENT_COUNT" -gt 0 ]]; then
   echo -e "\033[1mBlocking:\033[0m ($DENT_COUNT)"
-  echo "$ISSUE" | jq -r '.dependents[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
+  echo "$ISSUE" | jq -r '.[0].dependents[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
   echo ""
 fi
 
 # Labels
-LABELS=$(echo "$ISSUE" | jq -r '.labels // [] | if length > 0 then join(", ") else "" end')
+LABELS=$(echo "$ISSUE" | jq -r '.[0].labels // [] | if length > 0 then join(", ") else "" end')
 if [[ -n "$LABELS" ]]; then
   echo -e "\033[90mLabels:\033[0m $LABELS"
 fi
 
 # Timestamps
-CREATED=$(echo "$ISSUE" | jq -r '.created_at // ""' | cut -d'T' -f1)
-UPDATED=$(echo "$ISSUE" | jq -r '.updated_at // ""' | cut -d'T' -f1)
+CREATED=$(echo "$ISSUE" | jq -r '.[0].created_at // ""' | cut -d'T' -f1)
+UPDATED=$(echo "$ISSUE" | jq -r '.[0].updated_at // ""' | cut -d'T' -f1)
 if [[ -n "$CREATED" ]]; then
   echo -e "\033[90mCreated:\033[0m  $CREATED"
 fi
