@@ -126,12 +126,20 @@ fi
 # Discover .beads directories
 discover_beads() {
   local root="$1"
-  fd -t d -H "^\.beads$" "$root" -d 10 \
+  fd -t d -H "^\.beads$" "$root" -d 5 \
     --exclude .cache \
     --exclude .Trash \
     --exclude Library \
     --exclude node_modules \
     --exclude .git \
+    --exclude venv \
+    --exclude __pycache__ \
+    --exclude target \
+    --exclude build \
+    --exclude dist \
+    --exclude .vscode \
+    --exclude .idea \
+    --exclude .bun \
     2>/dev/null
 }
 
