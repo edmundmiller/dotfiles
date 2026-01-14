@@ -18,7 +18,7 @@ stdenvNoCC.mkDerivation rec {
     owner = "raine";
     repo = "tmux-file-picker";
     rev = "0473f7abe87b95bc008e1cbfd16578e9cee93565";
-    hash = "sha256-Usn0uzqmKijodq7Pll4DCs2HSvINoLVjARZoebQh/Wk=";
+    hash = "sha256-Uz+88f3RG7dBangOg0RLQxuE9f49TpMOcQkTtauzPQU=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
