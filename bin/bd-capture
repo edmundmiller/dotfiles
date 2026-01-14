@@ -9,6 +9,10 @@ RED=196
 GREEN=82
 DIM=245
 
+# Header banner
+gum style --border rounded --padding "0 1" "New Beads Issue"
+echo
+
 # Check beads initialized
 if [[ ! -d .beads ]]; then
     gum style --foreground "$RED" --bold "Error: Not in a beads-initialized directory"
@@ -18,14 +22,17 @@ if [[ ! -d .beads ]]; then
 fi
 
 # Title (required)
+gum style --foreground "$DIM" "Step 1/4"
 TITLE=$(gum input --placeholder "Issue title..." --width 70 --header "Title")
 [[ -z "$TITLE" ]] && exit 0
 
 # Type selection with task as default
+gum style --foreground "$DIM" "Step 2/4"
 TYPE=$(gum choose --header "Type" --selected "task" \
     "task" "bug" "feature" "epic" "chore")
 
 # Priority selection with P2 as default
+gum style --foreground "$DIM" "Step 3/4"
 PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
     "P0 (Critical)" \
     "P1 (High)" \
@@ -35,14 +42,20 @@ PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
 PRIORITY=$(echo "$PRIORITY_FULL" | cut -d' ' -f1)
 
 # Description (optional - just press Enter to skip)
+gum style --foreground "$DIM" "Step 4/4"
 DESC=$(gum input --header "Description (optional)" --placeholder "Add details..." --width 70)
+
+# Keyboard hints before creation
+echo
+gum style --foreground "$DIM" "Enter: confirm | Esc: cancel"
+echo
 
 # Build command
 CMD=(bd create --title "$TITLE" --type "$TYPE" --priority "$PRIORITY")
 [[ -n "$DESC" ]] && CMD+=(--description "$DESC")
 
-# Create issue
-if OUTPUT=$("${CMD[@]}" 2>&1); then
+# Create issue with spinner
+if OUTPUT=$(gum spin --spinner dot --title "Creating issue..." -- "${CMD[@]}" 2>&1); then
     ISSUE_ID=$(echo "$OUTPUT" | grep -oE 'beads-[0-9]+' | head -1)
     if [[ -n "$ISSUE_ID" ]]; then
         gum style --foreground "$GREEN" --bold "Created: $ISSUE_ID"
