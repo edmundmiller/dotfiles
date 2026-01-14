@@ -42,7 +42,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = [ tmux ];
+    user.packages = [
+      tmux
+      pkgs.gum # Interactive CLI for bd-capture popup
+    ];
 
     modules.theme.onReload.tmux = "${tmux}/bin/tmux source-file $TMUX_HOME/extraInit";
 
