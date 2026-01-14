@@ -4,6 +4,15 @@
 
 set -euo pipefail
 
+# Parse args
+QUICK_MODE=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -q|--quick) QUICK_MODE=true; shift ;;
+        *) shift ;;
+    esac
+done
+
 # Colors
 RED=196
 GREEN=82
@@ -26,24 +35,31 @@ gum style --foreground "$DIM" "Step 1/4"
 TITLE=$(gum input --placeholder "Issue title..." --width 70 --header "Title")
 [[ -z "$TITLE" ]] && exit 0
 
-# Type selection with task as default
-gum style --foreground "$DIM" "Step 2/4"
-TYPE=$(gum choose --header "Type" --selected "task" \
-    "task" "bug" "feature" "epic" "chore")
+if $QUICK_MODE; then
+    # Quick mode: use defaults
+    TYPE="task"
+    PRIORITY="P2"
+    DESC=""
+else
+    # Type selection with task as default
+    gum style --foreground "$DIM" "Step 2/4"
+    TYPE=$(gum choose --header "Type" --selected "task" \
+        "task" "bug" "feature" "epic" "chore")
 
-# Priority selection with P2 as default
-gum style --foreground "$DIM" "Step 3/4"
-PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
-    "P0 (Critical)" \
-    "P1 (High)" \
-    "P2 (Medium)" \
-    "P3 (Low)" \
-    "P4 (Backlog)")
-PRIORITY=$(echo "$PRIORITY_FULL" | cut -d' ' -f1)
+    # Priority selection with P2 as default
+    gum style --foreground "$DIM" "Step 3/4"
+    PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
+        "P0 (Critical)" \
+        "P1 (High)" \
+        "P2 (Medium)" \
+        "P3 (Low)" \
+        "P4 (Backlog)")
+    PRIORITY=$(echo "$PRIORITY_FULL" | cut -d' ' -f1)
 
-# Description (optional - just press Enter to skip)
-gum style --foreground "$DIM" "Step 4/4"
-DESC=$(gum input --header "Description (optional)" --placeholder "Add details..." --width 70)
+    # Description (optional - just press Enter to skip)
+    gum style --foreground "$DIM" "Step 4/4"
+    DESC=$(gum input --header "Description (optional)" --placeholder "Add details..." --width 70)
+fi
 
 # Keyboard hints before creation
 echo
@@ -75,11 +91,20 @@ if OUTPUT=$(gum spin --spinner dot --title "Creating issue..." -- "${CMD[@]}" 2>
     if [[ -n "$ISSUE_ID" ]]; then
         echo "$ISSUE_ID" | pbcopy
         gum style --foreground "$GREEN" --bold "Created: $ISSUE_ID (copied to clipboard)"
+        
+        # Offer to start working
+        if gum confirm "Start working on this issue?"; then
+            if bd update "$ISSUE_ID" --status in_progress >/dev/null 2>&1; then
+                gum style --foreground "$GREEN" "Status: in_progress"
+            else
+                gum style --foreground "$RED" "Failed to update status"
+            fi
+        fi
     else
         gum style --foreground "$GREEN" --bold "Issue created"
         echo "$OUTPUT"
     fi
-    sleep 2
+    sleep 1
 else
     gum style --foreground "$RED" --bold "Error creating issue:"
     echo "$OUTPUT"
