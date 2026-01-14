@@ -121,7 +121,7 @@ bind E display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/b
 
 # file picker (raine.dev)
 bind f display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker"
-bind r display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --directories"
+bind D display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --directories"
 bind z display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide"
 bind d display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide --dir-only"
 bind g display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --git-root"
