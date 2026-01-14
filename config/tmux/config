@@ -116,6 +116,14 @@ bind Enter copy-mode # enter copy mode
 bind b list-buffers  # list paster buffers
 bind B choose-buffer # choose which buffer to paste from
 bind i display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-capture"  # beads capture
+
+# file picker (raine.dev)
+bind f display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker"
+bind r display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --directories"
+bind z display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide"
+bind d display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide --dir-only"
+bind g display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --git-root"
+
 bind p select-pane -t :.-  # select previous pane
 bind P run "xclip -selection clipboard -o | tmux load-buffer - ; tmux paste-buffer"
 
