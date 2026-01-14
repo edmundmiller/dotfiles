@@ -34,9 +34,8 @@ PRIORITY_FULL=$(gum choose --header "Priority" --selected "P2 (Medium)" \
     "P4 (Backlog)")
 PRIORITY=$(echo "$PRIORITY_FULL" | cut -d' ' -f1)
 
-# Description (optional)
-gum style --foreground "$DIM" "Description (optional, Ctrl+D to skip):"
-DESC=$(gum write --width 70 --height 5 --placeholder "Add details..." 2>/dev/null || echo "")
+# Description (optional - just press Enter to skip)
+DESC=$(gum input --header "Description (optional)" --placeholder "Add details..." --width 70)
 
 # Build command
 CMD=(bd create --title "$TITLE" --type "$TYPE" --priority "$PRIORITY")
