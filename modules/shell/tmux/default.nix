@@ -20,6 +20,14 @@ let
     sha256 = "sha256-ZoXNJPDsggi5d+5jcPAOUdTTOecIsfZrfSmE4nZSkNY=";
   };
 
+  # Fetch tmux-smooth-scroll plugin for animated scrolling
+  tmux-smooth-scroll = pkgs.fetchFromGitHub {
+    owner = "azorng";
+    repo = "tmux-smooth-scroll";
+    rev = "4c1232796235173f3e48031cbffe4a19773a957a";
+    sha256 = "sha256-nTB0V/Xln8QJ95TB+hpIbuf0GwlBCU7CFQyzd0oWXw4=";
+  };
+
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
@@ -73,6 +81,7 @@ in
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
         run-shell ${tmux-opencode-status}/opencode-status.tmux
+        run-shell ${tmux-smooth-scroll}/smooth-scroll.tmux
         
         # tmux-window-name: Smart automatic window naming based on path and running program
         # Abbreviations: OC=opencode, CC=claude, V=vim/nvim, G=git, JJ=jjui, λ=shell
