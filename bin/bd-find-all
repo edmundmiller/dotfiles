@@ -1,0 +1,363 @@
+#!/usr/bin/env bash
+# bd-find-all - Search and browse all beads across repositories
+# Usage: bd-find-all [--all] [--current]
+#   --current  Search from current directory (default)
+#   --all      Search from home directory
+#   If no beads found in current scope, falls back to --all
+
+set -euo pipefail
+
+# Colors (terminal-agnostic ANSI)
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+GRAY='\033[0;90m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# Check dependencies
+for cmd in fd jq fzf gum bd; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo -e "${RED}Error: $cmd not found${RESET}" >&2
+    exit 1
+  fi
+done
+
+# Clipboard command (macOS vs Linux)
+if command -v pbcopy &>/dev/null; then
+  CLIP_CMD="pbcopy"
+elif command -v xclip &>/dev/null; then
+  CLIP_CMD="xclip -selection clipboard"
+elif command -v wl-copy &>/dev/null; then
+  CLIP_CMD="wl-copy"
+else
+  CLIP_CMD=""
+fi
+
+# Get script path for reload bindings
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+
+# Handle --format-only mode FIRST (for reload bindings)
+# This must be before any other processing
+if [[ "${1:-}" == "--format-only" ]]; then
+  # Read JSON from stdin and format for fzf display
+  jq -r '
+    def status_color:
+      if . == "open" then "32"
+      elif . == "in_progress" then "33"
+      elif . == "blocked" then "31"
+      elif . == "closed" then "90"
+      else "0"
+      end;
+    
+    def priority_color:
+      if . <= 1 then "31"
+      elif . == 2 then "33"
+      else "34"
+      end;
+    
+    def type_icon:
+      if . == "bug" then "B"
+      elif . == "feature" then "F"
+      elif . == "task" then "T"
+      else "?"
+      end;
+    
+    .[] |
+    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m[\(.repo_name)]\u001b[0m \u001b[1m\(.id)\u001b[0m | \(.title // "untitled") | \u001b[\(.status | status_color)m\(.status)\u001b[0m | \u001b[\(.priority | priority_color)mP\(.priority)\u001b[0m | \(.issue_type // "task" | type_icon)"
+  '
+  exit 0
+fi
+
+# Parse arguments
+SCOPE="current"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --all|-a)
+      SCOPE="all"
+      shift
+      ;;
+    --current|-c)
+      SCOPE="current"
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: bd-find-all [--all] [--current]"
+      echo ""
+      echo "Search and browse all beads across repositories."
+      echo ""
+      echo "Options:"
+      echo "  --current, -c  Search from current directory (default)"
+      echo "  --all, -a      Search from home directory"
+      echo ""
+      echo "Keybindings in fzf:"
+      echo "  Enter     Copy issue ID to clipboard"
+      echo "  Ctrl-O    Filter: open issues"
+      echo "  Ctrl-P    Filter: in_progress issues"
+      echo "  Ctrl-B    Filter: blocked issues"
+      echo "  Ctrl-A    Clear all filters"
+      echo "  Ctrl-R    Filter: ready issues (no blockers)"
+      echo "  Alt-1     Filter: high priority (P0-P1)"
+      echo "  Alt-2     Filter: medium priority (P2)"
+      echo "  Alt-3     Filter: low priority (P3-P4)"
+      echo "  Alt-F     Filter: features"
+      echo "  Alt-T     Filter: tasks"
+      echo "  Alt-G     Filter: bugs"
+      echo "  Esc       Cancel"
+      exit 0
+      ;;
+    *)
+      echo -e "${RED}Unknown option: $1${RESET}" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# Set search root based on scope
+if [[ "$SCOPE" == "current" ]]; then
+  SEARCH_ROOT="$PWD"
+else
+  SEARCH_ROOT="$HOME"
+fi
+
+# Discover .beads directories
+discover_beads() {
+  local root="$1"
+  fd -t d -H "^\.beads$" "$root" -d 10 \
+    --exclude .cache \
+    --exclude .Trash \
+    --exclude Library \
+    --exclude node_modules \
+    --exclude .git \
+    2>/dev/null
+}
+
+# Find beads directories
+mapfile -t BEADS_DIRS < <(discover_beads "$SEARCH_ROOT")
+
+# Fallback to --all if no beads found in current scope
+if [[ ${#BEADS_DIRS[@]} -eq 0 && "$SCOPE" == "current" ]]; then
+  SEARCH_ROOT="$HOME"
+  mapfile -t BEADS_DIRS < <(discover_beads "$SEARCH_ROOT")
+  if [[ ${#BEADS_DIRS[@]} -gt 0 ]]; then
+    gum style --foreground 208 "No beads in current directory, searching home..."
+  fi
+fi
+
+# Exit if still no beads found
+if [[ ${#BEADS_DIRS[@]} -eq 0 ]]; then
+  gum style --foreground 208 "No .beads directories found"
+  exit 0
+fi
+
+# Collect all issues from all repos
+collect_issues() {
+  local all_issues="[]"
+  
+  for beads_dir in "${BEADS_DIRS[@]}"; do
+    local repo_dir
+    repo_dir=$(dirname "$beads_dir")
+    local repo_name
+    repo_name=$(basename "$repo_dir")
+    
+    # Get issues from this repo
+    local issues
+    issues=$(cd "$repo_dir" && bd list --json --no-daemon 2>/dev/null || echo "[]")
+    
+    # Add repo metadata to each issue
+    local enhanced
+    enhanced=$(echo "$issues" | jq --arg repo "$repo_name" --arg path "$repo_dir" \
+      'map(. + {repo_name: $repo, repo_path: $path})')
+    
+    # Merge into all_issues
+    all_issues=$(echo "$all_issues" "$enhanced" | jq -s 'add')
+  done
+  
+  echo "$all_issues"
+}
+
+# Format issues for fzf display
+format_for_fzf() {
+  local issues="$1"
+  
+  # Format: repo_name \t id \t title \t status \t priority \t type \t repo_path \t display_line
+  echo "$issues" | jq -r '
+    def status_color:
+      if . == "open" then "32"        # green
+      elif . == "in_progress" then "33"  # yellow
+      elif . == "blocked" then "31"   # red
+      elif . == "closed" then "90"    # gray
+      else "0"
+      end;
+    
+    def priority_color:
+      if . <= 1 then "31"   # red for P0-P1
+      elif . == 2 then "33" # yellow for P2
+      else "34"             # blue for P3-P4
+      end;
+    
+    def type_icon:
+      if . == "bug" then "B"
+      elif . == "feature" then "F"
+      elif . == "task" then "T"
+      else "?"
+      end;
+    
+    .[] |
+    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m[\(.repo_name)]\u001b[0m \u001b[1m\(.id)\u001b[0m | \(.title // "untitled") | \u001b[\(.status | status_color)m\(.status)\u001b[0m | \u001b[\(.priority | priority_color)mP\(.priority)\u001b[0m | \(.issue_type // "task" | type_icon)"
+  '
+}
+
+# Preview function for selected issue
+generate_preview_script() {
+  cat << 'PREVIEW_EOF'
+#!/usr/bin/env bash
+ID="$1"
+REPO_PATH="$2"
+
+if [[ -z "$ID" || -z "$REPO_PATH" ]]; then
+  echo "No issue selected"
+  exit 0
+fi
+
+cd "$REPO_PATH" 2>/dev/null || exit 1
+
+# Get issue details
+ISSUE=$(bd show "$ID" --json --no-daemon 2>/dev/null)
+
+if [[ -z "$ISSUE" || "$ISSUE" == "null" ]]; then
+  echo "Issue not found: $ID"
+  exit 0
+fi
+
+# Format output with selective fields
+echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+echo -e "\033[1m$(echo "$ISSUE" | jq -r '.title // "untitled"')\033[0m"
+echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+echo ""
+
+# Status and metadata
+STATUS=$(echo "$ISSUE" | jq -r '.status // "unknown"')
+PRIORITY=$(echo "$ISSUE" | jq -r '.priority // 2')
+TYPE=$(echo "$ISSUE" | jq -r '.issue_type // "task"')
+ASSIGNEE=$(echo "$ISSUE" | jq -r '.assignee // "unassigned"')
+
+echo -e "\033[90mID:\033[0m       $ID"
+echo -e "\033[90mStatus:\033[0m   $STATUS"
+echo -e "\033[90mPriority:\033[0m P$PRIORITY"
+echo -e "\033[90mType:\033[0m     $TYPE"
+echo -e "\033[90mAssignee:\033[0m $ASSIGNEE"
+echo -e "\033[90mRepo:\033[0m     $REPO_PATH"
+echo ""
+
+# Description
+DESC=$(echo "$ISSUE" | jq -r '.description // ""')
+if [[ -n "$DESC" && "$DESC" != "null" ]]; then
+  echo -e "\033[1mDescription:\033[0m"
+  echo "$DESC" | head -20
+  echo ""
+fi
+
+# Dependencies
+DEP_COUNT=$(echo "$ISSUE" | jq -r '.dependency_count // 0')
+if [[ "$DEP_COUNT" -gt 0 ]]; then
+  echo -e "\033[1mBlocked by:\033[0m ($DEP_COUNT)"
+  echo "$ISSUE" | jq -r '.dependencies[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
+  echo ""
+fi
+
+# Dependents
+DENT_COUNT=$(echo "$ISSUE" | jq -r '.dependent_count // 0')
+if [[ "$DENT_COUNT" -gt 0 ]]; then
+  echo -e "\033[1mBlocking:\033[0m ($DENT_COUNT)"
+  echo "$ISSUE" | jq -r '.dependents[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
+  echo ""
+fi
+
+# Labels
+LABELS=$(echo "$ISSUE" | jq -r '.labels // [] | if length > 0 then join(", ") else "" end')
+if [[ -n "$LABELS" ]]; then
+  echo -e "\033[90mLabels:\033[0m $LABELS"
+fi
+
+# Timestamps
+CREATED=$(echo "$ISSUE" | jq -r '.created_at // ""' | cut -d'T' -f1)
+UPDATED=$(echo "$ISSUE" | jq -r '.updated_at // ""' | cut -d'T' -f1)
+if [[ -n "$CREATED" ]]; then
+  echo -e "\033[90mCreated:\033[0m  $CREATED"
+fi
+if [[ -n "$UPDATED" ]]; then
+  echo -e "\033[90mUpdated:\033[0m  $UPDATED"
+fi
+PREVIEW_EOF
+}
+
+# Create temp preview script
+PREVIEW_SCRIPT=$(mktemp)
+generate_preview_script > "$PREVIEW_SCRIPT"
+chmod +x "$PREVIEW_SCRIPT"
+trap 'rm -f "$PREVIEW_SCRIPT"' EXIT
+
+# Collect and format issues
+gum spin --spinner dot --title "Searching for beads..." -- sleep 0.1 &
+ALL_ISSUES=$(collect_issues)
+wait
+
+ISSUE_COUNT=$(echo "$ALL_ISSUES" | jq 'length')
+
+if [[ "$ISSUE_COUNT" -eq 0 ]]; then
+  gum style --foreground 208 "No issues found in ${#BEADS_DIRS[@]} repositories"
+  exit 0
+fi
+
+# Store formatted issues in temp file for reload
+ISSUES_FILE=$(mktemp)
+echo "$ALL_ISSUES" > "$ISSUES_FILE"
+trap 'rm -f "$PREVIEW_SCRIPT" "$ISSUES_FILE"' EXIT
+
+# Format for initial display
+FORMATTED=$(format_for_fzf "$ALL_ISSUES")
+
+# Build header
+HEADER="Enter=copy | ^O=open ^P=prog ^B=blocked ^A=all ^R=ready | M-1/2/3=prio | M-f/t/g=type"
+
+# Run fzf
+SELECTED=$(echo "$FORMATTED" | fzf \
+  --ansi \
+  --height 100% \
+  --layout reverse \
+  --border rounded \
+  --prompt "Beads ($ISSUE_COUNT): " \
+  --header "$HEADER" \
+  --delimiter '\t' \
+  --with-nth 8 \
+  --preview "$PREVIEW_SCRIPT {2} {7}" \
+  --preview-window 'right:55%:wrap' \
+  --bind "ctrl-o:reload(cat '$ISSUES_FILE' | jq 'map(select(.status==\"open\"))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "ctrl-p:reload(cat '$ISSUES_FILE' | jq 'map(select(.status==\"in_progress\"))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "ctrl-b:reload(cat '$ISSUES_FILE' | jq 'map(select(.status==\"blocked\"))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "ctrl-r:reload(cat '$ISSUES_FILE' | jq 'map(select(.dependency_count==0 and .status!=\"closed\"))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "ctrl-a:reload(cat '$ISSUES_FILE' | jq '.' | '$SCRIPT_PATH' --format-only)" \
+  --bind "alt-1:reload(cat '$ISSUES_FILE' | jq 'map(select(.priority <= 1))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "alt-2:reload(cat '$ISSUES_FILE' | jq 'map(select(.priority == 2))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "alt-3:reload(cat '$ISSUES_FILE' | jq 'map(select(.priority >= 3))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "alt-f:reload(cat '$ISSUES_FILE' | jq 'map(select(.issue_type==\"feature\"))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "alt-t:reload(cat '$ISSUES_FILE' | jq 'map(select(.issue_type==\"task\"))' | '$SCRIPT_PATH' --format-only)" \
+  --bind "alt-g:reload(cat '$ISSUES_FILE' | jq 'map(select(.issue_type==\"bug\"))' | '$SCRIPT_PATH' --format-only)" \
+  || true)
+
+# Handle selection
+if [[ -n "$SELECTED" ]]; then
+  ISSUE_ID=$(echo "$SELECTED" | cut -f2)
+  
+  if [[ -n "$CLIP_CMD" ]]; then
+    echo -n "$ISSUE_ID" | $CLIP_CMD
+    gum style --foreground 212 "Copied $ISSUE_ID to clipboard"
+  else
+    echo "$ISSUE_ID"
+    gum style --foreground 208 "No clipboard available, ID printed above"
+  fi
+fi

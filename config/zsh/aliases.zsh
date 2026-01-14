@@ -81,5 +81,9 @@ alias ddg=duckduckgo
 alias bt=transmission-remote
 alias tb="nc termbin.com 9999"
 
+# Beads global search
+alias bdf='bd-find-all'          # Search from current dir (fallback to ~)
+alias bdfa='bd-find-all --all'   # Search from home dir
+
 # Claude Code
 alias cc="claude --dangerously-skip-permissions"
