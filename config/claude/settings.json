@@ -145,6 +145,8 @@
             "Bash(nix:*)",
             "Bash(nix-store:*)",
             "Bash(wt:*)",
+            "Bash(bd close * --reason *:*)",
+            "Bash(bd close * --reason=*:*)",
             "Bash(bd:*)",
             "Bash(git commit:*)",
             "Bash(git commit -m:*)",
@@ -170,6 +172,8 @@
         ],
         "deny": [
             "mcp__git__*",
+            "Bash(bd close *:*)",
+            "Bash(bd close:*)",
             "Bash(*--no-gpg-sign*:*)",
             "Bash(*gpgsign=false*:*)",
             "Bash(git -c commit.gpgsign=false:*)",
