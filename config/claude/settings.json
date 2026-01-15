@@ -225,7 +225,6 @@
         "plugin-dev@claude-plugins-official": false,
         "hookify@claude-plugins-official": false,
         "ralph-loop@claude-plugins-official": true,
-        "circleback@claude-plugins-official": true,
         "code-simplifier@claude-plugins-official": true
     },
     "alwaysThinkingEnabled": true
