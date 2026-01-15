@@ -3,6 +3,8 @@
   stdenvNoCC,
   fetchFromGitHub,
   zsh,
+  makeWrapper,
+  revolver,
 }:
 
 stdenvNoCC.mkDerivation rec {
@@ -13,21 +15,28 @@ stdenvNoCC.mkDerivation rec {
     owner = "zunit-zsh";
     repo = "zunit";
     rev = "v${version}";
-    sha256 = "sha256-LU9sFMGNXPVz2dqqPRIDGTb1d+C8IHxQKsO+7JH8uhg=";
+    sha256 = "sha256-JlUb5omhy6uAhgva674FvDZ8E9AJ1tO5Ki7jJ6sDqjc=";
   };
 
-  buildInputs = [ zsh ];
+  nativeBuildInputs = [ zsh makeWrapper ];
+
+  buildPhase = ''
+    # Patch out revolver dependency check (not needed in CI/TAP mode)
+    # Original: $(type revolver >/dev/null 2>&1) || ...
+    # Replace with: true || ... (always succeeds, skips the check)
+    sed -i 's/\$(type revolver .*2>&1)/true/' src/zunit.zsh
+
+    # Run the build script to compile zunit
+    zsh build.zsh
+  '';
 
   installPhase = ''
-    mkdir -p $out/bin $out/share/zunit
-    cp -r * $out/share/zunit/
-    
-    # Create wrapper script
-    cat > $out/bin/zunit << 'EOF'
-#!/usr/bin/env zsh
-source "${0:A:h}/../share/zunit/zunit"
-EOF
+    mkdir -p $out/bin
+    cp zunit $out/bin/zunit
     chmod +x $out/bin/zunit
+    
+    # Symlink revolver into zunit's bin so it's found via $PATH
+    ln -s ${revolver}/bin/revolver $out/bin/revolver
   '';
 
   meta = with lib; {
