@@ -1,0 +1,81 @@
+#!/usr/bin/env zunit
+
+# Tests for g2bare function - converts normal repo to bare + worktree layout
+# Tier 1 tests: critical path scenarios
+
+@setup {
+  # Create temp directory for test repos
+  export TEST_DIR=$(mktemp -d)
+  export ORIG_PWD=$PWD
+  
+  # Source the function we're testing
+  source "$ORIG_PWD/config/git/aliases.zsh"
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'g2bare fails when not in git repo' {
+  cd "$TEST_DIR"
+  
+  run g2bare
+  
+  assert $state equals 1
+  assert "$output" contains "Not in a git repository"
+}
+
+@test 'g2bare fails when working tree is dirty' {
+  # Create test repo
+  mkdir -p "$TEST_DIR/dirty-repo"
+  cd "$TEST_DIR/dirty-repo"
+  git init --quiet
+  git config user.email "test@test.com"
+  git config user.name "Test User"
+  echo "# Test Repo" > README.md
+  git add README.md
+  git commit --quiet -m "Initial commit"
+  
+  # Create uncommitted changes
+  echo "dirty" >> README.md
+  
+  run g2bare
+  
+  assert $state equals 1
+  assert "$output" contains "Uncommitted changes detected"
+  
+  # Verify original repo is unchanged
+  run git rev-parse --is-bare-repository
+  assert "$output" same_as "false"
+}
+
+@test 'g2bare converts normal repo to bare layout' {
+  # Create test repo
+  local repo_path="$TEST_DIR/clean-repo"
+  mkdir -p "$repo_path"
+  cd "$repo_path"
+  git init --quiet
+  git config user.email "test@test.com"
+  git config user.name "Test User"
+  echo "# Test Repo" > README.md
+  git add README.md
+  git commit --quiet -m "Initial commit"
+  
+  run g2bare
+  
+  assert $state equals 0
+  assert "$output" contains "Converted to bare layout"
+  
+  # Verify bare repo exists
+  run git -C "$repo_path/.git" rev-parse --is-bare-repository
+  assert "$output" same_as "true"
+  
+  # Verify worktree exists and has files
+  assert "$repo_path/.git.main/README.md" is_file
+  
+  # Verify git works in worktree
+  cd "$repo_path/.git.main"
+  run git status --short
+  assert $state equals 0
+}
