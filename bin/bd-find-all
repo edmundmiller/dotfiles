@@ -55,9 +55,14 @@ if [[ "${1:-}" == "--format-only" ]]; then
     
     def extract_hash:
       split("-") | last;
+
+    def clean_title:
+      (.title // "untitled")
+      | gsub("[\\r\\n\\t]+"; " ")
+      | gsub("  +"; " ");
     
     .[] |
-    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m\(.repo_name)\u001b[0m \u001b[90m│\u001b[0m \(.title // "untitled") \u001b[90m│\u001b[0m \u001b[\(.status | status_color)m\(.id | extract_hash)\u001b[0m"
+    "\(.repo_name)\t\(.id)\t\(clean_title)\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m\(.repo_name)\u001b[0m \u001b[90m│\u001b[0m \(clean_title) \u001b[90m│\u001b[0m \u001b[\(.status | status_color)m\(.id | extract_hash)\u001b[0m"
   '
   exit 0
 fi
@@ -130,7 +135,74 @@ discover_beads() {
     --exclude .vscode \
     --exclude .idea \
     --exclude .bun \
+    --exclude .claude/plugins \
+    --exclude .config/claude/plugins \
+    --exclude .config/opencode/plugin \
+    --exclude "*/plugins/*" \
+    --exclude "*/plugin/*" \
     2>/dev/null
+}
+
+resolve_repo_dir() {
+  local repo_dir="$1"
+  local repo_base
+  repo_base=$(basename "$repo_dir")
+
+  if [[ "$repo_base" != *".bd-"* && "$repo_base" != *".wt-"* ]]; then
+    echo "$repo_dir"
+    return
+  fi
+
+  if ! git -C "$repo_dir" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "$repo_dir"
+    return
+  fi
+
+  local entry_path=""
+  local entry_branch=""
+  local first_path=""
+  local main_path=""
+
+  while IFS= read -r line; do
+    if [[ -z "$line" ]]; then
+      if [[ -n "$entry_path" ]]; then
+        if [[ "$entry_branch" =~ refs/heads/(main|master)$ ]]; then
+          main_path="$entry_path"
+          break
+        fi
+        if [[ -z "$first_path" ]]; then
+          first_path="$entry_path"
+        fi
+      fi
+      entry_path=""
+      entry_branch=""
+      continue
+    fi
+
+    case "$line" in
+      worktree\ *) entry_path="${line#worktree }" ;;
+      branch\ *) entry_branch="${line#branch }" ;;
+    esac
+  done < <(git -C "$repo_dir" worktree list --porcelain)
+
+  if [[ -z "$main_path" && -n "$entry_path" ]]; then
+    if [[ "$entry_branch" =~ refs/heads/(main|master)$ ]]; then
+      main_path="$entry_path"
+    elif [[ -z "$first_path" ]]; then
+      first_path="$entry_path"
+    fi
+  fi
+
+  if [[ -z "$main_path" ]]; then
+    main_path="$first_path"
+  fi
+
+  if [[ -n "$main_path" ]]; then
+    echo "$main_path"
+    return
+  fi
+
+  echo "$repo_dir"
 }
 
 # Find beads directories
@@ -154,10 +226,26 @@ fi
 # Collect all issues from all repos
 collect_issues() {
   local all_issues="[]"
+  local seen_repos=()
   
   for beads_dir in "${BEADS_DIRS[@]}"; do
     local repo_dir
     repo_dir=$(dirname "$beads_dir")
+    repo_dir=$(resolve_repo_dir "$repo_dir")
+
+    local already_seen=0
+    for seen_repo in "${seen_repos[@]}"; do
+      if [[ "$seen_repo" == "$repo_dir" ]]; then
+        already_seen=1
+        break
+      fi
+    done
+
+    if [[ "$already_seen" -eq 1 ]]; then
+      continue
+    fi
+    seen_repos+=("$repo_dir")
+
     local repo_name
     repo_name=$(basename "$repo_dir")
     
@@ -193,9 +281,14 @@ format_for_fzf() {
     
     def extract_hash:
       split("-") | last;
+
+    def clean_title:
+      (.title // "untitled")
+      | gsub("[\\r\\n\\t]+"; " ")
+      | gsub("  +"; " ");
     
     .[] |
-    "\(.repo_name)\t\(.id)\t\(.title // "untitled")\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m\(.repo_name)\u001b[0m \u001b[90m│\u001b[0m \(.title // "untitled") \u001b[90m│\u001b[0m \u001b[\(.status | status_color)m\(.id | extract_hash)\u001b[0m"
+    "\(.repo_name)\t\(.id)\t\(clean_title)\t\(.status)\t\(.priority)\t\(.issue_type // "task")\t\(.repo_path)\t\u001b[36m\(.repo_name)\u001b[0m \u001b[90m│\u001b[0m \(clean_title) \u001b[90m│\u001b[0m \u001b[\(.status | status_color)m\(.id | extract_hash)\u001b[0m"
   '
 }
 
