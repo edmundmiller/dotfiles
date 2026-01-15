@@ -51,6 +51,7 @@
     "rockorager/tap/prise"  # Modern terminal multiplexer
     "bash"
     "bat"
+    "bats-core"
     "btop"
     "coreutils"
     "difftastic"
