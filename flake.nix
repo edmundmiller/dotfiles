@@ -254,10 +254,39 @@
           programs.statix.enable = true;
         };
 
-        # Add claudelint checks for Claude Code plugins
+        # Add checks for deployment, plugins, and shell tests
         checks = {
           # deploy-rs checks - validates deployment configurations
           deploy-rs = deploy-rs.lib.${system}.deployChecks self.deploy;
+
+          # zunit shell function tests
+          zunit-tests = pkgs.runCommand "zunit-tests" {
+            nativeBuildInputs = [
+              self.packages.${system}.zunit
+              pkgs.zsh
+              pkgs.git
+            ];
+          } ''
+            # Setup git config for tests
+            export HOME=$TMPDIR
+            git config --global user.email "test@test.com"
+            git config --global user.name "Test User"
+            git config --global init.defaultBranch main
+
+            # Run zunit tests (--tap bypasses revolver spinner dependency)
+            cd ${./.}
+            for test in config/*/tests/*.zunit; do
+              if [ -f "$test" ]; then
+                echo "Running $test..."
+                zunit --tap "$test"
+              fi
+            done
+
+            # Create success marker
+            mkdir -p $out
+            echo "All zunit tests passed" > $out/result
+          '';
+
           validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" {
             buildInputs = [ pkgs.python312 ];
           } ''

@@ -51,6 +51,11 @@
 }
 
 @test 'g2bare converts normal repo to bare layout' {
+  # Skip if wt (worktrunk) not available - required for full conversion
+  if ! command -v wt &>/dev/null; then
+    skip "wt (worktrunk) not available"
+  fi
+
   # Create test repo
   local repo_path="$TEST_DIR/clean-repo"
   mkdir -p "$repo_path"
