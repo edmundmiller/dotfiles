@@ -25,6 +25,40 @@ gcl() {
   git clone --bare "$url" "${name}/.git" && \
     echo "Bare repo created. Next: cd $name && wt switch -c main"
 }
+
+# g2bare: convert existing repo to bare + worktrunk layout
+# Usage: g2bare [target-dir]
+# Creates: target/.git (bare repo) + worktree for current branch
+# Leaves original repo untouched
+g2bare() {
+  local repo_root
+  repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Not in a git repository"
+    return 1
+  }
+  local repo_name parent target current_branch
+  repo_name=$(basename "$repo_root")
+  parent=$(dirname "$repo_root")
+  target="${1:-${parent}/${repo_name}-new}"
+  if [[ -e "$target" ]]; then
+    echo "Target already exists: $target"
+    return 1
+  fi
+  mkdir -p "$target" || return 1
+  git clone --bare "$repo_root" "$target/.git" || return 1
+  current_branch=$(git -C "$repo_root" branch --show-current)
+  if [[ -z "$current_branch" ]]; then
+    current_branch="main"
+  fi
+  if command -v wt >/dev/null 2>&1; then
+    (cd "$target" && wt switch -c "$current_branch") || return 1
+    echo "Bare repo ready at $target"
+    echo "Next: copy uncommitted files, verify, remove old repo"
+  else
+    echo "Bare repo created at $target/.git"
+    echo "Next: cd $target && wt switch -c $current_branch"
+  fi
+}
 alias gco='git checkout'
 alias gcoo='git checkout --'
 alias gf='git fetch'
