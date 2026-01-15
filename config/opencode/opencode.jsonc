@@ -243,6 +243,10 @@
             "kubectl describe *": "allow",
             "kubectl logs *": "allow",
             // Beads issue tracker
+            "bd close * --reason *": "allow",
+            "bd close * --reason=*": "allow",
+            "bd close *": "deny",
+            "bd close": "deny",
             "bd *": "allow",
             // Git commit - allow normal commits, block bypass + author overrides
             "git -c commit.gpgsign=false": "deny",
