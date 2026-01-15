@@ -24,7 +24,6 @@ setup() {
 }
 
 @test "format handles null title" {
-  skip "Need bats for run/skip gating first"
   json='[{"repo_name":"dotfiles","id":"dotfiles-k47","title":null,"status":"open","priority":2,"issue_type":"task","repo_path":"/tmp"}]'
 
   JSON="$json" SCRIPT="$script" run bash -c 'printf "%s" "$JSON" | "$SCRIPT" --format-only'
@@ -40,7 +39,6 @@ setup() {
 }
 
 @test "format cleans carriage returns" {
-  skip "Need bats for run/skip gating first"
   json='[{"repo_name":"dotfiles","id":"dotfiles-k47r","title":"line1\rline2","status":"open","priority":2,"issue_type":"task","repo_path":"/tmp"}]'
 
   JSON="$json" SCRIPT="$script" run bash -c 'printf "%s" "$JSON" | "$SCRIPT" --format-only'
@@ -53,7 +51,6 @@ setup() {
 }
 
 @test "format handles missing fields" {
-  skip "Need bats for run/skip gating first"
   json='[{"repo_name":"dotfiles","id":"dotfiles-k48","title":"title only","repo_path":"/tmp"}]'
 
   JSON="$json" SCRIPT="$script" run bash -c 'printf "%s" "$JSON" | "$SCRIPT" --format-only'
@@ -63,7 +60,6 @@ setup() {
 }
 
 @test "format keeps full id in hidden fields" {
-  skip "Need bats for run/skip gating first"
   json='[{"repo_name":"dotfiles","id":"dotfiles-k49","title":"title","status":"open","priority":2,"issue_type":"task","repo_path":"/tmp"}]'
 
   JSON="$json" SCRIPT="$script" run bash -c 'printf "%s" "$JSON" | "$SCRIPT" --format-only'
@@ -75,7 +71,6 @@ setup() {
 }
 
 @test "format outputs eight fields" {
-  skip "Need bats for run/skip gating first"
   json='[{"repo_name":"dotfiles","id":"dotfiles-k50","title":"title","status":"open","priority":2,"issue_type":"task","repo_path":"/tmp"}]'
 
   JSON="$json" SCRIPT="$script" run bash -c 'printf "%s" "$JSON" | "$SCRIPT" --format-only'
