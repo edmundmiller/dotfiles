@@ -244,7 +244,25 @@
             "kubectl logs *": "allow",
             // Beads issue tracker
             "bd *": "allow",
-            // Git commit - allow normal commits (with GPG signing), block bypass flags
+            // Git commit - allow normal commits, block bypass + author overrides
+            "git -c commit.gpgsign=false": "deny",
+            "git -c commit.gpgsign=false *": "deny",
+            "GIT_AUTHOR_EMAIL=* git commit": "deny",
+            "GIT_AUTHOR_EMAIL=* git commit *": "deny",
+            "GIT_AUTHOR_NAME=* git commit": "deny",
+            "GIT_AUTHOR_NAME=* git commit *": "deny",
+            "GIT_COMMITTER_EMAIL=* git commit": "deny",
+            "GIT_COMMITTER_EMAIL=* git commit *": "deny",
+            "GIT_COMMITTER_NAME=* git commit": "deny",
+            "GIT_COMMITTER_NAME=* git commit *": "deny",
+            "git -c user.email=* commit": "deny",
+            "git -c user.email=* commit *": "deny",
+            "git -c user.name=* commit": "deny",
+            "git -c user.name=* commit *": "deny",
+            "git commit --author *": "deny",
+            "git commit * --author *": "deny",
+            "git commit --author=*": "deny",
+            "git commit * --author=*": "deny",
             "git commit --no-gpg-sign *": "deny",
             "git commit * --no-gpg-sign": "deny",
             "git commit * --no-gpg-sign *": "deny",
@@ -252,7 +270,9 @@
             "git commit * --no-verify": "deny",
             "git commit * --no-verify *": "deny",
             "git commit *": "allow",
-            "git add *": "allow"
+            "git add *": "allow",
+            "*--no-gpg-sign*": "deny",
+            "*gpgsign=false*": "deny"
         },
         "edit": "allow",
         "write": "allow",
