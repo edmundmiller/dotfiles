@@ -34,6 +34,22 @@ setup() {
 
   display=$(printf '%s' "$output" | awk -F'\t' '{print $8}')
   [[ "$display" == *"untitled"* ]]
+
+  line_count=$(printf '%s\n' "$output" | wc -l | tr -d ' ')
+  [ "$line_count" -eq 1 ]
+}
+
+@test "format cleans carriage returns" {
+  skip "Need bats for run/skip gating first"
+  json='[{"repo_name":"dotfiles","id":"dotfiles-k47r","title":"line1\rline2","status":"open","priority":2,"issue_type":"task","repo_path":"/tmp"}]'
+
+  JSON="$json" SCRIPT="$script" run bash -c 'printf "%s" "$JSON" | "$SCRIPT" --format-only'
+
+  [ "$status" -eq 0 ]
+  [ -n "$output" ]
+
+  display=$(printf '%s' "$output" | awk -F'\t' '{print $8}')
+  [[ "$display" == *"line1 line2"* ]]
 }
 
 @test "format handles missing fields" {
