@@ -39,8 +39,11 @@ g2bare() {
     return 1
   }
 
-  # Must be at repo root for in-place transform
-  if [[ "$PWD" != "$repo_root" ]]; then
+  # Must be at repo root for in-place transform (resolve symlinks for comparison)
+  local current_dir
+  current_dir=$(cd -P . && pwd)
+  repo_root=$(cd -P "$repo_root" && pwd)
+  if [[ "$current_dir" != "$repo_root" ]]; then
     echo "✗ Must run from repository root: $repo_root"
     return 1
   fi

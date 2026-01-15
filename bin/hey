@@ -7,6 +7,7 @@ import 'hey.d/rebuild.just'
 import 'hey.d/flake.just'
 import 'hey.d/nix.just'
 import 'hey.d/remote.just'
+import 'hey.d/test.just'
 
 # Default recipe - show help
 default: help
@@ -43,6 +44,9 @@ help:
     @echo "  repl                 Open nix repl with flake loaded"
     @echo "  search <query>       Search nixpkgs for packages"
     @echo "  shell <package>      Start shell with package available"
+    @echo ""
+    @echo "Test Commands:"
+    @echo "  ztest [file]         Run zunit tests (all if none specified)"
     @echo ""
     @echo "Examples:"
     @echo "  hey rebuild          # Rebuild and switch local system"
