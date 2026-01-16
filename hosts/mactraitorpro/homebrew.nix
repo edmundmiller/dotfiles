@@ -13,6 +13,7 @@
     "tw93/tap"  # Mole
     "anomalyco/tap" # Opencode
     "max-sixty/worktrunk"  # Git worktree management for parallel AI agents
+    "joshmedeski/sesh"  # Smart tmux session manager with zoxide integration
   ];
 
   brews = [
@@ -75,6 +76,7 @@
     "tree-sitter"
     "wget"
     "max-sixty/worktrunk/wt"
+    "joshmedeski/sesh/sesh"
     "zoxide"
 
     # Task management
