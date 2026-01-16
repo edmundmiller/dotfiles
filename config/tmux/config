@@ -75,6 +75,10 @@ bind W choose-window
 bind / choose-session
 bind . choose-window
 
+# Sesh - smart session manager with zoxide integration
+# ^a: all | ^t: tmux | ^x: zoxide | ^d: kill session
+bind-key t display-popup -E -w 80% -h 60% 'sesh connect "$(sesh list | fzf --no-sort --border-label=" sesh " --prompt="> " --header="^a all  ^t tmux  ^x zoxide  ^d kill" --bind="ctrl-a:change-prompt(> )+reload(sesh list)" --bind="ctrl-t:change-prompt(tmux> )+reload(sesh list -t)" --bind="ctrl-x:change-prompt(zoxide> )+reload(sesh list -z)" --bind="ctrl-d:execute(tmux kill-session -t {})+change-prompt(> )+reload(sesh list)")"'
+
 # bind = select-layout tiled
 bind | select-layout even-horizontal
 bind _ select-layout even-vertical

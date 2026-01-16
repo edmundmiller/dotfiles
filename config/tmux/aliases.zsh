@@ -14,13 +14,7 @@ if [[ -n $TMUX ]]; then # From inside tmux
       tmux paste-buffer -t .+ && \
       tmux send-keys -t .+ Enter;
   }
-  # Create new session (from inside one)
-  function tn {
-    local name="${1:-${PWD:t}}"
-    TMUX= tmux new-session -d -s "$name"
-    tmux switch-client -t "$name"
-    tmux display-message "Session #S created"
-  }
+  # Session management now handled by sesh (C-c t)
 else # From outside tmux
   # Start grouped session so I can be in two different windows in one session
   function tdup { tmux new-session -t "${1:-$(tmux display-message -p '#S')}"; }
