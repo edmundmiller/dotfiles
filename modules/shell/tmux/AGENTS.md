@@ -46,6 +46,26 @@ config/tmux/
 | Plugin order wrong | prefix-highlight before theme | Check `rcFiles` loads first |
 | tmuxifier not found | PATH not updated | Restart shell after rebuild |
 
+## Sesh Integration
+
+**Keybinding:** `C-c t` - Smart session manager with zoxide integration
+
+**Filter modes (inside fzf):**
+- `^a` - All sources (tmux + zoxide)
+- `^t` - Tmux sessions only
+- `^x` - Zoxide directories only
+- `^d` - Kill selected session
+
+**How it works:**
+1. `display-popup` opens fzf with `sesh list`
+2. Select session/directory, press Enter
+3. `sesh connect` switches to existing session or creates new one from zoxide path
+
+**Related files:**
+- `config/tmux/config` - Keybinding definition (line ~79)
+- `~/.config/sesh/sesh.toml` - Sesh config (manual, not nix-managed yet)
+- `modules/shell/sesh/` - Nix module (disabled, for future use)
+
 ## Related Files
 
 - `modules/shell/zsh.nix` - Provides rcFiles/rcInit mechanism

@@ -6,6 +6,7 @@
     "seqeralabs/tap"
     "pulumi/tap"
     "max-sixty/worktrunk"
+    "joshmedeski/sesh"
   ];
 
   brews = [
@@ -19,6 +20,7 @@
     "uv"
     "tealdeer"
     "max-sixty/worktrunk/wt"
+    "joshmedeski/sesh/sesh"
     "seqeralabs/tap/tw"
     "seqeralabs/tap/wave-cli"
     "pulumi/tap/pulumi"
