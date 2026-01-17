@@ -10,6 +10,13 @@ with lib.my;
 let
   cfg = config.modules.shell.jj;
   inherit (config.dotfiles) configDir;
+
+  # Fetch credits_roll.toml from upstream
+  # https://github.com/YPares/jj.conf.d
+  creditsRollToml = pkgs.fetchurl {
+    url = "https://raw.githubusercontent.com/YPares/jj.conf.d/main/credits_roll.toml";
+    hash = "sha256-Y6LGfMJSmpVo9afO+VQ3DTvNuDq0lvOlTi97nWT/fa8=";
+  };
 in
 {
   options.modules.shell.jj = {
@@ -30,8 +37,9 @@ in
           force = true;
         };
         # Include conf.d files for additional configuration
+        # credits_roll.toml fetched from https://github.com/YPares/jj.conf.d
         "jj/conf.d/credits_roll.toml" = {
-          text = builtins.readFile "${configDir}/jj/conf.d/credits_roll.toml";
+          source = creditsRollToml;
           force = true;
         };
         "jj/conf.d/fix.toml" = {
