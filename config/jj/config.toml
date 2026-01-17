@@ -136,10 +136,12 @@ sign-on-push = true
 push-branch-prefix = "push-"
 # Don't create unnecessary local bookmarks when cloning
 track-default-bookmark-on-clone = false
-# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
-auto-local-bookmark = true
 # Allow pushing new bookmarks to remote
 push-bookmarks-prefix = "emiller/"
+
+[remotes.origin]
+# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
+auto-track-bookmarks = '*'
 
 [revsets]
 # Equivalent to git's push.default=current
@@ -164,13 +166,11 @@ log_node = "credits_roll_node"
 log = "credits_roll(0, 'none()')"
 
 [template-aliases]
-# Prompt template for shell integration - optimized for performance
-'format_short_change_id(id)' = 'id.shortest(4)'
-
+# Simple prompt template for shell integration
 'prompt' = '''
 separate(" ",
-  format_short_change_id_with_hidden_and_divergent_info(self),
-  format_short_commit_id(commit_id),
+  self.change_id().shortest(4),
+  commit_id.shortest(4),
   if(empty, label("empty", "∅"), ""),
   if(conflict, label("conflict", "✖"), ""),
   if(description == "", label("description placeholder", "✏"), "")
