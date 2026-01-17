@@ -67,95 +67,21 @@ jback() {
 }
 
 # =============================================================================
-# JJ Workspace Helpers (ported from DHH's git worktree script)
+# JJ Workspace (jw) - Worktrunk-inspired workspace management
 # =============================================================================
-# ja: Create a new workspace for parallel work (e.g., AI agent)
-# jd: Remove a workspace when done
+# See: jw help
+# Full tool at: bin/jw
 
-# Create a new jj workspace
-# Usage: ja [workspace-name]
-# Creates workspace at ../repo--name with same parent commits as current @
-ja() {
-    if [[ -z "$1" ]]; then
-        echo "Usage: ja <workspace-name>"
-        echo "Creates a new jj workspace for parallel work"
-        return 1
-    fi
+# Core jw aliases (matching worktrunk's wt aliases)
+alias jws='jw switch'       # Switch to workspace
+alias jwl='jw list'         # List workspaces with status
+alias jwr='jw remove'       # Remove workspace
+alias jwm='jw merge'        # Merge workspace to trunk
 
-    local name="$1"
-    local base
-    base="$(basename "$PWD")"
-    local workspace_path="../${base}--${name}"
+# Quick create + launch agent
+alias jwc='jw switch -c -x claude'    # Create + Claude
+alias jwo='jw switch -c -x opencode'  # Create + OpenCode
 
-    # Create workspace with same parent as current working copy
-    if jj workspace add --name "$name" "$workspace_path"; then
-        # Trust mise/direnv if present
-        [[ -f "$workspace_path/.mise.toml" ]] && mise trust "$workspace_path" 2>/dev/null
-        [[ -f "$workspace_path/.envrc" ]] && direnv allow "$workspace_path" 2>/dev/null
-        
-        echo "Created workspace '$name' at $workspace_path"
-        echo "Switch to it with: cd $workspace_path"
-        cd "$workspace_path" || return 1
-    fi
-}
-
-# Remove a jj workspace (run from within the workspace directory)
-# Usage: jwd (from within workspace) or jwd <workspace-name> (from main repo)
-jwd() {
-    local workspace_name
-
-    # If argument provided, use it as workspace name
-    if [[ -n "$1" ]]; then
-        workspace_name="$1"
-    else
-        # Extract workspace name from current directory
-        local cwd worktree root
-        cwd="$(pwd)"
-        worktree="$(basename "$cwd")"
-        
-        # Split on first `--`
-        root="${worktree%%--*}"
-        workspace_name="${worktree#*--}"
-        
-        # Protect against accidentally nuking a non-workspace directory
-        if [[ "$root" == "$worktree" ]]; then
-            echo "Error: Not in a workspace directory (expected format: repo--workspace)"
-            echo "Run from within a workspace dir, or specify workspace name: jwd <name>"
-            return 1
-        fi
-    fi
-
-    # Confirm before removing
-    if command -v gum &>/dev/null; then
-        gum confirm "Remove workspace '$workspace_name'?" || return 0
-    else
-        echo -n "Remove workspace '$workspace_name'? [y/N] "
-        read -r confirm
-        [[ "$confirm" =~ ^[Yy]$ ]] || return 0
-    fi
-
-    # If we're in the workspace, cd to parent first
-    local cwd worktree root
-    cwd="$(pwd)"
-    worktree="$(basename "$cwd")"
-    root="${worktree%%--*}"
-    
-    if [[ "${worktree#*--}" == "$workspace_name" ]]; then
-        cd "../$root" || return 1
-    fi
-
-    # Remove the workspace
-    jj workspace forget "$workspace_name"
-    
-    # Clean up the directory if it exists
-    local workspace_dir="../${root}--${workspace_name}"
-    if [[ -d "$workspace_dir" ]]; then
-        rm -rf "$workspace_dir"
-        echo "Removed workspace directory: $workspace_dir"
-    fi
-    
-    echo "Workspace '$workspace_name' removed"
-}
-
-# List all workspaces
-alias jws='jj workspace list'
+# Legacy aliases (for backward compatibility)
+alias ja='jw switch -c'     # Create workspace (old: ja)
+alias jwd='jw remove'       # Remove workspace (old: jwd)

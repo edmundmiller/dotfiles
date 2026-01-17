@@ -1,0 +1,732 @@
+#!/usr/bin/env bash
+# jw - JJ Workspace management tool (inspired by worktrunk)
+# https://github.com/max-sixty/worktrunk
+#
+# Designed for running AI agents in parallel using jj workspaces.
+#
+# Core commands:
+#   jw switch <name>         Switch to workspace (creates if needed)
+#   jw switch -c <name>      Create new workspace
+#   jw switch -c -x <cmd>    Create and execute command (claude, nvim, code)
+#   jw list                  List all workspaces with status
+#   jw remove [name]         Remove workspace (current if no name)
+#   jw merge [name]          Merge workspace changes to trunk
+#
+# See: jw help
+
+set -euo pipefail
+
+# =============================================================================
+# Configuration
+# =============================================================================
+
+# Default workspace path pattern: ../repo--name
+# Can be overridden with JW_WORKSPACE_PATH environment variable
+: "${JW_WORKSPACE_PATH:=../{repo}--{name}}"
+
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly DIM='\033[0;2m'
+readonly BOLD='\033[1m'
+readonly NC='\033[0m' # No Color
+
+# Symbols
+readonly CHECK="✓"
+readonly CROSS="✗"
+readonly ARROW="→"
+readonly DOT="●"
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
+_error() {
+    echo -e "${RED}error:${NC} $*" >&2
+}
+
+_warn() {
+    echo -e "${YELLOW}warning:${NC} $*" >&2
+}
+
+_info() {
+    echo -e "${DIM}$*${NC}"
+}
+
+_success() {
+    echo -e "${GREEN}${CHECK}${NC} $*"
+}
+
+# Get repo root
+_repo_root() {
+    jj workspace root 2>/dev/null || jj root 2>/dev/null || pwd
+}
+
+# Get repo name from current directory or git remote
+_repo_name() {
+    local root
+    root="$(_repo_root)"
+    basename "$root"
+}
+
+# Compute workspace path from pattern
+# Supports: {repo}, {name}, {branch}
+_workspace_path() {
+    local name="$1"
+    local repo
+    repo="$(_repo_name)"
+    local root
+    root="$(_repo_root)"
+    
+    local path="$JW_WORKSPACE_PATH"
+    path="${path//\{repo\}/$repo}"
+    path="${path//\{name\}/$name}"
+    
+    # If path is relative, make it relative to repo root
+    if [[ "$path" != /* ]]; then
+        path="$root/$path"
+    fi
+    
+    # Normalize path
+    echo "$path"
+}
+
+# Get current workspace name from path
+_current_workspace() {
+    local cwd worktree root name
+    cwd="$(pwd)"
+    worktree="$(basename "$cwd")"
+    
+    # Check if we're in a workspace (format: repo--name)
+    if [[ "$worktree" == *--* ]]; then
+        name="${worktree#*--}"
+        echo "$name"
+    else
+        # We're in the main workspace
+        echo "default"
+    fi
+}
+
+# Check if workspace exists
+_workspace_exists() {
+    local name="$1"
+    jj workspace list -T 'name ++ "\n"' 2>/dev/null | grep -qx "$name"
+}
+
+# Get workspace path from name
+_workspace_dir() {
+    local name="$1"
+    if [[ "$name" == "default" ]]; then
+        _repo_root
+    else
+        _workspace_path "$name"
+    fi
+}
+
+# =============================================================================
+# Commands
+# =============================================================================
+
+cmd_switch() {
+    local create=false
+    local execute=""
+    local name=""
+    
+    # Parse flags
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -c|--create)
+                create=true
+                shift
+                ;;
+            -x|--execute)
+                shift
+                execute="$1"
+                shift
+                ;;
+            -*)
+                _error "Unknown flag: $1"
+                return 1
+                ;;
+            *)
+                name="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -z "$name" ]]; then
+        echo "Usage: jw switch [-c] [-x <command>] <workspace-name>"
+        echo ""
+        echo "Flags:"
+        echo "  -c, --create     Create new workspace if it doesn't exist"
+        echo "  -x, --execute    Execute command after switching (claude, code, nvim)"
+        echo ""
+        echo "Examples:"
+        echo "  jw switch feat           # Switch to existing workspace"
+        echo "  jw switch -c feat        # Create and switch to workspace"  
+        echo "  jw switch -c -x claude   # Create, switch, and start Claude"
+        return 1
+    fi
+    
+    # Check if workspace already exists
+    if _workspace_exists "$name"; then
+        local workspace_dir
+        workspace_dir="$(_workspace_dir "$name")"
+        
+        # Check if we're already there
+        if [[ "$(pwd)" == "$workspace_dir" ]]; then
+            _info "Already in workspace '$name'"
+        else
+            cd "$workspace_dir" || return 1
+            _success "Switched to workspace '$name'"
+        fi
+    elif $create; then
+        # Create new workspace
+        cmd_create "$name"
+    else
+        _error "Workspace '$name' does not exist"
+        echo "Use 'jw switch -c $name' to create it"
+        return 1
+    fi
+    
+    # Execute command if specified
+    if [[ -n "$execute" ]]; then
+        _execute_command "$execute"
+    fi
+}
+
+cmd_create() {
+    local name="$1"
+    
+    if [[ -z "$name" ]]; then
+        echo "Usage: jw create <workspace-name>"
+        return 1
+    fi
+    
+    if _workspace_exists "$name"; then
+        _error "Workspace '$name' already exists"
+        return 1
+    fi
+    
+    local workspace_path
+    workspace_path="$(_workspace_path "$name")"
+    
+    echo "Creating workspace '$name'..."
+    
+    # Create the workspace
+    if ! jj workspace add --name "$name" "$workspace_path"; then
+        _error "Failed to create workspace"
+        return 1
+    fi
+    
+    # Trust mise/direnv if present
+    if [[ -f "$workspace_path/.mise.toml" ]]; then
+        mise trust "$workspace_path" 2>/dev/null || true
+    fi
+    if [[ -f "$workspace_path/.envrc" ]]; then
+        direnv allow "$workspace_path" 2>/dev/null || true
+    fi
+    
+    _success "Created workspace '$name' at $workspace_path"
+    
+    # Switch to the workspace
+    cd "$workspace_path" || return 1
+    
+    _info "Switched to workspace"
+}
+
+cmd_list() {
+    local full=false
+    local format="table"
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --full|-f)
+                full=true
+                shift
+                ;;
+            --json)
+                format="json"
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+    
+    local current_ws
+    current_ws="$(_current_workspace)"
+    local repo_root
+    repo_root="$(_repo_root)"
+    
+    if [[ "$format" == "json" ]]; then
+        _list_json "$full"
+        return
+    fi
+    
+    # Header
+    printf "${BOLD}%-15s %-12s %-8s %s${NC}\n" "WORKSPACE" "STATUS" "AHEAD" "PATH"
+    
+    local count=0
+    local dirty_count=0
+    local ahead_count=0
+    
+    # Get workspace names from jj workspace list using template
+    while IFS= read -r name; do
+        [[ -z "$name" ]] && continue
+        
+        # Compute path based on workspace name
+        local path
+        if [[ "$name" == "default" ]]; then
+            path="$repo_root"
+        else
+            path="$(_workspace_path "$name")"
+        fi
+        
+        count=$((count + 1))
+        
+        # Get status
+        local status=""
+        local status_symbol=""
+        local ahead=""
+        
+        if [[ -d "$path" ]]; then
+            # Check for uncommitted changes
+            local diff_output
+            if diff_output=$(jj diff --summary -r "@" 2>/dev/null --at-op=@ --ignore-working-copy --repository "$path"); then
+                if [[ -n "$diff_output" ]]; then
+                    status="dirty"
+                    status_symbol="${YELLOW}${DOT}${NC}"
+                    dirty_count=$((dirty_count + 1))
+                else
+                    status="clean"
+                    status_symbol="${GREEN}${DOT}${NC}"
+                fi
+            else
+                status="?"
+                status_symbol="${DIM}?${NC}"
+            fi
+            
+            # Count commits ahead of trunk
+            if $full; then
+                local ahead_num
+                ahead_num=$(jj log -r "@ ~ trunk()" --no-graph -T 'commit_id ++ "\n"' 2>/dev/null --repository "$path" | grep -c . || echo "0")
+                if [[ "$ahead_num" -gt 0 ]]; then
+                    ahead="↑$ahead_num"
+                    ahead_count=$((ahead_count + 1))
+                fi
+            fi
+        else
+            status="missing"
+            status_symbol="${RED}${CROSS}${NC}"
+        fi
+        
+        # Current indicator
+        local prefix=" "
+        if [[ "$name" == "$current_ws" ]]; then
+            prefix="${CYAN}*${NC}"
+        fi
+        
+        # Format path for display (relative if possible)
+        local display_path="$path"
+        if [[ "$path" == "$HOME"* ]]; then
+            display_path="~${path#$HOME}"
+        fi
+        
+        printf "${prefix}%-14s ${status_symbol} %-10s %-8s ${DIM}%s${NC}\n" "$name" "$status" "$ahead" "$display_path"
+        
+    done < <(jj workspace list -T 'name ++ "\n"' 2>/dev/null)
+    
+    # Summary
+    echo ""
+    local summary="$count workspace"
+    [[ $count -ne 1 ]] && summary+="s"
+    
+    if [[ $dirty_count -gt 0 ]]; then
+        summary+=", $dirty_count with changes"
+    fi
+    if [[ $ahead_count -gt 0 ]]; then
+        summary+=", $ahead_count ahead"
+    fi
+    
+    _info "Showing $summary"
+}
+
+_list_json() {
+    local full="$1"
+    local current_ws
+    current_ws="$(_current_workspace)"
+    local repo_root
+    repo_root="$(_repo_root)"
+    
+    echo "{"
+    echo '  "workspaces": ['
+    
+    local first=true
+    while IFS= read -r name; do
+        [[ -z "$name" ]] && continue
+        
+        # Compute path based on workspace name
+        local path
+        if [[ "$name" == "default" ]]; then
+            path="$repo_root"
+        else
+            path="$(_workspace_path "$name")"
+        fi
+        
+        $first || echo ","
+        first=false
+        
+        local is_current=false
+        [[ "$name" == "$current_ws" ]] && is_current=true
+        
+        local has_changes=false
+        local ahead=0
+        
+        if [[ -d "$path" ]]; then
+            if diff_output=$(jj diff --summary -r "@" 2>/dev/null --repository "$path"); then
+                [[ -n "$diff_output" ]] && has_changes=true
+            fi
+            
+            if $full; then
+                ahead=$(jj log -r "@ ~ trunk()" --no-graph -T 'commit_id ++ "\n"' 2>/dev/null --repository "$path" | grep -c . || echo "0")
+            fi
+        fi
+        
+        printf '    {"name": "%s", "path": "%s", "current": %s, "has_changes": %s, "ahead": %d}' \
+            "$name" "$path" "$is_current" "$has_changes" "$ahead"
+    done < <(jj workspace list -T 'name ++ "\n"' 2>/dev/null)
+    
+    echo ""
+    echo "  ]"
+    echo "}"
+}
+
+cmd_remove() {
+    local name="${1:-}"
+    local force=false
+    
+    # Parse flags
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -f|--force)
+                force=true
+                shift
+                ;;
+            -*)
+                _error "Unknown flag: $1"
+                return 1
+                ;;
+            *)
+                name="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    # If no name provided, use current workspace
+    if [[ -z "$name" ]]; then
+        name="$(_current_workspace)"
+        if [[ "$name" == "default" ]]; then
+            _error "Cannot remove the default workspace"
+            echo "Specify a workspace name: jw remove <name>"
+            return 1
+        fi
+    fi
+    
+    if ! _workspace_exists "$name"; then
+        _error "Workspace '$name' does not exist"
+        return 1
+    fi
+    
+    local workspace_dir
+    workspace_dir="$(_workspace_dir "$name")"
+    
+    # Check for uncommitted changes (unless --force)
+    if ! $force && [[ -d "$workspace_dir" ]]; then
+        local diff_output
+        if diff_output=$(jj diff --summary -r "@" 2>/dev/null --repository "$workspace_dir"); then
+            if [[ -n "$diff_output" ]]; then
+                _error "Workspace '$name' has uncommitted changes"
+                echo "Use 'jw remove -f $name' to force removal"
+                return 1
+            fi
+        fi
+    fi
+    
+    # Confirm removal
+    if command -v gum &>/dev/null; then
+        gum confirm "Remove workspace '$name'?" || return 0
+    else
+        echo -n "Remove workspace '$name'? [y/N] "
+        read -r confirm
+        [[ "$confirm" =~ ^[Yy]$ ]] || return 0
+    fi
+    
+    # If we're in the workspace, cd to parent first
+    if [[ "$(pwd)" == "$workspace_dir" ]]; then
+        local repo_root
+        repo_root="$(_repo_root)"
+        # Go to the main worktree
+        local main_dir
+        main_dir="$(_workspace_dir "default")"
+        cd "$main_dir" || cd "$repo_root" || return 1
+    fi
+    
+    # Remove the workspace
+    jj workspace forget "$name"
+    
+    # Clean up the directory
+    if [[ -d "$workspace_dir" ]]; then
+        rm -rf "$workspace_dir"
+        _success "Removed workspace directory: $workspace_dir"
+    fi
+    
+    _success "Workspace '$name' removed"
+}
+
+cmd_merge() {
+    local name="${1:-}"
+    local squash=false
+    
+    # Parse flags
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --squash|-s)
+                squash=true
+                shift
+                ;;
+            -*)
+                _error "Unknown flag: $1"
+                return 1
+                ;;
+            *)
+                name="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    # If no name, use current workspace
+    if [[ -z "$name" ]]; then
+        name="$(_current_workspace)"
+    fi
+    
+    if [[ "$name" == "default" ]]; then
+        _error "Cannot merge the default workspace"
+        return 1
+    fi
+    
+    if ! _workspace_exists "$name"; then
+        _error "Workspace '$name' does not exist"
+        return 1
+    fi
+    
+    local workspace_dir
+    workspace_dir="$(_workspace_dir "$name")"
+    
+    echo "Merging workspace '$name' to trunk..."
+    
+    # Get commits ahead of trunk in the workspace
+    local commits
+    commits=$(jj log -r "${name}@ ~ trunk()" --no-graph -T 'change_id.short() ++ "\n"' --repository "$workspace_dir" 2>/dev/null)
+    
+    if [[ -z "$commits" ]]; then
+        _warn "Workspace '$name' has no commits ahead of trunk"
+        return 0
+    fi
+    
+    local commit_count
+    commit_count=$(echo "$commits" | grep -c .)
+    
+    echo "Found $commit_count commit(s) to merge"
+    
+    # Rebase workspace commits onto trunk
+    if $squash; then
+        echo "Squashing commits..."
+        # Squash all commits into one on trunk
+        jj squash --from "${name}@-" --into "trunk()" --repository "$workspace_dir"
+    else
+        echo "Rebasing onto trunk..."
+        # Rebase the workspace commits onto trunk
+        jj rebase -s "roots(${name}@ ~ trunk())" -d "trunk()" --repository "$workspace_dir"
+    fi
+    
+    _success "Merged '$name' into trunk"
+    echo ""
+    echo "Next steps:"
+    echo "  jj git push        # Push to remote"
+    echo "  jw remove $name    # Clean up workspace"
+}
+
+cmd_sync() {
+    local name="${1:-}"
+    
+    if [[ -z "$name" ]]; then
+        name="$(_current_workspace)"
+    fi
+    
+    if [[ "$name" == "default" ]]; then
+        _error "Cannot sync the default workspace (already at trunk)"
+        return 1
+    fi
+    
+    if ! _workspace_exists "$name"; then
+        _error "Workspace '$name' does not exist"
+        return 1
+    fi
+    
+    local workspace_dir
+    workspace_dir="$(_workspace_dir "$name")"
+    
+    echo "Syncing workspace '$name' with trunk..."
+    
+    # Rebase workspace onto latest trunk
+    jj rebase -s "roots(${name}@ ~ trunk())" -d "trunk()" --repository "$workspace_dir"
+    
+    _success "Synced '$name' with trunk"
+}
+
+_execute_command() {
+    local cmd="$1"
+    
+    case "$cmd" in
+        claude)
+            echo "Starting Claude..."
+            exec claude
+            ;;
+        opencode|oc)
+            echo "Starting OpenCode..."
+            exec opencode
+            ;;
+        code|vscode)
+            echo "Opening in VS Code..."
+            code .
+            ;;
+        nvim|vim)
+            echo "Opening in Neovim..."
+            exec nvim
+            ;;
+        zed)
+            echo "Opening in Zed..."
+            zed .
+            ;;
+        *)
+            echo "Executing: $cmd"
+            exec $cmd
+            ;;
+    esac
+}
+
+cmd_help() {
+    cat <<'EOF'
+jw - JJ Workspace management for parallel agents
+
+USAGE:
+    jw <command> [options]
+
+COMMANDS:
+    switch    Switch to a workspace (creates if -c flag used)
+    list      List all workspaces with status  
+    remove    Remove a workspace
+    merge     Merge workspace changes to trunk
+    sync      Sync workspace with trunk (rebase)
+    help      Show this help message
+
+SWITCH:
+    jw switch <name>              Switch to existing workspace
+    jw switch -c <name>           Create and switch to workspace
+    jw switch -c -x claude <name> Create, switch, and start Claude
+    jw switch -c -x code <name>   Create, switch, and open VS Code
+
+LIST:
+    jw list                       List workspaces with basic status
+    jw list --full               Include ahead/behind counts
+    jw list --json               Output as JSON
+
+REMOVE:
+    jw remove                     Remove current workspace
+    jw remove <name>             Remove specific workspace
+    jw remove -f <name>          Force remove (ignore uncommitted changes)
+
+MERGE:
+    jw merge                      Merge current workspace to trunk
+    jw merge <name>              Merge specific workspace to trunk
+    jw merge --squash            Squash all commits into one
+
+SYNC:
+    jw sync                       Sync current workspace with trunk
+    jw sync <name>               Sync specific workspace with trunk
+
+ALIASES (add to shell config):
+    alias jws='jw switch'
+    alias jwl='jw list'
+    alias jwr='jw remove'
+    alias jwm='jw merge'
+    alias jwc='jw switch -c -x claude'  # Create + Claude
+
+AGENT WORKFLOW:
+    # Start multiple agents in parallel
+    jw switch -c -x claude agent-1      # Terminal 1
+    jw switch -c -x claude agent-2      # Terminal 2  
+    jw switch -c -x opencode agent-3    # Terminal 3
+
+    # Check status
+    jw list --full
+
+    # Merge completed work
+    jw merge agent-1
+    jw remove agent-1
+
+CONFIGURATION:
+    JW_WORKSPACE_PATH   Path pattern for workspaces
+                        Default: ../{repo}--{name}
+                        Supports: {repo}, {name}
+
+EOF
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    local cmd="${1:-help}"
+    shift || true
+    
+    case "$cmd" in
+        switch|s)
+            cmd_switch "$@"
+            ;;
+        create|c)
+            cmd_create "$@"
+            ;;
+        list|ls|l)
+            cmd_list "$@"
+            ;;
+        remove|rm|r)
+            cmd_remove "$@"
+            ;;
+        merge|m)
+            cmd_merge "$@"
+            ;;
+        sync)
+            cmd_sync "$@"
+            ;;
+        help|--help|-h)
+            cmd_help
+            ;;
+        *)
+            _error "Unknown command: $cmd"
+            echo "Run 'jw help' for usage"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
