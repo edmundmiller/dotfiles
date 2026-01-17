@@ -4,6 +4,10 @@ A CLI tool for managing Jujutsu (jj) workspaces, inspired by [worktrunk](https:/
 
 Designed for running AI agents (Claude, OpenCode) in parallel using jj workspaces.
 
+## Installation
+
+This package is installed via nix-darwin. After `hey rebuild`, `jw` will be available in your PATH.
+
 ## Quick Start
 
 ```bash
@@ -25,30 +29,18 @@ jw remove agent-1
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `jw switch <name>` | Switch to existing workspace |
-| `jw switch -c <name>` | Create and switch to workspace |
-| `jw switch -c -x <cmd> <name>` | Create, switch, and execute command |
-| `jw list` | List workspaces with status |
-| `jw list --full` | Include ahead counts |
-| `jw list --json` | Output as JSON |
-| `jw remove [name]` | Remove workspace (current if no name) |
-| `jw merge [name]` | Merge workspace to trunk |
-| `jw sync [name]` | Sync workspace with trunk |
-
-## Aliases
-
-Add to your shell config (already included in dotfiles):
-
-```bash
-alias jws='jw switch'       # Switch to workspace
-alias jwl='jw list'         # List workspaces
-alias jwr='jw remove'       # Remove workspace
-alias jwm='jw merge'        # Merge to trunk
-alias jwc='jw switch -c -x claude'    # Create + Claude
-alias jwo='jw switch -c -x opencode'  # Create + OpenCode
-```
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `jw switch <name>` | `jws` | Switch to existing workspace |
+| `jw switch -c <name>` | `ja` | Create and switch to workspace |
+| `jw switch -c -x claude <name>` | `jwc` | Create, switch, start Claude |
+| `jw switch -c -x opencode <name>` | `jwo` | Create, switch, start OpenCode |
+| `jw list` | `jwl` | List workspaces with status |
+| `jw list --full` | | Include ahead counts |
+| `jw list --json` | | Output as JSON |
+| `jw remove [name]` | `jwr` | Remove workspace |
+| `jw merge [name]` | `jwm` | Merge workspace to trunk |
+| `jw sync [name]` | | Sync workspace with trunk |
 
 ## Comparison with worktrunk (wt)
 
@@ -63,8 +55,8 @@ alias jwo='jw switch -c -x opencode'  # Create + OpenCode
 
 - **No branches needed**: jj uses changes/revisions, not branches
 - **First-class conflicts**: jj handles conflicts natively
-- **Simpler merging**: Just rebase onto trunk
 - **Undo everything**: jj operation log provides complete history
+- **Simpler merging**: Just rebase onto trunk
 
 ## Configuration
 
@@ -76,37 +68,25 @@ export JW_WORKSPACE_PATH='../{repo}--{name}'
 
 # Inside .jj-workspaces (like workflow tool)
 export JW_WORKSPACE_PATH='.jj-workspaces/{name}'
-
-# Absolute path
-export JW_WORKSPACE_PATH='~/workspaces/{repo}/{name}'
 ```
 
-Supports placeholders:
-- `{repo}` - Repository name
-- `{name}` - Workspace name
+Supports placeholders: `{repo}`, `{name}`
 
-## Agent Workflow Example
+## Architecture
 
-```bash
-# Terminal 1: Main development
-cd ~/src/myproject
-
-# Terminal 2: Start agent for feature work
-jwc feature-auth
-
-# Terminal 3: Start agent for refactoring
-jwo refactor-db
-
-# Check all agents
-jwl --full
-# WORKSPACE       STATUS       AHEAD    PATH
-# *default        ● clean               ~/src/myproject
-#  feature-auth   ● dirty      ↑2      ~/src/myproject--feature-auth
-#  refactor-db    ● dirty      ↑1      ~/src/myproject--refactor-db
-
-# When agent finishes, merge and clean up
-jwm feature-auth
-jwr feature-auth
+```
+packages/jw/
+├── default.nix      # Nix package definition
+├── README.md        # This file
+├── AGENTS.md        # Agent instructions
+├── jw               # Main entry point
+└── lib/
+    ├── common.sh    # Shared utilities
+    ├── switch.sh    # Switch command
+    ├── list.sh      # List command
+    ├── remove.sh    # Remove command
+    ├── merge.sh     # Merge command
+    └── sync.sh      # Sync command
 ```
 
 ## See Also
