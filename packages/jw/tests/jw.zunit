@@ -1,0 +1,263 @@
+#!/usr/bin/env zunit
+
+# Tests for jw - JJ Workspace management tool
+# Run with: zunit --tap packages/jw/tests/jw.zunit
+
+@setup {
+  export TEST_DIR=$(mktemp -d)
+  # Resolve symlinks for macOS /var -> /private/var
+  export TEST_DIR=$(cd "$TEST_DIR" && pwd -P)
+  export ORIG_PWD=$PWD
+  
+  # Path to jw script (run as bash script, not source zsh)
+  export JW="$ORIG_PWD/packages/jw/jw"
+  
+  # Create a test jj repo
+  cd "$TEST_DIR"
+  jj git init test-repo 2>/dev/null || jj init test-repo 2>/dev/null
+  cd test-repo
+  echo "# Test" > README.md
+  jj describe -m "Initial commit" 2>/dev/null
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+# =============================================================================
+# Help and basic commands
+# =============================================================================
+
+@test 'jw help shows usage' {
+  local out
+  out=$(bash "$JW" help 2>&1)
+  
+  assert "$out" contains "USAGE:"
+  assert "$out" contains "switch"
+  assert "$out" contains "list"
+}
+
+@test 'jw unknown command fails' {
+  local out ret
+  out=$(bash "$JW" foobar 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "Unknown command"
+}
+
+# =============================================================================
+# list command tests
+# =============================================================================
+
+@test 'jw list shows workspaces' {
+  local out
+  out=$(bash "$JW" list 2>&1)
+  
+  assert "$out" contains "WORKSPACE"
+  assert "$out" contains "default"
+}
+
+@test 'jw list --json outputs valid JSON' {
+  local out
+  out=$(bash "$JW" list --json 2>&1)
+  
+  assert "$out" contains '"workspaces":'
+  assert "$out" contains '"name": "default"'
+}
+
+@test 'jw list --full shows ahead count column' {
+  local out
+  out=$(bash "$JW" list --full 2>&1)
+  
+  assert "$out" contains "AHEAD"
+}
+
+@test 'jw l is alias for list' {
+  local out
+  out=$(bash "$JW" l 2>&1)
+  
+  assert "$out" contains "WORKSPACE"
+}
+
+# =============================================================================
+# switch command tests
+# =============================================================================
+
+@test 'jw switch without args shows usage' {
+  local out ret
+  out=$(bash "$JW" switch 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "Usage:"
+}
+
+@test 'jw switch to nonexistent workspace fails without -c' {
+  local out ret
+  out=$(bash "$JW" switch "nonexistent-ws" 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "does not exist"
+}
+
+@test 'jw switch -c creates new workspace' {
+  local out
+  out=$(bash "$JW" switch -c "test-feature" 2>&1)
+  
+  assert "$out" contains "Created workspace"
+  
+  # Verify workspace appears in list
+  local list_out
+  list_out=$(bash "$JW" list --json 2>&1)
+  assert "$list_out" contains "test-feature"
+}
+
+@test 'jw s is alias for switch' {
+  local out ret
+  out=$(bash "$JW" s 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "Usage:"
+}
+
+# =============================================================================
+# create command tests
+# =============================================================================
+
+@test 'jw create without args shows usage' {
+  local out ret
+  out=$(bash "$JW" create 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "Usage:"
+}
+
+@test 'jw create makes new workspace' {
+  local out
+  out=$(bash "$JW" create "new-ws" 2>&1)
+  
+  assert "$out" contains "Created workspace"
+}
+
+@test 'jw create fails for duplicate' {
+  bash "$JW" create "dup-ws" >/dev/null 2>&1
+  
+  local out ret
+  out=$(bash "$JW" create "dup-ws" 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "already exists"
+}
+
+@test 'jw c is alias for create' {
+  local out
+  out=$(bash "$JW" c "alias-test" 2>&1)
+  
+  assert "$out" contains "Created workspace"
+}
+
+# =============================================================================
+# remove command tests
+# =============================================================================
+
+@test 'jw remove nonexistent workspace fails' {
+  local out ret
+  out=$(bash "$JW" remove "ghost-ws" 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "does not exist"
+}
+
+@test 'jw remove in default workspace without name fails' {
+  local out ret
+  out=$(bash "$JW" remove 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "Cannot remove the default workspace"
+}
+
+@test 'jw remove -f removes workspace' {
+  bash "$JW" create "to-remove" >/dev/null 2>&1
+  
+  local out
+  out=$(bash "$JW" remove -f "to-remove" 2>&1)
+  
+  assert "$out" contains "removed"
+  
+  # Verify it's gone
+  local list_out
+  list_out=$(bash "$JW" list --json 2>&1)
+  assert "$list_out" does_not_contain '"name": "to-remove"'
+}
+
+# =============================================================================
+# merge command tests
+# =============================================================================
+
+@test 'jw merge default workspace fails' {
+  local out ret
+  out=$(bash "$JW" merge "default" 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "Cannot merge the default workspace"
+}
+
+@test 'jw merge nonexistent workspace fails' {
+  local out ret
+  out=$(bash "$JW" merge "ghost-ws" 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "does not exist"
+}
+
+# =============================================================================
+# sync command tests
+# =============================================================================
+
+@test 'jw sync default workspace fails' {
+  local out ret
+  out=$(bash "$JW" sync "default" 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "Cannot sync the default workspace"
+}
+
+@test 'jw sync nonexistent workspace fails' {
+  local out ret
+  out=$(bash "$JW" sync "ghost-ws" 2>&1) && ret=0 || ret=$?
+  
+  assert $ret equals 1
+  assert "$out" contains "does not exist"
+}
+
+# =============================================================================
+# Integration tests
+# =============================================================================
+
+@test 'full workflow: create, list, remove' {
+  # Create workspace
+  bash "$JW" create "workflow-test" >/dev/null 2>&1
+  
+  # Verify it appears in list
+  local list_out
+  list_out=$(bash "$JW" list --json 2>&1)
+  assert "$list_out" contains '"name": "workflow-test"'
+  
+  # Remove it
+  bash "$JW" remove -f "workflow-test" >/dev/null 2>&1
+  
+  # Verify it's gone
+  list_out=$(bash "$JW" list --json 2>&1)
+  assert "$list_out" does_not_contain '"name": "workflow-test"'
+}
+
+@test 'workspace path follows pattern' {
+  bash "$JW" create "path-test" >/dev/null 2>&1
+  
+  # Verify path in JSON output
+  local list_out
+  list_out=$(bash "$JW" list --json 2>&1)
+  
+  # Default pattern is ../{repo}--{name}
+  assert "$list_out" contains "test-repo--path-test"
+}

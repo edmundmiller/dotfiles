@@ -6,7 +6,7 @@
 # =============================================================================
 
 # Default workspace path pattern: ../repo--name
-: "${JW_WORKSPACE_PATH:=../{repo}--{name}}"
+JW_WORKSPACE_PATH="${JW_WORKSPACE_PATH:-../{repo\}--{name\}}"
 
 # Colors for output
 readonly RED='\033[0;31m'
