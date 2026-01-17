@@ -19,6 +19,7 @@ in
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       jujutsu
+      my.jw
     ];
 
     # Use home-manager's xdg.configFile with text to avoid source symlink issues
