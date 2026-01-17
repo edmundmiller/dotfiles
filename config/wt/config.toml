@@ -89,6 +89,11 @@ rebase = true      # Rebase onto target before merging
 remove = true      # Remove worktree after merge
 verify = true      # Run project hooks (pre-commit, pre-merge)
 
+# Pre-Create Hook
+# Fetch origin before creating new worktrees so branches start from latest
+[pre-create]
+fetch = "git fetch origin"
+
 # Select Command Defaults
 # Configure pager behavior for `wt select` diff previews
 [select]
