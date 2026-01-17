@@ -1,85 +1,259 @@
+# =============================================================================
+# JJ (Jujutsu) Configuration
+# =============================================================================
+# Additional configs in conf.d/:
+# - credits_roll.toml: Rich log formatting (fetched from YPares/jj.conf.d)
+# - fix.toml: Code formatters (jj fix)
+# - seqera.toml: Work repos (~/src/seqera, ~/src/nextflow)
+# - nfcore.toml: nf-core repos (~/src/nf-core)
+# - fg.toml: UTD academic repos (~/src/fg)
+
+# =============================================================================
+# USER INFO
+# =============================================================================
+
 [user]
 name = "Edmund Miller"
 email = "git@edmundmiller.dev"
 
-# Additional configs are in conf.d/
-# - seqera.toml: Work repos (~/src/seqera, ~/src/nextflow)
-# - nfcore.toml: nf-core repos (~/src/nf-core)
-# - fg.toml: UTD academic repos (~/src/fg)
-# - fix.toml: Code formatting tools (jj fix)
+# =============================================================================
+# UI SETTINGS
+# =============================================================================
+
+[ui]
+default-command = "log"
+pager = "less -FRX"
+paginate = "auto"
+allow-filesets = true
+
+# Diff and editing
+diff-formatter = ["difft", "--color=always", "$left", "$right"]
+diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
+merge-editor = "diffconflicts"
+editor = "nvim"
+
+# Display options
+log-word-wrap = true
+graph.style = "square"
+relative-timestamps = true
+
+[ui.movement]
+edit = true  # Make edit mode default for prev/next
+
+[core]
+whitespace = "trailing-space"
+
+# =============================================================================
+# SIGNING
+# =============================================================================
+
+[signing]
+# Use "drop" to avoid 1Password signing prompts during normal work
+# Commits will be signed in batch when pushing (see git.sign-on-push)
+behavior = "drop"
+backend = "ssh"
+key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC"
+
+[signing.backends.ssh]
+program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+
+# =============================================================================
+# GIT INTEGRATION
+# =============================================================================
+
+[git]
+sign-on-push = true
+push-branch-prefix = "push-"
+push-bookmarks-prefix = "emiller/"
+track-default-bookmark-on-clone = false
+
+[remotes.origin]
+auto-track-bookmarks = '*'  # Auto-import git branches as jj bookmarks
+
+# =============================================================================
+# TEMPLATES - Triple Template System
+# =============================================================================
+# Three log styles for different use cases:
+#
+# 1. credits_roll (default) - Rich visual formatting with diff stats
+#    Usage: jj log (default)
+#
+# 2. human_log - Clean, readable for daily human use
+#    Usage: jj lh (log human)
+#
+# 3. ai_log - Minimal, structured for AI agents
+#    Usage: jj la (log ai)
+
+[templates]
+# Default: credits_roll for visual appeal
+log_node = "credits_roll_node"
+log = "credits_roll(0, 'none()')"
+
+[template-aliases]
+# -----------------------------------------------------------------------------
+# AI-Friendly Template (minimal, structured)
+# For AI agents and scripts - easy to parse, no decoration
+# -----------------------------------------------------------------------------
+'ai_log' = '''
+change_id.shortest(8) ++ " "
+++ commit_id.shortest(8) ++ " "
+++ if(empty, "(empty) ", "")
+++ if(immutable, "(immutable) ", "")
+++ if(conflict, "(conflict) ", "")
+++ bookmarks ++ " "
+++ description.first_line()
+++ "\n"
+'''
+
+# -----------------------------------------------------------------------------
+# Human-Friendly Template (balanced readability)
+# Clean daily driver without credits_roll's visual complexity
+# -----------------------------------------------------------------------------
+'human_log' = '''
+separate(" ",
+  change_id.shortest(8).prefix().colored("magenta"),
+  change_id.shortest(8).rest().colored("dim"),
+  commit_id.shortest(8).colored("blue"),
+  if(empty, label("empty", "∅")),
+  if(immutable, label("immutable", "◆")),
+  if(conflict, label("conflict", "✖")),
+  bookmarks.colored("green"),
+  tags.colored("yellow"),
+) ++ "\n"
+++ if(description,
+    "  " ++ description.first_line().colored("white") ++ "\n",
+    "  " ++ label("description placeholder", "(no description)") ++ "\n"
+)
+++ if(author.name() != "Edmund Miller",
+    "  " ++ label("dim", "by " ++ author.name()) ++ "\n",
+    ""
+)
+'''
+
+# -----------------------------------------------------------------------------
+# Shell Prompt Template
+# For starship/shell integration - ultra-compact
+# -----------------------------------------------------------------------------
+'prompt' = '''
+separate(" ",
+  change_id.shortest(4),
+  commit_id.shortest(4),
+  if(empty, label("empty", "∅")),
+  if(conflict, label("conflict", "✖")),
+  if(description == "", label("description placeholder", "✏"))
+)
+'''
+
+# =============================================================================
+# ALIASES - Grouped by Purpose
+# =============================================================================
 
 [aliases]
-# Common git-like aliases
-amend = ["describe", "--edit"]
-lg = ["log", "--graph", "--color=always"]
-ls = ["files"]
+# -----------------------------------------------------------------------------
+# Navigation
+# -----------------------------------------------------------------------------
+p = ["prev", "--edit"]
+n = ["next", "--edit"]
+
+# -----------------------------------------------------------------------------
+# Viewing (Log variants)
+# -----------------------------------------------------------------------------
+l = ["log", "-r", "(main..@):: | (main..@)-"]         # Recent relative to main
+la = ["log", "--template", "ai_log"]                  # AI-friendly log
+lh = ["log", "--template", "human_log"]               # Human-friendly log
+lg = ["log", "--graph", "--color=always"]             # Graph view
+lm = ["log", "-r", "::@ | ::main"]                    # Log with main
+ls = ["files"]                                        # List files
+pp = ["log", "--template", "builtin_log_detailed"]    # Pretty print detailed
+recent = ["log", "-r", "::@ ~ ::trunk()"]             # Not in trunk yet
+work = ["log", "-r", "(mine() & ~empty()) | @"]       # Show meaningful work
+
+# -----------------------------------------------------------------------------
+# Basic Operations
+# -----------------------------------------------------------------------------
 st = ["status"]
+amend = ["describe", "--edit"]
+uncommit = ["backout", "-r", "@"]
+wip = ["describe", "-m", "WIP"]
 
-# Custom aliases matching your git setup
-ranked-authors = ["log", "--template", "author"]
-lm = ["log", "-r", "::@ | ::main"]
+# -----------------------------------------------------------------------------
+# Git Operations
+# -----------------------------------------------------------------------------
+sync = ["git", "fetch", "--all-remotes"]
 
-# Workflow shortcuts
-l = ["log", "-r", "(main..@):: | (main..@)-"] # Recent changes relative to main
-uncommit = ["backout", "-r", "@"] # Undo last commit keeping changes
-sync = ["git", "fetch", "--all-remotes"] # Fetch from all remotes
-wip = ["describe", "-m", "WIP"] # Quick work-in-progress commit
-pp = [
-  "log",
-  "--template",
-  "builtin_log_detailed",
-] # Pretty print with full descriptions
-recent = ["log", "-r", "::@ ~ ::trunk()"] # Recent commits not in trunk
-evolve = ["evolve", "--quiet"] # Quietly evolve commits
-# Move the closest bookmark to the current commit. This is useful when
-# working on a named branch, creating a bunch of commits, and then needing
-# to update the bookmark before pushing.
-# References:
-# - https://shaddy.dev/notes/jj-tug/
-# - https://github.com/jj-vcs/jj/discussions/5568
+# -----------------------------------------------------------------------------
+# Bookmark Management
+# -----------------------------------------------------------------------------
+# Move closest bookmark to current commit (useful before pushing)
+# References: https://shaddy.dev/notes/jj-tug/
 tug = ["bookmark", "move", "--from", "heads(::@- & bookmarks())", "--to", "@-"]
 
-# Rebase the current branch onto the trunk.
+# -----------------------------------------------------------------------------
+# Rebase & Workflow
+# -----------------------------------------------------------------------------
 retrunk = ["rebase", "-d", "trunk()"]
+evolve = ["evolve", "--quiet"]
 
-# Quick navigation
-p = ["prev", "--edit"] # Go to previous commit in edit mode
-n = ["next", "--edit"] # Go to next commit in edit mode
+# -----------------------------------------------------------------------------
+# Cleanup & Maintenance
+# -----------------------------------------------------------------------------
+cleanup = ["abandon", "-r", "empty() & ~@"]
+abandon-empty = ["abandon", "-r", "empty() & description(\"\")"]
+tidy = ["abandon", "-r", "empty() & description(\"\") & ~@"]
+orphans = ["log", "-r", "mine() & ~::trunk() & ~::@"]
 
-# Cleanup aliases for maintaining clean history
-cleanup = [
-  "abandon",
-  "-r",
-  "empty() & ~@",
-] # Clean up all empty commits except current
-work = ["log", "-r", "(mine() & ~empty()) | @"] # Show only meaningful work
-orphans = ["log", "-r", "mine() & ~::trunk() & ~::@"] # Show orphaned branches
-abandon-empty = [
-  "abandon",
-  "-r",
-  "empty() & description(\"\")",
-] # Remove empty unnamed commits
-tidy = [
-  "abandon",
-  "-r",
-  "empty() & description(\"\") & ~@",
-] # Safe cleanup of empty commits
-
-# GitHub Pull Request management
-spr = ["util", "exec", "--", "nix", "run", "/Users/edmundmiller/.config/dotfiles#jj-spr", "--"] # Stacked pull requests with jj-spr
-nd = ["util", "exec", "--", "/Users/edmundmiller/.config/dotfiles/bin/jj-nd", "--"] # Open diff in neovim (PR preview)
-
-# AI-powered commit message generation
+# -----------------------------------------------------------------------------
+# AI Commit Messages
+# -----------------------------------------------------------------------------
 ai-desc = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py"]
-aid = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py"] # Short alias for ai-desc
-aide = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py", "--edit"] # AI-desc with editor
+aid = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py"]
+aide = ["util", "exec", "--", "/Users/emiller/.config/dotfiles/bin/jj-ai-desc.py", "--edit"]
+
+# -----------------------------------------------------------------------------
+# GitHub/PR Tools
+# -----------------------------------------------------------------------------
+spr = ["util", "exec", "--", "nix", "run", "/Users/edmundmiller/.config/dotfiles#jj-spr", "--"]
+nd = ["util", "exec", "--", "/Users/edmundmiller/.config/dotfiles/bin/jj-nd", "--"]
+
+# -----------------------------------------------------------------------------
+# Diagnostics
+# -----------------------------------------------------------------------------
+ranked-authors = ["log", "--template", "author"]
+
+# =============================================================================
+# REVSET ALIASES
+# =============================================================================
 
 [revset-aliases]
-# Find the closest bookmark in the ancestry of a given revision
 'closest_bookmark(to)' = 'heads(::to & bookmarks())'
 "fork_history(to, from)" = "fork_point(to | from)..@"
 
-# Merge conflict resolution tool
+# =============================================================================
+# REVSETS
+# =============================================================================
+
+[revsets]
+trunk = "main@origin"
+log = "@ | ancestors(immutable_heads().., 2) | trunk()"
+mine = "author(exact:\"Edmund Miller\")"
+recent-changes = "::@ & ~::trunk()"
+stale = "committer_date().before(\"2 weeks ago\") & mine() & ~::trunk()"
+clean-log = "@ | ancestors(@ | trunk(), 2) | trunk()"
+active = "mine() & ~empty() & ~immutable()"
+
+# =============================================================================
+# SNAPSHOT SETTINGS
+# =============================================================================
+
+[snapshot]
+# Auto-track source files, excluding build/output directories
+auto-track = "(glob:**/*.js|glob:**/*.ts|glob:**/*.tsx|glob:**/*.jsx|glob:**/*.py|glob:**/*.rs|glob:**/*.go|glob:**/*.java|glob:**/*.c|glob:**/*.cpp|glob:**/*.h|glob:**/*.hpp|glob:**/*.nix|glob:**/*.toml|glob:**/*.yaml|glob:**/*.yml|glob:**/*.json|glob:**/*.md) & ~glob:**/node_modules/** & ~glob:**/.nextflow/** & ~glob:**/work/** & ~glob:**/results/** & ~glob:**/.lineage"
+max-new-file-size = "10MB"
+
+# =============================================================================
+# MERGE TOOLS
+# =============================================================================
+
 [merge-tools.diffconflicts]
 program = "nvim"
 merge-args = [
@@ -93,86 +267,3 @@ merge-args = [
   "$right",
 ]
 merge-tool-edits-conflict-markers = true
-
-[ui]
-# default-command = "status"
-diff-formatter = ["difft", "--color=always", "$left", "$right"]
-pager = "less -FRX"
-diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
-merge-editor = "diffconflicts"
-editor = "nvim"
-# Enable word wrapping in logs for better readability
-log-word-wrap = true
-# Change graph style for cleaner visualization
-graph.style = "square"
-# Show relative timestamps
-relative-timestamps = true
-# Paginate long outputs automatically
-paginate = "auto"
-# Automatically abandon empty commits on certain operations
-allow-filesets = true
-default-command = "log"
-
-[ui.movement]
-# Make edit mode default for prev/next commands
-edit = true
-
-[core]
-whitespace = "trailing-space"
-
-[signing]
-# Use "drop" to avoid 1Password signing prompts during normal work
-# Commits will be signed in batch when pushing (see git.sign-on-push below)
-behavior = "drop"
-backend = "ssh"
-key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC"
-
-[signing.backends.ssh]
-program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-
-[git]
-# lazily signing only on push.
-sign-on-push = true
-push-branch-prefix = "push-"
-# Don't create unnecessary local bookmarks when cloning
-track-default-bookmark-on-clone = false
-# Allow pushing new bookmarks to remote
-push-bookmarks-prefix = "emiller/"
-
-[remotes.origin]
-# Auto-import git branches as jj bookmarks (useful for gh pr checkout)
-auto-track-bookmarks = '*'
-
-[revsets]
-# Equivalent to git's push.default=current
-trunk = "main@origin"
-# Useful revset aliases for common queries
-log = "@ | ancestors(immutable_heads().., 2) | trunk()"                  # Default log view
-mine = "author(exact:\"Edmund Miller\")"                                 # Your commits
-recent-changes = "::@ & ~::trunk()"                                      # Changes not yet in trunk
-stale = "committer_date().before(\"2 weeks ago\") & mine() & ~::trunk()" # Old unmerged work
-# Cleaner log views
-clean-log = "@ | ancestors(@ | trunk(), 2) | trunk()" # Simplified default log
-active = "mine() & ~empty() & ~immutable()"           # Active work in progress
-
-[snapshot]
-# Automatically track new files in src directories
-auto-track = "(glob:**/*.js|glob:**/*.ts|glob:**/*.tsx|glob:**/*.jsx|glob:**/*.py|glob:**/*.rs|glob:**/*.go|glob:**/*.java|glob:**/*.c|glob:**/*.cpp|glob:**/*.h|glob:**/*.hpp|glob:**/*.nix|glob:**/*.toml|glob:**/*.yaml|glob:**/*.yml|glob:**/*.json|glob:**/*.md) & ~glob:**/node_modules/** & ~glob:**/.nextflow/** & ~glob:**/work/** & ~glob:**/results/** & ~glob:**/.lineage"
-# Maximum file size to auto-track (10MB)
-max-new-file-size = "10MB"
-
-[templates]
-log_node = "credits_roll_node"
-log = "credits_roll(0, 'none()')"
-
-[template-aliases]
-# Simple prompt template for shell integration
-'prompt' = '''
-separate(" ",
-  self.change_id().shortest(4),
-  commit_id.shortest(4),
-  if(empty, label("empty", "∅"), ""),
-  if(conflict, label("conflict", "✖"), ""),
-  if(description == "", label("description placeholder", "✏"), "")
-)
-'''
