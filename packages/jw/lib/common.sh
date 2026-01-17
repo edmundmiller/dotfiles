@@ -1,5 +1,6 @@
 # jw common utilities
 # Sourced by all jw commands
+# Uses gum for all styled output
 
 # =============================================================================
 # Configuration
@@ -8,40 +9,60 @@
 # Default workspace path pattern: ../repo--name
 JW_WORKSPACE_PATH="${JW_WORKSPACE_PATH:-../{repo\}--{name\}}"
 
-# Colors for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[0;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly DIM='\033[0;2m'
-readonly BOLD='\033[1m'
-readonly NC='\033[0m' # No Color
-
-# Symbols
-readonly CHECK="✓"
-readonly CROSS="✗"
-readonly ARROW="→"
-readonly DOT="●"
-
 # =============================================================================
-# Output Utilities
+# Output Utilities (gum-based)
 # =============================================================================
 
 _error() {
-    echo -e "${RED}error:${NC} $*" >&2
+    gum style --foreground 196 --bold "error:" "$*" >&2
 }
 
 _warn() {
-    echo -e "${YELLOW}warning:${NC} $*" >&2
+    gum style --foreground 214 --bold "warning:" "$*" >&2
 }
 
 _info() {
-    echo -e "${DIM}$*${NC}"
+    gum style --faint "$*"
 }
 
 _success() {
-    echo -e "${GREEN}${CHECK}${NC} $*"
+    gum style --foreground 42 "✓ $*"
+}
+
+# Styled header for section titles
+_header() {
+    gum style --bold --foreground 212 "$*"
+}
+
+# Spinner wrapper for long operations
+_spin() {
+    local title="$1"
+    shift
+    gum spin --spinner dot --title "$title" -- "$@"
+}
+
+# Format markdown text
+_format_md() {
+    gum format <<<"$*"
+}
+
+# =============================================================================
+# TTY Detection
+# =============================================================================
+
+# Check if running interactively (has TTY)
+_is_interactive() {
+    [[ -t 0 && -t 1 ]]
+}
+
+# Require TTY for interactive features, show usage hint if not
+_require_tty() {
+    local usage="$1"
+    if ! _is_interactive; then
+        _error "Interactive mode requires a terminal"
+        _info "$usage"
+        return 1
+    fi
 }
 
 # =============================================================================
@@ -68,16 +89,16 @@ _workspace_path() {
     repo="$(_repo_name)"
     local root
     root="$(_repo_root)"
-    
+
     local path="$JW_WORKSPACE_PATH"
     path="${path//\{repo\}/$repo}"
     path="${path//\{name\}/$name}"
-    
+
     # If path is relative, make it relative to repo root
     if [[ "$path" != /* ]]; then
         path="$root/$path"
     fi
-    
+
     echo "$path"
 }
 
@@ -86,7 +107,7 @@ _current_workspace() {
     local cwd worktree
     cwd="$(pwd)"
     worktree="$(basename "$cwd")"
-    
+
     # Check if we're in a workspace (format: repo--name)
     if [[ "$worktree" == *--* ]]; then
         echo "${worktree#*--}"
@@ -111,34 +132,39 @@ _workspace_dir() {
     fi
 }
 
+# List all workspace names
+_workspace_names() {
+    jj workspace list -T 'name ++ "\n"' 2>/dev/null
+}
+
 # Execute command after switching
 _execute_command() {
     local cmd="$1"
-    
+
     case "$cmd" in
-        claude)
-            echo "Starting Claude..."
-            exec claude
-            ;;
-        opencode|oc)
-            echo "Starting OpenCode..."
-            exec opencode
-            ;;
-        code|vscode)
-            echo "Opening in VS Code..."
-            code .
-            ;;
-        nvim|vim)
-            echo "Opening in Neovim..."
-            exec nvim
-            ;;
-        zed)
-            echo "Opening in Zed..."
-            zed .
-            ;;
-        *)
-            echo "Executing: $cmd"
-            exec $cmd
-            ;;
+    claude)
+        _info "Starting Claude..."
+        exec claude
+        ;;
+    opencode | oc)
+        _info "Starting OpenCode..."
+        exec opencode
+        ;;
+    code | vscode)
+        _info "Opening in VS Code..."
+        code .
+        ;;
+    nvim | vim)
+        _info "Opening in Neovim..."
+        exec nvim
+        ;;
+    zed)
+        _info "Opening in Zed..."
+        zed .
+        ;;
+    *)
+        _info "Executing: $cmd"
+        exec $cmd
+        ;;
     esac
 }

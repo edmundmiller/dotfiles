@@ -3,12 +3,14 @@
 # https://github.com/max-sixty/worktrunk
 #
 # Designed for running AI agents in parallel using jj workspaces.
+# Uses gum for interactive prompts and styled output.
 #
 # Core commands:
 #   jw switch <name>         Switch to workspace (creates if needed)
 #   jw switch -c <name>      Create new workspace
-#   jw switch -c -x <cmd>    Create and execute command (claude, nvim, code)
+#   jw switch -c -x <cmd>    Create and execute command (claude, opencode, etc)
 #   jw list                  List all workspaces with status
+#   jw select                Interactive workspace picker
 #   jw remove [name]         Remove workspace (current if no name)
 #   jw merge [name]          Merge workspace changes to trunk
 #
@@ -24,6 +26,7 @@ LIB_DIR="${SCRIPT_DIR}/lib"
 source "${LIB_DIR}/common.sh"
 source "${LIB_DIR}/switch.sh"
 source "${LIB_DIR}/list.sh"
+source "${LIB_DIR}/select.sh"
 source "${LIB_DIR}/remove.sh"
 source "${LIB_DIR}/merge.sh"
 source "${LIB_DIR}/sync.sh"
@@ -39,29 +42,60 @@ main() {
     
     case "$cmd" in
         switch|s)
-            cmd_switch "$@"
+            if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+                cmd_switch_help
+            else
+                cmd_switch "$@"
+            fi
             ;;
         create|c)
-            cmd_create "$@"
+            if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+                cmd_switch_help  # Same as switch
+            else
+                cmd_create "$@"
+            fi
             ;;
         list|ls|l)
-            cmd_list "$@"
+            if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+                cmd_list_help
+            else
+                cmd_list "$@"
+            fi
+            ;;
+        select|sel)
+            if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+                cmd_select_help
+            else
+                cmd_select "$@"
+            fi
             ;;
         remove|rm|r)
-            cmd_remove "$@"
+            if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+                cmd_remove_help
+            else
+                cmd_remove "$@"
+            fi
             ;;
         merge|m)
-            cmd_merge "$@"
+            if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+                cmd_merge_help
+            else
+                cmd_merge "$@"
+            fi
             ;;
         sync)
-            cmd_sync "$@"
+            if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+                cmd_sync_help
+            else
+                cmd_sync "$@"
+            fi
             ;;
         help|--help|-h)
             cmd_help
             ;;
         *)
             _error "Unknown command: $cmd"
-            echo "Run 'jw help' for usage"
+            _info "Run 'jw help' for usage"
             exit 1
             ;;
     esac

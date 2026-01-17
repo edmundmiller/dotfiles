@@ -4,6 +4,8 @@ A CLI tool for managing Jujutsu (jj) workspaces, inspired by [worktrunk](https:/
 
 Designed for running AI agents (Claude, OpenCode) in parallel using jj workspaces.
 
+Uses [gum](https://github.com/charmbracelet/gum) for interactive prompts, styled output, and spinners.
+
 ## Installation
 
 This package is installed via nix-darwin. After `hey rebuild`, `jw` will be available in your PATH.
@@ -38,9 +40,33 @@ jw remove agent-1
 | `jw list` | `jwl` | List workspaces with status |
 | `jw list --full` | | Include ahead counts |
 | `jw list --json` | | Output as JSON |
+| `jw select` | | Interactive workspace picker |
 | `jw remove [name]` | `jwr` | Remove workspace |
 | `jw merge [name]` | `jwm` | Merge workspace to trunk |
 | `jw sync [name]` | | Sync workspace with trunk |
+
+## Interactive Features
+
+When no arguments are provided, many commands become interactive:
+
+| Command | Interactive Behavior |
+|---------|---------------------|
+| `jw switch` | Fuzzy filter to select workspace |
+| `jw switch -c` | Prompt for workspace name |
+| `jw remove` | Select workspace to remove |
+| `jw merge` | Choose rebase or squash strategy |
+
+The `jw select` command provides a dedicated interactive workspace picker with status indicators.
+
+## Per-Command Help
+
+Each command has detailed help:
+
+```bash
+jw switch --help
+jw merge --help
+jw list --help
+```
 
 ## Comparison with worktrunk (wt)
 
@@ -48,6 +74,7 @@ jw remove agent-1
 |------|--------------------|--------------------|
 | Create + Claude | `jwc agent-1` | `wt switch -c -x claude agent-1` |
 | List with status | `jwl --full` | `wt list --full` |
+| Interactive pick | `jw select` | `wt select` |
 | Merge to main | `jwm agent-1` | `wt merge agent-1` |
 | Remove | `jwr agent-1` | `wt remove agent-1` |
 
@@ -81,16 +108,24 @@ packages/jw/
 ├── AGENTS.md        # Agent instructions
 ├── jw               # Main entry point
 └── lib/
-    ├── common.sh    # Shared utilities
-    ├── switch.sh    # Switch command
-    ├── list.sh      # List command
+    ├── common.sh    # Shared utilities (gum wrappers)
+    ├── switch.sh    # Switch/create command
+    ├── list.sh      # List command (styled table)
+    ├── select.sh    # Interactive picker
     ├── remove.sh    # Remove command
     ├── merge.sh     # Merge command
-    └── sync.sh      # Sync command
+    ├── sync.sh      # Sync command
+    └── help.sh      # Help (markdown formatted)
 ```
+
+## Dependencies
+
+- `jj` (jujutsu) - version control
+- `gum` (charmbracelet/gum) - interactive prompts and styling
 
 ## See Also
 
 - [worktrunk](https://worktrunk.dev) - Git worktree management for agents
 - [jj workspaces](https://martinvonz.github.io/jj/latest/working-copy/#workspaces) - Official docs
 - [poucet/workflow](https://github.com/poucet/workflow) - Similar jj workflow tool
+- [charmbracelet/gum](https://github.com/charmbracelet/gum) - Interactive shell utilities
