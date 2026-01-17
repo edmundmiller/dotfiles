@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# jw - JJ Workspace management tool (inspired by worktrunk)
+# https://github.com/max-sixty/worktrunk
+#
+# Designed for running AI agents in parallel using jj workspaces.
+#
+# Core commands:
+#   jw switch <name>         Switch to workspace (creates if needed)
+#   jw switch -c <name>      Create new workspace
+#   jw switch -c -x <cmd>    Create and execute command (claude, nvim, code)
+#   jw list                  List all workspaces with status
+#   jw remove [name]         Remove workspace (current if no name)
+#   jw merge [name]          Merge workspace changes to trunk
+#
+# See: jw help
+
+set -euo pipefail
+
+# Determine script directory for sourcing lib files
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="${SCRIPT_DIR}/lib"
+
+# Source library files
+source "${LIB_DIR}/common.sh"
+source "${LIB_DIR}/switch.sh"
+source "${LIB_DIR}/list.sh"
+source "${LIB_DIR}/remove.sh"
+source "${LIB_DIR}/merge.sh"
+source "${LIB_DIR}/sync.sh"
+source "${LIB_DIR}/help.sh"
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    local cmd="${1:-help}"
+    shift || true
+    
+    case "$cmd" in
+        switch|s)
+            cmd_switch "$@"
+            ;;
+        create|c)
+            cmd_create "$@"
+            ;;
+        list|ls|l)
+            cmd_list "$@"
+            ;;
+        remove|rm|r)
+            cmd_remove "$@"
+            ;;
+        merge|m)
+            cmd_merge "$@"
+            ;;
+        sync)
+            cmd_sync "$@"
+            ;;
+        help|--help|-h)
+            cmd_help
+            ;;
+        *)
+            _error "Unknown command: $cmd"
+            echo "Run 'jw help' for usage"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
