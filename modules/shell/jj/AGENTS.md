@@ -3,6 +3,21 @@
 ## Purpose
 Configures jj (Jujutsu VCS) with custom templates, aliases, and integrations.
 
+## Triple Template System
+
+Three log templates for different use cases:
+
+| Template | Command | Purpose |
+|----------|---------|---------|
+| `credits_roll` | `jj log` (default) | Rich visual formatting with diff stats |
+| `human_log` | `jj lh` | Clean, balanced readability for daily use |
+| `ai_log` | `jj la` | Minimal, structured output for AI agents |
+
+**For AI agents:** Always use `jj la` for parsing-friendly output:
+```
+xyzvwmqo 12a3bc45 (empty) feature-branch Add new feature
+```
+
 ## External Dependencies
 
 ### Credits Roll Templates
@@ -75,12 +90,23 @@ auto-local-bookmark = true
 auto-track-bookmarks = '*'
 ```
 
+## Key Aliases
+
+| Category | Aliases | Purpose |
+|----------|---------|---------|
+| Navigation | `p`, `n` | prev/next commit |
+| Viewing | `l`, `la`, `lh`, `lg`, `lm`, `pp` | Various log formats |
+| Cleanup | `cleanup`, `tidy`, `abandon-empty` | Remove empty commits |
+| Workflow | `wip`, `tug`, `retrunk`, `sync` | Common operations |
+| AI | `aid`, `aide`, `ai-desc` | AI commit messages |
+| GitHub | `spr`, `nd` | Stacked PRs, diff preview |
+
 ## Related Files
 
 - `config/jj/config.toml` - Main config (aliases, UI, signing, merge-tools)
 - `config/jj/conf.d/*.toml` - Modular configs (work repos, fix tools)
 - `config/jj/aliases.zsh` - Shell aliases
-- `config/jjui/config.toml` - JJUI TUI keybindings
+- `config/jjui/config.toml` - JJUI TUI keybindings (Catppuccin theme, power user commands)
 - `config/tmux/open-git-tui.sh` - Smart launcher (jjui for jj repos, gitu for git)
 
 ## Nix Module Options
