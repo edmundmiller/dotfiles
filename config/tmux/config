@@ -131,7 +131,7 @@ bind d display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picke
 bind g display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$TMUX_HOME/open-git-tui.sh"
 bind F display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --git-root"
 # critique: Beautiful TUI for reviewing git diffs with syntax highlighting
-bind G display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "bunx critique"
+bind G display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$TMUX_HOME/open-critique.sh"
 
 bind p select-pane -t :.-  # select previous pane
 bind P run "xclip -selection clipboard -o | tmux load-buffer - ; tmux paste-buffer"
