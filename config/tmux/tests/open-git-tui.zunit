@@ -1,0 +1,90 @@
+#!/usr/bin/env zunit
+
+# Tests for open-git-tui.sh - VCS detection for tmux popup
+# Detects jj vs git repos and launches appropriate TUI
+
+@setup {
+  export TEST_DIR=$(mktemp -d)
+  export ORIG_PWD=$PWD
+  export SCRIPT="$ORIG_PWD/config/tmux/open-git-tui.sh"
+  
+  # Create a testable version that echoes instead of exec
+  export TEST_SCRIPT="$TEST_DIR/open-git-tui-test.sh"
+  sed 's/exec /echo /' "$SCRIPT" > "$TEST_SCRIPT"
+  chmod +x "$TEST_SCRIPT"
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'detects jj repo and returns jjui' {
+  # Create jj repo (just .jj directory for detection)
+  mkdir -p "$TEST_DIR/jj-repo/.jj"
+  cd "$TEST_DIR/jj-repo"
+  
+  run "$TEST_SCRIPT"
+  
+  assert $state equals 0
+  assert "$output" same_as "jjui"
+}
+
+@test 'detects git repo and returns gitu' {
+  # Create git repo
+  mkdir -p "$TEST_DIR/git-repo"
+  cd "$TEST_DIR/git-repo"
+  git init --quiet
+  
+  run "$TEST_SCRIPT"
+  
+  assert $state equals 0
+  assert "$output" same_as "gitu"
+}
+
+@test 'prefers jj over git in colocated repo' {
+  # Create colocated repo (both .jj and .git)
+  mkdir -p "$TEST_DIR/colocated-repo/.jj"
+  mkdir -p "$TEST_DIR/colocated-repo/.git"
+  cd "$TEST_DIR/colocated-repo"
+  
+  run "$TEST_SCRIPT"
+  
+  assert $state equals 0
+  assert "$output" same_as "jjui"
+}
+
+@test 'detects git worktree via rev-parse' {
+  # Create git repo with worktree
+  mkdir -p "$TEST_DIR/main-repo"
+  cd "$TEST_DIR/main-repo"
+  git init --quiet
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  echo "test" > file.txt
+  git add file.txt
+  git commit --quiet -m "Initial"
+  
+  # Create worktree (no .git directory, uses gitdir file)
+  git worktree add --quiet "$TEST_DIR/worktree-repo" -b test-branch
+  cd "$TEST_DIR/worktree-repo"
+  
+  # Verify .git is a file not directory (worktrees use .git file pointing to main repo)
+  [[ -f ".git" ]] || return 1
+  
+  run "$TEST_SCRIPT"
+  
+  assert $state equals 0
+  assert "$output" same_as "gitu"
+}
+
+@test 'falls back to gitu in non-VCS directory' {
+  # Create empty directory (no VCS)
+  mkdir -p "$TEST_DIR/no-vcs"
+  cd "$TEST_DIR/no-vcs"
+  
+  run "$TEST_SCRIPT"
+  
+  assert $state equals 0
+  assert "$output" same_as "gitu"
+}
