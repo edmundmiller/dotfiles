@@ -1,11 +1,297 @@
 # jjui configuration
 # See: https://idursun.github.io/jjui/
+# Theme: Catppuccin Mocha (https://github.com/vic/tinted-jjui)
 
-# Leader key bindings (press \ then the key)
-[leader.a]
-help = "AI-generated commit message"
-send = [":", "aid", "enter"]
+# =============================================================================
+# UI SETTINGS
+# =============================================================================
 
-[leader.e]
-help = "AI-generated commit message (with edit)"
-send = [":", "aide", "enter"]
+[ui]
+theme = ""  # Using custom colors below (Catppuccin Mocha)
+auto_refresh_interval = 0  # Manual refresh only (ctrl+r)
+flash_message_display_seconds = 4
+
+# -----------------------------------------------------------------------------
+# Catppuccin Mocha Theme Colors
+# Source: https://github.com/vic/tinted-jjui
+# -----------------------------------------------------------------------------
+[ui.colors]
+"text"      = { fg = "#cdd6f4", bg = "#1e1e2e" }
+"dimmed"    = { fg = "#6c7086", bg = "#1e1e2e" }
+"title"     = { fg = "#89b4fa", bold = true }
+"shortcut"  = { fg = "#cba6f7" }
+"matched"   = { fg = "#f9e2af" }
+"border"    = { fg = "#6c7086" }
+"selected"  = { bg = "#313244", fg = "#cdd6f4", bold = true }
+
+"source_marker" = { bg = "#94e2d5", fg = "#1e1e2e", bold = true }
+"target_marker" = { bg = "#a6e3a1", fg = "#1e1e2e", bold = true }
+
+"status" = { bg = "#313244" }
+"status title" = { fg = "#1e1e2e", bg = "#89b4fa", bold = true }
+"status shortcut" = { fg = "#cba6f7" }
+"status dimmed" = { fg = "#6c7086" }
+
+"revset title" = { fg = "#89b4fa", bold = true }
+"revset text" = { fg = "#cdd6f4", bold = true }
+"revset completion text" = { fg = "#cdd6f4" }
+"revset completion matched" = { fg = "#f9e2af", bold = true }
+"revset completion dimmed" = { fg = "#6c7086" }
+"revset completion selected" = { bg = "#45475a", fg = "#cdd6f4" }
+
+"revisions" = { fg = "#cdd6f4" }
+"revisions selected" = { bg = "#313244"}
+"revisions dimmed" = { fg = "#6c7086" }
+"revisions details selected" = { bg = "#45475a" }
+"oplog selected" = { bold = true }
+
+"evolog" = { fg = "#cdd6f4" }
+"evolog selected" = { bg = "#45475a", fg = "#cdd6f4", bold = true }
+
+"menu" = { bg = "#1e1e2e" }
+"menu title" = { fg = "#1e1e2e", bg = "#cba6f7", bold = true }
+"menu shortcut" = { fg = "#cba6f7" }
+"menu matched" = { fg = "#f9e2af", bold = true }
+"menu dimmed" = { fg = "#6c7086" }
+"menu border" = { fg = "#313244" }
+"menu selected" = { bg = "#45475a", fg = "#cdd6f4" }
+
+"help" = { bg = "#1e1e2e" }
+"help title" = { fg = "#a6e3a1", bold = true, underline = true }
+"help border" = { fg = "#313244" }
+
+"preview" = { fg = "#cdd6f4" }
+"preview border" = { fg = "#313244" }
+
+"confirmation" = { bg = "#1e1e2e" }
+"confirmation text" = { fg = "#89b4fa", bold = true }
+"confirmation dimmed" = { fg = "#6c7086" }
+"confirmation border" = { fg = "#f38ba8", bold = true }
+"confirmation selected" = { bg = "#45475a", fg = "#cdd6f4" }
+
+"undo" = { bg = "#1e1e2e" }
+"undo confirmation dimmed" = { fg = "#6c7086" }
+"undo confirmation selected" = { bg = "#45475a", fg = "#cdd6f4" }
+
+"success" = { fg = "#a6e3a1", bold = true }
+"error" = { fg = "#f38ba8", bold = true }
+"revisions rebase source_marker" = { bold = true }
+"revisions rebase target_marker" = { bold = true }
+
+"details" = { fg = "#cdd6f4" }
+"details selected" = { bold = true }
+"completion" = { fg = "#cdd6f4" }
+"completion selected" = { bold = true }
+"rebase" = { bold = true }
+
+# Syntax highlighting colors
+"workspace" = { fg = "#89b4fa" }
+"branch" = { fg = "#fab387" }
+"commit" = { fg = "#a6e3a1" }
+"file" = { fg = "#f9e2af" }
+"change" = { fg = "#f38ba8" }
+"bookmark" = { fg = "#cba6f7" }
+
+# =============================================================================
+# PREVIEW PANE
+# =============================================================================
+
+[preview]
+position = "auto"           # auto, right, or bottom
+show_at_start = false       # Don't show preview on startup
+width_percentage = 50.0     # Width when on right
+width_increment_percentage = 5.0  # Ctrl+h/l adjustment size
+revision_command = ["show", "--color", "always", "-r", "$change_id"]
+file_command = ["diff", "--color", "always", "-r", "$change_id", "$file"]
+
+# =============================================================================
+# REVISIONS & LOG
+# =============================================================================
+
+[revisions]
+log_batching = true
+log_batch_size = 50
+# Uncomment to override jj's default log template:
+# template = 'builtin_log_compact'
+
+# =============================================================================
+# SUGGEST MODE
+# =============================================================================
+
+[suggest]
+  [suggest.exec]
+    mode = "fuzzy"  # Fuzzy matching for : commands
+
+# =============================================================================
+# CUSTOM COMMANDS
+# Key sequences show an overlay with available commands (replaces leader keys)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# AI Commit Messages (a = AI)
+# Press 'a' to see AI-related commands
+# -----------------------------------------------------------------------------
+
+[custom_commands."ai describe"]
+key_sequence = ["a", "d"]
+desc = "AI-generated commit message"
+args = ["aid"]
+
+[custom_commands."ai describe edit"]
+key_sequence = ["a", "e"]
+desc = "AI-generated commit message (with edit)"
+args = ["aide"]
+
+# -----------------------------------------------------------------------------
+# Clipboard Operations (Y = Yank)
+# Context-aware: copies file path, change_id, or checked files
+# -----------------------------------------------------------------------------
+
+[custom_commands.yank]
+key = ["Y"]
+desc = "Copy to clipboard (context-aware)"
+lua = '''
+local checked_files = context.checked_files()
+if checked_files and #checked_files > 0 then
+    copy_to_clipboard(table.concat(checked_files, " "))
+    flash("Copied " .. #checked_files .. " file(s)")
+    return
+end
+local selected_file = context.file()
+if selected_file then
+    copy_to_clipboard(selected_file)
+    flash("Copied: " .. selected_file)
+    return
+end
+local change_id = context.change_id()
+if change_id then
+    copy_to_clipboard(change_id)
+    flash("Copied: " .. change_id)
+end
+'''
+
+# -----------------------------------------------------------------------------
+# Quick Revset Switcher (ctrl+l for quick access)
+# -----------------------------------------------------------------------------
+
+[custom_commands."quick revset"]
+key = ["ctrl+l"]
+desc = "Quick revset switcher"
+lua = '''
+local selected = choose({
+    options = {
+        "@ | ancestors(immutable_heads().., 2) | trunk()",
+        "mine()",
+        "all()",
+        "trunk()..@",
+        "::@ ~ ::trunk()",
+        "author(exact:\"Edmund Miller\")",
+        revset.default()
+    },
+    title = "Quick Revset"
+})
+if selected then
+    revset.set(selected)
+    flash("Revset: " .. selected)
+end
+'''
+
+# -----------------------------------------------------------------------------
+# Move Commits (vim-style J/K in normal context is navigation)
+# Use Alt+j/k for moving commits
+# -----------------------------------------------------------------------------
+
+[custom_commands."move commit down"]
+key = ["alt+j"]
+desc = "Move commit down (before parent)"
+args = ["rebase", "-r", "$change_id", "--insert-before", "$change_id-"]
+
+[custom_commands."move commit up"]
+key = ["alt+k"]
+desc = "Move commit up (after child)"
+args = ["rebase", "-r", "$change_id", "--insert-after", "$change_id+"]
+
+# -----------------------------------------------------------------------------
+# Git Operations (g = Git)
+# -----------------------------------------------------------------------------
+
+[custom_commands."git sync"]
+key_sequence = ["g", "s"]
+desc = "Fetch from all remotes"
+args = ["sync"]
+
+[custom_commands."git push bookmark"]
+key_sequence = ["g", "P"]
+desc = "Push with named branch"
+lua = '''
+local branch_name = input({
+    title = "Push Named Branch",
+    prompt = "Branch name: "
+})
+if branch_name and branch_name ~= "" then
+    local rev = context.change_id()
+    jj("git", "push", "--named", branch_name.."="..rev)
+    revisions.refresh()
+    flash("Pushed: " .. branch_name)
+end
+'''
+
+# -----------------------------------------------------------------------------
+# Workflow Shortcuts (w = Workflow)
+# -----------------------------------------------------------------------------
+
+[custom_commands."workflow wip"]
+key_sequence = ["w", "w"]
+desc = "Mark as WIP"
+args = ["wip"]
+
+[custom_commands."workflow tug"]
+key_sequence = ["w", "t"]
+desc = "Move bookmark to current"
+args = ["tug"]
+
+[custom_commands."workflow retrunk"]
+key_sequence = ["w", "r"]
+desc = "Rebase onto trunk"
+args = ["retrunk"]
+
+[custom_commands."workflow cleanup"]
+key_sequence = ["w", "c"]
+desc = "Abandon empty commits"
+args = ["cleanup"]
+
+[custom_commands."workflow tidy"]
+key_sequence = ["w", "d"]
+desc = "Safe cleanup (empty + unnamed)"
+args = ["tidy"]
+
+# -----------------------------------------------------------------------------
+# Open in Editor (O = Open)
+# -----------------------------------------------------------------------------
+
+[custom_commands."open file"]
+key = ["O"]
+desc = "Open file in editor"
+lua = '''
+local file = context.file()
+if not file then
+    flash("No file selected")
+    return
+end
+suspend()
+os.execute("nvim " .. file)
+'''
+
+# -----------------------------------------------------------------------------
+# GitHub/PR Operations (p = PR)
+# -----------------------------------------------------------------------------
+
+[custom_commands."pr preview"]
+key_sequence = ["p", "p"]
+desc = "Preview PR diff in neovim"
+args = ["nd"]
+
+[custom_commands."pr stacked"]
+key_sequence = ["p", "s"]
+desc = "Stacked pull requests"
+args = ["spr"]
