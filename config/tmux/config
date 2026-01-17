@@ -128,7 +128,7 @@ bind f display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picke
 bind D display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --directories"
 bind z display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide"
 bind d display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide --dir-only"
-bind g display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "gitu"
+bind g display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$TMUX_HOME/open-git-tui.sh '#{pane_current_path}'"
 bind G display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --git-root"
 
 bind p select-pane -t :.-  # select previous pane
