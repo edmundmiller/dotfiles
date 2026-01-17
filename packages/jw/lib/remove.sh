@@ -52,13 +52,20 @@ cmd_remove() {
         fi
     fi
     
-    # Confirm removal
-    if command -v gum &>/dev/null; then
-        gum confirm "Remove workspace '$name'?" || return 0
-    else
-        echo -n "Remove workspace '$name'? [y/N] "
-        read -r confirm
-        [[ "$confirm" =~ ^[Yy]$ ]] || return 0
+    # Confirm removal (skip if force or no TTY)
+    if ! $force; then
+        if [[ -t 0 ]]; then
+            if command -v gum &>/dev/null; then
+                gum confirm "Remove workspace '$name'?" || return 0
+            else
+                echo -n "Remove workspace '$name'? [y/N] "
+                read -r confirm
+                [[ "$confirm" =~ ^[Yy]$ ]] || return 0
+            fi
+        else
+            _error "No TTY available for confirmation. Use -f to force removal."
+            return 1
+        fi
     fi
     
     # If we're in the workspace, cd to parent first

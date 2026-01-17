@@ -70,7 +70,7 @@ cmd_switch() {
 }
 
 cmd_create() {
-    local name="$1"
+    local name="${1:-}"
     
     if [[ -z "$name" ]]; then
         echo "Usage: jw create <workspace-name>"
