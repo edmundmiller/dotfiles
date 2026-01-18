@@ -36,6 +36,18 @@ Fields: `change_id commit_id [author_if_not_me] relative_time flags bookmarks de
 
 Flags: `∅` empty, `✖` conflict, `◆` immutable
 
+### Token Savings
+
+Measured on 10 commits:
+
+| Metric | Old (verbose) | New (ai_log) | Reduction |
+|--------|---------------|--------------|-----------|
+| Bytes  | 4107          | 806          | **80%**   |
+| Lines  | 88            | 14           | **84%**   |
+
+The `mine()` revset filter provides additional savings by showing only ~5-10 commits
+(your unmerged work) instead of potentially 1000s of commits in repos with many branches.
+
 ## External Dependencies
 
 ### Credits Roll Templates
