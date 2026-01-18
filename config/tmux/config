@@ -120,6 +120,7 @@ bind Enter copy-mode # enter copy mode
 bind b list-buffers  # list paster buffers
 bind B choose-buffer # choose which buffer to paste from
 bind i display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-capture"  # beads capture
+bind n display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/daily-note"
 bind e display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-find-all"  # beads explore (current dir)
 bind E display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-find-all --all"  # beads explore (home)
 
