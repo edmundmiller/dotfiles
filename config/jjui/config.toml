@@ -111,8 +111,8 @@ file_command = ["diff", "--color", "always", "-r", "$change_id", "$file"]
 [revisions]
 log_batching = true
 log_batch_size = 50
-# Uncomment to override jj's default log template:
-# template = 'builtin_log_compact'
+# Override jj's verbose credits_roll with compact template for cleaner TUI
+template = 'builtin_log_compact'
 
 # =============================================================================
 # SUGGEST MODE
