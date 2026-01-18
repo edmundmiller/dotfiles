@@ -8,11 +8,14 @@ note_path="$daily_dir/$note_date.md"
 session_name="daily-note"
 
 mkdir -p "$daily_dir"
+touch "$note_path"
 
-if [ ! -f "$note_path" ]; then
-  touch "$note_path"
+# If called with --popup flag, just open nvim directly (for tmux popups)
+if [[ "${1:-}" == "--popup" ]]; then
+  exec nvim "$note_path"
 fi
 
+# Otherwise, create/switch to persistent session
 if tmux has-session -t "$session_name" 2>/dev/null; then
   if [ -n "${TMUX:-}" ]; then
     tmux switch-client -t "$session_name"
