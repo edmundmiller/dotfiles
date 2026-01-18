@@ -4,7 +4,7 @@
 
 # If uncommitted changes exist, show them; otherwise show last commit
 if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
-    bunx critique "$@"
+    exec bunx critique "$@"
 else
-    bunx critique HEAD~1..HEAD "$@"
+    exec bunx critique HEAD~1..HEAD "$@"
 fi
