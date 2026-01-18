@@ -10,8 +10,10 @@
       dev = {
         node.enable = true;
         node.useFnm = true;
-        python.enable = true;
-        python.conda.enable = true;
+        # FIXME: Python disabled due to buildEnv conflict with clawdbot
+        # See beads issue for investigation: whisper in home-manager-path
+        python.enable = false;
+        python.conda.enable = false;
         R.enable = true;
       };
 

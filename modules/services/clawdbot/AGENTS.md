@@ -80,6 +80,10 @@ launchctl print gui/$(id -u)/com.steipete.clawdbot.gateway | grep state
 tail -f /tmp/clawdbot/clawdbot-gateway.log
 ```
 
+## Known Issues
+
+**Python conflict**: When `modules.dev.python.enable = true`, may conflict with packages in home-manager-path that bundle Python (e.g., whisper). Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../pydoc3.13`. Workaround: disable Python module temporarily.
+
 ## Related Files
 
 - `flake.nix` - nix-clawdbot input and home-manager.sharedModules config
