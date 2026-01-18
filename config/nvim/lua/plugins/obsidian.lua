@@ -23,6 +23,10 @@ return {
               end,
               desc = "Obsidian Follow Link",
             },
+            ["<leader>nd"] = {
+              "<cmd>ObsidianToday<cr>",
+              desc = "Open daily note",
+            },
           },
         },
       },
