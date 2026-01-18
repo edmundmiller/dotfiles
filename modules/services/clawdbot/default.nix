@@ -53,7 +53,7 @@ in {
     # Configure clawdbot through home-manager
     home-manager.users.${user}.programs.clawdbot = {
       enable = true;
-      documents = ../../config/clawdbot/documents;
+      documents = ../../../config/clawdbot/documents;
 
       # Use firstParty for built-in plugins (no flake locking needed)
       firstParty = {
