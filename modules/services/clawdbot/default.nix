@@ -1,4 +1,4 @@
-{ options, config, lib, pkgs, ... }:
+{ inputs, options, config, lib, pkgs, ... }:
 
 with lib;
 with lib.my;
@@ -47,6 +47,9 @@ in {
   };
 
   config = mkIf cfg.enable {
+    # Apply nix-clawdbot overlay to make pkgs.clawdbot available
+    nixpkgs.overlays = [ inputs.nix-clawdbot.overlays.default ];
+
     # Configure clawdbot through home-manager
     home-manager.users.${user}.programs.clawdbot = {
       enable = true;
