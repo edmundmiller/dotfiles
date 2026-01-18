@@ -51,6 +51,9 @@
     opencode.url = "github:anomalyco/opencode/dev";
     opencode.inputs.nixpkgs.follows = "nixpkgs";
 
+    nix-clawdbot.url = "github:clawdbot/nix-clawdbot";
+    nix-clawdbot.inputs.nixpkgs.follows = "nixpkgs";
+
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
   };
@@ -173,6 +176,13 @@
 
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "emiller"; }
+
+            # Add clawdbot to home-manager modules
+            {
+              home-manager.sharedModules = [
+                inputs.nix-clawdbot.homeManagerModules.clawdbot
+              ];
+            }
           ];
         };
         darwinConfigurations."Seqeratop" = nix-darwin.lib.darwinSystem {
@@ -203,6 +213,13 @@
 
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "edmundmiller"; }
+
+            # Add clawdbot to home-manager modules
+            {
+              home-manager.sharedModules = [
+                inputs.nix-clawdbot.homeManagerModules.clawdbot
+              ];
+            }
           ];
         };
 

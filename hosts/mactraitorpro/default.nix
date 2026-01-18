@@ -29,6 +29,7 @@
       };
 
       services = {
+        clawdbot.enable = true;
         docker.enable = true;
         ssh.enable = true;
       };
