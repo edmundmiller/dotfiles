@@ -15,12 +15,6 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.dev.python;
-  my-python-packages =
-    p: with p; [
-      pandas
-      requests
-      seaborn
-    ];
 in
 {
   options.modules.dev.python = {
@@ -31,16 +25,20 @@ in
   config = mkIf cfg.enable (mkMerge [
     {
       user.packages = with pkgs; [
-        (pkgs.python3.withPackages my-python-packages)
-        # FIXME my.multiqc
-        # my.nf-core
-        python3Packages.pip
-        python3Packages.black
-        python3Packages.isort
-        python3Packages.ipython
-        python3Packages.jupyterlab
-        python3Packages.setuptools
-        python3Packages.pylint
+        (python3.withPackages (p: with p; [
+          # Data science
+          pandas
+          requests
+          seaborn
+          # Dev tools (bundled to avoid env conflicts)
+          pip
+          black
+          isort
+          ipython
+          jupyterlab
+          setuptools
+          pylint
+        ]))
         poetry
         ruff
       ];
