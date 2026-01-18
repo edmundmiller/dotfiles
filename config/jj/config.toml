@@ -111,17 +111,17 @@ change_id.shortest(8) ++ " "
 # -----------------------------------------------------------------------------
 'human_log' = '''
 separate(" ",
-  change_id.shortest(8).prefix().colored("magenta"),
-  change_id.shortest(8).rest().colored("dim"),
-  commit_id.shortest(8).colored("blue"),
+  label("magenta", change_id.shortest(8).prefix()),
+  label("dim", change_id.shortest(8).rest()),
+  label("blue", commit_id.shortest(8)),
   if(empty, label("empty", "∅")),
   if(immutable, label("immutable", "◆")),
   if(conflict, label("conflict", "✖")),
-  bookmarks.colored("green"),
-  tags.colored("yellow"),
+  label("green", bookmarks),
+  label("yellow", tags),
 ) ++ "\n"
 ++ if(description,
-    "  " ++ description.first_line().colored("white") ++ "\n",
+    "  " ++ label("white", description.first_line()) ++ "\n",
     "  " ++ label("description placeholder", "(no description)") ++ "\n"
 )
 ++ if(author.name() != "Edmund Miller",
