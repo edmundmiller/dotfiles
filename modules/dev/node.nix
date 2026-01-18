@@ -19,16 +19,26 @@ in
   options.modules.dev.node = {
     enable = mkBoolOpt false;
     enableGlobally = mkBoolOpt false;
+    useFnm = mkBoolOpt false; # Use fnm (Fast Node Manager) for Node version management
   };
 
   config = mkIf cfg.enable (mkMerge [
+    # fnm (Fast Node Manager) shell initialization
+    (mkIf cfg.useFnm {
+      modules.shell.zsh.rcInit = ''
+        # fnm - Fast Node Manager
+        eval "$(fnm env --use-on-cd)"
+      '';
+    })
+
     (mkIf cfg.enableGlobally {
-      user.packages = with pkgs; [
-        bun
-        node
-        yarn
-        nodePackages_latest.pnpm
-      ];
+      user.packages = with pkgs;
+        [
+          bun
+          yarn
+          nodePackages_latest.pnpm
+        ]
+        ++ lib.optionals (!cfg.useFnm) [ node ];
 
       # Run locally installed bin-script, e.g. n coffee file.coffee
       environment.shellAliases = {
