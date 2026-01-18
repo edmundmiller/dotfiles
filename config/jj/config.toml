@@ -85,21 +85,24 @@ auto-track-bookmarks = '*'  # Auto-import git branches as jj bookmarks
 #    Usage: jj la (log ai)
 
 [templates]
-# Default: credits_roll for visual appeal
-log_node = "credits_roll_node"
-log = "credits_roll(0, 'none()')"
+# Default: AI-optimized for agent workflows (token-efficient, parseable)
+# Use `jj lh` for human-friendly, `jj lc` for visual credits_roll
+log_node = "builtin_log_node"
+log = "ai_log"
 
 [template-aliases]
 # -----------------------------------------------------------------------------
-# AI-Friendly Template (minimal, structured)
-# For AI agents and scripts - easy to parse, no decoration
+# AI-Friendly Template (DEFAULT - minimal, structured, token-efficient)
+# For AI agents and scripts - easy to parse, includes context
 # -----------------------------------------------------------------------------
 'ai_log' = '''
 change_id.shortest(8) ++ " "
 ++ commit_id.shortest(8) ++ " "
-++ if(empty, "(empty) ", "")
-++ if(immutable, "(immutable) ", "")
-++ if(conflict, "(conflict) ", "")
+++ if(author.email() != "git@edmundmiller.dev", "[" ++ author.email().local() ++ "] ", "")
+++ committer.timestamp().ago() ++ " "
+++ if(empty, "∅ ", "")
+++ if(conflict, "✖ ", "")
+++ if(immutable, "◆ ", "")
 ++ bookmarks ++ " "
 ++ description.first_line()
 ++ "\n"
@@ -158,15 +161,21 @@ n = ["next", "--edit"]
 # -----------------------------------------------------------------------------
 # Viewing (Log variants)
 # -----------------------------------------------------------------------------
+# Default `jj log` is now AI-optimized (ai_log template + mine() revset)
 l = ["log", "-r", "(main..@):: | (main..@)-"]         # Recent relative to main
-la = ["log", "--template", "ai_log"]                  # AI-friendly log
+la = ["log"]                                          # AI log (now default)
 lh = ["log", "--template", "human_log"]               # Human-friendly log
+lc = ["log", "--template", "credits_roll(0, 'none()')"]  # Visual credits_roll
 lg = ["log", "--graph", "--color=always"]             # Graph view
 lm = ["log", "-r", "::@ | ::main"]                    # Log with main
 ls = ["files"]                                        # List files
 pp = ["log", "--template", "builtin_log_detailed"]    # Pretty print detailed
 recent = ["log", "-r", "::@ ~ ::trunk()"]             # Not in trunk yet
 work = ["log", "-r", "(mine() & ~empty()) | @"]       # Show meaningful work
+
+# Fallback aliases to see beyond mine() filter
+la-all = ["log", "-r", "all()"]                       # All commits (verbose)
+la-team = ["log", "-r", "~mine()"]                    # Others' commits only
 
 # -----------------------------------------------------------------------------
 # Basic Operations
@@ -234,10 +243,11 @@ ranked-authors = ["log", "--template", "author"]
 
 [revsets]
 trunk = "main@origin"
-log = "@ | ancestors(immutable_heads().., 2) | trunk()"
+# AI-optimized: Only YOUR unmerged work (not all branches in repo)
+log = "@ | ancestors(trunk()..(visible_heads() & mine()), 2) | trunk()"
 mine = "author(exact:\"Edmund Miller\")"
 recent-changes = "::@ & ~::trunk()"
-stale = "committer_date().before(\"2 weeks ago\") & mine() & ~::trunk()"
+stale = "committer_date(before:\"2 weeks ago\") & mine() & ~::trunk()"
 clean-log = "@ | ancestors(@ | trunk(), 2) | trunk()"
 active = "mine() & ~empty() & ~immutable()"
 

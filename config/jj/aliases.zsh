@@ -15,9 +15,18 @@ alias jnx='jj next'    # Go to next commit
 
 # Inspection
 alias jst='jj status'  # Show status
-alias jl='jj log'      # Show log
 alias jdiff='jj diff'  # Show differences
 alias jshow='jj show'  # Show commit details
+
+# Log variants (default is AI-optimized for agents)
+# jl shows hint about human-friendly option
+jl() {
+    jj log "$@"
+    # Show hint in dim gray (only if interactive terminal, not piped)
+    [[ -t 1 ]] && print -P "%F{8}# Tip: 'jj lh' for human-friendly, 'jj lc' for visual%f"
+}
+alias jlh='jj lh'      # Human-friendly log
+alias jlc='jj lc'      # Visual credits_roll log
 
 # Operations
 alias jr='jj rebase'   # Rebase commits

@@ -113,6 +113,8 @@ log_batching = true
 log_batch_size = 50
 # Override jj's verbose credits_roll with compact template for cleaner TUI
 template = 'builtin_log_compact'
+# AI-optimized: Only YOUR unmerged work (matches jj config)
+revset = "@ | ancestors(trunk()..(visible_heads() & mine()), 2) | trunk()"
 
 # =============================================================================
 # SUGGEST MODE
@@ -180,13 +182,12 @@ desc = "Quick revset switcher"
 lua = '''
 local selected = choose({
     options = {
-        "@ | ancestors(immutable_heads().., 2) | trunk()",
-        "mine()",
-        "all()",
-        "trunk()..@",
-        "::@ ~ ::trunk()",
-        "author(exact:\"Edmund Miller\")",
-        revset.default()
+        revset.default(),                                          -- mine() filter (default)
+        "all()",                                                   -- everything (override filter)
+        "~mine()",                                                 -- team's work only
+        "trunk()..@",                                              -- trunk to current
+        "::@ ~ ::trunk()",                                         -- not in trunk yet
+        "@ | ancestors(immutable_heads().., 2) | trunk()",         -- all branches (old default)
     },
     title = "Quick Revset"
 })

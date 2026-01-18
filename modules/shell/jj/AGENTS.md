@@ -3,20 +3,38 @@
 ## Purpose
 Configures jj (Jujutsu VCS) with custom templates, aliases, and integrations.
 
-## Triple Template System
+## AI-First Log System
 
-Three log templates for different use cases:
+**Default `jj log` is optimized for AI agents** - token-efficient, parseable output.
+
+### Templates
 
 | Template | Command | Purpose |
 |----------|---------|---------|
-| `credits_roll` | `jj log` (default) | Rich visual formatting with diff stats |
-| `human_log` | `jj lh` | Clean, balanced readability for daily use |
-| `ai_log` | `jj la` | Minimal, structured output for AI agents |
+| `ai_log` | `jj log` (default) | AI-optimized: minimal tokens, structured |
+| `human_log` | `jj lh` | Clean readability for humans |
+| `credits_roll` | `jj lc` | Rich visual formatting with diff stats |
 
-**For AI agents:** Always use `jj la` for parsing-friendly output:
+### Revset Filter
+
+Default revset shows only YOUR unmerged work (not all branches):
 ```
-xyzvwmqo 12a3bc45 (empty) feature-branch Add new feature
+@ | ancestors(trunk()..(visible_heads() & mine()), 2) | trunk()
 ```
+
+Override when needed:
+- `jj la-all` - See all commits
+- `jj la-team` - See others' commits only
+
+### AI Log Format
+
+```
+xyzvwmqo 12a3bc45 [author] 2h ago feature-branch Add new feature
+```
+
+Fields: `change_id commit_id [author_if_not_me] relative_time flags bookmarks description`
+
+Flags: `∅` empty, `✖` conflict, `◆` immutable
 
 ## External Dependencies
 
@@ -95,7 +113,8 @@ auto-track-bookmarks = '*'
 | Category | Aliases | Purpose |
 |----------|---------|---------|
 | Navigation | `p`, `n` | prev/next commit |
-| Viewing | `l`, `la`, `lh`, `lg`, `lm`, `pp` | Various log formats |
+| Viewing | `la` (default), `lh`, `lc`, `lg`, `lm`, `pp` | Various log formats |
+| Viewing (extended) | `la-all`, `la-team` | Override mine() filter |
 | Cleanup | `cleanup`, `tidy`, `abandon-empty` | Remove empty commits |
 | Workflow | `wip`, `tug`, `retrunk`, `sync` | Common operations |
 | AI | `aid`, `aide`, `ai-desc` | AI commit messages |
