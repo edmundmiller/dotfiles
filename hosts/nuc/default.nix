@@ -13,8 +13,8 @@
     done
   '';
 
-  # Add /bin to PATH for user services (clawdbot wrapper uses bare 'cat')
-  environment.sessionVariables.PATH = [ "/bin" ];
+  # Add /bin to PATH for systemd user services (clawdbot wrapper uses bare 'cat')
+  home-manager.users.${config.user.name}.systemd.user.sessionVariables.PATH = "/bin:$PATH";
 
   # Passwordless sudo for nixos-rebuild (agentic deployments)
   security.sudo.extraRules = [{
