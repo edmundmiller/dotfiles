@@ -48,6 +48,7 @@
         # Disable darwin-only plugins
         plugins = {
           bird = false;
+          gogcli = false;
           sag = false;
           summarize = false;
           imsg = false; # macOS only
