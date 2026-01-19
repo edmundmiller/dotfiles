@@ -13,7 +13,7 @@ in {
       enable = mkBoolOpt false;
       botTokenFile = mkOption {
         type = types.str;
-        default = "/Users/${user}/.secrets/telegram-bot-token";
+        default = "${config.user.home}/.secrets/telegram-bot-token";
         description = "Path to file containing Telegram bot token";
       };
       allowFrom = mkOption {
@@ -26,7 +26,7 @@ in {
     anthropic = {
       apiKeyFile = mkOption {
         type = types.str;
-        default = "/Users/${user}/.secrets/anthropic-api-key";
+        default = "${config.user.home}/.secrets/anthropic-api-key";
         description = "Path to file containing Anthropic API key";
       };
     };

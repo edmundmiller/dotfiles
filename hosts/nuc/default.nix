@@ -8,8 +8,8 @@
     sqlite
   ];
   imports = [
-    ../server.nix
-    ../home.nix
+    ../_server.nix
+    ../_home.nix
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
@@ -42,6 +42,10 @@
     };
     services = {
       audiobookshelf.enable = true;
+      clawdbot = {
+        enable = true;
+        anthropic.apiKeyFile = config.age.secrets.anthropic-api-key.path;
+      };
       docker.enable = true;
       hass.enable = false;
       homepage.enable = true;

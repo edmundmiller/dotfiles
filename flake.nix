@@ -84,7 +84,7 @@
         };
       
       # Linux packages
-      pkgs = mkPkgs nixpkgs [ self.overlay ] linuxSystem;
+      pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-clawdbot.overlays.default ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
       
       # Darwin packages  
