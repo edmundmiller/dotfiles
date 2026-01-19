@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, lib, ... }:
 {
   config = {
     modules = {
@@ -31,7 +31,22 @@
       };
 
       services = {
-        clawdbot.enable = true;
+        clawdbot = {
+          enable = true;
+          plugins = {
+            camsnap = true;
+            sonoscli = true;
+          };
+          configOverrides = {
+            gateway = {
+              mode = "remote";
+              remote = {
+                url = "ws://nuc.cinnamon-rooster.ts.net:18789";
+                token = "\${CLAWDBOT_GATEWAY_TOKEN}";
+              };
+            };
+          };
+        };
         docker.enable = true;
         ssh.enable = true;
       };
@@ -40,6 +55,18 @@
         term.ghostty.enable = true;
       };
     };
+
+    home-manager.users.${config.user.name}.home.activation.clawdbotEnv =
+      inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
+        ${lib.optionalString (config.home-manager.users.${config.user.name}.age.secrets ? "clawdbot-bridge-token") ''
+          if [ -f ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path} ]; then
+            token="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path})"
+            printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
+            ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
+          fi
+        ''}
+      '';
 
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {
