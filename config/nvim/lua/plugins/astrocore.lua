@@ -17,6 +17,18 @@ return {
       highlighturl = true, -- highlight URLs at start
       notifications = true, -- enable notifications at start
     },
+    -- Rooter: Auto-CD to project root
+    rooter = {
+      enabled = true,
+      autochdir = true, -- Auto-CD on BufEnter
+      detector = {
+        "lsp",
+        { ".git", "_darcs", ".hg", ".bzr", ".svn" },
+        { "lua", "Makefile", "package.json", "pyproject.toml", "Cargo.toml" },
+      },
+      scope = "global",
+      notify = false,
+    },
     -- Diagnostics configuration (for vim.diagnostics.config({...})) when diagnostics are on
     diagnostics = {
       virtual_text = true,
