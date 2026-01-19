@@ -37,21 +37,20 @@ in
       volumes = [ "${cfg.projectDir}:/app" ];
       extraOptions = [
         "--network=host"
-        "--health-cmd=/bin/sh -c 'TS_IP=$(cat /proc/net/fib_trie 2>/dev/null | grep -oE \"100\\.[0-9]+\\.[0-9]+\\.[0-9]+\" | head -1); if [ -z \"$TS_IP\" ]; then TS_IP=127.0.0.1; fi; wget -q --spider http://$TS_IP:${toString cfg.port} || exit 1'"
+        "--health-cmd=/bin/sh -c 'wget -q --spider http://127.0.0.1:${toString cfg.port} || exit 1'"
         "--health-interval=30s"
         "--health-timeout=10s"
         "--health-start-period=30s"
         "--health-retries=3"
       ];
 
-      # Detect Tailscale IP at runtime and bind to it
+      # Bind on all interfaces; firewall restricts to Tailscale
       entrypoint = "/bin/sh";
       cmd = [
         "-c"
         ''
-          TS_IP=$(cat /proc/net/fib_trie 2>/dev/null | grep -oE '100\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           ${optionalString (cfg.password != "") "export OPENCODE_SERVER_PASSWORD='${cfg.password}'"}
-          exec opencode web --hostname ''${TS_IP:-127.0.0.1} --port ${toString cfg.port}
+          exec opencode web --hostname 0.0.0.0 --port ${toString cfg.port}
         ''
       ];
     };
@@ -65,7 +64,7 @@ in
       };
     };
 
-    # Open firewall port for Tailscale traffic
-    networking.firewall.allowedTCPPorts = [ cfg.port ];
+    # Open firewall port on Tailscale only
+    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
   });
 }
