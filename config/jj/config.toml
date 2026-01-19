@@ -201,7 +201,9 @@ tug = ["bookmark", "move", "--from", "heads(::@- & bookmarks())", "--to", "@-"]
 # Rebase & Workflow
 # -----------------------------------------------------------------------------
 retrunk = ["rebase", "-d", "trunk()"]
-evolve = ["evolve", "--quiet"]
+evolve = ["rebase", "--skip-emptied", "-d", "trunk()"]
+pullup = ["rebase", "--skip-emptied", "-s", "mine() & ~::trunk()", "-d", "trunk()"]
+mdiff = ["diff", "--from", "trunk()"]
 
 # -----------------------------------------------------------------------------
 # Cleanup & Maintenance
