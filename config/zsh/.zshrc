@@ -121,17 +121,32 @@ fi
 export PATH="/Users/emiller/.pixi/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 
-# bun completions
-[ -s "/Users/emiller/.bun/_bun" ] && source "/Users/emiller/.bun/_bun"
-
-# bun
+# bun - lazy load completions
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+if [[ -s "$BUN_INSTALL/_bun" ]]; then
+  function bun {
+    unfunction bun bunx
+    source "$BUN_INSTALL/_bun"
+    command bun "$@"
+  }
+  function bunx { bun; command bunx "$@"; }
+fi
 
 alias t="todo.sh"
 alias ta="t add"
 alias td="t do"
 alias ttoday="t today"
 
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+# SDKMAN - lazy load (~100ms savings)
+export SDKMAN_DIR="$HOME/.sdkman"
+if [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
+  function sdk {
+    unfunction sdk java gradle kotlin groovy maven
+    source "$SDKMAN_DIR/bin/sdkman-init.sh"
+    sdk "$@"
+  }
+  for cmd in java gradle kotlin groovy maven; do
+    eval "function $cmd { sdk; command $cmd \"\$@\"; }"
+  done
+fi

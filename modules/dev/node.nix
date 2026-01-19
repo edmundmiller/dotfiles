@@ -23,11 +23,20 @@ in
   };
 
   config = mkIf cfg.enable (mkMerge [
-    # fnm (Fast Node Manager) shell initialization
+    # fnm (Fast Node Manager) shell initialization with lazy loading (~30ms savings)
+    # Based on: https://willhbr.net/2025/01/06/lazy-load-command-completions-for-a-faster-shell-startup/
     (mkIf cfg.useFnm {
       modules.shell.zsh.rcInit = ''
-        # fnm - Fast Node Manager
-        eval "$(fnm env --use-on-cd)"
+        # fnm - Fast Node Manager (lazy loaded)
+        function fnm {
+          unfunction fnm node npm npx pnpm yarn
+          eval "$(command fnm env --use-on-cd)"
+          command fnm "$@"
+        }
+        # Create stub functions for node/npm that trigger fnm init
+        for cmd in node npm npx pnpm yarn; do
+          eval "function $cmd { fnm; command $cmd \"\$@\"; }"
+        done
       '';
     })
 
