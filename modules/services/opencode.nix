@@ -33,7 +33,7 @@ in
     virtualisation.oci-containers.containers.opencode = {
       autoStart = true;
       image = cfg.image;
-      user = "${config.user.name}:users";
+      # Backup: set `user = "<uid>:<gid>"` (see `id -u/-g`) if you want host-owned files.
       volumes = [ "${cfg.projectDir}:/app" ];
       extraOptions = [
         "--network=host"
