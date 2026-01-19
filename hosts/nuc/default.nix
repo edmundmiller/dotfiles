@@ -93,7 +93,7 @@
       tailscale.enable = true;
       taskchampion.enable = true;
       obsidian-sync.enable = true;
-      openportal.enable = true;
+      opencode.enable = true;
       timew_sync.enable = true;
       transmission.enable = false;
     };
