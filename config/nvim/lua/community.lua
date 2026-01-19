@@ -45,7 +45,8 @@ return {
   { import = "astrocommunity.editing-support.refactoring-nvim" },
   { import = "astrocommunity.editing-support.yanky-nvim" },
   { import = "astrocommunity.editing-support.neogen" },
-  { import = "astrocommunity.editing-support.codecompanion-nvim" },
+  -- FIXME dotfiles-y2j: Migrate to v18 syntax before re-enabling
+  -- { import = "astrocommunity.editing-support.codecompanion-nvim" },
   { import = "astrocommunity.search.grug-far-nvim" },
   { import = "astrocommunity.markdown-and-latex.render-markdown-nvim" },
 
