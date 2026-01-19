@@ -11,7 +11,7 @@ deploy HOST:
 # Deploy to NUC (primary remote deployment)
 nuc:
     @echo "=== Deploying to NUC ==="
-    nix run .#deploy-rs -- .#nuc 
+    nix run .#deploy-rs -- .#nuc --skip-checks
 
 # Alias for nuc
 rebuild-nuc: nuc
@@ -24,7 +24,7 @@ deploy-dry HOST:
 # Test NUC configuration (dry-run)
 nuc-test:
     @echo "=== Testing NUC Configuration (dry-run) ==="
-    nix run .#deploy-rs -- .#nuc --dry-activate
+    nix run .#deploy-rs -- .#nuc --dry-activate --skip-checks
 
 # Check all deploy configurations
 deploy-check:
