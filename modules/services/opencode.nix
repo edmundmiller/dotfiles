@@ -37,7 +37,7 @@ in
       volumes = [ "${cfg.projectDir}:/app" ];
       extraOptions = [
         "--network=host"
-        "--health-cmd=/bin/sh -c 'TS_IP=$(cat /proc/net/fib_trie 2>/dev/null | grep -oP \"100\\.\\d+\\.\\d+\\.\\d+\" | head -1); wget -q --spider http://$TS_IP:${toString cfg.port} || exit 1'"
+        "--health-cmd=/bin/sh -c 'TS_IP=$(cat /proc/net/fib_trie 2>/dev/null | grep -oE \"100\\.[0-9]+\\.[0-9]+\\.[0-9]+\" | head -1); wget -q --spider http://$TS_IP:${toString cfg.port} || exit 1'"
         "--health-interval=30s"
         "--health-timeout=10s"
         "--health-start-period=30s"
@@ -49,7 +49,7 @@ in
       cmd = [
         "-c"
         ''
-          TS_IP=$(cat /proc/net/fib_trie 2>/dev/null | grep -oP '100\.\d+\.\d+\.\d+' | head -1)
+          TS_IP=$(cat /proc/net/fib_trie 2>/dev/null | grep -oE '100\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           ${optionalString (cfg.password != "") "export OPENCODE_SERVER_PASSWORD='${cfg.password}'"}
           exec opencode web --hostname ''${TS_IP:-127.0.0.1} --port ${toString cfg.port}
         ''
