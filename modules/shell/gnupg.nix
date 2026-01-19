@@ -29,7 +29,7 @@ in
     home.configFile."gnupg/gpg-agent.conf" = {
       text = ''
         default-cache-ttl ${toString cfg.cacheTTL}
-        pinentry-program ${pkgs.pinentry.gnome3}/bin/pinentry
+        pinentry-program ${pkgs.pinentry-gnome3}/bin/pinentry
       '';
     };
   };
