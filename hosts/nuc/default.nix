@@ -45,13 +45,14 @@
       clawdbot = {
         enable = true;
         anthropic.apiKeyFile = config.age.secrets.anthropic-api-key.path;
-        # Disable darwin-only plugins (only peekaboo works on Linux)
+        # Disable all plugins - most have darwin-only deps
         plugins = {
           bird = false;
           camsnap = false;
           gogcli = false;
           imsg = false;
           oracle = false;
+          peekaboo = false; # pulls in darwin deps
           poltergeist = false;
           sag = false;
           summarize = false;
