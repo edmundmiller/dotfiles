@@ -3,6 +3,13 @@
 {
   # Disable dconf on headless server - no dbus session available
   home-manager.users.${config.user.name}.dconf.enable = false;
+
+  # Workaround for nix-clawdbot using /bin/mkdir (NixOS doesn't have /bin/mkdir)
+  # TODO: Report upstream to nix-clawdbot
+  system.activationScripts.binMkdir = ''
+    mkdir -p /bin
+    ln -sf ${pkgs.coreutils}/bin/mkdir /bin/mkdir
+  '';
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
