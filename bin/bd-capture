@@ -58,7 +58,12 @@ else
 
     # Description (optional - just press Enter to skip)
     gum style --foreground "$DIM" "Step 4/4"
-    DESC=$(gum input --header "Description (optional)" --placeholder "Add details..." --width 70)
+    DESC=$(gum write \
+      --header "Description (optional)" \
+      --placeholder "Add details... (Ctrl+D to finish)" \
+      --width 70 \
+      --height 8 \
+      --show-help)
 fi
 
 # Keyboard hints before creation
@@ -87,7 +92,7 @@ fi
 
 # Create issue with spinner
 if OUTPUT=$(gum spin --spinner dot --title "Creating issue..." -- "${CMD[@]}" 2>&1); then
-    ISSUE_ID=$(echo "$OUTPUT" | grep -oE 'beads-[0-9]+' | head -1)
+    ISSUE_ID=$(echo "$OUTPUT" | grep -oE 'dotfiles-[a-z0-9]+' | head -1)
     if [[ -n "$ISSUE_ID" ]]; then
         echo "$ISSUE_ID" | pbcopy
         gum style --foreground "$GREEN" --bold "Created: $ISSUE_ID (copied to clipboard)"
