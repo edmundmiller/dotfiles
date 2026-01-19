@@ -1,7 +1,18 @@
 #!/usr/bin/env zsh
 
-# Terminal width wrapper for better output
-alias jj="jj --config width=$(tput cols)"
+# =============================================================================
+# Lazy Loading for JJ Completions (~50ms startup savings)
+# =============================================================================
+# Based on: https://willhbr.net/2025/01/06/lazy-load-command-completions-for-a-faster-shell-startup/
+# JJ completions are expensive to load. This wrapper loads them on first use.
+
+function jj {
+  if [[ -z $_JJ_LOADED ]]; then
+    source <(command jj util completion zsh)
+    _JJ_LOADED=1
+  fi
+  command jj --config "ui.default-command=[\"log\"]" --config "width=$(( COLUMNS > 0 ? COLUMNS : 80 ))" "$@"
+}
 
 # Core workflow commands
 alias jn='jj new'      # Start new work
