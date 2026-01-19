@@ -13,8 +13,8 @@
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
-    # Add /bin to PATH for systemd user services (clawdbot wrapper uses bare 'cat')
-    systemd.user.sessionVariables.PATH = "/bin:$PATH";
+    # Add core system paths for systemd user services (clawdbot wrapper uses bare 'cat')
+    systemd.user.sessionVariables.PATH = "/run/current-system/sw/bin:/bin:$PATH";
     home.activation.clawdbotEnv = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
       ${lib.optionalString (config ? age && config.age ? secrets && config.age.secrets ? "clawdbot-bridge-token") ''
@@ -30,6 +30,7 @@
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
+    openssl
   ];
   imports = [
     ../_server.nix

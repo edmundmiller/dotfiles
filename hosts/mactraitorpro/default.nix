@@ -56,6 +56,8 @@
       };
     };
 
+    home-manager.users.${config.user.name}.programs.clawdbot.instances.default.launchd.enable = false;
+
     home-manager.users.${config.user.name}.home.activation.clawdbotEnv =
       inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
