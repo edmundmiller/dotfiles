@@ -8,8 +8,9 @@
   # TODO: Report upstream to nix-clawdbot
   system.activationScripts.binCompat = ''
     mkdir -p /bin
-    ln -sf ${pkgs.coreutils}/bin/mkdir /bin/mkdir
-    ln -sf ${pkgs.coreutils}/bin/ln /bin/ln
+    for cmd in cat ln mkdir rm; do
+      ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
+    done
   '';
 
   # Passwordless sudo for nixos-rebuild (agentic deployments)
