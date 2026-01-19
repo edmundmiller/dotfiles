@@ -116,8 +116,8 @@ in
     env.GTK_DATA_PREFIX = [ "${config.system.path}" ];
     env.QT_QPA_PLATFORMTHEME = "gtk2";
     qt = {
-      style = "gtk2";
-      platformTheme = "gtk2";
+      style = mkDefault "gtk2";
+      platformTheme = mkDefault "gtk2";
     };
 
     services.xserver.displayManager.sessionCommands = ''
