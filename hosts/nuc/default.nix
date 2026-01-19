@@ -45,14 +45,16 @@
       clawdbot = {
         enable = true;
         anthropic.apiKeyFile = config.age.secrets.anthropic-api-key.path;
-        # Disable darwin-only plugins
+        # Disable darwin-only plugins (only peekaboo works on Linux)
         plugins = {
           bird = false;
+          camsnap = false;
           gogcli = false;
+          imsg = false;
+          oracle = false;
+          poltergeist = false;
           sag = false;
           summarize = false;
-          imsg = false; # macOS only
-          camsnap = false; # macOS only
         };
       };
       docker.enable = true;
