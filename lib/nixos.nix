@@ -30,6 +30,14 @@ in
         (filterAttrs (n: _v: !elem n [ "system" ]) attrs)
         ../.
         (import path)
+        # Add clawdbot home-manager module for NixOS hosts
+        # (overlay applied at flake level via mkPkgs)
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.sharedModules = [
+            inputs.nix-clawdbot.homeManagerModules.clawdbot
+          ];
+        }
       ];
     };
 
