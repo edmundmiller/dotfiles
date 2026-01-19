@@ -11,14 +11,121 @@ let
   cfg = config.modules.shell.tmux;
   inherit (config.dotfiles) configDir;
 
-  # Fetch tmux-opencode-status plugin for OpenCode/Claude agent activity indicators
-  # Shows states: idle (○), busy (●), waiting (◉), error (✗), finished (✔)
-  tmux-opencode-status = pkgs.fetchFromGitHub {
-    owner = "IFAKA";
-    repo = "tmux-opencode-status";
-    rev = "d1cfa0e7663b0c9c4e6a51a1585986096f46ce8c";
-    sha256 = "sha256-ZoXNJPDsggi5d+5jcPAOUdTTOecIsfZrfSmE4nZSkNY=";
-  };
+  # OpenCode / Claude status for tmux `status-right`.
+  #
+  # NOTE: We intentionally avoid plugins that rename windows, because they fight
+  # with `tmux-window-name` and cause the "random symbol" feel.
+  #
+  # States:
+  # - ○ idle
+  # - ● busy
+  # - ◉ waiting (prompt/approval)
+  # - ✗ error
+  opencodeStatus = pkgs.writeShellScript "tmux-opencode-status" ''
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ICON_IDLE="○"
+    ICON_BUSY="●"
+    ICON_WAITING="◉"
+    ICON_ERROR="✗"
+
+    # Check if a pane is running a given tool.
+    # - `pane_current_command` is fast but can be `node`, so we also inspect args.
+    is_tool() {
+      local tool="$1" cmd="$2" pid="$3"
+
+      if [[ "$cmd" == "$tool" ]]; then
+        return 0
+      fi
+
+      if [[ "$cmd" == "node" ]]; then
+        ps -p "$pid" -o command= 2>/dev/null | grep -qiE "([[:space:]/]|^)($tool)([[:space:]]|$)" && return 0
+      fi
+
+      return 1
+    }
+
+    detect_state() {
+      local pane_id="$1"
+
+      # Grab a small tail of recent output for heuristics.
+      local lines
+      lines="$(tmux capture-pane -p -t "$pane_id" -S -12 2>/dev/null || true)"
+      [[ -z "$lines" ]] && echo "idle" && return 0
+
+      # Error: strong signals.
+      if echo "$lines" | grep -qiE "(^|[[:space:]])(error:|failed|exception|fatal|panic:|traceback)([[:space:]]|$)"; then
+        echo "error"
+        return 0
+      fi
+
+      # Waiting: prompts / approvals.
+      if echo "$lines" | tail -n 3 | grep -qiE "(\\[[Yy]/[Nn]\\]|\\[[yY]/[nN]\\]|\\[[Yy]/[Nn]/[Aa]\\]|Allow\\?|Deny\\?|Approve\\?|permission.*\\?)"; then
+        echo "waiting"
+        return 0
+      fi
+
+      # Busy: spinners / "thinking" / tool execution markers.
+      if echo "$lines" | tail -n 2 | grep -qE "(⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏|◐|◓|◑|◒|\\.\\.\\.$)"; then
+        echo "busy"
+        return 0
+      fi
+      if echo "$lines" | tail -n 4 | grep -qiE "(^|[[:space:]])(thinking|tool:)([[:space:]]|$)"; then
+        echo "busy"
+        return 0
+      fi
+
+      echo "idle"
+    }
+
+    icon_for() {
+      case "$1" in
+        idle) echo "$ICON_IDLE" ;;
+        busy) echo "$ICON_BUSY" ;;
+        waiting) echo "$ICON_WAITING" ;;
+        error) echo "$ICON_ERROR" ;;
+        *) echo "$ICON_IDLE" ;;
+      esac
+    }
+
+    main() {
+      local oc_icons="" cc_icons=""
+
+      # Current window only (keeps status-right cheap and stable).
+      local win_id
+      win_id="$(tmux display-message -p "#{window_id}")"
+
+      while IFS= read -r pane_line; do
+        local pane_id pane_cmd pane_pid
+        pane_id="$(awk '{print $1}' <<<"$pane_line")"
+        pane_cmd="$(awk '{print $2}' <<<"$pane_line")"
+        pane_pid="$(awk '{print $3}' <<<"$pane_line")"
+
+        if is_tool "opencode" "$pane_cmd" "$pane_pid" || is_tool "oc" "$pane_cmd" "$pane_pid"; then
+          oc_icons+=$(icon_for "$(detect_state "$pane_id")")
+        elif is_tool "claude" "$pane_cmd" "$pane_pid"; then
+          cc_icons+=$(icon_for "$(detect_state "$pane_id")")
+        fi
+      done < <(tmux list-panes -t "$win_id" -F "#{pane_id} #{pane_current_command} #{pane_pid}")
+
+      local out=""
+      [[ -n "$oc_icons" ]] && out+="OC:$oc_icons"
+      if [[ -n "$cc_icons" ]]; then
+        if [[ -n "$out" ]]; then
+          out+=" CC:$cc_icons"
+        else
+          out+="CC:$cc_icons"
+        fi
+      fi
+
+      # Print nothing when irrelevant (keeps status-right clean).
+      [[ -n "$out" ]] && printf " %s" "$out"
+      exit 0
+    }
+
+    main
+  '';
 
   # Fetch tmux-smooth-scroll plugin for animated scrolling
   tmux-smooth-scroll = pkgs.fetchFromGitHub {
@@ -81,7 +188,7 @@ in
         run-shell ${pkgs.tmuxPlugins.copycat}/share/tmux-plugins/copycat/copycat.tmux
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
-        run-shell ${tmux-opencode-status}/opencode-status.tmux
+        set-option -ga status-right "#(${opencodeStatus})"
         run-shell ${tmux-smooth-scroll}/smooth-scroll.tmux
         
         # tmux-window-name: Smart automatic window naming based on path and running program
