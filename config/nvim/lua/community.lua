@@ -39,8 +39,6 @@ return {
   -- Productivity & Workflow
   { import = "astrocommunity.editing-support.todo-comments-nvim" },
   { import = "astrocommunity.motion.flash-nvim" },
-  { import = "astrocommunity.project.project-nvim" },
-
   -- Development tools
   { import = "astrocommunity.editing-support.refactoring-nvim" },
   { import = "astrocommunity.editing-support.yanky-nvim" },
