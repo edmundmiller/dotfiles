@@ -45,6 +45,14 @@
       clawdbot = {
         enable = true;
         anthropic.apiKeyFile = config.age.secrets.anthropic-api-key.path;
+        # Disable darwin-only plugins
+        plugins = {
+          bird = false;
+          sag = false;
+          summarize = false;
+          imsg = false; # macOS only
+          camsnap = false; # macOS only
+        };
       };
       docker.enable = true;
       hass.enable = false;
