@@ -6,12 +6,12 @@ NUC_HOST := "nuc"
 # Deploy to any host
 deploy HOST:
     @echo "=== Deploying to {{HOST}} ==="
-    deploy .#{{HOST}} 
+    nix run .#deploy-rs -- .#{{HOST}}
 
 # Deploy to NUC (primary remote deployment)
 nuc:
     @echo "=== Deploying to NUC ==="
-    deploy .#nuc 
+    nix run .#deploy-rs -- .#nuc 
 
 # Alias for nuc
 rebuild-nuc: nuc
@@ -19,12 +19,12 @@ rebuild-nuc: nuc
 # Dry-run deployment (check what would change)
 deploy-dry HOST:
     @echo "=== Dry-run deploy to {{HOST}} ==="
-    deploy .#{{HOST}} --dry-activate
+    nix run .#deploy-rs -- .#{{HOST}} --dry-activate
 
 # Test NUC configuration (dry-run)
 nuc-test:
     @echo "=== Testing NUC Configuration (dry-run) ==="
-    deploy .#nuc --dry-activate
+    nix run .#deploy-rs -- .#nuc --dry-activate
 
 # Check all deploy configurations
 deploy-check:

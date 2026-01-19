@@ -263,6 +263,9 @@
         "aarch64-darwin"
       ];
       perSystem = { pkgs, system, ... }: {
+        # Expose deploy-rs CLI for `nix run .#deploy-rs`
+        packages.deploy-rs = deploy-rs.packages.${system}.default;
+
         treefmt = {
           projectRootFile = ".git/config";
           programs.deadnix.enable = true;
