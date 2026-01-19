@@ -17,6 +17,11 @@ alias jnx='jj next'    # Go to next commit
 alias jst='jj status'  # Show status
 alias jdiff='jj diff'  # Show differences
 alias jshow='jj show'  # Show commit details
+alias jmdiff='jj mdiff' # Diff from trunk (what will be in PR)
+
+# Restore (powerful file/change management)
+alias jres='jj restore'      # Discard changes (safer than abandon)
+alias jresi='jj restore -i'  # Interactively discard parts of changes
 
 # Log variants (default is AI-optimized for agents)
 # jl shows hint about human-friendly option
@@ -31,6 +36,9 @@ alias jlc='jj lc'      # Visual credits_roll log
 # Operations
 alias jr='jj rebase'   # Rebase commits
 alias jb='jj bookmark' # Manage bookmarks
+alias jsync='jj sync'  # Fetch all remotes
+alias jevolve='jj evolve'  # Rebase onto trunk
+alias jpullup='jj pullup'  # Pull all mutable commits onto trunk
 
 # Open diff in neovim (PR preview) - wraps jj nd
 jnd() {
