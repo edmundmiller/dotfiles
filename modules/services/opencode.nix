@@ -1,5 +1,12 @@
 # OpenCode - AI coding agent web interface
-# Access via Tailscale at http://<tailscale-ip>:4096
+# Access via Tailscale Service: https://opencode.<tailnet>.ts.net
+# Or direct: http://<tailscale-ip>:4096
+#
+# Tailscale Service setup (one-time manual steps):
+# 1. Go to Tailscale admin console → Services → Create service
+# 2. Name: "opencode", add tag (e.g., tag:services)
+# 3. After deploy, approve NUC as service host in admin console
+# 4. Access at https://opencode.<tailnet>.ts.net
 {
   options,
   config,
@@ -20,6 +27,12 @@ in
     image = mkOpt types.str "ghcr.io/anomalyco/opencode:latest";
     port = mkOpt types.port 4096;
     password = mkOpt types.str ""; # Optional: OPENCODE_SERVER_PASSWORD
+
+    # Tailscale Service integration
+    tailscaleService = {
+      enable = mkBoolOpt true;
+      serviceName = mkOpt types.str "opencode";
+    };
   };
 
   # NixOS-only service (uses OCI containers with existing backend)
@@ -66,5 +79,22 @@ in
 
     # Open firewall port on Tailscale only
     networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
+
+    # Tailscale Service proxy (HTTPS termination + service DNS)
+    systemd.services.opencode-tailscale-serve = mkIf cfg.tailscaleService.enable {
+      description = "Tailscale Service proxy for OpenCode";
+      wantedBy = [ "multi-user.target" ];
+      after = [
+        "${config.virtualisation.oci-containers.backend}-opencode.service"
+        "tailscaled.service"
+      ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.port}";
+        ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
+      };
+    };
   });
 }
