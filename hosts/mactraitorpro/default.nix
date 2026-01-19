@@ -10,8 +10,8 @@
       dev = {
         node.enable = true;
         node.useFnm = true;
-        # FIXME: Python disabled due to buildEnv conflict with clawdbot
-        # See beads issue for investigation: whisper in home-manager-path
+        # FIXME: Python disabled - clawdbot bundles whisper which includes Python 3.13
+        # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
         python.conda.enable = false;
         R.enable = true;
