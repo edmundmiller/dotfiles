@@ -9,6 +9,12 @@ in {
   options.modules.services.clawdbot = {
     enable = mkBoolOpt false;
 
+    configOverrides = mkOption {
+      type = types.attrs;
+      default = { };
+      description = "Extra clawdbot config overrides passed to the instance";
+    };
+
     telegram = {
       enable = mkBoolOpt false;
       botTokenFile = mkOption {
@@ -71,6 +77,7 @@ in {
 
       instances.default = {
         enable = true;
+        configOverrides = cfg.configOverrides;
 
         # Anthropic provider (required)
         providers.anthropic.apiKeyFile = cfg.anthropic.apiKeyFile;
