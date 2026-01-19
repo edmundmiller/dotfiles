@@ -37,9 +37,10 @@ in
       volumes = [ "${cfg.projectDir}:/app" ];
       extraOptions = [
         "--network=host"
-        "--health-cmd=wget -q --spider http://localhost:${toString cfg.port} || exit 1"
+        "--health-cmd=/bin/sh -c 'TS_IP=$(cat /proc/net/fib_trie 2>/dev/null | grep -oP \"100\\.\\d+\\.\\d+\\.\\d+\" | head -1); wget -q --spider http://$TS_IP:${toString cfg.port} || exit 1'"
         "--health-interval=30s"
         "--health-timeout=10s"
+        "--health-start-period=30s"
         "--health-retries=3"
       ];
 
