@@ -4,7 +4,7 @@
   # Disable dconf on headless server - no dbus session available
   home-manager.users.${config.user.name}.dconf.enable = false;
 
-  # Workaround for nix-clawdbot using hardcoded /bin paths
+  # Workaround for nix-clawdbot using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-clawdbot
   system.activationScripts.binCompat = ''
     mkdir -p /bin
@@ -12,6 +12,9 @@
       ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
     done
   '';
+
+  # Add /bin to PATH for user services (clawdbot wrapper uses bare 'cat')
+  environment.sessionVariables.PATH = [ "/bin" ];
 
   # Passwordless sudo for nixos-rebuild (agentic deployments)
   security.sudo.extraRules = [{
