@@ -1,5 +1,5 @@
 # Go nuc yourself
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 {
   # Workaround for nix-clawdbot using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-clawdbot
@@ -15,6 +15,14 @@
     dconf.enable = false;
     # Add /bin to PATH for systemd user services (clawdbot wrapper uses bare 'cat')
     systemd.user.sessionVariables.PATH = "/bin:$PATH";
+    home.activation.clawdbotEnv = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
+      if [ -f ${config.age.secrets.clawdbot-bridge-token.path} ]; then
+        token="$(${pkgs.coreutils}/bin/cat ${config.age.secrets.clawdbot-bridge-token.path})"
+        printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
+        ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
+      fi
+    '';
   };
 
   environment.systemPackages = with pkgs; [
@@ -59,6 +67,27 @@
       clawdbot = {
         enable = true;
         anthropic.apiKeyFile = config.age.secrets.anthropic-api-key.path;
+        configOverrides = {
+          gateway = {
+            mode = "local";
+            bind = "loopback";
+            auth = {
+              mode = "token";
+              token = "\${CLAWDBOT_GATEWAY_TOKEN}";
+              allowTailscale = true;
+            };
+            tailscale.mode = "serve";
+          };
+          bridge = {
+            enabled = true;
+            port = 18790;
+            bind = "tailnet";
+            tls = {
+              enabled = true;
+              autoGenerate = true;
+            };
+          };
+        };
         # Disable all plugins - most have darwin-only deps
         plugins = {
           bird = false;
