@@ -48,13 +48,21 @@ in
             else
               { };
           # Per-host taskchampion sync secret
-          sharedSecrets = optionalAttrs config.modules.shell.taskwarrior.enable {
-            taskchampion-sync = {
-              file = "${sharedSecretsDir}/taskchampion-sync-${effectiveHostName}.age";
-              owner = config.user.name;
-              mode = "0400";
-            };
-          };
+          sharedSecrets =
+            (optionalAttrs config.modules.shell.taskwarrior.enable {
+              taskchampion-sync = {
+                file = "${sharedSecretsDir}/taskchampion-sync-${effectiveHostName}.age";
+                owner = config.user.name;
+                mode = "0400";
+              };
+            })
+            // (optionalAttrs config.modules.services.clawdbot.enable {
+              clawdbot-bridge-token = {
+                file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
+                owner = config.user.name;
+                mode = "0400";
+              };
+            });
         in
         hostSecrets // sharedSecrets;
       identityPaths =
@@ -85,7 +93,11 @@ in
           wakatime-api-key = {
             file = "${sharedSecretsDir}/wakatime-api-key.age";
           };
-        };
+        } // (optionalAttrs config.modules.services.clawdbot.enable {
+          clawdbot-bridge-token = {
+            file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
+          };
+        });
       };
     };
   };

@@ -18,4 +18,6 @@ in
   "taskchampion-sync.age".publicKeys = [ mactraitor seqeratop nuc ];
 
   "wakatime-api-key.age".publicKeys = [ mactraitor seqeratop ];
+
+  "clawdbot-bridge-token.age".publicKeys = [ mactraitor nuc ];
 }
