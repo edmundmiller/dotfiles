@@ -1,0 +1,22 @@
+# =============================================================================
+# Workflow Aliases - Push/Pull Request Flow
+# =============================================================================
+# Based on: https://willhbr.net/2024/05/26/some-hot-jj-tips/
+
+[aliases]
+# Push parent commit, auto-create branch (for PR workflow)
+# After `jj commit -m "message"`, run `jj cl` to push
+cl = ["git", "push", "-c", "@-"]
+
+# Push all branches at once
+upload = ["git", "push", "--all"]
+
+# Set main bookmark to parent (for direct-to-main work)
+setmain = ["bookmark", "set", "main", "-r", "@-"]
+
+# Progression log - show how current commit evolved over time
+# Useful for recovering intermediate states you forgot to commit
+pl = ["obslog", "-p"]
+
+# Obslog without patches (just the history)
+ol = ["obslog"]
