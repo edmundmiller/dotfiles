@@ -17,14 +17,6 @@
     systemd.user.sessionVariables.PATH = "/bin:$PATH";
   };
 
-  # Passwordless sudo for nixos-rebuild (agentic deployments)
-  security.sudo.extraRules = [{
-    users = [ "emiller" ];
-    commands = [{
-      command = "/run/current-system/sw/bin/nixos-rebuild";
-      options = [ "NOPASSWD" ];
-    }];
-  }];
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
@@ -88,6 +80,7 @@
       qb.enable = false;
       radarr.enable = true;
       sonarr.enable = true;
+      deploy-rs.enable = true;
       ssh.enable = true;
       syncthing.enable = false;
       tailscale.enable = true;
