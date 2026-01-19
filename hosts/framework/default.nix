@@ -97,8 +97,9 @@
     theme.active = "functional";
   };
 
-  programs.ssh.startAgent = true;
+  programs.ssh.startAgent = false;
   services.openssh.startWhenNeeded = true;
+  services.power-profiles-daemon.enable = lib.mkForce false;
 
   networking.hostId = "0dd71c1c";
   networking.networkmanager.enable = true;
