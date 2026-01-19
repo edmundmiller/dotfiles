@@ -1,9 +1,6 @@
 # Go nuc yourself
 { config, pkgs, ... }:
 {
-  # Disable dconf on headless server - no dbus session available
-  home-manager.users.${config.user.name}.dconf.enable = false;
-
   # Workaround for nix-clawdbot using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-clawdbot
   system.activationScripts.binCompat = ''
@@ -13,8 +10,12 @@
     done
   '';
 
-  # Add /bin to PATH for systemd user services (clawdbot wrapper uses bare 'cat')
-  home-manager.users.${config.user.name}.systemd.user.sessionVariables.PATH = "/bin:$PATH";
+  home-manager.users.${config.user.name} = {
+    # Disable dconf on headless server - no dbus session available
+    dconf.enable = false;
+    # Add /bin to PATH for systemd user services (clawdbot wrapper uses bare 'cat')
+    systemd.user.sessionVariables.PATH = "/bin:$PATH";
+  };
 
   # Passwordless sudo for nixos-rebuild (agentic deployments)
   security.sudo.extraRules = [{
