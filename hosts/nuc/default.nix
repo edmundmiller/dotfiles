@@ -17,11 +17,13 @@
     systemd.user.sessionVariables.PATH = "/bin:$PATH";
     home.activation.clawdbotEnv = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
-      if [ -f ${config.age.secrets.clawdbot-bridge-token.path} ]; then
-        token="$(${pkgs.coreutils}/bin/cat ${config.age.secrets.clawdbot-bridge-token.path})"
-        printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
-        ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
-      fi
+      ${lib.optionalString (config ? age && config.age ? secrets && config.age.secrets ? "clawdbot-bridge-token") ''
+        if [ -f ${config.age.secrets.clawdbot-bridge-token.path} ]; then
+          token="$(${pkgs.coreutils}/bin/cat ${config.age.secrets.clawdbot-bridge-token.path})"
+          printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
+          ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
+        fi
+      ''}
     '';
   };
 
