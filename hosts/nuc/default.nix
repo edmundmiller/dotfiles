@@ -4,12 +4,22 @@
   # Disable dconf on headless server - no dbus session available
   home-manager.users.${config.user.name}.dconf.enable = false;
 
-  # Workaround for nix-clawdbot using /bin/mkdir (NixOS doesn't have /bin/mkdir)
+  # Workaround for nix-clawdbot using hardcoded /bin paths
   # TODO: Report upstream to nix-clawdbot
-  system.activationScripts.binMkdir = ''
+  system.activationScripts.binCompat = ''
     mkdir -p /bin
     ln -sf ${pkgs.coreutils}/bin/mkdir /bin/mkdir
+    ln -sf ${pkgs.coreutils}/bin/ln /bin/ln
   '';
+
+  # Passwordless sudo for nixos-rebuild (agentic deployments)
+  security.sudo.extraRules = [{
+    users = [ "emiller" ];
+    commands = [{
+      command = "/run/current-system/sw/bin/nixos-rebuild";
+      options = [ "NOPASSWD" ];
+    }];
+  }];
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
