@@ -1,5 +1,5 @@
 # Go nuc yourself
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, inputs, ... }:
 {
   # Workaround for nix-clawdbot using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-clawdbot
@@ -15,7 +15,7 @@
     dconf.enable = false;
     # Add /bin to PATH for systemd user services (clawdbot wrapper uses bare 'cat')
     systemd.user.sessionVariables.PATH = "/bin:$PATH";
-    home.activation.clawdbotEnv = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    home.activation.clawdbotEnv = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
       if [ -f ${config.age.secrets.clawdbot-bridge-token.path} ]; then
         token="$(${pkgs.coreutils}/bin/cat ${config.age.secrets.clawdbot-bridge-token.path})"
@@ -70,13 +70,13 @@
         configOverrides = {
           gateway = {
             mode = "local";
-            bind = "loopback";
+            bind = "tailnet";
             auth = {
               mode = "token";
               token = "\${CLAWDBOT_GATEWAY_TOKEN}";
               allowTailscale = true;
             };
-            tailscale.mode = "serve";
+            tailscale.mode = "off";
           };
           bridge = {
             enabled = true;
