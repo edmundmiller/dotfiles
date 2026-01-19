@@ -82,7 +82,13 @@ tail -f /tmp/clawdbot/clawdbot-gateway.log
 
 ## Known Issues
 
-**Python conflict**: When `modules.dev.python.enable = true`, may conflict with packages in home-manager-path that bundle Python (e.g., whisper). Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../pydoc3.13`. Workaround: disable Python module temporarily.
+**Python conflict**: Clawdbot bundles whisper (voice transcription) which includes Python 3.13. This conflicts with:
+- `modules.dev.python.enable = true` (direct Python env collision)
+- `modules.editors.emacs` +jupyter feature (removed to fix conflict)
+
+Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../pydoc3.13`
+
+**Current workaround**: Python module disabled, emacs Jupyter removed. See dotfiles-c11 for details.
 
 ## Related Files
 

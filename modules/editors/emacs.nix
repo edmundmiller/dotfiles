@@ -94,10 +94,6 @@ in
       anystyle-cli
       graphviz
     ]
-    # required by +jupyter (only if python module is not enabled)
-    ++ optionals (!config.modules.dev.python.enable) [
-      (python3.withPackages (ps: with ps; [ jupyter ]))
-    ]
     ++ optionals (!isDarwin) [
       # Linux-only packages
       scrot
