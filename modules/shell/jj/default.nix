@@ -59,6 +59,10 @@ in
           text = builtins.readFile "${configDir}/jj/conf.d/fg.toml";
           force = true;
         };
+        "jj/conf.d/workflow.toml" = {
+          text = builtins.readFile "${configDir}/jj/conf.d/workflow.toml";
+          force = true;
+        };
       };
     };
 

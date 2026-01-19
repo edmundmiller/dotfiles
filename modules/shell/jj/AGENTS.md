@@ -66,7 +66,8 @@ The `mine()` revset filter provides additional savings by showing only ~5-10 com
     ├── fix.toml          # Code formatters (jj fix)
     ├── fg.toml           # UTD academic repos
     ├── nfcore.toml       # nf-core repos
-    └── seqera.toml       # Work repos
+    ├── seqera.toml       # Work repos
+    └── workflow.toml     # PR workflow aliases (cl, upload, pl, etc.)
 ```
 
 ## Template System Gotchas
@@ -128,7 +129,9 @@ auto-track-bookmarks = '*'
 | Viewing | `la` (default), `lh`, `lc`, `lg`, `lm`, `pp` | Various log formats |
 | Viewing (extended) | `la-all`, `la-team` | Override mine() filter |
 | Cleanup | `cleanup`, `tidy`, `abandon-empty` | Remove empty commits |
-| Workflow | `wip`, `tug`, `retrunk`, `sync` | Common operations |
+| Workflow | `wip`, `tug`, `retrunk`, `sync`, `evolve` | Common operations |
+| PR Flow | `cl`, `upload`, `setmain` | Push branches for PRs |
+| History | `pl`, `ol` | Obslog progression (undo history) |
 | AI | `aid`, `aide`, `ai-desc` | AI commit messages |
 | GitHub | `spr`, `nd` | Stacked PRs, diff preview |
 
