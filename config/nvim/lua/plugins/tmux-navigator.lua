@@ -14,11 +14,12 @@ return {
     vim.g.tmux_navigator_no_mappings = 1
   end,
   keys = {
-    { "<C-h>", "<cmd><C-U>TmuxNavigateLeft<cr>", mode = "n", desc = "Navigate left (tmux/vim)" },
-    { "<C-j>", "<cmd><C-U>TmuxNavigateDown<cr>", mode = "n", desc = "Navigate down (tmux/vim)" },
-    { "<C-k>", "<cmd><C-U>TmuxNavigateUp<cr>", mode = "n", desc = "Navigate up (tmux/vim)" },
-    { "<C-l>", "<cmd><C-U>TmuxNavigateRight<cr>", mode = "n", desc = "Navigate right (tmux/vim)" },
-    { "<C-\\>", "<cmd><C-U>TmuxNavigatePrevious<cr>", mode = "n", desc = "Navigate previous (tmux/vim)" },
+    -- NOTE: Avoid `<C-U>` here: with `<cmd>…` it can be interpreted literally as `^U`.
+    { "<C-h>", "<cmd>TmuxNavigateLeft<cr>", mode = "n", desc = "Navigate left (tmux/vim)" },
+    { "<C-j>", "<cmd>TmuxNavigateDown<cr>", mode = "n", desc = "Navigate down (tmux/vim)" },
+    { "<C-k>", "<cmd>TmuxNavigateUp<cr>", mode = "n", desc = "Navigate up (tmux/vim)" },
+    { "<C-l>", "<cmd>TmuxNavigateRight<cr>", mode = "n", desc = "Navigate right (tmux/vim)" },
+    { "<C-\\>", "<cmd>TmuxNavigatePrevious<cr>", mode = "n", desc = "Navigate previous (tmux/vim)" },
   },
 }
 
