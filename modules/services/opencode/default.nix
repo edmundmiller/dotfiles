@@ -53,7 +53,7 @@ in
       volumes = [
         "${cfg.projectDir}:/repos"
         "${cfg.vaultDir}:/vault"
-        "${cfg.configDir}:/opencode-config"
+        "${cfg.configDir}:/opencode-config-ro:ro"
       ];
       extraOptions = [
         "--network=host"
@@ -70,7 +70,9 @@ in
         "-c"
         ''
           ${optionalString (cfg.password != "") "export OPENCODE_SERVER_PASSWORD='${cfg.password}'"}
-          export OPENCODE_CONFIG_DIR=/opencode-config
+          # Copy read-only config to writable location (ZFS enforces ro on git-tracked dirs)
+          cp -r /opencode-config-ro /tmp/opencode-config
+          export OPENCODE_CONFIG_DIR=/tmp/opencode-config
           exec opencode web --hostname 0.0.0.0 --port ${toString cfg.port}
         ''
       ];
