@@ -53,7 +53,7 @@ in
       volumes = [
         "${cfg.projectDir}:/repos"
         "${cfg.vaultDir}:/vault"
-        "${cfg.configDir}:/opencode-config:ro"
+        "${cfg.configDir}:/opencode-config"
       ];
       extraOptions = [
         "--network=host"
