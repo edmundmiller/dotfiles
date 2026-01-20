@@ -60,7 +60,7 @@ in
         "--health-cmd=/bin/sh -c 'wget -q --spider http://127.0.0.1:${toString cfg.port} || exit 1'"
         "--health-interval=30s"
         "--health-timeout=10s"
-        "--health-start-period=30s"
+        "--health-start-period=60s"
         "--health-retries=3"
       ];
 
