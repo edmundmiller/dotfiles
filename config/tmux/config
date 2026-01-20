@@ -106,6 +106,8 @@ bind-key -T copy-mode-vi 'C-k' select-pane -U
 bind-key -T copy-mode-vi 'C-l' select-pane -R
 bind-key -T copy-mode-vi 'C-\' select-pane -l
 bind C-w last-pane
+bind n select-pane -t :.+  # next pane (prefix+n)
+bind p select-pane -t :.-  # previous pane (prefix+p)
 bind C-n next-window
 bind C-p previous-window
 
@@ -143,7 +145,6 @@ bind F display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picke
 # critique: Beautiful TUI for reviewing git diffs with syntax highlighting
 bind G display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$TMUX_HOME/open-critique.sh"
 
-bind p select-pane -t :.-  # select previous pane
 bind P run "xclip -selection clipboard -o | tmux load-buffer - ; tmux paste-buffer"
 
 bind -T copy-mode-vi v send-keys -X begin-selection
