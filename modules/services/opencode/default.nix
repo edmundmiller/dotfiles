@@ -24,6 +24,8 @@ in
   options.modules.services.opencode = {
     enable = mkBoolOpt false;
     projectDir = mkOpt types.str "${config.user.home}/src";
+    vaultDir = mkOpt types.str "${config.user.home}/obsidian-vault";
+    configDir = mkOpt types.str "${config.user.home}/.config/dotfiles/config/opencode";
     image = mkOpt types.str "ghcr.io/anomalyco/opencode:latest";
     port = mkOpt types.port 4096;
     password = mkOpt types.str ""; # Optional: OPENCODE_SERVER_PASSWORD
@@ -37,9 +39,10 @@ in
 
   # NixOS-only service (uses OCI containers with existing backend)
   config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
-    # Create project directory if it doesn't exist
+    # Create directories if they don't exist
     systemd.tmpfiles.rules = [
       "d ${cfg.projectDir} 0755 ${config.user.name} users -"
+      "d ${cfg.vaultDir} 0755 ${config.user.name} users -"
     ];
 
     # OpenCode web container
@@ -47,7 +50,11 @@ in
       autoStart = true;
       image = cfg.image;
       # Backup: set `user = "<uid>:<gid>"` (see `id -u/-g`) if you want host-owned files.
-      volumes = [ "${cfg.projectDir}:/app" ];
+      volumes = [
+        "${cfg.projectDir}:/repos"
+        "${cfg.vaultDir}:/vault"
+        "${cfg.configDir}:/opencode-config:ro"
+      ];
       extraOptions = [
         "--network=host"
         "--health-cmd=/bin/sh -c 'wget -q --spider http://127.0.0.1:${toString cfg.port} || exit 1'"
@@ -63,6 +70,7 @@ in
         "-c"
         ''
           ${optionalString (cfg.password != "") "export OPENCODE_SERVER_PASSWORD='${cfg.password}'"}
+          export OPENCODE_CONFIG_DIR=/opencode-config
           exec opencode web --hostname 0.0.0.0 --port ${toString cfg.port}
         ''
       ];
