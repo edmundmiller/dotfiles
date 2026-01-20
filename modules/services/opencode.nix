@@ -1,12 +1,12 @@
 # OpenCode - AI coding agent web interface
-# Access via Tailscale Service: http://opencode.<tailnet>.ts.net:4096
+# Access via Tailscale Service: https://opencode.<tailnet>.ts.net
 # Or direct: http://<tailscale-ip>:4096
 #
 # Tailscale Service setup (one-time manual steps):
 # 1. Go to Tailscale admin console → Services → Create service
-# 2. Name: "opencode", endpoint: tcp:4096, add tag (e.g., tag:server)
+# 2. Name: "opencode", endpoint: https:443, add tag (e.g., tag:server)
 # 3. After deploy, approve NUC as service host in admin console
-# 4. Access at http://opencode.<tailnet>.ts.net:4096
+# 4. Access at https://opencode.<tailnet>.ts.net
 {
   options,
   config,
@@ -80,7 +80,7 @@ in
     # Open firewall port on Tailscale only
     networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
 
-    # Tailscale Service proxy (TCP forwarder to local OpenCode)
+    # Tailscale Service proxy (HTTPS on 443 → HTTP localhost:4096)
     systemd.services.opencode-tailscale-serve = mkIf cfg.tailscaleService.enable {
       description = "Tailscale Service proxy for OpenCode";
       wantedBy = [ "multi-user.target" ];
@@ -92,7 +92,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --tcp=${toString cfg.port} tcp://localhost:${toString cfg.port}";
+        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.port}";
         ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
       };
     };
