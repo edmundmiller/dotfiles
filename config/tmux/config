@@ -11,7 +11,8 @@ set -ga terminal-overrides ",ghostty:Tc"
 set -s extended-keys on
 set -as terminal-features ',ghostty:extkeys'
 
-new-session     # spawn session if attaching when none are running
+# Spawn a session only when none exist (safe to re-source).
+if-shell 'tmux list-sessions >/dev/null 2>&1' '' 'new-session'
 
 setw -g automatic-rename off      # rename window after current program
 set  -g renumber-windows on      # renumber windows when one is closed
