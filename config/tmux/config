@@ -31,6 +31,7 @@ set  -g history-limit 10000
 # connected to the *session*, constrain window size to the maximum size of any
 # client connected to *that window*. Much more reasonable.
 setw -g aggressive-resize off
+set  -g detach-on-destroy off    # Stay in tmux when session closes
 # For terminals that support them, propagate these events to programs that
 # understand them.
 set  -s focus-events on
@@ -111,10 +112,14 @@ bind p previous-window
 bind C-n next-window
 bind C-p previous-window
 
-# break pane into a window
-bind = select-layout even-vertical
-bind + select-layout even-horizontal
-bind - break-pane
+# Pane resizing (Raine's pattern)
+bind < resize-pane -L 10
+bind > resize-pane -R 10
+bind + resize-pane -D 5
+bind - resize-pane -U 5
+
+# Break/join panes (relocated from + and -)
+bind = break-pane
 bind _ join-pane
 
 # reload config without killing server
