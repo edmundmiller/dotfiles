@@ -216,6 +216,7 @@
     # "gitify"
     "calibre"
     "inkscape"
+    "keymapp"  # ZSA keyboard firmware flasher
     "mactex"
     "mendeley-reference-manager"
     "neohtop"
