@@ -1,5 +1,5 @@
 #undef DEBOUNCE
-#define DEBOUNCE 40
+#define DEBOUNCE 5  // Lowered from 40 to fix dropped keys during fast typing
 
 #undef TAPPING_TERM
 #define TAPPING_TERM 140
