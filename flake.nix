@@ -117,7 +117,58 @@
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
-        packages."${darwinSystem}" = mapModules ./packages (p: darwinPkgs.callPackage p { });
+        packages."${darwinSystem}" = mapModules ./packages (p: darwinPkgs.callPackage p { }) // {
+          # Ergodox firmware - inline definition for cross-compilation
+          # NOTE: To update ZSA QMK firmware, get new SHA from:
+          #   git ls-remote https://github.com/zsa/qmk_firmware.git firmware25
+          # Then update rev and set hash to lib.fakeHash, build to get correct hash.
+          ergodox-firmware = let
+            avrPkgs = darwinPkgs.pkgsCross.avr;
+            zsaQmkFirmware = darwinPkgs.fetchFromGitHub {
+              owner = "zsa";
+              repo = "qmk_firmware";
+              rev = "a07f8e6c7d62b814c495dfd16694a389a3855e08"; # firmware25 branch
+              hash = "sha256-6vU7nt6bYcdx958bgcb6gEiCHmn4Cv0OAPAnvt9yhWI=";
+              fetchSubmodules = true;
+            };
+            keymapSrc = ./config/ergodox/firmware/ergo-drifter/zsa_ergodox_ez_m32u4_base_ergo-drifter-fork-fork_source;
+          in darwinPkgs.stdenv.mkDerivation {
+            pname = "ergodox-ergo-drifter-firmware";
+            version = "unstable-2025-01-21";
+            src = zsaQmkFirmware;
+            nativeBuildInputs = [
+              darwinPkgs.gnumake
+              darwinPkgs.python3
+              darwinPkgs.git
+              darwinPkgs.qmk
+              avrPkgs.buildPackages.gcc
+              avrPkgs.buildPackages.binutils
+            ];
+            postPatch = ''
+              patchShebangs .
+              mkdir -p keyboards/zsa/ergodox_ez/m32u4/keymaps/ergo-drifter
+              cp -r ${keymapSrc}/* keyboards/zsa/ergodox_ez/m32u4/keymaps/ergo-drifter/
+            '';
+            buildPhase = ''
+              runHook preBuild
+              make zsa/ergodox_ez/m32u4:ergo-drifter
+              runHook postBuild
+            '';
+            installPhase = ''
+              runHook preInstall
+              mkdir -p $out
+              install -Dm444 zsa_ergodox_ez_m32u4_base_ergo-drifter.hex $out/
+              cd $out && md5sum *.hex > checksum.md5
+              runHook postInstall
+            '';
+            dontFixup = true;
+            meta = {
+              description = "Ergodox EZ firmware (ergo-drifter layout)";
+              homepage = "https://github.com/zsa/qmk_firmware";
+              license = lib.licenses.gpl2Only;
+            };
+          };
+        };
 
         nixosModules = {
           dotfiles = import ./.;
