@@ -97,6 +97,26 @@ ergodox-build-flash: ergodox-build
         sudo teensy-loader-cli -w -v --mcu=atmega32u4 "$hex"
     fi
 
+# Generate keymap visualization SVG
+ergodox-draw:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    yaml="{{FLAKE_DIR}}/config/ergodox/keymap.yaml"
+    svg="{{FLAKE_DIR}}/config/ergodox/layout.svg"
+    
+    if [[ ! -f ~/qmk_firmware/keyboards/zsa/ergodox_ez/info.json ]]; then
+        echo "QMK not set up. Run 'qmk setup' first."
+        echo ""
+        echo "The keymap.yaml file still serves as readable layer documentation:"
+        echo "  $yaml"
+        exit 1
+    fi
+    
+    echo "Generating keymap visualization..."
+    uvx --from keymap-drawer keymap draw "$yaml" -o "$svg"
+    echo "Generated: $svg"
+
 # Show ErgoDox firmware info
 ergodox-info:
     @echo "ErgoDox EZ Configuration"
