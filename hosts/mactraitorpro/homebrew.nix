@@ -152,6 +152,7 @@
     "jnsahaj/lumen/lumen"
     "opencode"
     "steveyegge/beads/bd"
+    "steipete/tap/gogcli"
     "reminders-cli"
   ];
 
