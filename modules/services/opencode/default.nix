@@ -57,6 +57,7 @@ in
       ];
       extraOptions = [
         "--network=host"
+        "--workdir=/repos"
       ];
 
       # Bind on all interfaces; firewall restricts to Tailscale
