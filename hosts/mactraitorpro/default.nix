@@ -56,19 +56,20 @@
       };
     };
 
-    home-manager.users.${config.user.name}.programs.clawdbot.instances.default.launchd.enable = false;
-
-    home-manager.users.${config.user.name}.home.activation.clawdbotEnv =
-      inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
-        ${lib.optionalString (config.home-manager.users.${config.user.name}.age.secrets ? "clawdbot-bridge-token") ''
-          if [ -f ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path} ]; then
-            token="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path})"
-            printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
-            ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
-          fi
-        ''}
-      '';
+    home-manager.users.${config.user.name} = {
+      programs.clawdbot.instances.default.launchd.enable = false;
+      home.activation.clawdbotEnv =
+        inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
+          ${lib.optionalString (config.home-manager.users.${config.user.name}.age.secrets ? "clawdbot-bridge-token") ''
+            if [ -f ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path} ]; then
+              token="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path})"
+              printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
+              ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
+            fi
+          ''}
+        '';
+    };
 
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {
