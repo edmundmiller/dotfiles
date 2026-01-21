@@ -8,6 +8,7 @@ import 'hey.d/flake.just'
 import 'hey.d/nix.just'
 import 'hey.d/remote.just'
 import 'hey.d/test.just'
+import 'hey.d/ergodox.just'
 
 # Default recipe - show help
 default: help
@@ -47,6 +48,12 @@ help:
     @echo ""
     @echo "Test Commands:"
     @echo "  ztest [file]         Run zunit tests (all if none specified)"
+    @echo ""
+    @echo "ErgoDox Commands:"
+    @echo "  ergodox-flash [hex]  Flash firmware (default: ergo-drifter)"
+    @echo "  ergodox-build        Build firmware from source using QMK"
+    @echo "  ergodox-build-flash  Build and flash firmware"
+    @echo "  ergodox-info         Show firmware info and paths"
     @echo ""
     @echo "Examples:"
     @echo "  hey rebuild          # Rebuild and switch local system"
