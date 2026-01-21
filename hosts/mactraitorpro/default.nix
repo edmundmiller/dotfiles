@@ -54,6 +54,10 @@
       desktop = {
         term.ghostty.enable = true;
       };
+
+      hardware = {
+        ergodox.enable = true;
+      };
     };
 
     home-manager.users.${config.user.name}.programs.clawdbot.instances.default.launchd.enable = false;
