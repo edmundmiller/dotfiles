@@ -25,3 +25,10 @@ results/
 
 # bv (beads viewer) local config and caches
 .bv/
+
+# Ergodox firmware build artifacts (built on-demand with nix)
+config/ergodox/firmware/**/*.hex
+config/ergodox/firmware/**/*.md5
+
+# QMK firmware (if cloned manually)
+qmk_firmware/

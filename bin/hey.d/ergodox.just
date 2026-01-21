@@ -1,100 +1,99 @@
 # ErgoDox keyboard firmware commands
+#
+# Uses pure nix build - no ~/qmk_firmware required.
+# Firmware source: config/ergodox/firmware/ergo-drifter/
 
 import 'common.just'
 
-# Default firmware path
+# Firmware paths
 ergodox_firmware := FLAKE_DIR / "config/ergodox/firmware/ergo-drifter"
-ergodox_hex := ergodox_firmware / "zsa_ergodox_ez_m32u4_base_wagdn.hex"
+ergodox_source := ergodox_firmware / "zsa_ergodox_ez_m32u4_base_ergo-drifter-fork-fork_source"
 
-# Flash ErgoDox firmware (put keyboard in bootloader mode first)
-ergodox-flash hex=ergodox_hex:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    
-    if [[ ! -f "{{hex}}" ]]; then
-        echo "Error: Firmware file not found: {{hex}}"
-        exit 1
-    fi
-    
-    echo "Flashing ErgoDox firmware: {{hex}}"
-    echo "Put keyboard in bootloader mode (press reset button or key combo)..."
-    echo ""
-    
-    # Use keymapp if available (ZSA recommended), fall back to teensy-loader-cli
-    if command -v keymapp >/dev/null 2>&1; then
-        echo "Using keymapp (ZSA recommended)..."
-        keymapp --load "{{hex}}"
-    elif command -v teensy-loader-cli >/dev/null 2>&1; then
-        echo "Using teensy-loader-cli..."
-        sudo teensy-loader-cli -w -v --mcu=atmega32u4 "{{hex}}"
-    else
-        echo "Error: Neither keymapp nor teensy-loader-cli found"
-        echo "Run 'hey rebuild' to install keyboard tools"
-        exit 1
-    fi
-    
-    echo ""
-    echo "Firmware flashed successfully!"
-
-# Build ErgoDox firmware from source using QMK
+# Build ErgoDox firmware using pure nix (no ~/qmk_firmware needed)
 ergodox-build:
     #!/usr/bin/env bash
     set -euo pipefail
     
-    source_dir="{{ergodox_firmware}}/zsa_ergodox_ez_m32u4_base_ergo-drifter-fork-fork_source"
-    
-    if [[ ! -d "$source_dir" ]]; then
-        echo "Error: Source directory not found: $source_dir"
-        exit 1
-    fi
-    
-    echo "Building ErgoDox firmware..."
-    echo "Source: $source_dir"
+    echo "Building ErgoDox firmware with nix..."
+    echo "Source: {{ergodox_source}}"
     echo ""
     
-    # Check if qmk is available
-    if ! command -v qmk >/dev/null 2>&1; then
-        echo "Error: qmk not found. Run 'hey rebuild' to install QMK tools."
-        exit 1
-    fi
+    cd "{{FLAKE_DIR}}"
+    nix build .#ergodox-firmware --print-build-logs
     
-    # Setup QMK if not already done
-    if [[ ! -d ~/qmk_firmware ]]; then
-        echo "Setting up QMK firmware repository..."
-        qmk setup -y
-    fi
+    # Copy to firmware directory for easy access
+    cp -f result/*.hex "{{ergodox_firmware}}/"
+    cp -f result/*.md5 "{{ergodox_firmware}}/"
     
-    # Copy keymap to QMK firmware
-    keymap_dir=~/qmk_firmware/keyboards/zsa/ergodox_ez/m32u4/keymaps/ergo-drifter
-    mkdir -p "$keymap_dir"
-    cp -r "$source_dir"/* "$keymap_dir/"
-    
-    # Build firmware
-    cd ~/qmk_firmware
-    qmk compile -kb zsa/ergodox_ez/m32u4 -km ergo-drifter
-    
+    hex=$(ls result/*.hex | head -1)
     echo ""
-    echo "Build complete! Firmware at:"
-    echo "  ~/qmk_firmware/.build/zsa_ergodox_ez_m32u4_ergo-drifter.hex"
+    echo "Build complete!"
+    echo "Firmware: {{ergodox_firmware}}/$(basename $hex)"
+    echo ""
+    echo "Flash with: hey ergodox-flash"
 
-# Build and flash ErgoDox firmware
-ergodox-build-flash: ergodox-build
+# Flash ErgoDox firmware (prefers Keymapp GUI on macOS)
+ergodox-flash hex="":
     #!/usr/bin/env bash
     set -euo pipefail
     
-    hex=~/qmk_firmware/.build/zsa_ergodox_ez_m32u4_ergo-drifter.hex
+    # Find hex file
+    if [[ -n "{{hex}}" ]]; then
+        HEX="{{hex}}"
+    else
+        # Look for built firmware
+        HEX="{{ergodox_firmware}}/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex"
+    fi
     
-    if [[ ! -f "$hex" ]]; then
-        echo "Error: Built firmware not found at $hex"
+    if [[ ! -f "$HEX" ]]; then
+        echo "Error: Firmware not found: $HEX"
+        echo "Run 'hey ergodox-build' first."
         exit 1
     fi
     
-    echo "Put keyboard in bootloader mode..."
+    echo "Flashing ErgoDox firmware: $HEX"
+    echo ""
     
-    if command -v keymapp >/dev/null 2>&1; then
-        keymapp --load "$hex"
+    # Prefer Keymapp GUI (handles macOS USB permissions correctly)
+    if [[ -d "/Applications/Keymapp.app" ]]; then
+        echo "Opening Keymapp..."
+        echo ""
+        echo "To flash:"
+        echo "  1. Click 'Flash from file' in Keymapp"
+        echo "  2. Select: $HEX"
+        echo "  3. Press reset button on keyboard when prompted"
+        echo ""
+        open -a Keymapp
+    # Fallback to teensy-loader-cli (may fail on macOS due to USB driver conflict)
+    elif command -v teensy_loader_cli >/dev/null 2>&1; then
+        echo "WARNING: teensy-loader-cli may fail on macOS (USB driver conflict)"
+        echo "Consider installing Keymapp: brew install --cask keymapp"
+        echo ""
+        echo "Press reset button on keyboard, then press Enter..."
+        read -r
+        teensy_loader_cli -mmcu=atmega32u4 -w "$HEX"
     else
-        sudo teensy-loader-cli -w -v --mcu=atmega32u4 "$hex"
+        echo "Error: No flashing tool found."
+        echo "Install Keymapp: brew install --cask keymapp"
+        exit 1
+    fi
+
+# Build and flash ErgoDox firmware
+ergodox-build-flash: ergodox-build ergodox-flash
+
+# Edit ergodox keymap source files
+ergodox-edit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    if [[ -n "${EDITOR:-}" ]]; then
+        $EDITOR "{{ergodox_source}}"
+    else
+        echo "Keymap source: {{ergodox_source}}"
+        echo ""
+        ls -la "{{ergodox_source}}"
+        echo ""
+        echo "Set \$EDITOR to open in your preferred editor"
     fi
 
 # Generate keymap visualization SVG
@@ -105,33 +104,33 @@ ergodox-draw:
     yaml="{{FLAKE_DIR}}/config/ergodox/keymap.yaml"
     svg="{{FLAKE_DIR}}/config/ergodox/layout.svg"
     
-    if [[ ! -f ~/qmk_firmware/keyboards/zsa/ergodox_ez/info.json ]]; then
-        echo "QMK not set up. Run 'qmk setup' first."
-        echo ""
-        echo "The keymap.yaml file still serves as readable layer documentation:"
-        echo "  $yaml"
-        exit 1
-    fi
-    
     echo "Generating keymap visualization..."
     uvx --from keymap-drawer keymap draw "$yaml" -o "$svg"
     echo "Generated: $svg"
 
-# Show ErgoDox firmware info
+# Show ErgoDox firmware info and current settings
 ergodox-info:
-    @echo "ErgoDox EZ Configuration"
-    @echo "========================"
-    @echo ""
-    @echo "Current firmware:"
-    @echo "  {{ergodox_hex}}"
-    @echo ""
-    @echo "Source:"
-    @echo "  {{ergodox_firmware}}/zsa_ergodox_ez_m32u4_base_ergo-drifter-fork-fork_source/"
-    @echo ""
-    @echo "Commands:"
-    @echo "  hey ergodox-flash         Flash current firmware"
-    @echo "  hey ergodox-flash <hex>   Flash specific firmware file"
-    @echo "  hey ergodox-build         Build firmware from source"
-    @echo "  hey ergodox-build-flash   Build and flash"
-    @echo ""
-    @echo "Oryx configurator: https://configure.zsa.io/ergodox-ez/layouts/wagdn/qmvNyL"
+    #!/usr/bin/env bash
+    echo "ErgoDox EZ - Ergo Drifter Layout"
+    echo "================================"
+    echo ""
+    echo "Build System: Pure nix (no ~/qmk_firmware required)"
+    echo ""
+    echo "Keymap source:"
+    echo "  {{ergodox_source}}/"
+    echo ""
+    echo "Built firmware:"
+    echo "  {{ergodox_firmware}}/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex"
+    echo ""
+    echo "Commands:"
+    echo "  hey ergodox-build       Build firmware with nix"
+    echo "  hey ergodox-flash       Flash to keyboard (Keymapp GUI)"
+    echo "  hey ergodox-build-flash Build and flash"
+    echo "  hey ergodox-edit        Edit keymap source"
+    echo "  hey ergodox-draw        Generate layout SVG"
+    echo ""
+    echo "Current config:"
+    grep -E "DEBOUNCE|TAPPING_TERM" "{{ergodox_source}}/config.h" 2>/dev/null || true
+    echo ""
+    echo "Oryx configurator:"
+    echo "  https://configure.zsa.io/ergodox-ez/layouts/wagdn/qmvNyL"
