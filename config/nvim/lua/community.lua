@@ -37,6 +37,7 @@ return {
   { import = "astrocommunity.pack.julia" },
 
   -- Productivity & Workflow
+  { import = "astrocommunity.media.vim-wakatime" },
   { import = "astrocommunity.editing-support.todo-comments-nvim" },
   { import = "astrocommunity.motion.flash-nvim" },
   -- Development tools
