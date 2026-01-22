@@ -14,6 +14,8 @@
     "anomalyco/tap" # Opencode
     "max-sixty/worktrunk"  # Git worktree management for parallel AI agents
     "joshmedeski/sesh"  # Smart tmux session manager with zoxide integration
+    "ahkohd/oyo"  # oy - tmux session manager
+    "chmouel/lazyworktree"  # lazyworktree - lazy git worktree switcher
   ];
 
   brews = [
@@ -77,6 +79,7 @@
     "wget"
     "max-sixty/worktrunk/wt"
     "joshmedeski/sesh/sesh"
+    "ahkohd/oyo/oy"
     "zoxide"
 
     # Task management
@@ -211,6 +214,9 @@
     "claude-code"
     "codexbar"
     "voicenotes"
+
+    # Git/Development utilities
+    "chmouel/lazyworktree/lazyworktree"
 
     # Utilities
     # FIXME: gitify cask has invalid 'uninstall' stanza with unsupported :on_upgrade key
