@@ -25,14 +25,14 @@ config/tmux/
 - **XDG workaround**: tmux 3.0/3.1 doesn't support XDG natively; wrapper forces `-f "$TMUX_HOME/config"`
 - **Plugin fetching**: `tmux-opencode-status` fetched via `fetchFromGitHub`, others from nixpkgs `tmuxPlugins.*`
 - **Loading order**: Theme config MUST load BEFORE prefix-highlight plugin (sets `#{prefix_highlight}` placeholder for replacement)
-- **Auto-generated extraInit**: Contains plugin `run-shell` commands and tmux-window-name configuration
+- **Auto-generated extraInit**: Contains plugin `run-shell` commands and tmux-opencode-integrated configuration
 
 ## Dependencies
 
 **Nix packages:**
 - `pkgs.tmux` - Base tmux package
 - `pkgs.tmuxPlugins.{copycat,prefix-highlight,yank}` - Standard plugins
-- `pkgs.my.tmux-window-name` - Custom package (defined in `packages/`)
+- `pkgs.my.tmux-opencode-integrated` - Custom package (defined in `packages/`)
 
 **Other modules:**
 - `modules.shell.zsh` - Shell integration (tmuxifier init, aliases)
@@ -70,5 +70,5 @@ config/tmux/
 
 - `modules/shell/zsh.nix` - Provides rcFiles/rcInit mechanism
 - `modules/theme/default.nix` - Registers theme reload hooks
-- `packages/tmux-window-name.nix` - Custom package definition
+- `packages/tmux-opencode-integrated/default.nix` - Custom package definition
 - `config/tmux/*` - Actual configuration files

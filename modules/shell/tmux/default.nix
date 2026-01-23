@@ -13,8 +13,8 @@ let
 
   # OpenCode / Claude status for tmux `status-right`.
   #
-  # NOTE: We intentionally avoid plugins that rename windows, because they fight
-  # with `tmux-window-name` and cause the "random symbol" feel.
+  # NOTE: Window naming is handled by tmux-opencode-integrated.
+  # Avoid other renamers to keep names stable.
   #
   # States:
   # - ○ idle
@@ -191,16 +191,8 @@ in
         set-option -ga status-right "#(${opencodeStatus})"
         run-shell ${tmux-smooth-scroll}/smooth-scroll.tmux
         
-        # tmux-window-name: Smart automatic window naming based on path and running program
-        # Abbreviations: OC=opencode, CC=claude, V=vim/nvim, G=git, JJ=jjui, λ=shell
-        set -g @tmux_window_name_shells "['zsh', 'bash', 'sh', 'fish']"
-        set -g @tmux_window_name_dir_programs "['nvim', 'vim', 'vi', 'git', 'jjui', 'opencode', 'claude']"
-        set -g @tmux_window_name_use_tilde "True"
-        set -g @tmux_window_name_max_name_len "24"
-        set -g @tmux_window_name_substitute_sets "[('.*node.*opencode.*', 'opencode'), ('.*node.*claude.*', 'claude'), ('^(/usr)?/bin/(.+)', '\\\\g<2>')]"
-        set -g @tmux_window_name_icon_style "icon"
-        set -g @tmux_window_name_custom_icons "{'opencode': 'OC', 'claude': 'CC', 'nvim': 'V', 'vim': 'V', 'vi': 'V', 'git': 'G', 'jjui': 'JJ', 'zsh': 'λ', 'bash': 'λ', 'sh': 'λ', 'fish': 'λ'}"
-        run-shell ${pkgs.my.tmux-window-name}/share/tmux-plugins/tmux-window-name/tmux_window_name.tmux
+        # tmux-opencode-integrated: smart naming + OpenCode status
+        run-shell ${pkgs.my.tmux-opencode-integrated}/share/tmux-plugins/tmux-opencode-integrated/scripts/smart-name.sh
       '';
     };
 
