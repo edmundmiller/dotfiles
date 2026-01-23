@@ -13,7 +13,7 @@ modules.shell.tmux.enable = true;
 ## What This Module Provides
 
 - **Custom wrapper script:** XDG path support + env var fallbacks for Ghostty
-- **Plugin integration:** copycat, prefix-highlight, yank, opencode-status, window-name
+- **Plugin integration:** copycat, prefix-highlight, yank, opencode-status, opencode-integrated
 - **Theme configuration:** Catppuccin with auto-hide status bar
 - **Shell integration:** tmuxifier initialization, aliases
 
@@ -43,9 +43,9 @@ Theme config loads BEFORE plugins (required for prefix-highlight placeholder rep
 | **prefix-highlight** | Visual prefix key indicator in status bar |
 | **yank** | System clipboard integration |
 | **opencode-status** | AI agent activity: ○ idle, ● busy, ◉ waiting, ✗ error, ✔ finished |
-| **window-name** | Smart automatic window naming |
+| **opencode-integrated** | Smart naming + OpenCode status |
 
-## tmux-window-name Customizations
+## tmux-opencode-integrated Behavior
 
 Custom icon mappings for common programs:
 
