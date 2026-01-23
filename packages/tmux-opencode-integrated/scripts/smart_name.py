@@ -76,9 +76,9 @@ def get_child_cmdline(pane_pid):
 def normalize_program(cmdline):
     if not cmdline:
         return ""
-    if re.search(r"(^|[ /])(opencode|oc)(\s|$)", cmdline):
+    if re.search(r"(^|[ /])(opencode|oc)(\b|$)", cmdline):
         return "opencode"
-    if re.search(r"(^|[ /])claude(\s|$)", cmdline):
+    if re.search(r"(^|[ /])claude(\b|$)", cmdline):
         return "claude"
     base = cmdline.strip().split()[0]
     return os.path.basename(base)
