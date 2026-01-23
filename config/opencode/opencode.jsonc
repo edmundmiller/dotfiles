@@ -39,8 +39,8 @@
         "@tarquinen/opencode-dcp@latest",
         "opencode-gemini-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
-        "./plugin/boomerang-notify",
-        "./plugin/opencode-worktrunk"
+        // "./plugin/boomerang-notify",
+        // "./plugin/opencode-worktrunk"
         // "./plugin/opencode-canvas"
         // NOTE: Migrating from opencode-jj to worktrunk
         // "./plugin/opencode-jj"
@@ -57,6 +57,13 @@
                 ".nf",
                 ".config"
             ]
+        }
+    },
+    // Nextflow formatter
+    "formatter": {
+        "nextflow": {
+            "command": ["nextflow", "lint", "-format", "-spaces", "4", "-harshil-alignment", "-sort-declarations", "$FILE"],
+            "extensions": [".nf", "nextflow.config"]
         }
     },
     // MCP servers
