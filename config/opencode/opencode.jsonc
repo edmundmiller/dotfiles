@@ -30,12 +30,12 @@
     // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
     // - opencode-beads: Beads issue tracker integration
     "plugin": [
-        "opencode-pty",
-        "@simonwjackson/opencode-direnv",
-        "opencode-wakatime",
+        "opencode-pty@latest",
+        "@simonwjackson/opencode-direnv@latest",
+        "opencode-wakatime@latest",
         "@franlol/opencode-md-table-formatter@latest",
-        "@mohak34/opencode-notifier",
-        "opencode-beads",
+        "@mohak34/opencode-notifier@latest",
+        "opencode-beads@latest",
         "@tarquinen/opencode-dcp@latest",
         "opencode-gemini-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
@@ -62,8 +62,20 @@
     // Nextflow formatter
     "formatter": {
         "nextflow": {
-            "command": ["nextflow", "lint", "-format", "-spaces", "4", "-harshil-alignment", "-sort-declarations", "$FILE"],
-            "extensions": [".nf", "nextflow.config"]
+            "command": [
+                "nextflow",
+                "lint",
+                "-format",
+                "-spaces",
+                "4",
+                "-harshil-alignment",
+                "-sort-declarations",
+                "$FILE"
+            ],
+            "extensions": [
+                ".nf",
+                "nextflow.config"
+            ]
         }
     },
     // MCP servers
@@ -309,7 +321,6 @@
                 "bash": {
                     // Default allow (MUST BE FIRST - last match wins)
                     "*": "allow",
-                    
                     // Only block truly destructive/irreversible operations
                     "rm *": "ask",
                     "git push *": "ask",
