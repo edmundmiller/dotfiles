@@ -2,7 +2,6 @@
 
 import os
 import re
-import sys
 import subprocess
 
 try:
@@ -12,61 +11,100 @@ except ImportError:
     libtmux = None
 
 
-def get_current_tmux_window_name(window):
-    """Get window name using smart-name logic with program prefixes"""
+SHELLS = ["bash", "zsh", "sh", "fish"]
+DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", "opencode", "claude"]
+MAX_NAME_LEN = 24
+USE_TILDE = True
+
+ICON_IDLE = "○"
+ICON_BUSY = "●"
+ICON_WAITING = "◉"
+ICON_ERROR = "✗"
+
+
+def pane_value(pane, key, default=""):
     try:
-        active_pane = window.active_pane
-        if not active_pane:
-            return ""
-
-        pane_current_path = active_pane.get("pane_current_path", "")
-        pane_current_command = active_pane.get("pane_current_command", "")
-
-        # Define "dir programs" that should show directory
-        dir_programs = [
-            "bash",
-            "zsh",
-            "fish",
-            "nvim",
-            "vim",
-            "vi",
-            "git",
-            "jjui",
-            "claude",
-            "opencode",
-        ]
-
-        # Calculate pretty path
-        home = os.environ.get("HOME", "")
-        if pane_current_path.startswith(home):
-            path = pane_current_path.replace(home, "~", 1)
-        else:
-            path = pane_current_path
-
-        # Shorten path if it's just home
-        if path == "~" and pane_current_command == "zsh":
-            path = "~"
-
-        # If it's a dir program, show "program: path" (requested by user)
-        if pane_current_command in dir_programs:
-            # Don't show shell names, just the path
-            if pane_current_command in ["bash", "zsh", "fish"]:
-                return path
-            # For others (nvim, git, etc), show prefix
-            return f"{pane_current_command}: {path}"
-
-        # Otherwise return the command name
-        return pane_current_command
+        value = pane.get(key, default)
     except Exception:
-        return "error"
+        value = getattr(pane, key, default)
+    return value if value is not None else default
+
+
+def format_path(path):
+    if not path:
+        return ""
+    home = os.environ.get("HOME", "")
+    if USE_TILDE and home and path.startswith(home):
+        return path.replace(home, "~", 1)
+    return path
+
+
+def run_ps(args):
+    try:
+        return subprocess.check_output(args, text=True).strip()
+    except Exception:
+        return ""
+
+
+def get_cmdline_for_pid(pid):
+    if not pid:
+        return ""
+    return run_ps(["ps", "-p", str(pid), "-o", "command="])
+
+
+def get_child_cmdline(pane_pid):
+    if not pane_pid:
+        return ""
+    output = run_ps(["ps", "-a", "-oppid=,command="])
+    if not output:
+        return ""
+    for line in output.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        ppid, cmdline = parts
+        if ppid == str(pane_pid):
+            if "smart_name.py" in cmdline:
+                continue
+            return cmdline
+    return ""
+
+
+def normalize_program(cmdline):
+    if not cmdline:
+        return ""
+    if re.search(r"(^|[ /])(opencode|oc)(\s|$)", cmdline):
+        return "opencode"
+    if re.search(r"(^|[ /])claude(\s|$)", cmdline):
+        return "claude"
+    base = cmdline.strip().split()[0]
+    return os.path.basename(base)
+
+
+def trim_name(name):
+    if MAX_NAME_LEN <= 0 or len(name) <= MAX_NAME_LEN:
+        return name
+    if MAX_NAME_LEN <= 3:
+        return name[:MAX_NAME_LEN]
+    return f"{name[: MAX_NAME_LEN - 3]}..."
+
+
+def build_base_name(program, path):
+    if not program:
+        return path or ""
+    if program in SHELLS:
+        return path or program
+    if program in DIR_PROGRAMS:
+        return f"{program}: {path}" if path else program
+    return program
 
 
 def get_opencode_status(pane):
     """Detect OpenCode status by capturing pane content"""
-    # Capture last 10 lines of pane content
     try:
-        # Using capture_pane from libtmux
-        # start=-10 captures last 10 lines
         cmd_output = pane.cmd("capture-pane", "-p", "-S", "-10").stdout
         if isinstance(cmd_output, list):
             content = "\n".join(cmd_output)
@@ -75,30 +113,46 @@ def get_opencode_status(pane):
     except Exception:
         return None
 
-    # Status Icons
-    ICON_IDLE = "○"
-    ICON_BUSY = "●"
-    ICON_WAITING = "◉"
-    ICON_ERROR = "✗"
-    ICON_FINISHED = "✔"
-
-    # Regex patterns (ported from bash script)
-    # 1. Error detection
     if re.search(
         r"(Traceback|UnhandledPromiseRejection|FATAL ERROR)", content, re.IGNORECASE
     ):
         return ICON_ERROR
 
-    # 2. Waiting for input
     if re.search(r"(\[Y/n\]|Allow once|Allow always|Reject)", content):
         return ICON_WAITING
 
-    # 3. Busy indicators (spinners, thinking)
     if re.search(r"(Thinking\.\.\.|Running\.\.\.|Executing)", content, re.IGNORECASE):
         return ICON_BUSY
 
-    # 4. Finished state
     return ICON_IDLE
+
+
+def get_window_context(window):
+    active_pane = window.active_pane
+    if not active_pane:
+        return None
+
+    pane_path = pane_value(active_pane, "pane_current_path", "")
+    pane_cmd = pane_value(active_pane, "pane_current_command", "")
+    pane_pid = pane_value(active_pane, "pane_pid", "")
+
+    cmdline = ""
+    if pane_pid:
+        if pane_cmd in SHELLS:
+            cmdline = get_child_cmdline(pane_pid)
+            if not cmdline:
+                cmdline = get_cmdline_for_pid(pane_pid)
+        else:
+            cmdline = get_cmdline_for_pid(pane_pid)
+
+    if not cmdline:
+        cmdline = pane_cmd
+
+    program = normalize_program(cmdline) or pane_cmd
+    path = format_path(pane_path)
+    base_name = build_base_name(program, path)
+
+    return active_pane, program, path, base_name
 
 
 def main():
@@ -114,37 +168,23 @@ def main():
         for session in server.sessions:
             for window in session.windows:
                 try:
-                    active_pane = window.active_pane
-                    if not active_pane:
+                    context = get_window_context(window)
+                    if not context:
+                        continue
+                    active_pane, program, path, base_name = context
+
+                    if not base_name and not program:
                         continue
 
-                    command = active_pane.get("pane_current_command")
-
-                    # Base name logic
-                    base_name = get_current_tmux_window_name(window)
-
-                    # OpenCode detection
-                    is_opencode = False
-
-                    # Check command
-                    if command in ["opencode", "oc", "node"]:
-                        # For node, check if arguments contain opencode/oc
-                        # This is harder with just libtmux, would need psutil or inspecting pane_cmd
-                        # For now assume 'node' might be opencode if we see the UI
-                        is_opencode = True
-
-                    if is_opencode:
-                        status_icon = get_opencode_status(active_pane)
-                        # Format: "● OC | ~/dotfiles" (icon first)
-                        # Use a default icon if detection failed
-                        icon = status_icon if status_icon else "○"
-                        new_name = f"{icon} OC | {base_name}"
+                    if program == "opencode":
+                        status_icon = get_opencode_status(active_pane) or ICON_IDLE
+                        display_path = path or base_name or "opencode"
+                        new_name = f"{status_icon} OC | {display_path}"
                     else:
-                        # Format: "~/dotfiles" or "nvim: ~/dotfiles"
                         new_name = base_name
 
-                    # Apply name if changed
-                    # Encode/decode handling for safety
+                    new_name = trim_name(new_name)
+
                     try:
                         current_name = window.name
                     except Exception:
