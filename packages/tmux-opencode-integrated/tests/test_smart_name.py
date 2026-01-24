@@ -509,3 +509,17 @@ def test_generate_menu_command_attention_count():
     cmd = smart_name.generate_menu_command(agents)
     assert "3 agents" in cmd
     assert "2 need attention" in cmd
+
+
+def test_colorize_status_icon_returns_colored_versions():
+    """colorize_status_icon returns tmux-formatted colored icons."""
+    assert smart_name.colorize_status_icon(smart_name.ICON_IDLE) == smart_name.ICON_IDLE_COLOR
+    assert smart_name.colorize_status_icon(smart_name.ICON_BUSY) == smart_name.ICON_BUSY_COLOR
+    assert smart_name.colorize_status_icon(smart_name.ICON_WAITING) == smart_name.ICON_WAITING_COLOR
+    assert smart_name.colorize_status_icon(smart_name.ICON_ERROR) == smart_name.ICON_ERROR_COLOR
+    assert smart_name.colorize_status_icon(smart_name.ICON_UNKNOWN) == smart_name.ICON_UNKNOWN_COLOR
+
+
+def test_colorize_status_icon_returns_input_for_unknown():
+    """colorize_status_icon returns input unchanged if not in mapping."""
+    assert smart_name.colorize_status_icon("?") == "?"

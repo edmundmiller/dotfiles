@@ -38,6 +38,11 @@ ICON_TO_COLOR = {
 }
 
 
+def colorize_status_icon(status):
+    """Return the status icon with tmux color formatting for window names."""
+    return ICON_TO_COLOR.get(status, status)
+
+
 def pane_value(pane, key, default=""):
     # FIXME: pane.get() is deprecated in libtmux, migrate to attribute access
     try:
@@ -365,14 +370,15 @@ def main():
                     agent_status, agent_count = get_aggregate_agent_status(window)
                     
                     if agent_status:
-                        # Window has agent(s) - show status icon
+                        # Window has agent(s) - show colored status icon
+                        colored_icon = colorize_status_icon(agent_status)
                         if program in AGENT_PROGRAMS:
                             # Active pane is the agent - show path
                             display_path = path or base_name or program
-                            new_name = f"{agent_status} {display_path}"
+                            new_name = f"{colored_icon} {display_path}"
                         else:
                             # Agent in background pane - show base name + indicator
-                            new_name = f"{agent_status} {base_name}"
+                            new_name = f"{colored_icon} {base_name}"
                     else:
                         new_name = base_name
 
