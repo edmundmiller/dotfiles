@@ -129,14 +129,10 @@ def get_opencode_status(pane):
     return ICON_IDLE
 
 
-def get_window_context(window):
-    active_pane = window.active_pane
-    if not active_pane:
-        return None
-
-    pane_path = pane_value(active_pane, "pane_current_path", "")
-    pane_cmd = pane_value(active_pane, "pane_current_command", "")
-    pane_pid = pane_value(active_pane, "pane_pid", "")
+def get_pane_program(pane):
+    """Get the program running in a pane."""
+    pane_cmd = pane_value(pane, "pane_current_command", "")
+    pane_pid = pane_value(pane, "pane_pid", "")
 
     cmdline = ""
     if pane_pid:
@@ -150,11 +146,55 @@ def get_window_context(window):
     if not cmdline:
         cmdline = pane_cmd
 
-    program = normalize_program(cmdline) or pane_cmd
+    return normalize_program(cmdline) or pane_cmd
+
+
+def find_agent_panes(window):
+    """Find all panes in a window running AI agents (opencode, claude)."""
+    agent_panes = []
+    for pane in window.panes:
+        program = get_pane_program(pane)
+        if program in ("opencode", "claude"):
+            agent_panes.append((pane, program))
+    return agent_panes
+
+
+def get_window_context(window):
+    active_pane = window.active_pane
+    if not active_pane:
+        return None
+
+    pane_path = pane_value(active_pane, "pane_current_path", "")
+    program = get_pane_program(active_pane)
     path = format_path(pane_path)
     base_name = build_base_name(program, path)
 
     return active_pane, program, path, base_name
+
+
+def get_aggregate_agent_status(window):
+    """Get highest-priority status across all agent panes in window.
+    
+    Priority: ERROR > WAITING > BUSY > IDLE
+    Returns (status_icon, agent_count) or (None, 0) if no agents.
+    """
+    agent_panes = find_agent_panes(window)
+    if not agent_panes:
+        return None, 0
+    
+    statuses = []
+    for pane, program in agent_panes:
+        status = get_opencode_status(pane) or ICON_IDLE
+        statuses.append(status)
+    
+    # Priority ordering
+    if ICON_ERROR in statuses:
+        return ICON_ERROR, len(agent_panes)
+    if ICON_WAITING in statuses:
+        return ICON_WAITING, len(agent_panes)
+    if ICON_BUSY in statuses:
+        return ICON_BUSY, len(agent_panes)
+    return ICON_IDLE, len(agent_panes)
 
 
 def main():
@@ -179,10 +219,18 @@ def main():
                     if not base_name and not program:
                         continue
 
-                    if program == "opencode":
-                        status_icon = get_opencode_status(active_pane) or ICON_IDLE
-                        display_path = path or base_name or "opencode"
-                        new_name = f"{status_icon} OC | {display_path}"
+                    # Check ALL panes for agents, not just active pane
+                    agent_status, agent_count = get_aggregate_agent_status(window)
+                    
+                    if agent_status:
+                        # Window has agent(s) - show status icon
+                        if program in ("opencode", "claude"):
+                            # Active pane is the agent - show path
+                            display_path = path or base_name or program
+                            new_name = f"{agent_status} {display_path}"
+                        else:
+                            # Agent in background pane - show base name + indicator
+                            new_name = f"{agent_status} {base_name}"
                     else:
                         new_name = base_name
 
