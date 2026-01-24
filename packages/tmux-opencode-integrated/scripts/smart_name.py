@@ -119,6 +119,17 @@ def build_base_name(program, path):
     return program
 
 
+def strip_ansi_and_control(text):
+    """Remove ANSI escape sequences and control characters from text."""
+    # Remove ANSI escape sequences (colors, cursor movement, etc.)
+    text = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', text)
+    text = re.sub(r'\x1b\][^\x07]*\x07', '', text)  # OSC sequences
+    text = re.sub(r'\x1b[PX^_][^\x1b]*\x1b\\', '', text)  # DCS/PM/APC/SOS
+    # Remove other control characters (except newline/tab)
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', text)
+    return text
+
+
 def get_opencode_status(pane):
     """Detect OpenCode/Claude status by capturing pane content.
     
@@ -136,6 +147,9 @@ def get_opencode_status(pane):
     if not content or not content.strip():
         return ICON_UNKNOWN
 
+    # Strip ANSI/control sequences for cleaner pattern matching
+    content = strip_ansi_and_control(content)
+
     # Error patterns - agent-specific crash signatures
     error_patterns = [
         r"Traceback \(most recent call last\)",  # Python errors
@@ -148,7 +162,7 @@ def get_opencode_status(pane):
     if any(re.search(p, content, re.IGNORECASE) for p in error_patterns):
         return ICON_ERROR
 
-    # Waiting patterns - agent permission/approval prompts
+    # Waiting patterns - agent permission/approval prompts (needs user action)
     # More specific to avoid matching arbitrary [Y/n] prompts
     waiting_patterns = [
         r"Allow (?:once|always)\?",  # Claude permission prompt
@@ -156,7 +170,8 @@ def get_opencode_status(pane):
         r"(?:Approve|Confirm|Accept)\?.*\[Y/n\]",
         r"Press enter to continue",  # Agent paused
         r"Waiting for (?:input|approval|confirmation)",
-        r">\s*$",  # Agent prompt at end (opencode/claude input mode)
+        r"Permission required",  # OpenCode permission prompt
+        r"(?:yes|no|skip)\s*›",  # OpenCode choice prompt
     ]
     if any(re.search(p, content, re.IGNORECASE) for p in waiting_patterns):
         return ICON_WAITING
@@ -171,11 +186,38 @@ def get_opencode_status(pane):
         r"Reading (?:file|files)",
         r"Writing (?:to|file)",
         r"Searching",
+        r"Calling tool",  # Amp tool execution
+        r"Tool:",  # Claude tool header
+        r"⎿",  # Claude output marker (indicates response in progress)
+        r"Running tools",  # Amp "Running tools..." message
+        r"≋",  # Amp activity indicator (wavy lines)
+        r"■■■",  # OpenCode progress bar (filled squares)
+        r"esc interrupt",  # OpenCode/agent actively running (can be interrupted)
+        r"Esc to cancel",  # Amp/Claude actively running (can be cancelled)
     ]
     if any(re.search(p, content, re.IGNORECASE) for p in busy_patterns):
         return ICON_BUSY
 
-    return ICON_IDLE
+    # Idle patterns - agent is ready for user input (positive detection)
+    # These indicate the agent has finished and is waiting for a new prompt
+    idle_patterns = [
+        r">\s*$",  # Input prompt at end of content (opencode/claude/amp)
+        r"❯\s*$",  # Alternative prompt character
+        r"│\s*$",  # Amp/Claude input box border at end
+        r"What would you like",  # Common agent ready message
+        r"How can I help",  # Agent ready prompt
+        r"Session went idle",  # OpenCode explicit idle message
+        r"Finished\s*$",  # Task completion indicator
+        r"Done\.\s*$",  # Simple completion indicator
+        r"completed successfully",  # Success message
+        r"\d+% of \d+k",  # Amp context usage display (visible when idle)
+        r"OpenCode \d+\.\d+\.\d+",  # OpenCode version in status bar (visible when idle)
+        r"ctrl\+p commands",  # OpenCode status bar (visible when idle)
+    ]
+    if any(re.search(p, content, re.IGNORECASE | re.MULTILINE) for p in idle_patterns):
+        return ICON_IDLE
+
+    return ICON_UNKNOWN
 
 
 AGENT_PROGRAMS = ["opencode", "claude", "amp"]
