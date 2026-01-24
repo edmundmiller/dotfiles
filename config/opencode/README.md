@@ -30,6 +30,29 @@ Plugins are **NOT** managed by nix. Install manually to `~/.config/opencode/plug
 **Important:** Local plugins must be explicitly registered in `opencode.jsonc` `plugins` array.
 Auto-discovery from `~/.config/opencode/plugin/` does not work for local plugins.
 
+### Plugin Cache & Updates
+
+OpenCode caches npm plugins in `~/.cache/opencode/node_modules/`. Plugins using `@latest` 
+don't auto-update; clearing the cache forces fresh installs on next launch.
+
+**Automatic:** `hey rebuild` clears the plugin cache before rebuilding, so npm plugins
+update whenever you rebuild your system.
+
+**Manual:** To update plugins without a full rebuild:
+
+```bash
+hey opencode-update   # Clear cache only
+# Then restart OpenCode
+```
+
+**What gets cleared:**
+- `~/.cache/opencode/node_modules/` - Installed plugins
+- `~/.cache/opencode/bun.lock` - Lock file (forces fresh resolution)
+
+**What's preserved:**
+- `models.json` - Downloaded model configs
+- `package.json` - Plugin list
+
 ### Installing Plugins
 
 ```bash
