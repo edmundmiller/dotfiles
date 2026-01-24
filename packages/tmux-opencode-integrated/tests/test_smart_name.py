@@ -23,20 +23,27 @@ class DummyWindow:
         self.panes = panes if panes is not None else [pane]
 
 
-def test_normalize_program_detects_opencode():
-    assert smart_name.normalize_program("node /opt/opencode/bin/oc") == "opencode"
-    assert smart_name.normalize_program("/usr/local/bin/opencode --foo") == "opencode"
-    assert smart_name.normalize_program("oc -m claude") == "opencode"
+@pytest.mark.parametrize("cmdline,expected", [
+    ("node /opt/opencode/bin/oc", "opencode"),
+    ("/usr/local/bin/opencode --foo", "opencode"),
+    ("oc -m claude", "opencode"),
+    ("claude --model sonnet", "claude"),
+    ("python script.py", "python"),
+    ("nvim file.txt", "nvim"),
+])
+def test_normalize_program(cmdline, expected):
+    assert smart_name.normalize_program(cmdline) == expected
 
 
-def test_normalize_program_detects_claude():
-    assert smart_name.normalize_program("claude --model sonnet") == "claude"
-
-
-def test_build_base_name():
-    assert smart_name.build_base_name("zsh", "~/repo") == "~/repo"
-    assert smart_name.build_base_name("nvim", "~/repo") == "nvim: ~/repo"
-    assert smart_name.build_base_name("python", "~/repo") == "python"
+@pytest.mark.parametrize("program,path,expected", [
+    ("zsh", "~/repo", "~/repo"),
+    ("nvim", "~/repo", "nvim: ~/repo"),
+    ("python", "~/repo", "python"),
+    ("opencode", "~/project", "opencode: ~/project"),
+    ("claude", "", "claude"),
+])
+def test_build_base_name(program, path, expected):
+    assert smart_name.build_base_name(program, path) == expected
 
 
 def test_trim_name(monkeypatch):
@@ -136,106 +143,43 @@ def test_find_agent_panes_empty_window(monkeypatch):
     assert len(agents) == 0
 
 
-def test_get_opencode_status_detects_error():
-    pane = DummyPaneWithCmd({}, "Some output\nTraceback (most recent call last):\n")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_ERROR
+class TestGetOpencodeStatus:
+    """Tests for get_opencode_status pattern matching."""
 
-
-def test_get_opencode_status_detects_error_api():
-    pane = DummyPaneWithCmd({}, "Error: API rate limit exceeded")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_ERROR
-
-
-def test_get_opencode_status_detects_waiting():
-    pane = DummyPaneWithCmd({}, "Allow once?")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_WAITING
-
-
-def test_get_opencode_status_detects_waiting_prompt():
-    pane = DummyPaneWithCmd({}, "Do you want to run this command?")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_WAITING
-
-
-def test_get_opencode_status_detects_busy():
-    pane = DummyPaneWithCmd({}, "Thinking...")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
-
-
-def test_get_opencode_status_detects_busy_spinner():
-    pane = DummyPaneWithCmd({}, "Working on task ⠋")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
-
-
-def test_get_opencode_status_defaults_to_unknown():
-    """When no patterns match, status is unknown (not idle)."""
-    pane = DummyPaneWithCmd({}, "Some random output without clear status indicators")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_UNKNOWN
-
-
-def test_get_opencode_status_detects_idle_prompt():
-    """Input prompt at end of content indicates idle."""
-    pane = DummyPaneWithCmd({}, "Some output\n> ")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
-
-
-def test_get_opencode_status_detects_idle_session_went_idle():
-    """OpenCode 'Session went idle' message indicates idle."""
-    pane = DummyPaneWithCmd({}, "Completed task\nSession went idle")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
-
-
-def test_get_opencode_status_detects_idle_context_display():
-    """Amp context usage display indicates idle."""
-    pane = DummyPaneWithCmd({}, "Some output\n45% of 168k")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
-
-
-def test_get_opencode_status_detects_idle_done():
-    """Done message at end indicates idle."""
-    pane = DummyPaneWithCmd({}, "Created the file\nDone.")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
-
-
-def test_get_opencode_status_permission_required():
-    """OpenCode 'Permission required' indicates waiting."""
-    pane = DummyPaneWithCmd({}, "Permission required\nyes › no › skip")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_WAITING
-
-
-def test_get_opencode_status_busy_running_tools():
-    """Amp 'Running tools...' indicates busy."""
-    pane = DummyPaneWithCmd({}, "≋ Running tools...  Esc to cancel")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
-
-
-def test_get_opencode_status_busy_esc_interrupt():
-    """OpenCode 'esc interrupt' indicates busy."""
-    pane = DummyPaneWithCmd({}, "■■■■■■⬝⬝  esc interrupt\nctrl+p commands")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
-
-
-def test_get_opencode_status_busy_esc_to_cancel():
-    """Amp 'Esc to cancel' indicates busy."""
-    pane = DummyPaneWithCmd({}, "Some output\nEsc to cancel")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
-
-
-def test_get_opencode_status_busy_progress_bar():
-    """OpenCode progress bar (■■■) indicates busy."""
-    pane = DummyPaneWithCmd({}, "Working...\n■■■■⬝⬝⬝⬝")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
-
-
-def test_get_opencode_status_idle_opencode_version():
-    """OpenCode version in status bar indicates idle."""
-    pane = DummyPaneWithCmd({}, "ctrl+t variants  tab agents  ctrl+p commands    • OpenCode 1.1.30")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
-
-
-def test_get_opencode_status_idle_ctrl_p_commands():
-    """OpenCode status bar with ctrl+p commands indicates idle."""
-    pane = DummyPaneWithCmd({}, "Some output\nctrl+p commands")
-    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+    @pytest.mark.parametrize("content,expected_status", [
+        # Error patterns
+        ("Some output\nTraceback (most recent call last):\n", "ICON_ERROR"),
+        ("Error: API rate limit exceeded", "ICON_ERROR"),
+        ("FATAL ERROR: out of memory", "ICON_ERROR"),
+        ("panic: runtime error", "ICON_ERROR"),
+        # Waiting patterns
+        ("Allow once?", "ICON_WAITING"),
+        ("Do you want to run this command?", "ICON_WAITING"),
+        ("Permission required\nyes › no › skip", "ICON_WAITING"),
+        ("Press enter to continue", "ICON_WAITING"),
+        # Busy patterns
+        ("Thinking...", "ICON_BUSY"),
+        ("Working on task ⠋", "ICON_BUSY"),
+        ("≋ Running tools...  Esc to cancel", "ICON_BUSY"),
+        ("■■■■■■⬝⬝  esc interrupt\nctrl+p commands", "ICON_BUSY"),
+        ("Some output\nEsc to cancel", "ICON_BUSY"),
+        ("Working...\n■■■■⬝⬝⬝⬝", "ICON_BUSY"),
+        ("Calling tool: Read", "ICON_BUSY"),
+        # Idle patterns
+        ("Some output\n> ", "ICON_IDLE"),
+        ("Completed task\nSession went idle", "ICON_IDLE"),
+        ("Some output\n45% of 168k", "ICON_IDLE"),
+        ("Created the file\nDone.", "ICON_IDLE"),
+        ("ctrl+t variants  tab agents  ctrl+p commands    • OpenCode 1.1.30", "ICON_IDLE"),
+        ("Some output\nctrl+p commands", "ICON_IDLE"),
+        # Unknown (no patterns match)
+        ("Some random output without clear status indicators", "ICON_UNKNOWN"),
+    ])
+    def test_status_detection(self, content, expected_status):
+        """Test that pane content is correctly classified."""
+        pane = DummyPaneWithCmd({}, content)
+        expected = getattr(smart_name, expected_status)
+        assert smart_name.get_opencode_status(pane) == expected
 
 
 def test_strip_ansi_and_control_removes_escape_sequences():
@@ -316,14 +260,20 @@ def test_get_aggregate_agent_status_no_agents(monkeypatch):
     assert count == 0
 
 
-def test_prioritize_status_ordering():
+@pytest.mark.parametrize("statuses,expected", [
+    ([], "ICON_IDLE"),
+    (["ICON_IDLE"], "ICON_IDLE"),
+    (["ICON_BUSY", "ICON_IDLE"], "ICON_BUSY"),
+    (["ICON_WAITING", "ICON_BUSY"], "ICON_WAITING"),
+    (["ICON_UNKNOWN", "ICON_WAITING"], "ICON_UNKNOWN"),
+    (["ICON_ERROR", "ICON_UNKNOWN"], "ICON_ERROR"),
+    (["ICON_IDLE", "ICON_BUSY", "ICON_WAITING", "ICON_ERROR"], "ICON_ERROR"),
+])
+def test_prioritize_status_ordering(statuses, expected):
     """Test priority ordering: ERROR > UNKNOWN > WAITING > BUSY > IDLE."""
-    assert smart_name.prioritize_status([]) == smart_name.ICON_IDLE
-    assert smart_name.prioritize_status([smart_name.ICON_IDLE]) == smart_name.ICON_IDLE
-    assert smart_name.prioritize_status([smart_name.ICON_BUSY, smart_name.ICON_IDLE]) == smart_name.ICON_BUSY
-    assert smart_name.prioritize_status([smart_name.ICON_WAITING, smart_name.ICON_BUSY]) == smart_name.ICON_WAITING
-    assert smart_name.prioritize_status([smart_name.ICON_UNKNOWN, smart_name.ICON_WAITING]) == smart_name.ICON_UNKNOWN
-    assert smart_name.prioritize_status([smart_name.ICON_ERROR, smart_name.ICON_UNKNOWN]) == smart_name.ICON_ERROR
+    status_values = [getattr(smart_name, s) for s in statuses]
+    expected_value = getattr(smart_name, expected)
+    assert smart_name.prioritize_status(status_values) == expected_value
 
 
 def test_get_aggregate_agent_status_unknown_priority(monkeypatch):
@@ -511,15 +461,21 @@ def test_generate_menu_command_attention_count():
     assert "2 need attention" in cmd
 
 
-def test_colorize_status_icon_returns_colored_versions():
+@pytest.mark.parametrize("icon,expected_color", [
+    ("ICON_IDLE", "ICON_IDLE_COLOR"),
+    ("ICON_BUSY", "ICON_BUSY_COLOR"),
+    ("ICON_WAITING", "ICON_WAITING_COLOR"),
+    ("ICON_ERROR", "ICON_ERROR_COLOR"),
+    ("ICON_UNKNOWN", "ICON_UNKNOWN_COLOR"),
+])
+def test_colorize_status_icon(icon, expected_color):
     """colorize_status_icon returns tmux-formatted colored icons."""
-    assert smart_name.colorize_status_icon(smart_name.ICON_IDLE) == smart_name.ICON_IDLE_COLOR
-    assert smart_name.colorize_status_icon(smart_name.ICON_BUSY) == smart_name.ICON_BUSY_COLOR
-    assert smart_name.colorize_status_icon(smart_name.ICON_WAITING) == smart_name.ICON_WAITING_COLOR
-    assert smart_name.colorize_status_icon(smart_name.ICON_ERROR) == smart_name.ICON_ERROR_COLOR
-    assert smart_name.colorize_status_icon(smart_name.ICON_UNKNOWN) == smart_name.ICON_UNKNOWN_COLOR
+    icon_value = getattr(smart_name, icon)
+    expected = getattr(smart_name, expected_color)
+    assert smart_name.colorize_status_icon(icon_value) == expected
 
 
-def test_colorize_status_icon_returns_input_for_unknown():
+@pytest.mark.parametrize("unknown_input", ["?", "X", "custom"])
+def test_colorize_status_icon_passthrough(unknown_input):
     """colorize_status_icon returns input unchanged if not in mapping."""
-    assert smart_name.colorize_status_icon("?") == "?"
+    assert smart_name.colorize_status_icon(unknown_input) == unknown_input
