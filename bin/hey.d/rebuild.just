@@ -1,9 +1,10 @@
 # System rebuild commands
 
 import 'common.just'
+import 'opencode.just'
 
 # Rebuild the system (default: switch)
-rebuild *args='switch':
+rebuild *args='switch': opencode-update
     #!/usr/bin/env bash
     set -euo pipefail
     
