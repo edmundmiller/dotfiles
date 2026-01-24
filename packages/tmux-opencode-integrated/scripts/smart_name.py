@@ -20,7 +20,7 @@ ICON_IDLE = "□"
 ICON_BUSY = "●"
 ICON_WAITING = "■"
 ICON_ERROR = "▲"
-ICON_COMPLETED = "✓"
+ICON_UNKNOWN = "◇"  # Could not determine status (e.g., pane capture failed)
 
 
 def pane_value(pane, key, default=""):
@@ -105,25 +105,59 @@ def build_base_name(program, path):
 
 
 def get_opencode_status(pane):
-    """Detect OpenCode status by capturing pane content"""
+    """Detect OpenCode/Claude status by capturing pane content.
+    
+    Uses agent-specific patterns to avoid false positives from user output.
+    """
     try:
-        cmd_output = pane.cmd("capture-pane", "-p", "-S", "-10").stdout
+        cmd_output = pane.cmd("capture-pane", "-p", "-S", "-20").stdout
         if isinstance(cmd_output, list):
             content = "\n".join(cmd_output)
         else:
             content = str(cmd_output)
     except Exception:
-        return None
+        return ICON_UNKNOWN
 
-    if re.search(
-        r"(Traceback|UnhandledPromiseRejection|FATAL ERROR)", content, re.IGNORECASE
-    ):
+    if not content or not content.strip():
+        return ICON_UNKNOWN
+
+    # Error patterns - agent-specific crash signatures
+    error_patterns = [
+        r"Traceback \(most recent call last\)",  # Python errors
+        r"UnhandledPromiseRejection",  # Node.js errors
+        r"FATAL ERROR",
+        r"panic:",  # Go panics
+        r"Error: .*(API|rate limit|connection|timeout)",  # API errors
+        r"(?:opencode|claude).*(?:crashed|failed|error)",
+    ]
+    if any(re.search(p, content, re.IGNORECASE) for p in error_patterns):
         return ICON_ERROR
 
-    if re.search(r"(\[Y/n\]|Allow once|Allow always|Reject)", content):
+    # Waiting patterns - agent permission/approval prompts
+    # More specific to avoid matching arbitrary [Y/n] prompts
+    waiting_patterns = [
+        r"Allow (?:once|always)\?",  # Claude permission prompt
+        r"Do you want to (?:run|execute|allow)",  # Generic agent prompts
+        r"(?:Approve|Confirm|Accept)\?.*\[Y/n\]",
+        r"Press enter to continue",  # Agent paused
+        r"Waiting for (?:input|approval|confirmation)",
+        r">\s*$",  # Agent prompt at end (opencode/claude input mode)
+    ]
+    if any(re.search(p, content, re.IGNORECASE) for p in waiting_patterns):
         return ICON_WAITING
 
-    if re.search(r"(Thinking\.\.\.|Running\.\.\.|Executing)", content, re.IGNORECASE):
+    # Busy patterns - agent actively working
+    busy_patterns = [
+        r"Thinking\.{2,}",  # "Thinking..." with 2+ dots
+        r"(?:Running|Executing|Processing)\.{2,}",
+        r"⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏",  # Spinner characters
+        r"Working on",
+        r"Analyzing",
+        r"Reading (?:file|files)",
+        r"Writing (?:to|file)",
+        r"Searching",
+    ]
+    if any(re.search(p, content, re.IGNORECASE) for p in busy_patterns):
         return ICON_BUSY
 
     return ICON_IDLE
@@ -172,29 +206,72 @@ def get_window_context(window):
     return active_pane, program, path, base_name
 
 
+def prioritize_status(statuses):
+    """Return highest-priority status from a list.
+    
+    Priority: ERROR > UNKNOWN > WAITING > BUSY > IDLE
+    """
+    if not statuses:
+        return ICON_IDLE
+    if ICON_ERROR in statuses:
+        return ICON_ERROR
+    if ICON_UNKNOWN in statuses:
+        return ICON_UNKNOWN
+    if ICON_WAITING in statuses:
+        return ICON_WAITING
+    if ICON_BUSY in statuses:
+        return ICON_BUSY
+    return ICON_IDLE
+
+
 def get_aggregate_agent_status(window):
     """Get highest-priority status across all agent panes in window.
     
-    Priority: ERROR > WAITING > BUSY > IDLE
+    Priority: ERROR > UNKNOWN > WAITING > BUSY > IDLE
     Returns (status_icon, agent_count) or (None, 0) if no agents.
     """
     agent_panes = find_agent_panes(window)
     if not agent_panes:
         return None, 0
     
-    statuses = []
-    for pane, program in agent_panes:
-        status = get_opencode_status(pane) or ICON_IDLE
-        statuses.append(status)
+    statuses = [get_opencode_status(pane) for pane, _ in agent_panes]
+    return prioritize_status(statuses), len(agent_panes)
+
+
+def get_global_agent_status(server):
+    """Get highest-priority status across ALL sessions/windows.
     
-    # Priority ordering
-    if ICON_ERROR in statuses:
-        return ICON_ERROR, len(agent_panes)
-    if ICON_WAITING in statuses:
-        return ICON_WAITING, len(agent_panes)
-    if ICON_BUSY in statuses:
-        return ICON_BUSY, len(agent_panes)
-    return ICON_IDLE, len(agent_panes)
+    For use in tmux status bar via #{opencode_status}.
+    Returns (status_icon, agent_count, agents_needing_attention).
+    """
+    all_statuses = []
+    agents_needing_attention = []
+    
+    for session in server.sessions:
+        for window in session.windows:
+            agent_panes = find_agent_panes(window)
+            for pane, program in agent_panes:
+                status = get_opencode_status(pane)
+                all_statuses.append(status)
+                
+                if status in (ICON_ERROR, ICON_WAITING, ICON_UNKNOWN):
+                    try:
+                        session_name = session.name
+                        window_index = window.index
+                    except Exception:
+                        session_name = "?"
+                        window_index = "?"
+                    agents_needing_attention.append({
+                        "session": session_name,
+                        "window": window_index,
+                        "status": status,
+                        "program": program,
+                    })
+    
+    if not all_statuses:
+        return None, 0, []
+    
+    return prioritize_status(all_statuses), len(all_statuses), agents_needing_attention
 
 
 def main():
@@ -249,5 +326,28 @@ def main():
         pass
 
 
+def print_global_status():
+    """Print global agent status for tmux status bar."""
+    if libtmux is None:
+        return
+    
+    try:
+        server = libtmux.Server()
+        if not server.children:
+            return
+        
+        status, count, attention = get_global_agent_status(server)
+        if status:
+            print(f"{status} {count}")
+        # Silent if no agents
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "--status":
+        print_global_status()
+    else:
+        main()
