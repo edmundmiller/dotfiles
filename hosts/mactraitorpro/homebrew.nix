@@ -213,6 +213,7 @@
     "block-goose"
     "claude-code"
     "codexbar"
+    "superset"
     "voicenotes"
 
     # Git/Development utilities
