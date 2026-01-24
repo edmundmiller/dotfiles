@@ -1,0 +1,35 @@
+{
+  "name": "opencode-tmux-namer",
+  "version": "0.1.0",
+  "description": "AI-powered dynamic tmux window naming for OpenCode",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "tmux",
+    "terminal"
+  ],
+  "author": "Edmund Miller",
+  "license": "MIT",
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.0.143",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
