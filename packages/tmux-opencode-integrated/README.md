@@ -6,11 +6,11 @@ Smart tmux window naming with OpenCode/Claude agent status integration.
 
 Shows status icons in window names when the active pane is running an AI agent:
 
-- `●` In progress - Agent is running
-- `✓` Completed - Task finished successfully
-- `■` Waiting - Agent needs approval (Y/n prompts)
-- `□` Idle - Agent was stopped/idle
-- `▲` Error - Agent encountered an error
+- `●` In progress - Agent is running (thinking, searching, writing)
+- `■` Waiting - Agent needs approval (permission prompts)
+- `□` Idle - Agent is ready for input
+- `▲` Error - Agent encountered an error (API, crash, timeout)
+- `◇` Unknown - Could not determine status (capture failed)
 
 ## Desired Behavior (Warp-style)
 
@@ -22,16 +22,18 @@ Like [Warp's Agent Management](https://docs.warp.dev/agents/using-agents/managin
 2. **Multi-agent awareness** - Track status across ALL tmux panes/sessions, not just active window
 3. **Priority-based display**:
    - `▲` Error (any agent has error)
+   - `◇` Unknown (capture failed)
    - `■` Waiting (any agent needs input)
    - `●` In progress (agents working)
    - `□` Idle (all agents idle)
 4. **Click/keybind to jump** - Quick navigation to agent needing attention
 
-### Implementation Ideas
+### Implementation Status
 
-- Add `get_global_agent_status()` that scans all panes for agent processes
-- Expose status via `#{opencode_status}` tmux format string for status bar
-- Optional: tmux popup showing all agents like Warp's Agent Management Panel
+- ✓ `get_global_agent_status()` scans all panes across sessions
+- ✓ `--status` CLI flag outputs global status for tmux status bar
+- TODO: Integrate `#{opencode_status}` tmux format string
+- TODO: tmux popup showing all agents like Warp's Agent Management Panel
 
 ## Installation
 

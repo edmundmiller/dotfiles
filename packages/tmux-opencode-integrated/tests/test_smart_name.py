@@ -141,8 +141,18 @@ def test_get_opencode_status_detects_error():
     assert smart_name.get_opencode_status(pane) == smart_name.ICON_ERROR
 
 
+def test_get_opencode_status_detects_error_api():
+    pane = DummyPaneWithCmd({}, "Error: API rate limit exceeded")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_ERROR
+
+
 def test_get_opencode_status_detects_waiting():
-    pane = DummyPaneWithCmd({}, "Allow this action? [Y/n]")
+    pane = DummyPaneWithCmd({}, "Allow once?")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_WAITING
+
+
+def test_get_opencode_status_detects_waiting_prompt():
+    pane = DummyPaneWithCmd({}, "Do you want to run this command?")
     assert smart_name.get_opencode_status(pane) == smart_name.ICON_WAITING
 
 
@@ -151,9 +161,27 @@ def test_get_opencode_status_detects_busy():
     assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
 
 
+def test_get_opencode_status_detects_busy_spinner():
+    pane = DummyPaneWithCmd({}, "Working on task ⠋")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
+
+
 def test_get_opencode_status_defaults_to_idle():
     pane = DummyPaneWithCmd({}, "Ready for input")
     assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+
+
+def test_get_opencode_status_empty_content():
+    pane = DummyPaneWithCmd({}, "")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_UNKNOWN
+
+
+def test_get_opencode_status_capture_failure():
+    class FailingPane:
+        def cmd(self, *args, **kwargs):
+            raise RuntimeError("capture failed")
+    
+    assert smart_name.get_opencode_status(FailingPane()) == smart_name.ICON_UNKNOWN
 
 
 def test_get_aggregate_agent_status_priority_error(monkeypatch):
@@ -162,7 +190,8 @@ def test_get_aggregate_agent_status_priority_error(monkeypatch):
         {"pane_current_command": "opencode", "pane_pid": "1"}, "Thinking..."
     )
     pane2 = DummyPaneWithCmd(
-        {"pane_current_command": "opencode", "pane_pid": "2"}, "Traceback error"
+        {"pane_current_command": "opencode", "pane_pid": "2"},
+        "Traceback (most recent call last):\n  File...",
     )
     monkeypatch.setattr(smart_name, "get_child_cmdline", lambda pid: "")
     monkeypatch.setattr(smart_name, "get_cmdline_for_pid", lambda pid: "opencode")
@@ -179,7 +208,7 @@ def test_get_aggregate_agent_status_priority_waiting(monkeypatch):
         {"pane_current_command": "opencode", "pane_pid": "1"}, "Thinking..."
     )
     pane2 = DummyPaneWithCmd(
-        {"pane_current_command": "opencode", "pane_pid": "2"}, "[Y/n]"
+        {"pane_current_command": "opencode", "pane_pid": "2"}, "Allow once?"
     )
     monkeypatch.setattr(smart_name, "get_child_cmdline", lambda pid: "")
     monkeypatch.setattr(smart_name, "get_cmdline_for_pid", lambda pid: "opencode")
@@ -200,3 +229,30 @@ def test_get_aggregate_agent_status_no_agents(monkeypatch):
     status, count = smart_name.get_aggregate_agent_status(window)
     assert status is None
     assert count == 0
+
+
+def test_prioritize_status_ordering():
+    """Test priority ordering: ERROR > UNKNOWN > WAITING > BUSY > IDLE."""
+    assert smart_name.prioritize_status([]) == smart_name.ICON_IDLE
+    assert smart_name.prioritize_status([smart_name.ICON_IDLE]) == smart_name.ICON_IDLE
+    assert smart_name.prioritize_status([smart_name.ICON_BUSY, smart_name.ICON_IDLE]) == smart_name.ICON_BUSY
+    assert smart_name.prioritize_status([smart_name.ICON_WAITING, smart_name.ICON_BUSY]) == smart_name.ICON_WAITING
+    assert smart_name.prioritize_status([smart_name.ICON_UNKNOWN, smart_name.ICON_WAITING]) == smart_name.ICON_UNKNOWN
+    assert smart_name.prioritize_status([smart_name.ICON_ERROR, smart_name.ICON_UNKNOWN]) == smart_name.ICON_ERROR
+
+
+def test_get_aggregate_agent_status_unknown_priority(monkeypatch):
+    """Unknown status is higher priority than waiting."""
+    pane1 = DummyPaneWithCmd(
+        {"pane_current_command": "opencode", "pane_pid": "1"}, ""  # Empty = unknown
+    )
+    pane2 = DummyPaneWithCmd(
+        {"pane_current_command": "opencode", "pane_pid": "2"}, "Allow once?"
+    )
+    monkeypatch.setattr(smart_name, "get_child_cmdline", lambda pid: "")
+    monkeypatch.setattr(smart_name, "get_cmdline_for_pid", lambda pid: "opencode")
+
+    window = DummyWindow(pane1, panes=[pane1, pane2])
+    status, count = smart_name.get_aggregate_agent_status(window)
+    assert status == smart_name.ICON_UNKNOWN
+    assert count == 2
