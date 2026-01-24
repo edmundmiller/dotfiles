@@ -19,29 +19,29 @@ This directory contains OpenCode configuration managed via nix-darwin.
 - `package.json` - Dependencies for tools/plugins
 - `node_modules/` - Installed via bun install in activation script
 
+### Nix-Built Plugins (Symlinked)
+- `plugin/opencode-tmux-namer` - Built from `packages/opencode-tmux-namer/`
+
 ### User-Managed (NOT in Nix)
-- `plugin/` - **Manually managed** plugin directory
+- `plugin/` - Directory for user-managed plugins (alongside nix-built ones)
 
 ## Plugin Management
 
-**Why plugins aren't in nix:**
-- TypeScript plugins need build steps (`bun run build`)
-- Development workflow requires flexibility without `hey rebuild`
-- OpenCode expects user-managed plugin directory
+**Nix-built plugins:**
+- `opencode-tmux-namer` - Built via nix, symlinked automatically on `hey rebuild`
+  - Source: `packages/opencode-tmux-namer/`
+  - Edit source, then `hey rebuild` to deploy
 
-**Important:** Local plugins must be explicitly registered in `opencode.jsonc` `plugins` array.
-Auto-discovery from `~/.config/opencode/plugin/` does NOT work.
+**User-managed plugins:**
+- Clone to `~/.config/opencode/plugin/`
+- For TypeScript plugins: run `bun run build`
+- Add to `opencode.jsonc` `plugins` array: `"./plugin/<plugin-name>"`
 
-**Working with plugins:**
-
-When user asks about installing/updating plugins:
-1. Direct them to clone to `~/.config/opencode/plugin/`
-2. For TypeScript plugins: run `bun run build` (do NOT run `bun install` - use global deps)
-3. Add plugin to `opencode.jsonc` `plugins` array: `"./plugin/<plugin-name>"`
-
-**Required plugins:**
+**Required user-managed plugins:**
 - `opencode-jj` - https://github.com/edmundmiller/opencode-jj (TypeScript, needs build)
 - `boomerang-notify` - https://github.com/edmundmiller/boomerang-notify
+
+**Important:** Local plugins must be explicitly registered in `opencode.jsonc` `plugins` array.
 
 ## Rebuild Workflow
 
@@ -49,7 +49,8 @@ After `hey rebuild`:
 - Symlinked files update automatically
 - `tool/` directory re-syncs
 - `bun install` runs for dependencies
-- `plugin/` is UNTOUCHED (user-managed)
+- Nix-built plugins (e.g., `opencode-tmux-namer`) are rebuilt and symlinked
+- User-managed plugins are UNTOUCHED
 
 ## Modifying Configuration
 
