@@ -12,7 +12,7 @@ except ImportError:
 
 
 SHELLS = ["bash", "zsh", "sh", "fish"]
-DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", "opencode", "claude"]
+DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", "opencode", "claude", "amp"]
 MAX_NAME_LEN = 24
 USE_TILDE = True
 
@@ -163,10 +163,18 @@ def get_opencode_status(pane):
     return ICON_IDLE
 
 
+AGENT_PROGRAMS = ["opencode", "claude", "amp"]
+
+
 def get_pane_program(pane):
     """Get the program running in a pane."""
     pane_cmd = pane_value(pane, "pane_current_command", "")
     pane_pid = pane_value(pane, "pane_pid", "")
+
+    # If pane_current_command is already a known agent, use it directly
+    # (pane_pid points to the shell, not the agent process)
+    if pane_cmd in AGENT_PROGRAMS:
+        return pane_cmd
 
     cmdline = ""
     if pane_pid:
@@ -184,11 +192,11 @@ def get_pane_program(pane):
 
 
 def find_agent_panes(window):
-    """Find all panes in a window running AI agents (opencode, claude)."""
+    """Find all panes in a window running AI agents (opencode, claude, amp)."""
     agent_panes = []
     for pane in window.panes:
         program = get_pane_program(pane)
-        if program in ("opencode", "claude"):
+        if program in AGENT_PROGRAMS:
             agent_panes.append((pane, program))
     return agent_panes
 
@@ -301,7 +309,7 @@ def main():
                     
                     if agent_status:
                         # Window has agent(s) - show status icon
-                        if program in ("opencode", "claude"):
+                        if program in AGENT_PROGRAMS:
                             # Active pane is the agent - show path
                             display_path = path or base_name or program
                             new_name = f"{agent_status} {display_path}"
@@ -344,10 +352,228 @@ def print_global_status():
         pass
 
 
+def get_all_agents_info(server):
+    """Get detailed info for all agents across all sessions.
+    
+    Returns list of dicts with: session, window, pane_id, program, status, path
+    """
+    agents = []
+    
+    for session in server.sessions:
+        try:
+            session_name = session.name
+        except Exception:
+            session_name = "?"
+            
+        for window in session.windows:
+            try:
+                window_index = window.index
+                window_name = window.name
+            except Exception:
+                window_index = "?"
+                window_name = "?"
+                
+            agent_panes = find_agent_panes(window)
+            for pane, program in agent_panes:
+                status = get_opencode_status(pane)
+                pane_path = pane_value(pane, "pane_current_path", "")
+                pane_id = pane_value(pane, "pane_id", "")
+                
+                agents.append({
+                    "session": session_name,
+                    "window_index": window_index,
+                    "window_name": window_name,
+                    "pane_id": pane_id,
+                    "program": program,
+                    "status": status,
+                    "path": format_path(pane_path),
+                })
+    
+    return agents
+
+
+def generate_menu_command(agents):
+    """Generate a tmux display-menu command for agent management.
+    
+    Menu format:
+    - Header showing agent count and aggregate status
+    - List of agents with status icon, program, session:window
+    - Each agent is selectable to jump to that pane
+    """
+    if not agents:
+        return None
+    
+    # Sort by priority: error/unknown/waiting first, then by session/window
+    priority = {ICON_ERROR: 0, ICON_UNKNOWN: 1, ICON_WAITING: 2, ICON_BUSY: 3, ICON_IDLE: 4}
+    agents_sorted = sorted(agents, key=lambda a: (priority.get(a["status"], 5), a["session"], a["window_index"]))
+    
+    # Build menu items
+    menu_items = []
+    
+    # Header
+    statuses = [a["status"] for a in agents]
+    aggregate = prioritize_status(statuses)
+    count = len(agents)
+    attention_count = sum(1 for s in statuses if s in (ICON_ERROR, ICON_UNKNOWN, ICON_WAITING))
+    
+    if attention_count > 0:
+        header = f"{aggregate} {count} agents ({attention_count} need attention)"
+    else:
+        header = f"{aggregate} {count} agents"
+    
+    menu_items.append(f'"{header}" "" ""')
+    menu_items.append('"-" "" ""')  # Separator
+    
+    # Agent entries
+    for i, agent in enumerate(agents_sorted):
+        status = agent["status"]
+        program = agent["program"]
+        session = agent["session"]
+        window_idx = agent["window_index"]
+        pane_id = agent["pane_id"]
+        path = agent["path"]
+        
+        # Truncate path if too long
+        if path and len(path) > 20:
+            path = "..." + path[-17:]
+        
+        # Label: "● opencode session:1 ~/project"
+        label = f"{status} {program} {session}:{window_idx}"
+        if path:
+            label += f" {path}"
+        
+        # Key: first letter of program or number
+        if i < 9:
+            key = str(i + 1)
+        else:
+            key = ""
+        
+        # Action: switch to session and window, then select pane
+        if pane_id:
+            action = f"switch-client -t {session}:{window_idx} ; select-pane -t {pane_id}"
+        else:
+            action = f"switch-client -t {session}:{window_idx}"
+        
+        menu_items.append(f'"{label}" "{key}" "{action}"')
+    
+    # Footer
+    menu_items.append('"-" "" ""')
+    menu_items.append('"Refresh" "r" "run-shell -b \\\"#{TMUX_OPENCODE_MENU_CMD}\\\""')
+    menu_items.append('"Close" "q" ""')
+    
+    # Build the full command
+    # Position: C = center
+    items_str = " ".join(menu_items)
+    return f'display-menu -T "Agent Management" -x C -y C {items_str}'
+
+
+def print_menu():
+    """Print the tmux display-menu command for agent management."""
+    if libtmux is None:
+        print('display-message "libtmux not available"')
+        return
+    
+    try:
+        server = libtmux.Server()
+        if not server.children:
+            print('display-message "No tmux sessions"')
+            return
+        
+        agents = get_all_agents_info(server)
+        if not agents:
+            print('display-message "No AI agents running"')
+            return
+        
+        cmd = generate_menu_command(agents)
+        if cmd:
+            print(cmd)
+        else:
+            print('display-message "No AI agents running"')
+    except Exception as e:
+        print(f'display-message "Error: {e}"')
+
+
+def run_menu():
+    """Execute the agent management menu directly."""
+    if libtmux is None:
+        return
+    
+    try:
+        server = libtmux.Server()
+        if not server.children:
+            subprocess.run(["tmux", "display-message", "No tmux sessions"])
+            return
+        
+        agents = get_all_agents_info(server)
+        if not agents:
+            subprocess.run(["tmux", "display-message", "No AI agents running"])
+            return
+        
+        # Build menu items for direct execution
+        menu_args = ["-T", "Agent Management", "-x", "C", "-y", "C"]
+        
+        # Sort by priority
+        priority = {ICON_ERROR: 0, ICON_UNKNOWN: 1, ICON_WAITING: 2, ICON_BUSY: 3, ICON_IDLE: 4}
+        agents_sorted = sorted(agents, key=lambda a: (priority.get(a["status"], 5), a["session"], a["window_index"]))
+        
+        # Header
+        statuses = [a["status"] for a in agents]
+        aggregate = prioritize_status(statuses)
+        count = len(agents)
+        attention_count = sum(1 for s in statuses if s in (ICON_ERROR, ICON_UNKNOWN, ICON_WAITING))
+        
+        if attention_count > 0:
+            header = f"{aggregate} {count} agents ({attention_count} need attention)"
+        else:
+            header = f"{aggregate} {count} agents"
+        
+        menu_args.extend([header, "", ""])
+        menu_args.extend(["", "", ""])  # Separator
+        
+        # Agent entries
+        for i, agent in enumerate(agents_sorted):
+            status = agent["status"]
+            program = agent["program"]
+            session = agent["session"]
+            window_idx = agent["window_index"]
+            pane_id = agent["pane_id"]
+            path = agent["path"]
+            
+            # Truncate path if too long
+            if path and len(path) > 20:
+                path = "..." + path[-17:]
+            
+            label = f"{status} {program} {session}:{window_idx}"
+            if path:
+                label += f" {path}"
+            
+            key = str(i + 1) if i < 9 else ""
+            
+            if pane_id:
+                action = f"switch-client -t {session}:{window_idx} ; select-pane -t {pane_id}"
+            else:
+                action = f"switch-client -t {session}:{window_idx}"
+            
+            menu_args.extend([label, key, action])
+        
+        # Footer
+        menu_args.extend(["", "", ""])  # Separator
+        menu_args.extend(["Close", "q", ""])
+        
+        subprocess.run(["tmux", "display-menu"] + menu_args)
+    except Exception as e:
+        subprocess.run(["tmux", "display-message", f"Error: {e}"])
+
+
 if __name__ == "__main__":
     import sys
     
-    if len(sys.argv) > 1 and sys.argv[1] == "--status":
-        print_global_status()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--status":
+            print_global_status()
+        elif sys.argv[1] == "--menu":
+            run_menu()
+        elif sys.argv[1] == "--menu-cmd":
+            print_menu()
     else:
         main()
