@@ -17,10 +17,10 @@ See https://docs.warp.dev/agents/using-agents/managing-agents for target UX:
 | Icon | Status |
 |------|--------|
 | `●` | In progress - agent is running |
-| `✓` | Completed successfully |
 | `■` | Needs attention (waiting for input/approval) |
-| `□` | Manually stopped, idle |
+| `□` | Idle - ready for input |
 | `▲` | Error occurred |
+| `◇` | Unknown - could not determine status |
 
 ## Files
 
@@ -30,14 +30,24 @@ See https://docs.warp.dev/agents/using-agents/managing-agents for target UX:
 
 ## Status Detection
 
-`get_opencode_status()` captures pane content and pattern-matches:
-- Error patterns → `▲`
-- Approval prompts (`[Y/n]`, `Allow once`) → `■` waiting
-- Thinking/Running patterns → `●` in progress
+`get_opencode_status()` captures last 20 lines of pane and pattern-matches:
+- Error patterns (Traceback, API errors, panic) → `▲`
+- Approval prompts (Allow once?, Do you want to run) → `■` waiting
+- Busy patterns (Thinking..., spinners, Working on) → `●` in progress
+- Empty/capture failure → `◇` unknown
 - Default → `□` idle
+
+## Global Status
+
+`get_global_agent_status(server)` scans ALL sessions/windows and returns:
+- Highest priority status across all agents
+- Total agent count
+- List of agents needing attention (error/waiting/unknown)
+
+CLI: `smart_name.py --status` outputs global status for tmux status bar.
 
 ## TODO
 
-1. Add `get_global_agent_status()` scanning all panes
-2. Expose `#{opencode_status}` format string for status bar
-3. Consider tmux popup for agent management panel
+1. Integrate `#{opencode_status}` tmux format string
+2. tmux popup for agent management panel
+3. Keybind to jump to agent needing attention
