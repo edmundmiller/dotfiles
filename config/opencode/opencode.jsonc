@@ -44,6 +44,7 @@
         // "./plugin/opencode-canvas"
         // NOTE: Migrating from opencode-jj to worktrunk
         // "./plugin/opencode-jj"
+        "./plugin/opencode-tmux-namer"
     ],
     // Nextflow Language Server
     "lsp": {
