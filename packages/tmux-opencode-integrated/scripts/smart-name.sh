@@ -9,11 +9,10 @@ if [[ "${1:-}" == "--run" ]]; then
     exit 0
 fi
 
+# Use the Python script's shebang (which points to nix python with libtmux)
+# instead of calling 'python3' from PATH (which may not have libtmux)
 LIBTMUX_AVAILABLE=$(
-    python3 - <<'PY'
-import importlib.util
-print(importlib.util.find_spec("libtmux") is not None)
-PY
+    "$PY_SCRIPT" -c 'import importlib.util; print(importlib.util.find_spec("libtmux") is not None)'
 )
 
 if [[ "$LIBTMUX_AVAILABLE" != "True" ]]; then
