@@ -20,7 +20,22 @@ ICON_IDLE = "□"
 ICON_BUSY = "●"
 ICON_WAITING = "■"
 ICON_ERROR = "▲"
-ICON_UNKNOWN = "◇"  # Could not determine status (e.g., pane capture failed)
+ICON_UNKNOWN = "◇"
+
+# Colored versions for tmux display-menu (using tmux style syntax)
+ICON_IDLE_COLOR = "#[fg=blue]□#[default]"
+ICON_BUSY_COLOR = "#[fg=cyan]●#[default]"
+ICON_WAITING_COLOR = "#[fg=yellow]■#[default]"
+ICON_ERROR_COLOR = "#[fg=red]▲#[default]"
+ICON_UNKNOWN_COLOR = "#[fg=magenta]◇#[default]"
+
+ICON_TO_COLOR = {
+    ICON_IDLE: ICON_IDLE_COLOR,
+    ICON_BUSY: ICON_BUSY_COLOR,
+    ICON_WAITING: ICON_WAITING_COLOR,
+    ICON_ERROR: ICON_ERROR_COLOR,
+    ICON_UNKNOWN: ICON_UNKNOWN_COLOR,
+}
 
 
 def pane_value(pane, key, default=""):
@@ -510,7 +525,8 @@ def run_menu():
             return
         
         # Build menu items for direct execution
-        menu_args = ["-T", "Agent Management", "-x", "C", "-y", "C"]
+        # -C 1 starts selection on first agent (skipping header)
+        menu_args = ["-T", "Agent Management", "-x", "C", "-y", "C", "-C", "1"]
         
         # Sort by priority
         priority = {ICON_ERROR: 0, ICON_UNKNOWN: 1, ICON_WAITING: 2, ICON_BUSY: 3, ICON_IDLE: 4}
@@ -522,10 +538,12 @@ def run_menu():
         count = len(agents)
         attention_count = sum(1 for s in statuses if s in (ICON_ERROR, ICON_UNKNOWN, ICON_WAITING))
         
+        # Header - just use aggregate icon with color (not disabled, but -C 1 skips it)
+        aggregate_color = ICON_TO_COLOR.get(aggregate, aggregate)
         if attention_count > 0:
-            header = f"{aggregate} {count} agents ({attention_count} need attention)"
+            header = f"{aggregate_color} {count} agents ({attention_count} need attention)"
         else:
-            header = f"{aggregate} {count} agents"
+            header = f"{aggregate_color} {count} agents"
         
         menu_args.extend([header, "", ""])
         menu_args.extend(["", "", ""])  # Separator
@@ -533,6 +551,7 @@ def run_menu():
         # Agent entries
         for i, agent in enumerate(agents_sorted):
             status = agent["status"]
+            status_color = ICON_TO_COLOR.get(status, status)
             program = agent["program"]
             session = agent["session"]
             window_idx = agent["window_index"]
@@ -543,7 +562,7 @@ def run_menu():
             if path and len(path) > 20:
                 path = "..." + path[-17:]
             
-            label = f"{status} {program} {session}:{window_idx}"
+            label = f"{status_color} {program} {session}:{window_idx}"
             if path:
                 label += f" {path}"
             
