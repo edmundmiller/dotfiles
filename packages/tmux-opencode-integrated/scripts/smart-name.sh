@@ -77,8 +77,9 @@ tmux set-environment -g TMUX_WINDOW_NAME_SCRIPT "$CURRENT_DIR/smart-name.sh --ru
 # Bind prefix-A to open the agent management panel
 tmux bind-key A run-shell "$CURRENT_DIR/smart-name.sh --menu"
 
-# Store menu command path for status bar integration
+# Store command paths for status bar integration
 tmux set-environment -g TMUX_OPENCODE_MENU_CMD "$CURRENT_DIR/smart-name.sh --menu"
 tmux set-environment -g TMUX_OPENCODE_STATUS_CMD "$CURRENT_DIR/smart-name.sh --status"
+tmux set-environment -g TMUX_OPENCODE_ATTENTION_CMD "$CURRENT_DIR/smart-name.sh --check-attention"
 
 "$CURRENT_DIR/smart-name.sh" --run
