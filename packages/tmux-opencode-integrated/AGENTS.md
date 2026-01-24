@@ -41,14 +41,34 @@ Provides tmux integration for AI coding agents (OpenCode, Claude) with smart win
 ## CLI Usage
 
 ```bash
-smart_name.py              # Run window renaming (called by hooks)
-smart_name.py --status     # Print global status for status bar
-smart_name.py --menu       # Open Agent Management Panel
+smart_name.py                  # Run window renaming (called by hooks)
+smart_name.py --status         # Print global status for status bar
+smart_name.py --menu           # Open Agent Management Panel
+smart_name.py --check-attention # Check for agents needing attention, send bell if new
 ```
 
 ## Keybinds
 
 - `<prefix> A` - Open Agent Management Panel
+
+## Agent Management Panel Features
+
+- **Jump to agent**: Select an agent to switch to its pane
+- **Interrupt busy agents**: When an agent is BUSY (●), an "⏹ Interrupt" sub-action appears to send Escape
+- **Priority sorting**: Agents needing attention (error/unknown/waiting) appear first
+- **Colored status icons**: Visual indication of each agent's state
+
+## Attention Notifications
+
+The `--check-attention` flag can be called periodically to send a terminal bell when agents need attention:
+
+```bash
+# Example: Check every 5 seconds (add to status-interval or a cron-like mechanism)
+set -g status-interval 5
+set -g status-right "#(#{TMUX_OPENCODE_STATUS_CMD}) ..."
+```
+
+The notification is smart - it only bells when the attention count *increases*, not repeatedly.
 
 ## Troubleshooting
 
@@ -80,5 +100,6 @@ tmux show-hooks -g | grep smart-name
 ## TODO
 
 1. Integrate `#{opencode_status}` tmux format string for status bar
-2. Add "Stop agent" action to menu
+2. ~~Add "Stop agent" action to menu~~ DONE: "⏹ Interrupt" sub-action for BUSY agents
 3. ~~Fix hook persistence issue~~ DONE: `client-attached` hook with `--refresh-hooks`
+4. Add periodic attention check to status-interval (currently manual)

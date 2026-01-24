@@ -596,7 +596,7 @@ def run_menu():
         menu_args.extend([header, "", ""])
         menu_args.extend(["", "", ""])  # Separator
         
-        # Agent entries
+        # Agent entries with sub-actions
         for i, agent in enumerate(agents_sorted):
             status = agent["status"]
             status_color = ICON_TO_COLOR.get(status, status)
@@ -616,12 +616,18 @@ def run_menu():
             
             key = str(i + 1) if i < 9 else ""
             
+            # Primary action: switch to pane
             if pane_id:
                 action = f"switch-client -t {session}:{window_idx} ; select-pane -t {pane_id}"
             else:
                 action = f"switch-client -t {session}:{window_idx}"
             
             menu_args.extend([label, key, action])
+            
+            # Sub-action: Interrupt (send Escape to cancel current operation)
+            if pane_id and status == ICON_BUSY:
+                interrupt_action = f"send-keys -t {pane_id} Escape"
+                menu_args.extend(["  ⏹ Interrupt", "", interrupt_action])
         
         # Footer
         menu_args.extend(["", "", ""])  # Separator
@@ -630,6 +636,49 @@ def run_menu():
         subprocess.run(["tmux", "display-menu"] + menu_args)
     except Exception as e:
         subprocess.run(["tmux", "display-message", f"Error: {e}"])
+
+
+def check_attention_and_notify():
+    """Check if any agents need attention and trigger bell if so.
+    
+    This can be called periodically (e.g., every 5s) to notify user
+    when an agent changes to WAITING/ERROR state.
+    """
+    if libtmux is None:
+        return
+    
+    try:
+        server = libtmux.Server()
+        if not server.children:
+            return
+        
+        status, count, attention = get_global_agent_status(server)
+        if attention > 0:
+            # Check if we already notified (stored in tmux environment)
+            try:
+                last_attention = subprocess.check_output(
+                    ["tmux", "show-environment", "-g", "TMUX_AGENT_LAST_ATTENTION"],
+                    text=True, stderr=subprocess.DEVNULL
+                ).strip().split("=")[1]
+                last_attention = int(last_attention)
+            except Exception:
+                last_attention = 0
+            
+            if attention > last_attention:
+                # New agents need attention - send bell
+                subprocess.run(["tmux", "run-shell", "-b", "printf '\\a'"])
+                subprocess.run([
+                    "tmux", "set-environment", "-g", 
+                    "TMUX_AGENT_LAST_ATTENTION", str(attention)
+                ])
+        else:
+            # Reset counter when no attention needed
+            subprocess.run([
+                "tmux", "set-environment", "-g", 
+                "TMUX_AGENT_LAST_ATTENTION", "0"
+            ], stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
@@ -642,5 +691,7 @@ if __name__ == "__main__":
             run_menu()
         elif sys.argv[1] == "--menu-cmd":
             print_menu()
+        elif sys.argv[1] == "--check-attention":
+            check_attention_and_notify()
     else:
         main()
