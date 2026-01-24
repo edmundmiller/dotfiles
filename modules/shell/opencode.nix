@@ -48,10 +48,16 @@ in
         };
         # Note: tool/ is copied via activation script (not symlinked)
         # because TypeScript tools need to resolve node_modules from ~/.config/opencode/
+
+        # Nix-built plugin: opencode-tmux-namer
+        # Built at nix-build time, symlinked here
+        "opencode/plugin/opencode-tmux-namer" = {
+          source = pkgs.my.opencode-tmux-namer;
+        };
       };
 
       home.activation.opencode-setup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        # Ensure plugin directory exists (user-managed, not synced)
+        # Ensure plugin directory exists (user-managed plugins go here too)
         ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/plugin"
         ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/tool"
 
