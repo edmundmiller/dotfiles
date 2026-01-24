@@ -166,9 +166,94 @@ def test_get_opencode_status_detects_busy_spinner():
     assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
 
 
-def test_get_opencode_status_defaults_to_idle():
-    pane = DummyPaneWithCmd({}, "Ready for input")
+def test_get_opencode_status_defaults_to_unknown():
+    """When no patterns match, status is unknown (not idle)."""
+    pane = DummyPaneWithCmd({}, "Some random output without clear status indicators")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_UNKNOWN
+
+
+def test_get_opencode_status_detects_idle_prompt():
+    """Input prompt at end of content indicates idle."""
+    pane = DummyPaneWithCmd({}, "Some output\n> ")
     assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+
+
+def test_get_opencode_status_detects_idle_session_went_idle():
+    """OpenCode 'Session went idle' message indicates idle."""
+    pane = DummyPaneWithCmd({}, "Completed task\nSession went idle")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+
+
+def test_get_opencode_status_detects_idle_context_display():
+    """Amp context usage display indicates idle."""
+    pane = DummyPaneWithCmd({}, "Some output\n45% of 168k")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+
+
+def test_get_opencode_status_detects_idle_done():
+    """Done message at end indicates idle."""
+    pane = DummyPaneWithCmd({}, "Created the file\nDone.")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+
+
+def test_get_opencode_status_permission_required():
+    """OpenCode 'Permission required' indicates waiting."""
+    pane = DummyPaneWithCmd({}, "Permission required\nyes › no › skip")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_WAITING
+
+
+def test_get_opencode_status_busy_running_tools():
+    """Amp 'Running tools...' indicates busy."""
+    pane = DummyPaneWithCmd({}, "≋ Running tools...  Esc to cancel")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
+
+
+def test_get_opencode_status_busy_esc_interrupt():
+    """OpenCode 'esc interrupt' indicates busy."""
+    pane = DummyPaneWithCmd({}, "■■■■■■⬝⬝  esc interrupt\nctrl+p commands")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
+
+
+def test_get_opencode_status_busy_esc_to_cancel():
+    """Amp 'Esc to cancel' indicates busy."""
+    pane = DummyPaneWithCmd({}, "Some output\nEsc to cancel")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
+
+
+def test_get_opencode_status_busy_progress_bar():
+    """OpenCode progress bar (■■■) indicates busy."""
+    pane = DummyPaneWithCmd({}, "Working...\n■■■■⬝⬝⬝⬝")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_BUSY
+
+
+def test_get_opencode_status_idle_opencode_version():
+    """OpenCode version in status bar indicates idle."""
+    pane = DummyPaneWithCmd({}, "ctrl+t variants  tab agents  ctrl+p commands    • OpenCode 1.1.30")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+
+
+def test_get_opencode_status_idle_ctrl_p_commands():
+    """OpenCode status bar with ctrl+p commands indicates idle."""
+    pane = DummyPaneWithCmd({}, "Some output\nctrl+p commands")
+    assert smart_name.get_opencode_status(pane) == smart_name.ICON_IDLE
+
+
+def test_strip_ansi_and_control_removes_escape_sequences():
+    """strip_ansi_and_control removes ANSI escape sequences."""
+    raw = "\x1b[32mgreen text\x1b[0m normal"
+    assert smart_name.strip_ansi_and_control(raw) == "green text normal"
+
+
+def test_strip_ansi_and_control_removes_control_chars():
+    """strip_ansi_and_control removes control characters but keeps newlines."""
+    raw = "line1\x00\x1f\nline2"
+    assert smart_name.strip_ansi_and_control(raw) == "line1\nline2"
+
+
+def test_strip_ansi_and_control_preserves_unicode():
+    """strip_ansi_and_control preserves Unicode box-drawing chars."""
+    raw = "─────╯\n● □ ■ ▲ ◇"
+    assert smart_name.strip_ansi_and_control(raw) == raw
 
 
 def test_get_opencode_status_empty_content():
