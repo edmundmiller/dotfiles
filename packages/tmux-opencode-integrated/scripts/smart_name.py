@@ -16,13 +16,15 @@ DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", "opencode", "claude"]
 MAX_NAME_LEN = 24
 USE_TILDE = True
 
-ICON_IDLE = "○"
+ICON_IDLE = "□"
 ICON_BUSY = "●"
-ICON_WAITING = "◉"
-ICON_ERROR = "✗"
+ICON_WAITING = "■"
+ICON_ERROR = "▲"
+ICON_COMPLETED = "✓"
 
 
 def pane_value(pane, key, default=""):
+    # FIXME: pane.get() is deprecated in libtmux, migrate to attribute access
     try:
         value = pane.get(key, default)
     except Exception:
@@ -162,6 +164,7 @@ def main():
 
     try:
         server = libtmux.Server()
+        # FIXME: server.children is deprecated, use server.sessions instead
         if not server.children:
             return
 
