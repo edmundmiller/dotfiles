@@ -28,6 +28,7 @@ in
       xdg.configFile = {
         "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
         "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
+        "opencode/dcp.jsonc".source = "${configDir}/opencode/dcp.jsonc";
 
         # Directories need recursive = true
         "opencode/rules" = {
