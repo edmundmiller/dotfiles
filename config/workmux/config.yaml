@@ -1,0 +1,28 @@
+# Global workmux configuration
+# https://workmux.raine.dev/guide/configuration
+
+# Default branch for merge targets
+main_branch: main
+
+# Default agent for -a flag
+agent: claude
+
+# Merge strategy: merge, rebase, or squash
+merge_strategy: rebase
+
+# Status icons in tmux window names
+status_icons:
+  working: "🤖"
+  waiting: "💬"
+  done: "✅"
+
+# Enable nerdfont icons
+nerdfont: true
+
+# Auto branch naming via LLM
+auto_name:
+  model: claude-haiku-4.5
+  system_prompt: |
+    Generate a concise kebab-case branch name from the task description.
+    Max 3-4 words. No prefixes like 'feature/' or 'fix/'.
+    Examples: fix-auth-timeout, add-user-settings, refactor-api-client

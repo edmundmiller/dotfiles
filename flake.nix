@@ -54,6 +54,8 @@
     nix-clawdbot.url = "github:clawdbot/nix-clawdbot";
     nix-clawdbot.inputs.nixpkgs.follows = "nixpkgs";
 
+    workmux.url = "github:raine/workmux";
+
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
   };

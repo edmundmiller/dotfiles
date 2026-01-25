@@ -26,6 +26,7 @@
         git.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        workmux.enable = true;
         wt.enable = true;
         zsh.enable = true;
       };
