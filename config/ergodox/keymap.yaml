@@ -21,7 +21,7 @@ layers:
     - [Ctrl, Alt, '', Home, End, '', '', '', '', '[', ']', '{', '}', Ctrl]
     - ['', '', '', '', '', {t: TT, h: L2}, {t: TT, h: L3}, VolUp, Mute, '', '', '', '', '']
     - ['', '', '', '', '', '', Gui, VolDn, '', '', '', '', '', '']
-    - ['', '', '', '', Space, {t: '', h: L1}, {t: Esc, h: Alt}, {t: Tab, h: Gui}, {t: Bksp, h: L1}, Enter, '', '', '', '']
+    - ['', '', '', '', Space, {t: '', h: L1}, {t: Esc, h: Alt}, RGui, {t: Bksp, h: L1}, Enter, '', '', '', '']
 
   Symbols:
     - [Esc, F1, F2, F3, F4, F5, '', '', '', F6, F7, F8, F9, F10, Bksp]
