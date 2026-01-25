@@ -117,14 +117,7 @@
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
-        # NOTE: ergodox-firmware excluded from mapModules - requires keymapSrc argument
-        packages."${darwinSystem}" =
-          builtins.removeAttrs (mapModules ./packages (p: darwinPkgs.callPackage p { })) [ "ergodox-firmware" ]
-          // {
-            ergodox-firmware = darwinPkgs.callPackage ./packages/ergodox-firmware {
-              keymapSrc = ./packages/ergodox-firmware/src;
-            };
-          };
+        packages."${darwinSystem}" = mapModules ./packages (p: darwinPkgs.callPackage p { });
 
         nixosModules = {
           dotfiles = import ./.;

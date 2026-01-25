@@ -27,8 +27,8 @@ results/
 .bv/
 
 # Ergodox firmware build artifacts (built on-demand with nix)
-config/ergodox/firmware/**/*.hex
-config/ergodox/firmware/**/*.md5
+config/ergodox/*.hex
+config/ergodox/*.md5
 
 # QMK firmware (if cloned manually)
 qmk_firmware/
