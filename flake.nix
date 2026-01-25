@@ -121,8 +121,8 @@
         packages."${darwinSystem}" =
           builtins.removeAttrs (mapModules ./packages (p: darwinPkgs.callPackage p { })) [ "ergodox-firmware" ]
           // {
-            ergodox-firmware = darwinPkgs.callPackage ./packages/ergodox-firmware.nix {
-              keymapSrc = ./config/ergodox/firmware/ergo-drifter/zsa_ergodox_ez_m32u4_base_ergo-drifter-fork-fork_source;
+            ergodox-firmware = darwinPkgs.callPackage ./packages/ergodox-firmware {
+              keymapSrc = ./packages/ergodox-firmware/src;
             };
           };
 
