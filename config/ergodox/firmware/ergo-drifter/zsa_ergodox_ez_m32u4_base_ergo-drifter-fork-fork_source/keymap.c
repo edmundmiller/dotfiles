@@ -20,7 +20,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_LEFT_CTRL,   KC_LEFT_ALT,    KC_TRANSPARENT, KC_HOME,        KC_END,                                                                                                         KC_LBRC,        KC_RBRC,        KC_LCBR,        KC_RCBR,        KC_RIGHT_CTRL,
                                                                                                     TT(2),          TT(3),          KC_AUDIO_VOL_UP,KC_AUDIO_MUTE,
                                                                                                                     KC_LEFT_GUI,    KC_AUDIO_VOL_DOWN,
-                                                                                    KC_SPACE,       MO(1),          MT(MOD_LALT, KC_ESCAPE),MT(MOD_RGUI, KC_TAB),LT(1, KC_BSPC), KC_ENTER
+                                                                                    KC_SPACE,       MO(1),          MT(MOD_LALT, KC_ESCAPE),KC_RIGHT_GUI,   LT(1, KC_BSPC), KC_ENTER
   ),
   [1] = LAYOUT_ergodox_pretty(
     KC_ESCAPE,      KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,          KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_BSPC,
