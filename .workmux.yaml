@@ -1,0 +1,12 @@
+# Dotfiles uses __worktrees pattern (not bare repo layout)
+# This repo should NEVER be converted to bare
+worktree_dir: "../dotfiles__worktrees/{{ branch | sanitize }}/"
+
+# Inherit from global
+main_branch: "<global>"
+agent: "<global>"
+merge_strategy: "<global>"
+
+# Dotfiles-specific: direnv integration
+post_create:
+  - direnv allow

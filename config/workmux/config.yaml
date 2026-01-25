@@ -1,6 +1,9 @@
 # Global workmux configuration
 # https://workmux.raine.dev/guide/configuration
 
+# Bare repo layout by default (worktrees as siblings to main)
+worktree_dir: "{{ branch | sanitize }}/"
+
 # Default branch for merge targets
 main_branch: main
 
