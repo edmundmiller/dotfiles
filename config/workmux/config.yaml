@@ -29,8 +29,8 @@ auto_name:
 
 # Pane layout: opencode left, nvim + shell stacked on right
 panes:
-  - command: <agent>      # opencode agent (left side)
+  - command: <agent>      # opencode agent (takes full window first)
     focus: true
-  - split: vertical       # Right column
+  - split: horizontal     # Split left/right (opencode left, nvim right)
     command: nvim
-  - split: horizontal     # Split right into nvim (top) + shell (bottom)
+  - split: vertical       # Split right pane top/bottom (nvim top, shell bottom)
