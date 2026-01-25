@@ -1,13 +1,14 @@
 # ErgoDox keyboard firmware commands
 #
 # Uses pure nix build - no ~/qmk_firmware required.
-# Firmware source: config/ergodox/firmware/ergo-drifter/
+# Keymap source: packages/ergodox-firmware/src/
 
 import 'common.just'
 
 # Firmware paths
-ergodox_firmware := FLAKE_DIR / "config/ergodox/firmware/ergo-drifter"
-ergodox_source := ergodox_firmware / "zsa_ergodox_ez_m32u4_base_ergo-drifter-fork-fork_source"
+ergodox_package := FLAKE_DIR / "packages/ergodox-firmware"
+ergodox_source := ergodox_package / "src"
+ergodox_output := FLAKE_DIR / "config/ergodox"
 
 # Build ErgoDox firmware using pure nix (no ~/qmk_firmware needed)
 ergodox-build:
@@ -21,14 +22,14 @@ ergodox-build:
     cd "{{FLAKE_DIR}}"
     nix build .#ergodox-firmware --print-build-logs
     
-    # Copy to firmware directory for easy access
-    cp -f result/*.hex "{{ergodox_firmware}}/"
-    cp -f result/*.md5 "{{ergodox_firmware}}/"
+    # Copy to output directory for easy access
+    cp -f result/*.hex "{{ergodox_output}}/"
+    cp -f result/*.md5 "{{ergodox_output}}/"
     
     hex=$(ls result/*.hex | head -1)
     echo ""
     echo "Build complete!"
-    echo "Firmware: {{ergodox_firmware}}/$(basename $hex)"
+    echo "Firmware: {{ergodox_output}}/$(basename $hex)"
     echo ""
     echo "Flash with: hey ergodox-flash"
 
@@ -42,7 +43,7 @@ ergodox-flash hex="":
         HEX="{{hex}}"
     else
         # Look for built firmware
-        HEX="{{ergodox_firmware}}/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex"
+        HEX="{{ergodox_output}}/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex"
     fi
     
     if [[ ! -f "$HEX" ]]; then
@@ -120,7 +121,7 @@ ergodox-info:
     echo "  {{ergodox_source}}/"
     echo ""
     echo "Built firmware:"
-    echo "  {{ergodox_firmware}}/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex"
+    echo "  {{ergodox_output}}/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex"
     echo ""
     echo "Commands:"
     echo "  hey ergodox-build       Build firmware with nix"

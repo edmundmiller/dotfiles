@@ -1,6 +1,6 @@
 # ErgoDox Configuration
 
-Personal keymap configuration for ErgoDox EZ keyboard.
+Documentation and visualization for ErgoDox EZ keyboard.
 
 ## Directory Structure
 
@@ -10,23 +10,25 @@ config/ergodox/
 ├── README.md              # Human documentation (comprehensive guide)
 ├── keymap.yaml            # Layout metadata for keymap-drawer
 ├── layout.svg             # Generated visualization
-└── firmware/ergo-drifter/
-    ├── *.hex              # Build artifacts (gitignored)
-    └── zsa_..._source/    # QMK keymap source files
-        ├── keymap.c       # THE KEYMAP (edit this)
-        ├── config.h       # DEBOUNCE, TAPPING_TERM settings
-        ├── rules.mk       # QMK build rules
-        └── keymap.json    # Oryx export format
+└── *.hex                  # Build artifacts (gitignored)
+
+packages/ergodox-firmware/
+├── default.nix            # Build derivation (AVR cross-compile)
+├── README.md              # Package documentation
+└── src/
+    ├── keymap.c           # THE KEYMAP (edit this)
+    ├── config.h           # DEBOUNCE, TAPPING_TERM settings
+    ├── rules.mk           # QMK build rules
+    └── keymap.json        # Oryx export format
 ```
 
 ## Related Files
 
 | File | Purpose |
 |------|---------|
-| `packages/ergodox-firmware.nix` | Build derivation (AVR cross-compile) |
+| `packages/ergodox-firmware/` | Keymap source + build derivation |
 | `modules/hardware/ergodox.nix` | Nix module (installs QMK tools) |
 | `bin/hey.d/ergodox.just` | Workflow commands |
-| `flake.nix` | Package instantiation |
 
 ## Key Facts
 
@@ -49,15 +51,15 @@ hey ergodox-info        # Show paths and settings
 
 ## Common Edits
 
-**Keymap changes**: Edit `firmware/.../keymap.c`
+**Keymap changes**: Edit `packages/ergodox-firmware/src/keymap.c`
 - Keycodes: `KC_A`, `KC_ENTER`, `KC_LGUI`, etc.
 - Mod-tap: `MT(MOD_LCTL, KC_ESC)` = Ctrl on hold, Esc on tap
 - Layer-tap: `LT(1, KC_SPACE)` = Layer 1 on hold, Space on tap
 
-**Timing issues**: Edit `firmware/.../config.h`
+**Timing issues**: Edit `packages/ergodox-firmware/src/config.h`
 - `DEBOUNCE 5` - Key debounce (ms), raise if chattering
 - `TAPPING_TERM 140` - Mod-tap timing (ms)
 
 ## Updating ZSA QMK Version
 
-See `packages/ergodox-firmware.nix` header for instructions.
+See `packages/ergodox-firmware/default.nix` header for instructions.
