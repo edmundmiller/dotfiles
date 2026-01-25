@@ -13,6 +13,11 @@ in
 {
   options.modules.hardware.ergodox = {
     enable = mkBoolOpt false;
+    firmware = mkOption {
+      type = types.package;
+      default = pkgs.ergodox-firmware;
+      description = "ErgoDox firmware package (from flake packages)";
+    };
   };
 
   config = mkIf cfg.enable {

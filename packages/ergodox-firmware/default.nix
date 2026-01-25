@@ -1,12 +1,9 @@
-# ErgoDox EZ firmware builder
+# ErgoDox EZ firmware builder (ergo-drifter layout)
 #
-# Builds QMK firmware for ErgoDox EZ using ZSA's firmware25 branch.
+# Builds QMK firmware using ZSA's firmware25 branch.
 # Cross-compiles with AVR toolchain on Darwin.
 #
-# Usage in flake.nix:
-#   ergodox-firmware = pkgs.callPackage ./packages/ergodox-firmware.nix {
-#     keymapSrc = ./config/ergodox/firmware/ergo-drifter/zsa_..._source;
-#   };
+# Keymap source files are in ./src/
 #
 # To update ZSA QMK firmware:
 #   1. Get new SHA: git ls-remote https://github.com/zsa/qmk_firmware.git firmware25
@@ -17,20 +14,12 @@
 {
   lib,
   stdenv,
-  runCommand,
   fetchFromGitHub,
   pkgsCross,
   gnumake,
   python3,
   git,
   qmk,
-  # Keymap source - override in flake.nix callPackage
-  # Default is a dummy that fails at build time (not evaluation time)
-  keymapSrc ? runCommand "ergodox-keymapSrc-missing" { } ''
-    echo "ERROR: ergodox-firmware requires keymapSrc argument"
-    echo "Usage: callPackage ./packages/ergodox-firmware.nix { keymapSrc = ./path/to/source; }"
-    exit 1
-  '',
   # ZSA QMK firmware version - update these when upgrading
   zsaRev ? "a07f8e6c7d62b814c495dfd16694a389a3855e08", # firmware25 branch
   zsaHash ? "sha256-6vU7nt6bYcdx958bgcb6gEiCHmn4Cv0OAPAnvt9yhWI=",
@@ -38,6 +27,8 @@
 
 let
   avrPkgs = pkgsCross.avr;
+  # Keymap source - relative to this file
+  keymapSrc = ./src;
   zsaQmkFirmware = fetchFromGitHub {
     owner = "zsa";
     repo = "qmk_firmware";
