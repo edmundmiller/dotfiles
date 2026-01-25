@@ -14,8 +14,8 @@
     },
     // Protect from pruning for <turns> message turns
     "turnProtection": {
-        "enabled": false,
-        "turns": 4
+        "enabled": true,
+        "turns": 2
     },
     // Protect file operations from pruning via glob patterns
     // Patterns match tool parameters.filePath (e.g. read/write/edit)
@@ -40,7 +40,7 @@
         "extract": {
             "enabled": true,
             // Show distillation content as an ignored message notification
-            "showDistillation": false
+            "showDistillation": true
         }
     },
     // Automatic pruning strategies
@@ -53,7 +53,7 @@
         },
         // Prune write tool inputs when the file has been subsequently read
         "supersedeWrites": {
-            "enabled": false
+            "enabled": true
         },
         // Prune tool inputs for errored tools after X turns
         "purgeErrors": {
