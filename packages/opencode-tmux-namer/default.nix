@@ -15,10 +15,12 @@ stdenv.mkDerivation {
   buildPhase = ''
     runHook preBuild
 
-    # Install dependencies and build
     export HOME=$(mktemp -d)
     bun install --frozen-lockfile
-    bun run build
+    
+    # Use bun's native transpiler (no node/tsc needed)
+    mkdir -p dist
+    bun build src/index.ts --outdir dist --target node
 
     runHook postBuild
   '';
