@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "AI-powered dynamic tmux window naming for OpenCode",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
     "build": "tsc",
