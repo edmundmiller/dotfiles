@@ -13,11 +13,12 @@ agent: opencode
 # Merge strategy: merge, rebase, or squash
 merge_strategy: rebase
 
-# Status icons in tmux window names
+# Status icons in tmux window names (matches opencode-tmux-namer)
+# opencode-tmux-namer handles status display, so workmux defers to it
 status_icons:
-  working: "🤖"
-  waiting: "💬"
-  done: "✅"
+  working: "●"
+  waiting: "■"
+  done: "□"
 
 # Enable nerdfont icons
 nerdfont: true
@@ -29,6 +30,11 @@ auto_name:
     Generate a concise kebab-case branch name from the task description.
     Max 3-4 words. No prefixes like 'feature/' or 'fix/'.
     Examples: fix-auth-timeout, add-user-settings, refactor-api-client
+
+# Symlink to avoid reinstalling deps in each worktree
+files:
+  symlink:
+    - node_modules
 
 # Pane layout: opencode left, nvim + shell stacked on right
 panes:
