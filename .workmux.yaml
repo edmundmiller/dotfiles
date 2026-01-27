@@ -2,10 +2,10 @@
 # This repo should NEVER be converted to bare
 worktree_dir: "../dotfiles__worktrees/{{ branch | sanitize }}/"
 
-# Inherit from global
+# Inherit from global where possible, explicit where required
 main_branch: "<global>"
 agent: "<global>"
-merge_strategy: "<global>"
+merge_strategy: rebase
 
 # Dotfiles-specific: direnv integration
 post_create:
