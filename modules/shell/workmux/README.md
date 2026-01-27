@@ -56,12 +56,12 @@ Global config at `~/.config/workmux/config.yaml`:
 
 ```yaml
 main_branch: main
-agent: claude
+agent: opencode
 merge_strategy: rebase
 status_icons:
-  working: "🤖"
-  waiting: "💬"
-  done: "✅"
+  working: "●"
+  waiting: "■"
+  done: "□"
 nerdfont: true
 
 auto_name:
@@ -69,6 +69,8 @@ auto_name:
   system_prompt: |
     Generate concise kebab-case branch name...
 ```
+
+**Note:** Status icons match `opencode-tmux-namer` for consistency. The plugin handles status display natively via OpenCode events.
 
 ### Project Config
 
@@ -154,3 +156,4 @@ Check that `claude` (or configured agent) is available in PATH.
 
 - [Workmux Documentation](https://workmux.raine.dev)
 - [Git Worktree Caveats](https://workmux.raine.dev/guide/git-worktree-caveats)
+- `packages/opencode-tmux-namer` - Native status tracking (handles tmux naming)

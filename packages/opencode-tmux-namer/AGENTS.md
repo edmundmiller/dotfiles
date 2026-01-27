@@ -74,10 +74,12 @@ bun install && bun run build
 ## Environment Variables
 
 ```bash
-OPENCODE_TMUX_DEBUG=1           # Enable debug logging
-OPENCODE_TMUX_COOLDOWN_MS=300000 # 5min between renames
-OPENCODE_TMUX_DEBOUNCE_MS=5000   # 5s debounce
-OPENCODE_TMUX_SHOW_STATUS=1      # Include status icons
+OPENCODE_TMUX_DEBUG=1              # Enable debug logging
+OPENCODE_TMUX_COOLDOWN_MS=300000   # 5min between renames
+OPENCODE_TMUX_DEBOUNCE_MS=5000     # 5s debounce
+OPENCODE_TMUX_SHOW_STATUS=1        # Include status icons
+OPENCODE_TMUX_WORKMUX_AWARE=1      # Detect workmux worktrees
+OPENCODE_TMUX_WORKMUX_FORMAT=both  # branch|project|both
 ```
 
 ## Relation to tmux-opencode-integrated
@@ -96,12 +98,19 @@ Use both:
 | `TmuxNamer` | Main plugin factory, exported as default |
 | `loadConfig()` | Load env vars into PluginConfig |
 | `findTmux()` | Locate tmux binary |
+| `getWorkmuxContext()` | Detect workmux worktree, extract branch/project |
 | `getProjectName()` | Extract project name from pkg.json/git/dir |
 | `inferIntent()` | Pattern match signals → intent (feat/fix/debug/etc) |
 | `inferTag()` | Pattern match signals → tag (auth/api/db/etc) |
-| `buildName()` | Construct `[icon] project-intent-tag` string |
+| `buildName()` | Construct name string (workmux-aware) |
 | `renameWindow()` | Call `tmux rename-window` |
 | `mapSessionStatus()` | Map OpenCode status strings → Status enum |
+
+## Workmux Integration
+
+Detects workmux worktrees via `git rev-parse --git-dir` checking for `/worktrees/` path.
+When detected, naming switches to branch-focused format matching workmux conventions.
+Workmux config uses same icons for consistency.
 
 ## Adding New Intents/Tags
 

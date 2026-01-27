@@ -26,6 +26,12 @@ const STATUS_ICONS: Record<Status, string> = {
   unknown: "◇",
 };
 
+interface WorkmuxContext {
+  branch: string;
+  projectRoot: string;
+  isWorktree: boolean;
+}
+
 interface PluginConfig {
   cooldownMs: number;
   debounceMs: number;
@@ -33,6 +39,8 @@ interface PluginConfig {
   debug: boolean;
   useAgentsMd: boolean;
   showStatus: boolean;
+  workmuxAware: boolean;
+  workmuxFormat: "project" | "branch" | "both";
 }
 
 interface State {
@@ -61,6 +69,8 @@ function loadConfig(): PluginConfig {
     debug: env.OPENCODE_TMUX_DEBUG === "1",
     useAgentsMd: env.OPENCODE_TMUX_USE_AGENTS_MD !== "0",
     showStatus: env.OPENCODE_TMUX_SHOW_STATUS !== "0",
+    workmuxAware: env.OPENCODE_TMUX_WORKMUX_AWARE !== "0",
+    workmuxFormat: (env.OPENCODE_TMUX_WORKMUX_FORMAT as "project" | "branch" | "both") || "both",
   };
 }
 
@@ -112,6 +122,62 @@ function sanitize(input: string, maxLen = 20): string {
     .replace(/^-/, "")
     .replace(/-$/, "")
     .slice(0, maxLen);
+}
+
+/**
+ * Detect if we're in a workmux-managed worktree.
+ * Workmux uses bare repo layout with worktrees as siblings.
+ * Pattern: project/.git (bare) + project/branch-name/ (worktrees)
+ */
+function getWorkmuxContext(
+  cwd: string,
+  log: ReturnType<typeof createLogger>
+): WorkmuxContext | null {
+  try {
+    // Check if we're in a git worktree
+    const gitDir = execFileSync("git", ["rev-parse", "--git-dir"], {
+      cwd,
+      encoding: "utf8",
+      timeout: 2000,
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+
+    // Worktrees have .git files pointing to .git/worktrees/<name>
+    // or gitdir paths containing /worktrees/
+    if (!gitDir.includes("/worktrees/") && !gitDir.includes(".git/worktrees")) {
+      log.debug("Not a worktree");
+      return null;
+    }
+
+    // Get the branch name
+    const branch = execFileSync("git", ["branch", "--show-current"], {
+      cwd,
+      encoding: "utf8",
+      timeout: 2000,
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+
+    if (!branch) {
+      log.debug("No current branch (detached HEAD?)");
+      return null;
+    }
+
+    // Extract project root from gitDir path
+    // gitDir format: /path/to/mainrepo/.git/worktrees/worktree-name
+    // We want: /path/to/mainrepo
+    const gitDirMatch = gitDir.match(/^(.+)\/\.git\/worktrees\//);
+    if (!gitDirMatch) {
+      log.debug("Could not parse gitDir for project root");
+      return null;
+    }
+    const projectRoot = gitDirMatch[1];
+
+    log.debug(`Workmux detected: branch=${branch}, root=${projectRoot}`);
+    return { branch, projectRoot, isWorktree: true };
+  } catch (e) {
+    log.debug(`Workmux detection failed: ${e instanceof Error ? e.message : "unknown"}`);
+    return null;
+  }
 }
 
 function getProjectName(cwd: string, log: ReturnType<typeof createLogger>): string {
@@ -190,9 +256,35 @@ function buildName(
   intent: Intent,
   tag: string | null,
   status: Status,
-  showStatus: boolean
+  showStatus: boolean,
+  workmux: WorkmuxContext | null,
+  workmuxFormat: "project" | "branch" | "both"
 ): string {
   const statusIcon = showStatus ? `${STATUS_ICONS[status]} ` : "";
+
+  // When in workmux worktree, use branch-focused naming
+  if (workmux) {
+    const branch = sanitize(workmux.branch, 25);
+    const proj = sanitize(basename(workmux.projectRoot), 15);
+
+    switch (workmuxFormat) {
+      case "branch":
+        // Just branch: "● fix-auth"
+        return `${statusIcon}${branch}`;
+      case "project":
+        // Just project with intent: "● myproject-feat"
+        return `${statusIcon}${proj}-${intent}`;
+      case "both":
+      default:
+        // Branch with project context: "● fix-auth (proj)"
+        if (branch.length + proj.length + 4 <= 35) {
+          return `${statusIcon}${branch} (${proj})`;
+        }
+        return `${statusIcon}${branch}`;
+    }
+  }
+
+  // Standard naming: project-intent[-tag]
   const base = `${statusIcon}${project}-${intent}`;
   if (tag && base.length + tag.length + 1 <= 40) {
     return `${base}-${tag}`;
@@ -296,6 +388,12 @@ export const TmuxNamer: Plugin = async ({ directory }) => {
   const tmux = findTmux(log);
   let agentsMdGuidance: string | null = null;
 
+  // Detect workmux context once at startup
+  const workmuxContext = config.workmuxAware ? getWorkmuxContext(directory, log) : null;
+  if (workmuxContext) {
+    log.info(`Workmux detected: branch=${workmuxContext.branch}`);
+  }
+
   if (config.useAgentsMd) {
     agentsMdGuidance = loadAgentsMdGuidance(directory, log);
     if (agentsMdGuidance) {
@@ -328,7 +426,15 @@ export const TmuxNamer: Plugin = async ({ directory }) => {
     const intent = inferIntent(signalText);
     const tag = inferTag(signalText);
 
-    const name = buildName(project, intent, tag, state.status, config.showStatus);
+    const name = buildName(
+      project,
+      intent,
+      tag,
+      state.status,
+      config.showStatus,
+      workmuxContext,
+      config.workmuxFormat
+    );
 
     if (name === state.currentName) {
       log.debug("Skipped: name unchanged");
@@ -351,7 +457,15 @@ export const TmuxNamer: Plugin = async ({ directory }) => {
     const intent = inferIntent(signalText);
     const tag = inferTag(signalText);
 
-    const newName = buildName(project, intent, tag, state.status, config.showStatus);
+    const newName = buildName(
+      project,
+      intent,
+      tag,
+      state.status,
+      config.showStatus,
+      workmuxContext,
+      config.workmuxFormat
+    );
     if (newName !== state.currentName) {
       if (renameWindow(newName, tmux, log)) {
         state.currentName = newName;
