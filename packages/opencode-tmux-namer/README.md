@@ -46,6 +46,8 @@ All configuration is via environment variables:
 | `OPENCODE_TMUX_MAX_SIGNALS` | `25` | Max activity signals to retain |
 | `OPENCODE_TMUX_USE_AGENTS_MD` | `1` | Set to `0` to disable AGENTS.md reading |
 | `OPENCODE_TMUX_SHOW_STATUS` | `1` | Set to `0` to disable status icons |
+| `OPENCODE_TMUX_WORKMUX_AWARE` | `1` | Set to `0` to disable workmux detection |
+| `OPENCODE_TMUX_WORKMUX_FORMAT` | `both` | `branch`, `project`, or `both` |
 
 ## Status Icons
 
@@ -85,6 +87,18 @@ The plugin listens to these OpenCode events:
 - `command.executed` — When you run commands
 - `todo.updated` — When todos change
 - `permission.updated` — When permission prompts appear
+
+## Workmux Integration
+
+When running inside a [workmux](https://workmux.raine.dev)-managed worktree, the plugin automatically detects this and adjusts naming:
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| `both` (default) | `fix-auth (proj)` | Branch name with project context |
+| `branch` | `fix-auth` | Just the branch name |
+| `project` | `proj-feat` | Standard project-intent naming |
+
+Detection works by checking if you're in a git worktree (bare repo layout). The workmux config uses matching status icons for consistency.
 
 ## Integration with tmux-opencode-integrated
 
