@@ -401,8 +401,9 @@ nix flake check
 1. **Aliases** are defined in `config/<tool>/aliases.zsh`
 2. **Environment variables** in `config/<tool>/env.zsh`
 3. **Git configuration** uses includes for work/personal profiles
-4. **Task management** uses Taskwarrior with Obsidian sync
-5. **Shell** is zsh with extensive customization in `config/zsh/`
+4. **Git rebase continue**: Use `GIT_EDITOR=true git rebase --continue` (bare command blocked - opens interactive editor)
+5. **Task management** uses Taskwarrior with Obsidian sync
+6. **Shell** is zsh with extensive customization in `config/zsh/`
 
 ## Debugging
 
