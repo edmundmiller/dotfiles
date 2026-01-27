@@ -20,4 +20,6 @@ in
   "wakatime-api-key.age".publicKeys = [ mactraitor seqeratop ];
 
   "clawdbot-bridge-token.age".publicKeys = [ mactraitor nuc ];
+
+  "anthropic-api-key.age".publicKeys = [ mactraitor seqeratop nuc ];
 }

@@ -34,6 +34,7 @@
       services = {
         clawdbot = {
           enable = true;
+          anthropic.apiKeyFile = config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path;
           plugins = {
             camsnap = true;
             sonoscli = true;
@@ -42,8 +43,8 @@
             gateway = {
               mode = "remote";
               remote = {
+                transport = "direct";  # Direct WebSocket, no SSH tunnel
                 url = "ws://nuc.cinnamon-rooster.ts.net:18789";
-                token = "\${CLAWDBOT_GATEWAY_TOKEN}";
               };
             };
           };
@@ -59,16 +60,40 @@
 
     home-manager.users.${config.user.name} = {
       programs.clawdbot.instances.default.launchd.enable = false;
-      home.activation.clawdbotEnv =
+      home.activation.clawdbotConfig =
         inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
+          config_file="${config.user.home}/.clawdbot/clawdbot.json"
+          
+          # Get gateway token
+          gateway_token=""
           ${lib.optionalString (config.home-manager.users.${config.user.name}.age.secrets ? "clawdbot-bridge-token") ''
             if [ -f ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path} ]; then
-              token="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path})"
-              printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
-              ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
+              gateway_token="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path})"
             fi
           ''}
+          
+          # Get Anthropic API key
+          anthropic_key=""
+          ${lib.optionalString (config.home-manager.users.${config.user.name}.age.secrets ? "anthropic-api-key") ''
+            if [ -f ${config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path} ]; then
+              anthropic_key="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path})"
+            fi
+          ''}
+          
+          if [ -f "$config_file" ]; then
+            # Set gateway token, transport, provider, and remove sshTarget
+            ${pkgs.jq}/bin/jq \
+              --arg gateway_token "$gateway_token" \
+              --arg anthropic_key "$anthropic_key" \
+              '.gateway.remote.token = $gateway_token | 
+               .gateway.remote.transport = "direct" | 
+               del(.gateway.remote.sshTarget) |
+               .providers.anthropic.apiKey = $anthropic_key' \
+              "$config_file" > "$config_file.tmp"
+            ${pkgs.coreutils}/bin/mv "$config_file.tmp" "$config_file"
+            ${pkgs.coreutils}/bin/chmod 600 "$config_file"
+          fi
         '';
     };
 
