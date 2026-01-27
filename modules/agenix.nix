@@ -97,6 +97,9 @@ in
           clawdbot-bridge-token = {
             file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
           };
+          anthropic-api-key = {
+            file = "${sharedSecretsDir}/anthropic-api-key.age";
+          };
         });
       };
     };
