@@ -65,6 +65,9 @@ in
       env.NPM_CONFIG_PREFIX = "$XDG_CACHE_HOME/npm";
       env.NODE_REPL_HISTORY = "$XDG_CACHE_HOME/node/repl_history";
 
+      # Add npm global bin to PATH
+      env.PATH = [ "$XDG_CACHE_HOME/npm/bin" ];
+
       home.configFile."npm/config".text = ''
         cache=$XDG_CACHE_HOME/npm
         prefix=$XDG_DATA_HOME/npm
