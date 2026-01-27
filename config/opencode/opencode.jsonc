@@ -295,6 +295,11 @@
             "git commit * --no-verify *": "deny",
             "git commit *": "allow",
             "git add *": "allow",
+            // Git rebase - block interactive continue, allow non-interactive workaround
+            "git rebase --continue": "deny",
+            "GIT_EDITOR=true git rebase --continue": "allow",
+            "GIT_SEQUENCE_EDITOR=true git rebase --continue": "allow",
+            "git rebase *": "allow",
             "*--no-gpg-sign*": "deny",
             "*gpgsign=false*": "deny"
         },

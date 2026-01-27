@@ -152,6 +152,9 @@
             "Bash(git commit -m:*)",
             "Bash(git commit -am:*)",
             "Bash(git add:*)",
+            "Bash(GIT_EDITOR=true git rebase --continue:*)",
+            "Bash(GIT_SEQUENCE_EDITOR=true git rebase --continue:*)",
+            "Bash(git rebase:*)",
             "mcp__RepoPrompt__list_windows",
             "mcp__RepoPrompt__select_window",
             "mcp__RepoPrompt__manage_workspaces",
@@ -194,7 +197,8 @@
             "Bash(git commit * --no-gpg-sign *:*)",
             "Bash(git commit --no-verify:*)",
             "Bash(git commit * --no-verify:*)",
-            "Bash(git commit * --no-verify *:*)"
+            "Bash(git commit * --no-verify *:*)",
+            "Bash(git rebase --continue:*)"
         ]
     },
     "statusLine": {
