@@ -50,6 +50,90 @@ home-manager.users.${user}.programs.clawdbot = {
 2. **getFlake on unlocked reference**: Use `firstParty.<plugin>.enable` for built-in plugins, not `plugins = [{source = "github:..."}]`
 3. **attribute 'label' missing**: Providers go under `instances.default`, not directly under `programs.clawdbot`
 
+## Manual Config Management (Mac Client)
+
+**The Mac client config `~/.clawdbot/clawdbot.json` is manually managed** via activation script in `hosts/mactraitorpro/default.nix`, NOT by nix-clawdbot module.
+
+**Why:** nix-clawdbot auto-generates `sshTarget` when `gateway.mode = "remote"`, which forces SSH tunnel mode even with `transport: "direct"`. Clawdbot prioritizes `sshTarget` presence over `transport` setting.
+
+### Required Config Structure (Mac)
+
+```json
+{
+  "gateway": {
+    "mode": "remote",
+    "remote": {
+      "transport": "direct",
+      "url": "ws://nuc.cinnamon-rooster.ts.net:18789",
+      "token": "<from agenix>"
+    }
+  },
+  "providers": {
+    "anthropic": { "apiKey": "<from agenix>" }
+  },
+  "plugins": { "camsnap": { "enabled": true }, "sonoscli": { "enabled": true } }
+}
+```
+
+**Critical:** NO `sshTarget` field - its presence triggers SSH tunnel mode regardless of transport setting.
+
+### CLI Commands Overwrite Config
+
+**DO NOT RUN on Mac:**
+- `clawdbot doctor`
+- `clawdbot config set ...`
+- Any CLI command that modifies config
+
+These **overwrite the entire config file**, removing tokens and adding back `sshTarget`.
+
+**Safe commands:**
+- `clawdbot gateway status` - Check connection (read-only)
+
+### Restore Config Manually
+
+If config gets reset:
+```bash
+gateway_token="$(cat ~/.local/share/agenix/clawdbot-bridge-token)"
+anthropic_key="$(cat ~/.local/share/agenix/anthropic-api-key)"
+
+cat > ~/.clawdbot/clawdbot.json << EOF
+{
+  "gateway": { "mode": "remote", "remote": {
+    "transport": "direct",
+    "url": "ws://nuc.cinnamon-rooster.ts.net:18789",
+    "token": "$gateway_token"
+  }},
+  "providers": { "anthropic": { "apiKey": "$anthropic_key" }},
+  "plugins": { "camsnap": { "enabled": true }, "sonoscli": { "enabled": true }}
+}
+EOF
+chmod 600 ~/.clawdbot/clawdbot.json
+killall Clawdbot; open -a Clawdbot
+```
+
+### Debugging Gateway Connection
+
+```bash
+clawdbot gateway status
+```
+
+Look for:
+```
+Remote (configured) ws://nuc.cinnamon-rooster.ts.net:18789
+  Connect: ok (31ms) · RPC: ok
+```
+
+Check NUC gateway logs:
+```bash
+ssh nuc "tail -20 /tmp/clawdbot/clawdbot-*.log" | jq '.'
+```
+
+### Future Improvements
+
+See beads:
+- `dotfiles-kzbo` - Research nix-clawdbot direct connection mode
+- `dotfiles-v1z6` - Investigate clawdbot sshTarget vs transport priority
+
 ## First-Party Plugins
 
 All available via `firstParty.<name>.enable`:
