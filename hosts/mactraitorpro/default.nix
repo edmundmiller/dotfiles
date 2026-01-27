@@ -81,19 +81,33 @@
             fi
           ''}
           
-          if [ -f "$config_file" ]; then
-            # Set gateway token, transport, provider, and remove sshTarget
-            ${pkgs.jq}/bin/jq \
-              --arg gateway_token "$gateway_token" \
-              --arg anthropic_key "$anthropic_key" \
-              '.gateway.remote.token = $gateway_token | 
-               .gateway.remote.transport = "direct" | 
-               del(.gateway.remote.sshTarget) |
-               .providers.anthropic.apiKey = $anthropic_key' \
-              "$config_file" > "$config_file.tmp"
-            ${pkgs.coreutils}/bin/mv "$config_file.tmp" "$config_file"
-            ${pkgs.coreutils}/bin/chmod 600 "$config_file"
-          fi
+          # Write complete config from scratch (no sshTarget!)
+          ${pkgs.coreutils}/bin/cat > "$config_file" << 'CLAWDBOT_CONFIG_EOF'
+          {
+            "gateway": {
+              "mode": "remote",
+              "remote": {
+                "transport": "direct",
+                "url": "ws://nuc.cinnamon-rooster.ts.net:18789",
+                "token": "__GATEWAY_TOKEN__"
+              }
+            },
+            "providers": {
+              "anthropic": {
+                "apiKey": "__ANTHROPIC_KEY__"
+              }
+            },
+            "plugins": {
+              "camsnap": { "enabled": true },
+              "sonoscli": { "enabled": true }
+            }
+          }
+          CLAWDBOT_CONFIG_EOF
+          
+          # Substitute tokens
+          ${pkgs.gnused}/bin/sed -i "s|__GATEWAY_TOKEN__|$gateway_token|g" "$config_file"
+          ${pkgs.gnused}/bin/sed -i "s|__ANTHROPIC_KEY__|$anthropic_key|g" "$config_file"
+          ${pkgs.coreutils}/bin/chmod 600 "$config_file"
         '';
     };
 
