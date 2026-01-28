@@ -33,7 +33,7 @@
 
       services = {
         clawdbot = {
-          enable = true;
+          enable = false;
           anthropic.apiKeyFile = config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path;
           plugins = {
             camsnap = true;
@@ -56,59 +56,6 @@
       desktop = {
         term.ghostty.enable = true;
       };
-    };
-
-    home-manager.users.${config.user.name} = {
-      programs.clawdbot.instances.default.launchd.enable = false;
-      home.activation.clawdbotConfig =
-        inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
-          config_file="${config.user.home}/.clawdbot/clawdbot.json"
-          
-          # Get gateway token
-          gateway_token=""
-          ${lib.optionalString (config.home-manager.users.${config.user.name}.age.secrets ? "clawdbot-bridge-token") ''
-            if [ -f ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path} ]; then
-              gateway_token="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.clawdbot-bridge-token.path})"
-            fi
-          ''}
-          
-          # Get Anthropic API key
-          anthropic_key=""
-          ${lib.optionalString (config.home-manager.users.${config.user.name}.age.secrets ? "anthropic-api-key") ''
-            if [ -f ${config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path} ]; then
-              anthropic_key="$(${pkgs.coreutils}/bin/cat ${config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path})"
-            fi
-          ''}
-          
-          # Write complete config from scratch (no sshTarget!)
-          ${pkgs.coreutils}/bin/cat > "$config_file" << 'CLAWDBOT_CONFIG_EOF'
-          {
-            "gateway": {
-              "mode": "remote",
-              "remote": {
-                "transport": "direct",
-                "url": "ws://nuc.cinnamon-rooster.ts.net:18789",
-                "token": "__GATEWAY_TOKEN__"
-              }
-            },
-            "providers": {
-              "anthropic": {
-                "apiKey": "__ANTHROPIC_KEY__"
-              }
-            },
-            "plugins": {
-              "camsnap": { "enabled": true },
-              "sonoscli": { "enabled": true }
-            }
-          }
-          CLAWDBOT_CONFIG_EOF
-          
-          # Substitute tokens
-          ${pkgs.gnused}/bin/sed -i "s|__GATEWAY_TOKEN__|$gateway_token|g" "$config_file"
-          ${pkgs.gnused}/bin/sed -i "s|__ANTHROPIC_KEY__|$anthropic_key|g" "$config_file"
-          ${pkgs.coreutils}/bin/chmod 600 "$config_file"
-        '';
     };
 
     # Configure nix-homebrew for proper privilege management
