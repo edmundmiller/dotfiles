@@ -1,7 +1,0 @@
-{
-  "last_failure": "2026-01-28T14:53:36.323628-06:00",
-  "failure_count": 1,
-  "backoff_until": "2026-01-28T14:54:06.323629-06:00",
-  "needs_manual_sync": false,
-  "failure_reason": "git pull failed: exit status 128\nFrom github.com:edmundmiller/dotfiles\n * branch              main       -\u003e FETCH_HEAD\nwarning: fetch updated the current branch head.\nfast-forwarding your working tree from\ncommit 14912a6230f6123f6a0ee2c71f223cd061d52a48.\nerror: Your local changes to the following files would be overwritten by merge:\n\t.beads/issues.jsonl\nPlease commit your changes or stash them before you merge.\nAborting\nfatal: Cannot fast-forward your working tree.\nAfter making sure that you saved anything precious from\n$ git diff 14912a6230f6123f6a0ee2c71f223cd061d52a48\noutput, run\n$ git reset --hard\nto recover.\n"
-}
