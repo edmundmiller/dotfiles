@@ -143,6 +143,9 @@ alias gst='git stash'
 alias gr='git reset HEAD'
 alias grv='git rev-parse'
 
+# critique - TUI diff viewer (requires bun)
+alias critique='bunx critique'
+
 # gh cli
 ghf() {
 	gh repo fork $1 --clone=true --remote=true
