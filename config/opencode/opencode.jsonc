@@ -12,13 +12,13 @@
     "model": "anthropic/claude-sonnet-4-5",
     "small_model": "anthropic/claude-haiku-4-5",
     // Provider configuration
-    "provider": {
-        "anthropic": {
-            "options": {
-                "apiKey": "{env:ANTHROPIC_API_KEY}"
-            }
-        }
-    },
+    // "provider": {
+    //     "anthropic": {
+    //         "options": {
+    //             "apiKey": "{env:ANTHROPIC_API_KEY}"
+    //         }
+    //     }
+    // },
     // Autoupdate - notify but don't auto-update
     "autoupdate": "notify",
     // Plugins
@@ -38,6 +38,7 @@
         "opencode-beads@latest",
         "@tarquinen/opencode-dcp@latest",
         "opencode-gemini-auth@latest",
+        "opencode-anthropic-auth@latest",
         // Local plugins (in ~/.config/opencode/plugin/)
         // "./plugin/boomerang-notify",
         // "./plugin/opencode-worktrunk"
