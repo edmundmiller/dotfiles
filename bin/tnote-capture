@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# tnote-capture: Interactive task capture via gum
+# Launched from tmux popup (prefix + T)
+
+set -euo pipefail
+
+# Config
+VAULT_PATH="${OBSIDIAN_VAULT:-$HOME/obsidian-vault}"
+TNOTE_CMD="${TNOTE_CMD:-tnote}"
+
+# Parse args
+QUICK_MODE=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -q|--quick) QUICK_MODE=true; shift ;;
+        *) shift ;;
+    esac
+done
+
+# Colors
+RED=196
+GREEN=82
+DIM=245
+
+# Header banner
+gum style --border rounded --padding "0 1" "New Task"
+echo
+
+# Description (required)
+gum style --foreground "$DIM" "Step 1/5"
+DESCRIPTION=$(gum input --placeholder "Task description..." --width 70 --header "Description")
+[[ -z "$DESCRIPTION" ]] && exit 0
+
+if $QUICK_MODE; then
+    # Quick mode: use defaults
+    PROJECT=""
+    CONTEXT=""
+    DUE=""
+    PRIORITY=""
+else
+    # Project (optional)
+    gum style --foreground "$DIM" "Step 2/5 (Enter to skip)"
+    PROJECT=$(gum input --placeholder "Project name..." --width 50 --header "Project (optional)")
+
+    # Context (optional)
+    gum style --foreground "$DIM" "Step 3/5 (Enter to skip)"
+    CONTEXT=$(gum input --placeholder "Context (@home, @work, @errands)..." --width 50 --header "Context (optional)")
+
+    # Due date (optional)
+    gum style --foreground "$DIM" "Step 4/5 (Enter to skip)"
+    DUE_FULL=$(gum choose --header "Due Date (optional)" --selected "(none)" \
+        "(none)" \
+        "today" \
+        "tomorrow" \
+        "+3d" \
+        "+7d" \
+        "custom...")
+    
+    if [[ "$DUE_FULL" == "custom..." ]]; then
+        DUE=$(gum input --placeholder "YYYY-MM-DD or +Nd..." --width 30 --header "Custom due date")
+    elif [[ "$DUE_FULL" == "(none)" ]]; then
+        DUE=""
+    else
+        DUE="$DUE_FULL"
+    fi
+
+    # Priority (optional)
+    gum style --foreground "$DIM" "Step 5/5"
+    PRIORITY_FULL=$(gum choose --header "Priority (optional)" --selected "(none)" \
+        "(none)" \
+        "high" \
+        "medium" \
+        "normal" \
+        "low")
+    [[ "$PRIORITY_FULL" == "(none)" ]] && PRIORITY="" || PRIORITY="$PRIORITY_FULL"
+fi
+
+# Keyboard hints before creation
+echo
+gum style --foreground "$DIM" "Enter: confirm | Esc: cancel"
+echo
+
+# Build command
+CMD=("$TNOTE_CMD" task add)
+[[ -n "$PROJECT" ]] && CMD+=(--project "$PROJECT")
+[[ -n "$CONTEXT" ]] && CMD+=(--context "$CONTEXT")
+[[ -n "$DUE" ]] && CMD+=(--due "$DUE")
+[[ -n "$PRIORITY" ]] && CMD+=(--priority "$PRIORITY")
+CMD+=("$DESCRIPTION")
+
+# Confirmation summary
+SUMMARY="Description: $DESCRIPTION"
+[[ -n "$PROJECT" ]] && SUMMARY+=$'\n'"Project: $PROJECT"
+[[ -n "$CONTEXT" ]] && SUMMARY+=$'\n'"Context: $CONTEXT"
+[[ -n "$DUE" ]] && SUMMARY+=$'\n'"Due: $DUE"
+[[ -n "$PRIORITY" ]] && SUMMARY+=$'\n'"Priority: $PRIORITY"
+
+gum style --border rounded --padding "0 1" --border-foreground "$DIM" "$SUMMARY"
+echo
+
+if ! gum confirm "Create this task?"; then
+    gum style --foreground "$DIM" "Cancelled"
+    sleep 1
+    exit 0
+fi
+
+# Create task with spinner (run from vault directory)
+if OUTPUT=$(cd "$VAULT_PATH" && gum spin --spinner dot --title "Creating task..." -- "${CMD[@]}" 2>&1); then
+    gum style --foreground "$GREEN" --bold "Task created!"
+    # Show output if any useful info
+    if [[ -n "$OUTPUT" ]]; then
+        echo "$OUTPUT" | head -3
+    fi
+    sleep 1
+else
+    gum style --foreground "$RED" --bold "Error creating task:"
+    echo "$OUTPUT"
+    read -n 1 -s -r -p "Press any key to close..."
+    exit 1
+fi
