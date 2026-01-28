@@ -23,6 +23,7 @@ in
       (mkIf config.modules.shell.gnupg.enable git-crypt)
       git-lfs
       pre-commit
+      my.git-hunks
     ];
 
     # Use home-manager's xdg.configFile directly for proper activation
