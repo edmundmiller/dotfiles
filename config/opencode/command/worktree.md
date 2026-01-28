@@ -17,8 +17,9 @@ For this task:
    - Any constraints or requirements
    - Reference to key files using @file syntax
 
-3. Run: `workmux add <branch> -b -P /tmp/workmux-<branch>.md`
+3. Run: `wms <branch>` to create a new tmux session with the worktree
+   - Or with prompt file: create worktree first with `workmux add <branch> -b`, then `wms <branch>`
 
 4. Confirm the worktree was created and agent started
 
-The agent runs in the background. Monitor via `workmux dashboard` or check tmux windows.
+The agent runs in a separate tmux session. Monitor via `wmsl` (list sessions) or `tmux switch-client -t <branch>`.

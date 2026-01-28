@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# wms - workmux with sessions (not windows)
+# Workaround for https://github.com/raine/workmux/issues/42
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: wms <branch> [workmux add options]"
+  echo ""
+  echo "Creates a new tmux session per worktree (instead of windows)"
+  echo ""
+  echo "Options passed to 'workmux add' (e.g., -A for auto-name, -P for prompt file)"
+  exit 1
+}
+
+if [[ $# -lt 1 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+  usage
+fi
+
+branch="$1"
+shift
+
+# Create worktree without switching (-b = background)
+workmux add -b "$branch" "$@" || exit 1
+
+# Get the worktree path
+wt_path=$(workmux path "$branch" 2>/dev/null)
+if [[ -z "$wt_path" ]]; then
+  echo "Failed to get worktree path for $branch" >&2
+  exit 1
+fi
+
+# Create a new tmux session with the branch name
+session_name="${branch//\//-}"  # Replace / with - for tmux
+
+if tmux has-session -t "$session_name" 2>/dev/null; then
+  echo "Session '$session_name' already exists, switching to it"
+  tmux switch-client -t "$session_name"
+else
+  # Create new session, detached first
+  tmux new-session -d -s "$session_name" -c "$wt_path"
+  # Run the pane layout setup (from workmux config)
+  tmux send-keys -t "$session_name" "workmux open '$branch'" Enter
+  # Switch to the new session
+  tmux switch-client -t "$session_name"
+fi
