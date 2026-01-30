@@ -5,6 +5,7 @@
 #
 # Pi is a terminal-based AI coding assistant. This module:
 # - Configures Ghostty keybindings when Ghostty is enabled
+# - Symlinks shared skills from config/agents/skills/
 #
 # Note: The shift+enter keybinding conflicts with OpenCode's binding.
 # See config/ghostty/pi-keybindings.conf for details.
@@ -30,5 +31,11 @@ in
     modules.desktop.term.ghostty.keybindingFiles = mkIf ghosttyCfg.enable [
       "${configDir}/ghostty/pi-keybindings.conf"
     ];
+
+    # Symlink shared skills to Pi's skills directory
+    # Skills are shared across all agents (Claude, OpenCode, Pi)
+    home-manager.users.${config.user.name}.home.file = {
+      ".pi/agent/skills".source = "${configDir}/agents/skills";
+    };
   };
 }
