@@ -1,14 +1,62 @@
-on: [push]
+name: CI
 
-name: Flake Check
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
-  check:
-    name: Flake Check
+  # Run flake checks on Linux (NixOS configurations)
+  check-linux:
+    name: Flake Check (Linux)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: DeterminateSystems/flake-checker-action@main
-      - run: nix flake check
+
+      - name: Run flake checks
+        run: |
+          # Check x86_64-linux specific outputs
+          nix build .#checks.x86_64-linux.treefmt --no-link
+          nix build .#checks.x86_64-linux.pre-commit --no-link
+          nix build .#checks.x86_64-linux.zunit-tests --no-link
+
+      - name: Check NixOS configurations evaluate
+        run: |
+          nix eval .#nixosConfigurations.nuc.config.system.build.toplevel --apply 'x: "OK"'
+          nix eval .#nixosConfigurations.framework.config.system.build.toplevel --apply 'x: "OK"'
+
+  # Run flake checks on macOS (Darwin configurations)
+  check-darwin:
+    name: Flake Check (Darwin)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Run flake checks
+        run: |
+          # Check aarch64-darwin specific outputs
+          nix build .#checks.aarch64-darwin.treefmt --no-link
+          nix build .#checks.aarch64-darwin.pre-commit --no-link
+          nix build .#checks.aarch64-darwin.zunit-tests --no-link
+
+      - name: Check Darwin configurations evaluate
+        run: |
+          nix eval .#darwinConfigurations.MacTraitor-Pro.system --apply 'x: "OK"'
+          nix eval .#darwinConfigurations.Seqeratop.system --apply 'x: "OK"'
+
+  # Formatting check (runs on Linux, faster)
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check formatting
+        run: nix build .#checks.x86_64-linux.treefmt --no-link
