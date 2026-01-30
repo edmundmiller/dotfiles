@@ -88,11 +88,11 @@
         };
 
       # Linux packages
-      pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-clawdbot.overlays.default ] linuxSystem;
+      pkgs = mkPkgs nixpkgs [ self.overlays.default inputs.nix-clawdbot.overlays.default ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
 
       # Darwin packages
-      darwinPkgs = mkPkgs nixpkgs [ self.overlay ] darwinSystem;
+      darwinPkgs = mkPkgs nixpkgs [ self.overlays.default ] darwinSystem;
 
       lib = nixpkgs.lib.extend (
         self: _super: {
@@ -113,16 +113,16 @@
       flake = {
         lib = lib.my;
 
-        overlay = final: _prev: {
-          unstable =
-            if final.stdenv.isDarwin then
-              mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
-            else
-              pkgs';
-          my = self.packages.${final.stdenv.hostPlatform.system} or { };
+        overlays = mapModules ./overlays import // {
+          default = final: _prev: {
+            unstable =
+              if final.stdenv.isDarwin then
+                mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
+              else
+                pkgs';
+            my = self.packages.${final.stdenv.hostPlatform.system} or { };
+          };
         };
-
-        overlays = mapModules ./overlays import;
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -296,7 +296,7 @@
             settings = {
               hooks = {
                 # Nix formatting and linting
-                nixfmt-rfc-style.enable = true;
+                nixfmt.enable = true;
                 deadnix.enable = true;
                 # statix disabled in pre-commit - too many false positives on style
                 # treefmt already runs statix for actual issues
@@ -313,7 +313,7 @@
               ${config.pre-commit.installationScript}
             '';
             buildInputs = with pkgs; [
-              nixfmt-rfc-style
+              nixfmt
               deadnix
               statix
               nodePackages.prettier
@@ -379,25 +379,22 @@
               validate-claude-plugins =
                 pkgs.runCommand "validate-claude-plugins"
                   {
-                    buildInputs = [ pkgs.python312 ];
+                    nativeBuildInputs = [
+                      pkgs.uv
+                      pkgs.python312
+                      pkgs.cacert
+                    ];
+                    # Allow network access for uvx to download claudelint
+                    __noChroot = true;
                   }
                   ''
-                    # Create a temporary directory for the check
-                    mkdir -p $out
-
-                    # Copy plugin files to temporary location
-                    cp -r ${./.} /tmp/dotfiles-check
-                    cd /tmp/dotfiles-check
-
-                    # Install uv
-                    export HOME=/tmp
-                    ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
-                    export PATH="$HOME/.cargo/bin:$PATH"
+                    export HOME=$TMPDIR
+                    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
 
                     # Run claudelint on each plugin directory
                     echo "Validating Claude Code plugins..."
 
-                    for plugin in config/claude/plugins/*/; do
+                    for plugin in ${./.}/config/claude/plugins/*/; do
                       if [ -d "$plugin" ]; then
                         echo "Checking $plugin..."
                         uvx claudelint "$plugin" || exit 1
@@ -405,6 +402,7 @@
                     done
 
                     # Create success marker
+                    mkdir -p $out
                     echo "All plugins validated successfully" > $out/result
                   '';
             };

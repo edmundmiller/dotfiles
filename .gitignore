@@ -8,6 +8,7 @@ config/jj/config.toml
 # Regenerate: bugwarrior uda > config/taskwarrior/bugwarrior-udas-<hostname>.rc
 
 # JJ workspaces and git worktrees
+.jj-workspaces/
 .workspaces/
 workspaces/
 .worktrees/
