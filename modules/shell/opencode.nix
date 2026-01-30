@@ -8,6 +8,7 @@ let
   inherit (lib) mkIf;
   inherit (lib.my) mkBoolOpt;
   cfg = config.modules.shell.opencode;
+  ghosttyCfg = config.modules.desktop.term.ghostty;
   inherit (config.dotfiles) configDir;
 in
 {
@@ -16,6 +17,10 @@ in
   };
 
   config = mkIf cfg.enable {
+    # When Ghostty is enabled, add OpenCode-specific keybindings
+    modules.desktop.term.ghostty.keybindingFiles = mkIf ghosttyCfg.enable [
+      "${configDir}/ghostty/opencode-keybindings.conf"
+    ];
     # OpenCode is installed via homebrew (not nix) for better macOS integration
     # See: brew install opencode
 
