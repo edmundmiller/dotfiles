@@ -1,5 +1,5 @@
 ---
-name: Ghostty Configuration
+name: ghostty-config
 description: Use when configuring Ghostty terminal emulator, working with ghostty config files, or looking up Ghostty settings and options.
 ---
 

@@ -1,3 +1,8 @@
+---
+name: jj-history-investigation
+description: Investigate jj commit history, split commits, annotate file changes, and clean up redundant commits. Use when debugging history, splitting large commits, or rewriting shared history.
+---
+
 # Jujutsu (jj) History Investigation and Manipulation
 
 ## Overview

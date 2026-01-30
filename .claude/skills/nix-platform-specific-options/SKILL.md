@@ -1,3 +1,8 @@
+---
+name: nix-platform-specific-options
+description: Write Nix modules with platform-specific options (NixOS vs Darwin) without infinite recursion. Use when mkIf causes evaluation errors or options don't exist across platforms.
+---
+
 # Nix Module Platform-Specific Options
 
 ## Overview

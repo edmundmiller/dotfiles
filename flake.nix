@@ -405,6 +405,44 @@
                     mkdir -p $out
                     echo "All plugins validated successfully" > $out/result
                   '';
+
+              validate-skills =
+                pkgs.runCommand "validate-skills"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.uv
+                      pkgs.python312
+                      pkgs.cacert
+                    ];
+                    # Allow network access for uvx to download skills-ref
+                    __noChroot = true;
+                  }
+                  ''
+                    export HOME=$TMPDIR
+                    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+
+                    # Validate skills in config/agents/skills/
+                    echo "Validating agent skills..."
+
+                    for skill in ${./.}/config/agents/skills/*/; do
+                      if [ -d "$skill" ] && [ -f "$skill/SKILL.md" ]; then
+                        echo "Checking $skill..."
+                        uvx --from skills-ref agentskills validate "$skill" || exit 1
+                      fi
+                    done
+
+                    # Validate skills in .claude/skills/
+                    for skill in ${./.}/.claude/skills/*/; do
+                      if [ -d "$skill" ] && [ -f "$skill/SKILL.md" ]; then
+                        echo "Checking $skill..."
+                        uvx --from skills-ref agentskills validate "$skill" || exit 1
+                      fi
+                    done
+
+                    # Create success marker
+                    mkdir -p $out
+                    echo "All skills validated successfully" > $out/result
+                  '';
             };
         };
     };

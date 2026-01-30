@@ -1,6 +1,6 @@
 ---
+name: skill-quality
 description: "Validates Claude Code skills against best practices for structure, content quality, and effectiveness. Use when creating new skills, reviewing existing skills, debugging skill invocation issues, or preparing skills for publication."
-priority: 5
 ---
 
 # Skill Quality Validation
