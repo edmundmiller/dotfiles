@@ -19,7 +19,7 @@ This configuration is shared across three agents:
 | -------- | --------------------------- | --------------------------- | --------------------------- |
 | Claude   | `~/.claude/skills/`         | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`       |
 | OpenCode | `~/.config/opencode/skill/` | `~/.config/opencode/agent/` | `~/.config/opencode/rules/` |
-| Pi       | `~/.pi/agent/skills/`       | N/A                         | N/A                         |
+| Pi       | `~/.pi/agent/skills/`       | N/A                         | `~/.pi/agent/AGENTS.md`     |
 
 ## Skills
 
@@ -61,7 +61,7 @@ Agent modes are specialized configurations for different tasks:
 
 ## Rules
 
-Rules are concatenated to build the system prompt (CLAUDE.md):
+Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGENTS.md` for Pi):
 
 1. `01-tone-and-style.md` - Communication style
 2. `02-critical-instructions.md` - Important guidelines
