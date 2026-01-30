@@ -6,7 +6,7 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 
 - **Skills**: `config/agents/skills/` → `~/.claude/skills`, `~/.config/opencode/skill`, `~/.pi/agent/skills`
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`, `~/.config/opencode/agent`
-- **Rules**: `config/agents/rules/` → Concatenated into `~/.claude/CLAUDE.md`, symlinked to `~/.config/opencode/rules`
+- **Rules**: `config/agents/rules/` → Concatenated into `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`, symlinked to `~/.config/opencode/rules`
 
 ## Key Facts
 
