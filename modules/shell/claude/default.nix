@@ -10,8 +10,8 @@ let
   cfg = config.modules.shell.claude;
   inherit (config.dotfiles) configDir;
 
-  # Dynamically concatenate all rule files from config/opencode/rules/
-  rulesDir = "${configDir}/opencode/rules";
+  # Dynamically concatenate all rule files from config/agents/rules/
+  rulesDir = "${configDir}/agents/rules";
   ruleFiles = builtins.sort builtins.lessThan (
     builtins.filter (f: lib.hasSuffix ".md" f) (builtins.attrNames (builtins.readDir rulesDir))
   );
@@ -25,10 +25,11 @@ in
 
   config = mkIf cfg.enable {
     home.file = {
-      # Skills and agents are shared with OpenCode - single source of truth
-      ".claude/agents".source = "${configDir}/opencode/agent";
-      ".claude/skills".source = "${configDir}/opencode/skill";
-      # CLAUDE.md is built dynamically from config/opencode/rules/*.md
+      # Skills and agents are shared across all agents (Claude, OpenCode, Pi)
+      # Single source of truth in config/agents/
+      ".claude/agents".source = "${configDir}/agents/modes";
+      ".claude/skills".source = "${configDir}/agents/skills";
+      # CLAUDE.md is built dynamically from config/agents/rules/*.md
       ".claude/CLAUDE.md".text = concatenatedRules;
       ".claude/settings.json".source = "${configDir}/claude/settings.json";
 

@@ -36,17 +36,18 @@ in
           "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
           "opencode/dcp.jsonc".source = "${configDir}/opencode/dcp.jsonc";
 
-          # Directories need recursive = true
+          # Skills and modes shared across all agents (Claude, OpenCode, Pi)
+          # Single source of truth in config/agents/
           "opencode/rules" = {
-            source = "${configDir}/opencode/rules";
+            source = "${configDir}/agents/rules";
             recursive = true;
           };
           "opencode/agent" = {
-            source = "${configDir}/opencode/agent";
+            source = "${configDir}/agents/modes";
             recursive = true;
           };
           "opencode/skill" = {
-            source = "${configDir}/opencode/skill";
+            source = "${configDir}/agents/skills";
             recursive = true;
           };
           "opencode/command" = {
