@@ -7,7 +7,12 @@
   "defaultThinkingLevel": "medium",
 
   // Model cycling - Ctrl+P to toggle between these
-  "enabledModels": ["claude-opus-4-5-*", "claude-sonnet-4-5-*", "claude-haiku-4-5-*", "codex-5-2*"],
+  "enabledModels": [
+    "claude-opus-4-5-*",
+    "claude-sonnet-4-5-*",
+    "claude-haiku-4-5-*",
+    "gpt-5.2-codex"
+  ],
 
   // UI preferences
   "theme": "dark",
