@@ -24,30 +24,30 @@ Then rebuild: `hey rebuild`
 
 ## Files
 
-| Source | Purpose |
-|--------|---------|
+| Source                       | Purpose                      |
+| ---------------------------- | ---------------------------- |
 | `config/workmux/config.yaml` | Global workmux configuration |
-| `config/workmux/aliases.zsh` | Shell aliases |
+| `config/workmux/aliases.zsh` | Shell aliases                |
 
 ## Aliases
 
 ### Core Commands
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `wm` | `workmux` | Base command |
-| `wml` | `workmux list` | List worktrees |
-| `wma` | `workmux add` | Create worktree |
-| `wmm` | `workmux merge` | Merge worktree |
-| `wmr` | `workmux remove` | Remove worktree |
+| Alias | Command             | Description        |
+| ----- | ------------------- | ------------------ |
+| `wm`  | `workmux`           | Base command       |
+| `wml` | `workmux list`      | List worktrees     |
+| `wma` | `workmux add`       | Create worktree    |
+| `wmm` | `workmux merge`     | Merge worktree     |
+| `wmr` | `workmux remove`    | Remove worktree    |
 | `wmd` | `workmux dashboard` | Open TUI dashboard |
 
 ### Quick Patterns
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `wma-b` | `workmux add -b` | Background (no switch) |
-| `wma-A` | `workmux add -A` | Auto-name from prompt |
+| Alias    | Command             | Description            |
+| -------- | ------------------- | ---------------------- |
+| `wma-b`  | `workmux add -b`    | Background (no switch) |
+| `wma-A`  | `workmux add -A`    | Auto-name from prompt  |
 | `wma-bA` | `workmux add -b -A` | Background + auto-name |
 
 ## Configuration
@@ -128,6 +128,7 @@ wmm  # Rebase, merge, remove worktree
 ## Tmux Integration
 
 Workmux creates:
+
 - **One session per project** (named after repo)
 - **One window per worktree** (named after branch)
 - Status icons in window names show agent state
@@ -139,6 +140,7 @@ Use sesh (C-c t) to switch between project sessions.
 ### workmux command not found
 
 Rebuild and restart shell:
+
 ```bash
 hey rebuild
 exec zsh

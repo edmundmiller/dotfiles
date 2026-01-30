@@ -52,6 +52,7 @@ AI coding assistants have increased PR volume by 8.69% and reduced time-to-PR fr
 ### The Optimal Strategy: Use Both
 
 Configure gh dash with a hotkey to open selected PRs in Neovim with Octo.nvim:
+
 ```
 tmux new-window -c {{.RepoPath}} 'nvim -c ":silent Octo pr edit {{.PrNumber}}}"'
 ```
@@ -71,6 +72,7 @@ This combines gh dash's superior triage with Octo's detailed review interface.
 ### Pre-Review Automation
 
 **AI Review Tools** (reduce review time by 40-50%):
+
 - **CodeRabbit**: $12-15/month, automated PR summaries and line-by-line AI review
 - **Qodo Merge / PR-Agent**: Open-source + enterprise ($19/user/month), CLI-friendly
 - **Graphite Agent**: RAG-based learning from past PRs
@@ -88,6 +90,7 @@ This combines gh dash's superior triage with Octo's detailed review interface.
 Break large features into chains of small, dependent PRs reviewable independently.
 
 **Graphite CLI** (`gt` command):
+
 - `gt branch create -m "Add feature"` - Create stacked branch
 - `gt commit create` - Commit changes
 - `gt stack submit` - Submit entire stack
@@ -115,26 +118,31 @@ Research shows review accuracy drops significantly beyond 200-400 lines.
 ## Tool Selection Recommendations
 
 **Terminal purists managing 10+ PRs daily**:
+
 - Install gh-dash immediately
 - Invest 2-3 hours in YAML configuration
 - Pair with Graphite for stacked PRs
 
 **Neovim power users**:
+
 - Use Octo.nvim (expect 2-4 weeks to reach full proficiency)
 - Use gh-dash in separate terminal for queue management
 - Start with minimal config, add customization gradually
 
 **Teams adopting AI coding assistants**:
+
 - Implement CodeRabbit or Qodo PR-Agent immediately
 - Configure GitHub Actions for automated pre-checks
 - Consider gitStream for workflow automation
 
 **Stacked PR workflows**:
+
 - Use Graphite (CLI + web dashboard + VS Code extension)
 - Start with 2-3 pilot developers
 - Expand team-wide if successful
 
 **Quick wins without extensive setup**:
+
 - Install GitHub CLI and create aliases
 - Add Qodo PR-Agent open-source version (30-minute setup)
 - Implement PR size guidelines (200-400 lines)
@@ -142,6 +150,7 @@ Research shows review accuracy drops significantly beyond 200-400 lines.
 ## GitHub CLI Foundation
 
 Essential commands scriptable in any terminal workflow:
+
 ```bash
 gh pr list
 gh pr view 123 --comments
@@ -151,6 +160,7 @@ gh pr diff 123
 ```
 
 Custom aliases:
+
 ```bash
 gh alias set bugs 'issue list --label="bugs"'
 ```
@@ -158,6 +168,7 @@ gh alias set bugs 'issue list --label="bugs"'
 ## Integration Patterns
 
 Typical tool combination (5-10 Git/GitHub tools):
+
 - **lazygit/gitui**: Local Git operations
 - **gh-dash**: PR discovery and queue management
 - **Octo.nvim**: Deep reviews

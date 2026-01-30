@@ -70,21 +70,24 @@ age-keygen -y < ~/.ssh/id_ed25519  # Your key fingerprint
 
 ## Common Secrets
 
-| Secret | Purpose | Hosts |
-|--------|---------|-------|
+| Secret                  | Purpose                      | Hosts                      |
+| ----------------------- | ---------------------------- | -------------------------- |
 | `taskchampion-sync.age` | TaskWarrior sync credentials | mactraitor, nuc, seqeratop |
-| `wakatime-api-key.age` | WakaTime API key | mactraitor, seqeratop |
+| `wakatime-api-key.age`  | WakaTime API key             | mactraitor, seqeratop      |
 
 ## Troubleshooting
 
 **"no identity matched any of the recipients"**
+
 - Your SSH key isn't in the secret's publicKeys list
 - Re-encrypt with your key added, or use a machine that has access
 
 **Secret not decrypted at login**
+
 - Check `age.identityPaths` includes your SSH key path
 - Verify the secret is defined in `age.secrets` for your host type (Darwin vs NixOS)
 
 **Permission denied reading secret**
+
 - Check `mode` and `owner` in secret definition
 - Default is root-owned; set `owner = config.user.name` for user access

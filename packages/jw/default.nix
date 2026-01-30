@@ -35,7 +35,12 @@ stdenvNoCC.mkDerivation {
 
     # Wrap with dependencies in PATH
     wrapProgram $out/bin/jw \
-      --prefix PATH : ${lib.makeBinPath [ jujutsu gum ]}
+      --prefix PATH : ${
+        lib.makeBinPath [
+          jujutsu
+          gum
+        ]
+      }
 
     runHook postInstall
   '';

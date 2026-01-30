@@ -124,18 +124,21 @@ modules/shell/wt/
 ```
 
 **When to use this pattern:**
+
 - Module has non-obvious setup or troubleshooting steps
 - External dependencies (homebrew, manual installation)
 - Complex configuration options worth documenting
 - Aliases or commands that benefit from a reference table
 
 **README.md should include:**
+
 - Installation/enable instructions
 - What the module provides (files, integrations)
 - Configuration options and examples
 - Troubleshooting section for common issues
 
 **AGENTS.md should include:**
+
 - Module purpose (1-2 sentences)
 - Directory/file structure
 - Key facts an AI needs to know (dependencies, gotchas)
@@ -223,11 +226,13 @@ hey nuc-rollback
 ### Available Remote Commands
 
 **Deployment:**
+
 - `hey nuc` - Full deploy (recommended)
 - `hey rebuild-nuc` - Alias for `hey nuc`
 - `hey nuc-test` - Test without adding to boot menu
 
 **Management:**
+
 - `hey nuc-ssh` - SSH into NUC
 - `hey nuc-status` - Show system status
 - `hey nuc-service <name>` - Check service (e.g., `hey nuc-service docker`)
@@ -236,11 +241,13 @@ hey nuc-rollback
 - `hey nuc-generations` - List all generations
 
 **Advanced:**
+
 - `hey nuc-local` - Build locally (slow cross-compile, testing only)
 
 ### NUC Configuration
 
 **SSH Setup** (`modules/shell/ssh.nix`):
+
 ```nix
 "nuc" = {
   hostname = "192.168.1.222";
@@ -250,6 +257,7 @@ hey nuc-rollback
 ```
 
 **Host Config** (`hosts/nuc/default.nix`):
+
 - Enable/disable modules like other hosts
 - Services: docker, taskchampion, jellyfin, etc.
 - See `hosts/nuc/DEPLOY.md` for detailed documentation
@@ -284,6 +292,7 @@ hey nuc-rollback
 ### Troubleshooting
 
 **SSH connection fails:**
+
 ```bash
 ssh nuc  # Test SSH host alias
 ssh emiller@192.168.1.222  # Test direct connection
@@ -291,12 +300,14 @@ ssh emiller@192.168.1.222  # Test direct connection
 
 **Repository not found:**
 The `hey nuc` command auto-clones on first run. If needed:
+
 ```bash
 hey nuc-ssh
 git clone https://github.com/edmundmiller/dotfiles.git ~/dotfiles-deploy
 ```
 
 **Build failures:**
+
 ```bash
 hey nuc-logs nixos-rebuild 100  # View build logs
 hey nuc-rollback                # Restore previous working state
@@ -481,6 +492,7 @@ wt select                       # Interactive worktree picker (fzf-like)
 ```
 
 **Aliases available:**
+
 - `wtl` → `wt list`
 - `wts` → `wt switch`
 - `wtm` → `wt merge`
@@ -496,6 +508,7 @@ wt select                       # Interactive worktree picker (fzf-like)
 
 **Parallel AI Agents:**
 Run multiple Claude/OpenCode sessions on different branches simultaneously:
+
 ```bash
 wt switch -c -x claude agent-1
 wt switch -c -x opencode agent-2
@@ -503,17 +516,20 @@ wt list  # Shows agent activity: 🤖 (working) or 💬 (waiting)
 ```
 
 **Activity Tracking:**
+
 - 🤖 — AI agent is working
 - 💬 — AI agent is waiting for input
 - Integrates with Claude Code plugin for automatic status updates
 
 **LLM Commit Messages:**
 Auto-generate commit messages using Claude Haiku:
+
 ```bash
 wt merge  # Generates commit message from diff, runs hooks, merges
 ```
 
 **CI Status Monitoring:**
+
 ```bash
 wt list --full
 # Shows:
@@ -525,6 +541,7 @@ wt list --full
 
 **Project Hooks:**
 Automate workflows with lifecycle hooks in `.config/wt.toml`:
+
 - `post-create` — Setup after worktree creation
 - `post-start` — Background processes (dev servers)
 - `post-switch` — Terminal title updates
@@ -535,6 +552,7 @@ Automate workflows with lifecycle hooks in `.config/wt.toml`:
 ### Configuration
 
 **User config:** `~/.config/worktrunk/config.toml` (managed via nix)
+
 ```toml
 # Bare repository layout (default)
 # Clone with: gcl <url> myproject
@@ -554,6 +572,7 @@ remove = true
 ```
 
 **Project hooks:** `.config/wt.toml` (git-tracked)
+
 ```toml
 [post-create]
 info = "echo 'Worktree created: {{ branch }}'"
@@ -570,9 +589,11 @@ notify = "terminal-notifier -title 'Merged' -message '{{ branch }} → {{ target
 **Default pattern (bare repo layout):** `../<branch-sanitized>`
 
 Example for `~/code/myproject` (cloned via `gcl`) on branch `feature/auth`:
+
 - Structure: `myproject/.git/` (bare), `myproject/main/`, `myproject/feature-auth/`
 
 **Alternative patterns:**
+
 ```toml
 # Sibling directories (legacy, used by dotfiles repo)
 worktree-path = "../{{ repo }}.{{ branch | sanitize }}"
@@ -591,15 +612,18 @@ worktree-path = "../worktrees/{{ repo }}/{{ branch | sanitize }}"
 Both `wt` and `bd worktree` manage worktrees but serve different purposes:
 
 **Use `wt` for:**
+
 - Parallel AI agent workflows
 - General feature development with CI tracking
 - Team workflows with standardized hooks
 
 **Use `bd worktree` for:**
+
 - Beads issue-specific workflows
 - Issue-driven development
 
 **Important:** When using beads in wt-managed worktrees, always use `--no-daemon`:
+
 ```bash
 cd ~/code/myproject.feature-auth
 bd --no-daemon list
@@ -611,12 +635,14 @@ See `docs/worktrunk-beads-integration.md` for detailed integration guide.
 ### Claude Code Plugin
 
 **Installation (manual):**
+
 ```bash
 claude plugin marketplace add max-sixty/worktrunk
 claude plugin install worktrunk@worktrunk
 ```
 
 **Features:**
+
 - Configuration skill (documentation Claude can read)
 - Activity tracking (🤖/💬 markers in `wt list`)
 - Automatic status updates during sessions
@@ -626,6 +652,7 @@ claude plugin install worktrunk@worktrunk
 ### Troubleshooting
 
 **wt command not found:**
+
 ```bash
 hey rebuild  # Installs via homebrew
 exec zsh     # Reload shell
@@ -633,12 +660,14 @@ exec zsh     # Reload shell
 
 **Can't change directory with `wt switch`:**
 Shell integration not loaded. Should be automatic after `hey rebuild`, but can manually run:
+
 ```bash
 eval "$(wt config shell init zsh)"
 ```
 
 **Beads commands hang in worktree:**
 Use `--no-daemon` flag:
+
 ```bash
 bd --no-daemon list
 ```
@@ -649,6 +678,7 @@ Edit `~/.config/worktrunk/config.toml` and change `worktree-path` template.
 ### Common Workflows
 
 **Parallel feature development:**
+
 ```bash
 # Clone as bare repo
 gcl https://github.com/user/myproject
@@ -669,6 +699,7 @@ wt merge  # Auto-generates commit, runs tests, merges, removes worktree
 ```
 
 **AI agent workflows:**
+
 ```bash
 # Launch Claude on new feature
 wt switch -c -x claude feature/refactor
@@ -683,6 +714,7 @@ wt list
 ```
 
 **Quick branch switching:**
+
 ```bash
 wt switch main           # Jump to main
 wt switch -              # Switch to previous worktree
@@ -690,6 +722,7 @@ wt switch feature/test   # Jump to existing worktree
 ```
 
 **Agent handoffs (background execution):**
+
 ```bash
 # Spawn Claude in background tmux session
 wtcc-bg fix-auth-bug "Fix authentication timeout issue"
@@ -707,6 +740,7 @@ tmux attach -t fix-auth-bug
 This spawns AI agents in detached tmux sessions, allowing true parallel execution. One Claude session can hand off work to another that runs independently in the background.
 
 **Stacked branches (incremental features):**
+
 ```bash
 # Create feature-part1
 wt switch -c feature-part1
@@ -719,6 +753,7 @@ wtstack feature-part2  # Builds on feature-part1
 The `.config/wt.toml` post-create hook includes `wt step copy-ignored`, which copies gitignored files (caches, build artifacts, `.env`) from the main worktree. This dramatically speeds up new worktree creation.
 
 To copy only specific patterns, create `.worktreeinclude`:
+
 ```gitignore
 # .worktreeinclude — limits what gets copied
 .env
@@ -728,6 +763,7 @@ target/
 ```
 
 **JSON output for scripting:**
+
 ```bash
 wtj  # Alias for wt list --format=json
 
@@ -742,6 +778,7 @@ wtj | jq -r '.worktrees[].branch'
 
 **Dev server per worktree** (for web projects):
 Each worktree gets a deterministic port using the `{{ branch | hash_port }}` template:
+
 ```toml
 # .config/wt.toml (web projects)
 [post-start]
@@ -753,6 +790,7 @@ url = "http://localhost:{{ branch | hash_port }}"
 
 **Bare repository layout** (now the default):
 All new repos use bare layout. Clone with `gcl`:
+
 ```bash
 gcl https://github.com/user/myproject  # Creates myproject/.git (bare)
 cd myproject
@@ -761,6 +799,7 @@ wt switch -c feature   # Creates myproject/feature/
 ```
 
 Structure:
+
 ```
 myproject/
 ├── .git/       # bare repository
@@ -780,15 +819,18 @@ myproject/
 OpenCode configuration is managed through nix-darwin with one exception:
 
 **Plugin Management:**
+
 - Plugins are NOT managed by nix (user-managed in `~/.config/opencode/plugin/`)
 - See `config/opencode/README.md` for setup instructions
 - See `config/opencode/AGENTS.md` for agent-facing documentation
 
 **Required Plugins:**
+
 - `opencode-jj` - https://github.com/edmundmiller/opencode-jj
 - `boomerang-notify` - https://github.com/edmundmiller/boomerang-notify
 
 **After `hey rebuild`:**
+
 - Symlinked config files update automatically
 - Tools get re-synced to `~/.config/opencode/tool/`
 - Plugins are untouched (manual management)

@@ -18,6 +18,7 @@ Use this skill when the user wants to add a custom plugin configuration (not fro
 Custom plugins are added as individual files in `lua/plugins/`. Each file returns a Lazy.nvim plugin specification with configuration, dependencies, keybindings, and lazy-loading options.
 
 See `.claude/CONTEXT.md` for:
+
 - Plugin file templates (standard, extended, local dev)
 - Keybinding organization and prefixes
 - Common patterns and best practices
@@ -65,9 +66,11 @@ When the user requests adding a plugin:
 **User request**: "Add vim-fugitive for advanced Git operations"
 
 **Your response**:
+
 1. Check existing Git plugins (neogit, fugit2, etc. in config)
 2. Note: "Fugitive complements your existing JJ workflow for Git operations"
 3. Create `lua/plugins/vim-fugitive.lua`:
+
    ```lua
    -- Vim Fugitive - Git integration
    -- Complements: JJ workflow, neogit for pure Git operations
@@ -92,6 +95,7 @@ When the user requests adding a plugin:
      },
    }
    ```
+
 4. Explain: "Added under `<leader>g` (Git prefix). Lazy-loads on commands or keybindings."
 5. Note: "Reload with `:Lazy reload vim-fugitive` or restart Neovim"
 
@@ -100,6 +104,7 @@ When the user requests adding a plugin:
 ### Lazy Loading Strategies
 
 Choose based on usage:
+
 - `cmd = { "CommandName" }` - Load on command execution
 - `keys = { ... }` - Load on keybinding press
 - `ft = { "filetype" }` - Load on filetype detection
@@ -108,6 +113,7 @@ Choose based on usage:
 ### Keybinding Organization
 
 Follow the Doom Emacs-style prefixes (see CONTEXT.md):
+
 - `<leader>f` - Files
 - `<leader>s` - Search
 - `<leader>b` - Buffers
@@ -119,6 +125,7 @@ Follow the Doom Emacs-style prefixes (see CONTEXT.md):
 ### Which-key Integration
 
 Register key groups for multi-key prefixes:
+
 ```lua
 dependencies = {
   "AstroNvim/astrocore",
@@ -135,6 +142,7 @@ dependencies = {
 ### Documentation Headers
 
 For complex plugins, add header:
+
 ```lua
 -- Plugin Name
 -- https://github.com/author/plugin

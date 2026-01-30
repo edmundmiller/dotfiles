@@ -6,16 +6,17 @@ Both **worktrunk** (`wt`) and **beads** (`bd worktree`) provide git worktree man
 
 ## Quick Reference
 
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `wt` | Parallel AI agent workflows | Multiple Claude/OpenCode sessions, CI-tracked features, LLM commits |
-| `bd worktree` | Beads issue-specific workflows | Working with beads issues, issue-driven development |
+| Tool          | Purpose                        | When to Use                                                         |
+| ------------- | ------------------------------ | ------------------------------------------------------------------- |
+| `wt`          | Parallel AI agent workflows    | Multiple Claude/OpenCode sessions, CI-tracked features, LLM commits |
+| `bd worktree` | Beads issue-specific workflows | Working with beads issues, issue-driven development                 |
 
 ## When to Use Each Tool
 
 ### Use `wt` (Worktrunk)
 
 **Best for:**
+
 - Running multiple AI agents (Claude, OpenCode) in parallel
 - General feature development with CI/PR tracking
 - Need LLM-generated commit messages
@@ -23,6 +24,7 @@ Both **worktrunk** (`wt`) and **beads** (`bd worktree`) provide git worktree man
 - Team workflows with project hooks
 
 **Example workflow:**
+
 ```bash
 # Start parallel AI agent work
 wt switch -c -x claude feature/api-refactor
@@ -38,12 +40,14 @@ wt merge
 ### Use `bd worktree` (Beads)
 
 **Best for:**
+
 - Working with beads issue tracker
 - Issue-specific development workflows
 - Need beads daemon integration
 - Investigative work with issue context
 
 **Example workflow:**
+
 ```bash
 # Create worktree for beads issue
 bd worktree create .worktrees/issue-123 --branch fix/issue-123
@@ -74,12 +78,14 @@ bd --no-daemon work issue-456
 Both tools can coexist with different path patterns:
 
 **Beads convention:**
+
 ```bash
 bd worktree create .worktrees/feature-name --branch feature/name
 # Creates: ~/code/myproject/.worktrees/feature-name
 ```
 
 **Worktrunk default:**
+
 ```bash
 wt switch -c feature/name
 # Creates: ~/code/myproject.feature-name (sibling directory)
@@ -90,6 +96,7 @@ wt switch -c feature/name
 ### Shared Git Directory
 
 Both tools operate on the same `.git/` directory:
+
 - ✅ Safe to use both tools in same repository
 - ✅ Beads issues tracked at repository level (not worktree-specific)
 - ✅ Worktrunk state stored in git config (shared)
@@ -148,6 +155,7 @@ bd worktree remove .worktrees/issue-789
 ## Choosing the Right Tool
 
 ### Use `wt` when you want:
+
 - ⚡️ Fast parallel workflows (`wt switch -c -x claude`)
 - 📊 CI status at a glance (`wt list --full`)
 - 🤖 LLM commit messages (`wt merge` with llm integration)
@@ -155,12 +163,14 @@ bd worktree remove .worktrees/issue-789
 - 👥 Team-wide worktree conventions
 
 ### Use `bd worktree` when you want:
+
 - 🐛 Issue-specific context from beads
 - 📋 Issue tracking integrated with worktrees
 - 🔍 Investigative work with issue details
 - 🧩 Beads-aware worktree management
 
 ### Use both when you want:
+
 - Best of both worlds: `wt` for structure, `bd` for issue context
 - Remember: Use `bd --no-daemon` in wt-managed worktrees
 
@@ -169,12 +179,14 @@ bd worktree remove .worktrees/issue-789
 ### Worktrunk Config
 
 **User config:** `~/.config/worktrunk/config.toml`
+
 ```toml
 # Sibling directories (different from beads pattern)
 worktree-path = "../{{ repo }}.{{ branch | sanitize }}"
 ```
 
 **Project config:** `.config/wt.toml`
+
 ```toml
 [post-create]
 setup = "echo 'Worktree created'"
@@ -183,6 +195,7 @@ setup = "echo 'Worktree created'"
 ### Beads Config
 
 Beads automatically detects worktrees and adjusts behavior. No special configuration needed, but remember:
+
 - Use `--no-daemon` in worktrees
 - Issues are shared across all worktrees (repository-level)
 
@@ -193,6 +206,7 @@ Beads automatically detects worktrees and adjusts behavior. No special configura
 **Problem:** Beads daemon socket conflict
 
 **Solution:** Always use `--no-daemon` flag:
+
 ```bash
 bd --no-daemon list
 bd --no-daemon work issue-123
@@ -203,6 +217,7 @@ bd --no-daemon work issue-123
 **Problem:** Worktree created with `bd worktree` or `git worktree`
 
 **Solution:** Worktrunk shows all worktrees regardless of creation method:
+
 ```bash
 wt list --branches  # Shows branches without worktrees too
 ```
@@ -212,6 +227,7 @@ wt list --branches  # Shows branches without worktrees too
 **Problem:** Prefer `.worktrees/` directory
 
 **Solution:** Change worktrunk path template:
+
 ```toml
 # In ~/.config/worktrunk/config.toml
 worktree-path = ".worktrees/{{ branch | sanitize }}"
@@ -225,6 +241,7 @@ worktree-path = ".worktrees/{{ branch | sanitize }}"
    - Avoid mixing randomly
 
 2. **Always use `--no-daemon`** with beads in worktrees:
+
    ```bash
    alias bd='bd --no-daemon'  # Consider this alias when in worktrees
    ```

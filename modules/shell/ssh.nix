@@ -1,8 +1,6 @@
 {
   config,
-  options,
   lib,
-  pkgs,
   ...
 }:
 with lib;
@@ -21,7 +19,7 @@ in
       programs.ssh = {
         enable = true;
         enableDefaultConfig = false;
-        
+
         # Host-specific configurations
         matchBlocks = {
           # Default host config (required when using extraConfig)

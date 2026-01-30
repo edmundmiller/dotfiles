@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   isDarwin,
@@ -16,11 +15,13 @@ in
   };
 
   # NixOS-only service
-  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
-    services.audiobookshelf.enable = true;
-    services.audiobookshelf.openFirewall = true;
-    services.audiobookshelf.host = "0.0.0.0";
+  config = mkIf cfg.enable (
+    optionalAttrs (!isDarwin) {
+      services.audiobookshelf.enable = true;
+      services.audiobookshelf.openFirewall = true;
+      services.audiobookshelf.host = "0.0.0.0";
 
-    user.extraGroups = [ "audiobookshelf" ];
-  });
+      user.extraGroups = [ "audiobookshelf" ];
+    }
+  );
 }

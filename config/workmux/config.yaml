@@ -38,8 +38,8 @@ files:
 
 # Pane layout: opencode left, nvim + shell stacked on right
 panes:
-  - command: <agent>      # opencode agent (takes full window first)
+  - command: <agent> # opencode agent (takes full window first)
     focus: true
-  - split: horizontal     # Split left/right (opencode left, nvim right)
+  - split: horizontal # Split left/right (opencode left, nvim right)
     command: nvim
-  - split: vertical       # Split right pane top/bottom (nvim top, shell bottom)
+  - split: vertical # Split right pane top/bottom (nvim top, shell bottom)

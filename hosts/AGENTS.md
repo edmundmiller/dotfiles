@@ -8,12 +8,13 @@ Agent-facing documentation for host configurations.
 
 Each host has a fixed username that CANNOT be changed:
 
-| Host            | Username       | Why                                      |
-| --------------- | -------------- | ---------------------------------------- |
-| mactraitorpro   | `emiller`      | Personal laptop, short username          |
-| seqeratop       | `edmundmiller` | Work laptop, corporate naming convention |
+| Host          | Username       | Why                                      |
+| ------------- | -------------- | ---------------------------------------- |
+| mactraitorpro | `emiller`      | Personal laptop, short username          |
+| seqeratop     | `edmundmiller` | Work laptop, corporate naming convention |
 
 **Never suggest unifying usernames across hosts.** The usernames are set by the machine's original setup and changing them breaks:
+
 - Home directory paths
 - File permissions
 - agenix secret decryption paths
@@ -32,16 +33,19 @@ Stale decrypted secrets can occur if the `.age` file was updated but the host ha
 ## Host Overview
 
 ### mactraitorpro (Personal Mac)
+
 - User: `emiller`
 - Primary development machine
 - Full homebrew package set
 
 ### seqeratop (Work Mac)
+
 - User: `edmundmiller`
 - Work-focused packages
 - 1Password enabled (work SSO)
 
 ### nuc (NixOS Server)
+
 - User: `emiller`
 - Remote deployment via `hey nuc`
 - Services: docker, jellyfin, home-assistant, etc.

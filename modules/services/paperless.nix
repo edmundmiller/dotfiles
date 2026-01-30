@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   isDarwin,
@@ -16,9 +15,11 @@ in
   };
 
   # NixOS-only service
-  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
-    services.paperless.enable = true;
+  config = optionalAttrs (!isDarwin) (
+    mkIf cfg.enable {
+      services.paperless.enable = true;
 
-    networking.firewall.allowedTCPPorts = [ 28981 ];
-  });
+      networking.firewall.allowedTCPPorts = [ 28981 ];
+    }
+  );
 }

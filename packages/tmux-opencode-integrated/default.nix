@@ -7,7 +7,10 @@
 
 let
   pythonEnv = python3.withPackages (ps: [ ps.libtmux ]);
-  pythonTestEnv = python3.withPackages (ps: [ ps.libtmux ps.pytest ]);
+  pythonTestEnv = python3.withPackages (ps: [
+    ps.libtmux
+    ps.pytest
+  ]);
 in
 stdenv.mkDerivation {
   pname = "tmux-opencode-integrated";
@@ -27,10 +30,10 @@ stdenv.mkDerivation {
   installPhase = ''
     mkdir -p $out/share/tmux-plugins/tmux-opencode-integrated/scripts
     cp -r scripts/* $out/share/tmux-plugins/tmux-opencode-integrated/scripts/
-    
+
     chmod +x $out/share/tmux-plugins/tmux-opencode-integrated/scripts/smart-name.sh
     chmod +x $out/share/tmux-plugins/tmux-opencode-integrated/scripts/smart_name.py
-    
+
     wrapProgram $out/share/tmux-plugins/tmux-opencode-integrated/scripts/smart-name.sh \
       --prefix PATH : ${lib.makeBinPath [ pythonEnv ]}
   '';

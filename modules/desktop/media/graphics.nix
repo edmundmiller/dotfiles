@@ -6,7 +6,6 @@
 # second computer dedicated to design work (and gaming).
 {
   config,
-  options,
   lib,
   pkgs,
   ...

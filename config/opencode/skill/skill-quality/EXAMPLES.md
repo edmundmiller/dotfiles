@@ -557,7 +557,6 @@ ls -la config/claude/plugins/my-plugin/
    ```
 
    **If errors occur:**
-
    - Check JSON syntax: `jq '.' plugin.json`
    - Verify required fields: name, version, description, author
    - Check file permissions: `ls -l plugin.json`

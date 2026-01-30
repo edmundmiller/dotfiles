@@ -27,7 +27,7 @@ prSections:
     type: null
 
   - title: "🔄 Recently Updated (Last Week)"
-    filters: "is:open involves:@me updated:>={{ nowModify \"-1w\" }} sort:updated-desc"
+    filters: 'is:open involves:@me updated:>={{ nowModify "-1w" }} sort:updated-desc'
     limit: 15
     type: null
 
@@ -61,7 +61,7 @@ prSections:
     filters: "is:open involves:@me -author:@me -author:app/dependabot sort:updated-desc"
     type: null
 
-# Issue Sections - Focus on actionable items  
+# Issue Sections - Focus on actionable items
 issuesSections:
   - title: "🐛 My Issues"
     filters: "is:open author:@me sort:updated-desc"
@@ -87,7 +87,7 @@ repo:
 defaults:
   # Start with PR view (most common workflow)
   view: prs
-  
+
   # Preview settings
   preview:
     open: true
@@ -96,10 +96,10 @@ defaults:
   # Limits to prevent overwhelming interface
   prsLimit: 25
   issuesLimit: 20
-  
+
   # Quick approve comment
   prApproveComment: "LGTM! ✅"
-  
+
   # Auto-refresh every 5 minutes for active development
   refetchIntervalMinutes: 5
 
@@ -109,7 +109,7 @@ defaults:
       updatedAt:
         width: 8
       createdAt:
-        width: 8  
+        width: 8
         hidden: false
       repo:
         width: 25
@@ -148,8 +148,8 @@ keybindings:
     - key: "b"
       name: "browser"
       command: "open https://github.com/{{.RepoName}}"
-    
-    # Copy current URL to clipboard  
+
+    # Copy current URL to clipboard
     - key: "y"
       name: "copy url"
       command: "echo '{{.Url}}' | pbcopy"
@@ -182,7 +182,7 @@ keybindings:
     # Approve with custom comment
     - key: "A"
       name: "approve with comment"
-      command: "gh pr review --repo {{.RepoName}} --approve --body \"$(echo 'Approval comment:' && read comment && echo $comment)\" {{.PrNumber}}"
+      command: 'gh pr review --repo {{.RepoName}} --approve --body "$(echo ''Approval comment:'' && read comment && echo $comment)" {{.PrNumber}}'
 
     # Request changes
     - key: "r"
@@ -224,22 +224,22 @@ keybindings:
       name: "view checks"
       command: "gh pr checks --repo {{.RepoName}} {{.PrNumber}}"
 
-  # Issue-specific keybindings  
+  # Issue-specific keybindings
   issues:
     # Open issue in browser
     - key: "o"
       builtin: "open"
-    
+
     # Comment on issue
     - key: "c"
       name: "comment"
       command: "gh issue comment --repo {{.RepoName}} {{.IssueNumber}}"
-    
+
     # Close issue
     - key: "x"
       name: "close"
       command: "gh issue close --repo {{.RepoName}} {{.IssueNumber}}"
-    
+
     # Assign to yourself
     - key: "@"
       name: "assign to me"
@@ -265,20 +265,20 @@ theme:
   colors:
     text:
       # Catppuccin Mocha colors
-      primary: "#cdd6f4"      # Text
-      secondary: "#a6adc8"    # Subtext1
-      inverted: "#1e1e2e"     # Base
-      faint: "#6c7086"        # Overlay0
-      warning: "#f9e2af"      # Yellow
-      success: "#a6e3a1"      # Green
-    
+      primary: "#cdd6f4" # Text
+      secondary: "#a6adc8" # Subtext1
+      inverted: "#1e1e2e" # Base
+      faint: "#6c7086" # Overlay0
+      warning: "#f9e2af" # Yellow
+      success: "#a6e3a1" # Green
+
     background:
-      selected: "#45475a"     # Surface1
-    
+      selected: "#45475a" # Surface1
+
     border:
-      primary: "#6c7086"      # Overlay0
-      secondary: "#45475a"    # Surface1
-      faint: "#313244"        # Surface0
+      primary: "#6c7086" # Overlay0
+      secondary: "#45475a" # Surface1
+      faint: "#313244" # Surface0
 
 # Pager settings for viewing diffs
 pager:

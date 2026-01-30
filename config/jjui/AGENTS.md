@@ -23,6 +23,7 @@ config/jjui/
 ## Custom Command Patterns
 
 ### Key Sequence (multi-key, shows overlay)
+
 ```toml
 [custom_commands."ai describe"]
 key_sequence = ["a", "d"]
@@ -31,6 +32,7 @@ args = ["aid"]
 ```
 
 ### Single Key
+
 ```toml
 [custom_commands.yank]
 key = ["Y"]
@@ -40,13 +42,13 @@ lua = '''...'''
 
 ## Important Key Bindings
 
-| Binding | Purpose | Implementation |
-|---------|---------|----------------|
-| `a d/e` | AI commit messages | Calls `jj aid`/`jj aide` alias |
-| `Y` | Context-aware copy | Lua: copies file/change_id/checked files |
-| `ctrl+l` | Revset switcher | Lua: choose() menu |
-| `alt+j/k` | Move commits | rebase --insert-before/after |
-| `O` | Open in editor | Lua: suspend + nvim |
+| Binding   | Purpose            | Implementation                           |
+| --------- | ------------------ | ---------------------------------------- |
+| `a d/e`   | AI commit messages | Calls `jj aid`/`jj aide` alias           |
+| `Y`       | Context-aware copy | Lua: copies file/change_id/checked files |
+| `ctrl+l`  | Revset switcher    | Lua: choose() menu                       |
+| `alt+j/k` | Move commits       | rebase --insert-before/after             |
+| `O`       | Open in editor     | Lua: suspend + nvim                      |
 
 ## Dependencies
 

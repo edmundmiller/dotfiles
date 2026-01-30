@@ -292,11 +292,7 @@ function buildName(
   return base;
 }
 
-function renameWindow(
-  name: string,
-  tmux: string,
-  log: ReturnType<typeof createLogger>
-): boolean {
+function renameWindow(name: string, tmux: string, log: ReturnType<typeof createLogger>): boolean {
   try {
     spawn(tmux, ["rename-window", name], {
       detached: true,
@@ -515,11 +511,7 @@ export const TmuxNamer: Plugin = async ({ directory }) => {
         addSignal(state, `file:${event.path}`, config.maxSignals);
       }
 
-      if (
-        event.type === "command.executed" &&
-        event.command &&
-        typeof event.command === "string"
-      ) {
+      if (event.type === "command.executed" && event.command && typeof event.command === "string") {
         addSignal(state, `cmd:${event.command}`, config.maxSignals);
       }
 

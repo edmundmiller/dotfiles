@@ -2,7 +2,6 @@
 # local music; most of which I haven't heard or don't even like.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

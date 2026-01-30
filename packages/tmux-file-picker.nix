@@ -1,13 +1,14 @@
-{ lib
-, stdenvNoCC
-, fetchFromGitHub
-, makeWrapper
-, fzf
-, fd
-, bat
-, tree
-, zoxide
-, coreutils
+{
+  lib,
+  stdenvNoCC,
+  fetchFromGitHub,
+  makeWrapper,
+  fzf,
+  fd,
+  bat,
+  tree,
+  zoxide,
+  coreutils,
 }:
 
 stdenvNoCC.mkDerivation rec {
@@ -29,14 +30,16 @@ stdenvNoCC.mkDerivation rec {
     chmod +x $out/bin/tmux-file-picker
 
     wrapProgram $out/bin/tmux-file-picker \
-      --prefix PATH : ${lib.makeBinPath [
-        fzf
-        fd
-        bat
-        tree
-        zoxide
-        coreutils
-      ]}
+      --prefix PATH : ${
+        lib.makeBinPath [
+          fzf
+          fd
+          bat
+          tree
+          zoxide
+          coreutils
+        ]
+      }
   '';
 
   meta = with lib; {

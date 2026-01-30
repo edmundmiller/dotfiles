@@ -6,7 +6,6 @@
 # ever need to.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

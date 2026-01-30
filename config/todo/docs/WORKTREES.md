@@ -17,27 +17,35 @@ The main directory contains the latest stable version of todo.sh actions:
 The `worktrees/` subdirectory preserves all development branches from the original repository:
 
 ### `feat-todo-deps/`
+
 Dependency-related feature development branch containing:
+
 - Modified versions of core scripts for dependency tracking
 - Temporary files: `comments.tmp`, `empty.tmp`, `project.tmp`
 - Experimental dependency specification work
 
 ### `implementation/`
+
 Implementation branch with:
+
 - Enhanced versions of core scripts
 - Additional test coverage
 - Library improvements in `lib/`
 - Updated configuration files
 
 ### `issue-gh-macos/`
+
 macOS-specific issue resolution branch:
+
 - Platform-specific fixes
 - Simplified test scripts
 - Installation utilities for dependencies
 - Compatibility improvements
 
 ### `review/`
+
 Code review and testing branch:
+
 - Review artifacts and test data
 - Comparison files (`all_current.txt`, `no_review_needed.txt`)
 - Testing configurations

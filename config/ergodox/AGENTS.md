@@ -24,11 +24,11 @@ packages/ergodox-firmware/
 
 ## Related Files
 
-| File | Purpose |
-|------|---------|
-| `packages/ergodox-firmware/` | Keymap source + build derivation |
-| `modules/hardware/ergodox.nix` | Nix module (installs QMK tools) |
-| `bin/hey.d/ergodox.just` | Workflow commands |
+| File                           | Purpose                          |
+| ------------------------------ | -------------------------------- |
+| `packages/ergodox-firmware/`   | Keymap source + build derivation |
+| `modules/hardware/ergodox.nix` | Nix module (installs QMK tools)  |
+| `bin/hey.d/ergodox.just`       | Workflow commands                |
 
 ## Key Facts
 
@@ -52,11 +52,13 @@ hey ergodox-info        # Show paths and settings
 ## Common Edits
 
 **Keymap changes**: Edit `packages/ergodox-firmware/src/keymap.c`
+
 - Keycodes: `KC_A`, `KC_ENTER`, `KC_LGUI`, etc.
 - Mod-tap: `MT(MOD_LCTL, KC_ESC)` = Ctrl on hold, Esc on tap
 - Layer-tap: `LT(1, KC_SPACE)` = Layer 1 on hold, Space on tap
 
 **Timing issues**: Edit `packages/ergodox-firmware/src/config.h`
+
 - `DEBOUNCE 5` - Key debounce (ms), raise if chattering
 - `TAPPING_TERM 140` - Mod-tap timing (ms)
 

@@ -4,18 +4,18 @@
 
   taps = [
     # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
-    "jnsahaj/lumen"  # AI-powered CLI explanations
-    "keith/formulae"  # reminders-cli
-    "rockorager/tap"  # Prise terminal multiplexer
+    "jnsahaj/lumen" # AI-powered CLI explanations
+    "keith/formulae" # reminders-cli
+    "rockorager/tap" # Prise terminal multiplexer
     "seqeralabs/tap"
-    "steipete/tap"  # Codexbar
-    "steveyegge/beads"  # Beads debugging tool
-    "tw93/tap"  # Mole
+    "steipete/tap" # Codexbar
+    "steveyegge/beads" # Beads debugging tool
+    "tw93/tap" # Mole
     "anomalyco/tap" # Opencode
-    "max-sixty/worktrunk"  # Git worktree management for parallel AI agents
-    "joshmedeski/sesh"  # Smart tmux session manager with zoxide integration
-    "ahkohd/oyo"  # oy - tmux session manager
-    "chmouel/lazyworktree"  # lazyworktree - lazy git worktree switcher
+    "max-sixty/worktrunk" # Git worktree management for parallel AI agents
+    "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
+    "ahkohd/oyo" # oy - tmux session manager
+    "chmouel/lazyworktree" # lazyworktree - lazy git worktree switcher
   ];
 
   brews = [
@@ -51,7 +51,7 @@
 
     # Shell and terminal tools
     "asciinema"
-    "rockorager/tap/prise"  # Modern terminal multiplexer
+    "rockorager/tap/prise" # Modern terminal multiplexer
     "bash"
     "bat"
     "bats-core"
@@ -147,7 +147,7 @@
     "opencode"
     "steveyegge/beads/bd"
     "steipete/tap/gogcli"
-    "steipete/tap/bird"  # fast X CLI for tweeting, replying, and reading
+    "steipete/tap/bird" # fast X CLI for tweeting, replying, and reading
     "reminders-cli"
     "wakatime-cli"
   ];
@@ -217,7 +217,7 @@
     # "gitify"
     "calibre"
     "inkscape"
-    "keymapp"  # ZSA keyboard firmware flasher
+    "keymapp" # ZSA keyboard firmware flasher
     "mactex"
     "mendeley-reference-manager"
     "neohtop"

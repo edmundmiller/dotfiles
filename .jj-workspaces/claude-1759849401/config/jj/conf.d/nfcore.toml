@@ -1,5 +1,0 @@
-# nf-core community repositories
---when.repositories = ["~/src/nf-core"]
-
-[user]
-email = "edmund@nf-co.re"

@@ -31,30 +31,30 @@ jw remove agent-1
 
 ## Commands
 
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `jw switch <name>` | `jws` | Switch to existing workspace |
-| `jw switch -c <name>` | `ja` | Create and switch to workspace |
-| `jw switch -c -x claude <name>` | `jwc` | Create, switch, start Claude |
+| Command                           | Alias | Description                    |
+| --------------------------------- | ----- | ------------------------------ |
+| `jw switch <name>`                | `jws` | Switch to existing workspace   |
+| `jw switch -c <name>`             | `ja`  | Create and switch to workspace |
+| `jw switch -c -x claude <name>`   | `jwc` | Create, switch, start Claude   |
 | `jw switch -c -x opencode <name>` | `jwo` | Create, switch, start OpenCode |
-| `jw list` | `jwl` | List workspaces with status |
-| `jw list --full` | | Include ahead counts |
-| `jw list --json` | | Output as JSON |
-| `jw select` | | Interactive workspace picker |
-| `jw remove [name]` | `jwr` | Remove workspace |
-| `jw merge [name]` | `jwm` | Merge workspace to trunk |
-| `jw sync [name]` | | Sync workspace with trunk |
+| `jw list`                         | `jwl` | List workspaces with status    |
+| `jw list --full`                  |       | Include ahead counts           |
+| `jw list --json`                  |       | Output as JSON                 |
+| `jw select`                       |       | Interactive workspace picker   |
+| `jw remove [name]`                | `jwr` | Remove workspace               |
+| `jw merge [name]`                 | `jwm` | Merge workspace to trunk       |
+| `jw sync [name]`                  |       | Sync workspace with trunk      |
 
 ## Interactive Features
 
 When no arguments are provided, many commands become interactive:
 
-| Command | Interactive Behavior |
-|---------|---------------------|
-| `jw switch` | Fuzzy filter to select workspace |
-| `jw switch -c` | Prompt for workspace name |
-| `jw remove` | Select workspace to remove |
-| `jw merge` | Choose rebase or squash strategy |
+| Command        | Interactive Behavior             |
+| -------------- | -------------------------------- |
+| `jw switch`    | Fuzzy filter to select workspace |
+| `jw switch -c` | Prompt for workspace name        |
+| `jw remove`    | Select workspace to remove       |
+| `jw merge`     | Choose rebase or squash strategy |
 
 The `jw select` command provides a dedicated interactive workspace picker with status indicators.
 
@@ -70,13 +70,13 @@ jw list --help
 
 ## Comparison with worktrunk (wt)
 
-| Task | jw (jj workspaces) | wt (git worktrees) |
-|------|--------------------|--------------------|
-| Create + Claude | `jwc agent-1` | `wt switch -c -x claude agent-1` |
-| List with status | `jwl --full` | `wt list --full` |
-| Interactive pick | `jw select` | `wt select` |
-| Merge to main | `jwm agent-1` | `wt merge agent-1` |
-| Remove | `jwr agent-1` | `wt remove agent-1` |
+| Task             | jw (jj workspaces) | wt (git worktrees)               |
+| ---------------- | ------------------ | -------------------------------- |
+| Create + Claude  | `jwc agent-1`      | `wt switch -c -x claude agent-1` |
+| List with status | `jwl --full`       | `wt list --full`                 |
+| Interactive pick | `jw select`        | `wt select`                      |
+| Merge to main    | `jwm agent-1`      | `wt merge agent-1`               |
+| Remove           | `jwr agent-1`      | `wt remove agent-1`              |
 
 ## Key Differences from Git Worktrees
 

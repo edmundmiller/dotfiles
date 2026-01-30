@@ -6,7 +6,6 @@
 # on a per-project basis.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

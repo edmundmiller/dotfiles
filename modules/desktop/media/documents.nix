@@ -1,6 +1,5 @@
 # modules/desktop/media/docs.nix
 {
-  options,
   config,
   lib,
   pkgs,

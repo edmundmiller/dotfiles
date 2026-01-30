@@ -30,38 +30,43 @@ config/tmux/
 ## Dependencies
 
 **Nix packages:**
+
 - `pkgs.tmux` - Base tmux package
 - `pkgs.tmuxPlugins.{copycat,prefix-highlight,yank}` - Standard plugins
 - `pkgs.my.tmux-opencode-integrated` - Custom package (defined in `packages/`)
 
 **Other modules:**
+
 - `modules.shell.zsh` - Shell integration (tmuxifier init, aliases)
 - `modules.theme` - Registers theme reload hook
 
 ## Common Issues
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| Env vars not set | Ghostty `--noprofile --norc` | Wrapper provides fallbacks |
-| Plugin order wrong | prefix-highlight before theme | Check `rcFiles` loads first |
-| tmuxifier not found | PATH not updated | Restart shell after rebuild |
+| Issue               | Cause                         | Fix                         |
+| ------------------- | ----------------------------- | --------------------------- |
+| Env vars not set    | Ghostty `--noprofile --norc`  | Wrapper provides fallbacks  |
+| Plugin order wrong  | prefix-highlight before theme | Check `rcFiles` loads first |
+| tmuxifier not found | PATH not updated              | Restart shell after rebuild |
 
 ## Sesh Integration
 
 **Keybinding:** `C-c t` - Smart session manager with zoxide integration
 
 **Filter modes (inside fzf):**
+
 - `^a` - All sources (tmux + zoxide)
 - `^t` - Tmux sessions only
 - `^x` - Zoxide directories only
 - `^d` - Kill selected session
 
 **How it works:**
+
 1. `display-popup` opens fzf with `sesh list`
 2. Select session/directory, press Enter
 3. `sesh connect` switches to existing session or creates new one from zoxide path
 
 **Related files:**
+
 - `config/tmux/config` - Keybinding definition (line ~79)
 - `~/.config/sesh/sesh.toml` - Sesh config (manual, not nix-managed yet)
 - `modules/shell/sesh/` - Nix module (disabled, for future use)

@@ -19,12 +19,12 @@ modules.shell.claude.enable = true;
 
 ## Files
 
-| Source | Destination | Purpose |
-|--------|-------------|---------|
+| Source                        | Destination               | Purpose                    |
+| ----------------------------- | ------------------------- | -------------------------- |
 | `config/claude/settings.json` | `~/.claude/settings.json` | CLI settings, marketplaces |
-| `config/claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Per-session instructions |
-| `config/opencode/agent/` | `~/.claude/agents/` | Custom agents (shared) |
-| `config/opencode/skill/` | `~/.claude/skills/` | Custom skills (shared) |
+| `config/claude/CLAUDE.md`     | `~/.claude/CLAUDE.md`     | Per-session instructions   |
+| `config/opencode/agent/`      | `~/.claude/agents/`       | Custom agents (shared)     |
+| `config/opencode/skill/`      | `~/.claude/skills/`       | Custom skills (shared)     |
 
 ## Plugin Management
 
@@ -40,6 +40,7 @@ claude plugin install <marketplace>@<plugin>
 ```
 
 Plugin directories:
+
 - System plugins: `~/.claude/plugins/`
 - Local dev: `config/claude/plugins/` (for testing)
 

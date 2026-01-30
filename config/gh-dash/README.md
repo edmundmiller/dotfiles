@@ -27,36 +27,38 @@ gh dash --config ~/.config/gh-dash/config.yml
 
 The dashboard is organized into focused sections for different types of work, following SLA-based prioritization (urgent <2h, high priority <4h, normal <24h):
 
-| Section | Purpose | Filters | Priority |
-|---------|---------|---------|----------|
-| 🚨 Urgent - Needs My Review | Critical PRs requiring immediate attention | `review-requested:@me label:urgent` | <2 hours |
-| 📝 My Open PRs | Your active work | `author:@me` | Monitor |
-| 👁️ Needs My Review | PRs awaiting your review | `review-requested:@me` | <4 hours |
-| 🔄 Recently Updated | PRs with activity in the last week | `involves:@me updated:>=-1w` | Review |
-| 🚧 Draft PRs | Work in progress | `is:draft author:@me` | Monitor |
-| 🧬 nf-core PRs | nf-core ecosystem work | `org:nf-core involves:@me` | <24 hours |
-| ⚡ Nextflow PRs | Core Nextflow work | `org:nextflow-io involves:@me` | <24 hours |
-| 🎓 Applied Genomics PRs | Student/teaching work | `org:Applied-Genomics-UTD` | <24 hours |
-| 🏢 Seqera PRs | Seqera platform work | `org:seqeralabs involves:@me` | <24 hours |
-| 🤖 Dependabot PRs | Automated updates | `author:app/dependabot involves:@me` | <48 hours |
+| Section                     | Purpose                                    | Filters                              | Priority  |
+| --------------------------- | ------------------------------------------ | ------------------------------------ | --------- |
+| 🚨 Urgent - Needs My Review | Critical PRs requiring immediate attention | `review-requested:@me label:urgent`  | <2 hours  |
+| 📝 My Open PRs              | Your active work                           | `author:@me`                         | Monitor   |
+| 👁️ Needs My Review          | PRs awaiting your review                   | `review-requested:@me`               | <4 hours  |
+| 🔄 Recently Updated         | PRs with activity in the last week         | `involves:@me updated:>=-1w`         | Review    |
+| 🚧 Draft PRs                | Work in progress                           | `is:draft author:@me`                | Monitor   |
+| 🧬 nf-core PRs              | nf-core ecosystem work                     | `org:nf-core involves:@me`           | <24 hours |
+| ⚡ Nextflow PRs             | Core Nextflow work                         | `org:nextflow-io involves:@me`       | <24 hours |
+| 🎓 Applied Genomics PRs     | Student/teaching work                      | `org:Applied-Genomics-UTD`           | <24 hours |
+| 🏢 Seqera PRs               | Seqera platform work                       | `org:seqeralabs involves:@me`        | <24 hours |
+| 🤖 Dependabot PRs           | Automated updates                          | `author:app/dependabot involves:@me` | <48 hours |
 
 ## Issue Sections
 
-| Section | Purpose | Filters |
-|---------|---------|---------|
-| 🐛 My Issues | Issues you created | `author:@me` |
-| ✅ Assigned to Me | Issues assigned to you | `assignee:@me` |
-| 🧬 nf-core Issues | nf-core ecosystem issues | `org:nf-core involves:@me` |
-| 🎓 Student Issues | Teaching-related issues | `org:Applied-Genomics-UTD involves:@me` |
-| 🔥 Hot Issues | Popular issues you're involved in | `involves:@me sort:reactions-desc` |
+| Section           | Purpose                           | Filters                                 |
+| ----------------- | --------------------------------- | --------------------------------------- |
+| 🐛 My Issues      | Issues you created                | `author:@me`                            |
+| ✅ Assigned to Me | Issues assigned to you            | `assignee:@me`                          |
+| 🧬 nf-core Issues | nf-core ecosystem issues          | `org:nf-core involves:@me`              |
+| 🎓 Student Issues | Teaching-related issues           | `org:Applied-Genomics-UTD involves:@me` |
+| 🔥 Hot Issues     | Popular issues you're involved in | `involves:@me sort:reactions-desc`      |
 
 ## Keybindings
 
 ### Universal (work everywhere)
+
 - `b` - Open repository in browser
 - `y` - Copy current URL to clipboard
 
 ### PR Operations
+
 - `o` - Open PR in browser
 - `O` - Checkout PR locally
 - `C` - **Review in Neovim** (opens gh.nvim in tmux window - optimal workflow!)
@@ -72,6 +74,7 @@ The dashboard is organized into focused sections for different types of work, fo
 - `c` - Add comment
 
 ### Issue Operations
+
 - `o` - Open issue in browser
 - `c` - Add comment
 - `x` - Close issue
@@ -88,6 +91,7 @@ The dashboard is organized into focused sections for different types of work, fo
 ## Theme
 
 The configuration uses **Catppuccin Mocha** colors to match your terminal theme:
+
 - Primary text: `#cdd6f4`
 - Secondary text: `#a6adc8`
 - Selected background: `#45475a`
@@ -96,11 +100,13 @@ The configuration uses **Catppuccin Mocha** colors to match your terminal theme:
 ## Configuration Details
 
 ### Auto-refresh
+
 - PRs refresh every 60 seconds
 - Branches refresh every 30 seconds
 - Full dashboard refreshes every 5 minutes
 
 ### Display Settings
+
 - Shows up to 25 PRs per section
 - Shows up to 20 issues per section
 - Preview pane opens by default at 55% width
@@ -108,6 +114,7 @@ The configuration uses **Catppuccin Mocha** colors to match your terminal theme:
 - Section counts displayed
 
 ### Integration
+
 - Uses `delta` for diff viewing
 - Configured for `pbcopy` (macOS clipboard)
 - Opens browser with `open` command (macOS)
@@ -115,6 +122,7 @@ The configuration uses **Catppuccin Mocha** colors to match your terminal theme:
 ## Workflow Examples
 
 ### Optimal Workflow: gh-dash + Neovim (Recommended)
+
 This setup implements the **optimal strategy from the CLI PR tools guide**: use gh-dash for queue management and discovery, then dive deep in Neovim for detailed review.
 
 1. Launch `gh dash`
@@ -125,12 +133,14 @@ This setup implements the **optimal strategy from the CLI PR tools guide**: use 
 6. Manage 3-5 PRs in parallel using tmux windows
 
 **Benefits**:
+
 - Combines gh-dash's superior triage with Neovim's deep review interface
 - tmux integration enables parallel PR reviews without context switching
 - Full LSP functionality (go-to-definition, find-references) on PR code
 - No browser required for entire workflow
 
 ### Morning Review Routine
+
 1. Launch `gh dash`
 2. Check "🚨 Urgent" section first (SLA: <2 hours)
 3. Check "👁️ Needs My Review" section (SLA: <4 hours)
@@ -139,12 +149,14 @@ This setup implements the **optimal strategy from the CLI PR tools guide**: use 
 6. Use `d` to quickly view diffs without full checkout
 
 ### PR Management
+
 1. Review "📝 My Open PRs" for status updates
 2. Use `m` to merge approved PRs
 3. Use `R` to mark drafts as ready
 4. Monitor "🤖 Dependabot PRs" for updates
 
 ### Organization Work
+
 1. Check org-specific sections (nf-core, Seqera, etc.)
 2. Use `y` to copy URLs for sharing
 3. Use `@` to assign issues to yourself
@@ -153,6 +165,7 @@ This setup implements the **optimal strategy from the CLI PR tools guide**: use 
 ## Troubleshooting
 
 ### Config Not Loading
+
 ```bash
 # Verify config location
 echo $GH_DASH_CONFIG
@@ -163,11 +176,13 @@ gh dash --config ~/.config/gh-dash/config.yml
 ```
 
 ### Keybindings Not Working
+
 - Ensure GitHub CLI is authenticated: `gh auth status`
 - Check that commands work manually: `gh pr list`
 - Verify repository access permissions
 
 ### Theme Issues
+
 - Terminal must support 24-bit color
 - Ensure terminal theme doesn't override colors
 - Check `$TERM` environment variable
@@ -181,6 +196,7 @@ The configuration is managed through nix-darwin. To modify:
 3. Restart gh-dash to apply changes
 
 ### Adding New Sections
+
 ```yaml
 prSections:
   - title: "🎯 New Section"
@@ -189,6 +205,7 @@ prSections:
 ```
 
 ### Custom Keybindings
+
 ```yaml
 keybindings:
   prs:
@@ -210,11 +227,13 @@ keybindings:
 ## Best Practices from the Guide
 
 ### PR Size Guidelines
+
 - **Small PRs** (<200 lines): Same-day reviews, 15-30 minutes - use `a` for quick approval
 - **Medium PRs** (200-500 lines): 1-2 hours - use `C` to review in Neovim with full context
 - **Large PRs** (>500 lines): Should be rare - request splitting into stacked PRs
 
 ### Review Workflow
+
 1. **Triage in gh-dash**: Use dashboard to prioritize and categorize PRs
 2. **Deep review in Neovim**: Press `C` for complex PRs requiring code context
 3. **Quick actions for simple PRs**: Use `a` for obvious approvals
@@ -222,6 +241,7 @@ keybindings:
 5. **Parallel reviews**: Manage multiple PRs simultaneously in tmux windows
 
 ### Managing High Volume
+
 - Track metrics: Aim for 1-2 review rounds per PR
 - Review load: 3-5 PRs max in review simultaneously
 - Use "🔄 Recently Updated" section to catch PRs needing re-review

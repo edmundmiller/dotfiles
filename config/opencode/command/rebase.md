@@ -5,11 +5,13 @@ description: Rebase current branch onto main with conflict awareness
 Rebase the current branch onto the main branch with smart conflict handling.
 
 1. First, check the current branch:
+
    ```
    git branch --show-current
    ```
 
 2. Review changes in main since branching:
+
    ```
    git log HEAD..main --oneline
    ```
@@ -17,6 +19,7 @@ Rebase the current branch onto the main branch with smart conflict handling.
 3. If there are relevant changes, summarize them briefly
 
 4. Attempt the rebase:
+
    ```
    git rebase main
    ```

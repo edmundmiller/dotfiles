@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs,
@@ -25,45 +24,45 @@ in
       environment.shellAliases.utd = "sshuttle --dns -r pubssh 10.0.0.0/8 129.110.0.0/16";
 
       programs.ssh.extraConfig = ''
-      Host *
-          IdentityAgent ${onePassPath}
+        Host *
+            IdentityAgent ${onePassPath}
 
-      Host pubssh
-          HostName pubssh.utdallas.edu
-          User eam150030
+        Host pubssh
+            HostName pubssh.utdallas.edu
+            User eam150030
 
-      Host europa
-          HostName europa.trecis.cloud
-          User emiller
+        Host europa
+            HostName europa.trecis.cloud
+            User emiller
 
-      Host ganymede
-          HostName ganymede.utdallas.edu
-          User eam150030
+        Host ganymede
+            HostName ganymede.utdallas.edu
+            User eam150030
 
-      Host juno
-          HostName juno.hpcre.utdallas.edu
-          User eam150030
+        Host juno
+            HostName juno.hpcre.utdallas.edu
+            User eam150030
 
-      Host mz
-          HostName mz.utdallas.edu
-          User eam150030
+        Host mz
+            HostName mz.utdallas.edu
+            User eam150030
 
-      Host sysbio
-          HostName sysbio.utdallas.edu
-          User eam150030
+        Host sysbio
+            HostName sysbio.utdallas.edu
+            User eam150030
 
-      Host zhanggpu?
-          HostName %h.utdallas.edu
-          User eam150030
+        Host zhanggpu?
+            HostName %h.utdallas.edu
+            User eam150030
 
-      Host mk
-          HostName mk.utdallas.edu
-          User eam150030
+        Host mk
+            HostName mk.utdallas.edu
+            User eam150030
 
-      Host promoter
-          HostName promoter.utdallas.edu
-          User emiller
-    '';
+        Host promoter
+            HostName promoter.utdallas.edu
+            User emiller
+      '';
     }
 
     # NixOS-specific openssh configuration

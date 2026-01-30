@@ -3,6 +3,7 @@
 ## Claude Code Workflow Commands
 
 ### Starting Work
+
 ```bash
 jj new main           # Start from main branch
 jj new                # Continue from current position
@@ -10,6 +11,7 @@ jj describe -m "msg"  # Add description to working copy
 ```
 
 ### While Working with Claude Code
+
 ```bash
 jj status            # Check what Claude changed
 jj diff              # Review Claude's modifications
@@ -17,12 +19,14 @@ jj split             # Separate unrelated changes Claude made
 ```
 
 ### Saving Progress
+
 ```bash
 jj commit -m "msg"   # Save work and start fresh
 jj squash            # Merge into previous commit
 ```
 
 ### When Claude Code Makes Multiple Changes
+
 ```bash
 # Scenario: Claude made 3 different fixes in one go
 jj diff              # Review all changes
@@ -31,6 +35,7 @@ jj log               # See the separated commits
 ```
 
 ### Undoing Claude Code Changes
+
 ```bash
 jj op log            # See what operations happened
 jj undo              # Undo last jj operation
@@ -40,6 +45,7 @@ jj op restore <id>   # Restore to specific point
 ## Common Claude Code + jj Patterns
 
 ### Pattern: "Claude, fix this bug"
+
 ```bash
 jj new main                      # Start clean
 # Claude makes fixes...
@@ -48,6 +54,7 @@ jj git push --change @-          # Push to GitHub
 ```
 
 ### Pattern: "Claude, refactor this module"
+
 ```bash
 jj new                           # Start from current
 # Claude refactors...
@@ -57,6 +64,7 @@ jj commit -m "refactor: [what]"  # Commit each piece
 ```
 
 ### Pattern: "Claude made too many changes"
+
 ```bash
 jj diff                          # See everything
 jj split                         # Separate changes
@@ -66,6 +74,7 @@ jj op restore <id>               # Go back to that point
 ```
 
 ### Pattern: Working on feature, need urgent fix
+
 ```bash
 # Working on feature...
 jj describe -m "WIP: feature"    # Save current state
@@ -79,6 +88,7 @@ jj edit <feature-commit-id>      # Back to feature
 ## Your Dotfiles-Specific Commands
 
 ### With `hey` Command Integration
+
 ```bash
 # Make config changes
 hey test             # Test without switching
@@ -88,6 +98,7 @@ hey rollback         # Or rollback if issues
 ```
 
 ### Typical Dotfiles Workflow
+
 ```bash
 jj new main                          # Start from main
 # Edit config files...
@@ -99,6 +110,7 @@ jj git push --change @-              # Push to GitHub
 ## Git Integration Commands
 
 ### Sync with GitHub
+
 ```bash
 jj git fetch                     # Get latest from GitHub
 jj git push --change @-          # Push current work
@@ -106,6 +118,7 @@ jj git push --all                # Push all bookmarks
 ```
 
 ### Working with Branches/Bookmarks
+
 ```bash
 jj bookmark create feature-name  # Create bookmark
 jj bookmark list                 # List all bookmarks
@@ -115,6 +128,7 @@ jj git push --bookmark feature-name  # Push specific bookmark
 ## Safety Commands
 
 ### Before Risky Operations
+
 ```bash
 jj op log            # Note current operation ID
 # Do risky thing...
@@ -122,6 +136,7 @@ jj op restore <id>   # Restore if needed
 ```
 
 ### Check What Changed
+
 ```bash
 jj diff              # Current changes
 jj diff -r @-        # Previous commit's changes
@@ -131,7 +146,7 @@ jj show <commit>     # Show specific commit
 ## Key Concepts to Remember
 
 1. **@ is your current position** - The working-copy commit
-2. **No staging needed** - All changes tracked automatically  
+2. **No staging needed** - All changes tracked automatically
 3. **Every operation is recorded** - Check `jj op log`
 4. **Commits are cheap** - Make many small ones
 5. **You can edit any commit** - Use `jj edit <commit>`
@@ -140,6 +155,7 @@ jj show <commit>     # Show specific commit
 ## Keyboard-Friendly Aliases
 
 Add to your shell config:
+
 ```bash
 alias js='jj status'
 alias jd='jj diff'
@@ -173,7 +189,7 @@ jj diff --from <rev> --to <rev>  # Compare any commits
 
 3. **Commit messages**: Follow conventional commits:
    - `fix:` for bug fixes
-   - `feat:` for features  
+   - `feat:` for features
    - `refactor:` for refactoring
    - `docs:` for documentation
    - `chore:` for maintenance

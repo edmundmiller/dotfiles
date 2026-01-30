@@ -17,25 +17,27 @@ ast-grep is a structural code search and rewriting tool. Use it when you need to
 ## When to Use ast-grep
 
 **Use ast-grep when:**
+
 - Searching for code patterns (function calls, imports, specific constructs)
 - Refactoring code systematically
 - Finding deprecated patterns or anti-patterns
 - The pattern involves code structure, not just text
 
 **Use grep/ripgrep when:**
+
 - Searching for literal strings, comments, or documentation
 - Simple text matching is sufficient
 
 ## Quick Reference
 
-| Task | Command |
-|------|---------|
-| Find pattern | `ast-grep run --pattern 'PATTERN' --lang LANG` |
-| Scan with rule | `ast-grep scan --rule file.yaml` |
-| Debug AST | `--debug-query=ast` |
-| Test pattern match | `--debug-query=pattern` |
-| Use inline rule | `--inline-rules 'YAML'` |
-| Nextflow patterns | Use `_VAR` instead of `$VAR` |
+| Task               | Command                                        |
+| ------------------ | ---------------------------------------------- |
+| Find pattern       | `ast-grep run --pattern 'PATTERN' --lang LANG` |
+| Scan with rule     | `ast-grep scan --rule file.yaml`               |
+| Debug AST          | `--debug-query=ast`                            |
+| Test pattern match | `--debug-query=pattern`                        |
+| Use inline rule    | `--inline-rules 'YAML'`                        |
+| Nextflow patterns  | Use `_VAR` instead of `$VAR`                   |
 
 ## Quick Start
 
@@ -78,12 +80,12 @@ ast-grep run --pattern 'your_pattern' --debug-query=pattern path/to/file.js
 
 ### Metavariables
 
-| Syntax | Matches | Example |
-|--------|---------|---------|
-| `$VAR` | Single named node | `console.$METHOD` matches `console.log` |
-| `$$VAR` | Single node (including anonymous) | `$$OP` matches operators |
-| `$$$VAR` | Zero or more nodes | `func($$$ARGS)` matches any args |
-| `_` prefix | Non-capturing (Nextflow) | `_VAR` instead of `$VAR` |
+| Syntax     | Matches                           | Example                                 |
+| ---------- | --------------------------------- | --------------------------------------- |
+| `$VAR`     | Single named node                 | `console.$METHOD` matches `console.log` |
+| `$$VAR`    | Single node (including anonymous) | `$$OP` matches operators                |
+| `$$$VAR`   | Zero or more nodes                | `func($$$ARGS)` matches any args        |
+| `_` prefix | Non-capturing (Nextflow)          | `_VAR` instead of `$VAR`                |
 
 **Note:** In Nextflow, use `_` instead of `$` for metavariables (configured via `expandoChar` in sgconfig.yml).
 
@@ -91,8 +93,8 @@ ast-grep run --pattern 'your_pattern' --debug-query=pattern path/to/file.js
 
 ```yaml
 id: rule-name
-language: javascript  # or nextflow, python, etc.
-severity: warning     # error, warning, hint, off
+language: javascript # or nextflow, python, etc.
+severity: warning # error, warning, hint, off
 message: "Human-readable message"
 note: |
   Additional context and fix suggestions
@@ -157,6 +159,7 @@ rule:
 ### OpenCode Tools
 
 This repository includes **nf-ast-grep MCP tools** for Nextflow-specific searches:
+
 - `nf-ast-grep_find_processes` - Find all process definitions
 - `nf-ast-grep_find_workflows` - Find workflow definitions
 - `nf-ast-grep_find_channels` - Find channel factory operations
@@ -169,6 +172,7 @@ Use these tools for Nextflow work instead of raw ast-grep commands when availabl
 ### Shell Execution
 
 When running ast-grep from bash:
+
 - **Single quotes** preserve `$` metavariables: `ast-grep run --pattern 'console.$METHOD'`
 - **Escape in double quotes**: `ast-grep run --pattern "console.\$METHOD"`
 - For complex patterns, use `--inline-rules` with a heredoc or rule files
@@ -186,6 +190,7 @@ When running ast-grep from bash:
 **Cause**: Pattern syntax doesn't match AST structure.
 
 **Solution**:
+
 1. Inspect actual AST: `ast-grep run --pattern '$$$' --debug-query=ast file.ext`
 2. Check node kinds match what you expect
 3. Simplify pattern and add constraints incrementally
@@ -195,6 +200,7 @@ When running ast-grep from bash:
 **Cause**: ast-grep not installed or not in PATH.
 
 **Solution**:
+
 ```bash
 # Install via cargo
 cargo install ast-grep
@@ -211,6 +217,7 @@ nix shell nixpkgs#ast-grep
 **Cause**: Trying to use an unsupported or unconfigured language.
 
 **Solution**:
+
 - Check supported languages: `ast-grep --help`
 - For custom languages (like Nextflow), ensure `sgconfig.yml` is present with `customLanguages` configured
 - See [Nextflow Reference](references/nextflow.md) for custom language setup
@@ -220,11 +227,12 @@ nix shell nixpkgs#ast-grep
 **Cause**: Relational rules (`inside`, `has`, `precedes`, `follows`) default to `stopBy: neighbor` which only checks immediate children.
 
 **Solution**: Always add `stopBy: end` to search the full subtree:
+
 ```yaml
 rule:
   has:
     pattern: target_pattern
-    stopBy: end  # Don't forget this!
+    stopBy: end # Don't forget this!
 ```
 
 ### "Metavariable not captured"
@@ -232,6 +240,7 @@ rule:
 **Cause**: Using `_` prefix makes metavariables non-capturing, or metavariable used before it's defined.
 
 **Solution**:
+
 - Use `$VAR` (or `_VAR` in Nextflow) for capturing
 - In `all` blocks, define metavariables before using them (rules process in order)
 
@@ -240,6 +249,7 @@ rule:
 **Cause**: `$` in patterns gets interpreted as shell variable.
 
 **Solution**:
+
 ```bash
 # Use single quotes (preferred)
 ast-grep run --pattern 'console.$METHOD'
@@ -256,6 +266,7 @@ ast-grep scan --rule my-rule.yaml
 **Cause**: Invalid YAML syntax or wrong file path.
 
 **Solution**:
+
 1. Validate YAML syntax (check indentation, colons, quotes)
 2. Use absolute paths or run from correct directory
 3. Test with `--inline-rules` first before creating rule file
@@ -277,6 +288,7 @@ ast-grep run --pattern 'Channel.from(___)' --lang nextflow
 ```
 
 **Rule used** (`deprecated-channel-from.yaml`):
+
 ```yaml
 id: deprecated-channel-from
 language: nextflow
@@ -284,7 +296,7 @@ severity: warning
 message: "Channel.from() is deprecated in DSL2"
 note: |
   Use Channel.of() for simple values or Channel.fromList() for lists.
-  
+
   Before: Channel.from(1, 2, 3)
   After:  Channel.of(1, 2, 3)
 rule:
@@ -395,6 +407,7 @@ ast-grep scan --rule config/opencode/skills/ast-grep/rules/implicit-it-closure.y
 ```
 
 **Rule explanation** (`implicit-it-closure.yaml`):
+
 ```yaml
 id: implicit-it-closure
 language: nextflow
@@ -455,6 +468,7 @@ ast-grep scan --rule /tmp/missing-cleanup.yaml src/
 ## References
 
 For detailed syntax and advanced features, see:
+
 - [Rule Reference](references/rule-reference.md) - Complete rule syntax documentation
 - [Nextflow Reference](references/nextflow.md) - Nextflow-specific patterns and examples
 

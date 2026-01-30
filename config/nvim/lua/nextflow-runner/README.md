@@ -44,25 +44,25 @@ nextflow-runner/
 
 In Nextflow files (`.nf`):
 
-| Key | Action |
-|-----|--------|
+| Key           | Action                      |
+| ------------- | --------------------------- |
 | `<leader>nrw` | Run workflow with custom UI |
-| `<leader>nrW` | Run with resume flag |
-| `<leader>nrR` | Resume last workflow |
-| `<leader>nrs` | Show runner UI |
-| `<leader>nrx` | Stop workflow |
-| `<leader>nrh` | Hide runner UI |
-| `<leader>nrL` | Show full logs |
-| `<leader>nrd` | Show DAG (planned) |
+| `<leader>nrW` | Run with resume flag        |
+| `<leader>nrR` | Resume last workflow        |
+| `<leader>nrs` | Show runner UI              |
+| `<leader>nrx` | Stop workflow               |
+| `<leader>nrh` | Hide runner UI              |
+| `<leader>nrL` | Show full logs              |
+| `<leader>nrd` | Show DAG (planned)          |
 
 Inside the runner buffer:
 
-| Key | Action |
-|-----|--------|
+| Key | Action          |
+| --- | --------------- |
 | `r` | Resume workflow |
-| `s` | Stop workflow |
-| `l` | Show full logs |
-| `q` | Quit/hide UI |
+| `s` | Stop workflow   |
+| `l` | Show full logs  |
+| `q` | Quit/hide UI    |
 
 ### Configuration
 
@@ -117,6 +117,7 @@ end
 ```
 
 **Parser enhancements** (`parser.lua`):
+
 ```lua
 -- Parse Tower-specific output
 function M.parse_tower_line(line)
@@ -127,6 +128,7 @@ end
 ```
 
 **UI enhancements** (`ui.lua`):
+
 ```lua
 -- Add Tower-specific UI elements
 function M.render_tower_info(state)
@@ -167,6 +169,7 @@ end
 ```
 
 **Integration** (`init.lua`):
+
 ```lua
 function M.show_dag()
   local dag = require("nextflow-runner.dag")
@@ -210,6 +213,7 @@ end
 ```
 
 **UI enhancements** (`ui.lua`):
+
 ```lua
 function M.render_resource_graphs(state)
   -- ASCII bar charts for CPU/memory usage
@@ -250,6 +254,7 @@ end
 ```
 
 **Integration** (`init.lua`):
+
 ```lua
 function M.open_task_work_dir(process_name, task_id)
   -- Find work directory from .nextflow/history
@@ -289,6 +294,7 @@ end
 ```
 
 **Integration** (`init.lua`):
+
 ```lua
 function M.run_with_params()
   local params_module = require("nextflow-runner.params")
@@ -400,6 +406,7 @@ end
 ```
 
 **UI for profile selection**:
+
 ```lua
 -- Show profile picker before running
 vim.ui.select(profiles, {
@@ -564,6 +571,7 @@ workflow {
 ```
 
 Run and verify:
+
 ```vim
 :NextflowRun tests/fixtures/simple.nf
 ```

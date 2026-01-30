@@ -12,12 +12,14 @@ Last updated: 2025-09-09
 Both methods extend todo.txt with time tracking capabilities but take fundamentally different approaches to data storage and workflow.
 
 ### donow
+
 **Repository**: https://github.com/clobrano-forks/todo.txt-cli  
 **Focus**: Simple inline time tracking with desktop notifications
 
 `donow` is a straightforward time tracker that appends time information directly to your todo.txt entries. It's designed for personal productivity with built-in reminder notifications to keep you focused.
 
 ### timetrack
+
 **Repository**: https://git.sr.ht/~proycon/todotxt-more  
 **Focus**: Professional time logging with comprehensive reporting
 
@@ -28,6 +30,7 @@ Both methods extend todo.txt with time tracking capabilities but take fundamenta
 ### donow Requirements and Installation
 
 **Dependencies:**
+
 - Bash shell
 - `todo.txt-cli` installed and configured
 - For notifications:
@@ -35,6 +38,7 @@ Both methods extend todo.txt with time tracking capabilities but take fundamenta
   - Linux: `libnotify-bin` package (`sudo apt-get install libnotify-bin`)
 
 **Installation:**
+
 ```bash path=null start=null
 # Download the donow script
 curl -o ~/.todo.actions.d/donow \
@@ -49,6 +53,7 @@ chmod +x ~/.todo.actions.d/donow
 
 **Configuration:**
 Edit the donow script to customize:
+
 ```bash path=null start=null
 DESKTOP_NOTIFICATION=true        # Enable/disable notifications
 REMINDER_INTERVAL=10             # Minutes between reminders
@@ -58,12 +63,14 @@ EVIDENCE_LOG=$TODO_DIR/evidence.log  # Optional detailed log
 ### timetrack Requirements and Installation
 
 **Dependencies:**
+
 - Bash shell
 - Python 3 (for helper scripts)
 - `todo.txt-cli` installed and configured
 - Standard Unix utilities (`date`, `sed`, `grep`)
 
 **Installation:**
+
 ```bash path=null start=null
 # Download the timetrack script
 curl -o ~/.todo.actions.d/timetrack \
@@ -81,6 +88,7 @@ curl -o ~/.todo.actions.d/helpers/timetrack_sum.py \
 ```
 
 **Configuration:**
+
 ```bash path=null start=null
 export TIMETRACK_FILE="$TODO_DIR/timetrack.txt"  # Optional: custom log location
 export TODOTXT_NOTIFY=1                           # Enable system notifications
@@ -91,6 +99,7 @@ export TODOTXT_NOTIFY=1                           # Enable system notifications
 ### donow Usage
 
 **Basic workflow:**
+
 ```bash path=null start=null
 # List your tasks
 $ todo.sh list
@@ -114,19 +123,21 @@ $ todo.sh list
 ```
 
 **Resuming work on the same task:**
+
 ```bash path=null start=null
 $ todo.sh donow 1
 Working on: Write project report +work @office min:15
 [Write project report +work @office min:15] 8 minute(s) passed^C
 
 # Time is accumulated
-$ todo.sh list  
+$ todo.sh list
 1 Write project report +work @office min:23
 ```
 
 ### timetrack Usage
 
 **Basic workflow:**
+
 ```bash path=null start=null
 # Start tracking a task
 $ todo.sh timetrack start 1
@@ -154,6 +165,7 @@ $ todo.sh timetrack daysummary
 ```
 
 **Advanced reporting:**
+
 ```bash path=null start=null
 # Weekly summary
 $ todo.sh timetrack weeksummary 2025-09-01 2
@@ -167,37 +179,39 @@ $ todo.sh timetrack log 2025-09-01 2025-09-08
 
 ## Feature Comparison
 
-| Capability | donow | timetrack | Notes |
-|---|---|---|---|
-| **Start/stop tracking** | ✅ Start only | ✅ Start/stop/pause | timetrack auto-stops when starting new task |
-| **Pause and resume** | ❌ | ✅ | timetrack can resume from idle state |
-| **Multiple sessions per task** | ✅ Cumulative | ✅ Detailed log | donow adds time, timetrack logs sessions |
-| **Stores data in todo.txt** | ✅ `min:X` suffix | ✅ `#timetracking` tag | Different annotation styles |
-| **Uses separate log file** | ⚠️ Optional | ✅ Required | donow has optional evidence.log |
-| **Built-in reporting** | ❌ | ✅ Extensive | timetrack has day/week/month summaries |
-| **Desktop notifications** | ✅ Reminders | ✅ Start/stop only | donow reminds every N minutes |
-| **Time units and format** | Minutes only | Flexible (s/m/h) | timetrack shows `1h13m`, donow shows `min:73` |
-| **Context/project aggregation** | ❌ | ✅ | timetrack groups by `@context` `+project` |
-| **Historical analysis** | ❌ | ✅ | timetrack supports date ranges |
-| **Dependencies** | Minimal | Python + helpers | donow is pure bash |
-| **Configuration options** | 3 variables | Environment vars | donow edits script, timetrack uses env |
-| **Cross-platform** | ✅ macOS/Linux | ✅ Unix-like | Both support major platforms |
-| **Installation complexity** | Simple | Moderate | timetrack needs helper scripts |
+| Capability                      | donow             | timetrack              | Notes                                         |
+| ------------------------------- | ----------------- | ---------------------- | --------------------------------------------- |
+| **Start/stop tracking**         | ✅ Start only     | ✅ Start/stop/pause    | timetrack auto-stops when starting new task   |
+| **Pause and resume**            | ❌                | ✅                     | timetrack can resume from idle state          |
+| **Multiple sessions per task**  | ✅ Cumulative     | ✅ Detailed log        | donow adds time, timetrack logs sessions      |
+| **Stores data in todo.txt**     | ✅ `min:X` suffix | ✅ `#timetracking` tag | Different annotation styles                   |
+| **Uses separate log file**      | ⚠️ Optional       | ✅ Required            | donow has optional evidence.log               |
+| **Built-in reporting**          | ❌                | ✅ Extensive           | timetrack has day/week/month summaries        |
+| **Desktop notifications**       | ✅ Reminders      | ✅ Start/stop only     | donow reminds every N minutes                 |
+| **Time units and format**       | Minutes only      | Flexible (s/m/h)       | timetrack shows `1h13m`, donow shows `min:73` |
+| **Context/project aggregation** | ❌                | ✅                     | timetrack groups by `@context` `+project`     |
+| **Historical analysis**         | ❌                | ✅                     | timetrack supports date ranges                |
+| **Dependencies**                | Minimal           | Python + helpers       | donow is pure bash                            |
+| **Configuration options**       | 3 variables       | Environment vars       | donow edits script, timetrack uses env        |
+| **Cross-platform**              | ✅ macOS/Linux    | ✅ Unix-like           | Both support major platforms                  |
+| **Installation complexity**     | Simple            | Moderate               | timetrack needs helper scripts                |
 
 ## Data Storage Formats
 
 ### donow Data Format
 
 **In todo.txt:**
+
 ```bash path=null start=null
 # Before tracking
 Write project report +work @office
 
-# After 23 minutes of tracking  
+# After 23 minutes of tracking
 Write project report +work @office min:23
 ```
 
 **Optional evidence.log:**
+
 ```bash path=null start=null
 2025-09-09 14:30:15 start: Write project report +work @office
 2025-09-09 15:15:42 stop : Write project report +work @office min:23
@@ -206,6 +220,7 @@ Write project report +work @office min:23
 ### timetrack Data Format
 
 **In todo.txt:**
+
 ```bash path=null start=null
 # Active task gets tagged
 Write project report +work @office #timetracking
@@ -215,9 +230,10 @@ Write project report +work @office
 ```
 
 **In timetrack.txt:**
+
 ```bash path=null start=null
 2025-09-09 Mon 14:30 Write project report +work @office
-2025-09-09 Mon 15:15 Implement API feature +dev @coding  
+2025-09-09 Mon 15:15 Implement API feature +dev @coding
 2025-09-09 Mon 16:00 idle
 2025-09-09 Mon 16:30 Write project report +work @office
 2025-09-09 Mon 17:00 idle
@@ -226,13 +242,15 @@ Write project report +work @office
 ## Pros and Cons
 
 ### donow Advantages
-- **Simple setup**: Single script, minimal dependencies  
+
+- **Simple setup**: Single script, minimal dependencies
 - **Inline data**: Time stored with tasks, easy to see at a glance
 - **Focus reminders**: Notifications help maintain concentration
 - **Cumulative tracking**: Natural accumulation of total time spent
 - **Lightweight**: Pure bash, no external tools needed
 
-### donow Disadvantages  
+### donow Disadvantages
+
 - **Limited reporting**: Only shows total minutes per task
 - **No historical analysis**: Can't analyze time patterns over periods
 - **Manual task switching**: Must stop and start manually
@@ -240,8 +258,9 @@ Write project report +work @office
 - **No project aggregation**: Can't see time by context or project
 
 ### timetrack Advantages
+
 - **Professional reporting**: Daily, weekly, monthly summaries
-- **Automatic switching**: Starting new task stops previous one  
+- **Automatic switching**: Starting new task stops previous one
 - **Flexible time display**: Shows time in human-readable format (1h13m)
 - **Context/project analysis**: Groups time by `@context` and `+project`
 - **Historical queries**: Analyze any date range
@@ -249,22 +268,25 @@ Write project report +work @office
 - **Rich command set**: Many options for different workflows
 
 ### timetrack Disadvantages
+
 - **Complex setup**: Requires Python helpers and more configuration
 - **Separate files**: Time data not immediately visible in todo.txt
-- **Learning curve**: Many commands and options to master  
+- **Learning curve**: Many commands and options to master
 - **Dependencies**: Requires Python and Unix utilities
 - **Log management**: Need to maintain separate timetrack.txt file
 
 ## Recommendations
 
 ### Choose donow if you are:
+
 - **Personal productivity focused**: Want simple time awareness
-- **Minimalist**: Prefer data stored directly with tasks  
+- **Minimalist**: Prefer data stored directly with tasks
 - **Notification-driven**: Like regular reminders while working
 - **Simplicity-seeking**: Want minimal setup and maintenance
 - **Task-centric**: Care more about total time per task than when work happened
 
 ### Choose timetrack if you are:
+
 - **Professional time tracking**: Need to bill clients or track projects
 - **Analytics-oriented**: Want to understand time patterns and productivity
 - **Multi-project juggling**: Work on many tasks/contexts and need reporting
@@ -278,18 +300,20 @@ Write project report +work @office
 **Project Manager**: **timetrack** - Need team time analysis and reporting  
 **Personal Productivity**: **donow** - Want awareness without complexity  
 **Consultant**: **timetrack** - Multiple clients require detailed time breakdown  
-**Developer**: Either - **donow** for focus, **timetrack** for project analysis  
+**Developer**: Either - **donow** for focus, **timetrack** for project analysis
 
 ## Technical Implementation Details
 
 ### donow Implementation
+
 - **Language**: Pure Bash script
 - **Time calculation**: Minute-based counter with sleep loops
 - **Signal handling**: Uses trap for SIGINT to save time on Ctrl+C
 - **Data persistence**: Regex replacement of `min:X` pattern in todo.txt
 - **Notifications**: Platform detection (macOS osascript vs Linux notify-send)
 
-### timetrack Implementation  
+### timetrack Implementation
+
 - **Language**: Bash script with Python helpers
 - **Time format**: ISO date format `YYYY-MM-DD Day HH:MM`
 - **Log structure**: Append-only log with task descriptions
@@ -299,6 +323,7 @@ Write project report +work @office
 ### Data Migration and Interoperability
 
 **Converting from donow to timetrack:**
+
 ```bash path=null start=null
 # Extract time data from donow format
 grep "min:[0-9]" todo.txt | while read line; do
@@ -308,6 +333,7 @@ done
 ```
 
 **Converting from timetrack to donow:**
+
 ```bash path=null start=null
 # Sum total time per task from timetrack.txt
 # Add min:X suffix to corresponding todo.txt entries
@@ -315,17 +341,20 @@ done
 ```
 
 **Running both simultaneously:**
+
 - ⚠️ **Not recommended** - creates conflicting data formats
 - If attempted, use different TODO_DIR or disable timetrack todo.txt modifications
 
 ## Troubleshooting
 
 ### Common donow Issues
+
 - **No notifications**: Check DESKTOP_NOTIFICATION setting and platform dependencies
-- **Time not saved**: Ensure todo.txt is writable and task number exists  
+- **Time not saved**: Ensure todo.txt is writable and task number exists
 - **Wrong time count**: Ctrl+C timing affects final count
 
 ### Common timetrack Issues
+
 - **Python errors**: Ensure helper scripts are installed and executable
 - **Missing timetrack.txt**: File created automatically on first use
 - **Tag conflicts**: Other scripts may interfere with #timetracking tag
@@ -333,19 +362,22 @@ done
 ## References
 
 ### Source Repositories
+
 - **donow**: https://github.com/clobrano-forks/todo.txt-cli/blob/master/todo.actions.d/donow
 - **timetrack**: https://git.sr.ht/~proycon/todotxt-more/blob/master/todo.actions.d/timetrack
 
-### Version Information  
+### Version Information
+
 - Research conducted: 2025-09-09
 - donow source: GitHub clobrano-forks/todo.txt-cli master branch
-- timetrack source: proycon/todotxt-more master branch  
+- timetrack source: proycon/todotxt-more master branch
 
 ### Related Projects
+
 - **todo.txt-cli**: https://github.com/todotxt/todo.txt-cli (base CLI)
 - **todotxt-more**: https://github.com/proycon/todotxt-more (extended actions)
 - **todo.txt format**: http://todotxt.org/ (official specification)
 
 ---
 
-*This comparison was created through hands-on analysis of both tools' source code and documentation. Commands and outputs were verified against the actual implementations.*
+_This comparison was created through hands-on analysis of both tools' source code and documentation. Commands and outputs were verified against the actual implementations._
