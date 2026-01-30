@@ -9,9 +9,9 @@
   // Model cycling - Ctrl+P to toggle between these
   "enabledModels": [
     "claude-opus-4-5-*",
+    "gpt-5.2-codex",
     "claude-sonnet-4-5-*",
-    "claude-haiku-4-5-*",
-    "gpt-5.2-codex"
+    "claude-haiku-4-5-*"
   ],
 
   // UI preferences
