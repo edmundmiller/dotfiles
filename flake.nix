@@ -421,8 +421,8 @@
                     export HOME=$TMPDIR
                     export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
 
-                    # Validate skills in config/agents/skills/
-                    echo "Validating agent skills..."
+                    # Validate global skills in config/agents/skills/
+                    echo "Validating global agent skills..."
 
                     for skill in ${./.}/config/agents/skills/*/; do
                       if [ -d "$skill" ] && [ -f "$skill/SKILL.md" ]; then
@@ -431,8 +431,10 @@
                       fi
                     done
 
-                    # Validate skills in .claude/skills/
-                    for skill in ${./.}/.claude/skills/*/; do
+                    # Validate project skills in .agents/skills/ (source of truth)
+                    echo "Validating project skills..."
+
+                    for skill in ${./.}/.agents/skills/*/; do
                       if [ -d "$skill" ] && [ -f "$skill/SKILL.md" ]; then
                         echo "Checking $skill..."
                         uvx --from skills-ref agentskills validate "$skill" || exit 1
