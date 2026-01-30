@@ -82,15 +82,6 @@
     "ahkohd/oyo/oy"
     "zoxide"
 
-    # Task management
-    "rlwrap"
-    "task"
-    "taskopen"
-    "tasksh"
-    "taskwarrior-tui"
-    "timewarrior"
-    "vit"
-
     # Cloud and infrastructure
     "awscli"
     "aws-shell"

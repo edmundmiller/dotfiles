@@ -28,7 +28,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-    taskwarrior3
+
     sqlite
     openssl
   ];
@@ -55,15 +55,9 @@
       };
     };
     shell = {
-      bugwarrior.enable = false;
+
       git.enable = true;
       zsh.enable = true;
-      taskwarrior = {
-        enable = true;
-        syncUrl = "http://localhost:8080";
-        shortcuts.enable = false;
-        timewarriorHook.enable = false;
-      };
     };
     services = {
       audiobookshelf.enable = true;
@@ -116,7 +110,7 @@
       ssh.enable = true;
       syncthing.enable = false;
       tailscale.enable = true;
-      taskchampion.enable = true;
+      taskchampion.enable = false;
       obsidian-sync.enable = true;
       opencode.enable = true;
       timew_sync.enable = true;

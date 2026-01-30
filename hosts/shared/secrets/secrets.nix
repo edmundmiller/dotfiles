@@ -8,15 +8,6 @@ let
   nuc = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICBPG2vvh8XkVObXANO9/CBfczftZrmpbjg2w5onK/Tv";
 in
 {
-  # TaskChampion sync - per-host client_id for multi-device sync
-  # Each host needs unique client_id but shared encryption_secret
-  "taskchampion-sync-mactraitor.age".publicKeys = [ mactraitor ];
-  "taskchampion-sync-seqeratop.age".publicKeys = [ seqeratop ];
-  "taskchampion-sync-nuc.age".publicKeys = [ nuc ];
-
-  # Legacy shared secret (deprecated - will remove after migration)
-  "taskchampion-sync.age".publicKeys = [ mactraitor seqeratop nuc ];
-
   "wakatime-api-key.age".publicKeys = [ mactraitor seqeratop ];
 
   "clawdbot-bridge-token.age".publicKeys = [ mactraitor nuc ];

@@ -44,4 +44,4 @@ Stale decrypted secrets can occur if the `.age` file was updated but the host ha
 ### nuc (NixOS Server)
 - User: `emiller`
 - Remote deployment via `hey nuc`
-- Services: docker, taskchampion-sync, etc.
+- Services: docker, jellyfin, home-assistant, etc.

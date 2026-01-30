@@ -160,24 +160,6 @@ in
         rcp = "rsync -azPJ --include=.git/ --filter=':- .gitignore' --filter=':- $XDG_CONFIG_HOME/git/ignore'";
         weather = "curl -s 'wttr.in/Ft+Worth?m&format=3'";
 
-        # taskwarrior
-        t = "task";
-        ta = "task add";
-        td = "task done";
-        tm = "task modify";
-        ts = "task sync";
-        to = "taskopen";
-        tn = "task-note";
-        tp = "task +PENDING";
-        tb = "task burndown.daily";
-        tsw = "task start";
-        tst = "task stop";
-        bug = "taskopen -n";
-        td1 = "task done +1";
-        td2 = "task done +2";
-        td3 = "task done +3";
-        td4 = "task done +4";
-
         # docker-compose
         dcup = "docker-compose up -d";
         dcdw = "docker-compose down";
