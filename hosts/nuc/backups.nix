@@ -10,11 +10,9 @@ in
       repositoryFile = config.age.secrets."restic/repo".path;
       passwordFile = config.age.secrets."restic/password".path;
 
-      # Run as root to read container-owned directories (taskchampion runs as UID 1092)
       user = "root";
       paths = [
         "${config.users.users.emiller.home}/sync"
-        "${config.users.users.emiller.home}/taskchampion-sync-server"
         "${config.users.users.emiller.home}/obsidian-vault"
         # "${config.users.users.emiller.home}/archive"
       ];

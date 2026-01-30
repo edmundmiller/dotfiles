@@ -47,16 +47,8 @@ in
               ) (import secretsFile)
             else
               { };
-          # Per-host taskchampion sync secret
           sharedSecrets =
-            (optionalAttrs config.modules.shell.taskwarrior.enable {
-              taskchampion-sync = {
-                file = "${sharedSecretsDir}/taskchampion-sync-${effectiveHostName}.age";
-                owner = config.user.name;
-                mode = "0400";
-              };
-            })
-            // (optionalAttrs config.modules.services.clawdbot.enable {
+            (optionalAttrs config.modules.services.clawdbot.enable {
               clawdbot-bridge-token = {
                 file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
                 owner = config.user.name;
@@ -85,11 +77,7 @@ in
         secretsMountPoint = "${config.user.home}/.local/share/agenix.d";
         identityPaths = [ "${config.user.home}/.ssh/id_ed25519" ];
 
-        # Per-host secrets (unique client_id per host for multi-device sync)
         secrets = {
-          taskchampion-sync = {
-            file = "${sharedSecretsDir}/taskchampion-sync-${effectiveHostName}.age";
-          };
           wakatime-api-key = {
             file = "${sharedSecretsDir}/wakatime-api-key.age";
           };
