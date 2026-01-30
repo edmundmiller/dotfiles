@@ -43,11 +43,13 @@ in
     ];
 
     # Pi configuration via home-manager
-    # Skills are shared across all agents (Claude, OpenCode, Pi)
-    # AGENTS.md is built dynamically from config/agents/rules/*.md
+    # - Skills are shared across all agents (Claude, OpenCode, Pi)
+    # - AGENTS.md is built dynamically from config/agents/rules/*.md
+    # - settings.json for global Pi configuration
     home-manager.users.${config.user.name}.home.file = {
       ".pi/agent/skills".source = "${configDir}/agents/skills";
       ".pi/agent/AGENTS.md".text = concatenatedRules;
+      ".pi/agent/settings.json".source = "${configDir}/pi/settings.json";
     };
   };
 }
