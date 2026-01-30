@@ -13,15 +13,15 @@ customLanguages:
       aarch64-apple-darwin: lib/macos-arm64/libnextflow.dylib
       x86_64-unknown-linux-gnu: lib/linux-x64/libnextflow.so
     extensions: [nf, config]
-    expandoChar: _  # Use _VAR instead of $VAR
+    expandoChar: _ # Use _VAR instead of $VAR
 ```
 
 **Important:** Because Nextflow uses `$` for string interpolation (`$variable`, `${expression}`), ast-grep patterns use `_` as the metavariable prefix instead:
 
 | Standard | Nextflow |
-|----------|----------|
-| `$VAR` | `_VAR` |
-| `$$VAR` | `__VAR` |
+| -------- | -------- |
+| `$VAR`   | `_VAR`   |
+| `$$VAR`  | `__VAR`  |
 | `$$$VAR` | `___VAR` |
 
 ## Quick Commands
@@ -41,14 +41,14 @@ ast-grep run --pattern '___' --debug-query=ast workflow.nf
 
 OpenCode provides MCP tools for Nextflow ast-grep operations:
 
-| Tool | Purpose |
-|------|---------|
-| `nf-ast-grep_find_processes` | Find all process definitions |
-| `nf-ast-grep_find_workflows` | Find workflow definitions |
-| `nf-ast-grep_find_channels` | Find channel factory operations |
-| `nf-ast-grep_find_deprecated` | Find deprecated patterns |
-| `nf-ast-grep_lint` | Run all lint rules |
-| `nf-ast-grep_search` | Custom pattern search |
+| Tool                          | Purpose                         |
+| ----------------------------- | ------------------------------- |
+| `nf-ast-grep_find_processes`  | Find all process definitions    |
+| `nf-ast-grep_find_workflows`  | Find workflow definitions       |
+| `nf-ast-grep_find_channels`   | Find channel factory operations |
+| `nf-ast-grep_find_deprecated` | Find deprecated patterns        |
+| `nf-ast-grep_lint`            | Run all lint rules              |
+| `nf-ast-grep_search`          | Custom pattern search           |
 
 ---
 
@@ -243,17 +243,17 @@ rule:
 
 Common Nextflow AST node kinds for pattern matching:
 
-| Node Kind | Description |
-|-----------|-------------|
-| `process_definition` | Process block |
-| `workflow_definition` | Workflow block |
-| `input_block` | Process input: section |
-| `output_block` | Process output: section |
-| `script_block` | Process script: section |
-| `closure` | Closure `{ ... }` |
-| `closure_parameter` | Explicit closure param `{ x -> }` |
-| `channel_value` | Channel.value() call |
-| `method_call` | Method invocation |
+| Node Kind             | Description                       |
+| --------------------- | --------------------------------- |
+| `process_definition`  | Process block                     |
+| `workflow_definition` | Workflow block                    |
+| `input_block`         | Process input: section            |
+| `output_block`        | Process output: section           |
+| `script_block`        | Process script: section           |
+| `closure`             | Closure `{ ... }`                 |
+| `closure_parameter`   | Explicit closure param `{ x -> }` |
+| `channel_value`       | Channel.value() call              |
+| `method_call`         | Method invocation                 |
 
 Use `--debug-query=ast` to discover more node types:
 

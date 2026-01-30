@@ -14,6 +14,7 @@ Use this skill when you need to research unfamiliar Neovim plugins, understand t
 ## Context
 
 This is a helper skill for the other nvim skills. Use it when:
+
 - User mentions a plugin you're not familiar with
 - Need to understand configuration options
 - Researching AstroCommunity packs
@@ -55,6 +56,7 @@ When you need to research a plugin:
 ### For Standalone Plugins
 
 1. **Fetch GitHub README**
+
    ```
    WebFetch: https://github.com/author/plugin-name
    Prompt: "Extract the plugin's purpose, key features, installation requirements,
@@ -77,6 +79,7 @@ When you need to research a plugin:
    - Check existing `lua/community.lua` for similar packs
 
 2. **Fetch AstroCommunity page**
+
    ```
    WebFetch: https://astronvim.github.io/astrocommunity/
    Prompt: "Find information about the [pack-name] pack in [category] category.
@@ -90,6 +93,7 @@ When you need to research a plugin:
 ### For LSP Servers
 
 1. **Fetch nvim-lspconfig docs**
+
    ```
    WebFetch: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md
    Prompt: "Find configuration documentation for [server-name] LSP server.
@@ -107,6 +111,7 @@ When you need to research a plugin:
 **Scenario**: Need to understand `telescope-frecency.nvim`
 
 **Your actions**:
+
 1. Fetch README:
    ```
    WebFetch: https://github.com/nvim-telescope/telescope-frecency.nvim
@@ -123,6 +128,7 @@ When you need to research a plugin:
 **Scenario**: User wants to add "pack.python" but you need to know what's included
 
 **Your actions**:
+
 1. Check CONTEXT.md for Python pack details
 2. If needed, fetch AstroCommunity docs:
    ```
@@ -138,6 +144,7 @@ When you need to research a plugin:
 **Scenario**: Need to configure rust-analyzer but unfamiliar with its settings
 
 **Your actions**:
+
 1. Fetch nvim-lspconfig docs for rust_analyzer
 2. Check rust-analyzer manual if needed:
    ```
@@ -150,21 +157,25 @@ When you need to research a plugin:
 ## Common Documentation Sources
 
 ### Plugin Documentation
+
 - **GitHub README**: `https://github.com/[author]/[plugin]`
 - **Plugin docs**: Often in `/doc/` directory
 - **Example configs**: Look for `/examples/` or wiki
 
 ### AstroNvim Resources
+
 - **AstroCommunity**: `https://astronvim.github.io/astrocommunity/`
 - **AstroNvim Docs**: `https://docs.astronvim.com/`
 - **Recipes**: Configuration examples for common setups
 
 ### LSP Resources
+
 - **nvim-lspconfig**: Server configurations and settings
 - **Language server docs**: Official documentation for each server
 - **Mason registry**: Tool installation information
 
 ### General Neovim
+
 - **Awesome Neovim**: Plugin discovery
 - **Neovim docs**: `:help` and online documentation
 

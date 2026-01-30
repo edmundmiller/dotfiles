@@ -1,6 +1,5 @@
 # modules/desktop/term/kitty.nix
 {
-  options,
   config,
   lib,
   pkgs,
@@ -55,13 +54,13 @@ in
         macos_titlebar_color = "system";
         macos_option_as_alt = "yes";
         macos_quit_when_last_window_closed = true;
-        macos_show_window_title_in = "menubar";  # Valid: menubar, titlebar, none
+        macos_show_window_title_in = "menubar"; # Valid: menubar, titlebar, none
         macos_traditional_fullscreen = false;
-        macos_colorspace = "srgb";  # Default, matches web browsers
+        macos_colorspace = "srgb"; # Default, matches web browsers
 
         # Window appearance (synced from Ghostty)
-        hide_window_decorations = "no";  # Show full native macOS titlebar
-        window_padding_width = 8;  # Match Ghostty's 8px padding
+        hide_window_decorations = "no"; # Show full native macOS titlebar
+        window_padding_width = 8; # Match Ghostty's 8px padding
         window_margin_width = 0;
 
         # Initial window size (synced from Ghostty)

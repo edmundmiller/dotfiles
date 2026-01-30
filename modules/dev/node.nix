@@ -4,7 +4,6 @@
 # disaster" languages.
 {
   config,
-  options,
   lib,
   pkgs,
   ...
@@ -41,7 +40,8 @@ in
     })
 
     (mkIf cfg.enableGlobally {
-      user.packages = with pkgs;
+      user.packages =
+        with pkgs;
         [
           bun
           yarn

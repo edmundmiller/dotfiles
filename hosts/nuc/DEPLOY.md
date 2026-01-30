@@ -18,6 +18,7 @@ hey nuc-ssh
 ## Architecture
 
 The remote deployment uses **deploy-rs**:
+
 - **Builds on NUC**: `remoteBuild = true` - no cross-compilation
 - **Magic rollback**: Auto-reverts if SSH dies during deploy
 - **Interactive sudo**: Requires password for security
@@ -74,6 +75,7 @@ hey nuc
 deploy-rs has **magic rollback**: if SSH becomes unreachable after activation, it automatically reverts to the previous generation.
 
 Manual rollback:
+
 ```bash
 hey nuc-rollback
 ```
@@ -83,6 +85,7 @@ hey nuc-rollback
 ### deploy-rs Configuration
 
 Defined in `flake.nix`:
+
 ```nix
 deploy.nodes.nuc = {
   hostname = "nuc";
@@ -90,7 +93,7 @@ deploy.nodes.nuc = {
   user = "root";
   interactiveSudo = true;
   remoteBuild = true;  # Build on NUC, not Mac
-  
+
   profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
     self.nixosConfigurations.nuc;
 };
@@ -99,6 +102,7 @@ deploy.nodes.nuc = {
 ### SSH Configuration
 
 Managed in `modules/shell/ssh.nix`:
+
 ```nix
 "nuc" = {
   hostname = "192.168.1.222";

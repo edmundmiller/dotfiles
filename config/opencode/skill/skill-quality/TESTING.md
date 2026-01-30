@@ -35,13 +35,11 @@ Every skill needs at least 3 test cases covering different complexity levels.
 Test this skill with:
 
 1. **Simple case:** [Common user request]
-
    - **Input**: User asks "[specific request]"
    - **Expected**: Skill [expected behavior]
    - **Verify**: [How to check success]
 
 2. **Edge case:** [Unusual but valid request]
-
    - **Input**: User asks "[edge case request]"
    - **Expected**: Skill [expected behavior]
    - **Verify**: [How to check success]
@@ -60,7 +58,6 @@ Test this skill with:
 Test this skill with:
 
 1. **Simple case:** User asks "create a Python script"
-
    - **Input**: "Create a Python script to fetch a URL"
    - **Expected**: Skill provides UV shebang template with requests dependency
    - **Verify**:
@@ -69,7 +66,6 @@ Test this skill with:
      - Script is executable and runs
 
 2. **Edge case:** User asks "script without dependencies"
-
    - **Input**: "Create a Python script using only stdlib"
    - **Expected**: Skill provides minimal UV shebang without dependencies
    - **Verify**:
@@ -204,21 +200,18 @@ Test the skill in actual workflows without external help.
 ### Test Procedure
 
 1. **Fresh start test:**
-
    - Start a new project
    - Use only the skill guidance (no external docs)
    - Complete a real task
    - Note any gaps or unclear instructions
 
 2. **Colleague test:**
-
    - Ask a colleague to use the skill
    - Don't explain anything beforehand
    - Observe where they get stuck
    - Fix unclear sections
 
 3. **Different project test:**
-
    - Try the skill in a different codebase
    - Verify guidance is project-agnostic
    - Check examples work in new context
@@ -329,13 +322,11 @@ Before finalizing a skill, verify:
 After initial testing:
 
 1. **Monitor usage:**
-
    - Track when skill is invoked
    - Note if invocation matches intent
    - Identify missing trigger words
 
 2. **Collect feedback:**
-
    - Ask users if skill was helpful
    - Note common questions after using skill
    - Track modifications users make to examples

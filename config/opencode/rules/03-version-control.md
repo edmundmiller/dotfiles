@@ -74,6 +74,7 @@ git hunks add <hunk-id> --reverse
 IDs are stable and deterministic: `file:@-old,len+new,len`
 
 Example: `README.md:@-1,3+1,5` means:
+
 - File: `README.md`
 - Old: starts line 1, length 3
 - New: starts line 1, length 5

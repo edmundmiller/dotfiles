@@ -1,11 +1,17 @@
-{ inputs, options, config, lib, pkgs, ... }:
+{
+  inputs,
+  config,
+  lib,
+  ...
+}:
 
 with lib;
 with lib.my;
 let
   cfg = config.modules.services.clawdbot;
   user = config.user.name;
-in {
+in
+{
   options.modules.services.clawdbot = {
     enable = mkBoolOpt false;
 
@@ -77,7 +83,7 @@ in {
 
       instances.default = {
         enable = true;
-        configOverrides = cfg.configOverrides;
+        inherit (cfg) configOverrides;
 
         # Anthropic provider (required)
         providers.anthropic.apiKeyFile = cfg.anthropic.apiKeyFile;
@@ -85,8 +91,8 @@ in {
         # Telegram provider (optional)
         providers.telegram = mkIf cfg.telegram.enable {
           enable = true;
-          botTokenFile = cfg.telegram.botTokenFile;
-          allowFrom = cfg.telegram.allowFrom;
+          inherit (cfg.telegram) botTokenFile;
+          inherit (cfg.telegram) allowFrom;
           groups."*".requireMention = true;
         };
       };

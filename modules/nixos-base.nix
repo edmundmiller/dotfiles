@@ -1,7 +1,6 @@
 # nixos-base.nix
 # NixOS-specific base configuration
 {
-  config,
   lib,
   pkgs,
   isDarwin,

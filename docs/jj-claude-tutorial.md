@@ -5,12 +5,15 @@ This tutorial will teach you how to effectively use Jujutsu (jj) version control
 ## Core Concepts
 
 ### 1. Working Copy as a Commit
+
 In jj, your working directory is always a commit (the "working-copy commit" shown as `@`). This means:
+
 - All changes are automatically tracked - no staging area needed
 - You can directly edit any commit in history
 - Every operation is recorded and can be undone
 
 ### 2. The @ Symbol
+
 - `@` refers to the current working-copy commit
 - `@-` refers to its parent commit
 - `@--` refers to its grandparent, and so on
@@ -123,6 +126,7 @@ jj git import  # Updates jj with git changes
 ## Claude Code Specific Tips
 
 ### 1. Using the `hey` Command
+
 Your dotfiles repo has a custom `hey` command that wraps common operations:
 
 ```bash
@@ -134,6 +138,7 @@ hey rollback # Rollback to previous generation
 ### 2. Committing with Claude Code
 
 When ready to commit:
+
 ```bash
 # jj handles the actual version control
 jj commit -m "your message"
@@ -158,6 +163,7 @@ jj op restore <operation-id>
 ## Common Patterns
 
 ### Pattern 1: Feature Development
+
 ```bash
 jj new main                          # Start from main
 # ... make changes ...
@@ -166,6 +172,7 @@ jj git push --change @-              # Push to GitHub
 ```
 
 ### Pattern 2: Quick Fix
+
 ```bash
 jj new                               # Start fresh
 # ... make fix ...
@@ -174,6 +181,7 @@ jj git push                          # Push the branch
 ```
 
 ### Pattern 3: Multiple Related Changes
+
 ```bash
 jj new main                          # Start from main
 # ... make first change ...
@@ -187,21 +195,22 @@ jj git push -r main..@               # Push all commits
 
 ## Key Differences from Git
 
-| Git Command | jj Equivalent | Notes |
-|------------|---------------|-------|
-| `git add` | (automatic) | jj tracks all changes automatically |
-| `git commit` | `jj commit` | Creates new commit and moves to fresh working copy |
-| `git commit --amend` | `jj squash` | Squashes current changes into parent |
-| `git checkout <branch>` | `jj new <branch>` | Creates new commit on top of branch |
-| `git rebase -i` | `jj edit`, `jj squash`, `jj split` | Direct manipulation instead of interactive rebase |
-| `git stash` | `jj new` | Just start a new commit, old work stays as-is |
-| `git log` | `jj log` | Shows graph by default |
-| `git status` | `jj status` | Shows working-copy commit info |
-| `git diff` | `jj diff` | Shows diff of working copy vs parent |
+| Git Command             | jj Equivalent                      | Notes                                              |
+| ----------------------- | ---------------------------------- | -------------------------------------------------- |
+| `git add`               | (automatic)                        | jj tracks all changes automatically                |
+| `git commit`            | `jj commit`                        | Creates new commit and moves to fresh working copy |
+| `git commit --amend`    | `jj squash`                        | Squashes current changes into parent               |
+| `git checkout <branch>` | `jj new <branch>`                  | Creates new commit on top of branch                |
+| `git rebase -i`         | `jj edit`, `jj squash`, `jj split` | Direct manipulation instead of interactive rebase  |
+| `git stash`             | `jj new`                           | Just start a new commit, old work stays as-is      |
+| `git log`               | `jj log`                           | Shows graph by default                             |
+| `git status`            | `jj status`                        | Shows working-copy commit info                     |
+| `git diff`              | `jj diff`                          | Shows diff of working copy vs parent               |
 
 ## Advanced Tips
 
 ### 1. Revsets
+
 jj has a powerful query language for selecting commits:
 
 ```bash
@@ -216,6 +225,7 @@ jj log -r 'bookmarks() & ~remote_bookmarks()'
 ```
 
 ### 2. Working with Multiple Changes
+
 Since every directory state is a commit, you can easily jump around:
 
 ```bash
@@ -236,6 +246,7 @@ jj edit <commit-id-of-feature-A>
 ```
 
 ### 3. The Operation Log is Your Safety Net
+
 Everything in jj is undoable because it tracks operations:
 
 ```bash

@@ -1,6 +1,5 @@
 # modules/desktop/term/wezterm.nix
 {
-  options,
   config,
   lib,
   inputs,

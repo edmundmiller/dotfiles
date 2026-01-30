@@ -5,7 +5,6 @@
 # I have what I need for youtube videos and streaming.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

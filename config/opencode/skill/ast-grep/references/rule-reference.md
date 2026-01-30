@@ -6,11 +6,11 @@ Complete reference for ast-grep rule syntax. For quick start, see [SKILL.md](../
 
 ast-grep rules fall into three categories:
 
-| Category | Purpose | Examples |
-|----------|---------|----------|
-| **Atomic** | Match single AST properties | `pattern`, `kind`, `regex` |
+| Category       | Purpose                              | Examples                               |
+| -------------- | ------------------------------------ | -------------------------------------- |
+| **Atomic**     | Match single AST properties          | `pattern`, `kind`, `regex`             |
 | **Relational** | Match by relationship to other nodes | `inside`, `has`, `precedes`, `follows` |
-| **Composite** | Combine multiple rules | `all`, `any`, `not`, `matches` |
+| **Composite**  | Combine multiple rules               | `all`, `any`, `not`, `matches`         |
 
 ---
 
@@ -30,9 +30,9 @@ rule:
 ```yaml
 rule:
   pattern:
-    context: 'class A { $METHOD() {} }'  # Provide syntactic context
-    selector: method_definition           # Select specific node from context
-    strictness: relaxed                   # relaxed, signature, smart (default), strict
+    context: "class A { $METHOD() {} }" # Provide syntactic context
+    selector: method_definition # Select specific node from context
+    strictness: relaxed # relaxed, signature, smart (default), strict
 ```
 
 ### kind
@@ -45,6 +45,7 @@ rule:
 ```
 
 Find node kinds using `--debug-query=ast`:
+
 ```bash
 ast-grep run --pattern '$$$' --debug-query=ast file.js
 ```
@@ -55,15 +56,16 @@ Match node text against a regular expression.
 
 ```yaml
 rule:
-  regex: '^test_.*'  # Functions starting with test_
+  regex: "^test_.*" # Functions starting with test_
 ```
 
 **Combine with kind for precision:**
+
 ```yaml
 rule:
   all:
     - kind: identifier
-    - regex: '^_'  # Private by convention
+    - regex: "^_" # Private by convention
 ```
 
 ### nthChild
@@ -72,7 +74,7 @@ Match nodes by position among siblings.
 
 ```yaml
 rule:
-  nthChild: 1        # First child (1-indexed)
+  nthChild: 1 # First child (1-indexed)
   # nthChild:
   #   position: 2
   #   reverse: true  # 2nd from last
@@ -140,11 +142,11 @@ rule:
 
 ### stopBy Options
 
-| Value | Behavior |
-|-------|----------|
+| Value      | Behavior                                               |
+| ---------- | ------------------------------------------------------ |
 | `neighbor` | (default) Stop at first sibling - rarely what you want |
-| `end` | Search to end of subtree - **use this** |
-| `{ rule }` | Stop when encountering node matching rule |
+| `end`      | Search to end of subtree - **use this**                |
+| `{ rule }` | Stop when encountering node matching rule              |
 
 ### field
 
@@ -156,7 +158,7 @@ rule:
     - pattern: $EXPR
     - inside:
         kind: call_expression
-        field: arguments  # Only match if $EXPR is in arguments field
+        field: arguments # Only match if $EXPR is in arguments field
 ```
 
 ---
@@ -170,9 +172,9 @@ Match when ALL sub-rules match. **Rules are evaluated in order** - use this when
 ```yaml
 rule:
   all:
-    - pattern: $FUNC($$$ARGS)    # First: capture $FUNC
+    - pattern: $FUNC($$$ARGS) # First: capture $FUNC
     - has:
-        pattern: $FUNC           # Then: use $FUNC in nested rule
+        pattern: $FUNC # Then: use $FUNC in nested rule
         stopBy: end
 ```
 
@@ -220,13 +222,13 @@ utils:
 
 ## Metavariables
 
-| Syntax | Description | Example Match |
-|--------|-------------|---------------|
-| `$VAR` | Single named node | `log` in `console.log` |
-| `$$VAR` | Single node (named or anonymous) | `+` operator |
-| `$$$VAR` | Zero or more nodes | `a, b, c` in `func(a, b, c)` |
-| `$_` | Wildcard (non-capturing) | Any single node |
-| `$$$` | Multi-wildcard (non-capturing) | Any sequence |
+| Syntax   | Description                      | Example Match                |
+| -------- | -------------------------------- | ---------------------------- |
+| `$VAR`   | Single named node                | `log` in `console.log`       |
+| `$$VAR`  | Single node (named or anonymous) | `+` operator                 |
+| `$$$VAR` | Zero or more nodes               | `a, b, c` in `func(a, b, c)` |
+| `$_`     | Wildcard (non-capturing)         | Any single node              |
+| `$$$`    | Multi-wildcard (non-capturing)   | Any sequence                 |
 
 **Nextflow note:** Use `_` prefix instead of `$` (e.g., `_VAR` not `$VAR`) due to `expandoChar` configuration.
 
@@ -235,20 +237,20 @@ utils:
 ## Rule File Structure
 
 ```yaml
-id: rule-id                    # Required: unique identifier
-language: javascript           # Required: target language
-severity: warning              # error, warning, hint, off
-message: "Short description"   # Shown in output
-note: |                        # Multi-line explanation
+id: rule-id # Required: unique identifier
+language: javascript # Required: target language
+severity: warning # error, warning, hint, off
+message: "Short description" # Shown in output
+note: | # Multi-line explanation
   Detailed explanation of why this is a problem
   and how to fix it.
 
-rule:                          # The actual matching rule
+rule: # The actual matching rule
   pattern: problematic_code
 
-fix: replacement_code          # Optional: auto-fix template
+fix: replacement_code # Optional: auto-fix template
 
-utils:                         # Optional: reusable sub-rules
+utils: # Optional: reusable sub-rules
   helper-rule:
     pattern: helper_pattern
 ```

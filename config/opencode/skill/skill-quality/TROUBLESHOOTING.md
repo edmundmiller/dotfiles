@@ -172,7 +172,6 @@ python-typing.md # type hints and mypy
 ### How to Split
 
 1. **Identify natural boundaries:**
-
    - By tool (pytest, mypy, typer)
    - By use case (scripts, APIs, CLIs)
    - By pattern (async, typing, error handling)
@@ -184,7 +183,6 @@ python-typing.md # type hints and mypy
    ```
 
 3. **Move content:**
-
    - Copy relevant sections to new skills
    - Update cross-references
    - Remove from original
@@ -480,7 +478,6 @@ Common failures and how to address them.
    ```
 
    **If you see:**
-
    - "pattern not found" → No matching functions
    - "file not found" → Check directory path
 

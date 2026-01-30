@@ -8,7 +8,6 @@
 # all the world's problems to be wonderful?
 {
   config,
-  options,
   lib,
   pkgs,
   ...

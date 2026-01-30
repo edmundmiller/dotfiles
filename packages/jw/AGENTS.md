@@ -20,6 +20,7 @@ jwr agent-1      # Remove workspace
 ## Interactive Behaviors
 
 When no args provided:
+
 - `jw switch` → `gum filter` to select workspace
 - `jw switch -c` → `gum input` for workspace name
 - `jw remove` → `gum filter` to select workspace
@@ -48,16 +49,16 @@ packages/jw/
 
 ## Key Functions in common.sh
 
-| Function | Description |
-|----------|-------------|
-| `_error` | Red styled error message |
-| `_warn` | Yellow styled warning |
-| `_info` | Faint styled info |
-| `_success` | Green styled success with checkmark |
-| `_header` | Bold styled section header |
-| `_spin` | Spinner wrapper for long operations |
-| `_is_interactive` | Check if TTY available |
-| `_require_tty` | Error if not interactive |
+| Function          | Description                         |
+| ----------------- | ----------------------------------- |
+| `_error`          | Red styled error message            |
+| `_warn`           | Yellow styled warning               |
+| `_info`           | Faint styled info                   |
+| `_success`        | Green styled success with checkmark |
+| `_header`         | Bold styled section header          |
+| `_spin`           | Spinner wrapper for long operations |
+| `_is_interactive` | Check if TTY available              |
+| `_require_tty`    | Error if not interactive            |
 
 ## Key Concepts
 

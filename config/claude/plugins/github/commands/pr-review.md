@@ -22,16 +22,19 @@ Present results as a numbered list for selection. If a PR number is provided as 
 ### Step 2: Check Out and Examine the PR
 
 1. Check out the PR locally:
+
    ```bash
    gh pr checkout <PR_NUMBER>
    ```
 
 2. View PR details:
+
    ```bash
    gh pr view <PR_NUMBER>
    ```
 
 3. Retrieve the full diff:
+
    ```bash
    gh pr diff <PR_NUMBER>
    ```
@@ -75,6 +78,7 @@ Provide a numbered list of files or directories to review, in logical order. Pay
 Generate specific feedback with file paths and line numbers.
 
 Format each comment as:
+
 - **File:** `path/to/file.ext`
 - **Line:** `<line_number>`
 - **Comment:** Your specific feedback
@@ -86,6 +90,7 @@ Format each comment as:
 Create the review using the GitHub CLI:
 
 1. **Create a pending review:**
+
    ```bash
    gh api repos/{owner}/{repo}/pulls/<PR_NUMBER>/reviews \
      --method POST \
@@ -93,6 +98,7 @@ Create the review using the GitHub CLI:
    ```
 
 2. **Add individual line comments:**
+
    ```bash
    gh api repos/{owner}/{repo}/pulls/<PR_NUMBER>/comments \
      --method POST \
@@ -103,6 +109,7 @@ Create the review using the GitHub CLI:
    ```
 
 3. **Reply to existing comments if needed:**
+
    ```bash
    gh api repos/{owner}/{repo}/pulls/comments/<comment_id>/replies \
      --method POST \
@@ -110,11 +117,13 @@ Create the review using the GitHub CLI:
    ```
 
 4. **Submit final approval with summary:**
+
    ```bash
    gh pr review <PR_NUMBER> --approve --body "<summary>"
    ```
 
    Or request changes:
+
    ```bash
    gh pr review <PR_NUMBER> --request-changes --body "<summary>"
    ```

@@ -181,7 +181,6 @@ Key categories (use documentation search for complete details):
    ```
 
 2. **Available bell features:**
-
    - `system` - System notification (GTK only)
    - `audio` - Custom sound (GTK only)
    - `attention` - Bounce dock icon on macOS (default: enabled)

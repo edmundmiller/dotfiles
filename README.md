@@ -18,16 +18,16 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
 
 ---
 
-|                |                                                          |
-| -------------- | -------------------------------------------------------- |
-| **Shell:**     | zsh + a bunch of Nix magic                               |
-| **DM:**        | lightdm + lightdm-mini-greeter                           |
-| **WM:**        | bspwm + polybar (Linux) / Aerospace (macOS)             |
+|                |                                                           |
+| -------------- | --------------------------------------------------------- |
+| **Shell:**     | zsh + a bunch of Nix magic                                |
+| **DM:**        | lightdm + lightdm-mini-greeter                            |
+| **WM:**        | bspwm + polybar (Linux) / Aerospace (macOS)               |
 | **Editor:**    | [Doom Emacs][doom-emacs] (and nvim when Emacs is napping) |
-| **Terminal:**  | st (Linux) / Ghostty (macOS)                            |
-| **Launcher:**  | rofi (Linux) / Raycast (macOS)                          |
-| **Browser:**   | firefox / Zen Browser / Orion (I collect browsers)      |
-| **GTK Theme:** | [Ant Dracula](https://github.com/EliverLara/Ant-Dracula) |
+| **Terminal:**  | st (Linux) / Ghostty (macOS)                              |
+| **Launcher:**  | rofi (Linux) / Raycast (macOS)                            |
+| **Browser:**   | firefox / Zen Browser / Orion (I collect browsers)        |
+| **GTK Theme:** | [Ant Dracula](https://github.com/EliverLara/Ant-Dracula)  |
 
 ---
 
@@ -76,7 +76,6 @@ And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO
 ## Frequently asked questions
 
 - **How do I change the default username?**
-
   1. Set `USER` the first time you run `nixos-install`: `USER=myusername nixos-install --root /mnt --flake #XYZ`
   2. Or change `"emiller"` in modules/options.nix (was `"hlissner"` in the before times).
   3. For macOS: just make sure your username matches what's in the flake
@@ -85,7 +84,7 @@ And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO
 
   My main host [has a README](hosts/kuro/README.org) you can use as a reference.
   I set up an EFI+GPT system and partitions with `parted` and `zfs`.
-  
+
   macOS users: You can skip this part and feel smug about it.
 
 - **Why is my build failing with homebrew errors?**

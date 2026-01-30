@@ -4,7 +4,6 @@
 # from it. But R isn't too bad. If you manage it with nix it's quite nice.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

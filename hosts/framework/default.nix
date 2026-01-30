@@ -1,5 +1,10 @@
 # Framework -- my laptop
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   user.name = "emiller";
   imports = [
