@@ -1,17 +1,16 @@
 {
   "$schema": "https://pi.ai/settings.json",
 
-  // Model configuration - matching OpenCode defaults
+  // Model configuration - Opus as default, toggle to Sonnet 4.5
   "defaultProvider": "anthropic",
-  "defaultModel": "claude-sonnet-4-20250514",
+  "defaultModel": "claude-opus-4-20250514",
   "defaultThinkingLevel": "medium",
 
-  // Model cycling - Claude models + key alternatives
+  // Model cycling - Opus default, Sonnet 4.5 for quick toggle (Ctrl+P)
   "enabledModels": [
-    "claude-sonnet-4-*",
     "claude-opus-4-*",
-    "claude-haiku-4-*",
-    "gpt-4o",
+    "claude-sonnet-4-5-*",
+    "claude-haiku-4-5-*",
     "gemini-2.5-pro*"
   ],
 
