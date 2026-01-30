@@ -1,3 +1,8 @@
+---
+name: using-jj-workspaces
+description: Set up isolated jj workspaces for parallel development. Use when creating new workspaces, organizing workspace directories, or setting up gitignore for workspaces.
+---
+
 # Using JJ Workspaces
 
 You're helping set up an isolated jj workspace for parallel development work without disrupting the current workspace.
