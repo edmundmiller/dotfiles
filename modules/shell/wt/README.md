@@ -11,6 +11,7 @@ modules.shell.wt.enable = true;
 ```
 
 Requires homebrew tap (installed separately):
+
 ```bash
 brew tap max-sixty/worktrunk
 brew install wt
@@ -24,44 +25,48 @@ brew install wt
 
 ## Files
 
-| Source | Purpose |
-|--------|---------|
+| Source                  | Purpose                                                             |
+| ----------------------- | ------------------------------------------------------------------- |
 | `config/wt/config.toml` | User configuration (worktree paths, merge defaults, LLM commit gen) |
-| `config/wt/env.zsh` | Shell integration (enables `wt switch` to change dirs) |
-| `config/wt/aliases.zsh` | Command shortcuts |
+| `config/wt/env.zsh`     | Shell integration (enables `wt switch` to change dirs)              |
+| `config/wt/aliases.zsh` | Command shortcuts                                                   |
 
 ## Aliases
 
 ### Core Commands
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `wtl` | `wt list` | List worktrees |
+
+| Alias | Command     | Description     |
+| ----- | ----------- | --------------- |
+| `wtl` | `wt list`   | List worktrees  |
 | `wts` | `wt switch` | Switch worktree |
-| `wtm` | `wt merge` | Merge + cleanup |
+| `wtm` | `wt merge`  | Merge + cleanup |
 | `wtr` | `wt remove` | Remove worktree |
 
 ### Create + Launch Agent
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `wtcc` | `wt switch -c -x claude` | Create + launch Claude |
-| `wtco` | `wt switch -c -x opencode` | Create + launch OpenCode |
-| `wtcc-bg` | (function) | Spawn Claude in background tmux |
-| `wtco-bg` | (function) | Spawn OpenCode in background tmux |
+
+| Alias     | Command                    | Description                       |
+| --------- | -------------------------- | --------------------------------- |
+| `wtcc`    | `wt switch -c -x claude`   | Create + launch Claude            |
+| `wtco`    | `wt switch -c -x opencode` | Create + launch OpenCode          |
+| `wtcc-bg` | (function)                 | Spawn Claude in background tmux   |
+| `wtco-bg` | (function)                 | Spawn OpenCode in background tmux |
 
 ### Navigation
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `wtb` | `wt switch -` | Previous worktree |
-| `wtmain` | `wt switch main` | Jump to main |
+
+| Alias     | Command                 | Description              |
+| --------- | ----------------------- | ------------------------ |
+| `wtb`     | `wt switch -`           | Previous worktree        |
+| `wtmain`  | `wt switch main`        | Jump to main             |
 | `wtstack` | `wt switch -c --base=@` | Branch from current HEAD |
-| `wtsel` | `wt select` | Interactive picker |
+| `wtsel`   | `wt select`             | Interactive picker       |
 
 ### Status & Config
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `wtst` | `wt list --full` | List with CI status |
-| `wtj` | `wt list --format=json` | JSON output |
-| `wtcfg` | `wt config show` | Show config |
+
+| Alias   | Command                 | Description         |
+| ------- | ----------------------- | ------------------- |
+| `wtst`  | `wt list --full`        | List with CI status |
+| `wtj`   | `wt list --format=json` | JSON output         |
+| `wtcfg` | `wt config show`        | Show config         |
 
 ## Config Options
 

@@ -8,13 +8,13 @@ Smart tmux window naming with OpenCode/Claude agent status integration.
 
 Shows status icons in window names for AI agents (opencode, claude):
 
-| Icon | Status | Description |
-|------|--------|-------------|
-| `●` | Busy | Agent is running (thinking, searching, writing) |
-| `■` | Waiting | Agent needs approval (permission prompts) |
-| `□` | Idle | Agent is ready for input |
-| `▲` | Error | Agent encountered an error (API, crash, timeout) |
-| `◇` | Unknown | Could not determine status (capture failed) |
+| Icon | Status  | Description                                      |
+| ---- | ------- | ------------------------------------------------ |
+| `●`  | Busy    | Agent is running (thinking, searching, writing)  |
+| `■`  | Waiting | Agent needs approval (permission prompts)        |
+| `□`  | Idle    | Agent is ready for input                         |
+| `▲`  | Error   | Agent encountered an error (API, crash, timeout) |
+| `◇`  | Unknown | Could not determine status (capture failed)      |
 
 ### Agent Management Panel
 
@@ -42,11 +42,11 @@ Use `--status` flag to get global status for tmux status bar:
 
 ## Usage
 
-| Command | Description |
-|---------|-------------|
-| `<prefix> A` | Open Agent Management Panel |
+| Command                  | Description                          |
+| ------------------------ | ------------------------------------ |
+| `<prefix> A`             | Open Agent Management Panel          |
 | `smart-name.sh --status` | Print global status (for status bar) |
-| `smart-name.sh --menu` | Open agent panel directly |
+| `smart-name.sh --menu`   | Open agent panel directly            |
 
 ## Installation
 

@@ -32,12 +32,14 @@ todo.sh open 2    # Opens GitHub PR
 ## Supported Link Formats
 
 ### GitHub
+
 - Format: `gh:owner/repo#123`
 - Example: `gh:nf-core/modules#2230`
 - Opens: `https://github.com/nf-core/modules/issues/2230`
 
 ### Jira
-- Format: `jira:TICKET-123`  
+
+- Format: `jira:TICKET-123`
 - Example: `jira:SD-456`
 - Opens: `https://your-jira-base/browse/SD-456`
 
@@ -48,11 +50,13 @@ todo.sh open 2    # Opens GitHub PR
 The Jira base URL can be configured in several ways (in order of precedence):
 
 1. **Environment Variable** (recommended):
+
    ```bash
    export JIRA_BASE_URL="company.atlassian.net"
    ```
 
 2. **Todo directory config file**:
+
    ```bash
    echo "company.atlassian.net" > "$TODO_DIR/.jira_base_url"
    ```
@@ -78,7 +82,7 @@ todo.sh add "Regular todo without links +project @context"
 
 # Open links (assuming the items above are numbered 1, 2, 3)
 todo.sh open 1    # Opens: https://github.com/myorg/backend/issues/1234
-todo.sh open 2    # Opens: https://mycompany.atlassian.net/browse/DOC-567 
+todo.sh open 2    # Opens: https://mycompany.atlassian.net/browse/DOC-567
                   #     AND https://github.com/myorg/api/issues/89
 todo.sh open 3    # Reports: "No supported links found in item 3"
 ```
@@ -86,7 +90,7 @@ todo.sh open 3    # Reports: "No supported links found in item 3"
 ## Error Handling
 
 - **Missing item**: Reports error and exits with code 1
-- **Invalid item number**: Reports error and exits with code 1  
+- **Invalid item number**: Reports error and exits with code 1
 - **No links found**: Reports message and exits with code 2
 - **Missing Jira config**: Warns user but still opens any GitHub links found
 
@@ -105,6 +109,7 @@ A comprehensive test suite is included in the `tests/` directory:
 ```
 
 The test framework includes:
+
 - URL parsing validation
 - End-to-end integration testing with mock browser opening
 - Error condition testing
@@ -116,6 +121,7 @@ The test framework includes:
 The action is already installed at `/Users/emiller/.todo.actions.d/open` and should be automatically discovered by todo.txt-cli.
 
 To verify installation:
+
 ```bash
 todo.sh open usage
 ```
@@ -125,7 +131,7 @@ todo.sh open usage
 - **Language**: Bash (compatible with macOS default Bash)
 - **Dependencies**: None beyond standard Unix tools (grep, sed, awk)
 - **Browser Integration**: Uses macOS `open` command
-- **Exit Codes**: 
+- **Exit Codes**:
   - 0: Success (links opened)
   - 1: Error (invalid input, missing item, etc.)
   - 2: No supported links found in item
@@ -139,6 +145,7 @@ The script is designed to be easily extensible. To add support for new link type
 3. Add corresponding tests
 
 Example patterns that could be added:
+
 - Pull requests: `pr:owner/repo#123`
 - Direct URLs: `url:https://example.com`
 - Internal tickets: `ticket:ABC-123`

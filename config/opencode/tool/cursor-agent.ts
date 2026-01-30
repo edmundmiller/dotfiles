@@ -1,5 +1,5 @@
 // Cursor Agent tool - calls the external cursor-agent CLI for deep research
-import { tool } from "@opencode-ai/plugin"
+import { tool } from "@opencode-ai/plugin";
 
 /**
  * Call cursor-agent CLI for deep research, second opinions, or bug fixing help
@@ -16,13 +16,13 @@ export const ask = tool({
   },
   async execute(args) {
     try {
-      const result = await Bun.$`cursor-agent -p ${args.prompt}`.text()
-      return `## Cursor Agent Response\n\n${result.trim()}`
+      const result = await Bun.$`cursor-agent -p ${args.prompt}`.text();
+      return `## Cursor Agent Response\n\n${result.trim()}`;
     } catch (error: any) {
       if (error.exitCode) {
-        return `Cursor agent failed (exit code ${error.exitCode}):\n${error.stderr || error.message}`
+        return `Cursor agent failed (exit code ${error.exitCode}):\n${error.stderr || error.message}`;
       }
-      return `Error calling cursor-agent: ${error.message}`
+      return `Error calling cursor-agent: ${error.message}`;
     }
   },
-})
+});

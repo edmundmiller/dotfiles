@@ -6,8 +6,8 @@ This guide shows you how to create, use, and manage Agent Skills in Claude Code.
 
 ## Prerequisites
 
-* Claude Code version 1.0 or later
-* Basic familiarity with [Claude Code](/en/docs/claude-code/quickstart)
+- Claude Code version 1.0 or later
+- Basic familiarity with [Claude Code](/en/docs/claude-code/quickstart)
 
 ## What are Agent Skills?
 
@@ -17,10 +17,10 @@ Agent Skills package expertise into discoverable capabilities. Each Skill consis
 
 **Benefits**:
 
-* Extend Claude's capabilities for your specific workflows
-* Share expertise across your team via git
-* Reduce repetitive prompting
-* Compose multiple Skills for complex tasks
+- Extend Claude's capabilities for your specific workflows
+- Share expertise across your team via git
+- Reduce repetitive prompting
+- Compose multiple Skills for complex tasks
 
 Learn more in the [Agent Skills overview](/en/docs/agents-and-tools/agent-skills/overview).
 
@@ -36,29 +36,29 @@ Skills are stored as directories containing a `SKILL.md` file.
 
 Personal Skills are available across all your projects. Store them in `~/.claude/skills/`:
 
-```bash  theme={null}
+```bash theme={null}
 mkdir -p ~/.claude/skills/my-skill-name
 ```
 
 **Use personal Skills for**:
 
-* Your individual workflows and preferences
-* Experimental Skills you're developing
-* Personal productivity tools
+- Your individual workflows and preferences
+- Experimental Skills you're developing
+- Personal productivity tools
 
 ### Project Skills
 
 Project Skills are shared with your team. Store them in `.claude/skills/` within your project:
 
-```bash  theme={null}
+```bash theme={null}
 mkdir -p .claude/skills/my-skill-name
 ```
 
 **Use project Skills for**:
 
-* Team workflows and conventions
-* Project-specific expertise
-* Shared utilities and scripts
+- Team workflows and conventions
+- Project-specific expertise
+- Shared utilities and scripts
 
 Project Skills are checked into git and automatically available to team members.
 
@@ -70,7 +70,7 @@ Skills can also come from [Claude Code plugins](/en/docs/claude-code/plugins). P
 
 Create a `SKILL.md` file with YAML frontmatter and Markdown content:
 
-```yaml  theme={null}
+```yaml theme={null}
 ---
 name: Your Skill Name
 description: Brief description of what this Skill does and when to use it
@@ -106,10 +106,11 @@ my-skill/
 
 Reference these files from SKILL.md:
 
-````markdown  theme={null}
+````markdown theme={null}
 For advanced usage, see [reference.md](reference.md).
 
 Run the helper script:
+
 ```bash
 python scripts/helper.py input.txt
 ```
@@ -121,7 +122,7 @@ Claude reads these files only when needed, using progressive disclosure to manag
 
 Use the `allowed-tools` frontmatter field to limit which tools Claude can use when a Skill is active:
 
-```yaml  theme={null}
+```yaml theme={null}
 ---
 name: Safe File Reader
 description: Read files without making changes. Use when you need read-only file access.
@@ -140,9 +141,9 @@ This Skill provides read-only file access.
 
 When this Skill is active, Claude can only use the specified tools (Read, Grep, Glob) without needing to ask for permission. This is useful for:
 
-* Read-only Skills that shouldn't modify files
-* Skills with limited scope (e.g., only data analysis, no file writing)
-* Security-sensitive workflows where you want to restrict capabilities
+- Read-only Skills that shouldn't modify files
+- Skills with limited scope (e.g., only data analysis, no file writing)
+- Security-sensitive workflows where you want to restrict capabilities
 
 If `allowed-tools` is not specified, Claude will ask for permission to use tools as normal, following the standard permission model.
 
@@ -154,9 +155,9 @@ If `allowed-tools` is not specified, Claude will ask for permission to use tools
 
 Skills are automatically discovered by Claude from three sources:
 
-* Personal Skills: `~/.claude/skills/`
-* Project Skills: `.claude/skills/`
-* Plugin Skills: bundled with installed plugins
+- Personal Skills: `~/.claude/skills/`
+- Project Skills: `.claude/skills/`
+- Plugin Skills: bundled with installed plugins
 
 **To view all available Skills**, ask Claude directly:
 
@@ -174,7 +175,7 @@ This will show all Skills from all sources, including plugin Skills.
 
 **To inspect a specific Skill**, you can also check the filesystem:
 
-```bash  theme={null}
+```bash theme={null}
 # List personal Skills
 ls ~/.claude/skills/
 
@@ -205,13 +206,13 @@ If Claude doesn't use your Skill, check these common issues:
 
 **Too vague**:
 
-```yaml  theme={null}
+```yaml theme={null}
 description: Helps with documents
 ```
 
 **Specific**:
 
-```yaml  theme={null}
+```yaml theme={null}
 description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction.
 ```
 
@@ -224,7 +225,7 @@ Include both what the Skill does and when to use it in the description.
 
 Check the file exists:
 
-```bash  theme={null}
+```bash theme={null}
 # Personal
 ls ~/.claude/skills/my-skill/SKILL.md
 
@@ -236,21 +237,21 @@ ls .claude/skills/my-skill/SKILL.md
 
 Invalid YAML prevents the Skill from loading. Verify the frontmatter:
 
-```bash  theme={null}
+```bash theme={null}
 cat SKILL.md | head -n 10
 ```
 
 Ensure:
 
-* Opening `---` on line 1
-* Closing `---` before Markdown content
-* Valid YAML syntax (no tabs, correct indentation)
+- Opening `---` on line 1
+- Closing `---` before Markdown content
+- Valid YAML syntax (no tabs, correct indentation)
 
 ### View errors
 
 Run Claude Code with debug mode to see Skill loading errors:
 
-```bash  theme={null}
+```bash theme={null}
 claude --debug
 ```
 
@@ -272,14 +273,14 @@ You can also share Skills directly through project repositories:
 
 Create a project Skill:
 
-```bash  theme={null}
+```bash theme={null}
 mkdir -p .claude/skills/team-skill
 # Create SKILL.md
 ```
 
 ### Step 2: Commit to git
 
-```bash  theme={null}
+```bash theme={null}
 git add .claude/skills/
 git commit -m "Add team Skill for PDF processing"
 git push
@@ -289,7 +290,7 @@ git push
 
 When team members pull the latest changes, Skills are immediately available:
 
-```bash  theme={null}
+```bash theme={null}
 git pull
 claude  # Skills are now available
 ```
@@ -298,7 +299,7 @@ claude  # Skills are now available
 
 Edit SKILL.md directly:
 
-```bash  theme={null}
+```bash theme={null}
 # Personal Skill
 code ~/.claude/skills/my-skill/SKILL.md
 
@@ -312,7 +313,7 @@ Changes take effect the next time you start Claude Code. If Claude Code is alrea
 
 Delete the Skill directory:
 
-```bash  theme={null}
+```bash theme={null}
 # Personal
 rm -rf ~/.claude/skills/my-skill
 
@@ -329,14 +330,14 @@ One Skill should address one capability:
 
 **Focused**:
 
-* "PDF form filling"
-* "Excel data analysis"
-* "Git commit messages"
+- "PDF form filling"
+- "Excel data analysis"
+- "Git commit messages"
 
 **Too broad**:
 
-* "Document processing" (split into separate Skills)
-* "Data tools" (split by data type or operation)
+- "Document processing" (split into separate Skills)
+- "Data tools" (split by data type or operation)
 
 ### Write clear descriptions
 
@@ -344,13 +345,13 @@ Help Claude discover when to use Skills by including specific triggers in your d
 
 **Clear**:
 
-```yaml  theme={null}
+```yaml theme={null}
 description: Analyze Excel spreadsheets, create pivot tables, and generate charts. Use when working with Excel files, spreadsheets, or analyzing tabular data in .xlsx format.
 ```
 
 **Vague**:
 
-```yaml  theme={null}
+```yaml theme={null}
 description: For files
 ```
 
@@ -358,18 +359,19 @@ description: For files
 
 Have teammates use Skills and provide feedback:
 
-* Does the Skill activate when expected?
-* Are the instructions clear?
-* Are there missing examples or edge cases?
+- Does the Skill activate when expected?
+- Are the instructions clear?
+- Are there missing examples or edge cases?
 
 ### Document Skill versions
 
 You can document Skill versions in your SKILL.md content to track changes over time. Add a version history section:
 
-```markdown  theme={null}
+```markdown theme={null}
 # My Skill
 
 ## Version History
+
 - v2.0.0 (2025-10-01): Breaking changes to API
 - v1.1.0 (2025-09-15): Added new features
 - v1.0.0 (2025-09-01): Initial release
@@ -389,13 +391,13 @@ Vague descriptions make discovery difficult. Include both what the Skill does an
 
 **Too generic**:
 
-```yaml  theme={null}
+```yaml theme={null}
 description: Helps with data
 ```
 
 **Specific**:
 
-```yaml  theme={null}
+```yaml theme={null}
 description: Analyze Excel spreadsheets, generate pivot tables, create charts. Use when working with Excel files, spreadsheets, or .xlsx files.
 ```
 
@@ -403,7 +405,7 @@ description: Analyze Excel spreadsheets, generate pivot tables, create charts. U
 
 Run validation to check for syntax errors:
 
-```bash  theme={null}
+```bash theme={null}
 # View frontmatter
 cat .claude/skills/my-skill/SKILL.md | head -n 15
 
@@ -415,7 +417,7 @@ cat .claude/skills/my-skill/SKILL.md | head -n 15
 
 **Check**: Is the Skill in the correct location?
 
-```bash  theme={null}
+```bash theme={null}
 # Personal Skills
 ls ~/.claude/skills/*/SKILL.md
 
@@ -433,7 +435,7 @@ Claude will automatically install required dependencies (or ask for permission t
 
 **Check**: Do scripts have execute permissions?
 
-```bash  theme={null}
+```bash theme={null}
 chmod +x .claude/skills/my-skill/scripts/*.py
 ```
 
@@ -452,7 +454,7 @@ Use forward slashes (Unix style) in all paths:
 
 Instead of:
 
-```yaml  theme={null}
+```yaml theme={null}
 # Skill 1
 description: For data analysis
 
@@ -462,7 +464,7 @@ description: For analyzing data
 
 Use:
 
-```yaml  theme={null}
+```yaml theme={null}
 # Skill 1
 description: Analyze sales data in Excel files and CRM exports. Use for sales reports, pipeline analysis, and revenue tracking.
 
@@ -479,7 +481,7 @@ commit-helper/
 └── SKILL.md
 ```
 
-```yaml  theme={null}
+```yaml theme={null}
 ---
 name: Generating Commit Messages
 description: Generates clear commit messages from git diffs. Use when writing commit messages or reviewing staged changes.
@@ -508,7 +510,7 @@ code-reviewer/
 └── SKILL.md
 ```
 
-```yaml  theme={null}
+```yaml theme={null}
 ---
 name: Code Reviewer
 description: Review code for best practices and potential issues. Use when reviewing code, checking PRs, or analyzing code quality.
@@ -547,7 +549,7 @@ pdf-processing/
 
 **SKILL.md**:
 
-````yaml  theme={null}
+````yaml theme={null}
 ---
 name: PDF Processing
 description: Extract text, fill forms, merge PDFs. Use when working with PDF files, forms, or document extraction. Requires pypdf and pdfplumber packages.

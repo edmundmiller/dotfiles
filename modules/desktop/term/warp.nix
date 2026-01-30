@@ -1,6 +1,5 @@
 # modules/desktop/term/warp.nix
 {
-  options,
   config,
   lib,
   pkgs,

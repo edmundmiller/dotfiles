@@ -19,9 +19,9 @@ modules.shell.tmux.enable = true;
 
 ## Files
 
-| Source | Destination | Purpose |
-|--------|-------------|---------|
-| `config/tmux/*` | `~/.config/tmux/` | Config, theme, scripts |
+| Source           | Destination                | Purpose                            |
+| ---------------- | -------------------------- | ---------------------------------- |
+| `config/tmux/*`  | `~/.config/tmux/`          | Config, theme, scripts             |
 | (auto-generated) | `~/.config/tmux/extraInit` | Plugin loading, window-name config |
 
 ## Configuration Options
@@ -37,28 +37,29 @@ Theme config loads BEFORE plugins (required for prefix-highlight placeholder rep
 
 ## Plugins
 
-| Plugin | Description |
-|--------|-------------|
-| **copycat** | Enhanced search (regex, files, URLs, git hashes) |
-| **prefix-highlight** | Visual prefix key indicator in status bar |
-| **yank** | System clipboard integration |
-| **opencode-status** | AI agent activity: ○ idle, ● busy, ◉ waiting, ✗ error, ✔ finished |
-| **opencode-integrated** | Smart naming + OpenCode status |
+| Plugin                  | Description                                                        |
+| ----------------------- | ------------------------------------------------------------------ |
+| **copycat**             | Enhanced search (regex, files, URLs, git hashes)                   |
+| **prefix-highlight**    | Visual prefix key indicator in status bar                          |
+| **yank**                | System clipboard integration                                       |
+| **opencode-status**     | AI agent activity: ○ idle, ● busy, ◉ waiting, ✗ error, ✔ finished |
+| **opencode-integrated** | Smart naming + OpenCode status                                     |
 
 ## tmux-opencode-integrated Behavior
 
 Custom icon mappings for common programs:
 
-| Icon | Programs |
-|------|----------|
-| `OC` | opencode |
-| `CC` | claude |
-| `V` | vim, nvim, vi |
-| `G` | git |
-| `JJ` | jjui |
-| `λ` | zsh, bash, sh, fish |
+| Icon | Programs            |
+| ---- | ------------------- |
+| `OC` | opencode            |
+| `CC` | claude              |
+| `V`  | vim, nvim, vi       |
+| `G`  | git                 |
+| `JJ` | jjui                |
+| `λ`  | zsh, bash, sh, fish |
 
 Settings:
+
 - Uses `~` for home directory abbreviation
 - Max window name length: 24 chars
 - Shows directory for: nvim, vim, git, jjui, opencode, claude
@@ -66,30 +67,30 @@ Settings:
 
 ## Notable Keybindings
 
-| Key | Action |
-|-----|--------|
-| `C-c` | Prefix (not `C-b`) |
-| `v` | Split horizontal |
-| `s` | Split vertical |
-| `h/j/k/l` | Pane navigation |
-| `H/J/K/L` | Swap panes |
+| Key       | Action                            |
+| --------- | --------------------------------- |
+| `C-c`     | Prefix (not `C-b`)                |
+| `v`       | Split horizontal                  |
+| `s`       | Split vertical                    |
+| `h/j/k/l` | Pane navigation                   |
+| `H/J/K/L` | Swap panes                        |
 | `u` / `U` | Launch jjui (vertical/horizontal) |
-| `r` | Reload config |
-| `o` | Zoom pane |
+| `r`       | Reload config                     |
+| `o`       | Zoom pane                         |
 
 See `config/tmux/config` for full keybinding reference.
 
 ## Aliases
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `ta` | `tmux attach` | Attach to session |
-| `tl` | `tmux ls` | List sessions |
-| `tf` | `tmux find-window` | Find window (inside tmux) |
-| `mine` | `tmux detach -a` | Detach other clients |
-| `tn` | (function) | Create new session |
-| `tt` | (function) | Send command to next window |
-| `tdup` | (function) | Start grouped session |
+| Alias  | Command            | Description                 |
+| ------ | ------------------ | --------------------------- |
+| `ta`   | `tmux attach`      | Attach to session           |
+| `tl`   | `tmux ls`          | List sessions               |
+| `tf`   | `tmux find-window` | Find window (inside tmux)   |
+| `mine` | `tmux detach -a`   | Detach other clients        |
+| `tn`   | (function)         | Create new session          |
+| `tt`   | (function)         | Send command to next window |
+| `tdup` | (function)         | Start grouped session       |
 
 ## Theme Features
 
@@ -110,6 +111,7 @@ Restart shell after `hey rebuild` to pick up `$TMUXIFIER/bin` in PATH.
 ### Plugins not loading
 
 Check that `extraInit` exists and is sourced:
+
 ```bash
 cat ~/.config/tmux/extraInit
 ```

@@ -1,6 +1,5 @@
 # Inspired by https://www.srid.ca/2012301.html
 {
-  options,
   config,
   lib,
   pkgs,

@@ -2,8 +2,6 @@
   config,
   options,
   lib,
-  pkgs,
-  home-manager,
   isDarwin,
   ...
 }:
@@ -13,7 +11,7 @@ with lib.my;
   options = with types; {
     user = mkOpt attrs { };
     # Add user.packages option for aliasing to home-manager
-    "user.packages" = mkOpt (listOf package) [];
+    "user.packages" = mkOpt (listOf package) [ ];
 
     dotfiles = {
       # Use static path to avoid self-referential infinite recursion
@@ -56,7 +54,7 @@ with lib.my;
               "root"
             ]
           then
-            config.system.primaryUser or "emiller"  # Use system.primaryUser from host config, fallback to emiller
+            config.system.primaryUser or "emiller" # Use system.primaryUser from host config, fallback to emiller
           else
             user;
         description =
@@ -70,9 +68,7 @@ with lib.my;
           else
             "The primary user account";
         # Determine home directory based on platform
-        homeBase = if isDarwin
-                   then "/Users"
-                   else "/home";
+        homeBase = if isDarwin then "/Users" else "/home";
       in
       {
         inherit name description;

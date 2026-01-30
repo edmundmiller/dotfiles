@@ -1,6 +1,5 @@
 {
   config,
-  home-manager,
   lib,
   pkgs,
   ...

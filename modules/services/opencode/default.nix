@@ -8,7 +8,6 @@
 # 3. After deploy, approve NUC as service host in admin console
 # 4. Access at https://opencode.<tailnet>.ts.net
 {
-  options,
   config,
   lib,
   pkgs,
@@ -38,69 +37,71 @@ in
   };
 
   # NixOS-only service (uses OCI containers with existing backend)
-  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
-    # Create directories if they don't exist
-    systemd.tmpfiles.rules = [
-      "d ${cfg.projectDir} 0755 ${config.user.name} users -"
-      "d ${cfg.vaultDir} 0755 ${config.user.name} users -"
-    ];
-
-    # OpenCode web container
-    virtualisation.oci-containers.containers.opencode = {
-      autoStart = true;
-      image = cfg.image;
-      # Backup: set `user = "<uid>:<gid>"` (see `id -u/-g`) if you want host-owned files.
-      volumes = [
-        "${cfg.projectDir}:/repos"
-        "${cfg.vaultDir}:/vault"
-        "${cfg.configDir}:/opencode-config-ro:ro"
-      ];
-      extraOptions = [
-        "--network=host"
-        "--workdir=/repos"
+  config = optionalAttrs (!isDarwin) (
+    mkIf cfg.enable {
+      # Create directories if they don't exist
+      systemd.tmpfiles.rules = [
+        "d ${cfg.projectDir} 0755 ${config.user.name} users -"
+        "d ${cfg.vaultDir} 0755 ${config.user.name} users -"
       ];
 
-      # Bind on all interfaces; firewall restricts to Tailscale
-      entrypoint = "/bin/sh";
-      cmd = [
-        "-c"
-        ''
-          ${optionalString (cfg.password != "") "export OPENCODE_SERVER_PASSWORD='${cfg.password}'"}
-          # Copy read-only config to writable location (ZFS enforces ro on git-tracked dirs)
-          cp -r /opencode-config-ro /tmp/opencode-config
-          export OPENCODE_CONFIG_DIR=/tmp/opencode-config
-          exec opencode web --hostname 0.0.0.0 --port ${toString cfg.port}
-        ''
-      ];
-    };
+      # OpenCode web container
+      virtualisation.oci-containers.containers.opencode = {
+        autoStart = true;
+        inherit (cfg) image;
+        # Backup: set `user = "<uid>:<gid>"` (see `id -u/-g`) if you want host-owned files.
+        volumes = [
+          "${cfg.projectDir}:/repos"
+          "${cfg.vaultDir}:/vault"
+          "${cfg.configDir}:/opencode-config-ro:ro"
+        ];
+        extraOptions = [
+          "--network=host"
+          "--workdir=/repos"
+        ];
 
-    # Add restart delay to the generated systemd service
-    # Service name depends on backend: podman-opencode or docker-opencode
-    # Note: OCI containers module already sets Restart = "always"
-    systemd.services."${config.virtualisation.oci-containers.backend}-opencode" = {
-      serviceConfig = {
-        RestartSec = mkForce "10s";
+        # Bind on all interfaces; firewall restricts to Tailscale
+        entrypoint = "/bin/sh";
+        cmd = [
+          "-c"
+          ''
+            ${optionalString (cfg.password != "") "export OPENCODE_SERVER_PASSWORD='${cfg.password}'"}
+            # Copy read-only config to writable location (ZFS enforces ro on git-tracked dirs)
+            cp -r /opencode-config-ro /tmp/opencode-config
+            export OPENCODE_CONFIG_DIR=/tmp/opencode-config
+            exec opencode web --hostname 0.0.0.0 --port ${toString cfg.port}
+          ''
+        ];
       };
-    };
 
-    # Open firewall port on Tailscale only
-    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
-
-    # Tailscale Service proxy (HTTPS on 443 → HTTP localhost:4096)
-    systemd.services.opencode-tailscale-serve = mkIf cfg.tailscaleService.enable {
-      description = "Tailscale Service proxy for OpenCode";
-      wantedBy = [ "multi-user.target" ];
-      after = [
-        "${config.virtualisation.oci-containers.backend}-opencode.service"
-        "tailscaled.service"
-      ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.port}";
-        ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
+      # Add restart delay to the generated systemd service
+      # Service name depends on backend: podman-opencode or docker-opencode
+      # Note: OCI containers module already sets Restart = "always"
+      systemd.services."${config.virtualisation.oci-containers.backend}-opencode" = {
+        serviceConfig = {
+          RestartSec = mkForce "10s";
+        };
       };
-    };
-  });
+
+      # Open firewall port on Tailscale only
+      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
+
+      # Tailscale Service proxy (HTTPS on 443 → HTTP localhost:4096)
+      systemd.services.opencode-tailscale-serve = mkIf cfg.tailscaleService.enable {
+        description = "Tailscale Service proxy for OpenCode";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "${config.virtualisation.oci-containers.backend}-opencode.service"
+          "tailscaled.service"
+        ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.port}";
+          ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
+        };
+      };
+    }
+  );
 }

@@ -21,7 +21,10 @@ in
       {
         users = [ config.user.name ];
         commands = [
-          { command = "ALL"; options = [ "NOPASSWD" ]; }
+          {
+            command = "ALL";
+            options = [ "NOPASSWD" ];
+          }
         ];
       }
     ];

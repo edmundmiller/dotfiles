@@ -3,10 +3,8 @@
 # I don't use clojure. Perhaps one day...
 {
   config,
-  options,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;

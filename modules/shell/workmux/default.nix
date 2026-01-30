@@ -3,7 +3,6 @@
 # Workmux - Tmux-native git worktree manager for parallel AI agent workflows
 # https://workmux.raine.dev
 {
-  options,
   config,
   lib,
   pkgs,

@@ -5,7 +5,6 @@
 # and Jupyter can have my babies. Every single one.
 {
   config,
-  options,
   lib,
   pkgs,
   isDarwin,
@@ -25,20 +24,22 @@ in
   config = mkIf cfg.enable (mkMerge [
     {
       user.packages = with pkgs; [
-        (python3.withPackages (p: with p; [
-          # Data science
-          pandas
-          requests
-          seaborn
-          # Dev tools (bundled to avoid env conflicts)
-          pip
-          black
-          isort
-          ipython
-          jupyterlab
-          setuptools
-          pylint
-        ]))
+        (python3.withPackages (
+          p: with p; [
+            # Data science
+            pandas
+            requests
+            seaborn
+            # Dev tools (bundled to avoid env conflicts)
+            pip
+            black
+            isort
+            ipython
+            jupyterlab
+            setuptools
+            pylint
+          ]
+        ))
         poetry
         ruff
       ];

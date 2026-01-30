@@ -30,7 +30,8 @@ in
             floorp
             .zen-wrapped
           '';
-        } // (if !isDarwin then { mode = "0755"; } else {});
+        }
+        // (if !isDarwin then { mode = "0755"; } else { });
       };
 
       programs.zsh = {

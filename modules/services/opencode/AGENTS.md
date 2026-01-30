@@ -27,7 +27,7 @@ modules.services.opencode = {
 ## Architecture
 
 ```
-[Browser] 
+[Browser]
     |
     v (HTTPS:443, TLS terminated by Tailscale)
 [Tailscale Service: svc:opencode]
@@ -41,9 +41,9 @@ modules.services.opencode = {
 
 ## Systemd Services
 
-| Service                         | Purpose                            |
-| ------------------------------- | ---------------------------------- |
-| `podman-opencode.service`       | Main container running OpenCode    |
+| Service                            | Purpose                         |
+| ---------------------------------- | ------------------------------- |
+| `podman-opencode.service`          | Main container running OpenCode |
 | `opencode-tailscale-serve.service` | Tailscale HTTPS proxy (oneshot) |
 
 ## Tailscale Service Setup (One-Time)

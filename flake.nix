@@ -26,6 +26,8 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    git-hooks.url = "github:cachix/git-hooks.nix";
+    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
     # NOTE https://github.com/danth/stylix/issues/359
     stylix.url = "github:danth/stylix/master";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
@@ -47,7 +49,7 @@
     try.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
-    
+
     opencode.url = "github:anomalyco/opencode/dev";
     opencode.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -84,18 +86,18 @@
           config.allowUnfree = true; # forgive me Stallman senpai
           overlays = extraOverlays ++ (lib.attrValues self.overlays);
         };
-      
+
       # Linux packages
       pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-clawdbot.overlays.default ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
-      
-      # Darwin packages  
+
+      # Darwin packages
       darwinPkgs = mkPkgs nixpkgs [ self.overlay ] darwinSystem;
 
       lib = nixpkgs.lib.extend (
         self: _super: {
           my = import ./lib {
-            pkgs = pkgs;  # Linux packages for the lib functions
+            inherit pkgs; # Linux packages for the lib functions
             inherit inputs;
             lib = self;
           };
@@ -103,16 +105,21 @@
       );
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ inputs.treefmt-nix.flakeModule ];
+      imports = [
+        inputs.git-hooks.flakeModule
+        inputs.treefmt-nix.flakeModule
+      ];
 
       flake = {
         lib = lib.my;
 
         overlay = final: _prev: {
-          unstable = if final.stdenv.isDarwin 
-                     then mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
-                     else pkgs';
-          my = self.packages.${final.stdenv.hostPlatform.system} or {};
+          unstable =
+            if final.stdenv.isDarwin then
+              mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
+            else
+              pkgs';
+          my = self.packages.${final.stdenv.hostPlatform.system} or { };
         };
 
         overlays = mapModules ./overlays import;
@@ -123,7 +130,8 @@
 
         nixosModules = {
           dotfiles = import ./.;
-        } // mapModulesRec ./modules import;
+        }
+        // mapModulesRec ./modules import;
 
         nixosConfigurations = mapHosts ./hosts { };
 
@@ -143,7 +151,7 @@
           type = "app";
           program = ./bin/hey;
         };
-        
+
         apps."${darwinSystem}".default = {
           type = "app";
           program = ./bin/hey;
@@ -234,8 +242,7 @@
             user = "root";
             interactiveSudo = false;
             remoteBuild = true;
-            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
-              self.nixosConfigurations.nuc;
+            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
           };
 
           # Darwin hosts - local deployment only (no magic rollback on macOS)
@@ -243,9 +250,9 @@
             hostname = "localhost";
             profiles.system = {
               user = "emiller";
-              path = deploy-rs.lib.aarch64-darwin.activate.custom
-                self.darwinConfigurations."MacTraitor-Pro".system
-                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
+              path =
+                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."MacTraitor-Pro".system
+                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
             };
           };
 
@@ -253,9 +260,9 @@
             hostname = "localhost";
             profiles.system = {
               user = "edmundmiller";
-              path = deploy-rs.lib.aarch64-darwin.activate.custom
-                self.darwinConfigurations."Seqeratop".system
-                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
+              path =
+                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."Seqeratop".system
+                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
             };
           };
         };
@@ -264,80 +271,143 @@
         "x86_64-linux"
         "aarch64-darwin"
       ];
-      perSystem = { pkgs, system, ... }: {
-        # Expose deploy-rs CLI for `nix run .#deploy-rs`
-        packages.deploy-rs = deploy-rs.packages.${system}.default;
+      perSystem =
+        {
+          config,
+          pkgs,
+          system,
+          ...
+        }:
+        {
+          # Expose deploy-rs CLI for `nix run .#deploy-rs`
+          packages.deploy-rs = deploy-rs.packages.${system}.default;
 
-        treefmt = {
-          projectRootFile = ".git/config";
-          programs.deadnix.enable = true;
-          programs.nixfmt.enable = true;
-          programs.prettier.enable = true;
-          programs.statix.enable = true;
-        };
+          treefmt = {
+            projectRootFile = ".git/config";
+            programs.deadnix.enable = true;
+            programs.nixfmt.enable = true;
+            programs.prettier.enable = true;
+            programs.statix.enable = true;
+          };
 
-        # Add checks for deployment, plugins, and shell tests
-        checks = {
-          # deploy-rs checks - validates deployment configurations
-          deploy-rs = deploy-rs.lib.${system}.deployChecks self.deploy;
+          # Pre-commit hooks via git-hooks.nix
+          pre-commit = {
+            check.enable = true;
+            settings = {
+              hooks = {
+                # Nix formatting and linting
+                nixfmt-rfc-style.enable = true;
+                deadnix.enable = true;
+                # statix disabled in pre-commit - too many false positives on style
+                # treefmt already runs statix for actual issues
 
-          # zunit shell function tests
-          zunit-tests = pkgs.runCommand "zunit-tests" {
-            nativeBuildInputs = [
-              self.packages.${system}.zunit
-              pkgs.zsh
-              pkgs.git
+                # General formatting
+                prettier.enable = true;
+              };
+            };
+          };
+
+          # DevShell with pre-commit hooks installed
+          devShells.default = pkgs.mkShell {
+            shellHook = ''
+              ${config.pre-commit.installationScript}
+            '';
+            buildInputs = with pkgs; [
+              nixfmt-rfc-style
+              deadnix
+              statix
+              nodePackages.prettier
             ];
-          } ''
-            # Setup git config for tests
-            export HOME=$TMPDIR
-            git config --global user.email "test@test.com"
-            git config --global user.name "Test User"
-            git config --global init.defaultBranch main
+          };
 
-            # Run zunit tests (--tap bypasses revolver spinner dependency)
-            cd ${./.}
-            for test in config/*/tests/*.zunit; do
-              if [ -f "$test" ]; then
-                echo "Running $test..."
-                zunit --tap "$test"
-              fi
-            done
+          # Add checks for deployment, plugins, and shell tests
+          checks =
+            let
+              # deploy-rs checks - only validate configurations that can build on current system
+              deployChecks = deploy-rs.lib.${system}.deployChecks {
+                nodes = pkgs.lib.filterAttrs (
+                  name: _node:
+                  if system == "aarch64-darwin" then
+                    # On Darwin, only check Darwin configs (MacTraitor-Pro, Seqeratop)
+                    builtins.elem name [
+                      "MacTraitor-Pro"
+                      "Seqeratop"
+                    ]
+                  else
+                    # On Linux, only check Linux configs (nuc, etc.)
+                    !builtins.elem name [
+                      "MacTraitor-Pro"
+                      "Seqeratop"
+                    ]
+                ) self.deploy.nodes;
+              };
+            in
+            deployChecks
+            // {
 
-            # Create success marker
-            mkdir -p $out
-            echo "All zunit tests passed" > $out/result
-          '';
+              # zunit shell function tests
+              zunit-tests =
+                pkgs.runCommand "zunit-tests"
+                  {
+                    nativeBuildInputs = [
+                      self.packages.${system}.zunit
+                      pkgs.zsh
+                      pkgs.git
+                    ];
+                  }
+                  ''
+                    # Setup git config for tests
+                    export HOME=$TMPDIR
+                    git config --global user.email "test@test.com"
+                    git config --global user.name "Test User"
+                    git config --global init.defaultBranch main
 
-          validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" {
-            buildInputs = [ pkgs.python312 ];
-          } ''
-            # Create a temporary directory for the check
-            mkdir -p $out
+                    # Run zunit tests (--tap bypasses revolver spinner dependency)
+                    cd ${./.}
+                    for test in config/*/tests/*.zunit; do
+                      if [ -f "$test" ]; then
+                        echo "Running $test..."
+                        zunit --tap "$test"
+                      fi
+                    done
 
-            # Copy plugin files to temporary location
-            cp -r ${./.} /tmp/dotfiles-check
-            cd /tmp/dotfiles-check
+                    # Create success marker
+                    mkdir -p $out
+                    echo "All zunit tests passed" > $out/result
+                  '';
 
-            # Install uv
-            export HOME=/tmp
-            ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
-            export PATH="$HOME/.cargo/bin:$PATH"
+              validate-claude-plugins =
+                pkgs.runCommand "validate-claude-plugins"
+                  {
+                    buildInputs = [ pkgs.python312 ];
+                  }
+                  ''
+                    # Create a temporary directory for the check
+                    mkdir -p $out
 
-            # Run claudelint on each plugin directory
-            echo "Validating Claude Code plugins..."
+                    # Copy plugin files to temporary location
+                    cp -r ${./.} /tmp/dotfiles-check
+                    cd /tmp/dotfiles-check
 
-            for plugin in config/claude/plugins/*/; do
-              if [ -d "$plugin" ]; then
-                echo "Checking $plugin..."
-                uvx claudelint "$plugin" || exit 1
-              fi
-            done
+                    # Install uv
+                    export HOME=/tmp
+                    ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
+                    export PATH="$HOME/.cargo/bin:$PATH"
 
-            # Create success marker
-            echo "All plugins validated successfully" > $out/result
-          '';
+                    # Run claudelint on each plugin directory
+                    echo "Validating Claude Code plugins..."
+
+                    for plugin in config/claude/plugins/*/; do
+                      if [ -d "$plugin" ]; then
+                        echo "Checking $plugin..."
+                        uvx claudelint "$plugin" || exit 1
+                      fi
+                    done
+
+                    # Create success marker
+                    echo "All plugins validated successfully" > $out/result
+                  '';
+            };
         };
-      };
     };
 }

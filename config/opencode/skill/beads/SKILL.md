@@ -22,10 +22,12 @@ Graph-based issue tracker that survives conversation compaction. Provides persis
 **bd (beads)** replaces markdown task lists with a dependency-aware graph stored in git. Unlike TodoWrite (session-scoped), bd persists across compactions and tracks complex dependencies.
 
 **Key Distinction**:
+
 - **bd**: Multi-session work, dependencies, survives compaction, git-backed
 - **TodoWrite**: Single-session tasks, linear execution, conversation-scoped
 
 **Core Capabilities**:
+
 - 📊 **Dependency Graphs**: Track what blocks what (blocks, parent-child, discovered-from, related)
 - 💾 **Compaction Survival**: Tasks persist when conversation history is compacted
 - 🐙 **Git Integration**: Issues versioned in `.beads/issues.jsonl`, sync with `bd sync`
@@ -34,6 +36,7 @@ Graph-based issue tracker that survives conversation compaction. Provides persis
 - 🏷️ **Rich Metadata**: Priority (P0-P4), types (bug/feature/task/epic), labels, assignees
 
 **When to Use bd vs TodoWrite**:
+
 - ❓ "Will I need this context in 2 weeks?" → **YES** = bd
 - ❓ "Could conversation history get compacted?" → **YES** = bd
 - ❓ "Does this have blockers/dependencies?" → **YES** = bd
@@ -46,22 +49,26 @@ Graph-based issue tracker that survives conversation compaction. Provides persis
 ## Prerequisites
 
 **Required**:
+
 - **bd CLI**: Version 0.34.0 or later installed and in PATH
 - **Git Repository**: Current directory must be a git repo
 - **Initialization**: `bd init` must be run once (humans do this, not agents)
 
 **Verify Installation**:
+
 ```bash
 bd --version  # Should return 0.34.0 or later
 ```
 
 **First-Time Setup** (humans run once):
+
 ```bash
 cd /path/to/your/repo
 bd init  # Creates .beads/ directory with database
 ```
 
 **Optional**:
+
 - **BEADS_DIR** environment variable for alternate database location
 - **Daemon** for background sync: `bd daemon --start`
 
@@ -80,12 +87,14 @@ bd ready
 Shows tasks with no open blockers, sorted by priority (P0 → P4).
 
 **What this shows**:
+
 - Task ID (e.g., `myproject-abc`)
 - Title
 - Priority level
 - Issue type (bug, feature, task, epic)
 
 **Example output**:
+
 ```
 claude-code-plugins-abc [P1] [task] open
   Implement user authentication
@@ -105,6 +114,7 @@ bd show <task-id>
 ```
 
 Displays:
+
 - Full task description
 - Dependency graph (what blocks this, what this blocks)
 - Audit trail (all status changes, notes)
@@ -127,6 +137,7 @@ bd update <task-id> --notes "Completed: X. In progress: Y. Blocked by: Z"
 **Critical for compaction survival**: Write notes as if explaining to a future agent with zero conversation context.
 
 **Note Format** (best practice):
+
 ```
 COMPLETED: Specific deliverables (e.g., "implemented JWT refresh endpoint + rate limiting")
 IN PROGRESS: Current state + next immediate step
@@ -141,6 +152,7 @@ KEY DECISIONS: Important context or user guidance
 #### When to Create Tasks
 
 Create bd tasks when:
+
 - User mentions tracking work across sessions
 - User says "we should fix/build/add X"
 - Work has dependencies or blockers
@@ -153,11 +165,13 @@ bd create "Task title" -p 1 --type task
 ```
 
 **Arguments**:
+
 - **Title**: Brief description (required)
 - **Priority**: 0-4 where 0=critical, 1=high, 2=medium, 3=low, 4=backlog (default: 2)
 - **Type**: bug, feature, task, epic, chore (default: task)
 
 **Example**:
+
 ```bash
 bd create "Fix authentication bug" -p 0 --type bug
 ```
@@ -192,12 +206,14 @@ bd update <task-id> --status <new-status>
 ```
 
 **Status Values**:
+
 - `open` - Not started
 - `in_progress` - Actively working
 - `blocked` - Stuck, waiting on something
 - `closed` - Completed
 
 **Example**:
+
 ```bash
 bd update myproject-abc --status blocked
 ```
@@ -238,12 +254,14 @@ bd dep add <child-id> <parent-id>
 **Meaning**: `<parent-id>` blocks `<child-id>` (parent must be completed first).
 
 **Dependency Types**:
+
 - **blocks**: Parent must close before child becomes ready
 - **parent-child**: Hierarchical relationship (epics and subtasks)
 - **discovered-from**: Task A led to discovering task B
 - **related**: Tasks are related but not blocking
 
 **Example**:
+
 ```bash
 # Deployment blocked by tests passing
 bd dep add deploy-task test-task  # test-task blocks deploy-task
@@ -256,6 +274,7 @@ bd dep list <task-id>
 ```
 
 Shows:
+
 - What this task blocks (dependents)
 - What blocks this task (blockers)
 
@@ -276,6 +295,7 @@ bd close <task-id> --reason "Completion summary"
 **Best Practice**: Always include a reason describing what was accomplished.
 
 **Example**:
+
 ```bash
 bd close myproject-abc --reason "Completed: OAuth endpoints implemented with Google, GitHub providers. Tests passing."
 ```
@@ -309,6 +329,7 @@ bd sync
 ```
 
 **Performs**:
+
 1. Export database to `.beads/issues.jsonl`
 2. Commit changes to git
 3. Pull from remote (merge if needed)
@@ -395,6 +416,7 @@ bd stats
 ```
 
 Shows:
+
 - Total issues by status (open, in_progress, blocked, closed)
 - Issues by priority (P0-P4)
 - Issues by type (bug, feature, task, epic, chore)
@@ -404,48 +426,48 @@ Shows:
 
 ### Complete Command Reference
 
-| Command | When to Use | Example |
-|---------|-------------|---------|
-| **FIND COMMANDS** | | |
-| `bd ready` | Find unblocked tasks | User asks "what should I work on?" |
-| `bd list` | View all tasks (with filters) | "Show me all open bugs" |
-| `bd show <id>` | Get task details | "Show me task bd-42" |
-| `bd search <query>` | Text search across tasks | "Find tasks about auth" |
-| `bd blocked` | Find stuck work | "What's blocking us?" |
-| `bd stats` | Project metrics | "How many tasks are open?" |
-| **CREATE COMMANDS** | | |
-| `bd create` | Track new work | "Create a task for this bug" |
-| `bd template create` | Use issue template | "Create task from bug template" |
-| `bd init` | Initialize beads | "Set up beads in this repo" (humans only) |
-| **UPDATE COMMANDS** | | |
-| `bd update <id>` | Change status/priority/notes | "Mark as in progress" |
-| `bd dep add` | Link dependencies | "This blocks that" |
-| `bd label add` | Tag with labels | "Label this as backend" |
-| `bd comments add` | Add comment | "Add comment to task" |
-| `bd reopen <id>` | Reopen closed task | "Reopen bd-42, found regression" |
-| `bd rename-prefix` | Rename issue prefix | "Change prefix from bd- to proj-" |
-| `bd epic status` | Check epic progress | "Show epic completion %" |
-| **COMPLETE COMMANDS** | | |
-| `bd close <id>` | Mark task done | "Close this task, it's done" |
-| `bd epic close-eligible` | Auto-close complete epics | "Close epics where all children done" |
-| **SYNC COMMANDS** | | |
-| `bd sync` | Git sync (all-in-one) | "Sync tasks to git" |
-| `bd export` | Export to JSONL | "Backup all tasks" |
-| `bd import` | Import from JSONL | "Restore from backup" |
-| `bd daemon` | Background sync manager | "Start auto-sync daemon" |
-| **CLEANUP COMMANDS** | | |
-| `bd delete <id>` | Delete issues | "Delete test task" (requires --force) |
-| `bd compact` | Archive old closed tasks | "Compress database" |
-| **REPORTING COMMANDS** | | |
-| `bd stats` | Project metrics | "Show project health" |
-| `bd audit record` | Log interactions | "Record this LLM call" |
-| `bd workflow` | Show workflow guide | "How do I use beads?" |
-| **ADVANCED COMMANDS** | | |
-| `bd prime` | Refresh AI context | "Load bd workflow rules" |
-| `bd quickstart` | Interactive tutorial | "Teach me beads basics" |
-| `bd daemons` | Multi-repo daemon mgmt | "Manage all beads daemons" |
-| `bd version` | Version check | "Check bd version" |
-| `bd restore <id>` | Restore compacted issue | "Get full history from git" |
+| Command                  | When to Use                   | Example                                   |
+| ------------------------ | ----------------------------- | ----------------------------------------- |
+| **FIND COMMANDS**        |                               |                                           |
+| `bd ready`               | Find unblocked tasks          | User asks "what should I work on?"        |
+| `bd list`                | View all tasks (with filters) | "Show me all open bugs"                   |
+| `bd show <id>`           | Get task details              | "Show me task bd-42"                      |
+| `bd search <query>`      | Text search across tasks      | "Find tasks about auth"                   |
+| `bd blocked`             | Find stuck work               | "What's blocking us?"                     |
+| `bd stats`               | Project metrics               | "How many tasks are open?"                |
+| **CREATE COMMANDS**      |                               |                                           |
+| `bd create`              | Track new work                | "Create a task for this bug"              |
+| `bd template create`     | Use issue template            | "Create task from bug template"           |
+| `bd init`                | Initialize beads              | "Set up beads in this repo" (humans only) |
+| **UPDATE COMMANDS**      |                               |                                           |
+| `bd update <id>`         | Change status/priority/notes  | "Mark as in progress"                     |
+| `bd dep add`             | Link dependencies             | "This blocks that"                        |
+| `bd label add`           | Tag with labels               | "Label this as backend"                   |
+| `bd comments add`        | Add comment                   | "Add comment to task"                     |
+| `bd reopen <id>`         | Reopen closed task            | "Reopen bd-42, found regression"          |
+| `bd rename-prefix`       | Rename issue prefix           | "Change prefix from bd- to proj-"         |
+| `bd epic status`         | Check epic progress           | "Show epic completion %"                  |
+| **COMPLETE COMMANDS**    |                               |                                           |
+| `bd close <id>`          | Mark task done                | "Close this task, it's done"              |
+| `bd epic close-eligible` | Auto-close complete epics     | "Close epics where all children done"     |
+| **SYNC COMMANDS**        |                               |                                           |
+| `bd sync`                | Git sync (all-in-one)         | "Sync tasks to git"                       |
+| `bd export`              | Export to JSONL               | "Backup all tasks"                        |
+| `bd import`              | Import from JSONL             | "Restore from backup"                     |
+| `bd daemon`              | Background sync manager       | "Start auto-sync daemon"                  |
+| **CLEANUP COMMANDS**     |                               |                                           |
+| `bd delete <id>`         | Delete issues                 | "Delete test task" (requires --force)     |
+| `bd compact`             | Archive old closed tasks      | "Compress database"                       |
+| **REPORTING COMMANDS**   |                               |                                           |
+| `bd stats`               | Project metrics               | "Show project health"                     |
+| `bd audit record`        | Log interactions              | "Record this LLM call"                    |
+| `bd workflow`            | Show workflow guide           | "How do I use beads?"                     |
+| **ADVANCED COMMANDS**    |                               |                                           |
+| `bd prime`               | Refresh AI context            | "Load bd workflow rules"                  |
+| `bd quickstart`          | Interactive tutorial          | "Teach me beads basics"                   |
+| `bd daemons`             | Multi-repo daemon mgmt        | "Manage all beads daemons"                |
+| `bd version`             | Version check                 | "Check bd version"                        |
+| `bd restore <id>`        | Restore compacted issue       | "Get full history from git"               |
 
 ---
 
@@ -456,11 +478,13 @@ This skill produces:
 **Task IDs**: Format `<prefix>-<hash>` (e.g., `claude-code-plugins-abc`, `myproject-xyz`)
 
 **Status Summaries**:
+
 ```
 5 open, 2 in_progress, 1 blocked, 47 closed
 ```
 
 **Dependency Graphs** (visual tree):
+
 ```
 myproject-abc: Deploy to production [P0] [blocked]
   Blocked by:
@@ -469,6 +493,7 @@ myproject-abc: Deploy to production [P0] [blocked]
 ```
 
 **Audit Trails** (complete history):
+
 ```
 2025-12-22 10:00 - Created by alice (P2, task)
 2025-12-22 10:15 - Priority changed: P2 → P0
@@ -485,8 +510,10 @@ myproject-abc: Deploy to production [P0] [blocked]
 ### Common Failures
 
 #### 1. `bd: command not found`
+
 **Cause**: bd CLI not installed or not in PATH
 **Solution**: Install from https://github.com/steveyegge/beads
+
 ```bash
 # macOS/Linux
 curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
@@ -499,30 +526,38 @@ brew install steveyegge/beads/bd
 ```
 
 #### 2. `No .beads database found`
+
 **Cause**: beads not initialized in this repository
 **Solution**: Run `bd init` (humans do this once, not agents)
+
 ```bash
 bd init  # Creates .beads/ directory
 ```
 
 #### 3. `Task not found: <id>`
+
 **Cause**: Invalid task ID or task doesn't exist
 **Solution**: Use `bd list` to see all tasks and verify ID format
+
 ```bash
 bd list                    # See all tasks
 bd search <partial-title>  # Find task by title
 ```
 
 #### 4. `Circular dependency detected`
+
 **Cause**: Attempting to create a dependency cycle (A blocks B, B blocks A)
 **Solution**: bd prevents circular dependencies automatically. Restructure dependency graph.
+
 ```bash
 bd dep list <id>  # View current dependencies
 ```
 
 #### 5. Git merge conflicts in `.beads/issues.jsonl`
+
 **Cause**: Multiple users modified same issue
 **Solution**: bd sync handles JSONL conflicts automatically. If manual intervention needed:
+
 ```bash
 # View conflict
 git status
@@ -532,16 +567,20 @@ bd sync --merge  # Attempt auto-resolution
 ```
 
 #### 6. `Database is locked`
+
 **Cause**: Daemon or another process has exclusive lock
 **Solution**: Restart daemon or wait for lock to release
+
 ```bash
 bd daemon --stop
 bd daemon --start
 ```
 
 #### 7. Sync failures
+
 **Cause**: Network issues, authentication failures, or git configuration
 **Solution**: Check git remote access and credentials
+
 ```bash
 git fetch  # Test connectivity
 git status # Verify repo state
@@ -556,6 +595,7 @@ git status # Verify repo state
 **User Request**: "We need to implement OAuth, this will take multiple sessions"
 
 **Agent Response**:
+
 ```bash
 # Create epic
 bd create "Epic: OAuth Implementation" -p 0 --type epic
@@ -587,6 +627,7 @@ bd update claude-code-plugins-abc.1 --status in_progress
 **Scenario**: Agent discovers API is down during implementation
 
 **Agent Actions**:
+
 ```bash
 # Mark current task as blocked
 bd update claude-code-plugins-xyz --status blocked --notes "API endpoint /auth returns 503, reported to backend team"
@@ -610,6 +651,7 @@ bd ready
 ### Example 3: Session Resume After Compaction
 
 **Session 1**:
+
 ```bash
 bd create "Implement user authentication" -p 1
 bd update myproject-auth --status in_progress
@@ -618,6 +660,7 @@ bd update myproject-auth --notes "COMPLETED: JWT library integrated. IN PROGRESS
 ```
 
 **Session 2** (weeks later):
+
 ```bash
 bd ready
 # Shows: myproject-auth [P1] [task] in_progress
@@ -680,6 +723,7 @@ bd ready
 ### Example 5: Team Collaboration (Git Sync)
 
 **Alice's Session**:
+
 ```bash
 bd create "Refactor database layer" -p 1
 bd update db-refactor --status in_progress
@@ -691,6 +735,7 @@ bd sync
 ```
 
 **Bob's Session** (next day):
+
 ```bash
 # Start of day - sync from git
 bd sync
@@ -721,6 +766,7 @@ bd sync
 ### When to Use bd vs TodoWrite (Decision Tree)
 
 **Use bd when**:
+
 - ✅ Work spans multiple sessions or days
 - ✅ Tasks have dependencies or blockers
 - ✅ Need to survive conversation compaction
@@ -728,6 +774,7 @@ bd sync
 - ✅ Collaboration with team (git sync)
 
 **Use TodoWrite when**:
+
 - ✅ Single-session linear tasks
 - ✅ Simple checklist for immediate work
 - ✅ All context is in current conversation
@@ -741,18 +788,18 @@ bd sync
 
 Top 10 most-used commands:
 
-| Command | Purpose |
-|---------|---------|
-| `bd ready` | Show tasks ready to work on |
-| `bd create "Title" -p 1` | Create new task |
-| `bd show <id>` | View task details |
-| `bd update <id> --status in_progress` | Start working |
-| `bd update <id> --notes "Progress"` | Add progress notes |
-| `bd close <id> --reason "Done"` | Complete task |
-| `bd dep add <child> <parent>` | Add dependency |
-| `bd list` | See all tasks |
-| `bd search <query>` | Find tasks by keyword |
-| `bd sync` | Sync with git remote |
+| Command                               | Purpose                     |
+| ------------------------------------- | --------------------------- |
+| `bd ready`                            | Show tasks ready to work on |
+| `bd create "Title" -p 1`              | Create new task             |
+| `bd show <id>`                        | View task details           |
+| `bd update <id> --status in_progress` | Start working               |
+| `bd update <id> --notes "Progress"`   | Add progress notes          |
+| `bd close <id> --reason "Done"`       | Complete task               |
+| `bd dep add <child> <parent>`         | Add dependency              |
+| `bd list`                             | See all tasks               |
+| `bd search <query>`                   | Find tasks by keyword       |
+| `bd sync`                             | Sync with git remote        |
 
 ---
 
@@ -771,6 +818,7 @@ Top 10 most-used commands:
 bd uses `.beads/` directory by default.
 
 **Alternate Database**:
+
 ```bash
 export BEADS_DIR=/path/to/alternate/beads
 bd ready  # Uses alternate database
@@ -813,6 +861,7 @@ For complex scenarios, see references:
 Complete reference: https://github.com/steveyegge/beads
 
 Existing detailed guides:
+
 - `{baseDir}/references/CLI_REFERENCE.md` - Complete command syntax
 - `{baseDir}/references/WORKFLOWS.md` - Detailed workflow patterns
 - `{baseDir}/references/DEPENDENCIES.md` - Dependency system deep dive

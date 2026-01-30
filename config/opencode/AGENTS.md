@@ -5,6 +5,7 @@
 This directory contains OpenCode configuration managed via nix-darwin.
 
 ### Nix-Managed (Read-Only Symlinks)
+
 - `opencode.jsonc` - Main configuration
 - `AGENTS.md` - This file (directory agent instructions)
 - `GLOBAL_INSTRUCTIONS.md` - Global agent instructions
@@ -13,31 +14,36 @@ This directory contains OpenCode configuration managed via nix-darwin.
 - `skills/` - Agent skills
 - `agent/` - Custom agent definitions
 
-
 ### Nix-Managed (Copied via Activation Script)
+
 - `tool/` - Custom tools (copied so bun can resolve node_modules)
 - `package.json` - Dependencies for tools/plugins
 - `node_modules/` - Installed via bun install in activation script
 
 ### Nix-Built Plugins (Symlinked)
+
 - `plugin/opencode-tmux-namer` - Built from `packages/opencode-tmux-namer/`
 
 ### User-Managed (NOT in Nix)
+
 - `plugin/` - Directory for user-managed plugins (alongside nix-built ones)
 
 ## Plugin Management
 
 **Nix-built plugins:**
+
 - `opencode-tmux-namer` - Built via nix, symlinked automatically on `hey rebuild`
   - Source: `packages/opencode-tmux-namer/`
   - Edit source, then `hey rebuild` to deploy
 
 **User-managed plugins:**
+
 - Clone to `~/.config/opencode/plugin/`
 - For TypeScript plugins: run `bun run build`
 - Add to `opencode.jsonc` `plugins` array: `"./plugin/<plugin-name>"`
 
 **Required user-managed plugins:**
+
 - `opencode-jj` - https://github.com/edmundmiller/opencode-jj (TypeScript, needs build)
 - `boomerang-notify` - https://github.com/edmundmiller/boomerang-notify
 
@@ -46,6 +52,7 @@ This directory contains OpenCode configuration managed via nix-darwin.
 ## Rebuild Workflow
 
 After `hey rebuild`:
+
 - Symlinked files update automatically
 - `tool/` directory re-syncs
 - `bun install` runs for dependencies
@@ -55,6 +62,7 @@ After `hey rebuild`:
 ## Modifying Configuration
 
 To modify nix-managed files:
+
 1. Edit in `~/.config/dotfiles/config/opencode/`
 2. Run `hey rebuild`
 3. Changes take effect immediately

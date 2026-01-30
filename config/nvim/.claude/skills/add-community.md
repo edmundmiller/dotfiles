@@ -17,6 +17,7 @@ Use this skill when the user wants to add a plugin pack from AstroCommunity to t
 This configuration uses AstroCommunity, a repository of pre-configured plugin packs organized into categories. Community packs are imported in `lua/community.lua` and can be customized in `lua/plugins/user.lua`.
 
 See `.claude/CONTEXT.md` for:
+
 - Community categories and available packs
 - Import patterns
 - Customization examples
@@ -54,6 +55,7 @@ When the user requests adding a community plugin:
 **User request**: "Add the octo.nvim community pack for GitHub integration"
 
 **Your response**:
+
 1. Read `lua/community.lua` to check for existing Git plugins
 2. Add import: `{ import = "astrocommunity.git.octo-nvim" }`
 3. Explain what octo.nvim provides

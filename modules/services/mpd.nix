@@ -1,9 +1,7 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  home-manager,
   ...
 }:
 with lib;

@@ -17,15 +17,15 @@ modules.services.opencode.enable = true;
 
 ## Options
 
-| Option                          | Default                             | Description                  |
-| ------------------------------- | ----------------------------------- | ---------------------------- |
-| `enable`                        | `false`                             | Enable OpenCode service      |
-| `projectDir`                    | `~/src`                             | Directory mounted in container |
-| `image`                         | `ghcr.io/anomalyco/opencode:latest` | Container image              |
-| `port`                          | `4096`                              | Backend port                 |
-| `password`                      | `""`                                | Optional server password     |
-| `tailscaleService.enable`       | `true`                              | Enable Tailscale Service     |
-| `tailscaleService.serviceName`  | `"opencode"`                        | Tailscale service name       |
+| Option                         | Default                             | Description                    |
+| ------------------------------ | ----------------------------------- | ------------------------------ |
+| `enable`                       | `false`                             | Enable OpenCode service        |
+| `projectDir`                   | `~/src`                             | Directory mounted in container |
+| `image`                        | `ghcr.io/anomalyco/opencode:latest` | Container image                |
+| `port`                         | `4096`                              | Backend port                   |
+| `password`                     | `""`                                | Optional server password       |
+| `tailscaleService.enable`      | `true`                              | Enable Tailscale Service       |
+| `tailscaleService.serviceName` | `"opencode"`                        | Tailscale service name         |
 
 ## Tailscale Service Setup
 
@@ -37,6 +37,7 @@ modules.services.opencode.enable = true;
 ### First-Time Setup
 
 1. **Tag the host:**
+
    ```bash
    sudo tailscale logout
    sudo tailscale up --auth-key=tskey-auth-xxxxx --advertise-tags=tag:server
@@ -48,9 +49,11 @@ modules.services.opencode.enable = true;
    - Endpoint: `https:443`
 
 3. **Deploy and approve:**
+
    ```bash
    hey nuc  # or deploy to your host
    ```
+
    - Approve host in Tailscale admin console
 
 ## Troubleshooting
@@ -90,7 +93,7 @@ ssh nuc "sudo systemctl restart opencode-tailscale-serve"
 ```
 Internet (blocked)
        X
-       
+
 Tailscale Network
        |
        v

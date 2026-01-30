@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Date:** 2025-09-08  
-**Status:** Draft  
+**Status:** Draft
 
 ## Abstract
 
@@ -38,7 +38,7 @@ This proposal extends the existing todo.txt key-value pair syntax with three new
 task-relation = id-field / dep-field / sup-field
 
 id-field      = "id:" task-id
-dep-field     = "dep:" task-id-list  
+dep-field     = "dep:" task-id-list
 sup-field     = "sup:" task-id
 
 task-id       = 1*32(ALPHA / DIGIT / "-" / "_")
@@ -48,6 +48,7 @@ task-id-list  = task-id *("," task-id)
 ### 2.2 Placement Rules
 
 Task relationship fields follow existing key-value pair conventions:
+
 - May appear anywhere in the task description after the optional priority and creation date
 - Multiple relationship fields are permitted per task
 - Order of relationship fields within a task is not significant
@@ -63,6 +64,7 @@ Task relationship fields follow existing key-value pair conventions:
 **Syntax**: `id:IDENTIFIER`
 
 **Rules**:
+
 - Each task may have at most one `id:` field
 - Task IDs must be unique within the todo.txt file
 - Task IDs are case-sensitive
@@ -70,6 +72,7 @@ Task relationship fields follow existing key-value pair conventions:
 - Maximum length: 32 characters
 
 **Example**:
+
 ```
 (A) Set up workshop in the @garage id:workshop-setup
 ```
@@ -81,12 +84,14 @@ Task relationship fields follow existing key-value pair conventions:
 **Syntax**: `dep:ID1[,ID2,...]`
 
 **Rules**:
+
 - A task may have multiple `dep:` fields or comma-separated IDs within a single field
 - Referenced task IDs must exist within the same todo.txt file
 - Tasks with unmet dependencies should be considered "blocked"
 - Circular dependencies are prohibited (see Section 5.1)
 
 **Example**:
+
 ```
 (C) Deploy application dep:testing,code-review @work
 ```
@@ -98,12 +103,14 @@ Task relationship fields follow existing key-value pair conventions:
 **Syntax**: `sup:PARENT_ID`
 
 **Rules**:
+
 - A task may have at most one `sup:` field (single parent)
 - The referenced parent task ID must exist within the same todo.txt file
 - A task cannot be both a dependency and sub-task of the same parent
 - Hierarchical loops are prohibited (see Section 5.2)
 
 **Example**:
+
 ```
 (B) Buy workbench sup:workshop-setup @garage
 ```
@@ -115,11 +122,13 @@ Task relationship fields follow existing key-value pair conventions:
 ### 4.1 Task Completion States
 
 #### 4.1.1 Dependencies (`dep:`)
+
 - A task with dependencies is **blocked** until all referenced tasks are marked complete
 - Once dependencies are satisfied, the task becomes **ready**
 - Completing a task automatically unblocks any dependent tasks
 
 #### 4.1.2 Hierarchies (`sup:`)
+
 - Sub-tasks can be completed independently of their parent task
 - A parent task is considered **in progress** if it has incomplete sub-tasks
 - Parent task completion behavior is implementation-defined:
@@ -130,16 +139,19 @@ Task relationship fields follow existing key-value pair conventions:
 ### 4.2 Priority Inheritance
 
 Sub-tasks inherit priority context from their parent task:
+
 - If a parent has priority `(A)`, sub-tasks without explicit priorities should be treated as higher urgency
 - Explicit sub-task priorities override inherited priority
 
 ### 4.3 Integration with Existing Extensions
 
 #### 4.3.1 Due Dates (`due:`)
+
 - Parent task due dates create implicit deadlines for sub-tasks
 - Sub-task due dates must not exceed parent due dates (validation warning)
 
 #### 4.3.2 Recurrence (`rec:`)
+
 - Recurring parent tasks generate new sub-task instances
 - Sub-task recurrence is independent of parent recurrence
 
@@ -151,12 +163,14 @@ Sub-tasks inherit priority context from their parent task:
 
 **Detection**: Use depth-first search to detect dependency cycles.
 
-**Resolution Strategy**: 
+**Resolution Strategy**:
+
 1. Issue warning to user identifying the cycle
 2. Ignore the dependency that creates the cycle (typically the last parsed)
 3. Continue processing remaining relationships
 
 **Example**:
+
 ```
 # Circular dependency - parser should warn and break the cycle
 (A) Task A id:a dep:b
@@ -168,6 +182,7 @@ Sub-tasks inherit priority context from their parent task:
 **Detection**: Traverse parent chain to detect loops.
 
 **Resolution Strategy**:
+
 1. Issue warning identifying the loop
 2. Ignore the `sup:` field that creates the loop
 3. Treat task as top-level
@@ -176,17 +191,20 @@ Sub-tasks inherit priority context from their parent task:
 
 When a referenced task ID does not exist:
 
-**For Dependencies (`dep:`)**: 
+**For Dependencies (`dep:`)**:
+
 - Issue warning about missing dependency
 - Treat task as ready (dependency ignored)
 
-**For Hierarchies (`sup:`)**: 
+**For Hierarchies (`sup:`)**:
+
 - Issue warning about missing parent
 - Treat task as top-level
 
 ### 5.4 Duplicate IDs
 
 When multiple tasks share the same ID:
+
 - Issue error for duplicate ID
 - Only the first occurrence retains the ID
 - Subsequent tasks with the same ID have their `id:` field ignored
@@ -203,7 +221,7 @@ def parse_task_relationships(todo_lines):
     tasks = {}
     dependencies = {}
     hierarchies = {}
-    
+
     # First pass: collect all IDs
     for line in todo_lines:
         task_id = extract_id(line)
@@ -212,20 +230,21 @@ def parse_task_relationships(todo_lines):
                 warn(f"Duplicate ID: {task_id}")
             else:
                 tasks[task_id] = line
-    
+
     # Second pass: process relationships
     for line in todo_lines:
         deps = extract_dependencies(line)
         parent = extract_parent(line)
-        
+
         validate_relationships(deps, parent, tasks)
-        
+
     return build_relationship_graph(dependencies, hierarchies)
 ```
 
 ### 6.2 Dependency Resolution
 
 Implementations should provide:
+
 - **Blocked task identification**: Tasks with unmet dependencies
 - **Ready task filtering**: Tasks with all dependencies satisfied
 - **Dependency chain visualization**: Show what blocks each task
@@ -233,6 +252,7 @@ Implementations should provide:
 ### 6.3 Hierarchy Display
 
 Recommended display approaches:
+
 - **Indented lists**: Show sub-tasks indented under parents
 - **Tree view**: ASCII art tree structure
 - **Flat with annotations**: Mark sub-tasks with symbols (e.g., `↳`)
@@ -250,6 +270,7 @@ Recommended display approaches:
 ### 7.2 Migration Path
 
 Users can gradually adopt the new syntax:
+
 1. Add `id:` fields to tasks that will be referenced
 2. Add `dep:` and `sup:` fields to establish relationships
 3. Tools can provide validation and visualization as they add support
@@ -261,6 +282,7 @@ Users can gradually adopt the new syntax:
 ### 8.1 Minimal CLI Annotations
 
 Suggested symbols for command-line interfaces:
+
 - `⏳` or `[BLOCKED]` - Tasks with unmet dependencies
 - `↳` or `└─` - Sub-tasks (indented under parent)
 - `📋` or `[PARENT]` - Tasks with sub-tasks
@@ -268,6 +290,7 @@ Suggested symbols for command-line interfaces:
 ### 8.2 List Filtering
 
 Recommended filter commands:
+
 - `todo.sh blocked` - Show only blocked tasks
 - `todo.sh ready` - Show tasks with satisfied dependencies
 - `todo.sh tree` - Show hierarchical view
@@ -279,7 +302,7 @@ Recommended filter commands:
 (A) Set up workshop in the @garage id:workshop
   ├─ (B) Sell jetski sup:workshop
   └─ (B) Buy workbench sup:workshop
-  
+
 ⏳ (C) Repair lawnmower dep:workshop (blocked by: workshop)
 ```
 
@@ -291,7 +314,7 @@ Recommended filter commands:
 
 ```
 (A) Write proposal id:proposal @work
-(B) Get approval dep:proposal id:approval @work  
+(B) Get approval dep:proposal id:approval @work
 (C) Start implementation dep:approval @work
 ```
 
@@ -310,7 +333,7 @@ Recommended filter commands:
 ```
 (A) Launch new feature id:launch @work due:2025-12-01
 (B) Complete development sup:launch id:dev @work
-(B) Write documentation sup:launch dep:dev @work  
+(B) Write documentation sup:launch dep:dev @work
 (B) Conduct user testing sup:launch dep:dev @work
 (C) Deploy to production dep:launch @ops
 ```
@@ -334,6 +357,7 @@ Should task relationships work across multiple todo.txt files? This could enable
 ### 10.2 Relationship Types
 
 Could the syntax be extended to support additional relationship types?
+
 - `blocks:` (inverse of `dep:`)
 - `related:` (informational relationship)
 - `template:` (task templates for recurring work)
@@ -351,8 +375,9 @@ Should there be a special designation for milestone tasks that serve as dependen
 ## 11. Reference Implementation
 
 A reference implementation will be provided as a todo.txt action script that:
+
 - Validates relationship syntax
-- Detects circular dependencies and orphaned references  
+- Detects circular dependencies and orphaned references
 - Provides basic visualization of task relationships
 - Demonstrates blocked/ready task filtering
 
@@ -369,7 +394,7 @@ task-relation = id-field / dep-field / sup-field
 priority      = "(" ALPHA ")"
 creation-date = date
 project       = "+" 1*project-char
-context       = "@" 1*context-char  
+context       = "@" 1*context-char
 key-value     = key ":" value
 
 id-field      = "id:" task-id

@@ -1,6 +1,5 @@
 {
   config,
-  options,
   lib,
   pkgs,
   ...
@@ -37,7 +36,9 @@ in
       ".wakatime.cfg" = mkIf pkgs.stdenv.isDarwin {
         text = ''
           [settings]
-          api_key_vault_cmd = cat ${config.home-manager.users.${config.user.name}.age.secretsDir}/wakatime-api-key
+          api_key_vault_cmd = cat ${
+            config.home-manager.users.${config.user.name}.age.secretsDir
+          }/wakatime-api-key
         '';
       };
     };

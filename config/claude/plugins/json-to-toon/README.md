@@ -92,7 +92,6 @@ If your `settings.json` already has a `hooks` section, merge the `UserPromptSubm
 The hook runs automatically before each prompt is sent to Claude:
 
 1. **Detects structured data** in your prompt:
-
    - **JSON**: Code blocks with ` ```json ` identifier, plain code blocks containing valid JSON, or inline JSON objects/arrays (30+ characters)
    - **CSV**: Code blocks with ` ```csv ` identifier or plain code blocks with comma/tab/pipe-delimited data
    - **Markdown tables**: Standard markdown table syntax with header, separator, and data rows
@@ -100,7 +99,6 @@ The hook runs automatically before each prompt is sent to Claude:
 2. **Converts to TOON** format using optimized parsing
 
 3. **Preserves non-data content**:
-
    - JavaScript/TypeScript code (detected via keywords)
    - Plain text
    - Other code blocks

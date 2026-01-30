@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   isDarwin,
@@ -16,7 +15,8 @@ in
   };
 
   # NixOS-only service (OCI containers)
-  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
+  config = optionalAttrs (!isDarwin) (
+    mkIf cfg.enable {
       # Enable podman for OCI containers
       virtualisation.podman = {
         enable = true;
@@ -45,5 +45,6 @@ in
       };
 
       networking.firewall.allowedTCPPorts = [ 8080 ];
-    });
+    }
+  );
 }

@@ -4,7 +4,6 @@
 # but to prototype (for 3D, mainly) I'll occasionally reach for godot.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

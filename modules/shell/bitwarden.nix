@@ -1,6 +1,5 @@
 {
   config,
-  options,
   pkgs,
   lib,
   isDarwin,
@@ -29,12 +28,14 @@ in
     }
 
     # NixOS-only activation scripts (optionalAttrs on isDarwin to avoid defining non-existent options)
-    (optionalAttrs (!isDarwin) (mkIf (cfg.config != { }) {
-      system.userActivationScripts = {
-        initBitwarden = ''
-          ${concatStringsSep "\n" (mapAttrsToList (n: v: "bw config ${n} ${v}") cfg.config)}
-        '';
-      };
-    }))
+    (optionalAttrs (!isDarwin) (
+      mkIf (cfg.config != { }) {
+        system.userActivationScripts = {
+          initBitwarden = ''
+            ${concatStringsSep "\n" (mapAttrsToList (n: v: "bw config ${n} ${v}") cfg.config)}
+          '';
+        };
+      }
+    ))
   ]);
 }

@@ -5,7 +5,6 @@
 # tell anyone pls.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

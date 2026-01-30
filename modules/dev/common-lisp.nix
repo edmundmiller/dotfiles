@@ -3,7 +3,6 @@
 # Mostly for my stumpwm config, and the occasional dip into lisp gamedev.
 {
   config,
-  options,
   lib,
   pkgs,
   ...

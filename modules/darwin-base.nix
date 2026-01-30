@@ -13,7 +13,10 @@ with lib;
     # Nix configuration
     nix = {
       settings = {
-        experimental-features = [ "nix-command" "flakes" ];
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
         substituters = [
           "https://nix-community.cachix.org"
           "https://hyprland.cachix.org"

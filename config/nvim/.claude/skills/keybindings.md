@@ -16,6 +16,7 @@ Use this skill when the user wants to add, modify, or organize keybindings in th
 Keybindings in this configuration follow a Doom Emacs-style approach with mnemonic prefixes. The primary keybinding hub is `lua/plugins/astrocore.lua`, though plugin-specific keybindings can live in individual plugin files.
 
 See `.claude/CONTEXT.md` for:
+
 - Leader key prefix organization
 - Keybinding templates and patterns
 - Which-key integration examples
@@ -110,19 +111,19 @@ mappings = {
 
 ## Leader Prefix Reference
 
-| Prefix | Category | Use For |
-|--------|----------|---------|
-| `<leader>f` | Files | File operations, finding, opening |
-| `<leader>s` | Search | Searching buffers, projects, help |
-| `<leader>b` | Buffers | Buffer management |
-| `<leader>w` | Windows | Window/split operations |
-| `<leader>g` | Git/VCS | Git and JJ operations |
-| `<leader>c` | Code | LSP actions, refactoring |
-| `<leader>t` | Toggle | Toggle UI elements, settings |
-| `<leader>n` | Notes/Tools | Custom tools, notes |
-| `<leader>h` | Help | Help and documentation |
-| `<leader>q` | Quit | Exit operations |
-| `,` (local) | Language | LSP, testing, language-specific |
+| Prefix      | Category    | Use For                           |
+| ----------- | ----------- | --------------------------------- |
+| `<leader>f` | Files       | File operations, finding, opening |
+| `<leader>s` | Search      | Searching buffers, projects, help |
+| `<leader>b` | Buffers     | Buffer management                 |
+| `<leader>w` | Windows     | Window/split operations           |
+| `<leader>g` | Git/VCS     | Git and JJ operations             |
+| `<leader>c` | Code        | LSP actions, refactoring          |
+| `<leader>t` | Toggle      | Toggle UI elements, settings      |
+| `<leader>n` | Notes/Tools | Custom tools, notes               |
+| `<leader>h` | Help        | Help and documentation            |
+| `<leader>q` | Quit        | Exit operations                   |
+| `,` (local) | Language    | LSP, testing, language-specific   |
 
 ## Example Workflows
 
@@ -131,6 +132,7 @@ mappings = {
 **User request**: "Add a keybinding for git push under the Git prefix"
 
 **Your response**:
+
 1. Read `lua/plugins/astrocore.lua` under `["<Leader>g"]` section
 2. Find available key (e.g., `<Leader>gp` is available)
 3. Add:
@@ -144,6 +146,7 @@ mappings = {
 **User request**: "Add keybindings for database operations under `<leader>d`"
 
 **Your response**:
+
 1. Check that `<leader>d` is not already used
 2. Add group and actions:
    ```lua
@@ -158,6 +161,7 @@ mappings = {
 **User request**: "Add keybinding for opening Neogit commit window"
 
 **Your response**:
+
 1. Check `lua/plugins/neogit.lua` (or relevant plugin file)
 2. Add to plugin's `keys = {}` table:
    ```lua

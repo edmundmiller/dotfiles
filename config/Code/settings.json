@@ -1,54 +1,54 @@
 {
-    "editor.fontFamily": "Fira Code",
-    "editor.fontLigatures": true,
-    "workbench.colorTheme": "One Dark",
-    "window.zoomLevel": 0,
-    "editor.suggestSelection": "first",
-    "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
-    "workbench.startupEditor": "newUntitledFile",
-    "windicss.enableCodeCompletion": true,
-    "windicss.enableHoverPreview": false,
-    "liveshare.authenticationProvider": "GitHub",
-    "editor.tokenColorCustomizations": {
-        "textMateRules": [
-            {
-                "name": "One Dark italic",
-                "scope": [
-                    "comment",
-                    "entity.other.attribute-name",
-                    "keyword",
-                    "markup.underline.link",
-                    "storage.modifier",
-                    "storage.type",
-                    "string.url",
-                    "variable.language.super",
-                    "variable.language.this"
-                ],
-                "settings": {
-                    "fontStyle": "italic"
-                }
-            },
-            {
-                "name": "One Dark italic reset",
-                "scope": [
-                    "keyword.operator",
-                    "keyword.other.type",
-                    "storage.modifier.import",
-                    "storage.modifier.package",
-                    "storage.type.built-in",
-                    "storage.type.function.arrow",
-                    "storage.type.generic",
-                    "storage.type.java",
-                    "storage.type.primitive"
-                ],
-                "settings": {
-                    "fontStyle": ""
-                }
-            }
-        ]
-    },
-    "vim.easymotion": true,
-    "vim.sneak": true,
-    "vim.sneakReplacesF": true,
-    "vim.useSystemClipboard": true
+  "editor.fontFamily": "Fira Code",
+  "editor.fontLigatures": true,
+  "workbench.colorTheme": "One Dark",
+  "window.zoomLevel": 0,
+  "editor.suggestSelection": "first",
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+  "workbench.startupEditor": "newUntitledFile",
+  "windicss.enableCodeCompletion": true,
+  "windicss.enableHoverPreview": false,
+  "liveshare.authenticationProvider": "GitHub",
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "name": "One Dark italic",
+        "scope": [
+          "comment",
+          "entity.other.attribute-name",
+          "keyword",
+          "markup.underline.link",
+          "storage.modifier",
+          "storage.type",
+          "string.url",
+          "variable.language.super",
+          "variable.language.this"
+        ],
+        "settings": {
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "name": "One Dark italic reset",
+        "scope": [
+          "keyword.operator",
+          "keyword.other.type",
+          "storage.modifier.import",
+          "storage.modifier.package",
+          "storage.type.built-in",
+          "storage.type.function.arrow",
+          "storage.type.generic",
+          "storage.type.java",
+          "storage.type.primitive"
+        ],
+        "settings": {
+          "fontStyle": ""
+        }
+      }
+    ]
+  },
+  "vim.easymotion": true,
+  "vim.sneak": true,
+  "vim.sneakReplacesF": true,
+  "vim.useSystemClipboard": true
 }

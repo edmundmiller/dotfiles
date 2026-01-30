@@ -80,6 +80,7 @@ home-manager.users.${user}.programs.clawdbot = {
 ### CLI Commands Overwrite Config
 
 **DO NOT RUN on Mac:**
+
 - `clawdbot doctor`
 - `clawdbot config set ...`
 - Any CLI command that modifies config
@@ -87,11 +88,13 @@ home-manager.users.${user}.programs.clawdbot = {
 These **overwrite the entire config file**, removing tokens and adding back `sshTarget`.
 
 **Safe commands:**
+
 - `clawdbot gateway status` - Check connection (read-only)
 
 ### Restore Config Manually
 
 If config gets reset:
+
 ```bash
 gateway_token="$(cat ~/.local/share/agenix/clawdbot-bridge-token)"
 anthropic_key="$(cat ~/.local/share/agenix/anthropic-api-key)"
@@ -118,12 +121,14 @@ clawdbot gateway status
 ```
 
 Look for:
+
 ```
 Remote (configured) ws://nuc.cinnamon-rooster.ts.net:18789
   Connect: ok (31ms) · RPC: ok
 ```
 
 Check NUC gateway logs:
+
 ```bash
 ssh nuc "tail -20 /tmp/clawdbot/clawdbot-*.log" | jq '.'
 ```
@@ -131,12 +136,14 @@ ssh nuc "tail -20 /tmp/clawdbot/clawdbot-*.log" | jq '.'
 ### Future Improvements
 
 See beads:
+
 - `dotfiles-kzbo` - Research nix-clawdbot direct connection mode
 - `dotfiles-v1z6` - Investigate clawdbot sshTarget vs transport priority
 
 ## First-Party Plugins
 
 All available via `firstParty.<name>.enable`:
+
 - `summarize` - Summarize web pages, PDFs, YouTube
 - `peekaboo` - Screenshots
 - `oracle` - Web search
@@ -151,6 +158,7 @@ All available via `firstParty.<name>.enable`:
 ## Secrets
 
 Default paths (plain files):
+
 - `~/.secrets/telegram-bot-token`
 - `~/.secrets/anthropic-api-key`
 
@@ -167,6 +175,7 @@ tail -f /tmp/clawdbot/clawdbot-gateway.log
 ## Known Issues
 
 **Python conflict**: Clawdbot bundles whisper (voice transcription) which includes Python 3.13. This conflicts with:
+
 - `modules.dev.python.enable = true` (direct Python env collision)
 - `modules.editors.emacs` +jupyter feature (removed to fix conflict)
 

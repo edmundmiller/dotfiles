@@ -1,6 +1,5 @@
 {
   config,
-  options,
   lib,
   isDarwin,
   ...
@@ -16,20 +15,22 @@ in
   };
 
   # NixOS-only service
-  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
-    services.nginx = {
-      enable = true;
+  config = optionalAttrs (!isDarwin) (
+    mkIf cfg.enable {
+      services.nginx = {
+        enable = true;
 
-      # Use recommended settings
-      recommendedGzipSettings = true;
-      recommendedOptimisation = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-    };
+        # Use recommended settings
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+      };
 
-    networking.firewall.allowedTCPPorts = [
-      80
-      443
-    ];
-  });
+      networking.firewall.allowedTCPPorts = [
+        80
+        443
+      ];
+    }
+  );
 }

@@ -126,20 +126,20 @@ return {
 
 ### Leader Key Prefixes (Doom Emacs Style)
 
-| Prefix | Category | Examples |
-|--------|----------|----------|
-| `<leader>f` | Files | `ff` find, `fr` recent, `fw` grep |
-| `<leader>s` | Search | `ss` buffer, `sp` project, `sh` help |
-| `<leader>b` | Buffers | `bb` list, `bd` delete, `bn` next |
-| `<leader>w` | Windows | `ww` other, `ws` split, `wv` vsplit |
-| `<leader>g` | Git | `gg` status, `gc` commit, `gl` log |
-| `<leader>c` | Code | `ca` action, `cr` rename, `cf` format |
-| `<leader>t` | Toggle | `tn` numbers, `ts` spell, `tw` wrap |
-| `<leader>q` | Quit | `qq` quit, `qQ` quit all |
-| `<leader>h` | Help | `hh` help, `hm` man |
-| `<leader>j` | Jujutsu (JJ) | `jj` status, `jc` commit, `jl` log |
-| `<leader>n` | Notes/Tools | `nr` nextflow runner |
-| `,` (local) | Language | LSP, testing, language-specific |
+| Prefix      | Category     | Examples                              |
+| ----------- | ------------ | ------------------------------------- |
+| `<leader>f` | Files        | `ff` find, `fr` recent, `fw` grep     |
+| `<leader>s` | Search       | `ss` buffer, `sp` project, `sh` help  |
+| `<leader>b` | Buffers      | `bb` list, `bd` delete, `bn` next     |
+| `<leader>w` | Windows      | `ww` other, `ws` split, `wv` vsplit   |
+| `<leader>g` | Git          | `gg` status, `gc` commit, `gl` log    |
+| `<leader>c` | Code         | `ca` action, `cr` rename, `cf` format |
+| `<leader>t` | Toggle       | `tn` numbers, `ts` spell, `tw` wrap   |
+| `<leader>q` | Quit         | `qq` quit, `qQ` quit all              |
+| `<leader>h` | Help         | `hh` help, `hm` man                   |
+| `<leader>j` | Jujutsu (JJ) | `jj` status, `jc` commit, `jl` log    |
+| `<leader>n` | Notes/Tools  | `nr` nextflow runner                  |
+| `,` (local) | Language     | LSP, testing, language-specific       |
 
 ### Keybinding Template (in astrocore.lua)
 
@@ -177,34 +177,43 @@ return {
 ### Major AstroCommunity Categories
 
 **Completion**
+
 - `completion.codeium-vim`, `completion.copilot-lua-cmp`
 
 **Editing Support**
+
 - `editing-support.comment-box-nvim`, `editing-support.multiple-cursors-nvim`
 - `editing-support.refactoring-nvim`, `editing-support.vim-move`
 
 **Git Integration**
+
 - `git.blame-nvim`, `git.diffview-nvim`, `git.fugit2-nvim`
 - `git.git-blame-nvim`, `git.neogit`, `git.octo-nvim`
 
 **Language Packs** (88 total)
+
 - `pack.bash`, `pack.python`, `pack.rust`, `pack.typescript`
 - `pack.go`, `pack.lua`, `pack.markdown`, `pack.yaml`
 - Custom: `pack.nextflow` (if exists)
 
 **Motion**
+
 - `motion.flash-nvim`, `motion.leap-nvim`, `motion.mini-move`
 
 **Note Taking**
+
 - `note-taking.neorg`, `note-taking.obsidian-nvim`, `note-taking.vimwiki`
 
 **Syntax**
+
 - `syntax.vim-sandwich`, `syntax.vim-easy-align`
 
 **Test**
+
 - `test.neotest`, `test.nvim-coverage`
 
 **Workflow**
+
 - `workflow.hardtime-nvim`, `workflow.precognition-nvim`
 
 ### Customizing Community Packs

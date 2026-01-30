@@ -34,6 +34,7 @@ The QMK firmware version is pinned to a specific commit in `flake.nix`.
 To update:
 
 1. Get the latest SHA:
+
    ```bash
    git ls-remote https://github.com/zsa/qmk_firmware.git firmware25
    ```
@@ -44,6 +45,7 @@ To update:
    - Set `hash` to `lib.fakeHash`
 
 3. Build to get the correct hash:
+
    ```bash
    nix build .#ergodox-firmware 2>&1 | grep "got:"
    ```
@@ -81,61 +83,64 @@ Keymapp (ZSA's official tool) has proper entitlements to handle this.
 
 Primary typing layer with home-row modifiers and thumb cluster optimizations.
 
-| Feature | Keys | Notes |
-|---------|------|-------|
-| **Home-row Ctrl** | Caps Lock position | Escape on tap, Ctrl on hold |
-| **Layer access** | Thumb clusters | TT(L2), TT(L3) on left; LT(L1) on both sides |
-| **Thumb Space** | Left thumb | Space key for primary typing |
-| **Thumb Enter** | Right thumb | Enter key with Backspace on LT(L1) |
+| Feature           | Keys               | Notes                                        |
+| ----------------- | ------------------ | -------------------------------------------- |
+| **Home-row Ctrl** | Caps Lock position | Escape on tap, Ctrl on hold                  |
+| **Layer access**  | Thumb clusters     | TT(L2), TT(L3) on left; LT(L1) on both sides |
+| **Thumb Space**   | Left thumb         | Space key for primary typing                 |
+| **Thumb Enter**   | Right thumb        | Enter key with Backspace on LT(L1)           |
 
 ### Layer 1: Symbols & Navigation
 
 Activated via thumb cluster hold (LT). Provides symbols, F-keys, and arrow navigation.
 
-| Feature | Location | Notes |
-|---------|----------|-------|
-| **Arrow keys** | HJKL position | Vim-style navigation |
-| **F-keys** | Number row | F1-F10 on top row |
-| **Symbols** | Home row | !@#$%^&*() easily accessible |
+| Feature        | Location      | Notes                         |
+| -------------- | ------------- | ----------------------------- |
+| **Arrow keys** | HJKL position | Vim-style navigation          |
+| **F-keys**     | Number row    | F1-F10 on top row             |
+| **Symbols**    | Home row      | !@#$%^&\*() easily accessible |
 
 ### Layer 2: Numpad & F-keys
 
 Activated via TT (tap-toggle) on left thumb.
 
-| Feature | Location | Notes |
-|---------|----------|-------|
-| **Numpad** | Right hand | 7-8-9 / 4-5-6 / 1-2-3 / 0 layout |
-| **Math ops** | Right pinky | +, -, *, / |
-| **F-keys** | Left hand | F1-F20 |
+| Feature      | Location    | Notes                            |
+| ------------ | ----------- | -------------------------------- |
+| **Numpad**   | Right hand  | 7-8-9 / 4-5-6 / 1-2-3 / 0 layout |
+| **Math ops** | Right pinky | +, -, \*, /                      |
+| **F-keys**   | Left hand   | F1-F20                           |
 
 ### Layer 3: Mouse & RGB
 
 Activated via TT (tap-toggle) on left thumb.
 
-| Feature | Location | Notes |
-|---------|----------|-------|
-| **Mouse cursor** | WASD/ESDF | Movement |
+| Feature           | Location      | Notes                   |
+| ----------------- | ------------- | ----------------------- |
+| **Mouse cursor**  | WASD/ESDF     | Movement                |
 | **Mouse buttons** | Thumb cluster | Left/Right/Middle click |
-| **RGB controls** | Left edge | LED toggle, brightness |
-| **Bootloader** | Top right | Reset to flash mode |
+| **RGB controls**  | Left edge     | LED toggle, brightness  |
+| **Bootloader**    | Top right     | Reset to flash mode     |
 
 ## Key Concepts
 
 ### Mod-Tap (MT)
 
 Hold for modifier, tap for key:
+
 - `Esc/Ctrl` - Tap for Escape, hold for Control
 - `Tab/Gui` - Tap for Tab, hold for Gui (Cmd)
 
 ### Layer-Tap (LT)
 
 Hold for layer, tap for key:
+
 - `Space/L1` - Tap for Space, hold for Layer 1
 - `Bksp/L1` - Tap for Backspace, hold for Layer 1
 
 ### Tap-Toggle (TT)
 
 Tap to momentarily activate, double-tap to toggle:
+
 - `TT(L2)` - Access numpad layer
 - `TT(L3)` - Access mouse layer
 
@@ -181,21 +186,26 @@ hey ergodox-build-flash
 ## Troubleshooting
 
 **Dropped keys when typing fast:**
+
 - Lower DEBOUNCE in config.h (default 5ms, was 40ms)
 - Rebuild and flash
 
 **Double/triple characters from single keypress (chattering):**
+
 - Raise DEBOUNCE in config.h by 5-10ms
 - If persistent, switch may need replacing
 
 **Flash fails with USB permissions:**
+
 - Use Keymapp GUI (handles permissions automatically)
 - CLI flashing not supported on macOS due to kernel driver conflict
 
 **Build fails:**
+
 - Run `hey rebuild` to install dependencies
 - Check nix store: `nix store delete .#ergodox-firmware` and retry
 
 **Keymapp not found:**
+
 - Install: `brew install --cask keymapp`
 - Or run `hey rebuild` (installs via nix-darwin)

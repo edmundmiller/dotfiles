@@ -1,7 +1,6 @@
 {
   lib,
   python3Packages,
-  fetchFromGitHub,
   jujutsu,
 }:
 

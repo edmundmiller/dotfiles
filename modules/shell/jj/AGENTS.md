@@ -1,6 +1,7 @@
 # JJ (Jujutsu) Module - Agent Documentation
 
 ## Purpose
+
 Configures jj (Jujutsu VCS) with custom templates, aliases, and integrations.
 
 ## AI-First Log System
@@ -9,20 +10,22 @@ Configures jj (Jujutsu VCS) with custom templates, aliases, and integrations.
 
 ### Templates
 
-| Template | Command | Purpose |
-|----------|---------|---------|
-| `ai_log` | `jj log` (default) | AI-optimized: minimal tokens, structured |
-| `human_log` | `jj lh` | Clean readability for humans |
-| `credits_roll` | `jj lc` | Rich visual formatting with diff stats |
+| Template       | Command            | Purpose                                  |
+| -------------- | ------------------ | ---------------------------------------- |
+| `ai_log`       | `jj log` (default) | AI-optimized: minimal tokens, structured |
+| `human_log`    | `jj lh`            | Clean readability for humans             |
+| `credits_roll` | `jj lc`            | Rich visual formatting with diff stats   |
 
 ### Revset Filter
 
 Default revset shows only YOUR unmerged work (not all branches):
+
 ```
 @ | ancestors(trunk()..(visible_heads() & mine()), 2) | trunk()
 ```
 
 Override when needed:
+
 - `jj la-all` - See all commits
 - `jj la-team` - See others' commits only
 
@@ -41,7 +44,7 @@ Flags: `∅` empty, `✖` conflict, `◆` immutable
 Measured on 10 commits:
 
 | Metric | Old (verbose) | New (ai_log) | Reduction |
-|--------|---------------|--------------|-----------|
+| ------ | ------------- | ------------ | --------- |
 | Bytes  | 4107          | 806          | **80%**   |
 | Lines  | 88            | 14           | **84%**   |
 
@@ -51,6 +54,7 @@ The `mine()` revset filter provides additional savings by showing only ~5-10 com
 ## External Dependencies
 
 ### Credits Roll Templates
+
 - **Source:** https://github.com/YPares/jj.conf.d
 - **Fetched via:** `pkgs.fetchurl` in `default.nix`
 - **Purpose:** Rich log formatting with diff stats, width calculations, pin markers
@@ -90,20 +94,24 @@ The `credits_roll.toml` from upstream defines its own aliases. Don't redefine th
 in `config.toml` with different signatures or you'll get type errors.
 
 **Credits roll provides:**
+
 - `format_short_id(id)` - ChangeId formatting
 - `credits_roll_w(width, max_summary_lines, statted_revset)` - Main template
 - `credits_roll(max_summary_lines, statted_revset)` - Wrapper with auto-width
 
 **Don't define in config.toml:**
+
 - `format_short_change_id` - conflicts with credits_roll
 
 ### Deprecated Aliases
 
 These jj built-in aliases no longer exist:
+
 - `format_short_change_id_with_hidden_and_divergent_info` - removed
 - `format_short_change_id_with_change_offset` - removed
 
 Use direct method calls instead:
+
 ```toml
 self.change_id().shortest(4)  # Instead of format_short_change_id_with_*
 ```
@@ -111,6 +119,7 @@ self.change_id().shortest(4)  # Instead of format_short_change_id_with_*
 ## Deprecated Config Settings
 
 Use the new format:
+
 ```toml
 # OLD (deprecated)
 [git]
@@ -123,17 +132,17 @@ auto-track-bookmarks = '*'
 
 ## Key Aliases
 
-| Category | Aliases | Purpose |
-|----------|---------|---------|
-| Navigation | `p`, `n` | prev/next commit |
-| Viewing | `la` (default), `lh`, `lc`, `lg`, `lm`, `pp` | Various log formats |
-| Viewing (extended) | `la-all`, `la-team` | Override mine() filter |
-| Cleanup | `cleanup`, `tidy`, `abandon-empty` | Remove empty commits |
-| Workflow | `wip`, `tug`, `retrunk`, `sync`, `evolve` | Common operations |
-| PR Flow | `cl`, `upload`, `setmain` | Push branches for PRs |
-| History | `pl`, `ol` | Obslog progression (undo history) |
-| AI | `aid`, `aide`, `ai-desc` | AI commit messages |
-| GitHub | `spr`, `nd` | Stacked PRs, diff preview |
+| Category           | Aliases                                      | Purpose                           |
+| ------------------ | -------------------------------------------- | --------------------------------- |
+| Navigation         | `p`, `n`                                     | prev/next commit                  |
+| Viewing            | `la` (default), `lh`, `lc`, `lg`, `lm`, `pp` | Various log formats               |
+| Viewing (extended) | `la-all`, `la-team`                          | Override mine() filter            |
+| Cleanup            | `cleanup`, `tidy`, `abandon-empty`           | Remove empty commits              |
+| Workflow           | `wip`, `tug`, `retrunk`, `sync`, `evolve`    | Common operations                 |
+| PR Flow            | `cl`, `upload`, `setmain`                    | Push branches for PRs             |
+| History            | `pl`, `ol`                                   | Obslog progression (undo history) |
+| AI                 | `aid`, `aide`, `ai-desc`                     | AI commit messages                |
+| GitHub             | `spr`, `nd`                                  | Stacked PRs, diff preview         |
 
 ## Related Files
 
@@ -152,13 +161,16 @@ modules.shell.jj.enable = true;  # Enable jj with all configs
 ## Troubleshooting
 
 ### "Method doesn't exist for type ChangeId"
+
 Check template aliases for signature mismatches. Likely calling `.change_id()` on
 something that's already a ChangeId.
 
 ### "Deprecated config" warnings
+
 Search for old setting names and update to new format. See "Deprecated Config
 Settings" above.
 
 ### Config not updating after rebuild
+
 Files are managed via home-manager's `xdg.configFile`. Run `hey rebuild` and
 restart terminal/jj to pick up changes.

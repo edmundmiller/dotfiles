@@ -1,6 +1,5 @@
 # Finally, a decent open alternative to Plex!
 {
-  options,
   config,
   lib,
   ...

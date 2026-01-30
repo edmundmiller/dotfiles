@@ -12,60 +12,76 @@ with lib.my;
   imports =
     # I use home-manager to deploy files to $HOME; little else
     # Note: For darwin, home-manager is imported in flake.nix as darwinModules
-    (lib.optional (!isDarwin)
-      inputs.home-manager.nixosModules.home-manager)
+    (lib.optional (!isDarwin) inputs.home-manager.nixosModules.home-manager)
     # All my personal modules (filtered for platform compatibility)
-    ++ (let
-      modulesPath = toString ./modules;
-      allModulePaths = mapModulesRec' modulesPath id;
-      # Filter out NixOS-only directories on Darwin
-      nixosOnlyDirs = [ "hardware" ];
-      # NixOS-only subdirectories within desktop (allow desktop/term for ghostty)
-      nixosOnlyDesktopDirs = [ "desktop/browsers" "desktop/media" "desktop/apps" "desktop/themes" "desktop/gaming" "desktop/vm" "desktop/gnome" ];
-      nixosOnlyFiles = [
-        "security.nix"
-        "nixos-base.nix"
-        "fonts-nixos.nix"
-        "browsers-nixos.nix"
-        "desktop/default.nix"  # X11-specific desktop config
-        "desktop/gnome.nix"    # GNOME desktop environment
-        "desktop/kde.nix"      # KDE desktop environment
-        "desktop/bspwm.nix"    # BSPWM window manager
-        # NixOS-only hardware/shell modules
-        "nushell.nix"
-        "yubikey.nix"
-        # NixOS-only services
-        "services/deploy-rs.nix"
-        "audiobookshelf.nix"
-        "calibre.nix"
-        "gitea.nix"
-        "hass.nix"
-        "homepage.nix"
-        "jellyfin.nix"
-        "keybase.nix"
-        "mpd.nix"
-        "nginx.nix"
-        "ollama.nix"
-        "paperless.nix"
-        "prowlarr.nix"
-        "qb.nix"
-        "radarr.nix"
-        "sonarr.nix"
-        "syncthing.nix"
-        "transmission.nix"
-      ];
-      isNixOSOnly = path:
-        let pathStr = toString path; in
-        lib.any (dir:
-          lib.hasInfix "/modules/${dir}/" pathStr ||  # Files inside directory
-          lib.hasSuffix "/modules/${dir}" pathStr     # Directory itself
-        ) (nixosOnlyDirs ++ nixosOnlyDesktopDirs)
-        || lib.any (file:
-          lib.hasSuffix file pathStr ||               # Exact file match
-          lib.hasSuffix "/${lib.removeSuffix "/default.nix" file}" pathStr  # Directory with default.nix
-        ) nixosOnlyFiles;
-    in
-    map import (if isDarwin then filter (p: !isNixOSOnly p) allModulePaths else allModulePaths));
+    ++ (
+      let
+        modulesPath = toString ./modules;
+        allModulePaths = mapModulesRec' modulesPath id;
+        # Filter out NixOS-only directories on Darwin
+        nixosOnlyDirs = [ "hardware" ];
+        # NixOS-only subdirectories within desktop (allow desktop/term for ghostty)
+        nixosOnlyDesktopDirs = [
+          "desktop/browsers"
+          "desktop/media"
+          "desktop/apps"
+          "desktop/themes"
+          "desktop/gaming"
+          "desktop/vm"
+          "desktop/gnome"
+        ];
+        nixosOnlyFiles = [
+          "security.nix"
+          "nixos-base.nix"
+          "fonts-nixos.nix"
+          "browsers-nixos.nix"
+          "desktop/default.nix" # X11-specific desktop config
+          "desktop/gnome.nix" # GNOME desktop environment
+          "desktop/kde.nix" # KDE desktop environment
+          "desktop/bspwm.nix" # BSPWM window manager
+          # NixOS-only hardware/shell modules
+          "nushell.nix"
+          "yubikey.nix"
+          # NixOS-only services
+          "services/deploy-rs.nix"
+          "audiobookshelf.nix"
+          "calibre.nix"
+          "gitea.nix"
+          "hass.nix"
+          "homepage.nix"
+          "jellyfin.nix"
+          "keybase.nix"
+          "mpd.nix"
+          "nginx.nix"
+          "ollama.nix"
+          "paperless.nix"
+          "prowlarr.nix"
+          "qb.nix"
+          "radarr.nix"
+          "sonarr.nix"
+          "syncthing.nix"
+          "transmission.nix"
+        ];
+        isNixOSOnly =
+          path:
+          let
+            pathStr = toString path;
+          in
+          lib.any (
+            dir:
+            lib.hasInfix "/modules/${dir}/" pathStr
+            # Files inside directory
+            || lib.hasSuffix "/modules/${dir}" pathStr # Directory itself
+          ) (nixosOnlyDirs ++ nixosOnlyDesktopDirs)
+          || lib.any (
+            file:
+            lib.hasSuffix file pathStr
+            # Exact file match
+            || lib.hasSuffix "/${lib.removeSuffix "/default.nix" file}" pathStr # Directory with default.nix
+          ) nixosOnlyFiles;
+      in
+      map import (if isDarwin then filter (p: !isNixOSOnly p) allModulePaths else allModulePaths)
+    );
 
   # Propagate isDarwin to all sub-modules so they can guard platform-specific options
   _module.args.isDarwin = isDarwin;

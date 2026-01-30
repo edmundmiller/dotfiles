@@ -1,8 +1,6 @@
 {
   config,
-  options,
   lib,
-  my,
   isDarwin,
   ...
 }:

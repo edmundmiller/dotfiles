@@ -1,7 +1,6 @@
 # modules/dev/julia.nix --- Julia
 {
   config,
-  options,
   lib,
   pkgs,
   ...

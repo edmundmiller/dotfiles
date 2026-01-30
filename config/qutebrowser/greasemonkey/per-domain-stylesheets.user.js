@@ -9,16 +9,13 @@
 // ==/UserScript==
 
 (function IIFE() {
-    "use strict";
+  "use strict";
 
-    document.addEventListener(
-        "readystatechange",
-        function onReadyStateChange() {
-            if (document.readyState == "interactive") {
-                const doc = document.documentElement;
-                doc.setAttribute("qb-url", window.location.href);
-                doc.setAttribute("qb-domain", window.location.host);
-            }
-        },
-    );
+  document.addEventListener("readystatechange", function onReadyStateChange() {
+    if (document.readyState == "interactive") {
+      const doc = document.documentElement;
+      doc.setAttribute("qb-url", window.location.href);
+      doc.setAttribute("qb-domain", window.location.host);
+    }
+  });
 })();

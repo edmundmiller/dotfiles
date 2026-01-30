@@ -23,6 +23,7 @@ packages/opencode-tmux-namer/
 **Nix-managed:** This plugin is built automatically via `hey rebuild`.
 
 The nix derivation (`default.nix`) uses bun to:
+
 1. Install dependencies from bun.lock
 2. Compile TypeScript to dist/
 3. Output `dist/` and `package.json` to the nix store
@@ -32,12 +33,14 @@ The built plugin is symlinked to `~/.config/opencode/plugin/opencode-tmux-namer`
 ## Development Commands
 
 For local development/testing:
+
 ```bash
 nix build .#packages.aarch64-darwin.opencode-tmux-namer  # Build via nix
 hey rebuild                                                # Full system rebuild
 ```
 
 To iterate quickly without rebuilding:
+
 ```bash
 cd packages/opencode-tmux-namer
 bun install && bun run build
@@ -57,13 +60,13 @@ bun install && bun run build
 
 ## Status Icons
 
-| Icon | Status | Trigger |
-|------|--------|---------|
-| `●` | Busy | session.status = running/streaming |
-| `□` | Idle | session.status = idle/completed, session.idle event |
-| `■` | Waiting | permission.updated, permission.replied |
-| `▲` | Error | session.status = error/failed |
-| `◇` | Unknown | Default/no status |
+| Icon | Status  | Trigger                                             |
+| ---- | ------- | --------------------------------------------------- |
+| `●`  | Busy    | session.status = running/streaming                  |
+| `□`  | Idle    | session.status = idle/completed, session.idle event |
+| `■`  | Waiting | permission.updated, permission.replied              |
+| `▲`  | Error   | session.status = error/failed                       |
+| `◇`  | Unknown | Default/no status                                   |
 
 ## Naming Logic
 
@@ -88,23 +91,24 @@ This is a **native OpenCode plugin** with direct event access.
 `tmux-opencode-integrated` is an **external Python script** that pattern-matches pane content.
 
 Use both:
+
 - This plugin for accurate status (has direct event access)
 - tmux-opencode-integrated for Agent Management Panel (`<prefix> A`)
 
 ## Key Functions in src/index.ts
 
-| Function | Purpose |
-|----------|---------|
-| `TmuxNamer` | Main plugin factory, exported as default |
-| `loadConfig()` | Load env vars into PluginConfig |
-| `findTmux()` | Locate tmux binary |
-| `getWorkmuxContext()` | Detect workmux worktree, extract branch/project |
-| `getProjectName()` | Extract project name from pkg.json/git/dir |
-| `inferIntent()` | Pattern match signals → intent (feat/fix/debug/etc) |
-| `inferTag()` | Pattern match signals → tag (auth/api/db/etc) |
-| `buildName()` | Construct name string (workmux-aware) |
-| `renameWindow()` | Call `tmux rename-window` |
-| `mapSessionStatus()` | Map OpenCode status strings → Status enum |
+| Function              | Purpose                                             |
+| --------------------- | --------------------------------------------------- |
+| `TmuxNamer`           | Main plugin factory, exported as default            |
+| `loadConfig()`        | Load env vars into PluginConfig                     |
+| `findTmux()`          | Locate tmux binary                                  |
+| `getWorkmuxContext()` | Detect workmux worktree, extract branch/project     |
+| `getProjectName()`    | Extract project name from pkg.json/git/dir          |
+| `inferIntent()`       | Pattern match signals → intent (feat/fix/debug/etc) |
+| `inferTag()`          | Pattern match signals → tag (auth/api/db/etc)       |
+| `buildName()`         | Construct name string (workmux-aware)               |
+| `renameWindow()`      | Call `tmux rename-window`                           |
+| `mapSessionStatus()`  | Map OpenCode status strings → Status enum           |
 
 ## Workmux Integration
 

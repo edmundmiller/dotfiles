@@ -6,10 +6,8 @@
 # they get shell programs.
 {
   config,
-  options,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;

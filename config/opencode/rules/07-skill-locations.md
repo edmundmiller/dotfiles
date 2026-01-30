@@ -6,10 +6,10 @@ When creating skills, write them to the appropriate location based on scope:
 
 For project-specific skills, use one of these locations:
 
-| Format | Path |
-|--------|------|
-| **Claude-compatible** | `.claude/skills/<name>/SKILL.md` |
-| **OpenCode config** | `.opencode/skill/<name>/SKILL.md` |
+| Format                | Path                              |
+| --------------------- | --------------------------------- |
+| **Claude-compatible** | `.claude/skills/<name>/SKILL.md`  |
+| **OpenCode config**   | `.opencode/skill/<name>/SKILL.md` |
 
 Both formats are valid. Use `.claude/` for compatibility with Claude Code, or `.opencode/` for OpenCode-specific projects.
 

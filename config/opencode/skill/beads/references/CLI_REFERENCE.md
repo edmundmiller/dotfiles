@@ -223,6 +223,7 @@ bd --no-daemon --no-auto-flush --no-auto-import <command>
 ```
 
 **What it does:**
+
 - Disables daemon (uses direct SQLite mode)
 - Disables auto-export to JSONL
 - Disables auto-import from JSONL
@@ -276,6 +277,7 @@ bd --actor alice <command>
 ```
 
 **See also:**
+
 - [TROUBLESHOOTING.md - Sandboxed environments](TROUBLESHOOTING.md#sandboxed-environments-codex-claude-code-etc) for detailed sandbox troubleshooting
 - [DAEMON.md](DAEMON.md) for daemon mode details
 
@@ -359,6 +361,7 @@ bd sync  # Now uses resurrect mode by default
 - **`strict`** - Fail import immediately if a child's parent is missing. Use when database integrity is critical.
 
 **When to use:**
+
 - Use `allow` (default) for daily imports and auto-sync
 - Use `resurrect` when importing from databases with deleted parents
 - Use `strict` for controlled imports requiring guaranteed parent existence

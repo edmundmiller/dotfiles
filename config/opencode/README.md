@@ -32,7 +32,7 @@ Auto-discovery from `~/.config/opencode/plugin/` does not work for local plugins
 
 ### Plugin Cache & Updates
 
-OpenCode caches npm plugins in `~/.cache/opencode/node_modules/`. Plugins using `@latest` 
+OpenCode caches npm plugins in `~/.cache/opencode/node_modules/`. Plugins using `@latest`
 don't auto-update; clearing the cache forces fresh installs on next launch.
 
 **Automatic:** `hey rebuild` clears the plugin cache before rebuilding, so npm plugins
@@ -46,10 +46,12 @@ hey opencode-update   # Clear cache only
 ```
 
 **What gets cleared:**
+
 - `~/.cache/opencode/node_modules/` - Installed plugins
 - `~/.cache/opencode/bun.lock` - Lock file (forces fresh resolution)
 
 **What's preserved:**
+
 - `models.json` - Downloaded model configs
 - `package.json` - Plugin list
 

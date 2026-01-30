@@ -4,12 +4,12 @@
 
 When working with complex jj repositories, you may need to investigate historical commits, split monolithic changes into focused commits, or clean up messy history. This skill documents efficient techniques for:
 
--   **Investigating commit history**: Finding when changes were made and why
--   **Using jj annotate**: Tracking down who/when specific lines were added
--   **Splitting commits**: Breaking large commits into focused, reviewable pieces
--   **Handling immutability**: Overriding protections when rewriting shared history
--   **Cleaning up redundancy**: Removing duplicate or empty commits
--   **Resolving conflicts**: Fixing merge conflicts after rebases
+- **Investigating commit history**: Finding when changes were made and why
+- **Using jj annotate**: Tracking down who/when specific lines were added
+- **Splitting commits**: Breaking large commits into focused, reviewable pieces
+- **Handling immutability**: Overriding protections when rewriting shared history
+- **Cleaning up redundancy**: Removing duplicate or empty commits
+- **Resolving conflicts**: Fixing merge conflicts after rebases
 
 ## Core Commands
 
@@ -110,9 +110,9 @@ jj diff -r abc123 src/main.tex
 
 Split a commit when it contains multiple logical changes that should be reviewed separately:
 
--   ✅ **Good candidates**: "Add frontend + backend + tests + docs"
--   ✅ **Mixed concerns**: Copyright page + acknowledgments + CV in one commit
--   ❌ **Already focused**: "Fix typo in README"
+- ✅ **Good candidates**: "Add frontend + backend + tests + docs"
+- ✅ **Mixed concerns**: Copyright page + acknowledgments + CV in one commit
+- ❌ **Already focused**: "Fix typo in README"
 
 ### Basic Split Workflow
 
@@ -199,17 +199,17 @@ jj restore --from @- src/main.tex
 
 Commits are immutable when:
 
--   They have descendants (other commits built on top)
--   They're in shared history (pushed to remote)
--   They're marked explicitly in config
+- They have descendants (other commits built on top)
+- They're in shared history (pushed to remote)
+- They're marked explicitly in config
 
 ### Overriding Immutability
 
 **When it's safe:**
 
--   ✅ Local-only history (not pushed)
--   ✅ You own all descendant commits
--   ✅ No collaborators affected
+- ✅ Local-only history (not pushed)
+- ✅ You own all descendant commits
+- ✅ No collaborators affected
 
 **How to override:**
 
@@ -415,13 +415,13 @@ jj log -r 'bookmarks()'
 
 After split/rebase/cleanup:
 
--   [ ] No conflict markers in `jj status`
--   [ ] No `(conflict)` labels in `jj log`
--   [ ] No empty `(empty)` commits (unless intentional)
--   [ ] Commit messages are clear and descriptive
--   [ ] Each commit has focused changes
--   [ ] Bookmarks (main, feature, etc.) point correctly
--   [ ] TODO.org or similar files are consistent
+- [ ] No conflict markers in `jj status`
+- [ ] No `(conflict)` labels in `jj log`
+- [ ] No empty `(empty)` commits (unless intentional)
+- [ ] Commit messages are clear and descriptive
+- [ ] Each commit has focused changes
+- [ ] Bookmarks (main, feature, etc.) point correctly
+- [ ] TODO.org or similar files are consistent
 
 ## Real-World Example
 
@@ -551,19 +551,19 @@ jj log -r 'description(frontmatter) & description(copyright)'
 
 ### When NOT to Split
 
--   Commit is already pushed and shared with others
--   Changes are truly atomic (e.g., "Fix typo + its test")
--   Split would make history harder to understand
--   Commit is ancient and rarely viewed
+- Commit is already pushed and shared with others
+- Changes are truly atomic (e.g., "Fix typo + its test")
+- Split would make history harder to understand
+- Commit is ancient and rarely viewed
 
 ## References
 
--   [jj Documentation](https://jj-vcs.github.io/jj/)
--   [jj Revset Language](https://jj-vcs.github.io/jj/latest/revsets/)
--   [jj Conflict Resolution](https://jj-vcs.github.io/jj/latest/conflicts/)
+- [jj Documentation](https://jj-vcs.github.io/jj/)
+- [jj Revset Language](https://jj-vcs.github.io/jj/latest/revsets/)
+- [jj Conflict Resolution](https://jj-vcs.github.io/jj/latest/conflicts/)
 
 ## Related Skills
 
--   `jj:jj-workflow` - Basic jj operations and workflow
--   `jj:commit-messages` - Writing good commit messages
--   `jj:commit-curation` - Organizing commits for sharing
+- `jj:jj-workflow` - Basic jj operations and workflow
+- `jj:commit-messages` - Writing good commit messages
+- `jj:commit-curation` - Organizing commits for sharing

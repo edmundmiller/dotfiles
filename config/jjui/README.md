@@ -30,26 +30,26 @@ Using **Catppuccin Mocha** - a warm, dark theme with good contrast. Colors sourc
 
 ### Single Keys
 
-| Key       | Action                              |
-| --------- | ----------------------------------- |
-| `Y`       | Yank (context-aware clipboard)      |
-| `O`       | Open file in editor                 |
-| `ctrl+l`  | Quick revset switcher menu          |
-| `alt+j`   | Move commit down (before parent)    |
-| `alt+k`   | Move commit up (after child)        |
+| Key      | Action                           |
+| -------- | -------------------------------- |
+| `Y`      | Yank (context-aware clipboard)   |
+| `O`      | Open file in editor              |
+| `ctrl+l` | Quick revset switcher menu       |
+| `alt+j`  | Move commit down (before parent) |
+| `alt+k`  | Move commit up (after child)     |
 
 ### Default Keys (built-in)
 
-| Key     | Action           |
-| ------- | ---------------- |
-| `?`     | Help             |
-| `q`     | Quit             |
-| `p`     | Toggle preview   |
-| `L`     | Change revset    |
-| `:`     | Execute jj cmd   |
-| `$`     | Execute shell    |
-| `x`     | Custom commands  |
-| `ctrl+r`| Refresh          |
+| Key      | Action          |
+| -------- | --------------- |
+| `?`      | Help            |
+| `q`      | Quit            |
+| `p`      | Toggle preview  |
+| `L`      | Change revset   |
+| `:`      | Execute jj cmd  |
+| `$`      | Execute shell   |
+| `x`      | Custom commands |
+| `ctrl+r` | Refresh         |
 
 ## Preview Pane
 
@@ -82,14 +82,17 @@ template = 'builtin_log_compact'  # or custom template
 ## Troubleshooting
 
 **Keys not working?**
+
 - Check for conflicts with terminal emulator shortcuts
 - `alt+` keys may need terminal configuration (iTerm2: Profiles > Keys > Option as Meta)
 
 **Theme looks wrong?**
+
 - Ensure terminal supports true color (24-bit)
 - Check `$TERM` is set to something like `xterm-256color` or `tmux-256color`
 
 **Custom commands failing?**
+
 - Check jj aliases exist: `jj config list aliases`
 - For Lua commands, check syntax with `jjui --check-config`
 

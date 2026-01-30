@@ -29,22 +29,22 @@ pager:
 # Usage: gh <alias> [args]
 # These shortcuts improve workflow efficiency and reduce typing
 aliases:
-    # Checkout a PR branch locally
-    co: pr checkout
-    # View PR details in terminal
-    v: pr view $1
-    # Open PR in web browser
-    vw: pr view $1 -w
-    # List PRs requesting your review
-    lr: pr list --search "is:open review-requested:@me"
-    # List PRs assigned to you
-    lpr: pr list --assignee @me
-    # Quick approve a PR
-    approve: pr review --approve $1
-    # Create a new draft PR
-    draft: pr create --draft
-    # Mark a draft PR as ready for review
-    ready: pr ready $1
+  # Checkout a PR branch locally
+  co: pr checkout
+  # View PR details in terminal
+  v: pr view $1
+  # Open PR in web browser
+  vw: pr view $1 -w
+  # List PRs requesting your review
+  lr: pr list --search "is:open review-requested:@me"
+  # List PRs assigned to you
+  lpr: pr list --assignee @me
+  # Quick approve a PR
+  approve: pr review --approve $1
+  # Create a new draft PR
+  draft: pr create --draft
+  # Mark a draft PR as ready for review
+  ready: pr ready $1
 
 # HTTP Unix socket configuration (advanced)
 # Leave blank for default HTTP handling

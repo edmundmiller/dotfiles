@@ -46,12 +46,12 @@ Deep dive into bd's four dependency types: blocks, related, parent-child, and di
 
 bd supports four dependency types that serve different purposes in organizing and tracking work:
 
-| Type | Purpose | Affects `bd ready`? | Common Use |
-|------|---------|---------------------|------------|
-| **blocks** | Hard blocker | Yes - blocked issues excluded | Sequential work, prerequisites |
-| **related** | Soft link | No - just informational | Context, related work |
-| **parent-child** | Hierarchy | No - structural only | Epics and subtasks |
-| **discovered-from** | Provenance | No - tracks origin | Side quests, research findings |
+| Type                | Purpose      | Affects `bd ready`?           | Common Use                     |
+| ------------------- | ------------ | ----------------------------- | ------------------------------ |
+| **blocks**          | Hard blocker | Yes - blocked issues excluded | Sequential work, prerequisites |
+| **related**         | Soft link    | No - just informational       | Context, related work          |
+| **parent-child**    | Hierarchy    | No - structural only          | Epics and subtasks             |
+| **discovered-from** | Provenance   | No - tracks origin            | Side quests, research findings |
 
 **Key insight**: Only `blocks` dependencies affect what work is ready. The other three provide structure and context.
 
@@ -543,15 +543,15 @@ Are Issues A and B just related?
 
 ### Quick Reference by Situation
 
-| Situation | Use |
-|-----------|-----|
-| B needs A complete to start | blocks |
-| B is part of A (epic/task) | parent-child |
-| Found B while working on A | discovered-from |
-| A and B are similar/connected | related |
-| B should come after A but could start | related + note |
-| A and B are alternatives | related |
-| B is follow-up to A | discovered-from |
+| Situation                             | Use             |
+| ------------------------------------- | --------------- |
+| B needs A complete to start           | blocks          |
+| B is part of A (epic/task)            | parent-child    |
+| Found B while working on A            | discovered-from |
+| A and B are similar/connected         | related         |
+| B should come after A but could start | related + note  |
+| A and B are alternatives              | related         |
+| B is follow-up to A                   | discovered-from |
 
 ---
 
@@ -560,6 +560,7 @@ Are Issues A and B just related?
 ### Mistake 1: Using blocks for Preferences
 
 **Wrong**:
+
 ```
 docs-1: "Update documentation"
   blocks
@@ -575,6 +576,7 @@ Reason: "We prefer to update docs first"
 ### Mistake 2: Using discovered-from for Planning
 
 **Wrong**:
+
 ```
 epic-1: "OAuth integration"
   discovered-from →
@@ -594,6 +596,7 @@ Reason: "I'm planning these tasks from the epic"
 **Problem**: Can't tell what's blocked, what's related, how work is organized.
 
 **Solution**: Add structure with dependencies:
+
 - Group with parent-child
 - Order with blocks
 - Link with related
@@ -602,6 +605,7 @@ Reason: "I'm planning these tasks from the epic"
 ### Mistake 4: Over-Using blocks
 
 **Wrong**:
+
 ```
 Everything blocks everything else in strict sequential order.
 ```
@@ -613,6 +617,7 @@ Everything blocks everything else in strict sequential order.
 ### Mistake 5: Wrong Direction
 
 **Wrong**:
+
 ```bash
 bd dep add api-endpoint database-schema
 
@@ -622,6 +627,7 @@ Meaning: api-endpoint blocks database-schema
 **Problem**: Backwards! Schema should block endpoint, not other way around.
 
 **Right**:
+
 ```bash
 bd dep add database-schema api-endpoint
 
@@ -739,6 +745,7 @@ This shows the full dependency context for an issue.
 **Key insight**: Only `blocks` affects what work is ready. The other three provide rich context without constraining execution.
 
 Use dependencies to create a graph that:
+
 - Automatically maintains ready work
 - Preserves discovery context
 - Shows project structure

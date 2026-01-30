@@ -18,10 +18,10 @@ Or infinite recursion when `config` is referenced in option defaults or `optiona
 
 **Use `optionalAttrs` for platform checks, `mkIf` for config-dependent checks.**
 
-| Check Type | Tool | Evaluated |
-|------------|------|-----------|
-| Platform (`isDarwin`, `!isDarwin`) | `optionalAttrs` | Parse time |
-| Config values (`cfg.enable`, `cfg.flavor`) | `mkIf` | Lazy |
+| Check Type                                 | Tool            | Evaluated  |
+| ------------------------------------------ | --------------- | ---------- |
+| Platform (`isDarwin`, `!isDarwin`)         | `optionalAttrs` | Parse time |
+| Config values (`cfg.enable`, `cfg.flavor`) | `mkIf`          | Lazy       |
 
 ## Examples
 
@@ -109,20 +109,20 @@ config = mkIf cfg.enable (mkMerge [
 
 ## Quick Reference
 
-| Scenario | Pattern |
-|----------|---------|
-| NixOS-only option | `optionalAttrs (!isDarwin) { ... }` |
-| Darwin-only option | `optionalAttrs isDarwin { ... }` |
-| Platform + enable check | `optionalAttrs isDarwin (mkIf cfg.enable { ... })` |
-| Platform + config value | `optionalAttrs isDarwin (mkIf (cfg.foo == "bar") { ... })` |
-| Option default from config | Use `null` default, resolve in `config` section |
+| Scenario                   | Pattern                                                    |
+| -------------------------- | ---------------------------------------------------------- |
+| NixOS-only option          | `optionalAttrs (!isDarwin) { ... }`                        |
+| Darwin-only option         | `optionalAttrs isDarwin { ... }`                           |
+| Platform + enable check    | `optionalAttrs isDarwin (mkIf cfg.enable { ... })`         |
+| Platform + config value    | `optionalAttrs isDarwin (mkIf (cfg.foo == "bar") { ... })` |
+| Option default from config | Use `null` default, resolve in `config` section            |
 
 ## Debugging
 
 When you see infinite recursion errors mentioning `_module.freeformType` or `anon-43`:
 
 1. Search for `config.` references in option defaults
-2. Search for `cfg.` references in `optionalAttrs` conditions  
+2. Search for `cfg.` references in `optionalAttrs` conditions
 3. Search for `mkIf (!isDarwin)` or `mkIf isDarwin` guarding platform-specific options
 
 ```bash

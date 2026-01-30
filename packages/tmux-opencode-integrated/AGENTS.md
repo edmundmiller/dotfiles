@@ -19,13 +19,13 @@ Provides tmux integration for AI coding agents (OpenCode, Claude) with smart win
 
 ## Status Icons
 
-| Icon | Status |
-|------|--------|
-| `●` | In progress (Thinking..., spinners, tool calls) |
-| `■` | Needs attention (Allow once?, Permission required, approval prompts) |
-| `□` | Idle - agent ready for input (prompt visible, "Done.", context display) |
-| `▲` | Error (Traceback, API errors, panic) |
-| `◇` | Unknown (no patterns matched, empty content, capture failed) |
+| Icon | Status                                                                  |
+| ---- | ----------------------------------------------------------------------- |
+| `●`  | In progress (Thinking..., spinners, tool calls)                         |
+| `■`  | Needs attention (Allow once?, Permission required, approval prompts)    |
+| `□`  | Idle - agent ready for input (prompt visible, "Done.", context display) |
+| `▲`  | Error (Traceback, API errors, panic)                                    |
+| `◇`  | Unknown (no patterns matched, empty content, capture failed)            |
 
 **Note:** Idle is now positively detected (not just a fallback). Unknown (◇) appears when no patterns match.
 
@@ -68,7 +68,7 @@ set -g status-interval 5
 set -g status-right "#(#{TMUX_OPENCODE_STATUS_CMD}) ..."
 ```
 
-The notification is smart - it only bells when the attention count *increases*, not repeatedly.
+The notification is smart - it only bells when the attention count _increases_, not repeatedly.
 
 ## Troubleshooting
 
@@ -81,6 +81,7 @@ The notification is smart - it only bells when the attention count *increases*, 
 **Auto-fix:** The `client-attached` hook runs `--refresh-hooks` which detects path changes and updates hooks automatically. Just detach and reattach to tmux after rebuild.
 
 **Manual fix (if auto-fix fails):**
+
 ```bash
 # Option 1: Run the script directly (find path in extraInit)
 grep tmux-opencode-integrated ~/.config/tmux/extraInit
@@ -92,6 +93,7 @@ tmux kill-server && tmux
 ```
 
 **Verify hooks are updated:**
+
 ```bash
 tmux show-hooks -g | grep smart-name
 # Should show the same nix store path as in extraInit

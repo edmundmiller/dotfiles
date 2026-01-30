@@ -17,6 +17,7 @@ Use this skill when the user wants to configure Language Server Protocol (LSP) s
 LSP configuration in AstroNvim is centralized in `lua/plugins/astrolsp.lua`. This file handles server-specific settings, keybindings, and capabilities. Tool installation is managed through Mason.
 
 See `.claude/CONTEXT.md` for:
+
 - LSP configuration patterns
 - Mason integration
 - Server-specific configuration examples
@@ -157,26 +158,31 @@ mappings = {
 ## Common LSP Servers
 
 ### Python
+
 - **pyright**: Microsoft's type checker (recommended)
 - **pylsp**: Python LSP server
 - **ruff_lsp**: Fast linter/formatter
 - Settings: `python.analysis.*`
 
 ### JavaScript/TypeScript
+
 - **tsserver**: TypeScript language server
 - **eslint**: Linting integration
 - Settings: `typescript.*`, `javascript.*`
 
 ### Rust
+
 - **rust_analyzer**: Primary Rust LSP
 - Settings: `["rust-analyzer"].*`
 - Common: clippy integration, cargo features
 
 ### Go
+
 - **gopls**: Official Go language server
 - Settings: `gopls.*`
 
 ### Lua
+
 - **lua_ls**: Lua language server (formerly sumneko_lua)
 - Settings: `Lua.*`
 - Neovim-specific: workspace library setup
@@ -188,6 +194,7 @@ mappings = {
 **User request**: "Set up pyright for type checking"
 
 **Your response**:
+
 1. Read `lua/plugins/astrolsp.lua` to check existing Python config
 2. Check if python pack exists in `lua/community.lua`
 3. Add configuration:
@@ -215,6 +222,7 @@ mappings = {
 **User request**: "Use clippy for Rust linting instead of cargo check"
 
 **Your response**:
+
 1. Read current `rust_analyzer` config in `astrolsp.lua`
 2. Modify or add:
    ```lua
@@ -236,6 +244,7 @@ mappings = {
 **User request**: "Enable inlay hints for TypeScript"
 
 **Your response**:
+
 1. Check `astrolsp.lua` for `tsserver` config
 2. Add/modify:
    ```lua

@@ -19,12 +19,8 @@ let
   # Effective hostname for per-host secrets
   effectiveHostName = if isDarwin then hostName else config.networking.hostName;
   # NixOS host-specific secrets directory
-  secretsDir =
-    if isDarwin then ""
-    else "${toString ../hosts}/${effectiveHostName}/secrets";
-  secretsFile =
-    if isDarwin then ""
-    else "${secretsDir}/secrets.nix";
+  secretsDir = if isDarwin then "" else "${toString ../hosts}/${effectiveHostName}/secrets";
+  secretsFile = if isDarwin then "" else "${secretsDir}/secrets.nix";
 in
 {
   imports = if isDarwin then [ agenix.darwinModules.age ] else [ agenix.nixosModules.age ];
@@ -47,14 +43,13 @@ in
               ) (import secretsFile)
             else
               { };
-          sharedSecrets =
-            (optionalAttrs config.modules.services.clawdbot.enable {
-              clawdbot-bridge-token = {
-                file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
-                owner = config.user.name;
-                mode = "0400";
-              };
-            });
+          sharedSecrets = optionalAttrs config.modules.services.clawdbot.enable {
+            clawdbot-bridge-token = {
+              file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
+              owner = config.user.name;
+              mode = "0400";
+            };
+          };
         in
         hostSecrets // sharedSecrets;
       identityPaths =
@@ -81,7 +76,8 @@ in
           wakatime-api-key = {
             file = "${sharedSecretsDir}/wakatime-api-key.age";
           };
-        } // (optionalAttrs config.modules.services.clawdbot.enable {
+        }
+        // (optionalAttrs config.modules.services.clawdbot.enable {
           clawdbot-bridge-token = {
             file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
           };

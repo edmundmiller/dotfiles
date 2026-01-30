@@ -18,7 +18,10 @@ stdenvNoCC.mkDerivation rec {
     sha256 = "sha256-JlUb5omhy6uAhgva674FvDZ8E9AJ1tO5Ki7jJ6sDqjc=";
   };
 
-  nativeBuildInputs = [ zsh makeWrapper ];
+  nativeBuildInputs = [
+    zsh
+    makeWrapper
+  ];
 
   buildPhase = ''
     # Patch out revolver dependency check (not needed in CI/TAP mode)
@@ -34,7 +37,7 @@ stdenvNoCC.mkDerivation rec {
     mkdir -p $out/bin
     cp zunit $out/bin/zunit
     chmod +x $out/bin/zunit
-    
+
     # Symlink revolver into zunit's bin so it's found via $PATH
     ln -s ${revolver}/bin/revolver $out/bin/revolver
   '';

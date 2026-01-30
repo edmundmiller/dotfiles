@@ -18,9 +18,7 @@ Add to your `~/.config/opencode/opencode.json`:
 
 ```json
 {
-  "plugin": [
-    "./plugin/opencode-tmux-namer"
-  ]
+  "plugin": ["./plugin/opencode-tmux-namer"]
 }
 ```
 
@@ -28,9 +26,7 @@ Or install from npm (when published):
 
 ```json
 {
-  "plugin": [
-    "opencode-tmux-namer@latest"
-  ]
+  "plugin": ["opencode-tmux-namer@latest"]
 }
 ```
 
@@ -38,26 +34,26 @@ Or install from npm (when published):
 
 All configuration is via environment variables:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENCODE_TMUX_DEBUG` | `0` | Set to `1` for debug logging |
-| `OPENCODE_TMUX_COOLDOWN_MS` | `300000` | Minimum ms between renames (5 min) |
-| `OPENCODE_TMUX_DEBOUNCE_MS` | `5000` | Debounce interval for checks (5 sec) |
-| `OPENCODE_TMUX_MAX_SIGNALS` | `25` | Max activity signals to retain |
-| `OPENCODE_TMUX_USE_AGENTS_MD` | `1` | Set to `0` to disable AGENTS.md reading |
-| `OPENCODE_TMUX_SHOW_STATUS` | `1` | Set to `0` to disable status icons |
-| `OPENCODE_TMUX_WORKMUX_AWARE` | `1` | Set to `0` to disable workmux detection |
-| `OPENCODE_TMUX_WORKMUX_FORMAT` | `both` | `branch`, `project`, or `both` |
+| Variable                       | Default  | Description                             |
+| ------------------------------ | -------- | --------------------------------------- |
+| `OPENCODE_TMUX_DEBUG`          | `0`      | Set to `1` for debug logging            |
+| `OPENCODE_TMUX_COOLDOWN_MS`    | `300000` | Minimum ms between renames (5 min)      |
+| `OPENCODE_TMUX_DEBOUNCE_MS`    | `5000`   | Debounce interval for checks (5 sec)    |
+| `OPENCODE_TMUX_MAX_SIGNALS`    | `25`     | Max activity signals to retain          |
+| `OPENCODE_TMUX_USE_AGENTS_MD`  | `1`      | Set to `0` to disable AGENTS.md reading |
+| `OPENCODE_TMUX_SHOW_STATUS`    | `1`      | Set to `0` to disable status icons      |
+| `OPENCODE_TMUX_WORKMUX_AWARE`  | `1`      | Set to `0` to disable workmux detection |
+| `OPENCODE_TMUX_WORKMUX_FORMAT` | `both`   | `branch`, `project`, or `both`          |
 
 ## Status Icons
 
-| Icon | Status | Description |
-|------|--------|-------------|
-| `●` | Busy | Agent is working (streaming, running tools) |
-| `□` | Idle | Agent ready for input |
-| `■` | Waiting | Permission prompt, needs user action |
-| `▲` | Error | Something went wrong |
-| `◇` | Unknown | Unable to determine status |
+| Icon | Status  | Description                                 |
+| ---- | ------- | ------------------------------------------- |
+| `●`  | Busy    | Agent is working (streaming, running tools) |
+| `□`  | Idle    | Agent ready for input                       |
+| `■`  | Waiting | Permission prompt, needs user action        |
+| `▲`  | Error   | Something went wrong                        |
+| `◇`  | Unknown | Unable to determine status                  |
 
 ## Naming Format
 
@@ -70,12 +66,12 @@ All configuration is via environment variables:
 
 ### Examples
 
-| Activity | Generated Name |
-|----------|----------------|
-| Working on new feature | `● myapp-feat` |
-| Debugging auth issues | `● myapp-debug-auth` |
-| Agent waiting for permission | `■ api-feat-db` |
-| Agent idle, ready for input | `□ backend-refactor` |
+| Activity                     | Generated Name       |
+| ---------------------------- | -------------------- |
+| Working on new feature       | `● myapp-feat`       |
+| Debugging auth issues        | `● myapp-debug-auth` |
+| Agent waiting for permission | `■ api-feat-db`      |
+| Agent idle, ready for input  | `□ backend-refactor` |
 
 ## Trigger Events
 
@@ -92,11 +88,11 @@ The plugin listens to these OpenCode events:
 
 When running inside a [workmux](https://workmux.raine.dev)-managed worktree, the plugin automatically detects this and adjusts naming:
 
-| Format | Example | Description |
-|--------|---------|-------------|
+| Format           | Example           | Description                      |
+| ---------------- | ----------------- | -------------------------------- |
 | `both` (default) | `fix-auth (proj)` | Branch name with project context |
-| `branch` | `fix-auth` | Just the branch name |
-| `project` | `proj-feat` | Standard project-intent naming |
+| `branch`         | `fix-auth`        | Just the branch name             |
+| `project`        | `proj-feat`       | Standard project-intent naming   |
 
 Detection works by checking if you're in a git worktree (bare repo layout). The workmux config uses matching status icons for consistency.
 
@@ -108,6 +104,7 @@ This plugin complements the existing `tmux-opencode-integrated` package:
 - **opencode-tmux-namer**: Native OpenCode plugin with direct event access
 
 Use both together:
+
 - This plugin provides accurate status from OpenCode events
 - tmux-opencode-integrated provides the Agent Management Panel (`<prefix> A`)
 

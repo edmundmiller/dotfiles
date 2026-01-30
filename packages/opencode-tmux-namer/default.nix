@@ -17,7 +17,7 @@ stdenv.mkDerivation {
 
     export HOME=$(mktemp -d)
     bun install --frozen-lockfile
-    
+
     # Use bun's native transpiler (no node/tsc needed)
     mkdir -p dist
     bun build src/index.ts --outdir dist --target node

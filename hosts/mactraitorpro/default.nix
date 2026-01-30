@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, lib, ... }:
+{ config, pkgs, ... }:
 {
   config = {
     modules = {
@@ -34,7 +34,8 @@
       services = {
         clawdbot = {
           enable = false;
-          anthropic.apiKeyFile = config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path;
+          anthropic.apiKeyFile =
+            config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path;
           plugins = {
             camsnap = true;
             sonoscli = true;
@@ -43,7 +44,7 @@
             gateway = {
               mode = "remote";
               remote = {
-                transport = "direct";  # Direct WebSocket, no SSH tunnel
+                transport = "direct"; # Direct WebSocket, no SSH tunnel
                 url = "ws://nuc.cinnamon-rooster.ts.net:18789";
               };
             };
@@ -62,9 +63,9 @@
     nix-homebrew = {
       enable = true;
       user = "emiller";
-      enableRosetta = true;  # Apple Silicon + Intel compatibility
-      autoMigrate = true;    # Migrate existing homebrew installation
-      mutableTaps = true;    # Allow mutable taps for flexibility
+      enableRosetta = true; # Apple Silicon + Intel compatibility
+      autoMigrate = true; # Migrate existing homebrew installation
+      mutableTaps = true; # Allow mutable taps for flexibility
     };
 
     # Use homebrew to install casks and Mac App Store apps
@@ -73,11 +74,12 @@
 
       # Homebrew configuration
       onActivation = {
-        autoUpdate = false;  # Don't auto-update during activation
-        cleanup = "none";     # Don't remove anything for now
-        upgrade = false;     # Don't upgrade formulae during activation
+        autoUpdate = false; # Don't auto-update during activation
+        cleanup = "none"; # Don't remove anything for now
+        upgrade = false; # Don't upgrade formulae during activation
       };
-    } // import ./homebrew.nix;
+    }
+    // import ./homebrew.nix;
 
     # Override the primary user for this host
     system.primaryUser = "emiller";

@@ -1,5 +1,4 @@
-{ config, ... }:
-{
+_: {
   config = {
     modules = {
       editors = {
@@ -45,15 +44,16 @@
     nix-homebrew = {
       enable = true;
       user = "edmundmiller";
-      enableRosetta = true;  # Apple Silicon + Intel compatibility
-      autoMigrate = true;    # Migrate existing homebrew installation
-      mutableTaps = true;    # Allow mutable taps for flexibility
+      enableRosetta = true; # Apple Silicon + Intel compatibility
+      autoMigrate = true; # Migrate existing homebrew installation
+      mutableTaps = true; # Allow mutable taps for flexibility
     };
 
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
       enable = true;
-    } // (import ./homebrew.nix);
+    }
+    // (import ./homebrew.nix);
 
     # set some OSX preferences that I always end up hunting down and changing.
     system.defaults = {

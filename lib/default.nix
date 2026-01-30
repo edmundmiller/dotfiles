@@ -15,10 +15,6 @@ let
       self = { };
     };
   };
-  
-  platform = import ./platform.nix {
-    inherit lib pkgs inputs;
-  };
 
   mylib = makeExtensible (
     self:

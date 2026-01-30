@@ -47,11 +47,68 @@ upgrade:
         sudo nixos-rebuild --flake "{{FLAKE_DIR}}" switch
     fi
 
-# Run flake checks
+# Run flake checks (platform-aware)
 check:
     #!/usr/bin/env bash
+    set -euo pipefail
     cd "{{FLAKE_DIR}}"
-    nix flake check
+    
+    if [[ "{{is_darwin}}" == "true" ]]; then
+        echo "Running Darwin-compatible checks (skipping NixOS configs)..."
+        FAILED=0
+        
+        # 1. Check Darwin configuration evaluates correctly
+        echo ""
+        echo "==> Checking Darwin configuration: {{flake_host}}"
+        if nix eval ".#darwinConfigurations.{{flake_host}}.system" --apply 'x: "OK"' 2>&1; then
+            echo "✓ Darwin configuration OK"
+        else
+            echo "✗ Darwin configuration FAILED"
+            FAILED=1
+        fi
+        
+        # 2. Run treefmt check
+        echo ""
+        echo "==> Running treefmt formatting check..."
+        if nix build ".#checks.aarch64-darwin.treefmt" --no-link 2>&1; then
+            echo "✓ Formatting OK"
+        else
+            echo "✗ Formatting check FAILED (run 'nix fmt' to fix)"
+            FAILED=1
+        fi
+        
+        # 3. Run pre-commit check
+        echo ""
+        echo "==> Running pre-commit hooks check..."
+        if nix build ".#checks.aarch64-darwin.pre-commit" --no-link 2>&1; then
+            echo "✓ Pre-commit hooks OK"
+        else
+            echo "✗ Pre-commit check FAILED"
+            FAILED=1
+        fi
+        
+        # 4. Run zunit tests
+        echo ""
+        echo "==> Running zunit shell tests..."
+        if nix build ".#checks.aarch64-darwin.zunit-tests" --no-link 2>&1; then
+            echo "✓ Shell tests OK"
+        else
+            echo "✗ Shell tests FAILED"
+            FAILED=1
+        fi
+        
+        echo ""
+        if [[ $FAILED -eq 0 ]]; then
+            echo "✓ All Darwin checks passed!"
+        else
+            echo "✗ Some checks failed. For full checks including NixOS configs, run on Linux."
+            exit 1
+        fi
+    else
+        # On Linux, run full flake check
+        echo "Running full flake check..."
+        nix flake check
+    fi
 
 # Show flake outputs
 show:

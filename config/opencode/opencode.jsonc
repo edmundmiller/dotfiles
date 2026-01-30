@@ -1,384 +1,376 @@
 {
-    "$schema": "https://opencode.ai/config.json",
-    // Theme - Catppuccin Mocha for consistency with Ghostty/Neovim/Taskwarrior
-    "theme": "catppuccin",
-    // TUI settings
-    "tui": {
-        "scroll_acceleration": {
-            "enabled": true
-        }
+  "$schema": "https://opencode.ai/config.json",
+  // Theme - Catppuccin Mocha for consistency with Ghostty/Neovim/Taskwarrior
+  "theme": "catppuccin",
+  // TUI settings
+  "tui": {
+    "scroll_acceleration": {
+      "enabled": true,
     },
-    // Model configuration - using Claude as primary
-    "model": "anthropic/claude-sonnet-4-5",
-    "small_model": "anthropic/claude-haiku-4-5",
-    // Provider configuration
-    // "provider": {
-    //     "anthropic": {
-    //         "options": {
-    //             "apiKey": "{env:ANTHROPIC_API_KEY}"
-    //         }
-    //     }
-    // },
-    // Autoupdate - notify but don't auto-update
-    "autoupdate": "notify",
-    // Plugins
-    // - opencode-pty: PTY support for interactive terminal sessions
-    // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
-    // - opencode-md-table-formatter: Auto-format markdown tables on completion
-    // - opencode-notifier: Desktop notifications + sounds on events
-    // - opencode-direnv: Auto-load .envrc environment variables at session start
-    // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
-    // - opencode-beads: Beads issue tracker integration
-    "plugin": [
-        "opencode-pty@latest",
-        "@simonwjackson/opencode-direnv@latest",
-        "opencode-wakatime@latest",
-        "@franlol/opencode-md-table-formatter@latest",
-        "@mohak34/opencode-notifier@latest",
-        "opencode-beads@latest",
-        "@tarquinen/opencode-dcp@latest",
-        "opencode-gemini-auth@latest",
-        "opencode-anthropic-auth@latest",
-        // Local plugins (in ~/.config/opencode/plugin/)
-        // "./plugin/boomerang-notify",
-        // "./plugin/opencode-worktrunk"
-        // "./plugin/opencode-canvas"
-        // NOTE: Migrating from opencode-jj to worktrunk
-        // "./plugin/opencode-jj"
-        "./plugin/opencode-tmux-namer"
-    ],
-    // Nextflow Language Server
-    "lsp": {
-        "nextflow": {
-            "command": [
-                "java",
-                "-jar",
-                "{env:HOME}/.local/share/opencode/bin/nextflow-language-server/language-server-all.jar"
-            ],
-            "extensions": [
-                ".nf",
-                ".config"
-            ]
-        }
+  },
+  // Model configuration - using Claude as primary
+  "model": "anthropic/claude-sonnet-4-5",
+  "small_model": "anthropic/claude-haiku-4-5",
+  // Provider configuration
+  // "provider": {
+  //     "anthropic": {
+  //         "options": {
+  //             "apiKey": "{env:ANTHROPIC_API_KEY}"
+  //         }
+  //     }
+  // },
+  // Autoupdate - notify but don't auto-update
+  "autoupdate": "notify",
+  // Plugins
+  // - opencode-pty: PTY support for interactive terminal sessions
+  // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
+  // - opencode-md-table-formatter: Auto-format markdown tables on completion
+  // - opencode-notifier: Desktop notifications + sounds on events
+  // - opencode-direnv: Auto-load .envrc environment variables at session start
+  // - opencode-dcp: Dynamic context pruning to reduce token usage (MUST BE LAST)
+  // - opencode-beads: Beads issue tracker integration
+  "plugin": [
+    "opencode-pty@latest",
+    "@simonwjackson/opencode-direnv@latest",
+    "opencode-wakatime@latest",
+    "@franlol/opencode-md-table-formatter@latest",
+    "@mohak34/opencode-notifier@latest",
+    "opencode-beads@latest",
+    "@tarquinen/opencode-dcp@latest",
+    "opencode-gemini-auth@latest",
+    "opencode-anthropic-auth@latest",
+    // Local plugins (in ~/.config/opencode/plugin/)
+    // "./plugin/boomerang-notify",
+    // "./plugin/opencode-worktrunk"
+    // "./plugin/opencode-canvas"
+    // NOTE: Migrating from opencode-jj to worktrunk
+    // "./plugin/opencode-jj"
+    "./plugin/opencode-tmux-namer",
+  ],
+  // Nextflow Language Server
+  "lsp": {
+    "nextflow": {
+      "command": [
+        "java",
+        "-jar",
+        "{env:HOME}/.local/share/opencode/bin/nextflow-language-server/language-server-all.jar",
+      ],
+      "extensions": [".nf", ".config"],
     },
-    // Nextflow formatter
-    "formatter": {
-        "nextflow": {
-            "command": [
-                "nextflow",
-                "lint",
-                "-format",
-                "-spaces",
-                "4",
-                "-harshil-alignment",
-                "-sort-declarations",
-                "$FILE"
-            ],
-            "extensions": [
-                ".nf",
-                "nextflow.config"
-            ]
-        }
+  },
+  // Nextflow formatter
+  "formatter": {
+    "nextflow": {
+      "command": [
+        "nextflow",
+        "lint",
+        "-format",
+        "-spaces",
+        "4",
+        "-harshil-alignment",
+        "-sort-declarations",
+        "$FILE",
+      ],
+      "extensions": [".nf", "nextflow.config"],
     },
-    // MCP servers
-    "mcp": {
-        "seqera-platform": {
-            "type": "remote",
-            "url": "https://mcp.seqera.io/mcp",
-            "enabled": false,
-            "headers": {
-                "Authorization": "Bearer {env:SEQERA_TOKEN}"
-            },
-            "timeout": 10000
-        },
-        "context7": {
-            "type": "remote",
-            "url": "https://mcp.context7.com/mcp",
-            "enabled": true,
-            "headers": {
-                "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
-            }
-        }
+  },
+  // MCP servers
+  "mcp": {
+    "seqera-platform": {
+      "type": "remote",
+      "url": "https://mcp.seqera.io/mcp",
+      "enabled": false,
+      "headers": {
+        "Authorization": "Bearer {env:SEQERA_TOKEN}",
+      },
+      "timeout": 10000,
     },
-    // Permission configuration - merged existing + Nextflow ecosystem
-    "permission": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true,
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}",
+      },
+    },
+  },
+  // Permission configuration - merged existing + Nextflow ecosystem
+  "permission": {
+    "bash": {
+      // Nextflow commands
+      "nextflow config": "allow",
+      "nextflow log *": "allow",
+      "nextflow lint *": "allow",
+      "nextflow info *": "allow",
+      "nextflow list *": "allow",
+      "nextflow view *": "allow",
+      "nextflow run *": "allow",
+      "nextflow pull *": "allow",
+      "nextflow drop *": "allow",
+      "nextflow clean *": "ask",
+      // nf-test commands
+      "nf-test test *": "allow",
+      "nf-test list *": "allow",
+      "nf-test generate *": "allow",
+      // nf-core commands
+      "nf-core list": "allow",
+      "nf-core info *": "allow",
+      "nf-core modules list *": "allow",
+      "nf-core subworkflows list *": "allow",
+      "nf-core pipelines list": "allow",
+      "nf-core lint *": "allow",
+      "nf-core download *": "ask",
+      "nf-core create *": "ask",
+      "nf-core modules install *": "ask",
+      "nf-core modules update *": "ask",
+      "nf-core modules remove *": "ask",
+      "nf-core subworkflows install *": "ask",
+      "nf-core launch *": "ask",
+      // Seqera Platform (tw) commands
+      "tw info *": "allow",
+      "tw workspaces list": "allow",
+      "tw pipelines list *": "allow",
+      "tw runs list *": "allow",
+      "tw runs view *": "allow",
+      "tw datasets list *": "allow",
+      "tw compute-envs list *": "allow",
+      "tw credentials list": "allow",
+      "tw organizations list": "allow",
+      "tw pipelines create *": "ask",
+      "tw pipelines delete *": "ask",
+      "tw pipelines update *": "ask",
+      "tw runs launch *": "ask",
+      "tw runs cancel *": "ask",
+      "tw runs delete *": "ask",
+      "tw datasets create *": "ask",
+      "tw datasets delete *": "ask",
+      "tw compute-envs create *": "ask",
+      "tw compute-envs delete *": "ask",
+      // Wave commands
+      "wave --version": "allow",
+      "wave --help": "allow",
+      "wave *": "ask",
+      // ast-grep commands
+      "ast-grep -p *": "allow",
+      "ast-grep --pattern *": "allow",
+      "ast-grep scan *": "allow",
+      "ast-grep --config *": "allow",
+      "sg *": "allow",
+      // Nix/Darwin commands
+      "nix flake *": "allow",
+      "nix build *": "allow",
+      "nix search *": "allow",
+      "nix shell *": "allow",
+      "nix eval *": "allow",
+      "nix-collect-garbage *": "ask",
+      "darwin-rebuild *": "ask",
+      "hey *": "allow",
+      // Build tools - all operations
+      "make *": "allow",
+      "make": "allow",
+      "cargo *": "allow",
+      "go build *": "allow",
+      "go test *": "allow",
+      "go run *": "allow",
+      "go vet *": "allow",
+      "mvn *": "allow",
+      "gradle *": "allow",
+      // Python ecosystem
+      "pip list *": "allow",
+      "pip show *": "allow",
+      "uv run *": "allow",
+      "uv sync *": "allow",
+      "uv *": "allow",
+      "poetry run *": "allow",
+      "poetry show *": "allow",
+      "poetry *": "allow",
+      "ruff *": "allow",
+      "black *": "allow",
+      "mypy *": "allow",
+      "pytest *": "allow",
+      // Node ecosystem
+      "npm run *": "allow",
+      "npm run build": "allow",
+      "npm run test": "allow",
+      "npm run lint": "allow",
+      "npm run dev": "allow",
+      "npm list *": "allow",
+      "yarn *": "allow",
+      "pnpm *": "allow",
+      "npx *": "allow",
+      "eslint *": "allow",
+      "prettier *": "allow",
+      // JJ operations (all safe with undo)
+      "jj *": "allow",
+      // File operations
+      "mkdir *": "allow",
+      "touch *": "allow",
+      "chmod *": "allow",
+      "cp *": "allow",
+      "mv *": "allow",
+      "ln *": "allow",
+      "rm *": "allow",
+      // System info
+      "date *": "allow",
+      "date": "allow",
+      "env": "allow",
+      "printenv *": "allow",
+      "hostname": "allow",
+      "whoami": "allow",
+      "id": "allow",
+      "uname *": "allow",
+      "ps *": "allow",
+      "top -l *": "allow",
+      // Network info (read-only)
+      "ping -c *": "allow",
+      "curl *": "allow",
+      "wget *": "allow",
+      "dig *": "allow",
+      "nslookup *": "allow",
+      "host *": "allow",
+      // Package managers (read operations)
+      "brew list *": "allow",
+      "brew info *": "allow",
+      "brew search *": "allow",
+      "apt list *": "allow",
+      "dnf list *": "allow",
+      // Text processing
+      "jq *": "allow",
+      "yq *": "allow",
+      "awk *": "allow",
+      "sed *": "allow",
+      "sort *": "allow",
+      "uniq *": "allow",
+      "cut *": "allow",
+      "tr *": "allow",
+      // File readers
+      "bat *": "allow",
+      "less *": "allow",
+      "more *": "allow",
+      // Search tools
+      "ag *": "allow",
+      "ack *": "allow",
+      "rg *": "allow",
+      // Server/dev commands
+      "docker *": "allow",
+      "docker-compose *": "allow",
+      "kubectl get *": "allow",
+      "kubectl describe *": "allow",
+      "kubectl logs *": "allow",
+      // Beads issue tracker
+      "bd close * --reason *": "allow",
+      "bd close * --reason=*": "allow",
+      "bd close *": "deny",
+      "bd close": "deny",
+      "bd *": "allow",
+      // Git commit - allow normal commits, block bypass + author overrides
+      "git -c commit.gpgsign=false": "deny",
+      "git -c commit.gpgsign=false *": "deny",
+      "GIT_AUTHOR_EMAIL=* git commit": "deny",
+      "GIT_AUTHOR_EMAIL=* git commit *": "deny",
+      "GIT_AUTHOR_NAME=* git commit": "deny",
+      "GIT_AUTHOR_NAME=* git commit *": "deny",
+      "GIT_COMMITTER_EMAIL=* git commit": "deny",
+      "GIT_COMMITTER_EMAIL=* git commit *": "deny",
+      "GIT_COMMITTER_NAME=* git commit": "deny",
+      "GIT_COMMITTER_NAME=* git commit *": "deny",
+      "git -c user.email=* commit": "deny",
+      "git -c user.email=* commit *": "deny",
+      "git -c user.name=* commit": "deny",
+      "git -c user.name=* commit *": "deny",
+      "git commit --author *": "deny",
+      "git commit * --author *": "deny",
+      "git commit --author=*": "deny",
+      "git commit * --author=*": "deny",
+      // Hook bypass prevention - commit
+      "git commit --no-gpg-sign": "deny",
+      "git commit --no-gpg-sign *": "deny",
+      "git commit * --no-gpg-sign": "deny",
+      "git commit * --no-gpg-sign *": "deny",
+      "git commit --no-verify": "deny",
+      "git commit --no-verify *": "deny",
+      "git commit * --no-verify": "deny",
+      "git commit * --no-verify *": "deny",
+      "git commit -n": "deny",
+      "git commit -n *": "deny",
+      "git commit * -n": "deny",
+      "git commit * -n *": "deny",
+      "git commit *": "allow",
+      "git add *": "allow",
+      // Hook bypass prevention - push
+      "git push --no-verify": "deny",
+      "git push --no-verify *": "deny",
+      "git push * --no-verify": "deny",
+      "git push * --no-verify *": "deny",
+      "git push --no-gpg-sign": "deny",
+      "git push --no-gpg-sign *": "deny",
+      "git push * --no-gpg-sign": "deny",
+      "git push * --no-gpg-sign *": "deny",
+      "git push *": "allow",
+      // Environment variable hook bypasses
+      "HUSKY=0 *": "deny",
+      "HUSKY=0 git *": "deny",
+      "SKIP=* git *": "deny",
+      "SKIP_PREPARE_COMMIT_MSG=* git *": "deny",
+      "SKIP_PRE_COMMIT=* git *": "deny",
+      "PRE_COMMIT_ALLOW_NO_CONFIG=* git *": "deny",
+      // Config-level hook disabling
+      "git -c core.hooksPath=/dev/null *": "deny",
+      "git -c core.hooksPath=* *": "deny",
+      "git config core.hooksPath *": "deny",
+      "git config --global core.hooksPath *": "deny",
+      "git config --local core.hooksPath *": "deny",
+      // Git rebase - block interactive continue, allow non-interactive workaround
+      "git rebase --continue": "deny",
+      "GIT_EDITOR=true git rebase --continue": "allow",
+      "GIT_SEQUENCE_EDITOR=true git rebase --continue": "allow",
+      "git rebase *": "allow",
+      // Catch-all patterns for bypass attempts
+      "*--no-gpg-sign*": "deny",
+      "*--no-verify*": "deny",
+      "*gpgsign=false*": "deny",
+    },
+    "edit": "allow",
+    "write": "allow",
+    "webfetch": "allow",
+    "doom_loop": "allow",
+    "external_directory": "allow",
+  },
+  // Nextflow development agents
+  "agent": {
+    // Built-in agent overrides
+    "build": {
+      "mode": "primary",
+      "model": "anthropic/claude-opus-4-5",
+      "description": "Full development work with all tools enabled",
+      "prompt": "You are Claude Code, Anthropic's official CLI for Claude.\n\nYou are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.\n\nIMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.\n\nIf the user asks for help or wants to give feedback inform them of the following:\n- ctrl+p to list available actions\n- To give feedback, users should report the issue at\n  https://github.com/anthropics/claude-code\n\nWhen the user directly asks about Claude Code (eg. \"can Claude Code do...\", \"does Claude Code have...\"), or asks in second person (eg. \"are you able...\", \"can you do...\"), or asks how to use a specific Claude Code feature (eg. implement a hook, write a slash command, or install an MCP server), use the WebFetch tool to gather information to answer the question from Claude Code docs.\n\n# Tone and style\n- Only use emojis if the user explicitly requests it. Avoid using emojis in all communication unless asked.\n- Your output will be displayed on a command line interface. Your responses should be short and concise. You can use Github-flavored markdown for formatting, and will be rendered in a monospace font using the CommonMark specification.\n- Output text to communicate with the user; all text you output outside of tool use is displayed to the user. Only use tools to complete tasks. Never use tools like Bash or code comments as means of communicate with the user during the session.\n- NEVER create files unless they're absolutely necessary for achieving your goal. ALWAYS prefer editing an existing file to creating a new one. This includes markdown files.\n\n# Professional objectivity\nPrioritize technical accuracy and truthfulness over validating the user's beliefs. Focus on facts and problem-solving, providing direct, objective technical info without any unnecessary superlatives, praise, or emotional validation. It is best for the user if Claude Code honestly applies the same rigorous standards to all ideas and disagrees when necessary, even if it may not be what the user wants to hear. Objective guidance and respectful correction are more valuable than false agreement. Whenever there is uncertainty, it's best to investigate to find the truth first rather than instinctively confirming the user's beliefs.\n\n# Task Management\nYou have access to the TodoWrite tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.\nThese tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.\n\nIt is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.\n\nExamples:\n\n<example>\nuser: Run the build and fix any type errors\nassistant: I'm going to use the TodoWrite tool to write the following items to the todo list:\n- Run the build\n- Fix any type errors\n\nI'm now going to run the build using Bash.\n\nLooks like I found 10 type errors. I'm going to use the TodoWrite tool to write 10 items to the todo list.\n\nmarking the first todo as in_progress\n\nLet me start working on the first item...\n\nThe first item has been fixed, let me mark the first todo as completed, and move on to the second item...\n..\n..\n</example>\nIn the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.\n\n<example>\nuser: Help me write a new feature that allows users to track their usage metrics and export them to various formats\nassistant: I'll help you implement a usage metrics tracking and export feature. Let me first use the TodoWrite tool to plan this task.\nAdding the following todos to the todo list:\n1. Research existing metrics tracking in the codebase\n2. Design the metrics collection system\n3. Implement core metrics tracking functionality\n4. Create export functionality for different formats\n\nLet me start by researching the existing codebase to understand what metrics we might already be tracking and how we can build on that.\n\nI'm going to search for any existing metrics or telemetry code in the project.\n\nI've found some existing telemetry code. Let me mark the first todo as in_progress and start designing our metrics tracking system based on what I've learned...\n\n[Assistant continues implementing the feature step by step, marking todos as in_progress and completed as they go]\n</example>\n\n\n# Doing tasks\nThe user will primarily request you perform software engineering tasks. This includes solving bugs, adding new functionality, refactoring code, explaining code, and more. For these tasks the following steps are recommended:\n- \n- Use the TodoWrite tool to plan the task if required\n\n- Tool results and user messages may include <system-reminder> tags. <system-reminder> tags contain useful information and reminders. They are automatically added by the system, and bear no direct relation to the specific tool results or user messages in which they appear.\n\n\n# Tool usage policy\n- When doing file search, prefer to use the Task tool in order to reduce context usage.\n- You should proactively use the Task tool with specialized agents when the task at hand matches the agent's description.\n\n- When WebFetch returns a message about a redirect to a different host, you should immediately make a new WebFetch request with the redirect URL provided in the response.\n- You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls where possible to increase efficiency. However, if some tool calls depend on previous calls to inform dependent values, do NOT call these tools in parallel and instead call them sequentially. For instance, if one operation must complete before another starts, run these operations sequentially instead. Never use placeholders or guess missing parameters in tool calls.\n- If the user specifies that they want you to run tools \"in parallel\", you MUST send a single message with multiple tool use content blocks. For example, if you need to launch multiple agents in parallel, send a single message with multiple Task tool calls.\n- Use specialized tools instead of bash commands when possible, as this provides a better user experience. For file operations, use dedicated tools: Read for reading files instead of cat/head/tail, Edit for editing instead of sed/awk, and Write for creating files instead of cat with heredoc or echo redirection. Reserve bash tools exclusively for actual system commands and terminal operations that require shell execution. NEVER use bash echo or other command-line tools to communicate thoughts, explanations, or instructions to the user. Output all communication directly in your response text instead.\n- VERY IMPORTANT: When exploring the codebase to gather context or to answer a question that is not a needle query for a specific file/class/function, it is CRITICAL that you use the Task tool instead of running search commands directly.\n<example>\nuser: Where are errors from the client handled?\nassistant: [Uses the Task tool to find the files that handle client errors instead of using Glob or Grep directly]\n</example>\n<example>\nuser: What is the codebase structure?\nassistant: [Uses the Task tool]\n</example>\n\nIMPORTANT: Always use the TodoWrite tool to plan and track tasks throughout the conversation.\n\n# Code References\n\nWhen referencing specific functions or pieces of code include the pattern `file_path:line_number` to allow the user to easily navigate to the source code location.\n\n<example>\nuser: Where are errors from the client handled?\nassistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.\n</example>",
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-5",
+      "description": "Analysis and planning without making changes",
+      "prompt": "You are Claude Code, Anthropic's official CLI for Claude.\n\nYou are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.\n\nIMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.\n\nIf the user asks for help or wants to give feedback inform them of the following:\n- ctrl+p to list available actions\n- To give feedback, users should report the issue at\n  https://github.com/anthropics/claude-code\n\nWhen the user directly asks about Claude Code (eg. \"can Claude Code do...\", \"does Claude Code have...\"), or asks in second person (eg. \"are you able...\", \"can you do...\"), or asks how to use a specific Claude Code feature (eg. implement a hook, write a slash command, or install an MCP server), use the WebFetch tool to gather information to answer the question from Claude Code docs.\n\n# Tone and style\n- Only use emojis if the user explicitly requests it. Avoid using emojis in all communication unless asked.\n- Your output will be displayed on a command line interface. Your responses should be short and concise. You can use Github-flavored markdown for formatting, and will be rendered in a monospace font using the CommonMark specification.\n- Output text to communicate with the user; all text you output outside of tool use is displayed to the user. Only use tools to complete tasks. Never use tools like Bash or code comments as means of communicate with the user during the session.\n- NEVER create files unless they're absolutely necessary for achieving your goal. ALWAYS prefer editing an existing file to creating a new one. This includes markdown files.\n\n# Professional objectivity\nPrioritize technical accuracy and truthfulness over validating the user's beliefs. Focus on facts and problem-solving, providing direct, objective technical info without any unnecessary superlatives, praise, or emotional validation. It is best for the user if Claude Code honestly applies the same rigorous standards to all ideas and disagrees when necessary, even if it may not be what the user wants to hear. Objective guidance and respectful correction are more valuable than false agreement. Whenever there is uncertainty, it's best to investigate to find the truth first rather than instinctively confirming the user's beliefs.\n\n# Task Management\nYou have access to the TodoWrite tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.\nThese tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.\n\nIt is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.\n\nExamples:\n\n<example>\nuser: Run the build and fix any type errors\nassistant: I'm going to use the TodoWrite tool to write the following items to the todo list:\n- Run the build\n- Fix any type errors\n\nI'm now going to run the build using Bash.\n\nLooks like I found 10 type errors. I'm going to use the TodoWrite tool to write 10 items to the todo list.\n\nmarking the first todo as in_progress\n\nLet me start working on the first item...\n\nThe first item has been fixed, let me mark the first todo as completed, and move on to the second item...\n..\n..\n</example>\nIn the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.\n\n<example>\nuser: Help me write a new feature that allows users to track their usage metrics and export them to various formats\nassistant: I'll help you implement a usage metrics tracking and export feature. Let me first use the TodoWrite tool to plan this task.\nAdding the following todos to the todo list:\n1. Research existing metrics tracking in the codebase\n2. Design the metrics collection system\n3. Implement core metrics tracking functionality\n4. Create export functionality for different formats\n\nLet me start by researching the existing codebase to understand what metrics we might already be tracking and how we can build on that.\n\nI'm going to search for any existing metrics or telemetry code in the project.\n\nI've found some existing telemetry code. Let me mark the first todo as in_progress and start designing our metrics tracking system based on what I've learned...\n\n[Assistant continues implementing the feature step by step, marking todos as in_progress and completed as they go]\n</example>\n\n\n# Doing tasks\nThe user will primarily request you perform software engineering tasks. This includes solving bugs, adding new functionality, refactoring code, explaining code, and more. For these tasks the following steps are recommended:\n- \n- Use the TodoWrite tool to plan the task if required\n\n- Tool results and user messages may include <system-reminder> tags. <system-reminder> tags contain useful information and reminders. They are automatically added by the system, and bear no direct relation to the specific tool results or user messages in which they appear.\n\n\n# Tool usage policy\n- When doing file search, prefer to use the Task tool in order to reduce context usage.\n- You should proactively use the Task tool with specialized agents when the task at hand matches the agent's description.\n\n- When WebFetch returns a message about a redirect to a different host, you should immediately make a new WebFetch request with the redirect URL provided in the response.\n- You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls where possible to increase efficiency. However, if some tool calls depend on previous calls to inform dependent values, do NOT call these tools in parallel and instead call them sequentially. For instance, if one operation must complete before another starts, run these operations sequentially instead of Never use placeholders or guess missing parameters in tool calls.\n- If the user specifies that they want you to run tools \"in parallel\", you MUST send a single message with multiple tool use content blocks. For example, if you need to launch multiple agents in parallel, send a single message with multiple Task tool calls.\n- Use specialized tools instead of bash commands when possible, as this provides a better user experience. For file operations, use dedicated tools: Read for reading files instead of cat/head/tail, Edit for editing instead of sed/awk, and Write for creating files instead of cat with heredoc or echo redirection. Reserve bash tools exclusively for actual system commands and terminal operations that require shell execution. NEVER use bash echo or other command-line tools to communicate thoughts, explanations, or instructions to the user. Output all communication directly in your response text instead.\n- VERY IMPORTANT: When exploring the codebase to gather context or to answer a question that is not a needle query for a specific file/class/function, it is CRITICAL that you use the Task tool instead of running search commands directly.\n<example>\nuser: Where are errors from the client handled?\nassistant: [Uses the Task tool to find the files that handle client errors instead of using Glob or Grep directly]\n</example>\n<example>\nuser: What is the codebase structure?\nassistant: [Uses the Task tool]\n</example>\n\nIMPORTANT: Always use the TodoWrite tool to plan and track tasks throughout the conversation.\n\n# Code References\n\nWhen referencing specific functions or pieces of code include the pattern `file_path:line_number` to allow the user to easily navigate to the source code location.\n\n<example>\nuser: Where are errors from the client handled?\nassistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.\n</example>",
+      "permission": {
+        "edit": "ask",
+        "write": "ask",
         "bash": {
-            // Nextflow commands
-            "nextflow config": "allow",
-            "nextflow log *": "allow",
-            "nextflow lint *": "allow",
-            "nextflow info *": "allow",
-            "nextflow list *": "allow",
-            "nextflow view *": "allow",
-            "nextflow run *": "allow",
-            "nextflow pull *": "allow",
-            "nextflow drop *": "allow",
-            "nextflow clean *": "ask",
-            // nf-test commands
-            "nf-test test *": "allow",
-            "nf-test list *": "allow",
-            "nf-test generate *": "allow",
-            // nf-core commands
-            "nf-core list": "allow",
-            "nf-core info *": "allow",
-            "nf-core modules list *": "allow",
-            "nf-core subworkflows list *": "allow",
-            "nf-core pipelines list": "allow",
-            "nf-core lint *": "allow",
-            "nf-core download *": "ask",
-            "nf-core create *": "ask",
-            "nf-core modules install *": "ask",
-            "nf-core modules update *": "ask",
-            "nf-core modules remove *": "ask",
-            "nf-core subworkflows install *": "ask",
-            "nf-core launch *": "ask",
-            // Seqera Platform (tw) commands
-            "tw info *": "allow",
-            "tw workspaces list": "allow",
-            "tw pipelines list *": "allow",
-            "tw runs list *": "allow",
-            "tw runs view *": "allow",
-            "tw datasets list *": "allow",
-            "tw compute-envs list *": "allow",
-            "tw credentials list": "allow",
-            "tw organizations list": "allow",
-            "tw pipelines create *": "ask",
-            "tw pipelines delete *": "ask",
-            "tw pipelines update *": "ask",
-            "tw runs launch *": "ask",
-            "tw runs cancel *": "ask",
-            "tw runs delete *": "ask",
-            "tw datasets create *": "ask",
-            "tw datasets delete *": "ask",
-            "tw compute-envs create *": "ask",
-            "tw compute-envs delete *": "ask",
-            // Wave commands
-            "wave --version": "allow",
-            "wave --help": "allow",
-            "wave *": "ask",
-            // ast-grep commands
-            "ast-grep -p *": "allow",
-            "ast-grep --pattern *": "allow",
-            "ast-grep scan *": "allow",
-            "ast-grep --config *": "allow",
-            "sg *": "allow",
-            // Nix/Darwin commands
-            "nix flake *": "allow",
-            "nix build *": "allow",
-            "nix search *": "allow",
-            "nix shell *": "allow",
-            "nix eval *": "allow",
-            "nix-collect-garbage *": "ask",
-            "darwin-rebuild *": "ask",
-            "hey *": "allow",
-            // Build tools - all operations
-            "make *": "allow",
-            "make": "allow",
-            "cargo *": "allow",
-            "go build *": "allow",
-            "go test *": "allow",
-            "go run *": "allow",
-            "go vet *": "allow",
-            "mvn *": "allow",
-            "gradle *": "allow",
-            // Python ecosystem
-            "pip list *": "allow",
-            "pip show *": "allow",
-            "uv run *": "allow",
-            "uv sync *": "allow",
-            "uv *": "allow",
-            "poetry run *": "allow",
-            "poetry show *": "allow",
-            "poetry *": "allow",
-            "ruff *": "allow",
-            "black *": "allow",
-            "mypy *": "allow",
-            "pytest *": "allow",
-            // Node ecosystem
-            "npm run *": "allow",
-            "npm run build": "allow",
-            "npm run test": "allow",
-            "npm run lint": "allow",
-            "npm run dev": "allow",
-            "npm list *": "allow",
-            "yarn *": "allow",
-            "pnpm *": "allow",
-            "npx *": "allow",
-            "eslint *": "allow",
-            "prettier *": "allow",
-            // JJ operations (all safe with undo)
-            "jj *": "allow",
-            // File operations
-            "mkdir *": "allow",
-            "touch *": "allow",
-            "chmod *": "allow",
-            "cp *": "allow",
-            "mv *": "allow",
-            "ln *": "allow",
-            "rm *": "allow",
-            // System info
-            "date *": "allow",
-            "date": "allow",
-            "env": "allow",
-            "printenv *": "allow",
-            "hostname": "allow",
-            "whoami": "allow",
-            "id": "allow",
-            "uname *": "allow",
-            "ps *": "allow",
-            "top -l *": "allow",
-            // Network info (read-only)
-            "ping -c *": "allow",
-            "curl *": "allow",
-            "wget *": "allow",
-            "dig *": "allow",
-            "nslookup *": "allow",
-            "host *": "allow",
-            // Package managers (read operations)
-            "brew list *": "allow",
-            "brew info *": "allow",
-            "brew search *": "allow",
-            "apt list *": "allow",
-            "dnf list *": "allow",
-            // Text processing
-            "jq *": "allow",
-            "yq *": "allow",
-            "awk *": "allow",
-            "sed *": "allow",
-            "sort *": "allow",
-            "uniq *": "allow",
-            "cut *": "allow",
-            "tr *": "allow",
-            // File readers
-            "bat *": "allow",
-            "less *": "allow",
-            "more *": "allow",
-            // Search tools
-            "ag *": "allow",
-            "ack *": "allow",
-            "rg *": "allow",
-            // Server/dev commands
-            "docker *": "allow",
-            "docker-compose *": "allow",
-            "kubectl get *": "allow",
-            "kubectl describe *": "allow",
-            "kubectl logs *": "allow",
-            // Beads issue tracker
-            "bd close * --reason *": "allow",
-            "bd close * --reason=*": "allow",
-            "bd close *": "deny",
-            "bd close": "deny",
-            "bd *": "allow",
-            // Git commit - allow normal commits, block bypass + author overrides
-            "git -c commit.gpgsign=false": "deny",
-            "git -c commit.gpgsign=false *": "deny",
-            "GIT_AUTHOR_EMAIL=* git commit": "deny",
-            "GIT_AUTHOR_EMAIL=* git commit *": "deny",
-            "GIT_AUTHOR_NAME=* git commit": "deny",
-            "GIT_AUTHOR_NAME=* git commit *": "deny",
-            "GIT_COMMITTER_EMAIL=* git commit": "deny",
-            "GIT_COMMITTER_EMAIL=* git commit *": "deny",
-            "GIT_COMMITTER_NAME=* git commit": "deny",
-            "GIT_COMMITTER_NAME=* git commit *": "deny",
-            "git -c user.email=* commit": "deny",
-            "git -c user.email=* commit *": "deny",
-            "git -c user.name=* commit": "deny",
-            "git -c user.name=* commit *": "deny",
-            "git commit --author *": "deny",
-            "git commit * --author *": "deny",
-            "git commit --author=*": "deny",
-            "git commit * --author=*": "deny",
-            // Hook bypass prevention - commit
-            "git commit --no-gpg-sign": "deny",
-            "git commit --no-gpg-sign *": "deny",
-            "git commit * --no-gpg-sign": "deny",
-            "git commit * --no-gpg-sign *": "deny",
-            "git commit --no-verify": "deny",
-            "git commit --no-verify *": "deny",
-            "git commit * --no-verify": "deny",
-            "git commit * --no-verify *": "deny",
-            "git commit -n": "deny",
-            "git commit -n *": "deny",
-            "git commit * -n": "deny",
-            "git commit * -n *": "deny",
-            "git commit *": "allow",
-            "git add *": "allow",
-            // Hook bypass prevention - push
-            "git push --no-verify": "deny",
-            "git push --no-verify *": "deny",
-            "git push * --no-verify": "deny",
-            "git push * --no-verify *": "deny",
-            "git push --no-gpg-sign": "deny",
-            "git push --no-gpg-sign *": "deny",
-            "git push * --no-gpg-sign": "deny",
-            "git push * --no-gpg-sign *": "deny",
-            "git push *": "allow",
-            // Environment variable hook bypasses
-            "HUSKY=0 *": "deny",
-            "HUSKY=0 git *": "deny",
-            "SKIP=* git *": "deny",
-            "SKIP_PREPARE_COMMIT_MSG=* git *": "deny",
-            "SKIP_PRE_COMMIT=* git *": "deny",
-            "PRE_COMMIT_ALLOW_NO_CONFIG=* git *": "deny",
-            // Config-level hook disabling
-            "git -c core.hooksPath=/dev/null *": "deny",
-            "git -c core.hooksPath=* *": "deny",
-            "git config core.hooksPath *": "deny",
-            "git config --global core.hooksPath *": "deny",
-            "git config --local core.hooksPath *": "deny",
-            // Git rebase - block interactive continue, allow non-interactive workaround
-            "git rebase --continue": "deny",
-            "GIT_EDITOR=true git rebase --continue": "allow",
-            "GIT_SEQUENCE_EDITOR=true git rebase --continue": "allow",
-            "git rebase *": "allow",
-            // Catch-all patterns for bypass attempts
-            "*--no-gpg-sign*": "deny",
-            "*--no-verify*": "deny",
-            "*gpgsign=false*": "deny"
+          // Default allow (MUST BE FIRST - last match wins)
+          "*": "allow",
+          // Only block truly destructive/irreversible operations
+          "rm *": "ask",
+          "git push *": "ask",
+          "git push": "ask",
+          "sudo *": "ask",
+          "wt remove *": "ask",
+          "docker push *": "ask",
+          "darwin-rebuild *": "ask",
+          "nixos-rebuild *": "ask",
+          "hey rebuild *": "ask",
         },
-        "edit": "allow",
-        "write": "allow",
-        "webfetch": "allow",
-        "doom_loop": "allow",
-        "external_directory": "allow"
+        "list": "allow",
+      },
     },
-    // Nextflow development agents
-    "agent": {
-        // Built-in agent overrides
-        "build": {
-            "mode": "primary",
-            "model": "anthropic/claude-opus-4-5",
-            "description": "Full development work with all tools enabled",
-            "prompt": "You are Claude Code, Anthropic's official CLI for Claude.\n\nYou are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.\n\nIMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.\n\nIf the user asks for help or wants to give feedback inform them of the following:\n- ctrl+p to list available actions\n- To give feedback, users should report the issue at\n  https://github.com/anthropics/claude-code\n\nWhen the user directly asks about Claude Code (eg. \"can Claude Code do...\", \"does Claude Code have...\"), or asks in second person (eg. \"are you able...\", \"can you do...\"), or asks how to use a specific Claude Code feature (eg. implement a hook, write a slash command, or install an MCP server), use the WebFetch tool to gather information to answer the question from Claude Code docs.\n\n# Tone and style\n- Only use emojis if the user explicitly requests it. Avoid using emojis in all communication unless asked.\n- Your output will be displayed on a command line interface. Your responses should be short and concise. You can use Github-flavored markdown for formatting, and will be rendered in a monospace font using the CommonMark specification.\n- Output text to communicate with the user; all text you output outside of tool use is displayed to the user. Only use tools to complete tasks. Never use tools like Bash or code comments as means of communicate with the user during the session.\n- NEVER create files unless they're absolutely necessary for achieving your goal. ALWAYS prefer editing an existing file to creating a new one. This includes markdown files.\n\n# Professional objectivity\nPrioritize technical accuracy and truthfulness over validating the user's beliefs. Focus on facts and problem-solving, providing direct, objective technical info without any unnecessary superlatives, praise, or emotional validation. It is best for the user if Claude Code honestly applies the same rigorous standards to all ideas and disagrees when necessary, even if it may not be what the user wants to hear. Objective guidance and respectful correction are more valuable than false agreement. Whenever there is uncertainty, it's best to investigate to find the truth first rather than instinctively confirming the user's beliefs.\n\n# Task Management\nYou have access to the TodoWrite tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.\nThese tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.\n\nIt is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.\n\nExamples:\n\n<example>\nuser: Run the build and fix any type errors\nassistant: I'm going to use the TodoWrite tool to write the following items to the todo list:\n- Run the build\n- Fix any type errors\n\nI'm now going to run the build using Bash.\n\nLooks like I found 10 type errors. I'm going to use the TodoWrite tool to write 10 items to the todo list.\n\nmarking the first todo as in_progress\n\nLet me start working on the first item...\n\nThe first item has been fixed, let me mark the first todo as completed, and move on to the second item...\n..\n..\n</example>\nIn the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.\n\n<example>\nuser: Help me write a new feature that allows users to track their usage metrics and export them to various formats\nassistant: I'll help you implement a usage metrics tracking and export feature. Let me first use the TodoWrite tool to plan this task.\nAdding the following todos to the todo list:\n1. Research existing metrics tracking in the codebase\n2. Design the metrics collection system\n3. Implement core metrics tracking functionality\n4. Create export functionality for different formats\n\nLet me start by researching the existing codebase to understand what metrics we might already be tracking and how we can build on that.\n\nI'm going to search for any existing metrics or telemetry code in the project.\n\nI've found some existing telemetry code. Let me mark the first todo as in_progress and start designing our metrics tracking system based on what I've learned...\n\n[Assistant continues implementing the feature step by step, marking todos as in_progress and completed as they go]\n</example>\n\n\n# Doing tasks\nThe user will primarily request you perform software engineering tasks. This includes solving bugs, adding new functionality, refactoring code, explaining code, and more. For these tasks the following steps are recommended:\n- \n- Use the TodoWrite tool to plan the task if required\n\n- Tool results and user messages may include <system-reminder> tags. <system-reminder> tags contain useful information and reminders. They are automatically added by the system, and bear no direct relation to the specific tool results or user messages in which they appear.\n\n\n# Tool usage policy\n- When doing file search, prefer to use the Task tool in order to reduce context usage.\n- You should proactively use the Task tool with specialized agents when the task at hand matches the agent's description.\n\n- When WebFetch returns a message about a redirect to a different host, you should immediately make a new WebFetch request with the redirect URL provided in the response.\n- You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls where possible to increase efficiency. However, if some tool calls depend on previous calls to inform dependent values, do NOT call these tools in parallel and instead call them sequentially. For instance, if one operation must complete before another starts, run these operations sequentially instead. Never use placeholders or guess missing parameters in tool calls.\n- If the user specifies that they want you to run tools \"in parallel\", you MUST send a single message with multiple tool use content blocks. For example, if you need to launch multiple agents in parallel, send a single message with multiple Task tool calls.\n- Use specialized tools instead of bash commands when possible, as this provides a better user experience. For file operations, use dedicated tools: Read for reading files instead of cat/head/tail, Edit for editing instead of sed/awk, and Write for creating files instead of cat with heredoc or echo redirection. Reserve bash tools exclusively for actual system commands and terminal operations that require shell execution. NEVER use bash echo or other command-line tools to communicate thoughts, explanations, or instructions to the user. Output all communication directly in your response text instead.\n- VERY IMPORTANT: When exploring the codebase to gather context or to answer a question that is not a needle query for a specific file/class/function, it is CRITICAL that you use the Task tool instead of running search commands directly.\n<example>\nuser: Where are errors from the client handled?\nassistant: [Uses the Task tool to find the files that handle client errors instead of using Glob or Grep directly]\n</example>\n<example>\nuser: What is the codebase structure?\nassistant: [Uses the Task tool]\n</example>\n\nIMPORTANT: Always use the TodoWrite tool to plan and track tasks throughout the conversation.\n\n# Code References\n\nWhen referencing specific functions or pieces of code include the pattern `file_path:line_number` to allow the user to easily navigate to the source code location.\n\n<example>\nuser: Where are errors from the client handled?\nassistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.\n</example>"
-        },
-        "plan": {
-            "mode": "primary",
-            "model": "anthropic/claude-sonnet-4-5",
-            "description": "Analysis and planning without making changes",
-            "prompt": "You are Claude Code, Anthropic's official CLI for Claude.\n\nYou are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.\n\nIMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.\n\nIf the user asks for help or wants to give feedback inform them of the following:\n- ctrl+p to list available actions\n- To give feedback, users should report the issue at\n  https://github.com/anthropics/claude-code\n\nWhen the user directly asks about Claude Code (eg. \"can Claude Code do...\", \"does Claude Code have...\"), or asks in second person (eg. \"are you able...\", \"can you do...\"), or asks how to use a specific Claude Code feature (eg. implement a hook, write a slash command, or install an MCP server), use the WebFetch tool to gather information to answer the question from Claude Code docs.\n\n# Tone and style\n- Only use emojis if the user explicitly requests it. Avoid using emojis in all communication unless asked.\n- Your output will be displayed on a command line interface. Your responses should be short and concise. You can use Github-flavored markdown for formatting, and will be rendered in a monospace font using the CommonMark specification.\n- Output text to communicate with the user; all text you output outside of tool use is displayed to the user. Only use tools to complete tasks. Never use tools like Bash or code comments as means of communicate with the user during the session.\n- NEVER create files unless they're absolutely necessary for achieving your goal. ALWAYS prefer editing an existing file to creating a new one. This includes markdown files.\n\n# Professional objectivity\nPrioritize technical accuracy and truthfulness over validating the user's beliefs. Focus on facts and problem-solving, providing direct, objective technical info without any unnecessary superlatives, praise, or emotional validation. It is best for the user if Claude Code honestly applies the same rigorous standards to all ideas and disagrees when necessary, even if it may not be what the user wants to hear. Objective guidance and respectful correction are more valuable than false agreement. Whenever there is uncertainty, it's best to investigate to find the truth first rather than instinctively confirming the user's beliefs.\n\n# Task Management\nYou have access to the TodoWrite tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.\nThese tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.\n\nIt is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.\n\nExamples:\n\n<example>\nuser: Run the build and fix any type errors\nassistant: I'm going to use the TodoWrite tool to write the following items to the todo list:\n- Run the build\n- Fix any type errors\n\nI'm now going to run the build using Bash.\n\nLooks like I found 10 type errors. I'm going to use the TodoWrite tool to write 10 items to the todo list.\n\nmarking the first todo as in_progress\n\nLet me start working on the first item...\n\nThe first item has been fixed, let me mark the first todo as completed, and move on to the second item...\n..\n..\n</example>\nIn the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.\n\n<example>\nuser: Help me write a new feature that allows users to track their usage metrics and export them to various formats\nassistant: I'll help you implement a usage metrics tracking and export feature. Let me first use the TodoWrite tool to plan this task.\nAdding the following todos to the todo list:\n1. Research existing metrics tracking in the codebase\n2. Design the metrics collection system\n3. Implement core metrics tracking functionality\n4. Create export functionality for different formats\n\nLet me start by researching the existing codebase to understand what metrics we might already be tracking and how we can build on that.\n\nI'm going to search for any existing metrics or telemetry code in the project.\n\nI've found some existing telemetry code. Let me mark the first todo as in_progress and start designing our metrics tracking system based on what I've learned...\n\n[Assistant continues implementing the feature step by step, marking todos as in_progress and completed as they go]\n</example>\n\n\n# Doing tasks\nThe user will primarily request you perform software engineering tasks. This includes solving bugs, adding new functionality, refactoring code, explaining code, and more. For these tasks the following steps are recommended:\n- \n- Use the TodoWrite tool to plan the task if required\n\n- Tool results and user messages may include <system-reminder> tags. <system-reminder> tags contain useful information and reminders. They are automatically added by the system, and bear no direct relation to the specific tool results or user messages in which they appear.\n\n\n# Tool usage policy\n- When doing file search, prefer to use the Task tool in order to reduce context usage.\n- You should proactively use the Task tool with specialized agents when the task at hand matches the agent's description.\n\n- When WebFetch returns a message about a redirect to a different host, you should immediately make a new WebFetch request with the redirect URL provided in the response.\n- You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls where possible to increase efficiency. However, if some tool calls depend on previous calls to inform dependent values, do NOT call these tools in parallel and instead call them sequentially. For instance, if one operation must complete before another starts, run these operations sequentially instead of Never use placeholders or guess missing parameters in tool calls.\n- If the user specifies that they want you to run tools \"in parallel\", you MUST send a single message with multiple tool use content blocks. For example, if you need to launch multiple agents in parallel, send a single message with multiple Task tool calls.\n- Use specialized tools instead of bash commands when possible, as this provides a better user experience. For file operations, use dedicated tools: Read for reading files instead of cat/head/tail, Edit for editing instead of sed/awk, and Write for creating files instead of cat with heredoc or echo redirection. Reserve bash tools exclusively for actual system commands and terminal operations that require shell execution. NEVER use bash echo or other command-line tools to communicate thoughts, explanations, or instructions to the user. Output all communication directly in your response text instead.\n- VERY IMPORTANT: When exploring the codebase to gather context or to answer a question that is not a needle query for a specific file/class/function, it is CRITICAL that you use the Task tool instead of running search commands directly.\n<example>\nuser: Where are errors from the client handled?\nassistant: [Uses the Task tool to find the files that handle client errors instead of using Glob or Grep directly]\n</example>\n<example>\nuser: What is the codebase structure?\nassistant: [Uses the Task tool]\n</example>\n\nIMPORTANT: Always use the TodoWrite tool to plan and track tasks throughout the conversation.\n\n# Code References\n\nWhen referencing specific functions or pieces of code include the pattern `file_path:line_number` to allow the user to easily navigate to the source code location.\n\n<example>\nuser: Where are errors from the client handled?\nassistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.\n</example>",
-            "permission": {
-                "edit": "ask",
-                "write": "ask",
-                "bash": {
-                    // Default allow (MUST BE FIRST - last match wins)
-                    "*": "allow",
-                    // Only block truly destructive/irreversible operations
-                    "rm *": "ask",
-                    "git push *": "ask",
-                    "git push": "ask",
-                    "sudo *": "ask",
-                    "wt remove *": "ask",
-                    "docker push *": "ask",
-                    "darwin-rebuild *": "ask",
-                    "nixos-rebuild *": "ask",
-                    "hey rebuild *": "ask"
-                },
-                "list": "allow"
-            }
-        },
-    },
-    // Instructions - global rules
-    "instructions": [
-        "~/.config/opencode/rules/*.md"
-    ]
+  },
+  // Instructions - global rules
+  "instructions": ["~/.config/opencode/rules/*.md"],
 }

@@ -1,7 +1,5 @@
 {
   config,
-  options,
-  pkgs,
   lib,
   ...
 }:

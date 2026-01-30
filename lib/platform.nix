@@ -1,7 +1,6 @@
 {
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
@@ -12,8 +11,13 @@ let
   isNixOS = isLinux; # For clarity when we specifically mean NixOS
 in
 {
-  inherit isDarwin isLinux isNixOS system;
-  
+  inherit
+    isDarwin
+    isLinux
+    isNixOS
+    system
+    ;
+
   # Helper to get the correct home base directory
   homeBase = if isDarwin then "/Users" else "/home";
 }

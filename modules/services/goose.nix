@@ -27,59 +27,64 @@ in
     host = mkOpt types.str "127.0.0.1"; # Bind to localhost, Tailscale serve handles external access
   };
 
-  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
-    # Secrets auto-loaded from hosts/nuc/secrets/secrets.nix via modules/agenix.nix
+  config = mkIf cfg.enable (
+    optionalAttrs (!isDarwin) {
+      # Secrets auto-loaded from hosts/nuc/secrets/secrets.nix via modules/agenix.nix
 
-    # Ensure goose config directory exists with provider config
-    systemd.tmpfiles.rules = [
-      "d ${homeDir}/.config/goose 0755 ${config.user.name} users -"
-      "L+ ${homeDir}/.config/goose/config.yaml - - - - ${gooseConfig}"
-    ];
-
-    # Main goose web server (HTTP on localhost)
-    systemd.services.goose = {
-      wantedBy = [ "multi-user.target" ];
-      description = "Goose AI agent web server";
-      after = [
-        "network.target"
-        "tailscaled.service"
-        "systemd-tmpfiles-setup.service"
+      # Ensure goose config directory exists with provider config
+      systemd.tmpfiles.rules = [
+        "d ${homeDir}/.config/goose 0755 ${config.user.name} users -"
+        "L+ ${homeDir}/.config/goose/config.yaml - - - - ${gooseConfig}"
       ];
-      wants = [ "tailscaled.service" ];
-      serviceConfig = {
-        ExecStart = "${pkgs.writeShellScript "goose-web" ''
-          export ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path})
-          exec ${lib.getExe pkgs.goose-cli} web --port ${toString cfg.port} --host ${cfg.host}
-        ''}";
-        User = config.user.name;
-        Group = "users";
-        WorkingDirectory = homeDir;
-        Environment = [
-          "HOME=${homeDir}"
-          "XDG_CONFIG_HOME=${homeDir}/.config"
+
+      # Main goose web server (HTTP on localhost)
+      systemd.services.goose = {
+        wantedBy = [ "multi-user.target" ];
+        description = "Goose AI agent web server";
+        after = [
+          "network.target"
+          "tailscaled.service"
+          "systemd-tmpfiles-setup.service"
         ];
-        Restart = "on-failure";
-        RestartSec = "10s";
+        wants = [ "tailscaled.service" ];
+        serviceConfig = {
+          ExecStart = "${pkgs.writeShellScript "goose-web" ''
+            export ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path})
+            exec ${lib.getExe pkgs.goose-cli} web --port ${toString cfg.port} --host ${cfg.host}
+          ''}";
+          User = config.user.name;
+          Group = "users";
+          WorkingDirectory = homeDir;
+          Environment = [
+            "HOME=${homeDir}"
+            "XDG_CONFIG_HOME=${homeDir}/.config"
+          ];
+          Restart = "on-failure";
+          RestartSec = "10s";
+        };
       };
-    };
 
-    # Tailscale serve for HTTPS termination (required for iOS)
-    # Proxies https://<tailscale-hostname>:3002 -> http://localhost:3000
-    systemd.services.goose-tailscale-serve = {
-      wantedBy = [ "multi-user.target" ];
-      description = "Tailscale HTTPS proxy for Goose";
-      after = [ "goose.service" "tailscaled.service" ];
-      wants = [ "goose.service" ];
-      serviceConfig = {
-        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --https ${toString cfg.httpsPort} http://localhost:${toString cfg.port}";
-        ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
-        Type = "oneshot";
-        RemainAfterExit = true;
+      # Tailscale serve for HTTPS termination (required for iOS)
+      # Proxies https://<tailscale-hostname>:3002 -> http://localhost:3000
+      systemd.services.goose-tailscale-serve = {
+        wantedBy = [ "multi-user.target" ];
+        description = "Tailscale HTTPS proxy for Goose";
+        after = [
+          "goose.service"
+          "tailscaled.service"
+        ];
+        wants = [ "goose.service" ];
+        serviceConfig = {
+          ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --https ${toString cfg.httpsPort} http://localhost:${toString cfg.port}";
+          ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
       };
-    };
 
-    environment.systemPackages = [ pkgs.goose-cli ];
+      environment.systemPackages = [ pkgs.goose-cli ];
 
-    # No need to open firewall - Tailscale handles it
-  });
+      # No need to open firewall - Tailscale handles it
+    }
+  );
 }

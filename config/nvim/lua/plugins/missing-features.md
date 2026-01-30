@@ -45,7 +45,6 @@ This document tracks features from the old Neovim configuration that haven't bee
 ### Org-mode Ecosystem
 
 - **nvim-orgmode/orgmode** - Full org-mode implementation
-
   - Reason: Using Neorg as alternative (available in AstroCommunity)
   - Features missing from Neorg:
     - GTD-style TODO keywords (TODO/NEXT/WAITING/DONE/CANCELLED)
@@ -54,7 +53,6 @@ This document tracks features from the old Neovim configuration that haven't bee
     - Logbook drawer functionality
 
 - **org-roam.nvim** - Zettelkasten for org-mode
-
   - Reason: Would require full org-mode; consider using Obsidian or Neorg equivalents
 
 - **vim-table-mode** - Table support for org/markdown
@@ -135,11 +133,9 @@ This document tracks features from the old Neovim configuration that haven't bee
 ### Priority Order for Future Additions
 
 1. **High Priority**
-
    - Custom nf-test adapter (essential for Nextflow development)
 
 2. **Medium Priority**
-
    - Org-mode features not covered by Neorg
    - Vale for prose linting
    - Session management enhancements

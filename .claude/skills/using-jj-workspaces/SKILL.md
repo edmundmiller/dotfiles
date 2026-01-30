@@ -51,6 +51,7 @@ jj workspace add "$WORKSPACE_PATH"
 After workspace creation, detect project type and run appropriate setup:
 
 **Detection patterns:**
+
 - `package.json` → `npm install` or `yarn install` or `pnpm install`
 - `Cargo.toml` → `cargo build`
 - `pyproject.toml` → `poetry install` or `pip install -e .`
@@ -59,6 +60,7 @@ After workspace creation, detect project type and run appropriate setup:
 - `go.mod` → `go mod download`
 
 **Always:**
+
 1. Change to workspace directory: `cd "$WORKSPACE_PATH"`
 2. Run the appropriate setup command
 3. Report any setup errors to the user
@@ -78,6 +80,7 @@ nix flake check
 ```
 
 **If baseline tests fail:**
+
 - Report the failure to the user
 - **Do NOT proceed** with implementation unless user explicitly approves
 - The workspace may have inherited an unstable state
@@ -132,6 +135,7 @@ jj workspace update-stale
 ## JJ-Specific Considerations
 
 Unlike git worktrees, jj workspaces:
+
 - Share the same operation log (visible in `jj op log`)
 - Each workspace has its own working-copy commit
 - Changes in one workspace don't affect others until explicitly moved/rebased
@@ -141,11 +145,13 @@ Unlike git worktrees, jj workspaces:
 ## Integration Notes
 
 This skill is typically invoked during:
+
 - Feature development requiring isolation from main work
 - Testing changes without affecting current workspace
 - Parallel development on multiple features
 - Experimentation that might be abandoned
 
 Pairs well with:
+
 - JJ squash workflow for finishing work
 - JJ split for organizing changes before moving back to main workspace

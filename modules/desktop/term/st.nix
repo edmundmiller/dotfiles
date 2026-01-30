@@ -3,7 +3,6 @@
 # I like (x)st. This appears to be a controversial opinion; don't tell anyone,
 # mkay?
 {
-  options,
   config,
   lib,
   pkgs,

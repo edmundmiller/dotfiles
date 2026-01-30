@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   isDarwin,
@@ -16,10 +15,12 @@ in
   };
 
   # NixOS-only service
-  config = optionalAttrs (!isDarwin) (mkIf cfg.enable {
-    services.calibre-server.enable = true;
-    services.calibre-server.libraries = [ "/home/emiller/calibre" ];
+  config = optionalAttrs (!isDarwin) (
+    mkIf cfg.enable {
+      services.calibre-server.enable = true;
+      services.calibre-server.libraries = [ "/home/emiller/calibre" ];
 
-    networking.firewall.allowedTCPPorts = [ 8080 ];
-  });
+      networking.firewall.allowedTCPPorts = [ 8080 ];
+    }
+  );
 }

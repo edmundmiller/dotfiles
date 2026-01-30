@@ -61,7 +61,7 @@ for session in server.sessions:
                         content = "\n".join(cmd_output)
                     else:
                         content = str(cmd_output)
-                    
+
                     cleaned = smart_name.strip_ansi_and_control(content)
                     print(f"Last 300 chars (cleaned):\n{cleaned[-300:]}")
                     print(f"\n--- Status: {smart_name.get_opencode_status(pane)} ---")
