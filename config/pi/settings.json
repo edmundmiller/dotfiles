@@ -1,0 +1,50 @@
+{
+  "$schema": "https://pi.ai/settings.json",
+
+  // Model configuration - matching OpenCode defaults
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-4-20250514",
+  "defaultThinkingLevel": "medium",
+
+  // Model cycling - Claude models + key alternatives
+  "enabledModels": [
+    "claude-sonnet-4-*",
+    "claude-opus-4-*",
+    "claude-haiku-4-*",
+    "gpt-4o",
+    "gemini-2.5-pro*"
+  ],
+
+  // UI preferences
+  "theme": "dark",
+  "quietStartup": false,
+  "doubleEscapeAction": "tree",
+  "editorPaddingX": 1,
+
+  // Compaction - keep more context for complex tasks
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 24000
+  },
+
+  // Retry configuration
+  "retry": {
+    "enabled": true,
+    "maxRetries": 3,
+    "baseDelayMs": 2000
+  },
+
+  // Message delivery - one at a time for control
+  "steeringMode": "one-at-a-time",
+  "followUpMode": "one-at-a-time",
+
+  // Images
+  "images": {
+    "autoResize": true,
+    "blockImages": false
+  },
+
+  // Skills as commands
+  "enableSkillCommands": true
+}
