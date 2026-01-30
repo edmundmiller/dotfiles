@@ -19,6 +19,7 @@ _: {
         ai.enable = true;
         claude.enable = true;
         opencode.enable = true;
+        pi.enable = true;
         direnv.enable = true;
         git.enable = true;
         tmux.enable = true;
