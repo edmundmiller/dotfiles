@@ -25,6 +25,7 @@
     "seqeralabs/tap/wave-cli"
     "pulumi/tap/pulumi"
     "awscli"
+    "wakatime-cli"
 
     # Doom dependencies
     "git"

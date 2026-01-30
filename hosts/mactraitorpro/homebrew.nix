@@ -158,6 +158,7 @@
     "steipete/tap/gogcli"
     "steipete/tap/bird"  # fast X CLI for tweeting, replying, and reading
     "reminders-cli"
+    "wakatime-cli"
   ];
 
   casks = [
