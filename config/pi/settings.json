@@ -1,4 +1,5 @@
 {
+  // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
   "$schema": "https://pi.ai/settings.json",
 
   // Model configuration - Opus 4.5 as default
@@ -45,9 +46,10 @@
   },
 
   // Skills as commands - disabled, see https://ampcode.com/news/slashing-custom-commands
+  // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
   "enableSkillCommands": false,
 
-  // Extensions
+  // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   "packages": [
     {
       "source": "shitty-extensions",
