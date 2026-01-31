@@ -44,6 +44,6 @@
     "blockImages": false
   },
 
-  // Skills as commands
-  "enableSkillCommands": true
+  // Skills as commands - disabled, see https://ampcode.com/news/slashing-custom-commands
+  "enableSkillCommands": false
 }
