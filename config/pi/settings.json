@@ -67,6 +67,18 @@
         "loop.ts"
       ],
       "skills": []
+    },
+    // Dynamic context pruning - https://github.com/zenobi-us/pi-dcp
+    "https://github.com/zenobi-us/pi-dcp",
+    // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
+    {
+      "source": "https://github.com/qualisero/rhubarb-pi",
+      "extensions": [
+        "hooks/background-notify",
+        "hooks/session-color",
+        "extensions/safe-git"
+        // "extensions/pi-agent-scip" // SCIP for typescript/python - requires scip CLI
+      ]
     }
   ]
 }
