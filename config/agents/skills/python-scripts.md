@@ -1,5 +1,5 @@
 ---
-name: Python Scripts
+name: python-scripts
 description: Use when writing standalone Python scripts (one-off scripts, utilities, not part of a larger Python project with pyproject.toml or setup.py). Provides UV shebang template and best practices.
 ---
 

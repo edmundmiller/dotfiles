@@ -1,5 +1,5 @@
 ---
-name: Code Search & Refactoring
+name: code-search
 description: Use when searching code, refactoring, running codemods, or choosing between search tools. Provides guidance on ast-grep vs ripgrep selection and usage patterns.
 ---
 
