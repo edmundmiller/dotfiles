@@ -79,6 +79,22 @@
         "extensions/safe-git"
         // "extensions/pi-agent-scip" // SCIP for typescript/python - requires scip CLI
       ]
+    },
+    // tmustier extensions - https://github.com/tmustier/pi-extensions
+    {
+      "source": "https://github.com/tmustier/pi-extensions",
+      "extensions": ["tab-status/tab-status.ts", "files-widget/index.ts"],
+      "skills": []
+    },
+    // Canvas for visual diagrams - https://github.com/jyaunches/pi-canvas
+    {
+      "source": "https://github.com/jyaunches/pi-canvas",
+      "extensions": ["pi-extension/index.ts"]
+    },
+    // LSP integration - https://github.com/prateekmedia/pi-hooks
+    {
+      "source": "https://github.com/prateekmedia/pi-hooks",
+      "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts"]
     }
   ]
 }
