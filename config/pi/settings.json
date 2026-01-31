@@ -45,5 +45,26 @@
   },
 
   // Skills as commands - disabled, see https://ampcode.com/news/slashing-custom-commands
-  "enableSkillCommands": false
+  "enableSkillCommands": false,
+
+  // Extensions
+  "packages": [
+    {
+      "source": "shitty-extensions",
+      "extensions": [
+        "oracle.ts",
+        "memory-mode.ts",
+        "plan-mode.ts",
+        "handoff.ts",
+        "usage-bar.ts",
+        "ultrathink.ts",
+        "status-widget.ts",
+        "cost-tracker.ts",
+        "funny-working-message.ts",
+        "speedreading.ts",
+        "loop.ts"
+      ],
+      "skills": []
+    }
+  ]
 }
