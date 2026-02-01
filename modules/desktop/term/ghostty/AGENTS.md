@@ -62,6 +62,8 @@ modules.desktop.term.ghostty.configInit = ''
 
 **Keybinding conflicts** → Later files/init override earlier (pi's shift+enter vs OpenCode's)
 
+**Keybindings not updating after reload** → Ghostty caches keybindings at startup for performance. Config reload works for colors/fonts but keybindings require full restart (Cmd+Q → reopen)
+
 ## Related Files
 
 - `modules/shell/pi/default.nix` - Adds pi-keybindings.conf via keybindingFiles
