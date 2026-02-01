@@ -114,7 +114,14 @@ The PATH injection should handle this. If still failing:
 
 1. Check `~/.config/ghostty/keybindings.conf` was generated correctly
 2. Verify no syntax errors in keybinding files
-3. Restart Ghostty after config changes
+3. **Fully restart Ghostty** (Cmd+Q → reopen) - keybindings require full restart
+
+### Keybindings not updating after config reload
+
+Ghostty caches keybindings at startup for performance. While most config changes
+(colors, fonts, etc.) apply with `Ctrl+Shift+,` or `ghostty +reload-config`,
+**keybindings are only parsed at launch**. You must fully quit and restart Ghostty
+for keybinding changes to take effect.
 
 ### SSH shows wrong TERM
 
