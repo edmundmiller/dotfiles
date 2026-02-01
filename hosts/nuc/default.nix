@@ -65,6 +65,7 @@
     };
     shell = {
       git.enable = true;
+      pi.enable = true;
       zsh.enable = true;
     };
     dev = {
