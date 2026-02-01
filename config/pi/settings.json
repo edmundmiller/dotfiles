@@ -60,7 +60,7 @@
       "skills": []
     },
     // Dynamic context pruning - https://github.com/zenobi-us/pi-dcp
-    // FIXME "https://github.com/zenobi-us/pi-dcp",
+    // FIXME(dotfiles-acxd) "https://github.com/zenobi-us/pi-dcp",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
