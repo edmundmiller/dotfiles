@@ -58,9 +58,10 @@ in
 
   config = mkIf cfg.enable {
     # When Ghostty is enabled, add pi-specific keybindings
-    modules.desktop.term.ghostty.keybindingFiles = mkIf ghosttyCfg.enable [
+    # mkAfter ensures pi's shift+enter binding wins over opencode's
+    modules.desktop.term.ghostty.keybindingFiles = mkIf ghosttyCfg.enable (mkAfter [
       "${configDir}/ghostty/pi-keybindings.conf"
-    ];
+    ]);
 
     # Pi configuration via home-manager
     # - Skills are shared across all agents (Claude, OpenCode, Pi)
