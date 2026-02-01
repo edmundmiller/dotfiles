@@ -13,7 +13,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib;
@@ -34,15 +33,18 @@ let
 
   # Strip // comments from JSON (pi doesn't support JSONC)
   # Only removes lines that start with // (preserves URLs like https://)
-  piSettingsSource = "${configDir}/pi/settings.json";
-  settingsJsonStripped =
-    pkgs.runCommand "pi-settings-json"
-      {
-        src = piSettingsSource;
-      }
-      ''
-        ${pkgs.gnused}/bin/sed '/^[[:space:]]*\/\//d' $src > $out
-      '';
+  piSettingsRaw = builtins.readFile "${configDir}/pi/settings.json";
+  piSettingsLines = lib.splitString "\n" piSettingsRaw;
+  isCommentLine =
+    line:
+    lib.hasPrefix "//" (
+      lib.trimWith {
+        start = true;
+        end = false;
+      } line
+    );
+  piSettingsFiltered = builtins.filter (line: !isCommentLine line) piSettingsLines;
+  piSettingsStripped = lib.concatStringsSep "\n" piSettingsFiltered;
 in
 {
   options.modules.shell.pi = {
@@ -62,7 +64,7 @@ in
     home-manager.users.${config.user.name}.home.file = {
       ".pi/agent/skills".source = "${configDir}/agents/skills";
       ".pi/agent/AGENTS.md".text = concatenatedRules;
-      ".pi/agent/settings.json".source = settingsJsonStripped;
+      ".pi/agent/settings.json".text = piSettingsStripped;
     };
   };
 }
