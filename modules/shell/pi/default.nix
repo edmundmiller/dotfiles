@@ -13,6 +13,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -30,6 +31,13 @@ let
   );
   readRule = file: builtins.readFile "${rulesDir}/${file}";
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
+
+  # Strip // comments from JSON (pi doesn't support JSONC)
+  # Only removes lines that start with // (preserves URLs like https://)
+  settingsJsonStripped = pkgs.runCommand "pi-settings-json" { } ''
+    ${pkgs.gnused}/bin/sed '/^[[:space:]]*\/\//d' \
+      ${configDir}/pi/settings.json > $out
+  '';
 in
 {
   options.modules.shell.pi = {
@@ -45,11 +53,11 @@ in
     # Pi configuration via home-manager
     # - Skills are shared across all agents (Claude, OpenCode, Pi)
     # - AGENTS.md is built dynamically from config/agents/rules/*.md
-    # - settings.json for global Pi configuration
+    # - settings.json stripped of comments (pi only supports standard JSON)
     home-manager.users.${config.user.name}.home.file = {
       ".pi/agent/skills".source = "${configDir}/agents/skills";
       ".pi/agent/AGENTS.md".text = concatenatedRules;
-      ".pi/agent/settings.json".source = "${configDir}/pi/settings.json";
+      ".pi/agent/settings.json".source = settingsJsonStripped;
     };
   };
 }
