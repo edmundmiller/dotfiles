@@ -64,9 +64,14 @@
       };
     };
     shell = {
-
       git.enable = true;
       zsh.enable = true;
+    };
+    dev = {
+      node = {
+        enable = true;
+        enableGlobally = true;
+      };
     };
     services = {
       audiobookshelf.enable = true;
