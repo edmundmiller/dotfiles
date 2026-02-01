@@ -7,9 +7,14 @@
 # - Configures Ghostty keybindings when Ghostty is enabled
 # - Symlinks shared skills from config/agents/skills/
 # - Generates AGENTS.md from config/agents/rules/
+# - Strips // comments from settings.json (pi only supports standard JSON)
 #
 # Note: The shift+enter keybinding conflicts with OpenCode's binding.
 # See config/ghostty/pi-keybindings.conf for details.
+#
+# Note: settings.json is nix-managed (read-only). Pi will show a warning
+# "Could not save settings file" when it tries to persist runtime state
+# (e.g., last selected model). This is expected and harmless.
 {
   config,
   lib,
