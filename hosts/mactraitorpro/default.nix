@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 {
   config = {
     modules = {
@@ -10,7 +10,7 @@
       dev = {
         node.enable = true;
         node.useFnm = true;
-        # FIXME: Python disabled - clawdbot bundles whisper which includes Python 3.13
+        # FIXME: Python disabled - openclaw bundles whisper which includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
         python.conda.enable = false;
@@ -18,37 +18,26 @@
       };
 
       shell = {
-        "1password".enable = false;
+        "1password".enable = true;
         ai.enable = true;
         claude.enable = true;
         opencode.enable = true;
-        pi.enable = true;
         direnv.enable = true;
         git.enable = true;
         jj.enable = true;
         tmux.enable = true;
-        workmux.enable = true;
         wt.enable = true;
         zsh.enable = true;
       };
 
       services = {
-        clawdbot = {
-          enable = false;
-          anthropic.apiKeyFile =
-            config.home-manager.users.${config.user.name}.age.secrets.anthropic-api-key.path;
-          plugins = {
-            camsnap = true;
-            sonoscli = true;
-          };
-          configOverrides = {
-            gateway = {
-              mode = "remote";
-              remote = {
-                transport = "direct"; # Direct WebSocket, no SSH tunnel
-                url = "ws://nuc.cinnamon-rooster.ts.net:18789";
-              };
-            };
+        openclaw = {
+          enable = true;
+          gatewayToken = "mactraitor-gateway-token-change-me"; # TODO: use opnix secret
+          telegram = {
+            enable = true;
+            # botTokenFile = "~/.secrets/telegram-bot-token";
+            # allowFrom = [ YOUR_TELEGRAM_USER_ID ]; # @edmundamiller
           };
         };
         docker.enable = true;
@@ -64,32 +53,31 @@
     nix-homebrew = {
       enable = true;
       user = "emiller";
-      enableRosetta = true; # Apple Silicon + Intel compatibility
-      autoMigrate = true; # Migrate existing homebrew installation
-      mutableTaps = true; # Allow mutable taps for flexibility
+      enableRosetta = true;  # Apple Silicon + Intel compatibility
+      autoMigrate = true;    # Migrate existing homebrew installation
+      mutableTaps = true;    # Allow mutable taps for flexibility
     };
 
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
       enable = true;
-
+      
       # Homebrew configuration
       onActivation = {
-        autoUpdate = false; # Don't auto-update during activation
-        cleanup = "none"; # Don't remove anything for now
-        upgrade = false; # Don't upgrade formulae during activation
+        autoUpdate = false;  # Don't auto-update during activation
+        cleanup = "none";     # Don't remove anything for now
+        upgrade = false;     # Don't upgrade formulae during activation
       };
-    }
-    // import ./homebrew.nix;
+    } // import ./homebrew.nix;
 
     # Override the primary user for this host
     system.primaryUser = "emiller";
-
+    
     # Add duti for managing file associations
     environment.systemPackages = with pkgs; [
       duti
     ];
-
+    
     # Prevent Intel brew symlink from being created
     system.activationScripts.removeIntelBrew.text = ''
       echo "Ensuring Intel brew symlink doesn't conflict with ARM homebrew..."
@@ -107,7 +95,7 @@
       cat > /tmp/duti-config.txt <<EOF
       # Zed as default text editor
       # Format: bundle_id UTI role
-
+      
       # Text files
       dev.zed.Zed public.plain-text all
       dev.zed.Zed public.text all
@@ -122,7 +110,7 @@
       dev.zed.Zed public.html all
       dev.zed.Zed com.netscape.javascript-source all
       dev.zed.Zed net.daringfireball.markdown all
-
+      
       # File extensions
       dev.zed.Zed .txt all
       dev.zed.Zed .md all
@@ -177,7 +165,7 @@
       dev.zed.Zed .csv all
       dev.zed.Zed .sql all
       EOF
-
+      
       # Apply the duti configuration as the primary user
       if command -v duti >/dev/null 2>&1; then
         sudo -u emiller duti /tmp/duti-config.txt
@@ -185,7 +173,7 @@
       else
         echo "Warning: duti not found, skipping file association configuration"
       fi
-
+      
       # Clean up
       rm -f /tmp/duti-config.txt
     '';

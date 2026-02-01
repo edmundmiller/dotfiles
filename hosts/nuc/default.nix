@@ -1,14 +1,8 @@
 # Go nuc yourself
+{ config, pkgs, ... }:
 {
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}:
-{
-  # Workaround for nix-clawdbot using bare commands (cat, ln, mkdir, rm)
-  # TODO: Report upstream to nix-clawdbot
+  # Workaround for nix-openclaw using bare commands (cat, ln, mkdir, rm)
+  # TODO: Report upstream to nix-openclaw
   system.activationScripts.binCompat = ''
     mkdir -p /bin
     for cmd in cat ln mkdir rm; do
@@ -19,27 +13,13 @@
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
-    # Add core system paths for systemd user services (clawdbot wrapper uses bare 'cat')
-    systemd.user.sessionVariables.PATH = "/run/current-system/sw/bin:/bin:$PATH";
-    home.activation.clawdbotEnv = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      ${pkgs.coreutils}/bin/mkdir -p "${config.user.home}/.clawdbot"
-      ${lib.optionalString
-        (config ? age && config.age ? secrets && config.age.secrets ? "clawdbot-bridge-token")
-        ''
-          if [ -f ${config.age.secrets.clawdbot-bridge-token.path} ]; then
-            token="$(${pkgs.coreutils}/bin/cat ${config.age.secrets.clawdbot-bridge-token.path})"
-            printf 'CLAWDBOT_GATEWAY_TOKEN=%s\n' "$token" > "${config.user.home}/.clawdbot/.env"
-            ${pkgs.coreutils}/bin/chmod 600 "${config.user.home}/.clawdbot/.env"
-          fi
-        ''
-      }
-    '';
+    # Add /bin to PATH for systemd user services (openclaw wrapper uses bare 'cat')
+    systemd.user.sessionVariables.PATH = "/bin:$PATH";
   };
 
   environment.systemPackages = with pkgs; [
-    opencode
+    taskwarrior3
     sqlite
-    openssl
   ];
   imports = [
     ../_server.nix
@@ -64,55 +44,23 @@
       };
     };
     shell = {
+      bugwarrior.enable = false;
       git.enable = true;
-      opencode.enable = true;
-      pi.enable = true;
       zsh.enable = true;
-    };
-    dev = {
-      node = {
+      taskwarrior = {
         enable = true;
-        enableGlobally = true;
+        syncUrl = "http://localhost:8080";
+        shortcuts.enable = false;
+        timewarriorHook.enable = false;
       };
     };
     services = {
       audiobookshelf.enable = true;
-      clawdbot = {
+      openclaw = {
         enable = true;
-        anthropic.apiKeyFile = config.age.secrets.anthropic-api-key.path;
-        configOverrides = {
-          gateway = {
-            mode = "local";
-            bind = "tailnet";
-            auth = {
-              mode = "token";
-              token = "\${CLAWDBOT_GATEWAY_TOKEN}";
-              allowTailscale = true;
-            };
-            tailscale.mode = "off";
-          };
-          bridge = {
-            enabled = true;
-            port = 18790;
-            bind = "tailnet";
-            tls = {
-              enabled = true;
-              autoGenerate = true;
-            };
-          };
-        };
-        # Disable all plugins - most have darwin-only deps
-        plugins = {
-          bird = false;
-          camsnap = false;
-          gogcli = false;
-          imsg = false;
-          oracle = false;
-          peekaboo = false; # pulls in darwin deps
-          poltergeist = false;
-          sag = false;
-          summarize = false;
-        };
+        gatewayToken = "nuc-gateway-token-change-me"; # TODO: use agenix secret
+        # No plugins for headless Linux - most need darwin
+        plugins = [ ];
       };
       docker.enable = true;
       hass.enable = false;
@@ -126,7 +74,7 @@
       ssh.enable = true;
       syncthing.enable = false;
       tailscale.enable = true;
-      taskchampion.enable = false;
+      taskchampion.enable = true;
       obsidian-sync.enable = true;
       opencode.enable = true;
       timew_sync.enable = true;
