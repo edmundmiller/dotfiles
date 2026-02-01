@@ -37,7 +37,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-
+    opencode
     sqlite
     openssl
   ];
