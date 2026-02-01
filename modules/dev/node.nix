@@ -55,7 +55,10 @@ in
         ya = "yarn";
       };
 
-      env.PATH = [ "$(${pkgs.yarn}/bin/yarn global bin)" ];
+      env.PATH = [
+        "$(${pkgs.yarn}/bin/yarn global bin)"
+        "$XDG_CACHE_HOME/.bun/bin" # bun global packages
+      ];
     })
 
     {
