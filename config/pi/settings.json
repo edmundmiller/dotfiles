@@ -1,12 +1,10 @@
 {
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
   "$schema": "https://pi.ai/settings.json",
-
   // Model configuration - Opus 4.5 as default
   "defaultProvider": "anthropic",
   "defaultModel": "claude-opus-4-5-20250514",
   "defaultThinkingLevel": "medium",
-
   // Model cycling - Ctrl+P to toggle between these
   "enabledModels": [
     "claude-opus-4-5-*",
@@ -14,41 +12,34 @@
     "claude-sonnet-4-5-*",
     "claude-haiku-4-5-*"
   ],
-
   // UI preferences
   "theme": "dark",
   "quietStartup": false,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
-
   // Compaction - keep more context for complex tasks
   "compaction": {
     "enabled": true,
     "reserveTokens": 16384,
     "keepRecentTokens": 24000
   },
-
   // Retry configuration
   "retry": {
     "enabled": true,
     "maxRetries": 3,
     "baseDelayMs": 2000
   },
-
   // Message delivery - one at a time for control
   "steeringMode": "one-at-a-time",
   "followUpMode": "one-at-a-time",
-
   // Images
   "images": {
     "autoResize": true,
     "blockImages": false
   },
-
   // Skills as commands - disabled, see https://ampcode.com/news/slashing-custom-commands
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
   "enableSkillCommands": false,
-
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   "packages": [
     {
@@ -69,7 +60,7 @@
       "skills": []
     },
     // Dynamic context pruning - https://github.com/zenobi-us/pi-dcp
-    "https://github.com/zenobi-us/pi-dcp",
+    // FIXME "https://github.com/zenobi-us/pi-dcp",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
