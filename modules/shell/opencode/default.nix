@@ -59,7 +59,8 @@ in
 
           # Nix-built plugin: opencode-tmux-namer
           # Built at nix-build time, symlinked here
-          "opencode/plugin/opencode-tmux-namer" = {
+          # Only on Darwin - the bun install in the derivation fails in NixOS sandbox
+          "opencode/plugin/opencode-tmux-namer" = lib.mkIf pkgs.stdenv.isDarwin {
             source = pkgs.my.opencode-tmux-namer;
           };
         };
