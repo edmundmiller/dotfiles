@@ -34,10 +34,15 @@ let
 
   # Strip // comments from JSON (pi doesn't support JSONC)
   # Only removes lines that start with // (preserves URLs like https://)
-  settingsJsonStripped = pkgs.runCommand "pi-settings-json" { } ''
-    ${pkgs.gnused}/bin/sed '/^[[:space:]]*\/\//d' \
-      ${configDir}/pi/settings.json > $out
-  '';
+  piSettingsSource = "${configDir}/pi/settings.json";
+  settingsJsonStripped =
+    pkgs.runCommand "pi-settings-json"
+      {
+        src = piSettingsSource;
+      }
+      ''
+        ${pkgs.gnused}/bin/sed '/^[[:space:]]*\/\//d' $src > $out
+      '';
 in
 {
   options.modules.shell.pi = {
