@@ -7,7 +7,7 @@
 # - Configures Ghostty keybindings when Ghostty is enabled
 # - Symlinks shared skills from config/agents/skills/
 # - Generates AGENTS.md from config/agents/rules/
-# - Strips // comments from settings.json (pi only supports standard JSON)
+# - Strips // comments from settings.jsonc (pi only supports standard JSON)
 #
 # Note: The shift+enter keybinding conflicts with OpenCode's binding.
 # See config/ghostty/pi-keybindings.conf for details.
@@ -38,7 +38,7 @@ let
 
   # Strip // comments from JSON (pi doesn't support JSONC)
   # Only removes lines that start with // (preserves URLs like https://)
-  piSettingsRaw = builtins.readFile "${configDir}/pi/settings.json";
+  piSettingsRaw = builtins.readFile "${configDir}/pi/settings.jsonc";
   piSettingsLines = lib.splitString "\n" piSettingsRaw;
   isCommentLine =
     line:
