@@ -26,8 +26,6 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    git-hooks.url = "github:cachix/git-hooks.nix";
-    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
     # NOTE https://github.com/danth/stylix/issues/359
     stylix.url = "github:danth/stylix/master";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
@@ -49,14 +47,12 @@
     try.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
-
+    
     opencode.url = "github:anomalyco/opencode/dev";
     opencode.inputs.nixpkgs.follows = "nixpkgs";
 
-    nix-clawdbot.url = "github:clawdbot/nix-clawdbot";
-    nix-clawdbot.inputs.nixpkgs.follows = "nixpkgs";
-
-    workmux.url = "github:raine/workmux";
+    nix-openclaw.url = "github:openclaw/nix-openclaw";
+    nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
 
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
@@ -86,18 +82,18 @@
           config.allowUnfree = true; # forgive me Stallman senpai
           overlays = extraOverlays ++ (lib.attrValues self.overlays);
         };
-
+      
       # Linux packages
-      pkgs = mkPkgs nixpkgs [ self.overlays.default inputs.nix-clawdbot.overlays.default ] linuxSystem;
+      pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-openclaw.overlays.default ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
-
-      # Darwin packages
-      darwinPkgs = mkPkgs nixpkgs [ self.overlays.default ] darwinSystem;
+      
+      # Darwin packages  
+      darwinPkgs = mkPkgs nixpkgs [ self.overlay ] darwinSystem;
 
       lib = nixpkgs.lib.extend (
         self: _super: {
           my = import ./lib {
-            inherit pkgs; # Linux packages for the lib functions
+            pkgs = pkgs;  # Linux packages for the lib functions
             inherit inputs;
             lib = self;
           };
@@ -105,24 +101,19 @@
       );
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [
-        inputs.git-hooks.flakeModule
-        inputs.treefmt-nix.flakeModule
-      ];
+      imports = [ inputs.treefmt-nix.flakeModule ];
 
       flake = {
         lib = lib.my;
 
-        overlays = mapModules ./overlays import // {
-          default = final: _prev: {
-            unstable =
-              if final.stdenv.isDarwin then
-                mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
-              else
-                pkgs';
-            my = self.packages.${final.stdenv.hostPlatform.system} or { };
-          };
+        overlay = final: _prev: {
+          unstable = if final.stdenv.isDarwin 
+                     then mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
+                     else pkgs';
+          my = self.packages.${final.stdenv.hostPlatform.system} or {};
         };
+
+        overlays = mapModules ./overlays import;
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -130,8 +121,7 @@
 
         nixosModules = {
           dotfiles = import ./.;
-        }
-        // mapModulesRec ./modules import;
+        } // mapModulesRec ./modules import;
 
         nixosConfigurations = mapHosts ./hosts { };
 
@@ -151,7 +141,7 @@
           type = "app";
           program = ./bin/hey;
         };
-
+        
         apps."${darwinSystem}".default = {
           type = "app";
           program = ./bin/hey;
@@ -187,10 +177,10 @@
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "emiller"; }
 
-            # Add clawdbot to home-manager modules
+            # Add openclaw to home-manager modules
             {
               home-manager.sharedModules = [
-                inputs.nix-clawdbot.homeManagerModules.clawdbot
+                inputs.nix-openclaw.homeManagerModules.openclaw
               ];
             }
           ];
@@ -224,10 +214,10 @@
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "edmundmiller"; }
 
-            # Add clawdbot to home-manager modules
+            # Add openclaw to home-manager modules
             {
               home-manager.sharedModules = [
-                inputs.nix-clawdbot.homeManagerModules.clawdbot
+                inputs.nix-openclaw.homeManagerModules.openclaw
               ];
             }
           ];
@@ -242,7 +232,8 @@
             user = "root";
             interactiveSudo = false;
             remoteBuild = true;
-            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
+            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
+              self.nixosConfigurations.nuc;
           };
 
           # Darwin hosts - local deployment only (no magic rollback on macOS)
@@ -250,9 +241,9 @@
             hostname = "localhost";
             profiles.system = {
               user = "emiller";
-              path =
-                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."MacTraitor-Pro".system
-                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
+              path = deploy-rs.lib.aarch64-darwin.activate.custom
+                self.darwinConfigurations."MacTraitor-Pro".system
+                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
             };
           };
 
@@ -260,9 +251,9 @@
             hostname = "localhost";
             profiles.system = {
               user = "edmundmiller";
-              path =
-                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."Seqeratop".system
-                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
+              path = deploy-rs.lib.aarch64-darwin.activate.custom
+                self.darwinConfigurations."Seqeratop".system
+                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
             };
           };
         };
@@ -271,181 +262,80 @@
         "x86_64-linux"
         "aarch64-darwin"
       ];
-      perSystem =
-        {
-          config,
-          pkgs,
-          system,
-          ...
-        }:
-        {
-          # Expose deploy-rs CLI for `nix run .#deploy-rs`
-          packages.deploy-rs = deploy-rs.packages.${system}.default;
+      perSystem = { pkgs, system, ... }: {
+        # Expose deploy-rs CLI for `nix run .#deploy-rs`
+        packages.deploy-rs = deploy-rs.packages.${system}.default;
 
-          treefmt = {
-            projectRootFile = ".git/config";
-            programs.deadnix.enable = true;
-            programs.nixfmt.enable = true;
-            programs.prettier.enable = true;
-            programs.statix.enable = true;
-          };
-
-          # Pre-commit hooks via git-hooks.nix
-          pre-commit = {
-            check.enable = true;
-            settings = {
-              hooks = {
-                # Nix formatting and linting
-                nixfmt.enable = true;
-                deadnix.enable = true;
-                # statix disabled in pre-commit - too many false positives on style
-                # treefmt already runs statix for actual issues
-
-                # General formatting
-                prettier.enable = true;
-              };
-            };
-          };
-
-          # DevShell with pre-commit hooks installed
-          devShells.default = pkgs.mkShell {
-            shellHook = ''
-              ${config.pre-commit.installationScript}
-            '';
-            buildInputs = with pkgs; [
-              nixfmt
-              deadnix
-              statix
-              nodePackages.prettier
-            ];
-          };
-
-          # Add checks for deployment, plugins, and shell tests
-          checks =
-            let
-              # deploy-rs checks - only validate configurations that can build on current system
-              deployChecks = deploy-rs.lib.${system}.deployChecks {
-                nodes = pkgs.lib.filterAttrs (
-                  name: _node:
-                  if system == "aarch64-darwin" then
-                    # On Darwin, only check Darwin configs (MacTraitor-Pro, Seqeratop)
-                    builtins.elem name [
-                      "MacTraitor-Pro"
-                      "Seqeratop"
-                    ]
-                  else
-                    # On Linux, only check Linux configs (nuc, etc.)
-                    !builtins.elem name [
-                      "MacTraitor-Pro"
-                      "Seqeratop"
-                    ]
-                ) self.deploy.nodes;
-              };
-            in
-            deployChecks
-            // {
-
-              # zunit shell function tests
-              zunit-tests =
-                pkgs.runCommand "zunit-tests"
-                  {
-                    nativeBuildInputs = [
-                      self.packages.${system}.zunit
-                      pkgs.zsh
-                      pkgs.git
-                    ];
-                  }
-                  ''
-                    # Setup git config for tests
-                    export HOME=$TMPDIR
-                    git config --global user.email "test@test.com"
-                    git config --global user.name "Test User"
-                    git config --global init.defaultBranch main
-
-                    # Run zunit tests (--tap bypasses revolver spinner dependency)
-                    cd ${./.}
-                    for test in config/*/tests/*.zunit; do
-                      if [ -f "$test" ]; then
-                        echo "Running $test..."
-                        zunit --tap "$test"
-                      fi
-                    done
-
-                    # Create success marker
-                    mkdir -p $out
-                    echo "All zunit tests passed" > $out/result
-                  '';
-
-              validate-claude-plugins =
-                pkgs.runCommand "validate-claude-plugins"
-                  {
-                    nativeBuildInputs = [
-                      pkgs.uv
-                      pkgs.python312
-                      pkgs.cacert
-                    ];
-                    # Allow network access for uvx to download claudelint
-                    __noChroot = true;
-                  }
-                  ''
-                    export HOME=$TMPDIR
-                    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
-
-                    # Run claudelint on each plugin directory
-                    echo "Validating Claude Code plugins..."
-
-                    for plugin in ${./.}/config/claude/plugins/*/; do
-                      if [ -d "$plugin" ]; then
-                        echo "Checking $plugin..."
-                        uvx claudelint "$plugin" || exit 1
-                      fi
-                    done
-
-                    # Create success marker
-                    mkdir -p $out
-                    echo "All plugins validated successfully" > $out/result
-                  '';
-
-              validate-skills =
-                pkgs.runCommand "validate-skills"
-                  {
-                    nativeBuildInputs = [
-                      pkgs.uv
-                      pkgs.python312
-                      pkgs.cacert
-                    ];
-                    # Allow network access for uvx to download skills-ref
-                    __noChroot = true;
-                  }
-                  ''
-                    export HOME=$TMPDIR
-                    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
-
-                    # Validate global skills in config/agents/skills/
-                    echo "Validating global agent skills..."
-
-                    for skill in ${./.}/config/agents/skills/*/; do
-                      if [ -d "$skill" ] && [ -f "$skill/SKILL.md" ]; then
-                        echo "Checking $skill..."
-                        uvx --from skills-ref agentskills validate "$skill" || exit 1
-                      fi
-                    done
-
-                    # Validate project skills in .agents/skills/ (source of truth)
-                    echo "Validating project skills..."
-
-                    for skill in ${./.}/.agents/skills/*/; do
-                      if [ -d "$skill" ] && [ -f "$skill/SKILL.md" ]; then
-                        echo "Checking $skill..."
-                        uvx --from skills-ref agentskills validate "$skill" || exit 1
-                      fi
-                    done
-
-                    # Create success marker
-                    mkdir -p $out
-                    echo "All skills validated successfully" > $out/result
-                  '';
-            };
+        treefmt = {
+          projectRootFile = ".git/config";
+          programs.deadnix.enable = true;
+          programs.nixfmt.enable = true;
+          programs.prettier.enable = true;
+          programs.statix.enable = true;
         };
+
+        # Add checks for deployment, plugins, and shell tests
+        checks = {
+          # deploy-rs checks - validates deployment configurations
+          deploy-rs = deploy-rs.lib.${system}.deployChecks self.deploy;
+
+          # zunit shell function tests
+          zunit-tests = pkgs.runCommand "zunit-tests" {
+            nativeBuildInputs = [
+              self.packages.${system}.zunit
+              pkgs.zsh
+              pkgs.git
+            ];
+          } ''
+            # Setup git config for tests
+            export HOME=$TMPDIR
+            git config --global user.email "test@test.com"
+            git config --global user.name "Test User"
+            git config --global init.defaultBranch main
+
+            # Run zunit tests (--tap bypasses revolver spinner dependency)
+            cd ${./.}
+            for test in config/*/tests/*.zunit; do
+              if [ -f "$test" ]; then
+                echo "Running $test..."
+                zunit --tap "$test"
+              fi
+            done
+
+            # Create success marker
+            mkdir -p $out
+            echo "All zunit tests passed" > $out/result
+          '';
+
+          validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" {
+            buildInputs = [ pkgs.python312 ];
+          } ''
+            # Create a temporary directory for the check
+            mkdir -p $out
+
+            # Copy plugin files to temporary location
+            cp -r ${./.} /tmp/dotfiles-check
+            cd /tmp/dotfiles-check
+
+            # Install uv
+            export HOME=/tmp
+            ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
+            export PATH="$HOME/.cargo/bin:$PATH"
+
+            # Run claudelint on each plugin directory
+            echo "Validating Claude Code plugins..."
+
+            for plugin in config/claude/plugins/*/; do
+              if [ -d "$plugin" ]; then
+                echo "Checking $plugin..."
+                uvx claudelint "$plugin" || exit 1
+              fi
+            done
+
+            # Create success marker
+            echo "All plugins validated successfully" > $out/result
+          '';
+        };
+      };
     };
 }
