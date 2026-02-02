@@ -12,7 +12,7 @@ in {
     gatewayToken = mkOption {
       type = types.str;
       default = "";
-      description = "Gateway auth token (long random string)";
+      description = "Gateway auth token (long random string). TODO: upstream tokenFile support";
     };
 
     telegram = {
@@ -45,22 +45,23 @@ in {
       enable = true;
       documents = ../../../config/openclaw/documents;
 
-      config = {
-        gateway = {
-          mode = "local";
-          auth.token = cfg.gatewayToken;
-        };
+      # Plugins at top level
+      plugins = cfg.plugins;
 
-        channels.telegram = mkIf cfg.telegram.enable {
-          tokenFile = cfg.telegram.botTokenFile;
-          allowFrom = cfg.telegram.allowFrom;
-          groups."*".requireMention = true;
-        };
-      };
-
+      # Configure the default instance directly
       instances.default = {
         enable = true;
-        plugins = cfg.plugins;
+        config = {
+          gateway = {
+            mode = "local";
+            auth.token = cfg.gatewayToken;
+          };
+          channels.telegram = mkIf cfg.telegram.enable {
+            tokenFile = cfg.telegram.botTokenFile;
+            allowFrom = cfg.telegram.allowFrom;
+            groups."*".requireMention = true;
+          };
+        };
       };
     };
   };

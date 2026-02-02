@@ -58,7 +58,7 @@
       audiobookshelf.enable = true;
       openclaw = {
         enable = true;
-        gatewayToken = "nuc-gateway-token-change-me"; # TODO: use agenix secret
+        gatewayToken = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
         # No plugins for headless Linux - most need darwin
         plugins = [ ];
       };
