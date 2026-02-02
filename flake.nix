@@ -84,7 +84,19 @@
         };
       
       # Linux packages
-      pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-openclaw.overlays.default ] linuxSystem;
+      # Patch openclaw-gateway to include missing docs/reference/templates (issue #18)
+      # Create a wrapper that copies templates from source into the package
+      openclawTemplatesOverlay = final: prev: {
+        openclaw-gateway = prev.runCommand "openclaw-gateway-with-templates" {
+          inherit (prev.openclaw-gateway) meta;
+        } ''
+          cp -rs ${prev.openclaw-gateway} $out
+          chmod -R u+w $out
+          mkdir -p $out/lib/openclaw/docs/reference/templates
+          cp ${prev.openclaw-gateway.src}/docs/reference/templates/* $out/lib/openclaw/docs/reference/templates/
+        '';
+      };
+      pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-openclaw.overlays.default openclawTemplatesOverlay ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
       
       # Darwin packages  

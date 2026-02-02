@@ -43,8 +43,7 @@ in {
   };
 
   config = mkIf cfg.enable {
-    # Apply nix-openclaw overlay
-    nixpkgs.overlays = [ inputs.nix-openclaw.overlays.default ];
+    # nix-openclaw overlay applied at flake level (with templates patch)
 
     # Configure openclaw through home-manager
     home-manager.users.${user} = {
@@ -63,6 +62,8 @@ in {
 
       programs.openclaw = {
       enable = true;
+      # Use patched openclaw-gateway which has templates (workaround for issue #18)
+      package = pkgs.openclaw-gateway;
       documents = ../../../config/openclaw/documents;
 
       # Plugins at top level
@@ -74,6 +75,8 @@ in {
       # Configure the default instance directly
       instances.default = {
         enable = true;
+        # Use patched openclaw-gateway which has templates (workaround for issue #18)
+        package = pkgs.openclaw-gateway;
         config = {
           gateway = {
             mode = "local";
