@@ -109,6 +109,16 @@
             --set-default CLAWDBOT_NIX_MODE "1"
           ln -s $out/bin/openclaw $out/bin/moltbot
         '';
+        
+        # Wrap oracle/summarize to only expose bin/ (avoid libexec/node_modules conflicts)
+        oracle = prev.runCommand "oracle-bin-only" { meta = prev.oracle.meta or {}; } ''
+          mkdir -p $out/bin
+          ln -s ${prev.oracle}/bin/* $out/bin/
+        '';
+        summarize = prev.runCommand "summarize-bin-only" { meta = prev.summarize.meta or {}; } ''
+          mkdir -p $out/bin
+          ln -s ${prev.summarize}/bin/* $out/bin/
+        '';
       };
       pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-openclaw.overlays.default openclawTemplatesOverlay ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
