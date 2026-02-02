@@ -61,6 +61,39 @@
         gatewayToken = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
         # No plugins for headless Linux - most need darwin
         plugins = [ ];
+        skills = [
+          {
+            name = "obsidian-vault";
+            description = "Access Edmund's Obsidian vault for notes, projects, and knowledge base";
+            mode = "inline";
+            body = ''
+              # Obsidian Vault Access
+
+              Location: `/home/emiller/obsidian-vault`
+
+              ## Structure (PARA method)
+              - `00_Inbox/` - New notes, quick captures
+              - `01_Projects/` - Active projects with tasks
+              - `02_Areas/` - Ongoing areas of responsibility
+              - `03_Resources/` - Reference material, topics of interest
+              - `04_Archive/` - Completed/inactive items
+              - `05_Attachments/` - Images, PDFs, files
+              - `06_Metadata/` - Templates, config
+
+              ## How to Search
+              ```bash
+              rg "search term" /home/emiller/obsidian-vault
+              rg -l "search term" /home/emiller/obsidian-vault  # list files only
+              ```
+
+              ## How to Read/List
+              ```bash
+              cat "/home/emiller/obsidian-vault/path/to/note.md"
+              ls /home/emiller/obsidian-vault/01_Projects/
+              ```
+            '';
+          }
+        ];
       };
       docker.enable = true;
       hass.enable = false;
