@@ -20,4 +20,8 @@ in
     edmundmiller
     nuc
   ];
+  "opencode-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 }
