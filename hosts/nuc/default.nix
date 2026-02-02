@@ -61,6 +61,11 @@
         gatewayToken = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
         # No plugins for headless Linux - most need darwin
         plugins = [ ];
+        telegram = {
+          enable = true;
+          botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
+          allowFrom = [ 8357890648 ]; # @edmundamiller
+        };
         skills = [
           {
             name = "obsidian-vault";
