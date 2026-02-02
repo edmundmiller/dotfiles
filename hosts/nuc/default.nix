@@ -44,15 +44,16 @@
       };
     };
     shell = {
-      bugwarrior.enable = false;
+      # bugwarrior.enable = false;  # Module removed
       git.enable = true;
       zsh.enable = true;
-      taskwarrior = {
-        enable = true;
-        syncUrl = "http://localhost:8080";
-        shortcuts.enable = false;
-        timewarriorHook.enable = false;
-      };
+      # taskwarrior module removed - TODO restore when available
+      # taskwarrior = {
+      #   enable = true;
+      #   syncUrl = "http://localhost:8080";
+      #   shortcuts.enable = false;
+      #   timewarriorHook.enable = false;
+      # };
     };
     services = {
       audiobookshelf.enable = true;

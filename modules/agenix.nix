@@ -43,13 +43,8 @@ in
               ) (import secretsFile)
             else
               { };
-          sharedSecrets = optionalAttrs config.modules.services.clawdbot.enable {
-            clawdbot-bridge-token = {
-              file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
-              owner = config.user.name;
-              mode = "0400";
-            };
-          };
+          # Shared secrets for services that need cross-host keys
+          sharedSecrets = {};
         in
         hostSecrets // sharedSecrets;
       identityPaths =
@@ -76,15 +71,7 @@ in
           wakatime-api-key = {
             file = "${sharedSecretsDir}/wakatime-api-key.age";
           };
-        }
-        // (optionalAttrs config.modules.services.clawdbot.enable {
-          clawdbot-bridge-token = {
-            file = "${sharedSecretsDir}/clawdbot-bridge-token.age";
-          };
-          anthropic-api-key = {
-            file = "${sharedSecretsDir}/anthropic-api-key.age";
-          };
-        });
+        };
       };
     };
   };
