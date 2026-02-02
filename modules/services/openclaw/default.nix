@@ -84,6 +84,7 @@ in {
             mode = "local";
             auth.token = cfg.gatewayToken;
           };
+          agents.defaults.model.primary = "opencode/claude-opus-4-5";
           channels.telegram = mkIf cfg.telegram.enable {
             tokenFile = cfg.telegram.botTokenFile;
             allowFrom = cfg.telegram.allowFrom;
@@ -97,7 +98,7 @@ in {
       # Use $XDG_RUNTIME_DIR since $(id -u) doesn't work in systemd context
       systemd.user.services.openclaw-gateway.Service = {
         ExecStartPre = [
-          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); } > $XDG_RUNTIME_DIR/openclaw/env'"
+          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); } > $XDG_RUNTIME_DIR/openclaw/env'"
         ];
         EnvironmentFile = "-/run/user/%U/openclaw/env";
       };
