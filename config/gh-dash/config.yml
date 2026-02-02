@@ -162,7 +162,8 @@ keybindings:
 
     # Open PR in browser
     - key: "o"
-      builtin: "open"
+      name: "open"
+      command: "open 'https://github.com/{{.RepoName}}/pull/{{.PrNumber}}'"
 
     # Open PR in Neovim with gh.nvim (optimal workflow from guide)
     - key: "C"
@@ -228,7 +229,8 @@ keybindings:
   issues:
     # Open issue in browser
     - key: "o"
-      builtin: "open"
+      name: "open"
+      command: "open 'https://github.com/{{.RepoName}}/issues/{{.IssueNumber}}'"
 
     # Comment on issue
     - key: "c"
