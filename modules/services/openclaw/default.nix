@@ -74,6 +74,15 @@ in {
       # Skills
       skills = cfg.skills;
 
+      # First-party plugins (web search, summarize, etc.)
+      
+      # exposePluginPackages = false avoids libexec/node_modules conflict between oracle+summarize
+      exposePluginPackages = false;
+      firstParty = {
+        oracle.enable = true;    # Web search
+        summarize.enable = true; # Summarize web pages, PDFs, videos
+      };
+
       # Configure the default instance directly
       instances.default = {
         enable = true;
