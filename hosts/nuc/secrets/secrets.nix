@@ -24,4 +24,8 @@ in
     edmundmiller
     nuc
   ];
+  "openai-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 }
