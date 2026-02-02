@@ -78,9 +78,7 @@ in {
       
       # exposePluginPackages = false avoids libexec/node_modules conflict between oracle+summarize
       exposePluginPackages = false;
-      # NOTE: firstParty plugins temporarily disabled due to corrupted nix store path
-      # in nix-openclaw's hardcoded steipete-tools flake URL
-      # TODO: Re-enable once upstream fixes the hash or store is repaired
+      # NOTE: firstParty plugins disabled - nix-openclaw has hardcoded steipete-tools URLs with stale hashes
       firstParty = {
         oracle.enable = false;    # Web search
         summarize.enable = false; # Summarize web pages, PDFs, videos
