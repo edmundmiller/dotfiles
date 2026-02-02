@@ -20,6 +20,8 @@
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
+    chromium  # For openclaw browser
+    nodejs    # For openclaw plugins
   ];
   imports = [
     ../_server.nix
