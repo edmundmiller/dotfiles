@@ -84,7 +84,7 @@ in {
             mode = "local";
             auth.token = cfg.gatewayToken;
           };
-          agents.defaults.model.primary = "opencode/claude-opus-4-5";
+          agents.defaults.model.primary = "opencode/kimi-k2.5";
           channels.telegram = mkIf cfg.telegram.enable {
             tokenFile = cfg.telegram.botTokenFile;
             allowFrom = cfg.telegram.allowFrom;
