@@ -1191,6 +1191,7 @@
         "treefmt-nix": "treefmt-nix_3",
         "try": "try",
         "wezterm": "wezterm",
+        "workmux": "workmux",
         "zen-browser": "zen-browser"
       }
     },
@@ -1606,6 +1607,26 @@
         "dir": "nix",
         "owner": "wez",
         "repo": "wezterm",
+        "type": "github"
+      }
+    },
+    "workmux": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1769952447,
+        "narHash": "sha256-C4CKBLcHMpR4MGvrt98/yik+MSB2G7tor0YfbDWkubg=",
+        "owner": "raine",
+        "repo": "workmux",
+        "rev": "f284684b292b0ee1eb81c7a92b26041953cb4bd4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "raine",
+        "repo": "workmux",
         "type": "github"
       }
     },
