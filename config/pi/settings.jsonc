@@ -10,7 +10,7 @@
     "claude-opus-4-5-*",
     "gpt-5.2-codex",
     "claude-sonnet-4-5-*",
-    "claude-haiku-4-5-*",
+    "claude-haiku-4-5-*"
   ],
   // UI preferences
   "theme": "dark",
@@ -21,13 +21,13 @@
   "compaction": {
     "enabled": true,
     "reserveTokens": 16384,
-    "keepRecentTokens": 24000,
+    "keepRecentTokens": 24000
   },
   // Retry configuration
   "retry": {
     "enabled": true,
     "maxRetries": 3,
-    "baseDelayMs": 2000,
+    "baseDelayMs": 2000
   },
   // Message delivery - one at a time for control
   "steeringMode": "one-at-a-time",
@@ -35,7 +35,7 @@
   // Images
   "images": {
     "autoResize": true,
-    "blockImages": false,
+    "blockImages": false
   },
   // Skills as commands - disabled, see https://ampcode.com/news/slashing-custom-commands
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
@@ -55,9 +55,9 @@
         "cost-tracker.ts",
         "funny-working-message.ts",
         "speedreading.ts",
-        "loop.ts",
+        "loop.ts"
       ],
-      "skills": [],
+      "skills": []
     },
     // Dynamic context pruning - https://github.com/zenobi-us/pi-dcp
     // FIXME(dotfiles-acxd) "https://github.com/zenobi-us/pi-dcp",
@@ -67,25 +67,25 @@
       "extensions": [
         "hooks/background-notify",
         "hooks/session-color",
-        "extensions/safe-git",
+        "extensions/safe-git"
         // "extensions/pi-agent-scip" // SCIP for typescript/python - requires scip CLI
-      ],
+      ]
     },
     // tmustier extensions - https://github.com/tmustier/pi-extensions
     {
       "source": "https://github.com/tmustier/pi-extensions",
       "extensions": ["tab-status/tab-status.ts", "files-widget/index.ts"],
-      "skills": [],
+      "skills": []
     },
     // Canvas for visual diagrams - https://github.com/jyaunches/pi-canvas
     {
       "source": "https://github.com/jyaunches/pi-canvas",
-      "extensions": ["pi-extension/index.ts"],
+      "extensions": ["pi-extension/index.ts"]
     },
     // LSP integration - https://github.com/prateekmedia/pi-hooks
     {
       "source": "https://github.com/prateekmedia/pi-hooks",
-      "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts"],
-    },
-  ],
+      "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts"]
+    }
+  ]
 }
