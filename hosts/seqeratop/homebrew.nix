@@ -43,13 +43,7 @@
 
     # Development
     "ghostty@tip"
-    "positron"
-    "repo-prompt"
     "claude"
-
-    # Communication & Productivity
-    "sunsama"
-    "gitify"
 
     # Media
     "spotify"
