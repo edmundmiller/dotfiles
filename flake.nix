@@ -85,15 +85,29 @@
       
       # Linux packages
       # Patch openclaw-gateway to include missing docs/reference/templates (issue #18)
-      # Create a wrapper that copies templates from source into the package
+      # Must copy lib/openclaw (not symlink) so __dirname resolves to patched package
       openclawTemplatesOverlay = final: prev: {
         openclaw-gateway = prev.runCommand "openclaw-gateway-with-templates" {
           inherit (prev.openclaw-gateway) meta;
+          nativeBuildInputs = [ prev.makeWrapper ];
         } ''
-          cp -rs ${prev.openclaw-gateway} $out
-          chmod -R u+w $out
+          mkdir -p $out/bin $out/lib
+          
+          # Copy lib/openclaw entirely (so __dirname points here)
+          cp -r ${prev.openclaw-gateway}/lib/openclaw $out/lib/
+          chmod -R u+w $out/lib/openclaw
+          
+          # Add the missing templates
           mkdir -p $out/lib/openclaw/docs/reference/templates
           cp ${prev.openclaw-gateway.src}/docs/reference/templates/* $out/lib/openclaw/docs/reference/templates/
+          
+          # Create new wrapper pointing to our copied dist
+          makeWrapper "${prev.nodejs}/bin/node" "$out/bin/openclaw" \
+            --add-flags "$out/lib/openclaw/dist/index.js" \
+            --set-default OPENCLAW_NIX_MODE "1" \
+            --set-default MOLTBOT_NIX_MODE "1" \
+            --set-default CLAWDBOT_NIX_MODE "1"
+          ln -s $out/bin/openclaw $out/bin/moltbot
         '';
       };
       pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-openclaw.overlays.default openclawTemplatesOverlay ] linuxSystem;

@@ -15,6 +15,8 @@ in {
       description = "Gateway auth token (long random string). TODO: upstream tokenFile support";
     };
 
+
+
     telegram = {
       enable = mkBoolOpt false;
       botTokenFile = mkOption {
@@ -90,6 +92,15 @@ in {
         };
       };
     };  # programs.openclaw
+
+      # Add Anthropic API key via ExecStartPre that loads from agenix
+      # Use $XDG_RUNTIME_DIR since $(id -u) doesn't work in systemd context
+      systemd.user.services.openclaw-gateway.Service = {
+        ExecStartPre = [
+          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}) > $XDG_RUNTIME_DIR/openclaw/env'"
+        ];
+        EnvironmentFile = "-/run/user/%U/openclaw/env";
+      };
     };  # home-manager.users.${user}
   };
 }
