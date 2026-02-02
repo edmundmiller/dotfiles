@@ -34,6 +34,12 @@ in {
       default = [ ];
       description = "List of plugin configs with { source = \"github:...\"; }";
     };
+
+    skills = mkOption {
+      type = types.listOf types.attrs;
+      default = [ ];
+      description = "List of skill configs (name, source, mode)";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -41,12 +47,29 @@ in {
     nixpkgs.overlays = [ inputs.nix-openclaw.overlays.default ];
 
     # Configure openclaw through home-manager
-    home-manager.users.${user}.programs.openclaw = {
+    home-manager.users.${user} = {
+      # Add skill files directly
+      home.file = builtins.listToAttrs (map (skill: {
+        name = ".openclaw/workspace/skills/${skill.name}/SKILL.md";
+        value.text = ''
+          ---
+          name: ${skill.name}
+          description: ${skill.description or ""}
+          ---
+
+          ${skill.body or ""}
+        '';
+      }) cfg.skills);
+
+      programs.openclaw = {
       enable = true;
       documents = ../../../config/openclaw/documents;
 
       # Plugins at top level
       plugins = cfg.plugins;
+
+      # Skills
+      skills = cfg.skills;
 
       # Configure the default instance directly
       instances.default = {
@@ -63,6 +86,7 @@ in {
           };
         };
       };
-    };
+    };  # programs.openclaw
+    };  # home-manager.users.${user}
   };
 }
