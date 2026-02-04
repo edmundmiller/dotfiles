@@ -1,24 +1,17 @@
 # Global workmux configuration
 # https://workmux.raine.dev/guide/configuration
 
-# Bare repo layout by default (worktrees as siblings to main)
-worktree_dir: "{{ branch | sanitize }}/"
+# Bare repo layout (worktrees as direct siblings: project/main, project/feature)
+worktree_dir: "../"
 
 # Default branch for merge targets
 main_branch: main
 
 # Default agent for -a flag
-agent: opencode
+agent: pi
 
 # Merge strategy: merge, rebase, or squash
 merge_strategy: rebase
-
-# Status icons in tmux window names (matches opencode-tmux-namer)
-# opencode-tmux-namer handles status display, so workmux defers to it
-status_icons:
-  working: "●"
-  waiting: "■"
-  done: "□"
 
 # Enable nerdfont icons
 nerdfont: true
@@ -36,10 +29,10 @@ files:
   symlink:
     - node_modules
 
-# Pane layout: opencode left, nvim + shell stacked on right
+# Pane layout: pi left, nvim + shell stacked on right
 panes:
-  - command: <agent> # opencode agent (takes full window first)
+  - command: <agent>
     focus: true
-  - split: horizontal # Split left/right (opencode left, nvim right)
+  - split: horizontal
     command: nvim
-  - split: vertical # Split right pane top/bottom (nvim top, shell bottom)
+  - split: vertical
