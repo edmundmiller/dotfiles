@@ -1,5 +1,27 @@
 # Agent Instructions
 
+This is a nix-darwin dotfiles repo. Config files (lazygit, ghostty, etc.) are symlinked from the Nix store — they're **read-only**. Edit source files here, then rebuild.
+
+## Rebuilding the System
+
+After changing any `.nix` file or Nix-managed config:
+
+```bash
+cd ~/.config/dotfiles
+sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .
+```
+
+NOPASSWD is configured — this works non-interactively. Always use the full path.
+
+## Key Paths
+
+- **Host config:** `hosts/mactraitorpro/default.nix`
+- **Modules:** `modules/` (shell, editors, services, etc.)
+- **Home-manager configs:** `config/` (lazygit, ghostty, etc.)
+- **`darwin.nix` is NOT imported** — don't put config there
+
+## Issue Tracking
+
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
 ## Quick Reference
@@ -33,8 +55,8 @@ bd sync               # Sync with git
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
+
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-
