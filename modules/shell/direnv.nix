@@ -1,14 +1,12 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib;
 with lib.my;
 let
   cfg = config.modules.shell.direnv;
-  inherit (config.dotfiles) configDir;
 in
 {
   options.modules.shell.direnv = {
@@ -16,14 +14,29 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = [ pkgs.direnv ];
     modules.shell.zsh.rcInit = ''eval "$(direnv hook zsh)"'';
 
-    home.configFile = {
-      "direnv" = {
-        source = "${configDir}/direnv";
-        recursive = true;
-      };
+    # Use home-manager's native direnv + nix-direnv for cached flake evaluation
+    home-manager.users.${config.user.name}.programs.direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+      stdlib = ''
+        use_docker-machine(){
+          local env=''${1:-default}
+          echo Docker machine: $env
+          eval $(docker-machine env --shell bash $env)
+        }
+
+        use_guix() {
+          local cache_dir="$(direnv_layout_dir)/.guix-profile"
+          if [[ -e "$cache_dir/etc/profile" ]]; then
+            source "$cache_dir/etc/profile"
+          else
+            mkdir "$(direnv_layout_dir)"
+            eval "$(guix environment --root="$cache_dir" "$@" --search-paths)"
+          fi
+        }
+      '';
     };
   };
 }
