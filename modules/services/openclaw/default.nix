@@ -114,7 +114,7 @@ in
       # Use $XDG_RUNTIME_DIR since $(id -u) doesn't work in systemd context
       systemd.user.services.openclaw-gateway.Service = {
         ExecStartPre = [
-          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.openai-api-key.path}); } > $XDG_RUNTIME_DIR/openclaw/env'"
+          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.openai-api-key.path}); echo GOG_KEYRING_PASSWORD=gogcli-agenix; } > $XDG_RUNTIME_DIR/openclaw/env'"
         ];
         EnvironmentFile = "-/run/user/%U/openclaw/env";
       };
