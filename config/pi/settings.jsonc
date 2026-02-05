@@ -1,6 +1,6 @@
 {
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
-  "$schema": "https://pi.ai/settings.json",
+  "$schema": "./settings-schema.json",
   // Model configuration - Opus 4.5 as default
   "defaultProvider": "anthropic",
   "defaultModel": "claude-opus-4-6",
