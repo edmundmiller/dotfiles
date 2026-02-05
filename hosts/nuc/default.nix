@@ -17,6 +17,18 @@
     systemd.user.sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
   };
 
+  # Import gogcli credentials + token from agenix on activation
+  # gogcli isn't in PATH (it's an openclaw plugin), find it in the nix store
+  system.activationScripts.gogcliSecrets = ''
+    GOG=$(find /nix/store -maxdepth 3 -name 'gog' -path '*/gogcli*/bin/*' 2>/dev/null | head -1)
+    CREDS="${config.age.secrets.gogcli-client-secret.path}"
+    TOKEN="${config.age.secrets.gogcli-token.path}"
+    if [ -n "$GOG" ] && [ -f "$CREDS" ] && [ -f "$TOKEN" ]; then
+      sudo -u ${config.user.name} "$GOG" auth credentials "$CREDS" 2>/dev/null || true
+      sudo -u ${config.user.name} "$GOG" auth tokens import "$TOKEN" 2>/dev/null || true
+    fi
+  '';
+
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
