@@ -50,7 +50,14 @@ in
     {
       # Add zsh to available shells
       environment.shells = [ pkgs.zsh ];
+    }
+
+    # NixOS-only: set default shell (option doesn't exist on Darwin)
+    (optionalAttrs (!pkgs.stdenv.isDarwin) {
       users.defaultUserShell = mkForce pkgs.zsh;
+    })
+
+    {
 
       # Enable zsh at system level - this creates /etc/zshrc that loads nix-darwin environment
       programs.zsh = {
