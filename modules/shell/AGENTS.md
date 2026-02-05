@@ -9,7 +9,7 @@ Shell aliases are managed through two mechanisms:
 Global aliases that apply system-wide go in nix modules:
 
 ```nix
-# modules/shell/zsh.nix
+# modules/shell/zsh/default.nix
 environment.shellAliases = {
   cd = "z";
   ls = "eza --group-directories-first --git";
