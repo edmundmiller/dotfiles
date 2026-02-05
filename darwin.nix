@@ -22,14 +22,6 @@ with lib;
       difftastic # Syntax-aware diff tool
     ];
 
-    # Passwordless sudo for darwin-rebuild (enables agent-driven rebuilds)
-    security.sudo.extraConfig = ''
-      ${config.user.name} ALL=(root) NOPASSWD: ${
-        inputs.nix-darwin.packages.${pkgs.stdenv.hostPlatform.system}.darwin-rebuild
-      }/bin/darwin-rebuild *
-      ${config.user.name} ALL=(root) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild *
-    '';
-
     # Configure home-manager for Darwin
     home-manager = {
       useGlobalPkgs = true;
