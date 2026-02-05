@@ -30,8 +30,8 @@ config/openclaw/documents/
 modules.services.openclaw.enable
 modules.services.openclaw.gatewayToken  # Auth token for gateway
 modules.services.openclaw.telegram.{enable, botTokenFile, allowFrom}
-modules.services.openclaw.plugins        # Custom plugins ({ source = "github:..."; })
-modules.services.openclaw.bundledPlugins # Bundled plugin toggles/config
+modules.services.openclaw.plugins    # Custom plugins ({ source = "github:..."; })
+modules.services.openclaw.firstParty # First-party plugin toggles
 
 # Maps to home-manager options
 home-manager.users.${user}.programs.openclaw = {
@@ -50,8 +50,8 @@ home-manager.users.${user}.programs.openclaw = {
     };
   };
 
-  bundledPlugins.gogcli.enable = true;
-  customPlugins = [{ source = "github:..."; }];
+  firstParty.gogcli.enable = true;
+  plugins = [{ source = "github:..."; }];
 
   instances.default = {
     enable = true;
@@ -95,7 +95,7 @@ Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../
 
 ## Google + Linear setup (nuc)
 
-- Enable gogcli via `modules.services.openclaw.bundledPlugins.gogcli.enable = true;`
+- Enable gogcli via `modules.services.openclaw.firstParty.gogcli.enable = true;`
 - Add Linear plugin via `modules.services.openclaw.plugins` (customPlugins)
 - Secrets (agenix):
   - `/run/agenix/gogcli-client-secret` (Google OAuth client secret JSON)
