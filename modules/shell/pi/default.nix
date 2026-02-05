@@ -66,7 +66,7 @@ in
 
     user.packages = [ pkgs.bun ];
     env.BUN_INSTALL = mkDefault "$HOME/.bun";
-    env.PATH = mkBefore [ "$HOME/.bun/bin" ];
+    env.PATH = mkAfter [ "$HOME/.bun/bin" ];
 
     # Pi configuration via home-manager
     # - Skills are shared across all agents (Claude, OpenCode, Pi)
