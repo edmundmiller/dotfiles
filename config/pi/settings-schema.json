@@ -1,0 +1,286 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pi Coding Agent Settings",
+  "description": "Configuration for the Pi coding agent (https://github.com/badlogic/pi-mono)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "lastChangelogVersion": {
+      "type": "string",
+      "description": "Last changelog version shown to user"
+    },
+    "defaultProvider": {
+      "type": "string",
+      "description": "Default LLM provider (e.g., \"anthropic\", \"openai\")"
+    },
+    "defaultModel": {
+      "type": "string",
+      "description": "Default model ID"
+    },
+    "defaultThinkingLevel": {
+      "type": "string",
+      "enum": ["off", "minimal", "low", "medium", "high", "xhigh"],
+      "description": "Default thinking level"
+    },
+    "steeringMode": {
+      "type": "string",
+      "enum": ["all", "one-at-a-time"],
+      "default": "one-at-a-time",
+      "description": "How steering messages are sent"
+    },
+    "followUpMode": {
+      "type": "string",
+      "enum": ["all", "one-at-a-time"],
+      "default": "one-at-a-time",
+      "description": "How follow-up messages are sent"
+    },
+    "theme": {
+      "type": "string",
+      "default": "dark",
+      "description": "Theme name (\"dark\", \"light\", or custom)"
+    },
+    "compaction": {
+      "type": "object",
+      "description": "Compaction settings for long conversations",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-compaction"
+        },
+        "reserveTokens": {
+          "type": "number",
+          "default": 16384,
+          "description": "Tokens reserved for LLM response"
+        },
+        "keepRecentTokens": {
+          "type": "number",
+          "default": 20000,
+          "description": "Recent tokens to keep (not summarized)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "branchSummary": {
+      "type": "object",
+      "description": "Branch summary settings",
+      "properties": {
+        "reserveTokens": {
+          "type": "number",
+          "default": 16384,
+          "description": "Tokens reserved for branch summarization"
+        }
+      },
+      "additionalProperties": false
+    },
+    "retry": {
+      "type": "object",
+      "description": "Retry configuration for transient errors",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic retry"
+        },
+        "maxRetries": {
+          "type": "number",
+          "default": 3,
+          "description": "Maximum retry attempts"
+        },
+        "baseDelayMs": {
+          "type": "number",
+          "default": 2000,
+          "description": "Base delay for exponential backoff (ms)"
+        },
+        "maxDelayMs": {
+          "type": "number",
+          "default": 60000,
+          "description": "Max server-requested delay before failing (ms). Set to 0 to disable cap."
+        }
+      },
+      "additionalProperties": false
+    },
+    "hideThinkingBlock": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hide thinking blocks in output"
+    },
+    "shellPath": {
+      "type": "string",
+      "description": "Custom shell path (e.g., for Cygwin on Windows)"
+    },
+    "quietStartup": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hide startup header"
+    },
+    "shellCommandPrefix": {
+      "type": "string",
+      "description": "Prefix for every bash command (e.g., \"shopt -s expand_aliases\")"
+    },
+    "collapseChangelog": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show condensed changelog after updates"
+    },
+    "packages": {
+      "type": "array",
+      "description": "npm/git packages to load resources from",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Package source - loads all resources"
+          },
+          {
+            "type": "object",
+            "description": "Package source with resource filters",
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Package name or git URL"
+              },
+              "extensions": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Extension paths to load"
+              },
+              "skills": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Skill paths to load"
+              },
+              "prompts": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Prompt template paths to load"
+              },
+              "themes": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Theme paths to load"
+              }
+            },
+            "required": ["source"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Local extension file paths or directories"
+    },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Local skill file paths or directories"
+    },
+    "prompts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Local prompt template paths or directories"
+    },
+    "themes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Local theme file paths or directories"
+    },
+    "enableSkillCommands": {
+      "type": "boolean",
+      "default": true,
+      "description": "Register skills as /skill:name commands"
+    },
+    "terminal": {
+      "type": "object",
+      "description": "Terminal display settings",
+      "properties": {
+        "showImages": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show images in terminal (if supported)"
+        },
+        "clearOnShrink": {
+          "type": "boolean",
+          "description": "Clear terminal on shrink"
+        }
+      },
+      "additionalProperties": false
+    },
+    "images": {
+      "type": "object",
+      "description": "Image handling settings",
+      "properties": {
+        "autoResize": {
+          "type": "boolean",
+          "default": true,
+          "description": "Resize images to 2000x2000 max"
+        },
+        "blockImages": {
+          "type": "boolean",
+          "default": false,
+          "description": "Block all images from being sent to LLM"
+        }
+      },
+      "additionalProperties": false
+    },
+    "enabledModels": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Model patterns for Ctrl+P cycling (supports globs like \"claude-*\")"
+    },
+    "doubleEscapeAction": {
+      "type": "string",
+      "enum": ["fork", "tree", "none"],
+      "default": "tree",
+      "description": "Action for double-escape"
+    },
+    "thinkingBudgets": {
+      "type": "object",
+      "description": "Custom token budgets per thinking level",
+      "properties": {
+        "minimal": { "type": "number" },
+        "low": { "type": "number" },
+        "medium": { "type": "number" },
+        "high": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "editorPaddingX": {
+      "type": "number",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 3,
+      "description": "Horizontal padding for input editor (0-3)"
+    },
+    "autocompleteMaxVisible": {
+      "type": "number",
+      "default": 5,
+      "minimum": 3,
+      "maximum": 20,
+      "description": "Max visible items in autocomplete dropdown"
+    },
+    "showHardwareCursor": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show terminal cursor"
+    },
+    "markdown": {
+      "type": "object",
+      "description": "Markdown rendering settings",
+      "properties": {
+        "codeBlockIndent": {
+          "type": "string",
+          "default": "  ",
+          "description": "Indentation for code blocks"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
