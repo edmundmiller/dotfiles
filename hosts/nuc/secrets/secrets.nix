@@ -32,6 +32,10 @@ in
     edmundmiller
     nuc
   ];
+  "gogcli-token.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "linear-api-token.age".publicKeys = [
     edmundmiller
     nuc
