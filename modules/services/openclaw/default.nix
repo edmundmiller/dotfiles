@@ -1,11 +1,17 @@
-{ inputs, options, config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 with lib.my;
 let
   cfg = config.modules.services.openclaw;
   user = config.user.name;
-in {
+in
+{
   options.modules.services.openclaw = {
     enable = mkBoolOpt false;
 
@@ -14,8 +20,6 @@ in {
       default = "";
       description = "Gateway auth token (long random string). TODO: upstream tokenFile support";
     };
-
-
 
     telegram = {
       enable = mkBoolOpt false;
@@ -37,6 +41,12 @@ in {
       description = "List of plugin configs with { source = \"github:...\"; }";
     };
 
+    bundledPlugins = mkOption {
+      type = types.attrs;
+      default = { };
+      description = "Bundled plugin toggles/config passed to programs.openclaw.bundledPlugins.";
+    };
+
     skills = mkOption {
       type = types.listOf types.attrs;
       default = [ ];
@@ -50,59 +60,55 @@ in {
     # Configure openclaw through home-manager
     home-manager.users.${user} = {
       # Add skill files directly
-      home.file = builtins.listToAttrs (map (skill: {
-        name = ".openclaw/workspace/skills/${skill.name}/SKILL.md";
-        value.text = ''
-          ---
-          name: ${skill.name}
-          description: ${skill.description or ""}
-          ---
+      home.file = builtins.listToAttrs (
+        map (skill: {
+          name = ".openclaw/workspace/skills/${skill.name}/SKILL.md";
+          value.text = ''
+            ---
+            name: ${skill.name}
+            description: ${skill.description or ""}
+            ---
 
-          ${skill.body or ""}
-        '';
-      }) cfg.skills);
+            ${skill.body or ""}
+          '';
+        }) cfg.skills
+      );
 
       programs.openclaw = {
-      enable = true;
-      # Use patched openclaw-gateway which has templates (workaround for issue #18)
-      package = pkgs.openclaw-gateway;
-      documents = ../../../config/openclaw/documents;
-
-      # Plugins at top level
-      plugins = cfg.plugins;
-
-      # Skills
-      skills = cfg.skills;
-
-      # First-party plugins (web search, summarize, etc.)
-      
-      # exposePluginPackages = false avoids libexec/node_modules conflict between oracle+summarize
-      exposePluginPackages = false;
-      # NOTE: firstParty plugins disabled - nix-openclaw has hardcoded steipete-tools URLs with stale hashes
-      firstParty = {
-        oracle.enable = false;    # Web search
-        summarize.enable = false; # Summarize web pages, PDFs, videos
-      };
-
-      # Configure the default instance directly
-      instances.default = {
         enable = true;
         # Use patched openclaw-gateway which has templates (workaround for issue #18)
         package = pkgs.openclaw-gateway;
-        config = {
-          gateway = {
-            mode = "local";
-            auth.token = cfg.gatewayToken;
-          };
-          agents.defaults.model.primary = "opencode/kimi-k2.5";
-          channels.telegram = mkIf cfg.telegram.enable {
-            tokenFile = cfg.telegram.botTokenFile;
-            allowFrom = cfg.telegram.allowFrom;
-            groups."*".requireMention = true;
+        documents = ../../../config/openclaw/documents;
+
+        # Plugins at top level
+        customPlugins = cfg.plugins;
+        bundledPlugins = cfg.bundledPlugins;
+
+        # Skills
+        skills = cfg.skills;
+
+        # exposePluginPackages = false avoids libexec/node_modules conflict between oracle+summarize
+        exposePluginPackages = false;
+
+        # Configure the default instance directly
+        instances.default = {
+          enable = true;
+          # Use patched openclaw-gateway which has templates (workaround for issue #18)
+          package = pkgs.openclaw-gateway;
+          config = {
+            gateway = {
+              mode = "local";
+              auth.token = cfg.gatewayToken;
+            };
+            agents.defaults.model.primary = "opencode/kimi-k2.5";
+            channels.telegram = mkIf cfg.telegram.enable {
+              tokenFile = cfg.telegram.botTokenFile;
+              allowFrom = cfg.telegram.allowFrom;
+              groups."*".requireMention = true;
+            };
           };
         };
-      };
-    };  # programs.openclaw
+      }; # programs.openclaw
 
       # Add API keys via ExecStartPre that loads from agenix
       # Use $XDG_RUNTIME_DIR since $(id -u) doesn't work in systemd context
@@ -112,6 +118,6 @@ in {
         ];
         EnvironmentFile = "-/run/user/%U/openclaw/env";
       };
-    };  # home-manager.users.${user}
+    }; # home-manager.users.${user}
   };
 }

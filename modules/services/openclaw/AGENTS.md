@@ -30,7 +30,8 @@ config/openclaw/documents/
 modules.services.openclaw.enable
 modules.services.openclaw.gatewayToken  # Auth token for gateway
 modules.services.openclaw.telegram.{enable, botTokenFile, allowFrom}
-modules.services.openclaw.plugins  # List of {source = "github:..."}
+modules.services.openclaw.plugins        # Custom plugins ({ source = "github:..."; })
+modules.services.openclaw.bundledPlugins # Bundled plugin toggles/config
 
 # Maps to home-manager options
 home-manager.users.${user}.programs.openclaw = {
