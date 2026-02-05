@@ -37,8 +37,9 @@ let
   readRule = file: builtins.readFile "${rulesDir}/${file}";
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
 
-  # Strip // comments from JSON (pi doesn't support JSONC)
-  # Only removes lines that start with // (preserves URLs like https://)
+  # Convert JSONC to valid JSON:
+  # 1. Strip // comment lines (preserves URLs like https://)
+  # 2. Remove trailing commas before } or ] (invalid in JSON)
   piSettingsRaw = builtins.readFile "${configDir}/pi/settings.jsonc";
   piSettingsLines = lib.splitString "\n" piSettingsRaw;
   isCommentLine =
@@ -50,7 +51,37 @@ let
       } line
     );
   piSettingsFiltered = builtins.filter (line: !isCommentLine line) piSettingsLines;
-  piSettingsStripped = lib.concatStringsSep "\n" piSettingsFiltered;
+  # Remove trailing commas by stripping commas from lines where the next
+  # non-empty line starts with ] or }
+  removeTrailingCommas =
+    lines:
+    let
+      indexed = lib.imap0 (i: line: { inherit i line; }) lines;
+      # Find next non-empty line after index i
+      nextNonEmpty =
+        i:
+        let
+          rest = lib.drop (i + 1) lines;
+          nonEmpty = builtins.filter (l: builtins.match "^[[:space:]]*$" l == null) rest;
+        in
+        if nonEmpty == [ ] then "" else builtins.head nonEmpty;
+      stripTrailingComma =
+        { i, line }:
+        let
+          next = nextNonEmpty i;
+          trimmedNext = lib.trimWith {
+            start = true;
+            end = false;
+          } next;
+          nextStartsClosing = lib.hasPrefix "]" trimmedNext || lib.hasPrefix "}" trimmedNext;
+          trimmedLine = lib.removeSuffix " " (lib.removeSuffix "\t" line);
+          hasTrailingComma = lib.hasSuffix "," trimmedLine;
+        in
+        if hasTrailingComma && nextStartsClosing then lib.removeSuffix "," trimmedLine else line;
+    in
+    map stripTrailingComma indexed;
+  piSettingsClean = removeTrailingCommas piSettingsFiltered;
+  piSettingsStripped = lib.concatStringsSep "\n" piSettingsClean;
 in
 {
   options.modules.shell.pi = {
