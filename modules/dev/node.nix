@@ -56,7 +56,7 @@ in
       };
 
       env.BUN_INSTALL = "$HOME/.bun";
-      env.PATH = [
+      env.PATH = mkAfter [
         "$(${pkgs.yarn}/bin/yarn global bin)"
         "$HOME/.bun/bin" # bun global packages
       ];
