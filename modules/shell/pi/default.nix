@@ -82,14 +82,15 @@ in
         };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          if command -v bun &> /dev/null; then
+          bun_bin="${pkgs.bun}/bin/bun"
+          if [ -x "$bun_bin" ]; then
             bun_install_dir="$BUN_INSTALL"
             if [ -z "$bun_install_dir" ]; then
               bun_install_dir="$HOME/.bun"
             fi
             if [ ! -x "$bun_install_dir/bin/pi" ]; then
               echo "Installing pi coding agent..."
-              bun install -g @mariozechner/pi-coding-agent \
+              "$bun_bin" install -g @mariozechner/pi-coding-agent \
                 || echo "Warning: bun install failed; pi may be unavailable."
             fi
           fi
