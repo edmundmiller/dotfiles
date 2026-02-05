@@ -19,7 +19,12 @@ in
     nixosSystem {
       inherit system;
       specialArgs = {
-        inherit lib inputs system;
+        inherit
+          lib
+          inputs
+          system
+          pkgs
+          ;
         isDarwin = false;
       };
       modules = [
