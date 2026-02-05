@@ -50,9 +50,11 @@ home-manager.users.${user}.programs.openclaw = {
     };
   };
 
+  bundledPlugins.gogcli.enable = true;
+  customPlugins = [{ source = "github:..."; }];
+
   instances.default = {
     enable = true;
-    plugins = [{source = "github:..."}];
   };
 };
 ```
@@ -90,6 +92,17 @@ Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../
 **Workaround**: Python module disabled where openclaw is enabled.
 
 **Missing hasown module**: `openclaw-gateway` crashes with `Cannot find module 'hasown'` (form-data). Fix is in `flake.nix` overlay adding `node_modules/hasown`.
+
+## Google + Linear setup (nuc)
+
+- Enable gogcli via `modules.services.openclaw.bundledPlugins.gogcli.enable = true;`
+- Add Linear plugin via `modules.services.openclaw.plugins` (customPlugins)
+- Secrets (agenix):
+  - `/run/agenix/gogcli-client-secret` (Google OAuth client secret JSON)
+  - `/run/agenix/linear-api-token` (Linear API key)
+- OAuth setup (once, on nuc):
+  - `gog auth credentials /run/agenix/gogcli-client-secret`
+  - `gog auth add you@gmail.com --services gmail,calendar`
 
 ## Related Files
 
