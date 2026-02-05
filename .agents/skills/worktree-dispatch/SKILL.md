@@ -22,7 +22,7 @@ For each task:
 
 1. Generate a short, descriptive branch name (2-4 words, kebab-case)
 2. Write a detailed implementation prompt to a temp file
-3. Run `wt switch -c <branch-name> -x claude -- "$(cat <temp-file>)"` to create worktree + launch agent
+3. Run `wt switch -c <branch-name> -x pi -- "$(cat <temp-file>)"` to create worktree + launch agent (pi is default)
 
 The prompt should:
 
@@ -59,7 +59,13 @@ handles that.
 When complete, run: wt merge
 ```
 
-**`--opencode`**: Use OpenCode instead of Claude:
+**`--claude`**: Use Claude instead of pi:
+
+```bash
+wt switch -c <branch> -x claude -- "prompt here"
+```
+
+**`--opencode`**: Use OpenCode instead of pi:
 
 ```bash
 wt switch -c <branch> -x opencode -- "prompt here"
@@ -88,8 +94,8 @@ echo "$tmpfile"  # Note the path for step 2
 Step 2 - After ALL files are written, run wt commands (in parallel):
 
 ```bash
-wt switch -c feature-x -x claude -- "$(cat /tmp/tmp.abc123.md)"
-wt switch -c feature-y -x claude -- "$(cat /tmp/tmp.def456.md)"
+wt switch -c feature-x -x pi -- "$(cat /tmp/tmp.abc123.md)"
+wt switch -c feature-y -x pi -- "$(cat /tmp/tmp.def456.md)"
 ```
 
 After creating the worktrees, inform the user which branches were created.
@@ -100,6 +106,9 @@ anything yourself.
 ## Quick Reference
 
 ```bash
+# Create worktree + launch pi (default)
+wt switch -c feature/auth -x pi -- "Implement OAuth flow"
+
 # Create worktree + launch Claude
 wt switch -c feature/auth -x claude -- "Implement OAuth flow"
 
@@ -107,7 +116,7 @@ wt switch -c feature/auth -x claude -- "Implement OAuth flow"
 wt switch -c fix/bug-123 -x opencode -- "Fix the null pointer in auth.rs"
 
 # Background session (handoff)
-tmux new-session -d -s auth "wt switch -c feature/auth -x claude -- 'prompt'"
+tmux new-session -d -s auth "wt switch -c feature/auth -x pi -- 'prompt'"
 
 # Check status of all worktrees
 wt list --full
