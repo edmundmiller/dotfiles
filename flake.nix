@@ -51,9 +51,6 @@
     opencode.url = "github:anomalyco/opencode/dev";
     opencode.inputs.nixpkgs.follows = "nixpkgs";
 
-    workmux.url = "github:raine/workmux";
-    workmux.inputs.nixpkgs.follows = "nixpkgs";
-
     nix-openclaw.url = "github:openclaw/nix-openclaw";
     nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
 
