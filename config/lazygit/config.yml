@@ -141,7 +141,7 @@ keybinding:
     diffingMenu-alt: <c-e>
     copyToClipboard: y
     openRecentRepos: <c-r>
-    submitEditorText: <c-c><c-c>
+    submitEditorText: <enter>
     extrasMenu: "@"
     toggleWhitespaceInDiffView: <c-w>
     increaseContextInDiffView: "}"
