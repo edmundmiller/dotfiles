@@ -1,6 +1,6 @@
 # Worktrunk aliases - parallel AI agent workflows
 # Prefix: w (not wt - saves a keystroke)
-# Default agent: pi
+# Default agent: pi + lazygit split
 
 if command -v wt >/dev/null 2>&1; then
   # Core (daily drivers)
@@ -10,11 +10,36 @@ if command -v wt >/dev/null 2>&1; then
   alias wr='wt remove'                         # wr feature/done
   alias wf='wt list --full'                    # Full view: CI, diffstat
   
-  # Create worktree (pi is default agent)
-  alias wc='wt switch -c -x pi'                # wc feature/new → creates + launches pi
-  alias wc!='wt switch -c'                     # wc! feature/new → no agent
-  alias wcc='wt switch -c -x claude'           # wcc feature/auth
-  alias wco='wt switch -c -x opencode'         # wco fix/bug-123
+  # Create worktree + open pi + git TUI split
+  # Usage: wc feature/new [prompt]
+  wc() {
+    local branch="$1"; shift
+    [[ -z "$branch" ]] && { echo "usage: wc <branch> [prompt]"; return 1; }
+    wt switch -c "$branch"
+    # Open git TUI in right split (30% width), pi in main pane
+    tmux split-window -h -l 30% "$TMUX_HOME/open-git-tui.sh"
+    tmux select-pane -L
+    pi "$@"
+  }
+  
+  # Variants
+  wc!() { wt switch -c "$@"; }                 # No agent, no split
+  wcc() {                                      # Claude + git split
+    local branch="$1"; shift
+    [[ -z "$branch" ]] && { echo "usage: wcc <branch> [prompt]"; return 1; }
+    wt switch -c "$branch"
+    tmux split-window -h -l 30% "$TMUX_HOME/open-git-tui.sh"
+    tmux select-pane -L
+    claude "$@"
+  }
+  wco() {                                      # OpenCode + git split
+    local branch="$1"; shift
+    [[ -z "$branch" ]] && { echo "usage: wco <branch> [prompt]"; return 1; }
+    wt switch -c "$branch"
+    tmux split-window -h -l 30% "$TMUX_HOME/open-git-tui.sh"
+    tmux select-pane -L
+    opencode "$@"
+  }
   
   # Navigation
   alias w-='wt switch -'                       # Previous worktree
