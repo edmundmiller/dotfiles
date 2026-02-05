@@ -69,8 +69,15 @@
       openclaw = {
         enable = true;
         gatewayToken = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
-        # No plugins for headless Linux - most need darwin
-        plugins = [ ];
+        firstParty = {
+          gogcli.enable = true;
+        };
+        plugins = [
+          {
+            source = "path:${toString ../../.}/tools/linear?narHash=sha256-/U3Q46ZY4ZAHWkS3mTaTkJ1QyFdMR4y29%2B3udrO%2BVCM%3D";
+            config.env.LINEAR_API_TOKEN_FILE = config.age.secrets.linear-api-token.path;
+          }
+        ];
         telegram = {
           enable = true;
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";

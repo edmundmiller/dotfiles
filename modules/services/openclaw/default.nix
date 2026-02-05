@@ -41,10 +41,10 @@ in
       description = "List of plugin configs with { source = \"github:...\"; }";
     };
 
-    bundledPlugins = mkOption {
+    firstParty = mkOption {
       type = types.attrs;
       default = { };
-      description = "Bundled plugin toggles/config passed to programs.openclaw.bundledPlugins.";
+      description = "First-party plugin toggles passed to programs.openclaw.firstParty.";
     };
 
     skills = mkOption {
@@ -81,8 +81,8 @@ in
         documents = ../../../config/openclaw/documents;
 
         # Plugins at top level
-        customPlugins = cfg.plugins;
-        bundledPlugins = cfg.bundledPlugins;
+        plugins = cfg.plugins;
+        firstParty = cfg.firstParty;
 
         # Skills
         skills = cfg.skills;

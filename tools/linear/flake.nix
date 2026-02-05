@@ -5,7 +5,8 @@
     nixpkgs.url = "github:NixOS/nixpkgs?rev=62c8382960464ceb98ea593cb8321a2cf8f9e3e5&narHash=sha256-kKB3bqYJU5nzYeIROI82Ef9VtTbu4uA3YydSk/Bioa8%3D";
   };
 
-  outputs = { self, nixpkgs }:
+  outputs =
+    { nixpkgs }:
     let
       lib = nixpkgs.lib;
       systems = [
@@ -15,7 +16,8 @@
         "aarch64-darwin"
       ];
       mkPkgs = system: import nixpkgs { inherit system; };
-      mkLinear = system:
+      mkLinear =
+        system:
         let
           pkgs = mkPkgs system;
         in
@@ -85,7 +87,7 @@
                           ;;
                       esac
                     done
-                    query='query($first:Int!){issues(first:$first, orderBy:updatedAt){nodes{identifier title url state{name} assignee{name} updatedAt}}}'
+                    query="query(\$first:Int!){issues(first:\$first, orderBy:updatedAt){nodes{identifier title url state{name} assignee{name} updatedAt}}}"
                     vars="$(jq -n --argjson first "$limit" '{first:$first}')"
                     graphql "$query" "$vars"
                     ;;
@@ -104,7 +106,7 @@
                       usage
                       exit 1
                     fi
-                    query='query($identifier:String!){issues(first:1, filter:{identifier:{eq:$identifier}}){nodes{identifier title description url state{name} assignee{name email} team{key name} createdAt updatedAt}}}'
+                    query="query(\$identifier:String!){issues(first:1, filter:{identifier:{eq:\$identifier}}){nodes{identifier title description url state{name} assignee{name email} team{key name} createdAt updatedAt}}}"
                     vars="$(jq -n --arg identifier "$identifier" '{identifier:$identifier}')"
                     graphql "$query" "$vars"
                     ;;
@@ -131,7 +133,8 @@
             esac
           '';
         };
-      pluginFor = system:
+      pluginFor =
+        system:
         let
           linear = mkLinear system;
         in
