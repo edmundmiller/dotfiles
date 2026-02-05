@@ -140,7 +140,10 @@
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
 
       # Darwin packages
-      darwinPkgs = mkPkgs nixpkgs [ self.overlay ] darwinSystem;
+      darwinPkgs = mkPkgs nixpkgs [
+        self.overlay
+        inputs.nix-openclaw.overlays.default
+      ] darwinSystem;
 
       lib = nixpkgs.lib.extend (
         self: _super: {
