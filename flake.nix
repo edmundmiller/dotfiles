@@ -47,7 +47,7 @@
     try.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
-    
+
     opencode.url = "github:anomalyco/opencode/dev";
     opencode.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -85,54 +85,70 @@
           config.allowUnfree = true; # forgive me Stallman senpai
           overlays = extraOverlays ++ (lib.attrValues self.overlays);
         };
-      
+
       # Linux packages
       # Patch openclaw-gateway to include missing docs/reference/templates (issue #18)
       # Must copy lib/openclaw (not symlink) so __dirname resolves to patched package
-      openclawTemplatesOverlay = final: prev: {
-        openclaw-gateway = prev.runCommand "openclaw-gateway-with-templates" {
-          inherit (prev.openclaw-gateway) meta;
-          nativeBuildInputs = [ prev.makeWrapper ];
-        } ''
-          mkdir -p $out/bin $out/lib
-          
-          # Copy lib/openclaw entirely (so __dirname points here)
-          cp -r ${prev.openclaw-gateway}/lib/openclaw $out/lib/
-          chmod -R u+w $out/lib/openclaw
-          
-          # Add the missing templates
-          mkdir -p $out/lib/openclaw/docs/reference/templates
-          cp ${prev.openclaw-gateway.src}/docs/reference/templates/* $out/lib/openclaw/docs/reference/templates/
-          
-          # Create new wrapper pointing to our copied dist
-          makeWrapper "${prev.nodejs}/bin/node" "$out/bin/openclaw" \
-            --add-flags "$out/lib/openclaw/dist/index.js" \
-            --set-default OPENCLAW_NIX_MODE "1" \
-            --set-default MOLTBOT_NIX_MODE "1" \
-            --set-default CLAWDBOT_NIX_MODE "1"
-          ln -s $out/bin/openclaw $out/bin/moltbot
-        '';
-        
+      openclawTemplatesOverlay = _final: prev: {
+        openclaw-gateway =
+          prev.runCommand "openclaw-gateway-with-templates"
+            {
+              inherit (prev.openclaw-gateway) meta;
+              nativeBuildInputs = [ prev.makeWrapper ];
+            }
+            ''
+              mkdir -p $out/bin $out/lib
+
+              # Copy lib/openclaw entirely (so __dirname points here)
+              cp -r ${prev.openclaw-gateway}/lib/openclaw $out/lib/
+              chmod -R u+w $out/lib/openclaw
+
+              # Add the missing templates
+              mkdir -p $out/lib/openclaw/docs/reference/templates
+              cp ${prev.openclaw-gateway.src}/docs/reference/templates/* $out/lib/openclaw/docs/reference/templates/
+
+              # Add missing hasown dependency (form-data expects it)
+              mkdir -p $out/lib/openclaw/node_modules/hasown
+              cat > $out/lib/openclaw/node_modules/hasown/index.js <<'EOF'
+              "use strict";
+              module.exports = Object.hasOwn || function hasOwn(obj, prop) {
+                return Object.prototype.hasOwnProperty.call(obj, prop);
+              };
+              EOF
+
+              # Create new wrapper pointing to our copied dist
+              makeWrapper "${prev.nodejs}/bin/node" "$out/bin/openclaw" \
+                --add-flags "$out/lib/openclaw/dist/index.js" \
+                --set-default OPENCLAW_NIX_MODE "1" \
+                --set-default MOLTBOT_NIX_MODE "1" \
+                --set-default CLAWDBOT_NIX_MODE "1"
+              ln -s $out/bin/openclaw $out/bin/moltbot
+            '';
+
         # Wrap oracle/summarize to only expose bin/ (avoid libexec/node_modules conflicts)
-        oracle = prev.runCommand "oracle-bin-only" { meta = prev.oracle.meta or {}; } ''
+        oracle = prev.runCommand "oracle-bin-only" { meta = prev.oracle.meta or { }; } ''
           mkdir -p $out/bin
           ln -s ${prev.oracle}/bin/* $out/bin/
         '';
-        summarize = prev.runCommand "summarize-bin-only" { meta = prev.summarize.meta or {}; } ''
+        summarize = prev.runCommand "summarize-bin-only" { meta = prev.summarize.meta or { }; } ''
           mkdir -p $out/bin
           ln -s ${prev.summarize}/bin/* $out/bin/
         '';
       };
-      pkgs = mkPkgs nixpkgs [ self.overlay inputs.nix-openclaw.overlays.default openclawTemplatesOverlay ] linuxSystem;
+      pkgs = mkPkgs nixpkgs [
+        self.overlay
+        inputs.nix-openclaw.overlays.default
+        openclawTemplatesOverlay
+      ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
-      
-      # Darwin packages  
+
+      # Darwin packages
       darwinPkgs = mkPkgs nixpkgs [ self.overlay ] darwinSystem;
 
       lib = nixpkgs.lib.extend (
         self: _super: {
           my = import ./lib {
-            pkgs = pkgs;  # Linux packages for the lib functions
+            pkgs = pkgs; # Linux packages for the lib functions
             inherit inputs;
             lib = self;
           };
@@ -146,10 +162,12 @@
         lib = lib.my;
 
         overlay = final: _prev: {
-          unstable = if final.stdenv.isDarwin 
-                     then mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
-                     else pkgs';
-          my = self.packages.${final.stdenv.hostPlatform.system} or {};
+          unstable =
+            if final.stdenv.isDarwin then
+              mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
+            else
+              pkgs';
+          my = self.packages.${final.stdenv.hostPlatform.system} or { };
         };
 
         overlays = mapModules ./overlays import;
@@ -160,7 +178,8 @@
 
         nixosModules = {
           dotfiles = import ./.;
-        } // mapModulesRec ./modules import;
+        }
+        // mapModulesRec ./modules import;
 
         nixosConfigurations = mapHosts ./hosts { };
 
@@ -180,7 +199,7 @@
           type = "app";
           program = ./bin/hey;
         };
-        
+
         apps."${darwinSystem}".default = {
           type = "app";
           program = ./bin/hey;
@@ -271,8 +290,7 @@
             user = "root";
             interactiveSudo = false;
             remoteBuild = true;
-            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
-              self.nixosConfigurations.nuc;
+            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
           };
 
           # Darwin hosts - local deployment only (no magic rollback on macOS)
@@ -280,9 +298,9 @@
             hostname = "localhost";
             profiles.system = {
               user = "emiller";
-              path = deploy-rs.lib.aarch64-darwin.activate.custom
-                self.darwinConfigurations."MacTraitor-Pro".system
-                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
+              path =
+                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."MacTraitor-Pro".system
+                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
             };
           };
 
@@ -290,9 +308,9 @@
             hostname = "localhost";
             profiles.system = {
               user = "edmundmiller";
-              path = deploy-rs.lib.aarch64-darwin.activate.custom
-                self.darwinConfigurations."Seqeratop".system
-                "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
+              path =
+                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."Seqeratop".system
+                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
             };
           };
         };
@@ -301,80 +319,88 @@
         "x86_64-linux"
         "aarch64-darwin"
       ];
-      perSystem = { pkgs, system, ... }: {
-        # Expose deploy-rs CLI for `nix run .#deploy-rs`
-        packages.deploy-rs = deploy-rs.packages.${system}.default;
+      perSystem =
+        { pkgs, system, ... }:
+        {
+          # Expose deploy-rs CLI for `nix run .#deploy-rs`
+          packages.deploy-rs = deploy-rs.packages.${system}.default;
 
-        treefmt = {
-          projectRootFile = ".git/config";
-          programs.deadnix.enable = true;
-          programs.nixfmt.enable = true;
-          programs.prettier.enable = true;
-          programs.statix.enable = true;
+          treefmt = {
+            projectRootFile = ".git/config";
+            programs.deadnix.enable = true;
+            programs.nixfmt.enable = true;
+            programs.prettier.enable = true;
+            programs.statix.enable = true;
+          };
+
+          # Add checks for deployment, plugins, and shell tests
+          checks = {
+            # deploy-rs checks - validates deployment configurations
+            deploy-rs = deploy-rs.lib.${system}.deployChecks self.deploy;
+
+            # zunit shell function tests
+            zunit-tests =
+              pkgs.runCommand "zunit-tests"
+                {
+                  nativeBuildInputs = [
+                    self.packages.${system}.zunit
+                    pkgs.zsh
+                    pkgs.git
+                  ];
+                }
+                ''
+                  # Setup git config for tests
+                  export HOME=$TMPDIR
+                  git config --global user.email "test@test.com"
+                  git config --global user.name "Test User"
+                  git config --global init.defaultBranch main
+
+                  # Run zunit tests (--tap bypasses revolver spinner dependency)
+                  cd ${./.}
+                  for test in config/*/tests/*.zunit; do
+                    if [ -f "$test" ]; then
+                      echo "Running $test..."
+                      zunit --tap "$test"
+                    fi
+                  done
+
+                  # Create success marker
+                  mkdir -p $out
+                  echo "All zunit tests passed" > $out/result
+                '';
+
+            validate-claude-plugins =
+              pkgs.runCommand "validate-claude-plugins"
+                {
+                  buildInputs = [ pkgs.python312 ];
+                }
+                ''
+                  # Create a temporary directory for the check
+                  mkdir -p $out
+
+                  # Copy plugin files to temporary location
+                  cp -r ${./.} /tmp/dotfiles-check
+                  cd /tmp/dotfiles-check
+
+                  # Install uv
+                  export HOME=/tmp
+                  ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
+                  export PATH="$HOME/.cargo/bin:$PATH"
+
+                  # Run claudelint on each plugin directory
+                  echo "Validating Claude Code plugins..."
+
+                  for plugin in config/claude/plugins/*/; do
+                    if [ -d "$plugin" ]; then
+                      echo "Checking $plugin..."
+                      uvx claudelint "$plugin" || exit 1
+                    fi
+                  done
+
+                  # Create success marker
+                  echo "All plugins validated successfully" > $out/result
+                '';
+          };
         };
-
-        # Add checks for deployment, plugins, and shell tests
-        checks = {
-          # deploy-rs checks - validates deployment configurations
-          deploy-rs = deploy-rs.lib.${system}.deployChecks self.deploy;
-
-          # zunit shell function tests
-          zunit-tests = pkgs.runCommand "zunit-tests" {
-            nativeBuildInputs = [
-              self.packages.${system}.zunit
-              pkgs.zsh
-              pkgs.git
-            ];
-          } ''
-            # Setup git config for tests
-            export HOME=$TMPDIR
-            git config --global user.email "test@test.com"
-            git config --global user.name "Test User"
-            git config --global init.defaultBranch main
-
-            # Run zunit tests (--tap bypasses revolver spinner dependency)
-            cd ${./.}
-            for test in config/*/tests/*.zunit; do
-              if [ -f "$test" ]; then
-                echo "Running $test..."
-                zunit --tap "$test"
-              fi
-            done
-
-            # Create success marker
-            mkdir -p $out
-            echo "All zunit tests passed" > $out/result
-          '';
-
-          validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" {
-            buildInputs = [ pkgs.python312 ];
-          } ''
-            # Create a temporary directory for the check
-            mkdir -p $out
-
-            # Copy plugin files to temporary location
-            cp -r ${./.} /tmp/dotfiles-check
-            cd /tmp/dotfiles-check
-
-            # Install uv
-            export HOME=/tmp
-            ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
-            export PATH="$HOME/.cargo/bin:$PATH"
-
-            # Run claudelint on each plugin directory
-            echo "Validating Claude Code plugins..."
-
-            for plugin in config/claude/plugins/*/; do
-              if [ -d "$plugin" ]; then
-                echo "Checking $plugin..."
-                uvx claudelint "$plugin" || exit 1
-              fi
-            done
-
-            # Create success marker
-            echo "All plugins validated successfully" > $out/result
-          '';
-        };
-      };
     };
 }
