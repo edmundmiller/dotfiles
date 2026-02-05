@@ -32,10 +32,15 @@ Tool availability depends on which plugins are enabled for this Clawdbot instanc
 
 - **Use for**: Reading short summaries, reminders, or alerts aloud.
 
-## Google Calendar (`gogcli`)
+## Google Workspace (`gogcli`)
 
-- **Use for**: Viewing and managing calendar events.
-- **Safety**: Confirm before creating/editing/deleting events.
+- **Use for**: Gmail (read/search/drafts/labels) and Calendar events.
+- **Safety**: Confirm before sending mail or creating/editing/deleting events.
+
+## Linear (`linear`)
+
+- **Use for**: Read-only issue lookups and lists.
+- **Safety**: Do not modify Linear issues unless explicitly told.
 
 ## Twitter/X (`bird`)
 
