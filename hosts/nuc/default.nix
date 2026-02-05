@@ -13,15 +13,15 @@
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
-    # Add /bin to PATH for systemd user services (openclaw wrapper uses bare 'cat')
-    systemd.user.sessionVariables.PATH = "/bin:$PATH";
+    # Ensure systemd user services can find system + user packages (openclaw uses bare 'cat')
+    systemd.user.sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
   };
 
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
-    chromium  # For openclaw browser
-    nodejs    # For openclaw plugins
+    chromium # For openclaw browser
+    nodejs # For openclaw plugins
   ];
   imports = [
     ../_server.nix
@@ -45,10 +45,17 @@
         ssd.enable = true;
       };
     };
+    dev = {
+      node = {
+        enable = true;
+        enableGlobally = true;
+      };
+    };
     shell = {
       # bugwarrior.enable = false;  # Module removed
       git.enable = true;
       zsh.enable = true;
+      pi.enable = true;
       # taskwarrior module removed - TODO restore when available
       # taskwarrior = {
       #   enable = true;

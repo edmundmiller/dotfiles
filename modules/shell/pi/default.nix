@@ -18,6 +18,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -63,14 +64,34 @@ in
       "${configDir}/ghostty/pi-keybindings.conf"
     ]);
 
+    user.packages = [ pkgs.bun ];
+    env.BUN_INSTALL = mkDefault "$HOME/.bun";
+    env.PATH = mkBefore [ "$HOME/.bun/bin" ];
+
     # Pi configuration via home-manager
     # - Skills are shared across all agents (Claude, OpenCode, Pi)
     # - AGENTS.md is built dynamically from config/agents/rules/*.md
     # - settings.json stripped of comments (pi only supports standard JSON)
-    home-manager.users.${config.user.name}.home.file = {
-      ".pi/agent/skills".source = "${configDir}/agents/skills";
-      ".pi/agent/AGENTS.md".text = concatenatedRules;
-      ".pi/agent/settings.json".text = piSettingsStripped;
+    home-manager.users.${config.user.name} = {
+      home.file = {
+        ".pi/agent/skills".source = "${configDir}/agents/skills";
+        ".pi/agent/AGENTS.md".text = concatenatedRules;
+        ".pi/agent/settings.json".text = piSettingsStripped;
+      };
+
+      home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        if command -v bun &> /dev/null; then
+          bun_install_dir="$BUN_INSTALL"
+          if [ -z "$bun_install_dir" ]; then
+            bun_install_dir="$HOME/.bun"
+          fi
+          if [ ! -x "$bun_install_dir/bin/pi" ]; then
+            echo "Installing pi coding agent..."
+            bun install -g @mariozechner/pi-coding-agent \
+              || echo "Warning: bun install failed; pi may be unavailable."
+          fi
+        fi
+      '';
     };
   };
 }
