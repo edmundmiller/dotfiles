@@ -178,6 +178,11 @@
     # Enable sudo authentication with Touch ID.
     security.pam.services.sudo_local.touchIdAuth = true;
 
+    # Passwordless sudo for darwin-rebuild (enables agent-driven rebuilds)
+    security.sudo.extraConfig = ''
+      emiller ALL=(root) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild *
+    '';
+
     # set some OSX preferences that I always end up hunting down and changing.
     system.defaults = {
       # minimal dock
