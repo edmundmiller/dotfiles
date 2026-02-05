@@ -84,7 +84,7 @@ in
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           bun_bin="${pkgs.bun}/bin/bun"
           if [ -x "$bun_bin" ]; then
-            bun_install_dir="$BUN_INSTALL"
+            bun_install_dir="''${BUN_INSTALL:-}"
             if [ -z "$bun_install_dir" ]; then
               bun_install_dir="$HOME/.bun"
             fi
