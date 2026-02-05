@@ -1,3 +1,9 @@
+# Source nix-direnv for cached flake evaluation
+# Caches devShell in GC root - subsequent loads are instant
+source ~/.nix-profile/share/nix-direnv/direnvrc 2>/dev/null \
+  || source /run/current-system/sw/share/nix-direnv/direnvrc 2>/dev/null \
+  || true
+
 use_docker-machine(){
   local env=${1:-default}
   echo Docker machine: $env
@@ -15,10 +21,4 @@ use_guix() {
     mkdir "$(direnv_layout_dir)"
     eval "$(guix environment --root="$cache_dir" "$@" --search-paths)"
   fi
-}
-
-use_flake() {
-  watch_file flake.nix
-  watch_file flake.lock
-  eval "$(nix print-dev-env --profile "$(direnv_layout_dir)/flake-profile")"
 }
