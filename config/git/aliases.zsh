@@ -169,3 +169,6 @@ ghmr() {
 	fi
 	gh pr merge $1 --squash --delete-branch && git pull
 }
+
+# Lazygit
+alias lzg="lazygit"
