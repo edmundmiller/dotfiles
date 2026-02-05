@@ -50,7 +50,7 @@ in
     {
       # Add zsh to available shells
       environment.shells = [ pkgs.zsh ];
-      users.users.${config.user.name}.shell = mkDefault pkgs.zsh;
+      users.defaultUserShell = mkDefault pkgs.zsh;
 
       # Enable zsh at system level - this creates /etc/zshrc that loads nix-darwin environment
       programs.zsh = {
