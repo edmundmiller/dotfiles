@@ -36,7 +36,7 @@ modules.services.openclaw.plugins  # List of {source = "github:..."}
 home-manager.users.${user}.programs.openclaw = {
   enable = true;
   documents = ../../config/openclaw/documents;
-  
+
   config = {
     gateway = {
       mode = "local";
@@ -59,6 +59,7 @@ home-manager.users.${user}.programs.openclaw = {
 ## Secrets
 
 Default paths (plain files):
+
 - `~/.secrets/telegram-bot-token`
 - Gateway token: inline in config (TODO: use agenix/opnix)
 
@@ -79,12 +80,15 @@ journalctl --user -u openclaw-gateway -f     # Linux
 ## Known Issues
 
 **Python conflict**: Openclaw bundles whisper (voice transcription) which includes Python 3.13. This conflicts with:
+
 - `modules.dev.python.enable = true` (direct Python env collision)
 - `modules.editors.emacs` +jupyter feature
 
 Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../pydoc3.13`
 
 **Workaround**: Python module disabled where openclaw is enabled.
+
+**Missing hasown module**: `openclaw-gateway` crashes with `Cannot find module 'hasown'` (form-data). Fix is in `flake.nix` overlay adding `node_modules/hasown`.
 
 ## Related Files
 
