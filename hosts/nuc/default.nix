@@ -26,11 +26,10 @@
     CREDS="${config.age.secrets.gogcli-client-secret.path}"
     TOKEN="${config.age.secrets.gogcli-token.path}"
     if [ -n "$GOG" ] && [ -f "$CREDS" ] && [ -f "$TOKEN" ]; then
-      export GOG_KEYRING_PASSWORD="gogcli-agenix"
       # Clear stale keyring entries before importing
       rm -f /home/${config.user.name}/.config/gogcli/keyring/* 2>/dev/null
-      sudo -u ${config.user.name} -E "$GOG" auth credentials "$CREDS" 2>/dev/null || true
-      sudo -u ${config.user.name} -E "$GOG" auth tokens import "$TOKEN" 2>/dev/null || true
+      sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=gogcli-agenix "$GOG" auth credentials "$CREDS" 2>/dev/null || true
+      sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=gogcli-agenix "$GOG" auth tokens import "$TOKEN" 2>/dev/null || true
     fi
   '';
 
