@@ -6,7 +6,7 @@
   };
 
   outputs =
-    { nixpkgs }:
+    { nixpkgs, ... }:
     let
       lib = nixpkgs.lib;
       systems = [
