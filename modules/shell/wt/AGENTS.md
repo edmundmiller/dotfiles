@@ -33,5 +33,5 @@ config/wt/
 
 ## Related Files
 
-- `modules/shell/zsh.nix` - Parent zsh module (envFiles/rcFiles mechanism)
+- `modules/shell/zsh/default.nix` - Parent zsh module (envFiles/rcFiles mechanism)
 - `config/zsh/.zshenv` - Must source `$ZDOTDIR/extra.zshenv`

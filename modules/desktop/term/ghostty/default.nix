@@ -14,7 +14,7 @@
 # direct editing. behavior.conf and keybindings.conf are generated to allow other
 # modules to append configuration.
 #
-# Pattern (similar to zsh.nix):
+# Pattern (similar to modules/shell/zsh/default.nix):
 #   - keybindingsInit: inline keybinding text from other modules
 #   - keybindingFiles: list of keybinding files to include
 #   - configInit: inline config text from other modules

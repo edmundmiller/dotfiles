@@ -73,7 +73,7 @@ config/tmux/
 
 ## Related Files
 
-- `modules/shell/zsh.nix` - Provides rcFiles/rcInit mechanism
+- `modules/shell/zsh/default.nix` - Provides rcFiles/rcInit mechanism
 - `modules/theme/default.nix` - Registers theme reload hooks
 - `packages/tmux-opencode-integrated/default.nix` - Custom package definition
 - `config/tmux/*` - Actual configuration files

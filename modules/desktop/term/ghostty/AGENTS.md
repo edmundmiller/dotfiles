@@ -30,7 +30,7 @@ config/ghostty/
 
 ## Extension Pattern
 
-Similar to zsh.nix rcFiles/rcInit pattern:
+Similar to modules/shell/zsh/default.nix rcFiles/rcInit pattern:
 
 ```nix
 # Add keybinding file
@@ -67,4 +67,4 @@ modules.desktop.term.ghostty.configInit = ''
 ## Related Files
 
 - `modules/shell/pi/default.nix` - Adds pi-keybindings.conf via keybindingFiles
-- `modules/shell/zsh.nix` - Pattern inspiration (rcFiles/rcInit)
+- `modules/shell/zsh/default.nix` - Pattern inspiration (rcFiles/rcInit)
