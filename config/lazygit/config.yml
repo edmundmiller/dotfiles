@@ -217,14 +217,14 @@ customCommands:
     description: "Commit"
     command: "git commit"
     context: "files"
-    subprocess: true
+    output: terminal
 
   # c a - amend
   - key: "a"
     description: "Amend commit"
     command: "git commit --amend"
     context: "files"
-    subprocess: true
+    output: terminal
 
   # c f - fixup (magit: create fixup commit)
   - key: "f"
@@ -279,14 +279,14 @@ customCommands:
     description: "Interactive rebase from here"
     command: "git rebase -i {{.SelectedLocalCommit.Sha}}^"
     context: "commits"
-    subprocess: true
+    output: terminal
 
   # r a - autosquash rebase
   - key: "A"
     description: "Autosquash rebase"
     command: "git rebase -i --autosquash {{.SelectedLocalCommit.Sha}}^"
     context: "commits"
-    subprocess: true
+    output: terminal
 
   # ===== RESET MENU (x/X in magit) =====
   # x s - soft reset
