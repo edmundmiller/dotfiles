@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -53,7 +54,7 @@ in
     }
 
     # NixOS-only: set default shell (option doesn't exist on Darwin)
-    (optionalAttrs (!pkgs.stdenv.isDarwin) {
+    (optionalAttrs (!isDarwin) {
       users.defaultUserShell = mkForce pkgs.zsh;
     })
 
