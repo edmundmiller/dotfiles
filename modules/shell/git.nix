@@ -19,6 +19,7 @@ in
     user.packages = with pkgs; [
       git-open
       difftastic
+      delta # for lazygit paging
       (mkIf config.modules.shell.gnupg.enable git-crypt)
       git-lfs
       pre-commit
@@ -38,6 +39,11 @@ in
         "gh/hosts.yml".source = "${configDir}/gh/hosts.yml";
         # GitHub Dashboard config
         "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
+        # Lazygit config
+        "lazygit/config.yml" = {
+          text = builtins.readFile "${configDir}/lazygit/config.yml";
+          force = true;
+        };
       };
     };
 

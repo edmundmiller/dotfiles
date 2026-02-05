@@ -1,0 +1,414 @@
+# =============================================================================
+# LazyGit Configuration - Magit-inspired
+# =============================================================================
+# Keybindings modeled after Doom Emacs Magit
+# https://docs.doomemacs.org/v21.12/modules/tools/magit/
+
+gui:
+  nerdFontsVersion: "3"
+  showFileTree: true
+  showListFooter: false
+  showRandomTip: false
+  showCommandLog: false
+  showBottomLine: false
+  showPanelJumps: true
+  sidePanelWidth: 0.3333
+  expandFocusedSidePanel: true
+  mainPanelSplitMode: flexible
+  language: auto
+  timeFormat: "02 Jan 06"
+  shortTimeFormat: "3:04PM"
+  theme:
+    activeBorderColor:
+      - magenta
+      - bold
+    inactiveBorderColor:
+      - default
+    searchingActiveBorderColor:
+      - cyan
+      - bold
+    optionsTextColor:
+      - blue
+    selectedLineBgColor:
+      - default
+    cherryPickedCommitFgColor:
+      - blue
+    cherryPickedCommitBgColor:
+      - cyan
+    unstagedChangesColor:
+      - red
+    defaultFgColor:
+      - default
+
+git:
+  pagers:
+    - colorArg: always
+      pager: delta --dark --paging=never
+  commit:
+    signOff: false
+    autoWrapCommitMessage: true
+    autoWrapWidth: 72
+  merging:
+    manualCommit: false
+    args: ""
+  mainBranches:
+    - main
+    - master
+  skipHookPrefix: WIP
+  autoFetch: true
+  autoRefresh: true
+  fetchAll: true
+  branchLogCmd: "git log --graph --color=always --abbrev-commit --decorate --date=relative --pretty=medium {{branchName}} --"
+  overrideGpg: false
+  disableForcePushing: false
+  parseEmoji: true
+  log:
+    order: topo-order
+    showGraph: always
+    showWholeGraph: false
+  allBranchesLogCmds:
+    - git log --graph --all --color=always --abbrev-commit --decorate --date=relative --pretty=medium
+
+os:
+  editPreset: nvim
+
+refresher:
+  refreshInterval: 10
+  fetchInterval: 60
+
+# =============================================================================
+# KEYBINDINGS - Magit Style
+# =============================================================================
+# Magit philosophy: mnemonic keys, transient menus
+# s=stage, u=unstage, c=commit, b=branch, f=fetch, F=pull, P=push, etc.
+
+keybinding:
+  universal:
+    quit: q
+    quit-alt1: <c-c>
+    return: <esc>
+    quitWithoutChangingDirectory: Q
+    togglePanel: <tab>
+    prevItem: <up>
+    nextItem: <down>
+    prevItem-alt: k
+    nextItem-alt: j
+    prevPage: <c-b>
+    nextPage: <c-f>
+    scrollLeft: H
+    scrollRight: L
+    gotoTop: g
+    gotoBottom: G
+    toggleRangeSelect: v
+    rangeSelectDown: <s-down>
+    rangeSelectUp: <s-up>
+    prevBlock: <left>
+    nextBlock: <right>
+    prevBlock-alt: h
+    nextBlock-alt: l
+    nextMatch: "n"
+    prevMatch: "N"
+    startSearch: /
+    optionMenu: <disabled>
+    optionMenu-alt1: "?"
+    select: <space>
+    goInto: <enter>
+    confirm: <enter>
+    remove: d
+    new: "n"
+    edit: e
+    openFile: o
+    scrollUpMain: <c-u>
+    scrollDownMain: <c-d>
+    scrollUpMain-alt1: K
+    scrollDownMain-alt1: J
+    scrollUpMain-alt2: <pgup>
+    scrollDownMain-alt2: <pgdown>
+    executeShellCommand: "!"
+    createRebaseOptionsMenu: r
+    pushFiles: P
+    pullFiles: F
+    refresh: g
+    createPatchOptionsMenu: <c-p>
+    nextTab: "]"
+    prevTab: "["
+    nextScreenMode: +
+    prevScreenMode: _
+    undo: u
+    redo: <c-r>
+    filteringMenu: <c-s>
+    diffingMenu: d
+    diffingMenu-alt: <c-e>
+    copyToClipboard: y
+    openRecentRepos: <c-r>
+    submitEditorText: <c-c><c-c>
+    extrasMenu: "@"
+    toggleWhitespaceInDiffView: <c-w>
+    increaseContextInDiffView: "}"
+    decreaseContextInDiffView: "{"
+    increaseRenameSimilarityThreshold: )
+    decreaseRenameSimilarityThreshold: (
+    openDiffTool: <c-t>
+  status:
+    checkoutFile: <disabled>
+  files:
+    # s=stage (default space works, but s is more magit-like)
+    toggleStagedAll: S
+    stashFiles: z
+  branches:
+    createPullRequest: <disabled>
+    viewPullRequestOptions: <disabled>
+    checkoutBranchByName: b
+    forceCheckoutBranch: B
+    rebaseBranch: r
+    renameBranch: R
+    mergeIntoCurrentBranch: m
+    viewGitFlowOptions: <disabled>
+    fastForward: f
+    createTag: t
+    pushTag: T
+    setUpstream: u
+    fetchRemote: f
+  commits:
+    squashDown: s
+    renameCommit: R
+    renameCommitWithEditor: r
+    viewResetOptions: x
+    markCommitAsFixup: f
+    createFixupCommit: F
+    squashAboveCommits: S
+    moveDownCommit: <c-j>
+    moveUpCommit: <c-k>
+    amendToCommit: a
+    resetCherryPick: <c-R>
+    cherryPickCopy: c
+    pasteCommits: p
+    tagCommit: t
+    checkoutCommit: <space>
+    revertCommit: v
+    copyCommitAttributeToClipboard: y
+    openLogMenu: l
+    openInBrowser: o
+    viewBisectOptions: B
+    startInteractiveRebase: i
+  stash:
+    popStash: p
+    renameStash: r
+  commitFiles:
+    checkoutCommitFile: <space>
+  main:
+    toggleSelectHunk: a
+    pickBothHunks: b
+    editSelectHunk: E
+  submodules:
+    init: i
+    update: u
+    bulkMenu: b
+  worktrees:
+    viewWorktreeOptions: w
+
+# =============================================================================
+# CUSTOM COMMANDS - Magit-inspired
+# =============================================================================
+customCommands:
+  # ===== COMMIT MENU (c prefix in magit) =====
+  # c c - commit
+  - key: "c"
+    description: "Commit"
+    command: "git commit"
+    context: "files"
+    subprocess: true
+
+  # c a - amend
+  - key: "a"
+    description: "Amend commit"
+    command: "git commit --amend"
+    context: "files"
+    subprocess: true
+
+  # c f - fixup (magit: create fixup commit)
+  - key: "f"
+    description: "Fixup commit for HEAD"
+    command: "git commit --fixup=HEAD"
+    context: "files"
+    loadingText: "Creating fixup..."
+
+  # c F - instant fixup to selected commit
+  - key: "f"
+    description: "Fixup this commit"
+    command: "git commit --fixup={{.SelectedLocalCommit.Sha}}"
+    context: "commits"
+    loadingText: "Creating fixup..."
+
+  # ===== BRANCH MENU (b prefix in magit) =====
+  # b c - create branch
+  - key: "c"
+    description: "Create branch"
+    command: "git checkout -b {{.Form.BranchName}}"
+    context: "localBranches"
+    prompts:
+      - type: "input"
+        title: "Branch name"
+        key: "BranchName"
+
+  # b d - delete branch
+  - key: "D"
+    description: "Delete branch"
+    command: "git branch -d {{.SelectedLocalBranch.Name}}"
+    context: "localBranches"
+    loadingText: "Deleting..."
+
+  # ===== FETCH/PULL/PUSH (f/F/P in magit) =====
+  # f a - fetch all
+  - key: "A"
+    description: "Fetch all remotes"
+    command: "git fetch --all"
+    context: "global"
+    loadingText: "Fetching all..."
+
+  # P f - force push with lease
+  - key: "<c-p>"
+    description: "Force push (--force-with-lease)"
+    command: "git push --force-with-lease"
+    context: "global"
+    loadingText: "Force pushing..."
+
+  # ===== REBASE MENU (r prefix in magit) =====
+  # r i - interactive rebase
+  - key: "I"
+    description: "Interactive rebase from here"
+    command: "git rebase -i {{.SelectedLocalCommit.Sha}}^"
+    context: "commits"
+    subprocess: true
+
+  # r a - autosquash rebase
+  - key: "A"
+    description: "Autosquash rebase"
+    command: "git rebase -i --autosquash {{.SelectedLocalCommit.Sha}}^"
+    context: "commits"
+    subprocess: true
+
+  # ===== RESET MENU (x/X in magit) =====
+  # x s - soft reset
+  - key: "X"
+    description: "Reset soft to commit"
+    command: "git reset --soft {{.SelectedLocalCommit.Sha}}"
+    context: "commits"
+    loadingText: "Resetting..."
+
+  # ===== STASH MENU (z prefix in magit) =====
+  # z z - stash
+  - key: "z"
+    description: "Stash (include untracked)"
+    command: "git stash push -u -m '{{.Form.Message}}'"
+    context: "files"
+    prompts:
+      - type: "input"
+        title: "Stash message"
+        key: "Message"
+        initialValue: "WIP"
+
+  # z s - stash staged only
+  - key: "Z"
+    description: "Stash staged only"
+    command: "git stash push --staged -m '{{.Form.Message}}'"
+    context: "files"
+    prompts:
+      - type: "input"
+        title: "Stash message"
+        key: "Message"
+        initialValue: "WIP: staged"
+
+  # ===== LOG MENU (l prefix in magit) =====
+  # l l - log current branch
+  - key: "l"
+    description: "Log current branch"
+    command: "git log --oneline --graph -50"
+    context: "global"
+    output: terminal
+
+  # l a - log all branches
+  - key: "L"
+    description: "Log all branches"
+    command: "git log --oneline --graph --all -50"
+    context: "global"
+    output: terminal
+
+  # ===== DIFF (d in magit) =====
+  - key: "D"
+    description: "Diff with difftastic"
+    command: "difft --color=always HEAD -- {{.SelectedPath}}"
+    context: "files"
+    output: terminal
+
+  # ===== MISC MAGIT-LIKE =====
+  # $ - command output (magit: show git process)
+  - key: "$"
+    description: "Show git log"
+    command: "git reflog -20"
+    context: "global"
+    output: terminal
+
+  # o - browse on forge (magit-forge)
+  - key: "o"
+    description: "Open on GitHub"
+    command: "git open"
+    context: "global"
+    loadingText: "Opening..."
+
+  # y - copy SHA
+  - key: "Y"
+    description: "Copy commit SHA"
+    command: "echo -n {{.SelectedLocalCommit.Sha}} | pbcopy"
+    context: "commits"
+
+  # Browse file at commit (magit: forge-browse-dwim)
+  - key: "O"
+    description: "Browse file on GitHub at commit"
+    command: "gh browse {{.SelectedPath}} --commit={{.SelectedLocalCommit.Sha}}"
+    context: "commitFiles"
+    loadingText: "Opening..."
+
+  # Conventional commit helper
+  - key: "C"
+    description: "Conventional commit"
+    command: >
+      git commit -m "{{.Form.Type}}{{if .Form.Scope}}({{.Form.Scope}}){{end}}: {{.Form.Message}}"
+    context: "files"
+    prompts:
+      - type: "menu"
+        title: "Type"
+        key: "Type"
+        options:
+          - name: "feat"
+            value: "feat"
+          - name: "fix"
+            value: "fix"
+          - name: "docs"
+            value: "docs"
+          - name: "style"
+            value: "style"
+          - name: "refactor"
+            value: "refactor"
+          - name: "perf"
+            value: "perf"
+          - name: "test"
+            value: "test"
+          - name: "build"
+            value: "build"
+          - name: "ci"
+            value: "ci"
+          - name: "chore"
+            value: "chore"
+      - type: "input"
+        title: "Scope (optional)"
+        key: "Scope"
+      - type: "input"
+        title: "Message"
+        key: "Message"
+
+confirmOnQuit: false
+quitOnTopLevelReturn: true
+disableStartupPopups: true
+notARepository: quit
+promptToReturnFromSubprocess: false
