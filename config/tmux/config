@@ -10,6 +10,8 @@ set -ga terminal-overrides ",ghostty:Tc"
 # Enable extended keys for proper modifier key support (Shift+Enter, etc.)
 set -s extended-keys on
 set -as terminal-features ',ghostty:extkeys'
+# Allow passthrough for Kitty keyboard protocol queries
+set -g allow-passthrough on
 
 # Spawn a session only when none exist (safe to re-source).
 if-shell 'tmux list-sessions >/dev/null 2>&1' '' 'new-session'
@@ -91,12 +93,15 @@ bind X kill-window
 bind q kill-session
 bind Q kill-server
 
-# Smart pane switching with awareness of vim splits
+# Smart pane switching with awareness of vim splits and AI agents
 # See: https://github.com/christoomey/vim-tmux-navigator
 vim_pattern='(\S+/)?g?\.?(view|l?n?vim?x?)(diff)?$'
+# pi needs C-j passed through for shift+enter (sends \n)
+agent_pattern='pi$'
 is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +${vim_pattern}$'"
+is_vim_or_agent="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(${vim_pattern}|${agent_pattern})$'"
 bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h'  'select-pane -L'
-bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j'  'select-pane -D'
+bind-key -n 'C-j' if-shell "$is_vim_or_agent" 'send-keys C-j'  'select-pane -D'
 bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k'  'select-pane -U'
 bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l'  'select-pane -R'
 bind-key -n 'C-\' if-shell "$is_vim" 'send-keys C-\\' 'select-pane -l'
