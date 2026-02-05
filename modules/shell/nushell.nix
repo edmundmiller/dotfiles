@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -16,7 +17,7 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     # NixOS-only: set default shell (option doesn't exist on Darwin)
-    (optionalAttrs (!pkgs.stdenv.isDarwin) {
+    (optionalAttrs (!isDarwin) {
       users.defaultUserShell = lib.mkForce pkgs.nushellFull;
     })
 
