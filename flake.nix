@@ -333,74 +333,87 @@
             programs.statix.enable = true;
           };
 
-          # Add checks for deployment, plugins, and shell tests
-          checks = {
-            # deploy-rs checks - validates deployment configurations
-            deploy-rs = deploy-rs.lib.${system}.deployChecks self.deploy;
-
-            # zunit shell function tests
-            zunit-tests =
-              pkgs.runCommand "zunit-tests"
-                {
-                  nativeBuildInputs = [
-                    self.packages.${system}.zunit
-                    pkgs.zsh
-                    pkgs.git
-                  ];
-                }
-                ''
-                  # Setup git config for tests
-                  export HOME=$TMPDIR
-                  git config --global user.email "test@test.com"
-                  git config --global user.name "Test User"
-                  git config --global init.defaultBranch main
-
-                  # Run zunit tests (--tap bypasses revolver spinner dependency)
-                  cd ${./.}
-                  for test in config/*/tests/*.zunit; do
-                    if [ -f "$test" ]; then
-                      echo "Running $test..."
-                      zunit --tap "$test"
-                    fi
-                  done
-
-                  # Create success marker
-                  mkdir -p $out
-                  echo "All zunit tests passed" > $out/result
-                '';
-
-            validate-claude-plugins =
-              pkgs.runCommand "validate-claude-plugins"
-                {
-                  buildInputs = [ pkgs.python312 ];
-                }
-                ''
-                  # Create a temporary directory for the check
-                  mkdir -p $out
-
-                  # Copy plugin files to temporary location
-                  cp -r ${./.} /tmp/dotfiles-check
-                  cd /tmp/dotfiles-check
-
-                  # Install uv
-                  export HOME=/tmp
-                  ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
-                  export PATH="$HOME/.cargo/bin:$PATH"
-
-                  # Run claudelint on each plugin directory
-                  echo "Validating Claude Code plugins..."
-
-                  for plugin in config/claude/plugins/*/; do
-                    if [ -d "$plugin" ]; then
-                      echo "Checking $plugin..."
-                      uvx claudelint "$plugin" || exit 1
-                    fi
-                  done
-
-                  # Create success marker
-                  echo "All plugins validated successfully" > $out/result
-                '';
+          # Development shell
+          devShells.default = pkgs.mkShell {
+            packages = with pkgs; [
+              nixfmt
+              deadnix
+              statix
+              deploy-rs.packages.${system}.default
+            ];
+            shellHook = ''
+              echo "dotfiles development shell"
+            '';
           };
+
+          # Add checks for deployment, plugins, and shell tests
+          checks =
+            # deploy-rs checks - validates deployment configurations (merge attrset)
+            (deploy-rs.lib.${system}.deployChecks self.deploy) // {
+
+              # zunit shell function tests
+              zunit-tests =
+                pkgs.runCommand "zunit-tests"
+                  {
+                    nativeBuildInputs = [
+                      self.packages.${system}.zunit
+                      pkgs.zsh
+                      pkgs.git
+                    ];
+                  }
+                  ''
+                    # Setup git config for tests
+                    export HOME=$TMPDIR
+                    git config --global user.email "test@test.com"
+                    git config --global user.name "Test User"
+                    git config --global init.defaultBranch main
+
+                    # Run zunit tests (--tap bypasses revolver spinner dependency)
+                    cd ${./.}
+                    for test in config/*/tests/*.zunit; do
+                      if [ -f "$test" ]; then
+                        echo "Running $test..."
+                        zunit --tap "$test"
+                      fi
+                    done
+
+                    # Create success marker
+                    mkdir -p $out
+                    echo "All zunit tests passed" > $out/result
+                  '';
+
+              validate-claude-plugins =
+                pkgs.runCommand "validate-claude-plugins"
+                  {
+                    buildInputs = [ pkgs.python312 ];
+                  }
+                  ''
+                    # Create a temporary directory for the check
+                    mkdir -p $out
+
+                    # Copy plugin files to temporary location
+                    cp -r ${./.} /tmp/dotfiles-check
+                    cd /tmp/dotfiles-check
+
+                    # Install uv
+                    export HOME=/tmp
+                    ${pkgs.curl}/bin/curl -LsSf https://astral.sh/uv/install.sh | sh
+                    export PATH="$HOME/.cargo/bin:$PATH"
+
+                    # Run claudelint on each plugin directory
+                    echo "Validating Claude Code plugins..."
+
+                    for plugin in config/claude/plugins/*/; do
+                      if [ -d "$plugin" ]; then
+                        echo "Checking $plugin..."
+                        uvx claudelint "$plugin" || exit 1
+                      fi
+                    done
+
+                    # Create success marker
+                    echo "All plugins validated successfully" > $out/result
+                  '';
+            };
         };
     };
 }
