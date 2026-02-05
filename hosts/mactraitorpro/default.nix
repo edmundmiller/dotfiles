@@ -35,15 +35,7 @@
       };
 
       services = {
-        openclaw = {
-          enable = true;
-          gatewayToken = "mactraitor-gateway-token-change-me"; # TODO: use opnix secret
-          telegram = {
-            enable = true;
-            # botTokenFile = "~/.secrets/telegram-bot-token";
-            # allowFrom = [ YOUR_TELEGRAM_USER_ID ]; # @edmundamiller
-          };
-        };
+        openclaw.enable = false;
         docker.enable = true;
         ssh.enable = true;
       };
