@@ -74,7 +74,7 @@
         };
         plugins = [
           {
-            source = "path:${toString ../../.}/tools/linear?narHash=sha256-/U3Q46ZY4ZAHWkS3mTaTkJ1QyFdMR4y29%2B3udrO%2BVCM%3D";
+            source = "path:${toString ../../.}/tools/linear?narHash=sha256-Hebg73NSilpWBBv7xA+gOfLOuyiJI6JMf1qZTrnV2Lc=";
             config.env.LINEAR_API_TOKEN_FILE = config.age.secrets.linear-api-token.path;
           }
         ];
