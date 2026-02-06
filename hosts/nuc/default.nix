@@ -21,17 +21,21 @@
 
   # Import gogcli credentials + token from agenix on activation
   # gogcli file-based keyring on headless Linux needs GOG_KEYRING_PASSWORD
-  system.activationScripts.gogcliSecrets = ''
-    GOG=$(find /nix/store -maxdepth 3 -name 'gog' -path '*/gogcli*/bin/*' 2>/dev/null | head -1)
-    CREDS="${config.age.secrets.gogcli-client-secret.path}"
-    TOKEN="${config.age.secrets.gogcli-token.path}"
-    if [ -n "$GOG" ] && [ -f "$CREDS" ] && [ -f "$TOKEN" ]; then
-      # Clear stale keyring entries before importing
-      rm -f /home/${config.user.name}/.config/gogcli/keyring/* 2>/dev/null
-      sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=gogcli-agenix "$GOG" auth credentials "$CREDS" 2>/dev/null || true
-      sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=gogcli-agenix "$GOG" auth tokens import "$TOKEN" 2>/dev/null || true
-    fi
-  '';
+  # Must run after agenix decrypts secrets
+  system.activationScripts.gogcliSecrets = {
+    deps = [ "agenix" ];
+    text = ''
+      GOG=$(find /nix/store -maxdepth 3 -name 'gog' -path '*/gogcli*/bin/*' 2>/dev/null | head -1)
+      CREDS="${config.age.secrets.gogcli-client-secret.path}"
+      TOKEN="${config.age.secrets.gogcli-token.path}"
+      if [ -n "$GOG" ] && [ -f "$CREDS" ] && [ -f "$TOKEN" ]; then
+        # Clear stale keyring entries before importing
+        rm -f /home/${config.user.name}/.config/gogcli/keyring/* 2>/dev/null
+        sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=gogcli-agenix "$GOG" auth credentials "$CREDS" 2>/dev/null || true
+        sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=gogcli-agenix "$GOG" auth tokens import "$TOKEN" 2>/dev/null || true
+      fi
+    '';
+  };
 
   environment.systemPackages = with pkgs; [
     taskwarrior3
