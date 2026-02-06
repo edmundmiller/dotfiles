@@ -161,6 +161,11 @@ switch (arg) {
   case "--check-attention":
     checkAttention();
     break;
+  case "--tick":
+    // Combined rename + attention check for periodic timer (single node process)
+    renameAll();
+    checkAttention();
+    break;
   default:
     renameAll();
 }
