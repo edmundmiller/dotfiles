@@ -114,7 +114,9 @@ function protectToolUseBackward(msg: MessageWithMetadata, ctx: ProcessContext): 
     if (!prevMsg.metadata.toolUseIds) continue;
 
     // Check if this tool_use matches our kept tool_result
-    const hasMatchingToolUse = toolUseIds.some((id) => prevMsg.metadata.toolUseIds?.includes(id));
+    const hasMatchingToolUse = toolUseIds.some((id: string) =>
+      prevMsg.metadata.toolUseIds?.includes(id)
+    );
 
     if (hasMatchingToolUse && prevMsg.metadata.shouldPrune) {
       // Protect the tool_use
@@ -154,7 +156,7 @@ function protectMatchingToolResults(
     if (!nextMsg.metadata.hasToolResult) continue;
     if (!nextMsg.metadata.toolUseIds) continue;
 
-    const hasMatchingToolResult = toolUseIds.some((id) =>
+    const hasMatchingToolResult = toolUseIds.some((id: string) =>
       nextMsg.metadata.toolUseIds?.includes(id)
     );
 
