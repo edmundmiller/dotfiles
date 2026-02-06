@@ -1,5 +1,8 @@
 /**
  * AI agent status detection via pane content analysis.
+ *
+ * Pattern priority: ERROR > WAITING > BUSY > IDLE > UNKNOWN
+ * Agent-specific patterns are checked first, then shared fallbacks.
  */
 
 export type StatusIcon = "□" | "●" | "■" | "▲" | "◇";
@@ -33,18 +36,17 @@ export function stripAnsi(text: string): string {
   return text.replace(ANSI_RE, "").replace(OSC_RE, "").replace(DCS_RE, "").replace(CTRL_RE, "");
 }
 
-// ── Pattern sets ───────────────────────────────────────────────────────────
+// ── Shared patterns (all agents) ───────────────────────────────────────────
 
-const ERROR_PATTERNS = [
+const SHARED_ERROR = [
   /Traceback \(most recent call last\)/,
   /UnhandledPromiseRejection/i,
   /FATAL ERROR/i,
   /panic:/,
   /Error: .*(API|rate limit|connection|timeout)/i,
-  /(?:opencode|claude).*(?:crashed|failed|error)/i,
 ];
 
-const WAITING_PATTERNS = [
+const SHARED_WAITING = [
   /Allow (?:once|always)\?/i,
   /Do you want to (?:run|execute|allow)/i,
   /(?:Approve|Confirm|Accept)\?.*\[Y\/n\]/i,
@@ -54,55 +56,131 @@ const WAITING_PATTERNS = [
   /(?:yes|no|skip)\s*›/i,
 ];
 
-const BUSY_PATTERNS = [
+const SHARED_BUSY = [
+  /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/, // braille spinners
   /Thinking\.{2,}/i,
   /(?:Running|Executing|Processing)\.{2,}/i,
-  /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/,
   /Working on/i,
   /Analyzing/i,
   /Reading (?:file|files)/i,
   /Writing (?:to|file)/i,
   /Searching/i,
   /Calling tool/i,
-  /Tool:/i,
-  /⎿/,
-  /Running tools/i,
-  /≋/,
-  /■■■/,
-  /esc interrupt/i,
-  /Esc to cancel/i,
 ];
 
-const IDLE_PATTERNS = [
-  />\s*$/m,
-  /❯\s*$/m,
-  /│\s*$/m,
+// ── pi patterns ────────────────────────────────────────────────────────────
+
+const PI_BUSY = [
+  /Working\.\.\./i, // "⠦ Working..." spinner line
+  /Steering:/i, // queued steering message (agent still processing)
+];
+
+const PI_IDLE = [
+  /\(anthropic\)\s+\S+/i, // pi status bar: "(anthropic) claude-opus-4-6 • medium"
+  /\(openai[^)]*\)\s+\S+/i, // "(openai-codex) gpt-5.3-codex • xhigh"
+  /\(google\)\s+\S+/i, // "(google) gemini-..."
+  /↑\d+k?\s+↓\d+k?\s+R\d+/, // cost line: "↑343 ↓20k R11M W820k $10.960"
+  /\$\d+\.\d+\s+\(sub\)/i, // "$10.960 (sub)"
+  /\bLSP\b/, // LSP indicator at bottom
+];
+
+// ── Claude Code patterns ───────────────────────────────────────────────────
+
+const CLAUDE_BUSY = [
+  /⎿/, // Claude tool output marker
+  /Esc to cancel/i, // shown during tool execution
+];
+
+const CLAUDE_IDLE = [
+  />\s*$/m, // prompt line ">"
   /What would you like/i,
   /How can I help/i,
-  /Session went idle/i,
-  /Finished\s*$/im,
-  /Done\.\s*$/im,
-  /completed successfully/i,
-  /\d+% of \d+k/,
-  /OpenCode \d+\.\d+\.\d+/,
-  /ctrl\+p commands/i,
+  /\d+% of \d+k/, // token usage: "45% of 168k"
 ];
+
+// ── OpenCode patterns ──────────────────────────────────────────────────────
+
+const OPENCODE_BUSY = [
+  /Running tools/i,
+  /≋/, // opencode streaming indicator
+  /■■■/, // progress bar
+  /esc interrupt/i, // shown during tool execution
+  /Tool:/i,
+];
+
+const OPENCODE_IDLE = [
+  /OpenCode \d+\.\d+\.\d+/, // version in status bar
+  /ctrl\+p commands/i, // footer hint
+  /ctrl\+t variants/i,
+];
+
+// ── Detection logic ────────────────────────────────────────────────────────
+
+interface PatternSet {
+  error: RegExp[];
+  waiting: RegExp[];
+  busy: RegExp[];
+  idle: RegExp[];
+}
+
+const AGENT_PATTERNS: Record<string, PatternSet> = {
+  pi: {
+    error: SHARED_ERROR,
+    waiting: SHARED_WAITING,
+    busy: [...PI_BUSY, ...SHARED_BUSY],
+    idle: PI_IDLE,
+  },
+  claude: {
+    error: SHARED_ERROR,
+    waiting: SHARED_WAITING,
+    busy: [...CLAUDE_BUSY, ...SHARED_BUSY],
+    idle: CLAUDE_IDLE,
+  },
+  opencode: {
+    error: SHARED_ERROR,
+    waiting: SHARED_WAITING,
+    busy: [...OPENCODE_BUSY, ...SHARED_BUSY],
+    idle: OPENCODE_IDLE,
+  },
+};
+
+/** Fallback patterns for agents without specific tuning */
+const DEFAULT_PATTERNS: PatternSet = {
+  error: SHARED_ERROR,
+  waiting: SHARED_WAITING,
+  busy: [...SHARED_BUSY, ...PI_BUSY, ...CLAUDE_BUSY, ...OPENCODE_BUSY],
+  idle: [
+    ...PI_IDLE,
+    ...CLAUDE_IDLE,
+    ...OPENCODE_IDLE,
+    /Done\.\s*$/im,
+    /completed successfully/i,
+    /Session went idle/i,
+    /Finished\s*$/im,
+    /│\s*$/m,
+    /❯\s*$/m,
+  ],
+};
 
 function matchesAny(content: string, patterns: RegExp[]): boolean {
   return patterns.some((p) => p.test(content));
 }
 
-// ── Public API ─────────────────────────────────────────────────────────────
-
-export function detectStatus(content: string): StatusIcon {
+/**
+ * Detect agent status from captured pane content.
+ * @param content - raw pane text (will be ANSI-stripped)
+ * @param agent - optional agent name for agent-specific patterns
+ */
+export function detectStatus(content: string, agent?: string): StatusIcon {
   if (!content?.trim()) return ICON_UNKNOWN;
 
   const clean = stripAnsi(content);
+  const patterns = (agent && AGENT_PATTERNS[agent]) || DEFAULT_PATTERNS;
 
-  if (matchesAny(clean, ERROR_PATTERNS)) return ICON_ERROR;
-  if (matchesAny(clean, WAITING_PATTERNS)) return ICON_WAITING;
-  if (matchesAny(clean, BUSY_PATTERNS)) return ICON_BUSY;
-  if (matchesAny(clean, IDLE_PATTERNS)) return ICON_IDLE;
+  if (matchesAny(clean, patterns.error)) return ICON_ERROR;
+  if (matchesAny(clean, patterns.waiting)) return ICON_WAITING;
+  if (matchesAny(clean, patterns.busy)) return ICON_BUSY;
+  if (matchesAny(clean, patterns.idle)) return ICON_IDLE;
 
   return ICON_UNKNOWN;
 }
