@@ -33,18 +33,18 @@ function renameAll(): void {
         if (!baseName && !program) continue;
 
         // Check all panes for agents
-        const agentPaneIds: string[] = [];
+        const agentPanes: Array<{ paneId: string; agent: string }> = [];
         for (const pane of panes) {
           const prog = getPaneProgram(pane.command, pane.pid);
           if (AGENT_PROGRAMS.includes(prog)) {
-            agentPaneIds.push(pane.paneId);
+            agentPanes.push({ paneId: pane.paneId, agent: prog });
           }
         }
 
         let newName: string;
-        if (agentPaneIds.length > 0) {
-          // Capture agent panes for status detection
-          const statuses = agentPaneIds.map((id) => detectStatus(capturePane(id)));
+        if (agentPanes.length > 0) {
+          // Capture agent panes for status detection, passing agent name for tuned patterns
+          const statuses = agentPanes.map((a) => detectStatus(capturePane(a.paneId), a.agent));
           const agentStatus = prioritize(statuses);
           const icon = colorize(agentStatus);
           newName = `${icon} ${baseName}`;
