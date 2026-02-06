@@ -1,0 +1,9 @@
+{
+  "name": "tmux-smart-name",
+  "version": "0.3.0",
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "test": "bun test"
+  }
+}

@@ -12,7 +12,7 @@ let
 
   # OpenCode / Claude status for tmux `status-right`.
   #
-  # NOTE: Window naming is handled by tmux-opencode-integrated.
+  # NOTE: Window naming is handled by tmux-smart-name.
   # Avoid other renamers to keep names stable.
   #
   # States:
@@ -201,8 +201,8 @@ in
         set-option -ga status-right "#(${opencodeStatus})"
         run-shell ${tmux-smooth-scroll}/smooth-scroll.tmux
 
-        # tmux-opencode-integrated: smart naming + OpenCode status
-        run-shell ${pkgs.my.tmux-opencode-integrated}/share/tmux-plugins/tmux-opencode-integrated/scripts/smart-name.sh
+        # tmux-smart-name: window naming + AI agent status
+        run-shell ${pkgs.my.tmux-smart-name}/share/tmux-smart-name/scripts/smart-name.sh
       '';
     };
 
