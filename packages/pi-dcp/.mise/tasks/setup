@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#MISE description="Setting up project"
+
+echo ""
+echo "🍜 Setting up project"
+echo ""
+
+# Only run hk install if not in a git worktree
+if ! git worktree list | grep -q "$(pwd)"; then
+	hk install
+fi
+
+bun install
+
+echo ""
+echo "👍 Done"
+echo ""

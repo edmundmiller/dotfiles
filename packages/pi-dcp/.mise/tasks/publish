@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+#MISE description="Publish to npm registry"
+#MISE depends=["setup", "build"]
+#USAGE flag "-t --tag <tag>" "Tag to publish with" default="latest"
+#USAGE flag "-d --dry-run" "Perform a dry run of the publish process"
+#USAGE flag "--otp <otp>" "One-time password for npm two-factor authentication"
+set -e
+
+echo "Publishing to npm"
+echo " > with tag: ${usage_tag}..."
+echo " > npm version: $(npm --version)"
+
+# For 'next' tag, bump version to a prerelease to avoid conflicts
+if [ "${usage_tag}" = "next" ]; then
+	# Count commits since last tag for a semantic build number
+	LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+	if [ -n "$LAST_TAG" ]; then
+		BUILD_NUMBER=$(git rev-list "${LAST_TAG}..HEAD" --count)
+		echo " > last tag: ${LAST_TAG}"
+		echo " > commits since last tag: ${BUILD_NUMBER}"
+	else
+		BUILD_NUMBER=$(git rev-list HEAD --count)
+		echo " > no previous tag found"
+		echo " > total commits: ${BUILD_NUMBER}"
+	fi
+	CURRENT_VERSION=$(jq -r '.version' package.json)
+	PRERELEASE_VERSION="$(semver get release "$CURRENT_VERSION")-next.${BUILD_NUMBER}"
+	echo " > bumping version: ${CURRENT_VERSION} -> ${PRERELEASE_VERSION}"
+
+	if [ "${usage_dry_run}" != true ]; then
+		npm version "${PRERELEASE_VERSION}" --no-git-tag-version --allow-same-version
+	fi
+fi
+
+flags=()
+flags+=("--tag" "${usage_tag}")
+flags+=("--access" "public")
+
+if [ "${usage_dry_run}" != true ]; then
+	# Determine if we should use provenance
+	# Only enable in CI environments with OIDC support
+	if [ -z "$GITHUB_ACTIONS" ]; then
+		# Local development: disable provenance (fails without CI provider context)
+		echo " > provenance: disabled (local environment)"
+	else
+		# GitHub Actions: enable provenance (OIDC will handle it automatically)
+		echo " > provenance: enabled (GitHub Actions with OIDC)"
+		flags+=("--no-provenance")
+	fi
+
+	if [ -n "${usage_otp}" ]; then
+		flags+=("--otp" "${usage_otp}")
+	fi
+
+	# Publish directly from source (allows provenance generation in CI)
+	npm publish "${flags[@]}"
+
+	echo "Published successfully!"
+else
+	echo "Dry run mode - skipping actual publish"
+fi
