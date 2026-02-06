@@ -50,7 +50,7 @@ export function getAllAgentsInfo(): AgentInfo[] {
         windowName: pane.windowName ?? "",
         paneId: pane.paneId,
         program,
-        status: detectStatus(capturePane(pane.paneId)),
+        status: detectStatus(capturePane(pane.paneId), program),
         path: formatPath(pane.path),
       });
     }
