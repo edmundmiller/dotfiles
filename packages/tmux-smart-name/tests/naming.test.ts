@@ -1,14 +1,31 @@
 import { describe, expect, test } from "bun:test";
-import { buildBaseName, trimName } from "../src/naming";
+import { buildBaseName, trimName, shortenPath } from "../src/naming";
+
+describe("shortenPath", () => {
+  test.each([
+    ["~/src/personal/hledger", "~/s/p/hledger"],
+    ["~/.config/dotfiles", "~/.c/dotfiles"],
+    ["/usr/local/bin", "/u/l/bin"],
+    ["~/repo", "~/repo"],
+    ["~/a/b/c/d/deep", "~/a/b/c/d/deep"],
+    ["/single", "/single"],
+    ["relative", "relative"],
+    ["", ""],
+    ["~", "~"],
+    ["~/", "~/"],
+  ])("%s → %s", (input, expected) => {
+    expect(shortenPath(input)).toBe(expected);
+  });
+});
 
 describe("buildBaseName", () => {
   test.each([
-    ["zsh", "~/repo", "~/repo"],
-    ["nvim", "~/repo", "nvim: ~/repo"],
+    ["zsh", "~/src/personal/repo", "~/s/p/repo"],
+    ["nvim", "~/src/personal/repo", "nvim: ~/s/p/repo"],
     ["python", "~/repo", "python"],
-    ["opencode", "~/project", "opencode: ~/project"],
+    ["opencode", "~/src/project", "opencode: ~/s/project"],
     ["claude", "", "claude"],
-    ["pi", "~/project", "pi: ~/project"],
+    ["pi", "~/src/personal/project", "pi: ~/s/p/project"],
     ["amp", "~/foo", "amp: ~/foo"],
   ])("%s + %s → %s", (program, path, expected) => {
     expect(buildBaseName(program, path)).toBe(expected);
