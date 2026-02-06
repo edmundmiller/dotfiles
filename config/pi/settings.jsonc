@@ -82,5 +82,9 @@
       "source": "https://github.com/prateekmedia/pi-hooks",
       "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts"],
     },
+    // Multi-agent messaging/coordination - https://github.com/nicobailon/pi-messenger
+    "npm:pi-messenger",
+    // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
+    "npm:pi-interactive-shell",
   ],
 }
