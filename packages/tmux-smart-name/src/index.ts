@@ -46,11 +46,7 @@ function renameAll(): void {
           let newName: string;
           if (agentStatus) {
             const icon = colorize(agentStatus);
-            if (AGENT_PROGRAMS.includes(program)) {
-              newName = `${icon} ${path || baseName || program}`;
-            } else {
-              newName = `${icon} ${baseName}`;
-            }
+            newName = `${icon} ${baseName}`;
           } else {
             newName = baseName;
           }
