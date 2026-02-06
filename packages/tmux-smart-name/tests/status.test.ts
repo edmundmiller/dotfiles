@@ -45,8 +45,25 @@ describe("detectStatus (shared)", () => {
 // ── pi-specific ────────────────────────────────────────────────────────────
 
 describe("detectStatus (pi)", () => {
+  // Busy: Loader component renders "⠦ Working... (Escape to interrupt)"
   test("busy: spinner + Working...", () => {
     expect(detectStatus("⠦ Working...", "pi")).toBe(ICON_BUSY);
+  });
+
+  test("busy: Working with interrupt hint", () => {
+    expect(detectStatus("⠹ Working... (Escape to interrupt)", "pi")).toBe(ICON_BUSY);
+  });
+
+  test("busy: auto-compacting", () => {
+    expect(detectStatus("⠧ Auto-compacting... (Escape to cancel)", "pi")).toBe(ICON_BUSY);
+  });
+
+  test("busy: retrying", () => {
+    expect(detectStatus("⠋ Retrying (1/3) in 5s... (Escape to cancel)", "pi")).toBe(ICON_BUSY);
+  });
+
+  test("busy: summarizing branch", () => {
+    expect(detectStatus("⠙ Summarizing branch... (Escape to cancel)", "pi")).toBe(ICON_BUSY);
   });
 
   test("busy: steering queued", () => {
@@ -57,7 +74,22 @@ describe("detectStatus (pi)", () => {
     expect(detectStatus(content, "pi")).toBe(ICON_BUSY);
   });
 
-  test("idle: status bar with anthropic model", () => {
+  test("busy: follow-up queued", () => {
+    const content = `Follow-up: Also check the tests
+↳ Alt+Up to edit all queued messages`;
+    expect(detectStatus(content, "pi")).toBe(ICON_BUSY);
+  });
+
+  test("busy: tool output truncated (earlier lines)", () => {
+    expect(detectStatus("... (3 earlier lines, ctrl+o to expand)", "pi")).toBe(ICON_BUSY);
+  });
+
+  test("busy: tool output truncated (more lines)", () => {
+    expect(detectStatus("... (5 more lines, ctrl+o to expand)", "pi")).toBe(ICON_BUSY);
+  });
+
+  // Idle: Footer component renders stats + model info
+  test("idle: footer with anthropic model", () => {
     const content = `done.
 
 ────────────────────────────────────────────────────
@@ -68,7 +100,7 @@ LSP`;
     expect(detectStatus(content, "pi")).toBe(ICON_IDLE);
   });
 
-  test("idle: status bar with openai model", () => {
+  test("idle: footer with openai model + MCP", () => {
     const content = `committed: 587b427 on em-branch-1
 working tree clean.
 
@@ -80,9 +112,22 @@ LSP pyright, beancount MCP: 0/1 servers`;
     expect(detectStatus(content, "pi")).toBe(ICON_IDLE);
   });
 
-  test("idle: cost line present", () => {
-    const content = `↑343 ↓20k R11M W820k $10.960 (sub) 13.9%/1.0M (auto)`;
-    expect(detectStatus(content, "pi")).toBe(ICON_IDLE);
+  test("idle: cost + context usage", () => {
+    expect(detectStatus("↑343 ↓20k R11M W820k $10.960 (sub) 13.9%/1.0M (auto)", "pi")).toBe(
+      ICON_IDLE
+    );
+  });
+
+  test("idle: cost without sub", () => {
+    expect(detectStatus("↑12 ↓1.5k $0.042 0.5%/200k (auto)", "pi")).toBe(ICON_IDLE);
+  });
+
+  test("idle: LSP indicator", () => {
+    expect(detectStatus("LSP", "pi")).toBe(ICON_IDLE);
+  });
+
+  test("idle: MCP indicator", () => {
+    expect(detectStatus("MCP: 2/3 servers", "pi")).toBe(ICON_IDLE);
   });
 });
 
