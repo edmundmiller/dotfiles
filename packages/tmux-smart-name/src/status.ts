@@ -98,20 +98,28 @@ const CLAUDE_IDLE = [
   /\d+% of \d+k/, // token usage: "45% of 168k"
 ];
 
+// ── Amp patterns ───────────────────────────────────────────────────────────
+
+const AMP_BUSY = [
+  /≋/, // amp streaming indicator
+  /■■■/, // amp progress bar
+  /esc interrupt/i, // shown during tool execution
+  /Running tools/i,
+];
+
+const AMP_IDLE = [
+  /ctrl\+p commands/i, // amp footer hint
+  /ctrl\+t variants/i, // amp footer hint
+];
+
 // ── OpenCode patterns ──────────────────────────────────────────────────────
 
 const OPENCODE_BUSY = [
-  /Running tools/i,
-  /≋/, // opencode streaming indicator
-  /■■■/, // progress bar
-  /esc interrupt/i, // shown during tool execution
-  /Tool:/i,
+  /Tool:/i, // tool execution
 ];
 
 const OPENCODE_IDLE = [
   /OpenCode \d+\.\d+\.\d+/, // version in status bar
-  /ctrl\+p commands/i, // footer hint
-  /ctrl\+t variants/i,
 ];
 
 // ── Detection logic ────────────────────────────────────────────────────────
@@ -136,6 +144,12 @@ const AGENT_PATTERNS: Record<string, PatternSet> = {
     busy: [...CLAUDE_BUSY, ...SHARED_BUSY],
     idle: CLAUDE_IDLE,
   },
+  amp: {
+    error: SHARED_ERROR,
+    waiting: SHARED_WAITING,
+    busy: [...AMP_BUSY, ...SHARED_BUSY],
+    idle: AMP_IDLE,
+  },
   opencode: {
     error: SHARED_ERROR,
     waiting: SHARED_WAITING,
@@ -148,10 +162,11 @@ const AGENT_PATTERNS: Record<string, PatternSet> = {
 const DEFAULT_PATTERNS: PatternSet = {
   error: SHARED_ERROR,
   waiting: SHARED_WAITING,
-  busy: [...SHARED_BUSY, ...PI_BUSY, ...CLAUDE_BUSY, ...OPENCODE_BUSY],
+  busy: [...SHARED_BUSY, ...PI_BUSY, ...CLAUDE_BUSY, ...AMP_BUSY, ...OPENCODE_BUSY],
   idle: [
     ...PI_IDLE,
     ...CLAUDE_IDLE,
+    ...AMP_IDLE,
     ...OPENCODE_IDLE,
     /Done\.\s*$/im,
     /completed successfully/i,
