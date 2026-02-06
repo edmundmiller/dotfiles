@@ -1,7 +1,7 @@
 /**
- * Integration test to verify fix for toolCall/toolResult pairing issues
+ * Integration test suite to verify the fix for tool_use/tool_result pairing issues
  *
- * Simulates the real-world scenario that caused 400 errors before the fix.
+ * This test simulates the real-world scenario that caused 400 errors before the fix
  */
 
 import { describe, test, expect, beforeAll } from "bun:test";
@@ -10,117 +10,93 @@ import { registerRule } from "../src/registry";
 import { deduplicationRule } from "../src/rules/deduplication";
 import { toolPairingRule } from "../src/rules/tool-pairing";
 import { recencyRule } from "../src/rules/recency";
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import type { AssistantMessage, ToolResultMessage, UserMessage } from "@mariozechner/pi-ai";
 import type { DcpConfigWithPruneRuleObjects } from "../src/types";
-
-// Helpers
-function user(content: string, ts = Date.now()): UserMessage {
-  return { role: "user", content, timestamp: ts };
-}
-
-function assistant(
-  text: string,
-  toolCalls: { id: string; name: string; args?: Record<string, any> }[] = [],
-  ts = Date.now()
-): AssistantMessage {
-  const content: AssistantMessage["content"] = [{ type: "text", text }];
-  for (const tc of toolCalls) {
-    content.push({ type: "toolCall", id: tc.id, name: tc.name, arguments: tc.args ?? {} });
-  }
-  return {
-    role: "assistant",
-    content,
-    api: "anthropic",
-    provider: "anthropic",
-    model: "test",
-    usage: {
-      input: 0,
-      output: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-      totalTokens: 0,
-      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-    },
-    stopReason: toolCalls.length ? "toolUse" : "stop",
-    timestamp: ts,
-  };
-}
-
-function toolResult(
-  toolCallId: string,
-  toolName: string,
-  text: string,
-  isError = false,
-  ts = Date.now()
-): ToolResultMessage {
-  return {
-    role: "toolResult",
-    toolCallId,
-    toolName,
-    content: [{ type: "text", text }],
-    isError,
-    timestamp: ts,
-  };
-}
-
-// Helpers to extract IDs from results
-function collectToolCallIds(result: AgentMessage[]): Set<string> {
-  const ids = new Set<string>();
-  for (const msg of result) {
-    if (msg.role === "assistant" && Array.isArray(msg.content)) {
-      for (const part of msg.content) {
-        if (part.type === "toolCall") ids.add(part.id);
-      }
-    }
-  }
-  return ids;
-}
-
-function collectToolResultIds(result: AgentMessage[]): string[] {
-  const ids: string[] = [];
-  for (const msg of result) {
-    if (msg.role === "toolResult") ids.push(msg.toolCallId);
-  }
-  return ids;
-}
 
 describe("Fix Verification: Tool Use/Result Pairing", () => {
   beforeAll(() => {
+    // Register rules
     registerRule(deduplicationRule);
     registerRule(toolPairingRule);
     registerRule(recencyRule);
   });
 
-  const realWorldMessages: AgentMessage[] = [
-    user("Read the file"),
-    assistant("I'll read it", [
-      { id: "toolu_01VzLnitYpwspzkRMSc2bhfA", name: "read", args: { path: "test.txt" } },
-    ]),
-    toolResult("toolu_01VzLnitYpwspzkRMSc2bhfA", "read", "file contents"),
-    assistant("Got it"),
-    user("Read it again"),
-    assistant("I'll read it", [
-      { id: "toolu_01VzLnitYpwspzkRMSc2bhfA", name: "read", args: { path: "test.txt" } },
-    ]),
-    toolResult("toolu_01VzLnitYpwspzkRMSc2bhfA", "read", "file contents"),
-  ];
+  const realWorldMessages = [
+    { role: "user", content: "Read the file" },
+    {
+      role: "assistant",
+      content: [
+        { type: "text", text: "I'll read it" },
+        {
+          type: "tool_use",
+          id: "toolu_01VzLnitYpwspzkRMSc2bhfA",
+          name: "read",
+          input: { path: "test.txt" },
+        },
+      ],
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "tool_result",
+          tool_use_id: "toolu_01VzLnitYpwspzkRMSc2bhfA",
+          content: "file contents",
+        },
+      ],
+    },
+    { role: "assistant", content: "Got it" },
+    { role: "user", content: "Read it again" },
+    {
+      role: "assistant",
+      content: [
+        { type: "text", text: "I'll read it" },
+        {
+          type: "tool_use",
+          id: "toolu_01VzLnitYpwspzkRMSc2bhfA",
+          name: "read",
+          input: { path: "test.txt" },
+        },
+      ],
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "tool_result",
+          tool_use_id: "toolu_01VzLnitYpwspzkRMSc2bhfA",
+          content: "file contents",
+        },
+      ],
+    },
+  ] as any;
 
   const strictConfig: DcpConfigWithPruneRuleObjects = {
     enabled: true,
-    debug: false,
+    debug: false, // Disable debug output in tests
     rules: [deduplicationRule, toolPairingRule, recencyRule],
-    keepRecentCount: 0,
+    keepRecentCount: 0, // Don't protect anything - show pure pruning behavior
   };
 
   test("should handle duplicate tool calls without breaking pairing", () => {
     const result = applyPruningWorkflow(realWorldMessages, strictConfig);
 
-    const toolCallIds = collectToolCallIds(result);
-    const toolResultIds = collectToolResultIds(result);
+    // Verify pairing integrity
+    const toolUseIds = new Set<string>();
 
-    for (const id of toolResultIds) {
-      expect(toolCallIds.has(id)).toBe(true);
+    for (const msg of result) {
+      const content = Array.isArray(msg.content) ? msg.content : [];
+      const toolUses = content.filter((p: any) => p?.type === "tool_use");
+
+      toolUses.forEach((tu: any) => toolUseIds.add(tu.id));
+    }
+
+    for (const msg of result) {
+      const content = Array.isArray(msg.content) ? msg.content : [];
+      const toolResults = content.filter((p: any) => p?.type === "tool_result");
+
+      for (const tr of toolResults) {
+        expect(toolUseIds.has(tr.tool_use_id)).toBe(true);
+      }
     }
   });
 
@@ -129,65 +105,130 @@ describe("Fix Verification: Tool Use/Result Pairing", () => {
 
     expect(result.length).toBeLessThan(realWorldMessages.length);
 
-    let hasToolCall = false;
+    // Should still have at least one tool_use/tool_result pair
+    let hasToolUse = false;
     let hasToolResult = false;
+
     for (const msg of result) {
-      if (msg.role === "assistant" && Array.isArray(msg.content)) {
-        if (msg.content.some((p) => p.type === "toolCall")) hasToolCall = true;
+      const content = Array.isArray(msg.content) ? msg.content : [];
+
+      if (content.some((p: any) => p?.type === "tool_use")) {
+        hasToolUse = true;
       }
-      if (msg.role === "toolResult") hasToolResult = true;
+      if (content.some((p: any) => p?.type === "tool_result")) {
+        hasToolResult = true;
+      }
     }
 
-    expect(hasToolCall).toBe(true);
+    expect(hasToolUse).toBe(true);
     expect(hasToolResult).toBe(true);
   });
 
-  test("should prevent 400 API errors from orphaned toolResults", () => {
+  test("should prevent 400 API errors from orphaned tool_results", () => {
     const result = applyPruningWorkflow(realWorldMessages, strictConfig);
 
-    const toolCallIds = collectToolCallIds(result);
-    const orphaned: string[] = [];
+    // This test verifies the core fix: no tool_result without corresponding tool_use
+    const toolUseIds = new Set<string>();
+    const orphanedResults: string[] = [];
 
+    // First pass: collect all tool_use IDs
     for (const msg of result) {
-      if (msg.role === "toolResult") {
-        if (!toolCallIds.has(msg.toolCallId)) {
-          orphaned.push(msg.toolCallId);
+      const content = Array.isArray(msg.content) ? msg.content : [];
+      const toolUses = content.filter((p: any) => p?.type === "tool_use");
+      toolUses.forEach((tu: any) => toolUseIds.add(tu.id));
+    }
+
+    // Second pass: check for orphaned tool_results
+    for (const msg of result) {
+      const content = Array.isArray(msg.content) ? msg.content : [];
+      const toolResults = content.filter((p: any) => p?.type === "tool_result");
+
+      for (const tr of toolResults) {
+        if (!toolUseIds.has(tr.tool_use_id)) {
+          orphanedResults.push(tr.tool_use_id);
         }
       }
     }
 
-    expect(orphaned).toHaveLength(0);
+    expect(orphanedResults).toHaveLength(0);
   });
 
   test("should maintain message flow integrity", () => {
     const result = applyPruningWorkflow(realWorldMessages, strictConfig);
 
+    // Verify basic message structure is maintained
     expect(result.length).toBeGreaterThan(0);
 
+    // All messages should have valid roles
     for (const msg of result) {
-      expect(["user", "assistant", "toolResult"]).toContain(msg.role);
+      expect(["user", "assistant"]).toContain(msg.role);
+    }
+
+    // Should not have completely empty content
+    for (const msg of result) {
+      if (Array.isArray(msg.content)) {
+        expect(msg.content.length).toBeGreaterThan(0);
+      } else {
+        expect(msg.content).toBeTruthy();
+      }
     }
   });
 
   test("should handle the specific error scenario from the real bug report", () => {
-    const problematicMessages: AgentMessage[] = [
-      user("Read the file"),
-      assistant("I'll read it", [{ id: "toolu_ABC", name: "read", args: { path: "test.txt" } }]),
-      toolResult("toolu_ABC", "read", "content"),
-      // Duplicate pair that could cause orphaned result
-      assistant("I'll read it", [{ id: "toolu_ABC", name: "read", args: { path: "test.txt" } }]),
-      toolResult("toolu_ABC", "read", "content"),
-    ];
+    // This is the exact scenario that caused the 400 error
+    const problematicMessages = [
+      { role: "user", content: "Read the file" },
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "I'll read it" },
+          { type: "tool_use", id: "toolu_ABC", name: "read", input: { path: "test.txt" } },
+        ],
+      },
+      {
+        role: "user",
+        content: [{ type: "tool_result", tool_use_id: "toolu_ABC", content: "content" }],
+      },
+      // Duplicate that could cause orphaned result
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "I'll read it" },
+          { type: "tool_use", id: "toolu_ABC", name: "read", input: { path: "test.txt" } },
+        ],
+      },
+      {
+        role: "user",
+        content: [{ type: "tool_result", tool_use_id: "toolu_ABC", content: "content" }],
+      },
+    ] as any;
 
+    // This should not throw and should maintain pairing
     const result = applyPruningWorkflow(problematicMessages, strictConfig);
 
-    const toolCallIds = collectToolCallIds(result);
+    const toolUseIds = new Set<string>();
     let allPairsValid = true;
 
+    // Collect tool_use IDs
     for (const msg of result) {
-      if (msg.role === "toolResult") {
-        if (!toolCallIds.has(msg.toolCallId)) allPairsValid = false;
-      }
+      const content = Array.isArray(msg.content) ? msg.content : [];
+      content.forEach((part: any) => {
+        if (part?.type === "tool_use") {
+          toolUseIds.add(part.id);
+        }
+      });
+    }
+
+    // Verify all tool_results have matching tool_use
+    for (const msg of result) {
+      const content = Array.isArray(msg.content) ? msg.content : [];
+      content.forEach((part: any) => {
+        if (part?.type === "tool_result") {
+          if (!toolUseIds.has(part.tool_use_id)) {
+            allPairsValid = false;
+          }
+        }
+      });
     }
 
     expect(allPairsValid).toBe(true);
