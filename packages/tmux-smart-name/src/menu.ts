@@ -2,14 +2,7 @@
  * Agent management menu — generates tmux display-menu commands.
  */
 import { execFileSync } from "node:child_process";
-import {
-  hasSessions,
-  listSessions,
-  listWindows,
-  listPanes,
-  capturePane,
-  type TmuxPane,
-} from "./tmux.js";
+import { hasSessions, listAllPanes, capturePane, type TmuxPane } from "./tmux.js";
 import { AGENT_PROGRAMS, getPaneProgram } from "./process.js";
 import {
   detectStatus,
@@ -45,33 +38,21 @@ export function findAgentPanes(panes: TmuxPane[]): Array<{ pane: TmuxPane; progr
   return agents;
 }
 
-export function getAggregateStatus(panes: TmuxPane[]): {
-  status: StatusIcon | null;
-  count: number;
-} {
-  const agents = findAgentPanes(panes);
-  if (agents.length === 0) return { status: null, count: 0 };
-
-  const statuses = agents.map(({ pane }) => detectStatus(capturePane(pane.paneId)));
-  return { status: prioritize(statuses), count: agents.length };
-}
-
 export function getAllAgentsInfo(): AgentInfo[] {
   const agents: AgentInfo[] = [];
-  for (const session of listSessions()) {
-    for (const window of listWindows(session.id)) {
-      const panes = listPanes(window.id);
-      for (const { pane, program } of findAgentPanes(panes)) {
-        agents.push({
-          session: session.name,
-          windowIndex: window.index,
-          windowName: window.name,
-          paneId: pane.paneId,
-          program,
-          status: detectStatus(capturePane(pane.paneId)),
-          path: formatPath(pane.path),
-        });
-      }
+  const allPanes = listAllPanes();
+
+  for (const [, panes] of allPanes) {
+    for (const { pane, program } of findAgentPanes(panes)) {
+      agents.push({
+        session: pane.sessionName ?? "",
+        windowIndex: pane.windowIndex ?? "",
+        windowName: pane.windowName ?? "",
+        paneId: pane.paneId,
+        program,
+        status: detectStatus(capturePane(pane.paneId)),
+        path: formatPath(pane.path),
+      });
     }
   }
   return agents;
@@ -164,8 +145,8 @@ export function runMenu(): void {
         ? `${colorize(aggregate)} ${agents.length} agents (${attentionCount} need attention)`
         : `${colorize(aggregate)} ${agents.length} agents`;
 
-    menuArgs.push(header, "", ""); // header
-    menuArgs.push("", "", ""); // separator
+    menuArgs.push(header, "", "");
+    menuArgs.push("", "", "");
 
     for (let i = 0; i < sorted.length; i++) {
       const a = sorted[i];
@@ -187,7 +168,7 @@ export function runMenu(): void {
       }
     }
 
-    menuArgs.push("", "", ""); // separator
+    menuArgs.push("", "", "");
     menuArgs.push("Close", "q", "");
 
     execFileSync("tmux", ["display-menu", ...menuArgs]);

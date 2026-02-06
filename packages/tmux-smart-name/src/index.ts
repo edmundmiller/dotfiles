@@ -3,24 +3,11 @@
  * tmux-smart-name — smart window naming with AI agent status detection.
  * No external dependencies.
  */
-import {
-  hasSessions,
-  listSessions,
-  listWindows,
-  listPanes,
-  capturePane,
-  renameWindow,
-} from "./tmux.js";
-import { AGENT_PROGRAMS, getPaneProgram } from "./process.js";
-import { detectStatus, prioritize, colorize, type StatusIcon } from "./status.js";
+import { hasSessions, listAllPanes, capturePane, renameWindow, type TmuxPane } from "./tmux.js";
+import { AGENT_PROGRAMS, getPaneProgram, loadProcessTable, clearProcessTable } from "./process.js";
+import { detectStatus, prioritize, colorize } from "./status.js";
 import { formatPath, buildBaseName, trimName } from "./naming.js";
-import {
-  findAgentPanes,
-  getAggregateStatus,
-  getAllAgentsInfo,
-  generateMenuCommand,
-  runMenu,
-} from "./menu.js";
+import { getAllAgentsInfo, generateMenuCommand, runMenu } from "./menu.js";
 
 // ── Main rename ────────────────────────────────────────────────────────────
 
@@ -28,41 +15,57 @@ function renameAll(): void {
   if (!hasSessions()) return;
 
   try {
-    for (const session of listSessions()) {
-      for (const window of listWindows(session.id)) {
-        try {
-          const panes = listPanes(window.id);
-          if (panes.length === 0) continue;
+    // Single ps call for all panes
+    loadProcessTable();
 
-          const active = panes.find((p) => p.active) ?? panes[0];
-          const program = getPaneProgram(active.command, active.pid);
-          const path = formatPath(active.path);
-          const baseName = buildBaseName(program, path);
+    // Single tmux call for all panes across all sessions
+    const allPanes = listAllPanes();
 
-          if (!baseName && !program) continue;
+    for (const [windowId, panes] of allPanes) {
+      try {
+        if (panes.length === 0) continue;
 
-          const { status: agentStatus } = getAggregateStatus(panes);
+        const active = panes.find((p) => p.active) ?? panes[0];
+        const program = getPaneProgram(active.command, active.pid);
+        const path = formatPath(active.path);
+        const baseName = buildBaseName(program, path);
 
-          let newName: string;
-          if (agentStatus) {
-            const icon = colorize(agentStatus);
-            newName = `${icon} ${baseName}`;
-          } else {
-            newName = baseName;
+        if (!baseName && !program) continue;
+
+        // Check all panes for agents
+        const agentPaneIds: string[] = [];
+        for (const pane of panes) {
+          const prog = getPaneProgram(pane.command, pane.pid);
+          if (AGENT_PROGRAMS.includes(prog)) {
+            agentPaneIds.push(pane.paneId);
           }
-
-          newName = trimName(newName);
-
-          if (window.name !== newName) {
-            renameWindow(window.id, newName);
-          }
-        } catch {
-          continue;
         }
+
+        let newName: string;
+        if (agentPaneIds.length > 0) {
+          // Capture agent panes for status detection
+          const statuses = agentPaneIds.map((id) => detectStatus(capturePane(id)));
+          const agentStatus = prioritize(statuses);
+          const icon = colorize(agentStatus);
+          newName = `${icon} ${baseName}`;
+        } else {
+          newName = baseName;
+        }
+
+        newName = trimName(newName);
+        const currentName = panes[0].windowName ?? "";
+
+        if (currentName !== newName) {
+          renameWindow(windowId, newName);
+        }
+      } catch {
+        continue;
       }
     }
   } catch {
     // silently fail
+  } finally {
+    clearProcessTable();
   }
 }
 
@@ -72,7 +75,10 @@ function printGlobalStatus(): void {
   try {
     if (!hasSessions()) return;
 
+    loadProcessTable();
     const agents = getAllAgentsInfo();
+    clearProcessTable();
+
     if (agents.length === 0) return;
 
     const statuses = agents.map((a) => a.status);
@@ -91,7 +97,10 @@ function checkAttention(): void {
   try {
     if (!hasSessions()) return;
 
+    loadProcessTable();
     const agents = getAllAgentsInfo();
+    clearProcessTable();
+
     const attention = agents.filter(
       (a) => a.status === "▲" || a.status === "■" || a.status === "◇"
     );
@@ -143,7 +152,9 @@ switch (arg) {
     runMenu();
     break;
   case "--menu-cmd": {
+    loadProcessTable();
     const cmd = generateMenuCommand(getAllAgentsInfo());
+    clearProcessTable();
     console.log(cmd ?? 'display-message "No AI agents running"');
     break;
   }
