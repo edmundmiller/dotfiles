@@ -69,19 +69,33 @@ const SHARED_BUSY = [
 ];
 
 // ── pi patterns ────────────────────────────────────────────────────────────
+// Source: pi-coding-agent/dist/modes/interactive/
 
 const PI_BUSY = [
-  /Working\.\.\./i, // "⠦ Working..." spinner line
+  /Working\.\.\./i, // Loader component: "⠦ Working... (Escape to interrupt)"
+  /to interrupt\)/i, // Loader suffix: "(Escape to interrupt)"
+  /Auto-compacting\.\.\./i, // "⠦ Auto-compacting... (Escape to cancel)"
+  /Retrying \(\d+\/\d+\)/i, // "⠦ Retrying (1/3) in 5s..."
+  /Summarizing branch\.\.\./i, // "⠦ Summarizing branch... (Escape to cancel)"
   /Steering:/i, // queued steering message (agent still processing)
+  /Follow-up:/i, // queued follow-up message (agent still processing)
+  /to edit all queued/i, // "↳ Alt+Up to edit all queued messages"
+  /earlier lines,/i, // "... (3 earlier lines, ctrl+o to expand)" = tool running
+  /more lines,/i, // "... (5 more lines, ctrl+o to expand)" = tool running
 ];
 
 const PI_IDLE = [
-  /\(anthropic\)\s+\S+/i, // pi status bar: "(anthropic) claude-opus-4-6 • medium"
-  /\(openai[^)]*\)\s+\S+/i, // "(openai-codex) gpt-5.3-codex • xhigh"
-  /\(google\)\s+\S+/i, // "(google) gemini-..."
-  /↑\d+k?\s+↓\d+k?\s+R\d+/, // cost line: "↑343 ↓20k R11M W820k $10.960"
-  /\$\d+\.\d+\s+\(sub\)/i, // "$10.960 (sub)"
-  /\bLSP\b/, // LSP indicator at bottom
+  // Footer: "(provider) model-name • thinking-level"
+  /\(anthropic\)\s+\S+/i,
+  /\(openai[^)]*\)\s+\S+/i,
+  /\(google\)\s+\S+/i,
+  // Footer stats: "↑343 ↓20k R11M W820k $10.960 (sub) 13.9%/1.0M (auto)"
+  /↑\d+k?\s+↓\d+k?/,
+  /\$\d+\.\d{3}/i, // cost: "$10.960"
+  /\d+\.\d+%\/\d+k?\s+\(auto\)/, // context: "13.9%/1.0M (auto)"
+  // Extension statuses in footer
+  /\bLSP\b/,
+  /\bMCP:/,
 ];
 
 // ── Claude Code patterns ───────────────────────────────────────────────────
