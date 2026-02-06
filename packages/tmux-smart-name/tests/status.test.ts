@@ -114,25 +114,35 @@ describe("detectStatus (claude)", () => {
   });
 });
 
-// ── OpenCode-specific ──────────────────────────────────────────────────────
+// ── Amp-specific ───────────────────────────────────────────────────────────
 
-describe("detectStatus (opencode)", () => {
-  test("busy: Running tools", () => {
-    expect(detectStatus("≋ Running tools...  Esc to cancel", "opencode")).toBe(ICON_BUSY);
+describe("detectStatus (amp)", () => {
+  test("busy: streaming indicator + Running tools", () => {
+    expect(detectStatus("≋ Running tools...  Esc to cancel", "amp")).toBe(ICON_BUSY);
   });
 
   test("busy: progress bar + esc interrupt", () => {
-    expect(detectStatus("■■■■■■⬝⬝  esc interrupt\nctrl+p commands", "opencode")).toBe(ICON_BUSY);
-  });
-
-  test("idle: OpenCode version", () => {
-    expect(
-      detectStatus("ctrl+t variants  tab agents  ctrl+p commands    • OpenCode 1.1.30", "opencode")
-    ).toBe(ICON_IDLE);
+    expect(detectStatus("■■■■■■⬝⬝  esc interrupt\nctrl+p commands", "amp")).toBe(ICON_BUSY);
   });
 
   test("idle: ctrl+p commands footer", () => {
-    expect(detectStatus("Some output\nctrl+p commands", "opencode")).toBe(ICON_IDLE);
+    expect(detectStatus("Some output\nctrl+p commands", "amp")).toBe(ICON_IDLE);
+  });
+
+  test("idle: ctrl+t variants footer", () => {
+    expect(detectStatus("ctrl+t variants  tab agents  ctrl+p commands", "amp")).toBe(ICON_IDLE);
+  });
+});
+
+// ── OpenCode-specific ──────────────────────────────────────────────────────
+
+describe("detectStatus (opencode)", () => {
+  test("idle: OpenCode version", () => {
+    expect(detectStatus("• OpenCode 1.1.30", "opencode")).toBe(ICON_IDLE);
+  });
+
+  test("busy: Tool execution", () => {
+    expect(detectStatus("Tool: read file.ts", "opencode")).toBe(ICON_BUSY);
   });
 });
 
