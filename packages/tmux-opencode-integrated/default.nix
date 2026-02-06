@@ -2,24 +2,17 @@
   lib,
   stdenv,
   python3,
-  makeWrapper,
 }:
 
 let
-  pythonEnv = python3.withPackages (ps: [ ps.libtmux ]);
-  pythonTestEnv = python3.withPackages (ps: [
-    ps.libtmux
-    ps.pytest
-  ]);
+  pythonTestEnv = python3.withPackages (ps: [ ps.pytest ]);
 in
 stdenv.mkDerivation {
   pname = "tmux-opencode-integrated";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = ./.;
 
-  nativeBuildInputs = [ makeWrapper ];
-  buildInputs = [ pythonEnv ];
   nativeCheckInputs = [ pythonTestEnv ];
 
   doCheck = true;
@@ -33,13 +26,10 @@ stdenv.mkDerivation {
 
     chmod +x $out/share/tmux-plugins/tmux-opencode-integrated/scripts/smart-name.sh
     chmod +x $out/share/tmux-plugins/tmux-opencode-integrated/scripts/smart_name.py
-
-    wrapProgram $out/share/tmux-plugins/tmux-opencode-integrated/scripts/smart-name.sh \
-      --prefix PATH : ${lib.makeBinPath [ pythonEnv ]}
   '';
 
   meta = with lib; {
-    description = "Integrated tmux smart naming and OpenCode status";
+    description = "Integrated tmux smart naming and AI agent status";
     license = licenses.mit;
     platforms = platforms.all;
   };
