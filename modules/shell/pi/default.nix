@@ -130,6 +130,15 @@ in
               ${pkgs.jq}/bin/jq '. + {license: "UNLICENSED"}' "$HOME/package.json" > "$HOME/package.json.tmp" \
                 && mv "$HOME/package.json.tmp" "$HOME/package.json"
             fi
+
+            # Install deps for local pi packages (use $HOME path, not nix store)
+            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-dcp"; do
+              if [ -d "$pkg_dir" ] && [ ! -d "$pkg_dir/node_modules" ]; then
+                echo "Installing deps for $(basename "$pkg_dir")..."
+                (cd "$pkg_dir" && "$bun_bin" install) \
+                  || echo "Warning: $(basename "$pkg_dir") bun install failed."
+              fi
+            done
           fi
         '';
       };
