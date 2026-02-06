@@ -110,6 +110,7 @@ in
           ".pi/agent/skills".source = "${configDir}/agents/skills";
           ".pi/agent/AGENTS.md".text = concatenatedRules;
           ".pi/agent/settings.json".text = piSettingsStripped;
+
         };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
