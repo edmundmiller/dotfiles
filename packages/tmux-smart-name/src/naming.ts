@@ -15,6 +15,38 @@ export function formatPath(path: string): string {
   return path;
 }
 
+/**
+ * Shorten a path p10k-style: keep first char of intermediate dirs, full last component.
+ * ~/src/personal/hledger → ~/s/p/hledger
+ * ~/.config/dotfiles     → ~/.c/dotfiles
+ * /usr/local/bin         → /u/l/bin
+ */
+export function shortenPath(path: string): string {
+  if (!path) return "";
+
+  let prefix = "";
+  let rest = path;
+
+  if (rest.startsWith("~/")) {
+    prefix = "~/";
+    rest = rest.slice(2);
+  } else if (rest.startsWith("/")) {
+    prefix = "/";
+    rest = rest.slice(1);
+  }
+
+  const parts = rest.split("/").filter(Boolean);
+  if (parts.length <= 1) return path;
+
+  const shortened = parts.slice(0, -1).map((p) => {
+    // Keep leading dot for hidden dirs: .config → .c
+    if (p.startsWith(".") && p.length > 1) return "." + p[1];
+    return p[0];
+  });
+
+  return prefix + [...shortened, parts[parts.length - 1]].join("/");
+}
+
 /** Visible length excluding tmux #[...] format codes */
 function visibleLength(name: string): number {
   return name.replace(/#\[[^\]]*\]/g, "").length;
@@ -56,10 +88,10 @@ export function trimName(name: string, maxLen = MAX_NAME_LEN): string {
 }
 
 export function buildBaseName(program: string, path: string): string {
-  if (!program) return path || "";
-  if (SHELLS.includes(program)) return path || program;
+  if (!program) return path ? shortenPath(path) : "";
+  if (SHELLS.includes(program)) return path ? shortenPath(path) : program;
   if (DIR_PROGRAMS.includes(program)) {
-    return path ? `${program}: ${path}` : program;
+    return path ? `${program}: ${shortenPath(path)}` : program;
   }
   return program;
 }
