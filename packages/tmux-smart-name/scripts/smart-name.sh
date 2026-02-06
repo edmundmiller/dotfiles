@@ -14,6 +14,10 @@ case "${1:-}" in
     node "$MAIN" --status 2>/dev/null || true ;;
   --check-attention)
     node "$MAIN" --check-attention 2>/dev/null || true ;;
+  --tick)
+    # Called by status-right #() every status-interval seconds.
+    # Runs rename + attention check in single process, outputs nothing.
+    node "$MAIN" --tick 2>/dev/null || true ;;
   --refresh-hooks)
     CURRENT_SCRIPT_PATH="$CURRENT_DIR/smart-name.sh"
     STORED_PATH=$(tmux show-environment -g TMUX_SMART_NAME_SCRIPT_PATH 2>/dev/null | cut -d= -f2- || echo "")
@@ -53,6 +57,11 @@ case "${1:-}" in
     tmux set-environment -g TMUX_SMART_NAME_MENU_CMD "$CURRENT_DIR/smart-name.sh --menu"
     tmux set-environment -g TMUX_SMART_NAME_STATUS_CMD "$CURRENT_DIR/smart-name.sh --status"
     tmux set-environment -g TMUX_SMART_NAME_ATTENTION_CMD "$CURRENT_DIR/smart-name.sh --check-attention"
+
+    # Periodic refresh: piggyback on status-interval (runs every N seconds).
+    # Appends a hidden #() call to status-right that triggers rename + attention check.
+    # The #() output is empty so it doesn't change the status bar visually.
+    tmux set-option -ga status-right "#($CURRENT_DIR/smart-name.sh --tick)"
 
     "$CURRENT_DIR/smart-name.sh" --run
     ;;
