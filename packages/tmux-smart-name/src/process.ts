@@ -6,8 +6,95 @@ import { basename } from "node:path";
 
 export const SHELLS = ["bash", "zsh", "sh", "fish"];
 export const WRAPPERS = ["node", "python3", "python", "ruby", "bun"];
-export const AGENT_PROGRAMS = ["opencode", "claude", "amp", "pi"];
-export const DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", "opencode", "claude", "amp", "pi"];
+
+/**
+ * Known AI coding agents that run in terminals.
+ * When adding a new agent, also add to AGENT_ALIASES if it has alternate binary names,
+ * and to DIR_PROGRAMS if it should show the working directory in the window name.
+ */
+export const AGENT_PROGRAMS = [
+  // Anthropic
+  "claude", // Claude Code CLI
+
+  // OpenAI
+  "codex", // OpenAI Codex CLI
+
+  // Google
+  "gemini", // Gemini CLI
+
+  // Amp
+  "amp",
+
+  // OpenCode
+  "opencode",
+
+  // pi
+  "pi",
+
+  // Aider
+  "aider",
+
+  // Goose (Block)
+  "goose",
+
+  // Mentat (AbanteAI)
+  "mentat",
+
+  // Cline (terminal mode)
+  "cline",
+
+  // Cursor (terminal agent)
+  "cursor",
+
+  // Zed AI agent
+  "zed",
+
+  // Warp AI
+  "warp",
+
+  // Continue
+  "continue",
+
+  // Sweep
+  "sweep",
+
+  // GPT Engineer / gpt-pilot
+  "gpt-engineer",
+  "gpt-pilot",
+
+  // Plandex
+  "plandex",
+
+  // Devon
+  "devon",
+
+  // Roo
+  "roo",
+];
+
+/** Agents that should display working directory in window name */
+export const DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", ...AGENT_PROGRAMS];
+
+/** Maps alternate binary names → canonical agent name */
+const AGENT_ALIASES: Record<string, string> = {
+  oc: "opencode",
+  "gpt-engineer": "gpt-engineer",
+  "gpt-pilot": "gpt-pilot",
+};
+
+// ── Regex patterns for cmdline matching ────────────────────────────────────
+// Built dynamically from AGENT_PROGRAMS + AGENT_ALIASES
+
+const allNames = [...new Set([...AGENT_PROGRAMS, ...Object.keys(AGENT_ALIASES)])];
+// Sort longest-first so "gpt-engineer" matches before "gpt"
+const sorted = allNames.sort((a, b) => b.length - a.length);
+const AGENT_RE = new RegExp(`(^|[ /])(${sorted.map(escapeRegex).join("|")})(\\s|$)`);
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// ── Process helpers ────────────────────────────────────────────────────────
 
 export function runPs(args: string[]): string {
   try {
@@ -51,25 +138,29 @@ export function getChildCmdline(panePid: string): string {
   return "";
 }
 
-const OPENCODE_RE = /(^|[ /])(opencode|oc)(\b|$)/;
-const CLAUDE_RE = /(^|[ /])claude(\b|$)/;
-const PI_RE = /(^|[ /])pi(\s|$)/;
-const AMP_RE = /(^|[ /])amp(\b|$)/;
-
 export function normalizeProgram(cmdline: string): string {
   if (!cmdline) return "";
-  if (OPENCODE_RE.test(cmdline)) return "opencode";
-  if (CLAUDE_RE.test(cmdline)) return "claude";
-  if (PI_RE.test(cmdline)) return "pi";
-  if (AMP_RE.test(cmdline)) return "amp";
+
+  const match = cmdline.match(AGENT_RE);
+  if (match) {
+    const name = match[2];
+    return AGENT_ALIASES[name] ?? name;
+  }
 
   let name = basename(cmdline.trim().split(/\s+/)[0]);
   if (name.startsWith("-")) name = name.slice(1); // strip login shell prefix
+
+  // Check if basename matches an alias
+  if (AGENT_ALIASES[name]) return AGENT_ALIASES[name];
+
   return name;
 }
 
 export function getPaneProgram(paneCmd: string, panePid: string): string {
   if (AGENT_PROGRAMS.includes(paneCmd)) return paneCmd;
+
+  // Check aliases for pane_current_command
+  if (AGENT_ALIASES[paneCmd]) return AGENT_ALIASES[paneCmd];
 
   if (panePid && (SHELLS.includes(paneCmd) || WRAPPERS.includes(paneCmd))) {
     const childCmd = getChildCmdline(panePid);
