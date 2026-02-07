@@ -135,8 +135,14 @@ in
             for pkg_dir in "$HOME/.config/dotfiles/packages/pi-dcp"; do
               if [ -d "$pkg_dir" ] && [ ! -d "$pkg_dir/node_modules" ]; then
                 echo "Installing deps for $(basename "$pkg_dir")..."
-                (cd "$pkg_dir" && "$bun_bin" install) \
-                  || echo "Warning: $(basename "$pkg_dir") bun install failed."
+                # Drop to user if running as root (sudo darwin-rebuild)
+                if [ "$(id -u)" = "0" ]; then
+                  /usr/bin/su ${config.user.name} -c "cd '$pkg_dir' && '$bun_bin' install" \
+                    || echo "Warning: $(basename "$pkg_dir") bun install failed."
+                else
+                  (cd "$pkg_dir" && "$bun_bin" install) \
+                    || echo "Warning: $(basename "$pkg_dir") bun install failed."
+                fi
               fi
             done
           fi
