@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildBaseName, trimName, shortenPath } from "../src/naming";
+import { buildBaseName, trimName, shortenPath, parsePiFooter } from "../src/naming";
 
 describe("shortenPath", () => {
   test.each([
@@ -18,17 +18,80 @@ describe("shortenPath", () => {
   });
 });
 
+describe("parsePiFooter", () => {
+  test("extracts branch (non-main)", () => {
+    const content = `some output
+~/.config/dotfiles (feature-branch)
+↑360 ↓100k R31M W1.3M $26.385 (sub) 18.8%/1.0M (auto)`;
+    expect(parsePiFooter(content)).toEqual({ branch: "feature-branch" });
+  });
+
+  test("omits main branch", () => {
+    const content = `~/.config/dotfiles (main)
+↑360 ↓100k R31M`;
+    expect(parsePiFooter(content)).toEqual({});
+  });
+
+  test("omits master branch", () => {
+    const content = `~/repo (master)
+↑12 ↓1k`;
+    expect(parsePiFooter(content)).toEqual({});
+  });
+
+  test("extracts session name", () => {
+    const content = `~/.config/dotfiles (main) • refactor auth
+↑360 ↓100k R31M`;
+    expect(parsePiFooter(content)).toEqual({ sessionName: "refactor auth" });
+  });
+
+  test("extracts branch + session name", () => {
+    const content = `~/project (feat/oauth) • implement login
+↑12 ↓1k`;
+    expect(parsePiFooter(content)).toEqual({
+      branch: "feat/oauth",
+      sessionName: "implement login",
+    });
+  });
+
+  test("returns empty for non-pi content", () => {
+    expect(parsePiFooter("random output\nno footer here")).toEqual({});
+  });
+
+  test("returns empty for empty string", () => {
+    expect(parsePiFooter("")).toEqual({});
+  });
+});
+
 describe("buildBaseName", () => {
   test.each([
-    ["zsh", "~/src/personal/repo", "~/s/p/repo"],
-    ["nvim", "~/src/personal/repo", "nvim: ~/s/p/repo"],
-    ["python", "~/repo", "python"],
-    ["opencode", "~/src/project", "opencode: ~/s/project"],
-    ["claude", "", "claude"],
-    ["pi", "~/src/personal/project", "pi: ~/s/p/project"],
-    ["amp", "~/foo", "amp: ~/foo"],
-  ])("%s + %s → %s", (program, path, expected) => {
-    expect(buildBaseName(program, path)).toBe(expected);
+    ["zsh", "~/src/personal/repo", undefined, "~/s/p/repo"],
+    ["nvim", "~/src/personal/repo", undefined, "nvim: ~/s/p/repo"],
+    ["python", "~/repo", undefined, "python"],
+    ["opencode", "~/src/project", undefined, "opencode: ~/s/project"],
+    ["claude", "", undefined, "claude"],
+    ["pi", "~/src/personal/project", undefined, "pi: ~/s/p/project"],
+    ["amp", "~/foo", undefined, "amp: ~/foo"],
+  ] as const)("%s + %s → %s", (program, path, ctx, expected) => {
+    expect(buildBaseName(program, path, ctx)).toBe(expected);
+  });
+
+  test("pi with branch", () => {
+    expect(buildBaseName("pi", "~/.config/dotfiles", { branch: "feat/tmux" })).toBe(
+      "pi: ~/.c/dotfiles@feat/tmux"
+    );
+  });
+
+  test("pi with session name (takes priority)", () => {
+    expect(
+      buildBaseName("pi", "~/.config/dotfiles", {
+        branch: "feat/tmux",
+        sessionName: "refactor auth",
+      })
+    ).toBe("pi: refactor auth");
+  });
+
+  test("pi on main (no branch in context)", () => {
+    expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("pi: ~/.c/dotfiles");
   });
 });
 
