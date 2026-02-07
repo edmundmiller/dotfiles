@@ -6,7 +6,7 @@
 import { hasSessions, listAllPanes, capturePane, renameWindow, type TmuxPane } from "./tmux.js";
 import { AGENT_PROGRAMS, getPaneProgram, loadProcessTable, clearProcessTable } from "./process.js";
 import { detectStatus, prioritize, colorize } from "./status.js";
-import { formatPath, buildBaseName, trimName } from "./naming.js";
+import { formatPath, buildBaseName, trimName, parsePiFooter, type PaneContext } from "./naming.js";
 import { getAllAgentsInfo, generateMenuCommand, runMenu } from "./menu.js";
 
 // ── Main rename ────────────────────────────────────────────────────────────
@@ -28,12 +28,9 @@ function renameAll(): void {
         const active = panes.find((p) => p.active) ?? panes[0];
         const program = getPaneProgram(active.command, active.pid);
         const path = formatPath(active.path);
-        const baseName = buildBaseName(program, path);
 
-        if (!baseName && !program) continue;
-
-        // Check all panes for agents
-        const agentPanes: Array<{ paneId: string; agent: string }> = [];
+        // Check all panes for agents, capture content for status + context
+        const agentPanes: Array<{ paneId: string; agent: string; content?: string }> = [];
         for (const pane of panes) {
           const prog = getPaneProgram(pane.command, pane.pid);
           if (AGENT_PROGRAMS.includes(prog)) {
@@ -41,10 +38,26 @@ function renameAll(): void {
           }
         }
 
+        // Extract context (branch, session name) from active pane if it's a pi agent
+        let context: PaneContext | undefined;
+        const activeAgent = agentPanes.find((a) => a.paneId === active.paneId);
+        let activeContent: string | undefined;
+        if (activeAgent && activeAgent.agent === "pi") {
+          activeContent = capturePane(active.paneId);
+          context = parsePiFooter(activeContent);
+        }
+
+        const baseName = buildBaseName(program, path, context);
+        if (!baseName && !program) continue;
+
         let newName: string;
         if (agentPanes.length > 0) {
-          // Capture agent panes for status detection, passing agent name for tuned patterns
-          const statuses = agentPanes.map((a) => detectStatus(capturePane(a.paneId), a.agent));
+          const statuses = agentPanes.map((a) => {
+            // Reuse already-captured content for active pane
+            const content =
+              a.paneId === active.paneId && activeContent ? activeContent : capturePane(a.paneId);
+            return detectStatus(content, a.agent);
+          });
           const agentStatus = prioritize(statuses);
           const icon = colorize(agentStatus);
           newName = `${icon} ${baseName}`;
