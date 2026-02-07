@@ -67,10 +67,17 @@
       ],
     },
     // tmustier extensions - https://github.com/tmustier/pi-extensions
+    "npm:@tmustier/pi-tab-status",
+    "npm:@tmustier/pi-files-widget",
+    "npm:@tmustier/pi-code-actions", // /code to pick code blocks from messages
+    "npm:@tmustier/pi-raw-paste", // /paste for raw clipboard paste
+    "npm:@tmustier/pi-ralph-wiggum", // Long-running iterative agent loops
+    "npm:@tmustier/pi-agent-guidance", // Agent guidance/steering
+    "npm:@tmustier/pi-skill-creator", // Create new pi skills
+    // extending-pi skill (no npm pkg) - how to build pi extensions
     {
       "source": "https://github.com/tmustier/pi-extensions",
-      "extensions": ["tab-status/tab-status.ts", "files-widget/index.ts"],
-      "skills": [],
+      "skills": ["extending-pi/SKILL.md"],
     },
     // Canvas for visual diagrams - https://github.com/jyaunches/pi-canvas
     {
