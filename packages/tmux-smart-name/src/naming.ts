@@ -87,11 +87,62 @@ export function trimName(name: string, maxLen = MAX_NAME_LEN): string {
   return maxLen <= 3 ? trimmed : trimmed + "...";
 }
 
-export function buildBaseName(program: string, path: string): string {
+export interface PaneContext {
+  /** Git branch (omitted if main/master) */
+  branch?: string;
+  /** Pi session name */
+  sessionName?: string;
+}
+
+/**
+ * Extract branch and session name from pi's footer line.
+ * Footer format: "~/path (branch)" or "~/path (branch) • session-name"
+ */
+export function parsePiFooter(content: string): PaneContext {
+  const ctx: PaneContext = {};
+  if (!content) return ctx;
+
+  // Find the footer pwd line: "~/path (branch) • session-name" or "~/path (branch)"
+  // It's the line before the stats line (which starts with ↑)
+  const lines = content.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    // Footer pwd line has (branch) and next line starts with ↑ (stats)
+    const next = lines[i + 1]?.trim() ?? "";
+    if (/\(.*\)/.test(line) && /^↑/.test(next)) {
+      const branchMatch = line.match(/\(([^)]+)\)/);
+      if (branchMatch) {
+        const branch = branchMatch[1];
+        if (branch !== "main" && branch !== "master") {
+          ctx.branch = branch;
+        }
+      }
+      const sessionMatch = line.match(/•\s+(.+)$/);
+      if (sessionMatch) {
+        ctx.sessionName = sessionMatch[1].trim();
+      }
+      break;
+    }
+  }
+  return ctx;
+}
+
+export function buildBaseName(program: string, path: string, context?: PaneContext): string {
   if (!program) return path ? shortenPath(path) : "";
   if (SHELLS.includes(program)) return path ? shortenPath(path) : program;
   if (DIR_PROGRAMS.includes(program)) {
-    return path ? `${program}: ${shortenPath(path)}` : program;
+    let name = program;
+    const short = path ? shortenPath(path) : "";
+
+    // Prefer session name > branch > path
+    if (context?.sessionName) {
+      name += `: ${context.sessionName}`;
+    } else if (context?.branch) {
+      name += `: ${short}@${context.branch}`;
+    } else if (short) {
+      name += `: ${short}`;
+    }
+    return name;
   }
   return program;
 }
