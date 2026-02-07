@@ -171,6 +171,60 @@ describe("Tool Pairing Protection", () => {
     expect(hasToolResult).toBe(true);
   });
 
+  // Regression: dotfiles-tmb9 — recency boundary splits duplicate pair
+  // dedup marks both assistant[6] and toolResult[7] as pruned (identical to [1]/[2])
+  // tool-pairing skips cascade because both already pruned
+  // recency un-prunes toolResult[7] (inside window) but NOT assistant[6] (outside)
+  // → orphaned tool_result → API 400
+  test("should not orphan tool_result when recency boundary splits duplicate pair", () => {
+    const msgs: AgentMessage[] = [
+      // 0
+      user("read the file"),
+      // 1: original assistant+tool_use
+      assistant("reading file", [{ id: "toolu_AAA", name: "read", args: { path: "f.txt" } }]),
+      // 2: original tool_result
+      toolResult("toolu_AAA", "read", "contents"),
+      // 3
+      user("do something else"),
+      // 4
+      assistant("ok", [{ id: "toolu_CCC", name: "write", args: { path: "g.txt", content: "x" } }]),
+      // 5
+      toolResult("toolu_CCC", "write", "done"),
+      // 6: DUPLICATE assistant (same content as [1], different tool ID)
+      assistant("reading file", [{ id: "toolu_BBB", name: "read", args: { path: "f.txt" } }]),
+      // 7: DUPLICATE tool_result (same content as [2])
+      toolResult("toolu_BBB", "read", "contents"),
+      // 8
+      user("thanks"),
+    ];
+
+    const cfg: DcpConfigWithPruneRuleObjects = {
+      enabled: true,
+      debug: false,
+      rules: [deduplicationRule, toolPairingRule, recencyRule],
+      keepRecentCount: 2, // protects indices 7,8 but NOT 6
+    };
+
+    const result = applyPruningWorkflow(msgs, cfg);
+
+    // Collect kept tool IDs
+    const keptToolUseIds = new Set<string>();
+    const keptToolResultIds: string[] = [];
+    for (const msg of result) {
+      if (msg.role === "assistant" && Array.isArray(msg.content)) {
+        for (const p of msg.content) {
+          if (p.type === "toolCall") keptToolUseIds.add(p.id);
+        }
+      }
+      if (msg.role === "toolResult") keptToolResultIds.push(msg.toolCallId);
+    }
+
+    // Every kept tool_result must have a matching kept tool_use
+    for (const id of keptToolResultIds) {
+      expect(keptToolUseIds.has(id)).toBe(true);
+    }
+  });
+
   test("should handle multiple different tool pairs correctly", () => {
     const result = applyPruningWorkflow(testMessages, config);
 
