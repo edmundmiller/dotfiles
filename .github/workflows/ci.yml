@@ -25,7 +25,7 @@ jobs:
       - name: Check NixOS configurations evaluate
         run: |
           nix eval .#nixosConfigurations.nuc.config.system.build.toplevel --apply 'x: "OK"'
-          # framework config disabled: NUR overlay migration needed (pkgs.nur.repos.rycee removed)
+          # TODO: framework eval fails on op-plugin-list build; re-enable after fixing 1Password shell-plugins
           # nix eval .#nixosConfigurations.framework.config.system.build.toplevel --apply 'x: "OK"'
 
   # Run flake checks on macOS (Darwin configurations)
