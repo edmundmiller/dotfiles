@@ -37,6 +37,7 @@ stdenvNoCC.mkDerivation rec {
     mkdir -p $out/bin
     cp zunit $out/bin/zunit
     chmod +x $out/bin/zunit
+    patchShebangs $out/bin/zunit
 
     # Symlink revolver into zunit's bin so it's found via $PATH
     ln -s ${revolver}/bin/revolver $out/bin/revolver
