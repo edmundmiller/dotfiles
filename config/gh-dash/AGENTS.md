@@ -5,17 +5,20 @@
 Custom keybinding commands use Go templates. Available variables differ by context:
 
 **PRs:**
+
 - `{{.RepoName}}` - owner/repo
 - `{{.RepoPath}}` - local path
 - `{{.PrNumber}}` - PR number
 - `{{.HeadRefName}}` - branch name
 
 **Issues:**
+
 - `{{.RepoName}}` - owner/repo
 - `{{.RepoPath}}` - local path
 - `{{.IssueNumber}}` - issue number
 
 **There is no `{{.Url}}` variable.** Construct URLs manually:
+
 ```yaml
 # PR
 command: "open 'https://github.com/{{.RepoName}}/pull/{{.PrNumber}}'"
