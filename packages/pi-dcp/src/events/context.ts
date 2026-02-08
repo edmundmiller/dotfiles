@@ -270,7 +270,7 @@ function injectContextInfo(
  * This runs AFTER all pruning layers (automatic + LLM-driven) to catch
  * orphans created by layer 2 that layer 1's repair couldn't anticipate.
  */
-function repairOrphanedToolPairsPostPruning(
+export function repairOrphanedToolPairsPostPruning(
   messages: AgentMessage[],
   logger: ReturnType<typeof getLogger>
 ): AgentMessage[] {
