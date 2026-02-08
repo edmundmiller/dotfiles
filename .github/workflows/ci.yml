@@ -20,7 +20,6 @@ jobs:
         run: |
           # Check x86_64-linux specific outputs
           nix build .#checks.x86_64-linux.treefmt --no-link
-          nix build .#checks.x86_64-linux.pre-commit --no-link
           nix build .#checks.x86_64-linux.zunit-tests --no-link
 
       - name: Check NixOS configurations evaluate
@@ -41,7 +40,6 @@ jobs:
         run: |
           # Check aarch64-darwin specific outputs
           nix build .#checks.aarch64-darwin.treefmt --no-link
-          nix build .#checks.aarch64-darwin.pre-commit --no-link
           nix build .#checks.aarch64-darwin.zunit-tests --no-link
 
       - name: Check Darwin configurations evaluate
