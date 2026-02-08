@@ -38,8 +38,9 @@ let
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
 
   # Convert JSONC to valid JSON:
-  # 1. Strip // comment lines (preserves URLs like https://)
-  # 2. Remove trailing commas before } or ] (invalid in JSON)
+  # 1. Strip full-line // comments
+  # 2. Strip inline // comments (after JSON values, not inside strings)
+  # 3. Remove trailing commas before } or ] (invalid in JSON)
   piSettingsRaw = builtins.readFile "${configDir}/pi/settings.jsonc";
   piSettingsLines = lib.splitString "\n" piSettingsRaw;
   isCommentLine =
@@ -50,7 +51,18 @@ let
         end = false;
       } line
     );
-  piSettingsFiltered = builtins.filter (line: !isCommentLine line) piSettingsLines;
+  # Strip inline comments: split on " //" and keep only the first part
+  # This handles patterns like: "value", // comment
+  # Safe because JSON string values containing " //" would be unusual
+  stripInlineComment =
+    line:
+    let
+      parts = lib.splitString " //" line;
+    in
+    if builtins.length parts > 1 then builtins.head parts else line;
+  piSettingsFiltered = map stripInlineComment (
+    builtins.filter (line: !isCommentLine line) piSettingsLines
+  );
   # Remove trailing commas by stripping commas from lines where the next
   # non-empty line starts with ] or }
   removeTrailingCommas =

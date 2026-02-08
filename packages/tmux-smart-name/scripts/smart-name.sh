@@ -11,6 +11,7 @@ case "${1:-}" in
   --run)
     # Debounce: skip if lock file exists and is <1s old (prevents hook storms)
     if [[ -f "$LOCKFILE" ]]; then
+      # NB: -c %Y is GNU stat (from nix coreutils). macOS native stat uses -f %m.
       lock_age=$(( $(date +%s) - $(stat -c %Y "$LOCKFILE" 2>/dev/null || echo 0) ))
       if (( lock_age < 1 )); then
         exit 0
