@@ -10,6 +10,7 @@
  */
 
 import type { PruneRule } from "../types";
+import { getLogger } from "../logger";
 
 export const recencyRule: PruneRule = {
   name: "recency",
@@ -35,8 +36,8 @@ export const recencyRule: PruneRule = {
       msg.metadata.protectedByRecency = true;
 
       if (ctx.config.debug && wasPruned) {
-        console.log(
-          `[pi-dcp] Recency: protecting message at index ${ctx.index} ` +
+        getLogger().debug(
+          `Recency: protecting message at index ${ctx.index} ` +
             `(distance from end: ${distanceFromEnd}, threshold: ${ctx.config.keepRecentCount})`
         );
       }

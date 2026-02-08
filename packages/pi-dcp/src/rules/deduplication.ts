@@ -8,6 +8,7 @@
 
 import type { PruneRule } from "../types";
 import { hashMessage } from "../metadata";
+import { getLogger } from "../logger";
 
 export const deduplicationRule: PruneRule = {
   name: "deduplication",
@@ -45,8 +46,8 @@ export const deduplicationRule: PruneRule = {
       msg.metadata.pruneReason = "duplicate content";
 
       if (ctx.config.debug) {
-        console.log(
-          `[pi-dcp] Dedup: marking duplicate message at index ${ctx.index} (hash: ${currentHash})`
+        getLogger().debug(
+          `Dedup: marking duplicate message at index ${ctx.index} (hash: ${currentHash})`
         );
       }
     }
