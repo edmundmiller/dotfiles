@@ -10,7 +10,10 @@
   
   # Create a testable version that echoes instead of exec
   export TEST_SCRIPT="$TEST_DIR/open-git-tui-test.sh"
-  sed 's/exec /echo /' "$SCRIPT" > "$TEST_SCRIPT"
+  {
+    echo "#!$(command -v bash)"
+    tail -n +2 "$SCRIPT" | sed 's/exec /echo /'
+  } > "$TEST_SCRIPT"
   chmod +x "$TEST_SCRIPT"
 }
 
