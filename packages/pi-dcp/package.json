@@ -28,6 +28,7 @@
     ]
   },
   "dependencies": {
+    "@sinclair/typebox": "^0.34.0",
     "bunfig": "^0.15.6"
   }
 }
