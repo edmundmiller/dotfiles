@@ -148,7 +148,7 @@
       lib = nixpkgs.lib.extend (
         self: _super: {
           my = import ./lib {
-            pkgs = pkgs; # Linux packages for the lib functions
+            inherit pkgs; # Linux packages for the lib functions
             inherit inputs;
             lib = self;
           };
