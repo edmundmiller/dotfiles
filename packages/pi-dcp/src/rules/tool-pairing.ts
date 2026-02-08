@@ -16,6 +16,7 @@
 
 import type { PruneRule, ProcessContext, MessageWithMetadata } from "../types";
 import { extractToolUseIds, hasToolUse, hasToolResult } from "../metadata";
+import { getLogger } from "../logger";
 
 export const toolPairingRule: PruneRule = {
   name: "tool-pairing",
@@ -73,8 +74,8 @@ function cascadePruneForward(msg: MessageWithMetadata, ctx: ProcessContext): voi
         nextMsg.metadata.pruneReason = "orphaned tool_result (tool_use was pruned)";
 
         if (ctx.config.debug) {
-          console.log(
-            `[pi-dcp] Tool-pairing: cascade pruning tool_result at index ${i} ` +
+          getLogger().debug(
+            `Tool-pairing: cascade pruning tool_result at index ${i} ` +
               `(tool_use at index ${ctx.index} was pruned)`
           );
         }
@@ -85,8 +86,8 @@ function cascadePruneForward(msg: MessageWithMetadata, ctx: ProcessContext): voi
         nextMsg.metadata.protectedByToolPairing = true;
 
         if (ctx.config.debug) {
-          console.log(
-            `[pi-dcp] Tool-pairing: protecting tool_result at index ${i} ` +
+          getLogger().debug(
+            `Tool-pairing: protecting tool_result at index ${i} ` +
               `(tool_use at index ${ctx.index} is kept)`
           );
         }
@@ -125,8 +126,8 @@ function protectToolUseBackward(msg: MessageWithMetadata, ctx: ProcessContext): 
       prevMsg.metadata.protectedByToolPairing = true;
 
       if (ctx.config.debug) {
-        console.log(
-          `[pi-dcp] Tool-pairing: protecting tool_use at index ${i} ` +
+        getLogger().debug(
+          `Tool-pairing: protecting tool_use at index ${i} ` +
             `(referenced by kept tool_result at index ${ctx.index})`
         );
       }
@@ -166,8 +167,8 @@ function protectMatchingToolResults(
       nextMsg.metadata.protectedByToolPairing = true;
 
       if (ctx.config.debug) {
-        console.log(
-          `[pi-dcp] Tool-pairing: protecting tool_result at index ${i} ` +
+        getLogger().debug(
+          `Tool-pairing: protecting tool_result at index ${i} ` +
             `(paired with protected tool_use at index ${toolUseIndex})`
         );
       }
