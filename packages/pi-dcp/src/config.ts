@@ -12,13 +12,14 @@ import {
 } from "./types";
 import { loadConfig as bunfigLoad } from "bunfig";
 import { getRule, getRuleNames } from "./registry";
+import { getLogger } from "./logger";
 
 /**
  * Default configuration
  */
 const DEFAULT_CONFIG: DcpConfigWithRuleRefs = {
   enabled: true,
-  debug: true,
+  debug: false,
   rules: ["deduplication", "superseded-writes", "error-purging", "tool-pairing", "recency"],
   keepRecentCount: 10,
 };
@@ -79,8 +80,8 @@ export async function loadConfig(pi: ExtensionAPI): Promise<DcpConfigWithPruneRu
 
   // Log invalid rules if debug is enabled
   if (config.debug && invalidRuleNames.length > 0) {
-    console.warn(
-      `[pi-dcp] Warning: The following configured rules are invalid and will be ignored: ${invalidRuleNames.join(", ")}`
+    getLogger().warn(
+      `The following configured rules are invalid and will be ignored: ${invalidRuleNames.join(", ")}`
     );
   }
 

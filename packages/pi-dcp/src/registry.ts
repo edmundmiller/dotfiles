@@ -3,6 +3,7 @@
  */
 
 import type { PruneRule } from "./types";
+import { getLogger } from "./logger";
 
 /**
  * Global registry of available pruning rules
@@ -24,7 +25,7 @@ export function registerRule(rule: PruneRule): void {
 
   // Warn if duplicate (but allow override)
   if (ruleRegistry.has(rule.name)) {
-    console.warn(`[pi-dcp] Overriding existing rule: ${rule.name}`);
+    getLogger().warn(`Overriding existing rule: ${rule.name}`);
   }
 
   ruleRegistry.set(rule.name, rule);

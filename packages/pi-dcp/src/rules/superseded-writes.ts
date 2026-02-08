@@ -7,6 +7,7 @@
 
 import type { PruneRule } from "../types";
 import { extractFilePath, hashMessage } from "../metadata";
+import { getLogger } from "../logger";
 
 export const supersededWritesRule: PruneRule = {
   name: "superseded-writes",
@@ -25,8 +26,8 @@ export const supersededWritesRule: PruneRule = {
       msg.metadata.fileVersion = hashMessage(msg.message);
 
       if (ctx.config.debug) {
-        console.log(
-          `[pi-dcp] SupersededWrites: found file operation at index ${ctx.index}: ${filePath}`
+        getLogger().debug(
+          `SupersededWrites: found file operation at index ${ctx.index}: ${filePath}`
         );
       }
     }
@@ -55,8 +56,8 @@ export const supersededWritesRule: PruneRule = {
       msg.metadata.pruneReason = `superseded by later write to ${msg.metadata.filePath}`;
 
       if (ctx.config.debug) {
-        console.log(
-          `[pi-dcp] SupersededWrites: marking superseded write at index ${ctx.index}: ${msg.metadata.filePath}`
+        getLogger().debug(
+          `SupersededWrites: marking superseded write at index ${ctx.index}: ${msg.metadata.filePath}`
         );
       }
     }
