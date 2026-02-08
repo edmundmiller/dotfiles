@@ -25,8 +25,6 @@ jobs:
       - name: Check NixOS configurations evaluate
         run: |
           nix eval .#nixosConfigurations.nuc.config.system.build.toplevel --apply 'x: "OK"'
-          # TODO: framework eval fails on op-plugin-list build; re-enable after fixing 1Password shell-plugins
-          # nix eval .#nixosConfigurations.framework.config.system.build.toplevel --apply 'x: "OK"'
 
   # Run flake checks on macOS (Darwin configurations)
   check-darwin:
