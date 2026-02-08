@@ -32,6 +32,9 @@ export const deduplicationRule: PruneRule = {
     // Never prune user messages
     if (msg.message.role === "user") return;
 
+    // Never prune assistant messages with tool calls — each invocation is unique
+    if (msg.metadata.hasToolUse) return;
+
     // Check if we've seen this exact content before
     const currentHash = msg.metadata.hash;
     if (!currentHash) return;
