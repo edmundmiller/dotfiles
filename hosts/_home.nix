@@ -11,7 +11,6 @@ with lib;
     192.168.1.1   router.home
 
     # Hosts
-    192.168.1.99   framework.home
     192.168.1.88   meshify.home
     192.168.1.101  unas.home
     192.168.1.144  nuc.home
