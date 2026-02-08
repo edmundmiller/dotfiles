@@ -3,7 +3,6 @@
 # Oh firefox, gateway to the interwebs, devourer of ram. Give onto me your
 # infinite knowledge and shelter me from ads.
 {
-  inputs,
   config,
   lib,
   pkgs,
@@ -43,7 +42,6 @@ in
       profileName = if cfg.profileName != null then cfg.profileName else config.user.name;
     in
     {
-      nixpkgs.overlays = [ inputs.nur.overlays.default ];
       services.psd.enable = true;
 
       # Prevent auto-creation of ~/Desktop. The trailing slash is necessary; see
@@ -61,23 +59,6 @@ in
           ];
         };
         profiles."profile0" = {
-          extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-            bitwarden
-            buster-captcha-solver
-            clearurls
-            decentraleyes
-            libredirect
-            no-pdf-download
-            translate-web-pages
-            tridactyl
-            ublock-origin
-            onetab
-
-            # # Missing:
-            # cloudhole
-            # devtools-adb-extension
-            # firefox-sticky-window-containers
-          ];
           settings = {
             "devtools.theme" = "dark";
             # Enable userContent.css and userChrome.css for our theme modules

@@ -16,7 +16,6 @@
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nur.url = "github:nix-community/NUR";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
 
