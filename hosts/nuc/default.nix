@@ -94,7 +94,7 @@
         };
         plugins = [
           {
-            source = "path:${toString ../../.}/tools/linear?narHash=sha256-J24PZZzztkk2yE52SHRd09kHGg4jFnqYWN0yssf5nKs=";
+            source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
             config.env.LINEAR_API_TOKEN_FILE = config.age.secrets.linear-api-token.path;
           }
         ];
