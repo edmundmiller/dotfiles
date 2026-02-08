@@ -8,6 +8,7 @@
 
 import type { PruneRule } from "../types";
 import { isErrorMessage, isSameOperation } from "../metadata";
+import { getLogger } from "../logger";
 
 export const errorPurgingRule: PruneRule = {
   name: "error-purging",
@@ -30,7 +31,7 @@ export const errorPurgingRule: PruneRule = {
       msg.metadata.errorResolved = !!laterSuccess;
 
       if (ctx.config.debug && laterSuccess) {
-        console.log(`[pi-dcp] ErrorPurging: found resolved error at index ${ctx.index}`);
+        getLogger().debug(`ErrorPurging: found resolved error at index ${ctx.index}`);
       }
     }
   },
@@ -51,7 +52,7 @@ export const errorPurgingRule: PruneRule = {
       msg.metadata.pruneReason = "error resolved by later success";
 
       if (ctx.config.debug) {
-        console.log(`[pi-dcp] ErrorPurging: marking resolved error at index ${ctx.index}`);
+        getLogger().debug(`ErrorPurging: marking resolved error at index ${ctx.index}`);
       }
     }
   },
