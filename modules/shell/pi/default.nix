@@ -94,6 +94,16 @@ let
     map stripTrailingComma indexed;
   piSettingsClean = removeTrailingCommas piSettingsFiltered;
   piSettingsStripped = lib.concatStringsSep "\n" piSettingsClean;
+
+  # Validate at Nix eval time — fails the build if JSONC stripping is broken
+  piSettingsValidated =
+    let
+      parsed = builtins.tryEval (builtins.fromJSON piSettingsStripped);
+    in
+    if parsed.success then
+      piSettingsStripped
+    else
+      builtins.throw "pi settings.jsonc produced invalid JSON after stripping comments/trailing commas. Run: nix eval --expr 'builtins.fromJSON (builtins.readFile ./result-settings.json)' to debug.";
 in
 {
   options.modules.shell.pi = {
@@ -121,7 +131,7 @@ in
         home.file = {
           ".pi/agent/skills".source = "${configDir}/agents/skills";
           ".pi/agent/AGENTS.md".text = concatenatedRules;
-          ".pi/agent/settings.json".text = piSettingsStripped;
+          ".pi/agent/settings.json".text = piSettingsValidated;
 
         };
 
