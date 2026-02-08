@@ -359,6 +359,8 @@
                       self.packages.${system}.zunit
                       pkgs.zsh
                       pkgs.git
+                      pkgs.gnused
+                      pkgs.bash
                     ];
                   }
                   ''
