@@ -22,9 +22,14 @@ export function hashMessage(message: AgentMessage): string {
   // Create a stable string representation of the message content
   let content = "";
 
+  // toolResult messages: include toolCallId and toolName for uniqueness
+  if (message.role === "toolResult") {
+    content = `[toolResult:${(message as any).toolCallId || "?"}:${(message as any).toolName || "?"}]`;
+  }
+
   if ("content" in message) {
     if (typeof message.content === "string") {
-      content = message.content;
+      content += message.content;
     } else if (Array.isArray(message.content)) {
       content = message.content
         .map((part: any) => {
@@ -33,7 +38,16 @@ export function hashMessage(message: AgentMessage): string {
 
           if (part.type === "text") return part.text || "";
           if (part.type === "image") return `[image:${part.source?.type || "unknown"}]`;
-          if (part.type === "tool_use") return `[tool:${part.name || "unknown"}]`;
+          // Pi uses "toolCall" (not "tool_use") for assistant tool invocations
+          if (part.type === "toolCall") {
+            const args = part.arguments ? JSON.stringify(part.arguments) : "";
+            return `[tool:${part.id || "?"}:${part.name || "unknown"}:${args}]`;
+          }
+          // Legacy API format
+          if (part.type === "tool_use") {
+            const input = part.input ? JSON.stringify(part.input) : "";
+            return `[tool:${part.id || "?"}:${part.name || "unknown"}:${input}]`;
+          }
           if (part.type === "tool_result") return `[result:${part.tool_use_id || "unknown"}]`;
           return "";
         })
