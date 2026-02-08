@@ -26,7 +26,6 @@ in
       configDir = "/home/${config.user.name}/.config/syncthing";
       dataDir = "/home/${config.user.name}/.local/share/syncthing";
       settings.devices = {
-        framework.id = "YLGMFGU-DYU3KRI-UIJVSOK-DFWPDJ2-Y73BYZF-GOQSB7O-XUMCJ3Y-PWLE4AR";
         jodi.id = "ND4CPWW-B6W3HQV-E4QLZAZ-RV7TWFP-2F2WNKB-ONLVHV4-K5AKYAK-KICP2AB"; # Set up externally
         iphone.id = "S4UUK5M-MV6EGGH-GAW7KGW-4LOHO24-4K3BOKV-7TVOAIJ-AYZY5FA-DJY7FAV"; # Set up externally
         mbp.id = "SORM6WA-5QWAQJ4-UHXAWXK-TXGQ54H-NA752HH-VVRJDDV-3L7JL6D-SRJ5JA4"; # Set up externally
@@ -44,7 +43,6 @@ in
         {
           archive = rec {
             devices = [
-              "framework"
               "meshify"
               "nuc"
               "unas"
@@ -53,7 +51,6 @@ in
             fsWatcherEnabled = false;
             rescanIntervalS = 3600 * 6;
             type = deviceType [
-              "framework"
               "mbp"
               "meshify"
             ];
@@ -63,7 +60,6 @@ in
           };
           sync = rec {
             devices = [
-              "framework"
               "mbp"
               "iphone"
               "meshify"
@@ -74,7 +70,6 @@ in
             fsWatcherEnabled = true;
             rescanIntervalS = 3600 * 6;
             type = deviceType [
-              "framework"
               "mbp"
               "meshify"
               "iphone"
@@ -90,7 +85,6 @@ in
           };
           src = rec {
             devices = [
-              "framework"
               "mbp"
               "meshify"
               "nuc"
@@ -100,7 +94,6 @@ in
             fsWatcherEnabled = false;
             rescanIntervalS = 3600 * 2;
             type = deviceType [
-              "framework"
               "mbp"
               "meshify"
             ];
@@ -108,7 +101,6 @@ in
           };
           secrets = rec {
             devices = [
-              "framework"
               "iphone"
               "meshify"
               "nuc"
@@ -118,7 +110,6 @@ in
             fsWatcherEnabled = true;
             rescanIntervalS = 3600;
             type = deviceType [
-              "framework"
               "meshify"
             ];
             enable = deviceEnabled devices;
