@@ -5,8 +5,18 @@ CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST_DIR="$(cd "$CURRENT_DIR/.." && pwd)/dist"
 MAIN="$DIST_DIR/index.js"
 
+LOCKFILE="/tmp/tmux-smart-name.lock"
+
 case "${1:-}" in
   --run)
+    # Debounce: skip if lock file exists and is <1s old (prevents hook storms)
+    if [[ -f "$LOCKFILE" ]]; then
+      lock_age=$(( $(date +%s) - $(stat -f %m "$LOCKFILE" 2>/dev/null || echo 0) ))
+      if (( lock_age < 1 )); then
+        exit 0
+      fi
+    fi
+    touch "$LOCKFILE"
     node "$MAIN" >/dev/null 2>&1 || true ;;
   --menu)
     node "$MAIN" --menu 2>/dev/null || true ;;
@@ -27,9 +37,10 @@ case "${1:-}" in
       tmux set-hook -g after-new-window[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
       tmux set-hook -g after-select-window[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
       tmux set-hook -g after-split-window[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
-      tmux set-hook -g pane-focus-in[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
-      tmux set-hook -g window-layout-changed[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
       tmux set-hook -g client-attached[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --refresh-hooks\""
+      # Clean up old noisy hooks
+      tmux set-hook -gu pane-focus-in[0] 2>/dev/null || true
+      tmux set-hook -gu window-layout-changed[0] 2>/dev/null || true
       tmux bind-key A run-shell "$CURRENT_DIR/smart-name.sh --menu"
       tmux set-environment -g TMUX_SMART_NAME_MENU_CMD "$CURRENT_DIR/smart-name.sh --menu"
       tmux set-environment -g TMUX_SMART_NAME_STATUS_CMD "$CURRENT_DIR/smart-name.sh --status"
@@ -44,12 +55,16 @@ case "${1:-}" in
     tmux set-environment -g TMUX_SMART_NAME_SCRIPT_PATH "$CURRENT_SCRIPT_PATH"
 
     # Hook array index [0] for smart-name, theme uses [100]
+    # Minimal hooks: new window/split need immediate naming.
+    # Ongoing status updates handled by --tick via status-right #().
+    # pane-focus-in and window-layout-changed removed — too noisy, cause scroll glitches.
     tmux set-hook -g after-new-window[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
     tmux set-hook -g after-select-window[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
     tmux set-hook -g after-split-window[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
-    tmux set-hook -g pane-focus-in[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
-    tmux set-hook -g window-layout-changed[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --run\""
     tmux set-hook -g client-attached[0] "run-shell -b \"$CURRENT_DIR/smart-name.sh --refresh-hooks\""
+    # Remove noisy hooks from older versions
+    tmux set-hook -gu pane-focus-in[0] 2>/dev/null || true
+    tmux set-hook -gu window-layout-changed[0] 2>/dev/null || true
 
     tmux set-environment -g TMUX_WINDOW_NAME_SCRIPT "$CURRENT_DIR/smart-name.sh --run"
     tmux bind-key A run-shell "$CURRENT_DIR/smart-name.sh --menu"
