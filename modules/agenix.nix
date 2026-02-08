@@ -44,7 +44,7 @@ in
             else
               { };
           # Shared secrets for services that need cross-host keys
-          sharedSecrets = {};
+          sharedSecrets = { };
         in
         hostSecrets // sharedSecrets;
       identityPaths =

@@ -81,11 +81,11 @@ in
         documents = ../../../config/openclaw/documents;
 
         # Plugins at top level
-        plugins = cfg.plugins;
-        firstParty = cfg.firstParty;
+        inherit (cfg) plugins;
+        inherit (cfg) firstParty;
 
         # Skills
-        skills = cfg.skills;
+        inherit (cfg) skills;
 
         # exposePluginPackages = false avoids libexec/node_modules conflict between oracle+summarize
         exposePluginPackages = false;
@@ -103,7 +103,7 @@ in
             agents.defaults.model.primary = "opencode/kimi-k2.5";
             channels.telegram = mkIf cfg.telegram.enable {
               tokenFile = cfg.telegram.botTokenFile;
-              allowFrom = cfg.telegram.allowFrom;
+              inherit (cfg.telegram) allowFrom;
               groups."*".requireMention = true;
             };
           };
