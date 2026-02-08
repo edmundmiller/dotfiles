@@ -31,7 +31,7 @@ export function hashMessage(message: AgentMessage): string {
     if (typeof message.content === "string") {
       content += message.content;
     } else if (Array.isArray(message.content)) {
-      content = message.content
+      content += message.content
         .map((part: any) => {
           // Handle undefined or malformed parts
           if (!part || typeof part !== "object") return "";
