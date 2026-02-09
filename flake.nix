@@ -53,20 +53,11 @@
     nix-openclaw.url = "github:openclaw/nix-openclaw";
     nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
 
-    agent-skills.url = "github:Kyure-A/agent-skills-nix";
-
-    # Skill sources (flake = false for hash-pinned content)
-    anthropic-skills = {
-      url = "github:anthropics/courses";
-      flake = false;
-    };
-    pi-extension-skills = {
-      url = "github:tmustier/pi-extensions";
-      flake = false;
-    };
-    gitbutler-repo = {
-      url = "github:gitbutlerapp/gitbutler";
-      flake = false;
+    # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
+    skills-catalog = {
+      # Use repo root as source, but flake.nix lives in ./skills (so catalog can reference ../config/...)
+      url = "path:./?dir=skills";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -255,7 +246,7 @@
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
                 inputs.nix-openclaw.homeManagerModules.openclaw
-                inputs.agent-skills.homeManagerModules.default
+                inputs.skills-catalog.homeManagerModules.default
               ];
             }
           ];
@@ -294,7 +285,7 @@
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
                 inputs.nix-openclaw.homeManagerModules.openclaw
-                inputs.agent-skills.homeManagerModules.default
+                inputs.skills-catalog.homeManagerModules.default
               ];
             }
           ];

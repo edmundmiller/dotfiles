@@ -156,7 +156,7 @@ in
                 && mv "$HOME/package.json.tmp" "$HOME/package.json"
             fi
 
-            # GitButler skill now pinned via agent-skills-nix (gitbutlerapp/gitbutler repo)
+            # GitButler `but` skill pinned via skills-catalog flake (gitbutlerapp/gitbutler repo)
             # so we don't mutate skills dirs at activation-time.
 
             # Install deps for local pi packages (use $HOME path, not nix store)
