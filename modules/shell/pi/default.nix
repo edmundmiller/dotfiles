@@ -129,10 +129,6 @@ in
       { lib, ... }:
       {
         home.file = {
-          ".pi/agent/skills" = {
-            source = "${configDir}/agents/skills";
-            recursive = true;
-          };
           ".pi/agent/AGENTS.md".text = concatenatedRules;
           ".pi/agent/settings.json".text = piSettingsValidated;
           ".pi/agent/extensions/enforce-commit-signing.ts".source =
