@@ -3,6 +3,8 @@
   ...
 }:
 {
+  imports = [ ../skills.nix ];
+
   config = {
     modules = {
       editors = {

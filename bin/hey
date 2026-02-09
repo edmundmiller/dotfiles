@@ -9,6 +9,7 @@ import 'hey.d/nix.just'
 import 'hey.d/remote.just'
 import 'hey.d/test.just'
 import 'hey.d/ergodox.just'
+import 'hey.d/skills.just'
 
 # Default recipe - show help
 default: help
