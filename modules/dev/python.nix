@@ -40,7 +40,6 @@ in
             pylint
           ]
         ))
-        poetry
         ruff
       ];
 
@@ -57,7 +56,6 @@ in
         py = "python";
         py2 = "python2";
         py3 = "python3";
-        po = "poetry";
         ipy = "ipython --no-banner";
         ipylab = "ipython --pylab=qt5 --no-banner";
       };
