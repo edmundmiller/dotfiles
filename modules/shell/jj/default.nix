@@ -14,7 +14,7 @@ let
   # https://github.com/YPares/jj.conf.d
   creditsRollToml = pkgs.fetchurl {
     url = "https://raw.githubusercontent.com/YPares/jj.conf.d/main/credits_roll.toml";
-    hash = "sha256-Y6LGfMJSmpVo9afO+VQ3DTvNuDq0lvOlTi97nWT/fa8=";
+    hash = "sha256-A7QBTx5mUlfiwp3hoekuZ6nO21Xdv+ItlO/xbDzVT+M=";
   };
 in
 {

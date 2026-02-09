@@ -64,19 +64,19 @@
             # opt-in targets
             claude = {
               enable = true;
-              structure = "link";
+              structure = "symlink-tree";
             };
 
             pi = {
               enable = true;
               dest = ".pi/agent/skills";
-              structure = "link";
+              structure = "symlink-tree";
             };
 
             opencode = {
               enable = true;
               dest = ".config/opencode/skill";
-              structure = "link";
+              structure = "symlink-tree";
             };
           };
         };
