@@ -53,6 +53,18 @@
     nix-openclaw.url = "github:openclaw/nix-openclaw";
     nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
 
+    agent-skills.url = "github:Kyure-A/agent-skills-nix";
+
+    # Skill sources (flake = false for hash-pinned content)
+    anthropic-skills = {
+      url = "github:anthropics/courses";
+      flake = false;
+    };
+    pi-extension-skills = {
+      url = "github:tmustier/pi-extensions";
+      flake = false;
+    };
+
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
   };
@@ -236,8 +248,10 @@
 
             # Add openclaw to home-manager modules
             {
+              home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
                 inputs.nix-openclaw.homeManagerModules.openclaw
+                inputs.agent-skills.homeManagerModules.default
               ];
             }
           ];
@@ -273,8 +287,10 @@
 
             # Add openclaw to home-manager modules
             {
+              home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
                 inputs.nix-openclaw.homeManagerModules.openclaw
+                inputs.agent-skills.homeManagerModules.default
               ];
             }
           ];

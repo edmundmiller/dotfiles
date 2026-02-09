@@ -46,10 +46,6 @@ in
             source = "${configDir}/agents/modes";
             recursive = true;
           };
-          "opencode/skill" = {
-            source = "${configDir}/agents/skills";
-            recursive = true;
-          };
           "opencode/command" = {
             source = "${configDir}/opencode/command";
             recursive = true;
