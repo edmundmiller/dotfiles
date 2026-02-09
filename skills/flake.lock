@@ -1,0 +1,117 @@
+{
+  "nodes": {
+    "agent-skills": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1770375875,
+        "narHash": "sha256-0hwqMVbMKfKBNoOfDfgVusZWqYylTtEBYbc5K2lp7Ns=",
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "0de0b1522651fbe86eb2d62369b5dc4c40c2170f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "type": "github"
+      }
+    },
+    "gitbutler-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770592364,
+        "narHash": "sha256-JWpEjUgAXeDUJaz/QqT1fNFIw8FqUdN9JCRKzoXZRg8=",
+        "owner": "gitbutlerapp",
+        "repo": "gitbutler",
+        "rev": "7b829d7041fefafd6a71bc63d270eb8ef848cd35",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gitbutlerapp",
+        "repo": "gitbutler",
+        "type": "github"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "agent-skills",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1770318660,
+        "narHash": "sha256-yFVde8QZK7Dc0Xa8eQDsmxLX4NJNfL1NKfctSyiQgMY=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "471e6a065f9efed51488d7c51a9abbd387df91b8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1770197578,
+        "narHash": "sha256-AYqlWrX09+HvGs8zM6ebZ1pwUqjkfpnv8mewYwAo+iM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "00c21e4c93d963c50d4c0c89bfa84ed6e0694df2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1770562336,
+        "narHash": "sha256-ub1gpAONMFsT/GU2hV6ZWJjur8rJ6kKxdm9IlCT0j84=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d6c71932130818840fc8fe9509cf50be8c64634f",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-unstable",
+        "type": "indirect"
+      }
+    },
+    "pi-extension-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770298227,
+        "narHash": "sha256-eUT6cWDJYYS3t6nKzEu6s4g73mKgJJLj5cNC32MohOc=",
+        "owner": "tmustier",
+        "repo": "pi-extensions",
+        "rev": "7d269390fb8fd7e8ddfd17addb84c4cb821e54b8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tmustier",
+        "repo": "pi-extensions",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "agent-skills": "agent-skills",
+        "gitbutler-repo": "gitbutler-repo",
+        "nixpkgs": "nixpkgs_2",
+        "pi-extension-skills": "pi-extension-skills"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

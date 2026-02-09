@@ -1,44 +1,47 @@
-# Agent skills management via agent-skills-nix
-# Skills are pinned by flake.lock hashes — no prompt injection risk.
-# Update skills: `nix flake update pi-extension-skills gitbutler-repo agent-skills`
 {
-  config,
-  lib,
-  ...
-}:
+  description = "Dotfiles agent skills catalog (child flake)";
 
-with lib;
-with lib.my;
-let
-  cfg = config.modules.shell.agents.skills;
-  configDir = "${config.dotfiles.configDir}";
-in
-{
-  options.modules.shell.agents.skills = {
-    enable = mkBoolOpt false;
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+
+    agent-skills.url = "github:Kyure-A/agent-skills-nix";
+
+    # Skill sources (flake = false for hash-pinned content)
+    pi-extension-skills = {
+      url = "github:tmustier/pi-extensions";
+      flake = false;
+    };
+
+    gitbutler-repo = {
+      url = "github:gitbutlerapp/gitbutler";
+      flake = false;
+    };
   };
 
-  config = mkIf cfg.enable {
-    home-manager.users.${config.user.name} =
-      { inputs, ... }:
+  outputs = inputs: {
+    homeManagerModules.default =
+      { config, ... }:
       {
+        imports = [ inputs.agent-skills.homeManagerModules.default ];
+
         programs.agent-skills = {
           enable = true;
 
           sources = {
-            # Local skills from this repo
+            # Local skills from dotfiles repo (copied into store by HM)
             local = {
-              path = "${configDir}/agents/skills";
+              # Local skills from this dotfiles repo (in flake source/store)
+              path = ../config/agents/skills;
               filter.maxDepth = 1;
             };
-            # Remote skill repos (hash-pinned via flake.lock)
+
+            # Remote skill repos (hash-pinned via this flake's lock)
             pi-extensions = {
-              # NOTE: agent-skills-nix resolveSourceRoot treats `path = null` as set.
-              # Workaround: pass store path directly instead of `input = ...`.
               path = inputs.pi-extension-skills.outPath;
               subdir = ".";
               filter.maxDepth = 2;
             };
+
             gitbutler = {
               path = inputs.gitbutler-repo.outPath;
               subdir = "crates/but";
@@ -46,8 +49,7 @@ in
             };
           };
 
-          # Enable all local skills, but avoid path-prefix conflicts in remote catalogs
-          # (e.g. both `extending-pi` and `extending-pi/skill-creator` exist).
+          # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
           skills.enableAll = [ "local" ];
           skills.explicit = {
             extending-pi.from = "pi-extensions";
@@ -63,14 +65,18 @@ in
           };
 
           targets = {
-            claude.enable = true;
-            claude.structure = "link";
+            # opt-in targets
+            claude = {
+              enable = true;
+              structure = "link";
+            };
 
             pi = {
               enable = true;
               dest = ".pi/agent/skills";
               structure = "link";
             };
+
             opencode = {
               enable = true;
               dest = ".config/opencode/skill";

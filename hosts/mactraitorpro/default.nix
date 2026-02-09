@@ -23,7 +23,6 @@
 
       shell = {
         "1password".enable = true;
-        agents.skills.enable = true;
         ai.enable = true;
         claude.enable = true;
         opencode.enable = true;
