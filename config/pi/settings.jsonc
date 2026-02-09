@@ -77,10 +77,7 @@
         "ralph-wiggum/index.ts", // Long-running iterative agent loops
         "agent-guidance/agent-guidance.ts", // Agent guidance/steering
       ],
-      "skills": [
-        "extending-pi/SKILL.md", // How to build pi extensions
-        "extending-pi/skill-creator/SKILL.md", // Create new pi skills
-      ],
+      "skills": [],
     },
     // Canvas for visual diagrams - https://github.com/jyaunches/pi-canvas
     {

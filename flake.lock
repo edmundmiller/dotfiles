@@ -1258,13 +1258,11 @@
         "pi-extension-skills": "pi-extension-skills"
       },
       "locked": {
-        "dir": "skills",
-        "path": "./",
+        "path": "./skills",
         "type": "path"
       },
       "original": {
-        "dir": "skills",
-        "path": "./",
+        "path": "./skills",
         "type": "path"
       },
       "parent": []

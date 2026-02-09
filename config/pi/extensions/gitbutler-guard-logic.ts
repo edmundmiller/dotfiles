@@ -7,6 +7,13 @@
 import { existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 
+// NOTE: This file is also symlinked into ~/.pi/agent/extensions.
+// Pi loads *.ts there as extensions and expects a default-exported factory.
+// Provide a no-op factory so this shared logic file doesn't error at startup.
+export default function (_pi: unknown) {
+  // no-op
+}
+
 // Git write commands that should use `but` equivalents
 export const BLOCKED_COMMANDS: { pattern: RegExp; replacement: string }[] = [
   { pattern: /\bgit\s+commit\b/, replacement: "but commit <branch> -m 'message' --changes <id>" },
