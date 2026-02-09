@@ -135,6 +135,8 @@ in
           ".pi/agent/extensions/enforce-commit-signing.ts".source =
             "${configDir}/pi/extensions/enforce-commit-signing.ts";
           ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
+          ".pi/agent/extensions/gitbutler-guard-logic.ts".source =
+            "${configDir}/pi/extensions/gitbutler-guard-logic.ts";
         };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -153,6 +155,16 @@ in
             if [ -f "$HOME/package.json" ] && ! grep -q '"license"' "$HOME/package.json"; then
               ${pkgs.jq}/bin/jq '. + {license: "UNLICENSED"}' "$HOME/package.json" > "$HOME/package.json.tmp" \
                 && mv "$HOME/package.json.tmp" "$HOME/package.json"
+            fi
+
+            # Check if GitButler skill is outdated
+            if command -v but >/dev/null 2>&1; then
+              but_version=$(but --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+              skill_version=$(head -5 "$HOME/.pi/agent/skills/gitbutler/SKILL.md" 2>/dev/null | grep '^version:' | awk '{print $2}' || echo "none")
+              if [ "$but_version" != "unknown" ] && [ "$but_version" != "$skill_version" ]; then
+                echo "⚠️  GitButler skill outdated (skill: $skill_version, but: $but_version)"
+                echo "   Run: but skill install --path config/agents/skills/gitbutler"
+              fi
             fi
 
             # Install deps for local pi packages (use $HOME path, not nix store)
