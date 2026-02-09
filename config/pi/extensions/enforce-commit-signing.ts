@@ -15,7 +15,8 @@ export default function (pi: ExtensionAPI) {
 
   function isSigningAvailable(): boolean {
     try {
-      execSync("/Applications/1Password.app/Contents/MacOS/op-ssh-sign --version", {
+      // op-ssh-sign doesn't support --version; --help is stable and exits 0 when present.
+      execSync("/Applications/1Password.app/Contents/MacOS/op-ssh-sign --help", {
         stdio: "pipe",
         timeout: 5000,
       });
