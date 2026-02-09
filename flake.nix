@@ -64,6 +64,10 @@
       url = "github:tmustier/pi-extensions";
       flake = false;
     };
+    gitbutler-repo = {
+      url = "github:gitbutlerapp/gitbutler";
+      flake = false;
+    };
 
     # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
     # jj-spr.url = "github:LucioFranco/jj-spr";
