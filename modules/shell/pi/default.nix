@@ -129,7 +129,10 @@ in
       { lib, ... }:
       {
         home.file = {
-          ".pi/agent/skills".source = "${configDir}/agents/skills";
+          ".pi/agent/skills" = {
+            source = "${configDir}/agents/skills";
+            recursive = true;
+          };
           ".pi/agent/AGENTS.md".text = concatenatedRules;
           ".pi/agent/settings.json".text = piSettingsValidated;
           ".pi/agent/extensions/enforce-commit-signing.ts".source =
@@ -157,14 +160,37 @@ in
                 && mv "$HOME/package.json.tmp" "$HOME/package.json"
             fi
 
-            # Check if GitButler skill is outdated
-            if command -v but >/dev/null 2>&1; then
-              but_version=$(but --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
-              skill_version=$(head -5 "$HOME/.pi/agent/skills/gitbutler/SKILL.md" 2>/dev/null | grep '^version:' | awk '{print $2}' || echo "none")
-              if [ "$but_version" != "unknown" ] && [ "$but_version" != "$skill_version" ]; then
-                echo "⚠️  GitButler skill outdated (skill: $skill_version, but: $but_version)"
-                echo "   Run: but skill install --path config/agents/skills/gitbutler"
+            # Generate GitButler skill from CLI (always up-to-date with installed version)
+            but_bin=""
+            for candidate in \
+              "$HOME/.local/bin/but" \
+              "/opt/homebrew/bin/but" \
+              "/usr/local/bin/but"; do
+              if [ -x "$candidate" ]; then
+                but_bin="$candidate"
+                break
               fi
+            done
+            if [ -z "$but_bin" ]; then
+              but_bin=$(command -v but 2>/dev/null || true)
+            fi
+            if [ -n "$but_bin" ]; then
+              but_version=$("$but_bin" --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+              skill_version=$(head -5 "$HOME/.pi/agent/skills/gitbutler/SKILL.md" 2>/dev/null | grep '^version:' | ${pkgs.gawk}/bin/awk '{print $2}' || echo "none")
+              if [ "$but_version" != "unknown" ] && [ "$but_version" != "$skill_version" ]; then
+                echo "Generating GitButler skill (v$but_version)..."
+                # Generate into all agent skill dirs (recursive=true makes these real dirs)
+                for skill_dir in \
+                  "$HOME/.pi/agent/skills/gitbutler" \
+                  "$HOME/.claude/skills/gitbutler" \
+                  "$HOME/.config/opencode/skill/gitbutler"; do
+                  rm -rf "$skill_dir"
+                  "$but_bin" skill install --path "$skill_dir" 2>/dev/null \
+                    || echo "Warning: but skill install failed for $skill_dir"
+                done
+              fi
+            else
+              echo "⚠️  but CLI not found — GitButler skill not generated"
             fi
 
             # Install deps for local pi packages (use $HOME path, not nix store)
