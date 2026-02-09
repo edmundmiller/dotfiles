@@ -16,6 +16,11 @@
       url = "github:gitbutlerapp/gitbutler";
       flake = false;
     };
+
+    openai-skills = {
+      url = "github:openai/skills";
+      flake = false;
+    };
   };
 
   outputs = inputs: {
@@ -47,6 +52,12 @@
               subdir = "crates/but";
               filter.maxDepth = 2;
             };
+
+            openai = {
+              path = inputs.openai-skills.outPath;
+              subdir = "skills/.curated";
+              filter.maxDepth = 2;
+            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -58,6 +69,9 @@
             # GitButler CLI skill (source: gitbutlerapp/gitbutler/crates/but/skill)
             but.from = "gitbutler";
             but.path = "skill";
+
+            gh-fix-ci.from = "openai";
+            gh-fix-ci.path = "gh-fix-ci";
           };
 
           targets = {

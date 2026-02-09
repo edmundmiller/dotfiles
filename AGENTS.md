@@ -18,6 +18,7 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 - **Host config:** `hosts/mactraitorpro/default.nix`
 - **Modules:** `modules/` (shell, editors, services, etc.)
 - **Home-manager configs:** `config/` (lazygit, ghostty, etc.)
+- **Skills catalog:** `skills/flake.nix` (child flake managing agent skills — see `skills/AGENTS.md`)
 - **`darwin.nix` is NOT imported** — don't put config there
 
 ## Issue Tracking

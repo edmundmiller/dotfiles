@@ -87,6 +87,22 @@
         "type": "indirect"
       }
     },
+    "openai-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770673087,
+        "narHash": "sha256-2xqGpcQyUsWxxjN8p31SSm/NzlvwP59RUmOugRfTfig=",
+        "owner": "openai",
+        "repo": "skills",
+        "rev": "4ab6e0fd99c6667163bc34173e3ed3a3fed75ebc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "openai",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "pi-extension-skills": {
       "flake": false,
       "locked": {
@@ -108,6 +124,7 @@
         "agent-skills": "agent-skills",
         "gitbutler-repo": "gitbutler-repo",
         "nixpkgs": "nixpkgs_2",
+        "openai-skills": "openai-skills",
         "pi-extension-skills": "pi-extension-skills"
       }
     }
