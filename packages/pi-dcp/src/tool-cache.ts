@@ -126,16 +126,23 @@ export function extractParamKey(toolName: string, params: Record<string, any>): 
 }
 
 /**
- * Get prunable entries (not already pruned, not protected).
+ * Get prunable entries (not already pruned, not protected, not too recent).
  * Returns entries with their numeric index for the LLM.
+ *
+ * @param skipRecent Number of most recent entries to exclude from the list.
+ *   Prevents the model from pruning tool results it just received.
  */
 export function getPrunableEntries(
   state: ToolCacheState,
-  protectedTools: string[] = []
+  protectedTools: string[] = [],
+  skipRecent: number = 5
 ): { numericId: number; entry: ToolCacheEntry }[] {
   const result: { numericId: number; entry: ToolCacheEntry }[] = [];
 
-  for (let i = 0; i < state.idList.length; i++) {
+  // Don't show the last N entries as prunable — they're too fresh
+  const cutoff = Math.max(0, state.idList.length - skipRecent);
+
+  for (let i = 0; i < cutoff; i++) {
     const callId = state.idList[i];
     if (state.prunedIds.has(callId)) continue;
 

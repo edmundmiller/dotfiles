@@ -29,31 +29,45 @@ You have access to context management tools that help keep conversations efficie
 - Never prune tool outputs you're still actively using
 - Prefer distill over prune when the information might be needed later
 - Use compress for long stretches of back-and-forth that can be summarized
-- Prune aggressively for writes/edits (the file system is the source of truth)
+- Write/edit outputs are safe to prune since the file system is the source of truth
 `.trim();
+
+/** Max entries to show in the prunable-tools list (largest by token count) */
+const MAX_PRUNABLE_ENTRIES = 10;
 
 /**
  * Build the <prunable-tools> block that gets injected into context.
  * Uses numeric IDs so the LLM can reference them in dcp_prune/dcp_distill calls.
+ * Shows only the top N largest entries to avoid flooding context.
  */
 export function buildPrunableToolsList(
   entries: { numericId: number; entry: ToolCacheEntry }[]
 ): string | null {
   if (entries.length === 0) return null;
 
-  const lines = entries.map(({ numericId, entry }) => {
+  // Sort by token count descending, show only the largest
+  const sorted = [...entries].sort((a, b) => b.entry.tokenCount - a.entry.tokenCount);
+  const shown = sorted.slice(0, MAX_PRUNABLE_ENTRIES);
+  const hidden = entries.length - shown.length;
+
+  const lines = shown.map(({ numericId, entry }) => {
     const tokens = entry.tokenCount > 0 ? ` (~${entry.tokenCount} tokens)` : "";
     const error = entry.isError ? " [ERROR]" : "";
     return `  ${numericId}: ${entry.toolName}(${entry.paramKey})${tokens}${error}`;
   });
 
-  return [
+  const parts = [
     "<prunable-tools>",
     "The following tool outputs can be pruned or distilled to save context:",
     ...lines,
-    "Use dcp_prune or dcp_distill with these numeric IDs to manage context.",
-    "</prunable-tools>",
-  ].join("\n");
+  ];
+  if (hidden > 0) {
+    parts.push(`  ... and ${hidden} smaller entries`);
+  }
+  parts.push("Use dcp_prune or dcp_distill with these numeric IDs to manage context.");
+  parts.push("</prunable-tools>");
+
+  return parts.join("\n");
 }
 
 /**

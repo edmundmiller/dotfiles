@@ -119,10 +119,37 @@ describe("Tool Cache", () => {
     syncToolCache(state, messages);
     state.prunedIds.add("toolu_A");
 
-    const entries = getPrunableEntries(state, ["dcp_prune"]);
+    // skipRecent=0 to test filtering logic without recency guard
+    const entries = getPrunableEntries(state, ["dcp_prune"], 0);
     expect(entries.length).toBe(1);
     expect(entries[0].entry.toolName).toBe("write");
     expect(entries[0].numericId).toBe(2);
+  });
+
+  test("getPrunableEntries skips recent entries by default", () => {
+    const state = createToolCacheState();
+    const messages: AgentMessage[] = [];
+
+    // Create 8 tool calls so some are old enough to be prunable
+    for (let i = 0; i < 8; i++) {
+      const id = `toolu_${i}`;
+      messages.push(
+        assistant(`call ${i}`, [{ id, name: "read", args: { path: `file${i}.txt` } }]),
+        toolResult(id, "read", `content ${i}`)
+      );
+    }
+
+    syncToolCache(state, messages);
+
+    // Default skipRecent=5: only first 3 should be prunable
+    const entries = getPrunableEntries(state, []);
+    expect(entries.length).toBe(3);
+    expect(entries[0].numericId).toBe(0);
+    expect(entries[2].numericId).toBe(2);
+
+    // skipRecent=0: all 8 should be prunable
+    const allEntries = getPrunableEntries(state, [], 0);
+    expect(allEntries.length).toBe(8);
   });
 });
 
