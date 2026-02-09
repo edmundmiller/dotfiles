@@ -134,6 +134,7 @@ in
           ".pi/agent/settings.json".text = piSettingsValidated;
           ".pi/agent/extensions/enforce-commit-signing.ts".source =
             "${configDir}/pi/extensions/enforce-commit-signing.ts";
+          ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
         };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
