@@ -55,10 +55,6 @@
             extending-pi.from = "pi-extensions";
             extending-pi.path = "extending-pi";
 
-            # Flatten nested skill ID to avoid `extending-pi/*` under a symlink.
-            skill-creator.from = "pi-extensions";
-            skill-creator.path = "extending-pi/skill-creator";
-
             # GitButler CLI skill (source: gitbutlerapp/gitbutler/crates/but/skill)
             but.from = "gitbutler";
             but.path = "skill";
