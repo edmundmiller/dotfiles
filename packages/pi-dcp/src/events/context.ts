@@ -227,20 +227,25 @@ function injectContextInfo(
     parts.push(COOLDOWN_PROMPT);
     lastToolWasDcp.value = false;
   } else {
-    // Build prunable tools list
-    const entries = getPrunableEntries(state, protectedTools);
-    const prunableList = buildPrunableToolsList(entries);
-    if (prunableList) {
-      parts.push(prunableList);
-    }
-
     // Check context size for compress nudge
     const totalTokens = estimateContextTokens(messages);
-    if (totalTokens > contextLimit) {
-      parts.push(COMPRESS_NUDGE_PROMPT);
-      logger.info(`Context ~${totalTokens} tokens, exceeds limit ${contextLimit}`);
-    } else if (nudgeCounter.value >= nudgeFrequency) {
-      parts.push(NUDGE_PROMPT);
+    const isCompressNudge = totalTokens > contextLimit;
+    const isPeriodicNudge = nudgeCounter.value >= nudgeFrequency;
+
+    // Only show prunable-tools list on nudge turns (not every turn)
+    if (isCompressNudge || isPeriodicNudge) {
+      const entries = getPrunableEntries(state, protectedTools);
+      const prunableList = buildPrunableToolsList(entries);
+      if (prunableList) {
+        parts.push(prunableList);
+      }
+
+      if (isCompressNudge) {
+        parts.push(COMPRESS_NUDGE_PROMPT);
+        logger.info(`Context ~${totalTokens} tokens, exceeds limit ${contextLimit}`);
+      } else {
+        parts.push(NUDGE_PROMPT);
+      }
       nudgeCounter.value = 0;
     }
   }
