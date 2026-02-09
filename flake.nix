@@ -55,8 +55,7 @@
 
     # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
     skills-catalog = {
-      # Use repo root as source, but flake.nix lives in ./skills (so catalog can reference ../config/...)
-      url = "path:./?dir=skills";
+      url = "path:./skills";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
