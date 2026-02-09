@@ -593,6 +593,22 @@
         "type": "github"
       }
     },
+    "gitbutler-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770592364,
+        "narHash": "sha256-JWpEjUgAXeDUJaz/QqT1fNFIw8FqUdN9JCRKzoXZRg8=",
+        "owner": "gitbutlerapp",
+        "repo": "gitbutler",
+        "rev": "7b829d7041fefafd6a71bc63d270eb8ef848cd35",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gitbutlerapp",
+        "repo": "gitbutler",
+        "type": "github"
+      }
+    },
     "gnome-shell": {
       "flake": false,
       "locked": {
@@ -1209,6 +1225,7 @@
         "emacs-overlay": "emacs-overlay",
         "flake-parts": "flake-parts",
         "ghostty": "ghostty",
+        "gitbutler-repo": "gitbutler-repo",
         "home-manager": "home-manager_4",
         "llm-prompt": "llm-prompt",
         "nix-darwin": "nix-darwin",

@@ -1,6 +1,6 @@
 # Agent skills management via agent-skills-nix
 # Skills are pinned by flake.lock hashes — no prompt injection risk.
-# Update skills: `nix flake update pi-extension-skills`
+# Update skills: `nix flake update pi-extension-skills gitbutler-repo agent-skills`
 {
   config,
   lib,
@@ -39,6 +39,11 @@ in
               subdir = ".";
               filter.maxDepth = 2;
             };
+            gitbutler = {
+              path = inputs.gitbutler-repo.outPath;
+              subdir = "crates/but";
+              filter.maxDepth = 2;
+            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs
@@ -48,10 +53,13 @@ in
             extending-pi.from = "pi-extensions";
             extending-pi.path = "extending-pi";
 
-
             # Flatten nested skill ID to avoid `extending-pi/*` under a symlink.
             skill-creator.from = "pi-extensions";
             skill-creator.path = "extending-pi/skill-creator";
+
+            # GitButler CLI skill (source: gitbutlerapp/gitbutler/crates/but/skill)
+            but.from = "gitbutler";
+            but.path = "skill";
           };
 
           targets = {
