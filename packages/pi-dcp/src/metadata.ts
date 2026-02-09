@@ -117,9 +117,35 @@ export function isSameOperation(msg1: AgentMessage, msg2: AgentMessage): boolean
     return path1 === path2;
   }
 
-  // For other operations, check if similar content
-  // (this is a heuristic, could be improved)
-  return hashMessage(msg1) === hashMessage(msg2);
+  // For other operations, compare content directly (not hashMessage,
+  // which includes toolCallId and would never match across different calls)
+  return hashContentOnly(msg1) === hashContentOnly(msg2);
+}
+
+/**
+ * Hash only the content of a message, ignoring identity fields like toolCallId.
+ * Used for comparing whether two operations did the same thing (error resolution).
+ */
+function hashContentOnly(message: AgentMessage): string {
+  let content = "";
+  if ("content" in message) {
+    if (typeof message.content === "string") {
+      content = message.content;
+    } else if (Array.isArray(message.content)) {
+      content = message.content
+        .map((part: any) => {
+          if (!part || typeof part !== "object") return "";
+          if (part.type === "text") return part.text || "";
+          return "";
+        })
+        .join("");
+    }
+  }
+  let hash = 5381;
+  for (let i = 0; i < content.length; i++) {
+    hash = (hash * 33) ^ content.charCodeAt(i);
+  }
+  return hash.toString(36);
 }
 
 /**
