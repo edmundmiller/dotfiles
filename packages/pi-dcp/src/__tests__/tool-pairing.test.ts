@@ -7,7 +7,7 @@
 
 import { describe, test, expect, beforeAll } from "bun:test";
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import { hashMessage } from "../metadata";
+import { hashMessage, isSameOperation } from "../metadata";
 import { applyPruningWorkflow } from "../workflow";
 import { registerRule } from "../registry";
 import { deduplicationRule } from "../rules/deduplication";
@@ -83,15 +83,24 @@ function getToolResultIds(messages: AgentMessage[]): string[] {
 function getToolUseIds(messages: AgentMessage[]): string[] {
   return messages
     .filter((m) => m.role === "assistant" && Array.isArray(m.content))
-    .flatMap((m) => (m.content as any[]).filter((b) => b?.type === "toolCall").map((b) => b.id));
+    .flatMap((m) =>
+      ((m as any).content as any[]).filter((b) => b?.type === "toolCall").map((b) => b.id)
+    );
 }
 
-/** Verify every tool_result has a matching tool_use (API compliance) */
+/** Verify every tool_result has a matching tool_use AND vice versa (API compliance) */
 function assertToolPairsIntact(messages: AgentMessage[]) {
   const toolUseIds = new Set(getToolUseIds(messages));
-  const toolResultIds = getToolResultIds(messages);
+  const toolResultIds = new Set(getToolResultIds(messages));
+
+  // Every tool_result must reference an existing tool_use
   for (const id of toolResultIds) {
     expect(toolUseIds.has(id)).toBe(true);
+  }
+
+  // Every tool_use must have a corresponding tool_result
+  for (const id of toolUseIds) {
+    expect(toolResultIds.has(id)).toBe(true);
   }
 }
 
@@ -373,5 +382,33 @@ describe("repairOrphanedToolPairsPostPruning", () => {
     const result = repairOrphanedToolPairsPostPruning(messages, logger);
     expect(result).toHaveLength(3);
     assertToolPairsIntact(result);
+  });
+});
+
+// ============================================================
+// Regression: isSameOperation broken by hashMessage change
+// ============================================================
+
+describe("regression: isSameOperation with unique toolCallIds", () => {
+  test("same bash command with different toolCallIds matches as same operation", () => {
+    // REGRESSION: hashMessage now includes toolCallId for dedup correctness,
+    // but isSameOperation used hashMessage to compare operations. Two retries
+    // of the same command would never match, breaking error-purging.
+    const err = makeToolResult("toolu_first", "bash", "Error: command failed");
+    const success = makeToolResult("toolu_retry", "bash", "Error: command failed");
+    // Same content = same operation (used for error resolution tracking)
+    expect(isSameOperation(err, success)).toBe(true);
+  });
+
+  test("different bash outputs are not the same operation", () => {
+    const tr1 = makeToolResult("toolu_a", "bash", "output A");
+    const tr2 = makeToolResult("toolu_b", "bash", "output B");
+    expect(isSameOperation(tr1, tr2)).toBe(false);
+  });
+
+  test("different tool names are not the same operation", () => {
+    const tr1 = makeToolResult("toolu_a", "bash", "same output");
+    const tr2 = makeToolResult("toolu_b", "read", "same output");
+    expect(isSameOperation(tr1, tr2)).toBe(false);
   });
 });
