@@ -31,6 +31,7 @@ fn setup_repo() -> TempDir {
     dir
 }
 
+#[allow(deprecated)]
 fn jut() -> AssertCmd {
     AssertCmd::cargo_bin("jut").unwrap()
 }
