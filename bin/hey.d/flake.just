@@ -57,6 +57,21 @@ check:
         echo "Running Darwin-compatible checks (skipping NixOS configs)..."
         FAILED=0
         
+        # 0. Check child flake locks are synced with parent
+        echo ""
+        echo "==> Checking child flake lock sync..."
+        CHILD_INPUTS=$(nix flake metadata ./skills --json 2>/dev/null | jq -r '.locks.nodes.root.inputs | keys[]' | sort)
+        PARENT_CHILD_INPUTS=$(nix flake metadata . --json 2>/dev/null | jq -r '.locks.nodes["skills-catalog"].inputs | keys[]' | sort)
+        if [[ "$CHILD_INPUTS" == "$PARENT_CHILD_INPUTS" ]]; then
+            echo "✓ Child flake locks synced"
+        else
+            echo "✗ skills/flake.lock is out of sync with parent flake.lock!"
+            echo "  Child inputs:  $CHILD_INPUTS"
+            echo "  Parent inputs: $PARENT_CHILD_INPUTS"
+            echo "  Fix: nix flake update skills-catalog"
+            FAILED=1
+        fi
+        
         # 1. Check Darwin configuration evaluates correctly
         echo ""
         echo "==> Checking Darwin configuration: {{flake_host}}"

@@ -41,13 +41,23 @@ Drop a directory with `SKILL.md` into `config/agents/skills/<name>/`. Auto-enabl
    };
    ```
 
-4. **Lock**: `cd skills && nix flake lock --update-input my-repo`
+4. **Lock child AND parent** (both steps required):
+   ```bash
+   cd skills && nix flake lock --update-input my-repo
+   cd .. && nix flake update skills-catalog
+   ```
+
+**⚠️ CRITICAL: Whenever you change `skills/flake.nix` or `skills/flake.lock`, you MUST also run `nix flake update skills-catalog` from the repo root to sync the parent lock. Forgetting this causes `attribute 'xxx' missing` errors at rebuild time.**
 
 ## Updating Remote Skills
 
 ```bash
+# Update child lock
 cd skills && nix flake update  # update all
 cd skills && nix flake lock --update-input openai-skills  # update one
+
+# THEN sync parent lock (REQUIRED)
+cd .. && nix flake update skills-catalog
 ```
 
 Then `hey rebuild`.

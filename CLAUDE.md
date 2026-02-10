@@ -72,6 +72,8 @@ Configuration flow:
 
 - `flake.nix` → `lib/hosts.nix` → `hosts/<hostname>/default.nix` → enabled modules
 
+**⚠️ Child Flake Rule:** `skills/flake.nix` is a child flake with its own lock. Whenever you change `skills/flake.nix` or `skills/flake.lock`, you **MUST** also run `nix flake update skills-catalog` from the repo root to sync the parent lock. Forgetting this causes `attribute 'xxx' missing` errors at rebuild.
+
 ## Hey Command Architecture
 
 The `hey` command is implemented as a modular JustScript system that provides the primary interface to nix-darwin operations:
