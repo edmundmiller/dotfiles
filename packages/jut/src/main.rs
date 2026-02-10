@@ -6,6 +6,7 @@ mod command;
 mod id;
 mod output;
 mod repo;
+pub mod stack;
 
 use args::{Args, Subcommands};
 use output::OutputChannel;
