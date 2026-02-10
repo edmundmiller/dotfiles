@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "eval": "npx promptfoo eval",
+    "eval:claude": "JUT_EVAL_AGENT=claude npx promptfoo eval --providers 'file://providers/jut-integration.ts' -c promptfooconfig.yaml",
+    "eval:codex": "JUT_EVAL_AGENT=codex npx promptfoo eval --providers 'file://providers/jut-integration.ts' -c promptfooconfig.yaml",
     "eval:repeat": "npx promptfoo eval --repeat 3",
     "view": "npx promptfoo view"
   },
