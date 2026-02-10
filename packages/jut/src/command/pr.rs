@@ -12,14 +12,14 @@ pub fn execute(
     bookmark: Option<&str>,
     message: Option<&str>,
 ) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     // Ensure bookmark exists and is pushed
     let bookmark_name = match bookmark {
         Some(b) => b.to_string(),
         None => {
             // Try to find the bookmark for the current revision
-            let repo_mut = Repo::discover(&args.current_dir)?;
+            let repo_mut = Repo::open(&args.current_dir)?;
             let change_id = repo_mut.current_change_id()?;
             let bookmarks = repo_mut.bookmarks()?;
             bookmarks

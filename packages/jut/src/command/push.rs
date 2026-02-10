@@ -6,7 +6,7 @@ use crate::output::OutputChannel;
 use crate::repo::Repo;
 
 pub fn execute(args: &Args, out: &mut OutputChannel, bookmark: Option<&str>) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     let mut cmd_args = vec!["git", "push"];
     if let Some(b) = bookmark {

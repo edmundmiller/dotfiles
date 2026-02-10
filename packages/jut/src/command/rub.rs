@@ -14,7 +14,7 @@ use crate::repo::Repo;
 /// Revision         │ jj abandon rev   │ jj squash rev into    │ jj rebase
 /// ```
 pub fn execute(args: &Args, out: &mut OutputChannel, source: &str, target: &str) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     let is_file = std::path::Path::new(source).exists()
         || repo.root().join(source).exists();

@@ -5,7 +5,7 @@ use crate::output::OutputChannel;
 use crate::repo::Repo;
 
 pub fn execute(args: &Args, out: &mut OutputChannel, revision: &str, verbose: bool) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     let show_output = repo.jj_cmd(&["show", "-r", revision])?;
 

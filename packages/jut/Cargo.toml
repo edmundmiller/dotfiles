@@ -15,7 +15,7 @@ path = "src/main.rs"
 clap = { version = "4", features = ["derive", "env", "wrap_help", "color"] }
 
 # jj integration
-jj-lib = "0.38"
+jj-lib = { version = "0.38", features = ["git"] }
 
 # Async (jj-lib needs tokio)
 tokio = { version = "1", features = ["full"] }

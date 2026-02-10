@@ -14,10 +14,12 @@ pub struct IdMap {
     full_to_short: HashMap<String, String>,
 }
 
+#[allow(dead_code)]
 const MIN_ID_LEN: usize = 4;
 
 impl IdMap {
     /// Build an ID map from a list of change ID hex strings.
+    #[allow(dead_code)]
     pub fn build(change_ids: &[String]) -> Self {
         let mut short_to_full: HashMap<String, String> = HashMap::new();
         let mut full_to_short: HashMap<String, String> = HashMap::new();
@@ -83,6 +85,7 @@ impl IdMap {
     }
 
     /// Get the short ID for a full change ID hex.
+    #[allow(dead_code)]
     pub fn short_id(&self, full: &str) -> String {
         self.full_to_short
             .get(full)

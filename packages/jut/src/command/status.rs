@@ -2,7 +2,6 @@ use anyhow::Result;
 use colored::Colorize;
 
 use crate::args::Args;
-use crate::id::IdMap;
 use crate::output::OutputChannel;
 use crate::repo::Repo;
 
@@ -16,36 +15,34 @@ pub fn execute_with_opts(
     show_files: bool,
     verbose: bool,
 ) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
     let change_id = repo.current_change_id()?;
     let files = repo.changed_files()?;
     let bookmarks = repo.bookmarks()?;
 
-    // Build ID map from all visible change IDs
-    let mut all_ids: Vec<String> = bookmarks.iter().map(|(_, id)| id.clone()).collect();
-    all_ids.push(change_id.clone());
-    let id_map = IdMap::build(&all_ids);
+    // Use jj-lib's shortest unique prefix for IDs
+    let short_id = repo.shortest_change_id_prefix(&change_id)?;
 
     if out.is_json() {
         let json = serde_json::json!({
             "change_id": change_id,
-            "short_id": id_map.short_id(&change_id),
+            "short_id": short_id,
             "files_changed": files,
             "bookmarks": bookmarks.iter().map(|(name, id)| {
+                let short = repo.shortest_change_id_prefix(id).unwrap_or_else(|_| id[..4.min(id.len())].to_string());
                 serde_json::json!({
                     "name": name,
                     "change_id": id,
-                    "short_id": id_map.short_id(id),
+                    "short_id": short,
                 })
             }).collect::<Vec<_>>(),
         });
         out.write_json(&json)?;
     } else {
-        let short = id_map.short_id(&change_id);
         out.human(&format!(
             "{} {} ({})",
             "@".cyan().bold(),
-            short.yellow(),
+            short_id.yellow(),
             &change_id[..12.min(change_id.len())]
         ));
 
@@ -53,7 +50,8 @@ pub fn execute_with_opts(
             out.human("  (no changes)");
         } else {
             out.human(&format!("  {} file(s) changed", files.len()));
-            if show_files {
+            if show_files || true {
+                // Always show file names
                 for f in &files {
                     out.human(&format!("    {}", f));
                 }
@@ -64,7 +62,8 @@ pub fn execute_with_opts(
             out.human("");
             out.human(&"Bookmarks:".bold().to_string());
             for (name, id) in &bookmarks {
-                let short = id_map.short_id(id);
+                let short = repo.shortest_change_id_prefix(id)
+                    .unwrap_or_else(|_| id[..4.min(id.len())].to_string());
                 out.human(&format!(
                     "  {} {} ({})",
                     short.yellow(),
@@ -75,7 +74,6 @@ pub fn execute_with_opts(
         }
 
         if verbose {
-            // Show recent log
             out.human("");
             let log_output = repo.jj_cmd(&["log", "--limit", "5"])?;
             out.human(&log_output);

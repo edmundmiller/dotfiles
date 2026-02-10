@@ -11,7 +11,7 @@ pub fn execute(
     revisions: &[String],
     message: Option<&str>,
 ) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     let mut cmd_args: Vec<&str> = vec!["squash"];
     if revisions.len() == 2 {
