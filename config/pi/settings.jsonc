@@ -74,7 +74,6 @@
         "files-widget/index.ts",
         "code-actions/index.ts", // /code to pick code blocks from messages
         "raw-paste/index.ts", // /paste for raw clipboard paste
-        "ralph-wiggum/index.ts", // Long-running iterative agent loops
         "agent-guidance/agent-guidance.ts", // Agent guidance/steering
       ],
       "skills": [],
@@ -88,6 +87,12 @@
     {
       "source": "https://github.com/prateekmedia/pi-hooks",
       "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts"],
+    },
+    // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
+    {
+      "source": "https://github.com/pasky/pi-amplike",
+      "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
+      "skills": ["skills/session-query"],
     },
     // Multi-agent messaging/coordination - https://github.com/nicobailon/pi-messenger
     "npm:pi-messenger",
