@@ -228,7 +228,7 @@ impl Repo {
     }
 
     /// Query revisions matching a revset, returning structured info.
-    fn query_revisions(&self, revset: &str) -> Result<Vec<RevisionInfo>> {
+    pub fn query_revisions(&self, revset: &str) -> Result<Vec<RevisionInfo>> {
         // Use JSON-ish template to avoid newline-in-field issues.
         // jj's description.first_line() includes trailing newline, so we
         // output each field on its own line in a known order, separated
