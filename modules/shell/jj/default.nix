@@ -25,6 +25,7 @@ in
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       jujutsu
+      my.jut
       my.jw
     ];
 
