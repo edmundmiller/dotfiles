@@ -1,8 +1,10 @@
 pub mod absorb;
+pub mod branch;
 pub mod commit;
 pub mod diff;
 pub mod discard;
 pub mod log;
+pub mod oplog;
 pub mod pr;
 pub mod pull;
 pub mod push;

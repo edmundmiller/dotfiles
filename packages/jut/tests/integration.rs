@@ -499,3 +499,291 @@ fn status_shows_parallel_stacks() {
         "should have at least 2 stacks: {stdout}"
     );
 }
+
+// --- Branch command tests ---
+
+#[test]
+fn branch_create_parallel() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    // Commit so we have a trunk
+    jut()
+        .args(["-C", path, "commit", "-m", "base work"])
+        .assert()
+        .success();
+
+    let output = jut()
+        .args(["-C", path, "branch", "my-feature", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    assert_eq!(json["created"], true);
+    assert_eq!(json["bookmark"], "my-feature");
+    assert!(json["change_id"].is_string());
+    assert_eq!(json["base"], "trunk");
+    assert_eq!(json["stacked"], false);
+}
+
+#[test]
+fn branch_create_stacked() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    let output = jut()
+        .args(["-C", path, "branch", "stacked-work", "-s", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    assert_eq!(json["created"], true);
+    assert_eq!(json["bookmark"], "stacked-work");
+    assert_eq!(json["stacked"], true);
+    assert_eq!(json["base"], "@");
+}
+
+#[test]
+fn branch_list_shows_bookmarks() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    // Create a bookmark
+    Command::new("jj")
+        .args(["bookmark", "set", "test-branch"])
+        .current_dir(repo.path())
+        .output()
+        .unwrap();
+
+    let output = jut()
+        .args(["-C", path, "branch", "--list"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("test-branch"), "list should show bookmark: {stdout}");
+}
+
+#[test]
+fn branch_delete_removes_bookmark() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    // Create then delete
+    Command::new("jj")
+        .args(["bookmark", "set", "to-delete"])
+        .current_dir(repo.path())
+        .output()
+        .unwrap();
+
+    let output = jut()
+        .args(["-C", path, "branch", "-d", "to-delete", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    assert_eq!(json["deleted"], true);
+    assert_eq!(json["bookmark"], "to-delete");
+
+    // Verify it's gone
+    let bookmarks = Command::new("jj")
+        .args(["bookmark", "list"])
+        .current_dir(repo.path())
+        .output()
+        .unwrap();
+    let bm_out = String::from_utf8_lossy(&bookmarks.stdout);
+    assert!(!bm_out.contains("to-delete"), "bookmark should be deleted");
+}
+
+#[test]
+fn branch_rename() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    Command::new("jj")
+        .args(["bookmark", "set", "old-name"])
+        .current_dir(repo.path())
+        .output()
+        .unwrap();
+
+    let output = jut()
+        .args(["-C", path, "branch", "--rename", "old-name", "new-name", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    assert_eq!(json["renamed"], true);
+    assert_eq!(json["old"], "old-name");
+    assert_eq!(json["new"], "new-name");
+
+    // Verify
+    let bookmarks = Command::new("jj")
+        .args(["bookmark", "list"])
+        .current_dir(repo.path())
+        .output()
+        .unwrap();
+    let bm_out = String::from_utf8_lossy(&bookmarks.stdout);
+    assert!(bm_out.contains("new-name"), "new name should exist");
+    assert!(!bm_out.contains("old-name"), "old name should be gone");
+}
+
+// --- Pull command tests ---
+
+#[test]
+fn pull_basic_fetch() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    // Without a remote, fetch gracefully reports no remotes
+    let output = jut()
+        .args(["-C", path, "pull", "--no-rebase", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    // No remote = fetched is false, but command succeeds
+    assert_eq!(json["fetched"], false);
+    assert_eq!(json["rebased"], false);
+}
+
+#[test]
+fn pull_dry_run() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    let output = jut()
+        .args(["-C", path, "pull", "--dry-run", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    assert_eq!(json["dry_run"], true);
+    assert!(json["plan"]["fetch"].as_bool().unwrap());
+    assert!(json["plan"]["rebase"].as_bool().unwrap());
+}
+
+#[test]
+fn pull_dry_run_no_rebase() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    let output = jut()
+        .args(["-C", path, "pull", "--dry-run", "--no-rebase", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    assert!(!json["plan"]["rebase"].as_bool().unwrap());
+}
+
+// --- Oplog command tests ---
+
+#[test]
+fn oplog_lists_operations() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    let output = jut()
+        .args(["-C", path, "oplog", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    let ops = json["operations"].as_array().unwrap();
+    assert!(!ops.is_empty(), "should have at least one operation");
+
+    // Each op should have required fields
+    let op = &ops[0];
+    assert!(op["id"].is_string());
+    assert!(op["short_id"].is_string());
+    assert!(op["description"].is_string());
+    assert!(op["timestamp"].is_string());
+}
+
+#[test]
+fn oplog_limit_works() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    // Do some operations to have history
+    for i in 0..3 {
+        jut()
+            .args(["-C", path, "commit", "-m", &format!("commit {i}")])
+            .assert()
+            .success();
+    }
+
+    let output = jut()
+        .args(["-C", path, "oplog", "-n", "2", "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    let ops = json["operations"].as_array().unwrap();
+    assert!(ops.len() <= 2, "should respect limit, got {}", ops.len());
+}
+
+#[test]
+fn oplog_restore_works() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    // Get current op ID
+    let before = jut()
+        .args(["-C", path, "oplog", "--json", "-n", "1"])
+        .output()
+        .unwrap();
+    let before_json: serde_json::Value =
+        serde_json::from_str(&String::from_utf8_lossy(&before.stdout)).unwrap();
+    let op_id = before_json["operations"][0]["id"].as_str().unwrap().to_string();
+
+    // Make a change
+    jut()
+        .args(["-C", path, "commit", "-m", "to be restored away"])
+        .assert()
+        .success();
+
+    // Restore
+    let output = jut()
+        .args(["-C", path, "oplog", "restore", &op_id, "--json"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+
+    assert_eq!(json["restored"], true);
+
+}
+
+#[test]
+fn oplog_human_output() {
+    let repo = setup_repo();
+    let path = repo.path().to_str().unwrap();
+
+    let output = jut()
+        .args(["-C", path, "oplog"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Operations:"), "should show header: {stdout}");
+}
