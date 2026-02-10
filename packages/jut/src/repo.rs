@@ -102,6 +102,7 @@ impl Repo {
 
     /// Get files changed in the working copy.
     /// Uses jj CLI — tree diffing via jj-lib is complex and fragile.
+    #[allow(dead_code)]
     pub fn changed_files(&self) -> Result<Vec<String>> {
         let out = self.jj_cmd(&["status"])?;
         let mut files = Vec::new();
