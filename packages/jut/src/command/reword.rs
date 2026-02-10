@@ -11,7 +11,7 @@ pub fn execute(
     target: &str,
     message: Option<&str>,
 ) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     let mut cmd_args = vec!["describe", "-r", target];
     if let Some(m) = message {
