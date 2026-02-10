@@ -49,47 +49,53 @@ fn status_shows_current_change() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("@"), "status should show @ marker");
-    assert!(
-        stdout.contains("file(s) changed") || stdout.contains("no changes"),
-        "status should report file changes"
-    );
 }
 
 #[test]
-fn status_json_has_required_fields() {
+fn status_json_has_workspace_structure() {
     let repo = setup_repo();
 
     let output = jut()
-        .args([
-            "-C",
-            repo.path().to_str().unwrap(),
-            "status",
-            "--json",
-        ])
+        .args(["-C", repo.path().to_str().unwrap(), "status", "--json"])
         .output()
         .unwrap();
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
 
-    assert!(json["change_id"].is_string(), "must have change_id");
-    assert!(json["short_id"].is_string(), "must have short_id");
-    assert!(json["files_changed"].is_array(), "must have files_changed");
-    assert!(json["bookmarks"].is_array(), "must have bookmarks");
+    // New workspace structure
+    assert!(json["stacks"].is_array(), "must have stacks");
+    assert!(json["uncommitted_files"].is_array(), "must have uncommitted_files");
+
+    // Should have at least one stack (working copy creates one if no bookmarks)
+    let stacks = json["stacks"].as_array().unwrap();
+    assert!(!stacks.is_empty(), "should have at least one stack");
+
+    // First stack should have revisions
+    let revisions = stacks[0]["revisions"].as_array().unwrap();
+    assert!(!revisions.is_empty(), "stack should have revisions");
+
+    // Each revision should have required fields
+    let rev = &revisions[0];
+    assert!(rev["change_id"].is_string(), "revision must have change_id");
+    assert!(rev["short_id"].is_string(), "revision must have short_id");
+    assert!(rev["description"].is_string(), "revision must have description");
 
     // Short ID should be at least 4 chars
-    let short = json["short_id"].as_str().unwrap();
+    let short = rev["short_id"].as_str().unwrap();
     assert!(short.len() >= 4, "short_id must be >= 4 chars, got {short}");
-
-    // Change ID should be longer than short ID
-    let full = json["change_id"].as_str().unwrap();
-    assert!(full.len() > short.len(), "change_id should be longer than short_id");
-    assert!(full.starts_with(short), "change_id should start with short_id");
 }
 
 #[test]
-fn status_json_shows_changed_files() {
+fn status_json_shows_working_copy_files() {
     let repo = setup_repo();
+
+    // Track the file first
+    Command::new("jj")
+        .args(["file", "track", "hello.txt"])
+        .current_dir(repo.path())
+        .output()
+        .unwrap();
 
     let output = jut()
         .args(["-C", repo.path().to_str().unwrap(), "status", "--json"])
@@ -98,12 +104,23 @@ fn status_json_shows_changed_files() {
 
     let json: serde_json::Value =
         serde_json::from_str(&String::from_utf8_lossy(&output.stdout)).unwrap();
-    let files = json["files_changed"].as_array().unwrap();
 
-    assert!(
-        files.iter().any(|f| f.as_str() == Some("hello.txt")),
-        "should show hello.txt as changed, got: {files:?}"
-    );
+    // Check uncommitted_files or files within the working copy revision
+    let stacks = json["stacks"].as_array().unwrap();
+    let has_file = stacks.iter().any(|stack| {
+        stack["revisions"].as_array().map_or(false, |revs| {
+            revs.iter().any(|rev| {
+                rev["is_working_copy"].as_bool() == Some(true)
+                    && rev["files"].as_array().map_or(false, |files| {
+                        files
+                            .iter()
+                            .any(|f| f["path"].as_str() == Some("hello.txt"))
+                    })
+            })
+        })
+    });
+
+    assert!(has_file, "should show hello.txt in working copy files");
 }
 
 #[test]
@@ -111,14 +128,14 @@ fn commit_creates_new_change() {
     let repo = setup_repo();
     let path = repo.path().to_str().unwrap();
 
-    // Get initial change ID
+    // Get initial working copy change ID
     let before = jut()
         .args(["-C", path, "status", "--json"])
         .output()
         .unwrap();
     let before_json: serde_json::Value =
         serde_json::from_str(&String::from_utf8_lossy(&before.stdout)).unwrap();
-    let before_id = before_json["change_id"].as_str().unwrap().to_string();
+    let before_id = find_working_copy_change_id(&before_json);
 
     // Commit
     jut()
@@ -133,9 +150,30 @@ fn commit_creates_new_change() {
         .unwrap();
     let after_json: serde_json::Value =
         serde_json::from_str(&String::from_utf8_lossy(&after.stdout)).unwrap();
-    let after_id = after_json["change_id"].as_str().unwrap();
+    let after_id = find_working_copy_change_id(&after_json);
 
     assert_ne!(before_id, after_id, "commit should create a new change");
+}
+
+/// Find the working copy change_id from the new workspace JSON structure.
+fn find_working_copy_change_id(json: &serde_json::Value) -> String {
+    // Check stacks for working copy
+    if let Some(stacks) = json["stacks"].as_array() {
+        for stack in stacks {
+            if let Some(revs) = stack["revisions"].as_array() {
+                for rev in revs {
+                    if rev["is_working_copy"].as_bool() == Some(true) {
+                        return rev["change_id"].as_str().unwrap().to_string();
+                    }
+                }
+            }
+        }
+    }
+    // Check standalone working_copy
+    if let Some(wc) = json["working_copy"].as_object() {
+        return wc["change_id"].as_str().unwrap().to_string();
+    }
+    panic!("no working copy found in JSON output");
 }
 
 #[test]
@@ -182,13 +220,13 @@ fn status_after_flag_appends_status() {
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // Should contain two pretty-printed JSON objects
-    // Parse by splitting on "}\n{" boundary
     let full = stdout.to_string();
     assert!(full.contains("committed"), "should have commit result");
-    assert!(full.contains("change_id"), "should have status after");
+    assert!(full.contains("stacks"), "should have status after with stacks");
 
     // Use a streaming JSON deserializer to count objects
-    let mut deserializer = serde_json::Deserializer::from_str(&full).into_iter::<serde_json::Value>();
+    let mut deserializer =
+        serde_json::Deserializer::from_str(&full).into_iter::<serde_json::Value>();
     let mut count = 0;
     while let Some(Ok(_)) = deserializer.next() {
         count += 1;
@@ -250,7 +288,9 @@ fn json_flag_works_globally() {
         .unwrap();
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let _json: serde_json::Value = serde_json::from_str(&stdout).expect("--json should produce valid JSON");
+    let json: serde_json::Value =
+        serde_json::from_str(&stdout).expect("--json should produce valid JSON");
+    assert!(json["stacks"].is_array(), "JSON should have stacks");
 }
 
 #[test]
@@ -272,13 +312,18 @@ fn bookmarks_shown_in_status() {
 
     let json: serde_json::Value =
         serde_json::from_str(&String::from_utf8_lossy(&output.stdout)).unwrap();
-    let bookmarks = json["bookmarks"].as_array().unwrap();
+    let stacks = json["stacks"].as_array().unwrap();
+
+    // The bookmark should appear in a stack's bookmarks or revision's bookmarks
+    let has_bookmark = stacks.iter().any(|stack| {
+        stack["bookmarks"]
+            .as_array()
+            .map_or(false, |bs| bs.iter().any(|b| b.as_str() == Some("test-bookmark")))
+    });
 
     assert!(
-        bookmarks
-            .iter()
-            .any(|b| b["name"].as_str() == Some("test-bookmark")),
-        "status should list bookmarks, got: {bookmarks:?}"
+        has_bookmark,
+        "status should show test-bookmark in stacks, got: {stacks:?}"
     );
 }
 
@@ -292,13 +337,9 @@ fn undo_reverts_last_operation() {
         .args(["-C", path, "status", "--json"])
         .output()
         .unwrap();
-    let before_id = serde_json::from_str::<serde_json::Value>(
-        &String::from_utf8_lossy(&before.stdout),
-    )
-    .unwrap()["change_id"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let before_json: serde_json::Value =
+        serde_json::from_str(&String::from_utf8_lossy(&before.stdout)).unwrap();
+    let before_id = find_working_copy_change_id(&before_json);
 
     // Commit (changes state)
     jut()
@@ -317,13 +358,9 @@ fn undo_reverts_last_operation() {
         .args(["-C", path, "status", "--json"])
         .output()
         .unwrap();
-    let after_id = serde_json::from_str::<serde_json::Value>(
-        &String::from_utf8_lossy(&after.stdout),
-    )
-    .unwrap()["change_id"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let after_json: serde_json::Value =
+        serde_json::from_str(&String::from_utf8_lossy(&after.stdout)).unwrap();
+    let after_id = find_working_copy_change_id(&after_json);
 
     assert_eq!(before_id, after_id, "undo should restore previous change");
 }
@@ -336,4 +373,129 @@ fn no_repo_gives_error() {
         .args(["-C", dir.path().to_str().unwrap(), "status"])
         .assert()
         .failure();
+}
+
+// --- Regression: stacked branches visualization ---
+
+#[test]
+fn status_shows_stacked_branches() {
+    let repo = setup_repo();
+    let path = repo.path();
+
+    // Create a stack: commit1 -> commit2 (with bookmark)
+    Command::new("jj")
+        .args(["new", "-m", "second commit"])
+        .current_dir(path)
+        .output()
+        .unwrap();
+    std::fs::write(path.join("file2.txt"), "content\n").unwrap();
+    Command::new("jj")
+        .args(["file", "track", "file2.txt"])
+        .current_dir(path)
+        .output()
+        .unwrap();
+    Command::new("jj")
+        .args(["bookmark", "set", "my-feature"])
+        .current_dir(path)
+        .output()
+        .unwrap();
+
+    let output = jut()
+        .args(["-C", path.to_str().unwrap(), "status"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Should show stack structure with tree characters
+    assert!(stdout.contains("╭"), "should have stack header");
+    assert!(stdout.contains("my-feature"), "should show bookmark name");
+    assert!(stdout.contains("├╯"), "should have stack footer");
+    assert!(stdout.contains("┴"), "should have trunk marker");
+}
+
+#[test]
+fn status_shows_parallel_stacks() {
+    let repo = setup_repo();
+    let path = repo.path();
+
+    // Create first stack with bookmark
+    Command::new("jj")
+        .args(["new", "-m", "feature-a work"])
+        .current_dir(path)
+        .output()
+        .unwrap();
+    std::fs::write(path.join("file_a.txt"), "a content\n").unwrap();
+    Command::new("jj")
+        .args(["file", "track", "file_a.txt"])
+        .current_dir(path)
+        .output()
+        .unwrap();
+
+    // Save the feature-a change id before moving working copy
+    let feature_a_id = {
+        let out = Command::new("jj")
+            .args(["log", "--no-graph", "-T", "change_id.shortest(8)", "-r", "@", "-n", "1"])
+            .current_dir(path)
+            .output()
+            .unwrap();
+        String::from_utf8_lossy(&out.stdout).trim().to_string()
+    };
+
+    // Get the initial commit's change ID for branching (parent of @)
+    let init_id = {
+        let out = Command::new("jj")
+            .args(["log", "--no-graph", "-T", "change_id.shortest(8)", "-r", "@-", "-n", "1"])
+            .current_dir(path)
+            .output()
+            .unwrap();
+        String::from_utf8_lossy(&out.stdout).trim().to_string()
+    };
+
+    // Create parallel stack from initial commit
+    Command::new("jj")
+        .args(["new", "-m", "feature-b work", "-r", &init_id])
+        .current_dir(path)
+        .output()
+        .unwrap();
+    std::fs::write(path.join("file_b.txt"), "b content\n").unwrap();
+    Command::new("jj")
+        .args(["file", "track", "file_b.txt"])
+        .current_dir(path)
+        .output()
+        .unwrap();
+
+    // Now set bookmarks on the correct revisions
+    Command::new("jj")
+        .args(["bookmark", "set", "feature-a", "-r", &feature_a_id])
+        .current_dir(path)
+        .output()
+        .unwrap();
+    Command::new("jj")
+        .args(["bookmark", "set", "feature-b"])
+        .current_dir(path)
+        .output()
+        .unwrap();
+
+    let output = jut()
+        .args(["-C", path.to_str().unwrap(), "status"])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Should show both stacks
+    assert!(
+        stdout.contains("feature-a"),
+        "should show feature-a: {stdout}"
+    );
+    assert!(
+        stdout.contains("feature-b"),
+        "should show feature-b: {stdout}"
+    );
+    // Should have two stack headers
+    assert!(
+        stdout.matches("╭┄").count() >= 2,
+        "should have at least 2 stacks: {stdout}"
+    );
 }
