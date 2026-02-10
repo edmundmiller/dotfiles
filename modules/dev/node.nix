@@ -19,6 +19,7 @@ in
     enable = mkBoolOpt false;
     enableGlobally = mkBoolOpt false;
     useFnm = mkBoolOpt false; # Use fnm (Fast Node Manager) for Node version management
+    bunGlobalPackages = mkOpt (types.listOf types.str) [ ]; # Packages to install via bun install -g
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -37,6 +38,17 @@ in
           eval "function $cmd { fnm; command $cmd \"\$@\"; }"
         done
       '';
+    })
+
+    (mkIf (cfg.bunGlobalPackages != [ ]) {
+      system.activationScripts.extraActivation.text =
+        let
+          packages = concatStringsSep " " cfg.bunGlobalPackages;
+        in
+        ''
+          echo "Ensuring bun global packages: ${packages}" >&2
+          sudo -u emiller HOME=/Users/emiller ${pkgs.bun}/bin/bun install -g ${packages} || echo "Warning: bun global install failed" >&2
+        '';
     })
 
     (mkIf cfg.enableGlobally {

@@ -14,6 +14,7 @@
       dev = {
         node.enable = true;
         node.useFnm = true;
+        node.bunGlobalPackages = [ "zele" ];
         # FIXME: Python disabled - openclaw bundles whisper which includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
