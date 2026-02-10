@@ -1,0 +1,13 @@
+{
+  "name": "jut-skill-eval",
+  "private": true,
+  "scripts": {
+    "eval": "npx promptfoo eval",
+    "eval:repeat": "npx promptfoo eval --repeat 3",
+    "view": "npx promptfoo view"
+  },
+  "devDependencies": {
+    "promptfoo": "^0.100.0",
+    "typescript": "^5.0.0"
+  }
+}

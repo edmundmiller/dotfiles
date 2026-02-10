@@ -10,6 +10,9 @@ use crate::args::SkillAction;
 use crate::output::OutputChannel;
 
 const SKILL_CONTENT: &str = include_str!("../../skill/SKILL.md");
+const REF_REFERENCE: &str = include_str!("../../skill/references/reference.md");
+const REF_CONCEPTS: &str = include_str!("../../skill/references/concepts.md");
+const REF_EXAMPLES: &str = include_str!("../../skill/references/examples.md");
 
 pub fn execute(out: &mut OutputChannel, action: Option<&SkillAction>) -> Result<()> {
     match action {
@@ -35,11 +38,23 @@ fn install(out: &mut OutputChannel, global: bool, target: Option<&str>) -> Resul
         fs::write(&skill_path, SKILL_CONTENT)
             .with_context(|| format!("failed to write {}", skill_path.display()))?;
 
+        // Write reference files
+        let refs_dir = dir.join("references");
+        fs::create_dir_all(&refs_dir)?;
+        for (name, content) in &[
+            ("reference.md", REF_REFERENCE),
+            ("concepts.md", REF_CONCEPTS),
+            ("examples.md", REF_EXAMPLES),
+        ] {
+            fs::write(refs_dir.join(name), content)?;
+        }
+
         if out.is_json() {
             let json = serde_json::json!({
                 "installed": true,
                 "path": skill_path.to_string_lossy(),
                 "version": env!("CARGO_PKG_VERSION"),
+                "references": ["references/reference.md", "references/concepts.md", "references/examples.md"],
             });
             out.write_json(&json)?;
         } else {
@@ -47,6 +62,10 @@ fn install(out: &mut OutputChannel, global: bool, target: Option<&str>) -> Resul
                 "{} {}",
                 "Installed:".green().bold(),
                 skill_path.display()
+            ));
+            out.human(&format!(
+                "  {} references/reference.md, concepts.md, examples.md",
+                "+".dimmed()
             ));
         }
     }
@@ -103,6 +122,17 @@ fn check(out: &mut OutputChannel, update: bool) -> Result<()> {
             let parent = path.parent().unwrap();
             fs::create_dir_all(parent)?;
             fs::write(path, SKILL_CONTENT)?;
+
+            // Also update references
+            let refs_dir = parent.join("references");
+            fs::create_dir_all(&refs_dir)?;
+            for (name, content) in &[
+                ("reference.md", REF_REFERENCE),
+                ("concepts.md", REF_CONCEPTS),
+                ("examples.md", REF_EXAMPLES),
+            ] {
+                fs::write(refs_dir.join(name), content)?;
+            }
 
             if out.is_json() {
                 let json = serde_json::json!({

@@ -1,0 +1,119 @@
+description: "Skill eval for jut — jj porcelain"
+
+prompts:
+  - "{{prompt}}"
+
+providers:
+  - id: file://dist/providers/jut-integration.js
+    config:
+      runner: "providers/claude-local.sh"
+      runner_timeout_ms: 180000
+      keep_fixtures: false
+
+defaultTest:
+  vars:
+    setup_commands: ""
+
+tests:
+  - description: "Basic commit: status then commit with --json --status-after"
+    vars:
+      prompt: "Commit the current changes with message 'Add auth skeleton'."
+      setup_commands: |
+        mkdir -p src
+        cat <<'EOF' > src/auth.rs
+        pub fn auth() {}
+        EOF
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:basicCommitFlow
+
+  - description: "Branch workflow: create branch before committing"
+    vars:
+      prompt: "Create a branch called dark-mode and commit src/theme.rs with a clear message."
+      setup_commands: |
+        mkdir -p src
+        cat <<'EOF' > src/theme.rs
+        pub fn dark_mode() {}
+        EOF
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:branchWorkflow
+
+  - description: "Ordering: jut status happens before any mutation"
+    vars:
+      prompt: "Commit src/main.rs with a useful commit message."
+      setup_commands: |
+        mkdir -p src
+        cat <<'EOF' > src/main.rs
+        fn main() {}
+        EOF
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:orderingFlow
+
+  - description: "Rub amend: amend a file into an older commit"
+    vars:
+      prompt: "Amend src/fix.rs into the revision that added src/feature.rs."
+      setup_commands: |
+        mkdir -p src
+        cat <<'EOF' > src/feature.rs
+        pub fn feature() {}
+        EOF
+        jj commit -m "Add feature"
+        cat <<'EOF' > src/fix.rs
+        pub fn fix() {}
+        EOF
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:rubAmendFlow
+
+  - description: "Discard flow: discard changes to a file"
+    vars:
+      prompt: "Discard changes to src/experiment.rs."
+      setup_commands: |
+        mkdir -p src
+        echo "original" > src/experiment.rs
+        jj commit -m "Add experiment"
+        echo "modified" > src/experiment.rs
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:discardFlow
+
+  - description: "Squash flow: squash revisions together"
+    vars:
+      prompt: "Squash the last two revisions together."
+      setup_commands: |
+        mkdir -p src
+        echo "a" > src/a.rs
+        jj commit -m "Add a"
+        echo "b" > src/b.rs
+        jj commit -m "Add b"
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:squashFlow
+
+  - description: "Interactive fallback: use jj split, not jut"
+    vars:
+      prompt: "Split the current revision into two commits."
+      setup_commands: |
+        mkdir -p src
+        echo "fn a() {}" > src/a.rs
+        echo "fn b() {}" > src/b.rs
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:interactiveFallback
+
+  - description: "Stacked branch: create dependent work with --stack"
+    vars:
+      prompt: "Create a branch called auth, commit the auth code, then create a stacked branch called profile that depends on auth."
+      setup_commands: |
+        mkdir -p src
+        cat <<'EOF' > src/auth.rs
+        pub fn login() {}
+        EOF
+        cat <<'EOF' > src/profile.rs
+        pub fn profile() {}
+        EOF
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:stackedBranchFlow
