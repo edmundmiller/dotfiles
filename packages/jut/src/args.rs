@@ -186,6 +186,12 @@ pub enum Subcommands {
         from: Option<String>,
     },
 
+    /// Manage jut AI skill for coding agents.
+    Skill {
+        #[clap(subcommand)]
+        action: Option<SkillAction>,
+    },
+
     /// Operations history (go back in time).
     Oplog {
         /// Max operations to show.
@@ -196,6 +202,27 @@ pub enum Subcommands {
         all: bool,
         #[clap(subcommand)]
         action: Option<OplogAction>,
+    },
+}
+
+#[derive(Debug, clap::Subcommand)]
+pub enum SkillAction {
+    /// Install skill files into a project or globally.
+    Install {
+        /// Install globally (~/.pi/agent/skills/jut/).
+        #[clap(long)]
+        global: bool,
+        /// Target directory (default: .pi/agent/skills/jut/ or .claude/skills/jut/).
+        #[clap(long)]
+        target: Option<String>,
+    },
+    /// Print the skill content to stdout.
+    Show,
+    /// Check if installed skill is up to date with this CLI version.
+    Check {
+        /// Auto-update if outdated.
+        #[clap(long)]
+        update: bool,
     },
 }
 

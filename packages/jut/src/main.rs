@@ -89,6 +89,7 @@ fn dispatch(cmd: &Subcommands, args: &Args, out: &mut OutputChannel) -> Result<(
                 },
             )
         }
+        Subcommands::Skill { action } => command::skill::execute(out, action.as_ref()),
         Subcommands::Oplog { limit, all, action } => {
             command::oplog::execute(args, out, *limit, *all, action.as_ref())
         }
