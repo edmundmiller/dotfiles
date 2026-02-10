@@ -8,7 +8,7 @@ pub fn execute(args: &Args, out: &mut OutputChannel, limit: usize, all: bool) ->
     let repo = Repo::open(&args.current_dir)?;
 
     if out.is_json() {
-        // Structured JSON output via jj-lib query
+        // Structured JSON output via jj CLI query
         let revset = if all {
             "all()".to_string()
         } else {
