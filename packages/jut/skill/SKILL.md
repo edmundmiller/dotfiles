@@ -323,3 +323,10 @@ Read-only `jj` commands are always fine alongside jut (`jj log`, `jj evolog`, `j
 - `zz` is the universal discard target for `rub`.
 - `--status-after` returns the full workspace state after mutation — eliminates a round-trip.
 - jut and jj coexist freely. No setup/teardown. Switch between them at will.
+- Keep skill version checks low-noise:
+  - Do not run `jut skill check` as routine preflight.
+  - Run `jut skill check` when command behavior diverges from this skill.
+  - If update available, recommend `jut skill check --update`.
+- For deeper command syntax and flags, see `references/reference.md`.
+- For workspace model and jj concepts, see `references/concepts.md`.
+- For end-to-end workflow patterns, see `references/examples.md`.
