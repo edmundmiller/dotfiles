@@ -9,6 +9,7 @@
     "view": "npx promptfoo view"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "promptfoo": "^0.100.0",
     "typescript": "^5.0.0"
   }
