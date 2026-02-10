@@ -53,7 +53,9 @@ fn dispatch(cmd: &Subcommands, args: &Args, out: &mut OutputChannel) -> Result<(
             command::reword::execute(args, out, target, message.as_deref())
         }
         Subcommands::Push { bookmark } => command::push::execute(args, out, bookmark.as_deref()),
-        Subcommands::Pull => command::pull::execute(args, out),
+        Subcommands::Pull { clean, no_rebase, dry_run } => {
+            command::pull::execute(args, out, *clean, *no_rebase, *dry_run)
+        }
         Subcommands::Pr { bookmark, message } => {
             command::pr::execute(args, out, bookmark.as_deref(), message.as_deref())
         }
@@ -61,5 +63,34 @@ fn dispatch(cmd: &Subcommands, args: &Args, out: &mut OutputChannel) -> Result<(
         Subcommands::Undo => command::undo::execute(args, out),
         Subcommands::Absorb { dry_run } => command::absorb::execute(args, out, *dry_run),
         Subcommands::Log { limit, all } => command::log::execute(args, out, *limit, *all),
+        Subcommands::Branch {
+            name,
+            stack,
+            list,
+            delete,
+            rename,
+            from,
+        } => {
+            let rename_pair = if rename.len() == 2 {
+                Some((rename[0].as_str(), rename[1].as_str()))
+            } else {
+                None
+            };
+            command::branch::execute(
+                args,
+                out,
+                command::branch::BranchOpts {
+                    name: name.as_deref(),
+                    list: *list,
+                    delete: delete.as_deref(),
+                    rename: rename_pair,
+                    stack: *stack,
+                    from: from.as_deref(),
+                },
+            )
+        }
+        Subcommands::Oplog { limit, all, action } => {
+            command::oplog::execute(args, out, *limit, *all, action.as_ref())
+        }
     }
 }

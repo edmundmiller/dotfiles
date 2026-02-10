@@ -118,7 +118,17 @@ pub enum Subcommands {
     },
 
     /// Fetch and rebase on upstream.
-    Pull,
+    Pull {
+        /// Auto-delete bookmarks merged into trunk.
+        #[clap(short = 'c', long)]
+        clean: bool,
+        /// Only fetch, skip rebase (legacy behavior).
+        #[clap(long)]
+        no_rebase: bool,
+        /// Show plan without executing.
+        #[clap(long)]
+        dry_run: bool,
+    },
 
     /// Create a PR via gh CLI.
     Pr {
@@ -153,5 +163,47 @@ pub enum Subcommands {
         /// Show all revisions.
         #[clap(long)]
         all: bool,
+    },
+
+    /// Create/manage branches (bookmarks).
+    Branch {
+        /// Branch name to create.
+        name: Option<String>,
+        /// Create stacked branch from current @ (dependent work).
+        #[clap(short = 's', long)]
+        stack: bool,
+        /// List branches with stack relationships.
+        #[clap(short = 'l', long)]
+        list: bool,
+        /// Delete a branch.
+        #[clap(short = 'd', long)]
+        delete: Option<String>,
+        /// Rename a branch: --rename old new.
+        #[clap(long, num_args = 2, value_names = &["OLD", "NEW"])]
+        rename: Vec<String>,
+        /// Override base revision for create/stack.
+        #[clap(long)]
+        from: Option<String>,
+    },
+
+    /// Operations history (go back in time).
+    Oplog {
+        /// Max operations to show.
+        #[clap(short = 'n', long, default_value = "10")]
+        limit: usize,
+        /// Include snapshot operations (filtered by default).
+        #[clap(long)]
+        all: bool,
+        #[clap(subcommand)]
+        action: Option<OplogAction>,
+    },
+}
+
+#[derive(Debug, clap::Subcommand)]
+pub enum OplogAction {
+    /// Restore workspace to a previous operation state.
+    Restore {
+        /// Operation ID to restore.
+        op_id: String,
     },
 }
