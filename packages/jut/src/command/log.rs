@@ -5,7 +5,7 @@ use crate::output::OutputChannel;
 use crate::repo::Repo;
 
 pub fn execute(args: &Args, out: &mut OutputChannel, limit: usize, all: bool) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     let limit_str = limit.to_string();
     let mut cmd_args = vec!["log"];

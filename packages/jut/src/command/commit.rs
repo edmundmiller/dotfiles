@@ -12,7 +12,7 @@ pub fn execute(
     message: Option<&str>,
     _branch: Option<&str>,
 ) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     let msg = match message {
         Some(m) => m.to_string(),

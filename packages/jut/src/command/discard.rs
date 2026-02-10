@@ -6,7 +6,7 @@ use crate::output::OutputChannel;
 use crate::repo::Repo;
 
 pub fn execute(args: &Args, out: &mut OutputChannel, target: &str) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     // Check if target is a file path or revision
     let is_file = repo.root().join(target).exists();

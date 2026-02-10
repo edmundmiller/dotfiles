@@ -6,7 +6,7 @@ use crate::output::OutputChannel;
 use crate::repo::Repo;
 
 pub fn execute(args: &Args, out: &mut OutputChannel) -> Result<()> {
-    let repo = Repo::discover(&args.current_dir)?;
+    let repo = Repo::open(&args.current_dir)?;
 
     // Fetch
     let fetch_result = repo.jj_cmd(&["git", "fetch"])?;
