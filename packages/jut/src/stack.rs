@@ -255,9 +255,11 @@ impl Repo {
                 "\"AUTH:\" ++ coalesce(author.name(), \"(unknown)\") ++ \":AUTH\"",
                 " ++ \"{}\" ++ ",
                 "author.timestamp()",
+                " ++ \"{}\" ++ ",
+                "change_id.shortest(4)",
                 " ++ \"{}\"",
             ),
-            US, US, US, US, US, US, US, US, US, RS,
+            US, US, US, US, US, US, US, US, US, US, RS,
         );
 
         let output = self.jj_cmd(&[
@@ -272,7 +274,7 @@ impl Repo {
                 continue;
             }
             let fields: Vec<&str> = record.split(US).collect();
-            if fields.len() < 10 {
+            if fields.len() < 11 {
                 continue;
             }
 
@@ -286,6 +288,7 @@ impl Repo {
             let is_conflicted = fields[7].trim() == "conflict";
             let author = extract_delimited(fields[8], "AUTH:");
             let timestamp = fields[9].trim().to_string();
+            let short_id = fields[10].trim().to_string();
 
             let bookmarks: Vec<String> = if bookmarks_str.is_empty() {
                 Vec::new()
@@ -298,10 +301,6 @@ impl Repo {
             } else {
                 parents_str.split(',').map(|s| s.trim().to_string()).collect()
             };
-
-            let short_id = self
-                .shortest_change_id_prefix(&change_id)
-                .unwrap_or_else(|_| change_id[..4.min(change_id.len())].to_string());
 
             revisions.push(RevisionInfo {
                 change_id,
