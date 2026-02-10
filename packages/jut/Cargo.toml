@@ -1,0 +1,41 @@
+[package]
+name = "jut"
+version = "0.1.0"
+edition = "2021"
+description = "GitButler-inspired CLI for Jujutsu (jj)"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "jut"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4", features = ["derive", "env", "wrap_help", "color"] }
+
+# jj integration
+jj-lib = "0.38"
+
+# Async (jj-lib needs tokio)
+tokio = { version = "1", features = ["full"] }
+pollster = "0.4"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# Display
+colored = "3"
+unicode-width = "0.2"
+
+# Misc
+dirs = "6"
+
+[dev-dependencies]
+tempfile = "3"
+assert_cmd = "2"
