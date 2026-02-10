@@ -11,6 +11,7 @@ pub mod push;
 pub mod reword;
 pub mod rub;
 pub mod show;
+pub mod skill;
 pub mod squash;
 pub mod status;
 pub mod undo;
