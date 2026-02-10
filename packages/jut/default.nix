@@ -16,6 +16,8 @@ rustPlatform.buildRustPackage {
 
   src = ./.;
 
+  cargoLock.lockFile = ./Cargo.lock;
+
   nativeBuildInputs = [
     makeWrapper
     pkg-config
@@ -26,6 +28,11 @@ rustPlatform.buildRustPackage {
     zlib
     libgit2
   ];
+
+  nativeCheckInputs = [ jujutsu ];
+
+  # Integration tests need a real jj repo + git, skip in sandbox
+  doCheck = false;
 
   # Wrap with jj and gh in PATH
   postInstall = ''
