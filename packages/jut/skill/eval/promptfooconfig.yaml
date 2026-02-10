@@ -4,11 +4,25 @@ prompts:
   - "{{prompt}}"
 
 providers:
-  - id: file://dist/providers/jut-integration.js
+  # Claude Code (default)
+  - id: file://providers/jut-integration.ts
+    label: claude
     config:
-      runner: "providers/claude-local.sh"
+      agent: claude
+      claude_runner: "providers/claude-local.sh"
       runner_timeout_ms: 180000
       keep_fixtures: false
+      min_claude_version: "1.0.88"
+
+  # Codex
+  - id: file://providers/jut-integration.ts
+    label: codex
+    config:
+      agent: codex
+      codex_runner: "providers/codex-local.sh"
+      runner_timeout_ms: 180000
+      keep_fixtures: false
+      min_codex_version: "0.99.0"
 
 defaultTest:
   vars:
@@ -117,3 +131,23 @@ tests:
     assert:
       - type: javascript
         value: file://assertions/jut-assertions.ts:stackedBranchFlow
+
+  - description: "PR flow: push and create PR with jut, not raw gh"
+    vars:
+      prompt: "Push the current branch and create a pull request."
+      setup_commands: |
+        mkdir -p src
+        echo "fn feature() {}" > src/feature.rs
+        jj bookmark set my-feature
+        jj commit -m "Add feature"
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:prFlow
+
+  - description: "Pull flow: sync with upstream using jut pull"
+    vars:
+      prompt: "Pull the latest changes from upstream and rebase our work."
+      setup_commands: ""
+    assert:
+      - type: javascript
+        value: file://assertions/jut-assertions.ts:pullFlow
