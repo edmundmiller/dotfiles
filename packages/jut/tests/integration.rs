@@ -251,6 +251,50 @@ fn log_shows_history() {
 }
 
 #[test]
+fn log_json_returns_structured_revisions() {
+    let repo = setup_repo();
+
+    let output = jut()
+        .args(["-C", repo.path().to_str().unwrap(), "log", "--json", "-n", "5"])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success(), "log --json should succeed");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout)
+        .expect("log --json should return valid JSON");
+
+    let revisions = json["revisions"].as_array()
+        .expect("should have revisions array");
+    assert!(!revisions.is_empty(), "should have at least one revision");
+
+    // Check first revision has expected fields
+    let rev = &revisions[0];
+    assert!(rev["change_id"].is_string(), "should have change_id");
+    assert!(rev["commit_id"].is_string(), "should have commit_id");
+    assert!(rev["short_id"].is_string(), "should have short_id");
+    assert!(rev["description"].is_string(), "should have description");
+    assert!(rev["author"].is_string(), "should have author");
+    assert!(rev["timestamp"].is_string(), "should have timestamp");
+    assert!(rev["bookmarks"].is_array(), "should have bookmarks array");
+    assert!(rev["parent_change_ids"].is_array(), "should have parent_change_ids");
+    assert!(rev["is_empty"].is_boolean(), "should have is_empty");
+    assert!(rev["is_immutable"].is_boolean(), "should have is_immutable");
+    assert!(rev["is_conflicted"].is_boolean(), "should have is_conflicted");
+    assert!(rev["is_working_copy"].is_boolean(), "should have is_working_copy");
+
+    // At least one revision should have our commit description
+    let has_initial = revisions.iter().any(|r| {
+        r["description"].as_str().map_or(false, |d| d.contains("initial commit"))
+    });
+    assert!(has_initial, "should contain 'initial commit' description");
+
+    // Exactly one revision should be working copy
+    let wc_count = revisions.iter().filter(|r| r["is_working_copy"] == true).count();
+    assert!(wc_count <= 1, "at most one working copy revision");
+}
+
+#[test]
 fn diff_runs_without_error() {
     let repo = setup_repo();
 
