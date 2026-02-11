@@ -32,7 +32,7 @@ Tool availability depends on which plugins are enabled for this Clawdbot instanc
 
 - **Use for**: Reading short summaries, reminders, or alerts aloud.
 
-## Google Workspace (`gogcli`)
+## Google Workspace (`zele`)
 
 - **Use for**: Gmail (read/search/drafts/labels) and Calendar events.
 - **Safety**: Confirm before sending mail or creating/editing/deleting events.

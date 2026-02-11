@@ -50,7 +50,7 @@ home-manager.users.${user}.programs.openclaw = {
     };
   };
 
-  firstParty.gogcli.enable = true;
+  firstParty.zele.enable = true;
   plugins = [{ source = "github:..."; }];
 
   instances.default = {
@@ -95,13 +95,13 @@ Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../
 
 ## Google + Linear setup (nuc)
 
-- Enable gogcli via `modules.services.openclaw.firstParty.gogcli.enable = true;`
+- Enable zele via `modules.services.openclaw.firstParty.zele.enable = true;`
 - Add Linear plugin via `modules.services.openclaw.plugins` (customPlugins)
 - Secrets (agenix):
-  - `/run/agenix/gogcli-client-secret` (Google OAuth client secret JSON)
+  - `/run/agenix/zele-client-secret` (Google OAuth client secret JSON)
   - `/run/agenix/linear-api-token` (Linear API key)
 - OAuth setup (once, on nuc):
-  - `gog auth credentials /run/agenix/gogcli-client-secret`
+  - `gog auth credentials /run/agenix/zele-client-secret`
   - `gog auth add you@gmail.com --services gmail,calendar`
 
 ## Related Files
