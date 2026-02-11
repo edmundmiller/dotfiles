@@ -6,6 +6,8 @@
 # Pi is a terminal-based AI coding assistant. This module:
 # - Configures Ghostty keybindings when Ghostty is enabled
 # - Symlinks shared skills from config/agents/skills/
+# - Auto-discovers prompt templates from config/pi/prompts/
+# - Auto-discovers local skills from config/pi/skills/
 # - Generates AGENTS.md from config/agents/rules/
 # - Strips // comments from settings.jsonc (pi only supports standard JSON)
 #
@@ -36,6 +38,37 @@ let
   );
   readRule = file: builtins.readFile "${rulesDir}/${file}";
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
+
+  # Dynamically discover prompt templates from config/pi/prompts/
+  promptsDir = "${configDir}/pi/prompts";
+  promptFiles =
+    if builtins.pathExists promptsDir then
+      builtins.filter (f: lib.hasSuffix ".md" f) (builtins.attrNames (builtins.readDir promptsDir))
+    else
+      [ ];
+  promptLinks = lib.listToAttrs (
+    map (f: {
+      name = ".pi/agent/prompts/${f}";
+      value.source = "${promptsDir}/${f}";
+    }) promptFiles
+  );
+
+  # Dynamically discover local skills from config/pi/skills/
+  # Each subdirectory should contain a SKILL.md
+  skillsDir = "${configDir}/pi/skills";
+  skillDirs =
+    if builtins.pathExists skillsDir then
+      builtins.filter (d: builtins.pathExists "${skillsDir}/${d}/SKILL.md") (
+        builtins.attrNames (builtins.readDir skillsDir)
+      )
+    else
+      [ ];
+  skillLinks = lib.listToAttrs (
+    map (d: {
+      name = ".pi/agent/skills/${d}/SKILL.md";
+      value.source = "${skillsDir}/${d}/SKILL.md";
+    }) skillDirs
+  );
 
   # Convert JSONC to valid JSON:
   # 1. Strip full-line // comments
@@ -128,22 +161,24 @@ in
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
-        home.file = {
-          ".pi/agent/AGENTS.md".text = concatenatedRules;
-          ".pi/agent/settings.json".text = piSettingsValidated;
-          # Prompt templates (invoked via /name in editor)
-          ".pi/agent/prompts/codex-implement-plan.md".source =
-            "${configDir}/pi/prompts/codex-implement-plan.md";
-          ".pi/agent/prompts/codex-review-impl.md".source = "${configDir}/pi/prompts/codex-review-impl.md";
-          ".pi/agent/prompts/codex-review-plan.md".source = "${configDir}/pi/prompts/codex-review-plan.md";
-          # Skills (local, not via packages)
-          ".pi/agent/skills/codex-cli/SKILL.md".source = "${configDir}/pi/skills/codex-cli/SKILL.md";
-          ".pi/agent/extensions/enforce-commit-signing.ts".source =
-            "${configDir}/pi/extensions/enforce-commit-signing.ts";
-          ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
-          ".pi/agent/extensions/gitbutler-guard-logic.ts".source =
-            "${configDir}/pi/extensions/gitbutler-guard-logic.ts";
-        };
+        home.file =
+          promptLinks
+          // skillLinks
+          // {
+            ".pi/agent/AGENTS.md".text = concatenatedRules;
+            ".pi/agent/settings.json".text = piSettingsValidated;
+            ".pi/agent/extensions/enforce-commit-signing.ts".source =
+              "${configDir}/pi/extensions/enforce-commit-signing.ts";
+            ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
+            ".pi/agent/extensions/gitbutler-guard-logic.ts".source =
+              "${configDir}/pi/extensions/gitbutler-guard-logic.ts";
+            # Subagent definitions (pi-subagents)
+            ".pi/agent/agents/code-simplifier.md".source = "${configDir}/pi/agents/code-simplifier.md";
+            ".pi/agent/agents/coder.md".source = "${configDir}/pi/agents/coder.md";
+            ".pi/agent/agents/scout.md".source = "${configDir}/pi/agents/scout.md";
+            ".pi/agent/agents/cursor.md".source = "${configDir}/pi/agents/cursor.md";
+            ".pi/agent/agents/scout-planner.chain.md".source = "${configDir}/pi/agents/scout-planner.chain.md";
+          };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           bun_bin="${pkgs.bun}/bin/bun"
