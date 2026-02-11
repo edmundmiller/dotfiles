@@ -104,6 +104,10 @@
     "npm:pi-codex-profile",
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
+    // Ghostty theme sync - https://github.com/ogulcancelik/pi-ghostty-theme-sync
+    "npm:pi-ghostty-theme-sync",
+    // Entire.io code context - https://github.com/entireio/cli
+    "npm:@hjanuschka/pi-entire",
     // Notification on task completion - https://github.com/ferologics/pi-notify
     "npm:pi-notify",
     // Multi-agent messaging/coordination - https://github.com/nicobailon/pi-messenger
