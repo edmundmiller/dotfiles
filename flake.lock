@@ -45,11 +45,11 @@
     "agent-tail-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1770742269,
-        "narHash": "sha256-gpTu5TRPkXop+bkR/6+JxY6E80PL0xyFuPlWS54v8q8=",
+        "lastModified": 1770764999,
+        "narHash": "sha256-pkBA4J2lss6DIowrFC0Ot0S0CiOOKMiCtvXbpK9JCuQ=",
         "owner": "gillkyle",
         "repo": "agent-tail",
-        "rev": "a7bc7f6905def920c422ff76a3f9c72919ff09b2",
+        "rev": "da6eae09ed672478c2e7252ae5fed32fbcbcdaa6",
         "type": "github"
       },
       "original": {
@@ -1232,6 +1232,22 @@
         "type": "github"
       }
     },
+    "pi-messenger-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770621254,
+        "narHash": "sha256-wz2uaqFbqdv5BHK5M9ax2xC6S7HatjF9dNrS2fjsnEQ=",
+        "owner": "nicobailon",
+        "repo": "pi-messenger",
+        "rev": "38b4652091d585cb186ca6435d1a7f273f3502c2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nicobailon",
+        "repo": "pi-messenger",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
@@ -1289,7 +1305,8 @@
           "nixpkgs"
         ],
         "openai-skills": "openai-skills",
-        "pi-extension-skills": "pi-extension-skills"
+        "pi-extension-skills": "pi-extension-skills",
+        "pi-messenger-repo": "pi-messenger-repo"
       },
       "locked": {
         "path": "./skills",
