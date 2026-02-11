@@ -131,6 +131,13 @@ in
         home.file = {
           ".pi/agent/AGENTS.md".text = concatenatedRules;
           ".pi/agent/settings.json".text = piSettingsValidated;
+          # Prompt templates (invoked via /name in editor)
+          ".pi/agent/prompts/codex-implement-plan.md".source =
+            "${configDir}/pi/prompts/codex-implement-plan.md";
+          ".pi/agent/prompts/codex-review-impl.md".source = "${configDir}/pi/prompts/codex-review-impl.md";
+          ".pi/agent/prompts/codex-review-plan.md".source = "${configDir}/pi/prompts/codex-review-plan.md";
+          # Skills (local, not via packages)
+          ".pi/agent/skills/codex-cli/SKILL.md".source = "${configDir}/pi/skills/codex-cli/SKILL.md";
           ".pi/agent/extensions/enforce-commit-signing.ts".source =
             "${configDir}/pi/extensions/enforce-commit-signing.ts";
           ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
