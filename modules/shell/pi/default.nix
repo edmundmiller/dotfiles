@@ -171,6 +171,8 @@ in
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Ping.aiff";
+    # pi-tasks backend
+    env.PI_TASKS_BACKEND = "beads";
 
     # Pi configuration via home-manager
     # - Skills are shared across all agents (Claude, OpenCode, Pi)
