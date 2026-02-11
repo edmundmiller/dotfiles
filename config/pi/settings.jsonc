@@ -98,6 +98,10 @@
     "npm:@prinova/pi-github-tools",
     // Task management UI (ctrl+x) - https://github.com/Soleone/pi-tasks
     "npm:@soleone/pi-tasks",
+    // Fuzzy file picker (ctrl+f) - https://github.com/kaofelix/pi-fzf
+    "npm:pi-fzf",
+    // Profile/settings switcher - https://www.npmjs.com/package/pi-codex-profile
+    "npm:pi-codex-profile",
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
     // Notification on task completion - https://github.com/ferologics/pi-notify
