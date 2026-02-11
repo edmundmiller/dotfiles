@@ -169,6 +169,8 @@ in
     user.packages = [ pkgs.bun ];
     env.BUN_INSTALL = mkDefault "$HOME/.bun";
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
+    # pi-notify sound after system notification
+    env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Ping.aiff";
 
     # Pi configuration via home-manager
     # - Skills are shared across all agents (Claude, OpenCode, Pi)
