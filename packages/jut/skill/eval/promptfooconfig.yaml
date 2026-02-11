@@ -41,14 +41,10 @@ tests:
       - type: javascript
         value: file://assertions/jut-assertions.ts:basicCommitFlow
 
-  - description: "Branch workflow: create branch before committing"
+  - description: "Branch workflow: create branch then write and commit"
     vars:
-      prompt: "Create a branch called dark-mode and commit src/theme.rs with a clear message."
-      setup_commands: |
-        mkdir -p src
-        cat <<'EOF' > src/theme.rs
-        pub fn dark_mode() {}
-        EOF
+      prompt: "Create a branch called dark-mode, then create src/theme.rs with a dark_mode() function and commit it."
+      setup_commands: ""
     assert:
       - type: javascript
         value: file://assertions/jut-assertions.ts:branchWorkflow
