@@ -94,6 +94,8 @@
       "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
       "skills": ["skills/session-query"],
     },
+    // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
+    "npm:@marckrenn/pi-sub-bar",
     // Notification on task completion - https://github.com/ferologics/pi-notify
     "npm:pi-notify",
     // Multi-agent messaging/coordination - https://github.com/nicobailon/pi-messenger
