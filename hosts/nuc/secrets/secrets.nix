@@ -28,11 +28,11 @@ in
     edmundmiller
     nuc
   ];
-  "gogcli-client-secret.age".publicKeys = [
+  "zele-client-secret.age".publicKeys = [
     edmundmiller
     nuc
   ];
-  "gogcli-token.age".publicKeys = [
+  "zele-token.age".publicKeys = [
     edmundmiller
     nuc
   ];

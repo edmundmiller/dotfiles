@@ -146,7 +146,7 @@
     "jnsahaj/lumen/lumen"
     "opencode"
     "steveyegge/beads/bd"
-    "steipete/tap/gogcli"
+    "steipete/tap/zele"
     "steipete/tap/bird" # fast X CLI for tweeting, replying, and reading
     "reminders-cli"
     "wakatime-cli"
