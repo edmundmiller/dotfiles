@@ -26,6 +26,11 @@
       url = "github:gillkyle/agent-tail";
       flake = false;
     };
+
+    pi-messenger-repo = {
+      url = "github:nicobailon/pi-messenger";
+      flake = false;
+    };
   };
 
   outputs = inputs: {
@@ -69,6 +74,12 @@
               subdir = "skills";
               filter.maxDepth = 2;
             };
+
+            pi-messenger = {
+              path = inputs.pi-messenger-repo.outPath;
+              subdir = "skills";
+              filter.maxDepth = 2;
+            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -86,6 +97,9 @@
 
             agent-tail.from = "agent-tail";
             agent-tail.path = "agent-tail";
+
+            pi-messenger-crew.from = "pi-messenger";
+            pi-messenger-crew.path = "pi-messenger-crew";
           };
 
           targets = {
