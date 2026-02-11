@@ -104,6 +104,11 @@
     "npm:pi-codex-profile",
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
+    // Dumb zone - context degradation warning - https://github.com/aliou/pi-extensions
+    {
+      "source": "https://github.com/aliou/pi-extensions",
+      "extensions": ["extensions/the-dumb-zone"],
+    },
     // Ghostty theme sync - https://github.com/ogulcancelik/pi-ghostty-theme-sync
     "npm:pi-ghostty-theme-sync",
     // Entire.io code context - https://github.com/entireio/cli
