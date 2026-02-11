@@ -30,7 +30,7 @@
 
   outputs = inputs: {
     homeManagerModules.default =
-      { config, ... }:
+      { ... }:
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
 
