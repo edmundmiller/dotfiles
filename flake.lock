@@ -42,6 +42,22 @@
         "type": "github"
       }
     },
+    "agent-tail-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770742269,
+        "narHash": "sha256-gpTu5TRPkXop+bkR/6+JxY6E80PL0xyFuPlWS54v8q8=",
+        "owner": "gillkyle",
+        "repo": "agent-tail",
+        "rev": "a7bc7f6905def920c422ff76a3f9c72919ff09b2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gillkyle",
+        "repo": "agent-tail",
+        "type": "github"
+      }
+    },
     "base16": {
       "inputs": {
         "fromYaml": "fromYaml"
@@ -1267,6 +1283,7 @@
     "skills-catalog": {
       "inputs": {
         "agent-skills": "agent-skills",
+        "agent-tail-repo": "agent-tail-repo",
         "gitbutler-repo": "gitbutler-repo",
         "nixpkgs": [
           "nixpkgs"

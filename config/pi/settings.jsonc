@@ -98,5 +98,7 @@
     "npm:pi-messenger",
     // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
     "npm:pi-interactive-shell",
+    // Subagent delegation with chains, parallel execution, TUI - https://github.com/nicobailon/pi-subagents
+    "npm:pi-subagents",
   ],
 }

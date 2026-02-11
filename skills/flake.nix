@@ -21,6 +21,11 @@
       url = "github:openai/skills";
       flake = false;
     };
+
+    agent-tail-repo = {
+      url = "github:gillkyle/agent-tail";
+      flake = false;
+    };
   };
 
   outputs = inputs: {
@@ -58,6 +63,12 @@
               subdir = "skills/.curated";
               filter.maxDepth = 2;
             };
+
+            agent-tail = {
+              path = inputs.agent-tail-repo.outPath;
+              subdir = "skills";
+              filter.maxDepth = 2;
+            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -72,6 +83,9 @@
 
             gh-fix-ci.from = "openai";
             gh-fix-ci.path = "gh-fix-ci";
+
+            agent-tail.from = "agent-tail";
+            agent-tail.path = "agent-tail";
           };
 
           targets = {
