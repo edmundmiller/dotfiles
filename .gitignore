@@ -30,6 +30,9 @@ results/
 # bv (beads viewer) local config and caches
 .bv/
 
+# Ralph (AI agent workspace)
+.ralph/
+
 # Ergodox firmware build artifacts (built on-demand with nix)
 config/ergodox/*.hex
 config/ergodox/*.md5
