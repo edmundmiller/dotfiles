@@ -94,6 +94,10 @@
       "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
       "skills": ["skills/session-query"],
     },
+    // GitHub repo tools (read/search/explore) - https://github.com/PriNova/pi-github-tools
+    "npm:@prinova/pi-github-tools",
+    // Task management UI (ctrl+x) - https://github.com/Soleone/pi-tasks
+    "npm:@soleone/pi-tasks",
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
     // Notification on task completion - https://github.com/ferologics/pi-notify
