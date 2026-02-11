@@ -8,6 +8,7 @@
 # - Symlinks shared skills from config/agents/skills/
 # - Auto-discovers prompt templates from config/pi/prompts/
 # - Auto-discovers local skills from config/pi/skills/
+# - Auto-discovers subagent definitions from config/pi/agents/
 # - Generates AGENTS.md from config/agents/rules/
 # - Strips // comments from settings.jsonc (pi only supports standard JSON)
 #
@@ -68,6 +69,21 @@ let
       name = ".pi/agent/skills/${d}/SKILL.md";
       value.source = "${skillsDir}/${d}/SKILL.md";
     }) skillDirs
+  );
+
+  # Dynamically discover subagent definitions from config/pi/agents/
+  # Supports both .md (agents) and .chain.md (chains) for pi-subagents
+  agentsDir = "${configDir}/pi/agents";
+  agentFiles =
+    if builtins.pathExists agentsDir then
+      builtins.filter (f: lib.hasSuffix ".md" f) (builtins.attrNames (builtins.readDir agentsDir))
+    else
+      [ ];
+  agentLinks = lib.listToAttrs (
+    map (f: {
+      name = ".pi/agent/agents/${f}";
+      value.source = "${agentsDir}/${f}";
+    }) agentFiles
   );
 
   # Convert JSONC to valid JSON:
@@ -164,6 +180,7 @@ in
         home.file =
           promptLinks
           // skillLinks
+          // agentLinks
           // {
             ".pi/agent/AGENTS.md".text = concatenatedRules;
             ".pi/agent/settings.json".text = piSettingsValidated;
@@ -172,12 +189,6 @@ in
             ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
             ".pi/agent/extensions/gitbutler-guard-logic.ts".source =
               "${configDir}/pi/extensions/gitbutler-guard-logic.ts";
-            # Subagent definitions (pi-subagents)
-            ".pi/agent/agents/code-simplifier.md".source = "${configDir}/pi/agents/code-simplifier.md";
-            ".pi/agent/agents/coder.md".source = "${configDir}/pi/agents/coder.md";
-            ".pi/agent/agents/scout.md".source = "${configDir}/pi/agents/scout.md";
-            ".pi/agent/agents/cursor.md".source = "${configDir}/pi/agents/cursor.md";
-            ".pi/agent/agents/scout-planner.chain.md".source = "${configDir}/pi/agents/scout-planner.chain.md";
           };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
