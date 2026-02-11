@@ -324,15 +324,31 @@ function resolvePathInEvalDir(candidatePath: string): string {
   return path.isAbsolute(candidatePath) ? candidatePath : path.resolve(evalDir(), candidatePath);
 }
 
-function buildPolicyPrompt(): string {
-  return [
-    "Use jut commands instead of raw jj commands for mutations.",
-    "Use `jut status --json` when checking workspace state.",
-    "For mutation commands (`jut commit`, `jut squash`, `jut rub`, `jut push`, `jut pull`, etc.), include `--json --status-after`.",
-    "Use raw `jj` only for interactive commands (split, resolve, diffedit, edit, rebase) that jut does not wrap.",
-    "Avoid routine `--help` probes before mutations; use the skill's canonical command patterns first.",
-    "Never run `jut status` after a mutation that used `--status-after`.",
-  ].join("\n");
+function loadSkillContent(): string {
+  const skillPath = path.resolve(evalDir(), "../SKILL.md");
+  if (!fs.existsSync(skillPath)) {
+    throw new Error(`SKILL.md not found at ${skillPath}`);
+  }
+  return fs.readFileSync(skillPath, "utf8");
+}
+
+function loadReferenceContent(): string {
+  const refsDir = path.resolve(evalDir(), "../references");
+  if (!fs.existsSync(refsDir)) return "";
+  const parts: string[] = [];
+  for (const name of ["reference.md", "concepts.md", "examples.md"]) {
+    const filePath = path.join(refsDir, name);
+    if (fs.existsSync(filePath)) {
+      parts.push(`\n## ${name}\n\n${fs.readFileSync(filePath, "utf8")}`);
+    }
+  }
+  return parts.join("\n");
+}
+
+function buildSystemPrompt(): string {
+  const skill = loadSkillContent();
+  const refs = loadReferenceContent();
+  return `You are an AI coding agent. Use the following skill to guide your actions.\n\n${skill}${refs}`;
 }
 
 // ─── Provider ───────────────────────────────────────────────────
@@ -474,7 +490,7 @@ export default class JutIntegrationProvider {
             JUT_EVAL_PROMPT: taskPrompt,
             JUT_EVAL_ALLOWED_TOOLS: allowedTools.join(","),
             JUT_EVAL_PERMISSION_MODE: "bypassPermissions",
-            JUT_EVAL_APPEND_SYSTEM_PROMPT: buildPolicyPrompt(),
+            JUT_EVAL_APPEND_SYSTEM_PROMPT: buildSystemPrompt(),
             JUT_EVAL_MIN_RUNNER_VERSION: minRunnerVersion,
           },
         });

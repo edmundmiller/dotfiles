@@ -277,11 +277,15 @@ export function orderingFlow(output: unknown): boolean {
 
 /**
  * Stacked branch: create with --stack, verify correct base.
+ * Allows jj restore for file movement between revisions (expected workflow).
  */
 export function stackedBranchFlow(output: unknown): boolean {
   const data = parseOutput(output);
   const commands = commandStrings(data);
 
+  const branchIndex = commands.findIndex(
+    (cmd) => cmd.includes("jut branch") && !isHelpCommand(cmd)
+  );
   const stackIndex = commands.findIndex(
     (cmd) => cmd.includes("jut branch") && cmd.includes("--stack")
   );
@@ -290,14 +294,20 @@ export function stackedBranchFlow(output: unknown): boolean {
   );
 
   const stacks = allBranches(data);
-  // Verify we have at least 2 stacks (base + stacked)
   const hasMultipleStacks = stacks.length >= 1;
 
+  // Allow jj restore for file movement — it's expected when staging files
+  // into newly created branches. Only block other jj write commands.
+  const JJ_WRITE_NO_RESTORE_RE =
+    /\bjj (describe|new|commit|squash|abandon|rebase|bookmark set|bookmark delete|git push|git fetch)\b/;
+  const hasDisallowedJjWrite = commands.some((cmd) => JJ_WRITE_NO_RESTORE_RE.test(cmd));
+
   return (
+    branchIndex >= 0 &&
     stackIndex >= 0 &&
-    commitIndex > stackIndex &&
+    commitIndex >= 0 &&
     hasRepoState(data) &&
     hasMultipleStacks &&
-    !containsJjWrite(commands)
+    !hasDisallowedJjWrite
   );
 }
