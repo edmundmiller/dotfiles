@@ -87,7 +87,7 @@ The skill is the primary leverage point. Improving it based on eval failures has
 
 - **No TUI.** That's `jj` + lazyjj territory.
 - **No interactive commands.** `split`, `resolve`, `rebase -i` — use `jj` directly. Agents can't drive interactive UIs anyway.
-- **No jj-lib dependency.** Pure CLI wrapping keeps semantics identical to jj. If jj changes behavior, jut follows automatically.
+- **Reads via jj-lib, writes via CLI.** jj-lib for fast structured reads (repo, commits, bookmarks, short IDs). CLI for mutations (avoids complex transaction handling). Best of both worlds.
 - **No daemon/server/state.** No setup, no teardown. Mix `jut` and `jj` freely.
 - **No config system.** jj's config is enough.
 
