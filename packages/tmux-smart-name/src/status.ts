@@ -71,7 +71,7 @@ const SHARED_BUSY = [
 // ── pi patterns ────────────────────────────────────────────────────────────
 // Source: pi-coding-agent/dist/modes/interactive/
 
-const PI_BUSY = [
+const PI_BUSY_STRONG = [
   /Working\.\.\./i, // Loader component: "⠦ Working... (Escape to interrupt)"
   /to interrupt\)/i, // Loader suffix: "(Escape to interrupt)"
   /Auto-compacting\.\.\./i, // "⠦ Auto-compacting... (Escape to cancel)"
@@ -80,8 +80,13 @@ const PI_BUSY = [
   /Steering:/i, // queued steering message (agent still processing)
   /Follow-up:/i, // queued follow-up message (agent still processing)
   /to edit all queued/i, // "↳ Alt+Up to edit all queued messages"
-  /earlier lines,/i, // "... (3 earlier lines, ctrl+o to expand)" = tool running
-  /more lines,/i, // "... (5 more lines, ctrl+o to expand)" = tool running
+];
+
+// Weak busy indicators that can linger in scrollback while pi is idle.
+// These should not override explicit footer idle signals.
+const PI_BUSY_WEAK = [
+  /earlier lines,/i, // "... (3 earlier lines, ctrl+o to expand)"
+  /more lines,/i, // "... (5 more lines, ctrl+o to expand)"
 ];
 
 const PI_IDLE = [
@@ -149,7 +154,7 @@ const AGENT_PATTERNS: Record<string, PatternSet> = {
   pi: {
     error: SHARED_ERROR,
     waiting: SHARED_WAITING,
-    busy: [...PI_BUSY, ...SHARED_BUSY],
+    busy: [...PI_BUSY_STRONG, ...PI_BUSY_WEAK, ...SHARED_BUSY],
     idle: PI_IDLE,
   },
   claude: {
@@ -176,7 +181,14 @@ const AGENT_PATTERNS: Record<string, PatternSet> = {
 const DEFAULT_PATTERNS: PatternSet = {
   error: SHARED_ERROR,
   waiting: SHARED_WAITING,
-  busy: [...SHARED_BUSY, ...PI_BUSY, ...CLAUDE_BUSY, ...AMP_BUSY, ...OPENCODE_BUSY],
+  busy: [
+    ...SHARED_BUSY,
+    ...PI_BUSY_STRONG,
+    ...PI_BUSY_WEAK,
+    ...CLAUDE_BUSY,
+    ...AMP_BUSY,
+    ...OPENCODE_BUSY,
+  ],
   idle: [
     ...PI_IDLE,
     ...CLAUDE_IDLE,
@@ -208,6 +220,20 @@ export function detectStatus(content: string, agent?: string): StatusIcon {
 
   if (matchesAny(clean, patterns.error)) return ICON_ERROR;
   if (matchesAny(clean, patterns.waiting)) return ICON_WAITING;
+
+  // pi can retain "... (N earlier lines, ctrl+o to expand)" in recent scrollback
+  // after going idle. Treat footer idle signals as stronger than weak busy hints.
+  if (agent === "pi") {
+    const hasStrongBusy = matchesAny(clean, [...PI_BUSY_STRONG, ...SHARED_BUSY]);
+    const hasWeakBusy = matchesAny(clean, PI_BUSY_WEAK);
+    const hasIdle = matchesAny(clean, PI_IDLE);
+
+    if (hasStrongBusy) return ICON_BUSY;
+    if (hasIdle) return ICON_IDLE;
+    if (hasWeakBusy) return ICON_BUSY;
+    return ICON_UNKNOWN;
+  }
+
   if (matchesAny(clean, patterns.busy)) return ICON_BUSY;
   if (matchesAny(clean, patterns.idle)) return ICON_IDLE;
 
