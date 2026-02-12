@@ -28,14 +28,6 @@ in
     edmundmiller
     nuc
   ];
-  "zele-client-secret.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
-  "zele-token.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
   "linear-api-token.age".publicKeys = [
     edmundmiller
     nuc

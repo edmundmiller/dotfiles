@@ -15,26 +15,6 @@
     dconf.enable = false;
     # Ensure systemd user services can find system + user packages (openclaw uses bare 'cat')
     systemd.user.sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
-    # zele file-based keyring password for headless Linux
-    home.sessionVariables.GOG_KEYRING_PASSWORD = "zele-agenix";
-  };
-
-  # Import zele credentials + token from agenix on activation
-  # zele file-based keyring on headless Linux needs GOG_KEYRING_PASSWORD
-  # Must run after agenix decrypts secrets
-  system.activationScripts.zeleSecrets = {
-    deps = [ "agenix" ];
-    text = ''
-      GOG=$(find /nix/store -maxdepth 3 -name 'gog' -path '*/zele*/bin/*' 2>/dev/null | head -1)
-      CREDS="${config.age.secrets.zele-client-secret.path}"
-      TOKEN="${config.age.secrets.zele-token.path}"
-      if [ -n "$GOG" ] && [ -f "$CREDS" ] && [ -f "$TOKEN" ]; then
-        # Clear stale keyring entries before importing
-        rm -f /home/${config.user.name}/.config/zele/keyring/* 2>/dev/null
-        sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=zele-agenix "$GOG" auth credentials "$CREDS" 2>/dev/null || true
-        sudo -u ${config.user.name} GOG_KEYRING_PASSWORD=zele-agenix "$GOG" auth tokens import "$TOKEN" 2>/dev/null || true
-      fi
-    '';
   };
 
   environment.systemPackages = with pkgs; [
@@ -89,9 +69,6 @@
       openclaw = {
         enable = true;
         gatewayToken = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
-        firstParty = {
-          zele.enable = true;
-        };
         plugins = [
           {
             source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
@@ -138,7 +115,7 @@
         ];
       };
       docker.enable = true;
-      hass.enable = false;
+      hass.enable = true;
       homepage.enable = true;
       jellyfin.enable = true;
       prowlarr.enable = true;

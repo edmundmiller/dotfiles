@@ -12,26 +12,33 @@ in
 {
   options.modules.services.hass = {
     enable = mkBoolOpt false;
+    configDir = mkOpt types.str "${config.user.home}/HomeAssistant";
+    usbDevice = mkOpt (types.nullOr types.str) null;
+    port = mkOpt types.port 8123;
   };
 
   # NixOS-only service (OCI containers)
   config = optionalAttrs (!isDarwin) (
     mkIf cfg.enable {
+      systemd.tmpfiles.rules = [
+        "d ${cfg.configDir} 0750 ${config.user.name} users -"
+      ];
+
       virtualisation.oci-containers.containers."homeassistant" = {
         autoStart = true;
         image = "ghcr.io/home-assistant/home-assistant:stable";
         volumes = [
-          "/home/emiller/HomeAssistant:/config"
+          "${cfg.configDir}:/config"
           "/etc/localtime:/etc/localtime:ro"
         ];
         extraOptions = [
-          "--device=/dev/ttyUSB0"
           "--network=host"
           "--privileged"
-        ];
+        ]
+        ++ optionals (cfg.usbDevice != null) [ "--device=${cfg.usbDevice}" ];
       };
 
-      networking.firewall.allowedTCPPorts = [ 8123 ];
+      networking.firewall.allowedTCPPorts = [ cfg.port ];
     }
   );
 }
