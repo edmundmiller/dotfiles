@@ -18,6 +18,8 @@ Use `jut` as the primary interface for jj version control. jut is a thin opinion
 5. Use raw `jj` for interactive commands (split, resolve, diffedit, edit, rebase) — jut intentionally does not wrap these.
 6. Never fabricate change IDs. Always read them from `jut status`, `jut log`, or `jut show` output first.
 7. jj has no staging area. The working copy IS the stage. Don't look for `add`/`stage` commands.
+8. **Build stacks, not monoliths.** Multiple related changes should be multiple stacked commits, not one giant commit. Use `jut branch <name> --stack` to chain them.
+9. **jj's working copy IS a commit.** You describe it, evolve it, then `jut commit` (or `jj new`) to start the next one. This is NOT git's "stage → commit" model.
 
 ## Core Flow
 
@@ -224,6 +226,32 @@ jut branch part-2 --stack --json --status-after
 # ... make changes ...
 jut commit -m "part 2" --json --status-after
 ```
+
+### Multi-part feature (the critical pattern)
+
+**DO THIS** — three stacked commits, each reviewable independently:
+
+```bash
+jut branch auth --json --status-after
+# ... write auth code ...
+jut commit -m "add authentication" --json --status-after
+jut branch profile --stack --json --status-after
+# ... write profile code ...
+jut commit -m "add user profiles" --json --status-after
+jut branch settings --stack --json --status-after
+# ... write settings code ...
+jut commit -m "add settings page" --json --status-after
+```
+
+**NOT THIS** — one giant commit (git muscle memory):
+
+```bash
+# WRONG: dumping everything into one commit
+# ... write all files ...
+jj describe -m "add auth, profiles, and settings"
+```
+
+Each logical unit of work should be its own commit in a stack. This enables independent review, selective rollback, and clean history.
 
 ### Ship a feature
 
