@@ -115,7 +115,10 @@
         ];
       };
       docker.enable = true;
-      hass.enable = true;
+      hass = {
+        enable = true;
+        homebridge.enable = true;
+      };
       homepage.enable = true;
       jellyfin.enable = true;
       prowlarr.enable = true;

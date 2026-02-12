@@ -15,6 +15,15 @@ in
     configDir = mkOpt types.str "${config.user.home}/HomeAssistant";
     usbDevice = mkOpt (types.nullOr types.str) null;
     port = mkOpt types.port 8123;
+    homebridge = {
+      enable = mkBoolOpt false;
+      openFirewall = mkBoolOpt true;
+      user = mkOpt types.str "homebridge";
+      group = mkOpt types.str "homebridge";
+      userStoragePath = mkOpt types.str "/var/lib/homebridge";
+      settings = mkOpt types.attrs { };
+      uiSettings = mkOpt types.attrs { };
+    };
   };
 
   # NixOS-only service (OCI containers)
@@ -39,6 +48,16 @@ in
       };
 
       networking.firewall.allowedTCPPorts = [ cfg.port ];
+
+      services.homebridge = mkIf cfg.homebridge.enable {
+        enable = true;
+        openFirewall = cfg.homebridge.openFirewall;
+        user = cfg.homebridge.user;
+        group = cfg.homebridge.group;
+        userStoragePath = cfg.homebridge.userStoragePath;
+        settings = cfg.homebridge.settings;
+        uiSettings = cfg.homebridge.uiSettings;
+      };
     }
   );
 }
