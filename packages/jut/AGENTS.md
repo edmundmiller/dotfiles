@@ -35,7 +35,7 @@ src/
 
 ## Key Design Decisions
 
-- **Reads via jj-lib, writes via jj CLI.** Working copy snapshots and transaction handling are complex; the CLI handles them correctly. Reads (repo discovery, commit data, bookmarks, short IDs) use jj-lib directly for speed and structured access.
+- **Reads via jj-lib, writes via jj CLI (for now).** Reads (repo discovery, commit data, bookmarks, short IDs) use jj-lib directly for speed and structured access. Writes use CLI because working copy snapshots and transaction handling are complex. **The goal is full jj-lib for both reads and writes** — CLI is the fallback while we get there. Tracked in epic `dotfiles-wkch`.
 - **Default command is `status`** — bare `jut` shows workspace overview.
 - **Default rub** — `jut <source> <target>` (no subcommand) dispatches to `rub`.
 - **`--json` and `--status-after`** are global flags, not per-subcommand.
