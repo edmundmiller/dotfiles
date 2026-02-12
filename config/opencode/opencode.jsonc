@@ -45,7 +45,8 @@
     // "./plugin/opencode-canvas"
     // NOTE: Migrating from opencode-jj to worktrunk
     // "./plugin/opencode-jj"
-    "./plugin/opencode-tmux-namer",
+    // Disabled: tmux naming is now handled globally by tmux-smart-name
+    // "./plugin/opencode-tmux-namer",
   ],
   // Nextflow Language Server
   "lsp": {

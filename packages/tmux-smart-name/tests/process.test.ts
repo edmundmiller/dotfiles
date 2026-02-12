@@ -25,6 +25,10 @@ describe("normalizeProgram", () => {
 
     // Codex
     ["codex --full-auto", "codex"],
+    ["codex-cli --full-auto", "codex"],
+    ["node /opt/homebrew/bin/codex", "codex"],
+    ["node /Users/me/.npm/_npx/123/node_modules/@openai/codex/dist/cli.js", "codex"],
+    ["OPENAI_API_KEY=foo codex exec --help", "codex"],
 
     // Gemini
     ["gemini chat", "gemini"],
