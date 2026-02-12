@@ -7,7 +7,8 @@ Opinionated human + agentic framework around Jujutsu (jj). Not a replacement —
 ## Architecture
 
 - **Rust binary** (`clap` CLI) — `src/main.rs` entry point
-- **Pure CLI wrapper** — all operations via `jj` CLI subprocess. No jj-lib dependency.
+- **jj-lib** for reads (repo discovery, commit data, bookmarks, short IDs) — `src/repo.rs`
+- **jj CLI** for mutations (describe, new, squash) — avoids complex transaction handling
 - **gh CLI** for PR creation
 
 ```
@@ -15,7 +16,7 @@ src/
 ├── main.rs          # CLI entry, dispatch
 ├── args.rs          # Clap args, OutputFormat, global flags
 ├── output.rs        # OutputChannel (text/json formatting)
-├── repo.rs          # jj CLI runner, change ID + bookmark queries
+├── repo.rs          # jj-lib repo handle + jj CLI runner
 ├── stack.rs         # Stack analysis, revision queries
 ├── id/mod.rs        # Short ID generation
 └── command/
@@ -34,7 +35,7 @@ src/
 
 ## Key Design Decisions
 
-- **Pure CLI wrapper.** No jj-lib. CLI keeps semantics identical to jj — users drop in and out freely. This is a feature.
+- **Reads via jj-lib, writes via jj CLI.** Working copy snapshots and transaction handling are complex; the CLI handles them correctly. Reads (repo discovery, commit data, bookmarks, short IDs) use jj-lib directly for speed and structured access.
 - **Default command is `status`** — bare `jut` shows workspace overview.
 - **Default rub** — `jut <source> <target>` (no subcommand) dispatches to `rub`.
 - **`--json` and `--status-after`** are global flags, not per-subcommand.
