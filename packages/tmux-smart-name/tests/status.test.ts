@@ -88,6 +88,17 @@ describe("detectStatus (pi)", () => {
     expect(detectStatus("... (5 more lines, ctrl+o to expand)", "pi")).toBe(ICON_BUSY);
   });
 
+  test("idle: earlier lines marker does not override footer", () => {
+    const content = `Some earlier output
+... (20 earlier lines, ctrl+o to expand)
+Claude │ 5h 4h21m left ━━━━━━━ 0% used │ Week 6d10h left ━━━━━━━ 0% used
+~/obsidian-vault (main)
+↑38 ↓4.1k R1.0M W94k $1.206 (sub) 19.0%/200k (auto)
+(anthropic) claude-opus-4-6 • medium
+LSP typescript`;
+    expect(detectStatus(content, "pi")).toBe(ICON_IDLE);
+  });
+
   // Idle: Footer component renders stats + model info
   test("idle: footer with anthropic model", () => {
     const content = `done.
