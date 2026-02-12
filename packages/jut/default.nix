@@ -4,6 +4,10 @@
   jujutsu,
   gh,
   makeWrapper,
+  pkg-config,
+  openssl,
+  zlib,
+  libgit2,
 }:
 
 rustPlatform.buildRustPackage {
@@ -14,7 +18,16 @@ rustPlatform.buildRustPackage {
 
   cargoLock.lockFile = ./Cargo.lock;
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [
+    makeWrapper
+    pkg-config
+  ];
+
+  buildInputs = [
+    openssl
+    zlib
+    libgit2
+  ];
 
   nativeCheckInputs = [ jujutsu ];
 

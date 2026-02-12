@@ -14,6 +14,13 @@ path = "src/main.rs"
 # CLI
 clap = { version = "4", features = ["derive", "env", "wrap_help", "color"] }
 
+# jj integration
+jj-lib = { version = "0.38", features = ["git"] }
+
+# Async (jj-lib needs tokio)
+tokio = { version = "1", features = ["full"] }
+pollster = "0.4"
+
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
