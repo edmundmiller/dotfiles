@@ -53,12 +53,6 @@ in
           # Note: tool/ is copied via activation script (not symlinked)
           # because TypeScript tools need to resolve node_modules from ~/.config/opencode/
 
-          # Nix-built plugin: opencode-tmux-namer
-          # Built at nix-build time, symlinked here
-          # Only on Darwin - the bun install in the derivation fails in NixOS sandbox
-          "opencode/plugin/opencode-tmux-namer" = lib.mkIf pkgs.stdenv.isDarwin {
-            source = pkgs.my.opencode-tmux-namer;
-          };
         };
 
         home.activation.opencode-setup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

@@ -202,6 +202,22 @@ describe("detectStatus (opencode)", () => {
   });
 });
 
+// ── Codex-specific ──────────────────────────────────────────────────────
+
+describe("detectStatus (codex)", () => {
+  test("busy: esc to interrupt", () => {
+    expect(detectStatus("tab to add notes\nesc to interrupt", "codex")).toBe(ICON_BUSY);
+  });
+
+  test("waiting: patch approval prompt", () => {
+    expect(detectStatus("Allow Codex to apply proposed code changes?", "codex")).toBe(ICON_WAITING);
+  });
+
+  test("idle: composer footer", () => {
+    expect(detectStatus("tab to add notes\nCompose new task", "codex")).toBe(ICON_IDLE);
+  });
+});
+
 // ── Priority ───────────────────────────────────────────────────────────────
 
 describe("prioritize", () => {

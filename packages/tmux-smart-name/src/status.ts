@@ -141,6 +141,18 @@ const OPENCODE_IDLE = [
   /OpenCode \d+\.\d+\.\d+/, // version in status bar
 ];
 
+// ── Codex patterns ────────────────────────────────────────────────────────
+
+const CODEX_WAITING = [
+  /Allow Codex to (?:apply proposed code changes|run|execute)/i,
+  /patch-approval/i,
+  /exec-approval/i,
+];
+
+const CODEX_BUSY = [/esc to interrupt/i, /Running (?:tools|commands?)/i];
+
+const CODEX_IDLE = [/tab to add notes/i, /Compose new task/i, /no message yet/i];
+
 // ── Detection logic ────────────────────────────────────────────────────────
 
 interface PatternSet {
@@ -175,6 +187,12 @@ const AGENT_PATTERNS: Record<string, PatternSet> = {
     busy: [...OPENCODE_BUSY, ...SHARED_BUSY],
     idle: OPENCODE_IDLE,
   },
+  codex: {
+    error: SHARED_ERROR,
+    waiting: [...CODEX_WAITING, ...SHARED_WAITING],
+    busy: [...CODEX_BUSY, ...SHARED_BUSY],
+    idle: CODEX_IDLE,
+  },
 };
 
 /** Fallback patterns for agents without specific tuning */
@@ -188,12 +206,14 @@ const DEFAULT_PATTERNS: PatternSet = {
     ...CLAUDE_BUSY,
     ...AMP_BUSY,
     ...OPENCODE_BUSY,
+    ...CODEX_BUSY,
   ],
   idle: [
     ...PI_IDLE,
     ...CLAUDE_IDLE,
     ...AMP_IDLE,
     ...OPENCODE_IDLE,
+    ...CODEX_IDLE,
     /Done\.\s*$/im,
     /completed successfully/i,
     /Session went idle/i,

@@ -20,21 +20,11 @@ This directory contains OpenCode configuration managed via nix-darwin.
 - `package.json` - Dependencies for tools/plugins
 - `node_modules/` - Installed via bun install in activation script
 
-### Nix-Built Plugins (Symlinked)
-
-- `plugin/opencode-tmux-namer` - Built from `packages/opencode-tmux-namer/`
-
 ### User-Managed (NOT in Nix)
 
-- `plugin/` - Directory for user-managed plugins (alongside nix-built ones)
+- `plugin/` - Directory for user-managed plugins
 
 ## Plugin Management
-
-**Nix-built plugins:**
-
-- `opencode-tmux-namer` - Built via nix, symlinked automatically on `hey rebuild`
-  - Source: `packages/opencode-tmux-namer/`
-  - Edit source, then `hey rebuild` to deploy
 
 **User-managed plugins:**
 
@@ -56,7 +46,6 @@ After `hey rebuild`:
 - Symlinked files update automatically
 - `tool/` directory re-syncs
 - `bun install` runs for dependencies
-- Nix-built plugins (e.g., `opencode-tmux-namer`) are rebuilt and symlinked
 - User-managed plugins are UNTOUCHED
 
 ## Modifying Configuration

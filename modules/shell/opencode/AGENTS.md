@@ -28,7 +28,7 @@ config/opencode/
 
 - **Config/rules/agents/skills/commands:** Nix-managed (symlinked from store, read-only)
 - **Tools:** Copied (not symlinked) - TypeScript needs to resolve node_modules
-- **Plugins:** User-managed at `~/.config/opencode/plugin/` (except nix-built ones)
+- **Plugins:** User-managed at `~/.config/opencode/plugin/`
 - **Plugin cache:** Lives at `~/.cache/opencode/` (NOT nix-managed)
 
 ## Troubleshooting

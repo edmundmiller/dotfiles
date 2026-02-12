@@ -80,6 +80,7 @@ export const DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", ...AGENT_PROGRA
 /** Maps alternate binary names → canonical agent name */
 const AGENT_ALIASES: Record<string, string> = {
   oc: "opencode",
+  "codex-cli": "codex",
   "gpt-engineer": "gpt-engineer",
   "gpt-pilot": "gpt-pilot",
 };
@@ -88,7 +89,7 @@ const AGENT_ALIASES: Record<string, string> = {
 
 const allNames = [...new Set([...AGENT_PROGRAMS, ...Object.keys(AGENT_ALIASES)])];
 const sorted = allNames.sort((a, b) => b.length - a.length);
-const AGENT_RE = new RegExp(`(^|[ /])(${sorted.map(escapeRegex).join("|")})(\\s|$)`);
+const AGENT_RE = new RegExp(`(^|[ /])(${sorted.map(escapeRegex).join("|")})(?=\\s|$|[/.:-])`, "i");
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -155,17 +156,69 @@ export function getChildCmdline(panePid: string): string {
 export function normalizeProgram(cmdline: string): string {
   if (!cmdline) return "";
 
-  const match = cmdline.match(AGENT_RE);
-  if (match) {
-    const name = match[2];
-    return AGENT_ALIASES[name] ?? name;
-  }
+  const agent = detectAgentFromCmdline(cmdline);
+  if (agent) return agent;
 
-  let name = basename(cmdline.trim().split(/\s+/)[0]);
+  const firstToken = cmdline.trim().split(/\s+/)[0];
+  if (!firstToken) return "";
+
+  let name = basename(firstToken);
   if (name.startsWith("-")) name = name.slice(1);
 
-  if (AGENT_ALIASES[name]) return AGENT_ALIASES[name];
+  const direct = normalizeAgentName(name);
+  if (direct) return direct;
+
   return name;
+}
+
+function normalizeAgentName(name: string): string | null {
+  const lowered = name.toLowerCase();
+  if (AGENT_ALIASES[lowered]) return AGENT_ALIASES[lowered];
+  if (AGENT_PROGRAMS.includes(lowered)) return lowered;
+  return null;
+}
+
+function detectAgentFromCmdline(cmdline: string): string | null {
+  const tokens = cmdline.trim().split(/\s+/);
+  for (const token of tokens) {
+    if (!token || /^[A-Za-z_][A-Za-z0-9_]*=.*/.test(token)) continue;
+    for (const candidate of extractCandidates(token)) {
+      const normalized = normalizeAgentName(candidate);
+      if (normalized) return normalized;
+    }
+  }
+
+  const match = cmdline.match(AGENT_RE);
+  if (match) {
+    return normalizeAgentName(match[2]) ?? match[2].toLowerCase();
+  }
+  return null;
+}
+
+function extractCandidates(token: string): string[] {
+  const cleaned = token.replace(/^['"]+|['"]+$/g, "");
+  if (!cleaned) return [];
+
+  const values = new Set<string>();
+
+  function add(raw: string): void {
+    if (!raw) return;
+    let value = raw
+      .replace(/^['"]+|['"]+$/g, "")
+      .replace(/^[^A-Za-z0-9@]+|[^A-Za-z0-9-]+$/g, "")
+      .toLowerCase();
+    if (!value) return;
+    if (value.startsWith("-")) value = value.slice(1);
+    if (!value) return;
+    values.add(value);
+    values.add(value.replace(/\.(?:mjs|cjs|js|ts|jsx|tsx)$/i, ""));
+  }
+
+  add(cleaned);
+  add(basename(cleaned));
+  for (const segment of cleaned.split("/")) add(segment);
+
+  return [...values].filter(Boolean);
 }
 
 export function getPaneProgram(paneCmd: string, panePid: string): string {
