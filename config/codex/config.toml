@@ -1,0 +1,18 @@
+personality = "pragmatic"
+model = "gpt-5.3-codex"
+model_reasoning_effort = "high"
+
+[projects."/Users/edmundmiller/src/seqera/web"]
+trust_level = "trusted"
+
+[projects."/Users/edmundmiller/src/seqera/ai/portal-but"]
+trust_level = "trusted"
+
+[mcp_servers.seqera]
+url = "https://mcp.seqera.io/mcp"
+
+[features]
+rmcp_client = true
+
+[notice.model_migrations]
+"gpt-5.2-codex" = "gpt-5.3-codex"

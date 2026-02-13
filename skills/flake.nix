@@ -125,6 +125,12 @@
               dest = ".config/opencode/skill";
               structure = "symlink-tree";
             };
+
+            codex = {
+              enable = true;
+              dest = ".codex/skills";
+              structure = "symlink-tree";
+            };
           };
         };
       };

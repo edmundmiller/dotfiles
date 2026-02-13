@@ -26,6 +26,7 @@
         "1password".enable = true;
         ai.enable = true;
         claude.enable = true;
+        codex.enable = true;
         opencode.enable = true;
         pi.enable = true;
         direnv.enable = true;
