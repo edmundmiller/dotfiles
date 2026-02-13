@@ -118,6 +118,7 @@
       hass = {
         enable = true;
         homebridge.enable = true;
+        tailscaleService.enable = true;
       };
       homepage.enable = true;
       jellyfin.enable = true;
