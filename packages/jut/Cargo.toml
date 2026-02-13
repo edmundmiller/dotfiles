@@ -20,6 +20,7 @@ jj-lib = { version = "0.38", features = ["git"] }
 # Async (jj-lib needs tokio)
 tokio = { version = "1", features = ["full"] }
 pollster = "0.4"
+futures-util = "0.3"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

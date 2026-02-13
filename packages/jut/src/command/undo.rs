@@ -7,20 +7,17 @@ use crate::repo::Repo;
 
 pub fn execute(args: &Args, out: &mut OutputChannel) -> Result<()> {
     let repo = Repo::open(&args.current_dir)?;
-
-    let result = repo.jj_cmd(&["undo"])?;
+    let restored_op = repo.undo()?;
 
     if out.is_json() {
         let json = serde_json::json!({
             "undone": true,
-            "output": result.trim(),
+            "restored_operation": restored_op,
         });
         out.write_json(&json)?;
     } else {
         out.human(&format!("{}", "Undone".green().bold()));
-        if !result.trim().is_empty() {
-            out.human(result.trim());
-        }
+        out.human(&format!("Restored operation {}", restored_op));
     }
 
     if args.status_after {

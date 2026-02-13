@@ -11,11 +11,11 @@ pub fn execute(args: &Args, out: &mut OutputChannel, target: &str) -> Result<()>
     // Check if target is a file path or revision
     let is_file = repo.root().join(target).exists();
 
-    let result = if is_file {
-        repo.jj_cmd(&["restore", target])?
+    if is_file {
+        repo.restore_path(target)?;
     } else {
-        repo.jj_cmd(&["abandon", target])?
-    };
+        repo.abandon_revision(target)?;
+    }
 
     if out.is_json() {
         let action = if is_file { "restore" } else { "abandon" };
@@ -31,9 +31,6 @@ pub fn execute(args: &Args, out: &mut OutputChannel, target: &str) -> Result<()>
             "Discarded".red().bold(),
             target.yellow()
         ));
-        if !result.trim().is_empty() {
-            out.human(result.trim());
-        }
     }
 
     if args.status_after {

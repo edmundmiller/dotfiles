@@ -21,23 +21,25 @@ pub fn execute(
     }
 
     // 1. Fetch
-    let (fetched, fetch_output) = match repo.jj_cmd(&["git", "fetch"]) {
-        Ok(output) => (true, output),
+    let fetch_report = match repo.git_fetch() {
+        Ok(report) => Some(report),
         Err(e) => {
             let msg = e.to_string();
             if msg.contains("No git remotes") || msg.contains("No matching remotes") {
-                (false, String::new())
+                None
             } else {
                 return Err(e);
             }
         }
     };
+    let fetched = fetch_report.is_some();
 
     if !out.is_json() {
-        if fetched {
+        if let Some(report) = &fetch_report {
             out.human(&format!("{}", "Fetched".green().bold()));
-            if !fetch_output.trim().is_empty() {
-                out.human(fetch_output.trim());
+            out.human(&format!("Remotes: {}", report.remotes.join(", ")));
+            if report.imported_refs > 0 {
+                out.human(&format!("Imported refs: {}", report.imported_refs));
             }
         } else {
             out.human(&format!("{}", "No remotes to fetch from".dimmed()));
