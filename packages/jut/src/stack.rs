@@ -88,8 +88,12 @@ impl Repo {
             by_change_id.insert(rev.change_id.clone(), rev);
         }
 
-        // Get working copy file changes
-        let uncommitted_files = self.query_file_changes("@")?;
+        // Get working copy file changes via jj-lib tree diff against parent.
+        let uncommitted_files: Vec<FileChange> = self
+            .changed_files_with_status()?
+            .into_iter()
+            .map(|(status, path)| FileChange { status, path })
+            .collect();
 
         // Identify stack tips: revisions with bookmarks, or leaf revisions (no children)
 
