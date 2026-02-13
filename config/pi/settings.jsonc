@@ -35,6 +35,41 @@
   // Skills as commands - disabled, see https://ampcode.com/news/slashing-custom-commands
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
   "enableSkillCommands": false,
+  // Permission system - layered command control via pi-hooks/permission
+  // Docs: https://github.com/prateekmedia/pi-hooks/tree/main/permission
+  "permissionLevel": "high",
+  "permissionMode": "ask",
+  "permissionConfig": {
+    "overrides": {
+      // Hard-deny via dangerous: --no-verify, signing bypass, identity spoofing
+      // These always prompt even at high level; enforce-hooks.ts hard-blocks them
+      "dangerous": [
+        "git commit *--no-verify*",
+        "git commit *-n *",
+        "git push *--no-verify*",
+        "git commit *--no-gpg-sign*",
+        "git push *--no-gpg-sign*",
+        "git commit *--author*",
+        "*-c user.email=*",
+        "*-c user.name=*",
+        "*-c commit.gpgsign=false*",
+        "*gpgsign=false*",
+        "*--no-verify*",
+        "*--no-gpg-sign*",
+        "*core.hooksPath*",
+        "HUSKY=0 *",
+        "SKIP=* *",
+        "PRE_COMMIT_ALLOW_NO_CONFIG=* *",
+        "GIT_AUTHOR_NAME=* *",
+        "GIT_AUTHOR_EMAIL=* *",
+        "GIT_COMMITTER_NAME=* *",
+        "GIT_COMMITTER_EMAIL=* *",
+        "jj git push *--no-verify*",
+      ],
+      // Nix/dotfiles ops are routine in this repo
+      "medium": ["nix *", "darwin-rebuild *", "hey *"],
+    },
+  },
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   "packages": [
     {
@@ -83,10 +118,10 @@
       "source": "https://github.com/jyaunches/pi-canvas",
       "extensions": ["pi-extension/index.ts"],
     },
-    // LSP integration - https://github.com/prateekmedia/pi-hooks
+    // LSP + permission system - https://github.com/prateekmedia/pi-hooks
     {
       "source": "https://github.com/prateekmedia/pi-hooks",
-      "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts"],
+      "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts", "permission/permission.ts"],
     },
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
