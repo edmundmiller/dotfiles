@@ -50,6 +50,11 @@
               filter.maxDepth = 1;
             };
 
+            jut = {
+              path = ../packages/jut/skill;
+              filter.maxDepth = 1;
+            };
+
             # Remote skill repos (hash-pinned via this flake's lock)
             pi-extensions = {
               path = inputs.pi-extension-skills.outPath;
@@ -83,7 +88,7 @@
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
-          skills.enableAll = [ "local" ];
+          skills.enableAll = [ "local" "jut" ];
           skills.explicit = {
             extending-pi.from = "pi-extensions";
             extending-pi.path = "extending-pi";
