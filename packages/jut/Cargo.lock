@@ -1606,6 +1606,7 @@ dependencies = [
  "clap",
  "colored",
  "dirs",
+ "futures-util",
  "jj-lib",
  "pollster",
  "serde",
