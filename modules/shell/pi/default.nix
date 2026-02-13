@@ -192,6 +192,7 @@ in
             ".pi/agent/settings.json".text = piSettingsValidated;
             ".pi/agent/extensions/enforce-commit-signing.ts".source =
               "${configDir}/pi/extensions/enforce-commit-signing.ts";
+            ".pi/agent/extensions/enforce-hooks.ts".source = "${configDir}/pi/extensions/enforce-hooks.ts";
             ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
             ".pi/agent/extensions/gitbutler-guard-logic.ts".source =
               "${configDir}/pi/extensions/gitbutler-guard-logic.ts";
