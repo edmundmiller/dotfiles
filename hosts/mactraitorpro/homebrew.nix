@@ -156,7 +156,7 @@
     # Core productivity
     "1password"
     "1password-cli"
-    "raycast"
+    # "raycast"  # Managed by modules.desktop.apps.raycast
     "jordanbaird-ice"
 
     # Communication
