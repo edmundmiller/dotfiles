@@ -81,11 +81,11 @@ in
         documents = ../../../config/openclaw/documents;
 
         # Plugins at top level
-        inherit (cfg) plugins;
-        inherit (cfg) firstParty;
+        plugins = cfg.plugins;
+        firstParty = cfg.firstParty;
 
         # Skills
-        inherit (cfg) skills;
+        skills = cfg.skills;
 
         # exposePluginPackages = false avoids libexec/node_modules conflict between oracle+summarize
         exposePluginPackages = false;
@@ -100,10 +100,15 @@ in
               mode = "local";
               auth.token = cfg.gatewayToken;
             };
-            agents.defaults.model.primary = "anthropic/claude-sonnet-4-5";
+            agents.defaults.model.primary = "anthropic/claude-opus-4-6";
+            agents.defaults.heartbeat.model = "opencode/minimax-m2.5";
+            agents.defaults.subagents.model = {
+              primary = "anthropic/claude-haiku-4";
+              fallbacks = [ "opencode/minimax-m2.5" ];
+            };
             channels.telegram = mkIf cfg.telegram.enable {
               tokenFile = cfg.telegram.botTokenFile;
-              inherit (cfg.telegram) allowFrom;
+              allowFrom = cfg.telegram.allowFrom;
               groups."*".requireMention = true;
             };
           };
@@ -114,7 +119,7 @@ in
       # Use $XDG_RUNTIME_DIR since $(id -u) doesn't work in systemd context
       systemd.user.services.openclaw-gateway.Service = {
         ExecStartPre = [
-          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.openai-api-key.path}); echo GOG_KEYRING_PASSWORD=zele-agenix; } > $XDG_RUNTIME_DIR/openclaw/env'"
+          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.openai-api-key.path}); echo GOG_KEYRING_PASSWORD=gogcli-agenix; } > $XDG_RUNTIME_DIR/openclaw/env'"
         ];
         EnvironmentFile = "-/run/user/%U/openclaw/env";
       };
