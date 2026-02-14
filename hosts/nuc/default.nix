@@ -23,6 +23,8 @@
     chromium # For openclaw browser
     nodejs # For openclaw plugins
     python3 # For node-gyp (pi-interactive-shell/node-pty)
+    gcc
+    gnumake # For node-gyp native compilation
   ];
   imports = [
     ../_server.nix
