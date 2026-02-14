@@ -109,10 +109,7 @@ in
               primary = "opencode/minimax-m2.5";
               fallbacks = [ "anthropic/claude-sonnet-4-5" ];
             };
-            agents.defaults.heartbeat.model = {
-              primary = "opencode/minimax-m2.5";
-              fallbacks = [ "anthropic/claude-haiku-4" ];
-            };
+            agents.defaults.heartbeat.model = "opencode/minimax-m2.5";
             agents.defaults.subagents.model = {
               primary = "opencode/minimax-m2.5";
               fallbacks = [ "anthropic/claude-haiku-4" ];
