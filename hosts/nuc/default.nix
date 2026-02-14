@@ -22,6 +22,7 @@
     sqlite
     chromium # For openclaw browser
     nodejs # For openclaw plugins
+    python3 # For node-gyp (pi-interactive-shell/node-pty)
   ];
   imports = [
     ../_server.nix
