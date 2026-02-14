@@ -121,9 +121,7 @@
               # Create new wrapper pointing to our copied dist
               makeWrapper "${prev.nodejs}/bin/node" "$out/bin/openclaw" \
                 --add-flags "$out/lib/openclaw/dist/index.js" \
-                --set-default OPENCLAW_NIX_MODE "1" \
-                --set-default MOLTBOT_NIX_MODE "1" \
-                --set-default CLAWDBOT_NIX_MODE "1"
+                --set-default OPENCLAW_NIX_MODE "1"
               ln -s $out/bin/openclaw $out/bin/moltbot
             '';
 
