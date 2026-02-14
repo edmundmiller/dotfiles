@@ -26,8 +26,6 @@ alias p='xclip -selection clipboard -out'
 alias jc='journalctl -xe'
 alias sc=systemctl
 
-# Avante.nvim Zen Mode - Launch Neovim in Avante's Zen Mode for AI-powered coding
-alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'
 alias ssc='sudo systemctl'
 
 if command -v eza >/dev/null; then
