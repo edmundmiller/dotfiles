@@ -26,11 +26,7 @@ in
     environment.shellAliases = {
       vim = "nvim";
       v = "nvim";
-      nvim-kickstart = ''NVIM_APPNAME="nvim-kickstart" nvim'';
     };
-
-    # Symlink kickstart config to ~/.config/nvim-kickstart
-    home.file.".config/nvim-kickstart".source = ../../config/nvim-kickstart;
 
     # Set nvim as the default editor
     env = {
