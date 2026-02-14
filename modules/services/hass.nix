@@ -28,7 +28,6 @@ in
     tailscaleService = {
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "homeassistant";
-      httpsPort = mkOpt types.port 443;
     };
   };
 
@@ -53,11 +52,8 @@ in
         ++ optionals (cfg.usbDevice != null) [ "--device=${cfg.usbDevice}" ];
       };
 
-      # Open Home Assistant and optional Tailscale Service HTTPS on tailscale0 only.
-      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
-        cfg.port
-      ]
-      ++ optionals cfg.tailscaleService.enable [ cfg.tailscaleService.httpsPort ];
+      # Open Home Assistant port on tailscale0 only (Tailscale Service handles HTTPS routing internally)
+      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
 
       services.homebridge = mkIf cfg.homebridge.enable {
         enable = true;
@@ -81,7 +77,7 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=${toString cfg.tailscaleService.httpsPort} http://localhost:${toString cfg.port} && exit 0; sleep 1; done; exit 1'";
+          ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.port} && exit 0; sleep 1; done; exit 1'";
           ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
         };
       };
