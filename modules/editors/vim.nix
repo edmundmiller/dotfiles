@@ -26,7 +26,7 @@ in
     environment.shellAliases = {
       vim = "nvim";
       v = "nvim";
-      nvim-hierarchical = ''NVIM_APPNAME="nvim-kickstart" nvim'';
+      nvim-kickstart = ''NVIM_APPNAME="nvim-kickstart" nvim'';
     };
 
     # Symlink kickstart config to ~/.config/nvim-kickstart
