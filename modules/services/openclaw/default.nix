@@ -60,19 +60,24 @@ in
     # Configure openclaw through home-manager
     home-manager.users.${user} = {
       # Add skill files directly
-      home.file = builtins.listToAttrs (
-        map (skill: {
-          name = ".openclaw/workspace/skills/${skill.name}/SKILL.md";
-          value.text = ''
-            ---
-            name: ${skill.name}
-            description: ${skill.description or ""}
-            ---
+      home.file =
+        builtins.listToAttrs (
+          map (skill: {
+            name = ".openclaw/workspace/skills/${skill.name}/SKILL.md";
+            value.text = ''
+              ---
+              name: ${skill.name}
+              description: ${skill.description or ""}
+              ---
 
-            ${skill.body or ""}
-          '';
-        }) cfg.skills
-      );
+              ${skill.body or ""}
+            '';
+          }) cfg.skills
+        )
+        // {
+          # Force-overwrite — openclaw mutates config at runtime, breaking home-manager backups
+          ".openclaw/openclaw.json".force = true;
+        };
 
       programs.openclaw = {
         enable = true;
