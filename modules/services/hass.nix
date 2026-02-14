@@ -29,6 +29,11 @@ in
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "homeassistant";
     };
+    homebridge.tailscaleService = {
+      enable = mkBoolOpt false;
+      serviceName = mkOpt types.str "homebridge";
+      port = mkOpt types.port 8581;
+    };
   };
 
   # NixOS-only service (OCI containers)
@@ -79,6 +84,23 @@ in
           RemainAfterExit = true;
           ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.port} && exit 0; sleep 1; done; exit 1'";
           ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
+        };
+      };
+
+      # Tailscale Service proxy for Homebridge
+      systemd.services.homebridge-tailscale-serve = mkIf cfg.homebridge.tailscaleService.enable {
+        description = "Tailscale Service proxy for Homebridge";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "homebridge.service"
+          "tailscaled.service"
+        ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.homebridge.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.homebridge.tailscaleService.port} && exit 0; sleep 1; done; exit 1'";
+          ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.homebridge.tailscaleService.serviceName} || true'";
         };
       };
     }
