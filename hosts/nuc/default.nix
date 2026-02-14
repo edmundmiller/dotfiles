@@ -126,6 +126,7 @@
       hass = {
         enable = true;
         homebridge.enable = true;
+        homebridge.tailscaleService.enable = true;
         tailscaleService.enable = true;
       };
       homepage.enable = true;
