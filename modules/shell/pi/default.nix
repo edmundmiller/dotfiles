@@ -170,7 +170,7 @@ in
     env.BUN_INSTALL = mkDefault "$HOME/.bun";
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
     # pi-notify sound after system notification
-    env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Ping.aiff";
+    env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
     # pi-github-tools PAT (from gh CLI)
     env.GITHUB_PAT = "$(gh auth token 2>/dev/null)";
     # pi-tasks backend
