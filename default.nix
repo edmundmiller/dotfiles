@@ -24,13 +24,20 @@ with lib.my;
         nixosOnlyDesktopDirs = [
           "desktop/browsers"
           "desktop/media"
-          "desktop/apps"
           "desktop/themes"
           "desktop/gaming"
           "desktop/vm"
           "desktop/gnome"
         ];
         nixosOnlyFiles = [
+          # desktop/apps — Linux-only apps (raycast.nix is cross-platform)
+          "desktop/apps/discord.nix"
+          "desktop/apps/godot.nix"
+          "desktop/apps/mail/davmail.nix"
+          "desktop/apps/mail/mbsync.nix"
+          "desktop/apps/mail/imapfilter.nix"
+          "desktop/apps/mail/accounts.nix"
+          "desktop/apps/mail/aerc.nix"
           "security.nix"
           "nixos-base.nix"
           "fonts-nixos.nix"
