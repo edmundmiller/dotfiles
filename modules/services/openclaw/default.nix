@@ -100,11 +100,14 @@ in
               mode = "local";
               auth.token = cfg.gatewayToken;
             };
-            agents.defaults.model.primary = "anthropic/claude-opus-4-6";
+            agents.defaults.model = {
+              primary = "opencode/minimax-m2.5";
+              fallbacks = [ "anthropic/claude-sonnet-4-5" ];
+            };
             agents.defaults.heartbeat.model = "opencode/minimax-m2.5";
             agents.defaults.subagents.model = {
-              primary = "anthropic/claude-haiku-4";
-              fallbacks = [ "opencode/minimax-m2.5" ];
+              primary = "opencode/minimax-m2.5";
+              fallbacks = [ "anthropic/claude-haiku-4" ];
             };
             # Built-in OpenCode catalog handles Zen routing + cost tracking
             channels.telegram = mkIf cfg.telegram.enable {
