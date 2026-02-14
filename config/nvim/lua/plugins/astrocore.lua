@@ -64,6 +64,7 @@ return {
         -- File operations
         ["<Leader>f"] = { desc = "Files" },
         ["<Leader>ff"] = { function() require("fff").find_files() end, desc = "Find file" },
+        ["<Leader>fd"] = { function() require("fff").find_files_in_dir(vim.fn.input("Directory: ", "", "dir")) end, desc = "Find in directory" },
         ["<Leader>fr"] = { function() require("telescope.builtin").oldfiles() end, desc = "Recent files" },
         ["<Leader>fs"] = { "<cmd>w<cr>", desc = "Save file" },
         ["<Leader>fS"] = { "<cmd>wa<cr>", desc = "Save all files" },
@@ -124,7 +125,7 @@ return {
         ["<Leader>gd"] = { function() require("diffview").open() end, desc = "Git diff" },
         ["<Leader>gH"] = { function() require("diffview").file_history() end, desc = "Git file history" },
         ["<Leader>gl"] = { function() vim.cmd("Git log --oneline") end, desc = "Git log" },
-        ["<Leader>gf"] = { function() require("telescope.builtin").git_files() end, desc = "Git files" },
+        ["<Leader>gf"] = { function() require("fff").find_in_git_root() end, desc = "Git files" },
         ["<Leader>gs"] = { function() require("telescope.builtin").git_status() end, desc = "Git status (telescope)" },
 
         -- Code navigation
