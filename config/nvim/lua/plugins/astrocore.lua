@@ -57,13 +57,13 @@ return {
         -- === DOOM EMACS KEYBINDINGS ===
 
         -- Project search
-        ["<Leader><Leader>"] = { function() require("telescope.builtin").find_files({ hidden = true }) end, desc = "Find files" },
+        ["<Leader><Leader>"] = { function() require("fff").find_files() end, desc = "Find files" },
         ["<Leader>."] = { function() require("oil").open() end, desc = "Open directory in oil" },
         ["<Leader>,"] = { function() require("telescope.builtin").buffers() end, desc = "Switch buffer" },
 
         -- File operations
         ["<Leader>f"] = { desc = "Files" },
-        ["<Leader>ff"] = { function() require("telescope.builtin").find_files({ hidden = true }) end, desc = "Find file" },
+        ["<Leader>ff"] = { function() require("fff").find_files() end, desc = "Find file" },
         ["<Leader>fr"] = { function() require("telescope.builtin").oldfiles() end, desc = "Recent files" },
         ["<Leader>fs"] = { "<cmd>w<cr>", desc = "Save file" },
         ["<Leader>fS"] = { "<cmd>wa<cr>", desc = "Save all files" },
