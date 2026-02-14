@@ -56,6 +56,11 @@
       git.enable = true;
       zsh.enable = true;
       pi.enable = true;
+      ai = {
+        enable = true;
+        enableClaude = true;
+        enableCodex = true;
+      };
       # taskwarrior module removed - TODO restore when available
       # taskwarrior = {
       #   enable = true;
