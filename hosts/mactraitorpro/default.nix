@@ -44,6 +44,7 @@
       };
 
       desktop = {
+        apps.raycast.enable = true;
         term.ghostty.enable = true;
       };
     };
