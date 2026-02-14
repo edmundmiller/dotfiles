@@ -153,3 +153,6 @@ if [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
     eval "function $cmd { sdk; command $cmd \"\$@\"; }"
   done
 fi
+
+# Entire CLI shell completion
+autoload -Uz compinit && compinit && source <(entire completion zsh)
