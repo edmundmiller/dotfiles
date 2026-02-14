@@ -53,8 +53,11 @@ in
         ++ optionals (cfg.usbDevice != null) [ "--device=${cfg.usbDevice}" ];
       };
 
-      # Open Home Assistant only on the Tailscale interface.
-      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
+      # Open Home Assistant and optional Tailscale Service HTTPS on tailscale0 only.
+      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+        cfg.port
+      ]
+      ++ optionals cfg.tailscaleService.enable [ cfg.tailscaleService.httpsPort ];
 
       services.homebridge = mkIf cfg.homebridge.enable {
         enable = true;

@@ -83,8 +83,11 @@ in
         };
       };
 
-      # Open firewall port on Tailscale only
-      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
+      # Open app port and Tailscale Service HTTPS on tailscale0 only.
+      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+        cfg.port
+      ]
+      ++ optionals cfg.tailscaleService.enable [ 443 ];
 
       # Tailscale Service proxy (HTTPS on 443 → HTTP localhost:4096)
       systemd.services.opencode-tailscale-serve = mkIf cfg.tailscaleService.enable {
