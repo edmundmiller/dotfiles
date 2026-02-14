@@ -106,6 +106,15 @@ in
               primary = "anthropic/claude-haiku-4";
               fallbacks = [ "opencode/minimax-m2.5" ];
             };
+            models.providers.opencode = {
+              baseUrl = "https://opencode.ai/zen/v1";
+              apiKey = "\${OPENCODE_API_KEY}";
+              api = "openai-completions";
+              models = [
+                { id = "minimax-m2.5"; name = "MiniMax M2.5"; }
+                { id = "kimi-k2.5"; name = "Kimi K2.5"; }
+              ];
+            };
             channels.telegram = mkIf cfg.telegram.enable {
               tokenFile = cfg.telegram.botTokenFile;
               allowFrom = cfg.telegram.allowFrom;
