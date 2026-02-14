@@ -75,6 +75,7 @@
     {
       "source": "shitty-extensions",
       "extensions": [
+        "clipboard.ts",
         "oracle.ts",
         "memory-mode.ts",
         "plan-mode.ts",
