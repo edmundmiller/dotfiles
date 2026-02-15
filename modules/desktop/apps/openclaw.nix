@@ -13,6 +13,11 @@ in
 {
   options.modules.desktop.apps.openclaw = {
     enable = mkBoolOpt false;
+    gatewayToken = mkOption {
+      type = types.str;
+      default = "";
+      description = "Gateway auth token for remote pairing. Set in host config, not committed.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -42,7 +47,7 @@ in
             remote = {
               url = "wss://nuc.cinnamon-rooster.ts.net";
               transport = "direct";
-              token = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
+              token = cfg.gatewayToken;
             };
           };
         };
