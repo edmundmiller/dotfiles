@@ -9,7 +9,7 @@ return {
         install_info = {
           url = 'https://github.com/nextflow-io/tree-sitter-nextflow',
           files = { 'src/parser.c' },
-          branch = 'rewrite',
+          branch = 'main',
           generate_requires_npm = false,
         },
         filetype = 'nextflow',
