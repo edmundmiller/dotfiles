@@ -45,6 +45,10 @@
 
       desktop = {
         apps.raycast.enable = true;
+        apps.openclaw = {
+          enable = true;
+          gatewayToken = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
+        };
         term.ghostty.enable = true;
       };
     };
