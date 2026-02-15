@@ -15,10 +15,10 @@ in
   options.modules.services.openclaw = {
     enable = mkBoolOpt false;
 
-    gatewayToken = mkOption {
+    gatewayTokenFile = mkOption {
       type = types.str;
       default = "";
-      description = "Gateway auth token (long random string). TODO: upstream tokenFile support";
+      description = "Path to file containing gateway auth token (agenix secret)";
     };
 
     telegram = {
@@ -112,7 +112,7 @@ in
                 "::1"
               ];
               auth = {
-                token = cfg.gatewayToken;
+                token = "__OPENCLAW_TOKEN_PLACEHOLDER__";
                 allowTailscale = true;
               };
             };
@@ -161,6 +161,8 @@ in
       systemd.user.services.openclaw-gateway.Service = {
         ExecStartPre = [
           "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.openai-api-key.path}); echo GOG_KEYRING_PASSWORD=gogcli-agenix; } > $XDG_RUNTIME_DIR/openclaw/env'"
+          # Inject gateway token from agenix into openclaw.json
+          "${pkgs.bash}/bin/bash -c '${pkgs.gnused}/bin/sed -i \"s|__OPENCLAW_TOKEN_PLACEHOLDER__|$(cat ${config.age.secrets.openclaw-gateway-token.path})|g\" $HOME/.openclaw/openclaw.json'"
         ];
         EnvironmentFile = "-/run/user/%U/openclaw/env";
       };
