@@ -103,7 +103,12 @@ in
           config = {
             gateway = {
               mode = "local";
-              auth.token = cfg.gatewayToken;
+              # GP2: bind to tailnet so Mac node can connect over Tailscale
+              bind = "tailnet";
+              auth = {
+                token = cfg.gatewayToken;
+                allowTailscale = true;
+              };
             };
             agents.defaults.model = {
               primary = "opencode/minimax-m2.5";
