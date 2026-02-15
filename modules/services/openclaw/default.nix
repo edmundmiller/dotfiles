@@ -114,6 +114,27 @@ in
               primary = "opencode/minimax-m2.5";
               fallbacks = [ "anthropic/claude-haiku-4" ];
             };
+            models.providers.opencode = {
+              baseUrl = "https://opencode.ai/zen/v1";
+              apiKey = "\${OPENCODE_API_KEY}";
+              api = "openai-completions";
+              models = [
+                {
+                  id = "minimax-m2.5";
+                  name = "MiniMax M2.5";
+                  cost = {
+                    input = 0.30;
+                    output = 1.20;
+                    cacheRead = 0.06;
+                    cacheWrite = 0.15;
+                  };
+                }
+                {
+                  id = "kimi-k2.5";
+                  name = "Kimi K2.5";
+                }
+              ];
+            };
             # Built-in OpenCode catalog handles Zen routing + cost tracking
             channels.telegram = mkIf cfg.telegram.enable {
               tokenFile = cfg.telegram.botTokenFile;
