@@ -80,6 +80,29 @@ tail -f /tmp/openclaw/openclaw-gateway.log  # macOS
 journalctl --user -u openclaw-gateway -f     # Linux
 ```
 
+## Debug Logs
+
+**Mac app (OpenClaw.app):**
+
+- `~/Library/Logs/OpenClaw/diagnostics.jsonl` — app-level diagnostics (connection, pairing, gateway errors)
+- Rotated: `diagnostics.jsonl.1`, `.2`, etc.
+
+**Gateway process:**
+
+- `/private/tmp/openclaw/openclaw-gateway.log` — gateway stdout/stderr
+- On NUC (Linux): `/tmp/openclaw/openclaw-gateway.log` or `journalctl --user -u openclaw-gateway`
+
+**Useful filters:**
+
+```bash
+# Mac — recent gateway/connection errors
+tail -200 ~/Library/Logs/OpenClaw/diagnostics.jsonl | \
+  python3 -c "import sys,json; [print(f'{d[\"ts\"]} [{d.get(\"category\",\"\")}] {d[\"event\"]}') for l in sys.stdin if (d:=json.loads(l)) and any(k in d.get('event','').lower() for k in ['gateway','pair','connect','auth','token','wss'])]"
+
+# NUC — gateway auth/connection events
+ssh nuc "tail -200 /tmp/openclaw/openclaw-gateway.log | grep -iE 'pair|auth|connect|token|serve'"
+```
+
 ## Known Issues
 
 **Python conflict**: Openclaw bundles whisper (voice transcription) which includes Python 3.13. This conflicts with:
