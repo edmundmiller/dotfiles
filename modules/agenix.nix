@@ -44,7 +44,17 @@ in
             else
               { };
           # Shared secrets for services that need cross-host keys
-          sharedSecrets = { };
+          sharedSecrets =
+            if pathExists "${sharedSecretsDir}/secrets.nix" then
+              mapAttrs' (
+                n: _:
+                nameValuePair (removeSuffix ".age" n) {
+                  file = "${sharedSecretsDir}/${n}";
+                  owner = mkDefault config.user.name;
+                }
+              ) (import "${sharedSecretsDir}/secrets.nix")
+            else
+              { };
         in
         hostSecrets // sharedSecrets;
       identityPaths =
@@ -70,6 +80,9 @@ in
         secrets = {
           wakatime-api-key = {
             file = "${sharedSecretsDir}/wakatime-api-key.age";
+          };
+          openclaw-gateway-token = {
+            file = "${sharedSecretsDir}/openclaw-gateway-token.age";
           };
         };
       };

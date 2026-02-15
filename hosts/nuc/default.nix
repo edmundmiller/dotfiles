@@ -76,7 +76,7 @@
       audiobookshelf.enable = true;
       openclaw = {
         enable = true;
-        gatewayToken = "2395843a6c856b1380154e960875c5b6cbcf238c4d26b2ef14eb2dada188f6fb";
+        gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
         plugins = [
           {
             source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
