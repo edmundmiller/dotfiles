@@ -18,6 +18,8 @@
   },
   "mason.nvim": { "branch": "main", "commit": "44d1e90e1f66e077268191e3ee9d2ac97cc18e65" },
   "mini.nvim": { "branch": "main", "commit": "4ca988557786c9a4e41d5e5b6e31b4c9d7379f53" },
+  "nextflow-vim": { "branch": "master", "commit": "3b77c4c329dcfb81c9cc5e10daeb3f9752c51d73" },
+  "nvim-lint": { "branch": "master", "commit": "bcd1a44edbea8cd473af7e7582d3f7ffc60d8e81" },
   "nvim-lspconfig": { "branch": "master", "commit": "44acfe887d4056f704ccc4f17513ed41c9e2b2e6" },
   "nvim-treesitter": { "branch": "master", "commit": "42fc28ba918343ebfd5565147a42a26580579482" },
   "nvim-web-devicons": { "branch": "master", "commit": "746ffbb17975ebd6c40142362eee1b0249969c5c" },

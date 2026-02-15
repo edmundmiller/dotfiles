@@ -16,8 +16,8 @@ in
 
     gatewayUrl = mkOption {
       type = types.str;
-      default = "ws://nuc:18789";
-      description = "WebSocket URL of the remote gateway (e.g. ws://nuc:18789)";
+      default = "ws://nuc.cinnamon-rooster.ts.net:18789";
+      description = "WebSocket URL of the remote gateway (Tailscale MagicDNS)";
     };
 
     gatewayToken = mkOption {
