@@ -29,6 +29,10 @@ with lib.my;
           "desktop/vm"
           "desktop/gnome"
         ];
+        # Darwin-only files — excluded on NixOS (homebrew.casks doesn't exist)
+        darwinOnlyFiles = [
+          "desktop/apps/openclaw.nix"
+        ];
         nixosOnlyFiles = [
           # desktop/apps — Linux-only apps (raycast.nix is cross-platform)
           "desktop/apps/discord.nix"
@@ -86,8 +90,19 @@ with lib.my;
             # Exact file match
             || lib.hasSuffix "/${lib.removeSuffix "/default.nix" file}" pathStr # Directory with default.nix
           ) nixosOnlyFiles;
+        isDarwinOnly =
+          path:
+          let
+            pathStr = toString path;
+          in
+          lib.any (file: lib.hasSuffix file pathStr) darwinOnlyFiles;
       in
-      map import (if isDarwin then filter (p: !isNixOSOnly p) allModulePaths else allModulePaths)
+      map import (
+        if isDarwin then
+          filter (p: !isNixOSOnly p) allModulePaths
+        else
+          filter (p: !isDarwinOnly p) allModulePaths
+      )
     );
 
   # Propagate isDarwin to all sub-modules so they can guard platform-specific options
