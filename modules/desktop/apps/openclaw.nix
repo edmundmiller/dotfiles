@@ -36,8 +36,14 @@ in
             # Attach to remote gateway, don't spawn local
             attachExistingOnly = true;
           };
-          # No gateway config here — Mac is a node only.
-          # Node→gateway pairing is runtime state (done in app UI).
+          # GP2: connect to NUC gateway over Tailscale
+          config.gateway = {
+            mode = "remote";
+            remote = {
+              url = "ws://nuc.cinnamon-rooster.ts.net:18789";
+              transport = "direct";
+            };
+          };
         };
       };
     };
