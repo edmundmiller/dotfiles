@@ -1,5 +1,8 @@
--- Nextflow language support: treesitter parser, LSP, formatter, keybinds
+-- Nextflow language support: filetype, treesitter, LSP, linter, formatter, keybinds
 return {
+  -- Nextflow filetype detection + syntax fallback
+  { 'LukeGoodsell/nextflow-vim', lazy = false },
+
   -- Register Nextflow treesitter parser
   {
     'nvim-treesitter/nvim-treesitter',
@@ -61,20 +64,57 @@ return {
     end,
   },
 
+  -- Nextflow linter via nvim-lint (register on first nextflow buffer)
+  {
+    'mfussenegger/nvim-lint',
+    init = function()
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'nextflow',
+        once = true,
+        callback = function()
+          local lint = require 'lint'
+          lint.linters_by_ft.nextflow = { 'nextflow_lint' }
+          lint.linters.nextflow_lint = {
+            cmd = 'nextflow',
+            args = { 'lint' },
+            stdin = false,
+            append_fname = true,
+            stream = 'both',
+            ignore_exitcode = true,
+            parser = require('lint.parser').from_pattern(
+              '(%S+):(%d+): (%w+): (.+)',
+              { 'file', 'lnum', 'severity', 'message' },
+              {
+                error = vim.diagnostic.severity.ERROR,
+                warning = vim.diagnostic.severity.WARN,
+                info = vim.diagnostic.severity.INFO,
+              },
+              { source = 'nextflow lint' }
+            ),
+          }
+          -- Trigger lint on this buffer now
+          lint.try_lint()
+        end,
+      })
+    end,
+  },
+
   -- Nextflow formatter via conform
   {
     'stevearc/conform.nvim',
-    opts = function(_, opts)
-      opts.formatters_by_ft = opts.formatters_by_ft or {}
-      opts.formatters_by_ft.nextflow = { 'nextflow_fmt' }
-      opts.formatters = opts.formatters or {}
-      opts.formatters.nextflow_fmt = {
-        command = 'nextflow',
-        args = { 'lint', '-format', '-spaces', '4', '$FILENAME' },
-        stdin = false,
-        require_cwd = true,
-      }
-    end,
+    opts = {
+      formatters_by_ft = {
+        nextflow = { 'nextflow_fmt' },
+      },
+      formatters = {
+        nextflow_fmt = {
+          command = 'nextflow',
+          args = { 'lint', '--format', '$FILENAME' },
+          stdin = false,
+          require_cwd = false,
+        },
+      },
+    },
   },
 
   -- Nextflow keybinds
