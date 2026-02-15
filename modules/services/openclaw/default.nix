@@ -103,8 +103,9 @@ in
           config = {
             gateway = {
               mode = "local";
-              # GP2: bind to tailnet so Mac node can connect over Tailscale
-              bind = "tailnet";
+              # GP2: loopback + Tailscale Serve (HTTPS via MagicDNS)
+              bind = "loopback";
+              tailscale.mode = "serve";
               auth = {
                 token = cfg.gatewayToken;
                 allowTailscale = true;

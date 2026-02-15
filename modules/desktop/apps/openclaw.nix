@@ -36,11 +36,11 @@ in
             # Attach to remote gateway, don't spawn local
             attachExistingOnly = true;
           };
-          # GP2: connect to NUC gateway over Tailscale
+          # GP2: connect to NUC gateway via Tailscale Serve (wss://)
           config.gateway = {
             mode = "remote";
             remote = {
-              url = "ws://nuc.cinnamon-rooster.ts.net:18789";
+              url = "wss://nuc.cinnamon-rooster.ts.net";
               transport = "direct";
             };
           };
