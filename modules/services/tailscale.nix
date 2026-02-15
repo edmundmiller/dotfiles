@@ -30,6 +30,8 @@ in
     # NixOS-specific networking configuration
     (optionalAttrs (!isDarwin) {
       services.tailscale.openFirewall = true;
+      # Allow user to run `tailscale serve` without sudo (for openclaw-gateway etc)
+      services.tailscale.extraSetFlags = [ "--operator=${config.user.name}" ];
 
       # MagicDNS
       services.resolved.enable = true;
