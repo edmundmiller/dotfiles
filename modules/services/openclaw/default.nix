@@ -106,6 +106,11 @@ in
               # GP2: loopback + Tailscale Serve (HTTPS via MagicDNS)
               bind = "loopback";
               tailscale.mode = "serve";
+              # Tailscale Serve proxies from loopback — must be trusted for identity headers
+              trustedProxies = [
+                "127.0.0.1"
+                "::1"
+              ];
               auth = {
                 token = cfg.gatewayToken;
                 allowTailscale = true;
