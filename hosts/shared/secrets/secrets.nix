@@ -11,6 +11,7 @@ in
   "wakatime-api-key.age".publicKeys = [
     mactraitor
     seqeratop
+    nuc
   ];
 
   "clawdbot-bridge-token.age".publicKeys = [
