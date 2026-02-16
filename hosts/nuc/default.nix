@@ -17,6 +17,9 @@
 
   '';
 
+  # Allow __noChroot derivations (e.g. qmd needs network for bun install)
+  nix.settings.sandbox = "relaxed";
+
   # nix-ld libraries for dynamically linked binaries (e.g. sag TTS)
   programs.nix-ld.libraries = with pkgs; [
     alsa-lib # libasound.so.2 for sag audio playback
@@ -42,6 +45,9 @@
     codex # CLI backend for openclaw
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
+    (inputs.qmd.packages.${system}.qmd.overrideAttrs (_: {
+      __noChroot = true;
+    })) # Memory backend for openclaw
   ];
   imports = [
     ../_server.nix
