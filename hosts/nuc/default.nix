@@ -20,10 +20,13 @@
   # Allow __noChroot derivations (e.g. qmd needs network for bun install)
   nix.settings.sandbox = "relaxed";
 
-  # nix-ld libraries for dynamically linked binaries (e.g. sag TTS)
-  programs.nix-ld.libraries = with pkgs; [
-    alsa-lib # libasound.so.2 for sag audio playback
-  ];
+  # nix-ld for dynamically linked binaries (e.g. sag TTS)
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      alsa-lib # libasound.so.2 for sag audio playback
+    ];
+  };
 
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
