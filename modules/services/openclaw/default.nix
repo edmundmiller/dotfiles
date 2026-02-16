@@ -109,6 +109,14 @@ in
   };
 
   config = mkIf cfg.enable {
+    # Source openclaw secrets env file in interactive shells so CLI commands
+    # (openclaw status, openclaw nodes, etc) get the same API keys as the service.
+    # The env file is written by ExecStartPre at service start.
+    modules.shell.zsh.rcInit = ''
+      [[ -f "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env" ]] && \
+        source "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env"
+    '';
+
     home-manager.users.${user} =
       let
         hmCfg = config.home-manager.users.${user};
@@ -150,8 +158,7 @@ in
           documents = ./documents;
           inherit (cfg) customPlugins skills;
 
-          # Avoid libexec/node_modules conflict between oracle+summarize
-          exposePluginPackages = false;
+          exposePluginPackages = true;
 
           bundledPlugins.sag = {
             enable = true;
@@ -175,8 +182,8 @@ in
             };
 
             memory = {
-              backend = "qmd";
               citations = "auto";
+              # QMD available for Obsidian vault search (not primary memory backend)
               qmd.command = "${home}/.local/bin/qmd-wrapper";
             };
 
