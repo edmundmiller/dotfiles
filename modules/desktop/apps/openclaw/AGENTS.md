@@ -1,6 +1,6 @@
-# OpenClaw Mac App Module
+# Openclaw Mac App Module
 
-Nix-darwin module for the OpenClaw macOS app — remote client connecting to the NUC gateway.
+Nix-darwin module for the Openclaw macOS app — remote client connecting to the NUC gateway.
 
 ## Module Structure
 
@@ -33,6 +33,27 @@ Config is a Nix store symlink (read-only). The `openclawInjectToken` activation 
 1. Copies the symlinked config to a regular file
 2. Replaces `__OPENCLAW_TOKEN_PLACEHOLDER__` with the agenix secret
 3. Moves the patched file into place
+
+## Verification
+
+```bash
+# Check launchd service
+launchctl print gui/$(id -u)/com.steipete.openclaw.gateway | grep state
+
+# Check config was generated
+cat ~/.openclaw/openclaw.json | jq .gateway.mode
+```
+
+## Debug Logs
+
+- `~/Library/Logs/OpenClaw/diagnostics.jsonl` — app-level diagnostics (connection, pairing, gateway errors)
+- Rotated: `diagnostics.jsonl.1`, `.2`, etc.
+
+```bash
+# Recent gateway/connection errors
+tail -200 ~/Library/Logs/OpenClaw/diagnostics.jsonl | \
+  python3 -c "import sys,json; [print(f'{d[\"ts\"]} [{d.get(\"category\",\"\")}] {d[\"event\"]}') for l in sys.stdin if (d:=json.loads(l)) and any(k in d.get('event','').lower() for k in ['gateway','pair','connect','auth','token','wss'])]"
+```
 
 ## Related Files
 
