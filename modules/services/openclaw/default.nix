@@ -1,7 +1,9 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
+  system,
   ...
 }:
 
@@ -10,6 +12,7 @@ with lib.my;
 let
   cfg = config.modules.services.openclaw;
   user = config.user.name;
+  qmdPkg = inputs.qmd.packages.${system}.qmd;
 in
 {
   options.modules.services.openclaw = {
@@ -56,6 +59,9 @@ in
 
   config = mkIf cfg.enable {
     # nix-openclaw overlay applied at flake level (with templates patch)
+
+    # QMD for semantic memory search
+    environment.systemPackages = [ qmdPkg ];
 
     # Configure openclaw through home-manager
     home-manager.users.${user} = {
