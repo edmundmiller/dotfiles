@@ -15,6 +15,7 @@ in
         "${config.users.users.emiller.home}/sync"
         "${config.users.users.emiller.home}/obsidian-vault"
         # "${config.users.users.emiller.home}/archive"
+        "/var/lib/hass" # Home Assistant config + database
       ];
 
       pruneOpts = [

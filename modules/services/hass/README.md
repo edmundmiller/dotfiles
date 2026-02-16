@@ -56,16 +56,31 @@ Previous module ran `ghcr.io/home-assistant/home-assistant:stable` via `virtuali
 
 ### Data Migration
 
+Run `migrate-hass.sh` on the NUC (as root):
+
 ```bash
-# Stop old container
-systemctl stop podman-homeassistant  # or docker-homeassistant
+sudo bash /etc/hass/migrate-hass.sh
+```
 
-# Copy config to new location
+The script:
+
+1. Stops old container + new native service
+2. Copies config from `~/HomeAssistant` → `/var/lib/hass`
+3. Removes stale files managed by nix (`configuration.yaml`, etc.)
+4. Fixes ownership to `hass:hass`
+5. Starts native HA service
+
+If migrating to postgres, HA handles recorder migration on startup — just enable `postgres.enable` and rebuild.
+
+**Manual fallback:**
+
+```bash
+systemctl stop podman-homeassistant 2>/dev/null || true
+systemctl stop home-assistant
 cp -a ~/HomeAssistant/* /var/lib/hass/
+rm -f /var/lib/hass/configuration.yaml  # nix manages this
 chown -R hass:hass /var/lib/hass
-
-# If migrating to postgres, HA handles recorder migration on startup
-# Just enable postgres.enable and rebuild
+systemctl start home-assistant
 ```
 
 ## Home-Ops Parity

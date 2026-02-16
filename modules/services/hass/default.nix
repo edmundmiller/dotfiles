@@ -102,6 +102,12 @@ in
         "f ${config.services.home-assistant.configDir}/scripts.yaml 0644 hass hass"
       ];
 
+      # Migration script (one-time OCI → native)
+      environment.etc."hass/migrate-hass.sh" = {
+        source = ./migrate-hass.sh;
+        mode = "0755";
+      };
+
       # USB device passthrough (e.g. Zigbee/Z-Wave stick)
       services.udev.extraRules = mkIf (cfg.usbDevice != null) ''
         SUBSYSTEM=="tty", ATTRS{idVendor}=="*", ATTRS{idProduct}=="*", SYMLINK+="ttyUSB-hass", TAG+="systemd", ENV{SYSTEMD_WANTS}="home-assistant.service"
