@@ -101,7 +101,30 @@
       openclaw = {
         enable = true;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
-        plugins = [
+        secrets = [
+          {
+            envVar = "ANTHROPIC_API_KEY";
+            path = config.age.secrets.anthropic-api-key.path;
+          }
+          {
+            envVar = "OPENCODE_API_KEY";
+            path = config.age.secrets.opencode-api-key.path;
+          }
+          {
+            envVar = "OPENAI_API_KEY";
+            path = config.age.secrets.openai-api-key.path;
+          }
+          {
+            envVar = "ELEVENLABS_API_KEY";
+            path = config.age.secrets.elevenlabs-api-key.path;
+          }
+          {
+            envVar = "GOG_KEYRING_PASSWORD";
+            value = "gogcli-agenix";
+            literal = true;
+          }
+        ];
+        customPlugins = [
           {
             source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
             config.env.LINEAR_API_TOKEN_FILE = config.age.secrets.linear-api-token.path;
