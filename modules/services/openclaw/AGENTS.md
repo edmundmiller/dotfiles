@@ -16,7 +16,7 @@ modules/services/openclaw/
 - **Home-manager integration**: Uses `home-manager.sharedModules` in flake.nix
 - **Option path**: `modules.services.openclaw.*`
 - **systemd service**: `openclaw-gateway`
-- **Bot documents**: `config/openclaw/documents/` (AGENTS.md, SOUL.md, TOOLS.md)
+- **Bot documents**: `./documents/` (AGENTS.md, SOUL.md, TOOLS.md) — shared by Mac client module too
 
 ## Configuration Overview
 
@@ -99,4 +99,4 @@ bunx @mariozechner/pi-coding-agent --version
 - `flake.nix` — nix-openclaw input and home-manager.sharedModules
 - `hosts/nuc/default.nix` — Enables service + installs CLI backend packages
 - `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
-- `config/openclaw/documents/` — Bot personality and behavior documents
+- `./documents/` — Bot personality and behavior documents

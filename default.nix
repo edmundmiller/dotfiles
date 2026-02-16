@@ -31,7 +31,7 @@ with lib.my;
         ];
         # Darwin-only files — excluded on NixOS (homebrew.casks doesn't exist)
         darwinOnlyFiles = [
-          "desktop/apps/openclaw.nix"
+          "desktop/apps/openclaw/default.nix"
         ];
         nixosOnlyFiles = [
           # desktop/apps — Linux-only apps (raycast.nix is cross-platform)
@@ -95,7 +95,9 @@ with lib.my;
           let
             pathStr = toString path;
           in
-          lib.any (file: lib.hasSuffix file pathStr) darwinOnlyFiles;
+          lib.any (
+            file: lib.hasSuffix file pathStr || lib.hasSuffix "/${lib.removeSuffix "/default.nix" file}" pathStr
+          ) darwinOnlyFiles;
       in
       map import (
         if isDarwin then
