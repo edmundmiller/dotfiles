@@ -105,6 +105,14 @@
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
           allowFrom = [ 8357890648 ]; # @edmundamiller
         };
+        sharedSkills = [
+          "ast-grep"
+          "beads"
+          "code-search"
+          "jut"
+          "pr-review"
+          "python-scripts"
+        ];
         skills = [
           {
             name = "obsidian-vault";
