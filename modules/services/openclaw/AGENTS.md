@@ -129,6 +129,7 @@ Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../
 
 ## Related Files
 
+- `modules/desktop/apps/openclaw/` - Mac remote client module
 - `flake.nix` - nix-openclaw input and home-manager.sharedModules config
 - `hosts/*/default.nix` - Enable with `services.openclaw.enable = true`
 - `config/openclaw/documents/` - Bot personality and behavior documents
