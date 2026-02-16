@@ -87,11 +87,18 @@ codex --version
 bunx @mariozechner/pi-coding-agent --version
 ```
 
-## Known Issues
+## Known Issues & Gotchas
 
 - **Python conflict**: Openclaw whisper bundles Python 3.13 — conflicts with python module
 - **Missing hasown**: Fixed in flake.nix overlay
 - **pi not in nixpkgs**: Installed via `bunx` (bun package in systemPackages)
+- **qmd installed via npm, NOT nix**: The qmd flake (`github:tobi/qmd`) fails in nix sandbox (bun install needs network). Even with `sandbox = "relaxed"` + `__noChroot = true`, the resulting nix store binary has read-only filesystem issues (`node-llama-cpp` tries to write to its own dir). Solution: `npm install -g @tobilu/qmd` on NUC, accessed via `~/.local/bin/qmd-wrapper` which forces the correct system node in PATH.
+- **qmd node version mismatch**: The gateway spawns qmd as a subprocess with a modified PATH. If qmd's `better-sqlite3` native module was compiled against a different node version than what the wrapper finds, you get `ERR_DLOPEN_FAILED`. Fix: `cd ~/.cache/npm/lib/node_modules/@tobilu/qmd && npm rebuild better-sqlite3` after any node upgrade.
+- **sag binary needs nix-ld**: `nix-steipete-tools` produces generic linux binaries. NUC needs `programs.nix-ld.enable = true` + `alsa-lib` in `programs.nix-ld.libraries` for sag's `libasound.so.2` dependency.
+- **tools config is top-level**: `tools.exec.safeBins` and `tools.profile` go under `config.tools`, NOT `config.agents.defaults.tools` (the latter doesn't exist).
+- **darwinOnlyFiles/nixosOnlyFiles in default.nix**: When converting a module from `.nix` to directory (`/default.nix`), MUST update the path AND ensure the directory is git-tracked (untracked dirs invisible to nix flakes).
+- **ExecStartPre vs agenix timing**: On first deploy with a new secret, the env file may be written before agenix decrypts the new key. Restart the service after deploy: `systemctl --user restart openclaw-gateway`.
+- **bundledPlugins.sag**: Installs sag as a SKILL (SKILL.md teaching the agent to call the `sag` CLI), not as a gateway plugin. The sag binary must be in system PATH separately.
 
 ## Skills
 
