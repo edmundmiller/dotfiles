@@ -17,6 +17,7 @@ Agents default to git's commit model: "make change, stage, commit, make change, 
 The most common agent failure: create a single commit with all changes instead of building proper stacks. The agent treats jj like git — dump everything into one commit and move on. This defeats the entire purpose of jj's mutable, stackable history.
 
 **What agents do:**
+
 ```bash
 # Write all files
 echo "auth" > src/auth.rs
@@ -27,6 +28,7 @@ jj describe -m "add auth, profile, and settings"
 ```
 
 **What they should do:**
+
 ```bash
 jut branch auth
 echo "auth" > src/auth.rs

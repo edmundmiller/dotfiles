@@ -17,6 +17,7 @@ Drop a directory with `SKILL.md` into `config/agents/skills/<name>/`. Auto-enabl
 ## Adding a Remote Skill
 
 1. **Add flake input** (hash-pinned, `flake = false`):
+
    ```nix
    my-repo = {
      url = "github:org/repo";
@@ -25,6 +26,7 @@ Drop a directory with `SKILL.md` into `config/agents/skills/<name>/`. Auto-enabl
    ```
 
 2. **Add source** with `subdir` pointing to the skills parent directory:
+
    ```nix
    sources.my-repo = {
      path = inputs.my-repo.outPath;
@@ -34,6 +36,7 @@ Drop a directory with `SKILL.md` into `config/agents/skills/<name>/`. Auto-enabl
    ```
 
 3. **Add explicit skill entry** (name = skill dir inside subdir):
+
    ```nix
    skills.explicit = {
      my-skill.from = "my-repo";
@@ -64,9 +67,9 @@ Then `hey rebuild`.
 
 ## Current Sources
 
-| Source | Repo | Skills |
-|--------|------|--------|
-| local | `config/agents/skills/` | all (auto-enabled) |
-| pi-extensions | `tmustier/pi-extensions` | extending-pi |
-| gitbutler | `gitbutlerapp/gitbutler` | but |
-| openai | `openai/skills` | gh-fix-ci |
+| Source        | Repo                     | Skills             |
+| ------------- | ------------------------ | ------------------ |
+| local         | `config/agents/skills/`  | all (auto-enabled) |
+| pi-extensions | `tmustier/pi-extensions` | extending-pi       |
+| gitbutler     | `gitbutlerapp/gitbutler` | but                |
+| openai        | `openai/skills`          | gh-fix-ci          |

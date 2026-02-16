@@ -2,7 +2,7 @@ let
   hostKeys = import ./host-keys.nix;
   mactraitor = hostKeys."MacTraitor-Pro";
   seqeratop = hostKeys."Seqeratop";
-  nuc = hostKeys.nuc;
+  inherit (hostKeys) nuc;
 in
 {
   "wakatime-api-key.age".publicKeys = [

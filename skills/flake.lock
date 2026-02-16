@@ -19,6 +19,22 @@
         "type": "github"
       }
     },
+    "agent-tail-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770764999,
+        "narHash": "sha256-pkBA4J2lss6DIowrFC0Ot0S0CiOOKMiCtvXbpK9JCuQ=",
+        "owner": "gillkyle",
+        "repo": "agent-tail",
+        "rev": "da6eae09ed672478c2e7252ae5fed32fbcbcdaa6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gillkyle",
+        "repo": "agent-tail",
+        "type": "github"
+      }
+    },
     "gitbutler-repo": {
       "flake": false,
       "locked": {
@@ -119,13 +135,31 @@
         "type": "github"
       }
     },
+    "pi-messenger-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770621254,
+        "narHash": "sha256-wz2uaqFbqdv5BHK5M9ax2xC6S7HatjF9dNrS2fjsnEQ=",
+        "owner": "nicobailon",
+        "repo": "pi-messenger",
+        "rev": "38b4652091d585cb186ca6435d1a7f273f3502c2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nicobailon",
+        "repo": "pi-messenger",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agent-skills": "agent-skills",
+        "agent-tail-repo": "agent-tail-repo",
         "gitbutler-repo": "gitbutler-repo",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
-        "pi-extension-skills": "pi-extension-skills"
+        "pi-extension-skills": "pi-extension-skills",
+        "pi-messenger-repo": "pi-messenger-repo"
       }
     }
   },
