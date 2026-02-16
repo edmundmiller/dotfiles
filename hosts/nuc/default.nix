@@ -47,6 +47,7 @@
     claude-code # CLI backend for openclaw
     codex # CLI backend for openclaw
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
+    uv # For vault sync scripts (PEP 723 inline deps)
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
     # qmd installed globally via npm (nix-built version has read-only store issues with node-llama-cpp)
   ];
@@ -207,6 +208,11 @@
       tailscale.enable = true;
       taskchampion.enable = true;
       obsidian-sync.enable = true;
+      vault-sync = {
+        enable = true;
+        cuboxApiKeyFile = config.age.secrets.cubox-api-key.path;
+        snipdApiKeyFile = config.age.secrets.snipd-api-key.path;
+      };
       opencode.enable = true;
       timew_sync.enable = true;
       transmission.enable = false;
