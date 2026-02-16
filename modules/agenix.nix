@@ -43,18 +43,27 @@ in
               ) (import secretsFile)
             else
               { };
-          # Shared secrets for services that need cross-host keys
+          # Shared secrets — only load secrets this host can decrypt
           sharedSecrets =
-            if pathExists "${sharedSecretsDir}/secrets.nix" then
-              mapAttrs' (
-                n: _:
-                nameValuePair (removeSuffix ".age" n) {
-                  file = "${sharedSecretsDir}/${n}";
-                  owner = mkDefault config.user.name;
-                }
-              ) (import "${sharedSecretsDir}/secrets.nix")
-            else
-              { };
+            let
+              hostKeysFile = "${sharedSecretsDir}/host-keys.nix";
+              hostKey =
+                if pathExists hostKeysFile then (import hostKeysFile).${effectiveHostName} or null else null;
+              allShared =
+                if pathExists "${sharedSecretsDir}/secrets.nix" then
+                  import "${sharedSecretsDir}/secrets.nix"
+                else
+                  { };
+              filtered =
+                if hostKey != null then filterAttrs (_: v: elem hostKey v.publicKeys) allShared else allShared;
+            in
+            mapAttrs' (
+              n: _:
+              nameValuePair (removeSuffix ".age" n) {
+                file = "${sharedSecretsDir}/${n}";
+                owner = mkDefault config.user.name;
+              }
+            ) filtered;
         in
         hostSecrets // sharedSecrets;
       identityPaths =
