@@ -44,11 +44,13 @@ src/
 ## The Agent Problem
 
 Models have seen millions of git workflows but almost zero jj workflows. They default to git mental models:
+
 - "make change → commit → make change → commit" (linear, git-style)
 - Instead of jj's "working copy IS a commit you describe and evolve"
 - They don't grok `jj new` (create child) vs `git commit` (checkpoint)
 
 This causes agents to create one-off commits instead of proper stacks. The fix is:
+
 1. **`--status-after` on every mutation** — forces agents to see state and react, not plan from memory
 2. **The skill** (`jut skill install`) — teaches the jj model, not just command mappings
 3. **The eval harness** (`skill/eval/`) — measures skill compliance, finds failure modes

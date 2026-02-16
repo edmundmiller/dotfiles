@@ -62,12 +62,12 @@ in
 
       services.homebridge = mkIf cfg.homebridge.enable {
         enable = true;
-        openFirewall = cfg.homebridge.openFirewall;
-        user = cfg.homebridge.user;
-        group = cfg.homebridge.group;
-        userStoragePath = cfg.homebridge.userStoragePath;
-        settings = cfg.homebridge.settings;
-        uiSettings = cfg.homebridge.uiSettings;
+        inherit (cfg.homebridge) openFirewall;
+        inherit (cfg.homebridge) user;
+        inherit (cfg.homebridge) group;
+        inherit (cfg.homebridge) userStoragePath;
+        inherit (cfg.homebridge) settings;
+        inherit (cfg.homebridge) uiSettings;
       };
 
       # Tailscale Service proxy (HTTPS -> local Home Assistant HTTP)
