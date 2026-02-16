@@ -36,4 +36,12 @@ in
     edmundmiller
     nuc
   ];
+  "cubox-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "snipd-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 }
