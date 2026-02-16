@@ -93,6 +93,15 @@ bunx @mariozechner/pi-coding-agent --version
 - **Missing hasown**: Fixed in flake.nix overlay
 - **pi not in nixpkgs**: Installed via `bunx` (bun package in systemPackages)
 
+## Skills
+
+Two mechanisms for providing skills to openclaw:
+
+- **`sharedSkills`** — cherry-picks from the `agent-skills-nix` bundle (same skills used by coding agents). Symlinked from `programs.agent-skills.bundlePath` into `~/.openclaw/workspace/skills/`.
+- **`skills`** — inline skill definitions (name, description, body). Written as `SKILL.md` files. Use for openclaw-only skills like `obsidian-vault`.
+
+Shared skill list configured in `hosts/nuc/default.nix`.
+
 ## Related Files
 
 - `modules/desktop/apps/openclaw/` — Mac remote client module
