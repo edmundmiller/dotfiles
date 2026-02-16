@@ -168,46 +168,47 @@ in
                 };
               };
 
-              # Tools — full profile, exec allowlist
-              tools = {
-                profile = "full";
-                exec = {
-                  security = "allowlist";
-                  safeBins = [
-                    "cat"
-                    "ls"
-                    "find"
-                    "grep"
-                    "rg"
-                    "jq"
-                    "curl"
-                    "git"
-                    "head"
-                    "tail"
-                    "wc"
-                    "sort"
-                    "uniq"
-                    "sed"
-                    "awk"
-                    "echo"
-                    "mkdir"
-                    "cp"
-                    "mv"
-                    "rm"
-                    "touch"
-                    "chmod"
-                    "dirname"
-                    "basename"
-                    "realpath"
-                    "which"
-                    "env"
-                    "date"
-                    "diff"
-                    "tr"
-                    "tee"
-                    "xargs"
-                  ];
-                };
+            };
+
+            # --- Tools — full profile, exec allowlist ---
+            tools = {
+              profile = "full";
+              exec = {
+                security = "allowlist";
+                safeBins = [
+                  "cat"
+                  "ls"
+                  "find"
+                  "grep"
+                  "rg"
+                  "jq"
+                  "curl"
+                  "git"
+                  "head"
+                  "tail"
+                  "wc"
+                  "sort"
+                  "uniq"
+                  "sed"
+                  "awk"
+                  "echo"
+                  "mkdir"
+                  "cp"
+                  "mv"
+                  "rm"
+                  "touch"
+                  "chmod"
+                  "dirname"
+                  "basename"
+                  "realpath"
+                  "which"
+                  "env"
+                  "date"
+                  "diff"
+                  "tr"
+                  "tee"
+                  "xargs"
+                ];
               };
             };
 
