@@ -156,7 +156,7 @@ in
               memory = {
                 backend = "qmd";
                 citations = "auto";
-
+                qmd.command = "/home/emiller/.cache/npm/bin/qmd";
               };
 
               # --- Agents ---
