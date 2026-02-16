@@ -83,7 +83,7 @@ in
         enable = true;
         # Use patched openclaw-gateway which has templates (workaround for issue #18)
         package = pkgs.openclaw-gateway;
-        documents = ../../../config/openclaw/documents;
+        documents = ./documents;
 
         # Plugins at top level
         inherit (cfg) plugins;

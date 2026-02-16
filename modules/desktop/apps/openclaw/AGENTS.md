@@ -58,6 +58,6 @@ tail -200 ~/Library/Logs/OpenClaw/diagnostics.jsonl | \
 ## Related Files
 
 - `modules/services/openclaw/` — NUC gateway service (server side)
-- `config/openclaw/documents/` — Bot personality and behavior docs
+- `modules/services/openclaw/documents/` — Bot personality and behavior docs (shared)
 - `hosts/mactraitorpro/default.nix` — Enables with `apps.openclaw.enable = true`
 - `hosts/shared/secrets/openclaw-gateway-token.age` — Auth token (agenix)
