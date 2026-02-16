@@ -1,93 +1,60 @@
-# Shared Secrets Management
+# Shared Secrets (agenix)
 
-Secrets encrypted with [agenix](https://github.com/ryantm/agenix) for multi-host access.
+Cross-host secrets encrypted with [agenix](https://github.com/ryantm/agenix).
 
-## Key Concepts
+## Architecture
 
-- **secrets.nix**: Defines which SSH public keys can decrypt each secret
-- **\*.age files**: Encrypted secrets (safe to commit)
-- Decryption happens at system activation using SSH private keys
+**Two layers, different purposes:**
 
-## Re-encrypting Secrets
+- **`secrets.nix`** — CLI-only. Tells `agenix -r` which public keys encrypt each `.age` file. NOT imported into NixOS config directly (agenix design).
+- **`modules/agenix.nix`** — Our custom module that auto-loads secrets. Imports `secrets.nix` to discover shared secrets, then **filters by host key** so each host only gets secrets it can decrypt.
 
-When adding a new host's SSH key to a secret:
+**Host-key filtering:** `host-keys.nix` maps hostnames → SSH public keys. The module looks up `effectiveHostName` in this map and only loads shared secrets where that key appears in `publicKeys`. If a host isn't in `host-keys.nix` or the file is missing, it falls back to loading all (backwards compat).
 
-### 1. Update secrets.nix
+**Darwin is different:** Darwin hosts don't use the shared secrets auto-loader. They declare secrets explicitly in the home-manager block in `modules/agenix.nix`.
 
-Add the new system key to the secret's `publicKeys` list:
+## Files
 
-```nix
-"taskchampion-sync.age".publicKeys = [
-  users.emiller
-  systems.mactraitor
-  systems.nuc        # <-- Add new host
-  systems.seqeratop
-];
-```
+| File            | Purpose                                          |
+| --------------- | ------------------------------------------------ |
+| `secrets.nix`   | Public key → secret mapping (for `agenix` CLI)   |
+| `host-keys.nix` | Hostname → SSH public key (for module filtering) |
+| `*.age`         | Encrypted secrets (safe to commit)               |
 
-### 2. Re-encrypt the secret
-
-```bash
-cd hosts/shared/secrets
-agenix -e <secret>.age
-# Editor opens with decrypted content
-# Save and exit - agenix re-encrypts with updated key list
-```
-
-**Important:** You must have a private key that can decrypt the current secret. The `-e` flag decrypts, opens editor, then re-encrypts with all keys from secrets.nix.
-
-### 3. Commit both files
-
-```bash
-jj desc -m "Add <host> key to <secret>"
-# or: git add secrets.nix <secret>.age && git commit
-```
-
-## Adding New Secrets
+## Adding a Secret
 
 ```bash
 cd hosts/shared/secrets
 
-# 1. Define in secrets.nix
-echo '"new-secret.age".publicKeys = [ users.emiller systems.nuc ];' >> secrets.nix
+# 1. Add entry to secrets.nix with publicKeys list
+# 2. Create encrypted file
+agenix -e new-secret.age -i ~/.ssh/id_ed25519
 
-# 2. Create the encrypted file
-agenix -e new-secret.age
-# Enter secret content, save and exit
+# 3. If new host needs it, add host key to host-keys.nix too
+# 4. NixOS: auto-loaded if host key is in publicKeys
+# 5. Darwin: must add explicit declaration in modules/agenix.nix home-manager block
 ```
 
-## Viewing Secret Recipients
+## Re-keying
 
-Check which keys can decrypt a secret:
+After changing `publicKeys` in `secrets.nix`:
 
 ```bash
-# From secrets.nix definition
-grep -A5 "secret-name.age" secrets.nix
-
-# Or inspect the .age file directly (shows key fingerprints)
-age-keygen -y < ~/.ssh/id_ed25519  # Your key fingerprint
+cd hosts/shared/secrets
+agenix -r -i ~/.ssh/id_ed25519
 ```
 
-## Common Secrets
+You must have a private key that can decrypt the current secrets.
 
-| Secret                  | Purpose                      | Hosts                      |
-| ----------------------- | ---------------------------- | -------------------------- |
-| `taskchampion-sync.age` | TaskWarrior sync credentials | mactraitor, nuc, seqeratop |
-| `wakatime-api-key.age`  | WakaTime API key             | mactraitor, seqeratop      |
+## Adding a New Host
 
-## Troubleshooting
+1. Add hostname → public key to `host-keys.nix`
+2. Add the same key to relevant secrets in `secrets.nix`
+3. Re-key: `agenix -r -i ~/.ssh/id_ed25519`
 
-**"no identity matched any of the recipients"**
+## Gotchas
 
-- Your SSH key isn't in the secret's publicKeys list
-- Re-encrypt with your key added, or use a machine that has access
-
-**Secret not decrypted at login**
-
-- Check `age.identityPaths` includes your SSH key path
-- Verify the secret is defined in `age.secrets` for your host type (Darwin vs NixOS)
-
-**Permission denied reading secret**
-
-- Check `mode` and `owner` in secret definition
-- Default is root-owned; set `owner = config.user.name` for user access
+- **`secrets.nix` is for the CLI, not NixOS** — agenix docs say "not imported into your NixOS configuration." Our module imports it for convenience but filters by host key.
+- **Darwin secrets are manual** — the home-manager block in `modules/agenix.nix` explicitly lists which secrets Darwin gets. Adding a shared secret doesn't auto-expose it on Darwin.
+- **Key strings must match exactly** — the key in `host-keys.nix` must be identical to the key in `secrets.nix` `publicKeys` lists (same string, no trailing comment differences).
+- **New files must be git-tracked** — flake eval can't see untracked files. `git add` new `.nix` or `.age` files before testing.
