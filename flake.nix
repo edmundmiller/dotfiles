@@ -56,9 +56,6 @@
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
 
-    qmd.url = "github:tobi/qmd";
-    qmd.inputs.nixpkgs.follows = "nixpkgs";
-
     # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
     skills-catalog = {
       url = "path:./skills";

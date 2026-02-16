@@ -48,10 +48,7 @@
     codex # CLI backend for openclaw
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
-    (inputs.qmd.packages.${system}.qmd.overrideAttrs (old: {
-      __noChroot = true;
-      nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ python3 ];
-    })) # Memory backend for openclaw
+    # qmd installed globally via npm (nix-built version has read-only store issues with node-llama-cpp)
   ];
   imports = [
     ../_server.nix
