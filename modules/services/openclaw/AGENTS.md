@@ -1,6 +1,6 @@
-# Openclaw Module
+# Openclaw Gateway Module
 
-Nix-darwin/NixOS service module wrapping [nix-openclaw](https://github.com/openclaw/nix-openclaw) for Telegram AI assistant.
+NixOS service module wrapping [nix-openclaw](https://github.com/openclaw/nix-openclaw) for the NUC gateway.
 
 ## Module Structure
 
@@ -18,118 +18,89 @@ config/openclaw/documents/
 ## Key Facts
 
 - **Upstream module**: `nix-openclaw.homeManagerModules.openclaw`
-- **Home-manager integration**: Uses `home-manager.sharedModules` in flake.nix (required for `lib.hm` access)
-- **Option path**: `modules.services.openclaw.*` (wraps `home-manager.users.${user}.programs.openclaw`)
-- **launchd service** (macOS): `com.steipete.openclaw.gateway`
-- **systemd service** (Linux): `openclaw-gateway`
+- **Home-manager integration**: Uses `home-manager.sharedModules` in flake.nix
+- **Option path**: `modules.services.openclaw.*`
+- **systemd service**: `openclaw-gateway`
 
-## Configuration Hierarchy
+## Configuration Overview
 
-```nix
-# This module's options (modules/services/openclaw)
-modules.services.openclaw.enable
-modules.services.openclaw.gatewayToken  # Auth token for gateway
-modules.services.openclaw.telegram.{enable, botTokenFile, allowFrom}
-modules.services.openclaw.plugins    # Custom plugins ({ source = "github:..."; })
-modules.services.openclaw.firstParty # First-party plugin toggles
+### Gateway
 
-# Maps to home-manager options
-home-manager.users.${user}.programs.openclaw = {
-  enable = true;
-  documents = ../../config/openclaw/documents;
+- Mode: local, loopback + Tailscale Serve (HTTPS via MagicDNS)
+- Auth: token (agenix) + allowTailscale
 
-  config = {
-    gateway = {
-      mode = "local";
-      auth.token = "...";
-    };
-    channels.telegram = {
-      tokenFile = "...";
-      allowFrom = [...];
-      groups."*".requireMention = true;
-    };
-  };
+### Memory
 
-  firstParty.zele.enable = true;
-  plugins = [{ source = "github:..."; }];
+- Backend: `qmd` (semantic search)
+- Citations: `auto`
 
-  instances.default = {
-    enable = true;
-  };
-};
-```
+### CLI Backends (agents.defaults.cliBackends)
 
-## Secrets
+- `pi` — via `bunx @mariozechner/pi-coding-agent --print`
+- `claude` — `claude --print`
+- `codex` — `codex`
 
-Default paths (plain files):
+### Exec Security
 
-- `~/.secrets/telegram-bot-token`
-- Gateway token: inline in config (TODO: use agenix/opnix)
+- Mode: `allowlist` with safeBins (cat, ls, find, grep, rg, jq, curl, git, head, tail, wc, sort, uniq, sed, awk, echo, mkdir, cp, mv, rm, touch, chmod, dirname, basename, realpath, which, env, date, diff, tr, tee, xargs)
+- Tools profile: `full`
+
+### Bindings
+
+- Default agent bound to telegram DM (user 8357890648)
+
+### Plugins
+
+- `sag` (TTS) — enabled, uses ElevenLabs API key from agenix
+- `linear` — custom plugin from dotfiles repo
+- Telegram channel enabled
+
+### Models
+
+- Primary: `opencode/minimax-m2.5`
+- Fallback: `anthropic/claude-sonnet-4-5`
+- Subagent fallback: `anthropic/claude-haiku-4`
+
+## Secrets (agenix)
+
+All injected via ExecStartPre into `$XDG_RUNTIME_DIR/openclaw/env`:
+
+- `anthropic-api-key`
+- `opencode-api-key`
+- `openai-api-key`
+- `elevenlabs-api-key`
+- `openclaw-gateway-token` (injected into config JSON via sed)
+- `linear-api-token` (passed to linear plugin)
+
+## NUC System Packages
+
+Required by openclaw CLI backends: `claude-code`, `codex`, `bun` (for pi via bunx)
 
 ## Verification
 
 ```bash
-# macOS - Check launchd service
-launchctl print gui/$(id -u)/com.steipete.openclaw.gateway | grep state
-
-# Linux - Check systemd service
+# Check systemd service
 systemctl --user status openclaw-gateway
 
 # View logs
-tail -f /tmp/openclaw/openclaw-gateway.log  # macOS
-journalctl --user -u openclaw-gateway -f     # Linux
-```
+journalctl --user -u openclaw-gateway -f
 
-## Debug Logs
-
-**Mac app (OpenClaw.app):**
-
-- `~/Library/Logs/OpenClaw/diagnostics.jsonl` — app-level diagnostics (connection, pairing, gateway errors)
-- Rotated: `diagnostics.jsonl.1`, `.2`, etc.
-
-**Gateway process:**
-
-- `/private/tmp/openclaw/openclaw-gateway.log` — gateway stdout/stderr
-- On NUC (Linux): `/tmp/openclaw/openclaw-gateway.log` or `journalctl --user -u openclaw-gateway`
-
-**Useful filters:**
-
-```bash
-# Mac — recent gateway/connection errors
-tail -200 ~/Library/Logs/OpenClaw/diagnostics.jsonl | \
-  python3 -c "import sys,json; [print(f'{d[\"ts\"]} [{d.get(\"category\",\"\")}] {d[\"event\"]}') for l in sys.stdin if (d:=json.loads(l)) and any(k in d.get('event','').lower() for k in ['gateway','pair','connect','auth','token','wss'])]"
-
-# NUC — gateway auth/connection events
-ssh nuc "tail -200 /tmp/openclaw/openclaw-gateway.log | grep -iE 'pair|auth|connect|token|serve'"
+# Test CLI backends
+claude --version
+codex --version
+bunx @mariozechner/pi-coding-agent --version
 ```
 
 ## Known Issues
 
-**Python conflict**: Openclaw bundles whisper (voice transcription) which includes Python 3.13. This conflicts with:
-
-- `modules.dev.python.enable = true` (direct Python env collision)
-- `modules.editors.emacs` +jupyter feature
-
-Error: `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../pydoc3.13`
-
-**Workaround**: Python module disabled where openclaw is enabled.
-
-**Missing hasown module**: `openclaw-gateway` crashes with `Cannot find module 'hasown'` (form-data). Fix is in `flake.nix` overlay adding `node_modules/hasown`.
-
-## Google + Linear setup (nuc)
-
-- Enable zele via `modules.services.openclaw.firstParty.zele.enable = true;`
-- Add Linear plugin via `modules.services.openclaw.plugins` (customPlugins)
-- Secrets (agenix):
-  - `/run/agenix/zele-client-secret` (Google OAuth client secret JSON)
-  - `/run/agenix/linear-api-token` (Linear API key)
-- OAuth setup (once, on nuc):
-  - `gog auth credentials /run/agenix/zele-client-secret`
-  - `gog auth add you@gmail.com --services gmail,calendar`
+- **Python conflict**: Openclaw whisper bundles Python 3.13 — conflicts with python module
+- **Missing hasown**: Fixed in flake.nix overlay
+- **pi not in nixpkgs**: Installed via `bunx` (bun package in systemPackages)
 
 ## Related Files
 
-- `modules/desktop/apps/openclaw/` - Mac remote client module
-- `flake.nix` - nix-openclaw input and home-manager.sharedModules config
-- `hosts/*/default.nix` - Enable with `services.openclaw.enable = true`
-- `config/openclaw/documents/` - Bot personality and behavior documents
+- `modules/desktop/apps/openclaw/` — Mac remote client module
+- `flake.nix` — nix-openclaw input and home-manager.sharedModules
+- `hosts/nuc/default.nix` — Enables service + installs CLI backend packages
+- `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
+- `config/openclaw/documents/` — Bot personality and behavior documents

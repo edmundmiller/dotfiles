@@ -32,4 +32,8 @@ in
     edmundmiller
     nuc
   ];
+  "elevenlabs-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 }
