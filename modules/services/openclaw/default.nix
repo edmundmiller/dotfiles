@@ -175,19 +175,25 @@ in
             };
 
             memory = {
-              backend = "lancedb";
+              backend = "qmd";
               citations = "auto";
-              lancedb = {
-                embedding = {
-                  apiKey = "\${OPENAI_API_KEY}";
-                  model = "text-embedding-3-small";
-                };
-                dbPath = "${home}/.openclaw/memory/lancedb";
-                autoCapture = true;
-                autoRecall = true;
-              };
-              # QMD still available for Obsidian vault search
               qmd.command = "${home}/.local/bin/qmd-wrapper";
+            };
+
+            plugins = {
+              slots.memory = "memory-lancedb";
+              entries."memory-lancedb" = {
+                enabled = true;
+                config = {
+                  embedding = {
+                    apiKey = "\${OPENAI_API_KEY}";
+                    model = "text-embedding-3-small";
+                  };
+                  dbPath = "${home}/.openclaw/memory/lancedb";
+                  autoCapture = true;
+                  autoRecall = true;
+                };
+              };
             };
 
             agents.defaults = {

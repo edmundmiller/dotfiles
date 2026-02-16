@@ -50,9 +50,20 @@ in
       serviceName = mkOpt types.str "homeassistant";
     };
 
+    # Temporary: plain tailscale serve until svc: approval works
+    tailscaleServe = {
+      enable = mkBoolOpt false;
+      port = mkOpt types.port 8443;
+    };
+
     homebridge.tailscaleService = {
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "homebridge";
+      port = mkOpt types.port 8581;
+    };
+
+    homebridge.tailscaleServe = {
+      enable = mkBoolOpt false;
       port = mkOpt types.port 8581;
     };
   };
@@ -159,6 +170,39 @@ in
           RemainAfterExit = true;
           ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString config.services.home-assistant.config.http.server_port} && exit 0; sleep 1; done; exit 1'";
           ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
+        };
+      };
+
+      # Temporary: plain tailscale serve for HA (until svc: approval works)
+      # Access at https://nuc.cinnamon-rooster.ts.net:<port>/
+      systemd.services.hass-tailscale-serve-plain = mkIf cfg.tailscaleServe.enable {
+        description = "Tailscale serve for Home Assistant (plain, no svc:)";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "home-assistant.service"
+          "tailscaled.service"
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --https=${toString cfg.tailscaleServe.port} http://localhost:${toString config.services.home-assistant.config.http.server_port} && exit 0; sleep 1; done; exit 1'";
+          ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve --https=${toString cfg.tailscaleServe.port} off || true'";
+        };
+      };
+
+      # Temporary: plain tailscale serve for Homebridge
+      systemd.services.homebridge-tailscale-serve-plain = mkIf cfg.homebridge.tailscaleServe.enable {
+        description = "Tailscale serve for Homebridge (plain, no svc:)";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "homebridge.service"
+          "tailscaled.service"
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --https=${toString cfg.homebridge.tailscaleServe.port} http://localhost:${toString cfg.homebridge.tailscaleServe.port} && exit 0; sleep 1; done; exit 1'";
+          ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve --https=${toString cfg.homebridge.tailscaleServe.port} off || true'";
         };
       };
 
