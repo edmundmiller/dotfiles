@@ -1,0 +1,340 @@
+- id: "1702597663213"
+  name: Evening Ambiance
+  entities:
+    switch.christmas_tree_switch:
+      friendly_name: Christmas Tree Switch
+      state: "on"
+    switch.string_lights_switch_2:
+      friendly_name: String Lights Switch
+      state: "on"
+    light.edmund_bed_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode: xy
+      brightness: 102
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+        - 308.125
+        - 37.647
+      rgb_color:
+        - 255
+        - 159
+        - 242
+      xy_color:
+        - 0.371
+        - 0.239
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Edmund Bed Lamp Light
+      supported_features: 40
+      state: "on"
+    light.moni_bed_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode: xy
+      brightness: 102
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+        - 308.125
+        - 37.647
+      rgb_color:
+        - 255
+        - 159
+        - 242
+      xy_color:
+        - 0.371
+        - 0.239
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Moni Bed Lamp Light
+      supported_features: 40
+      state: "on"
+    light.outside_lights_light:
+      supported_color_modes:
+        - onoff
+      color_mode: onoff
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Outside Lights Light
+      supported_features: 8
+      state: "on"
+    light.office_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode: xy
+      brightness: 166
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+        - 308.125
+        - 37.647
+      rgb_color:
+        - 255
+        - 159
+        - 242
+      xy_color:
+        - 0.371
+        - 0.239
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Office Lamp Light
+      supported_features: 40
+      state: "on"
+  icon: mdi:candle
+  metadata: {}
+- id: "1702614252183"
+  name: Sleep
+  entities:
+    switch.white_noise_machine_switch:
+      friendly_name: White Noise Machine Switch
+      state: "on"
+    switch.christmas_tree_switch:
+      friendly_name: Christmas Tree Switch
+      state: "off"
+    switch.string_lights_switch_2:
+      friendly_name: String Lights Switch
+      state: "off"
+    light.edmund_bed_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      off_with_transition: false
+      off_brightness: 102
+      friendly_name: Edmund Bed Lamp Light
+      supported_features: 40
+      state: "off"
+    light.outside_lights_light:
+      supported_color_modes:
+        - onoff
+      color_mode:
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Outside Lights Light
+      supported_features: 8
+      state: "off"
+    light.office_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      off_with_transition: false
+      off_brightness: 166
+      friendly_name: Office Lamp Light
+      supported_features: 40
+      state: "off"
+    remote.samsung_8_series_55:
+      friendly_name: Samsung 8 Series (55)
+      supported_features: 0
+      state: unknown
+    media_player.samsung_8_series_55:
+      source_list:
+        - TV
+        - HDMI
+        - AMC
+        - Animal Planet GO
+        - Apple Music
+        - Apple TV
+        - Barre3
+        - BritBox by BBC ＆ ITV
+        - Calm
+        - DIRECTV STREAM
+        - Disney+
+        - DisneyNOW
+        - ESPN
+        - Echelon
+        - Emby
+        - FOX Sports
+        - Facebook Watch
+        - Fitplan
+        - Food Network GO
+        - Freevee
+        - Gallery
+        - Google Play Movies ＆ TV
+        - HBO Max
+        - HGTV GO - Stream Live TV
+        - Hulu
+        - Internet
+        - Jillian Michaels Fitness App
+        - MagellanTV Documentaries
+        - Netflix
+        - PBS KIDS Video
+        - PBS Video
+        - Paramount+
+        - Peacock TV
+        - Pluto TV
+        - Prime Video
+        - PrivacyChoices
+        - QVC+ and HSN+
+        - Samsung Promotion
+        - Science Channel GO
+        - Sling TV
+        - SmartThings
+        - Spotify - Music and Podcasts
+        - TLC GO - Watch With Your TV Subscription
+        - TikTok
+        - Tubi - Free Movies ＆ TV
+        - Universal Guide
+        - VUDU
+        - "ViX: Cine y TV Gratis en Español"
+        - Viaplay
+        - Watch with TV Subscription - Discovery GO
+        - YouTube
+        - YouTube TV
+        - e-Manual
+      device_class: tv
+      friendly_name: Samsung 8 Series (55)
+      supported_features: 20413
+      state: "off"
+  metadata: {}
+  icon: mdi:sleep
+- id: "1704861141303"
+  name: "Waking up "
+  entities:
+    switch.white_noise_machine_switch:
+      friendly_name: White Noise Machine Switch
+      state: "off"
+    light.office_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode: color_temp
+      brightness: 166
+      color_temp_kelvin: 3984
+      color_temp: 251
+      hs_color:
+        - 26.819
+        - 35.161
+      rgb_color:
+        - 255
+        - 205
+        - 165
+      xy_color:
+        - 0.421
+        - 0.365
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Office Lamp Light
+      supported_features: 40
+      state: "on"
+  metadata: {}
+- id: "1704949650336"
+  name: Bedtime
+  entities:
+    light.edmund_bed_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode: xy
+      brightness: 74
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+        - 352.195
+        - 96.471
+      rgb_color:
+        - 255
+        - 9
+        - 41
+      xy_color:
+        - 0.687
+        - 0.294
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Edmund Bed Lamp Light
+      supported_features: 40
+      state: "on"
+    light.moni_bed_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode: xy
+      brightness: 76
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+        - 357.453
+        - 83.137
+      rgb_color:
+        - 255
+        - 43
+        - 52
+      xy_color:
+        - 0.671
+        - 0.298
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Moni Bed Lamp Light
+      supported_features: 40
+      state: "on"
+    light.office_lamp_light:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6493
+      min_mireds: 154
+      max_mireds: 500
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      off_with_transition: false
+      off_brightness: 166
+      friendly_name: Office Lamp Light
+      supported_features: 40
+      state: "off"
+  icon: mdi:bed-clock
+  metadata: {}
