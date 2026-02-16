@@ -58,7 +58,7 @@ with lib.my;
           "audiobookshelf.nix"
           "calibre.nix"
           "gitea.nix"
-          "hass.nix"
+          "hass/default.nix"
           "homepage.nix"
           "jellyfin.nix"
           "keybase.nix"
