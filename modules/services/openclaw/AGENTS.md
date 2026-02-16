@@ -8,11 +8,6 @@ NixOS service module wrapping [nix-openclaw](https://github.com/openclaw/nix-ope
 modules/services/openclaw/
 ├── default.nix   # Module definition
 └── AGENTS.md     # This file
-
-config/openclaw/documents/
-├── AGENTS.md     # Bot behavior instructions
-├── SOUL.md       # Bot personality
-└── TOOLS.md      # Available tools reference
 ```
 
 ## Key Facts
@@ -21,6 +16,7 @@ config/openclaw/documents/
 - **Home-manager integration**: Uses `home-manager.sharedModules` in flake.nix
 - **Option path**: `modules.services.openclaw.*`
 - **systemd service**: `openclaw-gateway`
+- **Bot documents**: `config/openclaw/documents/` (AGENTS.md, SOUL.md, TOOLS.md)
 
 ## Configuration Overview
 
