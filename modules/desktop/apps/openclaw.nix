@@ -41,6 +41,7 @@ in
             };
             # GP2: connect to NUC gateway via Tailscale Serve (wss://)
             # Token injected at activation from agenix secret
+            config.agents.defaults.thinkingDefault = "high";
             config.gateway = {
               mode = "remote";
               remote = {
