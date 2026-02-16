@@ -25,6 +25,9 @@
     python3 # For node-gyp (pi-interactive-shell/node-pty)
     gcc
     gnumake # For node-gyp native compilation
+    claude-code # CLI backend for openclaw
+    codex # CLI backend for openclaw
+    bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
   ];
   imports = [
     ../_server.nix

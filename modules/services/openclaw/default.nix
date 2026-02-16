@@ -86,14 +86,22 @@ in
         documents = ../../../config/openclaw/documents;
 
         # Plugins at top level
-        plugins = cfg.plugins;
-        firstParty = cfg.firstParty;
+        inherit (cfg) plugins;
+        inherit (cfg) firstParty;
 
         # Skills
-        skills = cfg.skills;
+        inherit (cfg) skills;
 
         # exposePluginPackages = false avoids libexec/node_modules conflict between oracle+summarize
         exposePluginPackages = false;
+
+        # Enable sag (TTS) plugin
+        bundledPlugins.sag = {
+          enable = true;
+          config = {
+            env.ELEVENLABS_API_KEY_FILE = config.age.secrets.elevenlabs-api-key.path;
+          };
+        };
 
         # Configure the default instance directly
         instances.default = {
@@ -116,15 +124,107 @@ in
                 allowTailscale = true;
               };
             };
-            agents.defaults.model = {
-              primary = "opencode/minimax-m2.5";
-              fallbacks = [ "anthropic/claude-sonnet-4-5" ];
+
+            # --- Memory ---
+            memory = {
+              backend = "qmd";
+              citations = "auto";
             };
-            agents.defaults.heartbeat.model = "opencode/minimax-m2.5";
-            agents.defaults.subagents.model = {
-              primary = "opencode/minimax-m2.5";
-              fallbacks = [ "anthropic/claude-haiku-4" ];
+
+            # --- Agents ---
+            agents.defaults = {
+              model = {
+                primary = "opencode/minimax-m2.5";
+                fallbacks = [ "anthropic/claude-sonnet-4-5" ];
+              };
+              thinkingDefault = "high";
+              heartbeat.model = "opencode/minimax-m2.5";
+              subagents.model = {
+                primary = "opencode/minimax-m2.5";
+                fallbacks = [ "anthropic/claude-haiku-4" ];
+              };
+
+              # CLI backends — pi, claude, codex
+              cliBackends = {
+                pi = {
+                  command = "bunx";
+                  args = [
+                    "@mariozechner/pi-coding-agent"
+                    "--print"
+                  ];
+                  input = "arg";
+                  output = "text";
+                };
+                claude = {
+                  command = "claude";
+                  args = [ "--print" ];
+                  input = "arg";
+                  output = "text";
+                };
+                codex = {
+                  command = "codex";
+                  input = "arg";
+                  output = "text";
+                };
+              };
+
+              # Tools — full profile, exec allowlist
+              tools = {
+                profile = "full";
+                exec = {
+                  security = "allowlist";
+                  safeBins = [
+                    "cat"
+                    "ls"
+                    "find"
+                    "grep"
+                    "rg"
+                    "jq"
+                    "curl"
+                    "git"
+                    "head"
+                    "tail"
+                    "wc"
+                    "sort"
+                    "uniq"
+                    "sed"
+                    "awk"
+                    "echo"
+                    "mkdir"
+                    "cp"
+                    "mv"
+                    "rm"
+                    "touch"
+                    "chmod"
+                    "dirname"
+                    "basename"
+                    "realpath"
+                    "which"
+                    "env"
+                    "date"
+                    "diff"
+                    "tr"
+                    "tee"
+                    "xargs"
+                  ];
+                };
+              };
             };
+
+            # --- Bindings: main agent → telegram ---
+            bindings = [
+              {
+                agentId = "default";
+                match = {
+                  channel = "telegram";
+                  peer = {
+                    id = "8357890648";
+                    kind = "direct";
+                  };
+                };
+              }
+            ];
+
             models.providers.opencode = {
               baseUrl = "https://opencode.ai/zen/v1";
               apiKey = "\${OPENCODE_API_KEY}";
@@ -149,7 +249,7 @@ in
             # Built-in OpenCode catalog handles Zen routing + cost tracking
             channels.telegram = mkIf cfg.telegram.enable {
               tokenFile = cfg.telegram.botTokenFile;
-              allowFrom = cfg.telegram.allowFrom;
+              inherit (cfg.telegram) allowFrom;
               groups."*".requireMention = true;
             };
           };
@@ -160,7 +260,7 @@ in
       # Use $XDG_RUNTIME_DIR since $(id -u) doesn't work in systemd context
       systemd.user.services.openclaw-gateway.Service = {
         ExecStartPre = [
-          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.openai-api-key.path}); echo GOG_KEYRING_PASSWORD=gogcli-agenix; } > $XDG_RUNTIME_DIR/openclaw/env'"
+          "${pkgs.bash}/bin/bash -c 'mkdir -p $XDG_RUNTIME_DIR/openclaw && { echo ANTHROPIC_API_KEY=$(cat ${config.age.secrets.anthropic-api-key.path}); echo OPENCODE_API_KEY=$(cat ${config.age.secrets.opencode-api-key.path}); echo OPENAI_API_KEY=$(cat ${config.age.secrets.openai-api-key.path}); echo ELEVENLABS_API_KEY=$(cat ${config.age.secrets.elevenlabs-api-key.path}); echo GOG_KEYRING_PASSWORD=gogcli-agenix; } > $XDG_RUNTIME_DIR/openclaw/env'"
           # Inject gateway token from agenix into openclaw.json
           "${pkgs.bash}/bin/bash -c '${pkgs.gnused}/bin/sed -i \"s|__OPENCLAW_TOKEN_PLACEHOLDER__|$(cat ${config.age.secrets.openclaw-gateway-token.path})|g\" $HOME/.openclaw/openclaw.json'"
         ];
