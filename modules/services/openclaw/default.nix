@@ -113,8 +113,11 @@ in
     # get the same API keys as the systemd service. Uses envInit (.zshenv)
     # so it works for non-interactive shells too (e.g. ssh nuc "openclaw status").
     modules.shell.zsh.envInit = ''
-      [[ -f "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env" ]] && \
+      if [[ -f "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env" ]]; then
+        set -a  # auto-export so child processes (openclaw CLI) inherit the vars
         source "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env"
+        set +a
+      fi
     '';
 
     home-manager.users.${user} =
