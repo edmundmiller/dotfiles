@@ -16,7 +16,7 @@ modules/services/openclaw/
 - **Home-manager integration**: Uses `home-manager.sharedModules` in flake.nix
 - **Option path**: `modules.services.openclaw.*`
 - **systemd service**: `openclaw-gateway`
-- **Bot documents**: `./documents/` (AGENTS.md, SOUL.md, TOOLS.md) — shared by Mac client module too
+- **Bot documents**: `./documents/` (AGENTS.md, SOUL.md, TOOLS.md)
 
 ## Configuration Overview
 

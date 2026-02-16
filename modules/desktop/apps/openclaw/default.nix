@@ -27,7 +27,6 @@ in
           enable = true;
           # App installed via Homebrew — don't install via Nix
           installApp = false;
-          documents = ../../../services/openclaw/documents;
 
           instances.default = {
             enable = true;
