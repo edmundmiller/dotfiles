@@ -72,16 +72,69 @@ All injected via ExecStartPre into `$XDG_RUNTIME_DIR/openclaw/env`:
 
 Required by openclaw CLI backends: `claude-code`, `codex`, `bun` (for pi via bunx)
 
-## Verification
+## Troubleshooting
+
+### Quick Health Check
+
+SSH in and run `openclaw doctor` with the gateway's env vars:
 
 ```bash
-# Check systemd service
+ssh nuc
+source <(sed "s/^/export /" /run/user/1000/openclaw/env)
+export OPENCLAW_AUTH_TOKEN=$(cat /run/agenix/openclaw-gateway-token)
+openclaw doctor
+```
+
+This checks config validity, plugin status, channel connectivity (telegram), skills, and security.
+
+### Send a Test Message
+
+Same env setup, then:
+
+```bash
+openclaw agent --agent main -m "Hello, test message"
+```
+
+### Check Logs
+
+```bash
+# Simple gateway log (human-readable)
+cat /tmp/openclaw/openclaw-gateway.log
+
+# Detailed JSON log (structured, verbose)
+cat /tmp/openclaw/openclaw-2026-02-16.log  # date-stamped
+
+# Grep for errors
+grep -iE 'error|fail' /tmp/openclaw/openclaw-gateway.log
+
+# Clean slate (truncate + restart)
+truncate -s 0 /tmp/openclaw/openclaw-gateway.log
+systemctl --user restart openclaw-gateway
+```
+
+### Service Management
+
+```bash
 systemctl --user status openclaw-gateway
-
-# View logs
+systemctl --user restart openclaw-gateway
 journalctl --user -u openclaw-gateway -f
+```
 
-# Test CLI backends
+### qmd Memory
+
+```bash
+# Check qmd status
+~/.local/bin/qmd-wrapper status
+
+# Rebuild better-sqlite3 after node upgrades (use system node!)
+cd ~/.cache/npm/lib/node_modules/@tobilu/qmd
+PATH=/run/current-system/sw/bin:$PATH npm rebuild better-sqlite3
+systemctl --user restart openclaw-gateway
+```
+
+### Test CLI Backends
+
+```bash
 claude --version
 codex --version
 bunx @mariozechner/pi-coding-agent --version
@@ -93,7 +146,7 @@ bunx @mariozechner/pi-coding-agent --version
 - **Missing hasown**: Fixed in flake.nix overlay
 - **pi not in nixpkgs**: Installed via `bunx` (bun package in systemPackages)
 - **qmd installed via npm, NOT nix**: The qmd flake (`github:tobi/qmd`) fails in nix sandbox (bun install needs network). Even with `sandbox = "relaxed"` + `__noChroot = true`, the resulting nix store binary has read-only filesystem issues (`node-llama-cpp` tries to write to its own dir). Solution: `npm install -g @tobilu/qmd` on NUC, accessed via `~/.local/bin/qmd-wrapper` which forces the correct system node in PATH.
-- **qmd node version mismatch**: The gateway spawns qmd as a subprocess with a modified PATH. If qmd's `better-sqlite3` native module was compiled against a different node version than what the wrapper finds, you get `ERR_DLOPEN_FAILED`. Fix: `cd ~/.cache/npm/lib/node_modules/@tobilu/qmd && npm rebuild better-sqlite3` after any node upgrade.
+- **qmd node version mismatch**: NUC has two node versions — system v24 (`/run/current-system/sw/bin/node`) and user-profile v25 (`/etc/profiles/per-user/emiller/bin/node`). The `qmd-wrapper` pins system node first in PATH so gateway and CLI use the same version. After any node upgrade, rebuild: `cd ~/.cache/npm/lib/node_modules/@tobilu/qmd && PATH=/run/current-system/sw/bin:$PATH npm rebuild better-sqlite3`.
 - **sag binary needs nix-ld**: `nix-steipete-tools` produces generic linux binaries. NUC needs `programs.nix-ld.enable = true` + `alsa-lib` in `programs.nix-ld.libraries` for sag's `libasound.so.2` dependency.
 - **tools config is top-level**: `tools.exec.safeBins` and `tools.profile` go under `config.tools`, NOT `config.agents.defaults.tools` (the latter doesn't exist).
 - **darwinOnlyFiles/nixosOnlyFiles in default.nix**: When converting a module from `.nix` to directory (`/default.nix`), MUST update the path AND ensure the directory is git-tracked (untracked dirs invisible to nix flakes).
