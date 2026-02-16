@@ -65,6 +65,28 @@ cd .. && nix flake update skills-catalog
 
 Then `hey rebuild`.
 
+## Adding a skilld-Generated Skill
+
+[skilld](https://github.com/harlan-zw/skilld) generates SKILL.md files from npm package docs. To add one to the Nix-managed catalog:
+
+1. **Generate the skill** in a temp directory:
+
+   ```bash
+   cd /tmp && mkdir skilld-gen && cd skilld-gen
+   npm init -y && npx skilld add <package> --agent claude-code -y
+   ```
+
+2. **Copy the SKILL.md** into local skills:
+
+   ```bash
+   cp .claude/skills/<generated-name>/SKILL.md \
+     config/agents/skills/<package>/SKILL.md
+   ```
+
+   Skip the `.skilld/` symlinks — they point to runtime caches. The SKILL.md itself tells agents to use `npx -y skilld search` for lookups.
+
+3. **Rebuild**: `hey rebuild` — auto-enabled via `local` source.
+
 ## Current Sources
 
 | Source        | Repo                     | Skills             |

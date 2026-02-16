@@ -48,6 +48,7 @@ Skill content...
 - **jj-merge-repos** - Merge git repositories with jj
 - **python-scripts** - Python scripting guidelines
 - **skill-quality** - Guidelines for writing high-quality skills
+- **mdream** - HTML to Markdown converter (skilld-generated, for LLM/llm.txt workflows)
 - **ui-skills** - Frontend design and UI development
 
 ## Modes

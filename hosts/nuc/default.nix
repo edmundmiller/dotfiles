@@ -140,6 +140,7 @@
           "beads"
           "code-search"
           "jut"
+          "mdream"
           "pr-review"
           "python-scripts"
         ];
