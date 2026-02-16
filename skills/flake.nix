@@ -88,7 +88,10 @@
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
-          skills.enableAll = [ "local" "jut" ];
+          skills.enableAll = [
+            "local"
+            "jut"
+          ];
           skills.explicit = {
             extending-pi.from = "pi-extensions";
             extending-pi.path = "extending-pi";

@@ -26,7 +26,7 @@ If the thing you’re converting is a Pi `packages` entry like:
 {
   "source": "git:github.com/tmustier/pi-extensions",
   "extensions": ["tab-status/tab-status.ts"],
-  "skills": []
+  "skills": [],
 }
 ```
 
@@ -67,28 +67,34 @@ Rule: avoid nested-symlink collisions by **flattening** nested IDs (example: `sk
 
 Given a Pi-ish request, classify it:
 
-1) **Remote extension package** (git:, npm:, https:):
+1. **Remote extension package** (git:, npm:, https:):
+
 - Put/keep it in `config/pi/settings.jsonc` under `packages`.
 
-2) **Local extension** (your own `.ts`):
+2. **Local extension** (your own `.ts`):
+
 - Create `config/pi/extensions/<name>.ts`.
 - Add a `home.file` link in `modules/shell/pi/default.nix`.
 
-3) **Skill** (SKILL.md):
+3. **Skill** (SKILL.md):
+
 - If local: create `config/agents/skills/<name>/SKILL.md`.
 - If remote: pin via `skills/flake.nix` (child flake) and select via `skills.explicit`.
 - Ensure `config/pi/settings.jsonc` package entries have `"skills": []` to avoid collisions.
 
 ### Nix → Pi (how to express the effective Pi result)
 
-1) If Nix is linking a file into `~/.pi/agent/extensions/<x>.ts`, then the Pi-side view is simply:
+1. If Nix is linking a file into `~/.pi/agent/extensions/<x>.ts`, then the Pi-side view is simply:
+
 - “There exists an extension at `~/.pi/agent/extensions/<x>.ts`.”
 - No `settings.json` change required.
 
-2) If Nix is generating `~/.pi/agent/settings.json` from `config/pi/settings.jsonc`, then the Pi-side view is:
+2. If Nix is generating `~/.pi/agent/settings.json` from `config/pi/settings.jsonc`, then the Pi-side view is:
+
 - “My Pi packages list includes …” (copy the JSONC stanza).
 
-3) If Nix installs skills via agent-skills-nix, then the Pi-side view is:
+3. If Nix installs skills via agent-skills-nix, then the Pi-side view is:
+
 - “Skills exist on disk in `~/.pi/agent/skills/<name>/SKILL.md`.”
 - They are **not** sourced from Pi `packages[].skills`.
 
