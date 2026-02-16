@@ -1,5 +1,11 @@
 # Go nuc yourself
-{ config, pkgs, ... }:
+{
+  config,
+  inputs,
+  pkgs,
+  system,
+  ...
+}:
 {
   # Workaround for nix-openclaw using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-openclaw
@@ -8,7 +14,13 @@
     for cmd in cat ln mkdir rm; do
       ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
     done
+
   '';
+
+  # nix-ld libraries for dynamically linked binaries (e.g. sag TTS)
+  programs.nix-ld.libraries = with pkgs; [
+    alsa-lib # libasound.so.2 for sag audio playback
+  ];
 
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
@@ -25,9 +37,11 @@
     python3 # For node-gyp (pi-interactive-shell/node-pty)
     gcc
     gnumake # For node-gyp native compilation
+    cmake # For node-llama-cpp (qmd dependency)
     claude-code # CLI backend for openclaw
     codex # CLI backend for openclaw
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
+    inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
   ];
   imports = [
     ../_server.nix
