@@ -184,9 +184,7 @@
         matter.enable = true;
         homebridge.enable = true;
         homebridge.tailscaleService.enable = true;
-        homebridge.tailscaleServe.enable = true; # TODO: remove when svc: works
         tailscaleService.enable = true;
-        tailscaleServe.enable = true; # TODO: remove when svc: works
         extraComponents = [
           "homekit_controller" # Discover Apple Home devices (Matter/Thread via Apple TV/HomePod)
           "apple_tv" # Apple TV control + remote
