@@ -150,6 +150,7 @@
       docker.enable = true;
       hass = {
         enable = true;
+        postgres.enable = true;
         homebridge.enable = true;
         homebridge.tailscaleService.enable = true;
         tailscaleService.enable = true;
