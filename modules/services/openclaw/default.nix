@@ -109,10 +109,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    # Source openclaw secrets env file in interactive shells so CLI commands
-    # (openclaw status, openclaw nodes, etc) get the same API keys as the service.
-    # The env file is written by ExecStartPre at service start.
-    modules.shell.zsh.rcInit = ''
+    # Source openclaw secrets env file so CLI commands (openclaw status, etc)
+    # get the same API keys as the systemd service. Uses envInit (.zshenv)
+    # so it works for non-interactive shells too (e.g. ssh nuc "openclaw status").
+    modules.shell.zsh.envInit = ''
       [[ -f "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env" ]] && \
         source "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env"
     '';
