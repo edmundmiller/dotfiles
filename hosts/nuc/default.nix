@@ -158,9 +158,18 @@
       hass = {
         enable = true;
         postgres.enable = true;
+        matter.enable = true;
         homebridge.enable = true;
         homebridge.tailscaleService.enable = true;
         tailscaleService.enable = true;
+        extraComponents = [
+          "homekit_controller" # Discover Apple Home devices (Matter/Thread via Apple TV/HomePod)
+          "apple_tv" # Apple TV control + remote
+          "samsungtv" # Samsung TV integration
+          "cast" # Chromecast/Google Cast
+          "mobile_app" # HA Companion app (iOS/Android)
+          "bluetooth" # BLE device discovery
+        ];
       };
       homepage.enable = true;
       jellyfin.enable = true;

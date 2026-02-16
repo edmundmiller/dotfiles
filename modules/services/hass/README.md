@@ -16,7 +16,7 @@ modules.services.hass = {
 - Native `services.home-assistant` (not OCI container) — 98% integration support
 - Declarative `configuration.yaml` via nix with `default_config`
 - UI automations/scenes/scripts (`!include` + tmpfiles for empty yaml)
-- HTTP bound to `::1` with `use_x_forwarded_for` (ready for reverse proxy)
+- HTTP bound to `::1`/`127.0.0.1` with `use_x_forwarded_for` (ready for reverse proxy)
 - Firewall opens HA port on `tailscale0` only
 
 ## Options
@@ -24,7 +24,6 @@ modules.services.hass = {
 | Option                  | Default  | Description                                                   |
 | ----------------------- | -------- | ------------------------------------------------------------- |
 | `enable`                | `false`  | Enable Home Assistant                                         |
-| `usbDevice`             | `null`   | USB device passthrough (Zigbee/Z-Wave stick)                  |
 | `extraComponents`       | `[]`     | Additional integrations (merged with onboarding defaults)     |
 | `customComponents`      | `[]`     | Packages from `pkgs.home-assistant-custom-components.*`       |
 | `customLovelaceModules` | `[]`     | Packages from `pkgs.home-assistant-custom-lovelace-modules.*` |
@@ -56,32 +55,7 @@ Previous module ran `ghcr.io/home-assistant/home-assistant:stable` via `virtuali
 
 ### Data Migration
 
-Run `migrate-hass.sh` on the NUC (as root):
-
-```bash
-sudo bash /etc/hass/migrate-hass.sh
-```
-
-The script:
-
-1. Stops old container + new native service
-2. Copies config from `~/HomeAssistant` → `/var/lib/hass`
-3. Removes stale files managed by nix (`configuration.yaml`, etc.)
-4. Fixes ownership to `hass:hass`
-5. Starts native HA service
-
-If migrating to postgres, HA handles recorder migration on startup — just enable `postgres.enable` and rebuild.
-
-**Manual fallback:**
-
-```bash
-systemctl stop podman-homeassistant 2>/dev/null || true
-systemctl stop home-assistant
-cp -a ~/HomeAssistant/* /var/lib/hass/
-rm -f /var/lib/hass/configuration.yaml  # nix manages this
-chown -R hass:hass /var/lib/hass
-systemctl start home-assistant
-```
+Migration complete. Old config archived at `old-config/` (automations + scenes with device IDs replaced by `FIXME_REMAP_DEVICE`). Native HA runs fresh at `/var/lib/hass`.
 
 ## Home-Ops Parity
 

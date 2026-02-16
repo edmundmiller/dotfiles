@@ -1,0 +1,82 @@
+- id: "1702597694076"
+  alias: Sunset
+  description: ""
+  trigger:
+    - platform: sun
+      event: sunset
+      offset: 0
+  condition: []
+  action:
+    - service: scene.turn_on
+      target:
+        entity_id: scene.evening_ambiance
+      metadata: {}
+  mode: single
+- id: "1702614446976"
+  alias: Closing Time
+  description: ""
+  trigger:
+    - platform: time
+      at: "22:40:00"
+  condition:
+    - condition: device
+      device_id: FIXME_REMAP_DEVICE
+      domain: device_tracker
+      entity_id: FIXME_REMAP_ENTITY
+      type: is_home
+  action:
+    - service: scene.turn_on
+      target:
+        entity_id: scene.bedtime
+      metadata: {}
+  mode: single
+- id: "1704861250097"
+  alias: Rise and shine
+  description: ""
+  trigger:
+    - platform: sun
+      event: sunrise
+      offset: 0
+    - platform: time
+      at: 07:30:00
+    - type: turned_off
+      platform: device
+      device_id: FIXME_REMAP_DEVICE
+      entity_id: FIXME_REMAP_ENTITY
+      domain: binary_sensor
+  condition:
+    - alias: "Edmund and Moni are both up "
+      condition: and
+      conditions:
+        - type: is_off
+          condition: device
+          device_id: FIXME_REMAP_DEVICE
+          entity_id: FIXME_REMAP_ENTITY
+          domain: binary_sensor
+        - condition: sun
+          after: sunrise
+          after_offset: "15"
+        - type: is_off
+          condition: device
+          device_id: FIXME_REMAP_DEVICE
+          entity_id: FIXME_REMAP_ENTITY
+          domain: binary_sensor
+          for:
+            hours: 0
+            minutes: 1
+            seconds: 0
+  action:
+    - service: scene.turn_on
+      target:
+        entity_id: scene.waking_up
+      metadata: {}
+  mode: single
+- id: "1704949480060"
+  alias: "Get ready for bed "
+  description: ""
+  trigger:
+    - platform: time
+      at: "21:30:00"
+  condition: []
+  action: []
+  mode: single

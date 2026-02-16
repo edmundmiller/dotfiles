@@ -13,7 +13,6 @@ in
 {
   options.modules.services.hass = {
     enable = mkBoolOpt false;
-    usbDevice = mkOpt (types.nullOr types.str) null;
 
     # Extra integrations to load (no YAML config needed)
     extraComponents = mkOpt (types.listOf types.str) [ ];
@@ -23,6 +22,11 @@ in
 
     # Custom lovelace modules
     customLovelaceModules = mkOpt (types.listOf types.package) [ ];
+
+    # Matter Server for Matter/Thread device support
+    matter = {
+      enable = mkBoolOpt false;
+    };
 
     # Postgres recorder backend (faster than default SQLite)
     postgres = {
@@ -69,6 +73,7 @@ in
           # Fast zlib compression
           "isal"
         ]
+        ++ optionals cfg.matter.enable [ "matter" ]
         ++ cfg.extraComponents;
 
         inherit (cfg) customComponents customLovelaceModules;
@@ -79,8 +84,14 @@ in
           default_config = { };
 
           http = {
-            server_host = "::1";
-            trusted_proxies = [ "::1" ];
+            server_host = [
+              "::1"
+              "127.0.0.1"
+            ];
+            trusted_proxies = [
+              "::1"
+              "127.0.0.1"
+            ];
             use_x_forwarded_for = true;
           };
 
@@ -102,16 +113,10 @@ in
         "f ${config.services.home-assistant.configDir}/scripts.yaml 0644 hass hass"
       ];
 
-      # Migration script (one-time OCI → native)
-      environment.etc."hass/migrate-hass.sh" = {
-        source = ./migrate-hass.sh;
-        mode = "0755";
+      # Matter Server
+      services.matter-server = mkIf cfg.matter.enable {
+        enable = true;
       };
-
-      # USB device passthrough (e.g. Zigbee/Z-Wave stick)
-      services.udev.extraRules = mkIf (cfg.usbDevice != null) ''
-        SUBSYSTEM=="tty", ATTRS{idVendor}=="*", ATTRS{idProduct}=="*", SYMLINK+="ttyUSB-hass", TAG+="systemd", ENV{SYSTEMD_WANTS}="home-assistant.service"
-      '';
 
       # PostgreSQL recorder backend
       services.postgresql = mkIf cfg.postgres.enable {
