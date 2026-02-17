@@ -197,6 +197,7 @@ in
             ".pi/agent/extensions/gitbutler-guard-logic.ts".source =
               "${configDir}/pi/extensions/gitbutler-guard-logic.ts";
             ".pi/agent/extensions/direnv.ts".source = "${configDir}/pi/extensions/direnv.ts";
+            ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
           };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -221,7 +222,7 @@ in
             # so we don't mutate skills dirs at activation-time.
 
             # Install deps for local pi packages (use $HOME path, not nix store)
-            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-dcp"; do
+            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-dcp" "$HOME/.config/dotfiles/packages/pi-scurl"; do
               if [ -d "$pkg_dir" ] && [ ! -d "$pkg_dir/node_modules" ]; then
                 echo "Installing deps for $(basename "$pkg_dir")..."
                 # Drop to user if running as root (sudo darwin-rebuild)
