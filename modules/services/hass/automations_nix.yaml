@@ -81,3 +81,71 @@
     - action: media_player.turn_off
       target:
         entity_id: media_player.tv
+
+# --- TV sleep timer ---
+- alias: "TV sleep timer - start"
+  id: tv_sleep_timer_start
+  trigger:
+    - platform: state
+      entity_id: input_number.tv_sleep_timer
+  condition:
+    - condition: template
+      value_template: "{{ states('input_number.tv_sleep_timer') | int > 0 }}"
+  action:
+    - action: timer.start
+      target:
+        entity_id: timer.sleep
+      data:
+        duration: "{{ states('input_number.tv_sleep_timer') | int * 60 }}"
+
+- alias: "TV sleep timer - expired"
+  id: tv_sleep_timer_expired
+  trigger:
+    - platform: event
+      event_type: timer.finished
+      event_data:
+        entity_id: timer.sleep
+  action:
+    - action: media_player.turn_off
+      target:
+        entity_id: media_player.tv
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.tv_sleep_timer
+      data:
+        value: 0
+
+# --- DND suppresses notifications ---
+- alias: "DND on - suppress notifications"
+  id: dnd_on
+  trigger:
+    - platform: state
+      entity_id: input_boolean.do_not_disturb
+      to: "on"
+  action:
+    - action: notify.persistent_notification
+      data:
+        message: "Do Not Disturb is active"
+        title: "🔕 DND"
+
+# --- Daily TV counter reset ---
+- alias: "Reset TV counter daily"
+  id: reset_tv_counter_daily
+  trigger:
+    - platform: time
+      at: "00:00:00"
+  action:
+    - action: counter.reset
+      target:
+        entity_id: counter.tv_on_today
+
+- alias: "Count TV sessions"
+  id: count_tv_sessions
+  trigger:
+    - platform: state
+      entity_id: media_player.tv
+      to: "playing"
+  action:
+    - action: counter.increment
+      target:
+        entity_id: counter.tv_on_today
