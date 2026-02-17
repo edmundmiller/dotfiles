@@ -18,9 +18,10 @@ function launchCritique(cwd: string, args: string[] = []) {
     tui.stop();
     process.stdout.write("\x1b[2J\x1b[H");
 
+    // GIT_CONFIG_GLOBAL=/dev/null works around diff.external=difft breaking critique's diff parsing
     const result = spawnSync("bunx", ["critique", ...args], {
       stdio: "inherit",
-      env: process.env,
+      env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null" },
       cwd,
     });
 
