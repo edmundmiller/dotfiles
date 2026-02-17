@@ -235,7 +235,6 @@
   masApps = {
     "Keynote" = 409183694;
     "Numbers" = 409203825;
-    "Reminders" = 1662218674;
     "Xcode" = 497799835;
   };
 }
