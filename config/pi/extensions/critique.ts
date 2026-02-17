@@ -2,8 +2,8 @@
  * Critique Extension — launch critique diff viewer from Pi
  *
  * Shortcuts:
- *   Ctrl+R  — open critique TUI (unstaged diff)
- *   Ctrl+S  — open critique TUI (staged diff)
+ *   Ctrl+Shift+D — open critique TUI (unstaged diff)
+ *   Ctrl+Shift+G — open critique TUI (staged diff)
  *
  * Commands:
  *   /critique [args]  — run critique with custom args
@@ -36,7 +36,7 @@ function launchCritique(args: string[] = []) {
 
 export default function (pi: ExtensionAPI) {
   // Ctrl+R — unstaged diff
-  pi.registerShortcut("ctrl+r", {
+  pi.registerShortcut("ctrl+shift+d", {
     description: "Open critique diff viewer",
     handler: async (ctx) => {
       if (!ctx.hasUI) {
@@ -48,7 +48,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   // Ctrl+S — staged diff
-  pi.registerShortcut("ctrl+s", {
+  pi.registerShortcut("ctrl+shift+g", {
     description: "Open critique diff viewer (staged)",
     handler: async (ctx) => {
       if (!ctx.hasUI) {
