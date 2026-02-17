@@ -9,6 +9,21 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.hass;
+
+  # HACS - Home Assistant Community Store
+  # https://github.com/hacs/integration
+  hacs = pkgs.buildHomeAssistantComponent {
+    owner = "hacs";
+    domain = "hacs";
+    version = "2.0.5";
+    src = pkgs.fetchFromGitHub {
+      owner = "hacs";
+      repo = "integration";
+      tag = "2.0.5";
+      hash = "sha256-xj+H75A6iwyGzMvYUjx61aGiH5DK/qYLC6clZ4cGDac=";
+    };
+    dependencies = [ pkgs.python3Packages.aiogithubapi ];
+  };
 in
 {
   options.modules.services.hass = {
@@ -77,7 +92,8 @@ in
         ++ optionals cfg.matter.enable [ "matter" ]
         ++ cfg.extraComponents;
 
-        inherit (cfg) customComponents customLovelaceModules;
+        customComponents = [ hacs ] ++ cfg.customComponents;
+        inherit (cfg) customLovelaceModules;
 
         extraPackages = ps: [ ] ++ optionals cfg.postgres.enable [ ps.psycopg2 ];
 
