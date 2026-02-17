@@ -238,11 +238,13 @@ in
         };
       };
 
-      # Symlink Nix-managed blueprints into HA config dir
-      systemd.tmpfiles.settings."10-hass-blueprints" = {
-        "${config.services.home-assistant.configDir}/blueprints/automation/custom" = {
-          L.argument = "${./blueprints/automation/custom}";
-        };
+      # Nix-managed blueprints (symlinked into HA config dir by NixOS module)
+      services.home-assistant.blueprints = {
+        automation = [
+          ./blueprints/automation/custom/media_idle_auto_off.yaml
+          ./blueprints/automation/custom/mode_switch.yaml
+          ./blueprints/automation/custom/toggle_routine.yaml
+        ];
       };
 
       # Matter Server
