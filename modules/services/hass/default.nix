@@ -238,6 +238,13 @@ in
         };
       };
 
+      # Symlink Nix-managed blueprints into HA config dir
+      systemd.tmpfiles.settings."10-hass-blueprints" = {
+        "${config.services.home-assistant.configDir}/blueprints/automation/custom" = {
+          L.argument = "${./blueprints/automation/custom}";
+        };
+      };
+
       # Matter Server
       services.matter-server = mkIf cfg.matter.enable {
         enable = true;
