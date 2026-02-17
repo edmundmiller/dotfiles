@@ -209,9 +209,9 @@
       taskchampion.enable = true;
       obsidian-sync.enable = true;
       vault-sync = {
-        enable = true;
-        cuboxApiKeyFile = config.age.secrets.cubox-api-key.path;
-        snipdApiKeyFile = config.age.secrets.snipd-api-key.path;
+        enable = false; # TODO: re-enable after creating cubox-api-key.age and snipd-api-key.age
+        # cuboxApiKeyFile = config.age.secrets.cubox-api-key.path;
+        # snipdApiKeyFile = config.age.secrets.snipd-api-key.path;
       };
       opencode.enable = true;
       timew_sync.enable = true;
