@@ -145,6 +145,8 @@
       "source": "https://github.com/aliou/pi-extensions",
       "extensions": ["extensions/the-dumb-zone"],
     },
+    // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
+    "npm:pi-ghostty",
     // Ghostty theme sync - https://github.com/ogulcancelik/pi-ghostty-theme-sync
     "npm:pi-ghostty-theme-sync",
     // Entire.io code context - https://github.com/entireio/cli
