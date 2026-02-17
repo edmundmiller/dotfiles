@@ -92,6 +92,8 @@
     },
     // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
     "~/.config/dotfiles/packages/pi-dcp",
+    // Secure web fetch – HTML→markdown via mdream, secret scanning, injection detection
+    "~/.config/dotfiles/packages/pi-scurl",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
