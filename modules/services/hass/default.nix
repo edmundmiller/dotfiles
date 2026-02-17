@@ -82,10 +82,8 @@ in
         extraComponents = [
           # Required for onboarding
           "analytics"
-          "google_translate"
           "met"
           "radio_browser"
-          "shopping_list"
           # Fast zlib compression
           "isal"
         ]
@@ -283,6 +281,29 @@ in
       systemd.tmpfiles.settings."10-hass-nix-yaml" = {
         "${config.services.home-assistant.configDir}/automations_nix.yaml" = {
           L.argument = "${./automations_nix.yaml}";
+        };
+        "${config.services.home-assistant.configDir}/devices.yaml" = {
+          L.argument = "${./devices.yaml}";
+        };
+      };
+
+      # Apply declarative device→area assignments after HA starts
+      systemd.services.hass-apply-devices = {
+        description = "Apply declarative device→area assignments from devices.yaml";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "home-assistant.service" ];
+        requires = [ "home-assistant.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          # Wait for HA to be fully ready (API available)
+          # /api/ returns 401 when HA is up (vs connection refused when not ready)
+          ExecStartPre = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 60); do ${pkgs.curl}/bin/curl -so /dev/null -w \"%%{http_code}\" http://127.0.0.1:8123/api/ 2>/dev/null | grep -qE \"(200|401|403)\" && exit 0; sleep 2; done; echo \"HA API not ready after 120s\"; exit 1'";
+          ExecStart =
+            let
+              py = pkgs.python3.withPackages (ps: [ ps.websockets ]);
+            in
+            "${py}/bin/python3 ${./apply-devices.py} ${config.services.home-assistant.configDir}/devices.yaml";
         };
       };
 
