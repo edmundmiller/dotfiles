@@ -194,6 +194,7 @@
           "cast" # Chromecast/Google Cast
           "mobile_app" # HA Companion app (iOS/Android)
           "bluetooth" # BLE device discovery
+          "spotify" # Spotify playback control (config-flow: add via UI after deploy)
         ];
       };
       homepage.enable = true;
