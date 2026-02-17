@@ -1,0 +1,48 @@
+# Run different actions when a boolean toggle turns on vs off.
+# Great for goodnight/wake-up, guest mode, etc.
+blueprint:
+  name: Toggle Routine
+  description: >
+    Run one set of actions when an input_boolean turns on, and another
+    when it turns off.  Useful for goodnight/morning, guest mode, DND, etc.
+  domain: automation
+  input:
+    toggle_entity:
+      name: Toggle
+      description: The input_boolean that triggers the routine.
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    on_actions:
+      name: Actions when ON
+      description: Actions to perform when the toggle is turned on.
+      selector:
+        action:
+    off_actions:
+      name: Actions when OFF
+      description: Actions to perform when the toggle is turned off.
+      default: []
+      selector:
+        action:
+
+triggers:
+  - trigger: state
+    entity_id: !input toggle_entity
+    to: "on"
+    id: "on"
+  - trigger: state
+    entity_id: !input toggle_entity
+    to: "off"
+    id: "off"
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: "on"
+        sequence: !input on_actions
+      - conditions:
+          - condition: trigger
+            id: "off"
+        sequence: !input off_actions

@@ -1,0 +1,57 @@
+# Turn off a media player after it's been idle for a configurable duration.
+# Optionally restrict to a specific house mode.
+blueprint:
+  name: Media Player Idle Auto-Off
+  description: >
+    Turn off a media player after it has been idle (or paused) for a
+    configurable amount of time.  Optionally only fire when the house
+    is in a specific mode.
+  domain: automation
+  input:
+    media_player:
+      name: Media Player
+      description: The media player to monitor.
+      selector:
+        entity:
+          filter:
+            - domain: media_player
+    idle_minutes:
+      name: Idle Duration (minutes)
+      description: How long the player must be idle before turning off.
+      default: 120
+      selector:
+        number:
+          min: 5
+          max: 480
+          unit_of_measurement: min
+    require_mode:
+      name: Required House Mode (optional)
+      description: >
+        Only turn off when input_select.house_mode is this value.
+        Leave blank to always apply.
+      default: ""
+      selector:
+        text:
+
+triggers:
+  - trigger: state
+    entity_id: !input media_player
+    to: "idle"
+    for:
+      minutes: !input idle_minutes
+  - trigger: state
+    entity_id: !input media_player
+    to: "paused"
+    for:
+      minutes: !input idle_minutes
+
+conditions:
+  - condition: template
+    value_template: >
+      {% set mode = "require_mode" %}
+      {{ mode == "" or states("input_select.house_mode") == mode }}
+
+actions:
+  - action: media_player.turn_off
+    target:
+      entity_id: !input media_player
