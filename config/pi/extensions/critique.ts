@@ -7,7 +7,7 @@
  *
  * Commands:
  *   /critique [args]  — run critique with custom args
- *   /review [args]    — run critique review (AI-powered)
+ *   /critique-review [args] — run critique review (AI-powered)
  */
 
 import { spawnSync } from "node:child_process";
@@ -72,8 +72,8 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  // /review — AI-powered review
-  pi.registerCommand("review", {
+  // /critique-review — AI-powered review
+  pi.registerCommand("critique-review", {
     description: "Run critique AI review. Args passed through (e.g. --staged, --agent claude)",
     handler: async (args: string, ctx: ExtensionCommandContext) => {
       if (!ctx.hasUI) {
