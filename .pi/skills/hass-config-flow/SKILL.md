@@ -17,37 +17,59 @@ NixOS `extraComponents` bundles integration code, but config-flow-only
 integrations (Spotify, Matter, HomeKit Controller, Cast, etc.) require
 the REST API or UI to complete setup.
 
-## Token generation
+## Scripts
 
-HA long-lived tokens are HS256 JWTs signed with a per-token key stored
-in `/var/lib/hass/.storage/auth`. Generate one without external deps:
+All scripts run on the NUC (via SSH). They need `TOKEN` env var unless noted.
+
+| Script               | Purpose                                  | Usage                                               |
+| -------------------- | ---------------------------------------- | --------------------------------------------------- |
+| `ha-token.sh`        | Generate JWT from existing auth token    | `sudo bash ha-token.sh [token_name]`                |
+| `ha-api.sh`          | General-purpose API wrapper              | `ha-api.sh GET /api/states/input_select.house_mode` |
+| `ha-entities.sh`     | List entities, optionally by domain      | `ha-entities.sh media_player`                       |
+| `ha-integrations.sh` | List all configured integrations         | `ha-integrations.sh`                                |
+| `ha-call.sh`         | Call a service on an entity              | `ha-call.sh media_player.turn_off media_player.tv`  |
+| `ha-flow.sh`         | Manage config flows (start/submit/abort) | `ha-flow.sh start spotify`                          |
+
+### Quick start
 
 ```bash
-ssh nuc "sudo python3 << 'PY'
-import hashlib, hmac, base64, time, json
+# 1. Get a token (no HA restart needed)
+TOKEN=$(ssh nuc "sudo bash /path/to/ha-token.sh")
 
-auth = json.load(open('/var/lib/hass/.storage/auth'))
-for t in auth['data']['refresh_tokens']:
-    if t.get('client_name') == 'agent-automation':
-        header = base64.urlsafe_b64encode(json.dumps({'alg':'HS256','typ':'JWT'}).encode()).rstrip(b'=')
-        now = int(time.time())
-        payload = base64.urlsafe_b64encode(json.dumps({'iss':t['id'],'iat':now,'exp':now+86400*365}).encode()).rstrip(b'=')
-        sig_input = header + b'.' + payload
-        sig = base64.urlsafe_b64encode(hmac.new(t['jwt_key'].encode(), sig_input, hashlib.sha256).digest()).rstrip(b'=')
-        print((sig_input + b'.' + sig).decode())
-        break
-PY"
+# 2. Use any script
+ssh nuc "TOKEN=$TOKEN bash /path/to/ha-entities.sh media_player"
+ssh nuc "TOKEN=$TOKEN bash /path/to/ha-call.sh media_player.turn_off media_player.tv"
+ssh nuc "TOKEN=$TOKEN bash /path/to/ha-flow.sh start spotify"
 ```
 
-If no `agent-automation` token exists yet, create one via the HA UI:
-**Profile → Security → Long-Lived Access Tokens → Create Token** (name it `agent-automation`).
+## References
+
+Read these for detailed information:
+
+| File                                 | Contents                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| `references/integration-flows.md`    | Per-integration config flow behavior, abort reasons, mDNS discovery commands |
+| `references/default-integrations.md` | NixOS `defaultIntegrations` list — what's auto-loaded, Nix config examples   |
+
+## Token generation
+
+HA long-lived tokens are HS256 JWTs signed with a per-token key in
+`/var/lib/hass/.storage/auth`. Use `scripts/ha-token.sh` or inline:
+
+```bash
+ssh nuc "sudo bash ha-token.sh"           # uses "agent-automation" token
+ssh nuc "sudo bash ha-token.sh my-token"  # use a different token name
+```
+
+If no token exists yet, create via HA UI:
+**Profile → Security → Long-Lived Access Tokens → Create Token**
 
 Verify: `curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8123/api/`
 → `{"message":"API running."}`
 
 ## API quick reference
 
-All requests to `http://127.0.0.1:8123` with header `Authorization: Bearer $TOKEN`.
+All requests to `http://127.0.0.1:8123` with `Authorization: Bearer $TOKEN`.
 
 | Action              | Method | Endpoint                                      | Body                                                       |
 | ------------------- | ------ | --------------------------------------------- | ---------------------------------------------------------- |
@@ -68,110 +90,33 @@ All requests to `http://127.0.0.1:8123` with header `Authorization: Bearer $TOKE
 | Render template     | POST   | `/api/template`                               | `{"template": "{{ states('...') }}"}`                      |
 | Check config        | POST   | `/api/config/core/check_config`               | —                                                          |
 
-## Common workflows
+## Key workflows
 
-### Add a config-flow integration
+### Config flow (non-OAuth)
 
 ```bash
-# 1. Start the flow
-curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"handler":"spotify"}' http://127.0.0.1:8123/api/config/config_entries/flow
-
-# Response types:
-#   "form"         → needs input, check "data_schema" for fields
-#   "create_entry" → done
-#   "abort"        → can't proceed (reason in "reason" field)
-
-# 2. Submit form data (if type=form)
-curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"field": "value"}' \
-  http://127.0.0.1:8123/api/config/config_entries/flow/{flow_id}
+ha-flow.sh start cast           # auto-discovery, usually creates entry immediately
+ha-flow.sh start matter         # returns form → submit with URL
+ha-flow.sh submit <flow_id> '{"url":"ws://localhost:5580/ws"}'
 ```
 
 ### OAuth integrations (Spotify, Google, etc.)
 
-These return `abort` with `reason: missing_credentials` until app credentials are registered:
+1. Register app credentials first (abort reason: `missing_credentials`)
+2. Start config flow — returns auth URL for user
 
 ```bash
-# 1. Register OAuth app credentials
-curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"domain":"spotify","client_id":"YOUR_ID","client_secret":"YOUR_SECRET"}' \
-  http://127.0.0.1:8123/api/config/application_credentials
-
-# 2. Then start config flow — it will return an auth URL for the user to visit
+ha-api.sh POST /api/config/application_credentials \
+  '{"domain":"spotify","client_id":"ID","client_secret":"SECRET"}'
+ha-flow.sh start spotify
 ```
 
-### List all configured integrations
-
-```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8123/api/config/config_entries/entry \
-  | python3 -c "
-import json, sys
-for e in json.load(sys.stdin):
-    print(f'{e[\"state\"]:12} {e[\"domain\"]:25} {e[\"title\"]}')
-"
-```
-
-### Call a service
-
-```bash
-# Turn off TV
-curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"entity_id":"media_player.tv"}' \
-  http://127.0.0.1:8123/api/services/media_player/turn_off
-
-# Set house mode
-curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"entity_id":"input_select.house_mode","option":"Movie"}' \
-  http://127.0.0.1:8123/api/services/input_select/select_option
-```
-
-### Query entity state
-
-```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8123/api/states/input_select.house_mode \
-  | python3 -m json.tool
-```
-
-## Integration-specific notes
-
-### Spotify
-
-- Needs OAuth app at https://developer.spotify.com/dashboard
-- Redirect URI: `https://homeassistant.cinnamon-rooster.ts.net/auth/external/callback`
-- Register credentials via `/api/config/application_credentials` before starting flow
-
-### Matter
-
-- Needs `services.matter-server` running (port 5580)
-- Flow asks for URL, default: `ws://localhost:5580/ws`
-
-### HomeKit Controller
-
-- Auto-discovers via mDNS; flow: select device → enter pairing code
-- Homebridge pin: `sudo cat /var/lib/homebridge/config.json | jq .bridge.pin`
-
-### Google Cast
-
-- No config needed — auto-discovers Chromecast devices
-
-### Apple TV / Samsung TV
-
-- Must be powered on and on same L2 network (not over Tailscale)
-- Discover: `avahi-browse -trp _mediaremotetv._tcp` / `_samsungtvs._tcp`
-
-### Mobile App
-
-- Cannot be added via API — auto-registers when companion app connects
+See `references/integration-flows.md` for per-integration details.
 
 ## NixOS context
 
-- HA config: `/var/lib/hass/` on NUC
 - Auth storage: `/var/lib/hass/.storage/auth`
-- Config entries: `/var/lib/hass/.storage/core.config_entries`
-- API only on localhost (`127.0.0.1:8123`), HTTPS via Tailscale serve
+- API: `http://127.0.0.1:8123` (localhost only), HTTPS via Tailscale serve
 - Public URL: `https://homeassistant.cinnamon-rooster.ts.net/`
-- NixOS option `services.home-assistant.defaultIntegrations` auto-loads:
-  automation, scene, script, input_boolean, input_button, input_datetime,
-  input_number, input_select, input_text, counter, timer, schedule, person,
-  zone, tag, backup — no `extraComponents` needed for these
+- `defaultIntegrations` auto-loads input helpers, automation, scene, script,
+  etc. — see `references/default-integrations.md`
