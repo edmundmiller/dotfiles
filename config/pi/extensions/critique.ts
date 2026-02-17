@@ -12,25 +12,25 @@
 
 import { spawnSync } from "node:child_process";
 import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
 
 function launchCritique(args: string[] = []) {
   return (tui: any, _theme: any, _kb: any, done: (result: number | null) => void) => {
     tui.stop();
     process.stdout.write("\x1b[2J\x1b[H");
 
-    const result = spawnSync("critique", args, {
+    const shell = process.env.SHELL || "/bin/sh";
+    const command = ["critique", ...args].join(" ");
+    const result = spawnSync(shell, ["-c", command], {
       stdio: "inherit",
       env: process.env,
-      cwd: process.cwd(),
     });
 
     tui.start();
     tui.requestRender(true);
     done(result.status);
 
-    // Return a minimal component (required by ui.custom)
-    return new Text("", 0, 0);
+    // Return minimal component (immediately disposed since done() was called)
+    return { render: () => [], invalidate: () => {} };
   };
 }
 
