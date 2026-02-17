@@ -13,7 +13,7 @@
 import { spawnSync } from "node:child_process";
 import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
 
-function launchCritique(args: string[] = []) {
+function launchCritique(cwd: string, args: string[] = []) {
   return (tui: any, _theme: any, _kb: any, done: (result: number | null) => void) => {
     tui.stop();
     process.stdout.write("\x1b[2J\x1b[H");
@@ -23,6 +23,7 @@ function launchCritique(args: string[] = []) {
     const result = spawnSync(shell, ["-c", command], {
       stdio: "inherit",
       env: process.env,
+      cwd,
     });
 
     tui.start();
@@ -43,11 +44,11 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Critique requires TUI mode", "error");
         return;
       }
-      await ctx.ui.custom<number | null>(launchCritique());
+      await ctx.ui.custom<number | null>(launchCritique(ctx.cwd));
     },
   });
 
-  // Ctrl+S — staged diff
+  // Ctrl+R — staged diff
   pi.registerShortcut("ctrl+r", {
     description: "Open critique diff viewer (staged)",
     handler: async (ctx) => {
@@ -55,7 +56,7 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Critique requires TUI mode", "error");
         return;
       }
-      await ctx.ui.custom<number | null>(launchCritique(["--staged"]));
+      await ctx.ui.custom<number | null>(launchCritique(ctx.cwd, ["--staged"]));
     },
   });
 
@@ -68,7 +69,7 @@ export default function (pi: ExtensionAPI) {
         return;
       }
       const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
-      await ctx.ui.custom<number | null>(launchCritique(parsedArgs));
+      await ctx.ui.custom<number | null>(launchCritique(ctx.cwd, parsedArgs));
     },
   });
 
@@ -81,7 +82,7 @@ export default function (pi: ExtensionAPI) {
         return;
       }
       const parsedArgs = ["review", ...(args.trim() ? args.trim().split(/\s+/) : [])];
-      await ctx.ui.custom<number | null>(launchCritique(parsedArgs));
+      await ctx.ui.custom<number | null>(launchCritique(ctx.cwd, parsedArgs));
     },
   });
 }
