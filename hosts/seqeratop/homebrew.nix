@@ -46,6 +46,7 @@
     "claude"
 
     # Media
+    "helium"
     "spotify"
     "soundsource"
 

@@ -212,6 +212,7 @@
     "chmouel/lazyworktree/lazyworktree"
 
     # Utilities
+    "helium"
     # FIXME: gitify cask has invalid 'uninstall' stanza with unsupported :on_upgrade key
     # "gitify"
     "calibre"
