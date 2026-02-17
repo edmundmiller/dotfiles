@@ -1,0 +1,51 @@
+# Run actions when a house mode changes.
+blueprint:
+  name: House Mode Switch
+  description: >
+    Trigger actions when input_select.house_mode changes to a target
+    value. Use this to build per-mode routines (movie, away, night, etc.)
+    without duplicating trigger logic.
+  domain: automation
+  input:
+    target_mode:
+      name: Target Mode
+      description: The house mode value to react to.
+      selector:
+        select:
+          options:
+            - Home
+            - Away
+            - Night
+            - Movie
+    enter_actions:
+      name: Actions on Enter
+      description: Actions to run when the house enters this mode.
+      selector:
+        action:
+    exit_actions:
+      name: Actions on Exit
+      description: Actions to run when the house leaves this mode.
+      default: []
+      selector:
+        action:
+
+triggers:
+  - trigger: state
+    entity_id: input_select.house_mode
+    to: !input target_mode
+    id: enter
+  - trigger: state
+    entity_id: input_select.house_mode
+    from: !input target_mode
+    id: exit
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: enter
+        sequence: !input enter_actions
+      - conditions:
+          - condition: trigger
+            id: exit
+        sequence: !input exit_actions
