@@ -4,7 +4,11 @@ Native `services.home-assistant` NixOS module. NixOS-only (`isDarwin` guard).
 
 ## Structure
 
-- `default.nix` — Module definition
+- `default.nix` — Module definition (Nix config + systemd services)
+- `automations_nix.yaml` — Nix-declared automations (symlinked into HA config dir)
+- `devices.yaml` — Declarative device→area assignments (applied via WebSocket API)
+- `apply-devices.py` — Script to apply devices.yaml (runs as systemd oneshot after HA starts)
+- `blueprints/` — Custom automation blueprints
 - `README.md` — Human docs with migration guide and home-ops parity table
 
 ## Key Facts
@@ -13,6 +17,8 @@ Native `services.home-assistant` NixOS module. NixOS-only (`isDarwin` guard).
 - Config dir: `/var/lib/hass` (NixOS default), runs as `hass` user
 - Declarative config: `default_config`, HTTP on `::1` with `use_x_forwarded_for`
 - UI automations/scenes/scripts via `!include` + tmpfiles for empty yaml
+- Device→area assignments: `devices.yaml` applied by `hass-apply-devices.service` via WebSocket API
+- Token: auto-generated JWT from `/var/lib/hass/.storage/auth` (client_name=`agent-automation`)
 - PostgreSQL recorder via `postgres.enable` (provisions db + psycopg2)
 - Firewall only opens on `tailscale0` interface
 - Host config: `hosts/nuc/default.nix` enables hass + postgres + homebridge + tailscale
