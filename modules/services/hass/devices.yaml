@@ -1,0 +1,18 @@
+# Declarative device → area assignments
+# Applied via WebSocket API after HA starts
+# Key: area_id (must match HA area registry)
+# Values: list of device names (matched by friendly name)
+
+areas:
+  bathroom:
+    - "Bathroom"
+  bedroom:
+    - "Bathroom Nightstand"
+    - "Window Nightstand"
+  kitchen:
+    - "Kitchen"
+  living_room:
+    - "Living Room"
+    - "Living Room (2)"
+    - "Living Room (3)"
+    - "TV"
