@@ -159,5 +159,7 @@
     "npm:pi-interactive-shell",
     // Subagent delegation with chains, parallel execution, TUI - https://github.com/nicobailon/pi-subagents
     "npm:pi-subagents",
+    // Mermaid diagram rendering - https://www.npmjs.com/package/pi-mermaid
+    "npm:pi-mermaid",
   ],
 }
