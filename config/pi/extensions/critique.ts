@@ -11,17 +11,30 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { writeFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+
+// critique can't parse difftastic output — provide a minimal gitconfig without diff.external
+function getCritiqueGitConfig(): string {
+  const p = join(tmpdir(), "critique-gitconfig");
+  if (!existsSync(p)) writeFileSync(p, "[user]\n  name = critique\n  email = critique@local\n");
+  return p;
+}
 
 function launchCritique(cwd: string, args: string[] = []) {
   return (tui: any, _theme: any, _kb: any, done: (result: number | null) => void) => {
     tui.stop();
     process.stdout.write("\x1b[2J\x1b[H");
 
-    // GIT_CONFIG_GLOBAL=/dev/null works around diff.external=difft breaking critique's diff parsing
     const result = spawnSync("bunx", ["critique", ...args], {
       stdio: "inherit",
-      env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null" },
+      env: {
+        ...process.env,
+        GIT_CONFIG_GLOBAL: getCritiqueGitConfig(),
+        GIT_CONFIG_SYSTEM: "/dev/null",
+      },
       cwd,
     });
 
