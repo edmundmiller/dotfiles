@@ -4,7 +4,7 @@
 
 import { htmlToMarkdown } from "mdream";
 import { withMinimalPreset } from "mdream/preset/minimal";
-import { scanUrl, scanHeaders, type SecretScanResult } from "./secrets";
+import { scanUrl, scanHeaders } from "./secrets";
 import {
   analyzeInjection,
   wrapInjection,

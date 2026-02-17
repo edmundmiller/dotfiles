@@ -78,7 +78,7 @@ export default function (pi: ExtensionAPI) {
     description: `Fetch a URL and return clean markdown content optimized for LLMs. Converts HTML pages to compact markdown via mdream (~50-99% size reduction). Includes secret scanning (blocks requests containing API keys/tokens) and prompt injection detection (warns about manipulative content). Use for reading web pages, documentation, articles, API responses. Output truncated to ${DEFAULT_MAX_LINES} lines / ${formatSize(DEFAULT_MAX_BYTES)}.`,
     parameters: fetchToolParams,
 
-    async execute(toolCallId, params: FetchToolInput, signal, onUpdate) {
+    async execute(_toolCallId, params: FetchToolInput, signal, onUpdate) {
       const url = params.url.replace(/^@/, ""); // strip leading @ (model quirk)
 
       onUpdate?.({
