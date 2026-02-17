@@ -1,0 +1,87 @@
+/**
+ * Critique Extension — launch critique diff viewer from Pi
+ *
+ * Shortcuts:
+ *   Ctrl+R  — open critique TUI (unstaged diff)
+ *   Ctrl+S  — open critique TUI (staged diff)
+ *
+ * Commands:
+ *   /critique [args]  — run critique with custom args
+ *   /review [args]    — run critique review (AI-powered)
+ */
+
+import { spawnSync } from "node:child_process";
+import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+import { Text } from "@mariozechner/pi-tui";
+
+function launchCritique(args: string[] = []) {
+  return (tui: any, _theme: any, _kb: any, done: (result: number | null) => void) => {
+    tui.stop();
+    process.stdout.write("\x1b[2J\x1b[H");
+
+    const result = spawnSync("critique", args, {
+      stdio: "inherit",
+      env: process.env,
+      cwd: process.cwd(),
+    });
+
+    tui.start();
+    tui.requestRender(true);
+    done(result.status);
+
+    // Return a minimal component (required by ui.custom)
+    return new Text("", 0, 0);
+  };
+}
+
+export default function (pi: ExtensionAPI) {
+  // Ctrl+R — unstaged diff
+  pi.registerShortcut("ctrl+r", {
+    description: "Open critique diff viewer",
+    handler: async (ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Critique requires TUI mode", "error");
+        return;
+      }
+      await ctx.ui.custom<number | null>(launchCritique());
+    },
+  });
+
+  // Ctrl+S — staged diff
+  pi.registerShortcut("ctrl+s", {
+    description: "Open critique diff viewer (staged)",
+    handler: async (ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Critique requires TUI mode", "error");
+        return;
+      }
+      await ctx.ui.custom<number | null>(launchCritique(["--staged"]));
+    },
+  });
+
+  // /critique — run with custom args
+  pi.registerCommand("critique", {
+    description: "Open critique diff viewer. Args passed through (e.g. --staged, --web, main HEAD)",
+    handler: async (args: string, ctx: ExtensionCommandContext) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Critique requires TUI mode", "error");
+        return;
+      }
+      const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
+      await ctx.ui.custom<number | null>(launchCritique(parsedArgs));
+    },
+  });
+
+  // /review — AI-powered review
+  pi.registerCommand("review", {
+    description: "Run critique AI review. Args passed through (e.g. --staged, --agent claude)",
+    handler: async (args: string, ctx: ExtensionCommandContext) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Critique requires TUI mode", "error");
+        return;
+      }
+      const parsedArgs = ["review", ...(args.trim() ? args.trim().split(/\s+/) : [])];
+      await ctx.ui.custom<number | null>(launchCritique(parsedArgs));
+    },
+  });
+}
