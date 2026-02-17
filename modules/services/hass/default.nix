@@ -116,7 +116,7 @@ in
             db_url = "postgresql://@/${cfg.postgres.database}";
           };
 
-          # --- Input helpers ---
+          # --- Input helpers (all from defaultIntegrations, no extraComponents needed) ---
           input_boolean = {
             guest_mode = {
               name = "Guest Mode";
@@ -125,6 +125,10 @@ in
             goodnight = {
               name = "Goodnight";
               icon = "mdi:weather-night";
+            };
+            do_not_disturb = {
+              name = "Do Not Disturb";
+              icon = "mdi:minus-circle";
             };
           };
 
@@ -141,6 +145,50 @@ in
               icon = "mdi:home";
             };
           };
+
+          input_number = {
+            tv_sleep_timer = {
+              name = "TV Sleep Timer";
+              icon = "mdi:timer-outline";
+              min = 0;
+              max = 240;
+              step = 15;
+              unit_of_measurement = "min";
+            };
+          };
+
+          input_datetime = {
+            morning_time = {
+              name = "Morning Time";
+              icon = "mdi:weather-sunset-up";
+              has_date = false;
+              has_time = true;
+            };
+            bedtime = {
+              name = "Bedtime";
+              icon = "mdi:weather-night";
+              has_date = false;
+              has_time = true;
+            };
+          };
+
+          timer = {
+            sleep = {
+              name = "Sleep Timer";
+              icon = "mdi:timer-sand";
+              duration = "02:00:00";
+            };
+          };
+
+          counter = {
+            tv_on_today = {
+              name = "TV Sessions Today";
+              icon = "mdi:television";
+              step = 1;
+            };
+          };
+
+          schedule = { };
 
           # --- Automations (Nix-declared) ---
           automation = "!include automations_nix.yaml";
