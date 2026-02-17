@@ -196,6 +196,7 @@ in
             ".pi/agent/extensions/gitbutler-guard.ts".source = "${configDir}/pi/extensions/gitbutler-guard.ts";
             ".pi/agent/extensions/gitbutler-guard-logic.ts".source =
               "${configDir}/pi/extensions/gitbutler-guard-logic.ts";
+            ".pi/agent/extensions/direnv.ts".source = "${configDir}/pi/extensions/direnv.ts";
           };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
