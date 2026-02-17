@@ -1,5 +1,5 @@
 ---
-name: harlan-zw-mdream
+name: mdream
 description: 'Ultra-performant HTML to Markdown Convertor Optimized for LLMs and llm.txt artifacts. ALWAYS use when writing code importing "mdream". Consult for debugging, best practices, or modifying mdream.'
 metadata:
   version: 0.16.0
