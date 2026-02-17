@@ -100,6 +100,107 @@ in
             db_url = "postgresql://@/${cfg.postgres.database}";
           };
 
+          # --- Input helpers ---
+          input_boolean = {
+            guest_mode = {
+              name = "Guest Mode";
+              icon = "mdi:account-group";
+            };
+            goodnight = {
+              name = "Goodnight";
+              icon = "mdi:weather-night";
+            };
+          };
+
+          input_select = {
+            house_mode = {
+              name = "House Mode";
+              options = [
+                "Home"
+                "Away"
+                "Night"
+                "Movie"
+              ];
+              initial = "Home";
+              icon = "mdi:home";
+            };
+          };
+
+          # --- Automations (Nix-declared) ---
+          automation = "!include automations_nix.yaml";
+
+          # --- Scenes ---
+          scene = [
+            {
+              name = "Movie";
+              icon = "mdi:movie-open";
+              entities = {
+                "input_select.house_mode" = "Movie";
+                "media_player.tv" = "on";
+              };
+            }
+            {
+              name = "Goodnight";
+              icon = "mdi:weather-night";
+              entities = {
+                "input_boolean.goodnight" = "on";
+                "input_select.house_mode" = "Night";
+                "media_player.tv" = "off";
+              };
+            }
+            {
+              name = "Good Morning";
+              icon = "mdi:weather-sunny";
+              entities = {
+                "input_boolean.goodnight" = "off";
+                "input_select.house_mode" = "Home";
+              };
+            }
+          ];
+
+          # --- Scripts ---
+          script = {
+            tv_on = {
+              alias = "Turn on TV";
+              icon = "mdi:television";
+              sequence = [
+                {
+                  action = "media_player.turn_on";
+                  target.entity_id = "media_player.tv";
+                }
+              ];
+            };
+            tv_off = {
+              alias = "Turn off TV";
+              icon = "mdi:television-off";
+              sequence = [
+                {
+                  action = "media_player.turn_off";
+                  target.entity_id = "media_player.tv";
+                }
+              ];
+            };
+            everything_off = {
+              alias = "Everything Off";
+              icon = "mdi:power";
+              sequence = [
+                {
+                  action = "media_player.turn_off";
+                  target.entity_id = "media_player.tv";
+                }
+                {
+                  action = "input_boolean.turn_on";
+                  target.entity_id = "input_boolean.goodnight";
+                }
+                {
+                  action = "input_select.select_option";
+                  target.entity_id = "input_select.house_mode";
+                  data.option = "Night";
+                }
+              ];
+            };
+          };
+
           # Allow UI-created automations/scenes/scripts alongside declarative ones
           "automation ui" = "!include automations.yaml";
           "scene ui" = "!include scenes.yaml";
@@ -113,6 +214,13 @@ in
         "f ${config.services.home-assistant.configDir}/scenes.yaml 0644 hass hass"
         "f ${config.services.home-assistant.configDir}/scripts.yaml 0644 hass hass"
       ];
+
+      # Symlink Nix-managed YAML files into HA config dir
+      systemd.tmpfiles.settings."10-hass-nix-yaml" = {
+        "${config.services.home-assistant.configDir}/automations_nix.yaml" = {
+          L.argument = "${./automations_nix.yaml}";
+        };
+      };
 
       # Matter Server
       services.matter-server = mkIf cfg.matter.enable {
