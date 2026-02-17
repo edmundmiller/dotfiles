@@ -18,9 +18,7 @@ function launchCritique(cwd: string, args: string[] = []) {
     tui.stop();
     process.stdout.write("\x1b[2J\x1b[H");
 
-    const shell = process.env.SHELL || "/bin/sh";
-    const command = ["critique", ...args].join(" ");
-    const result = spawnSync(shell, ["-c", command], {
+    const result = spawnSync("bunx", ["critique", ...args], {
       stdio: "inherit",
       env: process.env,
       cwd,
