@@ -23,7 +23,7 @@ function getCritiqueGitConfig(): string {
   return p;
 }
 
-// Use local dev build if available, otherwise fall back to fork via bunx
+// FIXME: remove local dev path before publishing — hardcoded to edmundmiller's machine
 const CRITIQUE_DEV = join(homedir(), "src", "personal", "critique", "src", "cli.tsx");
 function getCritiqueCommand(): [string, string[]] {
   if (existsSync(CRITIQUE_DEV)) return ["bun", ["run", CRITIQUE_DEV]];
