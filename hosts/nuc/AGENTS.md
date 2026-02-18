@@ -63,7 +63,6 @@ See `modules/services/openclaw/AGENTS.md` for full details.
 - **Taskchampion** — Task sync server
 - **Obsidian Sync** — Note sync
 - **OpenCode** — AI coding service
-- **timew_sync** — Timewarrior sync
 - **deploy-rs** — Self-deployment target
 
 ## Secrets (agenix)
