@@ -197,6 +197,10 @@
           "spotify" # Spotify playback control (config-flow: add via UI after deploy)
         ];
       };
+      gatus = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       homepage.enable = true;
       jellyfin.enable = true;
       prowlarr.enable = true;
