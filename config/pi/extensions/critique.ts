@@ -13,7 +13,7 @@
 import { spawnSync } from "node:child_process";
 import { writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { tmpdir, homedir } from "node:os";
 import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
 
 // critique can't parse difftastic output — provide a minimal gitconfig without diff.external
@@ -23,12 +23,20 @@ function getCritiqueGitConfig(): string {
   return p;
 }
 
+// Use local dev build if available, otherwise fall back to fork via bunx
+const CRITIQUE_DEV = join(homedir(), "src", "personal", "critique", "src", "cli.tsx");
+function getCritiqueCommand(): [string, string[]] {
+  if (existsSync(CRITIQUE_DEV)) return ["bun", ["run", CRITIQUE_DEV]];
+  return ["bunx", ["github:edmundmiller/critique"]];
+}
+
 function launchCritique(cwd: string, args: string[] = []) {
   return (tui: any, _theme: any, _kb: any, done: (result: number | null) => void) => {
     tui.stop();
     process.stdout.write("\x1b[2J\x1b[H");
 
-    const result = spawnSync("bunx", ["critique", ...args], {
+    const [cmd, prefix] = getCritiqueCommand();
+    const result = spawnSync(cmd, [...prefix, ...args], {
       stdio: "inherit",
       env: {
         ...process.env,
@@ -81,6 +89,10 @@ export default function (pi: ExtensionAPI) {
         return;
       }
       const parsedArgs = args.trim() ? args.trim().split(/\s+/) : [];
+      // Auto-inject --agent pi when running review subcommand
+      if (parsedArgs[0] === "review" && !parsedArgs.includes("--agent")) {
+        parsedArgs.splice(1, 0, "--agent", "pi");
+      }
       await ctx.ui.custom<number | null>(launchCritique(ctx.cwd, parsedArgs));
     },
   });
@@ -93,7 +105,12 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Critique requires TUI mode", "error");
         return;
       }
-      const parsedArgs = ["review", ...(args.trim() ? args.trim().split(/\s+/) : [])];
+      const parsedArgs = [
+        "review",
+        "--agent",
+        "pi",
+        ...(args.trim() ? args.trim().split(/\s+/) : []),
+      ];
       await ctx.ui.custom<number | null>(launchCritique(ctx.cwd, parsedArgs));
     },
   });
