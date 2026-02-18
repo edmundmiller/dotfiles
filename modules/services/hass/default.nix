@@ -82,6 +82,7 @@ in
         extraComponents = [
           # Required for onboarding
           "analytics"
+          "ecobee"
           "met"
           "radio_browser"
           # Fast zlib compression

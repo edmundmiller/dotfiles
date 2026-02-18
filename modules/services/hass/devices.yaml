@@ -9,10 +9,19 @@ areas:
   bedroom:
     - "Bathroom Nightstand"
     - "Window Nightstand"
+    - "Whitenoise Machine"
+    - "SmartWings Window Covering"
+  entrance:
+    - "Night Light"
   kitchen:
     - "Kitchen"
+    - "Trashcan"
+    - "Dishwasher"
   living_room:
     - "Living Room"
     - "Living Room (2)"
     - "Living Room (3)"
     - "TV"
+    - "Couch Lamp"
+  office:
+    - "Edmund Desk"
