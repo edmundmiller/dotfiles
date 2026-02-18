@@ -205,6 +205,7 @@
     "block-goose"
     "claude-code"
     "codexbar"
+    "home-assistant"
     "superset"
     "voicenotes"
 
