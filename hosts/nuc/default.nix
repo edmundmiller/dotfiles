@@ -215,7 +215,7 @@
         # snipdApiKeyFile = config.age.secrets.snipd-api-key.path;
       };
       opencode.enable = true;
-      timew_sync.enable = true;
+
       transmission.enable = false;
     };
 
