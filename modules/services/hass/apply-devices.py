@@ -87,12 +87,24 @@ async def apply_with_websockets(token: str, desired: dict[str, list[str]]):
             print(f"Auth failed: {msg}", file=sys.stderr)
             sys.exit(1)
 
+        # Ensure areas exist
+        await ws.send(json.dumps({"id": 1, "type": "config/area_registry/list"}))
+        resp = json.loads(await ws.recv())
+        existing_areas = {a["area_id"] for a in resp["result"]}
+        msg_id = 2
+        for area_id in desired:
+            if area_id not in existing_areas:
+                await ws.send(json.dumps({"id": msg_id, "type": "config/area_registry/create", "name": area_id}))
+                resp = json.loads(await ws.recv())
+                print(f"  CREATE area {area_id!r}: {'ok' if resp.get('success') else 'FAIL'}")
+                msg_id += 1
+
         # Fetch device registry
-        await ws.send(json.dumps({"id": 1, "type": "config/device_registry/list"}))
+        await ws.send(json.dumps({"id": msg_id, "type": "config/device_registry/list"}))
         resp = json.loads(await ws.recv())
         devices = resp["result"]
 
-        await _apply(ws, devices, desired, id_start=2)
+        await _apply(ws, devices, desired, id_start=msg_id + 1)
 
 
 async def apply_with_aiohttp(token: str, desired: dict[str, list[str]]):
@@ -107,11 +119,23 @@ async def apply_with_aiohttp(token: str, desired: dict[str, list[str]]):
                 print(f"Auth failed: {msg}", file=sys.stderr)
                 sys.exit(1)
 
-            await ws.send_json({"id": 1, "type": "config/device_registry/list"})
+            # Ensure areas exist
+            await ws.send_json({"id": 1, "type": "config/area_registry/list"})
+            resp = await ws.receive_json()
+            existing_areas = {a["area_id"] for a in resp["result"]}
+            msg_id = 2
+            for area_id in desired:
+                if area_id not in existing_areas:
+                    await ws.send_json({"id": msg_id, "type": "config/area_registry/create", "name": area_id})
+                    resp = await ws.receive_json()
+                    print(f"  CREATE area {area_id!r}: {'ok' if resp.get('success') else 'FAIL'}")
+                    msg_id += 1
+
+            await ws.send_json({"id": msg_id, "type": "config/device_registry/list"})
             resp = await ws.receive_json()
             devices = resp["result"]
 
-            await _apply_aiohttp(ws, devices, desired, id_start=2)
+            await _apply_aiohttp(ws, devices, desired, id_start=msg_id + 1)
 
 
 async def _apply(ws, devices, desired, id_start):
