@@ -1,71 +1,95 @@
 # Home Assistant Module
 
-Native NixOS `services.home-assistant` module with declarative config, PostgreSQL recorder, Homebridge, and Tailscale Service proxies.
+NixOS module for Home Assistant with Matter, PostgreSQL recorder, Homebridge, and Tailscale access.
 
-## Enable
+## Backups
+
+HA state lives in `/var/lib/hass` and is backed up nightly by restic (see `hosts/nuc/backups.nix`).
+
+### What's Backed Up
+
+| Data                                           | Location                                 | Recoverable from Nix?                                                                  |
+| ---------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| Device pairings (Zigbee, BLE, Matter, HomeKit) | `/var/lib/hass/.storage/`                | ❌ No — must restore from backup                                                       |
+| Integration configs (API keys, tokens)         | `/var/lib/hass/.storage/`                | ❌ No                                                                                  |
+| Entity/device registry (names, areas, IDs)     | `/var/lib/hass/.storage/core.*_registry` | Partial — `devices.yaml` + `apply-devices.py` can reassign areas                       |
+| Automations (UI-created)                       | `/var/lib/hass/automations.yaml`         | ❌ No                                                                                  |
+| Automations (Nix-declared)                     | `automations_nix.yaml`                   | ✅ Yes — rebuilt from Nix                                                              |
+| HA config (http, recorder, helpers)            | `default.nix`                            | ✅ Yes — rebuilt from Nix                                                              |
+| Extra components (ecobee, cast, etc.)          | `default.nix`                            | ✅ Yes — rebuilt from Nix                                                              |
+| Recorder history (energy, temps, states)       | PostgreSQL (`hass` db)                   | ❌ Not in restic — separate pg backup needed                                           |
+| HACS integrations                              | `/var/lib/hass/custom_components/`       | Partial — HACS itself is Nix-managed, but HACS-installed integrations need re-download |
+| Blueprints (Nix-managed)                       | `blueprints/`                            | ✅ Yes                                                                                 |
+| Lovelace dashboards                            | `/var/lib/hass/.storage/lovelace*`       | ❌ No                                                                                  |
+
+### Backup Schedule
+
+- **Frequency:** Daily at midnight
+- **Retention:** 7 daily, 5 weekly, 12 monthly
+- **Monitoring:** [Healthchecks.io](https://healthchecks.io) ping on start/finish
+- **Excludes:** `.stversions`, `.git`
+
+### Recovery Procedure
+
+1. **Restore `/var/lib/hass` from restic:**
+
+   ```bash
+   # List snapshots
+   sudo restic snapshots --compact
+
+   # Restore latest
+   sudo restic restore latest --target / --include /var/lib/hass
+
+   # Or restore a specific snapshot
+   sudo restic restore <snapshot-id> --target / --include /var/lib/hass
+   ```
+
+2. **Rebuild NixOS** (restores Nix-managed config):
+
+   ```bash
+   hey nuc
+   ```
+
+3. **Reapply device areas** (if registries were reset):
+   ```bash
+   ssh nuc "sudo python3 /var/lib/hass/apply-devices.py /var/lib/hass/devices.yaml"
+   ```
+
+### What Can't Be Recovered
+
+If backups are lost AND HA storage is gone, you'd need to:
+
+- Re-pair all Zigbee/BLE/Matter/HomeKit devices manually
+- Re-authenticate all cloud integrations (ecobee, Spotify, etc.)
+- Recreate Lovelace dashboards
+- Re-download HACS community integrations
+
+The Nix config rebuilds everything else: components, input helpers, scenes, scripts, blueprints, and Nix-declared automations.
+
+### ⚠️ Gap: PostgreSQL
+
+The recorder database (sensor history, energy data) is in PostgreSQL, **not** in `/var/lib/hass`. It's not currently backed up by restic. This is acceptable if history is non-critical, but add a `pg_dump` pre-backup hook if you want it preserved.
+
+## Declarative Device Management
+
+`devices.yaml` maps devices to areas. `apply-devices.py` applies these via the HA WebSocket API:
+
+```bash
+# Run manually
+ssh nuc "sudo python3 /var/lib/hass/apply-devices.py /var/lib/hass/devices.yaml"
+```
+
+The script is idempotent — it creates missing areas and only updates devices whose area differs. It also runs automatically as a systemd oneshot after HA starts (`hass-apply-devices.service`).
+
+## Module Options
 
 ```nix
 modules.services.hass = {
   enable = true;
-  postgres.enable = true; # recommended: faster than SQLite
+  extraComponents = [ "spotify" "cast" ];  # Additional HA integrations
+  postgres.enable = true;                   # PostgreSQL recorder backend
+  matter.enable = true;                     # Matter/Thread support
+  homebridge.enable = true;                 # Homebridge for HomeKit
+  tailscaleService.enable = true;           # HTTPS via Tailscale
 };
 ```
-
-## What You Get
-
-- Native `services.home-assistant` (not OCI container) — 98% integration support
-- Declarative `configuration.yaml` via nix with `default_config`
-- UI automations/scenes/scripts (`!include` + tmpfiles for empty yaml)
-- HTTP bound to `::1`/`127.0.0.1` with `use_x_forwarded_for` (ready for reverse proxy)
-- Firewall opens HA port on `tailscale0` only
-
-## Options
-
-| Option                  | Default  | Description                                                   |
-| ----------------------- | -------- | ------------------------------------------------------------- |
-| `enable`                | `false`  | Enable Home Assistant                                         |
-| `extraComponents`       | `[]`     | Additional integrations (merged with onboarding defaults)     |
-| `customComponents`      | `[]`     | Packages from `pkgs.home-assistant-custom-components.*`       |
-| `customLovelaceModules` | `[]`     | Packages from `pkgs.home-assistant-custom-lovelace-modules.*` |
-| `postgres.enable`       | `false`  | Use PostgreSQL recorder (provisions db + user)                |
-| `postgres.database`     | `"hass"` | Database name                                                 |
-| `postgres.user`         | `"hass"` | Database user                                                 |
-
-### Homebridge
-
-```nix
-modules.services.hass.homebridge.enable = true;
-```
-
-### Tailscale Service Proxies
-
-```nix
-modules.services.hass.tailscaleService.enable = true;
-modules.services.hass.homebridge.tailscaleService.enable = true;
-```
-
-## Migration from OCI Container
-
-Previous module ran `ghcr.io/home-assistant/home-assistant:stable` via `virtualisation.oci-containers`. Native module uses `services.home-assistant` which:
-
-- Auto-resolves component dependencies from `config` attrset
-- Supports `customComponents` and `customLovelaceModules` from nixpkgs
-- Manages config dir at `/var/lib/hass` (NixOS default)
-- Runs as `hass` user (not root/privileged container)
-
-### Data Migration
-
-Migration complete. Old config archived at `old-config/` (automations + scenes with device IDs replaced by `FIXME_REMAP_DEVICE`). Native HA runs fresh at `/var/lib/hass`.
-
-## Home-Ops Parity
-
-Patterns from [home-ops k8s deployment](https://github.com/edmundmiller/home-ops/tree/main/kubernetes/apps/default/home-assistant/app):
-
-| K8s Feature                      | Nix Equivalent                                         |
-| -------------------------------- | ------------------------------------------------------ |
-| `helmrelease.yaml` app-template  | Native `services.home-assistant`                       |
-| `externalsecret.yaml` (location) | Set in HA UI or `config.homeassistant`                 |
-| `postgres-init` initContainer    | `postgres.enable` → `services.postgresql` + `psycopg2` |
-| `volsync.yaml` restic backup     | Use restic/borgbackup module on `/var/lib/hass`        |
-| nginx ingress                    | Tailscale Service proxy (or add nginx vhost)           |
-| code-server addon                | Not needed — edit nix config directly                  |
