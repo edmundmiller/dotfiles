@@ -351,6 +351,9 @@ in
           StartLimitIntervalSec = 60;
           StartLimitBurst = 10;
         };
+        systemd.user.services.openclaw-gateway.Install = {
+          WantedBy = [ "default.target" ];
+        };
         systemd.user.services.openclaw-gateway.Service = {
           ExecStartPre = [
             "${mkEnvScript}"
