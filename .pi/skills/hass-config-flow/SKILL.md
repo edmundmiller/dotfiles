@@ -17,30 +17,77 @@ NixOS `extraComponents` bundles integration code, but config-flow-only
 integrations (Spotify, Matter, HomeKit Controller, Cast, etc.) require
 the REST API or UI to complete setup.
 
-## Scripts
+## Querying the API (inline SSH)
 
-All scripts run on the NUC (via SSH). They need `TOKEN` env var unless noted.
+Scripts in `scripts/` exist but are local — they can't be referenced by
+path on the NUC. Use inline SSH commands instead.
 
-| Script               | Purpose                                  | Usage                                               |
-| -------------------- | ---------------------------------------- | --------------------------------------------------- |
-| `ha-token.sh`        | Generate JWT from existing auth token    | `sudo bash ha-token.sh [token_name]`                |
-| `ha-api.sh`          | General-purpose API wrapper              | `ha-api.sh GET /api/states/input_select.house_mode` |
-| `ha-entities.sh`     | List entities, optionally by domain      | `ha-entities.sh media_player`                       |
-| `ha-integrations.sh` | List all configured integrations         | `ha-integrations.sh`                                |
-| `ha-call.sh`         | Call a service on an entity              | `ha-call.sh media_player.turn_off media_player.tv`  |
-| `ha-flow.sh`         | Manage config flows (start/submit/abort) | `ha-flow.sh start spotify`                          |
-
-### Quick start
+### Get a token
 
 ```bash
-# 1. Get a token (no HA restart needed)
-TOKEN=$(ssh nuc "sudo bash /path/to/ha-token.sh")
-
-# 2. Use any script
-ssh nuc "TOKEN=$TOKEN bash /path/to/ha-entities.sh media_player"
-ssh nuc "TOKEN=$TOKEN bash /path/to/ha-call.sh media_player.turn_off media_player.tv"
-ssh nuc "TOKEN=$TOKEN bash /path/to/ha-flow.sh start spotify"
+TOKEN=$(ssh nuc "sudo python3 -c '
+import hashlib, hmac, base64, time, json
+auth = json.load(open(\"/var/lib/hass/.storage/auth\"))
+for t in auth[\"data\"][\"refresh_tokens\"]:
+    if t.get(\"client_name\") == \"agent-automation\":
+        header = base64.urlsafe_b64encode(json.dumps({\"alg\":\"HS256\",\"typ\":\"JWT\"}).encode()).rstrip(b\"=\")
+        now = int(time.time())
+        payload = base64.urlsafe_b64encode(json.dumps({\"iss\":t[\"id\"],\"iat\":now,\"exp\":now+86400*365}).encode()).rstrip(b\"=\")
+        sig_input = header + b\".\" + payload
+        sig = base64.urlsafe_b64encode(hmac.new(t[\"jwt_key\"].encode(), sig_input, hashlib.sha256).digest()).rstrip(b\"=\")
+        print((sig_input + b\".\" + sig).decode())
+        break
+'" 2>/dev/null)
 ```
+
+### List entities (by domain)
+
+```bash
+ssh nuc "curl -s -H 'Authorization: Bearer $TOKEN' http://localhost:8123/api/states" | python3 -c "
+import json, sys
+states = json.load(sys.stdin)
+for s in sorted(states, key=lambda x: x['entity_id']):
+    eid = s['entity_id']
+    name = s['attributes'].get('friendly_name', '')
+    domain = eid.split('.')[0]
+    if domain in ('light', 'switch', 'cover', 'media_player', 'fan', 'binary_sensor', 'scene', 'humidifier'):
+        print(f'{eid:55s} {name}')
+"
+```
+
+Change the `domain in (...)` filter as needed, or remove it for all entities.
+
+### Call a service
+
+```bash
+ssh nuc "curl -s -X POST -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{\"entity_id\": \"media_player.tv\"}' \
+  http://localhost:8123/api/services/media_player/turn_off"
+```
+
+### Start a config flow
+
+```bash
+ssh nuc "curl -s -X POST -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{\"handler\": \"spotify\"}' \
+  http://localhost:8123/api/config/config_entries/flow"
+```
+
+### Helper scripts (reference)
+
+Scripts in `scripts/` are useful as reference for the API patterns but
+must be piped via SSH or inlined — they aren't deployed to the NUC.
+
+| Script               | Purpose                            |
+| -------------------- | ---------------------------------- |
+| `ha-token.sh`        | Generate JWT from auth storage     |
+| `ha-api.sh`          | General-purpose API wrapper        |
+| `ha-entities.sh`     | List entities by domain            |
+| `ha-integrations.sh` | List configured integrations       |
+| `ha-call.sh`         | Call a service on an entity        |
+| `ha-flow.sh`         | Manage config flows (start/submit) |
 
 ## References
 
