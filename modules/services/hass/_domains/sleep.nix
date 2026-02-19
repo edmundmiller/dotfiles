@@ -6,7 +6,7 @@
 #   3. Sleep         — done with audiobook, out cold (whitenoise stays)
 #
 # Triggers:
-#   Winding Down  ← goodnight toggle / voice "Goodnight"
+#   Winding Down  ← 10:00 PM daily
 #   In Bed        ← bed presence (Monica, 2 min)
 #   Sleep         ← manual or future: audiobook stops / sleep focus activates
 { lib, ... }:
@@ -80,15 +80,14 @@
     };
 
     automation = lib.mkAfter [
-      # Stage 1: Goodnight toggle → Winding Down
+      # Stage 1: 10 PM → Winding Down
       {
         alias = "Winding Down";
         id = "winding_down";
-        description = "Goodnight toggled — lights off (night light stays), blinds closed, TV off";
+        description = "10 PM — lights off (night light stays), blinds closed, TV off";
         trigger = {
-          platform = "state";
-          entity_id = "input_boolean.goodnight";
-          to = "on";
+          platform = "time";
+          at = "22:00:00";
         };
         action = [
           {
