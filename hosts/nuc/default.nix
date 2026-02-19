@@ -102,6 +102,7 @@
       openclaw = {
         enable = true;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
+        hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
         secrets = [
           {
             envVar = "ANTHROPIC_API_KEY";
@@ -205,6 +206,10 @@
           enable = true;
           botTokenFile = config.age.secrets.telegram-bot-token.path;
           chatId = "8357890648";
+        };
+        alerting.openclaw = {
+          enable = true;
+          hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
         };
         healthcheck = {
           enable = true;
