@@ -128,6 +128,11 @@ in
         config = {
           default_config = { };
 
+          homeassistant = {
+            internal_url = "http://192.168.1.222:8123";
+            external_url = "https://homeassistant.cinnamon-rooster.ts.net";
+          };
+
           http = {
             server_host = [
               "0.0.0.0"
