@@ -192,15 +192,23 @@ in
           DynamicUser = true;
           StateDirectory = "gatus";
           RuntimeDirectory = "gatus";
-          ExecStartPre = pkgs.writeShellScript "gatus-prepare-config" (
-            ''
-              cp ${configTemplate} /run/gatus/config.yaml
-              chmod 600 /run/gatus/config.yaml
-            ''
-            + optionalString cfg.alerting.telegram.enable ''
-              ${pkgs.gnused}/bin/sed -i "s|__TELEGRAM_TOKEN__|$(cat ${cfg.alerting.telegram.botTokenFile})|g" /run/gatus/config.yaml
-            ''
-          );
+          # '+' prefix runs as root to read agenix secrets, then chowns to DynamicUser
+          ExecStartPre =
+            "+"
+            + pkgs.writeShellScript "gatus-prepare-config" (
+              ''
+                cp ${configTemplate} /run/gatus/config.yaml
+              ''
+              + optionalString cfg.alerting.telegram.enable ''
+                TELEGRAM_TOKEN=$(cat ${cfg.alerting.telegram.botTokenFile})
+                ${pkgs.gnused}/bin/sed -i "s|__TELEGRAM_TOKEN__|$TELEGRAM_TOKEN|g" /run/gatus/config.yaml
+              ''
+              + ''
+                # RuntimeDirectory is owned by DynamicUser; match ownership
+                chown "$(stat -c %u /run/gatus)" /run/gatus/config.yaml
+                chmod 600 /run/gatus/config.yaml
+              ''
+            );
           ExecStart = "${pkgs.gatus}/bin/gatus";
           Environment = [ "GATUS_CONFIG_PATH=/run/gatus/config.yaml" ];
           Restart = "on-failure";
