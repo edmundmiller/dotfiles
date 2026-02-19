@@ -66,7 +66,7 @@
     automation = lib.mkAfter [
       # --- Sun-based ---
       {
-        alias = "Mid-morning - lights off blinds closed";
+        alias = "Mid-morning";
         id = "mid_morning";
         description = "West-facing windows — kill lights and close blinds after sunrise";
         trigger = {
@@ -82,7 +82,7 @@
         ];
       }
       {
-        alias = "Sundown - lights on blinds closed";
+        alias = "Sundown";
         id = "sundown";
         description = "Turn on lights and close blinds before sunset";
         trigger = {
@@ -100,7 +100,7 @@
 
       # --- Contact sensor (uncomment when balcony sensor is added to HA) ---
       # {
-      #   alias = "Balcony opens - couch lamp on";
+      #   alias = "Balcony door opened";
       #   id = "balcony_opens_couch_lamp";
       #   description = "Turn on couch lamp when balcony door opens";
       #   trigger = {
@@ -118,7 +118,7 @@
 
       # --- Occupancy ---
       {
-        alias = "Entrance occupancy - night light on";
+        alias = "Entrance occupancy";
         id = "entrance_occupancy_night_light";
         description = "Night light on when motion detected, off after 5 min clear";
         trigger = {
