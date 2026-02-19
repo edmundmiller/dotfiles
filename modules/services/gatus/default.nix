@@ -112,6 +112,17 @@ let
           ];
         }
       ]
+      ++ optionals config.modules.services.openclaw.enable [
+        {
+          name = "OpenClaw Gateway";
+          group = "Infrastructure";
+          url = "http://localhost:18789";
+          interval = "60s";
+          conditions = [
+            "[STATUS] == 200"
+          ];
+        }
+      ]
       ++ optionals config.modules.services.audiobookshelf.enable [
         {
           name = "Audiobookshelf";
