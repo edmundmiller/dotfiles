@@ -62,6 +62,7 @@ hey nuc
 
 - **PostgreSQL** — `tcp://localhost:5432`
 - **Tailscale** — `http://localhost:41112/healthz`
+- **OpenClaw Gateway** — `http://localhost:18789` (conditional)
 
 ## Adding Endpoints
 
