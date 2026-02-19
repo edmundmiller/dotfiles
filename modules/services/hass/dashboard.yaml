@@ -1,0 +1,740 @@
+title: Home
+views:
+  # ─── View 1: Home ───────────────────────────────────────────
+  - type: sections
+    title: Home
+    path: home
+    icon: mdi:home
+    max_columns: 3
+    badges:
+      - entity: weather.forecast_home
+      - entity: input_select.house_mode
+      - entity: person.edmund_miller
+
+    sections:
+      # ── Quick Actions ──
+      - cards:
+          - type: heading
+            heading: Quick Actions
+            heading_style: subtitle
+
+          - type: custom:mushroom-select-card
+            entity: input_select.house_mode
+            icon: mdi:home
+            fill_container: true
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: scene.good_morning
+                name: Morning
+                icon: mdi:weather-sunny
+                icon_color: amber
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.good_morning
+                layout: vertical
+                fill_container: true
+
+              - type: custom:mushroom-entity-card
+                entity: scene.movie
+                name: Movie
+                icon: mdi:movie-open
+                icon_color: indigo
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.movie
+                layout: vertical
+                fill_container: true
+
+              - type: custom:mushroom-entity-card
+                entity: scene.goodnight
+                name: Goodnight
+                icon: mdi:weather-night
+                icon_color: deep-purple
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.goodnight
+                layout: vertical
+                fill_container: true
+
+              - type: custom:mushroom-entity-card
+                entity: scene.sleep
+                name: Sleep
+                icon: mdi:sleep
+                icon_color: blue
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.sleep
+                layout: vertical
+                fill_container: true
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.do_not_disturb
+                name: DND
+                icon_color: red
+                fill_container: true
+                tap_action:
+                  action: toggle
+
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.guest_mode
+                name: Guest
+                icon_color: teal
+                fill_container: true
+                tap_action:
+                  action: toggle
+
+      # ── Living Room ──
+      - cards:
+          - type: heading
+            heading: Living Room
+            heading_style: subtitle
+            icon: mdi:sofa
+
+          - type: custom:mini-media-player
+            entity: media_player.tv
+            name: TV
+            icon: mdi:television
+            artwork: cover
+            hide:
+              power_state: false
+              icon: false
+
+          - type: custom:mushroom-light-card
+            entity: light.nanoleaf_multicolor_floor_lamp
+            name: Couch Lamp
+            icon: mdi:floor-lamp
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            fill_container: true
+            collapsible_controls: true
+
+      # ── Bedroom ──
+      - cards:
+          - type: heading
+            heading: Bedroom
+            heading_style: subtitle
+            icon: mdi:bed
+
+          - type: custom:mushroom-cover-card
+            entity: cover.smartwings_window_covering
+            name: Blinds
+            icon: mdi:blinds-horizontal
+            show_buttons_control: true
+            show_position_control: true
+            fill_container: true
+
+          - type: custom:mushroom-entity-card
+            entity: switch.eve_energy_20ebu4101
+            name: White Noise
+            icon: mdi:weather-windy
+            icon_color: cyan
+            fill_container: true
+            tap_action:
+              action: toggle
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: tile
+                entity: binary_sensor.edmund_s_eight_sleep_side_bed_presence
+                name: Edmund
+                icon: mdi:bed
+                color: blue
+
+              - type: tile
+                entity: binary_sensor.monica_s_eight_sleep_side_bed_presence
+                name: Monica
+                icon: mdi:bed
+                color: pink
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-climate-card
+                entity: climate.edmund_s_eight_sleep_side_climate
+                name: Edmund Temp
+                fill_container: true
+                collapsible_controls: true
+
+              - type: custom:mushroom-climate-card
+                entity: climate.monica_s_eight_sleep_side_climate
+                name: Monica Temp
+                fill_container: true
+                collapsible_controls: true
+
+      # ── Kitchen ──
+      - cards:
+          - type: heading
+            heading: Kitchen
+            heading_style: subtitle
+            icon: mdi:silverware-fork-knife
+
+          - type: custom:mushroom-light-card
+            entity: light.essentials_a19_a60
+            name: Trashcan
+            show_brightness_control: true
+            fill_container: true
+            collapsible_controls: true
+
+          - type: custom:mushroom-light-card
+            entity: light.essentials_a19_a60_2
+            name: Dishwasher
+            show_brightness_control: true
+            fill_container: true
+            collapsible_controls: true
+
+      # ── Other Lights ──
+      - cards:
+          - type: heading
+            heading: Lights
+            heading_style: subtitle
+            icon: mdi:lightbulb-group
+
+          - type: custom:mushroom-light-card
+            entity: light.smart_night_light_w
+            name: Night Light
+            icon: mdi:lightbulb-night
+            show_brightness_control: true
+            fill_container: true
+            collapsible_controls: true
+
+          - type: custom:mushroom-light-card
+            entity: light.nanoleaf_multicolor_hd_ls
+            name: Office Desk
+            icon: mdi:desk-lamp
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            fill_container: true
+            collapsible_controls: true
+
+      # ── Weather & Info ──
+      - cards:
+          - type: heading
+            heading: Weather
+            heading_style: subtitle
+            icon: mdi:weather-partly-cloudy
+
+          - type: weather-forecast
+            entity: weather.forecast_home
+            show_forecast: true
+            forecast_type: daily
+
+          - type: custom:mushroom-entity-card
+            entity: sensor.smartwings_window_covering_battery
+            name: Blinds Battery
+            icon: mdi:battery
+            fill_container: true
+
+  # ─── View 2: Sleep ──────────────────────────────────────────
+  - type: sections
+    title: Sleep
+    path: sleep
+    icon: mdi:sleep
+    max_columns: 2
+
+    sections:
+      # ── Edmund ──
+      - cards:
+          - type: heading
+            heading: Edmund
+            heading_style: subtitle
+            icon: mdi:account
+
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: gauge
+                entity: sensor.edmund_s_eight_sleep_side_sleep_fitness_score
+                name: Fitness
+                min: 0
+                max: 100
+                severity:
+                  green: 80
+                  yellow: 60
+                  red: 0
+
+              - type: gauge
+                entity: sensor.edmund_s_eight_sleep_side_sleep_quality_score
+                name: Quality
+                min: 0
+                max: 100
+                severity:
+                  green: 80
+                  yellow: 60
+                  red: 0
+
+              - type: gauge
+                entity: sensor.edmund_s_eight_sleep_side_sleep_routine_score
+                name: Routine
+                min: 0
+                max: 100
+                severity:
+                  green: 80
+                  yellow: 60
+                  red: 0
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.edmund_s_eight_sleep_side_heart_rate
+                name: Heart Rate
+                color: "#e74c3c"
+            name: Heart Rate
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+              extrema: true
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.edmund_s_eight_sleep_side_hrv
+                name: HRV
+                color: "#3498db"
+            name: HRV
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+              extrema: true
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.edmund_s_eight_sleep_side_breath_rate
+                name: Breath Rate
+                color: "#2ecc71"
+            name: Breathing
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+              extrema: true
+
+          - type: entities
+            entities:
+              - entity: sensor.edmund_s_eight_sleep_side_sleep_stage
+                name: Sleep Stage
+                icon: mdi:sleep
+              - entity: sensor.edmund_s_eight_sleep_side_bed_temperature
+                name: Bed Temp
+                icon: mdi:thermometer
+              - entity: sensor.edmund_s_eight_sleep_side_time_slept
+                name: Time Slept
+                icon: mdi:timer
+              - entity: sensor.edmund_s_eight_sleep_side_next_alarm
+                name: Next Alarm
+                icon: mdi:alarm
+
+      # ── Monica ──
+      - cards:
+          - type: heading
+            heading: Monica
+            heading_style: subtitle
+            icon: mdi:account
+
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: gauge
+                entity: sensor.monica_s_eight_sleep_side_sleep_fitness_score
+                name: Fitness
+                min: 0
+                max: 100
+                severity:
+                  green: 80
+                  yellow: 60
+                  red: 0
+
+              - type: gauge
+                entity: sensor.monica_s_eight_sleep_side_sleep_quality_score
+                name: Quality
+                min: 0
+                max: 100
+                severity:
+                  green: 80
+                  yellow: 60
+                  red: 0
+
+              - type: gauge
+                entity: sensor.monica_s_eight_sleep_side_sleep_routine_score
+                name: Routine
+                min: 0
+                max: 100
+                severity:
+                  green: 80
+                  yellow: 60
+                  red: 0
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.monica_s_eight_sleep_side_heart_rate
+                name: Heart Rate
+                color: "#e74c3c"
+            name: Heart Rate
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+              extrema: true
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.monica_s_eight_sleep_side_hrv
+                name: HRV
+                color: "#3498db"
+            name: HRV
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+              extrema: true
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.monica_s_eight_sleep_side_breath_rate
+                name: Breath Rate
+                color: "#2ecc71"
+            name: Breathing
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+              extrema: true
+
+          - type: entities
+            entities:
+              - entity: sensor.monica_s_eight_sleep_side_sleep_stage
+                name: Sleep Stage
+                icon: mdi:sleep
+              - entity: sensor.monica_s_eight_sleep_side_bed_temperature
+                name: Bed Temp
+                icon: mdi:thermometer
+              - entity: sensor.monica_s_eight_sleep_side_time_slept
+                name: Time Slept
+                icon: mdi:timer
+              - entity: sensor.monica_s_eight_sleep_side_next_alarm
+                name: Next Alarm
+                icon: mdi:alarm
+
+      # ── Room Environment ──
+      - cards:
+          - type: heading
+            heading: Room
+            heading_style: subtitle
+            icon: mdi:home-thermometer
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.edmund_a_miller_gmail_com_s_eight_sleep_room_temperature
+                name: Room Temp
+                color: "#f39c12"
+            name: Room Temperature
+            hours_to_show: 48
+            points_per_hour: 2
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+              extrema: true
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-climate-card
+                entity: climate.edmund_s_eight_sleep_side_climate
+                name: Edmund
+                fill_container: true
+                show_temperature_control: true
+                collapsible_controls: true
+
+              - type: custom:mushroom-climate-card
+                entity: climate.monica_s_eight_sleep_side_climate
+                name: Monica
+                fill_container: true
+                show_temperature_control: true
+                collapsible_controls: true
+
+  # ─── View 3: Media ─────────────────────────────────────────
+  - type: sections
+    title: Media
+    path: media
+    icon: mdi:television
+    max_columns: 2
+
+    sections:
+      # ── TV Controls ──
+      - cards:
+          - type: heading
+            heading: TV
+            heading_style: subtitle
+            icon: mdi:television
+
+          - type: custom:mini-media-player
+            entity: media_player.tv
+            name: Samsung TV
+            icon: mdi:television
+            artwork: cover
+            hide:
+              power_state: false
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: script.tv_on
+                name: TV On
+                icon: mdi:television
+                icon_color: green
+                layout: vertical
+                fill_container: true
+                tap_action:
+                  action: perform-action
+                  perform_action: script.turn_on
+                  target:
+                    entity_id: script.tv_on
+
+              - type: custom:mushroom-entity-card
+                entity: script.tv_off
+                name: TV Off
+                icon: mdi:television-off
+                icon_color: red
+                layout: vertical
+                fill_container: true
+                tap_action:
+                  action: perform-action
+                  perform_action: script.turn_on
+                  target:
+                    entity_id: script.tv_off
+
+          - type: custom:mushroom-number-card
+            entity: input_number.tv_sleep_timer
+            name: Sleep Timer
+            icon: mdi:timer-outline
+            fill_container: true
+
+          - type: tile
+            entity: timer.sleep
+            name: Timer Active
+            icon: mdi:timer-sand
+
+          - type: custom:mushroom-entity-card
+            entity: counter.tv_on_today
+            name: Sessions Today
+            icon: mdi:counter
+            fill_container: true
+
+      # ── Scripts & Modes ──
+      - cards:
+          - type: heading
+            heading: Quick Actions
+            heading_style: subtitle
+            icon: mdi:lightning-bolt
+
+          - type: custom:mushroom-entity-card
+            entity: script.everything_off
+            name: Everything Off
+            icon: mdi:power
+            icon_color: red
+            fill_container: true
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.everything_off
+
+          - type: custom:mushroom-entity-card
+            entity: script.bedtime_nudge
+            name: Bedtime Nudge
+            icon: mdi:bed-clock
+            icon_color: purple
+            fill_container: true
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.bedtime_nudge
+
+  # ─── View 4: Status ────────────────────────────────────────
+  - type: sections
+    title: Status
+    path: status
+    icon: mdi:information
+    max_columns: 2
+
+    sections:
+      # ── Devices ──
+      - cards:
+          - type: heading
+            heading: Devices
+            heading_style: subtitle
+            icon: mdi:devices
+
+          - type: entities
+            entities:
+              - entity: sensor.edmunds_iphone_battery_level
+                name: iPhone Battery
+                icon: mdi:cellphone
+              - entity: sensor.edmunds_iphone_battery_state
+                name: iPhone Charging
+                icon: mdi:battery-charging
+              - entity: sensor.mactraitor_internal_battery_level
+                name: MacBook Battery
+                icon: mdi:laptop
+              - entity: sensor.mactraitor_internal_battery_state
+                name: MacBook Charging
+                icon: mdi:battery-charging
+              - entity: sensor.smartwings_window_covering_battery
+                name: Blinds Battery
+                icon: mdi:blinds-horizontal
+              - entity: sensor.mactraitor_storage
+                name: MacBook Storage
+                icon: mdi:harddisk
+              - entity: sensor.edmunds_iphone_storage
+                name: iPhone Storage
+                icon: mdi:sd
+
+          - type: custom:mushroom-entity-card
+            entity: person.edmund_miller
+            name: Edmund
+            fill_container: true
+
+      # ── Network & Phone ──
+      - cards:
+          - type: heading
+            heading: Phone & Activity
+            heading_style: subtitle
+            icon: mdi:cellphone
+
+          - type: entities
+            entities:
+              - entity: sensor.edmunds_iphone_steps
+                name: Steps
+                icon: mdi:walk
+              - entity: sensor.edmunds_iphone_distance
+                name: Distance
+                icon: mdi:map-marker-distance
+              - entity: sensor.edmunds_iphone_floors_ascended
+                name: Floors Up
+                icon: mdi:stairs-up
+              - entity: sensor.edmunds_iphone_floors_descended
+                name: Floors Down
+                icon: mdi:stairs-down
+              - entity: sensor.edmunds_iphone_connection_type
+                name: Connection
+                icon: mdi:wifi
+              - entity: sensor.edmunds_iphone_ssid
+                name: Wi-Fi Network
+                icon: mdi:wifi
+
+      # ── Energy ──
+      - cards:
+          - type: heading
+            heading: Energy
+            heading_style: subtitle
+            icon: mdi:flash
+
+          - type: custom:mini-graph-card
+            entities:
+              - entity: sensor.eve_energy_20ebu4101_power
+                name: Power
+                color: "#e67e22"
+            name: Whitenoise Power
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 2
+            font_size: 75
+            show:
+              labels: true
+
+          - type: entities
+            entities:
+              - entity: sensor.eve_energy_20ebu4101_energy
+                name: Total Energy
+                icon: mdi:flash
+              - entity: sensor.eve_energy_20ebu4101_voltage
+                name: Voltage
+                icon: mdi:sine-wave
+              - entity: sensor.eve_energy_20ebu4101_active_current
+                name: Current
+                icon: mdi:current-ac
+
+      # ── Automations ──
+      - cards:
+          - type: heading
+            heading: Automations
+            heading_style: subtitle
+            icon: mdi:robot
+
+          - type: entities
+            entities:
+              - entity: automation.bed_presence_activate_sleep_scene
+                name: Bed → Sleep
+              - entity: automation.good_morning_both_out_of_bed
+                name: Good Morning
+              - entity: automation.good_morning_reset_night_mode
+                name: Reset Night
+              - entity: automation.goodnight_everything_off
+                name: Goodnight Off
+              - entity: automation.movie_mode_on
+                name: Movie On
+              - entity: automation.movie_mode_off
+                name: Movie Off
+              - entity: automation.away_mode_turn_off_media
+                name: Away Off
+              - entity: automation.tv_auto_off_after_2_hours_idle
+                name: TV Auto-Off
+              - entity: automation.tv_sleep_timer_start
+                name: TV Timer Start
+              - entity: automation.tv_sleep_timer_expired
+                name: TV Timer Expire
+              - entity: automation.count_tv_sessions
+                name: Count TV
+              - entity: automation.reset_tv_counter_daily
+                name: Reset Counter
+              - entity: automation.dnd_on_suppress_notifications
+                name: DND Active
+
+      # ── Shopping ──
+      - cards:
+          - type: heading
+            heading: Shopping
+            heading_style: subtitle
+            icon: mdi:cart
+
+          - type: todo-list
+            entity: todo.shopping_list

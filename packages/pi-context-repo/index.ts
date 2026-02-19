@@ -34,6 +34,14 @@ import {
 import { join, relative } from "node:path";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import type { Dirent } from "node:fs";
+
+// --- Helpers ---
+
+/** Shorthand for tool results (satisfies AgentToolResult<unknown>) */
+function toolResult(text: string) {
+  return { content: [{ type: "text" as const, text }], details: undefined };
+}
 
 // --- Constants ---
 
@@ -85,7 +93,7 @@ function buildFrontmatter(fm: Frontmatter): string {
 function validateFrontmatter(
   content: string,
   filePath: string,
-  existingContent?: string
+  existingContent?: string | undefined
 ): string[] {
   const errors: string[] = [];
   const { frontmatter } = parseFrontmatter(content);
@@ -283,8 +291,8 @@ function buildTree(dir: string, prefix = ""): string[] {
   if (!existsSync(dir)) return lines;
 
   const entries = readdirSync(dir, { withFileTypes: true })
-    .filter((e) => !e.name.startsWith("."))
-    .sort((a, b) => {
+    .filter((e: Dirent) => !e.name.startsWith("."))
+    .sort((a: Dirent, b: Dirent) => {
       if (a.isDirectory() && !b.isDirectory()) return -1;
       if (!a.isDirectory() && b.isDirectory()) return 1;
       return a.name.localeCompare(b.name);
@@ -317,7 +325,7 @@ function loadSystemFiles(memDir: string, dir?: string): string {
   const targetDir = dir || join(memDir, SYSTEM_DIR);
   if (!existsSync(targetDir)) return "";
 
-  const entries = readdirSync(targetDir, { withFileTypes: true }).sort((a, b) => {
+  const entries = readdirSync(targetDir, { withFileTypes: true }).sort((a: Dirent, b: Dirent) => {
     if (a.isDirectory() && !b.isDirectory()) return -1;
     if (!a.isDirectory() && b.isDirectory()) return 1;
     return a.name.localeCompare(b.name);
@@ -592,7 +600,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       if (!initialized) {
-        return { content: [{ type: "text", text: "Context repo not initialized." }] };
+        return toolResult("Context repo not initialized.");
       }
 
       // Ensure .md extension
@@ -609,11 +617,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
 
         // Check read_only
         if (existingFm.read_only) {
-          return {
-            content: [
-              { type: "text", text: `Error: ${pathWithExt} is read_only and cannot be modified.` },
-            ],
-          };
+          return toolResult(`Error: ${pathWithExt} is read_only and cannot be modified.`);
         }
 
         // Use existing limit if not overridden
@@ -624,14 +628,9 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
 
       // Enforce character limit on content
       if (params.content.length > effectiveLimit) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: content is ${params.content.length} chars, exceeds limit of ${effectiveLimit}. Trim content or increase limit.`,
-            },
-          ],
-        };
+        return toolResult(
+          `Error: content is ${params.content.length} chars, exceeds limit of ${effectiveLimit}. Trim content or increase limit.`
+        );
       }
 
       // Build file content
@@ -644,9 +643,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
       // Validate frontmatter
       const errors = validateFrontmatter(fileContent, pathWithExt, existingContent);
       if (errors.length > 0) {
-        return {
-          content: [{ type: "text", text: `Frontmatter validation failed:\n${errors.join("\n")}` }],
-        };
+        return toolResult(`Frontmatter validation failed:\n${errors.join("\n")}`);
       }
 
       // Write
@@ -664,14 +661,9 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
         `📝 Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
       ]);
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Wrote ${relPath} (${params.content.length}/${effectiveLimit} chars). Staged for commit.`,
-          },
-        ],
-      };
+      return toolResult(
+        `Wrote ${relPath} (${params.content.length}/${effectiveLimit} chars). Staged for commit.`
+      );
     },
   });
 
@@ -687,20 +679,20 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       if (!initialized) {
-        return { content: [{ type: "text", text: "Context repo not initialized." }] };
+        return toolResult("Context repo not initialized.");
       }
 
       try {
         await git(pi, memDir, ["add", "-A"]);
         await git(pi, memDir, ["commit", "-m", params.message]);
         ctx.ui.setWidget(EXT_TYPE, ["📝 Memory: clean"]);
-        return { content: [{ type: "text", text: `Committed: ${params.message}` }] };
+        return toolResult(`Committed: ${params.message}`);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("nothing to commit")) {
-          return { content: [{ type: "text", text: "Nothing to commit — memory is clean." }] };
+          return toolResult("Nothing to commit — memory is clean.");
         }
-        return { content: [{ type: "text", text: `Commit failed: ${msg}` }] };
+        return toolResult(`Commit failed: ${msg}`);
       }
     },
   });
@@ -715,7 +707,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
     }),
     async execute(_toolCallId, params) {
       if (!initialized) {
-        return { content: [{ type: "text", text: "Context repo not initialized." }] };
+        return toolResult("Context repo not initialized.");
       }
 
       try {
@@ -734,9 +726,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
           .filter((f) => f.trim());
 
         if (files.length === 0) {
-          return {
-            content: [{ type: "text", text: `No memory files matching "${params.query}".` }],
-          };
+          return toolResult(`No memory files matching "${params.query}".`);
         }
 
         const results: string[] = [];
@@ -746,16 +736,11 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
           results.push(`- **${file}** — ${frontmatter.description || "(no description)"}`);
         }
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Found ${files.length} match(es):\n${results.join("\n")}\n\nUse the read tool to load full content.`,
-            },
-          ],
-        };
+        return toolResult(
+          `Found ${files.length} match(es):\n${results.join("\n")}\n\nUse the read tool to load full content.`
+        );
       } catch {
-        return { content: [{ type: "text", text: `No memory files matching "${params.query}".` }] };
+        return toolResult(`No memory files matching "${params.query}".`);
       }
     },
   });
@@ -769,7 +754,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
     }),
     async execute(_toolCallId, params) {
       if (!initialized) {
-        return { content: [{ type: "text", text: "Context repo not initialized." }] };
+        return toolResult("Context repo not initialized.");
       }
 
       const n = params.count || 10;
@@ -780,9 +765,9 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
           `-${n}`,
           "--format=%h %s (%ar)",
         ]);
-        return { content: [{ type: "text", text: stdout.trim() || "No commits yet." }] };
+        return toolResult(stdout.trim() || "No commits yet.");
       } catch {
-        return { content: [{ type: "text", text: "No commits yet." }] };
+        return toolResult("No commits yet.");
       }
     },
   });
@@ -795,7 +780,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
     parameters: Type.Object({}),
     async execute() {
       if (!initialized) {
-        return { content: [{ type: "text", text: "Context repo not initialized." }] };
+        return toolResult("Context repo not initialized.");
       }
 
       const backupRoot = getBackupDir(memDir);
@@ -803,22 +788,15 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
       const backupPath = join(backupRoot, backupName);
 
       if (existsSync(backupPath)) {
-        return {
-          content: [{ type: "text", text: `Backup already exists: ${backupName}` }],
-        };
+        return toolResult(`Backup already exists: ${backupName}`);
       }
 
       mkdirSync(backupRoot, { recursive: true });
       cpSync(memDir, backupPath, { recursive: true });
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Backup created: ${backupName}\nRestore with /memory-restore ${backupName}`,
-          },
-        ],
-      };
+      return toolResult(
+        `Backup created: ${backupName}\nRestore with /memory-restore ${backupName}`
+      );
     },
   });
 
@@ -869,7 +847,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
         installPreCommitHook(memDir);
       }
       initialized = true;
-      ctx.ui.notify("Context repo scaffolded at " + MEMORY_DIR_NAME, "success");
+      ctx.ui.notify("Context repo scaffolded at " + MEMORY_DIR_NAME, "info");
     },
   });
 
@@ -906,7 +884,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
 
       mkdirSync(backupRoot, { recursive: true });
       cpSync(memDir, backupPath, { recursive: true });
-      ctx.ui.notify(`Backup created: ${backupName}`, "success");
+      ctx.ui.notify(`Backup created: ${backupName}`, "info");
     },
   });
 
@@ -949,7 +927,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
       rmSync(memDir, { recursive: true, force: true });
       cpSync(backupPath, memDir, { recursive: true });
       installPreCommitHook(memDir);
-      ctx.ui.notify(`Restored from: ${backupName}`, "success");
+      ctx.ui.notify(`Restored from: ${backupName}`, "info");
     },
   });
 
@@ -969,7 +947,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
 
       mkdirSync(outDir, { recursive: true });
       cpSync(memDir, outDir, { recursive: true });
-      ctx.ui.notify(`Exported memory to: ${outDir}`, "success");
+      ctx.ui.notify(`Exported memory to: ${outDir}`, "info");
     },
   });
 
