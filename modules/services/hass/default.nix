@@ -149,6 +149,9 @@ in
             db_url = "postgresql://@/${cfg.postgres.database}";
           };
 
+          # Lovelace: YAML-managed dashboard
+          lovelace.mode = "yaml";
+
           schedule = { };
 
           # Base automation list — domain files append via mkAfter
@@ -172,6 +175,9 @@ in
       systemd.tmpfiles.settings."10-hass-nix-yaml" = {
         "${config.services.home-assistant.configDir}/devices.yaml" = {
           L.argument = "${./devices.yaml}";
+        };
+        "${config.services.home-assistant.configDir}/ui-lovelace.yaml" = {
+          L.argument = "${./dashboard.yaml}";
         };
       };
 
