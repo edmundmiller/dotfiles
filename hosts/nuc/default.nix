@@ -190,6 +190,7 @@
         extraComponents = [
           "homekit_controller" # Discover Apple Home devices (Matter/Thread via Apple TV/HomePod)
           "apple_tv" # Apple TV control + remote
+          "roomba" # iRobot Roomba vacuum (config-flow: add via UI after deploy)
           "samsungtv" # Samsung TV integration
           "cast" # Chromecast/Google Cast
           "mobile_app" # HA Companion app (iOS/Android)
