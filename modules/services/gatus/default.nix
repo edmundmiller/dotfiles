@@ -251,14 +251,19 @@ in
 
       networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ gatusPort ];
 
-      # Dead man's switch — pings healthchecks.io to prove Gatus is alive
+      # Dead man's switch — checks Gatus is healthy, then reports to healthchecks.io
       systemd.services.gatus-healthcheck-ping = mkIf cfg.healthcheck.enable {
-        description = "Ping healthchecks.io dead man's switch";
+        description = "Check Gatus health and ping healthchecks.io";
         after = [ "gatus.service" ];
         serviceConfig = {
           Type = "oneshot";
           DynamicUser = true;
-          ExecStart = "${pkgs.curl}/bin/curl -fsS -m 10 --retry 5 ${cfg.healthcheck.pingUrl}";
+          # Signal start (- prefix: ignore curl failure so main command still runs)
+          ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${cfg.healthcheck.pingUrl}/start";
+          # Main check: verify Gatus is responding
+          ExecStart = "${pkgs.curl}/bin/curl -fsS -m 10 http://localhost:${toString gatusPort}/health";
+          # Report exit status to healthchecks.io (0=success, >0=failure)
+          ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${cfg.healthcheck.pingUrl}/\${EXIT_STATUS}";
         };
       };
 
