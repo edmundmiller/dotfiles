@@ -56,6 +56,14 @@ See `modules/services/openclaw/AGENTS.md` for full details.
 - **Home Assistant** — With PostgreSQL backend, Homebridge, Tailscale
 - Extra components: homekit_controller, apple_tv, samsungtv, cast, mobile_app, bluetooth
 
+### Monitoring
+
+- **Gatus** — Uptime monitoring for all NUC services. See `modules/services/gatus/AGENTS.md`.
+  - **Dashboard:** `https://gatus.cinnamon-rooster.ts.net` (Tailscale serve on port 8084)
+  - **Alerting:** Telegram (chat 8357890648) + OpenClaw webhook (`/hooks/wake`)
+  - **Dead man's switch:** systemd timer checks Gatus health, reports to healthchecks.io every 2 min. Alerts if Gatus OR NUC goes down.
+  - **Monitored:** HA, Homebridge, Matter, Jellyfin, Sonarr, Radarr, Prowlarr, PostgreSQL, Tailscale, OpenClaw, Audiobookshelf
+
 ### Other
 
 - **Docker** — Container runtime
@@ -75,6 +83,8 @@ Located in `hosts/nuc/secrets/`:
 - `openai-api-key.age` — OpenAI API
 - `elevenlabs-api-key.age` — ElevenLabs TTS
 - `openclaw-gateway-token.age` — Gateway auth
+- `openclaw-hooks-token.age` — OpenClaw hooks auth (used by Gatus webhook alerting)
+- `telegram-bot-token.age` — Telegram bot token (used by Gatus alerting)
 - `linear-api-token.age` — Linear integration
 - `goose-auth-token.age` — Goose auth
 - `gogcli_credentials.age` — GOG CLI
@@ -95,4 +105,5 @@ Located in `hosts/nuc/secrets/`:
 - `hosts/nuc/backups.nix` — Backup configuration
 - `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
 - `modules/services/openclaw/` — Gateway module + AGENTS.md
+- `modules/services/gatus/` — Uptime monitoring module + AGENTS.md
 - `hosts/nuc/DEPLOY.md` — Deployment documentation
