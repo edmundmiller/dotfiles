@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Uptime monitoring dashboard for NUC services. Checks HTTP/TCP endpoints every 60-120s, stores results in SQLite, serves web UI.
+Uptime monitoring dashboard for NUC services. Checks HTTP/TCP endpoints every 60-120s, stores results in SQLite, serves web UI. Alerts via Telegram when services go down. Pings healthchecks.io as a dead man's switch.
 
 ## Module Structure
 
@@ -17,10 +17,19 @@ modules/services/gatus/
 
 - **Port:** 8084 (configurable via `cfg.port`)
 - **Storage:** SQLite at `/var/lib/gatus/data.db`
+- **Config:** Template at build time, secrets injected at runtime via `ExecStartPre`
+- **Runtime config:** `/run/gatus/config.yaml` (secrets replaced from template)
 - **Systemd:** `DynamicUser = true` — no manual user creation needed
-- **Config:** Generated as JSON from Nix attrset via `pkgs.writeText`
 - **NixOS-only:** Wrapped in `optionalAttrs (!isDarwin)`
-- **Tailscale serve:** Optional, creates `gatus-tailscale-serve.service`
+
+## Secret Injection
+
+The config template contains `__TELEGRAM_TOKEN__` placeholder. `ExecStartPre` copies the template to `/run/gatus/` and uses `sed` to replace placeholders with values read from agenix secret files. This keeps secrets out of the nix store.
+
+## Alerting
+
+- **Telegram:** Sends alerts to a chat when endpoints fail 3x in a row, and on recovery
+- **Dead man's switch:** `gatus-healthcheck-ping.timer` curls healthchecks.io every 2 min. If NUC/Gatus dies, healthchecks.io alerts externally.
 
 ## Monitored Endpoints
 
@@ -40,7 +49,7 @@ modules/services/gatus/
 
 ## Adding New Endpoints
 
-Add to the `endpoints` list in `default.nix`. HTTP endpoints use `[STATUS] == 200`, TCP use `[CONNECTED] == true`.
+Add to the `endpoints` list in `default.nix`. HTTP endpoints use `[STATUS] == 200`, TCP use `[CONNECTED] == true`. Alerts are auto-attached to all endpoints via `withAlerts`.
 
 For conditional endpoints (only when another module is enabled):
 
@@ -48,7 +57,16 @@ For conditional endpoints (only when another module is enabled):
 ++ optionals config.modules.services.foo.enable [ { ... } ]
 ```
 
+## Adding New Alert Providers
+
+1. Add options under `cfg.alerting.<provider>`
+2. Add provider config to `alertingConfig` (with placeholder for secrets)
+3. Add `{ type = "<provider>"; }` to `endpointAlerts`
+4. Add sed replacement in `ExecStartPre` for any secret placeholders
+
 ## Related Files
 
-- `hosts/nuc/default.nix` — Enables module with `tailscaleService.enable = true`
+- `hosts/nuc/default.nix` — Enables module with alerting + healthcheck config
+- `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
+- `hosts/nuc/secrets/telegram-bot-token.age` — Encrypted bot token
 - `modules/services/AGENTS.md` — Tailscale serve pattern docs
