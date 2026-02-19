@@ -68,7 +68,7 @@
       # TODO: Add condition requiring Monica's focus is "on" (Sleep focus active)
       # once her phone is connected: binary_sensor.monicas_iphone_focus = on
       {
-        alias = "Bed presence - activate sleep scene";
+        alias = "Bed presence";
         id = "bed_presence_sleep";
         trigger = {
           platform = "state";
@@ -86,7 +86,7 @@
 
       # Good morning — both out of bed for 2min, after 7am
       {
-        alias = "Good Morning - both out of bed";
+        alias = "Good Morning - out of bed";
         id = "good_morning_bed_presence";
         trigger = [
           {

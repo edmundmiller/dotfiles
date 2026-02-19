@@ -124,7 +124,7 @@ in
     automation = lib.mkAfter [
       # Goodnight routine
       {
-        alias = "Goodnight - everything off";
+        alias = "Goodnight";
         id = "goodnight_everything_off";
         trigger = {
           platform = "state";
@@ -137,7 +137,7 @@ in
         ];
       }
       {
-        alias = "Good Morning - reset night mode";
+        alias = "Good Morning";
         id = "good_morning_reset";
         trigger = {
           platform = "state";
@@ -172,7 +172,7 @@ in
 
       # Away mode
       {
-        alias = "Away mode - turn off media";
+        alias = "Away mode";
         id = "away_mode_media_off";
         trigger = {
           platform = "state";
@@ -184,7 +184,7 @@ in
 
       # DND
       {
-        alias = "DND on - suppress notifications";
+        alias = "Do Not Disturb";
         id = "dnd_on";
         trigger = {
           platform = "state";
