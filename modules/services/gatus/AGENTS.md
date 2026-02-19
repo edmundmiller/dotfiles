@@ -24,18 +24,19 @@ modules/services/gatus/
 
 ## Monitored Endpoints
 
-| Service        | Group          | URL                         | Protocol           |
-| -------------- | -------------- | --------------------------- | ------------------ |
-| Home Assistant | Smart Home     | localhost:8123/api/         | HTTP               |
-| Homebridge     | Smart Home     | localhost:8581              | HTTP               |
-| Matter Server  | Smart Home     | localhost:5580              | TCP                |
-| Jellyfin       | Media          | localhost:8096/health       | HTTP               |
-| Sonarr         | Media          | localhost:8989/ping         | HTTP               |
-| Radarr         | Media          | localhost:7878/ping         | HTTP               |
-| Prowlarr       | Media          | localhost:9696/ping         | HTTP               |
-| PostgreSQL     | Infrastructure | localhost:5432              | TCP                |
-| Tailscale      | Infrastructure | localhost:41112/healthz     | HTTP               |
-| Audiobookshelf | Media          | localhost:13378/healthcheck | HTTP (conditional) |
+| Service          | Group          | URL                         | Protocol           |
+| ---------------- | -------------- | --------------------------- | ------------------ |
+| Home Assistant   | Smart Home     | localhost:8123/api/         | HTTP               |
+| Homebridge       | Smart Home     | localhost:8581              | HTTP               |
+| Matter Server    | Smart Home     | localhost:5580              | TCP                |
+| Jellyfin         | Media          | localhost:8096/health       | HTTP               |
+| Sonarr           | Media          | localhost:8989/ping         | HTTP               |
+| Radarr           | Media          | localhost:7878/ping         | HTTP               |
+| Prowlarr         | Media          | localhost:9696/ping         | HTTP               |
+| PostgreSQL       | Infrastructure | localhost:5432              | TCP                |
+| Tailscale        | Infrastructure | localhost:41112/healthz     | HTTP               |
+| OpenClaw Gateway | Infrastructure | localhost:18789             | HTTP (conditional) |
+| Audiobookshelf   | Media          | localhost:13378/healthcheck | HTTP (conditional) |
 
 ## Adding New Endpoints
 
