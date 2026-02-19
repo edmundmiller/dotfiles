@@ -8,15 +8,29 @@
  * Files in `system/` are always loaded into the system prompt.
  * The full file tree is always visible so the agent can `read` any file on demand.
  *
- * Key ideas from Letta's design:
- * - Files as memory units with frontmatter (description, limit)
+ * Features (from Letta's design):
+ * - Files as memory units with frontmatter (description, limit, read_only)
  * - `system/` subdir pinned to system prompt (always-loaded context)
  * - Progressive disclosure via file tree (agent reads what it needs)
  * - Git versioning with informative commits
- * - Pre-commit validation of frontmatter
+ * - Pre-commit hook validates frontmatter (description required, limit positive int,
+ *   read_only protected — agent can't add/remove/change it)
+ * - Character limit enforcement in memory_write
+ * - Backup/restore with timestamped snapshots
+ * - Periodic memory reflection reminders (every N turns)
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join, relative } from "node:path";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
@@ -26,6 +40,8 @@ import { Type } from "@sinclair/typebox";
 const MEMORY_DIR_NAME = ".pi/memory";
 const SYSTEM_DIR = "system";
 const EXT_TYPE = "context-repo";
+const ALLOWED_FM_KEYS = new Set(["description", "limit", "read_only"]);
+const DEFAULT_REFLECTION_INTERVAL = 15; // turns between reflection reminders
 
 // --- Frontmatter helpers ---
 
@@ -62,6 +78,204 @@ function buildFrontmatter(fm: Frontmatter): string {
   return lines.join("\n");
 }
 
+/**
+ * Validate frontmatter for a memory file. Returns array of error strings.
+ * Mirrors Letta's pre-commit hook validation logic.
+ */
+function validateFrontmatter(
+  content: string,
+  filePath: string,
+  existingContent?: string
+): string[] {
+  const errors: string[] = [];
+  const { frontmatter } = parseFrontmatter(content);
+
+  // Frontmatter required
+  if (!content.startsWith("---\n")) {
+    errors.push(`${filePath}: missing frontmatter (must start with ---)`);
+    return errors;
+  }
+
+  // Check closing ---
+  const rest = content.slice(4);
+  if (!rest.includes("\n---\n")) {
+    errors.push(`${filePath}: frontmatter opened but never closed`);
+    return errors;
+  }
+
+  // Extract raw frontmatter keys for unknown key check
+  const fmBlock = content.slice(4, content.indexOf("\n---\n", 4));
+  for (const line of fmBlock.split("\n")) {
+    const i = line.indexOf(":");
+    if (i <= 0) continue;
+    const key = line.slice(0, i).trim();
+    if (!ALLOWED_FM_KEYS.has(key)) {
+      errors.push(
+        `${filePath}: unknown frontmatter key '${key}' (allowed: description, limit, read_only)`
+      );
+    }
+  }
+
+  // Required fields
+  if (!frontmatter.description) {
+    errors.push(`${filePath}: missing required field 'description'`);
+  }
+  if (frontmatter.limit === undefined || frontmatter.limit === null) {
+    errors.push(`${filePath}: missing required field 'limit'`);
+  } else if (!Number.isInteger(frontmatter.limit) || frontmatter.limit <= 0) {
+    errors.push(`${filePath}: 'limit' must be a positive integer, got '${frontmatter.limit}'`);
+  }
+
+  // Protected field: read_only
+  if (existingContent) {
+    const existing = parseFrontmatter(existingContent);
+
+    // If file was read_only, reject any modification
+    if (existing.frontmatter.read_only) {
+      errors.push(`${filePath}: file is read_only and cannot be modified`);
+      return errors;
+    }
+
+    // Agent can't change read_only value
+    if (frontmatter.read_only !== existing.frontmatter.read_only) {
+      errors.push(`${filePath}: 'read_only' is a protected field and cannot be changed`);
+    }
+  } else {
+    // New file — agent can't set read_only
+    if (frontmatter.read_only) {
+      errors.push(`${filePath}: 'read_only' is a protected field and cannot be set by the agent`);
+    }
+  }
+
+  return errors;
+}
+
+// --- Pre-commit hook (adapted from Letta's PRE_COMMIT_HOOK_SCRIPT) ---
+
+const PRE_COMMIT_HOOK_SCRIPT = `#!/usr/bin/env bash
+# Validate frontmatter in staged memory .md files
+# Installed by pi context-repo extension
+
+AGENT_EDITABLE_KEYS="description limit"
+PROTECTED_KEYS="read_only"
+ALL_KNOWN_KEYS="description limit read_only"
+errors=""
+
+get_fm_value() {
+  local content="$1" key="$2"
+  local closing_line
+  closing_line=$(echo "$content" | tail -n +2 | grep -n '^---$' | head -1 | cut -d: -f1)
+  [ -z "$closing_line" ] && return
+  echo "$content" | tail -n +2 | head -n $((closing_line - 1)) | grep "^$key:" | cut -d: -f2- | sed 's/^ *//;s/ *$//'
+}
+
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\\.md$'); do
+  staged=$(git show ":$file")
+
+  first_line=$(echo "$staged" | head -1)
+  if [ "$first_line" != "---" ]; then
+    errors="$errors\\n  $file: missing frontmatter (must start with ---)"
+    continue
+  fi
+
+  closing_line=$(echo "$staged" | tail -n +2 | grep -n '^---$' | head -1 | cut -d: -f1)
+  if [ -z "$closing_line" ]; then
+    errors="$errors\\n  $file: frontmatter opened but never closed (missing closing ---)"
+    continue
+  fi
+
+  head_content=$(git show "HEAD:$file" 2>/dev/null || true)
+  if [ -n "$head_content" ]; then
+    head_ro=$(get_fm_value "$head_content" "read_only")
+    if [ "$head_ro" = "true" ]; then
+      errors="$errors\\n  $file: file is read_only and cannot be modified"
+      continue
+    fi
+  fi
+
+  frontmatter=$(echo "$staged" | tail -n +2 | head -n $((closing_line - 1)))
+
+  has_description=false
+  has_limit=false
+
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    key=$(echo "$line" | cut -d: -f1 | tr -d ' ')
+    value=$(echo "$line" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
+
+    known=false
+    for k in $ALL_KNOWN_KEYS; do
+      if [ "$key" = "$k" ]; then known=true; break; fi
+    done
+    if [ "$known" = "false" ]; then
+      errors="$errors\\n  $file: unknown frontmatter key '$key' (allowed: $ALL_KNOWN_KEYS)"
+      continue
+    fi
+
+    for k in $PROTECTED_KEYS; do
+      if [ "$key" = "$k" ]; then
+        if [ -n "$head_content" ]; then
+          head_val=$(get_fm_value "$head_content" "$k")
+          if [ "$value" != "$head_val" ]; then
+            errors="$errors\\n  $file: '$k' is a protected field and cannot be changed by the agent"
+          fi
+        else
+          errors="$errors\\n  $file: '$k' is a protected field and cannot be set by the agent"
+        fi
+      fi
+    done
+
+    case "$key" in
+      limit)
+        has_limit=true
+        if ! echo "$value" | grep -qE '^[0-9]+$' || [ "$value" = "0" ]; then
+          errors="$errors\\n  $file: 'limit' must be a positive integer, got '$value'"
+        fi
+        ;;
+      description)
+        has_description=true
+        if [ -z "$value" ]; then
+          errors="$errors\\n  $file: 'description' must not be empty"
+        fi
+        ;;
+    esac
+  done <<< "$frontmatter"
+
+  if [ "$has_description" = "false" ]; then
+    errors="$errors\\n  $file: missing required field 'description'"
+  fi
+  if [ "$has_limit" = "false" ]; then
+    errors="$errors\\n  $file: missing required field 'limit'"
+  fi
+
+  if [ -n "$head_content" ]; then
+    for k in $PROTECTED_KEYS; do
+      head_val=$(get_fm_value "$head_content" "$k")
+      if [ -n "$head_val" ]; then
+        staged_val=$(get_fm_value "$staged" "$k")
+        if [ -z "$staged_val" ]; then
+          errors="$errors\\n  $file: '$k' is a protected field and cannot be removed by the agent"
+        fi
+      fi
+    done
+  fi
+done
+
+if [ -n "$errors" ]; then
+  echo "Frontmatter validation failed:"
+  echo -e "$errors"
+  exit 1
+fi
+`;
+
+function installPreCommitHook(memDir: string): void {
+  const hooksDir = join(memDir, ".git", "hooks");
+  const hookPath = join(hooksDir, "pre-commit");
+  mkdirSync(hooksDir, { recursive: true });
+  writeFileSync(hookPath, PRE_COMMIT_HOOK_SCRIPT, "utf-8");
+  chmodSync(hookPath, 0o755);
+}
+
 // --- File tree ---
 
 function buildTree(dir: string, prefix = ""): string[] {
@@ -71,7 +285,6 @@ function buildTree(dir: string, prefix = ""): string[] {
   const entries = readdirSync(dir, { withFileTypes: true })
     .filter((e) => !e.name.startsWith("."))
     .sort((a, b) => {
-      // dirs first, then alpha
       if (a.isDirectory() && !b.isDirectory()) return -1;
       if (!a.isDirectory() && b.isDirectory()) return 1;
       return a.name.localeCompare(b.name);
@@ -98,22 +311,32 @@ function buildTree(dir: string, prefix = ""): string[] {
   return lines;
 }
 
-// --- Load system/ files ---
+// --- Load system/ files (recursive) ---
 
-function loadSystemFiles(memDir: string): string {
-  const sysDir = join(memDir, SYSTEM_DIR);
-  if (!existsSync(sysDir)) return "";
+function loadSystemFiles(memDir: string, dir?: string): string {
+  const targetDir = dir || join(memDir, SYSTEM_DIR);
+  if (!existsSync(targetDir)) return "";
 
-  const files = readdirSync(sysDir)
-    .filter((f) => f.endsWith(".md"))
-    .sort();
+  const entries = readdirSync(targetDir, { withFileTypes: true }).sort((a, b) => {
+    if (a.isDirectory() && !b.isDirectory()) return -1;
+    if (!a.isDirectory() && b.isDirectory()) return 1;
+    return a.name.localeCompare(b.name);
+  });
 
   const sections: string[] = [];
-  for (const file of files) {
-    const content = readFileSync(join(sysDir, file), "utf-8");
-    const { body } = parseFrontmatter(content);
-    if (body.trim()) {
-      sections.push(`<system/memory/${file}>\n${body.trim()}\n</system/memory/${file}>`);
+  for (const entry of entries) {
+    const fullPath = join(targetDir, entry.name);
+    const relPath = relative(memDir, fullPath);
+
+    if (entry.isDirectory()) {
+      const sub = loadSystemFiles(memDir, fullPath);
+      if (sub) sections.push(sub);
+    } else if (entry.name.endsWith(".md")) {
+      const content = readFileSync(fullPath, "utf-8");
+      const { body } = parseFrontmatter(content);
+      if (body.trim()) {
+        sections.push(`<${relPath}>\n${body.trim()}\n</${relPath}>`);
+      }
     }
   }
   return sections.join("\n\n");
@@ -142,6 +365,7 @@ async function initRepo(pi: ExtensionAPI, dir: string): Promise<void> {
   await git(pi, dir, ["init"]);
   await git(pi, dir, ["add", "."]);
   await git(pi, dir, ["commit", "-m", "init: context repository"]);
+  installPreCommitHook(dir);
 }
 
 async function getStatus(
@@ -155,6 +379,48 @@ async function getStatus(
     .filter((l) => l.trim());
   return { dirty: files.length > 0, files };
 }
+
+// --- Backup helpers (adapted from Letta's memfs.ts) ---
+
+function formatBackupTimestamp(date = new Date()): string {
+  const pad = (v: number) => String(v).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
+
+function getBackupDir(memDir: string): string {
+  return join(memDir, "..", "memory-backups");
+}
+
+function listBackups(memDir: string): Array<{ name: string; path: string; createdAt: string }> {
+  const backupRoot = getBackupDir(memDir);
+  if (!existsSync(backupRoot)) return [];
+
+  return readdirSync(backupRoot, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && e.name.startsWith("backup-"))
+    .map((e) => {
+      const path = join(backupRoot, e.name);
+      const stat = statSync(path);
+      return { name: e.name, path, createdAt: stat.mtime.toISOString() };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// --- Reflection reminder text (adapted from Letta's prompts) ---
+
+const MEMORY_REFLECTION_REMINDER = `<system-reminder>
+MEMORY REFLECTION: It's time to reflect on the recent conversation and update your memory.
+
+Review this conversation for information worth storing. Update memory silently if you learned:
+
+- **User info**: Name, role, preferences, working style, current goals
+- **Project details**: Architecture, patterns, gotchas, dependencies, conventions
+- **Corrections**: User corrected you or clarified something important
+- **Preferences**: How they want you to behave, communicate, or approach tasks
+
+Ask yourself: "If I started a new session tomorrow, what from this conversation would I want to remember?"
+
+If the answer is meaningful, use memory_write to update the appropriate file(s), then memory_commit.
+</system-reminder>`;
 
 // --- Scaffold ---
 
@@ -184,7 +450,6 @@ You are a helpful coding assistant.
     );
   }
 
-  // Create reference dir for non-system memory
   const refDir = join(memDir, "reference");
   mkdirSync(refDir, { recursive: true });
 
@@ -208,8 +473,10 @@ Examples: project conventions, architecture notes, frequently used patterns.
 export default function contextRepoExtension(pi: ExtensionAPI) {
   let memDir = "";
   let initialized = false;
+  let turnCount = 0;
+  let reflectionInterval = DEFAULT_REFLECTION_INTERVAL;
 
-  // Initialize on session start: ensure dir exists, git init if needed
+  // Initialize on session start
   pi.on("session_start", async (_event, ctx) => {
     memDir = join(ctx.cwd, MEMORY_DIR_NAME);
 
@@ -220,11 +487,14 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
 
     if (!(await isGitRepo(pi, memDir))) {
       await initRepo(pi, memDir);
+    } else {
+      // Ensure hook is installed even on existing repos
+      installPreCommitHook(memDir);
     }
 
     initialized = true;
+    turnCount = 0;
 
-    // Show status widget
     const status = await getStatus(pi, memDir);
     ctx.ui.setWidget(EXT_TYPE, [
       `📝 Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
@@ -234,6 +504,8 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
   // Inject memory into system prompt before each agent turn
   pi.on("before_agent_start", async (event) => {
     if (!initialized || !existsSync(memDir)) return;
+
+    turnCount++;
 
     const tree = buildTree(memDir);
     const systemContent = loadSystemFiles(memDir);
@@ -254,11 +526,13 @@ ${tree.join("\n")}
 ${systemContent || "(No system files yet.)"}
 
 ### Memory Guidelines
-- To remember something: write/update a .md file in \`${MEMORY_DIR_NAME}/\`
+- To remember something: use the memory_write tool (validates frontmatter, enforces limits)
 - Each file needs frontmatter: \`description\` (what it contains) and \`limit\` (max chars)
 - Put always-needed context in \`${SYSTEM_DIR}/\`, reference material elsewhere
-- After changes, commit: \`cd ${MEMORY_DIR_NAME} && git add -A && git commit -m "type: what changed"\`
+- Use hierarchical \`/\` naming: \`system/project/tooling.md\`, not \`system/project-tooling.md\`
+- After changes, use memory_commit to save
 - Apply memory naturally — don't narrate "I remember that..." — just use what you know
+- Files marked \`read_only\` cannot be modified
 `;
 
     // Dirty reminder
@@ -267,12 +541,16 @@ ${systemContent || "(No system files yet.)"}
       if (status.dirty) {
         memoryBlock += `
 ### ⚠️ Uncommitted Memory Changes
-You have ${status.files.length} uncommitted change(s). Commit when convenient:
-\`cd ${MEMORY_DIR_NAME} && git add -A && git commit -m "update: ..."\`
+You have ${status.files.length} uncommitted change(s). Commit when convenient with memory_commit.
 `;
       }
     } catch {
-      // ignore status check failures
+      // ignore
+    }
+
+    // Periodic reflection reminder
+    if (reflectionInterval > 0 && turnCount > 0 && turnCount % reflectionInterval === 0) {
+      memoryBlock += "\n" + MEMORY_REFLECTION_REMINDER + "\n";
     }
 
     return {
@@ -299,8 +577,8 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient:
     name: "memory_write",
     label: "Memory Write",
     description:
-      "Write or update a memory file in the context repository. Creates parent directories automatically. " +
-      "Use system/ prefix for always-loaded context, other paths for reference material.",
+      "Write or update a memory file. Validates frontmatter, enforces character limits, " +
+      "rejects writes to read-only files. Use system/ prefix for always-loaded context.",
     parameters: Type.Object({
       path: Type.String({
         description:
@@ -317,32 +595,67 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient:
         return { content: [{ type: "text", text: "Context repo not initialized." }] };
       }
 
-      const filePath = join(memDir, params.path);
+      // Ensure .md extension
+      const pathWithExt = params.path.endsWith(".md") ? params.path : params.path + ".md";
+      const filePath = join(memDir, pathWithExt);
 
-      // Check read_only
+      // Determine effective limit
+      let effectiveLimit = params.limit || 3000;
+      let existingContent: string | undefined;
+
       if (existsSync(filePath)) {
-        const existing = readFileSync(filePath, "utf-8");
-        const { frontmatter } = parseFrontmatter(existing);
-        if (frontmatter.read_only) {
-          return { content: [{ type: "text", text: `Error: ${params.path} is read-only.` }] };
+        existingContent = readFileSync(filePath, "utf-8");
+        const { frontmatter: existingFm } = parseFrontmatter(existingContent);
+
+        // Check read_only
+        if (existingFm.read_only) {
+          return {
+            content: [
+              { type: "text", text: `Error: ${pathWithExt} is read_only and cannot be modified.` },
+            ],
+          };
+        }
+
+        // Use existing limit if not overridden
+        if (!params.limit && existingFm.limit) {
+          effectiveLimit = existingFm.limit;
         }
       }
 
-      // Ensure parent dirs exist
-      const parentDir = join(filePath, "..");
-      mkdirSync(parentDir, { recursive: true });
+      // Enforce character limit on content
+      if (params.content.length > effectiveLimit) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: content is ${params.content.length} chars, exceeds limit of ${effectiveLimit}. Trim content or increase limit.`,
+            },
+          ],
+        };
+      }
 
-      // Ensure .md extension
-      const finalPath = params.path.endsWith(".md") ? filePath : filePath + ".md";
-
+      // Build file content
       const fm = buildFrontmatter({
         description: params.description,
-        limit: params.limit || 3000,
+        limit: effectiveLimit,
       });
-      writeFileSync(finalPath, `${fm}\n\n${params.content}\n`);
+      const fileContent = `${fm}\n\n${params.content}\n`;
+
+      // Validate frontmatter
+      const errors = validateFrontmatter(fileContent, pathWithExt, existingContent);
+      if (errors.length > 0) {
+        return {
+          content: [{ type: "text", text: `Frontmatter validation failed:\n${errors.join("\n")}` }],
+        };
+      }
+
+      // Write
+      const parentDir = join(filePath, "..");
+      mkdirSync(parentDir, { recursive: true });
+      writeFileSync(filePath, fileContent);
 
       // Auto-stage
-      const relPath = relative(memDir, finalPath);
+      const relPath = relative(memDir, filePath);
       await git(pi, memDir, ["add", relPath]);
 
       // Update widget
@@ -355,7 +668,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient:
         content: [
           {
             type: "text",
-            text: `Wrote ${relPath} (${params.content.length} chars). Staged for commit.`,
+            text: `Wrote ${relPath} (${params.content.length}/${effectiveLimit} chars). Staged for commit.`,
           },
         ],
       };
@@ -378,15 +691,10 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient:
       }
 
       try {
-        // Stage everything and commit
         await git(pi, memDir, ["add", "-A"]);
         await git(pi, memDir, ["commit", "-m", params.message]);
-
         ctx.ui.setWidget(EXT_TYPE, ["📝 Memory: clean"]);
-
-        return {
-          content: [{ type: "text", text: `Committed: ${params.message}` }],
-        };
+        return { content: [{ type: "text", text: `Committed: ${params.message}` }] };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("nothing to commit")) {
@@ -468,17 +776,49 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient:
       try {
         const { stdout } = await git(pi, memDir, [
           "log",
-          `--oneline`,
+          "--oneline",
           `-${n}`,
           "--format=%h %s (%ar)",
         ]);
-
-        return {
-          content: [{ type: "text", text: stdout.trim() || "No commits yet." }],
-        };
+        return { content: [{ type: "text", text: stdout.trim() || "No commits yet." }] };
       } catch {
         return { content: [{ type: "text", text: "No commits yet." }] };
       }
+    },
+  });
+
+  pi.registerTool({
+    name: "memory_backup",
+    label: "Memory Backup",
+    description:
+      "Create a timestamped backup of the memory directory. Use before risky operations like defragmentation.",
+    parameters: Type.Object({}),
+    async execute() {
+      if (!initialized) {
+        return { content: [{ type: "text", text: "Context repo not initialized." }] };
+      }
+
+      const backupRoot = getBackupDir(memDir);
+      const backupName = `backup-${formatBackupTimestamp()}`;
+      const backupPath = join(backupRoot, backupName);
+
+      if (existsSync(backupPath)) {
+        return {
+          content: [{ type: "text", text: `Backup already exists: ${backupName}` }],
+        };
+      }
+
+      mkdirSync(backupRoot, { recursive: true });
+      cpSync(memDir, backupPath, { recursive: true });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Backup created: ${backupName}\nRestore with /memory-restore ${backupName}`,
+          },
+        ],
+      };
     },
   });
 
@@ -525,9 +865,111 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient:
       scaffoldMemory(memDir);
       if (!(await isGitRepo(pi, memDir))) {
         await initRepo(pi, memDir);
+      } else {
+        installPreCommitHook(memDir);
       }
       initialized = true;
       ctx.ui.notify("Context repo scaffolded at " + MEMORY_DIR_NAME, "success");
+    },
+  });
+
+  pi.registerCommand("memory-diff", {
+    description: "Show uncommitted memory changes",
+    handler: async (_args, ctx) => {
+      if (!initialized || !existsSync(memDir)) {
+        ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      try {
+        const { stdout } = await git(pi, memDir, ["diff"]);
+        const { stdout: staged } = await git(pi, memDir, ["diff", "--cached"]);
+        const diff = [staged, stdout].filter(Boolean).join("\n");
+        ctx.ui.notify(diff || "No changes.", "info");
+      } catch {
+        ctx.ui.notify("No changes.", "info");
+      }
+    },
+  });
+
+  pi.registerCommand("memory-backup", {
+    description: "Create a timestamped backup of memory",
+    handler: async (_args, ctx) => {
+      if (!initialized || !existsSync(memDir)) {
+        ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      const backupRoot = getBackupDir(memDir);
+      const backupName = `backup-${formatBackupTimestamp()}`;
+      const backupPath = join(backupRoot, backupName);
+
+      mkdirSync(backupRoot, { recursive: true });
+      cpSync(memDir, backupPath, { recursive: true });
+      ctx.ui.notify(`Backup created: ${backupName}`, "success");
+    },
+  });
+
+  pi.registerCommand("memory-backups", {
+    description: "List available memory backups",
+    handler: async (_args, ctx) => {
+      const backups = listBackups(memDir);
+      if (backups.length === 0) {
+        ctx.ui.notify("No backups found.", "info");
+        return;
+      }
+      const lines = backups.map((b) => `  ${b.name} (${b.createdAt})`);
+      ctx.ui.notify(`Memory backups:\n${lines.join("\n")}`, "info");
+    },
+  });
+
+  pi.registerCommand("memory-restore", {
+    description: "Restore memory from a backup (usage: /memory-restore <backup-name>)",
+    handler: async (args, ctx) => {
+      if (!initialized) {
+        ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      const backupName = args.trim();
+      if (!backupName) {
+        ctx.ui.notify(
+          "Usage: /memory-restore <backup-name>\nList backups with /memory-backups",
+          "warning"
+        );
+        return;
+      }
+
+      const backupPath = join(getBackupDir(memDir), backupName);
+      if (!existsSync(backupPath) || !statSync(backupPath).isDirectory()) {
+        ctx.ui.notify(`Backup not found: ${backupName}`, "error");
+        return;
+      }
+
+      rmSync(memDir, { recursive: true, force: true });
+      cpSync(backupPath, memDir, { recursive: true });
+      installPreCommitHook(memDir);
+      ctx.ui.notify(`Restored from: ${backupName}`, "success");
+    },
+  });
+
+  pi.registerCommand("memory-export", {
+    description: "Export memory to a directory (usage: /memory-export <dir>)",
+    handler: async (args, ctx) => {
+      if (!initialized || !existsSync(memDir)) {
+        ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      const outDir = args.trim();
+      if (!outDir) {
+        ctx.ui.notify("Usage: /memory-export <output-dir>", "warning");
+        return;
+      }
+
+      mkdirSync(outDir, { recursive: true });
+      cpSync(memDir, outDir, { recursive: true });
+      ctx.ui.notify(`Exported memory to: ${outDir}`, "success");
     },
   });
 
