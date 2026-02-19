@@ -4,18 +4,26 @@ Native `services.home-assistant` NixOS module. NixOS-only (`isDarwin` guard).
 
 ## Structure
 
-- `default.nix` — Module definition (Nix config + systemd services)
-- `automations_nix.yaml` — Nix-declared automations (symlinked into HA config dir)
+- `default.nix` — Module definition (options, core HA config, infra/systemd)
+- `_domains/modes.nix` — House modes, goodnight/morning routines, DND, scenes
+- `_domains/tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 - `devices.yaml` — Declarative device→area assignments (applied via WebSocket API)
 - `apply-devices.py` — Script to apply devices.yaml (runs as systemd oneshot after HA starts)
 - `blueprints/` — Custom automation blueprints
 - `README.md` — Human docs with migration guide and home-ops parity table
+
+### Adding new domains
+
+Create `_domains/<name>.nix`. Set `services.home-assistant.config.*` and use `lib.mkAfter` for automations. The `_` prefix excludes from auto-discovery; `default.nix` imports explicitly.
+
+Nix helper functions (let-bindings) DRY common actions — see `tvOff`/`setMode` patterns in existing domain files.
 
 ## Key Facts
 
 - Uses native `services.home-assistant` (NOT OCI container)
 - Config dir: `/var/lib/hass` (NixOS default), runs as `hass` user
 - Declarative config: `default_config`, HTTP on `::1` with `use_x_forwarded_for`
+- Automations declared in Nix (domain files), not YAML — enables helper functions/variables
 - UI automations/scenes/scripts via `!include` + tmpfiles for empty yaml
 - Device→area assignments: `devices.yaml` applied by `hass-apply-devices.service` via WebSocket API
 - Token: auto-generated JWT from `/var/lib/hass/.storage/auth` (client_name=`agent-automation`)
