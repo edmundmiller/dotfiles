@@ -46,6 +46,23 @@
     };
 
     automation = lib.mkAfter [
+      # Webhook: Monica says "Hey Siri, I'm getting into bed" → nudge Edmund
+      {
+        alias = "Bedtime nudge webhook";
+        id = "bedtime_nudge_webhook";
+        trigger = {
+          platform = "webhook";
+          webhook_id = "bedtime-nudge-monica";
+          allowed_methods = [ "POST" ];
+          local_only = true;
+        };
+        action = [
+          {
+            action = "script.bedtime_nudge";
+          }
+        ];
+      }
+
       # TODO: Rework this to first activate "Goodnight" scene on bed presence,
       # then randomly 2–5 minutes later activate "Sleep" scene.
       # TODO: Add condition requiring Monica's focus is "on" (Sleep focus active)
