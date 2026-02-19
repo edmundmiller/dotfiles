@@ -27,6 +27,7 @@ let
 in
 {
   imports = [
+    ./_domains/conversation.nix
     ./_domains/modes.nix
     ./_domains/tv.nix
   ];
