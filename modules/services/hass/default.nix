@@ -130,8 +130,8 @@ in
 
           http = {
             server_host = [
-              "::1"
-              "127.0.0.1"
+              "0.0.0.0"
+              "::"
             ];
             trusted_proxies = [
               "::1"
