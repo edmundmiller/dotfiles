@@ -97,6 +97,20 @@ in
       alias = "Everything Off";
       icon = "mdi:power";
       sequence = [
+        {
+          action = "light.turn_off";
+          target.entity_id = [
+            "light.essentials_a19_a60"
+            "light.essentials_a19_a60_2"
+            "light.nanoleaf_multicolor_floor_lamp"
+            "light.nanoleaf_multicolor_hd_ls"
+            "light.smart_night_light_w"
+          ];
+        }
+        {
+          action = "cover.close_cover";
+          target.entity_id = "cover.smartwings_window_covering";
+        }
         tvOff
         {
           action = "input_boolean.turn_on";
