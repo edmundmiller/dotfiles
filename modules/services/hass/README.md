@@ -14,7 +14,7 @@ HA state lives in `/var/lib/hass` and is backed up nightly by restic (see `hosts
 | Integration configs (API keys, tokens)         | `/var/lib/hass/.storage/`                | ❌ No                                                                                  |
 | Entity/device registry (names, areas, IDs)     | `/var/lib/hass/.storage/core.*_registry` | Partial — `devices.yaml` + `apply-devices.py` can reassign areas                       |
 | Automations (UI-created)                       | `/var/lib/hass/automations.yaml`         | ❌ No                                                                                  |
-| Automations (Nix-declared)                     | `automations_nix.yaml`                   | ✅ Yes — rebuilt from Nix                                                              |
+| Automations (Nix-declared)                     | `_domains/*.nix`                         | ✅ Yes — rebuilt from Nix                                                              |
 | HA config (http, recorder, helpers)            | `default.nix`                            | ✅ Yes — rebuilt from Nix                                                              |
 | Extra components (ecobee, cast, etc.)          | `default.nix`                            | ✅ Yes — rebuilt from Nix                                                              |
 | Recorder history (energy, temps, states)       | PostgreSQL (`hass` db)                   | ❌ Not in restic — separate pg backup needed                                           |
