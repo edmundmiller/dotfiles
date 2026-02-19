@@ -13,7 +13,7 @@ tml() {
     # Back to top, split for lazygit (30% right) with narrow-pane config
     tmux select-pane -t "$ai_pane"
     local lg_main="$HOME/.config/lazygit/config.yml"
-    local lg_tml="$HOME/.config/sesh/lazygit-tml.yml"
+    local lg_tml="$HOME/.config/lazygit/tml.yml"
     tmux split-window -h -p 30 -c "$current_dir" "lazygit --use-config-file='${lg_main},${lg_tml}'"
 
     # Launch AI in left pane
