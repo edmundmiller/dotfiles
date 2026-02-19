@@ -30,7 +30,26 @@ The config template contains `__TELEGRAM_TOKEN__` and `__OPENCLAW_HOOKS_TOKEN__`
 
 - **Telegram:** Sends alerts to a chat when endpoints fail 3x in a row, and on recovery
 - **OpenClaw webhook:** POSTs to `/hooks/wake` on localhost to trigger OpenClaw investigation of downtime
-- **Dead man's switch:** `gatus-healthcheck-ping.timer` curls healthchecks.io every 2 min. If NUC/Gatus dies, healthchecks.io alerts externally.
+
+## Dead Man's Switch (healthchecks.io)
+
+Three-phase systemd timer using the [healthchecks.io systemd pattern](https://healthchecks.io/docs/monitoring_systemd_tasks/):
+
+1. **ExecStartPre** — `curl .../start` signals check began (- prefix: failure doesn't block main command)
+2. **ExecStart** — `curl localhost:8084/health` verifies Gatus is responding
+3. **ExecStopPost** — `curl .../${EXIT_STATUS}` reports result (0=success, >0=failure)
+
+This means healthchecks.io alerts if:
+
+- The NUC goes down entirely (no pings at all)
+- Gatus crashes but NUC stays up (ExecStart fails → EXIT_STATUS > 0 reported)
+- The timer itself stops running (no start signal)
+
+**Timer interval:** 2 min (`cfg.healthcheck.interval`), 10s randomized delay.
+
+**Systemd units:** `gatus-healthcheck-ping.timer` + `gatus-healthcheck-ping.service`
+
+**Manual test:** `sudo systemctl start gatus-healthcheck-ping.service && journalctl -u gatus-healthcheck-ping -n 10`
 
 ## Monitored Endpoints
 
