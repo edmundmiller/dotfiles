@@ -24,6 +24,24 @@ let
     };
     dependencies = [ pkgs.python3Packages.aiogithubapi ];
   };
+
+  # Eight Sleep - smart mattress integration
+  # https://github.com/lukas-clarke/eight_sleep
+  eight-sleep = pkgs.buildHomeAssistantComponent {
+    owner = "lukas-clarke";
+    domain = "eight_sleep";
+    version = "1.0.22";
+    src = pkgs.fetchFromGitHub {
+      owner = "lukas-clarke";
+      repo = "eight_sleep";
+      rev = "ae70f80";
+      hash = "sha256-ody4Fl7VcYTGLID4967PH11E0HXcos1mFg9+hd1YsLY=";
+    };
+    dependencies = with pkgs.python3Packages; [
+      httpx
+      aiohttp
+    ];
+  };
 in
 {
   imports = [
@@ -97,7 +115,11 @@ in
         ++ optionals cfg.matter.enable [ "matter" ]
         ++ cfg.extraComponents;
 
-        customComponents = [ hacs ] ++ cfg.customComponents;
+        customComponents = [
+          hacs
+          eight-sleep
+        ]
+        ++ cfg.customComponents;
         inherit (cfg) customLovelaceModules;
 
         extraPackages = ps: [ ] ++ optionals cfg.postgres.enable [ ps.psycopg2 ];

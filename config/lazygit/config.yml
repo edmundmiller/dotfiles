@@ -12,10 +12,9 @@ gui:
   showCommandLog: false
   showBottomLine: false
   showPanelJumps: true
-  sidePanelWidth: 0.2
+  sidePanelWidth: 0.3333
   expandFocusedSidePanel: true
   mainPanelSplitMode: flexible
-  screenMode: full
   language: auto
   timeFormat: "02 Jan 06"
   shortTimeFormat: "3:04PM"

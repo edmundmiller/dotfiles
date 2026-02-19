@@ -1,0 +1,13 @@
+# lazygit overrides for tml narrow pane (30% width)
+# Loaded on top of main config via --use-config-file
+
+gui:
+  screenMode: full
+  sidePanelWidth: 0.2
+
+keybinding:
+  universal:
+    quit: <disabled>
+    quit-alt1: <c-c>
+
+quitOnTopLevelReturn: false
