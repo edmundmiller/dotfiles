@@ -188,6 +188,12 @@
         homebridge.enable = true;
         homebridge.tailscaleService.enable = true;
         tailscaleService.enable = true;
+        customLovelaceModules = with pkgs.home-assistant-custom-lovelace-modules; [
+          mushroom # Modern card collection (light, entity, cover, climate, etc.)
+          mini-graph-card # Sparkline graphs for sleep vitals
+          mini-media-player # Better media player card
+          card-mod # CSS customization
+        ];
         extraComponents = [
           "homekit_controller" # Discover Apple Home devices (Matter/Thread via Apple TV/HomePod)
           "apple_tv" # Apple TV control + remote
