@@ -31,6 +31,8 @@
     automation = lib.mkAfter [
       # TODO: Rework this to first activate "Goodnight" scene on bed presence,
       # then randomly 2–5 minutes later activate "Sleep" scene.
+      # TODO: Add condition requiring Monica's focus is "on" (Sleep focus active)
+      # once her phone is connected: binary_sensor.monicas_iphone_focus = on
       {
         alias = "Bed presence - activate sleep scene";
         id = "bed_presence_sleep";
