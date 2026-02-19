@@ -35,6 +35,29 @@ modules.shell.tmux = {
 
 Theme config loads BEFORE plugins (required for prefix-highlight placeholder replacement).
 
+## Dev Layouts (tml)
+
+The `sesh` module provides tmux dev layouts via shell functions:
+
+```
+┌──────────────────┬─────────┐
+│                  │         │
+│    AI tool       │ lazygit │
+│    (70%)         │  (30%)  │
+│                  │         │
+├──────────────────┴─────────┤
+│         shell (15%)        │
+└────────────────────────────┘
+```
+
+| Command     | Layout                     |
+| ----------- | -------------------------- |
+| `tml <cmd>` | Any tool + lazygit + shell |
+| `nic`       | pi + lazygit + shell       |
+| `nicx`      | opencode + lazygit + shell |
+
+Enable with `modules.shell.sesh.enable = true;`.
+
 ## Plugins
 
 | Plugin                  | Description                                                        |
@@ -65,20 +88,81 @@ Settings:
 - Shows directory for: nvim, vim, git, jjui, opencode, claude
 - Auto-detects node-based AI agents (opencode, claude)
 
-## Notable Keybindings
+## Keybindings
 
-| Key       | Action                            |
-| --------- | --------------------------------- |
-| `C-c`     | Prefix (not `C-b`)                |
-| `v`       | Split horizontal                  |
-| `s`       | Split vertical                    |
-| `h/j/k/l` | Pane navigation                   |
-| `H/J/K/L` | Swap panes                        |
-| `u` / `U` | Launch jjui (vertical/horizontal) |
-| `r`       | Reload config                     |
-| `o`       | Zoom pane                         |
+Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 
-See `config/tmux/config` for full keybinding reference.
+### Windows & Sessions
+
+| Key     | Action                      |
+| ------- | --------------------------- |
+| `c`     | New window                  |
+| `X`     | Kill window                 |
+| `x`     | Kill pane                   |
+| `q`     | Kill session                |
+| `Q`     | Kill server                 |
+| `n/C-n` | Next window                 |
+| `p/C-p` | Previous window             |
+| `S`     | Choose session              |
+| `W / .` | Choose window               |
+| `/ `    | Choose session              |
+| `t`     | Session picker (sesh + fzf) |
+
+### Panes
+
+| Key       | Action                   |
+| --------- | ------------------------ |
+| `v`       | Split horizontal         |
+| `s`       | Split vertical           |
+| `h/j/k/l` | Navigate panes           |
+| `H/J/K/L` | Swap panes               |
+| `M`       | Swap to master           |
+| `o`       | Zoom pane                |
+| `< / >`   | Resize left/right (10)   |
+| `+ / -`   | Resize down/up (5)       |
+| `=`       | Break pane to new window |
+| `_`       | Join pane                |
+| `C-w`     | Last pane                |
+
+### Splits & Tools
+
+| Key | Action                           |
+| --- | -------------------------------- |
+| `u` | Split vertical + jjui            |
+| `U` | Split horizontal + jjui          |
+| `C` | Prompt: run command in new split |
+| `g` | Git TUI popup                    |
+| `G` | Critique (diff review) popup     |
+| `f` | File picker popup                |
+| `F` | File picker (git root) popup     |
+| `D` | Directory picker popup           |
+| `z` | Zoxide picker popup              |
+| `d` | Zoxide dir-only picker popup     |
+
+### Copy Mode & Misc
+
+| Key       | Action                      |
+| --------- | --------------------------- |
+| `Enter`   | Enter copy mode             |
+| `b`       | List paste buffers          |
+| `B`       | Choose paste buffer         |
+| `P`       | Paste from system clipboard |
+| `i`       | Beads capture popup         |
+| `m`       | Task note capture popup     |
+| `N / `` ` | Daily note popup            |
+| `e`       | Beads explore (cwd) popup   |
+| `E`       | Beads explore (home) popup  |
+| `r`       | Reload config               |
+
+### Vim-aware Navigation (no prefix)
+
+| Key   | Action                                     |
+| ----- | ------------------------------------------ |
+| `C-h` | Left (passed to vim if in vim)             |
+| `C-j` | Down (passed to vim/pi if in vim or agent) |
+| `C-k` | Up (passed to vim if in vim)               |
+| `C-l` | Right (passed to vim if in vim)            |
+| `C-\` | Last pane (passed to vim if in vim)        |
 
 ## Aliases
 
