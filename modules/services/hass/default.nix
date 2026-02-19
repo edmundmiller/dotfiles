@@ -179,7 +179,8 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStartPre = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 60); do ${pkgs.curl}/bin/curl -so /dev/null -w \"%%{http_code}\" http://127.0.0.1:8123/api/ 2>/dev/null | grep -qE \"(200|401|403)\" && exit 0; sleep 2; done; echo \"HA API not ready after 120s\"; exit 1'";
+          # Use /manifest.json — public endpoint that doesn't trigger auth warnings
+          ExecStartPre = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 60); do ${pkgs.curl}/bin/curl -so /dev/null -w \"%%{http_code}\" http://127.0.0.1:8123/manifest.json 2>/dev/null | grep -q \"200\" && exit 0; sleep 2; done; echo \"HA not ready after 120s\"; exit 1'";
           ExecStart =
             let
               py = pkgs.python3.withPackages (ps: [ ps.websockets ]);
