@@ -32,7 +32,6 @@
         direnv.enable = true;
         git.enable = true;
         jj.enable = true;
-        tml.enable = true;
         tmux.enable = true;
         wt.enable = true;
         zsh.enable = true;
