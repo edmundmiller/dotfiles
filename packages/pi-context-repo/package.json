@@ -1,0 +1,30 @@
+{
+  "name": "pi-context-repo",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Git-backed persistent memory filesystem for pi agents, inspired by Letta Code's Context Repositories",
+  "main": "./index.ts",
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "pi-package",
+    "memory",
+    "context-repository",
+    "agent-memory",
+    "git-memory"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@sinclair/typebox": "^0.34.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
