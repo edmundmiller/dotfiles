@@ -16,11 +16,6 @@
         "We're (leaving|going out)"
         "Goodbye"
       ];
-      SetModeMovie = [
-        "Set (mode|house) to movie"
-        "Movie (mode|time)"
-        "Start movie"
-      ];
       SetModeNight = [
         "Set (mode|house) to night"
         "Goodnight"
@@ -101,16 +96,6 @@
             action = "input_select.select_option";
             target.entity_id = "input_select.house_mode";
             data.option = "Away";
-          }
-        ];
-      };
-      SetModeMovie = {
-        speech.text = "Enjoy your movie.";
-        action = [
-          {
-            action = "input_select.select_option";
-            target.entity_id = "input_select.house_mode";
-            data.option = "Movie";
           }
         ];
       };

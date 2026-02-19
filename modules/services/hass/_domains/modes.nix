@@ -1,7 +1,6 @@
-# House modes domain — mode switching, goodnight/morning routines, DND
+# House modes domain — mode switching, routines, DND
 { lib, ... }:
 let
-  # --- Helper functions ---
   setMode = mode: {
     action = "input_select.select_option";
     target.entity_id = "input_select.house_mode";
@@ -10,11 +9,6 @@ let
 
   tvOff = {
     action = "media_player.turn_off";
-    target.entity_id = "media_player.tv";
-  };
-
-  tvOn = {
-    action = "media_player.turn_on";
     target.entity_id = "media_player.tv";
   };
 in
@@ -42,46 +36,13 @@ in
         "Home"
         "Away"
         "Night"
-        "Movie"
       ];
       initial = "Home";
       icon = "mdi:home";
     };
 
-    input_datetime = {
-      morning_time = {
-        name = "Morning Time";
-        icon = "mdi:weather-sunset-up";
-        has_date = false;
-        has_time = true;
-      };
-      bedtime = {
-        name = "Bedtime";
-        icon = "mdi:weather-night";
-        has_date = false;
-        has_time = true;
-      };
-    };
-
     # --- Scenes ---
     scene = [
-      {
-        name = "Movie";
-        icon = "mdi:movie-open";
-        entities = {
-          "input_select.house_mode" = "Movie";
-          "media_player.tv" = "on";
-        };
-      }
-      {
-        name = "Goodnight";
-        icon = "mdi:weather-night";
-        entities = {
-          "input_boolean.goodnight" = "on";
-          "input_select.house_mode" = "Night";
-          "media_player.tv" = "off";
-        };
-      }
       {
         name = "Good Morning";
         icon = "mdi:weather-sunny";
@@ -96,6 +57,7 @@ in
     script.everything_off = {
       alias = "Everything Off";
       icon = "mdi:power";
+      description = "Nuclear option — all lights, blinds, TV, mode Night";
       sequence = [
         {
           action = "light.turn_off";
@@ -122,23 +84,10 @@ in
 
     # --- Automations ---
     automation = lib.mkAfter [
-      # Goodnight routine
-      {
-        alias = "Goodnight";
-        id = "goodnight_everything_off";
-        trigger = {
-          platform = "state";
-          entity_id = "input_boolean.goodnight";
-          to = "on";
-        };
-        action = [
-          tvOff
-          (setMode "Night")
-        ];
-      }
       {
         alias = "Good Morning";
         id = "good_morning_reset";
+        description = "Reset night mode when goodnight toggle turns off";
         trigger = {
           platform = "state";
           entity_id = "input_boolean.goodnight";
@@ -147,30 +96,8 @@ in
         action = [ (setMode "Home") ];
       }
 
-      # Movie mode
-      {
-        alias = "Movie mode on";
-        id = "movie_mode_on";
-        trigger = {
-          platform = "state";
-          entity_id = "input_select.house_mode";
-          to = "Movie";
-        };
-        action = [ tvOn ];
-      }
-      {
-        alias = "Movie mode off";
-        id = "movie_mode_off";
-        trigger = {
-          platform = "state";
-          entity_id = "input_select.house_mode";
-          from = "Movie";
-        };
-        action = [ ];
-        # Add light restore here when you have smart lights
-      }
-
-      # Away mode
+      # Away mode — safety net for manual mode changes
+      # (presence-based Leave Home scene handles the automatic case)
       {
         alias = "Away mode";
         id = "away_mode_media_off";
