@@ -57,6 +57,9 @@ bind c new-window      -c "#{pane_current_path}"
 bind v split-window -h -c "#{pane_current_path}"
 bind s split-window -v -c "#{pane_current_path}"
 
+# Toggle tml layout (AI + lazygit + shell)
+bind T run '$TMUX_HOME/toggle-tml.sh'
+
 # Split and launch jjui
 bind u split-window -v -c "#{pane_current_path}" "jjui"
 bind U split-window -h -c "#{pane_current_path}" "jjui"
