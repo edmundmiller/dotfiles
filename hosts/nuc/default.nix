@@ -200,6 +200,15 @@
       gatus = {
         enable = true;
         tailscaleService.enable = true;
+        alerting.telegram = {
+          enable = true;
+          botTokenFile = config.age.secrets.telegram-bot-token.path;
+          chatId = "8357890648";
+        };
+        healthcheck = {
+          enable = true;
+          pingUrl = "https://hc-ping.com/a6bbb4df-b118-4262-9881-9939f3ac7e76";
+        };
       };
       homepage.enable = true;
       jellyfin.enable = true;
