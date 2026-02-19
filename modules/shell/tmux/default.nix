@@ -116,6 +116,10 @@ in
       '';
     };
 
+    # tml — tmux dev layout: AI tool + lazygit + shell
+    # Shell function in config/tml/aliases.zsh (auto-sourced by zsh module)
+    home.configFile."lazygit/tml.yml".source = "${configDir}/lazygit/tml.yml";
+
     env = {
       PATH = [ "$TMUXIFIER/bin" ];
       TMUX_HOME = "$XDG_CONFIG_HOME/tmux";
