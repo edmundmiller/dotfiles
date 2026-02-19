@@ -1,6 +1,5 @@
 {
   config,
-  pkgs,
   lib,
   ...
 }:
@@ -15,10 +14,8 @@ in
   };
 
   config = mkIf cfg.enable {
-    # almonk/sesh — zellij split with AI tool + lazygit
+    # sesh — tmux split with AI tool + lazygit
     # Shell function lives in config/sesh/aliases.zsh (auto-sourced by zsh module)
-    user.packages = with pkgs; [
-      zellij
-    ];
+    # Requires: tmux (from tmux module), lazygit (from zsh module)
   };
 }
