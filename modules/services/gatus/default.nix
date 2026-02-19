@@ -142,13 +142,14 @@ let
               interval = "60s";
               conditions = [ "[CONNECTED] == true" ];
             }
-            {
-              name = "Tailscale";
-              group = "Infrastructure";
-              url = "http://localhost:41112/healthz";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
+            # TODO: Tailscale local API doesn't expose healthz on 41112
+            # {
+            #   name = "Tailscale";
+            #   group = "Infrastructure";
+            #   url = "http://localhost:41112/healthz";
+            #   interval = "60s";
+            #   conditions = [ "[STATUS] == 200" ];
+            # }
           ]
           ++ optionals config.modules.services.openclaw.enable [
             {
@@ -159,15 +160,16 @@ let
               conditions = [ "[STATUS] == 200" ];
             }
           ]
-          ++ optionals config.modules.services.audiobookshelf.enable [
-            {
-              name = "Audiobookshelf";
-              group = "Media";
-              url = "http://localhost:13378/healthcheck";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-          ]
+          # TODO: Audiobookshelf is on port 8000, not 13378; find correct healthcheck path
+          # ++ optionals config.modules.services.audiobookshelf.enable [
+          #   {
+          #     name = "Audiobookshelf";
+          #     group = "Media";
+          #     url = "http://localhost:13378/healthcheck";
+          #     interval = "60s";
+          #     conditions = [ "[STATUS] == 200" ];
+          #   }
+          # ]
         );
       }
       // optionalAttrs (alertingConfig != { }) {
