@@ -1,54 +1,34 @@
-# sesh — tmux split: AI tool (70%) + lazygit (30%) side by side
-# Inspired by almonk/sesh and basecamp/omarchy tml()
-sesh() {
-    if ! command -v lazygit &>/dev/null; then
-        echo "sesh: 'lazygit' is not installed"
-        return 1
-    fi
+# tml — tmux dev layout: editor (70%) + AI (30%) on top, terminal (15%) on bottom
+# Inspired by basecamp/omarchy
+tml() {
+    local current_dir="${PWD}"
+    local editor_pane ai_pane
+    local ai="$1"
 
-    local tool="${1:-claude}"
-    tool="$(echo "$tool" | tr '[:upper:]' '[:lower:]')"
+    editor_pane=$(tmux display-message -p '#{pane_id}')
 
-    case "$tool" in
-        help|--help|-h)
-            echo "Usage: sesh [tool] [directory]"
-            echo ""
-            echo "Tools: claude (default), codex, opencode, amp, pi, or any binary"
-            echo ""
-            echo "  sesh                     # claude + lazygit in cwd"
-            echo "  sesh pi ~/project        # pi + lazygit in ~/project"
-            echo ""
-            echo "Keybinds: use normal tmux pane navigation"
-            return 0
-            ;;
-    esac
+    # Bottom terminal pane (15%)
+    tmux split-window -v -p 15 -c "$current_dir"
 
-    local dir="${2:-$(pwd)}"
-    dir="$(realpath "$dir" 2>/dev/null)" || {
-        echo "sesh: invalid directory: $2"
-        return 1
-    }
+    # Back to top, split horizontally for AI (30% right)
+    tmux select-pane -t "$editor_pane"
+    tmux split-window -h -p 30 -c "$current_dir"
 
-    if ! command -v "$tool" &>/dev/null; then
-        echo "sesh: '$tool' is not installed or not in PATH"
-        return 1
-    fi
+    ai_pane=$(tmux display-message -p '#{pane_id}')
+    tmux send-keys -t "$ai_pane" "$ai" C-m
 
-    # If not in tmux, start a new session
-    if [[ -z "$TMUX" ]]; then
-        tmux new-session -d -s sesh -c "$dir"
-        tmux send-keys -t sesh "$tool" C-m
-        tmux split-window -h -p 30 -c "$dir" "lazygit"
-        tmux select-pane -t 0
-        tmux attach-session -t sesh
-        return
-    fi
+    # Editor in left pane
+    tmux send-keys -t "$editor_pane" "$EDITOR ." C-m
 
-    # Already in tmux — split current pane
-    local tool_pane
-    tool_pane=$(tmux display-message -p '#{pane_id}')
+    tmux select-pane -t "$editor_pane"
+}
 
-    tmux split-window -h -p 30 -c "$dir" "lazygit"
-    tmux select-pane -t "$tool_pane"
-    tmux send-keys -t "$tool_pane" "$tool" C-m
+# editor + pi + terminal
+nic() {
+    tml pi
+}
+
+# editor + opencode + terminal
+nicx() {
+    tml opencode
 }
