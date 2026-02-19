@@ -42,6 +42,7 @@ gui:
 
 git:
   pagers:
+    - pager: bunx edmundmiller/critique --stdin
     - colorArg: always
       pager: delta --dark --paging=never
   commit:

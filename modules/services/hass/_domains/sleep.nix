@@ -50,6 +50,40 @@
         ];
       }
 
+      # Monica in bed, Edmund not — nudge him to come to bed
+      {
+        alias = "Bedtime nudge - Monica waiting";
+        id = "bedtime_nudge_monica_waiting";
+        trigger = {
+          platform = "state";
+          entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+          to = "on";
+          "for".minutes = 5;
+        };
+        condition = [
+          {
+            # Only at night
+            condition = "time";
+            after = "21:00:00";
+          }
+          {
+            # Edmund isn't already in bed
+            condition = "state";
+            entity_id = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "notify.mobile_app_edmunds_iphone";
+            data = {
+              title = "🛏️ Bedtime";
+              message = "Monica's in bed — time to wrap up!";
+            };
+          }
+        ];
+      }
+
       # Good morning — both out of bed for 2min, after 7am
       {
         alias = "Good Morning - both out of bed";
