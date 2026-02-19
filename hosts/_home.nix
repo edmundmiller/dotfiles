@@ -13,7 +13,7 @@ with lib;
     # Hosts
     192.168.1.88   meshify.home
     192.168.1.101  unas.home
-    192.168.1.144  nuc.home
+    192.168.1.222  nuc.home
 
     # Block garbage
     ${optionalString config.services.xserver.enable (readFile "${pkgs.stevenblack-blocklist}/hosts")}
