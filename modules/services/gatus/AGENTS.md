@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Uptime monitoring dashboard for NUC services. Checks HTTP/TCP endpoints every 60-120s, stores results in SQLite, serves web UI. Alerts via Telegram when services go down. Pings healthchecks.io as a dead man's switch.
+Uptime monitoring dashboard for NUC services. Checks HTTP/TCP endpoints every 60-120s, stores results in SQLite, serves web UI. Alerts via Telegram and OpenClaw webhook when services go down. Pings healthchecks.io as a dead man's switch.
 
 ## Module Structure
 
@@ -24,11 +24,12 @@ modules/services/gatus/
 
 ## Secret Injection
 
-The config template contains `__TELEGRAM_TOKEN__` placeholder. `ExecStartPre` copies the template to `/run/gatus/` and uses `sed` to replace placeholders with values read from agenix secret files. This keeps secrets out of the nix store.
+The config template contains `__TELEGRAM_TOKEN__` and `__OPENCLAW_HOOKS_TOKEN__` placeholders. `ExecStartPre` copies the template to `/run/gatus/` and uses `sed` to replace placeholders with values read from agenix secret files. This keeps secrets out of the nix store.
 
 ## Alerting
 
 - **Telegram:** Sends alerts to a chat when endpoints fail 3x in a row, and on recovery
+- **OpenClaw webhook:** POSTs to `/hooks/wake` on localhost to trigger OpenClaw investigation of downtime
 - **Dead man's switch:** `gatus-healthcheck-ping.timer` curls healthchecks.io every 2 min. If NUC/Gatus dies, healthchecks.io alerts externally.
 
 ## Monitored Endpoints
@@ -69,4 +70,6 @@ For conditional endpoints (only when another module is enabled):
 - `hosts/nuc/default.nix` — Enables module with alerting + healthcheck config
 - `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
 - `hosts/nuc/secrets/telegram-bot-token.age` — Encrypted bot token
+- `hosts/nuc/secrets/openclaw-hooks-token.age` — Encrypted OpenClaw hooks token
+- `modules/services/openclaw/default.nix` — OpenClaw hooks config (must enable hooks)
 - `modules/services/AGENTS.md` — Tailscale serve pattern docs

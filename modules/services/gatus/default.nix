@@ -34,6 +34,26 @@ let
           send-on-resolved = true;
         };
       };
+    }
+    // optionalAttrs cfg.alerting.openclaw.enable {
+      custom = {
+        url = "http://localhost:${toString cfg.alerting.openclaw.port}/hooks/wake";
+        method = "POST";
+        headers = {
+          "Content-Type" = "application/json";
+          "Authorization" = "Bearer __OPENCLAW_HOOKS_TOKEN__";
+        };
+        body = builtins.toJSON {
+          text = "[ALERT_TRIGGERED_OR_RESOLVED]: [ENDPOINT_NAME] ([ENDPOINT_GROUP]) — [RESULT_ERRORS]";
+          mode = "now";
+        };
+        default-alert = {
+          enabled = true;
+          failure-threshold = 3;
+          success-threshold = 2;
+          send-on-resolved = true;
+        };
+      };
     };
 
   # Default alert list per endpoint — one entry per enabled provider
@@ -41,6 +61,9 @@ let
     [ ]
     ++ optionals cfg.alerting.telegram.enable [
       { type = "telegram"; }
+    ]
+    ++ optionals cfg.alerting.openclaw.enable [
+      { type = "custom"; }
     ];
 
   # Helper to add alerts to an endpoint
@@ -169,6 +192,12 @@ in
       chatId = mkOpt types.str "";
     };
 
+    alerting.openclaw = {
+      enable = mkBoolOpt false;
+      hooksTokenFile = mkOpt types.str "";
+      port = mkOpt types.port 18789;
+    };
+
     healthcheck = {
       enable = mkBoolOpt false;
       pingUrl = mkOpt types.str "";
@@ -202,6 +231,10 @@ in
               + optionalString cfg.alerting.telegram.enable ''
                 TELEGRAM_TOKEN=$(cat ${cfg.alerting.telegram.botTokenFile})
                 ${pkgs.gnused}/bin/sed -i "s|__TELEGRAM_TOKEN__|$TELEGRAM_TOKEN|g" /run/gatus/config.yaml
+              ''
+              + optionalString cfg.alerting.openclaw.enable ''
+                OPENCLAW_HOOKS_TOKEN=$(cat ${cfg.alerting.openclaw.hooksTokenFile})
+                ${pkgs.gnused}/bin/sed -i "s|__OPENCLAW_HOOKS_TOKEN__|$OPENCLAW_HOOKS_TOKEN|g" /run/gatus/config.yaml
               ''
               + ''
                 # RuntimeDirectory is owned by DynamicUser; match ownership

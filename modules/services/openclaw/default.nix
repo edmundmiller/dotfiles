@@ -27,12 +27,17 @@ let
     } > "$XDG_RUNTIME_DIR/openclaw/env"
   '';
 
-  # Script to inject gateway token into config JSON
+  # Script to inject gateway token + hooks token into config JSON
   mkTokenScript = pkgs.writeShellScript "openclaw-inject-token" ''
     set -euo pipefail
     ${pkgs.gnused}/bin/sed -i \
       "s|__OPENCLAW_TOKEN_PLACEHOLDER__|$(cat ${cfg.gatewayTokenFile})|g" \
       "$HOME/.openclaw/openclaw.json"
+    ${optionalString (cfg.hooksTokenFile != "") ''
+      ${pkgs.gnused}/bin/sed -i \
+        "s|__OPENCLAW_HOOKS_TOKEN_PLACEHOLDER__|$(cat ${cfg.hooksTokenFile})|g" \
+        "$HOME/.openclaw/openclaw.json"
+    ''}
   '';
 in
 {
@@ -43,6 +48,12 @@ in
       type = types.str;
       default = "";
       description = "Path to file containing gateway auth token (agenix secret)";
+    };
+
+    hooksTokenFile = mkOption {
+      type = types.str;
+      default = "";
+      description = "Path to file containing hooks auth token (agenix secret)";
     };
 
     secrets = mkOption {
@@ -316,6 +327,13 @@ in
                   name = "Kimi K2.5";
                 }
               ];
+            };
+
+            hooks = mkIf (cfg.hooksTokenFile != "") {
+              enabled = true;
+              token = "__OPENCLAW_HOOKS_TOKEN_PLACEHOLDER__";
+              defaultSessionKey = "hook:ingress";
+              allowRequestSessionKey = false;
             };
 
             channels.telegram = mkIf cfg.telegram.enable {
