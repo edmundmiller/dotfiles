@@ -94,6 +94,12 @@
             entity_id = "binary_sensor.edmunds_iphone_focus";
             state = "off";
           }
+          # TODO: Add Monica's focus condition once her phone is connected
+          # {
+          #   condition = "state";
+          #   entity_id = "binary_sensor.monicas_iphone_focus";
+          #   state = "off";
+          # }
         ];
         action = [
           {
