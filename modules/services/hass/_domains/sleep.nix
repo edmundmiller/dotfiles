@@ -87,6 +87,13 @@
             entity_id = "input_select.house_mode";
             state = "Night";
           }
+          {
+            # Phone focus is off (i.e. Sleep focus has been dismissed)
+            # Enable sensor: Companion App Settings → Sensors → Focus
+            condition = "state";
+            entity_id = "binary_sensor.edmunds_iphone_focus";
+            state = "off";
+          }
         ];
         action = [
           {
