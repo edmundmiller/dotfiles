@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   lib,
   ...
 }:
@@ -7,7 +8,6 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.shell.sesh;
-  inherit (config.dotfiles) configDir;
 in
 {
   options.modules.shell.sesh = with types; {
@@ -15,13 +15,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    # Sesh is installed via homebrew (joshmedeski/sesh/sesh)
-    # This module manages the configuration file
-
-    home.configFile = {
-      "sesh/sesh.toml" = {
-        source = "${configDir}/sesh/sesh.toml";
-      };
-    };
+    # almonk/sesh — zellij split with AI tool + lazygit
+    # Shell function lives in config/sesh/aliases.zsh (auto-sourced by zsh module)
+    user.packages = with pkgs; [
+      zellij
+    ];
   };
 }
