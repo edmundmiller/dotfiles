@@ -1,29 +1,63 @@
-# Sleep domain — bed presence detection, sleep/wake routines
+# Sleep domain — bedtime progression, bed presence, wake routines
+#
+# Three-stage bedtime flow:
+#   1. Winding Down  — get ready for bed (night light stays on for navigation)
+#   2. In Bed        — settled in, audiobook time (whitenoise on, lights off)
+#   3. Sleep         — done with audiobook, out cold (whitenoise stays)
+#
+# Triggers:
+#   Winding Down  ← goodnight toggle / voice "Goodnight"
+#   In Bed        ← bed presence (Monica, 2 min)
+#   Sleep         ← manual or future: audiobook stops / sleep focus activates
 { lib, ... }:
 {
   services.home-assistant.config = {
     scene = lib.mkAfter [
+      # Stage 1: Get ready for bed
+      {
+        name = "Winding Down";
+        icon = "mdi:weather-night";
+        entities = {
+          "input_boolean.goodnight" = "on";
+          "input_select.house_mode" = "Night";
+          "cover.smartwings_window_covering" = "closed";
+          "media_player.tv" = "off";
+
+          # Main lights off
+          "light.essentials_a19_a60" = "off"; # Trashcan
+          "light.essentials_a19_a60_2" = "off"; # Dishwasher
+          "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
+          "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
+
+          # Night light stays on — navigate to bed
+          "light.smart_night_light_w" = "on";
+        };
+      }
+      # Stage 2: In bed, audiobook time
+      {
+        name = "In Bed";
+        icon = "mdi:bed";
+        entities = {
+          "switch.eve_energy_20ebu4101" = "on"; # Whitenoise
+          "light.smart_night_light_w" = "off"; # No longer needed
+        };
+      }
+      # Stage 3: Audiobook done, sleeping
       {
         name = "Sleep";
         icon = "mdi:sleep";
         entities = {
-          # Modes
+          # Confirm sealed state — whitenoise stays, everything else off
           "input_boolean.goodnight" = "on";
           "input_select.house_mode" = "Night";
-
-          # Bedroom — white noise on, blinds closed
-          "switch.eve_energy_20ebu4101" = "on"; # Whitenoise Machine
+          "switch.eve_energy_20ebu4101" = "on"; # Whitenoise stays
           "cover.smartwings_window_covering" = "closed";
-
-          # Lights off
-          "light.essentials_a19_a60" = "off"; # Trashcan
-          "light.essentials_a19_a60_2" = "off"; # Dishwasher
-          "light.smart_night_light_w" = "off"; # Night Light
-          "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
-          "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
-
-          # Media off
           "media_player.tv" = "off";
+          "light.essentials_a19_a60" = "off";
+          "light.essentials_a19_a60_2" = "off";
+          "light.nanoleaf_multicolor_floor_lamp" = "off";
+          "light.nanoleaf_multicolor_hd_ls" = "off";
+          "light.smart_night_light_w" = "off";
         };
       }
     ];
@@ -46,9 +80,46 @@
     };
 
     automation = lib.mkAfter [
-      # Webhook: Monica says "Hey Siri, I'm getting into bed" → nudge Edmund
+      # Stage 1: Goodnight toggle → Winding Down
       {
-        alias = "Bedtime nudge webhook";
+        alias = "Winding Down";
+        id = "winding_down";
+        description = "Goodnight toggled — lights off (night light stays), blinds closed, TV off";
+        trigger = {
+          platform = "state";
+          entity_id = "input_boolean.goodnight";
+          to = "on";
+        };
+        action = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.winding_down";
+          }
+        ];
+      }
+
+      # Stage 2: Bed presence → In Bed
+      {
+        alias = "In Bed";
+        id = "bed_presence_in_bed";
+        description = "Monica in bed 2 min → whitenoise on, night light off";
+        trigger = {
+          platform = "state";
+          entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+          to = "on";
+          "for".minutes = 2;
+        };
+        action = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.in_bed";
+          }
+        ];
+      }
+
+      # Bedtime nudge webhook (Monica: "Hey Siri, I'm getting into bed")
+      {
+        alias = "Bedtime nudge";
         id = "bedtime_nudge_webhook";
         trigger = {
           platform = "webhook";
@@ -63,28 +134,7 @@
         ];
       }
 
-      # TODO: Rework this to first activate "Goodnight" scene on bed presence,
-      # then randomly 2–5 minutes later activate "Sleep" scene.
-      # TODO: Add condition requiring Monica's focus is "on" (Sleep focus active)
-      # once her phone is connected: binary_sensor.monicas_iphone_focus = on
-      {
-        alias = "Bed presence";
-        id = "bed_presence_sleep";
-        trigger = {
-          platform = "state";
-          entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
-          to = "on";
-          "for".minutes = 2;
-        };
-        action = [
-          {
-            action = "scene.turn_on";
-            target.entity_id = "scene.sleep";
-          }
-        ];
-      }
-
-      # Good morning — both out of bed for 2min, after 7am
+      # Good Morning — both out of bed for 2 min, after 7am
       {
         alias = "Good Morning - out of bed";
         id = "good_morning_bed_presence";
@@ -118,24 +168,16 @@
             state = "off";
           }
           {
-            # Only trigger when in Night mode (i.e. we actually slept)
             condition = "state";
             entity_id = "input_select.house_mode";
             state = "Night";
           }
           {
-            # Phone focus is off (i.e. Sleep focus has been dismissed)
-            # Enable sensor: Companion App Settings → Sensors → Focus
             condition = "state";
             entity_id = "binary_sensor.edmunds_iphone_focus";
             state = "off";
           }
           # TODO: Add Monica's focus condition once her phone is connected
-          # {
-          #   condition = "state";
-          #   entity_id = "binary_sensor.monicas_iphone_focus";
-          #   state = "off";
-          # }
         ];
         action = [
           {
