@@ -11,30 +11,19 @@
           "input_boolean.goodnight" = "on";
           "input_select.house_mode" = "Night";
 
-          # Bedroom — white noise on, blinds closed, lights off
-          "switch.whitenoise_machine" = "on";
+          # Bedroom — white noise on, blinds closed
+          "switch.eve_energy_20ebu4101" = "on"; # Whitenoise Machine
           "cover.smartwings_window_covering" = "closed";
-          "light.nightstand" = "off";
-          "light.humidifier_light" = "off";
-          "light.desk" = "off";
-          "light.bedframe" = "off";
 
-          # Entrance
-          "light.night_light" = "off";
-          "light.forest" = "off";
+          # Lights off
+          "light.essentials_a19_a60" = "off"; # Trashcan
+          "light.essentials_a19_a60_2" = "off"; # Dishwasher
+          "light.smart_night_light_w" = "off"; # Night Light
+          "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
+          "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
 
-          # Kitchen
-          "light.sink" = "off";
-
-          # Living room
-          "light.wall" = "off";
-          "light.couch_lamp" = "off";
-          "light.christmas_tree" = "off";
+          # Media off
           "media_player.tv" = "off";
-          "media_player.apple_tv" = "off";
-
-          # Office
-          "light.edmund_desk" = "off";
         };
       }
     ];
