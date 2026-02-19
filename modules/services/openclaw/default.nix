@@ -345,6 +345,12 @@ in
         };
 
         # Inject agenix secrets + gateway token via ExecStartPre
+        systemd.user.services.openclaw-gateway.Unit = {
+          # Relax start rate limit — deploys restart user services and openclaw
+          # takes a few seconds to boot, hitting the default 5/10s limit
+          StartLimitIntervalSec = 60;
+          StartLimitBurst = 10;
+        };
         systemd.user.services.openclaw-gateway.Service = {
           ExecStartPre = [
             "${mkEnvScript}"
