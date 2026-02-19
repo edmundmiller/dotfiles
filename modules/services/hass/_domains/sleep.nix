@@ -47,6 +47,54 @@
           }
         ];
       }
+
+      # Good morning — both out of bed for 2min, after 7am
+      {
+        alias = "Good Morning - both out of bed";
+        id = "good_morning_bed_presence";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+            to = "off";
+            "for".minutes = 2;
+          }
+          {
+            platform = "state";
+            entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+            to = "off";
+            "for".minutes = 2;
+          }
+        ];
+        condition = [
+          {
+            condition = "time";
+            after = "07:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+            state = "off";
+          }
+          {
+            condition = "state";
+            entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+            state = "off";
+          }
+          {
+            # Only trigger when in Night mode (i.e. we actually slept)
+            condition = "state";
+            entity_id = "input_select.house_mode";
+            state = "Night";
+          }
+        ];
+        action = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.good_morning";
+          }
+        ];
+      }
     ];
   };
 }
