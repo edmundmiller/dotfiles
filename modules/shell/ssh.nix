@@ -32,7 +32,7 @@ in
 
           # NUC server
           "nuc" = {
-            hostname = "192.168.1.222";
+            hostname = "192.168.1.144";
             user = "emiller";
             forwardAgent = true;
           };

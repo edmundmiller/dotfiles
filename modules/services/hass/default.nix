@@ -215,8 +215,11 @@ in
         ];
       };
 
-      # Firewall: open HA port on tailscale0 only
+      # Firewall: open HA port on tailscale and LAN
       networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+        config.services.home-assistant.config.http.server_port
+      ];
+      networking.firewall.allowedTCPPorts = [
         config.services.home-assistant.config.http.server_port
       ];
 
