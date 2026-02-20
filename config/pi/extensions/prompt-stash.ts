@@ -79,7 +79,7 @@ export default function (pi: ExtensionAPI) {
       const theme = ctx.ui.theme;
       const count = theme.fg("accent", String(stashes.length));
       const label = theme.fg("dim", stashes.length === 1 ? " stash" : " stashes");
-      ctx.ui.setStatus("prompt-stash", `📋 ${count}${label}`);
+      ctx.ui.setStatus("prompt-stash", `stash: ${count}${label}`);
     }
   }
 
