@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -14,6 +15,10 @@ in
 {
   options.modules.services.homepage = {
     enable = mkBoolOpt false;
+    tailscaleService = {
+      enable = mkBoolOpt false;
+      serviceName = mkOpt types.str "homepage";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -22,8 +27,16 @@ in
       listenPort = homepagePort;
       openFirewall = true;
 
-      # Allow access from tailscale hostname
-      allowedHosts = "localhost:${toString homepagePort},nuc.${tailnet}:${toString homepagePort}";
+      allowedHosts = concatStringsSep "," (
+        [
+          "localhost:${toString homepagePort}"
+          "nuc.${tailnet}:${toString homepagePort}"
+        ]
+        ++ optionals cfg.tailscaleService.enable [
+          # Tailscale serve proxies HTTPS — Host header has no port
+          "${cfg.tailscaleService.serviceName}.${tailnet}"
+        ]
+      );
 
       settings = {
         title = "NUC";
@@ -134,6 +147,22 @@ in
           ];
         }
       ];
+    };
+
+    # Tailscale serve — HTTPS at https://homepage.<tailnet>
+    systemd.services.homepage-tailscale-serve = mkIf cfg.tailscaleService.enable {
+      description = "Tailscale serve proxy for Homepage Dashboard";
+      wantedBy = [ "multi-user.target" ];
+      after = [
+        "homepage-dashboard.service"
+        "tailscaled.service"
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString homepagePort} && exit 0; sleep 1; done; exit 1'";
+        ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
+      };
     };
 
     environment.systemPackages = [ config.services.homepage-dashboard.package ];
