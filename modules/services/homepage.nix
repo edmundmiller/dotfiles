@@ -28,6 +28,15 @@ in
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "homepage";
     };
+    # environmentFiles should contain HOMEPAGE_VAR_* entries, e.g.:
+    #   HOMEPAGE_VAR_HASS_TOKEN=...
+    #   HOMEPAGE_VAR_HOMEBRIDGE_PASSWORD=...
+    #   HOMEPAGE_VAR_JELLYFIN_API_KEY=...
+    #   HOMEPAGE_VAR_NEXTDNS_PROFILE=...
+    #   HOMEPAGE_VAR_NEXTDNS_API_KEY=...
+    #   HOMEPAGE_VAR_TAILSCALE_DEVICE_ID=...
+    #   HOMEPAGE_VAR_TAILSCALE_API_KEY=...
+    environmentFiles = mkOpt (types.listOf types.path) [ ];
   };
 
   config = mkIf cfg.enable {
@@ -56,7 +65,10 @@ in
         hideVersion = true;
       };
 
+      environmentFiles = cfg.environmentFiles;
+
       widgets = [
+        { logo = { }; }
         {
           resources = {
             cpu = true;
@@ -106,6 +118,13 @@ in
                 href = "${nucBase}:8096";
                 description = "Media server";
                 icon = "jellyfin.svg";
+                widget = {
+                  type = "jellyfin";
+                  url = "http://localhost:8096";
+                  key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
+                  version = 2;
+                  enableBlocks = true;
+                };
               };
             }
             {
@@ -149,6 +168,11 @@ in
                 href = "https://homeassistant.${tailnet}";
                 description = "Home automation";
                 icon = "home-assistant.svg";
+                widget = {
+                  type = "homeassistant";
+                  url = "http://localhost:8123";
+                  key = "{{HOMEPAGE_VAR_HASS_TOKEN}}";
+                };
               };
             }
             {
@@ -156,6 +180,40 @@ in
                 href = "https://homebridge.${tailnet}";
                 description = "HomeKit bridge";
                 icon = "homebridge.svg";
+                widget = {
+                  type = "homebridge";
+                  url = "http://localhost:8581";
+                  username = "admin";
+                  password = "{{HOMEPAGE_VAR_HOMEBRIDGE_PASSWORD}}";
+                };
+              };
+            }
+          ];
+        }
+        {
+          "Network" = [
+            {
+              "NextDNS" = {
+                href = "https://my.nextdns.io";
+                description = "DNS filtering";
+                icon = "nextdns.svg";
+                widget = {
+                  type = "nextdns";
+                  profile = "{{HOMEPAGE_VAR_NEXTDNS_PROFILE}}";
+                  key = "{{HOMEPAGE_VAR_NEXTDNS_API_KEY}}";
+                };
+              };
+            }
+            {
+              "Tailscale" = {
+                href = "https://login.tailscale.com/admin";
+                description = "VPN mesh";
+                icon = "tailscale.svg";
+                widget = {
+                  type = "tailscale";
+                  deviceid = "{{HOMEPAGE_VAR_TAILSCALE_DEVICE_ID}}";
+                  key = "{{HOMEPAGE_VAR_TAILSCALE_API_KEY}}";
+                };
               };
             }
           ];
@@ -167,6 +225,10 @@ in
                 href = "https://gatus.${tailnet}";
                 description = "Status page";
                 icon = "gatus.svg";
+                widget = {
+                  type = "gatus";
+                  url = "http://localhost:8084";
+                };
               };
             }
           ];
