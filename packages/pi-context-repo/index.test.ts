@@ -13,6 +13,8 @@ import { tmpdir } from "node:os";
 import {
   type MemoryStatus,
   buildFrontmatter,
+  loadSettings,
+  saveSettings,
   buildTree,
   detectPromptDrift,
   formatBackupTimestamp,
@@ -492,5 +494,93 @@ describe("scaffoldMemory new blocks", () => {
     expect(frontmatter.limit).toBeGreaterThan(0);
     expect(validateFrontmatter(content, "system/style.md")).toEqual([]);
     expect(body).toContain("preferences");
+  });
+});
+
+// --- Persona presets ---
+
+describe("scaffoldMemory persona presets", () => {
+  let memDir: string;
+
+  beforeEach(() => {
+    memDir = join(tmpMemDir(), "memory");
+  });
+  afterEach(() => {
+    rmSync(join(memDir, ".."), { recursive: true, force: true });
+  });
+
+  test("default persona contains helpful assistant", () => {
+    scaffoldMemory(memDir);
+    const content = readFileSync(join(memDir, "system/persona.md"), "utf-8");
+    expect(content).toContain("helpful");
+  });
+
+  test("concise persona uses terse style", () => {
+    scaffoldMemory(memDir, "concise");
+    const content = readFileSync(join(memDir, "system/persona.md"), "utf-8");
+    expect(content).toContain("terse");
+    expect(content).toContain("concise");
+  });
+
+  test("friendly persona uses warm style", () => {
+    scaffoldMemory(memDir, "friendly");
+    const content = readFileSync(join(memDir, "system/persona.md"), "utf-8");
+    expect(content).toContain("friendly");
+    expect(content).toContain("collaborative");
+  });
+
+  test("mentor persona uses teaching style", () => {
+    scaffoldMemory(memDir, "mentor");
+    const content = readFileSync(join(memDir, "system/persona.md"), "utf-8");
+    expect(content).toContain("mentor");
+    expect(content).toContain("why");
+  });
+
+  test("unknown preset falls back to default", () => {
+    scaffoldMemory(memDir, "nonexistent");
+    const content = readFileSync(join(memDir, "system/persona.md"), "utf-8");
+    expect(content).toContain("helpful");
+  });
+});
+
+// --- Per-agent settings ---
+
+describe("per-agent settings", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = tmpMemDir();
+  });
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test("loadSettings returns defaults when no file exists", () => {
+    const settings = loadSettings(tmpDir);
+    expect(settings.memfsEnabled).toBe(true);
+    expect(settings.reflectionInterval).toBe(15);
+    expect(settings.personaPreset).toBe("default");
+  });
+
+  test("saveSettings persists and loadSettings reads back", () => {
+    saveSettings(tmpDir, { reflectionInterval: 30, personaPreset: "concise" });
+    const settings = loadSettings(tmpDir);
+    expect(settings.reflectionInterval).toBe(30);
+    expect(settings.personaPreset).toBe("concise");
+    expect(settings.memfsEnabled).toBe(true); // default preserved
+  });
+
+  test("saveSettings merges with existing", () => {
+    saveSettings(tmpDir, { reflectionInterval: 20 });
+    saveSettings(tmpDir, { personaPreset: "mentor" });
+    const settings = loadSettings(tmpDir);
+    expect(settings.reflectionInterval).toBe(20);
+    expect(settings.personaPreset).toBe("mentor");
+  });
+
+  test("loadSettings handles corrupt file gracefully", () => {
+    writeFileSync(join(tmpDir, ".settings.json"), "not json");
+    const settings = loadSettings(tmpDir);
+    expect(settings.memfsEnabled).toBe(true); // defaults
   });
 });
