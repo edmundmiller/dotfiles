@@ -17,6 +17,30 @@ NixOS `extraComponents` bundles integration code, but config-flow-only
 integrations (Spotify, Matter, HomeKit Controller, Cast, etc.) require
 the REST API or UI to complete setup.
 
+## hass-cli (preferred for inspection/simple calls)
+
+`home-assistant-cli` is installed on the NUC. Prefer it over raw curl for
+entity listing, service calls, device/area management, and event watching.
+
+```bash
+# On NUC (after getting a token):
+export HASS_SERVER=http://localhost:8123
+export HASS_TOKEN=<token>
+
+hass-cli state list 'light.*'          # list entities by glob
+hass-cli state get light.office        # get single entity (yaml)
+hass-cli service call homeassistant.toggle --arguments entity_id=light.office
+hass-cli device list                   # all devices with area
+hass-cli area list                     # all areas
+hass-cli device assign Kitchen --match "Kitchen Light"  # bulk assign area
+hass-cli event watch                   # watch all events
+hass-cli event watch deconz_event      # watch specific event type
+hass-cli -o yaml state list            # yaml output
+hass-cli -o json state list            # json output
+```
+
+Use raw curl (below) for config flows, app credentials, and anything hass-cli doesn't cover.
+
 ## Querying the API (inline SSH)
 
 Scripts in `scripts/` exist but are local — they can't be referenced by
