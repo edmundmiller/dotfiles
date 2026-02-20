@@ -66,6 +66,7 @@ in
     ./_domains/modes.nix
     ./_domains/sleep.nix
     ./_domains/tv.nix
+    ./_domains/vacation.nix
   ];
 
   options.modules.services.hass = {
