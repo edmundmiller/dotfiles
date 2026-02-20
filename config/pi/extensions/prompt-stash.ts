@@ -17,59 +17,31 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+import {
+  formatPreview,
+  formatTime,
+  loadStashes,
+  nextIdFromStashes,
+  parseStashCommand,
+  pushStash as purePushStash,
+  saveStashes,
+  type StashEntry,
+} from "./prompt-stash-logic";
 
 const STASH_FILE = join(homedir(), ".pi", "agent", "prompt-stash.json");
 
-interface StashEntry {
-  id: number;
-  text: string;
-  timestamp: number;
-}
-
-function loadStashes(): StashEntry[] {
-  try {
-    if (existsSync(STASH_FILE)) {
-      return JSON.parse(readFileSync(STASH_FILE, "utf-8"));
-    }
-  } catch {}
-  return [];
-}
-
-function saveStashes(stashes: StashEntry[]): void {
-  const dir = dirname(STASH_FILE);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(STASH_FILE, JSON.stringify(stashes, null, 2), "utf-8");
-}
-
-function formatPreview(text: string, maxLen = 60): string {
-  const oneLine = text.replace(/\n+/g, "↵ ").trim();
-  return oneLine.length > maxLen ? oneLine.slice(0, maxLen) + "…" : oneLine;
-}
-
-function formatTime(ts: number): string {
-  const d = new Date(ts);
-  const now = new Date();
-  const diffMs = now.getTime() - ts;
-  const diffMins = Math.floor(diffMs / 60_000);
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return d.toLocaleDateString();
-}
-
 export default function (pi: ExtensionAPI) {
-  let stashes: StashEntry[] = loadStashes();
-  let nextId = stashes.length > 0 ? Math.max(...stashes.map((s) => s.id)) + 1 : 1;
+  let stashes: StashEntry[] = loadStashes(STASH_FILE);
+  let nextId = nextIdFromStashes(stashes);
 
   function pushStash(text: string): StashEntry {
-    const entry: StashEntry = { id: nextId++, text, timestamp: Date.now() };
-    stashes.unshift(entry); // most recent first
-    saveStashes(stashes);
-    return entry;
+    const result = purePushStash(stashes, nextId, text);
+    stashes = result.stashes;
+    nextId = result.nextId;
+    saveStashes(stashes, STASH_FILE);
+    return result.entry;
   }
 
   function updateStatus(ctx: ExtensionContext) {
@@ -85,8 +57,8 @@ export default function (pi: ExtensionAPI) {
 
   // Reload stashes when session starts (picks up changes from other sessions)
   pi.on("session_start", async (_event, ctx) => {
-    stashes = loadStashes();
-    nextId = stashes.length > 0 ? Math.max(...stashes.map((s) => s.id)) + 1 : 1;
+    stashes = loadStashes(STASH_FILE);
+    nextId = nextIdFromStashes(stashes);
     updateStatus(ctx);
   });
 
@@ -120,7 +92,7 @@ export default function (pi: ExtensionAPI) {
         return;
       }
       const entry = stashes.shift()!;
-      saveStashes(stashes);
+      saveStashes(stashes, STASH_FILE);
       updateStatus(ctx);
       ctx.ui.setEditorText(entry.text);
       ctx.ui.notify(`Stash #${entry.id} restored  (${stashes.length} remaining)`, "success");
@@ -136,55 +108,34 @@ export default function (pi: ExtensionAPI) {
       return filtered.length > 0 ? filtered.map((c) => ({ value: c, label: c })) : null;
     },
     handler: async (args, ctx) => {
-      const trimmed = args.trim();
-      const parts = trimmed.split(/\s+/);
-      const sub = parts[0];
+      const action = parseStashCommand(args, stashes.length);
 
-      // /stash pop [n]
-      if (sub === "pop") {
-        const n = parts[1] ? parseInt(parts[1], 10) : 1;
-        if (stashes.length === 0) {
-          ctx.ui.notify("No stashes", "warning");
-          return;
-        }
-        if (isNaN(n) || n < 1 || n > stashes.length) {
-          ctx.ui.notify(
-            `Index out of range. Have ${stashes.length} stash${stashes.length !== 1 ? "es" : ""}.`,
-            "warning"
-          );
-          return;
-        }
-        const entry = stashes.splice(n - 1, 1)[0];
-        saveStashes(stashes);
+      if (action.type === "error") {
+        ctx.ui.notify(action.message, "warning");
+        return;
+      }
+
+      if (action.type === "pop") {
+        const entry = stashes.splice(action.index, 1)[0];
+        saveStashes(stashes, STASH_FILE);
         updateStatus(ctx);
         ctx.ui.setEditorText(entry.text);
-        ctx.ui.notify(`Stash ${n} restored to editor`, "success");
+        ctx.ui.notify(`Stash ${action.index + 1} restored to editor`, "success");
         return;
       }
 
-      // /stash drop [n]
-      if (sub === "drop") {
-        const n = parts[1] ? parseInt(parts[1], 10) : 1;
-        if (stashes.length === 0) {
-          ctx.ui.notify("No stashes", "warning");
-          return;
-        }
-        if (isNaN(n) || n < 1 || n > stashes.length) {
-          ctx.ui.notify(
-            `Index out of range. Have ${stashes.length} stash${stashes.length !== 1 ? "es" : ""}.`,
-            "warning"
-          );
-          return;
-        }
-        const dropped = stashes.splice(n - 1, 1)[0];
-        saveStashes(stashes);
+      if (action.type === "drop") {
+        const dropped = stashes.splice(action.index, 1)[0];
+        saveStashes(stashes, STASH_FILE);
         updateStatus(ctx);
-        ctx.ui.notify(`Dropped stash ${n}: "${formatPreview(dropped.text, 40)}"`, "info");
+        ctx.ui.notify(
+          `Dropped stash ${action.index + 1}: "${formatPreview(dropped.text, 40)}"`,
+          "info"
+        );
         return;
       }
 
-      // /stash clear
-      if (sub === "clear") {
+      if (action.type === "clear") {
         if (stashes.length === 0) {
           ctx.ui.notify("No stashes to clear", "info");
           return;
@@ -195,25 +146,24 @@ export default function (pi: ExtensionAPI) {
         );
         if (ok) {
           stashes = [];
-          saveStashes(stashes);
+          saveStashes(stashes, STASH_FILE);
           updateStatus(ctx);
           ctx.ui.notify("All stashes cleared", "info");
         }
         return;
       }
 
-      // /stash <text> (non-keyword args → save directly as stash)
-      if (trimmed && sub !== "list") {
-        const entry = pushStash(trimmed);
+      if (action.type === "save") {
+        const entry = pushStash(action.text);
         updateStatus(ctx);
         ctx.ui.notify(
-          `Stashed #${entry.id}: "${formatPreview(trimmed, 40)}"  (${stashes.length} total)`,
+          `Stashed #${entry.id}: "${formatPreview(action.text, 40)}"  (${stashes.length} total)`,
           "success"
         );
         return;
       }
 
-      // /stash or /stash list → interactive picker
+      // list
       if (stashes.length === 0) {
         ctx.ui.notify("No stashes  —  use ctrl+s or /stash <text> to save one", "info");
         return;
@@ -233,19 +183,19 @@ export default function (pi: ExtensionAPI) {
       if (idx < 0) return;
 
       const entry = stashes[idx];
-      const action = await ctx.ui.select(`Stash ${idx + 1}: "${formatPreview(entry.text, 40)}"`, [
+      const picked = await ctx.ui.select(`Stash ${idx + 1}: "${formatPreview(entry.text, 40)}"`, [
         "Restore to editor",
         "View full text",
         "Delete",
       ]);
 
-      if (action === "Restore to editor") {
+      if (picked === "Restore to editor") {
         stashes.splice(idx, 1);
-        saveStashes(stashes);
+        saveStashes(stashes, STASH_FILE);
         updateStatus(ctx);
         ctx.ui.setEditorText(entry.text);
         ctx.ui.notify(`Stash ${idx + 1} restored`, "success");
-      } else if (action === "View full text") {
+      } else if (picked === "View full text") {
         // Re-open editor in read-only style with full text pre-filled
         const edited = await ctx.ui.editor(
           "Stash (edit to update, confirm to save back)",
@@ -253,12 +203,12 @@ export default function (pi: ExtensionAPI) {
         );
         if (edited !== undefined && edited.trim() && edited.trim() !== entry.text) {
           stashes[idx] = { ...entry, text: edited.trim(), timestamp: Date.now() };
-          saveStashes(stashes);
+          saveStashes(stashes, STASH_FILE);
           ctx.ui.notify("Stash updated", "success");
         }
-      } else if (action === "Delete") {
+      } else if (picked === "Delete") {
         stashes.splice(idx, 1);
-        saveStashes(stashes);
+        saveStashes(stashes, STASH_FILE);
         updateStatus(ctx);
         ctx.ui.notify(`Stash ${idx + 1} deleted`, "info");
       }
