@@ -169,11 +169,18 @@
         alias = "First person arrives home";
         id = "first_person_arrives";
         description = "Welcome home — lights on, house mode Home";
-        trigger = {
-          platform = "state";
-          entity_id = "person.edmund_miller";
-          to = "home";
-        };
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "person.edmund_miller";
+            to = "home";
+          }
+          {
+            platform = "state";
+            entity_id = "person.monica";
+            to = "home";
+          }
+        ];
         condition = [
           {
             condition = "state";
@@ -192,11 +199,18 @@
         alias = "Last person leaves home";
         id = "last_person_leaves";
         description = "Everything off (except indicators), close blinds, away mode";
-        trigger = {
-          platform = "state";
-          entity_id = "person.edmund_miller";
-          from = "home";
-        };
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "person.edmund_miller";
+            from = "home";
+          }
+          {
+            platform = "state";
+            entity_id = "person.monica";
+            from = "home";
+          }
+        ];
         condition = [
           {
             # Only fire when no one is home
