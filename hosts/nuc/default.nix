@@ -89,13 +89,7 @@
         enableClaude = true;
         enableCodex = true;
       };
-      # taskwarrior module removed - TODO restore when available
-      # taskwarrior = {
-      #   enable = true;
-      #   syncUrl = "http://localhost:8080";
-      #   shortcuts.enable = false;
-      #   timewarriorHook.enable = false;
-      # };
+
     };
     services = {
       audiobookshelf.enable = true;
@@ -225,7 +219,6 @@
       ssh.enable = true;
       syncthing.enable = false;
       tailscale.enable = true;
-      taskchampion.enable = true;
       obsidian-sync.enable = true;
       vault-sync = {
         enable = false; # TODO: re-enable after creating cubox-api-key.age and snipd-api-key.age
