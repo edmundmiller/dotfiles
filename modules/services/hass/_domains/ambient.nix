@@ -217,6 +217,17 @@
             condition = "template";
             value_template = "{{ states.person | selectattr('state', 'eq', 'home') | list | length == 0 }}";
           }
+          {
+            # Don't override vacation mode — it manages its own state
+            condition = "not";
+            conditions = [
+              {
+                condition = "state";
+                entity_id = "input_select.house_mode";
+                state = "Vacation";
+              }
+            ];
+          }
         ];
         action = [
           {

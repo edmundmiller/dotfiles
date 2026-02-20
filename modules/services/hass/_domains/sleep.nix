@@ -9,6 +9,16 @@
 #   Winding Down  ← 10:00 PM daily
 #   In Bed        ← bed presence (Monica, 2 min)
 #   Sleep         ← manual or future: audiobook stops / sleep focus activates
+#
+# Apple integration (iPhone ↔ 8Sleep):
+#   iPhone alarm sensor  → set_one_off_alarm on 8Sleep (keeps them in sync)
+#   Sleep Focus off 6–9am → dismiss 8Sleep alarm + side_off (manual wake = skip alarm)
+#
+# Entity name notes (verify in HA dev tools > States if IDs change):
+#   8Sleep service target: sensor.edmund_s_eight_sleep_side_sleep_stage
+#   8Sleep next alarm switch: switch.edmund_s_eight_sleep_next_alarm
+#   iPhone next alarm: sensor.edmunds_iphone_next_alarm (datetime)
+#   iPhone focus: binary_sensor.edmunds_iphone_focus (on = any focus active)
 { lib, ... }:
 {
   services.home-assistant.config = {
@@ -136,6 +146,129 @@
           }
         ];
       }
+
+      # ── Apple ↔ 8Sleep integration ─────────────────────────────────────────
+
+      # Sync Edmund's iPhone next alarm → 8Sleep one-off alarm
+      # iPhone sensor is a datetime; extract local time for set_one_off_alarm.
+      # Conditions filter out unavailable state and non-morning alarms (≥11am
+      # = not a wake alarm, skip it).
+      {
+        alias = "Sync iPhone Alarm to 8Sleep";
+        id = "sync_iphone_alarm_8sleep";
+        description = "iPhone next alarm changes → set matching one-off alarm on 8Sleep";
+        trigger = {
+          platform = "state";
+          entity_id = "sensor.edmunds_iphone_next_alarm";
+        };
+        condition = [
+          {
+            condition = "template";
+            value_template = "{{ states('sensor.edmunds_iphone_next_alarm') not in ['unknown', 'unavailable', 'none'] }}";
+          }
+          {
+            condition = "template";
+            # Ignore alarms set for 11am or later — those aren't sleep alarms
+            value_template = "{{ (states('sensor.edmunds_iphone_next_alarm') | as_datetime | as_local).hour < 11 }}";
+          }
+        ];
+        action = [
+          {
+            # Verify entity in HA dev-tools → States: filter eight_sleep / sensor
+            action = "eight_sleep.set_one_off_alarm";
+            target.entity_id = "sensor.edmund_s_eight_sleep_side_sleep_stage";
+            data = {
+              time = "{{ (states('sensor.edmunds_iphone_next_alarm') | as_datetime | as_local).strftime('%H:%M:%S') }}";
+              enabled = true;
+              vibration_enabled = true;
+              vibration_power_level = "50";
+              thermal_enabled = false; # thermal wake handled by existing 8Sleep routine
+            };
+          }
+        ];
+      }
+
+      # Sleep Focus off 6–9am → cancel + dismiss 8Sleep alarm, turn off Edmund's side
+      # Covers two cases: alarm hasn't fired yet (switch off) and actively ringing (dismiss).
+      {
+        alias = "Sleep Focus Off - Stop Edmund 8Sleep";
+        id = "sleep_focus_off_stop_edmund";
+        description = "Edmund turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
+        trigger = {
+          platform = "state";
+          entity_id = "binary_sensor.edmunds_iphone_focus";
+          to = "off";
+        };
+        condition = [
+          {
+            condition = "time";
+            after = "06:00:00";
+            before = "09:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "input_select.house_mode";
+            state = "Night";
+          }
+        ];
+        action = [
+          # Cancel if not yet ringing
+          {
+            action = "switch.turn_off";
+            target.entity_id = "switch.edmund_s_eight_sleep_next_alarm";
+          }
+          # Dismiss if actively ringing
+          {
+            action = "eight_sleep.alarm_dismiss";
+            target.entity_id = "sensor.edmund_s_eight_sleep_side_sleep_stage";
+          }
+          # Stop heating/cooling
+          {
+            action = "eight_sleep.side_off";
+            target.entity_id = "sensor.edmund_s_eight_sleep_side_sleep_stage";
+          }
+        ];
+      }
+
+      # Sleep Focus off 6–9am → cancel + dismiss 8Sleep alarm, turn off Monica's side
+      {
+        alias = "Sleep Focus Off - Stop Monica 8Sleep";
+        id = "sleep_focus_off_stop_monica";
+        description = "Monica turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
+        trigger = {
+          platform = "state";
+          entity_id = "binary_sensor.monicas_iphone_focus";
+          to = "off";
+        };
+        condition = [
+          {
+            condition = "time";
+            after = "06:00:00";
+            before = "09:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "input_select.house_mode";
+            state = "Night";
+          }
+        ];
+        action = [
+          {
+            action = "switch.turn_off";
+            target.entity_id = "switch.monica_s_eight_sleep_next_alarm";
+          }
+          {
+            action = "eight_sleep.alarm_dismiss";
+            target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
+          }
+          {
+            action = "eight_sleep.side_off";
+            target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
+          }
+        ];
+      }
+
+      # ───────────────────────────────────────────────────────────────────────
 
       # Good Morning — both out of bed for 2 min, after 7am
       {

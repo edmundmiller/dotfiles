@@ -8,7 +8,8 @@ Each file is a logical grouping of HA config (scenes, automations, scripts, inpu
 - `conversation.nix` — Voice/conversation config
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
 - `modes.nix` — House modes (`Home`/`Away`/`Night`), goodnight toggle, DND, everything_off script
-- `sleep.nix` — Three-stage bedtime (Winding Down → In Bed → Sleep), bed presence, wake routines
+- `sleep.nix` — Three-stage bedtime (Winding Down → In Bed → Sleep), bed presence, wake routines, Apple↔8Sleep integration
+- `vacation.nix` — Vacation mode: 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 
 ## Cross-domain dependencies
