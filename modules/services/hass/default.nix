@@ -149,6 +149,9 @@ in
           homeassistant = {
             internal_url = "http://192.168.1.222:8123";
             external_url = "https://homeassistant.cinnamon-rooster.ts.net";
+            latitude = "!secret latitude";
+            longitude = "!secret longitude";
+            elevation = "!secret elevation";
           };
 
           http = {
@@ -182,6 +185,12 @@ in
         };
       };
 
+      # Decrypt hass-secrets.age → HA secrets.yaml (owner: hass)
+      age.secrets.hass-secrets = {
+        owner = "hass";
+        group = "hass";
+      };
+
       # Create empty yaml files so HA doesn't fail on first start
       systemd.tmpfiles.rules = [
         "f ${config.services.home-assistant.configDir}/automations.yaml 0644 hass hass"
@@ -196,6 +205,9 @@ in
         };
         "${config.services.home-assistant.configDir}/ui-lovelace.yaml" = {
           L.argument = "${./dashboard.yaml}";
+        };
+        "${config.services.home-assistant.configDir}/secrets.yaml" = {
+          L.argument = config.age.secrets.hass-secrets.path;
         };
       };
 
@@ -244,13 +256,8 @@ in
         ];
       };
 
-      # Firewall: open HA port on tailscale and LAN
-      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
-        config.services.home-assistant.config.http.server_port
-      ];
-      networking.firewall.allowedTCPPorts = [
-        config.services.home-assistant.config.http.server_port
-      ];
+      # Firewall: open HA port on LAN and tailscale
+      services.home-assistant.openFirewall = true;
 
       # Homebridge
       services.homebridge = mkIf cfg.homebridge.enable {
