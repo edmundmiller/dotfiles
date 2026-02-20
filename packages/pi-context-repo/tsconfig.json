@@ -7,7 +7,7 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["bun"]
   },
   "include": ["index.ts"]
 }
