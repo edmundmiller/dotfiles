@@ -503,6 +503,195 @@ Ask yourself: "If I started a new session tomorrow, what from this conversation 
 If the answer is meaningful, use memory_write to update the appropriate file(s), then memory_commit.
 </system-reminder>`;
 
+// --- /remember prompt ---
+
+const REMEMBER_PROMPT = `<system-reminder>
+The user has invoked /remember, requesting you commit something to memory.
+
+## What to do
+
+1. **Identify what to remember**: Look at recent conversation context. If they provided text after /remember, that's the target. Otherwise infer from context.
+
+2. **Determine the right memory file**: Use memory_write to store in the appropriate file. Consider:
+   - User preferences → system/user.md
+   - Coding style → system/style.md
+   - Project knowledge → system/project.md
+   - Agent behavior → system/persona.md
+   - Create a new file if no existing file fits
+
+3. **Confirm the update**: After writing, briefly confirm what you remembered and where.
+
+## Guidelines
+- Be concise — distill to essence
+- Avoid duplicates — check existing content first
+- Match existing file formatting
+- If unclear, ask the user to clarify
+</system-reminder>`;
+
+// --- Worktree helpers ---
+
+export function getWorktreeDir(memDir: string): string {
+  return join(memDir, "..", "memory-worktrees");
+}
+
+export interface WorktreeInfo {
+  branch: string;
+  path: string;
+}
+
+/**
+ * Create a git worktree for isolated memory edits.
+ * Returns the worktree path and branch name.
+ */
+export async function createWorktree(
+  pi: ExtensionAPI,
+  memDir: string,
+  prefix: string
+): Promise<WorktreeInfo> {
+  const worktreeDir = getWorktreeDir(memDir);
+  mkdirSync(worktreeDir, { recursive: true });
+
+  const branch = `${prefix}-${Date.now()}`;
+  const wtPath = join(worktreeDir, branch);
+
+  await git(pi, memDir, ["worktree", "add", wtPath, "-b", branch]);
+
+  return { branch, path: wtPath };
+}
+
+/**
+ * Merge a worktree branch back to main, then clean up.
+ */
+export async function mergeWorktree(
+  pi: ExtensionAPI,
+  memDir: string,
+  wt: WorktreeInfo
+): Promise<{ merged: boolean; pushed: boolean; summary: string }> {
+  // Pull latest first
+  if (await hasRemote(pi, memDir)) {
+    try {
+      await git(pi, memDir, ["pull", "--ff-only"]);
+    } catch {
+      try {
+        await git(pi, memDir, ["pull", "--rebase"]);
+      } catch {
+        // continue — merge may still work
+      }
+    }
+  }
+
+  // Merge the branch
+  let merged = false;
+  try {
+    await git(pi, memDir, ["merge", wt.branch, "--no-edit"]);
+    merged = true;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { merged: false, pushed: false, summary: `Merge failed: ${msg}` };
+  }
+
+  // Push if remote configured
+  let pushed = false;
+  if (await hasRemote(pi, memDir)) {
+    try {
+      await git(pi, memDir, ["push"]);
+      pushed = true;
+    } catch {
+      // non-fatal — local main has the merge
+    }
+  }
+
+  // Clean up worktree and branch
+  try {
+    await git(pi, memDir, ["worktree", "remove", wt.path]);
+    await git(pi, memDir, ["branch", "-d", wt.branch]);
+  } catch {
+    // non-fatal
+  }
+
+  const summary = pushed ? "Merged and pushed" : "Merged (push pending)";
+  return { merged, pushed, summary };
+}
+
+// --- Prompt drift detection ---
+
+export type DriftCode =
+  | "legacy_memory_section"
+  | "orphan_memory_fragment"
+  | "duplicate_memory_section";
+
+export interface PromptDrift {
+  code: DriftCode;
+  message: string;
+}
+
+/**
+ * Detect memory-related drift in system prompt.
+ * Identifies legacy sections, orphan fragments, and duplicates.
+ */
+export function detectPromptDrift(systemPrompt: string): PromptDrift[] {
+  const drifts: PromptDrift[] = [];
+
+  // Check for legacy "Memory" sections that aren't from context-repo
+  const hasLegacyMemory =
+    systemPrompt.includes("Your memory consists of core memory") ||
+    systemPrompt.includes("composed of memory blocks");
+  if (hasLegacyMemory) {
+    drifts.push({
+      code: "legacy_memory_section",
+      message:
+        "System prompt contains legacy memory-block language incompatible with context-repo.",
+    });
+  }
+
+  // Check for orphan git sync fragments without full memory section
+  const hasOrphanSync =
+    systemPrompt.includes("git add system/") &&
+    systemPrompt.includes('git commit -m "') &&
+    !systemPrompt.includes("Context Repository (Agent Memory)");
+  if (hasOrphanSync) {
+    drifts.push({
+      code: "orphan_memory_fragment",
+      message:
+        "System prompt contains orphaned memory sync fragment without full context-repo section.",
+    });
+  }
+
+  // Check for duplicate context-repo sections
+  const contextRepoMatches = systemPrompt.match(/## Context Repository \(Agent Memory\)/g);
+  if (contextRepoMatches && contextRepoMatches.length > 1) {
+    drifts.push({
+      code: "duplicate_memory_section",
+      message: `System prompt contains ${contextRepoMatches.length} duplicate Context Repository sections.`,
+    });
+  }
+
+  return drifts;
+}
+
+/**
+ * Strip managed memory sections from a system prompt.
+ * Used before re-injecting to prevent duplicates.
+ */
+export function stripManagedMemorySections(systemPrompt: string): string {
+  // Remove context-repo section (## Context Repository ... to next ## or end)
+  let result = systemPrompt.replace(
+    /\n## Context Repository \(Agent Memory\)[\s\S]*?(?=\n## [^C]|\n## $|$)/g,
+    ""
+  );
+
+  // Remove system-reminder blocks injected by this extension
+  result = result.replace(
+    /<system-reminder>\nMEMORY (?:SYNC|REFLECTION|CHECK):[\s\S]*?<\/system-reminder>/g,
+    ""
+  );
+
+  // Compact blank lines
+  result = result.replace(/\n{3,}/g, "\n\n").trimEnd();
+
+  return result;
+}
+
 // --- Scaffold ---
 
 export function scaffoldMemory(memDir: string): void {
@@ -527,6 +716,39 @@ You are a helpful coding assistant.
       `${buildFrontmatter({ description: "User preferences and context", limit: 3000 })}
 
 (No user preferences recorded yet.)
+`
+    );
+  }
+
+  // Project block — codebase knowledge (inspired by Letta's project.mdx)
+  const projectFile = join(sysDir, "project.md");
+  if (!existsSync(projectFile)) {
+    writeFileSync(
+      projectFile,
+      `${buildFrontmatter({ description: "Codebase architecture, patterns, gotchas, and tribal knowledge", limit: 3000 })}
+
+I'm still getting to know this codebase.
+
+As I work here, I'll build up knowledge about: how the code is structured and why,
+patterns and conventions the team follows, footguns to avoid, tooling and workflows.
+
+If there's an AGENTS.md, CLAUDE.md, or README, I should read it early.
+`
+    );
+  }
+
+  // Style block — coding preferences (inspired by Letta's style.mdx)
+  const styleFile = join(sysDir, "style.md");
+  if (!existsSync(styleFile)) {
+    writeFileSync(
+      styleFile,
+      `${buildFrontmatter({ description: "User's coding preferences and conventions", limit: 3000 })}
+
+Nothing here yet. If the user reveals preferences about how they code
+(or how they want me to code), I should store them here.
+
+Examples: "always use bun not npm", "never git commit without asking first",
+"prefer functional style over classes".
 `
     );
   }
@@ -597,11 +819,19 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
     const tree = buildTree(memDir);
     const systemContent = loadSystemFiles(memDir);
 
+    // Detect and warn about prompt drift
+    const drifts = detectPromptDrift(event.systemPrompt);
+    let driftWarning = "";
+    if (drifts.length > 0) {
+      driftWarning = `\n<system-reminder>\nMEMORY PROMPT DRIFT DETECTED:\n${drifts.map((d) => `- ${d.message}`).join("\n")}\nThe context-repo extension manages memory sections. Legacy fragments may cause confusion.\n</system-reminder>\n`;
+    }
+
     let memoryBlock = `
 ## Context Repository (Agent Memory)
 
 Your persistent memory is stored in \`${MEMORY_DIR_NAME}/\` (git-backed).
 Files in \`${SYSTEM_DIR}/\` are pinned below. Other files are in the tree — use the read tool to load them.
+The memory directory is available as \`$MEMORY_DIR\` in shell commands.
 
 ### Memory Filesystem
 \`\`\`
@@ -614,12 +844,23 @@ ${systemContent || "(No system files yet.)"}
 
 ### Memory Guidelines
 - To remember something: use the memory_write tool (validates frontmatter, enforces limits)
+- To remove a file: use the memory_delete tool
 - Each file needs frontmatter: \`description\` (what it contains) and \`limit\` (max chars)
 - Put always-needed context in \`${SYSTEM_DIR}/\`, reference material elsewhere
 - Use hierarchical \`/\` naming: \`system/project/tooling.md\`, not \`system/project-tooling.md\`
 - After changes, use memory_commit to save
 - Apply memory naturally — don't narrate "I remember that..." — just use what you know
 - Files marked \`read_only\` cannot be modified
+
+### Syncing
+\`\`\`bash
+cd "$MEMORY_DIR"
+git status                           # See what changed
+git add system/
+git commit -m "<type>: <what changed>"  # e.g. "fix: update user prefs"
+git push                             # Push to remote
+git pull                             # Get latest from remote
+\`\`\`
 `;
 
     // Sync reminder (dirty or ahead-of-remote)
@@ -645,7 +886,11 @@ ${systemContent || "(No system files yet.)"}
     }
 
     return {
-      systemPrompt: event.systemPrompt + "\n" + memoryBlock,
+      systemPrompt: event.systemPrompt + "\n" + driftWarning + memoryBlock,
+      env: {
+        MEMORY_DIR: memDir,
+        PI_MEMORY_DIR: memDir,
+      },
     };
   });
 
@@ -743,6 +988,47 @@ ${systemContent || "(No system files yet.)"}
       return toolResult(
         `Wrote ${relPath} (${params.content.length}/${effectiveLimit} chars). Staged for commit.`
       );
+    },
+  });
+
+  pi.registerTool({
+    name: "memory_delete",
+    label: "Memory Delete",
+    description: "Delete a memory file and stage the deletion. Cannot delete read-only files.",
+    parameters: Type.Object({
+      path: Type.String({
+        description: "Relative path within .pi/memory/ (e.g. 'reference/old-notes.md')",
+      }),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+      if (!initialized) {
+        return toolResult("Context repo not initialized.");
+      }
+
+      const pathWithExt = params.path.endsWith(".md") ? params.path : params.path + ".md";
+      const filePath = join(memDir, pathWithExt);
+
+      if (!existsSync(filePath)) {
+        return toolResult(`Error: ${pathWithExt} does not exist.`);
+      }
+
+      // Check read_only
+      const content = readFileSync(filePath, "utf-8");
+      const { frontmatter } = parseFrontmatter(content);
+      if (frontmatter.read_only) {
+        return toolResult(`Error: ${pathWithExt} is read_only and cannot be deleted.`);
+      }
+
+      // Remove and stage
+      const relPath = relative(memDir, filePath);
+      rmSync(filePath);
+      await git(pi, memDir, ["add", relPath]);
+
+      // Update widget
+      const status = await getStatus(pi, memDir);
+      ctx.ui.setWidget(EXT_TYPE, statusWidget(status));
+
+      return toolResult(`Deleted ${relPath}. Staged for commit.`);
     },
   });
 
@@ -1045,6 +1331,24 @@ Key steps:
     },
   });
 
+  pi.registerCommand("remember", {
+    description:
+      "Explicitly tell the agent to commit something to memory (usage: /remember [what to remember])",
+    handler: async (args, _ctx) => {
+      if (!initialized || !existsSync(memDir)) {
+        _ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      const userText = args.trim();
+      const prompt = userText
+        ? `${REMEMBER_PROMPT}\n\nThe user wants to remember: "${userText}"`
+        : REMEMBER_PROMPT;
+
+      pi.sendUserMessage(prompt);
+    },
+  });
+
   pi.registerCommand("memory-diff", {
     description: "Show uncommitted memory changes",
     handler: async (_args, ctx) => {
@@ -1142,6 +1446,41 @@ Key steps:
       mkdirSync(outDir, { recursive: true });
       cpSync(memDir, outDir, { recursive: true });
       ctx.ui.notify(`Exported memory to: ${outDir}`, "info");
+    },
+  });
+
+  pi.registerCommand("memory-import", {
+    description: "Import memory from another directory (usage: /memory-import <source-dir>)",
+    handler: async (args, ctx) => {
+      if (!initialized) {
+        ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      const srcDir = args.trim();
+      if (!srcDir) {
+        ctx.ui.notify("Usage: /memory-import <source-dir>", "warning");
+        return;
+      }
+
+      if (!existsSync(srcDir)) {
+        ctx.ui.notify(`Source directory not found: ${srcDir}`, "error");
+        return;
+      }
+
+      // Copy files from source (preserving existing)
+      cpSync(srcDir, memDir, { recursive: true, force: false });
+      installPreCommitHook(memDir);
+
+      // Stage and commit
+      try {
+        await git(pi, memDir, ["add", "-A"]);
+        await git(pi, memDir, ["commit", "-m", `import: memory from ${srcDir}`]);
+      } catch {
+        // may have nothing new
+      }
+
+      ctx.ui.notify(`Imported memory from: ${srcDir}`, "info");
     },
   });
 

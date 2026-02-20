@@ -14,12 +14,15 @@ import {
   type MemoryStatus,
   buildFrontmatter,
   buildTree,
+  detectPromptDrift,
   formatBackupTimestamp,
+  getWorktreeDir,
   installPreCommitHook,
   loadSystemFiles,
   parseFrontmatter,
   scaffoldMemory,
   statusWidget,
+  stripManagedMemorySections,
   validateFrontmatter,
 } from "./index";
 
@@ -380,5 +383,114 @@ describe("installPreCommitHook", () => {
     const content = readFileSync(hookPath, "utf-8");
     expect(content).not.toContain("echo old");
     expect(content).toContain("Validate frontmatter");
+  });
+});
+
+// --- detectPromptDrift ---
+
+describe("detectPromptDrift", () => {
+  test("returns empty for clean prompt", () => {
+    expect(detectPromptDrift("You are a helpful assistant.")).toEqual([]);
+  });
+
+  test("detects legacy memory-block language", () => {
+    const prompt = "Your memory consists of core memory (composed of memory blocks)";
+    const drifts = detectPromptDrift(prompt);
+    expect(drifts).toHaveLength(1);
+    expect(drifts[0].code).toBe("legacy_memory_section");
+  });
+
+  test("detects orphan sync fragment", () => {
+    const prompt = 'Some text\ngit add system/\ngit commit -m "update"';
+    const drifts = detectPromptDrift(prompt);
+    expect(drifts).toHaveLength(1);
+    expect(drifts[0].code).toBe("orphan_memory_fragment");
+  });
+
+  test("does not flag sync fragment when context-repo section present", () => {
+    const prompt = '## Context Repository (Agent Memory)\ngit add system/\ngit commit -m "update"';
+    const drifts = detectPromptDrift(prompt);
+    expect(drifts.every((d) => d.code !== "orphan_memory_fragment")).toBe(true);
+  });
+
+  test("detects duplicate context-repo sections", () => {
+    const prompt =
+      "## Context Repository (Agent Memory)\nfirst\n## Context Repository (Agent Memory)\nsecond";
+    const drifts = detectPromptDrift(prompt);
+    expect(drifts.some((d) => d.code === "duplicate_memory_section")).toBe(true);
+  });
+});
+
+// --- stripManagedMemorySections ---
+
+describe("stripManagedMemorySections", () => {
+  test("removes context-repo section", () => {
+    const prompt =
+      "Before.\n\n## Context Repository (Agent Memory)\n\nMemory content here.\n\n## Other Section\n\nAfter.";
+    const result = stripManagedMemorySections(prompt);
+    expect(result).not.toContain("Context Repository");
+    expect(result).toContain("Before.");
+    expect(result).toContain("Other Section");
+  });
+
+  test("removes system-reminder blocks", () => {
+    const prompt =
+      "Before.\n<system-reminder>\nMEMORY SYNC: 2 uncommitted\n</system-reminder>\nAfter.";
+    const result = stripManagedMemorySections(prompt);
+    expect(result).not.toContain("MEMORY SYNC");
+    expect(result).toContain("Before.");
+    expect(result).toContain("After.");
+  });
+
+  test("preserves unrelated content", () => {
+    const prompt = "## Instructions\n\nDo stuff.\n\n## Notes\n\nSome notes.";
+    expect(stripManagedMemorySections(prompt)).toBe(prompt);
+  });
+
+  test("compacts excessive blank lines", () => {
+    const prompt = "A.\n\n\n\n\nB.";
+    expect(stripManagedMemorySections(prompt)).toBe("A.\n\nB.");
+  });
+});
+
+// --- getWorktreeDir ---
+
+describe("getWorktreeDir", () => {
+  test("returns sibling memory-worktrees directory", () => {
+    const memDir = "/home/user/.pi/memory";
+    expect(getWorktreeDir(memDir)).toBe("/home/user/.pi/memory-worktrees");
+  });
+});
+
+// --- scaffoldMemory (new blocks) ---
+
+describe("scaffoldMemory new blocks", () => {
+  let memDir: string;
+
+  beforeEach(() => {
+    memDir = join(tmpMemDir(), "memory");
+  });
+  afterEach(() => {
+    rmSync(join(memDir, ".."), { recursive: true, force: true });
+  });
+
+  test("creates system/project.md with valid frontmatter", () => {
+    scaffoldMemory(memDir);
+    const content = readFileSync(join(memDir, "system/project.md"), "utf-8");
+    const { frontmatter, body } = parseFrontmatter(content);
+    expect(frontmatter.description).toBeTruthy();
+    expect(frontmatter.limit).toBeGreaterThan(0);
+    expect(validateFrontmatter(content, "system/project.md")).toEqual([]);
+    expect(body).toContain("codebase");
+  });
+
+  test("creates system/style.md with valid frontmatter", () => {
+    scaffoldMemory(memDir);
+    const content = readFileSync(join(memDir, "system/style.md"), "utf-8");
+    const { frontmatter, body } = parseFrontmatter(content);
+    expect(frontmatter.description).toBeTruthy();
+    expect(frontmatter.limit).toBeGreaterThan(0);
+    expect(validateFrontmatter(content, "system/style.md")).toEqual([]);
+    expect(body).toContain("preferences");
   });
 });
