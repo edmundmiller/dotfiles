@@ -15,7 +15,7 @@ views:
       # ── Quick Actions ──
       - cards:
           - type: heading
-            heading: Quick Actions
+            heading: Scenes
             heading_style: subtitle
 
           - type: custom:mushroom-select-card
@@ -23,61 +23,75 @@ views:
             icon: mdi:home
             fill_container: true
 
+          # Bedtime flow — the main nightly progression
+          - type: heading
+            heading: Bedtime
+            heading_style: subtitle
+            icon: mdi:bed-clock
+
           - type: grid
-            columns: 2
+            columns: 3
             square: false
             cards:
-              - type: custom:mushroom-entity-card
-                entity: scene.good_morning
-                name: Morning
-                icon: mdi:weather-sunny
-                icon_color: amber
-                tap_action:
-                  action: perform-action
-                  perform_action: scene.turn_on
-                  target:
-                    entity_id: scene.good_morning
-                layout: vertical
-                fill_container: true
-
-              - type: custom:mushroom-entity-card
-                entity: scene.movie
-                name: Movie
-                icon: mdi:movie-open
-                icon_color: indigo
-                tap_action:
-                  action: perform-action
-                  perform_action: scene.turn_on
-                  target:
-                    entity_id: scene.movie
-                layout: vertical
-                fill_container: true
-
-              - type: custom:mushroom-entity-card
-                entity: scene.goodnight
-                name: Goodnight
+              - type: button
+                entity: scene.winding_down
+                name: Wind Down
                 icon: mdi:weather-night
-                icon_color: deep-purple
+                show_state: false
                 tap_action:
                   action: perform-action
                   perform_action: scene.turn_on
                   target:
-                    entity_id: scene.goodnight
-                layout: vertical
-                fill_container: true
+                    entity_id: scene.winding_down
 
-              - type: custom:mushroom-entity-card
+              - type: button
+                entity: scene.in_bed
+                name: In Bed
+                icon: mdi:bed
+                show_state: false
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.in_bed
+
+              - type: button
                 entity: scene.sleep
                 name: Sleep
                 icon: mdi:sleep
-                icon_color: blue
+                show_state: false
                 tap_action:
                   action: perform-action
                   perform_action: scene.turn_on
                   target:
                     entity_id: scene.sleep
-                layout: vertical
-                fill_container: true
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: button
+                entity: scene.good_morning
+                name: Morning
+                icon: mdi:weather-sunny
+                show_state: false
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.good_morning
+
+              - type: button
+                entity: script.everything_off
+                name: All Off
+                icon: mdi:power
+                icon_height: 40px
+                show_state: false
+                tap_action:
+                  action: perform-action
+                  perform_action: script.turn_on
+                  target:
+                    entity_id: script.everything_off
 
           - type: grid
             columns: 2
@@ -125,6 +139,13 @@ views:
             fill_container: true
             collapsible_controls: true
 
+          # TV sleep timer — compact
+          - type: custom:mushroom-number-card
+            entity: input_number.tv_sleep_timer
+            name: Sleep Timer
+            icon: mdi:timer-outline
+            fill_container: true
+
       # ── Bedroom ──
       - cards:
           - type: heading
@@ -132,22 +153,26 @@ views:
             heading_style: subtitle
             icon: mdi:bed
 
-          - type: custom:mushroom-cover-card
-            entity: cover.smartwings_window_covering
-            name: Blinds
-            icon: mdi:blinds-horizontal
-            show_buttons_control: true
-            show_position_control: true
-            fill_container: true
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-cover-card
+                entity: cover.smartwings_window_covering
+                name: Blinds
+                icon: mdi:blinds-horizontal
+                show_buttons_control: true
+                show_position_control: true
+                fill_container: true
 
-          - type: custom:mushroom-entity-card
-            entity: switch.eve_energy_20ebu4101
-            name: White Noise
-            icon: mdi:weather-windy
-            icon_color: cyan
-            fill_container: true
-            tap_action:
-              action: toggle
+              - type: custom:mushroom-entity-card
+                entity: switch.eve_energy_20ebu4101
+                name: White Noise
+                icon: mdi:weather-windy
+                icon_color: cyan
+                fill_container: true
+                tap_action:
+                  action: toggle
 
           - type: grid
             columns: 2
@@ -181,33 +206,36 @@ views:
                 fill_container: true
                 collapsible_controls: true
 
-      # ── Kitchen ──
-      - cards:
-          - type: heading
-            heading: Kitchen
-            heading_style: subtitle
-            icon: mdi:silverware-fork-knife
-
-          - type: custom:mushroom-light-card
-            entity: light.essentials_a19_a60
-            name: Trashcan
-            show_brightness_control: true
+          - type: custom:mushroom-entity-card
+            entity: sensor.smartwings_window_covering_battery
+            name: Blinds Battery
+            icon: mdi:battery
             fill_container: true
-            collapsible_controls: true
 
-          - type: custom:mushroom-light-card
-            entity: light.essentials_a19_a60_2
-            name: Dishwasher
-            show_brightness_control: true
-            fill_container: true
-            collapsible_controls: true
-
-      # ── Other Lights ──
+      # ── Lights ──
       - cards:
           - type: heading
             heading: Lights
             heading_style: subtitle
             icon: mdi:lightbulb-group
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-light-card
+                entity: light.essentials_a19_a60
+                name: Trashcan
+                show_brightness_control: true
+                fill_container: true
+                collapsible_controls: true
+
+              - type: custom:mushroom-light-card
+                entity: light.essentials_a19_a60_2
+                name: Dishwasher
+                show_brightness_control: true
+                fill_container: true
+                collapsible_controls: true
 
           - type: custom:mushroom-light-card
             entity: light.smart_night_light_w
@@ -227,7 +255,7 @@ views:
             fill_container: true
             collapsible_controls: true
 
-      # ── Weather & Info ──
+      # ── Weather ──
       - cards:
           - type: heading
             heading: Weather
@@ -238,12 +266,6 @@ views:
             entity: weather.forecast_home
             show_forecast: true
             forecast_type: daily
-
-          - type: custom:mushroom-entity-card
-            entity: sensor.smartwings_window_covering_battery
-            name: Blinds Battery
-            icon: mdi:battery
-            fill_container: true
 
   # ─── View 2: Sleep ──────────────────────────────────────────
   - type: sections
@@ -515,26 +537,22 @@ views:
             columns: 2
             square: false
             cards:
-              - type: custom:mushroom-entity-card
+              - type: button
                 entity: script.tv_on
                 name: TV On
                 icon: mdi:television
-                icon_color: green
-                layout: vertical
-                fill_container: true
+                show_state: false
                 tap_action:
                   action: perform-action
                   perform_action: script.turn_on
                   target:
                     entity_id: script.tv_on
 
-              - type: custom:mushroom-entity-card
+              - type: button
                 entity: script.tv_off
                 name: TV Off
                 icon: mdi:television-off
-                icon_color: red
-                layout: vertical
-                fill_container: true
+                show_state: false
                 tap_action:
                   action: perform-action
                   perform_action: script.turn_on
@@ -565,24 +583,22 @@ views:
             heading_style: subtitle
             icon: mdi:lightning-bolt
 
-          - type: custom:mushroom-entity-card
+          - type: button
             entity: script.everything_off
             name: Everything Off
             icon: mdi:power
-            icon_color: red
-            fill_container: true
+            show_state: false
             tap_action:
               action: perform-action
               perform_action: script.turn_on
               target:
                 entity_id: script.everything_off
 
-          - type: custom:mushroom-entity-card
+          - type: button
             entity: script.bedtime_nudge
             name: Bedtime Nudge
             icon: mdi:bed-clock
-            icon_color: purple
-            fill_container: true
+            show_state: false
             tap_action:
               action: perform-action
               perform_action: script.turn_on
@@ -633,7 +649,7 @@ views:
             name: Edmund
             fill_container: true
 
-      # ── Network & Phone ──
+      # ── Phone & Activity ──
       - cards:
           - type: heading
             heading: Phone & Activity
@@ -702,20 +718,26 @@ views:
 
           - type: entities
             entities:
-              - entity: automation.bed_presence_activate_sleep_scene
-                name: Bed → Sleep
-              - entity: automation.good_morning_both_out_of_bed
+              - entity: automation.winding_down
+                name: Winding Down (10 PM)
+              - entity: automation.in_bed
+                name: In Bed (presence)
+              - entity: automation.good_morning_out_of_bed
                 name: Good Morning
-              - entity: automation.good_morning_reset_night_mode
-                name: Reset Night
-              - entity: automation.goodnight_everything_off
-                name: Goodnight Off
-              - entity: automation.movie_mode_on
-                name: Movie On
-              - entity: automation.movie_mode_off
-                name: Movie Off
-              - entity: automation.away_mode_turn_off_media
-                name: Away Off
+              - entity: automation.good_morning
+                name: Reset Night Mode
+              - entity: automation.mid_morning
+                name: Mid-morning (sunrise)
+              - entity: automation.sundown
+                name: Sundown (sunset)
+              - entity: automation.first_person_arrives_home
+                name: Arrive Home
+              - entity: automation.last_person_leaves_home
+                name: Leave Home
+              - entity: automation.entrance_occupancy
+                name: Night Light Motion
+              - entity: automation.away_mode
+                name: Away Mode
               - entity: automation.tv_auto_off_after_2_hours_idle
                 name: TV Auto-Off
               - entity: automation.tv_sleep_timer_start
@@ -726,7 +748,7 @@ views:
                 name: Count TV
               - entity: automation.reset_tv_counter_daily
                 name: Reset Counter
-              - entity: automation.dnd_on_suppress_notifications
+              - entity: automation.do_not_disturb
                 name: DND Active
 
       # ── Shopping ──
