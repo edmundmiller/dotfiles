@@ -928,17 +928,120 @@ ${systemContent || "(No system files yet.)"}
     },
   });
 
-  pi.registerCommand("memory-init", {
-    description: "Re-scaffold memory directory if missing",
+  pi.registerCommand("init", {
+    description:
+      "Initialize or re-analyze agent memory. Gathers project context, asks questions, " +
+      "researches codebase, and populates 15-25 hierarchical memory files. " +
+      "Run again after major project changes.",
     handler: async (_args, ctx) => {
-      scaffoldMemory(memDir);
+      // Ensure scaffold + git repo exist
+      if (!existsSync(memDir)) {
+        scaffoldMemory(memDir);
+      }
       if (!(await isGitRepo(pi, memDir))) {
         await initRepo(pi, memDir);
       } else {
         installPreCommitHook(memDir);
       }
       initialized = true;
-      ctx.ui.notify("Context repo scaffolded at " + MEMORY_DIR_NAME, "info");
+
+      ctx.ui.notify("Gathering project context...", "info");
+
+      // Gather git context
+      let gitContext = "";
+      try {
+        const cwd = memDir.replace(/\/.pi\/memory$/, "");
+        const { stdout: branch } = await pi.exec("git", ["-C", cwd, "branch", "--show-current"]);
+        const { stdout: status } = await pi.exec("git", ["-C", cwd, "status", "--short"]);
+        const { stdout: commits } = await pi.exec("git", ["-C", cwd, "log", "--oneline", "-10"]);
+        const { stdout: contributors } = await pi.exec("git", [
+          "-C",
+          cwd,
+          "shortlog",
+          "-sn",
+          "--all",
+        ]);
+        gitContext = `
+## Current Project Context
+
+**Working directory**: ${cwd}
+
+### Git Status
+- **Current branch**: ${branch.trim()}
+- **Working tree**: ${status.trim() || "(clean)"}
+
+### Recent Commits
+${commits.trim()}
+
+### Top Contributors
+${contributors.trim().split("\n").slice(0, 10).join("\n")}
+`;
+      } catch {
+        gitContext = "\n## Current Project Context\n\n(Not a git repository)\n";
+      }
+
+      // Detect prior agent session history
+      const historyPaths: string[] = [];
+      const homeDir = process.env.HOME || "";
+      const candidates = [
+        { path: join(homeDir, ".claude", "projects"), label: "Claude Code project sessions" },
+        { path: join(homeDir, ".pi", "agent", "sessions"), label: "Pi agent sessions" },
+        { path: join(homeDir, ".codex", "history.jsonl"), label: "Codex history" },
+      ];
+      for (const c of candidates) {
+        if (existsSync(c.path)) historyPaths.push(`- **${c.label}**: \`${c.path}\``);
+      }
+
+      const historySection =
+        historyPaths.length > 0
+          ? `
+## Prior Agent Sessions Detected
+
+The following agent history is available on this machine:
+${historyPaths.join("\n")}
+
+You can ask the user if they want you to analyze these for preferences and project context.
+`
+          : "";
+
+      // Count existing memory files
+      let existingFiles = 0;
+      try {
+        const { stdout } = await pi.exec("find", [memDir, "-name", "*.md", "-type", "f"]);
+        existingFiles = stdout.trim().split("\n").filter(Boolean).length;
+      } catch {
+        // ignore
+      }
+
+      const memorySection = `
+## Memory Location
+
+**Memory directory**: \`${memDir}\`
+**Existing files**: ${existingFiles}
+**Remote**: ${(await hasRemote(pi, memDir)) ? "configured" : "none"}
+
+Use the \`memory_write\` tool to create/update files, then \`memory_commit\` to save.
+`;
+
+      // Send the init trigger as a user message
+      pi.sendUserMessage(
+        `<system-reminder>
+The user has requested memory initialization via /init.
+${memorySection}
+${gitContext}
+${historySection}
+## Instructions
+
+Load and follow the \`initializing-memory\` skill for comprehensive instructions.
+
+Key steps:
+1. Ask upfront questions (research depth, identity, communication style, rules)
+2. Research the project based on chosen depth
+3. Create 15-25 hierarchical memory files using \`memory_write\`
+4. Reflect and verify completeness
+5. Commit with \`memory_commit\` and push if remote is configured
+</system-reminder>`
+      );
     },
   });
 
