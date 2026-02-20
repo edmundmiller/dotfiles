@@ -20,7 +20,7 @@ with lib.my;
 let
   cfg = config.modules.services.vault-sync;
   user = config.user.name;
-  home = config.user.home;
+  inherit (config.user) home;
   vaultPath = "${home}/obsidian-vault";
 
   # Write env file from agenix secrets at service start

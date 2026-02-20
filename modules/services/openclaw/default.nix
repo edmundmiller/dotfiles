@@ -10,7 +10,7 @@ with lib.my;
 let
   cfg = config.modules.services.openclaw;
   user = config.user.name;
-  home = config.user.home;
+  inherit (config.user) home;
 
   # Script to inject agenix secrets into systemd env file
   mkEnvScript = pkgs.writeShellScript "openclaw-env" ''

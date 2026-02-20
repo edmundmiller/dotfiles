@@ -58,8 +58,7 @@ let
 
   # Default alert list per endpoint — one entry per enabled provider
   endpointAlerts =
-    [ ]
-    ++ optionals cfg.alerting.telegram.enable [
+    optionals cfg.alerting.telegram.enable [
       { type = "telegram"; }
     ]
     ++ optionals cfg.alerting.openclaw.enable [

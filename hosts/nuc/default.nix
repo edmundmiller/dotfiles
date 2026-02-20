@@ -100,19 +100,19 @@
         secrets = [
           {
             envVar = "ANTHROPIC_API_KEY";
-            path = config.age.secrets.anthropic-api-key.path;
+            inherit (config.age.secrets.anthropic-api-key) path;
           }
           {
             envVar = "OPENCODE_API_KEY";
-            path = config.age.secrets.opencode-api-key.path;
+            inherit (config.age.secrets.opencode-api-key) path;
           }
           {
             envVar = "OPENAI_API_KEY";
-            path = config.age.secrets.openai-api-key.path;
+            inherit (config.age.secrets.openai-api-key) path;
           }
           {
             envVar = "ELEVENLABS_API_KEY";
-            path = config.age.secrets.elevenlabs-api-key.path;
+            inherit (config.age.secrets.elevenlabs-api-key) path;
           }
           {
             envVar = "GOG_KEYRING_PASSWORD";

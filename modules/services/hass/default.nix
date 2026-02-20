@@ -124,7 +124,7 @@ in
         ++ cfg.customComponents;
         inherit (cfg) customLovelaceModules;
 
-        extraPackages = ps: [ ] ++ optionals cfg.postgres.enable [ ps.psycopg2 ];
+        extraPackages = ps: optionals cfg.postgres.enable [ ps.psycopg2 ];
 
         config = {
           default_config = { };

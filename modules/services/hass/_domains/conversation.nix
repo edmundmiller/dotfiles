@@ -1,7 +1,6 @@
 # Conversation intents — voice control via HA Assist
 # Works with any voice assistant (Assist, Rhasspy, etc.)
-{ ... }:
-{
+_: {
   services.home-assistant.config = {
     conversation.intents = {
       # --- House modes ---
