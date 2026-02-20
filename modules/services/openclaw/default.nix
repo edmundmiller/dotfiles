@@ -307,27 +307,9 @@ in
               }
             ];
 
-            models.providers.opencode = {
-              baseUrl = "https://opencode.ai/zen/v1";
-              apiKey = "\${OPENCODE_API_KEY}";
-              api = "openai-completions";
-              models = [
-                {
-                  id = "minimax-m2.5";
-                  name = "MiniMax M2.5";
-                  cost = {
-                    input = 0.30;
-                    output = 1.20;
-                    cacheRead = 0.06;
-                    cacheWrite = 0.15;
-                  };
-                }
-                {
-                  id = "kimi-k2.5";
-                  name = "Kimi K2.5";
-                }
-              ];
-            };
+            # OpenCode Zen models — use built-in catalog for per-model API routing + costs.
+            # OPENCODE_API_KEY is injected via secrets env file; the gateway auto-discovers
+            # Zen models (minimax-m2.5, kimi-k2.5 etc) when the key is present.
 
             hooks = mkIf (cfg.hooksTokenFile != "") {
               enabled = true;
@@ -360,6 +342,12 @@ in
             "${pkgs.bash}/bin/bash ${mkTokenScript}"
           ];
           EnvironmentFile = "-/run/user/%U/openclaw/env";
+          # memory-lancedb extension needs openai + @lancedb/lancedb from the
+          # gateway's pnpm store — the Nix build leaves extension node_modules
+          # empty (upstream packaging bug). NODE_PATH lets Node resolve them.
+          Environment = [
+            "NODE_PATH=${pkgs.openclaw-gateway}/lib/openclaw/node_modules"
+          ];
         };
       };
   };
