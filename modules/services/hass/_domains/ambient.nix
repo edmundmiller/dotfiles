@@ -11,8 +11,8 @@
         entities = {
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
-          "light.essentials_a19_a60_3" = "off"; # Left Night Stand
-          "light.essentials_a19_a60_4" = "off"; # Right Nightstand
+          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
@@ -26,8 +26,8 @@
         entities = {
           "light.essentials_a19_a60" = "on";
           "light.essentials_a19_a60_2" = "on";
-          "light.essentials_a19_a60_3" = "on"; # Left Night Stand
-          "light.essentials_a19_a60_4" = "on"; # Right Nightstand
+          "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "on"; # Window Nightstand
           "light.nanoleaf_multicolor_floor_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
           "light.smart_night_light_w" = "on";
@@ -43,8 +43,8 @@
           "input_select.house_mode" = "Home";
           "light.essentials_a19_a60" = "on";
           "light.essentials_a19_a60_2" = "on";
-          "light.essentials_a19_a60_3" = "on"; # Left Night Stand
-          "light.essentials_a19_a60_4" = "on"; # Right Nightstand
+          "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "on"; # Window Nightstand
           "light.nanoleaf_multicolor_floor_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
           "light.smart_night_light_w" = "on";
@@ -57,8 +57,8 @@
         entities = {
           "input_select.house_mode" = "Away";
           "cover.smartwings_window_covering" = "closed";
-          "light.essentials_a19_a60_3" = "off"; # Left Night Stand
-          "light.essentials_a19_a60_4" = "off"; # Right Nightstand
+          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
