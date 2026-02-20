@@ -208,15 +208,8 @@
       gatus = {
         enable = true;
         tailscaleService.enable = true;
-        alerting.telegram = {
-          enable = true;
-          botTokenFile = config.age.secrets.telegram-bot-token.path;
-          chatId = "8357890648";
-        };
-        alerting.openclaw = {
-          enable = true;
-          hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
-        };
+        alerting.telegram.enable = false;
+        alerting.openclaw.enable = false;
         healthcheck = {
           enable = true;
           pingUrl = "https://hc-ping.com/a6bbb4df-b118-4262-9881-9939f3ac7e76";
