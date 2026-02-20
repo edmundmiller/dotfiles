@@ -212,8 +212,7 @@
       homepage = {
         enable = true;
         tailscaleService.enable = true;
-        # Uncomment once homepage-env.age is created and secrets.nix entry enabled:
-        # environmentFile = config.age.secrets.homepage-env.path;
+        environmentFile = config.age.secrets.homepage-env.path;
       };
       jellyfin.enable = true;
       prowlarr.enable = true;
