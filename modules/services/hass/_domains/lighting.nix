@@ -28,7 +28,7 @@
         max_brightness = 100;
         min_color_temp = 2000; # warm white
         max_color_temp = 5500; # cool daylight
-        sleep_brightness = 5;
+        sleep_brightness = 10;
         sleep_color_temp = 1000; # deep warm red — melatonin-friendly
         take_over_control = true;
         detect_non_ha_changes = false;
