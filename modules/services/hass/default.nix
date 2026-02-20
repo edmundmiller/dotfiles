@@ -37,6 +37,7 @@ let
       tag = "v1.30.1";
       hash = "sha256-pmI0jZxIjSiA9P5+0hRCujHE53WprvkAo6jp/IOpJ88=";
     };
+    propagatedBuildInputs = [ pkgs.python3Packages.ulid-transform ];
   };
 
   # Eight Sleep - smart mattress integration
