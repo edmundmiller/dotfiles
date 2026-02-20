@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   detectStatus,
   prioritize,
@@ -140,6 +142,15 @@ LSP pyright, beancount MCP: 0/1 servers`;
   test("idle: MCP indicator", () => {
     expect(detectStatus("MCP: 2/3 servers", "pi")).toBe(ICON_IDLE);
   });
+
+  // ── Fixture tests (real captured pane content) ─────────────────────────
+  test.each([
+    // file, expected — add rows as new fixtures are captured
+    ["pi-idle.txt", ICON_IDLE], // contains weak-busy in scrollback; footer wins
+  ] as const)("fixture %s → %s", (file, expected) => {
+    const fixture = readFileSync(join(import.meta.dir, "fixtures", file), "utf8");
+    expect(detectStatus(fixture, "pi")).toBe(expected);
+  });
 });
 
 // ── Claude Code-specific ───────────────────────────────────────────────────
@@ -226,7 +237,7 @@ describe("prioritize", () => {
     [[ICON_IDLE], ICON_IDLE],
     [[ICON_BUSY, ICON_IDLE], ICON_BUSY],
     [[ICON_WAITING, ICON_BUSY], ICON_WAITING],
-    [[ICON_UNKNOWN, ICON_WAITING], ICON_UNKNOWN],
+    [[ICON_UNKNOWN, ICON_WAITING], ICON_WAITING],
     [[ICON_ERROR, ICON_UNKNOWN], ICON_ERROR],
     [[ICON_IDLE, ICON_BUSY, ICON_WAITING, ICON_ERROR], ICON_ERROR],
   ] as const)("%j → %s", (input, expected) => {

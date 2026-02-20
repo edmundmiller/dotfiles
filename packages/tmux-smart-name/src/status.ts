@@ -163,12 +163,7 @@ interface PatternSet {
 }
 
 const AGENT_PATTERNS: Record<string, PatternSet> = {
-  pi: {
-    error: SHARED_ERROR,
-    waiting: SHARED_WAITING,
-    busy: [...PI_BUSY_STRONG, ...PI_BUSY_WEAK, ...SHARED_BUSY],
-    idle: PI_IDLE,
-  },
+  // Note: "pi" is handled by a dedicated branch in detectStatus below.
   claude: {
     error: SHARED_ERROR,
     waiting: SHARED_WAITING,
@@ -260,12 +255,12 @@ export function detectStatus(content: string, agent?: string): StatusIcon {
   return ICON_UNKNOWN;
 }
 
-/** ERROR > UNKNOWN > WAITING > BUSY > IDLE */
+/** ERROR > WAITING > BUSY > UNKNOWN > IDLE */
 const PRIORITY: Record<StatusIcon, number> = {
   "▲": 0,
-  "◇": 1,
-  "■": 2,
-  "●": 3,
+  "■": 1,
+  "●": 2,
+  "◇": 3,
   "□": 4,
 };
 
