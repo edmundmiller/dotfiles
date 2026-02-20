@@ -1,3 +1,12 @@
+# Homepage Dashboard
+# Tailscale: https://homepage.<tailnet>.ts.net
+# Direct: http://<tailscale-ip>:8082
+#
+# Setup (one-time):
+# 1. Tailscale admin → Services → Create service
+# 2. Name: "homepage", endpoint: tcp:443, tag: tag:server
+# 3. Deploy: hey nuc
+# 4. Approve host in admin console
 {
   config,
   lib,
