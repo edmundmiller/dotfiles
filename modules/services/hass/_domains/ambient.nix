@@ -164,6 +164,38 @@
         ];
       }
 
+      # --- Plant light schedule ---
+      {
+        alias = "Plant Glow Light on";
+        id = "plant_glow_light_on";
+        description = "Plant light on at 8 AM daily";
+        trigger = {
+          platform = "time";
+          at = "08:00:00";
+        };
+        action = [
+          {
+            action = "switch.turn_on";
+            target.entity_id = "switch.plant_glow_light";
+          }
+        ];
+      }
+      {
+        alias = "Plant Glow Light off";
+        id = "plant_glow_light_off";
+        description = "Plant light off at 9 PM daily";
+        trigger = {
+          platform = "time";
+          at = "21:00:00";
+        };
+        action = [
+          {
+            action = "switch.turn_off";
+            target.entity_id = "switch.plant_glow_light";
+          }
+        ];
+      }
+
       # --- Presence ---
       {
         alias = "First person arrives home";
