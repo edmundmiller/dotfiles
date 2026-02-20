@@ -28,7 +28,7 @@ in
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "homepage";
     };
-    # environmentFiles should contain HOMEPAGE_VAR_* entries, e.g.:
+    # environmentFile should contain HOMEPAGE_VAR_* entries, e.g.:
     #   HOMEPAGE_VAR_HASS_TOKEN=...
     #   HOMEPAGE_VAR_HOMEBRIDGE_PASSWORD=...
     #   HOMEPAGE_VAR_JELLYFIN_API_KEY=...
@@ -36,7 +36,7 @@ in
     #   HOMEPAGE_VAR_NEXTDNS_API_KEY=...
     #   HOMEPAGE_VAR_TAILSCALE_DEVICE_ID=...
     #   HOMEPAGE_VAR_TAILSCALE_API_KEY=...
-    environmentFiles = mkOpt (types.listOf types.path) [ ];
+    environmentFile = mkOpt (types.nullOr types.path) null;
   };
 
   config = mkIf cfg.enable {
@@ -65,7 +65,7 @@ in
         hideVersion = true;
       };
 
-      environmentFiles = cfg.environmentFiles;
+      environmentFile = mkIf (cfg.environmentFile != null) cfg.environmentFile;
 
       widgets = [
         { logo = { }; }
