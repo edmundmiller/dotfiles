@@ -276,7 +276,7 @@ if [ -n "$errors" ]; then
 fi
 `;
 
-function installPreCommitHook(memDir: string): void {
+export function installPreCommitHook(memDir: string): void {
   const hooksDir = join(memDir, ".git", "hooks");
   const hookPath = join(hooksDir, "pre-commit");
   mkdirSync(hooksDir, { recursive: true });
@@ -321,7 +321,7 @@ export function buildTree(dir: string, prefix = ""): string[] {
 
 // --- Load system/ files (recursive) ---
 
-function loadSystemFiles(memDir: string, dir?: string): string {
+export function loadSystemFiles(memDir: string, dir?: string): string {
   const targetDir = dir || join(memDir, SYSTEM_DIR);
   if (!existsSync(targetDir)) return "";
 
@@ -394,7 +394,7 @@ async function getAheadCount(pi: ExtensionAPI, dir: string): Promise<number> {
   }
 }
 
-interface MemoryStatus {
+export interface MemoryStatus {
   dirty: boolean;
   files: string[];
   aheadOfRemote: boolean;
@@ -433,7 +433,7 @@ async function getStatus(pi: ExtensionAPI, dir: string): Promise<MemoryStatus> {
   };
 }
 
-function statusWidget(status: MemoryStatus): string[] {
+export function statusWidget(status: MemoryStatus): string[] {
   const parts: string[] = [];
   if (status.dirty) parts.push(`${status.files.length} uncommitted`);
   if (status.aheadOfRemote) parts.push(`${status.aheadCount} unpushed`);
@@ -463,7 +463,7 @@ async function pullFromRemote(
 
 // --- Backup helpers (adapted from Letta's memfs.ts) ---
 
-function formatBackupTimestamp(date = new Date()): string {
+export function formatBackupTimestamp(date = new Date()): string {
   const pad = (v: number) => String(v).padStart(2, "0");
   return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
@@ -505,7 +505,7 @@ If the answer is meaningful, use memory_write to update the appropriate file(s),
 
 // --- Scaffold ---
 
-function scaffoldMemory(memDir: string): void {
+export function scaffoldMemory(memDir: string): void {
   const sysDir = join(memDir, SYSTEM_DIR);
   mkdirSync(sysDir, { recursive: true });
 

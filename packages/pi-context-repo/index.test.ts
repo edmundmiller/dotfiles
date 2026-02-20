@@ -1,8 +1,27 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { buildFrontmatter, buildTree, parseFrontmatter, validateFrontmatter } from "./index";
+import {
+  type MemoryStatus,
+  buildFrontmatter,
+  buildTree,
+  formatBackupTimestamp,
+  installPreCommitHook,
+  loadSystemFiles,
+  parseFrontmatter,
+  scaffoldMemory,
+  statusWidget,
+  validateFrontmatter,
+} from "./index";
 
 // --- parseFrontmatter ---
 
@@ -298,7 +317,6 @@ Top.
 `
     );
     const tree = buildTree(tmpDir);
-    // subdir/ should appear before top.md
     const dirIdx = tree.findIndex((l) => l.includes("subdir/"));
     const fileIdx = tree.findIndex((l) => l.includes("top.md"));
     expect(dirIdx).toBeLessThan(fileIdx);
@@ -371,5 +389,299 @@ Overview.
     expect(tree.some((l) => l.includes("system/"))).toBe(true);
     expect(tree.some((l) => l.includes("project/"))).toBe(true);
     expect(tree.some((l) => l.includes("overview.md"))).toBe(true);
+  });
+});
+
+// --- scaffoldMemory ---
+
+describe("scaffoldMemory", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "context-repo-scaffold-"));
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test("creates system/ and reference/ directories", () => {
+    const memDir = join(tmpDir, "memory");
+    scaffoldMemory(memDir);
+    expect(existsSync(join(memDir, "system"))).toBe(true);
+    expect(existsSync(join(memDir, "reference"))).toBe(true);
+  });
+
+  test("creates persona.md with valid frontmatter", () => {
+    const memDir = join(tmpDir, "memory");
+    scaffoldMemory(memDir);
+    const content = readFileSync(join(memDir, "system", "persona.md"), "utf-8");
+    const { frontmatter, body } = parseFrontmatter(content);
+    expect(frontmatter.description).toBeTruthy();
+    expect(frontmatter.limit).toBeGreaterThan(0);
+    expect(body).toContain("helpful");
+    expect(validateFrontmatter(content, "persona.md")).toEqual([]);
+  });
+
+  test("creates user.md with valid frontmatter", () => {
+    const memDir = join(tmpDir, "memory");
+    scaffoldMemory(memDir);
+    const content = readFileSync(join(memDir, "system", "user.md"), "utf-8");
+    expect(validateFrontmatter(content, "user.md")).toEqual([]);
+  });
+
+  test("creates reference/README.md with valid frontmatter", () => {
+    const memDir = join(tmpDir, "memory");
+    scaffoldMemory(memDir);
+    const content = readFileSync(join(memDir, "reference", "README.md"), "utf-8");
+    expect(validateFrontmatter(content, "README.md")).toEqual([]);
+  });
+
+  test("is idempotent — doesn't overwrite existing files", () => {
+    const memDir = join(tmpDir, "memory");
+    scaffoldMemory(memDir);
+
+    // Modify a file
+    const personaPath = join(memDir, "system", "persona.md");
+    writeFileSync(
+      personaPath,
+      `---
+description: Custom persona
+limit: 3000
+---
+
+Custom content.
+`
+    );
+
+    // Run again
+    scaffoldMemory(memDir);
+
+    // Should keep custom content
+    const content = readFileSync(personaPath, "utf-8");
+    expect(content).toContain("Custom content");
+  });
+});
+
+// --- loadSystemFiles ---
+
+describe("loadSystemFiles", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "context-repo-sysfiles-"));
+    mkdirSync(join(tmpDir, "system"), { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test("returns empty for missing system/ dir", () => {
+    const empty = mkdtempSync(join(tmpdir(), "context-repo-empty-"));
+    expect(loadSystemFiles(empty)).toBe("");
+    rmSync(empty, { recursive: true, force: true });
+  });
+
+  test("loads single file wrapped in path tags", () => {
+    writeFileSync(
+      join(tmpDir, "system", "persona.md"),
+      `---
+description: Persona
+limit: 3000
+---
+
+Be helpful.
+`
+    );
+    const result = loadSystemFiles(tmpDir);
+    expect(result).toContain("<system/persona.md>");
+    expect(result).toContain("Be helpful.");
+    expect(result).toContain("</system/persona.md>");
+  });
+
+  test("skips files with empty body", () => {
+    writeFileSync(
+      join(tmpDir, "system", "empty.md"),
+      `---
+description: Empty
+limit: 1000
+---
+
+`
+    );
+    const result = loadSystemFiles(tmpDir);
+    expect(result).toBe("");
+  });
+
+  test("loads nested directories recursively", () => {
+    mkdirSync(join(tmpDir, "system", "project"), { recursive: true });
+    writeFileSync(
+      join(tmpDir, "system", "project", "overview.md"),
+      `---
+description: Overview
+limit: 2000
+---
+
+Project overview content.
+`
+    );
+    const result = loadSystemFiles(tmpDir);
+    expect(result).toContain("<system/project/overview.md>");
+    expect(result).toContain("Project overview content.");
+  });
+
+  test("sorts directories before files", () => {
+    mkdirSync(join(tmpDir, "system", "aaa"), { recursive: true });
+    writeFileSync(
+      join(tmpDir, "system", "aaa", "nested.md"),
+      `---
+description: Nested
+limit: 1000
+---
+
+Nested content.
+`
+    );
+    writeFileSync(
+      join(tmpDir, "system", "zzz.md"),
+      `---
+description: Top level
+limit: 1000
+---
+
+Top content.
+`
+    );
+    const result = loadSystemFiles(tmpDir);
+    const nestedIdx = result.indexOf("Nested content");
+    const topIdx = result.indexOf("Top content");
+    expect(nestedIdx).toBeLessThan(topIdx);
+  });
+});
+
+// --- statusWidget ---
+
+describe("statusWidget", () => {
+  const base: MemoryStatus = {
+    dirty: false,
+    files: [],
+    aheadOfRemote: false,
+    aheadCount: 0,
+    hasRemote: false,
+    summary: "clean",
+  };
+
+  test("shows clean when no changes", () => {
+    expect(statusWidget(base)).toEqual(["Memory: clean"]);
+  });
+
+  test("shows uncommitted count", () => {
+    const status: MemoryStatus = {
+      ...base,
+      dirty: true,
+      files: ["M system/persona.md", "A system/user.md", "?? reference/new.md"],
+    };
+    expect(statusWidget(status)).toEqual(["Memory: 3 uncommitted"]);
+  });
+
+  test("shows unpushed count", () => {
+    const status: MemoryStatus = {
+      ...base,
+      hasRemote: true,
+      aheadOfRemote: true,
+      aheadCount: 5,
+    };
+    expect(statusWidget(status)).toEqual(["Memory: 5 unpushed"]);
+  });
+
+  test("shows both uncommitted and unpushed", () => {
+    const status: MemoryStatus = {
+      ...base,
+      dirty: true,
+      files: ["M file.md"],
+      hasRemote: true,
+      aheadOfRemote: true,
+      aheadCount: 2,
+    };
+    expect(statusWidget(status)).toEqual(["Memory: 1 uncommitted, 2 unpushed"]);
+  });
+});
+
+// --- formatBackupTimestamp ---
+
+describe("formatBackupTimestamp", () => {
+  test("formats with zero-padded components", () => {
+    const date = new Date(2026, 0, 5, 3, 7, 9); // Jan 5, 2026 03:07:09
+    expect(formatBackupTimestamp(date)).toBe("20260105-030709");
+  });
+
+  test("handles double-digit months/hours", () => {
+    const date = new Date(2026, 11, 25, 14, 30, 59); // Dec 25, 2026 14:30:59
+    expect(formatBackupTimestamp(date)).toBe("20261225-143059");
+  });
+
+  test("returns consistent length", () => {
+    const ts = formatBackupTimestamp();
+    // YYYYMMDD-HHMMSS = 15 chars
+    expect(ts).toMatch(/^\d{8}-\d{6}$/);
+  });
+});
+
+// --- installPreCommitHook ---
+
+describe("installPreCommitHook", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "context-repo-hook-"));
+    mkdirSync(join(tmpDir, ".git", "hooks"), { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test("creates executable pre-commit hook", () => {
+    installPreCommitHook(tmpDir);
+    const hookPath = join(tmpDir, ".git", "hooks", "pre-commit");
+    expect(existsSync(hookPath)).toBe(true);
+    const stat = statSync(hookPath);
+    // Check executable bit (owner)
+    expect(stat.mode & 0o100).toBeTruthy();
+  });
+
+  test("hook starts with bash shebang", () => {
+    installPreCommitHook(tmpDir);
+    const hookPath = join(tmpDir, ".git", "hooks", "pre-commit");
+    const content = readFileSync(hookPath, "utf-8");
+    expect(content.startsWith("#!/usr/bin/env bash")).toBe(true);
+  });
+
+  test("hook validates frontmatter fields", () => {
+    installPreCommitHook(tmpDir);
+    const hookPath = join(tmpDir, ".git", "hooks", "pre-commit");
+    const content = readFileSync(hookPath, "utf-8");
+    expect(content).toContain("description");
+    expect(content).toContain("limit");
+    expect(content).toContain("read_only");
+    expect(content).toContain("PROTECTED_KEYS");
+  });
+
+  test("creates hooks dir if missing", () => {
+    const freshDir = mkdtempSync(join(tmpdir(), "context-repo-nohooks-"));
+    mkdirSync(join(freshDir, ".git")); // no hooks subdir
+    installPreCommitHook(freshDir);
+    expect(existsSync(join(freshDir, ".git", "hooks", "pre-commit"))).toBe(true);
+    rmSync(freshDir, { recursive: true, force: true });
+  });
+
+  test("overwrites existing hook (self-healing)", () => {
+    const hookPath = join(tmpDir, ".git", "hooks", "pre-commit");
+    writeFileSync(hookPath, "#!/bin/bash\necho old");
+    installPreCommitHook(tmpDir);
+    const content = readFileSync(hookPath, "utf-8");
+    expect(content).not.toContain("echo old");
+    expect(content).toContain("Validate frontmatter");
   });
 });
