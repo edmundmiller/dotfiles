@@ -165,5 +165,7 @@
     "npm:pi-subagents",
     // Mermaid diagram rendering - https://www.npmjs.com/package/pi-mermaid
     "npm:pi-mermaid",
+    // Token-efficient MCP adapter (~200 tokens vs 10k+) - https://github.com/nicobailon/pi-mcp-adapter
+    "npm:pi-mcp-adapter",
   ],
 }
