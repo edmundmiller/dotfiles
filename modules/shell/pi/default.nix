@@ -223,7 +223,7 @@ in
             # so we don't mutate skills dirs at activation-time.
 
             # Install deps for local pi packages (use $HOME path, not nix store)
-            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-dcp" "$HOME/.config/dotfiles/packages/pi-scurl"; do
+            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-context-repo" "$HOME/.config/dotfiles/packages/pi-dcp" "$HOME/.config/dotfiles/packages/pi-scurl"; do
               if [ -d "$pkg_dir" ] && [ ! -d "$pkg_dir/node_modules" ]; then
                 echo "Installing deps for $(basename "$pkg_dir")..."
                 # Drop to user if running as root (sudo darwin-rebuild)
