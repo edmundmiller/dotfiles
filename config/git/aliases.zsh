@@ -13,7 +13,8 @@ alias gca='git commit --amend'
 alias gcf='git commit --fixup'
 # gcl: Clone as bare repo for worktrunk workflow
 # Usage: gcl <url> [name]
-# Creates: name/.git (bare repo), ready for wt switch -c main
+# Creates: name/.git (bare) + name/<default-branch>/ worktree
+# Clone to a non-.git path first to avoid git's core.bare=false heuristic
 gcl() {
   if [[ $# -eq 0 ]]; then
     echo "Usage: gcl <url> [directory]"
@@ -22,8 +23,20 @@ gcl() {
   fi
   local url=$1
   local name=${2:-$(basename "$url" .git)}
-  git clone --bare "$url" "${name}/.git" && \
-    echo "Bare repo created. Next: cd $name && wt switch -c main"
+  git clone --bare "$url" "${name}/.bare" || return 1
+  mv "${name}/.bare" "${name}/.git"
+  # Fix fetch refspec — bare clones omit this, making remote branches invisible
+  git -C "${name}/.git" config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git -C "${name}/.git" fetch
+  # Add worktree for default branch
+  local default_branch
+  default_branch=$(git -C "${name}/.git" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')
+  if [[ -z "$default_branch" ]]; then
+    default_branch=$(git -C "${name}/.git" remote show origin | awk '/HEAD branch/{print $NF}')
+  fi
+  git -C "${name}/.git" worktree add "${name}/${default_branch}" "${default_branch}"
+  echo "✓ $name/${default_branch} ready"
+  cd "${name}/${default_branch}"
 }
 
 # g2bare: convert existing repo to bare + worktrunk layout IN-PLACE
