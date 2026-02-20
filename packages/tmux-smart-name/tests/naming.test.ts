@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { buildBaseName, trimName, shortenPath, parsePiFooter } from "../src/naming";
 
 describe("shortenPath", () => {
@@ -59,6 +61,15 @@ describe("parsePiFooter", () => {
 
   test("returns empty for empty string", () => {
     expect(parsePiFooter("")).toEqual({});
+  });
+
+  // ── Fixture tests (real captured pane content) ─────────────────────────
+  test.each([
+    // file, expected — add rows as new fixtures are captured
+    ["pi-idle.txt", {}], // main branch omitted, no session name on path line
+  ] as const)("fixture %s", (file, expected) => {
+    const fixture = readFileSync(join(import.meta.dir, "fixtures", file), "utf8");
+    expect(parsePiFooter(fixture)).toEqual(expected);
   });
 });
 
