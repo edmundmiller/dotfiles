@@ -177,7 +177,7 @@
           }
           {
             platform = "state";
-            entity_id = "person.monica";
+            entity_id = "person.moni";
             to = "home";
           }
         ];
@@ -207,7 +207,7 @@
           }
           {
             platform = "state";
-            entity_id = "person.monica";
+            entity_id = "person.moni";
             from = "home";
           }
         ];
