@@ -1143,6 +1143,139 @@ git pull                             # Get latest from remote
   });
 
   pi.registerTool({
+    name: "memory_recall",
+    label: "Memory Recall",
+    description:
+      "Search past conversation history from pi session files. " +
+      "Finds messages matching a query across session JSONL files. " +
+      "Use to recall past discussions, decisions, and context.",
+    parameters: Type.Object({
+      query: Type.String({ description: "Search term to find in past conversations" }),
+      limit: Type.Optional(Type.Number({ description: "Max results to return (default: 10)" })),
+      sessionsDir: Type.Optional(
+        Type.String({
+          description:
+            "Override sessions directory (default: auto-detected from ~/.pi/agent/sessions/)",
+        })
+      ),
+    }),
+    async execute(_toolCallId, params) {
+      if (!initialized) {
+        return toolResult("Context repo not initialized.");
+      }
+
+      const maxResults = params.limit || 10;
+
+      // Find sessions directory for current project
+      const homeDir = process.env.HOME || "";
+      const piSessionsRoot = join(homeDir, ".pi", "agent", "sessions");
+
+      let sessionsDir = params.sessionsDir;
+      if (!sessionsDir) {
+        // Auto-detect: find the session dir matching current cwd
+        if (existsSync(piSessionsRoot)) {
+          const cwdEncoded = memDir.replace(/\/.pi\/memory$/, "").replace(/\//g, "-");
+          const entries = readdirSync(piSessionsRoot);
+          const match = entries.find((e) => e.includes(cwdEncoded));
+          if (match) {
+            sessionsDir = join(piSessionsRoot, match);
+          }
+        }
+      }
+
+      if (!sessionsDir || !existsSync(sessionsDir)) {
+        // Try Claude Code history as fallback
+        const claudeHistory = join(homeDir, ".claude", "projects");
+        if (existsSync(claudeHistory)) {
+          return toolResult(
+            `No pi session history found for this project.\n` +
+              `Claude Code history detected at: ${claudeHistory}\n` +
+              `Use \`rg '${params.query}' ${claudeHistory}\` to search manually.`
+          );
+        }
+        return toolResult("No session history found for this project.");
+      }
+
+      // Search session files with ripgrep (fast) or grep fallback
+      try {
+        const { stdout } = await pi.exec("rg", [
+          "--no-filename",
+          "-i",
+          "--max-count",
+          String(maxResults * 3), // over-fetch to filter
+          params.query,
+          sessionsDir,
+        ]);
+
+        const lines = stdout.trim().split("\n").filter(Boolean);
+        const results: string[] = [];
+
+        for (const line of lines) {
+          if (results.length >= maxResults) break;
+          try {
+            const entry = JSON.parse(line);
+            if (entry.type !== "message") continue;
+            const msg = entry.message;
+            if (!msg?.content) continue;
+
+            // Extract text content
+            let text = "";
+            if (typeof msg.content === "string") {
+              text = msg.content;
+            } else if (Array.isArray(msg.content)) {
+              text = msg.content
+                .filter((c: { type: string; text?: string }) => c.type === "text" && c.text)
+                .map((c: { text: string }) => c.text)
+                .join("\n");
+            }
+
+            if (!text || !text.toLowerCase().includes(params.query.toLowerCase())) continue;
+
+            // Truncate to snippet
+            const idx = text.toLowerCase().indexOf(params.query.toLowerCase());
+            const start = Math.max(0, idx - 100);
+            const end = Math.min(text.length, idx + params.query.length + 100);
+            const snippet =
+              (start > 0 ? "..." : "") + text.slice(start, end) + (end < text.length ? "..." : "");
+
+            const date = entry.timestamp
+              ? new Date(entry.timestamp).toISOString().slice(0, 16)
+              : "unknown";
+
+            results.push(`**[${date}]** (${msg.role}):\n${snippet}\n`);
+          } catch {
+            // skip malformed lines
+          }
+        }
+
+        if (results.length === 0) {
+          return toolResult(
+            `No conversations matching "${params.query}" found in session history.`
+          );
+        }
+
+        return toolResult(
+          `Found ${results.length} match(es) for "${params.query}":\n\n${results.join("\n---\n")}`
+        );
+      } catch {
+        // rg not available, try grep
+        try {
+          const { stdout } = await pi.exec("grep", ["-ri", "-l", params.query, sessionsDir]);
+          const files = stdout.trim().split("\n").filter(Boolean);
+          return toolResult(
+            `Found matches in ${files.length} session file(s). Use the read tool to examine:\n${files
+              .slice(0, 5)
+              .map((f) => `- ${f}`)
+              .join("\n")}`
+          );
+        } catch {
+          return toolResult(`No conversations matching "${params.query}" found.`);
+        }
+      }
+    },
+  });
+
+  pi.registerTool({
     name: "memory_backup",
     label: "Memory Backup",
     description:
