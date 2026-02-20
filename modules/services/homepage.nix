@@ -118,13 +118,13 @@ in
                 href = "${nucBase}:8096";
                 description = "Media server";
                 icon = "jellyfin.svg";
-                widget = {
-                  type = "jellyfin";
-                  url = "http://localhost:8096";
-                  key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
-                  version = 2;
-                  enableBlocks = true;
-                };
+                # widget = {
+                #   type = "jellyfin";
+                #   url = "http://localhost:8096";
+                #   key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
+                #   version = 2;
+                #   enableBlocks = true;
+                # };
               };
             }
             {
