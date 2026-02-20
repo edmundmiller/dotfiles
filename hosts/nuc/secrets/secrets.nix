@@ -44,12 +44,10 @@ in
     edmundmiller
     nuc
   ];
-  # Uncomment after creating the .age file:
-  #   agenix -e hosts/nuc/secrets/homepage-env.age
-  # "homepage-env.age".publicKeys = [
-  #   edmundmiller
-  #   nuc
-  # ];
+  "homepage-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   # TODO: create these .age files to re-enable vault-sync
   # "cubox-api-key.age".publicKeys = [
   #   edmundmiller
