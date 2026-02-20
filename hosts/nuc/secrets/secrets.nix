@@ -48,6 +48,10 @@ in
     edmundmiller
     nuc
   ];
+  "hass-secrets.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   # TODO: create these .age files to re-enable vault-sync
   # "cubox-api-key.age".publicKeys = [
   #   edmundmiller
