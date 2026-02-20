@@ -488,16 +488,25 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     memDir = join(ctx.cwd, MEMORY_DIR_NAME);
 
-    if (!existsSync(memDir)) {
+    const freshInit = !existsSync(memDir);
+    if (freshInit) {
       scaffoldMemory(memDir);
-      ctx.ui.notify("Context repo initialized at " + MEMORY_DIR_NAME, "info");
     }
 
     if (!(await isGitRepo(pi, memDir))) {
       await initRepo(pi, memDir);
     } else {
-      // Ensure hook is installed even on existing repos
       installPreCommitHook(memDir);
+      // Auto-commit any uncommitted scaffold/leftover files
+      const status = await getStatus(pi, memDir);
+      if (status.dirty) {
+        try {
+          await git(pi, memDir, ["add", "-A"]);
+          await git(pi, memDir, ["commit", "-m", "init: auto-commit on session start"]);
+        } catch {
+          // ignore — nothing to commit or hook failure
+        }
+      }
     }
 
     initialized = true;
@@ -505,7 +514,7 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
 
     const status = await getStatus(pi, memDir);
     ctx.ui.setWidget(EXT_TYPE, [
-      `📝 Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
+      `Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
     ]);
   });
 
@@ -572,7 +581,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
     try {
       const status = await getStatus(pi, memDir);
       ctx.ui.setWidget(EXT_TYPE, [
-        `📝 Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
+        `Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
       ]);
     } catch {
       // ignore
@@ -658,7 +667,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
       // Update widget
       const status = await getStatus(pi, memDir);
       ctx.ui.setWidget(EXT_TYPE, [
-        `📝 Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
+        `Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
       ]);
 
       return toolResult(
@@ -685,7 +694,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
       try {
         await git(pi, memDir, ["add", "-A"]);
         await git(pi, memDir, ["commit", "-m", params.message]);
-        ctx.ui.setWidget(EXT_TYPE, ["📝 Memory: clean"]);
+        ctx.ui.setWidget(EXT_TYPE, ["Memory: clean"]);
         return toolResult(`Committed: ${params.message}`);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -813,7 +822,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
       const tree = buildTree(memDir);
       const status = await getStatus(pi, memDir);
 
-      let output = `📝 Context Repository (${MEMORY_DIR_NAME})\n\n`;
+      let output = `Context Repository (${MEMORY_DIR_NAME})\n\n`;
       output += tree.join("\n") + "\n\n";
       output += status.dirty
         ? `⚠️ ${status.files.length} uncommitted change(s):\n${status.files.map((f) => `  ${f}`).join("\n")}`
