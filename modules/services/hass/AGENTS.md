@@ -41,6 +41,34 @@ Built via `pkgs.buildHomeAssistantComponent` in `default.nix`:
 - Firewall only opens on `tailscale0` interface
 - Host config: `hosts/nuc/default.nix` enables hass + postgres + homebridge + tailscale
 
+## hass-cli (agent-friendly API wrapper)
+
+`home-assistant-cli` is installed on the NUC. Configure via env vars then run over SSH:
+
+```bash
+# One-liner: get token + run command
+TOKEN=$(ssh nuc "sudo python3 -c '...'")  # see hass-config-flow skill
+ssh nuc "HASS_SERVER=http://localhost:8123 HASS_TOKEN=$TOKEN hass-cli state list"
+```
+
+Or set env vars in your SSH session:
+
+```bash
+ssh nuc
+export HASS_SERVER=http://localhost:8123
+export HASS_TOKEN=<token>
+hass-cli state list
+hass-cli state list 'light.*'
+hass-cli device list
+hass-cli area list
+hass-cli service call homeassistant.toggle --arguments entity_id=light.office
+hass-cli device assign Kitchen --match "Kitchen Light"
+hass-cli event watch
+```
+
+Use `hass-cli --output yaml` or `-o json` for machine-readable output.
+The `devices.yaml` → `apply-devices.py` pattern could be replaced with `hass-cli device assign` for one-off changes.
+
 ## NixOS Wiki Reference
 
 Before making changes, fetch the NixOS HA wiki for current best practices:

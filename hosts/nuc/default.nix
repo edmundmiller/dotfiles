@@ -48,6 +48,7 @@
     codex # CLI backend for openclaw
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
     uv # For vault sync scripts (PEP 723 inline deps)
+    home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
     # qmd installed globally via npm (nix-built version has read-only store issues with node-llama-cpp)
   ];
