@@ -165,5 +165,7 @@
     "npm:pi-subagents",
     // Mermaid diagram rendering - https://www.npmjs.com/package/pi-mermaid
     "npm:pi-mermaid",
+    // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
+    "npm:pi-mcp-adapter",
   ],
 }
