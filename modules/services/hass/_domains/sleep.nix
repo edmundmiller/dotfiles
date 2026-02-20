@@ -26,6 +26,8 @@
           # Main lights off
           "light.essentials_a19_a60" = "off"; # Trashcan
           "light.essentials_a19_a60_2" = "off"; # Dishwasher
+          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
           "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
           "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
 
@@ -55,6 +57,8 @@
           "media_player.tv" = "off";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
+          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
