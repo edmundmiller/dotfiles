@@ -43,3 +43,4 @@ qmk_firmware/
 .pre-commit-config.yaml
 # Nightshift plan artifacts (keep out of version control)
 .nightshift-plan
+.pi/memory/
