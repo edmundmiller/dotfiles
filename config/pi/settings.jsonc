@@ -90,6 +90,8 @@
       ],
       "skills": [],
     },
+    // Git-backed agent memory filesystem (inspired by Letta Code)
+    "~/.config/dotfiles/packages/pi-context-repo",
     // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
     "~/.config/dotfiles/packages/pi-dcp",
     // Secure web fetch – HTML→markdown via mdream, secret scanning, injection detection

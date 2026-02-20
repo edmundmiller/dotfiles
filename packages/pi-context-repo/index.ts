@@ -53,14 +53,14 @@ const DEFAULT_REFLECTION_INTERVAL = 15; // turns between reflection reminders
 
 // --- Frontmatter helpers ---
 
-interface Frontmatter {
+export interface Frontmatter {
   description?: string;
   limit?: number;
   read_only?: boolean;
   [key: string]: unknown;
 }
 
-function parseFrontmatter(content: string): { frontmatter: Frontmatter; body: string } {
+export function parseFrontmatter(content: string): { frontmatter: Frontmatter; body: string } {
   const match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!match?.[1] || !match[2]) return { frontmatter: {}, body: content };
 
@@ -77,7 +77,7 @@ function parseFrontmatter(content: string): { frontmatter: Frontmatter; body: st
   return { frontmatter: fm, body: match[2].trimStart() };
 }
 
-function buildFrontmatter(fm: Frontmatter): string {
+export function buildFrontmatter(fm: Frontmatter): string {
   const lines: string[] = ["---"];
   if (fm.description) lines.push(`description: ${fm.description}`);
   if (fm.limit) lines.push(`limit: ${fm.limit}`);
@@ -90,7 +90,7 @@ function buildFrontmatter(fm: Frontmatter): string {
  * Validate frontmatter for a memory file. Returns array of error strings.
  * Mirrors Letta's pre-commit hook validation logic.
  */
-function validateFrontmatter(
+export function validateFrontmatter(
   content: string,
   filePath: string,
   existingContent?: string | undefined
@@ -286,7 +286,7 @@ function installPreCommitHook(memDir: string): void {
 
 // --- File tree ---
 
-function buildTree(dir: string, prefix = ""): string[] {
+export function buildTree(dir: string, prefix = ""): string[] {
   const lines: string[] = [];
   if (!existsSync(dir)) return lines;
 
