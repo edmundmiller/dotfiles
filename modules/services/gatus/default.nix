@@ -84,75 +84,84 @@ let
           path = "/var/lib/gatus/data.db";
         };
 
-        endpoints = map withAlerts ([
-          {
-            name = "Home Assistant";
-            group = "Smart Home";
-            url = "http://localhost:8123/api/";
-            interval = "60s";
-            conditions = [ "[STATUS] < 500" ];
-          }
-          {
-            name = "Homebridge";
-            group = "Smart Home";
-            url = "http://localhost:8581";
-            interval = "60s";
-            conditions = [ "[STATUS] < 500" ];
-          }
-          {
-            name = "Matter Server";
-            group = "Smart Home";
-            url = "tcp://localhost:5580";
-            interval = "120s";
-            conditions = [ "[CONNECTED] == true" ];
-          }
-          {
-            name = "Jellyfin";
-            group = "Media";
-            url = "http://localhost:8096/health";
-            interval = "60s";
-            conditions = [ "[STATUS] == 200" ];
-          }
-          {
-            name = "Sonarr";
-            group = "Media";
-            url = "http://localhost:8989/ping";
-            interval = "60s";
-            conditions = [ "[STATUS] == 200" ];
-          }
-          {
-            name = "Radarr";
-            group = "Media";
-            url = "http://localhost:7878/ping";
-            interval = "60s";
-            conditions = [ "[STATUS] == 200" ];
-          }
-          {
-            name = "Prowlarr";
-            group = "Media";
-            url = "http://localhost:9696/ping";
-            interval = "60s";
-            conditions = [ "[STATUS] == 200" ];
-          }
-          {
-            name = "PostgreSQL";
-            group = "Infrastructure";
-            url = "tcp://localhost:5432";
-            interval = "60s";
-            conditions = [ "[CONNECTED] == true" ];
-          }
-          # TODO: Tailscale local API doesn't expose healthz on 41112
-          # {
-          #   name = "Tailscale";
-          #   group = "Infrastructure";
-          #   url = "http://localhost:41112/healthz";
-          #   interval = "60s";
-          #   conditions = [ "[STATUS] == 200" ];
-          # }
-        ]
-        # OpenClaw endpoint removed — monitoring the service that receives
-        # alerts creates a circular dependency (gatus can't alert openclaw
-        # that openclaw is down)
+        endpoints =
+          (map withAlerts [
+            {
+              name = "Home Assistant";
+              group = "Smart Home";
+              url = "http://localhost:8123/api/";
+              interval = "60s";
+              conditions = [ "[STATUS] < 500" ];
+            }
+            {
+              name = "Homebridge";
+              group = "Smart Home";
+              url = "http://localhost:8581";
+              interval = "60s";
+              conditions = [ "[STATUS] < 500" ];
+            }
+            {
+              name = "Matter Server";
+              group = "Smart Home";
+              url = "tcp://localhost:5580";
+              interval = "120s";
+              conditions = [ "[CONNECTED] == true" ];
+            }
+            {
+              name = "Jellyfin";
+              group = "Media";
+              url = "http://localhost:8096/health";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
+            {
+              name = "Sonarr";
+              group = "Media";
+              url = "http://localhost:8989/ping";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
+            {
+              name = "Radarr";
+              group = "Media";
+              url = "http://localhost:7878/ping";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
+            {
+              name = "Prowlarr";
+              group = "Media";
+              url = "http://localhost:9696/ping";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
+            {
+              name = "PostgreSQL";
+              group = "Infrastructure";
+              url = "tcp://localhost:5432";
+              interval = "60s";
+              conditions = [ "[CONNECTED] == true" ];
+            }
+            # TODO: Tailscale local API doesn't expose healthz on 41112
+            # {
+            #   name = "Tailscale";
+            #   group = "Infrastructure";
+            #   url = "http://localhost:41112/healthz";
+            #   interval = "60s";
+            #   conditions = [ "[STATUS] == 200" ];
+            # }
+          ])
+          # OpenClaw: monitor-only (no alerts) — alerting openclaw about
+          # itself being down is a circular dependency
+          ++ optionals config.modules.services.openclaw.enable [
+            {
+              name = "OpenClaw Gateway";
+              group = "Infrastructure";
+              url = "http://localhost:18789";
+              interval = "60s";
+              conditions = [ "[STATUS] < 500" ];
+            }
+          ];
         # TODO: Audiobookshelf is on port 8000, not 13378; find correct healthcheck path
         # ++ optionals config.modules.services.audiobookshelf.enable [
         #   {
@@ -163,7 +172,6 @@ let
         #     conditions = [ "[STATUS] == 200" ];
         #   }
         # ]
-        );
       }
       // optionalAttrs (alertingConfig != { }) {
         alerting = alertingConfig;
