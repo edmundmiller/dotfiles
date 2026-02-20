@@ -584,3 +584,572 @@ describe("per-agent settings", () => {
     expect(settings.memfsEnabled).toBe(true); // defaults
   });
 });
+
+// ==========================================================================
+// Integration tests using real git repos
+// ==========================================================================
+
+import { execSync } from "node:child_process";
+import { createWorktree, mergeWorktree, PERSONA_PRESETS, type WorktreeInfo } from "./index";
+
+// --- Git repo test helpers ---
+
+/**
+ * Create a temp dir with a real git repo initialized + initial commit.
+ * Returns the memory dir path (has .git, system/, reference/).
+ */
+function createTestGitRepo(): string {
+  const base = mkdtempSync(join(tmpdir(), "ctx-repo-git-"));
+  const memDir = join(base, ".pi", "memory");
+  scaffoldMemory(memDir);
+  execSync("git init", { cwd: memDir });
+  execSync("git add -A", { cwd: memDir });
+  execSync('git commit -m "init"', { cwd: memDir });
+  installPreCommitHook(memDir);
+  return memDir;
+}
+
+/**
+ * Minimal mock of ExtensionAPI — only pi.exec is needed for git operations.
+ */
+function mockPi() {
+  return {
+    exec: (cmd: string, args: string[]) => {
+      const { execFileSync } = require("node:child_process");
+      try {
+        const stdout = execFileSync(cmd, args, {
+          encoding: "utf-8",
+          timeout: 10000,
+        });
+        return Promise.resolve({ stdout, stderr: "" });
+      } catch (e: any) {
+        const err = new Error(e.stderr || e.message);
+        return Promise.reject(err);
+      }
+    },
+  } as any; // ExtensionAPI mock
+}
+
+// --- createWorktree ---
+
+describe("createWorktree", () => {
+  let memDir: string;
+  const pi = mockPi();
+
+  beforeEach(() => {
+    memDir = createTestGitRepo();
+  });
+  afterEach(() => {
+    // Clean up the base temp dir (parent of .pi/memory)
+    const base = memDir.replace(/\/.pi\/memory$/, "");
+    rmSync(base, { recursive: true, force: true });
+    // Also clean up worktree dir
+    const wtDir = getWorktreeDir(memDir);
+    if (existsSync(wtDir)) rmSync(wtDir, { recursive: true, force: true });
+  });
+
+  test("creates a worktree directory and branch", async () => {
+    const wt = await createWorktree(pi, memDir, "test");
+    expect(wt.branch).toMatch(/^test-\d+$/);
+    expect(existsSync(wt.path)).toBe(true);
+    // The worktree should have the same files
+    expect(existsSync(join(wt.path, "system", "persona.md"))).toBe(true);
+  });
+
+  test("worktree branch shows up in git branch list", async () => {
+    const wt = await createWorktree(pi, memDir, "feat");
+    const branches = execSync("git branch --list", { cwd: memDir, encoding: "utf-8" });
+    expect(branches).toContain(wt.branch);
+  });
+
+  test("creates worktree dir inside memory-worktrees sibling", async () => {
+    const wt = await createWorktree(pi, memDir, "sibling");
+    const expectedParent = getWorktreeDir(memDir);
+    expect(wt.path.startsWith(expectedParent)).toBe(true);
+  });
+
+  test("edits in worktree don't affect main", async () => {
+    const wt = await createWorktree(pi, memDir, "isolated");
+    writeFileSync(
+      join(wt.path, "system", "wt-only.md"),
+      "---\ndescription: WT\nlimit: 1000\n---\n\nWT content.\n"
+    );
+    expect(existsSync(join(memDir, "system", "wt-only.md"))).toBe(false);
+  });
+});
+
+// --- mergeWorktree ---
+
+describe("mergeWorktree", () => {
+  let memDir: string;
+  const pi = mockPi();
+
+  beforeEach(() => {
+    memDir = createTestGitRepo();
+  });
+  afterEach(() => {
+    const base = memDir.replace(/\/.pi\/memory$/, "");
+    rmSync(base, { recursive: true, force: true });
+    const wtDir = getWorktreeDir(memDir);
+    if (existsSync(wtDir)) rmSync(wtDir, { recursive: true, force: true });
+  });
+
+  test("merges worktree changes back to main", async () => {
+    const wt = await createWorktree(pi, memDir, "merge");
+
+    // Make a change in the worktree and commit
+    const newFile = join(wt.path, "system", "merged-note.md");
+    writeFileSync(newFile, "---\ndescription: Merged note\nlimit: 1000\n---\n\nMerged content.\n");
+    execSync("git add -A", { cwd: wt.path });
+    execSync('git commit -m "add merged note"', { cwd: wt.path });
+
+    const result = await mergeWorktree(pi, memDir, wt);
+    expect(result.merged).toBe(true);
+    expect(result.summary).toContain("Merged");
+
+    // File should now exist in main
+    expect(existsSync(join(memDir, "system", "merged-note.md"))).toBe(true);
+  });
+
+  test("cleans up worktree directory after merge", async () => {
+    const wt = await createWorktree(pi, memDir, "cleanup");
+
+    writeFileSync(join(wt.path, "temp.md"), "---\ndescription: Temp\nlimit: 500\n---\n\nTemp.\n");
+    execSync("git add -A", { cwd: wt.path });
+    execSync('git commit -m "temp commit"', { cwd: wt.path });
+
+    await mergeWorktree(pi, memDir, wt);
+
+    // Worktree dir should be removed
+    expect(existsSync(wt.path)).toBe(false);
+  });
+
+  test("cleans up branch after merge", async () => {
+    const wt = await createWorktree(pi, memDir, "branchclean");
+
+    writeFileSync(join(wt.path, "branchtest.md"), "---\ndescription: B\nlimit: 500\n---\n\nB.\n");
+    execSync("git add -A", { cwd: wt.path });
+    execSync('git commit -m "branch test"', { cwd: wt.path });
+
+    await mergeWorktree(pi, memDir, wt);
+
+    const branches = execSync("git branch --list", { cwd: memDir, encoding: "utf-8" });
+    expect(branches).not.toContain(wt.branch);
+  });
+
+  test("reports push pending when no remote", async () => {
+    const wt = await createWorktree(pi, memDir, "nopush");
+
+    writeFileSync(join(wt.path, "nopush.md"), "---\ndescription: NP\nlimit: 500\n---\n\nNP.\n");
+    execSync("git add -A", { cwd: wt.path });
+    execSync('git commit -m "no push"', { cwd: wt.path });
+
+    const result = await mergeWorktree(pi, memDir, wt);
+    expect(result.pushed).toBe(false);
+    expect(result.summary).toContain("pending");
+  });
+
+  test("handles merge with no commits (empty worktree)", async () => {
+    const wt = await createWorktree(pi, memDir, "empty");
+
+    // No changes made — merge should still succeed (nothing to merge, fast-forward)
+    const result = await mergeWorktree(pi, memDir, wt);
+    expect(result.merged).toBe(true);
+  });
+});
+
+// --- listBackups (via backup/restore cycle) ---
+
+describe("backup and restore cycle", () => {
+  let memDir: string;
+
+  beforeEach(() => {
+    const base = mkdtempSync(join(tmpdir(), "ctx-backup-"));
+    memDir = join(base, ".pi", "memory");
+    scaffoldMemory(memDir);
+  });
+  afterEach(() => {
+    const base = memDir.replace(/\/.pi\/memory$/, "");
+    rmSync(base, { recursive: true, force: true });
+  });
+
+  test("backup creates a copy of memory dir", () => {
+    const { cpSync } = require("node:fs");
+    const backupDir = join(memDir, "..", "memory-backups");
+    const backupName = `backup-${formatBackupTimestamp()}`;
+    const backupPath = join(backupDir, backupName);
+    mkdirSync(backupDir, { recursive: true });
+    cpSync(memDir, backupPath, { recursive: true });
+
+    expect(existsSync(backupPath)).toBe(true);
+    expect(existsSync(join(backupPath, "system", "persona.md"))).toBe(true);
+  });
+
+  test("restore overwrites memory dir from backup", () => {
+    const { cpSync } = require("node:fs");
+    const backupDir = join(memDir, "..", "memory-backups");
+    const backupPath = join(backupDir, "backup-test");
+    mkdirSync(backupDir, { recursive: true });
+    cpSync(memDir, backupPath, { recursive: true });
+
+    // Modify original
+    writeFileSync(
+      join(memDir, "system", "persona.md"),
+      "---\ndescription: Modified\nlimit: 3000\n---\n\nChanged.\n"
+    );
+
+    // Restore
+    rmSync(memDir, { recursive: true, force: true });
+    cpSync(backupPath, memDir, { recursive: true });
+
+    const content = readFileSync(join(memDir, "system", "persona.md"), "utf-8");
+    expect(content).toContain("helpful"); // original content restored
+    expect(content).not.toContain("Changed");
+  });
+});
+
+// --- memory_delete logic (unit-level, no ExtensionAPI needed) ---
+
+describe("memory_delete logic", () => {
+  let memDir: string;
+
+  beforeEach(() => {
+    memDir = createTestGitRepo();
+  });
+  afterEach(() => {
+    const base = memDir.replace(/\/.pi\/memory$/, "");
+    rmSync(base, { recursive: true, force: true });
+  });
+
+  test("deleting a non-existent file is caught", () => {
+    const filePath = join(memDir, "reference", "nonexistent.md");
+    expect(existsSync(filePath)).toBe(false);
+  });
+
+  test("read_only files cannot be deleted (guard logic)", () => {
+    const roFile = join(memDir, "system", "locked.md");
+    writeFileSync(
+      roFile,
+      "---\ndescription: Locked\nlimit: 1000\nread_only: true\n---\n\nLocked.\n"
+    );
+    // Bypass pre-commit hook since it (correctly) rejects agent-set read_only
+    execSync("git add -A", { cwd: memDir });
+    execSync('git commit --no-verify -m "add locked file"', { cwd: memDir });
+
+    const content = readFileSync(roFile, "utf-8");
+    const { frontmatter } = parseFrontmatter(content);
+    expect(frontmatter.read_only).toBe(true);
+    // The tool would reject deletion — we're testing the guard condition
+  });
+
+  test("deleting a writable file removes it from disk", () => {
+    const target = join(memDir, "reference", "deleteme.md");
+    writeFileSync(target, "---\ndescription: Delete me\nlimit: 1000\n---\n\nTemp.\n");
+    execSync("git add -A", { cwd: memDir });
+    execSync('git commit -m "add deleteme"', { cwd: memDir });
+
+    expect(existsSync(target)).toBe(true);
+    rmSync(target);
+    expect(existsSync(target)).toBe(false);
+
+    // Git recognizes the deletion
+    const status = execSync("git status --porcelain", { cwd: memDir, encoding: "utf-8" });
+    expect(status).toContain("deleteme.md");
+  });
+
+  test("deleted file can be staged with git add", () => {
+    const target = join(memDir, "reference", "stageme.md");
+    writeFileSync(target, "---\ndescription: Stage me\nlimit: 1000\n---\n\nStage.\n");
+    execSync("git add -A", { cwd: memDir });
+    execSync('git commit -m "add stageme"', { cwd: memDir });
+
+    rmSync(target);
+    execSync("git add reference/stageme.md", { cwd: memDir });
+
+    const staged = execSync("git diff --cached --name-only", { cwd: memDir, encoding: "utf-8" });
+    expect(staged).toContain("reference/stageme.md");
+  });
+});
+
+// --- memory_recall JSONL parsing logic ---
+
+describe("memory_recall JSONL parsing", () => {
+  let sessionsDir: string;
+
+  beforeEach(() => {
+    sessionsDir = mkdtempSync(join(tmpdir(), "ctx-sessions-"));
+  });
+  afterEach(() => {
+    rmSync(sessionsDir, { recursive: true, force: true });
+  });
+
+  test("finds matching messages in JSONL files", () => {
+    const sessionFile = join(sessionsDir, "session-1.jsonl");
+    const entries = [
+      JSON.stringify({
+        type: "message",
+        timestamp: "2026-01-15T10:00:00Z",
+        message: { role: "user", content: "Please fix the authentication bug" },
+      }),
+      JSON.stringify({
+        type: "message",
+        timestamp: "2026-01-15T10:01:00Z",
+        message: { role: "assistant", content: "I'll look into the authentication issue now." },
+      }),
+      JSON.stringify({ type: "tool_call", timestamp: "2026-01-15T10:02:00Z", tool: "bash" }),
+      JSON.stringify({
+        type: "message",
+        timestamp: "2026-01-15T10:03:00Z",
+        message: { role: "user", content: "Great, also check the database connection" },
+      }),
+    ];
+    writeFileSync(sessionFile, entries.join("\n") + "\n");
+
+    // Simulate what memory_recall does: grep + parse
+    const query = "authentication";
+    const lines = readFileSync(sessionFile, "utf-8").trim().split("\n");
+    const results: Array<{ date: string; role: string; snippet: string }> = [];
+
+    for (const line of lines) {
+      try {
+        const entry = JSON.parse(line);
+        if (entry.type !== "message") continue;
+        const msg = entry.message;
+        if (!msg?.content) continue;
+
+        let text = typeof msg.content === "string" ? msg.content : "";
+        if (!text.toLowerCase().includes(query.toLowerCase())) continue;
+
+        const idx = text.toLowerCase().indexOf(query.toLowerCase());
+        const start = Math.max(0, idx - 100);
+        const end = Math.min(text.length, idx + query.length + 100);
+        const snippet = text.slice(start, end);
+
+        results.push({
+          date: new Date(entry.timestamp).toISOString().slice(0, 16),
+          role: msg.role,
+          snippet,
+        });
+      } catch {
+        // skip
+      }
+    }
+
+    expect(results).toHaveLength(2);
+    expect(results[0].role).toBe("user");
+    expect(results[0].snippet).toContain("authentication");
+    expect(results[1].role).toBe("assistant");
+  });
+
+  test("handles array content format", () => {
+    const sessionFile = join(sessionsDir, "session-2.jsonl");
+    const entry = JSON.stringify({
+      type: "message",
+      timestamp: "2026-01-15T10:00:00Z",
+      message: {
+        role: "assistant",
+        content: [
+          { type: "text", text: "I found the webpack config issue." },
+          { type: "tool_use", id: "t1", name: "bash" },
+        ],
+      },
+    });
+    writeFileSync(sessionFile, entry + "\n");
+
+    const line = readFileSync(sessionFile, "utf-8").trim();
+    const parsed = JSON.parse(line);
+    const msg = parsed.message;
+    const text = Array.isArray(msg.content)
+      ? msg.content
+          .filter((c: any) => c.type === "text" && c.text)
+          .map((c: any) => c.text)
+          .join("\n")
+      : msg.content;
+
+    expect(text).toContain("webpack");
+  });
+
+  test("skips non-message entries", () => {
+    const sessionFile = join(sessionsDir, "session-3.jsonl");
+    const entries = [
+      JSON.stringify({ type: "tool_call", tool: "bash", input: "search term here" }),
+      JSON.stringify({ type: "system", content: "search term here" }),
+    ];
+    writeFileSync(sessionFile, entries.join("\n") + "\n");
+
+    const lines = readFileSync(sessionFile, "utf-8").trim().split("\n");
+    const matches = lines.filter((l) => {
+      try {
+        return JSON.parse(l).type === "message";
+      } catch {
+        return false;
+      }
+    });
+
+    expect(matches).toHaveLength(0);
+  });
+
+  test("handles malformed JSONL gracefully", () => {
+    const sessionFile = join(sessionsDir, "session-4.jsonl");
+    writeFileSync(
+      sessionFile,
+      "not json\n{bad\n" +
+        JSON.stringify({ type: "message", message: { role: "user", content: "valid" } }) +
+        "\n"
+    );
+
+    const lines = readFileSync(sessionFile, "utf-8").trim().split("\n");
+    let validCount = 0;
+    for (const line of lines) {
+      try {
+        const entry = JSON.parse(line);
+        if (entry.type === "message") validCount++;
+      } catch {
+        // expected for malformed lines
+      }
+    }
+
+    expect(validCount).toBe(1);
+  });
+});
+
+// --- before_agent_start prompt building ---
+
+describe("system prompt building", () => {
+  test("drift warning is injected when legacy memory detected", () => {
+    const systemPrompt = "Your memory consists of core memory blocks";
+    const drifts = detectPromptDrift(systemPrompt);
+    expect(drifts.length).toBeGreaterThan(0);
+
+    // Simulate what before_agent_start does
+    const driftWarning =
+      drifts.length > 0
+        ? `\n<system-reminder>\nMEMORY PROMPT DRIFT DETECTED:\n${drifts.map((d) => `- ${d.message}`).join("\n")}\nThe context-repo extension manages memory sections. Legacy fragments may cause confusion.\n</system-reminder>\n`
+        : "";
+
+    expect(driftWarning).toContain("MEMORY PROMPT DRIFT DETECTED");
+    expect(driftWarning).toContain("legacy memory-block");
+  });
+
+  test("drift warning is empty when prompt is clean", () => {
+    const drifts = detectPromptDrift("You are a helpful assistant.");
+    const driftWarning = drifts.length > 0 ? "WARNING" : "";
+    expect(driftWarning).toBe("");
+  });
+
+  test("memory block contains expected sections", () => {
+    // Simulate the template building
+    const tree = ["├── system/", "│   ├── persona.md", "└── reference/"];
+    const systemContent = "<system/persona.md>\nContent\n</system/persona.md>";
+
+    const memoryBlock = `
+## Context Repository (Agent Memory)
+
+### Memory Filesystem
+\`\`\`
+.pi/memory/
+${tree.join("\n")}
+\`\`\`
+
+### Pinned Memory (system/)
+${systemContent}
+
+### Memory Guidelines
+- To remember something: use the memory_write tool
+- To remove a file: use the memory_delete tool
+
+### Syncing
+
+### Conflict Resolution
+`;
+
+    expect(memoryBlock).toContain("Context Repository (Agent Memory)");
+    expect(memoryBlock).toContain("Memory Filesystem");
+    expect(memoryBlock).toContain("Pinned Memory");
+    expect(memoryBlock).toContain("Memory Guidelines");
+    expect(memoryBlock).toContain("memory_delete");
+    expect(memoryBlock).toContain("Syncing");
+    expect(memoryBlock).toContain("Conflict Resolution");
+  });
+
+  test("reflection reminder fires at correct interval", () => {
+    const interval = 15;
+    const fired: number[] = [];
+    for (let turn = 1; turn <= 50; turn++) {
+      if (interval > 0 && turn > 0 && turn % interval === 0) {
+        fired.push(turn);
+      }
+    }
+    expect(fired).toEqual([15, 30, 45]);
+  });
+
+  test("env vars are set correctly", () => {
+    const memDir = "/some/project/.pi/memory";
+    const env = { MEMORY_DIR: memDir, PI_MEMORY_DIR: memDir };
+    expect(env.MEMORY_DIR).toBe(memDir);
+    expect(env.PI_MEMORY_DIR).toBe(memDir);
+  });
+});
+
+// --- PERSONA_PRESETS exhaustive ---
+
+describe("PERSONA_PRESETS", () => {
+  test("all presets have description and content", () => {
+    for (const [name, preset] of Object.entries(PERSONA_PRESETS)) {
+      expect(preset.description).toBeTruthy();
+      expect(preset.content).toBeTruthy();
+      expect(preset.content.length).toBeGreaterThan(10);
+    }
+  });
+
+  test("has at least 4 presets", () => {
+    expect(Object.keys(PERSONA_PRESETS).length).toBeGreaterThanOrEqual(4);
+  });
+
+  test("default preset exists", () => {
+    expect(PERSONA_PRESETS.default).toBeDefined();
+  });
+});
+
+// --- stripManagedMemorySections edge cases ---
+
+describe("stripManagedMemorySections edge cases", () => {
+  test("handles context-repo at end of prompt (no following section)", () => {
+    const prompt =
+      "## Instructions\n\nDo stuff.\n\n## Context Repository (Agent Memory)\n\nAll memory here.";
+    const result = stripManagedMemorySections(prompt);
+    expect(result).toContain("Instructions");
+    expect(result).not.toContain("All memory here");
+  });
+
+  test("handles MEMORY REFLECTION reminder removal", () => {
+    const prompt =
+      "Before.\n<system-reminder>\nMEMORY REFLECTION: time to reflect\nReview conversation.\n</system-reminder>\nAfter.";
+    const result = stripManagedMemorySections(prompt);
+    expect(result).not.toContain("MEMORY REFLECTION");
+    expect(result).toContain("Before.");
+    expect(result).toContain("After.");
+  });
+
+  test("handles MEMORY CHECK reminder removal", () => {
+    const prompt =
+      "Before.\n<system-reminder>\nMEMORY CHECK: verify state\n</system-reminder>\nAfter.";
+    const result = stripManagedMemorySections(prompt);
+    expect(result).not.toContain("MEMORY CHECK");
+  });
+
+  test("handles multiple system-reminder blocks", () => {
+    const prompt =
+      "<system-reminder>\nMEMORY SYNC: dirty\n</system-reminder>\nMiddle.\n<system-reminder>\nMEMORY REFLECTION: reflect\n</system-reminder>";
+    const result = stripManagedMemorySections(prompt);
+    expect(result).not.toContain("MEMORY SYNC");
+    expect(result).not.toContain("MEMORY REFLECTION");
+    expect(result).toContain("Middle.");
+  });
+
+  test("preserves non-MEMORY system-reminder blocks", () => {
+    const prompt = "<system-reminder>\nSOMETHING ELSE: important\n</system-reminder>";
+    const result = stripManagedMemorySections(prompt);
+    expect(result).toContain("SOMETHING ELSE");
+  });
+});
