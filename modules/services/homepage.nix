@@ -82,6 +82,22 @@ in
         }
       ];
 
+      bookmarks = [
+        {
+          "Admin" = [
+            {
+              "Tailscale" = [
+                {
+                  icon = "tailscale.svg";
+                  href = "https://login.tailscale.com/admin/services/svc:homepage";
+                  description = "Services admin";
+                }
+              ];
+            }
+          ];
+        }
+      ];
+
       services = [
         {
           "Media" = [
