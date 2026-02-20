@@ -36,6 +36,7 @@ in
         "Home"
         "Away"
         "Night"
+        "Vacation"
       ];
       initial = "Home";
       icon = "mdi:home";
@@ -49,6 +50,10 @@ in
         entities = {
           "input_boolean.goodnight" = "off";
           "input_select.house_mode" = "Home";
+          "cover.smartwings_window_covering" = {
+            state = "open";
+            position = 20; # crack — natural light without full exposure
+          };
         };
       }
     ];
