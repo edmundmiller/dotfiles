@@ -209,7 +209,10 @@
           pingUrl = "https://hc-ping.com/a6bbb4df-b118-4262-9881-9939f3ac7e76";
         };
       };
-      homepage.enable = true;
+      homepage = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       jellyfin.enable = true;
       prowlarr.enable = true;
       qb.enable = false;
