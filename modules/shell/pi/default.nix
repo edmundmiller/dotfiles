@@ -200,6 +200,8 @@ in
             ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/prompt-stash.ts".source = "${configDir}/pi/extensions/prompt-stash.ts";
+            ".pi/agent/extensions/prompt-stash-logic.ts".source =
+              "${configDir}/pi/extensions/prompt-stash-logic.ts";
             ".pi/agent/extensions/non-interactive-env.ts".source =
               "${configDir}/pi/extensions/non-interactive-env.ts";
           };
