@@ -692,20 +692,85 @@ export function stripManagedMemorySections(systemPrompt: string): string {
   return result;
 }
 
+// --- Per-agent settings ---
+
+export interface AgentSettings {
+  memfsEnabled: boolean;
+  reflectionInterval: number;
+  personaPreset: string;
+}
+
+const DEFAULT_SETTINGS: AgentSettings = {
+  memfsEnabled: true,
+  reflectionInterval: DEFAULT_REFLECTION_INTERVAL,
+  personaPreset: "default",
+};
+
+export function loadSettings(memDir: string): AgentSettings {
+  const settingsPath = join(memDir, ".settings.json");
+  if (!existsSync(settingsPath)) return { ...DEFAULT_SETTINGS };
+  try {
+    const raw = JSON.parse(readFileSync(settingsPath, "utf-8"));
+    return { ...DEFAULT_SETTINGS, ...raw };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export function saveSettings(memDir: string, settings: Partial<AgentSettings>): AgentSettings {
+  const current = loadSettings(memDir);
+  const merged = { ...current, ...settings };
+  const settingsPath = join(memDir, ".settings.json");
+  writeFileSync(settingsPath, JSON.stringify(merged, null, 2) + "\n");
+  return merged;
+}
+
+// --- Persona presets (inspired by Letta's persona_claude/kawaii/memo.mdx) ---
+
+export const PERSONA_PRESETS: Record<string, { description: string; content: string }> = {
+  default: {
+    description: "Agent identity and behavior guidelines",
+    content: "You are a helpful coding assistant.\n",
+  },
+  concise: {
+    description: "Agent identity — terse, direct style",
+    content: `You are a terse coding assistant. Be extremely concise.
+Sacrifice grammar for brevity. No filler words. Code speaks louder than prose.
+When explaining, use bullets not paragraphs. Skip pleasantries.
+`,
+  },
+  friendly: {
+    description: "Agent identity — warm, collaborative style",
+    content: `You are a friendly, collaborative coding assistant.
+Explain your reasoning as you go. Use encouraging language.
+Celebrate small wins. Ask clarifying questions when unsure.
+Make the developer feel supported and productive.
+`,
+  },
+  mentor: {
+    description: "Agent identity — teaching-focused style",
+    content: `You are a patient coding mentor. When solving problems:
+- Explain the "why" behind decisions, not just the "what"
+- Point out patterns and principles the developer can reuse
+- Suggest further reading when relevant
+- Ask the developer to predict outcomes before revealing answers
+`,
+  },
+};
+
 // --- Scaffold ---
 
-export function scaffoldMemory(memDir: string): void {
+export function scaffoldMemory(memDir: string, personaPreset?: string): void {
   const sysDir = join(memDir, SYSTEM_DIR);
   mkdirSync(sysDir, { recursive: true });
+
+  const persona = PERSONA_PRESETS[personaPreset || "default"] || PERSONA_PRESETS.default;
 
   const personaFile = join(sysDir, "persona.md");
   if (!existsSync(personaFile)) {
     writeFileSync(
       personaFile,
-      `${buildFrontmatter({ description: "Agent identity and behavior guidelines", limit: 3000 })}
-
-You are a helpful coding assistant.
-`
+      `${buildFrontmatter({ description: persona.description, limit: 3000 })}\n\n${persona.content}`
     );
   }
 
@@ -782,6 +847,10 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
   // Initialize on session start
   pi.on("session_start", async (_event, ctx) => {
     memDir = join(ctx.cwd, MEMORY_DIR_NAME);
+
+    // Load per-agent settings
+    const settings = loadSettings(memDir);
+    reflectionInterval = settings.reflectionInterval;
 
     if (!existsSync(memDir)) {
       scaffoldMemory(memDir);
@@ -861,6 +930,13 @@ git commit -m "<type>: <what changed>"  # e.g. "fix: update user prefs"
 git push                             # Push to remote
 git pull                             # Get latest from remote
 \`\`\`
+
+### Conflict Resolution
+If pull/push fails with conflicts:
+1. \`git pull --rebase\` to rebase local on remote
+2. If conflicts, edit files to resolve, then \`git add <file>\` and \`git rebase --continue\`
+3. Prefer keeping newer content when resolving
+4. If stuck: \`git rebase --abort\` to undo, then \`/memfs sync\` to retry
 `;
 
     // Sync reminder (dirty or ahead-of-remote)
@@ -1579,6 +1655,92 @@ Key steps:
       mkdirSync(outDir, { recursive: true });
       cpSync(memDir, outDir, { recursive: true });
       ctx.ui.notify(`Exported memory to: ${outDir}`, "info");
+    },
+  });
+
+  pi.registerCommand("memfs", {
+    description: "Manage memory filesystem (usage: /memfs [status|sync|reset])",
+    handler: async (args, ctx) => {
+      const subcommand = args.trim().split(/\s+/)[0] || "status";
+
+      if (subcommand === "status") {
+        if (!initialized || !existsSync(memDir)) {
+          ctx.ui.notify("Memory filesystem: not initialized", "info");
+          return;
+        }
+        const status = await getStatus(pi, memDir);
+        const remote = await hasRemote(pi, memDir);
+        let output = `Memory filesystem: enabled\n`;
+        output += `Directory: ${memDir}\n`;
+        output += `Status: ${status.summary}\n`;
+        output += `Remote: ${remote ? "configured" : "none"}\n`;
+        if (status.dirty) {
+          output += `Uncommitted:\n${status.files.map((f) => `  ${f}`).join("\n")}\n`;
+        }
+        ctx.ui.notify(output, "info");
+        return;
+      }
+
+      if (subcommand === "sync") {
+        if (!initialized || !existsSync(memDir)) {
+          ctx.ui.notify("Context repo not initialized.", "warning");
+          return;
+        }
+
+        // Commit any uncommitted changes
+        try {
+          const status = await getStatus(pi, memDir);
+          if (status.dirty) {
+            await git(pi, memDir, ["add", "-A"]);
+            await git(pi, memDir, ["commit", "-m", "sync: auto-commit before sync"]);
+          }
+        } catch {
+          // nothing to commit
+        }
+
+        // Pull then push
+        if (await hasRemote(pi, memDir)) {
+          const pullResult = await pullFromRemote(pi, memDir);
+          try {
+            await git(pi, memDir, ["push"]);
+            ctx.ui.notify(`Synced. Pull: ${pullResult.summary}. Push: success.`, "info");
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            ctx.ui.notify(`Pull: ${pullResult.summary}. Push failed: ${msg}`, "warning");
+          }
+        } else {
+          ctx.ui.notify("No remote configured. Nothing to sync.", "info");
+        }
+        return;
+      }
+
+      if (subcommand === "reset") {
+        if (!initialized || !existsSync(memDir)) {
+          ctx.ui.notify("Context repo not initialized.", "warning");
+          return;
+        }
+
+        // Reset to last commit (discard uncommitted changes)
+        try {
+          await git(pi, memDir, ["checkout", "--", "."]);
+          await git(pi, memDir, ["clean", "-fd"]);
+          const status = await getStatus(pi, memDir);
+          ctx.ui.setWidget(EXT_TYPE, statusWidget(status));
+          ctx.ui.notify("Memory reset to last commit.", "info");
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          ctx.ui.notify(`Reset failed: ${msg}`, "error");
+        }
+        return;
+      }
+
+      ctx.ui.notify(
+        "Usage: /memfs [status|sync|reset]\n\n" +
+          "  status  — Show memory filesystem status (default)\n" +
+          "  sync    — Commit, pull, and push\n" +
+          "  reset   — Discard uncommitted changes",
+        "info"
+      );
     },
   });
 
