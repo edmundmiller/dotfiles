@@ -376,16 +376,89 @@ async function initRepo(pi: ExtensionAPI, dir: string): Promise<void> {
   installPreCommitHook(dir);
 }
 
-async function getStatus(
-  pi: ExtensionAPI,
-  dir: string
-): Promise<{ dirty: boolean; files: string[] }> {
+async function hasRemote(pi: ExtensionAPI, dir: string): Promise<boolean> {
+  try {
+    const { stdout } = await git(pi, dir, ["remote"]);
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function getAheadCount(pi: ExtensionAPI, dir: string): Promise<number> {
+  try {
+    const { stdout } = await git(pi, dir, ["rev-list", "--count", "@{u}..HEAD"]);
+    return parseInt(stdout.trim(), 10) || 0;
+  } catch {
+    return 0; // no upstream configured
+  }
+}
+
+interface MemoryStatus {
+  dirty: boolean;
+  files: string[];
+  aheadOfRemote: boolean;
+  aheadCount: number;
+  hasRemote: boolean;
+  summary: string;
+}
+
+async function getStatus(pi: ExtensionAPI, dir: string): Promise<MemoryStatus> {
   const { stdout } = await git(pi, dir, ["status", "--porcelain"]);
   const files = stdout
     .trim()
     .split("\n")
     .filter((l) => l.trim());
-  return { dirty: files.length > 0, files };
+  const dirty = files.length > 0;
+
+  const remote = await hasRemote(pi, dir);
+  let aheadCount = 0;
+  let aheadOfRemote = false;
+  if (remote) {
+    aheadCount = await getAheadCount(pi, dir);
+    aheadOfRemote = aheadCount > 0;
+  }
+
+  const parts: string[] = [];
+  if (dirty) parts.push(`${files.length} uncommitted change(s)`);
+  if (aheadOfRemote) parts.push(`${aheadCount} unpushed commit(s)`);
+
+  return {
+    dirty,
+    files,
+    aheadOfRemote,
+    aheadCount,
+    hasRemote: remote,
+    summary: parts.length > 0 ? parts.join(", ") : "clean",
+  };
+}
+
+function statusWidget(status: MemoryStatus): string[] {
+  const parts: string[] = [];
+  if (status.dirty) parts.push(`${status.files.length} uncommitted`);
+  if (status.aheadOfRemote) parts.push(`${status.aheadCount} unpushed`);
+  return [`Memory: ${parts.length > 0 ? parts.join(", ") : "clean"}`];
+}
+
+async function pullFromRemote(
+  pi: ExtensionAPI,
+  dir: string
+): Promise<{ updated: boolean; summary: string }> {
+  try {
+    const { stdout, stderr } = await git(pi, dir, ["pull", "--ff-only"]);
+    const output = stdout + stderr;
+    const updated = !output.includes("Already up to date");
+    return { updated, summary: updated ? output.trim() : "Already up to date" };
+  } catch {
+    // ff-only failed (diverged), try rebase
+    try {
+      const { stdout, stderr } = await git(pi, dir, ["pull", "--rebase"]);
+      return { updated: true, summary: (stdout + stderr).trim() };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { updated: false, summary: `Pull failed: ${msg}` };
+    }
+  }
 }
 
 // --- Backup helpers (adapted from Letta's memfs.ts) ---
@@ -488,23 +561,22 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     memDir = join(ctx.cwd, MEMORY_DIR_NAME);
 
-    const freshInit = !existsSync(memDir);
-    if (freshInit) {
+    if (!existsSync(memDir)) {
       scaffoldMemory(memDir);
     }
 
     if (!(await isGitRepo(pi, memDir))) {
       await initRepo(pi, memDir);
     } else {
+      // Self-healing: ensure hook is installed on existing repos
       installPreCommitHook(memDir);
-      // Auto-commit any uncommitted scaffold/leftover files
-      const status = await getStatus(pi, memDir);
-      if (status.dirty) {
+
+      // Pull from remote on startup if configured
+      if (await hasRemote(pi, memDir)) {
         try {
-          await git(pi, memDir, ["add", "-A"]);
-          await git(pi, memDir, ["commit", "-m", "init: auto-commit on session start"]);
+          await pullFromRemote(pi, memDir);
         } catch {
-          // ignore — nothing to commit or hook failure
+          // non-fatal — agent will see status
         }
       }
     }
@@ -513,9 +585,7 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
     turnCount = 0;
 
     const status = await getStatus(pi, memDir);
-    ctx.ui.setWidget(EXT_TYPE, [
-      `Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
-    ]);
+    ctx.ui.setWidget(EXT_TYPE, statusWidget(status));
   });
 
   // Inject memory into system prompt before each agent turn
@@ -552,14 +622,18 @@ ${systemContent || "(No system files yet.)"}
 - Files marked \`read_only\` cannot be modified
 `;
 
-    // Dirty reminder
+    // Sync reminder (dirty or ahead-of-remote)
     try {
       const status = await getStatus(pi, memDir);
-      if (status.dirty) {
-        memoryBlock += `
-### ⚠️ Uncommitted Memory Changes
-You have ${status.files.length} uncommitted change(s). Commit when convenient with memory_commit.
-`;
+      if (status.dirty || status.aheadOfRemote) {
+        memoryBlock += `\n<system-reminder>\nMEMORY SYNC: ${status.summary}\n`;
+        if (status.dirty) {
+          memoryBlock += `Commit when convenient with memory_commit.\n`;
+        }
+        if (status.aheadOfRemote) {
+          memoryBlock += `Push when convenient: \`git -C ${MEMORY_DIR_NAME} push\`\n`;
+        }
+        memoryBlock += `</system-reminder>\n`;
       }
     } catch {
       // ignore
@@ -580,9 +654,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
     if (!initialized || !existsSync(memDir)) return;
     try {
       const status = await getStatus(pi, memDir);
-      ctx.ui.setWidget(EXT_TYPE, [
-        `Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
-      ]);
+      ctx.ui.setWidget(EXT_TYPE, statusWidget(status));
     } catch {
       // ignore
     }
@@ -666,9 +738,7 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
 
       // Update widget
       const status = await getStatus(pi, memDir);
-      ctx.ui.setWidget(EXT_TYPE, [
-        `Memory: ${status.dirty ? `${status.files.length} uncommitted` : "clean"}`,
-      ]);
+      ctx.ui.setWidget(EXT_TYPE, statusWidget(status));
 
       return toolResult(
         `Wrote ${relPath} (${params.content.length}/${effectiveLimit} chars). Staged for commit.`
@@ -694,8 +764,13 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
       try {
         await git(pi, memDir, ["add", "-A"]);
         await git(pi, memDir, ["commit", "-m", params.message]);
-        ctx.ui.setWidget(EXT_TYPE, ["Memory: clean"]);
-        return toolResult(`Committed: ${params.message}`);
+        const status = await getStatus(pi, memDir);
+        ctx.ui.setWidget(EXT_TYPE, statusWidget(status));
+        let result = `Committed: ${params.message}`;
+        if (status.aheadOfRemote) {
+          result += `\n\n${status.aheadCount} unpushed commit(s). Push with: git -C ${MEMORY_DIR_NAME} push`;
+        }
+        return toolResult(result);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("nothing to commit")) {
@@ -824,9 +899,16 @@ You have ${status.files.length} uncommitted change(s). Commit when convenient wi
 
       let output = `Context Repository (${MEMORY_DIR_NAME})\n\n`;
       output += tree.join("\n") + "\n\n";
-      output += status.dirty
-        ? `⚠️ ${status.files.length} uncommitted change(s):\n${status.files.map((f) => `  ${f}`).join("\n")}`
-        : "✓ Clean (all changes committed)";
+      if (status.dirty) {
+        output += `${status.files.length} uncommitted change(s):\n${status.files.map((f) => `  ${f}`).join("\n")}`;
+      } else {
+        output += "Clean (all changes committed)";
+      }
+      if (status.hasRemote) {
+        output += status.aheadOfRemote
+          ? `\n${status.aheadCount} commit(s) ahead of remote — push with: git -C ${MEMORY_DIR_NAME} push`
+          : "\nIn sync with remote";
+      }
 
       try {
         const { stdout } = await git(pi, memDir, [
