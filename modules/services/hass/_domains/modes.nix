@@ -64,6 +64,8 @@ in
           target.entity_id = [
             "light.essentials_a19_a60"
             "light.essentials_a19_a60_2"
+            "light.essentials_a19_a60_3" # Bathroom Nightstand
+            "light.essentials_a19_a60_4" # Window Nightstand
             "light.nanoleaf_multicolor_floor_lamp"
             "light.nanoleaf_multicolor_hd_ls"
             "light.smart_night_light_w"
