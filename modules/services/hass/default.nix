@@ -25,6 +25,20 @@ let
     dependencies = [ pkgs.python3Packages.aiogithubapi ];
   };
 
+  # Adaptive Lighting - sun-synchronized color temperature & brightness
+  # https://github.com/basnijholt/adaptive-lighting
+  adaptive-lighting = pkgs.buildHomeAssistantComponent {
+    owner = "basnijholt";
+    domain = "adaptive_lighting";
+    version = "1.30.1";
+    src = pkgs.fetchFromGitHub {
+      owner = "basnijholt";
+      repo = "adaptive-lighting";
+      tag = "v1.30.1";
+      hash = "sha256-pmI0jZxIjSiA9P5+0hRCujHE53WprvkAo6jp/IOpJ88=";
+    };
+  };
+
   # Eight Sleep - smart mattress integration
   # https://github.com/lukas-clarke/eight_sleep
   eight-sleep = pkgs.buildHomeAssistantComponent {
@@ -47,6 +61,7 @@ in
   imports = [
     ./_domains/ambient.nix
     ./_domains/conversation.nix
+    ./_domains/lighting.nix
     ./_domains/modes.nix
     ./_domains/sleep.nix
     ./_domains/tv.nix
@@ -118,6 +133,7 @@ in
         ++ cfg.extraComponents;
 
         customComponents = [
+          adaptive-lighting
           hacs
           eight-sleep
         ]
