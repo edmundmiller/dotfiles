@@ -23,6 +23,12 @@ in
     home-manager.users.${user} =
       { lib, ... }:
       {
+        # Force-overwrite openclaw.json so HM never tries to back it up.
+        # openclawInjectToken replaces the nix symlink with a real file each
+        # rebuild; without force=true HM tries to move it to .bkup, which
+        # already exists, causing a collision error.
+        home.file.".openclaw/openclaw.json".force = true;
+
         programs.openclaw = {
           enable = true;
           # App installed via Homebrew — don't install via Nix
