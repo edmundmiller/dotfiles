@@ -336,19 +336,36 @@ in
         systemd.user.services.openclaw-gateway.Install = {
           WantedBy = [ "default.target" ];
         };
-        systemd.user.services.openclaw-gateway.Service = {
-          ExecStartPre = [
-            "${mkEnvScript}"
-            "${pkgs.bash}/bin/bash ${mkTokenScript}"
-          ];
-          EnvironmentFile = "-/run/user/%U/openclaw/env";
-          # memory-lancedb extension needs openai + @lancedb/lancedb from the
-          # gateway's pnpm store — the Nix build leaves extension node_modules
-          # empty (upstream packaging bug). NODE_PATH lets Node resolve them.
-          Environment = [
-            "NODE_PATH=${pkgs.openclaw-gateway}/lib/openclaw/node_modules"
-          ];
-        };
+        systemd.user.services.openclaw-gateway.Service =
+          let
+            # memory-lancedb extension needs openai + @lancedb/lancedb from the
+            # gateway's pnpm store — the Nix build leaves extension node_modules
+            # empty (upstream packaging bug). This script finds the deps in the
+            # pnpm virtual store and appends NODE_PATH to the env file.
+            findNodePath = pkgs.writeShellScript "openclaw-node-path" ''
+              set -euo pipefail
+              GW_STORE=$(readlink -f $(which openclaw) | sed 's|/bin/openclaw$||')
+              PNPM="$GW_STORE/lib/openclaw/node_modules/.pnpm"
+
+              OPENAI_DIR=$(find "$PNPM" -maxdepth 2 -path '*/openai@*/node_modules' -type d 2>/dev/null | head -1)
+              LANCE_DIR=$(find "$PNPM" -maxdepth 2 -path '*/@lancedb+lancedb@*/node_modules' -type d 2>/dev/null | head -1)
+
+              NODE_PATH=""
+              [ -n "$OPENAI_DIR" ] && NODE_PATH="$OPENAI_DIR"
+              [ -n "$LANCE_DIR" ] && NODE_PATH="''${NODE_PATH:+$NODE_PATH:}$LANCE_DIR"
+
+              mkdir -p "$XDG_RUNTIME_DIR/openclaw"
+              echo "NODE_PATH=$NODE_PATH" >> "$XDG_RUNTIME_DIR/openclaw/env"
+            '';
+          in
+          {
+            ExecStartPre = [
+              "${mkEnvScript}"
+              "${pkgs.bash}/bin/bash ${mkTokenScript}"
+              "${findNodePath}"
+            ];
+            EnvironmentFile = "-/run/user/%U/openclaw/env";
+          };
       };
   };
 }
