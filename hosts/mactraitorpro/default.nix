@@ -43,6 +43,8 @@
         ssh.enable = true;
       };
 
+      macos-defaults.enable = true;
+
       desktop = {
         apps.raycast.enable = true;
         apps.openclaw.enable = true;
@@ -188,118 +190,6 @@
       emiller ALL=(root) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild *
     '';
 
-    # set some OSX preferences that I always end up hunting down and changing.
-    # ref: https://github.com/yannbertrand/macos-defaults
-    system.defaults = {
-      # minimal dock
-      dock = {
-        autohide = true;
-        orientation = "left";
-        show-process-indicators = false;
-        show-recents = false;
-        static-only = true;
-        tilesize = 36;
-        # disable hot corners
-        wvous-bl-corner = 1;
-        wvous-br-corner = 1;
-        wvous-tl-corner = 1;
-        wvous-tr-corner = 1;
-      };
 
-      # a finder that tells me what I want to know and lets me work
-      finder = {
-        _FXShowPosixPathInTitle = true; # full path in title bar
-        AppleShowAllExtensions = true;
-        FXEnableExtensionChangeWarning = false;
-        QuitMenuItem = true; # allow quitting Finder
-        ShowPathbar = true;
-        ShowStatusBar = true;
-      };
-
-      # trackpad: tap to click, two-finger right click, three-finger drag
-      trackpad = {
-        Clicking = true;
-        TrackpadRightClick = true;
-        TrackpadThreeFingerDrag = true;
-      };
-
-      # keyboard & text behavior
-      NSGlobalDomain = {
-        "com.apple.keyboard.fnState" = false; # F-row as F1-F12
-        AppleKeyboardUIMode = 3; # full keyboard control (tab through all UI controls)
-        AppleInterfaceStyle = "Dark";
-        ApplePressAndHoldEnabled = false; # disable press-and-hold for keys (better for vim)
-
-        # fast key repeat
-        InitialKeyRepeat = 15; # 225ms
-        KeyRepeat = 2; # 30ms
-
-        # kill all the "smart" text substitution
-        NSAutomaticCapitalizationEnabled = false;
-        NSAutomaticDashSubstitutionEnabled = false;
-        NSAutomaticPeriodSubstitutionEnabled = false;
-        NSAutomaticQuoteSubstitutionEnabled = false;
-        NSAutomaticSpellingCorrectionEnabled = false;
-
-        # expand save panel by default
-        NSNavPanelExpandedStateForSaveMode = true;
-        NSNavPanelExpandedStateForSaveMode2 = true;
-      };
-
-      # login window
-      loginwindow = {
-        GuestEnabled = false;
-        SHOWFULLNAME = true;
-      };
-
-      # stuff nix-darwin doesn't have first-class options for
-      CustomUserPreferences = {
-        # disable Siri
-        "com.apple.assistant.support" = {
-          "Assistant Enabled" = false;
-        };
-        "com.apple.Siri" = {
-          StatusMenuVisible = false;
-          UserHasDeclinedEnable = true;
-        };
-
-        # disable personalized ads
-        "com.apple.AdLib" = {
-          allowApplePersonalizedAdvertising = false;
-        };
-
-        # avoid .DS_Store on network/USB volumes
-        "com.apple.desktopservices" = {
-          DSDontWriteNetworkStores = true;
-          DSDontWriteUSBStores = true;
-        };
-
-        # don't auto-open Photos when plugging in devices
-        "com.apple.ImageCapture".disableHotPlug = true;
-
-        # screencapture defaults
-        "com.apple.screencapture" = {
-          location = "~/Desktop";
-          type = "png";
-        };
-
-        # lock screen immediately after screensaver
-        "com.apple.screensaver" = {
-          askForPassword = 1;
-          askForPasswordDelay = 0;
-        };
-
-        # finder extras
-        "com.apple.finder" = {
-          _FXSortFoldersFirst = true;
-          FXDefaultSearchScope = "SCcf"; # search current folder by default
-        };
-
-        # disable click-wallpaper-to-reveal-desktop
-        "com.apple.WindowManager" = {
-          EnableStandardClickToShowDesktop = 0;
-        };
-      };
-    };
   };
 }
