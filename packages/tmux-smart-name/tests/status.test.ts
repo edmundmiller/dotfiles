@@ -301,6 +301,109 @@ describe("readPiStatusFile", () => {
     writeFileSync(testFile, JSON.stringify({ status: "exploded", pid: 1234, ts: Date.now() }));
     expect(readPiStatusFile(testPaneId)).toBeNull();
   });
+
+  test("sanitizes pane ID — strips % prefix", () => {
+    // %999 → 999.json (same file we set up)
+    writeFileSync(testFile, JSON.stringify({ status: "idle", pid: 1, ts: Date.now() }));
+    expect(readPiStatusFile("%999")).toBe(ICON_IDLE);
+  });
+
+  test("sanitizes pane ID — handles bare number", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "busy", pid: 1, ts: Date.now() }));
+    expect(readPiStatusFile("999")).toBe(ICON_BUSY);
+  });
+
+  test("returns null for empty pane ID", () => {
+    expect(readPiStatusFile("")).toBeNull();
+  });
+
+  test("fresh file just under threshold is valid", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "busy", pid: 1, ts: Date.now() }));
+    // Set mtime to 29s ago — just under 30s threshold
+    const recent = new Date(Date.now() - 29_000);
+    utimesSync(testFile, recent, recent);
+    expect(readPiStatusFile(testPaneId)).toBe(ICON_BUSY);
+  });
+
+  test("file exactly at threshold is stale", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "busy", pid: 1, ts: Date.now() }));
+    const boundary = new Date(Date.now() - 30_001);
+    utimesSync(testFile, boundary, boundary);
+    expect(readPiStatusFile(testPaneId)).toBeNull();
+  });
+
+  test("ignores extra fields gracefully", () => {
+    writeFileSync(
+      testFile,
+      JSON.stringify({
+        status: "idle",
+        pid: 1,
+        ts: Date.now(),
+        model: "claude-sonnet",
+        cwd: "/tmp",
+      })
+    );
+    expect(readPiStatusFile(testPaneId)).toBe(ICON_IDLE);
+  });
+
+  test("returns null for empty JSON object", () => {
+    writeFileSync(testFile, "{}");
+    expect(readPiStatusFile(testPaneId)).toBeNull();
+  });
+});
+
+// Verifies the exact JSON format the tmux-status.ts extension writes.
+// If the extension format changes, update these to match.
+describe("readPiStatusFile — extension contract", () => {
+  const testDir = "/tmp/pi-tmux-status";
+  const testFile = join(testDir, "417.json");
+
+  beforeEach(() => mkdirSync(testDir, { recursive: true }));
+  afterEach(() => {
+    try {
+      rmSync(testFile);
+    } catch {
+      /* noop */
+    }
+  });
+
+  test("reads extension-format busy payload (with trailing newline)", () => {
+    // Extension writes: JSON.stringify(data) + "\n"
+    const payload =
+      JSON.stringify({
+        status: "busy",
+        pid: 54321,
+        ts: Date.now(),
+        cwd: "/Users/test/project",
+        model: "anthropic/claude-sonnet-4-20250514",
+      }) + "\n";
+    writeFileSync(testFile, payload);
+    expect(readPiStatusFile("%417")).toBe(ICON_BUSY);
+  });
+
+  test("reads extension-format idle payload", () => {
+    const payload =
+      JSON.stringify({
+        status: "idle",
+        pid: 54321,
+        ts: Date.now(),
+        session: "/Users/test/.pi/agent/sessions/abc/session.jsonl",
+        cwd: "/Users/test/project",
+      }) + "\n";
+    writeFileSync(testFile, payload);
+    expect(readPiStatusFile("%417")).toBe(ICON_IDLE);
+  });
+
+  test("reads extension-format waiting payload", () => {
+    const payload =
+      JSON.stringify({
+        status: "waiting",
+        pid: 54321,
+        ts: Date.now(),
+      }) + "\n";
+    writeFileSync(testFile, payload);
+    expect(readPiStatusFile("%417")).toBe(ICON_WAITING);
+  });
 });
 
 // ── Utilities ──────────────────────────────────────────────────────────────
