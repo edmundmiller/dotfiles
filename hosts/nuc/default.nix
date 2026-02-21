@@ -180,6 +180,7 @@
         enable = true;
         postgres.enable = true;
         matter.enable = true;
+        zbt2.enable = true;
         homebridge.enable = true;
         homebridge.tailscaleService.enable = true;
         tailscaleService.enable = true;
@@ -198,6 +199,9 @@
           "mobile_app" # HA Companion app (iOS/Android)
           "bluetooth" # BLE device discovery
           "spotify" # Spotify playback control (config-flow: add via UI after deploy)
+          "zha" # Zigbee Home Automation via ZBT-2 dongle
+          "thread" # Thread border router via ZBT-2 dongle
+          "otbr" # OpenThread Border Router (ZBT-2 Thread radio)
         ];
       };
       gatus = {
