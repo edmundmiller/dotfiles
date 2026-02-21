@@ -31,6 +31,11 @@
       url = "github:nicobailon/pi-messenger";
       flake = false;
     };
+
+    mitsuhiko-agent-stuff = {
+      url = "github:mitsuhiko/agent-stuff";
+      flake = false;
+    };
   };
 
   outputs = inputs: {
@@ -85,6 +90,12 @@
               subdir = "skills";
               filter.maxDepth = 2;
             };
+
+            mitsuhiko = {
+              path = inputs.mitsuhiko-agent-stuff.outPath;
+              subdir = "skills/tmux";
+              filter.maxDepth = 1;
+            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -108,6 +119,9 @@
 
             pi-messenger-crew.from = "pi-messenger";
             pi-messenger-crew.path = "pi-messenger-crew";
+
+            tmux.from = "mitsuhiko";
+            tmux.path = ".";
           };
 
           targets = {

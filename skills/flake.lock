@@ -72,6 +72,22 @@
         "type": "github"
       }
     },
+    "mitsuhiko-agent-stuff": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1771625733,
+        "narHash": "sha256-Zw8Q8FfvV+E93aJRL0iaC7iONiSprveRJxKqgmNBqqQ=",
+        "owner": "mitsuhiko",
+        "repo": "agent-stuff",
+        "rev": "f47743e1f6cf7d1cc38394793c4ac276b1d09f56",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mitsuhiko",
+        "repo": "agent-stuff",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1770197578,
@@ -156,6 +172,7 @@
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
         "gitbutler-repo": "gitbutler-repo",
+        "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
         "pi-extension-skills": "pi-extension-skills",
