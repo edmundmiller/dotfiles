@@ -83,20 +83,8 @@ bind / choose-session
 bind . choose-window
 
 # Sesh - smart session manager with zoxide integration
-# ^a: all | ^t: tmux | ^x: zoxide | ^d: kill session
-bind-key t run-shell "sesh connect \"$(
-  sesh list --icons | fzf-tmux -p 80%,70% \
-    --no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
-    --header '  ^a all ^t tmux ^c configs ^x zoxide ^d kill' \
-    --bind 'tab:down,btab:up' \
-    --bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list --icons)' \
-    --bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t --icons)' \
-    --bind 'ctrl-c:change-prompt(⚙️  )+reload(sesh list -c --icons)' \
-    --bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z --icons)' \
-    --bind 'ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(⚡  )+reload(sesh list --icons)' \
-    --preview-window 'right:55%' \
-    --preview 'sesh preview {}' \
-)\""
+# ^a: all | ^t: tmux | ^c: configs | ^x: zoxide | ^d: kill session
+bind-key t run-shell "$TMUX_HOME/sesh-picker.sh"
 
 # bind = select-layout tiled
 bind | select-layout even-horizontal
