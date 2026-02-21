@@ -101,8 +101,9 @@ in
         run-shell ${pkgs.tmuxPlugins.copycat}/share/tmux-plugins/copycat/copycat.tmux
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
-        run-shell ${tmux-smooth-scroll}/smooth-scroll.tmux
 
+        # tmux-smooth-scroll: manual bindings below cover all scroll keys, so we skip
+        # running smooth-scroll.tmux (its init.sh would just be overridden anyway).
         # Suppress scroll.sh non-zero exit messages (rapid scroll races cause exit 1)
         bind-key -T copy-mode-vi J            run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down normal    || true"
         bind-key -T copy-mode-vi K            run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up normal      || true"
