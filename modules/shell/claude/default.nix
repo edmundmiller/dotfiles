@@ -13,7 +13,9 @@ let
   # Dynamically concatenate all rule files from config/agents/rules/
   rulesDir = "${configDir}/agents/rules";
   ruleFiles = builtins.sort builtins.lessThan (
-    builtins.filter (f: lib.hasSuffix ".md" f) (builtins.attrNames (builtins.readDir rulesDir))
+    builtins.filter (f: lib.hasSuffix ".md" f && f != "AGENTS.md") (
+      builtins.attrNames (builtins.readDir rulesDir)
+    )
   );
   readRule = file: builtins.readFile "${rulesDir}/${file}";
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
