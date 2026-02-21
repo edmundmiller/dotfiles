@@ -188,6 +188,13 @@ in
                 };
               };
             }
+            {
+              "LubeLogger" = {
+                href = "${nucBase}:5000";
+                description = "Vehicle maintenance tracker";
+                icon = "lubelogger.svg";
+              };
+            }
           ];
         }
         {

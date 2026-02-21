@@ -113,6 +113,7 @@ let
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }
+
             {
               name = "Sonarr";
               group = "Media";
@@ -157,6 +158,15 @@ let
               name = "OpenClaw Gateway";
               group = "Infrastructure";
               url = "http://localhost:18789";
+              interval = "60s";
+              conditions = [ "[STATUS] < 500" ];
+            }
+          ]
+          ++ optionals config.modules.services.lubelogger.enable [
+            {
+              name = "LubeLogger";
+              group = "Home";
+              url = "http://localhost:5000";
               interval = "60s";
               conditions = [ "[STATUS] < 500" ];
             }
