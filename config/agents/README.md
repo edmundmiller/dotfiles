@@ -62,15 +62,16 @@ Agent modes are specialized configurations for different tasks:
 
 ## Rules
 
-Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGENTS.md` for Pi):
+Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGENTS.md` for Pi, symlinked for OpenCode):
 
 1. `01-tone-and-style.md` - Communication style
-2. `02-critical-instructions.md` - Important guidelines
-3. `03-version-control.md` - Git/jj workflow
-4. `04-code-search.md` - Search tool selection
-5. `05-testing-philosophy.md` - Testing approach
-6. `06-development-preferences.md` - Coding preferences
-7. `07-skill-locations.md` - Where to find skills
+2. `02-critical-instructions.md` - File editing, output format
+3. `03-version-control.md` - Worktrees, selective staging
+4. `04-code-search.md` - ast-grep over text search
+5. `05-testing-philosophy.md` - Spec + regression tests
+6. `06-development-preferences.md` - Persistence, philosophy
+7. `07-skill-locations.md` - Where to create skills
+8. `08-context-efficiency.md` - Filter at the source
 
 ## Adding a New Skill
 
