@@ -216,7 +216,10 @@
         environmentFile = config.age.secrets.homepage-env.path;
       };
       jellyfin.enable = true;
-      lubelogger.enable = true;
+      lubelogger = {
+        enable = true;
+        environmentFile = config.age.secrets.lubelogger-env.path;
+      };
       prowlarr.enable = true;
       qb.enable = false;
       radarr.enable = true;
@@ -247,6 +250,8 @@
   services.logrotate.checkConfig = false;
 
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
+
+  age.secrets.lubelogger-env.owner = "lubelogger";
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {

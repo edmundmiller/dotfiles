@@ -48,6 +48,10 @@ in
     edmundmiller
     nuc
   ];
+  "lubelogger-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "hass-secrets.age".publicKeys = [
     edmundmiller
     nuc
