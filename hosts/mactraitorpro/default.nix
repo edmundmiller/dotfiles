@@ -43,7 +43,7 @@
         ssh.enable = true;
       };
 
-      macos-defaults.enable = true;
+      desktop.macos.enable = true;
 
       desktop = {
         apps.raycast.enable = true;
