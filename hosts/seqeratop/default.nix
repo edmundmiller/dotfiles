@@ -34,6 +34,8 @@ _: {
         ssh.enable = true;
       };
 
+      macos-defaults.enable = true;
+
       desktop = {
         term.ghostty.enable = true;
       };
@@ -57,27 +59,6 @@ _: {
     }
     // (import ./homebrew.nix);
 
-    # set some OSX preferences that I always end up hunting down and changing.
-    system.defaults = {
-      # minimal dock
-      dock = {
-        autohide = true;
-        orientation = "left";
-        show-process-indicators = false;
-        show-recents = false;
-        static-only = true;
-      };
-      # a finder that tells me what I want to know and lets me work
-      finder = {
-        AppleShowAllExtensions = true;
-        ShowPathbar = true;
-        FXEnableExtensionChangeWarning = false;
-      };
-      # Tab between form controls and F-row that behaves as F1-F12
-      NSGlobalDomain = {
-        AppleKeyboardUIMode = 3;
-        "com.apple.keyboard.fnState" = false;
-      };
-    };
+
   };
 }
