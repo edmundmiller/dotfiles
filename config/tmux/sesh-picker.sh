@@ -2,7 +2,7 @@
 # sesh session picker — no emojis, handles escape gracefully
 
 SESH=/opt/homebrew/bin/sesh
-SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR=${TMUX_HOME:-/Users/emiller/.config/tmux}
 
 SESSION=$($SESH list | fzf-tmux -p 80%,70% \
   --no-sort \
