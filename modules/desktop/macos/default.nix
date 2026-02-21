@@ -1,7 +1,7 @@
-# modules/macos-defaults.nix
+# modules/desktop/macos/default.nix
 #
 # Opinionated macOS system.defaults shared across all Darwin hosts.
-# Enable with: modules.macos-defaults.enable = true;
+# Enable with: modules.desktop.macos.enable = true;
 #
 # Sets: dock, finder, trackpad, keyboard/text behavior, login window,
 # Siri off, ads off, DS_Store prevention, screencapture, etc.
@@ -14,10 +14,10 @@
 with lib;
 with lib.my;
 let
-  cfg = config.modules.macos-defaults;
+  cfg = config.modules.desktop.macos;
 in
 {
-  options.modules.macos-defaults = {
+  options.modules.desktop.macos = {
     enable = mkBoolOpt false;
   };
 

@@ -34,7 +34,7 @@ _: {
         ssh.enable = true;
       };
 
-      macos-defaults.enable = true;
+      desktop.macos.enable = true;
 
       desktop = {
         term.ghostty.enable = true;
