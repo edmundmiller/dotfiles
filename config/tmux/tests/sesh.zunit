@@ -1,0 +1,63 @@
+#!/usr/bin/env zunit
+
+# Tests for sesh tmux session manager integration
+# Covers: sesh availability, list output, and display-popup PATH regression
+
+@setup {
+  export SESH=/opt/homebrew/bin/sesh
+  export FZF_TMUX=/opt/homebrew/bin/fzf-tmux
+}
+
+# --- Spec: sesh is available and functional ---
+
+@test 'sesh binary exists at known path' {
+  assert "$SESH" is_file
+}
+
+@test 'fzf-tmux binary exists at known path' {
+  assert "$FZF_TMUX" is_file
+}
+
+@test 'sesh list returns output' {
+  run $SESH list
+  assert $state equals 0
+  assert "$output" is_not_empty
+}
+
+@test 'sesh list -t returns only tmux sessions' {
+  run $SESH list -t
+  assert $state equals 0
+  # tmux sessions should not contain home directory paths
+  assert "$output" does_not_contain "~/"
+}
+
+@test 'sesh list -z returns zoxide directories' {
+  run $SESH list -z
+  assert $state equals 0
+  assert "$output" is_not_empty
+}
+
+@test 'sesh list --icons flag is accepted' {
+  run $SESH list --icons
+  assert $state equals 0
+}
+
+@test 'sesh preview accepts a path argument' {
+  run $SESH preview "$HOME"
+  assert $state equals 0
+}
+
+# --- Regression: display-popup PATH does not include /opt/homebrew/bin ---
+# This is why we use run-shell + fzf-tmux instead of display-popup + fzf.
+
+@test 'sesh is NOT in minimal display-popup PATH' {
+  local minimal_path="/usr/bin:/bin:/usr/sbin:/sbin"
+  local result=$(env -i PATH="$minimal_path" which sesh 2>&1)
+  assert "$result" is_empty
+}
+
+@test 'fzf is NOT in minimal display-popup PATH' {
+  local minimal_path="/usr/bin:/bin:/usr/sbin:/sbin"
+  local result=$(env -i PATH="$minimal_path" which fzf 2>&1)
+  assert "$result" is_empty
+}
