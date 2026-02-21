@@ -31,8 +31,14 @@ in
     optionalAttrs (!isDarwin) {
       services.lubelogger = {
         enable = true;
+        openFirewall = true;
         environmentFile = cfg.environmentFile;
       };
+
+      # Upstream module binds to localhost only — override to allow Tailscale access
+      systemd.services.lubelogger.environment.Kestrel__Endpoints__Http__Url =
+        lib.mkForce "http://0.0.0.0:${toString config.services.lubelogger.port}";
+
     }
   );
 }
