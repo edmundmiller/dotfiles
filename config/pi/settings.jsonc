@@ -124,11 +124,13 @@
       "source": "https://github.com/jyaunches/pi-canvas",
       "extensions": ["pi-extension/index.ts"],
     },
-    // LSP + permission system - https://github.com/prateekmedia/pi-hooks
+    // Permission system - https://github.com/prateekmedia/pi-hooks
     {
       "source": "https://github.com/prateekmedia/pi-hooks",
-      "extensions": ["lsp/lsp.ts", "lsp/lsp-tool.ts", "permission/permission.ts"],
+      "extensions": ["permission/permission.ts"],
     },
+    // LSP - standalone npm package (extracted from pi-hooks)
+    "npm:lsp-pi",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
       "source": "https://github.com/pasky/pi-amplike",
