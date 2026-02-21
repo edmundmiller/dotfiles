@@ -5,4 +5,5 @@ export _ZO_DATA_DIR="${_ZO_DATA_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}}"
 /opt/homebrew/bin/zoxide query --list 2>/dev/null \
   | grep -vE '^(/tmp|/private/|/nix/|/dev/|/sys/)' \
   | grep -vE '(\.Trash|\.sdkman/tmp|/T$|/var/folders)' \
-  | head -30
+  | head -30 \
+  | sed "s|^$HOME|~|"
