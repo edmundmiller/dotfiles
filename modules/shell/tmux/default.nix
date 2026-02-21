@@ -103,6 +103,20 @@ in
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
         run-shell ${tmux-smooth-scroll}/smooth-scroll.tmux
 
+        # Suppress scroll.sh non-zero exit messages (rapid scroll races cause exit 1)
+        bind-key -T copy-mode-vi J            run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down normal    || true"
+        bind-key -T copy-mode-vi K            run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up normal      || true"
+        bind-key -T copy-mode-vi C-e          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down normal    || true"
+        bind-key -T copy-mode-vi C-y          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up normal      || true"
+        bind-key -T copy-mode-vi C-d          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down halfpage  || true"
+        bind-key -T copy-mode-vi C-u          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up halfpage    || true"
+        bind-key -T copy-mode-vi C-f          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down fullpage  || true"
+        bind-key -T copy-mode-vi C-b          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up fullpage    || true"
+        bind-key -T copy-mode-vi NPage        run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down fullpage  || true"
+        bind-key -T copy-mode-vi PPage        run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up fullpage    || true"
+        bind-key -T copy-mode-vi WheelDownPane run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down normal   || true"
+        bind-key -T copy-mode-vi WheelUpPane   run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up normal     || true"
+
         # tmux-dark-notify: auto dark/light mode switching (macOS only)
         # Uses generated theme files that re-run dotbar on switch
         # NOTE: Can't use run-shell for main.tmux — its background daemon causes
