@@ -2,9 +2,7 @@
 # sesh session picker — no emojis, handles escape gracefully
 
 SESH=/opt/homebrew/bin/sesh
-ZOXIDE=/opt/homebrew/bin/zoxide
-# Top 30 zoxide dirs by frecency, skipping noise
-ZOXIDE_CMD="$ZOXIDE query --list | head -30"
+SCRIPT_DIR=$(dirname "$0")
 
 SESSION=$($SESH list | fzf-tmux -p 80%,70% \
   --no-sort \
@@ -15,7 +13,7 @@ SESSION=$($SESH list | fzf-tmux -p 80%,70% \
   --bind "ctrl-a:change-prompt(> )+reload($SESH list)" \
   --bind "ctrl-t:change-prompt(tmux> )+reload($SESH list -t)" \
   --bind "ctrl-c:change-prompt(configs> )+reload($SESH list -c)" \
-  --bind "ctrl-x:change-prompt(zoxide> )+reload($ZOXIDE_CMD)" \
+  --bind "ctrl-x:change-prompt(zoxide> )+reload($SCRIPT_DIR/zoxide-list.sh)" \
   --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(> )+reload($SESH list)")
 
 [ -n "$SESSION" ] && sesh connect "$SESSION"
