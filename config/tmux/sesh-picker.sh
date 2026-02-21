@@ -20,5 +20,5 @@ SESSION=$($SCRIPT_DIR/sesh-all.sh | fzf-tmux -p 80%,70% \
 # Strip colored dot prefix (• ) added by sesh-all.sh before connecting
 # Strip ANSI escape codes, then the symbol prefix
 SESSION=$(printf '%s' "$SESSION" | sed 's/\x1b\[[0-9;]*m//g; s/^[▪▫›] //')
-[ -n "$SESSION" ] && sesh connect -s "$SESSION"
+[ -n "$SESSION" ] && sesh connect "$SESSION"
 exit 0
