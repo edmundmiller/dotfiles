@@ -13,9 +13,7 @@ SESSION=$($SESH list | fzf-tmux -p 80%,70% \
   --bind "ctrl-t:change-prompt(tmux> )+reload($SESH list -t)" \
   --bind "ctrl-c:change-prompt(configs> )+reload($SESH list -c)" \
   --bind "ctrl-x:change-prompt(zoxide> )+reload($SESH list -z)" \
-  --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(> )+reload($SESH list)" \
-  --preview-window "right:55%" \
-  --preview "$SESH preview {}")
+  --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(> )+reload($SESH list)")
 
 [ -n "$SESSION" ] && sesh connect "$SESSION"
 exit 0
