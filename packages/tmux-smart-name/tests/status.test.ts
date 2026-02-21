@@ -1,8 +1,9 @@
-import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { readFileSync, mkdirSync, writeFileSync, rmSync, utimesSync } from "node:fs";
 import { join } from "node:path";
 import {
   detectStatus,
+  readPiStatusFile,
   prioritize,
   stripAnsi,
   colorize,
@@ -242,6 +243,63 @@ describe("prioritize", () => {
     [[ICON_IDLE, ICON_BUSY, ICON_WAITING, ICON_ERROR], ICON_ERROR],
   ] as const)("%j → %s", (input, expected) => {
     expect(prioritize([...input])).toBe(expected);
+  });
+});
+
+// ── Status file bridge ─────────────────────────────────────────────────────
+
+describe("readPiStatusFile", () => {
+  const testDir = "/tmp/pi-tmux-status";
+  const testPaneId = "%999";
+  const testFile = join(testDir, "999.json");
+
+  beforeEach(() => {
+    mkdirSync(testDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    try {
+      rmSync(testFile);
+    } catch {
+      // already gone
+    }
+  });
+
+  test("returns ICON_BUSY for busy status", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "busy", pid: 1234, ts: Date.now() }));
+    expect(readPiStatusFile(testPaneId)).toBe(ICON_BUSY);
+  });
+
+  test("returns ICON_IDLE for idle status", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "idle", pid: 1234, ts: Date.now() }));
+    expect(readPiStatusFile(testPaneId)).toBe(ICON_IDLE);
+  });
+
+  test("returns ICON_WAITING for waiting status", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "waiting", pid: 1234, ts: Date.now() }));
+    expect(readPiStatusFile(testPaneId)).toBe(ICON_WAITING);
+  });
+
+  test("returns null for missing file", () => {
+    expect(readPiStatusFile("%nonexistent")).toBeNull();
+  });
+
+  test("returns null for stale file (>30s old)", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "busy", pid: 1234, ts: Date.now() }));
+    // Backdate the file modification time by 60 seconds
+    const past = new Date(Date.now() - 60_000);
+    utimesSync(testFile, past, past);
+    expect(readPiStatusFile(testPaneId)).toBeNull();
+  });
+
+  test("returns null for malformed JSON", () => {
+    writeFileSync(testFile, "not json");
+    expect(readPiStatusFile(testPaneId)).toBeNull();
+  });
+
+  test("returns null for unknown status value", () => {
+    writeFileSync(testFile, JSON.stringify({ status: "exploded", pid: 1234, ts: Date.now() }));
+    expect(readPiStatusFile(testPaneId)).toBeNull();
   });
 });
 

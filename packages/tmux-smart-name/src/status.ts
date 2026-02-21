@@ -1,9 +1,15 @@
 /**
- * AI agent status detection via pane content analysis.
+ * AI agent status detection.
  *
- * Pattern priority: ERROR > WAITING > BUSY > IDLE > UNKNOWN
- * Agent-specific patterns are checked first, then shared fallbacks.
+ * For pi: reads a lightweight JSON status file written by the tmux-status
+ * extension (see extensions/tmux-status.ts). Falls back to pane content
+ * regex parsing when the extension isn't installed.
+ *
+ * For other agents: regex-based pane content analysis.
+ *
+ * Pattern priority: ERROR > WAITING > BUSY > UNKNOWN > IDLE
  */
+import { readFileSync, statSync } from "node:fs";
 
 export type StatusIcon = "□" | "●" | "■" | "▲" | "◇";
 
@@ -95,7 +101,8 @@ const PI_IDLE = [
   /\(openai[^)]*\)\s+\S+/i,
   /\(google\)\s+\S+/i,
   // Footer stats: "↑343 ↓20k R11M W820k $10.960 (sub) 13.9%/1.0M (auto)"
-  /↑\d+k?\s+↓\d+k?/,
+  // Allow decimal token counts like ↑12 ↓1.5k
+  /↑\d+(?:\.\d+)?k?\s+↓\d+(?:\.\d+)?k?/,
   /\$\d+\.\d{3}/i, // cost: "$10.960"
   /\d+\.\d+%\/\d+k?\s+\(auto\)/, // context: "13.9%/1.0M (auto)"
   // Extension statuses in footer
@@ -197,7 +204,10 @@ const DEFAULT_PATTERNS: PatternSet = {
   busy: [
     ...SHARED_BUSY,
     ...PI_BUSY_STRONG,
-    ...PI_BUSY_WEAK,
+    // PI_BUSY_WEAK intentionally excluded: those patterns are pi-specific and
+    // handled by the dedicated pi branch in detectStatus(). Including them here
+    // would cause false BUSY on unknown agents that happen to show "(N earlier
+    // lines, ctrl+o to expand)" — a pi-only UI pattern.
     ...CLAUDE_BUSY,
     ...AMP_BUSY,
     ...OPENCODE_BUSY,
@@ -267,4 +277,39 @@ const PRIORITY: Record<StatusIcon, number> = {
 export function prioritize(statuses: StatusIcon[]): StatusIcon {
   if (statuses.length === 0) return ICON_IDLE;
   return statuses.reduce((best, s) => (PRIORITY[s] < PRIORITY[best] ? s : best));
+}
+
+// ── Status file bridge (pi extension) ──────────────────────────────────────
+
+const STATUS_DIR = "/tmp/pi-tmux-status";
+
+/** Max age (ms) before a status file is considered stale. */
+const STATUS_FILE_MAX_AGE = 30_000;
+
+const STATUS_MAP: Record<string, StatusIcon> = {
+  busy: ICON_BUSY,
+  idle: ICON_IDLE,
+  waiting: ICON_WAITING,
+};
+
+/**
+ * Read pi's status from the filesystem bridge written by tmux-status extension.
+ * Returns null if the file doesn't exist, is stale, or is unparseable.
+ */
+export function readPiStatusFile(paneId: string): StatusIcon | null {
+  const safePane = paneId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const path = `${STATUS_DIR}/${safePane}.json`;
+
+  try {
+    const stat = statSync(path);
+    // Stale check: if the file hasn't been updated in STATUS_FILE_MAX_AGE ms,
+    // the pi process likely crashed without cleanup.
+    if (Date.now() - stat.mtimeMs > STATUS_FILE_MAX_AGE) return null;
+
+    const raw = readFileSync(path, "utf8");
+    const data = JSON.parse(raw);
+    return STATUS_MAP[data.status] ?? null;
+  } catch {
+    return null; // file missing, unreadable, or malformed
+  }
 }
