@@ -36,16 +36,22 @@
     ];
 
     automation = lib.mkAfter [
-      # Sync AL sleep mode with goodnight toggle
+      # AL sleep mode on: 9:30 PM OR goodnight toggled on (whichever comes first)
       {
         alias = "Adaptive Lighting: sleep mode on";
         id = "al_sleep_mode_on";
-        description = "Enable AL sleep mode when goodnight is toggled on";
-        trigger = {
-          platform = "state";
-          entity_id = "input_boolean.goodnight";
-          to = "on";
-        };
+        description = "Enable AL sleep mode at 9:30 PM or when goodnight is toggled on";
+        trigger = [
+          {
+            platform = "time";
+            at = "21:30:00";
+          }
+          {
+            platform = "state";
+            entity_id = "input_boolean.goodnight";
+            to = "on";
+          }
+        ];
         action = [
           {
             action = "switch.turn_on";
@@ -53,15 +59,22 @@
           }
         ];
       }
+      # AL sleep mode off: 7:00 AM OR goodnight toggled off (Good Morning)
       {
         alias = "Adaptive Lighting: sleep mode off";
         id = "al_sleep_mode_off";
-        description = "Disable AL sleep mode when goodnight is toggled off (morning)";
-        trigger = {
-          platform = "state";
-          entity_id = "input_boolean.goodnight";
-          to = "off";
-        };
+        description = "Disable AL sleep mode at 7 AM or when goodnight is toggled off";
+        trigger = [
+          {
+            platform = "time";
+            at = "07:00:00";
+          }
+          {
+            platform = "state";
+            entity_id = "input_boolean.goodnight";
+            to = "off";
+          }
+        ];
         action = [
           {
             action = "switch.turn_off";

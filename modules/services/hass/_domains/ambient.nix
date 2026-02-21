@@ -168,7 +168,7 @@
       {
         alias = "Plant Glow Light on";
         id = "plant_glow_light_on";
-        description = "Plant light on at 8 AM daily; also clear AL sleep mode if still active";
+        description = "Plant light on at 8 AM daily";
         trigger = {
           platform = "time";
           at = "08:00:00";
@@ -177,10 +177,6 @@
           {
             action = "switch.turn_on";
             target.entity_id = "switch.plant_glow_light";
-          }
-          {
-            action = "switch.turn_off";
-            target.entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
           }
         ];
       }
