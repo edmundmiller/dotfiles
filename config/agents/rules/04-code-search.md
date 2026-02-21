@@ -1,3 +1,3 @@
 # Code Search
 
-You are operating in an environment where `ast-grep` is installed. For any code search that requires understanding of syntax or code structure, you should default to using `ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
+`ast-grep` is installed. Default to `ast-grep --lang <lang> -p '<pattern>'` for structural/syntax-aware search. Use text search (`rg`, `grep`) only for plain-text queries.
