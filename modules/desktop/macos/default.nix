@@ -21,7 +21,7 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf (isDarwin && cfg.enable) {
+  config = optionalAttrs isDarwin (mkIf cfg.enable {
     # ref: https://github.com/yannbertrand/macos-defaults
     system.defaults = {
       # minimal dock
@@ -115,5 +115,5 @@ in
         "com.apple.WindowManager".EnableStandardClickToShowDesktop = 0;
       };
     };
-  };
+  });
 }
