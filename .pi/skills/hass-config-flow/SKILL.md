@@ -36,7 +36,8 @@ hass-cli device assign Kitchen --match "Kitchen Light"  # bulk assign area
 hass-cli event watch                   # watch all events
 hass-cli event watch deconz_event      # watch specific event type
 hass-cli -o yaml state list            # yaml output
-hass-cli -o json state list            # json output
+hass-cli -o json state list 'light.*' | jq '[.[] | {entity: .entity_id, name: .attributes.friendly_name, state: .state}]'
+hass-cli -o json state list 'light.*' | python3 -c "import json,sys; d=json.load(sys.stdin); print([x['entity_id'] for x in d if x['state']=='on'])"
 ```
 
 **Note:** `hass-cli info` is broken on current HA (deprecated endpoint). All other commands work.

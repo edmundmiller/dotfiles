@@ -66,7 +66,19 @@ hass-cli device assign Kitchen --match "Kitchen Light"
 hass-cli event watch
 ```
 
-Use `hass-cli --output yaml` or `-o json` for machine-readable output.
+`-o json` outputs a clean JSON array — pipe directly to `jq` or `python3`:
+
+```bash
+# jq: extract entity/name/state
+hass-cli -o json state list 'light.*' | jq '[.[] | {entity: .entity_id, name: .attributes.friendly_name, state: .state}]'
+
+# python: count by state
+hass-cli -o json state list 'light.*' | python3 -c "
+import json, sys; lights = json.load(sys.stdin)
+print('on:', sum(1 for l in lights if l['state'] == 'on'))
+"
+```
+
 The `devices.yaml` → `apply-devices.py` pattern could be replaced with `hass-cli device assign` for one-off changes.
 
 **Note:** `hass-cli info` is broken on current HA (hits deprecated `/api/discovery_info`). All other commands work.
