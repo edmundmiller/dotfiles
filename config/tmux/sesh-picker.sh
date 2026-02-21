@@ -16,3 +16,4 @@ SESSION=$(sesh list | fzf-tmux -p 80%,70% \
   --preview "sesh preview {}")
 
 [ -n "$SESSION" ] && sesh connect "$SESSION"
+exit 0
