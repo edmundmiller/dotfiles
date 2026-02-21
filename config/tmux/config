@@ -142,6 +142,7 @@ bind ^r refresh-client
 bind Enter copy-mode # enter copy mode
 bind b list-buffers  # list paster buffers
 bind B choose-buffer # choose which buffer to paste from
+bind p display-popup -E -w 80% -h 70% "$DOTFILES_BIN/pi-sessions"  # pi session picker
 bind i display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-capture"  # beads capture
 bind m display-popup -E -w 80% -h 80% -d "$HOME/obsidian-vault" "$DOTFILES_BIN/tnote-capture"  # tnote task capture
 bind N display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/daily-note --popup"  # daily note
