@@ -120,6 +120,71 @@ latitude: 33.083423
 longitude: -96.820367
 ```
 
+## Pattern: Update Existing .age File
+
+Decrypt → modify → re-encrypt. Common when adding vars to an existing env file.
+
+```bash
+# Decrypt to temp
+age -d -i ~/.ssh/id_ed25519 hosts/<host>/secrets/my-env.age > /tmp/my-env.txt
+
+# Modify
+echo "NEW_VAR=value" >> /tmp/my-env.txt
+
+# Re-encrypt (overwrites existing .age)
+age \
+  -r "ssh-ed25519 AAAA...user" \
+  -r "ssh-ed25519 AAAA...host" \
+  -o hosts/<host>/secrets/my-env.age /tmp/my-env.txt
+
+# Clean up
+rm /tmp/my-env.txt
+
+# Verify
+age -d -i ~/.ssh/id_ed25519 hosts/<host>/secrets/my-env.age
+```
+
+## Pattern: 1Password + Agenix (Login Credentials)
+
+For services needing a username/password — store in both 1Password (human access) and agenix (machine access).
+
+```bash
+# 1. Generate creds and store in 1Password
+PASSWORD=$(op item create \
+  --category=login \
+  --title="MyService" \
+  --vault="Private" \
+  --url="http://nuc:8080" \
+  --generate-password="32,letters,digits" \
+  username="emiller" \
+  --format=json | jq -r '.fields[] | select(.id == "password") | .value')
+
+# 2. Create agenix env file
+printf 'MYSERVICE_USER=emiller\nMYSERVICE_PASSWORD=%s' "$PASSWORD" | age \
+  -r "ssh-ed25519 AAAA...user" \
+  -r "ssh-ed25519 AAAA...host" \
+  -o hosts/<host>/secrets/myservice-env.age
+
+# 3. Add to secrets.nix, wire environmentFile, set owner (see below)
+```
+
+## Pattern: Service Environment File with Owner Override
+
+Most NixOS services run as a dedicated user (not `emiller`). Override the secret owner so the service can read it.
+
+```nix
+# In host config (e.g., hosts/nuc/default.nix):
+modules.services.myservice = {
+  enable = true;
+  environmentFile = config.age.secrets.myservice-env.path;
+};
+
+# Override default owner (emiller) → service user
+age.secrets.myservice-env.owner = "myservice";
+```
+
+The service username typically matches the service name. Check with `grep -r "DynamicUser\|User=" /etc/systemd/system/<service>*` on the target host if unsure.
+
 ## Key public keys
 
 Read from `hosts/<host>/secrets/secrets.nix` — don't hardcode. The file defines
