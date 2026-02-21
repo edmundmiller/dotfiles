@@ -69,6 +69,8 @@ hass-cli event watch
 Use `hass-cli --output yaml` or `-o json` for machine-readable output.
 The `devices.yaml` → `apply-devices.py` pattern could be replaced with `hass-cli device assign` for one-off changes.
 
+**Note:** `hass-cli info` is broken on current HA (hits deprecated `/api/discovery_info`). All other commands work.
+
 ## NixOS Wiki Reference
 
 Before making changes, fetch the NixOS HA wiki for current best practices:
