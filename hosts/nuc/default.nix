@@ -216,6 +216,7 @@
         environmentFile = config.age.secrets.homepage-env.path;
       };
       jellyfin.enable = true;
+      lubelogger.enable = true;
       prowlarr.enable = true;
       qb.enable = false;
       radarr.enable = true;
