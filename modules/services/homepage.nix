@@ -36,6 +36,8 @@ in
     #   HOMEPAGE_VAR_NEXTDNS_API_KEY=...
     #   HOMEPAGE_VAR_TAILSCALE_DEVICE_ID=...
     #   HOMEPAGE_VAR_TAILSCALE_API_KEY=...
+    #   HOMEPAGE_VAR_LUBELOGGER_USERNAME=...
+    #   HOMEPAGE_VAR_LUBELOGGER_PASSWORD=...
     environmentFile = mkOpt (types.nullOr types.path) null;
   };
 
@@ -193,6 +195,12 @@ in
                 href = "${nucBase}:5000";
                 description = "Vehicle maintenance tracker";
                 icon = "lubelogger.svg";
+                widget = {
+                  type = "lubelogger";
+                  url = "http://localhost:5000";
+                  username = "{{HOMEPAGE_VAR_LUBELOGGER_USERNAME}}";
+                  password = "{{HOMEPAGE_VAR_LUBELOGGER_PASSWORD}}";
+                };
               };
             }
           ];
