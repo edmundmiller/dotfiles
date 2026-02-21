@@ -1,3 +1,10 @@
+# LubeLogger - Vehicle maintenance & fuel mileage tracker
+# Dashboard: http://<nuc-tailscale-ip>:5000
+#
+# Home Assistant integration (HACS):
+#   Repo: https://github.com/hollowpnt92/lubelogger-ha
+#   Provides sensors per vehicle: odometer, next reminder, service/repair/fuel records
+#   Install via HACS → Custom Repositories → add URL above
 {
   config,
   lib,
