@@ -18,14 +18,6 @@ let
     sha256 = "0y9hjw5rxr3684dcg8s5qc7r70p1ai39bjbadmn7vlnn6680qjzy";
   };
 
-  # Fetch tmux-smooth-scroll plugin for animated scrolling
-  tmux-smooth-scroll = pkgs.fetchFromGitHub {
-    owner = "azorng";
-    repo = "tmux-smooth-scroll";
-    rev = "4c1232796235173f3e48031cbffe4a19773a957a";
-    sha256 = "sha256-nTB0V/Xln8QJ95TB+hpIbuf0GwlBCU7CFQyzd0oWXw4=";
-  };
-
   # Fetch tmux-dark-notify - auto dark/light mode switching on macOS
   tmux-dark-notify = pkgs.fetchFromGitHub {
     owner = "erikw";
@@ -101,22 +93,6 @@ in
         run-shell ${pkgs.tmuxPlugins.copycat}/share/tmux-plugins/copycat/copycat.tmux
         run-shell ${pkgs.tmuxPlugins.prefix-highlight}/share/tmux-plugins/prefix-highlight/prefix_highlight.tmux
         run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
-
-        # tmux-smooth-scroll: manual bindings below cover all scroll keys, so we skip
-        # running smooth-scroll.tmux (its init.sh would just be overridden anyway).
-        # Suppress scroll.sh non-zero exit messages (rapid scroll races cause exit 1)
-        bind-key -T copy-mode-vi J            run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down normal    || true"
-        bind-key -T copy-mode-vi K            run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up normal      || true"
-        bind-key -T copy-mode-vi C-e          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down normal    || true"
-        bind-key -T copy-mode-vi C-y          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up normal      || true"
-        bind-key -T copy-mode-vi C-d          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down halfpage  || true"
-        bind-key -T copy-mode-vi C-u          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up halfpage    || true"
-        bind-key -T copy-mode-vi C-f          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down fullpage  || true"
-        bind-key -T copy-mode-vi C-b          run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up fullpage    || true"
-        bind-key -T copy-mode-vi NPage        run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down fullpage  || true"
-        bind-key -T copy-mode-vi PPage        run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up fullpage    || true"
-        bind-key -T copy-mode-vi WheelDownPane run-shell -b "${tmux-smooth-scroll}/src/scroll.sh down normal   || true"
-        bind-key -T copy-mode-vi WheelUpPane   run-shell -b "${tmux-smooth-scroll}/src/scroll.sh up normal     || true"
 
         # tmux-dark-notify: auto dark/light mode switching (macOS only)
         # Uses generated theme files that re-run dotbar on switch
