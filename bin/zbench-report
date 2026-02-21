@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+"""Parse zsh-bench output, compare against baselines, and format results.
+
+Reads raw zsh-bench output from stdin. Modes:
+  run     - Display results with threshold indicators
+  save    - Display + save as baseline + append to history
+  compare - Display + compare against saved baseline
+  check   - Exit non-zero if any metric exceeds threshold (for git bisect)
+"""
+
+import argparse
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+# Human-perception thresholds from romkatv's blind study (ms).
+# Values at or below these are indistinguishable from zero.
+THRESHOLDS = {
+    "first_prompt_lag_ms": 50,
+    "first_command_lag_ms": 150,
+    "command_lag_ms": 10,
+    "input_lag_ms": 20,
+}
+
+# Budget targets: stay under 50% of threshold for headroom (green zone).
+BUDGET = {k: v * 0.5 for k, v in THRESHOLDS.items()}
+
+METRICS = list(THRESHOLDS.keys())
+CAPS = [
+    "creates_tty",
+    "has_compsys",
+    "has_syntax_highlighting",
+    "has_autosuggestions",
+    "has_git_prompt",
+]
+
+
+def parse_raw(text: str) -> dict:
+    """Parse key=value zsh-bench output."""
+    data = {}
+    for line in text.strip().splitlines():
+        line = line.strip()
+        if "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        try:
+            data[k] = float(v)
+        except ValueError:
+            data[k] = v
+    return data
+
+
+def indicator(metric: str, value: float) -> str:
+    """Return colored indicator based on threshold percentage."""
+    threshold = THRESHOLDS.get(metric)
+    if threshold is None:
+        return ""
+    pct = (value / threshold) * 100
+    if pct <= 50:
+        return f"\033[32m{pct:5.0f}% 🟢\033[0m"  # green
+    elif pct <= 100:
+        return f"\033[33m{pct:5.0f}% 🟡\033[0m"  # yellow — still imperceptible
+    elif pct <= 200:
+        return f"\033[38;5;208m{pct:5.0f}% 🟠\033[0m"  # orange
+    else:
+        return f"\033[31m{pct:5.0f}% 🔴\033[0m"  # red
+
+
+def display(data: dict) -> None:
+    """Pretty-print benchmark results."""
+    # Capabilities
+    print("\n\033[1mCapabilities\033[0m")
+    for cap in CAPS:
+        v = data.get(cap, 0)
+        sym = "✔" if v else "✗"
+        print(f"  {cap:<30s} {sym}")
+
+    # Latencies
+    print("\n\033[1mLatencies\033[0m")
+    print(f"  {'metric':<30s} {'ms':>8s}   threshold")
+    print(f"  {'─' * 30}  {'─' * 8}  {'─' * 14}")
+    for m in METRICS:
+        v = data.get(m, 0)
+        ind = indicator(m, v)
+        print(f"  {m:<30s} {v:8.1f}   {ind}")
+
+    # Exit time (informational only — not meaningful per romkatv)
+    et = data.get("exit_time_ms")
+    if et is not None:
+        print(f"  {'exit_time_ms':<30s} {et:8.1f}   (informational)")
+    print()
+
+
+def compare(data: dict, baseline: dict) -> None:
+    """Show delta between current and baseline."""
+    print("\033[1mComparison vs baseline\033[0m")
+    rev = baseline.get("_git_rev", "?")
+    ts = baseline.get("_timestamp", "?")
+    print(f"  baseline: {rev} ({ts})\n")
+    print(f"  {'metric':<30s} {'now':>8s} {'base':>8s} {'delta':>8s}  {'status'}")
+    print(f"  {'─' * 30}  {'─' * 8} {'─' * 8} {'─' * 8}  {'─' * 10}")
+
+    for m in METRICS:
+        now = data.get(m, 0)
+        base = baseline.get(m, 0)
+        delta = now - base
+        sign = "+" if delta > 0 else ""
+        # Flag regressions > 20% or > 5ms
+        if delta > max(base * 0.2, 5):
+            status = "\033[31m⚠ regression\033[0m"
+        elif delta < -max(base * 0.2, 5):
+            status = "\033[32m✓ improved\033[0m"
+        else:
+            status = "  ~same"
+        print(f"  {m:<30s} {now:8.1f} {base:8.1f} {sign}{delta:7.1f}  {status}")
+    print()
+
+
+def check_thresholds(data: dict) -> bool:
+    """Return True if all metrics within threshold. For git bisect."""
+    ok = True
+    for m in METRICS:
+        v = data.get(m, 0)
+        t = THRESHOLDS[m]
+        if v > t:
+            pct = (v / t) * 100
+            print(f"FAIL: {m} = {v:.1f}ms ({pct:.0f}% of {t}ms threshold)", file=sys.stderr)
+            ok = False
+    return ok
+
+
+def save_baseline(data: dict, host: str, bench_dir: Path, git_rev: str) -> None:
+    """Save current results as baseline."""
+    bench_dir.mkdir(parents=True, exist_ok=True)
+    baseline = dict(data)
+    baseline["_git_rev"] = git_rev
+    baseline["_timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    baseline["_host"] = host
+
+    path = bench_dir / f"{host}.json"
+    with open(path, "w") as f:
+        json.dump(baseline, f, indent=2)
+        f.write("\n")
+    print(f"Baseline saved: {path}")
+
+
+def append_history(data: dict, host: str, bench_dir: Path, git_rev: str) -> None:
+    """Append result row to TSV history."""
+    hist_dir = bench_dir / "history"
+    hist_dir.mkdir(parents=True, exist_ok=True)
+    path = hist_dir / f"{host}.tsv"
+
+    header_needed = not path.exists()
+    cols = ["timestamp", "git_rev"] + METRICS
+    with open(path, "a") as f:
+        if header_needed:
+            f.write("\t".join(cols) + "\n")
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        vals = [ts, git_rev] + [f"{data.get(m, 0):.3f}" for m in METRICS]
+        f.write("\t".join(vals) + "\n")
+    print(f"History appended: {path}")
+
+
+def load_baseline(host: str, bench_dir: Path) -> dict | None:
+    path = bench_dir / f"{host}.json"
+    if not path.exists():
+        return None
+    with open(path) as f:
+        return json.load(f)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="zsh-bench report tool")
+    parser.add_argument("--mode", choices=["run", "save", "compare", "check"], default="run")
+    parser.add_argument("--host", required=True)
+    parser.add_argument("--dir", required=True, type=Path)
+    parser.add_argument("--git-rev", default="unknown")
+    args = parser.parse_args()
+
+    raw = sys.stdin.read()
+    data = parse_raw(raw)
+
+    if args.mode == "check":
+        ok = check_thresholds(data)
+        if ok:
+            print("All metrics within thresholds ✓")
+        sys.exit(0 if ok else 1)
+
+    display(data)
+
+    if args.mode == "save":
+        save_baseline(data, args.host, args.dir, args.git_rev)
+        append_history(data, args.host, args.dir, args.git_rev)
+
+    if args.mode == "compare":
+        baseline = load_baseline(args.host, args.dir)
+        if baseline:
+            compare(data, baseline)
+        else:
+            print("No baseline found. Run: hey zbench-save")
+
+    if args.mode == "run":
+        # Show comparison if baseline exists
+        baseline = load_baseline(args.host, args.dir)
+        if baseline:
+            compare(data, baseline)
+
+
+if __name__ == "__main__":
+    main()

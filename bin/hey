@@ -10,6 +10,7 @@ import 'hey.d/remote.just'
 import 'hey.d/test.just'
 import 'hey.d/ergodox.just'
 import 'hey.d/skills-catalog.just'
+import 'hey.d/zbench.just'
 
 
 # Default recipe - show help
