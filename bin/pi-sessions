@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Pi session dashboard — fzf-based TUI for tracking pi agent sessions across tmux
-# Adapted from https://github.com/richardgill/nix
-#
-# Requires: process-info pi extension (writes PID/tmux/status to session JSONL)
-# Dependencies: fzf, jq, ripgrep, tmux
+# pi-sessions: fzf picker for live Pi instances across tmux sessions
+# Adapted from https://github.com/richardgill/nix/blob/main/flake/modules/home-manager/dot-files/Scripts/pi-sessions
+# Requires: process-info.ts Pi extension (writes PID/pane/status into session JSONL)
 
 PI_SESSIONS_DIR="$HOME/.pi/agent/sessions"
 PI_SESSIONS_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/pi-sessions"
@@ -11,17 +9,20 @@ PI_IGNORED_FILE="$PI_SESSIONS_STATE_DIR/ignored.tsv"
 PI_LOG_FILE="$PI_SESSIONS_STATE_DIR/preview.log"
 FZF_LISTEN_PORT=51778
 
+# macOS: use gdate (GNU coreutils) for ISO timestamps and -d flag
+DATE_CMD="gdate"
+
 pi_log_preview() {
   local message="$1"
   mkdir -p "$PI_SESSIONS_STATE_DIR"
-  printf '%s %s\n' "$(date -Is)" "$message" >> "$PI_LOG_FILE"
+  printf '%s %s\n' "$($DATE_CMD -Is)" "$message" >> "$PI_LOG_FILE"
 }
 
 pi_log_debug() {
   [[ "${PI_SESSIONS_DEBUG:-0}" == "1" ]] || return
   local message="$1"
   mkdir -p "$PI_SESSIONS_STATE_DIR"
-  printf '%s %s\n' "$(date -Is)" "$message" >> "$PI_SESSIONS_STATE_DIR/debug.log"
+  printf '%s %s\n' "$($DATE_CMD -Is)" "$message" >> "$PI_SESSIONS_STATE_DIR/debug.log"
 }
 
 pi_get_pane_height() {
@@ -38,75 +39,43 @@ pi_get_pane_height() {
 
 pi_list_rows_max() {
   local height="$1"
-
-  if [[ -z "$height" ]]; then
-    echo "7"
-    return
-  fi
-
-  if (( height <= 22 )); then
-    echo "5"
-  elif (( height <= 36 )); then
-    echo "7"
-  else
-    echo "10"
+  if [[ -z "$height" ]]; then echo "7"; return; fi
+  if (( height <= 22 )); then echo "5"
+  elif (( height <= 36 )); then echo "7"
+  else echo "10"
   fi
 }
 
 pi_list_rows() {
-  local height="$1"
-  local count="$2"
-
+  local height="$1" count="$2"
   local max_rows
   max_rows=$(pi_list_rows_max "$height")
-
-  if [[ -z "$max_rows" || ! "$max_rows" =~ ^[0-9]+$ ]]; then
-    echo "7"
-    return
-  fi
-
-  if [[ -z "$count" || ! "$count" =~ ^[0-9]+$ ]]; then
-    echo "$max_rows"
-    return
-  fi
-
-  if (( count < max_rows )); then
-    echo "$count"
-  else
-    echo "$max_rows"
-  fi
+  if [[ -z "$max_rows" || ! "$max_rows" =~ ^[0-9]+$ ]]; then echo "7"; return; fi
+  if [[ -z "$count" || ! "$count" =~ ^[0-9]+$ ]]; then echo "$max_rows"; return; fi
+  if (( count < max_rows )); then echo "$count"; else echo "$max_rows"; fi
 }
 
 pi_preview_window() {
-  local height="$1"
-  local list_count="$2"
-
+  local height="$1" list_count="$2"
   if [[ -z "$height" || ! "$height" =~ ^[0-9]+$ ]]; then
     pi_log_preview "height=$height list_rows= preview=down:16"
-    echo "down:16"
-    return
+    echo "down:16"; return
   fi
-
   local list_rows
   list_rows=$(pi_list_rows "$height" "$list_count")
-
   if [[ -z "$list_rows" || ! "$list_rows" =~ ^[0-9]+$ ]]; then
     pi_log_preview "height=$height list_rows=$list_rows preview=down:16"
-    echo "down:16"
-    return
+    echo "down:16"; return
   fi
-
   local preview_lines
   preview_lines=$((height - list_rows - 3))
   (( preview_lines < 1 )) && preview_lines=1
-
   pi_log_preview "height=$height list_rows=$list_rows preview=down:$preview_lines"
   echo "down:$preview_lines"
 }
 
 pi_session_id_from_path() {
-  local session_file="$1"
-  local base
+  local session_file="$1" base
   base=$(basename "$session_file")
   base="${base%.jsonl}"
   echo "${base##*_}"
@@ -126,11 +95,7 @@ pi_get_last_timestamp() {
 pi_timestamp_to_epoch() {
   local ts="$1"
   [[ -z "$ts" ]] && return
-  # macOS date uses -j -f, GNU date uses -d
-  if date -j -f "%Y-%m-%dT%H:%M:%S" "$(echo "$ts" | cut -c1-19)" +%s 2>/dev/null; then
-    return
-  fi
-  date -d "$ts" +%s 2>/dev/null
+  $DATE_CMD -d "$ts" +%s 2>/dev/null
 }
 
 pi_get_idle_secs() {
@@ -145,10 +110,8 @@ pi_normalize_tty() {
   local tty
   tty=$(echo "$1" | awk '{print $1}')
   [[ -z "$tty" || "$tty" == "?" ]] && return
-  if [[ "$tty" == /dev/* ]]; then
-    echo "$tty"
-  else
-    echo "/dev/$tty"
+  if [[ "$tty" == /dev/* ]]; then echo "$tty"
+  else echo "/dev/$tty"
   fi
 }
 
@@ -178,27 +141,17 @@ pi_ignore_session() {
   local session_file
   session_file=$(pi_find_session_file "$session_id")
   [[ -z "$session_file" ]] && return 1
-
   mkdir -p "$PI_SESSIONS_STATE_DIR"
-  local msg_ts
+  local msg_ts now
   msg_ts=$(pi_get_last_timestamp "$session_file")
-  local now
-  now=$(date +%s)
-
-  # macOS sed needs '' for in-place, use temp file for portability
-  if [[ -f "$PI_IGNORED_FILE" ]]; then
-    grep -v "^$session_id	" "$PI_IGNORED_FILE" > "$PI_IGNORED_FILE.tmp" 2>/dev/null || true
-    mv "$PI_IGNORED_FILE.tmp" "$PI_IGNORED_FILE"
-  fi
+  now=$($DATE_CMD +%s)
+  [[ -f "$PI_IGNORED_FILE" ]] && sed -i '' "/^$session_id$(printf '\t')/d" "$PI_IGNORED_FILE"
   printf '%s\t%s\t%s\n' "$session_id" "$msg_ts" "$now" >> "$PI_IGNORED_FILE"
 }
 
 pi_unignore_session() {
   local session_id="$1"
-  if [[ -f "$PI_IGNORED_FILE" ]]; then
-    grep -v "^$session_id	" "$PI_IGNORED_FILE" > "$PI_IGNORED_FILE.tmp" 2>/dev/null || true
-    mv "$PI_IGNORED_FILE.tmp" "$PI_IGNORED_FILE"
-  fi
+  [[ -f "$PI_IGNORED_FILE" ]] && sed -i '' "/^$session_id$(printf '\t')/d" "$PI_IGNORED_FILE"
 }
 
 pi_toggle_ignore_session() {
@@ -206,16 +159,11 @@ pi_toggle_ignore_session() {
   local session_file
   session_file=$(pi_find_session_file "$session_id")
   [[ -z "$session_file" ]] && return 1
-
-  local msg_ts
+  local msg_ts ignored_at
   msg_ts=$(pi_get_last_timestamp "$session_file")
-  local ignored_at
   ignored_at=$(pi_get_ignored_at "$session_id" "$msg_ts")
-
-  if [[ -n "$ignored_at" ]]; then
-    pi_unignore_session "$session_id"
-  else
-    pi_ignore_session "$session_id"
+  if [[ -n "$ignored_at" ]]; then pi_unignore_session "$session_id"
+  else pi_ignore_session "$session_id"
   fi
 }
 
@@ -287,14 +235,10 @@ pi_new_session() {
     --with-nth=2.. \
     --header 'Start new pi in session (esc to go back)' \
     --bind 'tab:down,btab:up')
-
   [[ -z "$selected" ]] && return
-
-  local session_name
+  local session_name start_dir target
   session_name=$(echo "$selected" | cut -f1)
-  local start_dir
   start_dir=$(tmux display -t "${session_name}:0" -p '#{pane_current_path}')
-  local target
   target=$(tmux new-window -t "$session_name" -c "$start_dir" -P -F '#{session_name}:#{window_index}')
   tmux send-keys -t "$target" "pi" Enter
   tmux switch-client -t "$target"
@@ -303,40 +247,25 @@ pi_new_session() {
 pi_get_fork_flag() {
   local help
   help=$(pi --help 2>/dev/null)
-
-  if echo "$help" | grep -q -- "--fork-session"; then
-    echo "--fork-session"
-    return
-  fi
-
-  if echo "$help" | grep -q -- "--fork"; then
-    echo "--fork"
-  fi
+  if echo "$help" | grep -q -- "--fork-session"; then echo "--fork-session"; return; fi
+  if echo "$help" | grep -q -- "--fork"; then echo "--fork"; fi
 }
 
 pi_fork_session() {
   local session_id="$1"
   [[ -z "$session_id" ]] && return 1
-
   local session_file
   session_file=$(pi_find_session_file "$session_id")
   [[ -z "$session_file" ]] && return 1
-
-  local cwd
+  local cwd start_dir tmux_session target
   cwd=$(jq -r 'select(.type == "session") | .cwd // ""' "$session_file" 2>/dev/null | head -1)
-  local start_dir
   start_dir="${cwd:-$(tmux display -p '#{pane_current_path}')}"
-  local tmux_session
   tmux_session=$(tmux display -p '#{session_name}')
-  local target
   target=$(tmux new-window -t "$tmux_session" -c "$start_dir" -P -F '#{session_name}:#{window_index}')
-
-  local fork_flag
+  local fork_flag command
   fork_flag=$(pi_get_fork_flag)
-  local command
   command="pi --session \"$session_file\""
   [[ -n "$fork_flag" ]] && command="$command $fork_flag"
-
   tmux send-keys -t "$target" "$command" Enter
   tmux switch-client -t "$target"
 }
@@ -345,20 +274,14 @@ list_pi_sessions() {
   [[ -d "$PI_SESSIONS_DIR" ]] || { echo "[]"; return; }
 
   local now
-  now=$(date +%s)
-
+  now=$($DATE_CMD +%s)
   local row_delim=$'\x1f'
 
   local -a pids
-  # macOS pgrep: use -x for exact match
   mapfile -t pids < <(pgrep -x pi 2>/dev/null || true)
-  if (( ${#pids[@]} == 0 )); then
-    echo "[]"
-    return
-  fi
+  if (( ${#pids[@]} == 0 )); then echo "[]"; return; fi
 
-  declare -A pane_target
-  declare -A pane_tty_target
+  declare -A pane_target pane_tty_target
   while IFS=$'\t' read -r pane_id target pane_tty; do
     [[ -z "$pane_id" || -z "$target" ]] && continue
     pane_target["$pane_id"]="$target"
@@ -384,9 +307,8 @@ list_pi_sessions() {
     rg_args+=(-e "\"pid\":${pid},")
   done
 
-  declare -A session_rows
-  declare -A session_epochs
-  declare -a session_files
+  declare -A session_rows session_epochs
+  local -a session_files
   mapfile -t session_files < <(rg "${rg_args[@]}" "$PI_SESSIONS_DIR" 2>/dev/null | sort -u)
 
   for session_file in "${session_files[@]}"; do
@@ -401,26 +323,18 @@ list_pi_sessions() {
     [[ "$pane" == "null" ]] && pane=""
     [[ "$pid" == "null" ]] && pid=""
 
-    local switch_epoch
-    local process_epoch
+    local switch_epoch process_epoch
     if [[ -n "$last_switch_ts" ]]; then
       switch_epoch=$(pi_timestamp_to_epoch "$last_switch_ts")
       process_epoch=$(pi_timestamp_to_epoch "$last_process_ts")
-      if [[ -z "$process_epoch" ]]; then
-        continue
-      fi
-      if [[ -n "$switch_epoch" && "$switch_epoch" -gt "$process_epoch" ]]; then
-        continue
-      fi
+      if [[ -z "$process_epoch" ]]; then continue; fi
+      if [[ -n "$switch_epoch" && "$switch_epoch" -gt "$process_epoch" ]]; then continue; fi
     fi
 
     local key
-    if [[ -n "$pid" ]]; then
-      key="pid:$pid"
-    elif [[ -n "$pane" ]]; then
-      key="pane:$pane"
-    else
-      key="session:$session_id"
+    if [[ -n "$pid" ]]; then key="pid:$pid"
+    elif [[ -n "$pane" ]]; then key="pane:$pane"
+    else key="session:$session_id"
     fi
 
     local epoch
@@ -461,12 +375,9 @@ list_pi_sessions() {
     tmux_last_attached="${last_selected[$tmux_target]:-0}"
 
     local state="unknown"
-    if [[ "$has_pending" == "true" ]]; then
-      state="permission"
-    elif [[ "$status" == "running" ]]; then
-      state="running"
-    elif [[ "$status" == "stopped" ]]; then
-      state="stopped"
+    if [[ "$has_pending" == "true" ]]; then state="permission"
+    elif [[ "$status" == "running" ]]; then state="running"
+    elif [[ "$status" == "stopped" ]]; then state="stopped"
     fi
 
     local idle_secs
@@ -483,12 +394,9 @@ list_pi_sessions() {
     fi
 
     local topic=""
-    if [[ -n "$first_user" ]]; then
-      topic="$first_user"
-    elif [[ -n "$cwd" ]]; then
-      topic="$cwd"
-    else
-      topic="$session_id"
+    if [[ -n "$first_user" ]]; then topic="$first_user"
+    elif [[ -n "$cwd" ]]; then topic="$cwd"
+    else topic="$session_id"
     fi
 
     [[ "$pid" == "null" || -z "$pid" ]] && pid="0"
@@ -508,7 +416,6 @@ list_pi_sessions() {
       --arg topic "$topic" \
       --arg summary "" \
       '{pid: $pid, tmux_target: $tmux_target, tmux_session: $tmux_session, session_id: $session_id, state: $state, idle_secs: $idle_secs, ignored_at: $ignored_at, tmux_last_attached: $tmux_last_attached, topic: $topic, summary: $summary}'
-
   done
 
   echo "]"
@@ -519,29 +426,22 @@ generate_list() {
     group_by(.state == "ignored") |
     (.[0] // []) as $active |
     (.[1] // []) as $ignored |
-
     ($active | sort_by([-.tmux_last_attached, .idle_secs])) + ($ignored | sort_by(-.ignored_at))
-
     | .[] |
-
     (if .state == "ignored" then "○"
      elif .state == "permission" then "\u001b[33m󰂞\u001b[0m"
      elif .state == "stopped" then "\u001b[34m■\u001b[0m"
      elif .state == "running" then "\u001b[32m▶\u001b[0m"
      else "?" end) as $indicator |
-
     (if .state == "permission" or .state == "stopped" or .state == "ignored" then " (\(.idle_secs |
        if . < 60 then "\(.)s"
        elif . < 3600 then "\(. / 60 | floor)m"
        elif . < 86400 then "\(. / 3600 | floor)h"
        else "\(. / 86400 | floor)d" end))"
      else "" end) as $suffix |
-
     (if .summary != "" then .summary else .topic end | gsub("\n"; " ")) as $display |
-
     (if .state == "ignored" then "\u001b[2m" else "" end) as $dim |
     (if .state == "ignored" then "\u001b[0m" else "" end) as $reset |
-
     "\(.pid)\t\(.tmux_target)\t\(.session_id)\t\($dim)\($indicator)  \(.tmux_target | . + (" " * (24 - length))[:24])  \($display)\($suffix)\($reset)"
   '
 }
@@ -603,7 +503,6 @@ case "${1:-run}" in
       --bind "f:execute($script_path fork {3})+abort" \
       --bind "n:execute($script_path new)" \
       --bind "i:execute-silent($script_path ignore {3})+reload:$script_path list" \
-      --bind "c:execute(tmux respawn-pane -k -t {2} 'pi')+reload:$script_path list" \
       --bind "ctrl-q:abort" \
       --preview-window "$preview_window" \
       --layout=reverse \

@@ -87,6 +87,7 @@
         "funny-working-message.ts",
         "speedreading.ts",
         "loop.ts",
+        "process-info.ts", // writes PID/tmux pane/session/status into session JSONL (for pi-sessions picker)
       ],
       "skills": [],
     },
