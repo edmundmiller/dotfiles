@@ -81,6 +81,11 @@ in
     # Custom lovelace modules
     customLovelaceModules = mkOpt (types.listOf types.package) [ ];
 
+    # Home Assistant Connect ZBT-2 (Zigbee + Thread USB dongle)
+    zbt2 = {
+      enable = mkBoolOpt false;
+    };
+
     # Matter Server for Matter/Thread device support
     matter = {
       enable = mkBoolOpt false;
@@ -256,6 +261,13 @@ in
           }
         ];
       };
+
+      # ZBT-2: udev rule for Nabu Casa ZBT-2 dongle + hass user access
+      services.udev.extraRules = mkIf cfg.zbt2.enable ''
+        # Nabu Casa ZBT-2 (Zigbee + Thread)
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="831a", GROUP="dialout", MODE="0660", SYMLINK+="zbt2"
+      '';
+      users.users.hass.extraGroups = optionals cfg.zbt2.enable [ "dialout" ];
 
       # Firewall: open HA port on LAN and tailscale
       services.home-assistant.openFirewall = true;
