@@ -101,6 +101,7 @@ in
         unstable.yazi
         zoxide
         my.hey # Nix-managed hey command with completions
+        my.zsh-bench
       ];
 
       env = {
