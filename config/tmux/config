@@ -5,7 +5,7 @@
 
 # Pass zoxide's DB location to all popup shells (Nix sets _ZO_DATA_DIR=$XDG_CACHE_HOME)
 # run-shell ensures $HOME is expanded by the shell, not tmux's config parser
-run-shell "tmux set-environment -g _ZO_DATA_DIR ${_ZO_DATA_DIR:-$HOME/.cache}"
+run-shell 'tmux set-environment -g _ZO_DATA_DIR "$HOME/.cache"'
 
 # Use ghostty terminfo when available, fall back to xterm-256color
 set  -g default-terminal "ghostty"
