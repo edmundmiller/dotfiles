@@ -109,7 +109,7 @@ in
         # run-shell to hang waiting for child processes. Start it detached instead.
         set -g @dark-notify-theme-path-light '$HOME/.config/tmux/theme-light-generated.conf'
         set -g @dark-notify-theme-path-dark '$HOME/.config/tmux/theme-dark-generated.conf'
-        run-shell -b ${tmux-dark-notify}/main.tmux
+        run-shell -b "${tmux-dark-notify}/main.tmux > /dev/null 2>&1"
 
         # tmux-smart-name: window naming + AI agent status
         run-shell ${pkgs.my.tmux-smart-name}/share/tmux-smart-name/scripts/smart-name.sh
