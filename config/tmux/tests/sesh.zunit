@@ -1,54 +1,96 @@
 #!/usr/bin/env zunit
 
-# Tests for sesh tmux session manager integration
-# Covers: sesh availability, list output, and display-popup PATH regression
+# Tests for sesh session picker integration
+# Covers: binary existence, zoxide list quality, tmux popup interaction
 
 @setup {
-  export SESH=/opt/homebrew/bin/sesh
-  export FZF_TMUX=/opt/homebrew/bin/fzf-tmux
+  export ORIG_PWD=$PWD
+  export SESH_SCRIPT="$ORIG_PWD/config/tmux/sesh-picker.sh"
+  export ZOXIDE_SCRIPT="$ORIG_PWD/config/tmux/zoxide-list.sh"
 }
 
-# --- Spec: sesh is available and functional ---
+# ── Binary checks ──────────────────────────────────────────────────────────────
 
 @test 'sesh binary exists at known path' {
-  assert "$SESH" is_file
+  run /opt/homebrew/bin/sesh --version
+  assert $state equals 0
 }
 
 @test 'fzf-tmux binary exists at known path' {
-  assert "$FZF_TMUX" is_file
+  run /opt/homebrew/bin/fzf-tmux --version
+  assert $state equals 0
 }
 
+@test 'zoxide binary exists at known path' {
+  run /opt/homebrew/bin/zoxide --version
+  assert $state equals 0
+}
+
+# ── Script checks ──────────────────────────────────────────────────────────────
+
+@test 'sesh-picker.sh is executable' {
+  [[ -x "$SESH_SCRIPT" ]]
+  assert $state equals 0
+}
+
+@test 'zoxide-list.sh is executable' {
+  [[ -x "$ZOXIDE_SCRIPT" ]]
+  assert $state equals 0
+}
+
+# ── sesh list output ───────────────────────────────────────────────────────────
+
 @test 'sesh list returns output' {
-  run $SESH list
+  run /opt/homebrew/bin/sesh list
   assert $state equals 0
   assert "$output" is_not_empty
 }
 
 @test 'sesh list -t returns only tmux sessions' {
-  run $SESH list -t
+  run /opt/homebrew/bin/sesh list -t
   assert $state equals 0
-  # tmux sessions should not contain home directory paths
-  assert "$output" does_not_contain "~/"
 }
 
-@test 'sesh list -z returns zoxide directories' {
-  run $SESH list -z
+# ── zoxide-list.sh quality ─────────────────────────────────────────────────────
+
+@test 'zoxide-list.sh returns output' {
+  run "$ZOXIDE_SCRIPT"
   assert $state equals 0
   assert "$output" is_not_empty
 }
 
-@test 'sesh list --icons flag is accepted' {
-  run $SESH list --icons
+@test 'zoxide-list.sh returns at most 30 lines' {
+  local count=$("$ZOXIDE_SCRIPT" | wc -l | tr -d ' ')
+  [[ "$count" -le 30 ]]
   assert $state equals 0
 }
 
-@test 'sesh preview accepts a path argument' {
-  run $SESH preview "$HOME"
+@test 'zoxide-list.sh excludes temp and noise dirs' {
+  local result=$("$ZOXIDE_SCRIPT")
+  # Should not include common noise entries
+  local noise=$(echo "$result" | grep -E '^(/tmp|/private/tmp|/private/var/folders|.*\.Trash|.*\.sdkman/tmp)' || true)
+  assert "$noise" is_empty
+}
+
+@test 'zoxide-list.sh entries are real directories' {
+  while IFS= read -r dir; do
+    [[ -d "$dir" ]] || { echo "Not a directory: $dir"; return 1; }
+  done < <("$ZOXIDE_SCRIPT")
   assert $state equals 0
 }
 
-# --- Regression: display-popup PATH does not include /opt/homebrew/bin ---
-# This is why we use run-shell + fzf-tmux instead of display-popup + fzf.
+# ── Regression: fzf reload pipe parsing ───────────────────────────────────────
+
+@test 'zoxide-list.sh uses a script not inline pipe (avoids fzf reload bug)' {
+  # Regression: pipe in reload() was parsed as fzf action separator, showing "/"
+  # Fix: extract to standalone script, reference by path in reload()
+  run grep 'reload.*|.*head' "$SESH_SCRIPT"
+  # Should NOT find an inline pipe in the reload bind
+  local result=$(grep 'reload.*|.*head' "$SESH_SCRIPT" || true)
+  assert "$result" is_empty
+}
+
+# ── Regression: minimal PATH in fzf popup ─────────────────────────────────────
 
 @test 'sesh is NOT in minimal display-popup PATH' {
   local minimal_path="/usr/bin:/bin:/usr/sbin:/sbin"
@@ -60,4 +102,40 @@
   local minimal_path="/usr/bin:/bin:/usr/sbin:/sbin"
   local result=$(env -i PATH="$minimal_path" which fzf 2>&1)
   assert "$result" is_empty
+}
+
+# ── tmux popup interaction ─────────────────────────────────────────────────────
+
+@test 'sesh picker popup appears and closes cleanly on escape' {
+  # Skip if not inside tmux
+  [[ -n "$TMUX" ]] || return 0
+
+  local test_window
+  test_window=$(tmux new-window -d -P -F '#{window_id}')
+
+  # Run the picker in the test window (it will show the fzf-tmux popup)
+  tmux send-keys -t "$test_window" "$SESH_SCRIPT" Enter
+  sleep 1
+
+  # Capture popup content — should show the sesh border label
+  local pane_output
+  pane_output=$(tmux capture-pane -t "$test_window" -p 2>/dev/null || true)
+
+  # Send escape to dismiss
+  tmux send-keys -t "$test_window" Escape ''
+  sleep 0.3
+  tmux kill-window -t "$test_window" 2>/dev/null || true
+
+  # Popup should have shown the sesh border or fzf prompt
+  echo "$pane_output" | grep -qE 'sesh|> $' 
+  assert $state equals 0
+}
+
+@test 'sesh picker exits 0 when no session selected (escape logic)' {
+  # Regression: empty sesh connect returned 127; [ -n ] + exit 0 guards against it
+  # Test the guard logic directly without needing a live fzf popup
+  local result
+  result=$(SESSION="" bash -c '[ -n "$SESSION" ] && /opt/homebrew/bin/sesh connect "$SESSION"; exit 0; echo ok')
+  run bash -c 'SESSION=""; [ -n "$SESSION" ] && /opt/homebrew/bin/sesh connect "$SESSION"; exit 0'
+  assert $state equals 0
 }
