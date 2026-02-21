@@ -9,7 +9,7 @@
     "rockorager/tap" # Prise terminal multiplexer
     "seqeralabs/tap"
     "steipete/tap" # Codexbar
-    "steveyegge/beads" # Beads debugging tool
+    # "steveyegge/beads" # Not needed — using homebrew-core 'beads' formula instead
     "tw93/tap" # Mole
     "anomalyco/tap" # Opencode
     "max-sixty/worktrunk" # Git worktree management for parallel AI agents
@@ -145,7 +145,7 @@
     "html2markdown"
     "jnsahaj/lumen/lumen"
     "opencode"
-    "steveyegge/beads/bd"
+    "beads"
 
     "reminders-cli"
     "wakatime-cli"
