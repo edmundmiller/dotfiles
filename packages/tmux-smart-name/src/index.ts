@@ -5,7 +5,7 @@
  */
 import { hasSessions, listAllPanes, capturePane, renameWindow, type TmuxPane } from "./tmux.js";
 import { AGENT_PROGRAMS, getPaneProgram, loadProcessTable, clearProcessTable } from "./process.js";
-import { detectStatus, prioritize, colorize } from "./status.js";
+import { detectStatus, readPiStatusFile, prioritize, colorize } from "./status.js";
 import { formatPath, buildBaseName, trimName, parsePiFooter, type PaneContext } from "./naming.js";
 import { getAllAgentsInfo, generateMenuCommand, runMenu } from "./menu.js";
 
@@ -53,7 +53,12 @@ function renameAll(): void {
         let newName: string;
         if (agentPanes.length > 0) {
           const statuses = agentPanes.map((a) => {
-            // Reuse already-captured content for active pane
+            // For pi: try the status file bridge first (fast, no pane capture needed)
+            if (a.agent === "pi") {
+              const fileStatus = readPiStatusFile(a.paneId);
+              if (fileStatus) return fileStatus;
+            }
+            // Fallback: capture pane content and detect via regex
             const content =
               a.paneId === active.paneId && activeContent ? activeContent : capturePane(a.paneId);
             return detectStatus(content, a.agent);
