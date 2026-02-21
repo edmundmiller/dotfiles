@@ -204,6 +204,7 @@ in
               "${configDir}/pi/extensions/prompt-stash-logic.ts";
             ".pi/agent/extensions/non-interactive-env.ts".source =
               "${configDir}/pi/extensions/non-interactive-env.ts";
+            ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
           };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

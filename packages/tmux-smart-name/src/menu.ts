@@ -6,6 +6,7 @@ import { hasSessions, listAllPanes, capturePane, type TmuxPane } from "./tmux.js
 import { AGENT_PROGRAMS, getPaneProgram } from "./process.js";
 import {
   detectStatus,
+  readPiStatusFile,
   prioritize,
   colorize,
   ICON_COLORS,
@@ -50,7 +51,10 @@ export function getAllAgentsInfo(): AgentInfo[] {
         windowName: pane.windowName ?? "",
         paneId: pane.paneId,
         program,
-        status: detectStatus(capturePane(pane.paneId), program),
+        status:
+          program === "pi"
+            ? (readPiStatusFile(pane.paneId) ?? detectStatus(capturePane(pane.paneId), program))
+            : detectStatus(capturePane(pane.paneId), program),
         path: formatPath(pane.path),
       });
     }
