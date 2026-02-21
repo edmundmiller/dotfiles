@@ -39,6 +39,8 @@ hass-cli -o yaml state list            # yaml output
 hass-cli -o json state list            # json output
 ```
 
+**Note:** `hass-cli info` is broken on current HA (deprecated endpoint). All other commands work.
+
 Use raw curl (below) for config flows, app credentials, and anything hass-cli doesn't cover.
 
 ## Querying the API (inline SSH)
