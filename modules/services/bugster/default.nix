@@ -101,9 +101,15 @@ let
     chown dagster:dagster "$REPO_DIR/bugster.toml"
     chmod 640 "$REPO_DIR/bugster.toml"
 
-    # Grant dagster write access to the obsidian vault for TaskNotes output
-    ${pkgs.acl}/bin/setfacl -R -m u:dagster:rwX ${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir} 2>/dev/null || true
-    ${pkgs.acl}/bin/setfacl -R -d -m u:dagster:rwX ${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir} 2>/dev/null || true
+    # Grant dagster traversal access to the vault path
+    # ZFS noacl: ACLs not supported, use POSIX permissions
+    # dagster user needs +x on parent dirs and g+w on the tasks dir
+    VAULT_PATH="${cfg.tasknotes.vaultPath}"
+    # Ensure dagster can traverse to the vault (home dir is typically 700)
+    VAULT_PARENT="$(dirname "$VAULT_PATH")"
+    chmod o+x "$VAULT_PARENT" 2>/dev/null || true
+    # dagster is in 'users' group — make tasks dir group-writable
+    chmod g+w "$VAULT_PATH/${cfg.tasknotes.tasksDir}" 2>/dev/null || true
   '';
 
   sourceType = types.submodule ({ config, ... }: {
