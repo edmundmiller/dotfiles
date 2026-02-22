@@ -270,8 +270,9 @@
 
       # ───────────────────────────────────────────────────────────────────────
 
-      # Good Morning — first person to turn off focus in Night mode after 7am
-      # Only needs one person; no bed presence (unreliable), no "both" requirement
+      # Good Morning — first focus-off since 6am, fires at transition or 7am catch-up
+      # Three triggers: either person's focus turns off, or 7am clock (catches pre-7am wake)
+      # Template condition: at least one focus went off→off since 6am (not stale from yesterday)
       {
         alias = "Good Morning";
         id = "good_morning_bed_presence";
@@ -286,16 +287,32 @@
             entity_id = "binary_sensor.monicas_iphone_focus";
             to = "off";
           }
+          {
+            # Catch-up for anyone who woke before 7am
+            platform = "time";
+            at = "07:00:00";
+          }
         ];
         condition = [
           {
             condition = "time";
-            after = "07:00:00";
+            after = "06:00:00";
           }
           {
             condition = "state";
             entity_id = "input_select.house_mode";
             state = "Night";
+          }
+          {
+            # At least one person's focus turned off since 6am today
+            condition = "template";
+            value_template = ''
+              {% set e = states.binary_sensor.edmunds_iphone_focus %}
+              {% set m = states.binary_sensor.monicas_iphone_focus %}
+              {% set cutoff = today_at("06:00") %}
+              {{ (e.state == "off" and e.last_changed >= cutoff) or
+                 (m.state == "off" and m.last_changed >= cutoff) }}
+            '';
           }
         ];
         action = [
