@@ -251,7 +251,7 @@ collect_issues() {
     
     # Get issues from this repo
     local issues
-    issues=$(cd "$repo_dir" && bd list --json --no-daemon 2>/dev/null || echo "[]")
+    issues=$(cd "$repo_dir" && bd list --json 2>/dev/null || echo "[]")
     
     # Add repo metadata to each issue
     local enhanced
@@ -307,7 +307,7 @@ fi
 cd "$REPO_PATH" 2>/dev/null || exit 1
 
 # Get issue details
-ISSUE=$(bd show "$ID" --json --no-daemon 2>/dev/null)
+ISSUE=$(bd show "$ID" --json 2>/dev/null)
 
 if [[ -z "$ISSUE" || "$ISSUE" == "null" ]]; then
   echo "Issue not found: $ID"
@@ -324,7 +324,7 @@ echo ""
 STATUS=$(echo "$ISSUE" | jq -r '.[0].status // "unknown"')
 PRIORITY=$(echo "$ISSUE" | jq -r '.[0].priority // 2')
 TYPE=$(echo "$ISSUE" | jq -r '.[0].issue_type // "task"')
-ASSIGNEE=$(echo "$ISSUE" | jq -r '.[0].assignee // "unassigned"')
+ASSIGNEE=$(echo "$ISSUE" | jq -r '.[0].owner // "unassigned"')
 
 echo -e "\033[90mID:\033[0m       $ID"
 echo -e "\033[90mStatus:\033[0m   $STATUS"
@@ -343,7 +343,7 @@ if [[ -n "$DESC" && "$DESC" != "null" ]]; then
 fi
 
 # Dependencies
-DEP_COUNT=$(echo "$ISSUE" | jq -r '.[0].dependency_count // 0')
+DEP_COUNT=$(echo "$ISSUE" | jq -r '(.[0].dependencies // []) | length')
 if [[ "$DEP_COUNT" -gt 0 ]]; then
   echo -e "\033[1mBlocked by:\033[0m ($DEP_COUNT)"
   echo "$ISSUE" | jq -r '.[0].dependencies[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
@@ -351,7 +351,7 @@ if [[ "$DEP_COUNT" -gt 0 ]]; then
 fi
 
 # Dependents
-DENT_COUNT=$(echo "$ISSUE" | jq -r '.[0].dependent_count // 0')
+DENT_COUNT=$(echo "$ISSUE" | jq -r '.[0].dependent_count // 0')  # not in bd show output; stays 0
 if [[ "$DENT_COUNT" -gt 0 ]]; then
   echo -e "\033[1mBlocking:\033[0m ($DENT_COUNT)"
   echo "$ISSUE" | jq -r '.[0].dependents[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
