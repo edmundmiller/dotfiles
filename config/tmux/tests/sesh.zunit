@@ -121,13 +121,13 @@
 
 @test 'sesh is NOT in minimal display-popup PATH' {
   local minimal_path="/usr/bin:/bin:/usr/sbin:/sbin"
-  local result=$(env -i PATH="$minimal_path" which sesh 2>&1 || true)
+  local result=$(PATH="$minimal_path" command -v sesh 2>/dev/null || true)
   assert "$result" is_empty
 }
 
 @test 'fzf is NOT in minimal display-popup PATH' {
   local minimal_path="/usr/bin:/bin:/usr/sbin:/sbin"
-  local result=$(env -i PATH="$minimal_path" which fzf 2>&1 || true)
+  local result=$(PATH="$minimal_path" command -v fzf 2>/dev/null || true)
   assert "$result" is_empty
 }
 
