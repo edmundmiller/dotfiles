@@ -26,8 +26,8 @@ let
   bugsterToml = pkgs.writeText "bugster.toml" (
     ''
       [tasknotes]
-      vault_path = "${cfg.tasknotes.vaultPath}"
-      tasks_dir = "${cfg.tasknotes.tasksDir}"
+      vault_path = "/var/lib/dagster/vault"
+      tasks_dir = "."
     ''
     + concatMapStrings (src:
       if src.type == "github" then ''
@@ -208,7 +208,7 @@ in
               readWritePaths = [
                 cfg.dataDir
                 "/var/lib/dagster/.cache"
-                cfg.tasknotes.vaultPath
+                "/var/lib/dagster/vault"
               ];
             };
           }
@@ -240,6 +240,14 @@ in
       systemd.services.dagster-code-bugster = {
         after = [ "bugster-setup.service" ];
         requires = [ "bugster-setup.service" ];
+      };
+
+      # Bind mount vault tasks dir into dagster's space
+      # (ProtectHome=read-only blocks access to /home even with ReadWritePaths)
+      fileSystems."/var/lib/dagster/vault" = {
+        device = "${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir}";
+        fsType = "none";
+        options = [ "bind" "rw" ];
       };
 
       # Ensure data directory exists
