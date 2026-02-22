@@ -245,6 +245,7 @@
       bugster = {
         enable = true;
         environmentFile = config.age.secrets.bugster-env.path;
+        healthcheckPingUrl = "https://hc-ping.com/5abc3bda-4cc1-48a3-a2ec-fc0b930ca759";
         tasknotes = {
           vaultPath = "/home/emiller/obsidian-vault";
           tasksDir = "00_Inbox/Tasks/Bugster";
