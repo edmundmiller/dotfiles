@@ -259,9 +259,9 @@
           }
           {
             type = "linear";
-            name = "work";
+            name = "personal";
             tokenEnv = "LINEAR_TOKEN";
-            contexts = [ "work" ];
+            contexts = [ "personal" ];
           }
         ];
       };
