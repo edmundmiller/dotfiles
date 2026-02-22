@@ -240,6 +240,8 @@
       };
       opencode.enable = true;
 
+      dagster.webserver.port = 3001;
+
       bugster = {
         enable = true;
         environmentFile = config.age.secrets.bugster-env.path;
