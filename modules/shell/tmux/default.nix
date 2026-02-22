@@ -51,6 +51,7 @@ in
     user.packages = [
       tmux
       pkgs.my.tmux-file-picker
+      pkgs.my.tmux-smooth-scroll
       pkgs.gum # Interactive CLI for bd-capture popup
     ];
 
@@ -101,6 +102,9 @@ in
         set -g @dark-notify-theme-path-light '$HOME/.config/tmux/theme-light-generated.conf'
         set -g @dark-notify-theme-path-dark '$HOME/.config/tmux/theme-dark-generated.conf'
         run-shell -b "${tmux-dark-notify}/main.tmux > /dev/null 2>&1"
+
+        # tmux-smooth-scroll: Rust-based smooth scrolling (replaces azorng/tmux-smooth-scroll)
+        run-shell -b '${pkgs.my.tmux-smooth-scroll}/bin/tmux-smooth-scroll init'
 
         # tmux-smart-name: window naming + AI agent status
         run-shell ${pkgs.my.tmux-smart-name}/share/tmux-smart-name/scripts/smart-name.sh
