@@ -89,9 +89,27 @@ Located in `hosts/nuc/secrets/`:
 - `goose-auth-token.age` — Goose auth
 - `gogcli_credentials.age` — GOG CLI
 
+## Deployment
+
+Two mechanisms, both pull from GitHub:
+
+| Method                | Trigger            | Source                                              |
+| --------------------- | ------------------ | --------------------------------------------------- |
+| `hey nuc`             | Manual (deploy-rs) | Local flake eval → remote build on NUC              |
+| `nixos-upgrade.timer` | Daily 04:40        | `github:edmundmiller/dotfiles#nuc` with `--refresh` |
+
+**Manual rebuild on NUC** (no local clone needed):
+
+```bash
+ssh nuc "sudo nixos-rebuild switch --refresh --flake github:edmundmiller/dotfiles#nuc"
+```
+
+Config: `hosts/_server.nix` — `system.autoUpgrade.flake = "github:edmundmiller/dotfiles#${hostname}"`.
+
 ## Gotchas
 
 - **Deploy builds remotely**: `hey nuc` evaluates locally but builds on NUC. Large rebuilds (home-assistant, etc.) take time.
+- **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
 - **New agenix secrets**: ExecStartPre env injection may run before agenix decrypts new secrets on first deploy. Restart the service after: `systemctl --user restart openclaw-gateway`.
 - **Node version churn**: NUC has nodejs from home-manager. When it upgrades, native modules (better-sqlite3 in qmd) break. Fix: `npm rebuild better-sqlite3` in qmd's node_modules.
 - **nix-ld libraries**: Any new generic linux binary that fails with "cannot run dynamically linked executable" needs its missing libs added to `programs.nix-ld.libraries`. Use `ldd /path/to/binary` to find missing `.so` files.
