@@ -18,7 +18,7 @@
 #   8Sleep service target: sensor.edmund_s_eight_sleep_side_sleep_stage
 #   8Sleep next alarm switch: switch.edmund_s_eight_sleep_next_alarm
 #   iPhone next alarm: sensor.edmunds_iphone_next_alarm (datetime)
-#   iPhone focus: binary_sensor.edmunds_iphone_focus (on = any focus active)
+#   iPhone sleep focus: binary_sensor.edmunds_iphone_sleep_focus (on = Sleep Focus active)
 { lib, ... }:
 {
   services.home-assistant.config = {
@@ -196,7 +196,7 @@
         description = "Edmund turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
         trigger = {
           platform = "state";
-          entity_id = "binary_sensor.edmunds_iphone_focus";
+          entity_id = "binary_sensor.edmunds_iphone_sleep_focus";
           to = "off";
         };
         condition = [
@@ -237,7 +237,7 @@
         description = "Monica turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
         trigger = {
           platform = "state";
-          entity_id = "binary_sensor.monicas_iphone_focus";
+          entity_id = "binary_sensor.monicas_iphone_sleep_focus";
           to = "off";
         };
         condition = [
@@ -310,12 +310,12 @@
           }
           {
             condition = "state";
-            entity_id = "binary_sensor.edmunds_iphone_focus";
+            entity_id = "binary_sensor.edmunds_iphone_sleep_focus";
             state = "off";
           }
           {
             condition = "state";
-            entity_id = "binary_sensor.monicas_iphone_focus";
+            entity_id = "binary_sensor.monicas_iphone_sleep_focus";
             state = "off";
           }
         ];
