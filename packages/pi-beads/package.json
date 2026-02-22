@@ -8,6 +8,10 @@
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git"
   },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bun tsc --noEmit"
+  },
   "pi": {
     "extensions": [
       "./src/index.ts"
