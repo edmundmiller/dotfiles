@@ -1,0 +1,270 @@
+# Bugster — Bugwarrior meets TaskNotes, running on Dagster
+#
+# Syncs GitHub/Jira/Linear issues into Obsidian TaskNotes via dlt pipelines.
+# Runs as a dagster code location (gRPC server) managed by the dagster module.
+#
+# Architecture:
+#   - Git clone of bugster repo at ${cfg.dataDir}
+#   - uv manages Python deps from pyproject.toml + uv.lock
+#   - dagster code-server exposes bugster.definitions on gRPC port
+#   - dagster webserver/daemon connect via workspace.yaml
+#
+# Secrets: API tokens passed as env vars, referenced in bugster.toml as ${VAR}
+{
+  config,
+  lib,
+  pkgs,
+  isDarwin,
+  ...
+}:
+with lib;
+with lib.my;
+let
+  cfg = config.modules.services.bugster;
+
+  # Generate bugster.toml from Nix options
+  bugsterToml = pkgs.writeText "bugster.toml" (
+    ''
+      [tasknotes]
+      vault_path = "${cfg.tasknotes.vaultPath}"
+      tasks_dir = "${cfg.tasknotes.tasksDir}"
+    ''
+    + concatMapStrings (src:
+      if src.type == "github" then ''
+
+        [[sources]]
+        type = "github"
+        name = "${src.name}"
+        token = "''${${src.tokenEnv}}"
+        username = "${src.username}"
+        contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+        include_issues = ${boolToString src.includeIssues}
+        include_prs = ${boolToString src.includePrs}
+        include_review_requests = ${boolToString src.includeReviewRequests}
+        ${optionalString (src.includeRepos != []) "include_repos = [${concatMapStringsSep ", " (r: ''\"${r}\"'') src.includeRepos}]"}
+        ${optionalString (src.excludeRepos != []) "exclude_repos = [${concatMapStringsSep ", " (r: ''\"${r}\"'') src.excludeRepos}]"}
+      ''
+      else if src.type == "linear" then ''
+
+        [[sources]]
+        type = "linear"
+        name = "${src.name}"
+        token = "''${${src.tokenEnv}}"
+        ${optionalString (src.teamIds != []) "team_ids = [${concatMapStringsSep ", " (t: ''\"${t}\"'') src.teamIds}]"}
+        contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+        only_assigned = ${boolToString src.onlyAssigned}
+      ''
+      else if src.type == "jira" then ''
+
+        [[sources]]
+        type = "jira"
+        name = "${src.name}"
+        url = "''${${src.urlEnv}}"
+        username = "''${${src.usernameEnv}}"
+        token = "''${${src.tokenEnv}}"
+        ${optionalString (src.projects != []) "projects = [${concatMapStringsSep ", " (p: ''\"${p}\"'') src.projects}]"}
+        contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+        only_my_issues = ${boolToString src.onlyMyIssues}
+      ''
+      else ""
+    ) cfg.sources
+  );
+
+  # Script to set up the bugster repo and config
+  setupScript = pkgs.writeShellScript "bugster-setup" ''
+    set -euo pipefail
+
+    REPO_DIR="${cfg.dataDir}"
+
+    # Clone if not present, pull if exists
+    if [ ! -d "$REPO_DIR/.git" ]; then
+      ${pkgs.git}/bin/git clone ${cfg.gitUrl} "$REPO_DIR"
+    else
+      cd "$REPO_DIR"
+      ${pkgs.git}/bin/git fetch origin
+      ${pkgs.git}/bin/git reset --hard origin/${cfg.gitBranch}
+    fi
+
+    # Copy generated config (env vars expanded at runtime by bugster)
+    cp ${bugsterToml} "$REPO_DIR/bugster.toml"
+    chmod 640 "$REPO_DIR/bugster.toml"
+  '';
+
+  # GitHub source config submodule
+  githubSourceOpts = {
+    options = {
+      type = mkOpt types.str "github";
+      name = mkOpt types.str "";
+      tokenEnv = mkOpt types.str "GITHUB_TOKEN";
+      username = mkOpt types.str "";
+      contexts = mkOpt (types.listOf types.str) [];
+      includeIssues = mkBoolOpt true;
+      includePrs = mkBoolOpt true;
+      includeReviewRequests = mkBoolOpt true;
+      includeRepos = mkOpt (types.listOf types.str) [];
+      excludeRepos = mkOpt (types.listOf types.str) [];
+    };
+  };
+
+  # Linear source config submodule
+  linearSourceOpts = {
+    options = {
+      type = mkOpt types.str "linear";
+      name = mkOpt types.str "";
+      tokenEnv = mkOpt types.str "LINEAR_TOKEN";
+      teamIds = mkOpt (types.listOf types.str) [];
+      contexts = mkOpt (types.listOf types.str) [];
+      onlyAssigned = mkBoolOpt true;
+    };
+  };
+
+  # Jira source config submodule
+  jiraSourceOpts = {
+    options = {
+      type = mkOpt types.str "jira";
+      name = mkOpt types.str "";
+      urlEnv = mkOpt types.str "JIRA_URL";
+      usernameEnv = mkOpt types.str "JIRA_USERNAME";
+      tokenEnv = mkOpt types.str "JIRA_TOKEN";
+      projects = mkOpt (types.listOf types.str) [];
+      contexts = mkOpt (types.listOf types.str) [];
+      onlyMyIssues = mkBoolOpt true;
+    };
+  };
+
+  sourceType = types.submodule ({ config, ... }: {
+    options = {
+      type = mkOpt (types.enum [ "github" "linear" "jira" ]) "github";
+      name = mkOpt types.str "";
+      # Common
+      contexts = mkOpt (types.listOf types.str) [];
+      tokenEnv = mkOpt types.str "";
+      # GitHub
+      username = mkOpt types.str "";
+      includeIssues = mkBoolOpt true;
+      includePrs = mkBoolOpt true;
+      includeReviewRequests = mkBoolOpt true;
+      includeRepos = mkOpt (types.listOf types.str) [];
+      excludeRepos = mkOpt (types.listOf types.str) [];
+      # Linear
+      teamIds = mkOpt (types.listOf types.str) [];
+      onlyAssigned = mkBoolOpt true;
+      # Jira
+      urlEnv = mkOpt types.str "JIRA_URL";
+      usernameEnv = mkOpt types.str "JIRA_USERNAME";
+      projects = mkOpt (types.listOf types.str) [];
+      onlyMyIssues = mkBoolOpt true;
+    };
+  });
+in
+{
+  options.modules.services.bugster = {
+    enable = mkBoolOpt false;
+
+    gitUrl = mkOpt types.str "https://github.com/edmundmiller/bugster.git";
+    gitBranch = mkOpt types.str "main";
+
+    port = mkOpt types.port 4000;
+
+    dataDir = mkOpt types.str "/var/lib/dagster/bugster";
+
+    # Environment file with API tokens (agenix secret)
+    environmentFile = mkOpt types.str "";
+
+    tasknotes = {
+      vaultPath = mkOpt types.str "/home/emiller/obsidian-vault";
+      tasksDir = mkOpt types.str "00_Inbox/Tasks/Bugster";
+    };
+
+    sources = mkOpt (types.listOf sourceType) [];
+  };
+
+  config = mkIf cfg.enable (
+    optionalAttrs (!isDarwin) {
+
+      # Ensure dagster is enabled
+      modules.services.dagster = {
+        enable = true;
+
+        # Register bugster as a gRPC code location
+        codeLocations = [
+          {
+            type = "grpc";
+            name = "bugster";
+            host = "localhost";
+            port = cfg.port;
+            service = {
+              enable = true;
+              workingDirectory = cfg.dataDir;
+              execStart = pkgs.writeShellScript "bugster-code-server" ''
+                set -euo pipefail
+                cd ${cfg.dataDir}
+
+                # Sync Python deps (frozen = use lockfile, no resolution)
+                ${pkgs.uv}/bin/uv sync --frozen --no-dev 2>&1
+
+                # Start gRPC code server
+                exec ${pkgs.uv}/bin/uv run dagster code-server start \
+                  -m bugster.definitions \
+                  -h 0.0.0.0 \
+                  -p ${toString cfg.port}
+              '';
+              environment = {
+                BUGSTER_CONFIG = "${cfg.dataDir}/bugster.toml";
+                # uv needs a writable cache dir
+                UV_CACHE_DIR = "/var/lib/dagster/.cache/uv";
+                # Use system Python
+                UV_PYTHON_PREFERENCE = "system";
+                # Home for uv/pip
+                HOME = "/var/lib/dagster";
+              };
+              environmentFiles = optional (cfg.environmentFile != "") cfg.environmentFile;
+              readWritePaths = [
+                cfg.dataDir
+                "/var/lib/dagster/.cache"
+              ];
+            };
+          }
+        ];
+      };
+
+      # Setup service — clones/updates bugster repo before code server starts
+      systemd.services.bugster-setup = {
+        description = "Bugster repo setup";
+        wantedBy = [ "multi-user.target" ];
+        before = [ "dagster-code-bugster.service" ];
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = "dagster";
+          Group = "dagster";
+          ExecStart = setupScript;
+        };
+
+        environment = {
+          HOME = "/var/lib/dagster";
+          GIT_TERMINAL_PROMPT = "0";
+        };
+      };
+
+      # Make dagster-code-bugster depend on setup
+      systemd.services.dagster-code-bugster = {
+        after = [ "bugster-setup.service" ];
+        requires = [ "bugster-setup.service" ];
+      };
+
+      # Ensure data directory exists
+      systemd.tmpfiles.rules = [
+        "d ${cfg.dataDir} 0750 dagster dagster -"
+        "d /var/lib/dagster/.cache 0750 dagster dagster -"
+        "d /var/lib/dagster/.cache/uv 0750 dagster dagster -"
+      ];
+
+      # Obsidian vault needs to be readable by dagster user
+      users.users.dagster.extraGroups = [ "emiller" ];
+    }
+  );
+}

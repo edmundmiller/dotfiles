@@ -21,6 +21,10 @@ with lib.my;
 let
   cfg = config.modules.services.dagster;
 
+  # Service names for managed code location gRPC servers
+  codeServiceNames = map (loc: "dagster-code-${loc.name}.service")
+    (filter (loc: loc.service.enable) cfg.codeLocations);
+
   # Build dagster.yaml from structured options
   dagsterYaml = pkgs.writeText "dagster-template.yaml" (builtins.toJSON (
     {
@@ -142,6 +146,7 @@ in
 
     # Code locations — each gets a gRPC server or points to a module/file
     # type: "grpc" | "module" | "file"
+    # gRPC locations with service.enable get a managed systemd service
     codeLocations = mkOpt (types.listOf (types.submodule {
       options = {
         type = mkOpt types.str "grpc";
@@ -151,6 +156,17 @@ in
         # module/file options
         module = mkOpt types.str "";
         file = mkOpt types.str "";
+        # Managed gRPC code server (optional — creates a systemd service)
+        name = mkOpt types.str "";
+        service = {
+          enable = mkBoolOpt false;
+          execStart = mkOpt (types.either types.str types.path) "";
+          workingDirectory = mkOpt types.str "";
+          environment = mkOpt (types.attrsOf types.str) {};
+          environmentFiles = mkOpt (types.listOf types.str) [];
+          # Extra ReadWritePaths for the service
+          readWritePaths = mkOpt (types.listOf types.str) [];
+        };
       };
     })) [];
 
@@ -172,8 +188,8 @@ in
     };
   };
 
-  config = mkIf cfg.enable (
-    optionalAttrs (!isDarwin) {
+  config = mkIf cfg.enable (mkMerge [
+    (optionalAttrs (!isDarwin) {
 
       # Postgres database
       services.postgresql = mkIf cfg.postgres.enable {
@@ -229,7 +245,7 @@ in
           "network.target"
           "postgresql.service"
           "dagster-config.service"
-        ];
+        ] ++ codeServiceNames;
         requires = [ "dagster-config.service" ];
 
         environment.DAGSTER_HOME = cfg.home;
@@ -259,7 +275,7 @@ in
           "network.target"
           "postgresql.service"
           "dagster-config.service"
-        ];
+        ] ++ codeServiceNames;
         requires = [ "dagster-config.service" ];
 
         environment.DAGSTER_HOME = cfg.home;
@@ -323,6 +339,48 @@ in
           RandomizedDelaySec = "10s";
         };
       };
-    }
-  );
+    })
+    # Code location gRPC services — one per codeLocation with service.enable
+    (optionalAttrs (!isDarwin) {
+      systemd.services = builtins.listToAttrs (
+        map (loc: {
+          name = "dagster-code-${loc.name}";
+          value = {
+            description = "Dagster code server: ${loc.name}";
+            wantedBy = [ "multi-user.target" ];
+            after = [
+              "network.target"
+              "postgresql.service"
+              "dagster-config.service"
+            ];
+            requires = [ "dagster-config.service" ];
+
+            environment = {
+              DAGSTER_HOME = cfg.home;
+            } // loc.service.environment;
+
+            serviceConfig = {
+              Type = "simple";
+              User = "dagster";
+              Group = "dagster";
+              ExecStart = loc.service.execStart;
+              Restart = "on-failure";
+              RestartSec = 10;
+
+              # Hardening
+              NoNewPrivileges = true;
+              ProtectSystem = "strict";
+              ProtectHome = "read-only";
+              ReadWritePaths = [ cfg.home "/tmp" ] ++ loc.service.readWritePaths;
+              PrivateTmp = true;
+            } // optionalAttrs (loc.service.workingDirectory != "") {
+              WorkingDirectory = loc.service.workingDirectory;
+            } // optionalAttrs (loc.service.environmentFiles != []) {
+              EnvironmentFile = loc.service.environmentFiles;
+            };
+          };
+        }) (filter (loc: loc.service.enable) cfg.codeLocations)
+      );
+    })
+  ]);
 }
