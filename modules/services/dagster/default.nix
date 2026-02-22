@@ -28,11 +28,12 @@ let
   # Build dagster.yaml from structured options
   dagsterYaml = pkgs.writeText "dagster-template.yaml" (builtins.toJSON (
     {
-      # Storage — postgres via peer auth (no password needed)
+      # Storage — postgres via peer auth (empty password, local socket)
       storage = {
         postgres = {
           postgres_db = {
             username = cfg.postgres.user;
+            password = "";
             hostname = "localhost";
             db_name = cfg.postgres.database;
             port = 5432;
