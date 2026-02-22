@@ -191,6 +191,5 @@
       emiller ALL=(root) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild *
     '';
 
-
   };
 }

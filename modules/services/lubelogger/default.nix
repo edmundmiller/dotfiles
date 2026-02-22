@@ -32,7 +32,7 @@ in
       services.lubelogger = {
         enable = true;
         openFirewall = true;
-        environmentFile = cfg.environmentFile;
+        inherit (cfg) environmentFile;
       };
 
       # Upstream module binds to localhost only — override to allow Tailscale access

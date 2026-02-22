@@ -10,13 +10,13 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 
 ## Enabled Modules
 
-| Category | Modules |
-|---|---|
-| Editors | emacs, vim (default: nvim) |
-| Dev | node (fnm), python + conda, R |
-| Shell | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, wt, zsh |
-| Services | docker, ssh |
-| Desktop | macos defaults, ghostty |
+| Category | Modules                                                                    |
+| -------- | -------------------------------------------------------------------------- |
+| Editors  | emacs, vim (default: nvim)                                                 |
+| Dev      | node (fnm), python + conda, R                                              |
+| Shell    | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, wt, zsh |
+| Services | docker, ssh                                                                |
+| Desktop  | macos defaults, ghostty                                                    |
 
 ## Host-Specific Config
 
@@ -26,15 +26,15 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 
 ## Differences from MacTraitor-Pro
 
-| Feature | MacTraitor-Pro | Seqeratop |
-|---|---|---|
-| User | `emiller` | `edmundmiller` |
-| Python/conda | disabled | enabled |
-| Raycast | yes | no |
-| OpenClaw | yes | no |
-| duti file assoc | yes (Zed) | no |
-| TouchID sudo | yes | no |
-| Passwordless rebuild | yes | no |
+| Feature              | MacTraitor-Pro | Seqeratop      |
+| -------------------- | -------------- | -------------- |
+| User                 | `emiller`      | `edmundmiller` |
+| Python/conda         | disabled       | enabled        |
+| Raycast              | yes            | no             |
+| OpenClaw             | yes            | no             |
+| duti file assoc      | yes (Zed)      | no             |
+| TouchID sudo         | yes            | no             |
+| Passwordless rebuild | yes            | no             |
 
 ## Secrets
 

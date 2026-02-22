@@ -22,84 +22,103 @@ let
   cfg = config.modules.services.dagster;
 
   # Service names for managed code location gRPC servers
-  codeServiceNames = map (loc: "dagster-code-${loc.name}.service")
-    (filter (loc: loc.service.enable) cfg.codeLocations);
+  codeServiceNames = map (loc: "dagster-code-${loc.name}.service") (
+    filter (loc: loc.service.enable) cfg.codeLocations
+  );
 
   # Build dagster.yaml from structured options
-  dagsterYaml = pkgs.writeText "dagster-template.yaml" (builtins.toJSON (
-    {
-      # Storage — postgres via peer auth over Unix socket
-      # Use postgres_url directly because structured config mangles socket paths
-      storage = {
-        postgres = {
-          postgres_url = "postgresql://${cfg.postgres.user}@/${cfg.postgres.database}?host=/run/postgresql";
-        };
-      };
-
-      # Run launcher
-      run_launcher =
-        if cfg.runLauncher == "default" then {
-          module = "dagster.core.launcher";
-          class = "DefaultRunLauncher";
-        } else if cfg.runLauncher == "docker" then {
-          module = "dagster_docker";
-          class = "DockerRunLauncher";
-        } else {
-          module = "dagster.core.launcher";
-          class = "DefaultRunLauncher";
-        };
-
-      # Run coordinator
-      run_coordinator =
-        if cfg.runCoordinator == "queued" then {
-          module = "dagster.core.run_coordinator";
-          class = "QueuedRunCoordinator";
-          config = {
-            max_concurrent_runs = cfg.maxConcurrentRuns;
+  dagsterYaml = pkgs.writeText "dagster-template.yaml" (
+    builtins.toJSON (
+      {
+        # Storage — postgres via peer auth over Unix socket
+        # Use postgres_url directly because structured config mangles socket paths
+        storage = {
+          postgres = {
+            postgres_url = "postgresql://${cfg.postgres.user}@/${cfg.postgres.database}?host=/run/postgresql";
           };
-        } else {
-          module = "dagster.core.run_coordinator";
-          class = "DefaultRunCoordinator";
         };
 
-      telemetry.enabled = false;
-    }
-    // optionalAttrs (cfg.retentionDays > 0) {
-      retention = {
-        schedule.purge_after_days.skipped = cfg.retentionDays;
-        sensor.purge_after_days.skipped = cfg.retentionDays;
-      };
-    }
-    // optionalAttrs cfg.runMonitoring.enable {
-      run_monitoring = {
-        enabled = true;
-        poll_interval_seconds = cfg.runMonitoring.pollInterval;
-        max_resume_run_attempts = cfg.runMonitoring.maxResumeAttempts;
-      };
-    }
-    // optionalAttrs (cfg.runRetries.maxRetries > 0) {
-      run_retries = {
-        max_retries = cfg.runRetries.maxRetries;
-        retry_on_asset_or_op_failure = cfg.runRetries.retryOnFailure;
-      };
-    }
-  ));
+        # Run launcher
+        run_launcher =
+          if cfg.runLauncher == "default" then
+            {
+              module = "dagster.core.launcher";
+              class = "DefaultRunLauncher";
+            }
+          else if cfg.runLauncher == "docker" then
+            {
+              module = "dagster_docker";
+              class = "DockerRunLauncher";
+            }
+          else
+            {
+              module = "dagster.core.launcher";
+              class = "DefaultRunLauncher";
+            };
+
+        # Run coordinator
+        run_coordinator =
+          if cfg.runCoordinator == "queued" then
+            {
+              module = "dagster.core.run_coordinator";
+              class = "QueuedRunCoordinator";
+              config = {
+                max_concurrent_runs = cfg.maxConcurrentRuns;
+              };
+            }
+          else
+            {
+              module = "dagster.core.run_coordinator";
+              class = "DefaultRunCoordinator";
+            };
+
+        telemetry.enabled = false;
+      }
+      // optionalAttrs (cfg.retentionDays > 0) {
+        retention = {
+          schedule.purge_after_days.skipped = cfg.retentionDays;
+          sensor.purge_after_days.skipped = cfg.retentionDays;
+        };
+      }
+      // optionalAttrs cfg.runMonitoring.enable {
+        run_monitoring = {
+          enabled = true;
+          poll_interval_seconds = cfg.runMonitoring.pollInterval;
+          max_resume_run_attempts = cfg.runMonitoring.maxResumeAttempts;
+        };
+      }
+      // optionalAttrs (cfg.runRetries.maxRetries > 0) {
+        run_retries = {
+          max_retries = cfg.runRetries.maxRetries;
+          retry_on_asset_or_op_failure = cfg.runRetries.retryOnFailure;
+        };
+      }
+    )
+  );
 
   # Build workspace.yaml from code locations
-  workspaceYaml = pkgs.writeText "workspace.yaml" (builtins.toJSON {
-    load_from = map (loc:
-      if loc.type == "grpc" then {
-        grpc_server = {
-          host = loc.host;
-          port = loc.port;
-        };
-      } else if loc.type == "module" then {
-        python_module = loc.module;
-      } else {
-        python_file = loc.file;
-      }
-    ) cfg.codeLocations;
-  });
+  workspaceYaml = pkgs.writeText "workspace.yaml" (
+    builtins.toJSON {
+      load_from = map (
+        loc:
+        if loc.type == "grpc" then
+          {
+            grpc_server = {
+              inherit (loc) host;
+              inherit (loc) port;
+            };
+          }
+        else if loc.type == "module" then
+          {
+            python_module = loc.module;
+          }
+        else
+          {
+            python_file = loc.file;
+          }
+      ) cfg.codeLocations;
+    }
+  );
 
 in
 {
@@ -143,34 +162,36 @@ in
     # Code locations — each gets a gRPC server or points to a module/file
     # type: "grpc" | "module" | "file"
     # gRPC locations with service.enable get a managed systemd service
-    codeLocations = mkOpt (types.listOf (types.submodule {
-      options = {
-        type = mkOpt types.str "grpc";
-        # grpc options
-        host = mkOpt types.str "localhost";
-        port = mkOpt types.port 4000;
-        # module/file options
-        module = mkOpt types.str "";
-        file = mkOpt types.str "";
-        # Managed gRPC code server (optional — creates a systemd service)
-        name = mkOpt types.str "";
-        service = {
-          enable = mkBoolOpt false;
-          execStart = mkOpt (types.either types.str types.path) "";
-          workingDirectory = mkOpt types.str "";
-          environment = mkOpt (types.attrsOf types.str) {};
-          environmentFiles = mkOpt (types.listOf types.str) [];
-          # Extra ReadWritePaths for the service
-          readWritePaths = mkOpt (types.listOf types.str) [];
+    codeLocations = mkOpt (types.listOf (
+      types.submodule {
+        options = {
+          type = mkOpt types.str "grpc";
+          # grpc options
+          host = mkOpt types.str "localhost";
+          port = mkOpt types.port 4000;
+          # module/file options
+          module = mkOpt types.str "";
+          file = mkOpt types.str "";
+          # Managed gRPC code server (optional — creates a systemd service)
+          name = mkOpt types.str "";
+          service = {
+            enable = mkBoolOpt false;
+            execStart = mkOpt (types.either types.str types.path) "";
+            workingDirectory = mkOpt types.str "";
+            environment = mkOpt (types.attrsOf types.str) { };
+            environmentFiles = mkOpt (types.listOf types.str) [ ];
+            # Extra ReadWritePaths for the service
+            readWritePaths = mkOpt (types.listOf types.str) [ ];
+          };
         };
-      };
-    })) [];
+      }
+    )) [ ];
 
     # Dagster home directory
     home = mkOpt types.str "/var/lib/dagster";
 
     # Extra dagster.yaml content merged into generated config
-    extraConfig = mkOpt types.attrs {};
+    extraConfig = mkOpt types.attrs { };
 
     tailscaleService = {
       enable = mkBoolOpt false;
@@ -203,10 +224,10 @@ in
       users.users.dagster = {
         isSystemUser = true;
         group = "dagster";
-        home = cfg.home;
+        inherit (cfg) home;
         createHome = true;
       };
-      users.groups.dagster = {};
+      users.groups.dagster = { };
 
       # DAGSTER_HOME directory with config files
       systemd.tmpfiles.rules = [
@@ -217,7 +238,10 @@ in
       systemd.services.dagster-config = {
         description = "Dagster config setup";
         wantedBy = [ "multi-user.target" ];
-        before = [ "dagster-webserver.service" "dagster-daemon.service" ];
+        before = [
+          "dagster-webserver.service"
+          "dagster-daemon.service"
+        ];
         after = [ "postgresql.service" ];
 
         serviceConfig = {
@@ -241,7 +265,8 @@ in
           "network.target"
           "postgresql.service"
           "dagster-config.service"
-        ] ++ codeServiceNames;
+        ]
+        ++ codeServiceNames;
         requires = [ "dagster-config.service" ];
 
         environment.DAGSTER_HOME = cfg.home;
@@ -258,7 +283,10 @@ in
           NoNewPrivileges = true;
           ProtectSystem = "strict";
           ProtectHome = true;
-          ReadWritePaths = [ cfg.home "/tmp" ];
+          ReadWritePaths = [
+            cfg.home
+            "/tmp"
+          ];
           PrivateTmp = true;
         };
       };
@@ -271,7 +299,8 @@ in
           "network.target"
           "postgresql.service"
           "dagster-config.service"
-        ] ++ codeServiceNames;
+        ]
+        ++ codeServiceNames;
         requires = [ "dagster-config.service" ];
 
         environment.DAGSTER_HOME = cfg.home;
@@ -288,7 +317,10 @@ in
           NoNewPrivileges = true;
           ProtectSystem = "strict";
           ProtectHome = true;
-          ReadWritePaths = [ cfg.home "/tmp" ];
+          ReadWritePaths = [
+            cfg.home
+            "/tmp"
+          ];
           PrivateTmp = true;
         };
       };
@@ -353,7 +385,8 @@ in
 
             environment = {
               DAGSTER_HOME = cfg.home;
-            } // loc.service.environment;
+            }
+            // loc.service.environment;
 
             serviceConfig = {
               Type = "simple";
@@ -367,11 +400,17 @@ in
               NoNewPrivileges = true;
               ProtectSystem = "strict";
               ProtectHome = "read-only";
-              ReadWritePaths = [ cfg.home "/tmp" ] ++ loc.service.readWritePaths;
+              ReadWritePaths = [
+                cfg.home
+                "/tmp"
+              ]
+              ++ loc.service.readWritePaths;
               PrivateTmp = true;
-            } // optionalAttrs (loc.service.workingDirectory != "") {
+            }
+            // optionalAttrs (loc.service.workingDirectory != "") {
               WorkingDirectory = loc.service.workingDirectory;
-            } // optionalAttrs (loc.service.environmentFiles != []) {
+            }
+            // optionalAttrs (loc.service.environmentFiles != [ ]) {
               EnvironmentFile = loc.service.environmentFiles;
             };
           };

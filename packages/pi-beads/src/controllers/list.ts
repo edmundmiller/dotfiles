@@ -1,4 +1,4 @@
-import { Key, matchesKey } from "@mariozechner/pi-tui"
+import { Key, matchesKey } from "@mariozechner/pi-tui";
 
 export type ListIntent =
   | { type: "cancel" }
@@ -16,56 +16,61 @@ export type ListIntent =
   | { type: "toggleType" }
   | { type: "create" }
   | { type: "insert" }
-  | { type: "delegate" }
+  | { type: "delegate" };
 
 export interface ListControllerState {
-  searching: boolean
-  filtered: boolean
-  allowSearch: boolean
-  allowPriority: boolean
-  closeKey: string
-  priorities: string[]
-  priorityHotkeys?: Record<string, string>
+  searching: boolean;
+  filtered: boolean;
+  allowSearch: boolean;
+  allowPriority: boolean;
+  closeKey: string;
+  priorities: string[];
+  priorityHotkeys?: Record<string, string>;
 }
 
-type ShortcutContext = "default" | "search"
+type ShortcutContext = "default" | "search";
 
 interface ShortcutDefinition {
-  context: ShortcutContext
-  help?: string | ((state: ListControllerState) => string)
-  showInHelp?: (state: ListControllerState) => boolean
-  match: (data: string, state: ListControllerState) => boolean
-  intent: (data: string, state: ListControllerState) => ListIntent
+  context: ShortcutContext;
+  help?: string | ((state: ListControllerState) => string);
+  showInHelp?: (state: ListControllerState) => boolean;
+  match: (data: string, state: ListControllerState) => boolean;
+  intent: (data: string, state: ListControllerState) => ListIntent;
 }
 
 function parsePriorityKey(
   data: string,
   priorities: string[],
-  priorityHotkeys?: Record<string, string>,
+  priorityHotkeys?: Record<string, string>
 ): string | null {
-  if (data.length !== 1) return null
+  if (data.length !== 1) return null;
 
-  const hotkeyPriority = priorityHotkeys?.[data]
-  if (hotkeyPriority && priorities.includes(hotkeyPriority)) return hotkeyPriority
+  const hotkeyPriority = priorityHotkeys?.[data];
+  if (hotkeyPriority && priorities.includes(hotkeyPriority)) return hotkeyPriority;
 
-  const rank = parseInt(data, 10)
-  if (isNaN(rank) || rank < 1 || rank > priorities.length) return null
-  return priorities[rank - 1] ?? null
+  const rank = parseInt(data, 10);
+  if (isNaN(rank) || rank < 1 || rank > priorities.length) return null;
+  return priorities[rank - 1] ?? null;
 }
 
-function buildPriorityHelpText(priorities: string[], priorityHotkeys?: Record<string, string>): string {
-  const hotkeyKeys = priorityHotkeys ? Object.keys(priorityHotkeys).sort((a, b) => a.localeCompare(b)) : []
+function buildPriorityHelpText(
+  priorities: string[],
+  priorityHotkeys?: Record<string, string>
+): string {
+  const hotkeyKeys = priorityHotkeys
+    ? Object.keys(priorityHotkeys).sort((a, b) => a.localeCompare(b))
+    : [];
   if (hotkeyKeys.length > 0) {
-    return `${hotkeyKeys.join("/")} priority`
+    return `${hotkeyKeys.join("/")} priority`;
   }
 
-  if (priorities.length === 0) return "priority"
-  if (priorities.length === 1) return "1 priority"
-  return `1-${priorities.length} priority`
+  if (priorities.length === 0) return "priority";
+  if (priorities.length === 1) return "1 priority";
+  return `1-${priorities.length} priority`;
 }
 
 function isPrintable(data: string): boolean {
-  return data.length === 1 && data.charCodeAt(0) >= 32 && data.charCodeAt(0) < 127
+  return data.length === 1 && data.charCodeAt(0) >= 32 && data.charCodeAt(0) < 127;
 }
 
 const MOVE_KEYS: Record<string, number> = {
@@ -73,12 +78,12 @@ const MOVE_KEYS: Record<string, number> = {
   W: -1,
   s: 1,
   S: 1,
-}
+};
 
 const SCROLL_KEYS: Record<string, number> = {
   j: 1,
   k: -1,
-}
+};
 
 const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
   {
@@ -131,10 +136,15 @@ const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
     context: "default",
     help: (state) => buildPriorityHelpText(state.priorities, state.priorityHotkeys),
     showInHelp: (state) => state.allowPriority,
-    match: (data, state) => state.allowPriority && parsePriorityKey(data, state.priorities, state.priorityHotkeys) !== null,
+    match: (data, state) =>
+      state.allowPriority &&
+      parsePriorityKey(data, state.priorities, state.priorityHotkeys) !== null,
     intent: (data, state) => ({
       type: "setPriority",
-      priority: parsePriorityKey(data, state.priorities, state.priorityHotkeys) ?? state.priorities[0] ?? "",
+      priority:
+        parsePriorityKey(data, state.priorities, state.priorityHotkeys) ??
+        state.priorities[0] ??
+        "",
     }),
   },
   {
@@ -177,32 +187,31 @@ const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
     match: (data, state) => data === state.closeKey,
     intent: () => ({ type: "cancel" }),
   },
-]
+];
 
 export function resolveListIntent(data: string, state: ListControllerState): ListIntent {
-  const context: ShortcutContext = state.searching ? "search" : "default"
+  const context: ShortcutContext = state.searching ? "search" : "default";
   for (const shortcut of SHORTCUT_DEFINITIONS) {
-    if (shortcut.context !== context) continue
-    if (shortcut.match(data, state)) return shortcut.intent(data, state)
+    if (shortcut.context !== context) continue;
+    if (shortcut.match(data, state)) return shortcut.intent(data, state);
   }
-  return { type: "delegate" }
+  return { type: "delegate" };
 }
 
 export function buildListPrimaryHelpText(state: ListControllerState): string {
-  const context: ShortcutContext = state.searching ? "search" : "default"
-  const parts = SHORTCUT_DEFINITIONS
-    .filter(s => s.context === context)
-    .filter(s => !!s.help)
-    .filter(s => (s.showInHelp ? s.showInHelp(state) : true))
-    .map(s => (typeof s.help === "function" ? s.help(state) : s.help as string))
+  const context: ShortcutContext = state.searching ? "search" : "default";
+  const parts = SHORTCUT_DEFINITIONS.filter((s) => s.context === context)
+    .filter((s) => !!s.help)
+    .filter((s) => (s.showInHelp ? s.showInHelp(state) : true))
+    .map((s) => (typeof s.help === "function" ? s.help(state) : (s.help as string)));
 
   if (context === "default") {
-    parts.push(state.filtered ? "esc clear filter" : "esc cancel")
+    parts.push(state.filtered ? "esc clear filter" : "esc cancel");
   }
 
-  return parts.join(" • ")
+  return parts.join(" • ");
 }
 
 export function buildListSecondaryHelpText(): string {
-  return "space status • j/k scroll"
+  return "space status • j/k scroll";
 }

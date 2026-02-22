@@ -42,14 +42,14 @@ modes.nix (input_boolean.goodnight, input_select.house_mode)
 
 ## People & devices
 
-| Entity ID                            | Notes                              |
-| ------------------------------------ | ---------------------------------- |
-| `person.edmund_miller`               | Edmund — presence tracking         |
-| `person.moni`                        | Monica — presence tracking         |
+| Entity ID                            | Notes                                     |
+| ------------------------------------ | ----------------------------------------- |
+| `person.edmund_miller`               | Edmund — presence tracking                |
+| `person.moni`                        | Monica — presence tracking                |
 | `binary_sensor.edmunds_iphone_focus` | Any focus active (Sleep, DND, Work, etc.) |
 | `binary_sensor.monicas_iphone_focus` | Any focus active (Sleep, DND, Work, etc.) |
-| `notify.mobile_app_edmunds_iphone`   | Push notifications → Edmund        |
-| `notify.mobile_app_monicas_iphone`   | Push notifications → Monica        |
+| `notify.mobile_app_edmunds_iphone`   | Push notifications → Edmund               |
+| `notify.mobile_app_monicas_iphone`   | Push notifications → Monica               |
 
 ## Adaptive Lighting
 
