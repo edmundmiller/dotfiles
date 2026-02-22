@@ -22,8 +22,10 @@
 #
 # Wake detection state machine:
 #   input_boolean.edmund_awake / monica_awake track who's up
-#   Set by: bed presence off (2 min) OR focus off, during Night mode
-#   Reset by: Goodnight scene (modes.nix) and Good Morning scene
+#   Set by (any during Night mode): bed presence off, focus off,
+#     battery Charging→Not Charging, activity=Walking, or
+#     active phone use (Launch/Siri/Manual update trigger)
+#   Reset by: Winding Down scene (sleep.nix) and Good Morning scene (modes.nix)
 #   Good Morning fires when both are on
 { lib, ... }:
 {
@@ -294,6 +296,8 @@
       # Booleans reset by Winding Down / Good Morning scenes.
 
       # Edmund shows awake signal → mark awake
+      # Signals: bed presence off, focus off, phone off charger,
+      #          walking, or active phone use (Launch/Siri/Manual)
       {
         alias = "Edmund is awake";
         id = "edmund_awake_detection";
@@ -308,6 +312,24 @@
             platform = "state";
             entity_id = "binary_sensor.edmunds_iphone_focus";
             to = "off";
+          }
+          {
+            # Picked phone off charger
+            platform = "state";
+            entity_id = "sensor.edmunds_iphone_battery_state";
+            from = "Charging";
+            to = "Not Charging";
+          }
+          {
+            # Physically walking
+            platform = "state";
+            entity_id = "sensor.edmunds_iphone_activity";
+            to = "Walking";
+          }
+          {
+            # Active phone use (Launch, Siri, Manual — not Background Fetch)
+            platform = "template";
+            value_template = "{{ states('sensor.edmunds_iphone_last_update_trigger') in ['Launch', 'Siri', 'Manual'] }}";
           }
         ];
         condition = [
@@ -345,6 +367,21 @@
             platform = "state";
             entity_id = "binary_sensor.monicas_iphone_focus";
             to = "off";
+          }
+          {
+            platform = "state";
+            entity_id = "sensor.monicas_iphone_battery_state";
+            from = "Charging";
+            to = "Not Charging";
+          }
+          {
+            platform = "state";
+            entity_id = "sensor.monicas_iphone_activity";
+            to = "Walking";
+          }
+          {
+            platform = "template";
+            value_template = "{{ states('sensor.monicas_iphone_last_update_trigger') in ['Launch', 'Siri', 'Manual'] }}";
           }
         ];
         condition = [
