@@ -593,22 +593,6 @@
         "type": "github"
       }
     },
-    "gitbutler-repo": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1770592364,
-        "narHash": "sha256-JWpEjUgAXeDUJaz/QqT1fNFIw8FqUdN9JCRKzoXZRg8=",
-        "owner": "gitbutlerapp",
-        "repo": "gitbutler",
-        "rev": "7b829d7041fefafd6a71bc63d270eb8ef848cd35",
-        "type": "github"
-      },
-      "original": {
-        "owner": "gitbutlerapp",
-        "repo": "gitbutler",
-        "type": "github"
-      }
-    },
     "gnome-shell": {
       "flake": false,
       "locked": {
@@ -1337,7 +1321,6 @@
       "inputs": {
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
-        "gitbutler-repo": "gitbutler-repo",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": [
           "nixpkgs"

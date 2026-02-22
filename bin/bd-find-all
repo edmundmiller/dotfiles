@@ -223,11 +223,15 @@ if [[ ${#BEADS_DIRS[@]} -eq 0 ]]; then
   exit 0
 fi
 
-# Collect all issues from all repos
+# Collect all issues from all repos (parallel)
 collect_issues() {
-  local all_issues="[]"
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+
+  # Deduplicate repos first
   local seen_repos=()
-  
+  local unique_repos=()
   for beads_dir in "${BEADS_DIRS[@]}"; do
     local repo_dir
     repo_dir=$(dirname "$beads_dir")
@@ -240,29 +244,27 @@ collect_issues() {
         break
       fi
     done
-
-    if [[ "$already_seen" -eq 1 ]]; then
-      continue
-    fi
+    if [[ "$already_seen" -eq 1 ]]; then continue; fi
     seen_repos+=("$repo_dir")
+    unique_repos+=("$repo_dir")
+  done
 
+  # Fetch all repos in parallel
+  local i=0
+  for repo_dir in "${unique_repos[@]}"; do
     local repo_name
     repo_name=$(basename "$repo_dir")
-    
-    # Get issues from this repo
-    local issues
-    issues=$(cd "$repo_dir" && bd list --json 2>/dev/null || echo "[]")
-    
-    # Add repo metadata to each issue
-    local enhanced
-    enhanced=$(echo "$issues" | jq --arg repo "$repo_name" --arg path "$repo_dir" \
-      'map(. + {repo_name: $repo, repo_path: $path})')
-    
-    # Merge into all_issues
-    all_issues=$(echo "$all_issues" "$enhanced" | jq -s 'add')
+    (
+      issues=$(cd "$repo_dir" && bd list --json 2>/dev/null || echo "[]")
+      echo "$issues" | jq --arg repo "$repo_name" --arg path "$repo_dir" \
+        'map(. + {repo_name: $repo, repo_path: $path})' > "$tmpdir/$i.json" 2>/dev/null
+    ) &
+    ((i++))
   done
-  
-  echo "$all_issues"
+  wait
+
+  # Single merge of all results
+  jq -s 'add // []' "$tmpdir"/*.json 2>/dev/null || echo "[]"
 }
 
 # Format issues for fzf display
@@ -306,73 +308,45 @@ fi
 
 cd "$REPO_PATH" 2>/dev/null || exit 1
 
-# Get issue details
-ISSUE=$(bd show "$ID" --json 2>/dev/null)
+# Get issue details and render preview in a single jq call
+bd show "$ID" --json 2>/dev/null | jq -r --arg id "$ID" --arg repo "$REPO_PATH" '
+  .[0] // empty |
+  def sep: "\u001b[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m";
+  def g: "\u001b[90m";
+  def b: "\u001b[1m";
+  def r: "\u001b[0m";
 
-if [[ -z "$ISSUE" || "$ISSUE" == "null" ]]; then
-  echo "Issue not found: $ID"
-  exit 0
-fi
+  sep, (b + (.title // "untitled") + r), sep, "",
 
-# Format output with selective fields
-echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-echo -e "\033[1m$(echo "$ISSUE" | jq -r '.[0].title // "untitled"')\033[0m"
-echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-echo ""
+  (g + "ID:" + r + "       " + $id),
+  (g + "Status:" + r + "   " + (.status // "unknown")),
+  (g + "Priority:" + r + " P" + ((.priority // 2) | tostring)),
+  (g + "Type:" + r + "     " + (.issue_type // "task")),
+  (g + "Assignee:" + r + " " + (.owner // "unassigned")),
+  (g + "Repo:" + r + "     " + $repo),
+  "",
 
-# Status and metadata
-STATUS=$(echo "$ISSUE" | jq -r '.[0].status // "unknown"')
-PRIORITY=$(echo "$ISSUE" | jq -r '.[0].priority // 2')
-TYPE=$(echo "$ISSUE" | jq -r '.[0].issue_type // "task"')
-ASSIGNEE=$(echo "$ISSUE" | jq -r '.[0].owner // "unassigned"')
+  (if (.description // "") != "" then
+    b + "Description:" + r + "\n" + (.description | split("\n")[0:20] | join("\n")) + "\n"
+  else empty end),
 
-echo -e "\033[90mID:\033[0m       $ID"
-echo -e "\033[90mStatus:\033[0m   $STATUS"
-echo -e "\033[90mPriority:\033[0m P$PRIORITY"
-echo -e "\033[90mType:\033[0m     $TYPE"
-echo -e "\033[90mAssignee:\033[0m $ASSIGNEE"
-echo -e "\033[90mRepo:\033[0m     $REPO_PATH"
-echo ""
+  (if ((.dependencies // []) | length) > 0 then
+    b + "Blocked by:" + r + " (" + ((.dependencies // []) | length | tostring) + ")\n" +
+    ([.dependencies[]? | "  - \(.id): \(.title // "untitled")"][0:5] | join("\n")) + "\n"
+  else empty end),
 
-# Description
-DESC=$(echo "$ISSUE" | jq -r '.[0].description // ""')
-if [[ -n "$DESC" && "$DESC" != "null" ]]; then
-  echo -e "\033[1mDescription:\033[0m"
-  echo "$DESC" | head -20
-  echo ""
-fi
+  (if ((.labels // []) | length) > 0 then
+    g + "Labels:" + r + " " + ((.labels // []) | join(", "))
+  else empty end),
 
-# Dependencies
-DEP_COUNT=$(echo "$ISSUE" | jq -r '(.[0].dependencies // []) | length')
-if [[ "$DEP_COUNT" -gt 0 ]]; then
-  echo -e "\033[1mBlocked by:\033[0m ($DEP_COUNT)"
-  echo "$ISSUE" | jq -r '.[0].dependencies[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
-  echo ""
-fi
+  (if (.created_at // "") != "" then
+    g + "Created:" + r + "  " + (.created_at | split("T")[0])
+  else empty end),
 
-# Dependents
-DENT_COUNT=$(echo "$ISSUE" | jq -r '.[0].dependent_count // 0')  # not in bd show output; stays 0
-if [[ "$DENT_COUNT" -gt 0 ]]; then
-  echo -e "\033[1mBlocking:\033[0m ($DENT_COUNT)"
-  echo "$ISSUE" | jq -r '.[0].dependents[]? | "  - \(.id): \(.title // "untitled")"' 2>/dev/null | head -5
-  echo ""
-fi
-
-# Labels
-LABELS=$(echo "$ISSUE" | jq -r '.[0].labels // [] | if length > 0 then join(", ") else "" end')
-if [[ -n "$LABELS" ]]; then
-  echo -e "\033[90mLabels:\033[0m $LABELS"
-fi
-
-# Timestamps
-CREATED=$(echo "$ISSUE" | jq -r '.[0].created_at // ""' | cut -d'T' -f1)
-UPDATED=$(echo "$ISSUE" | jq -r '.[0].updated_at // ""' | cut -d'T' -f1)
-if [[ -n "$CREATED" ]]; then
-  echo -e "\033[90mCreated:\033[0m  $CREATED"
-fi
-if [[ -n "$UPDATED" ]]; then
-  echo -e "\033[90mUpdated:\033[0m  $UPDATED"
-fi
+  (if (.updated_at // "") != "" then
+    g + "Updated:" + r + "  " + (.updated_at | split("T")[0])
+  else empty end)
+' 2>/dev/null || echo "Issue not found: $ID"
 PREVIEW_EOF
 }
 

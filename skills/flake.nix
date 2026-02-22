@@ -12,11 +12,6 @@
       flake = false;
     };
 
-    gitbutler-repo = {
-      url = "github:gitbutlerapp/gitbutler";
-      flake = false;
-    };
-
     openai-skills = {
       url = "github:openai/skills";
       flake = false;
@@ -67,12 +62,6 @@
               filter.maxDepth = 2;
             };
 
-            gitbutler = {
-              path = inputs.gitbutler-repo.outPath;
-              subdir = "crates/but";
-              filter.maxDepth = 2;
-            };
-
             openai = {
               path = inputs.openai-skills.outPath;
               subdir = "skills/.curated";
@@ -106,10 +95,6 @@
           skills.explicit = {
             extending-pi.from = "pi-extensions";
             extending-pi.path = "extending-pi";
-
-            # GitButler CLI skill (source: gitbutlerapp/gitbutler/crates/but/skill)
-            but.from = "gitbutler";
-            but.path = "skill";
 
             gh-fix-ci.from = "openai";
             gh-fix-ci.path = "gh-fix-ci";
