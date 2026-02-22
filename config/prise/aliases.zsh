@@ -22,10 +22,8 @@ _prise_fix_session_cwds() {
   done
 }
 
-# Run fix on shell startup (outside prise only)
-if [[ -z $PRISE_SESSION ]]; then
-  _prise_fix_session_cwds
-fi
+# Run fix manually if needed: _prise_fix_session_cwds
+# Removed from shell startup — scanning 80+ files per shell is too slow (~340ms)
 
 # Basic prise commands
 alias pa='prise'
