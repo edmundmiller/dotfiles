@@ -1,0 +1,2 @@
+timestamp	git_rev	first_prompt_lag_ms	first_command_lag_ms	command_lag_ms	input_lag_ms
+2026-02-22T00:03:03Z	445ce061	63.790	2002.960	21.893	5.200
