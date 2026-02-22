@@ -153,9 +153,10 @@ in
   config = mkIf cfg.enable (
     optionalAttrs (!isDarwin) {
 
-      # Ensure dagster is enabled
+      # Ensure dagster is enabled with tailscale UI access
       modules.services.dagster = {
         enable = true;
+        tailscaleService.enable = true;
 
         # Register bugster as a gRPC code location
         codeLocations = [
