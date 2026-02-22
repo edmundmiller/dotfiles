@@ -29,15 +29,10 @@ let
   dagsterYaml = pkgs.writeText "dagster-template.yaml" (builtins.toJSON (
     {
       # Storage — postgres via peer auth over Unix socket
+      # Use postgres_url directly because structured config mangles socket paths
       storage = {
         postgres = {
-          postgres_db = {
-            username = cfg.postgres.user;
-            password = "";
-            hostname = "/run/postgresql";
-            db_name = cfg.postgres.database;
-            port = 5432;
-          };
+          postgres_url = "postgresql://${cfg.postgres.user}@/${cfg.postgres.database}?host=/run/postgresql";
         };
       };
 
