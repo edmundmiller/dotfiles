@@ -28,7 +28,6 @@ function makeListArgs(status: string): string[] {
     "list",
     "--status", status,
     "--limit", String(MAX_LIST_RESULTS),
-    "--sort", "priority",
     "--json",
   ]
 }
