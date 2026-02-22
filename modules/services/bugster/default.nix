@@ -178,10 +178,6 @@ in
                 # Sync Python deps (frozen = use lockfile, no resolution)
                 ${pkgs.uv}/bin/uv sync --frozen --no-dev 2>&1
 
-                # dagster-postgres needed for code server to read DAGSTER_HOME/dagster.yaml
-                # (not in bugster's deps since bugster doesn't use postgres directly)
-                ${pkgs.uv}/bin/uv pip install dagster-postgres 2>&1
-
                 # Start gRPC code server
                 exec ${pkgs.uv}/bin/uv run dagster code-server start \
                   -m bugster.definitions \
@@ -190,6 +186,9 @@ in
               '';
               environment = {
                 BUGSTER_CONFIG = "${cfg.dataDir}/bugster.toml";
+                # Code server doesn't need postgres — use ephemeral home
+                # (overrides dagster module's DAGSTER_HOME pointing to postgres config)
+                DAGSTER_HOME = "/var/lib/dagster/code-home";
                 # uv needs a writable cache dir
                 UV_CACHE_DIR = "/var/lib/dagster/.cache/uv";
                 # Use system Python
@@ -201,6 +200,7 @@ in
               readWritePaths = [
                 cfg.dataDir
                 "/var/lib/dagster/.cache"
+                "/var/lib/dagster/code-home"
                 cfg.tasknotes.vaultPath
               ];
             };
@@ -240,6 +240,8 @@ in
         "d ${cfg.dataDir} 0750 dagster dagster -"
         "d /var/lib/dagster/.cache 0750 dagster dagster -"
         "d /var/lib/dagster/.cache/uv 0750 dagster dagster -"
+        # Ephemeral dagster home for code server (no postgres config needed)
+        "d /var/lib/dagster/code-home 0750 dagster dagster -"
       ];
 
       # Obsidian vault needs to be writable by dagster user
