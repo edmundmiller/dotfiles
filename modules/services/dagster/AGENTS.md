@@ -9,7 +9,7 @@ NixOS service module for Dagster OSS data orchestration.
 - **Postgres**: peer auth via `services.postgresql`, no password needed
 - **Package**: `packages/dagster.nix` builds from PyPI, exposed as `pkgs.my.dagster`
 - **Single daemon only**: dagster-daemon cannot be replicated
-- **Code locations**: defined via `codeLocations` list; code servers run separately (not managed by this module)
+- **Code locations**: defined via `codeLocations` list; gRPC servers with `service.enable` get managed systemd services
 
 ## Files
 
