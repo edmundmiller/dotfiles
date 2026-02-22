@@ -15,7 +15,7 @@ in
 {
   services.home-assistant.config = {
     # --- Input helpers ---
-    input_boolean = lib.mkMerge [{
+    input_boolean = {
       guest_mode = {
         name = "Guest Mode";
         icon = "mdi:account-group";
@@ -28,7 +28,16 @@ in
         name = "Do Not Disturb";
         icon = "mdi:minus-circle";
       };
-    }];
+      # Wake detection — used by sleep/ automations
+      edmund_awake = {
+        name = "Edmund Awake";
+        icon = "mdi:sleep-off";
+      };
+      monica_awake = {
+        name = "Monica Awake";
+        icon = "mdi:sleep-off";
+      };
+    };
 
     input_select.house_mode = {
       name = "House Mode";

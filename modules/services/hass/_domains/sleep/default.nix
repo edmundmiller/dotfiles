@@ -30,17 +30,7 @@
 { lib, ... }:
 {
   services.home-assistant.config = {
-    # --- Wake detection helpers ---
-    input_boolean = lib.mkMerge [{
-      edmund_awake = {
-        name = "Edmund Awake";
-        icon = "mdi:sleep-off";
-      };
-      monica_awake = {
-        name = "Monica Awake";
-        icon = "mdi:sleep-off";
-      };
-    }];
+    # Wake detection input_booleans declared in modes.nix (single input_boolean block)
     scene = lib.mkAfter [
       # Stage 1: Get ready for bed
       {
