@@ -178,6 +178,10 @@ in
                 # Sync Python deps (frozen = use lockfile, no resolution)
                 ${pkgs.uv}/bin/uv sync --frozen --no-dev 2>&1
 
+                # dagster-postgres needed for code server to read DAGSTER_HOME/dagster.yaml
+                # (not in bugster's deps since bugster doesn't use postgres directly)
+                ${pkgs.uv}/bin/uv pip install dagster-postgres 2>&1
+
                 # Start gRPC code server
                 exec ${pkgs.uv}/bin/uv run dagster code-server start \
                   -m bugster.definitions \
