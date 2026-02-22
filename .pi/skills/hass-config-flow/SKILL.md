@@ -124,10 +124,10 @@ must be piped via SSH or inlined — they aren't deployed to the NUC.
 
 Read these for detailed information:
 
-| File                                 | Contents                                                                     |
-| ------------------------------------ | ---------------------------------------------------------------------------- |
-| `references/integration-flows.md`    | Per-integration config flow behavior, abort reasons, mDNS discovery commands |
-| `references/default-integrations.md` | NixOS `defaultIntegrations` list — what's auto-loaded, Nix config examples   |
+| File                                 | Contents                                                                                                                                     |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `references/integration-flows.md`    | Per-integration config flow behavior, abort reasons, mDNS discovery commands                                                                 |
+| `references/default-integrations.md` | NixOS `defaultIntegrations` list — what's auto-loaded, Nix config examples                                                                   |
 | `references/device-protocols.md`     | Identify device protocol (Matter/Zigbee/Thread/HomeKit) from device registry; vendor model-name conventions; decision tree for ZHA migration |
 
 ## Token generation
