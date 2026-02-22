@@ -182,6 +182,7 @@ let
       click
       starlette
       uvicorn
+      websockets
     ];
 
     doCheck = false;
