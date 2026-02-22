@@ -78,10 +78,13 @@ let
 
     REPO_DIR="${cfg.dataDir}"
 
-    # Clone if not present, pull if exists
     # Use emiller's SSH keys for private repo access
     export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -i /home/emiller/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new"
 
+    # Allow root to operate on dagster-owned repo
+    ${pkgs.git}/bin/git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
+
+    # Clone if not present, pull if exists
     if [ ! -d "$REPO_DIR/.git" ]; then
       ${pkgs.git}/bin/git clone ${cfg.gitUrl} "$REPO_DIR"
     else
