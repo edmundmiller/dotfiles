@@ -29,44 +29,57 @@ let
       vault_path = "/var/lib/dagster/vault"
       tasks_dir = "."
     ''
-    + concatMapStrings (src:
-      if src.type == "github" then ''
+    + concatMapStrings (
+      src:
+      if src.type == "github" then
+        ''
 
-        [[sources]]
-        type = "github"
-        name = "${src.name}"
-        token = "''${${src.tokenEnv}}"
-        username = "${src.username}"
-        contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
-        include_issues = ${boolToString src.includeIssues}
-        include_prs = ${boolToString src.includePrs}
-        include_review_requests = ${boolToString src.includeReviewRequests}
-        ${optionalString (src.includeRepos != []) "include_repos = [${concatMapStringsSep ", " (r: ''\"${r}\"'') src.includeRepos}]"}
-        ${optionalString (src.excludeRepos != []) "exclude_repos = [${concatMapStringsSep ", " (r: ''\"${r}\"'') src.excludeRepos}]"}
-      ''
-      else if src.type == "linear" then ''
+          [[sources]]
+          type = "github"
+          name = "${src.name}"
+          token = "''${${src.tokenEnv}}"
+          username = "${src.username}"
+          contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+          include_issues = ${boolToString src.includeIssues}
+          include_prs = ${boolToString src.includePrs}
+          include_review_requests = ${boolToString src.includeReviewRequests}
+          ${optionalString (src.includeRepos != [ ])
+            "include_repos = [${concatMapStringsSep ", " (r: ''\"${r}\"'') src.includeRepos}]"
+          }
+          ${optionalString (src.excludeRepos != [ ])
+            "exclude_repos = [${concatMapStringsSep ", " (r: ''\"${r}\"'') src.excludeRepos}]"
+          }
+        ''
+      else if src.type == "linear" then
+        ''
 
-        [[sources]]
-        type = "linear"
-        name = "${src.name}"
-        token = "''${${src.tokenEnv}}"
-        ${optionalString (src.teamIds != []) "team_ids = [${concatMapStringsSep ", " (t: ''\"${t}\"'') src.teamIds}]"}
-        contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
-        only_assigned = ${boolToString src.onlyAssigned}
-      ''
-      else if src.type == "jira" then ''
+          [[sources]]
+          type = "linear"
+          name = "${src.name}"
+          token = "''${${src.tokenEnv}}"
+          ${optionalString (src.teamIds != [ ])
+            "team_ids = [${concatMapStringsSep ", " (t: ''\"${t}\"'') src.teamIds}]"
+          }
+          contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+          only_assigned = ${boolToString src.onlyAssigned}
+        ''
+      else if src.type == "jira" then
+        ''
 
-        [[sources]]
-        type = "jira"
-        name = "${src.name}"
-        url = "''${${src.urlEnv}}"
-        username = "''${${src.usernameEnv}}"
-        token = "''${${src.tokenEnv}}"
-        ${optionalString (src.projects != []) "projects = [${concatMapStringsSep ", " (p: ''\"${p}\"'') src.projects}]"}
-        contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
-        only_my_issues = ${boolToString src.onlyMyIssues}
-      ''
-      else ""
+          [[sources]]
+          type = "jira"
+          name = "${src.name}"
+          url = "''${${src.urlEnv}}"
+          username = "''${${src.usernameEnv}}"
+          token = "''${${src.tokenEnv}}"
+          ${optionalString (src.projects != [ ])
+            "projects = [${concatMapStringsSep ", " (p: ''\"${p}\"'') src.projects}]"
+          }
+          contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+          only_my_issues = ${boolToString src.onlyMyIssues}
+        ''
+      else
+        ""
     ) cfg.sources
   );
 
@@ -112,30 +125,37 @@ let
     chmod g+w "$VAULT_PATH/${cfg.tasknotes.tasksDir}" 2>/dev/null || true
   '';
 
-  sourceType = types.submodule ({ config, ... }: {
-    options = {
-      type = mkOpt (types.enum [ "github" "linear" "jira" ]) "github";
-      name = mkOpt types.str "";
-      # Common
-      contexts = mkOpt (types.listOf types.str) [];
-      tokenEnv = mkOpt types.str "";
-      # GitHub
-      username = mkOpt types.str "";
-      includeIssues = mkBoolOpt true;
-      includePrs = mkBoolOpt true;
-      includeReviewRequests = mkBoolOpt true;
-      includeRepos = mkOpt (types.listOf types.str) [];
-      excludeRepos = mkOpt (types.listOf types.str) [];
-      # Linear
-      teamIds = mkOpt (types.listOf types.str) [];
-      onlyAssigned = mkBoolOpt true;
-      # Jira
-      urlEnv = mkOpt types.str "JIRA_URL";
-      usernameEnv = mkOpt types.str "JIRA_USERNAME";
-      projects = mkOpt (types.listOf types.str) [];
-      onlyMyIssues = mkBoolOpt true;
-    };
-  });
+  sourceType = types.submodule (
+    _:
+    {
+      options = {
+        type = mkOpt (types.enum [
+          "github"
+          "linear"
+          "jira"
+        ]) "github";
+        name = mkOpt types.str "";
+        # Common
+        contexts = mkOpt (types.listOf types.str) [ ];
+        tokenEnv = mkOpt types.str "";
+        # GitHub
+        username = mkOpt types.str "";
+        includeIssues = mkBoolOpt true;
+        includePrs = mkBoolOpt true;
+        includeReviewRequests = mkBoolOpt true;
+        includeRepos = mkOpt (types.listOf types.str) [ ];
+        excludeRepos = mkOpt (types.listOf types.str) [ ];
+        # Linear
+        teamIds = mkOpt (types.listOf types.str) [ ];
+        onlyAssigned = mkBoolOpt true;
+        # Jira
+        urlEnv = mkOpt types.str "JIRA_URL";
+        usernameEnv = mkOpt types.str "JIRA_USERNAME";
+        projects = mkOpt (types.listOf types.str) [ ];
+        onlyMyIssues = mkBoolOpt true;
+      };
+    }
+  );
 in
 {
   options.modules.services.bugster = {
@@ -156,7 +176,7 @@ in
       tasksDir = mkOpt types.str "00_Inbox/Tasks/Bugster";
     };
 
-    sources = mkOpt (types.listOf sourceType) [];
+    sources = mkOpt (types.listOf sourceType) [ ];
   };
 
   config = mkIf cfg.enable (
@@ -173,7 +193,7 @@ in
             type = "grpc";
             name = "bugster";
             host = "localhost";
-            port = cfg.port;
+            inherit (cfg) port;
             service = {
               enable = true;
               workingDirectory = cfg.dataDir;
@@ -247,7 +267,10 @@ in
       fileSystems."/var/lib/dagster/vault" = {
         device = "${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir}";
         fsType = "none";
-        options = [ "bind" "rw" ];
+        options = [
+          "bind"
+          "rw"
+        ];
       };
 
       # Ensure data directory exists

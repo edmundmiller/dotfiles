@@ -27,23 +27,23 @@ Toggle with `ctrl+x` or `/tasks`.
 
 **List view**
 
-| Key | Action |
-|-----|--------|
-| `w` / `s` | Navigate |
-| `space` | Cycle status (open → in-progress → blocked → deferred → closed) |
-| `0`–`4` | Set priority |
-| `t` | Cycle type |
-| `e` / `→` | Edit task |
-| `enter` | Send task to prompt |
-| `tab` | Insert task ref and close |
-| `c` | Create task |
-| `f` | Search/filter |
-| `esc` | Back / clear filter |
+| Key       | Action                                                          |
+| --------- | --------------------------------------------------------------- |
+| `w` / `s` | Navigate                                                        |
+| `space`   | Cycle status (open → in-progress → blocked → deferred → closed) |
+| `0`–`4`   | Set priority                                                    |
+| `t`       | Cycle type                                                      |
+| `e` / `→` | Edit task                                                       |
+| `enter`   | Send task to prompt                                             |
+| `tab`     | Insert task ref and close                                       |
+| `c`       | Create task                                                     |
+| `f`       | Search/filter                                                   |
+| `esc`     | Back / clear filter                                             |
 
 **Edit view**
 
-| Key | Action |
-|-----|--------|
-| `tab` | Switch focus (title ↔ description) |
-| `enter` | Save |
-| `esc` | Back to nav |
+| Key     | Action                              |
+| ------- | ----------------------------------- |
+| `tab`   | Switch focus (title ↔ description) |
+| `enter` | Save                                |
+| `esc`   | Back to nav                         |

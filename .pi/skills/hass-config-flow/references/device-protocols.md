@@ -5,14 +5,14 @@
 The `identifiers` field on every device is a list of `[namespace, id]` pairs.
 The namespace tells you the protocol:
 
-| Namespace           | Protocol          | Notes                                    |
-| ------------------- | ----------------- | ---------------------------------------- |
-| `matter`            | Matter / Thread   | Thread is transport, Matter is protocol  |
-| `zha`               | Zigbee            | Via ZHA integration                      |
-| `deconz`            | Zigbee            | Via deCONZ/Phoscon                       |
-| `mqtt`              | Zigbee2MQTT       | Via Zigbee2MQTT bridge                   |
-| `homekit_controller`| HomeKit (BLE/IP)  | Native HomeKit or via Homebridge         |
-| `apple_tv`          | Apple ATV/HomePod | Apple devices                            |
+| Namespace            | Protocol          | Notes                                   |
+| -------------------- | ----------------- | --------------------------------------- |
+| `matter`             | Matter / Thread   | Thread is transport, Matter is protocol |
+| `zha`                | Zigbee            | Via ZHA integration                     |
+| `deconz`             | Zigbee            | Via deCONZ/Phoscon                      |
+| `mqtt`               | Zigbee2MQTT       | Via Zigbee2MQTT bridge                  |
+| `homekit_controller` | HomeKit (BLE/IP)  | Native HomeKit or via Homebridge        |
+| `apple_tv`           | Apple ATV/HomePod | Apple devices                           |
 
 ```json
 "identifiers": [
@@ -20,6 +20,7 @@ The namespace tells you the protocol:
   ["matter", "deviceid_15F0AB97017D95BD-..."]
 ]
 ```
+
 → Matter device. Do NOT try to move it to ZHA.
 
 ```json
@@ -27,6 +28,7 @@ The namespace tells you the protocol:
   ["zha", "00:12:4b:00:...:ff:fe:ab:cd"]
 ]
 ```
+
 → Zigbee device on ZHA.
 
 ## Query via hass-cli
@@ -45,16 +47,17 @@ for d in json.load(sys.stdin):
 
 ## Common vendor model-name conventions
 
-| Suffix / keyword | Meaning         |
-| ---------------- | --------------- |
-| `-W`             | Wi-Fi + Matter  |
-| `-Z`             | Zigbee          |
-| `-T`             | Thread          |
-| `ZBT`, `ZB`      | Zigbee          |
-| `Thread`, `TH`   | Thread          |
-| `Matter`         | Matter          |
+| Suffix / keyword | Meaning        |
+| ---------------- | -------------- |
+| `-W`             | Wi-Fi + Matter |
+| `-Z`             | Zigbee         |
+| `-T`             | Thread         |
+| `ZBT`, `ZB`      | Zigbee         |
+| `Thread`, `TH`   | Thread         |
+| `Matter`         | Matter         |
 
 Examples:
+
 - ThirdReality **Smart Night Light-W** → Matter (Wi-Fi)
 - ThirdReality **Smart Plug-Z** → Zigbee
 - Nanoleaf **Essentials A19** → Thread/Matter (paired via HomePod/Apple TV)
@@ -62,7 +65,7 @@ Examples:
 ## Matter vs Thread — not the same thing
 
 - **Thread** is a low-power mesh radio protocol (like Zigbee physically)
-- **Matter** is the application protocol that runs *over* Thread (or Wi-Fi or Ethernet)
+- **Matter** is the application protocol that runs _over_ Thread (or Wi-Fi or Ethernet)
 - A "Thread device" is always a Matter device — its HA identifiers use namespace `matter`
 - Thread devices don't appear under a Thread config entry; they appear under the `matter` config entry
 - The `thread` config entry in HA is just the Thread border router management, not devices

@@ -59,6 +59,5 @@ _: {
     }
     // (import ./homebrew.nix);
 
-
   };
 }

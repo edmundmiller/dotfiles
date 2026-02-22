@@ -29,12 +29,12 @@ All commands accept extra zsh-bench args: `hey zbench --iters 4` for quick runs.
 
 From romkatv's blind perception study — values at or below threshold are indistinguishable from zero:
 
-| Metric | Threshold | What it means |
-|--------|-----------|---------------|
-| `first_prompt_lag_ms` | 50ms | Time to see prompt after opening terminal |
-| `first_command_lag_ms` | 150ms | Time until first command can execute |
-| `command_lag_ms` | 10ms | Delay between Enter and next prompt |
-| `input_lag_ms` | 20ms | Keystroke-to-screen latency |
+| Metric                 | Threshold | What it means                             |
+| ---------------------- | --------- | ----------------------------------------- |
+| `first_prompt_lag_ms`  | 50ms      | Time to see prompt after opening terminal |
+| `first_command_lag_ms` | 150ms     | Time until first command can execute      |
+| `command_lag_ms`       | 10ms      | Delay between Enter and next prompt       |
+| `input_lag_ms`         | 20ms      | Keystroke-to-screen latency               |
 
 Indicators: 🟢 ≤50% (headroom) · 🟡 ≤100% (imperceptible) · 🟠 ≤200% (noticeable) · 🔴 >200% (sluggish)
 
@@ -126,15 +126,15 @@ To drill into `extra.zshrc`, time each `source` line individually — one slow a
 
 ### Known Culprits (ranked by typical impact)
 
-| Culprit | Typical cost | Fix |
-|---------|-------------|-----|
-| **Redundant compinit** | 2000-3000ms | Ensure compinit runs exactly once. Check EOF of `.zshrc`, `/etc/zshrc`, and completion.zsh — easy to end up with 2+ calls. Use `compinit -C -d "$cache"` with 24h staleness check. |
-| **Nix store globs** | 200-400ms | `for f in /nix/store/*foo*/*.zsh` is slow — thousands of dirs. Cache the resolved path to a file. |
-| **Shell startup file scanning** | 100-500ms | Functions that `grep`/`sed` across many files at startup (e.g., fixing session files). Move to on-demand or a cron job. |
-| **Uncached `eval "$(tool init)"`** | 40-100ms each | `brew shellenv`, `direnv hook zsh`, `fnm env`, `zoxide init zsh`, `entire completion zsh`. Use `_cache` pattern to write output to file, re-eval only when binary changes. |
-| **Double `brew shellenv`** | 40-80ms | nix-homebrew adds `eval "$(brew shellenv)"` to `/etc/zshrc`. If you handle it in `.zshenv`, set `enableZshIntegration = false` in nix-homebrew config. |
-| **Plugin manager overhead** | 10-40ms | Antidote's `antidote load` does staleness checks. If static file exists, source it directly and skip antidote init entirely. |
-| **Deferred plugins** | 0ms startup | antidote `kind:defer` is free at startup but zsh-bench won't detect `has_syntax_highlighting`/`has_autosuggestions`. This is fine. |
+| Culprit                            | Typical cost  | Fix                                                                                                                                                                                |
+| ---------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Redundant compinit**             | 2000-3000ms   | Ensure compinit runs exactly once. Check EOF of `.zshrc`, `/etc/zshrc`, and completion.zsh — easy to end up with 2+ calls. Use `compinit -C -d "$cache"` with 24h staleness check. |
+| **Nix store globs**                | 200-400ms     | `for f in /nix/store/*foo*/*.zsh` is slow — thousands of dirs. Cache the resolved path to a file.                                                                                  |
+| **Shell startup file scanning**    | 100-500ms     | Functions that `grep`/`sed` across many files at startup (e.g., fixing session files). Move to on-demand or a cron job.                                                            |
+| **Uncached `eval "$(tool init)"`** | 40-100ms each | `brew shellenv`, `direnv hook zsh`, `fnm env`, `zoxide init zsh`, `entire completion zsh`. Use `_cache` pattern to write output to file, re-eval only when binary changes.         |
+| **Double `brew shellenv`**         | 40-80ms       | nix-homebrew adds `eval "$(brew shellenv)"` to `/etc/zshrc`. If you handle it in `.zshenv`, set `enableZshIntegration = false` in nix-homebrew config.                             |
+| **Plugin manager overhead**        | 10-40ms       | Antidote's `antidote load` does staleness checks. If static file exists, source it directly and skip antidote init entirely.                                                       |
+| **Deferred plugins**               | 0ms startup   | antidote `kind:defer` is free at startup but zsh-bench won't detect `has_syntax_highlighting`/`has_autosuggestions`. This is fine.                                                 |
 
 ### The `_cache` Pattern
 

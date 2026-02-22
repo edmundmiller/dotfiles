@@ -40,6 +40,7 @@ LINEAR_TOKEN=lin_api_xxx
 ```
 
 Override owner in host config:
+
 ```nix
 age.secrets.bugster-env.owner = "dagster";
 ```
@@ -55,30 +56,33 @@ sudo systemctl restart bugster-setup dagster-code-bugster
 
 ## Configuration
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `gitUrl` | `git@github.com:edmundmiller/bugster.git` | Repo SSH URL |
-| `gitBranch` | `main` | Branch to track |
-| `port` | `4000` | gRPC code server port |
-| `dataDir` | `/var/lib/dagster/bugster` | Working directory |
-| `tasknotes.vaultPath` | `/home/emiller/obsidian-vault` | Obsidian vault |
-| `tasknotes.tasksDir` | `00_Inbox/Tasks/Bugster` | TaskNotes output dir |
+| Option                | Default                                   | Description           |
+| --------------------- | ----------------------------------------- | --------------------- |
+| `gitUrl`              | `git@github.com:edmundmiller/bugster.git` | Repo SSH URL          |
+| `gitBranch`           | `main`                                    | Branch to track       |
+| `port`                | `4000`                                    | gRPC code server port |
+| `dataDir`             | `/var/lib/dagster/bugster`                | Working directory     |
+| `tasknotes.vaultPath` | `/home/emiller/obsidian-vault`            | Obsidian vault        |
+| `tasknotes.tasksDir`  | `00_Inbox/Tasks/Bugster`                  | TaskNotes output dir  |
 
 ## Troubleshooting
 
 **Code server fails to start:**
+
 ```bash
 journalctl -u dagster-code-bugster -f
 # Check if uv sync succeeded
 ```
 
 **Git clone fails:**
+
 ```bash
 journalctl -u bugster-setup
 # Verify SSH key: /home/emiller/.ssh/id_ed25519
 ```
 
 **Token issues:**
+
 ```bash
 # Check secret is decrypted
 cat /run/agenix/bugster-env

@@ -4,22 +4,23 @@ Opinionated `system.defaults` for all Darwin hosts. Enable: `modules.desktop.mac
 
 ## What It Manages
 
-| Category | Key settings |
-|---|---|
-| Dock | autohide, left, static-only, no recents, hot corners off |
-| Finder | POSIX path title, all extensions, pathbar, statusbar, quit menu, folders first |
-| Trackpad | tap-to-click, 3-finger drag |
-| Keyboard | full keyboard control (mode 3), fast repeat (15/2), press-and-hold off |
-| Text | all auto-corrections off (caps, dashes, periods, quotes, spelling) |
-| Login | no guest, show full name |
-| Privacy | Siri off, personalized ads off |
-| Misc | no DS_Store on network/USB, Photos hotplug off, screencapture PNG, lock on screensaver, expanded save panels, click-wallpaper-reveal off |
+| Category | Key settings                                                                                                                             |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Dock     | autohide, left, static-only, no recents, hot corners off                                                                                 |
+| Finder   | POSIX path title, all extensions, pathbar, statusbar, quit menu, folders first                                                           |
+| Trackpad | tap-to-click, 3-finger drag                                                                                                              |
+| Keyboard | full keyboard control (mode 3), fast repeat (15/2), press-and-hold off                                                                   |
+| Text     | all auto-corrections off (caps, dashes, periods, quotes, spelling)                                                                       |
+| Login    | no guest, show full name                                                                                                                 |
+| Privacy  | Siri off, personalized ads off                                                                                                           |
+| Misc     | no DS_Store on network/USB, Photos hotplug off, screencapture PNG, lock on screensaver, expanded save panels, click-wallpaper-reveal off |
 
 ## Discovering Available Options
 
 ### First-class nix-darwin options
 
 Browse all `system.defaults.*` options:
+
 ```bash
 # search nix-darwin options online
 # https://daiderd.com/nix-darwin/manual/index.html
@@ -33,6 +34,7 @@ Notable submodules: `dock`, `finder`, `trackpad`, `NSGlobalDomain`, `loginwindow
 ### CustomUserPreferences (escape hatch)
 
 For anything without a first-class option, use `system.defaults.CustomUserPreferences`:
+
 ```nix
 system.defaults.CustomUserPreferences = {
   "com.apple.SomeApp" = {
@@ -42,6 +44,7 @@ system.defaults.CustomUserPreferences = {
 ```
 
 Find domain/key pairs with:
+
 ```bash
 # read all prefs for a domain
 defaults read com.apple.dock

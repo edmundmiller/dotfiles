@@ -143,8 +143,7 @@ function applyLlmDrivenPruning(
 
   // Find the last assistant message — Anthropic requires thinking blocks in
   // the latest assistant message to remain completely unmodified.
-  const lastAssistantMsg =
-    [...messages].reverse().find((m) => m.role === "assistant") ?? null;
+  const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant") ?? null;
 
   // Build anchor map for compress summaries
   const summaryByAnchor = new Map<string, string>();
@@ -304,8 +303,7 @@ export function repairOrphanedToolPairsPostPruning(
 ): AgentMessage[] {
   // Find the last assistant message — must not modify its content if it has
   // thinking blocks (Anthropic API requirement).
-  const lastAssistantMsg =
-    [...messages].reverse().find((m) => m.role === "assistant") ?? null;
+  const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant") ?? null;
 
   // Build set of all tool_use IDs present in assistant messages
   const availableToolUseIds = new Set<string>();
