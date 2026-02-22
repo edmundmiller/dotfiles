@@ -1,7 +1,6 @@
 use std::env;
 use std::f64::consts::PI;
-use std::io::{BufRead, BufReader, Write};
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
@@ -56,67 +55,21 @@ fn pane_height() -> u32 {
         .unwrap_or(24)
 }
 
-/// Open a tmux control-mode subprocess and send scroll commands through it.
-/// Falls back to per-line send-keys if control mode fails.
-fn scroll_via_control(direction: Direction, lines: u32, delays: &[Duration]) {
-    let cmd = match direction {
-        Direction::Up => "send-keys -X scroll-up",
-        Direction::Down => "send-keys -X scroll-down",
-    };
-
-    // Try control mode first — single process, zero fork overhead per line
-    if let Ok(mut child) = Command::new("tmux")
-        .args(["-C", "attach"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-    {
-        let mut stdin = match child.stdin.take() {
-            Some(s) => s,
-            None => {
-                let _ = child.kill();
-                return scroll_fallback(direction, lines, delays);
-            }
-        };
-
-        // Drain stdout in background so tmux doesn't block
-        let stdout = child.stdout.take();
-        let drain = thread::spawn(move || {
-            if let Some(out) = stdout {
-                let r = BufReader::new(out);
-                for _ in r.lines() {}
-            }
-        });
-
-        for i in 0..lines {
-            if writeln!(stdin, "{cmd}").is_err() {
-                break;
-            }
-            if i < lines - 1 {
-                thread::sleep(delays[i as usize]);
-            }
-        }
-
-        drop(stdin); // EOF → tmux exits control mode
-        let _ = child.wait();
-        let _ = drain.join();
-        return;
-    }
-
-    scroll_fallback(direction, lines, delays);
-}
-
-/// Fallback: one tmux send-keys per line (same as upstream Perl).
-fn scroll_fallback(direction: Direction, lines: u32, delays: &[Duration]) {
+/// Send scroll commands one per line via tmux send-keys.
+/// Compiled Rust has negligible fork overhead vs Perl — no need for control mode.
+fn scroll(direction: Direction, lines: u32, delays: &[Duration], pane: Option<&str>) {
     let dir = match direction {
         Direction::Up => "scroll-up",
         Direction::Down => "scroll-down",
     };
     for i in 0..lines {
-        let _ = Command::new("tmux")
-            .args(["send-keys", "-X", dir])
-            .status();
+        let mut cmd = Command::new("tmux");
+        cmd.arg("send-keys");
+        if let Some(t) = pane {
+            cmd.args(["-t", t]);
+        }
+        cmd.args(["-X", dir]);
+        let _ = cmd.status();
         if i < lines - 1 {
             thread::sleep(delays[i as usize]);
         }
@@ -239,11 +192,13 @@ fn init() {
             None => continue,
         };
 
+        // Pass #{pane_id} so the binary targets the correct pane.
+        // Without -t, send-keys -X fails from background run-shell.
         let _ = Command::new("tmux")
             .args([
                 "bind-key", "-T", table, key,
                 "run-shell", "-b",
-                &format!("{exe} {params}"),
+                &format!("{exe} -t '#{{pane_id}}' {params}"),
             ])
             .status();
     }
@@ -251,11 +206,144 @@ fn init() {
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
+// ── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── velocity() ──────────────────────────────────────────────────────
+
+    #[test]
+    fn linear_velocity_is_constant() {
+        for &t in &[0.0, 0.25, 0.5, 0.75, 1.0] {
+            assert_eq!(velocity(Easing::Linear, t), 1.0);
+        }
+    }
+
+    #[test]
+    fn sine_velocity_endpoints() {
+        // sin(0) = 0, sin(π) = 0 → velocity = 0.3
+        assert!((velocity(Easing::Sine, 0.0) - 0.3).abs() < 1e-9);
+        assert!((velocity(Easing::Sine, 1.0) - 0.3).abs() < 1e-9);
+    }
+
+    #[test]
+    fn sine_velocity_peak_at_midpoint() {
+        // sin(π/2) = 1 → velocity = 0.3 + 2.7 = 3.0
+        assert!((velocity(Easing::Sine, 0.5) - 3.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn sine_velocity_is_symmetric() {
+        let v_quarter = velocity(Easing::Sine, 0.25);
+        let v_three_quarter = velocity(Easing::Sine, 0.75);
+        assert!((v_quarter - v_three_quarter).abs() < 1e-9);
+    }
+
+    #[test]
+    fn quad_velocity_endpoints() {
+        // t=0: v=2*0*0=0, velocity = 0.2 + 0*2.8 = 0.2
+        assert!((velocity(Easing::Quad, 0.0) - 0.2).abs() < 1e-9);
+        // t=1: v=1-0/2=1, velocity = 0.2 + 1*2.8 = 3.0
+        assert!((velocity(Easing::Quad, 1.0) - 3.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn quad_velocity_at_midpoint() {
+        // t=0.5: v=2*0.25=0.5, velocity = 0.2 + 0.5*2.8 = 1.6
+        assert!((velocity(Easing::Quad, 0.5) - 1.6).abs() < 1e-9);
+    }
+
+    #[test]
+    fn quad_velocity_is_monotonically_nondecreasing() {
+        let steps = 100;
+        let mut prev = velocity(Easing::Quad, 0.0);
+        for i in 1..=steps {
+            let t = i as f64 / steps as f64;
+            let v = velocity(Easing::Quad, t);
+            assert!(v >= prev - 1e-9, "quad velocity decreased at t={t}: {prev} > {v}");
+            prev = v;
+        }
+    }
+
+    // ── compute_delays() ────────────────────────────────────────────────
+
+    #[test]
+    fn zero_lines_returns_empty() {
+        assert!(compute_delays(0, 10000.0, Easing::Linear).is_empty());
+    }
+
+    #[test]
+    fn one_line_returns_empty() {
+        // Single line = no gaps between lines
+        assert!(compute_delays(1, 10000.0, Easing::Linear).is_empty());
+    }
+
+    #[test]
+    fn delay_count_is_lines_minus_one() {
+        for n in 2..=20 {
+            let d = compute_delays(n, 5000.0, Easing::Sine);
+            assert_eq!(d.len(), (n - 1) as usize);
+        }
+    }
+
+    #[test]
+    fn linear_delays_are_all_equal() {
+        let delays = compute_delays(10, 5000.0, Easing::Linear);
+        let first = delays[0];
+        for d in &delays {
+            assert_eq!(*d, first, "linear delays should be identical");
+        }
+    }
+
+    #[test]
+    fn linear_delay_value_at_scale_1() {
+        // 10 lines → scale = 1.0, velocity = 1.0 → delay = base_delay_us
+        let delays = compute_delays(10, 5000.0, Easing::Linear);
+        assert_eq!(delays[0], Duration::from_micros(5000));
+    }
+
+    #[test]
+    fn small_line_count_scales_up_delay() {
+        // 3 lines: scale = 1 + 2*(10-3)/9 ≈ 2.556
+        let d_small = compute_delays(3, 5000.0, Easing::Linear);
+        let d_large = compute_delays(15, 5000.0, Easing::Linear);
+        assert!(d_small[0] > d_large[0], "small scroll should have slower (larger) delays");
+    }
+
+    #[test]
+    fn sine_delays_are_slowest_at_endpoints() {
+        // Sine velocity is lowest at t=0 and t=1 → delays highest at first and last
+        let delays = compute_delays(20, 5000.0, Easing::Sine);
+        let mid = delays.len() / 2;
+        assert!(delays[0] > delays[mid], "first delay should be > mid delay");
+        assert!(delays[delays.len() - 1] > delays[mid], "last delay should be > mid delay");
+    }
+
+    #[test]
+    fn default_speed_base_delay() {
+        // speed=100 (default): base_delay = 1000 + 100*90 = 10000 µs
+        let base = 1000.0 + 100.0 * 90.0;
+        assert_eq!(base, 10000.0);
+    }
+
+    #[test]
+    fn all_delays_are_positive() {
+        for easing in [Easing::Linear, Easing::Sine, Easing::Quad] {
+            let delays = compute_delays(50, 10000.0, easing);
+            for (i, d) in delays.iter().enumerate() {
+                assert!(!d.is_zero(), "delay[{i}] should be > 0");
+            }
+        }
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("usage: tmux-smooth-scroll <init|up|down> [normal|halfpage|fullpage|N]");
+        eprintln!("usage: tmux-smooth-scroll <init|up|down> [-t pane] [normal|halfpage|fullpage|N]");
         std::process::exit(1);
     }
 
@@ -265,13 +353,29 @@ fn main() {
         return;
     }
 
-    // Scroll mode: <up|down> <type>
-    if args.len() < 3 {
-        eprintln!("usage: tmux-smooth-scroll <up|down> <normal|halfpage|fullpage|N>");
+    // Parse optional -t <pane> flag
+    let mut pane: Option<String> = None;
+    let mut positional: Vec<&str> = Vec::new();
+
+    let mut i = 1;
+    while i < args.len() {
+        if args[i] == "-t" {
+            i += 1;
+            if i < args.len() {
+                pane = Some(args[i].clone());
+            }
+        } else {
+            positional.push(&args[i]);
+        }
+        i += 1;
+    }
+
+    if positional.len() < 2 {
+        eprintln!("usage: tmux-smooth-scroll <up|down> [-t pane] <normal|halfpage|fullpage|N>");
         std::process::exit(1);
     }
 
-    let direction = match args[1].as_str() {
+    let direction = match positional[0] {
         "up" => Direction::Up,
         "down" => Direction::Down,
         _ => {
@@ -280,7 +384,7 @@ fn main() {
         }
     };
 
-    let scroll_type = match args[2].as_str() {
+    let scroll_type = match positional[1] {
         "normal" => ScrollType::Normal,
         "halfpage" => ScrollType::Halfpage,
         "fullpage" => ScrollType::Fullpage,
@@ -306,5 +410,5 @@ fn main() {
     let base_delay_us = 1000.0 + cfg.speed as f64 * 90.0;
     let delays = compute_delays(lines, base_delay_us, cfg.easing);
 
-    scroll_via_control(direction, lines, &delays);
+    scroll(direction, lines, &delays, pane.as_deref());
 }
