@@ -347,6 +347,28 @@
                     echo "All zunit tests passed" > $out/result
                   '';
 
+              dagster-package =
+                pkgs.runCommand "dagster-package-check"
+                  {
+                    nativeBuildInputs = [ self.packages.${system}.dagster ];
+                  }
+                  ''
+                    echo "Checking dagster binaries..."
+                    dagster --version
+                    dagster-webserver --help > /dev/null
+                    dagster-daemon --help > /dev/null
+                    dagster-graphql --help > /dev/null
+
+                    echo "Checking python imports..."
+                    python3 -c "import dagster; print(f'dagster {dagster.__version__}')"
+                    python3 -c "import dagster_postgres; print('dagster_postgres OK')"
+                    python3 -c "import dagster_webserver; print('dagster_webserver OK')"
+                    python3 -c "import dagster_graphql; print('dagster_graphql OK')"
+
+                    mkdir -p $out
+                    echo "All dagster checks passed" > $out/result
+                  '';
+
               validate-claude-plugins =
                 pkgs.runCommand "validate-claude-plugins"
                   {
