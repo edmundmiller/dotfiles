@@ -174,6 +174,9 @@ in
     };
 
     sources = mkOpt (types.listOf sourceType) [ ];
+
+    # healthchecks.io ping URL for schedule run monitoring
+    healthcheckPingUrl = mkOpt types.str "";
   };
 
   config = mkIf cfg.enable (
@@ -220,6 +223,9 @@ in
                 UV_PYTHON_PREFERENCE = "system";
                 # Home for uv/pip
                 HOME = "/var/lib/dagster";
+              }
+              // optionalAttrs (cfg.healthcheckPingUrl != "") {
+                HEALTHCHECK_PING_URL = cfg.healthcheckPingUrl;
               };
               environmentFiles = optional (cfg.environmentFile != "") cfg.environmentFile;
               readWritePaths = [
