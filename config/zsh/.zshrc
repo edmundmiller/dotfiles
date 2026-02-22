@@ -35,50 +35,35 @@ function _cache {
 # Source configuration
 source $ZDOTDIR/config.zsh
 
-# Initialize antidote (managed by Nix)
-# Cache antidote path for faster startup
-_antidote_cache_file="$ZSH_CACHE/antidote_path"
-if [[ -f "$_antidote_cache_file" ]]; then
-  _antidote_path="$(cat "$_antidote_cache_file")"
-else
-  # Find and cache antidote path
-  for antidote_file in /nix/store/*antidote*/share/antidote/antidote.zsh; do
-    if [[ -f "$antidote_file" ]]; then
-      _antidote_path="$antidote_file"
-      mkdir -p "$(dirname "$_antidote_cache_file")"
-      echo "$_antidote_path" > "$_antidote_cache_file"
-      break
-    fi
-  done
-fi
-
-# Source antidote if path exists
-[[ -f "$_antidote_path" ]] && source "$_antidote_path"
-
-# Load plugins from .zsh_plugins.txt
-# Use cache directory for compiled plugin file since ZDOTDIR might be read-only
+# Load plugins via antidote's static file
+# If the static file exists, source it directly (fast path ~27ms vs ~41ms)
+# Run `antidote bundle < $ZDOTDIR/.zsh_plugins.txt > $ZSH_CACHE/.zsh_plugins.zsh`
+# to regenerate after changing .zsh_plugins.txt
 ANTIDOTE_STATIC_FILE="$ZSH_CACHE/.zsh_plugins.zsh"
-antidote load "$ZDOTDIR/.zsh_plugins.txt"
-
-# Ensure Powerlevel10k is loaded (fallback if antidote didn't load it)
-# Always try to load P10k, even if p10k command exists (might be a stub)
-P10K_LOADED=0
-for p10k_path in \
-  "$HOME/.local/share/zsh/plugins/romkatv/powerlevel10k/powerlevel10k.zsh-theme" \
-  "/nix/store/"*"powerlevel10k"*"/share/zsh/powerlevel10k/powerlevel10k.zsh-theme" \
-  "$HOME/.cache/antidote/https-COLON--SLASH--SLASH-github.com-SLASH-romkatv-SLASH-powerlevel10k/powerlevel10k.zsh-theme"
-do
-  if [[ -f "$p10k_path" ]]; then
-    source "$p10k_path"
-    P10K_LOADED=1
-    break
+if [[ -f "$ANTIDOTE_STATIC_FILE" ]]; then
+  source "$ANTIDOTE_STATIC_FILE"
+else
+  # Cold start: find antidote and generate static file
+  _antidote_cache_file="$ZSH_CACHE/antidote_path"
+  if [[ -f "$_antidote_cache_file" ]]; then
+    _antidote_path="$(cat "$_antidote_cache_file")"
+  else
+    for antidote_file in /nix/store/*antidote*/share/antidote/antidote.zsh; do
+      if [[ -f "$antidote_file" ]]; then
+        _antidote_path="$antidote_file"
+        mkdir -p "${_antidote_cache_file:h}"
+        echo "$_antidote_path" > "$_antidote_cache_file"
+        break
+      fi
+    done
   fi
-done
-
-# If we loaded P10k, load the config immediately
-if [[ $P10K_LOADED -eq 1 ]] && [[ -f $ZDOTDIR/.p10k.zsh ]]; then
-  source $ZDOTDIR/.p10k.zsh
+  [[ -f "$_antidote_path" ]] && source "$_antidote_path"
+  antidote load "$ZDOTDIR/.zsh_plugins.txt"
 fi
+
+# P10k is loaded by antidote from .zsh_plugins.txt
+# Load p10k config after antidote has sourced the theme
+[[ -f $ZDOTDIR/.p10k.zsh ]] && source $ZDOTDIR/.p10k.zsh
 
 ## Bootstrap interactive sessions
 if [[ $TERM != dumb ]]; then
@@ -154,5 +139,7 @@ if [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
   done
 fi
 
-# Entire CLI shell completion
-autoload -Uz compinit && compinit && source <(entire completion zsh)
+# Entire CLI shell completion (use _cache to avoid slow subshell on every start)
+if (( $+commands[entire] )); then
+  _cache entire completion zsh
+fi
