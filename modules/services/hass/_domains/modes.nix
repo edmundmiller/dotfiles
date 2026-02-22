@@ -49,6 +49,8 @@ in
         icon = "mdi:weather-sunny";
         entities = {
           "input_boolean.goodnight" = "off";
+          "input_boolean.edmund_awake" = "off"; # reset for next night
+          "input_boolean.monica_awake" = "off";
           "input_select.house_mode" = "Home";
           "cover.smartwings_window_covering" = {
             state = "open";
