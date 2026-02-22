@@ -19,7 +19,5 @@ SESSION=$($SCRIPT_DIR/sesh-all.sh | fzf-tmux -p 80%,70% \
 
 # Strip ANSI escape codes, then the symbol prefix
 SESSION=$(printf '%s' "$SESSION" | sed 's/\x1b\[[0-9;]*m//g; s/^[▪▫›] //')
-# Debug: log what we're connecting to
-echo "$(date) raw='$SESSION'" >> /tmp/sesh-debug.log
-[ -n "$SESSION" ] && $SESH connect "$SESSION" 2>> /tmp/sesh-debug.log
+[ -n "$SESSION" ] && $SESH connect "$SESSION"
 exit 0
