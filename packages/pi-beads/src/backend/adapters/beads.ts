@@ -220,11 +220,10 @@ function initialize(pi: ExtensionAPI): TaskAdapter {
     priorityHotkeys: PRIORITY_HOTKEYS,
 
     async list(): Promise<Task[]> {
-      const [openOut, inProgressOut, blockedOut] = await Promise.all([
-        execBd(makeListArgs(STATUS_MAP.open)),
-        execBd(makeListArgs(STATUS_MAP.inProgress!)),
-        execBd(makeListArgs(STATUS_MAP.blocked!)),
-      ])
+      // Sequential — bd uses dolt, which panics on concurrent DB access
+      const openOut = await execBd(makeListArgs(STATUS_MAP.open))
+      const inProgressOut = await execBd(makeListArgs(STATUS_MAP.inProgress!))
+      const blockedOut = await execBd(makeListArgs(STATUS_MAP.blocked!))
 
       const openIssues = parseJsonArray<BeadsIssue>(openOut, "list open")
       const inProgressIssues = parseJsonArray<BeadsIssue>(inProgressOut, "list in_progress")
