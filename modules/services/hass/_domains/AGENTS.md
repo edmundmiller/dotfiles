@@ -46,8 +46,10 @@ modes.nix (input_boolean.goodnight, input_select.house_mode)
 | ------------------------------------ | ---------------------------------- |
 | `person.edmund_miller`               | Edmund — presence tracking         |
 | `person.moni`                        | Monica — presence tracking         |
-| `binary_sensor.edmunds_iphone_focus` | Sleep/focus state for Good Morning |
-| `binary_sensor.monicas_iphone_focus` | Sleep/focus state for Good Morning |
+| `binary_sensor.edmunds_iphone_sleep_focus` | Sleep Focus state for Good Morning |
+| `binary_sensor.monicas_iphone_sleep_focus` | Sleep Focus state for Good Morning |
+| `binary_sensor.edmunds_iphone_focus`       | Any focus active (generic)         |
+| `binary_sensor.monicas_iphone_focus`       | Any focus active (generic)         |
 | `notify.mobile_app_edmunds_iphone`   | Push notifications → Edmund        |
 | `notify.mobile_app_monicas_iphone`   | Push notifications → Monica        |
 
