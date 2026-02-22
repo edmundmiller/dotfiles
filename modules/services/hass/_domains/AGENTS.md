@@ -12,6 +12,26 @@ Each file is a logical grouping of HA config (scenes, automations, scripts, inpu
 - `vacation.nix` — Vacation mode: 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 
+## Wake detection state machine
+
+`sleep.nix` uses `input_boolean.edmund_awake` / `monica_awake` to track who's up. Good Morning fires when **both** are on.
+
+**Reset:** Winding Down scene (bedtime) and Good Morning scene both set both booleans to `off`.
+
+**Awake signals** (any one during Night mode marks that person as awake):
+
+| Signal | Edmund entity | Monica entity | What it means |
+| --- | --- | --- | --- |
+| Bed presence off (2 min) | `binary_sensor.edmund_s_eight_sleep_side_bed_presence` | `binary_sensor.monica_s_eight_sleep_side_bed_presence` | Physically out of bed (unreliable) |
+| Focus off | `binary_sensor.edmunds_iphone_focus` | `binary_sensor.monicas_iphone_focus` | Turned off any focus mode |
+| Battery: Charging → Not Charging | `sensor.edmunds_iphone_battery_state` | `sensor.monicas_iphone_battery_state` | Picked phone off charger |
+| Activity = Walking | `sensor.edmunds_iphone_activity` | `sensor.monicas_iphone_activity` | Up and moving around |
+| Active phone use (Launch/Siri/Manual) | `sensor.edmunds_iphone_last_update_trigger` | `sensor.monicas_iphone_last_update_trigger` | Deliberate phone interaction (not Background Fetch) |
+
+**Flow:** Person A wakes → any signal fires → `a_awake = on` → waits. Person B wakes → signal fires → `b_awake = on` → both on → Good Morning scene activates (blinds open, goodnight off, mode → Home).
+
+**Why multiple signals:** No single sensor is reliable enough. Generic focus can't distinguish Sleep from Work. 8Sleep bed presence is flaky. Battery only works if phone was charging. Redundancy ensures the first real activity is caught. Night mode condition prevents daytime false positives.
+
 ## Cross-domain dependencies
 
 ```

@@ -240,6 +240,30 @@
       };
       opencode.enable = true;
 
+      bugster = {
+        enable = true;
+        environmentFile = config.age.secrets.bugster-env.path;
+        tasknotes = {
+          vaultPath = "/home/emiller/obsidian-vault";
+          tasksDir = "00_Inbox/Tasks/Bugster";
+        };
+        sources = [
+          {
+            type = "github";
+            name = "personal";
+            tokenEnv = "GITHUB_TOKEN";
+            username = "edmundmiller";
+            contexts = [ "personal" ];
+          }
+          {
+            type = "linear";
+            name = "work";
+            tokenEnv = "LINEAR_TOKEN";
+            contexts = [ "work" ];
+          }
+        ];
+      };
+
       transmission.enable = false;
     };
 
@@ -256,6 +280,7 @@
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
   age.secrets.lubelogger-env.owner = "lubelogger";
+  age.secrets.bugster-env.owner = "dagster";
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {

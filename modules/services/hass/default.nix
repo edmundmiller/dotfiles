@@ -64,7 +64,7 @@ in
     ./_domains/conversation.nix
     ./_domains/lighting.nix
     ./_domains/modes.nix
-    ./_domains/sleep.nix
+    ./_domains/sleep
     ./_domains/tv.nix
     ./_domains/vacation.nix
   ];
