@@ -1,7 +1,7 @@
 {
-  "name": "@edmundmiller/pi-tasks",
-  "version": "0.3.0",
-  "description": "Task management extension for the pi coding agent (fork with beads 0.55+ support)",
+  "name": "@edmundmiller/pi-beads",
+  "version": "0.1.0",
+  "description": "pi extension for beads (bd) task management",
   "type": "module",
   "license": "MIT",
   "repository": {
