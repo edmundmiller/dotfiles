@@ -71,12 +71,17 @@ let
   );
 
   # Script to set up the bugster repo and config
+  # Runs as root to handle git clone (private repo needs user SSH keys),
+  # then chowns to dagster.
   setupScript = pkgs.writeShellScript "bugster-setup" ''
     set -euo pipefail
 
     REPO_DIR="${cfg.dataDir}"
 
     # Clone if not present, pull if exists
+    # Use emiller's SSH keys for private repo access
+    export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -i /home/emiller/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new"
+
     if [ ! -d "$REPO_DIR/.git" ]; then
       ${pkgs.git}/bin/git clone ${cfg.gitUrl} "$REPO_DIR"
     else
@@ -85,52 +90,18 @@ let
       ${pkgs.git}/bin/git reset --hard origin/${cfg.gitBranch}
     fi
 
+    # Fix ownership
+    chown -R dagster:dagster "$REPO_DIR"
+
     # Copy generated config (env vars expanded at runtime by bugster)
     cp ${bugsterToml} "$REPO_DIR/bugster.toml"
+    chown dagster:dagster "$REPO_DIR/bugster.toml"
     chmod 640 "$REPO_DIR/bugster.toml"
+
+    # Grant dagster write access to the obsidian vault for TaskNotes output
+    ${pkgs.acl}/bin/setfacl -R -m u:dagster:rwX ${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir} 2>/dev/null || true
+    ${pkgs.acl}/bin/setfacl -R -d -m u:dagster:rwX ${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir} 2>/dev/null || true
   '';
-
-  # GitHub source config submodule
-  githubSourceOpts = {
-    options = {
-      type = mkOpt types.str "github";
-      name = mkOpt types.str "";
-      tokenEnv = mkOpt types.str "GITHUB_TOKEN";
-      username = mkOpt types.str "";
-      contexts = mkOpt (types.listOf types.str) [];
-      includeIssues = mkBoolOpt true;
-      includePrs = mkBoolOpt true;
-      includeReviewRequests = mkBoolOpt true;
-      includeRepos = mkOpt (types.listOf types.str) [];
-      excludeRepos = mkOpt (types.listOf types.str) [];
-    };
-  };
-
-  # Linear source config submodule
-  linearSourceOpts = {
-    options = {
-      type = mkOpt types.str "linear";
-      name = mkOpt types.str "";
-      tokenEnv = mkOpt types.str "LINEAR_TOKEN";
-      teamIds = mkOpt (types.listOf types.str) [];
-      contexts = mkOpt (types.listOf types.str) [];
-      onlyAssigned = mkBoolOpt true;
-    };
-  };
-
-  # Jira source config submodule
-  jiraSourceOpts = {
-    options = {
-      type = mkOpt types.str "jira";
-      name = mkOpt types.str "";
-      urlEnv = mkOpt types.str "JIRA_URL";
-      usernameEnv = mkOpt types.str "JIRA_USERNAME";
-      tokenEnv = mkOpt types.str "JIRA_TOKEN";
-      projects = mkOpt (types.listOf types.str) [];
-      contexts = mkOpt (types.listOf types.str) [];
-      onlyMyIssues = mkBoolOpt true;
-    };
-  };
 
   sourceType = types.submodule ({ config, ... }: {
     options = {
@@ -161,7 +132,7 @@ in
   options.modules.services.bugster = {
     enable = mkBoolOpt false;
 
-    gitUrl = mkOpt types.str "https://github.com/edmundmiller/bugster.git";
+    gitUrl = mkOpt types.str "git@github.com:edmundmiller/bugster.git";
     gitBranch = mkOpt types.str "main";
 
     port = mkOpt types.port 4000;
@@ -222,6 +193,7 @@ in
               readWritePaths = [
                 cfg.dataDir
                 "/var/lib/dagster/.cache"
+                cfg.tasknotes.vaultPath
               ];
             };
           }
@@ -229,6 +201,7 @@ in
       };
 
       # Setup service — clones/updates bugster repo before code server starts
+      # Runs as root to access emiller's SSH keys for private repo
       systemd.services.bugster-setup = {
         description = "Bugster repo setup";
         wantedBy = [ "multi-user.target" ];
@@ -239,8 +212,6 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          User = "dagster";
-          Group = "dagster";
           ExecStart = setupScript;
         };
 
@@ -263,8 +234,9 @@ in
         "d /var/lib/dagster/.cache/uv 0750 dagster dagster -"
       ];
 
-      # Obsidian vault needs to be readable by dagster user
-      users.users.dagster.extraGroups = [ "emiller" ];
+      # Obsidian vault needs to be writable by dagster user
+      # Vault is owned by emiller:users with 0755 — add dagster to users group
+      users.users.dagster.extraGroups = [ "users" ];
     }
   );
 }
