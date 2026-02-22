@@ -29,6 +29,8 @@
     stylix.url = "github:danth/stylix/master";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
+    git-hooks.url = "github:cachix/git-hooks.nix";
+    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
 
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
@@ -115,7 +117,10 @@
       );
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ inputs.treefmt-nix.flakeModule ];
+      imports = [
+        inputs.treefmt-nix.flakeModule
+        inputs.git-hooks.flakeModule
+      ];
 
       flake = {
         lib = lib.my;
@@ -283,7 +288,7 @@
         "aarch64-darwin"
       ];
       perSystem =
-        { pkgs, system, ... }:
+        { config, pkgs, system, ... }:
         {
           # Expose deploy-rs CLI for `nix run .#deploy-rs`
           packages.deploy-rs = deploy-rs.packages.${system}.default;
@@ -296,15 +301,32 @@
             programs.statix.enable = true;
           };
 
+          pre-commit.settings.hooks = {
+            treefmt = {
+              enable = true;
+              package = config.treefmt.build.wrapper;
+            };
+            beads = {
+              enable = true;
+              name = "beads";
+              entry = "bd hook pre-commit";
+              language = "system";
+              pass_filenames = false;
+            };
+          };
+
           # Development shell
           devShells.default = pkgs.mkShell {
-            packages = with pkgs; [
-              nixfmt
-              deadnix
-              statix
-              deploy-rs.packages.${system}.default
-            ];
-            shellHook = ''
+            packages =
+              with pkgs;
+              [
+                nixfmt
+                deadnix
+                statix
+                deploy-rs.packages.${system}.default
+              ]
+              ++ config.pre-commit.settings.enabledPackages;
+            shellHook = config.pre-commit.shellHook + ''
               echo "dotfiles development shell"
             '';
           };
