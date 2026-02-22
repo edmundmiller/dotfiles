@@ -280,7 +280,7 @@ in
           Type = "simple";
           User = "dagster";
           Group = "dagster";
-          ExecStart = "${cfg.package}/bin/dagster-daemon run";
+          ExecStart = "${cfg.package}/bin/dagster-daemon run -w ${cfg.home}/workspace.yaml";
           Restart = "on-failure";
           RestartSec = 5;
 
