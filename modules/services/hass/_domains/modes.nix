@@ -65,6 +65,7 @@ in
             state = "open";
             position = 20; # crack — natural light without full exposure
           };
+          "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
         };
       }
     ];
