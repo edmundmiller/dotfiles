@@ -56,6 +56,12 @@ in
     edmundmiller
     nuc
   ];
+  # Bugster env file (GITHUB_TOKEN, LINEAR_TOKEN, etc.)
+  "bugster-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+
   # TODO: create these .age files to re-enable vault-sync
   # "cubox-api-key.age".publicKeys = [
   #   edmundmiller
