@@ -117,6 +117,17 @@ export function createContextEventHandler(options: ContextEventHandlerOptions) {
 }
 
 /**
+ * Check if an assistant message contains thinking or redacted_thinking blocks.
+ * The Anthropic API forbids modifying these in the latest assistant message.
+ */
+function hasThinkingBlocks(msg: AgentMessage): boolean {
+  if (msg.role !== "assistant" || !Array.isArray(msg.content)) return false;
+  return msg.content.some(
+    (block: any) => block && (block.type === "thinking" || block.type === "redacted_thinking")
+  );
+}
+
+/**
  * Apply LLM-driven pruning decisions to messages.
  * Handles prune (remove/stub), distill (replace), and compress (summarize range).
  */
@@ -129,6 +140,11 @@ function applyLlmDrivenPruning(
   if (state.prunedIds.size === 0 && compressSummaries.length === 0) {
     return messages;
   }
+
+  // Find the last assistant message — Anthropic requires thinking blocks in
+  // the latest assistant message to remain completely unmodified.
+  const lastAssistantMsg =
+    [...messages].reverse().find((m) => m.role === "assistant") ?? null;
 
   // Build anchor map for compress summaries
   const summaryByAnchor = new Map<string, string>();
@@ -186,6 +202,13 @@ function applyLlmDrivenPruning(
 
     // Handle assistant messages — remove toolCall blocks for pruned write/edit
     if (msg.role === "assistant" && Array.isArray(msg.content)) {
+      // Never modify the latest assistant message if it has thinking blocks —
+      // Anthropic API requires thinking/redacted_thinking to pass through unchanged.
+      if (msg === lastAssistantMsg && hasThinkingBlocks(msg)) {
+        result.push(msg);
+        continue;
+      }
+
       const filtered = msg.content.filter((block: any) => {
         if (block.type !== "toolCall") return true;
         if (!state.prunedIds.has(block.id)) return true;
@@ -279,6 +302,11 @@ export function repairOrphanedToolPairsPostPruning(
   messages: AgentMessage[],
   logger: ReturnType<typeof getLogger>
 ): AgentMessage[] {
+  // Find the last assistant message — must not modify its content if it has
+  // thinking blocks (Anthropic API requirement).
+  const lastAssistantMsg =
+    [...messages].reverse().find((m) => m.role === "assistant") ?? null;
+
   // Build set of all tool_use IDs present in assistant messages
   const availableToolUseIds = new Set<string>();
   for (const msg of messages) {
@@ -321,6 +349,13 @@ export function repairOrphanedToolPairsPostPruning(
   const finalResult: AgentMessage[] = [];
   for (const msg of result) {
     if (msg.role === "assistant" && Array.isArray(msg.content)) {
+      // Never modify the latest assistant message if it has thinking blocks —
+      // Anthropic API requires thinking/redacted_thinking to pass through unchanged.
+      if (msg === lastAssistantMsg && hasThinkingBlocks(msg)) {
+        finalResult.push(msg);
+        continue;
+      }
+
       const hasAnyToolCalls = msg.content.some((b: any) => b && b.type === "toolCall");
       if (!hasAnyToolCalls) {
         finalResult.push(msg);
