@@ -4,9 +4,13 @@ description: >
   Interact with Home Assistant via the REST API on a NixOS host.
   Use when adding integrations, querying entities, managing config
   flows, creating API tokens, or automating HA setup programmatically.
+  Also covers identifying device protocols (Matter, Zigbee, Thread,
+  HomeKit) from the device registry.
   Trigger phrases: "add HA integration", "configure home assistant",
   "query HA entities", "create HA token", "HA REST API",
-  "pair homekit", "set up matter in HA", "add spotify to HA".
+  "pair homekit", "set up matter in HA", "add spotify to HA",
+  "is this device zigbee or thread", "what protocol is this device",
+  "move devices to ZHA", "identify matter devices".
 ---
 
 # Home Assistant REST API
@@ -124,6 +128,7 @@ Read these for detailed information:
 | ------------------------------------ | ---------------------------------------------------------------------------- |
 | `references/integration-flows.md`    | Per-integration config flow behavior, abort reasons, mDNS discovery commands |
 | `references/default-integrations.md` | NixOS `defaultIntegrations` list — what's auto-loaded, Nix config examples   |
+| `references/device-protocols.md`     | Identify device protocol (Matter/Zigbee/Thread/HomeKit) from device registry; vendor model-name conventions; decision tree for ZHA migration |
 
 ## Token generation
 
