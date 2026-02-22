@@ -14,7 +14,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    modules.shell.zsh.rcInit = ''eval "$(direnv hook zsh)"'';
+    modules.shell.zsh.rcInit = ''_cache direnv hook zsh'';
 
     # Use home-manager's native direnv + nix-direnv for cached flake evaluation
     home-manager.users.${config.user.name}.programs.direnv = {

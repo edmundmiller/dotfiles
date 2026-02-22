@@ -59,6 +59,7 @@
       enableRosetta = true; # Apple Silicon + Intel compatibility
       autoMigrate = true; # Migrate existing homebrew installation
       mutableTaps = true; # Allow mutable taps for flexibility
+      enableZshIntegration = false; # We handle brew in .zshenv with caching
     };
 
     # Use homebrew to install casks and Mac App Store apps
