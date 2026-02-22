@@ -1,0 +1,33 @@
+{
+  "name": "@edmundmiller/pi-tasks",
+  "version": "0.3.0",
+  "description": "Task management extension for the pi coding agent (fork with beads 0.55+ support)",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmundmiller/dotfiles.git"
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "pi",
+    "tasks",
+    "task-management",
+    "tui"
+  ],
+  "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.5",
+    "release-it": "^19.2.4"
+  }
+}
