@@ -288,7 +288,12 @@
         "aarch64-darwin"
       ];
       perSystem =
-        { config, pkgs, system, ... }:
+        {
+          config,
+          pkgs,
+          system,
+          ...
+        }:
         {
           # Expose deploy-rs CLI for `nix run .#deploy-rs`
           packages.deploy-rs = deploy-rs.packages.${system}.default;
