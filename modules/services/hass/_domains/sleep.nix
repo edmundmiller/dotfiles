@@ -19,9 +19,26 @@
 #   8Sleep next alarm switch: switch.edmund_s_eight_sleep_next_alarm
 #   iPhone next alarm: sensor.edmunds_iphone_next_alarm (datetime)
 #   iPhone focus: binary_sensor.edmunds_iphone_focus (on = any focus active)
+#
+# Wake detection state machine:
+#   input_boolean.edmund_awake / monica_awake track who's up
+#   Set by: bed presence off (2 min) OR focus off, during Night mode
+#   Reset by: Goodnight scene (modes.nix) and Good Morning scene
+#   Good Morning fires when both are on
 { lib, ... }:
 {
   services.home-assistant.config = {
+    # --- Wake detection helpers ---
+    input_boolean = {
+      edmund_awake = {
+        name = "Edmund Awake";
+        icon = "mdi:sleep-off";
+      };
+      monica_awake = {
+        name = "Monica Awake";
+        icon = "mdi:sleep-off";
+      };
+    };
     scene = lib.mkAfter [
       # Stage 1: Get ready for bed
       {
@@ -29,6 +46,8 @@
         icon = "mdi:weather-night";
         entities = {
           "input_boolean.goodnight" = "on";
+          "input_boolean.edmund_awake" = "off"; # reset wake tracking
+          "input_boolean.monica_awake" = "off";
           "input_select.house_mode" = "Night";
           "cover.smartwings_window_covering" = "closed";
           "media_player.tv" = "off";
@@ -268,51 +287,112 @@
         ];
       }
 
-      # ───────────────────────────────────────────────────────────────────────
+      # ── Wake detection state machine ─────────────────────────────────────
+      #
+      # Each person gets an "awake" boolean set by bed presence OR focus off.
+      # Good Morning fires when BOTH are on — handles different wake times.
+      # Booleans reset by Winding Down / Good Morning scenes.
 
-      # Good Morning — first focus-off since 6am, fires at transition or 7am catch-up
-      # Three triggers: either person's focus turns off, or 7am clock (catches pre-7am wake)
-      # Template condition: at least one focus went off→off since 6am (not stale from yesterday)
+      # Edmund shows awake signal → mark awake
       {
-        alias = "Good Morning";
-        id = "good_morning_bed_presence";
+        alias = "Edmund is awake";
+        id = "edmund_awake_detection";
         trigger = [
+          {
+            platform = "state";
+            entity_id = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+            to = "off";
+            "for".minutes = 2;
+          }
           {
             platform = "state";
             entity_id = "binary_sensor.edmunds_iphone_focus";
             to = "off";
           }
-          {
-            platform = "state";
-            entity_id = "binary_sensor.monicas_iphone_focus";
-            to = "off";
-          }
-          {
-            # Catch-up for anyone who woke before 7am
-            platform = "time";
-            at = "07:00:00";
-          }
         ];
         condition = [
-          {
-            condition = "time";
-            after = "06:00:00";
-          }
           {
             condition = "state";
             entity_id = "input_select.house_mode";
             state = "Night";
           }
           {
-            # At least one person's focus turned off since 6am today
-            condition = "template";
-            value_template = ''
-              {% set e = states.binary_sensor.edmunds_iphone_focus %}
-              {% set m = states.binary_sensor.monicas_iphone_focus %}
-              {% set cutoff = today_at("06:00") %}
-              {{ (e.state == "off" and e.last_changed >= cutoff) or
-                 (m.state == "off" and m.last_changed >= cutoff) }}
-            '';
+            condition = "state";
+            entity_id = "input_boolean.edmund_awake";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "input_boolean.turn_on";
+            target.entity_id = "input_boolean.edmund_awake";
+          }
+        ];
+      }
+
+      # Monica shows awake signal → mark awake
+      {
+        alias = "Monica is awake";
+        id = "monica_awake_detection";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+            to = "off";
+            "for".minutes = 2;
+          }
+          {
+            platform = "state";
+            entity_id = "binary_sensor.monicas_iphone_focus";
+            to = "off";
+          }
+        ];
+        condition = [
+          {
+            condition = "state";
+            entity_id = "input_select.house_mode";
+            state = "Night";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.monica_awake";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "input_boolean.turn_on";
+            target.entity_id = "input_boolean.monica_awake";
+          }
+        ];
+      }
+
+      # Both awake → Good Morning
+      {
+        alias = "Good Morning";
+        id = "good_morning_both_awake";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "input_boolean.edmund_awake";
+            to = "on";
+          }
+          {
+            platform = "state";
+            entity_id = "input_boolean.monica_awake";
+            to = "on";
+          }
+        ];
+        condition = [
+          {
+            condition = "state";
+            entity_id = "input_boolean.edmund_awake";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.monica_awake";
+            state = "on";
           }
         ];
         action = [
