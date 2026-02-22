@@ -15,7 +15,7 @@ in
 {
   services.home-assistant.config = {
     # --- Input helpers ---
-    input_boolean = {
+    input_boolean = lib.mkMerge [{
       guest_mode = {
         name = "Guest Mode";
         icon = "mdi:account-group";
@@ -28,7 +28,7 @@ in
         name = "Do Not Disturb";
         icon = "mdi:minus-circle";
       };
-    };
+    }];
 
     input_select.house_mode = {
       name = "House Mode";
