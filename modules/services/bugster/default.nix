@@ -125,37 +125,34 @@ let
     chmod g+w "$VAULT_PATH/${cfg.tasknotes.tasksDir}" 2>/dev/null || true
   '';
 
-  sourceType = types.submodule (
-    _:
-    {
-      options = {
-        type = mkOpt (types.enum [
-          "github"
-          "linear"
-          "jira"
-        ]) "github";
-        name = mkOpt types.str "";
-        # Common
-        contexts = mkOpt (types.listOf types.str) [ ];
-        tokenEnv = mkOpt types.str "";
-        # GitHub
-        username = mkOpt types.str "";
-        includeIssues = mkBoolOpt true;
-        includePrs = mkBoolOpt true;
-        includeReviewRequests = mkBoolOpt true;
-        includeRepos = mkOpt (types.listOf types.str) [ ];
-        excludeRepos = mkOpt (types.listOf types.str) [ ];
-        # Linear
-        teamIds = mkOpt (types.listOf types.str) [ ];
-        onlyAssigned = mkBoolOpt true;
-        # Jira
-        urlEnv = mkOpt types.str "JIRA_URL";
-        usernameEnv = mkOpt types.str "JIRA_USERNAME";
-        projects = mkOpt (types.listOf types.str) [ ];
-        onlyMyIssues = mkBoolOpt true;
-      };
-    }
-  );
+  sourceType = types.submodule (_: {
+    options = {
+      type = mkOpt (types.enum [
+        "github"
+        "linear"
+        "jira"
+      ]) "github";
+      name = mkOpt types.str "";
+      # Common
+      contexts = mkOpt (types.listOf types.str) [ ];
+      tokenEnv = mkOpt types.str "";
+      # GitHub
+      username = mkOpt types.str "";
+      includeIssues = mkBoolOpt true;
+      includePrs = mkBoolOpt true;
+      includeReviewRequests = mkBoolOpt true;
+      includeRepos = mkOpt (types.listOf types.str) [ ];
+      excludeRepos = mkOpt (types.listOf types.str) [ ];
+      # Linear
+      teamIds = mkOpt (types.listOf types.str) [ ];
+      onlyAssigned = mkBoolOpt true;
+      # Jira
+      urlEnv = mkOpt types.str "JIRA_URL";
+      usernameEnv = mkOpt types.str "JIRA_USERNAME";
+      projects = mkOpt (types.listOf types.str) [ ];
+      onlyMyIssues = mkBoolOpt true;
+    };
+  });
 in
 {
   options.modules.services.bugster = {
