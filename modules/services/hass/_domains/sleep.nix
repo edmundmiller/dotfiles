@@ -270,38 +270,27 @@
 
       # ───────────────────────────────────────────────────────────────────────
 
-      # Good Morning — both out of bed for 2 min, after 7am
+      # Good Morning — both Sleep Focus off, after 7am
+      # Bed presence removed (unreliable); Sleep Focus off = they're awake
       {
-        alias = "Good Morning - out of bed";
+        alias = "Good Morning";
         id = "good_morning_bed_presence";
         trigger = [
           {
             platform = "state";
-            entity_id = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+            entity_id = "binary_sensor.edmunds_iphone_sleep_focus";
             to = "off";
-            "for".minutes = 2;
           }
           {
             platform = "state";
-            entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+            entity_id = "binary_sensor.monicas_iphone_sleep_focus";
             to = "off";
-            "for".minutes = 2;
           }
         ];
         condition = [
           {
             condition = "time";
             after = "07:00:00";
-          }
-          {
-            condition = "state";
-            entity_id = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
-            state = "off";
-          }
-          {
-            condition = "state";
-            entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
-            state = "off";
           }
           {
             condition = "state";
