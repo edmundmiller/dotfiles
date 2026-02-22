@@ -139,8 +139,8 @@
     },
     // GitHub repo tools (read/search/explore) - https://github.com/PriNova/pi-github-tools
     "npm:@prinova/pi-github-tools",
-    // Task management UI (ctrl+x) - https://github.com/Soleone/pi-tasks
-    "npm:@soleone/pi-tasks",
+    // Task management UI (ctrl+x) - fork of Soleone/pi-tasks with beads 0.55+ support
+    "~/.config/dotfiles/packages/pi-tasks",
     // Fuzzy file picker (ctrl+f) - https://github.com/kaofelix/pi-fzf
     "npm:pi-fzf",
     // Profile/settings switcher - https://www.npmjs.com/package/pi-codex-profile
