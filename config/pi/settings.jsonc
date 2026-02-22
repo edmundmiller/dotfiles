@@ -147,6 +147,18 @@
     "npm:pi-codex-profile",
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
+    // Semaphore/lock primitives (dep of pi-tmux) - https://github.com/offline-ant/pi-semaphore
+    {
+      "source": "git:github.com/offline-ant/pi-semaphore",
+      "extensions": ["extensions/semaphore-locks.ts"],
+      "skills": [],
+    },
+    // Tmux pane control (bash, capture, send, kill, spawn agents) - https://github.com/offline-ant/pi-tmux
+    {
+      "source": "git:github.com/offline-ant/pi-tmux",
+      "extensions": ["extensions/tmux.ts", "extensions/supervisor.ts"],
+      "skills": [],
+    },
     // Dumb zone - context degradation warning - https://github.com/aliou/pi-extensions
     {
       "source": "https://github.com/aliou/pi-extensions",
