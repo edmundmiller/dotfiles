@@ -270,8 +270,8 @@
 
       # ───────────────────────────────────────────────────────────────────────
 
-      # Good Morning — both focus off + Night mode + after 7am
-      # Bed presence removed (unreliable); focus off in Night mode = waking up
+      # Good Morning — first person to turn off focus in Night mode after 7am
+      # Only needs one person; no bed presence (unreliable), no "both" requirement
       {
         alias = "Good Morning";
         id = "good_morning_bed_presence";
@@ -296,16 +296,6 @@
             condition = "state";
             entity_id = "input_select.house_mode";
             state = "Night";
-          }
-          {
-            condition = "state";
-            entity_id = "binary_sensor.edmunds_iphone_focus";
-            state = "off";
-          }
-          {
-            condition = "state";
-            entity_id = "binary_sensor.monicas_iphone_focus";
-            state = "off";
           }
         ];
         action = [
