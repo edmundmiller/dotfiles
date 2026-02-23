@@ -92,6 +92,8 @@ export interface PaneContext {
   branch?: string;
   /** Pi session name */
   sessionName?: string;
+  /** Active file for editors (nvim, vim, etc.) */
+  filename?: string;
 }
 
 /**
@@ -150,9 +152,12 @@ export function buildBaseName(program: string, path: string, context?: PaneConte
     const icon = DISPLAY_NAMES[program] ?? program;
 
     // Sesh shows the project in the status bar — window names just need smart context.
-    // Prefer session name > branch (dim) > bare icon
+    // Prefer: session name > filename > branch (dim) > bare icon
     if (context?.sessionName) {
       return `${icon} ${context.sessionName}`;
+    }
+    if (context?.filename) {
+      return `${icon} ${context.filename}`;
     }
     if (context?.branch) {
       const branch = context.branch.split("/").pop() ?? context.branch;

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { normalizeProgram, AGENT_PROGRAMS } from "../src/process";
+import { normalizeProgram, AGENT_PROGRAMS, extractFilenameFromArgs } from "../src/process";
 
 describe("normalizeProgram", () => {
   test.each([
@@ -47,6 +47,22 @@ describe("normalizeProgram", () => {
     ["", ""],
   ])("%s → %s", (input, expected) => {
     expect(normalizeProgram(input)).toBe(expected);
+  });
+});
+
+describe("extractFilenameFromArgs", () => {
+  test.each([
+    ["nvim src/index.ts", "index.ts"],
+    ["nvim /long/path/Button.tsx", "Button.tsx"],
+    ["vim -c 'autocmd' file.go", "file.go"],
+    ["nvim +10 README.md", "README.md"],
+    ["nvim -c cmd -u NONE config.lua", "config.lua"],
+    ["nvim", ""], // no args
+    ["nvim .", ""], // bare dot skipped
+    ["nvim ..", ""], // double-dot skipped
+    ["nvim file1.ts file2.ts", "file1.ts"], // first wins
+  ])("%s → %s", (cmdline, expected) => {
+    expect(extractFilenameFromArgs(cmdline)).toBe(expected);
   });
 });
 

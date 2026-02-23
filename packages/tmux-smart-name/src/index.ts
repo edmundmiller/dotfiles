@@ -4,7 +4,14 @@
  * No external dependencies.
  */
 import { hasSessions, listAllPanes, capturePane, renameWindow, type TmuxPane } from "./tmux.js";
-import { AGENT_PROGRAMS, getPaneProgram, loadProcessTable, clearProcessTable } from "./process.js";
+import {
+  AGENT_PROGRAMS,
+  getPaneProgram,
+  loadProcessTable,
+  clearProcessTable,
+  getProcessCmdline,
+  extractFilenameFromArgs,
+} from "./process.js";
 import { detectStatus, readPiStatusFile, prioritize, colorize } from "./status.js";
 import { formatPath, buildBaseName, trimName, parsePiFooter, type PaneContext } from "./naming.js";
 import { getAllAgentsInfo, generateMenuCommand, runMenu } from "./menu.js";
@@ -38,13 +45,18 @@ function renameAll(): void {
           }
         }
 
-        // Extract context (branch, session name) from active pane if it's a pi agent
+        // Extract context (branch, session name, filename) from active pane
         let context: PaneContext | undefined;
         const activeAgent = agentPanes.find((a) => a.paneId === active.paneId);
         let activeContent: string | undefined;
         if (activeAgent && activeAgent.agent === "pi") {
           activeContent = capturePane(active.paneId);
           context = parsePiFooter(activeContent);
+        } else if (program === "nvim" || program === "vim" || program === "vi") {
+          // For editors: extract the file being edited from process args
+          const cmdline = getProcessCmdline(active.pid);
+          const filename = extractFilenameFromArgs(cmdline);
+          if (filename) context = { filename };
         }
 
         const baseName = buildBaseName(program, path, context);
