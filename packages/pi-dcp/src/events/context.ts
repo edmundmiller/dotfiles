@@ -141,26 +141,9 @@ function applyLlmDrivenPruning(
     return messages;
   }
 
-  // Anthropic requires ANY assistant message containing thinking/redacted_thinking blocks
-  // to remain completely unmodified — not just the latest one.
-  // Build a set of all assistant messages with thinking blocks.
-  const thinkingAssistantMsgs = new Set(
-    messages.filter((m) => m.role === "assistant" && hasThinkingBlocks(m))
-  );
-
-  // Collect tool call IDs from thinking-block assistant messages.
-  // Their tool results must NOT be removed entirely — only stubbed — since we can't
-  // remove the matching tool_call blocks from the (unmodifiable) assistant message.
-  const thinkingProtectedCallIds = new Set<string>();
-  for (const msg of thinkingAssistantMsgs) {
-    if (Array.isArray((msg as any).content)) {
-      for (const block of (msg as any).content) {
-        if (block?.type === "toolCall" && block.id) {
-          thinkingProtectedCallIds.add(block.id);
-        }
-      }
-    }
-  }
+  // Find the last assistant message — Anthropic requires thinking blocks in
+  // the latest assistant message to remain completely unmodified.
+  const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant") ?? null;
 
   // Build anchor map for compress summaries
   const summaryByAnchor = new Map<string, string>();
@@ -190,17 +173,8 @@ function applyLlmDrivenPruning(
         const cacheEntry = state.cache.get(msg.toolCallId);
         const toolName = cacheEntry?.toolName || (msg as any).toolName || "unknown";
 
-        // Write/edit: remove entirely (file system is source of truth).
-        // Exception: if the tool_call is in a thinking-block assistant message (which we
-        // can't modify to remove the tool_call), stub the result instead of removing it.
-        // Removing it would leave an orphaned tool_call that would break API validation.
+        // Write/edit: remove entirely (file system is source of truth)
         if (toolName === "write" || toolName === "edit") {
-          if (thinkingProtectedCallIds.has(msg.toolCallId!)) {
-            result.push({
-              ...msg,
-              content: [{ type: "text", text: PRUNED_REPLACEMENT }],
-            } as any);
-          }
           continue;
         }
 
@@ -227,13 +201,6 @@ function applyLlmDrivenPruning(
 
     // Handle assistant messages — remove toolCall blocks for pruned write/edit
     if (msg.role === "assistant" && Array.isArray(msg.content)) {
-      // Never modify any assistant message that has thinking blocks —
-      // Anthropic API requires thinking/redacted_thinking to pass through unchanged.
-      if (thinkingAssistantMsgs.has(msg)) {
-        result.push(msg);
-        continue;
-      }
-
       const filtered = msg.content.filter((block: any) => {
         if (block.type !== "toolCall") return true;
         if (!state.prunedIds.has(block.id)) return true;
@@ -327,13 +294,6 @@ export function repairOrphanedToolPairsPostPruning(
   messages: AgentMessage[],
   logger: ReturnType<typeof getLogger>
 ): AgentMessage[] {
-  // Build set of ALL assistant messages with thinking blocks — Anthropic requires
-  // any assistant message containing thinking/redacted_thinking blocks to remain
-  // completely unmodified, not just the latest one.
-  const thinkingAssistantMsgs = new Set(
-    messages.filter((m) => m.role === "assistant" && hasThinkingBlocks(m))
-  );
-
   // Build set of all tool_use IDs present in assistant messages
   const availableToolUseIds = new Set<string>();
   for (const msg of messages) {
@@ -376,13 +336,6 @@ export function repairOrphanedToolPairsPostPruning(
   const finalResult: AgentMessage[] = [];
   for (const msg of result) {
     if (msg.role === "assistant" && Array.isArray(msg.content)) {
-      // Never modify any assistant message that has thinking blocks —
-      // Anthropic API requires thinking/redacted_thinking to pass through unchanged.
-      if (thinkingAssistantMsgs.has(msg)) {
-        finalResult.push(msg);
-        continue;
-      }
-
       const hasAnyToolCalls = msg.content.some((b: any) => b && b.type === "toolCall");
       if (!hasAnyToolCalls) {
         finalResult.push(msg);
