@@ -55,6 +55,58 @@ fn pane_height() -> u32 {
         .unwrap_or(24)
 }
 
+/// Check if a pane is automated (e.g. Pi agent) and should skip animation.
+fn is_automated_pane(pane: Option<&str>) -> bool {
+    let exclude = tmux_option("@smooth-scroll-exclude")
+        .unwrap_or_else(|| "π".to_string());
+    let mut cmd = Command::new("tmux");
+    cmd.args(["display-message", "-p"]);
+    if let Some(t) = pane {
+        cmd.args(["-t", t]);
+    }
+    cmd.arg("#{pane_title}");
+    let title = cmd
+        .output()
+        .ok()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap_or_default();
+    exclude.split(',').any(|pat| title.contains(pat.trim()))
+}
+
+/// Send a single native scroll command (no animation).
+fn scroll_instant(direction: Direction, scroll_type: &ScrollType, lines: u32, pane: Option<&str>) {
+    let cmd_name = match (direction, scroll_type) {
+        (Direction::Up, ScrollType::Halfpage) => "halfpage-up",
+        (Direction::Down, ScrollType::Halfpage) => "halfpage-down",
+        (Direction::Up, ScrollType::Fullpage) => "page-up",
+        (Direction::Down, ScrollType::Fullpage) => "page-down",
+        _ => {
+            // Normal/Lines: send N individual scroll commands without delays
+            let dir = match direction {
+                Direction::Up => "scroll-up",
+                Direction::Down => "scroll-down",
+            };
+            for _ in 0..lines {
+                let mut c = Command::new("tmux");
+                c.arg("send-keys");
+                if let Some(t) = pane {
+                    c.args(["-t", t]);
+                }
+                c.args(["-X", dir]);
+                let _ = c.status();
+            }
+            return;
+        }
+    };
+    let mut c = Command::new("tmux");
+    c.arg("send-keys");
+    if let Some(t) = pane {
+        c.args(["-t", t]);
+    }
+    c.args(["-X", cmd_name]);
+    let _ = c.status();
+}
+
 /// Send scroll commands one per line via tmux send-keys.
 /// Compiled Rust has negligible fork overhead vs Perl — no need for control mode.
 fn scroll(direction: Direction, lines: u32, delays: &[Duration], pane: Option<&str>) {
@@ -404,6 +456,12 @@ fn main() {
     };
 
     if lines == 0 {
+        return;
+    }
+
+    // Skip animation for automated panes (Pi agents, etc.)
+    if is_automated_pane(pane.as_deref()) {
+        scroll_instant(direction, &scroll_type, lines, pane.as_deref());
         return;
     }
 
