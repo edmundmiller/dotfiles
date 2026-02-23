@@ -55,6 +55,13 @@ in
       pkgs.gum # Interactive CLI for bd-capture popup
     ];
 
+    # Agent Icons font for PUA codepoints (U+F5000–F5003) rendered by Ghostty
+    fonts.packages = [ pkgs.my.agent-icons ];
+    modules.desktop.term.ghostty.configInit = mkIf config.modules.desktop.term.ghostty.enable ''
+      # Map agent icon PUA codepoints to the Agent Icons font
+      font-codepoint-map = U+F5000-U+F5003=Agent Icons
+    '';
+
     modules.theme.onReload.tmux = "${tmux}/bin/tmux source-file $TMUX_HOME/extraInit";
 
     modules.shell.zsh = {
