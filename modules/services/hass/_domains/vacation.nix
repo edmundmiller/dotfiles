@@ -1,6 +1,6 @@
 # Vacation domain — multi-day away mode spanning 8Sleep, Ecobee, lights, blinds
 #
-# Activation: manually set input_select.house_mode = "Vacation" (dashboard / voice)
+# Activation: turn on input_boolean.vacation_mode (dashboard / voice)
 # Deactivation: first person arrives home (presence) OR manually set mode back to Home
 #
 # What vacation mode controls:
@@ -45,6 +45,10 @@ let
   ];
 
   vacationEnd = [
+    {
+      action = "input_boolean.turn_off";
+      target.entity_id = "input_boolean.vacation_mode";
+    }
     # 8Sleep — stop away mode both sides
     {
       action = "eight_sleep.away_mode_stop";
@@ -74,7 +78,7 @@ in
         name = "Vacation";
         icon = "mdi:airplane";
         entities = {
-          "input_select.house_mode" = "Vacation";
+          "input_boolean.vacation_mode" = "on";
           "cover.smartwings_window_covering" = "closed";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
@@ -94,11 +98,11 @@ in
       {
         alias = "Vacation Start";
         id = "vacation_start";
-        description = "house_mode → Vacation: 8Sleep away, Ecobee away, everything off";
+        description = "vacation_mode on: 8Sleep away, Ecobee away, everything off";
         trigger = {
           platform = "state";
-          entity_id = "input_select.house_mode";
-          to = "Vacation";
+          entity_id = "input_boolean.vacation_mode";
+          to = "on";
         };
         action = vacationStart;
       }
@@ -123,8 +127,8 @@ in
         condition = [
           {
             condition = "state";
-            entity_id = "input_select.house_mode";
-            state = "Vacation";
+            entity_id = "input_boolean.vacation_mode";
+            state = "on";
           }
         ];
         action = vacationEnd;

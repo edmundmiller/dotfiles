@@ -122,7 +122,7 @@ condition prevents all of these from false-triggering during the day.
 
 1. Check `input_boolean.edmund_awake` and `input_boolean.monica_awake` in Developer Tools → States
 2. If one is still `off`, that person's signals haven't fired — check their phone sensors
-3. Verify `input_select.house_mode` is "Night" (Good Morning only fires from Night mode)
+3. Verify `input_boolean.goodnight` is "on" (wake detection only fires during nighttime)
 
 **Good Morning fires too early (one person still sleeping):**
 

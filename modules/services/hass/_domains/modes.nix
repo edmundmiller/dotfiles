@@ -27,17 +27,9 @@
       };
     };
 
-    input_select.house_mode = {
-      name = "House Mode";
-      options = [
-        "Home"
-        "Away"
-        "Night"
-        "Vacation"
-      ];
-      # No initial — persists across HA restarts (critical: initial="Home"
-      # was resetting Night mode on restart, breaking wake detection)
-      icon = "mdi:home";
+    input_boolean.vacation_mode = {
+      name = "Vacation Mode";
+      icon = "mdi:airplane";
     };
 
     # --- Scenes ---
@@ -49,7 +41,6 @@
           "input_boolean.goodnight" = "off";
           "input_boolean.edmund_awake" = "off"; # reset for next night
           "input_boolean.monica_awake" = "off";
-          "input_select.house_mode" = "Home";
           "cover.smartwings_window_covering" = {
             state = "open";
             position = 20; # crack — natural light without full exposure
@@ -95,24 +86,6 @@
           {
             action = "scene.turn_on";
             target.entity_id = "scene.good_morning";
-          }
-        ];
-      }
-
-      # Away mode — safety net for voice/dashboard mode changes
-      # (presence-based Last Person Leaves automation also calls Leave Home)
-      {
-        alias = "Away mode";
-        id = "away_mode_media_off";
-        trigger = {
-          platform = "state";
-          entity_id = "input_select.house_mode";
-          to = "Away";
-        };
-        action = [
-          {
-            action = "scene.turn_on";
-            target.entity_id = "scene.leave_home";
           }
         ];
       }

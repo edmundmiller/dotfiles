@@ -59,8 +59,8 @@ in
         };
         condition = {
           condition = "state";
-          entity_id = "input_select.house_mode";
-          state = "Night";
+          entity_id = "input_boolean.goodnight";
+          state = "on";
         };
         action = [ tvOff ];
       }
