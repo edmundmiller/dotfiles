@@ -61,6 +61,7 @@ in
 {
   imports = [
     ./_domains/ambient.nix
+    ./_domains/aranet.nix
     ./_domains/conversation.nix
     ./_domains/lighting.nix
     ./_domains/modes.nix
@@ -136,6 +137,9 @@ in
           "radio_browser"
           # Fast zlib compression
           "isal"
+          # Aranet4 CO2 sensor (Bluetooth LE)
+          "aranet"
+          "bluetooth"
         ]
         ++ optionals cfg.matter.enable [ "matter" ]
         ++ cfg.extraComponents;

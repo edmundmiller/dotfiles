@@ -21,6 +21,7 @@ Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-aut
 ## Files
 
 - `ambient.nix` — Sun-based scenes (mid-morning, sundown), presence (arrive/leave), entrance occupancy night light
+- `aranet.nix` — Aranet4 CO2 sensor: elevated/poor/cleared push notifications (thresholds: 1000/1500 ppm). Update `prefix` var to match device entity ID.
 - `conversation.nix` — Voice/conversation config
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
 - `modes.nix` — House modes (`Home`/`Away`/`Night`), goodnight toggle, DND, everything_off script
