@@ -74,25 +74,33 @@ describe("parsePiFooter", () => {
 });
 
 describe("buildBaseName", () => {
+  // U+E6AE = nvim nerd font icon, U+F5000-F5002 = agent icons (PUA)
+  const NVIM = "\uE6AE";
+  const CLAUDE = "\u{F5000}";
+  const AMP = "\u{F5001}";
+  const OPENCODE = "\u{F5002}";
+
   test.each([
+    // shells: still show path (useful as you cd around; sesh shows project)
     ["zsh", "~/src/personal/repo", undefined, "~/s/p/repo"],
-    ["nvim", "~/src/personal/repo", undefined, " repo"],
+    // editors/agents: sesh shows project — just icon (+ smart context if available)
+    ["nvim", "~/src/personal/repo", undefined, NVIM],
     ["python", "~/repo", undefined, "python"],
-    ["opencode", "~/src/project", undefined, "󵀂 project"],
-    ["claude", "", undefined, "󵀀"],
-    ["pi", "~/src/personal/project", undefined, "π project"],
-    ["amp", "~/foo", undefined, "󵀁 foo"],
-  ] as const)("%s + %s → %s", (program, path, ctx, expected) => {
-    expect(buildBaseName(program, path, ctx)).toBe(expected);
+    ["opencode", "~/src/project", undefined, OPENCODE],
+    ["claude", "", undefined, CLAUDE],
+    ["pi", "~/src/personal/project", undefined, "π"],
+    ["amp", "~/foo", undefined, AMP],
+  ] as const)("%s: no project dir in name", (program, path, _ctx, expected) => {
+    expect(buildBaseName(program, path)).toBe(expected);
   });
 
-  test("pi with branch", () => {
+  test("pi with branch (no session name)", () => {
     expect(buildBaseName("pi", "~/.config/dotfiles", { branch: "feat/tmux" })).toBe(
-      "π dotfiles #[dim]tmux#[nodim]"
+      "π #[dim]tmux#[nodim]"
     );
   });
 
-  test("pi with session name (takes priority)", () => {
+  test("pi with session name (takes priority over branch)", () => {
     expect(
       buildBaseName("pi", "~/.config/dotfiles", {
         branch: "feat/tmux",
@@ -102,7 +110,7 @@ describe("buildBaseName", () => {
   });
 
   test("pi on main (no branch in context)", () => {
-    expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("π dotfiles");
+    expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("π");
   });
 });
 
