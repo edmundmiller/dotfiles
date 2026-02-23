@@ -76,11 +76,11 @@ describe("parsePiFooter", () => {
 describe("buildBaseName", () => {
   test.each([
     ["zsh", "~/src/personal/repo", undefined, "~/s/p/repo"],
-    ["nvim", "~/src/personal/repo", undefined, ": ~/s/p/repo"],
+    ["nvim", "~/src/personal/repo", undefined, " ~/s/p/repo"],
     ["python", "~/repo", undefined, "python"],
     ["opencode", "~/src/project", undefined, "opencode: ~/s/project"],
     ["claude", "", undefined, "claude"],
-    ["pi", "~/src/personal/project", undefined, "π: ~/s/p/project"],
+    ["pi", "~/src/personal/project", undefined, "π ~/s/p/project"],
     ["amp", "~/foo", undefined, "amp: ~/foo"],
   ] as const)("%s + %s → %s", (program, path, ctx, expected) => {
     expect(buildBaseName(program, path, ctx)).toBe(expected);
@@ -88,7 +88,7 @@ describe("buildBaseName", () => {
 
   test("pi with branch", () => {
     expect(buildBaseName("pi", "~/.config/dotfiles", { branch: "feat/tmux" })).toBe(
-      "π: ~/.c/dotfiles@feat/tmux"
+      "π ~/.c/dotfiles@feat/tmux"
     );
   });
 
@@ -98,11 +98,11 @@ describe("buildBaseName", () => {
         branch: "feat/tmux",
         sessionName: "refactor auth",
       })
-    ).toBe("π: refactor auth");
+    ).toBe("π refactor auth");
   });
 
   test("pi on main (no branch in context)", () => {
-    expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("π: ~/.c/dotfiles");
+    expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("π ~/.c/dotfiles");
   });
 });
 
@@ -120,7 +120,7 @@ describe("trimName", () => {
   });
 
   test("skips tmux color codes in length calculation", () => {
-    const name = "#[fg=cyan]●#[default] π: ~/some/long/path/here";
+    const name = "#[fg=cyan]●#[default] π ~/some/long/path/here";
     const trimmed = trimName(name, 24);
     // Should preserve color codes and trim visible content
     expect(trimmed).toContain("#[fg=cyan]");
