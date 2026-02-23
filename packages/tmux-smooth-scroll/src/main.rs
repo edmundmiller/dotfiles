@@ -268,6 +268,24 @@ fn init() {
             "up fullpage"
         } else if line.contains("page-down") && line.contains("send-keys") {
             "down fullpage"
+        // Legacy azorng/tmux-smooth-scroll (scroll.sh) format:
+        // bind-key -T copy-mode-vi K run-shell -b ".../scroll.sh up normal"
+        } else if line.contains("scroll.sh") {
+            if line.contains("up normal") {
+                "up normal"
+            } else if line.contains("down normal") {
+                "down normal"
+            } else if line.contains("up halfpage") {
+                "up halfpage"
+            } else if line.contains("down halfpage") {
+                "down halfpage"
+            } else if line.contains("up fullpage") {
+                "up fullpage"
+            } else if line.contains("down fullpage") {
+                "down fullpage"
+            } else {
+                continue;
+            }
         } else {
             continue;
         };
