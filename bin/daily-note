@@ -8,7 +8,18 @@ note_path="$daily_dir/$note_date.md"
 session_name="daily-note"
 
 mkdir -p "$daily_dir"
-touch "$note_path"
+
+# Create with template if it doesn't exist yet
+if [ ! -f "$note_path" ]; then
+  cat > "$note_path" <<EOF
+# ${note_date}
+
+## Tasks
+
+## Notes
+
+EOF
+fi
 
 # If called with --popup flag, just open nvim directly (for tmux popups)
 if [[ "${1:-}" == "--popup" ]]; then
