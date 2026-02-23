@@ -265,6 +265,16 @@
             contexts = [ "personal" ];
           }
         ];
+
+        calendar = {
+          enable = true;
+          homeAddress = "7859 Clara Dr, Plano, TX 75024";
+          sourceCalendars = [
+            "primary"
+            "monicadd4@gmail.com"
+            "family06788939864322602215@group.calendar.google.com"
+          ];
+        };
       };
 
       transmission.enable = false;

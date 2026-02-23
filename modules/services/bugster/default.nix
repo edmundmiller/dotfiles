@@ -29,6 +29,17 @@ let
       vault_path = "/var/lib/dagster/vault"
       tasks_dir = "."
     ''
+    + optionalString cfg.calendar.enable ''
+
+      [calendar]
+      home_address = "${cfg.calendar.homeAddress}"
+      google_api_key = "''${${cfg.calendar.googleApiKeyEnv}}"
+      client_id = "''${${cfg.calendar.clientIdEnv}}"
+      client_secret = "''${${cfg.calendar.clientSecretEnv}}"
+      refresh_token = "''${${cfg.calendar.refreshTokenEnv}}"
+      source_calendars = [${concatMapStringsSep ", " (c: ''"${c}"'') cfg.calendar.sourceCalendars}]
+      target_calendar = "${cfg.calendar.targetCalendar}"
+    ''
     + concatMapStrings (
       src:
       if src.type == "github" then
@@ -174,6 +185,17 @@ in
     };
 
     sources = mkOpt (types.listOf sourceType) [ ];
+
+    calendar = {
+      enable = mkBoolOpt false;
+      homeAddress = mkOpt types.str "";
+      googleApiKeyEnv = mkOpt types.str "GOOGLE_API_KEY";
+      clientIdEnv = mkOpt types.str "GOOGLE_OAUTH_CLIENT_ID";
+      clientSecretEnv = mkOpt types.str "GOOGLE_OAUTH_CLIENT_SECRET";
+      refreshTokenEnv = mkOpt types.str "GOOGLE_OAUTH_REFRESH_TOKEN";
+      sourceCalendars = mkOpt (types.listOf types.str) [ "primary" ];
+      targetCalendar = mkOpt types.str "primary";
+    };
 
     # healthchecks.io ping URL for schedule run monitoring
     healthcheckPingUrl = mkOpt types.str "";
