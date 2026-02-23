@@ -66,6 +66,7 @@ in
             position = 20; # crack — natural light without full exposure
           };
           "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
+          "switch.adaptive_lighting_sleep_mode_living_space" = "off";
         };
       }
     ];
