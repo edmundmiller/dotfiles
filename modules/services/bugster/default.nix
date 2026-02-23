@@ -201,8 +201,11 @@ in
       targetCalendar = mkOpt types.str "primary";
     };
 
-    # healthchecks.io ping URL for schedule run monitoring
-    healthcheckPingUrl = mkOpt types.str "";
+    # Per-asset healthchecks.io ping URLs.
+    # Keys are Dagster asset names (e.g. "github_personal_tasknotes").
+    # Each key maps to env var HEALTHCHECK_PING_URL_{KEY_UPPER} consumed by
+    # definitions.py to ping the correct check on start/success/failure.
+    healthcheckPingUrls = mkOpt (types.attrsOf types.str) { };
   };
 
   config = mkIf cfg.enable (
@@ -250,9 +253,12 @@ in
                 # Home for uv/pip
                 HOME = "/var/lib/dagster";
               }
-              // optionalAttrs (cfg.healthcheckPingUrl != "") {
-                HEALTHCHECK_PING_URL = cfg.healthcheckPingUrl;
-              };
+              # Per-asset healthcheck env vars:
+              # healthcheckPingUrls."github_personal_tasknotes" = "https://..."
+              # → HEALTHCHECK_PING_URL_GITHUB_PERSONAL_TASKNOTES = "https://..."
+              // lib.mapAttrs' (
+                name: url: lib.nameValuePair "HEALTHCHECK_PING_URL_${builtins.toUpper name}" url
+              ) cfg.healthcheckPingUrls;
               environmentFiles = optional (cfg.environmentFile != "") cfg.environmentFile;
               readWritePaths = [
                 cfg.dataDir
