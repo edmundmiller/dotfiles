@@ -127,18 +127,20 @@ export function parsePiFooter(content: string): PaneContext {
   return ctx;
 }
 
-/** Map internal program identifiers to display names (nerd font icons). */
+/** Map internal program identifiers to display names.
+ * Agent icons use PUA codepoints from the Agent Icons font (U+F5000–F5003).
+ * Nerd font icons used for nvim/vim/git. */
 const DISPLAY_NAMES: Record<string, string> = {
   pi: "π",
   nvim: "",
   vim: "",
   vi: "",
   git: "",
-  claude: "󱂶",
-  codex: "󱂶",
-  opencode: "",
+  claude: "󵀀",
+  codex: "󵀀",
+  opencode: "󵀂",
   aider: "",
-  amp: "",
+  amp: "󵀁",
 };
 
 export function buildBaseName(program: string, path: string, context?: PaneContext): string {
