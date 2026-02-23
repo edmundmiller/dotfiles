@@ -288,6 +288,49 @@ fn init() {
             ])
             .status();
     }
+
+    // Guard root-table WheelUpPane: prevent copy-mode entry in excluded panes
+    // (e.g. Pi agents that don't set alternate_on or mouse_any_flag).
+    // The default binding is:
+    //   if alternate_on OR pane_in_mode OR mouse_any_flag → send-keys -M
+    //   else → copy-mode -e
+    // We add an exclude check so matched panes get send-keys -M instead.
+    if mouse_scroll {
+        let exclude = tmux_option("@smooth-scroll-exclude")
+            .unwrap_or_else(|| "π".to_string());
+        // Build a tmux format string: #{m:pattern,#{pane_title}} matches substring
+        // We OR multiple patterns together for comma-separated excludes
+        let match_exprs: Vec<String> = exclude
+            .split(',')
+            .map(|pat| format!("#{{m:{},#{{pane_title}}}}", pat.trim()))
+            .collect();
+        let combined = match match_exprs.len() {
+            1 => match_exprs[0].clone(),
+            _ => {
+                // Nest #{||:...} for multiple patterns
+                let mut expr = match_exprs[0].clone();
+                for m in &match_exprs[1..] {
+                    expr = format!("#{{||:{expr},{m}}}");
+                }
+                expr
+            }
+        };
+
+        // If excluded OR alternate_on OR pane_in_mode OR mouse_any_flag → passthrough
+        // Otherwise → enter copy-mode as normal
+        let guard = format!(
+            "#{{||:{combined},#{{||:#{{alternate_on}},#{{||:#{{pane_in_mode}},#{{mouse_any_flag}}}}}}}}"
+        );
+
+        let _ = Command::new("tmux")
+            .args([
+                "bind-key", "-T", "root", "WheelUpPane",
+                "if-shell", "-F", &guard,
+                "send-keys -M",
+                "copy-mode -e",
+            ])
+            .status();
+    }
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────
