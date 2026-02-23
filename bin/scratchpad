@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# scratchpad — floating neovim note in a tmux popup (skitty-notes equivalent)
+# Usage: scratchpad [file]
+# Bind in tmux: bind-key s run-shell "scratchpad"
+
+set -euo pipefail
+
+vault_dir="${OBSIDIAN_VAULT_DIR:-$HOME/obsidian-vault}"
+note="${1:-$vault_dir/00_Inbox/scratchpad.md}"
+
+mkdir -p "$(dirname "$note")"
+
+if [ ! -f "$note" ]; then
+  printf '# Scratchpad\n\n' > "$note"
+fi
+
+# If already inside tmux, open as popup; otherwise just launch nvim directly
+if [ -n "${TMUX:-}" ]; then
+  tmux popup -E -w 80% -h 85% -d "$(dirname "$note")" "nvim '$note'"
+else
+  exec nvim "$note"
+fi
