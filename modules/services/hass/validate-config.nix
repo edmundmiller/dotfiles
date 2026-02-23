@@ -13,7 +13,7 @@
   ...
 }:
 let
-  cfg = config.services.home-assistant;
+  cfg = config.services.home-assistant or { };
   hassEnabled = cfg.enable or false;
 
   configYaml = (pkgs.formats.yaml { }).generate "configuration.yaml" cfg.config;
