@@ -422,56 +422,9 @@
                     echo "All dagster checks passed" > $out/result
                   '';
 
-              validate-hass-config =
-                let
-                  # Generate the HA configuration.yaml the same way the NixOS module does
-                  hassConfig = self.nixosConfigurations.nuc.config.services.home-assistant.config;
-                  configYaml = (pkgs.formats.yaml { }).generate "configuration.yaml" hassConfig;
-                  alSchema = ./modules/services/hass/schemas/adaptive-lighting.json;
-                  validatePy = pkgs.python3.withPackages (ps: [
-                    ps.jsonschema
-                    ps.pyyaml
-                  ]);
-                in
-                pkgs.runCommand "validate-hass-config"
-                  {
-                    nativeBuildInputs = [ validatePy ];
-                  }
-                  ''
-                                        echo "Validating HA config against adaptive-lighting schema..."
-                                        python3 -c "
-                    import yaml, json, jsonschema, sys
-
-                    with open('${configYaml}') as f:
-                        config = yaml.safe_load(f)
-
-                    with open('${alSchema}') as f:
-                        schema = json.load(f)
-
-                    # Validate just the adaptive_lighting section
-                    al_schema = schema['properties']['adaptive_lighting']
-                    al_config = config.get('adaptive_lighting', [])
-
-                    if not al_config:
-                        print('No adaptive_lighting config found, skipping')
-                        sys.exit(0)
-
-                    for i, switch in enumerate(al_config):
-                        try:
-                            jsonschema.validate(switch, al_schema['items'])
-                            print(f'  Switch {i} ({switch.get(\"name\", \"unnamed\")}): OK')
-                        except jsonschema.ValidationError as e:
-                            print(f'  Switch {i} ({switch.get(\"name\", \"unnamed\")}): FAILED')
-                            print(f'    {e.message}')
-                            if e.path:
-                                print(f'    At: {\".\".join(str(p) for p in e.path)}')
-                            sys.exit(1)
-
-                    print('All adaptive_lighting switches valid')
-                    "
-                                        mkdir -p $out
-                                        echo "HA config validation passed" > $out/result
-                  '';
+              # HA config validation is now done at build time on the NUC via
+              # validate-config.nix (uses HA's own check_config). The JSON schema
+              # in schemas/adaptive-lighting.json is kept as agent reference only.
 
               validate-claude-plugins =
                 pkgs.runCommand "validate-claude-plugins"
