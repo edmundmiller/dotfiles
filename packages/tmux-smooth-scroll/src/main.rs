@@ -222,7 +222,26 @@ fn init() {
             continue;
         }
 
-        let params = if line.contains("scroll-up") && line.contains("send-keys") {
+        // Match both native tmux bindings (send-keys -X scroll-up) and
+        // our own re-bindings (run-shell ... tmux-smooth-scroll ... up normal)
+        let params = if line.contains("tmux-smooth-scroll") {
+            // Already our binding — extract params to re-bind with current binary path
+            if line.contains("up normal") {
+                "up normal"
+            } else if line.contains("down normal") {
+                "down normal"
+            } else if line.contains("up halfpage") {
+                "up halfpage"
+            } else if line.contains("down halfpage") {
+                "down halfpage"
+            } else if line.contains("up fullpage") {
+                "up fullpage"
+            } else if line.contains("down fullpage") {
+                "down fullpage"
+            } else {
+                continue;
+            }
+        } else if line.contains("scroll-up") && line.contains("send-keys") {
             "up normal"
         } else if line.contains("scroll-down") && line.contains("send-keys") {
             "down normal"
