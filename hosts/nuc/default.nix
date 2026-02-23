@@ -245,7 +245,11 @@
       bugster = {
         enable = true;
         environmentFile = config.age.secrets.bugster-env.path;
-        healthcheckPingUrl = "https://hc-ping.com/5abc3bda-4cc1-48a3-a2ec-fc0b930ca759";
+        healthcheckPingUrls = {
+          github_personal_tasknotes = "https://hc-ping.com/c4b0b3c8-25b4-4cf6-9252-745eaf0a6689";
+          linear_personal_tasknotes = "https://hc-ping.com/dc2b60c1-5967-48ea-883d-649ca7ae1bfa";
+          travel_time_blocks = "https://hc-ping.com/5b5e8fef-8462-42ff-9562-9fe451972b1c";
+        };
         tasknotes = {
           vaultPath = "/home/emiller/obsidian-vault";
           tasksDir = "00_Inbox/Tasks/Bugster";
