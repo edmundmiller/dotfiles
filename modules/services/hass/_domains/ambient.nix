@@ -41,6 +41,7 @@
         entities = {
           "input_boolean.goodnight" = "off";
           "input_select.house_mode" = "Home";
+          "switch.adaptive_lighting_sleep_mode_living_space" = "off";
           "light.essentials_a19_a60" = "on";
           "light.essentials_a19_a60_2" = "on";
           "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
