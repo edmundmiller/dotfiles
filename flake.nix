@@ -351,6 +351,10 @@
                       pkgs.git
                       pkgs.gnused
                       pkgs.bash
+                      pkgs.sesh
+                      pkgs.fzf
+                      pkgs.zoxide
+                      pkgs.tmux
                     ];
                   }
                   ''
@@ -360,6 +364,24 @@
                     git config --global user.name "Test User"
                     git config --global init.defaultBranch main
 
+                    # Start a headless tmux server on the default socket
+                    export TMUX_TMPDIR=$TMPDIR
+                    tmux new-session -d -s ci-session 2>/dev/null || true
+                    # Mark as headless so popup test stays skipped
+                    export ZUNIT_HEADLESS=1
+
+                    # Seed zoxide database using /var/tmp dirs (not filtered by noise patterns)
+                    export _ZO_DATA_DIR=$TMPDIR/zoxide-data
+                    mkdir -p $_ZO_DATA_DIR
+                    ZOXIDE_TEST_DIRS=/var/tmp/zunit-zoxide-$$
+                    mkdir -p $ZOXIDE_TEST_DIRS/code/project1 \
+                              $ZOXIDE_TEST_DIRS/code/project2 \
+                              $ZOXIDE_TEST_DIRS/repos/work
+                    zoxide add $ZOXIDE_TEST_DIRS/code/project1 2>/dev/null || true
+                    zoxide add $ZOXIDE_TEST_DIRS/code/project2 2>/dev/null || true
+                    zoxide add $ZOXIDE_TEST_DIRS/repos/work 2>/dev/null || true
+                    export ZOXIDE_TEST_DIRS
+
                     # Run zunit tests (--tap bypasses revolver spinner dependency)
                     cd ${./.}
                     for test in config/*/tests/*.zunit; do
@@ -368,6 +390,10 @@
                         zunit --tap "$test"
                       fi
                     done
+
+                    # Cleanup
+                    tmux -L default kill-server 2>/dev/null || true
+                    rm -rf $ZOXIDE_TEST_DIRS 2>/dev/null || true
 
                     # Create success marker
                     mkdir -p $out
