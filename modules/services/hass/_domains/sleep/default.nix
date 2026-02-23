@@ -43,6 +43,7 @@
           "input_select.house_mode" = "Night";
           "cover.smartwings_window_covering" = "closed";
           "media_player.tv" = "off";
+          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
 
           # Main lights off
           "light.essentials_a19_a60" = "off"; # Trashcan
