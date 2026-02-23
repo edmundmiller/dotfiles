@@ -147,19 +147,18 @@ export function buildBaseName(program: string, path: string, context?: PaneConte
   if (!program) return path ? shortenPath(path) : "";
   if (SHELLS.includes(program)) return path ? shortenPath(path) : program;
   if (DIR_PROGRAMS.includes(program)) {
-    let name = DISPLAY_NAMES[program] ?? program;
-    const dir = path?.split("/").filter(Boolean).pop() ?? "";
+    const icon = DISPLAY_NAMES[program] ?? program;
 
-    // Prefer session name > branch > dir
+    // Sesh shows the project in the status bar — window names just need smart context.
+    // Prefer session name > branch (dim) > bare icon
     if (context?.sessionName) {
-      name += ` ${context.sessionName}`;
-    } else if (context?.branch) {
-      const branch = context.branch.split("/").pop() ?? context.branch;
-      name += dir ? ` ${dir} #[dim]${branch}#[nodim]` : ` #[dim]${branch}#[nodim]`;
-    } else if (dir) {
-      name += ` ${dir}`;
+      return `${icon} ${context.sessionName}`;
     }
-    return name;
+    if (context?.branch) {
+      const branch = context.branch.split("/").pop() ?? context.branch;
+      return `${icon} #[dim]${branch}#[nodim]`;
+    }
+    return icon;
   }
   return program;
 }
