@@ -133,28 +133,29 @@ const DISPLAY_NAMES: Record<string, string> = {
   nvim: "",
   vim: "",
   vi: "",
+  git: "",
+  claude: "󱂶",
+  codex: "󱂶",
+  opencode: "",
+  aider: "",
+  amp: "",
 };
 
 export function buildBaseName(program: string, path: string, context?: PaneContext): string {
   if (!program) return path ? shortenPath(path) : "";
   if (SHELLS.includes(program)) return path ? shortenPath(path) : program;
   if (DIR_PROGRAMS.includes(program)) {
-    const displayName = DISPLAY_NAMES[program];
-    let name = displayName ?? program;
-    const sep = displayName ? " " : ": ";
-    const short = displayName
-      ? (path?.split("/").filter(Boolean).pop() ?? "")
-      : path
-        ? shortenPath(path)
-        : "";
+    let name = DISPLAY_NAMES[program] ?? program;
+    const dir = path?.split("/").filter(Boolean).pop() ?? "";
 
-    // Prefer session name > branch > path
+    // Prefer session name > branch > dir
     if (context?.sessionName) {
-      name += `${sep}${context.sessionName}`;
+      name += ` ${context.sessionName}`;
     } else if (context?.branch) {
-      name += `${sep}${short}@${context.branch}`;
-    } else if (short) {
-      name += `${sep}${short}`;
+      const branch = context.branch.split("/").pop() ?? context.branch;
+      name += dir ? ` ${dir} #[dim]${branch}#[nodim]` : ` #[dim]${branch}#[nodim]`;
+    } else if (dir) {
+      name += ` ${dir}`;
     }
     return name;
   }

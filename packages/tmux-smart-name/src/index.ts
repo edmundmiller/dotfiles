@@ -64,8 +64,13 @@ function renameAll(): void {
             return detectStatus(content, a.agent);
           });
           const agentStatus = prioritize(statuses);
-          const icon = colorize(agentStatus);
-          newName = `${icon} ${baseName}`;
+          // Idle is the default state — no icon needed
+          if (agentStatus === "□") {
+            newName = baseName;
+          } else {
+            const icon = colorize(agentStatus);
+            newName = `${icon} ${baseName}`;
+          }
         } else {
           newName = baseName;
         }
