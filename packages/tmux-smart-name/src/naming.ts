@@ -127,9 +127,12 @@ export function parsePiFooter(content: string): PaneContext {
   return ctx;
 }
 
-/** Map internal program identifiers to display names. */
+/** Map internal program identifiers to display names (nerd font icons). */
 const DISPLAY_NAMES: Record<string, string> = {
   pi: "π",
+  nvim: "",
+  vim: "",
+  vi: "",
 };
 
 export function buildBaseName(program: string, path: string, context?: PaneContext): string {
