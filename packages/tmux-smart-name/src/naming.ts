@@ -127,11 +127,16 @@ export function parsePiFooter(content: string): PaneContext {
   return ctx;
 }
 
+/** Map internal program identifiers to display names. */
+const DISPLAY_NAMES: Record<string, string> = {
+  pi: "π",
+};
+
 export function buildBaseName(program: string, path: string, context?: PaneContext): string {
   if (!program) return path ? shortenPath(path) : "";
   if (SHELLS.includes(program)) return path ? shortenPath(path) : program;
   if (DIR_PROGRAMS.includes(program)) {
-    let name = program;
+    let name = DISPLAY_NAMES[program] ?? program;
     const short = path ? shortenPath(path) : "";
 
     // Prefer session name > branch > path
