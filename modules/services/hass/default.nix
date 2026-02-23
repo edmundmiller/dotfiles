@@ -215,6 +215,10 @@ in
         "${config.services.home-assistant.configDir}/secrets.yaml" = {
           L.argument = config.age.secrets.hass-secrets.path;
         };
+        # JSON schemas for custom component config validation
+        "${config.services.home-assistant.configDir}/schemas/adaptive-lighting.json" = {
+          L.argument = "${./schemas/adaptive-lighting.json}";
+        };
       };
 
       # Apply declarative device→area assignments after HA starts
