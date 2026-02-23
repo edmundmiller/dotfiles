@@ -142,7 +142,11 @@ export function buildBaseName(program: string, path: string, context?: PaneConte
     const displayName = DISPLAY_NAMES[program];
     let name = displayName ?? program;
     const sep = displayName ? " " : ": ";
-    const short = path ? shortenPath(path) : "";
+    const short = displayName
+      ? (path?.split("/").filter(Boolean).pop() ?? "")
+      : path
+        ? shortenPath(path)
+        : "";
 
     // Prefer session name > branch > path
     if (context?.sessionName) {
