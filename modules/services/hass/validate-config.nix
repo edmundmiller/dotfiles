@@ -10,11 +10,12 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 let
-  cfg = config.services.home-assistant or { };
-  hassEnabled = cfg.enable or false;
+  cfg = if isDarwin then { } else config.services.home-assistant;
+  hassEnabled = if isDarwin then false else (cfg.enable or false);
 
   configYaml = (pkgs.formats.yaml { }).generate "configuration.yaml" cfg.config;
 
@@ -167,6 +168,8 @@ let
       '';
 
 in
-lib.mkIf hassEnabled {
-  system.extraDependencies = [ hassConfigCheck ];
-}
+lib.optionalAttrs (!isDarwin) (
+  lib.mkIf hassEnabled {
+    system.extraDependencies = [ hassConfigCheck ];
+  }
+)
