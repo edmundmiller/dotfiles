@@ -139,16 +139,18 @@ export function buildBaseName(program: string, path: string, context?: PaneConte
   if (!program) return path ? shortenPath(path) : "";
   if (SHELLS.includes(program)) return path ? shortenPath(path) : program;
   if (DIR_PROGRAMS.includes(program)) {
-    let name = DISPLAY_NAMES[program] ?? program;
+    const displayName = DISPLAY_NAMES[program];
+    let name = displayName ?? program;
+    const sep = displayName ? " " : ": ";
     const short = path ? shortenPath(path) : "";
 
     // Prefer session name > branch > path
     if (context?.sessionName) {
-      name += `: ${context.sessionName}`;
+      name += `${sep}${context.sessionName}`;
     } else if (context?.branch) {
-      name += `: ${short}@${context.branch}`;
+      name += `${sep}${short}@${context.branch}`;
     } else if (short) {
-      name += `: ${short}`;
+      name += `${sep}${short}`;
     }
     return name;
   }
