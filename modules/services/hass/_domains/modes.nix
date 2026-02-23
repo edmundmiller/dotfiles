@@ -106,13 +106,18 @@ in
       {
         alias = "Good Morning";
         id = "good_morning_reset";
-        description = "Reset night mode when goodnight toggle turns off";
+        description = "Reset night mode when goodnight toggle turns off — delegates to scene for full morning reset (blinds, whitenoise, mode, wake booleans)";
         trigger = {
           platform = "state";
           entity_id = "input_boolean.goodnight";
           to = "off";
         };
-        action = [ (setMode "Home") ];
+        action = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.good_morning";
+          }
+        ];
       }
 
       # Away mode — safety net for manual mode changes
