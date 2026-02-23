@@ -73,6 +73,16 @@ fn is_automated_pane(pane: Option<&str>) -> bool {
     exclude.split(',').any(|pat| title.contains(pat.trim()))
 }
 
+/// Check whether a pane target is still valid.
+fn pane_exists(pane: &str) -> bool {
+    Command::new("tmux")
+        .args(["display-message", "-t", pane, "-p", ""])
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
 /// Send a single native scroll command (no animation).
 fn scroll_instant(direction: Direction, scroll_type: &ScrollType, lines: u32, pane: Option<&str>) {
     let cmd_name = match (direction, scroll_type) {
@@ -93,7 +103,9 @@ fn scroll_instant(direction: Direction, scroll_type: &ScrollType, lines: u32, pa
                     c.args(["-t", t]);
                 }
                 c.args(["-X", dir]);
-                let _ = c.status();
+                if !c.status().map(|s| s.success()).unwrap_or(false) {
+                    return;
+                }
             }
             return;
         }
@@ -109,6 +121,7 @@ fn scroll_instant(direction: Direction, scroll_type: &ScrollType, lines: u32, pa
 
 /// Send scroll commands one per line via tmux send-keys.
 /// Compiled Rust has negligible fork overhead vs Perl — no need for control mode.
+/// Bails early if any send-keys fails (pane closed mid-scroll, etc.).
 fn scroll(direction: Direction, lines: u32, delays: &[Duration], pane: Option<&str>) {
     let dir = match direction {
         Direction::Up => "scroll-up",
@@ -121,7 +134,9 @@ fn scroll(direction: Direction, lines: u32, delays: &[Duration], pane: Option<&s
             cmd.args(["-t", t]);
         }
         cmd.args(["-X", dir]);
-        let _ = cmd.status();
+        if !cmd.status().map(|s| s.success()).unwrap_or(false) {
+            return;
+        }
         if i < lines - 1 {
             thread::sleep(delays[i as usize]);
         }
@@ -476,6 +491,13 @@ fn main() {
 
     if lines == 0 {
         return;
+    }
+
+    // Bail silently if target pane no longer exists (closed mid-scroll race)
+    if let Some(ref p) = pane {
+        if !pane_exists(p) {
+            return;
+        }
     }
 
     // Skip animation for automated panes (Pi agents, etc.)
