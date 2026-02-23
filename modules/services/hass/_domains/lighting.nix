@@ -29,17 +29,16 @@
         min_color_temp = 2000; # warm white
         max_color_temp = 5500; # cool daylight
         sleep_brightness = 10;
-        sleep_color_temp = 1000; # deep warm red — melatonin-friendly
+        sleep_color_temp = 1000;
         # All lights clip at min_color_temp_kelvin=2127K so color_temp alone
-        # can't reach 1000K. sleep_rgb_color sets the target color; force_rgb_color
-        # makes AL send HS/RGB commands instead of color_temp, bypassing the
-        # hardware floor. [255, 56, 0] ≈ 1000K deep warm red.
+        # can't reach 1000K. Switch sleep mode to RGB and send [255, 56, 0]
+        # (≈1000K deep warm red) to bypass the hardware color_temp floor.
+        sleep_rgb_or_color_temp = "rgb_color";
         sleep_rgb_color = [
           255
           56
           0
         ];
-        force_rgb_color = true;
         take_over_control = true;
         detect_non_ha_changes = false;
       }
