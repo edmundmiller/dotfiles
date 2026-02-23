@@ -35,7 +35,8 @@
         "Night"
         "Vacation"
       ];
-      initial = "Home";
+      # No initial — persists across HA restarts (critical: initial="Home"
+      # was resetting Night mode on restart, breaking wake detection)
       icon = "mdi:home";
     };
 
