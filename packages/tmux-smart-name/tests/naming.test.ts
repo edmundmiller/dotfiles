@@ -76,7 +76,7 @@ describe("parsePiFooter", () => {
 describe("buildBaseName", () => {
   test.each([
     ["zsh", "~/src/personal/repo", undefined, "~/s/p/repo"],
-    ["nvim", "~/src/personal/repo", undefined, ": ~/s/p/repo"],
+    ["nvim", "~/src/personal/repo", undefined, ": ~/s/p/repo"],
     ["python", "~/repo", undefined, "python"],
     ["opencode", "~/src/project", undefined, "opencode: ~/s/project"],
     ["claude", "", undefined, "claude"],
