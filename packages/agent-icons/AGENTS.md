@@ -22,9 +22,9 @@ Custom font mapping AI agent logos to Private Use Area codepoints for use in Gho
 
 ```
 U+F5000 = claude
-U+F5001 = anthropic
-U+F5002 = amp
-U+F5003 = opencode
+U+F5001 = amp
+U+F5002 = opencode
+U+F5003 = anthropic
 ```
 
 ## Adding a New Icon

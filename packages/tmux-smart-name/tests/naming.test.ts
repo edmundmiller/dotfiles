@@ -78,10 +78,10 @@ describe("buildBaseName", () => {
     ["zsh", "~/src/personal/repo", undefined, "~/s/p/repo"],
     ["nvim", "~/src/personal/repo", undefined, " repo"],
     ["python", "~/repo", undefined, "python"],
-    ["opencode", "~/src/project", undefined, " project"],
-    ["claude", "", undefined, "󱂶"],
+    ["opencode", "~/src/project", undefined, "󵀂 project"],
+    ["claude", "", undefined, "󵀀"],
     ["pi", "~/src/personal/project", undefined, "π project"],
-    ["amp", "~/foo", undefined, " foo"],
+    ["amp", "~/foo", undefined, "󵀁 foo"],
   ] as const)("%s + %s → %s", (program, path, ctx, expected) => {
     expect(buildBaseName(program, path, ctx)).toBe(expected);
   });
