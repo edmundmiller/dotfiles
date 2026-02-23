@@ -2,6 +2,22 @@
 
 Each file is a logical grouping of HA config (scenes, automations, scripts, input helpers). Imported explicitly from `../default.nix`. Use `lib.mkAfter` for automations/scenes to append to base lists.
 
+## Scene vs Automation vs Script
+
+Pick the simplest primitive that fits:
+
+| Primitive      | What it does                                                                 | When to use                                             |
+| -------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **Scene**      | Sets entity states. No logic, no service calls. Idempotent — safe to repeat. | Desired end-states (bedtime, morning, away, etc.)       |
+| **Script**     | Sequence of actions with optional logic. Can call any service.               | Reusable multi-step procedures (everything_off, nudges) |
+| **Automation** | Listens for triggers, runs actions with optional conditions.                 | Reactive behavior (presence, time, sensor changes)      |
+
+**Design pattern:** Scenes define _what_ the state should be. Automations define _when_ to apply it. Scripts define _how_ to do complex procedures. Automations should `scene.turn_on` wherever possible — keeps entity state centralized in scenes, automations stay thin trigger→scene wrappers.
+
+Scenes are idempotent — every stage should assert the full expected state for that stage, even if a prior stage already set it. This makes each scene a reliable safety net regardless of entry path.
+
+Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-automations/288105), [Automations and Scenes and Scripts, Oh My!](https://community.home-assistant.io/t/automations-and-scenes-and-scripts-oh-my/583417)
+
 ## Files
 
 - `ambient.nix` — Sun-based scenes (mid-morning, sundown), presence (arrive/leave), entrance occupancy night light
@@ -59,8 +75,8 @@ Configured in `lighting.nix`. One "Living Space" switch covers all color-temp li
 - Brightness: 20% min → 100% max
 - Sleep mode: 10% brightness, 1000K (deep warm red, melatonin-friendly)
 - `take_over_control: true` — manual adjustments pause AL for that light
-- Sleep mode schedule: **on at 9:30 PM, off at 7:00 AM** (time-based)
-- Sleep mode also mirrors `input_boolean.goodnight` for early nights / manual override
+- Sleep mode schedule: **on at 9:30 PM** (pre-warmup), **off at 7:00 AM** (hard cutoff) — time-based automations in `lighting.nix`
+- Sleep mode also embedded in scenes: Winding Down/In Bed/Sleep → on, Good Morning → off
 
 ### HA entities
 
