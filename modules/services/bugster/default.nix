@@ -257,7 +257,7 @@ in
               # healthcheckPingUrls."github_personal_tasknotes" = "https://..."
               # → HEALTHCHECK_PING_URL_GITHUB_PERSONAL_TASKNOTES = "https://..."
               // lib.mapAttrs' (
-                name: url: lib.nameValuePair "HEALTHCHECK_PING_URL_${builtins.toUpper name}" url
+                name: url: lib.nameValuePair "HEALTHCHECK_PING_URL_${lib.strings.toUpper name}" url
               ) cfg.healthcheckPingUrls;
               environmentFiles = optional (cfg.environmentFile != "") cfg.environmentFile;
               readWritePaths = [
