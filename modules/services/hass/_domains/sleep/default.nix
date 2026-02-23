@@ -22,7 +22,7 @@
 #
 # Wake detection state machine:
 #   input_boolean.edmund_awake / monica_awake track who's up
-#   Set by (any during Night mode): bed presence off, focus off,
+#   Set by (any while goodnight=on): bed presence off, focus off,
 #     battery Charging→Not Charging, activity=Walking, or
 #     active phone use (Launch/Siri/Manual update trigger)
 #   Reset by: Winding Down scene (sleep.nix) and Good Morning scene (modes.nix)
@@ -40,7 +40,6 @@
           "input_boolean.goodnight" = "on";
           "input_boolean.edmund_awake" = "off"; # reset wake tracking
           "input_boolean.monica_awake" = "off";
-          "input_select.house_mode" = "Night";
           "cover.smartwings_window_covering" = "closed";
           "media_player.tv" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
@@ -74,7 +73,6 @@
         entities = {
           # Confirm sealed state — whitenoise stays, everything else off
           "input_boolean.goodnight" = "on";
-          "input_select.house_mode" = "Night";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise stays
           "cover.smartwings_window_covering" = "closed";
@@ -221,8 +219,8 @@
           }
           {
             condition = "state";
-            entity_id = "input_select.house_mode";
-            state = "Night";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
           }
         ];
         action = [
@@ -262,8 +260,8 @@
           }
           {
             condition = "state";
-            entity_id = "input_select.house_mode";
-            state = "Night";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
           }
         ];
         action = [
@@ -328,8 +326,8 @@
         condition = [
           {
             condition = "state";
-            entity_id = "input_select.house_mode";
-            state = "Night";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
           }
           {
             condition = "state";
@@ -380,8 +378,8 @@
         condition = [
           {
             condition = "state";
-            entity_id = "input_select.house_mode";
-            state = "Night";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
           }
           {
             condition = "state";

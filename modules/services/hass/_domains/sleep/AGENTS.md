@@ -17,7 +17,7 @@ Three-stage bedtime flow + wake detection state machine. See `README.md` for ful
 
 ## Cross-domain Touchpoints
 
-- Reads `input_select.house_mode` and `input_boolean.goodnight` from `modes.nix`
-- Sets `goodnight = on` and `house_mode = Night` via Winding Down
+- Reads `input_boolean.goodnight` from `modes.nix`
+- Sets `goodnight = on` via Winding Down
 - Good Morning scene (in `modes.nix`) resets `edmund_awake` / `monica_awake`
 - `lighting.nix` AL sleep mode mirrors `goodnight` toggle
