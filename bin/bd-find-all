@@ -251,6 +251,7 @@ collect_issues() {
 
   # Fetch repos in parallel (capped at 8 concurrent to avoid overwhelming dolt)
   local i=0 max_jobs=8
+  local pids=()
   for repo_dir in "${unique_repos[@]}"; do
     local repo_name
     repo_name=$(basename "$repo_dir")
@@ -259,11 +260,15 @@ collect_issues() {
       echo "$issues" | jq --arg repo "$repo_name" --arg path "$repo_dir" \
         'map(. + {repo_name: $repo, repo_path: $path})' > "$tmpdir/$i.json" 2>/dev/null
     ) &
+    pids+=($!)
     ((i++))
     # Throttle: wait when we hit max_jobs
-    if (( i % max_jobs == 0 )); then wait; fi
+    if (( i % max_jobs == 0 )); then
+      for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || true; done
+      pids=()
+    fi
   done
-  wait
+  for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || true; done
 
   # Single merge of all results
   jq -s 'add // []' "$tmpdir"/*.json 2>/dev/null || echo "[]"
