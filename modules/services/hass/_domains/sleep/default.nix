@@ -62,6 +62,7 @@
         name = "In Bed";
         icon = "mdi:bed";
         entities = {
+          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise
           "light.smart_night_light_w" = "off"; # No longer needed
         };
@@ -74,6 +75,7 @@
           # Confirm sealed state — whitenoise stays, everything else off
           "input_boolean.goodnight" = "on";
           "input_select.house_mode" = "Night";
+          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise stays
           "cover.smartwings_window_covering" = "closed";
           "media_player.tv" = "off";
