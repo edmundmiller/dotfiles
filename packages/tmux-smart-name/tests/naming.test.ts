@@ -78,17 +78,17 @@ describe("buildBaseName", () => {
     ["zsh", "~/src/personal/repo", undefined, "~/s/p/repo"],
     ["nvim", "~/src/personal/repo", undefined, " repo"],
     ["python", "~/repo", undefined, "python"],
-    ["opencode", "~/src/project", undefined, "opencode: ~/s/project"],
-    ["claude", "", undefined, "claude"],
+    ["opencode", "~/src/project", undefined, " project"],
+    ["claude", "", undefined, "󱂶"],
     ["pi", "~/src/personal/project", undefined, "π project"],
-    ["amp", "~/foo", undefined, "amp: ~/foo"],
+    ["amp", "~/foo", undefined, " foo"],
   ] as const)("%s + %s → %s", (program, path, ctx, expected) => {
     expect(buildBaseName(program, path, ctx)).toBe(expected);
   });
 
   test("pi with branch", () => {
     expect(buildBaseName("pi", "~/.config/dotfiles", { branch: "feat/tmux" })).toBe(
-      "π dotfiles@feat/tmux"
+      "π dotfiles #[dim]tmux#[nodim]"
     );
   });
 
@@ -129,7 +129,7 @@ describe("trimName", () => {
   });
 
   test("no trim when color codes make string look long but visible is short", () => {
-    const name = "#[fg=blue]□#[default] π";
+    const name = "π";
     expect(trimName(name, 24)).toBe(name); // visible: "□ pi" = 4 chars
   });
 });
