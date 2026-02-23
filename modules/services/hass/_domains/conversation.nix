@@ -82,9 +82,8 @@ _: {
             target.entity_id = "input_boolean.goodnight";
           }
           {
-            action = "input_select.select_option";
-            target.entity_id = "input_select.house_mode";
-            data.option = "Home";
+            action = "input_boolean.turn_off";
+            target.entity_id = "input_boolean.vacation_mode";
           }
         ];
       };
@@ -92,9 +91,8 @@ _: {
         speech.text = "Goodbye. Setting away mode.";
         action = [
           {
-            action = "input_select.select_option";
-            target.entity_id = "input_select.house_mode";
-            data.option = "Away";
+            action = "scene.turn_on";
+            target.entity_id = "scene.leave_home";
           }
         ];
       };
@@ -162,7 +160,11 @@ _: {
       };
 
       # --- Status ---
-      GetHouseMode.speech.text = ''The house is in {{ states("input_select.house_mode") }} mode.'';
+      GetHouseMode.speech.text = ''
+        {% if is_state("input_boolean.vacation_mode", "on") %}The house is in Vacation mode.
+        {% elif is_state("input_boolean.goodnight", "on") %}The house is in Night mode.
+        {% elif states.person | selectattr('state', 'eq', 'home') | list | length == 0 %}The house is in Away mode.
+        {% else %}The house is in Home mode.{% endif %}'';
       GetDnd.speech.text = ''Do not disturb is {{ states("input_boolean.do_not_disturb") }}.'';
 
       # --- DND ---

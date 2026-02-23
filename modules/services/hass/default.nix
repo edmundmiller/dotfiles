@@ -249,7 +249,6 @@ in
       services.home-assistant.blueprints = {
         automation = [
           ./blueprints/automation/custom/media_idle_auto_off.yaml
-          ./blueprints/automation/custom/mode_switch.yaml
           ./blueprints/automation/custom/toggle_routine.yaml
         ];
       };

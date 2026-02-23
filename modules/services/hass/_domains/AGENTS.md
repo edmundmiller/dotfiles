@@ -32,9 +32,9 @@ Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-aut
 ## Cross-domain dependencies
 
 ```
-modes.nix (input_boolean.goodnight, input_select.house_mode)
-  ├── ambient.nix reads house_mode for presence scenes
-  ├── sleep/ sets goodnight=on at 10PM, house_mode=Night
+modes.nix (input_boolean.goodnight, input_boolean.vacation_mode)
+  ├── ambient.nix uses presence for arrive/leave scenes
+  ├── sleep/ sets goodnight=on at 10PM
   └── lighting.nix syncs AL sleep mode with goodnight toggle + time schedule
 ```
 

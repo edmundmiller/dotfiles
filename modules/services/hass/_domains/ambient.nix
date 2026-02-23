@@ -40,7 +40,6 @@
         icon = "mdi:home-account";
         entities = {
           "input_boolean.goodnight" = "off";
-          "input_select.house_mode" = "Home";
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
           "light.essentials_a19_a60" = "on";
           "light.essentials_a19_a60_2" = "on";
@@ -56,7 +55,6 @@
         name = "Leave Home";
         icon = "mdi:home-export-outline";
         entities = {
-          "input_select.house_mode" = "Away";
           "cover.smartwings_window_covering" = "closed";
           "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "off"; # Window Nightstand
@@ -216,9 +214,10 @@
         ];
         condition = [
           {
-            condition = "state";
-            entity_id = "input_select.house_mode";
-            state = "Away";
+            # First to arrive — the triggering person is already "home",
+            # so exactly 1 person home means nobody was here before
+            condition = "template";
+            value_template = "{{ states.person | selectattr('state', 'eq', 'home') | list | length == 1 }}";
           }
         ];
         action = [
@@ -252,14 +251,9 @@
           }
           {
             # Don't override vacation mode — it manages its own state
-            condition = "not";
-            conditions = [
-              {
-                condition = "state";
-                entity_id = "input_select.house_mode";
-                state = "Vacation";
-              }
-            ];
+            condition = "state";
+            entity_id = "input_boolean.vacation_mode";
+            state = "off";
           }
         ];
         action = [

@@ -8,7 +8,8 @@ views:
     max_columns: 3
     badges:
       - entity: weather.forecast_home
-      - entity: input_select.house_mode
+      - entity: input_boolean.goodnight
+      - entity: input_boolean.vacation_mode
       - entity: person.edmund_miller
 
     sections:
@@ -17,11 +18,6 @@ views:
           - type: heading
             heading: Scenes
             heading_style: subtitle
-
-          - type: custom:mushroom-select-card
-            entity: input_select.house_mode
-            icon: mdi:home
-            fill_container: true
 
           # Bedtime flow — the main nightly progression
           - type: heading
@@ -736,8 +732,6 @@ views:
                 name: Leave Home
               - entity: automation.entrance_occupancy
                 name: Night Light Motion
-              - entity: automation.away_mode
-                name: Away Mode
               - entity: automation.tv_auto_off_after_2_hours_idle
                 name: TV Auto-Off
               - entity: automation.tv_sleep_timer_start

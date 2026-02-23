@@ -1,11 +1,10 @@
 # Turn off a media player after it's been idle for a configurable duration.
-# Optionally restrict to a specific house mode.
+# Optionally restrict to nighttime (goodnight=on).
 blueprint:
   name: Media Player Idle Auto-Off
   description: >
     Turn off a media player after it has been idle (or paused) for a
-    configurable amount of time.  Optionally only fire when the house
-    is in a specific mode.
+    configurable amount of time.  Optionally only fire during nighttime.
   domain: automation
   input:
     media_player:
@@ -24,14 +23,13 @@ blueprint:
           min: 5
           max: 480
           unit_of_measurement: min
-    require_mode:
-      name: Required House Mode (optional)
+    require_night:
+      name: Require Nighttime (optional)
       description: >
-        Only turn off when input_select.house_mode is this value.
-        Leave blank to always apply.
-      default: ""
+        Only turn off when goodnight is on. Set to false to always apply.
+      default: false
       selector:
-        text:
+        boolean:
 
 triggers:
   - trigger: state
@@ -48,8 +46,8 @@ triggers:
 conditions:
   - condition: template
     value_template: >
-      {% set mode = "require_mode" %}
-      {{ mode == "" or states("input_select.house_mode") == mode }}
+      {% set night_only = "require_night" %}
+      {{ not night_only or is_state("input_boolean.goodnight", "on") }}
 
 actions:
   - action: media_player.turn_off
