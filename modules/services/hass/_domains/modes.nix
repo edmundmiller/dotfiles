@@ -1,17 +1,5 @@
 # House modes domain — mode switching, routines, DND
 { lib, ... }:
-let
-  setMode = mode: {
-    action = "input_select.select_option";
-    target.entity_id = "input_select.house_mode";
-    data.option = mode;
-  };
-
-  tvOff = {
-    action = "media_player.turn_off";
-    target.entity_id = "media_player.tv";
-  };
-in
 {
   services.home-assistant.config = {
     # --- Input helpers ---
@@ -75,30 +63,19 @@ in
     script.everything_off = {
       alias = "Everything Off";
       icon = "mdi:power";
-      description = "Nuclear option — all lights, blinds, TV, mode Night";
+      description = "Nuclear option — delegates to Winding Down scene (goodnight, mode Night, AL sleep mode, blinds, TV, lights), then kills night light too";
       sequence = [
+        # Winding Down: goodnight=on, mode=Night, AL sleep mode on, blinds closed,
+        # TV off, main lights off, wake booleans reset. Night light stays on there —
+        # nuclear option wants it off too.
+        {
+          action = "scene.turn_on";
+          target.entity_id = "scene.winding_down";
+        }
         {
           action = "light.turn_off";
-          target.entity_id = [
-            "light.essentials_a19_a60"
-            "light.essentials_a19_a60_2"
-            "light.essentials_a19_a60_3" # Bathroom Nightstand
-            "light.essentials_a19_a60_4" # Window Nightstand
-            "light.nanoleaf_multicolor_floor_lamp"
-            "light.nanoleaf_multicolor_hd_ls"
-            "light.smart_night_light_w"
-          ];
+          target.entity_id = "light.smart_night_light_w";
         }
-        {
-          action = "cover.close_cover";
-          target.entity_id = "cover.smartwings_window_covering";
-        }
-        tvOff
-        {
-          action = "input_boolean.turn_on";
-          target.entity_id = "input_boolean.goodnight";
-        }
-        (setMode "Night")
       ];
     };
 
@@ -121,8 +98,8 @@ in
         ];
       }
 
-      # Away mode — safety net for manual mode changes
-      # (presence-based Leave Home scene handles the automatic case)
+      # Away mode — safety net for voice/dashboard mode changes
+      # (presence-based Last Person Leaves automation also calls Leave Home)
       {
         alias = "Away mode";
         id = "away_mode_media_off";
@@ -131,7 +108,12 @@ in
           entity_id = "input_select.house_mode";
           to = "Away";
         };
-        action = [ tvOff ];
+        action = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.leave_home";
+          }
+        ];
       }
 
       # DND
