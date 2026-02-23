@@ -132,8 +132,12 @@ let
     # Ensure dagster can traverse to the vault (home dir is typically 700)
     VAULT_PARENT="$(dirname "$VAULT_PATH")"
     chmod o+x "$VAULT_PARENT" 2>/dev/null || true
-    # dagster is in 'users' group — make tasks dir group-writable
-    chmod g+w "$VAULT_PATH/${cfg.tasknotes.tasksDir}" 2>/dev/null || true
+    TASKS_DIR="$VAULT_PATH/${cfg.tasknotes.tasksDir}"
+    # dagster is in 'users' group — make tasks dir + all files group-writable.
+    # Obsidian syncs files from other machines as 644; -R ensures dagster can
+    # update them (mark_stale_as_done, etc.) without PermissionError.
+    chmod g+w "$TASKS_DIR" 2>/dev/null || true
+    find "$TASKS_DIR" -maxdepth 1 -type f -name "*.md" -exec chmod g+w {} + 2>/dev/null || true
   '';
 
   sourceType = types.submodule (_: {
@@ -285,6 +289,29 @@ in
       systemd.services.dagster-code-bugster = {
         after = [ "bugster-setup.service" ];
         requires = [ "bugster-setup.service" ];
+      };
+
+      # Periodic vault permission fix — Obsidian syncs files as 644 from other
+      # machines, but dagster (group: users) needs g+w to update them.
+      systemd.services.bugster-vault-perms = {
+        description = "Fix vault task file permissions for dagster";
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = pkgs.writeShellScript "bugster-vault-perms" ''
+            find "${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir}" \
+              -maxdepth 1 -type f -name "*.md" \
+              -exec chmod g+w {} + 2>/dev/null || true
+          '';
+        };
+      };
+
+      systemd.timers.bugster-vault-perms = {
+        description = "Periodically fix vault file permissions for dagster";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "1min";
+          OnUnitActiveSec = "30min";
+        };
       };
 
       # Bind mount vault tasks dir into dagster's space
