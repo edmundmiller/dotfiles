@@ -10,6 +10,7 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import {
+  isToolCallEventType,
   truncateHead,
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_LINES,
@@ -21,10 +22,18 @@ const XURL_CMD = "npx";
 const XURL_ARGS = ["@xuanwo/xurl"];
 
 export default function (pi: ExtensionAPI) {
+  // Gate: require user confirmation before resolving any thread URI.
+  // Prevents the LLM from silently browsing arbitrary sessions.
+  pi.on("tool_call", async (event, ctx) => {
+    if (event.toolName !== "xurl") return;
+    const ok = await ctx.ui.confirm("xurl: read agent thread?", `Resolve ${event.input.uri}?`);
+    if (!ok) return { block: true, reason: "User declined xurl access" };
+  });
+
   pi.registerTool({
     name: "xurl",
     label: "xurl",
-    description: `Resolve and read AI agent thread content by URI.
+    description: `Resolve and read AI agent thread content by URI. Only use when the user provides a URI.
 
 Supports unified agents:// URIs and legacy provider URIs for: Amp, Codex, Claude, Gemini, Pi, OpenCode.
 
