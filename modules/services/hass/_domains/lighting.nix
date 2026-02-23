@@ -1,7 +1,8 @@
 # Lighting domain — Adaptive Lighting (circadian color temperature + brightness)
 #
 # Adjusts color temp and brightness based on sun position.
-# Sleep mode integrates with existing goodnight flow.
+# Sleep mode: 9:30 PM time trigger (pre-warmup); on/off also embedded in
+# Winding Down and Good Morning scenes (sleep/, modes.nix).
 #
 # One switch: "Living Space" — all color-temp-capable lights.
 # TODO: Consider splitting office (Edmund Desk) into separate switch
@@ -45,22 +46,16 @@
     ];
 
     automation = lib.mkAfter [
-      # AL sleep mode on: 9:30 PM OR goodnight toggled on (whichever comes first)
+      # AL sleep mode on: 9:30 PM — 30 min early warmup before Winding Down at 10 PM
+      # Goodnight path handled by Winding Down scene
       {
         alias = "Adaptive Lighting: sleep mode on";
         id = "al_sleep_mode_on";
-        description = "Enable AL sleep mode at 9:30 PM or when goodnight is toggled on";
-        trigger = [
-          {
-            platform = "time";
-            at = "21:30:00";
-          }
-          {
-            platform = "state";
-            entity_id = "input_boolean.goodnight";
-            to = "on";
-          }
-        ];
+        description = "Enable AL sleep mode at 9:30 PM (30 min pre-warmup before Winding Down)";
+        trigger = {
+          platform = "time";
+          at = "21:30:00";
+        };
         action = [
           {
             action = "switch.turn_on";
@@ -68,22 +63,16 @@
           }
         ];
       }
-      # AL sleep mode off: 7:00 AM OR goodnight toggled off (Good Morning)
+      # AL sleep mode off: 7:00 AM hard cutoff
+      # Goodnight path handled by Good Morning scene
       {
         alias = "Adaptive Lighting: sleep mode off";
         id = "al_sleep_mode_off";
-        description = "Disable AL sleep mode at 7 AM or when goodnight is toggled off";
-        trigger = [
-          {
-            platform = "time";
-            at = "07:00:00";
-          }
-          {
-            platform = "state";
-            entity_id = "input_boolean.goodnight";
-            to = "off";
-          }
-        ];
+        description = "Disable AL sleep mode at 7 AM hard cutoff";
+        trigger = {
+          platform = "time";
+          at = "07:00:00";
+        };
         action = [
           {
             action = "switch.turn_off";
