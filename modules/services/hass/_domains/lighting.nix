@@ -30,6 +30,14 @@
         max_color_temp = 5500; # cool daylight
         sleep_brightness = 10;
         sleep_color_temp = 1000; # deep warm red — melatonin-friendly
+        # All lights clip at min_color_temp_kelvin=2127K so color_temp alone
+        # can't reach 1000K. sleep_rgb_color switches to HS mode during sleep,
+        # bypassing the hardware floor. [255, 56, 0] ≈ 1000K.
+        sleep_rgb_color = [
+          255
+          56
+          0
+        ];
         take_over_control = true;
         detect_non_ha_changes = false;
       }
