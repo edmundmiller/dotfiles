@@ -9,6 +9,7 @@ import {
   getPaneProgram,
   loadProcessTable,
   clearProcessTable,
+  getChildCmdline,
   getProcessCmdline,
   extractFilenameFromArgs,
 } from "./process.js";
@@ -53,8 +54,10 @@ function renameAll(): void {
           activeContent = capturePane(active.paneId);
           context = parsePiFooter(activeContent);
         } else if (program === "nvim" || program === "vim" || program === "vi") {
-          // For editors: extract the file being edited from process args
-          const cmdline = getProcessCmdline(active.pid);
+          // pane_pid is the shell; nvim is its child. Use getChildCmdline to find
+          // nvim's full cmdline (with args). Fall back to getProcessCmdline for
+          // the rare case where nvim is the direct pane process (no shell wrapper).
+          const cmdline = getChildCmdline(active.pid) || getProcessCmdline(active.pid);
           const filename = extractFilenameFromArgs(cmdline);
           if (filename) context = { filename };
         }
