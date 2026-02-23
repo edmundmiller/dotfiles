@@ -80,7 +80,7 @@ describe("buildBaseName", () => {
     ["python", "~/repo", undefined, "python"],
     ["opencode", "~/src/project", undefined, "opencode: ~/s/project"],
     ["claude", "", undefined, "claude"],
-    ["pi", "~/src/personal/project", undefined, "pi: ~/s/p/project"],
+    ["pi", "~/src/personal/project", undefined, "π: ~/s/p/project"],
     ["amp", "~/foo", undefined, "amp: ~/foo"],
   ] as const)("%s + %s → %s", (program, path, ctx, expected) => {
     expect(buildBaseName(program, path, ctx)).toBe(expected);
@@ -88,7 +88,7 @@ describe("buildBaseName", () => {
 
   test("pi with branch", () => {
     expect(buildBaseName("pi", "~/.config/dotfiles", { branch: "feat/tmux" })).toBe(
-      "pi: ~/.c/dotfiles@feat/tmux"
+      "π: ~/.c/dotfiles@feat/tmux"
     );
   });
 
@@ -98,11 +98,11 @@ describe("buildBaseName", () => {
         branch: "feat/tmux",
         sessionName: "refactor auth",
       })
-    ).toBe("pi: refactor auth");
+    ).toBe("π: refactor auth");
   });
 
   test("pi on main (no branch in context)", () => {
-    expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("pi: ~/.c/dotfiles");
+    expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("π: ~/.c/dotfiles");
   });
 });
 
@@ -120,7 +120,7 @@ describe("trimName", () => {
   });
 
   test("skips tmux color codes in length calculation", () => {
-    const name = "#[fg=cyan]●#[default] pi: ~/some/long/path/here";
+    const name = "#[fg=cyan]●#[default] π: ~/some/long/path/here";
     const trimmed = trimName(name, 24);
     // Should preserve color codes and trim visible content
     expect(trimmed).toContain("#[fg=cyan]");
@@ -129,7 +129,7 @@ describe("trimName", () => {
   });
 
   test("no trim when color codes make string look long but visible is short", () => {
-    const name = "#[fg=blue]□#[default] pi";
+    const name = "#[fg=blue]□#[default] π";
     expect(trimName(name, 24)).toBe(name); // visible: "□ pi" = 4 chars
   });
 });
