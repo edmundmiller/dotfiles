@@ -22,6 +22,9 @@ if-shell 'tmux list-sessions >/dev/null 2>&1' '' 'new-session'
 
 setw -g automatic-rename off      # rename window after current program
 set  -g renumber-windows on      # renumber windows when one is closed
+# Push session name to terminal (Ghostty) window title via OSC 2
+set  -g set-titles on
+set  -g set-titles-string "#{session_name}"
 # Zero-based indexing is fine in programming languages, but not so much in a
 # multiplexer when zero is on the other side of the keyboard.
 set  -g base-index 1

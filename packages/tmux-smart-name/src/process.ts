@@ -98,6 +98,7 @@ function escapeRegex(s: string): string {
 // ── Cached process table ───────────────────────────────────────────────────
 
 interface PsEntry {
+  pid: string;
   ppid: string;
   cmdline: string;
 }
@@ -107,7 +108,7 @@ let psCache: PsEntry[] | null = null;
 /** Load process table once, reuse for all panes in this cycle. */
 export function loadProcessTable(): void {
   try {
-    const output = execFileSync("ps", ["-a", "-oppid=,command="], {
+    const output = execFileSync("ps", ["-a", "-opid=,ppid=,command="], {
       encoding: "utf8",
       timeout: 3000,
       stdio: ["pipe", "pipe", "ignore"],
@@ -115,14 +116,13 @@ export function loadProcessTable(): void {
 
     psCache = [];
     for (const raw of output.split("\n")) {
-      const line = raw.trim();
-      if (!line) continue;
-      const spaceIdx = line.indexOf(" ");
-      if (spaceIdx < 0) continue;
-      psCache.push({
-        ppid: line.slice(0, spaceIdx).trim(),
-        cmdline: line.slice(spaceIdx + 1).trim(),
-      });
+      const parts = raw.trim().split(/\s+/);
+      if (parts.length < 3) continue;
+      const pid = parts[0];
+      const ppid = parts[1];
+      const cmdline = parts.slice(2).join(" ");
+      if (!pid || !ppid) continue;
+      psCache.push({ pid, ppid, cmdline });
     }
   } catch {
     psCache = [];
@@ -147,6 +147,59 @@ export function getChildCmdline(panePid: string): string {
     if (cmd.startsWith("-")) continue;
 
     return entry.cmdline;
+  }
+  return "";
+}
+
+/** Look up a process's own cmdline by its PID. */
+export function getProcessCmdline(pid: string): string {
+  if (!pid) return "";
+  if (!psCache) loadProcessTable();
+  for (const entry of psCache!) {
+    if (entry.pid === pid) return entry.cmdline;
+  }
+  return "";
+}
+
+/** Vim/nvim flags that consume the next argument (not a filename). */
+const EDITOR_FLAGS_WITH_ARGS = new Set([
+  "-c",
+  "--cmd",
+  "-u",
+  "-U", // vimrc / gvimrc
+  "-s", // script file
+  "-w",
+  "-W", // log file
+  "-T", // terminal type
+  "-d", // diff
+  "--servername",
+  "--server-name",
+  "--listen", // nvim socket
+  "--remote-send",
+  "--remote-expr",
+]);
+
+/**
+ * Extract a meaningful filename from an editor/viewer cmdline.
+ * Skips flags (- or +) and their arguments, bare dots, returns basename of first file arg.
+ * e.g. "nvim src/index.ts" → "index.ts", "vim -c cmd file.go" → "file.go"
+ */
+export function extractFilenameFromArgs(cmdline: string): string {
+  if (!cmdline) return "";
+  const tokens = cmdline.trim().split(/\s+/).slice(1); // skip program name
+  let skipNext = false;
+  for (const token of tokens) {
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    if (!token || token.startsWith("-") || token.startsWith("+")) {
+      if (EDITOR_FLAGS_WITH_ARGS.has(token)) skipNext = true;
+      continue;
+    }
+    const base = basename(token);
+    if (!base || base === "." || base === "..") continue;
+    return base;
   }
   return "";
 }

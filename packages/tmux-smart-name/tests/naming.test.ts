@@ -112,6 +112,18 @@ describe("buildBaseName", () => {
   test("pi on main (no branch in context)", () => {
     expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("π");
   });
+
+  test("nvim with filename", () => {
+    expect(buildBaseName("nvim", "~/src/project", { filename: "index.ts" })).toBe(
+      `\uE6AE index.ts`
+    );
+  });
+
+  test("nvim filename takes priority over branch", () => {
+    expect(
+      buildBaseName("nvim", "~/src/project", { filename: "Button.tsx", branch: "feat/ui" })
+    ).toBe(`\uE6AE Button.tsx`);
+  });
 });
 
 describe("trimName", () => {
