@@ -19,17 +19,13 @@
 #                   sensor.monica_s_eight_sleep_side_sleep_stage
 { lib, ... }:
 let
-  allLights = [
-    "light.essentials_a19_a60"
-    "light.essentials_a19_a60_2"
-    "light.essentials_a19_a60_3"
-    "light.essentials_a19_a60_4"
-    "light.nanoleaf_multicolor_floor_lamp"
-    "light.nanoleaf_multicolor_hd_ls"
-    "light.smart_night_light_w"
-  ];
-
   vacationStart = [
+    # Entity state changes — delegated to scene (lights, blinds, media, mode)
+    {
+      action = "scene.turn_on";
+      target.entity_id = "scene.vacation";
+    }
+    # Service calls that scenes can't express:
     # 8Sleep — away mode both sides
     {
       action = "eight_sleep.away_mode_start";
@@ -45,23 +41,6 @@ let
       action = "climate.set_preset_mode";
       target.entity_id = "climate.ecobee"; # TODO: verify
       data.preset_mode = "away";
-    }
-    # Lights, blinds, media
-    {
-      action = "light.turn_off";
-      target.entity_id = allLights;
-    }
-    {
-      action = "cover.close_cover";
-      target.entity_id = "cover.smartwings_window_covering";
-    }
-    {
-      action = "media_player.turn_off";
-      target.entity_id = "media_player.tv";
-    }
-    {
-      action = "switch.turn_off";
-      target.entity_id = "switch.eve_energy_20ebu4101";
     }
   ];
 
