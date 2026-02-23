@@ -349,13 +349,19 @@ fn init() {
             ])
             .status();
 
-        // Also guard WheelDownPane (can enter copy-mode in some tmux configs)
+        // Also guard WheelDownPane.
+        // IMPORTANT: only pass through when already in a mode or alternate screen.
+        // Unconditional send-keys -M sends raw mouse escape sequences to a normal
+        // shell pane, which causes visual blanking/glitches.
         let _ = Command::new("tmux")
             .args([
                 "bind-key", "-T", "root", "WheelDownPane",
                 "if-shell", "-F", &combined,
+                // Excluded pane: swallow event
                 "",
-                "send-keys -M",
+                // Not excluded: only pass through if in copy-mode, alternate screen, or
+                // app-requested mouse — matches WheelUpPane passthrough guard exactly.
+                &format!("if-shell -F \"{default_guard}\" \"send-keys -M\""),
             ])
             .status();
     }
