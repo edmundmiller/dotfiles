@@ -204,6 +204,7 @@ in
             ".pi/agent/extensions/non-interactive-env.ts".source =
               "${configDir}/pi/extensions/non-interactive-env.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
+            ".pi/agent/extensions/xurl.ts".source = "${configDir}/pi/extensions/xurl.ts";
           };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
