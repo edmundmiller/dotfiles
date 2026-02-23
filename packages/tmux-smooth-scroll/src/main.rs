@@ -298,11 +298,11 @@ fn init() {
     if mouse_scroll {
         let exclude = tmux_option("@smooth-scroll-exclude")
             .unwrap_or_else(|| "π".to_string());
-        // Build a tmux format string: #{m:pattern,#{pane_title}} matches substring
+        // Build a tmux format string: #{m:*pattern*,#{pane_title}} matches via fnmatch glob
         // We OR multiple patterns together for comma-separated excludes
         let match_exprs: Vec<String> = exclude
             .split(',')
-            .map(|pat| format!("#{{m:{},#{{pane_title}}}}", pat.trim()))
+            .map(|pat| format!("#{{m:*{}*,#{{pane_title}}}}", pat.trim()))
             .collect();
         let combined = match match_exprs.len() {
             1 => match_exprs[0].clone(),
