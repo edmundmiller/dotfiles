@@ -71,4 +71,17 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- Wrap text at 80 chars while typing (doesn't reflow existing lines; prettier handles that)
+vim.opt.textwidth = 80
+vim.opt.colorcolumn = '80'
+
+-- Enable spell checking for prose filetypes
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'markdown', 'gitcommit', 'text' },
+  callback = function()
+    vim.opt_local.spell = true
+    vim.opt_local.spelllang = 'en'
+  end,
+})
+
 -- vim: ts=2 sts=2 sw=2 et
