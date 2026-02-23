@@ -316,18 +316,28 @@ fn init() {
             }
         };
 
-        // If excluded OR alternate_on OR pane_in_mode OR mouse_any_flag → passthrough
-        // Otherwise → enter copy-mode as normal
-        let guard = format!(
-            "#{{||:{combined},#{{||:#{{alternate_on}},#{{||:#{{pane_in_mode}},#{{mouse_any_flag}}}}}}}}"
-        );
+        // Excluded panes: swallow the wheel event entirely (no copy-mode, no passthrough).
+        // Non-excluded: preserve default behavior (alternate/mode/mouse → passthrough, else copy-mode).
+        let default_guard = "#{||:#{alternate_on},#{||:#{pane_in_mode},#{mouse_any_flag}}}";
 
         let _ = Command::new("tmux")
             .args([
                 "bind-key", "-T", "root", "WheelUpPane",
-                "if-shell", "-F", &guard,
+                "if-shell", "-F", &combined,
+                // Excluded pane: do nothing (swallow event)
+                "",
+                // Not excluded: run default logic
+                &format!("if-shell -F \"{default_guard}\" \"send-keys -M\" \"copy-mode -e\""),
+            ])
+            .status();
+
+        // Also guard WheelDownPane (can enter copy-mode in some tmux configs)
+        let _ = Command::new("tmux")
+            .args([
+                "bind-key", "-T", "root", "WheelDownPane",
+                "if-shell", "-F", &combined,
+                "",
                 "send-keys -M",
-                "copy-mode -e",
             ])
             .status();
     }
