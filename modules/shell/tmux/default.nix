@@ -111,8 +111,8 @@ in
         run-shell -b "${tmux-dark-notify}/main.tmux > /dev/null 2>&1"
 
         # tmux-smooth-scroll: Rust-based smooth scrolling (replaces azorng/tmux-smooth-scroll)
-        # Run synchronously — init just calls bind-key N times, no reason to background it.
-        # Backgrounding causes a race: old stale bindings fire before init finishes.
+        # Mouse scroll disabled — causes spurious copy-mode entry in Pi panes
+        set -g @smooth-scroll-mouse false
         run-shell '${pkgs.my.tmux-smooth-scroll}/bin/tmux-smooth-scroll init'
 
         # tmux-smart-name: window naming + AI agent status
