@@ -1,6 +1,6 @@
 {
   "name": "@edmundmiller/pi-beads",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "pi extension for beads (bd) task management",
   "type": "module",
   "license": "MIT",
