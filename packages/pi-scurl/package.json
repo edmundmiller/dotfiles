@@ -1,5 +1,5 @@
 {
-  "name": "pi-scurl",
+  "name": "@edmundmiller/pi-scurl",
   "version": "0.1.0",
   "type": "module",
   "description": "Secure web fetch for pi – HTML-to-markdown via mdream, secret scanning, prompt injection detection",
@@ -11,9 +11,21 @@
     "markdown",
     "scurl",
     "mdream",
-    "prompt-injection"
+    "prompt-injection",
+    "pi-package"
   ],
+  "author": "Edmund Miller <edmundmiller@hey.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmundmiller/dotfiles.git",
+    "directory": "packages/pi-scurl"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md"
+  ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*"
   },

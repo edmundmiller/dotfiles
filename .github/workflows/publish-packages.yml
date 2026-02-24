@@ -1,0 +1,99 @@
+name: Publish Pi Packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/*/package.json"
+      - "packages/*/src/**"
+      - "packages/*/index.ts"
+
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Specific package to publish (e.g. pi-dcp), or blank for all changed"
+        required: false
+        type: string
+      dry-run:
+        description: "Dry run (don't actually publish)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  detect:
+    name: Detect changed packages
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: detect
+        run: |
+          if [ -n "${{ inputs.package }}" ]; then
+            # Manual trigger for specific package
+            echo "packages=[\"${{ inputs.package }}\"]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Find packages whose version changed since last commit
+          changed=()
+          for pkg_dir in packages/*/; do
+            pkg=$(basename "$pkg_dir")
+            pkg_json="$pkg_dir/package.json"
+            [ -f "$pkg_json" ] || continue
+
+            # Check if package.json or src changed
+            if git diff --name-only HEAD~1 HEAD -- "$pkg_dir" | grep -qE '(package\.json|src/|index\.ts)'; then
+              # Check if version bumped
+              old_ver=$(git show HEAD~1:"$pkg_json" 2>/dev/null | jq -r '.version // "0.0.0"')
+              new_ver=$(jq -r '.version' "$pkg_json")
+              if [ "$old_ver" != "$new_ver" ]; then
+                changed+=("$pkg")
+              fi
+            fi
+          done
+
+          if [ ${#changed[@]} -eq 0 ]; then
+            echo "packages=[]" >> "$GITHUB_OUTPUT"
+          else
+            json=$(printf '%s\n' "${changed[@]}" | jq -R . | jq -sc .)
+            echo "packages=$json" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: echo "Packages to publish:${{ steps.detect.outputs.packages }}"
+
+  publish:
+    name: Publish ${{ matrix.package }}
+    needs: detect
+    if: needs.detect.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.detect.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        working-directory: packages/${{ matrix.package }}
+        run: npm install --ignore-scripts
+
+      - name: Publish
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          FLAGS="--access public"
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            FLAGS="$FLAGS --dry-run"
+          fi
+          npm publish $FLAGS
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
