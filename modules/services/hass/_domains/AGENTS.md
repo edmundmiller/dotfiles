@@ -18,6 +18,22 @@ Scenes are idempotent — every stage should assert the full expected state for 
 
 Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-automations/288105), [Automations and Scenes and Scripts, Oh My!](https://community.home-assistant.io/t/automations-and-scenes-and-scripts-oh-my/583417)
 
+### Intentionally not scene-ified
+
+These automations have inline actions by design — do not refactor them into scenes:
+
+| Automation                                           | Why inline is correct                                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `entrance_occupancy_night_light` (ambient.nix)       | Dynamic wait-loop (`wait_for_trigger`); scenes are static snapshots                                                             |
+| `plant_glow_light_on/off` (ambient.nix)              | Single entity toggled on a time schedule; no state to compose                                                                   |
+| `al_sleep_mode_on/off` (lighting.nix)                | Single switch, time-only triggers (pre-warmup + hard cutoff); scene path already handled by Winding Down / Good Morning scenes  |
+| `Mid-morning` / `Sundown` scenes                     | AL sleep mode not included — it's always off by those times of day (7 AM hard cutoff)                                           |
+| `Leave Home` scene                                   | AL sleep mode not included — irrelevant when nobody is home                                                                     |
+| `Vacation` scene                                     | AL sleep mode not included — long-term away state, not a sleep cycle                                                            |
+| 8Sleep / focus / wake detection automations (sleep/) | Arbitrary service calls (`eight_sleep.*`, `alarm_dismiss`, `side_off`) with per-person conditions; can't be expressed as scenes |
+| `bedtime_nudge` script (sleep/)                      | One-shot notification; no entity state to capture                                                                               |
+| `dnd_on` automation (modes.nix)                      | Sends a notification; no entity state change worth a scene                                                                      |
+
 ## Files
 
 - `ambient.nix` — Sun-based scenes (mid-morning, sundown), presence (arrive/leave), entrance occupancy night light
@@ -32,10 +48,10 @@ Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-aut
 ## Cross-domain dependencies
 
 ```
-modes.nix (input_boolean.goodnight, input_boolean.vacation_mode)
-  ├── ambient.nix uses presence for arrive/leave scenes
-  ├── sleep/ sets goodnight=on at 10PM
-  └── lighting.nix syncs AL sleep mode with goodnight toggle + time schedule
+modes.nix (input_boolean.goodnight, input_select.house_mode)
+  ├── ambient.nix reads house_mode for presence scene conditions
+  ├── sleep/ sets goodnight=on / house_mode=Night at 10PM
+  └── lighting.nix AL sleep mode: time-based triggers; scenes handle the goodnight path
 ```
 
 ## Lights
@@ -95,6 +111,6 @@ Add another entry to the `adaptive_lighting` list. Each entry creates its own `s
 1. Create `_domains/<name>.nix` (simple) or `_domains/<name>/default.nix` (complex)
 2. Add import to `../default.nix` imports list
 3. Use `lib.mkAfter` for `automation`, `scene`, `script` to append (not override)
-4. DRY with let-bindings for repeated actions (see `setMode`/`tvOff` in `modes.nix`)
+4. DRY with let-bindings for repeated action sets (see `vacationStart`/`vacationEnd` in `vacation.nix`)
 
 **Use a directory** when the domain has non-obvious logic, troubleshooting steps, or entity references worth documenting (see `sleep/` for reference).
