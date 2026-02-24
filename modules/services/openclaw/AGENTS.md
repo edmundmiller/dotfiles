@@ -30,6 +30,16 @@ modules/services/openclaw/
 - Backend: `qmd` (semantic search)
 - Citations: `auto`
 
+### Claude Max Proxy
+
+- **Service**: `claude-max-api-proxy` (systemd user service)
+- **Package**: `pkgs.my.claude-max-api-proxy` (built from GitHub via `buildNpmPackage`)
+- **Port**: 3456 (default), configurable via `claudeMaxProxy.port`
+- **Provider name**: `claude-max` — models: `claude-max/claude-opus-4`, `claude-max/claude-sonnet-4`, `claude-max/claude-haiku-4`
+- **Requires**: `claude` CLI authenticated on the NUC (already in systemPackages)
+- **Dependency**: openclaw-gateway `Requires` + `After` the proxy service
+- **Enable**: `modules.services.openclaw.claudeMaxProxy.enable = true`
+
 ### CLI Backends (agents.defaults.cliBackends)
 
 - `pi` — via `bunx @mariozechner/pi-coding-agent --print`
@@ -140,6 +150,24 @@ codex --version
 bunx @mariozechner/pi-coding-agent --version
 ```
 
+### Check Claude Max Proxy
+
+```bash
+# Service status
+systemctl --user status claude-max-api-proxy
+
+# Health check
+curl http://localhost:3456/health
+
+# List models
+curl http://localhost:3456/v1/models
+
+# Test completion
+curl http://localhost:3456/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "claude-sonnet-4", "messages": [{"role": "user", "content": "Hello!"}]}'
+```
+
 ## Known Issues & Gotchas
 
 - **Python conflict**: Openclaw whisper bundles Python 3.13 — conflicts with python module
@@ -148,6 +176,7 @@ bunx @mariozechner/pi-coding-agent --version
 - **qmd installed via npm, NOT nix**: The qmd flake (`github:tobi/qmd`) fails in nix sandbox (bun install needs network). Even with `sandbox = "relaxed"` + `__noChroot = true`, the resulting nix store binary has read-only filesystem issues (`node-llama-cpp` tries to write to its own dir). Solution: `npm install -g @tobilu/qmd` on NUC, accessed via `~/.local/bin/qmd-wrapper` which forces the correct system node in PATH.
 - **qmd node version mismatch**: NUC has two node versions — system v24 (`/run/current-system/sw/bin/node`) and user-profile v25 (`/etc/profiles/per-user/emiller/bin/node`). The `qmd-wrapper` pins system node first in PATH so gateway and CLI use the same version. After any node upgrade, rebuild: `cd ~/.cache/npm/lib/node_modules/@tobilu/qmd && PATH=/run/current-system/sw/bin:$PATH npm rebuild better-sqlite3`.
 - **sag binary needs nix-ld**: `nix-steipete-tools` produces generic linux binaries. NUC needs `programs.nix-ld.enable = true` + `alsa-lib` in `programs.nix-ld.libraries` for sag's `libasound.so.2` dependency.
+- **claude-max-api-proxy needs authenticated claude CLI**: The proxy calls `claude` under the hood. If auth expires, the proxy service will fail on startup (it verifies auth). Re-authenticate with `claude auth login` on the NUC.
 - **tools config is top-level**: `tools.exec.safeBins` and `tools.profile` go under `config.tools`, NOT `config.agents.defaults.tools` (the latter doesn't exist).
 - **darwinOnlyFiles/nixosOnlyFiles in default.nix**: When converting a module from `.nix` to directory (`/default.nix`), MUST update the path AND ensure the directory is git-tracked (untracked dirs invisible to nix flakes).
 - **ExecStartPre vs agenix timing**: On first deploy with a new secret, the env file may be written before agenix decrypts the new key. Restart the service after deploy: `systemctl --user restart openclaw-gateway`.
@@ -164,6 +193,7 @@ Shared skill list configured in `hosts/nuc/default.nix`.
 
 ## Related Files
 
+- `packages/claude-max-api-proxy.nix` — Nix package for the proxy
 - `modules/desktop/apps/openclaw/` — Mac remote client module
 - `flake.nix` — nix-openclaw input and home-manager.sharedModules
 - `hosts/nuc/default.nix` — Enables service + installs CLI backend packages
