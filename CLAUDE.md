@@ -300,14 +300,6 @@ ssh nuc  # Test SSH host alias
 ssh emiller@192.168.1.222  # Test direct connection
 ```
 
-**Repository not found:**
-The `hey nuc` command auto-clones on first run. If needed:
-
-```bash
-hey nuc-ssh
-git clone https://github.com/edmundmiller/dotfiles.git ~/dotfiles-deploy
-```
-
 **Build failures:**
 
 ```bash
