@@ -48,7 +48,7 @@ stdenvNoCC.mkDerivation {
   meta = with lib; {
     description = "JJ Workspace management for parallel agents";
     longDescription = ''
-      A CLI tool for managing Jujutsu (jj) workspaces, inspired by worktrunk.
+      A CLI tool for managing Jujutsu (jj) workspaces.
       Designed for running AI agents (Claude, OpenCode) in parallel.
     '';
     homepage = "https://github.com/edmundmiller/dotfiles";

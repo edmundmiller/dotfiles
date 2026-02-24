@@ -5,7 +5,6 @@
   taps = [
     "seqeralabs/tap"
     "pulumi/tap"
-    "max-sixty/worktrunk"
     "joshmedeski/sesh"
   ];
 
@@ -19,7 +18,6 @@
     "ruff"
     "uv"
     "tealdeer"
-    "max-sixty/worktrunk/wt"
     "joshmedeski/sesh/sesh"
     "seqeralabs/tap/tw"
     "seqeralabs/tap/wave-cli"

@@ -45,6 +45,5 @@ modules.shell.zsh = {
 
 ## Related
 
-- `modules/shell/wt/` (envFiles usage)
 - `modules/shell/tmux/` (rcFiles usage)
 - `config/zsh/*`

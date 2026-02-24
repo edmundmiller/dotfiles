@@ -208,12 +208,6 @@
     "padding": 0
   },
   "extraKnownMarketplaces": {
-    "worktrunk": {
-      "source": {
-        "source": "github",
-        "repo": "max-sixty/worktrunk"
-      }
-    },
     "wakatime": {
       "source": {
         "source": "github",
@@ -228,7 +222,6 @@
     }
   },
   "enabledPlugins": {
-    "worktrunk@worktrunk": true,
     "nextflow-pipeline-development@seqera-templates": false,
     "nextflow-plugin-development@seqera-templates": false,
     "jj@dotfiles-plugins": false,

@@ -26,7 +26,7 @@ const STATUS_ICONS: Record<Status, string> = {
   unknown: "◇",
 };
 
-interface WorkmuxContext {
+interface WorktreeContext {
   branch: string;
   projectRoot: string;
   isWorktree: boolean;
@@ -39,8 +39,8 @@ interface PluginConfig {
   debug: boolean;
   useAgentsMd: boolean;
   showStatus: boolean;
-  workmuxAware: boolean;
-  workmuxFormat: "project" | "branch" | "both";
+  worktreeAware: boolean;
+  worktreeFormat: "project" | "branch" | "both";
 }
 
 interface State {
@@ -69,8 +69,8 @@ function loadConfig(): PluginConfig {
     debug: env.OPENCODE_TMUX_DEBUG === "1",
     useAgentsMd: env.OPENCODE_TMUX_USE_AGENTS_MD !== "0",
     showStatus: env.OPENCODE_TMUX_SHOW_STATUS !== "0",
-    workmuxAware: env.OPENCODE_TMUX_WORKMUX_AWARE !== "0",
-    workmuxFormat: (env.OPENCODE_TMUX_WORKMUX_FORMAT as "project" | "branch" | "both") || "both",
+    worktreeAware: env.OPENCODE_TMUX_WORKTREE_AWARE !== "0",
+    worktreeFormat: (env.OPENCODE_TMUX_WORKTREE_FORMAT as "project" | "branch" | "both") || "both",
   };
 }
 
@@ -125,14 +125,14 @@ function sanitize(input: string, maxLen = 20): string {
 }
 
 /**
- * Detect if we're in a workmux-managed worktree.
- * Workmux uses bare repo layout with worktrees as siblings.
+ * Detect if we're in a worktree-managed worktree.
+ * Worktree uses bare repo layout with worktrees as siblings.
  * Pattern: project/.git (bare) + project/branch-name/ (worktrees)
  */
-function getWorkmuxContext(
+function getWorktreeContext(
   cwd: string,
   log: ReturnType<typeof createLogger>
-): WorkmuxContext | null {
+): WorktreeContext | null {
   try {
     // Check if we're in a git worktree
     const gitDir = execFileSync("git", ["rev-parse", "--git-dir"], {
@@ -172,10 +172,10 @@ function getWorkmuxContext(
     }
     const projectRoot = gitDirMatch[1];
 
-    log.debug(`Workmux detected: branch=${branch}, root=${projectRoot}`);
+    log.debug(`Worktree detected: branch=${branch}, root=${projectRoot}`);
     return { branch, projectRoot, isWorktree: true };
   } catch (e) {
-    log.debug(`Workmux detection failed: ${e instanceof Error ? e.message : "unknown"}`);
+    log.debug(`Worktree detection failed: ${e instanceof Error ? e.message : "unknown"}`);
     return null;
   }
 }
@@ -257,17 +257,17 @@ function buildName(
   tag: string | null,
   status: Status,
   showStatus: boolean,
-  workmux: WorkmuxContext | null,
-  workmuxFormat: "project" | "branch" | "both"
+  worktree: WorktreeContext | null,
+  worktreeFormat: "project" | "branch" | "both"
 ): string {
   const statusIcon = showStatus ? `${STATUS_ICONS[status]} ` : "";
 
-  // When in workmux worktree, use branch-focused naming
-  if (workmux) {
-    const branch = sanitize(workmux.branch, 25);
-    const proj = sanitize(basename(workmux.projectRoot), 15);
+  // When in worktree worktree, use branch-focused naming
+  if (worktree) {
+    const branch = sanitize(worktree.branch, 25);
+    const proj = sanitize(basename(worktree.projectRoot), 15);
 
-    switch (workmuxFormat) {
+    switch (worktreeFormat) {
       case "branch":
         // Just branch: "● fix-auth"
         return `${statusIcon}${branch}`;
@@ -384,10 +384,10 @@ export const TmuxNamer: Plugin = async ({ directory }) => {
   const tmux = findTmux(log);
   let agentsMdGuidance: string | null = null;
 
-  // Detect workmux context once at startup
-  const workmuxContext = config.workmuxAware ? getWorkmuxContext(directory, log) : null;
-  if (workmuxContext) {
-    log.info(`Workmux detected: branch=${workmuxContext.branch}`);
+  // Detect worktree context once at startup
+  const worktreeContext = config.worktreeAware ? getWorktreeContext(directory, log) : null;
+  if (worktreeContext) {
+    log.info(`Worktree detected: branch=${worktreeContext.branch}`);
   }
 
   if (config.useAgentsMd) {
@@ -428,8 +428,8 @@ export const TmuxNamer: Plugin = async ({ directory }) => {
       tag,
       state.status,
       config.showStatus,
-      workmuxContext,
-      config.workmuxFormat
+      worktreeContext,
+      config.worktreeFormat
     );
 
     if (name === state.currentName) {
@@ -459,8 +459,8 @@ export const TmuxNamer: Plugin = async ({ directory }) => {
       tag,
       state.status,
       config.showStatus,
-      workmuxContext,
-      config.workmuxFormat
+      worktreeContext,
+      config.worktreeFormat
     );
     if (newName !== state.currentName) {
       if (renameWindow(newName, tmux, log)) {

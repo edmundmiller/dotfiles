@@ -100,7 +100,7 @@ jback() {
 # See: jw help
 # Full tool at: bin/jw
 
-# Core jw aliases (matching worktrunk's wt aliases)
+# Core jw aliases
 alias jws='jw switch'       # Switch to workspace
 alias jwl='jw list'         # List workspaces with status
 alias jwr='jw remove'       # Remove workspace

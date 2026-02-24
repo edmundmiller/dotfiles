@@ -14,7 +14,7 @@ Primary personal development machine running nix-darwin.
 | -------- | ------------------------------------------------------------------------------------------ |
 | Editors  | emacs, vim (default: nvim)                                                                 |
 | Dev      | node (fnm + bun globals: zele), R, python (DISABLED — openclaw conflict, see dotfiles-c11) |
-| Shell    | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, wt, zsh                 |
+| Shell    | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, zsh                     |
 | Services | docker, ssh (openclaw disabled)                                                            |
 | Desktop  | macos defaults, raycast, openclaw, ghostty                                                 |
 
