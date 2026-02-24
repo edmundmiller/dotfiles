@@ -92,19 +92,19 @@
       "skills": [],
     },
     // Git-backed agent memory filesystem (inspired by Letta Code)
-    "~/.config/dotfiles/packages/pi-context-repo",
+    "~/.config/dotfiles/pi-packages/pi-context-repo",
     // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
-    "~/.config/dotfiles/packages/pi-dcp",
+    "~/.config/dotfiles/pi-packages/pi-dcp",
     // Secure web fetch – HTML→markdown via mdream, secret scanning, injection detection
-    "~/.config/dotfiles/packages/pi-scurl",
+    "~/.config/dotfiles/pi-packages/pi-scurl",
     // Auto-load direnv env at session start
-    "~/.config/dotfiles/packages/pi-direnv",
+    "~/.config/dotfiles/pi-packages/pi-direnv",
     // Prevent hangs on interactive commands (GIT_EDITOR=true, PAGER=cat, etc.)
-    "~/.config/dotfiles/packages/pi-non-interactive",
+    "~/.config/dotfiles/pi-packages/pi-non-interactive",
     // Git-stash for prompt drafts (ctrl+s/ctrl+shift+s)
-    "~/.config/dotfiles/packages/pi-prompt-stash",
+    "~/.config/dotfiles/pi-packages/pi-prompt-stash",
     // Cross-agent thread reader (agents:// URIs)
-    "~/.config/dotfiles/packages/pi-xurl",
+    "~/.config/dotfiles/pi-packages/pi-xurl",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
@@ -148,7 +148,7 @@
     // GitHub repo tools (read/search/explore) - https://github.com/PriNova/pi-github-tools
     "npm:@prinova/pi-github-tools",
     // Task management UI (ctrl+x) - beads (bd) integration
-    "~/.config/dotfiles/packages/pi-beads",
+    "~/.config/dotfiles/pi-packages/pi-beads",
     // Fuzzy file picker (ctrl+f) - https://github.com/kaofelix/pi-fzf
     "npm:pi-fzf",
     // Profile/settings switcher - https://www.npmjs.com/package/pi-codex-profile

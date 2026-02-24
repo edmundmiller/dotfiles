@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "workspaces": [
+    "pi-*"
+  ],
+  "devDependencies": {
+    "@types/bun": "^1.3.9",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "typecheck": "bun --filter '*' typecheck",
+    "check": "bun --filter '*' typecheck"
+  }
+}

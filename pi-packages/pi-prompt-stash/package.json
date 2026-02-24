@@ -1,39 +1,38 @@
 {
-  "name": "pi-direnv",
+  "name": "pi-prompt-stash",
   "version": "0.1.0",
   "type": "module",
-  "description": "Auto-load direnv environment at session start — ensures bash commands have project-specific env vars from .envrc",
+  "description": "Git-stash for your train of thought — save prompt drafts with ctrl+s, restore with ctrl+shift+s",
   "main": "./index.ts",
   "keywords": [
     "pi",
     "pi-extension",
     "pi-package",
-    "direnv",
-    "nix",
-    "envrc"
+    "prompt-stash",
+    "stash",
+    "drafts"
   ],
   "author": "Edmund Miller <edmundmiller@hey.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "packages/pi-direnv"
+    "directory": "pi-packages/pi-prompt-stash"
   },
   "files": [
     "index.ts",
+    "src",
     "README.md"
   ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*"
   },
-  "devDependencies": {
-    "@types/bun": "^1.3.8",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.0.0"
-  },
   "pi": {
     "extensions": [
       "./index.ts"
     ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
   }
 }

@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/*/package.json"
-      - "packages/*/src/**"
-      - "packages/*/index.ts"
+      - "pi-packages/pi-*/package.json"
+      - "pi-packages/pi-*/src/**"
+      - "pi-packages/pi-*/index.ts"
 
   workflow_dispatch:
     inputs:
@@ -45,7 +45,7 @@ jobs:
 
           # Find packages whose version changed since last commit
           changed=()
-          for pkg_dir in packages/*/; do
+          for pkg_dir in pi-packages/pi-*/; do
             pkg=$(basename "$pkg_dir")
             pkg_json="$pkg_dir/package.json"
             [ -f "$pkg_json" ] || continue
@@ -85,12 +85,12 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Install dependencies
-        working-directory: packages/${{ matrix.package }}
+      - name: Install workspace dependencies
+        working-directory: pi-packages
         run: npm install --ignore-scripts
 
       - name: Publish
-        working-directory: packages/${{ matrix.package }}
+        working-directory: pi-packages/${{ matrix.package }}
         run: |
           FLAGS="--access public"
           if [ "${{ inputs.dry-run }}" = "true" ]; then
@@ -98,6 +98,4 @@ jobs:
           fi
           npm publish $FLAGS
         env:
-          # Trusted Publishing (OIDC) is used automatically when id-token: write is set.
-          # NPM_TOKEN fallback for initial publish before trusted publisher is configured on npmjs.com.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
