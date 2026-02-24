@@ -22,5 +22,5 @@ else # From outside tmux
   function tdup { tmux new-session -t "${1:-$(tmux display-message -p '#S')}"; }
 fi
 
-# Omarchy-inspired dev layouts (tml, tmlm, nic, nicx, nicm, nicxm)
+# Omarchy-inspired dev layouts (tml, tmlm, nic, nicx, nicm, nicxm, tmlc, nicc, niccx)
 source "${0:A:h}/omarchy.zsh"

@@ -67,3 +67,37 @@ nicm()  { tmlm pi; }
 
 # tml for each subdir using opencode
 nicxm() { tmlm opencode; }
+
+# tmlc — like tml but with critique instead of lazygit
+# Right column (30%): unstaged on top, staged on bottom
+tmlc() {
+  [[ -z $TMUX ]] && { echo "You must start tmux to use tmlc."; return 1; }
+
+  local current_dir="${PWD}"
+  local ai_pane critique_pane
+  local ai="$1"
+
+  ai_pane="$TMUX_PANE"
+
+  tmux rename-window -t "$ai_pane" "$(basename "$current_dir")"
+
+  # Bottom shell pane (15%)
+  tmux split-window -v -p 15 -t "$ai_pane" -c "$current_dir"
+
+  # Back to top, split right column (30%) for unstaged critique
+  critique_pane=$(tmux split-window -h -p 30 -t "$ai_pane" -c "$current_dir" -P -F '#{pane_id}' \
+    "$HOME/.config/tmux/open-critique.sh")
+
+  # Split critique pane: bottom half for staged
+  tmux split-window -v -p 50 -t "$critique_pane" -c "$current_dir" \
+    "$HOME/.config/tmux/open-critique.sh --staged"
+
+  # Launch AI in left pane
+  tmux send-keys -t "$ai_pane" "$ai" C-m
+
+  tmux select-pane -t "$ai_pane"
+}
+
+# AI + critique + shell
+nicc()  { tmlc pi; }
+niccx() { tmlc opencode; }
