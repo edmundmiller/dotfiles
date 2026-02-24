@@ -339,7 +339,8 @@
           # Add checks for deployment, plugins, and shell tests
           checks =
             # deploy-rs checks - validates deployment configurations (merge attrset)
-            (deploy-rs.lib.${system}.deployChecks self.deploy) // {
+            (deploy-rs.lib.${system}.deployChecks self.deploy)
+            // {
 
               # zunit shell function tests
               zunit-tests =
@@ -430,6 +431,13 @@
               # Catches regressions like removed time guards without a VM.
               ha-automation-assertions = import ./modules/services/hass/_tests/eval-automations.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+            }
+            // lib.optionalAttrs (system == "x86_64-linux") {
+              # NixOS VM test: boot HA with our domain modules, verify config + API.
+              # Only on x86_64-linux (needs QEMU). Run on NUC or Linux builder.
+              hass-vm-test = import ./modules/services/hass/_tests/vm-test.nix {
                 inherit pkgs;
               };
 
