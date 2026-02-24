@@ -1,5 +1,5 @@
 {
-  "name": "pi-context-repo",
+  "name": "@edmundmiller/pi-context-repo",
   "version": "0.1.0",
   "type": "module",
   "description": "Git-backed persistent memory filesystem for pi agents, inspired by Letta Code's Context Repositories",
@@ -13,7 +13,18 @@
     "agent-memory",
     "git-memory"
   ],
+  "author": "Edmund Miller <edmundmiller@hey.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmundmiller/dotfiles.git",
+    "directory": "packages/pi-context-repo"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md"
+  ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*"
   },

@@ -6,7 +6,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/edmundmiller/dotfiles.git"
+    "url": "git+https://github.com/edmundmiller/dotfiles.git",
+    "directory": "packages/pi-beads"
   },
   "scripts": {
     "test": "bun test",
@@ -26,6 +27,8 @@
   ],
   "keywords": [
     "pi",
+    "pi-extension",
+    "pi-package",
     "tasks",
     "task-management",
     "tui"
