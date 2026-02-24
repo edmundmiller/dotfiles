@@ -130,7 +130,23 @@
         telegram = {
           enable = true;
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
-          allowFrom = [ 8357890648 ]; # @edmundamiller
+          allowFrom = [
+            8357890648 # @edmundamiller
+            # TODO: replace with wife's actual Telegram user ID (Settings → Edit Profile → Username, or @userinfobot)
+            # REPLACE_ME_WIFE_TELEGRAM_ID
+          ];
+          bindings = [
+            {
+              peerId = "8357890648"; # @edmundamiller
+              agentId = "default";
+            }
+            # TODO: replace REPLACE_ME_WIFE_TELEGRAM_ID with actual Telegram user ID
+            # and uncomment allowFrom entry above
+            # {
+            #   peerId = "REPLACE_ME_WIFE_TELEGRAM_ID";
+            #   agentId = "default";
+            # }
+          ];
         };
         sharedSkills = [
           "ast-grep"
