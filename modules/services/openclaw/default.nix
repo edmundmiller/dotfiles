@@ -98,6 +98,25 @@ in
         default = [ ];
         description = "List of Telegram user IDs allowed to interact with bot";
       };
+      bindings = mkOption {
+        type = types.listOf (
+          types.submodule {
+            options = {
+              peerId = mkOption {
+                type = types.str;
+                description = "Telegram peer user ID (as string)";
+              };
+              agentId = mkOption {
+                type = types.str;
+                default = "default";
+                description = "OpenClaw agent to route messages to";
+              };
+            };
+          }
+        );
+        default = [ ];
+        description = "Telegram peer → agent bindings (one entry per person)";
+      };
     };
 
     customPlugins = mkOption {
@@ -294,18 +313,16 @@ in
               };
             };
 
-            bindings = [
-              {
-                agentId = "default";
-                match = {
-                  channel = "telegram";
-                  peer = {
-                    id = "8357890648";
-                    kind = "direct";
-                  };
+            bindings = map (b: {
+              agentId = b.agentId;
+              match = {
+                channel = "telegram";
+                peer = {
+                  id = b.peerId;
+                  kind = "direct";
                 };
-              }
-            ];
+              };
+            }) cfg.telegram.bindings;
 
             # OpenCode Zen models — use built-in catalog for per-model API routing + costs.
             # OPENCODE_API_KEY is injected via secrets env file; the gateway auto-discovers
