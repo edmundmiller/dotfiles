@@ -1,6 +1,6 @@
 {
-  "name": "@edmundmiller/pi-scurl",
-  "version": "0.1.1",
+  "name": "pi-scurl",
+  "version": "0.2.0",
   "type": "module",
   "description": "Secure web fetch for pi – HTML-to-markdown via mdream, secret scanning, prompt injection detection",
   "main": "./index.ts",
