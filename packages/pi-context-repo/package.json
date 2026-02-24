@@ -1,6 +1,6 @@
 {
-  "name": "@edmundmiller/pi-context-repo",
-  "version": "0.1.1",
+  "name": "pi-context-repo",
+  "version": "0.2.0",
   "type": "module",
   "description": "Git-backed persistent memory filesystem for pi agents, inspired by Letta Code's Context Repositories",
   "main": "./index.ts",
