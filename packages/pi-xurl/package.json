@@ -1,0 +1,41 @@
+{
+  "name": "pi-xurl",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Cross-agent thread reader — resolve agents:// URIs for Amp, Codex, Claude, Gemini, Pi, OpenCode",
+  "main": "./index.ts",
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "pi-package",
+    "xurl",
+    "agent-threads",
+    "codex",
+    "claude"
+  ],
+  "author": "Edmund Miller <edmundmiller@hey.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmundmiller/dotfiles.git",
+    "directory": "packages/pi-xurl"
+  },
+  "files": [
+    "index.ts",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.8",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

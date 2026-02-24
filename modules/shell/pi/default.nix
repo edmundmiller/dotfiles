@@ -197,16 +197,9 @@ in
             ".pi/agent/extensions/enforce-commit-signing.ts".source =
               "${configDir}/pi/extensions/enforce-commit-signing.ts";
             ".pi/agent/extensions/enforce-hooks.ts".source = "${configDir}/pi/extensions/enforce-hooks.ts";
-            ".pi/agent/extensions/direnv.ts".source = "${configDir}/pi/extensions/direnv.ts";
             ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
-            ".pi/agent/extensions/prompt-stash.ts".source = "${configDir}/pi/extensions/prompt-stash.ts";
-            ".pi/agent/extensions/prompt-stash-logic.ts".source =
-              "${configDir}/pi/extensions/prompt-stash-logic.ts";
-            ".pi/agent/extensions/non-interactive-env.ts".source =
-              "${configDir}/pi/extensions/non-interactive-env.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
-            ".pi/agent/extensions/xurl.ts".source = "${configDir}/pi/extensions/xurl.ts";
           };
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -228,7 +221,7 @@ in
             fi
 
             # Install deps for local pi packages (use $HOME path, not nix store)
-            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-context-repo" "$HOME/.config/dotfiles/packages/pi-dcp" "$HOME/.config/dotfiles/packages/pi-scurl" "$HOME/.config/dotfiles/packages/pi-beads"; do
+            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-context-repo" "$HOME/.config/dotfiles/packages/pi-dcp" "$HOME/.config/dotfiles/packages/pi-scurl" "$HOME/.config/dotfiles/packages/pi-beads" "$HOME/.config/dotfiles/packages/pi-direnv" "$HOME/.config/dotfiles/packages/pi-non-interactive" "$HOME/.config/dotfiles/packages/pi-prompt-stash" "$HOME/.config/dotfiles/packages/pi-xurl"; do
               if [ -d "$pkg_dir" ] && [ ! -d "$pkg_dir/node_modules" ]; then
                 echo "Installing deps for $(basename "$pkg_dir")..."
                 # Drop to user if running as root (sudo darwin-rebuild)

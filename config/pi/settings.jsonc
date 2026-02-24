@@ -97,6 +97,14 @@
     "~/.config/dotfiles/packages/pi-dcp",
     // Secure web fetch – HTML→markdown via mdream, secret scanning, injection detection
     "~/.config/dotfiles/packages/pi-scurl",
+    // Auto-load direnv env at session start
+    "~/.config/dotfiles/packages/pi-direnv",
+    // Prevent hangs on interactive commands (GIT_EDITOR=true, PAGER=cat, etc.)
+    "~/.config/dotfiles/packages/pi-non-interactive",
+    // Git-stash for prompt drafts (ctrl+s/ctrl+shift+s)
+    "~/.config/dotfiles/packages/pi-prompt-stash",
+    // Cross-agent thread reader (agents:// URIs)
+    "~/.config/dotfiles/packages/pi-xurl",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
