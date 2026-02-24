@@ -407,7 +407,10 @@
       }
 
       # Both awake → Good Morning
-      # Time guard: never fire before 7 AM (defense-in-depth)
+      # Time guard: goodnight MUST NOT turn off before 7 AM.
+      # This is the primary guardian of that invariant — Good Morning is the
+      # only automated path that clears goodnight, so gating it here is the
+      # single choke point. The per-detection time guards are defense-in-depth.
       {
         alias = "Good Morning";
         id = "good_morning_both_awake";
