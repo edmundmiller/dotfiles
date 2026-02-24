@@ -30,8 +30,10 @@ import urllib.error
 HA_PORT = 8123
 HA_BASE = f"http://localhost:{HA_PORT}"
 
-# Long-lived access token — generated during onboarding in the VM test setup
+# Auth state — populated by create_token()
 _token = None
+_refresh_token_val = None
+_client_id = None
 
 
 def _headers():
@@ -71,57 +73,68 @@ def wait_ready(machine, timeout=120):
 
 
 def create_token(machine):
-    """Create a long-lived access token via HA's auth system.
+    """Create an access token via HA onboarding + auth exchange.
 
     Must be called after HA is ready. Uses the onboarding API to create
-    the initial user, then generates a long-lived token.
+    the initial user, exchanges the auth_code for an access_token, then
+    completes remaining onboarding steps.
     """
-    global _token
+    global _token, _refresh_token_val, _client_id
 
     # Check if onboarding is needed
     exit_code, output = machine.execute(
         f"curl -sf {HA_BASE}/api/onboarding"
     )
-    if exit_code == 0:
-        steps = json.loads(output)
-        needs_user = any(s["step"] == "user" and not s["done"] for s in steps)
-        if needs_user:
-            # Create initial user via onboarding
-            exit_code, output = machine.execute(
-                f"curl -sf -X POST -H 'Content-Type: application/json' "
-                f"-d '{{\"client_id\": \"http://localhost:{HA_PORT}/\", "
-                f"\"name\": \"Test\", \"username\": \"test\", \"password\": \"test1234\", "
-                f"\"language\": \"en\"}}' "
-                f"{HA_BASE}/api/onboarding/users"
-            )
-            if exit_code != 0:
-                raise RuntimeError(f"Onboarding failed: {output}")
-            result = json.loads(output)
-            _token = result.get("auth_code")
+    if exit_code != 0:
+        raise RuntimeError(f"Failed to check onboarding status: {output}")
 
-            # Complete remaining onboarding steps
-            for step in ["core_config", "analytics", "integration"]:
-                machine.execute(
-                    f"curl -sf -X POST -H 'Content-Type: application/json' "
-                    f"-H 'Authorization: Bearer {_token}' "
-                    f"-d '{{\"client_id\": \"http://localhost:{HA_PORT}/\"}}' "
-                    f"{HA_BASE}/api/onboarding/{step}"
-                )
+    steps = json.loads(output)
+    needs_user = any(s["step"] == "user" and not s["done"] for s in steps)
 
-    if not _token:
-        # Onboarding already done — use auth flow
-        # Get auth token via Resource Owner Password grant
-        exit_code, output = machine.execute(
-            f"curl -sf -X POST "
-            f"-d 'grant_type=password&client_id=http://localhost:{HA_PORT}/&username=test&password=test1234' "
-            f"{HA_BASE}/auth/token"
+    if not needs_user:
+        raise RuntimeError(
+            "Onboarding already completed — cannot create token without browser flow"
         )
-        if exit_code == 0:
-            result = json.loads(output)
-            _token = result.get("access_token")
 
+    # Step 1: Create initial user via onboarding → get auth_code
+    _client_id = f"http://localhost:{HA_PORT}/"
+    client_id = _client_id
+    exit_code, output = machine.execute(
+        f"curl -sf -X POST -H 'Content-Type: application/json' "
+        f"-d '{{\"client_id\": \"{client_id}\", "
+        f"\"name\": \"Test\", \"username\": \"test\", \"password\": \"test1234\", "
+        f"\"language\": \"en\"}}' "
+        f"{HA_BASE}/api/onboarding/users"
+    )
+    if exit_code != 0:
+        raise RuntimeError(f"Onboarding user creation failed: {output}")
+    result = json.loads(output)
+    auth_code = result.get("auth_code")
+    if not auth_code:
+        raise RuntimeError(f"No auth_code in onboarding response: {result}")
+
+    # Step 2: Exchange auth_code for access_token at /auth/token
+    exit_code, output = machine.execute(
+        f"curl -sf -X POST -H 'Content-Type: application/x-www-form-urlencoded' "
+        f"-d 'grant_type=authorization_code&code={auth_code}&client_id={client_id}' "
+        f"{HA_BASE}/auth/token"
+    )
+    if exit_code != 0:
+        raise RuntimeError(f"Token exchange failed: {output}")
+    result = json.loads(output)
+    _token = result.get("access_token")
+    _refresh_token_val = result.get("refresh_token")
     if not _token:
-        raise RuntimeError("Failed to obtain HA auth token")
+        raise RuntimeError(f"No access_token in token response: {result}")
+
+    # Step 3: Complete remaining onboarding steps with real token
+    for step in ["core_config", "analytics", "integration"]:
+        machine.execute(
+            f"curl -sf -X POST -H 'Content-Type: application/json' "
+            f"-H 'Authorization: Bearer {_token}' "
+            f"-d '{{\"client_id\": \"{client_id}\"}}' "
+            f"{HA_BASE}/api/onboarding/{step}"
+        )
 
     return _token
 
@@ -150,10 +163,74 @@ def call_service(machine, domain, service, data=None):
     _api(machine, "POST", f"services/{domain}/{service}", data or {})
 
 
-def trigger_automation(machine, automation_id):
-    """Trigger an automation by entity_id."""
-    entity_id = automation_id if automation_id.startswith("automation.") else f"automation.{automation_id}"
-    call_service(machine, "automation", "trigger", {"entity_id": entity_id})
+def _resolve_automation_entity(machine, automation_id):
+    """Resolve an automation config ID to its actual entity_id.
+
+    HA generates entity IDs from the alias (friendly_name), not the config id.
+    E.g., id="edmund_awake_detection" + alias="Edmund is awake"
+    → entity_id = "automation.edmund_is_awake" (slugified alias)
+
+    This function queries the API for all automation entities and matches
+    on the 'id' attribute (which HA populates from the config's id field).
+    """
+    if automation_id.startswith("automation."):
+        return automation_id  # Already a full entity_id
+    states = _api(machine, "GET", "states")
+    for state in states:
+        eid = state["entity_id"]
+        if not eid.startswith("automation."):
+            continue
+        attrs = state.get("attributes", {})
+        if attrs.get("id") == automation_id:
+            return eid
+    available = [s["entity_id"] for s in states if s["entity_id"].startswith("automation.")]
+    raise RuntimeError(
+        f"No automation entity with config id='{automation_id}'. "
+        f"Available: {available}"
+    )
+
+
+def trigger_automation(machine, automation_id, skip_condition=False):
+    """Trigger an automation by its config ID.
+
+    Resolves the config id (e.g., 'edmund_awake_detection') to the actual
+    entity_id (e.g., 'automation.edmund_is_awake') since HA derives
+    entity IDs from the alias, not the config id.
+
+    Args:
+        automation_id: The 'id' field from the automation config
+        skip_condition: If False (default), conditions (including time guards)
+            are evaluated. HA's default is True (skip), but for testing we
+            almost always want conditions respected.
+    """
+    entity_id = _resolve_automation_entity(machine, automation_id)
+    call_service(machine, "automation", "trigger", {
+        "entity_id": entity_id,
+        "skip_condition": skip_condition,
+    })
+
+
+def _refresh_access_token(machine):
+    """Refresh the access token using the stored refresh token.
+
+    Called automatically by set_clock() since clock manipulation can
+    expire the short-lived access token (30-min lifetime).
+    """
+    global _token
+    if not _refresh_token_val or not _client_id:
+        return
+    exit_code, output = machine.execute(
+        f"curl -sf -X POST -H 'Content-Type: application/x-www-form-urlencoded' "
+        f"-d 'grant_type=refresh_token&refresh_token={_refresh_token_val}&client_id={_client_id}' "
+        f"{HA_BASE}/auth/token"
+    )
+    if exit_code != 0:
+        raise RuntimeError(f"Token refresh failed: {output}")
+    result = json.loads(output)
+    new_token = result.get("access_token")
+    if not new_token:
+        raise RuntimeError(f"No access_token in refresh response: {result}")
+    _token = new_token
 
 
 def set_clock(machine, time_str, date_str=None):
@@ -167,6 +244,8 @@ def set_clock(machine, time_str, date_str=None):
         machine.succeed(f"date -s '{date_str} {time_str}'")
     else:
         machine.succeed(f"date -s '{time_str}'")
+    # Refresh auth token — clock change may expire the 30-min access token
+    _refresh_access_token(machine)
     # Give HA a moment to notice the time change
     time.sleep(1)
 

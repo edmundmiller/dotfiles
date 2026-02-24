@@ -56,6 +56,10 @@ pkgs.testers.nixosTest {
             elevation = 0;
           };
 
+          # default_config loads standard integrations including automation,
+          # scene, input_boolean — required for entities to be created
+          default_config = { };
+
           # Frontend needed for onboarding
           frontend = { };
 
@@ -74,24 +78,30 @@ pkgs.testers.nixosTest {
         "f ${config.services.home-assistant.configDir}/scripts.yaml 0644 hass hass"
       ];
 
+      # Match HA timezone so clock manipulation works correctly
+      time.timeZone = "US/Central";
       # Enough RAM for HA
       virtualisation.memorySize = 2048;
     };
 
+  # ha_test_lib is injected at runtime via sys.path — mypy can't find it
+  skipTypeCheck = true;
+
   testScript = ''
     import sys
     sys.path.insert(0, "${testLibDir}")
+    import ha_test_lib as ha
 
     start_all()
 
     # ── Boot + readiness ─────────────────────────────────────────────────
     with subtest("HA starts and API is reachable"):
-        hass.wait_for_unit("home-assistant.service")
-        hass.wait_for_open_port(8123)
-        hass.wait_until_succeeds(
-            "journalctl -u home-assistant.service | grep -q 'Home Assistant initialized in'",
-            timeout=120,
-        )
+        ha.wait_ready(hass)
+
+    # ── Onboarding + auth ────────────────────────────────────────────────
+    with subtest("Onboarding completes and token is created"):
+        token = ha.create_token(hass)
+        assert token, "Failed to obtain auth token"
 
     # ── Configuration structure ──────────────────────────────────────────
     with subtest("configuration.yaml exists and is a symlink"):
@@ -139,9 +149,10 @@ pkgs.testers.nixosTest {
         for boolean in ["goodnight", "edmund_awake", "monica_awake", "guest_mode", "do_not_disturb"]:
             assert boolean in config, f"input_boolean '{boolean}' missing from config"
 
-    # ── API access ───────────────────────────────────────────────────────
+    # ── API access (authenticated) ───────────────────────────────────────
     with subtest("HA API responds"):
-        hass.succeed("curl -sf http://localhost:8123/api/ | grep -q 'API running'")
+        result = ha._api(hass, "GET", "")
+        assert result.get("message") == "API running.", f"Unexpected API response: {result}"
 
     with subtest("No errors in HA log"):
         # Allow specific known benign errors but catch real ones
@@ -152,6 +163,7 @@ pkgs.testers.nixosTest {
             "| grep -v 'Setup failed for' "  # expected: no real devices
             "| grep -v 'Unable to install' "  # expected: no network in sandbox
             "| grep -v 'OSError' "  # expected: no hardware
+            "| grep -v 'unknown entity' "  # expected: no real sensors in test VM
             "|| true"  # Don't fail if grep finds nothing
         )
   '';
