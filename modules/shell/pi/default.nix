@@ -220,20 +220,18 @@ in
                 && mv "$HOME/package.json.tmp" "$HOME/package.json"
             fi
 
-            # Install deps for local pi packages (use $HOME path, not nix store)
-            for pkg_dir in "$HOME/.config/dotfiles/packages/pi-context-repo" "$HOME/.config/dotfiles/packages/pi-dcp" "$HOME/.config/dotfiles/packages/pi-scurl" "$HOME/.config/dotfiles/packages/pi-beads" "$HOME/.config/dotfiles/packages/pi-direnv" "$HOME/.config/dotfiles/packages/pi-non-interactive" "$HOME/.config/dotfiles/packages/pi-prompt-stash" "$HOME/.config/dotfiles/packages/pi-xurl"; do
-              if [ -d "$pkg_dir" ] && [ ! -d "$pkg_dir/node_modules" ]; then
-                echo "Installing deps for $(basename "$pkg_dir")..."
-                # Drop to user if running as root (sudo darwin-rebuild)
-                if [ "$(id -u)" = "0" ]; then
-                  /usr/bin/su ${config.user.name} -c "cd '$pkg_dir' && '$bun_bin' install" \
-                    || echo "Warning: $(basename "$pkg_dir") bun install failed."
-                else
-                  (cd "$pkg_dir" && "$bun_bin" install) \
-                    || echo "Warning: $(basename "$pkg_dir") bun install failed."
-                fi
+            # Install deps for pi-packages workspace (single bun install at root)
+            pi_ws="$HOME/.config/dotfiles/pi-packages"
+            if [ -d "$pi_ws" ] && [ ! -d "$pi_ws/node_modules" ]; then
+              echo "Installing pi-packages workspace deps..."
+              if [ "$(id -u)" = "0" ]; then
+                /usr/bin/su ${config.user.name} -c "cd '$pi_ws' && '$bun_bin' install" \
+                  || echo "Warning: pi-packages bun install failed."
+              else
+                (cd "$pi_ws" && "$bun_bin" install) \
+                  || echo "Warning: pi-packages bun install failed."
               fi
-            done
+            fi
           fi
         '';
       };

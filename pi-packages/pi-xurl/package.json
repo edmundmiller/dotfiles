@@ -18,7 +18,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "packages/pi-xurl"
+    "directory": "pi-packages/pi-xurl"
   },
   "files": [
     "index.ts",
@@ -28,14 +28,12 @@
     "@mariozechner/pi-coding-agent": "*",
     "@sinclair/typebox": "*"
   },
-  "devDependencies": {
-    "@types/bun": "^1.3.8",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.0.0"
-  },
   "pi": {
     "extensions": [
       "./index.ts"
     ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
   }
 }

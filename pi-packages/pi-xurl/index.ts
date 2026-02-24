@@ -55,7 +55,7 @@ Use raw=true for JSON output. Use list=true to discover subagents/entries before
     }),
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async execute(toolCallId, params, signal): Promise<any> {
+    async execute(_toolCallId, params, signal): Promise<any> {
       const args = [...XURL_ARGS, params.uri];
       if (params.raw) args.push("--raw");
       if (params.list) args.push("--list");

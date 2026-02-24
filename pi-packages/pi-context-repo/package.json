@@ -1,22 +1,24 @@
 {
-  "name": "pi-dcp",
+  "name": "pi-context-repo",
   "version": "0.2.0",
   "type": "module",
-  "description": "Dynamic Context Pruning extension for pi - intelligently removes obsolete messages to optimize token usage",
+  "description": "Git-backed persistent memory filesystem for pi agents, inspired by Letta Code's Context Repositories",
   "main": "./index.ts",
   "keywords": [
     "pi",
     "pi-extension",
-    "context-pruning",
-    "token-optimization",
-    "pi-package"
+    "pi-package",
+    "memory",
+    "context-repository",
+    "agent-memory",
+    "git-memory"
   ],
   "author": "Edmund Miller <edmundmiller@hey.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "packages/pi-dcp"
+    "directory": "pi-packages/pi-context-repo"
   },
   "files": [
     "index.ts",
@@ -25,20 +27,14 @@
   ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*",
-    "@mariozechner/pi-agent-core": "*"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.8",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.0.0"
+    "@sinclair/typebox": "*"
   },
   "pi": {
     "extensions": [
       "./index.ts"
     ]
   },
-  "dependencies": {
-    "@sinclair/typebox": "^0.34.0",
-    "bunfig": "^0.15.6"
+  "scripts": {
+    "typecheck": "tsc --noEmit"
   }
 }
