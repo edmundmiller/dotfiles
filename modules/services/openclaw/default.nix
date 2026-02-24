@@ -136,6 +136,20 @@ in
       default = [ ];
       description = "Skill names to cherry-pick from agent-skills bundle";
     };
+
+    claudeMaxProxy = {
+      enable = mkBoolOpt false;
+      port = mkOption {
+        type = types.port;
+        default = 3456;
+        description = "Port for the Claude Max API proxy";
+      };
+      package = mkOption {
+        type = types.package;
+        default = pkgs.my.claude-max-api-proxy;
+        description = "claude-max-api-proxy package";
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -238,14 +252,20 @@ in
 
             agents.defaults = {
               model = {
-                primary = "opencode/minimax-m2.5";
-                fallbacks = [ "anthropic/claude-sonnet-4-5" ];
+                primary = "claude-max/claude-sonnet-4";
+                fallbacks = [
+                  "opencode/minimax-m2.5"
+                  "claude-max/claude-opus-4"
+                ];
               };
               thinkingDefault = "high";
-              heartbeat.model = "opencode/minimax-m2.5";
+              heartbeat.model = "claude-max/claude-haiku-4";
               subagents.model = {
-                primary = "opencode/minimax-m2.5";
-                fallbacks = [ "anthropic/claude-haiku-4" ];
+                primary = "claude-max/claude-sonnet-4";
+                fallbacks = [
+                  "opencode/minimax-m2.5"
+                  "claude-max/claude-opus-4"
+                ];
               };
 
               cliBackends = {
@@ -314,7 +334,7 @@ in
             };
 
             bindings = map (b: {
-              agentId = b.agentId;
+              inherit (b) agentId;
               match = {
                 channel = "telegram";
                 peer = {
@@ -323,6 +343,30 @@ in
                 };
               };
             }) cfg.telegram.bindings;
+
+            # Claude Max proxy — exposes subscription as OpenAI-compatible API.
+            # Models available as claude-max/claude-opus-4, claude-max/claude-sonnet-4, etc.
+            models = mkIf cfg.claudeMaxProxy.enable {
+              providers.claude-max = {
+                baseUrl = "http://localhost:${toString cfg.claudeMaxProxy.port}/v1";
+                apiKey = "not-needed";
+                api = "openai-completions";
+                models = [
+                  {
+                    id = "claude-opus-4";
+                    name = "Claude Opus 4";
+                  }
+                  {
+                    id = "claude-sonnet-4";
+                    name = "Claude Sonnet 4";
+                  }
+                  {
+                    id = "claude-haiku-4";
+                    name = "Claude Haiku 4";
+                  }
+                ];
+              };
+            };
 
             # OpenCode Zen models — use built-in catalog for per-model API routing + costs.
             # OPENCODE_API_KEY is injected via secrets env file; the gateway auto-discovers
@@ -343,13 +387,36 @@ in
           };
         };
 
-        # Inject agenix secrets + gateway token via ExecStartPre
-        systemd.user.services.openclaw-gateway.Unit = {
-          # Relax start rate limit — deploys restart user services and openclaw
-          # takes a few seconds to boot, hitting the default 5/10s limit
-          StartLimitIntervalSec = 60;
-          StartLimitBurst = 10;
+        # Claude Max API proxy — runs alongside gateway, exposes subscription as OpenAI API
+        systemd.user.services.claude-max-api-proxy = mkIf cfg.claudeMaxProxy.enable {
+          Unit = {
+            Description = "Claude Max API Proxy (OpenAI-compatible)";
+            StartLimitIntervalSec = 60;
+            StartLimitBurst = 5;
+          };
+          Install.WantedBy = [ "default.target" ];
+          Service = {
+            ExecStart = "${cfg.claudeMaxProxy.package}/bin/claude-max-api ${toString cfg.claudeMaxProxy.port}";
+            Restart = "on-failure";
+            RestartSec = 5;
+            # claude CLI needs PATH to find itself + node
+            Environment = "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${user}/bin";
+          };
         };
+
+        # Inject agenix secrets + gateway token via ExecStartPre
+        systemd.user.services.openclaw-gateway.Unit = mkMerge [
+          {
+            # Relax start rate limit — deploys restart user services and openclaw
+            # takes a few seconds to boot, hitting the default 5/10s limit
+            StartLimitIntervalSec = 60;
+            StartLimitBurst = 10;
+          }
+          (mkIf cfg.claudeMaxProxy.enable {
+            After = [ "claude-max-api-proxy.service" ];
+            Requires = [ "claude-max-api-proxy.service" ];
+          })
+        ];
         systemd.user.services.openclaw-gateway.Install = {
           WantedBy = [ "default.target" ];
         };

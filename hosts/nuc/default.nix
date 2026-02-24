@@ -96,6 +96,7 @@
       audiobookshelf.enable = true;
       openclaw = {
         enable = true;
+        claudeMaxProxy.enable = true;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
         hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
         secrets = [
