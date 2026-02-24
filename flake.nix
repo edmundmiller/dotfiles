@@ -426,6 +426,13 @@
               # validate-config.nix (uses HA's own check_config). The JSON schema
               # in schemas/adaptive-lighting.json is kept as agent reference only.
 
+              # Pure Nix eval: assert structural properties of HA automation config.
+              # Catches regressions like removed time guards without a VM.
+              ha-automation-assertions = import ./modules/services/hass/_tests/eval-automations.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               validate-claude-plugins =
                 pkgs.runCommand "validate-claude-plugins"
                   {
