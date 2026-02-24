@@ -22,12 +22,12 @@
 #
 # Wake detection state machine:
 #   input_boolean.edmund_awake / monica_awake track who's up
-#   Set by (any while goodnight=on AND after 5 AM): bed presence off, focus off,
+#   Set by (any while goodnight=on AND after 7 AM): bed presence off, focus off,
 #     battery Charging→Not Charging, activity=Walking, or
 #     active phone use (Launch/Siri/Manual update trigger)
-#   Time guard: signals before 5 AM ignored (bathroom trips, sensor glitches)
+#   Time guard: signals before 7 AM ignored (bathroom trips, sensor glitches)
 #   Reset by: Winding Down scene (sleep.nix) and Good Morning scene (modes.nix)
-#   Good Morning fires when both are on (also gated to after 5 AM)
+#   Good Morning fires when both are on (also gated to after 7 AM)
 { lib, ... }:
 {
   services.home-assistant.config = {
@@ -290,7 +290,7 @@
       # Edmund shows awake signal → mark awake
       # Signals: bed presence off, focus off, phone off charger,
       #          walking, or active phone use (Launch/Siri/Manual)
-      # Time guard: ignore signals before 5 AM (bathroom trips, sensor glitches)
+      # Time guard: ignore signals before 7 AM (bathroom trips, sensor glitches)
       {
         alias = "Edmund is awake";
         id = "edmund_awake_detection";
@@ -328,7 +328,7 @@
         condition = [
           {
             condition = "time";
-            after = "05:00:00";
+            after = "07:00:00";
           }
           {
             condition = "state";
@@ -350,7 +350,7 @@
       }
 
       # Monica shows awake signal → mark awake
-      # Time guard: ignore signals before 5 AM
+      # Time guard: ignore signals before 7 AM
       {
         alias = "Monica is awake";
         id = "monica_awake_detection";
@@ -385,7 +385,7 @@
         condition = [
           {
             condition = "time";
-            after = "05:00:00";
+            after = "07:00:00";
           }
           {
             condition = "state";
@@ -407,7 +407,7 @@
       }
 
       # Both awake → Good Morning
-      # Time guard: never fire before 5 AM (defense-in-depth)
+      # Time guard: never fire before 7 AM (defense-in-depth)
       {
         alias = "Good Morning";
         id = "good_morning_both_awake";
@@ -426,7 +426,7 @@
         condition = [
           {
             condition = "time";
-            after = "05:00:00";
+            after = "07:00:00";
           }
           {
             condition = "state";
