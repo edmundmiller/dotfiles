@@ -12,15 +12,20 @@ in
 {
   options.modules.editors.vim = {
     enable = mkBoolOpt false;
+    package = mkOpt types.package pkgs.neovim;
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      neovim
-      editorconfig-core-c
+    user.packages = [
+      cfg.package
+      pkgs.editorconfig-core-c
       # ctags provided by emacs package
-      unstable.lua-language-server
-      lazygit
+      pkgs.unstable.lua-language-server
+      pkgs.lazygit
+      pkgs.fd
+      (pkgs.ripgrep.override { withPCRE2 = true; })
+      pkgs.gnumake
+      pkgs.unzip
     ];
 
     environment.shellAliases = {
@@ -30,8 +35,8 @@ in
 
     # Set nvim as the default editor
     env = {
-      EDITOR = "nvim";
-      VISUAL = "nvim";
+      EDITOR = mkDefault "nvim";
+      VISUAL = mkDefault "nvim";
     };
 
   };
