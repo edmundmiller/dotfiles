@@ -441,6 +441,12 @@
                 inherit pkgs;
               };
 
+              # Time-guard behavior tests: verify automations block before 7 AM.
+              # Uses clock manipulation + HA API to test end-to-end.
+              hass-time-guards = import ./modules/services/hass/_tests/time-guards-test.nix {
+                inherit pkgs;
+              };
+
               validate-claude-plugins =
                 pkgs.runCommand "validate-claude-plugins"
                   {
