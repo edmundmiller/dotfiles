@@ -10,8 +10,10 @@
 #   1. Wake signal at 3 AM → stays off (time guard blocks)
 #   2. Wake signal at 6:59 AM → stays off (boundary)
 #   3. Wake signal at 7:01 AM → turns on (time guard passes)
-#   4. Both awake set at 3 AM → Good Morning does NOT fire
-#   5. Both awake at 8 AM → Good Morning fires
+#   4. GOODNIGHT INVARIANT: goodnight cannot turn off before 7 AM by any automated path
+#      4a. Both awake at 3 AM → goodnight stays on
+#      4b. Both awake at 6:59 AM → goodnight stays on (boundary)
+#   5. Both awake at 8 AM → Good Morning fires (goodnight turns off)
 #   6. Post-bedtime signal at 10:48 PM → stays off (the actual bug scenario)
 { pkgs }:
 let
@@ -141,20 +143,33 @@ pkgs.testers.nixosTest {
 
         ha.assert_state(hass, "input_boolean.edmund_awake", "on", timeout=10)
 
-    # ── Test 4: Both awake at 3 AM → Good Morning blocked ──────────────
-    with subtest("Good Morning does NOT fire at 3 AM even with both awake"):
+    # ── Test 4: GOODNIGHT INVARIANT ─────────────────────────────────────
+    # Once goodnight is on, no automated path can turn it off before 7 AM.
+    # Good Morning is the ONLY automation that clears goodnight, and its
+    # time guard is the choke point. We bypass detection guards here (manually
+    # set both awake) to test the Good Morning guard directly.
+    with subtest("GOODNIGHT INVARIANT: stays on at 3 AM even with both awake"):
         ha.set_clock(hass, "03:00:00", "2026-02-25")
-        # Manually set both awake (bypassing their own time guards)
         ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.goodnight"})
         ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.edmund_awake"})
         ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.monica_awake"})
         time.sleep(2)
 
-        # Good Morning automation has its own time guard
         ha.trigger_automation(hass, "good_morning_both_awake")
         time.sleep(2)
 
-        # Goodnight should still be on (Good Morning scene turns it off)
+        ha.assert_state(hass, "input_boolean.goodnight", "on", timeout=5)
+
+    with subtest("GOODNIGHT INVARIANT: stays on at 6:59 AM (boundary)"):
+        ha.set_clock(hass, "06:59:00", "2026-02-25")
+        ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.goodnight"})
+        ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.edmund_awake"})
+        ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.monica_awake"})
+        time.sleep(2)
+
+        ha.trigger_automation(hass, "good_morning_both_awake")
+        time.sleep(2)
+
         ha.assert_state(hass, "input_boolean.goodnight", "on", timeout=5)
 
     # ── Test 5: Both awake at 8 AM → Good Morning fires ────────────────
