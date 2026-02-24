@@ -1,6 +1,6 @@
 # jw - JJ Workspace Management
 
-A CLI tool for managing Jujutsu (jj) workspaces, inspired by [worktrunk](https://github.com/max-sixty/worktrunk) for git worktrees.
+A CLI tool for managing Jujutsu (jj) workspaces.
 
 Designed for running AI agents (Claude, OpenCode) in parallel using jj workspaces.
 
@@ -68,16 +68,6 @@ jw merge --help
 jw list --help
 ```
 
-## Comparison with worktrunk (wt)
-
-| Task             | jw (jj workspaces) | wt (git worktrees)               |
-| ---------------- | ------------------ | -------------------------------- |
-| Create + Claude  | `jwc agent-1`      | `wt switch -c -x claude agent-1` |
-| List with status | `jwl --full`       | `wt list --full`                 |
-| Interactive pick | `jw select`        | `wt select`                      |
-| Merge to main    | `jwm agent-1`      | `wt merge agent-1`               |
-| Remove           | `jwr agent-1`      | `wt remove agent-1`              |
-
 ## Key Differences from Git Worktrees
 
 - **No branches needed**: jj uses changes/revisions, not branches
@@ -125,7 +115,6 @@ packages/jw/
 
 ## See Also
 
-- [worktrunk](https://worktrunk.dev) - Git worktree management for agents
 - [jj workspaces](https://martinvonz.github.io/jj/latest/working-copy/#workspaces) - Official docs
 - [poucet/workflow](https://github.com/poucet/workflow) - Similar jj workflow tool
 - [charmbracelet/gum](https://github.com/charmbracelet/gum) - Interactive shell utilities

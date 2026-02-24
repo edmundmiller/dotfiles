@@ -11,14 +11,14 @@ alias gc='git commit'
 alias gcm='git commit -m'
 alias gca='git commit --amend'
 alias gcf='git commit --fixup'
-# gcl: Clone as bare repo for worktrunk workflow
+# gcl: Clone as bare repo with worktree layout
 # Usage: gcl <url> [name]
 # Creates: name/.git (bare) + name/<default-branch>/ worktree
 # Clone to a non-.git path first to avoid git's core.bare=false heuristic
 gcl() {
   if [[ $# -eq 0 ]]; then
     echo "Usage: gcl <url> [directory]"
-    echo "Creates a bare repository for use with worktrunk"
+    echo "Creates a bare repository with worktree layout"
     return 1
   fi
   local url=$1
@@ -39,7 +39,7 @@ gcl() {
   cd "${name}/${default_branch}"
 }
 
-# g2bare: convert existing repo to bare + worktrunk layout IN-PLACE
+# g2bare: convert existing repo to bare layout IN-PLACE
 # Usage: g2bare
 # Transforms current repo: .git (normal) → .git (bare) + worktree
 # Requires clean working tree. Indiana Jones style - seamless swap.
@@ -80,13 +80,6 @@ g2bare() {
     current_branch="main"
   fi
 
-  # Check wt is available
-  if ! command -v wt >/dev/null 2>&1; then
-    echo "✗ worktrunk (wt) not found"
-    echo "↳ Install: brew install max-sixty/tap/worktrunk"
-    return 1
-  fi
-
   # 2. Create temp bare clone
   temp_dir=$(mktemp -d /tmp/g2bare.XXXXXX)
   echo "Creating bare clone..."
@@ -120,26 +113,24 @@ g2bare() {
 
   # 4. Create worktree for current branch
   echo "Creating worktree for $current_branch..."
-  if ! wt switch "$current_branch"; then
+  worktree_path="$repo_root/$current_branch"
+  if ! git -C "$repo_root/.git" worktree add "$worktree_path" "$current_branch"; then
     echo "✗ Failed to create worktree"
     echo "↳ Restoring original repo..."
     rm -rf .git
     mv .git.old .git
-    # Restore working files
     git checkout -- .
     return 1
   fi
 
-  # 5. Success - cleanup (use absolute paths since wt switch changed pwd)
+  # 5. Success - cleanup
   rm -rf "$repo_root/.git.old" "$temp_dir"
-
-  # Find the worktree path
-  worktree_path=$(git worktree list | grep "\[$current_branch\]" | awk '{print $1}')
 
   echo "✓ Converted to bare layout"
   echo "✓ Bare repo: $repo_root/.git"
   echo "✓ Worktree: $worktree_path"
   echo "↳ Run: cd $worktree_path"
+  cd "$worktree_path"
 }
 alias gco='git checkout'
 alias gcoo='git checkout --'

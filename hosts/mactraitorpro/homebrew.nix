@@ -12,7 +12,6 @@
     # "steveyegge/beads" # Not needed — using homebrew-core 'beads' formula instead
     "tw93/tap" # Mole
     "anomalyco/tap" # Opencode
-    "max-sixty/worktrunk" # Git worktree management for parallel AI agents
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
     "ahkohd/oyo" # oy - tmux session manager
     "chmouel/lazyworktree" # lazyworktree - lazy git worktree switcher
@@ -77,7 +76,6 @@
     "tree"
     "tree-sitter"
     "wget"
-    "max-sixty/worktrunk/wt"
     "joshmedeski/sesh/sesh"
     "ahkohd/oyo/oy"
     "zoxide"

@@ -34,16 +34,16 @@ Or install from npm (when published):
 
 All configuration is via environment variables:
 
-| Variable                       | Default  | Description                             |
-| ------------------------------ | -------- | --------------------------------------- |
-| `OPENCODE_TMUX_DEBUG`          | `0`      | Set to `1` for debug logging            |
-| `OPENCODE_TMUX_COOLDOWN_MS`    | `300000` | Minimum ms between renames (5 min)      |
-| `OPENCODE_TMUX_DEBOUNCE_MS`    | `5000`   | Debounce interval for checks (5 sec)    |
-| `OPENCODE_TMUX_MAX_SIGNALS`    | `25`     | Max activity signals to retain          |
-| `OPENCODE_TMUX_USE_AGENTS_MD`  | `1`      | Set to `0` to disable AGENTS.md reading |
-| `OPENCODE_TMUX_SHOW_STATUS`    | `1`      | Set to `0` to disable status icons      |
-| `OPENCODE_TMUX_WORKMUX_AWARE`  | `1`      | Set to `0` to disable workmux detection |
-| `OPENCODE_TMUX_WORKMUX_FORMAT` | `both`   | `branch`, `project`, or `both`          |
+| Variable                        | Default  | Description                              |
+| ------------------------------- | -------- | ---------------------------------------- |
+| `OPENCODE_TMUX_DEBUG`           | `0`      | Set to `1` for debug logging             |
+| `OPENCODE_TMUX_COOLDOWN_MS`     | `300000` | Minimum ms between renames (5 min)       |
+| `OPENCODE_TMUX_DEBOUNCE_MS`     | `5000`   | Debounce interval for checks (5 sec)     |
+| `OPENCODE_TMUX_MAX_SIGNALS`     | `25`     | Max activity signals to retain           |
+| `OPENCODE_TMUX_USE_AGENTS_MD`   | `1`      | Set to `0` to disable AGENTS.md reading  |
+| `OPENCODE_TMUX_SHOW_STATUS`     | `1`      | Set to `0` to disable status icons       |
+| `OPENCODE_TMUX_WORKTREE_AWARE`  | `1`      | Set to `0` to disable worktree detection |
+| `OPENCODE_TMUX_WORKTREE_FORMAT` | `both`   | `branch`, `project`, or `both`           |
 
 ## Status Icons
 
@@ -84,9 +84,9 @@ The plugin listens to these OpenCode events:
 - `todo.updated` — When todos change
 - `permission.updated` — When permission prompts appear
 
-## Workmux Integration
+## Worktree Integration
 
-When running inside a [workmux](https://workmux.raine.dev)-managed worktree, the plugin automatically detects this and adjusts naming:
+When running inside a a git worktree, the plugin automatically detects this and adjusts naming:
 
 | Format           | Example           | Description                      |
 | ---------------- | ----------------- | -------------------------------- |
@@ -94,7 +94,7 @@ When running inside a [workmux](https://workmux.raine.dev)-managed worktree, the
 | `branch`         | `fix-auth`        | Just the branch name             |
 | `project`        | `proj-feat`       | Standard project-intent naming   |
 
-Detection works by checking if you're in a git worktree (bare repo layout). The workmux config uses matching status icons for consistency.
+Detection works by checking if you're in a git worktree (bare repo layout). The worktree config uses matching status icons for consistency.
 
 ## Integration with tmux-opencode-integrated
 

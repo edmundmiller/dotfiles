@@ -33,7 +33,6 @@
         git.enable = true;
         jj.enable = true;
         tmux.enable = true;
-        wt.enable = true;
         zsh.enable = true;
       };
 
