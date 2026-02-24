@@ -1,5 +1,12 @@
+local tnote_dir = vim.fn.expand '~/src/personal/tnote/main/packages/nvim'
+
+-- Optional local dev plugin. Skip cleanly on machines without this path.
+if vim.fn.isdirectory(tnote_dir) == 0 then
+  return {}
+end
+
 return {
-  dir = vim.fn.expand("~/src/personal/tnote/main/packages/nvim"),
+  dir = tnote_dir,
   name = "tnote.nvim",
   -- Load on keymap OR when entering markdown files (for auto-open)
   ft = "markdown",
