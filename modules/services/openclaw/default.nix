@@ -295,6 +295,7 @@ in
             tools = {
               profile = "full";
               exec = {
+                host = "gateway";
                 security = "allowlist";
                 safeBins = [
                   "cat"
