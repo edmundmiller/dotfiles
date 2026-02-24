@@ -32,9 +32,9 @@
     "autoResize": true,
     "blockImages": false,
   },
-  // Skills as commands - disabled, see https://ampcode.com/news/slashing-custom-commands
+  // Skills as commands - also registers skills as /skill:name slash commands
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
-  "enableSkillCommands": false,
+  "enableSkillCommands": true,
   // Permission system - layered command control via pi-hooks/permission
   // Docs: https://github.com/prateekmedia/pi-hooks/tree/main/permission
   "permissionLevel": "high",

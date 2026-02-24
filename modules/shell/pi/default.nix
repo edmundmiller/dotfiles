@@ -171,6 +171,8 @@ in
     user.packages = [ pkgs.bun ];
     env.BUN_INSTALL = mkDefault "$HOME/.bun";
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
+    # Disable pi version-update check on startup
+    env.PI_SKIP_VERSION_CHECK = "1";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
     # pi-github-tools PAT (from gh CLI)
