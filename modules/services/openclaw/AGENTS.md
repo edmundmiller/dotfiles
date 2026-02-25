@@ -58,8 +58,20 @@ modules/services/openclaw/
 ### Plugins
 
 - `sag` (TTS) — enabled, uses ElevenLabs API key from agenix
-- `linear` — custom plugin from dotfiles repo
+- `linear` — CLI plugin from dotfiles repo (curl/jq GraphQL wrapper)
+- `linear-agent-bridge` — gateway extension: webhook handler for Linear Agent Sessions
 - Telegram channel enabled
+
+### Webhook Proxy (Linear Agent Bridge)
+
+- **Architecture**: nginx (method-restricted) → Tailscale Funnel (path-restricted)
+- **Public URL**: `https://nuc.cinnamon-rooster.ts.net:8443/plugins/linear/linear`
+- **Tailscale Serve (port 443)**: full gateway, tailnet-only (unchanged)
+- **Tailscale Funnel (port 8443)**: only `/plugins/linear/*`, public internet
+- **nginx (127.0.0.1:8444)**: only POST allowed, proxies to gateway port 18789
+- **Security layers**: path restriction (Tailscale) → method restriction (nginx) → HMAC-SHA256 (plugin) → per-session bearer tokens (agent API)
+- **systemd service**: `tailscale-funnel-linear` (oneshot, configures serve+funnel)
+- **Gateway extensions**: symlinked from nix store to `~/.openclaw/extensions/`
 
 ### Models
 

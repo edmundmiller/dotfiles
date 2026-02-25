@@ -163,9 +163,101 @@ in
         description = "claude-max-api-proxy package";
       };
     };
+
+    gatewayExtensions = mkOption {
+      type = types.listOf types.package;
+      default = [ ];
+      description = "Nix packages to symlink into ~/.openclaw/extensions/ (gateway npm extensions)";
+    };
+
+    webhookProxy = {
+      enable = mkBoolOpt false;
+      funnelPort = mkOption {
+        type = types.port;
+        default = 8443;
+        description = "Tailscale Funnel port (public). Must be 443, 8443, or 10000.";
+      };
+      nginxPort = mkOption {
+        type = types.port;
+        default = 8444;
+        description = "Internal nginx listen port (loopback only)";
+      };
+      gatewayPort = mkOption {
+        type = types.port;
+        default = 18789;
+        description = "OpenClaw gateway HTTP port to proxy to";
+      };
+    };
   };
 
   config = mkIf cfg.enable {
+    # Webhook proxy: nginx (method-restricted) + Tailscale Funnel (path-restricted)
+    # Exposes ONLY POST /plugins/linear/* to the public internet on a separate port.
+    # The gateway stays tailnet-only on port 443.
+    services.nginx = mkIf cfg.webhookProxy.enable {
+      enable = true;
+      appendHttpConfig = ''
+        server {
+          listen 127.0.0.1:${toString cfg.webhookProxy.nginxPort};
+          server_name _;
+
+          location /plugins/linear/ {
+            limit_except POST { deny all; }
+            proxy_pass http://127.0.0.1:${toString cfg.webhookProxy.gatewayPort};
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_read_timeout 120s;
+            client_max_body_size 1m;
+          }
+
+          location / { return 403; }
+        }
+      '';
+    };
+
+    # Tailscale Funnel — expose webhook path on port 8443 (public internet)
+    # Port 443 stays as Serve (tailnet-only) for the full gateway.
+    # First-time setup requires interactive approval in Tailscale admin console.
+    systemd.services.tailscale-funnel-linear = mkIf cfg.webhookProxy.enable {
+      description = "Tailscale Funnel for Linear webhook proxy";
+      after = [
+        "tailscaled.service"
+        "nginx.service"
+        "network-online.target"
+      ];
+      requires = [ "tailscaled.service" ];
+      wants = [
+        "nginx.service"
+        "network-online.target"
+      ];
+      wantedBy = [ "multi-user.target" ];
+      path = [ pkgs.tailscale ];
+      script = ''
+        # Wait for tailscale to be connected
+        while ! tailscale status >/dev/null 2>&1; do sleep 2; done
+
+        # Configure serve on funnel port — path-restricted to /plugins/linear
+        tailscale serve --https=${toString cfg.webhookProxy.funnelPort} \
+          --set-path=/plugins/linear \
+          http://127.0.0.1:${toString cfg.webhookProxy.nginxPort}
+
+        # Enable funnel (public internet access) on that port
+        tailscale funnel --https=${toString cfg.webhookProxy.funnelPort} on
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStop = "${pkgs.tailscale}/bin/tailscale funnel --https=${toString cfg.webhookProxy.funnelPort} off";
+      };
+    };
+
+    # Open the funnel port in the firewall
+    networking.firewall.allowedTCPPorts = mkIf cfg.webhookProxy.enable [
+      cfg.webhookProxy.funnelPort
+    ];
+
     # Source openclaw secrets env file so CLI commands (openclaw status, etc)
     # get the same API keys as the systemd service. Uses envInit (.zshenv)
     # so it works for non-interactive shells too (e.g. ssh nuc "openclaw status").
@@ -207,6 +299,12 @@ in
         home.file =
           inlineSkillFiles
           // sharedSkillFiles
+          // (listToAttrs (
+            map (ext: {
+              name = ".openclaw/extensions/${ext.pname or ext.name}";
+              value.source = "${ext}/lib/${ext.pname or ext.name}";
+            }) cfg.gatewayExtensions
+          ))
           // {
             # Force-overwrite — openclaw mutates config at runtime, breaking home-manager backups
             ".openclaw/openclaw.json".force = true;
