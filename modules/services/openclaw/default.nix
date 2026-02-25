@@ -98,6 +98,11 @@ in
         default = [ ];
         description = "List of Telegram user IDs allowed to interact with bot";
       };
+      requireMention = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether bot requires @mention in group chats";
+      };
       bindings = mkOption {
         type = types.listOf (
           types.submodule {
@@ -391,7 +396,7 @@ in
             channels.telegram = mkIf cfg.telegram.enable {
               tokenFile = cfg.telegram.botTokenFile;
               inherit (cfg.telegram) allowFrom;
-              groups."*".requireMention = true;
+              groups."*".requireMention = cfg.telegram.requireMention;
             };
           };
         };

@@ -130,6 +130,7 @@
         ];
         telegram = {
           enable = true;
+          requireMention = false;
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
           allowFrom = [
             8357890648 # @edmundamiller
