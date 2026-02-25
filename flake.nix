@@ -304,6 +304,10 @@
             programs.nixfmt.enable = true;
             programs.prettier.enable = true;
             programs.statix.enable = true;
+            settings.global.excludes = [
+              "packages/*/dist/**"
+              "packages/*/node_modules/**"
+            ];
           };
 
           pre-commit.settings.hooks = {

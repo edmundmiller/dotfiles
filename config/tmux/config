@@ -24,7 +24,7 @@ setw -g automatic-rename off      # rename window after current program
 set  -g renumber-windows on      # renumber windows when one is closed
 # Push session + window to terminal (Ghostty) title via OSC 2
 set  -g set-titles on
-set  -g set-titles-string "#{session_name} · #{@smart_name_plain}"
+set  -g set-titles-string "#{?#{@smart_title_context},#{session_name} · #{@smart_title_context},#{session_name}}"
 # Zero-based indexing is fine in programming languages, but not so much in a
 # multiplexer when zero is on the other side of the keyboard.
 set  -g base-index 1

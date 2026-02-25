@@ -9,6 +9,7 @@ import {
   capturePane,
   renameWindow,
   setWindowPlainName,
+  setWindowTitleContext,
   type TmuxPane,
 } from "./tmux.js";
 import {
@@ -98,14 +99,17 @@ function renameAll(): void {
         }
 
         newName = trimName(newName);
-        // Strip #[...] color codes for terminal title (set-titles-string uses
-        // @smart_name_plain to avoid leaking tmux format codes into the title bar).
+        // Strip #[...] color codes for terminal title (@smart_name_plain).
         const plainName = newName.replace(/#\[[^\]]*\]/g, "").trim();
+        // Just the meaningful subtitle for the title bar: task name or filename,
+        // no icon, no status symbol. Empty for bare shells / unlabelled agents.
+        const titleContext = context?.sessionName ?? context?.filename ?? "";
         const currentName = panes[0].windowName ?? "";
 
         if (currentName !== newName) {
           renameWindow(windowId, newName);
           setWindowPlainName(windowId, plainName);
+          setWindowTitleContext(windowId, titleContext);
         }
       } catch {
         continue;
