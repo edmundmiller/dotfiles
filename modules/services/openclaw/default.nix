@@ -28,7 +28,8 @@ let
   '';
 
   # Gateway doesn't follow symlinks for extension discovery — must be real dirs.
-  # Copy from nix store before gateway starts.
+  # Copy from nix store before gateway starts. chmod before rm because previous
+  # copies inherit nix store's read-only permissions.
   copyExtensions = pkgs.writeShellScript "openclaw-copy-extensions" ''
     set -euo pipefail
     for ext in ${
@@ -36,6 +37,7 @@ let
     }; do
       name=$(basename "$ext")
       target="$HOME/.openclaw/extensions/$name"
+      chmod -R u+w "$target" 2>/dev/null || true
       rm -rf "$target"
       cp -rL "$ext" "$target"
       chmod -R u+w "$target"
