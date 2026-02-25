@@ -297,16 +297,24 @@ in
         home.file =
           inlineSkillFiles
           // sharedSkillFiles
-          // (listToAttrs (
-            map (ext: {
-              name = ".openclaw/extensions/${ext.pname or ext.name}";
-              value.source = "${ext}/lib/${ext.pname or ext.name}";
-            }) cfg.gatewayExtensions
-          ))
           // {
             # Force-overwrite — openclaw mutates config at runtime, breaking home-manager backups
             ".openclaw/openclaw.json".force = true;
           };
+
+        # Gateway doesn't follow symlinks for extension discovery — must be real dirs.
+        # Copy from nix store instead of symlinking via home.file.
+        home.activation.copyOpenclawExtensions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          for ext in ${
+            concatMapStringsSep " " (ext: "${ext}/lib/${ext.pname or ext.name}") cfg.gatewayExtensions
+          }; do
+            name=$(basename "$ext")
+            target="$HOME/.openclaw/extensions/$name"
+            ${pkgs.coreutils}/bin/rm -rf "$target"
+            ${pkgs.coreutils}/bin/cp -rL "$ext" "$target"
+            ${pkgs.coreutils}/bin/chmod -R u+w "$target"
+          done
+        '';
 
         programs.openclaw = {
           enable = true;
