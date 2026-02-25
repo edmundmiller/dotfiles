@@ -9,7 +9,9 @@ alias gbr='git browse'
 alias gbl='git blame'
 alias gc='git commit'
 alias gcm='git commit -m'
+alias gcam='git commit -a -m'
 alias gca='git commit --amend'
+alias gcad='git commit -a --amend'
 alias gcf='git commit --fixup'
 # gcl: Clone as bare repo with worktree layout
 # Usage: gcl <url> [name]

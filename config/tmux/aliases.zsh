@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
 
+# Attach to existing session or create new one (from omarchy)
+alias t='tmux attach 2>/dev/null || tmux new -s Work'
 alias ta='tmux attach'
 alias tl='tmux ls'
 
