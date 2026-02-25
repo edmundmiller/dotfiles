@@ -157,6 +157,18 @@ in
             inherit (config.age.secrets.linear-webhook-secret) path;
           }
           {
+            envVar = "HC_PING_KEY";
+            inherit (config.age.secrets.healthchecks-ping-key) path;
+          }
+          {
+            envVar = "HC_API_KEY";
+            inherit (config.age.secrets.healthchecks-api-key) path;
+          }
+          {
+            envVar = "HC_API_KEY_READONLY";
+            inherit (config.age.secrets.healthchecks-api-key-readonly) path;
+          }
+          {
             envVar = "GOG_KEYRING_PASSWORD";
             value = "gogcli-agenix";
             literal = true;
@@ -199,6 +211,7 @@ in
           "ast-grep"
           "beads"
           "code-search"
+          "healthchecks-io"
           "jut"
           "mdream"
           "pr-review"

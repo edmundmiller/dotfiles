@@ -65,6 +65,19 @@ in
     edmundmiller
     nuc
   ];
+  # Healthchecks.io keys (for openclaw + automation)
+  "healthchecks-ping-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "healthchecks-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "healthchecks-api-key-readonly.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 
   # TODO: create these .age files to re-enable vault-sync
   # "cubox-api-key.age".publicKeys = [
