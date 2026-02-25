@@ -54,7 +54,7 @@ in
     systemd.user.sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
 
     # linear-agent-bridge gateway extension config
-    programs.openclaw.config.plugins.entries.linear = {
+    programs.openclaw.config.plugins.entries.linear-agent-bridge = {
       enabled = true;
       config = {
         linearApiKey = "\${LINEAR_API_KEY}";
