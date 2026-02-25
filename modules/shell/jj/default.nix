@@ -26,6 +26,7 @@ in
     user.packages = with pkgs; [
       jujutsu
       my.jut
+      my.jj-vine
       my.jw
     ];
 
