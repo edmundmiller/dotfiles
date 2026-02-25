@@ -19,7 +19,6 @@
         # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
         python.conda.enable = false;
-        R.enable = true;
       };
 
       shell = {

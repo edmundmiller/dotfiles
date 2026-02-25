@@ -11,7 +11,6 @@ _: {
         node.useFnm = true;
         python.enable = true;
         python.conda.enable = true;
-        R.enable = true;
       };
 
       shell = {

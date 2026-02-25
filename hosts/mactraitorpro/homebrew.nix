@@ -36,7 +36,6 @@
     "make"
     "nim"
     "python@3.13"
-    "r"
 
     # Python tools
     "pipx"
