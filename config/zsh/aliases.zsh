@@ -34,6 +34,8 @@ if command -v eza >/dev/null; then
     alias ll="eza -abghilmu"
     alias llmod='ll --sort=modified'
     alias la="LC_COLLATE=C eza -ablF"
+    alias lt='eza --tree --level=2 --long --icons --git'
+    alias lta='lt -a'
     alias tree='eza --tree'
 fi
 
@@ -65,8 +67,32 @@ function r() {
 }
 compdef r=sched
 
-# Convenience
-# Editor aliases
+# fzf + bat preview (from omarchy)
+alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+eff() { $EDITOR $(ff); }
+
+# Compression (from omarchy)
+compress() { tar -czf "${1%/}.tar.gz" "${1%/}"; }
+alias decompress="tar -xzf"
+
+# SSH port forwarding helpers (from omarchy)
+fip() {
+  [[ $# -lt 2 ]] && echo "Usage: fip <host> <port1> [port2] ..." && return 1
+  local host="$1"; shift
+  for port in "$@"; do
+    ssh -f -N -L "$port:localhost:$port" "$host" && echo "Forwarding localhost:$port → $host:$port"
+  done
+}
+dip() {
+  [[ $# -eq 0 ]] && echo "Usage: dip <port1> [port2] ..." && return 1
+  for port in "$@"; do
+    pkill -f "ssh.*-L $port:localhost:$port" && echo "Stopped forwarding port $port" || echo "No forwarding on port $port"
+  done
+}
+lip() { pgrep -af "ssh.*-L [0-9]+:localhost:[0-9]+" || echo "No active forwards"; }
+
+# Editor — open cwd when called without args (from omarchy)
+n() { if [[ $# -eq 0 ]]; then command nvim .; else command nvim "$@"; fi; }
 alias vi='nvim'
 alias nv='nvim'
 
