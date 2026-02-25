@@ -238,19 +238,16 @@ in
         # Wait for tailscale to be connected
         while ! tailscale status >/dev/null 2>&1; do sleep 2; done
 
-        # Configure serve on funnel port — path-restricted to /plugins/linear
-        # --bg makes it persistent (configure and exit, don't block)
-        tailscale serve --bg --https=${toString cfg.webhookProxy.funnelPort} \
+        # Expose via funnel (public internet) on funnel port, path-restricted
+        # funnel = serve + public access; --bg makes it persistent (exit after config)
+        tailscale funnel --bg --https=${toString cfg.webhookProxy.funnelPort} \
           --set-path=/plugins/linear \
           http://127.0.0.1:${toString cfg.webhookProxy.nginxPort}
-
-        # Enable funnel (public internet access) on that port
-        tailscale funnel --bg --https=${toString cfg.webhookProxy.funnelPort} on
       '';
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStop = "${pkgs.tailscale}/bin/tailscale funnel --https=${toString cfg.webhookProxy.funnelPort} off";
+        ExecStop = "${pkgs.tailscale}/bin/tailscale funnel reset";
       };
     };
 
