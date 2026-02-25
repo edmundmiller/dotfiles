@@ -27,7 +27,9 @@
 #     active phone use (Launch/Siri/Manual update trigger)
 #   Time guard: signals before 7 AM ignored (bathroom trips, sensor glitches)
 #   Reset by: Winding Down scene (sleep.nix) and Good Morning scene (modes.nix)
-#   Good Morning fires when both are on (also gated to after 7 AM)
+#   Good Morning fires when all home residents are awake (also gated to after 7 AM)
+#   Away residents are skipped — if only one person is home, only their awake
+#   boolean is required.
 { lib, ... }:
 {
   services.home-assistant.config = {
@@ -406,11 +408,14 @@
         ];
       }
 
-      # Both awake → Good Morning
+      # All home residents awake → Good Morning
       # Time guard: goodnight MUST NOT turn off before 7 AM.
       # This is the primary guardian of that invariant — Good Morning is the
       # only automated path that clears goodnight, so gating it here is the
       # single choke point. The per-detection time guards are defense-in-depth.
+      #
+      # Presence-aware: if a person is not home (travel, early departure) their
+      # awake boolean is not required. At least one person must be home.
       {
         alias = "Good Morning";
         id = "good_morning_both_awake";
@@ -432,14 +437,15 @@
             after = "07:00:00";
           }
           {
-            condition = "state";
-            entity_id = "input_boolean.edmund_awake";
-            state = "on";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.monica_awake";
-            state = "on";
+            # At least one person home, and every home resident is awake
+            condition = "template";
+            value_template = ''
+              {{
+                (is_state('person.edmund_miller', 'home') or is_state('person.moni', 'home'))
+                and (not is_state('person.edmund_miller', 'home') or is_state('input_boolean.edmund_awake', 'on'))
+                and (not is_state('person.moni', 'home') or is_state('input_boolean.monica_awake', 'on'))
+              }}
+            '';
           }
         ];
         action = [
