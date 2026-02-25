@@ -4,8 +4,10 @@
     signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC edmundmiller"
 [commit]
 	gpgsign = true
+	verbose = true
 [tag]
 	gpgSign = true
+	sort = -version:refname
 [gpg]
 	format = ssh
 [gpg "ssh"]
@@ -21,10 +23,20 @@
 	user = edmundmiller
 [gitlab]
 	user = emiller88
+[pull]
+	rebase = true
 [rebase]
 	autosquash = true
 [push]
 	default = current
+	autoSetupRemote = true
+[column]
+	ui = auto
+[branch]
+	sort = -committerdate
+[rerere]
+	enabled = true
+	autoupdate = true
 [alias]
 	amend = commit --amend
 	exec = "!exec "
@@ -55,6 +67,9 @@
 [diff]
 	external = difft
 	tool = difftastic
+	algorithm = histogram
+	colorMoved = plain
+	mnemonicPrefix = true
 [difftool]
 	prompt = false
 [difftool "difftastic"]
