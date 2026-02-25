@@ -419,7 +419,7 @@ in
               profile = "full";
               exec = {
                 host = "gateway";
-                security = "allowlist";
+                security = "full";
                 safeBins = [
                   "cat"
                   "ls"
