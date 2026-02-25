@@ -298,6 +298,40 @@
           # Expose deploy-rs CLI for `nix run .#deploy-rs`
           packages.deploy-rs = deploy-rs.packages.${system}.default;
 
+          # Headless agent environment (Factory, Devin, etc.)
+          # Install: nix profile install .#agent-env
+          # Shell:   nix develop .#agent
+          packages.agent-env = pkgs.buildEnv {
+            name = "dotfiles-agent-env";
+            paths = with pkgs; [
+              # VCS
+              git
+              jujutsu
+              gh
+
+              # Shell essentials
+              zsh
+              tmux
+              direnv
+              nix-direnv
+              starship
+
+              # Search & navigation
+              ripgrep
+              fd
+              fzf
+              bat
+              eza
+              zoxide
+              jq
+              delta
+
+              # Build tools
+              gnumake
+              just
+            ];
+          };
+
           treefmt = {
             projectRootFile = ".git/config";
             programs.deadnix.enable = true;
@@ -322,6 +356,14 @@
               language = "system";
               pass_filenames = false;
             };
+          };
+
+          # Headless agent dev shell (nix develop .#agent)
+          devShells.agent = pkgs.mkShell {
+            packages = self.packages.${system}.agent-env.paths;
+            shellHook = ''
+              echo "dotfiles agent shell (headless)"
+            '';
           };
 
           # Development shell
