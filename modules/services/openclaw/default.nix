@@ -106,6 +106,14 @@ in
                 type = types.str;
                 description = "Telegram peer user ID (as string)";
               };
+              kind = mkOption {
+                type = types.enum [
+                  "direct"
+                  "group"
+                ];
+                default = "direct";
+                description = "Telegram peer kind: direct message or group chat";
+              };
               agentId = mkOption {
                 type = types.str;
                 default = "default";
@@ -340,7 +348,7 @@ in
                 channel = "telegram";
                 peer = {
                   id = b.peerId;
-                  kind = "direct";
+                  inherit (b) kind;
                 };
               };
             }) cfg.telegram.bindings;

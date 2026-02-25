@@ -31,34 +31,34 @@
   ## NFS
   services.rpcbind.enable = true;
   fileSystems = {
-    "/data/docs" = {
-      device = "unas:/data/docs";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
+    # "/data/docs" = {
+    #   device = "unas:/data/docs";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
 
-    "/data/media/books/audiobooks" = {
-      device = "unas:/data/media/books/audiobooks";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
-    "/data/media/books/ebooks" = {
-      device = "unas:/data/media/books/audiobooks";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
+    # "/data/media/books/audiobooks" = {
+    #   device = "unas:/data/media/books/audiobooks";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
+    # "/data/media/books/ebooks" = {
+    #   device = "unas:/data/media/books/audiobooks";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
 
     # "/data/media/downloads" = {
     #   device = "unas:/data/media/downloads";
@@ -90,24 +90,24 @@
     #   ];
     # };
 
-    "/data/media/photos" = {
-      device = "unas:/data/media/photos";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
+    # "/data/media/photos" = {
+    #   device = "unas:/data/media/photos";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
 
-    "/data/media/music" = {
-      device = "unas:/data/media/music";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "noauto"
-        "x-systemd.idle-timeout=600"
-      ];
-    };
+    # "/data/media/music" = {
+    #   device = "unas:/data/media/music";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "noauto"
+    #     "x-systemd.idle-timeout=600"
+    #   ];
+    # };
   };
 }
