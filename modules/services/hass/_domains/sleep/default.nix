@@ -437,6 +437,14 @@
             after = "07:00:00";
           }
           {
+            # Sleep cycle must have happened and still be active — guards against
+            # firing if no one went through the night cycle, or if Good Morning
+            # already ran and cleared it
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
+          }
+          {
             # At least one person home, and every home resident is awake
             condition = "template";
             value_template = ''
