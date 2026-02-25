@@ -3,7 +3,14 @@
  * tmux-smart-name — smart window naming with AI agent status detection.
  * No external dependencies.
  */
-import { hasSessions, listAllPanes, capturePane, renameWindow, type TmuxPane } from "./tmux.js";
+import {
+  hasSessions,
+  listAllPanes,
+  capturePane,
+  renameWindow,
+  setWindowPlainName,
+  type TmuxPane,
+} from "./tmux.js";
 import {
   AGENT_PROGRAMS,
   getPaneProgram,
@@ -91,10 +98,14 @@ function renameAll(): void {
         }
 
         newName = trimName(newName);
+        // Strip #[...] color codes for terminal title (set-titles-string uses
+        // @smart_name_plain to avoid leaking tmux format codes into the title bar).
+        const plainName = newName.replace(/#\[[^\]]*\]/g, "").trim();
         const currentName = panes[0].windowName ?? "";
 
         if (currentName !== newName) {
           renameWindow(windowId, newName);
+          setWindowPlainName(windowId, plainName);
         }
       } catch {
         continue;

@@ -157,3 +157,12 @@ export function capturePanes(paneIds: string[], lines = 20): Map<string, string>
 export function renameWindow(windowId: string, name: string): void {
   tmuxCmd("rename-window", "-t", windowId, name);
 }
+
+/**
+ * Store a plain (color-code-stripped) window name as the @smart_name_plain
+ * user option so set-titles-string can use it without leaking #[...] codes
+ * into the terminal title bar.
+ */
+export function setWindowPlainName(windowId: string, plainName: string): void {
+  tmuxCmd("set-option", "-wt", windowId, "@smart_name_plain", plainName);
+}
