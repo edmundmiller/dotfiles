@@ -15,7 +15,10 @@ rustPlatform.buildRustPackage {
     hash = "sha256-vvNbeQvP205snAGiql/i8yFGyMw23YkSU4/uxOSnycY=";
   };
 
-  cargoHash = lib.fakeHash;
+  cargoHash = "sha256-vcpaKlNeORnDpVqXxu0TrXWaWNfaK9QPVJOrty9WmcQ=";
+
+  # Integration tests need network/forge access
+  doCheck = false;
 
   meta = with lib; {
     description = "Stacked pull requests for jj (jujutsu) — bookmark-based, multi-forge";
