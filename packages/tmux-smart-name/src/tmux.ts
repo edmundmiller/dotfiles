@@ -166,3 +166,13 @@ export function renameWindow(windowId: string, name: string): void {
 export function setWindowPlainName(windowId: string, plainName: string): void {
   tmuxCmd("set-option", "-wt", windowId, "@smart_name_plain", plainName);
 }
+
+/**
+ * Store just the meaningful subtitle for the terminal title bar:
+ * pi session name, nvim filename, etc. — no icon, no status symbol.
+ * Empty string when there's nothing meaningful (bare shell, bare agent).
+ * Used by set-titles-string: "session · subtitle" or just "session".
+ */
+export function setWindowTitleContext(windowId: string, context: string): void {
+  tmuxCmd("set-option", "-wt", windowId, "@smart_title_context", context);
+}
