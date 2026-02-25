@@ -32,6 +32,10 @@ in
     edmundmiller
     nuc
   ];
+  "linear-webhook-secret.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "elevenlabs-api-key.age".publicKeys = [
     edmundmiller
     nuc
