@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 
@@ -207,374 +208,379 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    # Webhook proxy: nginx (method-restricted) + Tailscale Funnel (path-restricted)
-    # Exposes ONLY POST /plugins/linear/* to the public internet on a separate port.
-    # The gateway stays tailnet-only on port 443.
-    services.nginx = mkIf cfg.webhookProxy.enable {
-      enable = true;
-      appendHttpConfig = ''
-        server {
-          listen 127.0.0.1:${toString cfg.webhookProxy.nginxPort};
-          server_name _;
+  config = mkIf cfg.enable (mkMerge [
+    # NixOS-only: nginx proxy, systemd services, firewall
+    (optionalAttrs (!isDarwin) {
+      # Webhook proxy: nginx (method-restricted) + Tailscale Funnel (path-restricted)
+      # Exposes ONLY POST /plugins/linear/* to the public internet on a separate port.
+      # The gateway stays tailnet-only on port 443.
+      services.nginx = mkIf cfg.webhookProxy.enable {
+        enable = true;
+        appendHttpConfig = ''
+          server {
+            listen 127.0.0.1:${toString cfg.webhookProxy.nginxPort};
+            server_name _;
 
-          # Tailscale funnel --set-path=/plugins/linear strips the prefix,
-          # so /plugins/linear/linear arrives here as just /linear.
-          # Re-add the prefix when proxying to the gateway.
-          location / {
-            limit_except POST { deny all; }
-            proxy_pass http://127.0.0.1:${toString cfg.webhookProxy.gatewayPort}/plugins/linear/;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto https;
-            proxy_read_timeout 120s;
-            client_max_body_size 1m;
+            # Tailscale funnel --set-path=/plugins/linear strips the prefix,
+            # so /plugins/linear/linear arrives here as just /linear.
+            # Re-add the prefix when proxying to the gateway.
+            location / {
+              limit_except POST { deny all; }
+              proxy_pass http://127.0.0.1:${toString cfg.webhookProxy.gatewayPort}/plugins/linear/;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto https;
+              proxy_read_timeout 120s;
+              client_max_body_size 1m;
+            }
           }
-        }
-      '';
-    };
-
-    # Tailscale Funnel — expose webhook path on port 8443 (public internet)
-    # Port 443 stays as Serve (tailnet-only) for the full gateway.
-    # First-time setup requires interactive approval in Tailscale admin console.
-    systemd.services.tailscale-funnel-linear = mkIf cfg.webhookProxy.enable {
-      description = "Tailscale Funnel for Linear webhook proxy";
-      after = [
-        "tailscaled.service"
-        "nginx.service"
-        "network-online.target"
-      ];
-      requires = [ "tailscaled.service" ];
-      wants = [
-        "nginx.service"
-        "network-online.target"
-      ];
-      wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.tailscale ];
-      script = ''
-        # Wait for tailscale to be connected
-        while ! tailscale status >/dev/null 2>&1; do sleep 2; done
-
-        # Expose via funnel (public internet) on funnel port, path-restricted
-        # funnel = serve + public access; --bg makes it persistent (exit after config)
-        tailscale funnel --bg --https=${toString cfg.webhookProxy.funnelPort} \
-          --set-path=/plugins/linear \
-          http://127.0.0.1:${toString cfg.webhookProxy.nginxPort}
-      '';
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStop = "${pkgs.tailscale}/bin/tailscale funnel reset";
+        '';
       };
-    };
 
-    # Open the funnel port in the firewall
-    networking.firewall.allowedTCPPorts = mkIf cfg.webhookProxy.enable [
-      cfg.webhookProxy.funnelPort
-    ];
-
-    # Source openclaw secrets env file so CLI commands (openclaw status, etc)
-    # get the same API keys as the systemd service. Uses envInit (.zshenv)
-    # so it works for non-interactive shells too (e.g. ssh nuc "openclaw status").
-    modules.shell.zsh.envInit = ''
-      if [[ -f "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env" ]]; then
-        set -a  # auto-export so child processes (openclaw CLI) inherit the vars
-        source "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env"
-        set +a
-      fi
-    '';
-
-    home-manager.users.${user} =
-      let
-        hmCfg = config.home-manager.users.${user};
-        bundle = hmCfg.programs.agent-skills.bundlePath;
-
-        inlineSkillFiles = listToAttrs (
-          map (skill: {
-            name = ".openclaw/workspace/skills/${skill.name}/SKILL.md";
-            value.text = ''
-              ---
-              name: ${skill.name}
-              description: ${skill.description or ""}
-              ---
-
-              ${skill.body or ""}
-            '';
-          }) cfg.skills
-        );
-
-        sharedSkillFiles = listToAttrs (
-          map (name: {
-            name = ".openclaw/workspace/skills/${name}";
-            value.source = "${bundle}/${name}";
-          }) cfg.sharedSkills
-        );
-      in
-      {
-        home.file =
-          inlineSkillFiles
-          // sharedSkillFiles
-          // {
-            # Force-overwrite — openclaw mutates config at runtime, breaking home-manager backups
-            ".openclaw/openclaw.json".force = true;
-          };
-
-        programs.openclaw = {
-          enable = true;
-          package = pkgs.openclaw-gateway;
-          documents = ./documents;
-          inherit (cfg) customPlugins skills;
-
-          exposePluginPackages = true;
-
-          bundledPlugins.sag = {
-            enable = true;
-            config.env.ELEVENLABS_API_KEY_FILE = config.age.secrets.elevenlabs-api-key.path;
-          };
-
-          # Config goes at top level — upstream auto-creates default instance and merges this in
-          config = {
-            gateway = {
-              mode = "local";
-              bind = "loopback";
-              tailscale.mode = "serve";
-              trustedProxies = [
-                "127.0.0.1"
-                "::1"
-              ];
-              auth = {
-                token = "__OPENCLAW_TOKEN_PLACEHOLDER__";
-                allowTailscale = true;
-              };
-            };
-
-            memory = {
-              citations = "auto";
-              # QMD available for Obsidian vault search (not primary memory backend)
-              qmd.command = "${home}/.local/bin/qmd-wrapper";
-            };
-
-            plugins = {
-              slots.memory = "memory-lancedb";
-              entries."memory-lancedb" = {
-                enabled = true;
-                config = {
-                  embedding = {
-                    apiKey = "\${OPENAI_API_KEY}";
-                    model = "text-embedding-3-small";
-                  };
-                  dbPath = "${home}/.openclaw/memory/lancedb";
-                  autoCapture = true;
-                  autoRecall = true;
-                };
-              };
-            };
-
-            agents.defaults = {
-              model = {
-                # anthropic native API avoids openai-completions adapter phantom tool bug
-                # (openclaw#23116, openclaw#21985) that corrupts MiniMax/Kimi sessions
-                primary = "anthropic/claude-sonnet-4-5";
-                fallbacks = [
-                  "claude-max/claude-sonnet-4"
-                  "opencode/minimax-m2.5"
-                ];
-              };
-              thinkingDefault = "high";
-              heartbeat.model = "anthropic/claude-haiku-4";
-              subagents.model = {
-                primary = "anthropic/claude-sonnet-4-5";
-                fallbacks = [
-                  "claude-max/claude-sonnet-4"
-                  "opencode/minimax-m2.5"
-                ];
-              };
-
-              cliBackends = {
-                pi = {
-                  command = "bunx";
-                  args = [
-                    "@mariozechner/pi-coding-agent"
-                    "--print"
-                  ];
-                  input = "arg";
-                  output = "text";
-                };
-                claude = {
-                  command = "claude";
-                  args = [ "--print" ];
-                  input = "arg";
-                  output = "text";
-                };
-                codex = {
-                  command = "codex";
-                  input = "arg";
-                  output = "text";
-                };
-              };
-            };
-
-            tools = {
-              profile = "full";
-              exec = {
-                host = "gateway";
-                security = "full";
-                safeBins = [
-                  "cat"
-                  "ls"
-                  "find"
-                  "grep"
-                  "rg"
-                  "jq"
-                  "curl"
-                  "git"
-                  "head"
-                  "tail"
-                  "wc"
-                  "sort"
-                  "uniq"
-                  "sed"
-                  "awk"
-                  "echo"
-                  "mkdir"
-                  "cp"
-                  "mv"
-                  "rm"
-                  "touch"
-                  "chmod"
-                  "dirname"
-                  "basename"
-                  "realpath"
-                  "which"
-                  "env"
-                  "date"
-                  "diff"
-                  "tr"
-                  "tee"
-                  "xargs"
-                ];
-              };
-            };
-
-            bindings = map (b: {
-              inherit (b) agentId;
-              match = {
-                channel = "telegram";
-                peer = {
-                  id = b.peerId;
-                  inherit (b) kind;
-                };
-              };
-            }) cfg.telegram.bindings;
-
-            # Claude Max proxy — exposes subscription as OpenAI-compatible API.
-            # Models available as claude-max/claude-opus-4, claude-max/claude-sonnet-4, etc.
-            models = mkIf cfg.claudeMaxProxy.enable {
-              providers.claude-max = {
-                baseUrl = "http://localhost:${toString cfg.claudeMaxProxy.port}/v1";
-                apiKey = "not-needed";
-                api = "openai-completions";
-                models = [
-                  {
-                    id = "claude-opus-4";
-                    name = "Claude Opus 4";
-                  }
-                  {
-                    id = "claude-sonnet-4";
-                    name = "Claude Sonnet 4";
-                  }
-                  {
-                    id = "claude-haiku-4";
-                    name = "Claude Haiku 4";
-                  }
-                ];
-              };
-            };
-
-            # OpenCode Zen models — use built-in catalog for per-model API routing + costs.
-            # OPENCODE_API_KEY is injected via secrets env file; the gateway auto-discovers
-            # Zen models (minimax-m2.5, kimi-k2.5 etc) when the key is present.
-
-            hooks = mkIf (cfg.hooksTokenFile != "") {
-              enabled = true;
-              token = "__OPENCLAW_HOOKS_TOKEN_PLACEHOLDER__";
-              defaultSessionKey = "hook:ingress";
-              allowRequestSessionKey = false;
-            };
-
-            channels.telegram = mkIf cfg.telegram.enable {
-              tokenFile = cfg.telegram.botTokenFile;
-              inherit (cfg.telegram) allowFrom;
-              groups."*".requireMention = cfg.telegram.requireMention;
-            };
-          };
-        };
-
-        # Claude Max API proxy — runs alongside gateway, exposes subscription as OpenAI API
-        systemd.user.services.claude-max-api-proxy = mkIf cfg.claudeMaxProxy.enable {
-          Unit = {
-            Description = "Claude Max API Proxy (OpenAI-compatible)";
-            StartLimitIntervalSec = 60;
-            StartLimitBurst = 5;
-          };
-          Install.WantedBy = [ "default.target" ];
-          Service = {
-            ExecStart = "${cfg.claudeMaxProxy.package}/bin/claude-max-api ${toString cfg.claudeMaxProxy.port}";
-            Restart = "on-failure";
-            RestartSec = 5;
-            # claude CLI needs PATH to find itself + node
-            Environment = "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${user}/bin";
-          };
-        };
-
-        # Inject agenix secrets + gateway token via ExecStartPre
-        systemd.user.services.openclaw-gateway.Unit = mkMerge [
-          {
-            # Relax start rate limit — deploys restart user services and openclaw
-            # takes a few seconds to boot, hitting the default 5/10s limit
-            StartLimitIntervalSec = 60;
-            StartLimitBurst = 10;
-          }
-          (mkIf cfg.claudeMaxProxy.enable {
-            After = [ "claude-max-api-proxy.service" ];
-            Requires = [ "claude-max-api-proxy.service" ];
-          })
+      # Tailscale Funnel — expose webhook path on port 8443 (public internet)
+      # Port 443 stays as Serve (tailnet-only) for the full gateway.
+      # First-time setup requires interactive approval in Tailscale admin console.
+      systemd.services.tailscale-funnel-linear = mkIf cfg.webhookProxy.enable {
+        description = "Tailscale Funnel for Linear webhook proxy";
+        after = [
+          "tailscaled.service"
+          "nginx.service"
+          "network-online.target"
         ];
-        systemd.user.services.openclaw-gateway.Install = {
-          WantedBy = [ "default.target" ];
+        requires = [ "tailscaled.service" ];
+        wants = [
+          "nginx.service"
+          "network-online.target"
+        ];
+        wantedBy = [ "multi-user.target" ];
+        path = [ pkgs.tailscale ];
+        script = ''
+          # Wait for tailscale to be connected
+          while ! tailscale status >/dev/null 2>&1; do sleep 2; done
+
+          # Expose via funnel (public internet) on funnel port, path-restricted
+          # funnel = serve + public access; --bg makes it persistent (exit after config)
+          tailscale funnel --bg --https=${toString cfg.webhookProxy.funnelPort} \
+            --set-path=/plugins/linear \
+            http://127.0.0.1:${toString cfg.webhookProxy.nginxPort}
+        '';
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStop = "${pkgs.tailscale}/bin/tailscale funnel reset";
         };
-        systemd.user.services.openclaw-gateway.Service =
-          let
-            # memory-lancedb extension needs openai + @lancedb/lancedb from the
-            # gateway's pnpm store — the Nix build leaves extension node_modules
-            # empty (upstream packaging bug). This script finds the deps in the
-            # pnpm virtual store and appends NODE_PATH to the env file.
-            findNodePath = pkgs.writeShellScript "openclaw-node-path" ''
-              set -euo pipefail
-              GW_STORE=$(readlink -f $(which openclaw) | sed 's|/bin/openclaw$||')
-              PNPM="$GW_STORE/lib/openclaw/node_modules/.pnpm"
-
-              OPENAI_DIR=$(find "$PNPM" -maxdepth 2 -path '*/openai@*/node_modules' -type d 2>/dev/null | head -1)
-              LANCE_DIR=$(find "$PNPM" -maxdepth 2 -path '*/@lancedb+lancedb@*/node_modules' -type d 2>/dev/null | head -1)
-
-              NODE_PATH=""
-              [ -n "$OPENAI_DIR" ] && NODE_PATH="$OPENAI_DIR"
-              [ -n "$LANCE_DIR" ] && NODE_PATH="''${NODE_PATH:+$NODE_PATH:}$LANCE_DIR"
-
-              mkdir -p "$XDG_RUNTIME_DIR/openclaw"
-              echo "NODE_PATH=$NODE_PATH" >> "$XDG_RUNTIME_DIR/openclaw/env"
-            '';
-          in
-          {
-            ExecStartPre = [
-              "${mkEnvScript}"
-              "${pkgs.bash}/bin/bash ${mkTokenScript}"
-              "${findNodePath}"
-              "${copyExtensions}"
-            ];
-            EnvironmentFile = "-/run/user/%U/openclaw/env";
-          };
       };
-  };
+
+      # Open the funnel port in the firewall
+      networking.firewall.allowedTCPPorts = mkIf cfg.webhookProxy.enable [
+        cfg.webhookProxy.funnelPort
+      ];
+    })
+
+    {
+      # Source openclaw secrets env file so CLI commands (openclaw status, etc)
+      # get the same API keys as the systemd service. Uses envInit (.zshenv)
+      # so it works for non-interactive shells too (e.g. ssh nuc "openclaw status").
+      modules.shell.zsh.envInit = ''
+        if [[ -f "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env" ]]; then
+          set -a  # auto-export so child processes (openclaw CLI) inherit the vars
+          source "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env"
+          set +a
+        fi
+      '';
+
+      home-manager.users.${user} =
+        let
+          hmCfg = config.home-manager.users.${user};
+          bundle = hmCfg.programs.agent-skills.bundlePath;
+
+          inlineSkillFiles = listToAttrs (
+            map (skill: {
+              name = ".openclaw/workspace/skills/${skill.name}/SKILL.md";
+              value.text = ''
+                ---
+                name: ${skill.name}
+                description: ${skill.description or ""}
+                ---
+
+                ${skill.body or ""}
+              '';
+            }) cfg.skills
+          );
+
+          sharedSkillFiles = listToAttrs (
+            map (name: {
+              name = ".openclaw/workspace/skills/${name}";
+              value.source = "${bundle}/${name}";
+            }) cfg.sharedSkills
+          );
+        in
+        {
+          home.file =
+            inlineSkillFiles
+            // sharedSkillFiles
+            // {
+              # Force-overwrite — openclaw mutates config at runtime, breaking home-manager backups
+              ".openclaw/openclaw.json".force = true;
+            };
+
+          programs.openclaw = {
+            enable = true;
+            package = pkgs.openclaw-gateway;
+            documents = ./documents;
+            inherit (cfg) customPlugins skills;
+
+            exposePluginPackages = true;
+
+            bundledPlugins.sag = {
+              enable = true;
+              config.env.ELEVENLABS_API_KEY_FILE = config.age.secrets.elevenlabs-api-key.path;
+            };
+
+            # Config goes at top level — upstream auto-creates default instance and merges this in
+            config = {
+              gateway = {
+                mode = "local";
+                bind = "loopback";
+                tailscale.mode = "serve";
+                trustedProxies = [
+                  "127.0.0.1"
+                  "::1"
+                ];
+                auth = {
+                  token = "__OPENCLAW_TOKEN_PLACEHOLDER__";
+                  allowTailscale = true;
+                };
+              };
+
+              memory = {
+                citations = "auto";
+                # QMD available for Obsidian vault search (not primary memory backend)
+                qmd.command = "${home}/.local/bin/qmd-wrapper";
+              };
+
+              plugins = {
+                slots.memory = "memory-lancedb";
+                entries."memory-lancedb" = {
+                  enabled = true;
+                  config = {
+                    embedding = {
+                      apiKey = "\${OPENAI_API_KEY}";
+                      model = "text-embedding-3-small";
+                    };
+                    dbPath = "${home}/.openclaw/memory/lancedb";
+                    autoCapture = true;
+                    autoRecall = true;
+                  };
+                };
+              };
+
+              agents.defaults = {
+                model = {
+                  # anthropic native API avoids openai-completions adapter phantom tool bug
+                  # (openclaw#23116, openclaw#21985) that corrupts MiniMax/Kimi sessions
+                  primary = "anthropic/claude-sonnet-4-5";
+                  fallbacks = [
+                    "claude-max/claude-sonnet-4"
+                    "opencode/minimax-m2.5"
+                  ];
+                };
+                thinkingDefault = "high";
+                heartbeat.model = "anthropic/claude-haiku-4";
+                subagents.model = {
+                  primary = "anthropic/claude-sonnet-4-5";
+                  fallbacks = [
+                    "claude-max/claude-sonnet-4"
+                    "opencode/minimax-m2.5"
+                  ];
+                };
+
+                cliBackends = {
+                  pi = {
+                    command = "bunx";
+                    args = [
+                      "@mariozechner/pi-coding-agent"
+                      "--print"
+                    ];
+                    input = "arg";
+                    output = "text";
+                  };
+                  claude = {
+                    command = "claude";
+                    args = [ "--print" ];
+                    input = "arg";
+                    output = "text";
+                  };
+                  codex = {
+                    command = "codex";
+                    input = "arg";
+                    output = "text";
+                  };
+                };
+              };
+
+              tools = {
+                profile = "full";
+                exec = {
+                  host = "gateway";
+                  security = "full";
+                  safeBins = [
+                    "cat"
+                    "ls"
+                    "find"
+                    "grep"
+                    "rg"
+                    "jq"
+                    "curl"
+                    "git"
+                    "head"
+                    "tail"
+                    "wc"
+                    "sort"
+                    "uniq"
+                    "sed"
+                    "awk"
+                    "echo"
+                    "mkdir"
+                    "cp"
+                    "mv"
+                    "rm"
+                    "touch"
+                    "chmod"
+                    "dirname"
+                    "basename"
+                    "realpath"
+                    "which"
+                    "env"
+                    "date"
+                    "diff"
+                    "tr"
+                    "tee"
+                    "xargs"
+                  ];
+                };
+              };
+
+              bindings = map (b: {
+                inherit (b) agentId;
+                match = {
+                  channel = "telegram";
+                  peer = {
+                    id = b.peerId;
+                    inherit (b) kind;
+                  };
+                };
+              }) cfg.telegram.bindings;
+
+              # Claude Max proxy — exposes subscription as OpenAI-compatible API.
+              # Models available as claude-max/claude-opus-4, claude-max/claude-sonnet-4, etc.
+              models = mkIf cfg.claudeMaxProxy.enable {
+                providers.claude-max = {
+                  baseUrl = "http://localhost:${toString cfg.claudeMaxProxy.port}/v1";
+                  apiKey = "not-needed";
+                  api = "openai-completions";
+                  models = [
+                    {
+                      id = "claude-opus-4";
+                      name = "Claude Opus 4";
+                    }
+                    {
+                      id = "claude-sonnet-4";
+                      name = "Claude Sonnet 4";
+                    }
+                    {
+                      id = "claude-haiku-4";
+                      name = "Claude Haiku 4";
+                    }
+                  ];
+                };
+              };
+
+              # OpenCode Zen models — use built-in catalog for per-model API routing + costs.
+              # OPENCODE_API_KEY is injected via secrets env file; the gateway auto-discovers
+              # Zen models (minimax-m2.5, kimi-k2.5 etc) when the key is present.
+
+              hooks = mkIf (cfg.hooksTokenFile != "") {
+                enabled = true;
+                token = "__OPENCLAW_HOOKS_TOKEN_PLACEHOLDER__";
+                defaultSessionKey = "hook:ingress";
+                allowRequestSessionKey = false;
+              };
+
+              channels.telegram = mkIf cfg.telegram.enable {
+                tokenFile = cfg.telegram.botTokenFile;
+                inherit (cfg.telegram) allowFrom;
+                groups."*".requireMention = cfg.telegram.requireMention;
+              };
+            };
+          };
+
+          # Claude Max API proxy — runs alongside gateway, exposes subscription as OpenAI API
+          systemd.user.services.claude-max-api-proxy = mkIf cfg.claudeMaxProxy.enable {
+            Unit = {
+              Description = "Claude Max API Proxy (OpenAI-compatible)";
+              StartLimitIntervalSec = 60;
+              StartLimitBurst = 5;
+            };
+            Install.WantedBy = [ "default.target" ];
+            Service = {
+              ExecStart = "${cfg.claudeMaxProxy.package}/bin/claude-max-api ${toString cfg.claudeMaxProxy.port}";
+              Restart = "on-failure";
+              RestartSec = 5;
+              # claude CLI needs PATH to find itself + node
+              Environment = "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${user}/bin";
+            };
+          };
+
+          # Inject agenix secrets + gateway token via ExecStartPre
+          systemd.user.services.openclaw-gateway.Unit = mkMerge [
+            {
+              # Relax start rate limit — deploys restart user services and openclaw
+              # takes a few seconds to boot, hitting the default 5/10s limit
+              StartLimitIntervalSec = 60;
+              StartLimitBurst = 10;
+            }
+            (mkIf cfg.claudeMaxProxy.enable {
+              After = [ "claude-max-api-proxy.service" ];
+              Requires = [ "claude-max-api-proxy.service" ];
+            })
+          ];
+          systemd.user.services.openclaw-gateway.Install = {
+            WantedBy = [ "default.target" ];
+          };
+          systemd.user.services.openclaw-gateway.Service =
+            let
+              # memory-lancedb extension needs openai + @lancedb/lancedb from the
+              # gateway's pnpm store — the Nix build leaves extension node_modules
+              # empty (upstream packaging bug). This script finds the deps in the
+              # pnpm virtual store and appends NODE_PATH to the env file.
+              findNodePath = pkgs.writeShellScript "openclaw-node-path" ''
+                set -euo pipefail
+                GW_STORE=$(readlink -f $(which openclaw) | sed 's|/bin/openclaw$||')
+                PNPM="$GW_STORE/lib/openclaw/node_modules/.pnpm"
+
+                OPENAI_DIR=$(find "$PNPM" -maxdepth 2 -path '*/openai@*/node_modules' -type d 2>/dev/null | head -1)
+                LANCE_DIR=$(find "$PNPM" -maxdepth 2 -path '*/@lancedb+lancedb@*/node_modules' -type d 2>/dev/null | head -1)
+
+                NODE_PATH=""
+                [ -n "$OPENAI_DIR" ] && NODE_PATH="$OPENAI_DIR"
+                [ -n "$LANCE_DIR" ] && NODE_PATH="''${NODE_PATH:+$NODE_PATH:}$LANCE_DIR"
+
+                mkdir -p "$XDG_RUNTIME_DIR/openclaw"
+                echo "NODE_PATH=$NODE_PATH" >> "$XDG_RUNTIME_DIR/openclaw/env"
+              '';
+            in
+            {
+              ExecStartPre = [
+                "${mkEnvScript}"
+                "${pkgs.bash}/bin/bash ${mkTokenScript}"
+                "${findNodePath}"
+                "${copyExtensions}"
+              ];
+              EnvironmentFile = "-/run/user/%U/openclaw/env";
+            };
+        };
+    }
+  ]);
 }
