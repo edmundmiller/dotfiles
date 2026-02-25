@@ -27,6 +27,21 @@ let
     } > "$XDG_RUNTIME_DIR/openclaw/env"
   '';
 
+  # Gateway doesn't follow symlinks for extension discovery — must be real dirs.
+  # Copy from nix store before gateway starts.
+  copyExtensions = pkgs.writeShellScript "openclaw-copy-extensions" ''
+    set -euo pipefail
+    for ext in ${
+      concatMapStringsSep " " (ext: "${ext}/lib/${ext.pname or ext.name}") cfg.gatewayExtensions
+    }; do
+      name=$(basename "$ext")
+      target="$HOME/.openclaw/extensions/$name"
+      rm -rf "$target"
+      cp -rL "$ext" "$target"
+      chmod -R u+w "$target"
+    done
+  '';
+
   # Script to inject gateway token + hooks token into config JSON
   mkTokenScript = pkgs.writeShellScript "openclaw-inject-token" ''
     set -euo pipefail
@@ -302,20 +317,6 @@ in
             ".openclaw/openclaw.json".force = true;
           };
 
-        # Gateway doesn't follow symlinks for extension discovery — must be real dirs.
-        # Copy from nix store instead of symlinking via home.file.
-        home.activation.copyOpenclawExtensions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          for ext in ${
-            concatMapStringsSep " " (ext: "${ext}/lib/${ext.pname or ext.name}") cfg.gatewayExtensions
-          }; do
-            name=$(basename "$ext")
-            target="$HOME/.openclaw/extensions/$name"
-            ${pkgs.coreutils}/bin/rm -rf "$target"
-            ${pkgs.coreutils}/bin/cp -rL "$ext" "$target"
-            ${pkgs.coreutils}/bin/chmod -R u+w "$target"
-          done
-        '';
-
         programs.openclaw = {
           enable = true;
           package = pkgs.openclaw-gateway;
@@ -567,6 +568,7 @@ in
               "${mkEnvScript}"
               "${pkgs.bash}/bin/bash ${mkTokenScript}"
               "${findNodePath}"
+              "${copyExtensions}"
             ];
             EnvironmentFile = "-/run/user/%U/openclaw/env";
           };
