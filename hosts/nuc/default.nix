@@ -59,7 +59,7 @@ in
       config = {
         linearApiKey = "\${LINEAR_API_KEY}";
         linearWebhookSecret = "\${LINEAR_WEBHOOK_SECRET}";
-        devAgentId = "dev";
+        devAgentId = "main";
         enableAgentApi = true;
         # Agent callbacks stay local — no need to go through funnel
         apiBaseUrl = "http://127.0.0.1:18789/plugins/linear/api";
