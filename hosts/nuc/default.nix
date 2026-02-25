@@ -6,6 +6,25 @@
   system,
   ...
 }:
+let
+  linear-agent-bridge = pkgs.buildNpmPackage rec {
+    pname = "linear-agent-bridge";
+    version = "0.1.2";
+    src = pkgs.fetchFromGitHub {
+      owner = "edmundmiller";
+      repo = "linear-agent-bridge";
+      rev = "0dbcecd1e251efa68428096c3ff780dbf1bbd124";
+      hash = "sha256-GfKl9o2Hw7xpneRZRQUR4f323Q2oeGC84bXg3sxAlWI=";
+    };
+    npmDepsHash = "sha256-UPm3S6F9KKok1rpQbz0mYsC07YeHtFTBnAUip2k6Moc=";
+    buildPhase = "npm run build";
+    installPhase = ''
+      mkdir -p $out/lib/linear-agent-bridge
+      cp -r dist openclaw.plugin.json package.json $out/lib/linear-agent-bridge/
+    '';
+    meta.description = "OpenClaw plugin: Linear → multi-agent workspace";
+  };
+in
 {
   # Workaround for nix-openclaw using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-openclaw
@@ -33,6 +52,19 @@
     dconf.enable = false;
     # Ensure systemd user services can find system + user packages (openclaw uses bare 'cat')
     systemd.user.sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
+
+    # linear-agent-bridge gateway extension config
+    programs.openclaw.config.plugins.entries.linear = {
+      enabled = true;
+      config = {
+        linearApiKey = "\${LINEAR_API_KEY}";
+        linearWebhookSecret = "\${LINEAR_WEBHOOK_SECRET}";
+        devAgentId = "dev";
+        enableAgentApi = true;
+        # Agent callbacks stay local — no need to go through funnel
+        apiBaseUrl = "http://127.0.0.1:18789/plugins/linear/api";
+      };
+    };
   };
 
   environment.systemPackages = with pkgs; [
@@ -117,6 +149,14 @@
             inherit (config.age.secrets.elevenlabs-api-key) path;
           }
           {
+            envVar = "LINEAR_API_KEY";
+            inherit (config.age.secrets.linear-api-token) path;
+          }
+          {
+            envVar = "LINEAR_WEBHOOK_SECRET";
+            inherit (config.age.secrets.linear-webhook-secret) path;
+          }
+          {
             envVar = "GOG_KEYRING_PASSWORD";
             value = "gogcli-agenix";
             literal = true;
@@ -128,6 +168,9 @@
             config.env.LINEAR_API_TOKEN_FILE = config.age.secrets.linear-api-token.path;
           }
         ];
+        # Gateway extensions (npm plugins loaded into the gateway process)
+        gatewayExtensions = [ linear-agent-bridge ];
+        webhookProxy.enable = true;
         telegram = {
           enable = true;
           requireMention = false;
