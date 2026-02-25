@@ -91,10 +91,7 @@ dip() {
 }
 lip() { pgrep -af "ssh.*-L [0-9]+:localhost:[0-9]+" || echo "No active forwards"; }
 
-# Editor — open cwd when called without args (from omarchy)
-n() { if [[ $# -eq 0 ]]; then command nvim .; else command nvim "$@"; fi; }
-alias vi='nvim'
-alias nv='nvim'
+# v/vi/nv defined in modules/editors/vim.nix
 
 alias kb=keybase
 alias exe=exercism

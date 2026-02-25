@@ -30,8 +30,12 @@ in
 
     environment.shellAliases = {
       vim = "nvim";
-      v = "nvim";
     };
+
+    # v: open cwd when called bare, pass args otherwise (from omarchy's n())
+    modules.shell.zsh.rcInit = ''
+      v() { if [[ $# -eq 0 ]]; then command nvim .; else command nvim "$@"; fi; }
+    '';
 
     # Set nvim as the default editor
     env = {
