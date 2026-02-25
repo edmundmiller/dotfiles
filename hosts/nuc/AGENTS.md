@@ -55,6 +55,7 @@ See `modules/services/openclaw/AGENTS.md` for full details.
 
 - **Home Assistant** — With PostgreSQL backend, Homebridge, Tailscale
 - Extra components: homekit_controller, apple_tv, samsungtv, cast, mobile_app, bluetooth
+- **HA state persists across Nix rebuilds** — Automation on/off states, entity states, etc. are stored in `/var/lib/hass/.storage/` and survive `hey nuc` redeploys. Toggling an automation off via API does not need a corresponding Nix change.
 
 ### Monitoring
 
