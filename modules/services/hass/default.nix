@@ -181,8 +181,17 @@ in
             db_url = "postgresql://@/${cfg.postgres.database}";
           };
 
-          # Lovelace: YAML-managed dashboard
-          lovelace.mode = "yaml";
+          # Lovelace: YAML-managed dashboard (migrated from legacy mode: yaml)
+          lovelace = {
+            resource_mode = "yaml";
+            dashboards.lovelace = {
+              mode = "yaml";
+              filename = "ui-lovelace.yaml";
+              title = "Overview";
+              icon = "mdi:view-dashboard";
+              show_in_sidebar = true;
+            };
+          };
 
           schedule = { };
 
