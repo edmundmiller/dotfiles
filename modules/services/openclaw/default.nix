@@ -188,6 +188,30 @@ in
       description = "Nix packages to symlink into ~/.openclaw/extensions/ (gateway npm extensions)";
     };
 
+    heartbeatMonitor = {
+      enable = mkBoolOpt false;
+      interval = mkOption {
+        type = types.str;
+        default = "30m";
+        description = "Systemd timer interval (e.g. 30m, 1h)";
+      };
+      pingUrl = mkOption {
+        type = types.str;
+        default = "";
+        description = "healthchecks.io ping URL for the heartbeat check";
+      };
+      agent = mkOption {
+        type = types.str;
+        default = "default";
+        description = "OpenClaw agent ID to send the heartbeat message to";
+      };
+      gatewayTokenFile = mkOption {
+        type = types.str;
+        default = cfg.gatewayTokenFile;
+        description = "Path to gateway auth token (defaults to main gatewayTokenFile)";
+      };
+    };
+
     webhookProxy = {
       enable = mkBoolOpt false;
       funnelPort = mkOption {
@@ -531,6 +555,66 @@ in
               # claude CLI needs PATH to find itself + node
               Environment = "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${user}/bin";
             };
+          };
+
+          # External heartbeat monitor — systemd timer triggers agent heartbeat + healthchecks.io
+          # Lives outside the gateway process so it detects gateway crashes/hangs.
+          systemd.user.services.openclaw-heartbeat-monitor = mkIf cfg.heartbeatMonitor.enable {
+            Unit = {
+              Description = "OpenClaw external heartbeat monitor";
+              After = [ "openclaw-gateway.service" ];
+            };
+            Service =
+              let
+                heartbeatScript = pkgs.writeShellScript "openclaw-heartbeat" ''
+                  set -euo pipefail
+                  PING_URL="${cfg.heartbeatMonitor.pingUrl}"
+
+                  # Signal start to healthchecks.io
+                  ${pkgs.curl}/bin/curl -sS -m 10 --retry 3 "$PING_URL/start" || true
+
+                  # Source secrets env (same as gateway) for API keys
+                  ENV_FILE="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env"
+                  if [[ -f "$ENV_FILE" ]]; then
+                    set -a
+                    source "$ENV_FILE"
+                    set +a
+                  fi
+
+                  # Read gateway token
+                  OPENCLAW_AUTH_TOKEN="$(cat ${cfg.heartbeatMonitor.gatewayTokenFile})"
+                  export OPENCLAW_AUTH_TOKEN
+
+                  # Trigger agent heartbeat — captures output for healthchecks.io
+                  OUTPUT=$(openclaw agent \
+                    --agent ${cfg.heartbeatMonitor.agent} \
+                    -m "Read HEARTBEAT.md and run the diagnostic. Reply with a single status line." \
+                    2>&1) || {
+                    EXIT_CODE=$?
+                    echo "$OUTPUT" | ${pkgs.curl}/bin/curl -sS -m 10 --retry 3 "$PING_URL/fail" --data-raw @- || true
+                    exit $EXIT_CODE
+                  }
+
+                  # Signal success with agent output as body
+                  echo "$OUTPUT" | ${pkgs.curl}/bin/curl -sS -m 10 --retry 3 "$PING_URL" --data-raw @- || true
+                '';
+              in
+              {
+                Type = "oneshot";
+                ExecStart = "${pkgs.bash}/bin/bash ${heartbeatScript}";
+                Environment = "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${user}/bin";
+                TimeoutStartSec = "5m";
+              };
+          };
+
+          systemd.user.timers.openclaw-heartbeat-monitor = mkIf cfg.heartbeatMonitor.enable {
+            Unit.Description = "Timer for OpenClaw external heartbeat monitor";
+            Timer = {
+              OnBootSec = "5m";
+              OnUnitActiveSec = cfg.heartbeatMonitor.interval;
+              RandomizedDelaySec = "2m";
+            };
+            Install.WantedBy = [ "timers.target" ];
           };
 
           # Inject agenix secrets + gateway token via ExecStartPre
