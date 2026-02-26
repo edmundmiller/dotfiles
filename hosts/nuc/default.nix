@@ -301,11 +301,21 @@ in
         enable = true;
         tailscaleService.enable = true;
         environmentFile = config.age.secrets.homepage-env.path;
+        environmentSecrets = [
+          {
+            envVar = "HOMEPAGE_VAR_HEALTHCHECKS_API_KEY";
+            inherit (config.age.secrets.healthchecks-api-key-readonly) path;
+          }
+        ];
       };
       jellyfin.enable = true;
       lubelogger = {
         enable = true;
         environmentFile = config.age.secrets.lubelogger-env.path;
+      };
+      speedtest-tracker = {
+        enable = true;
+        environmentFile = config.age.secrets.speedtest-tracker-env.path;
       };
       prowlarr.enable = true;
       qb.enable = false;
@@ -381,6 +391,7 @@ in
 
   age.secrets.lubelogger-env.owner = "lubelogger";
   age.secrets.bugster-env.owner = "dagster";
+  age.secrets.speedtest-tracker-env.owner = "root";
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
