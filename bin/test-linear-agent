@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# Smoke-test the openclaw linear-agent-bridge by firing a signed fake webhook.
+# Usage: test-linear-agent [ISSUE_ID [ISSUE_IDENTIFIER]]
+# Defaults to OPS-15.
+set -euo pipefail
+
+ISSUE_ID="${1:-38dd5593-b1d0-4b30-8ba8-1d490ec8652c}"   # OPS-15
+ISSUE_IDENTIFIER="${2:-OPS-15}"
+
+echo "==> Firing test webhook (NUC → gateway)"
+echo "    Issue: $ISSUE_IDENTIFIER ($ISSUE_ID)"
+echo
+
+# Write a self-contained Python script to the NUC and run it there
+ssh nuc "cat > /tmp/lw-test.py" <<PYEOF
+import json, hmac, hashlib, urllib.request, uuid, subprocess
+from datetime import datetime, timezone
+
+with open("/dev/stdin") as f:
+    env_lines = {}
+for line in open("/run/user/1000/openclaw/env"):
+    k, _, v = line.strip().partition("=")
+    env_lines[k] = v
+
+secret  = env_lines["LINEAR_WEBHOOK_SECRET"]
+session = str(uuid.uuid4())
+ts      = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+payload = {
+    "type": "AgentSession",
+    "action": "create",
+    "organizationId": "minionsofmordred",
+    "createdAt": ts,
+    "data": {
+        "id": session,
+        "agentSession": {
+            "id": session,
+            "issue": {
+                "id": "$ISSUE_ID",
+                "identifier": "$ISSUE_IDENTIFIER",
+                "title": "Linear agent bridge smoke test",
+                "description": "Automated test. Reply: AGENT_TEST_OK",
+            },
+        },
+        "issue": {
+            "id": "$ISSUE_ID",
+            "identifier": "$ISSUE_IDENTIFIER",
+            "title": "Linear agent bridge smoke test",
+            "description": "Automated test. Reply: AGENT_TEST_OK",
+        },
+    },
+}
+
+body = json.dumps(payload, separators=(",", ":")).encode()
+sig  = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+print(f"Session: {session}")
+print(f"Sig:     {sig[:20]}...")
+
+req = urllib.request.Request(
+    "http://127.0.0.1:18789/plugins/linear/linear",
+    data=body,
+    method="POST",
+    headers={
+        "Content-Type": "application/json",
+        "linear-signature": sig,
+        "linear-delivery": f"test-{ts}",
+    },
+)
+try:
+    with urllib.request.urlopen(req) as r:
+        print(f"HTTP {r.status}: {r.read().decode()}")
+except urllib.error.HTTPError as e:
+    print(f"HTTP {e.code}: {e.read().decode()}")
+PYEOF
+
+ssh nuc "python3 /tmp/lw-test.py && rm /tmp/lw-test.py"
+
+echo
+echo "==> Tailing gateway log (20s)..."
+ssh nuc "tail -f /tmp/openclaw/openclaw-gateway.log" &
+TAIL_PID=$!
+sleep 20
+kill $TAIL_PID 2>/dev/null
+echo
+echo "==> Done. Check: https://linear.app/minionsofmordred/issue/$ISSUE_IDENTIFIER"
