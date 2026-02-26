@@ -291,30 +291,29 @@ in
       ];
     };
 
-    # Inject raw agenix secrets as HOMEPAGE_VAR_* env vars at service start.
-    # Generates /run/homepage-secrets-env/secrets.env from cfg.environmentSecrets,
-    # then merges with cfg.environmentFile via EnvironmentFile.
+    # Inject raw agenix secrets as HOMEPAGE_VAR_* env vars.
+    # Uses activationScript (runs as root, after agenix, before services) to generate
+    # /run/homepage-secrets-env/secrets.env, then loads it via EnvironmentFile.
+    # ExecStartPre can't be used: systemd loads EnvironmentFile before ExecStartPre runs,
+    # and DynamicUser=true prevents ExecStartPre from reading agenix secrets.
+    system.activationScripts.homepage-secrets = mkIf (cfg.environmentSecrets != [ ]) {
+      deps = [ "agenix" ];
+      text = ''
+        mkdir -p /run/homepage-secrets-env
+        : > /run/homepage-secrets-env/secrets.env
+        chmod 600 /run/homepage-secrets-env/secrets.env
+        ${concatMapStrings (
+          { envVar, path }:
+          ''
+            printf '%s=%s\n' ${lib.escapeShellArg envVar} "$(cat ${lib.escapeShellArg (toString path)})" \
+              >> /run/homepage-secrets-env/secrets.env
+          ''
+        ) cfg.environmentSecrets}
+      '';
+    };
+
     systemd.services.homepage-dashboard = mkIf (cfg.environmentSecrets != [ ]) {
       serviceConfig = {
-        RuntimeDirectory = "homepage-secrets-env";
-        ExecStartPre =
-          let
-            genScript = pkgs.writeShellScript "homepage-gen-secret-env" (
-              ''
-                set -e
-                : > /run/homepage-secrets-env/secrets.env
-                chmod 600 /run/homepage-secrets-env/secrets.env
-              ''
-              + concatMapStrings (
-                { envVar, path }:
-                ''
-                  printf '%s=%s\n' ${lib.escapeShellArg envVar} "$(cat ${path})" \
-                    >> /run/homepage-secrets-env/secrets.env
-                ''
-              ) cfg.environmentSecrets
-            );
-          in
-          [ "${genScript}" ];
         EnvironmentFile = mkForce (
           lib.optional (cfg.environmentFile != null) cfg.environmentFile
           ++ [ "/run/homepage-secrets-env/secrets.env" ]
