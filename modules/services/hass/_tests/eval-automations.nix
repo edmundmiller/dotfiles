@@ -3,7 +3,7 @@
 # No VM needed — evaluates the NixOS module config and checks:
 #   - Required automation IDs exist
 #   - Wake detection has time guards (after 07:00)
-#   - Good Morning has both-awake + time guard conditions
+#   - Good Morning has presence-aware awake template + time guard conditions
 #   - Winding Down resets awake booleans
 #
 # Catches regressions like "someone removed the time guard" in seconds.
@@ -54,6 +54,19 @@ let
     any (
       c:
       (c.condition or null) == "state" && (c.entity_id or null) == entityId && (c.state or null) == state
+    ) conditions;
+
+  # Check if any template condition references a given entity ID
+  hasTemplateRef =
+    conditions: entityId:
+    any (
+      c:
+      (c.condition or null) == "template"
+      && builtins.isString (c.value_template or null)
+      &&
+        builtins.match (".*" + builtins.replaceStrings [ "." ] [ "\\." ] entityId + ".*") (
+          c.value_template or ""
+        ) != null
     ) conditions;
 
   # Normalize conditions to a list (HA accepts single or list)
@@ -125,16 +138,16 @@ let
       msg = "good_morning_both_awake missing time guard (after: 07:00:00)";
     }
     {
-      test = hasStateCondition (toConditionList (
+      test = hasTemplateRef (toConditionList (
         goodMorningBothAwake.condition or [ ]
-      )) "input_boolean.edmund_awake" "on";
-      msg = "good_morning_both_awake missing condition: edmund_awake == on";
+      )) "input_boolean.edmund_awake";
+      msg = "good_morning_both_awake missing condition referencing edmund_awake";
     }
     {
-      test = hasStateCondition (toConditionList (
+      test = hasTemplateRef (toConditionList (
         goodMorningBothAwake.condition or [ ]
-      )) "input_boolean.monica_awake" "on";
-      msg = "good_morning_both_awake missing condition: monica_awake == on";
+      )) "input_boolean.monica_awake";
+      msg = "good_morning_both_awake missing condition referencing monica_awake";
     }
 
     # --- Wake detection requires goodnight == on ---
