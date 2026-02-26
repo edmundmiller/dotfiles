@@ -314,8 +314,8 @@ in
         environmentFile = config.age.secrets.lubelogger-env.path;
       };
       speedtest-tracker = {
-        enable = false; # TODO: create speedtest-tracker-env.age secret first
-        # environmentFile = config.age.secrets.speedtest-tracker-env.path;
+        enable = true;
+        environmentFile = config.age.secrets.speedtest-tracker-env.path;
       };
       prowlarr.enable = true;
       qb.enable = false;
@@ -391,7 +391,7 @@ in
 
   age.secrets.lubelogger-env.owner = "lubelogger";
   age.secrets.bugster-env.owner = "dagster";
-  # age.secrets.speedtest-tracker-env.owner = "root"; # TODO: create .age file
+  age.secrets.speedtest-tracker-env.owner = "root";
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
