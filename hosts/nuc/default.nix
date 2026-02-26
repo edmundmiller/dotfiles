@@ -1,4 +1,4 @@
-# Go nuc yourself
+# Go nuc yourself (2026-02-26)
 {
   config,
   inputs,
