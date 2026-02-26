@@ -7,7 +7,12 @@ NixOS service module wrapping [nix-openclaw](https://github.com/openclaw/nix-ope
 ```
 modules/services/openclaw/
 ├── default.nix   # Module definition
-└── AGENTS.md     # This file
+├── AGENTS.md     # This file
+└── documents/
+    ├── AGENTS.md
+    ├── HEARTBEAT.md  # Agent reads this during external heartbeat checks
+    ├── SOUL.md
+    └── TOOLS.md
 ```
 
 ## Key Facts
@@ -39,6 +44,17 @@ modules/services/openclaw/
 - **Requires**: `claude` CLI authenticated on the NUC (already in systemPackages)
 - **Dependency**: openclaw-gateway `Requires` + `After` the proxy service
 - **Enable**: `modules.services.openclaw.claudeMaxProxy.enable = true`
+
+### External Heartbeat Monitor
+
+- **Architecture**: systemd user timer → triggers `openclaw agent` → pings healthchecks.io
+- **Why external**: built-in heartbeat runs inside the gateway process — if gateway crashes/hangs, it stops too. External timer detects that.
+- **Timer**: `openclaw-heartbeat-monitor.timer` — every 30m (configurable), 2m random jitter, starts 5m after boot
+- **Service**: `openclaw-heartbeat-monitor.service` — oneshot, 5m timeout
+- **Flow**: ping `/start` → run agent with HEARTBEAT.md prompt → ping success (with output) or `/fail`
+- **Document**: `documents/HEARTBEAT.md` — agent reads this for self-diagnostic instructions
+- **Enable**: `modules.services.openclaw.heartbeatMonitor.enable = true` + set `pingUrl`
+- **healthchecks.io UUID**: `71a6388a-9ed5-4edd-b2a9-e5616dec4091`
 
 ### CLI Backends (agents.defaults.cliBackends)
 
