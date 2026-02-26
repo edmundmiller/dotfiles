@@ -417,10 +417,10 @@
                     # Mark as headless so popup test stays skipped
                     export ZUNIT_HEADLESS=1
 
-                    # Seed zoxide database using /var/tmp dirs (not filtered by noise patterns)
+                    # Seed zoxide database using $TMPDIR dirs (not filtered by noise patterns)
                     export _ZO_DATA_DIR=$TMPDIR/zoxide-data
                     mkdir -p $_ZO_DATA_DIR
-                    ZOXIDE_TEST_DIRS=/var/tmp/zunit-zoxide-$$
+                    ZOXIDE_TEST_DIRS=$TMPDIR/zunit-zoxide-$$
                     mkdir -p $ZOXIDE_TEST_DIRS/code/project1 \
                               $ZOXIDE_TEST_DIRS/code/project2 \
                               $ZOXIDE_TEST_DIRS/repos/work
