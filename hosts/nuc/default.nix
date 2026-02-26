@@ -38,8 +38,8 @@ let
     src = pkgs.fetchFromGitHub {
       owner = "edmundmiller";
       repo = "linear-agent-bridge";
-      rev = "39742e0fd873734e8bfb75a6add5d23b0542557e";
-      hash = "sha256-I7D+uT2ZoUeYfoZU/R7ImUZKku2YYTBy3ki7DHfiRMc=";
+      rev = "cb09637071dadf7a8bf5314310e1457ec4dd44d4";
+      hash = "sha256-3XDUnMGyasBa5xRuVmcwfyUrlJ7adzl8wRjyDDjhDzY=";
     };
     npmDepsHash = "sha256-UPm3S6F9KKok1rpQbz0mYsC07YeHtFTBnAUip2k6Moc=";
     buildPhase = "npm run build";
