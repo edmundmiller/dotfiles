@@ -56,10 +56,10 @@ in
     edmundmiller
     nuc
   ];
-  # "speedtest-tracker-env.age".publicKeys = [  # TODO: create .age file first
-  #   edmundmiller
-  #   nuc
-  # ];
+  "speedtest-tracker-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "hass-secrets.age".publicKeys = [
     edmundmiller
     nuc

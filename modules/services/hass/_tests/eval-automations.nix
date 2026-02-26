@@ -233,3 +233,4 @@ pkgs.runCommand "ha-automation-assertions"
         ''
     }
   ''
+# test
