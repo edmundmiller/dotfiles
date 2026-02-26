@@ -1,4 +1,7 @@
-# House modes domain — mode switching, routines, DND
+# House modes domain — DND, guest mode, utility scripts
+#
+# Sleep/wake lifecycle (goodnight, awake booleans, Good Morning) → sleep/
+# Vacation mode → vacation.nix
 { lib, ... }:
 {
   services.home-assistant.config = {
@@ -8,58 +11,18 @@
         name = "Guest Mode";
         icon = "mdi:account-group";
       };
-      goodnight = {
-        name = "Goodnight";
-        icon = "mdi:weather-night";
-      };
       do_not_disturb = {
         name = "Do Not Disturb";
         icon = "mdi:minus-circle";
       };
-      # Wake detection — used by sleep/ automations
-      edmund_awake = {
-        name = "Edmund Awake";
-        icon = "mdi:sleep-off";
-      };
-      monica_awake = {
-        name = "Monica Awake";
-        icon = "mdi:sleep-off";
-      };
     };
-
-    input_boolean.vacation_mode = {
-      name = "Vacation Mode";
-      icon = "mdi:airplane";
-    };
-
-    # --- Scenes ---
-    scene = [
-      {
-        name = "Good Morning";
-        icon = "mdi:weather-sunny";
-        entities = {
-          "input_boolean.goodnight" = "off";
-          "input_boolean.edmund_awake" = "off"; # reset for next night
-          "input_boolean.monica_awake" = "off";
-          "cover.smartwings_window_covering" = {
-            state = "open";
-            position = 20; # crack — natural light without full exposure
-          };
-          "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
-          "switch.adaptive_lighting_sleep_mode_living_space" = "off";
-        };
-      }
-    ];
 
     # --- Scripts ---
     script.everything_off = {
       alias = "Everything Off";
       icon = "mdi:power";
-      description = "Nuclear option — delegates to Winding Down scene (goodnight, mode Night, AL sleep mode, blinds, TV, lights), then kills night light too";
+      description = "Nuclear option — delegates to Winding Down scene (goodnight, AL sleep mode, blinds, TV, lights), then kills night light too";
       sequence = [
-        # Winding Down: goodnight=on, mode=Night, AL sleep mode on, blinds closed,
-        # TV off, main lights off, wake booleans reset. Night light stays on there —
-        # nuclear option wants it off too.
         {
           action = "scene.turn_on";
           target.entity_id = "scene.winding_down";
@@ -73,23 +36,6 @@
 
     # --- Automations ---
     automation = lib.mkAfter [
-      {
-        alias = "Good Morning";
-        id = "good_morning_reset";
-        description = "Reset night mode when goodnight toggle turns off — delegates to scene for full morning reset (blinds, whitenoise, mode, wake booleans)";
-        trigger = {
-          platform = "state";
-          entity_id = "input_boolean.goodnight";
-          to = "off";
-        };
-        action = [
-          {
-            action = "scene.turn_on";
-            target.entity_id = "scene.good_morning";
-          }
-        ];
-      }
-
       # DND
       {
         alias = "Do Not Disturb";

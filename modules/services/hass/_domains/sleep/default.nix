@@ -1,5 +1,11 @@
 # Sleep domain — bedtime progression, bed presence, wake routines
 #
+# Owns the full sleep/wake lifecycle:
+#   - input_boolean.goodnight (night mode toggle)
+#   - input_boolean.edmund_awake / monica_awake (wake detection)
+#   - Scenes: Winding Down → In Bed → Sleep → Good Morning
+#   - Automations: bedtime, 8Sleep sync, wake detection, Good Morning
+#
 # Three-stage bedtime flow:
 #   1. Winding Down  — get ready for bed (night light stays on for navigation)
 #   2. In Bed        — settled in, audiobook time (whitenoise on, lights off)
@@ -26,14 +32,164 @@
 #     battery Charging→Not Charging, activity=Walking, or
 #     active phone use (Launch/Siri/Manual update trigger)
 #   Time guard: signals before 7 AM ignored (bathroom trips, sensor glitches)
-#   Reset by: Winding Down scene (sleep.nix) and Good Morning scene (modes.nix)
+#   Reset by: Winding Down scene and Good Morning scene
 #   Good Morning fires when all home residents are awake (also gated to after 7 AM)
 #   Away residents are skipped — if only one person is home, only their awake
 #   boolean is required.
 { lib, ... }:
+let
+  # ── Per-person entity config ───────────────────────────────────────────
+  edmund = {
+    name = "Edmund";
+    id = "edmund";
+    bedPresence = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+    focus = "binary_sensor.edmunds_iphone_focus";
+    battery = "sensor.edmunds_iphone_battery_state";
+    activity = "sensor.edmunds_iphone_activity";
+    updateTrigger = "sensor.edmunds_iphone_last_update_trigger";
+    awake = "input_boolean.edmund_awake";
+    alarmSwitch = "switch.edmund_s_eight_sleep_next_alarm";
+    sleepStage = "sensor.edmund_s_eight_sleep_side_sleep_stage";
+  };
+
+  monica = {
+    name = "Monica";
+    id = "monica";
+    bedPresence = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+    focus = "binary_sensor.monicas_iphone_focus";
+    battery = "sensor.monicas_iphone_battery_state";
+    activity = "sensor.monicas_iphone_activity";
+    updateTrigger = "sensor.monicas_iphone_last_update_trigger";
+    awake = "input_boolean.monica_awake";
+    alarmSwitch = "switch.monica_s_eight_sleep_next_alarm";
+    sleepStage = "sensor.monica_s_eight_sleep_side_sleep_stage";
+  };
+
+  # ── Automation generators ──────────────────────────────────────────────
+
+  # Sleep Focus off 6–9am → cancel + dismiss 8Sleep alarm, turn off side
+  # Covers two cases: alarm hasn't fired yet (switch off) and actively ringing (dismiss).
+  mkSleepFocusOff = p: {
+    alias = "Sleep Focus Off - Stop ${p.name} 8Sleep";
+    id = "sleep_focus_off_stop_${p.id}";
+    description = "${p.name} turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
+    trigger = {
+      platform = "state";
+      entity_id = p.focus;
+      to = "off";
+    };
+    condition = [
+      {
+        condition = "time";
+        after = "06:00:00";
+        before = "09:00:00";
+      }
+      {
+        condition = "state";
+        entity_id = "input_boolean.goodnight";
+        state = "on";
+      }
+    ];
+    action = [
+      # Cancel if not yet ringing
+      {
+        action = "switch.turn_off";
+        target.entity_id = p.alarmSwitch;
+      }
+      # Dismiss if actively ringing
+      {
+        action = "eight_sleep.alarm_dismiss";
+        target.entity_id = p.sleepStage;
+      }
+      # Stop heating/cooling
+      {
+        action = "eight_sleep.side_off";
+        target.entity_id = p.sleepStage;
+      }
+    ];
+  };
+
+  # Wake detection — any signal while goodnight=on AND after 7 AM → mark awake
+  # Signals: bed presence off (2 min), focus off, phone off charger,
+  #          walking, or active phone use (Launch/Siri/Manual — not Background Fetch)
+  # Time guard: ignore signals before 7 AM (bathroom trips, sensor glitches)
+  mkWakeDetection = p: {
+    alias = "${p.name} is awake";
+    id = "${p.id}_awake_detection";
+    trigger = [
+      {
+        platform = "state";
+        entity_id = p.bedPresence;
+        to = "off";
+        "for".minutes = 2;
+      }
+      {
+        platform = "state";
+        entity_id = p.focus;
+        to = "off";
+      }
+      {
+        # Picked phone off charger
+        platform = "state";
+        entity_id = p.battery;
+        from = "Charging";
+        to = "Not Charging";
+      }
+      {
+        # Physically walking
+        platform = "state";
+        entity_id = p.activity;
+        to = "Walking";
+      }
+      {
+        # Active phone use (Launch, Siri, Manual — not Background Fetch)
+        platform = "template";
+        value_template = "{{ states('${p.updateTrigger}') in ['Launch', 'Siri', 'Manual'] }}";
+      }
+    ];
+    condition = [
+      {
+        condition = "time";
+        after = "07:00:00";
+      }
+      {
+        condition = "state";
+        entity_id = "input_boolean.goodnight";
+        state = "on";
+      }
+      {
+        condition = "state";
+        entity_id = p.awake;
+        state = "off";
+      }
+    ];
+    action = [
+      {
+        action = "input_boolean.turn_on";
+        target.entity_id = p.awake;
+      }
+    ];
+  };
+in
 {
   services.home-assistant.config = {
-    # Wake detection input_booleans declared in modes.nix (single input_boolean block)
+    # ── Input helpers (sleep/wake lifecycle) ──────────────────────────────
+    input_boolean = {
+      goodnight = {
+        name = "Goodnight";
+        icon = "mdi:weather-night";
+      };
+      edmund_awake = {
+        name = "Edmund Awake";
+        icon = "mdi:sleep-off";
+      };
+      monica_awake = {
+        name = "Monica Awake";
+        icon = "mdi:sleep-off";
+      };
+    };
+
+    # ── Scenes ───────────────────────────────────────────────────────────
     scene = lib.mkAfter [
       # Stage 1: Get ready for bed
       {
@@ -89,8 +245,25 @@
           "light.smart_night_light_w" = "off";
         };
       }
+      # Wake — end of sleep cycle
+      {
+        name = "Good Morning";
+        icon = "mdi:weather-sunny";
+        entities = {
+          "input_boolean.goodnight" = "off";
+          "input_boolean.edmund_awake" = "off"; # reset for next night
+          "input_boolean.monica_awake" = "off";
+          "cover.smartwings_window_covering" = {
+            state = "open";
+            position = 20; # crack — natural light without full exposure
+          };
+          "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
+          "switch.adaptive_lighting_sleep_mode_living_space" = "off";
+        };
+      }
     ];
 
+    # ── Scripts ──────────────────────────────────────────────────────────
     script = lib.mkAfter {
       # Monica voice-activates this to nudge Edmund to come to bed
       bedtime_nudge = {
@@ -108,6 +281,7 @@
       };
     };
 
+    # ── Automations ──────────────────────────────────────────────────────
     automation = lib.mkAfter [
       # Stage 1: 10 PM → Winding Down
       {
@@ -162,7 +336,7 @@
         ];
       }
 
-      # ── Apple ↔ 8Sleep integration ─────────────────────────────────────────
+      # ── Apple ↔ 8Sleep integration ─────────────────────────────────────
 
       # Sync Edmund's iPhone next alarm → 8Sleep one-off alarm
       # iPhone sensor is a datetime; extract local time for set_one_off_alarm.
@@ -203,210 +377,19 @@
         ];
       }
 
-      # Sleep Focus off 6–9am → cancel + dismiss 8Sleep alarm, turn off Edmund's side
-      # Covers two cases: alarm hasn't fired yet (switch off) and actively ringing (dismiss).
-      {
-        alias = "Sleep Focus Off - Stop Edmund 8Sleep";
-        id = "sleep_focus_off_stop_edmund";
-        description = "Edmund turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
-        trigger = {
-          platform = "state";
-          entity_id = "binary_sensor.edmunds_iphone_focus";
-          to = "off";
-        };
-        condition = [
-          {
-            condition = "time";
-            after = "06:00:00";
-            before = "09:00:00";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "on";
-          }
-        ];
-        action = [
-          # Cancel if not yet ringing
-          {
-            action = "switch.turn_off";
-            target.entity_id = "switch.edmund_s_eight_sleep_next_alarm";
-          }
-          # Dismiss if actively ringing
-          {
-            action = "eight_sleep.alarm_dismiss";
-            target.entity_id = "sensor.edmund_s_eight_sleep_side_sleep_stage";
-          }
-          # Stop heating/cooling
-          {
-            action = "eight_sleep.side_off";
-            target.entity_id = "sensor.edmund_s_eight_sleep_side_sleep_stage";
-          }
-        ];
-      }
-
-      # Sleep Focus off 6–9am → cancel + dismiss 8Sleep alarm, turn off Monica's side
-      {
-        alias = "Sleep Focus Off - Stop Monica 8Sleep";
-        id = "sleep_focus_off_stop_monica";
-        description = "Monica turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
-        trigger = {
-          platform = "state";
-          entity_id = "binary_sensor.monicas_iphone_focus";
-          to = "off";
-        };
-        condition = [
-          {
-            condition = "time";
-            after = "06:00:00";
-            before = "09:00:00";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "on";
-          }
-        ];
-        action = [
-          {
-            action = "switch.turn_off";
-            target.entity_id = "switch.monica_s_eight_sleep_next_alarm";
-          }
-          {
-            action = "eight_sleep.alarm_dismiss";
-            target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
-          }
-          {
-            action = "eight_sleep.side_off";
-            target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
-          }
-        ];
-      }
+      # Per-person: Sleep Focus off 6–9am → cancel + dismiss 8Sleep alarm
+      (mkSleepFocusOff edmund)
+      (mkSleepFocusOff monica)
 
       # ── Wake detection state machine ─────────────────────────────────────
       #
       # Each person gets an "awake" boolean set by bed presence OR focus off.
-      # Good Morning fires when BOTH are on — handles different wake times.
-      # Booleans reset by Winding Down / Good Morning scenes.
+      # Good Morning fires when all home residents are awake — handles different
+      # wake times. Booleans reset by Winding Down / Good Morning scenes.
 
-      # Edmund shows awake signal → mark awake
-      # Signals: bed presence off, focus off, phone off charger,
-      #          walking, or active phone use (Launch/Siri/Manual)
-      # Time guard: ignore signals before 7 AM (bathroom trips, sensor glitches)
-      {
-        alias = "Edmund is awake";
-        id = "edmund_awake_detection";
-        trigger = [
-          {
-            platform = "state";
-            entity_id = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
-            to = "off";
-            "for".minutes = 2;
-          }
-          {
-            platform = "state";
-            entity_id = "binary_sensor.edmunds_iphone_focus";
-            to = "off";
-          }
-          {
-            # Picked phone off charger
-            platform = "state";
-            entity_id = "sensor.edmunds_iphone_battery_state";
-            from = "Charging";
-            to = "Not Charging";
-          }
-          {
-            # Physically walking
-            platform = "state";
-            entity_id = "sensor.edmunds_iphone_activity";
-            to = "Walking";
-          }
-          {
-            # Active phone use (Launch, Siri, Manual — not Background Fetch)
-            platform = "template";
-            value_template = "{{ states('sensor.edmunds_iphone_last_update_trigger') in ['Launch', 'Siri', 'Manual'] }}";
-          }
-        ];
-        condition = [
-          {
-            condition = "time";
-            after = "07:00:00";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "on";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.edmund_awake";
-            state = "off";
-          }
-        ];
-        action = [
-          {
-            action = "input_boolean.turn_on";
-            target.entity_id = "input_boolean.edmund_awake";
-          }
-        ];
-      }
-
-      # Monica shows awake signal → mark awake
-      # Time guard: ignore signals before 7 AM
-      {
-        alias = "Monica is awake";
-        id = "monica_awake_detection";
-        trigger = [
-          {
-            platform = "state";
-            entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
-            to = "off";
-            "for".minutes = 2;
-          }
-          {
-            platform = "state";
-            entity_id = "binary_sensor.monicas_iphone_focus";
-            to = "off";
-          }
-          {
-            platform = "state";
-            entity_id = "sensor.monicas_iphone_battery_state";
-            from = "Charging";
-            to = "Not Charging";
-          }
-          {
-            platform = "state";
-            entity_id = "sensor.monicas_iphone_activity";
-            to = "Walking";
-          }
-          {
-            platform = "template";
-            value_template = "{{ states('sensor.monicas_iphone_last_update_trigger') in ['Launch', 'Siri', 'Manual'] }}";
-          }
-        ];
-        condition = [
-          {
-            condition = "time";
-            after = "07:00:00";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "on";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.monica_awake";
-            state = "off";
-          }
-        ];
-        action = [
-          {
-            action = "input_boolean.turn_on";
-            target.entity_id = "input_boolean.monica_awake";
-          }
-        ];
-      }
+      # Per-person: any awake signal → mark awake
+      (mkWakeDetection edmund)
+      (mkWakeDetection monica)
 
       # All home residents awake → Good Morning
       # Time guard: goodnight MUST NOT turn off before 7 AM.

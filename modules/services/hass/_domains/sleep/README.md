@@ -1,6 +1,8 @@
 # Sleep Domain
 
-Bedtime progression, bed presence, Apple↔8Sleep sync, and wake detection.
+Full sleep/wake lifecycle: bedtime progression, bed presence, Apple↔8Sleep sync, wake detection, and Good Morning.
+
+Owns: `input_boolean.goodnight`, `input_boolean.edmund_awake`, `input_boolean.monica_awake`
 
 ## Three-Stage Bedtime Flow
 

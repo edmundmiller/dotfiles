@@ -73,6 +73,11 @@ let
 in
 {
   services.home-assistant.config = {
+    input_boolean.vacation_mode = {
+      name = "Vacation Mode";
+      icon = "mdi:airplane";
+    };
+
     scene = lib.mkAfter [
       {
         name = "Vacation";
