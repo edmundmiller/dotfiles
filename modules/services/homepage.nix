@@ -82,7 +82,7 @@ in
         hideVersion = true;
       };
 
-      environmentFile = mkIf (cfg.environmentFile != null) cfg.environmentFile;
+      environmentFiles = lib.optional (cfg.environmentFile != null) cfg.environmentFile;
 
       widgets = [
         { logo = { }; }
