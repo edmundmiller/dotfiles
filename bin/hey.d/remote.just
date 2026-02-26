@@ -6,14 +6,14 @@ NUC_HOST := "nuc"
 # Deploy to any host
 deploy HOST:
     @echo "=== Deploying to {{HOST}} ==="
-    nix run .#deploy-rs -- .#{{HOST}}
+    cd {{FLAKE_DIR}} && nix run .#deploy-rs -- .#{{HOST}}
 
 # Deploy to NUC (primary remote deployment)
 nuc:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "=== Deploying to NUC ==="
-    nix run .#deploy-rs -- .#nuc --skip-checks
+    cd {{FLAKE_DIR}} && nix run .#deploy-rs -- .#nuc --skip-checks
 
     # openclaw-gateway uses X-RestartIfChanged=false to survive rebuilds.
     # Restart it after deploy-rs finishes (remote deploys are always safe).
