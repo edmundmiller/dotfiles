@@ -32,6 +32,10 @@ in
     edmundmiller
     nuc
   ];
+  "linear-refresh-token.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "linear-webhook-secret.age".publicKeys = [
     edmundmiller
     nuc
