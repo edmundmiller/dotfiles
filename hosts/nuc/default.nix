@@ -14,7 +14,7 @@ let
       owner = "edmundmiller";
       repo = "linear-agent-bridge";
       rev = "39742e0fd873734e8bfb75a6add5d23b0542557e";
-      hash = "sha256-lbyZdTw7QLrnrNYXubFD4/cEbcoAZVrFSjbh3YibvSc=";
+      hash = "sha256-I7D+uT2ZoUeYfoZU/R7ImUZKku2YYTBy3ki7DHfiRMc=";
     };
     npmDepsHash = "sha256-UPm3S6F9KKok1rpQbz0mYsC07YeHtFTBnAUip2k6Moc=";
     buildPhase = "npm run build";
