@@ -182,6 +182,10 @@ in
         ];
         # Gateway extensions (npm plugins loaded into the gateway process)
         gatewayExtensions = [ linear-agent-bridge ];
+        heartbeatMonitor = {
+          enable = true;
+          pingUrl = "https://hc-ping.com/71a6388a-9ed5-4edd-b2a9-e5616dec4091";
+        };
         webhookProxy.enable = true;
         telegram = {
           enable = true;
