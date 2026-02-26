@@ -184,7 +184,7 @@ in
           # Lovelace: YAML-managed dashboard (migrated from legacy mode: yaml)
           lovelace = {
             resource_mode = "yaml";
-            dashboards.lovelace = {
+            dashboards.lovelace-yaml = {
               mode = "yaml";
               filename = "ui-lovelace.yaml";
               title = "Overview";
