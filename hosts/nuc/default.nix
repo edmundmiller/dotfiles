@@ -7,6 +7,31 @@
   ...
 }:
 let
+  linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
+
+  linearTokenRefreshScript = pkgs.writeShellScript "linear-token-refresh" ''
+    set -euo pipefail
+    REFRESH_TOKEN=$(cat /run/agenix/linear-refresh-token)
+    CLIENT_ID="c64c969674a02fccc863d4aa950ec132"
+    CLIENT_SECRET="72406896af1a83cb5765c6042a59cde2"
+
+    RESPONSE=$(${pkgs.curl}/bin/curl -sf -X POST https://api.linear.app/oauth/token \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      --data-urlencode "grant_type=refresh_token" \
+      --data-urlencode "client_id=$CLIENT_ID" \
+      --data-urlencode "client_secret=$CLIENT_SECRET" \
+      --data-urlencode "refresh_token=$REFRESH_TOKEN")
+
+    ACCESS_TOKEN=$(echo "$RESPONSE" | ${pkgs.jq}/bin/jq -r '.access_token')
+    if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+      echo "Failed to refresh Linear token: $RESPONSE" >&2
+      exit 1
+    fi
+
+    echo -n "$ACCESS_TOKEN" > "''${STATE_DIRECTORY}/token"
+    echo "Linear OAuth token refreshed"
+  '';
+
   linear-agent-bridge = pkgs.buildNpmPackage rec {
     pname = "linear-agent-bridge";
     version = "0.1.3";
@@ -52,6 +77,42 @@ in
     dconf.enable = false;
     # Ensure systemd user services can find system + user packages (openclaw uses bare 'cat')
     systemd.user.sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
+
+    # linear-token-init: ensures token file exists before openclaw-gateway starts.
+    # RemainAfterExit=yes so gateway restarts don't re-trigger it unnecessarily.
+    systemd.user.services.linear-token-init = {
+      Unit = {
+        Description = "Initialize Linear OAuth token file";
+        Before = "openclaw-gateway.service";
+      };
+      Install.WantedBy = [ "openclaw-gateway.service" ];
+      Service = {
+        Type = "oneshot";
+        RemainAfterExit = "yes";
+        StateDirectory = "openclaw-linear";
+        ExecStart = toString linearTokenRefreshScript;
+      };
+    };
+
+    # linear-token-refresh: timer-driven periodic refresh (every 12h).
+    # Restarts openclaw-gateway after updating the token so the new value is picked up.
+    systemd.user.services.linear-token-refresh = {
+      Unit.Description = "Refresh Linear OAuth access token";
+      Service = {
+        Type = "oneshot";
+        StateDirectory = "openclaw-linear";
+        ExecStart = toString linearTokenRefreshScript;
+        ExecStartPost = "${pkgs.systemd}/bin/systemctl --user try-restart openclaw-gateway.service";
+      };
+    };
+    systemd.user.timers.linear-token-refresh = {
+      Unit.Description = "Refresh Linear OAuth token every 12h";
+      Timer = {
+        OnUnitActiveSec = "12h";
+        RandomizedDelaySec = "5min";
+      };
+      Install.WantedBy = [ "timers.target" ];
+    };
 
     # linear-agent-bridge gateway extension config
     programs.openclaw.config.plugins.entries.linear-agent-bridge = {
@@ -150,7 +211,7 @@ in
           }
           {
             envVar = "LINEAR_API_KEY";
-            inherit (config.age.secrets.linear-api-token) path;
+            path = linearTokenFile;
           }
           {
             envVar = "LINEAR_WEBHOOK_SECRET";
@@ -177,7 +238,7 @@ in
         customPlugins = [
           {
             source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
-            config.env.LINEAR_API_TOKEN_FILE = config.age.secrets.linear-api-token.path;
+            config.env.LINEAR_API_TOKEN_FILE = linearTokenFile;
           }
         ];
         # Gateway extensions (npm plugins loaded into the gateway process)
@@ -392,6 +453,7 @@ in
   age.secrets.lubelogger-env.owner = "lubelogger";
   age.secrets.bugster-env.owner = "dagster";
   age.secrets.speedtest-tracker-env.owner = "root";
+  age.secrets.linear-refresh-token.owner = "emiller";
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
