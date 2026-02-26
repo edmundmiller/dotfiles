@@ -398,7 +398,7 @@ in
                   ];
                 };
                 thinkingDefault = "high";
-                heartbeat.model = "anthropic/claude-haiku-4";
+                heartbeat.every = "0m"; # Disable native heartbeat — use external systemd timer instead (OPS-24)
                 subagents.model = {
                   primary = "anthropic/claude-sonnet-4-5";
                   fallbacks = [
@@ -547,6 +547,11 @@ in
           # Inject agenix secrets + gateway token via ExecStartPre
           systemd.user.services.openclaw-gateway.Unit = mkMerge [
             {
+              # Skip automatic restart during nixos-rebuild / home-manager activation.
+              # The deploy scripts (hey rebuild, hey nuc) handle restarting explicitly,
+              # but skip the restart when openclaw itself triggered the deploy (OPS-24).
+              X-RestartIfChanged = "false";
+              X-StopIfChanged = "false";
               # Relax start rate limit — deploys restart user services and openclaw
               # takes a few seconds to boot, hitting the default 5/10s limit
               StartLimitIntervalSec = 60;
