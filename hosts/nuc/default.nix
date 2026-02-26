@@ -463,6 +463,7 @@ in
       if [ ! -s "$TOKEN_FILE" ]; then
         mkdir -p "$(dirname "$TOKEN_FILE")"
         cp /run/agenix/linear-api-token "$TOKEN_FILE"
+        chmod 600 "$TOKEN_FILE"
         chown -R emiller:users "$(dirname "$TOKEN_FILE")"
       fi
     '';
