@@ -9,12 +9,12 @@
 let
   linear-agent-bridge = pkgs.buildNpmPackage rec {
     pname = "linear-agent-bridge";
-    version = "0.1.2";
+    version = "0.1.3";
     src = pkgs.fetchFromGitHub {
       owner = "edmundmiller";
       repo = "linear-agent-bridge";
-      rev = "0dbcecd1e251efa68428096c3ff780dbf1bbd124";
-      hash = "sha256-GfKl9o2Hw7xpneRZRQUR4f323Q2oeGC84bXg3sxAlWI=";
+      rev = "39742e0fd873734e8bfb75a6add5d23b0542557e";
+      hash = "sha256-lbyZdTw7QLrnrNYXubFD4/cEbcoAZVrFSjbh3YibvSc=";
     };
     npmDepsHash = "sha256-UPm3S6F9KKok1rpQbz0mYsC07YeHtFTBnAUip2k6Moc=";
     buildPhase = "npm run build";
