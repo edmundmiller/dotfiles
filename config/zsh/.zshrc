@@ -143,3 +143,5 @@ fi
 if (( $+commands[entire] )); then
   _cache entire completion zsh
 fi
+alias oz="oz-preview"
+alias oz="oz-preview"
