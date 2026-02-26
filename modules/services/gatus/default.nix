@@ -170,6 +170,15 @@ let
               interval = "60s";
               conditions = [ "[STATUS] < 500" ];
             }
+          ]
+          ++ optionals config.modules.services.speedtest-tracker.enable [
+            {
+              name = "Speedtest Tracker";
+              group = "Network";
+              url = "http://localhost:${toString config.modules.services.speedtest-tracker.port}/admin/login";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
           ];
         # TODO: Audiobookshelf is on port 8000, not 13378; find correct healthcheck path
         # ++ optionals config.modules.services.audiobookshelf.enable [
