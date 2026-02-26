@@ -38,7 +38,22 @@ in
     #   HOMEPAGE_VAR_TAILSCALE_API_KEY=...
     #   HOMEPAGE_VAR_LUBELOGGER_USERNAME=...
     #   HOMEPAGE_VAR_LUBELOGGER_PASSWORD=...
+    #   HOMEPAGE_VAR_SPEEDTEST_API_KEY=...
     environmentFile = mkOpt (types.nullOr types.path) null;
+    # Raw secret files (each containing just a value) to inject as env vars.
+    # Reuse existing agenix secrets without duplicating them in environmentFile.
+    # Each entry becomes <envVar>=<contents of path> at service start.
+    #   environmentSecrets = [
+    #     { envVar = "HOMEPAGE_VAR_FOO"; path = config.age.secrets.foo.path; }
+    #   ];
+    environmentSecrets = mkOpt (types.listOf (
+      types.submodule {
+        options = {
+          envVar = mkOpt types.str "";
+          path = mkOpt types.path (throw "environmentSecrets entry requires a path");
+        };
+      }
+    )) [ ];
   };
 
   config = mkIf cfg.enable {
@@ -231,6 +246,19 @@ in
                 };
               };
             }
+            {
+              "Speedtest Tracker" = {
+                href = "${nucBase}:8765";
+                description = "Network speed history";
+                icon = "speedtest-tracker.svg";
+                widget = {
+                  type = "speedtest";
+                  url = "http://localhost:8765";
+                  version = 2;
+                  key = "{{HOMEPAGE_VAR_SPEEDTEST_API_KEY}}";
+                };
+              };
+            }
           ];
         }
         {
@@ -246,9 +274,52 @@ in
                 };
               };
             }
+            {
+              "Healthchecks" = {
+                href = "https://healthchecks.io";
+                description = "Cron job monitoring";
+                icon = "healthchecks.svg";
+                widget = {
+                  type = "healthchecks";
+                  url = "https://healthchecks.io";
+                  key = "{{HOMEPAGE_VAR_HEALTHCHECKS_API_KEY}}";
+                };
+              };
+            }
           ];
         }
       ];
+    };
+
+    # Inject raw agenix secrets as HOMEPAGE_VAR_* env vars at service start.
+    # Generates /run/homepage-secrets-env/secrets.env from cfg.environmentSecrets,
+    # then merges with cfg.environmentFile via EnvironmentFile.
+    systemd.services.homepage-dashboard = mkIf (cfg.environmentSecrets != [ ]) {
+      serviceConfig = {
+        RuntimeDirectory = "homepage-secrets-env";
+        ExecStartPre =
+          let
+            genScript = pkgs.writeShellScript "homepage-gen-secret-env" (
+              ''
+                set -e
+                : > /run/homepage-secrets-env/secrets.env
+                chmod 600 /run/homepage-secrets-env/secrets.env
+              ''
+              + concatMapStrings (
+                { envVar, path }:
+                ''
+                  printf '%s=%s\n' ${lib.escapeShellArg envVar} "$(cat ${path})" \
+                    >> /run/homepage-secrets-env/secrets.env
+                ''
+              ) cfg.environmentSecrets
+            );
+          in
+          [ "${genScript}" ];
+        EnvironmentFile = mkForce (
+          lib.optional (cfg.environmentFile != null) cfg.environmentFile
+          ++ [ "/run/homepage-secrets-env/secrets.env" ]
+        );
+      };
     };
 
     # Tailscale serve — HTTPS at https://homepage.<tailnet>
