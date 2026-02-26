@@ -109,8 +109,8 @@ _: {
         speech.text = "Good morning.";
         action = [
           {
-            action = "input_boolean.turn_off";
-            target.entity_id = "input_boolean.goodnight";
+            action = "scene.turn_on";
+            target.entity_id = "scene.good_morning";
           }
         ];
       };

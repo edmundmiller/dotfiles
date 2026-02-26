@@ -40,18 +40,22 @@ These automations have inline actions by design — do not refactor them into sc
 - `aranet.nix` — Aranet4 CO2 sensor: elevated/poor/cleared push notifications (thresholds: 1000/1500 ppm). Update `prefix` var to match device entity ID.
 - `conversation.nix` — Voice/conversation config
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
-- `modes.nix` — House modes (`Home`/`Away`/`Night`), goodnight toggle, DND, everything_off script
-- `sleep/` — Three-stage bedtime (Winding Down → In Bed → Sleep), wake detection state machine, Apple↔8Sleep sync. See `sleep/AGENTS.md`
-- `vacation.nix` — Vacation mode: 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
+- `modes.nix` — DND, guest mode, everything_off script
+- `sleep/` — Full sleep/wake lifecycle: goodnight toggle, awake booleans, scenes (Winding Down → In Bed → Sleep → Good Morning), wake detection, Apple↔8Sleep sync. Per-person automations DRY'd via helpers. See `sleep/AGENTS.md`
+- `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 
 ## Cross-domain dependencies
 
 ```
-modes.nix (input_boolean.goodnight, input_select.house_mode)
-  ├── ambient.nix reads house_mode for presence scene conditions
-  ├── sleep/ sets goodnight=on / house_mode=Night at 10PM
-  └── lighting.nix AL sleep mode: time-based triggers; scenes handle the goodnight path
+sleep/ (input_boolean.goodnight, input_boolean.*_awake)
+  ├── ambient.nix reads goodnight for presence scene conditions
+  ├── modes.nix everything_off delegates to Winding Down scene
+  ├── lighting.nix AL sleep mode: time-based triggers; scenes handle the goodnight path
+  ├── conversation.nix GoodMorning voice intent calls scene.good_morning directly
+  └── tv.nix reads goodnight for idle auto-off condition
+vacation.nix (input_boolean.vacation_mode)
+  └── ambient.nix skips last-person-leaves during vacation
 ```
 
 ## Lights
