@@ -1,1 +1,7 @@
 {"ts":"2026-02-26T03:57:21.026Z","agent":"SagePhoenix","type":"join"}
+{"ts":"2026-02-26T04:12:20.610Z","agent":"SagePhoenix","type":"commit","preview":"nuc: disable speedtest-tracker until secret exists"}
+{"ts":"2026-02-26T04:14:24.954Z","agent":"SagePhoenix","type":"edit","target":"/Users/emiller/.config/dotfiles/hosts/nuc/secrets/secrets.nix"}
+{"ts":"2026-02-26T04:15:10.105Z","agent":"SagePhoenix","type":"commit","preview":"nuc: remove speedtest-tracker-env from secrets.nix until .age file exists\n\nagenix auto-creates age.secrets for everything in secrets.nix, so the\nmissing .age file blocked all secret decryption on deploy."}
+{"ts":"2026-02-26T14:14:19.903Z","agent":"SagePhoenix","type":"edit","target":"/Users/emiller/.config/dotfiles/modules/services/homepage.nix"}
+{"ts":"2026-02-26T14:14:35.542Z","agent":"SagePhoenix","type":"commit","preview":"homepage: fix secret injection via activationScript not ExecStartPre\n\nExecStartPre runs after EnvironmentFile is loaded, and DynamicUser=true\nprevents it reading agenix secrets. Use system.activationScripts instead:\nruns as root, after agenix, before any services start."}
+{"ts":"2026-02-26T14:15:33.939Z","agent":"SagePhoenix","type":"commit","preview":"homepage: fix secret injection via activationScript not ExecStartPre\n\nExecStartPre runs after EnvironmentFile is loaded, and DynamicUser=true\nprevents it reading agenix secrets. Use system.activationScripts instead:\nruns as root, after agenix, before any services start."}
