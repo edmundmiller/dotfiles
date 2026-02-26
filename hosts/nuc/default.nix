@@ -455,6 +455,23 @@ in
   age.secrets.speedtest-tracker-env.owner = "root";
   age.secrets.linear-refresh-token.owner = "emiller";
 
+  # Bootstrap the linear token state file from agenix so openclawPluginGuard
+  # doesn't fail during home-manager activation (before linear-token-init.service runs).
+  system.activationScripts.bootstrapLinearToken = {
+    text = ''
+      TOKEN_FILE="/home/emiller/.local/state/openclaw-linear/token"
+      if [ ! -s "$TOKEN_FILE" ]; then
+        mkdir -p "$(dirname "$TOKEN_FILE")"
+        cp /run/agenix/linear-api-token "$TOKEN_FILE"
+        chown -R emiller:users "$(dirname "$TOKEN_FILE")"
+      fi
+    '';
+    deps = [
+      "agenixInstall"
+      "agenixChown"
+    ];
+  };
+
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
   services.znapzend = {
     # FIXME
