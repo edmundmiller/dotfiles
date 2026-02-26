@@ -356,6 +356,23 @@
               language = "system";
               pass_filenames = false;
             };
+            ha-automation-assertions = {
+              enable = true;
+              name = "ha-automation-assertions";
+              entry = toString (
+                pkgs.writeShellScript "ha-automation-assertions" ''
+                  failures=$(nix eval '.#checks.${system}.ha-automation-assertions.passthru.failures' --json 2>/dev/null)
+                  if [ "$failures" != "[]" ]; then
+                    echo "HA automation assertions failed:" >&2
+                    echo "$failures" | ${pkgs.jq}/bin/jq -r '.[].msg' | sed 's/^/  FAIL: /' >&2
+                    exit 1
+                  fi
+                ''
+              );
+              language = "system";
+              pass_filenames = false;
+              files = "modules/services/hass/";
+            };
           };
 
           # Headless agent dev shell (nix develop .#agent)
