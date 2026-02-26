@@ -6,8 +6,9 @@ NixOS service module wrapping [nix-openclaw](https://github.com/openclaw/nix-ope
 
 ```
 modules/services/openclaw/
-├── default.nix   # Module definition
-├── AGENTS.md     # This file
+├── default.nix      # Module definition
+├── _heartbeat.nix   # Per-agent heartbeat monitor options + systemd units
+├── AGENTS.md        # This file
 └── documents/
     ├── AGENTS.md
     ├── HEARTBEAT.md  # Agent reads this during external heartbeat checks
@@ -47,14 +48,26 @@ modules/services/openclaw/
 
 ### External Heartbeat Monitor
 
-- **Architecture**: systemd user timer → triggers `openclaw agent` → pings healthchecks.io
+- **Architecture**: per-agent systemd user timers → trigger `openclaw agent` → ping healthchecks.io
 - **Why external**: built-in heartbeat runs inside the gateway process — if gateway crashes/hangs, it stops too. External timer detects that.
-- **Timer**: `openclaw-heartbeat-monitor.timer` — every 30m (configurable), 2m random jitter, starts 5m after boot
-- **Service**: `openclaw-heartbeat-monitor.service` — oneshot, 5m timeout
+- **Multi-agent**: `heartbeatMonitor.monitors` is an attrset — each entry generates its own timer+service pair
+- **Timer**: `openclaw-heartbeat-monitor-<name>.timer` — every 30m (configurable globally or per-monitor), 2m random jitter, starts 5m after boot
+- **Service**: `openclaw-heartbeat-monitor-<name>.service` — oneshot, 5m timeout
 - **Flow**: ping `/start` → run agent with HEARTBEAT.md prompt → ping success (with output) or `/fail`
 - **Document**: `documents/HEARTBEAT.md` — agent reads this for self-diagnostic instructions
-- **Enable**: `modules.services.openclaw.heartbeatMonitor.enable = true` + set `pingUrl`
-- **healthchecks.io UUID**: `71a6388a-9ed5-4edd-b2a9-e5616dec4091`
+- **Enable**: `modules.services.openclaw.heartbeatMonitor.enable = true` + add monitors
+- **Config example**:
+  ```nix
+  heartbeatMonitor = {
+    enable = true;
+    interval = "30m";  # shared default
+    monitors.main = {
+      agent = "main";
+      pingUrl = "https://hc-ping.com/<uuid>";
+      # interval = "15m";  # optional per-monitor override
+    };
+  };
+  ```
 
 ### CLI Backends (agents.defaults.cliBackends)
 
