@@ -74,6 +74,65 @@ See `modules/services/openclaw/AGENTS.md` for full details.
 - **OpenCode** — AI coding service
 - **deploy-rs** — Self-deployment target
 
+## Linear Agent Bridge (OAuth Token Lifecycle)
+
+The NUC runs a **linear-agent-bridge** gateway extension that lets Linear @mentions trigger autonomous agent runs. It authenticates as "Norbot" (an app-user) via OAuth.
+
+### Architecture
+
+```
+Linear @mention → webhook → gateway → linear-agent-bridge → agent run
+                                ↑
+                        LINEAR_API_KEY (from token file)
+```
+
+### Token Chain
+
+Linear OAuth tokens expire every 24h. The system auto-rotates them:
+
+1. **Agenix seed** (`linear-api-token.age`, `linear-refresh-token.age`) — bootstrap values, encrypted for edmundmiller + nuc keys
+2. **`linear-token-init.service`** (oneshot, runs before gateway) — refreshes token on first boot using the refresh token
+3. **`linear-token-refresh.timer`** — fires every 12h, calls the refresh script, restarts gateway
+4. **Persisted state** (`~/.local/state/openclaw-linear/`) — `token` (access) and `refresh-token` (rotated)
+
+**Critical detail:** Linear rotates refresh tokens on every use. The refresh script persists the new refresh token to `STATE_DIRECTORY/refresh-token`, preferring it over the agenix seed. This prevents token chain death.
+
+### Recovery (when refresh token dies)
+
+Run from your Mac:
+
+```bash
+linear-oauth-refresh          # full: re-auth → encrypt → seed → deploy
+linear-oauth-refresh --no-deploy  # just tokens, skip hey nuc
+```
+
+The script starts a callback server on `:9999`, opens the OAuth consent page, exchanges the code, encrypts with agenix, seeds on NUC, and deploys. Requires: logged into Linear in browser, SSH access to NUC.
+
+### Smoke Test
+
+```bash
+bin/test-linear-agent          # fires fake webhook, tails gateway log
+```
+
+Expect: HTTP 202, `agentActivityCreate failed: Entity not found: AgentSession` (normal — test uses fake session ID).
+
+### Key Files
+
+| File                                         | Purpose                             |
+| -------------------------------------------- | ----------------------------------- |
+| `hosts/nuc/default.nix` (lines 12-43)        | Refresh script with persist logic   |
+| `bin/linear-oauth-refresh`                   | Manual re-bootstrap from Mac        |
+| `bin/test-linear-agent`                      | Smoke test script                   |
+| `hosts/nuc/secrets/linear-api-token.age`     | Agenix-encrypted access token seed  |
+| `hosts/nuc/secrets/linear-refresh-token.age` | Agenix-encrypted refresh token seed |
+
+### OAuth App Details
+
+- **Client ID:** `c64c969674a02fccc863d4aa950ec132`
+- **Redirect:** `http://localhost:9999/callback`
+- **Scopes:** `read,write,issues:create,comments:create,app:assignable,app:mentionable`
+- **Actor:** `app` (app-user tokens, not personal)
+
 ## Secrets (agenix)
 
 Located in `hosts/nuc/secrets/`:
@@ -86,9 +145,10 @@ Located in `hosts/nuc/secrets/`:
 - `openclaw-gateway-token.age` — Gateway auth
 - `openclaw-hooks-token.age` — OpenClaw hooks auth (used by Gatus webhook alerting)
 - `telegram-bot-token.age` — Telegram bot token (used by Gatus alerting)
-- `linear-api-token.age` — Linear integration
+- `linear-api-token.age` — Linear OAuth access token (see Linear Agent Bridge section)
+- `linear-refresh-token.age` — Linear OAuth refresh token (see Linear Agent Bridge section)
+- `linear-webhook-secret.age` — Linear webhook signature verification
 - `goose-auth-token.age` — Goose auth
-- `gogcli_credentials.age` — GOG CLI
 
 ## Deployment
 
