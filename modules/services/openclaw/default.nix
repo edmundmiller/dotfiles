@@ -546,17 +546,12 @@ in
                   pruneAfter = "14d";
                   maxEntries = 200;
                   rotateBytes = "10mb";
-                  resetArchiveRetention = "7d";
                 };
               };
 
               # Cron maintenance — prune completed isolated run sessions
               cron = {
                 sessionRetention = "12h";
-                runLog = {
-                  maxBytes = "2mb";
-                  keepLines = 1000;
-                };
               };
 
               channels.telegram = mkIf cfg.telegram.enable {
