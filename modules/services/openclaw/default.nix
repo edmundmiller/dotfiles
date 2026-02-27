@@ -531,6 +531,34 @@ in
                 allowRequestSessionKey = false;
               };
 
+              # Session management — bound growth to prevent accumulation.
+              # Cron sessions reuse context across runs; daily reset + compaction
+              # keeps them from bloating (the [object Object] serialization bug
+              # is triggered by large accumulated toolCall/thinking blocks).
+              session = {
+                reset = {
+                  mode = "daily";
+                  atHour = 4; # 4am CST on gateway host
+                  idleMinutes = 240; # also reset after 4h idle (whichever first)
+                };
+                maintenance = {
+                  mode = "enforce";
+                  pruneAfter = "14d";
+                  maxEntries = 200;
+                  rotateBytes = "10mb";
+                  resetArchiveRetention = "7d";
+                };
+              };
+
+              # Cron maintenance — prune completed isolated run sessions
+              cron = {
+                sessionRetention = "12h";
+                runLog = {
+                  maxBytes = "2mb";
+                  keepLines = 1000;
+                };
+              };
+
               channels.telegram = mkIf cfg.telegram.enable {
                 tokenFile = cfg.telegram.botTokenFile;
                 inherit (cfg.telegram) allowFrom;
