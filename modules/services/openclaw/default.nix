@@ -389,20 +389,18 @@ in
 
               agents.defaults = {
                 model = {
-                  # anthropic native API avoids openai-completions adapter phantom tool bug
-                  # (openclaw#23116, openclaw#21985) that corrupts MiniMax/Kimi sessions
-                  primary = "anthropic/claude-sonnet-4-5";
+                  primary = "claude-max/claude-sonnet-4";
                   fallbacks = [
-                    "claude-max/claude-sonnet-4"
+                    "anthropic/claude-sonnet-4-6"
                     "opencode/minimax-m2.5"
                   ];
                 };
                 thinkingDefault = "high";
                 heartbeat.every = "0m"; # Disable native heartbeat — use external systemd timer instead (OPS-24)
                 subagents.model = {
-                  primary = "anthropic/claude-sonnet-4-5";
+                  primary = "claude-max/claude-sonnet-4";
                   fallbacks = [
-                    "claude-max/claude-sonnet-4"
+                    "anthropic/claude-sonnet-4-6"
                     "opencode/minimax-m2.5"
                   ];
                 };
