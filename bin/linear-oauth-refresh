@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Re-bootstrap the Linear OAuth token chain when the refresh token dies.
+#
+# This starts a local callback server, opens the Linear OAuth consent page
+# in your browser, exchanges the authorization code for fresh tokens,
+# encrypts them with agenix, seeds them on the NUC, and deploys.
+#
+# Usage: linear-oauth-refresh [--no-deploy]
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/.config/dotfiles}"
+SECRETS_DIR="$DOTFILES/hosts/nuc/secrets"
+NUC_STATE="/home/emiller/.local/state/openclaw-linear"
+
+CLIENT_ID="c64c969674a02fccc863d4aa950ec132"
+CLIENT_SECRET="72406896af1a83cb5765c6042a59cde2"
+REDIRECT_URI="http://localhost:9999/callback"
+SCOPES="read,write,issues:create,comments:create,app:assignable,app:mentionable"
+AUTH_URL="https://linear.app/oauth/authorize?response_type=code&client_id=$CLIENT_ID&redirect_uri=$REDIRECT_URI&scope=$SCOPES&actor=app&prompt=consent"
+
+DEPLOY=true
+[[ "${1:-}" == "--no-deploy" ]] && DEPLOY=false
+
+CODE_FILE=$(mktemp)
+SERVER_PY=$(mktemp)
+trap 'rm -f "$CODE_FILE" "$SERVER_PY"; kill "$SERVER_PID" 2>/dev/null' EXIT
+
+# --- 1. Start callback server ---
+cat > "$SERVER_PY" <<'PYEOF'
+import http.server, urllib.parse, sys
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        p = urllib.parse.urlparse(self.path)
+        code = urllib.parse.parse_qs(p.query).get("code", [None])[0]
+        if p.path == "/callback" and code:
+            with open(sys.argv[1], "w") as f: f.write(code)
+            self.send_response(200); self.end_headers()
+            self.wfile.write(b"<h1>Done!</h1><p>Close this tab.</p>")
+        else:
+            self.send_response(404); self.end_headers()
+    def log_message(self, *_): pass
+http.server.HTTPServer(("127.0.0.1", 9999), H).serve_forever()
+PYEOF
+python3 "$SERVER_PY" "$CODE_FILE" &
+SERVER_PID=$!
+sleep 0.5
+
+# --- 2. Open browser ---
+echo "Opening Linear OAuth consent page..."
+open "$AUTH_URL"
+echo "Waiting for you to click 'Authorize'..."
+while [ ! -s "$CODE_FILE" ]; do sleep 1; done
+CODE=$(cat "$CODE_FILE")
+echo "✓ Got authorization code"
+
+# --- 3. Exchange for tokens ---
+RESPONSE=$(curl -sf -X POST https://api.linear.app/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "grant_type=authorization_code" \
+  --data-urlencode "client_id=$CLIENT_ID" \
+  --data-urlencode "client_secret=$CLIENT_SECRET" \
+  --data-urlencode "redirect_uri=$REDIRECT_URI" \
+  --data-urlencode "code=$CODE")
+
+ACCESS_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+REFRESH_TOKEN=$(echo "$RESPONSE" | jq -r '.refresh_token')
+
+if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+  echo "✗ Token exchange failed:" >&2; echo "$RESPONSE" | jq . >&2; exit 1
+fi
+
+VIEWER=$(curl -sf https://api.linear.app/graphql \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ viewer { name } }"}' | jq -r '.data.viewer.name')
+echo "✓ Authenticated as: $VIEWER"
+
+# --- 4. Encrypt with agenix ---
+cd "$SECRETS_DIR"
+echo -n "$ACCESS_TOKEN"  | RULES=./secrets.nix agenix -e linear-api-token.age -i ~/.ssh/id_ed25519
+echo -n "$REFRESH_TOKEN" | RULES=./secrets.nix agenix -e linear-refresh-token.age -i ~/.ssh/id_ed25519
+echo "✓ Encrypted both tokens"
+
+# --- 5. Commit ---
+cd "$DOTFILES"
+git add hosts/nuc/secrets/linear-api-token.age hosts/nuc/secrets/linear-refresh-token.age
+git commit -m "chore: rotate linear oauth tokens" || true
+
+# --- 6. Seed on NUC ---
+ssh nuc "mkdir -p $NUC_STATE && echo -n '$ACCESS_TOKEN' > $NUC_STATE/token && echo -n '$REFRESH_TOKEN' > $NUC_STATE/refresh-token && chmod 600 $NUC_STATE/token $NUC_STATE/refresh-token"
+echo "✓ Seeded tokens on NUC"
+
+# --- 7. Deploy ---
+if $DEPLOY; then
+  echo "Deploying..."
+  cd "$DOTFILES" && hey nuc
+  ssh nuc "systemctl --user restart openclaw-gateway.service" 2>/dev/null || true
+  echo "✓ Deployed and restarted gateway"
+fi
+
+echo "Done. Refresh timer will auto-rotate every 12h."
