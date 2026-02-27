@@ -395,7 +395,7 @@ in
       dagster.webserver.port = 3001;
 
       bugster = {
-        enable = true;
+        enable = false;
         environmentFile = config.age.secrets.bugster-env.path;
         healthcheckPingUrls = {
           github_personal_tasknotes = "https://hc-ping.com/c4b0b3c8-25b4-4cf6-9252-745eaf0a6689";
