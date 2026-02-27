@@ -484,25 +484,39 @@ in
 
               # Claude Max proxy — exposes subscription as OpenAI-compatible API.
               # Models available as claude-max/claude-opus-4, claude-max/claude-sonnet-4, etc.
+              # Anthropic provider must be explicit or the gateway drops fallback refs to it.
               models = mkIf cfg.claudeMaxProxy.enable {
-                providers.claude-max = {
-                  baseUrl = "http://localhost:${toString cfg.claudeMaxProxy.port}/v1";
-                  apiKey = "not-needed";
-                  api = "openai-completions";
-                  models = [
-                    {
-                      id = "claude-opus-4";
-                      name = "Claude Opus 4";
-                    }
-                    {
-                      id = "claude-sonnet-4";
-                      name = "Claude Sonnet 4";
-                    }
-                    {
-                      id = "claude-haiku-4";
-                      name = "Claude Haiku 4";
-                    }
-                  ];
+                providers = {
+                  claude-max = {
+                    baseUrl = "http://localhost:${toString cfg.claudeMaxProxy.port}/v1";
+                    apiKey = "not-needed";
+                    api = "openai-completions";
+                    models = [
+                      {
+                        id = "claude-opus-4";
+                        name = "Claude Opus 4";
+                      }
+                      {
+                        id = "claude-sonnet-4";
+                        name = "Claude Sonnet 4";
+                      }
+                      {
+                        id = "claude-haiku-4";
+                        name = "Claude Haiku 4";
+                      }
+                    ];
+                  };
+                  anthropic = {
+                    baseUrl = "https://api.anthropic.com";
+                    apiKey = "\${ANTHROPIC_API_KEY}";
+                    api = "anthropic-messages";
+                    models = [
+                      {
+                        id = "claude-sonnet-4-6";
+                        name = "Claude Sonnet 4.6";
+                      }
+                    ];
+                  };
                 };
               };
 
