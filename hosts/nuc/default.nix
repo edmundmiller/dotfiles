@@ -449,7 +449,8 @@ in
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
   age.secrets.lubelogger-env.owner = "lubelogger";
-  age.secrets.bugster-env.owner = "dagster";
+  # bugster disabled — dagster user doesn't exist; agenix chown would fail
+  # age.secrets.bugster-env.owner = "dagster";
   age.secrets.speedtest-tracker-env.owner = "root";
   age.secrets.linear-refresh-token.owner = "emiller";
 
