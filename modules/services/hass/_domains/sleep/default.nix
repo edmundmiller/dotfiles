@@ -28,12 +28,13 @@
 #
 # Wake detection state machine:
 #   input_boolean.edmund_awake / monica_awake track who's up
-#   Set by (any while goodnight=on AND after 7 AM): bed presence off, focus off,
+#   Set by (any while goodnight=on AND 7 AM–noon): bed presence off, focus off,
 #     battery Charging→Not Charging, activity=Walking, or
 #     active phone use (Launch/Siri/Manual update trigger)
-#   Time guard: signals before 7 AM ignored (bathroom trips, sensor glitches)
+#   Time guard: 7 AM–noon window prevents both early-morning false wakes
+#     (bathroom trips) AND evening false wakes (Siri/phone use after Winding Down)
 #   Reset by: Winding Down scene and Good Morning scene
-#   Good Morning fires when all home residents are awake (also gated to after 7 AM)
+#   Good Morning fires when all home residents are awake (also gated to 7 AM–noon)
 #   Away residents are skipped — if only one person is home, only their awake
 #   boolean is required.
 { lib, ... }:
@@ -149,8 +150,11 @@ let
     ];
     condition = [
       {
+        # Morning window only — prevents Siri/focus/phone events in the
+        # evening (right after Winding Down) from marking someone awake
         condition = "time";
         after = "07:00:00";
+        before = "12:00:00";
       }
       {
         condition = "state";
@@ -416,8 +420,11 @@ in
         ];
         condition = [
           {
+            # Morning window only — defense-in-depth against wake detection
+            # misfiring in the evening (primary guard is in mkWakeDetection)
             condition = "time";
             after = "07:00:00";
+            before = "12:00:00";
           }
           {
             # Sleep cycle must have happened and still be active — guards against
