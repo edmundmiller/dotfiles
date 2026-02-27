@@ -11,7 +11,13 @@ let
 
   linearTokenRefreshScript = pkgs.writeShellScript "linear-token-refresh" ''
     set -euo pipefail
-    REFRESH_TOKEN=$(cat /run/agenix/linear-refresh-token)
+    # Read refresh token — prefer persisted (rotated) token, fall back to agenix seed
+    REFRESH_FILE="''${STATE_DIRECTORY}/refresh-token"
+    if [ -s "$REFRESH_FILE" ]; then
+      REFRESH_TOKEN=$(cat "$REFRESH_FILE")
+    else
+      REFRESH_TOKEN=$(cat /run/agenix/linear-refresh-token)
+    fi
     CLIENT_ID="c64c969674a02fccc863d4aa950ec132"
     CLIENT_SECRET="72406896af1a83cb5765c6042a59cde2"
 
@@ -23,12 +29,17 @@ let
       --data-urlencode "refresh_token=$REFRESH_TOKEN")
 
     ACCESS_TOKEN=$(echo "$RESPONSE" | ${pkgs.jq}/bin/jq -r '.access_token')
+    NEW_REFRESH=$(echo "$RESPONSE" | ${pkgs.jq}/bin/jq -r '.refresh_token // empty')
     if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
       echo "Failed to refresh Linear token: $RESPONSE" >&2
       exit 1
     fi
 
     echo -n "$ACCESS_TOKEN" > "''${STATE_DIRECTORY}/token"
+    # Linear rotates refresh tokens — persist the new one for next refresh
+    if [ -n "$NEW_REFRESH" ]; then
+      echo -n "$NEW_REFRESH" > "$REFRESH_FILE"
+    fi
     echo "Linear OAuth token refreshed"
   '';
 
