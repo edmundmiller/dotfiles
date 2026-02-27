@@ -282,33 +282,37 @@ in
         skills = [
           {
             name = "obsidian-vault";
-            description = "Access Edmund's Obsidian vault for notes, projects, and knowledge base";
+            description = "Search Edmund's Obsidian vault for notes, projects, and knowledge base. Use qmd search, never grep or cat full files.";
             mode = "inline";
             body = ''
-              # Obsidian Vault Access
+              # Obsidian Vault Search (qmd)
 
-              Location: `/home/emiller/obsidian-vault`
+              **Always use qmd. Never rg/cat full files** — qmd returns snippets (~500 tokens vs ~15k for full file reads).
 
-              ## Structure (PARA method)
-              - `00_Inbox/` - New notes, quick captures
-              - `01_Projects/` - Active projects with tasks
-              - `02_Areas/` - Ongoing areas of responsibility
-              - `03_Resources/` - Reference material, topics of interest
-              - `04_Archive/` - Completed/inactive items
-              - `05_Attachments/` - Images, PDFs, files
-              - `06_Metadata/` - Templates, config
+              ## Collections
+              - `vault` — full vault (PARA: projects, areas, resources, archive)
+              - `resources` — reference materials, tools, code snippets
+              - `areas` — ongoing areas of responsibility
+              - `tasks` — task notes
+              - `ai-claude` / `ai-chatgpt` / `ai-chats` — AI conversation history
 
-              ## How to Search
+              ## Commands
               ```bash
-              rg "search term" /home/emiller/obsidian-vault
-              rg -l "search term" /home/emiller/obsidian-vault  # list files only
+              qmd search "topic"              # BM25 full-text (fast, most queries)
+              qmd vsearch "concept"           # vector/semantic search
+              qmd search "topic" -c resources # scope to collection
+              qmd get vault/path/to/note.md   # full file (only if needed)
+
+              # Frontmatter queries (qmd doesn't index YAML frontmatter)
+              rg -l "tags:.*bioinformatics" /home/emiller/obsidian-vault
+              rg "^status: " /home/emiller/obsidian-vault/01_Projects --include="*.md"
               ```
 
-              ## How to Read/List
-              ```bash
-              cat "/home/emiller/obsidian-vault/path/to/note.md"
-              ls /home/emiller/obsidian-vault/01_Projects/
-              ```
+              ## Workflow
+              1. `qmd search` or `qmd vsearch` for content
+              2. `rg` only for frontmatter fields (tags, status, dates)
+              3. Results include path + snippet — usually enough
+              4. Only `qmd get` if you truly need full content
             '';
           }
         ];
