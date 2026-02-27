@@ -43,23 +43,6 @@ let
     echo "Linear OAuth token refreshed"
   '';
 
-  linear-agent-bridge = pkgs.buildNpmPackage rec {
-    pname = "linear-agent-bridge";
-    version = "0.1.3";
-    src = pkgs.fetchFromGitHub {
-      owner = "edmundmiller";
-      repo = "linear-agent-bridge";
-      rev = "cb09637071dadf7a8bf5314310e1457ec4dd44d4";
-      hash = "sha256-3XDUnMGyasBa5xRuVmcwfyUrlJ7adzl8wRjyDDjhDzY=";
-    };
-    npmDepsHash = "sha256-UPm3S6F9KKok1rpQbz0mYsC07YeHtFTBnAUip2k6Moc=";
-    buildPhase = "npm run build";
-    installPhase = ''
-      mkdir -p $out/lib/linear-agent-bridge
-      cp -r dist openclaw.plugin.json package.json $out/lib/linear-agent-bridge/
-    '';
-    meta.description = "OpenClaw plugin: Linear → multi-agent workspace";
-  };
 in
 {
   # Workaround for nix-openclaw using bare commands (cat, ln, mkdir, rm)
@@ -253,7 +236,7 @@ in
           }
         ];
         # Gateway extensions (npm plugins loaded into the gateway process)
-        gatewayExtensions = [ linear-agent-bridge ];
+        gatewayExtensions = [ pkgs.my.linear-agent-bridge ];
         heartbeatMonitor = {
           enable = true;
           monitors.main = {
