@@ -104,9 +104,17 @@ modules/services/openclaw/
 
 ### Models
 
-- Primary: `opencode/minimax-m2.5`
-- Fallback: `anthropic/claude-sonnet-4-5`
-- Subagent fallback: `anthropic/claude-haiku-4`
+- Primary: `claude-max/claude-sonnet-4` (uses Claude Max subscription via proxy, no API billing)
+- Fallback 1: `anthropic/claude-sonnet-4-6` (native Anthropic Messages API — explicit provider required)
+- Fallback 2: `opencode/minimax-m2.5`
+- Subagent: same chain
+
+### Session Management
+
+- **Reset**: daily at 4am CST + 4h idle timeout (whichever fires first)
+- **Maintenance**: enforce mode, prune after 14d, max 200 entries, rotate at 10mb
+- **Cron retention**: 12h (prune completed isolated run sessions)
+- **Why**: Cron sessions reuse context across runs and accumulate toolCall/thinking blocks. When sent through the `openai-completions` format converter (claude-max proxy), these serialize as `[object Object]`, corrupting the model's view of history.
 
 ## Secrets (agenix)
 
@@ -222,6 +230,8 @@ curl http://localhost:3456/v1/chat/completions \
 - **darwinOnlyFiles/nixosOnlyFiles in default.nix**: When converting a module from `.nix` to directory (`/default.nix`), MUST update the path AND ensure the directory is git-tracked (untracked dirs invisible to nix flakes).
 - **ExecStartPre vs agenix timing**: On first deploy with a new secret, the env file may be written before agenix decrypts the new key. Restart the service after deploy: `systemctl --user restart openclaw-gateway`.
 - **bundledPlugins.sag**: Installs sag as a SKILL (SKILL.md teaching the agent to call the `sag` CLI), not as a gateway plugin. The sag binary must be in system PATH separately.
+- **Gateway 2026.2.26 breaks nix store plugins**: Introduced "unsafe plugin manifest path" validation that rejects `/nix/store/` paths. Pinned to 2026.2.20 until upstream nix-openclaw fixes this.
+- **anthropic provider must be explicit**: The gateway validates fallback model IDs against `models.providers`. If `anthropic` isn't explicitly listed, the gateway silently replaces your fallbacks with its own defaults (all going through `openai-completions`).
 
 ## Skills
 
