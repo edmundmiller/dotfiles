@@ -1,0 +1,44 @@
+name: CI Failure Notification
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  notify-on-failure:
+    name: Create Linear Issue on CI Failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Create Linear Issue
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
+        run: |
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          SHORT_SHA="${SHA:0:7}"
+
+          TITLE="CI failure on \`${BRANCH}\` (${SHORT_SHA})"
+          DESCRIPTION="CI workflow failed on branch \`${BRANCH}\` at commit \`${SHORT_SHA}\`.\n\n[View workflow run](${RUN_URL})\n\nThis issue was automatically created by the CI failure notification workflow."
+
+          if [ -z "$LINEAR_API_KEY" ] || [ -z "$LINEAR_TEAM_ID" ]; then
+            echo "::warning::LINEAR_API_KEY or LINEAR_TEAM_ID secret not set. Skipping Linear issue creation."
+            echo "Would have created issue: $TITLE"
+            exit 0
+          fi
+
+          curl -s -X POST https://api.linear.app/graphql \
+            -H "Content-Type: application/json" \
+            -H "Authorization: $LINEAR_API_KEY" \
+            -d "{
+              \"query\": \"mutation { issueCreate(input: { teamId: \\\"${LINEAR_TEAM_ID}\\\", title: \\\"${TITLE}\\\", description: \\\"${DESCRIPTION}\\\", priority: 1 }) { success issue { url } } }\"
+            }" | tee /tmp/linear-response.json
+
+          URL=$(cat /tmp/linear-response.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('issueCreate',{}).get('issue',{}).get('url',''))" 2>/dev/null || true)
+          if [ -n "$URL" ]; then
+            echo "Created Linear issue: $URL"
+          fi
