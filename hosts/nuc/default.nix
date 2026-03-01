@@ -171,6 +171,7 @@ in
       # bugwarrior.enable = false;  # Module removed
       git.enable = true;
       zsh.enable = true;
+      tmux.enable = true;
       pi.enable = true;
       ai = {
         enable = true;
