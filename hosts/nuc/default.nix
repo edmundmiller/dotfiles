@@ -170,6 +170,7 @@ in
     shell = {
       # bugwarrior.enable = false;  # Module removed
       git.enable = true;
+      tmux.enable = true;
       zsh.enable = true;
       tmux.enable = true;
       pi.enable = true;
@@ -382,6 +383,7 @@ in
       radarr.enable = true;
       sonarr.enable = true;
       deploy-rs.enable = true;
+      mosh.enable = true;
       ssh.enable = true;
       syncthing.enable = false;
       tailscale.enable = true;
