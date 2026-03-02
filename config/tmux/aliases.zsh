@@ -2,6 +2,7 @@
 
 # Attach to existing session or create new one (from omarchy)
 alias t='tmux attach 2>/dev/null || tmux new -s Work'
+function tm { tmux new-session -A -s termius -c ~/obsidian-vault "${*:-pi; zsh}"; }
 alias ta='tmux attach'
 alias tl='tmux ls'
 
