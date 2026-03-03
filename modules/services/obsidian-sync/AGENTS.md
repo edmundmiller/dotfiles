@@ -4,16 +4,26 @@ Headless Obsidian Sync via `obsidian-headless` CLI. Replaces the old LinuxServer
 
 ## Key Facts
 
-- **NixOS-only** — uses systemd, not available on darwin
+- **Cross-platform** — darwin gets `ob` CLI only; NixOS gets systemd service + CLI
 - **Nix-packaged** — `pkgs.my.obsidian-headless` (see `packages/obsidian-headless/`)
 - **Two modes**: `server` (pull-only, read-only copy) and `desktop` (bidirectional)
 - **One-time setup required** — `ob login` + `ob sync-setup` before service starts
 - **Do NOT combine** with Obsidian desktop app sync on the same device
 
-## Services
+## Sync Modes
+
+Controlled by `ob sync-config --mode <mode>` (run as `ExecStartPre` on NixOS):
+
+- **`bidirectional`** — full two-way sync. Default when `mode = "desktop"`.
+- **`pull-only`** — download from remote only. Default when `mode = "server"`.
+- **`mirror-remote`** — pull-only + revert any local changes back to remote state.
+
+Set `syncMode` to override the default derived from `mode`.
+
+## Services (NixOS only)
 
 - `obsidian-sync` — long-running, `ob sync --continuous`
-  - `ExecStartPre` sets sync mode via `ob sync-config`
+  - `ExecStartPre` runs `ob sync-config` to set mode/device before each start
   - Runs as configured user, sandboxed with `ProtectHome=read-only`
 
 ## Options
