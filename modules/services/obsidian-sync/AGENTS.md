@@ -20,11 +20,17 @@ Controlled by `ob sync-config --mode <mode>` (run as `ExecStartPre` on NixOS):
 
 Set `syncMode` to override the default derived from `mode`.
 
-## Services (NixOS only)
+## Services
 
-- `obsidian-sync` — long-running, `ob sync --continuous`
-  - `ExecStartPre` runs `ob sync-config` to set mode/device before each start
-  - Runs as configured user, sandboxed with `ProtectHome=read-only`
+**Darwin** — `launchd.user.agents.obsidian-sync`
+
+- Runs config + sync in a single script, `KeepAlive = true`
+- Logs to `/tmp/obsidian-sync.{log,err}`
+
+**NixOS** — `systemd.services.obsidian-sync`
+
+- `ExecStartPre` runs `ob sync-config` to set mode/device before each start
+- Runs as configured user, sandboxed with `ProtectHome=read-only`
 
 ## Options
 
