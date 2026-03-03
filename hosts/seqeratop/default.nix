@@ -20,6 +20,7 @@ _: {
         codex.enable = true;
         opencode.enable = true;
         pi.enable = true;
+        pi.memoryRemote = "git@github.com:edmundmiller/pi-memory";
         direnv.enable = true;
         git.enable = true;
         jj.enable = true;
@@ -28,6 +29,8 @@ _: {
       };
 
       services = {
+        obsidian-sync.enable = true;
+        obsidian-sync.mode = "desktop";
         docker.enable = true;
         ssh.enable = true;
       };

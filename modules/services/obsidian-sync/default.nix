@@ -85,12 +85,14 @@ in
     continuous = mkBoolOpt true;
   };
 
-  # NixOS-only (systemd service)
-  config = mkIf cfg.enable (
-    optionalAttrs (!isDarwin) {
+  config = mkIf cfg.enable (mkMerge [
+    {
       # Make ob available for interactive setup (ob login, ob sync-setup)
       user.packages = [ pkgs.my.obsidian-headless ];
+    }
 
+    # NixOS-only (systemd service)
+    (optionalAttrs (!isDarwin) {
       systemd.tmpfiles.rules = [
         "d ${cfg.vaultPath} 0755 ${cfg.user} users -"
       ];
@@ -117,6 +119,6 @@ in
           PrivateTmp = true;
         };
       };
-    }
-  );
+    })
+  ]);
 }
