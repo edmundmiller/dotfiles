@@ -80,7 +80,7 @@ in
       '';
     };
 
-    deviceName = mkOpt types.str config.networking.hostName;
+    deviceName = mkOpt types.str (if isDarwin then "mac" else config.networking.hostName);
 
     continuous = mkBoolOpt true;
   };
@@ -91,7 +91,23 @@ in
       user.packages = [ pkgs.my.obsidian-headless ];
     }
 
-    # NixOS-only (systemd service)
+    # Darwin (launchd agent)
+    (optionalAttrs isDarwin {
+      launchd.user.agents.obsidian-sync = {
+        command = "${pkgs.writeShellScript "obsidian-sync-launchd" ''
+          ${configScript}
+          exec ${syncScript}
+        ''}";
+        serviceConfig = {
+          RunAtLoad = true;
+          KeepAlive = true;
+          StandardOutPath = "/tmp/obsidian-sync.log";
+          StandardErrorPath = "/tmp/obsidian-sync.err";
+        };
+      };
+    })
+
+    # NixOS (systemd service)
     (optionalAttrs (!isDarwin) {
       systemd.tmpfiles.rules = [
         "d ${cfg.vaultPath} 0755 ${cfg.user} users -"
