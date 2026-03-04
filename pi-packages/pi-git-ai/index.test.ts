@@ -1,5 +1,4 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
-import { spawn } from "node:child_process";
 
 // Mock isToolCallEventType before importing the module
 const mockIsToolCall = mock((toolName: string, event: any) => {
@@ -414,8 +413,7 @@ describe("extension lifecycle", () => {
     createExtension(mockPi);
     await handlers["tool_call"](editEvent("a.ts", "tc-nomodel"));
 
-    const ctx = makeCtx();
-    ctx.model = undefined;
+    const ctx = makeCtx({ model: undefined as any });
     const endEvent = { toolCallId: "tc-nomodel", toolName: "edit", isError: false };
     // Should not throw
     await handlers["tool_execution_end"](endEvent, ctx);
