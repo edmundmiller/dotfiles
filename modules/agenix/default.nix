@@ -15,11 +15,11 @@ with lib.my;
 let
   inherit (inputs) agenix;
   # Shared secrets directory (cross-platform, for secrets used on multiple hosts)
-  sharedSecretsDir = "${toString ../hosts}/shared/secrets";
+  sharedSecretsDir = "${toString ../../hosts}/shared/secrets";
   # Effective hostname for per-host secrets
   effectiveHostName = if isDarwin then hostName else config.networking.hostName;
   # NixOS host-specific secrets directory
-  secretsDir = if isDarwin then "" else "${toString ../hosts}/${effectiveHostName}/secrets";
+  secretsDir = if isDarwin then "" else "${toString ../../hosts}/${effectiveHostName}/secrets";
   secretsFile = if isDarwin then "" else "${secretsDir}/secrets.nix";
 in
 {
