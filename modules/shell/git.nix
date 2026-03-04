@@ -13,6 +13,7 @@ in
 {
   options.modules.shell.git = {
     enable = mkBoolOpt false;
+    ai.enable = mkBoolOpt false;
   };
 
   config = mkIf cfg.enable {
@@ -48,5 +49,10 @@ in
     };
 
     modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
+
+    # When git-ai is enabled and pi is available, inject pi-git-ai package
+    modules.shell.pi.extraPackages = mkIf (cfg.ai.enable && config.modules.shell.pi.enable) [
+      "~/.config/dotfiles/pi-packages/pi-git-ai"
+    ];
   };
 }
