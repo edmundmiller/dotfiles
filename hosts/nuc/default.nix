@@ -144,7 +144,8 @@ in
     ../_home.nix
     ./hardware-configuration.nix
     ./disko.nix
-    ./backups.nix
+    # FIXME(dotfiles-sw0j): restic secrets not wired in agenix
+    # ./backups.nix
   ];
 
   ## Modules

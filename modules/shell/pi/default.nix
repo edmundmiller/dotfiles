@@ -146,15 +146,23 @@ let
   piSettingsClean = removeTrailingCommas piSettingsFiltered;
   piSettingsStripped = lib.concatStringsSep "\n" piSettingsClean;
 
-  # Validate at Nix eval time — fails the build if JSONC stripping is broken
+  # Parse, validate, and optionally inject extra packages at Nix eval time
   piSettingsValidated =
     let
       parsed = builtins.tryEval (builtins.fromJSON piSettingsStripped);
     in
-    if parsed.success then
-      piSettingsStripped
+    if !parsed.success then
+      builtins.throw "pi settings.jsonc produced invalid JSON after stripping comments/trailing commas. Run: nix eval --expr 'builtins.fromJSON (builtins.readFile ./result-settings.json)' to debug."
     else
-      builtins.throw "pi settings.jsonc produced invalid JSON after stripping comments/trailing commas. Run: nix eval --expr 'builtins.fromJSON (builtins.readFile ./result-settings.json)' to debug.";
+      let
+        settings = parsed.value;
+        withExtras =
+          if cfg.extraPackages == [ ] then
+            settings
+          else
+            settings // { packages = settings.packages ++ cfg.extraPackages; };
+      in
+      builtins.toJSON withExtras;
 in
 {
   options.modules.shell.pi = {
@@ -163,6 +171,11 @@ in
       type = types.str;
       default = "";
       description = "Git remote URL for pi global memory (~/.pi/memory)";
+    };
+    extraPackages = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Additional pi package paths to inject into settings.json packages list";
     };
   };
 
