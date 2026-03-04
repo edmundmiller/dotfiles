@@ -19,13 +19,13 @@ const { isToolCallEventType: isToolCall } = await import("@mariozechner/pi-codin
 
 // --- git-ai agent-v1 preset types ---
 
-interface HumanCheckpoint {
+export interface HumanCheckpoint {
   type: "human";
   repo_working_dir: string;
   will_edit_filepaths?: string[];
 }
 
-interface AiAgentCheckpoint {
+export interface AiAgentCheckpoint {
   type: "ai_agent";
   repo_working_dir: string;
   edited_filepaths: string[];
@@ -35,16 +35,16 @@ interface AiAgentCheckpoint {
   conversation_id: string;
 }
 
-type TranscriptMessage =
+export type TranscriptMessage =
   | { type: "user"; text: string; timestamp?: string }
   | { type: "assistant"; text: string; timestamp?: string }
   | { type: "thinking"; text: string; timestamp?: string }
   | { type: "tool_use"; name: string; input: Record<string, unknown>; timestamp?: string };
 
-// --- Helpers ---
+// --- Helpers (exported for testing) ---
 
 /** Extract file paths from a tool call event. Empty array = not a file-editing tool. */
-function getEditedPaths(event: ToolCallEvent): string[] {
+export function getEditedPaths(event: ToolCallEvent): string[] {
   if (isToolCall("edit", event)) return [event.input.path];
   if (isToolCall("write", event)) return [event.input.path];
   if (event.toolName === "apply_patch") {
@@ -61,7 +61,7 @@ function getEditedPaths(event: ToolCallEvent): string[] {
 }
 
 /** Run git-ai checkpoint with JSON payload on stdin. */
-function runCheckpoint(payload: HumanCheckpoint | AiAgentCheckpoint): Promise<void> {
+export function runCheckpoint(payload: HumanCheckpoint | AiAgentCheckpoint): Promise<void> {
   return new Promise<void>((resolve) => {
     const child = spawn("git-ai", ["checkpoint", "agent-v1"], {
       stdio: ["pipe", "ignore", "ignore"],
@@ -75,7 +75,7 @@ function runCheckpoint(payload: HumanCheckpoint | AiAgentCheckpoint): Promise<vo
 
 /** Convert pi session entries to git-ai transcript format.
  *  Filters out tool results per git-ai spec. */
-function buildTranscript(
+export function buildTranscript(
   entries: Array<{ type: string; message?: { role: string; content: unknown; timestamp?: number } }>
 ): TranscriptMessage[] {
   const out: TranscriptMessage[] = [];
