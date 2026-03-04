@@ -1393,6 +1393,22 @@
         "type": "github"
       }
     },
+    "shaping-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770823764,
+        "narHash": "sha256-R7n5++Qonaheopn8odbgvvH5mcAw0QxjQmCb23vlAXU=",
+        "owner": "rjs",
+        "repo": "shaping-skills",
+        "rev": "9eeda4ec83f7d300838328033960cd0a50aad0cf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rjs",
+        "repo": "shaping-skills",
+        "type": "github"
+      }
+    },
     "skills-catalog": {
       "inputs": {
         "agent-skills": "agent-skills",
@@ -1404,7 +1420,8 @@
         ],
         "openai-skills": "openai-skills",
         "pi-extension-skills": "pi-extension-skills",
-        "pi-messenger-repo": "pi-messenger-repo"
+        "pi-messenger-repo": "pi-messenger-repo",
+        "shaping-skills": "shaping-skills"
       },
       "locked": {
         "path": "./skills",

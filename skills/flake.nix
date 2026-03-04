@@ -36,6 +36,11 @@
       url = "github:hamelsmu/evals-skills";
       flake = false;
     };
+
+    shaping-skills = {
+      url = "github:rjs/shaping-skills";
+      flake = false;
+    };
   };
 
   outputs = inputs: {
@@ -96,6 +101,12 @@
               subdir = "skills";
               filter.maxDepth = 2;
             };
+
+            shaping = {
+              path = inputs.shaping-skills.outPath;
+              subdir = ".";
+              filter.maxDepth = 1;
+            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -139,6 +150,15 @@
 
             write-judge-prompt.from = "evals";
             write-judge-prompt.path = "write-judge-prompt";
+
+            shaping.from = "shaping";
+            shaping.path = "shaping";
+
+            breadboarding.from = "shaping";
+            breadboarding.path = "breadboarding";
+
+            breadboard-reflection.from = "shaping";
+            breadboard-reflection.path = "breadboard-reflection";
           };
 
           targets = {
