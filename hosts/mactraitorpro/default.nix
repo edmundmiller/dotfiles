@@ -31,6 +31,7 @@
         pi.memoryRemote = "git@github.com:edmundmiller/pi-memory";
         direnv.enable = true;
         git.enable = true;
+        git.ai.enable = true;
         jj.enable = true;
         tmux.enable = true;
         zsh.enable = true;
