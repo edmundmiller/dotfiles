@@ -387,7 +387,16 @@ in
       ssh.enable = true;
       syncthing.enable = false;
       tailscale.enable = true;
-      obsidian-sync.enable = true;
+      obsidian-sync = {
+        enable = true;
+        op = {
+          emailRef = "op://Moni and Ed/Obsidian/Email";
+          passwordRef = "op://Moni and Ed/Obsidian/password";
+          itemRef = "Obsidian";
+          encryptionPasswordRef = "op://Moni and Ed/Obsidian/Encryption Password";
+          tokenFile = "/run/secrets/op-service-account-token";
+        };
+      };
       vault-sync = {
         enable = false; # TODO: re-enable after creating cubox-api-key.age and snipd-api-key.age
         # cuboxApiKeyFile = config.age.secrets.cubox-api-key.path;
@@ -450,6 +459,16 @@ in
   services.logrotate.checkConfig = false;
 
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
+
+  # opnix: 1Password service account token for unattended op CLI access
+  # Bootstrap: ssh nuc, then run `sudo opnix token set` and paste the token
+  # from op://Private/xkq3yij62kltcldkmk7qgkq66a/credential
+  services.onepassword-secrets = {
+    enable = true;
+    secrets.op-service-account-token = {
+      reference = "op://Private/xkq3yij62kltcldkmk7qgkq66a/credential";
+    };
+  };
 
   age.secrets.lubelogger-env.owner = "lubelogger";
   # bugster disabled — dagster user doesn't exist; agenix chown would fail

@@ -35,6 +35,8 @@ in
         (filterAttrs (n: _v: !elem n [ "system" ]) attrs)
         ../.
         (import path)
+        # opnix: 1Password secrets injection for NixOS hosts
+        inputs.opnix.nixosModules.default
         # Add openclaw home-manager module for NixOS hosts
         # (overlay applied at flake level via mkPkgs)
         {

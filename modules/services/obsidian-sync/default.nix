@@ -133,6 +133,10 @@ in
       passwordRef = mkOpt types.str "";
       itemRef = mkOpt types.str "";
       encryptionPasswordRef = mkOpt types.str "";
+      # Path to a file containing a raw 1Password service account token.
+      # When set, a oneshot service generates /run/obsidian-sync-op.env
+      # (KEY=VALUE format) so the service can call `op` unattended.
+      tokenFile = mkOpt (types.nullOr types.str) null;
     };
   };
 
@@ -176,6 +180,23 @@ in
         "d ${cfg.vaultPath} 0755 ${cfg.user} users -"
       ];
 
+      # Generate /run/obsidian-sync-op.env from the raw token file so
+      # systemd EnvironmentFile (which needs KEY=VALUE format) can load it.
+      systemd.services.obsidian-sync-op-env = mkIf (cfg.op.tokenFile != null) {
+        description = "Generate obsidian-sync OP env file";
+        before = [ "obsidian-sync.service" ];
+        requiredBy = [ "obsidian-sync.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = pkgs.writeShellScript "obsidian-sync-op-env" ''
+            printf 'OP_SERVICE_ACCOUNT_TOKEN=%s\n' "$(cat ${cfg.op.tokenFile})" \
+              > /run/obsidian-sync-op.env
+            chmod 600 /run/obsidian-sync-op.env
+          '';
+        };
+      };
+
       systemd.services.obsidian-sync = {
         description = "Obsidian Headless Sync";
         after = [ "network-online.target" ];
@@ -200,6 +221,9 @@ in
           ExecStart = "${syncScript}";
           Restart = "on-failure";
           RestartSec = "30s";
+
+          # Load OP_SERVICE_ACCOUNT_TOKEN when tokenFile is configured
+          EnvironmentFile = mkIf (cfg.op.tokenFile != null) "/run/obsidian-sync-op.env";
 
           # Hardening
           ProtectHome = "read-only";
