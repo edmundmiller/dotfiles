@@ -388,6 +388,7 @@ in
       tailscale.enable = true;
       obsidian-sync = {
         enable = true;
+        mode = "desktop"; # bidirectional — agents edit vault files on NUC
         op = {
           emailRef = "op://Agents/Obsidian/Email";
           passwordRef = "op://Agents/Obsidian/password";
