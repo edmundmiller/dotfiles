@@ -287,6 +287,22 @@
         "type": "github"
       }
     },
+    "evals-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1772579707,
+        "narHash": "sha256-LHZdalGj+7MhKLJ7xMqE7qUzd4MsXXNoqvW43FJJGwE=",
+        "owner": "hamelsmu",
+        "repo": "evals-skills",
+        "rev": "febdb335bd658a01f756b8b5b3364277a4fa6a4a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hamelsmu",
+        "repo": "evals-skills",
+        "type": "github"
+      }
+    },
     "firefox-gnome-theme": {
       "flake": false,
       "locked": {
@@ -1381,6 +1397,7 @@
       "inputs": {
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "evals-skills": "evals-skills",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": [
           "nixpkgs"
