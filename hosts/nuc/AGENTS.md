@@ -148,7 +148,6 @@ Located in `hosts/nuc/secrets/`:
 - `linear-api-token.age` — Linear OAuth access token (see Linear Agent Bridge section)
 - `linear-refresh-token.age` — Linear OAuth refresh token (see Linear Agent Bridge section)
 - `linear-webhook-secret.age` — Linear webhook signature verification
-- `goose-auth-token.age` — Goose auth
 
 ## Deployment
 
