@@ -1,0 +1,37 @@
+{
+  "name": "pi-git-ai",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Git AI integration for pi — tracks AI-generated code authorship via git-ai checkpoint",
+  "main": "./index.ts",
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "pi-package",
+    "git-ai",
+    "authorship",
+    "tracking"
+  ],
+  "author": "Edmund Miller <edmundmiller@hey.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmundmiller/dotfiles.git",
+    "directory": "pi-packages/pi-git-ai"
+  },
+  "files": [
+    "index.ts",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
