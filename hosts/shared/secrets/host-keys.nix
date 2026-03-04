@@ -1,5 +1,5 @@
 # Mapping of hostnames to SSH public keys.
-# Used by modules/agenix.nix to filter shared secrets per-host
+# Used by modules/agenix/ to filter shared secrets per-host
 # and by secrets.nix for encryption targets.
 {
   "MacTraitor-Pro" =

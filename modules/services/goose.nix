@@ -29,7 +29,7 @@ in
 
   config = mkIf cfg.enable (
     optionalAttrs (!isDarwin) {
-      # Secrets auto-loaded from hosts/nuc/secrets/secrets.nix via modules/agenix.nix
+      # Secrets auto-loaded from hosts/nuc/secrets/secrets.nix via modules/agenix/
 
       # Ensure goose config directory exists with provider config
       systemd.tmpfiles.rules = [
