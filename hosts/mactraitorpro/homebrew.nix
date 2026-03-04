@@ -131,7 +131,6 @@
     "z3"
 
     # Additional tools
-    "block-goose-cli"
     "bookokrat"
     "claude-squad"
     "mole"
@@ -199,7 +198,6 @@
     "granola"
 
     # AI Tools
-    "block-goose"
     "claude-code"
     "codexbar"
     "home-assistant"
