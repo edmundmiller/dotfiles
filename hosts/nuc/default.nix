@@ -394,7 +394,7 @@ in
           passwordRef = "op://Moni and Ed/Obsidian/password";
           itemRef = "Obsidian";
           encryptionPasswordRef = "op://Moni and Ed/Obsidian/Encryption Password";
-          tokenFile = "/run/secrets/op-service-account-token";
+          tokenFile = "/run/secrets/opServiceAccountToken";
         };
       };
       vault-sync = {
@@ -465,7 +465,7 @@ in
   # from op://Private/xkq3yij62kltcldkmk7qgkq66a/credential
   services.onepassword-secrets = {
     enable = true;
-    secrets.op-service-account-token = {
+    secrets.opServiceAccountToken = {
       reference = "op://Private/xkq3yij62kltcldkmk7qgkq66a/credential";
     };
   };
