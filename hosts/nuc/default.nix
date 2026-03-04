@@ -394,7 +394,7 @@ in
           passwordRef = "op://Moni and Ed/Obsidian/password";
           itemRef = "Obsidian";
           encryptionPasswordRef = "op://Moni and Ed/Obsidian/Encryption Password";
-          tokenFile = "/run/secrets/opServiceAccountToken";
+          tokenFile = "/etc/opnix-token";
         };
       };
       vault-sync = {
@@ -460,15 +460,11 @@ in
 
   users.users.emiller.hashedPasswordFile = config.age.secrets.emiller_password.path;
 
-  # opnix: 1Password service account token for unattended op CLI access
-  # Bootstrap: ssh nuc, then run `sudo opnix token set` and paste the token
-  # from op://Private/xkq3yij62kltcldkmk7qgkq66a/credential
-  services.onepassword-secrets = {
-    enable = true;
-    secrets.opServiceAccountToken = {
-      reference = "op://Private/xkq3yij62kltcldkmk7qgkq66a/credential";
-    };
-  };
+  # opnix: 1Password service account token bootstrapped at /etc/opnix-token
+  # Bootstrap (one-time): op read "op://Private/xkq3yij62kltcldkmk7qgkq66a/credential" \
+  #   | ssh nuc "sudo tee /etc/opnix-token && sudo chmod 640 /etc/opnix-token"
+  # The token file is read directly by obsidian-sync (and any future op CLI consumers).
+  # services.onepassword-secrets.enable left false until a non-Private vault secret is needed.
 
   age.secrets.lubelogger-env.owner = "lubelogger";
   # bugster disabled — dagster user doesn't exist; agenix chown would fail
