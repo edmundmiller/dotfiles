@@ -144,8 +144,7 @@ in
     ../_home.nix
     ./hardware-configuration.nix
     ./disko.nix
-    # FIXME(dotfiles-sw0j): restic secrets not wired in agenix
-    # ./backups.nix
+    ./backups.nix
   ];
 
   ## Modules
@@ -390,10 +389,10 @@ in
       obsidian-sync = {
         enable = true;
         op = {
-          emailRef = "op://Moni and Ed/Obsidian/Email";
-          passwordRef = "op://Moni and Ed/Obsidian/password";
-          itemRef = "Obsidian";
-          encryptionPasswordRef = "op://Moni and Ed/Obsidian/Encryption Password";
+          emailRef = "op://Agents/Obsidian/Email";
+          passwordRef = "op://Agents/Obsidian/password";
+          itemRef = "op://Agents/Obsidian/Security/one-time password";
+          encryptionPasswordRef = "op://Agents/Obsidian/Security/Encryption Password";
           tokenFile = "/etc/opnix-token";
         };
       };

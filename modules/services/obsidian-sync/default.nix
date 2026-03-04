@@ -55,7 +55,16 @@ let
     ${ob} login \
       --email "$(${op} read ${escapeShellArg cfg.op.emailRef})" \
       --password "$(${op} read ${escapeShellArg cfg.op.passwordRef})" \
-      --mfa "$(${op} item get ${escapeShellArg cfg.op.itemRef} --otp)"
+      --mfa "$(
+        ref=${escapeShellArg cfg.op.itemRef}
+        if [[ "$ref" == op://* ]]; then
+          vault=$(echo "$ref" | sed 's|op://||' | cut -d/ -f1)
+          item=$(echo "$ref" | sed 's|op://||' | cut -d/ -f2)
+          ${op} item get "$item" --vault "$vault" --otp
+        else
+          ${op} item get "$ref" --otp
+        fi
+      )"
   '';
 
   # Run sync-setup via 1Password if not already configured
@@ -224,6 +233,10 @@ in
 
           # Load OP_SERVICE_ACCOUNT_TOKEN when tokenFile is configured
           EnvironmentFile = mkIf (cfg.op.tokenFile != null) "/run/obsidian-sync-op.env";
+
+          # op CLI needs a writable dir for ~/.config/op session data.
+          # PrivateTmp=true gives an isolated /tmp; redirect XDG_CONFIG_HOME there.
+          Environment = mkIf (cfg.op.tokenFile != null) "XDG_CONFIG_HOME=/tmp";
 
           # Hardening
           ProtectHome = "read-only";
