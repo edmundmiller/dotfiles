@@ -39,6 +39,12 @@
       services = {
         obsidian-sync.enable = true;
         obsidian-sync.mode = "desktop";
+        obsidian-sync.op = {
+          emailRef = "op://Moni and Ed/Obsidian/Email";
+          passwordRef = "op://Moni and Ed/Obsidian/password";
+          itemRef = "Obsidian";
+          encryptionPasswordRef = "op://Moni and Ed/Obsidian/Encryption Password";
+        };
         openclaw.enable = false;
         docker.enable = true;
         ssh.enable = true;

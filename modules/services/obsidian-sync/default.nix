@@ -1,9 +1,7 @@
 # Headless Obsidian Sync using obsidian-headless CLI (open beta)
 #
-# One-time setup:
-#   1. ob login                (interactive — needs terminal)
-#   2. ob sync-setup --vault "<vault-name>" --path <vaultPath>
-#   3. systemctl start obsidian-sync
+# Setup is fully automated via 1Password when op.* options are set.
+# Manual fallback: ob login → ob sync-setup → launchctl start org.nixos.obsidian-sync
 #
 # Modes:
 #   server  — pull-only (default). Keeps a read-only local copy.
@@ -39,9 +37,44 @@ let
       --device-name ${escapeShellArg cfg.deviceName}
   '';
 
+  hasOp =
+    cfg.op.emailRef != ""
+    && cfg.op.passwordRef != ""
+    && cfg.op.itemRef != ""
+    && cfg.op.encryptionPasswordRef != "";
+
+  op = "${pkgs._1password-cli}/bin/op";
+
+  # Login via 1Password if not already logged in
+  autoLogin = pkgs.writeShellScript "obsidian-sync-login" ''
+    if ${ob} login 2>&1 | grep -q "Logged in"; then
+      echo "Already logged in"
+      exit 0
+    fi
+    echo "Logging in via 1Password..."
+    ${ob} login \
+      --email "$(${op} read ${escapeShellArg cfg.op.emailRef})" \
+      --password "$(${op} read ${escapeShellArg cfg.op.passwordRef})" \
+      --mfa "$(${op} item get ${escapeShellArg cfg.op.itemRef} --otp)"
+  '';
+
+  # Run sync-setup via 1Password if not already configured
+  autoSetup = pkgs.writeShellScript "obsidian-sync-setup" ''
+    if ${ob} sync-list-local 2>/dev/null | grep -q ${escapeShellArg cfg.vaultPath}; then
+      echo "Vault already configured"
+      exit 0
+    fi
+    echo "Running sync-setup via 1Password..."
+    ${ob} sync-setup \
+      --vault ${escapeShellArg cfg.vaultName} \
+      --path ${escapeShellArg cfg.vaultPath} \
+      --password "$(${op} read ${escapeShellArg cfg.op.encryptionPasswordRef})" \
+      --device-name ${escapeShellArg cfg.deviceName}
+  '';
+
   # Check if sync-setup has been run (vault is configured)
   checkConfigured = pkgs.writeShellScript "obsidian-sync-check" ''
-    if ! ${ob} sync-list-local 2>/dev/null | grep -q "${escapeShellArg cfg.vaultPath}"; then
+    if ! ${ob} sync-list-local 2>/dev/null | grep -q ${escapeShellArg cfg.vaultPath}; then
       echo "No sync configuration found for ${cfg.vaultPath}" >&2
       echo "Run 'ob sync-setup' first." >&2
       exit 1
@@ -92,6 +125,15 @@ in
     deviceName = mkOpt types.str (if isDarwin then "mac" else config.networking.hostName);
 
     continuous = mkBoolOpt true;
+
+    vaultName = mkOpt types.str "vault";
+
+    op = {
+      emailRef = mkOpt types.str "";
+      passwordRef = mkOpt types.str "";
+      itemRef = mkOpt types.str "";
+      encryptionPasswordRef = mkOpt types.str "";
+    };
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -104,8 +146,18 @@ in
     (optionalAttrs isDarwin {
       launchd.user.agents.obsidian-sync = {
         command = "${pkgs.writeShellScript "obsidian-sync-launchd" ''
-          # Exit cleanly if sync not configured (prevents restart loop)
-          ${checkConfigured} || exit 0
+          ${
+            if hasOp then
+              ''
+                ${autoLogin} || exit 0
+                ${autoSetup} || exit 0
+              ''
+            else
+              ''
+                # Exit cleanly if sync not configured (prevents restart loop)
+                ${checkConfigured} || exit 0
+              ''
+          }
           ${configScript}
           exec ${syncScript}
         ''}";
@@ -134,10 +186,17 @@ in
           Type = "simple";
           User = cfg.user;
           Group = "users";
-          ExecStartPre = [
-            "${checkConfigured}"
-            "${configScript}"
-          ];
+          ExecStartPre =
+            (
+              if hasOp then
+                [
+                  "${autoLogin}"
+                  "${autoSetup}"
+                ]
+              else
+                [ "${checkConfigured}" ]
+            )
+            ++ [ "${configScript}" ];
           ExecStart = "${syncScript}";
           Restart = "on-failure";
           RestartSec = "30s";
