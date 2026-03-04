@@ -159,6 +159,11 @@ in
 {
   options.modules.shell.pi = {
     enable = mkBoolOpt false;
+    memoryRemote = mkOption {
+      type = types.str;
+      default = "";
+      description = "Git remote URL for pi global memory (~/.pi/memory)";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -201,6 +206,20 @@ in
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
           };
+
+        home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            pi_mem="$HOME/.pi/memory"
+            if [ -d "$pi_mem/.git" ]; then
+              cur=$(${pkgs.git}/bin/git -C "$pi_mem" remote get-url origin 2>/dev/null || true)
+              if [ "$cur" != "${cfg.memoryRemote}" ]; then
+                ${pkgs.git}/bin/git -C "$pi_mem" remote set-url origin "${cfg.memoryRemote}" 2>/dev/null \
+                  || ${pkgs.git}/bin/git -C "$pi_mem" remote add origin "${cfg.memoryRemote}"
+                echo "pi memory remote set to ${cfg.memoryRemote}"
+              fi
+            fi
+          ''
+        );
 
         home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           bun_bin="${pkgs.bun}/bin/bun"
