@@ -39,6 +39,15 @@ let
       --device-name ${escapeShellArg cfg.deviceName}
   '';
 
+  # Check if sync-setup has been run (vault is configured)
+  checkConfigured = pkgs.writeShellScript "obsidian-sync-check" ''
+    if ! ${ob} sync-list-local 2>/dev/null | grep -q "${escapeShellArg cfg.vaultPath}"; then
+      echo "No sync configuration found for ${cfg.vaultPath}" >&2
+      echo "Run 'ob sync-setup' first." >&2
+      exit 1
+    fi
+  '';
+
   syncScript = pkgs.writeShellScript "obsidian-sync-start" ''
     exec ${ob} sync \
       --path ${escapeShellArg cfg.vaultPath} \
@@ -95,6 +104,8 @@ in
     (optionalAttrs isDarwin {
       launchd.user.agents.obsidian-sync = {
         command = "${pkgs.writeShellScript "obsidian-sync-launchd" ''
+          # Exit cleanly if sync not configured (prevents restart loop)
+          ${checkConfigured} || exit 0
           ${configScript}
           exec ${syncScript}
         ''}";
@@ -123,7 +134,10 @@ in
           Type = "simple";
           User = cfg.user;
           Group = "users";
-          ExecStartPre = "${configScript}";
+          ExecStartPre = [
+            "${checkConfigured}"
+            "${configScript}"
+          ];
           ExecStart = "${syncScript}";
           Restart = "on-failure";
           RestartSec = "30s";
