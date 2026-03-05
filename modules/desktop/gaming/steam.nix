@@ -20,8 +20,8 @@ in
     {
       # I avoid programs.steam.enable because it installs another steam binary,
       # which the xdesktop package invokes, instead of my steam shims below.
-      hardware.opengl.enable = true;
-      hardware.opengl.driSupport32Bit = true;
+      hardware.graphics.enable = true;
+      hardware.graphics.enable32Bit = true;
       hardware.pulseaudio.support32Bit = config.hardware.pulseaudio.enable;
 
       user.packages = with pkgs; [
@@ -53,7 +53,7 @@ in
       system.userActivationScripts.setupSteamDir = ''mkdir -p "${cfg.libDir}"'';
 
       # better for steam proton games
-      systemd.extraConfig = "DefaultLimitNOFILE=1048576";
+      systemd.settings.Manager.DefaultLimitNOFILE = "1048576";
     }
 
     (mkIf cfg.hardware.enable {
