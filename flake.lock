@@ -1396,11 +1396,11 @@
     "shaping-skills": {
       "flake": false,
       "locked": {
-        "lastModified": 1770823764,
-        "narHash": "sha256-R7n5++Qonaheopn8odbgvvH5mcAw0QxjQmCb23vlAXU=",
+        "lastModified": 1772633795,
+        "narHash": "sha256-2leRceuMeC5rUEb6ncAwWJnwUM5LuQ2QJZde8+7gj00=",
         "owner": "rjs",
         "repo": "shaping-skills",
-        "rev": "9eeda4ec83f7d300838328033960cd0a50aad0cf",
+        "rev": "7d8c311929de0dde6e47bd75c4f4b34634eded0c",
         "type": "github"
       },
       "original": {
