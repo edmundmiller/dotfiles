@@ -250,6 +250,9 @@ in
         };
       }
       # Wake — end of sleep cycle
+      # Turns off night mode, opens blinds, lights on for overcast mornings.
+      # Mid-morning (ambient.nix) follows up at sunrise+2h to kill lights
+      # once natural light is sufficient.
       {
         name = "Good Morning";
         icon = "mdi:weather-sunny";
@@ -259,10 +262,17 @@ in
           "input_boolean.monica_awake" = "off";
           "cover.smartwings_window_covering" = {
             state = "open";
-            position = 20; # crack — natural light without full exposure
+            position = 60; # generous open — mid-morning closes later
           };
           "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
+
+          # Lights on — AL handles color temp/brightness for time of day.
+          # Mid-morning scene (sunrise+2h) turns these off when natural
+          # light is enough.
+          "light.essentials_a19_a60" = "on"; # Kitchen (Trashcan)
+          "light.essentials_a19_a60_2" = "on"; # Kitchen (Dishwasher)
+          "light.nanoleaf_multicolor_floor_lamp" = "on"; # Couch Lamp
         };
       }
     ];
