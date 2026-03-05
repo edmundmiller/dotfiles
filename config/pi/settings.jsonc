@@ -166,5 +166,11 @@
     "npm:pi-gitnexus",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
+    // fff.nvim-powered file picker - typo-resistant, git-aware @ picker - https://github.com/denisshepelin/pi-fff
+    {
+      "source": "git:github.com/denisshepelin/pi-fff",
+      "extensions": ["src/index.ts"],
+      "skills": [],
+    },
   ],
 }
