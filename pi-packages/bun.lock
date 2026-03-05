@@ -44,6 +44,16 @@
         "@mariozechner/pi-coding-agent": "*",
       },
     },
+    "pi-dumb-zone": {
+      "name": "pi-dumb-zone",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@mariozechner/pi-agent-core": "*",
+        "@mariozechner/pi-ai": "*",
+        "@mariozechner/pi-coding-agent": ">=0.51.0",
+        "@mariozechner/pi-tui": "*",
+      },
+    },
     "pi-git-ai": {
       "name": "pi-git-ai",
       "version": "0.1.0",
@@ -533,6 +543,8 @@
     "pi-dcp": ["pi-dcp@workspace:pi-dcp"],
 
     "pi-direnv": ["pi-direnv@workspace:pi-direnv"],
+
+    "pi-dumb-zone": ["pi-dumb-zone@workspace:pi-dumb-zone"],
 
     "pi-git-ai": ["pi-git-ai@workspace:pi-git-ai"],
 
