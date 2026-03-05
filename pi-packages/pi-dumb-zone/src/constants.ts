@@ -6,13 +6,13 @@ export const DUMB_ZONE_MESSAGE = "YOU HAVE ENTERED THE DUMB ZONE";
  */
 export const CONTEXT_THRESHOLDS = {
   /** Warning threshold - getting close to dumb zone */
-  WARNING: 40,
+  WARNING: 30,
 
   /** Danger threshold - fully in the dumb zone */
-  DANGER: 50,
+  DANGER: 40,
 
   /** Critical threshold - severe degradation expected */
-  CRITICAL: 65,
+  CRITICAL: 50,
 } as const;
 
 /**
@@ -23,8 +23,8 @@ export const CONTEXT_THRESHOLDS = {
  * compaction, you're doing it wrong and should start fresh.
  *
  * Examples with 0.7 multiplier:
- * - WARNING: 40% → 28% after compaction
- * - DANGER: 50% → 35% after compaction
+ * - WARNING: 30% → 21% after compaction
+ * - DANGER: 40% → 28% after compaction
  */
 export const POST_COMPACTION_MULTIPLIER = 0.7;
 
