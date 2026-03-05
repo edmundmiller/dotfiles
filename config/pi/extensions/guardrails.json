@@ -1,0 +1,62 @@
+{
+  "enabled": true,
+  "features": {
+    "policies": true,
+    "permissionGate": true
+  },
+  "policies": {
+    "rules": [
+      {
+        "id": "secret-files",
+        "description": "Files containing secrets",
+        "patterns": [
+          { "pattern": ".env" },
+          { "pattern": ".env.local" },
+          { "pattern": ".env.production" },
+          { "pattern": ".env.prod" },
+          { "pattern": ".dev.vars" }
+        ],
+        "allowedPatterns": [
+          { "pattern": ".env.example" },
+          { "pattern": ".env.sample" },
+          { "pattern": ".env.test" }
+        ],
+        "protection": "noAccess",
+        "onlyIfExists": true
+      },
+      {
+        "id": "agenix-keys",
+        "description": "Age-encrypted secrets (agenix)",
+        "patterns": [{ "pattern": "*.age" }],
+        "allowedPatterns": [{ "pattern": "secrets.nix" }],
+        "protection": "readOnly",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  "permissionGate": {
+    "requireConfirmation": true,
+    "customPatterns": [],
+    "allowedPatterns": [
+      { "pattern": "nix ", "description": "nix commands (routine in dotfiles)" },
+      { "pattern": "darwin-rebuild ", "description": "darwin-rebuild (routine)" },
+      { "pattern": "hey ", "description": "hey commands (routine)" }
+    ],
+    "autoDenyPatterns": [
+      { "pattern": "--no-verify", "description": "hook bypass blocked" },
+      { "pattern": "--no-gpg-sign", "description": "signing bypass blocked" },
+      { "pattern": "commit.gpgsign=false", "description": "signing disable blocked" },
+      { "pattern": "core.hooksPath", "description": "hooks path manipulation blocked" },
+      { "pattern": "git commit*--author", "description": "author spoofing blocked" },
+      { "pattern": "-c user.email=", "description": "identity override blocked" },
+      { "pattern": "-c user.name=", "description": "identity override blocked" },
+      { "pattern": "GIT_AUTHOR_NAME=", "description": "author env override blocked" },
+      { "pattern": "GIT_AUTHOR_EMAIL=", "description": "author env override blocked" },
+      { "pattern": "GIT_COMMITTER_NAME=", "description": "committer env override blocked" },
+      { "pattern": "GIT_COMMITTER_EMAIL=", "description": "committer env override blocked" },
+      { "pattern": "HUSKY=0", "description": "husky bypass blocked" },
+      { "pattern": "PRE_COMMIT_ALLOW_NO_CONFIG=", "description": "pre-commit bypass blocked" }
+    ],
+    "explainCommands": false
+  }
+}

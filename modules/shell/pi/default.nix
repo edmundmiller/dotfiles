@@ -214,7 +214,7 @@ in
             ".pi/agent/settings.json".text = piSettingsValidated;
             ".pi/agent/extensions/enforce-commit-signing.ts".source =
               "${configDir}/pi/extensions/enforce-commit-signing.ts";
-            ".pi/agent/extensions/enforce-hooks.ts".source = "${configDir}/pi/extensions/enforce-hooks.ts";
+            ".pi/agent/extensions/guardrails.json".source = "${configDir}/pi/extensions/guardrails.json";
             ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
