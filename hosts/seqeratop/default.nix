@@ -30,7 +30,8 @@ _: {
       };
 
       services = {
-        # obsidian-sync: disabled — Obsidian desktop app handles sync on Macs
+        obsidian-sync.enable = true;
+        obsidian-sync.mode = "desktop";
         docker.enable = true;
         ssh.enable = true;
       };
