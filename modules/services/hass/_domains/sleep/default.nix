@@ -260,10 +260,9 @@ in
           "input_boolean.goodnight" = "off";
           "input_boolean.edmund_awake" = "off"; # reset for next night
           "input_boolean.monica_awake" = "off";
-          "cover.smartwings_window_covering" = {
-            state = "open";
-            position = 60; # generous open — mid-morning closes later
-          };
+          # Position only — setting state="open" sends open_cover (100%)
+          # which races with the position set. Just position is sufficient.
+          "cover.smartwings_window_covering".position = 60;
           "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
 
