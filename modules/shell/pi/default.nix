@@ -188,7 +188,7 @@ in
 
     user.packages = [
       pkgs.bun
-      pkgs.delta # syntax-highlighted diffs for diff-renderer extension
+      pkgs.delta # syntax-highlighted diffs
     ];
     env.BUN_INSTALL = mkDefault "$HOME/.bun";
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
@@ -223,9 +223,7 @@ in
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
             ".pi/agent/extensions/sub-limits.ts".source = "${configDir}/pi/extensions/sub-limits.ts";
             ".pi/agent/extensions/context.ts".source = "${configDir}/pi/extensions/context.ts";
-            ".pi/agent/extensions/diff-renderer.ts".source = "${configDir}/pi/extensions/diff-renderer.ts";
-            ".pi/agent/extensions/generate-commit-message.ts".source =
-              "${configDir}/pi/extensions/generate-commit-message.ts";
+
             ".pi/agent/extensions/you-are-right-killer.ts".source =
               "${configDir}/pi/extensions/you-are-right-killer.ts";
             ".pi/agent/rtk-config.json".source = "${configDir}/pi/extensions/rtk-config.json";
