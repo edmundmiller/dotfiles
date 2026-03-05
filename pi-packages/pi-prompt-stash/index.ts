@@ -5,8 +5,8 @@
  * Stashes persist across sessions in ~/.pi/agent/prompt-stash.json
  *
  * Shortcuts:
- *   ctrl+s        → stash (opens editor dialog to capture text)
- *   ctrl+shift+s  → pop most recent stash to editor
+ *   ctrl+shift+s  → stash (opens editor dialog to capture text)
+ *   ctrl+shift+p  → pop most recent stash to editor
  *
  * Commands:
  *   /stash              → list all stashes (interactive picker)
@@ -62,8 +62,8 @@ export default function (pi: ExtensionAPI) {
     updateStatus(ctx);
   });
 
-  // ctrl+s → open editor dialog and stash whatever the user types/pastes
-  pi.registerShortcut("ctrl+s", {
+  // ctrl+shift+s → open editor dialog and stash whatever the user types/pastes
+  pi.registerShortcut("ctrl+shift+s", {
     description: "Stash: save a prompt draft",
     handler: async (ctx) => {
       const text = await ctx.ui.editor(
@@ -77,18 +77,18 @@ export default function (pi: ExtensionAPI) {
       const entry = pushStash(text.trim());
       updateStatus(ctx);
       ctx.ui.notify(
-        `Stashed #${entry.id}  (${stashes.length} total)  —  ctrl+shift+s to restore`,
+        `Stashed #${entry.id}  (${stashes.length} total)  —  ctrl+shift+p to restore`,
         "info"
       );
     },
   });
 
-  // ctrl+shift+s → pop most recent stash to editor
-  pi.registerShortcut("ctrl+shift+s", {
+  // ctrl+shift+p → pop most recent stash to editor
+  pi.registerShortcut("ctrl+shift+p", {
     description: "Stash: pop most recent draft to editor",
     handler: async (ctx) => {
       if (stashes.length === 0) {
-        ctx.ui.notify("No stashes  —  ctrl+s to save one", "warning");
+        ctx.ui.notify("No stashes  —  ctrl+shift+s to save one", "warning");
         return;
       }
       const entry = stashes.shift()!;
@@ -165,7 +165,7 @@ export default function (pi: ExtensionAPI) {
 
       // list
       if (stashes.length === 0) {
-        ctx.ui.notify("No stashes  —  use ctrl+s or /stash <text> to save one", "info");
+        ctx.ui.notify("No stashes  —  use ctrl+shift+s or /stash <text> to save one", "info");
         return;
       }
 

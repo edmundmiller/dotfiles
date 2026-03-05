@@ -124,9 +124,6 @@
             agent-tail.from = "agent-tail";
             agent-tail.path = "agent-tail";
 
-            pi-messenger-crew.from = "pi-messenger";
-            pi-messenger-crew.path = "pi-messenger-crew";
-
             tmux.from = "mitsuhiko";
             tmux.path = ".";
 
