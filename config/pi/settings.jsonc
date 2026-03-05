@@ -67,6 +67,8 @@
     "~/.config/dotfiles/pi-packages/pi-scurl",
     // Auto-load direnv env at session start
     "~/.config/dotfiles/pi-packages/pi-direnv",
+    // Agentmap codebase tree in system prompt - https://github.com/remorses/agentmap
+    "~/.config/dotfiles/pi-packages/pi-agentmap",
 
     // Git-stash for prompt drafts (ctrl+s/ctrl+shift+s)
     "~/.config/dotfiles/pi-packages/pi-prompt-stash",

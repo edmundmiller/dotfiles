@@ -1,0 +1,38 @@
+{
+  "name": "pi-agentmap",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Inject agentmap codebase tree into pi system prompt at session start",
+  "main": "./index.ts",
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "agentmap",
+    "codebase-map"
+  ],
+  "author": "Edmund Miller <edmundmiller@hey.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmundmiller/dotfiles.git",
+    "directory": "pi-packages/pi-agentmap"
+  },
+  "files": [
+    "index.ts",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  },
+  "dependencies": {
+    "agentmap": "^0.8.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
