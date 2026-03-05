@@ -29,6 +29,7 @@ Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates 
 | `06-development-preferences` | Persistence, philosophy      |
 | `07-skill-locations`         | Where to create skills       |
 | `08-context-efficiency`      | Filter at source             |
+| `09-nix-managed-config`      | Read-only symlinks, sources  |
 
 ## Adding a Rule
 
