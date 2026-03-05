@@ -4,7 +4,7 @@
  * Requires: pi-sub-core extension installed and running
  */
 
-import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 // Types from sub-core
 type StatusIndicator = "none" | "minor" | "major" | "critical" | "maintenance" | "unknown";
@@ -54,13 +54,13 @@ type SubCoreEntriesRequest = {
 export default function subLimitsExtension(pi: ExtensionAPI): void {
   pi.registerCommand("limits", {
     description: "Show usage limits for all authenticated providers (via sub-core)",
-    handler: async (_args, ctx) => {
+    handler: async (_args: string[], ctx: any) => {
       await showLimits(pi, ctx);
     },
   });
 }
 
-async function showLimits(pi: ExtensionAPI, ctx: ExtensionCommandContext): Promise<void> {
+async function showLimits(pi: ExtensionAPI, ctx: any): Promise<void> {
   const entries = await fetchUsageEntries(pi, ctx);
 
   if (!entries) {
@@ -185,10 +185,7 @@ function isSubCoreAvailable(pi: ExtensionAPI): boolean {
   }
 }
 
-async function fetchUsageEntries(
-  pi: ExtensionAPI,
-  ctx: ExtensionCommandContext
-): Promise<ProviderUsageEntry[] | null> {
+async function fetchUsageEntries(pi: ExtensionAPI, ctx: any): Promise<ProviderUsageEntry[] | null> {
   if (!isSubCoreAvailable(pi)) {
     ctx.ui.notify(
       "sub-core extension not loaded.\n\nInstall: pi install npm:@marckrenn/pi-sub-core\nThen run: /reload",
