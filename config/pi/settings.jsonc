@@ -141,6 +141,8 @@
       "extensions": ["extensions/the-dumb-zone/**"],
       "skills": [],
     },
+    // Vim keybindings for input - https://www.npmjs.com/package/pi-vim
+    "npm:pi-vim",
     // Thinking timer widget - https://www.npmjs.com/package/pi-thinking-timer
     "npm:pi-thinking-timer",
     // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
