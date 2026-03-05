@@ -8,7 +8,7 @@
   // Model cycling - Ctrl+P to toggle between these
   "enabledModels": ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "gpt-5.3-codex"],
   // UI preferences
-  "theme": "dark",
+  "theme": "terminal",
   "quietStartup": false,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
@@ -158,6 +158,10 @@
     "npm:pi-mermaid",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
+    // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
+    "npm:pi-mcporter",
+    // Terminal-native ANSI theme (no hardcoded colors) - https://github.com/mavam/pi-terminal-theme
+    "npm:pi-terminal-theme",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
   ],
