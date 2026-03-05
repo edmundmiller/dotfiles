@@ -247,6 +247,11 @@ in
               "$bun_bin" install -g @mariozechner/pi-coding-agent \
                 || echo "Warning: bun install failed; pi may be unavailable."
             fi
+            if [ ! -x "$bun_install_dir/bin/gitnexus" ]; then
+              echo "Installing gitnexus..."
+              "$bun_bin" install -g gitnexus \
+                || echo "Warning: gitnexus install failed."
+            fi
             # Suppress bun "No license field" warning on ~/package.json
             if [ -f "$HOME/package.json" ] && ! grep -q '"license"' "$HOME/package.json"; then
               ${pkgs.jq}/bin/jq '. + {license: "UNLICENSED"}' "$HOME/package.json" > "$HOME/package.json.tmp" \
