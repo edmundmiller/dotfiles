@@ -122,7 +122,7 @@
     "npm:@marckrenn/pi-sub-bar",
     // /limits command - provider usage bars via sub-core
     // https://gist.github.com/airtonix/25b4aee6f4a6a775aff028adfdb9936f
-    "~/.pi/agent/extensions/sub-limits",
+    "~/.pi/agent/extensions/sub-limits.ts",
     // Semaphore/lock primitives (dep of pi-tmux) - https://github.com/offline-ant/pi-semaphore
     {
       "source": "git:github.com/offline-ant/pi-semaphore",
