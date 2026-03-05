@@ -44,3 +44,7 @@ qmk_firmware/
 # Nightshift plan artifacts (keep out of version control)
 .nightshift-plan
 .pi/memory/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
