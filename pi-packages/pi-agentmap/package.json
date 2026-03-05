@@ -19,6 +19,7 @@
   },
   "files": [
     "index.ts",
+    "src",
     "README.md"
   ],
   "peerDependencies": {
