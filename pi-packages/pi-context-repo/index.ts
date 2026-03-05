@@ -846,7 +846,7 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
 
   // Initialize on session start
   pi.on("session_start", async (_event, ctx) => {
-    memDir = join(ctx.cwd, MEMORY_DIR_NAME);
+    memDir = process.env.PI_MEMORY_DIR ?? join(ctx.cwd, MEMORY_DIR_NAME);
 
     // Load per-agent settings
     const settings = loadSettings(memDir);

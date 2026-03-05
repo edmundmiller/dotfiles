@@ -136,12 +136,8 @@
       "extensions": ["extensions/tmux.ts", "extensions/supervisor.ts"],
       "skills": [],
     },
-    // Dumb zone - context degradation warning - https://github.com/aliou/pi-extensions
-    {
-      "source": "https://github.com/aliou/pi-extensions",
-      "extensions": ["extensions/the-dumb-zone/**"],
-      "skills": [],
-    },
+    // Dumb zone - context degradation warning (forked from @aliou/pi-extensions)
+    "~/.config/dotfiles/pi-packages/pi-dumb-zone",
     // Visual code explainer with Mermaid diagrams - https://www.npmjs.com/package/visual-explainer
     "npm:visual-explainer",
     // Vim keybindings for input - https://www.npmjs.com/package/pi-vim

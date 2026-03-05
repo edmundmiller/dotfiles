@@ -1,0 +1,34 @@
+{
+  "name": "pi-dumb-zone",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "The Dumb Zone - context window degradation detection for pi",
+  "main": "./index.ts",
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "context-window",
+    "dumb-zone",
+    "pi-package"
+  ],
+  "license": "MIT",
+  "files": [
+    "index.ts",
+    "src",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": ">=0.51.0",
+    "@mariozechner/pi-agent-core": "*",
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-tui": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
