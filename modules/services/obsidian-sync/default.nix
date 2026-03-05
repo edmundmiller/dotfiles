@@ -161,13 +161,6 @@ in
         "node_modules"
         "TaskNotes"
         "OLD_VAULT"
-        # Old PARA folder names (pre-renumber migration)
-        "01_Projects"
-        "02_Areas"
-        "03_Resources"
-        "04_Archive"
-        "05_Attachments"
-        "06_Metadata"
       ];
       description = "Folders to exclude from sync.";
     };
