@@ -148,14 +148,13 @@
             write-judge-prompt.from = "evals";
             write-judge-prompt.path = "write-judge-prompt";
 
-            shaping.from = "shaping";
-            shaping.path = "shaping";
-
-            breadboarding.from = "shaping";
-            breadboarding.path = "breadboarding";
-
-            breadboard-reflection.from = "shaping";
-            breadboard-reflection.path = "breadboard-reflection";
+            # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
+            # shaping.from = "shaping";
+            # shaping.path = "shaping";
+            # breadboarding.from = "shaping";
+            # breadboarding.path = "breadboarding";
+            # breadboard-reflection.from = "shaping";
+            # breadboard-reflection.path = "breadboard-reflection";
           };
 
           targets = {
