@@ -96,6 +96,8 @@ let
   '';
 
   syncScript = pkgs.writeShellScript "obsidian-sync-start" ''
+    # ob doesn't clean up .sync.lock on kill/crash; remove stale lock before starting
+    rm -rf ${escapeShellArg cfg.vaultPath}/.obsidian/.sync.lock
     exec ${ob} sync \
       --path ${escapeShellArg cfg.vaultPath} \
       ${optionalString cfg.continuous "--continuous"}
