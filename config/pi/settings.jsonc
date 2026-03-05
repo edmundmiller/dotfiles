@@ -138,7 +138,8 @@
     // Dumb zone - context degradation warning - https://github.com/aliou/pi-extensions
     {
       "source": "https://github.com/aliou/pi-extensions",
-      "extensions": ["extensions/the-dumb-zone"],
+      "extensions": ["extensions/the-dumb-zone/**"],
+      "skills": [],
     },
     // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
     "npm:pi-ghostty",
