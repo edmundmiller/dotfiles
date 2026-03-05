@@ -72,15 +72,27 @@
 
     automation = lib.mkAfter [
       # --- Sun-based ---
+      # Follows Good Morning — once natural light fills the west-facing
+      # apartment, artificial lights are unnecessary.
       {
         alias = "Mid-morning";
         id = "mid_morning";
         description = "West-facing windows — kill lights and close blinds after sunrise";
+        initial_state = true; # force-enable on HA reload
         trigger = {
           platform = "sun";
           event = "sunrise";
           offset = "02:00:00";
         };
+        condition = [
+          {
+            # Only act if we're past the sleep cycle — don't kill lights
+            # if someone is still sleeping (goodnight still on)
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "off";
+          }
+        ];
         action = [
           {
             action = "scene.turn_on";

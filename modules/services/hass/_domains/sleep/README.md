@@ -77,10 +77,15 @@ Night mode active
   └── Person B wakes up (minutes to hours later)
         └── Any signal fires → monica_awake = on
             └── Check: both awake? Yes → Good Morning scene
-                  ├── Blinds open 20%
+                  ├── Blinds open 60%
+                  ├── Kitchen + couch lights on (AL handles color temp)
                   ├── Goodnight toggle off
                   ├── House mode → Home
                   └── Reset both awake booleans
+                  │
+                  └── Later: Mid-morning (sunrise+2h, ambient.nix)
+                        ├── Lights off (natural light sufficient)
+                        └── Blinds close (west-facing sun)
 ```
 
 ### Why Multiple Signals
