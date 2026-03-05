@@ -141,6 +141,8 @@
       "extensions": ["extensions/the-dumb-zone/**"],
       "skills": [],
     },
+    // Thinking timer widget - https://www.npmjs.com/package/pi-thinking-timer
+    "npm:pi-thinking-timer",
     // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
     "npm:pi-ghostty",
     // Ghostty theme sync - https://github.com/ogulcancelik/pi-ghostty-theme-sync
