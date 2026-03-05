@@ -13,6 +13,13 @@ with lib.my;
 let
   cfg = config.modules.dev.node;
   node = pkgs.nodejs_latest;
+
+  # Preload script that handles EPIPE/SIGPIPE gracefully.
+  # Without this, Node crashes when pipe readers die (tmux close, API stream drop).
+  # Injected via NODE_OPTIONS so it works regardless of which node binary runs.
+  epipeHandler = pkgs.writeText "epipe-handler.js" (
+    builtins.readFile ../config/node/epipe-handler.js
+  );
 in
 {
   options.modules.dev.node = {
@@ -26,10 +33,6 @@ in
     # fnm (Fast Node Manager) shell initialization with lazy loading (~30ms savings)
     # Based on: https://willhbr.net/2025/01/06/lazy-load-command-completions-for-a-faster-shell-startup/
     (mkIf cfg.useFnm {
-      # Eagerly prepend fnm default so #!/usr/bin/env node resolves here,
-      # not to homebrew's bleeding-edge node (full fnm env still lazy-loaded).
-      env.PATH = mkBefore [ "$HOME/.local/share/fnm/aliases/default/bin" ];
-
       modules.shell.zsh.rcInit = ''
         # fnm - Fast Node Manager (lazy loaded)
         function fnm {
@@ -79,6 +82,10 @@ in
     })
 
     {
+      # Graceful EPIPE handling — prevents crashes when pipe readers die.
+      # Works regardless of which node binary runs (homebrew, fnm, nix).
+      env.NODE_OPTIONS = "--require ${epipeHandler}";
+
       env.NPM_CONFIG_USERCONFIG = "$XDG_CONFIG_HOME/npm/config";
       env.NPM_CONFIG_CACHE = "$XDG_CACHE_HOME/npm";
       env.NPM_CONFIG_TMP = "$XDG_RUNTIME_DIR/npm";
