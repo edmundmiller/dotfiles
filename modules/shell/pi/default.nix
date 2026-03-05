@@ -218,6 +218,7 @@ in
             ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
+            ".pi/agent/extensions/sub-limits".source = "${configDir}/pi/extensions/sub-limits";
           };
 
         home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (

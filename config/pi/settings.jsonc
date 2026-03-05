@@ -120,6 +120,9 @@
     "npm:pi-codex-profile",
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
+    // /limits command - provider usage bars via sub-core
+    // https://gist.github.com/airtonix/25b4aee6f4a6a775aff028adfdb9936f
+    "~/.pi/agent/extensions/sub-limits",
     // Semaphore/lock primitives (dep of pi-tmux) - https://github.com/offline-ant/pi-semaphore
     {
       "source": "git:github.com/offline-ant/pi-semaphore",
