@@ -17,7 +17,7 @@ in
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       age-plugin-yubikey
-      yubikey-manager-qt
+      yubioath-flutter
       yubikey-manager
       yubikey-personalization
     ];

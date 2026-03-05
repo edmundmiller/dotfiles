@@ -87,7 +87,7 @@
     };
   };
 
-  programs.ssh.startAgent = true;
+  # gnome's gcr-ssh-agent handles this; programs.ssh.startAgent conflicts
   services.openssh.startWhenNeeded = true;
 
   networking.hostId = "3b848ba1";
