@@ -78,3 +78,22 @@ Adapted from Letta Code's [memoryGit.ts](https://github.com/letta-ai/letta-code/
 - Git worktree helpers for isolated background edits (reflection, migration)
 - System prompt drift detection and stripping
 - `$MEMORY_DIR` / `$PI_MEMORY_DIR` env vars for shell access
+
+## Competitive landscape
+
+Compared against [letta-code](https://github.com/letta-ai/letta-code), [pi-memory](https://www.npmjs.com/package/pi-memory) (jayzeng), and [pi-memory-md](https://www.npmjs.com/package/pi-memory-md) (VandeeFeng). All three share the same Letta lineage.
+
+### What we have that others don't
+
+| Feature                           | pi-context-repo | letta-code | pi-memory | pi-memory-md |
+| --------------------------------- | :-------------: | :--------: | :-------: | :----------: |
+| Git commits (not just writes)     |        ✓        |     ✓      |     ✗     |      ✓       |
+| Pre-commit frontmatter validation |        ✓        |     ✓      |     ✗     |      ✗       |
+| `read_only` protection            |        ✓        |     ✓      |     ✗     |      ✗       |
+| Prompt drift detection            |        ✓        |     ✓      |     ✗     |      ✗       |
+| Backup/restore snapshots          |        ✓        |     ✗      |     ✗     |      ✗       |
+| Git worktree helpers              |        ✓        |     ✗      |     ✗     |      ✗       |
+
+### Roadmap
+
+Tracked in beads epic `dotfiles-4jfl`. Run `bd show dotfiles-4jfl` for full details.
