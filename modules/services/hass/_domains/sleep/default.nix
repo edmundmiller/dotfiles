@@ -272,6 +272,7 @@ in
           "light.essentials_a19_a60" = "on"; # Kitchen (Trashcan)
           "light.essentials_a19_a60_2" = "on"; # Kitchen (Dishwasher)
           "light.nanoleaf_multicolor_floor_lamp" = "on"; # Couch Lamp
+          "light.nanoleaf_multicolor_hd_ls" = "on"; # Edmund Desk
         };
       }
     ];
