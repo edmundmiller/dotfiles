@@ -186,7 +186,10 @@ in
       "${configDir}/ghostty/pi-keybindings.conf"
     ]);
 
-    user.packages = [ pkgs.bun ];
+    user.packages = [
+      pkgs.bun
+      pkgs.delta # syntax-highlighted diffs for diff-renderer extension
+    ];
     env.BUN_INSTALL = mkDefault "$HOME/.bun";
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
     # Disable pi version-update check on startup
@@ -219,6 +222,10 @@ in
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
             ".pi/agent/extensions/sub-limits.ts".source = "${configDir}/pi/extensions/sub-limits.ts";
+            ".pi/agent/extensions/context.ts".source = "${configDir}/pi/extensions/context.ts";
+            ".pi/agent/extensions/diff-renderer.ts".source = "${configDir}/pi/extensions/diff-renderer.ts";
+            ".pi/agent/extensions/you-are-right-killer.ts".source =
+              "${configDir}/pi/extensions/you-are-right-killer.ts";
             ".pi/agent/rtk-config.json".source = "${configDir}/pi/extensions/rtk-config.json";
           };
 
