@@ -16,46 +16,42 @@ in
 
   config = mkIf cfg.enable {
     services.xserver.enable = true;
-    services.xserver.displayManager.gdm.enable = true;
-    services.xserver.displayManager.gdm.wayland = true;
-    services.xserver.desktopManager.gnome.enable = true;
-    services.xserver.desktopManager.gnome.debug = true;
-    environment.gnome.excludePackages =
-      (with pkgs; [
-        gnome-photos
-        gnome-tour
-        cheese # webcam tool
-        gnome-music
-        epiphany # web browser
-        geary # email reader
-        gnome-characters
-        tali # poker game
-        iagno # go game
-        hitori # sudoku game
-        atomix # puzzle game
-        yelp # Help view
-        gnome-contacts
-        gnome-initial-setup
-      ])
-      ++ (with pkgs.gnome; [
-        # gedit # text editor
-      ]);
+    services.displayManager.gdm.enable = true;
+    services.displayManager.gdm.wayland = true;
+    services.desktopManager.gnome.enable = true;
+    services.desktopManager.gnome.debug = true;
+    environment.gnome.excludePackages = with pkgs; [
+      gnome-photos
+      gnome-tour
+      cheese # webcam tool
+      gnome-music
+      epiphany # web browser
+      geary # email reader
+      gnome-characters
+      tali # poker game
+      iagno # go game
+      hitori # sudoku game
+      atomix # puzzle game
+      yelp # Help view
+      gnome-contacts
+      gnome-initial-setup
+    ];
     programs.dconf.enable = true;
 
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
     environment.systemPackages = with pkgs; [
-      gnome.gnome-tweaks
+      gnome-tweaks
       wl-clipboard
     ];
 
     hardware.nvidia.modesetting.enable = true;
 
     # Systray Icons
-    services.udev.packages = with pkgs; [ gnome.gnome-settings-daemon ];
+    services.udev.packages = with pkgs; [ gnome-settings-daemon ];
 
     # Throws an error without
-    hardware.pulseaudio.enable = false;
+    services.pulseaudio.enable = false;
 
     programs.evolution.enable = true;
     programs.evolution.plugins = [ pkgs.evolution-ews ];

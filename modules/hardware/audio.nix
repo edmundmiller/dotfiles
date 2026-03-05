@@ -30,7 +30,7 @@ in
 
       # HACK Prevents ~/.esd_auth files by disabling the esound protocol module
       #      for pulseaudio, which I likely don't need. Is there a better way?
-      hardware.pulseaudio.configFile =
+      services.pulseaudio.configFile =
         let
           inherit (pkgs) runCommand pulseaudio;
           paConfigFile = runCommand "disablePulseaudioEsoundModule" { buildInputs = [ pulseaudio ]; } ''
@@ -39,7 +39,7 @@ in
             sed -i -e 's|load-module module-esound-protocol-unix|# ...|' "$out/default.pa"
           '';
         in
-        mkIf config.hardware.pulseaudio.enable "${paConfigFile}/default.pa";
+        mkIf config.services.pulseaudio.enable "${paConfigFile}/default.pa";
 
       user.extraGroups = [ "audio" ];
     }
