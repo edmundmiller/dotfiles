@@ -129,6 +129,8 @@
       "extensions": ["extensions/semaphore-locks.ts"],
       "skills": [],
     },
+    // Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
+    "npm:pi-tmux-window-name",
     // Tmux pane control (bash, capture, send, kill, spawn agents) - https://github.com/offline-ant/pi-tmux
     {
       "source": "git:github.com/offline-ant/pi-tmux",
