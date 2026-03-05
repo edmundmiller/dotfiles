@@ -141,6 +141,7 @@ in
     excludedFolders = mkOption {
       type = types.listOf types.str;
       default = [
+        # Agent/dev dirs
         ".git"
         ".beads"
         ".claude"
@@ -153,6 +154,13 @@ in
         ".agents"
         ".goose"
         "node_modules"
+        # Old PARA folder names (pre-renumber migration)
+        "01_Projects"
+        "02_Areas"
+        "03_Resources"
+        "04_Archive"
+        "05_Attachments"
+        "06_Metadata"
       ];
       description = "Folders to exclude from sync.";
     };
