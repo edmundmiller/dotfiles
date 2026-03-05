@@ -26,6 +26,11 @@ in
     # fnm (Fast Node Manager) shell initialization with lazy loading (~30ms savings)
     # Based on: https://willhbr.net/2025/01/06/lazy-load-command-completions-for-a-faster-shell-startup/
     (mkIf cfg.useFnm {
+      # Add fnm default node to PATH eagerly so #!/usr/bin/env node
+      # resolves to fnm's version (not homebrew's bleeding-edge node).
+      # This is just a PATH entry — the full fnm env is still lazy-loaded.
+      env.PATH = mkBefore [ "$HOME/.local/share/fnm/aliases/default/bin" ];
+
       modules.shell.zsh.rcInit = ''
         # fnm - Fast Node Manager (lazy loaded)
         function fnm {
