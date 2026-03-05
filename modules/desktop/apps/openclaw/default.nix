@@ -1,6 +1,8 @@
 {
   config,
+  inputs,
   lib,
+  pkgs,
   ...
 }:
 
@@ -23,6 +25,10 @@ in
     home-manager.users.${user} =
       { lib, ... }:
       {
+        home.packages = [
+          inputs.google-workspace-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
+        ];
+
         # Force-overwrite openclaw.json so HM never tries to back it up.
         # openclawInjectToken replaces the nix symlink with a real file each
         # rebuild; without force=true HM tries to move it to .bkup, which
