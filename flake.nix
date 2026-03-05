@@ -95,14 +95,14 @@
 
       # Linux packages
       pkgs = mkPkgs nixpkgs [
-        self.overlay
+        self.overlays.default
         inputs.nix-openclaw.overlays.default
       ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
 
       # Darwin packages
       darwinPkgs = mkPkgs nixpkgs [
-        self.overlay
+        self.overlays.default
         inputs.nix-openclaw.overlays.default
       ] darwinSystem;
 
@@ -125,16 +125,16 @@
       flake = {
         lib = lib.my;
 
-        overlay = final: _prev: {
-          unstable =
-            if final.stdenv.isDarwin then
-              mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
-            else
-              pkgs';
-          my = self.packages.${final.stdenv.hostPlatform.system} or { };
+        overlays = mapModules ./overlays import // {
+          default = final: _prev: {
+            unstable =
+              if final.stdenv.isDarwin then
+                mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
+              else
+                pkgs';
+            my = self.packages.${final.stdenv.hostPlatform.system} or { };
+          };
         };
-
-        overlays = mapModules ./overlays import;
 
         packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
