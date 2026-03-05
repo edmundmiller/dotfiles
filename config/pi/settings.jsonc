@@ -77,10 +77,10 @@
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
       "extensions": [
-        "hooks/background-notify",
-        "hooks/session-color",
-        "extensions/safe-git",
-        // "extensions/pi-agent-scip" // SCIP for typescript/python - requires scip CLI
+        "hooks/background-notify/**",
+        "hooks/session-color/**",
+        "extensions/safe-git/**",
+        // "extensions/pi-agent-scip/**" // SCIP for typescript/python - requires scip CLI
       ],
     },
     // tmustier extensions - https://github.com/tmustier/pi-extensions
