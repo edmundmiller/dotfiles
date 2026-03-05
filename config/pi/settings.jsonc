@@ -166,6 +166,8 @@
     "npm:pi-gitnexus",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
+    // RTK token reduction via tool hooks - ~30-40% upload token savings - https://github.com/mcowger/pi-rtk
+    "npm:pi-rtk",
     // fff.nvim-powered file picker - typo-resistant, git-aware @ picker - https://github.com/denisshepelin/pi-fff
     {
       "source": "git:github.com/denisshepelin/pi-fff",
