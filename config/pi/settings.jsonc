@@ -190,5 +190,7 @@
     "npm:pi-mermaid",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
+    // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
+    "npm:pi-tool-display",
   ],
 }
