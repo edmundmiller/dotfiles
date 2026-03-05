@@ -69,7 +69,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   // Ctrl+R — staged diff
-  pi.registerShortcut("ctrl+r", {
+  pi.registerShortcut("ctrl+shift+r", {
     description: "Open critique diff viewer (staged)",
     handler: async (ctx) => {
       if (!ctx.hasUI) {
