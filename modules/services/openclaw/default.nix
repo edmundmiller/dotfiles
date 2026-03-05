@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   isDarwin,
@@ -328,6 +329,10 @@ in
           );
         in
         {
+          home.packages = [
+            inputs.google-workspace-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
+          ];
+
           home.file =
             inlineSkillFiles
             // sharedSkillFiles

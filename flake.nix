@@ -58,6 +58,8 @@
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
 
+    google-workspace-cli.url = "github:googleworkspace/cli";
+
     # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
     skills-catalog = {
       url = "path:./skills";
@@ -352,7 +354,7 @@
             beads = {
               enable = true;
               name = "beads";
-              entry = "bd hook pre-commit";
+              entry = "bd hooks run pre-commit";
               language = "system";
               pass_filenames = false;
             };
