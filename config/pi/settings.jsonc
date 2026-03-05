@@ -78,7 +78,7 @@
       "extensions": [
         "hooks/background-notify/**",
         "hooks/session-color/**",
-        "extensions/safe-git/**",
+
         // "extensions/pi-agent-scip/**" // SCIP for typescript/python - requires scip CLI
       ],
     },
