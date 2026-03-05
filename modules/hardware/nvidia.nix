@@ -15,11 +15,12 @@ in
   };
 
   config = mkIf cfg.enable {
-    hardware.opengl.enable = true;
+    hardware.graphics.enable = true;
 
     services.xserver.videoDrivers = [ "nvidia" ];
 
     hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
+    hardware.nvidia.open = false; # use closed-source modules (pre-Turing GPU)
     hardware.nvidia.powerManagement.enable = false;
 
     # TODO If docker
