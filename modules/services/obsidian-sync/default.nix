@@ -30,11 +30,16 @@ let
     else
       "bidirectional";
 
+  excludedFoldersStr = concatStringsSep "," cfg.excludedFolders;
+
   configScript = pkgs.writeShellScript "obsidian-sync-config" ''
     ${ob} sync-config \
       --path ${escapeShellArg cfg.vaultPath} \
       --mode ${syncMode} \
-      --device-name ${escapeShellArg cfg.deviceName}
+      --device-name ${escapeShellArg cfg.deviceName} \
+      ${optionalString (
+        cfg.excludedFolders != [ ]
+      ) "--excluded-folders ${escapeShellArg excludedFoldersStr}"}
   '';
 
   hasOp =
@@ -132,6 +137,25 @@ in
     };
 
     deviceName = mkOpt types.str (if isDarwin then "mac" else config.networking.hostName);
+
+    excludedFolders = mkOption {
+      type = types.listOf types.str;
+      default = [
+        ".git"
+        ".beads"
+        ".claude"
+        ".github"
+        ".scripts"
+        ".opencode"
+        ".qmd"
+        ".tn"
+        ".config"
+        ".agents"
+        ".goose"
+        "node_modules"
+      ];
+      description = "Folders to exclude from sync.";
+    };
 
     continuous = mkBoolOpt true;
 
