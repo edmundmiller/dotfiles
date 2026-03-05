@@ -162,6 +162,8 @@
     "npm:pi-mcporter",
     // Terminal-native ANSI theme (no hardcoded colors) - https://github.com/mavam/pi-terminal-theme
     "npm:pi-terminal-theme",
+    // GitNexus knowledge graph - auto-enriches reads/searches with call chains - https://github.com/tintinweb/pi-gitnexus
+    "npm:pi-gitnexus",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
   ],
