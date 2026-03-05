@@ -262,7 +262,7 @@ in
           "input_boolean.monica_awake" = "off";
           # Position only — setting state="open" sends open_cover (100%)
           # which races with the position set. Just position is sufficient.
-          "cover.smartwings_window_covering".position = 60;
+          "cover.smartwings_window_covering".position = 20;
           "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
 
