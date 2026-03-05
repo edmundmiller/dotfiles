@@ -51,6 +51,7 @@ Use the writing-git-commits skill and keep commits scoped, descriptive, and safe
 
 /** Default configuration values */
 const DEFAULT_CONFIG: GenerateCommitMessageConfig = {
+  mode: "anthropic/claude-haiku-4-5",
   prompt: DEFAULT_PROMPT,
   maxOutputCost: DEFAULT_MAX_OUTPUT_COST,
 };
