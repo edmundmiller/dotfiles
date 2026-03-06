@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -23,6 +24,8 @@ in
   };
 
   config = mkIf cfg.enable {
+    user.packages = [ pkgs.llm-agents.codex ];
+
     home.file = {
       ".codex/config.toml".source = "${configDir}/codex/config.toml";
 
