@@ -15,6 +15,8 @@
 #      4b. Both awake at 6:59 AM → goodnight stays on (boundary)
 #   5. Both awake at 8 AM → Good Morning fires (goodnight turns off)
 #   6. Post-bedtime signal at 10:48 PM → stays off (the actual bug scenario)
+#   8. REGRESSION 2026-03-05: goodnight=off all night (Winding Down disabled) → wake
+#      detection blocked → Good Morning never fires
 { pkgs }:
 let
   # Our HA domain modules
@@ -271,5 +273,67 @@ pkgs.testers.nixosTest {
         ha.trigger_automation(hass, "monica_awake_detection")
         time.sleep(3)
         ha.assert_state(hass, "input_boolean.goodnight", "off", timeout=10)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # REGRESSION TEST: 2026-03-05 Winding Down disabled
+    # automation.winding_down was state=off for a week (Feb 27 → Mar 5).
+    # Winding Down never fired at 10 PM, so goodnight stayed off all night.
+    # Without goodnight=on, wake detection is gated shut, so Good Morning
+    # never fires even though both people woke up in the morning window.
+    # ══════════════════════════════════════════════════════════════════════
+
+    with subtest("REGRESSION: goodnight=off blocks wake detection at 8 AM"):
+        ha.set_clock(hass, "08:00:00", "2026-03-05")
+        # Simulate Winding Down never firing — goodnight stays off
+        ha.call_service(hass, "input_boolean", "turn_off", {"entity_id": "input_boolean.goodnight"})
+        ha.call_service(hass, "input_boolean", "turn_off", {"entity_id": "input_boolean.edmund_awake"})
+        ha.call_service(hass, "input_boolean", "turn_off", {"entity_id": "input_boolean.monica_awake"})
+        time.sleep(1)
+
+        # Edmund wake signal at 8 AM — time guard passes but goodnight=off blocks
+        ha.trigger_automation(hass, "edmund_awake_detection")
+        time.sleep(2)
+        ha.assert_state(hass, "input_boolean.edmund_awake", "off", timeout=5)
+
+        # Monica wake signal at 8:30 AM — also blocked
+        ha.set_clock(hass, "08:30:00", "2026-03-05")
+        ha.trigger_automation(hass, "monica_awake_detection")
+        time.sleep(2)
+        ha.assert_state(hass, "input_boolean.monica_awake", "off", timeout=5)
+
+    with subtest("REGRESSION: goodnight=off blocks Good Morning even if awake booleans forced on"):
+        ha.set_clock(hass, "08:30:00", "2026-03-05")
+        # goodnight=off, but manually force both awake (e.g. someone toggled in UI)
+        ha.call_service(hass, "input_boolean", "turn_off", {"entity_id": "input_boolean.goodnight"})
+        ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.edmund_awake"})
+        ha.call_service(hass, "input_boolean", "turn_on", {"entity_id": "input_boolean.monica_awake"})
+        time.sleep(2)
+
+        # Good Morning should NOT fire — goodnight=off means no sleep cycle happened
+        ha.trigger_automation(hass, "good_morning_both_awake")
+        time.sleep(2)
+        ha.assert_state(hass, "input_boolean.goodnight", "off", timeout=5)
+
+    with subtest("REGRESSION: disabled winding_down does not fire at 10 PM"):
+        ha.set_clock(hass, "21:55:00", "2026-03-04")
+        ha.call_service(hass, "input_boolean", "turn_off", {"entity_id": "input_boolean.goodnight"})
+        time.sleep(1)
+
+        # Disable the winding_down automation (reproduces the observed state)
+        wd_entity = ha._resolve_automation_entity(hass, "winding_down")
+        ha.call_service(hass, "automation", "turn_off", {"entity_id": wd_entity})
+        time.sleep(1)
+        ha.assert_state(hass, wd_entity, "off", timeout=5)
+
+        # Advance past 10 PM — winding_down should NOT fire
+        ha.set_clock(hass, "22:05:00", "2026-03-04")
+        time.sleep(3)
+
+        # goodnight should still be off — the automation was disabled
+        ha.assert_state(hass, "input_boolean.goodnight", "off", timeout=5)
+
+        # Re-enable for subsequent tests
+        ha.call_service(hass, "automation", "turn_on", {"entity_id": wd_entity})
+        time.sleep(1)
   '';
 }
