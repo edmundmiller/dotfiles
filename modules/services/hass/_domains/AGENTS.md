@@ -110,11 +110,40 @@ Configured in `lighting.nix`. One "Living Space" switch covers all color-temp li
 
 Add another entry to the `adaptive_lighting` list. Each entry creates its own `switch.adaptive_lighting_*` entities. Useful if office should have different brightness/color curves than living room.
 
+## ensureEnabled — initial_state wrapper
+
+**Every automation must use `ensureEnabled` from `../_lib.nix`.** This injects
+`initial_state = true` so automations always re-enable on HA restart. Without it,
+HA's default behavior ("persist entity registry state") means a UI-toggled or
+registry-stale automation stays off forever after restart — silently.
+
+```nix
+{ lib, ... }:
+let
+  inherit (import ../_lib.nix) ensureEnabled;
+in {
+  services.home-assistant.config.automation = lib.mkAfter (ensureEnabled [
+    { alias = "My Thing"; id = "my_thing"; trigger = ...; action = ...; }
+  ]);
+}
+```
+
+Individual automations can still override with `initial_state = false` if needed —
+`ensureEnabled` uses `{ initial_state = true; } // a` so the automation's own
+value wins. But we never want this in practice; Nix is the source of truth and
+automations should never be toggled in the HA UI.
+
+**Build-time enforcement:** `_tests/eval-automations.nix` asserts every automation
+in the final merged config has `initial_state = true`. Forgetting `ensureEnabled`
+(or explicitly setting `false`) fails `nix flake check` with a clear error message
+pointing to `_lib.nix`.
+
 ## Adding a new domain
 
 1. Create `_domains/<name>.nix` (simple) or `_domains/<name>/default.nix` (complex)
 2. Add import to `../default.nix` imports list
 3. Use `lib.mkAfter` for `automation`, `scene`, `script` to append (not override)
-4. DRY with let-bindings for repeated action sets (see `vacationStart`/`vacationEnd` in `vacation.nix`)
+4. **Wrap automation lists with `ensureEnabled`** — see pattern above
+5. DRY with let-bindings for repeated action sets (see `vacationStart`/`vacationEnd` in `vacation.nix`)
 
 **Use a directory** when the domain has non-obvious logic, troubleshooting steps, or entity references worth documenting (see `sleep/` for reference).
