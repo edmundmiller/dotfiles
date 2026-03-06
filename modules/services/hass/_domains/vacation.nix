@@ -19,6 +19,8 @@
 #                   sensor.monica_s_eight_sleep_side_sleep_stage
 { lib, ... }:
 let
+  inherit (import ../_lib.nix) ensureEnabled;
+
   vacationStart = [
     # Entity state changes — delegated to scene (lights, blinds, media, mode)
     {
@@ -98,12 +100,11 @@ in
       }
     ];
 
-    automation = lib.mkAfter [
+    automation = lib.mkAfter (ensureEnabled [
       # Vacation starts — scene activates everything via mode change
       {
         alias = "Vacation Start";
         id = "vacation_start";
-        initial_state = true;
         description = "vacation_mode on: 8Sleep away, Ecobee away, everything off";
         trigger = {
           platform = "state";
@@ -117,7 +118,6 @@ in
       {
         alias = "Vacation End - Person Arrives";
         id = "vacation_end_presence";
-        initial_state = true;
         description = "First person home during vacation → restore 8Sleep, Ecobee, Welcome Home";
         trigger = [
           {
@@ -140,6 +140,6 @@ in
         ];
         action = vacationEnd;
       }
-    ];
+    ]);
   };
 }

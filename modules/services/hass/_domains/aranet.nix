@@ -6,6 +6,8 @@
 # (find in HA → Developer Tools → States, filter by "aranet4")
 { lib, ... }:
 let
+  inherit (import ../_lib.nix) ensureEnabled;
+
   # Update this to match your Aranet4 entity prefix
   # e.g. sensor.aranet4_ab12cd_carbon_dioxide → prefix is "aranet4_ab12cd"
   prefix = "aranet4_XXXXXX";
@@ -17,12 +19,11 @@ let
 in
 {
   services.home-assistant.config = {
-    automation = lib.mkAfter [
+    automation = lib.mkAfter (ensureEnabled [
       # --- CO2 alert: elevated ---
       {
         alias = "CO2 elevated";
         id = "co2_elevated";
-        initial_state = true;
         description = "Notify when CO2 crosses ${toString thresholdWarn} ppm — open a window";
         trigger = {
           platform = "numeric_state";
@@ -46,7 +47,6 @@ in
       {
         alias = "CO2 poor";
         id = "co2_poor";
-        initial_state = true;
         description = "Urgent alert when CO2 exceeds ${toString thresholdBad} ppm";
         trigger = {
           platform = "numeric_state";
@@ -70,7 +70,6 @@ in
       {
         alias = "CO2 cleared";
         id = "co2_cleared";
-        initial_state = true;
         description = "Notify when CO2 drops back below ${toString thresholdWarn} ppm";
         trigger = {
           platform = "numeric_state";
@@ -95,6 +94,6 @@ in
           }
         ];
       }
-    ];
+    ]);
   };
 }
