@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { checkDumbZone, getEffectiveThreshold } from "../checks";
 import { CONTEXT_THRESHOLDS } from "../constants";
-import { updateStatusBar, updateTopBanner } from "../notifications";
+import { updateTopBanner } from "../notifications";
 import { triggerDumbZoneOverlay } from "../overlay";
 
 /**
@@ -14,8 +14,7 @@ export function setupDumbZoneHook(pi: ExtensionAPI): void {
   pi.on("agent_end", async (event, ctx) => {
     const result = checkDumbZone(ctx, event.messages);
 
-    // Always update persistent indicators (show at WARNING, clear when OK)
-    updateStatusBar(ctx, result);
+    // Update persistent top banner (show at WARNING, clear when OK)
     updateTopBanner(ctx, result);
 
     if (!result.inZone) return;
