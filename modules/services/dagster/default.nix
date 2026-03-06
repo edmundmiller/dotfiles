@@ -128,6 +128,11 @@ in
     # Python environment with dagster + deps (from packages/dagster.nix)
     package = mkOpt types.package pkgs.my.dagster;
 
+    # User/group for all dagster services. Defaults to a real user to avoid
+    # permission dances with home dirs, SSH keys, vaults, etc.
+    user = mkOpt types.str "emiller";
+    group = mkOpt types.str "users";
+
     webserver = {
       port = mkOpt types.port 3000;
       host = mkOpt types.str "127.0.0.1";
@@ -218,20 +223,18 @@ in
             ensureDBOwnership = true;
           }
         ];
+        # Map OS user → pg role when they differ (e.g. emiller → dagster)
+        identMap = optionalString (
+          cfg.user != cfg.postgres.user
+        ) "dagster_map ${cfg.user} ${cfg.postgres.user}";
+        authentication = optionalString (
+          cfg.user != cfg.postgres.user
+        ) "local ${cfg.postgres.database} ${cfg.postgres.user} peer map=dagster_map";
       };
-
-      # System user
-      users.users.dagster = {
-        isSystemUser = true;
-        group = "dagster";
-        inherit (cfg) home;
-        createHome = true;
-      };
-      users.groups.dagster = { };
 
       # DAGSTER_HOME directory with config files
       systemd.tmpfiles.rules = [
-        "d ${cfg.home} 0750 dagster dagster -"
+        "d ${cfg.home} 0750 ${cfg.user} ${cfg.group} -"
       ];
 
       # Prepare config — copy templates to DAGSTER_HOME
@@ -247,8 +250,8 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          User = "dagster";
-          Group = "dagster";
+          User = cfg.user;
+          Group = cfg.group;
           ExecStart = pkgs.writeShellScript "dagster-setup-config" ''
             cp ${dagsterYaml} ${cfg.home}/dagster.yaml
             cp ${workspaceYaml} ${cfg.home}/workspace.yaml
@@ -273,8 +276,8 @@ in
 
         serviceConfig = {
           Type = "simple";
-          User = "dagster";
-          Group = "dagster";
+          User = cfg.user;
+          Group = cfg.group;
           ExecStart = "${cfg.package}/bin/dagster-webserver -h ${cfg.webserver.host} -p ${toString cfg.webserver.port} -w ${cfg.home}/workspace.yaml";
           Restart = "on-failure";
           RestartSec = 5;
@@ -282,7 +285,6 @@ in
           # Hardening
           NoNewPrivileges = true;
           ProtectSystem = "strict";
-          ProtectHome = true;
           ReadWritePaths = [
             cfg.home
             "/tmp"
@@ -307,8 +309,8 @@ in
 
         serviceConfig = {
           Type = "simple";
-          User = "dagster";
-          Group = "dagster";
+          User = cfg.user;
+          Group = cfg.group;
           ExecStart = "${cfg.package}/bin/dagster-daemon run -w ${cfg.home}/workspace.yaml";
           Restart = "on-failure";
           RestartSec = 5;
@@ -316,7 +318,6 @@ in
           # Hardening
           NoNewPrivileges = true;
           ProtectSystem = "strict";
-          ProtectHome = true;
           ReadWritePaths = [
             cfg.home
             "/tmp"
@@ -390,8 +391,8 @@ in
 
             serviceConfig = {
               Type = "simple";
-              User = "dagster";
-              Group = "dagster";
+              User = cfg.user;
+              Group = cfg.group;
               ExecStart = loc.service.execStart;
               Restart = "on-failure";
               RestartSec = 10;
@@ -399,7 +400,6 @@ in
               # Hardening
               NoNewPrivileges = true;
               ProtectSystem = "strict";
-              ProtectHome = "read-only";
               ReadWritePaths = [
                 cfg.home
                 "/tmp"
