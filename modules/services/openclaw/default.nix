@@ -394,7 +394,7 @@ in
 
               agents.defaults = {
                 model = {
-                  primary = "claude-max/claude-sonnet-4";
+                  primary = "openrouter/anthropic/claude-sonnet-4";
                   fallbacks = [
                     "anthropic/claude-sonnet-4-6"
                     "opencode/minimax-m2.5"
@@ -403,7 +403,7 @@ in
                 thinkingDefault = "high";
                 heartbeat.every = "0m"; # Disable native heartbeat — use external systemd timer instead (OPS-24)
                 subagents.model = {
-                  primary = "claude-max/claude-sonnet-4";
+                  primary = "openrouter/anthropic/claude-sonnet-4";
                   fallbacks = [
                     "anthropic/claude-sonnet-4-6"
                     "opencode/minimax-m2.5"
@@ -487,11 +487,25 @@ in
                 };
               }) cfg.telegram.bindings;
 
-              # Claude Max proxy — exposes subscription as OpenAI-compatible API.
-              # Models available as claude-max/claude-opus-4, claude-max/claude-sonnet-4, etc.
-              # Anthropic provider must be explicit or the gateway drops fallback refs to it.
-              models = mkIf cfg.claudeMaxProxy.enable {
-                providers = {
+              # OpenRouter — auto-discovered via OPENROUTER_API_KEY env var.
+              # Models referenced as openrouter/<provider>/<model> (e.g. openrouter/anthropic/claude-sonnet-4).
+              # Anthropic provider explicit so direct-API fallbacks resolve.
+              models.providers = mkMerge [
+                {
+                  anthropic = {
+                    baseUrl = "https://api.anthropic.com";
+                    apiKey = "\${ANTHROPIC_API_KEY}";
+                    api = "anthropic-messages";
+                    models = [
+                      {
+                        id = "claude-sonnet-4-6";
+                        name = "Claude Sonnet 4.6";
+                      }
+                    ];
+                  };
+                }
+                # Claude Max proxy — optional local proxy exposing subscription as OpenAI API
+                (mkIf cfg.claudeMaxProxy.enable {
                   claude-max = {
                     baseUrl = "http://localhost:${toString cfg.claudeMaxProxy.port}/v1";
                     apiKey = "not-needed";
@@ -511,23 +525,10 @@ in
                       }
                     ];
                   };
-                  anthropic = {
-                    baseUrl = "https://api.anthropic.com";
-                    apiKey = "\${ANTHROPIC_API_KEY}";
-                    api = "anthropic-messages";
-                    models = [
-                      {
-                        id = "claude-sonnet-4-6";
-                        name = "Claude Sonnet 4.6";
-                      }
-                    ];
-                  };
-                };
-              };
+                })
+              ];
 
-              # OpenCode Zen models — use built-in catalog for per-model API routing + costs.
-              # OPENCODE_API_KEY is injected via secrets env file; the gateway auto-discovers
-              # Zen models (minimax-m2.5, kimi-k2.5 etc) when the key is present.
+              # OpenCode Zen models — auto-discovered via OPENCODE_API_KEY env var.
 
               hooks = mkIf (cfg.hooksTokenFile != "") {
                 enabled = true;
