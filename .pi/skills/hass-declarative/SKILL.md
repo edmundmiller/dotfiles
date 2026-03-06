@@ -3,13 +3,15 @@ name: hass-declarative
 description: >
   Manage Home Assistant automations, scenes, and scripts declaratively
   via NixOS modules. Covers adding/editing/removing entities in the
-  domain-based Nix structure, the sweep service that cleans orphaned
-  entities, entity identity (IDs, slugs, unique_ids), the eval test
-  assertions, and the build-time manifest.
+  domain-based Nix structure, the ensureEnabled wrapper (initial_state
+  enforcement), the sweep service that cleans orphaned entities, entity
+  identity (IDs, slugs, unique_ids), the eval test assertions, and the
+  build-time manifest.
   Trigger phrases: "add HA automation", "new scene", "new script",
   "remove automation", "declarative HA", "sweep unmanaged",
   "entity drift", "ghost entity", "orphaned automation",
-  "HA domain file", "eval-automations test", "hass assertion".
+  "HA domain file", "eval-automations test", "hass assertion",
+  "ensureEnabled", "initial_state".
 ---
 
 # HA Declarative Entity Management
@@ -21,6 +23,7 @@ anything not in the declared set.
 ## Architecture
 
 ```
+_lib.nix                       ← shared helpers (ensureEnabled)
 _domains/                      ← domain files (Nix modules)
   ambient.nix                  ← lighting schedules, plant lights
   aranet.nix                   ← CO2 monitoring
@@ -53,19 +56,35 @@ underscores. Keep names ASCII-alphanumeric + spaces to avoid slug surprises.
 
 ### Automation
 
-Add to the `automation = lib.mkAfter [...]` list in the appropriate domain file.
-Every automation **must** have a unique `id` field — the sweep service uses it.
+Add to the `automation = lib.mkAfter (ensureEnabled [...])` list in the
+appropriate domain file. Every automation **must** have a unique `id` field
+— the sweep service uses it.
+
+**Always wrap with `ensureEnabled`** (from `_lib.nix`) — it injects
+`initial_state = true` so automations re-enable on HA restart. Without it,
+HA silently persists "off" state from the entity registry and automations
+stay disabled forever. The eval test catches missing wrappers at build time.
 
 ```nix
-{
-  alias = "Human-Readable Name";
-  id = "unique_snake_case_id";
-  description = "What it does";
-  trigger = { platform = "time"; at = "22:00:00"; };
-  condition = [];
-  action = [{ action = "scene.turn_on"; target.entity_id = "scene.foo"; }];
+{ lib, ... }:
+let
+  inherit (import ../_lib.nix) ensureEnabled;
+in {
+  services.home-assistant.config.automation = lib.mkAfter (ensureEnabled [
+    {
+      alias = "Human-Readable Name";
+      id = "unique_snake_case_id";
+      description = "What it does";
+      trigger = { platform = "time"; at = "22:00:00"; };
+      condition = [];
+      action = [{ action = "scene.turn_on"; target.entity_id = "scene.foo"; }];
+    }
+  ]);
 }
 ```
+
+Individual automations can override with `initial_state = false` if ever needed
+(the `//` merge gives right-hand precedence), but we never want this in practice.
 
 ### Scene
 
@@ -144,12 +163,30 @@ Writes these to a JSON manifest in the Nix store.
 `_tests/eval-automations.nix` runs as `nix flake check` and pre-commit hook.
 Tests structural properties:
 
+- **Every automation has `initial_state = true`** — catches missing `ensureEnabled` wrappers
 - Required automations/scenes exist
 - Time guards present on wake detection (the "4:47 AM fix")
 - Good Morning has presence-aware conditions
 - Winding Down resets awake booleans
 
 Add assertions when adding automations with critical invariants.
+
+### initial_state enforcement
+
+The `initial_state` assertion is global — it iterates all automations in the
+final merged config. No per-automation opt-in needed. If you add an automation
+anywhere without `ensureEnabled`, the build fails:
+
+```
+automation 'My Thing' missing initial_state = true (use ensureEnabled from _lib.nix)
+```
+
+**Why this matters:** HA's `initial_state` defaults to "restore from entity
+registry." If an automation was ever toggled off in the UI (or the registry
+entry drifts), it stays off across restarts — silently. With
+`configWritable = false`, the UI toggle is especially dangerous since there's
+no way to re-enable it without redeploying. `ensureEnabled` + the eval
+assertion make this class of bug impossible.
 
 ## Debugging
 
