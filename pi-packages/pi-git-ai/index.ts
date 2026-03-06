@@ -63,9 +63,10 @@ export function getEditedPaths(event: ToolCallEvent): string[] {
 /** Run git-ai checkpoint with JSON payload on stdin. */
 export function runCheckpoint(payload: HumanCheckpoint | AiAgentCheckpoint): Promise<void> {
   return new Promise<void>((resolve) => {
-    const child = spawn("git-ai", ["checkpoint", "agent-v1"], {
+    const child = spawn("git-ai", ["checkpoint", "agent-v1", "--hook-input", "stdin"], {
       stdio: ["pipe", "ignore", "ignore"],
     });
+    child.stdin.on("error", () => {}); // prevent EPIPE crash if git-ai exits early
     child.stdin.write(JSON.stringify(payload));
     child.stdin.end();
     child.on("close", () => resolve());
