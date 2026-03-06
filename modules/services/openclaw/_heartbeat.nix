@@ -37,6 +37,7 @@ let
       # Trigger agent heartbeat — captures output for healthchecks.io
       OUTPUT=$(openclaw agent \
         --agent ${mon.agent} \
+        --model ${mon.model} \
         -m "Read HEARTBEAT.md and run the diagnostic. Reply with a single status line." \
         2>&1) || {
         EXIT_CODE=$?
@@ -63,6 +64,11 @@ in
             agent = mkOption {
               type = types.str;
               description = "OpenClaw agent ID to send the heartbeat message to";
+            };
+            model = mkOption {
+              type = types.str;
+              default = "openrouter/openai/gpt-5-nano";
+              description = "Model for heartbeat checks (cheap default — most end in HEARTBEAT_OK)";
             };
             pingUrl = mkOption {
               type = types.str;
