@@ -14,10 +14,7 @@
 import type { ExtensionAPI, ToolCallEvent } from "@mariozechner/pi-coding-agent";
 import { spawn } from "node:child_process";
 
-// Runtime import for type guard
 const { isToolCallEventType: isToolCall } = await import("@mariozechner/pi-coding-agent");
-
-// --- git-ai agent-v1 preset types ---
 
 export interface HumanCheckpoint {
   type: "human";
@@ -40,8 +37,6 @@ export type TranscriptMessage =
   | { type: "assistant"; text: string; timestamp?: string }
   | { type: "thinking"; text: string; timestamp?: string }
   | { type: "tool_use"; name: string; input: Record<string, unknown>; timestamp?: string };
-
-// --- Helpers (exported for testing) ---
 
 /** Extract file paths from a tool call event. Empty array = not a file-editing tool. */
 export function getEditedPaths(event: ToolCallEvent): string[] {
