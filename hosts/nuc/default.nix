@@ -184,7 +184,7 @@ in
       audiobookshelf.enable = true;
       openclaw = {
         enable = true;
-        claudeMaxProxy.enable = true;
+        claudeMaxProxy.enable = false;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
         hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
         secrets = [
@@ -228,6 +228,10 @@ in
             envVar = "GOG_KEYRING_PASSWORD";
             value = "gogcli-agenix";
             literal = true;
+          }
+          {
+            envVar = "OPENROUTER_API_KEY";
+            inherit (config.age.secrets.openrouter-api-key) path;
           }
         ];
         customPlugins = [
