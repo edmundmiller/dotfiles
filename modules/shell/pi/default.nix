@@ -187,12 +187,14 @@ in
     ]);
 
     user.packages = [
-      pkgs.bun
+      pkgs.llm-agents.pi
+      pkgs.llm-agents.beads
+      pkgs.bun # still needed for extensions/packages workspace
       pkgs.delta # syntax-highlighted diffs
     ];
     env.BUN_INSTALL = mkDefault "$HOME/.bun";
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
-    # Disable pi version-update check on startup
+    # PI_SKIP_VERSION_CHECK already set by llm-agents wrapper, but keep for bun-installed tools
     env.PI_SKIP_VERSION_CHECK = "1";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
@@ -243,18 +245,12 @@ in
           ''
         );
 
-        home.activation.pi-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        # Pi binary now provided by pkgs.llm-agents.pi (nix-managed).
+        # This activation handles bun-dependent extras only.
+        home.activation.pi-extras = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           bun_bin="${pkgs.bun}/bin/bun"
           if [ -x "$bun_bin" ]; then
-            bun_install_dir="''${BUN_INSTALL:-}"
-            if [ -z "$bun_install_dir" ]; then
-              bun_install_dir="$HOME/.bun"
-            fi
-            if [ ! -x "$bun_install_dir/bin/pi" ]; then
-              echo "Installing pi coding agent..."
-              "$bun_bin" install -g @mariozechner/pi-coding-agent \
-                || echo "Warning: bun install failed; pi may be unavailable."
-            fi
+            bun_install_dir="''${BUN_INSTALL:-$HOME/.bun}"
             if [ ! -x "$bun_install_dir/bin/gitnexus" ]; then
               echo "Installing gitnexus..."
               "$bun_bin" install -g gitnexus \

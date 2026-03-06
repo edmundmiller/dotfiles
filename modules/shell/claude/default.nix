@@ -26,6 +26,10 @@ in
   };
 
   config = mkIf cfg.enable {
+    user.packages = [
+      pkgs.llm-agents.claude-code
+    ];
+
     home.file = {
       # Skills and agents are shared across all agents (Claude, OpenCode, Pi)
       # Single source of truth in config/agents/
