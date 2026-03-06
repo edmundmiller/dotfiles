@@ -238,9 +238,10 @@ in
 
             # Nix-built node_modules for pi-packages with npm dependencies
             # Source stays mutable in pi-packages/, only deps are store-managed
-            ".config/dotfiles/pi-packages/pi-agentmap/node_modules".source = piPkgDeps.pi-agentmap;
-            ".config/dotfiles/pi-packages/pi-dcp/node_modules".source = piPkgDeps.pi-dcp;
-            ".config/dotfiles/pi-packages/pi-scurl/node_modules".source = piPkgDeps.pi-scurl;
+            ".config/dotfiles/pi-packages/pi-agentmap/node_modules".source =
+              "${piPkgDeps.pi-agentmap}/node_modules";
+            ".config/dotfiles/pi-packages/pi-dcp/node_modules".source = "${piPkgDeps.pi-dcp}/node_modules";
+            ".config/dotfiles/pi-packages/pi-scurl/node_modules".source = "${piPkgDeps.pi-scurl}/node_modules";
           };
 
         home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (

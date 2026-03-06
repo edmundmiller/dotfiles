@@ -32,7 +32,11 @@ let
       npmFlags = [ "--ignore-scripts" ];
       installPhase = ''
         runHook preInstall
-        mv node_modules $out
+        # Wrap in a node_modules/ subdir so Node's symlink-following module
+        # resolution can still climb to it (avoids "cannot find module" when
+        # packages in the store import hoisted siblings).
+        mkdir -p $out/node_modules
+        mv node_modules/* $out/node_modules/
         runHook postInstall
       '';
     };
