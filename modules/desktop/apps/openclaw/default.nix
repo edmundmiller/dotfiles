@@ -42,8 +42,8 @@ in
 
           instances.default = {
             enable = true;
-            # App needs launchd to run
-            launchd.enable = true;
+            # No local gateway in remote mode — OpenClaw.app handles the connection
+            launchd.enable = false;
             appDefaults = {
               enable = true;
               nixMode = true;
