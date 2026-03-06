@@ -402,7 +402,12 @@ in
                   ];
                 };
                 thinkingDefault = "high";
-                heartbeat.every = "0m"; # Disable native heartbeat — use external systemd timer instead (OPS-24)
+                heartbeat = {
+                  every = "30m";
+                  model = "openrouter/openai/gpt-5-nano"; # cheap — ~95% end in HEARTBEAT_OK
+                  lightContext = true; # only inject HEARTBEAT.md from bootstrap files
+                  target = "none"; # run internally, don't deliver externally
+                };
                 subagents.model = {
                   primary = "openai-codex/gpt-5.3-codex";
                   fallbacks = [

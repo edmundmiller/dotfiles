@@ -7,11 +7,11 @@ NixOS service module wrapping [nix-openclaw](https://github.com/openclaw/nix-ope
 ```
 modules/services/openclaw/
 ├── default.nix      # Module definition
-├── _heartbeat.nix   # Per-agent heartbeat monitor options + systemd units
+├── _heartbeat.nix   # Gateway liveness probe options + systemd units
 ├── AGENTS.md        # This file
 └── documents/
     ├── AGENTS.md
-    ├── HEARTBEAT.md  # Agent reads this during external heartbeat checks
+    ├── HEARTBEAT.md  # Native heartbeat checklist (read by agent every 30m)
     ├── SOUL.md
     └── TOOLS.md
 ```
@@ -46,25 +46,22 @@ modules/services/openclaw/
 - **Dependency**: openclaw-gateway `Requires` + `After` the proxy service
 - **Enable**: `modules.services.openclaw.claudeMaxProxy.enable = true`
 
-### External Heartbeat Monitor
+### Heartbeat & Liveness Architecture
 
-- **Architecture**: per-agent systemd user timers → trigger `openclaw agent` → ping healthchecks.io
-- **Why external**: built-in heartbeat runs inside the gateway process — if gateway crashes/hangs, it stops too. External timer detects that.
-- **Multi-agent**: `heartbeatMonitor.monitors` is an attrset — each entry generates its own timer+service pair
-- **Timer**: `openclaw-heartbeat-monitor-<name>.timer` — every 30m (configurable globally or per-monitor), 2m random jitter, starts 5m after boot
-- **Service**: `openclaw-heartbeat-monitor-<name>.service` — oneshot, 5m timeout
-- **Flow**: ping `/start` → run agent with HEARTBEAT.md prompt → ping success (with output) or `/fail`
-- **Document**: `documents/HEARTBEAT.md` — agent reads this for self-diagnostic instructions
-- **Enable**: `modules.services.openclaw.heartbeatMonitor.enable = true` + add monitors
+Two complementary layers:
+
+1. **Native heartbeat** (in-process, every 30m): session-context-aware agent turns via `agents.defaults.heartbeat`. Reads `documents/HEARTBEAT.md` checklist. Uses cheap model (`gpt-5-nano`), `lightContext = true`, `target = "none"`. Handles inbox scans, blocked task detection, check-ins.
+2. **External liveness probe** (systemd timer, every 2h): deterministic gateway health check via `openclaw health --json`. No LLM call. Pings healthchecks.io on success/fail. Catches gateway crashes/hangs that would silently kill native heartbeats.
+
+- **Timer**: `openclaw-heartbeat-monitor-<name>.timer` — every 2h (default), 2m random jitter, starts 5m after boot
+- **Service**: `openclaw-heartbeat-monitor-<name>.service` — oneshot, 60s timeout
+- **Flow**: ping `/start` → `openclaw health --json` → ping success (with snapshot) or `/fail`
 - **Config example**:
   ```nix
   heartbeatMonitor = {
     enable = true;
-    interval = "30m";  # shared default
     monitors.main = {
-      agent = "main";
       pingUrl = "https://hc-ping.com/<uuid>";
-      # interval = "15m";  # optional per-monitor override
     };
   };
   ```

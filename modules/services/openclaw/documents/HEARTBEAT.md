@@ -1,37 +1,22 @@
 ---
 name: heartbeat
-description: External heartbeat check — invoked by systemd timer every 30 minutes
+description: Native heartbeat checklist — runs every 30m with full session context
 ---
 
-# Heartbeat Check
+# Heartbeat Checklist
 
-You're being called by an external systemd timer to verify you're alive and functional.
+## Quick Checks
 
-## What to Do
-
-Run a quick self-diagnostic:
-
-1. **Confirm you can reason** — you're reading this, so yes
-2. **Check tool access** — try listing your workspace: `ls ~/`
-3. **Check email** — list agentmail inboxes to verify API connectivity:
+1. **Inbox scan** — anything urgent in agentmail?
    ```bash
-   curl -sf -H "Authorization: Bearer $AGENTMAIL_API_KEY" https://api.agentmail.to/v0/inboxes | head -c 200
+   curl -sf -H "Authorization: Bearer $AGENTMAIL_API_KEY" https://api.agentmail.to/v0/inboxes | jq -r '.inboxes[]? | "\(.address): \(.unread_count // 0) unread"' 2>/dev/null || echo 'email=unavailable'
    ```
-   If curl fails or returns an error, report `email=error`.
-4. **Report status** — respond with a one-line summary
+2. **Blocked tasks** — if any task is waiting on input, note what's missing
+3. **Daytime check-in** — if nothing pending and it's daytime, a brief "anything you need?" is fine
 
-## Response Format
+## Rules
 
-Reply with exactly one line:
-
-```
-OK: [timestamp] tools=working memory=[ok/error] email=[ok/error] uptime=[if known]
-```
-
-If something is broken, say what:
-
-```
-DEGRADED: [timestamp] tools=working memory=error email=ok reason="lancedb connection refused"
-```
-
-Keep it short. This output gets attached to the healthchecks.io ping.
+- If nothing needs attention: reply `HEARTBEAT_OK`
+- If something is urgent: describe it concisely (no HEARTBEAT_OK)
+- Keep responses under 3 lines
+- Don't repeat old tasks from prior chats
