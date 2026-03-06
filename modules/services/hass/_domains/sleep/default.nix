@@ -39,6 +39,8 @@
 #   boolean is required.
 { lib, ... }:
 let
+  inherit (import ../../_lib.nix) ensureEnabled;
+
   # ── Per-person entity config ───────────────────────────────────────────
   edmund = {
     name = "Edmund";
@@ -73,7 +75,6 @@ let
   mkSleepFocusOff = p: {
     alias = "Sleep Focus Off - Stop ${p.name} 8Sleep";
     id = "sleep_focus_off_stop_${p.id}";
-    initial_state = true;
     description = "${p.name} turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
     trigger = {
       platform = "state";
@@ -118,7 +119,6 @@ let
   mkWakeDetection = p: {
     alias = "${p.name} is awake";
     id = "${p.id}_awake_detection";
-    initial_state = true;
     trigger = [
       {
         platform = "state";
@@ -298,12 +298,11 @@ in
     };
 
     # ── Automations ──────────────────────────────────────────────────────
-    automation = lib.mkAfter [
+    automation = lib.mkAfter (ensureEnabled [
       # Stage 1: 10 PM → Winding Down
       {
         alias = "Winding Down";
         id = "winding_down";
-        initial_state = true;
         description = "10 PM — lights off (night light stays), blinds closed, TV off";
         trigger = {
           platform = "time";
@@ -321,7 +320,6 @@ in
       {
         alias = "In Bed";
         id = "bed_presence_in_bed";
-        initial_state = true;
         description = "Monica in bed 2 min → whitenoise on, night light off";
         trigger = {
           platform = "state";
@@ -341,7 +339,6 @@ in
       {
         alias = "Bedtime nudge";
         id = "bedtime_nudge_webhook";
-        initial_state = true;
         trigger = {
           platform = "webhook";
           webhook_id = "bedtime-nudge-monica";
@@ -364,7 +361,6 @@ in
       {
         alias = "Sync iPhone Alarm to 8Sleep";
         id = "sync_iphone_alarm_8sleep";
-        initial_state = true;
         description = "iPhone next alarm changes → set matching one-off alarm on 8Sleep";
         trigger = {
           platform = "state";
@@ -422,7 +418,6 @@ in
       {
         alias = "Good Morning";
         id = "good_morning_both_awake";
-        initial_state = true;
         trigger = [
           {
             platform = "state";
@@ -470,6 +465,6 @@ in
           }
         ];
       }
-    ];
+    ]);
   };
 }

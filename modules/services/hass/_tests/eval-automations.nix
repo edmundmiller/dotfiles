@@ -1,6 +1,7 @@
 # Pure Nix eval test: assert structural properties of HA automation config.
 #
 # No VM needed — evaluates the NixOS module config and checks:
+#   - Every automation has initial_state = true (use ensureEnabled from _lib.nix)
 #   - Required automation IDs exist
 #   - Wake detection has time guards (after 07:00)
 #   - Good Morning has presence-aware awake template + time guard conditions
@@ -79,6 +80,17 @@ let
     else
       [ ];
 
+  # ── Global: every automation must have initial_state = true ───────────
+  # Nix is the source of truth — automations should never be toggled in the
+  # UI. ensureEnabled (_lib.nix) injects the default; this catches anyone
+  # who adds an automation without the wrapper.
+  missingInitialState = filter (a: !(a.initial_state or null)) automations;
+
+  initialStateAssertions = map (a: {
+    test = false;
+    msg = "automation '${a.alias or a.id or "??"}' missing initial_state = true (use ensureEnabled from _lib.nix)";
+  }) missingInitialState;
+
   # ── Automation lookups ───────────────────────────────────────────────────
 
   edmundAwake = findAutomation "edmund_awake_detection";
@@ -93,7 +105,7 @@ let
 
   # ── Assertions ───────────────────────────────────────────────────────────
 
-  assertions = [
+  assertions = initialStateAssertions ++ [
     # --- Required automations exist ---
     {
       test = edmundAwake != null;
