@@ -10,7 +10,6 @@ import { getEffectiveThreshold } from "./checks";
 type Severity = "warning" | "danger" | "critical";
 
 function getSeverity(result: DumbZoneCheckResult): Severity {
-  const warningThreshold = getEffectiveThreshold(CONTEXT_THRESHOLDS.WARNING, result.compacted);
   const dangerThreshold = getEffectiveThreshold(CONTEXT_THRESHOLDS.DANGER, result.compacted);
   const criticalThreshold = getEffectiveThreshold(CONTEXT_THRESHOLDS.CRITICAL, result.compacted);
 
