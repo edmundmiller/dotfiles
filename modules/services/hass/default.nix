@@ -60,6 +60,7 @@ let
 in
 {
   imports = [
+    ./_domains/airpurifier.nix
     ./_domains/ambient.nix
     ./_domains/aranet.nix
     ./_domains/conversation.nix
