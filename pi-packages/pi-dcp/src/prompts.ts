@@ -89,6 +89,16 @@ Context is getting large. Consider using dcp_compress to summarize completed wor
 `.trim();
 
 /**
+ * Dumb zone nudge — triggered by pi-dumb-zone signal at ≥40% context usage.
+ * More urgent than COMPRESS_NUDGE. Tells the LLM to act now.
+ */
+export const DUMB_ZONE_NUDGE_PROMPT = `
+<dcp-nudge priority="critical">
+⚠️ Context at {pct}% — you're in the dumb zone. You should prune stale tool outputs or compress completed work phases NOW using dcp_prune, dcp_distill, or dcp_compress. Check the <prunable-tools> list above.
+</dcp-nudge>
+`.trim();
+
+/**
  * Cooldown — shown right after a DCP tool was used to prevent loops
  */
 export const COOLDOWN_PROMPT = `
