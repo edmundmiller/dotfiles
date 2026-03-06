@@ -22,12 +22,14 @@ with lib.my;
 let
   cfg = config.modules.services.bugster;
 
+  dagsterCfg = config.modules.services.dagster;
+
   # Generate bugster.toml from Nix options
   bugsterToml = pkgs.writeText "bugster.toml" (
     ''
       [tasknotes]
-      vault_path = "/var/lib/dagster/vault"
-      tasks_dir = "."
+      vault_path = "${cfg.tasknotes.vaultPath}"
+      tasks_dir = "${cfg.tasknotes.tasksDir}"
     ''
     + optionalString cfg.calendar.enable ''
 
@@ -94,19 +96,14 @@ let
     ) cfg.sources
   );
 
-  # Script to set up the bugster repo and config
-  # Runs as root to handle git clone (private repo needs user SSH keys),
-  # then chowns to dagster.
+  # Setup script — clone/update bugster repo. Runs as dagster.user (emiller)
+  # so SSH keys and vault access work naturally.
   setupScript = pkgs.writeShellScript "bugster-setup" ''
     set -euo pipefail
 
     REPO_DIR="${cfg.dataDir}"
 
-    # Use emiller's SSH keys for private repo access
-    export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -i /home/emiller/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new"
-
-    # Allow root to operate on dagster-owned repo
-    ${pkgs.git}/bin/git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
+    export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -o StrictHostKeyChecking=accept-new"
 
     # Clone if not present, pull if exists
     if [ ! -d "$REPO_DIR/.git" ]; then
@@ -117,27 +114,9 @@ let
       ${pkgs.git}/bin/git reset --hard origin/${cfg.gitBranch}
     fi
 
-    # Fix ownership
-    chown -R dagster:dagster "$REPO_DIR"
-
     # Copy generated config (env vars expanded at runtime by bugster)
     cp ${bugsterToml} "$REPO_DIR/bugster.toml"
-    chown dagster:dagster "$REPO_DIR/bugster.toml"
     chmod 640 "$REPO_DIR/bugster.toml"
-
-    # Grant dagster traversal access to the vault path
-    # ZFS noacl: ACLs not supported, use POSIX permissions
-    # dagster user needs +x on parent dirs and g+w on the tasks dir
-    VAULT_PATH="${cfg.tasknotes.vaultPath}"
-    # Ensure dagster can traverse to the vault (home dir is typically 700)
-    VAULT_PARENT="$(dirname "$VAULT_PATH")"
-    chmod o+x "$VAULT_PARENT" 2>/dev/null || true
-    TASKS_DIR="$VAULT_PATH/${cfg.tasknotes.tasksDir}"
-    # dagster is in 'users' group — make tasks dir + all files group-writable.
-    # Obsidian syncs files from other machines as 644; -R ensures dagster can
-    # update them (mark_stale_as_done, etc.) without PermissionError.
-    chmod g+w "$TASKS_DIR" 2>/dev/null || true
-    find "$TASKS_DIR" -maxdepth 1 -type f -name "*.md" -exec chmod g+w {} + 2>/dev/null || true
   '';
 
   sourceType = types.submodule (_: {
@@ -246,12 +225,8 @@ in
               '';
               environment = {
                 BUGSTER_CONFIG = "${cfg.dataDir}/bugster.toml";
-                # uv needs a writable cache dir
-                UV_CACHE_DIR = "/var/lib/dagster/.cache/uv";
-                # Use system Python
+                UV_CACHE_DIR = "${dagsterCfg.home}/.cache/uv";
                 UV_PYTHON_PREFERENCE = "system";
-                # Home for uv/pip
-                HOME = "/var/lib/dagster";
               }
               # Per-asset healthcheck env vars:
               # healthcheckPingUrls."github_personal_tasknotes" = "https://..."
@@ -262,16 +237,15 @@ in
               environmentFiles = optional (cfg.environmentFile != "") cfg.environmentFile;
               readWritePaths = [
                 cfg.dataDir
-                "/var/lib/dagster/.cache"
-                "/var/lib/dagster/vault"
+                "${dagsterCfg.home}/.cache"
+                cfg.tasknotes.vaultPath
               ];
             };
           }
         ];
       };
 
-      # Setup service — clones/updates bugster repo before code server starts
-      # Runs as root to access emiller's SSH keys for private repo
+      # Setup service — clone/update bugster repo before code server starts
       systemd.services.bugster-setup = {
         description = "Bugster repo setup";
         wantedBy = [ "multi-user.target" ];
@@ -282,11 +256,12 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          User = dagsterCfg.user;
+          Group = dagsterCfg.group;
           ExecStart = setupScript;
         };
 
         environment = {
-          HOME = "/var/lib/dagster";
           GIT_TERMINAL_PROMPT = "0";
         };
       };
@@ -297,50 +272,12 @@ in
         requires = [ "bugster-setup.service" ];
       };
 
-      # Periodic vault permission fix — Obsidian syncs files as 644 from other
-      # machines, but dagster (group: users) needs g+w to update them.
-      systemd.services.bugster-vault-perms = {
-        description = "Fix vault task file permissions for dagster";
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = pkgs.writeShellScript "bugster-vault-perms" ''
-            find "${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir}" \
-              -maxdepth 1 -type f -name "*.md" \
-              -exec chmod g+w {} + 2>/dev/null || true
-          '';
-        };
-      };
-
-      systemd.timers.bugster-vault-perms = {
-        description = "Periodically fix vault file permissions for dagster";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnBootSec = "1min";
-          OnUnitActiveSec = "30min";
-        };
-      };
-
-      # Bind mount vault tasks dir into dagster's space
-      # (ProtectHome=read-only blocks access to /home even with ReadWritePaths)
-      fileSystems."/var/lib/dagster/vault" = {
-        device = "${cfg.tasknotes.vaultPath}/${cfg.tasknotes.tasksDir}";
-        fsType = "none";
-        options = [
-          "bind"
-          "rw"
-        ];
-      };
-
       # Ensure data directory exists
       systemd.tmpfiles.rules = [
-        "d ${cfg.dataDir} 0750 dagster dagster -"
-        "d /var/lib/dagster/.cache 0750 dagster dagster -"
-        "d /var/lib/dagster/.cache/uv 0750 dagster dagster -"
+        "d ${cfg.dataDir} 0750 ${dagsterCfg.user} ${dagsterCfg.group} -"
+        "d ${dagsterCfg.home}/.cache 0750 ${dagsterCfg.user} ${dagsterCfg.group} -"
+        "d ${dagsterCfg.home}/.cache/uv 0750 ${dagsterCfg.user} ${dagsterCfg.group} -"
       ];
-
-      # Obsidian vault needs to be writable by dagster user
-      # Vault is owned by emiller:users with 0755 — add dagster to users group
-      users.users.dagster.extraGroups = [ "users" ];
     }
   );
 }
