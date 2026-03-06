@@ -396,9 +396,9 @@ in
                 model = {
                   primary = "openai-codex/gpt-5.3-codex";
                   fallbacks = [
-                    "openrouter/anthropic/claude-sonnet-4"
-                    "anthropic/claude-sonnet-4-6"
+                    "openrouter/openrouter/auto"
                     "opencode/minimax-m2.5"
+                    "openrouter/anthropic/claude-sonnet-4"
                   ];
                 };
                 thinkingDefault = "high";
@@ -406,9 +406,9 @@ in
                 subagents.model = {
                   primary = "openai-codex/gpt-5.3-codex";
                   fallbacks = [
-                    "openrouter/anthropic/claude-sonnet-4"
-                    "anthropic/claude-sonnet-4-6"
+                    "openrouter/openrouter/auto"
                     "opencode/minimax-m2.5"
+                    "openrouter/anthropic/claude-sonnet-4"
                   ];
                 };
 
@@ -491,21 +491,8 @@ in
 
               # OpenRouter — auto-discovered via OPENROUTER_API_KEY env var.
               # Models referenced as openrouter/<provider>/<model> (e.g. openrouter/anthropic/claude-sonnet-4).
-              # Anthropic provider explicit so direct-API fallbacks resolve.
+              # Sonnet accessed via OpenRouter — no explicit anthropic provider needed.
               models.providers = mkMerge [
-                {
-                  anthropic = {
-                    baseUrl = "https://api.anthropic.com";
-                    apiKey = "\${ANTHROPIC_API_KEY}";
-                    api = "anthropic-messages";
-                    models = [
-                      {
-                        id = "claude-sonnet-4-6";
-                        name = "Claude Sonnet 4.6";
-                      }
-                    ];
-                  };
-                }
                 # Claude Max proxy — optional local proxy exposing subscription as OpenAI API
                 (mkIf cfg.claudeMaxProxy.enable {
                   claude-max = {
