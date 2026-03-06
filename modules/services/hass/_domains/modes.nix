@@ -40,6 +40,7 @@
       {
         alias = "Do Not Disturb";
         id = "dnd_on";
+        initial_state = true;
         trigger = {
           platform = "state";
           entity_id = "input_boolean.do_not_disturb";

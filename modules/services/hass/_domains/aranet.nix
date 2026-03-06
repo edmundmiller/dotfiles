@@ -22,6 +22,7 @@ in
       {
         alias = "CO2 elevated";
         id = "co2_elevated";
+        initial_state = true;
         description = "Notify when CO2 crosses ${toString thresholdWarn} ppm — open a window";
         trigger = {
           platform = "numeric_state";
@@ -45,6 +46,7 @@ in
       {
         alias = "CO2 poor";
         id = "co2_poor";
+        initial_state = true;
         description = "Urgent alert when CO2 exceeds ${toString thresholdBad} ppm";
         trigger = {
           platform = "numeric_state";
@@ -68,6 +70,7 @@ in
       {
         alias = "CO2 cleared";
         id = "co2_cleared";
+        initial_state = true;
         description = "Notify when CO2 drops back below ${toString thresholdWarn} ppm";
         trigger = {
           platform = "numeric_state";
