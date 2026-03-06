@@ -453,6 +453,10 @@ in
           encryptionPasswordRef = "op://Agents/Obsidian/Security/Encryption Password";
           tokenFile = "/etc/opnix-token";
         };
+        healthcheck = {
+          enable = true;
+          pingUrl = "https://hc-ping.com/1be68603-d0da-4a8a-9885-0461985d977f";
+        };
       };
       vault-sync = {
         enable = false; # TODO: re-enable after creating cubox-api-key.age and snipd-api-key.age
