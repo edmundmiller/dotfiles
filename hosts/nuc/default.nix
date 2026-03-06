@@ -233,6 +233,10 @@ in
             envVar = "OPENROUTER_API_KEY";
             inherit (config.age.secrets.openrouter-api-key) path;
           }
+          {
+            envVar = "AGENTMAIL_API_KEY";
+            inherit (config.age.secrets.agentmail-api-key) path;
+          }
         ];
         customPlugins = [
           {
@@ -285,6 +289,51 @@ in
           "python-scripts"
         ];
         skills = [
+          {
+            name = "agentmail";
+            description = "Send and receive emails using AgentMail API. Use when asked to email, check inbox, reply, or manage email.";
+            mode = "inline";
+            body = ''
+              # AgentMail
+
+              Send and receive emails via the AgentMail API. Auth via `$AGENTMAIL_API_KEY` env var.
+
+              ## API Base URL
+              ```
+              https://api.agentmail.to/v0
+              ```
+
+              ## Common Operations
+
+              ```bash
+              # List inboxes
+              curl -s -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+                https://api.agentmail.to/v0/inboxes
+
+              # Create inbox
+              curl -s -X POST -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{"display_name": "My Agent"}' \
+                https://api.agentmail.to/v0/inboxes
+
+              # Send email
+              curl -s -X POST -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{"to": ["recipient@example.com"], "subject": "Subject", "text": "Body"}' \
+                https://api.agentmail.to/v0/inboxes/{inbox_id}/messages/send
+
+              # List messages
+              curl -s -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+                https://api.agentmail.to/v0/inboxes/{inbox_id}/messages
+
+              # Reply to message
+              curl -s -X POST -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{"text": "Reply body"}' \
+                https://api.agentmail.to/v0/inboxes/{inbox_id}/messages/{message_id}/reply
+              ```
+            '';
+          }
           {
             name = "obsidian-vault";
             description = "Search Edmund's Obsidian vault for notes, projects, and knowledge base. Use qmd search, never grep or cat full files.";
