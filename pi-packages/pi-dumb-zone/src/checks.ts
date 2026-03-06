@@ -102,6 +102,7 @@ export function matchesDumbZonePatterns(text: string): boolean {
 /**
  * Check if we've entered the dumb zone.
  * Combines quantitative (context usage) and qualitative (phrase patterns) checks.
+ * Triggers at WARNING threshold so persistent indicators appear early.
  */
 export function checkDumbZone(
   ctx: ExtensionContext,
@@ -109,18 +110,18 @@ export function checkDumbZone(
 ): DumbZoneCheckResult {
   const utilization = getContextUtilization(ctx);
   const compacted = hasCompacted(ctx);
-  const threshold = getEffectiveThreshold(CONTEXT_THRESHOLDS.DANGER, compacted);
+  const warningThreshold = getEffectiveThreshold(CONTEXT_THRESHOLDS.WARNING, compacted);
 
-  // Quantitative check: context utilization
-  if (utilization >= threshold) {
+  // Quantitative check: context utilization (triggers at WARNING, not DANGER)
+  if (utilization >= warningThreshold) {
     const details = compacted
-      ? `Context: ${utilization.toFixed(1)}% (threshold: ${threshold.toFixed(1)}%, post-compaction)`
-      : `Context: ${utilization.toFixed(1)}% (threshold: ${threshold.toFixed(1)}%)`;
+      ? `Context: ${utilization.toFixed(1)}% (threshold: ${warningThreshold.toFixed(1)}%, post-compaction)`
+      : `Context: ${utilization.toFixed(1)}% (threshold: ${warningThreshold.toFixed(1)}%)`;
 
     return {
       inZone: true,
       utilization,
-      threshold,
+      threshold: warningThreshold,
       compacted,
       violationType: "quantitative",
       details,
@@ -136,7 +137,7 @@ export function checkDumbZone(
       return {
         inZone: true,
         utilization,
-        threshold,
+        threshold: warningThreshold,
         compacted,
         violationType: "pattern",
         details,
@@ -147,7 +148,7 @@ export function checkDumbZone(
   return {
     inZone: false,
     utilization,
-    threshold,
+    threshold: warningThreshold,
     compacted,
     details: "",
   };
