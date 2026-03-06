@@ -1,16 +1,31 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { spawn } from "node:child_process";
 
-// Mock isToolCallEventType before importing the module
 const mockIsToolCall = mock((toolName: string, event: any) => {
   return event.toolName === toolName;
 });
+
+// Track spawn calls — wrap spawn to record args without replacing it
+let spawnCalls: Array<{ cmd: string; args: string[] }> = [];
+const originalSpawn = spawn;
+
+mock.module("node:child_process", () => ({
+  spawn: (cmd: string, args: string[], opts: any) => {
+    spawnCalls.push({ cmd, args: [...args] });
+    return originalSpawn(cmd, args, opts);
+  },
+}));
 
 mock.module("@mariozechner/pi-coding-agent", () => ({
   isToolCallEventType: mockIsToolCall,
 }));
 
-// Now import the module under test (picks up mocked dependency)
-const { getEditedPaths, buildTranscript, default: createExtension } = await import("./index.ts");
+const {
+  getEditedPaths,
+  buildTranscript,
+  runCheckpoint,
+  default: createExtension,
+} = await import("./index.ts");
 
 // --- Test helpers ---
 
@@ -272,6 +287,32 @@ describe("buildTranscript", () => {
       { type: "message", message: { role: "user", content: "ok" } },
     ];
     expect(buildTranscript(entries as any)).toHaveLength(1);
+  });
+});
+
+// --- runCheckpoint ---
+
+describe("runCheckpoint", () => {
+  beforeEach(() => {
+    spawnCalls = [];
+  });
+
+  test("passes --hook-input stdin to git-ai checkpoint agent-v1", async () => {
+    await runCheckpoint({
+      type: "human",
+      repo_working_dir: "/tmp",
+    });
+    expect(spawnCalls).toHaveLength(1);
+    expect(spawnCalls[0].cmd).toBe("git-ai");
+    expect(spawnCalls[0].args).toEqual(["checkpoint", "agent-v1", "--hook-input", "stdin"]);
+  });
+
+  test("resolves without throwing on any spawn outcome", async () => {
+    // Even if git-ai fails, runCheckpoint should resolve (not reject/throw)
+    await runCheckpoint({
+      type: "human",
+      repo_working_dir: "/tmp",
+    });
   });
 });
 
