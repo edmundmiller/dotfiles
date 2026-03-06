@@ -405,8 +405,11 @@ in
                 heartbeat = {
                   every = "30m";
                   model = "openrouter/openai/gpt-5-nano"; # cheap — ~95% end in HEARTBEAT_OK
-                  lightContext = true; # only inject HEARTBEAT.md from bootstrap files
                   target = "none"; # run internally, don't deliver externally
+                  activeHours = {
+                    start = "08:00";
+                    end = "22:00";
+                  };
                 };
                 subagents.model = {
                   primary = "openai-codex/gpt-5.3-codex";

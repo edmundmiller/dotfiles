@@ -22,7 +22,6 @@ description: Native heartbeat checklist — runs every 30m with full session con
    ```
    If new issues exist, mention them briefly. High priority (P1/P2) issues are urgent.
 3. **Blocked tasks** — if any task is waiting on input, note what's missing
-4. **Daytime check-in** — if nothing pending and it's daytime, a brief "anything you need?" is fine
 
 ## Rules
 
