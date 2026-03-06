@@ -468,7 +468,7 @@ in
       dagster.webserver.port = 3001;
 
       bugster = {
-        enable = false;
+        enable = true;
         environmentFile = config.age.secrets.bugster-env.path;
         healthcheckPingUrls = {
           github_personal_tasknotes = "https://hc-ping.com/c4b0b3c8-25b4-4cf6-9252-745eaf0a6689";
@@ -528,8 +528,7 @@ in
   # services.onepassword-secrets.enable left false until a non-Private vault secret is needed.
 
   age.secrets.lubelogger-env.owner = "lubelogger";
-  # bugster disabled — dagster user doesn't exist; agenix chown would fail
-  # age.secrets.bugster-env.owner = "dagster";
+  age.secrets.bugster-env.owner = "emiller";
   age.secrets.speedtest-tracker-env.owner = "root";
   age.secrets.linear-refresh-token.owner = "emiller";
 
