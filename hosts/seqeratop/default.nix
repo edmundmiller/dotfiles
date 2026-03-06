@@ -26,6 +26,40 @@ _: {
         git.ai.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        tmux.sesh.sessions = [
+          {
+            name = "dotfiles";
+            path = "~/.config/dotfiles";
+          }
+          {
+            name = "platform";
+            path = "~/src/seqera/platform";
+          }
+          {
+            name = "nf-core";
+            path = "~/src/nf-core";
+          }
+          {
+            name = "nextflow";
+            path = "~/src/nextflow/nextflow";
+          }
+          {
+            name = "nf-xpack";
+            path = "~/src/seqera/nf-xpack";
+          }
+          {
+            name = "portal";
+            path = "~/src/seqera/portal";
+          }
+          {
+            name = "portal-main";
+            path = "~/src/seqera/portal/main";
+          }
+          {
+            name = "scientific-engagement";
+            path = "~/src/seqera/scientific-engagment";
+          }
+        ];
         zsh.enable = true;
       };
 
