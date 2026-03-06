@@ -1,5 +1,6 @@
-# Per-agent external heartbeat monitors.
-# Each monitor entry generates a systemd timer+service that pings healthchecks.io.
+# External gateway liveness probe.
+# Generates systemd timer+service that checks gateway health and pings healthchecks.io.
+# Complements the native in-process heartbeat (which handles session-aware monitoring).
 {
   cfg,
   lib,
@@ -13,16 +14,16 @@ with lib.my;
 let
   hbCfg = cfg.heartbeatMonitor;
 
-  mkHeartbeatScript =
+  mkHealthScript =
     name: mon:
-    pkgs.writeShellScript "openclaw-heartbeat-${name}" ''
+    pkgs.writeShellScript "openclaw-liveness-${name}" ''
       set -euo pipefail
       PING_URL="${mon.pingUrl}"
 
       # Signal start to healthchecks.io
       ${pkgs.curl}/bin/curl -sS -m 10 --retry 3 "$PING_URL/start" || true
 
-      # Source secrets env (same as gateway) for API keys
+      # Source secrets env (same as gateway) for auth token
       ENV_FILE="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openclaw/env"
       if [[ -f "$ENV_FILE" ]]; then
         set -a
@@ -30,22 +31,18 @@ let
         set +a
       fi
 
-      # Read gateway token
+      # Read gateway token (needed for health check CLI)
       OPENCLAW_AUTH_TOKEN="$(cat ${mon.gatewayTokenFile})"
       export OPENCLAW_AUTH_TOKEN
 
-      # Trigger agent heartbeat — captures output for healthchecks.io
-      OUTPUT=$(openclaw agent \
-        --agent ${mon.agent} \
-        --model ${mon.model} \
-        -m "Read HEARTBEAT.md and run the diagnostic. Reply with a single status line." \
-        2>&1) || {
+      # Gateway health check — deterministic, no LLM call, exits non-zero if unreachable
+      OUTPUT=$(openclaw health --json --timeout ${toString mon.timeout} 2>&1) || {
         EXIT_CODE=$?
         echo "$OUTPUT" | ${pkgs.curl}/bin/curl -sS -m 10 --retry 3 "$PING_URL/fail" --data-raw @- || true
         exit $EXIT_CODE
       }
 
-      # Signal success with agent output as body
+      # Signal success with health snapshot as body
       echo "$OUTPUT" | ${pkgs.curl}/bin/curl -sS -m 10 --retry 3 "$PING_URL" --data-raw @- || true
     '';
 in
@@ -54,22 +51,13 @@ in
     enable = mkBoolOpt false;
     interval = mkOption {
       type = types.str;
-      default = "30m";
-      description = "Default systemd timer interval for all monitors (overridable per-monitor)";
+      default = "2h";
+      description = "Default systemd timer interval (native heartbeat handles frequent checks)";
     };
     monitors = mkOption {
       type = types.attrsOf (
         types.submodule {
           options = {
-            agent = mkOption {
-              type = types.str;
-              description = "OpenClaw agent ID to send the heartbeat message to";
-            };
-            model = mkOption {
-              type = types.str;
-              default = "openrouter/openai/gpt-5-nano";
-              description = "Model for heartbeat checks (cheap default — most end in HEARTBEAT_OK)";
-            };
             pingUrl = mkOption {
               type = types.str;
               description = "healthchecks.io ping URL for this monitor";
@@ -78,6 +66,11 @@ in
               type = types.nullOr types.str;
               default = null;
               description = "Override timer interval for this monitor (defaults to shared interval)";
+            };
+            timeout = mkOption {
+              type = types.int;
+              default = 10000;
+              description = "Health check timeout in ms (default 10s)";
             };
             gatewayTokenFile = mkOption {
               type = types.str;
@@ -88,7 +81,7 @@ in
         }
       );
       default = { };
-      description = "Per-agent heartbeat monitors. Each entry generates a systemd timer+service.";
+      description = "Gateway liveness monitors. Each entry generates a systemd timer+service.";
     };
   };
 
@@ -97,14 +90,14 @@ in
       name: mon:
       nameValuePair "openclaw-heartbeat-monitor-${name}" {
         Unit = {
-          Description = "OpenClaw heartbeat monitor (${name})";
+          Description = "OpenClaw gateway liveness probe (${name})";
           After = [ "openclaw-gateway.service" ];
         };
         Service = {
           Type = "oneshot";
-          ExecStart = "${pkgs.bash}/bin/bash ${mkHeartbeatScript name mon}";
+          ExecStart = "${pkgs.bash}/bin/bash ${mkHealthScript name mon}";
           Environment = "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${user}/bin";
-          TimeoutStartSec = "5m";
+          TimeoutStartSec = "60";
         };
       }
     ) hbCfg.monitors
@@ -114,7 +107,7 @@ in
     mapAttrs' (
       name: mon:
       nameValuePair "openclaw-heartbeat-monitor-${name}" {
-        Unit.Description = "Timer for OpenClaw heartbeat monitor (${name})";
+        Unit.Description = "Timer for OpenClaw gateway liveness probe (${name})";
         Timer = {
           OnBootSec = "5m";
           OnUnitActiveSec = if mon.interval != null then mon.interval else hbCfg.interval;
