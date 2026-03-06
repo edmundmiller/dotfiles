@@ -21,8 +21,9 @@ in
     modules.desktop.term.ghostty.keybindingFiles = mkIf ghosttyCfg.enable [
       "${configDir}/ghostty/opencode-keybindings.conf"
     ];
-    # OpenCode is installed via homebrew (not nix) for better macOS integration
-    # See: brew install opencode
+    user.packages = [
+      pkgs.llm-agents.opencode
+    ];
 
     home-manager.users.${config.user.name} =
       { config, lib, ... }:

@@ -11,7 +11,6 @@
     "steipete/tap" # Codexbar
     # "steveyegge/beads" # Not needed — using homebrew-core 'beads' formula instead
     "tw93/tap" # Mole
-    "anomalyco/tap" # Opencode
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
     "ahkohd/oyo" # oy - tmux session manager
     "chmouel/lazyworktree" # lazyworktree - lazy git worktree switcher
@@ -140,9 +139,6 @@
     "harper"
     "html2markdown"
     "jnsahaj/lumen/lumen"
-    "opencode"
-    "beads"
-
     "reminders-cli"
     "wakatime-cli"
   ];
@@ -198,7 +194,6 @@
     "granola"
 
     # AI Tools
-    "claude-code"
     "codexbar"
     "home-assistant"
     "superset"

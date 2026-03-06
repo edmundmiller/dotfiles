@@ -32,11 +32,6 @@
       flake = false;
     };
 
-    evals-skills = {
-      url = "github:hamelsmu/evals-skills";
-      flake = false;
-    };
-
     shaping-skills = {
       url = "github:rjs/shaping-skills";
       flake = false;
@@ -96,12 +91,6 @@
               filter.maxDepth = 1;
             };
 
-            evals = {
-              path = inputs.evals-skills.outPath;
-              subdir = "skills";
-              filter.maxDepth = 2;
-            };
-
             shaping = {
               path = inputs.shaping-skills.outPath;
               subdir = ".";
@@ -126,27 +115,6 @@
 
             tmux.from = "mitsuhiko";
             tmux.path = ".";
-
-            build-review-interface.from = "evals";
-            build-review-interface.path = "build-review-interface";
-
-            error-analysis.from = "evals";
-            error-analysis.path = "error-analysis";
-
-            eval-audit.from = "evals";
-            eval-audit.path = "eval-audit";
-
-            evaluate-rag.from = "evals";
-            evaluate-rag.path = "evaluate-rag";
-
-            generate-synthetic-data.from = "evals";
-            generate-synthetic-data.path = "generate-synthetic-data";
-
-            validate-evaluator.from = "evals";
-            validate-evaluator.path = "validate-evaluator";
-
-            write-judge-prompt.from = "evals";
-            write-judge-prompt.path = "write-judge-prompt";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";

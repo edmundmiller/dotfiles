@@ -49,8 +49,8 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
-    opencode.url = "github:anomalyco/opencode/dev";
-    opencode.inputs.nixpkgs.follows = "nixpkgs";
+    llm-agents.url = "github:numtide/llm-agents.nix";
+    llm-agents.inputs.nixpkgs.follows = "nixpkgs";
 
     nix-openclaw.url = "github:openclaw/nix-openclaw";
     nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
@@ -99,6 +99,7 @@
       pkgs = mkPkgs nixpkgs [
         self.overlays.default
         inputs.nix-openclaw.overlays.default
+        inputs.llm-agents.overlays.default
       ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
 
@@ -106,6 +107,7 @@
       darwinPkgs = mkPkgs nixpkgs [
         self.overlays.default
         inputs.nix-openclaw.overlays.default
+        inputs.llm-agents.overlays.default
       ] darwinSystem;
 
       lib = nixpkgs.lib.extend (
