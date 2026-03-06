@@ -277,6 +277,146 @@ in
             }
           ];
         };
+        cronJobs = {
+          "Morning brief" = {
+            id = "17e31f2c-2a4a-460a-afe4-6317af3163fc";
+            schedule = {
+              kind = "cron";
+              expr = "0 7 * * *";
+            };
+            model = "openrouter/openai/gpt-5-nano";
+            message = ''
+              Generate a morning brief for Telegram. Run these commands, then format a bullet-list summary.
+
+              Data gathering:
+              1. tnote task list --urgency --no-color --no-pager --limit 8
+              2. tnote schedule report today --plain
+              3. tnote task list --no-color --no-pager -f "status == 'in-progress'" --limit 5
+              4. Check Linear for assigned/high-priority issues:
+                 curl -sf -X POST https://api.linear.app/graphql \
+                   -H "Authorization: $LINEAR_API_KEY" \
+                   -H "Content-Type: application/json" \
+                   -d '{"query":"{ issues(filter: { assignee: { isMe: { eq: true } }, state: { type: { nin: [\"canceled\", \"completed\"] } } }, orderBy: priority, first: 5) { nodes { identifier title state { name } priority } } }"}' \
+                   | jq -r '.data.issues.nodes[]? | "  \(.identifier) [P\(.priority)] \(.title)"'
+              5. Check agentmail inbox:
+                 curl -sf -H "Authorization: Bearer $AGENTMAIL_API_KEY" https://api.agentmail.to/v0/inboxes \
+                   | jq -r '.inboxes[]? | select(.unread_count > 0) | "\(.address): \(.unread_count) unread"'
+
+              Output format (bullet list, no section headers, keep it tight):
+              • Top 3-5 priorities from urgency list
+              • Scheduled tasks for today (if any)
+              • In-progress work carrying over
+              • Linear issues needing attention (if any)
+              • Unread mail count (if any)
+
+              Skip sections with no data. Keep total under 15 lines.
+            '';
+            delivery = {
+              mode = "announce";
+              to = "8357890648";
+            };
+          };
+
+          "Daily review" = {
+            id = "6bde5748-06f9-4746-987c-4b44afef191b";
+            schedule = {
+              kind = "cron";
+              expr = "0 21 * * *";
+            };
+            model = "openrouter/openai/gpt-5-nano";
+            message = ''
+              Generate an end-of-day review for Telegram. Run these commands, then format a bullet-list summary.
+
+              Data gathering:
+              1. tnote review daily --batch --no-color --no-pager
+              2. tnote time summary --today --by-project --no-color
+              3. tnote schedule report tomorrow --plain
+              4. Check Linear issues completed today:
+                 TODAY=$(date +%Y-%m-%d)
+                 curl -sf -X POST https://api.linear.app/graphql \
+                   -H "Authorization: $LINEAR_API_KEY" \
+                   -H "Content-Type: application/json" \
+                   -d '{"query":"{ issues(filter: { completedAt: { gte: \"'"$TODAY"'T00:00:00Z\" }, assignee: { isMe: { eq: true } } }, first: 10) { nodes { identifier title } } }"}' \
+                   | jq -r '.data.issues.nodes[]? | "  \(.identifier) \(.title)"'
+
+              Output format (bullet list, no section headers, keep it tight):
+              • Tasks completed today
+              • Time tracked breakdown (if any logged)
+              • Linear issues closed (if any)
+              • Tomorrow's scheduled tasks or top priorities
+              • Anything still in-progress carrying over
+
+              Skip sections with no data. Keep total under 15 lines.
+            '';
+            delivery = {
+              mode = "announce";
+              to = "8357890648";
+            };
+          };
+
+          "Weekly review" = {
+            id = "eabd1501-39bd-4b66-9d1f-842e848b1953";
+            schedule = {
+              kind = "cron";
+              expr = "0 9 * * 5";
+            };
+            model = "openai-codex/gpt-5.3-codex";
+            thinking = "medium";
+            message = "Weekly review using tnote: 1) Run 'tnote task list --no-color --no-pager -f status:waiting --limit 20' to find stale waiting tasks, 2) Run 'tnote vault lint --no-color 2>&1 | head -30' to check for data quality issues, 3) Review memory files for outdated entries, 4) Prepare weekend priorities and summarize findings";
+            delivery = {
+              mode = "announce";
+              to = "8357890648";
+            };
+          };
+
+          "tnote-schedule" = {
+            id = "b8804ea5-8033-4639-a9c5-2daa1c222951";
+            schedule = {
+              kind = "every";
+              everyMs = 3600000;
+            }; # 1h
+            timeoutSeconds = 180;
+            message = ''
+              Run tnote schedule then commit and push the obsidian vault:
+
+              1. cd /home/emiller/obsidian-vault && tnote schedule run
+              2. git add -A
+              3. Check if there are changes to commit (git diff --cached --quiet). If no changes, stop here.
+              4. git -c commit.gpgsign=false commit -m "sync: tnote schedule run from nuc"
+              5. git pull --rebase origin main (NEVER force push)
+              6. git push origin main
+
+              Report only if there are errors. If it runs successfully, just confirm briefly.
+            '';
+          };
+
+          "tnote-update" = {
+            id = "39814aea-2c1f-4a5b-9851-e0166a31bbc4";
+            schedule = {
+              kind = "cron";
+              expr = "0 3 * * *";
+            };
+            timeoutSeconds = 120;
+            message = ''
+              Update tnote by pulling the latest from the monorepo:
+
+              1. cd /home/emiller/src/personal/tn-monorepo && git pull --rebase origin main
+
+              Report only if there are errors. If it runs successfully, just confirm briefly.
+            '';
+          };
+
+          "travel-time-sync" = {
+            id = "ed4d27b6-11b1-4d5a-8f6e-321892e179bc";
+            enabled = false;
+            schedule = {
+              kind = "every";
+              everyMs = 1800000;
+            }; # 30m
+            message = "Run the travel time sync script: /home/emiller/.openclaw/workspace/scripts/run-travel-time.sh — Report only if there are errors or new travel events created. If everything is normal, just confirm briefly.";
+          };
+        };
+
         sharedSkills = [
           "ast-grep"
           "beads"

@@ -23,6 +23,14 @@ let
       ;
   };
 
+  cronJobs = import ./_cron-jobs.nix {
+    inherit
+      cfg
+      lib
+      pkgs
+      ;
+  };
+
   # Script to inject agenix secrets into systemd env file
   mkEnvScript = pkgs.writeShellScript "openclaw-env" ''
     set -euo pipefail
@@ -199,6 +207,12 @@ in
     };
 
     heartbeatMonitor = heartbeat.options;
+
+    cronJobs = mkOption {
+      type = types.attrsOf cronJobs.jobType;
+      default = { };
+      description = "Declarative cron jobs merged into ~/.openclaw/cron/jobs.json on deploy";
+    };
 
     webhookProxy = {
       enable = mkBoolOpt false;
@@ -631,6 +645,7 @@ in
                 "${pkgs.bash}/bin/bash ${mkTokenScript}"
                 "${findNodePath}"
                 "${copyExtensions}"
+                "${cronJobs.mergeScript}"
               ];
               EnvironmentFile = "-/run/user/%U/openclaw/env";
             };
