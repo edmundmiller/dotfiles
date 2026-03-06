@@ -17,8 +17,8 @@ workspaces/
 .worktrees/
 worktrees/
 
-# Node.js dependencies
-node_modules/
+# Node.js dependencies (including Nix store symlinks)
+**/node_modules
 
 # Nextflow
 .nextflow/
@@ -47,3 +47,8 @@ qmk_firmware/
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Beads runtime files
+.beads/*.pid
+.beads/*.port
+.beads/*.activity
