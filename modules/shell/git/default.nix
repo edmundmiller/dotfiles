@@ -35,9 +35,9 @@ in
         "git/config-nfcore".source = "${configDir}/git/config-nfcore";
         "git/ignore".source = "${configDir}/git/ignore";
         "git/allowed_signers".source = "${configDir}/git/allowed_signers";
-        # GitHub CLI config
+        # GitHub CLI config (hosts.yml intentionally NOT managed — gh writes
+        # token/scope metadata to it after auth; Nix store symlink would block that)
         "gh/config.yml".source = "${configDir}/gh/config.yml";
-        "gh/hosts.yml".source = "${configDir}/gh/hosts.yml";
         # GitHub Dashboard config
         "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
         # Lazygit config
