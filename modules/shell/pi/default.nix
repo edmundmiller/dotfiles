@@ -262,16 +262,25 @@ in
                 && mv "$HOME/package.json.tmp" "$HOME/package.json"
             fi
 
-            # Install deps for pi-packages workspace (single bun install at root)
+            # Install deps for pi-packages workspace when lockfile changes
+            # Uses a stamp file with bun.lock hash to avoid redundant installs
+            # but still catches new/changed deps (unlike the old node_modules-exists check)
             pi_ws="$HOME/.config/dotfiles/pi-packages"
-            if [ -d "$pi_ws" ] && [ ! -d "$pi_ws/node_modules" ]; then
-              echo "Installing pi-packages workspace deps..."
-              if [ "$(id -u)" = "0" ]; then
-                /usr/bin/su ${config.user.name} -c "cd '$pi_ws' && '$bun_bin' install" \
-                  || echo "Warning: pi-packages bun install failed."
-              else
-                (cd "$pi_ws" && "$bun_bin" install) \
-                  || echo "Warning: pi-packages bun install failed."
+            if [ -d "$pi_ws" ] && [ -f "$pi_ws/bun.lock" ]; then
+              stamp="$pi_ws/node_modules/.install-stamp"
+              lock_hash=$(${pkgs.coreutils}/bin/sha256sum "$pi_ws/bun.lock" | cut -d' ' -f1)
+              old_hash=""
+              [ -f "$stamp" ] && old_hash=$(cat "$stamp" 2>/dev/null)
+              if [ "$lock_hash" != "$old_hash" ]; then
+                echo "pi-packages deps changed, running bun install..."
+                run_install() { cd "$pi_ws" && "$bun_bin" install && echo "$lock_hash" > "$stamp"; }
+                if [ "$(id -u)" = "0" ]; then
+                  /usr/bin/su ${config.user.name} -c "$(declare -f run_install); run_install" \
+                    || echo "Warning: pi-packages bun install failed."
+                else
+                  run_install \
+                    || echo "Warning: pi-packages bun install failed."
+                fi
               fi
             fi
           fi
