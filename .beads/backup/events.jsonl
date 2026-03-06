@@ -498,3 +498,5 @@
 {"actor":"Edmund Miller","comment":null,"created_at":"2026-03-06T16:19:30Z","event_type":"created","id":501,"issue_id":"dotfiles-o6so.4","new_value":"","old_value":""}
 {"actor":"Edmund Miller","comment":null,"created_at":"2026-03-06T16:26:15Z","event_type":"closed","id":502,"issue_id":"dotfiles-o2tf","new_value":"Closed","old_value":""}
 {"actor":"Edmund Miller","comment":null,"created_at":"2026-03-06T17:09:05Z","event_type":"closed","id":503,"issue_id":"dotfiles-o6so.1","new_value":"Not needed — Linear issues don't come in overnight. Morning brief cron (7am) already covers start-of-day.","old_value":""}
+{"actor":"Edmund Miller","comment":null,"created_at":"2026-03-06T17:09:07Z","event_type":"closed","id":504,"issue_id":"dotfiles-o6so.2","new_value":"Not needed — daily review cron (9pm) already covers end-of-day recap + tomorrow planning. No separate weekly infra summary needed.","old_value":""}
+{"actor":"Edmund Miller","comment":null,"created_at":"2026-03-06T17:27:00Z","event_type":"closed","id":505,"issue_id":"dotfiles-mrm4","new_value":"Shaping skills already commented out in skills/flake.nix (lines 119-125). Flake checks pass.","old_value":""}
