@@ -21,11 +21,11 @@ function getSeverity(result: DumbZoneCheckResult): Severity {
 function severityIcon(severity: Severity): string {
   switch (severity) {
     case "critical":
-      return "🔴";
+      return "!!!";
     case "danger":
-      return "🟠";
+      return "!!";
     case "warning":
-      return "🟡";
+      return "!";
   }
 }
 
