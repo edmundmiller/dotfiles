@@ -43,7 +43,11 @@ No agenix secrets on this host (credentials in 1Password / work SSO).
 ## Gotchas
 
 - **Username is `edmundmiller`** — many paths differ from mactraitorpro. Don't assume `emiller`.
-- **No passwordless sudo** — `darwin-rebuild` requires password. Agents can't auto-rebuild.
+- **No passwordless sudo** — `darwin-rebuild` requires password. Use `tmux-bash` to launch rebuild so the user can enter their password in the tmux pane:
+  ```
+  tmux-bash name=rebuild command="cd ~/.config/dotfiles && sudo darwin-rebuild switch --flake ."
+  ```
+- **Hostname is `L19W56QXR4`** — flake attribute is `Seqeratop` (capitalized), but the actual hostname differs. `darwin-rebuild switch --flake .` auto-resolves by hostname and fails. Use `--flake .#Seqeratop` explicitly.
 
 ## Related Files
 
