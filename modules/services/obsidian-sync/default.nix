@@ -179,6 +179,12 @@ in
       # (KEY=VALUE format) so the service can call `op` unattended.
       tokenFile = mkOpt (types.nullOr types.str) null;
     };
+
+    healthcheck = {
+      enable = mkBoolOpt false;
+      pingUrl = mkOpt types.str "";
+      interval = mkOpt types.str "2min";
+    };
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -275,6 +281,40 @@ in
           ReadWritePaths = [ cfg.vaultPath ];
           NoNewPrivileges = true;
           PrivateTmp = true;
+        };
+      };
+
+      # Dead man's switch — verifies service is active + vault has files, pings healthchecks.io
+      systemd.services.obsidian-sync-healthcheck-ping = mkIf cfg.healthcheck.enable {
+        description = "Check obsidian-sync health and ping healthchecks.io";
+        after = [ "obsidian-sync.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${cfg.healthcheck.pingUrl}/start";
+          ExecStart = pkgs.writeShellScript "obsidian-sync-healthcheck" ''
+            # Verify systemd service is active
+            ${pkgs.systemd}/bin/systemctl is-active --quiet obsidian-sync.service || {
+              echo "obsidian-sync.service is not active" >&2
+              exit 1
+            }
+            # Verify vault directory exists and has files
+            if [ ! -d ${escapeShellArg cfg.vaultPath} ] || [ -z "$(ls -A ${escapeShellArg cfg.vaultPath})" ]; then
+              echo "vault directory missing or empty: ${cfg.vaultPath}" >&2
+              exit 1
+            fi
+            echo "healthy: service active, vault has files"
+          '';
+          ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${cfg.healthcheck.pingUrl}/\${EXIT_STATUS}";
+        };
+      };
+
+      systemd.timers.obsidian-sync-healthcheck-ping = mkIf cfg.healthcheck.enable {
+        description = "Ping healthchecks.io for obsidian-sync on schedule";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "1min";
+          OnUnitActiveSec = cfg.healthcheck.interval;
+          RandomizedDelaySec = "10s";
         };
       };
     })
