@@ -5,9 +5,10 @@
 #
 # Pi is a terminal-based AI coding assistant. This module:
 # - Configures Ghostty keybindings when Ghostty is enabled
-# - Symlinks shared skills from config/agents/skills/
 # - Auto-discovers prompt templates from config/pi/prompts/
-# - Auto-discovers local skills from config/pi/skills/
+# - Auto-discovers pi-specific skills from config/pi/skills/
+# - Auto-discovers cross-agent shared skills from config/agents/skills/
+# Note: Pi also natively discovers ~/.agents/skills/ (for manually installed global skills)
 # - Auto-discovers subagent definitions from config/pi/agents/
 # - Generates AGENTS.md from config/agents/rules/
 # - Strips // comments from settings.jsonc (pi only supports standard JSON)
@@ -62,22 +63,37 @@ let
     }) promptFiles
   );
 
-  # Dynamically discover local skills from config/pi/skills/
-  # Each subdirectory should contain a SKILL.md
-  skillsDir = "${configDir}/pi/skills";
-  skillDirs =
-    if builtins.pathExists skillsDir then
-      builtins.filter (d: builtins.pathExists "${skillsDir}/${d}/SKILL.md") (
-        builtins.attrNames (builtins.readDir skillsDir)
+  # Helper: discover skill dirs containing a SKILL.md
+  discoverSkills =
+    dir:
+    if builtins.pathExists dir then
+      builtins.filter (d: builtins.pathExists "${dir}/${d}/SKILL.md") (
+        builtins.attrNames (builtins.readDir dir)
       )
     else
       [ ];
-  skillLinks = lib.listToAttrs (
+
+  # config/pi/skills/ — pi-specific skills
+  piSkillsDir = "${configDir}/pi/skills";
+  piSkillDirs = discoverSkills piSkillsDir;
+  piSkillLinks = lib.listToAttrs (
     map (d: {
       name = ".pi/agent/skills/${d}/SKILL.md";
-      value.source = "${skillsDir}/${d}/SKILL.md";
-    }) skillDirs
+      value.source = "${piSkillsDir}/${d}/SKILL.md";
+    }) piSkillDirs
   );
+
+  # config/agents/skills/ — cross-agent shared skills (Claude, OpenCode, Pi)
+  agentSkillsDir = "${configDir}/agents/skills";
+  agentSkillDirs = discoverSkills agentSkillsDir;
+  agentSkillLinks = lib.listToAttrs (
+    map (d: {
+      name = ".pi/agent/skills/${d}/SKILL.md";
+      value.source = "${agentSkillsDir}/${d}/SKILL.md";
+    }) agentSkillDirs
+  );
+
+  skillLinks = piSkillLinks // agentSkillLinks;
 
   # Dynamically discover subagent definitions from config/pi/agents/
   # Supports both .md (agents) and .chain.md (chains) for pi-subagents
@@ -210,8 +226,9 @@ in
     env.PI_TASKS_BACKEND = "beads";
 
     # Pi configuration via home-manager
-    # - Skills are shared across all agents (Claude, OpenCode, Pi)
-    # - AGENTS.md is built dynamically from config/agents/rules/*.md
+    # - config/pi/skills/ + config/agents/skills/ → ~/.pi/agent/skills/
+    # - ~/.agents/skills/ auto-discovered by Pi natively (manually installed globals)
+    # - AGENTS.md built dynamically from config/agents/rules/*.md
     # - settings.json stripped of comments (pi only supports standard JSON)
     home-manager.users.${config.user.name} =
       { lib, ... }:
