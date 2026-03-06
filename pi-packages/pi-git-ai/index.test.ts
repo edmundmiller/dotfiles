@@ -5,7 +5,6 @@ const mockIsToolCall = mock((toolName: string, event: any) => {
   return event.toolName === toolName;
 });
 
-// Track spawn calls — wrap spawn to record args without replacing it
 let spawnCalls: Array<{ cmd: string; args: string[] }> = [];
 const originalSpawn = spawn;
 
@@ -27,8 +26,6 @@ const {
   default: createExtension,
 } = await import("./index.ts");
 
-// --- Test helpers ---
-
 function editEvent(path: string, toolCallId = "tc-1"): any {
   return { toolName: "edit", toolCallId, input: { path, oldText: "a", newText: "b" } };
 }
@@ -48,8 +45,6 @@ function customToolEvent(
 ): any {
   return { toolName, toolCallId, input };
 }
-
-// --- getEditedPaths ---
 
 describe("getEditedPaths", () => {
   test("extracts path from edit tool call", () => {
@@ -97,8 +92,6 @@ describe("getEditedPaths", () => {
     expect(getEditedPaths(applyPatchEvent(patch))).toEqual(["src/spaced.ts"]);
   });
 });
-
-// --- buildTranscript ---
 
 describe("buildTranscript", () => {
   test("converts user string content", () => {
@@ -231,7 +224,6 @@ describe("buildTranscript", () => {
 
   test("handles assistant with non-array content", () => {
     const entries = [{ type: "message", message: { role: "assistant", content: "just a string" } }];
-    // Should skip — assistant content must be an array
     expect(buildTranscript(entries)).toEqual([]);
   });
 
@@ -290,8 +282,6 @@ describe("buildTranscript", () => {
   });
 });
 
-// --- runCheckpoint ---
-
 describe("runCheckpoint", () => {
   beforeEach(() => {
     spawnCalls = [];
@@ -306,17 +296,7 @@ describe("runCheckpoint", () => {
     expect(spawnCalls[0].cmd).toBe("git-ai");
     expect(spawnCalls[0].args).toEqual(["checkpoint", "agent-v1", "--hook-input", "stdin"]);
   });
-
-  test("resolves without throwing on any spawn outcome", async () => {
-    // Even if git-ai fails, runCheckpoint should resolve (not reject/throw)
-    await runCheckpoint({
-      type: "human",
-      repo_working_dir: "/tmp",
-    });
-  });
 });
-
-// --- Extension lifecycle ---
 
 describe("extension lifecycle", () => {
   let handlers: Record<string, Function>;
@@ -372,16 +352,13 @@ describe("extension lifecycle", () => {
 
   test("tool_call for edit checks git-ai availability then proceeds", async () => {
     createExtension(mockPi);
-    const event = editEvent("src/main.ts");
-    await handlers["tool_call"](event);
-    // First exec: git-ai --version check, second: not done here (runCheckpoint uses spawn)
+    await handlers["tool_call"](editEvent("src/main.ts"));
     expect(execCalls).toEqual([{ cmd: "git-ai", args: ["--version"] }]);
   });
 
   test("tool_call skips non-file-editing tools", async () => {
     createExtension(mockPi);
     await handlers["tool_call"](customToolEvent("bash", { command: "ls" }));
-    // No exec calls — not a file-editing tool
     expect(execCalls).toEqual([]);
   });
 
@@ -389,86 +366,78 @@ describe("extension lifecycle", () => {
     mockPi.exec = mock(async () => {
       throw new Error("not found");
     });
-    execCalls = []; // reset
     createExtension(mockPi);
 
     await handlers["tool_call"](editEvent("a.ts"));
     await handlers["tool_call"](editEvent("b.ts"));
 
-    // Only one version check — result cached
     expect(mockPi.exec).toHaveBeenCalledTimes(1);
   });
 
   test("tool_execution_end ignores untracked tool calls", async () => {
     createExtension(mockPi);
-    const endEvent = { toolCallId: "unknown-tc", toolName: "edit", isError: false };
-    await handlers["tool_execution_end"](endEvent, makeCtx());
-    // No exec calls — toolCallId wasn't tracked
+    await handlers["tool_execution_end"](
+      { toolCallId: "unknown-tc", toolName: "edit", isError: false },
+      makeCtx()
+    );
     expect(execCalls).toEqual([]);
   });
 
   test("tool_execution_end skips errored tool calls", async () => {
     createExtension(mockPi);
-    const event = editEvent("src/main.ts", "tc-err");
-    await handlers["tool_call"](event);
-    execCalls = []; // clear version check
+    await handlers["tool_call"](editEvent("src/main.ts", "tc-err"));
+    execCalls = [];
 
-    const endEvent = { toolCallId: "tc-err", toolName: "edit", isError: true };
-    await handlers["tool_execution_end"](endEvent, makeCtx());
-    // No checkpoint — tool errored
+    await handlers["tool_execution_end"](
+      { toolCallId: "tc-err", toolName: "edit", isError: true },
+      makeCtx()
+    );
     expect(execCalls).toEqual([]);
   });
 
   test("agent_end resets availability cache", async () => {
-    // First run: git-ai available
     createExtension(mockPi);
     await handlers["tool_call"](editEvent("a.ts"));
-    expect(execCalls).toHaveLength(1); // version check
+    expect(execCalls).toHaveLength(1);
 
-    // agent_end resets cache
     await handlers["agent_end"]();
 
-    // Next tool_call should re-check availability
     await handlers["tool_call"](editEvent("b.ts"));
-    expect(execCalls).toHaveLength(2); // second version check
+    expect(execCalls).toHaveLength(2);
   });
 
-  test("tool_execution_end passes correct model and session to transcript", async () => {
-    // We can't easily intercept runCheckpoint (uses spawn), but we can verify
-    // the handler doesn't throw and processes correctly
+  test("tool_execution_end passes model and session to checkpoint", async () => {
     createExtension(mockPi);
-    const event = editEvent("src/main.ts", "tc-model");
-    await handlers["tool_call"](event);
+    await handlers["tool_call"](editEvent("src/main.ts", "tc-model"));
 
-    const ctx = makeCtx({
-      model: { id: "claude-opus-4-20250514" },
-      sessionId: "sess-abc",
-      branch: [{ type: "message", message: { role: "user", content: "fix it" } }],
-    });
-    const endEvent = { toolCallId: "tc-model", toolName: "edit", isError: false };
-    // Should not throw
-    await handlers["tool_execution_end"](endEvent, ctx);
+    await handlers["tool_execution_end"](
+      { toolCallId: "tc-model", toolName: "edit", isError: false },
+      makeCtx({
+        model: { id: "claude-opus-4-20250514" },
+        sessionId: "sess-abc",
+        branch: [{ type: "message", message: { role: "user", content: "fix it" } }],
+      })
+    );
   });
 
   test("model fallback to 'unknown' when model is null", async () => {
     createExtension(mockPi);
     await handlers["tool_call"](editEvent("a.ts", "tc-nomodel"));
 
-    const ctx = makeCtx({ model: undefined as any });
-    const endEvent = { toolCallId: "tc-nomodel", toolName: "edit", isError: false };
-    // Should not throw
-    await handlers["tool_execution_end"](endEvent, ctx);
+    await handlers["tool_execution_end"](
+      { toolCallId: "tc-nomodel", toolName: "edit", isError: false },
+      makeCtx({ model: undefined as any })
+    );
   });
 
   test("pendingPaths cleaned up after tool_execution_end", async () => {
     createExtension(mockPi);
-    const event = editEvent("src/main.ts", "tc-cleanup");
-    await handlers["tool_call"](event);
+    await handlers["tool_call"](editEvent("src/main.ts", "tc-cleanup"));
 
     const endEvent = { toolCallId: "tc-cleanup", toolName: "edit", isError: false };
     await handlers["tool_execution_end"](endEvent, makeCtx());
 
-    // Second call with same toolCallId should be a no-op (already deleted)
+    // Second call with same toolCallId is a no-op
     execCalls = [];
     await handlers["tool_execution_end"](endEvent, makeCtx());
     expect(execCalls).toEqual([]);
@@ -484,11 +453,11 @@ describe("extension lifecycle", () => {
 *** Add File: src/b.ts
 +content
 *** End Patch`;
-    const event = applyPatchEvent(patch, "tc-patch");
-    await handlers["tool_call"](event);
+    await handlers["tool_call"](applyPatchEvent(patch, "tc-patch"));
 
-    // Should not throw on end
-    const endEvent = { toolCallId: "tc-patch", toolName: "apply_patch", isError: false };
-    await handlers["tool_execution_end"](endEvent, makeCtx());
+    await handlers["tool_execution_end"](
+      { toolCallId: "tc-patch", toolName: "apply_patch", isError: false },
+      makeCtx()
+    );
   });
 });
