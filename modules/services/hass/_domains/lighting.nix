@@ -51,6 +51,7 @@
       {
         alias = "Adaptive Lighting: sleep mode on";
         id = "al_sleep_mode_on";
+        initial_state = true;
         description = "Enable AL sleep mode at 9:30 PM (30 min pre-warmup before Winding Down)";
         trigger = {
           platform = "time";
@@ -68,6 +69,7 @@
       {
         alias = "Adaptive Lighting: sleep mode off";
         id = "al_sleep_mode_off";
+        initial_state = true;
         description = "Disable AL sleep mode at 7 AM hard cutoff";
         trigger = {
           platform = "time";

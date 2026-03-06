@@ -104,6 +104,7 @@
         alias = "Sundown";
         id = "sundown";
         description = "Turn on lights and close blinds before sunset";
+        initial_state = true;
         trigger = {
           platform = "sun";
           event = "sunset";
@@ -140,6 +141,7 @@
         alias = "Entrance occupancy";
         id = "entrance_occupancy_night_light";
         description = "Night light on when motion detected, off after 5 min clear";
+        initial_state = true;
         trigger = {
           platform = "state";
           entity_id = "binary_sensor.smart_night_light_w_occupancy";
@@ -180,6 +182,7 @@
         alias = "Plant Glow Light on";
         id = "plant_glow_light_on";
         description = "Plant light on at 8 AM daily";
+        initial_state = true;
         trigger = {
           platform = "time";
           at = "08:00:00";
@@ -195,6 +198,7 @@
         alias = "Plant Glow Light off";
         id = "plant_glow_light_off";
         description = "Plant light off at 9 PM daily";
+        initial_state = true;
         trigger = {
           platform = "time";
           at = "21:00:00";
@@ -212,6 +216,7 @@
         alias = "First person arrives home";
         id = "first_person_arrives";
         description = "Welcome home — lights on, house mode Home";
+        initial_state = true;
         trigger = [
           {
             platform = "state";
@@ -243,6 +248,7 @@
         alias = "Last person leaves home";
         id = "last_person_leaves";
         description = "Everything off (except indicators), close blinds, away mode";
+        initial_state = true;
         trigger = [
           {
             platform = "state";
