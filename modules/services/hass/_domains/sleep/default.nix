@@ -238,6 +238,7 @@ in
         entities = {
           # Confirm sealed state — whitenoise stays, everything else off
           "input_boolean.goodnight" = "on";
+          "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise stays
           "cover.smartwings_window_covering" = "closed";
@@ -262,6 +263,7 @@ in
           "input_boolean.goodnight" = "off";
           "input_boolean.edmund_awake" = "off"; # reset for next night
           "input_boolean.monica_awake" = "off";
+          "select.master_suite_current_mode" = "home";
           # Position only — setting state="open" sends open_cover (100%)
           # which races with the position set. Just position is sufficient.
           "cover.smartwings_window_covering".position = 20;
