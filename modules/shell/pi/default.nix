@@ -31,6 +31,12 @@ let
   ghosttyCfg = config.modules.desktop.term.ghostty;
   inherit (config.dotfiles) configDir;
 
+  # Pre-built node_modules for pi-packages with npm dependencies
+  piPkgDeps = import ./lib/_pi-package-deps.nix {
+    inherit pkgs;
+    piPkgsDir = ../../../pi-packages;
+  };
+
   # Dynamically concatenate all rule files from config/agents/rules/
   # Same logic as Claude module for consistency
   rulesDir = "${configDir}/agents/rules";
@@ -229,6 +235,12 @@ in
             ".pi/agent/extensions/you-are-right-killer.ts".source =
               "${configDir}/pi/extensions/you-are-right-killer.ts";
             ".pi/agent/rtk-config.json".source = "${configDir}/pi/extensions/rtk-config.json";
+
+            # Nix-built node_modules for pi-packages with npm dependencies
+            # Source stays mutable in pi-packages/, only deps are store-managed
+            ".config/dotfiles/pi-packages/pi-agentmap/node_modules".source = piPkgDeps.pi-agentmap;
+            ".config/dotfiles/pi-packages/pi-dcp/node_modules".source = piPkgDeps.pi-dcp;
+            ".config/dotfiles/pi-packages/pi-scurl/node_modules".source = piPkgDeps.pi-scurl;
           };
 
         home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (
@@ -246,7 +258,8 @@ in
         );
 
         # Pi binary now provided by pkgs.llm-agents.pi (nix-managed).
-        # This activation handles bun-dependent extras only.
+        # Pi-package deps now provided via Nix-built node_modules (home.file symlinks above).
+        # This activation handles remaining bun-dependent extras only.
         home.activation.pi-extras = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           bun_bin="${pkgs.bun}/bin/bun"
           if [ -x "$bun_bin" ]; then
@@ -260,28 +273,6 @@ in
             if [ -f "$HOME/package.json" ] && ! grep -q '"license"' "$HOME/package.json"; then
               ${pkgs.jq}/bin/jq '. + {license: "UNLICENSED"}' "$HOME/package.json" > "$HOME/package.json.tmp" \
                 && mv "$HOME/package.json.tmp" "$HOME/package.json"
-            fi
-
-            # Install deps for pi-packages workspace when lockfile changes
-            # Uses a stamp file with bun.lock hash to avoid redundant installs
-            # but still catches new/changed deps (unlike the old node_modules-exists check)
-            pi_ws="$HOME/.config/dotfiles/pi-packages"
-            if [ -d "$pi_ws" ] && [ -f "$pi_ws/bun.lock" ]; then
-              stamp="$pi_ws/node_modules/.install-stamp"
-              lock_hash=$(${pkgs.coreutils}/bin/sha256sum "$pi_ws/bun.lock" | cut -d' ' -f1)
-              old_hash=""
-              [ -f "$stamp" ] && old_hash=$(cat "$stamp" 2>/dev/null)
-              if [ "$lock_hash" != "$old_hash" ]; then
-                echo "pi-packages deps changed, running bun install..."
-                run_install() { cd "$pi_ws" && "$bun_bin" install && echo "$lock_hash" > "$stamp"; }
-                if [ "$(id -u)" = "0" ]; then
-                  /usr/bin/su ${config.user.name} -c "$(declare -f run_install); run_install" \
-                    || echo "Warning: pi-packages bun install failed."
-                else
-                  run_install \
-                    || echo "Warning: pi-packages bun install failed."
-                fi
-              fi
             fi
           fi
         '';
