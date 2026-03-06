@@ -23,10 +23,12 @@ import {
   buildPrunableToolsList,
   NUDGE_PROMPT,
   COMPRESS_NUDGE_PROMPT,
+  DUMB_ZONE_NUDGE_PROMPT,
   COOLDOWN_PROMPT,
 } from "../prompts";
 import { estimateContextTokens } from "../tokens";
 import { getLogger } from "../logger";
+import { readDumbZoneSignal, type DumbZoneSignal } from "../dumb-zone-bridge";
 
 export interface ContextEventHandlerOptions {
   config: DcpConfigWithPruneRuleObjects;
@@ -247,15 +249,31 @@ function injectContextInfo(
     const isCompressNudge = totalTokens > contextLimit;
     const isPeriodicNudge = nudgeCounter.value >= nudgeFrequency;
 
-    // Only show prunable-tools list on nudge turns (not every turn)
-    if (isCompressNudge || isPeriodicNudge) {
+    // Check dumb-zone signal (optional — only fires if pi-dumb-zone is loaded)
+    const dumbZoneSignal = readDumbZoneSignal();
+    const isDumbZoneNudge =
+      dumbZoneSignal?.inZone === true &&
+      (dumbZoneSignal.severity === "danger" || dumbZoneSignal.severity === "critical");
+
+    // Show prunable-tools list + nudge when any trigger fires
+    if (isCompressNudge || isPeriodicNudge || isDumbZoneNudge) {
       const entries = getPrunableEntries(state, protectedTools);
       const prunableList = buildPrunableToolsList(entries);
       if (prunableList) {
         parts.push(prunableList);
       }
 
-      if (isCompressNudge) {
+      if (isDumbZoneNudge) {
+        // Dumb zone takes priority — most urgent nudge
+        const prompt = DUMB_ZONE_NUDGE_PROMPT.replace(
+          "{pct}",
+          dumbZoneSignal!.utilization.toFixed(0)
+        );
+        parts.push(prompt);
+        logger.info(
+          `Dumb zone signal: ${dumbZoneSignal!.severity} at ${dumbZoneSignal!.utilization.toFixed(1)}%`
+        );
+      } else if (isCompressNudge) {
         parts.push(COMPRESS_NUDGE_PROMPT);
         logger.info(`Context ~${totalTokens} tokens, exceeds limit ${contextLimit}`);
       } else {
