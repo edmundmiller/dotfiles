@@ -103,6 +103,7 @@ in
       {
         alias = "Vacation Start";
         id = "vacation_start";
+        initial_state = true;
         description = "vacation_mode on: 8Sleep away, Ecobee away, everything off";
         trigger = {
           platform = "state";
@@ -116,6 +117,7 @@ in
       {
         alias = "Vacation End - Person Arrives";
         id = "vacation_end_presence";
+        initial_state = true;
         description = "First person home during vacation → restore 8Sleep, Ecobee, Welcome Home";
         trigger = [
           {
