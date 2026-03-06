@@ -394,8 +394,9 @@ in
 
               agents.defaults = {
                 model = {
-                  primary = "openrouter/anthropic/claude-sonnet-4";
+                  primary = "openai-codex/gpt-5.3-codex";
                   fallbacks = [
+                    "openrouter/anthropic/claude-sonnet-4"
                     "anthropic/claude-sonnet-4-6"
                     "opencode/minimax-m2.5"
                   ];
@@ -403,8 +404,9 @@ in
                 thinkingDefault = "high";
                 heartbeat.every = "0m"; # Disable native heartbeat — use external systemd timer instead (OPS-24)
                 subagents.model = {
-                  primary = "openrouter/anthropic/claude-sonnet-4";
+                  primary = "openai-codex/gpt-5.3-codex";
                   fallbacks = [
+                    "openrouter/anthropic/claude-sonnet-4"
                     "anthropic/claude-sonnet-4-6"
                     "opencode/minimax-m2.5"
                   ];
