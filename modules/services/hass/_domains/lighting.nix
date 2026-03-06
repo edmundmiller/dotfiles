@@ -11,6 +11,9 @@
 # Manual control detection is on — if you manually adjust a light,
 # AL stops adapting it until it's toggled off/on.
 { lib, ... }:
+let
+  inherit (import ../_lib.nix) ensureEnabled;
+in
 {
   services.home-assistant.config = {
     adaptive_lighting = [
@@ -45,13 +48,12 @@
       }
     ];
 
-    automation = lib.mkAfter [
+    automation = lib.mkAfter (ensureEnabled [
       # AL sleep mode on: 9:30 PM — 30 min early warmup before Winding Down at 10 PM
       # Goodnight path handled by Winding Down scene
       {
         alias = "Adaptive Lighting: sleep mode on";
         id = "al_sleep_mode_on";
-        initial_state = true;
         description = "Enable AL sleep mode at 9:30 PM (30 min pre-warmup before Winding Down)";
         trigger = {
           platform = "time";
@@ -69,7 +71,6 @@
       {
         alias = "Adaptive Lighting: sleep mode off";
         id = "al_sleep_mode_off";
-        initial_state = true;
         description = "Disable AL sleep mode at 7 AM hard cutoff";
         trigger = {
           platform = "time";
@@ -82,6 +83,6 @@
           }
         ];
       }
-    ];
+    ]);
   };
 }

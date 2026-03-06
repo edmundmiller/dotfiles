@@ -1,6 +1,9 @@
 # Ambient domain — sun-based lighting, presence-based automations
 # Migrated from Apple Home automations
 { lib, ... }:
+let
+  inherit (import ../_lib.nix) ensureEnabled;
+in
 {
   services.home-assistant.config = {
     scene = lib.mkAfter [
@@ -70,7 +73,7 @@
       }
     ];
 
-    automation = lib.mkAfter [
+    automation = lib.mkAfter (ensureEnabled [
       # --- Sun-based ---
       # Follows Good Morning — once natural light fills the west-facing
       # apartment, artificial lights are unnecessary.
@@ -78,7 +81,6 @@
         alias = "Mid-morning";
         id = "mid_morning";
         description = "West-facing windows — kill lights and close blinds after sunrise";
-        initial_state = true; # force-enable on HA reload
         trigger = {
           platform = "sun";
           event = "sunrise";
@@ -104,7 +106,6 @@
         alias = "Sundown";
         id = "sundown";
         description = "Turn on lights and close blinds before sunset";
-        initial_state = true;
         trigger = {
           platform = "sun";
           event = "sunset";
@@ -141,7 +142,6 @@
         alias = "Entrance occupancy";
         id = "entrance_occupancy_night_light";
         description = "Night light on when motion detected, off after 5 min clear";
-        initial_state = true;
         trigger = {
           platform = "state";
           entity_id = "binary_sensor.smart_night_light_w_occupancy";
@@ -182,7 +182,6 @@
         alias = "Plant Glow Light on";
         id = "plant_glow_light_on";
         description = "Plant light on at 8 AM daily";
-        initial_state = true;
         trigger = {
           platform = "time";
           at = "08:00:00";
@@ -198,7 +197,6 @@
         alias = "Plant Glow Light off";
         id = "plant_glow_light_off";
         description = "Plant light off at 9 PM daily";
-        initial_state = true;
         trigger = {
           platform = "time";
           at = "21:00:00";
@@ -216,7 +214,6 @@
         alias = "First person arrives home";
         id = "first_person_arrives";
         description = "Welcome home — lights on, house mode Home";
-        initial_state = true;
         trigger = [
           {
             platform = "state";
@@ -248,7 +245,6 @@
         alias = "Last person leaves home";
         id = "last_person_leaves";
         description = "Everything off (except indicators), close blinds, away mode";
-        initial_state = true;
         trigger = [
           {
             platform = "state";
@@ -281,6 +277,6 @@
           }
         ];
       }
-    ];
+    ]);
   };
 }

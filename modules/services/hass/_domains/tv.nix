@@ -1,6 +1,8 @@
 # TV/media domain — inputs, scripts, automations for media_player.tv
 { lib, ... }:
 let
+  inherit (import ../_lib.nix) ensureEnabled;
+
   # --- Helper functions ---
   tvAction = action: {
     inherit action;
@@ -46,12 +48,11 @@ in
       };
     };
 
-    automation = lib.mkAfter [
+    automation = lib.mkAfter (ensureEnabled [
       # --- TV idle auto-off (2hr, night mode only) ---
       {
         alias = "TV auto-off after 2 hours idle";
         id = "tv_idle_auto_off";
-        initial_state = true;
         trigger = {
           platform = "state";
           entity_id = "media_player.tv";
@@ -70,7 +71,6 @@ in
       {
         alias = "TV sleep timer - start";
         id = "tv_sleep_timer_start";
-        initial_state = true;
         trigger = {
           platform = "state";
           entity_id = "input_number.tv_sleep_timer";
@@ -90,7 +90,6 @@ in
       {
         alias = "TV sleep timer - expired";
         id = "tv_sleep_timer_expired";
-        initial_state = true;
         trigger = {
           platform = "event";
           event_type = "timer.finished";
@@ -110,7 +109,6 @@ in
       {
         alias = "Reset TV counter daily";
         id = "reset_tv_counter_daily";
-        initial_state = true;
         trigger = {
           platform = "time";
           at = "00:00:00";
@@ -125,7 +123,6 @@ in
       {
         alias = "Count TV sessions";
         id = "count_tv_sessions";
-        initial_state = true;
         trigger = {
           platform = "state";
           entity_id = "media_player.tv";
@@ -138,6 +135,6 @@ in
           }
         ];
       }
-    ];
+    ]);
   };
 }

@@ -3,6 +3,9 @@
 # Sleep/wake lifecycle (goodnight, awake booleans, Good Morning) → sleep/
 # Vacation mode → vacation.nix
 { lib, ... }:
+let
+  inherit (import ../_lib.nix) ensureEnabled;
+in
 {
   services.home-assistant.config = {
     # --- Input helpers ---
@@ -35,12 +38,11 @@
     };
 
     # --- Automations ---
-    automation = lib.mkAfter [
+    automation = lib.mkAfter (ensureEnabled [
       # DND
       {
         alias = "Do Not Disturb";
         id = "dnd_on";
-        initial_state = true;
         trigger = {
           platform = "state";
           entity_id = "input_boolean.do_not_disturb";
@@ -56,6 +58,6 @@
           }
         ];
       }
-    ];
+    ]);
   };
 }
