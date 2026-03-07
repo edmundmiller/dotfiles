@@ -46,7 +46,6 @@
           itemRef = "Obsidian";
           encryptionPasswordRef = "op://Moni and Ed/Obsidian/Encryption Password";
         };
-        openclaw.enable = false;
         docker.enable = true;
         ssh.enable = true;
       };
