@@ -22,6 +22,7 @@ const DEFAULT_CONFIG: DcpConfigWithRuleRefs = {
   debug: false,
   rules: ["deduplication", "superseded-writes", "error-purging", "tool-pairing", "recency"],
   keepRecentCount: 10,
+  turnProtection: { enabled: true, turns: 3 },
 };
 
 /**
