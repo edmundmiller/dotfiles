@@ -110,8 +110,7 @@
     "npm:@prinova/pi-github-tools",
     // Task management UI (ctrl+x) - beads (bd) integration
     "~/.config/dotfiles/pi-packages/pi-beads",
-    // Fuzzy file picker (ctrl+f) - https://github.com/kaofelix/pi-fzf
-    "npm:pi-fzf",
+
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
     // /limits command - provider usage bars via sub-core
