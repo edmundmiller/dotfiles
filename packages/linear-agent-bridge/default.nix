@@ -29,6 +29,8 @@ buildNpmPackage rec {
 
   npmDepsHash = "sha256-UPm3S6F9KKok1rpQbz0mYsC07YeHtFTBnAUip2k6Moc=";
 
+  patches = [ ./add-route-auth.patch ];
+
   buildPhase = "npm run build";
 
   installPhase = ''
