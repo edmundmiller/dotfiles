@@ -37,6 +37,8 @@ in
         (import path)
         # opnix: 1Password secrets injection for NixOS hosts
         inputs.opnix.nixosModules.default
+        # OpenClaw service module (gateway, heartbeat, cron, webhook proxy)
+        inputs.openclaw-workspace.nixosModules.openclaw
         # Add openclaw home-manager module for NixOS hosts
         # (overlay applied at flake level via mkPkgs)
         {
