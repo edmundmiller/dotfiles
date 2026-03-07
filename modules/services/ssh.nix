@@ -78,6 +78,7 @@ in
         "no-touch-required sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIDvVosAjBisOM6GMdSjkxDUQpaf0LX8bmT+T/c7NX2AdAAAACnNzaDpnaXRodWI= edmundmiller"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFr8iZah3mwOy5QmDA/loQYBRspXooF2Fqaoq9kTAfuX edmuna.a.miller@gmail.com"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK3EVc3A55QHe83NXfqrClVohWz2DscDgx0pr4PSlcGO edmund.a.miller@protonmail.com"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILKq5Pgw1Cj7sKCo13FuFBBKNvSNJvlN3ZObhF/EjGT0 iphone-moshi"
       ];
     })
   ]);
