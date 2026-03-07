@@ -96,11 +96,6 @@
       ],
       "skills": [],
     },
-    // Canvas for visual diagrams - https://github.com/jyaunches/pi-canvas
-    {
-      "source": "https://github.com/jyaunches/pi-canvas",
-      "extensions": ["pi-extension/index.ts"],
-    },
     // Security guardrails - https://github.com/aliou/pi-guardrails
     "npm:@aliou/pi-guardrails",
     // LSP - standalone npm package (extracted from pi-hooks)
@@ -117,8 +112,6 @@
     "~/.config/dotfiles/pi-packages/pi-beads",
     // Fuzzy file picker (ctrl+f) - https://github.com/kaofelix/pi-fzf
     "npm:pi-fzf",
-    // Profile/settings switcher - https://www.npmjs.com/package/pi-codex-profile
-    "npm:pi-codex-profile",
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
     // /limits command - provider usage bars via sub-core
@@ -148,10 +141,6 @@
     "npm:pi-thinking-timer",
     // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
     "npm:pi-ghostty",
-    // Ghostty theme sync - https://github.com/ogulcancelik/pi-ghostty-theme-sync
-    "npm:pi-ghostty-theme-sync",
-    // Entire.io code context - https://github.com/entireio/cli
-    "npm:@hjanuschka/pi-entire",
     // Notification on task completion - https://github.com/ferologics/pi-notify
     "npm:pi-notify",
     // Multi-agent messaging/coordination - https://github.com/nicobailon/pi-messenger
@@ -160,14 +149,10 @@
     "npm:pi-interactive-shell",
     // Subagent delegation with chains, parallel execution, TUI - https://github.com/nicobailon/pi-subagents
     "npm:pi-subagents",
-    // Mermaid diagram rendering - https://www.npmjs.com/package/pi-mermaid
-    "npm:pi-mermaid",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
     // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
     "npm:pi-mcporter",
-    // Terminal-native ANSI theme (no hardcoded colors) - https://github.com/mavam/pi-terminal-theme
-    "npm:pi-terminal-theme",
     // GitNexus knowledge graph - auto-enriches reads/searches with call chains - https://github.com/tintinweb/pi-gitnexus
     "npm:pi-gitnexus",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
