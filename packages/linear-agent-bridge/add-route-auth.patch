@@ -1,0 +1,18 @@
+diff --git a/index.ts b/index.ts
+index 0000000..1111111 100644
+--- a/index.ts
++++ b/index.ts
+@@ -11,11 +11,13 @@ import "./src/api/query-ops.js";
+ export default function register(api: OpenClawPluginApi): void {
+   api.registerHttpRoute({
+     path: "/plugins/linear/linear",
+     handler: createLinearWebhook(api),
++    auth: "plugin",
+   });
+ 
+   api.registerHttpRoute({
+     path: "/plugins/linear/api",
+     handler: createApiRouter(api),
++    auth: "plugin",
+   });
+ }
