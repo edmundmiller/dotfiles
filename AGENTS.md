@@ -19,6 +19,7 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 - **Modules:** `modules/` (shell, editors, services, etc.)
 - **Home-manager configs:** `config/` (lazygit, ghostty, etc.)
 - **Skills catalog:** `skills/flake.nix` (child flake managing agent skills — see `skills/AGENTS.md`)
+- **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. Imported via `inputs.openclaw-workspace.nixosModules.openclaw` in `lib/nixos.nix`. Host-specific config (secrets, telegram, cron) stays in `hosts/nuc/default.nix`. Mac remote client is at `modules/desktop/apps/openclaw/`.
 - **`darwin.nix` is NOT imported** — don't put config there
 
 **⚠️ Child Flake Rule:** After changing `skills/flake.nix` or `skills/flake.lock`, ALWAYS run `nix flake update skills-catalog` from repo root to sync parent lock. Forgetting breaks rebuild.
