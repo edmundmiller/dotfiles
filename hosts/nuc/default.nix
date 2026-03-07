@@ -66,6 +66,10 @@ in
     ];
   };
 
+  # qmd skill: NUC-only (not in global agent-skills bundle to avoid token waste on Mac)
+  home.file.".openclaw/workspace/skills/qmd".source =
+    "${inputs.skills-catalog.inputs.qmd-repo}/skills/qmd";
+
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
@@ -417,8 +421,8 @@ in
           "mdream"
           "pr-review"
           "python-scripts"
-          "qmd"
         ];
+
         skills = [
           {
             name = "agentmail";
