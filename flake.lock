@@ -1428,6 +1428,22 @@
         "type": "github"
       }
     },
+    "openclaw-workspace": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1772858284,
+        "narHash": "sha256-4zvDxXwN5Qa5fWnwH2mDqubx10Hv4cC4VH0ZIp8coi0=",
+        "ref": "refs/heads/main",
+        "rev": "5a3fd595366959e9aed9444eaa01e954828d5681",
+        "revCount": 16,
+        "type": "git",
+        "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
+      }
+    },
     "opnix": {
       "inputs": {
         "flake-utils": "flake-utils_4",
@@ -1516,6 +1532,7 @@
         "nixpkgs": "nixpkgs_5",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "op-shell-plugins": "op-shell-plugins",
+        "openclaw-workspace": "openclaw-workspace",
         "opnix": "opnix",
         "skills-catalog": "skills-catalog",
         "stylix": "stylix",
