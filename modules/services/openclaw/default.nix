@@ -392,9 +392,29 @@ in
               };
 
               memory = {
+                backend = "qmd";
                 citations = "auto";
-                # QMD available for Obsidian vault search (not primary memory backend)
-                qmd.command = "${home}/.local/bin/qmd-wrapper";
+                qmd = {
+                  command = "${home}/.local/bin/qmd-wrapper";
+                  includeDefaultMemory = true;
+                  searchMode = "search";
+                  update = {
+                    interval = "5m";
+                    debounceMs = 15000;
+                    onBoot = true;
+                  };
+                  limits = {
+                    maxResults = 8;
+                    timeoutMs = 5000;
+                  };
+                  paths = [
+                    {
+                      name = "vault";
+                      path = "/home/${user}/obsidian-vault";
+                      pattern = "**/*.md";
+                    }
+                  ];
+                };
               };
 
               plugins = {
@@ -402,19 +422,7 @@ in
                   "camofox-browser"
                   "linear-agent-bridge"
                 ];
-                slots.memory = "memory-lancedb";
-                entries."memory-lancedb" = {
-                  enabled = true;
-                  config = {
-                    embedding = {
-                      apiKey = "\${OPENAI_API_KEY}";
-                      model = "text-embedding-3-small";
-                    };
-                    dbPath = "${home}/.openclaw/memory/lancedb";
-                    autoCapture = true;
-                    autoRecall = true;
-                  };
-                };
+                slots.memory = "none";
               };
 
               agents.defaults = {
@@ -638,10 +646,10 @@ in
           };
           systemd.user.services.openclaw-gateway.Service =
             let
-              # memory-lancedb extension needs openai + @lancedb/lancedb from the
-              # gateway's pnpm store — the Nix build leaves extension node_modules
-              # empty (upstream packaging bug). This script finds the deps in the
-              # pnpm virtual store and appends NODE_PATH to the env file.
+              # Gateway extensions may need deps from the pnpm store (e.g. openai).
+              # The Nix build leaves extension node_modules empty (upstream packaging
+              # bug). This script finds deps in the pnpm virtual store and appends
+              # NODE_PATH to the env file.
               findNodePath = pkgs.writeShellScript "openclaw-node-path" ''
                 set -euo pipefail
                 GW_STORE=$(readlink -f $(which openclaw) | sed 's|/bin/openclaw$||')
