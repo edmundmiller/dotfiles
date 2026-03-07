@@ -574,7 +574,12 @@ in
               channels.telegram = mkIf cfg.telegram.enable {
                 tokenFile = cfg.telegram.botTokenFile;
                 inherit (cfg.telegram) allowFrom;
-                groups."*".requireMention = cfg.telegram.requireMention;
+                groups = listToAttrs (
+                  map (b: {
+                    name = b.peerId;
+                    value.requireMention = cfg.telegram.requireMention;
+                  }) (filter (b: b.kind == "group") cfg.telegram.bindings)
+                );
               };
             };
           };
