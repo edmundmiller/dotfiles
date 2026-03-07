@@ -88,6 +88,7 @@ export function createContextEventHandler(options: ContextEventHandlerOptions) {
       injectContextInfo(
         messages,
         toolCacheState,
+        config,
         lastToolWasDcp,
         nudgeCounter,
         nudgeFrequency,
@@ -231,6 +232,7 @@ function applyLlmDrivenPruning(
 function injectContextInfo(
   messages: AgentMessage[],
   state: ToolCacheState,
+  config: DcpConfigWithPruneRuleObjects,
   lastToolWasDcp: { value: boolean },
   nudgeCounter: { value: number },
   nudgeFrequency: number,

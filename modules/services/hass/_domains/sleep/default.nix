@@ -45,7 +45,11 @@ let
   edmund = {
     name = "Edmund";
     id = "edmund";
-    bedPresence = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+    # Use composite template sensor — see template.binary_sensor below
+    bedPresence = "binary_sensor.edmund_bed_presence_reliable";
+    rawBedPresence = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
+    bedStateType = "sensor.edmund_s_eight_sleep_side_bed_state_type";
+    heartRate = "sensor.edmund_s_eight_sleep_side_heart_rate";
     focus = "binary_sensor.edmunds_iphone_focus";
     battery = "sensor.edmunds_iphone_battery_state";
     activity = "sensor.edmunds_iphone_activity";
@@ -58,7 +62,10 @@ let
   monica = {
     name = "Monica";
     id = "monica";
-    bedPresence = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+    bedPresence = "binary_sensor.monica_bed_presence_reliable";
+    rawBedPresence = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
+    bedStateType = "sensor.monica_s_eight_sleep_side_bed_state_type";
+    heartRate = "sensor.monica_s_eight_sleep_side_heart_rate";
     focus = "binary_sensor.monicas_iphone_focus";
     battery = "sensor.monicas_iphone_battery_state";
     activity = "sensor.monicas_iphone_activity";
@@ -66,6 +73,24 @@ let
     awake = "input_boolean.monica_awake";
     alarmSwitch = "switch.monica_s_eight_sleep_next_alarm";
     sleepStage = "sensor.monica_s_eight_sleep_side_sleep_stage";
+  };
+
+  # Reliable bed presence: bed_state_type active OR (raw presence ON AND HR available)
+  # Survives cloud session ending early because bed_state_type persists.
+  mkReliableBedPresence = p: {
+    name = "${p.name} Bed Presence Reliable";
+    unique_id = "${p.id}_bed_presence_reliable";
+    icon = "mdi:bed";
+    device_class = "occupancy";
+    # bed_state_type != 'off' means Eight Sleep thinks someone is in bed
+    # Raw presence OR heart rate available as fallback confirmation
+    state = ''
+      {{ states('${p.bedStateType}') not in ['off', 'unknown', 'unavailable']
+         or (is_state('${p.rawBedPresence}', 'on')
+             and states('${p.heartRate}') not in ['unknown', 'unavailable', '0']) }}
+    '';
+    # Only update every 30s — avoids flapping on sensor update boundaries
+    delay_off.seconds = 30;
   };
 
   # ── Automation generators ──────────────────────────────────────────────
@@ -179,6 +204,18 @@ let
 in
 {
   services.home-assistant.config = {
+    # ── Template sensors (reliable bed presence) ─────────────────────────
+    # Composites that survive Eight Sleep cloud session ending prematurely.
+    # See: https://github.com/lukas-clarke/eight_sleep/issues/114
+    template = lib.mkAfter [
+      {
+        binary_sensor = [
+          (mkReliableBedPresence edmund)
+          (mkReliableBedPresence monica)
+        ];
+      }
+    ];
+
     # ── Input helpers (sleep/wake lifecycle) ──────────────────────────────
     input_boolean = {
       goodnight = {
