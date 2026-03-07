@@ -22,6 +22,9 @@ redirect
 sync_base.jsonl
 export-state/
 
+# Backup exports (full DB snapshots, regenerated on every bd sync)
+backup/
+
 # Ephemeral store (SQLite - wisps/molecules, intentionally not versioned)
 ephemeral.sqlite3
 ephemeral.sqlite3-journal
