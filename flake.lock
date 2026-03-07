@@ -1430,11 +1430,11 @@
     },
     "openclaw-workspace": {
       "locked": {
-        "lastModified": 1772901423,
-        "narHash": "sha256-zYkigYm5Fbw0n71yd/wzVgQQpyptHlKaaOT4Q7LIwOk=",
+        "lastModified": 1772910832,
+        "narHash": "sha256-75veVnSp2C79IDll+H8t1v1ejUvRAS3xmyRAVpGak9w=",
         "ref": "refs/heads/main",
-        "rev": "a60e1fc3c83ec52de5794fb1727a64c83e43e79f",
-        "revCount": 21,
+        "rev": "ae6886d0f51d35ec71f7d0e618ee0c7af466fd67",
+        "revCount": 22,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
       },
