@@ -5,13 +5,13 @@ export const DUMB_ZONE_MESSAGE = "YOU HAVE ENTERED THE DUMB ZONE";
  * These determine when we're entering the "dumb zone" based on token usage.
  */
 export const CONTEXT_THRESHOLDS = {
-  /** Warning threshold - getting close to dumb zone */
-  WARNING: 30,
+  /** Warning threshold - quiet banner, no popup */
+  WARNING: 40,
 
-  /** Danger threshold - fully in the dumb zone */
-  DANGER: 40,
+  /** Danger threshold - loud warning + popup overlay */
+  DANGER: 45,
 
-  /** Critical threshold - severe degradation expected */
+  /** Critical threshold - auto-compact fires here */
   CRITICAL: 50,
 } as const;
 
@@ -23,8 +23,8 @@ export const CONTEXT_THRESHOLDS = {
  * compaction, you're doing it wrong and should start fresh.
  *
  * Examples with 0.7 multiplier:
- * - WARNING: 30% → 21% after compaction
- * - DANGER: 40% → 28% after compaction
+ * - WARNING: 40% → 28% after compaction
+ * - DANGER: 45% → 31.5% after compaction
  */
 export const POST_COMPACTION_MULTIPLIER = 0.7;
 
