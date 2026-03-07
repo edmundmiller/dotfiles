@@ -54,6 +54,7 @@
 
     nix-openclaw.url = "github:openclaw/nix-openclaw";
     nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
+    nix-openclaw.inputs.nix-steipete-tools.follows = "nix-steipete-tools";
 
     openclaw-workspace.url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
 
