@@ -227,6 +227,9 @@ in
                 BUGSTER_CONFIG = "${cfg.dataDir}/bugster.toml";
                 UV_CACHE_DIR = "${dagsterCfg.home}/.cache/uv";
                 UV_PYTHON_PREFERENCE = "system";
+                # uv-managed Python looks for /etc/ssl/cert.pem (doesn't exist
+                # on NixOS). Point it at the NixOS CA bundle explicitly.
+                SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
               }
               # Per-asset healthcheck env vars:
               # healthcheckPingUrls."github_personal_tasknotes" = "https://..."
