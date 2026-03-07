@@ -78,5 +78,12 @@ export const DUMB_ZONE_PATTERNS: readonly RegExp[] = [
   /you are absolutely right/i,
 ];
 
+/**
+ * Auto-compact threshold (percentage of context window).
+ * When utilization reaches this level, compact automatically.
+ * Set to 0 to disable auto-compaction.
+ */
+export const AUTO_COMPACT_THRESHOLD = 50;
+
 /** Minimum time between overlay displays to avoid spam (ms) */
 export const OVERLAY_COOLDOWN_MS = 30000;
