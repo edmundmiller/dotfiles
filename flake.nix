@@ -345,6 +345,7 @@
             settings.global.excludes = [
               "packages/*/dist/**"
               "packages/*/node_modules/**"
+              ".beads/backup/**"
             ];
           };
 
