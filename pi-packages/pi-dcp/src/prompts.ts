@@ -13,23 +13,27 @@ import type { ToolCacheEntry } from "./tool-cache";
 export const SYSTEM_PROMPT = `
 ## Context Management (DCP)
 
-You have access to context management tools that help keep conversations efficient:
+You operate in a context-constrained environment. PROACTIVELY manage context to avoid context rot — stale outputs accumulating and degrading your performance. This is CRITICAL.
 
-- **dcp_prune**: Remove tool outputs that are no longer needed (e.g., old file reads superseded by edits, resolved errors, redundant listings)
-- **dcp_distill**: Replace verbose tool outputs with concise summaries while preserving key information
-- **dcp_compress**: Compress a range of conversation into a summary, removing the original messages
+### Tools
 
-### When to Use
-- After completing a subtask, prune tool outputs from that phase
-- When context feels bloated with old reads/listings
-- Before starting a new phase of work
-- When you see the <prunable-tools> list and notice large, stale outputs
+- **dcp_distill**: Condense tool outputs into high-fidelity knowledge nuggets. Your distillation must be comprehensive — capture technical details (symbols, signatures, logic, constraints) such that raw output is no longer needed. Distill is the PREFERRED tool: it preserves gained insights while freeing space. Use when raw info isn't needed but the knowledge is valuable.
 
-### Guidelines
-- Never prune tool outputs you're still actively using
-- Prefer distill over prune when the information might be needed later
-- Use compress for long stretches of back-and-forth that can be summarized
-- Write/edit outputs are safe to prune since the file system is the source of truth
+- **dcp_compress**: Squash a contiguous range of conversation into a technical summary. This is a sledgehammer — it replaces everything in the range (user/assistant messages, tool I/O). Use at natural phase boundaries, not preemptively. Your summary MUST be specific enough that NO AMBIGUITY remains about what was done, found, or decided.
+
+- **dcp_prune**: Remove tool outputs entirely with NO preservation. Last resort. Only prune outputs you're certain are irrelevant or superseded. Never prune outputs you may need later. Write/edit outputs are safe to prune since the filesystem is source of truth.
+
+### Timing
+
+Manage context at the START of a new turn (after receiving a user message), not at the END of your previous turn. At turn start you have fresh signal about what's needed next — you can better judge what's relevant vs noise from prior work.
+
+### Rules
+
+- NEVER call ONLY context management tools in a response — always parallelize with task-continuation tools (read, edit, bash)
+- Prefer distill over prune when information has value worth preserving
+- Use compress at natural conversation breakpoints, not mid-task
+- The <prunable-tools> list shows what's available to manage — if none is present, don't attempt to prune
+- Be respectful of API usage — manage methodically as you work, not in bulk cleanup bursts
 `.trim();
 
 /** Max entries to show in the prunable-tools list (largest by token count) */
