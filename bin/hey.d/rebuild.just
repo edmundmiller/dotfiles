@@ -23,7 +23,7 @@ rebuild *args='switch': opencode-update
             fi
         fi
     else
-        sudo nixos-rebuild --flake "{{FLAKE_DIR}}" {{args}}
+        nixos-rebuild --flake "{{FLAKE_DIR}}" --use-remote-sudo {{args}}
 
         # openclaw-gateway uses X-RestartIfChanged=false to survive rebuilds.
         # Restart it explicitly — unless we ARE openclaw (OPS-24).
@@ -60,7 +60,7 @@ test *args:
             fi
         fi
     else
-        sudo nixos-rebuild --flake "{{FLAKE_DIR}}" test {{args}}
+        nixos-rebuild --flake "{{FLAKE_DIR}}" --use-remote-sudo test {{args}}
     fi
 
 # Roll back to previous generation
@@ -70,5 +70,5 @@ rollback:
     if [[ "{{is_darwin}}" == "true" ]]; then
         sudo darwin-rebuild --rollback
     else
-        sudo nixos-rebuild --rollback
+        nixos-rebuild --use-remote-sudo --rollback
     fi

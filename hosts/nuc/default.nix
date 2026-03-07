@@ -58,11 +58,6 @@ in
   # Allow __noChroot derivations (e.g. qmd needs network for bun install)
   nix.settings.sandbox = "relaxed";
 
-  # Allow nix daemon to fetch private GitHub flake inputs
-  nix.extraOptions = ''
-    !include /run/agenix/nix-github-token
-  '';
-
   # nix-ld for dynamically linked binaries (e.g. sag TTS)
   programs.nix-ld = {
     enable = true;
