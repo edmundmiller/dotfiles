@@ -354,6 +354,33 @@ in
                 ${pkgs.systemd}/bin/systemctl --user daemon-reload 2>/dev/null || true
               '';
 
+          # Clone openclaw-workspace repo if workspace dir isn't already a git repo.
+          # Nix-managed files (AGENTS.md, SOUL.md, TOOLS.md) are .gitignored in the
+          # repo so home-manager symlinks coexist without conflict.
+          home.activation.ensureOpenclawWorkspace =
+            inputs.home-manager.lib.hm.dag.entryBefore [ "writeBoundary" ]
+              ''
+                WORKSPACE="$HOME/.openclaw/workspace"
+                if [ ! -d "$WORKSPACE/.git" ]; then
+                  # Remove any stale non-git workspace dir (just Nix skill symlinks)
+                  if [ -d "$WORKSPACE" ]; then
+                    # Preserve Nix-managed skill symlinks by moving aside
+                    BACKUP="$WORKSPACE.pre-clone-$$"
+                    mv "$WORKSPACE" "$BACKUP"
+                  fi
+                  ${pkgs.git}/bin/git clone git@github.com:edmundmiller/openclaw-workspace.git "$WORKSPACE" || {
+                    # Restore backup on clone failure
+                    if [ -d "$BACKUP" ]; then
+                      rm -rf "$WORKSPACE"
+                      mv "$BACKUP" "$WORKSPACE"
+                    fi
+                    echo "WARNING: openclaw-workspace clone failed" >&2
+                  }
+                  # Clean up backup
+                  rm -rf "''${BACKUP:-/nonexistent}"
+                fi
+              '';
+
           home.file =
             inlineSkillFiles
             // sharedSkillFiles
