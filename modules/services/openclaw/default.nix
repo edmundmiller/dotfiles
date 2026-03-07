@@ -413,6 +413,11 @@ in
                       path = "/home/${user}/obsidian-vault";
                       pattern = "**/*.md";
                     }
+                    {
+                      name = "mill-docs";
+                      path = "/home/${user}/sync/mill-docs";
+                      pattern = "**/*.md";
+                    }
                   ];
                 };
               };
