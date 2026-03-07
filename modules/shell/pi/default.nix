@@ -83,17 +83,11 @@ let
     }) piSkillDirs
   );
 
-  # config/agents/skills/ — cross-agent shared skills (Claude, OpenCode, Pi)
-  agentSkillsDir = "${configDir}/agents/skills";
-  agentSkillDirs = discoverSkills agentSkillsDir;
-  agentSkillLinks = lib.listToAttrs (
-    map (d: {
-      name = ".pi/agent/skills/${d}/SKILL.md";
-      value.source = "${agentSkillsDir}/${d}/SKILL.md";
-    }) agentSkillDirs
-  );
+  # Note: config/agents/skills/ are managed by agent-skills-nix (skills/flake.nix)
+  # which installs them as directory symlinks in ~/.pi/agent/skills/.
+  # Do NOT add HM file links for those — they'd conflict with the read-only Nix store dirs.
 
-  skillLinks = piSkillLinks // agentSkillLinks;
+  skillLinks = piSkillLinks;
 
   # Dynamically discover subagent definitions from config/pi/agents/
   # Supports both .md (agents) and .chain.md (chains) for pi-subagents
