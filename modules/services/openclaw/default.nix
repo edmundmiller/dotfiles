@@ -347,6 +347,11 @@ in
             inputs.google-workspace-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
           ];
 
+          home.activation.cleanupStaleOpenclawUnit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            rm -f ~/.config/systemd/user/openclaw-gateway.service
+            ${pkgs.systemd}/bin/systemctl --user daemon-reload 2>/dev/null || true
+          '';
+
           home.file =
             inlineSkillFiles
             // sharedSkillFiles
@@ -391,6 +396,10 @@ in
               };
 
               plugins = {
+                allow = [
+                  "camofox-browser"
+                  "linear-agent-bridge"
+                ];
                 slots.memory = "memory-lancedb";
                 entries."memory-lancedb" = {
                   enabled = true;
@@ -463,6 +472,9 @@ in
                 exec = {
                   host = "gateway";
                   security = "full";
+                  safeBinTrustedDirs = [
+                    "/run/current-system/sw/bin"
+                  ];
                   safeBins = [
                     "cat"
                     "ls"
