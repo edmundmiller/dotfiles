@@ -347,10 +347,12 @@ in
             inputs.google-workspace-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
           ];
 
-          home.activation.cleanupStaleOpenclawUnit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            rm -f ~/.config/systemd/user/openclaw-gateway.service
-            ${pkgs.systemd}/bin/systemctl --user daemon-reload 2>/dev/null || true
-          '';
+          home.activation.cleanupStaleOpenclawUnit =
+            inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ]
+              ''
+                rm -f ~/.config/systemd/user/openclaw-gateway.service
+                ${pkgs.systemd}/bin/systemctl --user daemon-reload 2>/dev/null || true
+              '';
 
           home.file =
             inlineSkillFiles
