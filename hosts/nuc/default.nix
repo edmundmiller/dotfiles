@@ -417,6 +417,7 @@ in
           "mdream"
           "pr-review"
           "python-scripts"
+          "qmd"
         ];
         skills = [
           {
