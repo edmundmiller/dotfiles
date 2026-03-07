@@ -257,7 +257,7 @@ function injectContextInfo(
 
     // Show prunable-tools list + nudge when any trigger fires
     if (isCompressNudge || isPeriodicNudge || isDumbZoneNudge) {
-      const entries = getPrunableEntries(state, protectedTools);
+      const entries = getPrunableEntries(state, protectedTools, 5, config.turnProtection);
       const prunableList = buildPrunableToolsList(entries);
       if (prunableList) {
         parts.push(prunableList);
