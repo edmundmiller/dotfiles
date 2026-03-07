@@ -92,6 +92,13 @@ export const isPruneRuleObject = (obj: unknown): obj is PruneRule => {
 /**
  * Extension configuration
  */
+export interface TurnProtection {
+  /** Enable turn-based protection */
+  enabled: boolean;
+  /** Number of recent turns to protect from auto-pruning */
+  turns: number;
+}
+
 export interface DcpConfig {
   /** Master enable/disable toggle */
   enabled?: boolean;
@@ -99,6 +106,8 @@ export interface DcpConfig {
   debug?: boolean;
   /** Always keep last N messages */
   keepRecentCount: number;
+  /** Protect tool outputs from the last N agent turns */
+  turnProtection?: TurnProtection;
   /** Optional log directory override */
   logDir?: string;
 }

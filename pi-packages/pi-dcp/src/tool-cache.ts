@@ -21,6 +21,8 @@ export interface ToolCacheEntry {
   isError: boolean;
   /** Short identifier for display (e.g. file path, command) */
   paramKey: string;
+  /** Agent turn this tool call belongs to (0-indexed) */
+  turn: number;
 }
 
 export interface ToolCacheState {
@@ -32,6 +34,8 @@ export interface ToolCacheState {
   prunedIds: Set<string>;
   /** callId → distillation text */
   distillations: Map<string, string>;
+  /** Current turn counter (incremented on each user message) */
+  currentTurn: number;
 }
 
 /**
@@ -43,6 +47,7 @@ export function createToolCacheState(): ToolCacheState {
     idList: [],
     prunedIds: new Set(),
     distillations: new Map(),
+    currentTurn: 0,
   };
 }
 
@@ -63,8 +68,13 @@ export function syncToolCache(
     }
   }
 
-  // Scan assistant messages for toolCall blocks
+  // Count turns (each user message starts a new turn)
+  let turnCounter = 0;
   for (const msg of messages) {
+    if (msg.role === "user") {
+      turnCounter++;
+    }
+
     if (msg.role !== "assistant" || !Array.isArray(msg.content)) continue;
 
     for (const block of msg.content) {
@@ -87,12 +97,15 @@ export function syncToolCache(
         tokenCount,
         isError,
         paramKey: extractParamKey(toolName, parameters),
+        turn: turnCounter,
       };
 
       state.cache.set(block.id, entry);
       state.idList.push(block.id);
     }
   }
+
+  state.currentTurn = turnCounter;
 }
 
 /**
@@ -131,11 +144,14 @@ export function extractParamKey(toolName: string, params: Record<string, any>): 
  *
  * @param skipRecent Number of most recent entries to exclude from the list.
  *   Prevents the model from pruning tool results it just received.
+ * @param turnProtection If set, entries from the last N turns are excluded.
+ *   Takes precedence over skipRecent — tools from protected turns never appear.
  */
 export function getPrunableEntries(
   state: ToolCacheState,
   protectedTools: string[] = [],
-  skipRecent: number = 5
+  skipRecent: number = 5,
+  turnProtection?: { enabled: boolean; turns: number }
 ): { numericId: number; entry: ToolCacheEntry }[] {
   const result: { numericId: number; entry: ToolCacheEntry }[] = [];
 
@@ -149,6 +165,15 @@ export function getPrunableEntries(
     const entry = state.cache.get(callId);
     if (!entry) continue;
     if (protectedTools.includes(entry.toolName)) continue;
+
+    // Turn protection: skip entries from the last N agent turns
+    if (
+      turnProtection?.enabled &&
+      turnProtection.turns > 0 &&
+      state.currentTurn - entry.turn < turnProtection.turns
+    ) {
+      continue;
+    }
 
     result.push({ numericId: i, entry });
   }

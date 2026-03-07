@@ -151,6 +151,81 @@ describe("Tool Cache", () => {
     const allEntries = getPrunableEntries(state, [], 0);
     expect(allEntries.length).toBe(8);
   });
+
+  test("tracks turns from user messages", () => {
+    const state = createToolCacheState();
+    const user = (text: string): AgentMessage =>
+      ({ role: "user", content: [{ type: "text", text }], timestamp: Date.now() }) as any;
+
+    const messages: AgentMessage[] = [
+      user("first request"),
+      assistant("t1", [{ id: "toolu_A", name: "read", args: { path: "a.txt" } }]),
+      toolResult("toolu_A", "read", "aaa"),
+      user("second request"),
+      assistant("t2", [{ id: "toolu_B", name: "read", args: { path: "b.txt" } }]),
+      toolResult("toolu_B", "read", "bbb"),
+      user("third request"),
+      assistant("t3", [{ id: "toolu_C", name: "read", args: { path: "c.txt" } }]),
+      toolResult("toolu_C", "read", "ccc"),
+    ];
+
+    syncToolCache(state, messages);
+
+    expect(state.currentTurn).toBe(3);
+    expect(state.cache.get("toolu_A")!.turn).toBe(1);
+    expect(state.cache.get("toolu_B")!.turn).toBe(2);
+    expect(state.cache.get("toolu_C")!.turn).toBe(3);
+  });
+
+  test("turn protection excludes recent turns from prunable list", () => {
+    const state = createToolCacheState();
+    const user = (text: string): AgentMessage =>
+      ({ role: "user", content: [{ type: "text", text }], timestamp: Date.now() }) as any;
+
+    const messages: AgentMessage[] = [
+      user("turn 1"),
+      assistant("t1", [{ id: "toolu_A", name: "read", args: { path: "a.txt" } }]),
+      toolResult("toolu_A", "read", "aaa"),
+      user("turn 2"),
+      assistant("t2", [{ id: "toolu_B", name: "read", args: { path: "b.txt" } }]),
+      toolResult("toolu_B", "read", "bbb"),
+      user("turn 3"),
+      assistant("t3", [{ id: "toolu_C", name: "read", args: { path: "c.txt" } }]),
+      toolResult("toolu_C", "read", "ccc"),
+    ];
+
+    syncToolCache(state, messages);
+
+    // Protect last 2 turns, skipRecent=0 to isolate turn protection
+    const entries = getPrunableEntries(state, [], 0, { enabled: true, turns: 2 });
+    // Only turn 1 (toolu_A) should be prunable — turns 2+3 protected
+    expect(entries.length).toBe(1);
+    expect(entries[0].entry.paramKey).toBe("a.txt");
+
+    // Without turn protection, all 3 are prunable
+    const all = getPrunableEntries(state, [], 0);
+    expect(all.length).toBe(3);
+  });
+
+  test("turn protection disabled passes through all entries", () => {
+    const state = createToolCacheState();
+    const user = (text: string): AgentMessage =>
+      ({ role: "user", content: [{ type: "text", text }], timestamp: Date.now() }) as any;
+
+    const messages: AgentMessage[] = [
+      user("turn 1"),
+      assistant("t1", [{ id: "toolu_A", name: "read", args: { path: "a.txt" } }]),
+      toolResult("toolu_A", "read", "aaa"),
+      user("turn 2"),
+      assistant("t2", [{ id: "toolu_B", name: "read", args: { path: "b.txt" } }]),
+      toolResult("toolu_B", "read", "bbb"),
+    ];
+
+    syncToolCache(state, messages);
+
+    const entries = getPrunableEntries(state, [], 0, { enabled: false, turns: 2 });
+    expect(entries.length).toBe(2);
+  });
 });
 
 describe("extractParamKey", () => {
