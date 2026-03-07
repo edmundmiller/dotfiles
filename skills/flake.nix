@@ -102,11 +102,6 @@
               filter.maxDepth = 1;
             };
 
-            qmd = {
-              path = inputs.qmd-repo.outPath;
-              subdir = "skills";
-              filter.maxDepth = 2;
-            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -126,9 +121,6 @@
 
             tmux.from = "mitsuhiko";
             tmux.path = ".";
-
-            qmd.from = "qmd";
-            qmd.path = "qmd";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";
