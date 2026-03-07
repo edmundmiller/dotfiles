@@ -93,6 +93,7 @@ If the `device-pair` plugin is enabled:
 
 ## Related Files
 
-- `modules/services/openclaw/` — NUC gateway service (server side)
+- **openclaw-workspace** repo (`github:edmundmiller/openclaw-workspace`) `module/` — NUC gateway service module (moved from dotfiles)
+- `hosts/nuc/default.nix` — NUC host-specific openclaw config (secrets, telegram, cron)
 - `hosts/mactraitorpro/default.nix` — Enables with `apps.openclaw.enable = true`
 - `hosts/shared/secrets/openclaw-gateway-token.age` — Auth token (agenix)
