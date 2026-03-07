@@ -277,6 +277,84 @@ in
           }
         ];
       }
+
+      # --- Roomba ---
+      {
+        alias = "Roomba start — last person leaves";
+        id = "roomba_start_last_person_leaves";
+        description = "Start Rosie + Squirty when house empties; skip during goodnight mode";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "person.edmund_miller";
+            from = "home";
+          }
+          {
+            platform = "state";
+            entity_id = "person.moni";
+            from = "home";
+          }
+        ];
+        condition = [
+          {
+            condition = "template";
+            value_template = "{{ states.person | selectattr('state', 'eq', 'home') | list | length == 0 }}";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.vacation_mode";
+            state = "off";
+          }
+          {
+            # Sleep guard (xrqm.3) — don't vacuum when goodnight mode is active
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "vacuum.start";
+            target.entity_id = [
+              "vacuum.rosie"
+              "vacuum.squirty"
+            ];
+          }
+        ];
+      }
+      {
+        alias = "Roomba dock — first person arrives";
+        id = "roomba_dock_first_person_arrives";
+        description = "Return Rosie + Squirty to base when first person arrives home";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "person.edmund_miller";
+            to = "home";
+          }
+          {
+            platform = "state";
+            entity_id = "person.moni";
+            to = "home";
+          }
+        ];
+        condition = [
+          {
+            # First to arrive — only 1 person now home
+            condition = "template";
+            value_template = "{{ states.person | selectattr('state', 'eq', 'home') | list | length == 1 }}";
+          }
+        ];
+        action = [
+          {
+            action = "vacuum.return_to_base";
+            target.entity_id = [
+              "vacuum.rosie"
+              "vacuum.squirty"
+            ];
+          }
+        ];
+      }
     ]);
   };
 }
