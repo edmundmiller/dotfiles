@@ -1479,6 +1479,22 @@
         "type": "github"
       }
     },
+    "qmd-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1772104549,
+        "narHash": "sha256-IR5lIQU+hFKyZdF5BvZHAQbkVV+Yrde6bQ/2nyJARRk=",
+        "owner": "tobi",
+        "repo": "qmd",
+        "rev": "40610c3aa65d9d399ebb188a7e4930f6628ae51c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tobi",
+        "repo": "qmd",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
@@ -1557,6 +1573,7 @@
         "openai-skills": "openai-skills",
         "pi-extension-skills": "pi-extension-skills",
         "pi-messenger-repo": "pi-messenger-repo",
+        "qmd-repo": "qmd-repo",
         "shaping-skills": "shaping-skills"
       },
       "locked": {
