@@ -640,8 +640,12 @@ in
                 [ -n "$OPENAI_DIR" ] && NODE_PATH="$OPENAI_DIR"
                 [ -n "$LANCE_DIR" ] && NODE_PATH="''${NODE_PATH:+$NODE_PATH:}$LANCE_DIR"
 
+                # Find bundled skills directory in pnpm virtual store
+                SKILLS_DIR=$(find "$PNPM" -path '*/node_modules/openclaw/skills' -type d 2>/dev/null | head -1)
+
                 mkdir -p "$XDG_RUNTIME_DIR/openclaw"
                 echo "NODE_PATH=$NODE_PATH" >> "$XDG_RUNTIME_DIR/openclaw/env"
+                [ -n "$SKILLS_DIR" ] && echo "OPENCLAW_BUNDLED_SKILLS_DIR=$SKILLS_DIR" >> "$XDG_RUNTIME_DIR/openclaw/env"
               '';
             in
             {
