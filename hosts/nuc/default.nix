@@ -406,15 +406,6 @@ in
             '';
           };
 
-          "travel-time-sync" = {
-            id = "ed4d27b6-11b1-4d5a-8f6e-321892e179bc";
-            enabled = false;
-            schedule = {
-              kind = "every";
-              everyMs = 1800000;
-            }; # 30m
-            message = "Run the travel time sync script: /home/emiller/.openclaw/workspace/scripts/run-travel-time.sh — Report only if there are errors or new travel events created. If everything is normal, just confirm briefly.";
-          };
         };
 
         sharedSkills = [
