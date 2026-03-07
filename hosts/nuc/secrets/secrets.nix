@@ -90,6 +90,11 @@ in
     edmundmiller
     nuc
   ];
+  # Nix daemon access token for fetching private GitHub flake inputs
+  "nix-github-token.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 
   # TODO: create these .age files to re-enable vault-sync
   # "cubox-api-key.age".publicKeys = [

@@ -58,6 +58,11 @@ in
   # Allow __noChroot derivations (e.g. qmd needs network for bun install)
   nix.settings.sandbox = "relaxed";
 
+  # Allow nix daemon to fetch private GitHub flake inputs
+  nix.extraOptions = ''
+    !include /run/agenix/nix-github-token
+  '';
+
   # nix-ld for dynamically linked binaries (e.g. sag TTS)
   programs.nix-ld = {
     enable = true;
@@ -186,69 +191,18 @@ in
     };
     services = {
       audiobookshelf.enable = true;
+      # OpenClaw — agents, secrets, cron jobs, and skills are workspace-owned
+      # (defined in openclaw-workspace module). Only infra config stays here.
       openclaw = {
         enable = true;
-        claudeMaxProxy.enable = false;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
         hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
-        secrets = [
-          {
-            envVar = "ANTHROPIC_API_KEY";
-            inherit (config.age.secrets.anthropic-api-key) path;
-          }
-          {
-            envVar = "OPENCODE_API_KEY";
-            inherit (config.age.secrets.opencode-api-key) path;
-          }
-          {
-            envVar = "OPENAI_API_KEY";
-            inherit (config.age.secrets.openai-api-key) path;
-          }
-          {
-            envVar = "ELEVENLABS_API_KEY";
-            inherit (config.age.secrets.elevenlabs-api-key) path;
-          }
-          {
-            envVar = "LINEAR_API_KEY";
-            path = linearTokenFile;
-          }
-          {
-            envVar = "LINEAR_WEBHOOK_SECRET";
-            inherit (config.age.secrets.linear-webhook-secret) path;
-          }
-          {
-            envVar = "HC_PING_KEY";
-            inherit (config.age.secrets.healthchecks-ping-key) path;
-          }
-          {
-            envVar = "HC_API_KEY";
-            inherit (config.age.secrets.healthchecks-api-key) path;
-          }
-          {
-            envVar = "HC_API_KEY_READONLY";
-            inherit (config.age.secrets.healthchecks-api-key-readonly) path;
-          }
-          {
-            envVar = "GOG_KEYRING_PASSWORD";
-            value = "gogcli-agenix";
-            literal = true;
-          }
-          {
-            envVar = "OPENROUTER_API_KEY";
-            inherit (config.age.secrets.openrouter-api-key) path;
-          }
-          {
-            envVar = "AGENTMAIL_API_KEY";
-            inherit (config.age.secrets.agentmail-api-key) path;
-          }
-        ];
         customPlugins = [
           {
             source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
             config.env.LINEAR_API_TOKEN_FILE = linearTokenFile;
           }
         ];
-        # Gateway extensions (npm plugins loaded into the gateway process)
         gatewayExtensions = [ pkgs.my.linear-agent-bridge ];
         heartbeatMonitor = {
           enable = true;
@@ -268,243 +222,19 @@ in
           bindings = [
             {
               peerId = "8357890648"; # @edmundamiller
-              agentId = "default";
+              agentId = "edmund";
             }
             {
               peerId = "8748874608"; # wife
-              agentId = "default";
+              agentId = "monica";
             }
             {
               peerId = "-5115496901"; # Norbot group
               kind = "group";
-              agentId = "default";
+              agentId = "family";
             }
           ];
         };
-        cronJobs = {
-          "Morning brief" = {
-            id = "17e31f2c-2a4a-460a-afe4-6317af3163fc";
-            schedule = {
-              kind = "cron";
-              expr = "0 7 * * *";
-            };
-            model = "openrouter/openai/gpt-5-nano";
-            message = ''
-              Generate a morning brief for Telegram. Run these commands, then format a bullet-list summary.
-
-              Data gathering:
-              1. tnote task list --urgency --no-color --no-pager --limit 8
-              2. tnote schedule report today --plain
-              3. tnote task list --no-color --no-pager -f "status == 'in-progress'" --limit 5
-              4. Check Linear for assigned/high-priority issues:
-                 curl -sf -X POST https://api.linear.app/graphql \
-                   -H "Authorization: $LINEAR_API_KEY" \
-                   -H "Content-Type: application/json" \
-                   -d '{"query":"{ issues(filter: { assignee: { isMe: { eq: true } }, state: { type: { nin: [\"canceled\", \"completed\"] } } }, orderBy: priority, first: 5) { nodes { identifier title state { name } priority } } }"}' \
-                   | jq -r '.data.issues.nodes[]? | "  \(.identifier) [P\(.priority)] \(.title)"'
-              5. Check agentmail inbox:
-                 curl -sf -H "Authorization: Bearer $AGENTMAIL_API_KEY" https://api.agentmail.to/v0/inboxes \
-                   | jq -r '.inboxes[]? | select(.unread_count > 0) | "\(.address): \(.unread_count) unread"'
-
-              Output format (bullet list, no section headers, keep it tight):
-              • Top 3-5 priorities from urgency list
-              • Scheduled tasks for today (if any)
-              • In-progress work carrying over
-              • Linear issues needing attention (if any)
-              • Unread mail count (if any)
-
-              Skip sections with no data. Keep total under 15 lines.
-            '';
-            delivery = {
-              mode = "announce";
-              to = "8357890648";
-            };
-          };
-
-          "Daily review" = {
-            id = "6bde5748-06f9-4746-987c-4b44afef191b";
-            schedule = {
-              kind = "cron";
-              expr = "0 21 * * *";
-            };
-            model = "openrouter/openai/gpt-5-nano";
-            message = ''
-              Generate an end-of-day review for Telegram. Run these commands, then format a bullet-list summary.
-
-              Data gathering:
-              1. tnote review daily --batch --no-color --no-pager
-              2. tnote time summary --today --by-project --no-color
-              3. tnote schedule report tomorrow --plain
-              4. Check Linear issues completed today:
-                 TODAY=$(date +%Y-%m-%d)
-                 curl -sf -X POST https://api.linear.app/graphql \
-                   -H "Authorization: $LINEAR_API_KEY" \
-                   -H "Content-Type: application/json" \
-                   -d '{"query":"{ issues(filter: { completedAt: { gte: \"'"$TODAY"'T00:00:00Z\" }, assignee: { isMe: { eq: true } } }, first: 10) { nodes { identifier title } } }"}' \
-                   | jq -r '.data.issues.nodes[]? | "  \(.identifier) \(.title)"'
-
-              Output format (bullet list, no section headers, keep it tight):
-              • Tasks completed today
-              • Time tracked breakdown (if any logged)
-              • Linear issues closed (if any)
-              • Tomorrow's scheduled tasks or top priorities
-              • Anything still in-progress carrying over
-
-              Skip sections with no data. Keep total under 15 lines.
-            '';
-            delivery = {
-              mode = "announce";
-              to = "8357890648";
-            };
-          };
-
-          "Weekly review" = {
-            id = "eabd1501-39bd-4b66-9d1f-842e848b1953";
-            schedule = {
-              kind = "cron";
-              expr = "0 9 * * 5";
-            };
-            model = "openai-codex/gpt-5.3-codex";
-            thinking = "medium";
-            message = "Weekly review using tnote: 1) Run 'tnote task list --no-color --no-pager -f status:waiting --limit 20' to find stale waiting tasks, 2) Run 'tnote vault lint --no-color 2>&1 | head -30' to check for data quality issues, 3) Review memory files for outdated entries, 4) Prepare weekend priorities and summarize findings";
-            delivery = {
-              mode = "announce";
-              to = "8357890648";
-            };
-          };
-
-          "tnote-schedule" = {
-            id = "b8804ea5-8033-4639-a9c5-2daa1c222951";
-            schedule = {
-              kind = "every";
-              everyMs = 3600000;
-            }; # 1h
-            timeoutSeconds = 180;
-            message = ''
-              Run tnote schedule then commit and push the obsidian vault:
-
-              1. cd /home/emiller/obsidian-vault && tnote schedule run
-              2. git add -A
-              3. Check if there are changes to commit (git diff --cached --quiet). If no changes, stop here.
-              4. git -c commit.gpgsign=false commit -m "sync: tnote schedule run from nuc"
-              5. git pull --rebase origin main (NEVER force push)
-              6. git push origin main
-
-              Report only if there are errors. If it runs successfully, just confirm briefly.
-            '';
-          };
-
-          "tnote-update" = {
-            id = "39814aea-2c1f-4a5b-9851-e0166a31bbc4";
-            schedule = {
-              kind = "cron";
-              expr = "0 3 * * *";
-            };
-            timeoutSeconds = 120;
-            message = ''
-              Update tnote by pulling the latest from the monorepo:
-
-              1. cd /home/emiller/src/personal/tn-monorepo && git pull --rebase origin main
-
-              Report only if there are errors. If it runs successfully, just confirm briefly.
-            '';
-          };
-
-        };
-
-        sharedSkills = [
-          "ast-grep"
-          "beads"
-          "code-search"
-          "healthchecks-io"
-          "jut"
-          "mdream"
-          "pr-review"
-          "python-scripts"
-        ];
-
-        skills = [
-          {
-            name = "agentmail";
-            description = "Send and receive emails using AgentMail API. Use when asked to email, check inbox, reply, or manage email.";
-            mode = "inline";
-            body = ''
-              # AgentMail
-
-              Send and receive emails via the AgentMail API. Auth via `$AGENTMAIL_API_KEY` env var.
-
-              ## API Base URL
-              ```
-              https://api.agentmail.to/v0
-              ```
-
-              ## Common Operations
-
-              ```bash
-              # List inboxes
-              curl -s -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
-                https://api.agentmail.to/v0/inboxes
-
-              # Create inbox
-              curl -s -X POST -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
-                -H "Content-Type: application/json" \
-                -d '{"display_name": "My Agent"}' \
-                https://api.agentmail.to/v0/inboxes
-
-              # Send email
-              curl -s -X POST -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
-                -H "Content-Type: application/json" \
-                -d '{"to": ["recipient@example.com"], "subject": "Subject", "text": "Body"}' \
-                https://api.agentmail.to/v0/inboxes/{inbox_id}/messages/send
-
-              # List messages
-              curl -s -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
-                https://api.agentmail.to/v0/inboxes/{inbox_id}/messages
-
-              # Reply to message
-              curl -s -X POST -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
-                -H "Content-Type: application/json" \
-                -d '{"text": "Reply body"}' \
-                https://api.agentmail.to/v0/inboxes/{inbox_id}/messages/{message_id}/reply
-              ```
-            '';
-          }
-          {
-            name = "obsidian-vault";
-            description = "Search Edmund's Obsidian vault for notes, projects, and knowledge base. Use qmd search, never grep or cat full files.";
-            mode = "inline";
-            body = ''
-              # Obsidian Vault Search (qmd)
-
-              **Always use qmd. Never rg/cat full files** — qmd returns snippets (~500 tokens vs ~15k for full file reads).
-
-              ## Collections
-              - `vault` — full vault (PARA: projects, areas, resources, archive)
-              - `resources` — reference materials, tools, code snippets
-              - `areas` — ongoing areas of responsibility
-              - `tasks` — task notes
-              - `ai-claude` / `ai-chatgpt` / `ai-chats` — AI conversation history
-
-              ## Commands
-              ```bash
-              qmd search "topic"              # BM25 full-text (fast, most queries)
-              qmd vsearch "concept"           # vector/semantic search
-              qmd search "topic" -c resources # scope to collection
-              qmd get vault/path/to/note.md   # full file (only if needed)
-
-              # Frontmatter queries (qmd doesn't index YAML frontmatter)
-              rg -l "tags:.*bioinformatics" /home/emiller/obsidian-vault
-              rg "^status: " /home/emiller/obsidian-vault/01_Projects --include="*.md"
-              ```
-
-              ## Workflow
-              1. `qmd search` or `qmd vsearch` for content
-              2. `rg` only for frontmatter fields (tags, status, dates)
-              3. Results include path + snippet — usually enough
-              4. Only `qmd get` if you truly need full content
-            '';
-          }
-        ];
       };
       docker.enable = true;
       hass = {
