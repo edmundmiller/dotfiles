@@ -553,3 +553,7 @@
 {"actor":"Edmund Miller","comment":null,"created_at":"2026-03-06T21:51:48Z","event_type":"closed","id":556,"issue_id":"dotfiles-sjmi","new_value":"generate per-group config from bindings instead of wildcard in 306438a2","old_value":""}
 {"actor":"Edmund Miller","comment":null,"created_at":"2026-03-06T21:51:48Z","event_type":"closed","id":557,"issue_id":"dotfiles-u439","new_value":"set OPENCLAW_BUNDLED_SKILLS_DIR env var in ExecStartPre in 2502661f","old_value":""}
 {"actor":"Edmund Miller","comment":null,"created_at":"2026-03-07T06:56:08Z","event_type":"created","id":558,"issue_id":"dotfiles-emvx","new_value":"","old_value":""}
+{"actor":"Edmund Miller","comment":null,"created_at":"2026-03-07T06:56:30Z","event_type":"created","id":559,"issue_id":"dotfiles-22nv","new_value":"","old_value":""}
+{"actor":"Edmund Miller","comment":null,"created_at":"2026-03-07T07:16:00Z","event_type":"created","id":560,"issue_id":"dotfiles-abp0","new_value":"","old_value":""}
+{"actor":"Edmund Miller","comment":"Added label: pi-fff","created_at":"2026-03-07T07:16:00Z","event_type":"label_added","id":561,"issue_id":"dotfiles-abp0","new_value":null,"old_value":null}
+{"actor":"Edmund Miller","comment":"Added label: upstream","created_at":"2026-03-07T07:16:00Z","event_type":"label_added","id":562,"issue_id":"dotfiles-abp0","new_value":null,"old_value":null}
