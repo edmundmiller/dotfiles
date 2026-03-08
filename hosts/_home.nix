@@ -26,8 +26,8 @@ with lib;
   location =
     if config.time.timeZone == "America/Chicago" then
       {
-        latitude = 32.983;
-        longitude = -96.752;
+        latitude = 33.08344580762093;
+        longitude = -96.82034388184549;
       }
     else
       { };
