@@ -165,6 +165,7 @@ in
             latitude = "!secret latitude";
             longitude = "!secret longitude";
             elevation = "!secret elevation";
+            radius = 14; # home zone radius in meters (~46 ft)
           };
 
           http = {
