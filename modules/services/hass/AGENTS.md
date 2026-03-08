@@ -6,7 +6,7 @@ Native `services.home-assistant` NixOS module. NixOS-only (`isDarwin` guard).
 
 - `default.nix` — Module definition (options, core HA config, infra/systemd, custom components)
 - `_domains/` — Domain files (scenes, automations, scripts) — see `_domains/AGENTS.md`
-- `devices.yaml` — Declarative device→area assignments (applied via WebSocket API)
+- `devices.yaml` — Declarative device→area assignments + area icons (applied via WebSocket API)
 - `apply-devices.py` — Script to apply devices.yaml (runs as systemd oneshot after HA starts)
 - `blueprints/` — Custom automation blueprints
 - `README.md` — Human docs with migration guide and home-ops parity table

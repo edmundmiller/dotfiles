@@ -72,7 +72,7 @@ The recorder database (sensor history, energy data) is in PostgreSQL, **not** in
 
 ## Declarative Device Management
 
-`devices.yaml` maps devices to areas. `apply-devices.py` applies these via the HA WebSocket API:
+`devices.yaml` maps devices to areas and room icons. `apply-devices.py` applies both via the HA WebSocket API:
 
 ```bash
 # Run manually
