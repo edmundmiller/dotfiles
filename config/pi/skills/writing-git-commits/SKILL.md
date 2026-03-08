@@ -7,7 +7,7 @@ description: Write clean, atomic conventional commits from staged or uncommitted
 
 ## Workflow
 
-1. **Inspect** — `git diff --cached --stat` (staged) and `git diff --stat` (unstaged)
+1. **Inspect** — `sem diff --staged` (staged) and `sem diff` (unstaged); fallback to `git diff --stat` when raw line stats required
 2. **Group** — cluster related changes into atomic commits (one logical change per commit)
 3. **Order** — commit foundational changes first (deps, config, types), then features, then tests
 4. **Write** — craft each message per the format below

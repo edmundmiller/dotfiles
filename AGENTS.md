@@ -24,6 +24,11 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 
 **⚠️ Child Flake Rule:** After changing `skills/flake.nix` or `skills/flake.lock`, ALWAYS run `nix flake update skills-catalog` from repo root to sync parent lock. Forgetting breaks rebuild.
 
+## Diff Policy
+
+- Prefer `sem diff` over `git diff` for reviews and change analysis.
+- Use native `git diff` only if sem can't express required flags/output.
+
 ## Issue Tracking
 
 This project uses **bd** (beads) for issue tracking.

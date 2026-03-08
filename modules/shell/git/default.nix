@@ -20,6 +20,7 @@ in
     user.packages = with pkgs; [
       git-open
       difftastic
+      my.sem # semantic git diff/impact/blame
       delta # for lazygit paging
       (mkIf config.modules.shell.gnupg.enable git-crypt)
       git-lfs

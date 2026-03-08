@@ -9,7 +9,7 @@ Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/l
 
 ## Packages
 
-git-open, difftastic, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks
+git-open, difftastic, sem, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks
 
 ## Config files symlinked
 

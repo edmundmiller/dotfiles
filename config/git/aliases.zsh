@@ -1,5 +1,56 @@
 #!/usr/bin/env zsh
 
+# Route common `git diff` calls to sem. Set GIT_DIFF_NATIVE=1 to bypass.
+git() {
+  if [[ "$1" != "diff" || -n "${GIT_DIFF_NATIVE:-}" ]]; then
+    command git "$@"
+    return
+  fi
+
+  shift
+  local args=("$@")
+
+  if ! command -v sem >/dev/null 2>&1; then
+    command git diff "${args[@]}"
+    return
+  fi
+
+  case "${#args[@]}" in
+    0)
+      sem diff
+      return
+      ;;
+    1)
+      case "${args[1]}" in
+        --cached|--staged)
+          sem diff --staged
+          return
+          ;;
+        *..*)
+          if [[ "${args[1]}" != *"..."* ]]; then
+            sem diff --from "${args[1]%%..*}" --to "${args[1]##*..}"
+            return
+          fi
+          ;;
+        -*)
+          ;;
+        *)
+          sem diff --commit "${args[1]}"
+          return
+          ;;
+      esac
+      ;;
+    2)
+      if [[ "${args[1]}" != -* && "${args[2]}" != -* ]]; then
+        sem diff --from "${args[1]}" --to "${args[2]}"
+        return
+      fi
+      ;;
+  esac
+
+  command git diff "${args[@]}"
+}
+
 g() { [[ $# = 0 ]] && git status --short . || git $*; }
 
 alias ga='git add'
