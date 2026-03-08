@@ -1,7 +1,8 @@
-# Declarative device → area assignments
+# Declarative device → area assignments and area icons
 # Applied via WebSocket API after HA starts
-# Key: area_id (must match HA area registry)
-# Values: list of device names (matched by friendly name)
+#
+# areas: area_id -> list of device names (matched by friendly name)
+# icons: area_id -> mdi icon for area registry
 
 areas:
   bathroom:
@@ -26,3 +27,11 @@ areas:
     - "Plant Glow Light"
   office:
     - "Edmund Desk"
+
+icons:
+  bathroom: mdi:shower
+  bedroom: mdi:bed
+  entrance: mdi:door
+  kitchen: mdi:silverware-fork-knife
+  living_room: mdi:sofa
+  office: mdi:desk
