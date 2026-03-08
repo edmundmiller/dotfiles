@@ -21,18 +21,32 @@ in
     };
 
     # --- Scripts ---
+    # Power switch — kills lights, TV, blinds. Does NOT activate bedtime
+    # state (goodnight, sleep mode). Use Winding Down for that.
     script.everything_off = {
       alias = "Everything Off";
       icon = "mdi:power";
-      description = "Nuclear option — delegates to Winding Down scene (goodnight, AL sleep mode, blinds, TV, lights), then kills night light too";
+      description = "Kill all lights, TV, close blinds. No bedtime state — safe to call any time of day.";
       sequence = [
         {
-          action = "scene.turn_on";
-          target.entity_id = "scene.winding_down";
+          action = "light.turn_off";
+          target.entity_id = [
+            "light.essentials_a19_a60"       # Trashcan
+            "light.essentials_a19_a60_2"     # Dishwasher
+            "light.essentials_a19_a60_3"     # Bathroom Nightstand
+            "light.essentials_a19_a60_4"     # Window Nightstand
+            "light.nanoleaf_multicolor_floor_lamp"  # Couch Lamp
+            "light.nanoleaf_multicolor_hd_ls"       # Edmund Desk
+            "light.smart_night_light_w"      # Night light
+          ];
         }
         {
-          action = "light.turn_off";
-          target.entity_id = "light.smart_night_light_w";
+          action = "media_player.turn_off";
+          target.entity_id = "media_player.tv";
+        }
+        {
+          action = "cover.close_cover";
+          target.entity_id = "cover.smartwings_window_covering";
         }
       ];
     };

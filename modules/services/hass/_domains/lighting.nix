@@ -2,7 +2,12 @@
 #
 # Adjusts color temp and brightness based on sun position.
 # Sleep mode: 9:30 PM time trigger (pre-warmup); on/off also embedded in
-# Winding Down and Good Morning scenes (sleep/, modes.nix).
+# Winding Down and Good Morning scenes (sleep/).
+#
+# Sleep mode lifecycle:
+#   ON:  9:30 PM (pre-warmup) + Winding Down/In Bed/Sleep scenes
+#   OFF: 7:00 AM (hard cutoff) + Good Morning scene + Arrive Home scene
+#   SAFETY: hourly daytime check — if sleep mode on but goodnight off, correct it
 #
 # One switch: "Living Space" — all color-temp-capable lights.
 # TODO: Consider splitting office (Edmund Desk) into separate switch
@@ -76,6 +81,50 @@ in
           platform = "time";
           at = "07:00:00";
         };
+        action = [
+          {
+            action = "switch.turn_off";
+            target.entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
+          }
+        ];
+      }
+      # Safety net: sleep mode on during daytime without goodnight = stale state.
+      # Catches cases where sleep mode was re-enabled after the 7 AM cutoff
+      # (e.g., by a scene or manual toggle) without the full bedtime flow.
+      {
+        alias = "Adaptive Lighting: daytime sleep mode correction";
+        id = "al_daytime_sleep_correction";
+        description = "If sleep mode is on but goodnight is off during the day, turn it off";
+        trigger = [
+          {
+            # Goodnight turned off (Good Morning) but sleep mode lingering
+            platform = "state";
+            entity_id = "input_boolean.goodnight";
+            to = "off";
+          }
+          {
+            # Periodic check — catch orphaned sleep mode
+            platform = "time_pattern";
+            hours = "/1";
+          }
+        ];
+        condition = [
+          {
+            condition = "time";
+            after = "07:00:00";
+            before = "21:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "off";
+          }
+        ];
         action = [
           {
             action = "switch.turn_off";
