@@ -64,32 +64,46 @@ alias gcam='git commit -a -m'
 alias gca='git commit --amend'
 alias gcad='git commit -a --amend'
 alias gcf='git commit --fixup'
-# gcl: Clone as bare repo with worktree layout
+# gcl: Clone using a separate worktree hub + checkout root
 # Usage: gcl <url> [name]
-# Creates: name/.git (bare) + name/<default-branch>/ worktree
-# Clone to a non-.git path first to avoid git's core.bare=false heuristic
+# Creates: name.worktree-hub/.git (bare) + name/ checkout (default branch)
 gcl() {
   if [[ $# -eq 0 ]]; then
     echo "Usage: gcl <url> [directory]"
-    echo "Creates a bare repository with worktree layout"
+    echo "Creates name.worktree-hub + name checkout"
     return 1
   fi
+
   local url=$1
   local name=${2:-$(basename "$url" .git)}
-  git clone --bare "$url" "${name}/.bare" || return 1
-  mv "${name}/.bare" "${name}/.git"
-  # Fix fetch refspec — bare clones omit this, making remote branches invisible
-  git -C "${name}/.git" config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-  git -C "${name}/.git" fetch
-  # Add worktree for default branch
-  local default_branch
-  default_branch=$(git -C "${name}/.git" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')
-  if [[ -z "$default_branch" ]]; then
-    default_branch=$(git -C "${name}/.git" remote show origin | awk '/HEAD branch/{print $NF}')
+  local hub="${name}.worktree-hub"
+  local cwd checkout_path
+  cwd=$(pwd -P)
+  checkout_path="${cwd}/${name}"
+
+  if [[ -e "$name" || -e "$hub" ]]; then
+    echo "✗ '$name' or '$hub' already exists"
+    return 1
   fi
-  git -C "${name}/.git" worktree add "${name}/${default_branch}" "${default_branch}"
-  echo "✓ $name/${default_branch} ready"
-  cd "${name}/${default_branch}"
+
+  git clone --bare "$url" "${hub}/.bare" || return 1
+  mv "${hub}/.bare" "${hub}/.git"
+
+  # Fix fetch refspec — bare clones omit this, making remote branches invisible
+  git -C "${hub}/.git" config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git -C "${hub}/.git" fetch
+
+  local default_branch
+  default_branch=$(git -C "${hub}/.git" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')
+  if [[ -z "$default_branch" ]]; then
+    default_branch=$(git -C "${hub}/.git" remote show origin | awk '/HEAD branch/{print $NF}')
+  fi
+
+  git -C "${hub}/.git" worktree add "$checkout_path" "$default_branch"
+
+  echo "✓ checkout: $name ($default_branch)"
+  echo "✓ hub: $hub"
+  cd "$checkout_path"
 }
 
 # g2bare: convert existing repo to bare layout IN-PLACE

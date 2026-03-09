@@ -2,6 +2,8 @@
 # Beautiful TUI for reviewing git diffs with syntax highlighting
 # https://github.com/edmundmiller/critique
 
+set -euo pipefail
+
 # Ensure bun is in PATH (tmux popup doesn't inherit full shell PATH)
 export PATH="$HOME/.bun/bin:$PATH"
 
@@ -12,11 +14,30 @@ CRITIQUE_GIT_CONFIG="${TMPDIR:-/tmp}/critique-gitconfig"
 export GIT_CONFIG_GLOBAL="$CRITIQUE_GIT_CONFIG"
 export GIT_CONFIG_SYSTEM=/dev/null
 
-git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Not in a git repo"
+    echo "Press enter to close..."
+    read -r
+    exit 1
+fi
+
+resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
+[[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
+if [[ -x "$resolver" ]]; then
+    git_root=$($resolver ".") || {
+        echo "Not in a usable checkout"
+        echo "Press enter to close..."
+        read -r
+        exit 1
+    }
+else
+    git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+fi
+
 if [[ -z "$git_root" ]]; then
     echo "Not in a git repo"
     echo "Press enter to close..."
-    read
+    read -r
     exit 1
 fi
 

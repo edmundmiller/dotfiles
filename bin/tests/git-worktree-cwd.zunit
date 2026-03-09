@@ -1,0 +1,80 @@
+#!/usr/bin/env zunit
+
+# Tests for git-worktree-cwd resolver.
+# Ensures bare worktree hubs auto-resolve to a real checkout.
+
+@setup {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+  export TEST_DIR=$(cd "$tmp_dir" && pwd -P)
+  export ORIG_PWD=$PWD
+  export SCRIPT="$ORIG_PWD/bin/git-worktree-cwd"
+
+  export REPO_DIR="$TEST_DIR/source"
+  export HUB_DIR="$TEST_DIR/hub"
+
+  mkdir -p "$REPO_DIR" "$HUB_DIR"
+
+  cd "$REPO_DIR"
+  git init --quiet --initial-branch=main
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  echo "hi" > README.md
+  git add README.md
+  git commit --quiet -m "init"
+
+  # Build bare-hub layout: hub/.git (bare) + hub/main worktree.
+  git clone --quiet --bare "$REPO_DIR" "$HUB_DIR/.bare"
+  mv "$HUB_DIR/.bare" "$HUB_DIR/.git"
+  git -C "$HUB_DIR/.git" config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git -C "$HUB_DIR/.git" fetch --quiet origin
+  git -C "$HUB_DIR/.git" worktree add --quiet "$HUB_DIR/main" main
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'passes through non-git directories' {
+  mkdir -p "$TEST_DIR/no-git"
+
+  run "$SCRIPT" "$TEST_DIR/no-git"
+
+  assert $state equals 0
+  assert "$output" same_as "$TEST_DIR/no-git"
+}
+
+@test 'returns current dir when already in worktree' {
+  run "$SCRIPT" "$HUB_DIR/main"
+
+  assert $state equals 0
+  assert "$output" same_as "$HUB_DIR/main"
+}
+
+@test 'resolves bare hub root to main worktree' {
+  run "$SCRIPT" "$HUB_DIR"
+
+  assert $state equals 0
+  assert "$output" same_as "$HUB_DIR/main"
+}
+
+@test 'falls back to first non-bare worktree when main missing' {
+  git -C "$HUB_DIR/.git" worktree add --quiet "$HUB_DIR/feature" -b feature main
+  git -C "$HUB_DIR/.git" worktree remove --force "$HUB_DIR/main"
+
+  run "$SCRIPT" "$HUB_DIR"
+
+  assert $state equals 0
+  assert "$output" same_as "$HUB_DIR/feature"
+}
+
+@test 'fails clearly when bare hub has no non-bare worktree' {
+  mkdir -p "$TEST_DIR/empty-hub"
+  git init --quiet --bare "$TEST_DIR/empty-hub/.git"
+
+  run "$SCRIPT" "$TEST_DIR/empty-hub"
+
+  assert $state equals 1
+  assert "$output" contains "no non-bare worktree"
+}
