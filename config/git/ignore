@@ -41,6 +41,8 @@ Thumbs.db
 .svn
 .git
 .jj-workspaces/
+.dmux/
+.dmux-hooks/
 .swp
 .idea
 .*.swp

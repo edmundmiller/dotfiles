@@ -5,6 +5,9 @@ model_reasoning_effort = "high"
 [projects."/Users/edmundmiller/src/seqera/web"]
 trust_level = "trusted"
 
+[projects."/Users/edmundmiller/src/seqera/ai/portal"]
+trust_level = "trusted"
+
 [projects."/Users/edmundmiller/src/seqera/ai/portal-but"]
 trust_level = "trusted"
 

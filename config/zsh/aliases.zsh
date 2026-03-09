@@ -106,5 +106,29 @@ alias tb="nc termbin.com 9999"
 alias bdf='bd-find-all'          # Search from current dir (fallback to ~)
 alias bdfa='bd-find-all --all'   # Search from home dir
 
+# Agent launch helpers: avoid bare git worktree hubs as cwd
+_agent_safe_cwd() {
+    local resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
+    [[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
+    if [[ -x "$resolver" ]]; then
+        "$resolver" "$PWD"
+    else
+        echo "$PWD"
+    fi
+}
+
 # Claude Code
-alias cc="claude --dangerously-skip-permissions"
+cc() {
+    local safe_cwd
+    safe_cwd=$(_agent_safe_cwd) || return 1
+    cd "$safe_cwd" || return 1
+    command claude --dangerously-skip-permissions "$@"
+}
+
+# Codex
+cdx() {
+    local safe_cwd
+    safe_cwd=$(_agent_safe_cwd) || return 1
+    cd "$safe_cwd" || return 1
+    command codex "$@"
+}

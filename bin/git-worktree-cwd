@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# git-worktree-cwd: resolve a path to a usable git checkout (never a bare worktree hub root).
+
+set -euo pipefail
+
+input_path="${1:-.}"
+
+if ! current_path=$(cd "$input_path" 2>/dev/null && pwd -P); then
+  echo "error: path not found: $input_path" >&2
+  exit 1
+fi
+
+# Non-git paths are valid; pass through unchanged.
+if ! git -C "$current_path" rev-parse --git-dir >/dev/null 2>&1; then
+  echo "$current_path"
+  exit 0
+fi
+
+inside_work_tree=$(git -C "$current_path" rev-parse --is-inside-work-tree 2>/dev/null || echo "false")
+if [[ "$inside_work_tree" == "true" ]]; then
+  echo "$current_path"
+  exit 0
+fi
+
+worktree_data=$(git -C "$current_path" worktree list --porcelain 2>/dev/null || true)
+if [[ -z "$worktree_data" ]]; then
+  echo "error: git repo at '$current_path' is not a usable checkout; cd into a worktree" >&2
+  exit 1
+fi
+
+entry_path=""
+entry_branch=""
+entry_is_bare=0
+main_path=""
+first_non_bare_path=""
+current_is_bare=0
+
+finish_entry() {
+  [[ -z "$entry_path" ]] && return
+
+  local entry_abs
+  if ! entry_abs=$(cd "$entry_path" 2>/dev/null && pwd -P); then
+    entry_abs="$entry_path"
+  fi
+
+  if [[ "$entry_abs" == "$current_path" && "$entry_is_bare" -eq 1 ]]; then
+    current_is_bare=1
+  fi
+
+  if [[ "$entry_is_bare" -eq 0 ]]; then
+    [[ -z "$first_non_bare_path" ]] && first_non_bare_path="$entry_abs"
+    if [[ "$entry_branch" =~ refs/heads/(main|master)$ ]]; then
+      main_path="$entry_abs"
+    fi
+  fi
+}
+
+while IFS= read -r line || [[ -n "$line" ]]; do
+  if [[ -z "$line" ]]; then
+    finish_entry
+    entry_path=""
+    entry_branch=""
+    entry_is_bare=0
+    continue
+  fi
+
+  case "$line" in
+    worktree\ *) entry_path="${line#worktree }" ;;
+    branch\ *) entry_branch="${line#branch }" ;;
+    bare) entry_is_bare=1 ;;
+  esac
+done <<< "$worktree_data"
+
+finish_entry
+
+if [[ "$inside_work_tree" == "false" || "$current_is_bare" -eq 1 ]]; then
+  target_path="${main_path:-$first_non_bare_path}"
+  if [[ -n "$target_path" ]]; then
+    echo "$target_path"
+    exit 0
+  fi
+
+  echo "error: detected bare worktree hub '$current_path' but found no non-bare worktree to switch to" >&2
+  exit 1
+fi
+
+echo "$current_path"

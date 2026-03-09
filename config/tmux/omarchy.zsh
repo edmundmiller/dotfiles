@@ -2,11 +2,22 @@
 # Omarchy-inspired tmux dev layouts
 # https://github.com/basecamp/omarchy/blob/dev/default/bash/fns/tmux
 
+_git_worktree_cwd() {
+  local resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
+  [[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
+  if [[ ! -x "$resolver" ]]; then
+    echo "$1"
+    return 0
+  fi
+  "$resolver" "$1"
+}
+
 # tml — tmux dev layout: AI tool (70%) + lazygit (30%) right, shell (15%) bottom
 tml() {
   [[ -z $TMUX ]] && { echo "You must start tmux to use tml."; return 1; }
 
-  local current_dir="${PWD}"
+  local current_dir
+  current_dir=$(_git_worktree_cwd "$PWD") || return 1
   local ai_pane
   local ai="$1"
 
@@ -43,7 +54,8 @@ tmlm() {
 
   for dir in "$base_dir"/*/; do
     [[ -d $dir ]] || continue
-    local dirpath="${dir%/}"
+    local dirpath
+    dirpath=$(_git_worktree_cwd "${dir%/}") || continue
 
     if $first; then
       tmux send-keys -t "$TMUX_PANE" "cd '$dirpath' && tml $ai" C-m
@@ -73,7 +85,8 @@ nicxm() { tmlm opencode; }
 tmlc() {
   [[ -z $TMUX ]] && { echo "You must start tmux to use tmlc."; return 1; }
 
-  local current_dir="${PWD}"
+  local current_dir
+  current_dir=$(_git_worktree_cwd "$PWD") || return 1
   local ai_pane critique_pane
   local ai="$1"
 

@@ -2,8 +2,16 @@
 # Toggle tml layout: AI pane + lazygit + shell
 # 1 pane → create layout, >1 pane → kill extras (keep current)
 
+set -euo pipefail
+
 pane_count=$(tmux list-panes | wc -l | tr -d ' ')
 current_dir="$(tmux display-message -p '#{pane_current_path}')"
+resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
+[[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
+
+if [[ -x "$resolver" ]]; then
+  current_dir=$($resolver "$current_dir")
+fi
 
 if [ "$pane_count" -eq 1 ]; then
     ai_pane=$(tmux display-message -p '#{pane_id}')

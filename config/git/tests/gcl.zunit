@@ -1,0 +1,63 @@
+#!/usr/bin/env zunit
+
+# Tests for gcl function.
+# Ensures clone layout is safe: checkout at repo root, bare hub in sibling dir.
+
+@setup {
+  export TEST_DIR=$(mktemp -d)
+  export ORIG_PWD=$PWD
+
+  source "$ORIG_PWD/config/git/aliases.zsh"
+
+  export UPSTREAM="$TEST_DIR/upstream"
+  mkdir -p "$UPSTREAM"
+  git -C "$UPSTREAM" init --quiet --initial-branch=main
+  git -C "$UPSTREAM" config user.email "test@test.com"
+  git -C "$UPSTREAM" config user.name "Test"
+  echo hi > "$UPSTREAM/README.md"
+  git -C "$UPSTREAM" add README.md
+  git -C "$UPSTREAM" commit --quiet -m init
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'gcl fails without args' {
+  cd "$TEST_DIR"
+
+  run gcl
+
+  assert $state equals 1
+  assert "$output" contains "Usage: gcl"
+}
+
+@test 'gcl creates checkout root + sibling hub' {
+  cd "$TEST_DIR"
+
+  run gcl "$UPSTREAM" demo
+
+  assert $state equals 0
+  assert "$output" contains "checkout: demo"
+  assert "$output" contains "hub: demo.worktree-hub"
+
+  assert "$TEST_DIR/demo/.git" is_file
+  assert "$TEST_DIR/demo.worktree-hub/.git" is_dir
+
+  run git -C "$TEST_DIR/demo" rev-parse --is-inside-work-tree
+  assert "$output" same_as "true"
+
+  run git -C "$TEST_DIR/demo.worktree-hub" rev-parse --is-inside-work-tree
+  assert "$output" same_as "false"
+}
+
+@test 'gcl fails if target path already exists' {
+  cd "$TEST_DIR"
+  mkdir -p demo
+
+  run gcl "$UPSTREAM" demo
+
+  assert $state equals 1
+  assert "$output" contains "already exists"
+}
