@@ -138,18 +138,28 @@ let
   };
 
   # Wake detection — any signal while goodnight=on AND after 7 AM → mark awake
-  # Signals: bed presence off (2 min), focus off, phone off charger,
-  #          walking, or active phone use (Launch/Siri/Manual — not Background Fetch)
+  # Signals: reliable bed presence off (2 min), raw bed presence off (5 min),
+  #          focus off, phone off charger, walking, or active phone use
+  #          (Launch/Siri/Manual — not Background Fetch)
   # Time guard: ignore signals before 7 AM (bathroom trips, sensor glitches)
   mkWakeDetection = p: {
     alias = "${p.name} is awake";
     id = "${p.id}_awake_detection";
     trigger = [
       {
+        # Composite sensor: stable, survives Eight Sleep cloud oddities
         platform = "state";
         entity_id = p.bedPresence;
         to = "off";
         "for".minutes = 2;
+      }
+      {
+        # Raw Eight Sleep bed-presence can flap, but catches real wake-ups
+        # earlier when bed_state_type lags. Require longer off duration.
+        platform = "state";
+        entity_id = p.rawBedPresence;
+        to = "off";
+        "for".minutes = 5;
       }
       {
         platform = "state";
@@ -301,9 +311,12 @@ in
           "input_boolean.edmund_awake" = "off"; # reset for next night
           "input_boolean.monica_awake" = "off";
           "select.master_suite_current_mode" = "home";
-          # Position only — setting state="open" sends open_cover (100%)
-          # which races with the position set. Just position is sufficient.
-          "cover.smartwings_window_covering".position = 20;
+          # Cover scenes require state string + current_position attribute.
+          # position= is ignored in scene reproduction for this cover.
+          "cover.smartwings_window_covering" = {
+            state = "open";
+            current_position = 20;
+          };
           "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
 

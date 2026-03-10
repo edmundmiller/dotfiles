@@ -74,6 +74,18 @@ let
   hasHomeAssistantStartTrigger =
     triggers: any (t: (t.platform or null) == "homeassistant" && (t.event or null) == "start") triggers;
 
+  # Check if trigger list contains state trigger for entity + to-state
+  hasStateTrigger =
+    triggers: entityId: toState:
+    any (
+      t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == toState
+    ) triggers;
+
+  # Check if action list contains a service/action call
+  hasActionCall =
+    actions: actionName:
+    any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
+
   # Normalize conditions to a list (HA accepts single or list)
   toConditionList =
     c:
@@ -102,6 +114,7 @@ let
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
   windingDown = findAutomation "winding_down";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
+  entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
 
   # ── Scene lookups ────────────────────────────────────────────────────────
 
@@ -132,6 +145,10 @@ let
       test = alDaytimeSleepCorrection != null;
       msg = "automation 'al_daytime_sleep_correction' missing";
     }
+    {
+      test = entranceOccupancyNightLight != null;
+      msg = "automation 'entrance_occupancy_night_light' missing";
+    }
 
     # --- Required scenes exist ---
     {
@@ -141,6 +158,18 @@ let
     {
       test = goodMorningScene != null;
       msg = "scene 'Good Morning' missing";
+    }
+
+    # --- Good Morning scene sets SmartWings to 20% with scene-compatible keys ---
+    {
+      test =
+        let
+          coverCfg = goodMorningScene.entities."cover.smartwings_window_covering" or null;
+        in
+        builtins.isAttrs coverCfg
+        && (coverCfg.state or null) == "open"
+        && (coverCfg.current_position or null) == 20;
+      msg = "Good Morning scene cover.smartwings_window_covering must use state=open + current_position=20";
     }
 
     # --- Time guards on wake detection (the 4:47 AM fix) ---
@@ -185,10 +214,44 @@ let
       msg = "monica_awake_detection missing condition: goodnight == on";
     }
 
+    # --- Wake detection includes both reliable + raw bed-presence off triggers ---
+    {
+      test = hasStateTrigger (toConditionList (
+        edmundAwake.trigger or [ ]
+      )) "binary_sensor.edmund_bed_presence_reliable" "off";
+      msg = "edmund_awake_detection missing reliable bed presence off trigger";
+    }
+    {
+      test = hasStateTrigger (toConditionList (
+        edmundAwake.trigger or [ ]
+      )) "binary_sensor.edmund_s_eight_sleep_side_bed_presence" "off";
+      msg = "edmund_awake_detection missing raw bed presence off trigger";
+    }
+    {
+      test = hasStateTrigger (toConditionList (
+        monicaAwake.trigger or [ ]
+      )) "binary_sensor.monica_bed_presence_reliable" "off";
+      msg = "monica_awake_detection missing reliable bed presence off trigger";
+    }
+    {
+      test = hasStateTrigger (toConditionList (
+        monicaAwake.trigger or [ ]
+      )) "binary_sensor.monica_s_eight_sleep_side_bed_presence" "off";
+      msg = "monica_awake_detection missing raw bed presence off trigger";
+    }
+
     # --- AL daytime correction must run on HA startup (state restore path) ---
     {
       test = hasHomeAssistantStartTrigger (toConditionList (alDaytimeSleepCorrection.trigger or [ ]));
       msg = "al_daytime_sleep_correction missing homeassistant start trigger";
+    }
+
+    # --- Entrance occupancy must re-apply Adaptive Lighting on turn-on ---
+    {
+      test = hasActionCall (toConditionList (
+        entranceOccupancyNightLight.action or [ ]
+      )) "adaptive_lighting.apply";
+      msg = "entrance_occupancy_night_light missing adaptive_lighting.apply action (prevents stale orange daytime color)";
     }
 
     # --- Winding Down scene resets awake booleans ---
