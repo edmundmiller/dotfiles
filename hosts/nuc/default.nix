@@ -254,9 +254,9 @@ in
               agentId = "monica";
             }
             {
-              peerId = "-1003862456724:topic:27"; # Fin
+              peerId = "-1003862456724:topic:27"; # Finn
               kind = "group";
-              agentId = "fin";
+              agentId = "finn";
             }
           ];
         };
