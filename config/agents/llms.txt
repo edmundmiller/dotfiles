@@ -1,0 +1,106 @@
+# inspect
+
+Entity-level code review CLI for Git. Built by Ataraxy Labs.
+
+## What it does
+
+inspect analyzes Git diffs at the entity level (functions, structs, classes, traits) instead of the file or line level. Each changed entity gets:
+
+- **Change classification**: ConGra taxonomy (text, syntax, functional, or combinations)
+- **Risk scoring**: 0.0-1.0 based on classification, blast radius, dependent count, public API exposure, change type
+- **Blast radius**: How many entities are transitively affected by this change
+- **Group assignment**: Union-Find untangling separates independent logical changes within a single commit
+
+## Commands
+
+- `inspect diff <ref>`: Review entity-level changes for a commit or range
+- `inspect pr <number>`: Review all changes in a GitHub pull request
+- `inspect file <path>`: Review uncommitted changes in a file
+- `inspect bench --repo <path>`: Benchmark entity-level review across a repo's history
+
+All commands support `--format json` and `--format markdown` for machine-readable output.
+
+## MCP Server
+
+9 tools for agent integration:
+- `inspect_triage`: Primary entry point. Full analysis sorted by risk with verdict.
+- `inspect_entity`: Drill into one entity: before/after content, dependents, dependencies.
+- `inspect_group`: Get all entities in a logical change group.
+- `inspect_file`: Scope review to a single file.
+- `inspect_stats`: Lightweight summary: stats, verdict, timing. No entity details.
+- `inspect_risk_map`: File-level risk heatmap with per-file aggregate scores.
+- `inspect_pr`: Analyze a GitHub PR by number.
+- `inspect_diff`: Analyze a Git diff by ref.
+- `inspect_review`: Full LLM-assisted review of flagged entities.
+
+Build: `cargo build -p inspect-mcp`
+
+## Review Verdict
+
+Returned by inspect_triage and inspect_stats:
+- `likely_approvable`: All changes are cosmetic
+- `standard_review`: Normal changes, no high-risk entities
+- `requires_review`: High-risk entities present
+- `requires_careful_review`: Critical-risk entities present
+
+## Architecture
+
+Built in Rust. Three crates:
+- `inspect-core`: Analysis engine (classify, risk score, untangle, review verdict)
+- `inspect-cli`: CLI interface with terminal, JSON, and markdown formatters
+- `inspect-mcp`: MCP server exposing 9 tools for agent integration
+
+Depends on `sem-core` for entity extraction (tree-sitter parsers for 13 languages) and entity dependency graph.
+
+## Risk Scoring
+
+Graph-centric scoring. Dependents and blast radius are the primary discriminators. Classification and change type set a low baseline. Only entities with real graph impact reach High/Critical.
+
+Score = classification_weight(0.0-0.28) + change_type_weight(0.0-0.12) + public_api_boost(0.12) + blast_ratio_sqrt * 0.30 + ln(1+dependents) * 0.15
+
+Cosmetic-only changes (structural_hash unchanged) get a 0.2x discount.
+
+Levels: Critical (>= 0.7), High (>= 0.5), Medium (>= 0.3), Low (< 0.3)
+
+## Benchmark Results
+
+### AACR-Bench head-to-head (20 PRs, 166 golden comments, 9 languages)
+Same 20 PRs, same keyword-matching judge for all tools:
+- inspect + GPT-5.2: 30.1% recall, 22.7% precision, 25.9% F1 (220 findings)
+- Greptile API: 23.5% recall, 21.7% precision, 22.5% F1 (180 findings)
+- CodeRabbit CLI: 13.3% recall, 115.8% precision, 23.8% F1 (19 findings)
+- inspect beats Greptile on all three metrics: recall, precision, and F1
+
+### Pipeline
+- inspect triage (free, <1s) narrows entities by risk, then LLM reviews top 30 per PR, top 15 findings by confidence
+
+## Performance
+
+Parallel entity extraction via rayon, zero-allocation BFS, capped graph traversal. Powered by sem-core v0.3.0 with xxHash64, LTO, and cached tree resolution.
+
+Single commit review:
+- sem (25 files, 65 entities changed): 6ms
+- weave (80 files, 89 entities changed): 6ms
+- inspect (50 files, large commit): 67ms
+
+Full repo history (inspect bench):
+- sem (38 commits, 5,216 entities): 0.57s
+- weave (45 commits, 2,854 entities): 1.33s
+
+## Change Classification (ConGra)
+
+7 categories along 3 dimensions:
+1. Text: comments, whitespace, docs
+2. Syntax: signatures, types, declarations
+3. Functional: logic, behavior
+4. Text+Syntax, Text+Functional, Syntax+Functional, Text+Syntax+Functional
+
+## Languages
+
+Rust, TypeScript, TSX, JavaScript, Python, Go, Java, C, C++, Ruby, C#, PHP, Fortran
+
+## Links
+
+- GitHub: https://github.com/Ataraxy-Labs/inspect
+- sem (entity extraction): https://github.com/Ataraxy-Labs/sem
+- weave (entity merge): https://github.com/Ataraxy-Labs/weave
