@@ -41,6 +41,13 @@
       url = "github:tobi/qmd";
       flake = false;
     };
+
+    # Child flake cannot reference ../ paths once materialized in /nix/store.
+    # Pull repo-local skill dirs from dotfiles source instead.
+    dotfiles-repo = {
+      url = "github:edmundmiller/dotfiles";
+      flake = false;
+    };
   };
 
   outputs = inputs: {
@@ -53,15 +60,16 @@
           enable = true;
 
           sources = {
-            # Local skills from dotfiles repo (copied into store by HM)
+            # Local skills from dotfiles repo
             local = {
-              # Local skills from this dotfiles repo (in flake source/store)
-              path = ../config/agents/skills;
+              path = inputs.dotfiles-repo.outPath;
+              subdir = "config/agents/skills";
               filter.maxDepth = 1;
             };
 
             jut = {
-              path = ../packages/jut/skill;
+              path = inputs.dotfiles-repo.outPath;
+              subdir = "packages/jut/skill";
               filter.maxDepth = 1;
             };
 
