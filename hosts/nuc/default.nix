@@ -213,6 +213,7 @@ in
           allowFrom = [
             8357890648 # @edmundamiller
             8748874608 # wife
+            (-1003862456724) # Norbot send-as-chat/anonymous-admin messages
           ];
           bindings = [
             {
