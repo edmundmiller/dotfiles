@@ -19,8 +19,8 @@
   //         }
   //     }
   // },
-  // Autoupdate - notify but don't auto-update
-  "autoupdate": "notify",
+  // Autoupdate notifications disabled
+  "autoupdate": "off",
   // Plugins
   // - opencode-pty: PTY support for interactive terminal sessions
   // - opencode-wakatime: Track coding time with WakaTime (requires ~/.wakatime.cfg)
@@ -35,7 +35,6 @@
     "@simonwjackson/opencode-direnv@latest",
     "opencode-wakatime@latest",
     "@franlol/opencode-md-table-formatter@latest",
-    "@mohak34/opencode-notifier@latest",
     "opencode-beads@latest",
     "@agentmap/opencode",
     "@tarquinen/opencode-dcp@latest",
