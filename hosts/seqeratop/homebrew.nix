@@ -40,7 +40,6 @@
     "bartender"
 
     # Development
-    "ghostty@tip"
     "claude"
 
     # Media

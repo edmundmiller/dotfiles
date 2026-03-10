@@ -21,12 +21,11 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
 fi
 unset _brew_cache
 
-# Set up terminfo for NixOS (needed for TUI apps like opencode)
-if [[ -d /run/current-system/sw/share/terminfo ]]; then
-  export TERMINFO_DIRS="/run/current-system/sw/share/terminfo${TERMINFO_DIRS:+:$TERMINFO_DIRS}"
-  # Set default TERM if empty (prevents TUI crashes in non-interactive SSH)
-  [[ -z "$TERM" ]] && export TERM=xterm-256color
-fi
+# Set up terminfo early (before nix-darwin extra.zshenv is sourced).
+# Use full Nix search paths so TERM=ghostty resolves correctly on macOS too.
+export TERMINFO_DIRS="$HOME/.nix-profile/share/terminfo:/etc/profiles/per-user/$USER/share/terminfo:/run/current-system/sw/share/terminfo:/nix/var/nix/profiles/default/share/terminfo:/usr/share/terminfo${TERMINFO_DIRS:+:$TERMINFO_DIRS}"
+# Set default TERM if empty (prevents TUI crashes in non-interactive SSH)
+[[ -z "$TERM" ]] && export TERM=xterm-256color
 
 # Add ~/.local/bin to PATH if it exists
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"

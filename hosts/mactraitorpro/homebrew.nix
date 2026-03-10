@@ -158,7 +158,6 @@
     "zoom"
 
     # Development
-    "ghostty@tip"
     "visual-studio-code"
     "claude"
     "repo-prompt"
