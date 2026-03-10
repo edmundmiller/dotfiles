@@ -58,6 +58,7 @@ pi_messenger({ action: "reserve", paths: ["src/path/to/files/"], reason: "<TASK_
 
 ```bash
 git add -A
+sem diff --staged || git diff --cached
 git commit -m "feat(scope): description
 
 Task: <TASK_ID>"

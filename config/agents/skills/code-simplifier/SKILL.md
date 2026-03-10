@@ -40,7 +40,7 @@ Read project-level config (AGENTS.md, CLAUDE.md, .editorconfig, linter configs) 
 
 ## Process
 
-1. Identify recently modified sections (`sem diff`, changed files; fallback `git diff`)
+1. Identify recently modified sections (`sem diff`, prefer `sem diff --format json` for entity lists; fallback `git diff`)
 2. Analyze for clarity, consistency, and convention adherence
 3. Apply refinements — smallest diff that achieves the improvement
 4. Verify functionality is unchanged
