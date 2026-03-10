@@ -1,0 +1,203 @@
+#!@NODE@
+/**
+ * dmux-ai-infer: OpenRouter-compatible inference bridge for dmux.
+ * Prefers opencode/pi based on local auth, returns plain assistant text.
+ */
+
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+
+function commandExists(command) {
+  const result = spawnSync('bash', ['-lc', `command -v ${command}`], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  return result.status === 0;
+}
+
+function readStdin() {
+  try {
+    return fs.readFileSync(0, 'utf8');
+  } catch {
+    return '';
+  }
+}
+
+function normalizeContent(content) {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (part && typeof part.text === 'string') return part.text;
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+  return '';
+}
+
+function buildPrompt(payload) {
+  const messages = Array.isArray(payload?.messages) ? payload.messages : [];
+  const rendered = messages
+    .map((m) => {
+      const role = typeof m?.role === 'string' ? m.role : 'user';
+      const body = normalizeContent(m?.content);
+      return `[${role}]\n${body}`;
+    })
+    .join('\n\n');
+
+  return [
+    'You are a compatibility inference backend for dmux.',
+    'Return ONLY the final assistant content for the chat transcript below.',
+    'Do not add markdown fences, commentary, or prefixes.',
+    '',
+    rendered,
+  ].join('\n');
+}
+
+function parseOpencodeJsonStream(output) {
+  let text = '';
+  for (const line of output.split(/\r?\n/)) {
+    if (!line.trim().startsWith('{')) continue;
+    try {
+      const event = JSON.parse(line);
+      if (event?.type === 'text' && typeof event?.part?.text === 'string') {
+        text += event.part.text;
+      }
+    } catch {
+      // ignore non-json lines
+    }
+  }
+  return text.trim();
+}
+
+function runCommand(command, args, timeoutMs) {
+  const result = spawnSync(command, args, {
+    encoding: 'utf8',
+    timeout: timeoutMs,
+    maxBuffer: 8 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: process.env,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw new Error((result.stderr || result.stdout || '').trim() || `${command} failed`);
+  }
+  return result.stdout || '';
+}
+
+function runOpencode(prompt, timeoutMs) {
+  const args = ['run', '--format', 'json'];
+  if (process.env.DMUX_OPENCODE_ATTACH) {
+    args.push('--attach', process.env.DMUX_OPENCODE_ATTACH);
+  }
+  if (process.env.DMUX_OPENCODE_MODEL) {
+    args.push('--model', process.env.DMUX_OPENCODE_MODEL);
+  }
+  if (process.env.DMUX_OPENCODE_AGENT) {
+    args.push('--agent', process.env.DMUX_OPENCODE_AGENT);
+  }
+  args.push(prompt);
+
+  const stdout = runCommand('opencode', args, timeoutMs);
+  const parsed = parseOpencodeJsonStream(stdout);
+  if (parsed) return parsed;
+  const fallback = stdout.trim();
+  if (fallback) return fallback;
+  throw new Error('opencode returned empty output');
+}
+
+function runPi(prompt, timeoutMs) {
+  const args = ['-p', '--no-tools', '--mode', 'text', '--thinking', 'off'];
+  if (process.env.DMUX_PI_MODEL) {
+    args.push('--model', process.env.DMUX_PI_MODEL);
+  }
+  args.push(prompt);
+  const stdout = runCommand('pi', args, timeoutMs).trim();
+  if (!stdout) throw new Error('pi returned empty output');
+  return stdout;
+}
+
+function hasOpencodeAuthFile() {
+  const authPath = `${process.env.XDG_DATA_HOME || `${os.homedir()}/.local/share`}/opencode/auth.json`;
+  try {
+    return fs.existsSync(authPath) && fs.statSync(authPath).size > 0;
+  } catch {
+    return false;
+  }
+}
+
+function getOrder() {
+  const forced = (process.env.DMUX_AI_PROVIDER || 'pi').trim();
+  if (forced !== 'auto') return [forced];
+
+  const configured = (process.env.DMUX_AI_PROVIDER_ORDER || 'opencode,pi,openrouter')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return configured;
+}
+
+function providerAvailable(provider) {
+  if (provider === 'opencode') {
+    return commandExists('opencode') && (hasOpencodeAuthFile() || !!process.env.OPENCODE_API_KEY);
+  }
+  if (provider === 'pi') {
+    return commandExists('pi');
+  }
+  if (provider === 'openrouter') {
+    return !!process.env.DMUX_OPENROUTER_REAL_KEY;
+  }
+  return false;
+}
+
+function probe() {
+  const order = getOrder();
+  const available = order.some((provider) => providerAvailable(provider));
+  process.exit(available ? 0 : 1);
+}
+
+function infer() {
+  const timeoutMs = Number(process.env.DMUX_AI_TIMEOUT_MS || '20000');
+  const payloadRaw = readStdin();
+  const payload = payloadRaw ? JSON.parse(payloadRaw) : {};
+  const prompt = buildPrompt(payload);
+
+  const errors = [];
+  for (const provider of getOrder()) {
+    try {
+      if (provider === 'opencode') {
+        if (!providerAvailable(provider)) continue;
+        const content = runOpencode(prompt, timeoutMs);
+        process.stdout.write(JSON.stringify({ provider, content }));
+        process.exit(0);
+      }
+      if (provider === 'pi') {
+        if (!providerAvailable(provider)) continue;
+        const content = runPi(prompt, timeoutMs);
+        process.stdout.write(JSON.stringify({ provider, content }));
+        process.exit(0);
+      }
+    } catch (error) {
+      errors.push(`${provider}: ${error?.message || String(error)}`);
+    }
+  }
+
+  const message = errors.length ? errors.join(' | ') : 'no inference provider available';
+  process.stderr.write(message);
+  process.exit(1);
+}
+
+const mode = process.argv[2] || 'infer';
+if (mode === 'probe') {
+  probe();
+} else {
+  infer();
+}
