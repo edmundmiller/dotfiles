@@ -1580,6 +1580,8 @@
         "shaping-skills": "shaping-skills"
       },
       "locked": {
+        "lastModified": 1,
+        "narHash": "sha256-IC+3GNsKNY+J9H8ExRNFwpOllmTWGCBnXdpU/MCqeUM=",
         "path": "./skills",
         "type": "path"
       },
