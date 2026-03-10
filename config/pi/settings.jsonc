@@ -134,8 +134,6 @@
     "~/.config/dotfiles/pi-packages/pi-dumb-zone",
     // BUG dotfiles-n579: frontmatter warnings on CHANGELOG.md/README.md
     // "npm:visual-explainer",
-    // Vim keybindings for input - https://www.npmjs.com/package/pi-vim
-    "npm:pi-vim",
     // Thinking timer widget - https://www.npmjs.com/package/pi-thinking-timer
     "npm:pi-thinking-timer",
     // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
