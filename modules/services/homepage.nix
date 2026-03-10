@@ -222,6 +222,13 @@ in
                 };
               };
             }
+            {
+              "Open Wearables" = {
+                href = "${nucBase}:${toString config.modules.services.open-wearables.backendPort}/docs";
+                description = "Wearable health API (Apple XML import)";
+                icon = "healthchecks.svg";
+              };
+            }
           ];
         }
         {
