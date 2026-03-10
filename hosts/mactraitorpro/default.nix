@@ -34,6 +34,7 @@
         git.ai.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        dmux.enable = true;
         zsh.enable = true;
       };
 

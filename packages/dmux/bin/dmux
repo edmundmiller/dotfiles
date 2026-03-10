@@ -1,0 +1,59 @@
+#!@BASH@
+# dmux wrapper: routes OpenRouter chat-completion calls through local pi/opencode inference when available.
+
+set -euo pipefail
+
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+INFER_BIN="@INFER_BIN@"
+SHIM_PATH="@SHIM_PATH@"
+
+find_real_dmux() {
+  local cache_home data_home candidate
+  cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
+  data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+
+  if [ -n "${DMUX_REAL_BIN:-}" ] && [ -x "${DMUX_REAL_BIN}" ] && [ "${DMUX_REAL_BIN}" != "$SELF" ]; then
+    echo "${DMUX_REAL_BIN}"
+    return 0
+  fi
+
+  for candidate in \
+    "$cache_home/npm/bin/dmux" \
+    "$data_home/npm/bin/dmux" \
+    "$HOME/.npm/bin/dmux" \
+    "$HOME/.cache/npm/bin/dmux"; do
+    if [ -x "$candidate" ] && [ "$candidate" != "$SELF" ]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+
+  while IFS= read -r candidate; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ] && [ "$candidate" != "$SELF" ]; then
+      echo "$candidate"
+      return 0
+    fi
+  done < <(which -a dmux 2>/dev/null || true)
+
+  return 1
+}
+
+REAL_DMUX="$(find_real_dmux || true)"
+if [ -z "$REAL_DMUX" ]; then
+  echo "dmux upstream binary not found. Install it first: npm install -g dmux@5.4.0" >&2
+  exit 1
+fi
+
+PROVIDER="${DMUX_AI_PROVIDER:-pi}"
+if [ "$PROVIDER" != "openrouter" ] && "$INFER_BIN" probe >/dev/null 2>&1; then
+  export DMUX_AI_INFER_BIN="$INFER_BIN"
+  export DMUX_OPENROUTER_REAL_KEY="${OPENROUTER_API_KEY:-}"
+  export OPENROUTER_API_KEY="dmux-local-shim"
+
+  case " ${NODE_OPTIONS:-} " in
+    *" $SHIM_PATH "*) ;;
+    *) export NODE_OPTIONS="--require $SHIM_PATH ${NODE_OPTIONS:-}" ;;
+  esac
+fi
+
+exec "$REAL_DMUX" "$@"

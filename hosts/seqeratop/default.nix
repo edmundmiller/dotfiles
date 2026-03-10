@@ -26,6 +26,7 @@ _: {
         git.ai.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        dmux.enable = true;
         tmux.sesh.sessions = [
           {
             name = "dotfiles";
