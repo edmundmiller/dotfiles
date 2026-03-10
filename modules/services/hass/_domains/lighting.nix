@@ -7,7 +7,7 @@
 # Sleep mode lifecycle:
 #   ON:  9:30 PM (pre-warmup) + Winding Down/In Bed/Sleep scenes
 #   OFF: 7:00 AM (hard cutoff) + Good Morning scene + Arrive Home scene
-#   SAFETY: hourly daytime check — if sleep mode on but goodnight off, correct it
+#   SAFETY: startup + hourly daytime check — if sleep mode on but goodnight off, correct it
 #
 # One switch: "Living Space" — all color-temp-capable lights.
 # TODO: Consider splitting office (Edmund Desk) into separate switch
@@ -101,6 +101,11 @@ in
             platform = "state";
             entity_id = "input_boolean.goodnight";
             to = "off";
+          }
+          {
+            # HA restart — catches restored stale state immediately
+            platform = "homeassistant";
+            event = "start";
           }
           {
             # Periodic check — catch orphaned sleep mode
