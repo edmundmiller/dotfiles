@@ -21,6 +21,7 @@ in
       git-open
       difftastic
       my.sem # semantic git diff/impact/blame
+      my.inspect # entity-level code review triage
       delta # for lazygit paging
       (mkIf config.modules.shell.gnupg.enable git-crypt)
       git-lfs
