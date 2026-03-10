@@ -214,7 +214,6 @@ in
             8357890648 # @edmundamiller
             8748874608 # wife
             1087968824 # Telegram anonymous admin sender id
-            (-1003862456724) # Norbot send-as-chat/anonymous-admin messages
           ];
           bindings = [
             {
