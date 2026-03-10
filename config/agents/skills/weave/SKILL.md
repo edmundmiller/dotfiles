@@ -89,3 +89,4 @@ Pass condition: merge completes and `git ls-files -u` is empty.
 - `weave setup` updates `.gitattributes` and local git merge-driver config.
 - Keep driver command as `weave-driver ...` (PATH-resolved) to avoid stale nix-store paths.
 - For AI tooling, `weave-mcp` is available; wire into your MCP client as needed.
+- Troubleshooting: `references/troubleshooting.md`
