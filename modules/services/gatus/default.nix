@@ -179,6 +179,15 @@ let
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }
+          ]
+          ++ optionals config.modules.services.open-wearables.enable [
+            {
+              name = "Open Wearables API";
+              group = "Health";
+              url = "http://localhost:${toString config.modules.services.open-wearables.backendPort}/docs";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
           ];
         # TODO: Audiobookshelf is on port 8000, not 13378; find correct healthcheck path
         # ++ optionals config.modules.services.audiobookshelf.enable [
