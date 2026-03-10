@@ -70,6 +70,10 @@ let
         ) != null
     ) conditions;
 
+  # Check if trigger list contains homeassistant start trigger
+  hasHomeAssistantStartTrigger =
+    triggers: any (t: (t.platform or null) == "homeassistant" && (t.event or null) == "start") triggers;
+
   # Normalize conditions to a list (HA accepts single or list)
   toConditionList =
     c:
@@ -97,6 +101,7 @@ let
   monicaAwake = findAutomation "monica_awake_detection";
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
   windingDown = findAutomation "winding_down";
+  alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
 
   # ── Scene lookups ────────────────────────────────────────────────────────
 
@@ -122,6 +127,10 @@ let
     {
       test = windingDown != null;
       msg = "automation 'winding_down' missing";
+    }
+    {
+      test = alDaytimeSleepCorrection != null;
+      msg = "automation 'al_daytime_sleep_correction' missing";
     }
 
     # --- Required scenes exist ---
@@ -174,6 +183,12 @@ let
         monicaAwake.condition or [ ]
       )) "input_boolean.goodnight" "on";
       msg = "monica_awake_detection missing condition: goodnight == on";
+    }
+
+    # --- AL daytime correction must run on HA startup (state restore path) ---
+    {
+      test = hasHomeAssistantStartTrigger (toConditionList (alDaytimeSleepCorrection.trigger or [ ]));
+      msg = "al_daytime_sleep_correction missing homeassistant start trigger";
     }
 
     # --- Winding Down scene resets awake booleans ---

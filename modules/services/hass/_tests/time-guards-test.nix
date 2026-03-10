@@ -17,6 +17,8 @@
 #   6. Post-bedtime signal at 10:48 PM → stays off (the actual bug scenario)
 #   8. REGRESSION 2026-03-05: goodnight=off all night (Winding Down disabled) → wake
 #      detection blocked → Good Morning never fires
+#   9. REGRESSION 2026-03-09: HA restart restores AL sleep mode while goodnight=off;
+#      startup safety automation must clear stale sleep mode immediately
 { pkgs }:
 let
   # Our HA domain modules
@@ -335,5 +337,24 @@ pkgs.testers.nixosTest {
         # Re-enable for subsequent tests
         ha.call_service(hass, "automation", "turn_on", {"entity_id": wd_entity})
         time.sleep(1)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # REGRESSION TEST: 2026-03-09 AL sleep mode restored on HA start
+    # HA can restore switch state after restart. If goodnight is off and
+    # it's daytime, startup path must clear stale sleep mode immediately.
+    # ══════════════════════════════════════════════════════════════════════
+
+    with subtest("REGRESSION: homeassistant_start clears stale AL sleep mode"):
+        ha.set_clock(hass, "10:15:00", "2026-03-09")
+        ha.call_service(hass, "input_boolean", "turn_off", {"entity_id": "input_boolean.goodnight"})
+        ha.call_service(hass, "switch", "turn_on", {"entity_id": "switch.adaptive_lighting_sleep_mode_living_space"})
+        time.sleep(1)
+        ha.assert_state(hass, "switch.adaptive_lighting_sleep_mode_living_space", "on", timeout=5)
+
+        # Simulate HA startup event (what platform=homeassistant,event=start listens for)
+        ha.fire_event(hass, "homeassistant_start")
+        time.sleep(2)
+
+        ha.assert_state(hass, "switch.adaptive_lighting_sleep_mode_living_space", "off", timeout=10)
   '';
 }
