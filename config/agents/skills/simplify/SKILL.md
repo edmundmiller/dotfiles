@@ -13,7 +13,7 @@ Review all changed files for reuse, quality, and efficiency. Fix any issues foun
 
 ## Phase 1: Identify Changes
 
-Run `sem diff` (or `sem diff --commit HEAD` when you need a specific commit baseline) to see what changed. Fallback to `git diff` only if sem cannot express the needed flag/output. If there are no git changes, review the most recently modified files that the user mentioned or that you edited earlier in this conversation.
+Run `sem diff` (or `sem diff --commit HEAD` for a specific baseline) to see what changed; prefer `sem diff --format json` when you need explicit entity lists. For risky entities, use `sem graph --entity <symbol>` / `sem impact <symbol>` to prioritize review depth. Fallback to `git diff` only if sem cannot express needed output. If no git changes, review the most recently modified files the user mentioned or you edited earlier in this conversation.
 
 ## Phase 2: Launch Three Review Agents in Parallel
 
