@@ -228,6 +228,36 @@ in
               kind = "group";
               agentId = "family";
             }
+            {
+              peerId = "-1003862456724:topic:1"; # General
+              kind = "group";
+              agentId = "family";
+            }
+            {
+              peerId = "-1003862456724:topic:23"; # Dev
+              kind = "group";
+              agentId = "dev";
+            }
+            {
+              peerId = "-1003862456724:topic:24"; # Ops
+              kind = "group";
+              agentId = "ops";
+            }
+            {
+              peerId = "-1003862456724:topic:25"; # Scheduler
+              kind = "group";
+              agentId = "scheduler";
+            }
+            {
+              peerId = "-1003862456724:topic:26"; # Monica
+              kind = "group";
+              agentId = "monica";
+            }
+            {
+              peerId = "-1003862456724:topic:27"; # Fin
+              kind = "group";
+              agentId = "fin";
+            }
           ];
         };
       };
