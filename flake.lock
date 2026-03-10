@@ -1597,15 +1597,14 @@
         "shaping-skills": "shaping-skills"
       },
       "locked": {
-        "lastModified": 1,
-        "narHash": "sha256-YyBgQ/4F1X0mwsnegpzAGRel5mIbL8uXvXBM78q6INY=",
         "path": "./skills",
         "type": "path"
       },
       "original": {
         "path": "./skills",
         "type": "path"
-      }
+      },
+      "parent": []
     },
     "stylix": {
       "inputs": {
