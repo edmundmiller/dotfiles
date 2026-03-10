@@ -96,20 +96,33 @@ with lib.my;
       #   home.configFile  ->  home-manager.users.<user>.home.xdg.configFile
       #   home.dataFile    ->  home-manager.users.<user>.home.xdg.dataFile
       #   user.packages    ->  home-manager.users.<user>.home.packages
-      users.${config.user.name} = {
-        home = {
-          file = mkAliasDefinitions options.home.file;
-          packages = mkAliasDefinitions options."user.packages";
-          # Necessary for home-manager to work with flakes, otherwise it will
-          # look for a nixpkgs channel.
-          # On Darwin, system.stateVersion is a number; home-manager needs a string
-          stateVersion = if isDarwin then "24.11" else config.system.stateVersion;
-        };
-        xdg = {
-          configFile = mkAliasDefinitions options.home.configFile;
-          dataFile = mkAliasDefinitions options.home.dataFile;
-        };
-      };
+      users.${config.user.name} = mkMerge [
+        {
+          home = {
+            file = mkAliasDefinitions options.home.file;
+            packages = mkAliasDefinitions options."user.packages";
+            # Necessary for home-manager to work with flakes, otherwise it will
+            # look for a nixpkgs channel.
+            # On Darwin, system.stateVersion is a number; home-manager needs a string
+            stateVersion = if isDarwin then "24.11" else config.system.stateVersion;
+          };
+          xdg = {
+            configFile = mkAliasDefinitions options.home.configFile;
+            dataFile = mkAliasDefinitions options.home.dataFile;
+          };
+        }
+        (optionalAttrs isDarwin {
+          # Use real .app bundles under ~/Applications/Home Manager Apps so
+          # launchers index clean paths instead of /nix/store symlink targets.
+          # Keep checks off: legacy linkApps symlink is read-only and causes
+          # false failures during migration.
+          targets.darwin = {
+            copyApps.enable = true;
+            copyApps.enableChecks = false;
+            linkApps.enable = false;
+          };
+        })
+      ];
 
       backupFileExtension = "bkup";
     };

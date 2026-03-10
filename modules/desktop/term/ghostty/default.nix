@@ -22,6 +22,7 @@
   config,
   inputs,
   lib,
+  pkgs,
   isDarwin,
   ...
 }:
@@ -64,8 +65,13 @@ in
   };
 
   config = mkIf cfg.enable {
-    # On macOS, ghostty is installed via Homebrew cask
-    # On Linux, use the Nix package
+    # Install Ghostty via Nix on all platforms.
+    # macOS uses ghostty-bin (official DMG repackaged in nixpkgs).
+    # Linux uses the upstream Ghostty flake package.
+    # Install Ghostty from Nix.
+    # - macOS: system package (exposes app bundle in /Applications/Nix Apps)
+    # - Linux: user package from upstream Ghostty flake
+    environment.systemPackages = optionals isDarwin [ pkgs.ghostty-bin ];
     user.packages = optionals (!isDarwin) [ inputs.ghostty.packages.x86_64-linux.default ];
 
     # ghostty terminfo isn't supported over ssh, so revert to a known one
