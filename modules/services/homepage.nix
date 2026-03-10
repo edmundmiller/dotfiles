@@ -121,6 +121,10 @@ in
                   href = "https://login.tailscale.com/admin/services/svc:homepage";
                   description = "Services admin";
                 }
+                {
+                  href = "https://trmnl.com/dashboard";
+                  description = "TRMNL dashboard";
+                }
               ];
             }
           ];
