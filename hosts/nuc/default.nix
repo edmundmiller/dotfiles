@@ -355,6 +355,12 @@ in
       };
       opencode.enable = true;
 
+      open-wearables = {
+        enable = true;
+        # API only for now (historical Apple XML import + agent access)
+        enableFrontend = false;
+      };
+
       dagster.webserver.port = 3001;
 
       bugster = {
