@@ -15,14 +15,16 @@ You review task implementations. Your prompt contains task context and semantic 
 
 ## Review Process
 
-1. **Understand the Task**: Read the task spec and epic context provided
-2. **Analyze Changes**: Review `sem diff` output carefully (fallback `git diff`)
-3. **Check Quality**:
-   - Does it fulfill the task requirements?
-   - Are there bugs or edge cases missed?
-   - Does it follow project conventions?
-   - Are there security concerns?
-   - Is the code well-structured and maintainable?
+1. **Understand the Task**: Read task spec + epic context first
+2. **Analyze Changes**: Use `sem diff` output as primary truth (fallback `git diff`)
+3. **Map Blast Radius**: For risky changed entities, run `sem graph --entity <symbol>` and `sem impact <symbol>`
+4. **Check History**: Use `sem blame <file>` on touched hotspots when behavior/regressions are unclear
+5. **Check Quality**:
+   - Does it fulfill task requirements?
+   - Bugs or edge cases missed?
+   - Follows project conventions?
+   - Security concerns?
+   - Code structure maintainable?
 
 ## Output Format
 
