@@ -77,7 +77,7 @@ Night mode active
   └── Person B wakes up (minutes to hours later)
         └── Any signal fires → monica_awake = on
             └── Check: both awake? Yes → Good Morning scene
-                  ├── Blinds open 60%
+                  ├── Blinds set to 20% open
                   ├── Kitchen + couch lights on (AL handles color temp)
                   ├── Goodnight toggle off
                   ├── House mode → Home
