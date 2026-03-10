@@ -59,6 +59,7 @@ Agent modes are specialized configurations for different tasks:
 - **coder** - Default coding assistant mode
 - **code-simplifier** - Focused on simplifying existing code
 - **cursor** - Cursor-style code editing
+- **sem-review** - Flexible semantic diff/review mode (sem-first, expand when needed)
 
 ## Rules
 
