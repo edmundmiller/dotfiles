@@ -327,6 +327,22 @@
         "type": "github"
       }
     },
+    "dotfiles-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773164065,
+        "narHash": "sha256-qpc7g55xxIHE2TZRDB3rXYzDubukgPFkAKltg8ELS2A=",
+        "owner": "edmundmiller",
+        "repo": "dotfiles",
+        "rev": "ca7fd5332a1e0995dd74bfa13b422af729ed91d3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "edmundmiller",
+        "repo": "dotfiles",
+        "type": "github"
+      }
+    },
     "emacs-overlay": {
       "inputs": {
         "nixpkgs": "nixpkgs",
@@ -1569,6 +1585,7 @@
       "inputs": {
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "dotfiles-repo": "dotfiles-repo",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": [
           "nixpkgs"
@@ -1581,15 +1598,14 @@
       },
       "locked": {
         "lastModified": 1,
-        "narHash": "sha256-IC+3GNsKNY+J9H8ExRNFwpOllmTWGCBnXdpU/MCqeUM=",
+        "narHash": "sha256-YyBgQ/4F1X0mwsnegpzAGRel5mIbL8uXvXBM78q6INY=",
         "path": "./skills",
         "type": "path"
       },
       "original": {
         "path": "./skills",
         "type": "path"
-      },
-      "parent": []
+      }
     },
     "stylix": {
       "inputs": {
