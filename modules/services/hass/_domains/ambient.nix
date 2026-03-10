@@ -160,6 +160,17 @@ in
             target.entity_id = "light.smart_night_light_w";
           }
           {
+            # Re-apply AL immediately so daytime color/brightness overrides
+            # any stale sleep-mode orange left on the light.
+            action = "adaptive_lighting.apply";
+            data = {
+              entity_id = "switch.adaptive_lighting_living_space";
+              lights = [ "light.smart_night_light_w" ];
+              adapt_color = true;
+              adapt_brightness = true;
+            };
+          }
+          {
             wait_for_trigger = [
               {
                 platform = "state";
