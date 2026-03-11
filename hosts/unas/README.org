@@ -1,5 +1,10 @@
 #+title: Unas
 
+* Device identity (public-safe)
+- MAC (redacted): =d4:5d:64:**:**:**= (ASUSTek OUI)
+- Rule: keep full MAC out of public git (AGENTS.md / README)
+- If IP drifts: resolve current IP from router DHCP lease table using MAC prefix
+
 #+begin_src log
 ~ λ l /dev/disk/by-id                                                                                               emiller@unas
 lrwxrwxrwx  8,32 root 25 Nov 11:22 ata-WDC_WD60EFAX-68SHWN0_WD-WX21D39DZLK1 -> ../../sdc

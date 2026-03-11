@@ -258,7 +258,7 @@
 
         # deploy-rs configuration
         deploy.nodes = {
-          # NixOS host - remote deployment with magic rollback
+          # NixOS hosts - remote deployment with magic rollback
           nuc = {
             hostname = "nuc";
             sshUser = "emiller";
@@ -266,6 +266,15 @@
             interactiveSudo = false;
             remoteBuild = true;
             profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nuc;
+          };
+
+          unas = {
+            hostname = "192.168.1.101";
+            sshUser = "emiller";
+            user = "root";
+            interactiveSudo = false;
+            remoteBuild = true;
+            profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.unas;
           };
 
           # Darwin hosts - local deployment only (no magic rollback on macOS)

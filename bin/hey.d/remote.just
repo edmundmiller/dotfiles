@@ -2,6 +2,7 @@
 
 # Remote host configurations
 NUC_HOST := "nuc"
+UNAS_HOST := "192.168.1.101"
 
 # Deploy to any host
 deploy HOST:
@@ -21,6 +22,15 @@ nuc:
         echo "=== Restarting openclaw-gateway on NUC ==="
         ssh {{NUC_HOST}} "systemctl --user restart openclaw-gateway.service"
     fi
+
+# Deploy to UNAS
+unas:
+    @echo "=== Deploying to UNAS ==="
+    cd {{FLAKE_DIR}} && nix run .#deploy-rs -- .#unas --skip-checks
+
+unas-ssh:
+    @echo "Connecting to UNAS..."
+    @ssh -t {{UNAS_HOST}}
 
 # Alias for nuc
 rebuild-nuc: nuc
