@@ -94,7 +94,22 @@ then {
 }
 ```
 
-For workflow-level tests, use `workflow.failed`, `workflow.exitStatus`, and `workflow.errorReport.contains("...")` similarly.
+Workflow-level equivalent:
+
+```groovy
+// Test commit: assert workflow fails with expected error
+then {
+    assert workflow.failed
+    assert workflow.exitStatus == 1
+    assert workflow.errorReport.contains("Missing index file")  // BUG: should not error
+}
+
+// Fix commit: flip to assert success
+then {
+    assert workflow.success
+    assert workflow.exitStatus == 0
+}
+```
 
 ### Practical notes
 
