@@ -80,7 +80,7 @@ def "shift+tab toggles composer mode"() {
 
 No built-in xfail mechanism. Assert the failure explicitly in the test commit, flip to assert success in the fix commit. Add a `// BUG:` comment to flag intent.
 
-```groovy
+```nextflow
 // Test commit: assert the process/workflow fails (BUG: missing index input)
 then {
     assert process.failed        // BUG: should succeed once fixed
@@ -96,7 +96,7 @@ then {
 
 Workflow-level equivalent:
 
-```groovy
+```nextflow
 // Test commit: assert workflow fails with expected error
 then {
     assert workflow.failed
