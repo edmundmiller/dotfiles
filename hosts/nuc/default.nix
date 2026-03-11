@@ -245,9 +245,9 @@ in
               agentId = "dev";
             }
             {
-              peerId = "-1003862456724:topic:24"; # Ops
+              peerId = "-1003862456724:topic:24"; # Commander Bun Bun
               kind = "group";
-              agentId = "ops";
+              agentId = "commanderbunbun";
             }
             {
               peerId = "-1003862456724:topic:25"; # Scheduler
