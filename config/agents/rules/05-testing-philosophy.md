@@ -78,7 +78,23 @@ def "shift+tab toggles composer mode"() {
 
 #### nf-test
 
-No built-in expected-failure mechanism. Write the regression test asserting `!process.success` or the broken output in the test commit, then flip to assert correct behavior in the fix commit. Add a `// BUG:` comment to flag intent.
+No built-in xfail mechanism. Assert the failure explicitly in the test commit, flip to assert success in the fix commit. Add a `// BUG:` comment to flag intent.
+
+```groovy
+// Test commit: assert the process/workflow fails (BUG: missing index input)
+then {
+    assert process.failed        // BUG: should succeed once fixed
+    assert process.exitStatus == 1
+}
+
+// Fix commit: flip to assert success
+then {
+    assert process.success
+    assert process.exitStatus == 0
+}
+```
+
+For workflow-level tests, use `workflow.failed`, `workflow.exitStatus`, and `workflow.errorReport.contains("...")` similarly.
 
 ### Practical notes
 
