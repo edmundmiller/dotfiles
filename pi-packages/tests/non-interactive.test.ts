@@ -7,11 +7,11 @@
  * Uses @marcfargas/pi-test-harness.
  */
 
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from "bun:test";
 import { createTestSession, when, calls, type TestSession } from "@marcfargas/pi-test-harness";
 import * as path from "node:path";
 
-const EXTENSION = path.resolve(__dirname, "../pi-non-interactive/index.ts");
+const EXTENSION = path.resolve(import.meta.dir, "../pi-non-interactive/index.ts");
 
 describe("pi-non-interactive", () => {
   let t: TestSession;

@@ -9,7 +9,7 @@
  * when unavailable, which is its designed behavior.
  */
 
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from "bun:test";
 import {
   createTestSession,
   when,
@@ -19,7 +19,7 @@ import {
 } from "@marcfargas/pi-test-harness";
 import * as path from "node:path";
 
-const GIT_AI_EXTENSION = path.resolve(__dirname, "../pi-git-ai/index.ts");
+const GIT_AI_EXTENSION = path.resolve(import.meta.dir, "../pi-git-ai/index.ts");
 
 const MOCK_TOOLS = {
   bash: "ok",
