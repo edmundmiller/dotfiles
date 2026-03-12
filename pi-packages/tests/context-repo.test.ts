@@ -9,7 +9,7 @@
  * own tools. Only standard tools (bash, read, write, edit) are mocked.
  */
 
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "bun:test";
 import {
   createTestSession,
   when,
@@ -23,7 +23,7 @@ import * as os from "node:os";
 import { execSync } from "node:child_process";
 import { scaffoldMemory } from "../pi-context-repo/index.js";
 
-const EXTENSION = path.resolve(__dirname, "../pi-context-repo/index.ts");
+const EXTENSION = path.resolve(import.meta.dir, "../pi-context-repo/index.ts");
 
 /** Mock only the standard tools — extension-registered tools run real */
 const MOCK_TOOLS = {
