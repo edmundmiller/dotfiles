@@ -25,6 +25,9 @@ in
     home-manager.users.${user} =
       { lib, ... }:
       {
+        age.secrets.openclaw-gateway-token = {
+          file = "${toString ../../../hosts}/shared/secrets/openclaw-gateway-token.age";
+        };
         home.packages = [
           inputs.google-workspace-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
         ];

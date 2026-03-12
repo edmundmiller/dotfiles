@@ -90,9 +90,6 @@ in
           wakatime-api-key = {
             file = "${sharedSecretsDir}/wakatime-api-key.age";
           };
-          openclaw-gateway-token = {
-            file = "${sharedSecretsDir}/openclaw-gateway-token.age";
-          };
         };
       };
     };
