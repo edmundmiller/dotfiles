@@ -1,12 +1,12 @@
 {
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
   "$schema": "./settings-schema.json",
-  // Model configuration - Sonnet 4.6 as default
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-sonnet-4-6",
-  "defaultThinkingLevel": "medium",
+  // Model configuration - GPT-5.3 Codex as default (high thinking)
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-5.3-codex",
+  "defaultThinkingLevel": "high",
   // Model cycling - Ctrl+P to toggle between these
-  "enabledModels": ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "gpt-5.3-codex"],
+  "enabledModels": ["gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4", "claude-sonnet-4-6"],
   // UI preferences
   "theme": "terminal",
   "quietStartup": false,
