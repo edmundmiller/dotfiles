@@ -40,6 +40,10 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 
 No agenix secrets on this host (credentials in 1Password / work SSO).
 
+## Network
+
+- **No Tailscale** — can't SSH to NUC or other Tailscale hosts from this machine.
+
 ## Gotchas
 
 - **Username is `edmundmiller`** — many paths differ from mactraitorpro. Don't assume `emiller`.
