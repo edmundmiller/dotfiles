@@ -185,7 +185,10 @@ in
 
     };
     services = {
-      audiobookshelf.enable = true;
+      audiobookshelf = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       # OpenClaw — agents, secrets, cron jobs, and skills are workspace-owned
       # (defined in openclaw-workspace module). Only infra config stays here.
       openclaw = {
