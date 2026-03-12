@@ -39,7 +39,7 @@
 	autoupdate = true
 [alias]
 	amend = commit --amend
-	difi = "!TERM=xterm-256color difi"
+	difi = "!GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=diff.external GIT_CONFIG_VALUE_0='' TERM=xterm-256color difi"
 	exec = "!exec "
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
 	ls = ls-files
