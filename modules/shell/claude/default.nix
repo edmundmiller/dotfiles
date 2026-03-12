@@ -38,13 +38,11 @@ in
       ".claude/CLAUDE.md".text = concatenatedRules;
       ".claude/settings.json".source = "${configDir}/claude/settings.json";
 
-      # WakaTime configuration (references agenix-decrypted secret)
+      # WakaTime configuration (reads agenix secret from current user's HOME)
       ".wakatime.cfg" = mkIf pkgs.stdenv.isDarwin {
         text = ''
           [settings]
-          api_key_vault_cmd = cat ${
-            config.home-manager.users.${config.user.name}.age.secretsDir
-          }/wakatime-api-key
+          api_key_vault_cmd = sh -c 'test -r "$HOME/.local/share/agenix/wakatime-api-key" && cat "$HOME/.local/share/agenix/wakatime-api-key"'
         '';
       };
     };
