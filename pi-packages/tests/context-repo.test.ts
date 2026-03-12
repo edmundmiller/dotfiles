@@ -489,6 +489,140 @@ describe("pi-context-repo: memory_search tool", () => {
   });
 });
 
+describe("pi-context-repo: memory_list tool", () => {
+  let t: TestSession;
+  let cwd: string;
+
+  beforeEach(() => {
+    isolateEnv();
+    cwd = setupMemoryDir();
+  });
+
+  afterEach(() => {
+    t?.dispose();
+    if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });
+    restoreEnv();
+  });
+
+  it("lists memory files with descriptions", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+      cwd,
+      mockTools: MOCK_TOOLS,
+    });
+
+    await t.run(
+      when("write file", [
+        calls("memory_write", {
+          path: "reference/listable.md",
+          description: "Listable note",
+          content: "content",
+        }),
+      ]),
+      when("list files", [calls("memory_list", {})])
+    );
+
+    const results = t.events.toolResultsFor("memory_list");
+    expect(results).toHaveLength(1);
+    expect(results[0].text).toContain("Found");
+    expect(results[0].text).toContain("reference/listable.md");
+    expect(results[0].text).toContain("Listable note");
+  });
+
+  it("supports directory-scoped listing", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+      cwd,
+      mockTools: MOCK_TOOLS,
+    });
+
+    await t.run(
+      when("write file", [
+        calls("memory_write", {
+          path: "reference/scoped.md",
+          description: "Scoped note",
+          content: "content",
+        }),
+      ]),
+      when("list reference", [calls("memory_list", { directory: "reference" })])
+    );
+
+    const result = t.events.toolResultsFor("memory_list")[0];
+    expect(result.text).toContain("reference/scoped.md");
+    expect(result.text).not.toContain("system/persona.md");
+  });
+
+  it("rejects directories outside memory root", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+      cwd,
+      mockTools: MOCK_TOOLS,
+    });
+
+    await t.run(when("escape", [calls("memory_list", { directory: "../" })]));
+
+    const result = t.events.toolResultsFor("memory_list")[0];
+    expect(result.text).toContain("escapes memory root");
+  });
+});
+
+describe("pi-context-repo: memory_read tool", () => {
+  let t: TestSession;
+  let cwd: string;
+
+  beforeEach(() => {
+    isolateEnv();
+    cwd = setupMemoryDir();
+  });
+
+  afterEach(() => {
+    t?.dispose();
+    if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });
+    restoreEnv();
+  });
+
+  it("reads a memory file with metadata", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+      cwd,
+      mockTools: MOCK_TOOLS,
+    });
+
+    await t.run(when("read persona", [calls("memory_read", { path: "system/persona.md" })]));
+
+    const result = t.events.toolResultsFor("memory_read")[0];
+    expect(result.text).toContain("Path: system/persona.md");
+    expect(result.text).toContain("Description:");
+    expect(result.text).toContain("You are a helpful coding assistant");
+  });
+
+  it("auto-appends .md extension", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+      cwd,
+      mockTools: MOCK_TOOLS,
+    });
+
+    await t.run(when("read persona", [calls("memory_read", { path: "system/persona" })]));
+
+    const result = t.events.toolResultsFor("memory_read")[0];
+    expect(result.text).toContain("Path: system/persona.md");
+  });
+
+  it("returns error for missing file", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+      cwd,
+      mockTools: MOCK_TOOLS,
+    });
+
+    await t.run(when("read missing", [calls("memory_read", { path: "reference/missing.md" })]));
+
+    const result = t.events.toolResultsFor("memory_read")[0];
+    expect(result.text).toContain("does not exist");
+  });
+});
+
 describe("pi-context-repo: reflection reminders", () => {
   let t: TestSession;
   let cwd: string;
