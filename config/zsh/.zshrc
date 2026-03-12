@@ -145,3 +145,6 @@ if (( $+commands[entire] )); then
 fi
 alias oz="oz-preview"
 alias oz="oz-preview"
+
+# bun completions
+[ -s "/Users/edmundmiller/.bun/_bun" ] && source "/Users/edmundmiller/.bun/_bun"
