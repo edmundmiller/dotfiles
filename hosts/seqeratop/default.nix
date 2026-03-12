@@ -65,8 +65,7 @@ _: {
       };
 
       services = {
-        obsidian-sync.enable = true;
-        obsidian-sync.mode = "desktop";
+        obsidian-sync.enable = false;
         docker.enable = true;
         ssh.enable = true;
       };
