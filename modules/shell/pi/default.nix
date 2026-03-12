@@ -241,7 +241,14 @@ in
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
             ".pi/agent/extensions/sub-limits.ts".source = "${configDir}/pi/extensions/sub-limits.ts";
-            ".pi/agent/extensions/context.ts".source = "${configDir}/pi/extensions/context.ts";
+            ".pi/agent/extensions/pi-tool-display/config.json".text = builtins.toJSON {
+              # Legacy key (older pi-tool-display versions)
+              registerReadToolOverride = false;
+              # Current key (v0.9+)
+              registerToolOverrides = {
+                read = false;
+              };
+            };
 
             ".pi/agent/extensions/you-are-right-killer.ts".source =
               "${configDir}/pi/extensions/you-are-right-killer.ts";
@@ -254,6 +261,12 @@ in
             ".config/dotfiles/pi-packages/pi-dcp/node_modules".source = "${piPkgDeps.pi-dcp}/node_modules";
             ".config/dotfiles/pi-packages/pi-scurl/node_modules".source = "${piPkgDeps.pi-scurl}/node_modules";
           };
+
+        # Clean stale local extensions that conflict with package-provided ones
+        home.activation.pi-extension-conflict-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ext_dir="$HOME/.pi/agent/extensions"
+          rm -f "$ext_dir/context.ts" "$ext_dir/context.js"
+        '';
 
         home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (
           lib.hm.dag.entryAfter [ "writeBoundary" ] ''
