@@ -93,7 +93,7 @@ _sensors = [healthcheck_run_started, healthcheck_run_success, healthcheck_run_fa
 
 ### 4. Nix module — per-asset ping URLs
 
-In `modules/services/bugster/default.nix`:
+In `modules/services/dagster/bugster.nix`:
 
 ```nix
 healthcheckPingUrls = mkOpt (types.attrsOf types.str) { };
