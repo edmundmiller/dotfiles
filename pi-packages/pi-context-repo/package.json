@@ -22,8 +22,9 @@
   },
   "files": [
     "index.ts",
-    "src",
-    "README.md"
+    "README.md",
+    "docs",
+    "skills"
   ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*",

@@ -38,11 +38,14 @@ Memory is stored as markdown files with YAML frontmatter in `.pi/memory/` (a sep
 
 | Tool            | Description                                                    |
 | --------------- | -------------------------------------------------------------- |
+| `memory_list`   | List memory markdown files (optionally scoped to a directory)  |
+| `memory_read`   | Read one memory file by relative path                          |
 | `memory_write`  | Write/update a memory file (auto-stages, respects `read_only`) |
 | `memory_delete` | Delete a memory file and stage the removal                     |
 | `memory_commit` | Commit staged changes with a descriptive message               |
 | `memory_search` | Search memory files by content (`git grep`)                    |
 | `memory_log`    | Show recent commit history                                     |
+| `memory_recall` | Search prior pi session history for matching conversation text |
 | `memory_backup` | Create a timestamped backup snapshot                           |
 
 ## Commands
@@ -58,6 +61,12 @@ Memory is stored as markdown files with YAML frontmatter in `.pi/memory/` (a sep
 | `/memory-restore`  | Restore from a backup                 |
 | `/memory-export`   | Export memory to a directory          |
 | `/memory-import`   | Import memory from another directory  |
+
+## Bundled skills
+
+- `initializing-memory` — deep `/init` workflow and first-run memory population
+- `defragmenting-memory` — split/clean memory blocks into focused files
+- `searching-memory` — fast browse/search/read/sync workflows for daily usage
 
 ## UI
 
@@ -78,6 +87,10 @@ Adapted from Letta Code's [memoryGit.ts](https://github.com/letta-ai/letta-code/
 - Git worktree helpers for isolated background edits (reflection, migration)
 - System prompt drift detection and stripping
 - `$MEMORY_DIR` / `$PI_MEMORY_DIR` env vars for shell access
+
+## pi-memory-md parity decisions
+
+See [`docs/pi-memory-md-parity.md`](./docs/pi-memory-md-parity.md) for accepted vs rejected UX parity items and rationale.
 
 ## Competitive landscape
 
