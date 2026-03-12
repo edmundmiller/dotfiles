@@ -19,6 +19,7 @@ worktrees/
 
 # Node.js dependencies (including Nix store symlinks)
 **/node_modules
+**/node_modules.bkup
 
 # Nextflow
 .nextflow/
