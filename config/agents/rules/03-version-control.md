@@ -7,6 +7,15 @@
 - **Selective staging** with `git hunks list` / `git hunks add <hunk-id>` — non-interactive, deterministic hunk IDs
 - **Dotfiles exception**: sibling layout (`../dotfiles.branch`) via `.envrc` override
 
+## Non-interactive defaults (agents)
+
+- Never use interactive git/editor flows in `bash` toolcalls (`git rebase -i`, `git add -p`, `git commit` without `-m`, `git mergetool`, `vim`, `less`, etc.)
+- Use explicit non-interactive forms:
+  - `git hunks list` + `git hunks add <hunk-id>` (not `git add -p`)
+  - `git commit -m "..."` or `git commit --amend --no-edit`
+  - `git commit --fixup <sha>` + `git rebase --autosquash <base>` for history cleanup
+- If truly interactive flow needed, use `interactive_shell` (supervised) instead of `bash`
+
 ## Hunk ID Format
 
 `file:@-old,len+new,len` — e.g. `README.md:@-1,3+1,5`

@@ -2,7 +2,8 @@
  * Integration tests: pi-non-interactive
  *
  * Verifies the extension registers a bash tool replacement that injects
- * non-interactive env vars (GIT_EDITOR, PAGER, etc.) to prevent hangs.
+ * non-interactive env vars (GIT_EDITOR, PAGER, etc.) and blocks interactive
+ * command patterns that cause hung tool runs.
  *
  * Uses @marcfargas/pi-test-harness.
  */
@@ -23,15 +24,12 @@ describe("pi-non-interactive", () => {
       extensions: [EXTENSION],
     });
 
-    // The extension registers a bash tool — verify it exists by calling it
     await t.run(when("run echo", [calls("bash", { command: "echo hello" })]));
 
     const results = t.events.toolResultsFor("bash");
     expect(results).toHaveLength(1);
     expect(results[0].isError).toBe(false);
     expect(results[0].text).toContain("hello");
-    // This is a REAL bash execution, not mocked — the extension's bash tool
-    // wraps createBashTool which actually runs commands
   });
 
   it("injects GIT_EDITOR=true to prevent editor hangs", async () => {
@@ -107,7 +105,6 @@ describe("pi-non-interactive", () => {
       extensions: [EXTENSION],
     });
 
-    // Verify all env vars in one shot
     await t.run(
       when("dump env", [
         calls("bash", {
@@ -124,5 +121,30 @@ describe("pi-non-interactive", () => {
     expect(text).toContain("GIT_SEQUENCE_EDITOR=true");
     expect(text).toContain("LESS=-FX");
     expect(text).toContain("PAGER=cat");
+  });
+
+  it("blocks known interactive git commands", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+    });
+
+    await t.run(when("interactive rebase", [calls("bash", { command: "git rebase -i HEAD~2" })]));
+
+    const result = t.events.toolResultsFor("bash")[0];
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain("Blocked interactive command");
+    expect(result.text).toContain("Use instead");
+  });
+
+  it("does not block normal non-interactive command", async () => {
+    t = await createTestSession({
+      extensions: [EXTENSION],
+    });
+
+    await t.run(when("non interactive", [calls("bash", { command: "echo okay" })]));
+
+    const result = t.events.toolResultsFor("bash")[0];
+    expect(result.isError).toBe(false);
+    expect(result.text).toContain("okay");
   });
 });
