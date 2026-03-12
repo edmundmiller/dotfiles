@@ -13,6 +13,7 @@ set -ga terminal-overrides ",ghostty:Tc"
 
 # Enable extended keys for proper modifier key support (Shift+Enter, etc.)
 set -s extended-keys on
+set -g extended-keys-format csi-u
 set -as terminal-features ',ghostty:extkeys'
 # Allow passthrough for Kitty keyboard protocol queries
 set -g allow-passthrough on
