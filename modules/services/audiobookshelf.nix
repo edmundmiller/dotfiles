@@ -1,3 +1,5 @@
+# Audiobookshelf - self-hosted audiobooks and podcasts
+# Dashboard: http://<nuc-tailscale-ip>:13378
 {
   config,
   lib,
@@ -12,14 +14,18 @@ in
 {
   options.modules.services.audiobookshelf = {
     enable = mkBoolOpt false;
+    port = mkOpt types.port 13378;
   };
 
   # NixOS-only service
   config = mkIf cfg.enable (
     optionalAttrs (!isDarwin) {
-      services.audiobookshelf.enable = true;
-      services.audiobookshelf.openFirewall = true;
-      services.audiobookshelf.host = "0.0.0.0";
+      services.audiobookshelf = {
+        enable = true;
+        openFirewall = true;
+        host = "0.0.0.0";
+        inherit (cfg) port;
+      };
 
       user.extraGroups = [ "audiobookshelf" ];
     }
