@@ -78,6 +78,11 @@
   },
   // MCP servers
   "mcp": {
+    "fff": {
+      "type": "local",
+      "command": ["fff-mcp"],
+      "enabled": true,
+    },
     "seqera-platform": {
       "type": "remote",
       "url": "https://mcp.seqera.io/mcp",

@@ -29,6 +29,10 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 - Prefer `sem diff` over `git diff` for reviews and change analysis.
 - Use native `git diff` only if sem can't express required flags/output.
 
+## File Search
+
+- Use the `fff` MCP tools for all file search operations instead of default search tools.
+
 ## Issue Tracking
 
 This project uses **bd** (beads) for issue tracking.
