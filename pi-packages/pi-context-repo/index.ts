@@ -31,7 +31,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import type { Dirent } from "node:fs";
@@ -317,6 +317,40 @@ export function buildTree(dir: string, prefix = ""): string[] {
     }
   }
   return lines;
+}
+
+function resolveUnderMemory(memDir: string, memoryPath: string): string | null {
+  const resolved = resolve(memDir, memoryPath);
+  if (resolved === memDir || resolved.startsWith(memDir + "/")) {
+    return resolved;
+  }
+  return null;
+}
+
+function listMarkdownFilesRecursive(dir: string, root = dir): string[] {
+  if (!existsSync(dir)) return [];
+
+  const entries = readdirSync(dir, { withFileTypes: true })
+    .filter((e) => !e.name.startsWith("."))
+    .sort((a, b) => {
+      if (a.isDirectory() && !b.isDirectory()) return -1;
+      if (!a.isDirectory() && b.isDirectory()) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+  const files: string[] = [];
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listMarkdownFilesRecursive(fullPath, root));
+      continue;
+    }
+    if (entry.name.endsWith(".md")) {
+      files.push(relative(root, fullPath));
+    }
+  }
+
+  return files;
 }
 
 // --- Load system/ files (recursive) ---
@@ -912,6 +946,8 @@ ${tree.join("\n")}
 ${systemContent || "(No system files yet.)"}
 
 ### Memory Guidelines
+- To browse memory paths: use memory_list
+- To read one memory file: use memory_read
 - To remember something: use the memory_write tool (validates frontmatter, enforces limits)
 - To remove a file: use the memory_delete tool
 - Each file needs frontmatter: \`description\` (what it contains) and \`limit\` (max chars)
@@ -982,6 +1018,97 @@ If pull/push fails with conflicts:
   });
 
   // --- Tools ---
+
+  pi.registerTool({
+    name: "memory_list",
+    label: "Memory List",
+    description: "List markdown memory files and their descriptions.",
+    parameters: Type.Object({
+      directory: Type.Optional(
+        Type.String({
+          description:
+            "Optional directory within .pi/memory/ to scope listing (e.g. 'system' or 'reference/project')",
+        })
+      ),
+    }),
+    async execute(_toolCallId, params) {
+      if (!initialized) {
+        return toolResult("Context repo not initialized.");
+      }
+
+      const requestedDir = params.directory?.trim() || ".";
+      const baseDir = resolveUnderMemory(memDir, requestedDir);
+      if (!baseDir) {
+        return toolResult(`Error: directory escapes memory root: ${requestedDir}`);
+      }
+
+      if (!existsSync(baseDir)) {
+        return toolResult(`Error: directory does not exist: ${requestedDir}`);
+      }
+
+      if (!statSync(baseDir).isDirectory()) {
+        return toolResult(`Error: not a directory: ${requestedDir}`);
+      }
+
+      const files = listMarkdownFilesRecursive(baseDir);
+      if (files.length === 0) {
+        return toolResult(`No memory markdown files in ${requestedDir}.`);
+      }
+
+      const maxEntries = 200;
+      const lines = files.slice(0, maxEntries).map((relativeToDir) => {
+        const absolutePath = join(baseDir, relativeToDir);
+        const memoryPath = relative(memDir, absolutePath);
+        const { frontmatter } = parseFrontmatter(readFileSync(absolutePath, "utf-8"));
+        const desc = frontmatter.description ? ` — ${frontmatter.description}` : "";
+        const ro = frontmatter.read_only ? " [read-only]" : "";
+        return `- ${memoryPath}${desc}${ro}`;
+      });
+
+      const shownSuffix = files.length > maxEntries ? ` (showing first ${maxEntries})` : "";
+      return toolResult(
+        `Found ${files.length} memory file(s) in ${requestedDir}${shownSuffix}:\n${lines.join("\n")}`
+      );
+    },
+  });
+
+  pi.registerTool({
+    name: "memory_read",
+    label: "Memory Read",
+    description: "Read one memory markdown file by path.",
+    parameters: Type.Object({
+      path: Type.String({
+        description: "Relative path within .pi/memory/ (e.g. 'system/project.md')",
+      }),
+    }),
+    async execute(_toolCallId, params) {
+      if (!initialized) {
+        return toolResult("Context repo not initialized.");
+      }
+
+      const pathWithExt = params.path.endsWith(".md") ? params.path : `${params.path}.md`;
+      const filePath = resolveUnderMemory(memDir, pathWithExt);
+      if (!filePath) {
+        return toolResult(`Error: path escapes memory root: ${pathWithExt}`);
+      }
+
+      if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+        return toolResult(`Error: ${pathWithExt} does not exist.`);
+      }
+
+      const content = readFileSync(filePath, "utf-8");
+      const { frontmatter, body } = parseFrontmatter(content);
+      const relPath = relative(memDir, filePath);
+
+      return toolResult(
+        `Path: ${relPath}\n` +
+          `Description: ${frontmatter.description || "(none)"}\n` +
+          `Limit: ${frontmatter.limit ?? "(none)"}\n` +
+          `Read-only: ${frontmatter.read_only ? "true" : "false"}\n\n` +
+          (body || "(empty)")
+      );
+    },
+  });
 
   pi.registerTool({
     name: "memory_write",
