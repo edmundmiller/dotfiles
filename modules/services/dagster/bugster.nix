@@ -23,6 +23,18 @@ let
   cfg = config.modules.services.bugster;
 
   dagsterCfg = config.modules.services.dagster;
+  tnoteCliEntry = "/home/${dagsterCfg.user}/src/personal/tn-monorepo/packages/tn/index.ts";
+  runtimePath = lib.makeBinPath [
+    pkgs.bash
+    pkgs.bun
+    pkgs.coreutils
+    pkgs.findutils
+    pkgs.git
+    pkgs.gnugrep
+    pkgs.gnused
+    pkgs.just
+    pkgs.uv
+  ];
 
   # Generate bugster.toml from Nix options
   bugsterToml = pkgs.writeText "bugster.toml" (
@@ -207,6 +219,9 @@ in
               workingDirectory = cfg.dataDir;
               execStart = pkgs.writeShellScript "bugster-code-server" ''
                 set -euo pipefail
+
+                export PATH=${runtimePath}:/run/current-system/sw/bin
+
                 cd ${cfg.dataDir}
 
                 # Sync Python deps (frozen = use lockfile, no resolution)
@@ -225,6 +240,7 @@ in
               '';
               environment = {
                 BUGSTER_CONFIG = "${cfg.dataDir}/bugster.toml";
+                TNOTE_CLI_ENTRY = tnoteCliEntry;
                 UV_CACHE_DIR = "${dagsterCfg.home}/.cache/uv";
                 UV_PYTHON_PREFERENCE = "system";
                 # uv-managed Python looks for /etc/ssl/cert.pem (doesn't exist
@@ -258,7 +274,6 @@ in
 
         serviceConfig = {
           Type = "oneshot";
-          RemainAfterExit = true;
           User = dagsterCfg.user;
           Group = dagsterCfg.group;
           ExecStart = setupScript;

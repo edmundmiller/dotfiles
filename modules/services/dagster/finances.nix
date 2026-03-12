@@ -149,7 +149,6 @@ in
 
         serviceConfig = {
           Type = "oneshot";
-          RemainAfterExit = true;
           User = dagsterCfg.user;
           Group = dagsterCfg.group;
           ExecStart = setupScript;
