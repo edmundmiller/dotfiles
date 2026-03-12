@@ -242,11 +242,13 @@ in
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
             ".pi/agent/extensions/sub-limits.ts".source = "${configDir}/pi/extensions/sub-limits.ts";
             ".pi/agent/extensions/pi-tool-display/config.json".text = builtins.toJSON {
-              # Legacy key (older pi-tool-display versions)
+              # Legacy keys (older pi-tool-display versions)
               registerReadToolOverride = false;
+              registerBashToolOverride = false;
               # Current key (v0.9+)
               registerToolOverrides = {
                 read = false;
+                bash = false;
               };
             };
 
