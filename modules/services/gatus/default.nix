@@ -188,17 +188,16 @@ let
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }
+          ]
+          ++ optionals config.modules.services.audiobookshelf.enable [
+            {
+              name = "Audiobookshelf";
+              group = "Media";
+              url = "http://localhost:${toString config.modules.services.audiobookshelf.port}";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
           ];
-        # TODO: Audiobookshelf is on port 8000, not 13378; find correct healthcheck path
-        # ++ optionals config.modules.services.audiobookshelf.enable [
-        #   {
-        #     name = "Audiobookshelf";
-        #     group = "Media";
-        #     url = "http://localhost:13378/healthcheck";
-        #     interval = "60s";
-        #     conditions = [ "[STATUS] == 200" ];
-        #   }
-        # ]
       }
       // optionalAttrs (alertingConfig != { }) {
         alerting = alertingConfig;
