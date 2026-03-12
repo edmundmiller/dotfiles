@@ -69,6 +69,8 @@
     "~/.config/dotfiles/pi-packages/pi-scurl",
     // Auto-load direnv env at session start
     "~/.config/dotfiles/pi-packages/pi-direnv",
+    // Force non-interactive bash defaults + block interactive hang patterns
+    "~/.config/dotfiles/pi-packages/pi-non-interactive",
     // Agentmap codebase tree in system prompt - https://github.com/remorses/agentmap
     "~/.config/dotfiles/pi-packages/pi-agentmap",
 
