@@ -133,5 +133,8 @@ cdx() {
     command codex "$@"
 }
 
-# difi: TERM=ghostty breaks the diff renderer
-alias difi='TERM=xterm-256color difi'
+# difi: TERM=ghostty breaks the renderer; diff.external=difft produces non-unified output difi can't parse
+difi() {
+  GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=diff.external GIT_CONFIG_VALUE_0="" \
+    TERM=xterm-256color command difi "$@"
+}
