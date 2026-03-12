@@ -17,6 +17,7 @@
 [core]
 	whitespace = trailing-space
 	excludesfile = ~/.config/git/ignore
+	pager = delta
 [init]
 	defaultBranch = main
 [github]
@@ -39,6 +40,10 @@
 	autoupdate = true
 [alias]
 	amend = commit --amend
+	# difftastic on-demand (keeps diff.external unset so tools like difi/delta work)
+	ddiff = -c diff.external=difft diff
+	dl = -c diff.external=difft log -p --ext-diff
+	ds = -c diff.external=difft show --ext-diff
 	difi = "!git diff --no-ext-diff --color=always \"${1:-HEAD}\" | TERM=xterm-256color difi #"
 	exec = "!exec "
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
@@ -65,8 +70,15 @@
     insteadOf = gist:
 [url "https://bitbucket.org/"]
     insteadOf = bb:
+[delta]
+	navigate = true
+	side-by-side = true
+	line-numbers = true
+
+[interactive]
+	diffFilter = delta --color-only
+
 [diff]
-	external = difft
 	tool = difftastic
 	algorithm = histogram
 	colorMoved = plain
