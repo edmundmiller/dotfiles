@@ -372,6 +372,12 @@ in
 
       dagster.webserver.port = 3001;
 
+      finances-dagster = {
+        enable = true;
+        opTokenFile = "/etc/opnix-token";
+        dailyHealthcheckPingUrl = "https://hc-ping.com/465b4f6c-8107-487e-bfd7-dc5e30168f32";
+      };
+
       bugster = {
         enable = true;
         environmentFile = config.age.secrets.bugster-env.path;
