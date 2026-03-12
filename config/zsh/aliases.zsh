@@ -132,3 +132,6 @@ cdx() {
     cd "$safe_cwd" || return 1
     command codex "$@"
 }
+
+# difi: TERM=ghostty breaks the diff renderer
+alias difi='TERM=xterm-256color difi'
