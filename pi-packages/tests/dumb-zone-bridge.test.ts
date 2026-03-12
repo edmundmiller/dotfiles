@@ -7,7 +7,7 @@
  * Uses @marcfargas/pi-test-harness for real pi session testing.
  */
 
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "bun:test";
 import { createTestSession, when, says, type TestSession } from "@marcfargas/pi-test-harness";
 import * as path from "node:path";
 
@@ -20,7 +20,7 @@ import {
 } from "../pi-dumb-zone/src/signal";
 import { readDumbZoneSignal } from "../pi-dcp/src/dumb-zone-bridge";
 
-const DCP_EXTENSION = path.resolve(__dirname, "../pi-dcp/index.ts");
+const DCP_EXTENSION = path.resolve(import.meta.dir, "../pi-dcp/index.ts");
 
 const MOCK_TOOLS = {
   bash: "ok",
