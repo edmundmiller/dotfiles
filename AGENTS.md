@@ -26,8 +26,8 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 
 ## Diff Policy
 
-- Prefer `sem diff` over `git diff` for reviews and change analysis.
-- Use native `git diff` only if sem can't express required flags/output.
+- Prefer `diffs` over `git diff` for reviews and change analysis.
+- Use native `git diff` only if diffs can't express required flags/output.
 
 ## File Search
 
