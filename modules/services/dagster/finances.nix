@@ -23,23 +23,48 @@ let
 
     REPO_DIR=${escapeShellArg cfg.repoPath}
 
-    if [ -d "$REPO_DIR/.git" ]; then
-      echo "finances repo already present: $REPO_DIR"
-      exit 0
-    fi
-
     mkdir -p "$(dirname "$REPO_DIR")"
     export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -o StrictHostKeyChecking=accept-new"
-    ${pkgs.git}/bin/git clone --branch ${escapeShellArg cfg.gitBranch} --single-branch ${escapeShellArg cfg.gitUrl} "$REPO_DIR"
+
+    if [ ! -d "$REPO_DIR/.git" ]; then
+      ${pkgs.git}/bin/git clone --branch ${escapeShellArg cfg.gitBranch} --single-branch ${escapeShellArg cfg.gitUrl} "$REPO_DIR"
+    else
+      cd "$REPO_DIR"
+      ${pkgs.git}/bin/git fetch origin
+      ${pkgs.git}/bin/git reset --hard origin/${cfg.gitBranch}
+    fi
   '';
+
+  runtimePath = lib.makeBinPath [
+    pkgs.bash
+    pkgs.coreutils
+    pkgs.findutils
+    pkgs.gawk
+    pkgs.gnugrep
+    pkgs.gnused
+    pkgs.git
+    pkgs.just
+    pkgs.openssh
+    pkgs._1password-cli
+    pkgs.uv
+  ];
+  runtimeLibs = lib.makeLibraryPath [ pkgs.stdenv.cc.cc ];
 
   codeServerScript = pkgs.writeShellScript "finances-dagster-code-server" ''
     set -euo pipefail
 
+    export PATH=${runtimePath}:/run/current-system/sw/bin
+    export LD_LIBRARY_PATH=${runtimeLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+
     cd ${escapeShellArg cfg.repoPath}
 
-    # Sync lockfile-pinned dependencies, then launch gRPC code server.
+    # Sync lockfile-pinned deps. This repo isn't packaged, so uv may skip
+    # project entry points. Install Dagster explicitly into the synced venv.
     ${pkgs.uv}/bin/uv sync --frozen --no-dev
+    ${pkgs.uv}/bin/uv pip install --python .venv/bin/python \
+      'dagster>=1.11' \
+      'dagster-webserver>=1.11' \
+      'dagster-postgres>=0.27'
 
     exec .venv/bin/dagster code-server start \
       -m finances_dagster.definitions \
@@ -97,21 +122,8 @@ in
                 # uv-managed Python on NixOS needs explicit CA bundle path.
                 SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
                 # Make subprocess calls in finances_dagster (just/op/etc.) deterministic.
-                PATH = "${
-                  lib.makeBinPath [
-                    pkgs.bash
-                    pkgs.coreutils
-                    pkgs.findutils
-                    pkgs.gawk
-                    pkgs.gnugrep
-                    pkgs.gnused
-                    pkgs.git
-                    pkgs.just
-                    pkgs.openssh
-                    pkgs._1password-cli
-                    pkgs.uv
-                  ]
-                }:/run/current-system/sw/bin";
+                # PATH is set in the wrapper script to avoid conflicting with
+                # systemd's module-provided PATH env.
                 # 1Password CLI needs writable config/session path in service context.
                 XDG_CONFIG_HOME = "/tmp";
               };
@@ -148,6 +160,23 @@ in
         };
       };
 
+      # Fix ownership drift from older manual/local installs that created
+      # repo artifacts (notably .venv) as root.
+      systemd.services.finances-dagster-perms = {
+        description = "Fix finances Dagster repo permissions";
+        before = [ "dagster-code-finances.service" ];
+        requiredBy = [ "dagster-code-finances.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = pkgs.writeShellScript "finances-dagster-perms" ''
+            if [ -e ${escapeShellArg cfg.repoPath} ]; then
+              chown -R ${dagsterCfg.user}:${dagsterCfg.group} ${escapeShellArg cfg.repoPath}
+            fi
+          '';
+        };
+      };
+
       # Convert raw token file to KEY=VALUE EnvironmentFile for systemd.
       systemd.services.finances-dagster-op-env = mkIf (cfg.opTokenFile != null) {
         description = "Generate finances Dagster OP env file";
@@ -167,10 +196,12 @@ in
       systemd.services.dagster-code-finances = {
         after = [
           "finances-dagster-setup.service"
+          "finances-dagster-perms.service"
         ]
         ++ optional (cfg.opTokenFile != null) "finances-dagster-op-env.service";
         requires = [
           "finances-dagster-setup.service"
+          "finances-dagster-perms.service"
         ]
         ++ optional (cfg.opTokenFile != null) "finances-dagster-op-env.service";
       };

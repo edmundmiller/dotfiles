@@ -7,7 +7,7 @@ This repo deploys finances Dagster on NUC as a **Dagster code location** under t
 ## Where it is configured
 
 - Service module:
-  - `modules/services/finances-dagster/default.nix`
+  - `modules/services/dagster/finances.nix`
 - NUC host enablement + healthcheck URL:
   - `hosts/nuc/default.nix` under `modules.services.finances-dagster`
 - Shared Dagster base services (webserver/daemon/workspace wiring):
