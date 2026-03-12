@@ -39,10 +39,12 @@ in
       ".claude/settings.json".source = "${configDir}/claude/settings.json";
 
       # WakaTime configuration (reads agenix secret from current user's HOME)
+      # NOTE: api_key_vault_cmd is argv-split by wakatime-cli (not shell-parsed),
+      # so avoid sh -c with single quotes or it breaks with unmatched-quote errors.
       ".wakatime.cfg" = mkIf pkgs.stdenv.isDarwin {
         text = ''
           [settings]
-          api_key_vault_cmd = sh -c 'test -r "$HOME/.local/share/agenix/wakatime-api-key" && cat "$HOME/.local/share/agenix/wakatime-api-key"'
+          api_key_vault_cmd = cat ${config.user.home}/.local/share/agenix/wakatime-api-key
         '';
       };
     };
