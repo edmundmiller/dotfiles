@@ -14,7 +14,6 @@
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
     "ahkohd/oyo" # oy - tmux session manager
     "chmouel/lazyworktree" # lazyworktree - lazy git worktree switcher
-    "oug-t/tap" # difi - structured git diff reviewer
   ];
 
   brews = [
@@ -30,7 +29,6 @@
     "go"
     "gitu"
     "jjui"
-    "oug-t/tap/difi"
     "libtool"
     "llvm"
     "m4"
