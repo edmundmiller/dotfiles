@@ -155,6 +155,10 @@
     "npm:pi-rtk",
     // Web research — clean fetch, pluggable search, scout subagent - https://github.com/iaptsiauri/pi-surf
     "npm:pi-surf",
+    // WakaTime heartbeats + AI coding metrics - https://www.npmjs.com/package/pi-wakatime
+    "npm:pi-wakatime",
+    // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
+    "npm:latchkey",
     // AskUserQuestion tool — structured clarification before acting - https://github.com/ghoseb/pi-askuserquestion
     {
       "source": "git:github.com/ghoseb/pi-askuserquestion",
