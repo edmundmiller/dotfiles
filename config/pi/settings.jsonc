@@ -63,6 +63,8 @@
     "~/.config/dotfiles/pi-packages/pi-context-repo",
     // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
     "~/.config/dotfiles/pi-packages/pi-dcp",
+    // Agentic context management (/acm, /context, context_* tools) - https://github.com/ttttmr/pi-context
+    "npm:pi-context",
     // Secure web fetch – HTML→markdown via mdream, secret scanning, injection detection
     "~/.config/dotfiles/pi-packages/pi-scurl",
     // Auto-load direnv env at session start
@@ -107,6 +109,8 @@
     },
     // GitHub repo tools (read/search/explore) - https://github.com/PriNova/pi-github-tools
     "npm:@prinova/pi-github-tools",
+    // Read tool structural maps for large files - https://github.com/Whamp/pi-read-map
+    "npm:pi-read-map",
     // Task management UI (ctrl+x) - beads (bd) integration
     "~/.config/dotfiles/pi-packages/pi-beads",
 
@@ -166,10 +170,7 @@
       "skills": [],
     },
     // fff.nvim-powered file picker - typo-resistant, git-aware @ picker - https://github.com/denisshepelin/pi-fff
-    {
-      "source": "git:github.com/denisshepelin/pi-fff",
-      "extensions": ["src/index.ts"],
-      "skills": [],
-    },
+    // Use package defaults to avoid double-loading src/index.ts (koffi type redefinition)
+    "git:github.com/denisshepelin/pi-fff",
   ],
 }
