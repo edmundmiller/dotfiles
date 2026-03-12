@@ -133,8 +133,8 @@ cdx() {
     command codex "$@"
 }
 
-# difi: TERM=ghostty breaks the renderer; diff.external=difft produces non-unified output difi can't parse
+# difi: pipe git diff with --no-ext-diff to bypass difft; TERM=ghostty breaks the renderer
 difi() {
-  GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=diff.external GIT_CONFIG_VALUE_0="" \
-    TERM=xterm-256color command difi "$@"
+  local target="${1:-HEAD}"
+  git diff --no-ext-diff --color=always "$target" | TERM=xterm-256color command difi
 }
