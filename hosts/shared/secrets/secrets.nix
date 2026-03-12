@@ -12,11 +12,13 @@ in
 
   "clawdbot-bridge-token.age".publicKeys = [
     mactraitor
+    seqeratop
     nuc
   ];
 
   "openclaw-gateway-token.age".publicKeys = [
     mactraitor
+    seqeratop
     nuc
   ];
 
