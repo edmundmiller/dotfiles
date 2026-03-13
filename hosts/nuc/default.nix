@@ -112,6 +112,9 @@ in
       Install.WantedBy = [ "timers.target" ];
     };
 
+    # Keep qmd as primary memory backend, but use higher-quality query mode.
+    programs.openclaw.config.memory.qmd.searchMode = "query";
+
     # Force memory embeddings to Gemini to avoid OpenAI embed spend.
     programs.openclaw.config.agents.defaults.memorySearch = {
       provider = "gemini";
