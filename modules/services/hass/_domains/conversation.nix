@@ -55,8 +55,9 @@ _: {
         "Stop [the] sleep timer"
       ];
       ElevenLabsSay = [
-        "Say {message} on [the] TV"
-        "Announce {message} on [the] TV"
+        "Say {message}"
+        "Announce {message}"
+        "Announce {message} in [the] living room"
       ];
       TestElevenLabs = [
         "Test ElevenLabs"
