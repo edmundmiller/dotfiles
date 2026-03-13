@@ -10,16 +10,19 @@ resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
 [[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
 
 zoxide query --list 2>/dev/null \
+  | grep -vE '/\.git$' \
   | grep -vE '^(/tmp|/private/|/nix/|/dev/|/sys/)' \
   | grep -vE '(\.Trash|\.sdkman/tmp|/T$|/var/folders)' \
+  | head -120 \
   | while IFS= read -r dir; do
-      [[ -z "$dir" ]] && continue
-      if [[ -x "$resolver" ]]; then
+      [[ -z "$dir" || ! -d "$dir" ]] && continue
+
+      resolved_dir="$dir"
+      if [[ -x "$resolver" && ! -e "$dir/.git" && -e "$dir/HEAD" ]]; then
         resolved_dir=$($resolver "$dir" 2>/dev/null || true)
         [[ -z "$resolved_dir" ]] && continue
-      else
-        resolved_dir="$dir"
       fi
+
       printf '%s\n' "$resolved_dir"
     done \
   | awk '!seen[$0]++' \
