@@ -71,6 +71,17 @@ config/tmux/
 - `~/.config/sesh/sesh.toml` - Sesh config (manual, not nix-managed yet)
 - `modules/shell/sesh/` - Nix module (disabled, for future use)
 
+### Sesh perf + PATH gotchas (important)
+
+- Popup shells can have minimal PATH; never hardcode only `/opt/homebrew/bin/*`.
+- `config/tmux/sesh-picker.sh` and `config/tmux/sesh-all.sh` use `SESH_BIN`/`FZF_TMUX_BIN` + resolver fallbacks. Keep that pattern.
+- Biggest perf hotspot is zoxide filtering, not `sesh list`. Optimize `config/tmux/zoxide-list.sh` first.
+- `zoxide-list.sh` must:
+  - drop accidental `/.git` entries
+  - skip non-existent dirs early
+  - only call `git-worktree-cwd` for bare-hub-like paths (`HEAD` exists, `.git` absent)
+- Regression tests live in `config/tmux/tests/sesh.zunit` (minimal PATH + `/.git` filter). Update tests with script changes.
+
 ## Related Files
 
 - `modules/shell/zsh/default.nix` - Provides rcFiles/rcInit mechanism
