@@ -199,7 +199,7 @@ _: {
         action = [
           {
             action = "tts.speak";
-            target.entity_id = "tts.elevenlabs";
+            target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
               media_player_entity_id = "media_player.tv";
               message = "{{ message }}";
@@ -212,7 +212,7 @@ _: {
         action = [
           {
             action = "tts.speak";
-            target.entity_id = "tts.elevenlabs";
+            target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
               media_player_entity_id = "media_player.tv";
               message = "ElevenLabs voice commands are ready.";
