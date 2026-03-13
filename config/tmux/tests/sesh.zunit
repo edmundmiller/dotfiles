@@ -10,6 +10,7 @@
   export ORIG_PWD=$PWD
   export TEST_DIR=$(mktemp -d)
   export SESH_SCRIPT="$ORIG_PWD/config/tmux/sesh-picker.sh"
+  export SESH_ALL_SCRIPT="$ORIG_PWD/config/tmux/sesh-all.sh"
   export ZOXIDE_SCRIPT="$ORIG_PWD/config/tmux/zoxide-list.sh"
 }
 
@@ -132,6 +133,7 @@
   local bare_hub_out="${bare_hub/#$HOME/~}"
   local main_wt_out="${main_wt/#$HOME/~}"
   mkdir -p "$mock_bin" "$mock_dotfiles_bin" "$bare_hub" "$main_wt" "$normal_dir"
+  touch "$bare_hub/HEAD"
 
   cat > "$mock_bin/zoxide" <<'EOF'
 #!/usr/bin/env bash
@@ -168,6 +170,27 @@ EOF
   assert "$result" is_empty
 }
 
+@test 'zoxide-list.sh excludes accidental /.git entries' {
+  local mock_bin="$TEST_DIR/mock-zoxide-dotgit"
+  local fixture_root="$HOME/.cache/sesh-zunit-dotgit-$RANDOM"
+  local normal_dir="$fixture_root/normal"
+  mkdir -p "$mock_bin" "$fixture_root/repo/.git" "$normal_dir"
+
+  cat > "$mock_bin/zoxide" <<'EOF'
+#!/usr/bin/env bash
+echo "$DOTGIT_PATH"
+echo "$NORMAL_DIR"
+EOF
+  chmod +x "$mock_bin/zoxide"
+
+  run env DOTGIT_PATH="$fixture_root/repo/.git" NORMAL_DIR="$normal_dir" PATH="$mock_bin:$PATH" "$ZOXIDE_SCRIPT"
+
+  rm -rf "$fixture_root"
+
+  assert $state equals 0
+  echo "$output" | grep -qE '/\.git$' && return 1 || true
+}
+
 # ── Regression: minimal PATH in fzf popup ─────────────────────────────────────
 
 @test 'sesh is NOT in minimal display-popup PATH' {
@@ -180,6 +203,53 @@ EOF
   local minimal_path="/usr/bin:/bin:/usr/sbin:/sbin"
   local result=$(PATH="$minimal_path" command -v fzf 2>/dev/null || true)
   assert "$result" is_empty
+}
+
+@test 'sesh-all.sh honors SESH_BIN override (no hardcoded brew path)' {
+  local mock_bin="$TEST_DIR/mock-sesh-all"
+  local token="__zunit_mock_session__"
+  mkdir -p "$mock_bin"
+
+  cat > "$mock_bin/sesh" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "list" ]]; then
+  echo "__zunit_mock_session__"
+fi
+EOF
+  chmod +x "$mock_bin/sesh"
+
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" "$SESH_ALL_SCRIPT"
+
+  assert $state equals 0
+  assert "$output" contains "$token"
+}
+
+@test 'sesh-picker uses FZF_TMUX_BIN override in minimal PATH' {
+  local mock_bin="$TEST_DIR/mock-fzf"
+  mkdir -p "$mock_bin"
+
+  cat > "$mock_bin/sesh" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "list" ]]; then
+  exit 0
+fi
+if [[ "$1" == "connect" ]]; then
+  exit 0
+fi
+EOF
+  chmod +x "$mock_bin/sesh"
+
+  cat > "$mock_bin/fzf-tmux" <<'EOF'
+#!/usr/bin/env bash
+# Simulate escape/no selection
+exit 0
+EOF
+  chmod +x "$mock_bin/fzf-tmux"
+
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" "$SESH_SCRIPT"
+
+  assert $state equals 0
+  echo "$output" | grep -q 'command not found' && return 1 || true
 }
 
 # ── tmux popup interaction ─────────────────────────────────────────────────────
