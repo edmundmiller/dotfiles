@@ -311,6 +311,7 @@ in
           "mobile_app" # HA Companion app (iOS/Android)
           "bluetooth" # BLE device discovery
           "spotify" # Spotify playback control (config-flow: add via UI after deploy)
+          "elevenlabs" # ElevenLabs TTS/STT (config-flow: add API key via UI)
           "zha" # Zigbee Home Automation via ZBT-2 dongle
           "thread" # Thread border router via ZBT-2 dongle
           "otbr" # OpenThread Border Router (ZBT-2 Thread radio)
