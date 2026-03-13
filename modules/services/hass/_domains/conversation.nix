@@ -201,7 +201,7 @@ _: {
             action = "tts.speak";
             target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
-              media_player_entity_id = "media_player.tv";
+              media_player_entity_id = "media_player.living_room";
               message = "{{ message }}";
             };
           }
@@ -214,7 +214,7 @@ _: {
             action = "tts.speak";
             target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
-              media_player_entity_id = "media_player.tv";
+              media_player_entity_id = "media_player.living_room";
               message = "ElevenLabs voice commands are ready.";
             };
           }
