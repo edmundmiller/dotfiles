@@ -36,6 +36,15 @@ _: {
         "Turn off [the] TV"
         "TV off"
       ];
+      PauseTv = [
+        "Pause [the] TV"
+        "Pause media"
+      ];
+      ResumeTv = [
+        "Resume [the] TV"
+        "Play [the] TV"
+        "Resume media"
+      ];
       SetSleepTimer = [
         "Set [a] sleep timer for {duration} (minutes|min)"
         "Sleep timer {duration} (minutes|min)"
@@ -44,6 +53,15 @@ _: {
       CancelSleepTimer = [
         "Cancel [the] sleep timer"
         "Stop [the] sleep timer"
+      ];
+      ElevenLabsSay = [
+        "Say {message} on [the] TV"
+        "Announce {message} on [the] TV"
+      ];
+      TestElevenLabs = [
+        "Test ElevenLabs"
+        "Test ElevenLabs voice"
+        "Run [a] voice test"
       ];
 
       # --- Status queries ---
@@ -134,6 +152,24 @@ _: {
           }
         ];
       };
+      PauseTv = {
+        speech.text = "Pausing the TV.";
+        action = [
+          {
+            action = "media_player.media_pause";
+            target.entity_id = "media_player.tv";
+          }
+        ];
+      };
+      ResumeTv = {
+        speech.text = "Resuming the TV.";
+        action = [
+          {
+            action = "media_player.media_play";
+            target.entity_id = "media_player.tv";
+          }
+        ];
+      };
       SetSleepTimer = {
         speech.text = "Sleep timer set for {{ duration }} minutes.";
         action = [
@@ -155,6 +191,32 @@ _: {
             action = "input_number.set_value";
             target.entity_id = "input_number.tv_sleep_timer";
             data.value = 0;
+          }
+        ];
+      };
+      ElevenLabsSay = {
+        speech.text = "Announcing now.";
+        action = [
+          {
+            action = "tts.speak";
+            target.entity_id = "tts.elevenlabs";
+            data = {
+              media_player_entity_id = "media_player.tv";
+              message = "{{ message }}";
+            };
+          }
+        ];
+      };
+      TestElevenLabs = {
+        speech.text = "Running ElevenLabs test.";
+        action = [
+          {
+            action = "tts.speak";
+            target.entity_id = "tts.elevenlabs";
+            data = {
+              media_player_entity_id = "media_player.tv";
+              message = "ElevenLabs voice commands are ready.";
+            };
           }
         ];
       };
