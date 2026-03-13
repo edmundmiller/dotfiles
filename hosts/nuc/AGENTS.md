@@ -141,6 +141,7 @@ Located in `hosts/nuc/secrets/`:
 - `anthropic-api-key.age` — Claude API
 - `opencode-api-key.age` — OpenCode API
 - `openai-api-key.age` — OpenAI API
+- `gemini-api-key.age` — Gemini API
 - `elevenlabs-api-key.age` — ElevenLabs TTS
 - `openclaw-gateway-token.age` — Gateway auth
 - `openclaw-hooks-token.age` — OpenClaw hooks auth (used by Gatus webhook alerting)

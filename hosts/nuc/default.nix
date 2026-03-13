@@ -112,6 +112,14 @@ in
       Install.WantedBy = [ "timers.target" ];
     };
 
+    # Force memory embeddings to Gemini to avoid OpenAI embed spend.
+    programs.openclaw.config.agents.defaults.memorySearch = {
+      provider = "gemini";
+      model = "gemini-embedding-2-preview";
+      outputDimensionality = 3072;
+      fallback = "none";
+    };
+
     # linear-agent-bridge gateway extension config
     programs.openclaw.config.plugins.entries.linear-agent-bridge = {
       enabled = true;
@@ -195,6 +203,12 @@ in
         enable = true;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
         hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
+        secrets = [
+          {
+            envVar = "GEMINI_API_KEY";
+            inherit (config.age.secrets.gemini-api-key) path;
+          }
+        ];
         customPlugins = [
           {
             source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
