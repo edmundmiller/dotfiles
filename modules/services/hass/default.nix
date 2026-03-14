@@ -57,6 +57,20 @@ let
       aiohttp
     ];
   };
+
+  # OpenClaw - native conversation agent + chat card for Assist
+  # https://github.com/techartdev/OpenClawHomeAssistantIntegration
+  openclaw-integration = pkgs.buildHomeAssistantComponent {
+    owner = "techartdev";
+    domain = "openclaw";
+    version = "0.1.61";
+    src = pkgs.fetchFromGitHub {
+      owner = "techartdev";
+      repo = "OpenClawHomeAssistantIntegration";
+      tag = "0.1.61";
+      hash = "sha256-4c5Yc+AaX4cNMnS8dMSmPAHVkWm3oAajk4i8NArlatQ=";
+    };
+  };
 in
 {
   imports = [
@@ -150,6 +164,7 @@ in
           adaptive-lighting
           hacs
           eight-sleep
+          openclaw-integration
         ]
         ++ cfg.customComponents;
         inherit (cfg) customLovelaceModules;
@@ -178,6 +193,13 @@ in
               "127.0.0.1"
             ];
             use_x_forwarded_for = true;
+          };
+
+          # Expose a tiny Siri bridge surface first: Goodnight only.
+          # Home app / HomePod can run script.goodnight by voice.
+          homekit = {
+            filter.include_entities = [ "script.goodnight" ];
+            entity_config."script.goodnight".name = "Goodnight";
           };
 
           recorder = mkIf cfg.postgres.enable {

@@ -333,6 +333,18 @@ in
 
     # ── Scripts ──────────────────────────────────────────────────────────
     script = lib.mkAfter {
+      # Siri/HomeKit entrypoint: "Hey Siri, goodnight" → run sleep scene
+      goodnight = {
+        alias = "Goodnight";
+        icon = "mdi:weather-night";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.winding_down";
+          }
+        ];
+      };
+
       # Monica voice-activates this to nudge Edmund to come to bed
       bedtime_nudge = {
         alias = "Bedtime Nudge";
