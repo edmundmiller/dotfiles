@@ -997,11 +997,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1773313832,
-        "narHash": "sha256-dxn2wu6yA6dUWExZaW59CFTh/XedjmBrQ0opwXGN+hM=",
+        "lastModified": 1773498847,
+        "narHash": "sha256-93jTY0A0uOJJRn3qPWbPUaE7J5l0MVhTwuyy2vZzBi8=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "9ddc78b707e1155ff358b8158857ab8f2c1b26bf",
+        "rev": "de71dddfdd172ab4892ab0b56841e81c45ee8cc7",
         "type": "github"
       },
       "original": {
@@ -1433,11 +1433,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1773370628,
-        "narHash": "sha256-fWNRLP4bJHUbuS/Zpd5kLEv2DHiXgACiv7Ltd/yOLzI=",
+        "lastModified": 1773497754,
+        "narHash": "sha256-OYfeqtzWpboxM+SAurmwbK10B61nOtNwiZZYrZ51/mU=",
         "ref": "refs/heads/main",
-        "rev": "04e2a1c849d6d1fadb83735078067035393ec266",
-        "revCount": 51,
+        "rev": "a1a2246b43676d61e2fc90a2c8a0afd18111f64f",
+        "revCount": 56,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
       },
