@@ -20,7 +20,7 @@
 let
   rev = "ae3604cb884be718696dfeefc4cec64a3dc84357";
   version = "2.0.1-${lib.substring 0 7 rev}";
-  runtimeId = "${version}-node${nodejs.version}-v1";
+  runtimeId = "${version}-node${nodejs.version}-v2";
   qmdSource = fetchFromGitHub {
     owner = "tobi";
     repo = "qmd";
