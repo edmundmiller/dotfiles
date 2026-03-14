@@ -76,18 +76,23 @@ in
     };
   };
 
-  config = mkIf cfg.enable (mkMerge [
-    (optionalAttrs (isDarwin && cfg.installWithHomebrew) {
-      homebrew.brews = [ "agent-browser" ];
-    })
+  config = mkIf cfg.enable (
+    mkMerge (
+      [
+        {
+          home-manager.users.${config.user.name}.home.file.".agent-browser/config.json".text =
+            builtins.toJSON finalConfig;
+        }
 
-    {
-      home-manager.users.${config.user.name}.home.file.".agent-browser/config.json".text =
-        builtins.toJSON finalConfig;
-    }
-
-    (optionalAttrs (cfg.helium.enable && cfg.helium.kernelEndpoint != null) {
-      env.KERNEL_ENDPOINT = cfg.helium.kernelEndpoint;
-    })
-  ]);
+        (mkIf (cfg.helium.enable && cfg.helium.kernelEndpoint != null) {
+          env.KERNEL_ENDPOINT = cfg.helium.kernelEndpoint;
+        })
+      ]
+      ++ optionals isDarwin [
+        (mkIf cfg.installWithHomebrew {
+          homebrew.brews = [ "agent-browser" ];
+        })
+      ]
+    )
+  );
 }
