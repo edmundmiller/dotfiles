@@ -8,6 +8,10 @@
 }:
 let
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
+  qmd = pkgs.writeShellScriptBin "qmd" ''
+    export NODE_LLAMA_CPP_GPU=off
+    exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
+  '';
 
   linearTokenRefreshScript = pkgs.writeShellScript "linear-token-refresh" ''
     set -euo pipefail
@@ -113,10 +117,10 @@ in
       Install.WantedBy = [ "timers.target" ];
     };
 
-    # Keep qmd as primary memory backend, but force the Nix-managed wrapper and
-    # higher-quality query mode.
+    # Keep qmd as primary memory backend, but use a thin local wrapper around
+    # llm-agents.nix qmd that forces CPU mode on this NUC, plus query mode.
     programs.openclaw.config.memory.qmd = {
-      command = pkgs.lib.mkForce "${pkgs.my.qmd}/bin/qmd";
+      command = pkgs.lib.mkForce "${qmd}/bin/qmd";
       searchMode = pkgs.lib.mkForce "query";
     };
 
@@ -157,7 +161,7 @@ in
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
-    my.qmd # pinned wrapper; bootstraps writable qmd runtime under ~/.local/state/qmd
+    qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
   ];
   imports = [
     ../_server.nix
@@ -308,6 +312,7 @@ in
           card-mod # CSS customization
         ];
         extraComponents = [
+          "homekit" # Expose HA entities to Apple Home/Siri (HomePods)
           "homekit_controller" # Discover Apple Home devices (Matter/Thread via Apple TV/HomePod)
           "apple_tv" # Apple TV control + remote
           "roomba" # iRobot Roomba vacuum (config-flow: add via UI after deploy)

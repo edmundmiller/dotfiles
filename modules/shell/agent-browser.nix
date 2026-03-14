@@ -77,7 +77,7 @@ in
   };
 
   config = mkIf cfg.enable (mkMerge [
-    (mkIf (isDarwin && cfg.installWithHomebrew) {
+    (optionalAttrs (isDarwin && cfg.installWithHomebrew) {
       homebrew.brews = [ "agent-browser" ];
     })
 
@@ -86,7 +86,7 @@ in
         builtins.toJSON finalConfig;
     }
 
-    (mkIf (cfg.helium.enable && cfg.helium.kernelEndpoint != null) {
+    (optionalAttrs (cfg.helium.enable && cfg.helium.kernelEndpoint != null) {
       env.KERNEL_ENDPOINT = cfg.helium.kernelEndpoint;
     })
   ]);
