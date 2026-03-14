@@ -80,9 +80,10 @@
     # Override the primary user for this host
     system.primaryUser = "emiller";
 
-    # Add duti for managing file associations
+    # Add desktop helpers + qmd CLI
     environment.systemPackages = with pkgs; [
       duti
+      llm-agents.qmd
     ];
 
     # Prevent Intel brew symlink from being created
