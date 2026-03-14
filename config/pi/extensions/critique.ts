@@ -3,7 +3,7 @@
  *
  * Shortcuts:
  *   Ctrl+Q — open critique TUI (unstaged diff)
- *   Ctrl+R — open critique TUI (staged diff)
+ *   Ctrl+Shift+R — open critique TUI (staged diff)
  *
  * Commands:
  *   /critique [args]  — run critique with custom args

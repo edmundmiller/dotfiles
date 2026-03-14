@@ -19,6 +19,7 @@ import { Type } from "@sinclair/typebox";
 
 const XURL_CMD = "npx";
 const XURL_ARGS = ["@xuanwo/xurl"];
+const XURL_LIST_UNSUPPORTED = /unexpected argument '--list'/i;
 
 export default function (pi: ExtensionAPI) {
   pi.registerTool({
@@ -54,7 +55,8 @@ Use raw=true for JSON output. Use list=true to discover subagents/entries before
       ),
     }),
 
-    async execute(toolCallId, params, signal) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async execute(_toolCallId, params, signal): Promise<any> {
       const args = [...XURL_ARGS, params.uri];
       if (params.raw) args.push("--raw");
       if (params.list) args.push("--list");
@@ -67,8 +69,10 @@ Use raw=true for JSON output. Use list=true to discover subagents/entries before
       if (result.code !== 0) {
         const stderr = result.stderr?.trim() || "unknown error";
         return {
-          content: [{ type: "text", text: `xurl failed (exit ${result.code}): ${stderr}` }],
-          details: { exitCode: result.code, stderr },
+          content: [
+            { type: "text" as const, text: `xurl failed (exit ${result.code}): ${stderr}` },
+          ],
+          details: { exitCode: result.code, error: stderr },
           isError: true,
         };
       }
@@ -86,7 +90,7 @@ Use raw=true for JSON output. Use list=true to discover subagents/entries before
       }
 
       return {
-        content: [{ type: "text", text }],
+        content: [{ type: "text" as const, text }],
         details: {
           uri: params.uri,
           raw: params.raw ?? false,

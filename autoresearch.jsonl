@@ -1,1 +1,2 @@
 {"type":"config","name":"xurl-driven Pi setup hardening from past sessions (including config mirrors/docs)","metricName":"setup_issues","metricUnit":"","bestDirection":"lower"}
+{"run":1,"commit":"1826db5","metric":0,"metrics":{},"status":"crash","description":"retroactive bookkeeping: baseline run had setup_issues=3 before fixes; marking crash to skip commit and proceed with fixed run commit","timestamp":1773462035128,"segment":0}
