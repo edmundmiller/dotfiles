@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   ...
 }:
@@ -85,6 +86,14 @@
       duti
       llm-agents.qmd
     ];
+
+    home-manager.users.${config.user.name} =
+      { lib, ... }:
+      {
+        home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+      };
 
     # Prevent Intel brew symlink from being created
     system.activationScripts.removeIntelBrew.text = ''
