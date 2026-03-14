@@ -200,14 +200,37 @@ _: {
         action = [
           {
             action = "tts.speak";
+            continue_on_error = true;
             target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
-              media_player_entity_id = [
-                "media_player.kitchen"
-                "media_player.bathroom"
-                "media_player.window_nightstand"
-                "media_player.bathroom_nightstand"
-              ];
+              media_player_entity_id = "media_player.kitchen";
+              message = "{{ message }}";
+            };
+          }
+          {
+            action = "tts.speak";
+            continue_on_error = true;
+            target.entity_id = "tts.elevenlabs_text_to_speech";
+            data = {
+              media_player_entity_id = "media_player.bathroom";
+              message = "{{ message }}";
+            };
+          }
+          {
+            action = "tts.speak";
+            continue_on_error = true;
+            target.entity_id = "tts.elevenlabs_text_to_speech";
+            data = {
+              media_player_entity_id = "media_player.window_nightstand";
+              message = "{{ message }}";
+            };
+          }
+          {
+            action = "tts.speak";
+            continue_on_error = true;
+            target.entity_id = "tts.elevenlabs_text_to_speech";
+            data = {
+              media_player_entity_id = "media_player.bathroom_nightstand";
               message = "{{ message }}";
             };
           }
@@ -218,14 +241,37 @@ _: {
         action = [
           {
             action = "tts.speak";
+            continue_on_error = true;
             target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
-              media_player_entity_id = [
-                "media_player.kitchen"
-                "media_player.bathroom"
-                "media_player.window_nightstand"
-                "media_player.bathroom_nightstand"
-              ];
+              media_player_entity_id = "media_player.kitchen";
+              message = "ElevenLabs voice commands are ready.";
+            };
+          }
+          {
+            action = "tts.speak";
+            continue_on_error = true;
+            target.entity_id = "tts.elevenlabs_text_to_speech";
+            data = {
+              media_player_entity_id = "media_player.bathroom";
+              message = "ElevenLabs voice commands are ready.";
+            };
+          }
+          {
+            action = "tts.speak";
+            continue_on_error = true;
+            target.entity_id = "tts.elevenlabs_text_to_speech";
+            data = {
+              media_player_entity_id = "media_player.window_nightstand";
+              message = "ElevenLabs voice commands are ready.";
+            };
+          }
+          {
+            action = "tts.speak";
+            continue_on_error = true;
+            target.entity_id = "tts.elevenlabs_text_to_speech";
+            data = {
+              media_player_entity_id = "media_player.bathroom_nightstand";
               message = "ElevenLabs voice commands are ready.";
             };
           }
