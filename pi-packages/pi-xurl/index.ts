@@ -19,6 +19,7 @@ import { Type } from "@sinclair/typebox";
 
 const XURL_CMD = "npx";
 const XURL_ARGS = ["@xuanwo/xurl"];
+const XURL_LIST_UNSUPPORTED = /unexpected argument '--list'/i;
 
 export default function (pi: ExtensionAPI) {
   pi.registerTool({
