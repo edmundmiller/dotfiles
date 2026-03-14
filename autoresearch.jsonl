@@ -10,3 +10,4 @@
 {"run":16,"commit":"34f905d","metric":17.29,"metrics":{},"status":"discard","description":"remove guess-indent after dropping which-key; startup regressed to 17.29ms despite plugin count 17","timestamp":1773462106642,"segment":0}
 {"run":17,"commit":"34f905d","metric":14.935,"metrics":{},"status":"discard","description":"remove mini.nvim from plugin set; startup regressed to 14.935ms so kept mini for UX","timestamp":1773462153279,"segment":0}
 {"run":18,"commit":"34f905d","metric":13.769,"metrics":{},"status":"keep","description":"remove conform from minimal plugin set; startup improved to 13.769ms with 17 plugins","timestamp":1773462205126,"segment":0}
+{"run":19,"commit":"2384172","metric":13.651,"metrics":{},"status":"discard","description":"startup improved slightly without gitsigns (13.651ms) but rejected: git gutter feedback is part of required minimal UX","timestamp":1773462253464,"segment":0}
