@@ -162,7 +162,8 @@
     // Web research — clean fetch, pluggable search, scout subagent - https://github.com/iaptsiauri/pi-surf
     "npm:pi-surf",
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
-    "https://github.com/davebcn87/pi-autoresearch",
+    // FIXME MAKE IT STOP https://github.com/davebcn87/pi-autoresearch/issues/6
+    // "https://github.com/davebcn87/pi-autoresearch",
     // WakaTime heartbeats + AI coding metrics - https://www.npmjs.com/package/pi-wakatime
     "npm:pi-wakatime",
     // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
