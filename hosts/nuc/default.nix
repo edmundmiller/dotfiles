@@ -223,6 +223,15 @@ in
             envVar = "GEMINI_API_KEY";
             inherit (config.age.secrets.gemini-api-key) path;
           }
+          {
+            envVar = "HA_URL";
+            value = "http://127.0.0.1:8123";
+            literal = true;
+          }
+          {
+            envVar = "HA_TOKEN";
+            inherit (config.age.secrets.ha-openclaw-token) path;
+          }
         ];
         customPlugins = [
           {
