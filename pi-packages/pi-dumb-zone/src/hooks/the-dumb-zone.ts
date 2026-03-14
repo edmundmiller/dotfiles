@@ -1,16 +1,22 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { checkDumbZone, getEffectiveThreshold } from "../checks";
-import { AUTO_COMPACT_THRESHOLD, CONTEXT_THRESHOLDS } from "../constants";
-import { updateTopBanner } from "../notifications";
+import {
+  AUTO_COMPACT_THRESHOLD,
+  CONTEXT_THRESHOLDS,
+  SHOW_DANGER_OVERLAY,
+  SHOW_TOP_BANNER,
+} from "../constants";
+import { updateStatusBar, updateTopBanner } from "../notifications";
 import { triggerDumbZoneOverlay } from "../overlay";
 import { publishSignal, clearSignal, type DumbZoneSignal } from "../signal";
 
 /**
  * Setup the dumb zone detection hook.
  * Runs checks after each agent turn with escalating responses:
- * - WARNING: top banner (persistent, non-intrusive)
- * - DANGER: popup overlay (once per cooldown, intrusive)
- * - AUTO_COMPACT_THRESHOLD: auto-compact (once, before post-compaction)
+ * - WARNING: status bar indicator (always on)
+ * - WARNING: optional top banner (disabled by default)
+ * - DANGER: optional popup overlay (disabled by default)
+ * - AUTO_COMPACT_THRESHOLD: auto-compact (disabled by default)
  *
  * Also publishes a globalThis signal so other extensions (e.g. pi-dcp)
  * can optionally react to dumb zone state.
@@ -46,7 +52,10 @@ export function setupDumbZoneHook(pi: ExtensionAPI): void {
     }
 
     // Visual notifications
-    updateTopBanner(ctx, result);
+    updateStatusBar(ctx, result);
+    if (SHOW_TOP_BANNER) {
+      updateTopBanner(ctx, result);
+    }
 
     if (!result.inZone) return;
 
@@ -74,12 +83,15 @@ export function setupDumbZoneHook(pi: ExtensionAPI): void {
           }
         },
       });
-      return; // skip overlay — compaction handles it
+      return; // skip overlay - compaction handles it
     }
 
     // Overlay at DANGER+ (only if not auto-compacting)
     const dangerThreshold = getEffectiveThreshold(CONTEXT_THRESHOLDS.DANGER, result.compacted);
-    if (result.utilization >= dangerThreshold || result.violationType === "pattern") {
+    if (
+      SHOW_DANGER_OVERLAY &&
+      (result.utilization >= dangerThreshold || result.violationType === "pattern")
+    ) {
       triggerDumbZoneOverlay(ctx, result.details);
     }
   });
