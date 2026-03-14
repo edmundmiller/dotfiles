@@ -26,13 +26,18 @@ Intel NUC home server running NixOS. Primary role: openclaw gateway, media servi
 | gcc, gnumake, cmake      | Native compilation (node-gyp, node-llama-cpp)         |
 | claude-code, codex       | Openclaw CLI backends                                 |
 | bun                      | Pi CLI backend (`bunx @mariozechner/pi-coding-agent`) |
+| qmd                      | Pinned bootstrap wrapper for Openclaw memory          |
 | sag (nix-steipete-tools) | TTS for openclaw via ElevenLabs                       |
 | sqlite                   | General utility                                       |
 | taskwarrior3             | Task management                                       |
 
-## npm Global Packages (NOT nix-managed)
+## QMD (nix-managed bootstrap)
 
-- **qmd** (`@tobilu/qmd`) — Openclaw memory backend. Installed via `npm install -g @tobilu/qmd`. Accessed via `~/.local/bin/qmd-wrapper` (forces correct node version in PATH). After node upgrades: `cd ~/.cache/npm/lib/node_modules/@tobilu/qmd && npm rebuild better-sqlite3`.
+- **qmd** (`pkgs.my.qmd`) — Openclaw memory backend. Defined in `packages/qmd/default.nix`, pins upstream `tobi/qmd`, bootstraps a writable runtime under `~/.local/state/qmd/runtime/` on first use, and stays off the read-only Nix store for native-module state.
+- Cache/models live under `~/.cache/qmd/`; config lives under `~/.config/qmd/`.
+- Bootstrap uses the vendored `packages/qmd/package-lock.json` with `npm ci`, so we avoid upstream Bun lock drift while still getting a reproducible per-node-version runtime.
+- The wrapper defaults `NODE_LLAMA_CPP_GPU=off` so the NUC stays on CPU-safe bindings unless explicitly overridden.
+- Node upgrades no longer require manual `better-sqlite3` rebuilds; the wrapper keys the runtime by bundled Node version and re-bootstrap on change.
 
 ## Services
 
@@ -172,7 +177,7 @@ Config: `hosts/_server.nix` — `system.autoUpgrade.flake = "github:edmundmiller
 - **Deploy builds remotely**: `hey nuc` evaluates locally but builds on NUC. Large rebuilds (home-assistant, etc.) take time.
 - **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
 - **New agenix secrets**: ExecStartPre env injection may run before agenix decrypts new secrets on first deploy. Restart the service after: `systemctl --user restart openclaw-gateway`.
-- **Node version churn**: NUC has nodejs from home-manager. When it upgrades, native modules (better-sqlite3 in qmd) break. Fix: `npm rebuild better-sqlite3` in qmd's node_modules.
+- **First qmd run is heavier**: the wrapper bootstraps a per-node-version runtime in `~/.local/state/qmd/runtime/` and may compile native deps on first use after deploy or Node upgrades.
 - **nix-ld libraries**: Any new generic linux binary that fails with "cannot run dynamically linked executable" needs its missing libs added to `programs.nix-ld.libraries`. Use `ldd /path/to/binary` to find missing `.so` files.
 - **ZFS/znapzend**: Currently disabled (FIXME). Backup config exists but not active.
 - **Logrotate**: `checkConfig = false` due to missing group 30000 issue.
