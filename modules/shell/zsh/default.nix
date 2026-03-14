@@ -196,6 +196,9 @@ in
           ${cfg.envInit}
         '';
 
+        # Mole whitelist: prevent cleaning caches that break shell/tooling.
+        "mole/whitelist".source = "${configDir}/mole/whitelist";
+
       };
     }
   ]);

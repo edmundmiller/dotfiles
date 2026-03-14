@@ -15,6 +15,8 @@ export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 export ZSH_CACHE="${ZSH_CACHE:-$XDG_CACHE_HOME/zsh}"
+# Keep antidote repos out of ~/Library/Caches so cleaners (mole) don't nuke plugins.
+export ANTIDOTE_HOME="${ANTIDOTE_HOME:-$XDG_DATA_HOME/antidote}"
 
 # Helper functions
 function _source {
@@ -36,29 +38,60 @@ function _cache {
 source $ZDOTDIR/config.zsh
 
 # Load plugins via antidote's static file
-# If the static file exists, source it directly (fast path ~27ms vs ~41ms)
-# Run `antidote bundle < $ZDOTDIR/.zsh_plugins.txt > $ZSH_CACHE/.zsh_plugins.zsh`
-# to regenerate after changing .zsh_plugins.txt
+# Fast path: source pre-bundled plugins from cache.
+# Self-heal: if cache exists but plugin repos were purged, fall back to antidote.
 ANTIDOTE_STATIC_FILE="$ZSH_CACHE/.zsh_plugins.zsh"
-if [[ -f "$ANTIDOTE_STATIC_FILE" ]]; then
-  source "$ANTIDOTE_STATIC_FILE"
-else
-  # Cold start: find antidote and generate static file
-  _antidote_cache_file="$ZSH_CACHE/antidote_path"
-  if [[ -f "$_antidote_cache_file" ]]; then
-    _antidote_path="$(cat "$_antidote_cache_file")"
+
+function _load_antidote {
+  local antidote_cache_file="$ZSH_CACHE/antidote_path"
+  local antidote_path=""
+
+  if [[ -f "$antidote_cache_file" ]]; then
+    antidote_path="$(cat "$antidote_cache_file")"
   else
     for antidote_file in /nix/store/*antidote*/share/antidote/antidote.zsh; do
       if [[ -f "$antidote_file" ]]; then
-        _antidote_path="$antidote_file"
-        mkdir -p "${_antidote_cache_file:h}"
-        echo "$_antidote_path" > "$_antidote_cache_file"
+        antidote_path="$antidote_file"
+        mkdir -p "${antidote_cache_file:h}"
+        echo "$antidote_path" > "$antidote_cache_file"
         break
       fi
     done
   fi
-  [[ -f "$_antidote_path" ]] && source "$_antidote_path"
-  antidote load "$ZDOTDIR/.zsh_plugins.txt"
+
+  [[ -f "$antidote_path" ]] || return 1
+  source "$antidote_path"
+}
+
+function _antidote_static_is_healthy {
+  [[ -f "$ANTIDOTE_STATIC_FILE" ]] || return 1
+
+  local expected_antidote_home="${ANTIDOTE_HOME/#\~/$HOME}"
+  local line source_path
+  while IFS= read -r line; do
+    [[ "$line" == source\ \"* ]] || continue
+    source_path="${line#source \"}"
+    source_path="${source_path%%\"*}"
+    source_path="${source_path//\$HOME/$HOME}"
+    [[ -f "$source_path" ]] || return 1
+
+    # Force re-bundle if static file points to old antidote home.
+    if [[ "$source_path" == "$HOME/Library/Caches/antidote/"* || "$source_path" == "$HOME/.local/share/antidote/"* ]]; then
+      [[ "$source_path" == "$expected_antidote_home/"* ]] || return 1
+    fi
+  done < "$ANTIDOTE_STATIC_FILE"
+
+  return 0
+}
+
+if _antidote_static_is_healthy; then
+  source "$ANTIDOTE_STATIC_FILE"
+else
+  _load_antidote && antidote load "$ZDOTDIR/.zsh_plugins.txt"
+  if (( $+functions[antidote] )); then
+    mkdir -p "$ZSH_CACHE"
+    antidote bundle < "$ZDOTDIR/.zsh_plugins.txt" >| "$ANTIDOTE_STATIC_FILE"
+  fi
 fi
 
 # P10k is loaded by antidote from .zsh_plugins.txt
