@@ -235,9 +235,13 @@
     p10k display -r
   }
 
-  async_start_worker        jj_status_worker -u
-  async_unregister_callback jj_status_worker
-  async_register_callback   jj_status_worker jj_status_callback
+  typeset -g p10k_jj_async_available=0
+  if (( $+functions[async_start_worker] && $+functions[async_unregister_callback] && $+functions[async_register_callback] && $+functions[async_job] )); then
+    async_start_worker        jj_status_worker -u
+    async_unregister_callback jj_status_worker
+    async_register_callback   jj_status_worker jj_status_callback
+    p10k_jj_async_available=1
+  fi
 
   function prompt_jj() {
     emulate -L zsh -o extended_glob
@@ -254,11 +258,17 @@
       p10k_jj_quick+=" ..."
     fi
 
+    if (( ! p10k_jj_async_available )); then
+      typeset -g p10k_jj_placeholder=
+      typeset -g p10k_jj_status="$(jj_status "$PWD")"
+      typeset -g p10k_jj_status_stale= p10k_jj_status_updated=1
+    fi
+
     p10k segment -f grey -c '$p10k_jj_placeholder' -e -t '$p10k_jj_quick'
     p10k segment -f grey -c '$p10k_jj_status_stale' -e -t '$p10k_jj_status'
     p10k segment -c '$p10k_jj_status_updated' -e -t '$p10k_jj_status'
 
-    async_job jj_status_worker jj_status $PWD
+    (( p10k_jj_async_available )) && async_job jj_status_worker jj_status $PWD
   }
 
   # ==========================================================================
