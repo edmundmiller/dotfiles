@@ -91,6 +91,49 @@ _: {
       ];
     };
 
+    script.elevenlabs_announce_homepods = {
+      alias = "ElevenLabs announce on HomePods";
+      mode = "queued";
+      sequence = [
+        {
+          action = "tts.speak";
+          continue_on_error = true;
+          target.entity_id = "tts.elevenlabs_text_to_speech";
+          data = {
+            media_player_entity_id = "media_player.kitchen";
+            message = "{{ message }}";
+          };
+        }
+        {
+          action = "tts.speak";
+          continue_on_error = true;
+          target.entity_id = "tts.elevenlabs_text_to_speech";
+          data = {
+            media_player_entity_id = "media_player.bathroom";
+            message = "{{ message }}";
+          };
+        }
+        {
+          action = "tts.speak";
+          continue_on_error = true;
+          target.entity_id = "tts.elevenlabs_text_to_speech";
+          data = {
+            media_player_entity_id = "media_player.window_nightstand";
+            message = "{{ message }}";
+          };
+        }
+        {
+          action = "tts.speak";
+          continue_on_error = true;
+          target.entity_id = "tts.elevenlabs_text_to_speech";
+          data = {
+            media_player_entity_id = "media_player.bathroom_nightstand";
+            message = "{{ message }}";
+          };
+        }
+      ];
+    };
+
     intent_script = {
       # --- House modes ---
       SetModeHome = {
@@ -199,40 +242,9 @@ _: {
         speech.text = "Announcing on your HomePods now.";
         action = [
           {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.kitchen";
-              message = "{{ message }}";
-            };
-          }
-          {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.bathroom";
-              message = "{{ message }}";
-            };
-          }
-          {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.window_nightstand";
-              message = "{{ message }}";
-            };
-          }
-          {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.bathroom_nightstand";
-              message = "{{ message }}";
-            };
+            action = "script.turn_on";
+            target.entity_id = "script.elevenlabs_announce_homepods";
+            data.variables.message = "{{ message }}";
           }
         ];
       };
@@ -240,40 +252,9 @@ _: {
         speech.text = "Running ElevenLabs test on HomePods.";
         action = [
           {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.kitchen";
-              message = "ElevenLabs voice commands are ready.";
-            };
-          }
-          {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.bathroom";
-              message = "ElevenLabs voice commands are ready.";
-            };
-          }
-          {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.window_nightstand";
-              message = "ElevenLabs voice commands are ready.";
-            };
-          }
-          {
-            action = "tts.speak";
-            continue_on_error = true;
-            target.entity_id = "tts.elevenlabs_text_to_speech";
-            data = {
-              media_player_entity_id = "media_player.bathroom_nightstand";
-              message = "ElevenLabs voice commands are ready.";
-            };
+            action = "script.turn_on";
+            target.entity_id = "script.elevenlabs_announce_homepods";
+            data.variables.message = "ElevenLabs voice commands are ready.";
           }
         ];
       };
