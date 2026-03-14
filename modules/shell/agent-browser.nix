@@ -85,7 +85,8 @@ in
         }
 
         (mkIf (cfg.helium.enable && cfg.helium.kernelEndpoint != null) {
-          env.KERNEL_ENDPOINT = cfg.helium.kernelEndpoint;
+          home-manager.users.${config.user.name}.home.sessionVariables.KERNEL_ENDPOINT =
+            cfg.helium.kernelEndpoint;
         })
       ]
       ++ optionals isDarwin [
