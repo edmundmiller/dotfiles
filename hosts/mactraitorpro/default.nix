@@ -24,6 +24,7 @@
       shell = {
         "1password".enable = true;
         ai.enable = true;
+        agentBrowser.enable = true;
         claude.enable = true;
         codex.enable = true;
         opencode.enable = true;
