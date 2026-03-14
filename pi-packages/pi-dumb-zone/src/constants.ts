@@ -80,10 +80,16 @@ export const DUMB_ZONE_PATTERNS: readonly RegExp[] = [
 
 /**
  * Auto-compact threshold (percentage of context window).
- * When utilization reaches this level, compact automatically.
- * Set to 0 to disable auto-compaction.
+ * Disabled by default (0) so compaction is always explicit/manual.
  */
-export const AUTO_COMPACT_THRESHOLD = 50;
+export const AUTO_COMPACT_THRESHOLD = 0;
+
+/**
+ * Intrusive UI warnings.
+ * Keep both off by default; command `/dumb-zone-status` remains available.
+ */
+export const SHOW_TOP_BANNER = false;
+export const SHOW_DANGER_OVERLAY = false;
 
 /** Minimum time between overlay displays to avoid spam (ms) */
 export const OVERLAY_COOLDOWN_MS = 30000;
