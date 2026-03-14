@@ -55,7 +55,8 @@ in
 
   '';
 
-  # Allow __noChroot derivations (e.g. qmd needs network for bun install)
+  # Allow __noChroot derivations for occasional upstream packages that still
+  # assume networked builds.
   nix.settings.sandbox = "relaxed";
 
   # nix-ld for dynamically linked binaries (e.g. sag TTS)
@@ -112,8 +113,12 @@ in
       Install.WantedBy = [ "timers.target" ];
     };
 
-    # Keep qmd as primary memory backend, but use higher-quality query mode.
-    programs.openclaw.config.memory.qmd.searchMode = pkgs.lib.mkForce "query";
+    # Keep qmd as primary memory backend, but force the Nix-managed wrapper and
+    # higher-quality query mode.
+    programs.openclaw.config.memory.qmd = {
+      command = pkgs.lib.mkForce "${pkgs.my.qmd}/bin/qmd";
+      searchMode = pkgs.lib.mkForce "query";
+    };
 
     # Force memory embeddings to Gemini to avoid OpenAI embed spend.
     programs.openclaw.config.agents.defaults.memorySearch = {
@@ -152,7 +157,7 @@ in
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
-    # qmd installed globally via npm (nix-built version has read-only store issues with node-llama-cpp)
+    my.qmd # pinned wrapper; bootstraps writable qmd runtime under ~/.local/state/qmd
   ];
   imports = [
     ../_server.nix
