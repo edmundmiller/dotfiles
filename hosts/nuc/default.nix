@@ -355,7 +355,10 @@ in
           }
         ];
       };
-      jellyfin.enable = true;
+      jellyfin = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       lubelogger = {
         enable = true;
         environmentFile = config.age.secrets.lubelogger-env.path;
