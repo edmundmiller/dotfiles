@@ -136,7 +136,8 @@ in
           "Media" = [
             {
               "Jellyfin" = {
-                href = "${nucBase}:8096";
+                # Use svc URL so 1Password login matching works on the same host.
+                href = "https://jellyfin.${tailnet}";
                 description = "Media server";
                 icon = "jellyfin.svg";
                 # widget = {
