@@ -1,4 +1,5 @@
-_: {
+{ pkgs, ... }:
+{
   config = {
     modules = {
       editors = {
@@ -94,6 +95,10 @@ _: {
       enable = true;
     }
     // (import ./homebrew.nix);
+
+    environment.systemPackages = with pkgs; [
+      llm-agents.qmd
+    ];
 
   };
 }
