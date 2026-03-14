@@ -7,3 +7,6 @@
 {"run":9,"commit":"68a1fd1","metric":18.902,"metrics":{},"status":"discard","description":"remove guess-indent from minimal set; plugin count dropped to 19 but startup worsened to 18.902ms","timestamp":1773461825893,"segment":0}
 {"type":"config","name":"xurl-driven Pi setup hardening from past sessions (stable checks)","metricName":"setup_issues","metricUnit":"","bestDirection":"lower"}
 {"run":10,"commit":"9450127","metric":16.134,"metrics":{},"status":"keep","description":"remove tokyonight plugin/theme for lean default colors; startup improved to 16.134ms with 19 plugins","timestamp":1773461863957,"segment":0}
+{"run":11,"commit":"1826db5","metric":14.603,"metrics":{},"status":"keep","description":"defer which-key load from VimEnter to VeryLazy; startup improved to 14.603ms while retaining key-hint functionality","timestamp":1773461881945,"segment":0}
+{"run":12,"commit":"1826db5","metric":16.022,"metrics":{},"status":"discard","description":"lazy-load guess-indent on buffer events; measured 16.022ms so no gain over current profile","timestamp":1773461896717,"segment":0}
+{"run":13,"commit":"1826db5","metric":15.026,"metrics":{},"status":"discard","description":"disable several builtin runtime plugins in init.lua; startup 15.026ms (slightly worse), so reverted","timestamp":1773461923401,"segment":0}
