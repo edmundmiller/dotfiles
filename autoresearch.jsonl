@@ -34,3 +34,4 @@
 {"run":31,"commit":"d3a3843","metric":14.355,"metrics":{},"status":"discard","description":"retest removing mini plugin under current baseline; startup regressed to 14.355ms so keep mini.ai/surround","timestamp":1773463060584,"segment":0}
 {"run":12,"commit":"0fb4ec4","metric":13.545,"metrics":{},"status":"discard","description":"steady-state baseline after resume; startup 13.545ms with 17 plugins, slower than best observed","timestamp":1773463120926,"segment":0}
 {"run":32,"commit":"0fb4ec4","metric":14.349,"metrics":{},"status":"discard","description":"compact rewrite of lazy-plugins.lua (same plugin set) regressed startup to 14.349ms; revert","timestamp":1773463122655,"segment":0}
+{"run":13,"commit":"ca552d5","metric":13.642,"metrics":{},"status":"discard","description":"prune mini.nvim config to only mini.surround (remove mini.ai); startup regressed to 13.642ms with no plugin-count gain","timestamp":1773463150901,"segment":0}
