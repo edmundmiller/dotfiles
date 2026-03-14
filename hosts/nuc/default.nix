@@ -132,6 +132,9 @@ in
       fallback = "none";
     };
 
+    # Required for HA OpenClaw integration (OpenAI-compatible endpoint)
+    programs.openclaw.config.gateway.http.endpoints.chatCompletions.enabled = true;
+
     # linear-agent-bridge gateway extension config
     programs.openclaw.config.plugins.entries.linear-agent-bridge = {
       enabled = true;
