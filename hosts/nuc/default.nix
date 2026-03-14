@@ -152,6 +152,7 @@ in
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
+    jq # For OpenClaw skills that parse JSON (e.g. homeassistant)
     chromium # For openclaw browser
     nodejs # For openclaw plugins
     python3 # For node-gyp (pi-interactive-shell/node-pty)
