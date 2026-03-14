@@ -20,7 +20,7 @@ Primary personal development machine running nix-darwin.
 
 ## Host-Specific Config
 
-- **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search / parity with NUC OpenClaw memory backend
+- **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search / parity with NUC OpenClaw memory backend; activation removes stale bun/npm `qmd` shims so the Nix binary wins
 - **nix-homebrew**: ARM + Rosetta, auto-migrate, mutable taps
 - **Homebrew**: no auto-update/upgrade/cleanup on activation — see `homebrew.nix` for cask/formula list
 - **Intel brew symlink removal**: activation script prevents ARM/Intel conflicts

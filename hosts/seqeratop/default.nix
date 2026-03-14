@@ -1,4 +1,8 @@
-{ pkgs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
 {
   config = {
     modules = {
@@ -99,6 +103,14 @@
     environment.systemPackages = with pkgs; [
       llm-agents.qmd
     ];
+
+    home-manager.users.${config.user.name} =
+      { lib, ... }:
+      {
+        home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+      };
 
   };
 }
