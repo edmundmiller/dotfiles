@@ -57,7 +57,7 @@ _: {
       ElevenLabsSay = [
         "Say {message}"
         "Announce {message}"
-        "Announce {message} in [the] living room"
+        "Announce {message} on [the] homepods"
       ];
       TestElevenLabs = [
         "Test ElevenLabs"
@@ -196,26 +196,36 @@ _: {
         ];
       };
       ElevenLabsSay = {
-        speech.text = "Announcing now.";
+        speech.text = "Announcing on your HomePods now.";
         action = [
           {
             action = "tts.speak";
             target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
-              media_player_entity_id = "media_player.living_room";
+              media_player_entity_id = [
+                "media_player.kitchen"
+                "media_player.bathroom"
+                "media_player.window_nightstand"
+                "media_player.bathroom_nightstand"
+              ];
               message = "{{ message }}";
             };
           }
         ];
       };
       TestElevenLabs = {
-        speech.text = "Running ElevenLabs test.";
+        speech.text = "Running ElevenLabs test on HomePods.";
         action = [
           {
             action = "tts.speak";
             target.entity_id = "tts.elevenlabs_text_to_speech";
             data = {
-              media_player_entity_id = "media_player.living_room";
+              media_player_entity_id = [
+                "media_player.kitchen"
+                "media_player.bathroom"
+                "media_player.window_nightstand"
+                "media_player.bathroom_nightstand"
+              ];
               message = "ElevenLabs voice commands are ready.";
             };
           }
