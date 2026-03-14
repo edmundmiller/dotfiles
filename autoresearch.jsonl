@@ -3,3 +3,6 @@
 {"type":"config","name":"Minimal nvim config at config/nvim","metricName":"startup_ms","metricUnit":"ms","bestDirection":"lower"}
 {"run":1,"commit":"c1ca773","metric":54.872,"metrics":{},"status":"crash","description":"baseline run after reset: startup measured but plugin_count probe returned empty in non-tty command substitution; fixing harness output","timestamp":1773461247562,"segment":0}
 {"run":7,"commit":"c1ca773","metric":18.045,"metrics":{},"status":"keep","description":"lazy-load heavy kickstart modules and drop custom import/todo-comments for minimal nvim profile; startup now 18.045ms with 20 plugins","timestamp":1773461705517,"segment":0}
+{"run":8,"commit":"68a1fd1","metric":19.83,"metrics":{},"status":"discard","description":"drop which-key from minimal plugin set; plugin count 19 but startup regressed to 19.83ms so reverted","timestamp":1773461781192,"segment":0}
+{"run":9,"commit":"68a1fd1","metric":18.902,"metrics":{},"status":"discard","description":"remove guess-indent from minimal set; plugin count dropped to 19 but startup worsened to 18.902ms","timestamp":1773461825893,"segment":0}
+{"type":"config","name":"xurl-driven Pi setup hardening from past sessions (stable checks)","metricName":"setup_issues","metricUnit":"","bestDirection":"lower"}
