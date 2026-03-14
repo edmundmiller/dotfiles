@@ -74,7 +74,7 @@
     // Agentmap codebase tree in system prompt - https://github.com/remorses/agentmap
     "~/.config/dotfiles/pi-packages/pi-agentmap",
 
-    // Git-stash for prompt drafts (ctrl+s/ctrl+shift+s)
+    // Git-stash for prompt drafts (ctrl+shift+s / ctrl+shift+p)
     "~/.config/dotfiles/pi-packages/pi-prompt-stash",
     // Cross-agent thread reader (agents:// URIs)
     "~/.config/dotfiles/pi-packages/pi-xurl",
