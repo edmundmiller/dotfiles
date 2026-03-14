@@ -43,3 +43,4 @@
 {"run":35,"commit":"9684ecd","metric":12.464,"metrics":{},"status":"keep","description":"with current baseline (including deferred telescope), removing guess-indent from lazy-plugins improved startup to 12.464ms","timestamp":1773463277190,"segment":0}
 {"run":36,"commit":"9684ecd","metric":13.077,"metrics":{},"status":"discard","description":"remove mini.ai setup under new baseline; startup regressed to 13.077ms so keep mini.ai","timestamp":1773463314450,"segment":0}
 {"run":17,"commit":"9684ecd","metric":14.268,"metrics":{},"status":"discard","description":"compact gitsigns plugin spec/comments to reduce parse overhead; startup regressed to 14.268ms so reverted","timestamp":1773463329868,"segment":0}
+{"run":37,"commit":"2453c8a","metric":14.92,"metrics":{},"status":"discard","description":"retest dropping prose spellcheck autocmd under current baseline; startup regressed to 14.92ms","timestamp":1773463368553,"segment":0}
