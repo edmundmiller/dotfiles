@@ -17,11 +17,9 @@ nuc:
     cd {{FLAKE_DIR}} && nix run .#deploy-rs -- .#nuc --skip-checks
 
     # openclaw-gateway uses X-RestartIfChanged=false to survive rebuilds.
-    # Restart it after deploy-rs finishes (remote deploys are always safe).
-    if ssh {{NUC_HOST}} "systemctl --user is-active openclaw-gateway.service" &>/dev/null; then
-        echo "=== Restarting openclaw-gateway on NUC ==="
-        ssh {{NUC_HOST}} "systemctl --user restart openclaw-gateway.service"
-    fi
+    # HM rewrites openclaw.json during deploy; try-restart picks that up.
+    echo "=== try-restart openclaw-gateway on NUC ==="
+    ssh {{NUC_HOST}} "systemctl --user try-restart openclaw-gateway.service"
 
 # Deploy to UNAS
 unas:
