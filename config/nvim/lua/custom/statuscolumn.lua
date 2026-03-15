@@ -3,6 +3,16 @@ local M = {}
 
 local CUSTOM_STATUSCOLUMN = "%!v:lua.require'custom.statuscolumn'.render()"
 
+local DAP_COLUMN_WIDTH = 2
+local NUMBER_RIGHT_PAD = 1
+local GIT_COLUMN_WIDTH = 1
+
+local DISABLED_FILETYPES = {
+  ['neo-tree'] = true,
+  ['lazy'] = true,
+  ['mason'] = true,
+}
+
 local function starts_with_any(value, prefixes)
   for _, prefix in ipairs(prefixes) do
     if vim.startswith(value, prefix) then
@@ -63,21 +73,29 @@ local function pick_sign(extmarks, prefixes)
   }
 end
 
-local function render_sign(sign)
+local function render_sign(sign, width)
+  local empty = string.rep(' ', width)
+
   if sign == nil then
-    return ' '
+    return empty
   end
 
   local text = sign.text:gsub('%%', '%%%%')
+  local pad = width > 1 and string.rep(' ', width - 1) or ''
+
   if sign.hl ~= nil and sign.hl ~= '' then
-    return '%#' .. sign.hl .. '#' .. text .. '%*'
+    return '%#' .. sign.hl .. '#' .. text .. '%*' .. pad
   end
 
-  return text
+  return text .. pad
 end
 
 local function is_special_buffer(bufnr)
-  return vim.bo[bufnr].buftype ~= ''
+  if vim.bo[bufnr].buftype ~= '' then
+    return true
+  end
+
+  return DISABLED_FILETYPES[vim.bo[bufnr].filetype] == true
 end
 
 local function apply_to_window(winid, bufnr)
@@ -99,10 +117,6 @@ function M.render()
   local bufnr = vim.api.nvim_get_current_buf()
   local virtnum = vim.v.virtnum
 
-  if virtnum < 0 then
-    return ' ' .. ' ' .. '%=%l' .. ' ' .. ' '
-  end
-
   local extmarks = get_line_sign_extmarks(bufnr, vim.v.lnum)
 
   local dap_sign = nil
@@ -112,7 +126,7 @@ function M.render()
 
   local git_sign = pick_sign(extmarks, { 'GitSigns' })
 
-  return render_sign(dap_sign) .. ' ' .. '%=%l' .. ' ' .. render_sign(git_sign)
+  return render_sign(dap_sign, DAP_COLUMN_WIDTH) .. '%=%l' .. string.rep(' ', NUMBER_RIGHT_PAD) .. render_sign(git_sign, GIT_COLUMN_WIDTH)
 end
 
 function M.setup()
