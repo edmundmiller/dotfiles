@@ -30,9 +30,10 @@ Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates 
 | `07-skill-locations`         | Where to create skills       |
 | `08-context-efficiency`      | Filter at source             |
 | `09-nix-managed-config`      | Read-only symlinks, sources  |
+| `10-code-standards`          | Type assertion ban (`as`)    |
 
 ## Adding a Rule
 
-1. Pick next number: `09-<name>.md`
+1. Pick next number: `<NN>-<name>.md`
 2. Keep it short — if >500B, ask whether a skill would be better
 3. Rebuild: `hey re`
