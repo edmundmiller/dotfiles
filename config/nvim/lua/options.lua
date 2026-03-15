@@ -36,6 +36,9 @@ vim.o.smartcase = true
 -- Keep signcolumn on by default
 vim.o.signcolumn = 'yes'
 
+-- Custom statuscolumn: DAP sign | number | git sign
+require('custom.statuscolumn').setup()
+
 -- Decrease update time
 vim.o.updatetime = 250
 
