@@ -33,9 +33,8 @@ in
         ];
 
         # Force-overwrite openclaw.json so HM never tries to back it up.
-        # openclawInjectToken replaces the nix symlink with a real file each
-        # rebuild; without force=true HM tries to move it to .bkup, which
-        # already exists, causing a collision error.
+        # openclawInjectToken rewires this link target each rebuild; without
+        # force=true HM may try to move the existing path to .bkup and collide.
         home.file.".openclaw/openclaw.json".force = true;
 
         programs.openclaw = {
@@ -67,18 +66,20 @@ in
           };
         };
 
-        # Inject gateway token from agenix into openclaw.json after HM writes it
-        # Config is a nix store symlink — must copy to regular file, then sed
+        # Inject gateway token from agenix into a runtime config, then keep
+        # ~/.openclaw/openclaw.json as a symlink for clean HM state.
         home.activation.openclawInjectToken = lib.hm.dag.entryAfter [ "openclawConfigFiles" ] ''
           _token_file="${tokenPath}"
           _config="$HOME/.openclaw/openclaw.json"
+          _rendered="$HOME/.openclaw/openclaw.runtime.json"
           if [ -f "$_token_file" ] && [ -e "$_config" ]; then
             _real=$(readlink -f "$_config" 2>/dev/null || echo "$_config")
-            cp "$_real" "$_config.tmp"
+            cp "$_real" "$_rendered.tmp"
             _token=$(cat "$_token_file")
-            /usr/bin/sed -i "" "s|__OPENCLAW_TOKEN_PLACEHOLDER__|$_token|g" "$_config.tmp"
-            rm -f "$_config"
-            mv "$_config.tmp" "$_config"
+            /usr/bin/sed -i "" "s|__OPENCLAW_TOKEN_PLACEHOLDER__|$_token|g" "$_rendered.tmp"
+            chmod 600 "$_rendered.tmp"
+            mv "$_rendered.tmp" "$_rendered"
+            ln -sfn "$_rendered" "$_config"
           fi
         '';
       };
