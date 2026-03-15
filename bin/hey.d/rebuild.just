@@ -26,14 +26,13 @@ rebuild *args='switch': opencode-update
         nixos-rebuild --flake "{{FLAKE_DIR}}" --sudo {{args}}
 
         # openclaw-gateway uses X-RestartIfChanged=false to survive rebuilds.
-        # Restart it explicitly — unless we ARE openclaw (OPS-24).
-        if systemctl --user is-active openclaw-gateway.service &>/dev/null; then
-            if grep -q 'openclaw-gateway' /proc/self/cgroup 2>/dev/null; then
-                echo "=== openclaw-gateway: skipping restart (deploy triggered by openclaw) ==="
-            else
-                echo "=== Restarting openclaw-gateway ==="
-                systemctl --user restart openclaw-gateway.service
-            fi
+        # HM rewrites openclaw.json during switch; try-restart picks that up.
+        # Skip when we ARE openclaw (OPS-24).
+        if grep -q 'openclaw-gateway' /proc/self/cgroup 2>/dev/null; then
+            echo "=== openclaw-gateway: skipping restart (deploy triggered by openclaw) ==="
+        else
+            echo "=== try-restart openclaw-gateway ==="
+            systemctl --user try-restart openclaw-gateway.service
         fi
     fi
 
