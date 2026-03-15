@@ -1433,11 +1433,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1773505596,
-        "narHash": "sha256-rO2v0W2JbF/JYzIyFCLyPRYaR9yQmz5aavfIueyuSYA=",
+        "lastModified": 1773600388,
+        "narHash": "sha256-pNrUq9F09/qRVGHyx8/eAcYtC3P5DlYoMfjnQy6bDtE=",
         "ref": "refs/heads/main",
-        "rev": "e826f386acbc9f2d34f068285bc0f5e119eae96a",
-        "revCount": 59,
+        "rev": "494a78ba9650eea905963c97ff7e3c9e0b12bd1c",
+        "revCount": 65,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
       },
