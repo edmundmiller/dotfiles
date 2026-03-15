@@ -292,9 +292,9 @@ in
               agentId = "commanderbunbun";
             }
             {
-              peerId = "-1003862456724:topic:25"; # Scheduler
+              peerId = "-1003862456724:topic:25"; # Betty
               kind = "group";
-              agentId = "scheduler";
+              agentId = "betty";
             }
             {
               peerId = "-1003862456724:topic:26"; # Monica
