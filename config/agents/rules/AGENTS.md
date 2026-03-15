@@ -19,18 +19,19 @@ Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates 
 
 ## Current Files
 
-| File                         | Purpose                      |
-| ---------------------------- | ---------------------------- |
-| `01-tone-and-style`          | Concision directive          |
-| `02-critical-instructions`   | File editing, output format  |
-| `03-version-control`         | Worktrees, selective staging |
-| `04-code-search`             | ast-grep preference          |
-| `05-testing-philosophy`      | Spec + regression tests      |
-| `06-development-preferences` | Persistence, philosophy      |
-| `07-skill-locations`         | Where to create skills       |
-| `08-context-efficiency`      | Filter at source             |
-| `09-nix-managed-config`      | Read-only symlinks, sources  |
-| `10-code-standards`          | Type assertion ban (`as`)    |
+| File                         | Purpose                            |
+| ---------------------------- | ---------------------------------- |
+| `01-tone-and-style`          | Concision directive                |
+| `02-critical-instructions`   | File editing, output format        |
+| `03-version-control`         | Worktrees, selective staging       |
+| `04-code-search`             | ast-grep preference                |
+| `05-testing-philosophy`      | Spec + regression tests            |
+| `06-development-preferences` | Persistence, philosophy            |
+| `07-skill-locations`         | Where to create skills             |
+| `08-context-efficiency`      | Filter at source                   |
+| `09-nix-managed-config`      | Read-only symlinks, sources        |
+| `10-code-standards`          | Type assertion ban (`as`)          |
+| `11-reviewable-commits`      | Split work into reviewable commits |
 
 ## Adding a Rule
 
