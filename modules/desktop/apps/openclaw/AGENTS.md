@@ -88,6 +88,12 @@ If the `device-pair` plugin is enabled:
 ### Troubleshooting
 
 - **Pairing prompt never appears**: `openclaw devices list` on NUC, approve manually
+- **Approved but still fails**: request rotated. Run this loop and approve newest request:
+  ```bash
+  ssh nuc 'openclaw devices list'
+  ssh nuc 'openclaw devices approve <requestId>'
+  ```
+  Then hard-refresh the Control UI once.
 - **Reconnect fails after reinstall**: Keychain token cleared — re-pair the node
 - **Can't reach gateway**: Verify Tailscale is connected on both devices (`tailscale status`)
 
