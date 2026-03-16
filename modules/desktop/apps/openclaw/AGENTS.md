@@ -13,7 +13,7 @@ modules/desktop/apps/openclaw/
 ## Key Facts
 
 - **Install method**: Homebrew cask (`openclaw`)
-- **Gateway mode**: Remote — connects to NUC via `wss://nuc.cinnamon-rooster.ts.net`
+- **Gateway mode**: Remote — connects via Tailscale service VIP `wss://openclaw.cinnamon-rooster.ts.net`
 - **Option path**: `modules.desktop.apps.openclaw.enable`
 - **No local gateway**: `appDefaults.attachExistingOnly = true`
 - **launchd managed**: `launchd.enable = true` for background connectivity

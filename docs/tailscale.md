@@ -23,11 +23,12 @@ Generate API keys at https://login.tailscale.com/admin/settings/keys
 
 NUC exposes services via `tailscale serve --service=svc:<name>`:
 
-| Service        | URL                                              | Module                   |
-| -------------- | ------------------------------------------------ | ------------------------ |
-| Home Assistant | `https://homeassistant.cinnamon-rooster.ts.net/` | `modules/services/hass/` |
-| Homebridge     | `https://homebridge.cinnamon-rooster.ts.net/`    | `modules/services/hass/` |
-| OpenCode       | `https://opencode.cinnamon-rooster.ts.net/`      | (manual)                 |
+| Service        | URL                                              | Module                           |
+| -------------- | ------------------------------------------------ | -------------------------------- |
+| Home Assistant | `https://homeassistant.cinnamon-rooster.ts.net/` | `modules/services/hass/`         |
+| Homebridge     | `https://homebridge.cinnamon-rooster.ts.net/`    | `modules/services/hass/`         |
+| OpenClaw       | `https://openclaw.cinnamon-rooster.ts.net/`      | `hosts/nuc/default.nix` (manual) |
+| OpenCode       | `https://opencode.cinnamon-rooster.ts.net/`      | (manual)                         |
 
 Services need **two things** to work:
 
@@ -36,7 +37,7 @@ Services need **two things** to work:
    ```hujson
    {
      "src": ["autogroup:member"],
-     "dst": ["svc:homeassistant", "svc:homebridge", "svc:opencode"],
+     "dst": ["svc:homeassistant", "svc:homebridge", "svc:openclaw", "svc:opencode"],
      "ip":  ["*"],
    }
    ```
