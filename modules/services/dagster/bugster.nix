@@ -1,6 +1,6 @@
 # Bugster — Bugwarrior meets TaskNotes, running on Dagster
 #
-# Syncs GitHub/Jira/Linear issues into Obsidian TaskNotes via dlt pipelines.
+# Syncs GitHub/Jira/Linear issues + Snipd episodes into Obsidian notes via dlt pipelines.
 # Runs as a dagster code location (gRPC server) managed by the dagster module.
 #
 # Architecture:
@@ -103,6 +103,17 @@ let
           contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
           only_my_issues = ${boolToString src.onlyMyIssues}
         ''
+      else if src.type == "snipd" then
+        ''
+
+          [[sources]]
+          type = "snipd"
+          name = "${src.name}"
+          token = "''${${src.tokenEnv}}"
+          ${optionalString (src.updatedAfter != null) "updated_after = \"${src.updatedAfter}\""}
+          only_edited = ${boolToString src.onlyEdited}
+          contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+        ''
       else
         ""
     ) cfg.sources
@@ -137,6 +148,7 @@ let
         "github"
         "linear"
         "jira"
+        "snipd"
       ]) "github";
       name = mkOpt types.str "";
       # Common
@@ -157,6 +169,9 @@ let
       usernameEnv = mkOpt types.str "JIRA_USERNAME";
       projects = mkOpt (types.listOf types.str) [ ];
       onlyMyIssues = mkBoolOpt true;
+      # Snipd
+      updatedAfter = mkOpt (types.nullOr types.str) null;
+      onlyEdited = mkBoolOpt false;
     };
   });
 in
