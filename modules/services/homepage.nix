@@ -224,6 +224,13 @@ in
               };
             }
             {
+              "OpenClaw" = {
+                href = "https://openclaw.${tailnet}";
+                description = "AI gateway";
+                icon = "openai.svg";
+              };
+            }
+            {
               "Open Wearables" = {
                 href = "${nucBase}:${toString config.modules.services.open-wearables.backendPort}/docs";
                 description = "Wearable health API (Apple XML import)";
