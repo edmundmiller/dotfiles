@@ -52,13 +52,13 @@ in
               # Attach to remote gateway, don't spawn local
               attachExistingOnly = true;
             };
-            # GP2: connect to NUC gateway via Tailscale Serve (wss://)
+            # GP2: connect to OpenClaw Tailscale service VIP (wss://)
             # Token injected at activation from agenix secret
             config.agents.defaults.thinkingDefault = "high";
             config.gateway = {
               mode = "remote";
               remote = {
-                url = "wss://nuc.cinnamon-rooster.ts.net";
+                url = "wss://openclaw.cinnamon-rooster.ts.net";
                 transport = "direct";
                 token = "__OPENCLAW_TOKEN_PLACEHOLDER__";
               };

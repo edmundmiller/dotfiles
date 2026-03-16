@@ -478,6 +478,21 @@ in
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
+  # Expose OpenClaw gateway as a Tailscale service VIP (svc:openclaw)
+  # so clients can use https://openclaw.cinnamon-rooster.ts.net.
+  systemd.services.openclaw-tailscale-serve = {
+    description = "Tailscale serve proxy for OpenClaw gateway";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "tailscaled.service" ];
+    requires = [ "tailscaled.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:openclaw --https=443 http://127.0.0.1:18789 && exit 0; sleep 1; done; exit 1\"'";
+      ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:openclaw || true'";
+    };
+  };
+
   # FIXME https://discourse.nixos.org/t/logrotate-config-fails-due-to-missing-group-30000/28501/7
   services.logrotate.checkConfig = false;
 
