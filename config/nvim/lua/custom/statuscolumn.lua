@@ -1,105 +1,154 @@
--- cozy statuscolumn: DAP signs + line numbers + git signs without statuscol.nvim
-local M = {}
+-- cozy statuscolumn: DAP signs + line numbers + gitsigns without statuscol.nvim
+local api = vim.api
 
-local CUSTOM_STATUSCOLUMN = "%!v:lua.require'custom.statuscolumn'.render()"
+local M = {}
 
 local DAP_COLUMN_WIDTH = 2
 local NUMBER_RIGHT_PAD = 1
-local GIT_COLUMN_WIDTH = 1
+local GIT_COLUMN_WIDTH = 2
 
-local DISABLED_FILETYPES = {
-  ['neo-tree'] = true,
-  ['lazy'] = true,
-  ['mason'] = true,
+local CUSTOM_STATUSCOLUMN = "%{%v:lua.require('custom.statuscolumn').render()%}"
+
+local DISABLED_BUFTYPES = {
+  help = true,
+  nofile = true,
+  prompt = true,
+  terminal = true,
 }
 
-local function starts_with_any(value, prefixes)
-  for _, prefix in ipairs(prefixes) do
-    if vim.startswith(value, prefix) then
-      return true
-    end
+local DISABLED_FILETYPES = {
+  ['lazy'] = true,
+  ['mason'] = true,
+  ['neo-tree'] = true,
+}
+
+---@type table<integer, string>
+local ns_cache = {}
+
+---@param ns_id integer
+---@return string
+local function ns_name(ns_id)
+  if ns_cache[ns_id] then
+    return ns_cache[ns_id]
   end
 
-  return false
-end
-
-local function get_line_sign_extmarks(bufnr, lnum)
-  local ok, extmarks = pcall(
-    vim.api.nvim_buf_get_extmarks,
-    bufnr,
-    -1,
-    { lnum - 1, 0 },
-    { lnum - 1, -1 },
-    { type = 'sign', details = true }
-  )
-
-  if not ok then
-    return {}
+  for name, id in pairs(api.nvim_get_namespaces()) do
+    ns_cache[id] = name
   end
 
-  return extmarks
+  return ns_cache[ns_id] or ''
 end
 
-local function pick_sign(extmarks, prefixes)
-  local best_sign = nil
-  local best_priority = -math.huge
+---@param lnum integer
+---@return vim.api.keyset.extmark_details?, vim.api.keyset.extmark_details?
+local function get_signs(lnum)
+  local marks = api.nvim_buf_get_extmarks(0, -1, { lnum - 1, 0 }, { lnum - 1, -1 }, { details = true, type = 'sign' })
 
-  for _, extmark in ipairs(extmarks) do
-    local details = extmark[4] or {}
-    local sign_name = details.sign_name or ''
-    local sign_hl_group = details.sign_hl_group or ''
+  ---@type vim.api.keyset.extmark_details?
+  local dap_sign
+  ---@type vim.api.keyset.extmark_details?
+  local git_sign
 
-    if starts_with_any(sign_name, prefixes) or starts_with_any(sign_hl_group, prefixes) then
+  for _, mark in ipairs(marks) do
+    local details = mark[4]
+    if details and details.sign_text then
       local priority = tonumber(details.priority) or 0
-      if best_sign == nil or priority > best_priority then
-        best_sign = details
-        best_priority = priority
+
+      if details.sign_name and details.sign_name:match '^Dap' then
+        if not dap_sign or priority > (tonumber(dap_sign.priority) or 0) then
+          dap_sign = details
+        end
+      elseif details.ns_id and ns_name(details.ns_id):find 'gitsigns' then
+        if not git_sign or priority > (tonumber(git_sign.priority) or 0) then
+          git_sign = details
+        end
       end
     end
   end
 
-  if best_sign == nil then
-    return nil
-  end
-
-  local sign_text = best_sign.sign_text or ''
-  if sign_text == '' then
-    return nil
-  end
-
-  return {
-    text = vim.fn.strcharpart(sign_text, 0, 1),
-    hl = best_sign.sign_hl_group,
-  }
+  return dap_sign, git_sign
 end
 
-local function render_sign(sign, width)
-  local empty = string.rep(' ', width)
-
-  if sign == nil then
-    return empty
+---@param text string
+---@param width integer
+---@return string
+local function fit_width(text, width)
+  local current = vim.fn.strdisplaywidth(text)
+  if current > width then
+    local trimmed = vim.fn.strcharpart(text, 0, 1)
+    current = vim.fn.strdisplaywidth(trimmed)
+    text = trimmed
   end
 
-  local text = sign.text:gsub('%%', '%%%%')
-  local pad = width > 1 and string.rep(' ', width - 1) or ''
-
-  if sign.hl ~= nil and sign.hl ~= '' then
-    return '%#' .. sign.hl .. '#' .. text .. '%*' .. pad
+  if current < width then
+    text = text .. string.rep(' ', width - current)
   end
 
-  return text .. pad
+  return text
 end
 
-local function is_special_buffer(bufnr)
-  if vim.bo[bufnr].buftype ~= '' then
+---@param text string
+---@param hl string?
+---@return string
+local function with_hl(text, hl)
+  local escaped = text:gsub('%%', '%%%%')
+  if hl and hl ~= '' then
+    return '%#' .. hl .. '#' .. escaped .. '%*'
+  end
+
+  return escaped
+end
+
+---@param sign vim.api.keyset.extmark_details?
+---@return string
+local function render_dap(sign)
+  if not sign or not sign.sign_text then
+    return string.rep(' ', DAP_COLUMN_WIDTH)
+  end
+
+  local text = fit_width(sign.sign_text, DAP_COLUMN_WIDTH)
+  local hl = sign.sign_hl_group ~= '' and sign.sign_hl_group or sign.sign_name
+  return with_hl(text, hl)
+end
+
+---@param sign vim.api.keyset.extmark_details?
+---@return string
+local function render_git(sign)
+  if not sign or not sign.sign_text then
+    return string.rep(' ', GIT_COLUMN_WIDTH)
+  end
+
+  local text = fit_width(sign.sign_text, GIT_COLUMN_WIDTH)
+  return with_hl(text, sign.sign_hl_group)
+end
+
+---@return string
+local function number_column()
+  if vim.v.virtnum ~= 0 then
+    return '%='
+  end
+
+  local lnum = vim.v.relnum > 0 and vim.v.relnum or vim.v.lnum
+  local lnum_str = tostring(lnum)
+  local left_pad = string.rep(' ', math.max(vim.wo.numberwidth - #lnum_str, 0))
+
+  return '%=' .. left_pad .. lnum_str .. string.rep(' ', NUMBER_RIGHT_PAD)
+end
+
+---@param bufnr integer
+---@return boolean
+local function is_disabled_buffer(bufnr)
+  if DISABLED_BUFTYPES[vim.bo[bufnr].buftype] then
     return true
   end
 
   return DISABLED_FILETYPES[vim.bo[bufnr].filetype] == true
 end
 
+---@param winid integer
+---@param bufnr integer
 local function apply_to_window(winid, bufnr)
-  if is_special_buffer(bufnr) then
+  if is_disabled_buffer(bufnr) then
     vim.wo[winid].statuscolumn = ''
     return
   end
@@ -107,40 +156,45 @@ local function apply_to_window(winid, bufnr)
   vim.wo[winid].statuscolumn = CUSTOM_STATUSCOLUMN
 end
 
+---@param bufnr integer
 local function refresh_buffer_windows(bufnr)
   for _, winid in ipairs(vim.fn.win_findbuf(bufnr)) do
     apply_to_window(winid, bufnr)
   end
 end
 
+---@return string
 function M.render()
-  local bufnr = vim.api.nvim_get_current_buf()
-  local virtnum = vim.v.virtnum
-
-  local extmarks = get_line_sign_extmarks(bufnr, vim.v.lnum)
-
-  local dap_sign = nil
-  if virtnum == 0 then
-    dap_sign = pick_sign(extmarks, { 'Dap' })
+  if vim.bo[0].buftype == 'quickfix' then
+    return number_column()
   end
 
-  local git_sign = pick_sign(extmarks, { 'GitSigns' })
+  local dap_sign, git_sign = get_signs(vim.v.lnum)
+  local left = vim.v.virtnum == 0 and render_dap(dap_sign) or string.rep(' ', DAP_COLUMN_WIDTH)
 
-  return render_sign(dap_sign, DAP_COLUMN_WIDTH) .. '%=%l' .. string.rep(' ', NUMBER_RIGHT_PAD) .. render_sign(git_sign, GIT_COLUMN_WIDTH)
+  return left .. number_column() .. render_git(git_sign)
 end
 
 function M.setup()
-  local group = vim.api.nvim_create_augroup('custom-statuscolumn', { clear = true })
+  local group = api.nvim_create_augroup('custom-statuscolumn', { clear = true })
 
-  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter', 'FileType', 'TermOpen' }, {
+  api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter', 'FileType', 'TermOpen' }, {
     group = group,
     callback = function(args)
       refresh_buffer_windows(args.buf)
     end,
   })
 
-  for _, winid in ipairs(vim.api.nvim_list_wins()) do
-    local bufnr = vim.api.nvim_win_get_buf(winid)
+  api.nvim_create_autocmd('OptionSet', {
+    group = group,
+    pattern = 'buftype',
+    callback = function()
+      refresh_buffer_windows(api.nvim_get_current_buf())
+    end,
+  })
+
+  for _, winid in ipairs(api.nvim_list_wins()) do
+    local bufnr = api.nvim_win_get_buf(winid)
     apply_to_window(winid, bufnr)
   end
 end
