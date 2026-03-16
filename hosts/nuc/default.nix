@@ -428,6 +428,7 @@ in
         healthcheckPingUrls = {
           github_personal_tasknotes = "https://hc-ping.com/c4b0b3c8-25b4-4cf6-9252-745eaf0a6689";
           linear_personal_tasknotes = "https://hc-ping.com/dc2b60c1-5967-48ea-883d-649ca7ae1bfa";
+          snipd_personal_contentnotes = "https://hc-ping.com/c5a1738e-d12b-46e4-bcd9-b0c8f1fa80e7";
           travel_time_blocks = "https://hc-ping.com/5b5e8fef-8462-42ff-9562-9fe451972b1c";
         };
         tasknotes = {
@@ -447,6 +448,12 @@ in
             name = "personal";
             tokenEnv = "LINEAR_TOKEN";
             contexts = [ "personal" ];
+          }
+          {
+            type = "snipd";
+            name = "personal";
+            tokenEnv = "SNIPD_API_KEY";
+            contexts = [ "podcasts" ];
           }
         ];
 
