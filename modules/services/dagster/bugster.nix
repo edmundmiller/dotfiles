@@ -239,13 +239,10 @@ in
 
                 cd ${cfg.dataDir}
 
-                # Sync Python deps (frozen = use lockfile, no resolution)
+                # Sync Python deps from committed uv.lock. Do not mutate the
+                # venv with ad-hoc installs here; Dagster packages must stay on
+                # one pinned release line.
                 ${pkgs.uv}/bin/uv sync --frozen --no-dev 2>&1
-
-                # dagster-postgres needed for run workers (DagsterInstance uses postgres)
-                # Not in bugster's deps. Must pip-install THEN run via .venv/bin/ directly
-                # (uv run re-syncs and removes pip-installed packages)
-                ${pkgs.uv}/bin/uv pip install dagster-postgres 2>&1
 
                 # Start gRPC code server (via venv directly, not uv run)
                 exec .venv/bin/dagster code-server start \
