@@ -23,7 +23,7 @@ bugster-setup.service (oneshot)
   └── generates bugster.toml from Nix options
 
 dagster-code-bugster.service
-  ├── uv sync --frozen (install Python deps)
+  ├── uv sync --frozen (install Python deps from committed uv.lock)
   └── dagster code-server start -m bugster.definitions -p 4000
 
 dagster-webserver.service ──→ workspace.yaml → grpc://localhost:4000
