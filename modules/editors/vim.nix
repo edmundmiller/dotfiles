@@ -16,6 +16,16 @@ in
   };
 
   config = mkIf cfg.enable {
+    # TODO(emiller): this module currently only manages editor package/env wiring.
+    # It intentionally does NOT manage Neovim config deployment:
+    # - no home.configFile."nvim" ...
+    # - no home.file.".config/nvim" ...
+    # - no symlink creation for config
+    # TODO(emiller): if/when we Nix-manage Neovim config here, use a direct pattern:
+    # home.configFile."nvim" = {
+    #   source = "${config.dotfiles.configDir}/nvim";
+    #   recursive = true;
+    # };
     user.packages = [
       cfg.package
       pkgs.editorconfig-core-c
