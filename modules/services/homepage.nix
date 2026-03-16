@@ -227,7 +227,7 @@ in
               "OpenClaw" = {
                 href = "https://openclaw.${tailnet}";
                 description = "AI gateway";
-                icon = "openai.svg";
+                icon = "https://openclaw.cinnamon-rooster.ts.net/favicon.svg";
               };
             }
             {
