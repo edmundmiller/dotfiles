@@ -28,6 +28,10 @@ in
     edmundmiller
     nuc
   ];
+  "kilocode-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "linear-api-token.age".publicKeys = [
     edmundmiller
     nuc
