@@ -161,6 +161,13 @@ let
               interval = "60s";
               conditions = [ "[STATUS] < 500" ];
             }
+            {
+              name = "OpenClaw Tailscale Service";
+              group = "Infrastructure";
+              url = "https://openclaw.cinnamon-rooster.ts.net";
+              interval = "60s";
+              conditions = [ "[STATUS] < 500" ];
+            }
           ]
           ++ optionals config.modules.services.lubelogger.enable [
             {
