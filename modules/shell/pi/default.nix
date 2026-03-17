@@ -284,6 +284,41 @@ in
           ''
         );
 
+        # QMD depends on native modules (better-sqlite3/sqlite-vec), so install
+        # its local package deps in the mutable repo instead of a Nix-store
+        # node_modules symlink.
+        home.activation.pi-qmd-deps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          pkg_dir="$HOME/.config/dotfiles/pi-packages/pi-qmd"
+          lock_file="$pkg_dir/package-lock.json"
+          stamp_file="$pkg_dir/.node-modules-lock-sha256"
+          npm_bin="${pkgs.nodejs}/bin/npm"
+          node_bin_dir="${pkgs.nodejs}/bin"
+          sha_bin="${pkgs.coreutils}/bin/sha256sum"
+
+          if [ -f "$lock_file" ] && [ -x "$npm_bin" ]; then
+            current_sha="$($sha_bin "$lock_file" | ${pkgs.coreutils}/bin/cut -d' ' -f1)"
+            saved_sha="$(cat "$stamp_file" 2>/dev/null || true)"
+            needs_install=0
+
+            if [ ! -d "$pkg_dir/node_modules/@tobilu/qmd" ]; then
+              needs_install=1
+            elif [ "$current_sha" != "$saved_sha" ]; then
+              needs_install=1
+            fi
+
+            if [ -L "$pkg_dir/node_modules" ]; then
+              rm -f "$pkg_dir/node_modules"
+              needs_install=1
+            fi
+
+            if [ "$needs_install" -eq 1 ]; then
+              echo "Installing pi-qmd npm deps..."
+              (cd "$pkg_dir" && PATH="$node_bin_dir:$PATH" "$npm_bin" ci --workspaces=false --omit=dev) || echo "Warning: pi-qmd npm install failed."
+              printf '%s\n' "$current_sha" > "$stamp_file"
+            fi
+          fi
+        '';
+
         # Pi binary now provided by pkgs.llm-agents.pi (nix-managed).
         # Pi-package deps now provided via Nix-built node_modules (home.file symlinks above).
         # This activation handles remaining bun-dependent extras only.

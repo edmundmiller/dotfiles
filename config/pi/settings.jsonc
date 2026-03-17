@@ -65,6 +65,8 @@
     "~/.config/dotfiles/pi-packages/pi-dcp",
     // Agentic context management (/acm, /context, context_* tools) - https://github.com/ttttmr/pi-context
     "npm:pi-context",
+    // Repo-local QMD workflow (/qmd, /qp) and qmd-cli-first guidance
+    "~/.config/dotfiles/pi-packages/pi-qmd",
     // Secure web fetch – HTML→markdown via mdream, secret scanning, injection detection
     "~/.config/dotfiles/pi-packages/pi-scurl",
     // Auto-load direnv env at session start
