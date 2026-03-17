@@ -1,0 +1,52 @@
+{
+  "name": "pi-qmd",
+  "version": "0.1.0",
+  "description": "Repo-local QMD infrastructure for Pi",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmundmiller/dotfiles.git",
+    "directory": "pi-packages/pi-qmd"
+  },
+  "scripts": {
+    "test": "vitest run __tests__",
+    "typecheck": "tsc --noEmit"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "exports": {
+    ".": "./index.ts"
+  },
+  "files": [
+    "index.ts",
+    "README.md",
+    "core",
+    "domain",
+    "extension",
+    "ui",
+    "docs",
+    "diy",
+    "__tests__"
+  ],
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "pi-package",
+    "qmd",
+    "retrieval",
+    "tui"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*",
+    "@sinclair/typebox": "*"
+  },
+  "dependencies": {
+    "@tobilu/qmd": "^2.0.1",
+    "zod": "^4.3.6"
+  }
+}
