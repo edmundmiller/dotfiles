@@ -1,9 +1,9 @@
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { matchesKey, visibleWidth } from "@mariozechner/pi-tui";
-import { createConfigService } from "@zenobius/pi-extension-config";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import * as path from "node:path";
+import { loadCommitConfig, saveCommitConfig } from "./lib/commit-config";
 
 interface GenerateCommitMessageConfig {
   mode?: string;
@@ -24,7 +24,6 @@ interface ModelInfo {
 }
 
 const USER_AGENTS_DIR = path.join(homedir(), ".pi", "agent", "agents");
-const CONFIG_NAME = "generate-commit-message";
 
 const DEFAULT_PROMPT = "Write and stage commits according to the writing-git-commits skill";
 const DEFAULT_SKILL = "writing-git-commits";
@@ -93,6 +92,29 @@ function isCheapModelName(id: string): boolean {
   return /(mini|flash|nano|haiku|lite|micro|free)/i.test(id);
 }
 
+function isModelInfo(value: unknown): value is ModelInfo {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+
+  const id = Reflect.get(value, "id");
+  const provider = Reflect.get(value, "provider");
+  const cost = Reflect.get(value, "cost");
+  if (typeof id !== "string" || typeof provider !== "string") return false;
+  if (typeof cost !== "object" || cost === null || Array.isArray(cost)) return false;
+
+  return (
+    typeof Reflect.get(cost, "input") === "number" &&
+    typeof Reflect.get(cost, "output") === "number" &&
+    typeof Reflect.get(cost, "cacheRead") === "number" &&
+    typeof Reflect.get(cost, "cacheWrite") === "number"
+  );
+}
+
+async function getAvailableModels(ctx: ExtensionContext): Promise<ModelInfo[]> {
+  const available = await ctx.modelRegistry.getAvailable();
+  if (!Array.isArray(available)) return [];
+  return available.filter(isModelInfo);
+}
+
 interface ModelSelection {
   model: string;
   source: "config" | "auto";
@@ -110,7 +132,7 @@ async function pickCheapestModel(
   ctx: ExtensionContext,
   maxOutputCost: number = DEFAULT_MAX_OUTPUT_COST
 ): Promise<ModelSelection> {
-  const available = (await ctx.modelRegistry.getAvailable()) as ModelInfo[];
+  const available = await getAvailableModels(ctx);
 
   if (available.length === 0) {
     return { model: HARD_FALLBACK_MODEL, source: "auto", cost: null };
@@ -176,7 +198,7 @@ async function getModelCost(
 ): Promise<ModelInfo["cost"] | null> {
   const [provider, ...idParts] = modelString.split("/");
   const modelId = idParts.join("/");
-  const available = (await ctx.modelRegistry.getAvailable()) as ModelInfo[];
+  const available = await getAvailableModels(ctx);
   const found = available.find((m) => m.provider === provider && m.id === modelId);
   return found?.cost ?? null;
 }
@@ -327,7 +349,7 @@ async function selectModelInteractive(ctx: ExtensionContext): Promise<string | n
     return null; // Cannot show UI
   }
 
-  const available = (await ctx.modelRegistry.getAvailable()) as ModelInfo[];
+  const available = await getAvailableModels(ctx);
 
   if (available.length === 0) {
     ctx.ui.notify("No models available", "error");
@@ -516,17 +538,13 @@ async function selectModelInteractive(ctx: ExtensionContext): Promise<string | n
           lines.push(row(""));
 
           // Count actual model items for "no models" check
-          const modelItems = items.filter((i) => i.type === "model");
+          const modelItems = items.filter(isModelPickerItem);
 
           if (modelItems.length === 0) {
             lines.push(row(" " + theme.fg("muted", "No models matching filter")));
           } else {
             // Find max model name length for alignment (just the model name, not full ID)
-            const maxModelNameLen = Math.max(
-              ...modelItems.map(
-                (i) => (i as Extract<PickerItem, { type: "model" }>).modelName.length
-              )
-            );
+            const maxModelNameLen = Math.max(...modelItems.map((item) => item.modelName.length));
 
             // Render items
             for (let i = 0; i < items.length; i++) {
@@ -692,10 +710,7 @@ async function runGenerateCommit(
   pi: ExtensionAPI,
   explicitModel?: string
 ): Promise<void> {
-  const configService = await createConfigService<GenerateCommitMessageConfig>(CONFIG_NAME, {
-    defaults: DEFAULT_CONFIG,
-  });
-  const config = configService.config;
+  const config = loadCommitConfig(DEFAULT_CONFIG);
   const maxCost = config.maxOutputCost ?? DEFAULT_MAX_OUTPUT_COST;
 
   // Determine model selection
@@ -777,11 +792,8 @@ export default function generateCommitMessageExtension(pi: ExtensionAPI) {
 
       // Write configuration using config service
       try {
-        const configService = await createConfigService<GenerateCommitMessageConfig>(CONFIG_NAME, {
-          defaults: DEFAULT_CONFIG,
-        });
-        await configService.set("mode", selectedModel, "home");
-        await configService.save("home");
+        const config = loadCommitConfig(DEFAULT_CONFIG);
+        saveCommitConfig({ ...config, mode: selectedModel });
 
         if (ctx.hasUI) {
           const cost = await getModelCost(ctx, selectedModel);
