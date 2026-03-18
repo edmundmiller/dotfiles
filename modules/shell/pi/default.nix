@@ -239,6 +239,17 @@ in
             ".pi/agent/extensions/guardrails.json".source = "${configDir}/pi/extensions/guardrails.json";
             ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
+            ".pi/agent/extensions/commit-review.ts".source = "${configDir}/pi/extensions/commit-review.ts";
+            ".pi/agent/extensions/review.ts".source = "${configDir}/pi/extensions/review.ts";
+            ".pi/agent/extensions/lib/commit-review-logic.ts".source =
+              "${configDir}/pi/extensions/lib/commit-review-logic.ts";
+            ".pi/agent/extensions/lib/commit-config.ts".source =
+              "${configDir}/pi/extensions/lib/commit-config.ts";
+            ".pi/agent/extensions/lib/review-git.ts".source = "${configDir}/pi/extensions/lib/review-git.ts";
+            ".pi/agent/extensions/lib/review-screen.ts".source =
+              "${configDir}/pi/extensions/lib/review-screen.ts";
+            ".pi/agent/extensions/generate-commit-message.ts".source =
+              "${configDir}/pi/extensions/generate-commit-message.ts";
             ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
             ".pi/agent/extensions/sub-limits.ts".source = "${configDir}/pi/extensions/sub-limits.ts";
             ".pi/agent/extensions/pi-tool-display/config.json".text = builtins.toJSON {
