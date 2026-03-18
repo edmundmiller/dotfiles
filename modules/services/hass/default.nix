@@ -246,19 +246,18 @@ in
       # Symlink Nix-managed YAML files into HA config dir
       systemd.tmpfiles.settings."10-hass-nix-yaml" = {
         "${config.services.home-assistant.configDir}/devices.yaml" = {
-          L.argument = "${./devices.yaml}";
+          "L+".argument = "${./devices.yaml}";
         };
         "${config.services.home-assistant.configDir}/ui-lovelace.yaml" = {
-          L.argument = "${./dashboard.yaml}";
+          "L+".argument = "${./dashboard.yaml}";
         };
         "${config.services.home-assistant.configDir}/secrets.yaml" = {
-          L.argument = config.age.secrets.hass-secrets.path;
-        };
-        # JSON schemas for custom component config validation
-        "${config.services.home-assistant.configDir}/schemas/adaptive-lighting.json" = {
-          L.argument = "${./schemas/adaptive-lighting.json}";
+          "L+".argument = config.age.secrets.hass-secrets.path;
         };
       };
+
+      # Keep Adaptive Lighting schema in-repo only. Symlinking nested paths under
+      # /var/lib/hass trips systemd-tmpfiles unsafe-path checks during deploys.
 
       # Apply declarative device→area assignments after HA starts
       systemd.services.hass-apply-devices = {
@@ -269,13 +268,16 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          # Use /manifest.json — public endpoint that doesn't trigger auth warnings
-          ExecStartPre = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 60); do ${pkgs.curl}/bin/curl -so /dev/null -w \"%%{http_code}\" http://127.0.0.1:8123/manifest.json 2>/dev/null | grep -q \"200\" && exit 0; sleep 2; done; echo \"HA not ready after 120s\"; exit 1'";
+          ExecStartPre = [
+            "${pkgs.systemd}/bin/systemd-tmpfiles --create --remove --prefix ${config.services.home-assistant.configDir}/devices.yaml"
+            # Use /manifest.json — public endpoint that doesn't trigger auth warnings
+            "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 60); do ${pkgs.curl}/bin/curl -so /dev/null -w \"%%{http_code}\" http://127.0.0.1:8123/manifest.json 2>/dev/null | grep -q \"200\" && exit 0; sleep 2; done; echo \"HA not ready after 120s\"; exit 1'"
+          ];
           ExecStart =
             let
               py = pkgs.python3.withPackages (ps: [ ps.websockets ]);
             in
-            "${py}/bin/python3 ${./apply-devices.py} ${config.services.home-assistant.configDir}/devices.yaml";
+            "${py}/bin/python3 ${./apply-devices.py} ${./devices.yaml}";
         };
       };
 
