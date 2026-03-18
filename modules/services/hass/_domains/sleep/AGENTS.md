@@ -22,6 +22,6 @@ Owns the full sleep/wake lifecycle. See `README.md` for flow diagrams.
 
 - `modes.nix` `everything_off` script delegates to Winding Down scene
 - `ambient.nix` Arrive Home scene sets `goodnight = off`
-- `lighting.nix` AL sleep mode time triggers (9:30pm / 7am) complement scene-embedded toggles
+- `lighting.nix` AL sleep mode time triggers (10pm / 7am) complement scene-embedded toggles
 - `conversation.nix` GoodMorning voice intent calls `scene.good_morning` directly
 - `vacation.nix` reads `goodnight` state but doesn't modify it

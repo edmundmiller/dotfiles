@@ -162,8 +162,8 @@ _: {
         speech.text = "Goodnight.";
         action = [
           {
-            action = "input_boolean.turn_on";
-            target.entity_id = "input_boolean.goodnight";
+            action = "scene.turn_on";
+            target.entity_id = "scene.winding_down";
           }
         ];
       };
