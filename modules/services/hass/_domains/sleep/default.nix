@@ -261,6 +261,7 @@ in
           "light.essentials_a19_a60_2" = "off"; # Dishwasher
           "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "off"; # Window Nightstand
+          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
           "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
 
@@ -288,12 +289,15 @@ in
           "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise stays
+          "switch.desk_monitor" = "off";
+          "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
           "media_player.tv" = "off";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
           "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "off"; # Window Nightstand
+          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
@@ -319,12 +323,15 @@ in
           };
           "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
+          "switch.desk_monitor" = "on";
+          "switch.desk_pop" = "on";
 
           # Lights on — AL handles color temp/brightness for time of day.
           # Mid-morning scene (sunrise+2h) turns these off when natural
           # light is enough.
           "light.essentials_a19_a60" = "on"; # Kitchen (Trashcan)
           "light.essentials_a19_a60_2" = "on"; # Kitchen (Dishwasher)
+          "light.essentials_a19_a60_5" = "on"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "on"; # Couch Lamp
           "light.nanoleaf_multicolor_hd_ls" = "on"; # Edmund Desk
         };
@@ -376,6 +383,44 @@ in
           {
             action = "scene.turn_on";
             target.entity_id = "scene.winding_down";
+          }
+        ];
+      }
+
+      # Keep nightstands off whenever goodnight mode is on
+      {
+        alias = "Goodnight keeps bedroom lamps off";
+        id = "goodnight_keep_nightstands_off";
+        description = "During goodnight mode, force nightstand + wall lamps off";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "input_boolean.goodnight";
+            to = "on";
+          }
+          {
+            platform = "state";
+            entity_id = [
+              "light.essentials_a19_a60_3"
+              "light.essentials_a19_a60_4"
+              "light.essentials_a19_a60_5"
+            ];
+            to = "on";
+          }
+        ];
+        condition = {
+          condition = "state";
+          entity_id = "input_boolean.goodnight";
+          state = "on";
+        };
+        action = [
+          {
+            action = "light.turn_off";
+            target.entity_id = [
+              "light.essentials_a19_a60_3"
+              "light.essentials_a19_a60_4"
+              "light.essentials_a19_a60_5"
+            ];
           }
         ];
       }

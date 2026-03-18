@@ -1,11 +1,11 @@
 # Lighting domain — Adaptive Lighting (circadian color temperature + brightness)
 #
 # Adjusts color temp and brightness based on sun position.
-# Sleep mode: 9:30 PM time trigger (pre-warmup); on/off also embedded in
+# Sleep mode: 10:00 PM time trigger; on/off also embedded in
 # Winding Down and Good Morning scenes (sleep/).
 #
 # Sleep mode lifecycle:
-#   ON:  9:30 PM (pre-warmup) + Winding Down/In Bed/Sleep scenes
+#   ON:  10:00 PM + Winding Down/In Bed/Sleep scenes
 #   OFF: 7:00 AM (hard cutoff) + Good Morning scene + Arrive Home scene
 #   SAFETY: startup + hourly daytime check — if sleep mode on but goodnight off, correct it
 #
@@ -54,15 +54,15 @@ in
     ];
 
     automation = lib.mkAfter (ensureEnabled [
-      # AL sleep mode on: 9:30 PM — 30 min early warmup before Winding Down at 10 PM
+      # AL sleep mode on: 10:00 PM
       # Goodnight path handled by Winding Down scene
       {
         alias = "Adaptive Lighting: sleep mode on";
         id = "al_sleep_mode_on";
-        description = "Enable AL sleep mode at 9:30 PM (30 min pre-warmup before Winding Down)";
+        description = "Enable AL sleep mode at 10 PM";
         trigger = {
           platform = "time";
-          at = "21:30:00";
+          at = "22:00:00";
         };
         action = [
           {
