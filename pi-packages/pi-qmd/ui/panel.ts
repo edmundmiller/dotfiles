@@ -1,6 +1,6 @@
 /** Interactive split-pane TUI for browsing QMD collections, files, and search results. */
 
-import { type Theme, type ThemeColor } from "@mariozechner/pi-coding-agent";
+import type { ExtensionContext, Theme, ThemeColor } from "@mariozechner/pi-coding-agent";
 import { exec } from "node:child_process";
 import { matchesKey, type TUI, truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
 import {
@@ -34,14 +34,15 @@ export interface QmdPanelCallbacks {
 }
 
 export async function show_qmd_panel(
-  ctx: { ui: { custom: (...args: unknown[]) => Promise<void> } },
+  ctx: Pick<ExtensionContext, "ui">,
   callbacks: QmdPanelCallbacks,
   initial_snapshot: QmdPanelSnapshot
 ): Promise<void> {
   await ctx.ui.custom(
-    (tui: TUI, theme: Theme, _keybindings: unknown, done: () => void) => {
-      const panel = new QmdPanel(tui, theme, callbacks, done, initial_snapshot);
-      callbacks.on_close = () => done();
+    (tui: TUI, theme: Theme, _keybindings: unknown, done: (_result: unknown) => void) => {
+      const close = () => done(undefined);
+      const panel = new QmdPanel(tui, theme, callbacks, close, initial_snapshot);
+      callbacks.on_close = close;
       return panel;
     },
     {

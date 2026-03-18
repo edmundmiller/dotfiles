@@ -20,6 +20,7 @@ import {
   type NormalizedInitProposal,
   normalized_init_proposal_schema,
   qmd_init_params_schema,
+  type QmdEmbedResult,
   type QmdRepoMarker,
   type RepoScan,
 } from "../core/types.js";
@@ -82,7 +83,7 @@ function normalize_context_path(input: string, repo_root: string): string {
     return "";
   }
 
-  const normalized = path.posix.normalize(trimmed.replaceAll("\\", "/")).replace(/^\.\//u, "");
+  const normalized = path.posix.normalize(trimmed.split("\\").join("/")).replace(/^\.\//u, "");
   if (normalized === ".." || normalized.startsWith("../") || path.isAbsolute(normalized)) {
     throw new InvalidInitProposalError(
       `Context path '${input}' escapes the repository root ${repo_root}. Use repo-relative paths only.`
@@ -333,7 +334,7 @@ export async function execute_init(
   }
 
   const needs_embedding = update_result.needsEmbedding > 0 || dot_paths.length > 0;
-  let embed_result = null;
+  let embed_result: QmdEmbedResult | null = null;
   if (needs_embedding) {
     on_progress?.(`Embedding pending document(s)...`);
     embed_result = await embed_pending((info) => {

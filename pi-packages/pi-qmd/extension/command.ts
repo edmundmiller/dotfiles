@@ -1,6 +1,10 @@
 /** Slash commands, panel wiring, and repo-scoped update/init flows for the QMD extension. */
 
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  ExtensionCommandContext,
+  ExtensionContext,
+} from "@mariozechner/pi-coding-agent";
 import {
   deactivate_document,
   embed_pending,
@@ -34,9 +38,9 @@ import { type QmdExtensionState, refresh_runtime_state } from "./runtime.js";
 import { activate_qmd_init_tool } from "./tool.js";
 
 function output_message(
-  ctx: { hasUI: boolean; ui: { notify: (message: string, level: string) => void } },
+  ctx: ExtensionContext | ExtensionCommandContext,
   message: string,
-  level = "info"
+  level: "info" | "warning" | "error" = "info"
 ) {
   if (ctx.hasUI) {
     ctx.ui.notify(message, level);

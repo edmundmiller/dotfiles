@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { QmdRepoMarker } from "../../core/types.js";
 
 let tmp_dir: string;
 let repo_dir: string;
@@ -43,7 +44,7 @@ describe("collection_key_from_repo_root", () => {
 describe("repo marker read/write", () => {
   it("round-trips .pi/qmd.json", async () => {
     const module = await import("../../domain/repo-binding.js");
-    const marker = {
+    const marker: QmdRepoMarker = {
       schema_version: 1,
       repo_root: repo_dir,
       collection_key: module.collection_key_from_repo_root(repo_dir),
