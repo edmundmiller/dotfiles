@@ -390,6 +390,23 @@
               pass_filenames = false;
               files = "modules/services/hass/";
             };
+            ha-apply-devices-assertions = {
+              enable = true;
+              name = "ha-apply-devices-assertions";
+              entry = toString (
+                pkgs.writeShellScript "ha-apply-devices-assertions" ''
+                  failures=$(nix eval '.#checks.${system}.ha-apply-devices-assertions.passthru.failures' --json 2>/dev/null)
+                  if [ "$failures" != "[]" ]; then
+                    echo "HA apply-devices assertions failed:" >&2
+                    echo "$failures" | ${pkgs.jq}/bin/jq -r '.[].msg' | sed 's/^/  FAIL: /' >&2
+                    exit 1
+                  fi
+                ''
+              );
+              language = "system";
+              pass_filenames = false;
+              files = "modules/services/hass/";
+            };
           };
 
           # Headless agent dev shell (nix develop .#agent)
@@ -510,6 +527,12 @@
               # Pure Nix eval: assert structural properties of HA automation config.
               # Catches regressions like removed time guards without a VM.
               ha-automation-assertions = import ./modules/services/hass/_tests/eval-automations.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
+              # Pure Nix eval: assert hass-apply-devices stays deploy-safe.
+              ha-apply-devices-assertions = import ./modules/services/hass/_tests/eval-apply-devices.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
               };
