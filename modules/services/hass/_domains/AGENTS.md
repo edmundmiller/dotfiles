@@ -66,6 +66,7 @@ vacation.nix (input_boolean.vacation_mode)
 | `light.essentials_a19_a60_2`           | Dishwasher          | Kitchen     | ✅         |
 | `light.essentials_a19_a60_3`           | Bathroom Nightstand | Bedroom     | ✅         |
 | `light.essentials_a19_a60_4`           | Window Nightstand   | Bedroom     | ✅         |
+| `light.essentials_a19_a60_5`           | Wall Lamp           | Living Room | ✅         |
 | `light.nanoleaf_multicolor_floor_lamp` | Couch Lamp          | Living Room | ✅         |
 | `light.nanoleaf_multicolor_hd_ls`      | Edmund Desk         | Office      | ✅         |
 | `light.smart_night_light_w`            | Night Light         | Entrance    | ✅         |
@@ -96,7 +97,7 @@ Configured in `lighting.nix`. One "Living Space" switch covers all color-temp li
 - Brightness: 20% min → 100% max
 - Sleep mode: 10% brightness, 1000K (deep warm red, melatonin-friendly)
 - `take_over_control: true` — manual adjustments pause AL for that light
-- Sleep mode schedule: **on at 9:30 PM** (pre-warmup), **off at 7:00 AM** (hard cutoff) — time-based automations in `lighting.nix`
+- Sleep mode schedule: **on at 10:00 PM**, **off at 7:00 AM** (hard cutoff) — time-based automations in `lighting.nix`
 - Sleep mode also embedded in scenes: Winding Down/In Bed/Sleep → on, Good Morning → off
 
 ### HA entities

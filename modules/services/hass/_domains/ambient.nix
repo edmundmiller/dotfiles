@@ -16,6 +16,7 @@ in
           "light.essentials_a19_a60_2" = "off";
           "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "off"; # Window Nightstand
+          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
@@ -29,8 +30,15 @@ in
         entities = {
           "light.essentials_a19_a60" = "on";
           "light.essentials_a19_a60_2" = "on";
-          "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "on"; # Window Nightstand
+          "light.essentials_a19_a60_3" = {
+            state = "on";
+            brightness = 64; # 25%
+          }; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = {
+            state = "on";
+            brightness = 64; # 25%
+          }; # Window Nightstand
+          "light.essentials_a19_a60_5" = "on"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
           "light.smart_night_light_w" = "on";
@@ -48,6 +56,7 @@ in
           "light.essentials_a19_a60_2" = "on";
           "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "on"; # Window Nightstand
+          "light.essentials_a19_a60_5" = "on"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
           "light.smart_night_light_w" = "on";
@@ -61,6 +70,7 @@ in
           "cover.smartwings_window_covering" = "closed";
           "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "off"; # Window Nightstand
+          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";

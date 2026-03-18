@@ -81,6 +81,10 @@ let
       t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == toState
     ) triggers;
 
+  # Check if trigger list contains a time trigger at exact time
+  hasTimeTrigger =
+    triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
+
   # Check if action list contains a service/action call
   hasActionCall =
     actions: actionName:
@@ -113,13 +117,18 @@ let
   monicaAwake = findAutomation "monica_awake_detection";
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
   windingDown = findAutomation "winding_down";
+  goodnightKeepNightstands = findAutomation "goodnight_keep_nightstands_off";
+  alSleepModeOn = findAutomation "al_sleep_mode_on";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
 
   # ── Scene lookups ────────────────────────────────────────────────────────
 
   windingDownScene = findScene "Winding Down";
+  sleepScene = findScene "Sleep";
   goodMorningScene = findScene "Good Morning";
+  midMorningScene = findScene "Mid-morning";
+  sundownScene = findScene "Sundown";
 
   # ── Assertions ───────────────────────────────────────────────────────────
 
@@ -142,6 +151,14 @@ let
       msg = "automation 'winding_down' missing";
     }
     {
+      test = goodnightKeepNightstands != null;
+      msg = "automation 'goodnight_keep_nightstands_off' missing";
+    }
+    {
+      test = alSleepModeOn != null;
+      msg = "automation 'al_sleep_mode_on' missing";
+    }
+    {
       test = alDaytimeSleepCorrection != null;
       msg = "automation 'al_daytime_sleep_correction' missing";
     }
@@ -156,8 +173,20 @@ let
       msg = "scene 'Winding Down' missing";
     }
     {
+      test = sleepScene != null;
+      msg = "scene 'Sleep' missing";
+    }
+    {
       test = goodMorningScene != null;
       msg = "scene 'Good Morning' missing";
+    }
+    {
+      test = midMorningScene != null;
+      msg = "scene 'Mid-morning' missing";
+    }
+    {
+      test = sundownScene != null;
+      msg = "scene 'Sundown' missing";
     }
 
     # --- Good Morning scene sets SmartWings to 20% with scene-compatible keys ---
@@ -170,6 +199,26 @@ let
         && (coverCfg.state or null) == "open"
         && (coverCfg.current_position or null) == 20;
       msg = "Good Morning scene cover.smartwings_window_covering must use state=open + current_position=20";
+    }
+
+    # --- AL sleep mode turns on at 10 PM ---
+    {
+      test = hasTimeTrigger (toConditionList (alSleepModeOn.trigger or [ ])) "22:00:00";
+      msg = "al_sleep_mode_on must trigger at 22:00:00";
+    }
+
+    # --- Goodnight mode keeps nightstands off ---
+    {
+      test = hasStateCondition (toConditionList (
+        goodnightKeepNightstands.condition or [ ]
+      )) "input_boolean.goodnight" "on";
+      msg = "goodnight_keep_nightstands_off missing condition: goodnight == on";
+    }
+    {
+      test = hasStateTrigger (toConditionList (
+        goodnightKeepNightstands.trigger or [ ]
+      )) "input_boolean.goodnight" "on";
+      msg = "goodnight_keep_nightstands_off missing trigger on goodnight turning on";
     }
 
     # --- Time guards on wake detection (the 4:47 AM fix) ---
@@ -284,6 +333,62 @@ let
     {
       test = (goodMorningScene.entities."switch.eve_energy_20ebu4101" or null) == "off";
       msg = "Good Morning scene doesn't turn off whitenoise";
+    }
+
+    # --- Sleep scene turns desk plugs off ---
+    {
+      test = (sleepScene.entities."switch.desk_monitor" or null) == "off";
+      msg = "Sleep scene doesn't turn off switch.desk_monitor";
+    }
+    {
+      test = (sleepScene.entities."switch.desk_pop" or null) == "off";
+      msg = "Sleep scene doesn't turn off switch.desk_pop";
+    }
+
+    # --- Good Morning scene turns desk plugs back on ---
+    {
+      test = (goodMorningScene.entities."switch.desk_monitor" or null) == "on";
+      msg = "Good Morning scene doesn't turn on switch.desk_monitor";
+    }
+    {
+      test = (goodMorningScene.entities."switch.desk_pop" or null) == "on";
+      msg = "Good Morning scene doesn't turn on switch.desk_pop";
+    }
+
+    # --- Wall lamp cycle: off at night, on in morning, off at mid-morning ---
+    {
+      test = (windingDownScene.entities."light.essentials_a19_a60_5" or null) == "off";
+      msg = "Winding Down scene doesn't turn off wall lamp";
+    }
+    {
+      test = (sleepScene.entities."light.essentials_a19_a60_5" or null) == "off";
+      msg = "Sleep scene doesn't turn off wall lamp";
+    }
+    {
+      test = (goodMorningScene.entities."light.essentials_a19_a60_5" or null) == "on";
+      msg = "Good Morning scene doesn't turn on wall lamp";
+    }
+    {
+      test = (midMorningScene.entities."light.essentials_a19_a60_5" or null) == "off";
+      msg = "Mid-morning scene doesn't turn off wall lamp";
+    }
+
+    # --- Sundown: bedroom nightstands at 25% brightness ---
+    {
+      test =
+        let
+          cfg = sundownScene.entities."light.essentials_a19_a60_3" or null;
+        in
+        builtins.isAttrs cfg && (cfg.state or null) == "on" && (cfg.brightness or null) == 64;
+      msg = "Sundown scene must set bathroom nightstand to 25% brightness";
+    }
+    {
+      test =
+        let
+          cfg = sundownScene.entities."light.essentials_a19_a60_4" or null;
+        in
+        builtins.isAttrs cfg && (cfg.state or null) == "on" && (cfg.brightness or null) == 64;
+      msg = "Sundown scene must set window nightstand to 25% brightness";
     }
   ];
 
