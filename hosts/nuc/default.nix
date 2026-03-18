@@ -132,21 +132,21 @@ in
       fallback = "none";
     };
 
-    # Add Kilo Gateway as tail fallback for gateway/subagents.
+    # Prefer Kilo Gateway ahead of minimax for gateway/subagents.
     # Docs: https://docs.openclaw.ai/providers/kilocode
     programs.openclaw.config.agents.defaults.model.fallbacks = pkgs.lib.mkForce [
       "openrouter/openrouter/auto"
+      "kilocode/kilo/auto"
       "opencode/minimax-m2.5"
       "openrouter/anthropic/claude-sonnet-4"
       "openrouter/openai/gpt-5-nano"
-      "kilocode/kilo/auto"
     ];
     programs.openclaw.config.agents.defaults.subagents.model.fallbacks = pkgs.lib.mkForce [
       "openrouter/openrouter/auto"
+      "kilocode/kilo/auto"
       "opencode/minimax-m2.5"
       "openrouter/anthropic/claude-sonnet-4"
       "openrouter/openai/gpt-5-nano"
-      "kilocode/kilo/auto"
     ];
 
     # Required for HA OpenClaw integration (OpenAI-compatible endpoint)
