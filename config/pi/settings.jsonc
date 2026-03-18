@@ -176,8 +176,5 @@
       "extensions": ["src/index.ts"],
       "skills": [],
     },
-    // fff.nvim-powered file picker - typo-resistant, git-aware @ picker - https://github.com/denisshepelin/pi-fff
-    // Use package defaults to avoid double-loading src/index.ts (koffi type redefinition)
-    "git:github.com/denisshepelin/pi-fff",
   ],
 }
