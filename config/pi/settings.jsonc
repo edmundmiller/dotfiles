@@ -149,8 +149,8 @@
     "npm:pi-messenger",
     // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
     "npm:pi-interactive-shell",
-    // Subagent delegation with chains, parallel execution, TUI - https://github.com/nicobailon/pi-subagents
-    "npm:pi-subagents",
+    // Subagent delegation with chains, parallel execution, TUI - https://www.npmjs.com/package/@tintinweb/pi-subagents
+    "npm:@tintinweb/pi-subagents",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
     // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
@@ -163,6 +163,8 @@
     "npm:pi-rtk",
     // Web research — clean fetch, pluggable search, scout subagent - https://github.com/iaptsiauri/pi-surf
     "npm:pi-surf",
+    // Image attachments helper - https://www.npmjs.com/package/@jordyvd/pi-image-attachments
+    "npm:@jordyvd/pi-image-attachments",
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
     // FIXME MAKE IT STOP https://github.com/davebcn87/pi-autoresearch/issues/6
     // "https://github.com/davebcn87/pi-autoresearch",
