@@ -5,7 +5,7 @@
  *   Ctrl+Shift+V — open native review screen
  *
  * Commands:
- *   /review [--staged]
+ *   /diff-review [--staged]
  *   /review-staged
  */
 
@@ -121,8 +121,8 @@ export default function reviewExtension(pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand("review", {
-    description: "Open Pi-native review screen for working tree or staged changes",
+  pi.registerCommand("diff-review", {
+    description: "Open Pi-native diff review screen for working tree or staged changes",
     handler: async (args, ctx) => {
       await runReview(ctx, pi, parseReviewMode(args));
     },
