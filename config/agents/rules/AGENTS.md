@@ -32,6 +32,7 @@ Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates 
 | `09-nix-managed-config`      | Read-only symlinks, sources        |
 | `10-code-standards`          | Type assertion ban (`as`)          |
 | `11-reviewable-commits`      | Split work into reviewable commits |
+| `12-red-green-tdd`           | Red/Green/Refactor default         |
 
 ## Adding a Rule
 
