@@ -8,7 +8,10 @@ with lib.my;
 with types;
 {
   enable = mkBoolOpt false;
-  rcFiles = mkOpt (listOf (either str path)) [ "${configDir}/tmux/theme.conf" ];
+  rcFiles = mkOpt (listOf (either str path)) [
+    "${configDir}/tmux/theme.conf"
+    "${configDir}/tmux/cmux-concept.conf"
+  ];
 
   experimental = {
     sessionDots.enable = mkBoolOpt false;

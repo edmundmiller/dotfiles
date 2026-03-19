@@ -40,12 +40,16 @@ modules.shell.tmux.enable = true;
 ```nix
 modules.shell.tmux = {
   enable = true;
-  rcFiles = [ "${configDir}/tmux/theme.conf" ];  # Additional config files
+  rcFiles = [
+    "${configDir}/tmux/theme.conf"
+    "${configDir}/tmux/cmux-concept.conf"
+  ];
   opensessions.enable = true;
   jmux.enable = false;                            # set true to use jmux integration
 };
 ```
 
+Default behavior includes the cmux-inspired snippet (`cmux-concept.conf`).
 Theme config loads BEFORE plugins (required for prefix-highlight placeholder replacement).
 
 ### Opensessions (optional)
@@ -273,6 +277,7 @@ Choosing Active focuses the matching window, preserves its live agent pane, and 
 | `pir`  | (function)         | Review `origin/main` by default, or check out a PR and review it |
 | `ta`   | `tmux attach`      | Attach to session                                                |
 | `tl`   | `tmux ls`          | List sessions                                                    |
+| `tmx`  | (function)         | Bootstrap/switch project session (`code/test/logs/ops`)          |
 | `tf`   | `tmux find-window` | Find window (inside tmux)                                        |
 | `mine` | `tmux detach -a`   | Detach other clients                                             |
 | `tn`   | (function)         | Create new session                                               |
