@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { createTestSession, when, type TestSession } from "@marcfargas/pi-test-harness";
 import * as path from "node:path";
 
-const SUB_LIMITS = "/Users/emiller/.pi/agent/extensions/sub-limits.ts";
+const SUB_LIMITS = path.resolve(import.meta.dir, "../../config/pi/extensions/sub-limits.ts");
 const MOCK_SUB_CORE = path.resolve(import.meta.dir, "fixtures/mock-sub-core.ts");
 
 const EMIT_USAGE_EXTENSION = (pi: any): void => {
