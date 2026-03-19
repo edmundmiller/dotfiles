@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  tmx [session] [path]
+
+Examples:
+  tmx
+  tmx dotfiles ~/.config/dotfiles
+
+Behavior:
+  - Creates session if missing
+  - Seeds windows: code, test, logs, ops
+  - Splits code window into two panes
+  - Attaches (outside tmux) or switches client (inside tmux)
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+input_session="${1:-}"
+input_path="${2:-$PWD}"
+
+root="$(cd "$input_path" && pwd)"
+
+if [[ -n "$input_session" ]]; then
+  session="$input_session"
+else
+  session="$(basename "$root" | tr '.:@/' '_')"
+fi
+
+create_session() {
+  tmux new-session -d -s "$session" -c "$root" -n code
+  tmux split-window -h -t "$session:code" -c "$root"
+
+  tmux new-window -t "$session:" -n test -c "$root"
+  tmux new-window -t "$session:" -n logs -c "$root"
+  tmux new-window -t "$session:" -n ops -c "$root"
+
+  tmux select-window -t "$session:code"
+  tmux select-pane -t "$session:code.1"
+}
+
+if ! tmux has-session -t "$session" 2>/dev/null; then
+  create_session
+fi
+
+if [[ -n "${TMUX:-}" ]]; then
+  exec tmux switch-client -t "$session"
+else
+  exec tmux attach-session -t "$session"
+fi
