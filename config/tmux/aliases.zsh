@@ -14,6 +14,9 @@ function tm {
 
 alias tl='tmux ls'
 
+# Project bootstrap/switch helper (cmux-inspired workspace template)
+function tmx { "${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/tmx" "$@"; }
+
 if [[ -n $TMUX ]]; then # From inside tmux
   alias tf='tmux find-window'
   # Detach all other clients to this session
