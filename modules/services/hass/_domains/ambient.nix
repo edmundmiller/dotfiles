@@ -254,6 +254,12 @@ in
             condition = "template";
             value_template = "{{ states.person | selectattr('state', 'eq', 'home') | list | length == 1 }}";
           }
+          {
+            # Only run the welcome-light scene at night
+            condition = "state";
+            entity_id = "sun.sun";
+            state = "below_horizon";
+          }
         ];
         action = [
           {
