@@ -1,28 +1,24 @@
 ---
 name: tdd
-description: Use when asked to use TDD, Red/Green/Refactor, or test-first development for behavior changes and bug fixes.
+description: Handles /tdd, Red/Green, behavior changes + two-commit regression tests.
 ---
-
-<!-- TDD skill: enforce Red/Green/Refactor loop with regression-test-first bug fixes. -->
 
 # Red/Green TDD
 
-Default loop for behavior changes:
+1. **Red**: write intended-behavior spec test or failing test; verify failure for expected reason.
+2. **Green**: make the smallest change that passes.
+3. **Refactor**: clean up with the suite still green.
 
-1. **Red**: write focused test first; verify failure reason.
-2. **Green**: smallest change to make test pass.
-3. **Refactor**: improve design with suite still green.
+## Bug fixes
 
-## Bug-fix variant
-
-1. Reproduce bug with regression test first.
-2. Mark expected-failure (`test.failing`, `xfail(strict=True)`, `@PendingFeature`) when supported.
-3. Commit test alone.
-4. Implement fix; remove expected-failure marker.
-5. Commit fix alone.
+1. Regression test: reproduce bug, assert correct behavior.
+2. Use strict xfail so XPASS fails, or assert failure explicitly; commit stays green; CI green every commit before the fix.
+3. Commit so it runs; type-only changes okay; logic changes wait for fix commit.
+4. Commit test alone; reviewers verify it fails.
+5. Fix; keep regression test, remove xfail/flip to success, verify pass, commit fix.
 
 ## Guardrails
 
-- Never commit a red suite.
-- One behavior per TDD cycle when possible.
-- Keep tests deterministic and readable.
+- No red suite/red test without expected-failure marker
+- Show red→green progression; commits
+- Deterministic; skip hypothetical edge cases.
