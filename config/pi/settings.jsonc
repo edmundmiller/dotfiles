@@ -125,6 +125,12 @@
     // /limits command - provider usage bars via sub-core
     // https://gist.github.com/airtonix/25b4aee6f4a6a775aff028adfdb9936f
     "~/.pi/agent/extensions/sub-limits.ts",
+    // Multi-edit extension (edits[]) from gist (SSH git source)
+    {
+      "source": "git:git@gist.github.com:30c35e985b5ca59f8e6f69a66520d487.git",
+      "extensions": ["edit.ts"],
+      "skills": [],
+    },
     // Semaphore/lock primitives (dep of pi-tmux) - https://github.com/offline-ant/pi-semaphore
     {
       "source": "git:github.com/offline-ant/pi-semaphore",
