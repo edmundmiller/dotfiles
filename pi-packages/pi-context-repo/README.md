@@ -73,6 +73,7 @@ Memory is stored as markdown files with YAML frontmatter in `.pi/memory/` (a sep
 - **Status widget** shows uncommitted/unpushed counts in pi footer
 - **Sync reminder** in system prompt when changes need committing/pushing
 - **Reflection reminder** every 15 turns prompting memory consolidation
+- **Bounded tree rendering** avoids prompt blowups on very large memory repos
 - **Drift detection** warns about legacy/orphan memory fragments in system prompt
 
 ## Design
