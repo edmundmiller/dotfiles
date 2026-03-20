@@ -623,7 +623,7 @@ describe("pi-context-repo: memory_read tool", () => {
   });
 });
 
-describe("pi-context-repo: reflection reminders", () => {
+describe("pi-context-repo: memory check reminders", () => {
   let t: TestSession;
   let cwd: string;
 
@@ -641,7 +641,7 @@ describe("pi-context-repo: reflection reminders", () => {
     restoreEnv();
   });
 
-  it("injects reflection reminder at configured interval", async () => {
+  it("injects memory check reminder at configured interval", async () => {
     const capturedPrompts: string[] = [];
 
     t = await createTestSession({
@@ -657,7 +657,7 @@ describe("pi-context-repo: reflection reminders", () => {
       ],
     });
 
-    // Run 4 turns — reflection should appear at turn 3
+    // Run 4 turns — memory check should appear at turn 3
     await t.run(
       when("turn 1", [says("ok 1")]),
       when("turn 2", [says("ok 2")]),
@@ -666,11 +666,11 @@ describe("pi-context-repo: reflection reminders", () => {
     );
 
     // Turn 3 (index 2) should have reflection
-    expect(capturedPrompts[2]).toContain("MEMORY REFLECTION");
+    expect(capturedPrompts[2]).toContain("MEMORY CHECK");
     // Turns 1, 2, 4 should not
-    expect(capturedPrompts[0]).not.toContain("MEMORY REFLECTION");
-    expect(capturedPrompts[1]).not.toContain("MEMORY REFLECTION");
-    expect(capturedPrompts[3]).not.toContain("MEMORY REFLECTION");
+    expect(capturedPrompts[0]).not.toContain("MEMORY CHECK");
+    expect(capturedPrompts[1]).not.toContain("MEMORY CHECK");
+    expect(capturedPrompts[3]).not.toContain("MEMORY CHECK");
   });
 });
 
