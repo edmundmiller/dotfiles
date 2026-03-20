@@ -98,6 +98,10 @@ in
     edmundmiller
     nuc
   ];
+  "perplexity-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "agentmail-api-key.age".publicKeys = [
     edmundmiller
     nuc
