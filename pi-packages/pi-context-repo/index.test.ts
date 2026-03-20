@@ -212,6 +212,43 @@ describe("buildTree", () => {
     expect(tree.some((l) => l.includes("project/"))).toBe(true);
     expect(tree.some((l) => l.includes("overview.md"))).toBe(true);
   });
+
+  test("truncates very large trees and includes a notice", () => {
+    mkdirSync(join(tmpDir, "notes"), { recursive: true });
+    for (let i = 0; i < 200; i++) {
+      writeFileSync(
+        join(tmpDir, "notes", `topic-${String(i).padStart(4, "0")}.md`),
+        fm(`description: Topic ${i}\nlimit: 1000`)
+      );
+    }
+
+    const tree = buildTree(tmpDir, "", { maxLines: 20, maxChars: 700, maxChildrenPerDir: 500 });
+    const rendered = tree.join("\n");
+
+    expect(tree.length).toBeLessThanOrEqual(20);
+    expect(rendered.length).toBeLessThanOrEqual(700);
+    expect(rendered).toContain("[Tree truncated: showing");
+    expect(rendered).toContain("omitted.");
+  });
+
+  test("adds omission markers inside wide directories", () => {
+    mkdirSync(join(tmpDir, "notes"), { recursive: true });
+    for (let i = 0; i < 10; i++) {
+      writeFileSync(
+        join(tmpDir, "notes", `topic-${String(i).padStart(4, "0")}.md`),
+        fm(`description: Topic ${i}\nlimit: 1000`)
+      );
+    }
+
+    const rendered = buildTree(tmpDir, "", {
+      maxLines: 200,
+      maxChars: 10_000,
+      maxChildrenPerDir: 5,
+    }).join("\n");
+
+    expect(rendered).toContain("… (5 more entries)");
+    expect(rendered).not.toContain("topic-0009.md");
+  });
 });
 
 // --- scaffoldMemory ---

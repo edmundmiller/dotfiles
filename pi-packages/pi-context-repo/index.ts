@@ -50,6 +50,16 @@ const SYSTEM_DIR = "system";
 const EXT_TYPE = "context-repo";
 const ALLOWED_FM_KEYS = new Set(["description", "limit", "read_only"]);
 const DEFAULT_REFLECTION_INTERVAL = 15; // turns between reflection reminders
+const TREE_LIMIT_ENV = {
+  maxLines: "PI_CONTEXT_REPO_TREE_MAX_LINES",
+  maxChars: "PI_CONTEXT_REPO_TREE_MAX_CHARS",
+  maxChildrenPerDir: "PI_CONTEXT_REPO_TREE_MAX_CHILDREN_PER_DIR",
+} as const;
+const TREE_LIMIT_DEFAULTS = {
+  maxLines: 500,
+  maxChars: 20_000,
+  maxChildrenPerDir: 50,
+} as const;
 
 // --- Frontmatter helpers ---
 
@@ -285,11 +295,70 @@ export function installPreCommitHook(memDir: string): void {
 }
 
 // --- File tree ---
+// Adapted from Letta's bounded renderMemoryFilesystemTree() flow.
 
-export function buildTree(dir: string, prefix = ""): string[] {
-  const lines: string[] = [];
-  if (!existsSync(dir)) return lines;
+export interface BuildTreeOptions {
+  maxLines?: number;
+  maxChars?: number;
+  maxChildrenPerDir?: number;
+}
 
+interface TreeNode {
+  line: string;
+  isDirectory: boolean;
+  children: TreeNode[];
+}
+
+interface RenderedTreeLine {
+  text: string;
+  kind: "entry" | "omitted";
+}
+
+interface BuildTreeState {
+  lines: RenderedTreeLine[];
+  totalChars: number;
+  shownEntries: number;
+}
+
+function normalizePositiveInt(value: unknown, fallback: number, min: number, max: number): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim()
+        ? Number.parseInt(value.trim(), 10)
+        : Number.NaN;
+
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function getBuildTreeLimits(options: BuildTreeOptions = {}) {
+  return {
+    maxLines: normalizePositiveInt(
+      options.maxLines ?? process.env[TREE_LIMIT_ENV.maxLines],
+      TREE_LIMIT_DEFAULTS.maxLines,
+      2,
+      50_000
+    ),
+    maxChars: normalizePositiveInt(
+      options.maxChars ?? process.env[TREE_LIMIT_ENV.maxChars],
+      TREE_LIMIT_DEFAULTS.maxChars,
+      128,
+      5_000_000
+    ),
+    maxChildrenPerDir: normalizePositiveInt(
+      options.maxChildrenPerDir ?? process.env[TREE_LIMIT_ENV.maxChildrenPerDir],
+      TREE_LIMIT_DEFAULTS.maxChildrenPerDir,
+      1,
+      5_000
+    ),
+  };
+}
+
+function readTreeNodes(dir: string): TreeNode[] {
   const entries = readdirSync(dir, { withFileTypes: true })
     .filter((e: Dirent) => !e.name.startsWith("."))
     .sort((a: Dirent, b: Dirent) => {
@@ -298,25 +367,139 @@ export function buildTree(dir: string, prefix = ""): string[] {
       return a.name.localeCompare(b.name);
     });
 
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
-    const isLast = i === entries.length - 1;
-    const connector = isLast ? "└── " : "├── ";
-    const childPrefix = isLast ? "    " : "│   ";
+  const nodes: TreeNode[] = [];
+  for (const entry of entries) {
     const fullPath = join(dir, entry.name);
 
     if (entry.isDirectory()) {
-      lines.push(`${prefix}${connector}${entry.name}/`);
-      lines.push(...buildTree(fullPath, prefix + childPrefix));
-    } else if (entry.name.endsWith(".md")) {
-      const content = readFileSync(fullPath, "utf-8");
-      const { frontmatter } = parseFrontmatter(content);
-      const desc = frontmatter.description ? ` — ${frontmatter.description}` : "";
-      const ro = frontmatter.read_only ? " [read-only]" : "";
-      lines.push(`${prefix}${connector}${entry.name}${desc}${ro}`);
+      nodes.push({
+        line: `${entry.name}/`,
+        isDirectory: true,
+        children: readTreeNodes(fullPath),
+      });
+      continue;
+    }
+
+    if (!entry.name.endsWith(".md")) {
+      continue;
+    }
+
+    const content = readFileSync(fullPath, "utf-8");
+    const { frontmatter } = parseFrontmatter(content);
+    const desc = frontmatter.description ? ` — ${frontmatter.description}` : "";
+    const ro = frontmatter.read_only ? " [read-only]" : "";
+    nodes.push({
+      line: `${entry.name}${desc}${ro}`,
+      isDirectory: false,
+      children: [],
+    });
+  }
+
+  return nodes;
+}
+
+function countTreeEntries(nodes: TreeNode[]): number {
+  return nodes.reduce((total, node) => total + 1 + countTreeEntries(node.children), 0);
+}
+
+function canAppendTreeLine(
+  state: BuildTreeState,
+  line: string,
+  limits: ReturnType<typeof getBuildTreeLimits>
+) {
+  const nextLineCount = state.lines.length + 1;
+  const nextCharCount = state.totalChars + (state.lines.length > 0 ? 1 : 0) + line.length;
+  return nextLineCount <= limits.maxLines && nextCharCount <= limits.maxChars;
+}
+
+function pushTreeLine(state: BuildTreeState, text: string, kind: RenderedTreeLine["kind"]): void {
+  state.totalChars += (state.lines.length > 0 ? 1 : 0) + text.length;
+  state.lines.push({ text, kind });
+  if (kind === "entry") {
+    state.shownEntries += 1;
+  }
+}
+
+function popTreeLine(state: BuildTreeState): RenderedTreeLine | undefined {
+  const removed = state.lines.pop();
+  if (!removed) return undefined;
+  state.totalChars -= (state.lines.length > 0 ? 1 : 0) + removed.text.length;
+  if (removed.kind === "entry") {
+    state.shownEntries -= 1;
+  }
+  return removed;
+}
+
+function renderTreeNodes(
+  nodes: TreeNode[],
+  prefix: string,
+  limits: ReturnType<typeof getBuildTreeLimits>,
+  state: BuildTreeState
+): boolean {
+  const visibleNodes = nodes.slice(0, limits.maxChildrenPerDir);
+  const omittedEntries = Math.max(0, nodes.length - visibleNodes.length);
+  const items: Array<
+    { kind: "entry"; node: TreeNode } | { kind: "omitted"; omittedCount: number }
+  > = visibleNodes.map((node) => ({ kind: "entry", node }));
+
+  if (omittedEntries > 0) {
+    items.push({ kind: "omitted", omittedCount: omittedEntries });
+  }
+
+  for (const [index, item] of items.entries()) {
+    const isLast = index === items.length - 1;
+    const connector = isLast ? "└── " : "├── ";
+    const line =
+      item.kind === "entry"
+        ? `${prefix}${connector}${item.node.line}`
+        : `${prefix}${connector}… (${item.omittedCount.toLocaleString()} more entries)`;
+
+    if (!canAppendTreeLine(state, line, limits)) {
+      return false;
+    }
+
+    pushTreeLine(state, line, item.kind === "entry" ? "entry" : "omitted");
+
+    if (item.kind === "entry" && item.node.isDirectory && item.node.children.length > 0) {
+      const childPrefix = prefix + (isLast ? "    " : "│   ");
+      if (!renderTreeNodes(item.node.children, childPrefix, limits, state)) {
+        return false;
+      }
     }
   }
-  return lines;
+
+  return true;
+}
+
+export function buildTree(dir: string, prefix = "", options: BuildTreeOptions = {}): string[] {
+  if (!existsSync(dir)) return [];
+
+  const limits = getBuildTreeLimits(options);
+  const nodes = readTreeNodes(dir);
+  const totalEntries = countTreeEntries(nodes);
+  const state: BuildTreeState = {
+    lines: [],
+    totalChars: 0,
+    shownEntries: 0,
+  };
+
+  const fullyRendered = renderTreeNodes(nodes, prefix, limits, state);
+
+  if (!fullyRendered && totalEntries > 0) {
+    while (state.lines.length > 0) {
+      const omittedEntries = Math.max(1, totalEntries - state.shownEntries);
+      const notice = `[Tree truncated: showing ${state.shownEntries.toLocaleString()} of ${totalEntries.toLocaleString()} entries. ${omittedEntries.toLocaleString()} omitted.]`;
+
+      if (canAppendTreeLine(state, notice, limits)) {
+        pushTreeLine(state, notice, "omitted");
+        break;
+      }
+
+      popTreeLine(state);
+    }
+  }
+
+  return state.lines.map((line) => line.text);
 }
 
 function resolveUnderMemory(memDir: string, memoryPath: string): string | null {
