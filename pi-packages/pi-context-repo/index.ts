@@ -14,7 +14,7 @@
  * - Progressive disclosure via file tree (agent reads what it needs)
  * - Git versioning with informative commits
  * - Pre-commit hook validates frontmatter (description required, limit positive int,
- *   read_only protected — agent can't add/remove/change it)
+ *   read_only protected - agent can't add/remove/change it)
  * - Character limit enforcement in memory_write
  * - Backup/restore with timestamped snapshots
  * - Periodic memory reflection reminders (every N turns)
@@ -50,6 +50,7 @@ const SYSTEM_DIR = "system";
 const EXT_TYPE = "context-repo";
 const ALLOWED_FM_KEYS = new Set(["description", "limit", "read_only"]);
 const DEFAULT_REFLECTION_INTERVAL = 15; // turns between reflection reminders
+const DEFAULT_REFLECTION_TRIGGER = "step-count";
 const TREE_LIMIT_ENV = {
   maxLines: "PI_CONTEXT_REPO_TREE_MAX_LINES",
   maxChars: "PI_CONTEXT_REPO_TREE_MAX_CHARS",
@@ -62,6 +63,13 @@ const TREE_LIMIT_DEFAULTS = {
 } as const;
 
 // --- Frontmatter helpers ---
+
+export type ReflectionTrigger = "off" | "step-count" | "compaction-event";
+
+export interface ReflectionSettings {
+  trigger: ReflectionTrigger;
+  stepCount: number;
+}
 
 export interface Frontmatter {
   description?: string;
@@ -159,7 +167,7 @@ export function validateFrontmatter(
       errors.push(`${filePath}: 'read_only' is a protected field and cannot be changed`);
     }
   } else {
-    // New file — agent can't set read_only
+    // New file - agent can't set read_only
     if (frontmatter.read_only) {
       errors.push(`${filePath}: 'read_only' is a protected field and cannot be set by the agent`);
     }
@@ -386,7 +394,7 @@ function readTreeNodes(dir: string): TreeNode[] {
 
     const content = readFileSync(fullPath, "utf-8");
     const { frontmatter } = parseFrontmatter(content);
-    const desc = frontmatter.description ? ` — ${frontmatter.description}` : "";
+    const desc = frontmatter.description ? ` - ${frontmatter.description}` : "";
     const ro = frontmatter.read_only ? " [read-only]" : "";
     nodes.push({
       line: `${entry.name}${desc}${ro}`,
@@ -452,7 +460,7 @@ function renderTreeNodes(
     const line =
       item.kind === "entry"
         ? `${prefix}${connector}${item.node.line}`
-        : `${prefix}${connector}… (${item.omittedCount.toLocaleString()} more entries)`;
+        : `${prefix}${connector}... (${item.omittedCount.toLocaleString()} more entries)`;
 
     if (!canAppendTreeLine(state, line, limits)) {
       return false;
@@ -705,19 +713,15 @@ function listBackups(memDir: string): Array<{ name: string; path: string; create
 
 // --- Reflection reminder text (adapted from Letta's prompts) ---
 
-const MEMORY_REFLECTION_REMINDER = `<system-reminder>
-MEMORY REFLECTION: It's time to reflect on the recent conversation and update your memory.
+const MEMORY_CHECK_REMINDER = `<system-reminder>
+MEMORY CHECK: Review this conversation for information worth storing in your memory blocks. Update memory silently (no confirmation needed) if you learned:
 
-Review this conversation for information worth storing. Update memory silently if you learned:
-
-- **User info**: Name, role, preferences, working style, current goals
-- **Project details**: Architecture, patterns, gotchas, dependencies, conventions
+- **User info**: Name, role, preferences, working style, current work/goals
+- **Project details**: Architecture, patterns, gotchas, dependencies, conventions, workflow rules
 - **Corrections**: User corrected you or clarified something important
 - **Preferences**: How they want you to behave, communicate, or approach tasks
 
-Ask yourself: "If I started a new session tomorrow, what from this conversation would I want to remember?"
-
-If the answer is meaningful, use memory_write to update the appropriate file(s), then memory_commit.
+Ask yourself: "If I started a new session tomorrow, what from this conversation would I want to remember?" If the answer is meaningful, update the appropriate memory block(s) now.
 </system-reminder>`;
 
 // --- /remember prompt ---
@@ -739,8 +743,8 @@ The user has invoked /remember, requesting you commit something to memory.
 3. **Confirm the update**: After writing, briefly confirm what you remembered and where.
 
 ## Guidelines
-- Be concise — distill to essence
-- Avoid duplicates — check existing content first
+- Be concise - distill to essence
+- Avoid duplicates - check existing content first
 - Match existing file formatting
 - If unclear, ask the user to clarify
 </system-reminder>`;
@@ -792,7 +796,7 @@ export async function mergeWorktree(
       try {
         await git(pi, memDir, ["pull", "--rebase"]);
       } catch {
-        // continue — merge may still work
+        // continue - merge may still work
       }
     }
   }
@@ -814,7 +818,7 @@ export async function mergeWorktree(
       await git(pi, memDir, ["push"]);
       pushed = true;
     } catch {
-      // non-fatal — local main has the merge
+      // non-fatal - local main has the merge
     }
   }
 
@@ -911,15 +915,98 @@ export function stripManagedMemorySections(systemPrompt: string): string {
 
 // --- Per-agent settings ---
 
+function normalizeReflectionStepCount(
+  value: unknown,
+  fallback = DEFAULT_REFLECTION_INTERVAL
+): number {
+  return normalizePositiveInt(value, fallback, 1, 50_000);
+}
+
+function normalizeReflectionTrigger(
+  value: unknown,
+  fallback: ReflectionTrigger = DEFAULT_REFLECTION_TRIGGER
+): ReflectionTrigger {
+  if (value === "off" || value === "step-count" || value === "compaction-event") {
+    return value;
+  }
+  return fallback;
+}
+
+export function resolveReflectionSettings(
+  raw: Partial<{
+    reflectionTrigger: unknown;
+    reflectionStepCount: unknown;
+    reflectionInterval: unknown;
+  }> = {}
+): ReflectionSettings {
+  const hasExplicitTrigger =
+    raw.reflectionTrigger === "off" ||
+    raw.reflectionTrigger === "step-count" ||
+    raw.reflectionTrigger === "compaction-event";
+
+  if (
+    !hasExplicitTrigger &&
+    typeof raw.reflectionInterval === "number" &&
+    raw.reflectionInterval <= 0
+  ) {
+    return {
+      trigger: "off",
+      stepCount: DEFAULT_REFLECTION_INTERVAL,
+    };
+  }
+
+  const stepCount = normalizeReflectionStepCount(
+    raw.reflectionStepCount ?? raw.reflectionInterval,
+    DEFAULT_REFLECTION_INTERVAL
+  );
+
+  return {
+    trigger: normalizeReflectionTrigger(raw.reflectionTrigger, DEFAULT_REFLECTION_TRIGGER),
+    stepCount,
+  };
+}
+
+export function shouldEmitReflectionReminder(
+  turnCount: number,
+  settings: ReflectionSettings,
+  pendingCompactionReminder = false
+): boolean {
+  if (settings.trigger === "off") {
+    return false;
+  }
+
+  if (settings.trigger === "compaction-event") {
+    return pendingCompactionReminder;
+  }
+
+  return turnCount > 0 && turnCount % settings.stepCount === 0;
+}
+
+export function formatReflectionSettings(settings: ReflectionSettings): string {
+  if (settings.trigger === "off") {
+    return "off";
+  }
+
+  if (settings.trigger === "compaction-event") {
+    return `compaction-event (step-count fallback saved at ${settings.stepCount})`;
+  }
+
+  return `step-count (${settings.stepCount} turn${settings.stepCount === 1 ? "" : "s"})`;
+}
+
 export interface AgentSettings {
   memfsEnabled: boolean;
   reflectionInterval: number;
+  reflectionTrigger: ReflectionTrigger;
+  reflectionStepCount: number;
   personaPreset: string;
 }
 
 const DEFAULT_SETTINGS: AgentSettings = {
   memfsEnabled: true,
   reflectionInterval: DEFAULT_REFLECTION_INTERVAL,
+  reflectionTrigger: DEFAULT_REFLECTION_TRIGGER,
+  reflectionStepCount: DEFAULT_REFLECTION_INTERVAL,
   personaPreset: "default",
 };
 
@@ -928,7 +1015,14 @@ export function loadSettings(memDir: string): AgentSettings {
   if (!existsSync(settingsPath)) return { ...DEFAULT_SETTINGS };
   try {
     const raw = JSON.parse(readFileSync(settingsPath, "utf-8"));
-    return { ...DEFAULT_SETTINGS, ...raw };
+    const reflection = resolveReflectionSettings(raw);
+    return {
+      ...DEFAULT_SETTINGS,
+      ...raw,
+      reflectionInterval: reflection.trigger === "off" ? 0 : reflection.stepCount,
+      reflectionTrigger: reflection.trigger,
+      reflectionStepCount: reflection.stepCount,
+    };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -937,9 +1031,16 @@ export function loadSettings(memDir: string): AgentSettings {
 export function saveSettings(memDir: string, settings: Partial<AgentSettings>): AgentSettings {
   const current = loadSettings(memDir);
   const merged = { ...current, ...settings };
+  const reflection = resolveReflectionSettings(merged);
+  const normalized: AgentSettings = {
+    ...merged,
+    reflectionInterval: reflection.trigger === "off" ? 0 : reflection.stepCount,
+    reflectionTrigger: reflection.trigger,
+    reflectionStepCount: reflection.stepCount,
+  };
   const settingsPath = join(memDir, ".settings.json");
-  writeFileSync(settingsPath, JSON.stringify(merged, null, 2) + "\n");
-  return merged;
+  writeFileSync(settingsPath, JSON.stringify(normalized, null, 2) + "\n");
+  return normalized;
 }
 
 // --- Persona presets (inspired by Letta's persona_claude/kawaii/memo.mdx) ---
@@ -950,14 +1051,14 @@ export const PERSONA_PRESETS: Record<string, { description: string; content: str
     content: "You are a helpful coding assistant.\n",
   },
   concise: {
-    description: "Agent identity — terse, direct style",
+    description: "Agent identity - terse, direct style",
     content: `You are a terse coding assistant. Be extremely concise.
 Sacrifice grammar for brevity. No filler words. Code speaks louder than prose.
 When explaining, use bullets not paragraphs. Skip pleasantries.
 `,
   },
   friendly: {
-    description: "Agent identity — warm, collaborative style",
+    description: "Agent identity - warm, collaborative style",
     content: `You are a friendly, collaborative coding assistant.
 Explain your reasoning as you go. Use encouraging language.
 Celebrate small wins. Ask clarifying questions when unsure.
@@ -965,7 +1066,7 @@ Make the developer feel supported and productive.
 `,
   },
   mentor: {
-    description: "Agent identity — teaching-focused style",
+    description: "Agent identity - teaching-focused style",
     content: `You are a patient coding mentor. When solving problems:
 - Explain the "why" behind decisions, not just the "what"
 - Point out patterns and principles the developer can reuse
@@ -1002,7 +1103,7 @@ export function scaffoldMemory(memDir: string, personaPreset?: string): void {
     );
   }
 
-  // Project block — codebase knowledge (inspired by Letta's project.mdx)
+  // Project block - codebase knowledge (inspired by Letta's project.mdx)
   const projectFile = join(sysDir, "project.md");
   if (!existsSync(projectFile)) {
     writeFileSync(
@@ -1019,7 +1120,7 @@ If there's an AGENTS.md, CLAUDE.md, or README, I should read it early.
     );
   }
 
-  // Style block — coding preferences (inspired by Letta's style.mdx)
+  // Style block - coding preferences (inspired by Letta's style.mdx)
   const styleFile = join(sysDir, "style.md");
   if (!existsSync(styleFile)) {
     writeFileSync(
@@ -1059,7 +1160,11 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
   let memDir = "";
   let initialized = false;
   let turnCount = 0;
-  let reflectionInterval = DEFAULT_REFLECTION_INTERVAL;
+  let reflectionSettings: ReflectionSettings = {
+    trigger: DEFAULT_REFLECTION_TRIGGER,
+    stepCount: DEFAULT_REFLECTION_INTERVAL,
+  };
+  let pendingCompactionReminder = false;
 
   // Initialize on session start
   pi.on("session_start", async (_event, ctx) => {
@@ -1067,7 +1172,8 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
 
     // Load per-agent settings
     const settings = loadSettings(memDir);
-    reflectionInterval = settings.reflectionInterval;
+    reflectionSettings = resolveReflectionSettings(settings);
+    pendingCompactionReminder = false;
 
     if (!existsSync(memDir)) {
       scaffoldMemory(memDir);
@@ -1084,7 +1190,7 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
         try {
           await pullFromRemote(pi, memDir);
         } catch {
-          // non-fatal — agent will see status
+          // non-fatal - agent will see status
         }
       }
     }
@@ -1097,6 +1203,13 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
   });
 
   // Inject memory into system prompt before each agent turn
+  (pi as any).on("auto_compaction_start", () => {
+    if (!initialized) return;
+    if (reflectionSettings.trigger === "compaction-event") {
+      pendingCompactionReminder = true;
+    }
+  });
+
   pi.on("before_agent_start", async (event) => {
     if (!initialized || !existsSync(memDir)) return;
 
@@ -1116,7 +1229,7 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
 ## Context Repository (Agent Memory)
 
 Your persistent memory is stored in \`${MEMORY_DIR_NAME}/\` (git-backed).
-Files in \`${SYSTEM_DIR}/\` are pinned below. Other files are in the tree — use the read tool to load them.
+Files in \`${SYSTEM_DIR}/\` are pinned below. Other files are in the tree - use the read tool to load them.
 The memory directory is available as \`$MEMORY_DIR\` in shell commands.
 
 ### Memory Filesystem
@@ -1137,7 +1250,7 @@ ${systemContent || "(No system files yet.)"}
 - Put always-needed context in \`${SYSTEM_DIR}/\`, reference material elsewhere
 - Use hierarchical \`/\` naming: \`system/project/tooling.md\`, not \`system/project-tooling.md\`
 - After changes, use memory_commit to save
-- Apply memory naturally — don't narrate "I remember that..." — just use what you know
+- Apply memory naturally - don't narrate "I remember that..." - just use what you know
 - Files marked \`read_only\` cannot be modified
 
 ### Syncing
@@ -1176,8 +1289,9 @@ If pull/push fails with conflicts:
     }
 
     // Periodic reflection reminder
-    if (reflectionInterval > 0 && turnCount > 0 && turnCount % reflectionInterval === 0) {
-      memoryBlock += "\n" + MEMORY_REFLECTION_REMINDER + "\n";
+    if (shouldEmitReflectionReminder(turnCount, reflectionSettings, pendingCompactionReminder)) {
+      memoryBlock += "\n" + MEMORY_CHECK_REMINDER + "\n";
+      pendingCompactionReminder = false;
     }
 
     return {
@@ -1243,7 +1357,7 @@ If pull/push fails with conflicts:
         const absolutePath = join(baseDir, relativeToDir);
         const memoryPath = relative(memDir, absolutePath);
         const { frontmatter } = parseFrontmatter(readFileSync(absolutePath, "utf-8"));
-        const desc = frontmatter.description ? ` — ${frontmatter.description}` : "";
+        const desc = frontmatter.description ? ` - ${frontmatter.description}` : "";
         const ro = frontmatter.read_only ? " [read-only]" : "";
         return `- ${memoryPath}${desc}${ro}`;
       });
@@ -1446,7 +1560,7 @@ If pull/push fails with conflicts:
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("nothing to commit")) {
-          return toolResult("Nothing to commit — memory is clean.");
+          return toolResult("Nothing to commit - memory is clean.");
         }
         return toolResult(`Commit failed: ${msg}`);
       }
@@ -1489,7 +1603,7 @@ If pull/push fails with conflicts:
         for (const file of files.slice(0, 10)) {
           const content = readFileSync(join(memDir, file), "utf-8");
           const { frontmatter } = parseFrontmatter(content);
-          results.push(`- **${file}** — ${frontmatter.description || "(no description)"}`);
+          results.push(`- **${file}** - ${frontmatter.description || "(no description)"}`);
         }
 
         return toolResult(
@@ -1701,8 +1815,11 @@ If pull/push fails with conflicts:
 
       const tree = buildTree(memDir);
       const status = await getStatus(pi, memDir);
+      const settings = loadSettings(memDir);
+      const reminderSettings = resolveReflectionSettings(settings);
 
       let output = `Context Repository (${MEMORY_DIR_NAME})\n\n`;
+      output += `Reminder mode: ${formatReflectionSettings(reminderSettings)}\n\n`;
       output += tree.join("\n") + "\n\n";
       if (status.dirty) {
         output += `${status.files.length} uncommitted change(s):\n${status.files.map((f) => `  ${f}`).join("\n")}`;
@@ -1711,7 +1828,7 @@ If pull/push fails with conflicts:
       }
       if (status.hasRemote) {
         output += status.aheadOfRemote
-          ? `\n${status.aheadCount} commit(s) ahead of remote — push with: git -C ${MEMORY_DIR_NAME} push`
+          ? `\n${status.aheadCount} commit(s) ahead of remote - push with: git -C ${MEMORY_DIR_NAME} push`
           : "\nIn sync with remote";
       }
 
@@ -1730,6 +1847,77 @@ If pull/push fails with conflicts:
       }
 
       ctx.ui.notify(output, "info");
+    },
+  });
+
+  pi.registerCommand("sleeptime", {
+    description:
+      "Configure memory reminder triggers (usage: /sleeptime [status|off|step-count <n>|compaction-event])",
+    handler: async (args, ctx) => {
+      if (!initialized || !existsSync(memDir)) {
+        ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      const tokens = args.trim().split(/\s+/).filter(Boolean);
+      const subcommand = tokens[0] || "status";
+      const current = loadSettings(memDir);
+      const currentReflection = resolveReflectionSettings(current);
+
+      if (subcommand === "status") {
+        ctx.ui.notify(`Sleeptime: ${formatReflectionSettings(currentReflection)}`, "info");
+        return;
+      }
+
+      if (subcommand === "off") {
+        const saved = saveSettings(memDir, {
+          reflectionTrigger: "off",
+          reflectionStepCount: currentReflection.stepCount,
+        });
+        reflectionSettings = resolveReflectionSettings(saved);
+        pendingCompactionReminder = false;
+        ctx.ui.notify(`Sleeptime updated: ${formatReflectionSettings(reflectionSettings)}`, "info");
+        return;
+      }
+
+      if (subcommand === "step-count") {
+        const rawStepCount = tokens[1];
+        if (!rawStepCount || !/^[1-9]\d*$/.test(rawStepCount)) {
+          ctx.ui.notify("Usage: /sleeptime step-count <positive-integer>", "warning");
+          return;
+        }
+
+        const stepCount = Number(rawStepCount);
+
+        const saved = saveSettings(memDir, {
+          reflectionTrigger: "step-count",
+          reflectionStepCount: stepCount,
+        });
+        reflectionSettings = resolveReflectionSettings(saved);
+        pendingCompactionReminder = false;
+        ctx.ui.notify(`Sleeptime updated: ${formatReflectionSettings(reflectionSettings)}`, "info");
+        return;
+      }
+
+      if (subcommand === "compaction-event") {
+        const saved = saveSettings(memDir, {
+          reflectionTrigger: "compaction-event",
+          reflectionStepCount: currentReflection.stepCount,
+        });
+        reflectionSettings = resolveReflectionSettings(saved);
+        pendingCompactionReminder = false;
+        ctx.ui.notify(`Sleeptime updated: ${formatReflectionSettings(reflectionSettings)}`, "info");
+        return;
+      }
+
+      ctx.ui.notify(
+        "Usage: /sleeptime [status|off|step-count <n>|compaction-event]\n\n" +
+          "  status            — Show current reminder mode\n" +
+          "  off               — Disable automatic memory check reminders\n" +
+          "  step-count <n>    — Remind every n turns\n" +
+          "  compaction-event  — Remind after auto compaction",
+        "info"
+      );
     },
   });
 
@@ -2046,9 +2234,9 @@ Key steps:
 
       ctx.ui.notify(
         "Usage: /memfs [status|sync|reset]\n\n" +
-          "  status  — Show memory filesystem status (default)\n" +
-          "  sync    — Commit, pull, and push\n" +
-          "  reset   — Discard uncommitted changes",
+          "  status  - Show memory filesystem status (default)\n" +
+          "  sync    - Commit, pull, and push\n" +
+          "  reset   - Discard uncommitted changes",
         "info"
       );
     },
