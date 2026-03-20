@@ -16,8 +16,11 @@ import {
   loadSettings,
   saveSettings,
   buildTree,
+  resolveReflectionSettings,
+  shouldEmitReflectionReminder,
   detectPromptDrift,
   formatBackupTimestamp,
+  formatReflectionSettings,
   getWorktreeDir,
   installPreCommitHook,
   loadSystemFiles,
@@ -246,7 +249,7 @@ describe("buildTree", () => {
       maxChildrenPerDir: 5,
     }).join("\n");
 
-    expect(rendered).toContain("… (5 more entries)");
+    expect(rendered).toContain("... (5 more entries)");
     expect(rendered).not.toContain("topic-0009.md");
   });
 });
@@ -596,35 +599,119 @@ describe("per-agent settings", () => {
     const settings = loadSettings(tmpDir);
     expect(settings.memfsEnabled).toBe(true);
     expect(settings.reflectionInterval).toBe(15);
+    expect(settings.reflectionTrigger).toBe("step-count");
+    expect(settings.reflectionStepCount).toBe(15);
     expect(settings.personaPreset).toBe("default");
   });
 
   test("saveSettings persists and loadSettings reads back", () => {
-    saveSettings(tmpDir, { reflectionInterval: 30, personaPreset: "concise" });
+    saveSettings(tmpDir, {
+      reflectionTrigger: "step-count",
+      reflectionStepCount: 30,
+      personaPreset: "concise",
+    });
     const settings = loadSettings(tmpDir);
     expect(settings.reflectionInterval).toBe(30);
+    expect(settings.reflectionTrigger).toBe("step-count");
+    expect(settings.reflectionStepCount).toBe(30);
     expect(settings.personaPreset).toBe("concise");
-    expect(settings.memfsEnabled).toBe(true); // default preserved
+    expect(settings.memfsEnabled).toBe(true);
   });
 
   test("saveSettings merges with existing", () => {
-    saveSettings(tmpDir, { reflectionInterval: 20 });
+    saveSettings(tmpDir, { reflectionStepCount: 20 });
     saveSettings(tmpDir, { personaPreset: "mentor" });
     const settings = loadSettings(tmpDir);
     expect(settings.reflectionInterval).toBe(20);
+    expect(settings.reflectionStepCount).toBe(20);
     expect(settings.personaPreset).toBe("mentor");
+  });
+
+  test("loadSettings normalizes legacy reflectionInterval files", () => {
+    writeFileSync(
+      join(tmpDir, ".settings.json"),
+      JSON.stringify({ reflectionInterval: 7, personaPreset: "friendly" }, null, 2)
+    );
+    const settings = loadSettings(tmpDir);
+    expect(settings.reflectionTrigger).toBe("step-count");
+    expect(settings.reflectionStepCount).toBe(7);
+    expect(settings.reflectionInterval).toBe(7);
+    expect(settings.personaPreset).toBe("friendly");
+  });
+
+  test("loadSettings preserves legacy disabled reminders", () => {
+    writeFileSync(
+      join(tmpDir, ".settings.json"),
+      JSON.stringify({ reflectionInterval: 0 }, null, 2)
+    );
+    const settings = loadSettings(tmpDir);
+    expect(settings.reflectionTrigger).toBe("off");
+    expect(settings.reflectionInterval).toBe(0);
+  });
+
+  test("saveSettings writes legacy-compatible off mode", () => {
+    const settings = saveSettings(tmpDir, { reflectionTrigger: "off", reflectionStepCount: 12 });
+    expect(settings.reflectionTrigger).toBe("off");
+    expect(settings.reflectionInterval).toBe(0);
+
+    const saved = JSON.parse(readFileSync(join(tmpDir, ".settings.json"), "utf-8"));
+    expect(saved.reflectionTrigger).toBe("off");
+    expect(saved.reflectionInterval).toBe(0);
+    expect(saved.reflectionStepCount).toBe(12);
   });
 
   test("loadSettings handles corrupt file gracefully", () => {
     writeFileSync(join(tmpDir, ".settings.json"), "not json");
     const settings = loadSettings(tmpDir);
-    expect(settings.memfsEnabled).toBe(true); // defaults
+    expect(settings.memfsEnabled).toBe(true);
+    expect(settings.reflectionTrigger).toBe("step-count");
   });
 });
 
-// ==========================================================================
-// Integration tests using real git repos
-// ==========================================================================
+describe("reflection settings helpers", () => {
+  test("resolveReflectionSettings honors explicit trigger and step count", () => {
+    expect(
+      resolveReflectionSettings({ reflectionTrigger: "compaction-event", reflectionStepCount: 9 })
+    ).toEqual({
+      trigger: "compaction-event",
+      stepCount: 9,
+    });
+  });
+
+  test("resolveReflectionSettings falls back for invalid values", () => {
+    expect(
+      resolveReflectionSettings({ reflectionTrigger: "nope", reflectionStepCount: -1 })
+    ).toEqual({
+      trigger: "step-count",
+      stepCount: 15,
+    });
+  });
+
+  test("shouldEmitReflectionReminder respects off and step-count triggers", () => {
+    expect(shouldEmitReflectionReminder(15, { trigger: "off", stepCount: 15 })).toBe(false);
+    expect(shouldEmitReflectionReminder(15, { trigger: "step-count", stepCount: 15 })).toBe(true);
+    expect(shouldEmitReflectionReminder(14, { trigger: "step-count", stepCount: 15 })).toBe(false);
+  });
+
+  test("shouldEmitReflectionReminder respects compaction-event trigger", () => {
+    expect(
+      shouldEmitReflectionReminder(99, { trigger: "compaction-event", stepCount: 15 }, false)
+    ).toBe(false);
+    expect(
+      shouldEmitReflectionReminder(99, { trigger: "compaction-event", stepCount: 15 }, true)
+    ).toBe(true);
+  });
+
+  test("formatReflectionSettings summarizes modes", () => {
+    expect(formatReflectionSettings({ trigger: "off", stepCount: 15 })).toBe("off");
+    expect(formatReflectionSettings({ trigger: "step-count", stepCount: 5 })).toBe(
+      "step-count (5 turns)"
+    );
+    expect(formatReflectionSettings({ trigger: "compaction-event", stepCount: 8 })).toContain(
+      "compaction-event"
+    );
+  });
+});
 
 import { execSync } from "node:child_process";
 import { createWorktree, mergeWorktree, PERSONA_PRESETS, type WorktreeInfo } from "./index";
@@ -1110,10 +1197,9 @@ ${systemContent}
   });
 
   test("reflection reminder fires at correct interval", () => {
-    const interval = 15;
     const fired: number[] = [];
     for (let turn = 1; turn <= 50; turn++) {
-      if (interval > 0 && turn > 0 && turn % interval === 0) {
+      if (shouldEmitReflectionReminder(turn, { trigger: "step-count", stepCount: 15 })) {
         fired.push(turn);
       }
     }

@@ -50,17 +50,18 @@ Memory is stored as markdown files with YAML frontmatter in `.pi/memory/` (a sep
 
 ## Commands
 
-| Command            | Description                           |
-| ------------------ | ------------------------------------- |
-| `/memory`          | Show tree, status, and recent history |
-| `/init`            | Initialize or re-analyze memory       |
-| `/remember [text]` | Explicitly save something to memory   |
-| `/memory-diff`     | Show uncommitted changes              |
-| `/memory-backup`   | Create a timestamped backup           |
-| `/memory-backups`  | List available backups                |
-| `/memory-restore`  | Restore from a backup                 |
-| `/memory-export`   | Export memory to a directory          |
-| `/memory-import`   | Import memory from another directory  |
+| Command            | Description                                          |
+| ------------------ | ---------------------------------------------------- |
+| `/memory`          | Show tree, status, recent history, and reminder mode |
+| `/sleeptime`       | Show or configure memory reminder triggers           |
+| `/init`            | Initialize or re-analyze memory                      |
+| `/remember [text]` | Explicitly save something to memory                  |
+| `/memory-diff`     | Show uncommitted changes                             |
+| `/memory-backup`   | Create a timestamped backup                          |
+| `/memory-backups`  | List available backups                               |
+| `/memory-restore`  | Restore from a backup                                |
+| `/memory-export`   | Export memory to a directory                         |
+| `/memory-import`   | Import memory from another directory                 |
 
 ## Bundled skills
 
@@ -68,17 +69,29 @@ Memory is stored as markdown files with YAML frontmatter in `.pi/memory/` (a sep
 - `defragmenting-memory` — split/clean memory blocks into focused files
 - `searching-memory` — fast browse/search/read/sync workflows for daily usage
 
+## Reminder behavior
+
+Inspired by Letta's memory reminder model, pi-context-repo now supports configurable memory check triggers:
+
+- **`step-count`** — remind every _N_ turns (`15` by default)
+- **`compaction-event`** — remind after an auto-compaction event
+- **`off`** — disable automatic reminders; use `/remember` manually
+
+Use `/sleeptime status`, `/sleeptime step-count 10`, `/sleeptime compaction-event`, or `/sleeptime off` to manage the mode.
+
+Memory reminders are injected as **system reminders**, not user messages. They are cues to silently consolidate memory when useful — the agent should apply the information naturally rather than narrating "I remembered..." unless the user explicitly invoked `/remember`.
+
 ## UI
 
 - **Status widget** shows uncommitted/unpushed counts in pi footer
-- **Sync reminder** in system prompt when changes need committing/pushing
-- **Reflection reminder** every 15 turns prompting memory consolidation
+- **Sync reminder** appears in the system prompt when changes need committing/pushing
+- **Memory check reminder** can fire on step count or compaction events
 - **Bounded tree rendering** avoids prompt blowups on very large memory repos
 - **Drift detection** warns about legacy/orphan memory fragments in system prompt
 
 ## Design
 
-Adapted from Letta Code's [memoryGit.ts](https://github.com/letta-ai/letta-code/blob/main/src/agent/memoryGit.ts) and [Context Repositories](https://docs.letta.com/letta-code/memory) concept:
+Adapted from Letta Code's [memoryGit.ts](https://github.com/letta-ai/letta-code/blob/main/src/agent/memoryGit.ts), [memoryFilesystem.ts](https://github.com/letta-ai/letta-code/blob/main/src/agent/memoryFilesystem.ts), and [memoryReminder.ts](https://github.com/letta-ai/letta-code/blob/main/src/cli/helpers/memoryReminder.ts) along with the broader [Context Repositories](https://docs.letta.com/letta-code/memory) concept:
 
 - Files as memory units with metadata frontmatter
 - `system/` subdir always loaded (like Letta's pinned memory blocks)
