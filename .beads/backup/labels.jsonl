@@ -8,6 +8,11 @@
 {"issue_id":"dotfiles-3wzk.3","label":"pi"}
 {"issue_id":"dotfiles-3wzk.4","label":"commit-review"}
 {"issue_id":"dotfiles-3wzk.4","label":"pi"}
+{"issue_id":"dotfiles-8cbu","label":"cli"}
+{"issue_id":"dotfiles-8cbu","label":"homebrew"}
+{"issue_id":"dotfiles-8cbu","label":"insider"}
+{"issue_id":"dotfiles-8cbu","label":"nix-darwin"}
+{"issue_id":"dotfiles-8cbu","label":"obsidian"}
 {"issue_id":"dotfiles-abp0","label":"pi-fff"}
 {"issue_id":"dotfiles-abp0","label":"upstream"}
 {"issue_id":"dotfiles-cluk","label":"chore"}
