@@ -175,6 +175,8 @@
     "npm:pi-rtk",
     // Web research — clean fetch, pluggable search, scout subagent - https://github.com/iaptsiauri/pi-surf
     "npm:pi-surf",
+    // Programmatic Tool Calling (Python async orchestration) - https://github.com/cegersdoerfer/pi-ptc
+    "git:github.com/cegersdoerfer/pi-ptc",
     // Image attachments helper - https://www.npmjs.com/package/@jordyvd/pi-image-attachments
     "npm:@jordyvd/pi-image-attachments",
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
