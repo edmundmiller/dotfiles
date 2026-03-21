@@ -8,9 +8,62 @@
 }:
 let
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
+  obsidianOpRefs = {
+    emailRef = "op://Agents/Obsidian/Email";
+    passwordRef = "op://Agents/Obsidian/password";
+    itemRef = "op://Agents/Obsidian/Security/one-time password";
+    encryptionPasswordRef = "op://Agents/Obsidian/Security/Encryption Password";
+    tokenFile = "/etc/opnix-token";
+  };
+  millDocsVaultPath = "/home/emiller/mill-docs";
+  legacyMillDocsPath = "/home/emiller/sync/mill-docs";
+  millDocsDeviceName = "nuc-mill-docs";
+  obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT";
+  ob = "${pkgs.my.obsidian-headless}/bin/ob";
+  op = "${pkgs._1password-cli}/bin/op";
   qmd = pkgs.writeShellScriptBin "qmd" ''
     export NODE_LLAMA_CPP_GPU=off
     exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
+  '';
+
+  millDocsObsidianLoginScript = pkgs.writeShellScript "obsidian-sync-mill-docs-login" ''
+    set -euo pipefail
+    if ${ob} login 2>&1 | grep -q "Logged in"; then
+      echo "Using existing Obsidian Sync session from obsidian-sync.service"
+      exit 0
+    fi
+    echo "Obsidian Sync session not ready yet; start obsidian-sync.service first." >&2
+    exit 1
+  '';
+
+  millDocsObsidianSetupScript = pkgs.writeShellScript "obsidian-sync-mill-docs-setup" ''
+    set -euo pipefail
+    if ${ob} sync-list-local 2>/dev/null | grep -q '${millDocsVaultPath}'; then
+      echo "mill-docs vault already configured"
+      exit 0
+    fi
+    mkdir -p '${millDocsVaultPath}'
+    echo "Running sync-setup for mill-docs..."
+    ${ob} sync-setup \
+      --vault 'mill-docs' \
+      --path '${millDocsVaultPath}' \
+      --password "$(${op} read '${obsidianOpRefs.encryptionPasswordRef}')" \
+      --device-name '${millDocsDeviceName}'
+  '';
+
+  millDocsObsidianConfigScript = pkgs.writeShellScript "obsidian-sync-mill-docs-config" ''
+    set -euo pipefail
+    ${ob} sync-config \
+      --path '${millDocsVaultPath}' \
+      --mode bidirectional \
+      --device-name '${millDocsDeviceName}' \
+      --excluded-folders '${obsidianExcludedFolders}'
+  '';
+
+  millDocsObsidianSyncScript = pkgs.writeShellScript "obsidian-sync-mill-docs-start" ''
+    set -euo pipefail
+    rm -rf '${millDocsVaultPath}/.obsidian/.sync.lock'
+    exec ${ob} sync --path '${millDocsVaultPath}' --continuous
   '';
 
   linearTokenRefreshScript = pkgs.writeShellScript "linear-token-refresh" ''
@@ -416,13 +469,7 @@ in
       obsidian-sync = {
         enable = true;
         mode = "desktop"; # bidirectional — agents edit vault files on NUC
-        op = {
-          emailRef = "op://Agents/Obsidian/Email";
-          passwordRef = "op://Agents/Obsidian/password";
-          itemRef = "op://Agents/Obsidian/Security/one-time password";
-          encryptionPasswordRef = "op://Agents/Obsidian/Security/Encryption Password";
-          tokenFile = "/etc/opnix-token";
-        };
+        op = obsidianOpRefs;
         healthcheck = {
           enable = true;
           pingUrl = "https://hc-ping.com/1be68603-d0da-4a8a-9885-0461985d977f";
@@ -517,6 +564,69 @@ in
       RemainAfterExit = true;
       ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:openclaw --https=443 http://127.0.0.1:18789 && exit 0; sleep 1; done; exit 1\"'";
       ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:openclaw || true'";
+    };
+  };
+
+  systemd.tmpfiles.rules = [
+    "d ${millDocsVaultPath} 0755 emiller users -"
+  ];
+
+  system.activationScripts.relocateMillDocsVault = {
+    text = ''
+      LEGACY_PATH="${legacyMillDocsPath}"
+      TARGET_PATH="${millDocsVaultPath}"
+      mkdir -p /home/emiller /home/emiller/sync
+
+      if [ -d "$LEGACY_PATH" ] && [ ! -L "$LEGACY_PATH" ] && [ ! -e "$TARGET_PATH" ]; then
+        mv "$LEGACY_PATH" "$TARGET_PATH"
+      fi
+
+      if [ -e "$TARGET_PATH" ]; then
+        if [ -e "$LEGACY_PATH" ] || [ -L "$LEGACY_PATH" ]; then
+          if [ ! -L "$LEGACY_PATH" ] || [ "$(readlink -f "$LEGACY_PATH")" != "$TARGET_PATH" ]; then
+            rm -rf "$LEGACY_PATH"
+          fi
+        fi
+        ln -sfn "$TARGET_PATH" "$LEGACY_PATH"
+        chown -h emiller:users "$LEGACY_PATH"
+        chown -R emiller:users "$TARGET_PATH"
+      fi
+    '';
+  };
+
+  systemd.services.obsidian-sync-mill-docs = {
+    description = "Obsidian Headless Sync (mill-docs)";
+    after = [
+      "network-online.target"
+      "obsidian-sync-op-env.service"
+      "obsidian-sync.service"
+    ];
+    requires = [ "obsidian-sync-op-env.service" ];
+    wants = [
+      "network-online.target"
+      "obsidian-sync.service"
+    ];
+    wantedBy = [ "multi-user.target" ];
+    unitConfig.JoinsNamespaceOf = "obsidian-sync.service";
+
+    serviceConfig = {
+      Type = "simple";
+      User = "emiller";
+      Group = "users";
+      ExecStartPre = [
+        "${millDocsObsidianLoginScript}"
+        "${millDocsObsidianSetupScript}"
+        "${millDocsObsidianConfigScript}"
+      ];
+      ExecStart = "${millDocsObsidianSyncScript}";
+      Restart = "on-failure";
+      RestartSec = "30s";
+      EnvironmentFile = "/run/obsidian-sync-op.env";
+      Environment = "XDG_CONFIG_HOME=/tmp";
+      ProtectHome = "read-only";
+      ReadWritePaths = [ millDocsVaultPath ];
+      NoNewPrivileges = true;
+      PrivateTmp = true;
     };
   };
 
