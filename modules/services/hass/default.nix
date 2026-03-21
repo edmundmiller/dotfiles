@@ -71,6 +71,51 @@ let
       hash = "sha256-4c5Yc+AaX4cNMnS8dMSmPAHVkWm3oAajk4i8NArlatQ=";
     };
   };
+
+  # pypura - upstream Python client library required by the Pura integration
+  pypura = pkgs.python3Packages.buildPythonPackage rec {
+    pname = "pypura";
+    version = "2.1.1";
+    pyproject = true;
+
+    src = pkgs.python3Packages.fetchPypi {
+      inherit pname version;
+      hash = "sha256-hm38Y0UsE8ddXauyTEFY41IAxepYrlkhNwnM2f+J2QU=";
+    };
+
+    build-system = with pkgs.python3Packages; [
+      poetry-core
+      poetry-dynamic-versioning
+    ];
+
+    dependencies = with pkgs.python3Packages; [
+      aiohttp
+      boto3
+      pycognito
+    ];
+
+    # Circular dev dependency on pytest-cov pulls in pytest via extras.
+    doCheck = false;
+  };
+
+  # Pura - smart fragrance diffuser integration
+  # https://github.com/natekspencer/ha-pura
+  pura-integration = pkgs.buildHomeAssistantComponent {
+    owner = "natekspencer";
+    domain = "pura";
+    version = "1.5.3";
+    src = pkgs.fetchFromGitHub {
+      owner = "natekspencer";
+      repo = "ha-pura";
+      tag = "1.5.3";
+      hash = "sha256-SdYBplUgkOghXUflS5tNE4Ix8Ln5VHNKuEIxm0OlZeI=";
+    };
+    dependencies = with pkgs.python3Packages; [
+      deepdiff
+      ical
+      pypura
+    ];
+  };
 in
 {
   imports = [
@@ -78,6 +123,7 @@ in
     ./_domains/ambient.nix
     ./_domains/aranet.nix
     ./_domains/conversation.nix
+    ./_domains/pura.nix
     ./_domains/lighting.nix
     ./_domains/modes.nix
     ./_domains/sleep
@@ -165,6 +211,7 @@ in
           hacs
           eight-sleep
           openclaw-integration
+          pura-integration
         ]
         ++ cfg.customComponents;
         inherit (cfg) customLovelaceModules;
