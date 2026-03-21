@@ -186,9 +186,9 @@
     "npm:@jordyvd/pi-openai-compaction",
     // Codex profile/model tuning - https://www.npmjs.com/package/pi-codex-profile
     "npm:pi-codex-profile",
-    // Bash tool authority: keep pi-non-interactive as the sole `bash` provider
-    // Conflict note: pi-bash-live-view also registers tool "bash"; keep disabled unless pi-non-interactive is removed
-    // "git:github.com/lucasmeijer/pi-bash-live-view",
+    // Live bash output view enhancements - vendored local copy
+    // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view
+    "~/.config/dotfiles/pi-packages/pi-bash-live-view",
     // Terminal/UI animations - https://www.npmjs.com/package/pi-animations
     "npm:pi-animations",
     // Image attachments helper - https://www.npmjs.com/package/@jordyvd/pi-image-attachments
