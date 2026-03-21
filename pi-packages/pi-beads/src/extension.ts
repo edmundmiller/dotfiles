@@ -353,8 +353,8 @@ export default function registerExtension(pi: ExtensionAPI) {
     }
   }
 
-  pi.registerCommand("tasks", {
-    description: "Open task list",
+  pi.registerCommand("beads-tasks", {
+    description: "Open beads task list",
     handler: async (_rawArgs, ctx) => {
       if (!ctx.hasUI) return;
       await browseTasks(ctx);
