@@ -211,6 +211,13 @@ in
       "https://nuc.cinnamon-rooster.ts.net"
     ];
 
+    # Explicit Chromium path for NixOS so OpenClaw browser auto-detect doesn't miss it.
+    # Keep headless on for server operation.
+    programs.openclaw.config.browser = {
+      executablePath = "/run/current-system/sw/bin/chromium";
+      headless = true;
+    };
+
     # linear-agent-bridge gateway extension config
     programs.openclaw.config.plugins.entries.linear-agent-bridge = {
       enabled = true;
