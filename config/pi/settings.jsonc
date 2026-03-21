@@ -117,8 +117,9 @@
     "npm:@prinova/pi-github-tools",
     // Read tool structural maps for large files - https://github.com/Whamp/pi-read-map
     "npm:pi-read-map",
-    // Task management UI (ctrl+x) - beads (bd) integration
-    "~/.config/dotfiles/pi-packages/pi-beads",
+    // Task management authority: use @tintinweb/pi-tasks for /tasks + Task* tools
+    // Conflict note: pi-beads also registers /tasks; keep disabled unless pi-tasks is removed
+    // "~/.config/dotfiles/pi-packages/pi-beads",
 
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
     "npm:@marckrenn/pi-sub-bar",
@@ -185,8 +186,9 @@
     "npm:@jordyvd/pi-openai-compaction",
     // Codex profile/model tuning - https://www.npmjs.com/package/pi-codex-profile
     "npm:pi-codex-profile",
-    // Live bash output view enhancements - https://github.com/lucasmeijer/pi-bash-live-view
-    "git:github.com/lucasmeijer/pi-bash-live-view",
+    // Bash tool authority: keep pi-non-interactive as the sole `bash` provider
+    // Conflict note: pi-bash-live-view also registers tool "bash"; keep disabled unless pi-non-interactive is removed
+    // "git:github.com/lucasmeijer/pi-bash-live-view",
     // Terminal/UI animations - https://www.npmjs.com/package/pi-animations
     "npm:pi-animations",
     // Image attachments helper - https://www.npmjs.com/package/@jordyvd/pi-image-attachments

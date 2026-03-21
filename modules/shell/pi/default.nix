@@ -163,22 +163,52 @@ let
   piSettingsStripped = lib.concatStringsSep "\n" piSettingsClean;
 
   # Parse, validate, and optionally inject extra packages at Nix eval time
-  piSettingsValidated =
+  piSettingsParsed =
     let
       parsed = builtins.tryEval (builtins.fromJSON piSettingsStripped);
     in
     if !parsed.success then
       builtins.throw "pi settings.jsonc produced invalid JSON after stripping comments/trailing commas. Run: nix eval --expr 'builtins.fromJSON (builtins.readFile ./result-settings.json)' to debug."
     else
-      let
-        settings = parsed.value;
-        withExtras =
-          if cfg.extraPackages == [ ] then
-            settings
-          else
-            settings // { packages = settings.packages ++ cfg.extraPackages; };
-      in
-      builtins.toJSON withExtras;
+      parsed.value;
+
+  piSettingsWithExtras =
+    if cfg.extraPackages == [ ] then
+      piSettingsParsed
+    else
+      piSettingsParsed // { packages = piSettingsParsed.packages ++ cfg.extraPackages; };
+
+  piSettingsPackageSources = map (
+    pkg:
+    if builtins.isString pkg then
+      pkg
+    else if builtins.isAttrs pkg && pkg ? source then
+      pkg.source
+    else
+      ""
+  ) piSettingsWithExtras.packages;
+
+  hasPiPackage = source: builtins.elem source piSettingsPackageSources;
+
+  # Guardrails against known duplicate command/tool providers.
+  # These collisions currently fail extension loading at startup.
+  piConflictAssertions = [
+    {
+      assertion =
+        !(hasPiPackage "~/.config/dotfiles/pi-packages/pi-beads" && hasPiPackage "npm:@tintinweb/pi-tasks");
+      message = "Pi package conflict: both pi-beads and @tintinweb/pi-tasks register /tasks. Keep exactly one authoritative /tasks provider.";
+    }
+    {
+      assertion =
+        !(
+          hasPiPackage "~/.config/dotfiles/pi-packages/pi-non-interactive"
+          && hasPiPackage "git:github.com/lucasmeijer/pi-bash-live-view"
+        );
+      message = "Pi package conflict: both pi-non-interactive and pi-bash-live-view register tool 'bash'. Keep exactly one authoritative bash provider.";
+    }
+  ];
+
+  piSettingsValidated = builtins.toJSON piSettingsWithExtras;
 in
 {
   options.modules.shell.pi = {
@@ -196,6 +226,8 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = piConflictAssertions;
+
     # When Ghostty is enabled, add pi-specific keybindings
     # mkAfter ensures pi's shift+enter binding wins over opencode's
     modules.desktop.term.ghostty.keybindingFiles = mkIf ghosttyCfg.enable (mkAfter [
