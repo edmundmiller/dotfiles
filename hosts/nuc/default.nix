@@ -216,6 +216,7 @@ in
     programs.openclaw.config.browser = {
       executablePath = "/run/current-system/sw/bin/chromium";
       headless = true;
+      defaultProfile = "openclaw";
     };
 
     # linear-agent-bridge gateway extension config
