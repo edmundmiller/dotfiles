@@ -73,3 +73,7 @@ config.codekit
 ############################
 **/.claude/settings.local.json
 CLAUDE.local.md
+
+# Pi local runtime files #
+##########################
+**/.pi/tasks/
