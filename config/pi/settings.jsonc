@@ -177,6 +177,18 @@
     "npm:pi-surf",
     // Programmatic Tool Calling (Python async orchestration) - https://github.com/cegersdoerfer/pi-ptc
     "git:github.com/cegersdoerfer/pi-ptc",
+    // Interlude UI/UX enhancements - https://github.com/mjakl/pi-interlude
+    "git:github.com/mjakl/pi-interlude",
+    // Token burden visualization/management - https://github.com/Whamp/pi-token-burden
+    "git:github.com/Whamp/pi-token-burden",
+    // OpenAI compaction controls - https://www.npmjs.com/package/@jordyvd/pi-openai-compaction
+    "npm:@jordyvd/pi-openai-compaction",
+    // Codex profile/model tuning - https://www.npmjs.com/package/pi-codex-profile
+    "npm:pi-codex-profile",
+    // Live bash output view enhancements - https://github.com/lucasmeijer/pi-bash-live-view
+    "git:github.com/lucasmeijer/pi-bash-live-view",
+    // Terminal/UI animations - https://www.npmjs.com/package/pi-animations
+    "npm:pi-animations",
     // Image attachments helper - https://www.npmjs.com/package/@jordyvd/pi-image-attachments
     "npm:@jordyvd/pi-image-attachments",
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
