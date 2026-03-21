@@ -13,7 +13,15 @@ import { tmpdir } from "node:os";
 import {
   type MemoryStatus,
   buildFrontmatter,
+  buildManualReflectionPrompt,
+  buildReflectionReminder,
+  buildReflectionTranscript,
+  getReflectionRuntimeDir,
+  getReflectionTriggerSource,
+  loadReflectionRuntimeState,
   loadSettings,
+  prepareReflectionBundle,
+  requestBackgroundReflectionLaunch,
   saveSettings,
   buildTree,
   resolveReflectionSettings,
@@ -29,6 +37,7 @@ import {
   statusWidget,
   stripManagedMemorySections,
   validateFrontmatter,
+  REFLECTION_LAUNCH_EVENT,
 } from "./index";
 
 // --- helpers ---
@@ -728,7 +737,9 @@ function createTestGitRepo(): string {
   scaffoldMemory(memDir);
   execSync("git init", { cwd: memDir });
   execSync("git add -A", { cwd: memDir });
-  execSync('git commit -m "init"', { cwd: memDir });
+  execSync('git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit -m "init"', {
+    cwd: memDir,
+  });
   installPreCommitHook(memDir);
   return memDir;
 }
@@ -825,7 +836,10 @@ describe("mergeWorktree", () => {
     const newFile = join(wt.path, "system", "merged-note.md");
     writeFileSync(newFile, "---\ndescription: Merged note\nlimit: 1000\n---\n\nMerged content.\n");
     execSync("git add -A", { cwd: wt.path });
-    execSync('git commit -m "add merged note"', { cwd: wt.path });
+    execSync(
+      'git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit -m "add merged note"',
+      { cwd: wt.path }
+    );
 
     const result = await mergeWorktree(pi, memDir, wt);
     expect(result.merged).toBe(true);
@@ -840,7 +854,10 @@ describe("mergeWorktree", () => {
 
     writeFileSync(join(wt.path, "temp.md"), "---\ndescription: Temp\nlimit: 500\n---\n\nTemp.\n");
     execSync("git add -A", { cwd: wt.path });
-    execSync('git commit -m "temp commit"', { cwd: wt.path });
+    execSync(
+      'git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit -m "temp commit"',
+      { cwd: wt.path }
+    );
 
     await mergeWorktree(pi, memDir, wt);
 
@@ -853,7 +870,10 @@ describe("mergeWorktree", () => {
 
     writeFileSync(join(wt.path, "branchtest.md"), "---\ndescription: B\nlimit: 500\n---\n\nB.\n");
     execSync("git add -A", { cwd: wt.path });
-    execSync('git commit -m "branch test"', { cwd: wt.path });
+    execSync(
+      'git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit -m "branch test"',
+      { cwd: wt.path }
+    );
 
     await mergeWorktree(pi, memDir, wt);
 
@@ -866,7 +886,10 @@ describe("mergeWorktree", () => {
 
     writeFileSync(join(wt.path, "nopush.md"), "---\ndescription: NP\nlimit: 500\n---\n\nNP.\n");
     execSync("git add -A", { cwd: wt.path });
-    execSync('git commit -m "no push"', { cwd: wt.path });
+    execSync(
+      'git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit -m "no push"',
+      { cwd: wt.path }
+    );
 
     const result = await mergeWorktree(pi, memDir, wt);
     expect(result.pushed).toBe(false);
@@ -958,7 +981,10 @@ describe("memory_delete logic", () => {
     );
     // Bypass pre-commit hook since it (correctly) rejects agent-set read_only
     execSync("git add -A", { cwd: memDir });
-    execSync('git commit --no-verify -m "add locked file"', { cwd: memDir });
+    execSync(
+      'git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit --no-verify -m "add locked file"',
+      { cwd: memDir }
+    );
 
     const content = readFileSync(roFile, "utf-8");
     const { frontmatter } = parseFrontmatter(content);
@@ -970,7 +996,10 @@ describe("memory_delete logic", () => {
     const target = join(memDir, "reference", "deleteme.md");
     writeFileSync(target, "---\ndescription: Delete me\nlimit: 1000\n---\n\nTemp.\n");
     execSync("git add -A", { cwd: memDir });
-    execSync('git commit -m "add deleteme"', { cwd: memDir });
+    execSync(
+      'git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit -m "add deleteme"',
+      { cwd: memDir }
+    );
 
     expect(existsSync(target)).toBe(true);
     rmSync(target);
@@ -985,7 +1014,10 @@ describe("memory_delete logic", () => {
     const target = join(memDir, "reference", "stageme.md");
     writeFileSync(target, "---\ndescription: Stage me\nlimit: 1000\n---\n\nStage.\n");
     execSync("git add -A", { cwd: memDir });
-    execSync('git commit -m "add stageme"', { cwd: memDir });
+    execSync(
+      'git -c commit.gpgsign=false -c user.name=test -c user.email=t@t commit -m "add stageme"',
+      { cwd: memDir }
+    );
 
     rmSync(target);
     execSync("git add reference/stageme.md", { cwd: memDir });
@@ -1211,6 +1243,129 @@ ${systemContent}
     const env = { MEMORY_DIR: memDir, PI_MEMORY_DIR: memDir };
     expect(env.MEMORY_DIR).toBe(memDir);
     expect(env.PI_MEMORY_DIR).toBe(memDir);
+  });
+});
+
+describe("reflection bundle helpers", () => {
+  test("getReflectionTriggerSource returns trigger kind", () => {
+    expect(getReflectionTriggerSource(15, { trigger: "step-count", stepCount: 15 })).toBe(
+      "step-count"
+    );
+    expect(
+      getReflectionTriggerSource(2, { trigger: "compaction-event", stepCount: 15 }, true)
+    ).toBe("compaction-event");
+    expect(getReflectionTriggerSource(2, { trigger: "off", stepCount: 15 })).toBeNull();
+  });
+
+  test("buildReflectionTranscript renders message and compaction entries", () => {
+    const transcript = buildReflectionTranscript([
+      { type: "message", message: { role: "user", content: "hello" } },
+      { type: "message", message: { role: "assistant", content: [{ type: "text", text: "hi" }] } },
+      { type: "compaction", summary: "Earlier turns compacted" },
+    ]);
+
+    expect(transcript).toContain("<user>");
+    expect(transcript).toContain("hello");
+    expect(transcript).toContain("<assistant>");
+    expect(transcript).toContain("Earlier turns compacted");
+  });
+
+  test("prepareReflectionBundle writes transcript, prompt, and runtime state", () => {
+    const memDir = tmpMemDir();
+    scaffoldMemory(memDir);
+
+    const bundle = prepareReflectionBundle(
+      memDir,
+      {
+        getSessionId: () => "session:1",
+        getSessionFile: () => "/tmp/session.jsonl",
+        getBranch: () => [
+          { type: "message", message: { role: "user", content: "remember this detail" } },
+          { type: "message", message: { role: "assistant", content: "I will." } },
+        ],
+      },
+      {
+        triggerSource: "step-count",
+        cwd: "/tmp/project",
+        memoryTree: ".pi/memory/\n└── system/",
+        systemContent: "<system/project.md>Notes</system/project.md>",
+      }
+    );
+
+    expect(existsSync(bundle.transcriptPath)).toBe(true);
+    expect(existsSync(bundle.promptPath)).toBe(true);
+    expect(readFileSync(bundle.transcriptPath, "utf-8")).toContain("remember this detail");
+    expect(readFileSync(bundle.promptPath, "utf-8")).toContain("trigger: step-count");
+    expect(bundle.sessionId).toBe("session_1");
+    expect(getReflectionRuntimeDir(memDir)).toContain("reflection-runtime");
+
+    const state = loadReflectionRuntimeState(memDir);
+    expect(state.latestBundle?.transcriptPath).toBe(bundle.transcriptPath);
+    expect(state.lastLaunchMode).toBe("prepared");
+
+    rmSync(memDir, { recursive: true, force: true });
+  });
+
+  test("requestBackgroundReflectionLaunch falls back when no listener accepts", () => {
+    const emitted: Array<{ channel: string; accepted: boolean }> = [];
+    const bundle = {
+      bundleId: "b1",
+      bundleDir: "/tmp/b1",
+      triggerSource: "step-count" as const,
+      createdAt: new Date().toISOString(),
+      sessionId: "s1",
+      sessionFile: "/tmp/session.jsonl",
+      transcriptPath: "/tmp/b1/transcript.md",
+      promptPath: "/tmp/b1/prompt.md",
+      metadataPath: "/tmp/b1/metadata.json",
+      memoryDir: "/tmp/.pi/memory",
+      entryCount: 2,
+    };
+    const eventBus = {
+      emit(channel: string, request: any) {
+        emitted.push({ channel, accepted: request.accepted });
+      },
+      on() {
+        return () => {};
+      },
+    };
+
+    const result = requestBackgroundReflectionLaunch(eventBus, bundle, "step-count");
+    expect(emitted[0]?.channel).toBe(REFLECTION_LAUNCH_EVENT);
+    expect(result.launched).toBe(false);
+    expect(result.mode).toBe("reminder-fallback");
+    expect(buildReflectionReminder(bundle)).toContain(bundle.transcriptPath);
+    expect(buildManualReflectionPrompt(bundle)).toContain(bundle.promptPath);
+  });
+
+  test("requestBackgroundReflectionLaunch reports accepted launch", () => {
+    const bundle = {
+      bundleId: "b2",
+      bundleDir: "/tmp/b2",
+      triggerSource: "manual" as const,
+      createdAt: new Date().toISOString(),
+      sessionId: "s2",
+      sessionFile: "/tmp/session.jsonl",
+      transcriptPath: "/tmp/b2/transcript.md",
+      promptPath: "/tmp/b2/prompt.md",
+      metadataPath: "/tmp/b2/metadata.json",
+      memoryDir: "/tmp/.pi/memory",
+      entryCount: 1,
+    };
+    const eventBus = {
+      emit(_channel: string, request: any) {
+        request.note("listener saw request");
+        request.accept("launched by test listener");
+      },
+      on() {
+        return () => {};
+      },
+    };
+
+    const result = requestBackgroundReflectionLaunch(eventBus, bundle, "manual");
+    expect(result.launched).toBe(true);
+    expect(result.mode).toBe("background-subagent");
+    expect(result.notes).toEqual(["listener saw request", "launched by test listener"]);
   });
 });
 

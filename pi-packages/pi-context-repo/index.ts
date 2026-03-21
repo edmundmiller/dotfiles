@@ -61,6 +61,10 @@ const TREE_LIMIT_DEFAULTS = {
   maxChars: 20_000,
   maxChildrenPerDir: 50,
 } as const;
+const REFLECTION_RUNTIME_DIR_NAME = "reflection-runtime";
+const REFLECTION_TRANSCRIPT_ENTRY_LIMIT = 80;
+const REFLECTION_TRANSCRIPT_CHAR_LIMIT = 20_000;
+export const REFLECTION_LAUNCH_EVENT = "pi-context-repo:reflection-launch";
 
 // --- Frontmatter helpers ---
 
@@ -582,7 +586,7 @@ async function git(
   cwd: string,
   args: string[]
 ): Promise<{ stdout: string; stderr: string }> {
-  return pi.exec("git", ["-C", cwd, ...args]);
+  return pi.exec("git", ["-c", "commit.gpgsign=false", "-C", cwd, ...args]);
 }
 
 async function isGitRepo(pi: ExtensionAPI, dir: string): Promise<boolean> {
@@ -748,6 +752,370 @@ The user has invoked /remember, requesting you commit something to memory.
 - Match existing file formatting
 - If unclear, ask the user to clarify
 </system-reminder>`;
+
+// --- Reflection bundles / launch contract ---
+
+export type ReflectionTriggerSource = "manual" | "step-count" | "compaction-event";
+
+interface ReflectionSessionManagerLike {
+  getSessionId(): string;
+  getSessionFile(): string | undefined;
+  getBranch(fromId?: string): unknown[];
+}
+
+export interface ReflectionBundle {
+  bundleId: string;
+  bundleDir: string;
+  triggerSource: ReflectionTriggerSource;
+  createdAt: string;
+  sessionId: string;
+  sessionFile?: string;
+  transcriptPath: string;
+  promptPath: string;
+  metadataPath: string;
+  memoryDir: string;
+  entryCount: number;
+}
+
+export interface ReflectionRuntimeState {
+  latestBundle?: ReflectionBundle;
+  lastLaunchMode?: "prepared" | "background-subagent" | "reminder-fallback";
+  lastLaunchNotes?: string[];
+}
+
+export interface ReflectionLaunchRequest {
+  type: "background-reflection-launch";
+  triggerSource: ReflectionTriggerSource;
+  bundle: ReflectionBundle;
+  notes: string[];
+  accepted: boolean;
+  accept: (note?: string) => void;
+  note: (message: string) => void;
+}
+
+export interface ReflectionLaunchResult {
+  launched: boolean;
+  mode: "background-subagent" | "reminder-fallback";
+  bundle: ReflectionBundle;
+  notes: string[];
+}
+
+export interface ReflectionPromptInput {
+  transcriptPath: string;
+  promptPath?: string;
+  memoryDir: string;
+  cwd?: string;
+  sessionFile?: string;
+  triggerSource: ReflectionTriggerSource;
+  memoryTree?: string;
+  systemContent?: string;
+}
+
+function normalizePromptPath(path: string | undefined): string | undefined {
+  return path?.replace(/\\/g, "/");
+}
+
+export function getReflectionRuntimeDir(memDir: string): string {
+  return join(memDir, "..", REFLECTION_RUNTIME_DIR_NAME);
+}
+
+function getReflectionStatePath(memDir: string): string {
+  return join(getReflectionRuntimeDir(memDir), "state.json");
+}
+
+function sanitizePathSegment(segment: string): string {
+  const sanitized = segment.replace(/[^a-zA-Z0-9._-]/g, "_").trim();
+  return sanitized || "session";
+}
+
+export function loadReflectionRuntimeState(memDir: string): ReflectionRuntimeState {
+  const statePath = getReflectionStatePath(memDir);
+  if (!existsSync(statePath)) return {};
+  try {
+    return JSON.parse(readFileSync(statePath, "utf-8")) as ReflectionRuntimeState;
+  } catch {
+    return {};
+  }
+}
+
+function saveReflectionRuntimeState(memDir: string, state: ReflectionRuntimeState): void {
+  const runtimeDir = getReflectionRuntimeDir(memDir);
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(getReflectionStatePath(memDir), JSON.stringify(state, null, 2) + "\n");
+}
+
+function truncateTranscript(text: string, maxChars = REFLECTION_TRANSCRIPT_CHAR_LIMIT): string {
+  if (text.length <= maxChars) return text;
+  const suffix = "\n\n[Transcript truncated by pi-context-repo reflection bundle]\n";
+  return text.slice(0, Math.max(0, maxChars - suffix.length)).trimEnd() + suffix;
+}
+
+function contentToText(content: unknown): string {
+  if (content == null) return "";
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => contentToText(part))
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+  }
+  if (typeof content === "object") {
+    const obj = content as Record<string, unknown>;
+    if (typeof obj.text === "string") return obj.text;
+    if (typeof obj.content === "string") return obj.content;
+    if (Array.isArray(obj.content)) return contentToText(obj.content);
+    if (typeof obj.input === "string") return obj.input;
+    if (typeof obj.output === "string") return obj.output;
+    if (typeof obj.result === "string") return obj.result;
+    if (typeof obj.args === "string") return obj.args;
+    if (typeof obj.name === "string" && typeof obj.arguments === "string") {
+      return `${obj.name}(${obj.arguments})`;
+    }
+  }
+  try {
+    return JSON.stringify(content, null, 2);
+  } catch {
+    return String(content);
+  }
+}
+
+function renderTranscriptEntry(entry: unknown): string | null {
+  if (!entry || typeof entry !== "object") return null;
+  const record = entry as Record<string, unknown>;
+  if (record.type === "message") {
+    const message = (record.message ?? {}) as Record<string, unknown>;
+    const role = typeof message.role === "string" ? message.role : "message";
+    const body = contentToText(message.content).trim() || "(no text content)";
+    return `<${role}>\n${body}\n</${role}>`;
+  }
+
+  if (record.type === "custom_message") {
+    const customType = typeof record.customType === "string" ? record.customType : "custom";
+    const body = contentToText(record.content).trim() || "(no text content)";
+    return `<custom-message type="${customType}">\n${body}\n</custom-message>`;
+  }
+
+  if (record.type === "compaction") {
+    const summary = typeof record.summary === "string" ? record.summary.trim() : "";
+    if (!summary) return null;
+    return `<compaction-summary>\n${summary}\n</compaction-summary>`;
+  }
+
+  if (record.type === "branch_summary") {
+    const summary = typeof record.summary === "string" ? record.summary.trim() : "";
+    if (!summary) return null;
+    return `<branch-summary>\n${summary}\n</branch-summary>`;
+  }
+
+  return null;
+}
+
+export function buildReflectionTranscript(
+  entries: unknown[],
+  options: { maxEntries?: number; maxChars?: number } = {}
+): string {
+  const maxEntries = options.maxEntries ?? REFLECTION_TRANSCRIPT_ENTRY_LIMIT;
+  const maxChars = options.maxChars ?? REFLECTION_TRANSCRIPT_CHAR_LIMIT;
+  const transcriptEntries = entries
+    .map((entry) => renderTranscriptEntry(entry))
+    .filter((entry): entry is string => Boolean(entry));
+  const boundedEntries = transcriptEntries.slice(-maxEntries);
+  const lines = [
+    "# Reflection Transcript",
+    "",
+    "Prepared by pi-context-repo for Letta-style memory reflection.",
+    "",
+    ...boundedEntries.flatMap((entry) => [entry, ""]),
+  ];
+  return truncateTranscript(lines.join("\n").trimEnd(), maxChars);
+}
+
+export function buildReflectionPrompt(input: ReflectionPromptInput): string {
+  const lines: string[] = [];
+  const transcriptPath = normalizePromptPath(input.transcriptPath) || input.transcriptPath;
+  const promptPath = normalizePromptPath(input.promptPath);
+  const memoryDir = normalizePromptPath(input.memoryDir) || input.memoryDir;
+  const sessionFile = normalizePromptPath(input.sessionFile);
+
+  if (input.cwd) {
+    lines.push(`Working directory: ${normalizePromptPath(input.cwd)}`);
+    lines.push("");
+  }
+
+  lines.push(
+    `A Letta-style reflection bundle has been prepared for trigger: ${input.triggerSource}.`,
+    `Transcript: ${transcriptPath}`,
+    `Memory directory: ${memoryDir}`
+  );
+
+  if (promptPath) {
+    lines.push(`Prompt file: ${promptPath}`);
+  }
+
+  if (sessionFile) {
+    lines.push(`Session file: ${sessionFile}`);
+  }
+
+  lines.push(
+    "",
+    "Review the transcript and update memory files if it would improve future sessions.",
+    "Use system/ for always-needed context, and reference/ or other folders for lower-priority material.",
+    "Be selective: fewer meaningful updates are better than many weak ones.",
+    "Commit memory changes if you make them."
+  );
+
+  if (input.memoryTree) {
+    lines.push("", "Current memory tree:", "```", input.memoryTree, "```");
+  }
+
+  if (input.systemContent) {
+    lines.push("", "Pinned memory snapshot:", input.systemContent);
+  }
+
+  return lines.join("\n");
+}
+
+export function buildReflectionReminder(bundle?: ReflectionBundle): string {
+  if (!bundle) {
+    return MEMORY_CHECK_REMINDER;
+  }
+
+  const transcriptPath = normalizePromptPath(bundle.transcriptPath) || bundle.transcriptPath;
+  const promptPath = normalizePromptPath(bundle.promptPath) || bundle.promptPath;
+  const suffix = `\n\nReflection bundle prepared for deeper review:\n- Trigger: ${bundle.triggerSource}\n- Transcript: \`${transcriptPath}\`\n- Prompt: \`${promptPath}\`\nUse the bundle if you want a fuller transcript before deciding what to store.`;
+  return MEMORY_CHECK_REMINDER.replace("</system-reminder>", `${suffix}\n</system-reminder>`);
+}
+
+export function buildManualReflectionPrompt(bundle: ReflectionBundle): string {
+  const transcriptPath = normalizePromptPath(bundle.transcriptPath) || bundle.transcriptPath;
+  const promptPath = normalizePromptPath(bundle.promptPath) || bundle.promptPath;
+  const memoryDir = normalizePromptPath(bundle.memoryDir) || bundle.memoryDir;
+  return `<system-reminder>
+REFLECTION RUN: A reflection bundle has been prepared for this conversation.
+
+- Transcript: \`${transcriptPath}\`
+- Prompt: \`${promptPath}\`
+- Memory directory: \`${memoryDir}\`
+
+Review the prepared transcript, update memory if it would improve future sessions, and commit if you make changes.
+</system-reminder>`;
+}
+
+export function getReflectionTriggerSource(
+  turnCount: number,
+  settings: ReflectionSettings,
+  pendingCompactionReminder = false
+): ReflectionTriggerSource | null {
+  if (settings.trigger === "off") {
+    return null;
+  }
+
+  if (settings.trigger === "compaction-event") {
+    return pendingCompactionReminder ? "compaction-event" : null;
+  }
+
+  return turnCount > 0 && turnCount % settings.stepCount === 0 ? "step-count" : null;
+}
+
+export function prepareReflectionBundle(
+  memDir: string,
+  sessionManager: ReflectionSessionManagerLike,
+  options: {
+    triggerSource: ReflectionTriggerSource;
+    cwd?: string;
+    memoryTree?: string;
+    systemContent?: string;
+    maxEntries?: number;
+    maxChars?: number;
+  }
+): ReflectionBundle {
+  const sessionId = sanitizePathSegment(sessionManager.getSessionId());
+  const bundleId = `${formatBackupTimestamp()}-${options.triggerSource}`;
+  const runtimeDir = getReflectionRuntimeDir(memDir);
+  const bundleDir = join(runtimeDir, sessionId, bundleId);
+  mkdirSync(bundleDir, { recursive: true });
+
+  const entries = sessionManager.getBranch();
+  const transcriptPath = join(bundleDir, "transcript.md");
+  const promptPath = join(bundleDir, "prompt.md");
+  const metadataPath = join(bundleDir, "metadata.json");
+  const sessionFile = sessionManager.getSessionFile();
+  const transcript = buildReflectionTranscript(entries, {
+    maxEntries: options.maxEntries,
+    maxChars: options.maxChars,
+  });
+  writeFileSync(transcriptPath, transcript + (transcript.endsWith("\n") ? "" : "\n"));
+
+  const prompt = buildReflectionPrompt({
+    transcriptPath,
+    promptPath,
+    memoryDir: memDir,
+    cwd: options.cwd,
+    sessionFile,
+    triggerSource: options.triggerSource,
+    memoryTree: options.memoryTree,
+    systemContent: options.systemContent,
+  });
+  writeFileSync(promptPath, prompt + (prompt.endsWith("\n") ? "" : "\n"));
+
+  const bundle: ReflectionBundle = {
+    bundleId,
+    bundleDir,
+    triggerSource: options.triggerSource,
+    createdAt: new Date().toISOString(),
+    sessionId,
+    sessionFile,
+    transcriptPath,
+    promptPath,
+    metadataPath,
+    memoryDir: memDir,
+    entryCount: entries.length,
+  };
+
+  writeFileSync(metadataPath, JSON.stringify(bundle, null, 2) + "\n");
+  saveReflectionRuntimeState(memDir, {
+    ...loadReflectionRuntimeState(memDir),
+    latestBundle: bundle,
+    lastLaunchMode: "prepared",
+    lastLaunchNotes: [],
+  });
+
+  return bundle;
+}
+
+export function requestBackgroundReflectionLaunch(
+  eventBus: Pick<ExtensionAPI, "events">["events"],
+  bundle: ReflectionBundle,
+  triggerSource: ReflectionTriggerSource
+): ReflectionLaunchResult {
+  let accepted = false;
+  const notes: string[] = [];
+  const request: ReflectionLaunchRequest = {
+    type: "background-reflection-launch",
+    triggerSource,
+    bundle,
+    notes,
+    accepted: false,
+    accept(note) {
+      accepted = true;
+      request.accepted = true;
+      if (note) notes.push(note);
+    },
+    note(message) {
+      if (message) notes.push(message);
+    },
+  };
+
+  eventBus.emit(REFLECTION_LAUNCH_EVENT, request);
+
+  return {
+    launched: accepted,
+    mode: accepted ? "background-subagent" : "reminder-fallback",
+    bundle,
+    notes: [...notes],
+  };
+}
 
 // --- Worktree helpers ---
 
@@ -971,15 +1339,7 @@ export function shouldEmitReflectionReminder(
   settings: ReflectionSettings,
   pendingCompactionReminder = false
 ): boolean {
-  if (settings.trigger === "off") {
-    return false;
-  }
-
-  if (settings.trigger === "compaction-event") {
-    return pendingCompactionReminder;
-  }
-
-  return turnCount > 0 && turnCount % settings.stepCount === 0;
+  return getReflectionTriggerSource(turnCount, settings, pendingCompactionReminder) !== null;
 }
 
 export function formatReflectionSettings(settings: ReflectionSettings): string {
@@ -1210,13 +1570,18 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
     }
   });
 
-  pi.on("before_agent_start", async (event) => {
+  pi.on("before_agent_start", async (event, ctx) => {
     if (!initialized || !existsSync(memDir)) return;
 
     turnCount++;
 
     const tree = buildTree(memDir);
     const systemContent = loadSystemFiles(memDir);
+    const reflectionTriggerSource = getReflectionTriggerSource(
+      turnCount,
+      reflectionSettings,
+      pendingCompactionReminder
+    );
 
     // Detect and warn about prompt drift
     const drifts = detectPromptDrift(event.systemPrompt);
@@ -1288,9 +1653,34 @@ If pull/push fails with conflicts:
       // ignore
     }
 
-    // Periodic reflection reminder
-    if (shouldEmitReflectionReminder(turnCount, reflectionSettings, pendingCompactionReminder)) {
-      memoryBlock += "\n" + MEMORY_CHECK_REMINDER + "\n";
+    // Letta-style reflection handoff: prepare a transcript bundle, try optional
+    // background launch via the extension event bus, and fall back to a system reminder.
+    if (reflectionTriggerSource) {
+      try {
+        const reflectionBundle = prepareReflectionBundle(memDir, ctx.sessionManager, {
+          triggerSource: reflectionTriggerSource,
+          cwd: ctx.cwd,
+          memoryTree: `${MEMORY_DIR_NAME}/\n${tree.join("\n")}`,
+          systemContent,
+        });
+        const launchResult = requestBackgroundReflectionLaunch(
+          pi.events,
+          reflectionBundle,
+          reflectionTriggerSource
+        );
+        saveReflectionRuntimeState(memDir, {
+          ...loadReflectionRuntimeState(memDir),
+          latestBundle: reflectionBundle,
+          lastLaunchMode: launchResult.mode,
+          lastLaunchNotes: launchResult.notes,
+        });
+
+        if (!launchResult.launched) {
+          memoryBlock += "\n" + buildReflectionReminder(reflectionBundle) + "\n";
+        }
+      } catch {
+        memoryBlock += "\n" + MEMORY_CHECK_REMINDER + "\n";
+      }
       pendingCompactionReminder = false;
     }
 
@@ -1817,9 +2207,21 @@ If pull/push fails with conflicts:
       const status = await getStatus(pi, memDir);
       const settings = loadSettings(memDir);
       const reminderSettings = resolveReflectionSettings(settings);
+      const reflectionState = loadReflectionRuntimeState(memDir);
 
       let output = `Context Repository (${MEMORY_DIR_NAME})\n\n`;
-      output += `Reminder mode: ${formatReflectionSettings(reminderSettings)}\n\n`;
+      output += `Reminder mode: ${formatReflectionSettings(reminderSettings)}\n`;
+      if (reflectionState.latestBundle) {
+        output +=
+          `Latest reflection bundle: ${reflectionState.latestBundle.triggerSource} @ ${reflectionState.latestBundle.createdAt}` +
+          `\nReflection launch mode: ${reflectionState.lastLaunchMode || "prepared"}` +
+          `\nTranscript: ${normalizePromptPath(reflectionState.latestBundle.transcriptPath)}` +
+          `\nPrompt: ${normalizePromptPath(reflectionState.latestBundle.promptPath)}`;
+        if (reflectionState.lastLaunchNotes?.length) {
+          output += `\nLaunch notes: ${reflectionState.lastLaunchNotes.join("; ")}`;
+        }
+      }
+      output += "\n\n";
       output += tree.join("\n") + "\n\n";
       if (status.dirty) {
         output += `${status.files.length} uncommitted change(s):\n${status.files.map((f) => `  ${f}`).join("\n")}`;
@@ -1916,6 +2318,47 @@ If pull/push fails with conflicts:
           "  off               — Disable automatic memory check reminders\n" +
           "  step-count <n>    — Remind every n turns\n" +
           "  compaction-event  — Remind after auto compaction",
+        "info"
+      );
+    },
+  });
+
+  pi.registerCommand("reflect", {
+    description:
+      "Prepare a Letta-style reflection bundle and launch background reflection if a compatible handler is installed",
+    handler: async (_args, ctx) => {
+      if (!initialized || !existsSync(memDir)) {
+        ctx.ui.notify("Context repo not initialized.", "warning");
+        return;
+      }
+
+      const tree = buildTree(memDir);
+      const systemContent = loadSystemFiles(memDir);
+      const bundle = prepareReflectionBundle(memDir, ctx.sessionManager, {
+        triggerSource: "manual",
+        cwd: ctx.cwd,
+        memoryTree: `${MEMORY_DIR_NAME}/\n${tree.join("\n")}`,
+        systemContent,
+      });
+      const launchResult = requestBackgroundReflectionLaunch(pi.events, bundle, "manual");
+      saveReflectionRuntimeState(memDir, {
+        ...loadReflectionRuntimeState(memDir),
+        latestBundle: bundle,
+        lastLaunchMode: launchResult.mode,
+        lastLaunchNotes: launchResult.notes,
+      });
+
+      if (launchResult.launched) {
+        ctx.ui.notify(
+          `Background reflection launched. Transcript: ${normalizePromptPath(bundle.transcriptPath)}`,
+          "info"
+        );
+        return;
+      }
+
+      pi.sendUserMessage(buildManualReflectionPrompt(bundle));
+      ctx.ui.notify(
+        `Prepared reflection bundle. Falling back to in-band reflection. Transcript: ${normalizePromptPath(bundle.transcriptPath)}`,
         "info"
       );
     },
