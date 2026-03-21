@@ -41,6 +41,7 @@ These automations have inline actions by design — do not refactor them into sc
 - `conversation.nix` — Voice/conversation config
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
 - `modes.nix` — DND, guest mode, everything_off script
+- `pura.nix` — Pura diffuser routines (arrive-home freshen script + automation)
 - `sleep/` — Full sleep/wake lifecycle: goodnight toggle, awake booleans, scenes (Winding Down → In Bed → Sleep → Good Morning), wake detection, Apple↔8Sleep sync. Per-person automations DRY'd via helpers. See `sleep/AGENTS.md`
 - `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
