@@ -50,18 +50,19 @@ Memory is stored as markdown files with YAML frontmatter in `.pi/memory/` (a sep
 
 ## Commands
 
-| Command            | Description                                          |
-| ------------------ | ---------------------------------------------------- |
-| `/memory`          | Show tree, status, recent history, and reminder mode |
-| `/sleeptime`       | Show or configure memory reminder triggers           |
-| `/init`            | Initialize or re-analyze memory                      |
-| `/remember [text]` | Explicitly save something to memory                  |
-| `/memory-diff`     | Show uncommitted changes                             |
-| `/memory-backup`   | Create a timestamped backup                          |
-| `/memory-backups`  | List available backups                               |
-| `/memory-restore`  | Restore from a backup                                |
-| `/memory-export`   | Export memory to a directory                         |
-| `/memory-import`   | Import memory from another directory                 |
+| Command            | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `/memory`          | Show tree, status, recent history, reminder mode, and latest reflection bundle |
+| `/sleeptime`       | Show or configure memory reminder triggers                                     |
+| `/reflect`         | Prepare a Letta-style reflection bundle and try background launch              |
+| `/init`            | Initialize or re-analyze memory                                                |
+| `/remember [text]` | Explicitly save something to memory                                            |
+| `/memory-diff`     | Show uncommitted changes                                                       |
+| `/memory-backup`   | Create a timestamped backup                                                    |
+| `/memory-backups`  | List available backups                                                         |
+| `/memory-restore`  | Restore from a backup                                                          |
+| `/memory-export`   | Export memory to a directory                                                   |
+| `/memory-import`   | Import memory from another directory                                           |
 
 ## Bundled skills
 
@@ -81,17 +82,28 @@ Use `/sleeptime status`, `/sleeptime step-count 10`, `/sleeptime compaction-even
 
 Memory reminders are injected as **system reminders**, not user messages. They are cues to silently consolidate memory when useful — the agent should apply the information naturally rather than narrating "I remembered..." unless the user explicitly invoked `/remember`.
 
+When a reminder fires, pi-context-repo now also prepares a **reflection bundle** under `.pi/reflection-runtime/` containing:
+
+- a bounded transcript snapshot of the current session branch
+- a reflection prompt file with memory paths and current pinned-memory context
+- metadata describing the trigger source and bundle paths
+
+The extension then emits an optional event-bus launch request on `pi-context-repo:reflection-launch`. A separate extension/runtime component can accept that request and run a real background reflection worker. If nothing accepts it, pi-context-repo falls back to the normal in-band `MEMORY CHECK` system reminder.
+
+This means the Letta-style reflection system is now **partially ported**: transcript prep, launch contract, fallback handoff, and `/reflect` exist here; a true autonomous background worker still requires another extension/runtime component to consume the launch event.
+
 ## UI
 
 - **Status widget** shows uncommitted/unpushed counts in pi footer
 - **Sync reminder** appears in the system prompt when changes need committing/pushing
 - **Memory check reminder** can fire on step count or compaction events
+- **Reflection bundles** capture transcript/prompt artifacts for manual or external background reflection
 - **Bounded tree rendering** avoids prompt blowups on very large memory repos
 - **Drift detection** warns about legacy/orphan memory fragments in system prompt
 
 ## Design
 
-Adapted from Letta Code's [memoryGit.ts](https://github.com/letta-ai/letta-code/blob/main/src/agent/memoryGit.ts), [memoryFilesystem.ts](https://github.com/letta-ai/letta-code/blob/main/src/agent/memoryFilesystem.ts), and [memoryReminder.ts](https://github.com/letta-ai/letta-code/blob/main/src/cli/helpers/memoryReminder.ts) along with the broader [Context Repositories](https://docs.letta.com/letta-code/memory) concept:
+Adapted from Letta Code's [memoryGit.ts](https://github.com/letta-ai/letta-code/blob/main/src/agent/memoryGit.ts), [memoryFilesystem.ts](https://github.com/letta-ai/letta-code/blob/main/src/agent/memoryFilesystem.ts), [memoryReminder.ts](https://github.com/letta-ai/letta-code/blob/main/src/cli/helpers/memoryReminder.ts), and Letta's reflection transcript / background reflection flow (`cli/helpers/reflectionTranscript.ts`, `agent/subagents/builtin/reflection.md`, `tests/cli/reflection-auto-launch-wiring.test.ts`) along with the broader [Context Repositories](https://docs.letta.com/letta-code/memory) concept:
 
 - Files as memory units with metadata frontmatter
 - `system/` subdir always loaded (like Letta's pinned memory blocks)
@@ -99,6 +111,7 @@ Adapted from Letta Code's [memoryGit.ts](https://github.com/letta-ai/letta-code/
 - Git for versioning, history, and eventual multi-agent sync
 - Natural memory application — no "I remember that..." narration
 - Git worktree helpers for isolated background edits (reflection, migration)
+- Reflection bundle preparation + optional event-bus handoff for external background workers
 - System prompt drift detection and stripping
 - `$MEMORY_DIR` / `$PI_MEMORY_DIR` env vars for shell access
 

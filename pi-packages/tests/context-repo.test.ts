@@ -42,7 +42,7 @@ function setupMemoryDir(): string {
   // git init + initial commit so the extension sees an existing repo
   execSync("git init", { cwd: memDir });
   execSync("git add .", { cwd: memDir });
-  execSync('git -c user.name="test" -c user.email="t@t" commit -m "init"', {
+  execSync('git -c commit.gpgsign=false -c user.name="test" -c user.email="t@t" commit -m "init"', {
     cwd: memDir,
   });
   return tmp;
@@ -234,9 +234,12 @@ describe("pi-context-repo: memory_write tool", () => {
       roPath,
       "---\ndescription: Locked\nlimit: 1000\nread_only: true\n---\n\nDo not touch\n"
     );
-    execSync("git add . && git -c user.name=t -c user.email=t@t commit -m 'add locked'", {
-      cwd: path.join(cwd, ".pi", "memory"),
-    });
+    execSync(
+      "git add . && git -c commit.gpgsign=false -c user.name=t -c user.email=t@t commit -m 'add locked'",
+      {
+        cwd: path.join(cwd, ".pi", "memory"),
+      }
+    );
 
     t = await createTestSession({
       extensions: [EXTENSION],
@@ -305,9 +308,12 @@ describe("pi-context-repo: memory_delete tool", () => {
     const memDir = path.join(cwd, ".pi", "memory");
     const target = path.join(memDir, "reference", "to-delete.md");
     fs.writeFileSync(target, "---\ndescription: Doomed\nlimit: 1000\n---\n\nGoodbye\n");
-    execSync("git add . && git -c user.name=t -c user.email=t@t commit -m 'add doomed'", {
-      cwd: memDir,
-    });
+    execSync(
+      "git add . && git -c commit.gpgsign=false -c user.name=t -c user.email=t@t commit -m 'add doomed'",
+      {
+        cwd: memDir,
+      }
+    );
 
     t = await createTestSession({
       extensions: [EXTENSION],
@@ -345,9 +351,12 @@ describe("pi-context-repo: memory_delete tool", () => {
       roFile,
       "---\ndescription: Protected\nlimit: 1000\nread_only: true\n---\n\nSafe\n"
     );
-    execSync("git add . && git -c user.name=t -c user.email=t@t commit -m 'add protected'", {
-      cwd: memDir,
-    });
+    execSync(
+      "git add . && git -c commit.gpgsign=false -c user.name=t -c user.email=t@t commit -m 'add protected'",
+      {
+        cwd: memDir,
+      }
+    );
 
     t = await createTestSession({
       extensions: [EXTENSION],
@@ -671,6 +680,60 @@ describe("pi-context-repo: memory check reminders", () => {
     expect(capturedPrompts[0]).not.toContain("MEMORY CHECK");
     expect(capturedPrompts[1]).not.toContain("MEMORY CHECK");
     expect(capturedPrompts[3]).not.toContain("MEMORY CHECK");
+  });
+});
+
+describe("pi-context-repo: background reflection handoff", () => {
+  let t: TestSession;
+  let cwd: string;
+
+  beforeEach(() => {
+    isolateEnv();
+    cwd = setupMemoryDir();
+    const settingsPath = path.join(cwd, ".pi", "memory", ".settings.json");
+    fs.writeFileSync(settingsPath, JSON.stringify({ reflectionInterval: 3 }));
+  });
+
+  afterEach(() => {
+    t?.dispose();
+    if (fs.existsSync(cwd)) fs.rmSync(cwd, { recursive: true, force: true });
+    restoreEnv();
+  });
+
+  it("suppresses MEMORY CHECK when a background reflection handler accepts the launch", async () => {
+    const capturedPrompts: string[] = [];
+
+    t = await createTestSession({
+      extensions: [EXTENSION],
+      cwd,
+      mockTools: MOCK_TOOLS,
+      extensionFactories: [
+        (pi: any) => {
+          pi.events.on("pi-context-repo:reflection-launch", (request: any) => {
+            request.note("accepted by integration test");
+            request.accept("background worker stub");
+          });
+          pi.on("before_agent_start", async (event: any) => {
+            capturedPrompts.push(event.systemPrompt);
+          });
+        },
+      ],
+    });
+
+    await t.run(
+      when("turn 1", [says("ok 1")]),
+      when("turn 2", [says("ok 2")]),
+      when("turn 3", [says("ok 3")]),
+      when("turn 4", [says("ok 4")])
+    );
+
+    expect(capturedPrompts[2]).not.toContain("MEMORY CHECK");
+
+    const statePath = path.join(cwd, ".pi", "reflection-runtime", "state.json");
+    expect(fs.existsSync(statePath)).toBe(true);
+    const state = JSON.parse(fs.readFileSync(statePath, "utf-8"));
+    expect(state.lastLaunchMode).toBe("background-subagent");
+    expect(state.lastLaunchNotes).toContain("background worker stub");
   });
 });
 
