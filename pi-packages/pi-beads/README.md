@@ -21,7 +21,7 @@ Fork of [@soleone/pi-tasks](https://github.com/Soleone/pi-tasks) stripped down t
 { "extensions": ["~/.config/dotfiles/packages/pi-beads"] }
 ```
 
-Toggle with `ctrl+x` or `/tasks`.
+Toggle with `ctrl+x` or `/beads-tasks`.
 
 ## Keybindings
 
