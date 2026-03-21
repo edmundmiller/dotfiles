@@ -157,6 +157,8 @@
     "npm:pi-messenger",
     // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
     "npm:pi-interactive-shell",
+    // Multi-functional task list/DAG orchestration - https://www.npmjs.com/package/@tintinweb/pi-tasks
+    "npm:@tintinweb/pi-tasks",
     // Subagent delegation with chains, parallel execution, TUI - https://www.npmjs.com/package/@tintinweb/pi-subagents
     "npm:@tintinweb/pi-subagents",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
