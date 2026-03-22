@@ -303,7 +303,15 @@ in
         enable = true;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
         hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
+        onepassword = {
+          enable = true;
+          vault = "Agents";
+        };
         secrets = [
+          {
+            envVar = "OP_SERVICE_ACCOUNT_TOKEN";
+            path = "/home/emiller/.local/state/openclaw/op-service-account-token";
+          }
           {
             envVar = "GEMINI_API_KEY";
             inherit (config.age.secrets.gemini-api-key) path;
@@ -646,13 +654,22 @@ in
   # opnix: 1Password service account token bootstrapped at /etc/opnix-token
   # Bootstrap (one-time): op read "op://Private/xkq3yij62kltcldkmk7qgkq66a/credential" \
   #   | ssh nuc "sudo tee /etc/opnix-token && sudo chmod 640 /etc/opnix-token"
-  # The token file is read directly by obsidian-sync (and any future op CLI consumers).
-  # services.onepassword-secrets.enable left false until a non-Private vault secret is needed.
+  # The token file is read by OpNix + services that consume 1Password-backed secrets.
 
   age.secrets.lubelogger-env.owner = "lubelogger";
   age.secrets.bugster-env.owner = "emiller";
   age.secrets.speedtest-tracker-env.owner = "root";
   age.secrets.linear-refresh-token.owner = "emiller";
+
+  # Copy the existing OpNix bootstrap token into OpenClaw state so the
+  # user-level gateway service can export OP_SERVICE_ACCOUNT_TOKEN for agents.
+  system.activationScripts.bootstrapOpenclawOpServiceToken = {
+    text = ''
+      TOKEN_FILE="/home/emiller/.local/state/openclaw/op-service-account-token"
+      install -d -m 700 -o emiller -g users "$(dirname "$TOKEN_FILE")"
+      install -m 400 -o emiller -g users /etc/opnix-token "$TOKEN_FILE"
+    '';
+  };
 
   # Bootstrap the linear token state file from agenix so openclawPluginGuard
   # doesn't fail during home-manager activation (before linear-token-init.service runs).
