@@ -307,6 +307,13 @@ in
           enable = true;
           vault = "Agents";
         };
+        browserbase = {
+          enable = true;
+          stagehandModel = "openai/gpt-5-mini";
+          # Use the item ID to avoid ambiguity with the separate Browserbase login item.
+          apiKeyReference = "op://Agents/hsbagbmv3er6vm2fxj75brxtcy/credential";
+          projectIdReference = "op://Agents/hsbagbmv3er6vm2fxj75brxtcy/Project ID";
+        };
         secrets = [
           {
             envVar = "OP_SERVICE_ACCOUNT_TOKEN";
