@@ -110,34 +110,34 @@ pkgs.testers.nixosTest {
     with subtest("configuration.yaml contains expected automation IDs"):
         config = hass.succeed("cat /var/lib/hass/configuration.yaml")
 
-        # Wake detection automations
-        for automation_id in [
-            "edmund_awake_detection",
-            "monica_awake_detection",
-            "good_morning_both_awake",
-        ]:
-            assert automation_id in config, f"automation {automation_id} missing from config"
-
-        # Sleep automations
+        # Sleep automations that should remain
         for automation_id in [
             "winding_down",
+            "goodnight_keep_nightstands_off",
             "bed_presence_in_bed",
-        ]:
-            assert automation_id in config, f"automation {automation_id} missing from config"
-
-        # 8Sleep automations
-        for automation_id in [
+            "edmund_awake_detection",
+            "monica_awake_detection",
             "sync_iphone_alarm_8sleep",
             "sleep_focus_off_stop_edmund",
             "sleep_focus_off_stop_monica",
+            "bedtime_nudge_webhook",
         ]:
             assert automation_id in config, f"automation {automation_id} missing from config"
 
-    with subtest("configuration.yaml contains time guards"):
+        # Cross-domain lighting safety automations
+        for automation_id in [
+            "al_sleep_mode_on",
+            "al_daytime_sleep_correction",
+            "entrance_occupancy_night_light",
+        ]:
+            assert automation_id in config, f"automation {automation_id} missing from config"
+
+    with subtest("configuration.yaml does not contain removed wake automations"):
         config = hass.succeed("cat /var/lib/hass/configuration.yaml")
-        # The YAML should contain '07:00:00' for time guards
-        assert "'07:00:00'" in config or "07:00:00" in config, \
-            "time guard '07:00:00' not found in configuration.yaml"
+        for automation_id in [
+            "good_morning_both_awake",
+        ]:
+            assert automation_id not in config, f"automation {automation_id} should be removed"
 
     with subtest("configuration.yaml contains expected scenes"):
         config = hass.succeed("cat /var/lib/hass/configuration.yaml")

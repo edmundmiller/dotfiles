@@ -22,17 +22,17 @@ Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-aut
 
 These automations have inline actions by design — do not refactor them into scenes:
 
-| Automation                                           | Why inline is correct                                                                                                           |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `entrance_occupancy_night_light` (ambient.nix)       | Dynamic wait-loop (`wait_for_trigger`); scenes are static snapshots                                                             |
-| `plant_glow_light_on/off` (ambient.nix)              | Single entity toggled on a time schedule; no state to compose                                                                   |
-| `al_sleep_mode_on/off` (lighting.nix)                | Single switch, time-only triggers (pre-warmup + hard cutoff); scene path already handled by Winding Down / Good Morning scenes  |
-| `Mid-morning` / `Sundown` scenes                     | AL sleep mode not included — it's always off by those times of day (7 AM hard cutoff)                                           |
-| `Leave Home` scene                                   | AL sleep mode not included — irrelevant when nobody is home                                                                     |
-| `Vacation` scene                                     | AL sleep mode not included — long-term away state, not a sleep cycle                                                            |
-| 8Sleep / focus / wake detection automations (sleep/) | Arbitrary service calls (`eight_sleep.*`, `alarm_dismiss`, `side_off`) with per-person conditions; can't be expressed as scenes |
-| `bedtime_nudge` script (sleep/)                      | One-shot notification; no entity state to capture                                                                               |
-| `dnd_on` automation (modes.nix)                      | Sends a notification; no entity state change worth a scene                                                                      |
+| Automation                                                | Why inline is correct                                                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `entrance_occupancy_night_light` (ambient.nix)            | Dynamic wait-loop (`wait_for_trigger`); scenes are static snapshots                                                            |
+| `plant_glow_light_on/off` (ambient.nix)                   | Single entity toggled on a time schedule; no state to compose                                                                  |
+| `al_sleep_mode_on/off` (lighting.nix)                     | Single switch, time-only triggers (pre-warmup + hard cutoff); scene path already handled by Winding Down / Good Morning scenes |
+| `Mid-morning` / `Sundown` scenes                          | AL sleep mode not included — it's always off by those times of day (7 AM hard cutoff)                                          |
+| `Leave Home` scene                                        | AL sleep mode not included — irrelevant when nobody is home                                                                    |
+| `Vacation` scene                                          | AL sleep mode not included — long-term away state, not a sleep cycle                                                           |
+| 8Sleep/focus/wake-detection tracking automations (sleep/) | Arbitrary service calls and per-person conditions; wake detection updates helper booleans only, Good Morning is manual         |
+| `bedtime_nudge` script (sleep/)                           | One-shot notification; no entity state to capture                                                                              |
+| `dnd_on` automation (modes.nix)                           | Sends a notification; no entity state change worth a scene                                                                     |
 
 ## Files
 
@@ -42,7 +42,7 @@ These automations have inline actions by design — do not refactor them into sc
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
 - `modes.nix` — DND, guest mode, everything_off script
 - `pura.nix` — Pura diffuser routines (arrive-home freshen script + automation)
-- `sleep/` — Full sleep/wake lifecycle: goodnight toggle, awake booleans, scenes (Winding Down → In Bed → Sleep → Good Morning), wake detection, Apple↔8Sleep sync. Per-person automations DRY'd via helpers. See `sleep/AGENTS.md`
+- `sleep/` — Sleep lifecycle: goodnight toggle, awake helper booleans, scenes (Winding Down → In Bed → Sleep → Good Morning), Apple↔8Sleep sync, wake detection tracking. Auto-Good-Morning flow intentionally removed.
 - `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 
