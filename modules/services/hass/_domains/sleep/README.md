@@ -1,6 +1,6 @@
 # Sleep Domain
 
-Full sleep/wake lifecycle: bedtime progression, bed presence, Apple↔8Sleep sync, wake detection, and Good Morning.
+Bedtime progression + Apple↔8Sleep sync + wake detection, with **manual/voice Good Morning**.
 
 Owns: `input_boolean.goodnight`, `input_boolean.edmund_awake`, `input_boolean.monica_awake`
 
@@ -27,6 +27,20 @@ Winding Down  →  In Bed  →  Sleep
 - **Trigger:** Manual (future: audiobook stops or Sleep Focus activates)
 - **Actions:** Deep sleep mode — everything quiet
 
+## Wake Detection (Tracking Only)
+
+Wake detection automations still update:
+
+- `input_boolean.edmund_awake`
+- `input_boolean.monica_awake`
+
+These booleans are tracking-only now (for observability/manual use).
+
+## Good Morning
+
+`scene.good_morning` is intentionally **not auto-triggered** by wake detection anymore.
+Use voice/manual activation instead (e.g., Assist intent or Home app scene/script).
+
 ## Apple ↔ 8Sleep Sync
 
 Two automations keep iPhone alarms and 8Sleep alarms in sync:
@@ -35,70 +49,13 @@ Two automations keep iPhone alarms and 8Sleep alarms in sync:
 
 - Triggers when `sensor.edmunds_iphone_next_alarm` changes
 - Calls `eight_sleep.set_one_off_alarm` on 8Sleep
-- Only syncs if new alarm is within 24 hours
+- Skips alarms at 11am or later
 
 **Sleep Focus off → dismiss 8Sleep alarm:**
 
 - Triggers when iPhone focus turns off (6–9am)
 - Calls 8Sleep `dismiss_alarm` + `side_off`
 - Separate automations for Edmund and Monica
-
-## Wake Detection State Machine
-
-Uses `input_boolean.edmund_awake` / `monica_awake` to track who's up.
-Good Morning fires when **both** are on.
-
-### Reset
-
-- Winding Down scene sets both to `off`
-- Good Morning scene also resets both (prevents stale state next night)
-
-### Awake Signals
-
-Any one of these during Night mode marks that person as awake:
-
-| Signal                           | Entity pattern                                              | What it means                                       |
-| -------------------------------- | ----------------------------------------------------------- | --------------------------------------------------- |
-| Bed presence off (2 min)         | `binary_sensor.*_eight_sleep_side_bed_presence`             | Physically out of bed (unreliable)                  |
-| Focus off                        | `binary_sensor.*_iphone_focus`                              | Turned off any focus mode                           |
-| Battery: Charging → Not Charging | `sensor.*_iphone_battery_state`                             | Picked phone off charger                            |
-| Activity = Walking               | `sensor.*_iphone_activity`                                  | Up and moving around                                |
-| Active phone use                 | `sensor.*_iphone_last_update_trigger` to Launch/Siri/Manual | Deliberate phone interaction (not Background Fetch) |
-
-### Flow
-
-```
-Night mode active
-  │
-  ├── Person A wakes up
-  │     └── Any signal fires → edmund_awake = on
-  │         └── Check: both awake? No → wait
-  │
-  └── Person B wakes up (minutes to hours later)
-        └── Any signal fires → monica_awake = on
-            └── Check: both awake? Yes → Good Morning scene
-                  ├── Blinds set to 20% open
-                  ├── Kitchen + couch lights on (AL handles color temp)
-                  ├── Goodnight toggle off
-                  ├── House mode → Home
-                  └── Reset both awake booleans
-                  │
-                  └── Later: Mid-morning (sunrise+2h, ambient.nix)
-                        ├── Lights off (natural light sufficient)
-                        └── Blinds close (west-facing sun)
-```
-
-### Why Multiple Signals
-
-No single sensor is reliable:
-
-- **Generic focus** can't distinguish Sleep from Work/DND
-- **8Sleep bed presence** is flaky
-- **Battery** only works if phone was on charger
-- **Activity/update trigger** depends on companion app reporting
-
-Redundancy ensures the first real morning activity is caught. The Night mode
-condition prevents all of these from false-triggering during the day.
 
 ## Entity Reference
 
@@ -122,21 +79,3 @@ condition prevents all of these from false-triggering during the day.
 | `sensor.edmunds_iphone_last_update_trigger` | Launch / Siri / Manual / Background Fetch |
 
 (Monica equivalents: replace `edmunds` with `monicas`)
-
-## Troubleshooting
-
-**Good Morning not firing:**
-
-1. Check `input_boolean.edmund_awake` and `input_boolean.monica_awake` in Developer Tools → States
-2. If one is still `off`, that person's signals haven't fired — check their phone sensors
-3. Verify `input_boolean.goodnight` is "on" (wake detection only fires during nighttime)
-
-**Good Morning fires too early (one person still sleeping):**
-
-- Check which signal falsely triggered — bed presence bouncing is the usual suspect
-- Consider removing the unreliable signal from that person's automation
-
-**8Sleep alarm not syncing:**
-
-- Check `sensor.edmunds_iphone_next_alarm` has a value within 24 hours
-- Verify the eight_sleep integration is connected in Settings → Integrations
