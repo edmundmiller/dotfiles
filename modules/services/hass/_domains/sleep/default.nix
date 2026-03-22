@@ -1,10 +1,10 @@
-# Sleep domain — bedtime progression, bed presence, wake routines
+# Sleep domain — bedtime progression, bed presence, wake detection (manual Good Morning)
 #
 # Owns the full sleep/wake lifecycle:
 #   - input_boolean.goodnight (night mode toggle)
 #   - input_boolean.edmund_awake / monica_awake (wake detection)
 #   - Scenes: Winding Down → In Bed → Sleep → Good Morning
-#   - Automations: bedtime, 8Sleep sync, wake detection, Good Morning
+#   - Automations: bedtime, 8Sleep sync, wake detection
 #
 # Three-stage bedtime flow:
 #   1. Winding Down  — get ready for bed (night light stays on for navigation)
@@ -26,17 +26,8 @@
 #   iPhone next alarm: sensor.edmunds_iphone_next_alarm (datetime)
 #   iPhone focus: binary_sensor.edmunds_iphone_focus (on = any focus active)
 #
-# Wake detection state machine:
-#   input_boolean.edmund_awake / monica_awake track who's up
-#   Set by (any while goodnight=on AND 7 AM–noon): bed presence off, focus off,
-#     battery Charging→Not Charging, activity=Walking, or
-#     active phone use (Launch/Siri/Manual update trigger)
-#   Time guard: 7 AM–noon window prevents both early-morning false wakes
-#     (bathroom trips) AND evening false wakes (Siri/phone use after Winding Down)
-#   Reset by: Winding Down scene and Good Morning scene
-#   Good Morning fires when all home residents are awake (also gated to 7 AM–noon)
-#   Away residents are skipped — if only one person is home, only their awake
-#   boolean is required.
+# NOTE: Wake detection is retained, but auto Good Morning is intentionally removed.
+# Good Morning remains available as a scene for manual/voice activation.
 { lib, ... }:
 let
   inherit (import ../../_lib.nix) ensureEnabled;
@@ -137,11 +128,8 @@ let
     ];
   };
 
-  # Wake detection — any signal while goodnight=on AND after 7 AM → mark awake
-  # Signals: reliable bed presence off (2 min), raw bed presence off (5 min),
-  #          focus off, phone off charger, walking, or active phone use
-  #          (Launch/Siri/Manual — not Background Fetch)
-  # Time guard: ignore signals before 7 AM (bathroom trips, sensor glitches)
+  # Wake detection only — mark per-person awake booleans.
+  # Good Morning is intentionally not auto-triggered from these booleans.
   mkWakeDetection = p: {
     alias = "${p.name} is awake";
     id = "${p.id}_awake_detection";
@@ -167,28 +155,23 @@ let
         to = "off";
       }
       {
-        # Picked phone off charger
         platform = "state";
         entity_id = p.battery;
         from = "Charging";
         to = "Not Charging";
       }
       {
-        # Physically walking
         platform = "state";
         entity_id = p.activity;
         to = "Walking";
       }
       {
-        # Active phone use (Launch, Siri, Manual — not Background Fetch)
         platform = "template";
         value_template = "{{ states('${p.updateTrigger}') in ['Launch', 'Siri', 'Manual'] }}";
       }
     ];
     condition = [
       {
-        # Morning window only — prevents Siri/focus/phone events in the
-        # evening (right after Winding Down) from marking someone awake
         condition = "time";
         after = "07:00:00";
         before = "12:00:00";
@@ -211,6 +194,7 @@ let
       }
     ];
   };
+
 in
 {
   services.home-assistant.config = {
@@ -506,74 +490,11 @@ in
       (mkSleepFocusOff edmund)
       (mkSleepFocusOff monica)
 
-      # ── Wake detection state machine ─────────────────────────────────────
-      #
-      # Each person gets an "awake" boolean set by bed presence OR focus off.
-      # Good Morning fires when all home residents are awake — handles different
-      # wake times. Booleans reset by Winding Down / Good Morning scenes.
-
-      # Per-person: any awake signal → mark awake
+      # Wake detection retained for awake state tracking only.
       (mkWakeDetection edmund)
       (mkWakeDetection monica)
 
-      # All home residents awake → Good Morning
-      # Time guard: goodnight MUST NOT turn off before 7 AM.
-      # This is the primary guardian of that invariant — Good Morning is the
-      # only automated path that clears goodnight, so gating it here is the
-      # single choke point. The per-detection time guards are defense-in-depth.
-      #
-      # Presence-aware: if a person is not home (travel, early departure) their
-      # awake boolean is not required. At least one person must be home.
-      {
-        alias = "Good Morning";
-        id = "good_morning_both_awake";
-        trigger = [
-          {
-            platform = "state";
-            entity_id = "input_boolean.edmund_awake";
-            to = "on";
-          }
-          {
-            platform = "state";
-            entity_id = "input_boolean.monica_awake";
-            to = "on";
-          }
-        ];
-        condition = [
-          {
-            # Morning window only — defense-in-depth against wake detection
-            # misfiring in the evening (primary guard is in mkWakeDetection)
-            condition = "time";
-            after = "07:00:00";
-            before = "12:00:00";
-          }
-          {
-            # Sleep cycle must have happened and still be active — guards against
-            # firing if no one went through the night cycle, or if Good Morning
-            # already ran and cleared it
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "on";
-          }
-          {
-            # At least one person home, and every home resident is awake
-            condition = "template";
-            value_template = ''
-              {{
-                (is_state('person.edmund_miller', 'home') or is_state('person.moni', 'home'))
-                and (not is_state('person.edmund_miller', 'home') or is_state('input_boolean.edmund_awake', 'on'))
-                and (not is_state('person.moni', 'home') or is_state('input_boolean.monica_awake', 'on'))
-              }}
-            '';
-          }
-        ];
-        action = [
-          {
-            action = "scene.turn_on";
-            target.entity_id = "scene.good_morning";
-          }
-        ];
-      }
+      # Auto Good Morning intentionally disabled.
     ]);
   };
 }

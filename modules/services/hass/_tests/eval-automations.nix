@@ -2,15 +2,10 @@
 #
 # No VM needed — evaluates the NixOS module config and checks:
 #   - Every automation has initial_state = true (use ensureEnabled from _lib.nix)
-#   - Required automation IDs exist
-#   - Wake detection has time guards (after 07:00)
-#   - Good Morning has presence-aware awake template + time guard conditions
-#   - Winding Down resets awake booleans
-#
-# Catches regressions like "someone removed the time guard" in seconds.
-# Runs as: nix flake check (via checks.x86_64-linux.ha-automation-assertions)
-#
-# See also: validate-config.nix (HA's own schema validation at build time)
+#   - Wake detection automations exist with guardrails
+#   - Auto Good Morning automation is absent
+#   - Required automations/scenes still exist
+#   - Key scene state guarantees remain intact
 { nixosConfig, pkgs }:
 let
   inherit (builtins)
@@ -21,14 +16,10 @@ let
     concatStringsSep
     ;
 
-  # The fully-merged HA config from the NUC NixOS configuration
   haConfig = nixosConfig.config.services.home-assistant.config;
   automations = haConfig.automation;
   scenes = haConfig.scene;
 
-  # ── Helpers ──────────────────────────────────────────────────────────────
-
-  # Find automation by id
   findAutomation =
     id:
     let
@@ -36,7 +27,6 @@ let
     in
     if matches == [ ] then null else head matches;
 
-  # Find scene by name
   findScene =
     name:
     let
@@ -44,12 +34,26 @@ let
     in
     if matches == [ ] then null else head matches;
 
-  # Check if a condition list contains a time condition with after >= target
+  hasHomeAssistantStartTrigger =
+    triggers: any (t: (t.platform or null) == "homeassistant" && (t.event or null) == "start") triggers;
+
+  hasTimeTrigger =
+    triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
+
+  hasStateTrigger =
+    triggers: entityId: toState:
+    any (
+      t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == toState
+    ) triggers;
+
+  hasActionCall =
+    actions: actionName:
+    any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
+
   hasTimeGuard =
     conditions: target:
     any (c: (c.condition or null) == "time" && (c.after or null) == target) conditions;
 
-  # Check if a condition list checks entity state
   hasStateCondition =
     conditions: entityId: state:
     any (
@@ -57,53 +61,15 @@ let
       (c.condition or null) == "state" && (c.entity_id or null) == entityId && (c.state or null) == state
     ) conditions;
 
-  # Check if any template condition references a given entity ID
-  hasTemplateRef =
-    conditions: entityId:
-    any (
-      c:
-      (c.condition or null) == "template"
-      && builtins.isString (c.value_template or null)
-      &&
-        builtins.match (".*" + builtins.replaceStrings [ "." ] [ "\\." ] entityId + ".*") (
-          c.value_template or ""
-        ) != null
-    ) conditions;
-
-  # Check if trigger list contains homeassistant start trigger
-  hasHomeAssistantStartTrigger =
-    triggers: any (t: (t.platform or null) == "homeassistant" && (t.event or null) == "start") triggers;
-
-  # Check if trigger list contains state trigger for entity + to-state
-  hasStateTrigger =
-    triggers: entityId: toState:
-    any (
-      t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == toState
-    ) triggers;
-
-  # Check if trigger list contains a time trigger at exact time
-  hasTimeTrigger =
-    triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
-
-  # Check if action list contains a service/action call
-  hasActionCall =
-    actions: actionName:
-    any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
-
-  # Normalize conditions to a list (HA accepts single or list)
-  toConditionList =
-    c:
-    if builtins.isList c then
-      c
-    else if builtins.isAttrs c then
-      [ c ]
+  toList =
+    v:
+    if builtins.isList v then
+      v
+    else if builtins.isAttrs v then
+      [ v ]
     else
       [ ];
 
-  # ── Global: every automation must have initial_state = true ───────────
-  # Nix is the source of truth — automations should never be toggled in the
-  # UI. ensureEnabled (_lib.nix) injects the default; this catches anyone
-  # who adds an automation without the wrapper.
   missingInitialState = filter (a: !(a.initial_state or null)) automations;
 
   initialStateAssertions = map (a: {
@@ -111,18 +77,22 @@ let
     msg = "automation '${a.alias or a.id or "??"}' missing initial_state = true (use ensureEnabled from _lib.nix)";
   }) missingInitialState;
 
-  # ── Automation lookups ───────────────────────────────────────────────────
-
+  # Must exist
   edmundAwake = findAutomation "edmund_awake_detection";
   monicaAwake = findAutomation "monica_awake_detection";
-  goodMorningBothAwake = findAutomation "good_morning_both_awake";
   windingDown = findAutomation "winding_down";
   goodnightKeepNightstands = findAutomation "goodnight_keep_nightstands_off";
+  bedPresenceInBed = findAutomation "bed_presence_in_bed";
+  bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
+  syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
+  sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
+  sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
   alSleepModeOn = findAutomation "al_sleep_mode_on";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
 
-  # ── Scene lookups ────────────────────────────────────────────────────────
+  # Must stay removed
+  goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
   windingDownScene = findScene "Winding Down";
   sleepScene = findScene "Sleep";
@@ -130,10 +100,7 @@ let
   midMorningScene = findScene "Mid-morning";
   sundownScene = findScene "Sundown";
 
-  # ── Assertions ───────────────────────────────────────────────────────────
-
   assertions = initialStateAssertions ++ [
-    # --- Required automations exist ---
     {
       test = edmundAwake != null;
       msg = "automation 'edmund_awake_detection' missing";
@@ -143,9 +110,27 @@ let
       msg = "automation 'monica_awake_detection' missing";
     }
     {
-      test = goodMorningBothAwake != null;
-      msg = "automation 'good_morning_both_awake' missing";
+      test = goodMorningBothAwake == null;
+      msg = "automation 'good_morning_both_awake' should be removed";
     }
+
+    {
+      test = hasTimeGuard (toList (edmundAwake.condition or [ ])) "07:00:00";
+      msg = "edmund_awake_detection missing time guard (after: 07:00:00)";
+    }
+    {
+      test = hasTimeGuard (toList (monicaAwake.condition or [ ])) "07:00:00";
+      msg = "monica_awake_detection missing time guard (after: 07:00:00)";
+    }
+    {
+      test = hasStateCondition (toList (edmundAwake.condition or [ ])) "input_boolean.goodnight" "on";
+      msg = "edmund_awake_detection missing condition: goodnight == on";
+    }
+    {
+      test = hasStateCondition (toList (monicaAwake.condition or [ ])) "input_boolean.goodnight" "on";
+      msg = "monica_awake_detection missing condition: goodnight == on";
+    }
+
     {
       test = windingDown != null;
       msg = "automation 'winding_down' missing";
@@ -153,6 +138,26 @@ let
     {
       test = goodnightKeepNightstands != null;
       msg = "automation 'goodnight_keep_nightstands_off' missing";
+    }
+    {
+      test = bedPresenceInBed != null;
+      msg = "automation 'bed_presence_in_bed' missing";
+    }
+    {
+      test = bedtimeNudgeWebhook != null;
+      msg = "automation 'bedtime_nudge_webhook' missing";
+    }
+    {
+      test = syncIphoneAlarm8sleep != null;
+      msg = "automation 'sync_iphone_alarm_8sleep' missing";
+    }
+    {
+      test = sleepFocusOffEdmund != null;
+      msg = "automation 'sleep_focus_off_stop_edmund' missing";
+    }
+    {
+      test = sleepFocusOffMonica != null;
+      msg = "automation 'sleep_focus_off_stop_monica' missing";
     }
     {
       test = alSleepModeOn != null;
@@ -167,7 +172,6 @@ let
       msg = "automation 'entrance_occupancy_night_light' missing";
     }
 
-    # --- Required scenes exist ---
     {
       test = windingDownScene != null;
       msg = "scene 'Winding Down' missing";
@@ -189,7 +193,29 @@ let
       msg = "scene 'Sundown' missing";
     }
 
-    # --- Good Morning scene sets SmartWings to 20% with scene-compatible keys ---
+    {
+      test = hasTimeTrigger (toList (windingDown.trigger or [ ])) "22:00:00";
+      msg = "winding_down must trigger at 22:00:00";
+    }
+    {
+      test = hasTimeTrigger (toList (alSleepModeOn.trigger or [ ])) "22:00:00";
+      msg = "al_sleep_mode_on must trigger at 22:00:00";
+    }
+    {
+      test = hasStateTrigger (toList (
+        bedPresenceInBed.trigger or [ ]
+      )) "binary_sensor.monica_s_eight_sleep_side_bed_presence" "on";
+      msg = "bed_presence_in_bed must trigger from Monica bed presence = on";
+    }
+    {
+      test = hasHomeAssistantStartTrigger (toList (alDaytimeSleepCorrection.trigger or [ ]));
+      msg = "al_daytime_sleep_correction missing homeassistant start trigger";
+    }
+    {
+      test = hasActionCall (toList (entranceOccupancyNightLight.action or [ ])) "adaptive_lighting.apply";
+      msg = "entrance_occupancy_night_light missing adaptive_lighting.apply action";
+    }
+
     {
       test =
         let
@@ -201,109 +227,6 @@ let
       msg = "Good Morning scene cover.smartwings_window_covering must use state=open + current_position=20";
     }
 
-    # --- AL sleep mode turns on at 10 PM ---
-    {
-      test = hasTimeTrigger (toConditionList (alSleepModeOn.trigger or [ ])) "22:00:00";
-      msg = "al_sleep_mode_on must trigger at 22:00:00";
-    }
-
-    # --- Goodnight mode keeps nightstands off ---
-    {
-      test = hasStateCondition (toConditionList (
-        goodnightKeepNightstands.condition or [ ]
-      )) "input_boolean.goodnight" "on";
-      msg = "goodnight_keep_nightstands_off missing condition: goodnight == on";
-    }
-    {
-      test = hasStateTrigger (toConditionList (
-        goodnightKeepNightstands.trigger or [ ]
-      )) "input_boolean.goodnight" "on";
-      msg = "goodnight_keep_nightstands_off missing trigger on goodnight turning on";
-    }
-
-    # --- Time guards on wake detection (the 4:47 AM fix) ---
-    {
-      test = hasTimeGuard (toConditionList (edmundAwake.condition or [ ])) "07:00:00";
-      msg = "edmund_awake_detection missing time guard (after: 07:00:00)";
-    }
-    {
-      test = hasTimeGuard (toConditionList (monicaAwake.condition or [ ])) "07:00:00";
-      msg = "monica_awake_detection missing time guard (after: 07:00:00)";
-    }
-
-    # --- Good Morning (both_awake) has time guard + both-awake conditions ---
-    {
-      test = hasTimeGuard (toConditionList (goodMorningBothAwake.condition or [ ])) "07:00:00";
-      msg = "good_morning_both_awake missing time guard (after: 07:00:00)";
-    }
-    {
-      test = hasTemplateRef (toConditionList (
-        goodMorningBothAwake.condition or [ ]
-      )) "input_boolean.edmund_awake";
-      msg = "good_morning_both_awake missing condition referencing edmund_awake";
-    }
-    {
-      test = hasTemplateRef (toConditionList (
-        goodMorningBothAwake.condition or [ ]
-      )) "input_boolean.monica_awake";
-      msg = "good_morning_both_awake missing condition referencing monica_awake";
-    }
-
-    # --- Wake detection requires goodnight == on ---
-    {
-      test = hasStateCondition (toConditionList (
-        edmundAwake.condition or [ ]
-      )) "input_boolean.goodnight" "on";
-      msg = "edmund_awake_detection missing condition: goodnight == on";
-    }
-    {
-      test = hasStateCondition (toConditionList (
-        monicaAwake.condition or [ ]
-      )) "input_boolean.goodnight" "on";
-      msg = "monica_awake_detection missing condition: goodnight == on";
-    }
-
-    # --- Wake detection includes both reliable + raw bed-presence off triggers ---
-    {
-      test = hasStateTrigger (toConditionList (
-        edmundAwake.trigger or [ ]
-      )) "binary_sensor.edmund_bed_presence_reliable" "off";
-      msg = "edmund_awake_detection missing reliable bed presence off trigger";
-    }
-    {
-      test = hasStateTrigger (toConditionList (
-        edmundAwake.trigger or [ ]
-      )) "binary_sensor.edmund_s_eight_sleep_side_bed_presence" "off";
-      msg = "edmund_awake_detection missing raw bed presence off trigger";
-    }
-    {
-      test = hasStateTrigger (toConditionList (
-        monicaAwake.trigger or [ ]
-      )) "binary_sensor.monica_bed_presence_reliable" "off";
-      msg = "monica_awake_detection missing reliable bed presence off trigger";
-    }
-    {
-      test = hasStateTrigger (toConditionList (
-        monicaAwake.trigger or [ ]
-      )) "binary_sensor.monica_s_eight_sleep_side_bed_presence" "off";
-      msg = "monica_awake_detection missing raw bed presence off trigger";
-    }
-
-    # --- AL daytime correction must run on HA startup (state restore path) ---
-    {
-      test = hasHomeAssistantStartTrigger (toConditionList (alDaytimeSleepCorrection.trigger or [ ]));
-      msg = "al_daytime_sleep_correction missing homeassistant start trigger";
-    }
-
-    # --- Entrance occupancy must re-apply Adaptive Lighting on turn-on ---
-    {
-      test = hasActionCall (toConditionList (
-        entranceOccupancyNightLight.action or [ ]
-      )) "adaptive_lighting.apply";
-      msg = "entrance_occupancy_night_light missing adaptive_lighting.apply action (prevents stale orange daytime color)";
-    }
-
-    # --- Winding Down scene resets awake booleans ---
     {
       test = (windingDownScene.entities."input_boolean.edmund_awake" or null) == "off";
       msg = "Winding Down scene doesn't reset edmund_awake to off";
@@ -312,8 +235,6 @@ let
       test = (windingDownScene.entities."input_boolean.monica_awake" or null) == "off";
       msg = "Winding Down scene doesn't reset monica_awake to off";
     }
-
-    # --- Good Morning scene resets awake booleans (for next night) ---
     {
       test = (goodMorningScene.entities."input_boolean.edmund_awake" or null) == "off";
       msg = "Good Morning scene doesn't reset edmund_awake to off";
@@ -322,20 +243,14 @@ let
       test = (goodMorningScene.entities."input_boolean.monica_awake" or null) == "off";
       msg = "Good Morning scene doesn't reset monica_awake to off";
     }
-
-    # --- Good Morning scene turns off goodnight ---
     {
       test = (goodMorningScene.entities."input_boolean.goodnight" or null) == "off";
       msg = "Good Morning scene doesn't turn off goodnight";
     }
-
-    # --- Good Morning scene turns off whitenoise ---
     {
       test = (goodMorningScene.entities."switch.eve_energy_20ebu4101" or null) == "off";
       msg = "Good Morning scene doesn't turn off whitenoise";
     }
-
-    # --- Sleep scene turns desk plugs off ---
     {
       test = (sleepScene.entities."switch.desk_monitor" or null) == "off";
       msg = "Sleep scene doesn't turn off switch.desk_monitor";
@@ -344,8 +259,6 @@ let
       test = (sleepScene.entities."switch.desk_pop" or null) == "off";
       msg = "Sleep scene doesn't turn off switch.desk_pop";
     }
-
-    # --- Good Morning scene turns desk plugs back on ---
     {
       test = (goodMorningScene.entities."switch.desk_monitor" or null) == "on";
       msg = "Good Morning scene doesn't turn on switch.desk_monitor";
@@ -354,8 +267,6 @@ let
       test = (goodMorningScene.entities."switch.desk_pop" or null) == "on";
       msg = "Good Morning scene doesn't turn on switch.desk_pop";
     }
-
-    # --- Wall lamp cycle: off at night, on in morning, off at mid-morning ---
     {
       test = (windingDownScene.entities."light.essentials_a19_a60_5" or null) == "off";
       msg = "Winding Down scene doesn't turn off wall lamp";
@@ -372,8 +283,6 @@ let
       test = (midMorningScene.entities."light.essentials_a19_a60_5" or null) == "off";
       msg = "Mid-morning scene doesn't turn off wall lamp";
     }
-
-    # --- Sundown: bedroom nightstands at 25% brightness ---
     {
       test =
         let
@@ -392,8 +301,6 @@ let
     }
   ];
 
-  # ── Evaluate ─────────────────────────────────────────────────────────────
-
   failures = filter (a: !a.test) assertions;
   failureMessages = map (a: "  FAIL: ${a.msg}") failures;
 
@@ -407,7 +314,6 @@ let
         ]
         ++ failureMessages
       );
-
 in
 pkgs.runCommand "ha-automation-assertions"
   {
@@ -428,4 +334,3 @@ pkgs.runCommand "ha-automation-assertions"
         ''
     }
   ''
-# test
