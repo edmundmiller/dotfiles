@@ -76,8 +76,6 @@
     // Agentmap codebase tree in system prompt - https://github.com/remorses/agentmap
     "~/.config/dotfiles/pi-packages/pi-agentmap",
 
-    // Git-stash for prompt drafts (ctrl+shift+s / ctrl+shift+p)
-    "~/.config/dotfiles/pi-packages/pi-prompt-stash",
     // Prompt construction toolkit
     "npm:pi-promptsmith",
     // Cross-agent thread reader (agents:// URIs)
@@ -158,6 +156,8 @@
     "npm:pi-messenger",
     // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
     "npm:pi-interactive-shell",
+    // Powerline-style editor footer/statusline - https://github.com/nicobailon/pi-powerline-footer
+    "npm:pi-powerline-footer",
     // Multi-functional task list/DAG orchestration - https://www.npmjs.com/package/@tintinweb/pi-tasks
     "npm:@tintinweb/pi-tasks",
     // Subagent delegation with chains, parallel execution, TUI - https://www.npmjs.com/package/@tintinweb/pi-subagents
@@ -186,6 +186,9 @@
     "npm:@jordyvd/pi-openai-compaction",
     // Codex profile/model tuning - https://www.npmjs.com/package/pi-codex-profile
     "npm:pi-codex-profile",
+    // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
+    // Enables provider id: kilo (e.g., model: kilocode/auto)
+    "git:github.com/mrexodia/kilo-pi-provider",
     // Live bash output view enhancements - vendored local copy
     // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view
     "~/.config/dotfiles/pi-packages/pi-bash-live-view",
