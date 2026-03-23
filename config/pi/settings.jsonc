@@ -184,6 +184,8 @@
     "git:github.com/Whamp/pi-token-burden",
     // OpenAI compaction controls - https://www.npmjs.com/package/@jordyvd/pi-openai-compaction
     "npm:@jordyvd/pi-openai-compaction",
+    // Custom compaction model/template/trigger policy - https://github.com/nicobailon/pi-custom-compaction
+    "npm:pi-custom-compaction",
     // Codex profile/model tuning - https://www.npmjs.com/package/pi-codex-profile
     "npm:pi-codex-profile",
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
