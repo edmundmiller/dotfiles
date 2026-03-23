@@ -48,5 +48,15 @@ in
         '';
       };
     };
+
+    home-manager.users.${config.user.name} =
+      { lib, ... }:
+      {
+        home.activation.claude-skills-bridge = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          mkdir -p "$HOME/.claude"
+          rm -rf "$HOME/.claude/skills"
+          ln -sfn "$HOME/.agents/skills" "$HOME/.claude/skills"
+        '';
+      };
   };
 }

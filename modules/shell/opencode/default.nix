@@ -37,7 +37,7 @@ in
           "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
           "opencode/dcp.jsonc".source = "${configDir}/opencode/dcp.jsonc";
 
-          # Skills and modes shared across all agents (Claude, OpenCode, Pi)
+          # Rules and modes shared across all agents (Claude, OpenCode, Pi)
           # Single source of truth in config/agents/
           "opencode/rules" = {
             source = "${configDir}/agents/rules";
@@ -60,6 +60,9 @@ in
           # Ensure plugin directory exists (user-managed plugins go here too)
           ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/plugin"
           ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/tool"
+
+          # Shared global skills now live in ~/.agents/skills and are discovered natively.
+          rm -rf "${opencodeConfigDir}/skill" "${opencodeConfigDir}/skills"
 
           # Copy package.json (can't symlink - bun install modifies lockfile location)
           ${pkgs.coreutils}/bin/cp -f "${configDir}/opencode/package.json" "${opencodeConfigDir}/package.json"
