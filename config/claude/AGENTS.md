@@ -18,7 +18,8 @@ config/claude/
 
 **Skills and agents are shared across agents:**
 
-- Global skills: `config/agents/skills/` → symlinked to `~/.claude/skills/`
+- Global skills: `config/agents/skills/` → installed to `~/.agents/skills/`
+- Claude bridge: `~/.claude/skills/` → symlinked to `~/.agents/skills/`
 - Project-local skills: `.agents/skills/`
 - Agents: `config/agents/modes/` → symlinked to `~/.claude/agents/`
 
@@ -53,7 +54,7 @@ Files in this directory are symlinked by `modules/shell/claude/default.nix`:
 
 - `settings.json` → `~/.claude/settings.json`
 - `config/agents/modes/` → `~/.claude/agents/`
-- `config/agents/skills/` → `~/.claude/skills/`
+- `~/.agents/skills/` → `~/.claude/skills/` (compatibility bridge)
 - Rules concatenated → `~/.claude/CLAUDE.md`
 
 After `hey rebuild`, symlinks update automatically. Restart Claude Code to pick up changes.

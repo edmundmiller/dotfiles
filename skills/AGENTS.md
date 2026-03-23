@@ -1,6 +1,6 @@
 # Skills Catalog (Child Flake)
 
-Manages agent skills for claude, pi, and opencode via `agent-skills-nix`.
+Manages shared global skills via `agent-skills-nix`.
 
 ## How It Works
 
@@ -8,7 +8,7 @@ Manages agent skills for claude, pi, and opencode via `agent-skills-nix`.
 
 1. **Sources** — where skills come from (local dir or remote repos)
 2. **Skill selection** — which skills to enable
-3. **Targets** — which agents get the skills (symlink-tree into `~/.claude/skills/`, `~/.pi/agent/skills/`, `~/.config/opencode/skill/`)
+3. **Targets** — where skills are installed (symlink-tree into `~/.agents/skills/`; Claude gets a compatibility bridge via `~/.claude/skills/`)
 
 ## Adding a Local Skill
 

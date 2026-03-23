@@ -11,8 +11,9 @@ This directory contains OpenCode configuration for the dotfiles repository.
 - `GLOBAL_INSTRUCTIONS.md` - Global agent instructions
 - `rules/` - Rule files (shell-strategy, etc.)
 - `command/` - Slash commands
-- `skills/` - Agent skills
 - `agent/` - Custom agent definitions
+
+Global shared skills are discovered from `~/.agents/skills/`.
 
 ### Managed by Nix (via activation script)
 

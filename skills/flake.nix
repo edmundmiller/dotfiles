@@ -140,21 +140,10 @@
           };
 
           targets = {
-            # opt-in targets
-            claude = {
+            # Canonical shared global skills location.
+            agents = {
               enable = true;
-              structure = "symlink-tree";
-            };
-
-            pi = {
-              enable = true;
-              dest = ".pi/agent/skills";
-              structure = "symlink-tree";
-            };
-
-            opencode = {
-              enable = true;
-              dest = ".config/opencode/skill";
+              dest = ".agents/skills";
               structure = "symlink-tree";
             };
 

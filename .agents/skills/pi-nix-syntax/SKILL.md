@@ -95,7 +95,7 @@ Given a Pi-ish request, classify it:
 
 3. If Nix installs skills via agent-skills-nix, then the Pi-side view is:
 
-- “Skills exist on disk in `~/.pi/agent/skills/<name>/SKILL.md`.”
+- “Shared skills exist on disk in `~/.agents/skills/<name>/SKILL.md`.”
 - They are **not** sourced from Pi `packages[].skills`.
 
 ## Quick templates

@@ -19,7 +19,7 @@ config/claude/
 
 config/agents/
 ├── modes/        # Shared agents (symlinked to ~/.claude/agents/)
-└── skills/       # Shared skills (symlinked to ~/.claude/skills/)
+└── skills/       # Shared skills (installed to ~/.agents/skills/)
 
 .agents/
 └── skills/       # Project-local cross-agent skills
@@ -27,7 +27,8 @@ config/agents/
 
 ## Key Facts
 
-- **Agents/skills:** Shared across agents (single source of truth in `config/agents/`)
+- **Agents:** Shared across agents (single source of truth in `config/agents/`)
+- **Claude global skills:** `~/.claude/skills` is a bridge to `~/.agents/skills`
 - **Settings:** Nix-managed (symlinked from store, read-only)
 - **Plugins:** NOT nix-managed (user installs manually)
 - **WakaTime:** API key via agenix secret decryption (Darwin only)

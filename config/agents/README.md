@@ -15,17 +15,17 @@ config/agents/
 
 This configuration is shared across three agents:
 
-| Agent    | Skills Location             | Modes Location              | Rules                       |
-| -------- | --------------------------- | --------------------------- | --------------------------- |
-| Claude   | `~/.claude/skills/`         | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`       |
-| OpenCode | `~/.config/opencode/skill/` | `~/.config/opencode/agent/` | `~/.config/opencode/rules/` |
-| Pi       | `~/.pi/agent/skills/`       | N/A                         | `~/.pi/agent/AGENTS.md`     |
+| Agent    | Skills Location                                     | Modes Location              | Rules                       |
+| -------- | --------------------------------------------------- | --------------------------- | --------------------------- |
+| Claude   | `~/.claude/skills/` → bridge to `~/.agents/skills/` | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`       |
+| OpenCode | `~/.agents/skills/`                                 | `~/.config/opencode/agent/` | `~/.config/opencode/rules/` |
+| Pi       | `~/.agents/skills/`                                 | N/A                         | `~/.pi/agent/AGENTS.md`     |
 
 ## Skills
 
 Use two lanes only:
 
-- `config/agents/skills/` — global/shared skills deployed to Claude, OpenCode, and Pi
+- `config/agents/skills/` — global/shared skills installed into `~/.agents/skills/`
 - `.agents/skills/` — project-local skills checked into a repo
 
 OpenClaw keeps its own skills in `~/.openclaw/skills/`.
