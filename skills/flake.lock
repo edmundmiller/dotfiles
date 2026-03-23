@@ -72,6 +72,22 @@
         "type": "github"
       }
     },
+    "hunk-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774295381,
+        "narHash": "sha256-4PjFrxhkAnj8zPH8ABP2FJVKHRxbRNLg4UHZbsTwdro=",
+        "owner": "modem-dev",
+        "repo": "hunk",
+        "rev": "0d30d3933123a8a7df23394ca96edfe171078a57",
+        "type": "github"
+      },
+      "original": {
+        "owner": "modem-dev",
+        "repo": "hunk",
+        "type": "github"
+      }
+    },
     "mitsuhiko-agent-stuff": {
       "flake": false,
       "locked": {
@@ -188,6 +204,7 @@
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
         "dotfiles-repo": "dotfiles-repo",
+        "hunk-repo": "hunk-repo",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
