@@ -35,6 +35,22 @@
         "type": "github"
       }
     },
+    "dotfiles-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774273256,
+        "narHash": "sha256-3h1mMvh4AIgiTxHO3VYb3LupEwQwf5f4QNHNaIIRhbw=",
+        "owner": "edmundmiller",
+        "repo": "dotfiles",
+        "rev": "773544c1a50db509573b4ee9dc5a3702f804a573",
+        "type": "github"
+      },
+      "original": {
+        "owner": "edmundmiller",
+        "repo": "dotfiles",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -171,6 +187,7 @@
       "inputs": {
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "dotfiles-repo": "dotfiles-repo",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
