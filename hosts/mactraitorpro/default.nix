@@ -15,7 +15,10 @@
       dev = {
         node.enable = true;
         node.useFnm = true;
-        node.bunGlobalPackages = [ "zele" ];
+        node.bunGlobalPackages = [
+          "zele"
+          "hunkdiff"
+        ];
         # FIXME: Python disabled - openclaw bundles whisper which includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
@@ -90,6 +93,14 @@
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
+        xdg.configFile."hunk/config.toml".text = ''
+          theme = "graphite"
+          mode = "auto"
+          line_numbers = true
+          wrap_lines = false
+          agent_notes = true
+        '';
+
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
         '';
