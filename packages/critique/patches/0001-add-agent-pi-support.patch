@@ -1,0 +1,103 @@
+diff --git a/src/cli.tsx b/src/cli.tsx
+index 7b25a92..b795458 100755
+--- a/src/cli.tsx
++++ b/src/cli.tsx
+@@ -171,6 +171,7 @@ async function runReviewMode(
+   } = await import("./review/index.ts");
+   const { ReviewApp } = await import("./review/review-app.tsx");
+   type StoredReview = import("./review/index.ts").StoredReview;
++  type AgentType = import("./review/index.ts").AgentType;
+ 
+   // Parse hunks with IDs
+   const hunks = await parseHunksWithIds(gitDiffResult);
+@@ -366,7 +367,7 @@ async function runReviewMode(
+   try {
+     // Create client and start connection in background (non-blocking)
+     // This lets us list sessions while ACP server is starting
+-    acpClient = createAcpClient(agent as "opencode" | "claude", (notification) => {
++    acpClient = createAcpClient(agent as AgentType, (notification) => {
+       if (reviewSessionId && notification.sessionId === reviewSessionId) {
+         printNotification(notification);
+       }
+@@ -506,7 +507,7 @@ async function runReviewMode(
+           updatedAt: now,
+           status: "in_progress",
+           cwd,
+-          agent: agent as "opencode" | "claude",
++          agent: agent as AgentType,
+           title: "Untitled review",
+           hunks,
+           reviewYaml: { hunks: [] },
+@@ -2291,7 +2292,7 @@ cli
+ cli
+   .command("review [base] [head]", "AI-powered diff review")
+   .option("--agent <name>", "AI agent to use (default: opencode)")
+-  .option("--model <id>", "Model to use for review (e.g., anthropic/claude-sonnet-4-20250514 for opencode, claude-sonnet-4-20250514 for claude)")
++  .option("--model <id>", "Model to use for review (e.g., anthropic/claude-sonnet-4-20250514 for opencode/pi, claude-sonnet-4-20250514 for claude)")
+   .option("--staged", "Review staged changes")
+   .option("--commit <ref>", "Review changes from a specific commit")
+   .option("--context <lines>", "Number of context lines (default: 3)")
+@@ -2328,8 +2329,8 @@ cli
+ 
+       // Default agent to opencode if not specified
+       const agent = options.agent || "opencode";
+-      if (agent !== "opencode" && agent !== "claude") {
+-        console.error(`Unknown agent: ${agent}. Supported: opencode, claude`);
++      if (agent !== "opencode" && agent !== "claude" && agent !== "pi") {
++        console.error(`Unknown agent: ${agent}. Supported: opencode, claude, pi`);
+         process.exit(1);
+       }
+ 
+diff --git a/src/review/acp-client.ts b/src/review/acp-client.ts
+index 86e554d..3c1d7bc 100644
+--- a/src/review/acp-client.ts
++++ b/src/review/acp-client.ts
+@@ -15,7 +15,7 @@ import fs from "fs"
+ import path from "path"
+ import os from "os"
+ 
+-export type AgentType = "opencode" | "claude"
++export type AgentType = "opencode" | "claude" | "pi"
+ 
+ /**
+  * Client for communicating with AI agents via ACP protocol
+@@ -73,6 +73,8 @@ export class AcpClient {
+     // Spawn the appropriate ACP server
+     const command = this.agent === "opencode"
+       ? ["opencode", "acp"]
++      : this.agent === "pi"
++      ? ["bunx", "pi-acp"]
+       : ["bunx", "@zed-industries/claude-code-acp"]
+ 
+     this.proc = Bun.spawn(command, {
+@@ -353,6 +355,8 @@ export class AcpClient {
+       if (!modelExists) {
+         const modelList = availableModels.map(m => `  ${m.modelId}`).join("\n")
+         const agentHint = this.agent === "opencode"
++          ? "provider/model-id (e.g., anthropic/claude-sonnet-4-20250514)"
++          : this.agent === "pi"
+           ? "provider/model-id (e.g., anthropic/claude-sonnet-4-20250514)"
+           : "model-id (e.g., claude-sonnet-4-20250514)"
+         throw new Error(
+diff --git a/src/review/storage.ts b/src/review/storage.ts
+index dbc8b75..44c0d14 100644
+--- a/src/review/storage.ts
++++ b/src/review/storage.ts
+@@ -27,7 +27,7 @@ export interface StoredReview {
+   updatedAt: number
+   status: ReviewStatus
+   cwd: string
+-  agent: "opencode" | "claude"
++  agent: "opencode" | "claude" | "pi"
+   title: string
+   hunks: IndexedHunk[]
+   reviewYaml: ReviewYaml
+@@ -43,7 +43,7 @@ export interface ReviewMetadata {
+   status: ReviewStatus
+   cwd: string
+   title: string
+-  agent: "opencode" | "claude"
++  agent: "opencode" | "claude" | "pi"
+ }
+ 
+ /**

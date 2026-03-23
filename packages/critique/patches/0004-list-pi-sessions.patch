@@ -1,0 +1,111 @@
+diff --git a/src/review/acp-client.ts b/src/review/acp-client.ts
+index e45f80f..8b6c347 100644
+--- a/src/review/acp-client.ts
++++ b/src/review/acp-client.ts
+@@ -34,6 +34,7 @@ export class AcpClient {
+     this.connect = this.connect.bind(this)
+     this.ensureConnected = this.ensureConnected.bind(this)
+     this.listSessions = this.listSessions.bind(this)
++    this.listPiSessions = this.listPiSessions.bind(this)
+     this.loadSessionContent = this.loadSessionContent.bind(this)
+     this.createReviewSession = this.createReviewSession.bind(this)
+     this.close = this.close.bind(this)
+@@ -227,9 +228,8 @@ export class AcpClient {
+       if (this.agent === "claude") {
+         return this.listClaudeSessions(cwd, limit)
+       }
+-      // pi-acp doesn't support session/list — return empty
+       if (this.agent === "pi") {
+-        return []
++        return this.listPiSessions(cwd, limit)
+       }
+       throw error
+     }
+@@ -310,6 +310,87 @@ export class AcpClient {
+       .slice(0, limit)
+   }
+ 
++  /**
++   * List Pi sessions by parsing JSONL files (fallback)
++   * Sessions are stored in ~/.pi/agent/sessions/<encoded-path>/
++   * Path encoding: /Users/emiller/src/foo → --Users-emiller-src-foo--
++   * @param cwd - Working directory to filter sessions by
++   * @param limit - Maximum number of sessions to return
++   */
++  private async listPiSessions(cwd: string, limit: number): Promise<SessionInfo[]> {
++    const piDir = path.join(os.homedir(), ".pi", "agent", "sessions")
++    // Pi encodes paths: leading -- then / replaced with -, trailing --
++    // Strip leading / to avoid triple dash (e.g. /Users/... → Users-...)
++    const encodedPath = `--${cwd.replace(/^\//, "").replace(/\//g, "-")}--`
++    const projectDir = path.join(piDir, encodedPath)
++
++    if (!fs.existsSync(projectDir)) {
++      return []
++    }
++
++    const sessions: SessionInfo[] = []
++
++    try {
++      const files = fs.readdirSync(projectDir)
++      const jsonlFiles = files.filter(f => f.endsWith(".jsonl"))
++
++      for (const file of jsonlFiles) {
++        const filePath = path.join(projectDir, file)
++        const content = fs.readFileSync(filePath, "utf-8")
++        const lines = content.trim().split("\n").filter(Boolean)
++
++        if (lines.length === 0) continue
++
++        try {
++          // First line is always type: "session" with id and timestamp
++          const firstEntry = JSON.parse(lines[0]!)
++          const sessionId = firstEntry.id || file.replace(".jsonl", "")
++
++          // Find first user message for title
++          let title: string | undefined
++          for (const line of lines) {
++            try {
++              const entry = JSON.parse(line)
++              if (entry.type === "message" && entry.message?.role === "user") {
++                const msgContent = entry.message.content
++                if (Array.isArray(msgContent)) {
++                  const textPart = msgContent.find((p: { type: string }) => p.type === "text")
++                  title = textPart?.text?.slice(0, 100)
++                } else if (typeof msgContent === "string") {
++                  title = msgContent.slice(0, 100)
++                }
++                break
++              }
++            } catch (e) {
++              logger.debug("Failed to parse pi session line", { file, error: e })
++            }
++          }
++
++          // Get file modification time as updatedAt
++          const stat = fs.statSync(filePath)
++
++          sessions.push({
++            sessionId,
++            cwd,
++            title,
++            updatedAt: stat.mtimeMs,
++            _meta: firstEntry._meta,
++          })
++        } catch (e) {
++          logger.debug("Failed to parse pi session file", { file, error: e })
++        }
++      }
++    } catch (e) {
++      logger.debug("Failed to list pi sessions", { error: e })
++      return []
++    }
++
++    // Sort by updatedAt descending (most recent first) and apply limit
++    return sessions
++      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
++      .slice(0, limit)
++  }
++
+   /**
+    * Load a session and return its content
+    */

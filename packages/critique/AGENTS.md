@@ -1,50 +1,74 @@
 # critique
 
-Nix package for the **Pi-enabled fork** of [critique](https://github.com/remorses/critique).
+Nix package for **upstream** [remorses/critique](https://github.com/remorses/critique) with a small local patch stack that preserves the Pi-related work from the fork.
 
-**Fork tracked here:** [edmundmiller/critique](https://github.com/edmundmiller/critique)
-**Upstream:** [remorses/critique](https://github.com/remorses/critique)
+**Upstream fetched by Nix:** [remorses/critique](https://github.com/remorses/critique)
+**Patch source:** exported from the former [edmundmiller/critique](https://github.com/edmundmiller/critique) fork
 
-## What is different about this fork
+## How this package is structured
 
-This package intentionally follows the fork, not upstream `main`.
+This package now uses the simplest possible source-layering model:
 
-1. **Single-package layout instead of the upstream workspace**
-   - Upstream keeps the CLI in `cli/` and also carries extra workspace packages.
-   - The fork flattens the repo into one root package, which makes Nix packaging simpler and keeps this derivation focused on the CLI.
+1. fetch upstream `remorses/critique` at the pinned base revision
+2. apply local plain unified diffs via `patches = [ ... ]`
+3. copy in a checked-in `package-lock.json` for the fully patched tree
+4. build/package the resulting source with Bun at runtime
 
-2. **Pi review-agent support**
-   - The fork adds `critique review --agent pi`.
-   - Internally, critique talks to `pi-acp` so review generation can use Pi alongside the existing OpenCode/Claude paths.
+That means the fork itself is no longer required as a packaging input once the patch files are checked in.
 
-3. **Pi session context support**
-   - The fork can discover Pi sessions from `~/.pi/agent/sessions/...`.
-   - If ACP session listing/loading is unavailable, it falls back to reading Pi JSONL session files directly so `--session` context still works.
+## What the patch stack changes
 
-4. **Dotfiles-specific git compatibility fixes**
-   - The fork includes diff-command hardening such as `--no-ext-diff`, which matters in this repo because global git diff tooling can otherwise interfere with critique's parsing.
-   - ACP stderr is also suppressed/drained so review mode stays cleaner in terminal use.
+The local patches currently preserve these fork behaviors:
 
-5. **Docs lag the code**
-   - The fork README still mostly reflects upstream and does **not** fully document Pi support yet.
-   - When behavior seems ambiguous, trust `src/cli.tsx` and `src/review/acp-client.ts` over the README.
+1. **Pi review-agent support**
+   - Adds `critique review --agent pi`.
+   - critique talks to `pi-acp` alongside the existing OpenCode/Claude ACP paths.
+
+2. **Pi session context support**
+   - critique can discover Pi sessions from `~/.pi/agent/sessions/...`.
+   - Session context can be listed/loaded even when ACP session listing is unavailable.
+
+3. **JSONL fallback loading for normal Pi sessions**
+   - If ACP cannot load a Pi session, critique falls back to parsing the Pi JSONL session files directly.
+   - This is needed because many Pi sessions were not created through `pi-acp` and therefore cannot be loaded by ACP session ID alone.
+
+4. **Git diff compatibility hardening**
+   - Includes the `--no-ext-diff` adjustment so critique works in environments where external diff tooling would otherwise interfere with parsing.
+
+5. **Small packaging-adjacent fix**
+   - Keeps the `typecheck` script addition from the fork so `tsc` runs against the checked-in `tsconfig.json` consistently.
+
+## Patch format expectations
+
+The checked-in patch files are intentionally kept as **plain unified diffs** so they can be used directly in Nix `patches = [ ... ]`.
+
+This only works safely because the exported commits met these conditions:
+
+- text-only diffs
+- no rename metadata required
+- no binary patches
+- applies cleanly with normal `patch` against the pinned upstream base revision
+
+If future fork changes need git rename semantics or binary patches, switch from `patches = [ ... ]` to a `git format-patch --binary` + `git am` flow instead.
 
 ## Packaging notes
 
 - critique still **runs on Bun**, so the wrapper launches the checked-in `src/cli.tsx` with `${bun}/bin/bun`.
-- Dependencies are installed with `buildNpmPackage`, then shipped alongside the source tree so Bun can resolve runtime imports.
-- The wrapper prefixes Bun onto `PATH`, but Pi review mode still expects `pi-acp` to be available in the user environment.
+- Dependencies are installed with `buildNpmPackage`, pruned to production dependencies, then shipped alongside the source tree so Bun can resolve runtime imports without carrying the full worker/test toolchain.
+- Pi review mode still expects `pi-acp` to be available in the user environment.
+- `public/` stays packaged because critique reads the bundled font assets at runtime for PDF/image generation.
 
 ## Updating
 
-1. Inspect the fork diff against upstream if you are deciding whether to keep tracking the fork.
-2. Bump `rev` and `hash` in `default.nix`.
-3. Regenerate `package-lock.json` from the fork root:
+1. Re-export the fork delta as plain patches from the exact upstream base revision.
+2. Verify the patches still apply with normal `patch`.
+3. Update the upstream `rev` and `hash` in `default.nix` if rebasing to a new base.
+4. Regenerate `package-lock.json` from the fully patched tree:
    ```bash
    npm install --package-lock-only --ignore-scripts
    ```
-4. Recompute `npmDepsHash`.
-5. Smoke-test with:
+5. Recompute `npmDepsHash`.
+6. Smoke-test with:
    ```bash
    nix build .#critique
    ./result/bin/critique --help
