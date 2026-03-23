@@ -1,0 +1,119 @@
+diff --git a/src/diff-utils.ts b/src/diff-utils.ts
+index caaffca..052a461 100644
+--- a/src/diff-utils.ts
++++ b/src/diff-utils.ts
+@@ -218,6 +218,8 @@ export function buildGitCommand(options: GitCommandOptions): string {
+   const submoduleArg = "--submodule=diff";
+   // Detect renames instead of showing full delete+add
+   const renameArg = "-M";
++  // Ensure we get standard unified diff even when diff.external is set (e.g. difft)
++  const noExtDiff = "--no-ext-diff";
+ 
+   // Combine --filter options with positional args after --
+   const filterOptions = options.filter
+@@ -233,14 +235,14 @@ export function buildGitCommand(options: GitCommandOptions): string {
+       : "";
+ 
+   if (options.staged) {
+-    return `git diff --cached --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
++    return `git diff --cached ${noExtDiff} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
+   }
+   if (options.commit) {
+-    return `git show ${options.commit} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
++    return `git show ${options.commit} ${noExtDiff} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
+   }
+   // Two refs: compare base...head (three-dot, shows changes since branches diverged, like GitHub PRs)
+   if (options.base && options.head) {
+-    return `git diff ${options.base}...${options.head} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
++    return `git diff ${options.base}...${options.head} ${noExtDiff} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
+   }
+   // Detect range syntax in single base argument (e.g., "origin/main...HEAD" or "main..feature")
+   if (options.base && !options.head) {
+@@ -248,24 +250,24 @@ export function buildGitCommand(options: GitCommandOptions): string {
+     const threeDotsMatch = options.base.match(/^(.+)\.\.\.(.+)$/);
+     if (threeDotsMatch) {
+       const [, rangeBase, rangeHead] = threeDotsMatch;
+-      return `git diff ${rangeBase}...${rangeHead} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
++      return `git diff ${rangeBase}...${rangeHead} ${noExtDiff} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
+     }
+ 
+     // Two-dot syntax: A..B (commits in B not in A)
+     const twoDotsMatch = options.base.match(/^(.+)\.\.(.+)$/);
+     if (twoDotsMatch) {
+       const [, rangeBase, rangeHead] = twoDotsMatch;
+-      return `git diff ${rangeBase}..${rangeHead} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
++      return `git diff ${rangeBase}..${rangeHead} ${noExtDiff} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
+     }
+   }
+   // Single ref: compare ref to working tree (like git diff)
+   if (options.base) {
+-    return `git diff ${options.base} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
++    return `git diff ${options.base} ${noExtDiff} --no-prefix ${renameArg} ${submoduleArg} ${contextArg} ${filterArg}`.trim();
+   }
+   // Default (no args): ignore submodules here — dirty submodule diffs are fetched
+   // separately via buildSubmoduleDiffCommand() to avoid showing committed submodule
+   // ref changes that have no actual uncommitted content.
+-  return `git add -N . && git diff --no-prefix ${renameArg} --ignore-submodules=all ${contextArg} ${filterArg}`.trim();
++  return `git add -N . && git diff ${noExtDiff} --no-prefix ${renameArg} --ignore-submodules=all ${contextArg} ${filterArg}`.trim();
+ }
+ 
+ /**
+@@ -313,7 +315,7 @@ export function buildSubmoduleDiffCommand(
+   const renameArg = "-M"
+   const submoduleArg = "--submodule=diff"
+   const pathArgs = submodulePaths.map((p) => `"${p}"`).join(" ")
+-  return `git diff --no-prefix ${renameArg} ${submoduleArg} ${contextArg} -- ${pathArgs}`.trim()
++  return `git diff --no-ext-diff --no-prefix ${renameArg} ${submoduleArg} ${contextArg} -- ${pathArgs}`.trim()
+ }
+ 
+ /**
+diff --git a/src/review/acp-client.ts b/src/review/acp-client.ts
+index 3c1d7bc..e45f80f 100644
+--- a/src/review/acp-client.ts
++++ b/src/review/acp-client.ts
+@@ -80,16 +80,33 @@ export class AcpClient {
+     this.proc = Bun.spawn(command, {
+       stdin: "pipe",
+       stdout: "pipe",
+-      stderr: "inherit",
++      stderr: "pipe",
+     })
+ 
+     const procStdin = this.proc.stdin
+     const procStdout = this.proc.stdout
++    const procStderr = this.proc.stderr
+ 
+     if (!procStdin || !procStdout) {
+       throw new Error("Failed to create stdin/stdout pipes")
+     }
+ 
++    // Drain stderr to logger instead of inheriting to terminal
++    if (procStderr && typeof procStderr !== "number") {
++      ;(async () => {
++        const reader = procStderr.getReader()
++        const decoder = new TextDecoder()
++        try {
++          while (true) {
++            const { done, value } = await reader.read()
++            if (done) break
++            const text = decoder.decode(value, { stream: true }).trim()
++            if (text) logger.debug(`[${this.agent} acp stderr]`, text)
++          }
++        } catch {}
++      })()
++    }
++
+     // Create writable stream adapter for Bun
+     const stdin = new WritableStream<Uint8Array>({
+       write: (chunk) => {
+@@ -210,6 +227,10 @@ export class AcpClient {
+       if (this.agent === "claude") {
+         return this.listClaudeSessions(cwd, limit)
+       }
++      // pi-acp doesn't support session/list — return empty
++      if (this.agent === "pi") {
++        return []
++      }
+       throw error
+     }
+   }
