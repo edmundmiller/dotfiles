@@ -330,11 +330,11 @@
     "dotfiles-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1773164065,
-        "narHash": "sha256-qpc7g55xxIHE2TZRDB3rXYzDubukgPFkAKltg8ELS2A=",
+        "lastModified": 1774273256,
+        "narHash": "sha256-3h1mMvh4AIgiTxHO3VYb3LupEwQwf5f4QNHNaIIRhbw=",
         "owner": "edmundmiller",
         "repo": "dotfiles",
-        "rev": "ca7fd5332a1e0995dd74bfa13b422af729ed91d3",
+        "rev": "773544c1a50db509573b4ee9dc5a3702f804a573",
         "type": "github"
       },
       "original": {
