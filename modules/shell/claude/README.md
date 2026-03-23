@@ -14,17 +14,18 @@ modules.shell.claude.enable = true;
 
 - **Settings symlink:** `~/.claude/settings.json` -> nix store
 - **Session instructions:** `~/.claude/CLAUDE.md` -> nix store
-- **Shared agents/skills:** Symlinked from `config/agents/` (single source of truth)
+- **Shared agents:** Symlinked from `config/agents/` (single source of truth)
+- **Skills bridge:** `~/.claude/skills` -> `~/.agents/skills`
 - **WakaTime integration:** API key via agenix secret decryption
 
 ## Files
 
-| Source                        | Destination               | Purpose                    |
-| ----------------------------- | ------------------------- | -------------------------- |
-| `config/claude/settings.json` | `~/.claude/settings.json` | CLI settings, marketplaces |
-| `config/agents/rules/*.md`    | `~/.claude/CLAUDE.md`     | Per-session instructions   |
-| `config/agents/modes/`        | `~/.claude/agents/`       | Custom agents (shared)     |
-| `config/agents/skills/`       | `~/.claude/skills/`       | Custom skills (shared)     |
+| Source                        | Destination               | Purpose                     |
+| ----------------------------- | ------------------------- | --------------------------- |
+| `config/claude/settings.json` | `~/.claude/settings.json` | CLI settings, marketplaces  |
+| `config/agents/rules/*.md`    | `~/.claude/CLAUDE.md`     | Per-session instructions    |
+| `config/agents/modes/`        | `~/.claude/agents/`       | Custom agents (shared)      |
+| `~/.agents/skills/`           | `~/.claude/skills/`       | Skills compatibility bridge |
 
 Project-local skills should live in `.agents/skills/`.
 

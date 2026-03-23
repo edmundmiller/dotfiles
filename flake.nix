@@ -413,52 +413,52 @@
                 name = "skills-lock-sync";
                 entry = toString (
                   pkgs.writeShellScript "skills-lock-sync" ''
-                                      set -euo pipefail
+                                                          set -euo pipefail
 
-                                      upstream=""
-                                      if upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
-                                        upstream="$upstream_ref"
-                                      elif git rev-parse --verify origin/main >/dev/null 2>&1; then
-                                        upstream="origin/main"
-                                      else
-                                        echo "skills-lock-sync: no upstream branch found; skipping check" >&2
-                                        exit 0
-                                      fi
+                                                          upstream=""
+                                                          if upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
+                                                            upstream="$upstream_ref"
+                                                          elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+                                                            upstream="origin/main"
+                                                          else
+                                                            echo "skills-lock-sync: no upstream branch found; skipping check" >&2
+                                                            exit 0
+                                                          fi
 
-                                      range="$upstream...HEAD"
-                                      changed_files=$(git diff --name-only "$range")
+                                                          range="$upstream...HEAD"
+                                                          changed_files=$(git diff --name-only "$range")
 
-                                      if ! echo "$changed_files" | grep -q '^config/agents/skills/'; then
-                                        exit 0
-                                      fi
+                                                          if ! echo "$changed_files" | grep -q '^config/agents/skills/'; then
+                                                            exit 0
+                                                          fi
 
-                                      has_parent_lock=0
-                                      has_child_lock=0
+                                                          has_parent_lock=0
+                                                          has_child_lock=0
 
-                                      if echo "$changed_files" | grep -q '^flake.lock$'; then
-                                        has_parent_lock=1
-                                      fi
+                                                          if echo "$changed_files" | grep -q '^flake.lock$'; then
+                                                            has_parent_lock=1
+                                                          fi
 
-                                      if echo "$changed_files" | grep -q '^skills/flake.lock$'; then
-                                        has_child_lock=1
-                                      fi
+                                                          if echo "$changed_files" | grep -q '^skills/flake.lock$'; then
+                                                            has_child_lock=1
+                                                          fi
 
-                                      if [ "$has_parent_lock" -eq 1 ] && [ "$has_child_lock" -eq 1 ]; then
-                                        exit 0
-                                      fi
+                                                          if [ "$has_parent_lock" -eq 1 ] && [ "$has_child_lock" -eq 1 ]; then
+                                                            exit 0
+                                                          fi
 
-                                      cat >&2 <<'EOF'
-                    ERROR: config/agents/skills changes detected without synced lock files.
+                                                          cat >&2 <<'EOF'
+                                        ERROR: config/agents/skills changes detected without synced lock files.
 
-                    Run:
-                      hey skills-sync
+                                        Run:
+                                          hey skills-sync
 
-                    This updates:
-                      - skills/flake.lock (dotfiles-repo pin)
-                      - flake.lock (skills-catalog sync)
-                    and rebuilds so Pi sees the new skill.
-                    EOF
-                                      exit 1
+                                        This updates:
+                                          - skills/flake.lock (dotfiles-repo pin)
+                                          - flake.lock (skills-catalog sync)
+                    and rebuilds so shared skills are refreshed everywhere.
+                                        EOF
+                                                          exit 1
                   ''
                 );
                 language = "system";

@@ -64,8 +64,8 @@ let
   );
 
   # Note: config/agents/skills/ are managed by agent-skills-nix (skills/flake.nix)
-  # which installs them as directory symlinks in ~/.pi/agent/skills/.
-  # Do NOT add HM file links for those — they'd conflict with the read-only Nix store dirs.
+  # and installed to ~/.agents/skills/. Pi discovers that location natively,
+  # so do NOT add separate HM skill links under ~/.pi/agent/skills/.
 
   # Dynamically discover subagent definitions from config/pi/agents/
   # Supports both .md (agents) and .chain.md (chains) for pi-subagents
@@ -230,9 +230,9 @@ in
     env.PI_TASKS_BACKEND = "beads";
 
     # Pi configuration via home-manager
-    # - config/agents/skills/ → ~/.pi/agent/skills/
+    # - config/agents/skills/ → ~/.agents/skills/
     # - project-local skills should live in .agents/skills/
-    # - ~/.agents/skills/ auto-discovered by Pi natively (manually installed globals)
+    # - ~/.agents/skills/ auto-discovered by Pi natively
     # - AGENTS.md built dynamically from config/agents/rules/*.md
     # - settings.json stripped of comments (pi only supports standard JSON)
     home-manager.users.${config.user.name} =
@@ -289,6 +289,10 @@ in
         home.activation.pi-extension-conflict-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ext_dir="$HOME/.pi/agent/extensions"
           rm -f "$ext_dir/context.ts" "$ext_dir/context.js"
+        '';
+
+        home.activation.pi-legacy-skill-dir-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          rm -rf "$HOME/.pi/agent/skills"
         '';
 
         home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (

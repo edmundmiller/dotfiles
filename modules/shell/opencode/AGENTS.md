@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Nix module for OpenCode CLI. Manages config, rules, agents, skills, commands, and tools.
+Nix module for OpenCode CLI. Manages config, rules, agents, commands, and tools.
 
 ## Module Structure
 
@@ -17,16 +17,17 @@ config/opencode/
 ├── dcp.jsonc         # DCP plugin config
 ├── rules/            # Global rules (symlinked)
 ├── agent/            # Custom agents (symlinked)
-├── skill/            # Skills (symlinked)
 ├── command/          # Slash commands (symlinked)
 ├── tool/             # TypeScript tools (copied, not symlinked)
 ├── plugin/           # Local plugin development (NOT deployed)
 └── package.json      # Dependencies for tools
+
+Global shared skills live in `~/.agents/skills/` and are discovered natively by OpenCode.
 ```
 
 ## Key Facts
 
-- **Config/rules/agents/skills/commands:** Nix-managed (symlinked from store, read-only)
+- **Config/rules/agents/commands:** Nix-managed (symlinked from store, read-only)
 - **Tools:** Copied (not symlinked) - TypeScript needs to resolve node_modules
 - **Plugins:** User-managed at `~/.config/opencode/plugin/`
 - **Plugin cache:** Lives at `~/.cache/opencode/` (NOT nix-managed)

@@ -4,7 +4,8 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 
 ## Quick Reference
 
-- **Skills**: `config/agents/skills/` → `~/.claude/skills`, `~/.config/opencode/skill`, `~/.pi/agent/skills`
+- **Global shared skills**: `config/agents/skills/` → `~/.agents/skills`
+- **Claude compatibility bridge**: `~/.claude/skills` → `~/.agents/skills`
 - **Project-local skills**: `.agents/skills/`
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`, `~/.config/opencode/agent`
 - **Rules**: `config/agents/rules/` → Concatenated into `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`, symlinked to `~/.config/opencode/rules`
@@ -14,7 +15,8 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 - Skills use skills.sh format (YAML frontmatter + markdown)
 - Rules are numbered (01-, 02-, etc.) for ordered concatenation
 - All agents share the same skills and modes via nix symlinks
-- Global skills.sh CLI installs go to `~/.agents/skills/` (separate from dotfiles)
+- Pi and OpenCode discover `~/.agents/skills/` natively
+- Claude uses `~/.claude/skills/`, bridged to `~/.agents/skills/`
 - OpenClaw skills live separately in `~/.openclaw/skills/`
 
 ## Adding Skills
