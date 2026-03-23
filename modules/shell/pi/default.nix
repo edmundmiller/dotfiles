@@ -6,8 +6,8 @@
 # Pi is a terminal-based AI coding assistant. This module:
 # - Configures Ghostty keybindings when Ghostty is enabled
 # - Auto-discovers prompt templates from config/pi/prompts/
-# - Auto-discovers pi-specific skills from config/pi/skills/
 # - Auto-discovers cross-agent shared skills from config/agents/skills/
+# - Project-local skills should live in .agents/skills/
 # Note: Pi also natively discovers ~/.agents/skills/ (for manually installed global skills)
 # - Auto-discovers subagent definitions from config/pi/agents/
 # - Generates AGENTS.md from config/agents/rules/
@@ -63,31 +63,9 @@ let
     }) promptFiles
   );
 
-  # Helper: discover skill dirs containing a SKILL.md
-  discoverSkills =
-    dir:
-    if builtins.pathExists dir then
-      builtins.filter (d: builtins.pathExists "${dir}/${d}/SKILL.md") (
-        builtins.attrNames (builtins.readDir dir)
-      )
-    else
-      [ ];
-
-  # config/pi/skills/ — pi-specific skills
-  piSkillsDir = "${configDir}/pi/skills";
-  piSkillDirs = discoverSkills piSkillsDir;
-  piSkillLinks = lib.listToAttrs (
-    map (d: {
-      name = ".pi/agent/skills/${d}/SKILL.md";
-      value.source = "${piSkillsDir}/${d}/SKILL.md";
-    }) piSkillDirs
-  );
-
   # Note: config/agents/skills/ are managed by agent-skills-nix (skills/flake.nix)
   # which installs them as directory symlinks in ~/.pi/agent/skills/.
   # Do NOT add HM file links for those — they'd conflict with the read-only Nix store dirs.
-
-  skillLinks = piSkillLinks;
 
   # Dynamically discover subagent definitions from config/pi/agents/
   # Supports both .md (agents) and .chain.md (chains) for pi-subagents
@@ -252,7 +230,8 @@ in
     env.PI_TASKS_BACKEND = "beads";
 
     # Pi configuration via home-manager
-    # - config/pi/skills/ + config/agents/skills/ → ~/.pi/agent/skills/
+    # - config/agents/skills/ → ~/.pi/agent/skills/
+    # - project-local skills should live in .agents/skills/
     # - ~/.agents/skills/ auto-discovered by Pi natively (manually installed globals)
     # - AGENTS.md built dynamically from config/agents/rules/*.md
     # - settings.json stripped of comments (pi only supports standard JSON)
@@ -261,7 +240,6 @@ in
       {
         home.file =
           promptLinks
-          // skillLinks
           // agentLinks
           // {
             ".pi/agent/AGENTS.md".text = concatenatedRules;

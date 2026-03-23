@@ -1,6 +1,6 @@
 # Agents Configuration
 
-Unified configuration for AI coding agents. This directory contains shared skills, rules, and modes that are symlinked to each agent's configuration directory.
+Unified configuration for AI coding agents. This directory contains shared global skills, rules, and modes that are symlinked to each agent's configuration directory.
 
 ## Directory Structure
 
@@ -22,6 +22,13 @@ This configuration is shared across three agents:
 | Pi       | `~/.pi/agent/skills/`       | N/A                         | `~/.pi/agent/AGENTS.md`     |
 
 ## Skills
+
+Use two lanes only:
+
+- `config/agents/skills/` — global/shared skills deployed to Claude, OpenCode, and Pi
+- `.agents/skills/` — project-local skills checked into a repo
+
+OpenClaw keeps its own skills in `~/.openclaw/skills/`.
 
 Skills use the [skills.sh](https://skills.sh/docs) format with YAML frontmatter:
 
@@ -76,6 +83,8 @@ Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGEN
 
 ## Adding a New Skill
 
+### Global/shared skill
+
 1. Create a directory in `config/agents/skills/`:
 
    ```bash
@@ -97,6 +106,16 @@ Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGEN
    ```
 
 3. Run `hey rebuild` to deploy
+
+### Project-local skill
+
+1. Create a directory in `.agents/skills/`:
+
+   ```bash
+   mkdir -p .agents/skills/my-skill
+   ```
+
+2. Add `SKILL.md` with the same frontmatter shape as above.
 
 ## Related Files
 
