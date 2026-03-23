@@ -216,6 +216,9 @@ alias grv='git rev-parse'
 
 # critique - TUI diff viewer (requires bun)
 alias critique='bunx critique'
+alias hk='hunk'
+alias hkd='hunk diff'
+alias hks='hunk show'
 
 # gh cli
 ghf() {
