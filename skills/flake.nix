@@ -37,6 +37,11 @@
       flake = false;
     };
 
+    hunk-repo = {
+      url = "github:modem-dev/hunk";
+      flake = false;
+    };
+
     qmd-repo = {
       url = "github:tobi/qmd";
       flake = false;
@@ -110,6 +115,12 @@
               filter.maxDepth = 1;
             };
 
+            hunk = {
+              path = inputs.hunk-repo.outPath;
+              subdir = "skills";
+              filter.maxDepth = 2;
+            };
+
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -129,6 +140,9 @@
 
             tmux.from = "mitsuhiko";
             tmux.path = ".";
+
+            hunk-review.from = "hunk";
+            hunk-review.path = "hunk-review";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";
