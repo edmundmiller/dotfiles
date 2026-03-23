@@ -361,51 +361,114 @@
             ];
           };
 
-          pre-commit.settings.hooks = {
-            treefmt = {
-              enable = true;
-              package = config.treefmt.build.wrapper;
-            };
-            beads = {
-              enable = true;
-              name = "beads";
-              entry = "bd hooks run pre-commit";
-              language = "system";
-              pass_filenames = false;
-            };
-            ha-automation-assertions = {
-              enable = true;
-              name = "ha-automation-assertions";
-              entry = toString (
-                pkgs.writeShellScript "ha-automation-assertions" ''
-                  failures=$(nix eval '.#checks.${system}.ha-automation-assertions.passthru.failures' --json 2>/dev/null)
-                  if [ "$failures" != "[]" ]; then
-                    echo "HA automation assertions failed:" >&2
-                    echo "$failures" | ${pkgs.jq}/bin/jq -r '.[].msg' | sed 's/^/  FAIL: /' >&2
-                    exit 1
-                  fi
-                ''
-              );
-              language = "system";
-              pass_filenames = false;
-              files = "modules/services/hass/";
-            };
-            ha-apply-devices-assertions = {
-              enable = true;
-              name = "ha-apply-devices-assertions";
-              entry = toString (
-                pkgs.writeShellScript "ha-apply-devices-assertions" ''
-                  failures=$(nix eval '.#checks.${system}.ha-apply-devices-assertions.passthru.failures' --json 2>/dev/null)
-                  if [ "$failures" != "[]" ]; then
-                    echo "HA apply-devices assertions failed:" >&2
-                    echo "$failures" | ${pkgs.jq}/bin/jq -r '.[].msg' | sed 's/^/  FAIL: /' >&2
-                    exit 1
-                  fi
-                ''
-              );
-              language = "system";
-              pass_filenames = false;
-              files = "modules/services/hass/";
+          pre-commit.settings = {
+            hooks = {
+              treefmt = {
+                enable = true;
+                package = config.treefmt.build.wrapper;
+              };
+              beads = {
+                enable = true;
+                name = "beads";
+                entry = "bd hooks run pre-commit";
+                language = "system";
+                pass_filenames = false;
+              };
+              ha-automation-assertions = {
+                enable = true;
+                name = "ha-automation-assertions";
+                entry = toString (
+                  pkgs.writeShellScript "ha-automation-assertions" ''
+                    failures=$(nix eval '.#checks.${system}.ha-automation-assertions.passthru.failures' --json 2>/dev/null)
+                    if [ "$failures" != "[]" ]; then
+                      echo "HA automation assertions failed:" >&2
+                      echo "$failures" | ${pkgs.jq}/bin/jq -r '.[].msg' | sed 's/^/  FAIL: /' >&2
+                      exit 1
+                    fi
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "modules/services/hass/";
+              };
+              ha-apply-devices-assertions = {
+                enable = true;
+                name = "ha-apply-devices-assertions";
+                entry = toString (
+                  pkgs.writeShellScript "ha-apply-devices-assertions" ''
+                    failures=$(nix eval '.#checks.${system}.ha-apply-devices-assertions.passthru.failures' --json 2>/dev/null)
+                    if [ "$failures" != "[]" ]; then
+                      echo "HA apply-devices assertions failed:" >&2
+                      echo "$failures" | ${pkgs.jq}/bin/jq -r '.[].msg' | sed 's/^/  FAIL: /' >&2
+                      exit 1
+                    fi
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "modules/services/hass/";
+              };
+              skills-lock-sync = {
+                enable = true;
+                name = "skills-lock-sync";
+                entry = toString (
+                  pkgs.writeShellScript "skills-lock-sync" ''
+                                      set -euo pipefail
+
+                                      upstream=""
+                                      if upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
+                                        upstream="$upstream_ref"
+                                      elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+                                        upstream="origin/main"
+                                      else
+                                        echo "skills-lock-sync: no upstream branch found; skipping check" >&2
+                                        exit 0
+                                      fi
+
+                                      range="$upstream...HEAD"
+                                      changed_files=$(git diff --name-only "$range")
+
+                                      if ! echo "$changed_files" | grep -q '^config/agents/skills/'; then
+                                        exit 0
+                                      fi
+
+                                      has_parent_lock=0
+                                      has_child_lock=0
+
+                                      if echo "$changed_files" | grep -q '^flake.lock$'; then
+                                        has_parent_lock=1
+                                      fi
+
+                                      if echo "$changed_files" | grep -q '^skills/flake.lock$'; then
+                                        has_child_lock=1
+                                      fi
+
+                                      if [ "$has_parent_lock" -eq 1 ] && [ "$has_child_lock" -eq 1 ]; then
+                                        exit 0
+                                      fi
+
+                                      cat >&2 <<'EOF'
+                    ERROR: config/agents/skills changes detected without synced lock files.
+
+                    Run:
+                      hey skills-sync
+
+                    This updates:
+                      - skills/flake.lock (dotfiles-repo pin)
+                      - flake.lock (skills-catalog sync)
+                    and rebuilds so Pi sees the new skill.
+                    EOF
+                                      exit 1
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                always_run = true;
+                stages = [
+                  "pre-commit"
+                  "pre-push"
+                ];
+              };
             };
           };
 

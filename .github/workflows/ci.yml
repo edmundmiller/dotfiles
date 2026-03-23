@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: DeterminateSystems/flake-checker-action@main
@@ -20,6 +22,7 @@ jobs:
         run: |
           # Check x86_64-linux specific outputs
           nix build .#checks.x86_64-linux.treefmt --no-link
+          nix build .#checks.x86_64-linux.pre-commit --no-link
           nix build .#checks.x86_64-linux.zunit-tests --no-link
 
       - name: Check NixOS configurations evaluate
@@ -32,6 +35,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
@@ -39,6 +44,7 @@ jobs:
         run: |
           # Check aarch64-darwin specific outputs
           nix build .#checks.aarch64-darwin.treefmt --no-link
+          nix build .#checks.aarch64-darwin.pre-commit --no-link
           nix build .#checks.aarch64-darwin.zunit-tests --no-link
 
       - name: Check Darwin configurations evaluate
@@ -52,6 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
