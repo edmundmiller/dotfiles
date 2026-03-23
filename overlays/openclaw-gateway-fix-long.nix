@@ -1,4 +1,5 @@
-# Workaround: symlink missing `long` dep into @whiskeysockets/baileys
+# Pin OpenClaw gateway to release v2026.3.22 + keep local dependency workaround.
+# Remove the sourceInfo override once nix-openclaw updates its pin.
 #
 # Bug: baileys@7.0.0-rc.9 imports `long` (ESM) but pnpm strict mode
 # doesn't hoist it into baileys' scoped node_modules/. The package
@@ -11,8 +12,23 @@
 #
 # Remove once upstream nix-openclaw adds this to gateway-install.sh.
 # Tracking: dotfiles-2sc7
-_final: prev: {
-  openclaw-gateway = prev.openclaw-gateway.overrideAttrs (old: {
+_final: prev:
+let
+  sourceInfo = {
+    owner = "openclaw";
+    repo = "openclaw";
+    rev = "e7d11f6c33e223a0dd8a21cfe01076bd76cef87a"; # v2026.3.22
+    hash = "sha256-Dx4Khi0FxpC+ykiH/bXlX9cctDAHngBDCttV46iIvnQ=";
+    pnpmDepsHash = "sha256-B5qoJvp+FxsvnEL5UONS9FPAChh4jG236R1FvQI8I2I=";
+  };
+
+  pinnedGateway = prev.openclaw-gateway.override {
+    inherit sourceInfo;
+    inherit (sourceInfo) pnpmDepsHash;
+  };
+in
+{
+  openclaw-gateway = pinnedGateway.overrideAttrs (old: {
     installPhase = old.installPhase + ''
 
       # -- local fix: link missing `long` dep for baileys (dotfiles-2sc7) --
