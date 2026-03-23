@@ -1,10 +1,10 @@
 # Skill File Locations
 
-| Scope     | Path                                    | Notes                              |
-| --------- | --------------------------------------- | ---------------------------------- |
-| Project   | `.agents/skills/<name>/SKILL.md`        | Cross-agent compatible (preferred) |
-| Project   | `.claude/skills/` / `.pi/agent/skills/` | Agent-specific                     |
-| Global    | `config/agents/skills/<name>/SKILL.md`  | Symlinked to all agents            |
-| skills.sh | `~/.agents/skills/`                     | Managed by `npx skills add`        |
+| Scope              | Path                                   | Notes                                          |
+| ------------------ | -------------------------------------- | ---------------------------------------------- |
+| Project            | `.agents/skills/<name>/SKILL.md`       | Cross-agent compatible (preferred)             |
+| Global (dotfiles)  | `config/agents/skills/<name>/SKILL.md` | Symlinked to Claude, OpenCode, and Pi via Nix  |
+| Global (skills.sh) | `~/.agents/skills/`                    | Managed by `npx skills add`                    |
+| OpenClaw           | `~/.openclaw/skills/<name>/SKILL.md`   | OpenClaw-specific; keep separate from dotfiles |
 
 Each skill: `SKILL.md` with YAML frontmatter + optional `references/` dir.
