@@ -1,0 +1,221 @@
+diff --git a/src/cli.tsx b/src/cli.tsx
+index b795458..7448352 100755
+--- a/src/cli.tsx
++++ b/src/cli.tsx
+@@ -472,10 +472,11 @@ async function runReviewMode(
+ 
+         for (const sessionInfo of sessionsToLoad) {
+           try {
+-            const content = await acpClient.loadSessionContent(sessionInfo.sessionId, cwd);
++            const sessionFile = typeof sessionInfo._meta?.sessionFile === "string" ? sessionInfo._meta.sessionFile : undefined;
++            const content = await acpClient.loadSessionContent(sessionInfo.sessionId, cwd, sessionFile);
+             compressedSessions.push(compressSession(content));
+-          } catch {
+-            // Skip sessions that fail to load
++          } catch (e) {
++            logger.debug("Failed to load session", { sessionId: sessionInfo.sessionId, error: e })
+           }
+         }
+         sessionsContext = sessionsToContextXml(compressedSessions);
+diff --git a/src/review/acp-client.ts b/src/review/acp-client.ts
+index 8b6c347..542df8a 100644
+--- a/src/review/acp-client.ts
++++ b/src/review/acp-client.ts
+@@ -36,6 +36,8 @@ export class AcpClient {
+     this.listSessions = this.listSessions.bind(this)
+     this.listPiSessions = this.listPiSessions.bind(this)
+     this.loadSessionContent = this.loadSessionContent.bind(this)
++    this.parseSessionFile = this.parseSessionFile.bind(this)
++    this.extractTextFromContent = this.extractTextFromContent.bind(this)
+     this.createReviewSession = this.createReviewSession.bind(this)
+     this.close = this.close.bind(this)
+   }
+@@ -294,6 +296,7 @@ export class AcpClient {
+             cwd,
+             title,
+             updatedAt: stat.mtimeMs,
++            _meta: { sessionFile: filePath },
+           })
+         } catch (e) {
+           logger.debug("Failed to parse session file", { file, error: e })
+@@ -374,7 +377,7 @@ export class AcpClient {
+             cwd,
+             title,
+             updatedAt: stat.mtimeMs,
+-            _meta: firstEntry._meta,
++            _meta: { ...firstEntry._meta, sessionFile: filePath },
+           })
+         } catch (e) {
+           logger.debug("Failed to parse pi session file", { file, error: e })
+@@ -392,9 +395,11 @@ export class AcpClient {
+   }
+ 
+   /**
+-   * Load a session and return its content
++   * Load a session and return its content.
++   * Falls back to reading the JSONL file directly if ACP loadSession fails
++   * (e.g. session wasn't created through pi-acp).
+    */
+-  async loadSessionContent(sessionId: string, cwd: string): Promise<SessionContent> {
++  async loadSessionContent(sessionId: string, cwd: string, sessionFile?: string): Promise<SessionContent> {
+     await this.ensureConnected()
+     if (!this.client) {
+       throw new Error("Client connection failed")
+@@ -403,20 +408,146 @@ export class AcpClient {
+     // Clear any existing updates for this session
+     this.sessionUpdates.set(sessionId, [])
+ 
+-    // Load the session - this will stream updates via sessionUpdate handler
+-    if (this.client.loadSession) {
+-      await this.client.loadSession({
+-        sessionId,
+-        cwd,
+-        mcpServers: [],
+-      })
++    // Try ACP loadSession first
++    try {
++      if (this.client.loadSession) {
++        await this.client.loadSession({
++          sessionId,
++          cwd,
++          mcpServers: [],
++        })
++      }
++    } catch (e) {
++      logger.debug("ACP loadSession failed, trying file fallback", { sessionId, error: e })
+     }
+ 
+-    // Return collected notifications
+-    return {
+-      sessionId,
+-      notifications: this.sessionUpdates.get(sessionId) || [],
++    // If we got notifications via ACP, return them
++    const acpNotifications = this.sessionUpdates.get(sessionId) || []
++    if (acpNotifications.length > 0) {
++      return { sessionId, notifications: acpNotifications }
+     }
++
++    // Fallback: read session JSONL file directly and convert to notifications
++    if (sessionFile && fs.existsSync(sessionFile)) {
++      logger.debug("Loading session from file", { sessionId, sessionFile })
++      const notifications = this.parseSessionFile(sessionId, sessionFile)
++      return { sessionId, notifications }
++    }
++
++    return { sessionId, notifications: [] }
++  }
++
++  /**
++   * Parse a pi/claude session JSONL file into SessionNotification format
++   */
++  private parseSessionFile(sessionId: string, filePath: string): SessionNotification[] {
++    const notifications: SessionNotification[] = []
++    const content = fs.readFileSync(filePath, "utf-8")
++    const lines = content.trim().split("\n").filter(Boolean)
++
++    for (const line of lines) {
++      try {
++        const entry = JSON.parse(line)
++
++        // Pi format: type === "message" with message.role
++        if (entry.type === "message" && entry.message) {
++          const role = entry.message.role
++          const msgContent = entry.message.content
++
++          if (role === "user") {
++            const text = this.extractTextFromContent(msgContent)
++            if (text) {
++              notifications.push({
++                sessionId,
++                update: {
++                  sessionUpdate: "user_message_chunk",
++                  content: { type: "text", text },
++                },
++              } as SessionNotification)
++            }
++          }
++
++          if (role === "assistant") {
++            // Process each content part
++            if (Array.isArray(msgContent)) {
++              for (const part of msgContent) {
++                if (part.type === "text" && part.text) {
++                  notifications.push({
++                    sessionId,
++                    update: {
++                      sessionUpdate: "agent_message_chunk",
++                      content: { type: "text", text: part.text },
++                    },
++                  } as SessionNotification)
++                }
++                if (part.type === "thinking" && part.thinking) {
++                  notifications.push({
++                    sessionId,
++                    update: {
++                      sessionUpdate: "agent_thought_chunk",
++                      content: { text: part.thinking },
++                    },
++                  } as SessionNotification)
++                }
++                if (part.type === "toolCall") {
++                  notifications.push({
++                    sessionId,
++                    update: {
++                      sessionUpdate: "tool_call",
++                      title: part.name || "tool",
++                      toolCallId: part.id || "",
++                      kind: part.name || "tool",
++                      locations: [],
++                    },
++                  } as SessionNotification)
++                }
++              }
++            } else if (typeof msgContent === "string") {
++              notifications.push({
++                sessionId,
++                update: {
++                  sessionUpdate: "agent_message_chunk",
++                  content: { type: "text", text: msgContent },
++                },
++              } as SessionNotification)
++            }
++          }
++        }
++
++        // Claude format: type === "user"/"assistant" with message.content
++        if ((entry.type === "user" || entry.type === "assistant") && entry.message?.content) {
++          const text = this.extractTextFromContent(entry.message.content)
++          if (text) {
++            const updateType = entry.type === "user" ? "user_message_chunk" : "agent_message_chunk"
++            notifications.push({
++              sessionId,
++              update: {
++                sessionUpdate: updateType,
++                content: { type: "text", text },
++              },
++            } as SessionNotification)
++          }
++        }
++      } catch {
++        // Skip unparseable lines
++      }
++    }
++
++    return notifications
++  }
++
++  /**
++   * Extract text from various content formats (string, array of parts)
++   */
++  private extractTextFromContent(content: unknown): string {
++    if (typeof content === "string") return content
++    if (Array.isArray(content)) {
++      return content
++        .filter((p: { type: string; text?: string }) => p.type === "text" && p.text)
++        .map((p: { text: string }) => p.text)
++        .join("\n")
++    }
++    return ""
+   }
+ 
+   /**
