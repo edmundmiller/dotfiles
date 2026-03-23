@@ -130,3 +130,10 @@ alternative.
 For the expanded checklist, see:
 
 - `references/rubric.md`
+- `references/rules/01-data-ink-ratio.md`
+- `references/rules/02-no-3d-effects.md`
+- `references/rules/03-direct-labeling.md`
+- `references/rules/04-axis-readability.md`
+- `references/rules/05-muted-purposeful-color.md`
+- `references/rules/06-integrated-annotations.md`
+- `references/rules/07-graphical-integrity.md`
