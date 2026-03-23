@@ -24,6 +24,7 @@ help:
     @echo ""
     @echo "Examples:"
     @echo "  hey rebuild          # Rebuild and switch local system"
+    @echo "  hey skills-sync      # Sync shared skills lock + rebuild"
     @echo "  hey nuc              # Deploy to NUC server"
     @echo "  hey update nixpkgs   # Update only nixpkgs input"
     @echo "  hey search firefox   # Search for firefox packages"
