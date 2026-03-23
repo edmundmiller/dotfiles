@@ -5,6 +5,7 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 ## Quick Reference
 
 - **Skills**: `config/agents/skills/` → `~/.claude/skills`, `~/.config/opencode/skill`, `~/.pi/agent/skills`
+- **Project-local skills**: `.agents/skills/`
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`, `~/.config/opencode/agent`
 - **Rules**: `config/agents/rules/` → Concatenated into `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`, symlinked to `~/.config/opencode/rules`
 
@@ -14,10 +15,15 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 - Rules are numbered (01-, 02-, etc.) for ordered concatenation
 - All agents share the same skills and modes via nix symlinks
 - Global skills.sh CLI installs go to `~/.agents/skills/` (separate from dotfiles)
+- OpenClaw skills live separately in `~/.openclaw/skills/`
 
 ## Adding Skills
 
-Create `config/agents/skills/<name>/SKILL.md` with frontmatter:
+For global/shared skills, create `config/agents/skills/<name>/SKILL.md`.
+
+For project-local skills, create `.agents/skills/<name>/SKILL.md`.
+
+Example frontmatter:
 
 ```yaml
 ---
@@ -30,4 +36,4 @@ description: When to trigger this skill
 
 - `modules/shell/claude/default.nix` - Concatenates rules → CLAUDE.md
 - `modules/shell/opencode/default.nix` - Symlinks all directories
-- `modules/shell/pi/default.nix` - Symlinks skills only
+- `modules/shell/pi/default.nix` - Symlinks Pi config; global skills come from agent-skills-nix

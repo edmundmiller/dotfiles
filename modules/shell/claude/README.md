@@ -1,6 +1,6 @@
 # Claude CLI Module
 
-Claude Code shell integration for nix-darwin. Manages settings, agents, skills, and WakaTime integration.
+Claude Code shell integration for nix-darwin. Manages settings, agents, shared skills, and WakaTime integration.
 
 ## Installation
 
@@ -14,7 +14,7 @@ modules.shell.claude.enable = true;
 
 - **Settings symlink:** `~/.claude/settings.json` -> nix store
 - **Session instructions:** `~/.claude/CLAUDE.md` -> nix store
-- **Shared agents/skills:** Symlinked from OpenCode config (single source of truth)
+- **Shared agents/skills:** Symlinked from `config/agents/` (single source of truth)
 - **WakaTime integration:** API key via agenix secret decryption
 
 ## Files
@@ -22,9 +22,11 @@ modules.shell.claude.enable = true;
 | Source                        | Destination               | Purpose                    |
 | ----------------------------- | ------------------------- | -------------------------- |
 | `config/claude/settings.json` | `~/.claude/settings.json` | CLI settings, marketplaces |
-| `config/claude/CLAUDE.md`     | `~/.claude/CLAUDE.md`     | Per-session instructions   |
-| `config/opencode/agent/`      | `~/.claude/agents/`       | Custom agents (shared)     |
-| `config/opencode/skill/`      | `~/.claude/skills/`       | Custom skills (shared)     |
+| `config/agents/rules/*.md`    | `~/.claude/CLAUDE.md`     | Per-session instructions   |
+| `config/agents/modes/`        | `~/.claude/agents/`       | Custom agents (shared)     |
+| `config/agents/skills/`       | `~/.claude/skills/`       | Custom skills (shared)     |
+
+Project-local skills should live in `.agents/skills/`.
 
 ## Plugin Management
 

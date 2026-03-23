@@ -17,14 +17,17 @@ config/claude/
 ├── CLAUDE.md     # Per-session instructions
 └── plugins/      # Local plugin development (NOT deployed)
 
-config/opencode/
-├── agent/        # Shared agents (symlinked to ~/.claude/agents/)
-└── skill/        # Shared skills (symlinked to ~/.claude/skills/)
+config/agents/
+├── modes/        # Shared agents (symlinked to ~/.claude/agents/)
+└── skills/       # Shared skills (symlinked to ~/.claude/skills/)
+
+.agents/
+└── skills/       # Project-local cross-agent skills
 ```
 
 ## Key Facts
 
-- **Agents/skills:** Shared with OpenCode (single source of truth in `config/opencode/`)
+- **Agents/skills:** Shared across agents (single source of truth in `config/agents/`)
 - **Settings:** Nix-managed (symlinked from store, read-only)
 - **Plugins:** NOT nix-managed (user installs manually)
 - **WakaTime:** API key via agenix secret decryption (Darwin only)

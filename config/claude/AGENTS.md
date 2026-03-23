@@ -16,14 +16,15 @@ config/claude/
 
 ## Shared Resources
 
-**Skills and agents are shared with OpenCode:**
+**Skills and agents are shared across agents:**
 
-- Skills: `config/opencode/skill/` → symlinked to `~/.claude/skills/`
-- Agents: `config/opencode/agent/` → symlinked to `~/.claude/agents/`
+- Global skills: `config/agents/skills/` → symlinked to `~/.claude/skills/`
+- Project-local skills: `.agents/skills/`
+- Agents: `config/agents/modes/` → symlinked to `~/.claude/agents/`
 
 **Agent instructions:**
 
-- Built dynamically from `config/opencode/rules/*.md`
+- Built dynamically from `config/agents/rules/*.md`
 - Concatenated into `~/.claude/CLAUDE.md` at system activation
 - Numeric prefixes control ordering (01-, 02-, etc.)
 
@@ -51,8 +52,8 @@ config/claude/
 Files in this directory are symlinked by `modules/shell/claude/default.nix`:
 
 - `settings.json` → `~/.claude/settings.json`
-- `config/opencode/agent/` → `~/.claude/agents/`
-- `config/opencode/skill/` → `~/.claude/skills/`
+- `config/agents/modes/` → `~/.claude/agents/`
+- `config/agents/skills/` → `~/.claude/skills/`
 - Rules concatenated → `~/.claude/CLAUDE.md`
 
 After `hey rebuild`, symlinks update automatically. Restart Claude Code to pick up changes.
