@@ -27,6 +27,10 @@ function getCritiqueGitConfig(): string {
 const CRITIQUE_DEV = join(homedir(), "src", "personal", "critique", "src", "cli.tsx");
 function getCritiqueCommand(): [string, string[]] {
   if (existsSync(CRITIQUE_DEV)) return ["bun", ["run", CRITIQUE_DEV]];
+
+  const installed = spawnSync("which", ["critique"], { encoding: "utf8" });
+  if (installed.status === 0 && installed.stdout.trim()) return ["critique", []];
+
   return ["bunx", ["github:edmundmiller/critique"]];
 }
 

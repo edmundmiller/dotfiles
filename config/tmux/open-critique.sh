@@ -46,4 +46,8 @@ cd "$git_root" || exit 1
 # Pass args through — callers control staged/unstaged:
 #   (no args)  → unstaged changes
 #   --staged   → staged changes
+if command -v critique >/dev/null 2>&1; then
+    exec critique "$@"
+fi
+
 exec bunx github:edmundmiller/critique "$@"
