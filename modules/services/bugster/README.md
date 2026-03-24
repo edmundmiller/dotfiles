@@ -47,11 +47,13 @@ age.secrets.bugster-env.owner = "dagster";
 
 ## Updating Bugster
 
-The `bugster-setup` service pulls the latest `main` branch on every start. To update:
+The `bugster-setup` service pulls the latest `main` branch on every start. The
+`dagster-code-bugster` service is linked with `PartOf=bugster-setup.service`, so
+restarting setup also restarts the code server and reloads the updated repo/config.
 
 ```bash
 # On the NUC
-sudo systemctl restart bugster-setup dagster-code-bugster
+sudo systemctl restart bugster-setup
 ```
 
 ## Configuration
