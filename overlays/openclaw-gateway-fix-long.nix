@@ -29,20 +29,25 @@ let
 in
 {
   openclaw-gateway = pinnedGateway.overrideAttrs (old: {
-    installPhase = old.installPhase + ''
+    installPhase = ''
+      install_script="$TMPDIR/gateway-install.sh"
+      cp ${old.installPhase} "$install_script"
+      chmod +w "$install_script"
+
+      # Upstream validates symlinks before our local compatibility fixes run.
+      sed -i 's|^log_step "validate node_modules symlinks".*|: # validation moved to overlay|' "$install_script"
+
+      bash "$install_script"
 
       # -- local fix: link missing `long` dep for baileys (dotfiles-2sc7) --
       long_src="$(find "$out/lib/openclaw/node_modules/.pnpm" \
         -path "*/long@*/node_modules/long" -print | head -n 1)"
       baileys_pkgs="$(find "$out/lib/openclaw/node_modules/.pnpm" \
         -path "*/node_modules/@whiskeysockets/baileys" -print)"
-
       if [ -n "$long_src" ]; then
-        # Top-level node_modules fallback
         if [ ! -e "$out/lib/openclaw/node_modules/long" ]; then
           ln -s "$long_src" "$out/lib/openclaw/node_modules/long"
         fi
-        # Scoped into each baileys instance
         if [ -n "$baileys_pkgs" ]; then
           for pkg in $baileys_pkgs; do
             if [ ! -e "$pkg/node_modules/long" ]; then
@@ -52,6 +57,28 @@ in
           done
         fi
       fi
+
+      # -- local fix: prune dangling node-which bin links --
+      for broken in \
+        "$out/lib/openclaw/node_modules/cmake-js/node_modules/.bin/node-which" \
+        "$out/lib/openclaw/node_modules/node-llama-cpp/node_modules/.bin/node-which"; do
+        if [ -L "$broken" ] && [ ! -e "$broken" ]; then
+          rm -f "$broken"
+        fi
+      done
+
+      # Final sanity check after local compatibility fixes.
+      broken_tmp="$(mktemp)"
+      find "$out/lib/openclaw/node_modules" -type l -print | while IFS= read -r link; do
+        [ -e "$link" ] || printf '%s\n' "$link"
+      done > "$broken_tmp"
+      if [ -s "$broken_tmp" ]; then
+        echo "dangling symlinks found under $out/lib/openclaw/node_modules" >&2
+        cat "$broken_tmp" >&2
+        rm -f "$broken_tmp"
+        exit 1
+      fi
+      rm -f "$broken_tmp"
     '';
   });
 }
