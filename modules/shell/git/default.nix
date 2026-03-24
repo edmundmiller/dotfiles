@@ -23,6 +23,7 @@ in
       my.sem # semantic git diff/impact/blame
       my.inspect # entity-level code review triage
       my.weave # entity-level semantic merge driver
+      my.diffity # GitHub-style diff viewer/code review
       delta # for lazygit paging
       (mkIf config.modules.shell.gnupg.enable git-crypt)
       git-lfs
