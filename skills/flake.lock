@@ -35,6 +35,22 @@
         "type": "github"
       }
     },
+    "diffity-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774310549,
+        "narHash": "sha256-XAxQZCuDMOCMuU9aBl1yVhz5Vona8pbEwsFaAFZywq8=",
+        "owner": "kamranahmedse",
+        "repo": "diffity",
+        "rev": "5ce966edd0deff0ea2031b3c82744ec3ca0a3599",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kamranahmedse",
+        "repo": "diffity",
+        "type": "github"
+      }
+    },
     "dotfiles-repo": {
       "flake": false,
       "locked": {
@@ -203,6 +219,7 @@
       "inputs": {
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "diffity-repo": "diffity-repo",
         "dotfiles-repo": "dotfiles-repo",
         "hunk-repo": "hunk-repo",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",

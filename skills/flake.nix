@@ -42,6 +42,11 @@
       flake = false;
     };
 
+    diffity-repo = {
+      url = "github:kamranahmedse/diffity";
+      flake = false;
+    };
+
     qmd-repo = {
       url = "github:tobi/qmd";
       flake = false;
@@ -121,6 +126,12 @@
               filter.maxDepth = 2;
             };
 
+            diffity = {
+              path = inputs.diffity-repo.outPath;
+              subdir = "skills";
+              filter.maxDepth = 2;
+            };
+
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -143,6 +154,15 @@
 
             hunk-review.from = "hunk";
             hunk-review.path = "hunk-review";
+
+            diffity-diff.from = "diffity";
+            diffity-diff.path = "diffity-diff";
+
+            diffity-review.from = "diffity";
+            diffity-review.path = "diffity-review";
+
+            diffity-resolve.from = "diffity";
+            diffity-resolve.path = "diffity-resolve";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";
