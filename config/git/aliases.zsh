@@ -214,8 +214,15 @@ alias gst='git stash'
 alias gr='git reset HEAD'
 alias grv='git rev-parse'
 
-# critique - TUI diff viewer (requires bun)
-alias critique='bunx critique'
+# critique - TUI diff viewer (prefers installed binary, falls back to bunx)
+unalias critique 2>/dev/null
+critique() {
+	if (( $+commands[critique] )); then
+		command critique "$@"
+	else
+		bunx critique "$@"
+	fi
+}
 alias hk='hunk'
 alias hkd='hunk diff'
 alias hks='hunk show'

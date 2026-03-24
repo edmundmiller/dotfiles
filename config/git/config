@@ -44,6 +44,8 @@
 	ddiff = -c diff.external=difft diff
 	dl = -c diff.external=difft log -p --ext-diff
 	ds = -c diff.external=difft show --ext-diff
+	cdiff = "!f() { critique \"$@\"; }; f"
+	creview = "!f() { critique review \"$@\"; }; f"
 	hdiff = "!f() { git -c core.pager='hunk pager' diff \"$@\"; }; f"
 	hshow = "!f() { git -c core.pager='hunk pager' show \"$@\"; }; f"
 	difi = "!git diff --no-ext-diff --color=always \"${1:-HEAD}\" | TERM=xterm-256color difi #"
@@ -89,6 +91,8 @@
 	prompt = false
 [difftool "difftastic"]
 	cmd = difft "$LOCAL" "$REMOTE"
+[difftool "critique"]
+	cmd = critique difftool "$LOCAL" "$REMOTE"
 [pager]
 	difftool = true
 
