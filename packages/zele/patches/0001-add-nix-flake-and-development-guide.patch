@@ -1,0 +1,206 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index a3e0e5c..222fc4c 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -1,10 +1,68 @@
+-this project uses bun as package manager. the cli should support both bun and node. so use node apis. 
++# Hacking on zele
+ 
+-the TUI (the root command) is only supported in bun. our bin file tries to use bun to run the cli if available
++## Getting Started
+ 
+-## development
++### Prerequisites
+ 
+-to run the cli locally use `bun src/cli.ts`
++- **NixOS/Nix users**: Use the provided flake for a batteries-included dev environment
++- **Others**: Install Bun and Node.js manually
++
++### Quick Start with Nix
++
++```bash
++# Enter the dev shell (auto-downloads all dependencies)
++nix develop
++
++# Install Node dependencies
++bun install
++
++# Build the project (compiles TypeScript, generates Prisma client)
++bun run build
++
++# Install globally for testing
++npm install -g .
++
++# Try the CLI
++zele --help
++
++# Try the TUI
++zele
++```
++
++### NixOS-Specific: Prisma Engines
++
++On NixOS, Prisma can't download prebuilt binaries due to dynamic linking issues. The flake automatically:
++- Includes `prisma-engines` from nixpkgs (properly patched for NixOS)
++- Sets `PRISMA_*_BINARY` environment variables pointing to Nix store paths
++- Allows `bun run build` to work without internet access for engine downloads
++
++If you see Prisma errors about missing engines, make sure you're in the `nix develop` shell.
++
++### Manual Setup (non-Nix)
++
++```bash
++# Install Bun (macOS/Linux)
++curl -fsSL https://bun.sh/install | bash
++
++# Install dependencies
++bun install
++
++# Build
++bun run build
++
++# Install globally
++npm install -g .
++```
++
++## Architecture
++
++This project uses bun as package manager. The CLI should support both bun and node (use Node APIs for compatibility).
++
++The TUI (the root command) is **only** supported in Bun. Our bin file tries to use bun to run the cli if available, falling back to node for non-TUI commands.
++
++## Development
++
++To run the CLI locally use `bun src/cli.ts`
+ 
+ ## goke typing
+ 
+diff --git a/flake.lock b/flake.lock
+new file mode 100644
+index 0000000..43f833f
+--- /dev/null
++++ b/flake.lock
+@@ -0,0 +1,61 @@
++{
++  "nodes": {
++    "flake-utils": {
++      "inputs": {
++        "systems": "systems"
++      },
++      "locked": {
++        "lastModified": 1731533236,
++        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
++        "owner": "numtide",
++        "repo": "flake-utils",
++        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
++        "type": "github"
++      },
++      "original": {
++        "owner": "numtide",
++        "repo": "flake-utils",
++        "type": "github"
++      }
++    },
++    "nixpkgs": {
++      "locked": {
++        "lastModified": 1771008912,
++        "narHash": "sha256-gf2AmWVTs8lEq7z/3ZAsgnZDhWIckkb+ZnAo5RzSxJg=",
++        "owner": "NixOS",
++        "repo": "nixpkgs",
++        "rev": "a82ccc39b39b621151d6732718e3e250109076fa",
++        "type": "github"
++      },
++      "original": {
++        "owner": "NixOS",
++        "ref": "nixos-unstable",
++        "repo": "nixpkgs",
++        "type": "github"
++      }
++    },
++    "root": {
++      "inputs": {
++        "flake-utils": "flake-utils",
++        "nixpkgs": "nixpkgs"
++      }
++    },
++    "systems": {
++      "locked": {
++        "lastModified": 1681028828,
++        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
++        "owner": "nix-systems",
++        "repo": "default",
++        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
++        "type": "github"
++      },
++      "original": {
++        "owner": "nix-systems",
++        "repo": "default",
++        "type": "github"
++      }
++    }
++  },
++  "root": "root",
++  "version": 7
++}
+diff --git a/flake.nix b/flake.nix
+new file mode 100644
+index 0000000..a4a854b
+--- /dev/null
++++ b/flake.nix
+@@ -0,0 +1,56 @@
++{
++  description = "zele - Gmail CLI and TUI";
++
++  inputs = {
++    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
++    flake-utils.url = "github:numtide/flake-utils";
++  };
++
++  outputs = { self, nixpkgs, flake-utils }:
++    flake-utils.lib.eachDefaultSystem (system:
++      let
++        pkgs = nixpkgs.legacyPackages.${system};
++      in
++      {
++        devShells.default = pkgs.mkShell {
++          buildInputs = with pkgs; [
++            # Runtime
++            bun                    # Primary runtime for TUI and dev
++            nodejs_22              # Fallback runtime for CLI commands
++            
++            # Database
++            sqlite                 # For local DB inspection
++            prisma-engines         # Required for Prisma codegen on NixOS
++            
++            # Development tools
++            typescript
++            nodePackages.typescript-language-server
++          ];
++
++          shellHook = ''
++            echo "🌊 zele dev environment"
++            echo ""
++            echo "Quick start:"
++            echo "  bun install              # Install dependencies"
++            echo "  bun run build            # Build the project"
++            echo "  bun src/cli.ts           # Run CLI locally"
++            echo "  npm install -g .         # Install globally for testing"
++            echo ""
++            echo "Prisma (NixOS-specific):"
++            echo "  The prisma-engines are available in your PATH"
++            echo "  bun run generate         # Generate Prisma client"
++            echo ""
++            echo "Testing TUI:"
++            echo "  zele                     # Launch TUI (after global install)"
++            echo ""
++
++            # Make prisma-engines available to Prisma
++            export PRISMA_QUERY_ENGINE_BINARY="${pkgs.prisma-engines}/bin/query-engine"
++            export PRISMA_SCHEMA_ENGINE_BINARY="${pkgs.prisma-engines}/bin/schema-engine"
++            export PRISMA_MIGRATION_ENGINE_BINARY="${pkgs.prisma-engines}/bin/migration-engine"
++            export PRISMA_FMT_BINARY="${pkgs.prisma-engines}/bin/prisma-fmt"
++          '';
++        };
++      }
++    );
++}
