@@ -10,17 +10,18 @@ Primary personal development machine running nix-darwin.
 
 ## Enabled Modules
 
-| Category | Modules                                                                                    |
-| -------- | ------------------------------------------------------------------------------------------ |
-| Editors  | emacs, vim (default: nvim)                                                                 |
-| Dev      | node (fnm + bun globals: zele), R, python (DISABLED — openclaw conflict, see dotfiles-c11) |
-| Shell    | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, zsh                     |
-| Services | docker, ssh (openclaw disabled)                                                            |
-| Desktop  | macos defaults, raycast, openclaw, ghostty                                                 |
+| Category | Modules                                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Editors  | emacs, vim (default: nvim)                                                                                                  |
+| Dev      | node (fnm + bun globals: hunkdiff, critique; packaged Nix zele), R, python (DISABLED — openclaw conflict, see dotfiles-c11) |
+| Shell    | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, zsh                                                      |
+| Services | docker, ssh (openclaw disabled)                                                                                             |
+| Desktop  | macos defaults, raycast, openclaw, ghostty                                                                                  |
 
 ## Host-Specific Config
 
 - **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search / parity with NUC OpenClaw memory backend; activation removes stale bun/npm `qmd` shims so the Nix binary wins
+- **zele CLI**: installed system-wide as `pkgs.my.zele` (upstream source + local patch stack), not via Bun global install
 - **nix-homebrew**: ARM + Rosetta, auto-migrate, mutable taps
 - **Homebrew**: no auto-update/upgrade/cleanup on activation — see `homebrew.nix` for cask/formula list
 - **Intel brew symlink removal**: activation script prevents ARM/Intel conflicts

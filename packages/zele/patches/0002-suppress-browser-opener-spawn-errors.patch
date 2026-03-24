@@ -1,0 +1,12 @@
+diff --git a/src/auth.ts b/src/auth.ts
+index 5b9a8ad..24b9a5e 100644
+--- a/src/auth.ts
++++ b/src/auth.ts
+@@ -338,6 +338,7 @@ function openUrlInBrowser(url: string): Error | void {
+     return new Error(`Failed to open browser with ${command.bin}`, { cause: child })
+   }
+ 
++  child.on('error', () => {}) // suppress unhandled error event (ENOENT handled by caller)
+   child.unref()
+ }
+ 

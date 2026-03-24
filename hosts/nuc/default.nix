@@ -2,6 +2,8 @@
 {
   config,
   inputs,
+  lib,
+  options,
   pkgs,
   system,
   ...
@@ -110,6 +112,10 @@ in
       ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
     done
 
+  '';
+
+  system.activationScripts.removeLegacyZele = ''
+    rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
   '';
 
   # Allow __noChroot derivations for occasional upstream packages that still
@@ -250,6 +256,7 @@ in
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
+    my.zele # packaged upstream+patches zele CLI
   ];
   imports = [
     ../_server.nix
@@ -307,6 +314,8 @@ in
           enable = true;
           vault = "Agents";
         };
+      }
+      // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "openclaw" "browserbase" ] options) {
         browserbase = {
           enable = true;
           stagehandModel = "openai/gpt-5-mini";
@@ -314,6 +323,8 @@ in
           apiKeyReference = "op://Agents/hsbagbmv3er6vm2fxj75brxtcy/credential";
           projectIdReference = "op://Agents/hsbagbmv3er6vm2fxj75brxtcy/Project ID";
         };
+      }
+      // {
         secrets = [
           {
             envVar = "OP_SERVICE_ACCOUNT_TOKEN";

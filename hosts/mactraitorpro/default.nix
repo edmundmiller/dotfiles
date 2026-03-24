@@ -16,8 +16,8 @@
         node.enable = true;
         node.useFnm = true;
         node.bunGlobalPackages = [
-          "zele"
           "hunkdiff"
+          "critique"
         ];
         # FIXME: Python disabled - openclaw bundles whisper which includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
@@ -88,6 +88,7 @@
     environment.systemPackages = with pkgs; [
       duti
       llm-agents.qmd
+      my.zele
     ];
 
     home-manager.users.${config.user.name} =
@@ -103,6 +104,10 @@
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+
+        home.activation.removeLegacyZele = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          rm -f "$HOME/.bun/bin/zele" "$HOME/.cache/npm/bin/zele"
         '';
       };
 

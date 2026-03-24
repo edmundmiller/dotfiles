@@ -27,6 +27,7 @@ Intel NUC home server running NixOS. Primary role: openclaw gateway, media servi
 | claude-code, codex       | Openclaw CLI backends                                 |
 | bun                      | Pi CLI backend (`bunx @mariozechner/pi-coding-agent`) |
 | qmd                      | llm-agents.nix QMD package for Openclaw memory        |
+| zele                     | Packaged upstream+patches zele CLI                    |
 | sag (nix-steipete-tools) | TTS for openclaw via ElevenLabs                       |
 | sqlite                   | General utility                                       |
 | taskwarrior3             | Task management                                       |
