@@ -7,7 +7,7 @@
   "defaultThinkingLevel": "high",
   // Model cycling - Ctrl+P to toggle between these
   // Note: gpt-5.4-nano is intentionally omitted from cycling, but remains available for explicit subagent model overrides.
-  "enabledModels": ["gpt-5.4-mini", "gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4", "claude-sonnet-4-6"],
+  "enabledModels": ["gpt-5.4-mini", "gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4"],
   // UI preferences
   "theme": "terminal",
   "quietStartup": false,
@@ -199,8 +199,8 @@
     "~/.config/dotfiles/pi-packages/pi-bash-live-view",
     // Terminal/UI animations - https://www.npmjs.com/package/pi-animations
     "npm:pi-animations",
-    // Image attachments helper - https://www.npmjs.com/package/@jordyvd/pi-image-attachments
-    "npm:@jordyvd/pi-image-attachments",
+    // Image attachments helper - vendored local copy to match current pi-tui keybinding API
+    "~/.config/dotfiles/pi-packages/pi-image-attachments",
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
     // FIXME MAKE IT STOP https://github.com/davebcn87/pi-autoresearch/issues/6
     // "https://github.com/davebcn87/pi-autoresearch",
