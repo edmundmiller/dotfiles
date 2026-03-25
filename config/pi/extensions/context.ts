@@ -128,12 +128,30 @@ type SkillIndexEntry = {
   skillDir: string;
 };
 
+type SlashCommandLike = {
+  name: string;
+  source?: "extension" | "prompt" | "skill";
+  path?: string;
+  sourceInfo?: {
+    path?: string;
+    scope?: "user" | "project" | "temporary";
+    source?: string;
+    origin?: "package" | "top-level";
+    baseDir?: string;
+  };
+};
+
+function getCommandPath(command: SlashCommandLike): string {
+  return command.sourceInfo?.path ?? command.path ?? "";
+}
+
 function buildSkillIndex(pi: ExtensionAPI, cwd: string): SkillIndexEntry[] {
   return pi
     .getCommands()
     .filter((c) => c.source === "skill")
     .map((c) => {
-      const p = c.path ? normalizeReadPath(c.path, cwd) : "";
+      const rawPath = getCommandPath(c);
+      const p = rawPath ? normalizeReadPath(rawPath, cwd) : "";
       return {
         name: normalizeSkillName(c.name),
         skillFilePath: p,
@@ -497,7 +515,7 @@ export default function contextExtension(pi: ExtensionAPI) {
 
       const extensionsByPath = new Map<string, string[]>();
       for (const c of extensionCmds) {
-        const p = c.path ?? "<unknown>";
+        const p = getCommandPath(c) || "<unknown>";
         const arr = extensionsByPath.get(p) ?? [];
         arr.push(c.name);
         extensionsByPath.set(p, arr);
