@@ -32,9 +32,8 @@ in
           inputs.google-workspace-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
         ];
 
-        # Force-overwrite openclaw.json so HM never tries to back it up.
-        # openclawInjectToken rewires this link target each rebuild; without
-        # force=true HM may try to move the existing path to .bkup and collide.
+        # Force-overwrite openclaw.json so Home Manager can replace a
+        # mutable config file if OpenClaw.app has written local changes.
         home.file.".openclaw/openclaw.json".force = true;
 
         programs.openclaw = {
@@ -82,6 +81,7 @@ in
             ln -sfn "$_rendered" "$_config"
           fi
         '';
+
       };
   };
 }

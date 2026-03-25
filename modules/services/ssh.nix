@@ -27,6 +27,11 @@ in
         Host *
             IdentityAgent ${onePassPath}
 
+        Host nuc
+            HostName nuc.cinnamon-rooster.ts.net
+            User emiller
+            ForwardAgent yes
+
         Host pubssh
             HostName pubssh.utdallas.edu
             User eam150030
