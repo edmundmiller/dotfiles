@@ -2,7 +2,6 @@
 name: coder
 description: Implementation-focused subagent for coding tasks
 tools: bash, edit, write, read, glob, grep
-model: claude-sonnet-4-5
 thinking: medium
 ---
 
