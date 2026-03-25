@@ -144,6 +144,8 @@
       "extensions": ["extensions/tmux.ts", "extensions/supervisor.ts"],
       "skills": [],
     },
+    // Side agents in tmux windows + git worktrees - https://github.com/pasky/pi-side-agents
+    "https://github.com/pasky/pi-side-agents",
     // Dumb zone - context degradation warning (forked from @aliou/pi-extensions)
     "~/.config/dotfiles/pi-packages/pi-dumb-zone",
     // BUG dotfiles-n579: frontmatter warnings on CHANGELOG.md/README.md
