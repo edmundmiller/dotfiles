@@ -2,7 +2,6 @@
 name: scout
 description: Fast codebase exploration and reconnaissance
 tools: read, grep, glob, bash
-model: claude-haiku-4-5
 thinking: low
 output: context.md
 ---

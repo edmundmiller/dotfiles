@@ -2,7 +2,6 @@
 name: crew-planner
 description: Analyzes codebase and PRD to create a comprehensive task breakdown
 tools: read, bash, web_search, pi_messenger
-model: claude-opus-4-5
 crewRole: planner
 maxOutput: { bytes: 204800, lines: 5000 }
 parallel: false

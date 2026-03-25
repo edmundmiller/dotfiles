@@ -2,7 +2,6 @@
 name: cursor
 description: External AI consultation via cursor-agent CLI for second opinions and deep research
 tools: bash
-model: claude-sonnet-4-5
 thinking: low
 ---
 
