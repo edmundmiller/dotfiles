@@ -3,7 +3,6 @@
 name: sem-reviewer
 description: Flexible semantic diff reviewer using sem JSON/graph/impact/blame with optional raw diff context
 tools: bash, read, glob, grep
-model: claude-sonnet-4-5
 thinking: medium
 
 ---
