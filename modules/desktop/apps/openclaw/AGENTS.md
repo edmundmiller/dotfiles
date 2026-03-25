@@ -13,10 +13,10 @@ modules/desktop/apps/openclaw/
 ## Key Facts
 
 - **Install method**: Homebrew cask (`openclaw`)
-- **Gateway mode**: Remote — connects via Tailscale service VIP `wss://openclaw.cinnamon-rooster.ts.net`
+- **Gateway mode**: Remote over SSH — tunnels to the NUC via SSH target `nuc`
 - **Option path**: `modules.desktop.apps.openclaw.enable`
 - **No local gateway**: `appDefaults.attachExistingOnly = true`
-- **launchd managed**: `launchd.enable = true` for background connectivity
+- **No local launchd gateway**: `launchd.enable = false` in remote mode
 
 ## Configuration
 
@@ -24,15 +24,18 @@ Instance config at `programs.openclaw.instances.default.config`:
 
 - `gateway.mode = "remote"` — no local gateway process
 - `agents.defaults.thinkingDefault = "high"` — default thinking budget
-- Gateway token injected at activation from agenix secret
+- SSH target comes from dotfiles-managed SSH config (`Host nuc`)
 
-## Token Injection
+## Remote over SSH
 
-Config is a Nix store symlink (read-only). The `openclawInjectToken` activation script:
+The module now uses the official macOS **Remote over SSH** path:
 
-1. Copies the symlinked config to a regular file
-2. Replaces `__OPENCLAW_TOKEN_PLACEHOLDER__` with the agenix secret
-3. Moves the patched file into place
+1. OpenClaw.app runs in remote mode
+2. `gateway.remote.transport = "ssh"`
+3. `gateway.remote.sshTarget = "nuc"`
+4. SSH resolution comes from the dotfiles-managed `Host nuc` entry
+
+This enables the app to use SSH-based remote control and silent device approval instead of relying on a shared gateway token.
 
 ## Verification
 
@@ -40,8 +43,8 @@ Config is a Nix store symlink (read-only). The `openclawInjectToken` activation 
 # Check launchd service
 launchctl print gui/$(id -u)/com.steipete.openclaw.gateway | grep state
 
-# Check config was generated
-cat ~/.openclaw/openclaw.json | jq .gateway.mode
+# Check remote transport config
+cat ~/.openclaw/openclaw.json | jq '.gateway | { mode, remote }'
 ```
 
 ## Debug Logs
@@ -102,4 +105,4 @@ If the `device-pair` plugin is enabled:
 - **openclaw-workspace** repo (`github:edmundmiller/openclaw-workspace`) `module/` — NUC gateway service module (moved from dotfiles)
 - `hosts/nuc/default.nix` — NUC host-specific openclaw config (secrets, telegram, cron)
 - `hosts/mactraitorpro/default.nix` — Enables with `apps.openclaw.enable = true`
-- `hosts/shared/secrets/openclaw-gateway-token.age` — Auth token (agenix)
+- `modules/shell/ssh.nix` — SSH target used by the macOS app for Remote over SSH
