@@ -30,9 +30,9 @@ in
             };
           };
 
-          # NUC server
+          # NUC server (Tailscale/MagicDNS for OpenClaw Remote over SSH)
           "nuc" = {
-            hostname = "192.168.1.222";
+            hostname = "nuc.cinnamon-rooster.ts.net";
             user = "emiller";
             forwardAgent = true;
           };
