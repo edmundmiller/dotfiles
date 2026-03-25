@@ -1,0 +1,42 @@
+{
+  "name": "@jordyvd/pi-image-attachments",
+  "version": "0.1.1",
+  "type": "module",
+  "description": "Image attachments for Pi, including draft placeholders and screenshot tool-result promotion.",
+  "author": "Jordy Van Domselaar",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordyvandomselaar/pi-image-attachments.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "image-attachments",
+    "screenshots",
+    "attachments"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && node ./scripts/check-lcov.mjs ./coverage/lcov.info",
+    "test:pi": "bun test ./test/pi-smoke.test.ts"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*"
+  }
+}
