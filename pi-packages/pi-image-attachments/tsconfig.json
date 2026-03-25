@@ -1,15 +1,4 @@
 {
   "extends": "../tsconfig.base.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@mariozechner/pi-coding-agent": [
-        "../pi-bash-live-view/node_modules/@mariozechner/pi-coding-agent/dist/index.d.ts"
-      ],
-      "@mariozechner/pi-tui": [
-        "../pi-bash-live-view/node_modules/@mariozechner/pi-tui/dist/index.d.ts"
-      ]
-    }
-  },
   "include": ["index.ts", "src/**/*.ts"]
 }
