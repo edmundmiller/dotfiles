@@ -189,8 +189,8 @@
     "npm:@jordyvd/pi-openai-compaction",
     // Custom compaction model/template/trigger policy - https://github.com/nicobailon/pi-custom-compaction
     "npm:pi-custom-compaction",
-    // Codex profile/model tuning - https://www.npmjs.com/package/pi-codex-profile
-    "npm:pi-codex-profile",
+    // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
+    "npm:@howaboua/pi-codex-conversion",
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
     // Enables provider id: kilo (e.g., model: kilocode/auto)
     "git:github.com/mrexodia/kilo-pi-provider",
