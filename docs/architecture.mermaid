@@ -1,0 +1,150 @@
+%% Dotfiles Architecture — nix-darwin / NixOS / deploy-rs
+%% Render: https://mermaid.live  or  ```mermaid block in GitHub markdown
+
+graph TB
+  %% ── Flake Inputs ──────────────────────────────────────────────
+  subgraph Inputs["Flake Inputs"]
+    nixpkgs["nixpkgs<br/>(nixos-unstable)"]
+    nixpkgs_unstable["nixpkgs-unstable"]
+    home_manager["home-manager"]
+    nix_darwin["nix-darwin"]
+    flake_parts["flake-parts"]
+    agenix["agenix<br/>(encrypted secrets)"]
+    opnix["opnix<br/>(1Password secrets)"]
+    deploy_rs_input["deploy-rs"]
+    stylix["stylix<br/>(theming)"]
+    emacs_overlay["emacs-overlay"]
+    ghostty_input["ghostty"]
+    openclaw_ws["openclaw-workspace"]
+    nix_openclaw["nix-openclaw"]
+    skills_catalog_input["skills-catalog<br/>(child flake ./skills)"]
+    llm_agents["llm-agents.nix"]
+  end
+
+  %% ── Central Flake ─────────────────────────────────────────────
+  flake_nix(["flake.nix<br/>(flake-parts)"])
+  Inputs --> flake_nix
+
+  %% ── Library ───────────────────────────────────────────────────
+  lib_dir["lib/<br/>mapModules · mapHosts<br/>mkHost · platform helpers"]
+  flake_nix --> lib_dir
+
+  %% ── Overlays ──────────────────────────────────────────────────
+  overlays["overlays/<br/>pkgs.unstable · pkgs.my"]
+  flake_nix --> overlays
+
+  %% ── Module System ─────────────────────────────────────────────
+  subgraph Modules["modules/  (NixOS modules)"]
+    direction TB
+    mod_shell["shell/<br/>zsh · git · jj · tmux<br/>1password · ai · pi<br/>ssh · direnv · claude"]
+    mod_editors["editors/<br/>emacs · vim · helix<br/>code · file-assoc"]
+    mod_dev["dev/<br/>node · python · rust<br/>R · lua · nix · shell"]
+    mod_desktop["desktop/<br/>apps · browsers · term<br/>media · macos · gnome"]
+    mod_services["services/<br/>hass · dagster · bugster<br/>jellyfin · homepage<br/>docker · tailscale<br/>deploy-rs · obsidian-sync<br/>openclaw · gatus"]
+    mod_hardware["hardware/<br/>bluetooth · fs · audio"]
+    mod_themes["themes/<br/>alucard"]
+  end
+
+  default_nix["default.nix<br/>(root module: imports all<br/>modules + platform filter)"]
+  flake_nix --> default_nix
+  default_nix --> Modules
+
+  %% ── Config Files (home-manager) ───────────────────────────────
+  subgraph Config["config/  (dotfiles → home-manager symlinks)"]
+    direction TB
+    cfg_ghostty["ghostty/"]
+    cfg_git["git/"]
+    cfg_tmux["tmux/"]
+    cfg_zsh["zsh/"]
+    cfg_nvim["nvim/"]
+    cfg_agents["agents/<br/>claude · opencode · pi"]
+    cfg_lazygit["lazygit/"]
+    cfg_others["… 40+ app configs"]
+  end
+
+  Modules -->|"home.configFile<br/>home.file"| Config
+  Config -->|"symlinked from<br/>Nix store"| home_dir["~/.config/*"]
+
+  %% ── Host Configurations ───────────────────────────────────────
+  subgraph Hosts["hosts/  (per-machine config)"]
+    direction LR
+    subgraph Darwin["Darwin (aarch64-darwin)"]
+      mactraitorpro["mactraitorpro<br/>MacTraitor-Pro<br/>(personal Mac)"]
+      seqeratop["seqeratop<br/>Seqeratop<br/>(work Mac)"]
+    end
+    subgraph NixOS["NixOS (x86_64-linux)"]
+      nuc["nuc<br/>(home server:<br/>HA · Dagster · OpenClaw<br/>Jellyfin · Homepage)"]
+      unas["unas<br/>(NAS: ZFS · Syncthing<br/>Time Machine)"]
+      gandi["gandi<br/>(VPS: minimal)"]
+    end
+    shared["shared/<br/>_home.nix · _server.nix"]
+  end
+
+  flake_nix --> Hosts
+  lib_dir -->|mkHost| NixOS
+  flake_nix -->|"darwinSystem"| Darwin
+  shared --> nuc
+  shared --> unas
+
+  %% ── Secrets ───────────────────────────────────────────────────
+  subgraph Secrets["Secrets Management"]
+    agenix_secrets["hosts/nuc/secrets/<br/>(age-encrypted .age files)"]
+    opnix_secrets["opnix<br/>(1Password service<br/>account token)"]
+  end
+
+  agenix --> agenix_secrets
+  opnix --> opnix_secrets
+  agenix_secrets --> nuc
+  opnix_secrets --> nuc
+  opnix_secrets --> mactraitorpro
+  opnix_secrets --> seqeratop
+
+  %% ── Packages ──────────────────────────────────────────────────
+  subgraph Packages["Custom Packages"]
+    nix_packages["packages/<br/>(Nix derivations:<br/>dagster · zele · jut<br/>dmux · zunit · …)"]
+    ts_packages["pi-packages/<br/>(TypeScript monorepo:<br/>pi-dcp · pi-qmd<br/>pi-scurl · pi-beads · …)"]
+  end
+
+  flake_nix --> nix_packages
+  nix_packages -->|"pkgs.my.*"| Modules
+  ts_packages -->|"bun workspace"| mod_shell
+
+  %% ── Skills Catalog (child flake) ─────────────────────────────
+  subgraph Skills["skills/  (child flake)"]
+    skills_flake["skills/flake.nix<br/>(pins remote skill repos)"]
+    skills_hm["homeManagerModules.default<br/>(home.file links)"]
+  end
+
+  skills_catalog_input --> Skills
+  skills_hm -->|"home.file<br/>~/.openclaw/workspace/skills/*"| nuc
+  skills_hm --> mactraitorpro
+  skills_hm --> seqeratop
+
+  %% ── Deployment ────────────────────────────────────────────────
+  subgraph Deploy["deploy-rs  (remote deployment)"]
+    deploy_cli["deploy .#nuc<br/>deploy .#unas"]
+    deploy_darwin["darwin-rebuild switch<br/>(local only)"]
+  end
+
+  deploy_rs_input --> Deploy
+  deploy_cli -->|"SSH + remoteBuild<br/>magic rollback"| nuc
+  deploy_cli -->|"SSH + remoteBuild<br/>magic rollback"| unas
+  deploy_darwin --> mactraitorpro
+  deploy_darwin --> seqeratop
+
+  %% ── Dev Shells ────────────────────────────────────────────────
+  devshells["nix develop<br/>(nixfmt · deadnix · statix<br/>deploy-rs · pre-commit)"]
+  flake_nix --> devshells
+
+  %% ── Styling ───────────────────────────────────────────────────
+  classDef darwin fill:#4a90d9,stroke:#333,color:#fff
+  classDef nixos fill:#5277c3,stroke:#333,color:#fff
+  classDef secret fill:#d9534f,stroke:#333,color:#fff
+  classDef pkg fill:#5cb85c,stroke:#333,color:#fff
+  classDef config fill:#f0ad4e,stroke:#333,color:#000
+
+  class mactraitorpro,seqeratop darwin
+  class nuc,unas,gandi nixos
+  class agenix_secrets,opnix_secrets secret
+  class nix_packages,ts_packages pkg
+  class cfg_ghostty,cfg_git,cfg_tmux,cfg_zsh,cfg_nvim,cfg_agents,cfg_lazygit,cfg_others config

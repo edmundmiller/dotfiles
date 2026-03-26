@@ -24,6 +24,29 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 
 **⚠️ Child Flake Rule:** After changing `skills/flake.nix` or `skills/flake.lock`, ALWAYS run `nix flake update skills-catalog` from repo root to sync parent lock. Forgetting breaks rebuild.
 
+## Naming Conventions
+
+| Context                        | Convention                    | Example                         |
+| ------------------------------ | ----------------------------- | ------------------------------- |
+| Nix variables                  | `snake_case`                  | `my_package`, `host_name`       |
+| Nix functions                  | `camelCase`                   | `mkHost`, `mapModules`          |
+| Nix file names                 | `kebab-case` or `default.nix` | `nix-darwin.nix`, `default.nix` |
+| TypeScript functions/variables | `camelCase`                   | `fetchData`, `userName`         |
+| TypeScript types/interfaces    | `PascalCase`                  | `AgentConfig`, `SkillManifest`  |
+| Shell script file names        | `kebab-case`                  | `hey`, `skills-sync`            |
+| Module directories             | `kebab-case`                  | `desktop-apps`, `shell`         |
+
+## Environment Variables
+
+This is a **Nix-managed repository** — the environment is declarative, not `.env`-based.
+
+- **No `.env` file needed.** All dependencies are provided by Nix (`nix develop` or `nix-shell`).
+- **Secrets are managed via agenix** (encrypted `.age` files in `hosts/nuc/secrets/`). Never store plaintext secrets in the repo.
+- **1Password integration via opnix** — runtime secrets are read from 1Password vaults using a service account token bootstrapped at `/etc/opnix-token` (NixOS) or via `op` CLI (Darwin).
+- **The `hey` CLI** (`bin/hey`) wraps common operations (rebuild, deploy, update). Use it instead of raw nix commands.
+- **For development:** `nix develop` provides all tools (nixfmt, deadnix, statix, deploy-rs, pre-commit hooks). The `.envrc` activates this automatically via direnv.
+- **No API keys in environment.** Agent API keys (Gemini, Linear, OpenClaw, etc.) are injected via agenix or opnix at service activation time, never exported as shell variables.
+
 ## Diff Policy
 
 - Prefer `diffs` over `git diff` for reviews and change analysis.
@@ -60,6 +83,63 @@ npx jscpd . --config .jscpd.json
 - Review `.jscpd-report/jscpd-report.json` for details
 - Refactor into shared utilities or functions
 - For legitimate duplication (tests, configs), document why it's acceptable
+
+### Dead Code Detection
+
+**deadnix** is enabled in treefmt (`treefmt.programs.deadnix.enable = true`) and runs automatically on all Nix files during formatting. It detects unused variables, unused function arguments, and dead `let` bindings in `.nix` files.
+
+Deadnix runs as part of `treefmt` both in the dev shell and via the `treefmt` pre-commit hook.
+
+### Static Analysis & Complexity
+
+**statix** is enabled in treefmt (`treefmt.programs.statix.enable = true`) and lints all Nix files for antipatterns, redundant constructs, and complexity issues (e.g., unnecessary `let` bindings, eta-reducible functions, manual `inherit` misuse). It serves as the primary complexity and code-quality checker for Nix code.
+
+For TypeScript code in `pi-packages/` and `packages/`, complexity analysis is aspirational — consider adding ESLint complexity rules as the TS codebase grows.
+
+### Log Scrubbing
+
+This repo manages secrets via **agenix** (encrypted `.age` files) and **opnix** (1Password runtime injection). Follow these rules to prevent secret leakage:
+
+- **Never log decrypted secret values.** Agenix encrypts secrets at rest — decrypted paths should be referenced but their contents never echoed or printed.
+- **`.gitignore` blocks `.env` files** from being committed, preventing accidental plaintext secret commits.
+- **Never `echo` or `log` secret values** in Nix expressions or shell scripts. Pass secrets by file path or environment variable reference, not by value.
+- **Use `set +x` before handling secrets** in shell scripts to prevent bash trace logging from exposing secret values in CI output.
+- **Home-manager managed configs are read-only symlinks** from the Nix store, reducing the risk of runtime secret leakage into mutable config files.
+
+### Unused Dependencies Detection
+
+**deadnix** detects unused Nix bindings (variables, function arguments, `let` bindings) and runs automatically via treefmt. See [Dead Code Detection](#dead-code-detection) above.
+
+Additionally, **`nix flake check`** validates the flake and all its dependencies, ensuring no broken or missing inputs. The CI runs `nix build .#checks.*` which exercises these checks on every push and PR.
+
+### Large File Detection
+
+A pre-commit hook rejects files over 500 KB (excluding lock files and known large files). This prevents accidental commits of binaries, data dumps, or build artifacts.
+
+### Tech Debt Tracking
+
+A pre-commit hook scans for `TODO`, `FIXME`, and `HACK` comments and reports them on every commit. It does **not** block commits — it surfaces tech debt for awareness. Review the output periodically and file issues for high-priority items.
+
+## Deployment
+
+Deployment is via **deploy-rs** (see `flake.nix` `deploy.nodes`). There is no CI-driven deployment — all deploys are triggered locally.
+
+- **Deploy to NUC:** `hey nuc` (runs `nix run .#deploy-rs -- .#nuc --skip-checks`)
+- **Deploy dry-run:** `hey deploy-dry nuc`
+- **After deploy to NUC:** verify via `ssh nuc "systemctl status home-assistant"` for HA, check NUC dashboard with `hey nuc-status`
+- **After macOS rebuild:** verify via `nix flake check` (runs all flake checks locally)
+- **Rollback:** `hey rollback` or `nix-env --rollback` for previous generation; on NUC: `hey nuc-rollback`
+
+See [docs/runbooks/deploy-nuc.md](docs/runbooks/deploy-nuc.md) for the full deployment runbook.
+
+## Auto-Generated Configuration
+
+Several configurations in this repo are **auto-generated** — do not edit them by hand:
+
+- **`.pre-commit-config.yaml`** — Generated by `git-hooks.nix`. Edit the Nix source in the flake's `checks` output, not the YAML directly.
+- **Skills catalog symlinks** — Home-manager auto-generates skill symlinks from the skills child flake. Edit `skills/flake.nix` to change skills.
+- **Treefmt config** — Drives formatting across all file types (Nix, TypeScript, JSON, YAML, Markdown). Configured in the flake via `treefmt-nix`.
+- **Module docs** — Run `bin/generate-module-docs` to regenerate the module index.
 
 ## Issue Tracking
 
