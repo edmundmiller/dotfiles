@@ -77,3 +77,8 @@ CLAUDE.local.md
 # Pi local runtime files #
 ##########################
 **/.pi/tasks/
+
+# Beads / Dolt state
+**/.beads/dolt/
+**/.beads/dolt-access.lock
+**/.beads/dolt-server.*
