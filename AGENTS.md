@@ -33,6 +33,34 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 
 - Use the `fff` MCP tools for all file search operations instead of default search tools.
 
+## Code Quality Checks
+
+### Duplicate Code Detection
+
+This repository uses **jscpd** to detect code duplication in TypeScript, JavaScript, and Nix files.
+
+**Running manually:**
+
+```bash
+npx jscpd . --config .jscpd.json
+```
+
+**Configuration:** `.jscpd.json` (10% duplication threshold)
+
+**Pre-commit hook:** Runs on `pre-push` stage automatically
+
+**What it catches:**
+
+- Copy-pasted code blocks (5+ lines, 50+ tokens)
+- Similar code patterns that should be refactored into shared functions
+- Repeated test setup/teardown (consider test helpers)
+
+**Handling duplicates:**
+
+- Review `.jscpd-report/jscpd-report.json` for details
+- Refactor into shared utilities or functions
+- For legitimate duplication (tests, configs), document why it's acceptable
+
 ## Issue Tracking
 
 This project uses **bd** (beads) for issue tracking.

@@ -57,3 +57,6 @@ qmk_firmware/
 
 # Pi side-agent runtime/session state
 .pi/side-agents/
+
+# jscpd duplicate code detection reports
+.jscpd-report/
