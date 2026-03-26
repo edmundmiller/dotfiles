@@ -469,6 +469,37 @@
                   "pre-push"
                 ];
               };
+              jscpd = {
+                enable = true;
+                name = "jscpd";
+                description = "Detect duplicate code in TypeScript, JavaScript, and Nix files";
+                entry = toString (
+                  pkgs.writeShellScript "jscpd-check" ''
+                    set -euo pipefail
+
+                    # Check if npx is available
+                    if ! command -v npx &> /dev/null; then
+                      echo "Warning: npx not found, skipping jscpd check" >&2
+                      exit 0
+                    fi
+
+                    # Run jscpd and capture output
+                    echo "Running duplicate code detection..."
+                    if npx -y jscpd@4.0.5 . --config .jscpd.json; then
+                      echo "✓ No significant code duplication detected"
+                      exit 0
+                    else
+                      echo "✗ Code duplication detected above threshold" >&2
+                      echo "Run 'npx jscpd . --config .jscpd.json' to see details" >&2
+                      exit 1
+                    fi
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "\\.(ts|js|nix)$";
+                stages = [ "pre-push" ];
+              };
             };
           };
 
