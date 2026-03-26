@@ -21,13 +21,23 @@ jobs:
       - name: Run flake checks
         run: |
           # Check x86_64-linux specific outputs
-          nix build .#checks.x86_64-linux.treefmt --no-link
-          nix build .#checks.x86_64-linux.pre-commit --no-link
-          nix build .#checks.x86_64-linux.zunit-tests --no-link
+          echo "::group::treefmt" && time nix build .#checks.x86_64-linux.treefmt --no-link && echo "::endgroup::"
+          echo "::group::pre-commit" && time nix build .#checks.x86_64-linux.pre-commit --no-link && echo "::endgroup::"
+          echo "::group::zunit-tests" && time nix build .#checks.x86_64-linux.zunit-tests --no-link && echo "::endgroup::"
+
+      - name: Validate AGENTS.md references
+        run: |
+          echo "Checking AGENTS.md key paths exist..."
+          # Verify key paths mentioned in AGENTS.md
+          test -f hosts/mactraitorpro/default.nix || { echo "FAIL: hosts/mactraitorpro/default.nix missing"; exit 1; }
+          test -d modules/ || { echo "FAIL: modules/ missing"; exit 1; }
+          test -d config/ || { echo "FAIL: config/ missing"; exit 1; }
+          test -f skills/flake.nix || { echo "FAIL: skills/flake.nix missing"; exit 1; }
+          echo "All AGENTS.md references valid"
 
       - name: Check NixOS configurations evaluate
         run: |
-          nix eval .#nixosConfigurations.nuc.config.system.build.toplevel --apply 'x: "OK"'
+          time nix eval .#nixosConfigurations.nuc.config.system.build.toplevel --apply 'x: "OK"'
 
   # Run flake checks on macOS (Darwin configurations)
   check-darwin:
@@ -43,14 +53,14 @@ jobs:
       - name: Run flake checks
         run: |
           # Check aarch64-darwin specific outputs
-          nix build .#checks.aarch64-darwin.treefmt --no-link
-          nix build .#checks.aarch64-darwin.pre-commit --no-link
-          nix build .#checks.aarch64-darwin.zunit-tests --no-link
+          echo "::group::treefmt" && time nix build .#checks.aarch64-darwin.treefmt --no-link && echo "::endgroup::"
+          echo "::group::pre-commit" && time nix build .#checks.aarch64-darwin.pre-commit --no-link && echo "::endgroup::"
+          echo "::group::zunit-tests" && time nix build .#checks.aarch64-darwin.zunit-tests --no-link && echo "::endgroup::"
 
       - name: Check Darwin configurations evaluate
         run: |
-          nix eval .#darwinConfigurations.MacTraitor-Pro.system --apply 'x: "OK"'
-          nix eval .#darwinConfigurations.Seqeratop.system --apply 'x: "OK"'
+          time nix eval .#darwinConfigurations.MacTraitor-Pro.system --apply 'x: "OK"'
+          time nix eval .#darwinConfigurations.Seqeratop.system --apply 'x: "OK"'
 
   # Formatting check (runs on Linux, faster)
   format:
@@ -64,4 +74,4 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Check formatting
-        run: nix build .#checks.x86_64-linux.treefmt --no-link
+        run: time nix build .#checks.x86_64-linux.treefmt --no-link

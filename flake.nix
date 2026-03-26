@@ -500,6 +500,57 @@
                 files = "\\.(ts|js|nix)$";
                 stages = [ "pre-push" ];
               };
+              large-file-detection = {
+                enable = true;
+                name = "large-file-detection";
+                description = "Reject files over 500KB (excludes lock files and known large files)";
+                entry = toString (
+                  pkgs.writeShellScript "large-file-check" ''
+                    set -euo pipefail
+                    MAX_SIZE=512000  # 500KB in bytes
+                    failed=0
+                    for file in "$@"; do
+                      # Skip lock files and known large files
+                      case "$file" in
+                        *.lock|flake.lock|package-lock.json|yarn.lock|pnpm-lock.yaml) continue ;;
+                        *.png|*.jpg|*.jpeg|*.gif|*.ico|*.svg) continue ;;
+                      esac
+                      if [ -f "$file" ]; then
+                        size=$(wc -c < "$file")
+                        if [ "$size" -gt "$MAX_SIZE" ]; then
+                          echo "ERROR: $file is $(( size / 1024 ))KB (limit: 500KB)" >&2
+                          failed=1
+                        fi
+                      fi
+                    done
+                    exit $failed
+                  ''
+                );
+                language = "system";
+                stages = [ "pre-commit" ];
+              };
+              tech-debt-tracking = {
+                enable = true;
+                name = "tech-debt-tracking";
+                description = "Report TODO/FIXME/HACK comments for tech debt awareness";
+                entry = toString (
+                  pkgs.writeShellScript "tech-debt-report" ''
+                    set -uo pipefail
+                    matches=$(${pkgs.ripgrep}/bin/rg --no-heading -n 'TODO|FIXME|HACK' "$@" 2>/dev/null || true)
+                    if [ -n "$matches" ]; then
+                      echo "📋 Tech debt markers found in staged files:"
+                      echo "$matches"
+                      echo ""
+                      echo "Consider filing issues for high-priority items."
+                    fi
+                    # Always succeed — this is informational only
+                    exit 0
+                  ''
+                );
+                language = "system";
+                types = [ "text" ];
+                stages = [ "pre-commit" ];
+              };
             };
           };
 

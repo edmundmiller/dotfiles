@@ -1,0 +1,16 @@
+{
+  "name": "dotfiles-dev",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/nix:1": {
+      "version": "latest",
+      "extraNixConfig": "experimental-features = nix-command flakes"
+    }
+  },
+  "postCreateCommand": "nix develop --command echo 'Dev environment ready'",
+  "customizations": {
+    "vscode": {
+      "extensions": ["jnoortheen.nix-ide", "mkhl.direnv"]
+    }
+  }
+}

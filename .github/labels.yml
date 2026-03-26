@@ -1,0 +1,58 @@
+# Priority labels
+- name: "P0-critical"
+  color: "b60205"
+  description: "Critical priority — system broken or unusable"
+
+- name: "P1-high"
+  color: "d93f0b"
+  description: "High priority — significant impact on workflow"
+
+- name: "P2-medium"
+  color: "fbca04"
+  description: "Medium priority — noticeable but non-blocking"
+
+- name: "P3-low"
+  color: "0e8a16"
+  description: "Low priority — nice to have"
+
+# Type labels
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "feature"
+  color: "a2eeef"
+  description: "New feature or enhancement"
+
+- name: "chore"
+  color: "ededed"
+  description: "Maintenance, refactoring, or housekeeping"
+
+- name: "docs"
+  color: "0075ca"
+  description: "Documentation improvements"
+
+# Area labels
+- name: "area:shell"
+  color: "c5def5"
+  description: "Shell configuration (zsh, tmux, etc.)"
+
+- name: "area:editor"
+  color: "c5def5"
+  description: "Editor configuration (neovim, emacs, etc.)"
+
+- name: "area:services"
+  color: "c5def5"
+  description: "System services (hass, media, etc.)"
+
+- name: "area:packages"
+  color: "c5def5"
+  description: "Nix packages and overlays"
+
+- name: "area:pi-packages"
+  color: "c5def5"
+  description: "Pi TypeScript extensions"
+
+- name: "area:infra"
+  color: "c5def5"
+  description: "CI, flake infrastructure, and build tooling"

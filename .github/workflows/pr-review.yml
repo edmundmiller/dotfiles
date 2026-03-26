@@ -1,0 +1,61 @@
+name: PR Review Bot
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Analyze changes
+        id: analyze
+        run: |
+          # Get changed files
+          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1)
+
+          # Categorize changes
+          NIX_CHANGED=$(echo "$CHANGED" | grep '\.nix$' | wc -l | tr -d ' ')
+          TS_CHANGED=$(echo "$CHANGED" | grep '\.ts$' | wc -l | tr -d ' ')
+          SKILLS_CHANGED=$(echo "$CHANGED" | grep '^config/agents/skills/' | wc -l | tr -d ' ')
+          MODULES_CHANGED=$(echo "$CHANGED" | grep '^modules/' | sort -u | head -20)
+
+          echo "nix_count=$NIX_CHANGED" >> $GITHUB_OUTPUT
+          echo "ts_count=$TS_CHANGED" >> $GITHUB_OUTPUT
+          echo "skills_count=$SKILLS_CHANGED" >> $GITHUB_OUTPUT
+
+          # Build comment body
+          {
+            echo 'body<<ENDOFBODY'
+            echo "## 🔍 PR Analysis"
+            echo ""
+            echo "| Category | Files Changed |"
+            echo "|----------|--------------|"
+            echo "| Nix files | $NIX_CHANGED |"
+            echo "| TypeScript files | $TS_CHANGED |"
+            echo ""
+            if [ "$NIX_CHANGED" -gt 0 ]; then
+              echo "⚠️ **Rebuild required** — Nix files changed. Run \`hey re\` after merge."
+              echo ""
+            fi
+            if [ "$SKILLS_CHANGED" -gt 0 ]; then
+              echo "⚠️ **Skills changed** — Remember to run \`nix flake update skills-catalog\` from repo root."
+              echo ""
+            fi
+            if [ -n "$MODULES_CHANGED" ]; then
+              echo "**Changed modules:**"
+              echo '```'
+              echo "$MODULES_CHANGED"
+              echo '```'
+            fi
+            echo 'ENDOFBODY'
+          } >> $GITHUB_OUTPUT
+      - name: Post review comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.analyze.outputs.body }}

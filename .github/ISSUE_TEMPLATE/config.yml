@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Local Issue Tracking (beads)
+    url: https://github.com/edmundmiller/dotfiles
+    about: For local task tracking, use `bd create "Title"` with the beads CLI.
