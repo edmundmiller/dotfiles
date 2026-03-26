@@ -139,10 +139,10 @@
     },
     // Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
     "npm:pi-tmux-window-name",
-    // Tmux pane control (bash, capture, send, kill, spawn agents) - https://github.com/offline-ant/pi-tmux
+    // We're experimenting with tmux pane control for now (bash, capture, send, kill, spawn agents) - https://github.com/ogulcancelik/pi-extensions
     {
-      "source": "git:github.com/offline-ant/pi-tmux",
-      "extensions": ["extensions/tmux.ts", "extensions/supervisor.ts"],
+      "source": "git:github.com/ogulcancelik/pi-extensions",
+      "extensions": ["packages/pi-tmux/index.ts"],
       "skills": [],
     },
     // Side agents in tmux windows + git worktrees - https://github.com/pasky/pi-side-agents
