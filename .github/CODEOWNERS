@@ -1,0 +1,11 @@
+# Default owner for everything
+* @edmundmiller
+
+# Home Assistant configuration
+/modules/services/hass/ @edmundmiller
+
+# NUC server host config
+/hosts/nuc/ @edmundmiller
+
+# Pi extensions (TypeScript)
+/pi-packages/ @edmundmiller

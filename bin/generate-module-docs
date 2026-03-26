@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Auto-generate module documentation from the Nix module system
+echo "# Module Index"
+echo ""
+echo "Auto-generated list of dotfiles modules."
+echo ""
+for mod in modules/*/; do
+  name=$(basename "$mod")
+  echo "## $name"
+  if [ -f "$mod/default.nix" ]; then
+    # Extract description from comments
+    head -5 "$mod/default.nix" | grep -E "^#" | sed 's/^# //' || echo "_(no description)_"
+  fi
+  echo ""
+done
