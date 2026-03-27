@@ -17,6 +17,7 @@ stdenvNoCC.mkDerivation (_finalAttrs: {
 
   patches = [
     ./patches/0001-add-session-window-and-pane-details.patch
+    ./patches/0002-add-show-window-details-config-toggle.patch
   ];
 
   dontBuild = true;

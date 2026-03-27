@@ -1,0 +1,52 @@
+diff --git a/packages/runtime/src/config.ts b/packages/runtime/src/config.ts
+--- a/packages/runtime/src/config.ts
++++ b/packages/runtime/src/config.ts
+@@ -20,6 +20,8 @@
+   keybinding?: string;
+   /** Persisted detail panel heights keyed by mux session name */
+   detailPanelHeights?: Record<string, number>;
++  /** Show per-window pane tree in the detail panel (default false) */
++  showWindowDetails?: boolean;
+ }
+ 
+ const DEFAULTS: OpensessionsConfig = {
+diff --git a/apps/tui/src/index.tsx b/apps/tui/src/index.tsx
+--- a/apps/tui/src/index.tsx
++++ b/apps/tui/src/index.tsx
+@@ -796,7 +796,8 @@
+ 
+     return rows;
+   };
+-  const windowDetails = () => props.session.windowDetails ?? [];
++  const showWindowDetails = () => loadConfig().showWindowDetails ?? false;
++  const windowDetails = () => showWindowDetails() ? (props.session.windowDetails ?? []) : [];
+   const windowCount = () => windowDetails().length || props.session.windows;
+   const paneCount = () => {
+     if (windowDetails().length === 0) return props.session.panes;
+@@ -908,6 +909,7 @@
+         </For>
+       </Show>
+ 
++      <Show when={showWindowDetails()}>
+       <box height={1} />
+       <text>
+         <span style={{ fg: P().overlay0, attributes: DIM }}>layout </span>
+@@ -947,6 +949,7 @@
+         </For>
+       </Show>
+ 
++      </Show>
+       {/* Agent instances */}
+       <Show when={hasAgents()}>
+         <For each={agents()}>
+@@ -1127,9 +1130,10 @@
+   };
+ 
+   const layoutHint = () => {
++    if (!(loadConfig().showWindowDetails ?? false)) return "";
+     const windows = props.session.windowDetails?.length || props.session.windows;
+     const panes = props.session.windowDetails?.length
+       ? props.session.windowDetails.reduce((count, window) => count + window.panes.length, 0)
+       : props.session.panes;
+     return `${windows}w ${panes}p`;
+   };
