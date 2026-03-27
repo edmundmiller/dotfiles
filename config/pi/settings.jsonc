@@ -178,7 +178,7 @@
     // RTK token reduction via tool hooks - ~30-40% upload token savings - https://github.com/mcowger/pi-rtk
     "npm:pi-rtk",
     // Web research — clean fetch, pluggable search, scout subagent - https://github.com/iaptsiauri/pi-surf
-    "npm:pi-surf",
+    // "npm:pi-surf",
     // Programmatic Tool Calling (Python async orchestration) - https://github.com/cegersdoerfer/pi-ptc
     "git:github.com/cegersdoerfer/pi-ptc",
     // Interlude UI/UX enhancements - https://github.com/mjakl/pi-interlude
