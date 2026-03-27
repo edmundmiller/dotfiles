@@ -207,7 +207,7 @@
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "emiller"; }
 
-            # Add openclaw to home-manager modules
+            # Host-scoped home-manager modules
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
@@ -246,11 +246,10 @@
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "edmundmiller"; }
 
-            # Add openclaw to home-manager modules
+            # Host-scoped home-manager modules
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
-                inputs.nix-openclaw.homeManagerModules.openclaw
                 inputs.skills-catalog.homeManagerModules.default
               ];
             }
