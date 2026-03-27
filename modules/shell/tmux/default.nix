@@ -143,6 +143,9 @@ in
       "sesh/sesh.toml" = mkIf (cfg.sesh.sessions != [ ]) {
         text = seshConfig;
       };
+      "opensessions/plugins/pi.js" = mkIf cfg.opensessions.enable {
+        source = "${configDir}/opensessions/plugins/pi.js";
+      };
       "tmux" = {
         source = "${configDir}/tmux";
         recursive = true;
