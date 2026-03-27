@@ -10,6 +10,11 @@ let
   cfg = config.modules.shell.tmux;
   inherit (config.dotfiles) configDir;
 
+  opensessionsSource = "${pkgs.my.opensessions}/share/opensessions";
+  opensessionsRuntimeRoot = "${config.user.home}/.local/share/opensessions";
+  opensessionsCheckout = "${opensessionsRuntimeRoot}/${pkgs.my.opensessions.version}";
+  opensessionsCurrent = "${opensessionsRuntimeRoot}/current";
+
   # Generate sesh.toml from Nix options
   seshConfig =
     let
@@ -72,6 +77,19 @@ in
     enable = mkBoolOpt false;
     rcFiles = mkOpt (listOf (either str path)) [ "${configDir}/tmux/theme.conf" ];
 
+    opensessions = {
+      enable = mkBoolOpt false;
+      key = mkOpt str "s";
+      focusKey = mkOpt str "S";
+      prefixKey = mkOpt str "o";
+      prefixFocusKey = mkOpt str "s";
+      prefixToggleKey = mkOpt str "t";
+      prefixIndexKeys = mkOpt str "1 2 3 4 5 6 7 8 9";
+      width = mkOpt int 26;
+      host = mkOpt str "127.0.0.1";
+      port = mkOpt int 7391;
+    };
+
     sesh = {
       sessions = mkOpt (listOf (submodule {
         options = {
@@ -100,6 +118,11 @@ in
       pkgs.my.tmux-file-picker
       pkgs.my.tmux-smooth-scroll
       pkgs.gum # Interactive CLI for bd-capture popup
+    ]
+    ++ optionals cfg.opensessions.enable [
+      pkgs.bun # opensessions runtime + dependency bootstrap
+      pkgs.curl # opensessions server helper + HTTP control
+      pkgs.fzf # opensessions sessionizer popup
     ];
 
     # Agent Icons font for PUA codepoints (U+F5000–F5003) rendered by Ghostty
@@ -167,8 +190,58 @@ in
 
         # tmux-smart-name: window naming + AI agent status
         run-shell ${pkgs.my.tmux-smart-name}/share/tmux-smart-name/scripts/smart-name.sh
+
+        ${optionalString cfg.opensessions.enable ''
+          # opensessions: tmux sidebar + command table
+          set -g @opensessions-key "${cfg.opensessions.key}"
+          set -g @opensessions-focus-key "${cfg.opensessions.focusKey}"
+          set -g @opensessions-prefix-key "${cfg.opensessions.prefixKey}"
+          set -g @opensessions-prefix-focus-key "${cfg.opensessions.prefixFocusKey}"
+          set -g @opensessions-prefix-toggle-key "${cfg.opensessions.prefixToggleKey}"
+          set -g @opensessions-prefix-index-keys "${cfg.opensessions.prefixIndexKeys}"
+          set -g @opensessions-width "${toString cfg.opensessions.width}"
+          set-environment -g BUN_PATH "${pkgs.bun}/bin/bun"
+          set-environment -g OPENSESSIONS_HOST "${cfg.opensessions.host}"
+          set-environment -g OPENSESSIONS_PORT "${toString cfg.opensessions.port}"
+          set-environment -g OPENSESSIONS_PATH_PREFIX "${pkgs.curl}/bin:${pkgs.fzf}/bin:${pkgs.bun}/bin"
+
+          # Keybinding handoff: opensessions owns prefix s/S/o.
+          unbind -q s
+          unbind -q S
+          unbind -q o
+          bind V split-window -v -c "#{pane_current_path}"
+          bind Z resize-pane -Z
+
+          run-shell "sh '$TMUX_HOME/opensessions.sh'"
+        ''}
       '';
     };
+
+    home-manager.users.${config.user.name} =
+      { lib, ... }:
+      {
+        home.activation.opensessions-setup = mkIf cfg.opensessions.enable (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            checkout_root="${opensessionsCheckout}"
+            current_link="${opensessionsCurrent}"
+
+            ${pkgs.coreutils}/bin/mkdir -p "${opensessionsRuntimeRoot}" "$checkout_root"
+            ${pkgs.rsync}/bin/rsync -a --delete --exclude node_modules --exclude .git \
+              "${opensessionsSource}/" \
+              "$checkout_root/"
+
+            if [ ! -d "$checkout_root/node_modules" ]; then
+              echo "Bootstrapping opensessions dependencies at $checkout_root..." >&2
+              if ! (cd "$checkout_root" && ${pkgs.bun}/bin/bun install --silent --frozen-lockfile); then
+                echo "Warning: bun install failed; opensessions may be incomplete." >&2
+              fi
+            fi
+
+            ${pkgs.coreutils}/bin/rm -rf "$current_link"
+            ${pkgs.coreutils}/bin/ln -s "$checkout_root" "$current_link"
+          ''
+        );
+      };
 
     # tml — tmux dev layout: AI tool + lazygit + shell
     # Shell function in config/tml/aliases.zsh (auto-sourced by zsh module)
