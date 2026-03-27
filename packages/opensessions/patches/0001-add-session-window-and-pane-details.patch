@@ -1,0 +1,512 @@
+diff --git a/apps/tui/src/index.tsx b/apps/tui/src/index.tsx
+--- a/apps/tui/src/index.tsx
++++ b/apps/tui/src/index.tsx
+@@ -795,6 +795,33 @@
+     }
+ 
+     return rows;
++  };
++  const windowDetails = () => props.session.windowDetails ?? [];
++  const windowCount = () => windowDetails().length || props.session.windows;
++  const paneCount = () => {
++    if (windowDetails().length === 0) return props.session.panes;
++    return windowDetails().reduce((count, window) => count + window.panes.length, 0);
++  };
++
++  const formatWindowLabel = (window: SessionData["windowDetails"][number]) => {
++    const name = window.name.trim();
++    if (!name || name === String(window.index)) return String(window.index);
++    return `${window.index} ${name}`;
++  };
++
++  const formatPaneLabel = (pane: SessionData["windowDetails"][number]["panes"][number]) => {
++    const title = pane.title.trim();
++    if (title && title !== "opensessions") return `${pane.index} ${title}`;
++
++    const command = pane.command.trim();
++    if (command) return `${pane.index} ${command}`;
++
++    const cwd = pane.cwd.trim();
++    if (!cwd) return String(pane.index);
++
++    const parts = cwd.split("/").filter(Boolean);
++    const leaf = parts[parts.length - 1] ?? cwd;
++    return `${pane.index} ${leaf}`;
+   };
+ 
+   const truncDir = () => {
+@@ -881,6 +908,44 @@
+         </For>
+       </Show>
+ 
++      <box height={1} />
++      <text>
++        <span style={{ fg: P().overlay0, attributes: DIM }}>layout </span>
++        <span style={{ fg: P().subtext1 }}>{windowCount()} windows</span>
++        <span style={{ fg: P().surface2 }}>{" · "}</span>
++        <span style={{ fg: P().subtext1 }}>{paneCount()} panes</span>
++      </text>
++
++      <Show when={windowDetails().length}>
++        <For each={windowDetails()}>
++          {(window) => (
++            <box flexDirection="column" flexShrink={0}>
++              <box height={1} />
++              <text paddingRight={1} truncate>
++                <span style={{ fg: window.active ? P().lavender : P().overlay0 }}>
++                  {window.active ? "▾" : "▸"}
++                </span>
++                <span style={{ fg: window.active ? P().text : P().subtext1 }}>
++                  {" "}{formatWindowLabel(window)}
++                </span>
++              </text>
++              <For each={window.panes}>
++                {(pane) => (
++                  <text paddingLeft={2} paddingRight={1} truncate>
++                    <span style={{ fg: pane.active ? P().yellow : P().surface2 }}>
++                      {pane.active ? "›" : "·"}
++                    </span>
++                    <span style={{ fg: pane.active ? P().text : P().overlay1 }}>
++                      {" "}{formatPaneLabel(pane)}
++                    </span>
++                  </text>
++                )}
++              </For>
++            </box>
++          )}
++        </For>
++      </Show>
++
+       {/* Agent instances */}
+       <Show when={hasAgents()}>
+         <For each={agents()}>
+@@ -1059,6 +1124,14 @@
+     return `⌁${ports[0]}+${ports.length - 1}`;
+   };
+ 
++  const layoutHint = () => {
++    const windows = props.session.windowDetails?.length || props.session.windows;
++    const panes = props.session.windowDetails?.length
++      ? props.session.windowDetails.reduce((count, window) => count + window.panes.length, 0)
++      : props.session.panes;
++    return `${windows}w ${panes}p`;
++  };
++
+   const bgColor = () => {
+     if (props.isFocused) return P().surface0;
+     return "transparent";
+@@ -1096,8 +1169,8 @@
+             </Show>
+           </box>
+ 
+-          {/* Row 2: branch plus a compact local-port hint when available */}
+-          <Show when={props.session.branch || portHint()}>
++          {/* Row 2: branch plus a compact layout and local-port hint when available */}
++          <Show when={props.session.branch || layoutHint() || portHint()}>
+             <box flexDirection="row">
+               <Show when={props.session.branch}>
+                 <text truncate flexGrow={1}>
+@@ -1106,10 +1179,16 @@
+                   </span>
+                 </text>
+               </Show>
++              <text flexShrink={0}>
++                <span style={{ fg: props.isFocused ? P().subtext1 : P().overlay0 }}>
++                  {props.session.branch ? " " : ""}
++                  {layoutHint()}
++                </span>
++              </text>
+               <Show when={portHint()}>
+                 <text flexShrink={0}>
+                   <span style={{ fg: props.isFocused ? P().sky : P().overlay0 }}>
+-                    {props.session.branch ? " " : ""}
++                    {" "}
+                     {portHint()}
+                   </span>
+                 </text>
+diff --git a/packages/mux/providers/tmux/src/provider.ts b/packages/mux/providers/tmux/src/provider.ts
+--- a/packages/mux/providers/tmux/src/provider.ts
++++ b/packages/mux/providers/tmux/src/provider.ts
+@@ -120,6 +120,39 @@
+     tmux.unsetGlobalHook("after-resize-pane");
+   }
+ 
++  listSessionWindows(sessionName?: string) {
++    const windows = sessionName
++      ? tmux.listWindows({ scope: "session", target: sessionName })
++      : tmux.listWindows();
++
++    return windows
++      .filter((window) => window.sessionName !== STASH_SESSION)
++      .map((window) => ({
++        id: window.id,
++        sessionName: window.sessionName,
++        index: window.index,
++        name: window.name,
++        active: window.active,
++        paneCount: window.paneCount,
++      }));
++  }
++
++  listSessionPanes(sessionName: string) {
++    return tmux.listPanes({ scope: "session", target: sessionName })
++      .filter((pane) => pane.sessionName !== STASH_SESSION && pane.title !== "opensessions")
++      .map((pane) => ({
++        id: pane.id,
++        sessionName: pane.sessionName,
++        windowId: pane.windowId,
++        windowIndex: pane.windowIndex,
++        index: pane.index,
++        active: pane.active,
++        cwd: pane.cwd,
++        command: pane.command,
++        title: pane.title,
++      }));
++  }
++
+   getAllPaneCounts(): Map<string, number> {
+     return tmux.getAllPaneCounts();
+   }
+diff --git a/packages/runtime/src/shared.ts b/packages/runtime/src/shared.ts
+--- a/packages/runtime/src/shared.ts
++++ b/packages/runtime/src/shared.ts
+@@ -6,6 +6,26 @@
+ export const PID_FILE = "/tmp/opensessions.pid";
+ export const SERVER_IDLE_TIMEOUT_MS = 30_000;
+ export const STUCK_RUNNING_TIMEOUT_MS = 3 * 60 * 1000;
++
++export interface SessionPaneData {
++  id: string;
++  index: number;
++  windowId: string;
++  windowIndex: number;
++  active: boolean;
++  cwd: string;
++  command: string;
++  title: string;
++}
++
++export interface SessionWindowData {
++  id: string;
++  index: number;
++  name: string;
++  active: boolean;
++  paneCount: number;
++  panes: SessionPaneData[];
++}
+ 
+ export interface SessionData {
+   name: string;
+@@ -18,6 +38,7 @@
+   panes: number;
+   ports: number[];
+   windows: number;
++  windowDetails: SessionWindowData[];
+   uptime: string;
+   agentState: AgentEvent | null;
+   agents: AgentEvent[];
+diff --git a/packages/runtime/src/server/index.ts b/packages/runtime/src/server/index.ts
+--- a/packages/runtime/src/server/index.ts
++++ b/packages/runtime/src/server/index.ts
+@@ -13,6 +13,7 @@
+   type SidebarResizeContext,
+   type SidebarResizeSuppression,
+ } from "./sidebar-width-sync";
++import { getSessionWindowData } from "../session-details";
+ import {
+   type ServerState,
+   type SessionData,
+@@ -358,10 +359,12 @@
+       }
+     }
+ 
++    sessionProviders.clear();
+     const sessions: SessionData[] = orderedMuxSessions.map(({ name, createdAt, windows, dir, provider }) => {
+       sessionProviders.set(name, provider);
+       const git = getGitInfo(dir);
+       const providerPaneCounts = paneCountMaps.get(provider);
++      const windowDetails = getSessionWindowData(provider, name);
+       const panes = providerPaneCounts?.get(name) ?? provider.getPaneCount(name);
+ 
+       let uptime = "";
+@@ -384,6 +387,7 @@
+         isWorktree: git.isWorktree,
+         unseen: tracker.isUnseen(name),
+         panes,
++        windowDetails,
+         ports: getSessionPorts(name),
+         windows,
+         uptime,
+diff --git a/packages/runtime/src/session-details.ts b/packages/runtime/src/session-details.ts
+--- /dev/null
++++ b/packages/runtime/src/session-details.ts
+@@ -0,0 +1,108 @@
++import type { MuxProvider } from "./contracts/mux";
++import type { SessionPaneData, SessionWindowData } from "./shared";
++
++interface SessionWindowInfo {
++  readonly id: string;
++  readonly sessionName: string;
++  readonly index: number;
++  readonly name: string;
++  readonly active: boolean;
++  readonly paneCount: number;
++}
++
++interface SessionPaneInfo {
++  readonly id: string;
++  readonly sessionName: string;
++  readonly windowId: string;
++  readonly windowIndex: number;
++  readonly index: number;
++  readonly active: boolean;
++  readonly cwd: string;
++  readonly command: string;
++  readonly title: string;
++}
++
++interface SessionDetailCapableProvider extends MuxProvider {
++  listSessionWindows(sessionName?: string): SessionWindowInfo[];
++  listSessionPanes(sessionName: string): SessionPaneInfo[];
++}
++
++export function isSessionDetailCapable(provider: MuxProvider): provider is SessionDetailCapableProvider {
++  return (
++    typeof provider.listSessionWindows === "function"
++    && typeof provider.listSessionPanes === "function"
++  );
++}
++
++function compareWindows(a: SessionWindowData, b: SessionWindowData): number {
++  if (a.index !== b.index) return a.index - b.index;
++  return a.name.localeCompare(b.name);
++}
++
++function comparePanes(a: SessionPaneData, b: SessionPaneData): number {
++  if (a.index !== b.index) return a.index - b.index;
++  return a.id.localeCompare(b.id);
++}
++
++function cleanTmuxText(text: string): string {
++  return text
++    .replace(/#\[[^\]]*]/g, "")
++    .replace(/#\{[^}]*}/g, "")
++    .trim();
++}
++
++function cleanPaneCommand(command: string): string {
++  const cleaned = cleanTmuxText(command);
++  return /^[A-Z_][A-Z0-9_]*=/.test(cleaned) ? "" : cleaned;
++}
++
++/** Detect base64 blobs or other binary noise that some tools write to pane_title. */
++function isGarbageTitle(title: string): boolean {
++  if (title.length > 200) return true;
++  if (/^Gm=0;/.test(title)) return true;
++  return false;
++}
++
++/** Returns true for panes that are opensessions infrastructure (REFOCUS helpers, sidebar). */
++function isInfraPane(pane: SessionPaneInfo): boolean {
++  if (/^REFOCUS_WINDOW=/.test(pane.command)) return true;
++  return false;
++}
++
++export function getSessionWindowData(provider: MuxProvider, sessionName: string): SessionWindowData[] {
++  if (!isSessionDetailCapable(provider)) return [];
++
++  const panesByWindow = new Map<string, SessionPaneData[]>();
++  for (const pane of provider.listSessionPanes(sessionName)) {
++    if (isInfraPane(pane)) continue;
++
++    const title = isGarbageTitle(pane.title) ? "" : cleanTmuxText(pane.title);
++    const panes = panesByWindow.get(pane.windowId) ?? [];
++    panes.push({
++      id: pane.id,
++      index: pane.index,
++      windowId: pane.windowId,
++      windowIndex: pane.windowIndex,
++      active: pane.active,
++      cwd: pane.cwd,
++      command: cleanPaneCommand(pane.command),
++      title,
++    });
++    panesByWindow.set(pane.windowId, panes);
++  }
++
++  for (const panes of panesByWindow.values()) {
++    panes.sort(comparePanes);
++  }
++
++  return provider.listSessionWindows(sessionName)
++    .map((window) => ({
++      id: window.id,
++      index: window.index,
++      name: cleanTmuxText(window.name),
++      active: window.active,
++      paneCount: window.paneCount,
++      panes: panesByWindow.get(window.id) ?? [],
++    }))
++    .sort(compareWindows);
++}
+diff --git a/packages/runtime/test/session-details.test.ts b/packages/runtime/test/session-details.test.ts
+--- /dev/null
++++ b/packages/runtime/test/session-details.test.ts
+@@ -0,0 +1,157 @@
++import { describe, expect, test } from "bun:test";
++
++import type { MuxProvider } from "../src/contracts/mux";
++import { getSessionWindowData, isSessionDetailCapable } from "../src/session-details";
++
++function createBaseProvider(): MuxProvider {
++  return {
++    specificationVersion: "v1",
++    name: "test-mux",
++    listSessions: () => [],
++    switchSession: () => {},
++    getCurrentSession: () => null,
++    getSessionDir: () => "",
++    getPaneCount: () => 1,
++    getClientTty: () => "",
++    createSession: () => {},
++    killSession: () => {},
++    setupHooks: () => {},
++    cleanupHooks: () => {},
++  };
++}
++
++describe("session details", () => {
++  test("detects providers with session detail methods", () => {
++    const provider = {
++      ...createBaseProvider(),
++      listSessionWindows: () => [],
++      listSessionPanes: () => [],
++    };
++
++    expect(isSessionDetailCapable(provider)).toBe(true);
++  });
++
++  test("returns no window details when provider lacks session detail methods", () => {
++    expect(getSessionWindowData(createBaseProvider(), "alpha")).toEqual([]);
++  });
++
++  test("groups panes under windows in tmux order", () => {
++    const provider = {
++      ...createBaseProvider(),
++      listSessionWindows: (sessionName?: string) => {
++        if (sessionName !== "alpha") return [];
++
++        return [
++          {
++            id: "@2",
++            sessionName: "alpha",
++            index: 1,
++            name: "#[fg=cyan]●#[default] editor",
++            active: true,
++            paneCount: 2,
++          },
++          {
++            id: "@1",
++            sessionName: "alpha",
++            index: 0,
++            name: "shell",
++            active: false,
++            paneCount: 1,
++          },
++        ];
++      },
++      listSessionPanes: (sessionName: string) => {
++        if (sessionName !== "alpha") return [];
++
++        return [
++          {
++            id: "%3",
++            sessionName: "alpha",
++            windowId: "@2",
++            windowIndex: 1,
++            index: 1,
++            active: false,
++            cwd: "/tmp/logs",
++            command: "REFOCUS_WINDOW=@2",
++            title: "",
++          },
++          {
++            id: "%1",
++            sessionName: "alpha",
++            windowId: "@1",
++            windowIndex: 0,
++            index: 0,
++            active: false,
++            cwd: "/tmp/app",
++            command: "zsh",
++            title: "",
++          },
++          {
++            id: "%2",
++            sessionName: "alpha",
++            windowId: "@2",
++            windowIndex: 1,
++            index: 0,
++            active: true,
++            cwd: "/tmp/app",
++            command: "nvim",
++            title: "#[fg=green]main.ts#[default]",
++          },
++        ];
++      },
++    };
++
++    const result = getSessionWindowData(provider, "alpha");
++    expect(result).toEqual([
++      {
++        id: "@1",
++        index: 0,
++        name: "shell",
++        active: false,
++        paneCount: 1,
++        panes: [{ id: "%1", index: 0, windowId: "@1", windowIndex: 0, active: false, cwd: "/tmp/app", command: "zsh", title: "" }],
++      },
++      {
++        id: "@2",
++        index: 1,
++        name: "● editor",
++        active: true,
++        paneCount: 2,
++        panes: [{ id: "%2", index: 0, windowId: "@2", windowIndex: 1, active: true, cwd: "/tmp/app", command: "nvim", title: "main.ts" }],
++      },
++    ]);
++  });
++
++  test("filters REFOCUS_WINDOW infrastructure panes", () => {
++    const provider = {
++      ...createBaseProvider(),
++      listSessionWindows: () => [
++        { id: "@1", sessionName: "s", index: 0, name: "win", active: true, paneCount: 2 },
++      ],
++      listSessionPanes: () => [
++        { id: "%1", sessionName: "s", windowId: "@1", windowIndex: 0, index: 0, active: true, cwd: "/tmp", command: "zsh", title: "" },
++        { id: "%2", sessionName: "s", windowId: "@1", windowIndex: 0, index: 1, active: false, cwd: "/tmp", command: "REFOCUS_WINDOW=@1", title: "" },
++      ],
++    };
++
++    const result = getSessionWindowData(provider, "s");
++    expect(result[0].panes).toHaveLength(1);
++    expect(result[0].panes[0].id).toBe("%1");
++  });
++
++  test("sanitizes base64 blob pane titles", () => {
++    const blobTitle = "Gm=0;Ta677jpOnTpF13UcHR2xXC5prfHUpz4V2zzkIQ/h5V7u5Tg8PASg6zr" + "A".repeat(200);
++    const provider = {
++      ...createBaseProvider(),
++      listSessionWindows: () => [
++        { id: "@1", sessionName: "s", index: 0, name: "win", active: true, paneCount: 1 },
++      ],
++      listSessionPanes: () => [
++        { id: "%1", sessionName: "s", windowId: "@1", windowIndex: 0, index: 0, active: true, cwd: "/tmp/app", command: "node", title: blobTitle },
++      ],
++    };
++
++    const result = getSessionWindowData(provider, "s");
++    expect(result[0].panes[0].title).toBe("");
++  });
++});
