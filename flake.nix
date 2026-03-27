@@ -58,7 +58,8 @@
       inputs.nix-steipete-tools.follows = "nix-steipete-tools";
     };
 
-    openclaw-workspace.url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
+    # Temporarily disabled to unblock rebuilds on machines without GitHub auth.
+    # openclaw-workspace.url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
 
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
