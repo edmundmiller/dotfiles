@@ -33,6 +33,7 @@ Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates 
 | `10-code-standards`          | Type assertion ban (`as`)          |
 | `11-reviewable-commits`      | Split work into reviewable commits |
 | `12-red-green-tdd`           | Red/Green/Refactor default         |
+| `13-markit-cli`              | Use markit for markdown conversion |
 
 ## Adding a Rule
 
