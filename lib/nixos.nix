@@ -16,6 +16,11 @@ in
       system ? sys,
       ...
     }:
+    let
+      hostName = removeSuffix ".nix" (baseNameOf path);
+      openclawEnabledHosts = [ "nuc" ];
+      enableOpenClaw = elem hostName openclawEnabledHosts;
+    in
     nixosSystem {
       inherit system;
       specialArgs = {
@@ -25,7 +30,7 @@ in
       modules = [
         {
           nixpkgs.pkgs = pkgs;
-          networking.hostName = mkDefault (removeSuffix ".nix" (baseNameOf path));
+          networking.hostName = mkDefault hostName;
         }
         (filterAttrs (n: _v: !elem n [ "system" ]) attrs)
         ../.
@@ -33,16 +38,15 @@ in
         # opnix: 1Password secrets injection for NixOS hosts
         inputs.opnix.nixosModules.default
       ]
-      ++ optional (inputs ? openclaw-workspace) inputs.openclaw-workspace.nixosModules.openclaw
+      ++ optional (
+        enableOpenClaw && (inputs ? openclaw-workspace)
+      ) inputs.openclaw-workspace.nixosModules.openclaw
       ++ [
-        # Add openclaw home-manager module for NixOS hosts
-        # (overlay applied at flake level via mkPkgs)
         {
           home-manager.useGlobalPkgs = true;
-          home-manager.sharedModules = [
-            inputs.nix-openclaw.homeManagerModules.openclaw
-            inputs.skills-catalog.homeManagerModules.default
-          ];
+          home-manager.sharedModules =
+            optional enableOpenClaw inputs.nix-openclaw.homeManagerModules.openclaw
+            ++ [ inputs.skills-catalog.homeManagerModules.default ];
         }
       ];
     };
