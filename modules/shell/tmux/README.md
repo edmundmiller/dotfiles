@@ -14,6 +14,7 @@ modules.shell.tmux.enable = true;
 
 - **Custom wrapper script:** XDG path support + env var fallbacks for Ghostty
 - **Plugin integration:** copycat, prefix-highlight, yank, opencode-status, opencode-integrated
+- **Opensessions integration (optional):** declarative sidebar bootstrap + keybinding handoff
 - **Theme configuration:** Catppuccin with auto-hide status bar
 - **Shell integration:** tmuxifier initialization, aliases
 
@@ -30,14 +31,23 @@ modules.shell.tmux.enable = true;
 modules.shell.tmux = {
   enable = true;
   rcFiles = [ "${configDir}/tmux/theme.conf" ];  # Additional config files
+  opensessions.enable = true;
 };
 ```
 
 Theme config loads BEFORE plugins (required for prefix-highlight placeholder replacement).
 
-## TODO
+### Opensessions (optional)
 
-- Add a declarative `modules.shell.tmux.opensessions.enable = true;` option so opensessions can be managed from this module instead of via ad-hoc TPM setup in `~/.tmux.conf`.
+Enable the declarative integration with:
+
+```nix
+modules.shell.tmux.opensessions.enable = true;
+```
+
+When enabled, the module syncs an upstream opensessions checkout into `~/.local/share/opensessions/current`, bootstraps dependencies with bun, and loads the sidebar from `extraInit`.
+
+To avoid key conflicts, opensessions takes ownership of `prefix s`, `prefix S`, and `prefix o`. Vertical split moves to `prefix V`, and pane zoom moves to `prefix Z`.
 
 ## Dev Layouts (tml)
 
@@ -71,6 +81,7 @@ Enable with `modules.shell.sesh.enable = true;`.
 | **yank**                | System clipboard integration                                       |
 | **opencode-status**     | AI agent activity: ○ idle, ● busy, ◉ waiting, ✗ error, ✔ finished |
 | **opencode-integrated** | Smart naming + OpenCode status                                     |
+| **opensessions**        | Sidebar + command-table session switcher                           |
 
 ## tmux-opencode-integrated Behavior
 
@@ -98,35 +109,35 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 
 ### Windows & Sessions
 
-| Key     | Action                      |
-| ------- | --------------------------- |
-| `c`     | New window                  |
-| `X`     | Kill window                 |
-| `x`     | Kill pane                   |
-| `q`     | Kill session                |
-| `Q`     | Kill server                 |
-| `n/C-n` | Next window                 |
-| `p/C-p` | Previous window             |
-| `S`     | Choose session              |
-| `W / .` | Choose window               |
-| `/ `    | Choose session              |
-| `t`     | Session picker (sesh + fzf) |
+| Key     | Action                                         |
+| ------- | ---------------------------------------------- |
+| `c`     | New window                                     |
+| `X`     | Kill window                                    |
+| `x`     | Kill pane                                      |
+| `q`     | Kill session                                   |
+| `Q`     | Kill server                                    |
+| `n/C-n` | Next window                                    |
+| `p/C-p` | Previous window                                |
+| `S`     | Choose session (when opensessions is disabled) |
+| `W / .` | Choose window                                  |
+| `/`     | Choose session                                 |
+| `t`     | Session picker (sesh + fzf)                    |
 
 ### Panes
 
-| Key       | Action                   |
-| --------- | ------------------------ |
-| `v`       | Split horizontal         |
-| `s`       | Split vertical           |
-| `h/j/k/l` | Navigate panes           |
-| `H/J/K/L` | Swap panes               |
-| `M`       | Swap to master           |
-| `o`       | Zoom pane                |
-| `< / >`   | Resize left/right (10)   |
-| `+ / -`   | Resize down/up (5)       |
-| `=`       | Break pane to new window |
-| `_`       | Join pane                |
-| `C-w`     | Last pane                |
+| Key       | Action                                            |
+| --------- | ------------------------------------------------- |
+| `v`       | Split horizontal                                  |
+| `s / V`   | Split vertical (`V` when opensessions is enabled) |
+| `h/j/k/l` | Navigate panes                                    |
+| `H/J/K/L` | Swap panes                                        |
+| `M`       | Swap to master                                    |
+| `o / Z`   | Zoom pane (`Z` when opensessions is enabled)      |
+| `< / >`   | Resize left/right (10)                            |
+| `+ / -`   | Resize down/up (5)                                |
+| `=`       | Break pane to new window                          |
+| `_`       | Join pane                                         |
+| `C-w`     | Last pane                                         |
 
 ### Splits & Tools
 
@@ -142,6 +153,15 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 | `D` | Directory picker popup           |
 | `z` | Zoxide picker popup              |
 | `d` | Zoxide dir-only picker popup     |
+
+### Opensessions Sidebar (when enabled)
+
+| Key     | Action                                 |
+| ------- | -------------------------------------- |
+| `s`     | Toggle sidebar                         |
+| `S`     | Focus sidebar                          |
+| `o`     | Enter opensessions command table       |
+| `o 1-9` | Jump directly to visible session slots |
 
 ### Copy Mode & Misc
 
