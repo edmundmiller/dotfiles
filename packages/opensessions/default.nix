@@ -15,6 +15,10 @@ stdenvNoCC.mkDerivation (_finalAttrs: {
     hash = "sha256-4c+KSEUYxggi7RpuPLzC/OwEDL0BkQ++ahTdpi0TVYs=";
   };
 
+  patches = [
+    ./patches/0001-add-session-window-and-pane-details.patch
+  ];
+
   dontBuild = true;
 
   installPhase = ''
