@@ -26,7 +26,7 @@
     "agent-skills": {
       "inputs": {
         "home-manager": "home-manager_5",
-        "nixpkgs": "nixpkgs_8"
+        "nixpkgs": "nixpkgs_7"
       },
       "locked": {
         "lastModified": 1770375875,
@@ -1260,22 +1260,6 @@
         "type": "indirect"
       }
     },
-    "nixpkgs_10": {
-      "locked": {
-        "lastModified": 1727348695,
-        "narHash": "sha256-J+PeFKSDV+pHL7ukkfpVzCOO7mBSrrpJ3svwBFABbhI=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "1925c603f17fc89f4c8f6bf6f631a802ad85d784",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1770537093,
@@ -1338,22 +1322,6 @@
     },
     "nixpkgs_6": {
       "locked": {
-        "lastModified": 1751274312,
-        "narHash": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-24.11",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_7": {
-      "locked": {
         "lastModified": 1768127708,
         "narHash": "sha256-1Sm77VfZh3mU0F5OqKABNLWxOuDeHIlcFjsXeeiPazs=",
         "owner": "NixOS",
@@ -1368,7 +1336,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_8": {
+    "nixpkgs_7": {
       "locked": {
         "lastModified": 1770197578,
         "narHash": "sha256-AYqlWrX09+HvGs8zM6ebZ1pwUqjkfpnv8mewYwAo+iM=",
@@ -1384,7 +1352,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_9": {
+    "nixpkgs_8": {
       "locked": {
         "lastModified": 1770107345,
         "narHash": "sha256-tbS0Ebx2PiA1FRW8mt8oejR0qMXmziJmPaU1d4kYY9g=",
@@ -1396,6 +1364,22 @@
       "original": {
         "owner": "nixos",
         "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_9": {
+      "locked": {
+        "lastModified": 1727348695,
+        "narHash": "sha256-J+PeFKSDV+pHL7ukkfpVzCOO7mBSrrpJ3svwBFABbhI=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "1925c603f17fc89f4c8f6bf6f631a802ad85d784",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -1460,28 +1444,10 @@
         "type": "github"
       }
     },
-    "openclaw-workspace": {
-      "inputs": {
-        "nixpkgs": "nixpkgs_6"
-      },
-      "locked": {
-        "lastModified": 1774576804,
-        "narHash": "sha256-jrVr8JI5MZb5RzSSJlWA6rvROUkOpBltKACxSQ7Xbmc=",
-        "ref": "refs/heads/main",
-        "rev": "08441255cfa8b27513f22b69a097898f53c2c21f",
-        "revCount": 138,
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
-      }
-    },
     "opnix": {
       "inputs": {
         "flake-utils": "flake-utils_4",
-        "nixpkgs": "nixpkgs_7"
+        "nixpkgs": "nixpkgs_6"
       },
       "locked": {
         "lastModified": 1768270397,
@@ -1566,7 +1532,6 @@
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "op-shell-plugins": "op-shell-plugins",
-        "openclaw-workspace": "openclaw-workspace",
         "opnix": "opnix",
         "skills-catalog": "skills-catalog",
         "stylix": "stylix",
@@ -1628,7 +1593,8 @@
         "pi-extension-skills": "pi-extension-skills",
         "pi-messenger-repo": "pi-messenger-repo",
         "qmd-repo": "qmd-repo",
-        "shaping-skills": "shaping-skills"
+        "shaping-skills": "shaping-skills",
+        "vercel-agent-browser": "vercel-agent-browser"
       },
       "locked": {
         "path": "./skills",
@@ -2002,7 +1968,7 @@
     },
     "treefmt-nix_4": {
       "inputs": {
-        "nixpkgs": "nixpkgs_9"
+        "nixpkgs": "nixpkgs_8"
       },
       "locked": {
         "lastModified": 1770228511,
@@ -2057,6 +2023,22 @@
         "type": "github"
       }
     },
+    "vercel-agent-browser": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773668243,
+        "narHash": "sha256-BOWB6dolQbGGFaBbiP9GXhFBSztVFRkqmnOk3OyV9AM=",
+        "owner": "vercel-labs",
+        "repo": "agent-browser",
+        "rev": "0883813cd3cd5072c48d1415b4ae472c3c955666",
+        "type": "github"
+      },
+      "original": {
+        "owner": "vercel-labs",
+        "repo": "agent-browser",
+        "type": "github"
+      }
+    },
     "wezterm": {
       "inputs": {
         "flake-utils": "flake-utils_5",
@@ -2087,7 +2069,7 @@
     },
     "zen-browser": {
       "inputs": {
-        "nixpkgs": "nixpkgs_10"
+        "nixpkgs": "nixpkgs_9"
       },
       "locked": {
         "lastModified": 1727721329,
