@@ -35,6 +35,10 @@ modules.shell.tmux = {
 
 Theme config loads BEFORE plugins (required for prefix-highlight placeholder replacement).
 
+## TODO
+
+- Add a declarative `modules.shell.tmux.opensessions.enable = true;` option so opensessions can be managed from this module instead of via ad-hoc TPM setup in `~/.tmux.conf`.
+
 ## Dev Layouts (tml)
 
 The `sesh` module provides tmux dev layouts via shell functions:
