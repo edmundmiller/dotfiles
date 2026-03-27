@@ -122,7 +122,7 @@ in
     ++ optionals cfg.opensessions.enable [
       pkgs.bun # opensessions runtime + dependency bootstrap
       pkgs.curl # opensessions server helper + HTTP control
-      pkgs.fzf # opensessions sessionizer popup
+      pkgs.unstable.fzf # opensessions sessionizer popup
     ];
 
     # Agent Icons font for PUA codepoints (U+F5000–F5003) rendered by Ghostty
@@ -203,7 +203,7 @@ in
           set-environment -g BUN_PATH "${pkgs.bun}/bin/bun"
           set-environment -g OPENSESSIONS_HOST "${cfg.opensessions.host}"
           set-environment -g OPENSESSIONS_PORT "${toString cfg.opensessions.port}"
-          set-environment -g OPENSESSIONS_PATH_PREFIX "${pkgs.curl}/bin:${pkgs.fzf}/bin:${pkgs.bun}/bin"
+          set-environment -g OPENSESSIONS_PATH_PREFIX "${pkgs.curl}/bin:${pkgs.unstable.fzf}/bin:${pkgs.bun}/bin"
 
           # Keybinding handoff: opensessions owns prefix s/S/o.
           unbind -q s
