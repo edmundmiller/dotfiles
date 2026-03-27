@@ -226,9 +226,12 @@ in
             current_link="${opensessionsCurrent}"
 
             ${pkgs.coreutils}/bin/mkdir -p "${opensessionsRuntimeRoot}" "$checkout_root"
-            ${pkgs.rsync}/bin/rsync -a --delete --exclude node_modules --exclude .git \
+            ${pkgs.rsync}/bin/rsync -a --no-perms --delete --exclude node_modules --exclude .git \
               "${opensessionsSource}/" \
               "$checkout_root/"
+
+            # Source is copied from the read-only Nix store; make runtime checkout writable.
+            ${pkgs.coreutils}/bin/chmod -R u+w "$checkout_root"
 
             if [ ! -d "$checkout_root/node_modules" ]; then
               echo "Bootstrapping opensessions dependencies at $checkout_root..." >&2
