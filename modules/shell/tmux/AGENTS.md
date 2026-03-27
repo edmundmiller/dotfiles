@@ -16,6 +16,7 @@ config/tmux/
 ├── config          # Main tmux config (keybindings, behavior)
 ├── theme.conf      # Catppuccin theme + auto-hide status bar
 ├── aliases.zsh     # Shell aliases (ta, tl, tf, etc.)
+├── opensessions.sh # Declarative opensessions loader wrapper
 └── swap-pane.sh    # Pane swapping script for H/J/K/L bindings
 ```
 
@@ -26,6 +27,8 @@ config/tmux/
 - **Plugin fetching**: `tmux-opencode-status` fetched via `fetchFromGitHub`, others from nixpkgs `tmuxPlugins.*`
 - **Loading order**: Theme config MUST load BEFORE prefix-highlight plugin (sets `#{prefix_highlight}` placeholder for replacement)
 - **Auto-generated extraInit**: Contains plugin `run-shell` commands and tmux-opencode-integrated configuration
+- **Optional opensessions integration**: Enable with `modules.shell.tmux.opensessions.enable`; module syncs upstream checkout to `~/.local/share/opensessions/current`, runs bun bootstrap, and loads via `opensessions.sh`
+- **Keybinding handoff (opensessions)**: when enabled, opensessions owns `prefix s/S/o`; vertical split moves to `prefix V`, zoom to `prefix Z`, and `prefix /` remains choose-session
 
 ## Dependencies
 
@@ -34,6 +37,8 @@ config/tmux/
 - `pkgs.tmux` - Base tmux package
 - `pkgs.tmuxPlugins.{copycat,prefix-highlight,yank}` - Standard plugins
 - `pkgs.my.tmux-opencode-integrated` - Custom package (defined in `packages/`)
+- `pkgs.my.opensessions` - Pinned upstream opensessions source package
+- `pkgs.bun`, `pkgs.curl`, `pkgs.fzf`, `pkgs.rsync` - opensessions runtime/bootstrap dependencies
 
 **Other modules:**
 

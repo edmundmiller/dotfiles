@@ -31,6 +31,7 @@
         git.ai.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        tmux.opensessions.enable = true;
         dmux.enable = true;
         tmux.sesh.sessions = [
           {
