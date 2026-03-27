@@ -366,6 +366,8 @@ in
         enable = true;
         tailscaleService.enable = true;
       };
+    }
+    // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "openclaw" ] options) {
       # OpenClaw — agents, secrets, cron jobs, and skills are workspace-owned
       # (defined in openclaw-workspace module). Only infra config stays here.
       openclaw = {
@@ -485,6 +487,8 @@ in
           ];
         };
       };
+    }
+    // {
       docker.enable = true;
       hass = {
         enable = true;
