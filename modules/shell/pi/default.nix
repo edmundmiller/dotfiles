@@ -351,6 +351,11 @@ in
           bun_bin="${pkgs.bun}/bin/bun"
           if [ -x "$bun_bin" ]; then
             bun_install_dir="''${BUN_INSTALL:-$HOME/.bun}"
+            if [ ! -x "$bun_install_dir/bin/markit" ]; then
+              echo "Installing markit..."
+              "$bun_bin" install -g markit-ai \
+                || echo "Warning: markit install failed."
+            fi
             if [ ! -x "$bun_install_dir/bin/gitnexus" ]; then
               echo "Installing gitnexus..."
               "$bun_bin" install -g gitnexus \
