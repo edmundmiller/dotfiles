@@ -47,6 +47,8 @@ modules.shell.tmux.opensessions.enable = true;
 
 When enabled, the module syncs an upstream opensessions checkout into `~/.local/share/opensessions/current`, bootstraps dependencies with bun, and loads the sidebar from `extraInit`.
 
+It also installs a local opensessions watcher plugin at `~/.config/opensessions/plugins/pi.js` to monitor Pi sessions in `~/.pi/agent/sessions/` (or `$PI_SESSIONS_DIR`).
+
 To avoid key conflicts, opensessions takes ownership of `prefix s`, `prefix S`, and `prefix o`. Vertical split moves to `prefix V`, and pane zoom moves to `prefix Z`.
 
 ## Dev Layouts (tml)
