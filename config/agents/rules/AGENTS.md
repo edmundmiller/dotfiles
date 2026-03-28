@@ -17,24 +17,6 @@ Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates 
 - **Agent-agnostic** — no agent-specific tools/plugins (e.g. Claude MCP plugins). Those go in agent modules.
 - **Numbering = ordering** — gaps are fine, don't renumber existing files.
 
-## Current Files
-
-| File                         | Purpose                            |
-| ---------------------------- | ---------------------------------- |
-| `01-tone-and-style`          | Concision directive                |
-| `02-critical-instructions`   | File editing, output format        |
-| `03-version-control`         | Worktrees, selective staging       |
-| `04-code-search`             | ast-grep preference                |
-| `05-testing-philosophy`      | Spec + regression tests            |
-| `06-development-preferences` | Persistence, philosophy            |
-| `07-skill-locations`         | Where to create skills             |
-| `08-context-efficiency`      | Filter at source                   |
-| `09-nix-managed-config`      | Read-only symlinks, sources        |
-| `10-code-standards`          | Type assertion ban (`as`)          |
-| `11-reviewable-commits`      | Split work into reviewable commits |
-| `12-red-green-tdd`           | Red/Green/Refactor default         |
-| `13-markit-cli`              | Use markit for markdown conversion |
-
 ## Adding a Rule
 
 1. Pick next number: `<NN>-<name>.md`
