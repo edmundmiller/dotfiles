@@ -374,7 +374,7 @@ in
           bindings = [
             {
               peerId = "8357890648"; # @edmundamiller
-              agentId = "edmund";
+              agentId = "shimmer";
             }
             {
               peerId = "8748874608"; # wife
