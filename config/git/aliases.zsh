@@ -215,7 +215,7 @@ alias gr='git reset HEAD'
 alias grv='git rev-parse'
 
 # critique - TUI diff viewer (prefers installed binary, falls back to bunx)
-unalias critique 2>/dev/null
+unalias critique 2>/dev/null || true
 critique() {
 	if (( $+commands[critique] )); then
 		command critique "$@"

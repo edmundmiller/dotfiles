@@ -4,7 +4,7 @@
 # Ensures clone layout is safe: checkout at repo root, bare hub in sibling dir.
 
 @setup {
-  export TEST_DIR=$(mktemp -d)
+  export TEST_DIR=$(mktemp -d /tmp/gcl.zunit.XXXXXX)
   export ORIG_PWD=$PWD
 
   source "$ORIG_PWD/config/git/aliases.zsh"

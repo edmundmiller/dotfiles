@@ -4,7 +4,7 @@
 # Detects jj vs git repos and launches appropriate TUI
 
 @setup {
-  export TEST_DIR=$(mktemp -d)
+  export TEST_DIR=$(mktemp -d /tmp/open-git-tui.zunit.XXXXXX)
   export ORIG_PWD=$PWD
   export SCRIPT="$ORIG_PWD/config/tmux/open-git-tui.sh"
   

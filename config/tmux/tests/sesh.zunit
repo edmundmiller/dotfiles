@@ -8,7 +8,7 @@
 
 @setup {
   export ORIG_PWD=$PWD
-  export TEST_DIR=$(mktemp -d)
+  export TEST_DIR=$(mktemp -d /tmp/sesh.zunit.XXXXXX)
   export SESH_SCRIPT="$ORIG_PWD/config/tmux/sesh-picker.sh"
   export SESH_ALL_SCRIPT="$ORIG_PWD/config/tmux/sesh-all.sh"
   export ZOXIDE_SCRIPT="$ORIG_PWD/config/tmux/zoxide-list.sh"
@@ -124,15 +124,16 @@
 }
 
 @test 'zoxide-list.sh resolves bare hubs to real worktrees' {
+  cd "$TEST_DIR"
   local mock_bin="$TEST_DIR/mock-bin"
   local mock_dotfiles_bin="$TEST_DIR/mock-dotfiles-bin"
-  local fixture_root="$HOME/.cache/sesh-zunit-$RANDOM"
+  local fixture_root="sesh-zunit-$RANDOM"
   local bare_hub="$fixture_root/hub"
-  local main_wt="$fixture_root/hub/main"
+  local main_wt="resolved-sesh-zunit-$RANDOM/hub/main"
   local normal_dir="$fixture_root/normal"
   local bare_hub_out="${bare_hub/#$HOME/~}"
   local main_wt_out="${main_wt/#$HOME/~}"
-  mkdir -p "$mock_bin" "$mock_dotfiles_bin" "$bare_hub" "$main_wt" "$normal_dir"
+  mkdir -p "$mock_bin" "$mock_dotfiles_bin" "$bare_hub" "$normal_dir"
   touch "$bare_hub/HEAD"
 
   cat > "$mock_bin/zoxide" <<'EOF'
@@ -152,12 +153,16 @@ fi
 EOF
   chmod +x "$mock_dotfiles_bin/git-worktree-cwd"
 
-  run env BARE_HUB="$bare_hub" NORMAL_DIR="$normal_dir" MAIN_WT="$main_wt" DOTFILES_BIN="$mock_dotfiles_bin" PATH="$mock_bin:$PATH" "$ZOXIDE_SCRIPT"
+  output=$(env BARE_HUB="$bare_hub" NORMAL_DIR="$normal_dir" MAIN_WT="$main_wt" DOTFILES_BIN="$mock_dotfiles_bin" PATH="$mock_bin:$PATH" "$ZOXIDE_SCRIPT")
+  state=$?
 
   rm -rf "$fixture_root"
 
   assert $state equals 0
-  echo "$output" | grep -Fxq "$bare_hub_out" && return 1 || true
+  if printf "%s\n" "$output" | grep -Fxq "$bare_hub_out"; then
+    echo "unexpected bare hub in output: $output"
+    return 1
+  fi
   assert "$output" contains "$main_wt_out"
 }
 
