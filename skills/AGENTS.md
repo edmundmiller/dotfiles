@@ -87,11 +87,6 @@ Then `hey rebuild`.
 
 3. **Rebuild**: `hey rebuild` — auto-enabled via `local` source.
 
-## Current Sources
+## Discovering Current Sources
 
-| Source        | Repo                     | Skills             |
-| ------------- | ------------------------ | ------------------ |
-| local         | `config/agents/skills/`  | all (auto-enabled) |
-| pi-extensions | `tmustier/pi-extensions` | extending-pi       |
-| gitbutler     | `gitbutlerapp/gitbutler` | but                |
-| openai        | `openai/skills`          | gh-fix-ci          |
+Sources and skill mappings are defined in `skills/flake.nix`. Read its `inputs`, `sources`, and `skills.explicit` blocks to see what's configured. Local skills auto-discovered from `config/agents/skills/`.
