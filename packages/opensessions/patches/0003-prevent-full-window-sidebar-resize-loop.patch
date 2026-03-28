@@ -1,0 +1,27 @@
+diff --git a/packages/runtime/src/server/index.ts b/packages/runtime/src/server/index.ts
+--- a/packages/runtime/src/server/index.ts
++++ b/packages/runtime/src/server/index.ts
+@@ -698,8 +698,25 @@
+       });
+       for (const pane of panes) {
+         if (pane.width === sidebarWidth) continue;
++
++        // Guard against orphaned/full-window panes titled "opensessions".
++        // These cannot be resized to sidebar width and will otherwise trigger
++        // an after-resize-pane hook feedback loop in tmux.
++        if (pane.windowWidth != null && pane.width >= pane.windowWidth) {
++          log("resize", "skip resize for full-window sidebar pane", {
++            provider: provider.name,
++            paneId: pane.paneId,
++            sessionName: pane.sessionName,
++            windowId: pane.windowId,
++            width: pane.width,
++            windowWidth: pane.windowWidth,
++            sidebarWidth,
++          });
++          continue;
++        }
++
+         suppressedSidebarResizeAcks.set(pane.paneId, { width: sidebarWidth, expiresAt: now + 1_000 });
+         provider.resizeSidebarPane(pane.paneId, sidebarWidth);
+       }
