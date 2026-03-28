@@ -186,7 +186,7 @@
     // Token burden visualization/management - https://github.com/Whamp/pi-token-burden
     "git:github.com/Whamp/pi-token-burden",
     // OpenAI compaction controls - https://www.npmjs.com/package/@jordyvd/pi-openai-compaction
-    "npm:@jordyvd/pi-openai-compaction",
+    // "npm:@jordyvd/pi-openai-compaction",
     // Custom compaction model/template/trigger policy - https://github.com/nicobailon/pi-custom-compaction
     "npm:pi-custom-compaction",
     // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
