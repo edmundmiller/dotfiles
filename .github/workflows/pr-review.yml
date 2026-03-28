@@ -16,17 +16,21 @@ jobs:
         id: analyze
         run: |
           # Get changed files
-          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1)
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
+          CHANGED=$(git diff --name-only "$BASE_SHA..$HEAD_SHA" 2>/dev/null || git diff --name-only HEAD~1)
 
           # Categorize changes
-          NIX_CHANGED=$(echo "$CHANGED" | grep '\.nix$' | wc -l | tr -d ' ')
-          TS_CHANGED=$(echo "$CHANGED" | grep '\.ts$' | wc -l | tr -d ' ')
-          SKILLS_CHANGED=$(echo "$CHANGED" | grep '^config/agents/skills/' | wc -l | tr -d ' ')
-          MODULES_CHANGED=$(echo "$CHANGED" | grep '^modules/' | sort -u | head -20)
+          NIX_CHANGED=$(printf '%s\n' "$CHANGED" | grep -c '\.nix$' || true)
+          TS_CHANGED=$(printf '%s\n' "$CHANGED" | grep -c '\.ts$' || true)
+          SKILLS_CHANGED=$(printf '%s\n' "$CHANGED" | grep -c '^config/agents/skills/' || true)
+          MODULES_CHANGED=$(printf '%s\n' "$CHANGED" | grep '^modules/' | sort -u | head -20 || true)
 
-          echo "nix_count=$NIX_CHANGED" >> $GITHUB_OUTPUT
-          echo "ts_count=$TS_CHANGED" >> $GITHUB_OUTPUT
-          echo "skills_count=$SKILLS_CHANGED" >> $GITHUB_OUTPUT
+          {
+            echo "nix_count=$NIX_CHANGED"
+            echo "ts_count=$TS_CHANGED"
+            echo "skills_count=$SKILLS_CHANGED"
+          } >> "$GITHUB_OUTPUT"
 
           # Build comment body
           {
@@ -35,8 +39,8 @@ jobs:
             echo ""
             echo "| Category | Files Changed |"
             echo "|----------|--------------|"
-            echo "| Nix files | $NIX_CHANGED |"
-            echo "| TypeScript files | $TS_CHANGED |"
+            printf '| Nix files | %s |\n' "$NIX_CHANGED"
+            printf '| TypeScript files | %s |\n' "$TS_CHANGED"
             echo ""
             if [ "$NIX_CHANGED" -gt 0 ]; then
               echo "⚠️ **Rebuild required** — Nix files changed. Run \`hey re\` after merge."
@@ -53,7 +57,7 @@ jobs:
               echo '```'
             fi
             echo 'ENDOFBODY'
-          } >> $GITHUB_OUTPUT
+          } >> "$GITHUB_OUTPUT"
       - name: Post review comment
         uses: peter-evans/create-or-update-comment@v4
         with:

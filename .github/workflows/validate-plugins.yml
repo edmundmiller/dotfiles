@@ -60,11 +60,11 @@ jobs:
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No plugin files changed, skipping validation"
-            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "Changed files:"
             echo "$CHANGED_FILES"
-            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "skip=false" >> "$GITHUB_OUTPUT"
             # Store changed files for next step
             echo "$CHANGED_FILES" > changed_files.txt
           fi
