@@ -1,3 +1,7 @@
+---
+purpose: Hard rules for file hygiene, commit splitting, and output format.
+---
+
 # Critical Instructions
 
 - **ALWAYS overwrite the source file.** No "\_enhanced", "\_fixed", "\_updated", or "\_v2" copies. We use version control. If unsure, commit first then overwrite.

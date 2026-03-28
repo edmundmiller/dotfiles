@@ -1,3 +1,7 @@
+---
+purpose: Non-interactive version control workflows and diff tooling preferences.
+---
+
 # Version Control
 
 ## Preferences

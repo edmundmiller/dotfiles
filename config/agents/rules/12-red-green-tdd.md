@@ -1,4 +1,6 @@
-<!-- Testing workflow rule: default to red/green/refactor TDD for behavior changes. -->
+---
+purpose: Default to red/green/refactor TDD for all behavior changes.
+---
 
 # Red/Green TDD
 

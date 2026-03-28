@@ -1,3 +1,7 @@
+---
+purpose: Filter data at the source to minimize context window waste.
+---
+
 # Context Efficiency
 
 Prefer precise, filtered queries over dumping large datasets. A few tokens filtering at the source saves many tokens of noise downstream.
