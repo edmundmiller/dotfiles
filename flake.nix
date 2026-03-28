@@ -52,9 +52,11 @@
     llm-agents.url = "github:numtide/llm-agents.nix";
     llm-agents.inputs.nixpkgs.follows = "nixpkgs";
 
-    nix-openclaw.url = "github:openclaw/nix-openclaw";
-    nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
-    nix-openclaw.inputs.nix-steipete-tools.follows = "nix-steipete-tools";
+    nix-openclaw = {
+      url = "github:openclaw/nix-openclaw";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nix-steipete-tools.follows = "nix-steipete-tools";
+    };
 
     openclaw-workspace.url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
 
@@ -350,10 +352,12 @@
 
           treefmt = {
             projectRootFile = ".git/config";
-            programs.deadnix.enable = true;
-            programs.nixfmt.enable = true;
-            programs.prettier.enable = true;
-            programs.statix.enable = true;
+            programs = {
+              deadnix.enable = true;
+              nixfmt.enable = true;
+              prettier.enable = true;
+              statix.enable = true;
+            };
             settings.global.excludes = [
               "packages/*/dist/**"
               "packages/*/node_modules/**"
@@ -616,16 +620,16 @@
                     # Mark as headless so popup test stays skipped
                     export ZUNIT_HEADLESS=1
 
-                    # Seed zoxide database using /var/tmp dirs (not filtered by noise patterns)
+                    # Seed zoxide database in writable temp storage
                     export _ZO_DATA_DIR=$TMPDIR/zoxide-data
-                    mkdir -p $_ZO_DATA_DIR
-                    ZOXIDE_TEST_DIRS=/var/tmp/zunit-zoxide-$$
-                    mkdir -p $ZOXIDE_TEST_DIRS/code/project1 \
-                              $ZOXIDE_TEST_DIRS/code/project2 \
-                              $ZOXIDE_TEST_DIRS/repos/work
-                    zoxide add $ZOXIDE_TEST_DIRS/code/project1 2>/dev/null || true
-                    zoxide add $ZOXIDE_TEST_DIRS/code/project2 2>/dev/null || true
-                    zoxide add $ZOXIDE_TEST_DIRS/repos/work 2>/dev/null || true
+                    mkdir -p "$_ZO_DATA_DIR"
+                    ZOXIDE_TEST_DIRS="$TMPDIR/zunit-zoxide-$$"
+                    mkdir -p "$ZOXIDE_TEST_DIRS/code/project1" \
+                              "$ZOXIDE_TEST_DIRS/code/project2" \
+                              "$ZOXIDE_TEST_DIRS/repos/work"
+                    zoxide add "$ZOXIDE_TEST_DIRS/code/project1" 2>/dev/null || true
+                    zoxide add "$ZOXIDE_TEST_DIRS/code/project2" 2>/dev/null || true
+                    zoxide add "$ZOXIDE_TEST_DIRS/repos/work" 2>/dev/null || true
                     export ZOXIDE_TEST_DIRS
 
                     # Run zunit tests (--tap bypasses revolver spinner dependency)
