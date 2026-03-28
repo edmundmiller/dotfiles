@@ -92,10 +92,10 @@ jobs:
       - name: Publish
         working-directory: pi-packages/${{ matrix.package }}
         run: |
-          FLAGS="--access public"
+          FLAGS=(--access public)
           if [ "${{ inputs.dry-run }}" = "true" ]; then
-            FLAGS="$FLAGS --dry-run"
+            FLAGS+=(--dry-run)
           fi
-          npm publish $FLAGS
+          npm publish "${FLAGS[@]}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
