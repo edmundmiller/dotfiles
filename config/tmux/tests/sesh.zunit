@@ -79,7 +79,7 @@
   local count
   count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$count" -gt 0 ]] || skip "zoxide database is empty"
-  run "$ZOXIDE_SCRIPT"
+  run bash "$ZOXIDE_SCRIPT"
   assert $state equals 0
   # Note: output may be empty in sandbox when all seeded dirs are under filtered paths
 }
@@ -89,7 +89,7 @@
   local db_count
   db_count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$db_count" -gt 0 ]] || skip "zoxide database is empty"
-  local count=$("$ZOXIDE_SCRIPT" | wc -l | tr -d ' ')
+  local count=$(bash "$ZOXIDE_SCRIPT" | wc -l | tr -d ' ')
   [[ "$count" -le 30 ]]
   assert $state equals 0
 }
@@ -99,7 +99,7 @@
   local db_count
   db_count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$db_count" -gt 0 ]] || skip "zoxide database is empty"
-  local result=$("$ZOXIDE_SCRIPT")
+  local result=$(bash "$ZOXIDE_SCRIPT")
   # Empty output is fine (all dirs may have been filtered — correct behaviour)
   [[ -z "$result" ]] && return 0
   # Should not include common noise entries when output is non-empty
@@ -112,7 +112,7 @@
   local db_count
   db_count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$db_count" -gt 0 ]] || skip "zoxide database is empty"
-  local output=$("$ZOXIDE_SCRIPT")
+  local output=$(bash "$ZOXIDE_SCRIPT")
   # Empty output is fine (all dirs may have been filtered — correct behaviour)
   [[ -z "$output" ]] && return 0
   while IFS= read -r dir; do
@@ -153,7 +153,7 @@ fi
 EOF
   chmod +x "$mock_dotfiles_bin/git-worktree-cwd"
 
-  output=$(env BARE_HUB="$bare_hub" NORMAL_DIR="$normal_dir" MAIN_WT="$main_wt" DOTFILES_BIN="$mock_dotfiles_bin" PATH="$mock_bin:$PATH" "$ZOXIDE_SCRIPT")
+  output=$(env BARE_HUB="$bare_hub" NORMAL_DIR="$normal_dir" MAIN_WT="$main_wt" DOTFILES_BIN="$mock_dotfiles_bin" PATH="$mock_bin:$PATH" bash "$ZOXIDE_SCRIPT")
   state=$?
 
   rm -rf "$fixture_root"
@@ -188,7 +188,7 @@ echo "$NORMAL_DIR"
 EOF
   chmod +x "$mock_bin/zoxide"
 
-  run env DOTGIT_PATH="$fixture_root/repo/.git" NORMAL_DIR="$normal_dir" PATH="$mock_bin:$PATH" "$ZOXIDE_SCRIPT"
+  run env DOTGIT_PATH="$fixture_root/repo/.git" NORMAL_DIR="$normal_dir" PATH="$mock_bin:$PATH" bash "$ZOXIDE_SCRIPT"
 
   rm -rf "$fixture_root"
 
@@ -223,7 +223,7 @@ fi
 EOF
   chmod +x "$mock_bin/sesh"
 
-  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" "$SESH_ALL_SCRIPT"
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" bash "$SESH_ALL_SCRIPT"
 
   assert $state equals 0
   assert "$output" contains "$token"
@@ -251,7 +251,7 @@ exit 0
 EOF
   chmod +x "$mock_bin/fzf-tmux"
 
-  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" "$SESH_SCRIPT"
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" bash "$SESH_SCRIPT"
 
   assert $state equals 0
   echo "$output" | grep -q 'command not found' && return 1 || true
