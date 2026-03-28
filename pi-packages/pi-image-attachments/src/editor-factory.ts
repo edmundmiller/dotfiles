@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import path from "node:path";
 import type { ImageContent } from "./content.ts";
 import {
@@ -45,7 +46,7 @@ export type EditorBaseConstructor = new (...args: any[]) => EditorBase;
 
 export type AttachmentEditorDeps = {
   BaseEditor: EditorBaseConstructor;
-  getEditorKeybindings: () => EditorKeybindings;
+  getEditorKeybindings?: EditorKeybindings | (() => EditorKeybindings);
   resolveCwd: () => string;
   looksLikeImagePath: (filePath: string) => boolean;
   readImageContentFromPath: (filePath: string) => ImageContent | null;
@@ -55,6 +56,61 @@ export type AttachmentEditorDeps = {
 
 const BRACKETED_PASTE_START = "\u001b[200~";
 const BRACKETED_PASTE_END = "\u001b[201~";
+
+type SubmitKeyMatcher = (data: string) => boolean;
+
+let cachedSubmitKeyMatcher: SubmitKeyMatcher | null | undefined;
+
+function fallbackSubmitKeyMatcher(data: string): boolean {
+  return data === "\r" || data === "\n" || data === "\x1bOM";
+}
+
+function resolveSubmitKeyMatcher(): SubmitKeyMatcher {
+  if (cachedSubmitKeyMatcher !== undefined) {
+    return cachedSubmitKeyMatcher ?? fallbackSubmitKeyMatcher;
+  }
+
+  try {
+    const require = createRequire(import.meta.url);
+    const mod = require("@mariozechner/pi-tui") as {
+      Key?: { enter?: string };
+      matchesKey?: (data: string, key: string) => boolean;
+    };
+
+    if (typeof mod.matchesKey === "function" && typeof mod.Key?.enter === "string") {
+      cachedSubmitKeyMatcher = (data: string) => mod.matchesKey!(data, mod.Key!.enter!);
+      return cachedSubmitKeyMatcher;
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  cachedSubmitKeyMatcher = null;
+  return fallbackSubmitKeyMatcher;
+}
+
+function createFallbackEditorKeybindings(): EditorKeybindings {
+  return {
+    matches(data: string, action: string): boolean {
+      return action === "tui.input.submit" && resolveSubmitKeyMatcher()(data);
+    },
+  };
+}
+
+function resolveEditorKeybindings(
+  candidate: AttachmentEditorDeps["getEditorKeybindings"]
+): EditorKeybindings {
+  try {
+    const resolved = typeof candidate === "function" ? candidate() : candidate;
+    if (resolved && typeof resolved.matches === "function") {
+      return resolved;
+    }
+  } catch {
+    // Fall back below.
+  }
+
+  return createFallbackEditorKeybindings();
+}
 
 function extractBracketedPaste(data: string): string | null {
   if (!data.startsWith(BRACKETED_PASTE_START) || !data.endsWith(BRACKETED_PASTE_END)) {
@@ -97,9 +153,10 @@ export function createImageAttachmentEditor(deps: AttachmentEditorDeps) {
         return;
       }
 
-      const editorKeys = deps.getEditorKeybindings();
+      const editorKeybindings = this.getEditorKeybindings();
       const isSubmit =
-        editorKeys.matches(data, "tui.input.submit") && !(this.isShowingAutocomplete?.() ?? false);
+        editorKeybindings.matches(data, "tui.input.submit") &&
+        !(this.isShowingAutocomplete?.() ?? false);
       if (isSubmit && this.attachments.length > 0) {
         const fullText = (this.getExpandedText?.() ?? this.getText()).trim();
         const usedAttachments = sortByPlaceholderNumber(
@@ -206,6 +263,10 @@ export function createImageAttachmentEditor(deps: AttachmentEditorDeps) {
       this.attachments = this.attachments.filter((attachment) =>
         text.includes(attachment.placeholder)
       );
+    }
+
+    private getEditorKeybindings(): EditorKeybindings {
+      return resolveEditorKeybindings(deps.getEditorKeybindings);
     }
 
     private publishDraft(): void {
