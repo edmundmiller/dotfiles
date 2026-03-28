@@ -24,18 +24,7 @@ Each subdirectory maps to a tool or application. Common patterns:
 - `config/<tool>/aliases.zsh` — shell aliases sourced via `modules.shell.zsh.rcFiles`
 - `config/<tool>/*.lua` — Lua config (nvim, wezterm)
 
-## Subdirectories with Their Own AGENTS.md
-
-Some subdirectories have detailed agent docs. Check those first when working in:
-
-- `agents/` — Agent skills and rules
-- `claude/` — Claude Code config
-- `ergodox/` — Keyboard firmware
-- `gh-dash/` — GitHub dashboard
-- `nvim/` — Neovim config
-- `opencode/` — OpenCode config
-- `pi/` — Pi agent config
-- `jjui/` — Jujutsu UI config
+Subdirectories with their own `AGENTS.md` have detailed context — check those when working in that area.
 
 ## Adding Config for a New Tool
 
