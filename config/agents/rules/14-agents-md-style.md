@@ -1,3 +1,7 @@
+---
+purpose: Write AGENTS.md files that teach conventions, not list files.
+---
+
 # AGENTS.md Style
 
 When writing AGENTS.md files, document **conventions, patterns, and gotchas** — not file inventories.

@@ -1,3 +1,7 @@
+---
+purpose: Explain that agent config files are read-only Nix symlinks — edit sources here.
+---
+
 # Nix-Managed Agent Config
 
 Agent config files (`~/.pi/agent/`, `~/.claude/`, `~/.config/opencode/`) are **read-only Nix store symlinks**. Don't edit them directly — edit sources in this repo then `hey re`.

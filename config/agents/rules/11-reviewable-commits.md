@@ -1,4 +1,6 @@
-<!-- Commit hygiene rule: keep changes split into small reviewable commits. -->
+---
+purpose: Keep changes split into small, reviewable commits.
+---
 
 # Commit Hygiene
 

@@ -1,3 +1,7 @@
+---
+purpose: Write spec and regression tests using a two-commit red/green bug-fix workflow.
+---
+
 # Testing Philosophy
 
 Write two kinds of tests:

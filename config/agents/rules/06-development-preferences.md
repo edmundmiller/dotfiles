@@ -1,3 +1,7 @@
+---
+purpose: General development philosophy and task-completion expectations.
+---
+
 # Development Preferences
 
 - Don't stop tasks early due to token limits. Be persistent, complete fully. Save progress to memory if approaching budget.

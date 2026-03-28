@@ -1,4 +1,6 @@
-<!-- Code-quality guardrail: ban type assertions (`as`) to force sound typing. -->
+---
+purpose: Ban type assertions and enforce minimal-layer, minimal-state code.
+---
 
 # Code Standards
 

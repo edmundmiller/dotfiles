@@ -1,3 +1,7 @@
+---
+purpose: Map where agent skill files live across project, global, and OpenClaw scopes.
+---
+
 # Skill File Locations
 
 | Scope              | Path                                   | Notes                                          |

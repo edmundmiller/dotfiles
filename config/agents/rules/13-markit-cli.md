@@ -1,3 +1,7 @@
+---
+purpose: Use the markit CLI to convert files and URLs to markdown.
+---
+
 # Markit CLI
 
 Use `markit` when converting files, URLs, PDFs, Office docs, images, or audio into markdown.
