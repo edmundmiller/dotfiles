@@ -4,15 +4,15 @@ Shared utility functions exposed as `lib.my.*` throughout the flake. Auto-discov
 
 ## Key Files
 
-| File           | Exports                                              | Used For                               |
-| -------------- | ---------------------------------------------------- | -------------------------------------- |
-| `options.nix`  | `mkOpt`, `mkOpt'`, `mkBoolOpt`                      | Shorthand NixOS option constructors    |
-| `attrs.nix`    | `mapFilterAttrs`, `attrsToList`, `anyAttrs`, `countAttrs` | Attribute set manipulation        |
-| `modules.nix`  | `mapModules`, `mapModulesRec`, `mapModulesRec'`      | Auto-discovery of modules and hosts    |
-| `nixos.nix`    | `mkHost`, `mapHosts`                                 | Building NixOS host configurations     |
-| `platform.nix` | `isDarwin`, `isLinux`, `isNixOS`, `homeBase`         | Platform detection helpers             |
-| `paths.nix`    | Path manipulation utilities                          | File path helpers                      |
-| `generators.nix` | Config file generators                             | Generating config file formats         |
+| File             | Exports                                                   | Used For                            |
+| ---------------- | --------------------------------------------------------- | ----------------------------------- |
+| `options.nix`    | `mkOpt`, `mkOpt'`, `mkBoolOpt`                            | Shorthand NixOS option constructors |
+| `attrs.nix`      | `mapFilterAttrs`, `attrsToList`, `anyAttrs`, `countAttrs` | Attribute set manipulation          |
+| `modules.nix`    | `mapModules`, `mapModulesRec`, `mapModulesRec'`           | Auto-discovery of modules and hosts |
+| `nixos.nix`      | `mkHost`, `mapHosts`                                      | Building NixOS host configurations  |
+| `platform.nix`   | `isDarwin`, `isLinux`, `isNixOS`, `homeBase`              | Platform detection helpers          |
+| `paths.nix`      | Path manipulation utilities                               | File path helpers                   |
+| `generators.nix` | Config file generators                                    | Generating config file formats      |
 
 ## How Auto-Discovery Works
 

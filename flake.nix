@@ -373,6 +373,7 @@
                 entry = "bd hooks run pre-commit";
                 language = "system";
                 pass_filenames = false;
+                stages = [ "pre-push" ];
               };
               ha-automation-assertions = {
                 enable = true;
@@ -390,6 +391,7 @@
                 language = "system";
                 pass_filenames = false;
                 files = "modules/services/hass/";
+                stages = [ "pre-push" ];
               };
               ha-apply-devices-assertions = {
                 enable = true;
@@ -407,6 +409,7 @@
                 language = "system";
                 pass_filenames = false;
                 files = "modules/services/hass/";
+                stages = [ "pre-push" ];
               };
               skills-lock-sync = {
                 enable = true;
@@ -512,7 +515,7 @@
                     for file in "$@"; do
                       # Skip lock files and known large files
                       case "$file" in
-                        *.lock|flake.lock|package-lock.json|yarn.lock|pnpm-lock.yaml) continue ;;
+                        *.lock|flake.lock|*package-lock.json|yarn.lock|pnpm-lock.yaml|config/qutebrowser/css/github.com) continue ;;
                         *.png|*.jpg|*.jpeg|*.gif|*.ico|*.svg) continue ;;
                       esac
                       if [ -f "$file" ]; then
