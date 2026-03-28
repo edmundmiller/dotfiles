@@ -89,4 +89,4 @@ Then `hey rebuild`.
 
 ## Discovering Current Sources
 
-Sources and skill mappings are defined in `skills/flake.nix`. Read its `inputs`, `sources`, and `skills.explicit` blocks to see what's configured. Local skills auto-discovered from `config/agents/skills/`.
+List inputs: `nix flake metadata skills/ --json | jq -r '.locks.nodes.root.inputs | keys[]'`. Skill source/mapping config lives in `skills/flake.nix` (`sources` and `skills.explicit` blocks). Local skills are auto-discovered from `config/agents/skills/`.
