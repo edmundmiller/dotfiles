@@ -4,16 +4,16 @@ NixOS/nix-darwin modules that declare system options and configuration. Auto-dis
 
 ## Directory Layout
 
-| Directory    | Purpose                                            | Platform        |
-| ------------ | -------------------------------------------------- | --------------- |
-| `shell/`     | CLI tools, zsh, tmux, git, jj                      | All             |
-| `editors/`   | Editor packages and `$EDITOR` default              | All             |
-| `dev/`       | Language toolchains (node, python, rust, etc.)      | All             |
-| `desktop/`   | GUI apps, terminals, browsers, window managers      | Mostly Linux    |
-| `services/`  | Self-hosted services (NUC)                          | NixOS only      |
-| `agenix/`    | Secret encryption/decryption via age                | All             |
-| `hardware/`  | Audio, bluetooth, nvidia, peripherals               | NixOS only      |
-| `themes/`    | Color schemes and font config                       | All             |
+| Directory   | Purpose                                        | Platform     |
+| ----------- | ---------------------------------------------- | ------------ |
+| `shell/`    | CLI tools, zsh, tmux, git, jj                  | All          |
+| `editors/`  | Editor packages and `$EDITOR` default          | All          |
+| `dev/`      | Language toolchains (node, python, rust, etc.) | All          |
+| `desktop/`  | GUI apps, terminals, browsers, window managers | Mostly Linux |
+| `services/` | Self-hosted services (NUC)                     | NixOS only   |
+| `agenix/`   | Secret encryption/decryption via age           | All          |
+| `hardware/` | Audio, bluetooth, nvidia, peripherals          | NixOS only   |
+| `themes/`   | Color schemes and font config                  | All          |
 
 ## Module Pattern
 
@@ -43,13 +43,13 @@ Use `isDarwin` (from `specialArgs`) or `optionalAttrs (!isDarwin)` to guard NixO
 
 ## Top-Level Files
 
-| File              | Purpose                                        |
-| ----------------- | ---------------------------------------------- |
+| File              | Purpose                                         |
+| ----------------- | ----------------------------------------------- |
 | `options.nix`     | Core options: `user`, `dotfiles`, `home`, `env` |
-| `darwin-base.nix` | Shared nix-darwin config (nix settings, HM)    |
-| `nixos-base.nix`  | Shared NixOS config                            |
-| `security.nix`    | Security hardening                             |
-| `xdg.nix`         | XDG base directory setup                       |
+| `darwin-base.nix` | Shared nix-darwin config (nix settings, HM)     |
+| `nixos-base.nix`  | Shared NixOS config                             |
+| `security.nix`    | Security hardening                              |
+| `xdg.nix`         | XDG base directory setup                        |
 
 ## Config Files vs Module Files
 
