@@ -17,8 +17,13 @@ Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates 
 - **Agent-agnostic** — no agent-specific tools/plugins (e.g. Claude MCP plugins). Those go in agent modules.
 - **Numbering = ordering** — gaps are fine, don't renumber existing files.
 
+## Discovering Rules
+
+Each rule file has YAML frontmatter with a `purpose:` field. List them: `head -3 config/agents/rules/[0-9]*.md | grep purpose:`
+
 ## Adding a Rule
 
 1. Pick next number: `<NN>-<name>.md`
-2. Keep it short — if >500B, ask whether a skill would be better
-3. Rebuild: `hey re`
+2. Add YAML frontmatter with `purpose:` field
+3. Keep it short — if >500B, ask whether a skill would be better
+4. Rebuild: `hey re`
