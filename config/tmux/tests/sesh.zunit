@@ -232,7 +232,7 @@ EOF
   } > "$mock_bin/sesh"
   chmod +x "$mock_bin/sesh"
 
-  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" bash "$SESH_ALL_SCRIPT"
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" BASH_BIN="$BASH_PATH" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" bash "$SESH_ALL_SCRIPT"
 
   assert $state equals 0
   assert "$output" contains "$token"
@@ -264,7 +264,7 @@ EOF
   } > "$mock_bin/fzf-tmux"
   chmod +x "$mock_bin/fzf-tmux"
 
-  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" bash "$SESH_SCRIPT"
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" BASH_BIN="$BASH_PATH" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" bash "$SESH_SCRIPT"
 
   assert $state equals 0
   echo "$output" | grep -q 'command not found' && return 1 || true
