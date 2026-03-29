@@ -5,7 +5,7 @@
 
 @setup {
   # Create temp directory for test repos
-  export TEST_DIR=$(mktemp -d)
+  export TEST_DIR=$(mktemp -d /tmp/g2bare.zunit.XXXXXX)
   export ORIG_PWD=$PWD
   
   # Source the function we're testing
@@ -58,6 +58,7 @@
 
   # Create test repo
   local repo_path="$TEST_DIR/clean-repo"
+  local branch_name
   mkdir -p "$repo_path"
   cd "$repo_path"
   git init --quiet
@@ -66,6 +67,8 @@
   echo "# Test Repo" > README.md
   git add README.md
   git commit --quiet -m "Initial commit"
+  branch_name=$(git branch --show-current)
+  [[ -n "$branch_name" ]] || branch_name="main"
   
   run g2bare
   
@@ -77,10 +80,10 @@
   assert "$output" same_as "true"
   
   # Verify worktree exists and has files
-  assert "$repo_path/.git.main/README.md" is_file
+  assert "$repo_path/$branch_name/README.md" is_file
   
   # Verify git works in worktree
-  cd "$repo_path/.git.main"
+  cd "$repo_path/$branch_name"
   run git status --short
   assert $state equals 0
 }

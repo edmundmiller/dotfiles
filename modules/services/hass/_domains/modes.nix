@@ -31,13 +31,13 @@ in
         {
           action = "light.turn_off";
           target.entity_id = [
-            "light.essentials_a19_a60"       # Trashcan
-            "light.essentials_a19_a60_2"     # Dishwasher
-            "light.essentials_a19_a60_3"     # Bathroom Nightstand
-            "light.essentials_a19_a60_4"     # Window Nightstand
-            "light.nanoleaf_multicolor_floor_lamp"  # Couch Lamp
-            "light.nanoleaf_multicolor_hd_ls"       # Edmund Desk
-            "light.smart_night_light_w"      # Night light
+            "light.essentials_a19_a60" # Trashcan
+            "light.essentials_a19_a60_2" # Dishwasher
+            "light.essentials_a19_a60_3" # Bathroom Nightstand
+            "light.essentials_a19_a60_4" # Window Nightstand
+            "light.nanoleaf_multicolor_floor_lamp" # Couch Lamp
+            "light.nanoleaf_multicolor_hd_ls" # Edmund Desk
+            "light.smart_night_light_w" # Night light
           ];
         }
         {
