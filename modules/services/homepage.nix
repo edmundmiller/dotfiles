@@ -242,6 +242,13 @@ in
         {
           "Network" = [
             {
+              "Router" = {
+                href = "http://192.168.1.254/cgi-bin/home.ha";
+                description = "Router admin";
+                icon = "mdi-router-wireless";
+              };
+            }
+            {
               "NextDNS" = {
                 href = "https://my.nextdns.io";
                 description = "DNS filtering";
