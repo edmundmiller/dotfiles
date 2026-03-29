@@ -16,20 +16,34 @@ resolve_bin() {
   command -v "$name" 2>/dev/null || true
 }
 
+TMUX_BIN="${TMUX_BIN:-$(resolve_bin tmux "/opt/homebrew/bin/tmux" "/run/current-system/sw/bin/tmux" "$HOME/.nix-profile/bin/tmux")}"
 SESH_BIN="${SESH_BIN:-$(resolve_bin sesh "/opt/homebrew/bin/sesh" "/run/current-system/sw/bin/sesh" "$HOME/.nix-profile/bin/sesh")}"
 FZF_TMUX_BIN="${FZF_TMUX_BIN:-$(resolve_bin fzf-tmux "/opt/homebrew/bin/fzf-tmux" "/run/current-system/sw/bin/fzf-tmux" "$HOME/.nix-profile/bin/fzf-tmux")}"
 SCRIPT_DIR=${TMUX_HOME:-$HOME/.config/tmux}
-CUR_SESS=$(tmux display-message -p '#S' 2>/dev/null)
-CUR_DIR=$(tmux display-message -p '#{pane_current_path}' 2>/dev/null)
+CUR_SESS=""
+CUR_DIR=""
+if [[ -n "$TMUX_BIN" ]]; then
+  CUR_SESS=$("$TMUX_BIN" display-message -p '#S' 2>/dev/null || true)
+  CUR_DIR=$("$TMUX_BIN" display-message -p '#{pane_current_path}' 2>/dev/null || true)
+fi
 CUR_DIR_SHORT=${CUR_DIR/#$HOME/\~}
 
+tmux_message() {
+  local message="$1"
+  if [[ -n "$TMUX_BIN" ]]; then
+    "$TMUX_BIN" display-message "$message"
+  else
+    printf '%s\n' "$message" >&2
+  fi
+}
+
 [[ -n "$SESH_BIN" ]] || {
-  tmux display-message "sesh-picker: sesh not found"
+  tmux_message "sesh-picker: sesh not found"
   exit 1
 }
 
 [[ -n "$FZF_TMUX_BIN" ]] || {
-  tmux display-message "sesh-picker: fzf-tmux not found"
+  tmux_message "sesh-picker: fzf-tmux not found"
   exit 1
 }
 
