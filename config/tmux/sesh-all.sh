@@ -26,6 +26,7 @@ resolve_bin() {
 }
 
 TMUX_BIN="${TMUX_BIN:-$(resolve_bin tmux "/opt/homebrew/bin/tmux" "/run/current-system/sw/bin/tmux" "$HOME/.nix-profile/bin/tmux")}"
+BASH_BIN="${BASH_BIN:-$(resolve_bin bash "/bin/bash" "/usr/bin/bash" "$HOME/.nix-profile/bin/bash")}"
 SCRIPT_DIR=${TMUX_HOME:-$(dirname "$0")}
 SESH_BIN="${SESH_BIN:-$(resolve_bin sesh "/opt/homebrew/bin/sesh" "/run/current-system/sw/bin/sesh" "$HOME/.nix-profile/bin/sesh")}"
 CURRENT_SESSION=""
@@ -41,4 +42,4 @@ CURRENT_DIR_SHORT=${CURRENT_DIR/#$HOME/\~}
 
 "$SESH_BIN" list -t | grep -vxF "$CURRENT_SESSION" | awk '{printf "\033[35m■\033[0m %s\n", $0}'
 "$SESH_BIN" list -c | grep -vxF "$CURRENT_SESSION" | awk '{printf "\033[33m□\033[0m %s\n", $0}'
-bash "$SCRIPT_DIR/zoxide-list.sh" | grep -vxF "$CURRENT_DIR_SHORT" | awk '{printf "\033[34m›\033[0m %s\n", $0}'
+"$BASH_BIN" "$SCRIPT_DIR/zoxide-list.sh" | grep -vxF "$CURRENT_DIR_SHORT" | awk '{printf "\033[34m›\033[0m %s\n", $0}'
