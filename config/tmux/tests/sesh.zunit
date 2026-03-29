@@ -8,7 +8,8 @@
 
 @setup {
   export ORIG_PWD=$PWD
-  export TEST_DIR=$(mktemp -d)
+  export BASH_PATH=$(command -v bash)
+  export TEST_DIR=$(mktemp -d /tmp/sesh.zunit.XXXXXX)
   export SESH_SCRIPT="$ORIG_PWD/config/tmux/sesh-picker.sh"
   export SESH_ALL_SCRIPT="$ORIG_PWD/config/tmux/sesh-all.sh"
   export ZOXIDE_SCRIPT="$ORIG_PWD/config/tmux/zoxide-list.sh"
@@ -79,7 +80,7 @@
   local count
   count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$count" -gt 0 ]] || skip "zoxide database is empty"
-  run "$ZOXIDE_SCRIPT"
+  run bash "$ZOXIDE_SCRIPT"
   assert $state equals 0
   # Note: output may be empty in sandbox when all seeded dirs are under filtered paths
 }
@@ -89,7 +90,7 @@
   local db_count
   db_count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$db_count" -gt 0 ]] || skip "zoxide database is empty"
-  local count=$("$ZOXIDE_SCRIPT" | wc -l | tr -d ' ')
+  local count=$(bash "$ZOXIDE_SCRIPT" | wc -l | tr -d ' ')
   [[ "$count" -le 30 ]]
   assert $state equals 0
 }
@@ -99,7 +100,7 @@
   local db_count
   db_count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$db_count" -gt 0 ]] || skip "zoxide database is empty"
-  local result=$("$ZOXIDE_SCRIPT")
+  local result=$(bash "$ZOXIDE_SCRIPT")
   # Empty output is fine (all dirs may have been filtered — correct behaviour)
   [[ -z "$result" ]] && return 0
   # Should not include common noise entries when output is non-empty
@@ -112,7 +113,7 @@
   local db_count
   db_count=$(zoxide query --list 2>/dev/null | wc -l | tr -d ' ')
   [[ "$db_count" -gt 0 ]] || skip "zoxide database is empty"
-  local output=$("$ZOXIDE_SCRIPT")
+  local output=$(bash "$ZOXIDE_SCRIPT")
   # Empty output is fine (all dirs may have been filtered — correct behaviour)
   [[ -z "$output" ]] && return 0
   while IFS= read -r dir; do
@@ -124,40 +125,49 @@
 }
 
 @test 'zoxide-list.sh resolves bare hubs to real worktrees' {
+  cd "$TEST_DIR"
   local mock_bin="$TEST_DIR/mock-bin"
   local mock_dotfiles_bin="$TEST_DIR/mock-dotfiles-bin"
-  local fixture_root="$HOME/.cache/sesh-zunit-$RANDOM"
+  local fixture_root="sesh-zunit-$RANDOM"
   local bare_hub="$fixture_root/hub"
-  local main_wt="$fixture_root/hub/main"
+  local main_wt="resolved-sesh-zunit-$RANDOM/hub/main"
   local normal_dir="$fixture_root/normal"
   local bare_hub_out="${bare_hub/#$HOME/~}"
   local main_wt_out="${main_wt/#$HOME/~}"
-  mkdir -p "$mock_bin" "$mock_dotfiles_bin" "$bare_hub" "$main_wt" "$normal_dir"
+  mkdir -p "$mock_bin" "$mock_dotfiles_bin" "$bare_hub" "$normal_dir"
   touch "$bare_hub/HEAD"
 
-  cat > "$mock_bin/zoxide" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 echo "$BARE_HUB"
 echo "$NORMAL_DIR"
 EOF
+  } > "$mock_bin/zoxide"
   chmod +x "$mock_bin/zoxide"
 
-  cat > "$mock_dotfiles_bin/git-worktree-cwd" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 if [[ "$1" == "$BARE_HUB" ]]; then
   echo "$MAIN_WT"
 else
   echo "$1"
 fi
 EOF
+  } > "$mock_dotfiles_bin/git-worktree-cwd"
   chmod +x "$mock_dotfiles_bin/git-worktree-cwd"
 
-  run env BARE_HUB="$bare_hub" NORMAL_DIR="$normal_dir" MAIN_WT="$main_wt" DOTFILES_BIN="$mock_dotfiles_bin" PATH="$mock_bin:$PATH" "$ZOXIDE_SCRIPT"
+  output=$(env BARE_HUB="$bare_hub" NORMAL_DIR="$normal_dir" MAIN_WT="$main_wt" DOTFILES_BIN="$mock_dotfiles_bin" PATH="$mock_bin:$PATH" bash "$ZOXIDE_SCRIPT")
+  state=$?
 
   rm -rf "$fixture_root"
 
   assert $state equals 0
-  echo "$output" | grep -Fxq "$bare_hub_out" && return 1 || true
+  if printf "%s\n" "$output" | grep -Fxq "$bare_hub_out"; then
+    echo "unexpected bare hub in output: $output"
+    return 1
+  fi
   assert "$output" contains "$main_wt_out"
 }
 
@@ -176,14 +186,16 @@ EOF
   local normal_dir="$fixture_root/normal"
   mkdir -p "$mock_bin" "$fixture_root/repo/.git" "$normal_dir"
 
-  cat > "$mock_bin/zoxide" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 echo "$DOTGIT_PATH"
 echo "$NORMAL_DIR"
 EOF
+  } > "$mock_bin/zoxide"
   chmod +x "$mock_bin/zoxide"
 
-  run env DOTGIT_PATH="$fixture_root/repo/.git" NORMAL_DIR="$normal_dir" PATH="$mock_bin:$PATH" "$ZOXIDE_SCRIPT"
+  run env DOTGIT_PATH="$fixture_root/repo/.git" NORMAL_DIR="$normal_dir" PATH="$mock_bin:$PATH" bash "$ZOXIDE_SCRIPT"
 
   rm -rf "$fixture_root"
 
@@ -210,15 +222,17 @@ EOF
   local token="__zunit_mock_session__"
   mkdir -p "$mock_bin"
 
-  cat > "$mock_bin/sesh" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 if [[ "$1" == "list" ]]; then
   echo "__zunit_mock_session__"
 fi
 EOF
+  } > "$mock_bin/sesh"
   chmod +x "$mock_bin/sesh"
 
-  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" "$SESH_ALL_SCRIPT"
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" BASH_BIN="$BASH_PATH" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" "$BASH_PATH" "$SESH_ALL_SCRIPT"
 
   assert $state equals 0
   assert "$output" contains "$token"
@@ -228,8 +242,9 @@ EOF
   local mock_bin="$TEST_DIR/mock-fzf"
   mkdir -p "$mock_bin"
 
-  cat > "$mock_bin/sesh" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 if [[ "$1" == "list" ]]; then
   exit 0
 fi
@@ -237,16 +252,19 @@ if [[ "$1" == "connect" ]]; then
   exit 0
 fi
 EOF
+  } > "$mock_bin/sesh"
   chmod +x "$mock_bin/sesh"
 
-  cat > "$mock_bin/fzf-tmux" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 # Simulate escape/no selection
 exit 0
 EOF
+  } > "$mock_bin/fzf-tmux"
   chmod +x "$mock_bin/fzf-tmux"
 
-  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" "$SESH_SCRIPT"
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" BASH_BIN="$BASH_PATH" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" "$BASH_PATH" "$SESH_SCRIPT"
 
   assert $state equals 0
   echo "$output" | grep -q 'command not found' && return 1 || true

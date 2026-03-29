@@ -26,5 +26,29 @@ jobs:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Run statix check
-        run: nix run nixpkgs#statix -- check .
+      - name: Run statix on changed Nix files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            base_sha="$(python -c 'import json, os; print(json.load(open(os.environ["GITHUB_EVENT_PATH"]))["pull_request"]["base"]["sha"])')"
+          else
+            base_sha="$(python -c 'import json, os; print(json.load(open(os.environ["GITHUB_EVENT_PATH"]))["before"])')"
+          fi
+
+          if [[ "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t nix_files < <(git diff --name-only "$base_sha" HEAD -- '*.nix')
+
+          if (( ${#nix_files[@]} == 0 )); then
+            echo "No changed Nix files"
+            exit 0
+          fi
+
+          for file in "${nix_files[@]}"; do
+            echo "Running statix on $file"
+            nix run nixpkgs#statix -- check "$file"
+          done

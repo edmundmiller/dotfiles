@@ -4,17 +4,17 @@ GUI applications, terminals, window managers, and desktop environment config. Mo
 
 ## Subdirectories
 
-| Directory    | Purpose                                    | Platform |
-| ------------ | ------------------------------------------ | -------- |
-| `apps/`      | Desktop applications (openclaw client, etc.)| Mixed    |
-| `browsers/`  | Firefox, qutebrowser                       | Linux    |
-| `gaming/`    | Game-related packages                      | Linux    |
-| `gnome/`     | GNOME desktop tweaks                       | Linux    |
-| `macos/`     | macOS-specific desktop config              | Darwin   |
-| `media/`     | Media players, mpv, etc.                   | Mixed    |
-| `term/`      | Terminal emulators (ghostty, kitty, etc.)  | Mixed    |
-| `themes/`    | Desktop theming                            | Linux    |
-| `vm/`        | Virtual machine config                     | Linux    |
+| Directory   | Purpose                                      | Platform |
+| ----------- | -------------------------------------------- | -------- |
+| `apps/`     | Desktop applications (openclaw client, etc.) | Mixed    |
+| `browsers/` | Firefox, qutebrowser                         | Linux    |
+| `gaming/`   | Game-related packages                        | Linux    |
+| `gnome/`    | GNOME desktop tweaks                         | Linux    |
+| `macos/`    | macOS-specific desktop config                | Darwin   |
+| `media/`    | Media players, mpv, etc.                     | Mixed    |
+| `term/`     | Terminal emulators (ghostty, kitty, etc.)    | Mixed    |
+| `themes/`   | Desktop theming                              | Linux    |
+| `vm/`       | Virtual machine config                       | Linux    |
 
 ## Top-Level Files
 
