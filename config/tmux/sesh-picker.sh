@@ -22,6 +22,7 @@ resolve_bin() {
 }
 
 TMUX_BIN="${TMUX_BIN:-$(resolve_bin tmux "/opt/homebrew/bin/tmux" "/run/current-system/sw/bin/tmux" "$HOME/.nix-profile/bin/tmux")}"
+BASH_BIN="${BASH_BIN:-$(resolve_bin bash "/bin/bash" "/usr/bin/bash" "$HOME/.nix-profile/bin/bash")}"
 SESH_BIN="${SESH_BIN:-$(resolve_bin sesh "/opt/homebrew/bin/sesh" "/run/current-system/sw/bin/sesh" "$HOME/.nix-profile/bin/sesh")}"
 FZF_TMUX_BIN="${FZF_TMUX_BIN:-$(resolve_bin fzf-tmux "/opt/homebrew/bin/fzf-tmux" "/run/current-system/sw/bin/fzf-tmux" "$HOME/.nix-profile/bin/fzf-tmux")}"
 SCRIPT_DIR=${TMUX_HOME:-$HOME/.config/tmux}
@@ -55,18 +56,18 @@ tmux_message() {
 export SESH_BIN
 
 SESSION=$(
-  bash "$SCRIPT_DIR/sesh-all.sh" | "$FZF_TMUX_BIN" -p 80%,70% \
+  "$BASH_BIN" "$SCRIPT_DIR/sesh-all.sh" | "$FZF_TMUX_BIN" -p 80%,70% \
     --ansi \
     --no-sort \
     --border-label " sesh " \
     --prompt "> " \
     --header "^a all  ^t tmux  ^c configs  ^x zoxide  ^d kill" \
     --bind "tab:down,btab:up" \
-    --bind "ctrl-a:change-prompt(> )+reload(bash $SCRIPT_DIR/sesh-all.sh)" \
+    --bind "ctrl-a:change-prompt(> )+reload($BASH_BIN $SCRIPT_DIR/sesh-all.sh)" \
     --bind "ctrl-t:change-prompt(tmux> )+reload($SESH_BIN list -t | grep -vxF '$CUR_SESS' | awk '{printf \"\\033[35m■\\033[0m %s\\n\", \$0}')" \
     --bind "ctrl-c:change-prompt(configs> )+reload($SESH_BIN list -c | grep -vxF '$CUR_SESS' | awk '{printf \"\\033[33m□\\033[0m %s\\n\", \$0}')" \
-    --bind "ctrl-x:change-prompt(zoxide> )+reload(bash $SCRIPT_DIR/zoxide-list.sh | grep -vxF '$CUR_DIR_SHORT' | awk '{printf \"\\033[34m›\\033[0m %s\\n\", \$0}')" \
-    --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(> )+reload(bash $SCRIPT_DIR/sesh-all.sh)"
+    --bind "ctrl-x:change-prompt(zoxide> )+reload($BASH_BIN $SCRIPT_DIR/zoxide-list.sh | grep -vxF '$CUR_DIR_SHORT' | awk '{printf \"\\033[34m›\\033[0m %s\\n\", \$0}')" \
+    --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(> )+reload($BASH_BIN $SCRIPT_DIR/sesh-all.sh)"
 )
 
 # Strip ANSI escape codes, then the symbol prefix
