@@ -9,6 +9,11 @@ resolve_bin() {
   local name="$1"
   shift
 
+  if command -v "$name" >/dev/null 2>&1; then
+    command -v "$name"
+    return 0
+  fi
+
   local candidate
   for candidate in "$@"; do
     [[ -n "$candidate" && -x "$candidate" ]] && {
@@ -17,7 +22,7 @@ resolve_bin() {
     }
   done
 
-  command -v "$name" 2>/dev/null || true
+  return 0
 }
 
 TMUX_BIN="${TMUX_BIN:-$(resolve_bin tmux "/opt/homebrew/bin/tmux" "/run/current-system/sw/bin/tmux" "$HOME/.nix-profile/bin/tmux")}"
