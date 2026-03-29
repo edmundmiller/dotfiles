@@ -106,17 +106,66 @@ in
 {
   # Workaround for nix-openclaw using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-openclaw
-  system.activationScripts.binCompat = ''
-    mkdir -p /bin
-    for cmd in cat ln mkdir rm; do
-      ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
-    done
+  system.activationScripts = {
+    binCompat = ''
+      mkdir -p /bin
+      for cmd in cat ln mkdir rm; do
+        ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
+      done
 
-  '';
+    '';
 
-  system.activationScripts.removeLegacyZele = ''
-    rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
-  '';
+    removeLegacyZele = ''
+      rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
+    '';
+
+    relocateMillDocsVault = {
+      text = ''
+        LEGACY_PATH="${legacyMillDocsPath}"
+        TARGET_PATH="${millDocsVaultPath}"
+        mkdir -p /home/emiller /home/emiller/sync
+
+        if [ -d "$LEGACY_PATH" ] && [ ! -L "$LEGACY_PATH" ] && [ ! -e "$TARGET_PATH" ]; then
+          mv "$LEGACY_PATH" "$TARGET_PATH"
+        fi
+
+        if [ -e "$TARGET_PATH" ]; then
+          if [ -e "$LEGACY_PATH" ] || [ -L "$LEGACY_PATH" ]; then
+            if [ ! -L "$LEGACY_PATH" ] || [ "$(readlink -f "$LEGACY_PATH")" != "$TARGET_PATH" ]; then
+              rm -rf "$LEGACY_PATH"
+            fi
+          fi
+          ln -sfn "$TARGET_PATH" "$LEGACY_PATH"
+          chown -h emiller:users "$LEGACY_PATH"
+          chown -R emiller:users "$TARGET_PATH"
+        fi
+      '';
+    };
+
+    bootstrapOpenclawOpServiceToken = {
+      text = ''
+        TOKEN_FILE="/home/emiller/.local/state/openclaw/op-service-account-token"
+        install -d -m 700 -o emiller -g users "$(dirname "$TOKEN_FILE")"
+        install -m 400 -o emiller -g users /etc/opnix-token "$TOKEN_FILE"
+      '';
+    };
+
+    bootstrapLinearToken = {
+      text = ''
+        TOKEN_FILE="/home/emiller/.local/state/openclaw-linear/token"
+        if [ ! -s "$TOKEN_FILE" ]; then
+          mkdir -p "$(dirname "$TOKEN_FILE")"
+          cp /run/agenix/linear-api-token "$TOKEN_FILE"
+          chmod 600 "$TOKEN_FILE"
+          chown -R emiller:users "$(dirname "$TOKEN_FILE")"
+        fi
+      '';
+      deps = [
+        "agenixInstall"
+        "agenixChown"
+      ];
+    };
+  };
 
   # Allow __noChroot derivations for occasional upstream packages that still
   # assume networked builds.
@@ -138,103 +187,116 @@ in
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
     # Ensure systemd user services can find system + user packages (openclaw uses bare 'cat')
-    systemd.user.sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
+    systemd = {
+      user = {
+        sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
 
-    # linear-token-init: ensures token file exists before openclaw-gateway starts.
-    # RemainAfterExit=yes so gateway restarts don't re-trigger it unnecessarily.
-    systemd.user.services.linear-token-init = {
-      Unit = {
-        Description = "Initialize Linear OAuth token file";
-        Before = "openclaw-gateway.service";
-      };
-      Install.WantedBy = [ "openclaw-gateway.service" ];
-      Service = {
-        Type = "oneshot";
-        RemainAfterExit = "yes";
-        StateDirectory = "openclaw-linear";
-        ExecStart = toString linearTokenRefreshScript;
-      };
-    };
+        # linear-token-init: ensures token file exists before openclaw-gateway starts.
+        # RemainAfterExit=yes so gateway restarts don't re-trigger it unnecessarily.
+        services.linear-token-init = {
+          Unit = {
+            Description = "Initialize Linear OAuth token file";
+            Before = "openclaw-gateway.service";
+          };
+          Install.WantedBy = [ "openclaw-gateway.service" ];
+          Service = {
+            Type = "oneshot";
+            RemainAfterExit = "yes";
+            StateDirectory = "openclaw-linear";
+            ExecStart = toString linearTokenRefreshScript;
+          };
+        };
 
-    # linear-token-refresh: timer-driven periodic refresh (every 12h).
-    # Restarts openclaw-gateway after updating the token so the new value is picked up.
-    systemd.user.services.linear-token-refresh = {
-      Unit.Description = "Refresh Linear OAuth access token";
-      Service = {
-        Type = "oneshot";
-        StateDirectory = "openclaw-linear";
-        ExecStart = toString linearTokenRefreshScript;
-        ExecStartPost = "${pkgs.systemd}/bin/systemctl --user try-restart openclaw-gateway.service";
+        # linear-token-refresh: timer-driven periodic refresh (every 12h).
+        # Restarts openclaw-gateway after updating the token so the new value is picked up.
+        services.linear-token-refresh = {
+          Unit.Description = "Refresh Linear OAuth access token";
+          Service = {
+            Type = "oneshot";
+            StateDirectory = "openclaw-linear";
+            ExecStart = toString linearTokenRefreshScript;
+            ExecStartPost = "${pkgs.systemd}/bin/systemctl --user try-restart openclaw-gateway.service";
+          };
+        };
+        timers.linear-token-refresh = {
+          Unit.Description = "Refresh Linear OAuth token every 12h";
+          Timer = {
+            OnUnitActiveSec = "12h";
+            RandomizedDelaySec = "5min";
+          };
+          Install.WantedBy = [ "timers.target" ];
+        };
       };
-    };
-    systemd.user.timers.linear-token-refresh = {
-      Unit.Description = "Refresh Linear OAuth token every 12h";
-      Timer = {
-        OnUnitActiveSec = "12h";
-        RandomizedDelaySec = "5min";
-      };
-      Install.WantedBy = [ "timers.target" ];
     };
 
     # Keep qmd as primary memory backend, but use a thin local wrapper around
     # llm-agents.nix qmd that forces CPU mode on this NUC, plus query mode.
-    programs.openclaw.config.memory.qmd = {
-      command = pkgs.lib.mkForce "${qmd}/bin/qmd";
-      searchMode = pkgs.lib.mkForce "query";
-    };
+    programs = {
+      openclaw = {
+        config = {
+          memory.qmd = {
+            command = pkgs.lib.mkForce "${qmd}/bin/qmd";
+            searchMode = pkgs.lib.mkForce "query";
+          };
 
-    # Force memory embeddings to Gemini to avoid OpenAI embed spend.
-    programs.openclaw.config.agents.defaults.memorySearch = {
-      provider = "gemini";
-      model = "gemini-embedding-2-preview";
-      outputDimensionality = 3072;
-      fallback = "none";
-    };
+          # Force memory embeddings to Gemini to avoid OpenAI embed spend.
+          agents = {
+            defaults = {
+              memorySearch = {
+                provider = "gemini";
+                model = "gemini-embedding-2-preview";
+                outputDimensionality = 3072;
+                fallback = "none";
+              };
 
-    # Prefer Kilo Gateway ahead of minimax for gateway/subagents.
-    # Docs: https://docs.openclaw.ai/providers/kilocode
-    programs.openclaw.config.agents.defaults.model.fallbacks = pkgs.lib.mkForce [
-      "openrouter/openrouter/auto"
-      "kilocode/kilo/auto"
-      "opencode/minimax-m2.5"
-      "openrouter/anthropic/claude-sonnet-4"
-      "openrouter/openai/gpt-5-nano"
-    ];
-    programs.openclaw.config.agents.defaults.subagents.model.fallbacks = pkgs.lib.mkForce [
-      "openrouter/openrouter/auto"
-      "kilocode/kilo/auto"
-      "opencode/minimax-m2.5"
-      "openrouter/anthropic/claude-sonnet-4"
-      "openrouter/openai/gpt-5-nano"
-    ];
+              # Prefer Kilo Gateway ahead of minimax for gateway/subagents.
+              # Docs: https://docs.openclaw.ai/providers/kilocode
+              model.fallbacks = pkgs.lib.mkForce [
+                "openrouter/openrouter/auto"
+                "kilocode/kilo/auto"
+                "opencode/minimax-m2.5"
+                "openrouter/anthropic/claude-sonnet-4"
+                "openrouter/openai/gpt-5-nano"
+              ];
+              subagents.model.fallbacks = pkgs.lib.mkForce [
+                "openrouter/openrouter/auto"
+                "kilocode/kilo/auto"
+                "opencode/minimax-m2.5"
+                "openrouter/anthropic/claude-sonnet-4"
+                "openrouter/openai/gpt-5-nano"
+              ];
+            };
+          };
 
-    # Required for HA OpenClaw integration (OpenAI-compatible endpoint)
-    programs.openclaw.config.gateway.http.endpoints.chatCompletions.enabled = true;
+          http.endpoints.chatCompletions.enabled = true;
 
-    # Allow Control UI when accessed via Tailscale service hostnames.
-    programs.openclaw.config.gateway.controlUi.allowedOrigins = [
-      "https://openclaw.cinnamon-rooster.ts.net"
-      "https://nuc.cinnamon-rooster.ts.net"
-    ];
+          # Allow Control UI when accessed via Tailscale service hostnames.
+          gateway.controlUi.allowedOrigins = [
+            "https://openclaw.cinnamon-rooster.ts.net"
+            "https://nuc.cinnamon-rooster.ts.net"
+          ];
 
-    # Explicit Chromium path for NixOS so OpenClaw browser auto-detect doesn't miss it.
-    # Keep headless on for server operation.
-    programs.openclaw.config.browser = {
-      executablePath = "/run/current-system/sw/bin/chromium";
-      headless = true;
-      defaultProfile = "openclaw";
-    };
+          # Explicit Chromium path for NixOS so OpenClaw browser auto-detect doesn't miss it.
+          # Keep headless on for server operation.
+          browser = {
+            executablePath = "/run/current-system/sw/bin/chromium";
+            headless = true;
+            defaultProfile = "openclaw";
+          };
 
-    # linear-agent-bridge gateway extension config
-    programs.openclaw.config.plugins.entries.linear-agent-bridge = {
-      enabled = true;
-      config = {
-        linearApiKey = "\${LINEAR_API_KEY}";
-        linearWebhookSecret = "\${LINEAR_WEBHOOK_SECRET}";
-        devAgentId = "main";
-        enableAgentApi = true;
-        # Agent callbacks stay local — no need to go through funnel
-        apiBaseUrl = "http://127.0.0.1:18789/plugins/linear/api";
+          # linear-agent-bridge gateway extension config
+          plugins.entries.linear-agent-bridge = {
+            enabled = true;
+            config = {
+              linearApiKey = "\${LINEAR_API_KEY}";
+              linearWebhookSecret = "\${LINEAR_WEBHOOK_SECRET}";
+              devAgentId = "main";
+              enableAgentApi = true;
+              # Agent callbacks stay local — no need to go through funnel
+              apiBaseUrl = "http://127.0.0.1:18789/plugins/linear/api";
+            };
+          };
+        };
       };
     };
   };
@@ -588,79 +650,58 @@ in
 
   # Expose OpenClaw gateway as a Tailscale service VIP (svc:openclaw)
   # so clients can use https://openclaw.cinnamon-rooster.ts.net.
-  systemd.services.openclaw-tailscale-serve = {
-    description = "Tailscale serve proxy for OpenClaw gateway";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "tailscaled.service" ];
-    requires = [ "tailscaled.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:openclaw --https=443 http://127.0.0.1:18789 && exit 0; sleep 1; done; exit 1\"'";
-      ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:openclaw || true'";
+  systemd = {
+    services.openclaw-tailscale-serve = {
+      description = "Tailscale serve proxy for OpenClaw gateway";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "tailscaled.service" ];
+      requires = [ "tailscaled.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:openclaw --https=443 http://127.0.0.1:18789 && exit 0; sleep 1; done; exit 1\"'";
+        ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:openclaw || true'";
+      };
     };
-  };
 
-  systemd.tmpfiles.rules = [
-    "d ${millDocsVaultPath} 0755 emiller users -"
-  ];
-
-  system.activationScripts.relocateMillDocsVault = {
-    text = ''
-      LEGACY_PATH="${legacyMillDocsPath}"
-      TARGET_PATH="${millDocsVaultPath}"
-      mkdir -p /home/emiller /home/emiller/sync
-
-      if [ -d "$LEGACY_PATH" ] && [ ! -L "$LEGACY_PATH" ] && [ ! -e "$TARGET_PATH" ]; then
-        mv "$LEGACY_PATH" "$TARGET_PATH"
-      fi
-
-      if [ -e "$TARGET_PATH" ]; then
-        if [ -e "$LEGACY_PATH" ] || [ -L "$LEGACY_PATH" ]; then
-          if [ ! -L "$LEGACY_PATH" ] || [ "$(readlink -f "$LEGACY_PATH")" != "$TARGET_PATH" ]; then
-            rm -rf "$LEGACY_PATH"
-          fi
-        fi
-        ln -sfn "$TARGET_PATH" "$LEGACY_PATH"
-        chown -h emiller:users "$LEGACY_PATH"
-        chown -R emiller:users "$TARGET_PATH"
-      fi
-    '';
-  };
-
-  systemd.services.obsidian-sync-mill-docs = {
-    description = "Obsidian Headless Sync (mill-docs)";
-    after = [
-      "network-online.target"
-      "obsidian-sync-op-env.service"
-      "obsidian-sync.service"
+    tmpfiles.rules = [
+      "d ${millDocsVaultPath} 0755 emiller users -"
     ];
-    requires = [ "obsidian-sync-op-env.service" ];
-    wants = [
-      "network-online.target"
-      "obsidian-sync.service"
-    ];
-    wantedBy = [ "multi-user.target" ];
-    unitConfig.JoinsNamespaceOf = "obsidian-sync.service";
 
-    serviceConfig = {
-      Type = "simple";
-      User = "emiller";
-      Group = "users";
-      ExecStartPre = [
-        "${millDocsObsidianLoginScript}"
-        "${millDocsObsidianSetupScript}"
-        "${millDocsObsidianConfigScript}"
+    services.obsidian-sync-mill-docs = {
+      description = "Obsidian Headless Sync (mill-docs)";
+      after = [
+        "network-online.target"
+        "obsidian-sync-op-env.service"
+        "obsidian-sync.service"
       ];
-      ExecStart = "${millDocsObsidianSyncScript}";
-      Restart = "on-failure";
-      RestartSec = "30s";
-      EnvironmentFile = "/run/obsidian-sync-op.env";
-      Environment = "XDG_CONFIG_HOME=/tmp";
-      ProtectHome = "read-only";
-      ReadWritePaths = [ millDocsVaultPath ];
-      NoNewPrivileges = true;
-      PrivateTmp = true;
+      requires = [ "obsidian-sync-op-env.service" ];
+      wants = [
+        "network-online.target"
+        "obsidian-sync.service"
+      ];
+      wantedBy = [ "multi-user.target" ];
+      unitConfig.JoinsNamespaceOf = "obsidian-sync.service";
+
+      serviceConfig = {
+        Type = "simple";
+        User = "emiller";
+        Group = "users";
+        ExecStartPre = [
+          "${millDocsObsidianLoginScript}"
+          "${millDocsObsidianSetupScript}"
+          "${millDocsObsidianConfigScript}"
+        ];
+        ExecStart = "${millDocsObsidianSyncScript}";
+        Restart = "on-failure";
+        RestartSec = "30s";
+        EnvironmentFile = "/run/obsidian-sync-op.env";
+        Environment = "XDG_CONFIG_HOME=/tmp";
+        ProtectHome = "read-only";
+        ReadWritePaths = [ millDocsVaultPath ];
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+      };
     };
   };
 
@@ -674,37 +715,13 @@ in
   #   | ssh nuc "sudo tee /etc/opnix-token && sudo chmod 640 /etc/opnix-token"
   # The token file is read by OpNix + services that consume 1Password-backed secrets.
 
-  age.secrets.lubelogger-env.owner = "lubelogger";
-  age.secrets.bugster-env.owner = "emiller";
-  age.secrets.speedtest-tracker-env.owner = "root";
-  age.secrets.linear-refresh-token.owner = "emiller";
-
-  # Copy the existing OpNix bootstrap token into OpenClaw state so the
-  # user-level gateway service can export OP_SERVICE_ACCOUNT_TOKEN for agents.
-  system.activationScripts.bootstrapOpenclawOpServiceToken = {
-    text = ''
-      TOKEN_FILE="/home/emiller/.local/state/openclaw/op-service-account-token"
-      install -d -m 700 -o emiller -g users "$(dirname "$TOKEN_FILE")"
-      install -m 400 -o emiller -g users /etc/opnix-token "$TOKEN_FILE"
-    '';
-  };
-
-  # Bootstrap the linear token state file from agenix so openclawPluginGuard
-  # doesn't fail during home-manager activation (before linear-token-init.service runs).
-  system.activationScripts.bootstrapLinearToken = {
-    text = ''
-      TOKEN_FILE="/home/emiller/.local/state/openclaw-linear/token"
-      if [ ! -s "$TOKEN_FILE" ]; then
-        mkdir -p "$(dirname "$TOKEN_FILE")"
-        cp /run/agenix/linear-api-token "$TOKEN_FILE"
-        chmod 600 "$TOKEN_FILE"
-        chown -R emiller:users "$(dirname "$TOKEN_FILE")"
-      fi
-    '';
-    deps = [
-      "agenixInstall"
-      "agenixChown"
-    ];
+  age = {
+    secrets = {
+      lubelogger-env.owner = "lubelogger";
+      bugster-env.owner = "emiller";
+      speedtest-tracker-env.owner = "root";
+      linear-refresh-token.owner = "emiller";
+    };
   };
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
