@@ -8,6 +8,7 @@
 
 @setup {
   export ORIG_PWD=$PWD
+  export BASH_PATH=$(command -v bash)
   export TEST_DIR=$(mktemp -d /tmp/sesh.zunit.XXXXXX)
   export SESH_SCRIPT="$ORIG_PWD/config/tmux/sesh-picker.sh"
   export SESH_ALL_SCRIPT="$ORIG_PWD/config/tmux/sesh-all.sh"
@@ -136,21 +137,25 @@
   mkdir -p "$mock_bin" "$mock_dotfiles_bin" "$bare_hub" "$normal_dir"
   touch "$bare_hub/HEAD"
 
-  cat > "$mock_bin/zoxide" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 echo "$BARE_HUB"
 echo "$NORMAL_DIR"
 EOF
+  } > "$mock_bin/zoxide"
   chmod +x "$mock_bin/zoxide"
 
-  cat > "$mock_dotfiles_bin/git-worktree-cwd" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 if [[ "$1" == "$BARE_HUB" ]]; then
   echo "$MAIN_WT"
 else
   echo "$1"
 fi
 EOF
+  } > "$mock_dotfiles_bin/git-worktree-cwd"
   chmod +x "$mock_dotfiles_bin/git-worktree-cwd"
 
   output=$(env BARE_HUB="$bare_hub" NORMAL_DIR="$normal_dir" MAIN_WT="$main_wt" DOTFILES_BIN="$mock_dotfiles_bin" PATH="$mock_bin:$PATH" bash "$ZOXIDE_SCRIPT")
@@ -181,11 +186,13 @@ EOF
   local normal_dir="$fixture_root/normal"
   mkdir -p "$mock_bin" "$fixture_root/repo/.git" "$normal_dir"
 
-  cat > "$mock_bin/zoxide" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 echo "$DOTGIT_PATH"
 echo "$NORMAL_DIR"
 EOF
+  } > "$mock_bin/zoxide"
   chmod +x "$mock_bin/zoxide"
 
   run env DOTGIT_PATH="$fixture_root/repo/.git" NORMAL_DIR="$normal_dir" PATH="$mock_bin:$PATH" bash "$ZOXIDE_SCRIPT"
@@ -215,12 +222,14 @@ EOF
   local token="__zunit_mock_session__"
   mkdir -p "$mock_bin"
 
-  cat > "$mock_bin/sesh" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 if [[ "$1" == "list" ]]; then
   echo "__zunit_mock_session__"
 fi
 EOF
+  } > "$mock_bin/sesh"
   chmod +x "$mock_bin/sesh"
 
   run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" SESH_BIN="$mock_bin/sesh" TMUX_HOME="$ORIG_PWD/config/tmux" bash "$SESH_ALL_SCRIPT"
@@ -233,8 +242,9 @@ EOF
   local mock_bin="$TEST_DIR/mock-fzf"
   mkdir -p "$mock_bin"
 
-  cat > "$mock_bin/sesh" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 if [[ "$1" == "list" ]]; then
   exit 0
 fi
@@ -242,13 +252,16 @@ if [[ "$1" == "connect" ]]; then
   exit 0
 fi
 EOF
+  } > "$mock_bin/sesh"
   chmod +x "$mock_bin/sesh"
 
-  cat > "$mock_bin/fzf-tmux" <<'EOF'
-#!/usr/bin/env bash
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
 # Simulate escape/no selection
 exit 0
 EOF
+  } > "$mock_bin/fzf-tmux"
   chmod +x "$mock_bin/fzf-tmux"
 
   run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" TMUX_HOME="$ORIG_PWD/config/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" bash "$SESH_SCRIPT"
