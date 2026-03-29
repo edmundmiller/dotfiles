@@ -8,5 +8,5 @@ When writing AGENTS.md files, document **conventions, patterns, and gotchas** â€
 
 - Don't list files the agent can discover by listing the directory
 - Don't maintain tables that go stale â€” provide a command to query live state instead
-- Prefer "teach to fish": `nix flake metadata foo/ --json | jq '...'` over a static table of inputs
+- Prefer "teach to fish": `nix flake metadata foo/ --json | jg '...'` over a static table of inputs
 - Put metadata in the files themselves (e.g. YAML frontmatter `purpose:`) then query: `head -5 *.md | grep 'purpose:'`
