@@ -55,18 +55,18 @@ tmux_message() {
 export SESH_BIN
 
 SESSION=$(
-  "$SCRIPT_DIR/sesh-all.sh" | "$FZF_TMUX_BIN" -p 80%,70% \
+  bash "$SCRIPT_DIR/sesh-all.sh" | "$FZF_TMUX_BIN" -p 80%,70% \
     --ansi \
     --no-sort \
     --border-label " sesh " \
     --prompt "> " \
     --header "^a all  ^t tmux  ^c configs  ^x zoxide  ^d kill" \
     --bind "tab:down,btab:up" \
-    --bind "ctrl-a:change-prompt(> )+reload($SCRIPT_DIR/sesh-all.sh)" \
+    --bind "ctrl-a:change-prompt(> )+reload(bash $SCRIPT_DIR/sesh-all.sh)" \
     --bind "ctrl-t:change-prompt(tmux> )+reload($SESH_BIN list -t | grep -vxF '$CUR_SESS' | awk '{printf \"\\033[35m■\\033[0m %s\\n\", \$0}')" \
     --bind "ctrl-c:change-prompt(configs> )+reload($SESH_BIN list -c | grep -vxF '$CUR_SESS' | awk '{printf \"\\033[33m□\\033[0m %s\\n\", \$0}')" \
-    --bind "ctrl-x:change-prompt(zoxide> )+reload($SCRIPT_DIR/zoxide-list.sh | grep -vxF '$CUR_DIR_SHORT' | awk '{printf \"\\033[34m›\\033[0m %s\\n\", \$0}')" \
-    --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(> )+reload($SCRIPT_DIR/sesh-all.sh)"
+    --bind "ctrl-x:change-prompt(zoxide> )+reload(bash $SCRIPT_DIR/zoxide-list.sh | grep -vxF '$CUR_DIR_SHORT' | awk '{printf \"\\033[34m›\\033[0m %s\\n\", \$0}')" \
+    --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(> )+reload(bash $SCRIPT_DIR/sesh-all.sh)"
 )
 
 # Strip ANSI escape codes, then the symbol prefix
