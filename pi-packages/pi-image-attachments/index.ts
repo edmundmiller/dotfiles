@@ -131,10 +131,7 @@ async function loadCustomEditor(): Promise<EditorBaseConstructor> {
 }
 
 export default async function (pi: ExtensionAPI): Promise<void> {
-  const [CustomEditor] = await Promise.all([
-    loadCustomEditor(),
-    loadEditorKeybindings(),
-  ]);
+  const [CustomEditor] = await Promise.all([loadCustomEditor(), loadEditorKeybindings()]);
 
   registerImageAttachmentsExtension(pi, {
     BaseEditor: CustomEditor as any,

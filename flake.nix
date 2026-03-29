@@ -52,9 +52,11 @@
     llm-agents.url = "github:numtide/llm-agents.nix";
     llm-agents.inputs.nixpkgs.follows = "nixpkgs";
 
-    nix-openclaw.url = "github:openclaw/nix-openclaw";
-    nix-openclaw.inputs.nixpkgs.follows = "nixpkgs";
-    nix-openclaw.inputs.nix-steipete-tools.follows = "nix-steipete-tools";
+    nix-openclaw = {
+      url = "github:openclaw/nix-openclaw";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nix-steipete-tools.follows = "nix-steipete-tools";
+    };
 
     openclaw-workspace.url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
 
@@ -350,10 +352,12 @@
 
           treefmt = {
             projectRootFile = ".git/config";
-            programs.deadnix.enable = true;
-            programs.nixfmt.enable = true;
-            programs.prettier.enable = true;
-            programs.statix.enable = true;
+            programs = {
+              deadnix.enable = true;
+              nixfmt.enable = true;
+              prettier.enable = true;
+              statix.enable = true;
+            };
             settings.global.excludes = [
               "packages/*/dist/**"
               "packages/*/node_modules/**"
@@ -373,6 +377,7 @@
                 entry = "bd hooks run pre-commit";
                 language = "system";
                 pass_filenames = false;
+                stages = [ "pre-push" ];
               };
               ha-automation-assertions = {
                 enable = true;
@@ -390,6 +395,7 @@
                 language = "system";
                 pass_filenames = false;
                 files = "modules/services/hass/";
+                stages = [ "pre-push" ];
               };
               ha-apply-devices-assertions = {
                 enable = true;
@@ -407,6 +413,7 @@
                 language = "system";
                 pass_filenames = false;
                 files = "modules/services/hass/";
+                stages = [ "pre-push" ];
               };
               skills-lock-sync = {
                 enable = true;
@@ -512,7 +519,7 @@
                     for file in "$@"; do
                       # Skip lock files and known large files
                       case "$file" in
-                        *.lock|flake.lock|package-lock.json|yarn.lock|pnpm-lock.yaml) continue ;;
+                        *.lock|flake.lock|*package-lock.json|yarn.lock|pnpm-lock.yaml|config/qutebrowser/css/github.com) continue ;;
                         *.png|*.jpg|*.jpeg|*.gif|*.ico|*.svg) continue ;;
                       esac
                       if [ -f "$file" ]; then
@@ -613,16 +620,16 @@
                     # Mark as headless so popup test stays skipped
                     export ZUNIT_HEADLESS=1
 
-                    # Seed zoxide database using /var/tmp dirs (not filtered by noise patterns)
+                    # Seed zoxide database in writable temp storage
                     export _ZO_DATA_DIR=$TMPDIR/zoxide-data
-                    mkdir -p $_ZO_DATA_DIR
-                    ZOXIDE_TEST_DIRS=/var/tmp/zunit-zoxide-$$
-                    mkdir -p $ZOXIDE_TEST_DIRS/code/project1 \
-                              $ZOXIDE_TEST_DIRS/code/project2 \
-                              $ZOXIDE_TEST_DIRS/repos/work
-                    zoxide add $ZOXIDE_TEST_DIRS/code/project1 2>/dev/null || true
-                    zoxide add $ZOXIDE_TEST_DIRS/code/project2 2>/dev/null || true
-                    zoxide add $ZOXIDE_TEST_DIRS/repos/work 2>/dev/null || true
+                    mkdir -p "$_ZO_DATA_DIR"
+                    ZOXIDE_TEST_DIRS="$TMPDIR/zunit-zoxide-$$"
+                    mkdir -p "$ZOXIDE_TEST_DIRS/code/project1" \
+                              "$ZOXIDE_TEST_DIRS/code/project2" \
+                              "$ZOXIDE_TEST_DIRS/repos/work"
+                    zoxide add "$ZOXIDE_TEST_DIRS/code/project1" 2>/dev/null || true
+                    zoxide add "$ZOXIDE_TEST_DIRS/code/project2" 2>/dev/null || true
+                    zoxide add "$ZOXIDE_TEST_DIRS/repos/work" 2>/dev/null || true
                     export ZOXIDE_TEST_DIRS
 
                     # Run zunit tests (--tap bypasses revolver spinner dependency)
