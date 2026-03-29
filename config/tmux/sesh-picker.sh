@@ -71,6 +71,33 @@ SESSION=$(
 )
 
 # Strip ANSI escape codes, then the symbol prefix
-SESSION=$(printf '%s' "$SESSION" | sed 's/\x1b\[[0-9;]*m//g; s/^[■□›] //')
+strip_ansi() {
+  local input="$1"
+  local output=""
+  local ch=""
+
+  while [[ -n "$input" ]]; do
+    ch=${input:0:1}
+    if [[ "$ch" == $'\e' && ${input:1:1} == '[' ]]; then
+      input=${input:2}
+      while [[ -n "$input" ]]; do
+        ch=${input:0:1}
+        input=${input:1}
+        [[ "$ch" == 'm' ]] && break
+      done
+      continue
+    fi
+
+    output+="$ch"
+    input=${input:1}
+  done
+
+  printf '%s' "$output"
+}
+
+SESSION=$(strip_ansi "$SESSION")
+SESSION=${SESSION#■ }
+SESSION=${SESSION#□ }
+SESSION=${SESSION#› }
 [ -n "$SESSION" ] && "$SESH_BIN" connect "$SESSION"
 exit 0
