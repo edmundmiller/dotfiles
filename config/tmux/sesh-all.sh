@@ -41,4 +41,4 @@ CURRENT_DIR_SHORT=${CURRENT_DIR/#$HOME/\~}
 
 "$SESH_BIN" list -t | grep -vxF "$CURRENT_SESSION" | awk '{printf "\033[35m■\033[0m %s\n", $0}'
 "$SESH_BIN" list -c | grep -vxF "$CURRENT_SESSION" | awk '{printf "\033[33m□\033[0m %s\n", $0}'
-"$SCRIPT_DIR/zoxide-list.sh" | grep -vxF "$CURRENT_DIR_SHORT" | awk '{printf "\033[34m›\033[0m %s\n", $0}'
+bash "$SCRIPT_DIR/zoxide-list.sh" | grep -vxF "$CURRENT_DIR_SHORT" | awk '{printf "\033[34m›\033[0m %s\n", $0}'
