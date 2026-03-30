@@ -119,6 +119,7 @@
 
     environment.systemPackages = with pkgs; [
       llm-agents.qmd
+      my.zele
     ];
 
     home-manager.users.${config.user.name} =
