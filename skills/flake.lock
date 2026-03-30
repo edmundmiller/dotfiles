@@ -104,6 +104,22 @@
         "type": "github"
       }
     },
+    "markit-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774825410,
+        "narHash": "sha256-+v0eX8WPEwfvdqROXF3JmAT/YYoXXqiCGvbC8f1E140=",
+        "owner": "Michaelliv",
+        "repo": "markit",
+        "rev": "2b77d4223da7d8e20c9132c1b118273e98d7d6f1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Michaelliv",
+        "repo": "markit",
+        "type": "github"
+      }
+    },
     "mitsuhiko-agent-stuff": {
       "flake": false,
       "locked": {
@@ -222,6 +238,7 @@
         "diffity-repo": "diffity-repo",
         "dotfiles-repo": "dotfiles-repo",
         "hunk-repo": "hunk-repo",
+        "markit-repo": "markit-repo",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
