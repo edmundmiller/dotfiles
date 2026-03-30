@@ -33,6 +33,7 @@
         codex.enable = true;
         opencode.enable = true;
         pi.enable = true;
+        skillkit.enable = true;
         pi.memoryRemote = "git@github.com:edmundmiller/pi-memory";
         direnv.enable = true;
         git.enable = true;
