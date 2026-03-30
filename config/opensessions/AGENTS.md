@@ -10,6 +10,7 @@ This directory holds local opensessions configuration files that are loaded from
 config/opensessions/
 ├── AGENTS.md
 └── plugins/
+    ├── hunk.js
     └── pi.js
 ```
 

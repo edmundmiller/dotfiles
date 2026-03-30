@@ -161,6 +161,9 @@ in
       "opensessions/plugins/pi.js" = mkIf cfg.opensessions.enable {
         source = "${configDir}/opensessions/plugins/pi.js";
       };
+      "opensessions/plugins/hunk.js" = mkIf cfg.opensessions.enable {
+        source = "${configDir}/opensessions/plugins/hunk.js";
+      };
       "tmux/open-opensessions-config.sh" = mkIf cfg.opensessions.enable {
         executable = true;
         text = ''
