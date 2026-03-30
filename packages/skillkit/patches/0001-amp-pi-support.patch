@@ -1,0 +1,518 @@
+diff --git a/a/src/bin.ts b/b/src/bin.ts
+index de311a1..0b85011 100755
+--- a/a/src/bin.ts
++++ b/b/src/bin.ts
+@@ -49,6 +49,8 @@ function printHelp(): void {
+     ${dim("any")}   ${cyan("--codex")}              Only scan Codex
+     ${dim("any")}   ${cyan("--gemini")}             Only scan Gemini CLI
+     ${dim("any")}   ${cyan("--opencode")}           Only scan OpenCode
++    ${dim("any")}   ${cyan("--amp")}                Only scan Amp
++    ${dim("any")}   ${cyan("--pi")}                 Only scan Pi
+ 
+   ${dim("Install skills via skills.sh: npx skills add <owner/repo>")}
+ `);
+diff --git a/a/src/commands/scan.ts b/b/src/commands/scan.ts
+index 39c49e8..4f427bf 100644
+--- a/a/src/commands/scan.ts
++++ b/b/src/commands/scan.ts
+@@ -28,22 +28,33 @@ export async function runScan(): Promise<void> {
+ 	const agentFilter = parseAgentFilter(args);
+ 	const db = getDb();
+ 
+-	const agents = getDetectedAgents(agentFilter);
+-	if (agents.length === 0) {
++	const detectedAgents = getDetectedAgents(agentFilter);
++	const sessionCount = countAllSessions(agentFilter);
++
++	if (detectedAgents.length === 0 && sessionCount === 0) {
+ 		console.log(
+-			`\n  ${dim("No supported agents found (Claude Code, OpenCode).")}\n`,
++			`\n  ${dim("No supported agents found.")}\n`,
+ 		);
+ 		return;
+ 	}
++
++	let agents =
++		detectedAgents.length > 0
++			? detectedAgents
++			: [agentFilter ? agentFilter.toUpperCase() : "session sources"];
++
++	if (!agentFilter) {
++		if (countAllSessions("amp") > 0 && !agents.includes("Amp")) {
++			agents = [...agents, "Amp"];
++		}
++		if (countAllSessions("pi") > 0 && !agents.includes("Pi")) {
++			agents = [...agents, "Pi"];
++		}
++	}
+ 	console.log(`\n  ${dim(`Scanning ${agents.join(" + ")}`)}`);
+ 
+ 	const skills = scanInstalledSkills(agentFilter);
+ 
+-	if (skills.length === 0) {
+-		console.log(dim("  No skills found.\n"));
+-		return;
+-	}
+-
+ 	let skillsShCount = 0;
+ 	let manualCount = 0;
+ 
+@@ -57,9 +68,13 @@ export async function runScan(): Promise<void> {
+ 	if (skillsShCount > 0) parts.push(`${skillsShCount} via skills.sh`);
+ 	if (manualCount > 0) parts.push(`${manualCount} manual`);
+ 
+-	console.log(
+-		`  ${bold(`Found ${skills.length} skills`)} ${dim(`(${parts.join(", ")})`)}`,
+-	);
++	if (skills.length === 0) {
++		console.log(`  ${bold("Found 0 skills")}`);
++	} else {
++		console.log(
++			`  ${bold(`Found ${skills.length} skills`)} ${dim(`(${parts.join(", ")})`)}`,
++		);
++	}
+ 
+ 	const localSkillsDir = join(process.cwd(), ".claude", "skills");
+ 	if (existsSync(localSkillsDir)) {
+@@ -83,7 +98,7 @@ export async function runScan(): Promise<void> {
+ 
+ 	const result = await performScan(db, { includeCommands, agentFilter });
+ 
+-	const sessionCount = countAllSessions(agentFilter);
++	const totalSessions = countAllSessions(agentFilter);
+ 	const totalRow = db
+ 		.query<{ count: number }, []>(
+ 			"SELECT COUNT(*) as count FROM skill_invocations",
+@@ -92,7 +107,7 @@ export async function runScan(): Promise<void> {
+ 	const totalInvocations = totalRow?.count ?? 0;
+ 
+ 	console.log(
+-		`  ${dim("Indexed")} ${bold(String(sessionCount))} ${dim("sessions")} ${cyan("·")} ${bold(totalInvocations.toLocaleString())} ${dim("invocations")}`,
++		`  ${dim("Indexed")} ${bold(String(totalSessions))} ${dim("sessions")} ${cyan("·")} ${bold(totalInvocations.toLocaleString())} ${dim("invocations")}`,
+ 	);
+ 
+ 	if (result.invocationCount > 0) {
+diff --git a/a/src/scanner/auto-scan.ts b/b/src/scanner/auto-scan.ts
+index df6a75a..2a30126 100644
+--- a/a/src/scanner/auto-scan.ts
++++ b/b/src/scanner/auto-scan.ts
+@@ -3,6 +3,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
+ import { homedir } from "node:os";
+ import { basename, join } from "node:path";
+ import { deduplicateInvocations, upsertInstalledSkill } from "../db/queries";
++import { countAllSessions } from "./index";
+ import { scanAllSessions } from "./index";
+ import { getDetectedAgents, scanInstalledSkills } from "./skills";
+ 
+@@ -32,7 +33,8 @@ export async function performScan(
+ 	const { includeCommands = false, quiet = false, agentFilter } = options;
+ 
+ 	const agents = getDetectedAgents(agentFilter);
+-	if (agents.length === 0) {
++	const sessionCount = countAllSessions(agentFilter);
++	if (agents.length === 0 && sessionCount === 0) {
+ 		return { skillCount: 0, invocationCount: 0 };
+ 	}
+ 
+@@ -50,10 +52,6 @@ export async function performScan(
+ 		);
+ 	}
+ 
+-	if (skills.length === 0) {
+-		return { skillCount: 0, invocationCount: 0 };
+-	}
+-
+ 	const localSkillsDir = join(process.cwd(), ".claude", "skills");
+ 	const knownSkills = new Set<string>();
+ 	for (const skill of skills) {
+diff --git a/b/src/scanner/connectors/amp.ts b/b/src/scanner/connectors/amp.ts
+new file mode 100644
+index 0000000..1d66649
+--- /dev/null
++++ b/b/src/scanner/connectors/amp.ts
+@@ -0,0 +1,144 @@
++import type { Database } from "bun:sqlite";
++import { existsSync, readFileSync, statSync } from "node:fs";
++import { homedir, platform } from "node:os";
++import { basename, join } from "node:path";
++import type { Invocation } from "../index";
++import { recordNewInvocations } from "../index";
++
++interface AmpMessage {
++	role?: string;
++	content?: Array<Record<string, unknown>>;
++}
++
++interface AmpThread {
++	id?: string;
++	created?: number;
++	messages?: AmpMessage[];
++}
++
++function getThreadsDirs(): string[] {
++	const os = platform();
++	const home = homedir();
++	const xdgData = process.env.XDG_DATA_HOME || join(home, ".local", "share");
++
++	if (os === "darwin") {
++		return [
++			join(xdgData, "amp", "threads"),
++			join(home, "Library", "Application Support", "amp", "threads"),
++			join(home, ".amp", "threads"),
++		];
++	}
++
++	if (os === "win32") {
++		const localAppData = process.env.LOCALAPPDATA || join(home, "AppData", "Local");
++		return [join(localAppData, "amp", "threads")];
++	}
++
++	return [join(xdgData, "amp", "threads"), join(home, ".amp", "threads")];
++}
++
++function getThreadFiles(): string[] {
++	const files = new Set<string>();
++	for (const dir of getThreadsDirs()) {
++		if (!existsSync(dir)) continue;
++		const glob = new Bun.Glob("*.json");
++		for (const rel of glob.scanSync({ cwd: dir })) {
++			files.add(join(dir, rel));
++		}
++	}
++	return [...files];
++}
++
++export function parseAmpThreadFile(
++	filePath: string,
++	knownSkills: Set<string> = new Set(),
++): Invocation[] {
++	const invocations: Invocation[] = [];
++
++	let raw: string;
++	try {
++		raw = readFileSync(filePath, "utf-8");
++	} catch {
++		return invocations;
++	}
++
++	let thread: AmpThread;
++	try {
++		thread = JSON.parse(raw) as AmpThread;
++	} catch {
++		return invocations;
++	}
++
++	const sessionId = `amp:${thread.id ?? basename(filePath, ".json")}`;
++	const baseTs =
++		typeof thread.created === "number"
++			? thread.created > 1_000_000_000_000
++				? thread.created
++				: thread.created * 1000
++			: (() => {
++					try {
++						return Math.floor(statSync(filePath).mtimeMs);
++					} catch {
++						return Date.now();
++					}
++				})();
++
++	if (!Array.isArray(thread.messages)) return invocations;
++
++	let eventOffset = 0;
++	for (let mi = 0; mi < thread.messages.length; mi++) {
++		const msg = thread.messages[mi];
++		if (!msg || !Array.isArray(msg.content)) continue;
++
++		for (let ci = 0; ci < msg.content.length; ci++) {
++			const item = msg.content[ci];
++			if (typeof item !== "object" || item === null) continue;
++
++			if (item.type !== "tool_use") continue;
++			if (item.name !== "skill") continue;
++
++			const input = item.input as Record<string, unknown> | undefined;
++			if (!input) continue;
++
++			const skillNameRaw = input.name ?? input.skill ?? input.skillName;
++			if (typeof skillNameRaw !== "string") continue;
++
++			const skillName = skillNameRaw.trim();
++			if (!skillName) continue;
++			if (knownSkills.size > 0 && !knownSkills.has(skillName)) continue;
++
++			const timestamp = new Date(baseTs + eventOffset).toISOString();
++			eventOffset += 1;
++
++			invocations.push({
++				skillName,
++				timestamp,
++				sessionId,
++				agent: "amp",
++			});
++		}
++	}
++
++	return invocations;
++}
++
++export function countAmpSessions(): number {
++	return getThreadFiles().length;
++}
++
++export async function scanAmpSessions(
++	db: Database,
++	trackedSet: Set<string>,
++	knownSkills: Set<string> = new Set(),
++): Promise<number> {
++	const files = getThreadFiles();
++	let total = 0;
++
++	for (const file of files) {
++		const invocations = parseAmpThreadFile(file, knownSkills);
++		total += recordNewInvocations(db, trackedSet, invocations);
++	}
++
++	return total;
++}
++
+diff --git a/b/src/scanner/connectors/pi.ts b/b/src/scanner/connectors/pi.ts
+new file mode 100644
+index 0000000..3742018
+--- /dev/null
++++ b/b/src/scanner/connectors/pi.ts
+@@ -0,0 +1,173 @@
++import type { Database } from "bun:sqlite";
++import { existsSync, readFileSync } from "node:fs";
++import { homedir } from "node:os";
++import { basename, join } from "node:path";
++import type { Invocation } from "../index";
++import { recordNewInvocations } from "../index";
++
++const PI_SKILL_PATH_RE = /(?:^|[\\/])skills[\\/]([^\\/]+)[\\/]SKILL\.md/g;
++const VALID_PI_SKILL_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
++
++function collectStrings(value: unknown, out: string[]): void {
++	if (typeof value === "string") {
++		out.push(value);
++		return;
++	}
++	if (Array.isArray(value)) {
++		for (const v of value) collectStrings(v, out);
++		return;
++	}
++	if (typeof value === "object" && value !== null) {
++		for (const v of Object.values(value as Record<string, unknown>)) {
++			collectStrings(v, out);
++		}
++	}
++}
++
++function extractSkillNamesFromArgs(args: unknown): string[] {
++	const names: string[] = [];
++	const strings: string[] = [];
++	collectStrings(args, strings);
++
++	for (const text of strings) {
++		let match: RegExpExecArray | null;
++		while ((match = PI_SKILL_PATH_RE.exec(text)) !== null) {
++			const name = match[1]?.trim();
++			if (!name) continue;
++			if (!VALID_PI_SKILL_RE.test(name)) continue;
++			names.push(name);
++		}
++		PI_SKILL_PATH_RE.lastIndex = 0;
++	}
++
++	return names;
++}
++
++export function parsePiSessionFile(
++	filePath: string,
++	knownSkills: Set<string> = new Set(),
++): Invocation[] {
++	const invocations: Invocation[] = [];
++	const sessionId = `pi:${basename(filePath, ".jsonl")}`;
++
++	let content: string;
++	try {
++		content = readFileSync(filePath, "utf-8");
++	} catch {
++		return invocations;
++	}
++
++	const lines = content.split("\n");
++	let eventOffset = 0;
++
++	for (const line of lines) {
++		if (!line.trim()) continue;
++
++		let entry: unknown;
++		try {
++			entry = JSON.parse(line);
++		} catch {
++			continue;
++		}
++		if (typeof entry !== "object" || entry === null) continue;
++
++		const obj = entry as Record<string, unknown>;
++		if (obj.type !== "message") continue;
++
++		const baseTimestamp =
++			typeof obj.timestamp === "string" ? obj.timestamp : new Date().toISOString();
++		const baseTsMs = Date.parse(baseTimestamp);
++
++		const message = obj.message as Record<string, unknown> | undefined;
++		if (!message) continue;
++
++		const blocks = message.content as Array<Record<string, unknown>> | undefined;
++		if (!Array.isArray(blocks)) continue;
++
++		for (const block of blocks) {
++			const bType = block.type as string | undefined;
++			if (!bType || !["toolCall", "tool_use", "function_call"].includes(bType)) {
++				continue;
++			}
++
++			const args =
++				block.arguments ?? block.input ?? block.args ?? ({} as Record<string, unknown>);
++
++			// Direct skill tool use: { name: "skill", arguments: { name: "..." } }
++			if (typeof block.name === "string" && block.name.toLowerCase() === "skill") {
++				const a = args as Record<string, unknown>;
++				const explicit = a.name ?? a.skill ?? a.skillName;
++				if (typeof explicit === "string" && explicit.trim()) {
++					const skillName = explicit.trim();
++					if (knownSkills.size === 0 || knownSkills.has(skillName)) {
++						const ts = Number.isFinite(baseTsMs)
++							? new Date(baseTsMs + eventOffset).toISOString()
++							: new Date().toISOString();
++						eventOffset += 1;
++						invocations.push({
++							skillName,
++							timestamp: ts,
++							sessionId,
++							agent: "pi",
++						});
++					}
++				}
++			}
++
++			// Skill references via SKILL.md path in tool args/command strings.
++			for (const skillName of extractSkillNamesFromArgs(args)) {
++				if (knownSkills.size > 0 && !knownSkills.has(skillName)) continue;
++
++				const ts = Number.isFinite(baseTsMs)
++					? new Date(baseTsMs + eventOffset).toISOString()
++					: new Date().toISOString();
++				eventOffset += 1;
++
++				invocations.push({
++					skillName,
++					timestamp: ts,
++					sessionId,
++					agent: "pi",
++				});
++			}
++		}
++	}
++
++	return invocations;
++}
++
++export function countPiSessions(): number {
++	const sessionsDir = join(homedir(), ".pi", "agent", "sessions");
++	if (!existsSync(sessionsDir)) return 0;
++
++	let count = 0;
++	const glob = new Bun.Glob("**/*.jsonl");
++	for (const _ of glob.scanSync({ cwd: sessionsDir })) {
++		count++;
++	}
++	return count;
++}
++
++export async function scanPiSessions(
++	db: Database,
++	trackedSet: Set<string>,
++	knownSkills: Set<string> = new Set(),
++): Promise<number> {
++	const sessionsDir = join(homedir(), ".pi", "agent", "sessions");
++	if (!existsSync(sessionsDir)) return 0;
++
++	const glob = new Bun.Glob("**/*.jsonl");
++	const files: string[] = [];
++	for await (const file of glob.scan({ cwd: sessionsDir, absolute: true })) {
++		files.push(file);
++	}
++
++	let total = 0;
++	for (const file of files) {
++		const invocations = parsePiSessionFile(file, knownSkills);
++		total += recordNewInvocations(db, trackedSet, invocations);
++	}
++
++	return total;
++}
++
+diff --git a/a/src/scanner/index.ts b/b/src/scanner/index.ts
+index 5996b9f..52d2b84 100644
+--- a/a/src/scanner/index.ts
++++ b/b/src/scanner/index.ts
+@@ -4,6 +4,8 @@ import { countClaudeSessions, scanClaudeSessions } from "./connectors/claude";
+ import { countCodexSessions, scanCodexSessions } from "./connectors/codex";
+ import { countCursorSessions, scanCursorSessions } from "./connectors/cursor";
+ import { countGeminiSessions, scanGeminiSessions } from "./connectors/gemini";
++import { countAmpSessions, scanAmpSessions } from "./connectors/amp";
++import { countPiSessions, scanPiSessions } from "./connectors/pi";
+ import {
+ 	countOpenCodeSessions,
+ 	scanOpenCodeSessions,
+@@ -69,6 +71,12 @@ export async function scanAllSessions(
+ 	if (!agentFilter || agentFilter === "gemini") {
+ 		total += await scanGeminiSessions(db, trackedSet, knownSkills);
+ 	}
++	if (!agentFilter || agentFilter === "amp") {
++		total += await scanAmpSessions(db, trackedSet, knownSkills);
++	}
++	if (!agentFilter || agentFilter === "pi") {
++		total += await scanPiSessions(db, trackedSet, knownSkills);
++	}
+ 	return total;
+ }
+ 
+@@ -89,5 +97,11 @@ export function countAllSessions(agentFilter?: string): number {
+ 	if (!agentFilter || agentFilter === "gemini") {
+ 		total += countGeminiSessions();
+ 	}
++	if (!agentFilter || agentFilter === "amp") {
++		total += countAmpSessions();
++	}
++	if (!agentFilter || agentFilter === "pi") {
++		total += countPiSessions();
++	}
+ 	return total;
+ }
+diff --git a/a/src/scanner/skills.ts b/b/src/scanner/skills.ts
+index 8b9dad4..8829f0a 100644
+--- a/a/src/scanner/skills.ts
++++ b/b/src/scanner/skills.ts
+@@ -26,6 +26,7 @@ function getSupportedAgents(): AgentDef[] {
+ 		{ agent: "Goose", id: "goose", dirs: [join(xdgConfig, "goose", "skills")] },
+ 		{ agent: "Kiro", id: "kiro", dirs: [join(home, ".kiro", "skills")] },
+ 		{ agent: "Roo Code", id: "roo", dirs: [join(home, ".roo", "skills")] },
++		{ agent: "Pi", id: "pi", dirs: [join(home, ".pi", "agent", "skills")] },
+ 		{ agent: "Antigravity", id: "antigravity", dirs: [join(home, ".gemini", "antigravity", "skills")] },
+ 	];
+ 
+diff --git a/a/src/tui/args.ts b/b/src/tui/args.ts
+index afc8f18..d76d2d3 100644
+--- a/a/src/tui/args.ts
++++ b/b/src/tui/args.ts
+@@ -11,6 +11,7 @@ const AGENT_FLAGS: Record<string, string> = {
+ 	"--kiro": "kiro",
+ 	"--roo": "roo",
+ 	"--antigravity": "antigravity",
++	"--pi": "pi",
+ };
+ 
+ export function parseAgentFilter(args: string[]): string | undefined {

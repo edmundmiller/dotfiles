@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# Reinstall/patch @crafter/skillkit so Amp + Pi are always available.
+#
+# This is invoked by Home Manager activation and can also be run manually:
+#   ./bin/skillkit-sync
+
+set -euo pipefail
+
+script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOTFILES_DIR="${DOTFILES_DIR:-${DOTFILES:-$script_root}}"
+SKILLKIT_SPEC="${SKILLKIT_SPEC:-@crafter/skillkit@0.7.0}"
+
+XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+NPM_PREFIX="${NPM_CONFIG_PREFIX:-$XDG_CACHE_HOME/npm}"
+NPM_CACHE="${NPM_CONFIG_CACHE:-$NPM_PREFIX}"
+
+NPM_BIN="${NPM_BIN:-$(command -v npm || true)}"
+PATCH_BIN="${PATCH_BIN:-$(command -v patch || true)}"
+SHA_BIN="${SHA_BIN:-$(command -v sha256sum || true)}"
+
+skillkit_dir="$NPM_PREFIX/lib/node_modules/@crafter/skillkit"
+skillkit_bin="$NPM_PREFIX/bin/skillkit"
+patch_file="$DOTFILES_DIR/packages/skillkit/patches/0001-amp-pi-support.patch"
+stamp_file="$skillkit_dir/.dotfiles-skillkit-amp-pi.sha256"
+
+info() {
+  printf '[skillkit-sync] %s\n' "$*"
+}
+
+fail() {
+  printf '[skillkit-sync] %s\n' "$*" >&2
+  exit 1
+}
+
+[[ -n "$NPM_BIN" ]] || fail "npm not found"
+[[ -n "$PATCH_BIN" ]] || fail "patch not found"
+[[ -n "$SHA_BIN" ]] || fail "sha256sum not found"
+
+[[ -x "$NPM_BIN" ]] || fail "npm not executable: $NPM_BIN"
+[[ -x "$PATCH_BIN" ]] || fail "patch not executable: $PATCH_BIN"
+[[ -x "$SHA_BIN" ]] || fail "sha256sum not executable: $SHA_BIN"
+
+if [[ ! -f "$patch_file" ]]; then
+  fallback_patch_file="$script_root/packages/skillkit/patches/0001-amp-pi-support.patch"
+  if [[ -f "$fallback_patch_file" ]]; then
+    DOTFILES_DIR="$script_root"
+    patch_file="$fallback_patch_file"
+  fi
+fi
+
+[[ -f "$patch_file" ]] || fail "missing patch file: $patch_file"
+
+export NPM_CONFIG_PREFIX="$NPM_PREFIX"
+export NPM_CONFIG_CACHE="$NPM_CACHE"
+
+install_skillkit() {
+  info "installing $SKILLKIT_SPEC"
+  "$NPM_BIN" install -g "$SKILLKIT_SPEC"
+}
+
+patch_hash() {
+  "$SHA_BIN" "$patch_file" | awk '{print $1}'
+}
+
+already_patched() {
+  [[ -f "$skillkit_dir/src/scanner/connectors/amp.ts" ]] &&
+    [[ -f "$skillkit_dir/src/scanner/connectors/pi.ts" ]] &&
+    [[ -f "$skillkit_dir/src/scanner/index.ts" ]] &&
+    [[ -f "$skillkit_dir/src/bin.ts" ]] &&
+    [[ -f "$skillkit_dir/src/tui/args.ts" ]] &&
+    [[ -f "$skillkit_dir/src/scanner/skills.ts" ]]
+}
+
+if [[ ! -x "$skillkit_bin" || ! -d "$skillkit_dir" ]]; then
+  install_skillkit
+fi
+
+current_hash="$(patch_hash)"
+saved_hash="$(cat "$stamp_file" 2>/dev/null || true)"
+
+if already_patched; then
+  if [[ "$saved_hash" != "$current_hash" ]]; then
+    printf '%s\n' "$current_hash" > "$stamp_file"
+  fi
+  info "skillkit Amp+Pi patch already applied"
+  exit 0
+fi
+
+info "applying Amp+Pi patch"
+(cd "$skillkit_dir" && "$PATCH_BIN" --forward --batch --silent -p2 < "$patch_file")
+printf '%s\n' "$current_hash" > "$stamp_file"
+
+info "skillkit Amp+Pi support ready"
