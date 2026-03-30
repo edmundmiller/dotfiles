@@ -427,7 +427,8 @@ in
         };
         webhookProxy.enable = true;
         telegram = {
-          enable = true;
+          # Hermes Shimmer now owns Telegram gateway traffic on this host.
+          enable = false;
           requireMention = false;
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
           allowFrom = [
@@ -438,7 +439,7 @@ in
           bindings = [
             {
               peerId = "8357890648"; # @edmundamiller
-              agentId = "edmund";
+              agentId = "shimmer";
             }
             {
               peerId = "8748874608"; # wife
@@ -729,6 +730,10 @@ in
   };
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
+  # Hermes Shimmer takeover: prevent OpenClaw gateway from reclaiming
+  # the Telegram bot on future rebuilds/reboots.
+  systemd.user.services.openclaw-gateway.enable = lib.mkForce false;
+
   services.znapzend = {
     # FIXME
     enable = false;
