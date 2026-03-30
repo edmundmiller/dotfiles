@@ -15,6 +15,15 @@ let
   opensessionsCheckout = "${opensessionsRuntimeRoot}/${pkgs.my.opensessions.version}";
   opensessionsCurrent = "${opensessionsRuntimeRoot}/current";
 
+  opensessionsConfigJson = builtins.toJSON {
+    mux = "tmux";
+    plugins = [ ];
+    inherit (cfg.opensessions) theme;
+    sidebarWidth = cfg.opensessions.width;
+    inherit (cfg.opensessions) sidebarPosition;
+    inherit (cfg.opensessions) showWindowDetails;
+  };
+
   # Generate sesh.toml from Nix options
   seshConfig =
     let
@@ -86,6 +95,12 @@ in
       prefixToggleKey = mkOpt str "t";
       prefixIndexKeys = mkOpt str "1 2 3 4 5 6 7 8 9";
       width = mkOpt int 26;
+      sidebarPosition = mkOpt (enum [
+        "left"
+        "right"
+      ]) "right";
+      theme = mkOpt str "catppuccin-mocha";
+      showWindowDetails = mkBoolOpt true;
       host = mkOpt str "127.0.0.1";
       port = mkOpt int 7391;
     };
@@ -145,6 +160,25 @@ in
       };
       "opensessions/plugins/pi.js" = mkIf cfg.opensessions.enable {
         source = "${configDir}/opensessions/plugins/pi.js";
+      };
+      "tmux/open-opensessions-config.sh" = mkIf cfg.opensessions.enable {
+        executable = true;
+        text = ''
+          #!${pkgs.bash}/bin/bash
+          set -euo pipefail
+
+          config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/opensessions"
+          config_path="$config_dir/config.json"
+
+          ${pkgs.coreutils}/bin/mkdir -p "$config_dir"
+
+          if [[ ! -f "$config_path" ]]; then
+            ${pkgs.coreutils}/bin/printf '%s\n' ${escapeShellArg opensessionsConfigJson} > "$config_path"
+          fi
+
+          editor="''${VISUAL:-''${EDITOR:-nvim}}"
+          exec "$editor" "$config_path"
+        '';
       };
       "tmux" = {
         source = "${configDir}/tmux";
@@ -245,6 +279,20 @@ in
 
             ${pkgs.coreutils}/bin/rm -rf "$current_link"
             ${pkgs.coreutils}/bin/ln -s "$checkout_root" "$current_link"
+          ''
+        );
+
+        # Seed writable opensessions config (only if absent) so UI theme toggles
+        # and other runtime preferences can still be persisted by opensessions.
+        home.activation.opensessions-config = mkIf cfg.opensessions.enable (
+          lib.hm.dag.entryAfter [ "opensessions-setup" ] ''
+            config_dir="$HOME/.config/opensessions"
+            config_path="$config_dir/config.json"
+
+            if [ ! -f "$config_path" ]; then
+              ${pkgs.coreutils}/bin/mkdir -p "$config_dir"
+              ${pkgs.coreutils}/bin/printf '%s\n' ${escapeShellArg opensessionsConfigJson} > "$config_path"
+            fi
           ''
         );
       };

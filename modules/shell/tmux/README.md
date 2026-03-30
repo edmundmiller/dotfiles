@@ -49,6 +49,12 @@ When enabled, the module syncs an upstream opensessions checkout into `~/.local/
 
 It also installs a local opensessions watcher plugin at `~/.config/opensessions/plugins/pi.js` to monitor Pi sessions in `~/.pi/agent/sessions/` (or `$PI_SESSIONS_DIR`).
 
+The module also seeds a writable `~/.config/opensessions/config.json` (if missing) with Emdash-like defaults:
+
+- right-side sidebar (`"sidebarPosition": "right"`)
+- Catppuccin theme (`"theme": "catppuccin-mocha"`)
+- pane/window detail rows enabled (`"showWindowDetails": true`)
+
 To avoid key conflicts, opensessions takes ownership of `prefix s`, `prefix S`, and `prefix o`. Vertical split moves to `prefix V`, and pane zoom moves to `prefix Z`.
 
 ## Dev Layouts (tml)
@@ -150,6 +156,8 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 | `C` | Prompt: run command in new split |
 | `g` | Git TUI popup                    |
 | `G` | Critique (diff review) popup     |
+| `R` | Critique (staged diff) popup     |
+| `O` | Opensessions config popup        |
 | `f` | File picker popup                |
 | `F` | File picker (git root) popup     |
 | `D` | Directory picker popup           |
