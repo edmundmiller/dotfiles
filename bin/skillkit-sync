@@ -59,7 +59,9 @@ install_skillkit() {
 }
 
 patch_hash() {
-  "$SHA_BIN" "$patch_file" | awk '{print $1}'
+  local sha_out
+  sha_out="$("$SHA_BIN" "$patch_file")"
+  printf '%s\n' "${sha_out%% *}"
 }
 
 already_patched() {
