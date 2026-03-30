@@ -143,17 +143,16 @@ Several configurations in this repo are **auto-generated** — do not edit them 
 
 ## Issue Tracking
 
-This project uses **bd** (beads) for issue tracking.
-Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for auto-injection.
+This project uses **br** (beads_rust) for issue tracking.
+
+**Important:** `br` is non-invasive and never runs git commands for you.
 
 **Quick reference:**
 
-- `bd ready` - Find unblocked work
-- `bd create "Title" --type task --priority 2` - Create issue
-- `bd close <id>` - Complete work
-- `bd sync` - Sync with git (run at session end)
-
-For full workflow details: `bd prime`
+- `br ready` - Find unblocked work
+- `br create "Title" --type task --priority 2` - Create issue
+- `br close <id>` - Complete work
+- `br sync --flush-only` - Export issue state to `.beads/issues.jsonl`
 
 ## Landing the Plane (Session Completion)
 
@@ -167,7 +166,9 @@ For full workflow details: `bd prime`
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   br sync --flush-only
+   git add .beads/
+   git commit -m "sync beads"
    git push
    git status  # MUST show "up to date with origin"
    ```
