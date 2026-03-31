@@ -1,9 +1,17 @@
 #!/usr/bin/env zsh
 
-# Attach to existing session or create new one (from omarchy)
-alias t='tmux attach 2>/dev/null || tmux new -s Work'
-function tm { tmux new-session -A -s termius -c ~/obsidian-vault "${*:-pi; zsh}"; }
-alias ta='tmux attach'
+# Canonical project-session entrypoint.
+alias tp='tmproj'
+
+# Explicit special-purpose vault flow.
+function tvault { tmux new-session -A -s termius -c ~/obsidian-vault "${*:-pi; zsh}"; }
+
+# Temporary compatibility shim while tmproj/tp becomes the canonical project entry.
+function tm {
+  print -u2 'tm is deprecated; use tvault for the Obsidian/Pi flow or tmproj (tp) for project sessions.'
+  tvault "$@"
+}
+
 alias tl='tmux ls'
 
 if [[ -n $TMUX ]]; then # From inside tmux

@@ -1,6 +1,6 @@
 # Tmux-First ADE Spec
 
-Status: Draft 1
+Status: Draft 4
 
 ## Summary
 
@@ -184,12 +184,18 @@ This contains layout-oriented commands like:
 
 - `config/tmux/aliases.zsh`
 
-This currently defines `t`, `tm`, `ta`, `tl`, and related helpers, but those
-names are not all stable from the user's interactive shell perspective:
+This now provides a minimal, clearer command layer around tmux entry:
 
-- `t` is later re-aliased to `todo.sh` in `config/zsh/.zshrc`
-- `tm` is currently a special-purpose `termius` / Obsidian / Pi launcher, not a
-  generic current-project attach/create helper
+- `tp` is the short alias for `tmproj`, the canonical current-project
+  attach/create helper
+- `tvault` is the explicit `termius` / Obsidian / Pi launcher rooted in
+  `~/obsidian-vault`
+- `tm` remains only as a temporary deprecation shim that points users toward
+  `tvault` or `tmproj`
+- `tl` and the other raw tmux helpers remain available
+
+`config/zsh/.zshrc` intentionally keeps `t` and `ta` for `todo.sh`, so tmux no
+longer competes for those short names.
 
 ### Dynamic layout management
 
@@ -279,21 +285,25 @@ This section exists to keep the spec honest. These are not objections to the ADE
 direction; they are places where the intended model and current implementation
 still diverge.
 
-### 1. `t` is not currently a reliable tmux entrypoint
+### 1. `t` intentionally belongs to `todo.sh`, not tmux
 
-`config/tmux/aliases.zsh` defines `t` as a tmux attach/create shortcut, but
-`config/zsh/.zshrc` later redefines `t` for `todo.sh`.
+The collision has been resolved by removing tmux-side `t` / `ta` aliases.
 
-That means the spec should not talk about `t` as if it is currently the user's
-canonical tmux entry command.
+The interactive shell now intentionally treats:
 
-### 2. `tm` is not generic project-session entry
+- `t` as `todo.sh`
+- `ta` as `t add`
 
-`tm` currently launches a specific `termius` session rooted in
-`~/obsidian-vault`, defaulting to `pi; zsh`.
+The spec should not talk about `t` as a tmux entry command unless that policy
+changes later.
 
-That makes it a useful workflow-specific launcher, but not a drop-in synonym for
-the future `tmproj` concept.
+### 2. `tm` is only a temporary compatibility shim
+
+Generic project-session entry is now `tmproj`, with `tp` as the short alias.
+
+`tm` no longer defines the command model. It prints a deprecation message and
+delegates to `tvault`, the explicitly named workflow-specific launcher rooted in
+`~/obsidian-vault` and defaulting to `pi; zsh`.
 
 ### 3. Window naming hook wiring is unclear
 
@@ -491,28 +501,35 @@ that still expose `bd`-era command names.
 
 ---
 
-## Proposed Command Model
+## Current Command Model
 
-This section is not a final command commitment. It is the shape the workflow
-should likely converge toward.
+This is the command model the repo now documents and implements.
 
 ### Primary commands
 
 - `tmproj` — attach/create canonical session for current project/worktree
-- `tv` — attach/create canonical project session, starting in `nvim` if new
-- `tp` or existing picker — fuzzy switcher across session sources
+- `tp` — short alias for `tmproj`
+- `tvault` — explicit Obsidian / vault / Pi tmux entry flow
+
+### Compatibility and legacy behavior
+
+- `tm` — temporary deprecation shim that prints guidance, then runs `tvault`
+- `t` / `ta` — intentionally belong to `todo.sh`, not tmux
+- `tl` — raw `tmux ls` escape hatch
+
+### Secondary commands
+
+- existing picker flows (`sesh`, `opensessions`) remain useful for switching,
+  discovery, and recovery
+- future helpers such as `tv` can still exist, but should layer on top of the
+  `tmproj` naming/session contract rather than compete with it
 
 ### Deprecation path
 
-Once `tmproj` is stable, legacy aliases should converge:
-
-- `t` should only become an alias for `tmproj` after resolving its current
-  collision with `todo.sh` aliases in `config/zsh/.zshrc`
-- `tm` should be split into either:
-  - a clearly named replacement for the current `termius` / Obsidian / Pi flow
-  - and a generic `tmproj`,
-  - or removed if that special-purpose workflow is no longer needed
-- `ta` can remain as a raw `tmux attach` escape hatch
+- keep `tm` only long enough to redirect muscle memory toward `tvault` and
+  `tmproj`
+- do not reintroduce tmux meanings for `t` or `ta` unless the todo command model
+  changes first
 
 The goal is to reduce entry points, not add more. New commands must come with a
 plan to retire the old ones they supersede.
@@ -561,8 +578,11 @@ Goal: add one preferred current-project attach/create helper.
 Current implementation status:
 
 - `bin/tmproj` now provides the preferred current-project attach/create path
-- alias convergence (`t`, `tm`, `ta`) is intentionally deferred until the
-  command-model cleanup phase
+- `config/tmux/aliases.zsh` now adds `tp` as the short alias for `tmproj`
+- tmux-side `t` / `ta` aliases were removed so `config/zsh/.zshrc` can own the
+  todo workflow cleanly
+- the old special-purpose `tm` flow is now explicitly named `tvault`, with `tm`
+  kept only as a deprecation shim
 
 Likely touchpoints:
 
@@ -624,9 +644,7 @@ These should guide future changes.
 1. The current implementation uses a simple hybrid already: resolve the usable
    checkout root, then use that basename. This keeps main repos short while
    preserving distinct worktree names such as `dotfiles-pc4`.
-2. Should the default attach/create helper replace the current `tm`, or should
-   `tm` first be split into generic project entry vs. the existing
-   `termius`/Obsidian/Pi workflow?
+2. How long should the `tm` deprecation shim remain before removal?
 3. Which layout should be the default for a freshly created project session:
    plain shell, editor-first, or agent-first?
 4. How much session metadata should be visible in titles/status vs. only in the
@@ -647,11 +665,10 @@ These should guide future changes.
 
 Good next implementation candidates after this spec:
 
-1. Add a `tv` helper for editor-first project entry
-2. Add `tw` / `twd` for worktree + session lifecycle
-3. Update tmux task popups and helper names to fully reflect the `br` migration
-4. Resolve the `t` alias collision before making `tmproj` the canonical short
-   alias
+1. Decide when to remove the `tm` compatibility shim entirely
+2. Add a `tv` helper for editor-first project entry if it proves useful
+3. Add `tw` / `twd` for worktree + session lifecycle
+4. Update tmux task popups and helper names to fully reflect the `br` migration
 5. Either wire `config/zsh/tmux-hooks.zsh` explicitly or document why it should
    remain optional
 6. Make picker cancellation fall back to the current project's canonical session
@@ -671,3 +688,6 @@ Good next implementation candidates after this spec:
 - Draft 3: documented `bin/tmproj` as the current default attach/create helper
   for canonical project sessions, while leaving alias convergence for a later
   cleanup phase
+- Draft 4: documented the post-cleanup command model: `tmproj`/`tp` for
+  canonical project entry, `tvault` for the vault-specific workflow, `tm` as a
+  temporary deprecation shim, and `t`/`ta` as intentional `todo.sh` commands
