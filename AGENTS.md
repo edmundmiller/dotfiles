@@ -19,8 +19,31 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 - **Modules:** `modules/` (shell, editors, services, etc.)
 - **Home-manager configs:** `config/` (lazygit, ghostty, etc.)
 - **Skills catalog:** `skills/flake.nix` (child flake managing agent skills — see `skills/AGENTS.md`)
-- **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. Imported via `inputs.openclaw-workspace.nixosModules.openclaw` in `lib/nixos.nix`. Host-specific config (secrets, telegram, cron) stays in `hosts/nuc/default.nix`. Mac remote client is at `modules/desktop/apps/openclaw/`.
+- **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. That repo owns canonical agent specs, renderers, generated runtime facts, and reusable personal runtime defaults. This repo owns host-specific deployment wiring in `hosts/nuc/default.nix` plus the macOS remote client in `modules/desktop/apps/openclaw/`. During migration the module may still be consumed through the compatibility alias, but the intended steady-state boundary is `openclawBase` (or equivalent base module) + host-owned deployment wiring here.
 - **`darwin.nix` is NOT imported** — don't put config there
+
+## OpenClaw ownership boundary
+
+Use a **thin infra** split:
+
+- `openclaw-workspace` owns reusable defaults and authoring/runtime logic
+- `dotfiles` owns concrete host deployment choices
+
+Keep these in `openclaw-workspace`:
+
+- canonical agent definitions
+- OpenClaw/Hermes renderers
+- generated runtime/environment docs
+- shared cron bundles and shared skill defaults
+- reusable personal runtime presets
+
+Keep these in `dotfiles`:
+
+- secret references and token file paths
+- Telegram bindings and webhook routing
+- Tailscale/nginx/public ingress
+- healthcheck/monitoring endpoints
+- user/systemd service enablement and host-specific overrides
 
 **⚠️ Child Flake Rule:** After changing `skills/flake.nix` or `skills/flake.lock`, ALWAYS run `nix flake update skills-catalog` from repo root to sync parent lock. Forgetting breaks rebuild.
 
