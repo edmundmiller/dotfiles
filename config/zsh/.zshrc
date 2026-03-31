@@ -154,6 +154,7 @@ if [[ -s "$BUN_INSTALL/_bun" ]]; then
   function bunx { bun; command bunx "$@"; }
 fi
 
+# todo.sh intentionally owns the short t/ta commands; tmux project entry is tmproj/tp.
 alias t="todo.sh"
 alias ta="t add"
 alias td="t do"
