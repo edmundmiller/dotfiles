@@ -325,15 +325,16 @@ This keeps ownership split cleanly: tmux-smart-name computes metadata, zsh only
 requests refreshes on directory changes, and Ghostty remains responsible solely
 for getting the user into tmux.
 
-### 4. Tmux popups still reference older `bd` helpers
+### 4. Tmux popup helpers should stay wrapper-based
 
-At time of writing, the tmux popup bindings still call commands like:
+The tmux popup bindings now point at wrapper scripts rather than older
+`bd-*`-named helpers:
 
-- `bd-capture`
-- `bd-find-all`
+- `br-capture`
+- `br-find-all`
 
-The repo-level task system has already moved to `br`, so this should remain an
-explicit migration item rather than a vague future cleanup.
+Compatibility shims may still exist under the older `bd-*` names, but tmux now
+talks to the wrapper layer instead of preserving the legacy naming in the UI.
 
 ---
 
@@ -725,8 +726,7 @@ Good next implementation candidates after this spec:
 1. Decide when to remove the `tm` compatibility shim entirely
 2. Add a `tv` helper for editor-first project entry if it proves useful
 3. Add `tw` / `twd` for worktree + session lifecycle
-4. Update tmux task popups and helper names to fully reflect the `br` migration
-5. Make picker cancellation fall back to the current project's canonical session
+4. Make picker cancellation fall back to the current project's canonical session
 
 ---
 
@@ -750,3 +750,6 @@ Good next implementation candidates after this spec:
   metadata, zsh now wires the `chpwd` refresh hook explicitly, and Ghostty's
   fixed `home` session is documented as a landing session rather than ADE
   project identity
+- Draft 6: migrated tmux popup helper entrypoints from `bd-*` names to
+  `br-*` wrappers, while keeping compatibility shims so shell muscle memory and
+  older integrations do not break immediately
