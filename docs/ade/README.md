@@ -20,6 +20,10 @@ The intent is to create a shared source of truth for:
 
 - Treat specs here as **living design docs**, not polished marketing docs.
 - Prefer concrete language over aspirational fluff.
+- Prefer docs that distinguish clearly between:
+  - the **intended target state**
+  - the **current implementation reality**
+  - the **migration path** between them
 - When implementing a workflow change, update the relevant ADE doc in the same
   change when practical.
 - If humans or agents start repeating the same explanation in chat, that is a
