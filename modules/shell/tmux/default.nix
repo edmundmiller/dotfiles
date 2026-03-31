@@ -98,7 +98,7 @@ in
       sidebarPosition = mkOpt (enum [
         "left"
         "right"
-      ]) "right";
+      ]) "left";
       theme = mkOpt str "catppuccin-mocha";
       showWindowDetails = mkBoolOpt true;
       host = mkOpt str "127.0.0.1";
