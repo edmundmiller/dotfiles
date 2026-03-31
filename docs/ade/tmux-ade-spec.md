@@ -472,6 +472,18 @@ The ADE should eventually support commands in the spirit of:
 This is one of the highest-leverage additions because it ties source isolation
 and workspace isolation together.
 
+The current implementation now includes:
+
+- `tw <name>` — creates a sibling worktree using a deterministic repo-stem +
+  slug naming rule, creates or reuses the matching branch, then enters the new
+  workspace via `tmproj <worktree-path>`
+- `twd <name-or-path>` — resolves the matching worktree, kills its canonical
+  tmux session if present, then removes the worktree
+
+This keeps lifecycle behavior aligned with the same canonical naming/session
+contract used by `tmproj`, rather than routing through a separate worktree-only
+session model.
+
 ## 6. Remote parity
 
 Remote machines should expose a similar model:
@@ -549,6 +561,14 @@ plan to retire the old ones they supersede.
 
 - `tw <name>` — create worktree + session
 - `twd <name>` — destroy worktree + session
+
+Current behavior:
+
+- `tw` creates a sibling worktree whose basename is derived from the repository
+  stem plus the provided slug, then hands off to `tmproj`
+- `twd` accepts either a slug or an explicit path, resolves the matching
+  canonical session name with `tmux-project-name`, kills that session if it
+  exists, and removes the worktree
 
 ### Remote commands
 
