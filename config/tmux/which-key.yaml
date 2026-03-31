@@ -1,0 +1,194 @@
+command_alias_start_index: 200
+keybindings:
+  prefix_table: Space
+title:
+  style: align=centre,bold
+  prefix: tmux
+  prefix_style: "fg=green,align=centre,bold"
+position:
+  x: R
+  y: P
+custom_variables: []
+macros:
+  - name: reload-config
+    commands:
+      - source-file $DOTFILES/config/tmux/config
+      - display "  Config reloaded..."
+items:
+  - name: Last pane
+    key: "`"
+    command: last-pane
+  - name: Last window
+    key: tab
+    command: last-window
+  - name: Command
+    key: space
+    command: command-prompt
+  - separator: true
+  - name: +Splits
+    key: s
+    menu:
+      - name: Horizontal
+        key: v
+        command: "split-window -h -c #{pane_current_path}"
+      - name: Vertical
+        key: s
+        command: "split-window -v -c #{pane_current_path}"
+  - name: +Git
+    key: g
+    menu:
+      - name: Lazygit
+        key: g
+        command: "display-popup -E -w 80% -h 80% -d #{pane_current_path} $TMUX_HOME/open-git-tui.sh"
+      - name: Diff review
+        key: d
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-critique.sh"
+      - name: Staged review
+        key: s
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-critique.sh --staged"
+      - name: jjui (vertical)
+        key: u
+        command: "split-window -v -c #{pane_current_path} jjui"
+      - name: jjui (horizontal)
+        key: U
+        command: "split-window -h -c #{pane_current_path} jjui"
+  - name: +Find
+    key: f
+    menu:
+      - name: Files
+        key: f
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} tmux-file-picker"
+      - name: Files (git root)
+        key: F
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} tmux-file-picker --git-root"
+      - name: Zoxide
+        key: z
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} tmux-file-picker --zoxide"
+      - name: Zoxide (dirs)
+        key: d
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} tmux-file-picker --zoxide --dir-only"
+      - name: Directories
+        key: D
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} tmux-file-picker --directories"
+  - name: +Notes
+    key: "n"
+    menu:
+      - name: Daily note
+        key: "n"
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $DOTFILES_BIN/daily-note --popup"
+      - name: Task capture
+        key: m
+        command: "display-popup -E -w 80% -h 80% -d $HOME/obsidian-vault $DOTFILES_BIN/tnote-capture"
+      - name: Issue capture
+        key: i
+        command: "display-popup -E -w 80% -h 80% -d #{pane_current_path} $DOTFILES_BIN/br-capture"
+      - name: Issue explore
+        key: e
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $DOTFILES_BIN/br-find-all"
+      - name: Issue explore (all)
+        key: E
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $DOTFILES_BIN/br-find-all --all"
+  - name: +Panes
+    key: p
+    menu:
+      - name: Zoom
+        key: z
+        command: resize-pane -Z
+      - name: Break
+        key: "!"
+        command: break-pane
+      - name: Join
+        key: J
+        command: join-pane
+      - separator: true
+      - name: Swap left
+        key: h
+        command: "run $TMUX_HOME/swap-pane.sh left"
+      - name: Swap down
+        key: j
+        command: "run $TMUX_HOME/swap-pane.sh down"
+      - name: Swap up
+        key: k
+        command: "run $TMUX_HOME/swap-pane.sh up"
+      - name: Swap right
+        key: l
+        command: "run $TMUX_HOME/swap-pane.sh right"
+      - name: Swap master
+        key: m
+        command: "run $TMUX_HOME/swap-pane.sh master"
+      - separator: true
+      - name: Kill
+        key: x
+        command: kill-pane
+      - name: +Resize
+        key: r
+        menu:
+          - name: Left
+            key: h
+            command: resize-pane -L 10
+            transient: true
+          - name: Down
+            key: j
+            command: resize-pane -D 5
+            transient: true
+          - name: Up
+            key: k
+            command: resize-pane -U 5
+            transient: true
+          - name: Right
+            key: l
+            command: resize-pane -R 10
+            transient: true
+  - name: +Windows
+    key: w
+    menu:
+      - name: Choose
+        key: w
+        command: choose-tree -Zw
+      - name: Kill window
+        key: X
+        command: kill-window
+      - separator: true
+      - name: Kill session
+        key: q
+        command: kill-session
+      - name: Kill server
+        key: Q
+        command: kill-server
+  - name: +Buffers
+    key: b
+    menu:
+      - name: List
+        key: b
+        command: list-buffers
+      - name: Choose
+        key: B
+        command: choose-buffer
+  - name: +Opensessions
+    key: o
+    menu:
+      - name: Toggle
+        key: s
+        command: "run-shell sh $HOME/.local/share/opensessions/current/integrations/tmux-plugin/scripts/toggle.sh"
+      - name: Focus
+        key: S
+        command: "run-shell sh $HOME/.local/share/opensessions/current/integrations/tmux-plugin/scripts/focus.sh"
+      - name: Config
+        key: o
+        command: "display-popup -E -w 90% -h 90% $TMUX_HOME/open-opensessions-config.sh"
+  - separator: true
+  - name: Pi sessions
+    key: a
+    command: "display-popup -E -w 80% -h 70% $DOTFILES_BIN/pi-sessions"
+  - name: Toggle tml
+    key: T
+    command: "run $TMUX_HOME/toggle-tml.sh"
+  - name: Reload config
+    key: r
+    macro: reload-config
+  - name: Show messages
+    key: "~"
+    command: show-messages
+  - name: List keys
+    key: "?"
+    command: list-keys -N

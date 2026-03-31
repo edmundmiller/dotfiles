@@ -88,12 +88,12 @@ in
 
     opensessions = {
       enable = mkBoolOpt false;
-      key = mkOpt str "s";
-      focusKey = mkOpt str "S";
-      prefixKey = mkOpt str "o";
-      prefixFocusKey = mkOpt str "s";
-      prefixToggleKey = mkOpt str "t";
-      prefixIndexKeys = mkOpt str "1 2 3 4 5 6 7 8 9";
+      key = mkOpt str "";
+      focusKey = mkOpt str "";
+      prefixKey = mkOpt str "";
+      prefixFocusKey = mkOpt str "";
+      prefixToggleKey = mkOpt str "";
+      prefixIndexKeys = mkOpt str "";
       width = mkOpt int 26;
       sidebarPosition = mkOpt (enum [
         "left"
@@ -155,6 +155,7 @@ in
     };
 
     home.configFile = {
+      "tmux/plugins/tmux-which-key/config.yaml".source = "${configDir}/tmux/which-key.yaml";
       "sesh/sesh.toml" = mkIf (cfg.sesh.sessions != [ ]) {
         text = seshConfig;
       };
@@ -207,6 +208,11 @@ in
           source '${path}'
         '') cfg.rcFiles}
 
+        # tmux-which-key: discoverable keybinding menu
+        set -g @tmux-which-key-xdg-enable 1
+        run-shell 'chmod -R u+w "$HOME/.local/share/tmux/plugins/tmux-which-key" 2>/dev/null; true'
+        run-shell ${pkgs.tmuxPlugins.tmux-which-key}/share/tmux-plugins/tmux-which-key/plugin.sh.tmux
+
         # Dotbar theme (must run before prefix-highlight)
         run-shell ${tmux-dotbar}/dotbar.tmux
 
@@ -245,14 +251,12 @@ in
           set-environment -g OPENSESSIONS_PORT "${toString cfg.opensessions.port}"
           set-environment -g OPENSESSIONS_PATH_PREFIX "${pkgs.curl}/bin:${pkgs.unstable.fzf}/bin:${pkgs.bun}/bin"
 
-          # Keybinding handoff: opensessions owns prefix s/S/o.
+          run-shell "sh '$TMUX_HOME/opensessions.sh'"
+
+          # Reclaim prefix keys from opensessions — which-key handles discoverability
           unbind -q s
           unbind -q S
           unbind -q o
-          bind V split-window -v -c "#{pane_current_path}"
-          bind Z resize-pane -Z
-
-          run-shell "sh '$TMUX_HOME/opensessions.sh'"
         ''}
       '';
     };
