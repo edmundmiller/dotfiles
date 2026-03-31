@@ -33,7 +33,7 @@ For OpenClaw-specific work, use this rule of thumb:
 Examples of host-owned concerns:
 
 - secret/token references
-- Telegram bindings
+- bot token files and live surface enablement
 - ingress / Tailscale exposure
 - monitoring / healthchecks
 - whether `openclaw-gateway` is enabled on a specific host
