@@ -165,7 +165,9 @@ and Nix-managed tmux setup.
 - `config/tmux/zoxide-list.sh`
 
 These provide the current session picker and source aggregation for tmux
-sessions, configured sessions, and zoxide entries.
+sessions, configured sessions, and zoxide entries. In the ADE model this picker
+is the secondary switch/discovery layer; dismissing it without a choice should
+fall back to `tmproj` for the current pane directory when available.
 
 ### Project layouts
 
@@ -450,6 +452,10 @@ current project session. The picker should remain excellent for:
 - discovery
 - recovery
 - remote work
+
+When invoked from tmux, cancel or empty selection should prefer the canonical
+`tmproj` attach/create path for the current pane directory instead of inventing
+ad hoc picker-specific fallback behavior.
 
 `opensessions` does not necessarily disappear in this model. It may remain the
 visual sidebar / dashboard / project-config layer while `tmproj` and `sesh`
