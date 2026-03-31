@@ -2,7 +2,8 @@
 
 setup() {
   root_dir=$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)
-  script="$root_dir/bin/bd-find-all"
+  script="$root_dir/bin/br-find-all"
+  compat_script="$root_dir/bin/bd-find-all"
 }
 
 @test "format cleans title and stays single-line" {
@@ -84,7 +85,7 @@ setup() {
 # ── Preview rendering (single jq call) ──────────────────────────
 
 # Extract the preview jq filter from the script so we can test it
-# without needing `bd show` or a real repo
+# without needing `br show` or a real repo
 _run_preview_jq() {
   local json="$1" id="$2" repo="$3"
   echo "$json" | jq -r --arg id "$id" --arg repo "$repo" '
@@ -195,4 +196,15 @@ _run_preview_jq() {
   stripped=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
   [[ "$stripped" == *"line 20"* ]]
   [[ "$stripped" != *"line 21"* ]]
+}
+
+
+@test "bd-find-all compatibility wrapper delegates to br-find-all" {
+  json='[{"repo_name":"dotfiles","id":"dotfiles-k51","title":"compat","status":"open","priority":2,"issue_type":"task","repo_path":"/tmp"}]'
+
+  JSON="$json" SCRIPT="$compat_script" run bash -c 'printf "%s" "$JSON" | "$SCRIPT" --format-only'
+
+  [ "$status" -eq 0 ]
+  full_id=$(printf '%s' "$output" | awk -F'	' '{print $2}')
+  [ "$full_id" = "dotfiles-k51" ]
 }

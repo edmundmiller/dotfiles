@@ -156,12 +156,12 @@ bind Enter copy-mode # enter copy mode
 bind b list-buffers  # list paster buffers
 bind B choose-buffer # choose which buffer to paste from
 bind a display-popup -E -w 80% -h 70% "$DOTFILES_BIN/pi-sessions"  # pi session picker
-bind i display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-capture"  # beads capture
+bind i display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$DOTFILES_BIN/br-capture"  # issue capture
 bind m display-popup -E -w 80% -h 80% -d "$HOME/obsidian-vault" "$DOTFILES_BIN/tnote-capture"  # tnote task capture
 bind N display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/daily-note --popup"  # daily note
 bind ` display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/daily-note --popup"  # daily note (alt)
-bind e display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-find-all"  # beads explore (current dir)
-bind E display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/bd-find-all --all"  # beads explore (home)
+bind e display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/br-find-all"  # issue explore (current dir)
+bind E display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/br-find-all --all"  # issue explore (home)
 
 # file picker (raine.dev)
 bind f display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker"
