@@ -58,8 +58,14 @@
       inputs.nix-steipete-tools.follows = "nix-steipete-tools";
     };
 
-    # Temporarily disabled to unblock rebuilds on machines without GitHub auth.
-    # openclaw-workspace.url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
+    # Local authoring/runtime repo for canonical agent specs plus reusable
+    # OpenClaw defaults. Use the local checkout so dotfiles can consume
+    # in-progress module changes without depending on a pushed commit.
+    openclaw-workspace = {
+      url = "path:/Users/emiller/src/personal/openclaw-workspace";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.llm-agents.follows = "llm-agents";
+    };
 
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
