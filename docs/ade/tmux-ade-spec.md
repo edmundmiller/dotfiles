@@ -186,6 +186,37 @@ This contains layout-oriented commands like:
 
 This currently defines `t`, `tm`, `ta`, `tl`, and related helpers.
 
+### Dynamic layout management
+
+- `config/tmux/toggle-tml.sh`
+
+Toggles the `tml` layout on/off from a keybinding (`prefix T`). Creates the
+three-pane layout when only one pane exists, tears down extras when multiple
+panes exist.
+
+### Window naming hooks
+
+- `config/zsh/tmux-hooks.zsh`
+
+Fires `$TMUX_WINDOW_NAME_SCRIPT` on every `chpwd`, keeping window names in sync
+with the working directory automatically.
+
+### Theme and appearance
+
+- `config/tmux/theme.conf`
+- `config/tmux/theme-dark.conf`
+- `config/tmux/theme-light.conf`
+
+Auto dark/light mode via `tmux-dark-notify`. These control the "visible state"
+layer that surfaces session context.
+
+### Critique layouts
+
+- `tmlc` / `nicc` / `niccx` in `config/tmux/omarchy.zsh`
+
+Variant of `tml` that replaces lazygit with split critique panes (unstaged +
+staged). Relevant to the review-oriented layout preset.
+
 ### Adjacent project/session tooling
 
 - `packages/dmux/`
@@ -253,6 +284,16 @@ Examples:
 - worktree basename
 - optional namespace for remote hosts when needed
 
+Currently session naming is computed in at least three different ways:
+
+- `basename "$PWD"` in `omarchy.zsh`
+- `#{pane_current_path}` + `git-worktree-cwd` in `toggle-tml.sh`
+- hardcoded `"Work"` in `aliases.zsh` (`t` alias)
+
+A key deliverable of Phase 2 is extracting a single shared primitive (e.g.
+`bin/tmux-project-name`) that all tools, aliases, and agents use as the sole
+source of truth for session identity.
+
 ## 2. A zero-friction session entry command
 
 There should be one preferred helper for:
@@ -279,6 +320,23 @@ The ADE should support a small set of role-oriented layouts, such as:
 - **review** — critique/lazygit-focused layout
 
 The point is not just pane geometry. The point is predictable intent.
+
+## 3a. Popups as a distinct UI primitive
+
+The tmux config already uses ~15 popup bindings for transient, focused
+interactions: critique, beads capture, daily notes, file picking, git TUI, and
+session config editing.
+
+Popups and persistent panes serve different roles:
+
+- **Persistent panes** — continuous context that stays visible (agent, editor,
+  git sidebar, shell)
+- **Transient popups** — focused interruptions that dismiss on completion
+  (capture, file picking, session switching)
+
+Future layout and agent work should respect this distinction. Agents and scripts
+should not open persistent panes for transient tasks, and should not use popups
+for context that needs to remain visible.
 
 ## 4. Session picker as a secondary, not primary, entrypoint
 
@@ -342,8 +400,19 @@ should likely converge toward.
 
 - `tmproj` — attach/create canonical session for current project/worktree
 - `tv` — attach/create canonical project session, starting in `nvim` if new
-- `ta` — attach current/default session behavior if still useful
 - `tp` or existing picker — fuzzy switcher across session sources
+
+### Deprecation path
+
+Once `tmproj` is stable, legacy aliases should converge:
+
+- `t` should become an alias for `tmproj` (replacing the hardcoded `Work`
+  session)
+- `tm` should either alias `tmproj` or be removed
+- `ta` can remain as a raw `tmux attach` escape hatch
+
+The goal is to reduce entry points, not add more. New commands must come with a
+plan to retire the old ones they supersede.
 
 ### Layout commands
 
@@ -454,6 +523,12 @@ These should guide future changes.
 5. Should remote sessions preserve the exact same names as local sessions, or
    include a host prefix?
 6. How tightly should `br` capture/explore workflows be embedded in tmux popups?
+7. What is the future role of `opensessions` if `tmproj` + `sesh` handle all
+   session navigation? Does the sidebar become redundant?
+8. How will `sesh` discover newly created worktrees that are not yet in zoxide's
+   history?
+9. What role does `dmux` play in this model? Is it a complementary session
+   manager or a competing one that should be reconciled?
 
 ---
 
