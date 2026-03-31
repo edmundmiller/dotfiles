@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# All sesh sources with distinct symbol+color prefixes:
+# Aggregated sesh sources for the secondary switch/discovery picker:
 #   magenta ■ tmux sessions  (live/active)
 #   yellow  □ config entries (configured)
 #   blue    › zoxide dirs    (frecency)

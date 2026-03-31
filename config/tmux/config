@@ -90,7 +90,7 @@ bind W choose-window
 bind / choose-session
 bind . choose-window
 
-# Sesh - smart session manager with zoxide integration
+# Secondary sesh switch/discovery picker; tmproj/tp is the primary project entry.
 # ^a: all | ^t: tmux | ^c: configs | ^x: zoxide | ^d: kill session
 bind-key t run-shell "$TMUX_HOME/sesh-picker.sh"
 
