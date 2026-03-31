@@ -19,7 +19,7 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 - **Modules:** `modules/` (shell, editors, services, etc.)
 - **Home-manager configs:** `config/` (lazygit, ghostty, etc.)
 - **Skills catalog:** `skills/flake.nix` (child flake managing agent skills — see `skills/AGENTS.md`)
-- **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. That repo owns canonical agent specs, renderers, generated runtime facts, and reusable personal runtime defaults. This repo owns host-specific deployment wiring in `hosts/nuc/default.nix` plus the macOS remote client in `modules/desktop/apps/openclaw/`. During migration the module may still be consumed through the compatibility alias, but the intended steady-state boundary is `openclawBase` (or equivalent base module) + host-owned deployment wiring here.
+- **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. That repo owns canonical agent specs, renderers, generated runtime facts, and reusable personal runtime defaults. This repo owns host-specific deployment wiring in `hosts/nuc/default.nix` plus the macOS remote client in `modules/desktop/apps/openclaw/`. The NixOS side now imports `openclawBase` + `openclawPersonalDefaults` in `lib/nixos.nix`, while keeping secrets, Telegram, ingress, monitoring, and enablement decisions here.
 - **`darwin.nix` is NOT imported** — don't put config there
 
 ## OpenClaw ownership boundary

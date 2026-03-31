@@ -33,7 +33,10 @@ in
         # opnix: 1Password secrets injection for NixOS hosts
         inputs.opnix.nixosModules.default
       ]
-      ++ optional (inputs ? openclaw-workspace) inputs.openclaw-workspace.nixosModules.openclaw
+      ++ optionals (inputs ? openclaw-workspace) [
+        inputs.openclaw-workspace.nixosModules.openclawBase
+        inputs.openclaw-workspace.nixosModules.openclawPersonalDefaults
+      ]
       ++ [
         # Add openclaw home-manager module for NixOS hosts
         # (overlay applied at flake level via mkPkgs)
