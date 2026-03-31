@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# sesh session picker — no emojis, handles escape gracefully
+# Secondary sesh switch/discovery picker.
+# If the picker is dismissed with no selection and tmux exposes a current pane
+# directory, fall back to tmproj so session entry stays aligned with the
+# canonical current-project attach/create flow.
 
 resolve_bin() {
   local name="$1"
@@ -25,6 +28,7 @@ TMUX_BIN="${TMUX_BIN:-$(resolve_bin tmux "/opt/homebrew/bin/tmux" "/run/current-
 BASH_BIN="${BASH_BIN:-$(resolve_bin bash "/bin/bash" "/usr/bin/bash" "$HOME/.nix-profile/bin/bash")}"
 SESH_BIN="${SESH_BIN:-$(resolve_bin sesh "/opt/homebrew/bin/sesh" "/run/current-system/sw/bin/sesh" "$HOME/.nix-profile/bin/sesh")}"
 FZF_TMUX_BIN="${FZF_TMUX_BIN:-$(resolve_bin fzf-tmux "/opt/homebrew/bin/fzf-tmux" "/run/current-system/sw/bin/fzf-tmux" "$HOME/.nix-profile/bin/fzf-tmux")}"
+TMPROJ_BIN="${TMPROJ_BIN:-$(resolve_bin tmproj "/opt/homebrew/bin/tmproj" "/run/current-system/sw/bin/tmproj" "$HOME/.nix-profile/bin/tmproj")}"
 SCRIPT_DIR=${TMUX_HOME:-$HOME/.config/tmux}
 CUR_SESS=""
 CUR_DIR=""
@@ -99,5 +103,17 @@ SESSION=$(strip_ansi "$SESSION")
 SESSION=${SESSION#■ }
 SESSION=${SESSION#□ }
 SESSION=${SESSION#› }
-[ -n "$SESSION" ] && "$SESH_BIN" connect "$SESSION"
+
+if [[ -n "$SESSION" ]]; then
+  exec "$SESH_BIN" connect "$SESSION"
+fi
+
+if [[ -n "$CUR_DIR" ]]; then
+  if [[ -n "$TMPROJ_BIN" ]]; then
+    exec "$TMPROJ_BIN" "$CUR_DIR"
+  fi
+
+  tmux_message "sesh-picker: tmproj not found for current-project fallback"
+fi
+
 exit 0

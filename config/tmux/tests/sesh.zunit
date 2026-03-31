@@ -270,6 +270,143 @@ EOF
   echo "$output" | grep -q 'command not found' && return 1 || true
 }
 
+@test 'sesh-picker falls back to tmproj on empty selection when current pane dir is available' {
+  local mock_bin="$TEST_DIR/mock-fallback"
+  local mock_tmux_home="$TEST_DIR/mock-tmux-home"
+  local project_dir="$TEST_DIR/project"
+  local tmproj_log="$TEST_DIR/tmproj.log"
+  local sesh_log="$TEST_DIR/sesh.log"
+
+  mkdir -p "$mock_bin" "$mock_tmux_home" "$project_dir"
+  : > "$tmproj_log"
+  : > "$sesh_log"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+echo "□ sample-config"
+EOF
+  } > "$mock_tmux_home/sesh-all.sh"
+  chmod +x "$mock_tmux_home/sesh-all.sh"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+if [[ "$1" == "display-message" && "$2" == "-p" ]]; then
+  case "$3" in
+    '#S')
+      echo 'current-session'
+      ;;
+    '#{pane_current_path}')
+      printf '%s\n' "$MOCK_CUR_DIR"
+      ;;
+  esac
+fi
+exit 0
+EOF
+  } > "$mock_bin/tmux"
+  chmod +x "$mock_bin/tmux"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+if [[ "$1" == "connect" ]]; then
+  printf '%s\n' "$*" >> "$SESH_LOG"
+fi
+exit 0
+EOF
+  } > "$mock_bin/sesh"
+  chmod +x "$mock_bin/sesh"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+exit 0
+EOF
+  } > "$mock_bin/fzf-tmux"
+  chmod +x "$mock_bin/fzf-tmux"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+printf '%s\n' "$*" >> "$TMPROJ_LOG"
+exit 0
+EOF
+  } > "$mock_bin/tmproj"
+  chmod +x "$mock_bin/tmproj"
+
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" BASH_BIN="$BASH_PATH" TMUX_HOME="$mock_tmux_home" TMUX_BIN="$mock_bin/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" TMPROJ_BIN="$mock_bin/tmproj" MOCK_CUR_DIR="$project_dir" TMPROJ_LOG="$tmproj_log" SESH_LOG="$sesh_log" "$BASH_PATH" "$SESH_SCRIPT"
+
+  assert $state equals 0
+  assert "$(cat "$tmproj_log")" contains "$project_dir"
+  assert "$(cat "$sesh_log")" is_empty
+}
+
+@test 'sesh-picker exits without tmproj fallback when current pane dir is unavailable' {
+  local mock_bin="$TEST_DIR/mock-no-curdir"
+  local mock_tmux_home="$TEST_DIR/mock-no-curdir-home"
+  local tmproj_log="$TEST_DIR/no-curdir-tmproj.log"
+
+  mkdir -p "$mock_bin" "$mock_tmux_home"
+  : > "$tmproj_log"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+echo "□ sample-config"
+EOF
+  } > "$mock_tmux_home/sesh-all.sh"
+  chmod +x "$mock_tmux_home/sesh-all.sh"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+if [[ "$1" == "display-message" && "$2" == "-p" ]]; then
+  case "$3" in
+    '#S')
+      echo 'current-session'
+      ;;
+    '#{pane_current_path}')
+      exit 0
+      ;;
+  esac
+fi
+exit 0
+EOF
+  } > "$mock_bin/tmux"
+  chmod +x "$mock_bin/tmux"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+exit 0
+EOF
+  } > "$mock_bin/sesh"
+  chmod +x "$mock_bin/sesh"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+exit 0
+EOF
+  } > "$mock_bin/fzf-tmux"
+  chmod +x "$mock_bin/fzf-tmux"
+
+  {
+    printf '#!%s\n' "$BASH_PATH"
+    cat <<'EOF'
+printf '%s\n' "$*" >> "$TMPROJ_LOG"
+exit 0
+EOF
+  } > "$mock_bin/tmproj"
+  chmod +x "$mock_bin/tmproj"
+
+  run env PATH="/usr/bin:/bin:/usr/sbin:/sbin" BASH_BIN="$BASH_PATH" TMUX_HOME="$mock_tmux_home" TMUX_BIN="$mock_bin/tmux" SESH_BIN="$mock_bin/sesh" FZF_TMUX_BIN="$mock_bin/fzf-tmux" TMPROJ_BIN="$mock_bin/tmproj" TMPROJ_LOG="$tmproj_log" "$BASH_PATH" "$SESH_SCRIPT"
+
+  assert $state equals 0
+  assert "$(cat "$tmproj_log")" is_empty
+}
+
 # ── tmux popup interaction ─────────────────────────────────────────────────────
 
 @test 'sesh picker popup appears and closes cleanly on escape' {
