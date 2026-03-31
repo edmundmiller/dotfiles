@@ -1,21 +1,23 @@
-# Tmux-First ADE Spec
+# Opensessions-First Tmux ADE Spec
 
-Status: Draft 4
+Status: Draft 7
 
 ## Summary
 
-This document defines the first spec for a **tmux-centered Agentic Development
-Environment (ADE)** for this dotfiles repo.
+This document defines the current spec for an **opensessions-first,
+tmux-centered Agentic Development Environment (ADE)** for this dotfiles repo.
 
 The core idea is simple:
 
-> tmux should act as the primary interaction layer where humans, agents,
-> projects, worktrees, and task context meet.
+> tmux is the shared runtime substrate, and opensessions is the primary
+> human-facing control plane where humans, agents, projects, worktrees, and
+> task context meet.
 
 This repo already has many of the raw ingredients:
 
 - tmux as the daily driver multiplexer
-- `sesh` / `opensessions` session navigation
+- `opensessions` sidebar + command-table navigation
+- `sesh` session picking and recovery flows
 - custom tmux layouts (`tml`, `nic`, `nicx`, `nicc`, etc.)
 - Ghostty integration
 - AI tool launchers living inside tmux panes
@@ -34,6 +36,7 @@ changes that converge instead of drift.
 The current tmux workflow is powerful, but it has grown from multiple good local
 optimizations:
 
+- direct session entry via `tmproj`
 - session switching via `sesh`
 - project sidebars via `opensessions`
 - agent-centric layouts via `tml`/`nic`
@@ -57,37 +60,43 @@ The goal of this spec is to define a clean target state.
 
 The ADE should make the following flow feel natural:
 
-1. Pick a project or worktree
-2. Enter the canonical tmux session for it
-3. Land in a predictable layout
-4. See enough context to know what is happening
-5. Launch or resume human/agent work without ceremony
-6. Preserve enough structure that another human or agent can continue later
+1. Open or focus opensessions
+2. Pick a project or worktree from the primary sidebar / command-table surface
+3. Enter the canonical tmux session for it
+4. Land in a predictable layout
+5. See enough context to know what is happening
+6. Launch or resume human/agent work without ceremony
+7. Preserve enough structure that another human or agent can continue later
 
 In short:
 
-> **one project/worktree, one session, low-friction entry, visible state**
+> **one project/worktree, one session, opensessions-first navigation, visible
+> state**
 
 ---
 
 ## Design Principles
 
-### 1. Tmux is the control plane
+### 1. Tmux is the runtime substrate; opensessions is the primary control plane
 
 Tmux is not just a terminal multiplexer here. It is the shared operating surface
-for development sessions.
+for development sessions. But the primary human-facing navigation surface should
+be opensessions whenever it is enabled.
 
 ### 2. One project or worktree should map to one canonical session
 
 Humans and agents should not need to invent session names on the fly. Session
 identity should come from the repo/worktree whenever possible.
 
-### 3. Attach-or-create should be the default behavior
+### 3. Shared helpers should own attach/create and lifecycle behavior
 
-The common path should be:
+The common path should still be attach-or-create:
 
-- if the session exists, attach or switch to it
+- if the session exists, switch or attach
 - if it does not exist, create it with the right cwd/layout
+
+But opensessions should call into shared helpers for that behavior rather than
+reimplementing its own parallel naming or lifecycle logic.
 
 ### 4. Layouts should express roles, not just panes
 
@@ -214,9 +223,9 @@ panes exist.
 This hook file exists and appears intended to fire `$TMUX_WINDOW_NAME_SCRIPT`
 on every `chpwd`, keeping window names in sync with the working directory.
 
-However, current code review suggests it is **not obviously auto-sourced** by
-the generic zsh module loader. Treat this as an intended integration point that
-should be explicitly wired or documented before the ADE relies on it.
+It is now explicitly sourced from `config/zsh/.zshrc`, but remains intentionally
+lightweight: zsh only requests a refresh when running inside tmux and when the
+smart-name refresh script is actually available.
 
 ### Theme and appearance
 
@@ -246,38 +255,37 @@ the sustained-review counterpart to the popup critique bindings in
 
 ## Current Gaps
 
-### 1. Session entry is not yet canonical
+### 1. Opensessions-first ownership is not yet fully reflected in runtime UX
 
-The repo has multiple strong ways to enter tmux, but not one documented default
-for:
+The repo now has the primitives for an opensessions-first ADE, but the runtime
+experience is still somewhat hybrid across docs, keybindings, and helper
+surfaces.
 
-- current project
-- current worktree
-- remote target
+### 2. Opensessions does not yet expose the backend helper stack directly
 
-### 2. Worktree lifecycle is not yet a first-class tmux concept
+`tmproj`, `tw`, and `twd` exist, but opensessions is not yet the obvious place
+to invoke or discover those lifecycle actions.
 
-There is worktree awareness, but not yet a clearly documented contract like:
+### 3. Ghostty bootstrap vs opensessions-first landing is not fully decided
 
-- create worktree
-- create matching session
-- clean both up together
+Ghostty still lands in a stable `home` tmux session. The remaining question is
+how strongly startup should steer users into opensessions after that bootstrap.
 
-### 3. Session roles are implicit
+### 4. Session roles are still somewhat implicit
 
 Layouts like `tml` are useful, but the repo does not yet have a written concept
 of role-based pane layouts as part of the ADE.
 
-### 4. Human-agent alignment is partially accidental
+### 5. Human-agent alignment is partially accidental
 
 Some pieces are agent-aware, but there is no top-level spec that says what
 agents should assume about sessions, naming, or discoverability.
 
-### 5. Some task/issue integration still reflects older tooling
+### 6. Opensessions stability is on the critical path
 
-The repo has migrated from `bd` to `br`, but parts of the tmux integration still
-reference older `bd`-named helpers. That should be treated as follow-up work as
-the ADE is tightened.
+As long as opensessions is optional, runtime issues are isolated annoyances. In
+an opensessions-first ADE, bugs like the resize-loop tracked in `dotfiles-9bvd`
+become blockers for the primary interaction model.
 
 ---
 
@@ -336,13 +344,48 @@ The tmux popup bindings now point at wrapper scripts rather than older
 Compatibility shims may still exist under the older `bd-*` names, but tmux now
 talks to the wrapper layer instead of preserving the legacy naming in the UI.
 
+### 5. The repo is still more hybrid than the target model
+
+The repo now has the necessary primitives for an opensessions-first ADE, but the
+implemented UX is still transitional:
+
+- `tmproj` is fully implemented and documented
+- `tw` / `twd` exist for worktree lifecycle
+- opensessions integration already owns `prefix s`, `prefix S`, and `prefix o`
+  when enabled
+- but the spec and surrounding docs previously centered `tmproj` + `sesh` more
+  heavily than opensessions
+
+This draft pivots the written target state so the control-plane hierarchy is
+explicit: opensessions first, shared tmux helpers underneath, sesh as fallback.
+
 ---
 
 ## Target State
 
 The tmux ADE should provide the following capabilities.
 
-## 1. Canonical project session identity
+## 1. Opensessions as the primary human-facing control plane
+
+The default human-facing ADE surface should be opensessions.
+
+That means:
+
+- sidebar and command-table navigation should be the normal way to switch
+  sessions
+- project/worktree selection should be visible and discoverable without
+  memorizing helper names
+- Ghostty + tmux startup should be able to land in a stable bootstrap session
+  while still making opensessions the first-class navigation surface after
+  entry
+- opensessions should use the same canonical naming/session rules as the rest
+  of the ADE rather than inventing a competing identity model
+
+This does **not** mean opensessions should duplicate session lifecycle logic.
+It means the primary UX should live there, while shared shell helpers remain the
+backend primitives.
+
+## 2. Canonical project session identity
 
 Each project or worktree should have a deterministic session identity derived
 from the working directory or worktree root.
@@ -359,12 +402,6 @@ Examples:
 - repo basename
 - worktree basename
 - optional namespace for remote hosts when needed
-
-Currently session naming is computed in at least three different ways:
-
-- `basename "$PWD"` in `omarchy.zsh`
-- `#{pane_current_path}` + `git-worktree-cwd` in `toggle-tml.sh`
-- hardcoded `"Work"` in `aliases.zsh` (`t` alias)
 
 The implemented naming contract is now:
 
@@ -386,23 +423,22 @@ Examples:
 This keeps naming boring: main checkouts use the repo basename, and named
 worktrees keep their distinct basename when it differs.
 
-## 2. A zero-friction session entry command
+## 3. Shared backend session primitives
 
-There should be one preferred helper for:
+There should be a small, boring set of backend helpers for:
 
 - current directory → canonical session
+- worktree creation + entry
+- worktree removal + session cleanup
 
-Behavior:
+These are the primitives that scripts, agents, and opensessions actions should
+call.
 
-- attach if session exists
-- create if session does not exist
-- use the correct cwd
-- optionally seed a default layout
+The current implementation includes:
 
-This can coexist with more specialized entrypoints, but there should be a clearly
-documented default.
-
-The current implementation of that default is `bin/tmproj`.
+- `bin/tmproj` — attach/create canonical session for a path/project
+- `bin/tw` — create sibling worktree, then enter it via `tmproj`
+- `bin/twd` — remove worktree and clean up the canonical tmux session
 
 Contract:
 
@@ -413,10 +449,11 @@ Contract:
 - when the session does not exist it creates a plain tmux session rooted at the
   canonical project path, then switches or attaches
 
-This keeps session entry boring and composable. Layout seeding remains a
-separate concern.
+This keeps lifecycle behavior boring and composable. Opensessions can sit on top
+of these primitives without becoming a second implementation of session naming
+or worktree semantics.
 
-## 2.5. A clear metadata contract
+## 3.5. A clear metadata contract
 
 The implemented metadata contract is now:
 
@@ -428,14 +465,15 @@ The implemented metadata contract is now:
   `session · subtitle`, where the subtitle is `@smart_title_context`
 - `config/zsh/tmux-hooks.zsh` is a lightweight `chpwd` refresh hook, not an
   independent naming system
-- Ghostty's fixed `home` session is only the bootstrap entrypoint; users and
-  agents still move into project sessions via `tmproj` / `tp`
+- Ghostty's fixed `home` session is only the bootstrap entrypoint; opensessions
+  should become the primary human-facing navigation layer after startup, while
+  `tmproj` / `tp` remain direct helper paths
 
 This avoids three competing sources of truth. Session helpers choose _which_
 session you are in; tmux-smart-name decides _how windows and titles are
 presented_ once you are there.
 
-## 3. Layout presets with role semantics
+## 4. Layout presets with role semantics
 
 The ADE should support a small set of role-oriented layouts, such as:
 
@@ -446,10 +484,10 @@ The ADE should support a small set of role-oriented layouts, such as:
 
 The point is not just pane geometry. The point is predictable intent.
 
-## 3a. Popups as a distinct UI primitive
+## 4a. Popups as a distinct UI primitive
 
 The tmux config already uses ~15 popup bindings for transient, focused
-interactions: critique, beads capture, daily notes, file picking, git TUI, and
+interactions: critique, issue capture, daily notes, file picking, git TUI, and
 session config editing.
 
 Popups and persistent panes serve different roles:
@@ -463,7 +501,7 @@ Future layout and agent work should respect this distinction. Agents and scripts
 should not open persistent panes for transient tasks, and should not use popups
 for context that needs to remain visible.
 
-## 3b. Quick review vs sustained review
+## 4b. Quick review vs sustained review
 
 The current tmux UX already suggests two review modes, and the ADE should make
 that distinction explicit:
@@ -475,25 +513,31 @@ that distinction explicit:
 
 This keeps the popup-vs-pane model practical instead of purely conceptual.
 
-## 4. Session picker as a secondary, not primary, entrypoint
+## 5. Secondary picker and fallback paths
 
-The picker remains valuable, but the normal path should be direct entry into the
-current project session. The picker should remain excellent for:
+Once opensessions is treated as the primary human-facing control plane, other
+navigation paths should remain valuable but secondary.
+
+Fallback paths should remain excellent for:
 
 - switching
 - discovery
 - recovery
 - remote work
 
-When invoked from tmux, cancel or empty selection should prefer the canonical
-`tmproj` attach/create path for the current pane directory instead of inventing
-ad hoc picker-specific fallback behavior.
+This means:
 
-`opensessions` does not necessarily disappear in this model. It may remain the
-visual sidebar / dashboard / project-config layer while `tmproj` and `sesh`
-handle the direct attach-or-create path.
+- `sesh` remains useful as a recovery/discovery picker and remote-friendly
+  fallback
+- `tmproj` remains the direct shell/agent attach-create escape hatch
+- when a secondary picker is cancelled or produces no selection, it should fall
+  back to the canonical `tmproj` path for the current pane directory instead of
+  inventing picker-specific naming/session logic
 
-## 5. Worktree-aware lifecycle commands
+The design goal is not to eliminate alternate paths. It is to make them clearly
+secondary to the opensessions-centered flow.
+
+## 6. Worktree-aware lifecycle commands
 
 The ADE should eventually support commands in the spirit of:
 
@@ -513,10 +557,10 @@ The current implementation now includes:
   tmux session if present, then removes the worktree
 
 This keeps lifecycle behavior aligned with the same canonical naming/session
-contract used by `tmproj`, rather than routing through a separate worktree-only
-session model.
+contract used by `tmproj`. In an opensessions-first ADE, those helpers should
+be surfaced through opensessions actions rather than replaced.
 
-## 6. Remote parity
+## 7. Remote parity
 
 Remote machines should expose a similar model:
 
@@ -524,7 +568,7 @@ Remote machines should expose a similar model:
 - choose remote sessions predictably
 - preserve project naming conventions where practical
 
-## 7. Session-visible context
+## 8. Session-visible context
 
 A session should help answer questions like:
 
@@ -535,7 +579,7 @@ A session should help answer questions like:
 
 This does not need to be noisy. It just needs to be discoverable.
 
-## 8. Task-awareness without hard coupling
+## 9. Task-awareness without hard coupling
 
 Tmux should integrate cleanly with task tooling like `br`, but tmux should not be
 so tightly coupled that session management breaks when task tooling evolves.
@@ -553,12 +597,24 @@ that still expose `bd`-era command names.
 
 ## Current Command Model
 
-This is the command model the repo now documents and implements.
+This is the command model the repo should converge toward.
 
-### Primary commands
+### Primary interactive surface
 
-- `tmproj` — attach/create canonical session for current project/worktree
+- `opensessions` — sidebar + command-table session navigation when enabled
+- the primary human-facing path should be to pick or switch work through
+  opensessions, not to memorize a growing list of tmux entry commands
+
+### Backend and fallback commands
+
+- `tmproj` — direct attach/create primitive for the canonical
+  project/worktree session
 - `tp` — short alias for `tmproj`
+- `tw` / `twd` — worktree lifecycle primitives that should eventually be
+  surfaced through opensessions actions
+- `sesh` / `config/tmux/sesh-picker.sh` — secondary discovery/recovery picker,
+  especially useful when opensessions is unavailable or not the right tool for
+  the moment
 - `tvault` — explicit Obsidian / vault / Pi tmux entry flow
 
 ### Compatibility and legacy behavior
@@ -567,22 +623,23 @@ This is the command model the repo now documents and implements.
 - `t` / `ta` — intentionally belong to `todo.sh`, not tmux
 - `tl` — raw `tmux ls` escape hatch
 
-### Secondary commands
+### Layering rule
 
-- existing picker flows (`sesh`, `opensessions`) remain useful for switching,
-  discovery, and recovery
+- opensessions should call or reflect the canonical `tmproj` / `tw` / `twd`
+  model rather than compete with it
 - future helpers such as `tv` can still exist, but should layer on top of the
-  `tmproj` naming/session contract rather than compete with it
+  same naming/session contract rather than define a parallel one
 
 ### Deprecation path
 
 - keep `tm` only long enough to redirect muscle memory toward `tvault` and
-  `tmproj`
+  the opensessions-first model
 - do not reintroduce tmux meanings for `t` or `ta` unless the todo command model
   changes first
 
-The goal is to reduce entry points, not add more. New commands must come with a
-plan to retire the old ones they supersede.
+The goal is to keep the backend small and the primary UX visible. New commands
+must come with a plan to explain whether they are primary UI, backend
+primitive, or compatibility shim.
 
 ### Layout commands
 
@@ -608,7 +665,8 @@ Current behavior:
 
 The point is to separate:
 
-- **enter the workspace**
+- **choose or switch the workspace**
+- **enter the canonical session**
 - **choose the layout**
 - **manage lifecycle**
 
@@ -618,45 +676,49 @@ instead of forcing a single command to do all three every time.
 
 ## Implementation Priorities
 
-### Phase 1 — document and normalize
+### Phase 1 — reframe the spec around opensessions
 
-Goal: define the contract before expanding automation.
+Goal: make the control-plane hierarchy explicit before changing more runtime
+behavior.
 
 Tasks:
 
-- create ADE docs
-- document tmux as control plane
-- define canonical session model
-- identify command overlap and unclear entrypoints
+- rewrite the ADE docs around opensessions-first ownership
+- document tmux as runtime substrate plus control-plane host
+- define which helpers are backend primitives vs fallback flows
+- prune or rewrite older target-state language that assumed `tmproj` + `sesh`
+  were the primary user path
 
-### Phase 2 — canonical session entry
+### Phase 2 — opensessions-first navigation
 
-Goal: add one preferred current-project attach/create helper.
+Goal: make opensessions the default interactive navigation surface.
 
 Current implementation status:
 
-- `bin/tmproj` now provides the preferred current-project attach/create path
-- `config/tmux/aliases.zsh` now adds `tp` as the short alias for `tmproj`
-- tmux-side `t` / `ta` aliases were removed so `config/zsh/.zshrc` can own the
-  todo workflow cleanly
-- the old special-purpose `tm` flow is now explicitly named `tvault`, with `tm`
-  kept only as a deprecation shim
+- opensessions integration already owns `prefix s`, `prefix S`, and `prefix o`
+  when enabled
+- `bin/tmproj` exists as the canonical attach/create backend primitive
+- `config/tmux/sesh-picker.sh` already behaves as a fallback-oriented picker
+- the remaining work is mostly about making the ownership boundary explicit in
+  docs and runtime defaults
 
 Likely touchpoints:
 
-- `config/tmux/aliases.zsh`
-- `config/tmux/omarchy.zsh`
-- possibly `config/tmux/sesh-picker.sh`
+- `docs/ade/tmux-ade-spec.md`
+- `config/tmux/config`
+- `modules/shell/tmux/default.nix`
+- opensessions integration points under `config/opensessions/`
 
-### Phase 3 — worktree lifecycle
+### Phase 3 — expose backend helpers through opensessions
 
-Goal: make worktree creation/removal align with session creation/removal.
+Goal: keep one backend session/lifecycle implementation while making it
+available through the primary UI.
 
 Likely touchpoints:
 
-- shell helpers under `config/tmux/`
-- existing git/worktree helper scripts under `bin/`
-- maybe `packages/dmux/` or adjacent custom tooling
+- opensessions config/plugins
+- shell helpers under `bin/`
+- tmux bindings and command-table integration
 
 ### Phase 4 — remote parity
 
@@ -672,14 +734,18 @@ turning tmux into a dashboard gimmick.
 
 ## Success Criteria
 
-The tmux-first ADE is moving in the right direction if the following become true:
+The opensessions-first ADE is moving in the right direction if the following
+become true:
 
-1. A human can explain the default tmux workflow in a few sentences
-2. An agent can infer where to launch or resume work from repo docs alone
-3. Project/worktree session entry becomes near-zero-friction
+1. A human can explain the default tmux workflow in a few sentences, with
+   opensessions clearly identified as the main interactive surface
+2. An agent can infer when to use opensessions, `tmproj`, `tw`, or `sesh` from
+   repo docs alone
+3. Project/worktree navigation becomes visible and near-zero-friction
 4. Worktree and session sprawl decrease rather than increase
 5. Remote work feels like the same system, not a separate one
 6. Session naming becomes boring and predictable
+7. Disabling or bypassing opensessions still leaves a sane fallback path
 
 ---
 
@@ -699,21 +765,20 @@ For now, this spec is **not** trying to do the following:
 
 These should guide future changes.
 
-1. The current implementation uses a simple hybrid already: resolve the usable
-   checkout root, then use that basename. This keeps main repos short while
-   preserving distinct worktree names such as `dotfiles-pc4`.
+1. After Ghostty lands in the bootstrap `home` session, should opensessions be
+   auto-focused immediately, or should that remain a manual action?
 2. How long should the `tm` deprecation shim remain before removal?
 3. Which layout should be the default for a freshly created project session:
    plain shell, editor-first, or agent-first?
 4. How much session metadata should be visible in titles/status vs. only in the
-   picker?
+   opensessions rows and picker surfaces?
 5. Should remote sessions preserve the exact same names as local sessions, or
    include a host prefix?
 6. How tightly should `br` capture/explore workflows be embedded in tmux popups?
-7. What is the future role of `opensessions` if `tmproj` + `sesh` handle direct
-   session entry? Does it remain the visual dashboard/sidebar layer?
-8. How will `sesh` discover newly created worktrees that are not yet in zoxide's
-   history?
+7. Which opensessions actions should directly invoke `tmproj`, `tw`, and `twd`,
+   and which should stay purely navigational?
+8. How should `sesh` discover newly created worktrees that are not yet in
+   zoxide's history, once it becomes a fallback rather than the main picker?
 9. What role does `dmux` play in this model? Is it a complementary session
    manager or a competing one that should be reconciled?
 
@@ -723,10 +788,10 @@ These should guide future changes.
 
 Good next implementation candidates after this spec:
 
-1. Decide when to remove the `tm` compatibility shim entirely
-2. Add a `tv` helper for editor-first project entry if it proves useful
-3. Add `tw` / `twd` for worktree + session lifecycle
-4. Make picker cancellation fall back to the current project's canonical session
+1. Route primary tmux navigation through opensessions explicitly
+2. Expose `tmproj`, `tw`, and `twd` through opensessions actions
+3. Decide when to remove the `tm` compatibility shim entirely
+4. Clarify Ghostty bootstrap vs opensessions auto-focus behavior
 
 ---
 
@@ -753,3 +818,6 @@ Good next implementation candidates after this spec:
 - Draft 6: migrated tmux popup helper entrypoints from `bd-*` names to
   `br-*` wrappers, while keeping compatibility shims so shell muscle memory and
   older integrations do not break immediately
+- Draft 7: pivoted the written ADE model to opensessions-first ownership,
+  treating opensessions as the primary human-facing control plane while
+  `tmproj`, `tw`, `twd`, and `sesh` are documented as backend or fallback paths
