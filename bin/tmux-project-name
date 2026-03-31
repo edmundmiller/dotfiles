@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# tmux-project-name: derive a deterministic tmux-safe name for a project/worktree.
+
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+input_path="${1:-.}"
+root_helper="$script_dir/tmux-project-root"
+
+if [[ -x "$root_helper" ]]; then
+  project_root=$($root_helper "$input_path")
+else
+  if ! project_root=$(cd "$input_path" 2>/dev/null && pwd -P); then
+    echo "error: path not found: $input_path" >&2
+    exit 1
+  fi
+fi
+
+project_name=$(basename -- "$project_root")
+project_name=$(printf '%s' "$project_name" | sed -E 's/[^[:alnum:]_-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')
+
+if [[ -z "$project_name" ]]; then
+  project_name="root"
+fi
+
+printf '%s\n' "$project_name"

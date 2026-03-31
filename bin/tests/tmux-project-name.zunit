@@ -1,0 +1,70 @@
+#!/usr/bin/env zunit
+
+# Tests for tmux-project-name canonical session identity.
+
+@setup {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+  export TEST_DIR=$(cd "$tmp_dir" && pwd -P)
+  export ORIG_PWD=$PWD
+  export SCRIPT="$ORIG_PWD/bin/tmux-project-name"
+
+  export REPO_DIR="$TEST_DIR/source"
+  export HUB_DIR="$TEST_DIR/hub"
+
+  mkdir -p "$REPO_DIR" "$HUB_DIR"
+
+  cd "$REPO_DIR"
+  git init --quiet --initial-branch=main
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  echo "hi" > README.md
+  mkdir -p app/src
+  echo "nested" > app/src/main.txt
+  git add README.md app/src/main.txt
+  git commit --quiet -m "init"
+
+  # Build bare-hub layout: hub/.git (bare) + hub/main worktree.
+  git clone --quiet --bare "$REPO_DIR" "$HUB_DIR/.bare"
+  mv "$HUB_DIR/.bare" "$HUB_DIR/.git"
+  git -C "$HUB_DIR/.git" config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git -C "$HUB_DIR/.git" fetch --quiet origin
+  git -C "$HUB_DIR/.git" worktree add --quiet "$HUB_DIR/main" main
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'uses checkout root basename for nested repo paths' {
+  run "$SCRIPT" "$REPO_DIR/app/src"
+
+  assert $state equals 0
+  assert "$output" same_as "source"
+}
+
+@test 'resolves bare hub root through git-worktree-cwd before naming' {
+  run "$SCRIPT" "$HUB_DIR"
+
+  assert $state equals 0
+  assert "$output" same_as "main"
+}
+
+@test 'preserves distinct worktree basenames' {
+  git -C "$HUB_DIR/.git" worktree add --quiet "$HUB_DIR/source-pc4" -b feature-pc4 main
+
+  run "$SCRIPT" "$HUB_DIR/source-pc4/app"
+
+  assert $state equals 0
+  assert "$output" same_as "source-pc4"
+}
+
+@test 'sanitizes non-git basenames to tmux-safe names' {
+  mkdir -p "$TEST_DIR/Project Name...+scratch"
+
+  run "$SCRIPT" "$TEST_DIR/Project Name...+scratch"
+
+  assert $state equals 0
+  assert "$output" same_as "Project-Name-scratch"
+}

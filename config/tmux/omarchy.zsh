@@ -2,11 +2,27 @@
 # Omarchy-inspired tmux dev layouts
 # https://github.com/basecamp/omarchy/blob/dev/default/bash/fns/tmux
 
+_dotfiles_bin_script() {
+  local script_name="$1"
+  local script_path="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/$script_name"
+  [[ -x "$script_path" ]] || script_path="$HOME/.config/dotfiles/bin/$script_name"
+  [[ -x "$script_path" ]] || return 1
+  printf '%s\n' "$script_path"
+}
+
 _git_worktree_cwd() {
-  local resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
-  [[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
-  if [[ ! -x "$resolver" ]]; then
+  local resolver
+  if ! resolver=$(_dotfiles_bin_script git-worktree-cwd); then
     echo "$1"
+    return 0
+  fi
+  "$resolver" "$1"
+}
+
+_tmux_project_name() {
+  local resolver
+  if ! resolver=$(_dotfiles_bin_script tmux-project-name); then
+    basename -- "$1" | sed -E 's/[^[:alnum:]_-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
     return 0
   fi
   "$resolver" "$1"
@@ -25,7 +41,7 @@ tml() {
   ai_pane="$TMUX_PANE"
 
   # Name window after current dir
-  tmux rename-window -t "$ai_pane" "$(basename "$current_dir")"
+  tmux rename-window -t "$ai_pane" "$(_tmux_project_name "$current_dir")"
 
   # Bottom shell pane (15%)
   tmux split-window -v -p 15 -t "$ai_pane" -c "$current_dir"
@@ -50,7 +66,7 @@ tmlm() {
   local base_dir="$PWD"
   local first=true
 
-  tmux rename-session "$(basename "$base_dir" | tr '.:' '--')"
+  tmux rename-session "$(_tmux_project_name "$base_dir")"
 
   for dir in "$base_dir"/*/; do
     [[ -d $dir ]] || continue
@@ -92,7 +108,7 @@ tmlc() {
 
   ai_pane="$TMUX_PANE"
 
-  tmux rename-window -t "$ai_pane" "$(basename "$current_dir")"
+  tmux rename-window -t "$ai_pane" "$(_tmux_project_name "$current_dir")"
 
   # Bottom shell pane (15%)
   tmux split-window -v -p 15 -t "$ai_pane" -c "$current_dir"
