@@ -68,14 +68,10 @@ set -g mode-keys   vi
 
 bind c new-window      -c "#{pane_current_path}"
 bind v split-window -h -c "#{pane_current_path}"
-bind s split-window -v -c "#{pane_current_path}"
 
 # Toggle tml layout (AI + lazygit + shell)
 bind T run '$TMUX_HOME/toggle-tml.sh'
 
-# Split and launch jjui
-bind u split-window -v -c "#{pane_current_path}" "jjui"
-bind U split-window -h -c "#{pane_current_path}" "jjui"
 # Generic command in new split
 bind C command-prompt -p "Command:" "split-window -v -c '#{pane_current_path}' '%%'"
 
@@ -83,17 +79,6 @@ bind h select-pane -L
 bind j select-pane -D
 bind k select-pane -U
 bind l select-pane -R
-bind H run '$TMUX_HOME/swap-pane.sh left'
-bind J run '$TMUX_HOME/swap-pane.sh down'
-bind K run '$TMUX_HOME/swap-pane.sh up'
-bind L run '$TMUX_HOME/swap-pane.sh right'
-bind M run '$TMUX_HOME/swap-pane.sh master'
-
-bind o resize-pane -Z
-bind S choose-session
-bind W choose-window
-bind / choose-session
-bind . choose-window
 
 # Secondary sesh switch/discovery picker; tmproj/tp is the primary project entry.
 # ^a: all | ^t: tmux | ^c: configs | ^x: zoxide | ^d: kill session
@@ -101,13 +86,6 @@ bind-key t run-shell "$TMUX_HOME/sesh-picker.sh"
 
 # bind = select-layout tiled
 bind | select-layout even-horizontal
-bind _ select-layout even-vertical
-
-# Disable confirmation
-bind x kill-pane
-bind X kill-window
-bind q kill-session
-bind Q kill-server
 
 # Smart pane switching with awareness of vim splits and AI agents
 # See: https://github.com/christoomey/vim-tmux-navigator
@@ -133,16 +111,6 @@ bind p previous-window
 bind C-n next-window
 bind C-p previous-window
 
-# Pane resizing (Raine's pattern)
-bind < resize-pane -L 10
-bind > resize-pane -R 10
-bind + resize-pane -D 5
-bind - resize-pane -U 5
-
-# Break/join panes (relocated from + and -)
-bind = break-pane
-bind _ join-pane
-
 # reload config without killing server
 bind r source-file $DOTFILES/config/tmux/config \; display-message "  Config reloaded..".
 bind ^r refresh-client
@@ -153,29 +121,6 @@ bind ^r refresh-client
 ########################################
 
 bind Enter copy-mode # enter copy mode
-bind b list-buffers  # list paster buffers
-bind B choose-buffer # choose which buffer to paste from
-bind a display-popup -E -w 80% -h 70% "$DOTFILES_BIN/pi-sessions"  # pi session picker
-bind i display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$DOTFILES_BIN/br-capture"  # issue capture
-bind m display-popup -E -w 80% -h 80% -d "$HOME/obsidian-vault" "$DOTFILES_BIN/tnote-capture"  # tnote task capture
-bind N display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/daily-note --popup"  # daily note
-bind ` display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/daily-note --popup"  # daily note (alt)
-bind e display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/br-find-all"  # issue explore (current dir)
-bind E display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$DOTFILES_BIN/br-find-all --all"  # issue explore (home)
-
-# file picker (raine.dev)
-bind f display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker"
-bind D display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --directories"
-bind z display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide"
-bind d display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --zoxide --dir-only"
-bind g display-popup -E -w 80% -h 80% -d '#{pane_current_path}' "$TMUX_HOME/open-git-tui.sh"
-bind F display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "tmux-file-picker --git-root"
-# critique: Beautiful TUI for reviewing git diffs with syntax highlighting
-bind G display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$TMUX_HOME/open-critique.sh"
-# critique (staged-only): review staged hunks before commit
-bind R display-popup -E -w 90% -h 90% -d '#{pane_current_path}' "$TMUX_HOME/open-critique.sh --staged"
-# opensessions project config (writable JSON)
-bind O display-popup -E -w 90% -h 90% "$TMUX_HOME/open-opensessions-config.sh"
 
 bind P run "xclip -selection clipboard -o | tmux load-buffer - ; tmux paste-buffer"
 
