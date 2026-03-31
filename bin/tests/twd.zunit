@@ -47,6 +47,10 @@ case "${1:-}" in
     fi
     exit 1
     ;;
+  display-message)
+    printf '%s\n' "${MOCK_TMUX_CURRENT_SESSION:-}"
+    exit 0
+    ;;
   kill-session)
     exit 0
     ;;
@@ -93,5 +97,22 @@ MOCK
   actual=$(cat "$MOCK_TMUX_LOG")
   assert "$actual" contains "has-session -t source-cleanup"
   [[ "$actual" != *"kill-session -t source-cleanup"* ]]
+  assert $? equals 0
+}
+
+@test 'refuses to remove the current tmux session when invoked from it' {
+  git -C "$HUB_DIR/main" worktree add --quiet -b source-fix-bug "$HUB_DIR/source-fix-bug" HEAD
+  cd "$HUB_DIR/source-fix-bug"
+
+  run env PATH="$MOCK_BIN:$PATH" TMUX_BIN="$MOCK_BIN/tmux" MOCK_TMUX_LOG="$MOCK_TMUX_LOG" MOCK_TMUX_HAS_SESSION=1 MOCK_TMUX_CURRENT_SESSION=source-fix-bug TMUX=/tmp/mock-tmux.sock "$SCRIPT" fix-bug
+
+  assert $state equals 1
+  assert "$output" contains "refusing to remove the current tmux session: source-fix-bug"
+  assert $(test -d "$HUB_DIR/source-fix-bug"; echo $?) equals 0
+
+  actual=$(cat "$MOCK_TMUX_LOG")
+  assert "$actual" contains "has-session -t source-fix-bug"
+  assert "$actual" contains "display-message -p #{session_name}"
+  [[ "$actual" != *"kill-session -t source-fix-bug"* ]]
   assert $? equals 0
 }
