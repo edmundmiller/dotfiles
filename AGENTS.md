@@ -19,7 +19,7 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 - **Modules:** `modules/` (shell, editors, services, etc.)
 - **Home-manager configs:** `config/` (lazygit, ghostty, etc.)
 - **Skills catalog:** `skills/flake.nix` (child flake managing agent skills — see `skills/AGENTS.md`)
-- **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. That repo owns canonical agent specs, renderers, generated runtime facts, and reusable personal runtime defaults. This repo owns host-specific deployment wiring in `hosts/nuc/default.nix` plus the macOS remote client in `modules/desktop/apps/openclaw/`. The NixOS side now imports `openclawBase` + `openclawPersonalDefaults` in `lib/nixos.nix`, while keeping secrets, Telegram, ingress, monitoring, and enablement decisions here.
+- **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. That repo owns canonical agent specs, renderers, generated runtime facts, reusable personal runtime defaults, and deployment-scoped personal routing data such as the NUC Telegram topic map. This repo owns host-specific deployment wiring in `hosts/nuc/default.nix` plus the macOS remote client in `modules/desktop/apps/openclaw/`. The NixOS side now imports `openclawBase` + `openclawPersonalDefaults` in `lib/nixos.nix`, while keeping secrets, bot tokens, ingress, monitoring, and enablement decisions here.
 - **`darwin.nix` is NOT imported** — don't put config there
 
 ## OpenClaw ownership boundary
@@ -36,11 +36,12 @@ Keep these in `openclaw-workspace`:
 - generated runtime/environment docs
 - shared cron bundles and shared skill defaults
 - reusable personal runtime presets
+- deployment-scoped personal routing maps
 
 Keep these in `dotfiles`:
 
 - secret references and token file paths
-- Telegram bindings and webhook routing
+- bot token files and live surface enablement
 - Tailscale/nginx/public ingress
 - healthcheck/monitoring endpoints
 - user/systemd service enablement and host-specific overrides
