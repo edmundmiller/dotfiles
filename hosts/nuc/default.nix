@@ -350,6 +350,7 @@ in
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
+    inputs.openclaw-workspace.packages.${system}.scintillate-hermes # canonical Hermes launcher for prod coaching agent
   ];
   imports = [
     ../_server.nix
