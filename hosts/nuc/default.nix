@@ -488,11 +488,6 @@ in
               agentId = "family";
             }
             {
-              peerId = "-1003862456724:topic:23"; # Dev
-              kind = "group";
-              agentId = "dev";
-            }
-            {
               peerId = "-1003862456724:topic:24"; # Commander Bun Bun
               kind = "group";
               agentId = "commanderbunbun";
