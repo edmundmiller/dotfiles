@@ -67,12 +67,12 @@ else
 fi
 
 # Build command
-CMD=(br create --title "$TITLE" --type "$TYPE" --priority "$PRIORITY")
+CMD=(br create --silent --title "$TITLE" --type "$TYPE" --priority "$PRIORITY")
 [[ -n "$DESC" ]] && CMD+=(--description "$DESC")
 
 # Create issue directly (no confirmation prompt)
 if OUTPUT=$(gum spin --spinner dot --title "Creating issue..." -- "${CMD[@]}" 2>&1); then
-    ISSUE_ID=$(echo "$OUTPUT" | grep -oE 'dotfiles-[a-z0-9]+' | head -1)
+    ISSUE_ID=$(printf '%s\n' "$OUTPUT" | awk 'NF { print; exit }' | tr -d '\r')
     if [[ -n "$ISSUE_ID" ]]; then
         echo "$ISSUE_ID" | pbcopy
         gum style --foreground "$GREEN" --bold "✓ Created: $ISSUE_ID (copied to clipboard)"
