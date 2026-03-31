@@ -512,6 +512,11 @@ in
               kind = "group";
               agentId = "finn";
             }
+            {
+              peerId = "-1003862456724:topic:252"; # Anne
+              kind = "group";
+              agentId = "anne";
+            }
           ];
         };
       };
