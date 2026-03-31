@@ -294,7 +294,7 @@ in
             };
           };
 
-          http.endpoints.chatCompletions.enabled = true;
+          gateway.http.endpoints.chatCompletions.enabled = true;
 
           # Allow Control UI when accessed via Tailscale service hostnames.
           gateway.controlUi.allowedOrigins = [
