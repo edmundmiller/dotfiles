@@ -1,0 +1,74 @@
+#!/usr/bin/env zunit
+
+@setup {
+  export ORIG_PWD=$PWD
+  export TEST_DIR=$(mktemp -d /tmp/tmux-hooks.zunit.XXXXXX)
+  export HOOKS_FILE="$ORIG_PWD/config/zsh/tmux-hooks.zsh"
+  export LOG_FILE="$TEST_DIR/hook.log"
+  export ZSH_BIN=$(command -v zsh)
+
+  cat > "$TEST_DIR/mock-update" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'hook-ran\n' >> "$LOG_FILE"
+EOF
+  chmod +x "$TEST_DIR/mock-update"
+}
+
+@teardown {
+  rm -rf "$TEST_DIR"
+}
+
+@test 'tmux-hooks.zsh is inert outside tmux' {
+  run env -u TMUX -u TMUX_WINDOW_NAME_SCRIPT HOOKS_FILE="$HOOKS_FILE" "$ZSH_BIN" -fc '
+    source "$HOOKS_FILE"
+    if typeset -f tmux-window-name-update >/dev/null 2>&1; then
+      echo present
+    else
+      echo absent
+    fi
+  '
+
+  assert $state equals 0
+  assert "$output" contains "absent"
+}
+
+@test 'tmux-hooks.zsh registers chpwd hook inside tmux' {
+  run env \
+    HOOKS_FILE="$HOOKS_FILE" \
+    TMUX="fake-tmux" \
+    TMUX_WINDOW_NAME_SCRIPT="$TEST_DIR/mock-update" \
+    TEST_DIR="$TEST_DIR" \
+    LOG_FILE="$LOG_FILE" \
+    "$ZSH_BIN" -fc '
+      source "$HOOKS_FILE"
+      autoload -Uz add-zsh-hook
+      typeset -f tmux-window-name-update >/dev/null || exit 1
+      add-zsh-hook -L chpwd | grep -q tmux-window-name-update || exit 2
+      mkdir -p "$TEST_DIR/a" "$TEST_DIR/b"
+      cd "$TEST_DIR/a"
+      cd "$TEST_DIR/b"
+      sleep 0.2
+    '
+
+  assert $state equals 0
+  run cat "$LOG_FILE"
+  assert $state equals 0
+  assert "$output" is_not_empty
+}
+
+@test 'tmux-hooks.zsh does not duplicate the chpwd hook when sourced twice' {
+  run env \
+    HOOKS_FILE="$HOOKS_FILE" \
+    TMUX="fake-tmux" \
+    TMUX_WINDOW_NAME_SCRIPT="$TEST_DIR/mock-update" \
+    "$ZSH_BIN" -fc '
+      source "$HOOKS_FILE"
+      source "$HOOKS_FILE"
+      autoload -Uz add-zsh-hook
+      add-zsh-hook -L chpwd | grep -c tmux-window-name-update
+    '
+
+  assert $state equals 0
+  assert "$output" equals "1"
+}
