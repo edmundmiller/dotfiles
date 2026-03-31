@@ -307,11 +307,23 @@ Generic project-session entry is now `tmproj`, with `tp` as the short alias.
 delegates to `tvault`, the explicitly named workflow-specific launcher rooted in
 `~/obsidian-vault` and defaulting to `pi; zsh`.
 
-### 3. Window naming hook wiring is unclear
+### 3. Metadata ownership should stay explicit
 
-`config/zsh/tmux-hooks.zsh` exists, but it is not yet clearly sourced by the
-normal zsh module path loading. The spec should treat automatic `chpwd` window
-renaming as an intended integration, not a guaranteed current behavior.
+The current metadata contract is now:
+
+- `tmux-smart-name` is authoritative for tmux window naming, per-window
+  `@smart_title_context`, and the exported `TMUX_WINDOW_NAME_SCRIPT` refresh
+  command
+- `config/zsh/tmux-hooks.zsh` is sourced by `config/zsh/.zshrc`, but only does
+  anything when a shell is actually running inside tmux and
+  `TMUX_WINDOW_NAME_SCRIPT` is present
+- Ghostty still boots into a fixed `home` tmux session, but that is treated as
+  a landing/bootstrap session rather than the canonical ADE project-session
+  identity
+
+This keeps ownership split cleanly: tmux-smart-name computes metadata, zsh only
+requests refreshes on directory changes, and Ghostty remains responsible solely
+for getting the user into tmux.
 
 ### 4. Tmux popups still reference older `bd` helpers
 
@@ -402,6 +414,25 @@ Contract:
 
 This keeps session entry boring and composable. Layout seeding remains a
 separate concern.
+
+## 2.5. A clear metadata contract
+
+The implemented metadata contract is now:
+
+- canonical tmux **session identity** comes from the worktree/project helpers
+  (`tmux-project-name`, `tmproj`, `tw`)
+- canonical tmux **window naming and title metadata** comes from
+  `tmux-smart-name`
+- `config/tmux/config` renders terminal titles as either `session` or
+  `session · subtitle`, where the subtitle is `@smart_title_context`
+- `config/zsh/tmux-hooks.zsh` is a lightweight `chpwd` refresh hook, not an
+  independent naming system
+- Ghostty's fixed `home` session is only the bootstrap entrypoint; users and
+  agents still move into project sessions via `tmproj` / `tp`
+
+This avoids three competing sources of truth. Session helpers choose _which_
+session you are in; tmux-smart-name decides _how windows and titles are
+presented_ once you are there.
 
 ## 3. Layout presets with role semantics
 
@@ -695,9 +726,7 @@ Good next implementation candidates after this spec:
 2. Add a `tv` helper for editor-first project entry if it proves useful
 3. Add `tw` / `twd` for worktree + session lifecycle
 4. Update tmux task popups and helper names to fully reflect the `br` migration
-5. Either wire `config/zsh/tmux-hooks.zsh` explicitly or document why it should
-   remain optional
-6. Make picker cancellation fall back to the current project's canonical session
+5. Make picker cancellation fall back to the current project's canonical session
 
 ---
 
@@ -717,3 +746,7 @@ Good next implementation candidates after this spec:
 - Draft 4: documented the post-cleanup command model: `tmproj`/`tp` for
   canonical project entry, `tvault` for the vault-specific workflow, `tm` as a
   temporary deprecation shim, and `t`/`ta` as intentional `todo.sh` commands
+- Draft 5: clarified the metadata contract: tmux-smart-name owns window/title
+  metadata, zsh now wires the `chpwd` refresh hook explicitly, and Ghostty's
+  fixed `home` session is documented as a landing session rather than ADE
+  project identity

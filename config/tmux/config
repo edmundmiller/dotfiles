@@ -23,7 +23,12 @@ if-shell 'tmux list-sessions >/dev/null 2>&1' '' 'new-session'
 
 setw -g automatic-rename off      # rename window after current program
 set  -g renumber-windows on      # renumber windows when one is closed
-# Push session + window to terminal (Ghostty) title via OSC 2
+# Push session + smart subtitle to the terminal title via OSC 2.
+# tmux-smart-name owns @smart_title_context and keeps titles boring:
+#   <session>
+#   <session> · <pi session / filename / other subtitle>
+# This lets Ghostty keep a stable landing session while ADE project sessions
+# still surface their canonical tmux session name clearly.
 set  -g set-titles on
 set  -g set-titles-string "#{?#{@smart_title_context},#{session_name} · #{@smart_title_context},#{session_name}}"
 # Zero-based indexing is fine in programming languages, but not so much in a
