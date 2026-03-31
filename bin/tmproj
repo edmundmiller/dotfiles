@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# tmproj: attach/create the canonical tmux session for the current project/worktree.
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: tmproj [path]" >&2
+}
+
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -gt 1 ]]; then
+  usage
+  exit 1
+fi
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+input_path="${1:-.}"
+root_helper="$script_dir/tmux-project-root"
+name_helper="$script_dir/tmux-project-name"
+tmux_bin="${TMUX_BIN:-tmux}"
+
+if [[ -x "$root_helper" ]]; then
+  project_root=$($root_helper "$input_path")
+else
+  if ! project_root=$(cd "$input_path" 2>/dev/null && pwd -P); then
+    echo "error: path not found: $input_path" >&2
+    exit 1
+  fi
+fi
+
+if [[ -x "$name_helper" ]]; then
+  session_name=$($name_helper "$project_root")
+else
+  session_name=$(basename -- "$project_root" | sed -E 's/[^[:alnum:]_-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')
+  [[ -n "$session_name" ]] || session_name="root"
+fi
+
+if "$tmux_bin" has-session -t "$session_name" 2>/dev/null; then
+  if [[ -n "${TMUX:-}" ]]; then
+    exec "$tmux_bin" switch-client -t "$session_name"
+  fi
+
+  exec "$tmux_bin" attach-session -t "$session_name"
+fi
+
+"$tmux_bin" new-session -d -s "$session_name" -c "$project_root"
+
+if [[ -n "${TMUX:-}" ]]; then
+  exec "$tmux_bin" switch-client -t "$session_name"
+fi
+
+exec "$tmux_bin" attach-session -t "$session_name"
