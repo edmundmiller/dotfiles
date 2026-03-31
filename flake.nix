@@ -58,11 +58,10 @@
       inputs.nix-steipete-tools.follows = "nix-steipete-tools";
     };
 
-    # Local authoring/runtime repo for canonical agent specs plus reusable
-    # OpenClaw defaults. Use the local checkout so dotfiles can consume
-    # in-progress module changes without depending on a pushed commit.
+    # Canonical authoring/runtime repo for agent specs, renderers, and
+    # reusable OpenClaw defaults.
     openclaw-workspace = {
-      url = "path:/Users/emiller/src/personal/openclaw-workspace";
+      url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
