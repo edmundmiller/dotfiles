@@ -10,6 +10,32 @@
 }:
 let
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
+  mkOpenClawSecret = envVar: secretName: {
+    inherit envVar;
+    inherit (config.age.secrets.${secretName}) path;
+  };
+  openclawPlatformSecrets = [
+    (mkOpenClawSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
+    (mkOpenClawSecret "OPENCODE_API_KEY" "opencode-api-key")
+    (mkOpenClawSecret "OPENAI_API_KEY" "openai-api-key")
+    (mkOpenClawSecret "ELEVENLABS_API_KEY" "elevenlabs-api-key")
+    (mkOpenClawSecret "LINEAR_WEBHOOK_SECRET" "linear-webhook-secret")
+    (mkOpenClawSecret "HC_PING_KEY" "healthchecks-ping-key")
+    (mkOpenClawSecret "HC_API_KEY" "healthchecks-api-key")
+    (mkOpenClawSecret "HC_API_KEY_READONLY" "healthchecks-api-key-readonly")
+    (mkOpenClawSecret "OPENROUTER_API_KEY" "openrouter-api-key")
+    (mkOpenClawSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
+    (mkOpenClawSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
+    {
+      envVar = "LINEAR_API_KEY";
+      path = linearTokenFile;
+    }
+    {
+      envVar = "GOG_KEYRING_PASSWORD";
+      value = "gogcli-agenix";
+      literal = true;
+    }
+  ];
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
@@ -368,10 +394,11 @@ in
       };
     }
     // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "openclaw" ] options) {
-      # OpenClaw — agents, secrets, cron jobs, and skills are workspace-owned
-      # (defined in openclaw-workspace module). Only infra config stays here.
+      # OpenClaw — canonical agents plus shared cron/skill defaults come from
+      # openclaw-workspace. Concrete deployment wiring stays here.
       openclaw = {
         enable = true;
+        workspaceDefaults.enable = lib.mkForce false;
         gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
         hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
         onepassword = {
@@ -389,7 +416,7 @@ in
         };
       }
       // {
-        secrets = [
+        secrets = openclawPlatformSecrets ++ [
           {
             envVar = "OP_SERVICE_ACCOUNT_TOKEN";
             path = "/home/emiller/.local/state/openclaw/op-service-account-token";

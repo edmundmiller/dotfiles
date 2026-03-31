@@ -1460,6 +1460,26 @@
         "type": "github"
       }
     },
+    "openclaw-workspace": {
+      "inputs": {
+        "llm-agents": [
+          "llm-agents"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1774966648,
+        "narHash": "sha256-CgjP5I5+WW37MymMGSoDMKXjJg9NxDR26PI4iLR529M=",
+        "path": "/Users/emiller/src/personal/openclaw-workspace",
+        "type": "path"
+      },
+      "original": {
+        "path": "/Users/emiller/src/personal/openclaw-workspace",
+        "type": "path"
+      }
+    },
     "opnix": {
       "inputs": {
         "flake-utils": "flake-utils_4",
@@ -1548,6 +1568,7 @@
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "op-shell-plugins": "op-shell-plugins",
+        "openclaw-workspace": "openclaw-workspace",
         "opnix": "opnix",
         "skills-catalog": "skills-catalog",
         "stylix": "stylix",

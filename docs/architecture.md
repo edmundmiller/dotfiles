@@ -104,7 +104,7 @@ Darwin hosts are built with `nix-darwin` and configured inline in `flake.nix` (n
 | **gandi**   | Gandi VPS               | `emiller` | Minimal server: SSH, Syncthing, Tailscale                             |
 | **meshify** | Desktop (inactive)      | —         | Legacy workstation config                                             |
 
-NixOS hosts are built via `lib/nixos.nix` → `mkHost`, which adds opnix, openclaw-workspace, and skills-catalog modules.
+NixOS hosts are built via `lib/nixos.nix` → `mkHost`, which adds opnix, the `openclaw-workspace` base/personal-default modules, and skills-catalog modules.
 
 ### Shared Host Configs
 
