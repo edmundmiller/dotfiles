@@ -377,6 +377,20 @@ Behavior:
 This can coexist with more specialized entrypoints, but there should be a clearly
 documented default.
 
+The current implementation of that default is `bin/tmproj`.
+
+Contract:
+
+- `tmproj [path]` resolves the canonical project root via `bin/tmux-project-root`
+- it derives the canonical session name via `bin/tmux-project-name`
+- when the session already exists it switches inside tmux and attaches outside
+  tmux
+- when the session does not exist it creates a plain tmux session rooted at the
+  canonical project path, then switches or attaches
+
+This keeps session entry boring and composable. Layout seeding remains a
+separate concern.
+
 ## 3. Layout presets with role semantics
 
 The ADE should support a small set of role-oriented layouts, such as:
@@ -544,6 +558,12 @@ Tasks:
 
 Goal: add one preferred current-project attach/create helper.
 
+Current implementation status:
+
+- `bin/tmproj` now provides the preferred current-project attach/create path
+- alias convergence (`t`, `tm`, `ta`) is intentionally deferred until the
+  command-model cleanup phase
+
 Likely touchpoints:
 
 - `config/tmux/aliases.zsh`
@@ -627,14 +647,14 @@ These should guide future changes.
 
 Good next implementation candidates after this spec:
 
-1. Add a `tmproj` helper for current-project attach/create
-2. Add a `tv` helper for editor-first project entry
-3. Add `tw` / `twd` for worktree + session lifecycle
-4. Update tmux task popups and helper names to fully reflect the `br` migration
-5. Resolve the `t` alias collision before making a new canonical entrypoint
-6. Either wire `config/zsh/tmux-hooks.zsh` explicitly or document why it should
+1. Add a `tv` helper for editor-first project entry
+2. Add `tw` / `twd` for worktree + session lifecycle
+3. Update tmux task popups and helper names to fully reflect the `br` migration
+4. Resolve the `t` alias collision before making `tmproj` the canonical short
+   alias
+5. Either wire `config/zsh/tmux-hooks.zsh` explicitly or document why it should
    remain optional
-7. Make picker cancellation fall back to the current project's canonical session
+6. Make picker cancellation fall back to the current project's canonical session
 
 ---
 
@@ -648,3 +668,6 @@ Good next implementation candidates after this spec:
 - Draft 2: documented the canonical tmux project naming contract implemented by
   `bin/tmux-project-root` and `bin/tmux-project-name`, including worktree-aware
   basename preservation and tmux-safe sanitization
+- Draft 3: documented `bin/tmproj` as the current default attach/create helper
+  for canonical project sessions, while leaving alias convergence for a later
+  cleanup phase
