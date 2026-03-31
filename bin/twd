@@ -7,6 +7,16 @@ usage() {
   echo "Usage: twd <name-or-path>" >&2
 }
 
+current_session_name() {
+  local tmux_bin="$1"
+
+  if [[ -z "${TMUX:-}" ]]; then
+    return 1
+  fi
+
+  "$tmux_bin" display-message -p '#{session_name}' 2>/dev/null
+}
+
 resolve_target_path() {
   local raw_target="$1"
   local checkout_root="$2"
@@ -70,6 +80,13 @@ fi
 session_name=$($name_helper "$target_path")
 
 if "$tmux_bin" has-session -t "$session_name" 2>/dev/null; then
+  if current_session=$(current_session_name "$tmux_bin"); then
+    if [[ "$current_session" == "$session_name" ]]; then
+      echo "error: refusing to remove the current tmux session: $session_name" >&2
+      exit 1
+    fi
+  fi
+
   "$tmux_bin" kill-session -t "$session_name"
 fi
 
