@@ -9,6 +9,9 @@
   ...
 }:
 let
+  openclawTelegram = import (inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix) {
+    inherit lib;
+  };
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
   mkOpenClawSecret = envVar: secretName: {
     inherit envVar;
@@ -130,6 +133,8 @@ let
 
 in
 {
+  inherit (openclawTelegram) assertions;
+
   # Workaround for nix-openclaw using bare commands (cat, ln, mkdir, rm)
   # TODO: Report upstream to nix-openclaw
   system.activationScripts = {
@@ -458,61 +463,7 @@ in
           enable = false;
           requireMention = false;
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
-          allowFrom = [
-            8357890648 # @edmundamiller
-            8748874608 # wife
-            1087968824 # Telegram anonymous admin sender id
-          ];
-          bindings = [
-            {
-              peerId = "8357890648"; # @edmundamiller
-              agentId = "scintillate";
-            }
-            {
-              peerId = "8748874608"; # wife
-              agentId = "monica";
-            }
-            {
-              peerId = "-5115496901"; # Norbot group
-              kind = "group";
-              agentId = "family";
-            }
-            {
-              peerId = "-1003862456724"; # Norbot supergroup base id (topic allowlist gate)
-              kind = "group";
-              agentId = "family";
-            }
-            {
-              peerId = "-1003862456724:topic:1"; # General
-              kind = "group";
-              agentId = "family";
-            }
-            {
-              peerId = "-1003862456724:topic:24"; # Commander Bun Bun
-              kind = "group";
-              agentId = "commanderbunbun";
-            }
-            {
-              peerId = "-1003862456724:topic:25"; # Betty
-              kind = "group";
-              agentId = "betty";
-            }
-            {
-              peerId = "-1003862456724:topic:26"; # Monica
-              kind = "group";
-              agentId = "monica";
-            }
-            {
-              peerId = "-1003862456724:topic:27"; # Finn
-              kind = "group";
-              agentId = "finn";
-            }
-            {
-              peerId = "-1003862456724:topic:252"; # Anne
-              kind = "group";
-              agentId = "anne";
-            }
-          ];
+          inherit (openclawTelegram) allowFrom bindings;
         };
       };
     }
