@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# tmux-project-root: resolve a stable project/worktree root for tmux naming.
+
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+input_path="${1:-.}"
+resolver="$script_dir/git-worktree-cwd"
+
+if [[ -x "$resolver" ]]; then
+  resolved_path=$($resolver "$input_path")
+else
+  if ! resolved_path=$(cd "$input_path" 2>/dev/null && pwd -P); then
+    echo "error: path not found: $input_path" >&2
+    exit 1
+  fi
+fi
+
+if git -C "$resolved_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "$resolved_path" rev-parse --show-toplevel
+  exit 0
+fi
+
+echo "$resolved_path"

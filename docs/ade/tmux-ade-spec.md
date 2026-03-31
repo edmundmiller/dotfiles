@@ -341,9 +341,25 @@ Currently session naming is computed in at least three different ways:
 - `#{pane_current_path}` + `git-worktree-cwd` in `toggle-tml.sh`
 - hardcoded `"Work"` in `aliases.zsh` (`t` alias)
 
-A key deliverable of Phase 2 is extracting a single shared primitive (e.g.
-`bin/tmux-project-name`) that all tools, aliases, and agents use as the sole
-source of truth for session identity.
+The implemented naming contract is now:
+
+- `bin/tmux-project-root <path>` first normalizes with `bin/git-worktree-cwd`
+- if the normalized path is inside a git worktree, it resolves to that
+  checkout's top-level directory
+- otherwise the normalized path itself is used
+- `bin/tmux-project-name <path>` takes the basename of that resolved path and
+  sanitizes it to a tmux-safe `[A-Za-z0-9_-]`-style name by collapsing other
+  characters to `-`
+
+Examples:
+
+- `/src/dotfiles` → `dotfiles`
+- `/src/dotfiles-pc4` → `dotfiles-pc4`
+- bare worktree hub root → resolves to its usable checkout first, then names
+  that checkout
+
+This keeps naming boring: main checkouts use the repo basename, and named
+worktrees keep their distinct basename when it differs.
 
 ## 2. A zero-friction session entry command
 
@@ -585,8 +601,9 @@ For now, this spec is **not** trying to do the following:
 
 These should guide future changes.
 
-1. Should the canonical session name come from the repo root, the worktree name,
-   or a smarter hybrid?
+1. The current implementation uses a simple hybrid already: resolve the usable
+   checkout root, then use that basename. This keeps main repos short while
+   preserving distinct worktree names such as `dotfiles-pc4`.
 2. Should the default attach/create helper replace the current `tm`, or should
    `tm` first be split into generic project entry vs. the existing
    `termius`/Obsidian/Pi workflow?
@@ -628,3 +645,6 @@ Good next implementation candidates after this spec:
 - Draft 1: tightened the spec against current implementation reality, including
   alias collisions, `tm`'s special-purpose behavior, popup-vs-pane review modes,
   window-hook wiring ambiguity, and concrete `bd` → `br` migration leftovers
+- Draft 2: documented the canonical tmux project naming contract implemented by
+  `bin/tmux-project-root` and `bin/tmux-project-name`, including worktree-aware
+  basename preservation and tmux-safe sanitization

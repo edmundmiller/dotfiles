@@ -4,17 +4,31 @@
 
 set -euo pipefail
 
+bin_script() {
+  local script_name="$1"
+  local script_path="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/$script_name"
+  [[ -x "$script_path" ]] || script_path="$HOME/.config/dotfiles/bin/$script_name"
+  [[ -x "$script_path" ]] || return 1
+  printf '%s\n' "$script_path"
+}
+
 pane_count=$(tmux list-panes | wc -l | tr -d ' ')
 current_dir="$(tmux display-message -p '#{pane_current_path}')"
-resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
-[[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
 
-if [[ -x "$resolver" ]]; then
+if resolver=$(bin_script git-worktree-cwd); then
   current_dir=$($resolver "$current_dir")
+fi
+
+if project_name_helper=$(bin_script tmux-project-name); then
+  project_name=$($project_name_helper "$current_dir")
+else
+  project_name=$(basename -- "$current_dir" | sed -E 's/[^[:alnum:]_-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')
 fi
 
 if [ "$pane_count" -eq 1 ]; then
     ai_pane=$(tmux display-message -p '#{pane_id}')
+
+    tmux rename-window -t "$ai_pane" "$project_name"
 
     # Bottom shell (15%)
     tmux split-window -v -p 15 -c "$current_dir"
