@@ -1,6 +1,6 @@
 # Tmux-First ADE Spec
 
-Status: Draft 0
+Status: Draft 1
 
 ## Summary
 
@@ -184,7 +184,12 @@ This contains layout-oriented commands like:
 
 - `config/tmux/aliases.zsh`
 
-This currently defines `t`, `tm`, `ta`, `tl`, and related helpers.
+This currently defines `t`, `tm`, `ta`, `tl`, and related helpers, but those
+names are not all stable from the user's interactive shell perspective:
+
+- `t` is later re-aliased to `todo.sh` in `config/zsh/.zshrc`
+- `tm` is currently a special-purpose `termius` / Obsidian / Pi launcher, not a
+  generic current-project attach/create helper
 
 ### Dynamic layout management
 
@@ -198,8 +203,12 @@ panes exist.
 
 - `config/zsh/tmux-hooks.zsh`
 
-Fires `$TMUX_WINDOW_NAME_SCRIPT` on every `chpwd`, keeping window names in sync
-with the working directory automatically.
+This hook file exists and appears intended to fire `$TMUX_WINDOW_NAME_SCRIPT`
+on every `chpwd`, keeping window names in sync with the working directory.
+
+However, current code review suggests it is **not obviously auto-sourced** by
+the generic zsh module loader. Treat this as an intended integration point that
+should be explicitly wired or documented before the ADE relies on it.
 
 ### Theme and appearance
 
@@ -215,7 +224,9 @@ layer that surfaces session context.
 - `tmlc` / `nicc` / `niccx` in `config/tmux/omarchy.zsh`
 
 Variant of `tml` that replaces lazygit with split critique panes (unstaged +
-staged). Relevant to the review-oriented layout preset.
+staged). Relevant to the review-oriented layout preset and best understood as
+the sustained-review counterpart to the popup critique bindings in
+`config/tmux/config`.
 
 ### Adjacent project/session tooling
 
@@ -259,6 +270,46 @@ agents should assume about sessions, naming, or discoverability.
 The repo has migrated from `bd` to `br`, but parts of the tmux integration still
 reference older `bd`-named helpers. That should be treated as follow-up work as
 the ADE is tightened.
+
+---
+
+## Known Mismatches with Current Implementation
+
+This section exists to keep the spec honest. These are not objections to the ADE
+direction; they are places where the intended model and current implementation
+still diverge.
+
+### 1. `t` is not currently a reliable tmux entrypoint
+
+`config/tmux/aliases.zsh` defines `t` as a tmux attach/create shortcut, but
+`config/zsh/.zshrc` later redefines `t` for `todo.sh`.
+
+That means the spec should not talk about `t` as if it is currently the user's
+canonical tmux entry command.
+
+### 2. `tm` is not generic project-session entry
+
+`tm` currently launches a specific `termius` session rooted in
+`~/obsidian-vault`, defaulting to `pi; zsh`.
+
+That makes it a useful workflow-specific launcher, but not a drop-in synonym for
+the future `tmproj` concept.
+
+### 3. Window naming hook wiring is unclear
+
+`config/zsh/tmux-hooks.zsh` exists, but it is not yet clearly sourced by the
+normal zsh module path loading. The spec should treat automatic `chpwd` window
+renaming as an intended integration, not a guaranteed current behavior.
+
+### 4. Tmux popups still reference older `bd` helpers
+
+At time of writing, the tmux popup bindings still call commands like:
+
+- `bd-capture`
+- `bd-find-all`
+
+The repo-level task system has already moved to `br`, so this should remain an
+explicit migration item rather than a vague future cleanup.
 
 ---
 
@@ -338,6 +389,18 @@ Future layout and agent work should respect this distinction. Agents and scripts
 should not open persistent panes for transient tasks, and should not use popups
 for context that needs to remain visible.
 
+## 3b. Quick review vs sustained review
+
+The current tmux UX already suggests two review modes, and the ADE should make
+that distinction explicit:
+
+- **Quick review** — use popup critique bindings for fast, interruptible diff
+  inspection
+- **Sustained review** — use `tmlc` / `nicc` / `niccx` when review context
+  should stay visible alongside an agent or shell
+
+This keeps the popup-vs-pane model practical instead of purely conceptual.
+
 ## 4. Session picker as a secondary, not primary, entrypoint
 
 The picker remains valuable, but the normal path should be direct entry into the
@@ -347,6 +410,10 @@ current project session. The picker should remain excellent for:
 - discovery
 - recovery
 - remote work
+
+`opensessions` does not necessarily disappear in this model. It may remain the
+visual sidebar / dashboard / project-config layer while `tmproj` and `sesh`
+handle the direct attach-or-create path.
 
 ## 5. Worktree-aware lifecycle commands
 
@@ -389,6 +456,9 @@ That means:
 - naming should not depend on one tracker implementation
 - task capture should feel native but remain optional
 
+Concrete migration backlog items include replacing or renaming popup helpers
+that still expose `bd`-era command names.
+
 ---
 
 ## Proposed Command Model
@@ -406,9 +476,12 @@ should likely converge toward.
 
 Once `tmproj` is stable, legacy aliases should converge:
 
-- `t` should become an alias for `tmproj` (replacing the hardcoded `Work`
-  session)
-- `tm` should either alias `tmproj` or be removed
+- `t` should only become an alias for `tmproj` after resolving its current
+  collision with `todo.sh` aliases in `config/zsh/.zshrc`
+- `tm` should be split into either:
+  - a clearly named replacement for the current `termius` / Obsidian / Pi flow
+  - and a generic `tmproj`,
+  - or removed if that special-purpose workflow is no longer needed
 - `ta` can remain as a raw `tmux attach` escape hatch
 
 The goal is to reduce entry points, not add more. New commands must come with a
@@ -514,8 +587,9 @@ These should guide future changes.
 
 1. Should the canonical session name come from the repo root, the worktree name,
    or a smarter hybrid?
-2. Should the default attach/create helper replace the current `tm`, or live
-   beside it first?
+2. Should the default attach/create helper replace the current `tm`, or should
+   `tm` first be split into generic project entry vs. the existing
+   `termius`/Obsidian/Pi workflow?
 3. Which layout should be the default for a freshly created project session:
    plain shell, editor-first, or agent-first?
 4. How much session metadata should be visible in titles/status vs. only in the
@@ -523,8 +597,8 @@ These should guide future changes.
 5. Should remote sessions preserve the exact same names as local sessions, or
    include a host prefix?
 6. How tightly should `br` capture/explore workflows be embedded in tmux popups?
-7. What is the future role of `opensessions` if `tmproj` + `sesh` handle all
-   session navigation? Does the sidebar become redundant?
+7. What is the future role of `opensessions` if `tmproj` + `sesh` handle direct
+   session entry? Does it remain the visual dashboard/sidebar layer?
 8. How will `sesh` discover newly created worktrees that are not yet in zoxide's
    history?
 9. What role does `dmux` play in this model? Is it a complementary session
@@ -540,7 +614,10 @@ Good next implementation candidates after this spec:
 2. Add a `tv` helper for editor-first project entry
 3. Add `tw` / `twd` for worktree + session lifecycle
 4. Update tmux task popups and helper names to fully reflect the `br` migration
-5. Make picker cancellation fall back to the current project's canonical session
+5. Resolve the `t` alias collision before making a new canonical entrypoint
+6. Either wire `config/zsh/tmux-hooks.zsh` explicitly or document why it should
+   remain optional
+7. Make picker cancellation fall back to the current project's canonical session
 
 ---
 
@@ -548,3 +625,6 @@ Good next implementation candidates after this spec:
 
 - Draft 0: initial written spec for a tmux-centered ADE, based on the current
   repo workflow and intended human/agent alignment goals
+- Draft 1: tightened the spec against current implementation reality, including
+  alias collisions, `tm`'s special-purpose behavior, popup-vs-pane review modes,
+  window-hook wiring ambiguity, and concrete `bd` → `br` migration leftovers
