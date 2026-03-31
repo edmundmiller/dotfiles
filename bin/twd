@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# twd: destroy a sibling git worktree and its canonical tmux session.
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: twd <name-or-path>" >&2
+}
+
+sanitize_component() {
+  local value="$1"
+  value=$(printf '%s' "$value" | sed -E 's/[^[:alnum:]_-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')
+  printf '%s\n' "$value"
+}
+
+resolve_repo_stem() {
+  local checkout_root="$1"
+  local remote_url=""
+  local remote_base=""
+  local common_dir=""
+  local common_parent=""
+  local current_base
+
+  current_base=$(basename -- "$checkout_root")
+
+  if remote_url=$(git -C "$checkout_root" config --get remote.origin.url 2>/dev/null) && [[ -n "$remote_url" ]]; then
+    remote_base=$(basename -- "$remote_url")
+    remote_base=${remote_base%.git}
+    remote_base=$(sanitize_component "$remote_base")
+    if [[ -n "$remote_base" ]]; then
+      printf '%s\n' "$remote_base"
+      return 0
+    fi
+  fi
+
+  if common_dir=$(git -C "$checkout_root" rev-parse --git-common-dir 2>/dev/null) && [[ -n "$common_dir" ]]; then
+    if [[ "$common_dir" != /* ]]; then
+      common_dir=$(cd "$checkout_root/$common_dir" 2>/dev/null && pwd -P)
+    fi
+
+    common_parent=$(basename -- "$(dirname -- "$common_dir")")
+    common_parent=$(sanitize_component "$common_parent")
+    if [[ -n "$common_parent" && "$common_parent" != ".git" ]]; then
+      printf '%s\n' "$common_parent"
+      return 0
+    fi
+  fi
+
+  printf '%s\n' "$(sanitize_component "$current_base")"
+}
+
+resolve_target_path() {
+  local raw_target="$1"
+  local checkout_root="$2"
+  local repo_stem="$3"
+  local sibling_dir
+  local target_name
+
+  if [[ -e "$raw_target" ]]; then
+    cd "$raw_target" >/dev/null 2>&1 && pwd -P
+    return 0
+  fi
+
+  sibling_dir=$(dirname -- "$checkout_root")
+
+  if [[ "$raw_target" == */* ]]; then
+    echo "error: worktree path not found: $raw_target" >&2
+    return 1
+  fi
+
+  target_name=$(sanitize_component "$raw_target")
+  if [[ -z "$target_name" ]]; then
+    echo "error: empty worktree name after sanitization" >&2
+    return 1
+  fi
+
+  if [[ "$target_name" != "$repo_stem" && "$target_name" != "${repo_stem}-"* ]]; then
+    target_name="${repo_stem}-${target_name}"
+  fi
+
+  printf '%s/%s\n' "$sibling_dir" "$target_name"
+}
+
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 1 ]]; then
+  usage
+  exit 1
+fi
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+root_helper="${TMUX_PROJECT_ROOT_BIN:-$script_dir/tmux-project-root}"
+name_helper="${TMUX_PROJECT_NAME_BIN:-$script_dir/tmux-project-name}"
+tmux_bin="${TMUX_BIN:-tmux}"
+
+checkout_root=$($root_helper .)
+repo_stem=$(resolve_repo_stem "$checkout_root")
+target_path=$(resolve_target_path "$1" "$checkout_root" "$repo_stem")
+
+if [[ ! -d "$target_path" ]]; then
+  echo "error: worktree path not found: $target_path" >&2
+  exit 1
+fi
+
+session_name=$($name_helper "$target_path")
+
+if "$tmux_bin" has-session -t "$session_name" 2>/dev/null; then
+  "$tmux_bin" kill-session -t "$session_name"
+fi
+
+git -C "$checkout_root" worktree remove "$target_path"
