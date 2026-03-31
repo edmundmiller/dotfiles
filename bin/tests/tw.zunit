@@ -1,0 +1,88 @@
+#!/usr/bin/env zunit
+
+# Tests for tw worktree/session lifecycle helper.
+
+@setup {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+  export TEST_DIR=$(cd "$tmp_dir" && pwd -P)
+  export ORIG_PWD=$PWD
+  export BASH_PATH=$(command -v bash)
+  export SCRIPT="$ORIG_PWD/bin/tw"
+
+  export REPO_DIR="$TEST_DIR/source"
+  export HUB_DIR="$TEST_DIR/hub"
+  export LINKED_WORKTREE="$TEST_DIR/source-pc4"
+  export MOCK_BIN="$TEST_DIR/mock-bin"
+  export TMPROJ_LOG="$TEST_DIR/tmproj.log"
+
+  mkdir -p "$REPO_DIR/app/src" "$HUB_DIR" "$MOCK_BIN"
+  : > "$TMPROJ_LOG"
+
+  cd "$REPO_DIR"
+  git init --quiet --initial-branch=main
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  git config commit.gpgsign false
+  echo "hi" > README.md
+  echo "nested" > app/src/main.txt
+  git add README.md app/src/main.txt
+  git commit --quiet -m "init"
+
+  git worktree add --quiet "$LINKED_WORKTREE" -b source-pc4 HEAD
+
+  # Build bare-hub layout: hub/.git (bare) + hub/main worktree.
+  git clone --quiet --bare "$REPO_DIR" "$HUB_DIR/.bare"
+  mv "$HUB_DIR/.bare" "$HUB_DIR/.git"
+  git -C "$HUB_DIR/.git" config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git -C "$HUB_DIR/.git" fetch --quiet origin
+  git -C "$HUB_DIR/.git" worktree add --quiet "$HUB_DIR/main" main
+
+  cat > "$MOCK_BIN/tmproj" <<'MOCK'
+#!__BASH_PATH__
+set -euo pipefail
+printf '%s\n' "$*" >> "$TMPROJ_LOG"
+exit 0
+MOCK
+  perl -0pi -e 's|__BASH_PATH__|$ENV{BASH_PATH}|g' "$MOCK_BIN/tmproj"
+  chmod +x "$MOCK_BIN/tmproj"
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'creates sibling worktree from bare hub root using repo stem and enters tmproj' {
+  cd "$HUB_DIR"
+
+  run env TMPROJ_BIN="$MOCK_BIN/tmproj" TMPROJ_LOG="$TMPROJ_LOG" "$SCRIPT" fix-bug
+
+  assert $state equals 0
+  assert $(test -d "$HUB_DIR/source-fix-bug"; echo $?) equals 0
+  assert "$(git -C "$HUB_DIR/source-fix-bug" branch --show-current)" same_as "source-fix-bug"
+  assert "$(cat "$TMPROJ_LOG")" contains "$HUB_DIR/source-fix-bug"
+}
+
+@test 'reuses an existing branch when the matching branch already exists' {
+  git -C "$HUB_DIR/main" branch source-reuse
+  cd "$HUB_DIR/main"
+
+  run env TMPROJ_BIN="$MOCK_BIN/tmproj" TMPROJ_LOG="$TMPROJ_LOG" "$SCRIPT" reuse
+
+  assert $state equals 0
+  assert $(test -d "$HUB_DIR/source-reuse"; echo $?) equals 0
+  assert "$(git -C "$HUB_DIR/source-reuse" branch --show-current)" same_as "source-reuse"
+  assert "$(cat "$TMPROJ_LOG")" contains "$HUB_DIR/source-reuse"
+}
+
+@test 'falls back to git common-dir parent stem for linked worktrees without remotes' {
+  cd "$LINKED_WORKTREE"
+
+  run env TMPROJ_BIN="$MOCK_BIN/tmproj" TMPROJ_LOG="$TMPROJ_LOG" "$SCRIPT" review-notes
+
+  assert $state equals 0
+  assert $(test -d "$TEST_DIR/source-review-notes"; echo $?) equals 0
+  assert "$(git -C "$TEST_DIR/source-review-notes" branch --show-current)" same_as "source-review-notes"
+  assert "$(cat "$TMPROJ_LOG")" contains "$TEST_DIR/source-review-notes"
+}

@@ -1,0 +1,97 @@
+#!/usr/bin/env zunit
+
+# Tests for twd worktree/session teardown helper.
+
+@setup {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+  export TEST_DIR=$(cd "$tmp_dir" && pwd -P)
+  export ORIG_PWD=$PWD
+  export BASH_PATH=$(command -v bash)
+  export SCRIPT="$ORIG_PWD/bin/twd"
+
+  export REPO_DIR="$TEST_DIR/source"
+  export HUB_DIR="$TEST_DIR/hub"
+  export MOCK_BIN="$TEST_DIR/mock-bin"
+  export MOCK_TMUX_LOG="$TEST_DIR/tmux.log"
+
+  mkdir -p "$REPO_DIR/app/src" "$HUB_DIR" "$MOCK_BIN"
+  : > "$MOCK_TMUX_LOG"
+
+  cd "$REPO_DIR"
+  git init --quiet --initial-branch=main
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  git config commit.gpgsign false
+  echo "hi" > README.md
+  echo "nested" > app/src/main.txt
+  git add README.md app/src/main.txt
+  git commit --quiet -m "init"
+
+  # Build bare-hub layout: hub/.git (bare) + hub/main worktree.
+  git clone --quiet --bare "$REPO_DIR" "$HUB_DIR/.bare"
+  mv "$HUB_DIR/.bare" "$HUB_DIR/.git"
+  git -C "$HUB_DIR/.git" config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git -C "$HUB_DIR/.git" fetch --quiet origin
+  git -C "$HUB_DIR/.git" worktree add --quiet "$HUB_DIR/main" main
+
+  cat > "$MOCK_BIN/tmux" <<'MOCK'
+#!__BASH_PATH__
+set -euo pipefail
+printf '%s\n' "$*" >> "$MOCK_TMUX_LOG"
+
+case "${1:-}" in
+  has-session)
+    if [[ "${MOCK_TMUX_HAS_SESSION:-0}" == "1" ]]; then
+      exit 0
+    fi
+    exit 1
+    ;;
+  kill-session)
+    exit 0
+    ;;
+  *)
+    echo "unexpected tmux command: $*" >&2
+    exit 64
+    ;;
+esac
+MOCK
+  perl -0pi -e 's|__BASH_PATH__|$ENV{BASH_PATH}|g' "$MOCK_BIN/tmux"
+  chmod +x "$MOCK_BIN/tmux"
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'kills the matching session before removing a slug-resolved worktree' {
+  git -C "$HUB_DIR/main" worktree add --quiet -b source-fix-bug "$HUB_DIR/source-fix-bug" HEAD
+  cd "$HUB_DIR"
+
+  run env PATH="$MOCK_BIN:$PATH" TMUX_BIN="$MOCK_BIN/tmux" MOCK_TMUX_LOG="$MOCK_TMUX_LOG" MOCK_TMUX_HAS_SESSION=1 "$SCRIPT" fix-bug
+
+  assert $state equals 0
+  assert $(test ! -d "$HUB_DIR/source-fix-bug"; echo $?) equals 0
+  run git -C "$HUB_DIR/main" show-ref --verify --quiet refs/heads/source-fix-bug
+  assert $state equals 0
+
+  actual=$(cat "$MOCK_TMUX_LOG")
+  assert "$actual" contains "has-session -t source-fix-bug"
+  assert "$actual" contains "kill-session -t source-fix-bug"
+}
+
+@test 'removes a path-targeted worktree without killing a missing session' {
+  git -C "$HUB_DIR/main" worktree add --quiet -b source-cleanup "$HUB_DIR/source-cleanup" HEAD
+  cd "$HUB_DIR/main"
+
+  run env PATH="$MOCK_BIN:$PATH" TMUX_BIN="$MOCK_BIN/tmux" MOCK_TMUX_LOG="$MOCK_TMUX_LOG" MOCK_TMUX_HAS_SESSION=0 "$SCRIPT" "$HUB_DIR/source-cleanup"
+
+  assert $state equals 0
+  assert $(test ! -d "$HUB_DIR/source-cleanup"; echo $?) equals 0
+
+  actual=$(cat "$MOCK_TMUX_LOG")
+  assert "$actual" contains "has-session -t source-cleanup"
+  [[ "$actual" != *"kill-session -t source-cleanup"* ]]
+  assert $? equals 0
+}
