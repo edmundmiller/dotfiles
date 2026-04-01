@@ -268,7 +268,7 @@
           "llm-prompt",
           "nixpkgs"
         ],
-        "systems": "systems_6"
+        "systems": "systems_5"
       },
       "locked": {
         "lastModified": 1700815693,
@@ -291,7 +291,7 @@
           "lib-extras",
           "nixpkgs"
         ],
-        "systems": "systems_7"
+        "systems": "systems_6"
       },
       "locked": {
         "lastModified": 1695973661,
@@ -653,7 +653,7 @@
     },
     "flake-utils_3": {
       "inputs": {
-        "systems": "systems_8"
+        "systems": "systems_7"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -671,7 +671,7 @@
     },
     "flake-utils_4": {
       "inputs": {
-        "systems": "systems_10"
+        "systems": "systems_9"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -1072,7 +1072,9 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": "systems_5",
+        "systems": [
+          "systems"
+        ],
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
@@ -1475,7 +1477,7 @@
     "op-shell-plugins": {
       "inputs": {
         "nixpkgs": "nixpkgs_5",
-        "systems": "systems_9"
+        "systems": "systems_8"
       },
       "locked": {
         "lastModified": 1756860511,
@@ -1715,6 +1717,7 @@
         "opnix": "opnix",
         "skills-catalog": "skills-catalog",
         "stylix": "stylix",
+        "systems": "systems_11",
         "treefmt-nix": "treefmt-nix_4",
         "try": "try",
         "wezterm": "wezterm",
@@ -1800,7 +1803,7 @@
           "nixpkgs"
         ],
         "nur": "nur",
-        "systems": "systems_11",
+        "systems": "systems_10",
         "tinted-foot": "tinted-foot",
         "tinted-kitty": "tinted-kitty",
         "tinted-schemes": "tinted-schemes",
@@ -1853,19 +1856,16 @@
       }
     },
     "systems_11": {
+      "flake": false,
       "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
+        "path": "./systems",
+        "type": "path"
       },
       "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
+        "path": "./systems",
+        "type": "path"
+      },
+      "parent": []
     },
     "systems_12": {
       "locked": {

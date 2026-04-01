@@ -5,10 +5,10 @@
   lib,
   options,
   pkgs,
-  system,
   ...
 }:
 let
+  hostSystem = pkgs.stdenv.hostPlatform.system;
   openclawTelegram = import (inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix) {
     inherit lib;
   };
@@ -416,12 +416,25 @@ in
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
-    inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
+    inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS for openclaw sag plugin
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
   ];
   imports = [
-    inputs.openclaw-workspace.nixosModules.hermes
+    (
+      { pkgs, ... }@args:
+      let
+        compatPkgs = pkgs // {
+          inherit (pkgs.stdenv.hostPlatform) system;
+        };
+      in
+      inputs.openclaw-workspace.nixosModules.hermes (
+        (builtins.removeAttrs args [ "pkgs" ])
+        // {
+          pkgs = compatPkgs;
+        }
+      )
+    )
     ../_server.nix
     ../_home.nix
     ./hardware-configuration.nix
