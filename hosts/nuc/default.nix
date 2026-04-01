@@ -12,11 +12,34 @@ let
   openclawTelegram = import (inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix) {
     inherit lib;
   };
+  hermesScintillateHomeChannel = builtins.head (
+    lib.sort lib.versionOlder (
+      builtins.filter (peerId: openclawTelegram.direct.${peerId}.agentId == "scintillate") (
+        builtins.attrNames openclawTelegram.direct
+      )
+    )
+  );
+  hermesScintillateAllowedUsers = lib.concatStringsSep "," (map toString openclawTelegram.allowFrom);
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
   mkOpenClawSecret = envVar: secretName: {
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
   };
+  hermesScintillateSecrets = [
+    (mkOpenClawSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
+    (mkOpenClawSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
+    (mkOpenClawSecret "GEMINI_API_KEY" "gemini-api-key")
+    (mkOpenClawSecret "HA_TOKEN" "ha-openclaw-token")
+    (mkOpenClawSecret "KILOCODE_API_KEY" "kilocode-api-key")
+    (mkOpenClawSecret "OPENAI_API_KEY" "openai-api-key")
+    (mkOpenClawSecret "OPENROUTER_API_KEY" "openrouter-api-key")
+    (mkOpenClawSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
+    (mkOpenClawSecret "TELEGRAM_BOT_TOKEN" "telegram-bot-token")
+    {
+      envVar = "LINEAR_API_KEY";
+      path = linearTokenFile;
+    }
+  ];
   openclawPlatformSecrets = [
     (mkOpenClawSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
     (mkOpenClawSecret "OPENCODE_API_KEY" "opencode-api-key")
@@ -196,6 +219,52 @@ in
         "agenixChown"
       ];
     };
+
+    hermesScintillateSecrets = {
+      deps = [
+        "agenixInstall"
+        "agenixChown"
+        "canonical-hermes-scintillate-materialize"
+      ];
+      text = ''
+        ENV_DIR="/run/hermes-scintillate-env"
+        ENV_FILE="$ENV_DIR/secrets.env"
+        mkdir -p "$ENV_DIR"
+        : > "$ENV_FILE"
+        chmod 600 "$ENV_FILE"
+
+        ${lib.concatMapStringsSep "\n" (secret: ''
+          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$(cat ${lib.escapeShellArg (toString secret.path)})" \
+              >> "$ENV_FILE"
+          fi
+        '') hermesScintillateSecrets}
+      '';
+    };
+
+    disableLegacyHermesScintillateGateway = {
+      text = ''
+        LEGACY_UNIT="/home/emiller/.config/systemd/user/hermes-gateway-scintillate.service"
+
+        if [ -e "$LEGACY_UNIT" ]; then
+          rm -f "$LEGACY_UNIT"
+        fi
+
+        UID="$(${pkgs.coreutils}/bin/id -u emiller)"
+        export XDG_RUNTIME_DIR="/run/user/$UID"
+        if [ -S "$XDG_RUNTIME_DIR/bus" ]; then
+          ${pkgs.util-linux}/bin/runuser -u emiller -- \
+            ${pkgs.systemd}/bin/systemctl --user disable --now hermes-gateway-scintillate.service || true
+          ${pkgs.util-linux}/bin/runuser -u emiller -- \
+            ${pkgs.systemd}/bin/systemctl --user reset-failed hermes-gateway-scintillate.service || true
+          ${pkgs.util-linux}/bin/runuser -u emiller -- \
+            ${pkgs.systemd}/bin/systemctl --user daemon-reload || true
+        else
+          ${pkgs.procps}/bin/pkill -u emiller -f 'hermes_cli.main gateway run --replace' || true
+        fi
+      '';
+      deps = [ "users" ];
+    };
   };
 
   # Allow __noChroot derivations for occasional upstream packages that still
@@ -350,15 +419,27 @@ in
     inputs.nix-steipete-tools.packages.${system}.sag # TTS for openclaw sag plugin
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
-    inputs.openclaw-workspace.packages.${system}.scintillate-hermes # canonical Hermes launcher for prod coaching agent
   ];
   imports = [
+    inputs.openclaw-workspace.nixosModules.hermes
     ../_server.nix
     ../_home.nix
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
   ];
+
+  services.hermes-agent = {
+    user = "emiller";
+    group = "users";
+    createUser = false;
+    environment = {
+      HA_URL = "http://127.0.0.1:8123";
+      TELEGRAM_ALLOWED_USERS = hermesScintillateAllowedUsers;
+      TELEGRAM_HOME_CHANNEL = hermesScintillateHomeChannel;
+    };
+    environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
+  };
 
   ## Modules
   modules = {
@@ -466,6 +547,13 @@ in
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
           inherit (openclawTelegram) allowFrom bindings;
         };
+      };
+    }
+    // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "hermes" ] options) {
+      hermes = {
+        enable = true;
+        agentId = "scintillate";
+        workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
       };
     }
     // {
