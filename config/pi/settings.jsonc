@@ -116,6 +116,8 @@
     "npm:@prinova/pi-github-tools",
     // Read tool structural maps for large files - https://github.com/Whamp/pi-read-map
     "npm:pi-read-map",
+    // Self-updating markdown docs for pi - https://github.com/Michaelliv/pi-magic-docs
+    "npm:pi-magic-docs",
     // Task management authority: use @tintinweb/pi-tasks for /tasks + Task* tools
     // Conflict note: pi-beads also registers /tasks; keep disabled unless pi-tasks is removed
     // "~/.config/dotfiles/pi-packages/pi-beads",
@@ -167,6 +169,8 @@
     "npm:@tintinweb/pi-subagents",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
+    // Browser/web access tool - https://github.com/nicobailon/pi-web-access
+    "npm:pi-web-access",
     // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
     "npm:pi-mcporter",
     // GitNexus knowledge graph - auto-enriches reads/searches with call chains - https://github.com/tintinweb/pi-gitnexus
