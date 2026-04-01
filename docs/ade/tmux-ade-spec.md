@@ -367,7 +367,7 @@ The tmux ADE should provide the following capabilities.
 
 ## 1. Opensessions as the primary human-facing control plane
 
-The default human-facing ADE surface should be opensessions.
+The default human-facing ADE surface is opensessions.
 
 That means:
 
@@ -765,21 +765,19 @@ For now, this spec is **not** trying to do the following:
 
 These should guide future changes.
 
-1. After Ghostty lands in the bootstrap `home` session, should opensessions be
-   auto-focused immediately, or should that remain a manual action?
-2. How long should the `tm` deprecation shim remain before removal?
-3. Which layout should be the default for a freshly created project session:
+1. How long should the `tm` deprecation shim remain before removal?
+2. Which layout should be the default for a freshly created project session:
    plain shell, editor-first, or agent-first?
-4. How much session metadata should be visible in titles/status vs. only in the
+3. How much session metadata should be visible in titles/status vs. only in the
    opensessions rows and picker surfaces?
-5. Should remote sessions preserve the exact same names as local sessions, or
+4. Should remote sessions preserve the exact same names as local sessions, or
    include a host prefix?
-6. How tightly should `br` capture/explore workflows be embedded in tmux popups?
-7. Which opensessions actions should directly invoke `tmproj`, `tw`, and `twd`,
+5. How tightly should `br` capture/explore workflows be embedded in tmux popups?
+6. Which opensessions actions should directly invoke `tmproj`, `tw`, and `twd`,
    and which should stay purely navigational?
-8. How should `sesh` discover newly created worktrees that are not yet in
+7. How should `sesh` discover newly created worktrees that are not yet in
    zoxide's history, once it becomes a fallback rather than the main picker?
-9. What role does `dmux` play in this model? Is it a complementary session
+8. What role does `dmux` play in this model? Is it a complementary session
    manager or a competing one that should be reconciled?
 
 ---
@@ -791,7 +789,6 @@ Good next implementation candidates after this spec:
 1. Route primary tmux navigation through opensessions explicitly
 2. Expose `tmproj`, `tw`, and `twd` through opensessions actions
 3. Decide when to remove the `tm` compatibility shim entirely
-4. Clarify Ghostty bootstrap vs opensessions auto-focus behavior
 
 ---
 
@@ -821,3 +818,8 @@ Good next implementation candidates after this spec:
 - Draft 7: pivoted the written ADE model to opensessions-first ownership,
   treating opensessions as the primary human-facing control plane while
   `tmproj`, `tw`, `twd`, and `sesh` are documented as backend or fallback paths
+- Draft 8: recorded the implemented `tw` / `twd` lifecycle helpers and
+  picker-cancellation fallback work in the changelog, removed the stale
+  Target State §1 wording that still described pre-pivot naming drift, and
+  dropped the answered Ghostty/opensessions bootstrap question from Open
+  Questions
