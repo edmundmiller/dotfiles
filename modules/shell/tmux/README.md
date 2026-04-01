@@ -51,11 +51,11 @@ It also installs a local opensessions watcher plugin at `~/.config/opensessions/
 
 The module also seeds a writable `~/.config/opensessions/config.json` (if missing) with Emdash-like defaults:
 
-- right-side sidebar (`"sidebarPosition": "right"`)
+- left-side sidebar (`"sidebarPosition": "left"`)
 - Catppuccin theme (`"theme": "catppuccin-mocha"`)
 - pane/window detail rows enabled (`"showWindowDetails": true`)
 
-To avoid key conflicts, opensessions takes ownership of `prefix s`, `prefix S`, and `prefix o`. Vertical split moves to `prefix V`, and pane zoom moves to `prefix Z`.
+opensessions keeps its native `prefix o` command table (`s` to focus, `t` to toggle, `1-9` to jump). For discoverability, tmux-which-key also exposes an `opensessions` submenu on `prefix Space o`.
 
 ## Dev Layouts (tml)
 
