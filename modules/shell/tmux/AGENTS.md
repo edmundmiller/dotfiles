@@ -32,9 +32,9 @@ config/opensessions/plugins/
 - **Auto-generated extraInit**: Contains plugin `run-shell` commands and tmux-opencode-integrated configuration
 - **Optional opensessions integration**: Enable with `modules.shell.tmux.opensessions.enable`; module syncs upstream checkout to `~/.local/share/opensessions/current`, runs bun bootstrap, and loads via `opensessions.sh`
 - **Generated config editor helper**: module writes `~/.config/tmux/open-opensessions-config.sh` when opensessions is enabled (used by `prefix O` popup)
-- **Seeded runtime config**: if missing, writes `~/.config/opensessions/config.json` with defaults for theme, width, right-side sidebar, and window detail visibility
+- **Seeded runtime config**: if missing, writes `~/.config/opensessions/config.json` with defaults for theme, width, left-side sidebar, and window detail visibility
 - **Pi watcher plugin (opensessions)**: module links `config/opensessions/plugins/pi.js` into `~/.config/opensessions/plugins/pi.js`; opensessions auto-loads it to track Pi session activity
-- **Keybinding handoff (opensessions)**: when enabled, opensessions owns `prefix s/S/o`; vertical split moves to `prefix V`, zoom to `prefix Z`, and `prefix /` remains choose-session
+- **Keybinding handoff (opensessions)**: when enabled, opensessions keeps its native `prefix o` command table (`s` focus, `t` toggle, `1-9` jump); tmux-which-key also exposes an `opensessions` submenu on `prefix Space o`
 
 ## Dependencies
 
