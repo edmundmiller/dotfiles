@@ -49,8 +49,15 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Restrict flake systems to the architectures this repo actually targets.
+    systems = {
+      url = "path:./systems";
+      flake = false;
+    };
+
     llm-agents.url = "github:numtide/llm-agents.nix";
     llm-agents.inputs.nixpkgs.follows = "nixpkgs";
+    llm-agents.inputs.systems.follows = "systems";
 
     nix-openclaw = {
       url = "github:openclaw/nix-openclaw";
@@ -307,7 +314,7 @@
           };
         };
       };
-      systems = [
+      systems = lib.mkForce [
         "x86_64-linux"
         "aarch64-darwin"
       ];
