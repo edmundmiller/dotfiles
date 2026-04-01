@@ -79,6 +79,7 @@
         autoUpdate = false; # Don't auto-update during activation
         cleanup = "none"; # Don't remove anything for now
         upgrade = false; # Don't upgrade formulae during activation
+        extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };
     }
     // import ./homebrew.nix;

@@ -99,6 +99,10 @@
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
       enable = true;
+
+      onActivation = {
+        extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
+      };
     }
     // (import ./homebrew.nix);
 
