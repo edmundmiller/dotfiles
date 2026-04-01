@@ -250,8 +250,8 @@ in
           rm -f "$LEGACY_UNIT"
         fi
 
-        UID="$(${pkgs.coreutils}/bin/id -u emiller)"
-        export XDG_RUNTIME_DIR="/run/user/$UID"
+        USER_UID="$(${pkgs.coreutils}/bin/id -u emiller)"
+        export XDG_RUNTIME_DIR="/run/user/$USER_UID"
         if [ -S "$XDG_RUNTIME_DIR/bus" ]; then
           ${pkgs.util-linux}/bin/runuser -u emiller -- \
             ${pkgs.systemd}/bin/systemctl --user disable --now hermes-gateway-scintillate.service || true
