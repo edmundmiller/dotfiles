@@ -239,12 +239,24 @@ in
 
         ${optionalString cfg.opensessions.enable ''
           # opensessions: tmux sidebar + command table
-          set -g @opensessions-key "${cfg.opensessions.key}"
-          set -g @opensessions-focus-key "${cfg.opensessions.focusKey}"
-          set -g @opensessions-prefix-key "${cfg.opensessions.prefixKey}"
-          set -g @opensessions-prefix-focus-key "${cfg.opensessions.prefixFocusKey}"
-          set -g @opensessions-prefix-toggle-key "${cfg.opensessions.prefixToggleKey}"
-          set -g @opensessions-prefix-index-keys "${cfg.opensessions.prefixIndexKeys}"
+          ${optionalString (
+            cfg.opensessions.key != ""
+          ) ''set -g @opensessions-key "${cfg.opensessions.key}"''}
+          ${optionalString (
+            cfg.opensessions.focusKey != ""
+          ) ''set -g @opensessions-focus-key "${cfg.opensessions.focusKey}"''}
+          ${optionalString (
+            cfg.opensessions.prefixKey != ""
+          ) ''set -g @opensessions-prefix-key "${cfg.opensessions.prefixKey}"''}
+          ${optionalString (
+            cfg.opensessions.prefixFocusKey != ""
+          ) ''set -g @opensessions-prefix-focus-key "${cfg.opensessions.prefixFocusKey}"''}
+          ${optionalString (
+            cfg.opensessions.prefixToggleKey != ""
+          ) ''set -g @opensessions-prefix-toggle-key "${cfg.opensessions.prefixToggleKey}"''}
+          ${optionalString (
+            cfg.opensessions.prefixIndexKeys != ""
+          ) ''set -g @opensessions-prefix-index-keys "${cfg.opensessions.prefixIndexKeys}"''}
           set -g @opensessions-width "${toString cfg.opensessions.width}"
           set-environment -g BUN_PATH "${pkgs.bun}/bin/bun"
           set-environment -g OPENSESSIONS_HOST "${cfg.opensessions.host}"
@@ -252,11 +264,6 @@ in
           set-environment -g OPENSESSIONS_PATH_PREFIX "${pkgs.curl}/bin:${pkgs.unstable.fzf}/bin:${pkgs.bun}/bin"
 
           run-shell "sh '$TMUX_HOME/opensessions.sh'"
-
-          # Reclaim prefix keys from opensessions — which-key handles discoverability
-          unbind -q s
-          unbind -q S
-          unbind -q o
         ''}
       '';
     };
