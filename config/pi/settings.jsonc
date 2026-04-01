@@ -171,6 +171,8 @@
     "npm:pi-mcp-adapter",
     // Browser/web access tool - https://github.com/nicobailon/pi-web-access
     "npm:pi-web-access",
+    // Perplexity-powered web search (requires Bun + Perplexity Pro/Max) - https://github.com/ivanrvpereira/pi-perplexity
+    "npm:pi-perplexity",
     // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
     "npm:pi-mcporter",
     // GitNexus knowledge graph - auto-enriches reads/searches with call chains - https://github.com/tintinweb/pi-gitnexus
