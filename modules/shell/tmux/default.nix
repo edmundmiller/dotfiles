@@ -284,9 +284,31 @@ in
             # Source is copied from the read-only Nix store; make runtime checkout writable.
             ${pkgs.coreutils}/bin/chmod -R u+w "$checkout_root"
 
+            lock_hash_file="$checkout_root/.bun-lock.sha256"
+            current_lock_hash=""
+            previous_lock_hash=""
+            needs_install=0
+
+            if [ -f "$checkout_root/bun.lock" ]; then
+              current_lock_hash="$(${pkgs.coreutils}/bin/sha256sum "$checkout_root/bun.lock" | ${pkgs.gawk}/bin/awk '{print $1}')"
+              if [ -f "$lock_hash_file" ]; then
+                previous_lock_hash="$(${pkgs.coreutils}/bin/cat "$lock_hash_file")"
+              fi
+            fi
+
             if [ ! -d "$checkout_root/node_modules" ]; then
+              needs_install=1
+            elif [ -n "$current_lock_hash" ] && [ "$current_lock_hash" != "$previous_lock_hash" ]; then
+              needs_install=1
+            fi
+
+            if [ "$needs_install" -eq 1 ]; then
               echo "Bootstrapping opensessions dependencies at $checkout_root..." >&2
-              if ! (cd "$checkout_root" && ${pkgs.bun}/bin/bun install --silent --frozen-lockfile); then
+              if (cd "$checkout_root" && ${pkgs.bun}/bin/bun install --silent --frozen-lockfile); then
+                if [ -n "$current_lock_hash" ]; then
+                  ${pkgs.coreutils}/bin/printf '%s\n' "$current_lock_hash" > "$lock_hash_file"
+                fi
+              else
                 echo "Warning: bun install failed; opensessions may be incomplete." >&2
               fi
             fi

@@ -2,7 +2,9 @@
 
 # Load opensessions from the runtime checkout synced by the tmux module.
 
-OPENSESSIONS_DIR="$HOME/.local/share/opensessions/current"
+set -eu
+
+OPENSESSIONS_DIR="${OPENSESSIONS_DIR:-$HOME/.local/share/opensessions/current}"
 PLUGIN_ENTRY="$OPENSESSIONS_DIR/opensessions.tmux"
 
 if [ ! -f "$PLUGIN_ENTRY" ]; then
