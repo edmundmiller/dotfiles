@@ -1,0 +1,87 @@
+diff --git a/apps/server/src/main.ts b/apps/server/src/main.ts
+--- a/apps/server/src/main.ts
++++ b/apps/server/src/main.ts
+@@ -11,6 +11,23 @@
+ } from "@opensessions/runtime";
+ import { join } from "path";
+ 
++const SERVER_SIGNATURE = "opensessions server";
++
++function isAddrInUseError(error: unknown): boolean {
++  return typeof error === "object" && error !== null && (error as { code?: string }).code === "EADDRINUSE";
++}
++
++async function isExistingOpenSessionsServer(): Promise<boolean> {
++  try {
++    const response = await fetch(`http://${SERVER_HOST}:${SERVER_PORT}/`);
++    if (!response.ok) return false;
++    const text = (await response.text()).trim();
++    return text === SERVER_SIGNATURE;
++  } catch {
++    return false;
++  }
++}
++
+ const config = loadConfig();
+ const loader = new PluginLoader();
+ 
+@@ -73,4 +90,24 @@
+ }
+ 
+ console.log(`Primary mux provider: ${mux.name}`);
+-startServer(mux, extraProviders, watchers);
++
++(async () => {
++  try {
++    startServer(mux, extraProviders, watchers);
++  } catch (error) {
++    if (isAddrInUseError(error)) {
++      if (await isExistingOpenSessionsServer()) {
++        console.log(`opensessions server already running on http://${SERVER_HOST}:${SERVER_PORT}`);
++        process.exit(0);
++      }
++      console.error(
++        `Failed to start opensessions server: port ${SERVER_PORT} on ${SERVER_HOST} is already in use by another process.`,
++      );
++      process.exit(1);
++    }
++    throw error;
++  }
++})().catch((error) => {
++  console.error(error);
++  process.exit(1);
++});
+diff --git a/opensessions.tmux b/opensessions.tmux
+--- a/opensessions.tmux
++++ b/opensessions.tmux
+@@ -97,6 +97,30 @@
+ tmux set-environment -g OPENSESSIONS_DIR "$CURRENT_DIR"
+ tmux set-environment -g OPENSESSIONS_WIDTH "$WIDTH"
+ 
++# --- Bootstrap: kill stale server if install path or package version changed ---
++VERSION_FILE="/tmp/opensessions.version"
++PID_FILE="/tmp/opensessions.pid"
++HOST="${OPENSESSIONS_HOST:-127.0.0.1}"
++PORT="${OPENSESSIONS_PORT:-7391}"
++CURRENT_VERSION_FIELD="$(grep -o '"version": *"[^"]*"' "$CURRENT_DIR/package.json" 2>/dev/null | head -1 | cut -d'"' -f4)"
++CURRENT_VERSION_FIELD="${CURRENT_VERSION_FIELD:-unknown}"
++CURRENT_VERSION="${CURRENT_DIR}:${CURRENT_VERSION_FIELD}"
++RUNNING_VERSION=""
++[ -f "$VERSION_FILE" ] && RUNNING_VERSION=$(cat "$VERSION_FILE" 2>/dev/null)
++
++if [ "$CURRENT_VERSION" != "$RUNNING_VERSION" ] && [ -f "$PID_FILE" ]; then
++  kill "$(cat "$PID_FILE")" 2>/dev/null || true
++  rm -f "$PID_FILE"
++fi
++
++if [ "$CURRENT_VERSION" != "$RUNNING_VERSION" ] && command -v curl >/dev/null 2>&1; then
++  if curl -s -m 0.2 "http://${HOST}:${PORT}/" 2>/dev/null | grep -q '^opensessions server$'; then
++    curl -s -o /dev/null -X POST "http://${HOST}:${PORT}/shutdown" 2>/dev/null || true
++  fi
++fi
++
++echo -n "$CURRENT_VERSION" > "$VERSION_FILE"
++
+ # --- Bootstrap: install deps if needed ---
+ if [ ! -d "$CURRENT_DIR/node_modules" ]; then
+   BUN_PATH="$(command -v bun 2>/dev/null || echo "$HOME/.bun/bin/bun")"
