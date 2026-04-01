@@ -69,8 +69,17 @@ set -g mode-keys   vi
 bind c new-window      -c "#{pane_current_path}"
 bind v split-window -h -c "#{pane_current_path}"
 
+# Fast current-session Pi entry
+bind A run '$TMUX_HOME/open-pi-here.sh'
+
 # Toggle tml layout (AI + lazygit + shell)
 bind T run '$TMUX_HOME/toggle-tml.sh'
+
+# Fast diff review popups
+bind G display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-critique.sh"
+bind R display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-critique.sh --staged"
+bind H display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh"
+bind J display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh --staged"
 
 # Generic command in new split
 bind C command-prompt -p "Command:" "split-window -v -c '#{pane_current_path}' '%%'"

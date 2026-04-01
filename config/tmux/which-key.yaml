@@ -40,12 +40,18 @@ items:
       - name: Lazygit
         key: g
         command: "display-popup -E -w 80% -h 80% -d #{pane_current_path} $TMUX_HOME/open-git-tui.sh"
-      - name: Diff review
+      - name: Critique review
         key: d
         command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-critique.sh"
-      - name: Staged review
+      - name: Critique staged
         key: s
         command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-critique.sh --staged"
+      - name: Hunk review
+        key: h
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-hunk.sh"
+      - name: Hunk staged
+        key: H
+        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-hunk.sh --staged"
       - name: jjui (vertical)
         key: u
         command: "split-window -v -c #{pane_current_path} jjui"
@@ -183,9 +189,24 @@ items:
         key: o
         command: "display-popup -E -w 90% -h 90% $TMUX_HOME/open-opensessions-config.sh"
   - separator: true
+  - name: +Project
+    key: P
+    menu:
+      - name: Attach/create current
+        key: p
+        command: "run $TMUX_HOME/project-session.sh attach"
+      - name: New worktree
+        key: w
+        command: 'command-prompt -p ''Worktree name:'' ''run $TMUX_HOME/project-session.sh create "%%"'''
+      - name: Remove worktree
+        key: x
+        command: 'command-prompt -p ''Remove worktree:'' ''run $TMUX_HOME/project-session.sh remove "%%"'''
   - name: Pi sessions
     key: a
     command: "display-popup -E -w 80% -h 70% $DOTFILES_BIN/pi-sessions"
+  - name: Pi here
+    key: A
+    command: "run $TMUX_HOME/open-pi-here.sh"
   - name: Toggle tml
     key: T
     command: "run $TMUX_HOME/toggle-tml.sh"

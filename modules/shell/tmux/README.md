@@ -120,6 +120,7 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 | Key     | Action                                         |
 | ------- | ---------------------------------------------- |
 | `c`     | New window                                     |
+| `A`     | New Pi window here                             |
 | `X`     | Kill window                                    |
 | `x`     | Kill pane                                      |
 | `q`     | Kill session                                   |
@@ -130,6 +131,18 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 | `W / .` | Choose window                                  |
 | `/`     | Choose session                                 |
 | `t`     | Session picker (sesh + fzf)                    |
+
+### Project & Worktree (tmux-which-key)
+
+Open tmux-which-key with `prefix Space`, then:
+
+| Key path | Action                                     |
+| -------- | ------------------------------------------ |
+| `P p`    | Attach/create current project session      |
+| `P w`    | Create sibling worktree via `tw`           |
+| `P x`    | Remove sibling worktree via `twd`          |
+| `a`      | Open Pi sessions picker                    |
+| `A`      | Start a new Pi window in current pane path |
 
 ### Panes
 
@@ -157,6 +170,8 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 | `g` | Git TUI popup                    |
 | `G` | Critique (diff review) popup     |
 | `R` | Critique (staged diff) popup     |
+| `H` | Hunk (diff review) popup         |
+| `J` | Hunk (staged diff) popup         |
 | `O` | Opensessions config popup        |
 | `f` | File picker popup                |
 | `F` | File picker (git root) popup     |
