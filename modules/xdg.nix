@@ -11,10 +11,12 @@
 with lib;
 {
   ### A tidy $HOME is a tidy mind
-  home-manager.users.${config.user.name}.xdg.enable = true;
-  home-manager.users.${config.user.name}.xdg.configFile."uv/uv.toml".text = ''
-    exclude-newer = "7 days"
-  '';
+  home-manager.users.${config.user.name} = {
+    xdg.enable = true;
+    xdg.configFile."uv/uv.toml".text = ''
+      exclude-newer = "7 days"
+    '';
+  };
 
   # XDG environment variables
   # On Darwin, all variables go in environment.variables
