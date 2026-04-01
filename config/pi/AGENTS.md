@@ -12,6 +12,7 @@ This directory contains pi coding agent settings managed via nix.
 
 ## Files
 
+- `aliases.zsh` — Shell helpers like `piw` and `pir`
 - `settings.jsonc` — Source config (JSONC with comments + trailing commas)
 - `settings-schema.json` — JSON Schema derived from pi's `Settings` TypeScript interface
 - Nix strips comments and trailing commas → `~/.pi/agent/settings.json`
