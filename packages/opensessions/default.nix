@@ -19,6 +19,7 @@ stdenvNoCC.mkDerivation (_finalAttrs: {
     ./patches/0001-add-session-window-and-pane-details.patch
     ./patches/0002-add-show-window-details-config-toggle.patch
     ./patches/0003-prevent-full-window-sidebar-resize-loop.patch
+    ./patches/0004-harden-startup-and-server-bootstrap.patch
   ];
 
   dontBuild = true;

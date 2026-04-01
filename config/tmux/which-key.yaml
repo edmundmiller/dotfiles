@@ -167,12 +167,18 @@ items:
   - name: +Opensessions
     key: o
     menu:
-      - name: Toggle
-        key: s
-        command: "run-shell sh $HOME/.local/share/opensessions/current/integrations/tmux-plugin/scripts/toggle.sh"
       - name: Focus
-        key: S
-        command: "run-shell sh $HOME/.local/share/opensessions/current/integrations/tmux-plugin/scripts/focus.sh"
+        key: s
+        command: "run-shell sh ${OPENSESSIONS_DIR:-$HOME/.local/share/opensessions/current}/integrations/tmux-plugin/scripts/focus.sh"
+      - name: Toggle
+        key: t
+        command: "run-shell sh ${OPENSESSIONS_DIR:-$HOME/.local/share/opensessions/current}/integrations/tmux-plugin/scripts/toggle.sh"
+      - name: Restart
+        key: r
+        command: "run-shell sh $TMUX_HOME/restart-opensessions.sh"
+      - name: Doctor
+        key: d
+        command: "display-popup -E -w 90% -h 90% $TMUX_HOME/open-opensessions-doctor.sh"
       - name: Config
         key: o
         command: "display-popup -E -w 90% -h 90% $TMUX_HOME/open-opensessions-config.sh"
