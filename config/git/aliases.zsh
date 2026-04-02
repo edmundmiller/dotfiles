@@ -216,16 +216,149 @@ alias grv='git rev-parse'
 
 # critique - TUI diff viewer (prefers installed binary, falls back to bunx)
 unalias critique 2>/dev/null || true
-critique() {
+_git_critique_bin() {
 	if (( $+commands[critique] )); then
 		command critique "$@"
 	else
 		bunx critique "$@"
 	fi
 }
+
+_git_hunk_bin() {
+	if (( $+commands[hunk] )); then
+		command hunk "$@"
+	else
+		bunx hunkdiff "$@"
+	fi
+}
+
+_git_review_base_ref() {
+	local remote ref
+
+	for remote in upstream origin; do
+		git config --get "remote.${remote}.url" >/dev/null 2>&1 || continue
+
+		ref=$(git symbolic-ref --quiet --short "refs/remotes/${remote}/HEAD" 2>/dev/null) || true
+		if [[ -n "$ref" ]]; then
+			print -r -- "$ref"
+			return 0
+		fi
+
+		for ref in "${remote}/main" "${remote}/master"; do
+			if git rev-parse --verify "${ref}^{commit}" >/dev/null 2>&1; then
+				print -r -- "$ref"
+				return 0
+			fi
+		done
+	done
+
+	print -u2 'error: unable to determine review base; expected upstream or origin default branch'
+	return 1
+}
+
+_git_review_target_patch() {
+	local target="$1"
+
+	if [[ -z "$target" ]]; then
+		local base_ref
+		base_ref=$(_git_review_base_ref) || return 1
+		print -u2 -- "reviewing local diff against ${base_ref}"
+		git diff --patch "${base_ref}...HEAD"
+		return $?
+	fi
+
+	if ! command -v gh >/dev/null 2>&1; then
+		print -u2 'error: gh not found; PR review helpers require GitHub CLI'
+		return 1
+	fi
+
+	gh pr view "$target" \
+		--json number,title,baseRefName,headRefName,url,author \
+		--jq '"reviewing PR #\(.number): \(.title)\nbase: \(.baseRefName) ← head: \(.headRefName)\nurl: \(.url)\nauthor: \(.author.login)"' \
+		1>&2 || true
+	gh pr diff "$target" --patch
+}
+
+_git_review_helper() {
+	local tool="$1"
+	local mode="$2"
+	shift 2
+
+	if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+		cat <<EOF
+Usage: ${tool}pr [pr-number|branch|url] [-- ${tool} args...]
+
+Without a PR target, review the current checkout against upstream or origin.
+With a PR target, stream \`gh pr diff\` into ${tool}.
+
+Examples:
+  ${tool}pr
+  ${tool}pr 123
+  ${tool}pr feature-branch -- --web
+EOF
+		return 0
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		print -u2 'error: review helpers must be run inside a git repository'
+		return 1
+	fi
+
+	local target=""
+	if [[ $# -gt 0 && ${1:-} != -- && ${1:-} != -* ]]; then
+		target="$1"
+		shift
+	fi
+
+	if [[ ${1:-} == -- ]]; then
+		shift
+	fi
+
+	local patch_file
+	patch_file=$(mktemp "${TMPDIR:-/tmp}/${tool}pr.XXXXXX") || return 1
+	if ! _git_review_target_patch "$target" >"$patch_file"; then
+		rm -f "$patch_file"
+		return 1
+	fi
+
+	case "$mode" in
+		critique)
+			_git_critique_bin --stdin "$@" <"$patch_file"
+			;;
+		hunk)
+			_git_hunk_bin patch "$@" <"$patch_file"
+			;;
+		*)
+			rm -f "$patch_file"
+			print -u2 -- "error: unknown review helper mode: $mode"
+			return 1
+			;;
+	esac
+
+	rm -f "$patch_file"
+}
+
+critique() {
+	_git_critique_bin "$@"
+}
+
+critpr() {
+	_git_review_helper critique critique "$@"
+}
+
+hunkpr() {
+	_git_review_helper hunk hunk "$@"
+}
+
+crpr() {
+	critpr "$@"
+}
 alias hk='hunk'
 alias hkd='hunk diff'
 alias hks='hunk show'
+hkpr() {
+	hunkpr "$@"
+}
 
 # gh cli
 ghf() {
