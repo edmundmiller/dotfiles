@@ -6,21 +6,19 @@
 
 stdenvNoCC.mkDerivation (_finalAttrs: {
   pname = "opensessions";
-  version = "be4ed7f";
+  version = "9185abf";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "opensessions";
-    rev = "be4ed7ff399640c3c95ff976905e4d362c404478";
-    hash = "sha256-4c+KSEUYxggi7RpuPLzC/OwEDL0BkQ++ahTdpi0TVYs=";
+    rev = "9185abf6a363e98849a3a5727ca6865319cf9ea8";
+    hash = "sha256-l2oIOQH5OIKcqikv6ZQ9iK4M/QP0fRCMrb28zgU8Mwo=";
   };
 
   patches = [
     ./patches/0001-add-session-window-and-pane-details.patch
     ./patches/0002-add-show-window-details-config-toggle.patch
-    ./patches/0003-prevent-full-window-sidebar-resize-loop.patch
     ./patches/0004-harden-startup-and-server-bootstrap.patch
-    ./patches/0005-cleanup-orphaned-sidebar-panes.patch
   ];
 
   dontBuild = true;

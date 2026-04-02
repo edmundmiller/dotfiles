@@ -1,6 +1,99 @@
+diff --git a/apps/tui/src/index.tsx b/apps/tui/src/index.tsx
+--- a/apps/tui/src/index.tsx	2026-04-01 23:27:21.733871219 -0500
++++ b/apps/tui/src/index.tsx	2026-04-01 23:25:21.910002924 -0500
+@@ -1156,7 +1156,8 @@
+ 
+   const agents = () => props.session.agents ?? [];
+   const hasAgents = () => agents().length > 0;
+-  const windowDetails = () => props.session.windowDetails ?? [];
++  const showWindowDetails = () => loadConfig().showWindowDetails ?? false;
++  const windowDetails = () => showWindowDetails() ? (props.session.windowDetails ?? []) : [];
+   const windowCount = () => windowDetails().length || props.session.windows;
+   const paneCount = () => {
+     if (windowDetails().length === 0) return props.session.panes;
+@@ -1245,42 +1246,44 @@
+         <span style={{ fg: P().overlay0, attributes: DIM }}>{truncDir()}</span>
+       </text>
+ 
+-      <box height={1} />
+-      <text>
+-        <span style={{ fg: P().overlay0, attributes: DIM }}>layout </span>
+-        <span style={{ fg: P().subtext1 }}>{windowCount()} windows</span>
+-        <span style={{ fg: P().surface2 }}>{" · "}</span>
+-        <span style={{ fg: P().subtext1 }}>{paneCount()} panes</span>
+-      </text>
++      <Show when={showWindowDetails()}>
++        <box height={1} />
++        <text>
++          <span style={{ fg: P().overlay0, attributes: DIM }}>layout </span>
++          <span style={{ fg: P().subtext1 }}>{windowCount()} windows</span>
++          <span style={{ fg: P().surface2 }}>{" · "}</span>
++          <span style={{ fg: P().subtext1 }}>{paneCount()} panes</span>
++        </text>
+ 
+-      <Show when={windowDetails().length}>
+-        <For each={windowDetails()}>
+-          {(window) => (
+-            <box flexDirection="column" flexShrink={0}>
+-              <box height={1} />
+-              <text paddingRight={1} truncate>
+-                <span style={{ fg: window.active ? P().lavender : P().overlay0 }}>
+-                  {window.active ? "▾" : "▸"}
+-                </span>
+-                <span style={{ fg: window.active ? P().text : P().subtext1 }}>
+-                  {" "}{formatWindowLabel(window)}
+-                </span>
+-              </text>
+-              <For each={window.panes}>
+-                {(pane) => (
+-                  <text paddingLeft={2} paddingRight={1} truncate>
+-                    <span style={{ fg: pane.active ? P().yellow : P().surface2 }}>
+-                      {pane.active ? "›" : "·"}
+-                    </span>
+-                    <span style={{ fg: pane.active ? P().text : P().overlay1 }}>
+-                      {" "}{formatPaneLabel(pane)}
+-                    </span>
+-                  </text>
+-                )}
+-              </For>
+-            </box>
+-          )}
+-        </For>
++        <Show when={windowDetails().length}>
++          <For each={windowDetails()}>
++            {(window) => (
++              <box flexDirection="column" flexShrink={0}>
++                <box height={1} />
++                <text paddingRight={1} truncate>
++                  <span style={{ fg: window.active ? P().lavender : P().overlay0 }}>
++                    {window.active ? "▾" : "▸"}
++                  </span>
++                  <span style={{ fg: window.active ? P().text : P().subtext1 }}>
++                    {" "}{formatWindowLabel(window)}
++                  </span>
++                </text>
++                <For each={window.panes}>
++                  {(pane) => (
++                    <text paddingLeft={2} paddingRight={1} truncate>
++                      <span style={{ fg: pane.active ? P().yellow : P().surface2 }}>
++                        {pane.active ? "›" : "·"}
++                      </span>
++                      <span style={{ fg: pane.active ? P().text : P().overlay1 }}>
++                        {" "}{formatPaneLabel(pane)}
++                      </span>
++                    </text>
++                  )}
++                </For>
++              </box>
++            )}
++          </For>
++        </Show>
+       </Show>
+ 
+       {/* Agent instances */}
 diff --git a/packages/runtime/src/config.ts b/packages/runtime/src/config.ts
---- a/packages/runtime/src/config.ts
-+++ b/packages/runtime/src/config.ts
+--- a/packages/runtime/src/config.ts	2026-04-01 23:25:59.585643000 -0500
++++ b/packages/runtime/src/config.ts	2026-04-01 23:25:21.909522256 -0500
 @@ -20,6 +20,8 @@
    keybinding?: string;
    /** Persisted detail panel heights keyed by mux session name */
@@ -10,43 +103,3 @@ diff --git a/packages/runtime/src/config.ts b/packages/runtime/src/config.ts
  }
  
  const DEFAULTS: OpensessionsConfig = {
-diff --git a/apps/tui/src/index.tsx b/apps/tui/src/index.tsx
---- a/apps/tui/src/index.tsx
-+++ b/apps/tui/src/index.tsx
-@@ -796,7 +796,8 @@
- 
-     return rows;
-   };
--  const windowDetails = () => props.session.windowDetails ?? [];
-+  const showWindowDetails = () => loadConfig().showWindowDetails ?? false;
-+  const windowDetails = () => showWindowDetails() ? (props.session.windowDetails ?? []) : [];
-   const windowCount = () => windowDetails().length || props.session.windows;
-   const paneCount = () => {
-     if (windowDetails().length === 0) return props.session.panes;
-@@ -908,6 +909,7 @@
-         </For>
-       </Show>
- 
-+      <Show when={showWindowDetails()}>
-       <box height={1} />
-       <text>
-         <span style={{ fg: P().overlay0, attributes: DIM }}>layout </span>
-@@ -947,6 +949,7 @@
-         </For>
-       </Show>
- 
-+      </Show>
-       {/* Agent instances */}
-       <Show when={hasAgents()}>
-         <For each={agents()}>
-@@ -1127,9 +1130,10 @@
-   };
- 
-   const layoutHint = () => {
-+    if (!(loadConfig().showWindowDetails ?? false)) return "";
-     const windows = props.session.windowDetails?.length || props.session.windows;
-     const panes = props.session.windowDetails?.length
-       ? props.session.windowDetails.reduce((count, window) => count + window.panes.length, 0)
-       : props.session.panes;
-     return `${windows}w ${panes}p`;
-   };
