@@ -69,6 +69,7 @@
     # reusable OpenClaw defaults.
     openclaw-workspace = {
       url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
+      inputs.hermesAgent.follows = "hermesAgent";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
@@ -77,6 +78,17 @@
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
 
     google-workspace-cli.url = "github:googleworkspace/cli";
+
+    # Expose Hermes as a first-class root input so infra can override the
+    # upstream package directly when openclaw-workspace's wrapper module needs
+    # a local patch before upstream merges.
+    hermesAgent = {
+      # Keep the packaged Hermes source aligned with the existing upstream pin
+      # from openclaw-workspace, then layer only the local fallback fix patch
+      # on top.
+      url = "github:NousResearch/hermes-agent/83dec2b3ec0f6d0ddc5750f9a9e811a6a355a49f";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
     skills-catalog = {

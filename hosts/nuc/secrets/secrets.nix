@@ -32,6 +32,10 @@ in
     edmundmiller
     nuc
   ];
+  "fireworks-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "linear-api-token.age".publicKeys = [
     edmundmiller
     nuc

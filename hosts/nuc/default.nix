@@ -9,17 +9,130 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  openclawTelegram = import (inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix) {
-    inherit lib;
-  };
-  hermesScintillateHomeChannel = builtins.head (
-    lib.sort lib.versionOlder (
-      builtins.filter (peerId: openclawTelegram.direct.${peerId}.agentId == "scintillate") (
-        builtins.attrNames openclawTelegram.direct
+  hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default;
+  hermesAgentPatched = pkgs.stdenvNoCC.mkDerivation {
+    pname = "hermes-agent";
+    version = "0.1.0-fallback-endpoint-patched";
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.python3 ];
+    installPhase = ''
+      runHook preInstall
+
+      cp -a ${hermesAgentBase} "$out"
+      chmod -R u+w "$out"
+
+      base_venv="$(grep '^exec ' ${hermesAgentBase}/bin/hermes | cut -d '"' -f 2 | sed 's|/bin/hermes$||')"
+      if [ -z "$base_venv" ]; then
+        echo "Failed to locate hermes-agent-env from ${hermesAgentBase}/bin/hermes" >&2
+        exit 1
+      fi
+
+      original_run_agent="$(find "$base_venv/lib" -path '*/site-packages/run_agent.py' | head -1)"
+      if [ -z "$original_run_agent" ]; then
+        echo "Failed to locate run_agent.py in $base_venv" >&2
+        exit 1
+      fi
+
+      mkdir -p "$out/lib/hermes-overlay"
+      cp "$original_run_agent" "$out/lib/hermes-overlay/run_agent.py"
+      chmod u+w "$out/lib/hermes-overlay/run_agent.py"
+
+      export HERMES_OVERLAY="$out/lib/hermes-overlay"
+      export RUN_AGENT_PATH="$out/lib/hermes-overlay/run_agent.py"
+      ${pkgs.python3}/bin/python - <<'PY'
+      import os
+      from pathlib import Path
+
+      path = Path(os.environ["RUN_AGENT_PATH"])
+      text = path.read_text()
+      old = """        # Use centralized router for client construction.\n        # raw_codex=True because the main agent needs direct responses.stream()\n        # access for Codex providers.\n        try:\n            from agent.auxiliary_client import resolve_provider_client\n            fb_client, _ = resolve_provider_client(\n                fb_provider, model=fb_model, raw_codex=True)\n"""
+      new = """        # Use centralized router for client construction.\n        # raw_codex=True because the main agent needs direct responses.stream()\n        # access for Codex providers.\n        fb_base_url = (fb.get(\"base_url\") or \"\").strip() or None\n        fb_api_key_env = (fb.get(\"api_key_env\") or \"\").strip()\n        fb_explicit_key = None\n        if fb_api_key_env:\n            fb_explicit_key = os.getenv(fb_api_key_env, \"\").strip() or None\n        try:\n            from agent.auxiliary_client import resolve_provider_client\n            fb_client, _ = resolve_provider_client(\n                fb_provider,\n                model=fb_model,\n                raw_codex=True,\n                explicit_base_url=fb_base_url,\n                explicit_api_key=fb_explicit_key,\n            )\n"""
+      if old not in text:
+          raise SystemExit(f"expected fallback snippet not found in {path}")
+      path.write_text(text.replace(old, new, 1))
+      PY
+
+      for exe in "$out/bin/hermes" "$out/bin/hermes-agent" "$out/bin/hermes-acp"; do
+        export WRAPPER_PATH="$exe"
+        ${pkgs.python3}/bin/python - <<'PY'
+      import os
+      from pathlib import Path
+
+      path = Path(os.environ["WRAPPER_PATH"])
+      text = path.read_text()
+      needle = 'exec "'
+      replacement = (
+          f"export PYTHONPATH='{os.environ['HERMES_OVERLAY']}':$PYTHONPATH\n"
+          'exec "'
       )
+      if needle not in text:
+          raise SystemExit(f"expected exec line not found in {path}")
+      path.write_text(text.replace(needle, replacement, 1))
+      PY
+        substituteInPlace "$exe" --replace-fail ${hermesAgentBase} "$out"
+      done
+
+      runHook postInstall
+    '';
+    inherit (hermesAgentBase) meta;
+  };
+  # Telegram routing topology for this host:
+  # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
+  # - "split"  => prepared true split; OpenClaw owns family/group Telegram on the
+  #                current bot token, while Hermes owns Scintillate DM on a
+  #                dedicated Telegram bot token
+  telegramRoutingMode = "hermes";
+  telegramOwnedByHermes = telegramRoutingMode == "hermes";
+  telegramSplitBetweenOpenClawAndHermes = telegramRoutingMode == "split";
+
+  # Binding runtime controls whether OpenClaw keeps the Scintillate DM binding.
+  # Leave this at "hermes" for both current mode and split mode so OpenClaw only
+  # keeps family/group routing while Hermes owns Scintillate DM.
+  agentGatewayRuntime = "hermes";
+  openclawTelegramEnable = telegramSplitBetweenOpenClawAndHermes;
+  hermesTelegramEnable = telegramOwnedByHermes || telegramSplitBetweenOpenClawAndHermes;
+  openclawTelegramModule = import (
+    inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix
+  );
+  openclawTelegram = openclawTelegramModule (
+    {
+      inherit lib;
+    }
+    //
+      lib.optionalAttrs
+        (builtins.hasAttr "agentGatewayRuntime" (builtins.functionArgs openclawTelegramModule))
+        {
+          inherit agentGatewayRuntime;
+        }
+    //
+      lib.optionalAttrs
+        (
+          !(builtins.hasAttr "agentGatewayRuntime" (builtins.functionArgs openclawTelegramModule))
+          && builtins.hasAttr "telegramRuntime" (builtins.functionArgs openclawTelegramModule)
+        )
+        {
+          telegramRuntime = agentGatewayRuntime;
+        }
+  );
+  hermesScintillateChannelIds = lib.sort lib.versionOlder (
+    builtins.filter (peerId: openclawTelegram.direct.${peerId}.agentId == "scintillate") (
+      builtins.attrNames openclawTelegram.direct
     )
   );
-  hermesScintillateAllowedUsers = lib.concatStringsSep "," (map toString openclawTelegram.allowFrom);
+  hermesScintillateHomeChannel = builtins.head hermesScintillateChannelIds;
+  hermesScintillateAllowedUserIds =
+    if telegramSplitBetweenOpenClawAndHermes then
+      hermesScintillateChannelIds
+    else
+      map toString openclawTelegram.allowFrom;
+  hermesScintillateAllowedUsers = lib.concatStringsSep "," hermesScintillateAllowedUserIds;
+  # In split mode, Hermes needs its own Telegram bot token so it can own only
+  # the Scintillate DM without competing for OpenClaw's family/group bot.
+  hermesScintillateTelegramBotTokenFile =
+    if telegramSplitBetweenOpenClawAndHermes then
+      "/home/emiller/.secrets/telegram-bot-token-scintillate"
+    else
+      config.age.secrets.telegram-bot-token.path;
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
   mkOpenClawSecret = envVar: secretName: {
     inherit envVar;
@@ -29,12 +142,16 @@ let
     (mkOpenClawSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
     (mkOpenClawSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
     (mkOpenClawSecret "GEMINI_API_KEY" "gemini-api-key")
+    (mkOpenClawSecret "FIREWORKS_API_KEY" "fireworks-api-key")
     (mkOpenClawSecret "HA_TOKEN" "ha-openclaw-token")
     (mkOpenClawSecret "KILOCODE_API_KEY" "kilocode-api-key")
     (mkOpenClawSecret "OPENAI_API_KEY" "openai-api-key")
     (mkOpenClawSecret "OPENROUTER_API_KEY" "openrouter-api-key")
     (mkOpenClawSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
-    (mkOpenClawSecret "TELEGRAM_BOT_TOKEN" "telegram-bot-token")
+    {
+      envVar = "TELEGRAM_BOT_TOKEN";
+      path = hermesScintillateTelegramBotTokenFile;
+    }
     {
       envVar = "LINEAR_API_KEY";
       path = linearTokenFile;
@@ -229,16 +346,58 @@ in
       text = ''
         ENV_DIR="/run/hermes-scintillate-env"
         ENV_FILE="$ENV_DIR/secrets.env"
+        HERMES_ENV_HOME="/var/lib/hermes-scintillate/.hermes"
+        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
+        TMP_HERMES_ENV="$(mktemp)"
+        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
+
         mkdir -p "$ENV_DIR"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
         : > "$ENV_FILE"
         chmod 600 "$ENV_FILE"
 
+        if [ -f "$HERMES_ENV_FILE" ]; then
+          cp "$HERMES_ENV_FILE" "$TMP_HERMES_ENV"
+        else
+          : > "$TMP_HERMES_ENV"
+        fi
+
         ${lib.concatMapStringsSep "\n" (secret: ''
-          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$(cat ${lib.escapeShellArg (toString secret.path)})" \
-              >> "$ENV_FILE"
-          fi
+                    ${pkgs.python3}/bin/python - "$TMP_HERMES_ENV" ${lib.escapeShellArg secret.envVar} <<'PY'
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          env_var = sys.argv[2]
+          lines = path.read_text().splitlines() if path.exists() else []
+          path.write_text("\n".join(line for line in lines if not line.startswith(f"{env_var}=")) + ("\n" if lines else ""))
+          PY
+                    if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+                      secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
+                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$TMP_HERMES_ENV"
+                    fi
         '') hermesScintillateSecrets}
+
+        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
+      '';
+    };
+
+    hermesScintillateTaskNotesCompat = {
+      deps = [ "canonical-hermes-scintillate-materialize" ];
+      text = ''
+        HERMES_HOME_BASE="/var/lib/hermes-scintillate"
+
+        install -d -o emiller -g users -m 0750 "$HERMES_HOME_BASE/.local/bin"
+        install -d -o emiller -g users -m 0750 "$HERMES_HOME_BASE/src/personal"
+
+        ln -sfn /home/emiller/.local/bin/tnote "$HERMES_HOME_BASE/.local/bin/tnote"
+        ln -sfn /home/emiller/src/personal/tn-monorepo "$HERMES_HOME_BASE/src/personal/tn-monorepo"
+        ln -sfn /home/emiller/obsidian-vault "$HERMES_HOME_BASE/obsidian-vault"
+
+        chown -h emiller:users "$HERMES_HOME_BASE/.local/bin/tnote"
+        chown -h emiller:users "$HERMES_HOME_BASE/src/personal/tn-monorepo"
+        chown -h emiller:users "$HERMES_HOME_BASE/obsidian-vault"
       '';
     };
 
@@ -443,11 +602,14 @@ in
   ];
 
   services.hermes-agent = {
+    package = hermesAgentPatched;
     user = "emiller";
     group = "users";
     createUser = false;
     environment = {
       HA_URL = "http://127.0.0.1:8123";
+    }
+    // lib.optionalAttrs hermesTelegramEnable {
       TELEGRAM_ALLOWED_USERS = hermesScintillateAllowedUsers;
       TELEGRAM_HOME_CHANNEL = hermesScintillateHomeChannel;
     };
@@ -554,8 +716,8 @@ in
         };
         webhookProxy.enable = true;
         telegram = {
-          # Hermes Scintillate now owns Telegram gateway traffic on this host.
-          enable = false;
+          # In split mode OpenClaw owns family/group Telegram on the existing bot.
+          enable = openclawTelegramEnable;
           requireMention = false;
           botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
           inherit (openclawTelegram) allowFrom bindings;
@@ -564,9 +726,12 @@ in
     }
     // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "hermes" ] options) {
       hermes = {
+        # Scintillate stays on Hermes even when Telegram ingress eventually
+        # splits between OpenClaw (family/group) and Hermes (Scintillate DM).
         enable = true;
         agentId = "scintillate";
         workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+        workspaceLinks."repos/tnote" = "/home/emiller/src/personal/tn-monorepo";
       };
     }
     // {
