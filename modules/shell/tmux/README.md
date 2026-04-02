@@ -215,20 +215,22 @@ Open tmux-which-key with `prefix Space`, then:
 
 ## Aliases
 
-| Alias  | Command            | Description                                |
-| ------ | ------------------ | ------------------------------------------ |
-| `tp`   | `tmproj`           | Attach/create project session              |
-| `piw`  | (function)         | Create sibling worktree, `cd`, then run Pi |
-| `pir`  | (function)         | Check out a PR locally, then run Pi review |
-| `ta`   | `tmux attach`      | Attach to session                          |
-| `tl`   | `tmux ls`          | List sessions                              |
-| `tf`   | `tmux find-window` | Find window (inside tmux)                  |
-| `mine` | `tmux detach -a`   | Detach other clients                       |
-| `tn`   | (function)         | Create new session                         |
-| `tt`   | (function)         | Send command to next window                |
-| `tdup` | (function)         | Start grouped session                      |
+| Alias  | Command            | Description                                                      |
+| ------ | ------------------ | ---------------------------------------------------------------- |
+| `tp`   | `tmproj`           | Attach/create project session                                    |
+| `piw`  | (function)         | Create a `.pi/worktrees` checkout, `cd`, then run Pi             |
+| `pir`  | (function)         | Review `origin/main` by default, or check out a PR and review it |
+| `ta`   | `tmux attach`      | Attach to session                                                |
+| `tl`   | `tmux ls`          | List sessions                                                    |
+| `tf`   | `tmux find-window` | Find window (inside tmux)                                        |
+| `mine` | `tmux detach -a`   | Detach other clients                                             |
+| `tn`   | (function)         | Create new session                                               |
+| `tt`   | (function)         | Send command to next window                                      |
+| `tdup` | (function)         | Start grouped session                                            |
 
 `piw -- "prompt"` is the shortcut for an auto-named worktree plus an initial Pi prompt.
+
+`pir` with no PR number reviews the current checkout against `origin/main`.
 
 ## Theme Features
 
