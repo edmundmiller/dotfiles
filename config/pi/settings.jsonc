@@ -116,6 +116,8 @@
     "npm:@prinova/pi-github-tools",
     // Read tool structural maps for large files - https://github.com/Whamp/pi-read-map
     "npm:pi-read-map",
+    // Read mode for focused/large-file reading workflows
+    "npm:pi-read-mode",
     // Self-updating markdown docs for pi - https://github.com/Michaelliv/pi-magic-docs
     "npm:pi-magic-docs",
     // Task management authority: use @tintinweb/pi-tasks for /tasks + Task* tools
