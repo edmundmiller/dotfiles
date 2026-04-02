@@ -20,6 +20,8 @@ NOPASSWD is configured — this works non-interactively. Always use the full pat
 - **Home-manager configs:** `config/` (lazygit, ghostty, etc.)
 - **Skills catalog:** `skills/flake.nix` (child flake managing agent skills — see `skills/AGENTS.md`)
 - **OpenClaw service module:** Lives in **`openclaw-workspace`** repo (`github:edmundmiller/openclaw-workspace`) at `module/`, NOT in this repo. That repo owns canonical agent specs, renderers, generated runtime facts, reusable personal runtime defaults, and deployment-scoped personal routing data such as the NUC Telegram topic map. This repo owns host-specific deployment wiring in `hosts/nuc/default.nix` plus the macOS remote client in `modules/desktop/apps/openclaw/`. The NixOS side now imports `openclawBase` + `openclawPersonalDefaults` in `lib/nixos.nix`, while keeping secrets, bot tokens, ingress, monitoring, and enablement decisions here.
+- **Temporary local OpenClaw pin (allowed):** For urgent NUC fixes, `flake.lock` may temporarily pin `openclaw-workspace` to a local path (currently `/Users/emiller/src/personal/openclaw-workspace`) so deploys can consume unmerged local renderer/module changes. This is machine-local and should be treated as temporary.
+- **Re-pin after local debugging:** Once changes are pushed to `openclaw-workspace`, restore a git-based lock entry before handing off/relying on other machines (e.g. `nix flake lock --update-input openclaw-workspace`).
 - **`darwin.nix` is NOT imported** — don't put config there
 
 ## OpenClaw ownership boundary
