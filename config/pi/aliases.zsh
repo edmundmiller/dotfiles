@@ -50,13 +50,73 @@ _pi_source_tmux_lib() {
   source "$lib_path"
 }
 
+_pi_shared_checkout_root() {
+  local checkout_root="${1:-.}"
+  local repo_root common_dir
+  repo_root=$(git -C "$checkout_root" rev-parse --show-toplevel 2>/dev/null) || return 1
+  common_dir=$(git -C "$checkout_root" rev-parse --git-common-dir 2>/dev/null) || return 1
+
+  if [[ "$common_dir" != /* ]]; then
+    common_dir=$(cd "$repo_root/$common_dir" 2>/dev/null && pwd -P) || return 1
+  fi
+
+  if [[ $(basename -- "$common_dir") == ".git" ]]; then
+    dirname -- "$common_dir"
+    return 0
+  fi
+
+  print -r -- "$repo_root"
+}
+
+_pi_create_repo_worktree() {
+  local checkout_root="$1"
+  local requested_name="$2"
+  local repo_root slug repo_stem worktrees_dir worktree_path branch_name
+
+  if ! git -C "$checkout_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    print -u2 -- "error: not inside a git worktree: $checkout_root"
+    return 1
+  fi
+
+  repo_root=$(_pi_shared_checkout_root "$checkout_root") || {
+    print -u2 'error: unable to determine shared checkout root for piw'
+    return 1
+  }
+
+  slug=$(sanitize_component "$requested_name")
+  if [[ -z "$slug" ]]; then
+    print -u2 'error: empty worktree name after sanitization'
+    return 1
+  fi
+
+  repo_stem=$(resolve_repo_stem "$checkout_root")
+  branch_name="${repo_stem}-${slug}"
+  worktrees_dir="$repo_root/.pi/worktrees"
+  worktree_path="$worktrees_dir/$slug"
+
+  mkdir -p "$worktrees_dir" || return 1
+
+  if [[ -e "$worktree_path" ]]; then
+    print -u2 -- "error: worktree path already exists: $worktree_path"
+    return 1
+  fi
+
+  if git -C "$checkout_root" show-ref --verify --quiet "refs/heads/$branch_name"; then
+    git -C "$checkout_root" worktree add --quiet "$worktree_path" "$branch_name"
+  else
+    git -C "$checkout_root" worktree add --quiet -b "$branch_name" "$worktree_path" HEAD
+  fi
+
+  print -r -- "$worktree_path"
+}
+
 piw() {
   if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
     cat <<'EOF'
 Usage: piw [worktree-name] [pi args...]
        piw -- [pi args...]
 
-Create a sibling git worktree, cd into it, and launch pi there.
+Create a git worktree under .pi/worktrees/, cd into it, and launch pi there.
 If no worktree name is provided, piw auto-generates one.
 
 Examples:
@@ -68,6 +128,7 @@ EOF
   fi
 
   local worktree_name=""
+  local checkout_root worktree_slug worktree_path pi_bin
   if [[ ${1:-} == "--" ]]; then
     shift
   elif [[ $# -gt 0 && ${1:-} != -* ]]; then
@@ -75,22 +136,15 @@ EOF
     shift
   fi
 
-  local dotfiles_bin root_helper checkout_root worktree_slug worktree_path pi_bin
-  dotfiles_bin=$(_pi_dotfiles_bin) || {
-    print -u2 'error: unable to locate DOTFILES_BIN for piw'
-    return 1
-  }
-  root_helper="${TMUX_PROJECT_ROOT_BIN:-$dotfiles_bin/tmux-project-root}"
-  [[ -x "$root_helper" ]] || root_helper="$HOME/.config/dotfiles/bin/tmux-project-root"
-  [[ -x "$root_helper" ]] || {
-    print -u2 'error: tmux-project-root helper not found'
-    return 1
-  }
-
   _pi_source_tmux_lib || {
     print -u2 'error: tmux worktree helpers not found'
     return 1
   }
+
+  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    print -u2 'error: piw must be run inside a git repository'
+    return 1
+  fi
 
   if [[ -n "$worktree_name" ]]; then
     worktree_slug="$worktree_name"
@@ -98,8 +152,8 @@ EOF
     worktree_slug=$(default_worktree_slug pi)
   fi
 
-  checkout_root=$($root_helper .) || return 1
-  worktree_path=$(create_sibling_worktree "$checkout_root" "$worktree_slug") || return 1
+  checkout_root=$(git rev-parse --show-toplevel) || return 1
+  worktree_path=$(_pi_create_repo_worktree "$checkout_root" "$worktree_slug") || return 1
 
   pi_bin=$(_pi_resolve_bin "${PI_REAL_BIN:-pi}" \
     "/etc/profiles/per-user/$USER/bin/pi" \
@@ -115,31 +169,21 @@ EOF
 }
 
 pir() {
-  if [[ $# -eq 0 ]]; then
-    print -u2 'Usage: pir <pr-number> [pi args...]'
-    return 1
-  fi
-
   if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
     cat <<'EOF'
-Usage: pir <pr-number> [pi args...]
+Usage: pir [pr-number] [pi args...]
 
-Show quick PR context with gh, check out the PR locally, and launch pi with a
-review-oriented prompt.
+Without a PR number, review the current checkout against origin/main.
+With a PR number, show quick PR context with gh, check out the PR locally, and
+launch pi with a review-oriented prompt.
 
 Examples:
+  pir
+  pir --model sonnet
   pir 123
   pir 123 --model sonnet
 EOF
     return 0
-  fi
-
-  local pr_number="$1"
-  shift
-
-  if [[ ! "$pr_number" =~ ^[0-9]+$ ]]; then
-    print -u2 'Usage: pir <pr-number> [pi args...]'
-    return 1
   fi
 
   if (( $+functions[_agent_safe_cwd] )); then
@@ -153,7 +197,37 @@ EOF
     return 1
   fi
 
-  local gh_bin pi_bin review_prompt
+  local pi_bin review_prompt pr_number gh_bin review_base
+  pi_bin=$(_pi_resolve_bin "${PI_REAL_BIN:-pi}" \
+    "/etc/profiles/per-user/$USER/bin/pi" \
+    "/run/current-system/sw/bin/pi" \
+    "$HOME/.nix-profile/bin/pi" \
+    "/opt/homebrew/bin/pi") || {
+      print -u2 'error: pi binary not found'
+      return 1
+    }
+
+  if [[ $# -eq 0 || ${1:-} == -* ]]; then
+    review_base="origin/main"
+    if ! git rev-parse --verify "$review_base^{commit}" >/dev/null 2>&1; then
+      print -u2 "error: $review_base not found; run 'git fetch origin main' first"
+      return 1
+    fi
+
+    git diff --stat "$review_base...HEAD" 1>&2 || true
+    review_prompt="Review the current checkout against $review_base. Start with a concise summary of the change relative to $review_base, then inspect the diff carefully. Use /critique, /critique-review, or /diff-review when helpful."
+    "$pi_bin" "$@" "$review_prompt"
+    return $?
+  fi
+
+  pr_number="$1"
+  shift
+
+  if [[ ! "$pr_number" =~ ^[0-9]+$ ]]; then
+    print -u2 'Usage: pir [pr-number] [pi args...]'
+    return 1
+  fi
+
   gh_bin=$(_pi_resolve_bin "${GH_BIN:-gh}" \
     "/etc/profiles/per-user/$USER/bin/gh" \
     "/run/current-system/sw/bin/gh" \
@@ -170,19 +244,10 @@ EOF
   if ! "$gh_bin" pr checkout "$pr_number"; then
     cat >&2 <<'EOF'
 pir: gh pr checkout failed.
-If your current checkout is dirty, either stash first or use `piw` to start from a fresh sibling worktree.
+If your current checkout is dirty, either stash first or use `piw` to start from a fresh .pi/worktrees checkout.
 EOF
     return 1
   fi
-
-  pi_bin=$(_pi_resolve_bin "${PI_REAL_BIN:-pi}" \
-    "/etc/profiles/per-user/$USER/bin/pi" \
-    "/run/current-system/sw/bin/pi" \
-    "$HOME/.nix-profile/bin/pi" \
-    "/opt/homebrew/bin/pi") || {
-      print -u2 'error: pi binary not found'
-      return 1
-    }
 
   review_prompt="Review the checked-out GitHub PR #$pr_number. Start with a concise summary of the change, then inspect the diff carefully. Use /critique, /critique-review, or /diff-review when helpful."
   "$pi_bin" "$@" "$review_prompt"
