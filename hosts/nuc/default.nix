@@ -510,20 +510,23 @@ in
 
               # Prefer Kilo Gateway ahead of minimax for gateway/subagents.
               # Docs: https://docs.openclaw.ai/providers/kilocode
+              model.primary = pkgs.lib.mkForce "kilocode/kilo/auto";
               model.fallbacks = pkgs.lib.mkForce [
-                "openrouter/openrouter/auto"
-                "kilocode/kilo/auto"
                 "opencode/minimax-m2.5"
+                "openrouter/openrouter/auto"
                 "openrouter/anthropic/claude-sonnet-4"
                 "openrouter/openai/gpt-5-nano"
               ];
+              subagents.model.primary = pkgs.lib.mkForce "kilocode/kilo/auto";
               subagents.model.fallbacks = pkgs.lib.mkForce [
-                "openrouter/openrouter/auto"
-                "kilocode/kilo/auto"
                 "opencode/minimax-m2.5"
+                "openrouter/openrouter/auto"
                 "openrouter/anthropic/claude-sonnet-4"
                 "openrouter/openai/gpt-5-nano"
               ];
+
+              # Avoid hourly Codex auth/billing fallback churn on NUC.
+              heartbeat.model = pkgs.lib.mkForce "kilocode/kilo/auto";
             };
           };
 
