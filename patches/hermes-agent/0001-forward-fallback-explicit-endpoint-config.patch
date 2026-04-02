@@ -1,0 +1,62 @@
+diff --git a/run_agent.py b/run_agent.py
+--- a/run_agent.py
++++ b/run_agent.py
+@@ -4491,10 +4491,20 @@
+         # Use centralized router for client construction.
+         # raw_codex=True because the main agent needs direct responses.stream()
+         # access for Codex providers.
++        fb_base_url = (fb.get("base_url") or "").strip() or None
++        fb_api_key_env = (fb.get("api_key_env") or "").strip()
++        fb_explicit_key = None
++        if fb_api_key_env:
++            fb_explicit_key = os.getenv(fb_api_key_env, "").strip() or None
+         try:
+             from agent.auxiliary_client import resolve_provider_client
+             fb_client, _ = resolve_provider_client(
+-                fb_provider, model=fb_model, raw_codex=True)
++                fb_provider,
++                model=fb_model,
++                raw_codex=True,
++                explicit_base_url=fb_base_url,
++                explicit_api_key=fb_explicit_key,
++            )
+             if fb_client is None:
+                 logging.warning(
+                     "Fallback to %s failed: provider not configured",
+diff --git a/tests/test_fallback_model.py b/tests/test_fallback_model.py
+--- a/tests/test_fallback_model.py
++++ b/tests/test_fallback_model.py
+@@ -175,7 +175,7 @@
+             assert agent._fallback_activated is False
+ 
+     def test_custom_base_url(self):
+-        """Custom base_url in config should override the provider default."""
++        """Custom fallback endpoint config should be forwarded explicitly."""
+         agent = _make_agent(
+             fallback_model={
+                 "provider": "custom",
+@@ -188,11 +188,21 @@
+             api_key="custom-secret",
+             base_url="http://localhost:8080/v1",
+         )
+-        with patch(
+-            "agent.auxiliary_client.resolve_provider_client",
+-            return_value=(mock_client, "my-model"),
++        with (
++            patch.dict(os.environ, {"MY_CUSTOM_KEY": "custom-secret"}, clear=False),
++            patch(
++                "agent.auxiliary_client.resolve_provider_client",
++                return_value=(mock_client, "my-model"),
++            ) as mock_resolve,
+         ):
+             assert agent._try_activate_fallback() is True
++            mock_resolve.assert_called_once_with(
++                "custom",
++                model="my-model",
++                raw_codex=True,
++                explicit_base_url="http://localhost:8080/v1",
++                explicit_api_key="custom-secret",
++            )
+             assert agent.client is mock_client
+             assert agent.model == "my-model"
+ 
