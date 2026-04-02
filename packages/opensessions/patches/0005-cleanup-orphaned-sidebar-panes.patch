@@ -1,0 +1,161 @@
+diff --git a/packages/runtime/src/server/sidebar-orphans.ts b/packages/runtime/src/server/sidebar-orphans.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/runtime/src/server/sidebar-orphans.ts
+@@ -0,0 +1,19 @@
++import type { SidebarPane } from "../contracts/mux";
++
++export function isOrphanedSidebarPane(pane: SidebarPane): boolean {
++  return pane.width != null && pane.windowWidth != null && pane.width >= pane.windowWidth;
++}
++
++export function partitionSidebarPanes(panes: readonly SidebarPane[]): {
++  attached: SidebarPane[];
++  orphaned: SidebarPane[];
++} {
++  const attached: SidebarPane[] = [];
++  const orphaned: SidebarPane[] = [];
++
++  for (const pane of panes) {
++    if (isOrphanedSidebarPane(pane)) orphaned.push(pane);
++    else attached.push(pane);
++  }
++
++  return { attached, orphaned };
++}
+diff --git a/packages/runtime/src/server/index.ts b/packages/runtime/src/server/index.ts
+--- a/packages/runtime/src/server/index.ts
++++ b/packages/runtime/src/server/index.ts
+@@ -12,6 +12,7 @@ import {
+   type SidebarResizeContext,
+   type SidebarResizeSuppression,
+ } from "./sidebar-width-sync";
++import { partitionSidebarPanes } from "./sidebar-orphans";
+ import { getSessionWindowData } from "../session-details";
+ import {
+   type ServerState,
+@@ -529,9 +530,36 @@ export function startServer(primaryMux?: MuxProvider, extraMuxProviders: MuxProv
+ 
+   function listSidebarPanesByProvider() {
+     return getProvidersWithSidebar().map((provider) => ({
+       provider,
+-      panes: provider.listSidebarPanes(),
++      panes: cleanupOrphanSidebarPanes(provider).attached,
+     }));
+   }
++
++  function cleanupOrphanSidebarPanes(provider: ReturnType<typeof getProvidersWithSidebar>[number]) {
++    const { attached, orphaned } = partitionSidebarPanes(provider.listSidebarPanes());
++
++    for (const pane of orphaned) {
++      log("orphan", "killing full-window sidebar pane", {
++        provider: provider.name,
++        paneId: pane.paneId,
++        sessionName: pane.sessionName,
++        windowId: pane.windowId,
++        width: pane.width ?? null,
++        windowWidth: pane.windowWidth ?? null,
++      });
++
++      try {
++        provider.killSidebarPane(pane.paneId);
++      } catch (error) {
++        log("orphan", "failed to kill full-window sidebar pane", {
++          provider: provider.name,
++          paneId: pane.paneId,
++          error: error instanceof Error ? error.message : String(error),
++        });
++      }
++    }
++
++    return { attached, orphaned };
++  }
+ 
+   const pendingSidebarSpawns = new Set<string>();
+   const suppressedSidebarResizeAcks = new Map<string, SidebarResizeSuppression>();
+@@ -607,12 +635,29 @@ export function startServer(primaryMux?: MuxProvider, extraMuxProviders: MuxProv
+       return;
+     }
+ 
+-    const windowId = ctx?.windowId ?? p.getCurrentWindowId();
++    let windowId = ctx?.windowId ?? p.getCurrentWindowId();
+     if (!windowId) {
+       log("ensure", "SKIP — could not get window_id");
+       return;
+     }
++
++    const { attached: existingPanes, orphaned } = cleanupOrphanSidebarPanes(p);
++    if (orphaned.some((pane) => pane.windowId === windowId)) {
++      const nextWindowId = p.getCurrentWindowId();
++      if (!nextWindowId || nextWindowId === windowId) {
++        log("ensure", "SKIP — removed orphaned sidebar in target window", { curSession, windowId, provider: p.name });
++        scheduleSidebarResize();
++        return;
++      }
++
++      log("ensure", "retargeting after orphan cleanup", {
++        curSession,
++        provider: p.name,
++        fromWindowId: windowId,
++        toWindowId: nextWindowId,
++      });
++      windowId = nextWindowId;
++    }
+ 
+     const spawnKey = `${p.name}:${windowId}`;
+     if (pendingSidebarSpawns.has(spawnKey)) {
+@@ -620,7 +665,6 @@ export function startServer(primaryMux?: MuxProvider, extraMuxProviders: MuxProv
+       return;
+     }
+ 
+-    const existingPanes = p.listSidebarPanes();
+     const hasInWindow = existingPanes.some((ep) => ep.windowId === windowId);
+     log("ensure", "checking window", {
+       curSession, windowId, existingPanes: existingPanes.length,
+diff --git a/packages/runtime/test/sidebar-orphans.test.ts b/packages/runtime/test/sidebar-orphans.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/runtime/test/sidebar-orphans.test.ts
+@@ -0,0 +1,41 @@
++import { describe, expect, test } from "bun:test";
++
++import type { SidebarPane } from "../src/contracts/mux";
++import { isOrphanedSidebarPane, partitionSidebarPanes } from "../src/server/sidebar-orphans";
++
++describe("sidebar orphan detection", () => {
++  test("detects full-window sidebar panes as orphaned", () => {
++    const pane: SidebarPane = {
++      paneId: "%1",
++      sessionName: "alpha",
++      windowId: "@1",
++      width: 224,
++      windowWidth: 224,
++    };
++
++    expect(isOrphanedSidebarPane(pane)).toBe(true);
++  });
++
++  test("does not flag attached sidebars as orphaned", () => {
++    const pane: SidebarPane = {
++      paneId: "%1",
++      sessionName: "alpha",
++      windowId: "@1",
++      width: 29,
++      windowWidth: 224,
++    };
++
++    expect(isOrphanedSidebarPane(pane)).toBe(false);
++  });
++
++  test("partitions panes into attached and orphaned groups", () => {
++    const panes: SidebarPane[] = [
++      { paneId: "%1", sessionName: "alpha", windowId: "@1", width: 29, windowWidth: 224 },
++      { paneId: "%2", sessionName: "alpha", windowId: "@2", width: 224, windowWidth: 224 },
++    ];
++
++    const { attached, orphaned } = partitionSidebarPanes(panes);
++
++    expect(attached.map((pane) => pane.paneId)).toEqual(["%1"]);
++    expect(orphaned.map((pane) => pane.paneId)).toEqual(["%2"]);
++  });
++});
