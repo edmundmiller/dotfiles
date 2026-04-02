@@ -463,7 +463,7 @@
     "flake-parts_2": {
       "inputs": {
         "nixpkgs-lib": [
-          "llm-agents",
+          "hermesAgent",
           "nixpkgs"
         ]
       },
@@ -484,6 +484,27 @@
     "flake-parts_3": {
       "inputs": {
         "nixpkgs-lib": [
+          "llm-agents",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1772408722,
+        "narHash": "sha256-rHuJtdcOjK7rAHpHphUb1iCvgkU3GpfvicLMwwnfMT0=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "f20dc5d9b8027381c474144ecabc9034d6a839a3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_4": {
+      "inputs": {
+        "nixpkgs-lib": [
           "llm-prompt",
           "nixpkgs"
         ]
@@ -502,7 +523,7 @@
         "type": "github"
       }
     },
-    "flake-parts_4": {
+    "flake-parts_5": {
       "inputs": {
         "nixpkgs-lib": [
           "llm-prompt",
@@ -516,28 +537,6 @@
         "owner": "hercules-ci",
         "repo": "flake-parts",
         "rev": "c9afaba3dfa4085dbd2ccb38dfade5141e33d9d4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "type": "github"
-      }
-    },
-    "flake-parts_5": {
-      "inputs": {
-        "nixpkgs-lib": [
-          "openclaw-workspace",
-          "hermesAgent",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1772408722,
-        "narHash": "sha256-rHuJtdcOjK7rAHpHphUb1iCvgkU3GpfvicLMwwnfMT0=",
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "rev": "f20dc5d9b8027381c474144ecabc9034d6a839a3",
         "type": "github"
       },
       "original": {
@@ -861,9 +860,8 @@
     },
     "hermesAgent": {
       "inputs": {
-        "flake-parts": "flake-parts_5",
+        "flake-parts": "flake-parts_2",
         "nixpkgs": [
-          "openclaw-workspace",
           "nixpkgs"
         ],
         "pyproject-build-systems": "pyproject-build-systems",
@@ -881,6 +879,7 @@
       "original": {
         "owner": "NousResearch",
         "repo": "hermes-agent",
+        "rev": "83dec2b3ec0f6d0ddc5750f9a9e811a6a355a49f",
         "type": "github"
       }
     },
@@ -1024,7 +1023,7 @@
     "lib-extras": {
       "inputs": {
         "devshell": "devshell_2",
-        "flake-parts": "flake-parts_4",
+        "flake-parts": "flake-parts_5",
         "flake-root": "flake-root_2",
         "nixpkgs": [
           "llm-prompt",
@@ -1068,7 +1067,7 @@
       "inputs": {
         "blueprint": "blueprint",
         "bun2nix": "bun2nix",
-        "flake-parts": "flake-parts_2",
+        "flake-parts": "flake-parts_3",
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -1095,7 +1094,7 @@
       "inputs": {
         "devour-flake": "devour-flake",
         "devshell": "devshell",
-        "flake-parts": "flake-parts_3",
+        "flake-parts": "flake-parts_4",
         "flake-root": "flake-root",
         "lib-extras": "lib-extras",
         "nixpkgs": [
@@ -1511,7 +1510,9 @@
     },
     "openclaw-workspace": {
       "inputs": {
-        "hermesAgent": "hermesAgent",
+        "hermesAgent": [
+          "hermesAgent"
+        ],
         "llm-agents": [
           "llm-agents"
         ],
@@ -1520,13 +1521,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1775012014,
-        "narHash": "sha256-VDSHHCC+bnxn875ehmVWVS+6QlJjPnNbOEunt4ozvhg=",
-        "ref": "refs/heads/main",
-        "rev": "5d4478b7f860f54ed216a8ff5aac411eff3d6278",
-        "revCount": 176,
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
+        "lastModified": 1775101101,
+        "narHash": "sha256-vVcLyka9O9Fh53VoPLZ6mmRHWheC/5PFNldN7KP/1S8=",
+        "path": "/Users/emiller/src/personal/openclaw-workspace",
+        "type": "path"
       },
       "original": {
         "type": "git",
@@ -1587,7 +1585,6 @@
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
-          "openclaw-workspace",
           "hermesAgent",
           "nixpkgs"
         ],
@@ -1611,7 +1608,6 @@
     "pyproject-nix": {
       "inputs": {
         "nixpkgs": [
-          "openclaw-workspace",
           "hermesAgent",
           "pyproject-build-systems",
           "nixpkgs"
@@ -1634,7 +1630,6 @@
     "pyproject-nix_2": {
       "inputs": {
         "nixpkgs": [
-          "openclaw-workspace",
           "hermesAgent",
           "nixpkgs"
         ]
@@ -1656,7 +1651,6 @@
     "pyproject-nix_3": {
       "inputs": {
         "nixpkgs": [
-          "openclaw-workspace",
           "hermesAgent",
           "uv2nix",
           "nixpkgs"
@@ -1702,6 +1696,7 @@
         "ghostty": "ghostty",
         "git-hooks": "git-hooks",
         "google-workspace-cli": "google-workspace-cli",
+        "hermesAgent": "hermesAgent",
         "home-manager": "home-manager_3",
         "llm-agents": "llm-agents",
         "llm-prompt": "llm-prompt",
@@ -2207,13 +2202,11 @@
     "uv2nix": {
       "inputs": {
         "nixpkgs": [
-          "openclaw-workspace",
           "hermesAgent",
           "pyproject-build-systems",
           "nixpkgs"
         ],
         "pyproject-nix": [
-          "openclaw-workspace",
           "hermesAgent",
           "pyproject-build-systems",
           "pyproject-nix"
@@ -2236,7 +2229,6 @@
     "uv2nix_2": {
       "inputs": {
         "nixpkgs": [
-          "openclaw-workspace",
           "hermesAgent",
           "nixpkgs"
         ],
