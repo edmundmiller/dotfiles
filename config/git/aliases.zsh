@@ -232,6 +232,29 @@ _git_hunk_bin() {
 	fi
 }
 
+_git_sanitize_component() {
+	printf '%s' "$1" | sed -E 's/[^[:alnum:]_-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
+}
+
+_git_shared_checkout_root() {
+	local checkout_root="${1:-.}"
+	local repo_root common_dir
+
+	repo_root=$(git -C "$checkout_root" rev-parse --show-toplevel 2>/dev/null) || return 1
+	common_dir=$(git -C "$checkout_root" rev-parse --git-common-dir 2>/dev/null) || return 1
+
+	if [[ "$common_dir" != /* ]]; then
+		common_dir=$(cd "$repo_root/$common_dir" 2>/dev/null && pwd -P) || return 1
+	fi
+
+	if [[ $(basename -- "$common_dir") == ".git" ]]; then
+		dirname -- "$common_dir"
+		return 0
+	fi
+
+	print -r -- "$repo_root"
+}
+
 _git_review_base_ref() {
 	local remote ref
 
@@ -256,27 +279,69 @@ _git_review_base_ref() {
 	return 1
 }
 
-_git_review_target_patch() {
-	local target="$1"
+_git_resolve_branch_ref() {
+	local branch="$1"
+	local ref
 
-	if [[ -z "$target" ]]; then
-		local base_ref
-		base_ref=$(_git_review_base_ref) || return 1
-		print -u2 -- "reviewing local diff against ${base_ref}"
-		git diff --patch "${base_ref}...HEAD"
-		return $?
-	fi
+	for ref in "upstream/${branch}" "origin/${branch}" "$branch"; do
+		if git rev-parse --verify "${ref}^{commit}" >/dev/null 2>&1; then
+			print -r -- "$ref"
+			return 0
+		fi
+	done
+
+	print -u2 -- "error: unable to resolve review base branch: ${branch}"
+	return 1
+}
+
+_git_prepare_pr_review_checkout() {
+	local target="$1"
+	local checkout_root shared_root worktrees_dir metadata pr_number pr_title base_branch head_branch pr_url pr_author
+	local slug worktree_path base_ref
 
 	if ! command -v gh >/dev/null 2>&1; then
 		print -u2 'error: gh not found; PR review helpers require GitHub CLI'
 		return 1
 	fi
 
-	gh pr view "$target" \
+	metadata=$(gh pr view "$target" \
 		--json number,title,baseRefName,headRefName,url,author \
-		--jq '"reviewing PR #\(.number): \(.title)\nbase: \(.baseRefName) ← head: \(.headRefName)\nurl: \(.url)\nauthor: \(.author.login)"' \
-		1>&2 || true
-	gh pr diff "$target" --patch
+		--jq '[.number, .title, .baseRefName, .headRefName, .url, .author.login] | @tsv') || return 1
+	IFS=$'\t' read -r pr_number pr_title base_branch head_branch pr_url pr_author <<<"$metadata"
+
+	print -u2 -- "reviewing PR #${pr_number}: ${pr_title}"
+	print -u2 -- "base: ${base_branch} ← head: ${head_branch}"
+	print -u2 -- "url: ${pr_url}"
+	print -u2 -- "author: ${pr_author}"
+
+	checkout_root=$(git rev-parse --show-toplevel) || return 1
+	shared_root=$(_git_shared_checkout_root "$checkout_root") || return 1
+	worktrees_dir="$shared_root/.pi/worktrees"
+	mkdir -p "$worktrees_dir" || return 1
+
+	slug=$(_git_sanitize_component "pr-${pr_number}-${head_branch}")
+	[[ -n "$slug" ]] || slug="pr-${pr_number}"
+	worktree_path="$worktrees_dir/$slug"
+
+	if [[ -e "$worktree_path" ]]; then
+		if ! git -C "$worktree_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+			print -u2 -- "error: review worktree path exists but is not a git checkout: ${worktree_path}"
+			return 1
+		fi
+	else
+		git -C "$checkout_root" worktree add --quiet --detach "$worktree_path" HEAD || return 1
+	fi
+
+	(
+		cd "$worktree_path" || exit 1
+		gh pr checkout "$target" --detach --force >/dev/null
+	) || return 1
+
+	base_ref=$(_git_resolve_branch_ref "$base_branch") || return 1
+	_GIT_REVIEW_PR_WORKTREE="$worktree_path"
+	_GIT_REVIEW_PR_BASE_REF="$base_ref"
+
+	print -u2 -- "using local review checkout: ${worktree_path}"
 }
 
 _git_review_helper() {
@@ -289,7 +354,8 @@ _git_review_helper() {
 Usage: ${tool}pr [pr-number|branch|url] [-- ${tool} args...]
 
 Without a PR target, review the current checkout against upstream or origin.
-With a PR target, stream \`gh pr diff\` into ${tool}.
+With a PR target, update a local .pi/worktrees checkout via \`gh pr checkout\`
+and review it natively for speed.
 
 Examples:
   ${tool}pr
@@ -314,28 +380,46 @@ EOF
 		shift
 	fi
 
-	local patch_file
-	patch_file=$(mktemp "${TMPDIR:-/tmp}/${tool}pr.XXXXXX") || return 1
-	if ! _git_review_target_patch "$target" >"$patch_file"; then
-		rm -f "$patch_file"
-		return 1
+	if [[ -z "$target" ]]; then
+		local base_ref
+		base_ref=$(_git_review_base_ref) || return 1
+		print -u2 -- "reviewing local diff against ${base_ref}"
+
+		case "$mode" in
+			critique)
+				_git_critique_bin "$@" "$base_ref" HEAD
+				;;
+			hunk)
+				_git_hunk_bin diff "$@" "$base_ref"
+				;;
+			*)
+				print -u2 -- "error: unknown review helper mode: $mode"
+				return 1
+				;;
+		esac
+		return $?
 	fi
+
+	_git_prepare_pr_review_checkout "$target" || return 1
 
 	case "$mode" in
 		critique)
-			_git_critique_bin --stdin "$@" <"$patch_file"
+			(
+				cd "$_GIT_REVIEW_PR_WORKTREE" || exit 1
+				_git_critique_bin "$@" "$_GIT_REVIEW_PR_BASE_REF" HEAD
+			)
 			;;
 		hunk)
-			_git_hunk_bin patch "$@" <"$patch_file"
+			(
+				cd "$_GIT_REVIEW_PR_WORKTREE" || exit 1
+				_git_hunk_bin diff "$@" "$_GIT_REVIEW_PR_BASE_REF"
+			)
 			;;
 		*)
-			rm -f "$patch_file"
 			print -u2 -- "error: unknown review helper mode: $mode"
 			return 1
 			;;
 	esac
-
-	rm -f "$patch_file"
 }
 
 critique() {
