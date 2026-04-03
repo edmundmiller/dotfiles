@@ -1,0 +1,48 @@
+# Hermes base configuration
+#
+# This file is the editable, repo-local source of truth for Hermes defaults
+# while the module is being set up. The Hermes module merges this with any
+# Nix overlays and the writable config under $HERMES_HOME/config.yaml.
+#
+# Handy places to tweak while hacking:
+# - terminal.cwd: set a default working directory for Hermes sessions
+# - terminal.timeout: increase/decrease how long sessions can run
+# - memory.memory_enabled: turn long-term memory on/off
+# - memory.user_profile_enabled: decide whether Hermes should keep a profile
+#
+# Nix can still layer on top of this file, so treat these as the easy-to-edit
+# baseline settings.
+
+# -----------------------------------------------------------------------------
+# Example profiles
+# Uncomment one of these blocks and adjust it to taste.
+# -----------------------------------------------------------------------------
+
+# Dev-friendly: keep memory on and use the current repo as the default cwd.
+# terminal:
+#   backend: local
+#   cwd: "."
+#   timeout: 300
+#
+# memory:
+#   memory_enabled: true
+#   user_profile_enabled: true
+
+# Minimal: short sessions, no memory, good for quick one-off tasks.
+# terminal:
+#   backend: local
+#   cwd: "."
+#   timeout: 60
+#
+# memory:
+#   memory_enabled: false
+#   user_profile_enabled: false
+
+terminal:
+  backend: local
+  cwd: "."
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
