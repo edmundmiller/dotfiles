@@ -81,7 +81,7 @@ let
   # - "split"  => prepared true split; OpenClaw owns family/group Telegram on the
   #                current bot token, while Hermes owns Scintillate DM on a
   #                dedicated Telegram bot token
-  telegramRoutingMode = "hermes";
+  telegramRoutingMode = "split";
   telegramOwnedByHermes = telegramRoutingMode == "hermes";
   telegramSplitBetweenOpenClawAndHermes = telegramRoutingMode == "split";
 
@@ -130,7 +130,7 @@ let
   # the Scintillate DM without competing for OpenClaw's family/group bot.
   hermesScintillateTelegramBotTokenFile =
     if telegramSplitBetweenOpenClawAndHermes then
-      "/home/emiller/.secrets/telegram-bot-token-scintillate"
+      config.age.secrets.telegram-bot-token-scintillate.path
     else
       config.age.secrets.telegram-bot-token.path;
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
