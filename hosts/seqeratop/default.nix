@@ -23,6 +23,7 @@
         ai.enable = true;
         claude.enable = true;
         codex.enable = true;
+        hermes.enable = true;
         opencode.enable = true;
         pi.enable = true;
         skillkit.enable = true;
