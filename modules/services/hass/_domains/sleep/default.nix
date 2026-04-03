@@ -420,6 +420,20 @@ in
           to = "on";
           "for".minutes = 2;
         };
+        # Guardrails: only allow this bedtime stage at night while in goodnight mode.
+        # Prevents morning re-triggers when bed presence briefly flips back to "on".
+        condition = [
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
+          }
+          {
+            condition = "time";
+            after = "21:00:00";
+            before = "06:00:00";
+          }
+        ];
         action = [
           {
             action = "scene.turn_on";
