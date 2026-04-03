@@ -56,6 +56,10 @@ in
     edmundmiller
     nuc
   ];
+  "telegram-bot-token-scintillate.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "openclaw-hooks-token.age".publicKeys = [
     edmundmiller
     nuc
