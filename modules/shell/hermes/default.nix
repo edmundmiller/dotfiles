@@ -14,25 +14,15 @@ let
   yamlFormat = pkgs.formats.yaml { };
   yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
 
-  managedSettings = {
-    terminal = {
-      backend = "local";
-      cwd = ".";
-      timeout = 180;
-    };
+  renderedSettings =
+    optionalAttrs ((config.time.timeZone or "") != "") {
+      timezone = config.time.timeZone;
+    }
+    // cfg.settings;
 
-    memory = {
-      memory_enabled = true;
-      user_profile_enabled = true;
-    };
-  }
-  // optionalAttrs ((config.time.timeZone or "") != "") {
-    timezone = config.time.timeZone;
-  };
-
-  renderedSettings = recursiveUpdate managedSettings cfg.settings;
-  renderedConfig = yamlFormat.generate "hermes-config.yaml" renderedSettings;
+  renderedConfig = yamlFormat.generate "hermes-settings.yaml" renderedSettings;
   soulFile = "${configDir}/hermes/SOUL.md";
+  inherit (cfg) configFile;
 in
 {
   options.modules.shell.hermes = with types; {
@@ -50,13 +40,19 @@ in
       description = "Hermes package to install.";
     };
 
+    configFile = mkOption {
+      type = str;
+      default = "${configDir}/hermes/config.yml";
+      description = "Editable Hermes base config merged into $HERMES_HOME/config.yaml.";
+    };
+
     settings = mkOption {
       type = attrsOf anything;
       default = { };
       description = ''
-        Declarative Hermes settings merged into $HERMES_HOME/config.yaml during
-        activation. Nix-managed keys win; user-added keys outside this attrset
-        are preserved.
+        Declarative Hermes overlays merged on top of configFile and existing
+        user config during activation. Nix-managed keys win over the base file,
+        but user-added keys outside these overlays are preserved.
       '';
     };
   };
@@ -108,7 +104,7 @@ in
 
                     ${pkgs.coreutils}/bin/install -Dm644 ${soulFile} "$soul_target"
 
-                    ${yamlPython}/bin/python3 - "$config_target" ${renderedConfig} <<'PY'
+                    ${yamlPython}/bin/python3 - "$config_target" ${escapeShellArg configFile} ${renderedConfig} <<'PY'
           import copy
           import pathlib
           import sys
@@ -117,7 +113,8 @@ in
 
 
           target = pathlib.Path(sys.argv[1])
-          managed = pathlib.Path(sys.argv[2])
+          base = pathlib.Path(sys.argv[2])
+          overlay = pathlib.Path(sys.argv[3])
 
 
           def load_yaml(path: pathlib.Path) -> dict:
@@ -149,8 +146,10 @@ in
               return copy.deepcopy(declarative)
 
 
+          base_config = load_yaml(base)
+          overlay_config = load_yaml(overlay)
           existing_config = load_yaml(target)
-          declarative_config = load_yaml(managed)
+          declarative_config = merge(base_config, overlay_config)
           merged_config = merge(existing_config, declarative_config)
 
           target.write_text(
