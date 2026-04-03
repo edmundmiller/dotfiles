@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -45,7 +46,7 @@ in
 
     package = mkOption {
       type = package;
-      default = pkgs.llm-agents."hermes-agent";
+      default = inputs.llm-agents-upstream.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
       description = "Hermes package to install.";
     };
 
