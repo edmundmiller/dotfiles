@@ -153,22 +153,28 @@ let
           ])
           # OpenClaw: monitor-only (no alerts) — alerting openclaw about
           # itself being down is a circular dependency
-          ++ optionals config.modules.services.openclaw.enable [
-            {
-              name = "OpenClaw Gateway";
-              group = "Infrastructure";
-              url = "http://localhost:18789";
-              interval = "60s";
-              conditions = [ "[STATUS] < 500" ];
-            }
-            {
-              name = "OpenClaw Tailscale Service";
-              group = "Infrastructure";
-              url = "https://openclaw.cinnamon-rooster.ts.net";
-              interval = "60s";
-              conditions = [ "[STATUS] < 500" ];
-            }
-          ]
+          ++
+            optionals
+              (
+                lib.hasAttrByPath [ "modules" "services" "openclaw" "enable" ] config
+                && config.modules.services.openclaw.enable
+              )
+              [
+                {
+                  name = "OpenClaw Gateway";
+                  group = "Infrastructure";
+                  url = "http://localhost:18789";
+                  interval = "60s";
+                  conditions = [ "[STATUS] < 500" ];
+                }
+                {
+                  name = "OpenClaw Tailscale Service";
+                  group = "Infrastructure";
+                  url = "https://openclaw.cinnamon-rooster.ts.net";
+                  interval = "60s";
+                  conditions = [ "[STATUS] < 500" ];
+                }
+              ]
           ++ optionals config.modules.services.lubelogger.enable [
             {
               name = "LubeLogger";
