@@ -60,10 +60,6 @@ in
     edmundmiller
     nuc
   ];
-  "openclaw-hooks-token.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
   "homepage-env.age".publicKeys = [
     edmundmiller
     nuc

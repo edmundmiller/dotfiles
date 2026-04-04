@@ -67,12 +67,6 @@
       inputs.systems.follows = "systems";
     };
 
-    nix-openclaw = {
-      url = "github:openclaw/nix-openclaw";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nix-steipete-tools.follows = "nix-steipete-tools";
-    };
-
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults.
     openclaw-workspace = {
@@ -136,7 +130,6 @@
       # Linux packages
       pkgs = mkPkgs nixpkgs [
         self.overlays.default
-        inputs.nix-openclaw.overlays.default
         inputs.llm-agents.overlays.default
       ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
@@ -144,7 +137,6 @@
       # Darwin packages
       darwinPkgs = mkPkgs nixpkgs [
         self.overlays.default
-        inputs.nix-openclaw.overlays.default
         inputs.llm-agents.overlays.default
       ] darwinSystem;
 
@@ -245,7 +237,6 @@
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
-                inputs.nix-openclaw.homeManagerModules.openclaw
                 inputs.skills-catalog.homeManagerModules.default
               ];
             }
@@ -284,7 +275,6 @@
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
-                inputs.nix-openclaw.homeManagerModules.openclaw
                 inputs.skills-catalog.homeManagerModules.default
               ];
             }

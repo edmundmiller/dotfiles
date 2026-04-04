@@ -30,9 +30,7 @@ with lib.my;
           "desktop/gnome"
         ];
         # Darwin-only files — excluded on NixOS (homebrew.casks doesn't exist)
-        darwinOnlyFiles = [
-          "desktop/apps/openclaw/default.nix"
-        ];
+        darwinOnlyFiles = [ ];
         nixosOnlyFiles = [
           # desktop/apps — Linux-only apps (raycast.nix is cross-platform)
           "desktop/apps/discord.nix"

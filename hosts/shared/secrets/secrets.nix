@@ -16,11 +16,6 @@ in
     nuc
   ];
 
-  "openclaw-gateway-token.age".publicKeys = [
-    mactraitor
-    nuc
-  ];
-
   "anthropic-api-key.age".publicKeys = [
     mactraitor
     nuc
