@@ -1,5 +1,5 @@
 #undef DEBOUNCE
-#define DEBOUNCE 5  // Lowered from 40 to fix dropped keys during fast typing
+#define DEBOUNCE 10  // Slightly higher debounce to reduce chatter while keeping sym_eager_pr responsive
 
 #undef TAPPING_TERM
 #define TAPPING_TERM 140
