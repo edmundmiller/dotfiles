@@ -90,6 +90,4 @@ For conditional endpoints (only when another module is enabled):
 - `hosts/nuc/default.nix` — Enables module with alerting + healthcheck config
 - `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
 - `hosts/nuc/secrets/telegram-bot-token.age` — Encrypted bot token
-- `hosts/nuc/secrets/openclaw-hooks-token.age` — Encrypted OpenClaw hooks token
-- `modules/services/openclaw/default.nix` — OpenClaw hooks config (must enable hooks)
 - `modules/services/AGENTS.md` — Tailscale serve pattern docs
