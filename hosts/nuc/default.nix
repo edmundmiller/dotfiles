@@ -78,19 +78,19 @@ let
   };
   # Telegram routing topology for this host:
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
-  # - "split"  => prepared true split; OpenClaw owns family/group Telegram on the
-  #                current bot token, while Hermes owns Scintillate DM on a
-  #                dedicated Telegram bot token
-  telegramRoutingMode = "split";
+  # - "split"  => prepared future split; the shared bot keeps family/group traffic,
+  #                while Hermes owns Scintillate DM on a dedicated Telegram bot token
+  telegramRoutingMode = "hermes";
   telegramOwnedByHermes = telegramRoutingMode == "hermes";
-  telegramSplitBetweenOpenClawAndHermes = telegramRoutingMode == "split";
+  telegramSplitMode = telegramRoutingMode == "split";
 
-  # Binding runtime controls whether OpenClaw keeps the Scintillate DM binding.
-  # Leave this at "hermes" for both current mode and split mode so OpenClaw only
-  # keeps family/group routing while Hermes owns Scintillate DM.
-  agentGatewayRuntime = "hermes";
-  hermesTelegramEnable = telegramOwnedByHermes || telegramSplitBetweenOpenClawAndHermes;
-  openclawTelegramModule =
+  # Binding runtime controls whether the shared Telegram bindings keep the
+  # Scintillate DM binding. Leave this at "hermes" for both current mode and
+  # split mode so family/group routing stays separate while Hermes owns
+  # Scintillate DM.
+  telegramBindingRuntime = "hermes";
+  hermesTelegramEnable = telegramOwnedByHermes || telegramSplitMode;
+  telegramBindingsModule =
     let
       telegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/telegram-bindings.nix;
       legacyTelegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix;
@@ -101,60 +101,57 @@ let
       else
         legacyTelegramBindingsPath
     );
-  openclawTelegram = openclawTelegramModule (
+  telegramBindings = telegramBindingsModule (
     {
       inherit lib;
     }
     //
       lib.optionalAttrs
-        (builtins.hasAttr "agentGatewayRuntime" (builtins.functionArgs openclawTelegramModule))
+        (builtins.hasAttr "agentGatewayRuntime" (builtins.functionArgs telegramBindingsModule))
         {
-          inherit agentGatewayRuntime;
+          agentGatewayRuntime = telegramBindingRuntime;
         }
     //
       lib.optionalAttrs
         (
-          !(builtins.hasAttr "agentGatewayRuntime" (builtins.functionArgs openclawTelegramModule))
-          && builtins.hasAttr "telegramRuntime" (builtins.functionArgs openclawTelegramModule)
+          !(builtins.hasAttr "agentGatewayRuntime" (builtins.functionArgs telegramBindingsModule))
+          && builtins.hasAttr "telegramRuntime" (builtins.functionArgs telegramBindingsModule)
         )
         {
-          telegramRuntime = agentGatewayRuntime;
+          telegramRuntime = telegramBindingRuntime;
         }
   );
   hermesScintillateChannelIds = lib.sort lib.versionOlder (
-    builtins.filter (peerId: openclawTelegram.direct.${peerId}.agentId == "scintillate") (
-      builtins.attrNames openclawTelegram.direct
+    builtins.filter (peerId: telegramBindings.direct.${peerId}.agentId == "scintillate") (
+      builtins.attrNames telegramBindings.direct
     )
   );
   hermesScintillateHomeChannel = builtins.head hermesScintillateChannelIds;
   hermesScintillateAllowedUserIds =
-    if telegramSplitBetweenOpenClawAndHermes then
-      hermesScintillateChannelIds
-    else
-      map toString openclawTelegram.allowFrom;
+    if telegramSplitMode then hermesScintillateChannelIds else map toString telegramBindings.allowFrom;
   hermesScintillateAllowedUsers = lib.concatStringsSep "," hermesScintillateAllowedUserIds;
   # In split mode, Hermes needs its own Telegram bot token so it can own only
-  # the Scintillate DM without competing for OpenClaw's family/group bot.
+  # the Scintillate DM without competing with the shared family/group bot.
   hermesScintillateTelegramBotTokenFile =
-    if telegramSplitBetweenOpenClawAndHermes then
+    if telegramSplitMode then
       config.age.secrets.telegram-bot-token-scintillate.path
     else
       config.age.secrets.telegram-bot-token.path;
   linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
-  mkOpenClawSecret = envVar: secretName: {
+  mkAgentSecret = envVar: secretName: {
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
   };
   hermesScintillateSecrets = [
-    (mkOpenClawSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
-    (mkOpenClawSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
-    (mkOpenClawSecret "GEMINI_API_KEY" "gemini-api-key")
-    (mkOpenClawSecret "FIREWORKS_API_KEY" "fireworks-api-key")
-    (mkOpenClawSecret "HA_TOKEN" "ha-openclaw-token")
-    (mkOpenClawSecret "KILOCODE_API_KEY" "kilocode-api-key")
-    (mkOpenClawSecret "OPENAI_API_KEY" "openai-api-key")
-    (mkOpenClawSecret "OPENROUTER_API_KEY" "openrouter-api-key")
-    (mkOpenClawSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
+    (mkAgentSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
+    (mkAgentSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
+    (mkAgentSecret "GEMINI_API_KEY" "gemini-api-key")
+    (mkAgentSecret "FIREWORKS_API_KEY" "fireworks-api-key")
+    (mkAgentSecret "HA_TOKEN" "ha-openclaw-token")
+    (mkAgentSecret "KILOCODE_API_KEY" "kilocode-api-key")
+    (mkAgentSecret "OPENAI_API_KEY" "openai-api-key")
+    (mkAgentSecret "OPENROUTER_API_KEY" "openrouter-api-key")
+    (mkAgentSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
     {
       envVar = "TELEGRAM_BOT_TOKEN";
       path = hermesScintillateTelegramBotTokenFile;
@@ -224,7 +221,7 @@ let
 
 in
 {
-  inherit (openclawTelegram) assertions;
+  inherit (telegramBindings) assertions;
 
   system.activationScripts = {
 
