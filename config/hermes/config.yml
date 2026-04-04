@@ -73,7 +73,7 @@ provider_routing:
     - Fireworks
 
 display:
-  skin: slate
+  skin: mono
 
 memory:
   memory_enabled: true
