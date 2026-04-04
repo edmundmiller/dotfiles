@@ -89,7 +89,6 @@ let
   # Leave this at "hermes" for both current mode and split mode so OpenClaw only
   # keeps family/group routing while Hermes owns Scintillate DM.
   agentGatewayRuntime = "hermes";
-  openclawTelegramEnable = telegramSplitBetweenOpenClawAndHermes;
   hermesTelegramEnable = telegramOwnedByHermes || telegramSplitBetweenOpenClawAndHermes;
   openclawTelegramModule =
     let
@@ -165,28 +164,6 @@ let
       path = linearTokenFile;
     }
   ];
-  openclawPlatformSecrets = [
-    (mkOpenClawSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
-    (mkOpenClawSecret "OPENCODE_API_KEY" "opencode-api-key")
-    (mkOpenClawSecret "OPENAI_API_KEY" "openai-api-key")
-    (mkOpenClawSecret "ELEVENLABS_API_KEY" "elevenlabs-api-key")
-    (mkOpenClawSecret "LINEAR_WEBHOOK_SECRET" "linear-webhook-secret")
-    (mkOpenClawSecret "HC_PING_KEY" "healthchecks-ping-key")
-    (mkOpenClawSecret "HC_API_KEY" "healthchecks-api-key")
-    (mkOpenClawSecret "HC_API_KEY_READONLY" "healthchecks-api-key-readonly")
-    (mkOpenClawSecret "OPENROUTER_API_KEY" "openrouter-api-key")
-    (mkOpenClawSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
-    (mkOpenClawSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
-    {
-      envVar = "LINEAR_API_KEY";
-      path = linearTokenFile;
-    }
-    {
-      envVar = "GOG_KEYRING_PASSWORD";
-      value = "gogcli-agenix";
-      literal = true;
-    }
-  ];
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
@@ -245,54 +222,11 @@ let
     exec ${ob} sync --path '${millDocsVaultPath}' --continuous
   '';
 
-  linearTokenRefreshScript = pkgs.writeShellScript "linear-token-refresh" ''
-    set -euo pipefail
-    # Read refresh token — prefer persisted (rotated) token, fall back to agenix seed
-    REFRESH_FILE="''${STATE_DIRECTORY}/refresh-token"
-    if [ -s "$REFRESH_FILE" ]; then
-      REFRESH_TOKEN=$(cat "$REFRESH_FILE")
-    else
-      REFRESH_TOKEN=$(cat /run/agenix/linear-refresh-token)
-    fi
-    CLIENT_ID="c64c969674a02fccc863d4aa950ec132"
-    CLIENT_SECRET="72406896af1a83cb5765c6042a59cde2"
-
-    RESPONSE=$(${pkgs.curl}/bin/curl -sf -X POST https://api.linear.app/oauth/token \
-      -H "Content-Type: application/x-www-form-urlencoded" \
-      --data-urlencode "grant_type=refresh_token" \
-      --data-urlencode "client_id=$CLIENT_ID" \
-      --data-urlencode "client_secret=$CLIENT_SECRET" \
-      --data-urlencode "refresh_token=$REFRESH_TOKEN")
-
-    ACCESS_TOKEN=$(echo "$RESPONSE" | ${pkgs.jq}/bin/jq -r '.access_token')
-    NEW_REFRESH=$(echo "$RESPONSE" | ${pkgs.jq}/bin/jq -r '.refresh_token // empty')
-    if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
-      echo "Failed to refresh Linear token: $RESPONSE" >&2
-      exit 1
-    fi
-
-    echo -n "$ACCESS_TOKEN" > "''${STATE_DIRECTORY}/token"
-    # Linear rotates refresh tokens — persist the new one for next refresh
-    if [ -n "$NEW_REFRESH" ]; then
-      echo -n "$NEW_REFRESH" > "$REFRESH_FILE"
-    fi
-    echo "Linear OAuth token refreshed"
-  '';
-
 in
 {
   inherit (openclawTelegram) assertions;
 
-  # Workaround for nix-openclaw using bare commands (cat, ln, mkdir, rm)
-  # TODO: Report upstream to nix-openclaw
   system.activationScripts = {
-    binCompat = ''
-      mkdir -p /bin
-      for cmd in cat ln mkdir rm; do
-        ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
-      done
-
-    '';
 
     removeLegacyZele = ''
       rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
@@ -318,14 +252,6 @@ in
           chown -h emiller:users "$LEGACY_PATH"
           chown -R emiller:users "$TARGET_PATH"
         fi
-      '';
-    };
-
-    bootstrapOpenclawOpServiceToken = {
-      text = ''
-        TOKEN_FILE="/home/emiller/.local/state/openclaw/op-service-account-token"
-        install -d -m 700 -o emiller -g users "$(dirname "$TOKEN_FILE")"
-        install -m 400 -o emiller -g users /etc/opnix-token "$TOKEN_FILE"
       '';
     };
 
@@ -445,148 +371,27 @@ in
       alsa-lib # libasound.so.2 for sag audio playback
     ];
   };
-
-  # qmd skill: NUC-only (not in global agent-skills bundle to avoid token waste on Mac)
-  home.file.".openclaw/workspace/skills/qmd".source =
-    "${inputs.skills-catalog.inputs.qmd-repo}/skills/qmd";
-
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
-    # Ensure systemd user services can find system + user packages (openclaw uses bare 'cat')
-    systemd = {
-      user = {
-        sessionVariables.PATH = "/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin";
-
-        # linear-token-init: ensures token file exists before openclaw-gateway starts.
-        # RemainAfterExit=yes so gateway restarts don't re-trigger it unnecessarily.
-        services.linear-token-init = {
-          Unit = {
-            Description = "Initialize Linear OAuth token file";
-            Before = "openclaw-gateway.service";
-          };
-          Install.WantedBy = [ "openclaw-gateway.service" ];
-          Service = {
-            Type = "oneshot";
-            RemainAfterExit = "yes";
-            StateDirectory = "openclaw-linear";
-            ExecStart = toString linearTokenRefreshScript;
-          };
-        };
-
-        # linear-token-refresh: timer-driven periodic refresh (every 12h).
-        # Restarts openclaw-gateway after updating the token so the new value is picked up.
-        services.linear-token-refresh = {
-          Unit.Description = "Refresh Linear OAuth access token";
-          Service = {
-            Type = "oneshot";
-            StateDirectory = "openclaw-linear";
-            ExecStart = toString linearTokenRefreshScript;
-            ExecStartPost = "${pkgs.systemd}/bin/systemctl --user try-restart openclaw-gateway.service";
-          };
-        };
-        timers.linear-token-refresh = {
-          Unit.Description = "Refresh Linear OAuth token every 12h";
-          Timer = {
-            OnUnitActiveSec = "12h";
-            RandomizedDelaySec = "5min";
-          };
-          Install.WantedBy = [ "timers.target" ];
-        };
-      };
-    };
-
-    # Keep qmd as primary memory backend, but use a thin local wrapper around
-    # llm-agents.nix qmd that forces CPU mode on this NUC, plus query mode.
-    programs = {
-      openclaw = {
-        config = {
-          memory.qmd = {
-            command = pkgs.lib.mkForce "${qmd}/bin/qmd";
-            searchMode = pkgs.lib.mkForce "query";
-          };
-
-          # Force memory embeddings to Gemini to avoid OpenAI embed spend.
-          agents = {
-            defaults = {
-              memorySearch = {
-                provider = "gemini";
-                model = "gemini-embedding-2-preview";
-                outputDimensionality = 3072;
-                fallback = "none";
-              };
-
-              # Prefer Kilo Gateway ahead of minimax for gateway/subagents.
-              # Docs: https://docs.openclaw.ai/providers/kilocode
-              model.primary = pkgs.lib.mkForce "kilocode/kilo/auto";
-              model.fallbacks = pkgs.lib.mkForce [
-                "opencode/minimax-m2.5"
-                "openrouter/openrouter/auto"
-                "openrouter/anthropic/claude-sonnet-4"
-                "openrouter/openai/gpt-5-nano"
-              ];
-              subagents.model.primary = pkgs.lib.mkForce "kilocode/kilo/auto";
-              subagents.model.fallbacks = pkgs.lib.mkForce [
-                "opencode/minimax-m2.5"
-                "openrouter/openrouter/auto"
-                "openrouter/anthropic/claude-sonnet-4"
-                "openrouter/openai/gpt-5-nano"
-              ];
-
-              # Avoid hourly Codex auth/billing fallback churn on NUC.
-              heartbeat.model = pkgs.lib.mkForce "kilocode/kilo/auto";
-            };
-          };
-
-          gateway.http.endpoints.chatCompletions.enabled = true;
-
-          # Allow Control UI when accessed via Tailscale service hostnames.
-          gateway.controlUi.allowedOrigins = [
-            "https://openclaw.cinnamon-rooster.ts.net"
-            "https://nuc.cinnamon-rooster.ts.net"
-          ];
-
-          # Explicit Chromium path for NixOS so OpenClaw browser auto-detect doesn't miss it.
-          # Keep headless on for server operation.
-          browser = {
-            executablePath = "/run/current-system/sw/bin/chromium";
-            headless = true;
-            defaultProfile = "openclaw";
-          };
-
-          # linear-agent-bridge gateway extension config
-          plugins.entries.linear-agent-bridge = {
-            enabled = true;
-            config = {
-              linearApiKey = "\${LINEAR_API_KEY}";
-              linearWebhookSecret = "\${LINEAR_WEBHOOK_SECRET}";
-              devAgentId = "main";
-              enableAgentApi = true;
-              # Agent callbacks stay local — no need to go through funnel
-              apiBaseUrl = "http://127.0.0.1:18789/plugins/linear/api";
-            };
-          };
-        };
-      };
-    };
   };
 
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
-    jq # For OpenClaw skills that parse JSON (e.g. homeassistant)
-    chromium # For openclaw browser
-    nodejs # For openclaw plugins
+    jq # For agent skills that parse JSON (e.g. homeassistant)
+    chromium # Browser automation runtime
+    nodejs # Agent/plugin runtime support
     python3 # For node-gyp (pi-interactive-shell/node-pty)
     gcc
     gnumake # For node-gyp native compilation
     cmake # For node-llama-cpp (qmd dependency)
-    claude-code # CLI backend for openclaw
-    codex # CLI backend for openclaw
+    claude-code # CLI backend for local agents
+    codex # CLI backend for local agents
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
-    inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS for openclaw sag plugin
+    inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
   ];
@@ -652,75 +457,6 @@ in
         tailscaleService.enable = true;
       };
     }
-    // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "openclaw" ] options) {
-      # OpenClaw — canonical agents plus shared cron/skill defaults come from
-      # openclaw-workspace. Concrete deployment wiring stays here.
-      openclaw = {
-        enable = true;
-        workspaceDefaults.enable = lib.mkForce false;
-        gatewayTokenFile = config.age.secrets.openclaw-gateway-token.path;
-        hooksTokenFile = config.age.secrets.openclaw-hooks-token.path;
-        onepassword = {
-          enable = true;
-          vault = "Agents";
-        };
-      }
-      // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "openclaw" "browserbase" ] options) {
-        browserbase = {
-          enable = true;
-          stagehandModel = "openai/gpt-5-mini";
-          # Use the item ID to avoid ambiguity with the separate Browserbase login item.
-          apiKeyReference = "op://Agents/hsbagbmv3er6vm2fxj75brxtcy/credential";
-          projectIdReference = "op://Agents/hsbagbmv3er6vm2fxj75brxtcy/Project ID";
-        };
-      }
-      // {
-        secrets = openclawPlatformSecrets ++ [
-          {
-            envVar = "OP_SERVICE_ACCOUNT_TOKEN";
-            path = "/home/emiller/.local/state/openclaw/op-service-account-token";
-          }
-          {
-            envVar = "GEMINI_API_KEY";
-            inherit (config.age.secrets.gemini-api-key) path;
-          }
-          {
-            envVar = "KILOCODE_API_KEY";
-            inherit (config.age.secrets.kilocode-api-key) path;
-          }
-          {
-            envVar = "HA_URL";
-            value = "http://127.0.0.1:8123";
-            literal = true;
-          }
-          {
-            envVar = "HA_TOKEN";
-            inherit (config.age.secrets.ha-openclaw-token) path;
-          }
-        ];
-        customPlugins = [
-          {
-            source = "github:edmundmiller/dotfiles/415e35c2e9addcad8c600bcb8ada8ce1a8497077?dir=tools/linear&narHash=sha256-wd7FfzCzZzY0rZrPAAJrYJjMZzenewXfipD4XCc/mH8%3D";
-            config.env.LINEAR_API_TOKEN_FILE = linearTokenFile;
-          }
-        ];
-        gatewayExtensions = [ pkgs.my.linear-agent-bridge ];
-        heartbeatMonitor = {
-          enable = true;
-          monitors.main = {
-            pingUrl = "https://hc-ping.com/71a6388a-9ed5-4edd-b2a9-e5616dec4091";
-          };
-        };
-        webhookProxy.enable = true;
-        telegram = {
-          # In split mode OpenClaw owns family/group Telegram on the existing bot.
-          enable = openclawTelegramEnable;
-          requireMention = false;
-          botTokenFile = "/home/emiller/.secrets/telegram-bot-token";
-          inherit (openclawTelegram) allowFrom bindings;
-        };
-      };
-    }
     // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "hermes" ] options) {
       hermes = {
         # Scintillate stays on Hermes even when Telegram ingress eventually
@@ -771,7 +507,6 @@ in
         enable = true;
         tailscaleService.enable = true;
         alerting.telegram.enable = false;
-        alerting.openclaw.enable = false;
         healthcheck = {
           enable = true;
           pingUrl = "https://hc-ping.com/a6bbb4df-b118-4262-9881-9939f3ac7e76";
@@ -894,23 +629,7 @@ in
   time.timeZone = "America/Chicago";
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
-
-  # Expose OpenClaw gateway as a Tailscale service VIP (svc:openclaw)
-  # so clients can use https://openclaw.cinnamon-rooster.ts.net.
   systemd = {
-    services.openclaw-tailscale-serve = {
-      description = "Tailscale serve proxy for OpenClaw gateway";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "tailscaled.service" ];
-      requires = [ "tailscaled.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:openclaw --https=443 http://127.0.0.1:18789 && exit 0; sleep 1; done; exit 1\"'";
-        ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:openclaw || true'";
-      };
-    };
-
     tmpfiles.rules = [
       "d ${millDocsVaultPath} 0755 emiller users -"
     ];
@@ -972,9 +691,6 @@ in
   };
 
   # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
-  # Hermes Scintillate takeover: prevent OpenClaw gateway from reclaiming
-  # the Telegram bot on future rebuilds/reboots.
-  systemd.user.services.openclaw-gateway.enable = lib.mkForce false;
 
   services.znapzend = {
     # FIXME
