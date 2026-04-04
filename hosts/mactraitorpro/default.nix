@@ -19,7 +19,7 @@
           "hunkdiff"
           "critique"
         ];
-        # FIXME: Python disabled - openclaw bundles whisper which includes Python 3.13
+        # FIXME: Python disabled - bundled whisper currently includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
         python.conda.enable = false;
@@ -49,6 +49,7 @@
       services = {
         obsidian-sync.enable = false;
         docker.enable = true;
+        tailscale.enable = true;
         ssh.enable = true;
       };
 
