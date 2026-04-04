@@ -34,7 +34,7 @@ Linear OAuth tokens expire every 24h. The NUC auto-rotates them:
 
 - **`linear-token-init.service`** — oneshot before gateway, refreshes token on boot
 - **`linear-token-refresh.timer`** — every 12h, refreshes + restarts gateway
-- **Persisted state** — `~/.local/state/openclaw-linear/{token,refresh-token}`
+- **Persisted state** — `~/.local/state/hermes-linear/{token,refresh-token}`
 
 Linear rotates refresh tokens on each use. The refresh script persists the new one. If the chain breaks: `linear-oauth-refresh` from Mac re-bootstraps.
 

@@ -76,7 +76,7 @@ in
     edmundmiller
     nuc
   ];
-  "ha-openclaw-token.age".publicKeys = [
+  "ha-hermes-token.age".publicKeys = [
     edmundmiller
     nuc
   ];
@@ -85,7 +85,7 @@ in
     edmundmiller
     nuc
   ];
-  # Healthchecks.io keys (for openclaw + automation)
+  # Healthchecks.io keys (for automation)
   "healthchecks-ping-key.age".publicKeys = [
     edmundmiller
     nuc

@@ -100,7 +100,7 @@ Linear OAuth tokens expire every 24h. The system auto-rotates them:
 1. **Agenix seed** (`linear-api-token.age`, `linear-refresh-token.age`) — bootstrap values, encrypted for edmundmiller + nuc keys
 2. **`linear-token-init.service`** (oneshot, runs before gateway) — refreshes token on first boot using the refresh token
 3. **`linear-token-refresh.timer`** — fires every 12h, calls the refresh script, restarts gateway
-4. **Persisted state** (`~/.local/state/openclaw-linear/`) — `token` (access) and `refresh-token` (rotated)
+4. **Persisted state** (`~/.local/state/hermes-linear/`) — `token` (access) and `refresh-token` (rotated)
 
 **Critical detail:** Linear rotates refresh tokens on every use. The refresh script persists the new refresh token to `STATE_DIRECTORY/refresh-token`, preferring it over the agenix seed. This prevents token chain death.
 
@@ -150,8 +150,6 @@ Located in `hosts/nuc/secrets/`:
 - `openai-api-key.age` — OpenAI API
 - `gemini-api-key.age` — Gemini API
 - `elevenlabs-api-key.age` — ElevenLabs TTS
-- `openclaw-gateway-token.age` — Gateway auth
-- `openclaw-hooks-token.age` — OpenClaw hooks auth (used by Gatus webhook alerting)
 - `telegram-bot-token.age` — Telegram bot token (used by Gatus alerting)
 - `linear-api-token.age` — Linear OAuth access token (see Linear Agent Bridge section)
 - `linear-refresh-token.age` — Linear OAuth refresh token (see Linear Agent Bridge section)

@@ -10,7 +10,7 @@ set -euo pipefail
 
 DOTFILES="${DOTFILES:-$HOME/.config/dotfiles}"
 SECRETS_DIR="$DOTFILES/hosts/nuc/secrets"
-NUC_STATE="/home/emiller/.local/state/openclaw-linear"
+NUC_STATE="/home/emiller/.local/state/hermes-linear"
 
 CLIENT_ID="c64c969674a02fccc863d4aa950ec132"
 CLIENT_SECRET="72406896af1a83cb5765c6042a59cde2"

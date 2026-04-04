@@ -27,7 +27,7 @@ hosts/
 
 **Shared secrets** (`hosts/shared/secrets/`): Cross-host secrets. Filtered at eval time — only secrets whose `publicKeys` list includes the current host's key (from `host-keys.nix`) are loaded.
 
-**Darwin secrets**: Hardcoded in the module (currently `wakatime-api-key` and `openclaw-gateway-token`). No auto-discovery — add entries directly to the `home-manager.users.*.age.secrets` block in `default.nix`.
+**Darwin secrets**: Hardcoded in the module (currently `wakatime-api-key`). No auto-discovery — add entries directly to the `home-manager.users.*.age.secrets` block in `default.nix`.
 
 ## Adding a New Secret
 

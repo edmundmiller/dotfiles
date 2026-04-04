@@ -93,13 +93,14 @@ let
   telegramBindingsModule =
     let
       telegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/telegram-bindings.nix;
-      legacyTelegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix;
+      compatibilityTelegramBindingsPath =
+        inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix;
     in
     import (
       if builtins.pathExists telegramBindingsPath then
         telegramBindingsPath
       else
-        legacyTelegramBindingsPath
+        compatibilityTelegramBindingsPath
     );
   telegramBindings = telegramBindingsModule (
     {
@@ -137,7 +138,7 @@ let
       config.age.secrets.telegram-bot-token-scintillate.path
     else
       config.age.secrets.telegram-bot-token.path;
-  linearTokenFile = "/home/emiller/.local/state/openclaw-linear/token";
+  linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
   mkAgentSecret = envVar: secretName: {
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
@@ -147,7 +148,7 @@ let
     (mkAgentSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
     (mkAgentSecret "GEMINI_API_KEY" "gemini-api-key")
     (mkAgentSecret "FIREWORKS_API_KEY" "fireworks-api-key")
-    (mkAgentSecret "HA_TOKEN" "ha-openclaw-token")
+    (mkAgentSecret "HA_TOKEN" "ha-hermes-token")
     (mkAgentSecret "KILOCODE_API_KEY" "kilocode-api-key")
     (mkAgentSecret "OPENAI_API_KEY" "openai-api-key")
     (mkAgentSecret "OPENROUTER_API_KEY" "openrouter-api-key")
@@ -254,7 +255,7 @@ in
 
     bootstrapLinearToken = {
       text = ''
-        TOKEN_FILE="/home/emiller/.local/state/openclaw-linear/token"
+        TOKEN_FILE="/home/emiller/.local/state/hermes-linear/token"
         if [ ! -s "$TOKEN_FILE" ]; then
           mkdir -p "$(dirname "$TOKEN_FILE")"
           cp /run/agenix/linear-api-token "$TOKEN_FILE"
