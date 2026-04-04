@@ -1,0 +1,37 @@
+name: catppuccin-mocha
+description: Catppuccin Mocha — matched to the tmux dark theme
+
+colors:
+  banner_border: "#585b70"
+  banner_title: "#cdd6f4"
+  banner_accent: "#cba6f7"
+  banner_dim: "#9399b2"
+  banner_text: "#cdd6f4"
+  ui_accent: "#cba6f7"
+  ui_label: "#89b4fa"
+  ui_ok: "#a6e3a1"
+  ui_error: "#f38ba8"
+  ui_warn: "#f9e2af"
+  prompt: "#cdd6f4"
+  input_rule: "#585b70"
+  response_border: "#cba6f7"
+  session_label: "#89b4fa"
+  session_border: "#585b70"
+
+spinner:
+  thinking_verbs:
+    - thinking
+    - checking
+    - working
+  wings:
+    - ["[", "]"]
+
+branding:
+  agent_name: Hermes Agent
+  welcome: Welcome to Hermes Agent! Type your message or /help for commands.
+  goodbye: Goodbye! ⚕
+  response_label: " ⚕ Hermes "
+  prompt_symbol: "❯ "
+  help_header: "(^_^)? Available Commands"
+
+tool_prefix: "┊"
