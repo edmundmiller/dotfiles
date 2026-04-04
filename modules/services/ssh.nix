@@ -62,6 +62,12 @@ in
         Host promoter
             HostName promoter.utdallas.edu
             User emiller
+
+        # NUC server (Tailscale/MagicDNS)
+        Host nuc
+            HostName nuc.cinnamon-rooster.ts.net
+            User emiller
+            ForwardAgent yes
       '';
     }
 
