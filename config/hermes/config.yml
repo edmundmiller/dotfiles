@@ -72,6 +72,9 @@ provider_routing:
   order:
     - Fireworks
 
+display:
+  skin: slate
+
 memory:
   memory_enabled: true
   user_profile_enabled: true
