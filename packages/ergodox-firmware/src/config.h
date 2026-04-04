@@ -1,5 +1,5 @@
 #undef DEBOUNCE
-#define DEBOUNCE 10  // Slightly higher debounce to reduce chatter while keeping sym_eager_pr responsive
+#define DEBOUNCE 20  // Higher debounce to suppress sticky/chattering keys while keeping sym_eager_pr responsive
 
 #undef TAPPING_TERM
 #define TAPPING_TERM 140

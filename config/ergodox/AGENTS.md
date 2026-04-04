@@ -59,7 +59,7 @@ hey ergodox-info        # Show paths and settings
 
 **Timing issues**: Edit `packages/ergodox-firmware/src/config.h`
 
-- `DEBOUNCE 10` - Debounce window in ms
+- `DEBOUNCE 20` - Debounce window in ms
 - `DEBOUNCE_TYPE sym_eager_pr` in `rules.mk` - per-row eager debounce, recommended by QMK docs for ErgoDox-style rotated matrices
 - `TAPPING_TERM 140` - Mod-tap timing (ms)
 
