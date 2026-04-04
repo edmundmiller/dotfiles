@@ -9,6 +9,7 @@
 # - terminal.timeout: increase/decrease how long sessions can run
 # - memory.memory_enabled: turn long-term memory on/off
 # - memory.user_profile_enabled: decide whether Hermes should keep a profile
+# - model/fallback_providers: control the OpenClaw-style inference chain
 #
 # Nix can still layer on top of this file, so treat these as the easy-to-edit
 # baseline settings.
@@ -42,6 +43,34 @@ terminal:
   backend: local
   cwd: "."
   timeout: 180
+
+# Match the current OpenClaw workspace inference preference order:
+# 1. OpenAI Codex via existing Codex auth (~/.codex/auth.json is auto-imported)
+# 2. Fireworks custom endpoint
+# 3. KiloCode
+model:
+  provider: openai-codex
+  default: gpt-5.4
+
+fallback_model:
+  provider: openai-codex
+  model: gpt-5.4
+
+fallback_providers:
+  - provider: openai-codex
+    model: gpt-5.4
+  - provider: custom
+    model: accounts/fireworks/routers/kimi-k2p5-turbo
+    base_url: https://api.fireworks.ai/inference/v1
+    api_key_env: FIREWORKS_API_KEY
+  - provider: kilocode
+    model: kilo-auto/balanced
+
+# Auxiliary tools (vision/web summarization/etc.) prefer Fireworks-backed
+# OpenRouter routing when OPENROUTER_API_KEY is present.
+provider_routing:
+  order:
+    - Fireworks
 
 memory:
   memory_enabled: true
