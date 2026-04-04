@@ -34,8 +34,7 @@ in
         inputs.opnix.nixosModules.default
       ]
       ++ optionals (inputs ? openclaw-workspace) [
-        inputs.openclaw-workspace.nixosModules.openclawBase
-        inputs.openclaw-workspace.nixosModules.openclawPersonalDefaults
+        inputs.openclaw-workspace.nixosModules.hermes
       ]
       ++ [
         # Add openclaw home-manager module for NixOS hosts

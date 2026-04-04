@@ -91,9 +91,17 @@ let
   agentGatewayRuntime = "hermes";
   openclawTelegramEnable = telegramSplitBetweenOpenClawAndHermes;
   hermesTelegramEnable = telegramOwnedByHermes || telegramSplitBetweenOpenClawAndHermes;
-  openclawTelegramModule = import (
-    inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix
-  );
+  openclawTelegramModule =
+    let
+      telegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/telegram-bindings.nix;
+      legacyTelegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix;
+    in
+    import (
+      if builtins.pathExists telegramBindingsPath then
+        telegramBindingsPath
+      else
+        legacyTelegramBindingsPath
+    );
   openclawTelegram = openclawTelegramModule (
     {
       inherit lib;
@@ -583,20 +591,6 @@ in
     my.zele # packaged upstream+patches zele CLI
   ];
   imports = [
-    (
-      { pkgs, ... }@args:
-      let
-        compatPkgs = pkgs // {
-          inherit (pkgs.stdenv.hostPlatform) system;
-        };
-      in
-      inputs.openclaw-workspace.nixosModules.hermes (
-        (builtins.removeAttrs args [ "pkgs" ])
-        // {
-          pkgs = compatPkgs;
-        }
-      )
-    )
     ../_server.nix
     ../_home.nix
     ./hardware-configuration.nix
