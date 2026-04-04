@@ -93,15 +93,8 @@ let
   telegramBindingsModule =
     let
       telegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/telegram-bindings.nix;
-      compatibilityTelegramBindingsPath =
-        inputs.openclaw-workspace + /deployments/nuc/openclaw-telegram.nix;
     in
-    import (
-      if builtins.pathExists telegramBindingsPath then
-        telegramBindingsPath
-      else
-        compatibilityTelegramBindingsPath
-    );
+    import telegramBindingsPath;
   telegramBindings = telegramBindingsModule (
     {
       inherit lib;
