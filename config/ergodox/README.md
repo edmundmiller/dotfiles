@@ -176,8 +176,10 @@ config/ergodox/
 hey ergodox-edit
 
 # Common settings in config.h:
-#   DEBOUNCE 5       - Key debounce time (ms)
+#   DEBOUNCE 10      - Key debounce time (ms)
 #   TAPPING_TERM 140 - Mod-tap timing (ms)
+# Common setting in rules.mk:
+#   DEBOUNCE_TYPE sym_eager_pr - per-row eager debounce, good fit for ErgoDox's rotated matrix
 
 # Rebuild and flash
 hey ergodox-build-flash
@@ -187,12 +189,13 @@ hey ergodox-build-flash
 
 **Dropped keys when typing fast:**
 
-- Lower DEBOUNCE in config.h (default 5ms, was 40ms)
+- Confirm `DEBOUNCE_TYPE = sym_eager_pr` in `rules.mk`
+- If you still get chatter, bump `DEBOUNCE` upward in small steps (current default here: 10ms)
 - Rebuild and flash
 
 **Double/triple characters from single keypress (chattering):**
 
-- Raise DEBOUNCE in config.h by 5-10ms
+- Raise `DEBOUNCE` in `config.h` by 5-10ms if needed
 - If persistent, switch may need replacing
 
 **Flash fails with USB permissions:**
