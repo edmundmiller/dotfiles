@@ -56,7 +56,6 @@
 
       desktop = {
         apps.raycast.enable = true;
-        apps.openclaw.enable = true;
         term.ghostty.enable = true;
       };
     };

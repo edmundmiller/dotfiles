@@ -42,7 +42,6 @@ in
         {
           home-manager.useGlobalPkgs = true;
           home-manager.sharedModules = [
-            inputs.nix-openclaw.homeManagerModules.openclaw
             inputs.skills-catalog.homeManagerModules.default
           ];
         }
