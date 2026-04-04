@@ -30,7 +30,7 @@ let
 
   renderedConfig = yamlFormat.generate "hermes-settings.yaml" renderedSettings;
   soulFile = "${configDir}/hermes/SOUL.md";
-  inherit (cfg) configFile;
+  inherit (cfg) configFile skinsDir;
 in
 {
   options.modules.shell.hermes = with types; {
@@ -52,6 +52,15 @@ in
       type = str;
       default = "${configDir}/hermes/config.yml";
       description = "Editable Hermes base config merged into $HERMES_HOME/config.yaml.";
+    };
+
+    skinsDir = mkOption {
+      type = str;
+      default = "${configDir}/hermes/skins";
+      description = ''
+        Repo-managed Hermes skins materialized into $HERMES_HOME/skins.
+        User-created skins outside this directory are preserved.
+      '';
     };
 
     settings = mkOption {
@@ -101,6 +110,7 @@ in
                     legacy_home="$HOME/.hermes"
                     config_target="$hermes_home/config.yaml"
                     soul_target="$hermes_home/SOUL.md"
+                    skins_target="$hermes_home/skins"
 
                     ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$hermes_home")"
 
@@ -109,7 +119,7 @@ in
                       ${pkgs.coreutils}/bin/mv "$legacy_home" "$hermes_home"
                     fi
 
-                    ${pkgs.coreutils}/bin/mkdir -p "$hermes_home" "$hermes_home/memories"
+                    ${pkgs.coreutils}/bin/mkdir -p "$hermes_home" "$hermes_home/memories" "$skins_target"
 
                     # If a previous version left behind a symlinked config, replace it with
                     # a writable local copy before merging declarative defaults.
@@ -125,6 +135,30 @@ in
                     fi
 
                     ${pkgs.coreutils}/bin/install -Dm644 ${soulFile} "$soul_target"
+
+                    skins_source=${escapeShellArg skinsDir}
+                    ${pkgs.python3}/bin/python3 - "$skins_source" "$skins_target" <<'PY'
+          import pathlib
+          import shutil
+          import sys
+
+
+          source = pathlib.Path(sys.argv[1])
+          target_root = pathlib.Path(sys.argv[2])
+
+
+          if source.is_dir():
+              for skin_file in source.rglob("*"):
+                  if not skin_file.is_file():
+                      continue
+                  if skin_file.suffix.lower() not in {".yaml", ".yml"}:
+                      continue
+
+                  rel_path = skin_file.relative_to(source)
+                  dest_path = target_root / rel_path
+                  dest_path.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copy2(skin_file, dest_path)
+          PY
 
                     ${yamlPython}/bin/python3 - "$config_target" ${escapeShellArg configFile} ${renderedConfig} <<'PY'
           import copy
