@@ -69,6 +69,9 @@
 
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults.
+    # Note: while actively iterating locally, flake.lock may intentionally pin
+    # this input to /Users/emiller/src/personal/openclaw-workspace so deploys
+    # use unpublished local workspace changes directly.
     openclaw-workspace = {
       url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace";
       inputs.hermesAgent.follows = "hermesAgent";
