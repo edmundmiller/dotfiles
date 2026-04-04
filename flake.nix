@@ -63,7 +63,7 @@
     # can use Numtide's exact packaged derivation and maximize binary-cache
     # hits instead of rebuilding against our repo-wide nixpkgs follow.
     llm-agents-upstream = {
-      url = "github:numtide/llm-agents.nix/47ea2efcbe4f4056b320b157e4bdb263dd0000b2";
+      url = "github:numtide/llm-agents.nix/8945761bf8e462e15b3b76f1a38511f9b809619d";
       inputs.systems.follows = "systems";
     };
 
@@ -94,7 +94,7 @@
       # Keep the packaged Hermes source aligned with the existing upstream pin
       # from openclaw-workspace, then layer only the local fallback fix patch
       # on top.
-      url = "github:NousResearch/hermes-agent/83dec2b3ec0f6d0ddc5750f9a9e811a6a355a49f";
+      url = "github:NousResearch/hermes-agent/abf1e98f6253f6984479fe03d1098173a9b065a7";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
