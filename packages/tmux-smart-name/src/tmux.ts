@@ -52,6 +52,7 @@ export interface TmuxPane {
   pid: string;
   command: string;
   path: string;
+  paneTitle?: string;
   active: boolean;
   /** Session name this pane belongs to (populated by listAllPanes) */
   sessionName?: string;
@@ -69,18 +70,20 @@ export function listPanes(windowId: string): TmuxPane[] {
     "#{pane_pid}",
     "#{pane_current_command}",
     "#{pane_current_path}",
+    "#{pane_title}",
     "#{pane_active}",
   ].join("\t");
   return tmuxCmd("list-panes", "-t", windowId, "-F", fmt).flatMap((line) => {
-    const parts = line.split("\t", 5);
-    if (parts.length < 5) return [];
+    const parts = line.split("\t", 6);
+    if (parts.length < 6) return [];
     return [
       {
         paneId: parts[0],
         pid: parts[1],
         command: parts[2],
         path: parts[3],
-        active: parts[4] === "1",
+        paneTitle: parts[4],
+        active: parts[5] === "1",
       },
     ];
   });
@@ -100,6 +103,7 @@ export function listAllPanes(): Map<string, TmuxPane[]> {
     "#{pane_pid}",
     "#{pane_current_command}",
     "#{pane_current_path}",
+    "#{pane_title}",
     "#{pane_active}",
   ].join("\t");
 
@@ -107,8 +111,8 @@ export function listAllPanes(): Map<string, TmuxPane[]> {
   const byWindow = new Map<string, TmuxPane[]>();
 
   for (const line of lines) {
-    const parts = line.split("\t", 9);
-    if (parts.length < 9) continue;
+    const parts = line.split("\t", 10);
+    if (parts.length < 10) continue;
 
     const pane: TmuxPane = {
       sessionName: parts[0],
@@ -119,7 +123,8 @@ export function listAllPanes(): Map<string, TmuxPane[]> {
       pid: parts[5],
       command: parts[6],
       path: parts[7],
-      active: parts[8] === "1",
+      paneTitle: parts[8],
+      active: parts[9] === "1",
     };
 
     const key = parts[1]; // windowId

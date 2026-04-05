@@ -28,13 +28,14 @@ function listAllPanes() {
     "#{pane_pid}",
     "#{pane_current_command}",
     "#{pane_current_path}",
+    "#{pane_title}",
     "#{pane_active}"
   ].join("\t");
   const lines = tmuxCmd("list-panes", "-a", "-F", fmt);
   const byWindow = new Map;
   for (const line of lines) {
-    const parts = line.split("\t", 9);
-    if (parts.length < 9)
+    const parts = line.split("\t", 10);
+    if (parts.length < 10)
       continue;
     const pane = {
       sessionName: parts[0],
@@ -45,7 +46,8 @@ function listAllPanes() {
       pid: parts[5],
       command: parts[6],
       path: parts[7],
-      active: parts[8] === "1"
+      paneTitle: parts[8],
+      active: parts[9] === "1"
     };
     const key = parts[1];
     const arr = byWindow.get(key);
@@ -82,6 +84,7 @@ var AGENT_PROGRAMS = [
   "gemini",
   "amp",
   "opencode",
+  "hermes",
   "pi",
   "aider",
   "goose",
@@ -101,6 +104,8 @@ var AGENT_PROGRAMS = [
 var DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", ...AGENT_PROGRAMS];
 var AGENT_ALIASES = {
   oc: "opencode",
+  ".hermes-wrapped": "hermes",
+  "hermes-agent": "hermes",
   "codex-cli": "codex",
   "gpt-engineer": "gpt-engineer",
   "gpt-pilot": "gpt-pilot"
@@ -276,7 +281,8 @@ function getPaneProgram(paneCmd, panePid) {
     return paneCmd;
   if (AGENT_ALIASES[paneCmd])
     return AGENT_ALIASES[paneCmd];
-  if (panePid && (SHELLS.includes(paneCmd) || WRAPPERS.includes(paneCmd))) {
+  const isWrapper = WRAPPERS.includes(paneCmd) || /^python3(?:\.\d+)?$/.test(paneCmd) || /^python(?:\.\d+)?$/.test(paneCmd);
+  if (panePid && (SHELLS.includes(paneCmd) || isWrapper)) {
     const childCmd = getChildCmdline(panePid);
     if (childCmd) {
       return normalizeProgram(childCmd) || paneCmd;
@@ -509,6 +515,7 @@ function readPiStatusFile(paneId) {
 }
 
 // src/naming.ts
+import { execFileSync as execFileSync3 } from "node:child_process";
 import { homedir } from "node:os";
 var MAX_NAME_LEN = 24;
 function formatPath(path) {
@@ -599,8 +606,50 @@ function parsePiFooter(content) {
   }
   return ctx;
 }
+var HERMES_SESSION_RE = /\bSession:\s*([0-9]{8}_[0-9]{6}_[A-Za-z0-9]+)\b/;
+function parseHermesSession(content, paneTitle = "") {
+  const ctx = {};
+  const match = content.match(HERMES_SESSION_RE);
+  if (match?.[1]) {
+    const title = lookupHermesSessionTitle(match[1]);
+    if (title)
+      ctx.sessionName = title;
+  }
+  if (!ctx.sessionName) {
+    const launchTitle = parseHermesLaunchTitle(paneTitle);
+    if (launchTitle)
+      ctx.sessionName = launchTitle;
+  }
+  return ctx;
+}
+function parseHermesLaunchTitle(paneTitle) {
+  if (!paneTitle)
+    return "";
+  const quoted = paneTitle.match(/\bhermes\b.*\s-c\s+"([^"]+)"/i);
+  if (quoted?.[1])
+    return quoted[1].trim();
+  const bare = paneTitle.match(/\bhermes\b.*\s-c\s+(.+)$/i);
+  if (bare?.[1])
+    return bare[1].trim();
+  return "";
+}
+function lookupHermesSessionTitle(sessionId) {
+  const dbPath = `${homedir()}/.config/hermes/state.db`;
+  const safeSessionId = sessionId.replace(/'/g, "''");
+  try {
+    const out = execFileSync3("sqlite3", [dbPath, `SELECT title FROM sessions WHERE id = '${safeSessionId}' LIMIT 1;`], {
+      encoding: "utf8",
+      timeout: 1500,
+      stdio: ["pipe", "pipe", "ignore"]
+    }).trim();
+    return out;
+  } catch {
+    return "";
+  }
+}
 var DISPLAY_NAMES = {
   pi: "π",
+  hermes: "⚕",
   nvim: "",
   vim: "",
   vi: "",
@@ -634,7 +683,7 @@ function buildBaseName(program, path, context) {
 }
 
 // src/menu.ts
-import { execFileSync as execFileSync3 } from "node:child_process";
+import { execFileSync as execFileSync4 } from "node:child_process";
 function findAgentPanes(panes) {
   const agents = [];
   for (const pane of panes) {
@@ -702,12 +751,12 @@ function generateMenuCommand(agents) {
 function runMenu() {
   try {
     if (!hasSessions()) {
-      execFileSync3("tmux", ["display-message", "No tmux sessions"]);
+      execFileSync4("tmux", ["display-message", "No tmux sessions"]);
       return;
     }
     const agents = getAllAgentsInfo();
     if (agents.length === 0) {
-      execFileSync3("tmux", ["display-message", "No AI agents running"]);
+      execFileSync4("tmux", ["display-message", "No AI agents running"]);
       return;
     }
     const sorted2 = [...agents].sort((a, b) => (STATUS_PRIORITY[a.status] ?? 5) - (STATUS_PRIORITY[b.status] ?? 5) || a.session.localeCompare(b.session) || a.windowIndex.localeCompare(b.windowIndex));
@@ -735,10 +784,10 @@ function runMenu() {
     }
     menuArgs.push("", "", "");
     menuArgs.push("Close", "q", "");
-    execFileSync3("tmux", ["display-menu", ...menuArgs]);
+    execFileSync4("tmux", ["display-menu", ...menuArgs]);
   } catch (e) {
     try {
-      execFileSync3("tmux", [
+      execFileSync4("tmux", [
         "display-message",
         `Error: ${e instanceof Error ? e.message : "unknown"}`
       ]);
@@ -747,7 +796,7 @@ function runMenu() {
 }
 
 // src/index.ts
-import { execFileSync as execFileSync4 } from "node:child_process";
+import { execFileSync as execFileSync5 } from "node:child_process";
 function renameAll() {
   if (!hasSessions())
     return;
@@ -774,6 +823,9 @@ function renameAll() {
         if (activeAgent && activeAgent.agent === "pi") {
           activeContent = capturePane(active.paneId);
           context = parsePiFooter(activeContent);
+        } else if (activeAgent && activeAgent.agent === "hermes") {
+          activeContent = capturePane(active.paneId, 200);
+          context = parseHermesSession(activeContent, active.paneTitle ?? "");
         } else if (program === "nvim" || program === "vim" || program === "vi") {
           const cmdline = getChildCmdline(active.pid) || getProcessCmdline(active.pid);
           const filename = extractFilenameFromArgs(cmdline);
@@ -846,15 +898,15 @@ function checkAttention() {
     if (attention.length > 0) {
       let lastCount = 0;
       try {
-        const out = execFileSync4("tmux", ["show-environment", "-g", "TMUX_AGENT_LAST_ATTENTION"], {
+        const out = execFileSync5("tmux", ["show-environment", "-g", "TMUX_AGENT_LAST_ATTENTION"], {
           encoding: "utf8",
           stdio: ["pipe", "pipe", "ignore"]
         }).trim().split("=")[1];
         lastCount = parseInt(out, 10) || 0;
       } catch {}
       if (attention.length > lastCount) {
-        execFileSync4("tmux", ["run-shell", "-b", "printf '\\a'"]);
-        execFileSync4("tmux", [
+        execFileSync5("tmux", ["run-shell", "-b", "printf '\\a'"]);
+        execFileSync5("tmux", [
           "set-environment",
           "-g",
           "TMUX_AGENT_LAST_ATTENTION",
@@ -863,7 +915,7 @@ function checkAttention() {
       }
     } else {
       try {
-        execFileSync4("tmux", ["set-environment", "-g", "TMUX_AGENT_LAST_ATTENTION", "0"]);
+        execFileSync5("tmux", ["set-environment", "-g", "TMUX_AGENT_LAST_ATTENTION", "0"]);
       } catch {}
     }
   } catch {}

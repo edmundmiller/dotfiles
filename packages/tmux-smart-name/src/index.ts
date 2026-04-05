@@ -22,7 +22,14 @@ import {
   extractFilenameFromArgs,
 } from "./process.js";
 import { detectStatus, readPiStatusFile, prioritize, colorize } from "./status.js";
-import { formatPath, buildBaseName, trimName, parsePiFooter, type PaneContext } from "./naming.js";
+import {
+  formatPath,
+  buildBaseName,
+  trimName,
+  parsePiFooter,
+  parseHermesSession,
+  type PaneContext,
+} from "./naming.js";
 import { getAllAgentsInfo, generateMenuCommand, runMenu } from "./menu.js";
 
 // ── Main rename ────────────────────────────────────────────────────────────
@@ -61,6 +68,11 @@ function renameAll(): void {
         if (activeAgent && activeAgent.agent === "pi") {
           activeContent = capturePane(active.paneId);
           context = parsePiFooter(activeContent);
+        } else if (activeAgent && activeAgent.agent === "hermes") {
+          // Hermes shows the session ID near the top of the pane, so capture a
+          // deeper scrollback slice than the default footer-oriented window.
+          activeContent = capturePane(active.paneId, 200);
+          context = parseHermesSession(activeContent, active.paneTitle ?? "");
         } else if (program === "nvim" || program === "vim" || program === "vi") {
           // pane_pid is the shell; nvim is its child. Use getChildCmdline to find
           // nvim's full cmdline (with args). Fall back to getProcessCmdline for

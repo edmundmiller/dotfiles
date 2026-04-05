@@ -1,7 +1,37 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildBaseName, trimName, shortenPath, parsePiFooter } from "../src/naming";
+import {
+  buildBaseName,
+  trimName,
+  shortenPath,
+  parsePiFooter,
+  parseHermesSession,
+} from "../src/naming";
+
+describe("parseHermesSession", () => {
+  test("extracts Hermes session ID and looks up title from db", () => {
+    const content = `Hermes Agent v0.7.0\n│ Session: 20260404_151524_fae371 │\n⚕ ❯ type a message`;
+    expect(parseHermesSession(content)).toEqual({
+      sessionName: "Updating Home Assistant Skill Documentation",
+    });
+  });
+
+  test("falls back to launch title from pane title", () => {
+    expect(
+      parseHermesSession(
+        "random output\nno session id here",
+        'hermes -c "Norbot Family Telegram Channel Configuration"'
+      )
+    ).toEqual({
+      sessionName: "Norbot Family Telegram Channel Configuration",
+    });
+  });
+
+  test("returns empty when no Hermes session is visible", () => {
+    expect(parseHermesSession("random output\nno session id here")).toEqual({});
+  });
+});
 
 describe("shortenPath", () => {
   test.each([
@@ -88,6 +118,7 @@ describe("buildBaseName", () => {
     ["python", "~/repo", undefined, "python"],
     ["opencode", "~/src/project", undefined, OPENCODE],
     ["claude", "", undefined, CLAUDE],
+    ["hermes", "~/src/project", undefined, "⚕"],
     ["pi", "~/src/personal/project", undefined, "π"],
     ["amp", "~/foo", undefined, AMP],
   ] as const)("%s: no project dir in name", (program, path, _ctx, expected) => {
@@ -111,6 +142,12 @@ describe("buildBaseName", () => {
 
   test("pi on main (no branch in context)", () => {
     expect(buildBaseName("pi", "~/.config/dotfiles", {})).toBe("π");
+  });
+
+  test("hermes with session title", () => {
+    expect(buildBaseName("hermes", "~/src/project", { sessionName: "Crisp tmux polish" })).toBe(
+      "⚕ Crisp tmux polish"
+    );
   });
 
   test("nvim with filename", () => {

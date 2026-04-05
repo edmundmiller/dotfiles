@@ -197,10 +197,10 @@ items:
         command: "run $TMUX_HOME/project-session.sh attach"
       - name: New worktree
         key: w
-        command: 'command-prompt -p ''Worktree name:'' ''run $TMUX_HOME/project-session.sh create "%%"'''
+        command: "run-shell $TMUX_HOME/project-session-prompt.sh create"
       - name: Remove worktree
         key: x
-        command: 'command-prompt -p ''Remove worktree:'' ''run $TMUX_HOME/project-session.sh remove "%%"'''
+        command: "run-shell $TMUX_HOME/project-session-prompt.sh remove"
   - name: Pi sessions
     key: a
     command: "display-popup -E -w 80% -h 70% $DOTFILES_BIN/pi-sessions"
