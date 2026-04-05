@@ -39,8 +39,10 @@ hey nuc-status
 
 # Check specific services
 ssh nuc "systemctl status home-assistant"
-ssh nuc "systemctl status openclaw-gateway"
-ssh nuc "systemctl --user status openclaw-gateway"
+ssh nuc "systemctl status hermes-agent.service"
+
+# Legacy OpenClaw deployments only
+ssh nuc "systemctl --user status openclaw-gateway.service"
 
 # Check current generation
 ssh nuc "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system | tail -3"
@@ -84,9 +86,11 @@ ssh nuc "sudo journalctl -u <service-name> --since '5 minutes ago'"
 hey nuc-rollback
 ```
 
-### openclaw-gateway not picking up config changes
+### Gateway restart behavior after deploy
 
-The gateway uses `X-RestartIfChanged=false`. After deploy, it needs a manual try-restart (which `hey nuc` does automatically):
+The active NUC gateway is `hermes-agent.service`, a system service that is restarted by activation during `hey nuc`, so no manual post-deploy restart is normally needed.
+
+For older OpenClaw deployments only, the legacy user unit still uses `X-RestartIfChanged=false`, so you may need:
 
 ```bash
 ssh nuc "systemctl --user try-restart openclaw-gateway.service"
