@@ -25,14 +25,19 @@ rebuild *args='switch': opencode-update
     else
         nixos-rebuild --flake "{{FLAKE_DIR}}" --sudo {{args}}
 
-        # openclaw-gateway uses X-RestartIfChanged=false to survive rebuilds.
-        # HM rewrites openclaw.json during switch; try-restart picks that up.
+        # Legacy OpenClaw deployments used a user unit that needed a post-switch
+        # try-restart. Hermes on the NUC runs as a system service and is restarted
+        # by activation, so only touch the legacy user unit when it still exists.
         # Skip when we ARE openclaw (OPS-24).
-        if grep -q 'openclaw-gateway' /proc/self/cgroup 2>/dev/null; then
+        if systemctl list-unit-files hermes-agent.service >/dev/null 2>&1; then
+            echo "=== hermes-agent: system-managed restart handled by activation ==="
+        elif grep -q 'openclaw-gateway' /proc/self/cgroup 2>/dev/null; then
             echo "=== openclaw-gateway: skipping restart (deploy triggered by openclaw) ==="
-        else
+        elif systemctl --user list-unit-files openclaw-gateway.service >/dev/null 2>&1; then
             echo "=== try-restart openclaw-gateway ==="
             systemctl --user try-restart openclaw-gateway.service
+        else
+            echo "=== no legacy openclaw-gateway user unit present ==="
         fi
     fi
 
