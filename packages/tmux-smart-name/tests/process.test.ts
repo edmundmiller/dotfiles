@@ -14,6 +14,11 @@ describe("normalizeProgram", () => {
     // pi
     ["pi --help", "pi"],
 
+    // Hermes Agent
+    ["hermes chat", "hermes"],
+    ["python3.13 /nix/store/.../bin/hermes", "hermes"],
+    ["python3.13 /nix/store/.../bin/.hermes-wrapped -w", "hermes"],
+
     // Amp
     ["amp --config foo", "amp"],
 
@@ -72,6 +77,7 @@ describe("AGENT_PROGRAMS", () => {
       "opencode",
       "claude",
       "amp",
+      "hermes",
       "pi",
       "aider",
       "goose",
