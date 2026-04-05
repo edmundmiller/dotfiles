@@ -176,7 +176,7 @@ Config: `hosts/_server.nix` — `system.autoUpgrade.flake = "github:edmundmiller
 
 - **Deploy builds remotely**: `hey nuc` evaluates locally but builds on NUC. Large rebuilds (home-assistant, etc.) take time.
 - **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
-- **New agenix secrets**: ExecStartPre env injection may run before agenix decrypts new secrets on first deploy. Restart the service after: `systemctl --user restart openclaw-gateway`.
+- **New agenix secrets**: If a first deploy lands new secrets before a service has picked them up, verify the current gateway/service model before restarting anything. On the current NUC, Hermes runs as system service `hermes-agent.service`, so check `sudo systemctl status hermes-agent.service` and restart that if needed. `systemctl --user restart openclaw-gateway` only applies to older OpenClaw deployments.
 - **QMD now comes from llm-agents.nix**: if packaging breaks again, check `numtide/llm-agents.nix/packages/qmd/` and the upstream QMD note at https://github.com/tobi/qmd/pull/285#issuecomment-4012495904 before reviving a local wrapper.
 - **nix-ld libraries**: Any new generic linux binary that fails with "cannot run dynamically linked executable" needs its missing libs added to `programs.nix-ld.libraries`. Use `ldd /path/to/binary` to find missing `.so` files.
 - **ZFS/znapzend**: Currently disabled (FIXME). Backup config exists but not active.
