@@ -1,6 +1,7 @@
 /**
  * Window naming logic — builds display names from program + path.
  */
+import { execFileSync } from "node:child_process";
 import { homedir } from "node:os";
 import { SHELLS, DIR_PROGRAMS } from "./process.js";
 
@@ -90,7 +91,7 @@ export function trimName(name: string, maxLen = MAX_NAME_LEN): string {
 export interface PaneContext {
   /** Git branch (omitted if main/master) */
   branch?: string;
-  /** Pi session name */
+  /** Human-readable agent session title/name */
   sessionName?: string;
   /** Active file for editors (nvim, vim, etc.) */
   filename?: string;
@@ -129,11 +130,66 @@ export function parsePiFooter(content: string): PaneContext {
   return ctx;
 }
 
+const HERMES_SESSION_RE = /\bSession:\s*([0-9]{8}_[0-9]{6}_[A-Za-z0-9]+)\b/;
+
+/**
+ * Extract the Hermes session ID from pane content and look up its human-readable
+ * title from Hermes' local session database.
+ */
+export function parseHermesSession(content: string, paneTitle = ""): PaneContext {
+  const ctx: PaneContext = {};
+
+  const match = content.match(HERMES_SESSION_RE);
+  if (match?.[1]) {
+    const title = lookupHermesSessionTitle(match[1]);
+    if (title) ctx.sessionName = title;
+  }
+
+  if (!ctx.sessionName) {
+    const launchTitle = parseHermesLaunchTitle(paneTitle);
+    if (launchTitle) ctx.sessionName = launchTitle;
+  }
+
+  return ctx;
+}
+
+function parseHermesLaunchTitle(paneTitle: string): string {
+  if (!paneTitle) return "";
+
+  const quoted = paneTitle.match(/\bhermes\b.*\s-c\s+"([^"]+)"/i);
+  if (quoted?.[1]) return quoted[1].trim();
+
+  const bare = paneTitle.match(/\bhermes\b.*\s-c\s+(.+)$/i);
+  if (bare?.[1]) return bare[1].trim();
+
+  return "";
+}
+
+function lookupHermesSessionTitle(sessionId: string): string {
+  const dbPath = `${homedir()}/.config/hermes/state.db`;
+  const safeSessionId = sessionId.replace(/'/g, "''");
+  try {
+    const out = execFileSync(
+      "sqlite3",
+      [dbPath, `SELECT title FROM sessions WHERE id = '${safeSessionId}' LIMIT 1;`],
+      {
+        encoding: "utf8",
+        timeout: 1500,
+        stdio: ["pipe", "pipe", "ignore"],
+      }
+    ).trim();
+    return out;
+  } catch {
+    return "";
+  }
+}
+
 /** Map internal program identifiers to display names.
  * Agent icons use PUA codepoints from the Agent Icons font (U+F5000–F5003).
  * Nerd font icons used for nvim/vim/git. */
 const DISPLAY_NAMES: Record<string, string> = {
   pi: "π",
+  hermes: "⚕",
   nvim: "",
   vim: "",
   vi: "",

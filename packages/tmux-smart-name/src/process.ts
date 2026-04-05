@@ -30,6 +30,9 @@ export const AGENT_PROGRAMS = [
   // OpenCode
   "opencode",
 
+  // Hermes Agent
+  "hermes",
+
   // pi
   "pi",
 
@@ -80,6 +83,8 @@ export const DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", ...AGENT_PROGRA
 /** Maps alternate binary names → canonical agent name */
 const AGENT_ALIASES: Record<string, string> = {
   oc: "opencode",
+  ".hermes-wrapped": "hermes",
+  "hermes-agent": "hermes",
   "codex-cli": "codex",
   "gpt-engineer": "gpt-engineer",
   "gpt-pilot": "gpt-pilot",
@@ -278,7 +283,12 @@ export function getPaneProgram(paneCmd: string, panePid: string): string {
   if (AGENT_PROGRAMS.includes(paneCmd)) return paneCmd;
   if (AGENT_ALIASES[paneCmd]) return AGENT_ALIASES[paneCmd];
 
-  if (panePid && (SHELLS.includes(paneCmd) || WRAPPERS.includes(paneCmd))) {
+  const isWrapper =
+    WRAPPERS.includes(paneCmd) ||
+    /^python3(?:\.\d+)?$/.test(paneCmd) ||
+    /^python(?:\.\d+)?$/.test(paneCmd);
+
+  if (panePid && (SHELLS.includes(paneCmd) || isWrapper)) {
     const childCmd = getChildCmdline(panePid);
     if (childCmd) {
       return normalizeProgram(childCmd) || paneCmd;
