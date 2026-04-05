@@ -16,10 +16,21 @@ nuc:
     echo "=== Deploying to NUC ==="
     cd {{FLAKE_DIR}} && nix run .#deploy-rs -- .#nuc --skip-checks
 
-    # openclaw-gateway uses X-RestartIfChanged=false to survive rebuilds.
-    # HM rewrites openclaw.json during deploy; try-restart picks that up.
-    echo "=== try-restart openclaw-gateway on NUC ==="
-    ssh {{NUC_HOST}} "systemctl --user try-restart openclaw-gateway.service"
+    # Legacy OpenClaw deployments used a user unit that needed a post-deploy
+    # try-restart. The current NUC Hermes deployment runs as a system service and
+    # is restarted by activation, so only poke the legacy unit when it still
+    # exists.
+    echo "=== post-deploy gateway restart check on NUC ==="
+    ssh {{NUC_HOST}} '
+        if systemctl list-unit-files hermes-agent.service >/dev/null 2>&1; then
+            echo "hermes-agent.service is system-managed; no extra restart needed"
+        elif systemctl --user list-unit-files openclaw-gateway.service >/dev/null 2>&1; then
+            echo "legacy openclaw-gateway.service detected; try-restarting"
+            systemctl --user try-restart openclaw-gateway.service
+        else
+            echo "no gateway restart hook needed"
+        fi
+    '
 
 # Deploy to UNAS
 unas:
