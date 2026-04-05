@@ -142,6 +142,7 @@ let
     (mkAgentSecret "GEMINI_API_KEY" "gemini-api-key")
     (mkAgentSecret "FIREWORKS_API_KEY" "fireworks-api-key")
     (mkAgentSecret "HA_TOKEN" "ha-hermes-token")
+    (mkAgentSecret "HASS_TOKEN" "ha-hermes-token")
     (mkAgentSecret "KILOCODE_API_KEY" "kilocode-api-key")
     (mkAgentSecret "OPENAI_API_KEY" "openai-api-key")
     (mkAgentSecret "OPENROUTER_API_KEY" "openrouter-api-key")
@@ -400,7 +401,8 @@ in
     group = "users";
     createUser = false;
     environment = {
-      HA_URL = "http://127.0.0.1:8123";
+      HA_URL = "http://192.168.1.222:8123";
+      HASS_URL = "http://192.168.1.222:8123";
     }
     // lib.optionalAttrs hermesTelegramEnable {
       TELEGRAM_ALLOWED_USERS = hermesScintillateAllowedUsers;
