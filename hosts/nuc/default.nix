@@ -97,6 +97,7 @@ let
     }:$PATH
     exec ${anneHermesLauncher}/bin/anne-hermes gateway
   '';
+  anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   # Telegram routing topology for this host:
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
   # - "split"  => prepared future split; the shared bot keeps family/group traffic,
@@ -555,6 +556,28 @@ in
       ProtectHome = false;
       ProtectSystem = "strict";
       ReadWritePaths = [ "/var/lib/hermes-anne" ];
+    };
+  };
+
+  systemd.services.hermes-agent-anne-healthcheck-ping = {
+    description = "Check Anne Discord gateway health and ping healthchecks.io";
+    after = [ "hermes-agent-anne.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      DynamicUser = true;
+      ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/start";
+      ExecStart = "${pkgs.systemd}/bin/systemctl is-active --quiet hermes-agent-anne.service";
+      ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/\${EXIT_STATUS}";
+    };
+  };
+
+  systemd.timers.hermes-agent-anne-healthcheck-ping = {
+    description = "Ping healthchecks.io for Anne Discord gateway";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "1min";
+      OnUnitActiveSec = "2min";
+      RandomizedDelaySec = "10s";
     };
   };
 
