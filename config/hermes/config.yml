@@ -75,6 +75,21 @@ provider_routing:
 display:
   skin: mono
 
+# Repo-managed MCP defaults. Keep machine-specific auth out of git so personal
+# and work laptops can use different Linear accounts/tokens.
+#
+# Recommended local setup after rebuild:
+# - API token/header auth: add headers under ~/.config/hermes/config.yaml
+# - OAuth auth: set `auth: oauth` in ~/.config/hermes/config.yaml and run
+#   `hermes mcp auth linear`
+#
+# Because the dotfiles module merges the writable Hermes config on top of this
+# file, local auth details survive rebuilds without being committed here.
+mcp_servers:
+  linear:
+    url: https://mcp.linear.app/mcp
+    enabled: true
+
 memory:
   memory_enabled: true
   user_profile_enabled: true
