@@ -305,6 +305,7 @@ in
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="/var/lib/hermes-scintillate/.hermes"
         HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
+        HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
         TMP_HERMES_ENV="$(mktemp)"
         trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
@@ -337,6 +338,24 @@ in
         '') hermesScintillateSecrets}
 
         install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
+
+        ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
+        import json
+        import pathlib
+        import sys
+
+        path = pathlib.Path(sys.argv[1])
+        data = {}
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8")) or {}
+            except Exception:
+                data = {}
+        data["8357890648"] = "all"
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        PY
+        chown emiller:users "$HERMES_VOICE_MODE_FILE"
+        chmod 600 "$HERMES_VOICE_MODE_FILE"
       '';
     };
 
@@ -351,6 +370,7 @@ in
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="$ANNE_STATE_DIR/.hermes"
         HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
+        HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
         TMP_HERMES_ENV="$(mktemp)"
         trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
@@ -429,6 +449,26 @@ in
         ''}
 
         install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
+
+        ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} <<'PY'
+        import json
+        import pathlib
+        import sys
+
+        path = pathlib.Path(sys.argv[1])
+        chat_id = sys.argv[2].strip()
+        data = {}
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8")) or {}
+            except Exception:
+                data = {}
+        if chat_id:
+            data[chat_id] = "all"
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        PY
+        chown emiller:users "$HERMES_VOICE_MODE_FILE"
+        chmod 600 "$HERMES_VOICE_MODE_FILE"
       '';
     };
 
@@ -575,7 +615,15 @@ in
       Type = "oneshot";
       DynamicUser = true;
       ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/start";
-      ExecStart = "${pkgs.systemd}/bin/systemctl is-active --quiet hermes-agent-anne.service";
+      ExecStart = pkgs.writeShellScript "hermes-agent-anne-healthcheck-ping" ''
+        for _ in $(seq 1 30); do
+          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-agent-anne.service; then
+            exit 0
+          fi
+          sleep 1
+        done
+        exit 1
+      '';
       ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/\${EXIT_STATUS}";
     };
   };
