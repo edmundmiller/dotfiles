@@ -146,13 +146,10 @@ let
   hermesScintillateAllowedUserIds =
     if telegramSplitMode then hermesScintillateChannelIds else map toString telegramBindings.allowFrom;
   hermesScintillateAllowedUsers = lib.concatStringsSep "," hermesScintillateAllowedUserIds;
-  # In split mode, Hermes needs its own Telegram bot token so it can own only
-  # the Scintillate DM without competing with the shared family/group bot.
-  hermesScintillateTelegramBotTokenFile =
-    if telegramSplitMode then
-      config.age.secrets.telegram-bot-token-scintillate.path
-    else
-      config.age.secrets.telegram-bot-token.path;
+  # Scintillate should always answer as the dedicated Scintillate Telegram bot,
+  # even while Hermes owns Telegram directly in the current deployment mode.
+  # The shared family/group bot can stay separate from Scintillate's DM bot.
+  hermesScintillateTelegramBotTokenFile = config.age.secrets.telegram-bot-token-scintillate.path;
   linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
   mkAgentSecret = envVar: secretName: {
     inherit envVar;
@@ -448,6 +445,14 @@ in
           printf 'GATEWAY_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
         ''}
 
+        if [ -f ${lib.escapeShellArg (toString config.age.secrets.anne-linear-mcp-token.path)} ]; then
+          linear_token="$(cat ${lib.escapeShellArg (toString config.age.secrets.anne-linear-mcp-token.path)})"
+          if [ -n "$linear_token" ]; then
+            printf 'HERMES_MCP_BEARER_TOKEN_LINEAR=%s\n' "$linear_token" >> "$ENV_FILE"
+          fi
+          unset linear_token
+        fi
+
         install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} <<'PY'
@@ -683,6 +688,7 @@ in
         # splits between OpenClaw (family/group) and Hermes (Scintillate DM).
         enable = true;
         agentId = "scintillate";
+        mcpBearerTokenPaths.linear = config.age.secrets.linear-api-token.path;
         workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
         workspaceLinks."repos/tnote" = "/home/emiller/src/personal/tn-monorepo";
       };
