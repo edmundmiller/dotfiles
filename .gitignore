@@ -54,6 +54,7 @@ qmk_firmware/
 .beads/*.port
 .beads/*.activity
 .beads/.beads-credential-key
+.beads/.br_history/
 
 # Pi side-agent runtime/session state
 .pi/side-agents/
