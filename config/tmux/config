@@ -69,6 +69,9 @@ set -g mode-keys   vi
 bind c new-window      -c "#{pane_current_path}"
 bind v split-window -h -c "#{pane_current_path}"
 
+# AI agent management popup
+bind a run-shell '$TMUX_HOME/smart-name.sh --menu'
+
 # Fast current-session Pi entry
 bind A run '$TMUX_HOME/open-pi-here.sh'
 

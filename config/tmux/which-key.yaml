@@ -201,8 +201,11 @@ items:
       - name: Remove worktree
         key: x
         command: "run-shell $TMUX_HOME/project-session-prompt.sh remove"
-  - name: Pi sessions
+  - name: Agent sessions
     key: a
+    command: "run-shell $TMUX_HOME/smart-name.sh --menu"
+  - name: Pi sessions
+    key: I
     command: "display-popup -E -w 80% -h 70% $DOTFILES_BIN/pi-sessions"
   - name: Pi here
     key: A
