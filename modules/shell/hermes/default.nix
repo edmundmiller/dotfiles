@@ -14,20 +14,54 @@ let
   hermesBasePackage =
     inputs.llm-agents-upstream.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
   hermesAcpPythonPath = "${pkgs.python3Packages.agent-client-protocol}/${pkgs.python3.sitePackages}";
-  hermesPackageWithAcp = pkgs.symlinkJoin {
-    name = "${hermesBasePackage.pname or "hermes-agent"}-${
-      hermesBasePackage.version or "wrapped"
-    }-with-acp";
-    paths = [ hermesBasePackage ];
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    postBuild = ''
+  hermesPackageWithAcp = pkgs.stdenvNoCC.mkDerivation {
+    pname = hermesBasePackage.pname or "hermes-agent";
+    version = "${hermesBasePackage.version or "wrapped"}-with-acp";
+    dontUnpack = true;
+    nativeBuildInputs = [
+      pkgs.makeWrapper
+      pkgs.python3
+    ];
+    installPhase = ''
+      runHook preInstall
+
+      cp -a ${hermesBasePackage} "$out"
+      chmod -R u+w "$out"
+
+      export MCP_OAUTH_PATH="$(find "$out" -path '*/site-packages/tools/mcp_oauth.py' | head -1)"
+      if [ -z "$MCP_OAUTH_PATH" ]; then
+        echo "Failed to locate tools/mcp_oauth.py in $out" >&2
+        exit 1
+      fi
+
+      ${pkgs.python3}/bin/python - <<'PY'
+      import os
+      from pathlib import Path
+
+      path = Path(os.environ["MCP_OAUTH_PATH"])
+      text = path.read_text()
+      old = "self._write_json(self._client_path(), client_info.model_dump(exclude_none=True))"
+      new = "self._write_json(self._client_path(), client_info.model_dump(mode=\"json\", exclude_none=True))"
+      if old not in text:
+          raise SystemExit(f"expected OAuth client_info serialization snippet not found in {path}")
+      path.write_text(text.replace(old, new, 1))
+      PY
+
+      for file in "$out"/bin/* "$out"/bin/.*; do
+        if [ -f "$file" ]; then
+          substituteInPlace "$file" --replace-fail ${hermesBasePackage} "$out"
+        fi
+      done
+
       for exe in "$out/bin/hermes" "$out/bin/hermes-agent" "$out/bin/hermes-acp"; do
         if [ -x "$exe" ]; then
           wrapProgram "$exe" --prefix PYTHONPATH : ${escapeShellArg hermesAcpPythonPath}
         fi
       done
+
+      runHook postInstall
     '';
-    meta = hermesBasePackage.meta or { };
+    inherit (hermesBasePackage) meta;
   };
 
   yamlFormat = pkgs.formats.yaml { };
