@@ -205,6 +205,8 @@ let
   obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT";
   ob = "${pkgs.my.obsidian-headless}/bin/ob";
   op = "${pkgs._1password-cli}/bin/op";
+  tnoteBaseRepo = "/home/emiller/src/personal/tn-monorepo";
+  tnoteMainWorktree = "/home/emiller/src/personal/tn-monorepo-main";
   qmd = pkgs.writeShellScriptBin "qmd" ''
     export NODE_LLAMA_CPP_GPU=off
     exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
@@ -494,12 +496,72 @@ in
         install -d -o emiller -g users -m 0750 "$HERMES_HOME_BASE/src/personal"
 
         ln -sfn /home/emiller/.local/bin/tnote "$HERMES_HOME_BASE/.local/bin/tnote"
-        ln -sfn /home/emiller/src/personal/tn-monorepo "$HERMES_HOME_BASE/src/personal/tn-monorepo"
+        ln -sfn ${tnoteMainWorktree} "$HERMES_HOME_BASE/src/personal/tn-monorepo"
         ln -sfn /home/emiller/obsidian-vault "$HERMES_HOME_BASE/obsidian-vault"
 
         chown -h emiller:users "$HERMES_HOME_BASE/.local/bin/tnote"
         chown -h emiller:users "$HERMES_HOME_BASE/src/personal/tn-monorepo"
         chown -h emiller:users "$HERMES_HOME_BASE/obsidian-vault"
+      '';
+    };
+
+    tnoteMainWorktree = {
+      deps = [ "users" ];
+      text = ''
+        BASE_REPO=${lib.escapeShellArg tnoteBaseRepo}
+        MAIN_WORKTREE=${lib.escapeShellArg tnoteMainWorktree}
+
+        install -d -o emiller -g users -m 0750 /home/emiller/.local/bin
+        install -d -o emiller -g users -m 0750 /home/emiller/src/personal
+
+        cat > /home/emiller/.local/bin/tnote <<'EOF'
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        PRIMARY_REPO="$HOME/src/personal/tn-monorepo-main"
+        FALLBACK_REPO="$HOME/src/personal/tn-monorepo"
+        DEFAULT_VAULT="$HOME/obsidian-vault"
+
+        export TN_VAULT_PATH="''${TN_VAULT_PATH:-$DEFAULT_VAULT}"
+        quoted_args="$(printf '%q ' "$@")"
+
+        if [ -f "$PRIMARY_REPO/packages/tn/index.ts" ]; then
+          REPO="$PRIMARY_REPO"
+        else
+          REPO="$FALLBACK_REPO"
+        fi
+
+        cd "$REPO"
+        exec nix-shell -p bun --run "TN_VAULT_PATH=$(printf '%q' "$TN_VAULT_PATH") bun run packages/tn/index.ts ''${quoted_args}"
+        EOF
+        chown emiller:users /home/emiller/.local/bin/tnote
+        chmod 0755 /home/emiller/.local/bin/tnote
+
+        if [ ! -d "$BASE_REPO/.git" ]; then
+          echo "Skipping tnote main worktree setup; base repo missing at $BASE_REPO" >&2
+          exit 0
+        fi
+
+        if [ -e "$MAIN_WORKTREE" ] && [ ! -d "$MAIN_WORKTREE/.git" ] && [ ! -f "$MAIN_WORKTREE/.git" ]; then
+          rm -rf "$MAIN_WORKTREE"
+        fi
+
+        TARGET_REF=main
+        if ${pkgs.git}/bin/git -C "$BASE_REPO" rev-parse --verify refs/remotes/origin/main >/dev/null 2>&1; then
+          TARGET_REF=origin/main
+        fi
+
+        if ${pkgs.git}/bin/git -C "$BASE_REPO" worktree list --porcelain | ${pkgs.gnugrep}/bin/grep -Fxq "worktree $MAIN_WORKTREE"; then
+          ${pkgs.git}/bin/git -C "$MAIN_WORKTREE" reset --hard "$TARGET_REF"
+        else
+          [ -e "$MAIN_WORKTREE" ] && rm -rf "$MAIN_WORKTREE"
+          ${pkgs.git}/bin/git -C "$BASE_REPO" worktree add --detach "$MAIN_WORKTREE" "$TARGET_REF"
+        fi
+
+        chown -R emiller:users "$MAIN_WORKTREE"
+        ${pkgs.util-linux}/bin/runuser -u emiller -- \
+          ${pkgs.coreutils}/bin/env HOME=/home/emiller \
+          ${pkgs.bun}/bin/bun install --cwd "$MAIN_WORKTREE" --frozen-lockfile --ignore-scripts
       '';
     };
 
@@ -702,7 +764,7 @@ in
         agentId = "scintillate";
         mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
         workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
-        workspaceLinks."repos/tnote" = "/home/emiller/src/personal/tn-monorepo";
+        workspaceLinks."repos/tnote" = tnoteMainWorktree;
       };
     }
     // {
