@@ -64,6 +64,10 @@ in
     edmundmiller
     nuc
   ];
+  "anne-linear-mcp-token.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "homepage-env.age".publicKeys = [
     edmundmiller
     nuc
