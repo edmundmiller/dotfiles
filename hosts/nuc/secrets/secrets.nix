@@ -72,6 +72,14 @@ in
     edmundmiller
     nuc
   ];
+  "anne-firecrawl-api.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "scintillate-firecrawl-api.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "homepage-env.age".publicKeys = [
     edmundmiller
     nuc

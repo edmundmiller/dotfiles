@@ -177,11 +177,19 @@ let
       envVar = "LINEAR_API_KEY";
       path = linearTokenFile;
     }
+    {
+      envVar = "FIRECRAWL_API_KEY";
+      inherit (config.age.secrets.scintillate-firecrawl-api) path;
+    }
   ];
   hermesAnneSecrets = hermesProviderSecrets ++ [
     {
       envVar = "DISCORD_BOT_TOKEN";
       inherit (config.age.secrets.discord-bot-token-anne) path;
+    }
+    {
+      envVar = "FIRECRAWL_API_KEY";
+      inherit (config.age.secrets.anne-firecrawl-api) path;
     }
   ];
   obsidianOpRefs = {
