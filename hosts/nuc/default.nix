@@ -506,12 +506,16 @@ in
         USER_UID="$(${pkgs.coreutils}/bin/id -u emiller)"
         export XDG_RUNTIME_DIR="/run/user/$USER_UID"
         if [ -S "$XDG_RUNTIME_DIR/bus" ]; then
-          ${pkgs.util-linux}/bin/runuser -u emiller -- \
-            ${pkgs.systemd}/bin/systemctl --user disable --now hermes-gateway-scintillate.service || true
-          ${pkgs.util-linux}/bin/runuser -u emiller -- \
-            ${pkgs.systemd}/bin/systemctl --user reset-failed hermes-gateway-scintillate.service || true
-          ${pkgs.util-linux}/bin/runuser -u emiller -- \
-            ${pkgs.systemd}/bin/systemctl --user daemon-reload || true
+          if ${pkgs.util-linux}/bin/runuser -u emiller -- \
+            ${pkgs.systemd}/bin/systemctl --user list-unit-files hermes-gateway-scintillate.service --no-legend 2>/dev/null \
+            | ${pkgs.gnugrep}/bin/grep -q '^hermes-gateway-scintillate\.service'; then
+            ${pkgs.util-linux}/bin/runuser -u emiller -- \
+              ${pkgs.systemd}/bin/systemctl --user disable --now hermes-gateway-scintillate.service || true
+            ${pkgs.util-linux}/bin/runuser -u emiller -- \
+              ${pkgs.systemd}/bin/systemctl --user reset-failed hermes-gateway-scintillate.service || true
+            ${pkgs.util-linux}/bin/runuser -u emiller -- \
+              ${pkgs.systemd}/bin/systemctl --user daemon-reload || true
+          fi
         else
           ${pkgs.procps}/bin/pkill -u emiller -f 'hermes_cli.main gateway run --replace' || true
         fi
