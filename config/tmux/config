@@ -92,6 +92,10 @@ bind h select-pane -L
 bind j select-pane -D
 bind k select-pane -U
 bind l select-pane -R
+unbind /
+unbind .
+bind / choose-session
+bind . choose-window
 
 # Secondary sesh switch/discovery picker; tmproj/tp is the primary project entry.
 # ^a: all | ^t: tmux | ^c: configs | ^x: zoxide | ^d: kill session
@@ -99,6 +103,7 @@ bind-key t run-shell "$TMUX_HOME/sesh-picker.sh"
 
 # bind = select-layout tiled
 bind | select-layout even-horizontal
+bind _ select-layout even-vertical
 
 # Keep direct kill bindings without confirmation.
 unbind x
@@ -167,3 +172,9 @@ set -g @open-S 'https://www.duckduckgo.com/'
 if '[ -f ~/.tmux.conf ]' 'source ~/.tmux.conf'
 # Load generated module init last so declarative plugin/key settings win.
 source $TMUX_HOME/extraInit
+
+# Re-assert a few direct bindings after plugins load.
+unbind /
+unbind .
+bind / choose-session
+bind . choose-window
