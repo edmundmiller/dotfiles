@@ -354,6 +354,7 @@ in
 
         install -d -o emiller -g users -m 0750 \
           "$ANNE_STATE_DIR" \
+          "$ANNE_STATE_DIR/.codex" \
           "$ANNE_STATE_DIR/.local" \
           "$ANNE_STATE_DIR/.local/state" \
           "$ANNE_STATE_DIR/.local/state/hermes" \
@@ -363,6 +364,8 @@ in
           "$HERMES_ENV_HOME/workspace" \
           "$HERMES_ENV_HOME/workspace/repos"
 
+        ln -sfn /home/emiller/.codex/auth.json "$ANNE_STATE_DIR/.codex/auth.json"
+        chown -h emiller:users "$ANNE_STATE_DIR/.codex/auth.json"
         ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
         chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
         ln -sfn ${millDocsVaultPath} "$HERMES_ENV_HOME/workspace/repos/mill-docs"
@@ -542,6 +545,7 @@ in
       EnvironmentFile = [ "/run/hermes-anne-env/secrets.env" ];
       ExecStartPre = [
         "${pkgs.coreutils}/bin/test -f /home/emiller/.codex/auth.json"
+        "${pkgs.coreutils}/bin/test -f /var/lib/hermes-anne/.codex/auth.json"
       ];
       ExecStart = lib.mkForce anneHermesGateway;
       Restart = "always";
