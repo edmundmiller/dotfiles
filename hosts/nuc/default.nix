@@ -356,7 +356,7 @@ in
                 data = json.loads(path.read_text(encoding="utf-8")) or {}
             except Exception:
                 data = {}
-        data["8357890648"] = "all"
+        data.pop("8357890648", None)
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         PY
         chown emiller:users "$HERMES_VOICE_MODE_FILE"
@@ -477,7 +477,7 @@ in
             except Exception:
                 data = {}
         if chat_id:
-            data[chat_id] = "all"
+            data.pop(chat_id, None)
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         PY
         chown emiller:users "$HERMES_VOICE_MODE_FILE"
