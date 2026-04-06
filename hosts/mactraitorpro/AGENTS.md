@@ -37,7 +37,6 @@ No agenix secrets on this host (credentials in 1Password).
 
 - **Python disabled**: openclaw bundles whisper which includes Python 3.13, conflicts with python module's `withPackages` env. Track in dotfiles-c11.
 - **Hey not found after rebuild**: open a new terminal to pick up `$DOTFILES_BIN`
-- **Homebrew `bd` conflict**: may get brew bundle error about existing symlink — pre-existing, not blocking
 
 ## Related Files
 

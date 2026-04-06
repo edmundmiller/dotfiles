@@ -214,7 +214,6 @@ in
 
     user.packages = [
       pkgs.llm-agents.pi
-      pkgs.llm-agents.beads
       pkgs.llm-agents."beads-rust"
       pkgs.bun # still needed for extensions/packages workspace
       pkgs.delta # syntax-highlighted diffs

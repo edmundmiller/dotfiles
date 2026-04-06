@@ -9,7 +9,6 @@
     "rockorager/tap" # Prise terminal multiplexer
     "seqeralabs/tap"
     "steipete/tap" # Codexbar
-    # "steveyegge/beads" # Not needed — using homebrew-core 'beads' formula instead
     "tw93/tap" # Mole
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
     "ahkohd/oyo" # oy - tmux session manager
