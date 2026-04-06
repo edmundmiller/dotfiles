@@ -6,7 +6,7 @@ Manages `~/.codex/` config via nix-darwin.
 
 - `config.toml` — bootstrapped from `config/codex/config.toml` if missing; kept as a writable local file so Codex can mutate settings
 - `AGENTS.md` — built from concatenated `config/agents/rules/*.md` (shared w/ Claude, OpenCode)
-- `rules/` — sandbox allow-rules, symlinked from `config/codex/rules/`
+- `rules/` — sandbox allow-rules, bootstrapped into `~/.codex/rules/` during activation as local writable files
 
 ## Not Managed by Nix
 
