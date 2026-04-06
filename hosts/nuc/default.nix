@@ -369,8 +369,16 @@ in
         chown -h emiller:users "$ANNE_STATE_DIR/.codex/auth.json"
         ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
         chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
+
+        ln -sfn ${millDocsVaultPath} "$ANNE_STATE_DIR/mill-docs"
+        chown -h emiller:users "$ANNE_STATE_DIR/mill-docs"
+        ln -sfn /home/emiller/obsidian-vault "$ANNE_STATE_DIR/obsidian-vault"
+        chown -h emiller:users "$ANNE_STATE_DIR/obsidian-vault"
+
         ln -sfn ${millDocsVaultPath} "$HERMES_ENV_HOME/workspace/repos/mill-docs"
         chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/mill-docs"
+        ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+        chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
 
         mkdir -p "$ENV_DIR"
         : > "$ENV_FILE"
