@@ -11,6 +11,25 @@ let
   cfg = config.modules.shell.hermes;
   inherit (config.dotfiles) configDir;
 
+  hermesBasePackage =
+    inputs.llm-agents-upstream.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
+  hermesAcpPythonPath = "${pkgs.python3Packages.agent-client-protocol}/${pkgs.python3.sitePackages}";
+  hermesPackageWithAcp = pkgs.symlinkJoin {
+    name = "${hermesBasePackage.pname or "hermes-agent"}-${
+      hermesBasePackage.version or "wrapped"
+    }-with-acp";
+    paths = [ hermesBasePackage ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      for exe in "$out/bin/hermes" "$out/bin/hermes-agent" "$out/bin/hermes-acp"; do
+        if [ -x "$exe" ]; then
+          wrapProgram "$exe" --prefix PYTHONPATH : ${escapeShellArg hermesAcpPythonPath}
+        fi
+      done
+    '';
+    meta = hermesBasePackage.meta or { };
+  };
+
   yamlFormat = pkgs.formats.yaml { };
   yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
   secretRefsJson = pkgs.writeText "hermes-secret-references.json" (
@@ -44,8 +63,12 @@ in
 
     package = mkOption {
       type = package;
-      default = inputs.llm-agents-upstream.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
-      description = "Hermes package to install.";
+      default = hermesPackageWithAcp;
+      description = ''
+        Hermes package to install. The default wraps the upstream Hermes build
+        with the Agent Client Protocol Python dependency so `hermes acp`
+        works out of the box on laptop installs.
+      '';
     };
 
     configFile = mkOption {
@@ -157,6 +180,8 @@ in
                   rel_path = skin_file.relative_to(source)
                   dest_path = target_root / rel_path
                   dest_path.parent.mkdir(parents=True, exist_ok=True)
+                  if dest_path.exists():
+                      dest_path.chmod(0o644)
                   shutil.copy2(skin_file, dest_path)
           PY
 
