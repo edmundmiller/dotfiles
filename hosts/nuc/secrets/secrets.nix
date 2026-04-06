@@ -60,6 +60,10 @@ in
     edmundmiller
     nuc
   ];
+  "discord-bot-token-anne.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "homepage-env.age".publicKeys = [
     edmundmiller
     nuc
