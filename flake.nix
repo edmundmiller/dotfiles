@@ -397,10 +397,10 @@
                 enable = true;
                 package = config.treefmt.build.wrapper;
               };
-              beads = {
+              br-sync = {
                 enable = true;
-                name = "beads";
-                entry = "bd hooks run pre-commit";
+                name = "br-sync";
+                entry = "br sync --flush-only";
                 language = "system";
                 pass_filenames = false;
                 stages = [ "pre-push" ];
