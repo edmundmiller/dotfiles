@@ -132,7 +132,7 @@ in
 
       pkgs.my.tmux-file-picker
       pkgs.my.tmux-smooth-scroll
-      pkgs.gum # Interactive CLI for bd-capture popup
+      pkgs.gum # Interactive CLI for br-capture popup
     ]
     ++ optionals cfg.opensessions.enable [
       pkgs.bun # opensessions runtime + dependency bootstrap
