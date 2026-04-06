@@ -163,7 +163,6 @@
     "repo-prompt"
     # "emacs-app-pretest"  # Conflicts with emacs-app, using Nix version instead
     "positron"
-    "zed"
     "warp@preview"
     "termius@beta"
     "tuist"

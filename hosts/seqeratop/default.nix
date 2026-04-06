@@ -10,6 +10,7 @@
         default = "nvim";
         emacs.enable = true;
         vim.enable = true;
+        zed.enable = true;
       };
       dev = {
         node.enable = true;
