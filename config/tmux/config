@@ -178,3 +178,15 @@ unbind /
 unbind .
 bind / choose-session
 bind . choose-window
+
+# Which-key submenu launchers for top-level namespaces.
+unbind g
+unbind f
+unbind w
+bind g run-shell "$DOTFILES/config/tmux/show-which-key-menu.sh git"
+bind f run-shell "$DOTFILES/config/tmux/show-which-key-menu.sh find"
+bind w run-shell "$DOTFILES/config/tmux/show-which-key-menu.sh windows"
+
+# Keep next/previous-window on muscle-memory keys.
+bind n next-window
+bind p previous-window
