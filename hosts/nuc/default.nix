@@ -359,9 +359,12 @@ in
           "$ANNE_STATE_DIR/.local/state/hermes" \
           "$ANNE_STATE_DIR/.local/state/hermes/gateway-locks" \
           "$HERMES_ENV_HOME" \
+          "$HERMES_ENV_HOME/.codex" \
           "$HERMES_ENV_HOME/workspace" \
           "$HERMES_ENV_HOME/workspace/repos"
 
+        ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
+        chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
         ln -sfn ${millDocsVaultPath} "$HERMES_ENV_HOME/workspace/repos/mill-docs"
         chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/mill-docs"
 
@@ -533,8 +536,13 @@ in
         "HERMES_MANAGED=true"
         "HOME=/var/lib/hermes-anne"
         "MESSAGING_CWD=/var/lib/hermes-anne/.hermes/workspace"
+        "HA_URL=http://192.168.1.222:8123"
+        "HASS_URL=http://192.168.1.222:8123"
       ];
       EnvironmentFile = [ "/run/hermes-anne-env/secrets.env" ];
+      ExecStartPre = [
+        "${pkgs.coreutils}/bin/test -f /home/emiller/.codex/auth.json"
+      ];
       ExecStart = lib.mkForce anneHermesGateway;
       Restart = "always";
       RestartSec = 5;
