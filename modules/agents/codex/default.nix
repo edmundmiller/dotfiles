@@ -29,12 +29,6 @@ in
     home.file = {
       # AGENTS.md built from shared agent rules (same source as Claude/OpenCode)
       ".codex/AGENTS.md".text = concatenatedRules;
-
-      # Sandbox allow-rules
-      ".codex/rules" = {
-        source = "${configDir}/codex/rules";
-        recursive = true;
-      };
     };
 
     home-manager.users.${config.user.name} =
@@ -42,10 +36,34 @@ in
       {
         home.activation.codex-config-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           codex_dir="$HOME/.codex"
+          rules_dir="$codex_dir/rules"
+          rules_template_dir="${configDir}/codex/rules"
           target="$codex_dir/config.toml"
           template="${configDir}/codex/config.toml"
 
           ${pkgs.coreutils}/bin/mkdir -p "$codex_dir"
+
+          # Bootstrap sandbox allow-rules as local writable files so Codex can
+          # amend them in place (e.g. execpolicy updates).
+          ${pkgs.coreutils}/bin/mkdir -p "$rules_dir"
+          for src in "$rules_template_dir"/*; do
+            [ -e "$src" ] || continue
+
+            name="$(${pkgs.coreutils}/bin/basename "$src")"
+            dest="$rules_dir/$name"
+
+            # Preserve any existing local edits; only replace old HM symlinks
+            # and bootstrap files that are still missing.
+            if [ -L "$dest" ]; then
+              ${pkgs.coreutils}/bin/rm -f "$dest"
+            fi
+
+            if [ ! -e "$dest" ]; then
+              ${pkgs.coreutils}/bin/cp "$src" "$dest"
+            fi
+
+            ${pkgs.coreutils}/bin/chmod u+w "$dest" 2>/dev/null || true
+          done
 
           # Codex mutates config.toml (plugins, approvals, model switching).
           # Keep a writable local file and only bootstrap from template when needed.
