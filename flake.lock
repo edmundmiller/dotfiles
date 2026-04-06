@@ -1594,8 +1594,8 @@
         ]
       },
       "locked": {
-        "lastModified": 1775444163,
-        "narHash": "sha256-8YjsHTIqXEOQdmRZm4IKvbF/YoshwMnOvLc+yvnD5Jc=",
+        "lastModified": 1775444701,
+        "narHash": "sha256-DoLD8ZlGUkat9KWgio6G60/2+rBndYkf+8ib4eo6AWk=",
         "path": "/Users/emiller/src/personal/openclaw-workspace",
         "type": "path"
       },
