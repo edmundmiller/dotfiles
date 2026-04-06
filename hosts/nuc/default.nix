@@ -10,6 +10,7 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default;
+  anneHermesLauncher = inputs.openclaw-workspace.packages.${hostSystem}.anne-hermes;
   hermesAgentPatched = pkgs.stdenvNoCC.mkDerivation {
     pname = "hermes-agent";
     version = "0.1.0-fallback-endpoint-patched";
@@ -76,6 +77,26 @@ let
     '';
     inherit (hermesAgentBase) meta;
   };
+  discordBindings = import (inputs.openclaw-workspace + /deployments/nuc/discord-bindings.nix) {
+    inherit lib;
+  };
+  anneDiscordBindings = (discordBindings.agents or { }).anne or { };
+  anneHermesGateway = pkgs.writeShellScript "hermes-anne-discord-gateway" ''
+    export PATH=${
+      lib.escapeShellArg (
+        lib.makeBinPath [
+          anneHermesLauncher
+          hermesAgentPatched
+          pkgs.bashInteractive
+          pkgs.coreutils
+          pkgs.findutils
+          pkgs.git
+          pkgs.python3
+        ]
+      )
+    }:$PATH
+    exec ${anneHermesLauncher}/bin/anne-hermes gateway
+  '';
   # Telegram routing topology for this host:
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
   # - "split"  => prepared future split; the shared bot keeps family/group traffic,
@@ -136,7 +157,7 @@ let
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
   };
-  hermesScintillateSecrets = [
+  hermesProviderSecrets = [
     (mkAgentSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
     (mkAgentSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
     (mkAgentSecret "GEMINI_API_KEY" "gemini-api-key")
@@ -147,6 +168,8 @@ let
     (mkAgentSecret "OPENAI_API_KEY" "openai-api-key")
     (mkAgentSecret "OPENROUTER_API_KEY" "openrouter-api-key")
     (mkAgentSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
+  ];
+  hermesScintillateSecrets = hermesProviderSecrets ++ [
     {
       envVar = "TELEGRAM_BOT_TOKEN";
       path = hermesScintillateTelegramBotTokenFile;
@@ -154,6 +177,12 @@ let
     {
       envVar = "LINEAR_API_KEY";
       path = linearTokenFile;
+    }
+  ];
+  hermesAnneSecrets = hermesProviderSecrets ++ [
+    {
+      envVar = "DISCORD_BOT_TOKEN";
+      inherit (config.age.secrets.discord-bot-token-anne) path;
     }
   ];
   obsidianOpRefs = {
@@ -309,6 +338,84 @@ in
       '';
     };
 
+    hermesAnneSecrets = {
+      deps = [
+        "agenixInstall"
+        "agenixChown"
+      ];
+      text = ''
+        ANNE_STATE_DIR="/var/lib/hermes-anne"
+        ENV_DIR="/run/hermes-anne-env"
+        ENV_FILE="$ENV_DIR/secrets.env"
+        HERMES_ENV_HOME="$ANNE_STATE_DIR/.hermes"
+        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
+        TMP_HERMES_ENV="$(mktemp)"
+        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
+
+        install -d -o emiller -g users -m 0750 \
+          "$ANNE_STATE_DIR" \
+          "$ANNE_STATE_DIR/.local" \
+          "$ANNE_STATE_DIR/.local/state" \
+          "$ANNE_STATE_DIR/.local/state/hermes" \
+          "$ANNE_STATE_DIR/.local/state/hermes/gateway-locks" \
+          "$HERMES_ENV_HOME" \
+          "$HERMES_ENV_HOME/workspace" \
+          "$HERMES_ENV_HOME/workspace/repos"
+
+        ln -sfn ${millDocsVaultPath} "$HERMES_ENV_HOME/workspace/repos/mill-docs"
+        chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/mill-docs"
+
+        mkdir -p "$ENV_DIR"
+        : > "$ENV_FILE"
+        chmod 600 "$ENV_FILE"
+        chown emiller:users "$ENV_FILE"
+
+        if [ -f "$HERMES_ENV_FILE" ]; then
+          cp "$HERMES_ENV_FILE" "$TMP_HERMES_ENV"
+        else
+          : > "$TMP_HERMES_ENV"
+        fi
+
+        ${lib.concatMapStringsSep "\n" (secret: ''
+                    ${pkgs.python3}/bin/python - "$TMP_HERMES_ENV" ${lib.escapeShellArg secret.envVar} <<'PY'
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          env_var = sys.argv[2]
+          lines = path.read_text().splitlines() if path.exists() else []
+          path.write_text("\n".join(line for line in lines if not line.startswith(f"{env_var}=")) + ("\n" if lines else ""))
+          PY
+                    if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+                      secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
+                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$TMP_HERMES_ENV"
+                    fi
+        '') hermesAnneSecrets}
+
+        ${lib.optionalString (anneDiscordBindings ? requireMention) ''
+          printf 'DISCORD_REQUIRE_MENTION=%s\n' ${
+            lib.escapeShellArg (if anneDiscordBindings.requireMention then "true" else "false")
+          } >> "$ENV_FILE"
+        ''}
+        ${lib.optionalString ((anneDiscordBindings.freeResponseChannelIds or [ ]) != [ ]) ''
+          printf 'DISCORD_FREE_RESPONSE_CHANNELS=%s\n' ${lib.escapeShellArg (lib.concatStringsSep "," (map toString anneDiscordBindings.freeResponseChannelIds))} >> "$ENV_FILE"
+        ''}
+        ${lib.optionalString ((anneDiscordBindings.homeChannelId or null) != null) ''
+          printf 'DISCORD_HOME_CHANNEL=%s\n' ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} >> "$ENV_FILE"
+        ''}
+        ${lib.optionalString ((anneDiscordBindings.homeChannelName or null) != null) ''
+          printf 'DISCORD_HOME_CHANNEL_NAME=%s\n' ${lib.escapeShellArg anneDiscordBindings.homeChannelName} >> "$ENV_FILE"
+        ''}
+        ${lib.optionalString (anneDiscordBindings.allowAllUsers or false) ''
+          printf 'DISCORD_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
+          printf 'GATEWAY_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
+        ''}
+
+        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
+      '';
+    };
+
     hermesScintillateTaskNotesCompat = {
       deps = [ "canonical-hermes-scintillate-materialize" ];
       text = ''
@@ -409,6 +516,34 @@ in
       TELEGRAM_HOME_CHANNEL = hermesScintillateHomeChannel;
     };
     environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
+  };
+
+  systemd.services.hermes-agent-anne = {
+    description = "Hermes Agent Gateway (anne on Discord)";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Type = "simple";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = "/var/lib/hermes-anne";
+      Environment = [
+        "HERMES_HOME=/var/lib/hermes-anne/.hermes"
+        "HERMES_MANAGED=true"
+        "HOME=/var/lib/hermes-anne"
+        "MESSAGING_CWD=/var/lib/hermes-anne/.hermes/workspace"
+      ];
+      EnvironmentFile = [ "/run/hermes-anne-env/secrets.env" ];
+      ExecStart = lib.mkForce anneHermesGateway;
+      Restart = "always";
+      RestartSec = 5;
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      ReadWritePaths = [ "/var/lib/hermes-anne" ];
+    };
   };
 
   ## Modules
