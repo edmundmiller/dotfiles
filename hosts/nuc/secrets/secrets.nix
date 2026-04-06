@@ -80,6 +80,14 @@ in
     edmundmiller
     nuc
   ];
+  "scintillate-google-client-secret.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "scintillate-google-token.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "homepage-env.age".publicKeys = [
     edmundmiller
     nuc
