@@ -80,8 +80,9 @@ display:
 #
 # Recommended local setup after rebuild:
 # - API token/header auth: add headers under ~/.config/hermes/config.yaml
-# - OAuth auth: set `auth: oauth` in ~/.config/hermes/config.yaml and run
-#   `hermes mcp auth linear`
+# - OAuth auth: set `auth: oauth` under `mcp_servers.linear` in
+#   ~/.config/hermes/config.yaml. Hermes' current CLI exposes OAuth on
+#   `hermes mcp add --auth oauth ...`, not a separate `hermes mcp auth` command.
 #
 # Because the dotfiles module merges the writable Hermes config on top of this
 # file, local auth details survive rebuilds without being committed here.
