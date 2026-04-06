@@ -688,7 +688,7 @@ in
         # splits between OpenClaw (family/group) and Hermes (Scintillate DM).
         enable = true;
         agentId = "scintillate";
-        mcpBearerTokenPaths.linear = config.age.secrets.linear-api-token.path;
+        mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
         workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
         workspaceLinks."repos/tnote" = "/home/emiller/src/personal/tn-monorepo";
       };
