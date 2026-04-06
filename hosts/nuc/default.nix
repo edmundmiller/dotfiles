@@ -161,6 +161,7 @@ let
   hermesProviderSecrets = [
     (mkAgentSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
     (mkAgentSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
+    (mkAgentSecret "ELEVENLABS_API_KEY" "elevenlabs-api-key")
     (mkAgentSecret "GEMINI_API_KEY" "gemini-api-key")
     (mkAgentSecret "FIREWORKS_API_KEY" "fireworks-api-key")
     (mkAgentSecret "HA_TOKEN" "ha-hermes-token")
