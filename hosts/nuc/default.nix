@@ -182,6 +182,16 @@ let
       inherit (config.age.secrets.scintillate-firecrawl-api) path;
     }
   ];
+  hermesScintillateCredentialFiles = [
+    {
+      targetName = "google_client_secret.json";
+      inherit (config.age.secrets.scintillate-google-client-secret) path;
+    }
+    {
+      targetName = "google_token.json";
+      inherit (config.age.secrets.scintillate-google-token) path;
+    }
+  ];
   hermesAnneSecrets = hermesProviderSecrets ++ [
     {
       envVar = "DISCORD_BOT_TOKEN";
@@ -343,6 +353,23 @@ in
                       printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$TMP_HERMES_ENV"
                     fi
         '') hermesScintillateSecrets}
+
+        ${lib.concatMapStringsSep "\n" (credentialFile: ''
+          if [ -f ${lib.escapeShellArg (toString credentialFile.path)} ]; then
+            install -m 600 -o emiller -g users \
+              ${lib.escapeShellArg (toString credentialFile.path)} \
+              "$HERMES_ENV_HOME/${credentialFile.targetName}"
+          fi
+        '') hermesScintillateCredentialFiles}
+
+        TMP_HERMES_ENV_CLEANED="$(mktemp)"
+        trap 'rm -f "$TMP_HERMES_ENV" "$TMP_HERMES_ENV_CLEANED"' EXIT
+        if [ -f "$TMP_HERMES_ENV" ]; then
+          ${pkgs.gnugrep}/bin/grep -v '^GOOGLE_WORKSPACE_ENABLED_SERVICES=' "$TMP_HERMES_ENV" > "$TMP_HERMES_ENV_CLEANED" || true
+          mv "$TMP_HERMES_ENV_CLEANED" "$TMP_HERMES_ENV"
+        fi
+        printf '%s=%s\n' GOOGLE_WORKSPACE_ENABLED_SERVICES calendar >> "$ENV_FILE"
+        printf '%s=%s\n' GOOGLE_WORKSPACE_ENABLED_SERVICES calendar >> "$TMP_HERMES_ENV"
 
         install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
 
@@ -616,7 +643,13 @@ in
     jq # For agent skills that parse JSON (e.g. homeassistant)
     chromium # Browser automation runtime
     nodejs # Agent/plugin runtime support
-    python3 # For node-gyp (pi-interactive-shell/node-pty)
+    (python3.withPackages (
+      ps: with ps; [
+        google-api-python-client
+        google-auth-oauthlib
+        google-auth-httplib2
+      ]
+    )) # For node-gyp (pi-interactive-shell/node-pty) and Scintillate Google Workspace skill deps
     gcc
     gnumake # For node-gyp native compilation
     cmake # For node-llama-cpp (qmd dependency)
