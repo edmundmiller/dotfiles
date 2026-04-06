@@ -78,7 +78,8 @@ bind A run '$TMUX_HOME/open-pi-here.sh'
 # Toggle tml layout (AI + lazygit + shell)
 bind T run '$TMUX_HOME/toggle-tml.sh'
 
-# Fast diff review popups
+# Git/review popups
+bind g display-popup -E -w 80% -h 80% -d "#{pane_current_path}" "$TMUX_HOME/open-git-tui.sh"
 bind G display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-critique.sh"
 bind R display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-critique.sh --staged"
 bind H display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh"
@@ -98,6 +99,12 @@ bind-key t run-shell "$TMUX_HOME/sesh-picker.sh"
 
 # bind = select-layout tiled
 bind | select-layout even-horizontal
+
+# Keep direct kill bindings without confirmation.
+unbind x
+unbind &
+bind x kill-pane
+bind X kill-window
 
 # Smart pane switching with awareness of vim splits and AI agents
 # See: https://github.com/christoomey/vim-tmux-navigator
