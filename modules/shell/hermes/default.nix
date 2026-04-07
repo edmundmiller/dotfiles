@@ -28,25 +28,6 @@ let
       cp -a ${hermesBasePackage} "$out"
       chmod -R u+w "$out"
 
-      export MCP_OAUTH_PATH="$(find "$out" -path '*/site-packages/tools/mcp_oauth.py' | head -1)"
-      if [ -z "$MCP_OAUTH_PATH" ]; then
-        echo "Failed to locate tools/mcp_oauth.py in $out" >&2
-        exit 1
-      fi
-
-      ${pkgs.python3}/bin/python - <<'PY'
-      import os
-      from pathlib import Path
-
-      path = Path(os.environ["MCP_OAUTH_PATH"])
-      text = path.read_text()
-      old = "self._write_json(self._client_path(), client_info.model_dump(exclude_none=True))"
-      new = "self._write_json(self._client_path(), client_info.model_dump(mode=\"json\", exclude_none=True))"
-      if old not in text:
-          raise SystemExit(f"expected OAuth client_info serialization snippet not found in {path}")
-      path.write_text(text.replace(old, new, 1))
-      PY
-
       for file in "$out"/bin/* "$out"/bin/.*; do
         if [ -f "$file" ]; then
           substituteInPlace "$file" --replace-fail ${hermesBasePackage} "$out"
