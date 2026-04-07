@@ -11,72 +11,6 @@ let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default;
   anneHermesLauncher = inputs.openclaw-workspace.packages.${hostSystem}.anne-hermes;
-  hermesAgentPatched = pkgs.stdenvNoCC.mkDerivation {
-    pname = "hermes-agent";
-    version = "0.1.0-fallback-endpoint-patched";
-    dontUnpack = true;
-    nativeBuildInputs = [ pkgs.python3 ];
-    installPhase = ''
-      runHook preInstall
-
-      cp -a ${hermesAgentBase} "$out"
-      chmod -R u+w "$out"
-
-      base_venv="$(grep '^exec ' ${hermesAgentBase}/bin/hermes | cut -d '"' -f 2 | sed 's|/bin/hermes$||')"
-      if [ -z "$base_venv" ]; then
-        echo "Failed to locate hermes-agent-env from ${hermesAgentBase}/bin/hermes" >&2
-        exit 1
-      fi
-
-      original_run_agent="$(find "$base_venv/lib" -path '*/site-packages/run_agent.py' | head -1)"
-      if [ -z "$original_run_agent" ]; then
-        echo "Failed to locate run_agent.py in $base_venv" >&2
-        exit 1
-      fi
-
-      mkdir -p "$out/lib/hermes-overlay"
-      cp "$original_run_agent" "$out/lib/hermes-overlay/run_agent.py"
-      chmod u+w "$out/lib/hermes-overlay/run_agent.py"
-
-      export HERMES_OVERLAY="$out/lib/hermes-overlay"
-      export RUN_AGENT_PATH="$out/lib/hermes-overlay/run_agent.py"
-      ${pkgs.python3}/bin/python - <<'PY'
-      import os
-      from pathlib import Path
-
-      path = Path(os.environ["RUN_AGENT_PATH"])
-      text = path.read_text()
-      old = """        # Use centralized router for client construction.\n        # raw_codex=True because the main agent needs direct responses.stream()\n        # access for Codex providers.\n        try:\n            from agent.auxiliary_client import resolve_provider_client\n            fb_client, _ = resolve_provider_client(\n                fb_provider, model=fb_model, raw_codex=True)\n"""
-      new = """        # Use centralized router for client construction.\n        # raw_codex=True because the main agent needs direct responses.stream()\n        # access for Codex providers.\n        fb_base_url = (fb.get(\"base_url\") or \"\").strip() or None\n        fb_api_key_env = (fb.get(\"api_key_env\") or \"\").strip()\n        fb_explicit_key = None\n        if fb_api_key_env:\n            fb_explicit_key = os.getenv(fb_api_key_env, \"\").strip() or None\n        try:\n            from agent.auxiliary_client import resolve_provider_client\n            fb_client, _ = resolve_provider_client(\n                fb_provider,\n                model=fb_model,\n                raw_codex=True,\n                explicit_base_url=fb_base_url,\n                explicit_api_key=fb_explicit_key,\n            )\n"""
-      if old not in text:
-          raise SystemExit(f"expected fallback snippet not found in {path}")
-      path.write_text(text.replace(old, new, 1))
-      PY
-
-      for exe in "$out/bin/hermes" "$out/bin/hermes-agent" "$out/bin/hermes-acp"; do
-        export WRAPPER_PATH="$exe"
-        ${pkgs.python3}/bin/python - <<'PY'
-      import os
-      from pathlib import Path
-
-      path = Path(os.environ["WRAPPER_PATH"])
-      text = path.read_text()
-      needle = 'exec "'
-      replacement = (
-          f"export PYTHONPATH='{os.environ['HERMES_OVERLAY']}':$PYTHONPATH\n"
-          'exec "'
-      )
-      if needle not in text:
-          raise SystemExit(f"expected exec line not found in {path}")
-      path.write_text(text.replace(needle, replacement, 1))
-      PY
-        substituteInPlace "$exe" --replace-fail ${hermesAgentBase} "$out"
-      done
-
-      runHook postInstall
-    '';
-    inherit (hermesAgentBase) meta;
-  };
   discordBindings = import (inputs.openclaw-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
@@ -86,7 +20,7 @@ let
       lib.escapeShellArg (
         lib.makeBinPath [
           anneHermesLauncher
-          hermesAgentPatched
+          hermesAgentBase
           pkgs.bashInteractive
           pkgs.coreutils
           pkgs.findutils
@@ -671,7 +605,7 @@ in
   ];
 
   services.hermes-agent = {
-    package = hermesAgentPatched;
+    package = hermesAgentBase;
     user = "emiller";
     group = "users";
     createUser = false;

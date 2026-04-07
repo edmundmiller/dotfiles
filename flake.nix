@@ -88,10 +88,7 @@
     # upstream package directly when openclaw-workspace's wrapper module needs
     # a local patch before upstream merges.
     hermesAgent = {
-      # Keep the packaged Hermes source aligned with the existing upstream pin
-      # from openclaw-workspace, then layer only the local fallback fix patch
-      # on top.
-      url = "github:NousResearch/hermes-agent/abf1e98f6253f6984479fe03d1098173a9b065a7";
+      url = "github:NousResearch/hermes-agent";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

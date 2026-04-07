@@ -20,4 +20,9 @@ in
     mactraitor
     nuc
   ];
+  "hermes-honcho-api-key.age".publicKeys = [
+    mactraitor
+    seqeratop
+    nuc
+  ];
 }
