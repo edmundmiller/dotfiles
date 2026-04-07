@@ -126,6 +126,12 @@ let
       inherit (config.age.secrets.scintillate-google-token) path;
     }
   ];
+  hermesBettySecrets = hermesProviderSecrets ++ [
+    {
+      envVar = "TELEGRAM_BOT_TOKEN";
+      path = hermesScintillateTelegramBotTokenFile;
+    }
+  ];
   hermesAnneSecrets = hermesProviderSecrets ++ [
     {
       envVar = "DISCORD_BOT_TOKEN";
@@ -206,6 +212,13 @@ in
       rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
     '';
 
+    # The upstream hermes-agent module declares a dep on setupSecrets
+    # (sops-nix convention) but we use agenix. Provide a no-op stub.
+    setupSecrets = {
+      text = ""; # no-op: agenix handles secrets via agenixInstall
+      deps = [ ];
+    };
+
     relocateMillDocsVault = {
       text = ''
         LEGACY_PATH="${legacyMillDocsPath}"
@@ -249,7 +262,7 @@ in
       deps = [
         "agenixInstall"
         "agenixChown"
-        "canonical-hermes-scintillate-materialize"
+        "canonical-hermes-profiles-materialize"
       ];
       text = ''
         ENV_DIR="/run/hermes-scintillate-env"
@@ -449,7 +462,7 @@ in
     };
 
     hermesScintillateTaskNotesCompat = {
-      deps = [ "canonical-hermes-scintillate-materialize" ];
+      deps = [ "canonical-hermes-profiles-materialize" ];
       text = ''
         HERMES_HOME_BASE="/var/lib/hermes-scintillate"
 
@@ -463,6 +476,70 @@ in
         chown -h emiller:users "$HERMES_HOME_BASE/.local/bin/tnote"
         chown -h emiller:users "$HERMES_HOME_BASE/src/personal/tn-monorepo"
         chown -h emiller:users "$HERMES_HOME_BASE/obsidian-vault"
+      '';
+    };
+
+    hermesBettySecrets = {
+      deps = [
+        "agenixInstall"
+        "agenixChown"
+        "canonical-hermes-profiles-materialize"
+      ];
+      text = ''
+        ENV_DIR="/run/hermes-betty-env"
+        ENV_FILE="$ENV_DIR/secrets.env"
+        HERMES_ENV_HOME="/var/lib/hermes-betty/.hermes"
+        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
+        TMP_HERMES_ENV="$(mktemp)"
+        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
+
+        mkdir -p "$ENV_DIR"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
+        : > "$ENV_FILE"
+        chmod 600 "$ENV_FILE"
+
+        if [ -f "$HERMES_ENV_FILE" ]; then
+          cp "$HERMES_ENV_FILE" "$TMP_HERMES_ENV"
+        else
+          : > "$TMP_HERMES_ENV"
+        fi
+
+        ${lib.concatMapStringsSep "\n" (secret: ''
+                    ${pkgs.python3}/bin/python - "$TMP_HERMES_ENV" ${lib.escapeShellArg secret.envVar} <<'PY'
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          env_var = sys.argv[2]
+          lines = path.read_text().splitlines() if path.exists() else []
+          path.write_text("\n".join(line for line in lines if not line.startswith(f"{env_var}=")) + ("\n" if lines else ""))
+          PY
+                    if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+                      secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
+                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$TMP_HERMES_ENV"
+                    fi
+        '') hermesBettySecrets}
+
+        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
+      '';
+    };
+
+    hermesBettyWorkspaceCompat = {
+      deps = [ "canonical-hermes-profiles-materialize" ];
+      text = ''
+        BETTY_HOME="/var/lib/hermes-betty"
+
+        install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/bin"
+        install -d -o emiller -g users -m 0750 "$BETTY_HOME/home/emiller"
+
+        ln -sfn /home/emiller/.local/bin/tnote "$BETTY_HOME/.local/bin/tnote"
+        ln -sfn /home/emiller/obsidian-vault "$BETTY_HOME/obsidian-vault"
+        ln -sfn ${millDocsVaultPath} "$BETTY_HOME/home/emiller/mill-docs"
+
+        chown -h emiller:users "$BETTY_HOME/.local/bin/tnote"
+        chown -h emiller:users "$BETTY_HOME/obsidian-vault"
+        chown -h emiller:users "$BETTY_HOME/home/emiller/mill-docs"
       '';
     };
 
@@ -609,15 +686,26 @@ in
     user = "emiller";
     group = "users";
     createUser = false;
-    environment = {
-      HA_URL = "http://192.168.1.222:8123";
-      HASS_URL = "http://192.168.1.222:8123";
-    }
-    // lib.optionalAttrs hermesTelegramEnable {
-      TELEGRAM_ALLOWED_USERS = hermesScintillateAllowedUsers;
-      TELEGRAM_HOME_CHANNEL = hermesScintillateHomeChannel;
+
+    profiles.scintillate = {
+      environment = {
+        HA_URL = "http://192.168.1.222:8123";
+        HASS_URL = "http://192.168.1.222:8123";
+      }
+      // lib.optionalAttrs hermesTelegramEnable {
+        TELEGRAM_ALLOWED_USERS = hermesScintillateAllowedUsers;
+        TELEGRAM_HOME_CHANNEL = hermesScintillateHomeChannel;
+      };
+      environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
     };
-    environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
+
+    profiles.betty = {
+      environment = {
+        HA_URL = "http://192.168.1.222:8123";
+        HASS_URL = "http://192.168.1.222:8123";
+      };
+      environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
+    };
   };
 
   systemd.services.hermes-agent-anne = {
@@ -725,13 +813,18 @@ in
     }
     // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "hermes" ] options) {
       hermes = {
-        # Scintillate stays on Hermes even when Telegram ingress eventually
-        # splits between OpenClaw (family/group) and Hermes (Scintillate DM).
         enable = true;
-        agentId = "scintillate";
-        mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
-        workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
-        workspaceLinks."repos/tnote" = tnoteMainWorktree;
+        agents = {
+          scintillate = {
+            mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
+            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+            workspaceLinks."repos/tnote" = tnoteMainWorktree;
+          };
+          betty = {
+            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+            workspaceLinks."repos/tnote" = tnoteMainWorktree;
+          };
+        };
       };
     }
     // {
@@ -833,10 +926,10 @@ in
         enableFrontend = false;
       };
 
-      dagster.webserver.port = 3001;
+      # dagster.webserver.port = 3001; # temporarily disabled: dagster protobuf version mismatch
 
       finances-dagster = {
-        enable = true;
+        enable = false; # temporarily disabled: dagster protobuf version mismatch
         opTokenFile = "/etc/opnix-token";
         dailyHealthcheckPingUrl = "https://hc-ping.com/465b4f6c-8107-487e-bfd7-dc5e30168f32";
       };

@@ -44,10 +44,12 @@ terminal:
   cwd: "."
   timeout: 180
 
-# Match the current OpenClaw workspace inference preference order:
+# Inference fallback chain:
 # 1. OpenAI Codex via existing Codex auth (~/.codex/auth.json is auto-imported)
-# 2. Fireworks custom endpoint
-# 3. KiloCode
+# 2. KiloCode (kilo-auto/balanced)
+# Note: Fireworks via 'custom' provider is NOT in the fallback chain because
+# resolve_provider_client('custom', ...) doesn't pass explicit base_url/api_key_env,
+# causing it to fall back to the wrong endpoint (Codex instead of Fireworks).
 model:
   provider: openai-codex
   default: gpt-5.4
@@ -59,18 +61,8 @@ fallback_model:
 fallback_providers:
   - provider: openai-codex
     model: gpt-5.4
-  - provider: custom
-    model: accounts/fireworks/routers/kimi-k2p5-turbo
-    base_url: https://api.fireworks.ai/inference/v1
-    api_key_env: FIREWORKS_API_KEY
   - provider: kilocode
     model: kilo-auto/balanced
-
-# Auxiliary tools (vision/web summarization/etc.) prefer Fireworks-backed
-# OpenRouter routing when OPENROUTER_API_KEY is present.
-provider_routing:
-  order:
-    - Fireworks
 
 display:
   skin: mono
@@ -90,6 +82,7 @@ mcp_servers:
   linear:
     url: https://mcp.linear.app/mcp
     enabled: true
+    auth: oauth
 
 memory:
   memory_enabled: true
