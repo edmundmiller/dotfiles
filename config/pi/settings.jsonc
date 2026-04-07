@@ -224,5 +224,7 @@
       "extensions": ["src/index.ts"],
       "skills": [],
     },
+    // Pierre-themed inline diff rendering for edit/write tool results - https://github.com/tanvesh01/pierre-diffs
+    "git:github.com/tanvesh01/pierre-diffs",
   ],
 }
