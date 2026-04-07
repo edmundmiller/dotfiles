@@ -82,7 +82,6 @@ mcp_servers:
   linear:
     url: https://mcp.linear.app/mcp
     enabled: true
-    auth: oauth
 
 memory:
   memory_enabled: true
