@@ -26,21 +26,4 @@ After changing this module, prefer validating with a Nix eval/build of the Herme
 
 ## Provider Validation
 
-The inference fallback chain and API keys are validated periodically. As of last check:
-
-| Provider     | Model              | Status                               |
-| ------------ | ------------------ | ------------------------------------ |
-| OpenAI Codex | gpt-5.4            | ✓ (logged in via ~/.codex/auth.json) |
-| OpenCode     | GLM-5.1            | ✓ Working                            |
-| Nous         | z-ai/glm-5.1       | ✓ Working                            |
-| KiloCode     | kilo-auto/frontier | ✓ Working                            |
-| OpenRouter   | auto               | ✓ Working                            |
-
-Required secrets (via 1Password):
-
-| Secret              | 1Password Reference                        |
-| ------------------- | ------------------------------------------ |
-| OPENCODE_GO_API_KEY | op://Agents/OPENCODE_GO_API_KEY/credential |
-| OPENROUTER_API_KEY  | op://Agents/MTP OpenRouter/credential      |
-
-Run `hermes doctor` for full validation including connectivity checks.
+Run `hermes doctor` to validate the inference fallback chain and API connectivity.
