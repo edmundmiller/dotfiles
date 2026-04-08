@@ -74,9 +74,10 @@ in
     environment.systemPackages = optionals isDarwin [ pkgs.ghostty-bin ];
     user.packages = optionals (!isDarwin) [ inputs.ghostty.packages.x86_64-linux.default ];
 
-    # ghostty terminfo isn't supported over ssh, so revert to a known one
+    # ghostty terminfo isn't available everywhere (ssh, hermes, subprocesses)
+    # fall back to xterm-256color when the terminfo entry is missing
     modules.shell.zsh.rcInit = ''
-      [ "$TERM" = ghostty ] && [ -n "$SSH_CONNECTION" ] && export TERM=xterm-256color
+      [ "$TERM" = ghostty ] && ! infocmp ghostty >/dev/null 2>&1 && export TERM=xterm-256color
     '';
 
     # Ensure base keybindings file is included first
