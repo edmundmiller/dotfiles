@@ -30,8 +30,10 @@ model:
   provider: openai-codex
   default: gpt-5.4
 
-# Fallback chain: KiloCode as fallback
+# Fallback chain: OpenCode GLM-5.1 first, then KiloCode
 fallback_providers:
+  - provider: opencode
+    model: GLM-5.1
   - provider: kilocode
     model: kilo-auto/frontier
 
