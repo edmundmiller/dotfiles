@@ -1436,15 +1436,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1775532897,
-        "narHash": "sha256-GHjR4HYMrhLCzGytvTRg0m8xBa7pa8jgPSWTiHzcuCY=",
-        "ref": "refs/heads/main",
-        "rev": "e2053e76d3bdc1876bc1df38f84deb0b46690670",
-        "revCount": 278,
+        "lastModified": 1775620924,
+        "narHash": "sha256-SkPEMJL1vwKj9GF69bYtc69gdkPJF+wqCEdFl/mAKzM=",
+        "ref": "upstream/hermes-profiles",
+        "rev": "1523b224e1426853cf1752ad077a2627aab8af67",
+        "revCount": 283,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
       },
       "original": {
+        "ref": "upstream/hermes-profiles",
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
       }
