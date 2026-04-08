@@ -30,7 +30,7 @@ model:
   provider: openai-codex
   default: gpt-5.4
 
-# Fallback chain: OpenCode GLM-5.1, Nous MTP, then KiloCode
+# Fallback chain: OpenCode GLM-5.1, Nous MTP, KiloCode, then OpenRouter
 fallback_providers:
   - provider: opencode
     model: GLM-5.1
@@ -38,6 +38,8 @@ fallback_providers:
     model: MTP
   - provider: kilocode
     model: kilo-auto/frontier
+  - provider: openrouter
+    model: auto
 
 # Agent settings
 agent:
