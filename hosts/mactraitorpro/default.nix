@@ -32,7 +32,12 @@
         agentBrowser.enable = true;
         claude.enable = true;
         codex.enable = true;
-        hermes.enable = true;
+        hermes = {
+          enable = true;
+          secretReferences = {
+            OPENCODE_GO_API_KEY = "op://Agents/OPENCODE_GO_API_KEY/credential";
+          };
+        };
         opencode.enable = true;
         pi.enable = true;
         skillkit.enable = true;
