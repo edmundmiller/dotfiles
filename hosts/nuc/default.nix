@@ -3,7 +3,6 @@
   config,
   inputs,
   lib,
-  options,
   pkgs,
   ...
 }:
@@ -36,16 +35,12 @@ let
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
   # - "split"  => prepared future split; the shared bot keeps family/group traffic,
   #                while Hermes owns Scintillate DM on a dedicated Telegram bot token
-  telegramRoutingMode = "hermes";
-  telegramOwnedByHermes = telegramRoutingMode == "hermes";
-  telegramSplitMode = telegramRoutingMode == "split";
 
   # Binding runtime controls whether the shared Telegram bindings keep the
   # Scintillate DM binding. Leave this at "hermes" for both current mode and
   # split mode so family/group routing stays separate while Hermes owns
   # Scintillate DM.
   telegramBindingRuntime = "hermes";
-  hermesTelegramEnable = telegramOwnedByHermes || telegramSplitMode;
   telegramBindingsModule =
     let
       telegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/telegram-bindings.nix;
@@ -71,15 +66,6 @@ let
           telegramRuntime = telegramBindingRuntime;
         }
   );
-  hermesScintillateChannelIds = lib.sort lib.versionOlder (
-    builtins.filter (peerId: telegramBindings.direct.${peerId}.agentId == "scintillate") (
-      builtins.attrNames telegramBindings.direct
-    )
-  );
-  hermesScintillateHomeChannel = builtins.head hermesScintillateChannelIds;
-  hermesScintillateAllowedUserIds =
-    if telegramSplitMode then hermesScintillateChannelIds else map toString telegramBindings.allowFrom;
-  hermesScintillateAllowedUsers = lib.concatStringsSep "," hermesScintillateAllowedUserIds;
   # Scintillate should always answer as the dedicated Scintillate Telegram bot,
   # even while Hermes owns Telegram directly in the current deployment mode.
   # The shared family/group bot can stay separate from Scintillate's DM bot.
@@ -262,7 +248,6 @@ in
       deps = [
         "agenixInstall"
         "agenixChown"
-        "canonical-hermes-profiles-materialize"
       ];
       text = ''
         ENV_DIR="/run/hermes-scintillate-env"
@@ -462,7 +447,7 @@ in
     };
 
     hermesScintillateTaskNotesCompat = {
-      deps = [ "canonical-hermes-profiles-materialize" ];
+      deps = [ ];
       text = ''
         HERMES_HOME_BASE="/var/lib/hermes-scintillate"
 
@@ -483,7 +468,6 @@ in
       deps = [
         "agenixInstall"
         "agenixChown"
-        "canonical-hermes-profiles-materialize"
       ];
       text = ''
         ENV_DIR="/run/hermes-betty-env"
@@ -526,7 +510,7 @@ in
     };
 
     hermesBettyWorkspaceCompat = {
-      deps = [ "canonical-hermes-profiles-materialize" ];
+      deps = [ ];
       text = ''
         BETTY_HOME="/var/lib/hermes-betty"
 
@@ -686,26 +670,6 @@ in
     user = "emiller";
     group = "users";
     createUser = false;
-
-    profiles.scintillate = {
-      environment = {
-        HA_URL = "http://192.168.1.222:8123";
-        HASS_URL = "http://192.168.1.222:8123";
-      }
-      // lib.optionalAttrs hermesTelegramEnable {
-        TELEGRAM_ALLOWED_USERS = hermesScintillateAllowedUsers;
-        TELEGRAM_HOME_CHANNEL = hermesScintillateHomeChannel;
-      };
-      environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
-    };
-
-    profiles.betty = {
-      environment = {
-        HA_URL = "http://192.168.1.222:8123";
-        HASS_URL = "http://192.168.1.222:8123";
-      };
-      environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
-    };
   };
 
   systemd.services.hermes-agent-anne = {
@@ -810,21 +774,12 @@ in
         enable = true;
         tailscaleService.enable = true;
       };
-    }
-    // lib.optionalAttrs (lib.hasAttrByPath [ "modules" "services" "hermes" ] options) {
       hermes = {
         enable = true;
-        agents = {
-          scintillate = {
-            mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
-            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
-            workspaceLinks."repos/tnote" = tnoteMainWorktree;
-          };
-          betty = {
-            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
-            workspaceLinks."repos/tnote" = tnoteMainWorktree;
-          };
-        };
+        agentId = "scintillate";
+        mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
+        workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+        workspaceLinks."repos/tnote" = tnoteMainWorktree;
       };
     }
     // {

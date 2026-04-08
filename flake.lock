@@ -911,11 +911,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1775524770,
-        "narHash": "sha256-KcbNnaus2oCOKPQ+o6LvxxNwdLAuj4OUIAUjKFeCHFA=",
+        "lastModified": 1775610001,
+        "narHash": "sha256-k3By6s5n/3N8nrRtrwFRzh+35OCCFSYmKXi8deVALVU=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "0e336b0e717027cbb81fcb5816246b7aec2d4a47",
+        "rev": "7fe6782a25f4aeb6b792162c946cba825813beef",
         "type": "github"
       },
       "original": {
