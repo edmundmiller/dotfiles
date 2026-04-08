@@ -1,13 +1,16 @@
 {
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
   "$schema": "./settings-schema.json",
-  // Model configuration - GPT-5.4 mini as default (high thinking)
-  "defaultProvider": "openai",
-  "defaultModel": "gpt-5.4-mini",
+  // Model configuration - Kilo-first strategy for reliability
+  // Primary: kilo-auto/frontier (300+ models via Kilo Gateway)
+  // Note: openai gpt-5.4-mini/codex currently returns empty/malformed responses
+  "defaultProvider": "kilocode",
+  "defaultModel": "kilo-auto/frontier",
   "defaultThinkingLevel": "high",
   // Model cycling - Ctrl+P to toggle between these
   // Note: gpt-5.4-nano is intentionally omitted from cycling, but remains available for explicit subagent model overrides.
-  "enabledModels": ["gpt-5.4-mini", "gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4"],
+  // Kilo-first: frontier > balanced > openai; openai kept for compatibility when Kilo is down
+  "enabledModels": ["kilo-auto/frontier", "kilo-auto/balanced", "gpt-5.4-mini", "claude-opus-4-6"],
   // UI preferences
   "theme": "terminal",
   "quietStartup": false,
@@ -200,7 +203,8 @@
     // Algorithmic conversation compactor - https://www.npmjs.com/package/@sting8k/pi-vcc
     "npm:@sting8k/pi-vcc",
     // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
-    "npm:@howaboua/pi-codex-conversion",
+    // DISABLED: conflicts with pi-web-access on web_search tool
+    // "npm:@howaboua/pi-codex-conversion",
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
     // Enables provider id: kilo (e.g., model: kilocode/auto)
     "git:github.com/mrexodia/kilo-pi-provider",
@@ -225,6 +229,7 @@
       "skills": [],
     },
     // Pierre-themed inline diff rendering for edit/write tool results - https://github.com/tanvesh01/pierre-diffs
-    "git:github.com/tanvesh01/pierre-diffs",
+    // DISABLED: conflicts with pi-tool-display on edit/write tools
+    // "git:github.com/tanvesh01/pierre-diffs",
   ],
 }

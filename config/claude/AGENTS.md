@@ -50,7 +50,7 @@ config/claude/
 
 ## Nix Management
 
-Files in this directory are symlinked by `modules/shell/claude/default.nix`:
+Files in this directory are symlinked by `modules/agents/claude/default.nix`:
 
 - `settings.json` → `~/.claude/settings.json`
 - `config/agents/modes/` → `~/.claude/agents/`

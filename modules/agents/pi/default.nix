@@ -1,4 +1,4 @@
-# modules/shell/pi/default.nix
+# modules/agents/pi/default.nix
 #
 # Pi coding agent configuration
 # https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent

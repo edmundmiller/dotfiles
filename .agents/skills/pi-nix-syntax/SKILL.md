@@ -3,7 +3,7 @@ name: pi-nix-syntax
 description: >
   Use when converting Pi config/extension/skill setup (Pi settings.json packages, ~/.pi/agent/extensions,
   git:... sources) into this dotfiles repo's Nix representation (skills-catalog/agent-skills-nix,
-  modules/shell/pi/default.nix home.file links), or converting the other direction.
+  modules/agents/pi/default.nix home.file links), or converting the other direction.
 ---
 
 # Pi ↔ Nix syntax conversions (this repo)
@@ -43,7 +43,7 @@ Nix only ensures the file gets placed at `~/.pi/agent/settings.json`.
 1. Put code in:
    - `config/pi/extensions/<name>.ts`
 2. Link it into Pi extensions dir via:
-   - `modules/shell/pi/default.nix` → `home-manager.users.<user>.home.file.".pi/agent/extensions/<name>.ts".source = "${configDir}/pi/extensions/<name>.ts";`
+   - `modules/agents/pi/default.nix` → `home-manager.users.<user>.home.file.".pi/agent/extensions/<name>.ts".source = "${configDir}/pi/extensions/<name>.ts";`
 
 Rule: **anything under `~/.pi/agent/extensions/*.ts` must default-export a factory**.
 
@@ -74,7 +74,7 @@ Given a Pi-ish request, classify it:
 2. **Local extension** (your own `.ts`):
 
 - Create `config/pi/extensions/<name>.ts`.
-- Add a `home.file` link in `modules/shell/pi/default.nix`.
+- Add a `home.file` link in `modules/agents/pi/default.nix`.
 
 3. **Skill** (SKILL.md):
 
@@ -109,4 +109,4 @@ Given a Pi-ish request, classify it:
 
 - Path: `config/pi/extensions/<name>.ts`
 - Must: `export default function (pi: ExtensionAPI) { ... }`
-- Link in `modules/shell/pi/default.nix` under `home.file`.
+- Link in `modules/agents/pi/default.nix` under `home.file`.

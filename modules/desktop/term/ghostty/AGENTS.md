@@ -66,5 +66,5 @@ modules.desktop.term.ghostty.configInit = ''
 
 ## Related Files
 
-- `modules/shell/pi/default.nix` - Adds pi-keybindings.conf via keybindingFiles
+- `modules/agents/pi/default.nix` - Adds pi-keybindings.conf via keybindingFiles
 - `modules/shell/zsh/default.nix` - Pattern inspiration (rcFiles/rcInit)

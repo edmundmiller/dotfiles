@@ -6,9 +6,9 @@ Numbered markdown files concatenated into each agent's system prompt at build ti
 
 Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates with `\n\n` separators:
 
-- `~/.claude/CLAUDE.md` — via `modules/shell/claude/default.nix`
-- `~/.pi/agent/AGENTS.md` — via `modules/shell/pi/default.nix`
-- `~/.config/opencode/rules/` — symlinked as individual files
+- `~/.claude/CLAUDE.md` — via `modules/agents/claude/default.nix`
+- `~/.pi/agent/AGENTS.md` — via `modules/agents/pi/default.nix`
+- `~/.config/opencode/rules/` — via `modules/agents/opencode/default.nix` (symlinked as individual files)
 
 ## Design Principles
 
