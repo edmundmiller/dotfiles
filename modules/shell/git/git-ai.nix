@@ -14,7 +14,7 @@ in
     user.packages = [ pkgs.my.git-ai ];
 
     # Inject pi-git-ai package when pi is also enabled
-    modules.shell.pi.extraPackages = mkIf config.modules.shell.pi.enable [
+    modules.agents.pi.extraPackages = mkIf config.modules.agents.pi.enable [
       "~/.config/dotfiles/pi-packages/pi-git-ai"
     ];
   };

@@ -4,7 +4,7 @@ This module bootstraps Edmund's local Hermes CLI home and keeps it writable.
 
 ## Key rules
 
-- Edit `modules/shell/hermes/default.nix` for package/bootstrap behavior.
+- Edit `modules/agents/hermes/default.nix` for package/bootstrap behavior.
 - Edit `config/hermes/` for seeded user-facing files (`SOUL.md`, `config.yml`, skins).
 - Do not assume files under `$HERMES_HOME` are store symlinks; this module intentionally writes normal files so the CLI can mutate them.
 - Keep `hermes acp` working on laptop installs. If the upstream package omits ACP extras, wrap the package here rather than telling the user to `pip install` into an ad-hoc environment.

@@ -30,7 +30,7 @@ Tool-specific aliases and functions go in their own files:
 
 - `config/jj/aliases.zsh` - Jujutsu VCS aliases
 - `config/zsh/aliases.zsh` - General zsh aliases and functions
-- `config/claude/aliases.zsh` - Claude Code aliases
+- `config/claude/aliases.zsh` - Claude Code aliases (module now in modules/agents/claude/)
 
 These are sourced by `.zshrc` or via `modules.shell.zsh.rcFiles`.
 

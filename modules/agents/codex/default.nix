@@ -7,7 +7,7 @@
 with lib;
 with lib.my;
 let
-  cfg = config.modules.shell.codex;
+  cfg = config.modules.agents.codex;
   inherit (config.dotfiles) configDir;
 
   # Dynamically concatenate all rule files from config/agents/rules/
@@ -19,7 +19,7 @@ let
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
 in
 {
-  options.modules.shell.codex = {
+  options.modules.agents.codex = {
     enable = mkBoolOpt false;
   };
 
