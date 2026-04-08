@@ -71,9 +71,9 @@ in
           # :lang cc
           ccls
           # :lang javascript
-          nodePackages.typescript-language-server
-          nodePackages.typescript
-          nodePackages.prettier
+          typescript-language-server
+          typescript
+          prettier
           # :lang latex & :lang org (latex previews)
           # TODO: Re-enable when needed - texlive-combined is very large
           # (texlive.combine {
@@ -110,8 +110,7 @@ in
         ]
         ++ [
           # FIXME unstable.vale
-          # yaml
-          nodePackages.yaml-language-server
+          yaml-language-server
         ];
 
       env.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
