@@ -7,7 +7,7 @@ Nix module for Claude Code CLI. Manages settings, shared agents/skills, and Waka
 ## Module Structure
 
 ```
-modules/shell/claude/
+modules/agents/claude/
 ├── default.nix   # Module definition
 ├── README.md     # Human docs
 └── AGENTS.md     # This file
@@ -67,6 +67,6 @@ The `source` property must be an **object**, not a string:
 
 ## Related Files
 
-- `modules/shell/opencode.nix` - Sibling module (shares agent/skill directories)
+- `modules/agents/opencode/` - Sibling module (shares agent/skill directories)
 - `config/claude/plugins/*/` - Local plugin development directories
-- `hosts/*/default.nix` - Enable with `modules.shell.claude.enable = true`
+- `hosts/*/default.nix` - Enable with `modules.agents.claude.enable = true`

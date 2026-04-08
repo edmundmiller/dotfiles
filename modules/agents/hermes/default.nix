@@ -8,7 +8,7 @@
 with lib;
 with lib.my;
 let
-  cfg = config.modules.shell.hermes;
+  cfg = config.modules.agents.hermes;
   inherit (config.dotfiles) configDir;
 
   hermesBasePackage = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
@@ -71,7 +71,7 @@ let
   inherit (cfg) configFile skinsDir;
 in
 {
-  options.modules.shell.hermes = with types; {
+  options.modules.agents.hermes = with types; {
     enable = mkBoolOpt false;
 
     homeDir = mkOption {

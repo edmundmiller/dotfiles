@@ -5,7 +5,7 @@ Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/l
 ## Options
 
 - `modules.shell.git.enable` — core git packages + config symlinks
-- `modules.shell.git.ai.enable` — git-ai authorship tracking; injects `pi-git-ai` into `modules.shell.pi.extraPackages` when pi is also enabled
+- `modules.shell.git.ai.enable` — git-ai authorship tracking; injects `pi-git-ai` into `modules.agents.pi.extraPackages` when pi is also enabled
 
 ## Packages
 
@@ -22,4 +22,4 @@ git-open, difftastic, sem, diffity, delta, git-crypt (if gnupg enabled), git-lfs
 ## Cross-module deps
 
 - `modules.shell.gnupg` — conditionally adds git-crypt
-- `modules.shell.pi` — `ai.enable` pushes pi-git-ai package via `extraPackages`
+- `modules.agents.pi` — `ai.enable` pushes pi-git-ai package via `extraPackages`

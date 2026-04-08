@@ -22,13 +22,7 @@
       shell = {
         "1password".enable = true;
         ai.enable = true;
-        claude.enable = true;
-        codex.enable = true;
-        hermes.enable = true;
-        opencode.enable = true;
-        pi.enable = true;
         skillkit.enable = true;
-        pi.memoryRemote = "git@github.com:edmundmiller/pi-memory";
         direnv.enable = true;
         git.enable = true;
         git.ai.enable = true;
@@ -71,6 +65,17 @@
           }
         ];
         zsh.enable = true;
+      };
+
+      agents = {
+        hermes.enable = true;
+        pi = {
+          enable = true;
+          memoryRemote = "git@github.com:edmundmiller/pi-memory";
+        };
+        claude.enable = true;
+        codex.enable = true;
+        opencode.enable = true;
       };
 
       services = {

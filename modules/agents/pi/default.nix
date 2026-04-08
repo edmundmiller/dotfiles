@@ -28,7 +28,7 @@
 with lib;
 with lib.my;
 let
-  cfg = config.modules.shell.pi;
+  cfg = config.modules.agents.pi;
   ghosttyCfg = config.modules.desktop.term.ghostty;
   inherit (config.dotfiles) configDir;
 
@@ -189,7 +189,7 @@ let
   piSettingsValidated = builtins.toJSON piSettingsWithExtras;
 in
 {
-  options.modules.shell.pi = {
+  options.modules.agents.pi = {
     enable = mkBoolOpt false;
     memoryRemote = mkOption {
       type = types.str;

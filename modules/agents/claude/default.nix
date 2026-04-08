@@ -7,7 +7,7 @@
 with lib;
 with lib.my;
 let
-  cfg = config.modules.shell.claude;
+  cfg = config.modules.agents.claude;
   inherit (config.dotfiles) configDir;
 
   # Dynamically concatenate all rule files from config/agents/rules/
@@ -21,7 +21,7 @@ let
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
 in
 {
-  options.modules.shell.claude = {
+  options.modules.agents.claude = {
     enable = mkBoolOpt false;
   };
 

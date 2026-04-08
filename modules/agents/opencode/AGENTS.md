@@ -7,7 +7,7 @@ Nix module for OpenCode CLI. Manages config, rules, agents, commands, and tools.
 ## Module Structure
 
 ```
-modules/shell/opencode/
+modules/agents/opencode/
 ├── default.nix   # Module definition
 └── AGENTS.md     # This file
 
@@ -65,6 +65,6 @@ curl -sI "https://registry.npmjs.org/@opencode-ai/plugin/-/plugin-VERSION.tgz" |
 
 ## Related Files
 
-- `modules/shell/claude/` - Sibling module (similar pattern)
+- `modules/agents/claude/` - Sibling module (similar pattern)
 - `config/opencode/plugin/*/` - Local plugin development directories
-- `hosts/*/default.nix` - Enable with `modules.shell.opencode.enable = true`
+- `hosts/*/default.nix` - Enable with `modules.agents.opencode.enable = true`

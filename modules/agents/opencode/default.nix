@@ -7,12 +7,12 @@
 let
   inherit (lib) mkIf;
   inherit (lib.my) mkBoolOpt;
-  cfg = config.modules.shell.opencode;
+  cfg = config.modules.agents.opencode;
   ghosttyCfg = config.modules.desktop.term.ghostty;
   inherit (config.dotfiles) configDir;
 in
 {
-  options.modules.shell.opencode = {
+  options.modules.agents.opencode = {
     enable = mkBoolOpt false;
   };
 
