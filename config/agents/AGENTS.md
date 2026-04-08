@@ -36,6 +36,6 @@ description: When to trigger this skill
 
 ## Nix Modules
 
-- `modules/shell/claude/default.nix` - Concatenates rules → CLAUDE.md
-- `modules/shell/opencode/default.nix` - Symlinks all directories
-- `modules/shell/pi/default.nix` - Symlinks Pi config; global skills come from agent-skills-nix
+- `modules/agents/claude/default.nix` - Concatenates rules → CLAUDE.md
+- `modules/agents/opencode/default.nix` - Symlinks all directories
+- `modules/agents/pi/default.nix` - Symlinks Pi config; global skills come from agent-skills-nix

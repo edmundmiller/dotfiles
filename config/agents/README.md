@@ -119,6 +119,6 @@ Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGEN
 
 ## Related Files
 
-- `modules/shell/claude/default.nix` - Claude agent nix module
-- `modules/shell/opencode/default.nix` - OpenCode agent nix module
-- `modules/shell/pi/default.nix` - Pi agent nix module
+- `modules/agents/claude/default.nix` - Claude agent nix module
+- `modules/agents/opencode/default.nix` - OpenCode agent nix module
+- `modules/agents/pi/default.nix` - Pi agent nix module

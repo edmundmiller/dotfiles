@@ -22,7 +22,7 @@ packages/pi-scurl/
 - **Injection detection**: Pattern-only (no ML). Weighted composite score across 7 categories. Threshold default 0.3.
 - **Truncation**: Uses pi's `truncateHead` (50KB / 2000 lines).
 - **Package reference**: Listed in `config/pi/settings.jsonc` as `"~/.config/dotfiles/packages/pi-scurl"`.
-- **Dep install**: Nix activation in `modules/shell/pi/default.nix` runs `bun install` if `node_modules/` missing.
+- **Dep install**: Nix activation in `modules/agents/pi/default.nix` runs `bun install` if `node_modules/` missing.
 
 ## Adding Secret Patterns
 

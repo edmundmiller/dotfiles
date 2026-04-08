@@ -259,6 +259,8 @@ in
         : > "$ENV_FILE"
         chmod 600 "$ENV_FILE"
 
+        printf 'HERMES_HONCHO_HOST=%s\n' "scintillate" >> "$ENV_FILE"
+
         ${lib.concatMapStringsSep "\n" (secret: ''
           if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
             secret_value=*** ${lib.escapeShellArg (toString secret.path)})"
@@ -338,6 +340,8 @@ in
         chmod 600 "$ENV_FILE"
         chown emiller:users "$ENV_FILE"
 
+        printf 'HERMES_HONCHO_HOST=%s\n' "anne" >> "$ENV_FILE"
+
         ${lib.concatMapStringsSep "\n" (secret: ''
           if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
             secret_value=*** ${lib.escapeShellArg (toString secret.path)})"
@@ -412,26 +416,59 @@ in
       '';
     };
 
-    hermesBettySecrets.materialize = {
-      deps = [
-        "agenixInstall"
-        "agenixChown"
+    hermesBettySecrets = {
+      agenixList = hermesProviderSecrets ++ [
+        {
+          envVar = "TELEGRAM_BOT_TOKEN";
+          path = hermesScintillateTelegramBotTokenFile;
+        }
       ];
-      text = ''
-        ENV_DIR="/run/hermes-betty-env"
-        ENV_FILE="$ENV_DIR/secrets.env"
+      materialize = {
+        deps = [
+          "agenixInstall"
+          "agenixChown"
+        ];
+        text = ''
+          BETTY_HOME="/var/lib/hermes-betty"
+          ENV_DIR="/run/hermes-betty-env"
+          ENV_FILE="$ENV_DIR/secrets.env"
+          HERMES_ENV_HOME="$BETTY_HOME/.hermes"
 
-        mkdir -p "$ENV_DIR"
-        : > "$ENV_FILE"
-        chmod 600 "$ENV_FILE"
+          install -d -o emiller -g users -m 0750 "$BETTY_HOME"
+          install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
+          install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
+          install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace/repos"
+          install -d -o emiller -g users -m 0750 "$BETTY_HOME/.codex"
+          install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local"
+          install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/state"
+          install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/state/hermes"
+          install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/state/hermes/gateway-locks"
 
-        ${lib.concatMapStringsSep "\n" (secret: ''
-          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-            secret_value=*** ${lib.escapeShellArg (toString secret.path)})"
-            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
-          fi
-        '') hermesBettySecrets}
-      '';
+          ln -sfn /home/emiller/.codex/auth.json "$BETTY_HOME/.codex/auth.json"
+          chown -h emiller:users "$BETTY_HOME/.codex/auth.json"
+          ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
+          chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
+
+          ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+          chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+          ln -sfn /home/emiller/obsidian-vault "$BETTY_HOME/obsidian-vault"
+          chown -h emiller:users "$BETTY_HOME/obsidian-vault"
+
+          mkdir -p "$ENV_DIR"
+          : > "$ENV_FILE"
+          chmod 600 "$ENV_FILE"
+          chown emiller:users "$ENV_FILE"
+
+          printf 'HERMES_HONCHO_HOST=%s\n' "betty" >> "$ENV_FILE"
+
+          ${lib.concatMapStringsSep "\n" (secret: ''
+            if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+              secret_value=*** ${lib.escapeShellArg (toString secret.path)})"
+              printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+            fi
+          '') hermesBettySecrets.agenixList}
+        '';
+      };
     };
 
     hermesBettyWorkspaceCompat = {
@@ -708,12 +745,28 @@ in
             workspaceLinks."repos/tnote" = tnoteMainWorktree;
             mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
             environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
+            honcho = {
+              hostKey = "scintillate";
+              aiPeer = "scintillate";
+              workspace = "hermes";
+            };
           };
+
           betty = {
             environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
+            honcho = {
+              hostKey = "betty";
+              aiPeer = "betty";
+              workspace = "hermes";
+            };
           };
           anne = {
             environmentFiles = [ "/run/hermes-anne-env/secrets.env" ];
+            honcho = {
+              hostKey = "anne";
+              aiPeer = "anne";
+              workspace = "hermes";
+            };
           };
         };
       };
