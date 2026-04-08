@@ -30,19 +30,6 @@
         "1password".enable = true;
         ai.enable = true;
         agentBrowser.enable = true;
-        claude.enable = true;
-        codex.enable = true;
-        hermes = {
-          enable = true;
-          secretReferences = {
-            OPENCODE_GO_API_KEY = "op://Agents/OPENCODE_GO_API_KEY/credential";
-            OPENROUTER_API_KEY = "op://Agents/MTP OpenRouter/credential";
-          };
-        };
-        opencode.enable = true;
-        pi.enable = true;
-        skillkit.enable = true;
-        pi.memoryRemote = "git@github.com:edmundmiller/pi-memory";
         direnv.enable = true;
         git.enable = true;
         git.ai.enable = true;
@@ -51,6 +38,23 @@
         tmux.opensessions.enable = true;
         dmux.enable = true;
         zsh.enable = true;
+      };
+
+      agents = {
+        hermes = {
+          enable = true;
+          secretReferences = {
+            OPENCODE_GO_API_KEY = "op://Agents/OPENCODE_GO_API_KEY/credential";
+            OPENROUTER_API_KEY = "op://Agents/MTP OpenRouter/credential";
+          };
+        };
+        pi = {
+          enable = true;
+          memoryRemote = "git@github.com:edmundmiller/pi-memory";
+        };
+        claude.enable = true;
+        codex.enable = true;
+        opencode.enable = true;
       };
 
       services = {
