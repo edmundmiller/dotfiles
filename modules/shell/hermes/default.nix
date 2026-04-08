@@ -14,6 +14,22 @@ let
   hermesBasePackage =
     inputs.llm-agents-upstream.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
   hermesAcpPythonPath = "${pkgs.python3Packages.agent-client-protocol}/${pkgs.python3.sitePackages}";
+
+  hermesVcc = pkgs.python3Packages.buildPythonPackage {
+    pname = "hermes-vcc";
+    version = "0.2.0";
+    format = "pyproject";
+    src = pkgs.fetchFromGitHub {
+      owner = "bigph00t";
+      repo = "hermes-vcc";
+      rev = "649d3736ab05836d6f354a0e9b94876539cbb270";
+      hash = "sha256-ZZjVX062+ZfEK6nmdReF589cZVxv6JcuemIMg8Vz6f8=";
+    };
+    nativeBuildInputs = [ pkgs.python3Packages.hatchling ];
+    propagatedBuildInputs = [ pkgs.python3Packages.pyyaml ];
+    doCheck = false;
+  };
+  hermesVccPythonPath = "${hermesVcc}/${pkgs.python3.sitePackages}";
   hermesPackageWithAcp = pkgs.stdenvNoCC.mkDerivation {
     pname = hermesBasePackage.pname or "hermes-agent";
     version = "${hermesBasePackage.version or "wrapped"}-with-acp";
@@ -36,7 +52,9 @@ let
 
       for exe in "$out/bin/hermes" "$out/bin/hermes-agent" "$out/bin/hermes-acp"; do
         if [ -x "$exe" ]; then
-          wrapProgram "$exe" --prefix PYTHONPATH : ${escapeShellArg hermesAcpPythonPath}
+          wrapProgram "$exe" \
+            --prefix PYTHONPATH : ${escapeShellArg hermesAcpPythonPath} \
+            --prefix PYTHONPATH : ${escapeShellArg hermesVccPythonPath}
         fi
       done
 
