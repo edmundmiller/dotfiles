@@ -11,8 +11,7 @@ let
   cfg = config.modules.shell.hermes;
   inherit (config.dotfiles) configDir;
 
-  hermesBasePackage =
-    inputs.llm-agents-upstream.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
+  hermesBasePackage = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
   hermesAcpPythonPath = "${pkgs.python3Packages.agent-client-protocol}/${pkgs.python3.sitePackages}";
 
   hermesVcc = pkgs.python3Packages.buildPythonPackage {

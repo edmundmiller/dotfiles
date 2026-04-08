@@ -59,14 +59,6 @@
     llm-agents.inputs.nixpkgs.follows = "nixpkgs";
     llm-agents.inputs.systems.follows = "systems";
 
-    # Keep an upstream-shaped llm-agents input for Hermes specifically so we
-    # can use Numtide's exact packaged derivation and maximize binary-cache
-    # hits instead of rebuilding against our repo-wide nixpkgs follow.
-    llm-agents-upstream = {
-      url = "github:numtide/llm-agents.nix/8945761bf8e462e15b3b76f1a38511f9b809619d";
-      inputs.systems.follows = "systems";
-    };
-
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults.
     # Note: while actively iterating locally, flake.lock may intentionally pin
