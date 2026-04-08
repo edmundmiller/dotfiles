@@ -1,0 +1,12 @@
+[
+  { "role": "user", "content": "What's the best sorting algorithm for nearly-sorted data?" },
+  {
+    "role": "assistant",
+    "content": "<think>The user is asking about sorting algorithms for nearly-sorted data. For nearly-sorted data, insertion sort is typically the best choice with O(n) best case. Timsort is also excellent as it's designed to take advantage of existing order.</think>For nearly-sorted data, **insertion sort** is typically the best choice. It has O(n) time complexity in the best case when data is already sorted, and performs well when only a few elements are out of place.\n\nTimsort (Python's default) is also excellent for this — it detects existing runs of sorted data and merges them efficiently."
+  },
+  { "role": "user", "content": "Can you show an example?" },
+  {
+    "role": "assistant",
+    "content": "<REASONING_SCRATCHPAD>User wants a code example. I should show a simple insertion sort implementation with a comment about the nearly-sorted optimization.</REASONING_SCRATCHPAD>Here's a simple insertion sort:\n\n```python\ndef insertion_sort(arr):\n    for i in range(1, len(arr)):\n        key = arr[i]\n        j = i - 1\n        while j >= 0 and arr[j] > key:\n            arr[j + 1] = arr[j]\n            j -= 1\n        arr[j + 1] = key\n    return arr\n```\n\nFor nearly-sorted data, the inner while loop rarely executes, giving us near-linear performance."
+  }
+]

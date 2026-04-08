@@ -244,7 +244,7 @@ in
       ];
     };
 
-    hermesScintillateSecrets = {
+    hermesScintillateSecrets.materialize = {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -253,37 +253,17 @@ in
         ENV_DIR="/run/hermes-scintillate-env"
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="/var/lib/hermes-scintillate/.hermes"
-        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
         HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
-        TMP_HERMES_ENV="$(mktemp)"
-        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
         mkdir -p "$ENV_DIR"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
         : > "$ENV_FILE"
         chmod 600 "$ENV_FILE"
 
-        if [ -f "$HERMES_ENV_FILE" ]; then
-          cp "$HERMES_ENV_FILE" "$TMP_HERMES_ENV"
-        else
-          : > "$TMP_HERMES_ENV"
-        fi
-
         ${lib.concatMapStringsSep "\n" (secret: ''
-                    ${pkgs.python3}/bin/python - "$TMP_HERMES_ENV" ${lib.escapeShellArg secret.envVar} <<'PY'
-          import sys
-          from pathlib import Path
-
-          path = Path(sys.argv[1])
-          env_var = sys.argv[2]
-          lines = path.read_text().splitlines() if path.exists() else []
-          path.write_text("\n".join(line for line in lines if not line.startswith(f"{env_var}=")) + ("\n" if lines else ""))
-          PY
-                    if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-                      secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
-                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
-                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$TMP_HERMES_ENV"
-                    fi
+          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+            secret_value=*** ${lib.escapeShellArg (toString secret.path)})"
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+          fi
         '') hermesScintillateSecrets}
 
         ${lib.concatMapStringsSep "\n" (credentialFile: ''
@@ -293,17 +273,6 @@ in
               "$HERMES_ENV_HOME/${credentialFile.targetName}"
           fi
         '') hermesScintillateCredentialFiles}
-
-        TMP_HERMES_ENV_CLEANED="$(mktemp)"
-        trap 'rm -f "$TMP_HERMES_ENV" "$TMP_HERMES_ENV_CLEANED"' EXIT
-        if [ -f "$TMP_HERMES_ENV" ]; then
-          ${pkgs.gnugrep}/bin/grep -v '^GOOGLE_WORKSPACE_ENABLED_SERVICES=' "$TMP_HERMES_ENV" > "$TMP_HERMES_ENV_CLEANED" || true
-          mv "$TMP_HERMES_ENV_CLEANED" "$TMP_HERMES_ENV"
-        fi
-        printf '%s=%s\n' GOOGLE_WORKSPACE_ENABLED_SERVICES calendar >> "$ENV_FILE"
-        printf '%s=%s\n' GOOGLE_WORKSPACE_ENABLED_SERVICES calendar >> "$TMP_HERMES_ENV"
-
-        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
         import json
@@ -325,7 +294,7 @@ in
       '';
     };
 
-    hermesAnneSecrets = {
+    hermesAnneSecrets.materialize = {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -335,10 +304,7 @@ in
         ENV_DIR="/run/hermes-anne-env"
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="$ANNE_STATE_DIR/.hermes"
-        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
         HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
-        TMP_HERMES_ENV="$(mktemp)"
-        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
         install -d -o emiller -g users -m 0750 \
           "$ANNE_STATE_DIR" \
@@ -372,27 +338,11 @@ in
         chmod 600 "$ENV_FILE"
         chown emiller:users "$ENV_FILE"
 
-        if [ -f "$HERMES_ENV_FILE" ]; then
-          cp "$HERMES_ENV_FILE" "$TMP_HERMES_ENV"
-        else
-          : > "$TMP_HERMES_ENV"
-        fi
-
         ${lib.concatMapStringsSep "\n" (secret: ''
-                    ${pkgs.python3}/bin/python - "$TMP_HERMES_ENV" ${lib.escapeShellArg secret.envVar} <<'PY'
-          import sys
-          from pathlib import Path
-
-          path = Path(sys.argv[1])
-          env_var = sys.argv[2]
-          lines = path.read_text().splitlines() if path.exists() else []
-          path.write_text("\n".join(line for line in lines if not line.startswith(f"{env_var}=")) + ("\n" if lines else ""))
-          PY
-                    if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-                      secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
-                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
-                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$TMP_HERMES_ENV"
-                    fi
+          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+            secret_value=*** ${lib.escapeShellArg (toString secret.path)})"
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+          fi
         '') hermesAnneSecrets}
 
         ${lib.optionalString (anneDiscordBindings ? requireMention) ''
@@ -415,14 +365,12 @@ in
         ''}
 
         if [ -f ${lib.escapeShellArg (toString config.age.secrets.anne-linear-mcp-token.path)} ]; then
-          linear_token="$(cat ${lib.escapeShellArg (toString config.age.secrets.anne-linear-mcp-token.path)})"
+          linear_token=*** ${lib.escapeShellArg (toString config.age.secrets.anne-linear-mcp-token.path)})"
           if [ -n "$linear_token" ]; then
             printf 'HERMES_MCP_BEARER_TOKEN_LINEAR=%s\n' "$linear_token" >> "$ENV_FILE"
           fi
           unset linear_token
         fi
-
-        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} <<'PY'
         import json
@@ -464,7 +412,7 @@ in
       '';
     };
 
-    hermesBettySecrets = {
+    hermesBettySecrets.materialize = {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -472,40 +420,17 @@ in
       text = ''
         ENV_DIR="/run/hermes-betty-env"
         ENV_FILE="$ENV_DIR/secrets.env"
-        HERMES_ENV_HOME="/var/lib/hermes-betty/.hermes"
-        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
-        TMP_HERMES_ENV="$(mktemp)"
-        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
         mkdir -p "$ENV_DIR"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
         : > "$ENV_FILE"
         chmod 600 "$ENV_FILE"
 
-        if [ -f "$HERMES_ENV_FILE" ]; then
-          cp "$HERMES_ENV_FILE" "$TMP_HERMES_ENV"
-        else
-          : > "$TMP_HERMES_ENV"
-        fi
-
         ${lib.concatMapStringsSep "\n" (secret: ''
-                    ${pkgs.python3}/bin/python - "$TMP_HERMES_ENV" ${lib.escapeShellArg secret.envVar} <<'PY'
-          import sys
-          from pathlib import Path
-
-          path = Path(sys.argv[1])
-          env_var = sys.argv[2]
-          lines = path.read_text().splitlines() if path.exists() else []
-          path.write_text("\n".join(line for line in lines if not line.startswith(f"{env_var}=")) + ("\n" if lines else ""))
-          PY
-                    if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-                      secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
-                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
-                      printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$TMP_HERMES_ENV"
-                    fi
+          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+            secret_value=*** ${lib.escapeShellArg (toString secret.path)})"
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+          fi
         '') hermesBettySecrets}
-
-        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
       '';
     };
 
@@ -708,14 +633,15 @@ in
 
   systemd.services.hermes-agent-anne-healthcheck-ping = {
     description = "Check Anne Discord gateway health and ping healthchecks.io";
-    after = [ "hermes-agent-anne.service" ];
+    after = [ "hermes-gateway-anne.service" ];
+    wants = [ "hermes-gateway-anne.service" ];
     serviceConfig = {
       Type = "oneshot";
       DynamicUser = true;
       ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/start";
       ExecStart = pkgs.writeShellScript "hermes-agent-anne-healthcheck-ping" ''
         for _ in $(seq 1 30); do
-          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-agent-anne.service; then
+          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-anne.service; then
             exit 0
           fi
           sleep 1
@@ -776,10 +702,20 @@ in
       };
       hermes = {
         enable = true;
-        agentId = "scintillate";
-        mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
-        workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
-        workspaceLinks."repos/tnote" = tnoteMainWorktree;
+        agents = {
+          scintillate = {
+            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+            workspaceLinks."repos/tnote" = tnoteMainWorktree;
+            mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
+            environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
+          };
+          betty = {
+            environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
+          };
+          anne = {
+            environmentFiles = [ "/run/hermes-anne-env/secrets.env" ];
+          };
+        };
       };
     }
     // {
