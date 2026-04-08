@@ -14,36 +14,8 @@ let
   hermesBasePackage = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}."hermes-agent";
   hermesAcpPythonPath = "${pkgs.python3Packages.agent-client-protocol}/${pkgs.python3.sitePackages}";
 
-  hermesVcc = pkgs.python3Packages.buildPythonPackage {
-    pname = "hermes-vcc";
-    version = "0.2.0";
-    format = "pyproject";
-    src = pkgs.fetchFromGitHub {
-      owner = "bigph00t";
-      repo = "hermes-vcc";
-      rev = "649d3736ab05836d6f354a0e9b94876539cbb270";
-      hash = "sha256-ZZjVX062+ZfEK6nmdReF589cZVxv6JcuemIMg8Vz6f8=";
-    };
-    nativeBuildInputs = [ pkgs.python3Packages.hatchling ];
-    propagatedBuildInputs = [ pkgs.python3Packages.pyyaml ];
-    doCheck = false;
-  };
+  hermesVcc = pkgs.my."hermes-vcc";
   hermesVccPythonPath = "${hermesVcc}/${pkgs.python3.sitePackages}";
-  hermesVccPlugin =
-    pkgs.runCommandLocal "hermes-vcc-plugin"
-      {
-        initPy = builtins.readFile ./vcc-plugin/memory/vcc/__init__.py;
-        pluginYaml = builtins.readFile ./vcc-plugin/memory/vcc/plugin.yaml;
-        passAsFile = [
-          "initPy"
-          "pluginYaml"
-        ];
-      }
-      ''
-        mkdir -p $out/memory/vcc
-        cp "$initPyPath" $out/memory/vcc/__init__.py
-        cp "$pluginYamlPath" $out/memory/vcc/plugin.yaml
-      '';
   hermesPackageWithAcp = pkgs.stdenvNoCC.mkDerivation {
     pname = hermesBasePackage.pname or "hermes-agent";
     version = "${hermesBasePackage.version or "wrapped"}-with-acp";
@@ -235,8 +207,8 @@ in
                     # Install VCC memory plugin into Hermes plugin discovery path
                     plugin_dir="$hermes_home/plugins/memory/vcc"
                     ${pkgs.coreutils}/bin/mkdir -p "$plugin_dir"
-                    ${pkgs.coreutils}/bin/install -m 0644 ${hermesVccPlugin}/memory/vcc/__init__.py "$plugin_dir/__init__.py"
-                    ${pkgs.coreutils}/bin/install -m 0644 ${hermesVccPlugin}/memory/vcc/plugin.yaml "$plugin_dir/plugin.yaml"
+                    ${pkgs.coreutils}/bin/install -m 0644 ${hermesVcc}/share/hermes-vcc/plugins/memory/vcc/__init__.py "$plugin_dir/__init__.py"
+                    ${pkgs.coreutils}/bin/install -m 0644 ${hermesVcc}/share/hermes-vcc/plugins/memory/vcc/plugin.yaml "$plugin_dir/plugin.yaml"
 
                     ${yamlPython}/bin/python3 - "$config_target" ${escapeShellArg configFile} ${renderedConfig} <<'PY'
           import copy

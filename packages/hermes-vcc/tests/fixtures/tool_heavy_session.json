@@ -1,0 +1,68 @@
+[
+  { "role": "system", "content": "You are a coding assistant with file access." },
+  { "role": "user", "content": "Read the config file and tell me what port the server runs on." },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_abc123",
+        "type": "function",
+        "function": {
+          "name": "Read",
+          "arguments": "{\"file_path\": \"/home/user/config.yaml\"}"
+        }
+      }
+    ]
+  },
+  {
+    "role": "tool",
+    "content": "server:\n  port: 8080\n  host: 0.0.0.0\ncompression:\n  enabled: true",
+    "tool_call_id": "call_abc123"
+  },
+  { "role": "assistant", "content": "The server runs on port 8080, binding to 0.0.0.0." },
+  { "role": "user", "content": "Change the port to 9090." },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_def456",
+        "type": "function",
+        "function": {
+          "name": "Edit",
+          "arguments": "{\"file_path\": \"/home/user/config.yaml\", \"old_string\": \"port: 8080\", \"new_string\": \"port: 9090\"}"
+        }
+      }
+    ]
+  },
+  { "role": "tool", "content": "File edited successfully.", "tool_call_id": "call_def456" },
+  {
+    "role": "assistant",
+    "content": "Done. I've changed the port from 8080 to 9090 in config.yaml."
+  },
+  { "role": "user", "content": "Now search for any other files that reference port 8080." },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_ghi789",
+        "type": "function",
+        "function": {
+          "name": "Grep",
+          "arguments": "{\"pattern\": \"8080\", \"path\": \"/home/user\"}"
+        }
+      }
+    ]
+  },
+  {
+    "role": "tool",
+    "content": "/home/user/docker-compose.yml\n/home/user/nginx.conf",
+    "tool_call_id": "call_ghi789"
+  },
+  {
+    "role": "assistant",
+    "content": "Found 2 files still referencing port 8080:\n- docker-compose.yml\n- nginx.conf\n\nWould you like me to update those as well?"
+  }
+]

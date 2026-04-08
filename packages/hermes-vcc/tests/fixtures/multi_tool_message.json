@@ -1,0 +1,52 @@
+[
+  { "role": "user", "content": "Check both the README and the package.json for version numbers." },
+  {
+    "role": "assistant",
+    "content": "I'll read both files simultaneously.",
+    "tool_calls": [
+      {
+        "id": "call_read_1",
+        "type": "function",
+        "function": {
+          "name": "Read",
+          "arguments": "{\"file_path\": \"/project/README.md\"}"
+        }
+      },
+      {
+        "id": "call_read_2",
+        "type": "function",
+        "function": {
+          "name": "Read",
+          "arguments": "{\"file_path\": \"/project/package.json\"}"
+        }
+      },
+      {
+        "id": "call_grep_1",
+        "type": "function",
+        "function": {
+          "name": "Grep",
+          "arguments": "{\"pattern\": \"version\", \"path\": \"/project\"}"
+        }
+      }
+    ]
+  },
+  {
+    "role": "tool",
+    "content": "# My Project v2.1.0\n\nA fantastic project.",
+    "tool_call_id": "call_read_1"
+  },
+  {
+    "role": "tool",
+    "content": "{\n  \"name\": \"my-project\",\n  \"version\": \"2.0.9\"\n}",
+    "tool_call_id": "call_read_2"
+  },
+  {
+    "role": "tool",
+    "content": "/project/README.md\n/project/package.json\n/project/CHANGELOG.md",
+    "tool_call_id": "call_grep_1"
+  },
+  {
+    "role": "assistant",
+    "content": "Version mismatch found:\n- README.md says v2.1.0\n- package.json says 2.0.9\n\nThe README appears to be ahead. Want me to update package.json to match?"
+  }
+]
