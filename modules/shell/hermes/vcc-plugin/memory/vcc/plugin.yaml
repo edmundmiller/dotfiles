@@ -1,0 +1,6 @@
+name: vcc
+version: 0.2.0
+description: "Lossless conversation archiving + structured compaction. No LLM calls."
+hooks:
+  - on_pre_compress
+  - on_session_end
