@@ -35,7 +35,7 @@ fallback_providers:
   - provider: opencode
     model: GLM-5.1
   - provider: nous
-    model: MTP
+    model: z-ai/glm-5.1
   - provider: kilocode
     model: kilo-auto/frontier
   - provider: openrouter
