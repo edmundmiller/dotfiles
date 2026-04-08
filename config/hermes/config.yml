@@ -4,68 +4,8 @@
 # while the module is being set up. The Hermes module merges this with any
 # Nix overlays and the writable config under $HERMES_HOME/config.yaml.
 #
-# Handy places to tweak while hacking:
-# - terminal.cwd: set a default working directory for Hermes sessions
-# - terminal.timeout: increase/decrease how long sessions can run
-# - memory.memory_enabled: turn long-term memory on/off
-# - memory.user_profile_enabled: decide whether Hermes should keep a profile
-# - model/fallback_providers: control the OpenClaw-style inference chain
-#
 # Nix can still layer on top of this file, so treat these as the easy-to-edit
 # baseline settings.
-
-# -----------------------------------------------------------------------------
-# Example profiles
-# Uncomment one of these blocks and adjust it to taste.
-# -----------------------------------------------------------------------------
-
-# Dev-friendly: keep memory on and use the current repo as the default cwd.
-# terminal:
-#   backend: local
-#   cwd: "."
-#   timeout: 300
-#
-# memory:
-#   memory_enabled: true
-#   user_profile_enabled: true
-
-# Minimal: short sessions, no memory, good for quick one-off tasks.
-# terminal:
-#   backend: local
-#   cwd: "."
-#   timeout: 60
-#
-# memory:
-#   memory_enabled: false
-#   user_profile_enabled: false
-
-terminal:
-  backend: local
-  cwd: "."
-  timeout: 180
-
-# Inference fallback chain:
-# 1. OpenAI Codex via existing Codex auth (~/.codex/auth.json is auto-imported)
-# 2. KiloCode (kilo-auto/balanced)
-# Note: Fireworks via 'custom' provider is NOT in the fallback chain because
-# resolve_provider_client('custom', ...) doesn't pass explicit base_url/api_key_env,
-# causing it to fall back to the wrong endpoint (Codex instead of Fireworks).
-model:
-  provider: openai-codex
-  default: gpt-5.4
-
-fallback_model:
-  provider: openai-codex
-  model: gpt-5.4
-
-fallback_providers:
-  - provider: openai-codex
-    model: gpt-5.4
-  - provider: kilocode
-    model: kilo-auto/balanced
-
-display:
-  skin: mono
 
 # Repo-managed MCP defaults. Keep machine-specific auth out of git so personal
 # and work laptops can use different Linear accounts/tokens.
@@ -73,8 +13,7 @@ display:
 # Recommended local setup after rebuild:
 # - API token/header auth: add headers under ~/.config/hermes/config.yaml
 # - OAuth auth: set `auth: oauth` under `mcp_servers.linear` in
-#   ~/.config/hermes/config.yaml. Hermes' current CLI exposes OAuth on
-#   `hermes mcp add --auth oauth ...`, not a separate `hermes mcp auth` command.
+#   ~/.config/hermes/config.yaml
 #
 # Because the dotfiles module merges the writable Hermes config on top of this
 # file, local auth details survive rebuilds without being committed here.
@@ -82,7 +21,257 @@ mcp_servers:
   linear:
     url: https://mcp.linear.app/mcp
     enabled: true
+  beanquery:
+    command: ~/src/personal/finances/scripts/run-beanquery-mcp.sh
+    enabled: true
 
+# Primary inference: OpenAI Codex
+model:
+  provider: openai-codex
+  default: gpt-5.4
+
+# Fallback chain: KiloCode as fallback
+fallback_providers:
+  - provider: kilocode
+    model: kilo-auto/frontier
+
+# Agent settings
+agent:
+  max_turns: 90
+  tool_use_enforcement: auto
+
+# Terminal defaults
+terminal:
+  backend: local
+  modal_mode: auto
+  cwd: "."
+  timeout: 180
+  env_passthrough: []
+  container_cpu: 1
+  container_memory: 5120
+  container_disk: 51200
+  container_persistent: true
+  docker_volumes: []
+  docker_mount_cwd_to_workspace: false
+  persistent_shell: true
+
+# Browser settings
+browser:
+  inactivity_timeout: 120
+  command_timeout: 30
+  record_sessions: false
+  allow_private_urls: false
+  camofox:
+    managed_persistence: false
+
+# Checkpoint settings
+checkpoints:
+  enabled: true
+  max_snapshots: 50
+
+# File reading limits
+file_read_max_chars: 100000
+
+# Compression settings
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+  summary_model: ""
+  summary_provider: auto
+  summary_base_url: null
+
+# Smart model routing
+smart_model_routing:
+  enabled: true
+  max_simple_chars: 160
+  max_simple_words: 28
+  cheap_model:
+    provider: kilocode
+    model: kilo-auto/balanced
+
+# Auxiliary services
+auxiliary:
+  vision:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 30
+    download_timeout: 30
+  web_extract:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 30
+  compression:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 120
+  session_search:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 30
+  skills_hub:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 30
+  approval:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 30
+  mcp:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 30
+  flush_memories:
+    provider: auto
+    model: ""
+    base_url: ""
+    api_key: ""
+    timeout: 30
+
+# Display settings
+display:
+  compact: false
+  personality: kawaii
+  resume_display: full
+  busy_input_mode: interrupt
+  bell_on_complete: false
+  show_reasoning: false
+  streaming: false
+  inline_diffs: true
+  show_cost: false
+  skin: mono
+  tool_progress_command: false
+  tool_preview_length: 0
+
+# Privacy settings
+privacy:
+  redact_pii: false
+
+# TTS settings
+tts:
+  provider: edge
+  edge:
+    voice: en-US-AriaNeural
+  elevenlabs:
+    voice_id: pNInz6obpgDQGcFmaJgB
+    model_id: eleven_multilingual_v2
+  openai:
+    model: gpt-4o-mini-tts
+    voice: alloy
+  neutts:
+    ref_audio: ""
+    ref_text: ""
+    model: neuphonic/neutts-air-q4-gguf
+    device: cpu
+
+# STT settings
+stt:
+  enabled: true
+  provider: local
+  local:
+    model: base
+  openai:
+    model: whisper-1
+
+# Voice settings
+voice:
+  record_key: ctrl+b
+  max_recording_seconds: 120
+  auto_tts: false
+  silence_threshold: 200
+  silence_duration: 3.0
+
+# Human delay settings
+human_delay:
+  mode: "off"
+  min_ms: 800
+  max_ms: 2500
+
+# Memory settings
 memory:
   memory_enabled: true
   user_profile_enabled: true
+  memory_char_limit: 2200
+  user_char_limit: 1375
+  provider: ""
+
+# Delegation settings
+delegation:
+  model: ""
+  provider: ""
+  base_url: ""
+  api_key: ""
+  max_iterations: 50
+
+# Prefill messages
+prefill_messages_file: ""
+
+# Skills external directories
+skills:
+  external_dirs:
+    - ~/.agents/skills
+
+# Timezone (set by Nix module if configured)
+timezone: null
+
+# Discord settings
+discord:
+  require_mention: true
+  free_response_channels: ""
+  auto_thread: true
+  reactions: true
+
+# WhatsApp (empty)
+whatsapp: {}
+
+# Approvals settings
+approvals:
+  mode: manual
+  timeout: 60
+
+# Command allowlist
+command_allowlist: []
+
+# Quick commands
+quick_commands: {}
+
+# Personalities
+personalities: {}
+
+# Security settings
+security:
+  redact_secrets: true
+  tirith_enabled: true
+  tirith_path: tirith
+  tirith_timeout: 5
+  tirith_fail_open: true
+  website_blocklist:
+    enabled: false
+    domains: []
+    shared_files: []
+
+# Cron settings
+cron:
+  wrap_response: true
+
+# Config version
+_config_version: 11
+
+# Web backend
+web:
+  backend: firecrawl
