@@ -11,8 +11,8 @@
   fetchPypi,
 }:
 let
-  version = "1.12.15";
-  postgresVersion = "0.28.15";
+  version = "1.12.22";
+  postgresVersion = "0.28.22";
 
   py = python3;
   ps = py.pkgs;
@@ -26,10 +26,13 @@ let
     src = fetchPypi {
       pname = "dagster_pipes";
       inherit version;
-      hash = "sha256-kY2E17ojwsvionL5uTC2b8+B8zSxf6D8aEcNwbfr8ws=";
+      hash = "sha256-tgA95n49h5Q8iJT00opMS/CeBRIkv7DBJ9o+I88Dl0Q=";
     };
 
-    build-system = [ ps.setuptools ];
+    build-system = [
+      ps.setuptools
+      ps.hatchling
+    ];
     dependencies = [ ];
 
     # Tests require dagster (circular)
@@ -51,10 +54,13 @@ let
     src = fetchPypi {
       pname = "dagster_shared";
       inherit version;
-      hash = "sha256-WawkyoWBTxQxbGMgPrX0W+nYfGuykGGXAsW2oqO4O3g=";
+      hash = "sha256-s2itHi9l8y8Q8amayv2x/uFGuHA4dM3nu1qkwgsSw4c=";
     };
 
-    build-system = [ ps.setuptools ];
+    build-system = [
+      ps.setuptools
+      ps.hatchling
+    ];
 
     dependencies = with ps; [
       packaging
@@ -82,13 +88,20 @@ let
 
     src = fetchPypi {
       inherit pname version;
-      hash = "sha256-+NI0ZvAO26Uvhoq/Z3Pec3p+8SEYKVTT+8VL07cuUhI=";
+      hash = "sha256-QweNBrwJEd3n0j+2wJu6VbnPRAm2IDA2lQ6aV2faLpM=";
     };
 
-    build-system = [ ps.setuptools ];
+    build-system = [
+      ps.setuptools
+      ps.hatchling
+    ];
 
     # nixpkgs has coloredlogs 15.x, dagster pins <=14.0 but works fine
-    pythonRelaxDeps = [ "coloredlogs" ];
+    # nixpkgs has protobuf 7.x but dagster requires <7
+    pythonRelaxDeps = [
+      "coloredlogs"
+      "protobuf"
+    ];
     nativeBuildInputs = [ ps.pythonRelaxDepsHook ];
 
     dependencies = with ps; [
@@ -139,10 +152,13 @@ let
     src = fetchPypi {
       pname = "dagster_graphql";
       inherit version;
-      hash = "sha256-N3CwNRsOLSiSFNMlVgUwWt8k4idX9Vv3CQLzWH/hLhE=";
+      hash = "sha256-ppJYXG3nmbTgp//kKjgnSJBRfNnfp61pp/5w2FQn8Q8=";
     };
 
-    build-system = [ ps.setuptools ];
+    build-system = [
+      ps.setuptools
+      ps.hatchling
+    ];
 
     dependencies = with ps; [
       dagster-core
@@ -171,10 +187,13 @@ let
     src = fetchPypi {
       pname = "dagster_webserver";
       inherit version;
-      hash = "sha256-+WracEPPS2yUOeIpqDZQ5BX5aPHhwbh/X0eK/CsENU4=";
+      hash = "sha256-mhZbXhbi/87xKqEkpHChwthH2xjYtYnfg1qwMfQWZIc=";
     };
 
-    build-system = [ ps.setuptools ];
+    build-system = [
+      ps.setuptools
+      ps.hatchling
+    ];
 
     dependencies = with ps; [
       dagster-core
@@ -203,10 +222,13 @@ let
     src = fetchPypi {
       pname = "dagster_postgres";
       inherit version;
-      hash = "sha256-ydMt1g2NPSdrlCzmi8b4WKfeKY7U+Q+9YnO1dqx+cUY=";
+      hash = "sha256-l1Dj0wlv3YTJumOAUVWC1oCYwmkye1sBQ9+EJZjblvk=";
     };
 
-    build-system = [ ps.setuptools ];
+    build-system = [
+      ps.setuptools
+      ps.hatchling
+    ];
 
     # Wants psycopg2-binary but nixpkgs psycopg2 provides the same thing
     pythonRelaxDeps = [ "psycopg2-binary" ];

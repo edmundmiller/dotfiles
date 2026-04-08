@@ -61,7 +61,7 @@ in
         [
           bun
           yarn
-          nodePackages_latest.pnpm
+          pnpm
         ]
         ++ lib.optionals (!cfg.useFnm) [ node ];
 
