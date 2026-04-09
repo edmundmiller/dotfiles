@@ -281,7 +281,10 @@ in
         description = "Bugster repo setup";
         wantedBy = [ "multi-user.target" ];
         before = [ "dagster-code-bugster.service" ];
-        after = [ "network-online.target" ];
+        after = [
+          "network-online.target"
+          "systemd-resolved.service"
+        ];
         wants = [ "network-online.target" ];
 
         serviceConfig = {
@@ -289,6 +292,9 @@ in
           User = dagsterCfg.user;
           Group = dagsterCfg.group;
           ExecStart = setupScript;
+          Restart = "on-failure";
+          RestartSec = "10s";
+          RestartMaxDelaySec = "60s";
         };
 
         environment = {
