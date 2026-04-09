@@ -102,16 +102,6 @@ let
       inherit (config.age.secrets.scintillate-firecrawl-api) path;
     }
   ];
-  hermesScintillateCredentialFiles = [
-    {
-      targetName = "google_client_secret.json";
-      inherit (config.age.secrets.scintillate-google-client-secret) path;
-    }
-    {
-      targetName = "google_token.json";
-      inherit (config.age.secrets.scintillate-google-token) path;
-    }
-  ];
   hermesBettySecrets = hermesProviderSecrets ++ [
     {
       envVar = "TELEGRAM_BOT_TOKEN";
@@ -253,7 +243,10 @@ in
         ENV_DIR="/run/hermes-scintillate-env"
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="/var/lib/hermes-scintillate/.hermes"
+        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
         HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
+        TMP_HERMES_ENV="$(mktemp)"
+        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
         mkdir -p "$ENV_DIR"
         : > "$ENV_FILE"
@@ -267,14 +260,7 @@ in
             printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
           fi
         '') hermesScintillateSecrets}
-
-        ${lib.concatMapStringsSep "\n" (credentialFile: ''
-          if [ -f ${lib.escapeShellArg (toString credentialFile.path)} ]; then
-            install -m 600 -o emiller -g users \
-              ${lib.escapeShellArg (toString credentialFile.path)} \
-              "$HERMES_ENV_HOME/${credentialFile.targetName}"
-          fi
-        '') hermesScintillateCredentialFiles}
+        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
         import json
@@ -288,7 +274,7 @@ in
                 data = json.loads(path.read_text(encoding="utf-8")) or {}
             except Exception:
                 data = {}
-        data.pop("8357890648", None)
+        data["8357890648"] = "all"
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         PY
         chown emiller:users "$HERMES_VOICE_MODE_FILE"
@@ -306,7 +292,10 @@ in
         ENV_DIR="/run/hermes-anne-env"
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="$ANNE_STATE_DIR/.hermes"
+        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
         HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
+        TMP_HERMES_ENV="$(mktemp)"
+        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
         install -d -o emiller -g users -m 0750 \
           "$ANNE_STATE_DIR" \
@@ -349,6 +338,15 @@ in
           fi
         '') hermesAnneSecrets}
 
+        if [ -f /etc/opnix-token ]; then
+          OP_SERVICE_ACCOUNT_TOKEN="$(cat /etc/opnix-token)"
+          export OP_SERVICE_ACCOUNT_TOKEN
+          if linear_token="$(${pkgs._1password-cli}/bin/op read 'op://Agents/Anne Hermes Bot Linear Token/credential' 2>/dev/null)" && [ -n "$linear_token" ]; then
+            printf 'HERMES_MCP_BEARER_TOKEN_LINEAR=%s\n' "$linear_token" >> "$ENV_FILE"
+          fi
+          unset linear_token OP_SERVICE_ACCOUNT_TOKEN
+        fi
+
         ${lib.optionalString (anneDiscordBindings ? requireMention) ''
           printf 'DISCORD_REQUIRE_MENTION=%s\n' ${
             lib.escapeShellArg (if anneDiscordBindings.requireMention then "true" else "false")
@@ -367,14 +365,7 @@ in
           printf 'DISCORD_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
           printf 'GATEWAY_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
         ''}
-
-        if [ -f ${lib.escapeShellArg (toString config.age.secrets.anne-linear-mcp-token.path)} ]; then
-          linear_token=*** ${lib.escapeShellArg (toString config.age.secrets.anne-linear-mcp-token.path)})"
-          if [ -n "$linear_token" ]; then
-            printf 'HERMES_MCP_BEARER_TOKEN_LINEAR=%s\n' "$linear_token" >> "$ENV_FILE"
-          fi
-          unset linear_token
-        fi
+        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} <<'PY'
         import json
@@ -390,7 +381,7 @@ in
             except Exception:
                 data = {}
         if chat_id:
-            data.pop(chat_id, None)
+            data[chat_id] = "all"
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         PY
         chown emiller:users "$HERMES_VOICE_MODE_FILE"
@@ -678,7 +669,7 @@ in
       ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/start";
       ExecStart = pkgs.writeShellScript "hermes-agent-anne-healthcheck-ping" ''
         for _ in $(seq 1 30); do
-          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-anne.service; then
+          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-agent-anne.service; then
             exit 0
           fi
           sleep 1
