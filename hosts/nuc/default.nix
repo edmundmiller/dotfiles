@@ -31,6 +31,7 @@ let
     exec ${anneHermesLauncher}/bin/anne-hermes gateway
   '';
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
+  scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
   # Telegram routing topology for this host:
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
   # - "split"  => prepared future split; the shared bot keeps family/group traffic,
@@ -662,7 +663,7 @@ in
       ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/start";
       ExecStart = pkgs.writeShellScript "hermes-agent-anne-healthcheck-ping" ''
         for _ in $(seq 1 30); do
-          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-agent-anne.service; then
+          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-anne.service; then
             exit 0
           fi
           sleep 1
@@ -675,6 +676,37 @@ in
 
   systemd.timers.hermes-agent-anne-healthcheck-ping = {
     description = "Ping healthchecks.io for Anne Discord gateway";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "1min";
+      OnUnitActiveSec = "2min";
+      RandomizedDelaySec = "10s";
+    };
+  };
+
+  systemd.services.hermes-scintillate-healthcheck-ping = {
+    description = "Check Scintillate gateway health and ping healthchecks.io";
+    after = [ "hermes-gateway-scintillate.service" ];
+    wants = [ "hermes-gateway-scintillate.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      DynamicUser = true;
+      ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${scintillateHealthcheckPingUrl}/start";
+      ExecStart = pkgs.writeShellScript "hermes-scintillate-healthcheck-ping" ''
+        for _ in $(seq 1 30); do
+          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-scintillate.service; then
+            exit 0
+          fi
+          sleep 1
+        done
+        exit 1
+      '';
+      ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${scintillateHealthcheckPingUrl}/\${EXIT_STATUS}";
+    };
+  };
+
+  systemd.timers.hermes-scintillate-healthcheck-ping = {
+    description = "Ping healthchecks.io for Scintillate gateway";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "1min";
