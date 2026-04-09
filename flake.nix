@@ -62,7 +62,7 @@
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults. Pinned to local agents-workspace repo.
     agents-workspace = {
-      url = "git+file:///Users/emiller/src/personal/agents-workspace";
+      url = "git+file:///Users/emiller/src/personal/agents-workspace?ref=upstream/hermes-profiles";
       inputs.hermesAgent.follows = "hermesAgent";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";

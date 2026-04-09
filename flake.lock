@@ -71,15 +71,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1775617034,
-        "narHash": "sha256-TFbzU+Og/9ugbq00kRqRPK8/AuvLDMnBrSvS5VjRUXA=",
-        "ref": "refs/heads/main",
-        "rev": "6f6ae193dfae9592c70c75c6c97e3006aa41780f",
-        "revCount": 279,
+        "lastModified": 1775620924,
+        "narHash": "sha256-SkPEMJL1vwKj9GF69bYtc69gdkPJF+wqCEdFl/mAKzM=",
+        "ref": "upstream/hermes-profiles",
+        "rev": "1523b224e1426853cf1752ad077a2627aab8af67",
+        "revCount": 283,
         "type": "git",
         "url": "file:///Users/emiller/src/personal/agents-workspace"
       },
       "original": {
+        "ref": "upstream/hermes-profiles",
         "type": "git",
         "url": "file:///Users/emiller/src/personal/agents-workspace"
       }
