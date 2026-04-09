@@ -262,7 +262,10 @@ in
       systemd.services.open-wearables-setup = {
         description = "Open Wearables setup (clone + env generation)";
         wantedBy = [ "multi-user.target" ];
-        after = [ "network-online.target" ];
+        after = [
+          "network-online.target"
+          "systemd-resolved.service"
+        ];
         wants = [ "network-online.target" ];
         before = [ "open-wearables.service" ];
 
@@ -270,6 +273,9 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = setupScript;
+          Restart = "on-failure";
+          RestartSec = "10s";
+          RestartMaxDelaySec = "60s";
         };
       };
 
