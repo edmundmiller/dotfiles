@@ -744,30 +744,10 @@ in
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tnote" = tnoteMainWorktree;
             mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
-            environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
-            honcho = {
-              hostKey = "scintillate";
-              aiPeer = "scintillate";
-              workspace = "hermes";
-            };
           };
 
-          betty = {
-            environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
-            honcho = {
-              hostKey = "betty";
-              aiPeer = "betty";
-              workspace = "hermes";
-            };
-          };
-          anne = {
-            environmentFiles = [ "/run/hermes-anne-env/secrets.env" ];
-            honcho = {
-              hostKey = "anne";
-              aiPeer = "anne";
-              workspace = "hermes";
-            };
-          };
+          betty = { };
+          anne = { };
         };
       };
     }
