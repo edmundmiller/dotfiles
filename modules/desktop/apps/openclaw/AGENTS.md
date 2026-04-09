@@ -22,12 +22,12 @@ modules/desktop/apps/openclaw/
 
 This module is only the **macOS OpenClaw client**.
 
-- `openclaw-workspace` owns canonical agent specs, renderers, generated runtime facts, and reusable personal runtime defaults.
+- `agents-workspace` owns canonical agent specs, renderers, generated runtime facts, and reusable personal runtime defaults.
 - `dotfiles` owns concrete deployment wiring for the NUC/OpenClaw host and this Mac client's local app setup.
 
 For OpenClaw-specific work, use this rule of thumb:
 
-- If it is true for OpenClaw everywhere or for your personal agent platform generally, it probably belongs in `openclaw-workspace`.
+- If it is true for OpenClaw everywhere or for your personal agent platform generally, it probably belongs in `agents-workspace`.
 - If it is true only on a specific host or deployment surface, it belongs in dotfiles.
 
 Examples of host-owned concerns:
@@ -122,7 +122,7 @@ If the `device-pair` plugin is enabled:
 
 ## Related Files
 
-- **openclaw-workspace** repo (`github:edmundmiller/openclaw-workspace`) `module/` — canonical OpenClaw module, renderer logic, and reusable personal defaults
+- **agents-workspace** repo `module/` — canonical OpenClaw module, renderer logic, and reusable personal defaults
 - `hosts/nuc/default.nix` — NUC host-specific OpenClaw deployment wiring (secrets, telegram, ingress, monitoring, enablement)
 - `hosts/mactraitorpro/default.nix` — Enables with `apps.openclaw.enable = true`
 - `modules/shell/ssh.nix` — SSH target used by the macOS app for Remote over SSH

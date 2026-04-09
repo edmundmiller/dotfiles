@@ -58,6 +58,32 @@
         "type": "github"
       }
     },
+    "agents-workspace": {
+      "inputs": {
+        "hermesAgent": [
+          "hermesAgent"
+        ],
+        "llm-agents": [
+          "llm-agents"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775617034,
+        "narHash": "sha256-TFbzU+Og/9ugbq00kRqRPK8/AuvLDMnBrSvS5VjRUXA=",
+        "ref": "refs/heads/main",
+        "rev": "6f6ae193dfae9592c70c75c6c97e3006aa41780f",
+        "revCount": 279,
+        "type": "git",
+        "url": "file:///Users/emiller/src/personal/agents-workspace"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///Users/emiller/src/personal/agents-workspace"
+      }
+    },
     "base16": {
       "inputs": {
         "fromYaml": "fromYaml"
@@ -1423,33 +1449,6 @@
         "type": "github"
       }
     },
-    "openclaw-workspace": {
-      "inputs": {
-        "hermesAgent": [
-          "hermesAgent"
-        ],
-        "llm-agents": [
-          "llm-agents"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1775620924,
-        "narHash": "sha256-SkPEMJL1vwKj9GF69bYtc69gdkPJF+wqCEdFl/mAKzM=",
-        "ref": "upstream/hermes-profiles",
-        "rev": "1523b224e1426853cf1752ad077a2627aab8af67",
-        "revCount": 283,
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
-      },
-      "original": {
-        "ref": "upstream/hermes-profiles",
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/openclaw-workspace"
-      }
-    },
     "opnix": {
       "inputs": {
         "flake-utils": "flake-utils_2",
@@ -1608,6 +1607,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "agents-workspace": "agents-workspace",
         "deploy-rs": "deploy-rs",
         "disko": "disko",
         "emacs-overlay": "emacs-overlay",
@@ -1626,7 +1626,6 @@
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "op-shell-plugins": "op-shell-plugins",
-        "openclaw-workspace": "openclaw-workspace",
         "opnix": "opnix",
         "skills-catalog": "skills-catalog",
         "stylix": "stylix",
