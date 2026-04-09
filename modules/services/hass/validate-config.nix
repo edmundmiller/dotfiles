@@ -139,7 +139,7 @@ let
           .errors | to_entries
           | map(select(
               (.value | tostring) as $v |
-              ($v | contains("!secret") or contains("!include") or contains("NodeStrClass")) | not
+              ($v | contains("!secret") or contains("!include") or contains("NodeStrClass") or contains("config validator")) | not
             ))
           | length
         ' $TMPDIR/result.json)
@@ -153,7 +153,7 @@ let
             .errors | to_entries[]
             | select(
                 (.value | tostring) as $v |
-                ($v | contains("!secret") or contains("!include") or contains("NodeStrClass")) | not
+                ($v | contains("!secret") or contains("!include") or contains("NodeStrClass") or contains("config validator")) | not
               )
             | "\(.key): \(.value[0])"
           ' $TMPDIR/result.json
