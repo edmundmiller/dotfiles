@@ -101,15 +101,15 @@ nuc-generations:
     @echo "=== NUC System Generations ==="
     @ssh {{NUC_HOST}} "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system"
 
-# Push openclaw-workspace, bump flake input, push dotfiles, deploy on NUC.
-openclaw-rollout DOTFILES_MSG="chore: bump openclaw-workspace":
+# Push agents-workspace, bump flake input, push dotfiles, deploy on NUC.
+agents-rollout DOTFILES_MSG="chore: bump agents-workspace":
     #!/usr/bin/env bash
     set -euo pipefail
 
     workspace="$HOME/.openclaw/workspace"
     dotfiles="{{FLAKE_DIR}}"
 
-    echo "=== 1/4 Push openclaw-workspace ==="
+    echo "=== 1/4 Push agents-workspace ==="
     cd "$workspace"
     if ! git diff --quiet || ! git diff --cached --quiet; then
         echo "workspace repo dirty; commit/stash first"
@@ -118,13 +118,13 @@ openclaw-rollout DOTFILES_MSG="chore: bump openclaw-workspace":
     git pull --rebase
     git push
 
-    echo "=== 2/4 Update openclaw-workspace input ==="
+    echo "=== 2/4 Update agents-workspace input ==="
     cd "$dotfiles"
     if ! git diff --quiet || ! git diff --cached --quiet; then
         echo "dotfiles repo dirty; commit/stash first"
         exit 1
     fi
-    nix flake update openclaw-workspace
+    nix flake update agents-workspace
 
     echo "=== 3/4 Commit + push dotfiles ==="
     if git diff --quiet -- flake.lock; then

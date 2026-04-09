@@ -60,10 +60,9 @@
     llm-agents.inputs.systems.follows = "systems";
 
     # Canonical authoring/runtime repo for agent specs, renderers, and
-    # reusable OpenClaw defaults.
-    # NOTE: pinned to upstream/hermes-profiles for multi-agent profiles migration.
-    openclaw-workspace = {
-      url = "git+ssh://git@github.com/edmundmiller/openclaw-workspace?ref=upstream/hermes-profiles";
+    # reusable OpenClaw defaults. Pinned to local agents-workspace repo.
+    agents-workspace = {
+      url = "git+file:///Users/emiller/src/personal/agents-workspace";
       inputs.hermesAgent.follows = "hermesAgent";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
@@ -75,7 +74,7 @@
     google-workspace-cli.url = "github:googleworkspace/cli";
 
     # Expose Hermes as a first-class root input so infra can override the
-    # upstream package directly when openclaw-workspace's wrapper module needs
+    # upstream package directly when agents-workspace's wrapper module needs
     # a local patch before upstream merges.
     hermesAgent = {
       url = "github:NousResearch/hermes-agent";

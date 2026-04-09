@@ -9,8 +9,8 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default;
-  anneHermesLauncher = inputs.openclaw-workspace.packages.${hostSystem}.anne-hermes;
-  discordBindings = import (inputs.openclaw-workspace + /deployments/nuc/discord-bindings.nix) {
+  anneHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.anne-hermes;
+  discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
   anneDiscordBindings = (discordBindings.agents or { }).anne or { };
@@ -43,7 +43,7 @@ let
   telegramBindingRuntime = "hermes";
   telegramBindingsModule =
     let
-      telegramBindingsPath = inputs.openclaw-workspace + /deployments/nuc/telegram-bindings.nix;
+      telegramBindingsPath = inputs.agents-workspace + /deployments/nuc/telegram-bindings.nix;
     in
     import telegramBindingsPath;
   telegramBindings = telegramBindingsModule (
