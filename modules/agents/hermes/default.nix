@@ -98,6 +98,20 @@ in
       '';
     };
 
+    honcho = {
+      enable = mkBoolOpt false;
+
+      configFile = mkOption {
+        type = str;
+        default = "${configDir}/hermes/honcho.json";
+        description = ''
+          Repo-managed Honcho config seeded into $HERMES_HOME/honcho.json on
+          first activation. Not overwritten if the file already exists so
+          Hermes can mutate it at runtime.
+        '';
+      };
+    };
+
     secretReferences = mkOption {
       type = attrsOf str;
       default = {
@@ -161,6 +175,13 @@ in
                     fi
 
                     ${pkgs.coreutils}/bin/install -Dm644 ${soulFile} "$soul_target"
+
+                    ${lib.optionalString cfg.honcho.enable ''
+                      honcho_target="$hermes_home/honcho.json"
+                      if [ ! -e "$honcho_target" ]; then
+                        ${pkgs.coreutils}/bin/install -Dm600 ${escapeShellArg cfg.honcho.configFile} "$honcho_target"
+                      fi
+                    ''}
 
                     skins_source=${escapeShellArg skinsDir}
                     ${pkgs.python3}/bin/python3 - "$skins_source" "$skins_target" <<'PY'
