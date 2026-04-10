@@ -1,0 +1,16 @@
+{
+  "hosts": {
+    "hermes": {
+      "enabled": true,
+      "aiPeer": "mactraitorpro",
+      "peerName": "Edmund",
+      "workspace": "hermes",
+      "recallMode": "hybrid",
+      "writeFrequency": "async",
+      "sessionStrategy": "per-directory",
+      "dialecticReasoningLevel": "low",
+      "dialecticDynamic": true,
+      "messageMaxChars": 25000
+    }
+  }
+}
