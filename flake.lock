@@ -71,11 +71,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1775707348,
-        "narHash": "sha256-sIJ0uhRD0CPoJz17DhIsRaci/NBPrpzkbVbtNAAe0Lk=",
+        "lastModified": 1775787519,
+        "narHash": "sha256-7+d+MC6uDWMPm78Fg1iW8B5Lvr8RpVCbwj/TVanvulc=",
         "ref": "main",
-        "rev": "5fa897bc47974d5f644a9089a9c6ad2552033d9a",
-        "revCount": 285,
+        "rev": "6ffddb08afc658c61016821e50ebac4091426f26",
+        "revCount": 295,
         "type": "git",
         "url": "file:///Users/emiller/src/personal/agents-workspace"
       },
@@ -373,11 +373,11 @@
     "dotfiles-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1774276025,
-        "narHash": "sha256-4AEh/JpRM9oBhH+TUgXroPvYcOB+aiDbyqg02rKONjo=",
+        "lastModified": 1775742352,
+        "narHash": "sha256-nz2yuSAIUZsLnYdWV+TY/0KVINBRLZ6HzN0jeKKCkwc=",
         "owner": "edmundmiller",
         "repo": "dotfiles",
-        "rev": "542327804422d9ea919752a2bdd2df97f9a108a0",
+        "rev": "b520e26fa5527265b48e5e19fd4370ff16aa3c41",
         "type": "github"
       },
       "original": {
@@ -1044,11 +1044,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1775668779,
-        "narHash": "sha256-N+9jpq3ZqMpqqxhrGVUNSxtRX3p2Xw+WgQSMT5Ndx5I=",
+        "lastModified": 1775746837,
+        "narHash": "sha256-WrZCxhx82aBBQb6CMJwXimgOIcv9Eytl1zFsjfxiWSc=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "302d760e9370236420768013a5a9d8e0d13c5d34",
+        "rev": "b91b0e1583091847cf4f8a8fcaad92d66227abfb",
         "type": "github"
       },
       "original": {
@@ -1693,8 +1693,6 @@
         "shaping-skills": "shaping-skills"
       },
       "locked": {
-        "lastModified": 1775782632,
-        "narHash": "sha256-VJx8Wo4RXxaIDIEi04ouiUwjh3pi7plvEX2aM3K9F68=",
         "path": "./skills",
         "type": "path"
       },
@@ -1756,7 +1754,6 @@
     "systems_10": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-86do6U8K3DrJanCOg87nt3UV/zigTX7G68dwJHKIT7s=",
         "path": "./systems",
         "type": "path"
       },
