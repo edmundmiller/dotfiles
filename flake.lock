@@ -1756,15 +1756,14 @@
     "systems_10": {
       "flake": false,
       "locked": {
-        "lastModified": 1775013873,
-        "narHash": "sha256-86do6U8K3DrJanCOg87nt3UV/zigTX7G68dwJHKIT7s=",
         "path": "./systems",
         "type": "path"
       },
       "original": {
         "path": "./systems",
         "type": "path"
-      }
+      },
+      "parent": []
     },
     "systems_11": {
       "locked": {
