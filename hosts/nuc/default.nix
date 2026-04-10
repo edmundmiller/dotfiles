@@ -257,10 +257,11 @@ in
 
         ${lib.concatMapStringsSep "\n" (secret: ''
           if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-            secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
+            secret_value="$(< ${lib.escapeShellArg (toString secret.path)})"
             printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
           fi
         '') hermesScintillateSecrets}
+        printf 'TELEGRAM_ALLOWED_USERS=%s\n' '8357890648' >> "$ENV_FILE"
         install -m 600 -o emiller -g users "$ENV_FILE" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
@@ -275,7 +276,7 @@ in
                 data = json.loads(path.read_text(encoding="utf-8")) or {}
             except Exception:
                 data = {}
-        data["8357890648"] = "all"
+        data.pop("8357890648", None)
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         PY
         chown emiller:users "$HERMES_VOICE_MODE_FILE"

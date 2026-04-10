@@ -1693,6 +1693,8 @@
         "shaping-skills": "shaping-skills"
       },
       "locked": {
+        "lastModified": 1775793881,
+        "narHash": "sha256-VJx8Wo4RXxaIDIEi04ouiUwjh3pi7plvEX2aM3K9F68=",
         "path": "./skills",
         "type": "path"
       },
@@ -1754,14 +1756,15 @@
     "systems_10": {
       "flake": false,
       "locked": {
+        "lastModified": 1775013873,
+        "narHash": "sha256-86do6U8K3DrJanCOg87nt3UV/zigTX7G68dwJHKIT7s=",
         "path": "./systems",
         "type": "path"
       },
       "original": {
         "path": "./systems",
         "type": "path"
-      },
-      "parent": []
+      }
     },
     "systems_11": {
       "locked": {
