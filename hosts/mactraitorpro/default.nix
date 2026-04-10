@@ -45,6 +45,7 @@
           enable = true;
           honcho.enable = true;
           secretReferences = {
+            HONCHO_API_KEY = "op://Agents/MTP Honcho/credential";
             OPENCODE_GO_API_KEY = "op://Agents/OPENCODE_GO_API_KEY/credential";
             OPENROUTER_API_KEY = "op://Agents/MTP OpenRouter/credential";
           };
