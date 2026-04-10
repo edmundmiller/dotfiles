@@ -28,7 +28,7 @@ let
         ]
       )
     }:$PATH
-    exec ${anneHermesLauncher}/bin/anne-hermes gateway
+    exec ${anneHermesLauncher}/bin/anne-hermes gateway run --replace
   '';
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
@@ -261,7 +261,7 @@ in
             printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
           fi
         '') hermesScintillateSecrets}
-        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
+        install -m 600 -o emiller -g users "$ENV_FILE" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
         import json
@@ -366,7 +366,7 @@ in
           printf 'DISCORD_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
           printf 'GATEWAY_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
         ''}
-        install -m 600 -o emiller -g users "$TMP_HERMES_ENV" "$HERMES_ENV_FILE"
+        install -m 600 -o emiller -g users "$ENV_FILE" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} <<'PY'
         import json
@@ -619,38 +619,13 @@ in
     createUser = false;
   };
 
-  systemd.services.hermes-agent-anne = {
-    description = "Hermes Agent Gateway (anne on Discord)";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    serviceConfig = {
-      Type = "simple";
-      User = "emiller";
-      Group = "users";
-      WorkingDirectory = "/var/lib/hermes-anne";
-      Environment = [
-        "HERMES_HOME=/var/lib/hermes-anne/.hermes"
-        "HERMES_MANAGED=true"
-        "HOME=/var/lib/hermes-anne"
-        "MESSAGING_CWD=/var/lib/hermes-anne/.hermes/workspace"
-        "HA_URL=http://192.168.1.222:8123"
-        "HASS_URL=http://192.168.1.222:8123"
-      ];
-      EnvironmentFile = [ "/run/hermes-anne-env/secrets.env" ];
-      ExecStartPre = [
-        "${pkgs.coreutils}/bin/test -f /home/emiller/.codex/auth.json"
-        "${pkgs.coreutils}/bin/test -f /var/lib/hermes-anne/.codex/auth.json"
-      ];
-      ExecStart = lib.mkForce anneHermesGateway;
-      Restart = "always";
-      RestartSec = 5;
-      NoNewPrivileges = true;
-      PrivateTmp = true;
-      ProtectHome = false;
-      ProtectSystem = "strict";
-      ReadWritePaths = [ "/var/lib/hermes-anne" ];
-    };
+  systemd.services.hermes-gateway-anne.serviceConfig = {
+    EnvironmentFile = [ "/run/hermes-anne-env/secrets.env" ];
+    ExecStartPre = [
+      "${pkgs.coreutils}/bin/test -f /home/emiller/.codex/auth.json"
+      "${pkgs.coreutils}/bin/test -f /var/lib/hermes-anne/.codex/auth.json"
+    ];
+    ExecStart = lib.mkForce anneHermesGateway;
   };
 
   systemd.services.hermes-agent-anne-healthcheck-ping = {
@@ -660,9 +635,10 @@ in
     serviceConfig = {
       Type = "oneshot";
       DynamicUser = true;
+      TimeoutStartSec = 90;
       ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/start";
       ExecStart = pkgs.writeShellScript "hermes-agent-anne-healthcheck-ping" ''
-        for _ in $(seq 1 30); do
+        for _ in $(seq 1 90); do
           if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-anne.service; then
             exit 0
           fi
@@ -678,7 +654,7 @@ in
     description = "Ping healthchecks.io for Anne Discord gateway";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec = "1min";
+      OnBootSec = "2min";
       OnUnitActiveSec = "2min";
       RandomizedDelaySec = "10s";
     };
@@ -929,45 +905,43 @@ in
   time.timeZone = "America/Chicago";
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
-  systemd = {
-    tmpfiles.rules = [
-      "d ${millDocsVaultPath} 0755 emiller users -"
+  systemd.tmpfiles.rules = [
+    "d ${millDocsVaultPath} 0755 emiller users -"
+  ];
+
+  systemd.services.obsidian-sync-mill-docs = {
+    description = "Obsidian Headless Sync (mill-docs)";
+    after = [
+      "network-online.target"
+      "obsidian-sync-op-env.service"
+      "obsidian-sync.service"
     ];
+    requires = [ "obsidian-sync-op-env.service" ];
+    wants = [
+      "network-online.target"
+      "obsidian-sync.service"
+    ];
+    wantedBy = [ "multi-user.target" ];
+    unitConfig.JoinsNamespaceOf = "obsidian-sync.service";
 
-    services.obsidian-sync-mill-docs = {
-      description = "Obsidian Headless Sync (mill-docs)";
-      after = [
-        "network-online.target"
-        "obsidian-sync-op-env.service"
-        "obsidian-sync.service"
+    serviceConfig = {
+      Type = "simple";
+      User = "emiller";
+      Group = "users";
+      ExecStartPre = [
+        "${millDocsObsidianLoginScript}"
+        "${millDocsObsidianSetupScript}"
+        "${millDocsObsidianConfigScript}"
       ];
-      requires = [ "obsidian-sync-op-env.service" ];
-      wants = [
-        "network-online.target"
-        "obsidian-sync.service"
-      ];
-      wantedBy = [ "multi-user.target" ];
-      unitConfig.JoinsNamespaceOf = "obsidian-sync.service";
-
-      serviceConfig = {
-        Type = "simple";
-        User = "emiller";
-        Group = "users";
-        ExecStartPre = [
-          "${millDocsObsidianLoginScript}"
-          "${millDocsObsidianSetupScript}"
-          "${millDocsObsidianConfigScript}"
-        ];
-        ExecStart = "${millDocsObsidianSyncScript}";
-        Restart = "on-failure";
-        RestartSec = "30s";
-        EnvironmentFile = "/run/obsidian-sync-op.env";
-        Environment = "XDG_CONFIG_HOME=/tmp";
-        ProtectHome = "read-only";
-        ReadWritePaths = [ millDocsVaultPath ];
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-      };
+      ExecStart = "${millDocsObsidianSyncScript}";
+      Restart = "on-failure";
+      RestartSec = "30s";
+      EnvironmentFile = "/run/obsidian-sync-op.env";
+      Environment = "XDG_CONFIG_HOME=/tmp";
+      ProtectHome = "read-only";
+      ReadWritePaths = [ millDocsVaultPath ];
+      NoNewPrivileges = true;
+      PrivateTmp = true;
     };
   };
 
