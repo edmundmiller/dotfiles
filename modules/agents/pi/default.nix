@@ -38,6 +38,14 @@ let
     piPkgsDir = ../../../pi-packages;
   };
 
+  secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
+  opBin =
+    let
+      resolved = builtins.tryEval (lib.getExe pkgs._1password-cli);
+    in
+    if resolved.success then resolved.value else "op";
+  dotenvPython = pkgs.python3;
+
   # Dynamically concatenate all rule files from config/agents/rules/
   # Same logic as Claude module for consistency
   rulesDir = "${configDir}/agents/rules";
@@ -203,6 +211,11 @@ in
     honcho = {
       enable = mkBoolOpt false;
     };
+    secretReferences = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
+      description = "1Password secret references materialized into ~/.pi/agent/.env";
+    };
     extraPackages = mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -300,6 +313,76 @@ in
 
         home.activation.pi-legacy-skill-dir-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -rf "$HOME/.pi/agent/skills"
+        '';
+
+        home.activation.pi-dotenv-secrets = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                    dotenv_target="$HOME/.pi/agent/.env"
+                    if [ -s ${escapeShellArg secretRefsJson} ]; then
+                      if command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
+                        tmp="$(${pkgs.coreutils}/bin/mktemp)"
+                        ${dotenvPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import sys
+
+
+          target = pathlib.Path(sys.argv[1])
+          refs_path = pathlib.Path(sys.argv[2])
+          dotenv_path = pathlib.Path(sys.argv[3])
+          op_bin = sys.argv[4]
+
+          refs = json.loads(refs_path.read_text(encoding="utf-8"))
+          managed_keys = set(refs)
+          existing_lines = []
+          if dotenv_path.exists():
+              existing_lines = dotenv_path.read_text(encoding="utf-8").splitlines()
+
+          kept_lines = []
+          for line in existing_lines:
+              key, sep, _rest = line.partition("=")
+              if sep and key in managed_keys:
+                  continue
+              kept_lines.append(line)
+
+          rendered_lines = list(kept_lines)
+          for key, ref in refs.items():
+              try:
+                  value = subprocess.check_output(
+                      [op_bin, "read", ref],
+                      text=True,
+                      stderr=subprocess.DEVNULL,
+                  ).rstrip("\n")
+              except Exception:
+                  print(
+                      f"warning: failed to read pi secret {key} from 1Password reference {ref}",
+                      file=sys.stderr,
+                  )
+                  continue
+
+              if not value:
+                  print(
+                      f"warning: pi secret {key} resolved empty from 1Password reference {ref}",
+                      file=sys.stderr,
+                  )
+                  continue
+
+              rendered_lines.append(f"{key}={value}")
+
+          content = "\n".join(rendered_lines)
+          if content:
+              content += "\n"
+
+          target.write_text(content, encoding="utf-8")
+          os.chmod(target, 0o600)
+          PY
+                        ${pkgs.coreutils}/bin/install -m 0600 "$tmp" "$dotenv_target"
+                        ${pkgs.coreutils}/bin/rm -f "$tmp"
+                      else
+                        echo "warning: 1Password CLI unavailable; skipping pi dotenv materialization" >&2
+                      fi
+                    fi
         '';
 
         home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (
