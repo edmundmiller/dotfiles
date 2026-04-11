@@ -52,6 +52,7 @@
         };
         pi = {
           enable = true;
+          honcho.enable = true;
           memoryRemote = "git@github.com:edmundmiller/pi-memory";
         };
         claude.enable = true;
