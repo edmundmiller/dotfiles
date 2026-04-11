@@ -150,11 +150,15 @@ let
     else
       parsed.value;
 
+  honchoPackage = "npm:@agney/pi-honcho-memory";
+
+  piPackagesExtra = cfg.extraPackages ++ lib.optionals cfg.honcho.enable [ honchoPackage ];
+
   piSettingsWithExtras =
-    if cfg.extraPackages == [ ] then
+    if piPackagesExtra == [ ] then
       piSettingsParsed
     else
-      piSettingsParsed // { packages = piSettingsParsed.packages ++ cfg.extraPackages; };
+      piSettingsParsed // { packages = piSettingsParsed.packages ++ piPackagesExtra; };
 
   piSettingsPackageSources = map (
     pkg:
@@ -195,6 +199,9 @@ in
       type = types.str;
       default = "";
       description = "Git remote URL for pi global memory (~/.pi/memory)";
+    };
+    honcho = {
+      enable = mkBoolOpt false;
     };
     extraPackages = mkOption {
       type = types.listOf types.str;
