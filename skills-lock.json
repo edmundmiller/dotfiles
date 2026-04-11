@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "honcho-integration": {
+      "source": "plastic-labs/honcho",
+      "sourceType": "github",
+      "computedHash": "3749fe6863d18c5323ed77c80b8df031de3a46a29831ba749814a2a86f4052da"
+    }
+  }
+}
