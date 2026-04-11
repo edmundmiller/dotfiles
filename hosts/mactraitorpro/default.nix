@@ -53,6 +53,9 @@
         pi = {
           enable = true;
           honcho.enable = true;
+          secretReferences = {
+            HONCHO_API_KEY = "op://Agents/MTP Honcho/credential";
+          };
           memoryRemote = "git@github.com:edmundmiller/pi-memory";
         };
         claude.enable = true;
