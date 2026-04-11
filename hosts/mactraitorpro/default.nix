@@ -52,7 +52,13 @@
         };
         pi = {
           enable = true;
-          honcho.enable = true;
+          honcho = {
+            enable = true;
+            workspace = "coding";
+            peerName = "edmundmiller";
+            aiPeer = "pi";
+            sessionStrategy = "directory";
+          };
           secretReferences = {
             HONCHO_API_KEY = "op://Agents/MTP Honcho/credential";
           };

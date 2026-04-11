@@ -39,6 +39,19 @@ let
   };
 
   secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
+  honchoEnv = lib.optionalAttrs cfg.honcho.enable (
+    {
+      HONCHO_ENABLED = "true";
+      HONCHO_WORKSPACE_ID = cfg.honcho.workspace;
+      HONCHO_PEER_NAME = cfg.honcho.peerName;
+      HONCHO_AI_PEER = cfg.honcho.aiPeer;
+      HONCHO_SESSION_STRATEGY = cfg.honcho.sessionStrategy;
+    }
+    // lib.optionalAttrs (cfg.honcho.url != "") {
+      HONCHO_URL = cfg.honcho.url;
+    }
+  );
+  honchoEnvJson = pkgs.writeText "pi-honcho-env.json" (builtins.toJSON honchoEnv);
   opBin =
     let
       resolved = builtins.tryEval (lib.getExe pkgs._1password-cli);
@@ -210,6 +223,35 @@ in
     };
     honcho = {
       enable = mkBoolOpt false;
+      workspace = mkOption {
+        type = types.str;
+        default = "hermes";
+        description = "Honcho workspace ID for pi-honcho-memory.";
+      };
+      peerName = mkOption {
+        type = types.str;
+        default = "Edmund";
+        description = "Human peer name used by pi-honcho-memory.";
+      };
+      aiPeer = mkOption {
+        type = types.str;
+        default = "pi";
+        description = "AI peer name used by pi-honcho-memory.";
+      };
+      sessionStrategy = mkOption {
+        type = types.enum [
+          "repo"
+          "git-branch"
+          "directory"
+        ];
+        default = "directory";
+        description = "Session scoping strategy for pi-honcho-memory.";
+      };
+      url = mkOption {
+        type = types.str;
+        default = "";
+        description = "Optional Honcho base URL override for pi-honcho-memory.";
+      };
     };
     secretReferences = mkOption {
       type = types.attrsOf types.str;
@@ -316,11 +358,11 @@ in
         '';
 
         home.activation.pi-dotenv-secrets = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                    dotenv_target="$HOME/.pi/agent/.env"
-                    if [ -s ${escapeShellArg secretRefsJson} ]; then
-                      if command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
-                        tmp="$(${pkgs.coreutils}/bin/mktemp)"
-                        ${dotenvPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
+                              dotenv_target="$HOME/.pi/agent/.env"
+                              if [ -s ${escapeShellArg secretRefsJson} ]; then
+                                if command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
+                                  tmp="$(${pkgs.coreutils}/bin/mktemp)"
+                                  ${dotenvPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} ${escapeShellArg honchoEnvJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
           import json
           import os
           import pathlib
@@ -330,11 +372,13 @@ in
 
           target = pathlib.Path(sys.argv[1])
           refs_path = pathlib.Path(sys.argv[2])
-          dotenv_path = pathlib.Path(sys.argv[3])
-          op_bin = sys.argv[4]
+          plain_path = pathlib.Path(sys.argv[3])
+          dotenv_path = pathlib.Path(sys.argv[4])
+          op_bin = sys.argv[5]
 
           refs = json.loads(refs_path.read_text(encoding="utf-8"))
-          managed_keys = set(refs)
+          plain = json.loads(plain_path.read_text(encoding="utf-8"))
+          managed_keys = set(refs) | set(plain)
           existing_lines = []
           if dotenv_path.exists():
               existing_lines = dotenv_path.read_text(encoding="utf-8").splitlines()
@@ -347,6 +391,10 @@ in
               kept_lines.append(line)
 
           rendered_lines = list(kept_lines)
+          for key, value in plain.items():
+              if value:
+                  rendered_lines.append(f"{key}={value}")
+
           for key, ref in refs.items():
               try:
                   value = subprocess.check_output(
@@ -377,12 +425,12 @@ in
           target.write_text(content, encoding="utf-8")
           os.chmod(target, 0o600)
           PY
-                        ${pkgs.coreutils}/bin/install -m 0600 "$tmp" "$dotenv_target"
-                        ${pkgs.coreutils}/bin/rm -f "$tmp"
-                      else
-                        echo "warning: 1Password CLI unavailable; skipping pi dotenv materialization" >&2
-                      fi
-                    fi
+                                  ${pkgs.coreutils}/bin/install -m 0600 "$tmp" "$dotenv_target"
+                                  ${pkgs.coreutils}/bin/rm -f "$tmp"
+                                else
+                                  echo "warning: 1Password CLI unavailable; skipping pi dotenv materialization" >&2
+                                fi
+                              fi
         '';
 
         home.activation.pi-memory-remote = lib.mkIf (cfg.memoryRemote != "") (
