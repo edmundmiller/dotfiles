@@ -47,7 +47,7 @@ modules.shell.tmux.opensessions.enable = true;
 
 When enabled, the module syncs an upstream opensessions checkout into `~/.local/share/opensessions/current`, bootstraps dependencies with bun, and loads the sidebar from `extraInit`.
 
-It also installs a local opensessions watcher plugin at `~/.config/opensessions/plugins/pi.js` to monitor Pi sessions in `~/.pi/agent/sessions/` (or `$PI_SESSIONS_DIR`).
+opensessions now includes a native Pi watcher upstream, so this module only links local supplemental watchers (currently `hunk.js`).
 
 The module also seeds a writable `~/.config/opensessions/config.json` (if missing) with Emdash-like defaults:
 

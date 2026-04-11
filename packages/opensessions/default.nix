@@ -6,20 +6,17 @@
 
 stdenvNoCC.mkDerivation (_finalAttrs: {
   pname = "opensessions";
-  version = "9185abf";
+  version = "c4aa977";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "opensessions";
-    rev = "9185abf6a363e98849a3a5727ca6865319cf9ea8";
-    hash = "sha256-l2oIOQH5OIKcqikv6ZQ9iK4M/QP0fRCMrb28zgU8Mwo=";
+    rev = "c4aa977983385c37c616decdde52fc0eb69abda5";
+    hash = "sha256-4W17zfWq9TJhKleh+Lo7u6LxTcW/OZPk/bkJJMbEyIw=";
   };
 
-  patches = [
-    ./patches/0001-add-session-window-and-pane-details.patch
-    ./patches/0002-add-show-window-details-config-toggle.patch
-    ./patches/0004-harden-startup-and-server-bootstrap.patch
-  ];
+  # Local patch stack dropped: upstream now includes window-details toggle,
+  # session window/pane details, and startup/bootstrap hardening.
 
   dontBuild = true;
 

@@ -10,54 +10,24 @@ This directory holds local opensessions configuration files that are loaded from
 config/opensessions/
 ├── AGENTS.md
 └── plugins/
-    ├── hunk.js
-    └── pi.js
+    └── hunk.js
 ```
 
 ## Plugin Loading Contract
 
 - opensessions loads local plugins from `~/.config/opensessions/plugins/`.
 - Plugins are loaded with `require(...)`, so this repo uses **CommonJS** exports.
-- `pi.js` must export a default factory shape via CommonJS:
+- This repo currently ships only one local plugin: `hunk.js`.
+- Pi support is native in upstream opensessions and no longer requires a local `pi.js` plugin.
 
-```js
-module.exports = function registerPlugin(api) {
-  api.registerWatcher(...);
-};
-```
+## `plugins/hunk.js` behavior
 
-## `plugins/pi.js` behavior
-
-- Registers watcher name: `pi`
-- Watches Pi session transcripts under:
-  - `~/.pi/agent/sessions/` (default)
-  - `$PI_SESSIONS_DIR` (override)
-- Resolves session mapping from the transcript `session.cwd` field via `ctx.resolveSession(...)`.
-- Uses both:
-  - recursive `fs.watch` (fast updates)
-  - periodic polling fallback (resilience)
-
-### Status mapping (important)
-
-- User message => `running`
-- Assistant `stopReason`:
-  - `toolUse` / `tool_use` => `running`
-  - `stop` / `end_turn` => `done`
-  - `cancelled` / `aborted` / `interrupted` => `interrupted`
-  - `error` / `failed` => `error`
-- Pi custom status events:
-  - `status=running` => `running`
-  - `status=stopped && isIdle && !hasPendingMessages` => `done`
-  - `status=stopped && hasPendingMessages` => `running`
-  - other non-idle stopped states => `waiting`
-
-### Thread identity
-
-- `threadId`: parsed from transcript filename (UUID suffix if present)
-- `threadName`: best-effort from
-  1. `session_info.name`
-  2. `pi-tmux-window-name/window` payload
-  3. first user prompt text
+- Registers watcher name: `hunk`
+- Polls the local Hunk MCP endpoint (`http://127.0.0.1:47657/session-api` by default)
+- Maps active Hunk sessions to tmux sessions via `ctx.resolveSession(...)`
+- Emits:
+  - `running` while session appears in Hunk API list
+  - `done` after a tracked session disappears
 
 ## Editing notes
 
