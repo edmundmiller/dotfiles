@@ -159,9 +159,6 @@ in
       "sesh/sesh.toml" = mkIf (cfg.sesh.sessions != [ ]) {
         text = seshConfig;
       };
-      "opensessions/plugins/pi.js" = mkIf cfg.opensessions.enable {
-        source = "${configDir}/opensessions/plugins/pi.js";
-      };
       "opensessions/plugins/hunk.js" = mkIf cfg.opensessions.enable {
         source = "${configDir}/opensessions/plugins/hunk.js";
       };

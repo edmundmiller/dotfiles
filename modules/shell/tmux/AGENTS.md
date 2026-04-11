@@ -20,7 +20,7 @@ config/tmux/
 └── swap-pane.sh    # Pane swapping script for H/J/K/L bindings
 
 config/opensessions/plugins/
-└── pi.js           # Local opensessions watcher plugin for Pi sessions
+└── hunk.js         # Local opensessions watcher plugin for Hunk sessions
 ```
 
 ## Key Technical Facts
@@ -33,7 +33,7 @@ config/opensessions/plugins/
 - **Optional opensessions integration**: Enable with `modules.shell.tmux.opensessions.enable`; module syncs upstream checkout to `~/.local/share/opensessions/current`, runs bun bootstrap, and loads via `opensessions.sh`
 - **Generated config editor helper**: module writes `~/.config/tmux/open-opensessions-config.sh` when opensessions is enabled (used by `prefix O` popup)
 - **Seeded runtime config**: if missing, writes `~/.config/opensessions/config.json` with defaults for theme, width, left-side sidebar, and window detail visibility
-- **Pi watcher plugin (opensessions)**: module links `config/opensessions/plugins/pi.js` into `~/.config/opensessions/plugins/pi.js`; opensessions auto-loads it to track Pi session activity
+- **Hunk watcher plugin (opensessions)**: module links `config/opensessions/plugins/hunk.js` into `~/.config/opensessions/plugins/hunk.js`; opensessions auto-loads it to track Hunk sessions
 - **Keybinding handoff (opensessions)**: when enabled, opensessions keeps its native `prefix o` command table (`s` focus, `t` toggle, `1-9` jump); tmux-which-key also exposes an `opensessions` submenu on `prefix Space o`
 
 ## Dependencies
