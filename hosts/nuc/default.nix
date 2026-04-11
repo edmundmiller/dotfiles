@@ -531,7 +531,7 @@ in
         chown -R emiller:users "$MAIN_WORKTREE"
         ${pkgs.util-linux}/bin/runuser -u emiller -- \
           ${pkgs.coreutils}/bin/env HOME=/home/emiller \
-          ${pkgs.bun}/bin/bun install --cwd "$MAIN_WORKTREE" --frozen-lockfile --ignore-scripts
+          ${pkgs.bun}/bin/bun install --cwd "$MAIN_WORKTREE" --ignore-scripts
       '';
     };
 
