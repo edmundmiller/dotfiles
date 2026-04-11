@@ -17,8 +17,8 @@
         node.enable = true;
         node.useFnm = true;
         node.bunGlobalPackages = [
-          "hunkdiff"
-          "critique"
+          "hunkdiff@0.9.1"
+          "critique@0.1.139"
         ];
         # FIXME: Python disabled - bundled whisper currently includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
