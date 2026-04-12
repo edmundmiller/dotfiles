@@ -22,9 +22,8 @@ Primary personal development machine running nix-darwin.
 
 - **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search / parity with NUC OpenClaw memory backend; activation removes stale bun/npm `qmd` shims so the Nix binary wins
 - **zele CLI**: installed system-wide as `pkgs.my.zele` (upstream source + local patch stack), not via Bun global install
-- **nix-homebrew**: ARM + Rosetta, auto-migrate, mutable taps
+- **nix-homebrew**: ARM-only (Rosetta disabled), auto-migrate, mutable taps
 - **Homebrew**: no auto-update/upgrade/cleanup on activation — see `homebrew.nix` for cask/formula list
-- **Intel brew symlink removal**: activation script prevents ARM/Intel conflicts
 - **duti file associations**: Zed as default text editor for all source/text files, Gapplin for SVGs
 - **TouchID sudo**: `security.pam.services.sudo_local.touchIdAuth = true`
 - **Passwordless darwin-rebuild**: `emiller` can `sudo darwin-rebuild` without password (agent-friendly)
