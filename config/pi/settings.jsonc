@@ -1,16 +1,12 @@
 {
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
   "$schema": "./settings-schema.json",
-  // Model configuration - Kilo-first strategy for reliability
-  // Primary: kilo-auto/frontier (300+ models via Kilo Gateway)
-  // Note: openai gpt-5.4-mini/codex currently returns empty/malformed responses
-  "defaultProvider": "kilocode",
-  "defaultModel": "kilo-auto/frontier",
+  // Model configuration
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.4",
   "defaultThinkingLevel": "high",
   // Model cycling - Ctrl+P to toggle between these
-  // Note: gpt-5.4-nano is intentionally omitted from cycling, but remains available for explicit subagent model overrides.
-  // Kilo-first: frontier > balanced > openai; openai kept for compatibility when Kilo is down
-  "enabledModels": ["kilo-auto/frontier", "kilo-auto/balanced", "gpt-5.4-mini", "claude-opus-4-6"],
+  "enabledModels": ["gpt-5.4", "gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4-mini"],
   // UI preferences
   "theme": "terminal",
   "quietStartup": false,
@@ -215,6 +211,8 @@
     "npm:pi-animations",
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/pi-packages/pi-image-attachments",
+    // Automatic model switching workflows (e.g. Kimi ↔ Codex handoff)
+    "npm:pi-model-switch",
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
     // FIXME MAKE IT STOP https://github.com/davebcn87/pi-autoresearch/issues/6
     // "https://github.com/davebcn87/pi-autoresearch",
