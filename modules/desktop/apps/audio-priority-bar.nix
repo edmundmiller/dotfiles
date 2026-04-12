@@ -63,7 +63,7 @@ in
 
   config = optionalAttrs isDarwin (
     mkIf cfg.enable {
-      user.packages = [ pkgs.my.audio-priority-bar ];
+      environment.systemPackages = [ pkgs.my.audio-priority-bar ];
 
       home-manager.users.${config.user.name} =
         { lib, ... }:
