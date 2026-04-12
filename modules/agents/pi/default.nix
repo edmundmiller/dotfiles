@@ -308,7 +308,8 @@ in
             ".pi/agent/settings.json".text = piSettingsValidated;
             ".pi/agent/extensions/enforce-commit-signing.ts".source =
               "${configDir}/pi/extensions/enforce-commit-signing.ts";
-            ".pi/agent/extensions/guardrails.json".source = "${configDir}/pi/extensions/guardrails.json";
+            # Keep guardrails.json writable for @aliou/pi-guardrails (it opens the file with write access)
+            # so we do not manage it as a read-only Nix store symlink.
             ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/commit-review.ts".source = "${configDir}/pi/extensions/commit-review.ts";
@@ -351,6 +352,17 @@ in
         home.activation.pi-extension-conflict-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ext_dir="$HOME/.pi/agent/extensions"
           rm -f "$ext_dir/context.ts" "$ext_dir/context.js"
+
+          # @aliou/pi-guardrails needs this file writable at runtime.
+          # If HM wrote a symlink into /nix/store, replace it with a local writable copy.
+          guardrails="$ext_dir/guardrails.json"
+          if [ -L "$guardrails" ]; then
+            tmp="$guardrails.tmp"
+            cp -L "$guardrails" "$tmp"
+            rm -f "$guardrails"
+            mv "$tmp" "$guardrails"
+            chmod 0644 "$guardrails"
+          fi
         '';
 
         home.activation.pi-legacy-skill-dir-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
