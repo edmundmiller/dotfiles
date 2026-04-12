@@ -71,11 +71,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1775945722,
+        "lastModified": 1775947968,
         "narHash": "sha256-8AKzJJ1OjhRGrxhhz8MH52lHvr6EC8ZR9v2KWJVvC1k=",
         "ref": "main",
-        "rev": "ef8a6d4f110a011bb8bc87864043362f046cd946",
-        "revCount": 296,
+        "rev": "4efb5199f7297ed7ae8b5856d24ed714cd5626b2",
+        "revCount": 298,
         "type": "git",
         "url": "file:///Users/emiller/src/personal/agents-workspace"
       },
