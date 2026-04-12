@@ -71,6 +71,9 @@
         hermes.enable = true;
         pi = {
           enable = true;
+          secretReferences = {
+            OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
+          };
           memoryRemote = "git@github.com:edmundmiller/pi-memory";
         };
         claude.enable = true;
@@ -120,6 +123,12 @@
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
+        home.sessionVariables = {
+          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.4";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.3-codex";
+          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.4";
+        };
+
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
         '';

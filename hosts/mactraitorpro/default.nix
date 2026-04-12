@@ -46,7 +46,7 @@
           honcho.enable = true;
           secretReferences = {
             HONCHO_API_KEY = "op://Agents/MTP Honcho/credential";
-            OPENCODE_GO_API_KEY = "op://Agents/OPENCODE_GO_API_KEY/credential";
+            OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
             OPENROUTER_API_KEY = "op://Agents/MTP OpenRouter/credential";
           };
         };
@@ -61,6 +61,7 @@
           };
           secretReferences = {
             HONCHO_API_KEY = "op://Agents/MTP Honcho/credential";
+            OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };
           memoryRemote = "git@github.com:edmundmiller/pi-memory";
         };
@@ -120,6 +121,12 @@
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
+        home.sessionVariables = {
+          PI_MODEL_SWITCH_INTENT = "opencode-go/kimi-2.5";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.3-codex";
+          PI_MODEL_SWITCH_DONE = "opencode-go/kimi-2.5";
+        };
+
         xdg.configFile."hunk/config.toml".text = ''
           theme = "graphite"
           mode = "auto"
