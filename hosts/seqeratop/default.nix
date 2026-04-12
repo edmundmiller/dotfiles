@@ -90,6 +90,7 @@
       desktop.macos.enable = true;
 
       desktop = {
+        apps.audioPriorityBar.enable = true;
         term.ghostty.enable = true;
       };
     };
