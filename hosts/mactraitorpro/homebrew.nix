@@ -187,7 +187,7 @@
     "capacities"
     "heptabase"
     "sunsama"
-    "linear-linear"
+    "linear-linear" # Linear app (cask name is linear-linear)
     "motion"
     "granola"
 
@@ -195,6 +195,8 @@
     "codexbar"
     "home-assistant"
     "superset"
+    "lookaway"
+    "handy"
     "voicenotes"
 
     # Git/Development utilities
