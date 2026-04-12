@@ -89,7 +89,7 @@
     nix-homebrew = {
       enable = true;
       user = "emiller";
-      enableRosetta = true; # Apple Silicon + Intel compatibility
+      enableRosetta = false; # ARM-only Homebrew on this host; no Intel prefix management needed now.
       autoMigrate = true; # Migrate existing homebrew installation
       mutableTaps = true; # Allow mutable taps for flexibility
       enableZshIntegration = false; # We handle brew in .zshenv with caching
@@ -144,11 +144,11 @@
         '';
       };
 
-    # Prevent Intel brew symlink from being created
-    system.activationScripts.removeIntelBrew.text = ''
-      echo "Ensuring Intel brew symlink doesn't conflict with ARM homebrew..."
+    # TODO(dotfiles-lbea): Remove this shim cleanup block after a few rebuild cycles once
+    # we're confident no machines/users still carry legacy /usr/local/bin/brew links.
+    # Cleanup legacy Intel brew shim if it still exists from older Rosetta-enabled setups.
+    system.activationScripts.cleanupLegacyIntelBrew.text = ''
       if [ -L "/usr/local/bin/brew" ]; then
-        echo "Removing Intel brew symlink to prevent ARM/Intel conflicts"
         rm -f /usr/local/bin/brew
       fi
     '';
