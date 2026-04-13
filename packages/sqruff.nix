@@ -3,24 +3,26 @@
   rustPlatform,
   fetchFromGitHub,
   rust-jemalloc-sys,
+  python3,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "sqruff";
-  version = "0.11.1";
+  version = "0.38.0";
 
   src = fetchFromGitHub {
     owner = "quarylabs";
     repo = "sqruff";
     rev = "v${version}";
-    hash = "sha256-tAnfkeDou6OLTd9jnGxqLu8ydB8vTa+MQ7utCcua7zQ=";
+    hash = "sha256-khIP3CtrWcMWIuLcKwDOhwfnJ2FfpffQNqphNpWtzOs=";
   };
 
-  cargoHash = "sha256-A5csnVtUDmxFn7uBY2tBsZaTiYBZfF3jtAuly+tzrFs=";
+  cargoHash = "sha256-9u8U7rWm6jOlxky8+y4ptPRnBBEBWWcg4QO0jbLAk5E=";
 
   # depends on rust nightly features
   RUSTC_BOOTSTRAP = 1;
 
+  nativeBuildInputs = [ python3 ];
   buildInputs = [ rust-jemalloc-sys ];
 
   doCheck = false;
