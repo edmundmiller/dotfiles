@@ -9,23 +9,31 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "inspect";
-  version = "unstable-2026-03-10";
+  version = "0.1.1";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "inspect";
-    rev = "65baa7d1ca7180b3c3e2b102649388c867da96d9";
-    hash = "sha256-kuwzx/UcA4hpw+5ntKBLMMshXeDirx/g3GlN0oYwEUA=";
+    rev = "v${version}";
+    hash = "sha256-pGcE9fnJzgdD38/erHjqHVoBQfGEKxgyN3goUxFFsec=";
   };
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [ openssl ];
 
+  postPatch = ''
+    cp ${./inspect.Cargo.lock} Cargo.lock
+  '';
+
   cargoBuildFlags = [
     "-p"
     "inspect-cli"
   ];
-  cargoHash = "sha256-aUH+ODypabS+eSj2QRORQdgP+SKz2QenjNQdXiOPyO0=";
+
+  cargoLock = {
+    lockFile = ./inspect.Cargo.lock;
+    allowBuiltinFetchGit = true;
+  };
 
   # Upstream tests expect local fixture paths unavailable in nix sandbox.
   doCheck = false;
