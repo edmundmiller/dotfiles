@@ -871,11 +871,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1744113393,
-        "narHash": "sha256-6j64seTbxpHCxngRm86EwLmyPyzh4AykATtk3hPWqcM=",
+        "lastModified": 1776106329,
+        "narHash": "sha256-AKRAnvpUXntEbO88fR7Dq4Ra3vxbg/JCJvxh5UJ+TQY=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "86960cdbb0148145890e2ee90b4e157fa899f6e1",
+        "rev": "1af2e18d408a9dcc2c61d6fc1eef5c6667f8e254",
         "type": "github"
       },
       "original": {

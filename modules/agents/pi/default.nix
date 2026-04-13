@@ -417,6 +417,7 @@ in
                       [op_bin, "read", ref],
                       text=True,
                       stderr=subprocess.DEVNULL,
+                      timeout=15,
                   ).rstrip("\n")
               except Exception:
                   print(
