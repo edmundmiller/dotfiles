@@ -336,6 +336,8 @@ in
               };
             };
 
+            ".pi/agent/extensions/prompt-url-widget.ts".source =
+              "${configDir}/pi/extensions/prompt-url-widget.ts";
             ".pi/agent/extensions/you-are-right-killer.ts".source =
               "${configDir}/pi/extensions/you-are-right-killer.ts";
             ".pi/agent/rtk-config.json".source = "${configDir}/pi/extensions/rtk-config.json";
