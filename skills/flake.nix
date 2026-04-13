@@ -57,6 +57,11 @@
       flake = false;
     };
 
+    acpx-repo = {
+      url = "github:openclaw/acpx";
+      flake = false;
+    };
+
     # Child flake cannot reference ../ paths once materialized in /nix/store.
     # Pull repo-local skill dirs from dotfiles source instead.
     dotfiles-repo = {
@@ -143,6 +148,12 @@
               filter.maxDepth = 1;
             };
 
+            acpx = {
+              path = inputs.acpx-repo.outPath;
+              subdir = "skills";
+              filter.maxDepth = 2;
+            };
+
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -177,6 +188,9 @@
 
             markit.from = "markit";
             markit.path = ".";
+
+            acpx.from = "acpx";
+            acpx.path = "acpx";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";
