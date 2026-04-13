@@ -505,6 +505,8 @@ in
           rm -rf "$MAIN_WORKTREE"
         fi
 
+        ${pkgs.git}/bin/git -C "$BASE_REPO" worktree prune
+
         TARGET_REF=main
         if ${pkgs.git}/bin/git -C "$BASE_REPO" rev-parse --verify refs/remotes/origin/main >/dev/null 2>&1; then
           TARGET_REF=origin/main
