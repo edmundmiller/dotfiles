@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "acpx-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1775989303,
+        "narHash": "sha256-sVSzx8Bzc9G2LaM/bw8UNfejqKxeWgIahbHmOLp1wtw=",
+        "owner": "openclaw",
+        "repo": "acpx",
+        "rev": "be5199464f7d7d210374a618b65b3f25e401a803",
+        "type": "github"
+      },
+      "original": {
+        "owner": "openclaw",
+        "repo": "acpx",
+        "type": "github"
+      }
+    },
     "agent-skills": {
       "inputs": {
         "home-manager": "home-manager",
@@ -234,6 +250,7 @@
     },
     "root": {
       "inputs": {
+        "acpx-repo": "acpx-repo",
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
         "diffity-repo": "diffity-repo",

@@ -12,6 +12,32 @@ let
   inherit (config.dotfiles) configDir;
 
   hermesBasePackage = inputs.hermesAgent.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  acpxPackage = pkgs.buildNpmPackage rec {
+    pname = "acpx";
+    version = "0.5.3";
+
+    src = pkgs.fetchurl {
+      url = "https://registry.npmjs.org/acpx/-/acpx-0.5.3.tgz";
+      hash = "sha512-LNKc9gWlRztWKtQ3jr4g/kzlL9HU/5Wor79mromg/zRV5vE2FOdU+8VtW8ZypIMLzxLx2ATN6A4S1Dr97DM2QQ==";
+    };
+
+    sourceRoot = "package";
+    postPatch = ''
+      cp ${./acpx-package.json} package.json
+      cp ${./acpx-package-lock.json} package-lock.json
+    '';
+
+    npmDepsHash = "sha256-OzPdwNrQam8+RM7GARWdOlZL8iOraaMw/hfuUu7wN1w=";
+    npmDepsFetcherVersion = 2;
+    dontNpmBuild = true;
+
+    meta = {
+      description = "Headless CLI client for the Agent Client Protocol";
+      homepage = "https://github.com/openclaw/acpx";
+      license = lib.licenses.mit;
+      mainProgram = "acpx";
+    };
+  };
   hermesPackageWithAcp = pkgs.stdenvNoCC.mkDerivation {
     pname = hermesBasePackage.pname or "hermes-agent";
     version = "${hermesBasePackage.version or "wrapped"}-with-acp";
@@ -19,12 +45,25 @@ let
     nativeBuildInputs = [
       pkgs.makeWrapper
       pkgs.python3
+      pkgs.nodejs
     ];
     installPhase = ''
       runHook preInstall
 
       cp -a ${hermesBasePackage} "$out"
       chmod -R u+w "$out"
+
+      mkdir -p "$out/bin"
+      ln -sf ${acpxPackage}/bin/acpx "$out/bin/acpx"
+      if [ -x "$out/bin/hermes" ]; then
+        wrapProgram "$out/bin/hermes" \
+          --prefix PATH : ${
+            lib.makeBinPath [
+              pkgs.nodejs
+              acpxPackage
+            ]
+          }
+      fi
 
       runHook postInstall
     '';
