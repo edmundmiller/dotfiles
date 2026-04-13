@@ -354,6 +354,8 @@ in
         home.activation.pi-extension-conflict-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ext_dir="$HOME/.pi/agent/extensions"
           rm -f "$ext_dir/context.ts" "$ext_dir/context.js"
+          rm -rf "$HOME/.cache/npm/lib/node_modules/@howaboua/pi-codex-conversion"
+          rmdir "$HOME/.cache/npm/lib/node_modules/@howaboua" 2>/dev/null || true
 
           # @aliou/pi-guardrails needs this file writable at runtime.
           # If HM wrote a symlink into /nix/store, replace it with a local writable copy.
