@@ -11,7 +11,70 @@ let
   cfg = config.modules.agents.hermes;
   inherit (config.dotfiles) configDir;
 
-  hermesBasePackage = inputs.hermesAgent.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  hermesSource = inputs.hermesAgent;
+  hermesDarwinVenv = pkgs.callPackage (hermesSource + /nix/python.nix) {
+    inherit (hermesSource.inputs) uv2nix pyproject-nix pyproject-build-systems;
+    # Hermes 0.9.0's Darwin env fails on Python 3.11 via sphinx 9.1.
+    python311 = pkgs.python312;
+  };
+  hermesBundledSkills = lib.cleanSourceWith {
+    src = hermesSource + /skills;
+    filter = path: _type: !(lib.hasInfix "/index-cache/" path);
+  };
+  hermesRuntimePath = lib.makeBinPath (
+    with pkgs;
+    [
+      nodejs_20
+      ripgrep
+      git
+      openssh
+      ffmpeg
+      tirith
+    ]
+  );
+  hermesDarwinPackage = pkgs.stdenv.mkDerivation {
+    pname = "hermes-agent";
+    inherit ((builtins.fromTOML (builtins.readFile (hermesSource + /pyproject.toml))).project) version;
+
+    dontUnpack = true;
+    dontBuild = true;
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+
+    installPhase = ''
+      runHook preInstall
+
+      mkdir -p $out/share/hermes-agent $out/bin
+      cp -r ${hermesBundledSkills} $out/share/hermes-agent/skills
+
+      ${lib.concatMapStringsSep "\n"
+        (name: ''
+          makeWrapper ${hermesDarwinVenv}/bin/${name} $out/bin/${name} \
+            --suffix PATH : "${hermesRuntimePath}" \
+            --set HERMES_BUNDLED_SKILLS $out/share/hermes-agent/skills
+        '')
+        [
+          "hermes"
+          "hermes-agent"
+          "hermes-acp"
+        ]
+      }
+
+      runHook postInstall
+    '';
+
+    meta = with lib; {
+      description = "AI agent with advanced tool-calling capabilities";
+      homepage = "https://github.com/NousResearch/hermes-agent";
+      mainProgram = "hermes";
+      license = licenses.mit;
+      platforms = platforms.unix;
+    };
+  };
+  hermesBasePackage =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
+      hermesDarwinPackage
+    else
+      inputs.hermesAgent.packages.${pkgs.stdenv.hostPlatform.system}.default;
   acpxPackage = pkgs.buildNpmPackage rec {
     pname = "acpx";
     version = "0.5.3";
@@ -27,7 +90,7 @@ let
       cp ${./acpx-package-lock.json} package-lock.json
     '';
 
-    npmDepsHash = "sha256-OzPdwNrQam8+RM7GARWdOlZL8iOraaMw/hfuUu7wN1w=";
+    npmDepsHash = "sha256-NRqF7ELRjP6bwXqs9yAg5b0bOazexc6tUTACQaNlpEc=";
     npmDepsFetcherVersion = 2;
     dontNpmBuild = true;
 
@@ -346,6 +409,7 @@ in
                       [op_bin, "read", ref],
                       text=True,
                       stderr=subprocess.DEVNULL,
+                      timeout=15,
                   ).rstrip("\n")
               except Exception:
                   print(
