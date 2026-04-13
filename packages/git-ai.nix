@@ -7,20 +7,20 @@
 }:
 
 let
-  version = "1.1.8";
+  version = "1.2.1";
 
   sources = {
     "x86_64-linux" = fetchurl {
       url = "https://usegitai.com/worker/releases/download/v${version}/git-ai-linux-x64";
-      hash = "sha256-I9KkzigP55SKCLJEmVw3oyxD+2M0kV26qKMQVzDsB8I=";
+      hash = "sha256-h52Cod6X/zsUshu0+4fBgL7GDnlO9mFhvkhoH7eekXc=";
     };
     "x86_64-darwin" = fetchurl {
       url = "https://usegitai.com/worker/releases/download/v${version}/git-ai-macos-x64";
-      hash = "sha256-VDAiwDm3ID06jwUejJ5/8SwkpDHfvoWU03WVmx8tbm0=";
+      hash = "sha256-BchUpxAyPE2huTZdEuTyRE71MSxmlOBiDtid7sbtGj4=";
     };
     "aarch64-darwin" = fetchurl {
       url = "https://usegitai.com/worker/releases/download/v${version}/git-ai-macos-arm64";
-      hash = "sha256-js756hsRCm+8ugVwwUfkxlsH4E5ghsz2k6slu/MMHDY=";
+      hash = "sha256-CHFNh4oIQAa+VA/jANqYGjhm+NC45oKduFAbHyWduKo=";
     };
   };
 in
