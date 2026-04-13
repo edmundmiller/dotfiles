@@ -14,9 +14,20 @@ in
   options.modules.shell.git = {
     enable = mkBoolOpt false;
     ai.enable = mkBoolOpt false;
+    hunk = {
+      enable = mkBoolOpt false;
+      version = mkOpt types.str "0.9.2";
+    };
   };
 
   config = mkIf cfg.enable {
+    assertions = optional cfg.hunk.enable {
+      assertion = config.modules.dev.node.enable;
+      message = "modules.shell.git.hunk.enable requires modules.dev.node.enable (for bun global hunkdiff install).";
+    };
+
+    modules.dev.node.bunGlobalPackages = optional cfg.hunk.enable "hunkdiff@${cfg.hunk.version}";
+
     user.packages = with pkgs; [
       git-open
       difftastic
@@ -49,6 +60,9 @@ in
           text = builtins.readFile "${configDir}/lazygit/config.yml";
           force = true;
         };
+      }
+      // optionalAttrs cfg.hunk.enable {
+        "hunk/config.toml".source = "${configDir}/hunk/config.toml";
       };
     };
 
