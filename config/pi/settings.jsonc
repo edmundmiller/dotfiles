@@ -226,6 +226,8 @@
       "extensions": ["src/index.ts"],
       "skills": [],
     },
+    // Native diff review window with Monaco + annotations - https://github.com/badlogic/pi-diff-review
+    "git:https://github.com/badlogic/pi-diff-review",
     // Pierre-themed inline diff rendering for edit/write tool results - https://github.com/tanvesh01/pierre-diffs
     // DISABLED: conflicts with pi-tool-display on edit/write tools
     // "git:github.com/tanvesh01/pierre-diffs",
