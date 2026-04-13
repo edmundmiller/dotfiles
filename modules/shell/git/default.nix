@@ -18,20 +18,24 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = with pkgs; [
-      git-open
-      difftastic
-      my.sem # semantic git diff/impact/blame
-      my.inspect # entity-level code review triage
-      my.weave # entity-level semantic merge driver
-      my.diffity # GitHub-style diff viewer/code review
-      delta # for lazygit paging
-      (mkIf config.modules.shell.gnupg.enable git-crypt)
-      git-lfs
-      pre-commit
-      my.git-hunks
-      (mkIf cfg.hunk.enable my.hunk)
-    ];
+    user.packages =
+      with pkgs;
+      [
+        git-open
+        difftastic
+        delta # for lazygit paging
+        (mkIf config.modules.shell.gnupg.enable git-crypt)
+        git-lfs
+        pre-commit
+        my.git-hunks
+        (mkIf cfg.hunk.enable my.hunk)
+      ]
+      ++ lib.optionals stdenv.hostPlatform.isDarwin [
+        my.sem # semantic git diff/impact/blame
+        my.inspect # entity-level code review triage
+        my.weave # entity-level semantic merge driver
+        my.diffity # GitHub-style diff viewer/code review
+      ];
 
     # Use home-manager's xdg.configFile directly for proper activation
     home-manager.users.${config.user.name} = {

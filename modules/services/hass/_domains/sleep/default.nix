@@ -240,13 +240,13 @@ in
           "media_player.tv" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
 
-          # Main lights off
+          # Keep a low-light ambience while winding down; AL sleep mode makes these warm/dim.
           "light.essentials_a19_a60" = "off"; # Trashcan
           "light.essentials_a19_a60_2" = "off"; # Dishwasher
-          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
-          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
+          "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "on"; # Window Nightstand
+          "light.essentials_a19_a60_5" = "on"; # Wall Lamp
+          "light.nanoleaf_multicolor_floor_lamp" = "on"; # Couch Lamp
           "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
 
           # Night light stays on — navigate to bed
@@ -260,6 +260,12 @@ in
         entities = {
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise
+
+          # Lights out once in bed
+          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
+          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
+          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
+          "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
           "light.smart_night_light_w" = "off"; # No longer needed
         };
       }
@@ -371,43 +377,7 @@ in
         ];
       }
 
-      # Keep nightstands off whenever goodnight mode is on
-      {
-        alias = "Goodnight keeps bedroom lamps off";
-        id = "goodnight_keep_nightstands_off";
-        description = "During goodnight mode, force nightstand + wall lamps off";
-        trigger = [
-          {
-            platform = "state";
-            entity_id = "input_boolean.goodnight";
-            to = "on";
-          }
-          {
-            platform = "state";
-            entity_id = [
-              "light.essentials_a19_a60_3"
-              "light.essentials_a19_a60_4"
-              "light.essentials_a19_a60_5"
-            ];
-            to = "on";
-          }
-        ];
-        condition = {
-          condition = "state";
-          entity_id = "input_boolean.goodnight";
-          state = "on";
-        };
-        action = [
-          {
-            action = "light.turn_off";
-            target.entity_id = [
-              "light.essentials_a19_a60_3"
-              "light.essentials_a19_a60_4"
-              "light.essentials_a19_a60_5"
-            ];
-          }
-        ];
-      }
+      # Goodnight is a scene transition, not a persistent lock on these lamps.
 
       # Stage 2: Bed presence → In Bed
       {
