@@ -7,11 +7,11 @@
 
 buildNpmPackage rec {
   pname = "diffity";
-  version = "0.5.3";
+  version = "0.9.5";
 
   src = fetchzip {
     url = "https://registry.npmjs.org/diffity/-/diffity-${version}.tgz";
-    hash = "sha256-2K6eiLrTDSoL7YdT4TceL1PQZesARXD5CqCfuFpztU0=";
+    hash = "sha256-CtIAkKLJdoBYH8F7zRGA6OAW0yd4jwQB6IH/MyxuNz0=";
   };
 
   postPatch = ''
