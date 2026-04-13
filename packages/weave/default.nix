@@ -9,13 +9,13 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "weave";
-  version = "0.2.3";
+  version = "0.2.8";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "weave";
     rev = "v${version}";
-    hash = "sha256-lW1xFAnpQDmJyROM/5bB4IE2N3pBlJxI/nwOGw+HOCg=";
+    hash = "sha256-A9beYK1i52ghb4QQJLp5hw1DeIIc1AiK72oW5D3u08E=";
   };
 
   nativeBuildInputs = [ pkg-config ];
@@ -39,7 +39,7 @@ rustPlatform.buildRustPackage rec {
     "weave-mcp"
   ];
 
-  cargoHash = "sha256-DwPKB+6ejvJa2jed12CdpTvnJeWRXfQC0q3sOixc4x0=";
+  cargoHash = "sha256-C7vJQZ15TE9XwVLi1uCjYdQPr3TDPVEQfOVENeKXg14=";
 
   # Upstream has integration tests that expect git fixture repos.
   doCheck = false;
