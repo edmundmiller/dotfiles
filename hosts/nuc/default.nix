@@ -138,7 +138,6 @@ let
     export NODE_LLAMA_CPP_GPU=off
     exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
   '';
-
   millDocsObsidianLoginScript = pkgs.writeShellScript "obsidian-sync-mill-docs-login" ''
     set -euo pipefail
     if ${ob} login 2>&1 | grep -q "Logged in"; then
@@ -308,7 +307,6 @@ in
         chown -h emiller:users "$ANNE_STATE_DIR/.codex/auth.json"
         ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
         chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
-
         ln -sfn ${millDocsVaultPath} "$ANNE_STATE_DIR/mill-docs"
         chown -h emiller:users "$ANNE_STATE_DIR/mill-docs"
         ln -sfn /home/emiller/obsidian-vault "$ANNE_STATE_DIR/obsidian-vault"
@@ -427,7 +425,6 @@ in
         chown -h emiller:users "$BETTY_HOME/.codex/auth.json"
         ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
         chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
-
         ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
         chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
         ln -sfn /home/emiller/obsidian-vault "$BETTY_HOME/obsidian-vault"
@@ -610,6 +607,20 @@ in
     user = "emiller";
     group = "users";
     createUser = false;
+    profiles = {
+      anne = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment.CODEX_HOME = "/home/emiller/.codex";
+      };
+      betty = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment.CODEX_HOME = "/home/emiller/.codex";
+      };
+      scintillate = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment.CODEX_HOME = "/home/emiller/.codex";
+      };
+    };
   };
 
   systemd.services.hermes-gateway-anne.serviceConfig = {
