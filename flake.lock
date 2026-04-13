@@ -71,13 +71,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1776019670,
-        "narHash": "sha256-fJRcTUmcVVxYK934iFRwK3Xr8QXq9CdgD7ti5yRqFqY=",
-        "ref": "main",
-        "rev": "459b7d520c7e9ab9ee6b0990c485b01dd6d3f6c3",
-        "revCount": 300,
-        "type": "git",
-        "url": "file:///Users/emiller/src/personal/agents-workspace"
+        "lastModified": 1776047980,
+        "narHash": "sha256-jUFGcNdXMExZKuxmOH/wCRVw2G6cz3Yeev76EZLwjGE=",
+        "path": "/Users/emiller/src/personal/agents-workspace",
+        "type": "path"
       },
       "original": {
         "ref": "main",
@@ -959,15 +956,16 @@
     "hunk-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1774295381,
-        "narHash": "sha256-4PjFrxhkAnj8zPH8ABP2FJVKHRxbRNLg4UHZbsTwdro=",
+        "lastModified": 1775959236,
+        "narHash": "sha256-8DZkQI3xVS3f3BYBkSAh+VNIzrgE9mV5ejLnrsktYIU=",
         "owner": "modem-dev",
         "repo": "hunk",
-        "rev": "0d30d3933123a8a7df23394ca96edfe171078a57",
+        "rev": "40a05a56166d2a540d88d69cd7ee3eb9114bdc34",
         "type": "github"
       },
       "original": {
         "owner": "modem-dev",
+        "ref": "v0.9.2",
         "repo": "hunk",
         "type": "github"
       }
@@ -1693,8 +1691,6 @@
         "shaping-skills": "shaping-skills"
       },
       "locked": {
-        "lastModified": 1775793881,
-        "narHash": "sha256-VJx8Wo4RXxaIDIEi04ouiUwjh3pi7plvEX2aM3K9F68=",
         "path": "./skills",
         "type": "path"
       },
