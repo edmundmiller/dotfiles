@@ -621,6 +621,10 @@ in
     ExecStart = lib.mkForce anneHermesGateway;
   };
 
+  systemd.services.hermes-gateway-scintillate.serviceConfig = {
+    EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+  };
+
   systemd.services.hermes-agent-anne-healthcheck-ping = {
     description = "Check Anne Discord gateway health and ping healthchecks.io";
     after = [ "hermes-gateway-anne.service" ];
