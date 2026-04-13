@@ -17,7 +17,7 @@
         node.enable = true;
         node.useFnm = true;
         node.bunGlobalPackages = [
-          "hunkdiff@0.9.1"
+          "hunkdiff@0.9.2"
           "critique@0.1.139"
         ];
         # FIXME: Python disabled - bundled whisper currently includes Python 3.13
@@ -128,13 +128,7 @@
           PI_MODEL_SWITCH_DONE = "opencode-go/kimi-2.5";
         };
 
-        xdg.configFile."hunk/config.toml".text = ''
-          theme = "graphite"
-          mode = "auto"
-          line_numbers = true
-          wrap_lines = false
-          agent_notes = true
-        '';
+        xdg.configFile."hunk/config.toml".source = ../../config/hunk/config.toml;
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
