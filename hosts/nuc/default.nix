@@ -244,10 +244,7 @@ in
         ENV_DIR="/run/hermes-scintillate-env"
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="/var/lib/hermes-scintillate/.hermes"
-        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
         HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
-        TMP_HERMES_ENV="$(mktemp)"
-        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
         mkdir -p "$ENV_DIR"
         : > "$ENV_FILE"
@@ -262,7 +259,6 @@ in
           fi
         '') hermesScintillateSecrets}
         printf 'TELEGRAM_ALLOWED_USERS=%s\n' '8357890648' >> "$ENV_FILE"
-        install -m 600 -o emiller -g users "$ENV_FILE" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
         import json
@@ -294,10 +290,7 @@ in
         ENV_DIR="/run/hermes-anne-env"
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="$ANNE_STATE_DIR/.hermes"
-        HERMES_ENV_FILE="$HERMES_ENV_HOME/.env"
         HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
-        TMP_HERMES_ENV="$(mktemp)"
-        trap 'rm -f "$TMP_HERMES_ENV"' EXIT
 
         install -d -o emiller -g users -m 0750 \
           "$ANNE_STATE_DIR" \
@@ -367,7 +360,6 @@ in
           printf 'DISCORD_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
           printf 'GATEWAY_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
         ''}
-        install -m 600 -o emiller -g users "$ENV_FILE" "$HERMES_ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} <<'PY'
         import json
@@ -734,13 +726,20 @@ in
         enable = true;
         agents = {
           scintillate = {
+            honchoApiKeyPath = config.services.onepassword-secrets.secretPaths.scintillateHermesHonchoApiKey;
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tnote" = tnoteMainWorktree;
-            mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
+            mcpBearerTokenPaths = {
+              honcho = config.services.onepassword-secrets.secretPaths.scintillateHermesHonchoApiKey;
+              linear = config.age.secrets.scintillate-linear-mcp-token.path;
+            };
           };
 
           betty = { };
-          anne = { };
+          anne = {
+            honchoApiKeyPath = config.services.onepassword-secrets.secretPaths.anneHermesHonchoApiKey;
+            mcpBearerTokenPaths.honcho = config.services.onepassword-secrets.secretPaths.anneHermesHonchoApiKey;
+          };
         };
       };
     }
@@ -955,6 +954,18 @@ in
   # Bootstrap (one-time): op read "op://Private/xkq3yij62kltcldkmk7qgkq66a/credential" \
   #   | ssh nuc "sudo tee /etc/opnix-token && sudo chmod 640 /etc/opnix-token"
   # The token file is read by OpNix + services that consume 1Password-backed secrets.
+
+  services.onepassword-secrets = {
+    enable = true;
+    secrets = {
+      anneHermesHonchoApiKey = {
+        reference = "op://Agents/Anne Honcho Key/credential";
+      };
+      scintillateHermesHonchoApiKey = {
+        reference = "op://Agents/scintillate Honcho Key/credential";
+      };
+    };
+  };
 
   age = {
     secrets = {
