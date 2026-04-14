@@ -44,7 +44,6 @@
     "linear-linear" # Linear app (cask name is linear-linear)
     "superset"
     "lookaway"
-    "handy"
 
     # Media
     "helium"
