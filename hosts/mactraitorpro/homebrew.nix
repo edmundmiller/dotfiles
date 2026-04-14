@@ -196,7 +196,6 @@
     "home-assistant"
     "superset"
     "lookaway"
-    "handy"
     "voicenotes"
 
     # Git/Development utilities

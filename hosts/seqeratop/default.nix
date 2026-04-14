@@ -91,6 +91,7 @@
 
       desktop = {
         apps.audioPriorityBar.enable = true;
+        apps.handy.enable = true;
         term.ghostty.enable = true;
       };
     };

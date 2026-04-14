@@ -82,6 +82,7 @@
       desktop = {
         apps.raycast.enable = true;
         apps.audioPriorityBar.enable = true;
+        apps.handy.enable = true;
         term.ghostty.enable = true;
       };
     };
