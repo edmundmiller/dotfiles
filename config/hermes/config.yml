@@ -151,18 +151,21 @@ auxiliary:
 
 # Display settings
 display:
-  compact: false
+  compact: true
   personality: kawaii
-  resume_display: full
+  resume_display: minimal
   busy_input_mode: interrupt
   bell_on_complete: false
   show_reasoning: false
-  streaming: false
+  streaming: true
   inline_diffs: true
   show_cost: false
-  skin: mono
+  skin: catppuccin-mocha
+  tool_progress: new
   tool_progress_command: false
-  tool_preview_length: 0
+  tool_progress_overrides: {}
+  interim_assistant_messages: true
+  tool_preview_length: 120
 
 # Privacy settings
 privacy:
