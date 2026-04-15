@@ -11,6 +11,10 @@ Manages `~/.codex/` config via nix-darwin.
 ## Not Managed by Nix
 
 - `auth.json` — OAuth credentials (user-managed)
-- `skills/` — user-managed skills directory
 - `sessions/`, `history.jsonl` — runtime data
 - `config.toml` after bootstrap — user-managed and writable
+
+## Skills
+
+Codex should use the shared cross-agent skills directory at `~/.agents/skills/`.
+Do not rely on `~/.codex/skills/`; Codex does not consistently pick it up.

@@ -228,6 +228,7 @@ delegation:
 prefill_messages_file: ""
 
 # Skills external directories
+# Keep Hermes pointed at the shared cross-agent skills dir used by Codex/Pi/OpenCode.
 skills:
   external_dirs:
     - ~/.agents/skills
