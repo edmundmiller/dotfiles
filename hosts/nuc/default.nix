@@ -519,14 +519,6 @@ in
       '';
     };
 
-    # Scintillate's host-owned /repos/tnote link points at this clean main worktree,
-    # so build it before the canonical Hermes profile materialization runs.
-    "canonical-hermes-profiles-materialize".deps = [
-      "users"
-      "hermes-profiles-setup"
-      "tnoteMainWorktree"
-    ];
-
     tnoteMainWorktree = {
       deps = [ "users" ];
       text = ''
@@ -812,7 +804,7 @@ in
           scintillate = {
             honchoApiKeyPath = config.services.onepassword-secrets.secretPaths.scintillateHermesHonchoApiKey;
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
-            workspaceLinks."repos/tnote" = tnoteMainWorktree;
+            workspaceLinks."repos/tnote" = tnoteBaseRepo;
             mcpBearerTokenPaths = {
               honcho = config.services.onepassword-secrets.secretPaths.scintillateHermesHonchoApiKey;
               linear = config.age.secrets.scintillate-linear-mcp-token.path;
