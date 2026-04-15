@@ -202,16 +202,11 @@
           };
 
           targets = {
-            # Canonical shared global skills location.
+            # Canonical shared global skills location. Codex, Pi, OpenCode,
+            # and Hermes should all read from ~/.agents/skills directly.
             agents = {
               enable = true;
               dest = ".agents/skills";
-              structure = "symlink-tree";
-            };
-
-            codex = {
-              enable = true;
-              dest = ".codex/skills";
               structure = "symlink-tree";
             };
           };

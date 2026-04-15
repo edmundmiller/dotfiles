@@ -8,7 +8,7 @@ Manages shared global skills via `agent-skills-nix`.
 
 1. **Sources** — where skills come from (local dir or remote repos)
 2. **Skill selection** — which skills to enable
-3. **Targets** — where skills are installed (symlink-tree into `~/.agents/skills/`; Claude gets a compatibility bridge via `~/.claude/skills/`)
+3. **Targets** — where skills are installed (symlink-tree into `~/.agents/skills/`; Codex, Pi, OpenCode, and Hermes read there directly; Claude gets a compatibility bridge via `~/.claude/skills/`)
 
 ## Adding a Local Skill
 
