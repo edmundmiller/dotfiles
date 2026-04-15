@@ -828,6 +828,49 @@ in
         enable = true;
         environmentFile = config.age.secrets.speedtest-tracker-env.path;
       };
+      mission-control = {
+        enable = true;
+        tailscaleService.enable = true;
+        environmentFile = config.age.secrets.mission-control-env.path;
+        registeredAgents = [
+          {
+            name = "scintillate";
+            role = "assistant";
+            framework = "hermes";
+            capabilities = [
+              "memory"
+              "notes"
+              "planning"
+              "writing"
+            ];
+          }
+          {
+            name = "anne";
+            role = "assistant";
+            framework = "hermes";
+            capabilities = [
+              "memory"
+              "notes"
+              "planning"
+              "writing"
+            ];
+          }
+          {
+            name = "betty";
+            role = "assistant";
+            framework = "hermes";
+            capabilities = [
+              "browser"
+              "calendar"
+              "mail"
+              "memory"
+              "notes"
+              "planning"
+              "writing"
+            ];
+          }
+        ];
+      };
       prowlarr.enable = true;
       qb.enable = false;
       radarr.enable = true;
