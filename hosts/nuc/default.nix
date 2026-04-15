@@ -519,6 +519,14 @@ in
       '';
     };
 
+    # Scintillate's host-owned /repos/tnote link points at this clean main worktree,
+    # so build it before the canonical Hermes profile materialization runs.
+    "canonical-hermes-profiles-materialize".deps = [
+      "users"
+      "hermes-profiles-setup"
+      "tnoteMainWorktree"
+    ];
+
     tnoteMainWorktree = {
       deps = [ "users" ];
       text = ''
