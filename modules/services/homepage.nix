@@ -231,6 +231,13 @@ in
               };
             }
             {
+              "Mission Control" = {
+                href = "https://mission-control.${tailnet}";
+                description = "AI agent dashboard";
+                icon = "mdi-view-dashboard-outline";
+              };
+            }
+            {
               "Open Wearables" = {
                 href = "${nucBase}:${toString config.modules.services.open-wearables.backendPort}/docs";
                 description = "Wearable health API (Apple XML import)";
