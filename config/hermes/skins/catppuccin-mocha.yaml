@@ -1,37 +1,37 @@
 name: catppuccin-mocha
-description: Catppuccin Mocha — matched to the tmux dark theme
+description: Catppuccin Mocha — polished dark skin matched to the tmux theme
 
 colors:
-  banner_border: "#585b70"
+  banner_border: "#7f849c"
   banner_title: "#cdd6f4"
   banner_accent: "#cba6f7"
-  banner_dim: "#9399b2"
-  banner_text: "#cdd6f4"
+  banner_dim: "#a6adc8"
+  banner_text: "#bac2de"
   ui_accent: "#cba6f7"
   ui_label: "#89b4fa"
   ui_ok: "#a6e3a1"
   ui_error: "#f38ba8"
   ui_warn: "#f9e2af"
   prompt: "#cdd6f4"
-  input_rule: "#585b70"
-  response_border: "#cba6f7"
-  session_label: "#89b4fa"
-  session_border: "#585b70"
+  input_rule: "#45475a"
+  response_border: "#89b4fa"
+  session_label: "#cba6f7"
+  session_border: "#6c7086"
 
 spinner:
   thinking_verbs:
     - thinking
     - checking
-    - working
+    - shaping
   wings:
-    - ["[", "]"]
+    - ["‹", "›"]
 
 branding:
-  agent_name: Hermes Agent
-  welcome: Welcome to Hermes Agent! Type your message or /help for commands.
-  goodbye: Goodbye! ⚕
-  response_label: " ⚕ Hermes "
+  agent_name: Hermes
+  welcome: Hermes is ready. Type a request or /help.
+  goodbye: Bye for now. ⚕
+  response_label: " Hermes "
   prompt_symbol: "❯ "
-  help_header: "(^_^)? Available Commands"
+  help_header: "Hermes Commands"
 
-tool_prefix: "┊"
+tool_prefix: "▏"
