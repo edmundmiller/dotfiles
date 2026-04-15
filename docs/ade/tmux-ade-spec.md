@@ -287,6 +287,25 @@ As long as opensessions is optional, runtime issues are isolated annoyances. In
 an opensessions-first ADE, bugs like the resize-loop tracked in `dotfiles-9bvd`
 become blockers for the primary interaction model.
 
+### 7. Discoverability is still too dependent on alias memory
+
+Fast operator workflows currently depend on remembering command families such as
+`nic` / `nicx` / `nicc` / `niccx`. This creates avoidable cognitive load,
+especially when the user is context-switching quickly.
+
+The target model should be discoverable from inside tmux (opensessions,
+command-table, which-key), with aliases as optional accelerators rather than
+required knowledge.
+
+### 8. Status trust is weaker than it needs to be
+
+The UX degrades quickly when agent state, session identity, or window naming are
+stale or contradictory. In practice this feels "half-baked" even when the
+underlying capabilities exist.
+
+The ADE needs explicit, testable rules for status freshness and one clear source
+of truth per status domain.
+
 ---
 
 ## Known Mismatches with Current Implementation
@@ -423,6 +442,23 @@ Examples:
 This keeps naming boring: main checkouts use the repo basename, and named
 worktrees keep their distinct basename when it differs.
 
+## 2.5. Discoverability-first control surface
+
+The ADE should not require humans (or agents) to memorize layout aliases to use
+core workflows under time pressure.
+
+Required behavior:
+
+- opensessions + tmux command-table + tmux-which-key must expose the primary
+  project/worktree lifecycle actions
+- alias families (`nic*`, `tml*`) remain valid accelerators but are not the
+  canonical discovery surface
+- for every canonical workflow there must be at least one discoverable in-tmux
+  path that does not assume prior alias knowledge
+
+This shifts cognitive load from memory to visible controls and keeps the runtime
+usable during rapid context-switching.
+
 ## 3. Shared backend session primitives
 
 There should be a small, boring set of backend helpers for:
@@ -453,7 +489,7 @@ This keeps lifecycle behavior boring and composable. Opensessions can sit on top
 of these primitives without becoming a second implementation of session naming
 or worktree semantics.
 
-## 3.5. A clear metadata contract
+## 3.5. A clear metadata and status contract
 
 The implemented metadata contract is now:
 
@@ -469,9 +505,18 @@ The implemented metadata contract is now:
   should become the primary human-facing navigation layer after startup, while
   `tmproj` / `tp` remain direct helper paths
 
-This avoids three competing sources of truth. Session helpers choose _which_
-session you are in; tmux-smart-name decides _how windows and titles are
-presented_ once you are there.
+Status trust requirements:
+
+- each visible status domain must have one declared owner (session identity,
+  window title/subtitle, agent activity)
+- stale-status behavior must be explicit (timeouts, fallback labels, and
+  recovery action)
+- status claims in UI surfaces must be machine-checkable in runtime audits
+  rather than inferred from assumptions
+
+This avoids competing sources of truth. Session helpers choose _which_ session
+you are in; tmux-smart-name decides _how windows/titles are presented_; status
+surfaces report agent/runtime state with explicit ownership and freshness rules.
 
 ## 4. Layout presets with role semantics
 
