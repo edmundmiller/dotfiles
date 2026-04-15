@@ -622,6 +622,10 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
       };
+      radar = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment.CODEX_HOME = "/home/emiller/.codex";
+      };
     };
   };
 
@@ -757,6 +761,8 @@ in
             honchoApiKeyPath = config.services.onepassword-secrets.secretPaths.anneHermesHonchoApiKey;
             mcpBearerTokenPaths.honcho = config.services.onepassword-secrets.secretPaths.anneHermesHonchoApiKey;
           };
+          radar = { };
+
         };
       };
     }
