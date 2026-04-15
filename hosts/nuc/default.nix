@@ -119,6 +119,12 @@ let
       inherit (config.age.secrets.anne-firecrawl-api) path;
     }
   ];
+  hermesRadarSecrets = hermesProviderSecrets ++ [
+    {
+      envVar = "TELEGRAM_BOT_TOKEN";
+      path = hermesScintillateTelegramBotTokenFile;
+    }
+  ];
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
@@ -443,6 +449,55 @@ in
             printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
           fi
         '') hermesBettySecrets}
+      '';
+    };
+
+    hermesRadarSecretsMaterialize = {
+      deps = [
+        "agenixInstall"
+        "agenixChown"
+      ];
+      text = ''
+        RADAR_HOME="/var/lib/hermes-radar"
+        ENV_DIR="/run/hermes-radar-env"
+        ENV_FILE="$ENV_DIR/secrets.env"
+        HERMES_ENV_HOME="$RADAR_HOME/.hermes"
+
+        install -d -o emiller -g users -m 0750 "$RADAR_HOME"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace/repos"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/.codex"
+        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.codex"
+        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local"
+        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local/state"
+        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local/state/hermes"
+        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local/state/hermes/gateway-locks"
+
+        ln -sfn /home/emiller/.codex/auth.json "$RADAR_HOME/.codex/auth.json"
+        chown -h emiller:users "$RADAR_HOME/.codex/auth.json"
+        ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
+        chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
+        ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+        chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+        ln -sfn /home/emiller/obsidian-vault "$RADAR_HOME/obsidian-vault"
+        chown -h emiller:users "$RADAR_HOME/obsidian-vault"
+
+        mkdir -p "$ENV_DIR"
+        : > "$ENV_FILE"
+        chmod 600 "$ENV_FILE"
+        chown emiller:users "$ENV_FILE"
+
+        printf 'HERMES_HONCHO_HOST=%s\n' "radar" >> "$ENV_FILE"
+
+        ${lib.concatMapStringsSep "\n" (secret: ''
+          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+            secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+          fi
+        '') hermesRadarSecrets}
+
+        printf 'TELEGRAM_ALLOWED_USERS=%s\n' '8357890648' >> "$ENV_FILE"
       '';
     };
 
