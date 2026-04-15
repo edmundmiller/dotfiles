@@ -1,37 +1,37 @@
 name: catppuccin-latte
-description: Catppuccin Latte — matched to the tmux light theme
+description: Catppuccin Latte — polished light skin matched to the tmux theme
 
 colors:
-  banner_border: "#9ca0b0"
+  banner_border: "#8c8fa1"
   banner_title: "#4c4f69"
   banner_accent: "#8839ef"
-  banner_dim: "#6c6f85"
-  banner_text: "#4c4f69"
+  banner_dim: "#7c7f93"
+  banner_text: "#5c5f77"
   ui_accent: "#8839ef"
   ui_label: "#1e66f5"
   ui_ok: "#40a02b"
   ui_error: "#d20f39"
   ui_warn: "#df8e1d"
   prompt: "#4c4f69"
-  input_rule: "#9ca0b0"
-  response_border: "#8839ef"
-  session_label: "#1e66f5"
+  input_rule: "#acb0be"
+  response_border: "#1e66f5"
+  session_label: "#8839ef"
   session_border: "#9ca0b0"
 
 spinner:
   thinking_verbs:
     - thinking
     - checking
-    - working
+    - shaping
   wings:
-    - ["[", "]"]
+    - ["‹", "›"]
 
 branding:
-  agent_name: Hermes Agent
-  welcome: Welcome to Hermes Agent! Type your message or /help for commands.
-  goodbye: Goodbye! ⚕
-  response_label: " ⚕ Hermes "
+  agent_name: Hermes
+  welcome: Hermes is ready. Type a request or /help.
+  goodbye: Bye for now. ⚕
+  response_label: " Hermes "
   prompt_symbol: "❯ "
-  help_header: "(^_^)? Available Commands"
+  help_header: "Hermes Commands"
 
-tool_prefix: "┊"
+tool_prefix: "▏"
