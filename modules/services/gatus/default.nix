@@ -162,6 +162,15 @@ let
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }
+          ]
+          ++ optionals config.modules.services.mission-control.enable [
+            {
+              name = "Mission Control";
+              group = "Infrastructure";
+              url = "http://127.0.0.1:${toString config.modules.services.mission-control.port}/login";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
           ];
       }
       // optionalAttrs (alertingConfig != { }) {

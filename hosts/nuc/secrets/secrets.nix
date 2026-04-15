@@ -100,6 +100,10 @@ in
     edmundmiller
     nuc
   ];
+  "mission-control-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "hass-secrets.age".publicKeys = [
     edmundmiller
     nuc
