@@ -13,13 +13,16 @@ config/agents/
 
 ## Supported Agents
 
-This configuration is shared across three agents:
+This configuration is shared across four agents, with Hermes also reading the same shared skills directory:
 
 | Agent    | Skills Location                                     | Modes Location              | Rules                       |
 | -------- | --------------------------------------------------- | --------------------------- | --------------------------- |
 | Claude   | `~/.claude/skills/` → bridge to `~/.agents/skills/` | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`       |
+| Codex    | `~/.agents/skills/`                                 | N/A                         | `~/.codex/AGENTS.md`        |
 | OpenCode | `~/.agents/skills/`                                 | `~/.config/opencode/agent/` | `~/.config/opencode/rules/` |
 | Pi       | `~/.agents/skills/`                                 | N/A                         | `~/.pi/agent/AGENTS.md`     |
+
+Hermes also loads external skills from `~/.agents/skills/` via `config/hermes/config.yml`.
 
 ## Skills
 

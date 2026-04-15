@@ -14,8 +14,7 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 
 - Skills use skills.sh format (YAML frontmatter + markdown)
 - Rules are numbered (01-, 02-, etc.) for ordered concatenation
-- All agents share the same skills and modes via nix symlinks
-- Pi and OpenCode discover `~/.agents/skills/` natively
+- Shared skills live in `~/.agents/skills/` for Codex, Pi, OpenCode, and Hermes
 - Claude uses `~/.claude/skills/`, bridged to `~/.agents/skills/`
 - OpenClaw skills live separately in `~/.openclaw/skills/`
 
