@@ -45,7 +45,7 @@
           enable = true;
           honcho.enable = true;
           secretReferences = {
-            HONCHO_API_KEY = "op://Agents/MTP Honcho/credential";
+            HONCHO_API_KEY = "op://Private/Honcho Admin key/credential";
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
             OPENROUTER_API_KEY = "op://Agents/MTP OpenRouter/credential";
           };
@@ -60,7 +60,7 @@
             sessionStrategy = "directory";
           };
           secretReferences = {
-            HONCHO_API_KEY = "op://Agents/MTP Honcho/credential";
+            HONCHO_API_KEY = "op://Private/Honcho Admin key/credential";
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };
           memoryRemote = "git@github.com:edmundmiller/pi-memory";
