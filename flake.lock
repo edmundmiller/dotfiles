@@ -87,8 +87,8 @@
         ]
       },
       "locked": {
-        "lastModified": 1776310563,
-        "narHash": "sha256-a9zIRMpzi44qtzyOXTRszAavfnkqoXds64vvDQvGEBA=",
+        "lastModified": 1776311050,
+        "narHash": "sha256-GJ1ObWfwT5jcNG6CXT5BOBnYbq1ilU3SCO2yoJywhg4=",
         "path": "/Users/emiller/orca/workspaces/agents-workspace/tradclaw",
         "type": "path"
       },
