@@ -190,3 +190,9 @@ bind w choose-tree -Zw
 # Keep next/previous-window on muscle-memory keys.
 bind n next-window
 bind p previous-window
+
+# If experimental tmux-agent-status is enabled, it may bind n/p; reclaim them.
+unbind n
+unbind p
+bind n next-window
+bind p previous-window

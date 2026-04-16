@@ -66,6 +66,21 @@ let
     sha256 = "1qcqmq2hp8cb80m91bi2ryfgr8r0wgss3h1a4nlxgkx4w37aw1x3";
   };
 
+  # Visual session indicator dots (optional)
+  tmux-session-dots = pkgs.fetchFromGitHub {
+    owner = "jtmcginty";
+    repo = "tmux-session-dots";
+    rev = "main";
+    sha256 = "0c6yby1ing3sdcgzd5k23dr7hzlam1mcs45l9r9ihy18jx6l04k6";
+  };
+
+  # Agent-aware sidebar/switcher/status (experimental, opt-in)
+  tmux-agent-status = pkgs.fetchFromGitHub {
+    owner = "samleeney";
+    repo = "tmux-agent-status";
+    rev = "main";
+    sha256 = "1w0fy2hj3lr4dlm3ir1p8dbhqj83df48byqy937rqpic64rfih0y";
+  };
   # Despite tmux/tmux#142, tmux will support XDG in 3.2. Sadly, only 3.0 is
   # available on nixpkgs, and 3.1b on master (tmux/tmux@15d7e56), so I
   # implement it myself:
@@ -85,6 +100,11 @@ in
   options.modules.shell.tmux = with types; {
     enable = mkBoolOpt false;
     rcFiles = mkOpt (listOf (either str path)) [ "${configDir}/tmux/theme.conf" ];
+
+    experimental = {
+      sessionDots.enable = mkBoolOpt false;
+      agentStatus.enable = mkBoolOpt false;
+    };
 
     opensessions = {
       enable = mkBoolOpt false;
@@ -233,6 +253,24 @@ in
 
         # tmux-smart-name: window naming + AI agent status
         run-shell ${pkgs.my.tmux-smart-name}/share/tmux-smart-name/scripts/smart-name.sh
+
+        ${optionalString cfg.experimental.sessionDots.enable ''
+          # tmux-session-dots: prepend visual session indicator if missing
+          if-shell -F '#{m:*#{session_dots}*,#{status-right} #{status-left}}' 'true' 'set -g status-right "#{session_dots} #{status-right}"'
+          run-shell ${tmux-session-dots}/session-dots.tmux
+        ''}
+
+        ${optionalString cfg.experimental.agentStatus.enable ''
+          # tmux-agent-status (experimental): custom keys to avoid local binding conflicts
+          set -g @agent-switcher-style "popup"
+          set -g @agent-status-display-method "popup"
+          set -g @agent-status-key "S"
+          set -g @agent-sidebar-key "O"
+          set -g @agent-next-done-key "N"
+          set -g @agent-wait-key "W"
+          set -g @agent-park-key "U"
+          run-shell ${tmux-agent-status}/tmux-agent-status.tmux
+        ''}
 
         ${optionalString cfg.opensessions.enable ''
           # opensessions: tmux sidebar + command table
