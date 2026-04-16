@@ -18,64 +18,63 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.mission-control;
-  tailnet = "cinnamon-rooster.ts.net";
   agentsJson = pkgs.writeText "mission-control-agents.json" (builtins.toJSON cfg.registeredAgents);
   containerService = "${config.virtualisation.oci-containers.backend}-mission-control.service";
   syncScript = pkgs.writeShellScript "mission-control-sync-agents" ''
-    set -euo pipefail
+        set -euo pipefail
 
-    if [ ! -f ${lib.escapeShellArg (toString cfg.environmentFile)} ]; then
-      echo "mission-control env file missing: ${toString cfg.environmentFile}" >&2
-      exit 1
-    fi
+        if [ ! -f ${lib.escapeShellArg (toString cfg.environmentFile)} ]; then
+          echo "mission-control env file missing: ${toString cfg.environmentFile}" >&2
+          exit 1
+        fi
 
-    api_key="$(${pkgs.gnugrep}/bin/grep '^API_KEY=' ${lib.escapeShellArg (toString cfg.environmentFile)} \
-      | ${pkgs.coreutils}/bin/head -n1 \
-      | ${pkgs.gnused}/bin/sed 's/^API_KEY=//')"
+        api_key="$(${pkgs.gnugrep}/bin/grep '^API_KEY=' ${lib.escapeShellArg (toString cfg.environmentFile)} \
+          | ${pkgs.coreutils}/bin/head -n1 \
+          | ${pkgs.gnused}/bin/sed 's/^API_KEY=//')"
 
-    if [ -z "$api_key" ]; then
-      echo "mission-control API_KEY missing from ${toString cfg.environmentFile}" >&2
-      exit 1
-    fi
+        if [ -z "$api_key" ]; then
+          echo "mission-control API_KEY missing from ${toString cfg.environmentFile}" >&2
+          exit 1
+        fi
 
-    for _ in $(seq 1 60); do
-      if ${pkgs.curl}/bin/curl -fsS http://127.0.0.1:${toString cfg.port}/login >/dev/null; then
-        break
-      fi
-      sleep 2
-    done
+        for _ in $(seq 1 60); do
+          if ${pkgs.curl}/bin/curl -fsS http://127.0.0.1:${toString cfg.port}/login >/dev/null; then
+            break
+          fi
+          sleep 2
+        done
 
-    export MC_SYNC_API_KEY="$api_key"
-    export MC_SYNC_URL="http://127.0.0.1:${toString cfg.port}/api/agents/register"
-    export MC_SYNC_AGENTS_JSON=${lib.escapeShellArg agentsJson}
+        export MC_SYNC_API_KEY="$api_key"
+        export MC_SYNC_URL="http://127.0.0.1:${toString cfg.port}/api/agents/register"
+        export MC_SYNC_AGENTS_JSON=${lib.escapeShellArg agentsJson}
 
-    ${pkgs.python3}/bin/python3 <<'PY'
-import json
-import os
-import sys
-import urllib.request
+        ${pkgs.python3}/bin/python3 <<'PY'
+    import json
+    import os
+    import sys
+    import urllib.request
 
-api_key = os.environ["MC_SYNC_API_KEY"]
-url = os.environ["MC_SYNC_URL"]
-with open(os.environ["MC_SYNC_AGENTS_JSON"], "r", encoding="utf-8") as fh:
-    agents = json.load(fh)
+    api_key = os.environ["MC_SYNC_API_KEY"]
+    url = os.environ["MC_SYNC_URL"]
+    with open(os.environ["MC_SYNC_AGENTS_JSON"], "r", encoding="utf-8") as fh:
+        agents = json.load(fh)
 
-for agent in agents:
-    data = json.dumps(agent).encode("utf-8")
-    request = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "x-api-key": api_key,
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(request) as response:
-        if response.status >= 400:
-            raise RuntimeError(f"Mission Control agent registration failed for {agent['name']}: {response.status}")
-PY
+    for agent in agents:
+        data = json.dumps(agent).encode("utf-8")
+        request = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+                "x-api-key": api_key,
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request) as response:
+            if response.status >= 400:
+                raise RuntimeError(f"Mission Control agent registration failed for {agent['name']}: {response.status}")
+    PY
   '';
 in
 {
@@ -119,7 +118,7 @@ in
 
       virtualisation.oci-containers.containers.mission-control = {
         autoStart = true;
-        image = cfg.image;
+        inherit (cfg) image;
         ports = [ "127.0.0.1:${toString cfg.port}:3000" ];
         environmentFiles = [ cfg.environmentFile ];
         environment = {
@@ -128,10 +127,16 @@ in
           PORT = "3000";
           NEXT_PUBLIC_GATEWAY_OPTIONAL = "true";
         };
-        volumes = [ "/var/lib/mission-control:/app/.data" ] ++ optionals (cfg.agentSourceDir != null) [
+        volumes = [
+          "/var/lib/mission-control:/app/.data"
+        ]
+        ++ optionals (cfg.agentSourceDir != null) [
           "${cfg.agentSourceDir}:/home/nextjs/.agents:ro"
         ];
-        extraOptions = [ "--pull=always" ];
+        extraOptions = [
+          "--pull=always"
+          "--mount=type=tmpfs,destination=/app/.next/cache"
+        ];
       };
 
       systemd.services.${containerService} = {
