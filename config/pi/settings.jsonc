@@ -111,6 +111,8 @@
       "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
       "skills": ["skills/session-query"],
     },
+    // Branch-aware session context rollback + /checkpoint - https://github.com/uriafranko/pi-rollback
+    "npm:pi-rollback",
     // GitHub repo tools (read/search/explore) - https://github.com/PriNova/pi-github-tools
     "npm:@prinova/pi-github-tools",
     // Read tool structural maps for large files - https://github.com/Whamp/pi-read-map
