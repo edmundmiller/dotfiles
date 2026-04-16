@@ -114,6 +114,7 @@ with lib;
       set -g @agent-next-done-key "N"
       set -g @agent-wait-key "W"
       set -g @agent-park-key "U"
+      set -g @agent-sidebar-width "32"
       run-shell ${tmux-agent-status}/tmux-agent-status.tmux
     ''}
 
