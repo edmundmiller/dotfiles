@@ -1,0 +1,56 @@
+{
+  lib,
+  configDir,
+  ...
+}:
+with lib;
+with lib.my;
+with types;
+{
+  enable = mkBoolOpt false;
+  rcFiles = mkOpt (listOf (either str path)) [ "${configDir}/tmux/theme.conf" ];
+
+  experimental = {
+    sessionDots.enable = mkBoolOpt false;
+    agentStatus.enable = mkBoolOpt false;
+  };
+
+  opensessions = {
+    enable = mkBoolOpt false;
+    key = mkOpt str "";
+    focusKey = mkOpt str "";
+    prefixKey = mkOpt str "";
+    prefixFocusKey = mkOpt str "";
+    prefixToggleKey = mkOpt str "";
+    prefixIndexKeys = mkOpt str "";
+    width = mkOpt int 26;
+    sidebarPosition = mkOpt (enum [
+      "left"
+      "right"
+    ]) "left";
+    theme = mkOpt str "catppuccin-mocha";
+    showWindowDetails = mkBoolOpt true;
+    host = mkOpt str "127.0.0.1";
+    port = mkOpt int 7391;
+  };
+
+  sesh = {
+    sessions = mkOpt (listOf (submodule {
+      options = {
+        name = mkOption {
+          type = str;
+          description = "Session display name";
+        };
+        path = mkOption {
+          type = str;
+          description = "Working directory (supports ~)";
+        };
+        startup_command = mkOpt (nullOr str) null;
+      };
+    })) [ ];
+    defaultSession = {
+      startup_command = mkOpt (nullOr str) null;
+      preview_command = mkOpt (nullOr str) null;
+    };
+  };
+}
