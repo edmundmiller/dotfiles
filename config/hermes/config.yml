@@ -232,6 +232,9 @@ prefill_messages_file: ""
 skills:
   external_dirs:
     - ~/.agents/skills
+  config:
+    wiki:
+      path: ~/mill-docs
 
 # Timezone (set by Nix module if configured)
 timezone: null
