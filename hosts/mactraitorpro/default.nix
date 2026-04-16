@@ -36,7 +36,9 @@
         jj.enable = true;
         tmux.enable = true;
         tmux.opensessions.enable = true;
-        dmux.enable = true;
+        tmux.experimental.sessionDots.enable = true;
+        tmux.experimental.agentStatus.enable = true;
+        dmux.enable = false;
         zsh.enable = true;
       };
 
