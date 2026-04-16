@@ -760,20 +760,13 @@ in
         enable = true;
         agents = {
           scintillate = {
-            honchoApiKeyPath = config.services.onepassword-secrets.secretPaths.scintillateHermesHonchoApiKey;
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tnote" = tnoteBaseRepo;
-            mcpBearerTokenPaths = {
-              honcho = config.services.onepassword-secrets.secretPaths.scintillateHermesHonchoApiKey;
-              linear = config.age.secrets.scintillate-linear-mcp-token.path;
-            };
+            mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
           };
 
           betty = { };
-          anne = {
-            honchoApiKeyPath = config.services.onepassword-secrets.secretPaths.anneHermesHonchoApiKey;
-            mcpBearerTokenPaths.honcho = config.services.onepassword-secrets.secretPaths.anneHermesHonchoApiKey;
-          };
+          anne = { };
           radar = { };
 
         };
