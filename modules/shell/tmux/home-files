@@ -101,13 +101,13 @@ with lib;
 
     ${optionalString cfg.experimental.sessionDots.enable ''
       # tmux-session-dots: prepend visual session indicator if missing
-      if-shell -F '#{m:*#{session_dots}*,#{status-right} #{status-left}}' 'true' 'set -g status-right "#{session_dots} #{status-right}"'
+      if-shell -F '#{m:*#{session_dots}*,#{status-right} #{status-left}}' 'display-message -p ""' 'set -g status-right "#{session_dots} #{status-right}"'
       run-shell ${tmux-session-dots}/session-dots.tmux
     ''}
 
     ${optionalString cfg.experimental.agentStatus.enable ''
       # tmux-agent-status (experimental): custom keys to avoid local binding conflicts
-      set -g @agent-switcher-style "popup"
+      set -g @agent-switcher-style "both"
       set -g @agent-status-display-method "popup"
       set -g @agent-status-key "S"
       set -g @agent-sidebar-key "b"
