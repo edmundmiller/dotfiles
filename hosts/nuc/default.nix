@@ -783,7 +783,11 @@ in
           anne = { };
           radar = { };
           amosburton = {
+            workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
+            workspaceLinks."repos/dotfiles" = "/home/emiller/.config/dotfiles";
+            workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+            workspaceLinks."repos/tailnet" = "/home/emiller/src/personal/tailnet";
           };
 
         };
