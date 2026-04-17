@@ -1,32 +1,19 @@
 diff --git a/scripts/hook-based-switcher.sh b/scripts/hook-based-switcher.sh
-index 76d3af2..d63db9e 100755
+index 76d3af2..e6b9a15 100755
 --- a/scripts/hook-based-switcher.sh
 +++ b/scripts/hook-based-switcher.sh
-@@ -431,6 +431,30 @@ main() {
+@@ -431,6 +431,17 @@ main() {
  state_dir=$(mktemp -d "${TMPDIR:-/tmp}/tmux-agent-status-switcher.XXXXXX")
  trap 'rm -rf "$state_dir"' EXIT
  configure_state_dir "$state_dir"
 +
-+# Auto-expand sessions that currently have active Hermes/agent work.
-+# We use the plugin status cache and expand on each launch so the popup
-+# opens with useful context instead of fully collapsed sessions.
++# Auto-expand sessions on switcher open. This guarantees a useful default
++# for Hermes workflows regardless of status classifier behavior.
 +: > "$EXPANDED_SESSIONS_FILE"
-+if [ -d "$STATUS_DIR" ]; then
-+    for sf in "$STATUS_DIR"/*.status; do
-+        [ -f "$sf" ] || continue
-+
-+        session="${sf##*/}"
-+        session="${session%.status}"
-+        session="${session%-remote}"
-+
-+        st="$(cat "$sf" 2>/dev/null || true)"
-+        case "$st" in
-+            working|wait|ask)
-+                state_add_line "$EXPANDED_SESSIONS_FILE" "$session"
-+                ;;
-+        esac
-+    done
-+fi
++while IFS= read -r session_name; do
++    [ -n "$session_name" ] || continue
++    state_add_line "$EXPANDED_SESSIONS_FILE" "$session_name"
++done < <(tmux list-sessions -F '#S' 2>/dev/null || true)
 +
 +# Leave window-level expansion user-controlled (don't reset it here).
 +# This keeps the session list useful without clobbering navigation intent.
