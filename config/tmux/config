@@ -198,3 +198,7 @@ unbind n
 unbind p
 bind n next-window
 bind p previous-window
+
+# prefix+b should hard-toggle the agent sidebar (open if absent, close if present).
+unbind b
+bind b run-shell 'cmd=$(tmux show -gv @agent-sidebar-toggle-cmd 2>/dev/null); [ -z "$cmd" ] && cmd="$HOME/.config/tmux/plugins/tmux-agent-status/scripts/sidebar-toggle.sh"; pane=$(tmux list-panes -F "#{pane_id} #{pane_title}" | awk "\$2==\"agent-sidebar\"{print \$1; exit}"); if [ -n "$pane" ]; then tmux kill-pane -t "$pane"; else "$cmd"; fi'
