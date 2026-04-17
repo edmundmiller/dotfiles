@@ -630,6 +630,7 @@ in
       betty = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
+        workingDirectory = "/home/emiller/mill-docs";
       };
       scintillate = {
         authFile = "/home/emiller/.codex/auth.json";
@@ -654,6 +655,11 @@ in
   systemd.services.hermes-gateway-scintillate.serviceConfig = {
     EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
   };
+
+  systemd.services.hermes-gateway-betty.serviceConfig.ReadWritePaths = [
+    "/var/lib/hermes-betty"
+    "/home/emiller/mill-docs"
+  ];
 
   systemd.services.hermes-agent-anne-healthcheck-ping = {
     description = "Check Anne Discord gateway health and ping healthchecks.io";
@@ -765,7 +771,11 @@ in
             mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
           };
 
-          betty = { };
+          betty = {
+            workspaceLinks."repos/mill-docs" = "/home/emiller/mill-docs";
+            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+            workspaceLinks."repos/tnote" = tnoteBaseRepo;
+          };
           anne = { };
           radar = { };
 
