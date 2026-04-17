@@ -1,0 +1,39 @@
+diff --git a/scripts/hook-based-switcher.sh b/scripts/hook-based-switcher.sh
+index 76d3af2..08d9f0a 100755
+--- a/scripts/hook-based-switcher.sh
++++ b/scripts/hook-based-switcher.sh
+@@ -153,6 +153,7 @@ get_switcher_rows() {
+     declare -A pane_cmd=()
+     local session_order=()
+     local session="" pane_id="" win_idx="" win_name="" cmd="" pane_title=""
++    local current_session=""
+ 
+     while IFS=$'\t' read -r session pane_id win_idx win_name cmd pane_title; do
+         [ -z "$session" ] && continue
+@@ -175,6 +176,8 @@ get_switcher_rows() {
+     done < <(tmux list-panes -a -F \
+         "#{session_name}${tab}#{pane_id}${tab}#{window_index}${tab}#{window_name}${tab}#{pane_current_command}${tab}#{pane_title}" 2>/dev/null)
+ 
++    current_session="$(tmux display-message -p '#S' 2>/dev/null || true)"
++
+     for session in "${session_order[@]}"; do
+         local win_list="${session_windows[$session]:-}"
+         local session_panes=()
+@@ -195,7 +198,7 @@ get_switcher_rows() {
+ 
+         local session_marker="•"
+         if [ -n "$win_list" ]; then
+-            if session_expanded "$session"; then
++            if session_expanded "$session" || [ "$session" = "$current_session" ]; then
+                 session_marker="▾"
+             else
+                 session_marker="▸"
+@@ -204,7 +207,7 @@ get_switcher_rows() {
+         printf 'S\t%s\t%b  %s [session] %s\n' \
+             "$session" "$session_icon" "$session_marker" "$session"
+ 
+-        session_expanded "$session" || continue
++        ( session_expanded "$session" || [ "$session" = "$current_session" ] ) || continue
+ 
+         for window_index in $win_list; do
+             local window_key="${session}:${window_index}"
