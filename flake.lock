@@ -87,10 +87,13 @@
         ]
       },
       "locked": {
-        "lastModified": 1776390548,
-        "narHash": "sha256-CTJyHKW2gkuiJkAX0jMXFOCytclw0o5aBOf3ARJIKcw=",
-        "path": "/Users/emiller/orca/workspaces/agents-workspace/tradclaw",
-        "type": "path"
+        "lastModified": 1776391829,
+        "narHash": "sha256-5Y/QRtW8+aPxyZT6ZIzdVl/0fLeFlZI9LdZTnmv7zNY=",
+        "ref": "main",
+        "rev": "34be35462e7361adcdb5810dc4461fe97e3efa20",
+        "revCount": 329,
+        "type": "git",
+        "url": "file:///Users/emiller/src/personal/agents-workspace"
       },
       "original": {
         "ref": "main",
