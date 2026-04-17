@@ -116,6 +116,28 @@ in
 
       networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
 
+      services.nginx = {
+        enable = true;
+        recommendedProxySettings = true;
+        virtualHosts."mission-control-local" = {
+          listen = [
+            {
+              addr = "127.0.0.1";
+              port = 3006;
+            }
+          ];
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.port}";
+            extraConfig = ''
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-Host $host;
+              proxy_set_header X-Forwarded-Proto https;
+              proxy_cookie_flags ~ secure httponly samesite=lax;
+            '';
+          };
+        };
+      };
+
       virtualisation.oci-containers.containers.mission-control = {
         autoStart = true;
         inherit (cfg) image;
@@ -166,7 +188,7 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://127.0.0.1:${toString cfg.port} && exit 0; sleep 1; done; exit 1\"'";
+          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://127.0.0.1:3006 && exit 0; sleep 1; done; exit 1\"'";
           ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
         };
       };
