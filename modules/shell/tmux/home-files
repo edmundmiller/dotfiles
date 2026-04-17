@@ -115,6 +115,7 @@ with lib;
       set -g @agent-wait-key "W"
       set -g @agent-park-key "U"
       set -g @agent-sidebar-width "32"
+      set -g @agent-sidebar-toggle-cmd "${tmux-agent-status}/scripts/sidebar-toggle.sh"
       run-shell ${tmux-agent-status}/tmux-agent-status.tmux
     ''}
 
