@@ -19,6 +19,7 @@ stdenvNoCC.mkDerivation {
   patches = [
     ./tmux-agent-status/patches/0001-auto-expand-active-sessions.patch
     ./tmux-agent-status/patches/0002-force-expand-current-session.patch
+    ./tmux-agent-status/patches/0003-sidebar-derive-session-state-from-pane-files.patch
   ];
 
   dontBuild = true;
