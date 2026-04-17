@@ -31,7 +31,7 @@ model:
   default: gpt-5.4
   thinking: high
 
-# Fallback chain: OpenCode GLM-5.1, Nous MTP, Kilo, then OpenRouter
+# Fallback chain: OpenCode GLM-5.1, Nous GLM-5.1, Kilo frontier, then OpenRouter auto
 fallback_providers:
   - provider: opencode
     model: GLM-5.1
