@@ -1,0 +1,44 @@
+diff --git a/scripts/lib/collect.sh b/scripts/lib/collect.sh
+index 3dacf87..39aeb69 100755
+--- a/scripts/lib/collect.sh
++++ b/scripts/lib/collect.sh
+@@ -147,6 +147,41 @@ collect_data() {
+     done < <(tmux list-panes -a -F "#{session_name}${_tab}#{pane_id}${_tab}#{pane_current_path}${_tab}#{pane_pid}${_tab}#{window_index}${_tab}#{window_name}" 2>/dev/null)
+ 
++    # If session-level status files are missing, derive session state from
++    # per-pane status files so the sidebar still reflects active work.
++    for sname in "${!sess_seen[@]}"; do
++        [[ "${sess_state[$sname]:-}" != "noagent" ]] && continue
++
++        local best_status=""
++        local best_priority=0
++        local pane_file=""
++        for pane_file in "$PANE_DIR/${sname}_"*.status; do
++            [ -f "$pane_file" ] || continue
++
++            local pane_name pane_id pane_status pane_priority
++            pane_name=$(basename "$pane_file" .status)
++            pane_id="${pane_name##*_}"
++
++            if [ -f "$PARKED_DIR/${sname}_${pane_id}.parked" ]; then
++                pane_status="parked"
++            elif [ -f "$WAIT_DIR/${sname}_${pane_id}.wait" ]; then
++                pane_status="wait"
++            else
++                pane_status=$(cat "$pane_file" 2>/dev/null || echo "")
++            fi
++
++            pane_priority=$(status_priority "$pane_status")
++            if [ "$pane_priority" -gt "$best_priority" ]; then
++                best_priority="$pane_priority"
++                best_status="$pane_status"
++            fi
++        done
++
++        if [ -n "$best_status" ]; then
++            sess_state[$sname]="$best_status"
++        fi
++    done
++
+     # ── 3. Worktree detection ────────────────────────────────────
+     declare -A worktree_parent worktree_children
