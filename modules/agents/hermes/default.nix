@@ -118,15 +118,18 @@ let
 
       mkdir -p "$out/bin"
       ln -sf ${acpxPackage}/bin/acpx "$out/bin/acpx"
-      if [ -x "$out/bin/hermes" ]; then
-        wrapProgram "$out/bin/hermes" \
-          --prefix PATH : ${
-            lib.makeBinPath [
-              pkgs.nodejs
-              acpxPackage
-            ]
-          }
-      fi
+      for hermes_bin in hermes hermes-agent hermes-acp; do
+        if [ -x "$out/bin/$hermes_bin" ]; then
+          wrapProgram "$out/bin/$hermes_bin" \
+            --prefix PATH : ${
+              lib.makeBinPath [
+                pkgs.nodejs
+                acpxPackage
+              ]
+            } \
+            --run ${escapeShellArg "${hermesSecretPreflight}"}
+        fi
+      done
 
       runHook postInstall
     '';
@@ -139,11 +142,80 @@ let
   secretRefsJson = pkgs.writeText "hermes-secret-references.json" (
     builtins.toJSON cfg.secretReferences
   );
+  hermesRequiredSecretKeys = lib.unique (
+    cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
+  );
+  hermesRequiredSecretKeysJson = pkgs.writeText "hermes-required-secret-keys.json" (
+    builtins.toJSON hermesRequiredSecretKeys
+  );
   opBin =
     let
       resolved = builtins.tryEval (lib.getExe pkgs._1password-cli);
     in
     if resolved.success then resolved.value else "op";
+  hermesSecretPreflight = pkgs.writeShellScript "hermes-secret-preflight" ''
+    set -euo pipefail
+
+    configured_home=${escapeShellArg cfg.homeDir}
+    hermes_home="$(${pkgs.python3}/bin/python3 - "$configured_home" <<'PY'
+    import os
+    import sys
+
+    os.environ.setdefault("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config"))
+    print(os.path.expanduser(os.path.expandvars(sys.argv[1])))
+    PY
+    )"
+    dotenv_path="$hermes_home/.env"
+
+    ${pkgs.python3}/bin/python3 - ${escapeShellArg hermesRequiredSecretKeysJson} "$dotenv_path" <<'PY'
+    import json
+    import os
+    import pathlib
+    import sys
+
+
+    required = [key for key in json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")) if key]
+    if not required:
+        raise SystemExit(0)
+
+    dotenv_path = pathlib.Path(sys.argv[2])
+    dotenv_values = {}
+    if dotenv_path.exists():
+        for raw_line in dotenv_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:].lstrip()
+            key, sep, value = line.partition("=")
+            if not sep:
+                continue
+            dotenv_values[key] = value
+
+    missing = []
+    for key in required:
+        value = os.environ.get(key)
+        if value is None:
+            value = dotenv_values.get(key)
+        if value is None or value == "":
+            missing.append(key)
+
+    if missing:
+        print(
+            f"error: Hermes startup blocked; missing required secret env var(s): {', '.join(missing)}",
+            file=sys.stderr,
+        )
+        print(
+            f"error: checked process environment and dotenv file: {dotenv_path}",
+            file=sys.stderr,
+        )
+        print(
+            "error: unlock 1Password and run `hey re`, or export these env vars before starting Hermes.",
+            file=sys.stderr,
+        )
+        raise SystemExit(42)
+    PY
+  '';
 
   renderedSettings =
     optionalAttrs ((config.time.timeZone or "") != "") {
@@ -226,6 +298,17 @@ in
         1Password secret references to materialize into $HERMES_HOME/.env.
         This keeps repo config declarative while avoiding plaintext API keys
         in git. Existing unmanaged .env entries are preserved.
+      '';
+    };
+
+    requiredSecretKeys = mkOption {
+      type = listOf str;
+      default = [ ];
+      example = [ "HONCHO_API_KEY" ];
+      description = ''
+        Additional Hermes secrets that must be present at runtime startup.
+        Missing required keys fail Hermes startup in a wrapper preflight, but
+        activation/rebuild remains non-fatal.
       '';
     };
   };
@@ -403,6 +486,8 @@ in
               kept_lines.append(line)
 
           rendered_lines = list(kept_lines)
+          failed_keys = []
+          empty_keys = []
           for key, ref in refs.items():
               try:
                   value = subprocess.check_output(
@@ -412,20 +497,30 @@ in
                       timeout=15,
                   ).rstrip("\n")
               except Exception:
-                  print(
-                      f"warning: failed to read Hermes secret {key} from 1Password reference {ref}",
-                      file=sys.stderr,
-                  )
+                  failed_keys.append(f"{key} ({ref})")
                   continue
 
               if not value:
-                  print(
-                      f"warning: Hermes secret {key} resolved empty from 1Password reference {ref}",
-                      file=sys.stderr,
-                  )
+                  empty_keys.append(f"{key} ({ref})")
                   continue
 
               rendered_lines.append(f"{key}={value}")
+
+          if failed_keys:
+              sample = ", ".join(failed_keys[:5])
+              extra = "" if len(failed_keys) <= 5 else f" (+{len(failed_keys) - 5} more)"
+              print(
+                  f"warning: failed to read {len(failed_keys)} Hermes secret(s) from 1Password: {sample}{extra}",
+                  file=sys.stderr,
+              )
+
+          if empty_keys:
+              sample = ", ".join(empty_keys[:5])
+              extra = "" if len(empty_keys) <= 5 else f" (+{len(empty_keys) - 5} more)"
+              print(
+                  f"warning: {len(empty_keys)} Hermes secret(s) resolved empty from 1Password: {sample}{extra}",
+                  file=sys.stderr,
+              )
 
           content = "\n".join(rendered_lines)
           if content:
