@@ -234,7 +234,7 @@ skills:
     - ~/.agents/skills
   config:
     wiki:
-      path: ~/mill-docs
+      path: ~/obsidian-vault/
 
 # Timezone (set by Nix module if configured)
 timezone: null
