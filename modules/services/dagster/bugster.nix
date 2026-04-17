@@ -23,7 +23,7 @@ let
   cfg = config.modules.services.bugster;
 
   dagsterCfg = config.modules.services.dagster;
-  tnoteCliEntry = "/home/${dagsterCfg.user}/src/personal/tn-monorepo/packages/tn/index.ts";
+  tnoteCliEntry = "/home/${dagsterCfg.user}/src/personal/tnote/packages/tn/index.ts";
   runtimePath = lib.makeBinPath [
     pkgs.bash
     pkgs.bun
