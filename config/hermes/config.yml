@@ -30,14 +30,14 @@ model:
   provider: openai-codex
   default: gpt-5.4
 
-# Fallback chain: OpenCode GLM-5.1, Nous MTP, KiloCode, then OpenRouter
+# Fallback chain: OpenCode GLM-5.1, Nous MTP, Kilo, then OpenRouter
 fallback_providers:
   - provider: opencode
     model: GLM-5.1
   - provider: nous
     model: z-ai/glm-5.1
-  - provider: kilocode
-    model: kilo-auto/frontier
+  - provider: kilo
+    model: kilo/frontier
   - provider: openrouter
     model: auto
 
@@ -94,8 +94,8 @@ smart_model_routing:
   max_simple_chars: 160
   max_simple_words: 28
   cheap_model:
-    provider: kilocode
-    model: kilo-auto/balanced
+    provider: kilo
+    model: kilo/balanced
 
 # Auxiliary services
 auxiliary:
