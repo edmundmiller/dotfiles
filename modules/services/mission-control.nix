@@ -52,6 +52,8 @@ let
     import json
     import os
     import sys
+    import time
+    import urllib.error
     import urllib.request
 
     api_key = os.environ["MC_SYNC_API_KEY"]
@@ -71,9 +73,28 @@ let
             },
             method="POST",
         )
-        with urllib.request.urlopen(request) as response:
-            if response.status >= 400:
-                raise RuntimeError(f"Mission Control agent registration failed for {agent['name']}: {response.status}")
+
+        for attempt in range(5):
+            try:
+                with urllib.request.urlopen(request) as response:
+                    if response.status >= 400:
+                        raise RuntimeError(f"Mission Control agent registration failed for {agent['name']}: {response.status}")
+                break
+            except urllib.error.HTTPError as exc:
+                if exc.code == 429 and attempt < 4:
+                    time.sleep(2 * (attempt + 1))
+                    continue
+                print(
+                    f"warning: Mission Control registration skipped for {agent['name']}: HTTP {exc.code}",
+                    file=sys.stderr,
+                )
+                break
+            except urllib.error.URLError as exc:
+                print(
+                    f"warning: Mission Control registration skipped for {agent['name']}: {exc}",
+                    file=sys.stderr,
+                )
+                break
     PY
   '';
 in
