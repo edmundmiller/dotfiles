@@ -58,6 +58,86 @@ let
     in
     if resolved.success then resolved.value else "op";
   dotenvPython = pkgs.python3;
+  piRequiredSecretKeys = lib.unique (
+    cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
+  );
+  piRequiredSecretKeysJson = pkgs.writeText "pi-required-secret-keys.json" (
+    builtins.toJSON piRequiredSecretKeys
+  );
+  piSecretPreflight = pkgs.writeShellScript "pi-secret-preflight" ''
+    set -euo pipefail
+
+    dotenv_path="$HOME/.pi/agent/.env"
+
+    ${pkgs.python3}/bin/python3 - ${escapeShellArg piRequiredSecretKeysJson} "$dotenv_path" <<'PY'
+    import json
+    import os
+    import pathlib
+    import sys
+
+
+    required = [key for key in json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")) if key]
+    if not required:
+        raise SystemExit(0)
+
+    dotenv_path = pathlib.Path(sys.argv[2])
+    dotenv_values = {}
+    if dotenv_path.exists():
+        for raw_line in dotenv_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:].lstrip()
+            key, sep, value = line.partition("=")
+            if not sep:
+                continue
+            dotenv_values[key] = value
+
+    missing = []
+    for key in required:
+        value = os.environ.get(key)
+        if value is None:
+            value = dotenv_values.get(key)
+        if value is None or value == "":
+            missing.append(key)
+
+    if missing:
+        print(
+            f"error: pi startup blocked; missing required secret env var(s): {', '.join(missing)}",
+            file=sys.stderr,
+        )
+        print(
+            f"error: checked process environment and dotenv file: {dotenv_path}",
+            file=sys.stderr,
+        )
+        print(
+            "error: unlock 1Password and run `hey re`, or export these env vars before starting pi.",
+            file=sys.stderr,
+        )
+        raise SystemExit(42)
+    PY
+  '';
+  piPackageWithSecretPreflight = pkgs.stdenvNoCC.mkDerivation {
+    pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-secret-preflight";
+    version = pkgs.llm-agents.pi.version or "wrapped";
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    installPhase = ''
+      runHook preInstall
+
+      cp -a ${pkgs.llm-agents.pi} "$out"
+      chmod -R u+w "$out"
+
+      if [ -x "$out/bin/pi" ]; then
+        wrapProgram "$out/bin/pi" \
+          --run ${escapeShellArg "${piSecretPreflight}"}
+      fi
+
+      runHook postInstall
+    '';
+    inherit (pkgs.llm-agents.pi) meta;
+  };
 
   # Dynamically concatenate all rule files from config/agents/rules/
   # Same logic as Claude module for consistency
@@ -258,6 +338,16 @@ in
       default = { };
       description = "1Password secret references materialized into ~/.pi/agent/.env";
     };
+    requiredSecretKeys = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "HONCHO_API_KEY" ];
+      description = ''
+        Additional pi secrets that must be present at runtime startup.
+        Missing required keys fail pi startup in a wrapper preflight, but
+        activation/rebuild remains non-fatal.
+      '';
+    };
     extraPackages = mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -275,7 +365,7 @@ in
     ]);
 
     user.packages = [
-      pkgs.llm-agents.pi
+      piPackageWithSecretPreflight
       pkgs.llm-agents."beads-rust"
       pkgs.bun # still needed for extensions/packages workspace
       pkgs.delta # syntax-highlighted diffs
@@ -411,6 +501,8 @@ in
               if value:
                   rendered_lines.append(f"{key}={value}")
 
+          failed_keys = []
+          empty_keys = []
           for key, ref in refs.items():
               try:
                   value = subprocess.check_output(
@@ -420,20 +512,30 @@ in
                       timeout=15,
                   ).rstrip("\n")
               except Exception:
-                  print(
-                      f"warning: failed to read pi secret {key} from 1Password reference {ref}",
-                      file=sys.stderr,
-                  )
+                  failed_keys.append(f"{key} ({ref})")
                   continue
 
               if not value:
-                  print(
-                      f"warning: pi secret {key} resolved empty from 1Password reference {ref}",
-                      file=sys.stderr,
-                  )
+                  empty_keys.append(f"{key} ({ref})")
                   continue
 
               rendered_lines.append(f"{key}={value}")
+
+          if failed_keys:
+              sample = ", ".join(failed_keys[:5])
+              extra = "" if len(failed_keys) <= 5 else f" (+{len(failed_keys) - 5} more)"
+              print(
+                  f"warning: failed to read {len(failed_keys)} pi secret(s) from 1Password: {sample}{extra}",
+                  file=sys.stderr,
+              )
+
+          if empty_keys:
+              sample = ", ".join(empty_keys[:5])
+              extra = "" if len(empty_keys) <= 5 else f" (+{len(empty_keys) - 5} more)"
+              print(
+                  f"warning: {len(empty_keys)} pi secret(s) resolved empty from 1Password: {sample}{extra}",
+                  file=sys.stderr,
+              )
 
           content = "\n".join(rendered_lines)
           if content:
