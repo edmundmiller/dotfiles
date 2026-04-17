@@ -87,10 +87,13 @@
         ]
       },
       "locked": {
-        "lastModified": 1776427737,
-        "narHash": "sha256-mOZT404A+qX74DD4MW8vIoFYi93kkOTiW0fzfI/w2pQ=",
-        "path": "/Users/emiller/src/personal/agents-workspace",
-        "type": "path"
+        "lastModified": 1776439833,
+        "narHash": "sha256-vES3vuvhSu9Lv9U6JaGnG8UX7KnJneF/HP+KQnTAO/I=",
+        "ref": "main",
+        "rev": "99b08daa8e2e968497db0fe0e253ceefd1c1973d",
+        "revCount": 341,
+        "type": "git",
+        "url": "file:///Users/emiller/src/personal/agents-workspace"
       },
       "original": {
         "ref": "main",
