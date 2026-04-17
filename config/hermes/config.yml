@@ -280,7 +280,7 @@ cron:
   wrap_response: true
 
 # Config version
-_config_version: 17
+_config_version: 18
 
 # Web backend
 web:
