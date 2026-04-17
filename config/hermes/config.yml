@@ -29,6 +29,7 @@ mcp_servers:
 model:
   provider: openai-codex
   default: gpt-5.4
+  thinking: high
 
 # Fallback chain: OpenCode GLM-5.1, Nous MTP, Kilo, then OpenRouter
 fallback_providers:
@@ -91,8 +92,9 @@ smart_model_routing:
   max_simple_chars: 160
   max_simple_words: 28
   cheap_model:
-    provider: kilo
-    model: kilo/balanced
+    provider: nous
+    model: minimax/minimax-m1-80k
+    thinking: auto
 
 # Auxiliary services
 auxiliary:
@@ -218,8 +220,8 @@ memory:
 
 # Delegation settings
 delegation:
-  model: ""
-  provider: ""
+  provider: openai-codex
+  model: gpt-5.3-codex
   base_url: ""
   api_key: ""
   max_iterations: 50
