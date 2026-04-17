@@ -110,7 +110,7 @@ with lib;
       set -g @agent-switcher-style "popup"
       set -g @agent-status-display-method "popup"
       set -g @agent-status-key "S"
-      set -g @agent-sidebar-key "O"
+      set -g @agent-sidebar-key "b"
       set -g @agent-next-done-key "N"
       set -g @agent-wait-key "W"
       set -g @agent-park-key "U"
