@@ -138,7 +138,7 @@ let
   obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT";
   ob = "${pkgs.my.obsidian-headless}/bin/ob";
   op = "${pkgs._1password-cli}/bin/op";
-  tnoteBaseRepo = "/home/emiller/src/personal/tn-monorepo";
+  tnoteBaseRepo = "/home/emiller/src/personal/tnote";
   qmd = pkgs.writeShellScriptBin "qmd" ''
     export NODE_LLAMA_CPP_GPU=off
     exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
@@ -511,7 +511,7 @@ in
         #!/usr/bin/env bash
         set -euo pipefail
 
-        REPO="$HOME/src/personal/tn-monorepo"
+        REPO="$HOME/src/personal/tnote"
         DEFAULT_VAULT="$HOME/obsidian-vault"
 
         export TN_VAULT_PATH="''${TN_VAULT_PATH:-$DEFAULT_VAULT}"
