@@ -84,9 +84,6 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
-  summary_model: ""
-  summary_provider: auto
-  summary_base_url: null
 
 # Smart model routing
 smart_model_routing:
@@ -283,7 +280,7 @@ cron:
   wrap_response: true
 
 # Config version
-_config_version: 11
+_config_version: 17
 
 # Web backend
 web:
