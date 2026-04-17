@@ -50,6 +50,8 @@
             HONCHO_API_KEY = "op://Private/Honcho Admin key/credential";
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
             OPENROUTER_API_KEY = "op://Agents/MTP OpenRouter/credential";
+            HASS_TOKEN = "op://Agents/Hermes Laptop HA/credential";
+            HA_TOKEN = "op://Agents/Hermes Laptop HA/credential";
           };
         };
         pi = {
