@@ -640,6 +640,10 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
       };
+      amosburton = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment.CODEX_HOME = "/home/emiller/.codex";
+      };
     };
   };
 
@@ -778,6 +782,9 @@ in
           };
           anne = { };
           radar = { };
+          amosburton = {
+            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+          };
 
         };
       };
