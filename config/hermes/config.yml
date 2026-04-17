@@ -93,7 +93,7 @@ smart_model_routing:
   max_simple_words: 28
   cheap_model:
     provider: nous
-    model: minimax/minimax-m1-80k
+    model: minimax/minimax-m2.7
     thinking: auto
 
 # Auxiliary services
