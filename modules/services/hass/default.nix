@@ -82,6 +82,24 @@ let
   };
 
   # pypura - upstream Python client library required by the Pura integration
+  # Build against Home Assistant's Python (currently 3.14) to avoid version skew.
+  pypura = pkgs.python314Packages.buildPythonPackage rec {
+    pname = "pypura";
+    version = "2.1.1";
+    format = "wheel";
+    src = pkgs.fetchPypi {
+      inherit pname version format;
+      dist = "py3";
+      python = "py3";
+      hash = "sha256-fO93LS1pDzHZ2vYSzSECqes9dotWSEe13WobL6MGieU=";
+    };
+    propagatedBuildInputs = with pkgs.python314Packages; [
+      aiohttp
+      boto3
+      pycognito
+    ];
+    doCheck = false;
+  };
 
   # Pura - smart fragrance diffuser integration
   # https://github.com/natekspencer/ha-pura
@@ -196,7 +214,14 @@ in
         ++ cfg.customComponents;
         inherit (cfg) customLovelaceModules;
 
-        extraPackages = ps: optionals cfg.postgres.enable [ ps.psycopg2 ];
+        extraPackages =
+          ps:
+          optionals cfg.postgres.enable [ ps.psycopg2 ]
+          ++ [
+            pypura
+            ps.deepdiff
+            ps.ical
+          ];
 
         config = {
           default_config = { };
