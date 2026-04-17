@@ -69,12 +69,7 @@ let
     sha256 = "0c6yby1ing3sdcgzd5k23dr7hzlam1mcs45l9r9ihy18jx6l04k6";
   };
 
-  tmux-agent-status = pkgs.fetchFromGitHub {
-    owner = "samleeney";
-    repo = "tmux-agent-status";
-    rev = "main";
-    sha256 = "1w0fy2hj3lr4dlm3ir1p8dbhqj83df48byqy937rqpic64rfih0y";
-  };
+  tmux-agent-status = pkgs.my."tmux-agent-status";
 
   tmux = pkgs.writeScriptBin "tmux" ''
     #!${pkgs.stdenv.shell}
@@ -132,10 +127,6 @@ in
         })
         // {
           "lazygit/tml.yml".source = "${configDir}/lazygit/tml.yml";
-          "tmux/agent-switcher-expanded.sh" = {
-            source = "${configDir}/tmux/agent-switcher-expanded.sh";
-            executable = true;
-          };
         };
 
       env = {
