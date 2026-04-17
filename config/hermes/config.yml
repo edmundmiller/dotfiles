@@ -151,7 +151,6 @@ auxiliary:
 # Display settings
 display:
   compact: true
-  personality: kawaii
   resume_display: minimal
   busy_input_mode: interrupt
   bell_on_complete: false
