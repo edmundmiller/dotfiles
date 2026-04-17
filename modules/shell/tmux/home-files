@@ -112,6 +112,7 @@ with lib;
       set -g @agent-status-key "S"
       set -g @agent-sidebar-key "b"
       set -g @agent-next-done-key "N"
+      set -g @agent-switcher-cmd "$DOTFILES/config/tmux/agent-switcher-expanded.sh"
       set -g @agent-wait-key "W"
       set -g @agent-park-key "U"
       set -g @agent-sidebar-width "32"

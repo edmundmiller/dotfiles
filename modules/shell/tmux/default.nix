@@ -132,6 +132,10 @@ in
         })
         // {
           "lazygit/tml.yml".source = "${configDir}/lazygit/tml.yml";
+          "tmux/agent-switcher-expanded.sh" = {
+            source = "${configDir}/tmux/agent-switcher-expanded.sh";
+            executable = true;
+          };
         };
 
       env = {
