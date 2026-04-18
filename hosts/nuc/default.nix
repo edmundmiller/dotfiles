@@ -119,12 +119,7 @@ let
       inherit (config.age.secrets.anne-firecrawl-api) path;
     }
   ];
-  hermesRadarSecrets = hermesProviderSecrets ++ [
-    {
-      envVar = "TELEGRAM_BOT_TOKEN";
-      path = hermesScintillateTelegramBotTokenFile;
-    }
-  ];
+  hermesRadarSecrets = hermesProviderSecrets;
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
