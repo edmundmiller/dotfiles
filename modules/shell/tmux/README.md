@@ -136,14 +136,14 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 
 Open tmux-which-key with `prefix Space`, then:
 
-| Key path | Action                                       |
-| -------- | -------------------------------------------- |
-| `P p`    | Attach/create current project session        |
-| `P w`    | Create sibling worktree via `tw`             |
-| `P h`    | Prompt + create Hermes/Hunk cockpit worktree |
-| `P x`    | Remove sibling worktree via `twd`            |
-| `a`      | Open Pi sessions picker                      |
-| `A`      | Start a new Pi window in current pane path   |
+| Key path | Action                                                      |
+| -------- | ----------------------------------------------------------- |
+| `P p`    | Attach/create current project session                       |
+| `P w`    | Create sibling worktree via `tw`                            |
+| `P h`    | Prompt + create Hermes/Hunk work window on sibling worktree |
+| `P x`    | Remove sibling worktree via `twd`                           |
+| `a`      | Open Pi sessions picker                                     |
+| `A`      | Start a new Pi window in current pane path                  |
 
 ### Panes
 
@@ -168,7 +168,7 @@ Open tmux-which-key with `prefix Space`, then:
 | `u`   | Split vertical + jjui                                                 |
 | `U`   | Split horizontal + jjui                                               |
 | `C`   | Prompt: run command in new split                                      |
-| `Z`   | Prompt: new sibling worktree cockpit (opensessions + Hermes + Hunk)   |
+| `Z`   | Prompt: new sibling work window (opensessions + Hermes + Hunk)        |
 | `g`   | Git TUI popup                                                         |
 | `G`   | Critique (diff review) popup                                          |
 | `R`   | Critique (staged diff) popup                                          |

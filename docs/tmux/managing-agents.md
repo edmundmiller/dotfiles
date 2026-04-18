@@ -1,86 +1,61 @@
 # Managing agents in tmux
 
-Status: Draft 1
+Status: Draft 2
 Audience: human operators and coding agents working in this dotfiles repo
 
 ## Why this doc exists
 
-The tmux workflow has grown powerful but easy to overfit to whatever tool is hot this week.
+The old flow overfit to a specific tool stack (Hermes + Hunk) and a specific phrase ("cockpit").
 
-Right now that toolchain is often Hermes + Hunk, but the long-term need is broader:
+The durable need is simpler:
 
-- launch any agent quickly
-- in the right project/worktree session
-- with optional review sidecars (Hunk, critique, lazygit, none)
-- without memorizing fragile aliases
+- keep tmux session identity at the repo level
+- launch new focused windows for branch/task work
+- optionally include review sidecars
+- keep naming/tooling flexible
 
-This doc lays out the user-facing model and the clean architecture layers behind it.
+## Recommended user-facing term
 
-## User-first workflow (what people actually want)
+Use: "new work window"
 
-Most requests boil down to one of these intents:
+Why:
 
-1. "Take me to this project/worktree"
+- neutral across Hermes/pi/opencode/claude
+- neutral across sidecars (Hunk/critique/lazygit/none)
+- describes behavior instead of implementation details
 
-- Use: `tmproj` (alias `tp`)
-- Behavior: attach/create canonical session for current path
+If we later pick a better name, keep this as the fallback concept.
 
-2. "Create a new worktree and start working"
+## User model (what to expect)
 
-- Use: `tw <name>`
-- Behavior: create sibling worktree + enter canonical session
+1. Session identity is repo-level
 
-3. "Delete a finished worktree cleanly"
+- Example session: `dotfiles`
+- Not: one session per worktree slug
 
-- Use: `twd <name-or-path>`
-- Behavior: remove worktree + kill matching tmux session
+2. Window identity is task/branch-level
 
-4. "Launch an agent workspace here"
+- Example window: `test`
+- Not: `dotfiles-test-cockpit`
 
-- Use: launcher profile (currently via tmux keybinds and aliases)
-- Behavior: start agent pane(s) and optional sidecars in current canonical session
+3. Worktree is implementation detail for isolation
 
-5. "Review changes while coding"
+- You can still create sibling worktrees
+- But top-level tmux navigation should stay repo-first
 
-- Use persistent right-pane review (`]`, `}`, `{`) or profile layout
-- Behavior: keep review context visible (unstaged/staged/branch-committed)
+4. Layout is role-based
 
-The key UX rule: users should choose intent, not remember internals.
+- main work pane (agent/editor/shell)
+- optional review sidecar pane
+- optional opensessions sidebar
 
-## Mental model
+## Layered architecture
 
-Think in this order:
+### Layer 0: Identity resolution (invariants)
 
-1. Workspace identity
+Purpose: normalize paths and naming.
 
-- Which repo/worktree am I in?
-
-2. Session identity
-
-- Which canonical tmux session maps to that workspace?
-
-3. Window role
-
-- Is this a project shell window, an agent window, or review window?
-
-4. Pane role
-
-- Agent pane, review sidecar, shell/editor helper
-
-5. Tool choice
-
-- Hermes/pi/opencode/claude for agent
-- Hunk/critique/lazygit/none for review
-
-If these are separated, the system stays composable.
-
-## Clean architecture layers
-
-### Layer 0: Identity resolution (no UI, no agent assumptions)
-
-Owns path/session naming invariants.
-
-Key scripts:
+Owned by:
 
 - `bin/git-worktree-cwd`
 - `bin/tmux-project-root`
@@ -89,165 +64,92 @@ Key scripts:
 
 Contract:
 
-- given any path, resolve a usable checkout
-- derive deterministic tmux-safe names
-- avoid duplicate naming logic elsewhere
+- deterministic naming
+- no UI-specific behavior
 
-### Layer 1: Workspace lifecycle primitives
+### Layer 1: Lifecycle primitives (boring core)
 
-Owns create/switch/remove session and worktree behavior.
+Purpose: create/switch/remove repo/worktree state.
 
-Key commands:
+Owned by:
 
-- `bin/tmproj`
-- `bin/tw`
-- `bin/twd`
-
-Contract:
-
-- boring and deterministic
-- no opinionated pane layout decisions
-- callable from humans, tmux scripts, opensessions, and agents
-
-### Layer 2: Agent launch orchestration (generic)
-
-Owns layout composition and command wiring.
-
-Current state:
-
-- includes tool-specific launcher (`worktree-hermes-hunk.sh`)
-
-Target state:
-
-- generic launcher abstraction (for example `worktree-agent-launch.sh`) that accepts:
-  - workspace mode (`current` or `new-worktree`)
-  - worktree name (optional)
-  - agent command (`hermes`, `pi`, `opencode`, etc.)
-  - review sidecar command (`hunk`, `critique`, `lazygit`, `none`)
-  - layout preset (`single`, `tml`, `cockpit`)
+- `bin/tmproj` (attach/create canonical session)
+- `bin/tw` (create sibling worktree)
+- `bin/twd` (remove sibling worktree + cleanup)
 
 Contract:
 
-- composes Layer 0 + Layer 1, does not replace them
-- one implementation path for all UI entry points
+- small and composable
+- no tool-specific pane logic
 
-### Layer 3: UX surfaces (discoverability + shortcuts)
+### Layer 2: Work-window launcher (composed behavior)
 
-Owns how users trigger workflows.
+Purpose: launch a new task/branch window in the repo session and apply a layout.
 
-Surfaces:
+Inputs should be:
 
-- tmux keybinds in `config/tmux/config`
-- tmux-which-key menu in `config/tmux/which-key.yaml`
-- shell aliases/functions in `config/tmux/aliases.zsh` and `config/tmux/omarchy.zsh`
-- opensessions navigation
+- `name` (task/branch label)
+- tool command (hermes/pi/opencode/...)
+- optional sidecar command
+- layout preset
 
 Contract:
 
-- never duplicate lifecycle logic
-- call backend primitives and launch orchestration
+- session target should come from repo root (`checkout_root`)
+- window target should come from requested branch/task label
+- no identity leakage from worktree path into session naming
+
+### Layer 3: UX surfaces
+
+Purpose: discoverability and shortcuts.
+
+Owned by:
+
+- tmux keybinds (`config/tmux/config`)
+- tmux-which-key (`config/tmux/which-key.yaml`)
+- aliases (`config/tmux/aliases.zsh`, `config/tmux/omarchy.zsh`)
+- opensessions menus
+
+Contract:
+
+- call shared backend/launcher code
+- avoid duplicating lifecycle logic
 - aliases are accelerators, not source of truth
 
-## How to think about `nic` and friends
+## Naming and behavior rules
 
-`nic`, `nicx`, `nicc`, etc. should be treated as profile shortcuts, not architectural primitives.
+1. Repo session stays stable
 
-Good framing:
+- launcher should switch/create `dotfiles`-style session from repo root
 
-- `nic` = profile: `agent=pi`, `review=lazygit`, `layout=tml`
-- `nicx` = profile: `agent=opencode`, `review=lazygit`, `layout=tml`
-- `nicc` = profile: `agent=pi`, `review=critique`, `layout=tmlc`
+2. New window name uses branch/task label
 
-This keeps muscle memory while letting backend behavior evolve safely.
+- launcher prompt should ask for a branch/task window name
+- sanitize labels, but keep user intent (`test`, `bugfix-auth`, etc.)
 
-## Current tool-specific flow and how it should evolve
+3. Tool-specific words should be second-order
 
-Current:
+- avoid top-level names like "Hermes/Hunk cockpit"
+- keep tool details in profile/config, not concept label
 
-- `prefix + Z` launches a new worktree cockpit wired to Hermes + Hunk.
+## What this means for current flow
 
-Desired evolution:
+Current keybinds and scripts can stay, but behavior should be:
 
-- keep `Z` as "agent launch" concept
-- tool-specific behavior comes from a selected/default profile
-- keep compatibility wrappers so existing habits do not break
-
-Practical migration path:
-
-1. Add generic launcher script
-2. Keep `worktree-hermes-hunk.sh` as wrapper profile
-3. Rename user-visible labels from "Hermes + Hunk" to "Agent cockpit"
-4. Move more aliases/binds onto generic launcher profiles
-5. Keep `tmproj/tw/twd` unchanged as stable primitives
-
-## User-facing command model (recommended)
-
-Primary mental split:
-
-- choose/switch workspace
-- launch work style in that workspace
-
-### Choose/switch workspace
-
-- `tp` / `tmproj`
-- `tw <name>`
-- `twd <name-or-path>`
-- opensessions picker
-
-### Launch work style
-
-- agent profile (single pane, tml, cockpit)
-- optional persistent review sidecar (`]`, `}`, `{`)
-
-Avoid combining everything into one opaque alias unless it is a profile wrapper.
-
-## Hunk integration expectations
-
-For sustained review, keep Hunk in a persistent pane and support:
-
-- unstaged diff
-- staged diff
-- committed-on-branch diff
-
-For agent behavior, default expectation is proactive read/review support, not only reactive interaction:
-
-- read code from current context
-- use review surface where available
-- produce comments with clear scope (unstaged/staged/committed)
-
-## Design guardrails
-
-1. One canonical implementation per concern
-
-- naming logic once
-- lifecycle logic once
-- launch orchestration once
-
-2. Discoverability over alias memorization
-
-- every canonical flow should be reachable from tmux UI surfaces
-
-3. Backward-compatible wrappers
-
-- old aliases can stay while internals converge
-
-4. Role-based naming
-
-- prefer labels like "agent launch" / "review sidecar" over specific tool names in top-level UX
-
-5. Keep "boring core" stable
-
-- `tmproj`, `tw`, `twd` should stay small and predictable
+- `prefix + Z` (or menu equivalent) => prompt for branch/task label
+- create sibling worktree if needed
+- target repo-level tmux session
+- open a window named after requested label
+- apply layout with main work pane + optional sidecar(s)
 
 ## Success criteria
 
-This architecture is working when:
+This model is working when:
 
-- users can explain the workflow in terms of intent, not script names
-- swapping Hermes to another agent does not require rewriting lifecycle logic
-- keybinds and aliases call shared launch primitives instead of custom forks
-- agent + review layouts remain persistent and predictable
-- docs match runtime behavior closely
+- tmux session list is repo-oriented and stable
+- windows communicate current branch/task intent clearly
+- changing agent tool does not require changing session identity logic
+- docs and runtime behavior stay in sync
 
 ## Related docs
 
