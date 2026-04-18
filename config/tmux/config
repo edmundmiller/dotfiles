@@ -89,9 +89,9 @@ bind R display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open
 #   prefix + ]  -> worktree diff
 #   prefix + }  -> staged diff
 #   prefix + {  -> branch-committed diff
-bind-key ']' split-window -h -p 45 -c "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh"
-bind-key '}' split-window -h -p 45 -c "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh --staged"
-bind-key '{' split-window -h -p 45 -c "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh --branch-committed"
+bind-key ']' split-window -h -p 50 -c "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh"
+bind-key '}' split-window -h -p 50 -c "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh --staged"
+bind-key '{' split-window -h -p 50 -c "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh --branch-committed"
 
 # Generic command in new split
 bind C command-prompt -p "Command:" "split-window -v -c '#{pane_current_path}' '%%'"
