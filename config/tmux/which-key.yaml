@@ -46,12 +46,15 @@ items:
       - name: Critique staged
         key: s
         command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-critique.sh --staged"
-      - name: Hunk review
+      - name: Hunk review (right pane)
         key: h
-        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-hunk.sh"
-      - name: Hunk staged
+        command: "split-window -h -p 45 -c #{pane_current_path} $TMUX_HOME/open-hunk.sh"
+      - name: Hunk staged (right pane)
         key: H
-        command: "display-popup -E -w 90% -h 90% -d #{pane_current_path} $TMUX_HOME/open-hunk.sh --staged"
+        command: "split-window -h -p 45 -c #{pane_current_path} $TMUX_HOME/open-hunk.sh --staged"
+      - name: Hunk branch commits (right pane)
+        key: c
+        command: "split-window -h -p 45 -c #{pane_current_path} $TMUX_HOME/open-hunk.sh --branch-committed"
       - name: jjui (vertical)
         key: u
         command: "split-window -v -c #{pane_current_path} jjui"

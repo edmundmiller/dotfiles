@@ -84,8 +84,8 @@ bind T run '$TMUX_HOME/toggle-tml.sh'
 bind g display-popup -E -w 80% -h 80% -d "#{pane_current_path}" "$TMUX_HOME/open-git-tui.sh"
 bind G display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-critique.sh"
 bind R display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-critique.sh --staged"
-bind H display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh"
-bind J display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-hunk.sh --staged"
+# Hunk review is intentionally routed through tmux-which-key Git submenu
+# (prefix + g, then h/H/c) so we don't steal pane-navigation muscle memory.
 
 # Generic command in new split
 bind C command-prompt -p "Command:" "split-window -v -c '#{pane_current_path}' '%%'"
