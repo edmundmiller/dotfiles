@@ -71,7 +71,7 @@ unbind s
 bind s split-window -v -c "#{pane_current_path}"
 bind v split-window -h -c "#{pane_current_path}"
 
-# AI agent management popup
+# Session menu popup
 bind a run-shell '$TMUX_HOME/smart-name.sh --menu'
 
 # Fast current-session Pi entry
@@ -80,7 +80,7 @@ bind A run '$TMUX_HOME/open-pi-here.sh'
 # Toggle tml layout (AI + lazygit + shell)
 bind T run '$TMUX_HOME/toggle-tml.sh'
 
-# New sibling worktree cockpit (opensessions + hermes + hunk)
+# New sibling work window (opensessions + Hermes + Hunk)
 bind Z run-shell "bash $TMUX_HOME/worktree-hermes-hunk-prompt.sh"
 
 # Git/review popups

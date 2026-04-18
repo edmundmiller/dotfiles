@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Create a sibling git worktree, open/attach its canonical tmux session,
-# then launch a review cockpit window:
+# then open a review work window:
 #   left   - opensessions sidebar (if available)
 #   middle - hermes
 #   right  - hunk diff
@@ -76,7 +76,7 @@ worktree_path="$(create_sibling_worktree "$checkout_root" "$requested_name")"
 window_name="$(sanitize_component "$requested_name")"
 [[ -n "$window_name" ]] || window_name="worktree"
 
-session_name="$($tmux_project_name "$worktree_path")"
+session_name="$($tmux_project_name "$checkout_root")"
 
 if $TMUX_BIN has-session -t "$session_name" 2>/dev/null; then
   window_id="$($TMUX_BIN new-window -d -P -F '#{window_id}' -t "${session_name}:" -n "$window_name" -c "$worktree_path" "$HERMES_BIN")"
@@ -102,4 +102,4 @@ hunk_launcher="${TMUX_HOME:-$HOME/.config/tmux}/open-hunk.sh"
 $TMUX_BIN split-window -h -p 50 -t "$hermes_pane" -c "$worktree_path" "$hunk_launcher"
 $TMUX_BIN select-pane -t "$hermes_pane"
 
-$TMUX_BIN display-message "worktree cockpit ready: session=$session_name window=$window_name"
+$TMUX_BIN display-message "work window ready: session=$session_name window=$window_name"
