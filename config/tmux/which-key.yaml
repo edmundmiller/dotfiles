@@ -201,13 +201,13 @@ items:
       - name: New worktree
         key: w
         command: "run-shell $TMUX_HOME/project-session-prompt.sh create"
-      - name: New Hermes + Hunk cockpit worktree
+      - name: New Hermes + Hunk work window
         key: h
         command: "run-shell bash $TMUX_HOME/worktree-hermes-hunk-prompt.sh"
       - name: Remove worktree
         key: x
         command: "run-shell $TMUX_HOME/project-session-prompt.sh remove"
-  - name: Agent sessions
+  - name: Session menu
     key: a
     command: "run-shell $TMUX_HOME/smart-name.sh --menu"
   - name: Pi sessions
