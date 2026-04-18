@@ -191,7 +191,7 @@ in
 
     tasknotes = {
       vaultPath = mkOpt types.str "/home/emiller/obsidian-vault";
-      tasksDir = mkOpt types.str "00_Inbox/Tasks/Bugster";
+      tasksDir = mkOpt types.str "01_Tasks";
     };
 
     sources = mkOpt (types.listOf sourceType) [ ];
@@ -216,6 +216,12 @@ in
 
   config = mkIf cfg.enable (
     optionalAttrs (!isDarwin) {
+      assertions = [
+        {
+          assertion = cfg.tasknotes.tasksDir == "01_Tasks";
+          message = "Bugster tasknotes.tasksDir must be 01_Tasks; 00_Inbox is landing-only and would split the Obsidian source of truth.";
+        }
+      ];
 
       # Ensure dagster is enabled with tailscale UI access
       modules.services.dagster = {
