@@ -93,9 +93,7 @@ smart_model_routing:
   max_simple_words: 28
   cheap_model:
     provider: nous
-    # model: minimax/minimax-m2.7
-    # Trying MiMo for now since it's free on Nous at the moment.
-    model: xiaomi/mimo-v2-pro
+    model: minimax/minimax-m2.7
     thinking: auto
 
 # Auxiliary services
