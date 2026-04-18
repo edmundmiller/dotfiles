@@ -660,6 +660,10 @@ in
     EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
   };
 
+  systemd.services.hermes-gateway-radar.serviceConfig = {
+    EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
+  };
+
   systemd.services.hermes-gateway-betty.serviceConfig.ReadWritePaths = [
     "/var/lib/hermes-betty"
     "/home/emiller/mill-docs"
