@@ -30,6 +30,7 @@ let
     pkgs.coreutils
     pkgs.findutils
     pkgs.git
+    pkgs.git-lfs
     pkgs.gnugrep
     pkgs.gnused
     pkgs.just
@@ -282,7 +283,10 @@ in
         ];
       };
 
-      # Setup service — clone/update bugster repo before code server starts
+      # Setup service — clone/update bugster repo before code server starts.
+      # On every `hey nuc`, rerun setup so the repo checkout + generated
+      # bugster.toml are refreshed, then restart the code server via `partOf`
+      # below so live Dagster picks up the new code/config immediately.
       systemd.services.bugster-setup = {
         description = "Bugster repo setup";
         wantedBy = [ "multi-user.target" ];
@@ -307,6 +311,12 @@ in
           GIT_TERMINAL_PROMPT = "0";
         };
       };
+
+      system.activationScripts.bugsterRefresh = lib.stringAfter [ "agenix" ] ''
+        if systemctl list-unit-files bugster-setup.service >/dev/null 2>&1; then
+          systemctl restart bugster-setup.service || true
+        fi
+      '';
 
       # Make dagster-code-bugster depend on setup and restart when setup reruns
       # so a repo pull or regenerated bugster.toml is actually picked up.
