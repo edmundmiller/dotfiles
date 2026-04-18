@@ -170,6 +170,9 @@ Open tmux-which-key with `prefix Space`, then:
 | `g`   | Git TUI popup                                                         |
 | `G`   | Critique (diff review) popup                                          |
 | `R`   | Critique (staged diff) popup                                          |
+| `]`   | Hunk (diff review) in persistent right pane                           |
+| `}`   | Hunk (staged diff) in persistent right pane                           |
+| `{`   | Hunk (committed-on-branch) in persistent right pane                   |
 | `g h` | Hunk (diff review) in right pane (tmux-which-key Git submenu)         |
 | `g H` | Hunk (staged diff) in right pane (tmux-which-key Git submenu)         |
 | `g c` | Hunk (committed-on-branch) in right pane (tmux-which-key Git submenu) |
