@@ -471,16 +471,18 @@ in
           dotenv_path = pathlib.Path(sys.argv[3])
           op_bin = sys.argv[4]
 
-
           refs = json.loads(refs_path.read_text(encoding="utf-8"))
           managed_keys = set(refs)
           existing_lines = []
           if dotenv_path.exists():
               existing_lines = dotenv_path.read_text(encoding="utf-8").splitlines()
 
+          existing_values = {}
           kept_lines = []
           for line in existing_lines:
-              key, sep, _rest = line.partition("=")
+              key, sep, rest = line.partition("=")
+              if sep:
+                  existing_values[key] = rest
               if sep and key in managed_keys:
                   continue
               kept_lines.append(line)
@@ -488,6 +490,7 @@ in
           rendered_lines = list(kept_lines)
           failed_keys = []
           empty_keys = []
+          preserved_keys = []
           for key, ref in refs.items():
               try:
                   value = subprocess.check_output(
@@ -497,10 +500,20 @@ in
                       timeout=15,
                   ).rstrip("\n")
               except Exception:
+                  fallback = existing_values.get(key, "")
+                  if fallback:
+                      preserved_keys.append(f"{key} ({ref})")
+                      rendered_lines.append(f"{key}={fallback}")
+                      continue
                   failed_keys.append(f"{key} ({ref})")
                   continue
 
               if not value:
+                  fallback = existing_values.get(key, "")
+                  if fallback:
+                      preserved_keys.append(f"{key} ({ref})")
+                      rendered_lines.append(f"{key}={fallback}")
+                      continue
                   empty_keys.append(f"{key} ({ref})")
                   continue
 
@@ -519,6 +532,14 @@ in
               extra = "" if len(empty_keys) <= 5 else f" (+{len(empty_keys) - 5} more)"
               print(
                   f"warning: {len(empty_keys)} Hermes secret(s) resolved empty from 1Password: {sample}{extra}",
+                  file=sys.stderr,
+              )
+
+          if preserved_keys:
+              sample = ", ".join(preserved_keys[:5])
+              extra = "" if len(preserved_keys) <= 5 else f" (+{len(preserved_keys) - 5} more)"
+              print(
+                  f"warning: preserving {len(preserved_keys)} existing Hermes secret(s) because 1Password did not return a fresh value: {sample}{extra}",
                   file=sys.stderr,
               )
 
