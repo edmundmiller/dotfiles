@@ -162,22 +162,23 @@ Open tmux-which-key with `prefix Space`, then:
 
 ### Splits & Tools
 
-| Key | Action                           |
-| --- | -------------------------------- |
-| `u` | Split vertical + jjui            |
-| `U` | Split horizontal + jjui          |
-| `C` | Prompt: run command in new split |
-| `g` | Git TUI popup                    |
-| `G` | Critique (diff review) popup     |
-| `R` | Critique (staged diff) popup     |
-| `H` | Hunk (diff review) popup         |
-| `J` | Hunk (staged diff) popup         |
-| `O` | Opensessions config popup        |
-| `f` | File picker popup                |
-| `F` | File picker (git root) popup     |
-| `D` | Directory picker popup           |
-| `z` | Zoxide picker popup              |
-| `d` | Zoxide dir-only picker popup     |
+| Key   | Action                                                                |
+| ----- | --------------------------------------------------------------------- |
+| `u`   | Split vertical + jjui                                                 |
+| `U`   | Split horizontal + jjui                                               |
+| `C`   | Prompt: run command in new split                                      |
+| `g`   | Git TUI popup                                                         |
+| `G`   | Critique (diff review) popup                                          |
+| `R`   | Critique (staged diff) popup                                          |
+| `g h` | Hunk (diff review) in right pane (tmux-which-key Git submenu)         |
+| `g H` | Hunk (staged diff) in right pane (tmux-which-key Git submenu)         |
+| `g c` | Hunk (committed-on-branch) in right pane (tmux-which-key Git submenu) |
+| `O`   | Opensessions config popup                                             |
+| `f`   | File picker popup                                                     |
+| `F`   | File picker (git root) popup                                          |
+| `D`   | Directory picker popup                                                |
+| `z`   | Zoxide picker popup                                                   |
+| `d`   | Zoxide dir-only picker popup                                          |
 
 ### Opensessions Sidebar (when enabled)
 

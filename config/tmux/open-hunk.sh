@@ -36,8 +36,64 @@ fi
 
 cd "$git_root" || exit 1
 
-if command -v hunk >/dev/null 2>&1; then
-    exec hunk diff "$@"
+mode="worktree"
+pass_through=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --staged|--cached)
+            mode="staged"
+            shift
+            ;;
+        --branch-committed)
+            mode="branch-committed"
+            shift
+            ;;
+        *)
+            pass_through+=("$1")
+            shift
+            ;;
+    esac
+done
+
+review_args=(diff)
+
+case "$mode" in
+    staged)
+        review_args+=(--staged)
+        ;;
+    branch-committed)
+        base_ref=""
+        if upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
+            base_ref="$upstream_ref"
+        else
+            for candidate in origin/main origin/master main master; do
+                if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+                    base_ref="$candidate"
+                    break
+                fi
+            done
+        fi
+
+        if [[ -n "$base_ref" ]]; then
+            merge_base=$(git merge-base HEAD "$base_ref" 2>/dev/null || true)
+            if [[ -n "$merge_base" ]]; then
+                review_args+=("$merge_base...HEAD")
+            else
+                review_args+=(HEAD)
+            fi
+        else
+            review_args+=(HEAD)
+        fi
+        ;;
+esac
+
+if [[ ${#pass_through[@]} -gt 0 ]]; then
+    review_args+=("${pass_through[@]}")
 fi
 
-exec bunx hunkdiff diff "$@"
+if command -v hunk >/dev/null 2>&1; then
+    exec hunk "${review_args[@]}"
+fi
+
+exec bunx hunkdiff "${review_args[@]}"
