@@ -312,12 +312,6 @@ in
         };
       };
 
-      system.activationScripts.bugsterRefresh = lib.stringAfter [ "agenix" ] ''
-        if systemctl list-unit-files bugster-setup.service >/dev/null 2>&1; then
-          systemctl restart bugster-setup.service || true
-        fi
-      '';
-
       # Make dagster-code-bugster depend on setup and restart when setup reruns
       # so a repo pull or regenerated bugster.toml is actually picked up.
       systemd.services.dagster-code-bugster = {
