@@ -15,6 +15,8 @@ The intent is to create a shared source of truth for:
 
 - [tmux-ade-spec.md](./tmux-ade-spec.md) — primary draft spec for building a
   tmux-first ADE in this repo
+- [../tmux/managing-agents.md](../tmux/managing-agents.md) — user-first
+  operating model for launching/managing agent workflows in tmux
 
 ## How to use these docs
 

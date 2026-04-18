@@ -954,7 +954,7 @@ in
         };
         tasknotes = {
           vaultPath = "/home/emiller/obsidian-vault";
-          tasksDir = "00_Inbox/Tasks/Bugster";
+          tasksDir = "01_Tasks";
         };
         sources = [
           {

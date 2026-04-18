@@ -18,6 +18,8 @@ system works, what is intentional, and where changes should land.
 - [ade/README.md](./ade/README.md) — Agentic Development Environment docs index
 - [ade/tmux-ade-spec.md](./ade/tmux-ade-spec.md) — first spec for a
   tmux-centered Agentic Development Environment
+- [tmux/managing-agents.md](./tmux/managing-agents.md) — user-first tmux agent
+  launch model and architecture layering
 
 ### Runbooks
 

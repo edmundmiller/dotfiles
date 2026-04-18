@@ -80,6 +80,9 @@ bind A run '$TMUX_HOME/open-pi-here.sh'
 # Toggle tml layout (AI + lazygit + shell)
 bind T run '$TMUX_HOME/toggle-tml.sh'
 
+# New sibling worktree cockpit (opensessions + hermes + hunk)
+bind Z run-shell "bash $TMUX_HOME/worktree-hermes-hunk-prompt.sh"
+
 # Git/review popups
 bind g display-popup -E -w 80% -h 80% -d "#{pane_current_path}" "$TMUX_HOME/open-git-tui.sh"
 bind G display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "$TMUX_HOME/open-critique.sh"
