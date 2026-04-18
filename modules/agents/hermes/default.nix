@@ -458,6 +458,13 @@ in
                     if [ -s ${escapeShellArg secretRefsJson} ]; then
                       if command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
                         tmp="$(${pkgs.coreutils}/bin/mktemp)"
+                        # Probe for 1Password availability before attempting secret reads.
+                        # If locked/closed, op vault list hangs waiting for Touch ID. Skipping
+                        # silently preserves existing secrets without spamming warnings on every
+                        # rebuild when 1Password happens to be locked.
+                        if ! ${pkgs.coreutils}/bin/timeout 5 ${opBin} vault list >/dev/null 2>&1; then
+                          echo "warning: 1Password unavailable (locked or closed); preserving existing Hermes secrets" >&2
+                        else
                         ${yamlPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
           import json
           import os
@@ -552,6 +559,7 @@ in
           PY
                         ${pkgs.coreutils}/bin/install -m 0600 "$tmp" "$dotenv_target"
                         ${pkgs.coreutils}/bin/rm -f "$tmp"
+                        fi
                       else
                         echo "warning: 1Password CLI unavailable; skipping Hermes dotenv materialization" >&2
                       fi
