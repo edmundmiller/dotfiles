@@ -73,7 +73,8 @@ with lib;
     # tmux-which-key: discoverable keybinding menu
     set -g @tmux-which-key-xdg-enable 1
     run-shell 'chmod -R u+w "$HOME/.local/share/tmux/plugins/tmux-which-key" 2>/dev/null; true'
-    run-shell ${pkgs.tmuxPlugins.tmux-which-key}/share/tmux-plugins/tmux-which-key/plugin.sh.tmux
+    # Keep reload resilient if plugin startup exits non-zero.
+    run-shell '${pkgs.tmuxPlugins.tmux-which-key}/share/tmux-plugins/tmux-which-key/plugin.sh.tmux || true'
 
     # Dotbar theme (must run before prefix-highlight)
     run-shell ${tmux-dotbar}/dotbar.tmux
