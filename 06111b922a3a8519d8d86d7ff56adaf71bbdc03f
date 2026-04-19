@@ -1,0 +1,27 @@
+packages/hermes-agent-with-acp/default.nix
+  f9eec3d6b2ae8466 1-186
+modules/agents/hermes/default.nix
+  f9eec3d6b2ae8466 13,24,55-56,129,135
+flake.nix
+  f9eec3d6b2ae8466 162-166,168-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "06111b922a3a8519d8d86d7ff56adaf71bbdc03f",
+  "prompts": {
+    "f9eec3d6b2ae8466": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01c051f4-8b0d-4e66-abcc-7a7a9f45751e",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 240,
+      "total_deletions": 206,
+      "accepted_lines": 202,
+      "overriden_lines": 0
+    }
+  }
+}
