@@ -57,6 +57,7 @@ let
       resolved = builtins.tryEval (lib.getExe pkgs._1password-cli);
     in
     if resolved.success then resolved.value else "op";
+  opReadTimeoutSeconds = 15;
   dotenvPython = pkgs.python3;
   piRequiredSecretKeys = lib.unique (
     cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
@@ -521,7 +522,7 @@ in
                       [op_bin, "read", ref],
                       text=True,
                       stderr=subprocess.DEVNULL,
-                      timeout=15,
+                      timeout=${toString opReadTimeoutSeconds},
                   ).rstrip("\n")
               except Exception:
                   fallback = existing_values.get(key, "")
