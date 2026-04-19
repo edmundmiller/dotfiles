@@ -19,8 +19,7 @@
               "config/claude/plugins/.*/plugin\\.json$",
               "config/claude/plugins/.*/commands/.*\\.md$",
               "config/claude/plugins/.*/skills/.*/.*\\.md$",
-              "config/claude/plugins/.*/hooks/.*\\.(py|mjs|js|ts)$",
-              "config/claude/skills/.*\\.md$"
+              "config/claude/plugins/.*/hooks/.*\\.(py|mjs|js|ts)$"
             ]
           }
         ]

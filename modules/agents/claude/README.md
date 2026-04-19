@@ -1,81 +1,32 @@
 # Claude CLI Module
 
-Claude Code shell integration for nix-darwin. Manages settings, agents, shared skills, and WakaTime integration.
+Minimal nix-darwin wiring for Claude Code. This mainly exists so native Claude Code and `acpx claude` can share the same baseline Claude runtime config.
 
-## Installation
-
-Enable in host config:
+## Enable
 
 ```nix
-modules.shell.claude.enable = true;
+modules.agents.claude.enable = true;
 ```
 
-## What This Module Provides
+## What it manages
 
-- **Settings symlink:** `~/.claude/settings.json` -> nix store
-- **Session instructions:** `~/.claude/CLAUDE.md` -> nix store
-- **Shared agents:** Symlinked from `config/agents/` (single source of truth)
-- **Skills bridge:** `~/.claude/skills` -> `~/.agents/skills`
-- **WakaTime integration:** API key via agenix secret decryption
+- `claude-code` package
+- `~/.claude/settings.json` from `config/claude/settings.json`
+- `~/.claude/CLAUDE.md` built from `config/agents/rules/*.md`
+- `~/.claude/agents/` from `config/agents/modes/`
+- `~/.claude/skills` → `~/.agents/skills`
+- Darwin-only `~/.wakatime.cfg`
 
-## Files
+## Repo-local Claude plugin sources
 
-| Source                        | Destination               | Purpose                     |
-| ----------------------------- | ------------------------- | --------------------------- |
-| `config/claude/settings.json` | `~/.claude/settings.json` | CLI settings, marketplaces  |
-| `config/agents/rules/*.md`    | `~/.claude/CLAUDE.md`     | Per-session instructions    |
-| `config/agents/modes/`        | `~/.claude/agents/`       | Custom agents (shared)      |
-| `~/.agents/skills/`           | `~/.claude/skills/`       | Skills compatibility bridge |
+These stay in the repo for development/reference, but installed plugins still live in `~/.claude/plugins/`:
 
-Project-local skills should live in `.agents/skills/`.
+- `config/claude/plugins/claude-lint/`
+- `config/claude/plugins/github/`
+- `config/claude/plugins/json-to-toon/`
 
-## Plugin Management
+## Notes
 
-Plugins are **NOT** managed by nix. Install manually:
-
-```bash
-# From official marketplace
-claude plugin install <plugin-name>
-
-# From custom marketplace (defined in settings.json)
-claude plugin marketplace add <marketplace-name>
-claude plugin install <marketplace>@<plugin>
-```
-
-Plugin directories:
-
-- System plugins: `~/.claude/plugins/`
-- Local dev: `config/claude/plugins/` (for testing)
-
-## WakaTime Integration
-
-WakaTime API key is stored as an agenix secret and referenced via vault command:
-
-```ini
-# Generated ~/.wakatime.cfg
-[settings]
-api_key_vault_cmd = cat /path/to/decrypted/wakatime-api-key
-```
-
-Requires agenix secret `wakatime-api-key` to be configured.
-
-## Troubleshooting
-
-### Settings validation errors
-
-If you see schema validation errors for `extraKnownMarketplaces`, check the format in `config/claude/settings.json`. See AGENTS.md for correct schema.
-
-### Plugins not found after rebuild
-
-Plugins are user-managed and persist across rebuilds. If missing:
-
-```bash
-claude plugin list              # Check installed plugins
-claude plugin marketplace list  # Check available marketplaces
-```
-
-### WakaTime not tracking
-
-1. Verify secret exists: `ls ~/.config/agenix/`
-2. Check wakatime config: `cat ~/.wakatime.cfg`
-3. Test API key: `wakatime --today`
+- Shared skills and modes live under `config/agents/`
+- Project-local skills belong in `.agents/skills/`
+- If Claude reports settings schema errors, check `config/claude/settings.json`

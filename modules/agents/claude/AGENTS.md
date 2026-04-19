@@ -2,71 +2,19 @@
 
 ## Purpose
 
-Nix module for Claude Code CLI. Manages settings, shared agents/skills, and WakaTime integration.
+Minimal Nix module for Claude Code. It keeps Claude pointed at the shared rules, modes, and skills layout while preserving a small amount of Claude-specific runtime config.
 
-## Module Structure
+## Key paths
 
-```
-modules/agents/claude/
-├── default.nix   # Module definition
-├── README.md     # Human docs
-└── AGENTS.md     # This file
+- `modules/agents/claude/default.nix` - module definition
+- `config/claude/settings.json` - Claude-specific settings
+- `config/agents/rules/` - source for `~/.claude/CLAUDE.md`
+- `config/agents/modes/` - source for `~/.claude/agents/`
+- `config/claude/plugins/` - repo-local Claude plugin sources
 
-config/claude/
-├── settings.json # CLI settings (symlinked to ~/.claude/)
-├── CLAUDE.md     # Per-session instructions
-└── plugins/      # Local plugin development (NOT deployed)
+## Facts
 
-config/agents/
-├── modes/        # Shared agents (symlinked to ~/.claude/agents/)
-└── skills/       # Shared skills (installed to ~/.agents/skills/)
-
-.agents/
-└── skills/       # Project-local cross-agent skills
-```
-
-## Key Facts
-
-- **Agents:** Shared across agents (single source of truth in `config/agents/`)
-- **Claude global skills:** `~/.claude/skills` is a bridge to `~/.agents/skills`
-- **Settings:** Nix-managed (symlinked from store, read-only)
-- **Plugins:** NOT nix-managed (user installs manually)
-- **WakaTime:** API key via agenix secret decryption (Darwin only)
-
-## extraKnownMarketplaces Schema
-
-The `source` property must be an **object**, not a string:
-
-```json
-// CORRECT
-"extraKnownMarketplaces": {
-  "marketplace-name": {
-    "source": {
-      "source": "github",
-      "repo": "owner/repo-name"
-    }
-  }
-}
-
-// WRONG - will cause validation error
-"extraKnownMarketplaces": {
-  "marketplace-name": {
-    "source": "github",
-    "repo": "owner/repo-name"
-  }
-}
-```
-
-## Common Issues
-
-**Settings validation error** -> Check `extraKnownMarketplaces` schema format above
-
-**Plugins missing** -> Plugins are user-managed, not deployed by nix
-
-**WakaTime not working** -> Requires agenix secret `wakatime-api-key`
-
-## Related Files
-
-- `modules/agents/opencode/` - Sibling module (shares agent/skill directories)
-- `config/claude/plugins/*/` - Local plugin development directories
-- `hosts/*/default.nix` - Enable with `modules.agents.claude.enable = true`
+- Enable with `modules.agents.claude.enable = true`
+- `~/.claude/skills` is a bridge to `~/.agents/skills`
+- Plugins are user-installed; this repo only keeps source trees and settings
+- WakaTime config is Darwin-only and depends on `wakatime-api-key`

@@ -1,72 +1,20 @@
 # Claude Code Configuration
 
-> Agent-facing documentation for the Claude Code directory structure
+## Purpose
 
-## Directory Structure
+This directory now holds only the Claude-specific pieces that are still worth keeping around when most shared agent behavior lives in `config/agents/`.
 
-```
-config/claude/
-├── plugins/          # Claude Code plugins (user-managed)
-│   ├── claude-lint/  # Plugin validation on save
-│   ├── github/       # PR review commands
-│   └── jj/           # Jujutsu version control integration
-├── AGENTS.md         # This file (directory reference)
-└── settings.json     # Claude Code settings
-```
+## Contents
 
-## Shared Resources
+- `settings.json` - Claude runtime settings used by native Claude Code and `acpx claude`
+- `plugins/claude-lint/` - local plugin source for plugin validation
+- `plugins/github/` - local plugin source for PR review commands
+- `plugins/json-to-toon/` - local plugin source for prompt compression
 
-**Skills and agents are shared across agents:**
+## Shared elsewhere
 
-- Global skills: `config/agents/skills/` → installed to `~/.agents/skills/`
-- Claude bridge: `~/.claude/skills/` → symlinked to `~/.agents/skills/`
-- Project-local skills: `.agents/skills/`
-- Agents: `config/agents/modes/` → symlinked to `~/.claude/agents/`
+- Skills: `config/agents/skills/`
+- Modes/agents: `config/agents/modes/`
+- Rules/instructions: `config/agents/rules/`
 
-**Agent instructions:**
-
-- Built dynamically from `config/agents/rules/*.md`
-- Concatenated into `~/.claude/CLAUDE.md` at system activation
-- Numeric prefixes control ordering (01-, 02-, etc.)
-
-## Key Plugins
-
-**claude-lint** (`config/claude/plugins/claude-lint/`)
-
-- Real-time validation of Claude Code plugins
-- Runs on file save via hook
-- Uses claudelint for frontmatter/structure checks
-
-**jj** (`config/claude/plugins/jj/`)
-
-- Jujutsu version control integration
-- Commands: /jj:commit, /jj:log, /jj:diff, etc.
-- Skills: commit message generation, change management
-
-**github** (`config/claude/plugins/github/`)
-
-- PR review commands
-- Commands: /gh:pr-review, /gh:pr-review-improve
-
-## Nix Management
-
-Files in this directory are symlinked by `modules/agents/claude/default.nix`:
-
-- `settings.json` → `~/.claude/settings.json`
-- `config/agents/modes/` → `~/.claude/agents/`
-- `~/.agents/skills/` → `~/.claude/skills/` (compatibility bridge)
-- Rules concatenated → `~/.claude/CLAUDE.md`
-
-After `hey rebuild`, symlinks update automatically. Restart Claude Code to pick up changes.
-
-## Plugin Development
-
-Each plugin lives in `config/claude/plugins/<name>/`:
-
-- `.claude-plugin/plugin.json` - Metadata and schema
-- `commands/` - Command files with frontmatter
-- `hooks/` - Executable scripts for lifecycle events
-- `skills/` - Skill files with frontmatter
-- `README.md` - User documentation
-
-See `.claudelint.toml` for validation rules.
+`modules/agents/claude/default.nix` wires those into `~/.claude/`.

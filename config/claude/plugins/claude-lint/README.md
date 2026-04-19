@@ -21,7 +21,6 @@ The plugin monitors changes to:
 - `config/claude/plugins/*/commands/*.md` - Slash command definitions
 - `config/claude/plugins/*/skills/*/*.md` - Skill definitions
 - `config/claude/plugins/*/hooks/*.(py|mjs|js|ts)` - Hook implementations
-- `config/claude/skills/*.md` - Standalone skill files
 
 ## How It Works
 
@@ -38,7 +37,7 @@ When you save plugin files, you'll see validation feedback:
 ```
 ## Plugin Validation Results
 
-✅ **config/claude/plugins/jj**
+✅ **config/claude/plugins/github**
 
 ❌ **config/claude/plugins/my-plugin**
 ```

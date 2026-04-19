@@ -5,23 +5,10 @@
     "email": "claude@edmundmiller.dev"
   },
   "metadata": {
-    "description": "Version control workflow plugins for Jujutsu and Git, plus development utilities",
+    "description": "Local Claude Code plugin source for maintained dotfiles plugins",
     "version": "0.1.0"
   },
   "plugins": [
-    {
-      "name": "jj",
-      "source": "./config/claude/plugins/jj",
-      "description": "Basic Jujutsu workflow for commit stacking and curation. Commands: /jj:commit (stack commits), /jj:split (pattern-based split), /jj:squash (merge commits), /jj:cleanup (remove workspaces). Includes auto-formatting hook.",
-      "version": "0.2.0",
-      "author": {
-        "name": "emiller"
-      },
-      "keywords": ["jujutsu", "jj", "version-control", "workflow", "commit-stacking"],
-      "license": "MIT",
-      "category": "version-control",
-      "tags": ["jujutsu", "workflow", "git-compatible"]
-    },
     {
       "name": "json-to-toon",
       "source": "./config/claude/plugins/json-to-toon",
@@ -30,10 +17,19 @@
       "author": {
         "name": "edmundmiller"
       },
-      "keywords": ["json", "toon", "token-optimization", "compression"],
+      "keywords": [
+        "json",
+        "toon",
+        "token-optimization",
+        "compression"
+      ],
       "license": "MIT",
       "category": "development-utilities",
-      "tags": ["optimization", "tokens", "automation"]
+      "tags": [
+        "optimization",
+        "tokens",
+        "automation"
+      ]
     }
   ]
 }
