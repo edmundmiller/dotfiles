@@ -131,7 +131,9 @@ let
 
       if [ -x "$out/bin/pi" ]; then
         wrapProgram "$out/bin/pi" \
-          --run ${escapeShellArg "${piSecretPreflight}"}
+          --run ${escapeShellArg "${piSecretPreflight}"} \
+          --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
+          --unset SDKROOT
       fi
 
       runHook postInstall
