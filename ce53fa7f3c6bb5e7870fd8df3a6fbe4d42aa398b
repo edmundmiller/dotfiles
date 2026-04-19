@@ -1,0 +1,25 @@
+modules/agents/pi/default.nix
+  b56b1e7c82501438 60,525
+modules/agents/hermes/default.nix
+  b56b1e7c82501438 156,508
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "ce53fa7f3c6bb5e7870fd8df3a6fbe4d42aa398b",
+  "prompts": {
+    "b56b1e7c82501438": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "98845ecc-87d7-405c-8cc8-7323b458cbe1",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 2,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    }
+  }
+}
