@@ -194,22 +194,6 @@
         "type": "github"
       }
     },
-    "brennerspear-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1776627271,
-        "narHash": "sha256-WZC/e3kOx2NLwBeoL/AgQqfmTIcpl4W75udRWHg336k=",
-        "owner": "openclaw",
-        "repo": "skills",
-        "rev": "d60b95e2175f4ded54454f9561ece4aad1ff09a2",
-        "type": "github"
-      },
-      "original": {
-        "owner": "openclaw",
-        "repo": "skills",
-        "type": "github"
-      }
-    },
     "brew-src": {
       "flake": false,
       "locked": {
@@ -1712,7 +1696,6 @@
         "acpx-repo": "acpx-repo",
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
-        "brennerspear-skills": "brennerspear-skills",
         "diffity-repo": "diffity-repo",
         "dotfiles-repo": "dotfiles-repo",
         "hunk-repo": "hunk-repo",
