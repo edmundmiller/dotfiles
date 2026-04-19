@@ -1,0 +1,23 @@
+skills/flake.nix
+  7e4014bba3d0af73 65-69,162-167,206-207
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "037791b9cf2c3c3f282d589f49835501243a05a0",
+  "prompts": {
+    "7e4014bba3d0af73": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "7a6f55b9-0ba2-4cb4-ac00-8a3e143a7b51",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 54,
+      "total_deletions": 0,
+      "accepted_lines": 54,
+      "overriden_lines": 0
+    }
+  }
+}
