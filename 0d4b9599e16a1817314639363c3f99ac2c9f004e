@@ -1,0 +1,23 @@
+config/pi/aliases.zsh
+  dea90c55ecd07ad7 255-259
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "0d4b9599e16a1817314639363c3f99ac2c9f004e",
+  "prompts": {
+    "dea90c55ecd07ad7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "37322fa1-f506-4a5f-a41d-13d164570b19",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
