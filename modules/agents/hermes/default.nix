@@ -14,7 +14,7 @@ let
 
   yamlFormat = pkgs.formats.yaml { };
   yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
-  hermesVcc = pkgs.callPackage ../../../packages/hermes-vcc/default.nix { };
+  hermesVcc = pkgs.my.hermes-vcc;
   secretRefsJson = pkgs.writeText "hermes-secret-references.json" (
     builtins.toJSON cfg.secretReferences
   );
@@ -111,8 +111,8 @@ in
 
     homeDir = mkOption {
       type = str;
-      default = "$XDG_CONFIG_HOME/hermes";
-      description = "Hermes home directory exported as HERMES_HOME.";
+      default = "${config.user.home}/.hermes";
+      description = "Hermes home directory (defaults to ~/.hermes).";
     };
 
     package = mkOption {
@@ -202,25 +202,17 @@ in
         home.sessionVariables.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
 
         home.activation.hermes-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                    configured_home=${escapeShellArg cfg.homeDir}
-                    hermes_home="$(${pkgs.python3}/bin/python3 - "$configured_home" <<'PY'
-          import os
-          import sys
-
-          os.environ.setdefault("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config"))
-          print(os.path.expanduser(os.path.expandvars(sys.argv[1])))
-          PY
-                    )"
-                    legacy_home="$HOME/.hermes"
+                    hermes_home=${escapeShellArg cfg.homeDir}
                     config_target="$hermes_home/config.yaml"
                     soul_target="$hermes_home/SOUL.md"
                     skins_target="$hermes_home/skins"
 
                     ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$hermes_home")"
 
-                    if [ ! -e "$hermes_home" ] && [ -d "$legacy_home" ] && [ "$legacy_home" != "$hermes_home" ]; then
-                      echo "Migrating Hermes home from $legacy_home to $hermes_home"
-                      ${pkgs.coreutils}/bin/mv "$legacy_home" "$hermes_home"
+                    legacy_xdg_home="${config.user.home}/.config/hermes"
+                    if [ ! -e "$hermes_home" ] && [ -d "$legacy_xdg_home" ] && [ "$legacy_xdg_home" != "$hermes_home" ]; then
+                      echo "Migrating Hermes home from $legacy_xdg_home to $hermes_home"
+                      ${pkgs.coreutils}/bin/mv "$legacy_xdg_home" "$hermes_home"
                     fi
 
                     ${pkgs.coreutils}/bin/mkdir -p "$hermes_home" "$hermes_home/memories" "$skins_target"
@@ -344,7 +336,7 @@ in
                         if ! ${pkgs.coreutils}/bin/timeout 5 ${opBin} vault list >/dev/null 2>&1; then
                           echo "warning: 1Password unavailable (locked or closed); preserving existing Hermes secrets" >&2
                         else
-                        ${yamlPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
+                        ${pkgs.python3}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
           import json
           import os
           import pathlib
