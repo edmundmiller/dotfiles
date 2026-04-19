@@ -153,6 +153,7 @@ let
       resolved = builtins.tryEval (lib.getExe pkgs._1password-cli);
     in
     if resolved.success then resolved.value else "op";
+  opReadTimeoutSeconds = 15;
   hermesSecretPreflight = pkgs.writeShellScript "hermes-secret-preflight" ''
     set -euo pipefail
 
@@ -504,7 +505,7 @@ in
                       [op_bin, "read", ref],
                       text=True,
                       stderr=subprocess.DEVNULL,
-                      timeout=15,
+                      timeout=${toString opReadTimeoutSeconds},
                   ).rstrip("\n")
               except Exception:
                   fallback = existing_values.get(key, "")
