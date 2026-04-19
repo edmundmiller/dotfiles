@@ -110,6 +110,11 @@ in
         rcFiles = [ "${configDir}/tmux/aliases.zsh" ];
       };
 
+      # jmux only reads ~/.tmux.conf for user overrides; keep a tiny shim to our XDG config.
+      home.file.".tmux.conf".text = ''
+        source-file "$HOME/.config/tmux/config"
+      '';
+
       home.configFile =
         (import ./home-files {
           inherit
