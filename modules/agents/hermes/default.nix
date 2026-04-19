@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -11,105 +10,7 @@ let
   cfg = config.modules.agents.hermes;
   inherit (config.dotfiles) configDir;
 
-  hermesSource = inputs.hermesAgent;
-  hermesDarwinVenv = pkgs.callPackage (hermesSource + /nix/python.nix) {
-    inherit (hermesSource.inputs) uv2nix pyproject-nix pyproject-build-systems;
-    # Hermes 0.9.0's Darwin env fails on Python 3.11 via sphinx 9.1.
-    python311 = pkgs.python312;
-  };
-  hermesBundledSkills = lib.cleanSourceWith {
-    src = hermesSource + /skills;
-    filter = path: _type: !(lib.hasInfix "/index-cache/" path);
-  };
-  hermesRuntimePath = lib.makeBinPath (
-    with pkgs;
-    [
-      nodejs_20
-      ripgrep
-      git
-      openssh
-      ffmpeg
-      tirith
-    ]
-  );
-  hermesDarwinPackage = pkgs.stdenv.mkDerivation {
-    pname = "hermes-agent";
-    inherit ((builtins.fromTOML (builtins.readFile (hermesSource + /pyproject.toml))).project) version;
-
-    dontUnpack = true;
-    dontBuild = true;
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-
-    installPhase = ''
-      runHook preInstall
-
-      mkdir -p $out/share/hermes-agent $out/bin
-      cp -r ${hermesBundledSkills} $out/share/hermes-agent/skills
-
-      ${lib.concatMapStringsSep "\n"
-        (name: ''
-          makeWrapper ${hermesDarwinVenv}/bin/${name} $out/bin/${name} \
-            --suffix PATH : "${hermesRuntimePath}" \
-            --set HERMES_BUNDLED_SKILLS $out/share/hermes-agent/skills
-        '')
-        [
-          "hermes"
-          "hermes-agent"
-          "hermes-acp"
-        ]
-      }
-
-      runHook postInstall
-    '';
-
-    meta = with lib; {
-      description = "AI agent with advanced tool-calling capabilities";
-      homepage = "https://github.com/NousResearch/hermes-agent";
-      mainProgram = "hermes";
-      license = licenses.mit;
-      platforms = platforms.unix;
-    };
-  };
-  hermesBasePackage =
-    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
-      hermesDarwinPackage
-    else
-      inputs.hermesAgent.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  acpxPackage = pkgs.my.acpx;
-  hermesPackageWithAcp = pkgs.stdenvNoCC.mkDerivation {
-    pname = hermesBasePackage.pname or "hermes-agent";
-    version = "${hermesBasePackage.version or "wrapped"}-with-acp";
-    dontUnpack = true;
-    nativeBuildInputs = [
-      pkgs.makeWrapper
-      pkgs.python3
-      pkgs.nodejs
-    ];
-    installPhase = ''
-      runHook preInstall
-
-      cp -a ${hermesBasePackage} "$out"
-      chmod -R u+w "$out"
-
-      mkdir -p "$out/bin"
-      ln -sf ${acpxPackage}/bin/acpx "$out/bin/acpx"
-      for hermes_bin in hermes hermes-agent hermes-acp; do
-        if [ -x "$out/bin/$hermes_bin" ]; then
-          wrapProgram "$out/bin/$hermes_bin" \
-            --prefix PATH : ${
-              lib.makeBinPath [
-                pkgs.nodejs
-                acpxPackage
-              ]
-            } \
-            --run ${escapeShellArg "${hermesSecretPreflight}"}
-        fi
-      done
-
-      runHook postInstall
-    '';
-    inherit (hermesBasePackage) meta;
-  };
+  hermesPackageWithAcp = pkgs.my."hermes-agent-with-acp";
 
   yamlFormat = pkgs.formats.yaml { };
   yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
@@ -120,6 +21,7 @@ let
   hermesRequiredSecretKeys = lib.unique (
     cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
   );
+  hermesRequiredSecretKeysEnv = lib.concatStringsSep "," hermesRequiredSecretKeys;
   hermesRequiredSecretKeysJson = pkgs.writeText "hermes-required-secret-keys.json" (
     builtins.toJSON hermesRequiredSecretKeys
   );
@@ -217,9 +119,8 @@ in
       type = package;
       default = hermesPackageWithAcp;
       description = ''
-        Hermes package to install. The default wraps the upstream Hermes build
-        with the Agent Client Protocol Python dependency so `hermes acp`
-        works out of the box on laptop installs.
+        Hermes package to install. The default uses the overlay-managed
+        Hermes wrapper package with ACP editor integration assets.
       '';
     };
 
@@ -292,11 +193,13 @@ in
   config = mkIf cfg.enable {
     user.packages = [ cfg.package ];
     env.HERMES_HOME = cfg.homeDir;
+    env.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
 
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
         home.sessionVariables.HERMES_HOME = cfg.homeDir;
+        home.sessionVariables.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
 
         home.activation.hermes-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
                     configured_home=${escapeShellArg cfg.homeDir}

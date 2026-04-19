@@ -159,9 +159,17 @@
           };
         };
 
-        packages."${linuxSystem}" = mapModules ./packages (p: pkgs.callPackage p { });
+        packages."${linuxSystem}" =
+          let
+            callPackageWithInputs = lib.callPackageWith (pkgs // { inherit inputs; });
+          in
+          mapModules ./packages (p: callPackageWithInputs p { });
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
-        packages."${darwinSystem}" = mapModules ./packages (p: darwinPkgs.callPackage p { });
+        packages."${darwinSystem}" =
+          let
+            callPackageWithInputs = lib.callPackageWith (darwinPkgs // { inherit inputs; });
+          in
+          mapModules ./packages (p: callPackageWithInputs p { });
 
         nixosModules = {
           dotfiles = import ./.;
