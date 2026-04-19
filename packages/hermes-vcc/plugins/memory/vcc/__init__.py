@@ -95,14 +95,15 @@ VCC_RECALL_SCHEMA = {
     "name": "vcc_recall",
     "description": (
         "Search conversation history across compaction boundaries. "
-        "Supports regex or space-separated keyword queries."
+        "Uses hybrid search (BM25 + vector + reranking) when qmd is available, "
+        "falling back to regex matching. Supports natural language queries."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "query": {
                 "type": "string",
-                "description": "Regex or keywords to search for.",
+                "description": "Search query — natural language, keywords, or regex.",
             },
             "session_id": {
                 "type": "string",
@@ -112,8 +113,15 @@ VCC_RECALL_SCHEMA = {
                 "type": "integer",
                 "default": 20,
             },
+            "expand": {
+                "type": "string",
+                "description": (
+                    "Retrieve full content for a docid (e.g. '#abc123') or "
+                    "qmd file ref from a previous search result."
+                ),
+            },
         },
-        "required": ["query"],
+        "required": [],
     },
 }
 
@@ -189,7 +197,20 @@ class VCCMemoryProvider(_MemoryProviderBase):
 
     def handle_tool_call(self, name: str, args: dict[str, Any]) -> str:
         if name == "vcc_recall":
+            # Expand mode — retrieve full document by docid/file ref
+            expand_ref = args.get("expand")
+            if expand_ref:
+                from hermes_vcc.recall import recall_expand
+
+                content = recall_expand(expand_ref)
+                if content is None:
+                    return json.dumps({"error": f"could not retrieve {expand_ref}"})
+                return json.dumps({"content": content})
+
+            # Search mode
             query = args.get("query", "")
+            if not query:
+                return json.dumps({"error": "query or expand is required"})
             session_id = args.get("session_id") or self._session_id
             max_results = args.get("max_results", 20)
             matches = recall_search(query, session_id, self._archive_dir, max_results)

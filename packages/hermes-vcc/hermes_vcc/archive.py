@@ -128,6 +128,15 @@ def archive_before_compression(
         manifest["last_updated"] = datetime.now(timezone.utc).isoformat()
         _write_manifest(session_dir, manifest)
 
+        # --- 5. Register with qmd for hybrid recall ---
+        try:
+            from hermes_vcc import qmd
+
+            if qmd.is_available():
+                qmd.ensure_collection(session_dir, session_id)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("qmd collection registration skipped: %s", exc)
+
     except Exception as exc:  # noqa: BLE001
         logger.warning(
             "archive_before_compression failed for session %s cycle %d: %s",
