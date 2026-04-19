@@ -62,6 +62,11 @@
       flake = false;
     };
 
+    brennerspear-skills = {
+      url = "github:openclaw/skills";
+      flake = false;
+    };
+
     # Child flake cannot reference ../ paths once materialized in /nix/store.
     # Pull repo-local skill dirs from dotfiles source instead.
     dotfiles-repo = {
@@ -154,6 +159,12 @@
               filter.maxDepth = 2;
             };
 
+            brennerspear = {
+              path = inputs.brennerspear-skills.outPath;
+              subdir = "skills/brennerspear";
+              filter.maxDepth = 2;
+            };
+
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -191,6 +202,9 @@
 
             acpx.from = "acpx";
             acpx.path = "acpx";
+
+            deslop.from = "brennerspear";
+            deslop.path = "deslop";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";
