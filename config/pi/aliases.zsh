@@ -252,3 +252,8 @@ EOF
   review_prompt="Review the checked-out GitHub PR #$pr_number. Start with a concise summary of the change, then inspect the diff carefully. Use /critique, /critique-review, or /diff-review when helpful."
   "$pi_bin" "$@" "$review_prompt"
 }
+
+# pi-overwatch shortcuts
+alias ow='pi-overwatch'
+alias owf='PI_OVERWATCH_REFRESH_MS=500 PI_OVERWATCH_STALE_MS=12000 pi-overwatch'
+alias owm='PI_OVERWATCH_REFRESH_MS=1500 PI_OVERWATCH_STALE_MS=30000 pi-overwatch'
