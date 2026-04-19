@@ -4,13 +4,11 @@ on:
   push:
     paths:
       - "config/claude/plugins/**"
-      - "config/claude/skills/**"
       - ".claudelint.toml"
       - ".github/workflows/validate-plugins.yml"
   pull_request:
     paths:
       - "config/claude/plugins/**"
-      - "config/claude/skills/**"
       - ".claudelint.toml"
       - ".github/workflows/validate-plugins.yml"
 
@@ -56,7 +54,7 @@ jobs:
           fi
 
           # Get changed files in plugin directories
-          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD | grep -E '^config/claude/(plugins|skills)/' || true)
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD | grep -E '^config/claude/plugins/' || true)
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No plugin files changed, skipping validation"
@@ -98,25 +96,6 @@ jobs:
             exit $EXIT_CODE
           else
             echo "No plugin directories changed, skipping validation"
-          fi
-
-      - name: Run claudelint on standalone skills
-        if: steps.changed-files.outputs.skip != 'true'
-        run: |
-          # Add uv to PATH
-          export PATH="$HOME/.cargo/bin:$PATH"
-
-          # Check if any standalone skills changed
-          SKILL_FILES=$(cat changed_files.txt | grep '^config/claude/skills/.*\.md$' || true)
-
-          if [ -n "$SKILL_FILES" ]; then
-            echo "Validating standalone skill files:"
-            echo "$SKILL_FILES"
-
-            # Note: claudelint validates full directories, so we validate the skills directory
-            echo "::group::Validating config/claude/skills/"
-            uvx claudelint config/claude/skills/ || true
-            echo "::endgroup::"
           fi
 
       - name: Summary
