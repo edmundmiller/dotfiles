@@ -3,6 +3,11 @@
 # https://github.com/hlissner/dotfiles
 ########################################
 
+# Ensure key env vars exist even when tmux is launched outside our wrapper.
+if-shell '[ -z "${TMUX_HOME:-}" ]' 'set-environment -g TMUX_HOME "$HOME/.config/tmux"'
+if-shell '[ -z "${DOTFILES:-}" ]' 'set-environment -g DOTFILES "$HOME/.config/dotfiles"'
+if-shell '[ -z "${DOTFILES_BIN:-}" ]' 'set-environment -g DOTFILES_BIN "$HOME/.config/dotfiles/bin"'
+
 # Pass zoxide's DB location to all popup shells (Nix sets _ZO_DATA_DIR=$XDG_CACHE_HOME)
 # run-shell ensures $HOME is expanded by the shell, not tmux's config parser
 run-shell 'tmux set-environment -g _ZO_DATA_DIR "$HOME/.cache"'
@@ -180,7 +185,8 @@ bind -T copy-mode-vi L send-keys -X end-of-line
 set -g @open-editor 'C-e'
 set -g @open-S 'https://www.duckduckgo.com/'
 
-if '[ -f ~/.tmux.conf ]' 'source ~/.tmux.conf'
+# Optional local overrides in XDG path (instead of ~/.tmux.conf).
+if-shell '[ -f "$TMUX_HOME/local.conf" ]' 'source-file "$TMUX_HOME/local.conf"'
 # Load generated module init last so declarative plugin/key settings win.
 source $TMUX_HOME/extraInit
 

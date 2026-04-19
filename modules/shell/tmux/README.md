@@ -20,10 +20,11 @@ modules.shell.tmux.enable = true;
 
 ## Files
 
-| Source           | Destination                | Purpose                            |
-| ---------------- | -------------------------- | ---------------------------------- |
-| `config/tmux/*`  | `~/.config/tmux/`          | Config, theme, scripts             |
-| (auto-generated) | `~/.config/tmux/extraInit` | Plugin loading, window-name config |
+| Source           | Destination                | Purpose                                                   |
+| ---------------- | -------------------------- | --------------------------------------------------------- |
+| `config/tmux/*`  | `~/.config/tmux/`          | Config, theme, scripts                                    |
+| (auto-generated) | `~/.tmux.conf`             | Compatibility shim for tools that hardcode it (e.g. jmux) |
+| (auto-generated) | `~/.config/tmux/extraInit` | Plugin loading, window-name config                        |
 
 ## Configuration Options
 
