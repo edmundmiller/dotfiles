@@ -1,0 +1,23 @@
+modules/shell/tmux/home-files
+  b56b1e7c82501438 76-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "cd2ec899b73eb4ce74e91b04b09cee3d845d5c72",
+  "prompts": {
+    "b56b1e7c82501438": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "98845ecc-87d7-405c-8cc8-7323b458cbe1",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 1,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
