@@ -6,7 +6,6 @@
   stdenvNoCC,
   makeWrapper,
   writeShellScript,
-  writeText,
   python3,
   python312,
   nodejs,
@@ -41,10 +40,8 @@ let
     "hermes-agent"
     "hermes-acp"
   ];
-  hermesHomeBootstrap = writeText "hermes-home-bootstrap.sh" ''
-    if [ -z "''${HERMES_HOME:-}" ]; then
-      export HERMES_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}/hermes"
-    fi
+  hermesHomeBootstrapCmd = ''
+    export HERMES_HOME="''${HERMES_HOME:-$HOME/.hermes}"
   '';
   hermesSecretPreflight = writeShellScript "hermes-secret-preflight" ''
     set -euo pipefail
@@ -126,9 +123,7 @@ let
       ${lib.concatMapStringsSep "\n" (name: ''
         makeWrapper ${hermesDarwinVenv}/bin/${name} $out/bin/${name} \
           --suffix PATH : "${hermesRuntimePath}" \
-          --set HERMES_BUNDLED_SKILLS $out/share/hermes-agent/skills \
-          --run ${lib.escapeShellArg ". ${hermesHomeBootstrap}"} \
-          --run ${lib.escapeShellArg "${hermesSecretPreflight}"}
+          --set HERMES_BUNDLED_SKILLS $out/share/hermes-agent/skills
       '') hermesBins}
 
       runHook postInstall
@@ -168,14 +163,21 @@ stdenvNoCC.mkDerivation {
 
     mkdir -p "$out/share/hermes-agent"
     cp -rT ${hermesSource}/acp_registry "$out/share/hermes-agent/acp_registry"
-    cp -rT ${hermesSource}/acp_registry "$out/acp_registry"
+    rm -rf "$out/acp_registry"
+    ln -s "$out/share/hermes-agent/acp_registry" "$out/acp_registry"
 
     for hermes_bin in ${lib.concatStringsSep " " hermesBins}; do
       if [ -x "$out/bin/$hermes_bin" ]; then
-        wrapProgram "$out/bin/$hermes_bin" \
-          --prefix PATH : ${lib.makeBinPath [ nodejs ]} \
-          --run ${lib.escapeShellArg ". ${hermesHomeBootstrap}"} \
-          --run ${lib.escapeShellArg "${hermesSecretPreflight}"}
+        if [ "$hermes_bin" = "hermes-acp" ]; then
+          wrapProgram "$out/bin/$hermes_bin" \
+            --prefix PATH : ${lib.makeBinPath [ nodejs ]} \
+            --run ${lib.escapeShellArg hermesHomeBootstrapCmd}
+        else
+          wrapProgram "$out/bin/$hermes_bin" \
+            --prefix PATH : ${lib.makeBinPath [ nodejs ]} \
+            --run ${lib.escapeShellArg hermesHomeBootstrapCmd} \
+            --run ${lib.escapeShellArg "${hermesSecretPreflight}"}
+        fi
       fi
     done
 
