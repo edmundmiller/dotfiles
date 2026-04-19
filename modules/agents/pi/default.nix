@@ -383,6 +383,9 @@ in
     env.GITHUB_PAT = "$(gh auth token 2>/dev/null)";
     # pi-tasks backend
     env.PI_TASKS_BACKEND = "beads";
+    # pi-overwatch dashboard cadence / stale detection
+    env.PI_OVERWATCH_REFRESH_MS = "1000";
+    env.PI_OVERWATCH_STALE_MS = "20000";
 
     # Pi configuration via home-manager
     # - config/agents/skills/ → ~/.agents/skills/
@@ -434,6 +437,14 @@ in
             ".pi/agent/extensions/you-are-right-killer.ts".source =
               "${configDir}/pi/extensions/you-are-right-killer.ts";
             ".pi/agent/rtk-config.json".source = "${configDir}/pi/extensions/rtk-config.json";
+            ".pi/overwatch/config.json".text = ''
+              {
+                "dashboard": {
+                  "identity": "both",
+                  "showColumnHeader": true
+                }
+              }
+            '';
 
             # Nix-built node_modules for pi-packages with npm dependencies
             # Source stays mutable in pi-packages/, only deps are store-managed
