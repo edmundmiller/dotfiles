@@ -15,6 +15,7 @@ modules.shell.tmux.enable = true;
 - **Custom wrapper script:** XDG path support + env var fallbacks for Ghostty
 - **Plugin integration:** copycat, prefix-highlight, yank, opencode-status, opencode-integrated
 - **Opensessions integration (optional):** declarative sidebar bootstrap + keybinding handoff
+- **Jmux integration (optional):** popup launcher + Ghostty startup handoff
 - **Theme configuration:** Catppuccin with auto-hide status bar
 - **Shell integration:** tmuxifier initialization, aliases
 
@@ -58,6 +59,22 @@ The module also seeds a writable `~/.config/opensessions/config.json` (if missin
 - pane/window detail rows enabled (`"showWindowDetails": true`)
 
 opensessions keeps its native `prefix o` command table (`s` to focus, `t` to toggle, `1-9` to jump). For discoverability, tmux-which-key also exposes an `opensessions` submenu on `prefix Space o`.
+
+
+### Jmux (optional)
+
+Enable optional jmux integration with:
+
+```nix
+modules.shell.tmux.jmux.enable = true;
+```
+
+When enabled, the module:
+
+- writes `~/.config/tmux/open-jmux.sh` with a Ghostty-safe PATH
+- writes `~/.config/tmux/jmux.conf` and appends it after the base tmux config
+- writes a compatibility `~/.tmux.conf` shim so jmux can read your XDG tmux config
+- makes Ghostty launch jmux on startup instead of the plain `tmux new-session -A -s home`
 
 ## Dev Layouts (tml)
 
