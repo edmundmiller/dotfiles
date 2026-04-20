@@ -9,7 +9,7 @@
   "enabledModels": ["gpt-5.4", "gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4-mini"],
   // UI preferences
   "theme": "terminal",
-  "quietStartup": false,
+  "quietStartup": true,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
   // Compaction - keep more context for complex tasks
@@ -48,11 +48,8 @@
         "memory-mode.ts",
         "plan-mode.ts",
         "handoff.ts",
-        "usage-bar.ts",
         "ultrathink.ts",
-        "status-widget.ts",
         "cost-tracker.ts",
-        "funny-working-message.ts",
         "speedreading.ts",
         "loop.ts",
         "process-info.ts", // writes PID/tmux pane/session/status into session JSONL (for pi-sessions picker)
@@ -121,8 +118,7 @@
     "npm:pi-read-mode",
     // Self-updating markdown docs for pi - https://github.com/Michaelliv/pi-magic-docs
     "npm:pi-magic-docs",
-    // Task management authority: use @tintinweb/pi-tasks for /tasks + Task* tools
-    // Conflict note: pi-beads also registers /tasks; keep disabled unless pi-tasks is removed
+    // Legacy tasks package intentionally disabled to keep task tools out of session
     // "~/.config/dotfiles/pi-packages/pi-beads",
 
     // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
@@ -156,26 +152,14 @@
     "~/.config/dotfiles/pi-packages/pi-dumb-zone",
     // BUG dotfiles-n579: frontmatter warnings on CHANGELOG.md/README.md
     // "npm:visual-explainer",
-    // Thinking timer widget - https://www.npmjs.com/package/pi-thinking-timer
-    "npm:pi-thinking-timer",
     // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
     "npm:pi-ghostty",
-    // Multi-agent messaging/coordination - https://github.com/nicobailon/pi-messenger
-    "npm:pi-messenger",
     // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
     "npm:pi-interactive-shell",
-    // Powerline-style editor footer/statusline - https://github.com/nicobailon/pi-powerline-footer
-    "npm:pi-powerline-footer",
-    // Multi-functional task list/DAG orchestration - https://www.npmjs.com/package/@tintinweb/pi-tasks
-    "npm:@tintinweb/pi-tasks",
-    // Subagent delegation with chains, parallel execution, TUI - https://www.npmjs.com/package/@tintinweb/pi-subagents
-    "npm:@tintinweb/pi-subagents",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
     // Browser/web access tool - https://github.com/nicobailon/pi-web-access
     "npm:pi-web-access",
-    // Perplexity-powered web search (requires Bun + Perplexity Pro/Max) - https://github.com/ivanrvpereira/pi-perplexity
-    "npm:pi-perplexity",
     // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
     "npm:pi-mcporter",
     // GitNexus knowledge graph - auto-enriches reads/searches with call chains - https://github.com/tintinweb/pi-gitnexus
@@ -196,21 +180,12 @@
     "git:github.com/Whamp/pi-token-burden",
     // OpenAI compaction controls - https://www.npmjs.com/package/@jordyvd/pi-openai-compaction
     // "npm:@jordyvd/pi-openai-compaction",
-    // Custom compaction model/template/trigger policy - https://github.com/nicobailon/pi-custom-compaction
-    "npm:pi-custom-compaction",
-    // Algorithmic conversation compactor - https://www.npmjs.com/package/@sting8k/pi-vcc
-    "npm:@sting8k/pi-vcc",
     // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
     // DISABLED: conflicts with pi-web-access on web_search tool
     // "npm:@howaboua/pi-codex-conversion",
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
     // Enables provider id: kilo (e.g., model: kilocode/auto)
     "git:github.com/mrexodia/kilo-pi-provider",
-    // Live bash output view enhancements - vendored local copy
-    // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view
-    "~/.config/dotfiles/pi-packages/pi-bash-live-view",
-    // Terminal/UI animations - https://www.npmjs.com/package/pi-animations
-    "npm:pi-animations",
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/pi-packages/pi-image-attachments",
     // Automatic model switching workflows (e.g. Kimi ↔ Codex handoff)
