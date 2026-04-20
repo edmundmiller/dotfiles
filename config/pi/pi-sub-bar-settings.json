@@ -1,60 +1,60 @@
 {
   "version": 2,
   "display": {
-    "alignment": "split",
-    "barStyle": "both",
-    "barType": "horizontal-bar",
-    "barWidth": "fill",
+    "alignment": "left",
+    "barStyle": "bar",
+    "barType": "horizontal-single",
+    "barWidth": 8,
     "barCharacter": "heavy",
     "containBar": false,
     "brailleFillEmpty": false,
     "brailleFullBlocks": false,
     "colorScheme": "base-warning-error",
     "usageColorTargets": {
-      "title": true,
-      "timer": true,
+      "title": false,
+      "timer": false,
       "bar": true,
-      "usageLabel": true,
+      "usageLabel": false,
       "status": true
     },
-    "resetTimePosition": "front",
+    "resetTimePosition": "off",
     "resetTimeFormat": "relative",
     "resetTimeContainment": "blank",
     "statusIndicatorMode": "icon",
-    "statusIconPack": "emoji",
-    "statusIconCustom": "\u2713\u26a0\u00d7?",
+    "statusIconPack": "minimal",
+    "statusIconCustom": "✓⚠✗?",
     "statusProviderDivider": false,
     "statusDismissOk": true,
-    "showProviderName": true,
+    "showProviderName": false,
     "providerLabel": "none",
     "providerLabelColon": false,
-    "providerLabelBold": true,
-    "baseTextColor": "muted",
+    "providerLabelBold": false,
+    "baseTextColor": "dim",
     "backgroundColor": "none",
-    "showWindowTitle": true,
-    "boldWindowTitle": true,
-    "showUsageLabels": true,
-    "dividerCharacter": "\u2502",
+    "showWindowTitle": false,
+    "boldWindowTitle": false,
+    "showUsageLabels": false,
+    "dividerCharacter": "none",
     "dividerColor": "dim",
-    "dividerBlanks": 1,
-    "showProviderDivider": true,
+    "dividerBlanks": 0,
+    "showProviderDivider": false,
     "statusLeadingDivider": false,
     "statusTrailingDivider": false,
-    "dividerFooterJoin": true,
+    "dividerFooterJoin": false,
     "showTopDivider": false,
-    "showBottomDivider": true,
-    "paddingLeft": 1,
-    "paddingRight": 1,
-    "widgetPlacement": "belowEditor",
+    "showBottomDivider": false,
+    "paddingLeft": 0,
+    "paddingRight": 0,
+    "widgetPlacement": "status",
     "showContextBar": false,
-    "errorThreshold": 25,
-    "warningThreshold": 50,
+    "errorThreshold": 85,
+    "warningThreshold": 70,
     "overflow": "truncate",
     "successThreshold": 75
   },
   "providers": {
     "anthropic": {
-      "showStatus": true,
+      "showStatus": false,
       "windows": {
         "show5h": true,
         "show7d": true,
@@ -62,7 +62,7 @@
       }
     },
     "copilot": {
-      "showStatus": true,
+      "showStatus": false,
       "showMultiplier": true,
       "showRequestsLeft": true,
       "quotaDisplay": "percentage",
@@ -71,14 +71,14 @@
       }
     },
     "gemini": {
-      "showStatus": true,
+      "showStatus": false,
       "windows": {
         "showPro": true,
         "showFlash": true
       }
     },
     "antigravity": {
-      "showStatus": true,
+      "showStatus": false,
       "showCurrentModel": true,
       "showScopedModels": true,
       "windows": {
@@ -92,7 +92,7 @@
       "invertUsage": false,
       "windows": {
         "showPrimary": true,
-        "showSecondary": true
+        "showSecondary": false
       }
     },
     "kiro": {
@@ -111,7 +111,7 @@
   },
   "displayThemes": [],
   "displayUserTheme": null,
-  "pinnedProvider": null,
+  "pinnedProvider": "codex",
   "keybindings": {
     "cycleProvider": "ctrl+alt+p",
     "toggleResetFormat": "ctrl+alt+r"
