@@ -35,6 +35,7 @@
         git.hunk.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        tmux.jmux.enable = true;
         tmux.opensessions.enable = true;
         tmux.experimental.sessionDots.enable = true;
         tmux.experimental.agentStatus.enable = true;
