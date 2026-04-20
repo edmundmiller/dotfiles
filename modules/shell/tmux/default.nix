@@ -144,6 +144,15 @@ in
       };
     }
 
+    (import ./_jmux.nix {
+      inherit
+        lib
+        cfg
+        pkgs
+        config
+        ;
+    })
+
     (import ./activations {
       inherit
         lib
