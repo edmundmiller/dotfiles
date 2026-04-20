@@ -8,96 +8,92 @@ description: >
 
 # Deslop
 
-Use this skill after the change is functionally correct and before `commit`.
-The PR should be describing already-deslopped code, not code that still needs cleanup.
+Run this only after the change is functionally correct and before `commit`.
+PR text should describe already-deslopped code.
 
 ## Goals
 
-- Leave the smallest clear diff that still solves the issue.
-- Run multiple focused review passes in parallel instead of relying on one final subjective read.
-- Preserve behavior while improving readability, type safety, and alignment with repo rules.
+- Keep the smallest clear diff that still solves the task.
+- Run focused reviews in parallel instead of one subjective final pass.
+- Preserve behavior while improving clarity, type safety, and rule alignment.
 
-## Required review vectors
+## Required review vectors (exactly 3 agents, in parallel)
 
-Launch exactly these 3 parallel subagents as soon as the context bundle is ready.
-Give all of them the same context bundle, but assign each a different review vector:
+All 3 agents get the same context bundle, but each gets one vector:
 
-1. Rules and documentation conformance
-   - Are we following `AGENTS.md`, nested `AGENTS.md`, design docs, and core beliefs?
-   - Did we drift from documented repo patterns or ownership boundaries?
-2. Type safety and source of truth
-   - Are we preserving canonical types?
-   - Did we cast, redefine existing types, widen things unnecessarily, or break inference flow?
-   - Could a mistake slip to deploy time instead of build time?
-   - Prefer compile-time guarantees over runtime defensive programming inside typed repo-owned code. Validate or parse only at untrusted boundaries. Once data has crossed a validator-owned boundary or is carried by an inferred repo-owned type, trust it downstream and do not re-parse it.
-   - Use boundary validation only. Do not add defense-in-depth revalidation inside internal TypeScript helpers unless the input is truly untrusted or the operation is irreversible.
-3. Overengineering and simplification
-   - Did we write more code than needed?
-   - Did we create helpers, abstractions, factories, wrappers, or indirection without enough payoff?
-   - Could the same result be expressed more directly?
+1. **Rules and docs conformance**
+   - Check `AGENTS.md`, nested `AGENTS.md`, design docs, and core beliefs.
+   - Flag drift from documented patterns or ownership boundaries.
+2. **Type safety and source of truth**
+   - Preserve canonical types and inference flow.
+   - Flag casts, duplicated/redefined types, or unnecessary widening.
+   - Prefer compile-time guarantees inside typed internal code.
+   - Validate only at untrusted boundaries; do not re-validate trusted internal values.
+3. **Overengineering and simplification**
+   - Remove unnecessary code, wrappers, abstractions, factories, or indirection.
+   - Prefer direct, local solutions when equivalent.
 
 ## Required context bundle
 
-Before delegating, collect and pass the exact paths the reviewers need:
+Read and pass these paths:
 
 - repo root `AGENTS.md`
-- nested `AGENTS.md` files for the changed areas
+- nested `AGENTS.md` for changed areas
 - `docs/index.md`
 - `docs/PLANS.md`
 - `docs/design-docs/index.md`
 - `docs/design-docs/core-beliefs.md`
-- any design doc directly relevant to the changed area
-- the relevant active exec plan when one exists for the current work
-- the changed files and enough nearby context to review them properly
+- directly relevant design docs
+- active exec plan for this work (if any)
+- changed files plus nearby context
 
-If you're working on an ExecPlan, also include:
+If working on an ExecPlan:
 
 - inspect `docs/exec-plans/active/`
-- if one clearly matches the current task, inform the sub agent to study it extensively before starting their focused review as often it contains relevant context, constraints, and acceptance criteria that are not captured in the ticket or design docs.
+- if one clearly matches, tell reviewers to study it carefully before reviewing
 
 ## Delegation protocol
 
-1. Read the context bundle yourself first so the delegation is precise.
-2. Spawn the 3 required parallel subagents immediately.
-   - Do not wait to run local linting or slop checks before delegating.
-   - The point is to let the reviewers work in parallel while you do local verification.
+1. Read the full context bundle yourself first.
+2. Launch all 3 required review agents immediately (in parallel).
+   - Do **not** wait for local lint/slop checks.
 3. Give each agent:
-   - the same context bundle, plus any critical user context that is not captured in the files
+   - same context bundle
    - one assigned review vector
-   - clear instructions to return findings first, ordered by severity, with file references
-4. Wait for all review agents to return.
-   - While they run, start with `pnpm -w lint:slop:delta` to prime yourself on the highest positive deltas, newly introduced hotspots, and the largest improvements.
-5. Read all responses and synthesize them into one balanced report with these headings:
+   - instruction to return findings first, ordered by severity, with file refs
+4. While agents run, start with:
+   - `pnpm -w lint:slop:delta`
+5. After all responses arrive, synthesize under these exact headings:
    - `How did we do?`
    - `Feedback to keep`
    - `Feedback to ignore`
    - `Plan of attack`
-6. Prefer the balanced synthesis over any one subagent's extreme take.
+6. Use balanced synthesis over any single reviewer’s extreme take.
 
-## What to fix automatically
+## Auto-apply feedback (unattended flows)
 
-If you are in an unattended implementation flow, apply the worthwhile feedback immediately before commit. Prioritize:
+Apply clear, in-scope fixes before commit, prioritizing:
 
-- type drift, casting, or duplicated type definitions
-- violations of documented repo boundaries or design beliefs
-- dead helpers, dead code, debug leftovers, placeholder text
-- unnecessary wrappers or indirection that can be removed locally without widening scope
+- type drift, casts, duplicate type definitions
+- documented boundary/design-belief violations
+- dead helpers/code/debug leftovers/placeholders
+- removable local indirection
 
-If feedback is speculative, conflicts across reviewers, or would widen scope materially, leave it out and mention it briefly in the synthesis/workpad.
+Skip speculative, conflicting, or scope-expanding suggestions; note briefly in synthesis/workpad.
 
-## Steps
+## Execution steps
 
-1. Gather the context bundle.
-2. Launch the 3 required review agents in parallel.
-3. While they run, use `pnpm -w lint:slop:delta` to identify the biggest regressions and improvements, then run any other narrow local checks you need.
-4. Wait for their responses and synthesize them.
-5. Apply the worthwhile feedback that is clearly in scope.
-6. Rerun the narrowest affected validation immediately.
-7. Update workpad, commit text, and PR-facing text so they describe the final post-deslop state rather than the earlier draft state.
+1. Gather context bundle.
+2. Launch 3 required review agents in parallel.
+3. Run `pnpm -w lint:slop:delta` and narrow local checks while they run.
+4. Wait for responses and synthesize.
+5. Apply worthwhile in-scope feedback.
+6. Re-run the narrowest affected validation.
+7. Update workpad/commit/PR text to describe final post-deslop state.
 
 ## Stop rules
 
-- Do not turn this into a refactor unrelated to the ticket.
-- Do not churn stable code outside the changed area just to make it prettier.
-- If a cleanup is subjective and not clearly better, leave it alone.
-- Do not blindly apply every subagent suggestion.
+- No refactors unrelated to the ticket.
+- No churn outside changed area for style only.
+- Leave subjective/unclear “improvements” alone.
+- Do not blindly apply every suggestion.
