@@ -34,7 +34,15 @@ with types;
     port = mkOpt int 7391;
   };
 
-  jmux.enable = mkBoolOpt false;
+  jmux = {
+    enable = mkBoolOpt false;
+    package = mkOpt (nullOr package) null;
+    command = mkOpt str "jmux";
+    configFile = mkOpt (nullOr (either str path)) null;
+    key = mkOpt str "J";
+    popupWidth = mkOpt int 90;
+    popupHeight = mkOpt int 90;
+  };
 
   sesh = {
     sessions = mkOpt (listOf (submodule {
