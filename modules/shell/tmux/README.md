@@ -20,11 +20,11 @@ modules.shell.tmux.enable = true;
 
 ## Files
 
-| Source           | Destination                | Purpose                                                   |
-| ---------------- | -------------------------- | --------------------------------------------------------- |
-| `config/tmux/*`  | `~/.config/tmux/`          | Config, theme, scripts                                    |
-| (auto-generated) | `~/.tmux.conf`             | Compatibility shim for tools that hardcode it (e.g. jmux) |
-| (auto-generated) | `~/.config/tmux/extraInit` | Plugin loading, window-name config                        |
+| Source           | Destination                | Purpose                                                                                   |
+| ---------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
+| `config/tmux/*`  | `~/.config/tmux/`          | Config, theme, scripts                                                                    |
+| (auto-generated) | `~/.tmux.conf`             | Compatibility shim for tools that hardcode it (e.g. jmux); only when `jmux.enable = true` |
+| (auto-generated) | `~/.config/tmux/extraInit` | Plugin loading, window-name config                                                        |
 
 ## Configuration Options
 
@@ -33,6 +33,7 @@ modules.shell.tmux = {
   enable = true;
   rcFiles = [ "${configDir}/tmux/theme.conf" ];  # Additional config files
   opensessions.enable = true;
+  jmux.enable = false;                            # set true to use jmux integration
 };
 ```
 
