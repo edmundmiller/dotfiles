@@ -34,6 +34,8 @@ with types;
     port = mkOpt int 7391;
   };
 
+  jmux.enable = mkBoolOpt false;
+
   sesh = {
     sessions = mkOpt (listOf (submodule {
       options = {
