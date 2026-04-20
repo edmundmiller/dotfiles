@@ -1,0 +1,25 @@
+config/ghostty/behavior.conf
+  f645f864e920158b 27-28
+modules/desktop/term/ghostty/default.nix
+  f645f864e920158b 35-37,39-44,55-58,130,132,136,140,142-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "5f029676728d00b3eb677984419c64bc7f19020f",
+  "prompts": {
+    "f645f864e920158b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "f65e37e5-51ca-404d-9cb0-0ffa7d9944a6",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}

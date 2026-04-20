@@ -1,0 +1,29 @@
+modules/shell/tmux/README.md
+  f645f864e920158b 18,64-77
+modules/shell/tmux/default.nix
+  f645f864e920158b 114-118,147-154
+modules/shell/tmux/options
+  f645f864e920158b 37-46
+modules/shell/tmux/_jmux.nix
+  f645f864e920158b 1-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "a0bce569d053b38e2ac2f64667ef5fd2eedf71de",
+  "prompts": {
+    "f645f864e920158b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "f65e37e5-51ca-404d-9cb0-0ffa7d9944a6",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 217,
+      "total_deletions": 93,
+      "accepted_lines": 108,
+      "overriden_lines": 0
+    }
+  }
+}
