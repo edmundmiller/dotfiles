@@ -631,9 +631,14 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
       };
-      # Temporarily disabled: radar crash-loops on NUC because its Home Assistant
-      # endpoint does not resolve, which causes deploy-rs activation rollbacks for
-      # unrelated Hermes changes. Track permanent fix in beads.
+      radar = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment = {
+          CODEX_HOME = "/home/emiller/.codex";
+          HA_URL = "http://127.0.0.1:8123";
+          HASS_URL = "http://127.0.0.1:8123";
+        };
+      };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
@@ -654,7 +659,9 @@ in
     EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
   };
 
-  systemd.services.hermes-gateway-radar.enable = false;
+  systemd.services.hermes-gateway-radar.serviceConfig = {
+    EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
+  };
 
   systemd.services.hermes-gateway-betty.serviceConfig.ReadWritePaths = [
     "/var/lib/hermes-betty"
