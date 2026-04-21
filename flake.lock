@@ -87,13 +87,13 @@
         ]
       },
       "locked": {
-        "lastModified": 1776538868,
-        "narHash": "sha256-pM5EeBBNMwYeOUWLtXJi6PbkOgeZ4agv/qIGhmT/eQ4=",
-        "ref": "edmundmiller/blog-monitor",
-        "rev": "760abf448c3038210a33d4f2b1862d687a9df452",
-        "revCount": 351,
+        "lastModified": 1776728678,
+        "narHash": "sha256-oJPe03gcrXK8b7lrUGdPCFvLoqW+nAkTbRoU+DG5174=",
+        "ref": "main",
+        "rev": "065b5b98c6013b21c2179a16179a7c101a503e99",
+        "revCount": 361,
         "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/agents-workspace"
+        "url": "file:///Users/emiller/src/personal/agents-workspace"
       },
       "original": {
         "ref": "main",
