@@ -631,10 +631,9 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
       };
-      radar = {
-        authFile = "/home/emiller/.codex/auth.json";
-        environment.CODEX_HOME = "/home/emiller/.codex";
-      };
+      # Temporarily disabled: radar crash-loops on NUC because its Home Assistant
+      # endpoint does not resolve, which causes deploy-rs activation rollbacks for
+      # unrelated Hermes changes. Track permanent fix in beads.
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
@@ -655,9 +654,7 @@ in
     EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
   };
 
-  systemd.services.hermes-gateway-radar.serviceConfig = {
-    EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
-  };
+  systemd.services.hermes-gateway-radar.enable = false;
 
   systemd.services.hermes-gateway-betty.serviceConfig.ReadWritePaths = [
     "/var/lib/hermes-betty"
@@ -780,7 +777,7 @@ in
             workspaceLinks."repos/tnote" = tnoteBaseRepo;
           };
           anne = { };
-          radar = { };
+          # Radar intentionally disabled on NUC until its HA endpoint/runtime is fixed.
           amosburton = {
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
             workspaceLinks."repos/dotfiles" = "/home/emiller/.config/dotfiles";
