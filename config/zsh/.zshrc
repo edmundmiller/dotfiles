@@ -185,3 +185,6 @@ alias oz="oz-preview"
 
 # bun completions
 [ -s "/Users/edmundmiller/.bun/_bun" ] && source "/Users/edmundmiller/.bun/_bun"
+
+# Added by git-ai installer on Tue Apr 21 01:04:51 CDT 2026
+export PATH="/Users/emiller/.git-ai/bin:$PATH"
