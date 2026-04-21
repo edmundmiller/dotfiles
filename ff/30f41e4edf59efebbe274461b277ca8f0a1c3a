@@ -1,0 +1,29 @@
+config/hermes/config.yml
+  f645f864e920158b 258-271
+config/hermes/plugins/tmux-status/__init__.py
+  f645f864e920158b 1-168
+config/hermes/plugins/tmux-status/plugin.yaml
+  f645f864e920158b 1-8
+config/hermes/hooks/tmux-hermes-status.sh
+  f645f864e920158b 1-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "ff30f41e4edf59efebbe274461b277ca8f0a1c3a",
+  "prompts": {
+    "f645f864e920158b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "f65e37e5-51ca-404d-9cb0-0ffa7d9944a6",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 331,
+      "total_deletions": 0,
+      "accepted_lines": 343,
+      "overriden_lines": 0
+    }
+  }
+}
