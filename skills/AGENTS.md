@@ -10,6 +10,8 @@ Manages shared global skills via `agent-skills-nix`.
 2. **Skill selection** — which skills to enable
 3. **Targets** — where skills are installed (symlink-tree into `~/.agents/skills/`; Codex, Pi, OpenCode, and Hermes read there directly; Claude gets a compatibility bridge via `~/.claude/skills/`)
 
+**Hermes note:** Hermes builtin skills do not include these dotfiles shared skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.agents/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
+
 ## Adding a Local Skill
 
 Drop a directory with `SKILL.md` into `config/agents/skills/<name>/`. Auto-enabled via `skills.enableAll = ["local"]`.
