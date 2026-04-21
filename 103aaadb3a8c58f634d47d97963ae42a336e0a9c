@@ -1,0 +1,23 @@
+config/agents/AGENTS.md
+  7980eba5795df7c9 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "103aaadb3a8c58f634d47d97963ae42a336e0a9c",
+  "prompts": {
+    "7980eba5795df7c9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "661193a9-242e-4562-ac3a-b86556c4925e",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 478,
+      "overriden_lines": 0
+    }
+  }
+}
