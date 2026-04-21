@@ -5,6 +5,7 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 ## Quick Reference
 
 - **Global shared skills**: `config/agents/skills/` → `~/.agents/skills`
+- **Skills sync workflow**: see `skills/AGENTS.md` (commit+push skill edits first, then run `hey skills-sync`, then commit+push lockfile updates)
 - **Claude compatibility bridge**: `~/.claude/skills` → `~/.agents/skills`
 - **Project-local skills**: `.agents/skills/`
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`, `~/.config/opencode/agent`
