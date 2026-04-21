@@ -207,7 +207,10 @@
             agents = {
               enable = true;
               dest = ".agents/skills";
-              structure = "symlink-tree";
+              # Hermes skill discovery uses pathlib.rglob("SKILL.md"), which
+              # does not recurse into symlinked directories. Use copy-tree so
+              # ~/.agents/skills contains real directories Hermes can discover.
+              structure = "copy-tree";
             };
           };
         };
