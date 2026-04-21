@@ -10,6 +10,7 @@ let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default;
   anneHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.anne-hermes;
+  radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
@@ -119,7 +120,13 @@ let
       inherit (config.age.secrets.anne-firecrawl-api) path;
     }
   ];
-  hermesRadarSecrets = hermesProviderSecrets;
+  hermesRadarSecrets = builtins.filter (
+    secret:
+    !(builtins.elem secret.envVar [
+      "HA_TOKEN"
+      "HASS_TOKEN"
+    ])
+  ) hermesProviderSecrets;
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
@@ -631,14 +638,6 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
       };
-      radar = {
-        authFile = "/home/emiller/.codex/auth.json";
-        environment = {
-          CODEX_HOME = "/home/emiller/.codex";
-          HA_URL = "http://127.0.0.1:8123";
-          HASS_URL = "http://127.0.0.1:8123";
-        };
-      };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
@@ -659,9 +658,53 @@ in
     EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
   };
 
-  systemd.services.hermes-gateway-radar.serviceConfig = {
-    EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
+  systemd.services.hermes-radar-cron-tick = {
+    description = "Run Radar cron jobs without an interactive gateway";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    path = [
+      radarHermesLauncher
+      hermesAgentBase
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.git
+      pkgs.python3
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = "/var/lib/hermes-radar";
+      EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
+      Environment = [
+        "HOME=/var/lib/hermes-radar"
+        "HERMES_HOME=/var/lib/hermes-radar/.hermes"
+        "HERMES_PROFILE=radar"
+        "MESSAGING_CWD=/var/lib/hermes-radar/.hermes/workspace"
+        "CODEX_HOME=/home/emiller/.codex"
+      ];
+      ExecStart = "${radarHermesLauncher}/bin/radar-hermes cron tick";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      ReadWritePaths = [ "/var/lib/hermes-radar" ];
+    };
   };
+
+  systemd.timers.hermes-radar-cron-tick = {
+    description = "Run Radar background cron jobs on a timer";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30s";
+      Unit = "hermes-radar-cron-tick.service";
+    };
+  };
+
+  systemd.services.hermes-gateway-radar.enable = false;
 
   systemd.services.hermes-gateway-betty.serviceConfig.ReadWritePaths = [
     "/var/lib/hermes-betty"
