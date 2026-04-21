@@ -5,8 +5,8 @@
   // TUI settings
   "tui": {
     "scroll_acceleration": {
-      "enabled": true
-    }
+      "enabled": true,
+    },
   },
   // Model configuration - using Claude as primary
   "model": "anthropic/claude-sonnet-4-6",
@@ -47,7 +47,7 @@
     // NOTE: Migrating from opencode-jj to worktrunk
     // "./plugin/opencode-jj"
     // Disabled: tmux naming is now handled globally by tmux-smart-name
-    // "./plugin/opencode-tmux-namer"
+    // "./plugin/opencode-tmux-namer",
   ],
   // Nextflow Language Server
   "lsp": {
@@ -55,10 +55,10 @@
       "command": [
         "java",
         "-jar",
-        "{env:HOME}/.local/share/opencode/bin/nextflow-language-server/language-server-all.jar"
+        "{env:HOME}/.local/share/opencode/bin/nextflow-language-server/language-server-all.jar",
       ],
-      "extensions": [".nf", ".config"]
-    }
+      "extensions": [".nf", ".config"],
+    },
   },
   // Nextflow formatter
   "formatter": {
@@ -71,35 +71,35 @@
         "4",
         "-harshil-alignment",
         "-sort-declarations",
-        "$FILE"
+        "$FILE",
       ],
-      "extensions": [".nf", "nextflow.config"]
-    }
+      "extensions": [".nf", "nextflow.config"],
+    },
   },
   // MCP servers
   "mcp": {
     "fff": {
       "type": "local",
       "command": ["fff-mcp"],
-      "enabled": true
+      "enabled": true,
     },
     "seqera-platform": {
       "type": "remote",
       "url": "https://mcp.seqera.io/mcp",
       "enabled": false,
       "headers": {
-        "Authorization": "Bearer {env:SEQERA_TOKEN}"
+        "Authorization": "Bearer {env:SEQERA_TOKEN}",
       },
-      "timeout": 10000
+      "timeout": 10000,
     },
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",
       "enabled": true,
       "headers": {
-        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
-      }
-    }
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}",
+      },
+    },
   },
   // Permission configuration - merged existing + Nextflow ecosystem
   "permission": {
@@ -335,13 +335,13 @@
       // Catch-all patterns for bypass attempts
       "*--no-gpg-sign*": "deny",
       "*--no-verify*": "deny",
-      "*gpgsign=false*": "deny"
+      "*gpgsign=false*": "deny",
     },
     "edit": "allow",
     "write": "allow",
     "webfetch": "allow",
     "doom_loop": "allow",
-    "external_directory": "allow"
+    "external_directory": "allow",
   },
   // Nextflow development agents
   "agent": {
@@ -372,12 +372,12 @@
           "docker push *": "ask",
           "darwin-rebuild *": "ask",
           "nixos-rebuild *": "ask",
-          "hey rebuild *": "ask"
+          "hey rebuild *": "ask",
         },
-        "list": "allow"
-      }
-    }
+        "list": "allow",
+      },
+    },
   },
   // Instructions - global rules
-  "instructions": ["~/.config/opencode/rules/*.md"]
+  "instructions": ["~/.config/opencode/rules/*.md"],
 }
