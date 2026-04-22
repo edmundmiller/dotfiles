@@ -132,11 +132,11 @@ let
     ++ [
       {
         envVar = "AGENTMAIL_API_KEY";
-        path = config.services.onepassword-secrets.secretPaths.radarAgentmailCredential;
+        path = "/var/lib/opnix/secrets/radarAgentmailCredential";
       }
       {
         envVar = "EMAIL_PASSWORD";
-        path = config.services.onepassword-secrets.secretPaths.radarAgentmailCredential;
+        path = "/var/lib/opnix/secrets/radarAgentmailCredential";
       }
     ];
   obsidianOpRefs = {
