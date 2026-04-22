@@ -1,25 +1,7 @@
-modules/agents/pi/README.md
-  f645f864e920158b 5-12
-config/pi/extensions/tmux-status.ts
-  f645f864e920158b 2,4-7,10-19,21-26,29,43-218,230,234-260,263,265,272,274,276-277,280,287,292,294,303,307,310-314,317-319,323-324
 ---
 {
   "schema_version": "authorship/3.0.0",
   "git_ai_version": "1.3.2",
   "base_commit_sha": "79c9e7e0f5c1911fe8e25c75206506a7df818fe1",
-  "prompts": {
-    "f645f864e920158b": {
-      "agent_id": {
-        "tool": "pi",
-        "id": "f65e37e5-51ca-404d-9cb0-0ffa7d9944a6",
-        "model": "gpt-5.3-codex"
-      },
-      "human_author": "Edmund Miller",
-      "messages": [],
-      "total_additions": 267,
-      "total_deletions": 65,
-      "accepted_lines": 269,
-      "overriden_lines": 0
-    }
-  }
+  "prompts": {}
 }
