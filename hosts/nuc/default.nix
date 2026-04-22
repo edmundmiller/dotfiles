@@ -123,6 +123,7 @@ let
   hermesRadarSecrets = builtins.filter (
     secret:
     !(builtins.elem secret.envVar [
+      "AGENTMAIL_API_KEY"
       "HA_TOKEN"
       "HASS_TOKEN"
     ])
