@@ -120,14 +120,25 @@ let
       inherit (config.age.secrets.anne-firecrawl-api) path;
     }
   ];
-  hermesRadarSecrets = builtins.filter (
-    secret:
-    !(builtins.elem secret.envVar [
-      "AGENTMAIL_API_KEY"
-      "HA_TOKEN"
-      "HASS_TOKEN"
-    ])
-  ) hermesProviderSecrets;
+  hermesRadarSecrets =
+    (builtins.filter (
+      secret:
+      !(builtins.elem secret.envVar [
+        "AGENTMAIL_API_KEY"
+        "HA_TOKEN"
+        "HASS_TOKEN"
+      ])
+    ) hermesProviderSecrets)
+    ++ [
+      {
+        envVar = "AGENTMAIL_API_KEY";
+        path = config.services.onepassword-secrets.secretPaths.radarAgentmailCredential;
+      }
+      {
+        envVar = "EMAIL_PASSWORD";
+        path = config.services.onepassword-secrets.secretPaths.radarAgentmailCredential;
+      }
+    ];
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
@@ -684,6 +695,12 @@ in
         "HERMES_PROFILE=radar"
         "MESSAGING_CWD=/var/lib/hermes-radar/.hermes/workspace"
         "CODEX_HOME=/home/emiller/.codex"
+        "EMAIL_ADDRESS=norbot@agentmail.to"
+        "EMAIL_IMAP_HOST=imap.agentmail.to"
+        "EMAIL_IMAP_PORT=993"
+        "EMAIL_SMTP_HOST=smtp.agentmail.to"
+        "EMAIL_SMTP_PORT=465"
+        "EMAIL_HOME_ADDRESS=emiller@edmundmiller.dev"
       ];
       ExecStart = "${radarHermesLauncher}/bin/radar-hermes cron tick";
       NoNewPrivileges = true;
@@ -1103,6 +1120,9 @@ in
       };
       scintillateHermesHonchoApiKey = {
         reference = "op://Agents/scintillate Honcho Key/credential";
+      };
+      radarAgentmailCredential = {
+        reference = "op://Agents/Radar Agentmail/credential";
       };
     };
   };
