@@ -2,6 +2,8 @@
 
 import 'common.just'
 
+DARWIN_REBUILD := "/run/current-system/sw/bin/darwin-rebuild"
+
 # Update flake inputs (all if none specified)
 update *inputs:
     #!/usr/bin/env bash
@@ -31,10 +33,10 @@ upgrade:
     echo "Rebuilding system..."
     
     if [[ "{{is_darwin}}" == "true" ]]; then
-        if command -v darwin-rebuild >/dev/null 2>&1; then
-            sudo darwin-rebuild --flake "{{FLAKE_DIR}}#{{flake_host}}" switch
+        if [[ -x "{{DARWIN_REBUILD}}" ]]; then
+            sudo {{DARWIN_REBUILD}} --flake "{{FLAKE_DIR}}#{{flake_host}}" switch
         else
-            echo "darwin-rebuild not found in PATH, building via nix..."
+            echo "darwin-rebuild not found at {{DARWIN_REBUILD}}, building via nix..."
             nix build ".#darwinConfigurations.{{flake_host}}.system"
             if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
                 sudo ./result/sw/bin/darwin-rebuild --flake ".#{{flake_host}}" switch
