@@ -73,7 +73,7 @@
       "default": "allow"
     },
     "show_turn_stats": true,
-    "play_sound_when_agent_done": true,
+    "play_sound_when_agent_done": "when_hidden",
     "favorite_models": [],
     "model_parameters": []
   },
@@ -112,11 +112,12 @@
     }
   },
   "vim_mode": true,
-  "ui_font_size": 16,
-  "buffer_font_size": null,
+  "ui_font_size": 14,
+  "buffer_font_family": "JetBrains Mono",
+  "buffer_font_size": 14,
   "theme": {
     "mode": "system",
-    "light": "Ayu Light",
-    "dark": "Ayu Dark"
+    "light": "Catppuccin Latte",
+    "dark": "Catppuccin Mocha"
   }
 }
