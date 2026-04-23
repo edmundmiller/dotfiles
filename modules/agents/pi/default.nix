@@ -186,73 +186,13 @@ let
     }) agentFiles
   );
 
-  # Convert JSONC to valid JSON:
-  # 1. Strip full-line // comments
-  # 2. Strip inline // comments (after JSON values, not inside strings)
-  # 3. Remove trailing commas before } or ] (invalid in JSON)
-  piSettingsRaw = builtins.readFile "${configDir}/pi/settings.jsonc";
-  piSettingsLines = lib.splitString "\n" piSettingsRaw;
-  isCommentLine =
-    line:
-    lib.hasPrefix "//" (
-      lib.trimWith {
-        start = true;
-        end = false;
-      } line
-    );
-  # Strip inline comments: split on " //" and keep only the first part
-  # This handles patterns like: "value", // comment
-  # Safe because JSON string values containing " //" would be unusual
-  stripInlineComment =
-    line:
-    let
-      parts = lib.splitString " //" line;
-    in
-    if builtins.length parts > 1 then builtins.head parts else line;
-  piSettingsFiltered = map stripInlineComment (
-    builtins.filter (line: !isCommentLine line) piSettingsLines
-  );
-  # Remove trailing commas by stripping commas from lines where the next
-  # non-empty line starts with ] or }
-  removeTrailingCommas =
-    lines:
-    let
-      indexed = lib.imap0 (i: line: { inherit i line; }) lines;
-      # Find next non-empty line after index i
-      nextNonEmpty =
-        i:
-        let
-          rest = lib.drop (i + 1) lines;
-          nonEmpty = builtins.filter (l: builtins.match "^[[:space:]]*$" l == null) rest;
-        in
-        if nonEmpty == [ ] then "" else builtins.head nonEmpty;
-      stripTrailingComma =
-        { i, line }:
-        let
-          next = nextNonEmpty i;
-          trimmedNext = lib.trimWith {
-            start = true;
-            end = false;
-          } next;
-          nextStartsClosing = lib.hasPrefix "]" trimmedNext || lib.hasPrefix "}" trimmedNext;
-          trimmedLine = lib.removeSuffix " " (lib.removeSuffix "\t" line);
-          hasTrailingComma = lib.hasSuffix "," trimmedLine;
-        in
-        if hasTrailingComma && nextStartsClosing then lib.removeSuffix "," trimmedLine else line;
-    in
-    map stripTrailingComma indexed;
-  piSettingsClean = removeTrailingCommas piSettingsFiltered;
-  piSettingsStripped = lib.concatStringsSep "\n" piSettingsClean;
-
-  # Parse, validate, and optionally inject extra packages at Nix eval time
+  # Parse JSONC settings (strips comments and trailing commas via lib.my.readJsonc)
+  piSettingsParsedResult = readJsonc "${configDir}/pi/settings.jsonc";
   piSettingsParsed =
-    let
-      parsed = builtins.tryEval (builtins.fromJSON piSettingsStripped);
-    in
-    if !parsed.success then
+    if !piSettingsParsedResult.success then
       builtins.throw "pi settings.jsonc produced invalid JSON after stripping comments/trailing commas. Run: nix eval --expr 'builtins.fromJSON (builtins.readFile ./result-settings.json)' to debug."
     else
-      parsed.value;
+      piSettingsParsedResult.value;
 
   honchoPackage = "npm:@agney/pi-honcho-memory";
 

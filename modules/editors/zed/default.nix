@@ -11,35 +11,7 @@ let
   cfg = config.modules.editors.zed;
 
   zedSettingsPath = "${config.dotfiles.configDir}/zed/settings.json";
-  zedSettingsRaw =
-    if builtins.pathExists zedSettingsPath then builtins.readFile zedSettingsPath else null;
-
-  # settings.json is JSONC (leading // comments), so strip full-line comments
-  # before parsing it at eval time for lightweight schema validation.
-  isCommentLine =
-    line:
-    lib.hasPrefix "//" (
-      lib.trimWith {
-        start = true;
-        end = false;
-      } line
-    );
-  zedSettingsStripped =
-    if zedSettingsRaw == null then
-      null
-    else
-      lib.concatStringsSep "\n" (
-        builtins.filter (line: !isCommentLine line) (lib.splitString "\n" zedSettingsRaw)
-      );
-
-  zedSettingsParsed =
-    if zedSettingsStripped == null then
-      {
-        success = false;
-        value = { };
-      }
-    else
-      builtins.tryEval (builtins.fromJSON zedSettingsStripped);
+  zedSettingsParsed = readJsonc zedSettingsPath;
 
   zedSettings = if zedSettingsParsed.success then zedSettingsParsed.value else { };
 
