@@ -74,7 +74,9 @@ When enabled, the module:
 - writes `~/.config/tmux/open-jmux.sh` with a Ghostty-safe PATH
 - writes `~/.config/tmux/jmux.conf` and appends it after the base tmux config
 - writes a compatibility `~/.tmux.conf` shim so jmux can read your XDG tmux config
+- writes `~/.config/jmux/config.json` when `modules.shell.tmux.jmux.configFile` is set
 - makes Ghostty launch jmux on startup instead of the plain `tmux new-session -A -s home`
+- can point `modules.shell.tmux.jmux.package` at `pkgs.my.jmux` so jmux uses the same `C-c` prefix as the rest of this tmux setup
 
 ## Dev Layouts (tml)
 
