@@ -35,6 +35,10 @@ config/opensessions/plugins/
 - **Seeded runtime config**: if missing, writes `~/.config/opensessions/config.json` with defaults for theme, width, left-side sidebar, and window detail visibility
 - **Hunk watcher plugin (opensessions)**: module links `config/opensessions/plugins/hunk.js` into `~/.config/opensessions/plugins/hunk.js`; opensessions auto-loads it to track Hunk sessions
 - **Keybinding handoff (opensessions)**: when enabled, opensessions keeps its native `prefix o` command table (`s` focus, `t` toggle, `1-9` jump); tmux-which-key also exposes an `opensessions` submenu on `prefix Space o`
+- **Optional jmux integration**: when `modules.shell.tmux.jmux.enable = true`, the module writes `~/.config/tmux/open-jmux.sh`, `~/.config/tmux/jmux.conf`, and a compatibility `~/.tmux.conf` shim so jmux can inherit the XDG tmux config
+- **Jmux runtime config path**: current jmux reads `~/.config/jmux/config.json` (not `config.kdl`); keep docs/comments aligned with upstream behavior
+- **Packaged jmux override**: `modules.shell.tmux.jmux.package = pkgs.my.jmux` switches Ghostty/jmux launches to the locally packaged wrapper that keeps jmux's UI prefix aligned with tmux (`C-c` here)
+- **Generated shell alias**: when a jmux package is configured, the module also writes `~/.config/tmux/jmux-aliases.zsh` so interactive shells resolve `jmux` to the packaged binary
 
 ## Dependencies
 
