@@ -43,41 +43,18 @@ let
 
   zedSettings = if zedSettingsParsed.success then zedSettingsParsed.value else { };
 
-  playSoundWhenDone = lib.attrByPath [ "agent" "play_sound_when_agent_done" ] null zedSettings;
-  isPlaySoundWhenDoneValid =
-    if playSoundWhenDone == null then
-      true
-    else
-      builtins.isString playSoundWhenDone
-      && builtins.elem playSoundWhenDone [
-        "never"
-        "when_hidden"
-        "always"
-      ];
-
-  toolPermissionDefault = lib.attrByPath [ "agent" "tool_permissions" "default" ] null zedSettings;
-  isToolPermissionDefaultValid =
-    if toolPermissionDefault == null then
-      true
-    else
-      builtins.isString toolPermissionDefault
-      && builtins.elem toolPermissionDefault [
-        "allow"
-        "deny"
-        "confirm"
-      ];
-
-  relativeLineNumbers = lib.attrByPath [ "relative_line_numbers" ] null zedSettings;
-  isRelativeLineNumbersValid =
-    if relativeLineNumbers == null then
-      true
-    else
-      builtins.isString relativeLineNumbers
-      && builtins.elem relativeLineNumbers [
-        "disabled"
-        "enabled"
-        "wrapped"
-      ];
+  # Validate that a nested JSONC field is one of the allowed string values.
+  # Returns an assertion attrset { assertion; message; }.
+  mkEnumAssertion =
+    name: path: allowed:
+    let
+      val = lib.attrByPath path null zedSettings;
+      quoted = map (v: ''"${v}"'') allowed;
+    in
+    {
+      assertion = val == null || (builtins.isString val && builtins.elem val allowed);
+      message = "Zed schema check: ${name} must be one of ${lib.concatStringsSep ", " quoted}.";
+    };
 
   autosaveSetting = lib.attrByPath [ "autosave" ] null zedSettings;
   isAutosaveValid =
@@ -90,10 +67,10 @@ let
         "on_window_change"
       ]
     else if builtins.isAttrs autosaveSetting then
-      let
-        afterDelay = autosaveSetting.after_delay or null;
-      in
-      builtins.isAttrs afterDelay && builtins.isInt (afterDelay.milliseconds or null)
+      autosaveSetting ? after_delay
+      && builtins.isAttrs autosaveSetting.after_delay
+      && autosaveSetting.after_delay ? milliseconds
+      && builtins.isInt autosaveSetting.after_delay.milliseconds
     else
       false;
 
@@ -106,27 +83,21 @@ let
       assertion = zedSettingsParsed.success;
       message = "Zed schema check: ${zedSettingsPath} is invalid JSONC/JSON";
     }
-    {
-      assertion = isPlaySoundWhenDoneValid;
-      message = ''
-        Zed schema check: agent.play_sound_when_agent_done must be one of
-        "never", "when_hidden", or "always".
-      '';
-    }
-    {
-      assertion = isToolPermissionDefaultValid;
-      message = ''
-        Zed schema check: agent.tool_permissions.default must be one of
-        "allow", "deny", or "confirm".
-      '';
-    }
-    {
-      assertion = isRelativeLineNumbersValid;
-      message = ''
-        Zed schema check: relative_line_numbers must be one of
-        "disabled", "enabled", or "wrapped".
-      '';
-    }
+    (mkEnumAssertion "agent.play_sound_when_agent_done" [ "agent" "play_sound_when_agent_done" ] [
+      "never"
+      "when_hidden"
+      "always"
+    ])
+    (mkEnumAssertion "agent.tool_permissions.default" [ "agent" "tool_permissions" "default" ] [
+      "allow"
+      "deny"
+      "confirm"
+    ])
+    (mkEnumAssertion "relative_line_numbers" [ "relative_line_numbers" ] [
+      "disabled"
+      "enabled"
+      "wrapped"
+    ])
     {
       assertion = isAutosaveValid;
       message = ''
