@@ -31,7 +31,13 @@ model:
   default: gpt-5.4
   thinking: high
 
-# Fallback chain: OpenCode GLM-5.1, Nous GLM-5.1, Kilo frontier, then OpenRouter auto
+# Primary-model fallback: if Codex returns repeated invalid responses or hard
+# provider errors, fail over to a real Anthropic model ID.
+fallback_model:
+  provider: anthropic
+  model: claude-opus-4-6
+
+# Fallback chain: OpenCode GLM-5.1, Nous MTP, KiloCode, then OpenRouter
 fallback_providers:
   - provider: opencode
     model: GLM-5.1
@@ -218,13 +224,6 @@ memory:
   provider: "honcho"
 
 # Delegation settings
-delegation:
-  provider: openai-codex
-  model: gpt-5.3-codex
-  base_url: ""
-  api_key: ""
-  max_iterations: 50
-
 # Prefill messages
 prefill_messages_file: ""
 
