@@ -1,0 +1,27 @@
+packages/worktree-manager/AGENTS.md
+  efcb077f1351691a 1-23
+packages/worktree-manager/default.nix
+  efcb077f1351691a 1-59
+hosts/mactraitorpro/default.nix
+  efcb077f1351691a 126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "64fc2118a8ce887980608cbda92fef1277f633e5",
+  "prompts": {
+    "efcb077f1351691a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "54cd304c-4ecd-4e53-9909-e2474fdf9390",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 130,
+      "total_deletions": 20,
+      "accepted_lines": 130,
+      "overriden_lines": 0
+    }
+  }
+}
