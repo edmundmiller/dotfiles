@@ -3,16 +3,18 @@
 import 'common.just'
 import 'opencode.just'
 
+DARWIN_REBUILD := "/run/current-system/sw/bin/darwin-rebuild"
+
 # Rebuild the system (default: switch)
-rebuild *args='switch': opencode-update
+rebuild *args='switch': _check-flake-lock opencode-update
     #!/usr/bin/env bash
     set -euo pipefail
-    
+
     if [[ "{{is_darwin}}" == "true" ]]; then
-        if command -v darwin-rebuild >/dev/null 2>&1; then
-            sudo darwin-rebuild --flake "{{FLAKE_DIR}}#{{flake_host}}" {{args}}
+        if [[ -x "{{DARWIN_REBUILD}}" ]]; then
+            sudo {{DARWIN_REBUILD}} --flake "{{FLAKE_DIR}}#{{flake_host}}" {{args}}
         else
-            echo "darwin-rebuild not found in PATH, building via nix..."
+            echo "darwin-rebuild not found at {{DARWIN_REBUILD}}, building via nix..."
             cd "{{FLAKE_DIR}}"
             nix build ".#darwinConfigurations.{{flake_host}}.system"
             if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
@@ -50,10 +52,10 @@ test *args:
     set -euo pipefail
     
     if [[ "{{is_darwin}}" == "true" ]]; then
-        if command -v darwin-rebuild >/dev/null 2>&1; then
-            sudo darwin-rebuild --flake "{{FLAKE_DIR}}#{{flake_host}}" test {{args}}
+        if [[ -x "{{DARWIN_REBUILD}}" ]]; then
+            sudo {{DARWIN_REBUILD}} --flake "{{FLAKE_DIR}}#{{flake_host}}" test {{args}}
         else
-            echo "darwin-rebuild not found in PATH, building via nix..."
+            echo "darwin-rebuild not found at {{DARWIN_REBUILD}}, building via nix..."
             cd "{{FLAKE_DIR}}"
             nix build ".#darwinConfigurations.{{flake_host}}.system"
             if [[ -f ./result/sw/bin/darwin-rebuild ]]; then
@@ -72,7 +74,38 @@ rollback:
     #!/usr/bin/env bash
     set -euo pipefail
     if [[ "{{is_darwin}}" == "true" ]]; then
-        sudo darwin-rebuild --rollback
+        sudo {{DARWIN_REBUILD}} --rollback
     else
         nixos-rebuild --sudo --rollback
+    fi
+
+# Fail fast if tracked config files have unresolved merge conflicts
+[private]
+_check-flake-lock:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check flake.lock
+    lock="{{FLAKE_DIR}}/flake.lock"
+    if grep -qE '^<{7}|^={7}|^>{7}' "$lock"; then
+        echo "error: flake.lock contains git conflict markers — resolve them first" >&2
+        grep -nE '^<{7}|^={7}|^>{7}' "$lock" >&2
+        exit 1
+    fi
+    if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$lock" 2>/dev/null; then
+        echo "error: flake.lock is not valid JSON — check for corruption or conflict markers" >&2
+        exit 1
+    fi
+
+    # Check tracked source config files for conflict markers
+    bad=0
+    while IFS= read -r f; do
+        if grep -qE '^<{7}|^={7}|^>{7}' "$f" 2>/dev/null; then
+            echo "error: $f contains git conflict markers — resolve them first" >&2
+            grep -nE '^<{7}|^={7}|^>{7}' "$f" >&2
+            bad=1
+        fi
+    done < <(git -C "{{FLAKE_DIR}}" ls-files -- '*.nix' '*.json' '*.jsonc' '*.yml' '*.yaml' '*.toml')
+    if (( bad )); then
+        exit 1
     fi
