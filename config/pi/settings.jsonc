@@ -186,6 +186,11 @@
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
     // Enables provider id: kilo (e.g., model: kilocode/auto)
     "git:github.com/mrexodia/kilo-pi-provider",
+    // Live bash output view enhancements - vendored local copy
+    // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view
+    // "~/.config/dotfiles/pi-packages/pi-bash-live-view",
+    // Terminal/UI animations - https://www.npmjs.com/package/pi-animations
+    "npm:pi-animations",
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/pi-packages/pi-image-attachments",
     // Automatic model switching workflows (e.g. Kimi ↔ Codex handoff)
@@ -204,7 +209,7 @@
       "skills": [],
     },
     // Native diff review window with Monaco + annotations - https://github.com/badlogic/pi-diff-review
-    "git:https://github.com/badlogic/pi-diff-review",
+    // "git:https://github.com/badlogic/pi-diff-review",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
     "https://github.com/denismrvoljak/pi-overwatch",
     // Pierre-themed inline diff rendering for edit/write tool results - https://github.com/tanvesh01/pierre-diffs
