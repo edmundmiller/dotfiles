@@ -1,0 +1,31 @@
+modules/shell/tmux/jmux/README.md
+  efcb077f1351691a 26,28,30,33-34,36,40-42,45,50-51,53-54,57-58,62-65
+modules/shell/tmux/jmux/default.nix
+  efcb077f1351691a 38-40,79-82,90
+packages/jmux/AGENTS.md
+  efcb077f1351691a 1-26
+hosts/mactraitorpro/default.nix
+  efcb077f1351691a 39
+packages/jmux/default.nix
+  efcb077f1351691a 1-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "9c41fc2bbece03bfe7fe477912dc32336319053e",
+  "prompts": {
+    "efcb077f1351691a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "54cd304c-4ecd-4e53-9909-e2474fdf9390",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 104,
+      "total_deletions": 0,
+      "accepted_lines": 153,
+      "overriden_lines": 0
+    }
+  }
+}
