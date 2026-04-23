@@ -12,6 +12,10 @@
         emacs.enable = true;
         vim.enable = true;
         zed.enable = true;
+        file-associations = {
+          enable = true;
+          editor = "zed";
+        };
       };
       dev = {
         node.enable = true;
