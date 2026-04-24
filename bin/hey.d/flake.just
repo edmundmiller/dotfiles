@@ -2,8 +2,6 @@
 
 import 'common.just'
 
-DARWIN_REBUILD := "/run/current-system/sw/bin/darwin-rebuild"
-
 # Update flake inputs (all if none specified)
 update *inputs:
     #!/usr/bin/env bash
