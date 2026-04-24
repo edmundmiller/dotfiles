@@ -193,12 +193,14 @@ in
   config = mkIf cfg.enable {
     user.packages = [ cfg.package ];
     env.HERMES_HOME = cfg.homeDir;
+    env.HERMES_TUI = "1";
     env.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
 
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
         home.sessionVariables.HERMES_HOME = cfg.homeDir;
+        home.sessionVariables.HERMES_TUI = "1";
         home.sessionVariables.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
 
         home.activation.hermes-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
