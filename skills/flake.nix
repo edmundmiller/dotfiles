@@ -62,11 +62,6 @@
       flake = false;
     };
 
-    mattpocock-skills = {
-      url = "git+https://github.com/mattpocock/skills";
-      flake = false;
-    };
-
     # Child flake cannot reference ../ paths once materialized in /nix/store.
     # Pull repo-local skill dirs from dotfiles source instead.
     dotfiles-repo = {
@@ -159,12 +154,6 @@
               filter.maxDepth = 2;
             };
 
-            mattpocock = {
-              path = inputs.mattpocock-skills.outPath;
-              subdir = ".";
-              filter.maxDepth = 1;
-            };
-
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -202,21 +191,6 @@
 
             acpx.from = "acpx";
             acpx.path = "acpx";
-
-            grill-me.from = "mattpocock";
-            grill-me.path = "grill-me";
-
-            write-a-prd.from = "mattpocock";
-            write-a-prd.path = "to-prd";
-
-            prd-to-issues.from = "mattpocock";
-            prd-to-issues.path = "to-issues";
-
-            matt-tdd.from = "mattpocock";
-            matt-tdd.path = "tdd";
-
-            improve-codebase-architecture.from = "mattpocock";
-            improve-codebase-architecture.path = "improve-codebase-architecture";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";
