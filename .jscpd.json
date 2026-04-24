@@ -10,6 +10,8 @@
     "**/.beads/**",
     "**/.direnv/**",
     "**/.pi/**",
+    "**/.workspaces/**",
+    "**/.jj-workspaces/**",
     "**/result/**",
     "**/.jscpd-report/**",
     "flake.lock",
