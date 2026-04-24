@@ -1,0 +1,23 @@
+config/zed/settings.json
+  2e694df5696f906b 10-18,20,24-38,89-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "8dc7542a76fce22db1322ebd99356539372f1316",
+  "prompts": {
+    "2e694df5696f906b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "795b1e54-0be5-4a15-858e-c9b0c9ccb8a3",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 0,
+      "accepted_lines": 28,
+      "overriden_lines": 0
+    }
+  }
+}
