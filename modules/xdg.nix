@@ -13,9 +13,6 @@ with lib;
   ### A tidy $HOME is a tidy mind
   home-manager.users.${config.user.name} = {
     xdg.enable = true;
-    xdg.configFile."uv/uv.toml".text = ''
-      exclude-newer = "7 days"
-    '';
   };
 
   # XDG environment variables
