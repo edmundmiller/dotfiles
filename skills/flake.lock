@@ -137,6 +137,22 @@
         "type": "github"
       }
     },
+    "mattpocock-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777058810,
+        "narHash": "sha256-WOmQW6hlUsqCzabk2+EkyTlitHTLxmILPnatOoBFZhQ=",
+        "ref": "refs/heads/main",
+        "rev": "60aa99c0230fbac087514ba5fca2ae6e519965fe",
+        "revCount": 32,
+        "type": "git",
+        "url": "https://github.com/mattpocock/skills"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/mattpocock/skills"
+      }
+    },
     "mitsuhiko-agent-stuff": {
       "flake": false,
       "locked": {
@@ -257,6 +273,7 @@
         "dotfiles-repo": "dotfiles-repo",
         "hunk-repo": "hunk-repo",
         "markit-repo": "markit-repo",
+        "mattpocock-skills": "mattpocock-skills",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
