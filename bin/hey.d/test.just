@@ -1,7 +1,5 @@
 # Test commands
 
-import 'common.just'
-
 # Run zunit tests for shell functions
 ztest *args:
     #!/usr/bin/env bash

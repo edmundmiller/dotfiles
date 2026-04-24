@@ -1,7 +1,5 @@
 # zsh-bench benchmarking commands
 
-import 'common.just'
-
 _zbench_dir := FLAKE_DIR / "benchmarks" / "zsh-bench"
 _zbench_report := FLAKE_DIR / "bin" / "zbench-report"
 
