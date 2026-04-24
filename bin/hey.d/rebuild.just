@@ -3,8 +3,6 @@
 import 'common.just'
 import 'opencode.just'
 
-DARWIN_REBUILD := "/run/current-system/sw/bin/darwin-rebuild"
-
 # Rebuild the system (default: switch)
 rebuild *args='switch': _check-flake-lock opencode-update
     #!/usr/bin/env bash
