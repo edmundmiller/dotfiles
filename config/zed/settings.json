@@ -7,6 +7,10 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "project_panel": {
+    "dock": "right",
+    "hide_gitignore": false
+  },
   "outline_panel": {
     "dock": "right"
   },
@@ -27,22 +31,10 @@
     "trust_all_worktrees": true
   },
   "agent_servers": {
-    "codex-acp": {
-      "favorite_config_option_values": {
-        "mode": ["full-access"]
-      },
-      "type": "registry"
-    },
-    "pi-acp": {
-      "favorite_models": ["openai-codex/gpt-5.4", "openai-codex/gpt-5.4-mini"],
-      "type": "registry"
-    },
-    "hermes-agent": {
-      "type": "custom",
-      "command": "hermes",
-      "args": ["acp"]
-    },
     "opencode": {
+      "type": "registry"
+    },
+    "factory-droid": {
       "type": "registry"
     },
     "cursor": {
@@ -53,9 +45,37 @@
         "mode": "auto"
       },
       "favorite_config_option_values": {
-        "mode": ["bypassPermissions", "auto"]
+        "mode": [
+          "bypassPermissions",
+          "auto"
+        ]
       },
       "type": "registry"
+    },
+    "amp-acp": {
+      "type": "registry"
+    },
+    "codex-acp": {
+      "favorite_config_option_values": {
+        "mode": [
+          "full-access"
+        ]
+      },
+      "type": "registry"
+    },
+    "pi-acp": {
+      "favorite_models": [
+        "openai-codex/gpt-5.4",
+        "openai-codex/gpt-5.4-mini"
+      ],
+      "type": "registry"
+    },
+    "hermes-agent": {
+      "type": "custom",
+      "command": "hermes",
+      "args": [
+        "acp"
+      ]
     }
   },
   "redact_private_values": true,
@@ -73,13 +93,10 @@
       "default": "allow"
     },
     "show_turn_stats": true,
+    "single_file_review": true,
     "play_sound_when_agent_done": "when_hidden",
     "favorite_models": [],
     "model_parameters": []
-  },
-  "project_panel": {
-    "dock": "right",
-    "hide_gitignore": false
   },
   "edit_predictions": {
     "mode": "subtle",
@@ -98,12 +115,15 @@
     },
     "linear": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"],
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.linear.app/mcp"
+      ],
       "env": {}
     },
     "posthog": {
       "settings": {},
-
       "enabled": true,
       "url": "https://mcp.posthog.com/mcp",
       "headers": {
