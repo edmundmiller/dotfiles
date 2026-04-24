@@ -72,7 +72,6 @@
       };
 
       agents = {
-        hermes.enable = true;
         pi = {
           enable = true;
           secretReferences = {

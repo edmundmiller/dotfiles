@@ -49,9 +49,10 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Restrict flake systems to the architectures this repo actually targets.
+    # Shared systems list for llm-agents and other flakes that follow it.
+    # Using the upstream nix-systems list avoids local path-input lock issues.
     systems = {
-      url = "path:./systems";
+      url = "github:nix-systems/default";
       flake = false;
     };
 
@@ -61,12 +62,12 @@
 
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults. Pinned to local agents-workspace repo.
-    agents-workspace = {
-      url = "git+file:///Users/emiller/src/personal/agents-workspace?ref=main";
-      inputs.hermesAgent.follows = "hermesAgent";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.llm-agents.follows = "llm-agents";
-    };
+    # agents-workspace = {
+    #   url = "git+file:///Users/emiller/src/personal/agents-workspace?ref=main";
+    #   inputs.hermesAgent.follows = "hermesAgent";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    #   inputs.llm-agents.follows = "llm-agents";
+    # };
 
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
@@ -77,13 +78,13 @@
     # upstream package directly when agents-workspace's wrapper module needs
     # a local patch before upstream merges.
     hermesAgent = {
-      url = "github:NousResearch/hermes-agent";
+      url = "github:NousResearch/hermes-agent/0e336b0e717027cbb81fcb5816246b7aec2d4a47";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
     skills-catalog = {
-      url = "path:./skills";
+      url = "./skills";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
