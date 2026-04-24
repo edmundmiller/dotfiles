@@ -7,79 +7,116 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "outline_panel": {
+    "dock": "right"
+  },
+  "collaboration_panel": {
+    "dock": "right"
+  },
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "base_keymap": "Emacs",
+  "diff_view_style": "unified",
   "git_panel": {
+    "dock": "right",
     "tree_view": true
+  },
+  "session": {
+    "trust_all_worktrees": true
   },
   "agent_servers": {
     "codex-acp": {
+      "favorite_config_option_values": {
+        "mode": ["full-access"]
+      },
       "type": "registry"
     },
     "pi-acp": {
+      "favorite_models": ["openai-codex/gpt-5.4", "openai-codex/gpt-5.4-mini"],
       "type": "registry"
     },
     "hermes-agent": {
       "type": "custom",
       "command": "hermes",
       "args": ["acp"]
+    },
+    "opencode": {
+      "type": "registry"
+    },
+    "cursor": {
+      "type": "registry"
+    },
+    "claude-acp": {
+      "default_config_options": {
+        "mode": "auto"
+      },
+      "favorite_config_option_values": {
+        "mode": ["bypassPermissions", "auto"]
+      },
+      "type": "registry"
     }
-  },
-  "terminal": {
-    "toolbar": {
-      "breadcrumbs": true
-    }
-  },
-  "preview_tabs": {
-    "enable_preview_from_file_finder": true,
-    "enable_keep_preview_on_code_navigation": true
-  },
-  "prettier": {
-    "allowed": true
-  },
-  "soft_wrap": "none",
-  "minimap": {
-    "show": "auto"
-  },
-  "relative_line_numbers": "enabled",
-  "autosave": "on_focus_change",
-  "helix_mode": false,
-  "base_keymap": "Emacs",
-  "icon_theme": {
-    "mode": "system",
-    "light": "Zed (Default)",
-    "dark": "Zed (Default)"
   },
   "redact_private_values": true,
+  "languages": {
+    "TypeScript": {
+      "indent_guides": {
+        "coloring": "indent_aware",
+        "background_coloring": "indent_aware"
+      }
+    }
+  },
+  "agent": {
+    "dock": "left",
+    "tool_permissions": {
+      "default": "allow"
+    },
+    "show_turn_stats": true,
+    "play_sound_when_agent_done": true,
+    "favorite_models": [],
+    "model_parameters": []
+  },
+  "project_panel": {
+    "dock": "right",
+    "hide_gitignore": false
+  },
   "edit_predictions": {
-    "provider": "zed",
-    "mode": "subtle"
+    "mode": "subtle",
+    "provider": "zed"
   },
   "context_servers": {
+    "mcp-server-sequential-thinking": {
+      "enabled": false,
+      "remote": false,
+      "settings": {}
+    },
     "mcp-server-context7": {
       "enabled": false,
       "remote": false,
       "settings": {}
-    }
-  },
-  "agent": {
-    "tool_permissions": {
-      "default": "allow"
     },
-    "play_sound_when_agent_done": "when_hidden",
-    "default_model": {
-      "provider": "anthropic",
-      "model": "claude-sonnet-4-latest"
+    "linear": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"],
+      "env": {}
+    },
+    "posthog": {
+      "settings": {},
+
+      "enabled": true,
+      "url": "https://mcp.posthog.com/mcp",
+      "headers": {
+        "Authorization": "Bearer undefined"
+      }
     }
-  },
-  "telemetry": {
-    "diagnostics": true,
-    "metrics": false
   },
   "vim_mode": true,
   "ui_font_size": 16,
-  "buffer_font_size": 16,
+  "buffer_font_size": null,
   "theme": {
     "mode": "system",
-    "light": "One Light",
-    "dark": "macOS Classic Dark"
+    "light": "Ayu Light",
+    "dark": "Ayu Dark"
   }
 }
