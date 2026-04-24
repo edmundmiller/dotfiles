@@ -1,7 +1,5 @@
 # Skillkit patch/install helpers
 
-import 'common.just'
-
 # Reinstall or re-patch the global @crafter/skillkit install.
 skillkit-sync:
     #!/usr/bin/env bash
