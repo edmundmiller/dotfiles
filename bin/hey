@@ -1,35 +1,17 @@
-#!/usr/bin/env -S just --justfile
-# A modular interface to nix-darwin/nixos operations using JustScripts
-# Inspired by Henrik Lissner's dotfiles
+#!/usr/bin/env nu
 
-import 'hey.d/common.just'
-import 'hey.d/rebuild.just'
-import 'hey.d/flake.just'
-import 'hey.d/nix.just'
-import 'hey.d/remote.just'
-import 'hey.d/test.just'
-import 'hey.d/ergodox.just'
-import 'hey.d/skillkit.just'
-import 'hey.d/skills-catalog.just'
-import 'hey.d/zbench.just'
+source ./hey.d/common.nu
+source ./hey.d/opencode.nu
+source ./hey.d/rebuild.nu
+source ./hey.d/flake.nu
+source ./hey.d/nix.nu
+source ./hey.d/remote.nu
+source ./hey.d/test.nu
+source ./hey.d/ergodox.nu
+source ./hey.d/skillkit.nu
+source ./hey.d/skills-catalog.nu
+source ./hey.d/zbench.nu
 
-
-# Default recipe - show help
-default: help
-
-# Show help message
-help:
-    @echo "Usage: hey <command> [args...] (powered by just)"
-    @echo ""
-    @just --justfile {{justfile()}} --list --unsorted
-    @echo ""
-    @echo "Examples:"
-    @echo "  hey rebuild          # Rebuild and switch local system"
-    @echo "  hey skills-sync      # Sync shared skills lock + rebuild"
-    @echo "  hey skillkit-sync    # Reapply the @crafter/skillkit Amp+Pi patch"
-    @echo "  hey nuc              # Deploy to NUC server"
-    @echo "  hey update nixpkgs   # Update only nixpkgs input"
-    @echo "  hey search firefox   # Search for firefox packages"
-    @echo ""
-    @echo "Current flake host: {{flake_host}}"
-    @echo "Platform: $(if {{is_darwin}}; then echo Darwin; else echo NixOS; fi)"
+export def main [] {
+  help main
+}
