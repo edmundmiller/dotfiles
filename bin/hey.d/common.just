@@ -20,3 +20,5 @@ flake_host := env_var_or_default('FLAKE_HOST', if _hostname == "Mac" {
 
 # Check if we're on Darwin or NixOS
 is_darwin := if `uname -s` == "Darwin" { "true" } else { "false" }
+
+DARWIN_REBUILD := "/run/current-system/sw/bin/darwin-rebuild"
