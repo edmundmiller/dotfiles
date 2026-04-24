@@ -3,8 +3,6 @@
 # Uses pure nix build - no ~/qmk_firmware required.
 # Keymap source: packages/ergodox-firmware/src/
 
-import 'common.just'
-
 # Firmware paths
 ergodox_package := FLAKE_DIR / "packages/ergodox-firmware"
 ergodox_source := ergodox_package / "src"

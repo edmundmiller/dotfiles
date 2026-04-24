@@ -1,7 +1,5 @@
 # General Nix commands
 
-import 'common.just'
-
 # Run garbage collection
 gc:
     nix-collect-garbage -d

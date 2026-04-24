@@ -1,7 +1,5 @@
 # OpenCode commands
 
-import 'common.just'
-
 OPENCODE_CACHE := env_var('HOME') / ".cache/opencode"
 
 # Update OpenCode plugins (clear cache for fresh @latest installs)

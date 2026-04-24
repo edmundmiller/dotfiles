@@ -8,9 +8,9 @@ skills-update:
 skills-sync:
     cd {{FLAKE_DIR}}/skills && nix flake lock --update-input dotfiles-repo
     cd {{FLAKE_DIR}} && nix flake update skills-catalog
-    cd {{FLAKE_DIR}} && just --justfile {{justfile()}} rebuild
+    just rebuild
 
 # Update skill pins + rebuild host
 skills-bump:
     cd {{FLAKE_DIR}}/skills && nix flake update
-    cd {{FLAKE_DIR}} && just --justfile {{justfile()}} rebuild
+    just rebuild
