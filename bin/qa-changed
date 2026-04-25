@@ -91,6 +91,19 @@ mapfile -t packages < <(printf '%s\n' "${packages[@]}" | sed '/^$/d' | sort -u)
 
 echo "qa-changed: checking packages: ${packages[*]}"
 
+arch_files=()
+for file in "${changed_files[@]}"; do
+  if [[ "$file" =~ ^pi-packages/pi-[^/]+/.*\.tsx?$ ]]; then
+    arch_files+=("$file")
+  fi
+done
+
+if [[ ${#arch_files[@]} -gt 0 ]]; then
+  ./bin/lint-ts-architecture "${arch_files[@]}"
+else
+  echo "qa-changed: no changed TypeScript files for architecture lint"
+fi
+
 if ! command -v npm >/dev/null 2>&1; then
   echo "error: npm is required for qa-changed" >&2
   exit 1
