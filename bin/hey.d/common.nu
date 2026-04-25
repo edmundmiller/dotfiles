@@ -1,7 +1,20 @@
 export const DARWIN_REBUILD = "/run/current-system/sw/bin/darwin-rebuild"
 
 export def context [] {
-  let flake_dir = ($env.FILE_PWD | path join ".." ".." | path expand)
+  let file_pwd = ($env.FILE_PWD? | default (pwd) | path expand)
+  let cwd = (pwd | path expand)
+  let flake_dir = (
+    [
+      $file_pwd
+      ($file_pwd | path join ".." | path expand)
+      ($file_pwd | path join ".." ".." | path expand)
+      $cwd
+    ]
+    | where {|dir| (($dir | path join "flake.nix") | path exists)}
+    | first
+    | default ($file_pwd | path join ".." | path expand)
+  )
+
   let hostname = (try { ^hostname -s | str trim } catch { "unknown" })
   let flake_host = if (($env.FLAKE_HOST? | default "") | is-not-empty) {
     $env.FLAKE_HOST
