@@ -1,0 +1,23 @@
+bin/hey.d/common.nu
+  c69a10759563aa80 4-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "3cde191c56a2cbb94f09a2109082d001b559123c",
+  "prompts": {
+    "c69a10759563aa80": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "24e5866a-97b8-4584-9a18-74fbbec30679",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 42,
+      "total_deletions": 18,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
