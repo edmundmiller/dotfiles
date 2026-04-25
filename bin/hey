@@ -12,6 +12,44 @@ source ./hey.d/skillkit.nu
 source ./hey.d/skills-catalog.nu
 source ./hey.d/zbench.nu
 
+def hey-help [] {
+  let ctx = (context)
+  print "Usage: hey <command> [args...]"
+  print ""
+  print "System"
+  print "  rebuild, re, test, rollback"
+  print "  update, u, upgrade, check, show"
+  print "  gc, repl, search, shell"
+  print ""
+  print "Remote"
+  print "  deploy, deploy-dry, deploy-check"
+  print "  nuc, rebuild-nuc, nuc-test, nuc-ssh, nuc-status, nuc-service, nuc-logs, nuc-rollback, nuc-generations"
+  print "  unas, unas-ssh"
+  print "  agents-rollout"
+  print ""
+  print "Ergodox"
+  print "  ergodox-build, ergodox-flash, ergodox-build-flash, ergodox-edit, ergodox-draw, ergodox-info"
+  print ""
+  print "Skills"
+  print "  skills-update, skills-sync, skills-bump, skillkit-sync"
+  print ""
+  print "Benchmark/Test"
+  print "  ztest"
+  print "  zbench, zbench-save, zbench-compare, zbench-check, zbench-baseline, zbench-history"
+  print ""
+  print "Other"
+  print "  opencode-update"
+  print ""
+  print $"Flake host: ($ctx.flake_host)"
+  print $"Platform: ($ctx.os_name)"
+  print ""
+  print "Tip: use 'hey <command> --help' for command-specific usage."
+}
+
+def "main help" [] {
+  hey-help
+}
+
 export def main [] {
-  help main
+  hey-help
 }
