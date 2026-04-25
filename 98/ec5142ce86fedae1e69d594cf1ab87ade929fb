@@ -1,0 +1,23 @@
+packages/git-ai.nix
+  4aad41b74550844a 5-6,8,19-22,37-59,61-88,93-94,96-97,100-104,116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "98ec5142ce86fedae1e69d594cf1ab87ade929fb",
+  "prompts": {
+    "4aad41b74550844a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "1fc93ebc-2d5d-4491-8323-8909243d4be0",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 179,
+      "total_deletions": 122,
+      "accepted_lines": 74,
+      "overriden_lines": 0
+    }
+  }
+}
