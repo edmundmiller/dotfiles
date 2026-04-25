@@ -1,0 +1,33 @@
+packages/jmux/default.nix
+  8507a95aa207f92b 43-44,49,53,63-66,68-83,105,113
+config/tmux/config
+  8507a95aa207f92b 207-210
+CHANGELOG.md
+  8507a95aa207f92b 13
+modules/shell/tmux/README.md
+  8507a95aa207f92b 80-81,179,230
+modules/shell/tmux/AGENTS.md
+  8507a95aa207f92b 40
+packages/jmux/AGENTS.md
+  8507a95aa207f92b 12-13,18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "772f2f57d79d3cdfbc00293c21377f82cc47bd3e",
+  "prompts": {
+    "8507a95aa207f92b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "3b8cfaef-df32-418f-92e8-860aad3a3939",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 51,
+      "total_deletions": 20,
+      "accepted_lines": 41,
+      "overriden_lines": 0
+    }
+  }
+}
