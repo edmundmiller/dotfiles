@@ -11,13 +11,13 @@
 
 stdenv.mkDerivation {
   pname = "jmux";
-  version = "0.13.0-unstable-2026-04-24";
+  version = "0.14.0";
 
   src = fetchFromGitHub {
     owner = "jarredkenny";
     repo = "jmux";
-    rev = "43e500b6dc424a55d228dec9a7fb31f85b0d6937";
-    hash = "sha256-5qiJkjeylKPlcpAdK1lPia5+qQRW/BGrYupYhxGKPiY=";
+    rev = "v0.14.0";
+    hash = "sha256-XKgmyvoIGTeVHW0buUfpDwQRpy4jAovBI5By6Zs0diI=";
   };
 
   nativeBuildInputs = [
