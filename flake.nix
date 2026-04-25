@@ -528,6 +528,22 @@
                 files = "\\.(ts|js|nix)$";
                 stages = [ "pre-push" ];
               };
+              pi-packages-qa-changed = {
+                enable = true;
+                name = "pi-packages-qa-changed";
+                description = "Run changed-scope pi-packages typecheck/tests before push";
+                entry = toString (
+                  pkgs.writeShellScript "pi-packages-qa-changed" ''
+                    set -euo pipefail
+                    repo_root=$(git rev-parse --show-toplevel)
+                    cd "$repo_root"
+                    ./bin/qa-changed
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                stages = [ "pre-push" ];
+              };
               large-file-detection = {
                 enable = true;
                 name = "large-file-detection";
