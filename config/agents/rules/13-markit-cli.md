@@ -1,5 +1,9 @@
 ---
 purpose: Use the markit CLI to convert files and URLs to markdown.
+rule_id: AGENT-13
+enforced_by: prompt
+severity: info
+waiver_path: .agents/waivers/AGENT-13.md
 ---
 
 # Markit CLI

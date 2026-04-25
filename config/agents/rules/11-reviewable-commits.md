@@ -1,5 +1,9 @@
 ---
 purpose: Keep changes split into small, reviewable commits.
+rule_id: AGENT-11
+enforced_by: prompt
+severity: warn
+waiver_path: .agents/waivers/AGENT-11.md
 ---
 
 # Commit Hygiene

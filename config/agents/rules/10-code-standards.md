@@ -1,5 +1,9 @@
 ---
 purpose: Ban type assertions and enforce minimal-layer, minimal-state code.
+rule_id: AGENT-10
+enforced_by: prompt+lint(bin/lint-ts-architecture)
+severity: warn
+waiver_path: .agents/waivers/AGENT-10.md
 ---
 
 # Code Standards
