@@ -1,5 +1,9 @@
 ---
 purpose: Filter data at the source and prefer jg over jq.
+rule_id: AGENT-08
+enforced_by: prompt
+severity: warn
+waiver_path: .agents/waivers/AGENT-08.md
 ---
 
 # Context Efficiency

@@ -1,5 +1,9 @@
 ---
 purpose: Explain that agent config files are read-only Nix symlinks — edit sources here.
+rule_id: AGENT-09
+enforced_by: prompt
+severity: info
+waiver_path: .agents/waivers/AGENT-09.md
 ---
 
 # Nix-Managed Agent Config

@@ -1,5 +1,9 @@
 ---
 purpose: Map where agent skill files live across project, global, and OpenClaw scopes.
+rule_id: AGENT-07
+enforced_by: prompt
+severity: info
+waiver_path: .agents/waivers/AGENT-07.md
 ---
 
 # Skill File Locations
