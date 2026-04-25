@@ -18,3 +18,9 @@ def "main ztest" [...args: string] {
     }
   }
 }
+
+def "main qa-changed" [...args: string] {
+  let ctx = (context)
+  cd $ctx.flake_dir
+  ^./bin/qa-changed ...$args
+}
