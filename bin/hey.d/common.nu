@@ -14,7 +14,7 @@ export def context [] {
     }
   }
 
-  let nix_system = (try { ^nix eval --raw --expr 'builtins.currentSystem' | str trim } catch { "unknown" })
+  let nix_system = (try { ^nix eval --raw --impure --expr 'builtins.currentSystem' | str trim } catch { "unknown" })
 
   {
     flake_dir: $flake_dir
