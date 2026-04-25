@@ -177,16 +177,24 @@ def _as_int(value: Any, default: int) -> int:
 class DCPContextEngine(_ContextEngineBase):
     """Dynamic context pruning engine with Pi/OpenCode-inspired heuristics."""
 
-    def __init__(self, config: DCPConfig | None = None):
+    def __init__(
+        self,
+        config: DCPConfig | None = None,
+        *,
+        context_length: int | None = None,
+        threshold_pct: float | None = None,
+    ):
         self._config = (config or DCPConfig()).normalize()
+        if threshold_pct is not None:
+            self._config.threshold = min(max(float(threshold_pct), 0.05), 0.95)
         self.threshold_percent = self._config.threshold
         self.protect_first_n = self._config.protect_first_n
         self.protect_last_n = self._config.protect_last_n
         self.last_prompt_tokens = 0
         self.last_completion_tokens = 0
         self.last_total_tokens = 0
-        self.threshold_tokens = 0
-        self.context_length = 0
+        self.context_length = _as_int(context_length, 0)
+        self.threshold_tokens = int(self.context_length * self.threshold_percent) if self.context_length else 0
         self.compression_count = 0
         self._session_id: str | None = None
 
