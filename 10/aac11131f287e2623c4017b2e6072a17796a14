@@ -1,0 +1,25 @@
+packages/hermes-dcp/hermes_dcp/engine.py
+  66688f2ae0de458b 180-186,188-189,196-197
+packages/hermes-dcp/tests/test_hermes_contract.py
+  66688f2ae0de458b 1-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "10aac11131f287e2623c4017b2e6072a17796a14",
+  "prompts": {
+    "66688f2ae0de458b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "50d603bf-8132-4a0c-b140-b46c1ed25721",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 67,
+      "total_deletions": 15,
+      "accepted_lines": 386,
+      "overriden_lines": 0
+    }
+  }
+}
