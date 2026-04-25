@@ -1,0 +1,23 @@
+bin/tests/hey-context.nu
+  c69a10759563aa80 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "cd2c0d7591ca28bd6cccb004437cb9ba0b73f4af",
+  "prompts": {
+    "c69a10759563aa80": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "24e5866a-97b8-4584-9a18-74fbbec30679",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 0,
+      "accepted_lines": 14,
+      "overriden_lines": 0
+    }
+  }
+}
