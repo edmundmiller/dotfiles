@@ -1,0 +1,23 @@
+.beads/issues.jsonl
+  eb1f48f13f7e2337 22-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "4b3025bebcfedaaed685e86b602a6fd60a012b72",
+  "prompts": {
+    "eb1f48f13f7e2337": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "453e2529-1d38-40be-94b8-36ec6fd8ad89",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 1,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
