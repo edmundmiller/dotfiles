@@ -1,5 +1,9 @@
 ---
 purpose: Write spec and regression tests using a two-commit red/green bug-fix workflow.
+rule_id: AGENT-05
+enforced_by: prompt
+severity: warn
+waiver_path: .agents/waivers/AGENT-05.md
 ---
 
 # Testing Philosophy

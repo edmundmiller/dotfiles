@@ -1,5 +1,9 @@
 ---
 purpose: Non-interactive version control workflows and diff tooling preferences.
+rule_id: AGENT-03
+enforced_by: prompt
+severity: warn
+waiver_path: .agents/waivers/AGENT-03.md
 ---
 
 # Version Control

@@ -1,5 +1,9 @@
 ---
 purpose: Write AGENTS.md files that teach conventions, not list files.
+rule_id: AGENT-14
+enforced_by: prompt
+severity: info
+waiver_path: .agents/waivers/AGENT-14.md
 ---
 
 # AGENTS.md Style

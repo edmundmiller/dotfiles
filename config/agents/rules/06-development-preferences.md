@@ -1,5 +1,9 @@
 ---
 purpose: General development philosophy and task-completion expectations.
+rule_id: AGENT-06
+enforced_by: prompt
+severity: info
+waiver_path: .agents/waivers/AGENT-06.md
 ---
 
 # Development Preferences

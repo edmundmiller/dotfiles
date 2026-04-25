@@ -1,5 +1,9 @@
 ---
 purpose: Hard rules for file hygiene, commit splitting, and output format.
+rule_id: AGENT-02
+enforced_by: prompt
+severity: error
+waiver_path: .agents/waivers/AGENT-02.md
 ---
 
 # Critical Instructions

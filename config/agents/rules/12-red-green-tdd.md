@@ -1,5 +1,9 @@
 ---
 purpose: Default to red/green/refactor TDD for all behavior changes.
+rule_id: AGENT-12
+enforced_by: prompt
+severity: warn
+waiver_path: .agents/waivers/AGENT-12.md
 ---
 
 # Red/Green TDD
