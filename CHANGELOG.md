@@ -10,4 +10,5 @@ All notable changes to this repository are documented in this file.
 
 ### Changed
 - Wrapped `jmux` so its effective UI prefix follows this repo's tmux prefix (`C-c`) instead of upstream's default `Ctrl-a`.
+- Moved the packaged jmux new-session/worktree shortcut to `prefix M`, so `prefix n` remains tmux `next-window` inside jmux too, and explicitly unbound direct tmux `prefix M` so tmux does not compete for it.
 - Updated tmux/jmux module docs to describe the repo-local `C-c` keybindings and shell alias behavior.
