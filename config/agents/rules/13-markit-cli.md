@@ -1,21 +1,15 @@
 ---
-purpose: Use the markit CLI to convert files and URLs to markdown.
+purpose: Prefer deterministic single-tool conversion when turning source content into markdown.
 rule_id: AGENT-13
 enforced_by: prompt
 severity: info
 waiver_path: .agents/waivers/AGENT-13.md
 ---
 
-# Markit CLI
+# Content Conversion
 
-Use `markit` when converting files, URLs, PDFs, Office docs, images, or audio into markdown.
+When converting files or URLs into markdown:
 
-In Pi, prefer the `markit` tool/package when available.
-
-- `markit <source>` — convert to markdown
-- `markit <source> -q` — raw markdown for piping
-- `markit <source> --json` — structured output for parsing
-- `markit <source> -o output.md` — write to a file
-- `markit formats` — list supported inputs
-
-Prefer it over ad-hoc extraction when the user wants markdown from a file or URL.
+- Prefer one deterministic converter available in the environment.
+- Prefer structured output modes when parsing downstream.
+- Avoid ad-hoc multi-tool extraction chains unless required.
