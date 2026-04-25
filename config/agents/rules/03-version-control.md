@@ -6,7 +6,8 @@ purpose: Non-interactive version control workflows and diff tooling preferences.
 
 ## Preferences
 
-- **Diff policy:** prefer `diffs` over `git diff` (entity-level changes, better for agent review). Use native `git diff` only when diffs lacks needed flags/output.- **Selective staging** with `git hunks list` / `git hunks add <hunk-id>` — non-interactive, deterministic hunk IDs
+- **Diff policy:** prefer `diffs` over `git diff` (entity-level changes, better for agent review). Use native `git diff` only when `diffs` lacks needed flags/output.
+- **Selective staging:** use `git hunks list` / `git hunks add <hunk-id>` — non-interactive, deterministic hunk IDs.
 - **Dotfiles exception**: sibling layout (`../dotfiles.branch`) via `.envrc` override
 
 ## Non-interactive defaults (agents)
@@ -24,11 +25,11 @@ purpose: Non-interactive version control workflows and diff tooling preferences.
 
 ## Quick Reference
 
-````bash
+```bash
 diffs                       # Semantic diff (default)
 diffs --staged              # Semantic staged diff
 git hunks list              # List hunks with stable IDs
-git hunks add <hunk-id>     # Stage specific hunk```
+git hunks add <hunk-id>     # Stage specific hunk
+```
 
 See `but`/`jut` skills for VCS workflows.
-````
