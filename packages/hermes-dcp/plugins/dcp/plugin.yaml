@@ -1,0 +1,4 @@
+name: dcp
+version: 0.1.0
+description: "Dynamic context pruning engine for Hermes (Pi/OpenCode-style)"
+kind: standalone
