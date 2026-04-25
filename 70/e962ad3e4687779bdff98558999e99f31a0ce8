@@ -1,0 +1,23 @@
+config/agents/rules/10-code-standards.md
+  3f7fb37cda5f4051 3-6,11,13-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "70e962ad3e4687779bdff98558999e99f31a0ce8",
+  "prompts": {
+    "3f7fb37cda5f4051": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "919dda83-98c2-4518-a81d-1189b3d0a366",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 9,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}

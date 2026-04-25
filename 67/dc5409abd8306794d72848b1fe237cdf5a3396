@@ -1,0 +1,25 @@
+bin/hey.d/test.just
+  3f7fb37cda5f4051 11,19-25
+bin/qa-changed
+  3f7fb37cda5f4051 1-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "67dc5409abd8306794d72848b1fe237cdf5a3396",
+  "prompts": {
+    "3f7fb37cda5f4051": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "919dda83-98c2-4518-a81d-1189b3d0a366",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 164,
+      "total_deletions": 5,
+      "accepted_lines": 159,
+      "overriden_lines": 0
+    }
+  }
+}

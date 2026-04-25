@@ -1,0 +1,25 @@
+.github/workflows/ci.yml
+  3f7fb37cda5f4051 17-35,69-87
+flake.nix
+  3f7fb37cda5f4051 531-546
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "ad1d2491ae597841b5c7cb1843569a204801a5db",
+  "prompts": {
+    "3f7fb37cda5f4051": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "919dda83-98c2-4518-a81d-1189b3d0a366",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 54,
+      "total_deletions": 0,
+      "accepted_lines": 54,
+      "overriden_lines": 0
+    }
+  }
+}

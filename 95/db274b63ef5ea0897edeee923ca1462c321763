@@ -1,0 +1,27 @@
+.github/workflows/publish-packages.yml
+  3f7fb37cda5f4051 71-81,84-91,94
+bin/qa-changed
+  3f7fb37cda5f4051 1-93,107-164
+bin/lint-ts-architecture
+  3f7fb37cda5f4051 1-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "95db274b63ef5ea0897edeee923ca1462c321763",
+  "prompts": {
+    "3f7fb37cda5f4051": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "919dda83-98c2-4518-a81d-1189b3d0a366",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 70,
+      "total_deletions": 0,
+      "accepted_lines": 70,
+      "overriden_lines": 0
+    }
+  }
+}
