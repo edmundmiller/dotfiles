@@ -1,0 +1,25 @@
+modules/agents/codex/default.nix
+  3f7fb37cda5f4051 16
+config/opencode/opencode.jsonc
+  3f7fb37cda5f4051 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "8bc7db9d1b15736add66933fc5a14a51828c4ee7",
+  "prompts": {
+    "3f7fb37cda5f4051": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "919dda83-98c2-4518-a81d-1189b3d0a366",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
