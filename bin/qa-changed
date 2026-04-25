@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage: bin/qa-changed [options]
+
+Run pi-packages quality checks (typecheck + package tests) on changed packages.
+
+Options:
+  --base-ref <ref>     Base git ref for changed-file detection
+  --head-ref <ref>     Head git ref (default: HEAD)
+  --package <name>     Check a specific package (repeatable, e.g. pi-dcp)
+  --all                Check all pi-* packages
+  -h, --help           Show this help
+EOF
+}
+
+base_ref=""
+head_ref="HEAD"
+run_all=0
+packages=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --base-ref)
+      base_ref="${2:-}"
+      shift 2
+      ;;
+    --head-ref)
+      head_ref="${2:-}"
+      shift 2
+      ;;
+    --package)
+      packages+=("${2:-}")
+      shift 2
+      ;;
+    --all)
+      run_all=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "error: unknown arg: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ ${#packages[@]} -eq 0 && $run_all -eq 0 ]]; then
+  if [[ -z "$base_ref" ]]; then
+    if upstream_ref=$(git -C "$ROOT_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
+      base_ref="$upstream_ref"
+    elif git -C "$ROOT_DIR" rev-parse --verify origin/main >/dev/null 2>&1; then
+      base_ref="origin/main"
+    elif git -C "$ROOT_DIR" rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+      base_ref="HEAD~1"
+    else
+      base_ref="HEAD"
+    fi
+  fi
+
+  range="$base_ref...$head_ref"
+  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "$range" -- 'pi-packages/**')
+
+  for file in "${changed_files[@]}"; do
+    if [[ "$file" =~ ^pi-packages/(pi-[^/]+)/ ]]; then
+      packages+=("${BASH_REMATCH[1]}")
+    fi
+  done
+else
+  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "${base_ref:-HEAD~1}...$head_ref" -- 'pi-packages/**' 2>/dev/null || true)
+fi
+
+if [[ $run_all -eq 1 ]]; then
+  mapfile -t packages < <(find "$ROOT_DIR/pi-packages" -mindepth 1 -maxdepth 1 -type d -name 'pi-*' -exec basename {} \; | sort)
+fi
+
+if [[ ${#packages[@]} -eq 0 ]]; then
+  echo "qa-changed: no pi-packages changes detected"
+  exit 0
+fi
+
+mapfile -t packages < <(printf '%s\n' "${packages[@]}" | sed '/^$/d' | sort -u)
+
+echo "qa-changed: checking packages: ${packages[*]}"
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "error: npm is required for qa-changed" >&2
+  exit 1
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq is required for qa-changed" >&2
+  exit 1
+fi
+
+echo "qa-changed: ensuring workspace deps are installed"
+(
+  cd "$ROOT_DIR/pi-packages"
+  npm install --ignore-scripts --no-audit --no-fund --package-lock=false --silent
+)
+
+has_script() {
+  local pkg_json="$1/package.json"
+  local script_name="$2"
+  jq -e --arg script_name "$script_name" '.scripts[$script_name] != null' "$pkg_json" >/dev/null
+}
+
+for pkg in "${packages[@]}"; do
+  pkg_dir="$ROOT_DIR/pi-packages/$pkg"
+  if [[ ! -f "$pkg_dir/package.json" ]]; then
+    echo "error: package not found: $pkg" >&2
+    exit 1
+  fi
+
+  if has_script "$pkg_dir" typecheck; then
+    echo "qa-changed: $pkg -> typecheck"
+    npm --prefix "$pkg_dir" run --silent typecheck
+  fi
+
+  if has_script "$pkg_dir" test; then
+    echo "qa-changed: $pkg -> test"
+    npm --prefix "$pkg_dir" run --silent test
+  fi
+done
+
+run_integration=0
+if [[ $run_all -eq 1 ]]; then
+  run_integration=1
+else
+  for file in "${changed_files[@]}"; do
+    if [[ "$file" == pi-packages/tests/* || "$file" == pi-packages/package.json || "$file" == pi-packages/bun.lock ]]; then
+      run_integration=1
+      break
+    fi
+  done
+fi
+
+if [[ $run_integration -eq 1 ]]; then
+  echo "qa-changed: running pi-packages integration tests"
+  npm --prefix "$ROOT_DIR/pi-packages" run --silent test:integration
+fi
+
+echo "qa-changed: done"

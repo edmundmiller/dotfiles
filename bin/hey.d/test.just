@@ -8,7 +8,7 @@ ztest *args:
         echo "zunit not found. Install with: brew install zunit-zsh/zunit/zunit"
         exit 1
     fi
-    
+
     if [[ -n "{{args}}" ]]; then
         # Run specific test file(s)
         zunit {{args}}
@@ -16,3 +16,10 @@ ztest *args:
         # Run all .zunit tests
         find config -name '*.zunit' -exec zunit {} \;
     fi
+
+# Run changed-scope quality checks for pi-packages
+qa-changed *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{FLAKE_DIR}}"
+    ./bin/qa-changed {{args}}
