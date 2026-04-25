@@ -68,9 +68,28 @@ jobs:
 
       - run: echo "Packages to publish:${{ steps.detect.outputs.packages }}"
 
+  quality-gate:
+    name: QA ${{ matrix.package }}
+    needs: detect
+    if: needs.detect.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.detect.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run package quality checks
+        run: ./bin/qa-changed --package "${{ matrix.package }}"
+
   publish:
     name: Publish ${{ matrix.package }}
-    needs: detect
+    needs: [detect, quality-gate]
     if: needs.detect.outputs.packages != '[]'
     runs-on: ubuntu-latest
     strategy:
