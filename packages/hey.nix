@@ -1,8 +1,6 @@
 {
   lib,
   stdenvNoCC,
-  just,
-  installShellFiles,
 }:
 
 stdenvNoCC.mkDerivation {
@@ -11,27 +9,9 @@ stdenvNoCC.mkDerivation {
 
   src = ../bin;
 
-  nativeBuildInputs = [
-    just
-    installShellFiles
-  ];
-
-  buildInputs = [ just ];
-
   # Don't run any default build phases
   dontConfigure = true;
-  dontBuild = false;
-
-  buildPhase = ''
-    runHook preBuild
-
-    # Generate zsh completion using just
-    # The hey script uses #!/usr/bin/env -S just --justfile shebang
-    # so we call just directly with the hey file as the justfile
-    ${just}/bin/just --justfile hey --completions zsh > _hey
-
-    runHook postBuild
-  '';
+  dontBuild = true;
 
   installPhase = ''
     runHook preInstall
@@ -44,14 +24,11 @@ stdenvNoCC.mkDerivation {
     # Install hey.d modules
     cp -r hey.d $out/bin/hey.d
 
-    # Install zsh completion to standard location
-    installShellCompletion --zsh _hey
-
     runHook postInstall
   '';
 
   meta = with lib; {
-    description = "A modular interface to nix-darwin/nixos operations using JustScripts";
+    description = "A modular interface to nix-darwin/nixos operations using Nushell";
     homepage = "https://github.com/edmundmiller/dotfiles";
     license = licenses.mit;
     maintainers = [ ];
