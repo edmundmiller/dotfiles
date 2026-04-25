@@ -1,5 +1,5 @@
 ---
-purpose: Ban type assertions and enforce minimal-layer, minimal-state code.
+purpose: Ban unsafe type assertions and enforce minimal-layer, minimal-state code.
 rule_id: AGENT-10
 enforced_by: prompt+lint(bin/lint-ts-architecture)
 severity: warn
@@ -8,11 +8,13 @@ waiver_path: .agents/waivers/AGENT-10.md
 
 # Code Standards
 
-> two things that make code actually maintainable:
->
-> 1. reduce the layers a reader has to trace
-> 2. reduce the state a reader has to hold in their head
->
-> applies to every codebase. always.
+Two maintainability levers matter most:
 
-- Never typecast. Never use `as`.
+1. reduce layers a reader must trace
+2. reduce state a reader must hold in working memory
+
+Enforceable policy:
+
+- Do **not** use `as any` outside tests/fixtures.
+- Prefer narrowing, typed adapters, and explicit runtime guards over broad assertions.
+- If an assertion is unavoidable, keep it local and documented.
