@@ -1,0 +1,25 @@
+CHANGELOG.md
+  8507a95aa207f92b 13
+packages/jmux/default.nix
+  8507a95aa207f92b 14,19-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "6b1d8d63cffbbd50e64183eee226c0847fa656cf",
+  "prompts": {
+    "8507a95aa207f92b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "3b8cfaef-df32-418f-92e8-860aad3a3939",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 4,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
