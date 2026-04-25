@@ -11,7 +11,7 @@
 
 stdenv.mkDerivation {
   pname = "jmux";
-  version = "0.13.0-unstable-2026-04-22";
+  version = "0.13.0-unstable-2026-04-24";
 
   src = fetchFromGitHub {
     owner = "jarredkenny";
