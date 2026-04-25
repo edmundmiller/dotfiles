@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ $# -eq 0 ]]; then
+  echo "lint-ts-architecture: no files provided, skipping"
+  exit 0
+fi
+
+failures=0
+
+for file in "$@"; do
+  rel="$file"
+  if [[ "$rel" = "$ROOT_DIR"/* ]]; then
+    rel="${rel#"$ROOT_DIR/"}"
+  fi
+
+  abs="$ROOT_DIR/$rel"
+  if [[ ! -f "$abs" ]]; then
+    continue
+  fi
+
+  if [[ ! "$rel" =~ \.tsx?$ ]]; then
+    continue
+  fi
+
+  # Rule 1: ban `as any` outside test files
+  if [[ ! "$rel" =~ \.test\.tsx?$ ]] && [[ ! "$rel" =~ \.spec\.tsx?$ ]] \
+    && [[ ! "$rel" =~ /__tests__/ ]] && [[ ! "$rel" =~ /tests/ ]] \
+    && [[ ! "$rel" =~ /fixtures/ ]]; then
+    if rg --line-number --color never '\bas\s+any\b' "$abs" >/tmp/lint-ts-architecture-as-any.out 2>/dev/null; then
+      echo "TS architecture lint: 'as any' is forbidden outside tests: $rel" >&2
+      cat /tmp/lint-ts-architecture-as-any.out >&2
+      failures=1
+    fi
+  fi
+
+  # Rule 2: enforce package boundaries in pi-packages via import paths
+  # Disallow relative imports that jump into another pi-* package directly.
+  if [[ "$rel" =~ ^pi-packages/(pi-[^/]+)/ ]]; then
+    if rg --line-number --color never "['\"]\.\.(/\.\.)*/pi-[^'\"]+['\"]" "$abs" >/tmp/lint-ts-architecture-boundary.out 2>/dev/null; then
+      echo "TS architecture lint: cross-package relative import detected: $rel" >&2
+      cat /tmp/lint-ts-architecture-boundary.out >&2
+      failures=1
+    fi
+  fi
+done
+
+if [[ $failures -ne 0 ]]; then
+  echo "TS architecture lint failed." >&2
+  exit 1
+fi
+
+echo "TS architecture lint passed"
