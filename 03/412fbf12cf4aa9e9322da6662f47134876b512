@@ -1,0 +1,23 @@
+packages/jmux/default.nix
+  8507a95aa207f92b 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "03412fbf12cf4aa9e9322da6662f47134876b512",
+  "prompts": {
+    "8507a95aa207f92b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "3b8cfaef-df32-418f-92e8-860aad3a3939",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
