@@ -204,6 +204,10 @@ bind f run-shell "$DOTFILES/config/tmux/show-which-key-menu.sh find"
 unbind w
 bind w choose-tree -Zw
 
+# Reserve prefix+M for jmux's new session/worktree interceptor.
+# tmux's default prefix+M (`select-pane -M`) is not part of this setup.
+unbind M
+
 # Keep next/previous-window on muscle-memory keys.
 bind n next-window
 bind p previous-window

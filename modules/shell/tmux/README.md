@@ -77,6 +77,8 @@ When enabled, the module:
 - writes `~/.config/jmux/config.json` when `modules.shell.tmux.jmux.configFile` is set
 - makes Ghostty launch jmux on startup instead of the plain `tmux new-session -A -s home`
 - can point `modules.shell.tmux.jmux.package` at `pkgs.my.jmux` so jmux uses the same `C-c` prefix as the rest of this tmux setup
+- with `pkgs.my.jmux`, `prefix n` stays tmux `next-window`, while jmux's new session/worktree prompt moves to `prefix M`
+- the base tmux config explicitly leaves direct `prefix M` unbound so jmux can consume it cleanly; pane swap-to-master remains on `prefix Space p m`
 
 ## Dev Layouts (tml)
 
@@ -174,7 +176,7 @@ Open tmux-which-key with `prefix Space`, then:
 | `s / V`   | Split vertical (`V` when opensessions is enabled) |
 | `h/j/k/l` | Navigate panes                                    |
 | `H/J/K/L` | Swap panes                                        |
-| `M`       | Swap to master                                    |
+| `Space p m` | Swap to master                                  |
 | `o`       | Zoom pane                                         |
 | `< / >`   | Resize left/right (10)                            |
 | `+ / -`   | Resize down/up (5)                                |
@@ -225,7 +227,7 @@ Open tmux-which-key with `prefix Space`, then:
 | `P`       | Paste from system clipboard |
 | `i`       | Beads capture popup         |
 | `m`       | Task note capture popup     |
-| `N / `` ` | Daily note popup            |
+| `Space n n` | Daily note popup          |
 | `e`       | Beads explore (cwd) popup   |
 | `E`       | Beads explore (home) popup  |
 | `r`       | Reload config               |

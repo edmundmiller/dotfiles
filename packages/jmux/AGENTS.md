@@ -9,12 +9,13 @@ Provides a wrapped `jmux` binary that uses `C-c` as the effective prefix in this
 ## Local delta
 
 - Patches `src/input-router.ts` so jmux's UI intercept layer reads the prefix from `JMUX_PREFIX_KEY` instead of hardcoding `Ctrl-a`.
-- Wrapper sets `JMUX_PREFIX_KEY=C-c` by default.
+- Patches the new-session/worktree shortcut so it reads `JMUX_NEW_SESSION_KEY` and defaults to `Shift+M`, leaving `prefix+n` available for tmux `next-window` again.
+- Wrapper sets `JMUX_PREFIX_KEY=C-c` and `JMUX_NEW_SESSION_KEY=M` by default.
 - Wrapper prefixes `tmux` and `git` into `PATH`.
 
 ## Why this exists
 
-Upstream jmux lets tmux itself override the prefix via `~/.tmux.conf`, but its UI interception code was still hardcoded to `Ctrl-a`. That made `prefix+n`, `prefix+p`, settings, and diff-panel shortcuts inconsistent when tmux prefix was `C-c`.
+Upstream jmux lets tmux itself override the prefix via `~/.tmux.conf`, but its UI interception code was still hardcoded to `Ctrl-a`. That made `prefix+n`, `prefix+p`, settings, and diff-panel shortcuts inconsistent when tmux prefix was `C-c`. This package also moves jmux's new-session/worktree intercept off lowercase `n` so `prefix+n` stays tmux `next-window`, matching the rest of this setup.
 
 ## Validation
 
