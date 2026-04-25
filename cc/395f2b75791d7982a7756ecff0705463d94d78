@@ -1,0 +1,23 @@
+flake.nix
+  66688f2ae0de458b 81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "cc395f2b75791d7982a7756ecff0705463d94d78",
+  "prompts": {
+    "66688f2ae0de458b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "50d603bf-8132-4a0c-b140-b46c1ed25721",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 332,
+      "overriden_lines": 0
+    }
+  }
+}
