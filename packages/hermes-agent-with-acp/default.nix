@@ -7,7 +7,6 @@
   makeWrapper,
   writeShellScript,
   python3,
-  python312,
   nodejs,
   nodejs_20,
   ripgrep,
@@ -20,8 +19,6 @@ let
   hermesSource = inputs.hermesAgent;
   hermesDarwinVenv = callPackage (hermesSource + /nix/python.nix) {
     inherit (hermesSource.inputs) uv2nix pyproject-nix pyproject-build-systems;
-    # Hermes 0.9.0's Darwin env fails on Python 3.11 via sphinx 9.1.
-    python311 = python312;
   };
   hermesBundledSkills = lib.cleanSourceWith {
     src = hermesSource + /skills;
