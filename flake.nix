@@ -61,13 +61,13 @@
     llm-agents.inputs.systems.follows = "systems";
 
     # Canonical authoring/runtime repo for agent specs, renderers, and
-    # reusable OpenClaw defaults. Pinned to local agents-workspace repo.
-    # agents-workspace = {
-    #   url = "git+file:///Users/emiller/src/personal/agents-workspace?ref=main";
-    #   inputs.hermesAgent.follows = "hermesAgent";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    #   inputs.llm-agents.follows = "llm-agents";
-    # };
+    # reusable OpenClaw defaults.
+    agents-workspace = {
+      url = "git+ssh://git@github.com/edmundmiller/agents-workspace?ref=main";
+      inputs.hermesAgent.follows = "hermesAgent";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.llm-agents.follows = "llm-agents";
+    };
 
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
