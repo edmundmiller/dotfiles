@@ -14,7 +14,7 @@ Intel NUC home server running NixOS. Primary role: openclaw gateway, media servi
 
 - **`sandbox = "relaxed"`** — Required for packages needing network during build (e.g. qmd's bun install). Allows `__noChroot = true` derivations.
 - **`programs.nix-ld.enable = true`** — Required for generic linux binaries (e.g. sag from nix-steipete-tools). Libraries: `alsa-lib` (libasound.so.2 for sag audio).
-- **`/bin` compat symlinks** — `cat`, `ln`, `mkdir`, `rm` symlinked for nix-openclaw activation scripts.
+- **`/bin` compat symlinks** — `cat`, `ln`, `ls`, `mkdir`, `rm` symlinked for nix-openclaw/linux-sandbox compatibility.
 
 ## System Packages (non-module)
 
