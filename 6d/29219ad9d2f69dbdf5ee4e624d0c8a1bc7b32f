@@ -1,0 +1,23 @@
+bin/hey
+  14ca918b9b81e4ad 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "6d29219ad9d2f69dbdf5ee4e624d0c8a1bc7b32f",
+  "prompts": {
+    "14ca918b9b81e4ad": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019dc7c1-b1fb-7696-9acc-97be334f9221",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
