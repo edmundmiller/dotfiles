@@ -202,6 +202,14 @@ in
   inherit (telegramBindings) assertions;
 
   system.activationScripts = {
+    # Workaround for nix-openclaw/linux-sandbox using hardcoded /bin paths.
+    # TODO: report upstream so this compatibility shim can be removed.
+    binCompat = ''
+      mkdir -p /bin
+      for cmd in cat ln ls mkdir rm; do
+        ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
+      done
+    '';
 
     removeLegacyZele = ''
       rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
