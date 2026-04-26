@@ -1102,6 +1102,38 @@ in
     };
   };
 
+  # Replay Echo on iOS can fail SSH negotiation with newer OpenSSH defaults.
+  # Keep modern defaults, but explicitly allow legacy RSA + group14-sha1 fallback.
+  services.openssh.settings = {
+    # Replay Echo / NIOSSH compatibility: keep modern algorithms but avoid
+    # bleeding-edge-only defaults that some mobile SSH stacks choke on.
+    KexAlgorithms = [
+      "curve25519-sha256"
+      "curve25519-sha256@libssh.org"
+      "ecdh-sha2-nistp256"
+      "ecdh-sha2-nistp384"
+      "ecdh-sha2-nistp521"
+      "diffie-hellman-group14-sha256"
+      "diffie-hellman-group14-sha1"
+    ];
+    Ciphers = [
+      "chacha20-poly1305@openssh.com"
+      "aes256-ctr"
+      "aes192-ctr"
+      "aes128-ctr"
+      "aes256-gcm@openssh.com"
+      "aes128-gcm@openssh.com"
+    ];
+    Macs = [
+      "hmac-sha2-512"
+      "hmac-sha2-256"
+      "hmac-sha1"
+    ];
+    HostKeyAlgorithms = "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256,ssh-rsa";
+    PubkeyAcceptedAlgorithms = "ssh-ed25519,sk-ssh-ed25519@openssh.com,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256,ssh-rsa";
+    PerSourcePenalties = "no";
+  };
+
   # FIXME https://discourse.nixos.org/t/logrotate-config-fails-due-to-missing-group-30000/28501/7
   services.logrotate.checkConfig = false;
 
