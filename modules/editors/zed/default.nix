@@ -55,21 +55,30 @@ let
       assertion = zedSettingsParsed.success;
       message = "Zed schema check: ${zedSettingsPath} is invalid JSONC/JSON";
     }
-    (mkEnumAssertion "agent.play_sound_when_agent_done" [ "agent" "play_sound_when_agent_done" ] [
-      "never"
-      "when_hidden"
-      "always"
-    ])
-    (mkEnumAssertion "agent.tool_permissions.default" [ "agent" "tool_permissions" "default" ] [
-      "allow"
-      "deny"
-      "confirm"
-    ])
-    (mkEnumAssertion "relative_line_numbers" [ "relative_line_numbers" ] [
-      "disabled"
-      "enabled"
-      "wrapped"
-    ])
+    (mkEnumAssertion "agent.play_sound_when_agent_done"
+      [ "agent" "play_sound_when_agent_done" ]
+      [
+        "never"
+        "when_hidden"
+        "always"
+      ]
+    )
+    (mkEnumAssertion "agent.tool_permissions.default"
+      [ "agent" "tool_permissions" "default" ]
+      [
+        "allow"
+        "deny"
+        "confirm"
+      ]
+    )
+    (mkEnumAssertion "relative_line_numbers"
+      [ "relative_line_numbers" ]
+      [
+        "disabled"
+        "enabled"
+        "wrapped"
+      ]
+    )
     {
       assertion = isAutosaveValid;
       message = ''
@@ -98,7 +107,7 @@ in
       };
     })
 
-    (mkIf isDarwin {
+    (optionalAttrs isDarwin {
       homebrew.casks = [ "zed" ];
 
       modules.editors.file-associations = {
