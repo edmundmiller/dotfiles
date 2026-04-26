@@ -189,8 +189,6 @@
     // Live bash output view enhancements - vendored local copy
     // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view
     // "~/.config/dotfiles/pi-packages/pi-bash-live-view",
-    // Terminal/UI animations - https://www.npmjs.com/package/pi-animations
-    "npm:pi-animations",
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/pi-packages/pi-image-attachments",
     // Automatic model switching workflows (e.g. Kimi ↔ Codex handoff)
