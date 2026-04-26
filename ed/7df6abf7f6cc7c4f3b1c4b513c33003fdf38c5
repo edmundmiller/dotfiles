@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "ed7df6abf7f6cc7c4f3b1c4b513c33003fdf38c5",
+  "prompts": {
+    "8507a95aa207f92b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "3b8cfaef-df32-418f-92e8-860aad3a3939",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 470,
+      "total_deletions": 2,
+      "accepted_lines": 470,
+      "overriden_lines": 0
+    }
+  }
+}
