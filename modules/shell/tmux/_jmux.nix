@@ -10,10 +10,7 @@ let
   jmuxCfg = cfg.jmux;
 
   jmuxBin =
-    if jmuxCfg.package != null then
-      "${jmuxCfg.package}/bin/${jmuxCfg.command}"
-    else
-      jmuxCfg.command;
+    if jmuxCfg.package != null then "${jmuxCfg.package}/bin/${jmuxCfg.command}" else jmuxCfg.command;
 
   launchPath = concatStringsSep ":" [
     "${config.user.home}/.pi/agent/bin"
@@ -59,12 +56,16 @@ mkIf jmuxCfg.enable {
           # Start from home so jmux doesn't land in '/' when Ghostty launches from Finder.
           cd "$HOME"
 
+          jmux_cmd='${jmuxBin}'
+
           # jmux reads ~/.config/jmux/config.json automatically when present.
-          if ${jmuxBin}; then
-            exit 0
+          if command -v "$jmux_cmd" >/dev/null 2>&1; then
+            if "$jmux_cmd"; then
+              exit 0
+            fi
           fi
 
-          # Safety fallback: if jmux fails to start, drop into normal tmux.
+          # Safety fallback: if jmux is unavailable or fails to start, drop into normal tmux.
           exec tmux new-session -A -s home
         '';
       };
@@ -80,5 +81,7 @@ mkIf jmuxCfg.enable {
     };
 
   modules.shell.tmux.rcFiles = mkAfter [ "${config.user.home}/.config/tmux/jmux.conf" ];
-  modules.shell.zsh.rcFiles = mkAfter (optional (jmuxCfg.package != null) "${config.user.home}/.config/tmux/jmux-aliases.zsh");
+  modules.shell.zsh.rcFiles = mkAfter (
+    optional (jmuxCfg.package != null) "${config.user.home}/.config/tmux/jmux-aliases.zsh"
+  );
 }
