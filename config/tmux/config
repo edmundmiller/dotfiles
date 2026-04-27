@@ -188,7 +188,7 @@ set -g @open-S 'https://www.duckduckgo.com/'
 # Optional local overrides in XDG path (instead of ~/.tmux.conf).
 if-shell '[ -f "$TMUX_HOME/local.conf" ]' 'source-file "$TMUX_HOME/local.conf"'
 # Load generated module init last so declarative plugin/key settings win.
-source $TMUX_HOME/extraInit
+if-shell '[ -f "$TMUX_HOME/extraInit" ]' 'source-file "$TMUX_HOME/extraInit"'
 
 # Re-assert a few direct bindings after plugins load.
 unbind /
