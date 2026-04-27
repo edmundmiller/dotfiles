@@ -78,6 +78,18 @@ stdenv.mkDerivation {
         ("  Ctrl-a z                 Zoom diff panel (split ↔ full, when focused)\n", "  Prefix z                 Zoom diff panel (split ↔ full, when focused)\n"),
         ("  Ctrl-a Tab               Switch focus (tmux ↔ diff)\n", "  Prefix Tab               Switch focus (tmux ↔ diff)\n"),
         ("  Ctrl-a i                 Settings\n", "  Prefix i                 Settings\n"),
+        ('[{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "n", attrs: g }, { text: "          New session", attrs: n }],\n',
+         '[{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "M", attrs: g }, { text: "               New session", attrs: n }],\n'),
+        ('[{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "c", attrs: g }, { text: "          New window (tab)", attrs: n }],\n',
+         '[{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "c", attrs: g }, { text: "               New window (tab)", attrs: n }],\n'),
+        ('[{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "|", attrs: g }, { text: "          Split pane horizontally", attrs: n }],\n',
+         '[{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "|", attrs: g }, { text: "               Split pane horizontally", attrs: n }],\n'),
+        ('[{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "-", attrs: g }, { text: "          Split pane vertically", attrs: n }],\n',
+         '[{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "-", attrs: g }, { text: "               Split pane vertically", attrs: n }],\n'),
+        ('[{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "p", attrs: g }, { text: "          Command palette", attrs: n }],\n',
+         '[{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "p", attrs: g }, { text: "               Command palette", attrs: n }],\n'),
+        ('[{ text: "1.", attrs: c }, { text: " Try ", attrs: n }, { text: "Ctrl-a p", attrs: g }, { text: " to open the command palette", attrs: n }],\n',
+         '[{ text: "1.", attrs: c }, { text: " Try ", attrs: n }, { text: "Prefix p", attrs: g }, { text: " to open the command palette", attrs: n }],\n'),
     ]:
         help_text = help_text.replace(before, after)
     help_path.write_text(help_text)
