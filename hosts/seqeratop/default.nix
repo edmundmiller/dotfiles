@@ -32,8 +32,9 @@
         git.ai.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        tmux.jmux.enable = true;
         tmux.opensessions.enable = true;
-        dmux.enable = true;
+        dmux.enable = false;
         tmux.sesh.sessions = [
           {
             name = "dotfiles";
