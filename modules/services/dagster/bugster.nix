@@ -1,6 +1,6 @@
 # Bugster — Bugwarrior meets TaskNotes, running on Dagster
 #
-# Syncs GitHub/Jira/Linear issues + Snipd episodes into Obsidian notes via dlt pipelines.
+# Syncs GitHub/Jira/Linear issues + Snipd episodes + Granola notes into Obsidian notes via dlt pipelines.
 # Runs as a dagster code location (gRPC server) managed by the dagster module.
 #
 # Architecture:
@@ -115,6 +115,15 @@ let
           only_edited = ${boolToString src.onlyEdited}
           contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
         ''
+      else if src.type == "granola" then
+        ''
+
+          [[sources]]
+          type = "granola"
+          name = "${src.name}"
+          api_key = "''${${src.tokenEnv}}"
+          contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+        ''
       else
         ""
     ) cfg.sources
@@ -150,6 +159,7 @@ let
         "linear"
         "jira"
         "snipd"
+        "granola"
       ]) "github";
       name = mkOpt types.str "";
       # Common

@@ -1048,6 +1048,12 @@ in
             tokenEnv = "SNIPD_API_KEY";
             contexts = [ "podcasts" ];
           }
+          {
+            type = "granola";
+            name = "personal";
+            tokenEnv = "GRANOLA_API_KEY";
+            contexts = [ "meetings" ];
+          }
         ];
 
         calendar = {
