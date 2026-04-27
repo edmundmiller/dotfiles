@@ -1,6 +1,6 @@
 # Bugster — Dagster Code Location
 
-Syncs GitHub/Jira/Linear issues into Obsidian TaskNotes via dlt pipelines, running as a dagster code location.
+Syncs GitHub/Jira/Linear issues plus Snipd/Granola content into Obsidian via dlt pipelines, running as a dagster code location.
 
 ## Enable
 
@@ -11,6 +11,7 @@ modules.services.bugster = {
   sources = [
     { type = "github"; name = "personal"; tokenEnv = "GITHUB_TOKEN"; username = "edmundmiller"; }
     { type = "linear"; name = "work"; tokenEnv = "LINEAR_TOKEN"; }
+    { type = "granola"; name = "personal"; tokenEnv = "GRANOLA_API_KEY"; contexts = [ "meetings" ]; }
   ];
 };
 ```
@@ -37,6 +38,7 @@ Create `hosts/nuc/secrets/bugster-env.age` with:
 ```
 GITHUB_TOKEN=ghp_xxx
 LINEAR_TOKEN=lin_api_xxx
+GRANOLA_API_KEY=grn_xxx
 ```
 
 Override owner in host config:
