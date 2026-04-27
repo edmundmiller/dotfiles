@@ -86,6 +86,8 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
+      modules.shell.tmux.jmux.package = mkDefault pkgs.my.jmux;
+
       user.packages = [
         tmux
         pkgs.my.tmux-file-picker
