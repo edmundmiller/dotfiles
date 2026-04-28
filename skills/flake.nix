@@ -217,26 +217,17 @@
             marimo-pair.from = "marimo-pair";
             marimo-pair.path = ".";
 
-            add-molab-badge.from = "marimo-skills";
-            add-molab-badge.path = "add-molab-badge";
-
+            # Curated marimo subset: keep the broad, reusable notebook authoring
+            # and migration skills; omit niche publishing helpers and overlapping
+            # no-user-input workflows.
             anywidget.from = "marimo-skills";
             anywidget.path = "anywidget";
-
-            auto-paper-demo.from = "marimo-skills";
-            auto-paper-demo.path = "auto-paper-demo";
-
-            implement-paper-auto.from = "marimo-skills";
-            implement-paper-auto.path = "implement-paper-auto";
 
             implement-paper.from = "marimo-skills";
             implement-paper.path = "implement-paper";
 
             jupyter-to-marimo.from = "marimo-skills";
             jupyter-to-marimo.path = "jupyter-to-marimo";
-
-            marimo-batch.from = "marimo-skills";
-            marimo-batch.path = "marimo-batch";
 
             marimo-notebook.from = "marimo-skills";
             marimo-notebook.path = "marimo-notebook";
