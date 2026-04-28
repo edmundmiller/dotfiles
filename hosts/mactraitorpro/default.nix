@@ -42,6 +42,7 @@
         tmux.enable = true;
         tmux.jmux.enable = true;
         tmux.jmux.package = pkgs.my.jmux;
+        tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         tmux.experimental.sessionDots.enable = true;
         tmux.experimental.agentStatus.enable = true;
