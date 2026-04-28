@@ -1,0 +1,76 @@
+From 8c0e85974d6f4132e39b7b3fbceaae73a41e605e Mon Sep 17 00:00:00 2001
+From: Edmund Miller <git@edmundmiller.dev>
+Date: Tue, 28 Apr 2026 16:29:12 -0400
+Subject: [PATCH 1/4] patch: configurable prefix and new-session key
+
+---
+ src/input-router.ts | 23 +++++++++++++++++------
+ 1 file changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/src/input-router.ts b/src/input-router.ts
+index 3d382a4..75f2360 100644
+--- a/src/input-router.ts
++++ b/src/input-router.ts
+@@ -75,6 +75,16 @@ export interface InputRouterOptions {
+   onPanelRefresh?: () => void;
+ }
+ 
++const resolvePrefixByte = (): string => {
++  const raw = (typeof process !== "undefined" ? process.env.JMUX_PREFIX_KEY : undefined) ?? "C-a";
++  const normalized = raw.toLowerCase();
++  if (normalized === "c-c" || normalized === "ctrl-c") return "\x03";
++  return "\x01";
++};
++
++const resolveNewSessionKey = (): string =>
++  ((typeof process !== "undefined" ? process.env.JMUX_NEW_SESSION_KEY : undefined) ?? "M").slice(0, 1);
++
+ export class InputRouter {
+   private opts: InputRouterOptions;
+   private sidebarVisible: boolean;
+@@ -86,6 +96,8 @@ export class InputRouter {
+   private mainCols = 0;
+   private panelTabsActive = false;
+   private panelFilterActive = false;
++  private readonly prefixByte = resolvePrefixByte();
++  private readonly newSessionKey = resolveNewSessionKey();
+   constructor(opts: InputRouterOptions, sidebarVisible: boolean) {
+     this.opts = opts;
+     this.sidebarVisible = sidebarVisible;
+@@ -141,9 +153,8 @@ export class InputRouter {
+       }
+     }
+ 
+-    // Ctrl-a p interception: detect prefix + p to toggle palette
+-    // Ctrl-a is forwarded to tmux (so other prefix bindings work),
+-    // but if next byte is "p" we intercept it before tmux sees it.
++    // Prefix interception: detect prefix + p/N/i/g/... for jmux UI actions.
++    // The prefix byte is configurable via JMUX_PREFIX_KEY so it can track tmux.
+     if (!this.modalOpen) {
+       if (this.prefixSeen) {
+         this.prefixSeen = false;
+@@ -152,7 +163,7 @@ export class InputRouter {
+           this.opts.onModalToggle?.();
+           return;
+         }
+-        if (data === "n") {
++        if (data === this.newSessionKey) {
+           this.opts.onNewSession?.();
+           return;
+         }
+@@ -181,10 +192,10 @@ export class InputRouter {
+           return;
+         }
+         // Not intercepted — forward to PTY normally (tmux handles its prefix binding)
+-      } else if (data === "\x01") {
++      } else if (data === this.prefixByte) {
+         this.prefixSeen = true;
+         this.prefixTimer = setTimeout(() => { this.prefixSeen = false; this.prefixTimer = null; }, 2000);
+-        // Only forward Ctrl-a to PTY when tmux is focused (not when diff panel is focused)
++        // Only forward the configured prefix byte to PTY when tmux is focused.
+         if (!this.diffPanelFocused || this.diffPanelCols === 0) {
+           this.opts.onPtyData(data);
+         }
+-- 
+2.52.0
+
