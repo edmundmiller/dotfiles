@@ -1,0 +1,13 @@
+{
+  "adapters": {
+    "issueTracker": {
+      "type": "linear"
+    }
+  },
+  "issueWorkflow": {
+    "defaultBaseBranch": "main",
+    "autoCreateWorktree": true,
+    "autoLaunchAgent": true,
+    "sessionNameTemplate": "{identifier}"
+  }
+}
