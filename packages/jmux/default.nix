@@ -29,6 +29,7 @@ stdenv.mkDerivation {
   postPatch = ''
         python <<'PY'
     from pathlib import Path
+    import re
 
     path = Path("src/input-router.ts")
     text = path.read_text()
@@ -64,6 +65,28 @@ stdenv.mkDerivation {
         "        if (data === \"n\") {\n",
         "        if (data === this.newSessionKey) {\n",
     )
+
+    text, prefix_batch_count = re.subn(
+        r"""      } else if \(data === this\.prefixByte\) \{\n        this\.prefixSeen = true;\n        this\.prefixTimer = setTimeout\(\(\) => \{ this\.prefixSeen = false; this\.prefixTimer = null; \}, 2000\);\n        // Only forward the configured prefix byte to PTY when tmux is focused\.\n        if \(!this\.diffPanelFocused \|\| this\.diffPanelCols === 0\) \{\n          this\.opts\.onPtyData\(data\);\n        \}\n        return;\n      \}""",
+        """      } else if (data === this.prefixByte || data.startsWith(this.prefixByte)) {
+        this.prefixSeen = true;
+        this.prefixTimer = setTimeout(() => { this.prefixSeen = false; this.prefixTimer = null; }, 2000);
+        // Only forward the configured prefix byte to PTY when tmux is focused.
+        if (!this.diffPanelFocused || this.diffPanelCols === 0) {
+          this.opts.onPtyData(this.prefixByte);
+        }
+        const remainder = data.slice(this.prefixByte.length);
+        if (remainder.length > 0) {
+          this.handleInput(remainder);
+        }
+        return;
+      }""",
+        text,
+        count=1,
+    )
+    if prefix_batch_count == 0:
+        raise RuntimeError("Failed to patch batched-prefix handling in src/input-router.ts")
+
     path.write_text(text)
 
     help_path = Path("src/main.ts")
