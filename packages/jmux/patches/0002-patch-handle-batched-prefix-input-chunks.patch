@@ -1,0 +1,35 @@
+From 36c6f4575e034374bdba457aac1aaddca9b561b0 Mon Sep 17 00:00:00 2001
+From: Edmund Miller <git@edmundmiller.dev>
+Date: Tue, 28 Apr 2026 16:29:13 -0400
+Subject: [PATCH 2/4] patch: handle batched prefix input chunks
+
+---
+ src/input-router.ts | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/input-router.ts b/src/input-router.ts
+index 75f2360..23001c3 100644
+--- a/src/input-router.ts
++++ b/src/input-router.ts
+@@ -192,12 +192,16 @@ export class InputRouter {
+           return;
+         }
+         // Not intercepted — forward to PTY normally (tmux handles its prefix binding)
+-      } else if (data === this.prefixByte) {
++      } else if (data === this.prefixByte || data.startsWith(this.prefixByte)) {
+         this.prefixSeen = true;
+         this.prefixTimer = setTimeout(() => { this.prefixSeen = false; this.prefixTimer = null; }, 2000);
+         // Only forward the configured prefix byte to PTY when tmux is focused.
+         if (!this.diffPanelFocused || this.diffPanelCols === 0) {
+-          this.opts.onPtyData(data);
++          this.opts.onPtyData(this.prefixByte);
++        }
++        const remainder = data.slice(this.prefixByte.length);
++        if (remainder.length > 0) {
++          this.handleInput(remainder);
+         }
+         return;
+       }
+-- 
+2.52.0
+

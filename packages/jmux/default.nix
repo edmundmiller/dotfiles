@@ -20,7 +20,10 @@ stdenv.mkDerivation {
   };
 
   patches = [
-    ./patches/0001-configurable-prefix-and-welcome.patch
+    ./patches/0001-patch-configurable-prefix-and-new-session-key.patch
+    ./patches/0002-patch-handle-batched-prefix-input-chunks.patch
+    ./patches/0003-patch-update-help-text-for-Prefix-keybindings.patch
+    ./patches/0004-patch-add-Show-Welcome-palette-action.patch
   ];
 
   nativeBuildInputs = [
