@@ -1103,6 +1103,38 @@
         "type": "github"
       }
     },
+    "marimo-pair-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776958526,
+        "narHash": "sha256-y7/n9x6Yx8Oh0DWVpQDKc8YNn3pHFoo63l/mZ19i0OQ=",
+        "owner": "marimo-team",
+        "repo": "marimo-pair",
+        "rev": "4c2abb485e5ce68d8cb035df8871e7da4494c818",
+        "type": "github"
+      },
+      "original": {
+        "owner": "marimo-team",
+        "repo": "marimo-pair",
+        "type": "github"
+      }
+    },
+    "marimo-skills-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776850989,
+        "narHash": "sha256-BbaTxLN5AvJreZbvrgwFK9vG8GcH9DYFDr0T2Ab5u9c=",
+        "owner": "marimo-team",
+        "repo": "skills",
+        "rev": "94ae56ea457e24131c1d2369834eb527f87f35f4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "marimo-team",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "markit-repo": {
       "flake": false,
       "locked": {
@@ -1723,6 +1755,8 @@
         "diffity-repo": "diffity-repo",
         "dotfiles-repo": "dotfiles-repo",
         "hunk-repo": "hunk-repo",
+        "marimo-pair-repo": "marimo-pair-repo",
+        "marimo-skills-repo": "marimo-skills-repo",
         "markit-repo": "markit-repo",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": [
