@@ -89,6 +89,29 @@ Then `hey rebuild`.
 
 3. **Rebuild**: `hey rebuild` — auto-enabled via `local` source.
 
+## Marimo Skill Curation
+
+We intentionally do **not** enable every skill from `marimo-team/skills`.
+
+Kept:
+
+- `marimo-notebook` — core notebook authoring conventions
+- `jupyter-to-marimo` — common migration path
+- `streamlit-to-marimo` — common migration path
+- `anywidget` — richer custom widget/UI work
+- `wasm-compatibility` — useful validation niche
+- `implement-paper` — interactive, user-steered paper workflow
+- `marimo-pair` — separate repo; main live-notebook pairing capability
+
+Removed from the enabled set:
+
+- `add-molab-badge` — niche publishing helper; not broadly useful during normal coding flows
+- `auto-paper-demo` — overlaps with `implement-paper`, but forces a no-feedback workflow
+- `implement-paper-auto` — overlaps heavily with `implement-paper`; we prefer the interactive version
+- `marimo-batch` — valid, but narrower than the core authoring/conversion skills we want loaded by default
+
+Rule of thumb: prefer broad, reusable skills with low overlap. Avoid installing narrow helpers or duplicated "auto" variants unless we repeatedly need them.
+
 ## Discovering Current Sources
 
 List inputs: `nix flake metadata skills/ --json | jq -r '.locks.nodes.root.inputs | keys[]'`. Skill source/mapping config lives in `skills/flake.nix` (`sources` and `skills.explicit` blocks). Local skills are auto-discovered from `config/agents/skills/`.
