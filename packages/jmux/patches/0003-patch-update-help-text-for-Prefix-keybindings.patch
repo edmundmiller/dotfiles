@@ -1,0 +1,68 @@
+From 3a98588ff5218d33bf5d9a5f1e7661b4ed9a0f62 Mon Sep 17 00:00:00 2001
+From: Edmund Miller <git@edmundmiller.dev>
+Date: Tue, 28 Apr 2026 16:29:13 -0400
+Subject: [PATCH 3/4] patch: update help text for Prefix keybindings
+
+---
+ src/main.ts | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/src/main.ts b/src/main.ts
+index a7fffa3..2ba7282 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -98,15 +98,15 @@ Agent Control (JSON output):
+ 
+ Keybindings:
+   Ctrl-Shift-Up/Down       Switch sessions
+-  Ctrl-a n                 New session / worktree
+-  Ctrl-a c                 New window
+-  Ctrl-a z                 Toggle pane zoom
+-  Ctrl-a Arrows            Resize panes
+-  Ctrl-a p                 Command palette
+-  Ctrl-a g                 Toggle diff panel (on/off)
+-  Ctrl-a z                 Zoom diff panel (split ↔ full, when focused)
+-  Ctrl-a Tab               Switch focus (tmux ↔ diff)
+-  Ctrl-a i                 Settings
++  Prefix M                 New session / worktree
++  Prefix c                 New window
++  Prefix z                 Toggle pane zoom
++  Prefix Arrows            Resize panes
++  Prefix p                 Command palette
++  Prefix g                 Toggle diff panel (on/off)
++  Prefix z                 Zoom diff panel (split ↔ full, when focused)
++  Prefix Tab               Switch focus (tmux ↔ diff)
++  Prefix i                 Settings
+   Click sidebar            Switch to session
+ 
+ https://github.com/jarredkenny/jmux`;
+@@ -3244,12 +3244,12 @@ async function start(): Promise<void> {
+       [{ text: "Essential keybindings", attrs: b }],
+       [],
+       [{ text: "Ctrl-Shift-Up/Down", attrs: g }, { text: "     Switch between sessions", attrs: n }],
+-      [{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "n", attrs: g }, { text: "          New session", attrs: n }],
+-      [{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "c", attrs: g }, { text: "          New window (tab)", attrs: n }],
+-      [{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "|", attrs: g }, { text: "          Split pane horizontally", attrs: n }],
+-      [{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "-", attrs: g }, { text: "          Split pane vertically", attrs: n }],
++      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "M", attrs: g }, { text: "               New session", attrs: n }],
++      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "c", attrs: g }, { text: "               New window (tab)", attrs: n }],
++      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "|", attrs: g }, { text: "               Split pane horizontally", attrs: n }],
++      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "-", attrs: g }, { text: "               Split pane vertically", attrs: n }],
+       [{ text: "Shift-Arrow", attrs: g }, { text: "            Move between panes", attrs: n }],
+-      [{ text: "Ctrl-a", attrs: g }, { text: " then ", attrs: n }, { text: "p", attrs: g }, { text: "          Command palette", attrs: n }],
++      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "p", attrs: g }, { text: "               Command palette", attrs: n }],
+       [],
+       [{ text: "\u2500".repeat(44), attrs: d }],
+       [],
+@@ -3261,7 +3261,7 @@ async function start(): Promise<void> {
+       [],
+       [{ text: "Next steps", attrs: b }],
+       [],
+-      [{ text: "1.", attrs: c }, { text: " Try ", attrs: n }, { text: "Ctrl-a p", attrs: g }, { text: " to open the command palette", attrs: n }],
++      [{ text: "1.", attrs: c }, { text: " Try ", attrs: n }, { text: "Prefix p", attrs: g }, { text: " to open the command palette", attrs: n }],
+       [{ text: "2.", attrs: c }, { text: " Run ", attrs: n }, { text: "jmux --install-agent-hooks", attrs: g }, { text: " for Claude Code notifications", attrs: n }],
+       [{ text: "3.", attrs: c }, { text: " Full guide: ", attrs: n }, { text: "github.com/jarredkenny/jmux", attrs: d }],
+     ];
+-- 
+2.52.0
+
