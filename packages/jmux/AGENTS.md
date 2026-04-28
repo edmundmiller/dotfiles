@@ -1,6 +1,6 @@
 # jmux
 
-Nix package for upstream `jarredkenny/jmux` with a tiny local patch.
+Nix package for upstream `jarredkenny/jmux` with a local patch stack.
 
 ## Purpose
 
@@ -8,10 +8,18 @@ Provides a wrapped `jmux` binary that uses `C-c` as the effective prefix in this
 
 ## Local delta
 
-- Patches `src/input-router.ts` so jmux's UI intercept layer reads the prefix from `JMUX_PREFIX_KEY` instead of hardcoding `Ctrl-a`.
-- Patches the new-session/worktree shortcut so it reads `JMUX_NEW_SESSION_KEY` and defaults to `Shift+M`, leaving `prefix+n` available for tmux `next-window` again.
+- Patch stack lives in `packages/jmux/patches/` and is intentionally split into focused patches:
+  - configurable prefix/new-session key behavior
+  - batched prefix-chunk handling (e.g. `C-cg` arriving in one input chunk)
+  - help/welcome keybinding text updates
+  - command-palette "Show Welcome" action
 - Wrapper sets `JMUX_PREFIX_KEY=C-c` and `JMUX_NEW_SESSION_KEY=M` by default.
 - Wrapper prefixes `tmux` and `git` into `PATH`.
+
+## Maintenance rule
+
+When changing jmux behavior, prefer adding/updating a small `.patch` file in `packages/jmux/patches/` over inline source mutation in `default.nix`.
+Keep patch ordering stable and reflect it in the `patches = [ ... ]` list.
 
 ## Why this exists
 
