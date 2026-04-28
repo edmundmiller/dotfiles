@@ -62,6 +62,16 @@
       flake = false;
     };
 
+    marimo-pair-repo = {
+      url = "github:marimo-team/marimo-pair";
+      flake = false;
+    };
+
+    marimo-skills-repo = {
+      url = "github:marimo-team/skills";
+      flake = false;
+    };
+
     # Child flake cannot reference ../ paths once materialized in /nix/store.
     # Pull repo-local skill dirs from dotfiles source instead.
     dotfiles-repo = {
@@ -154,6 +164,18 @@
               filter.maxDepth = 2;
             };
 
+            marimo-pair = {
+              path = inputs.marimo-pair-repo.outPath;
+              subdir = ".";
+              filter.maxDepth = 1;
+            };
+
+            marimo-skills = {
+              path = inputs.marimo-skills-repo.outPath;
+              subdir = "skills";
+              filter.maxDepth = 1;
+            };
+
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -191,6 +213,39 @@
 
             acpx.from = "acpx";
             acpx.path = "acpx";
+
+            marimo-pair.from = "marimo-pair";
+            marimo-pair.path = ".";
+
+            add-molab-badge.from = "marimo-skills";
+            add-molab-badge.path = "add-molab-badge";
+
+            anywidget.from = "marimo-skills";
+            anywidget.path = "anywidget";
+
+            auto-paper-demo.from = "marimo-skills";
+            auto-paper-demo.path = "auto-paper-demo";
+
+            implement-paper-auto.from = "marimo-skills";
+            implement-paper-auto.path = "implement-paper-auto";
+
+            implement-paper.from = "marimo-skills";
+            implement-paper.path = "implement-paper";
+
+            jupyter-to-marimo.from = "marimo-skills";
+            jupyter-to-marimo.path = "jupyter-to-marimo";
+
+            marimo-batch.from = "marimo-skills";
+            marimo-batch.path = "marimo-batch";
+
+            marimo-notebook.from = "marimo-skills";
+            marimo-notebook.path = "marimo-notebook";
+
+            streamlit-to-marimo.from = "marimo-skills";
+            streamlit-to-marimo.path = "streamlit-to-marimo";
+
+            wasm-compatibility.from = "marimo-skills";
+            wasm-compatibility.path = "wasm-compatibility";
 
             # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
             # shaping.from = "shaping";
