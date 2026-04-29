@@ -1,0 +1,244 @@
+From f1030ec9978d3fc210fd9021ba6bde095a500137 Mon Sep 17 00:00:00 2001
+From: Edmund Miller <git@edmundmiller.dev>
+Date: Wed, 29 Apr 2026 12:31:34 -0400
+Subject: [PATCH] patch: show resolved prefix in all help and hunk hints
+
+---
+ src/diff-panel.ts |  16 ++++-
+ src/main.ts       | 153 ++++++++++++++++++++--------------------------
+ 2 files changed, 80 insertions(+), 89 deletions(-)
+
+diff --git a/src/diff-panel.ts b/src/diff-panel.ts
+index 5d4979c..3e0bb39 100644
+--- a/src/diff-panel.ts
++++ b/src/diff-panel.ts
+@@ -9,7 +9,16 @@ const HINT_KEY: CellAttrs = { fg: 2, fgMode: ColorMode.Palette };
+ 
+ const MIN_PANEL_COLS = 20;
+ 
++const resolvePrefixLabel = (): string => {
++  const raw = process.env.JMUX_PREFIX_KEY ?? "C-a";
++  const normalized = raw.trim().toLowerCase();
++  const match = normalized.match(/^(?:c|ctrl)-(.+)$/);
++  if (match) return `Ctrl-${match[1]}`;
++  return raw;
++};
++
+ export class DiffPanel {
++  private readonly prefixLabel = resolvePrefixLabel();
+   private _state: DiffPanelState = "off";
+   private _hunkExited = false;
+ 
+@@ -61,14 +70,15 @@ export class DiffPanel {
+   getEmptyGrid(cols: number, rows: number): CellGrid {
+     const grid = createGrid(cols, rows);
+     const centerRow = Math.floor(rows / 2);
+-    const line1 = "Press Ctrl-a g to close";
++    const line1 = `Press ${this.prefixLabel} g to close`;
+     const line2 = "Switch sessions to reload";
++    const keyHint = `${this.prefixLabel} g`;
+     const col1 = Math.max(0, Math.floor((cols - line1.length) / 2));
+     const col2 = Math.max(0, Math.floor((cols - line2.length) / 2));
+ 
+     writeString(grid, centerRow - 1, col1, "Press ", HINT_FG);
+-    writeString(grid, centerRow - 1, col1 + 6, "Ctrl-a g", HINT_KEY);
+-    writeString(grid, centerRow - 1, col1 + 14, " to close", HINT_FG);
++    writeString(grid, centerRow - 1, col1 + 6, keyHint, HINT_KEY);
++    writeString(grid, centerRow - 1, col1 + 6 + keyHint.length, " to close", HINT_FG);
+     writeString(grid, centerRow, col2, line2, HINT_FG);
+     return grid;
+   }
+diff --git a/src/main.ts b/src/main.ts
+index f0b0de4..2be47d1 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -44,6 +44,21 @@ import { homedir } from "os";
+ const VERSION = "0.15.0";
+ const MIN_BUN_VERSION = "1.3.8";
+ 
++const resolvePrefixLabel = (): string => {
++  const raw = process.env.JMUX_PREFIX_KEY ?? "C-a";
++  const normalized = raw.trim().toLowerCase();
++  const match = normalized.match(/^(?:c|ctrl)-(.+)$/);
++  if (match) return `Ctrl-${match[1]}`;
++  return raw;
++};
++
++const resolveNewSessionKeyLabel = (): string =>
++  (process.env.JMUX_NEW_SESSION_KEY ?? "M").slice(0, 1);
++
++const PREFIX_LABEL = resolvePrefixLabel();
++const NEW_SESSION_KEY_LABEL = resolveNewSessionKeyLabel();
++const prefixCombo = (key: string): string => `${PREFIX_LABEL} ${key}`;
++
+ function checkBunVersion(): void {
+   // parseInt parses leading digits and stops at the first non-digit, so
+   // canary/prerelease suffixes like "1.3.8-pre.1" survive intact.
+@@ -98,15 +113,15 @@ Agent Control (JSON output):
+ 
+ Keybindings:
+   Ctrl-Shift-Up/Down       Switch sessions
+-  Prefix M                 New session / worktree
+-  Prefix c                 New window
+-  Prefix z                 Toggle pane zoom
+-  Prefix Arrows            Resize panes
+-  Prefix p                 Command palette
+-  Prefix g                 Toggle diff panel (on/off)
+-  Prefix z                 Zoom diff panel (split ↔ full, when focused)
+-  Prefix Tab               Switch focus (tmux ↔ diff)
+-  Prefix i                 Settings
++  ${prefixCombo(NEW_SESSION_KEY_LABEL)}                 New session / worktree
++  ${prefixCombo("c")}                 New window
++  ${prefixCombo("z")}                 Toggle pane zoom
++  ${prefixCombo("Arrows")}            Resize panes
++  ${prefixCombo("p")}                 Command palette
++  ${prefixCombo("g")}                 Toggle diff panel (on/off)
++  ${prefixCombo("z")}                 Zoom diff panel (split ↔ full, when focused)
++  ${prefixCombo("Tab")}               Switch focus (tmux ↔ diff)
++  ${prefixCombo("i")}                 Settings
+   Click sidebar            Switch to session
+ 
+ https://github.com/jarredkenny/jmux`;
+@@ -2201,6 +2216,47 @@ function getNewSessionProviders(preScannedDirs: string[]): NewSessionProviders {
+   };
+ }
+ 
++function buildWelcomeLines(): StyledLine[] {
++  const g: CellAttrs = { fg: 2, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
++  const b: CellAttrs = { bold: true, bg: MODAL_BG, bgMode: 2 };
++  const d: CellAttrs = { fg: 8, fgMode: 1, dim: true, bg: MODAL_BG, bgMode: 2 };
++  const n: CellAttrs = { bg: MODAL_BG, bgMode: 2 };
++  const c: CellAttrs = { fg: 6, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
++  const y: CellAttrs = { fg: 3, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
++
++  const binding = (key: string): string => `${prefixCombo(key)}`.padEnd(28, " ");
++
++  return [
++    [{ text: "The terminal workspace for agentic development", attrs: d }],
++    [],
++    [{ text: "─".repeat(44), attrs: d }],
++    [],
++    [{ text: "Essential keybindings", attrs: b }],
++    [],
++    [{ text: "Ctrl-Shift-Up/Down", attrs: g }, { text: "     Switch between sessions", attrs: n }],
++    [{ text: binding(NEW_SESSION_KEY_LABEL), attrs: g }, { text: "New session", attrs: n }],
++    [{ text: binding("c"), attrs: g }, { text: "New window (tab)", attrs: n }],
++    [{ text: binding("|"), attrs: g }, { text: "Split pane horizontally", attrs: n }],
++    [{ text: binding("-"), attrs: g }, { text: "Split pane vertically", attrs: n }],
++    [{ text: "Shift-Arrow", attrs: g }, { text: "            Move between panes", attrs: n }],
++    [{ text: binding("p"), attrs: g }, { text: "Command palette", attrs: n }],
++    [],
++    [{ text: "─".repeat(44), attrs: d }],
++    [],
++    [{ text: "The sidebar", attrs: b }, { text: " on the left shows all your sessions.", attrs: n }],
++    [{ text: "●", attrs: g }, { text: " Green dot = new output    ", attrs: n }, { text: "!", attrs: y }, { text: " Orange = needs review", attrs: n }],
++    [{ text: "Click a session to switch to it.", attrs: n }],
++    [],
++    [{ text: "─".repeat(44), attrs: d }],
++    [],
++    [{ text: "Next steps", attrs: b }],
++    [],
++    [{ text: "1.", attrs: c }, { text: " Try ", attrs: n }, { text: prefixCombo("p"), attrs: g }, { text: " to open the command palette", attrs: n }],
++    [{ text: "2.", attrs: c }, { text: " Run ", attrs: n }, { text: "jmux --install-agent-hooks", attrs: g }, { text: " for Claude Code notifications", attrs: n }],
++    [{ text: "3.", attrs: c }, { text: " Full guide: ", attrs: n }, { text: "github.com/jarredkenny/jmux", attrs: d }],
++  ];
++}
++
+ async function handlePaletteAction(result: PaletteResult): Promise<void> {
+   const { commandId, sublistOptionId } = result;
+ 
+@@ -2379,44 +2435,7 @@ async function handlePaletteAction(result: PaletteResult): Promise<void> {
+       toggleSettingsScreen();
+       return;
+     case "show-welcome": {
+-      const g: CellAttrs = { fg: 2, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
+-      const b: CellAttrs = { bold: true, bg: MODAL_BG, bgMode: 2 };
+-      const d: CellAttrs = { fg: 8, fgMode: 1, dim: true, bg: MODAL_BG, bgMode: 2 };
+-      const n: CellAttrs = { bg: MODAL_BG, bgMode: 2 };
+-      const c: CellAttrs = { fg: 6, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
+-      const y: CellAttrs = { fg: 3, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
+-
+-      const welcomeLines: StyledLine[] = [
+-        [{ text: "The terminal workspace for agentic development", attrs: d }],
+-        [],
+-        [{ text: "─".repeat(44), attrs: d }],
+-        [],
+-        [{ text: "Essential keybindings", attrs: b }],
+-        [],
+-        [{ text: "Ctrl-Shift-Up/Down", attrs: g }, { text: "     Switch between sessions", attrs: n }],
+-        [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "M", attrs: g }, { text: "               New session", attrs: n }],
+-        [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "c", attrs: g }, { text: "               New window (tab)", attrs: n }],
+-        [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "|", attrs: g }, { text: "               Split pane horizontally", attrs: n }],
+-        [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "-", attrs: g }, { text: "               Split pane vertically", attrs: n }],
+-        [{ text: "Shift-Arrow", attrs: g }, { text: "            Move between panes", attrs: n }],
+-        [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "p", attrs: g }, { text: "               Command palette", attrs: n }],
+-        [],
+-        [{ text: "─".repeat(44), attrs: d }],
+-        [],
+-        [{ text: "The sidebar", attrs: b }, { text: " on the left shows all your sessions.", attrs: n }],
+-        [{ text: "●", attrs: g }, { text: " Green dot = new output    ", attrs: n }, { text: "!", attrs: y }, { text: " Orange = needs review", attrs: n }],
+-        [{ text: "Click a session to switch to it.", attrs: n }],
+-        [],
+-        [{ text: "─".repeat(44), attrs: d }],
+-        [],
+-        [{ text: "Next steps", attrs: b }],
+-        [],
+-        [{ text: "1.", attrs: c }, { text: " Try ", attrs: n }, { text: "Prefix p", attrs: g }, { text: " to open the command palette", attrs: n }],
+-        [{ text: "2.", attrs: c }, { text: " Run ", attrs: n }, { text: "jmux --install-agent-hooks", attrs: g }, { text: " for Claude Code notifications", attrs: n }],
+-        [{ text: "3.", attrs: c }, { text: " Full guide: ", attrs: n }, { text: "github.com/jarredkenny/jmux", attrs: d }],
+-      ];
+-
+-      const welcomeModal = new ContentModal({ lines: welcomeLines, title: "Welcome to jmux" });
++      const welcomeModal = new ContentModal({ lines: buildWelcomeLines(), title: "Welcome to jmux" });
+       welcomeModal.setTermRows(process.stdout.rows || 24);
+       welcomeModal.open();
+       openModal(welcomeModal, () => {});
+@@ -3273,45 +3292,7 @@ async function start(): Promise<void> {
+ 
+   // First-run welcome screen
+   if (configStore.ensureExists()) {
+-
+-    const g: CellAttrs = { fg: 2, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
+-    const b: CellAttrs = { bold: true, bg: MODAL_BG, bgMode: 2 };
+-    const d: CellAttrs = { fg: 8, fgMode: 1, dim: true, bg: MODAL_BG, bgMode: 2 };
+-    const n: CellAttrs = { bg: MODAL_BG, bgMode: 2 };
+-    const c: CellAttrs = { fg: 6, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
+-    const y: CellAttrs = { fg: 3, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
+-
+-    const welcomeLines: StyledLine[] = [
+-      [{ text: "The terminal workspace for agentic development", attrs: d }],
+-      [],
+-      [{ text: "\u2500".repeat(44), attrs: d }],
+-      [],
+-      [{ text: "Essential keybindings", attrs: b }],
+-      [],
+-      [{ text: "Ctrl-Shift-Up/Down", attrs: g }, { text: "     Switch between sessions", attrs: n }],
+-      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "M", attrs: g }, { text: "               New session", attrs: n }],
+-      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "c", attrs: g }, { text: "               New window (tab)", attrs: n }],
+-      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "|", attrs: g }, { text: "               Split pane horizontally", attrs: n }],
+-      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "-", attrs: g }, { text: "               Split pane vertically", attrs: n }],
+-      [{ text: "Shift-Arrow", attrs: g }, { text: "            Move between panes", attrs: n }],
+-      [{ text: "Prefix", attrs: g }, { text: " ", attrs: n }, { text: "p", attrs: g }, { text: "               Command palette", attrs: n }],
+-      [],
+-      [{ text: "\u2500".repeat(44), attrs: d }],
+-      [],
+-      [{ text: "The sidebar", attrs: b }, { text: " on the left shows all your sessions.", attrs: n }],
+-      [{ text: "\u25CF", attrs: g }, { text: " Green dot = new output    ", attrs: n }, { text: "!", attrs: y }, { text: " Orange = needs review", attrs: n }],
+-      [{ text: "Click a session to switch to it.", attrs: n }],
+-      [],
+-      [{ text: "\u2500".repeat(44), attrs: d }],
+-      [],
+-      [{ text: "Next steps", attrs: b }],
+-      [],
+-      [{ text: "1.", attrs: c }, { text: " Try ", attrs: n }, { text: "Prefix p", attrs: g }, { text: " to open the command palette", attrs: n }],
+-      [{ text: "2.", attrs: c }, { text: " Run ", attrs: n }, { text: "jmux --install-agent-hooks", attrs: g }, { text: " for Claude Code notifications", attrs: n }],
+-      [{ text: "3.", attrs: c }, { text: " Full guide: ", attrs: n }, { text: "github.com/jarredkenny/jmux", attrs: d }],
+-    ];
+-
+-    const welcomeModal = new ContentModal({ lines: welcomeLines, title: "Welcome to jmux" });
++    const welcomeModal = new ContentModal({ lines: buildWelcomeLines(), title: "Welcome to jmux" });
+     welcomeModal.setTermRows(process.stdout.rows || 24);
+     welcomeModal.open();
+     openModal(welcomeModal, () => {});
+-- 
+2.52.0
