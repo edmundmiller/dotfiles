@@ -1,0 +1,38 @@
+From 2b7c392cc475d293f84235655b8dc1f80d3a0f68 Mon Sep 17 00:00:00 2001
+From: Edmund Miller <git@edmundmiller.dev>
+Date: Wed, 29 Apr 2026 13:33:26 -0400
+Subject: [PATCH] test: cover resolved prefix label in diff panel hints
+
+---
+ src/__tests__/diff-panel.test.ts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/src/__tests__/diff-panel.test.ts b/src/__tests__/diff-panel.test.ts
+index 15be5c0..02cf930 100644
+--- a/src/__tests__/diff-panel.test.ts
++++ b/src/__tests__/diff-panel.test.ts
+@@ -86,6 +86,21 @@ describe("DiffPanel empty panel", () => {
+     expect(allChars).toContain("Ctrl-a");
+   });
+ 
++  test("getEmptyGrid renders configured prefix label", () => {
++    const prevPrefix = process.env.JMUX_PREFIX_KEY;
++    process.env.JMUX_PREFIX_KEY = "C-c";
++    try {
++      const panel = new DiffPanel();
++      const grid = panel.getEmptyGrid(40, 10);
++      const allChars = grid.cells.flatMap(row => row.map(c => c.char)).join("");
++      expect(allChars).toContain("Ctrl-c");
++      expect(allChars).not.toContain("Ctrl-a");
++    } finally {
++      if (prevPrefix === undefined) delete process.env.JMUX_PREFIX_KEY;
++      else process.env.JMUX_PREFIX_KEY = prevPrefix;
++    }
++  });
++
+   test("getEmptyGrid for not-found renders install hint", () => {
+     const panel = new DiffPanel();
+     const grid = panel.getNotFoundGrid(40, 10);
+-- 
+2.52.0
+
