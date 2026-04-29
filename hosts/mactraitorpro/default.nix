@@ -32,6 +32,7 @@
       shell = {
         "1password".enable = true;
         ai.enable = true;
+        amoxide.enable = true;
         agentBrowser.enable = true;
         direnv.enable = true;
         git.enable = true;

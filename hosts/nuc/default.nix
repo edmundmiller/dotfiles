@@ -822,6 +822,7 @@ in
     };
     shell = {
       # bugwarrior.enable = false;  # Module removed
+      amoxide.enable = true;
       git.enable = true;
       tmux.enable = true;
       zsh.enable = true;
