@@ -1,0 +1,5 @@
+name: jmux-attention
+version: 0.1.0
+description: "Set tmux @jmux-attention when a Hermes CLI turn completes in tmux."
+hooks:
+  - on_session_end
