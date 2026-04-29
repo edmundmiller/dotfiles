@@ -1,0 +1,66 @@
+From de6735ac80a791baaa44b1bbd9f7f3ccc02107a3 Mon Sep 17 00:00:00 2001
+From: Edmund Miller <git@edmundmiller.dev>
+Date: Wed, 29 Apr 2026 17:02:02 -0400
+Subject: [PATCH] patch: show resolved prefix only for documented keybindings
+
+---
+ src/__tests__/help-prefix.test.ts | 3 +--
+ src/main.ts                       | 8 ++------
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/src/__tests__/help-prefix.test.ts b/src/__tests__/help-prefix.test.ts
+index d4275c8..aa65b9e 100644
+--- a/src/__tests__/help-prefix.test.ts
++++ b/src/__tests__/help-prefix.test.ts
+@@ -11,13 +11,12 @@ describe("jmux --help keybindings", () => {
+       env: {
+         ...process.env,
+         JMUX_PREFIX_KEY: "C-c",
+-        JMUX_NEW_SESSION_KEY: "X",
+       },
+     });
+ 
+     expect(result.exitCode).toBe(0);
+     const out = result.stdout.toString();
+-    expect(out).toMatch(/Ctrl-c X\s+New session \/ worktree/);
++    expect(out).toMatch(/Ctrl-c M\s+New session \/ worktree/);
+     expect(out).toMatch(/Ctrl-c p\s+Command palette/);
+     expect(out).not.toContain("Prefix M");
+   });
+diff --git a/src/main.ts b/src/main.ts
+index 2be47d1..41968c3 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -52,11 +52,7 @@ const resolvePrefixLabel = (): string => {
+   return raw;
+ };
+ 
+-const resolveNewSessionKeyLabel = (): string =>
+-  (process.env.JMUX_NEW_SESSION_KEY ?? "M").slice(0, 1);
+-
+ const PREFIX_LABEL = resolvePrefixLabel();
+-const NEW_SESSION_KEY_LABEL = resolveNewSessionKeyLabel();
+ const prefixCombo = (key: string): string => `${PREFIX_LABEL} ${key}`;
+ 
+ function checkBunVersion(): void {
+@@ -113,7 +109,7 @@ Agent Control (JSON output):
+ 
+ Keybindings:
+   Ctrl-Shift-Up/Down       Switch sessions
+-  ${prefixCombo(NEW_SESSION_KEY_LABEL)}                 New session / worktree
++  ${prefixCombo("M")}                 New session / worktree
+   ${prefixCombo("c")}                 New window
+   ${prefixCombo("z")}                 Toggle pane zoom
+   ${prefixCombo("Arrows")}            Resize panes
+@@ -2234,7 +2230,7 @@ function buildWelcomeLines(): StyledLine[] {
+     [{ text: "Essential keybindings", attrs: b }],
+     [],
+     [{ text: "Ctrl-Shift-Up/Down", attrs: g }, { text: "     Switch between sessions", attrs: n }],
+-    [{ text: binding(NEW_SESSION_KEY_LABEL), attrs: g }, { text: "New session", attrs: n }],
++    [{ text: binding("M"), attrs: g }, { text: "New session", attrs: n }],
+     [{ text: binding("c"), attrs: g }, { text: "New window (tab)", attrs: n }],
+     [{ text: binding("|"), attrs: g }, { text: "Split pane horizontally", attrs: n }],
+     [{ text: binding("-"), attrs: g }, { text: "Split pane vertically", attrs: n }],
+-- 
+2.52.0
+
