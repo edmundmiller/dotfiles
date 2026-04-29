@@ -24,6 +24,8 @@ stdenv.mkDerivation {
     ./patches/0002-patch-handle-batched-prefix-input-chunks.patch
     ./patches/0003-patch-update-help-text-for-Prefix-keybindings.patch
     ./patches/0004-patch-add-Show-Welcome-palette-action.patch
+    ./patches/0005-patch-show-resolved-prefix-in-help-and-hunk-hints.patch
+    ./patches/0006-test-cover-resolved-prefix-label-in-diff-panel-hints.patch
   ];
 
   nativeBuildInputs = [
