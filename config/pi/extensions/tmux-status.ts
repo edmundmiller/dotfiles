@@ -14,6 +14,7 @@
  */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { mkdirSync, writeFileSync, unlinkSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 
 const STATUS_DIR = "/tmp/pi-tmux-status";
 
@@ -57,6 +58,16 @@ function cleanupStatus(): void {
   statusPath = null;
 }
 
+function setJmuxAttention(): void {
+  if (!process.env.TMUX) return;
+  try {
+    spawnSync("tmux", ["set-option", "@jmux-attention", "1"], {
+      stdio: "ignore",
+      timeout: 1500,
+    });
+  } catch {}
+}
+
 export default function tmuxStatus(pi: ExtensionAPI) {
   const pane = process.env.TMUX_PANE;
   if (!pane) return; // not running in tmux — nothing to do
@@ -92,6 +103,7 @@ export default function tmuxStatus(pi: ExtensionAPI) {
       writeStatus("busy", { cwd: ctx.cwd });
     } else {
       writeStatus("idle", { cwd: ctx.cwd });
+      setJmuxAttention();
     }
   });
 
