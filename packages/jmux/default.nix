@@ -26,6 +26,7 @@ stdenv.mkDerivation {
     ./patches/0004-patch-add-Show-Welcome-palette-action.patch
     ./patches/0005-patch-show-resolved-prefix-in-help-and-hunk-hints.patch
     ./patches/0006-test-cover-resolved-prefix-label-in-diff-panel-hints.patch
+    ./patches/0007-test-cover-resolved-prefix-in-help-output.patch
   ];
 
   nativeBuildInputs = [

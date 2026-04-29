@@ -1,0 +1,43 @@
+From c0e3e2f6a6949950afd56a1a72bde8b73fcc5fae Mon Sep 17 00:00:00 2001
+From: Edmund Miller <git@edmundmiller.dev>
+Date: Wed, 29 Apr 2026 14:14:19 -0400
+Subject: [PATCH] test: cover resolved prefix in --help output
+
+---
+ src/__tests__/help-prefix.test.ts | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 src/__tests__/help-prefix.test.ts
+
+diff --git a/src/__tests__/help-prefix.test.ts b/src/__tests__/help-prefix.test.ts
+new file mode 100644
+index 0000000..d4275c8
+--- /dev/null
++++ b/src/__tests__/help-prefix.test.ts
+@@ -0,0 +1,24 @@
++import { describe, expect, test } from "bun:test";
++import { resolve } from "path";
++
++describe("jmux --help keybindings", () => {
++  test("renders resolved prefix and new-session key", () => {
++    const rootDir = resolve(import.meta.dir, "..", "..");
++    const result = Bun.spawnSync([process.execPath, "run", "src/main.ts", "--help"], {
++      cwd: rootDir,
++      stdout: "pipe",
++      stderr: "pipe",
++      env: {
++        ...process.env,
++        JMUX_PREFIX_KEY: "C-c",
++        JMUX_NEW_SESSION_KEY: "X",
++      },
++    });
++
++    expect(result.exitCode).toBe(0);
++    const out = result.stdout.toString();
++    expect(out).toMatch(/Ctrl-c X\s+New session \/ worktree/);
++    expect(out).toMatch(/Ctrl-c p\s+Command palette/);
++    expect(out).not.toContain("Prefix M");
++  });
++});
+-- 
+2.52.0
+
