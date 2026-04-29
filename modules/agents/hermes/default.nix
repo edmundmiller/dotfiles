@@ -103,6 +103,7 @@ let
 
   renderedConfig = yamlFormat.generate "hermes-settings.yaml" renderedSettings;
   soulFile = "${configDir}/hermes/SOUL.md";
+  hermesPluginsDir = "${configDir}/hermes/plugins";
   inherit (cfg) configFile skinsDir;
 in
 {
@@ -208,6 +209,7 @@ in
                     config_target="$hermes_home/config.yaml"
                     soul_target="$hermes_home/SOUL.md"
                     skins_target="$hermes_home/skins"
+                    plugins_target="$hermes_home/plugins"
 
                     ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$hermes_home")"
 
@@ -217,7 +219,7 @@ in
                       ${pkgs.coreutils}/bin/mv "$legacy_xdg_home" "$hermes_home"
                     fi
 
-                    ${pkgs.coreutils}/bin/mkdir -p "$hermes_home" "$hermes_home/memories" "$skins_target"
+                    ${pkgs.coreutils}/bin/mkdir -p "$hermes_home" "$hermes_home/memories" "$skins_target" "$plugins_target"
 
                     # If a previous version left behind a symlinked config, replace it with
                     # a writable local copy before merging declarative defaults.
@@ -265,6 +267,38 @@ in
                   if dest_path.exists():
                       dest_path.chmod(0o644)
                   shutil.copy2(skin_file, dest_path)
+          PY
+
+                    plugins_source=${escapeShellArg hermesPluginsDir}
+                    ${pkgs.python3}/bin/python3 - "$plugins_source" "$plugins_target" <<'PY'
+          import pathlib
+          import shutil
+          import sys
+
+
+          source = pathlib.Path(sys.argv[1])
+          target_root = pathlib.Path(sys.argv[2])
+
+
+          if source.is_dir():
+              for plugin_dir in source.iterdir():
+                  if not plugin_dir.is_dir():
+                      continue
+                  if not (plugin_dir / "plugin.yaml").exists() and not (plugin_dir / "plugin.yml").exists():
+                      continue
+
+                  dest_plugin_dir = target_root / plugin_dir.name
+                  for path in plugin_dir.rglob("*"):
+                      rel_path = path.relative_to(plugin_dir)
+                      dest_path = dest_plugin_dir / rel_path
+                      if path.is_dir():
+                          dest_path.mkdir(parents=True, exist_ok=True)
+                          continue
+
+                      dest_path.parent.mkdir(parents=True, exist_ok=True)
+                      if dest_path.exists():
+                          dest_path.chmod(0o644)
+                      shutil.copy2(path, dest_path)
           PY
 
                     # Install VCC memory plugin into Hermes plugin discovery path
