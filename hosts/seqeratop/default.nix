@@ -98,7 +98,13 @@
       desktop = {
         apps.audioPriorityBar.enable = true;
         apps.handy.enable = true;
-        term.ghostty.enable = true;
+        term.ghostty = {
+          enable = true;
+          # Host-specific Seqera brand themes (auto-switch with system appearance)
+          configInit = ''
+            theme = dark:SeqeraDark,light:SeqeraLight
+          '';
+        };
       };
     };
 
@@ -137,6 +143,12 @@
           PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.3-codex";
           PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.4";
         };
+
+        # Host-local Ghostty themes in Seqera brand colors.
+        xdg.configFile."ghostty/themes/SeqeraDark".source =
+          "${config.dotfiles.configDir}/ghostty/themes/SeqeraDark";
+        xdg.configFile."ghostty/themes/SeqeraLight".source =
+          "${config.dotfiles.configDir}/ghostty/themes/SeqeraLight";
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
