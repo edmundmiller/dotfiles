@@ -22,78 +22,12 @@ let
     cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
   );
   hermesRequiredSecretKeysEnv = lib.concatStringsSep "," hermesRequiredSecretKeys;
-  hermesRequiredSecretKeysJson = pkgs.writeText "hermes-required-secret-keys.json" (
-    builtins.toJSON hermesRequiredSecretKeys
-  );
   opBin =
     let
       resolved = builtins.tryEval (lib.getExe pkgs._1password-cli);
     in
     if resolved.success then resolved.value else "op";
   opReadTimeoutSeconds = 15;
-  hermesSecretPreflight = pkgs.writeShellScript "hermes-secret-preflight" ''
-    set -euo pipefail
-
-    configured_home=${escapeShellArg cfg.homeDir}
-    hermes_home="$(${pkgs.python3}/bin/python3 - "$configured_home" <<'PY'
-    import os
-    import sys
-
-    os.environ.setdefault("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config"))
-    print(os.path.expanduser(os.path.expandvars(sys.argv[1])))
-    PY
-    )"
-    dotenv_path="$hermes_home/.env"
-
-    ${pkgs.python3}/bin/python3 - ${escapeShellArg hermesRequiredSecretKeysJson} "$dotenv_path" <<'PY'
-    import json
-    import os
-    import pathlib
-    import sys
-
-
-    required = [key for key in json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")) if key]
-    if not required:
-        raise SystemExit(0)
-
-    dotenv_path = pathlib.Path(sys.argv[2])
-    dotenv_values = {}
-    if dotenv_path.exists():
-        for raw_line in dotenv_path.read_text(encoding="utf-8").splitlines():
-            line = raw_line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if line.startswith("export "):
-                line = line[7:].lstrip()
-            key, sep, value = line.partition("=")
-            if not sep:
-                continue
-            dotenv_values[key] = value
-
-    missing = []
-    for key in required:
-        value = os.environ.get(key)
-        if value is None:
-            value = dotenv_values.get(key)
-        if value is None or value == "":
-            missing.append(key)
-
-    if missing:
-        print(
-            f"error: Hermes startup blocked; missing required secret env var(s): {', '.join(missing)}",
-            file=sys.stderr,
-        )
-        print(
-            f"error: checked process environment and dotenv file: {dotenv_path}",
-            file=sys.stderr,
-        )
-        print(
-            "error: unlock 1Password and run `hey re`, or export these env vars before starting Hermes.",
-            file=sys.stderr,
-        )
-        raise SystemExit(42)
-    PY
-  '';
 
   renderedSettings =
     optionalAttrs ((config.time.timeZone or "") != "") {
@@ -194,14 +128,14 @@ in
   config = mkIf cfg.enable {
     user.packages = [ cfg.package ];
     env.HERMES_HOME = cfg.homeDir;
-    env.HERMES_TUI = "1";
+    # env.HERMES_TUI = "1";
     env.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
 
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
         home.sessionVariables.HERMES_HOME = cfg.homeDir;
-        home.sessionVariables.HERMES_TUI = "1";
+        # home.sessionVariables.HERMES_TUI = "1";
         home.sessionVariables.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
 
         home.activation.hermes-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
