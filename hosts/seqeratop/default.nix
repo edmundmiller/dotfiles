@@ -185,7 +185,8 @@
             "${pkgs.python3}/bin/python3" \
               "${config.dotfiles.configDir}/bin/macos-wallpaper-placement.py" \
               "$wallpaper_store" \
-              Centered
+              Centered \
+              201637
             killall WallpaperAgent >/dev/null 2>&1 || true
           fi
         '';
