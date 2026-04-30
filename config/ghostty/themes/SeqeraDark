@@ -1,0 +1,24 @@
+background = #201637
+foreground = #e2f7f3
+cursor-color = #31c9ac
+cursor-text = #201637
+selection-background = #065647
+selection-foreground = #ffffff
+
+# ANSI palette (dark)
+palette = 0=#201637
+palette = 1=#95bf2f
+palette = 2=#31c9ac
+palette = 3=#e6d06c
+palette = 4=#5ea0ff
+palette = 5=#b38bff
+palette = 6=#2fc9b2
+palette = 7=#cfd0d1
+palette = 8=#6a6580
+palette = 9=#b7d85c
+palette = 10=#5be5ca
+palette = 11=#f4e19a
+palette = 12=#88baff
+palette = 13=#cfb3ff
+palette = 14=#7debd8
+palette = 15=#ffffff
