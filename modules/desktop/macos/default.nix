@@ -56,8 +56,9 @@ in
           TrackpadRightClick = true;
           # keep drag OFF so 3-finger swipes (Mission Control / app switching) work reliably
           TrackpadThreeFingerDrag = false;
-          TrackpadThreeFingerHorizSwipeGesture = 1;
-          TrackpadThreeFingerVertSwipeGesture = 1;
+          # nix-darwin expects 0 (off) or 2 (on) for these gesture enums.
+          TrackpadThreeFingerHorizSwipeGesture = 2;
+          TrackpadThreeFingerVertSwipeGesture = 2;
         };
 
         # keyboard & text behavior
@@ -88,8 +89,8 @@ in
           # keep external/Bluetooth trackpads aligned with built-in gesture settings
           "com.apple.driver.AppleBluetoothMultitouch.trackpad" = {
             TrackpadThreeFingerDrag = false;
-            TrackpadThreeFingerHorizSwipeGesture = 1;
-            TrackpadThreeFingerVertSwipeGesture = 1;
+            TrackpadThreeFingerHorizSwipeGesture = 2;
+            TrackpadThreeFingerVertSwipeGesture = 2;
           };
 
           # disable Siri
