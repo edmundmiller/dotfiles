@@ -174,11 +174,7 @@
 
           if [ -f "$wallpaper_dst" ] && [ -x /usr/bin/osascript ]; then
             wallpaper_escaped=$(printf '%s' "$wallpaper_dst" | sed 's/\\/\\\\/g; s/"/\\"/g')
-            /usr/bin/osascript <<APPLESCRIPT >/dev/null 2>&1 || true
-            tell application "Finder"
-              set desktop picture to POSIX file "$wallpaper_escaped"
-            end tell
-            APPLESCRIPT
+            /usr/bin/osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$wallpaper_escaped\"" >/dev/null 2>&1 || true
           fi
 
           if [ -f "$wallpaper_store" ]; then
@@ -195,41 +191,30 @@
         # Creates/updates a "Seqera" profile and sets it as startup/default profile.
         home.activation.setTerminalSeqeraProfile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           if [ -x /usr/bin/osascript ]; then
-            /usr/bin/osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
-            tell application "Terminal"
-              if not (exists settings set "Seqera") then
-                make new settings set with properties {name:"Seqera"}
-              end if
-
-              -- Font
-              set font name of settings set "Seqera" to "JetBrainsMono-Regular"
-              set font size of settings set "Seqera" to 14
-
-              -- Seqera colors
-              set background color of settings set "Seqera" to {8224, 5654, 14135} -- #201637
-              set normal text color of settings set "Seqera" to {58082, 63479, 62451} -- #e2f7f3
-              set bold text color of settings set "Seqera" to {65535, 65535, 65535} -- #ffffff
-              set cursor color of settings set "Seqera" to {12593, 51657, 44204} -- #31c9ac
-
-              -- Selection color is not supported on all macOS versions/profiles.
-              try
-                set selection color of settings set "Seqera" to {1542, 22102, 18247} -- #065647
-              end try
-
-              -- Make this profile the default for new windows/tabs
-              set default settings to settings set "Seqera"
-              set startup settings to settings set "Seqera"
-
-              -- Apply to all currently open tabs immediately.
-              if (count of windows) > 0 then
-                repeat with w in windows
-                  repeat with t in tabs of w
-                    set current settings of t to settings set "Seqera"
-                  end repeat
-                end repeat
-              end if
-            end tell
-            APPLESCRIPT
+            /usr/bin/osascript \
+              -e 'tell application "Terminal"' \
+              -e 'try' \
+              -e 'make new settings set with properties {name:"Seqera"}' \
+              -e 'end try' \
+              -e 'set font name of settings set "Seqera" to "JetBrainsMono-Regular"' \
+              -e 'set font size of settings set "Seqera" to 14' \
+              -e 'set background color of settings set "Seqera" to {8224, 5654, 14135}' \
+              -e 'set normal text color of settings set "Seqera" to {58082, 63479, 62451}' \
+              -e 'set bold text color of settings set "Seqera" to {65535, 65535, 65535}' \
+              -e 'set cursor color of settings set "Seqera" to {12593, 51657, 44204}' \
+              -e 'try' \
+              -e 'set selection color of settings set "Seqera" to {1542, 22102, 18247}' \
+              -e 'end try' \
+              -e 'set default settings to settings set "Seqera"' \
+              -e 'set startup settings to settings set "Seqera"' \
+              -e 'if (count of windows) > 0 then' \
+              -e 'repeat with w in windows' \
+              -e 'repeat with t in tabs of w' \
+              -e 'set current settings of t to settings set "Seqera"' \
+              -e 'end repeat' \
+              -e 'end repeat' \
+              -e 'end if' \
+              -e 'end tell' >/dev/null 2>&1 || true
           fi
         '';
       };
