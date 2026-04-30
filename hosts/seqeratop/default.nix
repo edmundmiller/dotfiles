@@ -101,7 +101,10 @@
         term.ghostty = {
           enable = true;
           # Host-specific Seqera brand themes (auto-switch with system appearance)
+          # plus host-local font override.
           configInit = ''
+            font-family = JetBrains Mono
+            font-size = 14
             theme = dark:SeqeraDark,light:SeqeraLight
           '';
         };
@@ -152,6 +155,41 @@
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+
+        # Keep macOS Terminal.app aligned with host-specific font and Seqera colors.
+        # Creates/updates a "Seqera" profile and sets it as startup/default profile.
+        home.activation.setTerminalSeqeraProfile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          if [ -x /usr/bin/osascript ]; then
+            /usr/bin/osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
+            tell application "Terminal"
+              -- Ensure profile exists (duplicate Basic once)
+              if not (exists settings set "Seqera") then
+                set newProfile to (make new settings set with properties {name:"Seqera"})
+                set baseProfile to settings set "Basic"
+                set font name of newProfile to font name of baseProfile
+                set font size of newProfile to font size of baseProfile
+              end if
+
+              set seqeraProfile to settings set "Seqera"
+
+              -- Font
+              set font name of seqeraProfile to "JetBrainsMono-Regular"
+              set font size of seqeraProfile to 14
+
+              -- Seqera colors
+              set background color of seqeraProfile to {8224, 5654, 14135} -- #201637
+              set normal text color of seqeraProfile to {58082, 63479, 62451} -- #e2f7f3
+              set bold text color of seqeraProfile to {65535, 65535, 65535} -- #ffffff
+              set cursor color of seqeraProfile to {12593, 51657, 44204} -- #31c9ac
+              set selection color of seqeraProfile to {1542, 22102, 18247} -- #065647
+
+              -- Make this profile the default for new windows/tabs
+              set default settings to seqeraProfile
+              set startup settings to seqeraProfile
+            end tell
+            APPLESCRIPT
+          fi
         '';
       };
 
