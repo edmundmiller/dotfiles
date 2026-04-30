@@ -157,36 +157,65 @@
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
         '';
 
+        # Keep the Seqera work wallpaper in a stable location and apply it to all desktops.
+        # macOS wallpaper automation reliably accepts the PNG export; the SVG sibling
+        # does not consistently stick as a desktop picture when scripted.
+        home.activation.setSeqeraWallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          wallpaper_src='/Users/edmundmiller/Downloads/seqera 6/seqera_no_margin/pngs/Seqera Icon Light Green.png'
+          wallpaper_dst="$HOME/Pictures/Wallpapers/Seqera Icon Light Green.png"
+
+          mkdir -p "$(dirname "$wallpaper_dst")"
+          if [ -f "$wallpaper_src" ]; then
+            cp -f "$wallpaper_src" "$wallpaper_dst"
+          fi
+
+          if [ -f "$wallpaper_dst" ] && [ -x /usr/bin/osascript ]; then
+            wallpaper_escaped=$(printf '%s' "$wallpaper_dst" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            /usr/bin/osascript <<APPLESCRIPT >/dev/null 2>&1 || true
+            tell application "Finder"
+              set desktop picture to POSIX file "$wallpaper_escaped"
+            end tell
+            APPLESCRIPT
+          fi
+        '';
+
         # Keep macOS Terminal.app aligned with host-specific font and Seqera colors.
         # Creates/updates a "Seqera" profile and sets it as startup/default profile.
         home.activation.setTerminalSeqeraProfile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           if [ -x /usr/bin/osascript ]; then
             /usr/bin/osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
             tell application "Terminal"
-              -- Ensure profile exists (duplicate Basic once)
               if not (exists settings set "Seqera") then
-                set newProfile to (make new settings set with properties {name:"Seqera"})
-                set baseProfile to settings set "Basic"
-                set font name of newProfile to font name of baseProfile
-                set font size of newProfile to font size of baseProfile
+                make new settings set with properties {name:"Seqera"}
               end if
 
-              set seqeraProfile to settings set "Seqera"
-
               -- Font
-              set font name of seqeraProfile to "JetBrainsMono-Regular"
-              set font size of seqeraProfile to 14
+              set font name of settings set "Seqera" to "JetBrainsMono-Regular"
+              set font size of settings set "Seqera" to 14
 
               -- Seqera colors
-              set background color of seqeraProfile to {8224, 5654, 14135} -- #201637
-              set normal text color of seqeraProfile to {58082, 63479, 62451} -- #e2f7f3
-              set bold text color of seqeraProfile to {65535, 65535, 65535} -- #ffffff
-              set cursor color of seqeraProfile to {12593, 51657, 44204} -- #31c9ac
-              set selection color of seqeraProfile to {1542, 22102, 18247} -- #065647
+              set background color of settings set "Seqera" to {8224, 5654, 14135} -- #201637
+              set normal text color of settings set "Seqera" to {58082, 63479, 62451} -- #e2f7f3
+              set bold text color of settings set "Seqera" to {65535, 65535, 65535} -- #ffffff
+              set cursor color of settings set "Seqera" to {12593, 51657, 44204} -- #31c9ac
+
+              -- Selection color is not supported on all macOS versions/profiles.
+              try
+                set selection color of settings set "Seqera" to {1542, 22102, 18247} -- #065647
+              end try
 
               -- Make this profile the default for new windows/tabs
-              set default settings to seqeraProfile
-              set startup settings to seqeraProfile
+              set default settings to settings set "Seqera"
+              set startup settings to settings set "Seqera"
+
+              -- Apply to all currently open tabs immediately.
+              if (count of windows) > 0 then
+                repeat with w in windows
+                  repeat with t in tabs of w
+                    set current settings of t to settings set "Seqera"
+                  end repeat
+                end repeat
+              end if
             end tell
             APPLESCRIPT
           fi
