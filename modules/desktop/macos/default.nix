@@ -50,11 +50,14 @@ in
           ShowStatusBar = true;
         };
 
-        # trackpad: tap to click, two-finger right click, three-finger drag
+        # trackpad: tap to click, two-finger right click, three-finger swipe gestures
         trackpad = {
           Clicking = true;
           TrackpadRightClick = true;
-          TrackpadThreeFingerDrag = true;
+          # keep drag OFF so 3-finger swipes (Mission Control / app switching) work reliably
+          TrackpadThreeFingerDrag = false;
+          TrackpadThreeFingerHorizSwipeGesture = 1;
+          TrackpadThreeFingerVertSwipeGesture = 1;
         };
 
         # keyboard & text behavior
@@ -82,6 +85,13 @@ in
         };
 
         CustomUserPreferences = {
+          # keep external/Bluetooth trackpads aligned with built-in gesture settings
+          "com.apple.driver.AppleBluetoothMultitouch.trackpad" = {
+            TrackpadThreeFingerDrag = false;
+            TrackpadThreeFingerHorizSwipeGesture = 1;
+            TrackpadThreeFingerVertSwipeGesture = 1;
+          };
+
           # disable Siri
           "com.apple.assistant.support"."Assistant Enabled" = false;
           "com.apple.Siri" = {
