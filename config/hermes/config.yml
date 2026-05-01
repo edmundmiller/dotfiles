@@ -254,6 +254,13 @@ approvals:
   mode: manual
   timeout: 60
 
+# Hooks
+hooks:
+  pre_tool_call:
+    - matcher: "terminal"
+      command: "~/.hermes/hooks/rtk-shell/rtk-rewrite-hermes.py"
+      timeout: 5
+
 # Command allowlist
 command_allowlist: []
 

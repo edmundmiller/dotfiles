@@ -38,7 +38,7 @@ let
   renderedConfig = yamlFormat.generate "hermes-settings.yaml" renderedSettings;
   soulFile = "${configDir}/hermes/SOUL.md";
   hermesPluginsDir = "${configDir}/hermes/plugins";
-  inherit (cfg) configFile skinsDir;
+  inherit (cfg) configFile skinsDir hooksDir;
 in
 {
   options.modules.agents.hermes = with types; {
@@ -71,6 +71,15 @@ in
       description = ''
         Repo-managed Hermes skins materialized into $HERMES_HOME/skins.
         User-created skins outside this directory are preserved.
+      '';
+    };
+
+    hooksDir = mkOption {
+      type = str;
+      default = "${configDir}/hermes/hooks";
+      description = ''
+        Repo-managed Hermes hooks materialized into $HERMES_HOME/hooks.
+        Nested directory structure is preserved. .py files get mode 0755.
       '';
     };
 
@@ -144,6 +153,7 @@ in
                     soul_target="$hermes_home/SOUL.md"
                     skins_target="$hermes_home/skins"
                     plugins_target="$hermes_home/plugins"
+                    hooks_target="$hermes_home/hooks"
 
                     ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$hermes_home")"
 
@@ -153,7 +163,7 @@ in
                       ${pkgs.coreutils}/bin/mv "$legacy_xdg_home" "$hermes_home"
                     fi
 
-                    ${pkgs.coreutils}/bin/mkdir -p "$hermes_home" "$hermes_home/memories" "$skins_target" "$plugins_target"
+                    ${pkgs.coreutils}/bin/mkdir -p "$hermes_home" "$hermes_home/memories" "$skins_target" "$plugins_target" "$hooks_target"
 
                     # If a previous version left behind a symlinked config, replace it with
                     # a writable local copy before merging declarative defaults.
@@ -233,6 +243,33 @@ in
                       if dest_path.exists():
                           dest_path.chmod(0o644)
                       shutil.copy2(path, dest_path)
+          PY
+
+                    hooks_source=${escapeShellArg hooksDir}
+                    ${pkgs.python3}/bin/python3 - "$hooks_source" "$hooks_target" <<'PY'
+          import os
+          import pathlib
+          import shutil
+          import sys
+
+
+          source = pathlib.Path(sys.argv[1])
+          target_root = pathlib.Path(sys.argv[2])
+
+
+          if source.is_dir():
+              for hook_file in source.rglob("*"):
+                  if not hook_file.is_file():
+                      continue
+
+                  rel_path = hook_file.relative_to(source)
+                  dest_path = target_root / rel_path
+                  dest_path.parent.mkdir(parents=True, exist_ok=True)
+                  if dest_path.exists():
+                      dest_path.chmod(0o644)
+                  shutil.copy2(hook_file, dest_path)
+                  mode = 0o755 if hook_file.suffix.lower() == ".py" else 0o644
+                  os.chmod(dest_path, mode)
           PY
 
                     # Install VCC memory plugin into Hermes plugin discovery path
