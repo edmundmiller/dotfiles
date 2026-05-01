@@ -33,7 +33,8 @@
         git.ai.enable = true;
         jj.enable = true;
         tmux.enable = true;
-        tmux.jmux.enable = true;
+        tmux.jmux.enable = false;
+        tmux.herdr.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         dmux.enable = false;
