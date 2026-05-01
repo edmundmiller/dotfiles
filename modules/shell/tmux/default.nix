@@ -155,6 +155,15 @@ in
         ;
     })
 
+    (import ./_herdr.nix {
+      inherit
+        lib
+        cfg
+        pkgs
+        config
+        ;
+    })
+
     (import ./activations {
       inherit
         lib

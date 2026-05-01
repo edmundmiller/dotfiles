@@ -44,6 +44,15 @@ with types;
     popupHeight = mkOpt int 90;
   };
 
+  herdr = {
+    enable = mkBoolOpt false;
+    package = mkOpt (nullOr package) null;
+    configFile = mkOpt (nullOr (either str path)) null;
+    key = mkOpt str "H";
+    popupWidth = mkOpt int 90;
+    popupHeight = mkOpt int 90;
+  };
+
   sesh = {
     sessions = mkOpt (listOf (submodule {
       options = {
