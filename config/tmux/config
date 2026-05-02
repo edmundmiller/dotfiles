@@ -8,6 +8,9 @@ if-shell '[ -z "${TMUX_HOME:-}" ]' 'set-environment -g TMUX_HOME "$HOME/.config/
 if-shell '[ -z "${DOTFILES:-}" ]' 'set-environment -g DOTFILES "$HOME/.config/dotfiles"'
 if-shell '[ -z "${DOTFILES_BIN:-}" ]' 'set-environment -g DOTFILES_BIN "$HOME/.config/dotfiles/bin"'
 
+# Propagate Moshi client signal into tmux when sessions are started via Moshi.
+set-option -ga update-environment " MOSHI_CLIENT"
+
 # Pass zoxide's DB location to all popup shells (Nix sets _ZO_DATA_DIR=$XDG_CACHE_HOME)
 # run-shell ensures $HOME is expanded by the shell, not tmux's config parser
 run-shell 'tmux set-environment -g _ZO_DATA_DIR "$HOME/.cache"'
@@ -46,7 +49,7 @@ set  -g display-panes-time 800
 # Address vim-mode switching delay (http://superuser.com/a/252717/65504)
 set  -s escape-time   0
 set -sg repeat-time   600
-set  -g history-limit 50000
+set  -g history-limit 100000
 # Rather than constraining window size to the maximum size of any client
 # connected to the *session*, constrain window size to the maximum size of any
 # client connected to *that window*. Much more reasonable.
@@ -221,3 +224,9 @@ bind p previous-window
 # prefix+b should hard-toggle the agent sidebar (open if absent, close if present).
 unbind b
 bind b run-shell 'cmd=$(tmux show -gv @agent-sidebar-toggle-cmd 2>/dev/null); [ -z "$cmd" ] && cmd="$HOME/.config/tmux/plugins/tmux-agent-status/scripts/sidebar-toggle.sh"; pane=$(tmux list-panes -F "#{pane_id} #{pane_title}" | awk "\$2==\"agent-sidebar\"{print \$1; exit}"); if [ -n "$pane" ]; then tmux kill-pane -t "$pane"; else "$cmd"; fi'
+
+# Keep Moshi swipe window detection reliable without changing local themes.
+if-shell '[ -n "$MOSHI_CLIENT" ]' {
+  set -g status-left ''
+  set -g status-right ''
+}
