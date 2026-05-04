@@ -95,6 +95,19 @@
       let
         moduleEnabled = path: if osConfig == null then false else lib.attrByPath path false osConfig;
 
+        acpxEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "acpx"
+          "enable"
+        ];
+        diffityEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "git"
+          "diffity"
+          "enable"
+        ];
         herdrEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -251,7 +264,7 @@
             herdr.from = "herdr";
             herdr.path = ".";
           }
-          // {
+          // lib.optionalAttrs diffityEnabled {
             diffity-diff.from = "diffity";
             diffity-diff.path = "diffity-diff";
 
@@ -260,13 +273,16 @@
 
             diffity-resolve.from = "diffity";
             diffity-resolve.path = "diffity-resolve";
-
+          }
+          // {
             markit.from = "markit";
             markit.path = ".";
-
+          }
+          // lib.optionalAttrs acpxEnabled {
             acpx.from = "acpx";
             acpx.path = "acpx";
-
+          }
+          // {
             marimo-pair.from = "marimo-pair";
             marimo-pair.path = ".";
 
