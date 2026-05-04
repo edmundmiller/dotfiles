@@ -1,0 +1,23 @@
+skills/flake.nix
+  999c454130f23a44 111-116,246-251
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "c2db316a17368352ed75a3337ebf0e458c06666b",
+  "prompts": {
+    "999c454130f23a44": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019defdc-c2a9-75bc-ba09-40f92b4e43c2",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 2,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
