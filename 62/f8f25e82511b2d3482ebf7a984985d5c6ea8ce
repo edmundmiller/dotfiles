@@ -1,0 +1,23 @@
+packages/sem.nix
+  867cd7cb9ffc9f89 12,18,28-29,31-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "62f8f25e82511b2d3482ebf7a984985d5c6ea8ce",
+  "prompts": {
+    "867cd7cb9ffc9f89": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df15c-94ca-723d-8f93-d541fe1bb673",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 18,
+      "accepted_lines": 21,
+      "overriden_lines": 0
+    }
+  }
+}
