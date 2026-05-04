@@ -108,6 +108,12 @@
           "diffity"
           "enable"
         ];
+        piEnabled = moduleEnabled [
+          "modules"
+          "agents"
+          "pi"
+          "enable"
+        ];
         herdrEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -237,84 +243,86 @@
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
           skills.enableAll = [ "local" ] ++ lib.optional jjEnabled "jut";
-          skills.explicit = {
-            extending-pi.from = "pi-extensions";
-            extending-pi.path = "extending-pi";
+          skills.explicit =
+            lib.optionalAttrs piEnabled {
+              extending-pi.from = "pi-extensions";
+              extending-pi.path = "extending-pi";
+            }
+            // {
+              gh-fix-ci.from = "openai";
+              gh-fix-ci.path = "gh-fix-ci";
 
-            gh-fix-ci.from = "openai";
-            gh-fix-ci.path = "gh-fix-ci";
+              agent-tail.from = "agent-tail";
+              agent-tail.path = "agent-tail";
 
-            agent-tail.from = "agent-tail";
-            agent-tail.path = "agent-tail";
+              # Mitsuhiko's tmux skill is only useful on hosts where tmux itself is enabled.
+            }
+            // lib.optionalAttrs tmuxEnabled {
+              tmux.from = "mitsuhiko";
+              tmux.path = ".";
+            }
+            // lib.optionalAttrs hunkEnabled {
+              hunk-review.from = "hunk";
+              hunk-review.path = "hunk-review";
+            }
+            // lib.optionalAttrs herdrEnabled {
+              # Herdr ships a root-level SKILL.md for agents controlling a live herdr
+              # session via its local socket. Only enable it on hosts where the herdr
+              # module is actually turned on.
+              herdr.from = "herdr";
+              herdr.path = ".";
+            }
+            // lib.optionalAttrs diffityEnabled {
+              diffity-diff.from = "diffity";
+              diffity-diff.path = "diffity-diff";
 
-            # Mitsuhiko's tmux skill is only useful on hosts where tmux itself is enabled.
-          }
-          // lib.optionalAttrs tmuxEnabled {
-            tmux.from = "mitsuhiko";
-            tmux.path = ".";
-          }
-          // lib.optionalAttrs hunkEnabled {
-            hunk-review.from = "hunk";
-            hunk-review.path = "hunk-review";
-          }
-          // lib.optionalAttrs herdrEnabled {
-            # Herdr ships a root-level SKILL.md for agents controlling a live herdr
-            # session via its local socket. Only enable it on hosts where the herdr
-            # module is actually turned on.
-            herdr.from = "herdr";
-            herdr.path = ".";
-          }
-          // lib.optionalAttrs diffityEnabled {
-            diffity-diff.from = "diffity";
-            diffity-diff.path = "diffity-diff";
+              diffity-review.from = "diffity";
+              diffity-review.path = "diffity-review";
 
-            diffity-review.from = "diffity";
-            diffity-review.path = "diffity-review";
+              diffity-resolve.from = "diffity";
+              diffity-resolve.path = "diffity-resolve";
+            }
+            // {
+              markit.from = "markit";
+              markit.path = ".";
+            }
+            // lib.optionalAttrs acpxEnabled {
+              acpx.from = "acpx";
+              acpx.path = "acpx";
+            }
+            // {
+              marimo-pair.from = "marimo-pair";
+              marimo-pair.path = ".";
 
-            diffity-resolve.from = "diffity";
-            diffity-resolve.path = "diffity-resolve";
-          }
-          // {
-            markit.from = "markit";
-            markit.path = ".";
-          }
-          // lib.optionalAttrs acpxEnabled {
-            acpx.from = "acpx";
-            acpx.path = "acpx";
-          }
-          // {
-            marimo-pair.from = "marimo-pair";
-            marimo-pair.path = ".";
+              # Curated marimo subset: keep the broad, reusable notebook authoring
+              # and migration skills; omit niche publishing helpers and overlapping
+              # no-user-input workflows.
+              anywidget.from = "marimo-skills";
+              anywidget.path = "anywidget";
 
-            # Curated marimo subset: keep the broad, reusable notebook authoring
-            # and migration skills; omit niche publishing helpers and overlapping
-            # no-user-input workflows.
-            anywidget.from = "marimo-skills";
-            anywidget.path = "anywidget";
+              implement-paper.from = "marimo-skills";
+              implement-paper.path = "implement-paper";
 
-            implement-paper.from = "marimo-skills";
-            implement-paper.path = "implement-paper";
+              jupyter-to-marimo.from = "marimo-skills";
+              jupyter-to-marimo.path = "jupyter-to-marimo";
 
-            jupyter-to-marimo.from = "marimo-skills";
-            jupyter-to-marimo.path = "jupyter-to-marimo";
+              marimo-notebook.from = "marimo-skills";
+              marimo-notebook.path = "marimo-notebook";
 
-            marimo-notebook.from = "marimo-skills";
-            marimo-notebook.path = "marimo-notebook";
+              streamlit-to-marimo.from = "marimo-skills";
+              streamlit-to-marimo.path = "streamlit-to-marimo";
 
-            streamlit-to-marimo.from = "marimo-skills";
-            streamlit-to-marimo.path = "streamlit-to-marimo";
+              wasm-compatibility.from = "marimo-skills";
+              wasm-compatibility.path = "wasm-compatibility";
 
-            wasm-compatibility.from = "marimo-skills";
-            wasm-compatibility.path = "wasm-compatibility";
-
-            # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
-            # shaping.from = "shaping";
-            # shaping.path = "shaping";
-            # breadboarding.from = "shaping";
-            # breadboarding.path = "breadboarding";
-            # breadboard-reflection.from = "shaping";
-            # breadboard-reflection.path = "breadboard-reflection";
-          };
+              # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
+              # shaping.from = "shaping";
+              # shaping.path = "shaping";
+              # breadboarding.from = "shaping";
+              # breadboarding.path = "breadboarding";
+              # breadboard-reflection.from = "shaping";
+              # breadboard-reflection.path = "breadboard-reflection";
+            };
 
           targets = {
             # Canonical shared global skills location. Codex, Pi, OpenCode,
