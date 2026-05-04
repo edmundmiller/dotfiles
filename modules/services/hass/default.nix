@@ -195,6 +195,8 @@ in
           "ecobee"
           "met"
           "radio_browser"
+          # Voice intents (hassil dependency for conversation config)
+          "conversation"
           # Fast zlib compression
           "isal"
           # Aranet4 CO2 sensor (Bluetooth LE)
