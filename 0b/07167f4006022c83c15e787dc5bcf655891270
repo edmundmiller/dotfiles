@@ -1,0 +1,31 @@
+modules/shell/acpx.nix
+  999c454130f23a44 1-22
+modules/shell/git/default.nix
+  999c454130f23a44 18,34-41
+hosts/seqeratop/default.nix
+  999c454130f23a44 36
+skills/flake.nix
+  999c454130f23a44 98-110,267,276-277,280-281,284-285
+hosts/mactraitorpro/default.nix
+  999c454130f23a44 43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "0b07167f4006022c83c15e787dc5bcf655891270",
+  "prompts": {
+    "999c454130f23a44": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019defdc-c2a9-75bc-ba09-40f92b4e43c2",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 55,
+      "total_deletions": 12,
+      "accepted_lines": 53,
+      "overriden_lines": 0
+    }
+  }
+}
