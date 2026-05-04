@@ -1,0 +1,23 @@
+hosts/nuc/default.nix
+  79c30f2d786249f4 890
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "d3fee998c92228c24c0b2512a9dd9a1d045304a3",
+  "prompts": {
+    "79c30f2d786249f4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df535-3294-7025-8685-13a220dd1e5d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
