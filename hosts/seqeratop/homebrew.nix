@@ -41,7 +41,7 @@
 
     # Development
     "claude"
-    "linear-linear" # Linear app (cask name is linear-linear)
+    "linear" # Linear app
     "superset"
     "lookaway"
 
