@@ -187,7 +187,7 @@
     "capacities"
     "heptabase"
     "sunsama"
-    "linear-linear" # Linear app (cask name is linear-linear)
+    "linear" # Linear app
     "motion"
     "granola"
 
