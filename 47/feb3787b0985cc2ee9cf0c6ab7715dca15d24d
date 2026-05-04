@@ -1,0 +1,23 @@
+packages/herdr/default.nix
+  676e6bc3c1e76b7e 3-4,7,10-40,42,44-45,47,49,57-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "47feb3787b0985cc2ee9cf0c6ab7715dca15d24d",
+  "prompts": {
+    "676e6bc3c1e76b7e": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df12e-bfe0-706a-ae85-8e91e0e7239d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 201,
+      "total_deletions": 181,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    }
+  }
+}
