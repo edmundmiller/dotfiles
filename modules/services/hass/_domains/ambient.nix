@@ -343,7 +343,6 @@ in
           {
             action = "vacuum.start";
             target.entity_id = [
-              "vacuum.rosie"
               "vacuum.squirty"
             ];
           }
