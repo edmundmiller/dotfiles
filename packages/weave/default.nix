@@ -9,13 +9,13 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "weave";
-  version = "0.2.8";
+  version = "0.3.2";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "weave";
     rev = "v${version}";
-    hash = "sha256-A9beYK1i52ghb4QQJLp5hw1DeIIc1AiK72oW5D3u08E=";
+    hash = "sha256-NlBHoxDgiNF38ktx2d44BmdABrPh4wr52mkNjlAmtX0=";
   };
 
   nativeBuildInputs = [ pkg-config ];
@@ -28,18 +28,13 @@ rustPlatform.buildRustPackage rec {
     "weave-driver"
     "-p"
     "weave-mcp"
+    "-p"
+    "weave-github"
   ];
 
-  cargoInstallFlags = [
-    "-p"
-    "weave-cli"
-    "-p"
-    "weave-driver"
-    "-p"
-    "weave-mcp"
-  ];
+  cargoInstallFlags = cargoBuildFlags;
 
-  cargoHash = "sha256-C7vJQZ15TE9XwVLi1uCjYdQPr3TDPVEQfOVENeKXg14=";
+  cargoHash = "sha256-XUasm/j9FOH9vDqSt1mYBfk3Y9UFKyFb8EKovptXYbI=";
 
   # Upstream has integration tests that expect git fixture repos.
   doCheck = false;
