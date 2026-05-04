@@ -28,7 +28,11 @@ rustPlatform.buildRustPackage rec {
   cargoBuildFlags = [
     "-p"
     "inspect-cli"
+    "-p"
+    "inspect-mcp"
   ];
+
+  cargoInstallFlags = cargoBuildFlags;
 
   cargoLock = {
     lockFile = ./inspect.Cargo.lock;
