@@ -53,7 +53,7 @@ let
     "/sbin"
   ];
 
-  useHerdr = config.modules.shell.tmux.enable && config.modules.shell.tmux.herdr.enable;
+  useHerdr = config.modules.shell.herdr.enable;
   useJmux = config.modules.shell.tmux.enable && config.modules.shell.tmux.jmux.enable;
   ghosttyStartupCommand =
     if useHerdr then
