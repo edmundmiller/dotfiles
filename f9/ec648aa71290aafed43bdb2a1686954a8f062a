@@ -1,0 +1,49 @@
+config/pi/settings.jsonc
+  e60820fbe0578ef6 6-7,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "f9ec648aa71290aafed43bdb2a1686954a8f062a",
+  "prompts": {
+    "009d912c7bdbfee3": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019def6b-1340-705e-b0ab-3f7b360264d8",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "999c454130f23a44": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019defdc-c2a9-75bc-ba09-40f92b4e43c2",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 133,
+      "total_deletions": 96,
+      "accepted_lines": 134,
+      "overriden_lines": 1
+    },
+    "e60820fbe0578ef6": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019defdb-2e6a-71fb-a654-f0f3d16f00c0",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
