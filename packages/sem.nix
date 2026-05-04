@@ -9,28 +9,32 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "sem";
-  version = "0.3.5";
+  version = "0.5.0";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "sem";
     rev = "v${version}";
-    hash = "sha256-G/EtpFnz8VJi2ln5QevFwxudVEmLLv80uDTiA7T6C+A=";
+    hash = "sha256-UjBjkscHwyry+qbfgJp4M+ftc+WAUsJljl3MxHWCQho=";
   };
 
   sourceRoot = "source/crates";
-  postPatch = ''
-    substituteInPlace Cargo.toml \
-      --replace-fail 'members = ["sem-core", "sem-cli", "sem-api"]' 'members = ["sem-core", "sem-cli"]'
-  '';
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [ openssl ];
 
   cargoBuildFlags = [
     "-p"
     "sem-cli"
+    "-p"
+    "sem-mcp"
   ];
-  cargoHash = "sha256-zpQrl3r95hjDcrj+0oa7/v1vVEra0P6Hf9CB5pkBzy8=";
+
+  cargoInstallFlags = cargoBuildFlags;
+
+  cargoHash = "sha256-aQ31vUJ4U2c4IfXU2aA8HRfUl/wNgbH/5YN/xzAcP7E=";
+
+  # Upstream graph-accuracy tests expect local fixture repos/files.
+  doCheck = false;
 
   meta = with lib; {
     description = "Semantic version control on top of Git";
