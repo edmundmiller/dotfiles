@@ -40,6 +40,7 @@
         git.hunk.enable = true;
         jj.enable = true;
         tmux.enable = true;
+        herdr.enable = true;
         tmux.jmux.enable = true;
         tmux.jmux.package = pkgs.my.jmux;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
