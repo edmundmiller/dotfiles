@@ -880,6 +880,22 @@
         "type": "github"
       }
     },
+    "herdr-repo_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777763852,
+        "narHash": "sha256-prCGMYsVf5fLMk6iF6lfwSbMjHI+SCqJ4emjHIHXFYI=",
+        "owner": "ogulcancelik",
+        "repo": "herdr",
+        "rev": "96d113ebe81a1368fa992c7d5830c13b800e40a7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ogulcancelik",
+        "repo": "herdr",
+        "type": "github"
+      }
+    },
     "hermesAgent": {
       "inputs": {
         "flake-parts": "flake-parts_2",
@@ -1705,6 +1721,7 @@
         "ghostty": "ghostty",
         "git-hooks": "git-hooks",
         "google-workspace-cli": "google-workspace-cli",
+        "herdr-repo": "herdr-repo",
         "hermesAgent": "hermesAgent",
         "home-manager": "home-manager_3",
         "llm-agents": "llm-agents",
@@ -1770,7 +1787,7 @@
         "agent-tail-repo": "agent-tail-repo",
         "diffity-repo": "diffity-repo",
         "dotfiles-repo": "dotfiles-repo",
-        "herdr-repo": "herdr-repo",
+        "herdr-repo": "herdr-repo_2",
         "hunk-repo": "hunk-repo",
         "marimo-pair-repo": "marimo-pair-repo",
         "marimo-skills-repo": "marimo-skills-repo",
