@@ -74,6 +74,11 @@
 
     google-workspace-cli.url = "github:googleworkspace/cli";
 
+    herdr-repo = {
+      url = "github:ogulcancelik/herdr";
+      flake = false;
+    };
+
     # Expose Hermes as a first-class root input so infra can override the
     # upstream package directly when agents-workspace's wrapper module needs
     # a local patch before upstream merges.

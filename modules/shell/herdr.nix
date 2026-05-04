@@ -53,7 +53,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    modules.shell.herdr.package = mkDefault (pkgs.herdr or null);
+    modules.shell.herdr.package = mkDefault (pkgs.my.herdr or pkgs.herdr or null);
 
     user.packages = optional (cfg.package != null) cfg.package;
 
@@ -122,6 +122,52 @@ in
           fi
 
           ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
+
+          # Keep the managed prefix in sync even after the initial bootstrap.
+          # Herdr's config stays writable for onboarding/settings, so existing
+          # files need an explicit upsert rather than only copying the template.
+          ${pkgs.python3}/bin/python3 - "$target" ${escapeShellArg cfg.prefix} <<'PY'
+          import pathlib
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          prefix = sys.argv[2]
+          lines = path.read_text().splitlines()
+          out = []
+          in_keys = False
+          saw_keys = False
+          wrote_prefix = False
+
+          for line in lines:
+              stripped = line.strip()
+              if stripped.startswith("[") and stripped.endswith("]"):
+                  if in_keys and not wrote_prefix:
+                      out.append(f'prefix = "{prefix}"')
+                      wrote_prefix = True
+                  in_keys = stripped == "[keys]"
+                  saw_keys = saw_keys or in_keys
+                  out.append(line)
+                  continue
+
+              if in_keys and stripped.startswith("prefix") and "=" in stripped:
+                  if not wrote_prefix:
+                      out.append(f'prefix = "{prefix}"')
+                      wrote_prefix = True
+                  continue
+
+              out.append(line)
+
+          if saw_keys and in_keys and not wrote_prefix:
+              out.append(f'prefix = "{prefix}"')
+              wrote_prefix = True
+
+          if not saw_keys:
+              if out and out[-1].strip():
+                  out.append("")
+              out.extend(["[keys]", f'prefix = "{prefix}"'])
+
+          path.write_text("\n".join(out) + "\n")
+          PY
         '';
       };
 
