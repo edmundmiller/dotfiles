@@ -1,0 +1,23 @@
+bin/hey.d/nix.nu
+  86fc6cc7b46e954d 4-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "b4cdc9bf7cc1864705b40f9b6655d33ed0fe28cf",
+  "prompts": {
+    "86fc6cc7b46e954d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df4dc-05d8-77ee-953c-f078a13d907c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
