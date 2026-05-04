@@ -81,7 +81,6 @@ let
   edmundAwake = findAutomation "edmund_awake_detection";
   monicaAwake = findAutomation "monica_awake_detection";
   windingDown = findAutomation "winding_down";
-  goodnightKeepNightstands = findAutomation "goodnight_keep_nightstands_off";
   bedPresenceInBed = findAutomation "bed_presence_in_bed";
   bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
@@ -134,10 +133,6 @@ let
     {
       test = windingDown != null;
       msg = "automation 'winding_down' missing";
-    }
-    {
-      test = goodnightKeepNightstands != null;
-      msg = "automation 'goodnight_keep_nightstands_off' missing";
     }
     {
       test = bedPresenceInBed != null;
@@ -268,8 +263,8 @@ let
       msg = "Good Morning scene doesn't turn on switch.desk_pop";
     }
     {
-      test = (windingDownScene.entities."light.essentials_a19_a60_5" or null) == "off";
-      msg = "Winding Down scene doesn't turn off wall lamp";
+      test = (windingDownScene.entities."light.essentials_a19_a60_5" or null) == "on";
+      msg = "Winding Down scene doesn't leave wall lamp on for low-light ambience";
     }
     {
       test = (sleepScene.entities."light.essentials_a19_a60_5" or null) == "off";

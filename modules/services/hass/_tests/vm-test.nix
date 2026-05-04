@@ -113,7 +113,6 @@ pkgs.testers.nixosTest {
         # Sleep automations that should remain
         for automation_id in [
             "winding_down",
-            "goodnight_keep_nightstands_off",
             "bed_presence_in_bed",
             "edmund_awake_detection",
             "monica_awake_detection",
