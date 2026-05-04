@@ -934,6 +934,7 @@ in
         enable = true;
         environmentFile = config.age.secrets.speedtest-tracker-env.path;
       };
+      timew_sync.enable = true;
       mission-control = {
         enable = true;
         tailscaleService.enable = true;
