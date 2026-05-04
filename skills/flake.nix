@@ -42,6 +42,11 @@
       flake = false;
     };
 
+    herdr-repo = {
+      url = "github:ogulcancelik/herdr";
+      flake = false;
+    };
+
     diffity-repo = {
       url = "github:kamranahmedse/diffity";
       flake = false;
@@ -82,7 +87,18 @@
 
   outputs = inputs: {
     homeManagerModules.default =
-      { ... }:
+      {
+        lib,
+        osConfig ? null,
+        ...
+      }:
+      let
+        herdrEnabled =
+          if osConfig == null then
+            false
+          else
+            lib.attrByPath [ "modules" "shell" "herdr" "enable" ] false osConfig;
+      in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
 
@@ -146,6 +162,12 @@
               filter.maxDepth = 2;
             };
 
+            herdr = {
+              path = inputs.herdr-repo.outPath;
+              subdir = ".";
+              filter.maxDepth = 1;
+            };
+
             diffity = {
               path = inputs.diffity-repo.outPath;
               subdir = "skills";
@@ -199,6 +221,15 @@
             hunk-review.from = "hunk";
             hunk-review.path = "hunk-review";
 
+            # Herdr ships a root-level SKILL.md for agents controlling a live herdr
+            # session via its local socket. Only enable it on hosts where the herdr
+            # module is actually turned on.
+          }
+          // lib.optionalAttrs herdrEnabled {
+            herdr.from = "herdr";
+            herdr.path = ".";
+          }
+          // {
             diffity-diff.from = "diffity";
             diffity-diff.path = "diffity-diff";
 
