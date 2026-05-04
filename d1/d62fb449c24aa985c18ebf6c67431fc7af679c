@@ -1,0 +1,23 @@
+packages/weave/default.nix
+  867cd7cb9ffc9f89 12,18,32,35-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "d1d62fb449c24aa985c18ebf6c67431fc7af679c",
+  "prompts": {
+    "867cd7cb9ffc9f89": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df15c-94ca-723d-8f93-d541fe1bb673",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 11,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
