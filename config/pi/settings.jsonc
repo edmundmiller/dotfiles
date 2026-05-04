@@ -3,10 +3,10 @@
   "$schema": "./settings-schema.json",
   // Model configuration
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "high",
+  "defaultModel": "gpt-5.5",
+  "defaultThinkingLevel": "low",
   // Model cycling - Ctrl+P to toggle between these
-  "enabledModels": ["gpt-5.4", "gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4-mini"],
+  "enabledModels": ["gpt-5.5", "gpt-5.4", "gpt-5.3-codex", "claude-opus-4-6", "gpt-5.4-mini"],
   // UI preferences
   "theme": "terminal",
   "quietStartup": true,
