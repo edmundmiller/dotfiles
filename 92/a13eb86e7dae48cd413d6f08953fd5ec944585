@@ -1,0 +1,23 @@
+packages/inspect.nix
+  867cd7cb9ffc9f89 31-32,35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "92a13eb86e7dae48cd413d6f08953fd5ec944585",
+  "prompts": {
+    "867cd7cb9ffc9f89": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df15c-94ca-723d-8f93-d541fe1bb673",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
