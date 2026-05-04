@@ -77,7 +77,7 @@ fi
 
 # Keyboard hints before creation
 echo
-gum style --foreground "$DIM" "Enter: confirm | Esc: cancel"
+gum style --foreground "$DIM" "Enter: confirm | Esc: cancel | Ctrl+C: quit"
 echo
 
 # Build command

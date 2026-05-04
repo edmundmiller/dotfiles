@@ -9,6 +9,7 @@
  *
  * Commands:
  *   /commit-review [guidance]
+ *   /commit-review --stage-all [guidance] — stage the whole working tree before drafting
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
@@ -207,6 +208,31 @@ async function hasStagedChanges(pi: ExtensionAPI, cwd: string): Promise<boolean>
   return result.code === 1;
 }
 
+async function stageAllChanges(pi: ExtensionAPI, cwd: string): Promise<void> {
+  const result = await pi.exec("git", ["add", "--all"], { cwd, timeout: 20_000 });
+  if (result.code !== 0) {
+    const details = result.stderr.trim() || result.stdout.trim() || "git add --all failed";
+    throw new Error(details);
+  }
+}
+
+function parseCommitReviewArgs(args: string): { guidance: string; stageAll: boolean } {
+  const trimmed = args.trim();
+  if (!trimmed) return { guidance: "", stageAll: false };
+
+  const tokens = trimmed.split(/\s+/);
+  const stageAll = tokens.includes("--stage-all");
+  if (!stageAll) return { guidance: trimmed, stageAll: false };
+
+  return {
+    guidance: tokens
+      .filter((token) => token !== "--stage-all")
+      .join(" ")
+      .trim(),
+    stageAll: true,
+  };
+}
+
 async function readStagedStat(pi: ExtensionAPI, cwd: string): Promise<string> {
   const result = await pi.exec("git", ["diff", "--cached", "--stat"], { cwd, timeout: 10_000 });
   return result.stdout.trim();
@@ -316,17 +342,35 @@ async function runCommitReview(
     return;
   }
 
+  const { guidance, stageAll } = parseCommitReviewArgs(args);
+
+  if (stageAll) {
+    ctx.ui.notify("staging all changes with git add --all before review...", "info");
+    try {
+      await stageAllChanges(pi, ctx.cwd);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      ctx.ui.notify(`auto-stage failed: ${message}`, "error");
+      return;
+    }
+  }
+
   if (!(await hasStagedChanges(pi, ctx.cwd))) {
-    ctx.ui.notify("no staged changes; stage the commit first", "warning");
+    ctx.ui.notify(
+      stageAll
+        ? "no changes to commit after auto-staging"
+        : "no staged changes; stage the commit first",
+      "warning"
+    );
     return;
   }
 
-  ctx.ui.notify("drafting commit message in child pi...", "info");
+  ctx.ui.notify("drafting commit message from staged diff...", "info");
 
   let draft: string;
   let selection: ModelSelection;
   try {
-    const generated = await generateCommitDraft(pi, ctx, args);
+    const generated = await generateCommitDraft(pi, ctx, guidance);
     draft = generated.draft;
     selection = generated.selection;
   } catch (error) {
@@ -348,6 +392,8 @@ async function runCommitReview(
 
   if (status === 0) {
     ctx.ui.notify("commit created", "success");
+  } else if (stageAll) {
+    ctx.ui.notify("commit aborted; auto-staged changes remain staged", "warning");
   } else {
     ctx.ui.notify("commit aborted", "warning");
   }
