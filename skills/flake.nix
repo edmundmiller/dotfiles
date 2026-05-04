@@ -93,11 +93,33 @@
         ...
       }:
       let
-        herdrEnabled =
-          if osConfig == null then
-            false
-          else
-            lib.attrByPath [ "modules" "shell" "herdr" "enable" ] false osConfig;
+        moduleEnabled = path: if osConfig == null then false else lib.attrByPath path false osConfig;
+
+        herdrEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "herdr"
+          "enable"
+        ];
+        hunkEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "git"
+          "hunk"
+          "enable"
+        ];
+        jjEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "jj"
+          "enable"
+        ];
+        tmuxEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "tmux"
+          "enable"
+        ];
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -201,10 +223,7 @@
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
-          skills.enableAll = [
-            "local"
-            "jut"
-          ];
+          skills.enableAll = [ "local" ] ++ lib.optional jjEnabled "jut";
           skills.explicit = {
             extending-pi.from = "pi-extensions";
             extending-pi.path = "extending-pi";
@@ -215,17 +234,20 @@
             agent-tail.from = "agent-tail";
             agent-tail.path = "agent-tail";
 
+            # Mitsuhiko's tmux skill is only useful on hosts where tmux itself is enabled.
+          }
+          // lib.optionalAttrs tmuxEnabled {
             tmux.from = "mitsuhiko";
             tmux.path = ".";
-
+          }
+          // lib.optionalAttrs hunkEnabled {
             hunk-review.from = "hunk";
             hunk-review.path = "hunk-review";
-
+          }
+          // lib.optionalAttrs herdrEnabled {
             # Herdr ships a root-level SKILL.md for agents controlling a live herdr
             # session via its local socket. Only enable it on hosts where the herdr
             # module is actually turned on.
-          }
-          // lib.optionalAttrs herdrEnabled {
             herdr.from = "herdr";
             herdr.path = ".";
           }
