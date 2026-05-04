@@ -1,6 +1,11 @@
 use ./common.nu *
 
 def "main gc" [] {
+  if (is-darwin) {
+    ^sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations old
+    ^sudo nix-collect-garbage -d
+  }
+
   ^nix-collect-garbage -d
 }
 
