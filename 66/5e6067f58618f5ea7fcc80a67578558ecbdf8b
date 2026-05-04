@@ -1,0 +1,42 @@
+modules/shell/herdr.nix
+  999c454130f23a44 2,8,10-11,13,32-41,43-53,55-60,84-90,93-94,97,101-131
+modules/desktop/term/ghostty/default.nix
+  e60820fbe0578ef6 56
+hosts/mactraitorpro/default.nix
+  e60820fbe0578ef6 43
+hosts/seqeratop/default.nix
+  e60820fbe0578ef6 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "665e6067f58618f5ea7fcc80a67578558ecbdf8b",
+  "prompts": {
+    "999c454130f23a44": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019defdc-c2a9-75bc-ba09-40f92b4e43c2",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 75,
+      "accepted_lines": 131,
+      "overriden_lines": 0
+    },
+    "e60820fbe0578ef6": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019defdb-2e6a-71fb-a654-f0f3d16f00c0",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 20,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
