@@ -12,7 +12,7 @@ in
 {
   options.modules.shell.acpx = {
     enable = mkBoolOpt false;
-    package = mkOpt (nullOr types.package) (pkgs.my.acpx or null);
+    package = mkOpt (types.nullOr types.package) (pkgs.my.acpx or null);
     command = mkOpt types.str "acpx";
   };
 
