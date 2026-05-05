@@ -343,6 +343,17 @@ in
         ];
       };
 
+      get_ready_for_bed = {
+        alias = "Get Ready For Bed";
+        icon = "mdi:bed-clock";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.winding_down";
+          }
+        ];
+      };
+
       in_bed = {
         alias = "In Bed";
         icon = "mdi:bed";

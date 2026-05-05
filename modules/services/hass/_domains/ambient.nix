@@ -83,6 +83,49 @@ in
       }
     ];
 
+    script = lib.mkAfter {
+      mid_morning = {
+        alias = "Mid-morning";
+        icon = "mdi:weather-sunny";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.mid_morning";
+          }
+        ];
+      };
+      sundown = {
+        alias = "Sundown";
+        icon = "mdi:weather-sunset";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.sundown";
+          }
+        ];
+      };
+      arrive_home = {
+        alias = "Arrive Home";
+        icon = "mdi:home-import-outline";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.arrive_home";
+          }
+        ];
+      };
+      leave_home = {
+        alias = "Leave Home";
+        icon = "mdi:home-export-outline";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.leave_home";
+          }
+        ];
+      };
+    };
+
     automation = lib.mkAfter (ensureEnabled [
       # --- Sun-based ---
       # Follows Good Morning — once natural light fills the west-facing
