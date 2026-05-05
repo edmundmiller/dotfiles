@@ -1,0 +1,27 @@
+modules/services/hass/_domains/sleep/default.nix
+  79c30f2d786249f4 346-356
+modules/services/hass/_domains/ambient.nix
+  79c30f2d786249f4 86-128
+modules/services/hass/default.nix
+  79c30f2d786249f4 258,263-266,269,274-277
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "fd219802b4508c55f15b13060f4078eb8dff4d04",
+  "prompts": {
+    "79c30f2d786249f4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df535-3294-7025-8685-13a220dd1e5d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 64,
+      "total_deletions": 0,
+      "accepted_lines": 64,
+      "overriden_lines": 0
+    }
+  }
+}
