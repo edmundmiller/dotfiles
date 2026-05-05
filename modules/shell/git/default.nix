@@ -18,53 +18,58 @@ in
     diffity.enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
-    user.packages =
-      with pkgs;
-      [
-        git-open
-        difftastic
-        delta # for lazygit paging
-        (mkIf config.modules.shell.gnupg.enable git-crypt)
-        git-lfs
-        pre-commit
-        my.git-hunks
-        (mkIf cfg.hunk.enable my.hunk)
-      ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin (
+  config = mkIf cfg.enable (mkMerge [
+    {
+      user.packages =
+        with pkgs;
         [
-          my.sem # semantic git diff/impact/blame
-          my.inspect # entity-level code review triage
-          my.weave # entity-level semantic merge driver
+          git-open
+          difftastic
+          delta # for lazygit paging
+          (mkIf config.modules.shell.gnupg.enable git-crypt)
+          git-lfs
+          pre-commit
+          my.git-hunks
+          (mkIf cfg.hunk.enable my.hunk)
         ]
-        ++ lib.optional cfg.diffity.enable my.diffity # GitHub-style diff viewer/code review
-      );
+        ++ lib.optionals stdenv.hostPlatform.isDarwin (
+          [
+            my.sem # semantic git diff/impact/blame
+            my.inspect # entity-level code review triage
+            my.weave # entity-level semantic merge driver
+          ]
+          ++ lib.optional cfg.diffity.enable my.diffity # GitHub-style diff viewer/code review
+        );
 
-    # Use home-manager's xdg.configFile directly for proper activation
-    home-manager.users.${config.user.name} = {
-      xdg.configFile = {
-        "git/config".source = "${configDir}/git/config";
-        "git/config-seqera".source = "${configDir}/git/config-seqera";
-        "git/config-nfcore".source = "${configDir}/git/config-nfcore";
-        "git/ignore".source = "${configDir}/git/ignore";
-        "git/allowed_signers".source = "${configDir}/git/allowed_signers";
-        # GitHub CLI config (hosts.yml intentionally NOT managed — gh writes
-        # token/scope metadata to it after auth; Nix store symlink would block that)
-        "gh/config.yml".source = "${configDir}/gh/config.yml";
-        # GitHub Dashboard config
-        "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
-        # Lazygit config
-        "lazygit/config.yml" = {
-          text = builtins.readFile "${configDir}/lazygit/config.yml";
-          force = true;
+      # Use home-manager's xdg.configFile directly for proper activation
+      home-manager.users.${config.user.name} = {
+        xdg.configFile = {
+          "git/config".source = "${configDir}/git/config";
+          "git/config-seqera".source = "${configDir}/git/config-seqera";
+          "git/config-nfcore".source = "${configDir}/git/config-nfcore";
+          "git/ignore".source = "${configDir}/git/ignore";
+          "git/allowed_signers".source = "${configDir}/git/allowed_signers";
+          # GitHub CLI config (hosts.yml intentionally NOT managed — gh writes
+          # token/scope metadata to it after auth; Nix store symlink would block that)
+          "gh/config.yml".source = "${configDir}/gh/config.yml";
+          # GitHub Dashboard config
+          "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
+          # Lazygit config
+          "lazygit/config.yml" = {
+            text = builtins.readFile "${configDir}/lazygit/config.yml";
+            force = true;
+          };
+        }
+        // optionalAttrs cfg.hunk.enable {
+          "hunk/config.toml".source = "${configDir}/hunk/config.toml";
         };
-      }
-      // optionalAttrs cfg.hunk.enable {
-        "hunk/config.toml".source = "${configDir}/hunk/config.toml";
       };
-    };
 
-    modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
+      modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
+    }
 
-  };
+    (mkIf pkgs.stdenv.hostPlatform.isDarwin {
+      homebrew.brews = [ "kitlangton/tap/ghui" ];
+    })
+  ]);
 }
