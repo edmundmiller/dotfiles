@@ -250,11 +250,22 @@ in
             use_x_forwarded_for = true;
           };
 
-          # Expose a tiny Siri bridge surface first: Goodnight only.
-          # Home app / HomePod can run script.goodnight by voice.
+          # Siri/Home bridge for existing Apple Home voice phrases/scenes.
+          # Add these script accessories to Apple Home scenes (for example,
+          # the existing "Good Night" scene) so Siri routes into HA routines.
           homekit = {
-            filter.include_entities = [ "script.goodnight" ];
-            entity_config."script.goodnight".name = "Goodnight";
+            filter.include_entities = [
+              "script.goodnight"
+              "script.in_bed"
+              "script.sleep"
+              "script.good_morning"
+            ];
+            entity_config = {
+              "script.goodnight".name = "HA Good Night";
+              "script.in_bed".name = "HA In Bed";
+              "script.sleep".name = "HA Sleep";
+              "script.good_morning".name = "HA Good Morning";
+            };
           };
 
           recorder = mkIf cfg.postgres.enable {
