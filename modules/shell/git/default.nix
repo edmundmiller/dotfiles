@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -68,7 +69,7 @@ in
       modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
     }
 
-    (mkIf pkgs.stdenv.hostPlatform.isDarwin {
+    (optionalAttrs isDarwin {
       homebrew.brews = [ "kitlangton/tap/ghui" ];
     })
   ]);
