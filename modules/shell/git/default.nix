@@ -67,6 +67,8 @@ in
       };
 
       modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
+
+      environment.variables.GHUI_PR_FETCH_LIMIT = "100";
     }
 
     (optionalAttrs isDarwin {
