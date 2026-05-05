@@ -122,6 +122,7 @@ in
     ./_domains/aranet.nix
     ./_domains/conversation.nix
     ./_domains/pura.nix
+    ./_domains/reolink.nix
     ./_domains/lighting.nix
     ./_domains/modes.nix
     ./_domains/sleep
