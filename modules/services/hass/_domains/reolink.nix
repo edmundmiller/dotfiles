@@ -1,8 +1,8 @@
 # Reolink camera privacy policy
 #
 # Phoebe Cam's recording availability is controlled by privacy mode: privacy is
-# off when the apartment is empty or the house is in sleep/goodnight mode, and
-# on when someone is home and the house is not sleeping.
+# off when the apartment is empty or the suite is actually in sleep mode, and
+# on when someone is home and the suite is not sleeping.
 { lib, ... }:
 let
   inherit (import ../_lib.nix) ensureEnabled;
@@ -12,7 +12,7 @@ in
     {
       alias = "Phoebe Cam Privacy Policy";
       id = "phoebe_cam_privacy_policy";
-      description = "Disable privacy mode when everyone is away or Goodnight/sleep mode is active; enable it otherwise.";
+      description = "Disable privacy mode when everyone is away or the suite is in sleep mode; enable it otherwise.";
       trigger = [
         {
           platform = "homeassistant";
@@ -28,7 +28,7 @@ in
         }
         {
           platform = "state";
-          entity_id = "input_boolean.goodnight";
+          entity_id = "select.master_suite_current_mode";
         }
       ];
       action = [
@@ -41,8 +41,8 @@ in
                   conditions = [
                     {
                       condition = "state";
-                      entity_id = "input_boolean.goodnight";
-                      state = "on";
+                      entity_id = "select.master_suite_current_mode";
+                      state = "sleep";
                     }
                     {
                       condition = "and";

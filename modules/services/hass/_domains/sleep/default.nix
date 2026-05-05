@@ -330,7 +330,8 @@ in
 
     # ── Scripts ──────────────────────────────────────────────────────────
     script = lib.mkAfter {
-      # Siri/HomeKit entrypoint: "Hey Siri, goodnight" → run sleep scene
+      # Siri/Shortcuts entrypoints. Prefer HA Companion App Shortcuts
+      # (authenticated HA actions) over Apple Home/HomeKit voice routing.
       goodnight = {
         alias = "Goodnight";
         icon = "mdi:weather-night";
@@ -338,6 +339,39 @@ in
           {
             action = "scene.turn_on";
             target.entity_id = "scene.winding_down";
+          }
+        ];
+      };
+
+      in_bed = {
+        alias = "In Bed";
+        icon = "mdi:bed";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.in_bed";
+          }
+        ];
+      };
+
+      sleep = {
+        alias = "Sleep";
+        icon = "mdi:sleep";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.sleep";
+          }
+        ];
+      };
+
+      good_morning = {
+        alias = "Good Morning";
+        icon = "mdi:weather-sunny";
+        sequence = [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.good_morning";
           }
         ];
       };
@@ -360,6 +394,73 @@ in
 
     # ── Automations ──────────────────────────────────────────────────────
     automation = lib.mkAfter (ensureEnabled [
+      # Siri Shortcut webhooks. These provide a no-Apple-Home path for fixed
+      # routines: Siri Shortcut → HA webhook → HA script/scene.
+      {
+        alias = "Voice Webhook - Goodnight";
+        id = "voice_webhook_goodnight";
+        trigger = {
+          platform = "webhook";
+          webhook_id = "ha_voice_5d3987a447ff4cb3bb5e9df5b9f072c6";
+          allowed_methods = [ "POST" ];
+          local_only = false;
+        };
+        action = [
+          {
+            action = "script.turn_on";
+            target.entity_id = "script.goodnight";
+          }
+        ];
+      }
+      {
+        alias = "Voice Webhook - In Bed";
+        id = "voice_webhook_in_bed";
+        trigger = {
+          platform = "webhook";
+          webhook_id = "ha_voice_00671127fbfa48e8afa9fe24bbf32b3e";
+          allowed_methods = [ "POST" ];
+          local_only = false;
+        };
+        action = [
+          {
+            action = "script.turn_on";
+            target.entity_id = "script.in_bed";
+          }
+        ];
+      }
+      {
+        alias = "Voice Webhook - Sleep";
+        id = "voice_webhook_sleep";
+        trigger = {
+          platform = "webhook";
+          webhook_id = "ha_voice_8868f3d983d3422b89a1429415682f99";
+          allowed_methods = [ "POST" ];
+          local_only = false;
+        };
+        action = [
+          {
+            action = "script.turn_on";
+            target.entity_id = "script.sleep";
+          }
+        ];
+      }
+      {
+        alias = "Voice Webhook - Good Morning";
+        id = "voice_webhook_good_morning";
+        trigger = {
+          platform = "webhook";
+          webhook_id = "ha_voice_4ddb9377a08745e185cc5bbff25cc06a";
+          allowed_methods = [ "POST" ];
+          local_only = false;
+        };
+        action = [
+          {
+            action = "script.turn_on";
+            target.entity_id = "script.good_morning";
+          }
+        ];
+      }
+
       # Stage 1: 10 PM → Winding Down
       {
         alias = "Winding Down";
