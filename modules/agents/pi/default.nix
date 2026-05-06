@@ -198,11 +198,18 @@ let
 
   piPackagesExtra = cfg.extraPackages ++ lib.optionals cfg.honcho.enable [ honchoPackage ];
 
+  piSettingsBase =
+    piSettingsParsed
+    // lib.optionalAttrs config.modules.shell.herdr.enable {
+      # Herdr ships a matching high-contrast theme into ~/.pi/agent/themes.
+      theme = "dotfiles-herdr";
+    };
+
   piSettingsWithExtras =
     if piPackagesExtra == [ ] then
-      piSettingsParsed
+      piSettingsBase
     else
-      piSettingsParsed // { packages = piSettingsParsed.packages ++ piPackagesExtra; };
+      piSettingsBase // { packages = piSettingsBase.packages ++ piPackagesExtra; };
 
   piSettingsPackageSources = map (
     pkg:
