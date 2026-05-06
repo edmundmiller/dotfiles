@@ -1,0 +1,25 @@
+hosts/nuc/default.nix
+  1ceb9f1135877cba 1059-1065
+modules/services/dagster/bugster.nix
+  1ceb9f1135877cba 127-141,178,199,202-207
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "8eb276f628acedf912aeb82a4b649a90af2bcb63",
+  "prompts": {
+    "1ceb9f1135877cba": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df598-9cab-7343-9b4b-bfd59dfc261d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller",
+      "messages": [],
+      "total_additions": 30,
+      "total_deletions": 1,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    }
+  }
+}
