@@ -1,0 +1,23 @@
+modules/agents/pi/default.nix
+  s_f84e6a93b29c6f::t_ab42e387bbe069 201-207,210,212
+modules/shell/herdr.nix
+  s_f84e6a93b29c6f::t_70aa6646584df3 42-123
+  s_f84e6a93b29c6f::t_a31d937503210f 142
+  s_f84e6a93b29c6f::t_26a0ee7da242ed 143
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.1",
+  "base_commit_sha": "71a8440ec2351df07039b4fcb8e54509607fbe28",
+  "prompts": {},
+  "sessions": {
+    "s_f84e6a93b29c6f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019dffad-b8c8-733a-bce0-5df58a285ed7",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    }
+  }
+}
