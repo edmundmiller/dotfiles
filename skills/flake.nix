@@ -312,11 +312,11 @@
               grill-me.from = "mattpocock-productivity";
               grill-me.path = "grill-me";
 
-              write-a-prd.from = "mattpocock-engineering";
-              write-a-prd.path = "to-prd";
+              to-prd.from = "mattpocock-engineering";
+              to-prd.path = "to-prd";
 
-              prd-to-issues.from = "mattpocock-engineering";
-              prd-to-issues.path = "to-issues";
+              to-issues.from = "mattpocock-engineering";
+              to-issues.path = "to-issues";
 
               improve-codebase-architecture.from = "mattpocock-engineering";
               improve-codebase-architecture.path = "improve-codebase-architecture";
@@ -332,8 +332,8 @@
               # Curated marimo subset: keep the broad, reusable notebook authoring
               # and migration skills; omit niche publishing helpers and overlapping
               # no-user-input workflows.
-              anywidget.from = "marimo-skills";
-              anywidget.path = "anywidget";
+              anywidget-generator.from = "marimo-skills";
+              anywidget-generator.path = "anywidget";
 
               implement-paper.from = "marimo-skills";
               implement-paper.path = "implement-paper";
