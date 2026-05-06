@@ -37,6 +37,11 @@
       flake = false;
     };
 
+    mattpocock-skills = {
+      url = "github:mattpocock/skills";
+      flake = false;
+    };
+
     hunk-repo = {
       url = "github:modem-dev/hunk/v0.9.2";
       flake = false;
@@ -197,6 +202,24 @@
               filter.maxDepth = 1;
             };
 
+            mattpocock-engineering = {
+              path = inputs.mattpocock-skills.outPath;
+              subdir = "skills/engineering";
+              filter = {
+                maxDepth = 1;
+                nameRegex = "^(improve-codebase-architecture|to-prd|to-issues)$";
+              };
+            };
+
+            mattpocock-productivity = {
+              path = inputs.mattpocock-skills.outPath;
+              subdir = "skills/productivity";
+              filter = {
+                maxDepth = 1;
+                nameRegex = "^grill-me$";
+              };
+            };
+
             hunk = {
               path = inputs.hunk-repo.outPath;
               subdir = "skills";
@@ -285,6 +308,18 @@
             // {
               markit.from = "markit";
               markit.path = ".";
+
+              grill-me.from = "mattpocock-productivity";
+              grill-me.path = "grill-me";
+
+              write-a-prd.from = "mattpocock-engineering";
+              write-a-prd.path = "to-prd";
+
+              prd-to-issues.from = "mattpocock-engineering";
+              prd-to-issues.path = "to-issues";
+
+              improve-codebase-architecture.from = "mattpocock-engineering";
+              improve-codebase-architecture.path = "improve-codebase-architecture";
             }
             // lib.optionalAttrs acpxEnabled {
               acpx.from = "acpx";

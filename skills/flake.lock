@@ -185,6 +185,22 @@
         "type": "github"
       }
     },
+    "mattpocock-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777549091,
+        "narHash": "sha256-qOhU5bBnT6kI8c7i0r0IyecrgLJNNPlmQtAb6qWM73Q=",
+        "owner": "mattpocock",
+        "repo": "skills",
+        "rev": "b843cb5ea74b1fe5e58a0fc23cddef9e66076fb8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mattpocock",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "mitsuhiko-agent-stuff": {
       "flake": false,
       "locked": {
@@ -308,6 +324,7 @@
         "marimo-pair-repo": "marimo-pair-repo",
         "marimo-skills-repo": "marimo-skills-repo",
         "markit-repo": "markit-repo",
+        "mattpocock-skills": "mattpocock-skills",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
