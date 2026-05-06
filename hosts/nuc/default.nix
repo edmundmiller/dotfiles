@@ -1056,6 +1056,13 @@ in
             tokenEnv = "GRANOLA_API_KEY";
             contexts = [ "meetings" ];
           }
+          {
+            type = "monologue";
+            name = "voice";
+            tokenEnv = "MONOLOGUE_API_KEY";
+            contexts = [ "voice" ];
+            includeTranscript = true;
+          }
         ];
 
         calendar = {
