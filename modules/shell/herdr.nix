@@ -39,6 +39,88 @@ let
         [keys]
         prefix = "${cfg.prefix}"
       '';
+
+  # Pi's auto-selected dark theme can be too low-contrast in the Herdr/Ghostty
+  # popup (especially muted prompt text). Ship and select a small Catppuccin-ish
+  # theme with brighter foregrounds so the input box remains readable.
+  piThemeName = "dotfiles-herdr";
+  piThemeFile = pkgs.writeText "${piThemeName}.json" ''
+    {
+      "$schema": "https://raw.githubusercontent.com/badlogic/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+      "name": "${piThemeName}",
+      "vars": {
+        "base": "#1e1e2e",
+        "surface0": "#313244",
+        "surface1": "#45475a",
+        "surface2": "#585b70",
+        "text": "#cdd6f4",
+        "subtext1": "#bac2de",
+        "subtext0": "#a6adc8",
+        "overlay1": "#7f849c",
+        "mauve": "#cba6f7",
+        "blue": "#89b4fa",
+        "sapphire": "#74c7ec",
+        "teal": "#94e2d5",
+        "green": "#a6e3a1",
+        "yellow": "#f9e2af",
+        "peach": "#fab387",
+        "red": "#f38ba8"
+      },
+      "colors": {
+        "accent": "teal",
+        "border": "blue",
+        "borderAccent": "teal",
+        "borderMuted": "surface2",
+        "success": "green",
+        "error": "red",
+        "warning": "yellow",
+        "muted": "subtext0",
+        "dim": "overlay1",
+        "text": "text",
+        "thinkingText": "subtext1",
+        "selectedBg": "surface0",
+        "userMessageBg": "surface0",
+        "userMessageText": "text",
+        "customMessageBg": "surface0",
+        "customMessageText": "text",
+        "customMessageLabel": "mauve",
+        "toolPendingBg": "#242438",
+        "toolSuccessBg": "#243826",
+        "toolErrorBg": "#3a2430",
+        "toolTitle": "sapphire",
+        "toolOutput": "text",
+        "mdHeading": "mauve",
+        "mdLink": "blue",
+        "mdLinkUrl": "sapphire",
+        "mdCode": "teal",
+        "mdCodeBlock": "text",
+        "mdCodeBlockBorder": "surface2",
+        "mdQuote": "subtext0",
+        "mdQuoteBorder": "surface2",
+        "mdHr": "surface2",
+        "mdListBullet": "teal",
+        "toolDiffAdded": "green",
+        "toolDiffRemoved": "red",
+        "toolDiffContext": "subtext0",
+        "syntaxComment": "overlay1",
+        "syntaxKeyword": "mauve",
+        "syntaxFunction": "blue",
+        "syntaxVariable": "peach",
+        "syntaxString": "green",
+        "syntaxNumber": "peach",
+        "syntaxType": "yellow",
+        "syntaxOperator": "mauve",
+        "syntaxPunctuation": "subtext0",
+        "thinkingOff": "surface2",
+        "thinkingMinimal": "teal",
+        "thinkingLow": "sapphire",
+        "thinkingMedium": "blue",
+        "thinkingHigh": "mauve",
+        "thinkingXhigh": "red",
+        "bashMode": "yellow"
+      }
+    }
+  '';
 in
 {
   options.modules.shell.herdr = with types; {
@@ -56,6 +138,8 @@ in
     modules.shell.herdr.package = mkDefault (pkgs.my.herdr or pkgs.herdr or null);
 
     user.packages = optional (cfg.package != null) cfg.package;
+
+    home.file.".pi/agent/themes/${piThemeName}.json".source = piThemeFile;
 
     home.configFile = {
       "tmux/open-herdr.sh" = {
@@ -101,6 +185,49 @@ in
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
+        home.activation.pi-herdr-theme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          pi_dir="$HOME/.pi/agent"
+          settings="$pi_dir/settings.json"
+          theme_path="$pi_dir/themes/${piThemeName}.json"
+
+          ${pkgs.coreutils}/bin/mkdir -p "$pi_dir/themes"
+
+          # Preserve Pi-managed settings while selecting the higher-contrast
+          # Herdr theme and registering the managed theme path.
+          ${pkgs.python3}/bin/python3 - "$settings" ${escapeShellArg piThemeName} "$theme_path" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          theme_name = sys.argv[2]
+          theme_path = sys.argv[3]
+
+          if path.exists():
+              try:
+                  data = json.loads(path.read_text() or "{}")
+              except json.JSONDecodeError:
+                  backup = path.with_suffix(path.suffix + ".bak")
+                  backup.write_text(path.read_text())
+                  data = {}
+          else:
+              data = {}
+
+          if not isinstance(data, dict):
+              data = {}
+
+          themes = data.get("themes", [])
+          if not isinstance(themes, list):
+              themes = [themes]
+          if theme_path not in themes:
+              themes.append(theme_path)
+
+          data["themes"] = themes
+          data["theme"] = theme_name
+          path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+          PY
+        '';
+
         home.activation.herdr-config-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           herdr_dir="$HOME/.config/herdr"
           target="$herdr_dir/config.toml"
