@@ -124,6 +124,21 @@ let
           api_key = "''${${src.tokenEnv}}"
           contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
         ''
+      else if src.type == "monologue" then
+        ''
+
+          [[sources]]
+          type = "monologue"
+          name = "${src.name}"
+          api_key = "''${${src.tokenEnv}}"
+          contexts = [${concatMapStringsSep ", " (c: ''"${c}"'') src.contexts}]
+          ${optionalString (src.query != "") "query = \"${src.query}\""}
+          ${optionalString (src.createdAfter != null) "created_after = \"${src.createdAfter}\""}
+          ${optionalString (src.createdBefore != null) "created_before = \"${src.createdBefore}\""}
+          ${optionalString (src.updatedAfter != null) "updated_after = \"${src.updatedAfter}\""}
+          limit = ${toString src.limit}
+          include_transcript = ${boolToString src.includeTranscript}
+        ''
       else
         ""
     ) cfg.sources
@@ -160,6 +175,7 @@ let
         "jira"
         "snipd"
         "granola"
+        "monologue"
       ]) "github";
       name = mkOpt types.str "";
       # Common
@@ -180,9 +196,15 @@ let
       usernameEnv = mkOpt types.str "JIRA_USERNAME";
       projects = mkOpt (types.listOf types.str) [ ];
       onlyMyIssues = mkBoolOpt true;
-      # Snipd
+      # Snipd / Monologue
       updatedAfter = mkOpt (types.nullOr types.str) null;
       onlyEdited = mkBoolOpt false;
+      # Monologue
+      query = mkOpt types.str "";
+      createdAfter = mkOpt (types.nullOr types.str) null;
+      createdBefore = mkOpt (types.nullOr types.str) null;
+      limit = mkOpt types.int 100;
+      includeTranscript = mkBoolOpt true;
     };
   });
 in
