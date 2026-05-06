@@ -87,11 +87,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777902563,
-        "narHash": "sha256-L7beZIVKG+8KQ6XPTWmfcWIRoEcg5tkFOqZ/7dF7T4s=",
+        "lastModified": 1778073069,
+        "narHash": "sha256-Y+4Fs1q7is50PMZN4qS98S1EkZHxWhOFCIv2ONtWR/o=",
         "ref": "main",
-        "rev": "9e9ab547429bfc9e2fc5644af2e0257c8161b680",
-        "revCount": 398,
+        "rev": "ea7e88c966ff3d2d345975c833f02cddb93eff67",
+        "revCount": 409,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/agents-workspace"
       },
@@ -1183,6 +1183,22 @@
         "type": "github"
       }
     },
+    "mattpocock-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777549091,
+        "narHash": "sha256-qOhU5bBnT6kI8c7i0r0IyecrgLJNNPlmQtAb6qWM73Q=",
+        "owner": "mattpocock",
+        "repo": "skills",
+        "rev": "b843cb5ea74b1fe5e58a0fc23cddef9e66076fb8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mattpocock",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "mitsuhiko-agent-stuff": {
       "flake": false,
       "locked": {
@@ -1792,6 +1808,7 @@
         "marimo-pair-repo": "marimo-pair-repo",
         "marimo-skills-repo": "marimo-skills-repo",
         "markit-repo": "markit-repo",
+        "mattpocock-skills": "mattpocock-skills",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "nixpkgs": [
           "nixpkgs"
