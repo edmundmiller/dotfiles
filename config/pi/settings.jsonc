@@ -100,8 +100,6 @@
     },
     // Security guardrails - https://github.com/aliou/pi-guardrails
     "npm:@aliou/pi-guardrails",
-    // LSP - standalone npm package (extracted from pi-hooks)
-    "npm:lsp-pi",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
       "source": "https://github.com/pasky/pi-amplike",
