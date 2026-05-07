@@ -235,6 +235,23 @@ in
               propagatedBuildInputs = [ ps.cryptography ];
               doCheck = false;
             })
+            (ps.buildPythonPackage {
+              pname = "ha-homekit-fixed-pin";
+              version = "1.0.0";
+              format = "other";
+              dontUnpack = true;
+              installPhase = ''
+                                mkdir -p $out/lib/${ps.python.sitePackages}
+                                cat > $out/lib/${ps.python.sitePackages}/sitecustomize.py <<'PY'
+                try:
+                    import pyhap.util
+                    pyhap.util.generate_pincode = lambda: b"831-54-927"
+                except Exception:
+                    pass
+                PY
+              '';
+              doCheck = false;
+            })
           ];
 
         config = {
