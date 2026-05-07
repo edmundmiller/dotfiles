@@ -224,6 +224,17 @@ in
             pypura
             ps.deepdiff
             ps.ical
+            (ps.buildPythonPackage rec {
+              pname = "homekit-audio-proxy";
+              version = "1.2.1";
+              format = "wheel";
+              src = pkgs.fetchurl {
+                url = "https://files.pythonhosted.org/packages/3f/f1/a44abfc486b5e7feccfbf4d7ec85421d5465b1fcc42416df8c5039dae222/homekit_audio_proxy-${version}-py3-none-any.whl";
+                hash = "sha256-sa8Z6JeyZRIa71I7+r9dJH2w0AJxXc1RrVidddAIFOo=";
+              };
+              propagatedBuildInputs = [ ps.cryptography ];
+              doCheck = false;
+            })
           ];
 
         config = {
