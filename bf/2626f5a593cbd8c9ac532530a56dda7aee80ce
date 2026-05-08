@@ -1,0 +1,23 @@
+packages/ergodox-firmware/src/config.h
+  s_f3f669046db538::t_160cacd41472d6 2
+config/ergodox/AGENTS.md
+  s_f3f669046db538::t_29921a8e3a3b94 62
+config/ergodox/README.md
+  s_f3f669046db538::t_6a685b80d79c8d 179,193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.1",
+  "base_commit_sha": "bf2626f5a593cbd8c9ac532530a56dda7aee80ce",
+  "prompts": {},
+  "sessions": {
+    "s_f3f669046db538": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e07dc-c882-744a-8312-759af263b121",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
