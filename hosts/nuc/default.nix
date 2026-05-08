@@ -197,6 +197,29 @@ let
     exec ${ob} sync --path '${millDocsVaultPath}' --continuous
   '';
 
+  millDocsGitPullScript = pkgs.writeShellScript "mill-docs-git-pull" ''
+    set -euo pipefail
+
+    cd '${millDocsVaultPath}'
+
+    if ! ${pkgs.git}/bin/git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      echo "${millDocsVaultPath} is not a git repository; skipping"
+      exit 0
+    fi
+
+    if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ] || [ -f .git/MERGE_HEAD ]; then
+      echo "git operation already in progress in ${millDocsVaultPath}; manual intervention required" >&2
+      exit 1
+    fi
+
+    if ! ${pkgs.git}/bin/git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+      echo "current branch has no upstream; skipping git pull"
+      exit 0
+    fi
+
+    ${pkgs.git}/bin/git pull --rebase --autostash
+  '';
+
 in
 {
   inherit (telegramBindings) assertions;
@@ -1122,6 +1145,41 @@ in
       ReadWritePaths = [ millDocsVaultPath ];
       NoNewPrivileges = true;
       PrivateTmp = true;
+    };
+  };
+
+  systemd.services.mill-docs-git-pull = {
+    description = "Auto-pull Git changes into mill-docs vault";
+    after = [
+      "network-online.target"
+      "obsidian-sync-mill-docs.service"
+    ];
+    wants = [
+      "network-online.target"
+      "obsidian-sync-mill-docs.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = millDocsVaultPath;
+      ExecStart = "${millDocsGitPullScript}";
+      TimeoutStartSec = "2min";
+      ProtectHome = "read-only";
+      ReadWritePaths = [ millDocsVaultPath ];
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+    };
+  };
+
+  systemd.timers.mill-docs-git-pull = {
+    description = "Auto-pull Git changes into mill-docs vault on a short interval";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "1min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30s";
+      Unit = "mill-docs-git-pull.service";
     };
   };
 
