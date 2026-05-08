@@ -192,6 +192,19 @@ in
 
           ${pkgs.coreutils}/bin/mkdir -p "$pi_dir/themes"
 
+          # Home Manager links settings.json into the read-only Nix store. Herdr/Pi
+          # settings need a writable local copy for theme selection, so copy the
+          # generated JSON out of the store before patching it.
+          if [ -L "$settings" ]; then
+            tmp="$(${pkgs.coreutils}/bin/mktemp)"
+            ${pkgs.coreutils}/bin/cp -L "$settings" "$tmp" 2>/dev/null || ${pkgs.coreutils}/bin/printf '{}\n' > "$tmp"
+            ${pkgs.coreutils}/bin/rm -f "$settings"
+            ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
+          elif [ ! -e "$settings" ]; then
+            ${pkgs.coreutils}/bin/printf '{}\n' > "$settings"
+          fi
+          ${pkgs.coreutils}/bin/chmod u+w "$settings" 2>/dev/null || true
+
           # Preserve Pi-managed settings while selecting the higher-contrast
           # Herdr theme and registering the managed theme path.
           ${pkgs.python3}/bin/python3 - "$settings" ${escapeShellArg piThemeName} "$theme_path" <<'PY'
