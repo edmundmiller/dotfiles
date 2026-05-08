@@ -1,0 +1,19 @@
+modules/agents/pi/default.nix
+  s_79c30f2d786249::t_1db31f1d000625 205-206,208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.1",
+  "base_commit_sha": "c03e54009b8548b886f376fa71644a121edd2196",
+  "prompts": {},
+  "sessions": {
+    "s_79c30f2d786249": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df535-3294-7025-8685-13a220dd1e5d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
