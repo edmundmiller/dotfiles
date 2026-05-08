@@ -202,7 +202,10 @@ let
     piSettingsParsed
     // lib.optionalAttrs config.modules.shell.herdr.enable {
       # Herdr ships a matching high-contrast theme into ~/.pi/agent/themes.
+      # Configure it directly in the generated Pi settings so activation does
+      # not need to mutate the read-only Home Manager settings symlink.
       theme = "dotfiles-herdr";
+      themes = [ "${config.user.home}/.pi/agent/themes/dotfiles-herdr.json" ];
     };
 
   piSettingsWithExtras =

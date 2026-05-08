@@ -185,62 +185,6 @@ in
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
-        home.activation.pi-herdr-theme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          pi_dir="$HOME/.pi/agent"
-          settings="$pi_dir/settings.json"
-          theme_path="$pi_dir/themes/${piThemeName}.json"
-
-          ${pkgs.coreutils}/bin/mkdir -p "$pi_dir/themes"
-
-          # Home Manager links settings.json into the read-only Nix store. Herdr/Pi
-          # settings need a writable local copy for theme selection, so copy the
-          # generated JSON out of the store before patching it.
-          if [ -L "$settings" ]; then
-            tmp="$(${pkgs.coreutils}/bin/mktemp)"
-            ${pkgs.coreutils}/bin/cp -L "$settings" "$tmp" 2>/dev/null || ${pkgs.coreutils}/bin/printf '{}\n' > "$tmp"
-            ${pkgs.coreutils}/bin/rm -f "$settings"
-            ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
-          elif [ ! -e "$settings" ]; then
-            ${pkgs.coreutils}/bin/printf '{}\n' > "$settings"
-          fi
-          ${pkgs.coreutils}/bin/chmod u+w "$settings" 2>/dev/null || true
-
-          # Preserve Pi-managed settings while selecting the higher-contrast
-          # Herdr theme and registering the managed theme path.
-          ${pkgs.python3}/bin/python3 - "$settings" ${escapeShellArg piThemeName} "$theme_path" <<'PY'
-          import json
-          import pathlib
-          import sys
-
-          path = pathlib.Path(sys.argv[1])
-          theme_name = sys.argv[2]
-          theme_path = sys.argv[3]
-
-          if path.exists():
-              try:
-                  data = json.loads(path.read_text() or "{}")
-              except json.JSONDecodeError:
-                  backup = path.with_suffix(path.suffix + ".bak")
-                  backup.write_text(path.read_text())
-                  data = {}
-          else:
-              data = {}
-
-          if not isinstance(data, dict):
-              data = {}
-
-          themes = data.get("themes", [])
-          if not isinstance(themes, list):
-              themes = [themes]
-          if theme_path not in themes:
-              themes.append(theme_path)
-
-          data["themes"] = themes
-          data["theme"] = theme_name
-          path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
-          PY
-        '';
-
         home.activation.herdr-config-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           herdr_dir="$HOME/.config/herdr"
           target="$herdr_dir/config.toml"
