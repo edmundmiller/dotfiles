@@ -83,7 +83,7 @@
     # upstream package directly when agents-workspace's wrapper module needs
     # a local patch before upstream merges.
     hermesAgent = {
-      url = "github:NousResearch/hermes-agent/6407b3d5b38db336971b63421d921d0d91326ee9";
+      url = "github:NousResearch/hermes-agent/faa13e49f81480771ceeb55991bb0c27edf1a5fb";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
