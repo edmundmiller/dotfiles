@@ -75,6 +75,8 @@
 
     // Prompt construction toolkit
     "npm:pi-promptsmith",
+    // FFF package
+    "npm:@ff-labs/pi-fff",
     // Cross-agent thread reader (agents:// URIs)
     "~/.config/dotfiles/pi-packages/pi-xurl",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
