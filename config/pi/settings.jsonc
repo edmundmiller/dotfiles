@@ -204,12 +204,8 @@
     "npm:pi-wakatime",
     // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
     "npm:latchkey",
-    // AskUserQuestion tool — structured clarification before acting - https://github.com/ghoseb/pi-askuserquestion
-    {
-      "source": "git:github.com/ghoseb/pi-askuserquestion",
-      "extensions": ["src/index.ts"],
-      "skills": [],
-    },
+    // Ask tool — structured clarification before acting - https://github.com/eko24ive/pi-ask
+    "npm:@eko24ive/pi-ask",
     // Native diff review window with Monaco + annotations - https://github.com/badlogic/pi-diff-review
     // "git:https://github.com/badlogic/pi-diff-review",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
