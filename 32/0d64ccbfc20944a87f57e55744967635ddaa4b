@@ -1,0 +1,20 @@
+modules/agents/pi/default.nix
+  s_5d6382f0bcc414::t_d34c3e0b2077e0 324-325
+  s_5d6382f0bcc414::t_fad1806fb6206c 323
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "320d64ccbfc20944a87f57e55744967635ddaa4b",
+  "prompts": {},
+  "sessions": {
+    "s_5d6382f0bcc414": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0e64-7b36-76df-b38c-c4a9adf8dd14",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
