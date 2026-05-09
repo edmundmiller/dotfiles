@@ -320,6 +320,9 @@ in
     user.packages = [
       piPackageWithSecretPreflight
       pkgs.llm-agents."beads-rust"
+      pkgs.llm-agents.rtk
+      pkgs.llm-agents.toon
+      pkgs.llm-agents.zat
       pkgs.bun # still needed for extensions/packages workspace
       pkgs.delta # syntax-highlighted diffs
     ];
