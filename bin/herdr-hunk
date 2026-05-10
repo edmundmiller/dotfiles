@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+
+# Open Hunk in Herdr, mirroring the tmux open-hunk.sh workflow.
+
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: herdr-hunk [--tab] [--staged|--cached|--branch-committed] [-- HUNK_ARGS...]
+
+Default: split the active Herdr pane to the right, focus it, and run `hunk diff`.
+
+Options:
+  --tab               Open Hunk in a new focused Herdr tab instead of a right split
+  --staged, --cached  Review staged changes
+  --branch-committed  Review commits on the current branch against upstream/main/master
+  -h, --help          Show this help
+EOF
+}
+
+herdr_cmd="${HERDR_BIN_PATH:-herdr}"
+placement="pane"
+mode="worktree"
+pass_through=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --tab)
+            placement="tab"
+            shift
+            ;;
+        --staged|--cached)
+            mode="staged"
+            shift
+            ;;
+        --branch-committed)
+            mode="branch-committed"
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --)
+            shift
+            pass_through+=("$@")
+            break
+            ;;
+        *)
+            pass_through+=("$1")
+            shift
+            ;;
+    esac
+done
+
+if [[ -z "${HERDR_ACTIVE_PANE_ID:-}" ]]; then
+    echo "herdr-hunk: HERDR_ACTIVE_PANE_ID is not set; run from a Herdr command binding" >&2
+    exit 1
+fi
+
+active_pane="${HERDR_ACTIVE_PANE_ID}"
+active_workspace="${HERDR_ACTIVE_WORKSPACE_ID:-}"
+start_cwd="${HERDR_ACTIVE_PANE_CWD:-$PWD}"
+
+if [[ ! -d "$start_cwd" ]]; then
+    start_cwd="$PWD"
+fi
+
+cd "$start_cwd" || exit 1
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "herdr-hunk: not in a git repo: $start_cwd" >&2
+    exit 1
+fi
+
+resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
+[[ -x "$resolver" ]] || resolver="$HOME/.config/dotfiles/bin/git-worktree-cwd"
+if [[ -x "$resolver" ]]; then
+    git_root=$("$resolver" ".") || {
+        echo "herdr-hunk: not in a usable checkout: $start_cwd" >&2
+        exit 1
+    }
+else
+    git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+fi
+
+if [[ -z "$git_root" ]]; then
+    echo "herdr-hunk: not in a git repo: $start_cwd" >&2
+    exit 1
+fi
+
+cd "$git_root" || exit 1
+
+review_args=(diff)
+
+case "$mode" in
+    staged)
+        review_args+=(--staged)
+        ;;
+    branch-committed)
+        base_ref=""
+        if upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
+            base_ref="$upstream_ref"
+        else
+            for candidate in origin/main origin/master main master; do
+                if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+                    base_ref="$candidate"
+                    break
+                fi
+            done
+        fi
+
+        if [[ -n "$base_ref" ]]; then
+            merge_base=$(git merge-base HEAD "$base_ref" 2>/dev/null || true)
+            if [[ -n "$merge_base" ]]; then
+                review_args+=("$merge_base...HEAD")
+            else
+                review_args+=(HEAD)
+            fi
+        else
+            review_args+=(HEAD)
+        fi
+        ;;
+esac
+
+if [[ ${#pass_through[@]} -gt 0 ]]; then
+    review_args+=("${pass_through[@]}")
+fi
+
+hunk_cmd=""
+if command -v hunk >/dev/null 2>&1; then
+    hunk_cmd="hunk"
+elif command -v bunx >/dev/null 2>&1; then
+    hunk_cmd="bunx hunkdiff"
+else
+    echo "herdr-hunk: neither hunk nor bunx is available on PATH" >&2
+    exit 1
+fi
+
+quote_for_shell() {
+    printf '%q' "$1"
+}
+
+run_cmd="cd $(quote_for_shell "$git_root") && $hunk_cmd"
+for arg in "${review_args[@]}"; do
+    run_cmd+=" $(quote_for_shell "$arg")"
+done
+
+extract_pane_id() {
+    python3 -c '
+import json, sys
+payload = json.load(sys.stdin)
+
+def walk(value):
+    if isinstance(value, dict):
+        pane_id = value.get("pane_id")
+        if isinstance(pane_id, str):
+            return pane_id
+        for child in value.values():
+            found = walk(child)
+            if found:
+                return found
+    elif isinstance(value, list):
+        for child in value:
+            found = walk(child)
+            if found:
+                return found
+    return None
+
+pane_id = walk(payload)
+if not pane_id:
+    raise SystemExit("no pane_id in herdr response")
+print(pane_id)
+'
+}
+
+case "$placement" in
+    pane)
+        split_json=$("$herdr_cmd" pane split "$active_pane" --direction right --cwd "$git_root" --focus)
+        target_pane=$(printf '%s' "$split_json" | extract_pane_id)
+        ;;
+    tab)
+        if [[ -n "$active_workspace" ]]; then
+            tab_json=$("$herdr_cmd" tab create --workspace "$active_workspace" --cwd "$git_root" --label hunk --focus)
+        else
+            tab_json=$("$herdr_cmd" tab create --cwd "$git_root" --label hunk --focus)
+        fi
+        target_pane=$(printf '%s' "$tab_json" | extract_pane_id)
+        ;;
+    *)
+        echo "herdr-hunk: unknown placement: $placement" >&2
+        exit 1
+        ;;
+esac
+
+"$herdr_cmd" pane run "$target_pane" "$run_cmd"
