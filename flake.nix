@@ -620,6 +620,7 @@
                 deadnix
                 statix
                 deploy-rs.packages.${system}.default
+                nushell
               ]
               ++ config.pre-commit.settings.enabledPackages;
             shellHook = config.pre-commit.shellHook + ''
