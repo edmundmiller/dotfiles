@@ -38,6 +38,9 @@ let
         # Seeded by nix. Herdr keeps this file writable after bootstrap.
         [keys]
         prefix = "${cfg.prefix}"
+        new_workspace = "w"
+        previous_tab = "p"
+        next_tab = "n"
 
         [[keys.command]]
         key = "]"
@@ -231,35 +234,49 @@ in
           out = []
           in_keys = False
           saw_keys = False
-          wrote_prefix = False
+          managed_keys = {
+              "prefix": prefix,
+              "new_workspace": "w",
+              "previous_tab": "p",
+              "next_tab": "n",
+          }
+          wrote_keys = set()
 
           for line in lines:
               stripped = line.strip()
               if stripped.startswith("[") and stripped.endswith("]"):
-                  if in_keys and not wrote_prefix:
-                      out.append(f'prefix = "{prefix}"')
-                      wrote_prefix = True
+                  if in_keys:
+                      for key, value in managed_keys.items():
+                          if key not in wrote_keys:
+                              out.append(f'{key} = "{value}"')
+                              wrote_keys.add(key)
                   in_keys = stripped == "[keys]"
                   saw_keys = saw_keys or in_keys
                   out.append(line)
                   continue
 
-              if in_keys and stripped.startswith("prefix") and "=" in stripped:
-                  if not wrote_prefix:
-                      out.append(f'prefix = "{prefix}"')
-                      wrote_prefix = True
-                  continue
+              if in_keys and "=" in stripped:
+                  key = stripped.split("=", 1)[0].strip()
+                  if key in managed_keys:
+                      if key not in wrote_keys:
+                          out.append(f'{key} = "{managed_keys[key]}"')
+                          wrote_keys.add(key)
+                      continue
 
               out.append(line)
 
-          if saw_keys and in_keys and not wrote_prefix:
-              out.append(f'prefix = "{prefix}"')
-              wrote_prefix = True
+          if saw_keys and in_keys:
+              for key, value in managed_keys.items():
+                  if key not in wrote_keys:
+                      out.append(f'{key} = "{value}"')
+                      wrote_keys.add(key)
 
           if not saw_keys:
               if out and out[-1].strip():
                   out.append("")
-              out.extend(["[keys]", f'prefix = "{prefix}"'])
+              out.append("[keys]")
+              for key, value in managed_keys.items():
+                  out.append(f'{key} = "{value}"')
 
           command_block = [
               "",

@@ -6,6 +6,9 @@ delivery = "herdr"
 
 [keys]
 prefix = "ctrl+c"
+new_workspace = "w"
+previous_tab = "p"
+next_tab = "n"
 
 [[keys.command]]
 key = "]"
