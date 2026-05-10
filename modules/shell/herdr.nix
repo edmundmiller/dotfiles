@@ -146,6 +146,7 @@ in
 
   config = mkIf cfg.enable {
     modules.shell.herdr.package = mkDefault (pkgs.my.herdr or pkgs.herdr or null);
+    modules.shell.herdr.configFile = mkDefault "${config.dotfiles.configDir}/herdr/config.toml";
 
     user.packages = optional (cfg.package != null) cfg.package;
 
