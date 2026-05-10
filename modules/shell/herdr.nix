@@ -38,6 +38,16 @@ let
         # Seeded by nix. Herdr keeps this file writable after bootstrap.
         [keys]
         prefix = "${cfg.prefix}"
+
+        [[keys.command]]
+        key = "]"
+        type = "shell"
+        command = "herdr-hunk"
+
+        [[keys.command]]
+        key = "}"
+        type = "shell"
+        command = "herdr-hunk --tab"
       '';
 
   # Pi's auto-selected dark theme can be too low-contrast in the Herdr/Ghostty
@@ -249,6 +259,24 @@ in
               if out and out[-1].strip():
                   out.append("")
               out.extend(["[keys]", f'prefix = "{prefix}"'])
+
+          command_block = [
+              "",
+              "[[keys.command]]",
+              'key = "]"',
+              'type = "shell"',
+              'command = "herdr-hunk"',
+              "",
+              "[[keys.command]]",
+              'key = "}"',
+              'type = "shell"',
+              'command = "herdr-hunk --tab"',
+          ]
+
+          if "herdr-hunk" not in "\n".join(out):
+              if out and out[-1].strip():
+                  out.append("")
+              out.extend(command_block[1:])
 
           path.write_text("\n".join(out) + "\n")
           PY
