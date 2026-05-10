@@ -171,6 +171,50 @@ for arg in "${review_args[@]}"; do
     run_cmd+=" $(quote_for_shell "$arg")"
 done
 
+herdr_socket_request() {
+    local method="$1"
+    local params_json="$2"
+
+    python3 - "$method" "$params_json" <<'PY'
+import json
+import os
+import pathlib
+import socket
+import sys
+
+method = sys.argv[1]
+params = json.loads(sys.argv[2])
+socket_path = os.environ.get("HERDR_SOCKET_PATH")
+if not socket_path:
+    session = os.environ.get("HERDR_SESSION")
+    config_home = pathlib.Path(os.environ.get("XDG_CONFIG_HOME", pathlib.Path.home() / ".config"))
+    if session and session != "default":
+        socket_path = str(config_home / "herdr" / "sessions" / session / "herdr.sock")
+    else:
+        socket_path = str(config_home / "herdr" / "herdr.sock")
+
+request = {"id": f"herdr-hunk:{method}", "method": method, "params": params}
+with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+    client.connect(socket_path)
+    client.sendall((json.dumps(request) + "\n").encode())
+    chunks = []
+    while True:
+        chunk = client.recv(4096)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        if b"\n" in chunk:
+            break
+
+response = b"".join(chunks).split(b"\n", 1)[0].decode()
+payload = json.loads(response)
+if "error" in payload:
+    error = payload["error"]
+    raise SystemExit(f"{error.get('code', 'error')}: {error.get('message', error)}")
+print(json.dumps(payload))
+PY
+}
+
 extract_pane_id() {
     python3 -c '
 import json, sys
@@ -201,15 +245,25 @@ print(pane_id)
 
 case "$placement" in
     pane)
-        split_json=$("$herdr_cmd" pane split "$active_pane" --direction right --cwd "$git_root" --focus)
+        split_params=$(python3 - "$active_pane" "$git_root" <<'PY'
+import json, sys
+print(json.dumps({"target_pane_id": sys.argv[1], "direction": "right", "cwd": sys.argv[2], "focus": True}))
+PY
+)
+        split_json=$(herdr_socket_request pane.split "$split_params")
         target_pane=$(printf '%s' "$split_json" | extract_pane_id)
         ;;
     tab)
-        if [[ -n "$active_workspace" ]]; then
-            tab_json=$("$herdr_cmd" tab create --workspace "$active_workspace" --cwd "$git_root" --label hunk --focus)
-        else
-            tab_json=$("$herdr_cmd" tab create --cwd "$git_root" --label hunk --focus)
-        fi
+        tab_params=$(python3 - "$active_workspace" "$git_root" <<'PY'
+import json, sys
+workspace_id, cwd = sys.argv[1], sys.argv[2]
+params = {"cwd": cwd, "label": "hunk", "focus": True}
+if workspace_id:
+    params["workspace_id"] = workspace_id
+print(json.dumps(params))
+PY
+)
+        tab_json=$(herdr_socket_request tab.create "$tab_params")
         target_pane=$(printf '%s' "$tab_json" | extract_pane_id)
         ;;
     *)

@@ -13,9 +13,9 @@ next_tab = "n"
 [[keys.command]]
 key = "]"
 type = "shell"
-command = "herdr-hunk"
+command = "/Users/emiller/.config/dotfiles/bin/herdr-hunk"
 
 [[keys.command]]
 key = "}"
 type = "shell"
-command = "herdr-hunk --tab"
+command = "/Users/emiller/.config/dotfiles/bin/herdr-hunk --tab"
