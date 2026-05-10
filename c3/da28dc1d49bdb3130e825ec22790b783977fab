@@ -1,0 +1,19 @@
+bin/herdr-hunk
+  s_3aa6dde758d4a8::t_55944c61ff9c07 71-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "c3da28dc1d49bdb3130e825ec22790b783977fab",
+  "prompts": {},
+  "sessions": {
+    "s_3aa6dde758d4a8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0f77-d9de-727b-8c6f-75c76df1106e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
