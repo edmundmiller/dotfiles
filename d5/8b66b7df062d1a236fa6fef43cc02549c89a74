@@ -1,0 +1,19 @@
+modules/services/hass/HOMEKIT_BRIDGE.md
+  s_79c30f2d786249::t_3ae26fc596edfb 1-52,54-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "d58b66b7df062d1a236fa6fef43cc02549c89a74",
+  "prompts": {},
+  "sessions": {
+    "s_79c30f2d786249": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019df535-3294-7025-8685-13a220dd1e5d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
