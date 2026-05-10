@@ -1,0 +1,21 @@
+modules/shell/herdr.nix
+  s_3aa6dde758d4a8::t_8965141095e1e3 41-50,263-279
+bin/herdr-hunk
+  s_3aa6dde758d4a8::t_098d45ea41895c 1-196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "fb33cee0c1450d0616a015e8191a11fcc8062ec0",
+  "prompts": {},
+  "sessions": {
+    "s_3aa6dde758d4a8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0f77-d9de-727b-8c6f-75c76df1106e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
