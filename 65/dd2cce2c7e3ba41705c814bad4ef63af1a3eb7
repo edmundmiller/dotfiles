@@ -1,0 +1,21 @@
+modules/shell/herdr.nix
+  s_629f81f3188e1a::t_e2da6b30cf2610 149
+config/herdr/config.toml
+  s_629f81f3188e1a::t_0218b0ff4a1122 1-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "65dd2cce2c7e3ba41705c814bad4ef63af1a3eb7",
+  "prompts": {},
+  "sessions": {
+    "s_629f81f3188e1a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0fea-5052-766d-883c-97b8fc5604a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
