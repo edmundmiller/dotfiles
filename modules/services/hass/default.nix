@@ -9,6 +9,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.hass;
+  homeAssistantHost = "192.168.1.222";
 
   # Build a Home Assistant component while skipping manifest dependency checks.
   # These checks fail due to Python version mismatches between the build environment
@@ -187,6 +188,8 @@ in
   config = optionalAttrs (!isDarwin) (
     mkIf cfg.enable {
 
+      networking.firewall.allowedTCPPorts = [ 21063 ];
+
       services.home-assistant = {
         enable = true;
 
@@ -235,30 +238,13 @@ in
               propagatedBuildInputs = [ ps.cryptography ];
               doCheck = false;
             })
-            (ps.buildPythonPackage {
-              pname = "ha-homekit-fixed-pin";
-              version = "1.0.0";
-              format = "other";
-              dontUnpack = true;
-              installPhase = ''
-                                mkdir -p $out/lib/${ps.python.sitePackages}
-                                cat > $out/lib/${ps.python.sitePackages}/sitecustomize.py <<'PY'
-                try:
-                    import pyhap.util
-                    pyhap.util.generate_pincode = lambda: b"831-54-927"
-                except Exception:
-                    pass
-                PY
-              '';
-              doCheck = false;
-            })
           ];
 
         config = {
           default_config = { };
 
           homeassistant = {
-            internal_url = "http://192.168.1.222:8123";
+            internal_url = "http://${homeAssistantHost}:8123";
             external_url = "https://homeassistant.cinnamon-rooster.ts.net";
             latitude = "!secret latitude";
             longitude = "!secret longitude";
@@ -282,6 +268,7 @@ in
           # Add these script accessories to Apple Home scenes (for example,
           # the existing "Good Night" scene) so Siri routes into HA routines.
           homekit = {
+            advertise_ip = [ homeAssistantHost ];
             filter.include_entities = [
               "script.get_ready_for_bed"
               "script.goodnight"
