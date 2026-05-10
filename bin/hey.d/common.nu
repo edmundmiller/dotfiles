@@ -82,15 +82,18 @@ export def check-flake-lock [] {
 
 export def system-rebuild [action: string, ...args: string] {
   let ctx = (context)
+  let agent_mode = (($env.AGENT? | default "") == "1")
+  let agent_rebuild_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
+  let agent_nix_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
 
   if $ctx.os_name == "macos" {
     let has_darwin_rebuild = ((^bash -lc $"[[ -x '($ctx.darwin_rebuild)' ]]" | complete).exit_code == 0)
 
     if $has_darwin_rebuild {
-      ^sudo $ctx.darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" $action ...$args
+      ^sudo $ctx.darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args
     } else {
       print $"darwin-rebuild not found at ($ctx.darwin_rebuild), building via nix..."
-      ^bash -lc $"set -euo pipefail; cd '($ctx.flake_dir)'; nix build '.#darwinConfigurations.($ctx.flake_host).system'"
+      ^bash -lc $"set -euo pipefail; cd '($ctx.flake_dir)'; nix build '.#darwinConfigurations.($ctx.flake_host).system' ($agent_nix_args | str join ' ')"
 
       let fallback = ($ctx.flake_dir | path join "result" "sw" "bin" "darwin-rebuild")
       if not ($fallback | path exists) {
@@ -100,11 +103,11 @@ export def system-rebuild [action: string, ...args: string] {
 
       let old_pwd = (pwd)
       cd $ctx.flake_dir
-      ^sudo ./result/sw/bin/darwin-rebuild --flake $".#($ctx.flake_host)" $action ...$args
+      ^sudo ./result/sw/bin/darwin-rebuild --flake $".#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args
       cd $old_pwd
     }
   } else {
-    ^nixos-rebuild --flake $ctx.flake_dir --sudo $action ...$args
+    ^nixos-rebuild --flake $ctx.flake_dir --sudo ...$agent_rebuild_args $action ...$args
   }
 }
 
