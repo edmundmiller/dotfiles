@@ -1,0 +1,26 @@
+flake.nix
+  s_5d6382f0bcc414::t_1f970c329f6f1d 623
+bin/hey.d/AGENTS.md
+  s_5d6382f0bcc414::t_ecf1f66ffba358 1-16
+bin/hey.d/common.nu
+  s_5d6382f0bcc414::t_132dd109a86b7a 93,106,110
+  s_5d6382f0bcc414::t_37e2244674cdea 85-87,96
+config/agents/skills/agent-friendly-cli/SKILL.md
+  s_5d6382f0bcc414::t_b8004c305b6e64 1-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "f5d3f47849c56794309b47d15f2994232882e920",
+  "prompts": {},
+  "sessions": {
+    "s_5d6382f0bcc414": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0e64-7b36-76df-b38c-c4a9adf8dd14",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
