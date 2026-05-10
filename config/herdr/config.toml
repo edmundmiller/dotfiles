@@ -1,0 +1,18 @@
+[theme]
+name = "catppuccin"
+
+[ui.toast]
+delivery = "herdr"
+
+[keys]
+prefix = "ctrl+c"
+
+[[keys.command]]
+key = "]"
+type = "shell"
+command = "herdr-hunk"
+
+[[keys.command]]
+key = "}"
+type = "shell"
+command = "herdr-hunk --tab"
