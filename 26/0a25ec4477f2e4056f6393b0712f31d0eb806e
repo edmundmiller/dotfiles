@@ -1,0 +1,19 @@
+modules/services/hass/default.nix
+  s_3aa6dde758d4a8::t_1914a49087a429 12,191-192,247,271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "260a25ec4477f2e4056f6393b0712f31d0eb806e",
+  "prompts": {},
+  "sessions": {
+    "s_3aa6dde758d4a8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0f77-d9de-727b-8c6f-75c76df1106e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
