@@ -53,14 +53,37 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z "${HERDR_ACTIVE_PANE_ID:-}" ]]; then
-    echo "herdr-hunk: HERDR_ACTIVE_PANE_ID is not set; run from a Herdr command binding" >&2
-    exit 1
-fi
-
-active_pane="${HERDR_ACTIVE_PANE_ID}"
+active_pane="${HERDR_ACTIVE_PANE_ID:-}"
 active_workspace="${HERDR_ACTIVE_WORKSPACE_ID:-}"
 start_cwd="${HERDR_ACTIVE_PANE_CWD:-$PWD}"
+
+# Herdr command bindings provide HERDR_ACTIVE_* context. When the script is run
+# manually, fall back to the currently focused pane from the socket API.
+if [[ -z "$active_pane" ]]; then
+    focused_pane_json=$("$herdr_cmd" pane list)
+    focused_context=$(printf '%s' "$focused_pane_json" | python3 -c '
+import json, sys
+payload = json.load(sys.stdin)
+panes = payload.get("result", {}).get("panes", [])
+focused = next((pane for pane in panes if pane.get("focused")), None)
+if not focused:
+    raise SystemExit("no focused Herdr pane found")
+print(focused.get("pane_id", ""))
+print(focused.get("workspace_id", ""))
+print(focused.get("cwd", ""))
+')
+    active_pane=$(printf '%s\n' "$focused_context" | sed -n '1p')
+    active_workspace=$(printf '%s\n' "$focused_context" | sed -n '2p')
+    fallback_cwd=$(printf '%s\n' "$focused_context" | sed -n '3p')
+    if [[ -n "$fallback_cwd" ]]; then
+        start_cwd="$fallback_cwd"
+    fi
+fi
+
+if [[ -z "$active_pane" ]]; then
+    echo "herdr-hunk: could not determine the active Herdr pane" >&2
+    exit 1
+fi
 
 if [[ ! -d "$start_cwd" ]]; then
     start_cwd="$PWD"
