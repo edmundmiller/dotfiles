@@ -68,6 +68,8 @@ fi
 
 cd "$start_cwd" || exit 1
 
+# TODO: Support jj workspaces, including resolving their backing git repo/root
+# and selecting an appropriate Hunk diff command for jj changes.
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
     echo "herdr-hunk: not in a git repo: $start_cwd" >&2
     exit 1
