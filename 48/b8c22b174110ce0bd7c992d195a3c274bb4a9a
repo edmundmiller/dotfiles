@@ -1,0 +1,33 @@
+bin/herdr-tab
+  s_629f81f3188e1a::t_a69733e04a3925 1-13,16,18-22,24-30,33-35,39-53,55-56
+  s_629f81f3188e1a::t_1198df762abd9d 14-15,17,23,31-32,36-38,54
+modules/shell/herdr.nix
+  s_f803fb28499136::t_301e26bb808978 183
+  s_629f81f3188e1a::t_22ba3208d842da 44-51,56,61,291-298,303,308,311-312
+config/herdr/config.toml
+  s_629f81f3188e1a::t_2edefb4e0d4fa6 12-19,24,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "48b8c22b174110ce0bd7c992d195a3c274bb4a9a",
+  "prompts": {},
+  "sessions": {
+    "s_629f81f3188e1a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0fea-5052-766d-883c-97b8fc5604a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_f803fb28499136": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e100e-3de3-743d-b5b4-5b4c102a1a3c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
