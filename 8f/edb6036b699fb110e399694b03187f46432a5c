@@ -1,0 +1,19 @@
+packages/hunk/default.nix
+  s_7331cefa2dd531::t_d5f9ef81f43e32 9,14,18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "8fedb6036b699fb110e399694b03187f46432a5c",
+  "prompts": {},
+  "sessions": {
+    "s_7331cefa2dd531": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e14f2-50d6-73ab-9f55-a27ce4259ee0",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
