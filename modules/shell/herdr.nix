@@ -161,6 +161,7 @@ in
     modules.shell.herdr.configFile = mkDefault "${config.dotfiles.configDir}/herdr/config.toml";
 
     user.packages = optional (cfg.package != null) cfg.package;
+    environment.systemPackages = optional (cfg.package != null) cfg.package;
 
     home.file.".pi/agent/themes/${piThemeName}.json".source = piThemeFile;
 
