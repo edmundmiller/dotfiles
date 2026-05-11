@@ -1,0 +1,39 @@
+name: Renovate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 10 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v20
+
+      - name: Enable Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+
+      - name: Run Renovate
+        env:
+          LOG_LEVEL: info
+          RENOVATE_PLATFORM: github
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN || github.token }}
+          GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_TOKEN || github.token }}
+          RENOVATE_ALLOWED_COMMANDS: '["^nix run \\.#renovate-update-nix-hashes$"]'
+        run: nix run nixpkgs#renovate
