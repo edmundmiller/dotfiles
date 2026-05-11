@@ -119,6 +119,8 @@
     "npm:pi-read-mode",
     // Self-updating markdown docs for pi - https://github.com/Michaelliv/pi-magic-docs
     "npm:pi-magic-docs",
+    // Codex-style persistent goal tracking and continuation - https://github.com/fitchmultz/pi-codex-goal
+    "npm:pi-codex-goal",
     // Legacy tasks package intentionally disabled to keep task tools out of session
     // "~/.config/dotfiles/pi-packages/pi-beads",
 
