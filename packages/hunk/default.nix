@@ -6,16 +6,16 @@
 }:
 
 let
-  version = "0.9.2";
+  version = "0.11.1";
 
   sources = {
     "aarch64-darwin" = fetchurl {
       url = "https://github.com/modem-dev/hunk/releases/download/v${version}/hunkdiff-darwin-arm64.tar.gz";
-      hash = "sha256-LpyFG+RlWuLaKR56lt53b2M8lnImyGSUK4bDQf6AW1E=";
+      hash = "sha256-TjSrDxHjYXasXEr+O0Nid9PcJRvZIbRK/lP7DrGHtZo=";
     };
     "x86_64-linux" = fetchurl {
       url = "https://github.com/modem-dev/hunk/releases/download/v${version}/hunkdiff-linux-x64.tar.gz";
-      hash = "sha256-eeHhlNH7of5LcoU79IaBJOmpZwdRkUPPTNtCfZCUAh8=";
+      hash = "sha256-XQkhUXxA9Vsd1ILgyo3cRqrOTfYNgVSUyiY9ZnQYchQ=";
     };
   };
 in
