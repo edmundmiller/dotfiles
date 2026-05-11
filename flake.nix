@@ -142,16 +142,10 @@
           runtimeInputs = with pkgsFor; [
             coreutils
             git
-            gnugrep
-            gnused
-            nix
-            python3
+            nix-update
           ];
           text = ''
             set -euo pipefail
-
-            fake_sri='sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
-            max_attempts=6
 
             changed_files=$(git diff --name-only -- 'packages/**/*.nix' 'packages/*.nix' || true)
             if [[ -z "''${changed_files}" ]]; then
@@ -169,64 +163,11 @@
               fi
             }
 
-            refresh_attr() {
-              local file="$1"
-              local attr="$2"
-              local attempt output expected status
-
-              echo "Refreshing Nix fixed-output hashes for .#''${attr} (''${file})"
-
-              for attempt in $(seq 1 "$max_attempts"); do
-                echo "Hash refresh attempt ''${attempt}/''${max_attempts} for .#''${attr}"
-                set +e
-                output=$(nix build --no-link ".#''${attr}" 2>&1)
-                status=$?
-                set -e
-
-                if [[ $status -eq 0 ]]; then
-                  echo ".#''${attr} builds successfully"
-                  return 0
-                fi
-
-                expected=$(printf '%s\n' "$output" | sed -nE 's/^[[:space:]]*(got|Got):[[:space:]]*(sha256-[A-Za-z0-9+\/=]+).*/\2/p' | tail -1)
-                if [[ -z "$expected" ]]; then
-                  printf '%s\n' "$output" >&2
-                  echo "Could not find an expected Nix hash in build output for .#''${attr}" >&2
-                  return "$status"
-                fi
-
-                if grep -qF "$expected" "$file"; then
-                  printf '%s\n' "$output" >&2
-                  echo "Build still failed after ''${file} already contains ''${expected}" >&2
-                  return "$status"
-                fi
-
-                python3 - "$file" "$fake_sri" "$expected" <<'PY'
-            from pathlib import Path
-            import sys
-            path = Path(sys.argv[1])
-            fake = sys.argv[2]
-            expected = sys.argv[3]
-            text = path.read_text()
-            if fake in text:
-                text = text.replace(fake, expected, 1)
-            else:
-                import re
-                text, n = re.subn(r'(\b(?:hash|sha256|vendorHash|cargoHash)\s*=\s*")sha256-[A-Za-z0-9+/=]+(";)', rf'\g<1>{fake}\2', text, count=1)
-                if n == 0:
-                    raise SystemExit(f'No SRI hash assignment found to refresh in {path}')
-            path.write_text(text)
-            PY
-              done
-
-              echo "Exceeded ''${max_attempts} hash refresh attempts for .#''${attr}" >&2
-              return 1
-            }
-
             while IFS= read -r file; do
               [[ -f "$file" ]] || continue
               attr=$(attr_for_file "$file")
-              refresh_attr "$file" "$attr"
+              echo "Refreshing Nix hashes for .#''${attr} (''${file}) with nix-update"
+              nix-update --flake --version=skip --build "''${attr}"
             done <<< "$changed_files"
           '';
         };
