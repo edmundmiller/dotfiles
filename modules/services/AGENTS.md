@@ -88,6 +88,13 @@ Add `HOMEPAGE_VAR_*` entries to `homepage-env.age` (decrypt → append → re-en
 git push && hey nuc
 ```
 
+For user-facing bridge/agent services like `kittylitter`, always verify the target host after deploying. A local build or macOS rebuild does not update the NUC service; run `hey nuc` before debugging mobile/client connectivity to NUC.
+
+```bash
+ssh nuc 'systemctl --user status kittylitter --no-pager'
+ssh nuc 'kittylitter probe --timeout-secs 15'
+```
+
 ---
 
 # Tailscale Services Pattern
