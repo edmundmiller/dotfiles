@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+direction="${1:-}"
+if [[ "$direction" != "previous" && "$direction" != "next" ]]; then
+  echo "usage: herdr-tab previous|next" >&2
+  exit 64
+fi
+
+herdr_bin="${HERDR_BIN_PATH:-herdr}"
+workspace_id="${HERDR_ACTIVE_WORKSPACE_ID:-}"
+
+if [[ -z "$workspace_id" ]]; then
+  workspace_json="$($herdr_bin workspace list)"
+  workspace_id="$(python3 -c '
+import json, sys
+payload = json.loads(sys.argv[1])
+workspaces = payload.get("result", {}).get("workspaces", [])
+for ws in workspaces:
+    if ws.get("focused"):
+        print(ws.get("workspace_id", ""))
+        break
+' "$workspace_json")"
+fi
+
+if [[ -z "$workspace_id" ]]; then
+  echo "herdr-tab: could not determine active workspace" >&2
+  exit 1
+fi
+
+tab_json="$($herdr_bin tab list)"
+next_tab_id="$(python3 -c '
+import json
+import sys
+
+payload = json.loads(sys.argv[1])
+workspace_id = sys.argv[2]
+direction = sys.argv[3]
+tabs = [t for t in payload.get("result", {}).get("tabs", []) if t.get("workspace_id") == workspace_id]
+tabs.sort(key=lambda t: t.get("number", 0))
+if not tabs:
+    sys.exit(1)
+
+focused_index = next((i for i, tab in enumerate(tabs) if tab.get("focused")), None)
+if focused_index is None:
+    focused_index = 0
+
+if direction == "previous":
+    target = tabs[(focused_index - 1) % len(tabs)]
+else:
+    target = tabs[(focused_index + 1) % len(tabs)]
+
+print(target["tab_id"])
+' "$tab_json" "$workspace_id" "$direction")"
+
+exec "$herdr_bin" tab focus "$next_tab_id"

@@ -39,18 +39,26 @@ let
         [keys]
         prefix = "${cfg.prefix}"
         new_workspace = "w"
-        previous_tab = "p"
-        next_tab = "n"
+
+        [[keys.command]]
+        key = "p"
+        type = "shell"
+        command = "herdr-tab previous"
+
+        [[keys.command]]
+        key = "n"
+        type = "shell"
+        command = "herdr-tab next"
 
         [[keys.command]]
         key = "]"
         type = "shell"
-        command = "${config.dotfiles.binDir}/herdr-hunk"
+        command = "herdr-hunk"
 
         [[keys.command]]
         key = "}"
         type = "shell"
-        command = "${config.dotfiles.binDir}/herdr-hunk --tab"
+        command = "herdr-hunk --tab"
       '';
 
   # Pi's auto-selected dark theme can be too low-contrast in the Herdr/Ghostty
@@ -172,6 +180,7 @@ in
           cd "$HOME"
 
           herdr_cmd='${herdrBin}'
+          export HERDR_BIN_PATH="$herdr_cmd"
 
           if command -v "$herdr_cmd" >/dev/null 2>&1; then
             if "$herdr_cmd"; then
@@ -237,8 +246,6 @@ in
           managed_keys = {
               "prefix": prefix,
               "new_workspace": "w",
-              "previous_tab": "p",
-              "next_tab": "n",
           }
           wrote_keys = set()
 
@@ -281,23 +288,28 @@ in
           command_block = [
               "",
               "[[keys.command]]",
+              'key = "p"',
+              'type = "shell"',
+              'command = "herdr-tab previous"',
+              "",
+              "[[keys.command]]",
+              'key = "n"',
+              'type = "shell"',
+              'command = "herdr-tab next"',
+              "",
+              "[[keys.command]]",
               'key = "]"',
               'type = "shell"',
-              'command = "${config.dotfiles.binDir}/herdr-hunk"',
+              'command = "herdr-hunk"',
               "",
               "[[keys.command]]",
               'key = "}"',
               'type = "shell"',
-              'command = "${config.dotfiles.binDir}/herdr-hunk --tab"',
+              'command = "herdr-hunk --tab"',
           ]
 
-          for i, line in enumerate(out):
-              if line.strip() == 'command = "herdr-hunk"':
-                  out[i] = 'command = "${config.dotfiles.binDir}/herdr-hunk"'
-              elif line.strip() == 'command = "herdr-hunk --tab"':
-                  out[i] = 'command = "${config.dotfiles.binDir}/herdr-hunk --tab"'
-
-          if "herdr-hunk" not in "\n".join(out):
+          content = "\n".join(out)
+          if "herdr-tab previous" not in content or "herdr-tab next" not in content or "herdr-hunk" not in content:
               if out and out[-1].strip():
                   out.append("")
               out.extend(command_block[1:])
