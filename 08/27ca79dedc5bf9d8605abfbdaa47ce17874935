@@ -1,0 +1,31 @@
+modules/services/kittylitter/AGENTS.md
+  s_3453a83b5c6bac::t_0b903bcf49f4a8 1-55
+modules/services/kittylitter/README.md
+  s_3453a83b5c6bac::t_17df16ddbd082b 1-30
+modules/services/AGENTS.md
+  s_12c054a6e9bfe1::t_d9dfe2a3de0017 91-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "0827ca79dedc5bf9d8605abfbdaa47ce17874935",
+  "prompts": {},
+  "sessions": {
+    "s_12c054a6e9bfe1": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e1523-9e40-778f-ba8d-01f787de68dc",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_3453a83b5c6bac": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e139a-ef8b-731f-88e5-0c3885298146",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
