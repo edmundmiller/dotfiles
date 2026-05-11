@@ -1,0 +1,47 @@
+hosts/nuc/default.nix
+  s_7331cefa2dd531::t_3023782eb6e008 1029
+packages/kittylitter/AGENTS.md
+  s_7331cefa2dd531::t_3023782eb6e008 55,57-62
+config/herdr/README.md
+  ai_agent 39-44,46
+  s_629f81f3188e1a::t_2c1bca5dfb0a9a 1-38,45,47-69
+config/herdr/AGENTS.md
+  ai_agent 1-66
+hosts/mactraitorpro/default.nix
+  s_7331cefa2dd531::t_3023782eb6e008 91
+modules/services/kittylitter/default.nix
+  s_7331cefa2dd531::t_3023782eb6e008 1-54,56-158
+  s_3453a83b5c6bac::t_30e5f8a560a2a1 55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "8734cba982438a5013a5e7caa8ddf3d012489a7f",
+  "prompts": {},
+  "sessions": {
+    "s_3453a83b5c6bac": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e139a-ef8b-731f-88e5-0c3885298146",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_629f81f3188e1a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0fea-5052-766d-883c-97b8fc5604a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_7331cefa2dd531": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e14f2-50d6-73ab-9f55-a27ce4259ee0",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
