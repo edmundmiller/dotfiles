@@ -1,0 +1,30 @@
+config/agents/skills/herdr-pi-workspace/scripts/monitor_pane.py
+  s_e4298ec90d63d8::t_e8cb6a224806a7 1-66
+config/agents/skills/herdr-pi-workspace/scripts/write_handoff_prompt.py
+  s_e4298ec90d63d8::t_c0eedb6fc62ad2 1-71
+config/agents/skills/herdr-pi-workspace/scripts/start_pi_workspace.py
+  s_e4298ec90d63d8::t_6a48d1efff8fed 1-108
+config/agents/skills/herdr-pi-workspace/scripts/extract_ids.py
+  s_e4298ec90d63d8::t_9d04518976fdb1 1-41
+config/agents/skills/herdr-pi-workspace/scripts/send_prompt_to_pane.py
+  s_e4298ec90d63d8::t_feae5e1d4430b5 1-68
+config/agents/skills/herdr-pi-workspace/SKILL.md
+  s_e4298ec90d63d8::t_62e488d696094e 25-27,29-48,53-62,65-66,68-73
+  s_e4298ec90d63d8::t_11b12b5af6a3d4 28,49-52,63-64,67,75-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "35579d90d3c3abdf2421bf54ca816638d04327a1",
+  "prompts": {},
+  "sessions": {
+    "s_e4298ec90d63d8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e100d-2231-7158-853a-459d40b96d4a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
