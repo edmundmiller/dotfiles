@@ -7,15 +7,23 @@ delivery = "herdr"
 [keys]
 prefix = "ctrl+c"
 new_workspace = "w"
-previous_tab = "p"
-next_tab = "n"
+
+[[keys.command]]
+key = "p"
+type = "shell"
+command = "herdr-tab previous"
+
+[[keys.command]]
+key = "n"
+type = "shell"
+command = "herdr-tab next"
 
 [[keys.command]]
 key = "]"
 type = "shell"
-command = "/Users/emiller/.config/dotfiles/bin/herdr-hunk"
+command = "herdr-hunk"
 
 [[keys.command]]
 key = "}"
 type = "shell"
-command = "/Users/emiller/.config/dotfiles/bin/herdr-hunk --tab"
+command = "herdr-hunk --tab"
