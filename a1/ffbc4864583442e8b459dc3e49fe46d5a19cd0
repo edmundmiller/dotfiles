@@ -1,0 +1,37 @@
+renovate.json
+  s_12c054a6e9bfe1::t_38e7eb917e46a7 1-11,31-47
+  s_12c054a6e9bfe1::t_4b170c868f699d 12,14-16
+  s_12c054a6e9bfe1::t_d088c0e2137ca4 13
+  s_12c054a6e9bfe1::t_9e3c6332e1dc95 17-30
+flake.nix
+  s_12c054a6e9bfe1::t_8f989f7ef5fd6a 150-179,181-231
+  s_629f81f3188e1a::t_1e393cad1b059b 138-149,232-233,295-303,306-314
+  s_12c054a6e9bfe1::t_f891f587489a2c 180
+.github/workflows/renovate.yml
+  s_12c054a6e9bfe1::t_e09098393cdaba 38
+  s_12c054a6e9bfe1::t_dc38962f44c981 1-37,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "a1ffbc4864583442e8b459dc3e49fe46d5a19cd0",
+  "prompts": {},
+  "sessions": {
+    "s_12c054a6e9bfe1": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e1523-9e40-778f-ba8d-01f787de68dc",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_629f81f3188e1a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e0fea-5052-766d-883c-97b8fc5604a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
