@@ -17,6 +17,7 @@ in
     ai.enable = mkBoolOpt false;
     hunk.enable = mkBoolOpt false;
     diffity.enable = mkBoolOpt false;
+    stack.enable = mkBoolOpt true;
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -32,6 +33,7 @@ in
           pre-commit
           my.git-hunks
           (mkIf cfg.hunk.enable my.hunk)
+          (mkIf cfg.stack.enable my.stack)
         ]
         ++ lib.optionals stdenv.hostPlatform.isDarwin (
           [
