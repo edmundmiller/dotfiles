@@ -309,8 +309,36 @@
               markit.from = "markit";
               markit.path = ".";
 
-              grill-me.from = "mattpocock-productivity";
-              grill-me.path = "grill-me";
+              grill-me = {
+                from = "mattpocock-productivity";
+                path = "grill-me";
+                transform =
+                  { original, ... }:
+                  ''
+                    ${original}
+
+                    ## Pi integration
+
+                    When running in Pi and the `ask_user` tool is available, use it for every
+                    user-facing grilling question instead of asking in plain chat. Keep the
+                    interview adaptive: ask one question per `ask_user` call, inspect the answer,
+                    then choose the next question.
+
+                    For each `ask_user` call:
+                    - Use `type: "single"` for normal decision questions, `type: "multi"` when
+                      several answers can be true, and `type: "preview"` for comparing longer
+                      designs/options.
+                    - Include your recommended answer as an option or clearly mark it in an
+                      option description.
+                    - Include an `other` / `needs_custom_answer` option when the provided choices
+                      may not fit, so the user can add notes.
+                    - Keep prompts short and direct; put tradeoffs in option descriptions or
+                      preview text.
+
+                    If `ask_user` is not available, fall back to asking one question at a time in
+                    plain chat.
+                  '';
+              };
 
               to-prd.from = "mattpocock-engineering";
               to-prd.path = "to-prd";
