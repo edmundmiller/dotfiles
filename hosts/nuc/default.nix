@@ -157,6 +157,54 @@ let
     export NODE_LLAMA_CPP_GPU=off
     exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
   '';
+  kittylitterConfigPrep = pkgs.writeShellScript "kittylitter-config-prep" ''
+        set -euo pipefail
+
+        config_dir=/home/emiller/.config/kittylitter
+        config_file="$config_dir/host.toml"
+
+        mkdir -p "$config_dir"
+
+        if [ -f "$config_file" ]; then
+          ${pkgs.perl}/bin/perl -0pi -e 's/(\[agents\.pi\]\n(?:(?!\n\[).)*?enabled\s*=\s*)false/$1true/s' "$config_file"
+          if ! ${pkgs.gnugrep}/bin/grep -q '^\[agents\.pi\]' "$config_file"; then
+            cat >> "$config_file" <<'EOF'
+
+    [agents.pi]
+    enabled = true
+    bin = "pi"
+    EOF
+          fi
+        else
+          cat > "$config_file" <<'EOF'
+    [agents.codex]
+    enabled = true
+    bin = "codex"
+    host = "127.0.0.1"
+    port = 8390
+
+    [agents.pi]
+    enabled = true
+    bin = "pi"
+
+    [agents.opencode]
+    enabled = true
+    bin = "opencode"
+
+    [agents.claude]
+    enabled = true
+    bin = "claude"
+    bypass_permissions = true
+
+    [session]
+    replay_max_msgs = 2048
+    replay_max_bytes = 16777216
+    idle_ttl_secs = 600
+    pending_grace_secs = 60
+    EOF
+          chmod 600 "$config_file"
+        fi
+  '';
   millDocsObsidianLoginScript = pkgs.writeShellScript "obsidian-sync-mill-docs-login" ''
     set -euo pipefail
     if ${ob} login 2>&1 | grep -q "Logged in"; then
@@ -627,6 +675,34 @@ in
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
+
+    systemd.user.services.kittylitter = {
+      Unit = {
+        Description = "Patched kittylitter Alleycat bridge daemon";
+        After = [ "network-online.target" ];
+      };
+      Service = {
+        Type = "simple";
+        ExecStartPre = "${kittylitterConfigPrep}";
+        ExecStart = "${pkgs.my.kittylitter}/bin/kittylitter serve";
+        Restart = "on-failure";
+        RestartSec = "5s";
+        Environment = [
+          "HOME=/home/emiller"
+          "XDG_CONFIG_HOME=/home/emiller/.config"
+          "PATH=${
+            lib.makeBinPath [
+              pkgs.my.kittylitter
+              pkgs.codex
+              pkgs.claude-code
+              pkgs.bun
+              pkgs.nodejs
+            ]
+          }:/home/emiller/.bun/bin:/home/emiller/.local/bin:/home/emiller/.cache/npm/bin:/run/current-system/sw/bin"
+        ];
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
   };
 
   environment.systemPackages = with pkgs; [
@@ -648,12 +724,24 @@ in
     claude-code # CLI backend for local agents
     codex # CLI backend for local agents
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
+    my.kittylitter # Patched Alleycat/kittylitter daemon for remote agent pairing
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
   ];
+  system.activationScripts.disableLegacyKittylitter = ''
+    ${pkgs.systemd}/bin/systemctl disable --now kittylitter.service || true
+    if id emiller >/dev/null 2>&1; then
+      ${pkgs.procps}/bin/pkill -u emiller -f '/_npx/.*/kittylitter serve' || true
+      if [ -f /home/emiller/.config/systemd/user/kittylitter.service ] \
+        && ! [ -L /home/emiller/.config/systemd/user/kittylitter.service ]; then
+        rm -f /home/emiller/.config/systemd/user/kittylitter.service
+      fi
+    fi
+  '';
+
   imports = [
     ../_server.nix
     ../_home.nix

@@ -1,0 +1,41 @@
+diff --git i/crates/pi-bridge/src/bridge.rs w/crates/pi-bridge/src/bridge.rs
+index 9f064e1..592ece1 100644
+--- i/crates/pi-bridge/src/bridge.rs
++++ w/crates/pi-bridge/src/bridge.rs
+@@ -207,15 +207,18 @@ impl PiBridgeBuilder {
+ 
+         let hydrator = match self.hydrator {
+             Some(hydrator) => hydrator,
++            // Local daemon mode can read ~/.pi/agent/sessions directly. Avoid
++            // spawning pi during startup to call the speculative list_sessions
++            // RPC, which is not part of released pi-coding-agent builds.
++            None if !self.rpc_session_listing_only => PiHydrator::new(),
++            // Remote launchers cannot safely scan the caller's local ~/.pi, so
++            // keep the RPC-only behavior there and degrade to an empty index if
++            // the remote pi build does not expose list_sessions.
+             None => match list_sessions_via_rpc(&pool).await {
+                 Ok(sessions) => PiHydrator::with_sessions(sessions),
+                 Err(error) => {
+                     tracing::warn!(%error, "pi RPC list_sessions failed during bridge startup");
+-                    if self.rpc_session_listing_only {
+-                        PiHydrator::with_sessions(Vec::new())
+-                    } else {
+-                        PiHydrator::new()
+-                    }
++                    PiHydrator::with_sessions(Vec::new())
+                 }
+             },
+         };
+diff --git i/crates/pi-bridge/src/pool/pi_protocol.rs w/crates/pi-bridge/src/pool/pi_protocol.rs
+index 33f9e13..8a69a54 100644
+--- i/crates/pi-bridge/src/pool/pi_protocol.rs
++++ w/crates/pi-bridge/src/pool/pi_protocol.rs
+@@ -683,7 +683,7 @@ pub enum CompactionReason {
+ 
+ /// `extension_ui_request` body without the outer `type` discriminator.
+ #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+-#[serde(tag = "method", rename_all = "snake_case")]
++#[serde(tag = "method", rename_all = "camelCase")]
+ pub enum ExtensionUiRequest {
+     Select {
+         id: String,
