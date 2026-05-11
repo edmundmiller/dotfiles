@@ -52,9 +52,14 @@ Probe Pi sessions:
 $(nix build .#kittylitter --no-link --print-out-paths)/bin/kittylitter probe --agent pi --method thread/list
 ```
 
-## NUC deployment
+## Host deployment
 
-`hosts/nuc/default.nix` runs this package as a Home Manager user systemd service named `kittylitter.service` for `emiller`. The service preserves the existing `~/.config/kittylitter/host.toml` token and patches `[agents.pi].enabled = true` at startup.
+`modules/services/kittylitter/default.nix` runs this package when `modules.services.kittylitter.enable = true`:
+
+- NixOS: Home Manager user systemd service named `kittylitter.service`.
+- macOS/nix-darwin: user launchd agent named `kittylitter`.
+
+The service preserves the existing `~/.config/kittylitter/host.toml` token and patches `[agents.pi].enabled = true` at startup.
 
 ## Patch policy
 
