@@ -1,0 +1,19 @@
+config/pi/settings.jsonc
+  s_2d5fc1ddd3bbd9::t_ec0620ffd937b8 122-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "5ba987cb2cd7cb51ed7ed0e0639b5b9f02cf7819",
+  "prompts": {},
+  "sessions": {
+    "s_2d5fc1ddd3bbd9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e14c0-02ec-730b-bfd7-04086129ca9b",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    }
+  }
+}
