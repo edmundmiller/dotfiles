@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "nix": {
+    "enabled": true,
+    "managerFilePatterns": ["/(^|/)flake\\.nix$/"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "postUpgradeTasks": {
+    "commands": ["nix run .#renovate-update-nix-hashes"],
+    "fileFilters": ["packages/**/*.nix", "packages/*.nix"],
+    "executionMode": "branch"
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update repo-local Nix packages in packages/ that fetch GitHub tags/releases via fetchFromGitHub.",
+      "managerFilePatterns": ["/(^|/)packages/.*\\.nix$/"],
+      "matchStrings": [
+        "version\\s*=\\s*\"(?<currentValue>[^\"]+)\";[\\s\\S]*?src\\s*=\\s*fetchFromGitHub\\s*\\{[\\s\\S]*?owner\\s*=\\s*\"(?<owner>[^\"]+)\";[\\s\\S]*?repo\\s*=\\s*\"(?<repo>[^\"]+)\";"
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "{{{owner}}}/{{{repo}}}",
+      "depNameTemplate": "{{{owner}}}/{{{repo}}}",
+      "versioningTemplate": "loose"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group Nix flake input bumps for local packages and agent package sources so a Flue agent can review them together.",
+      "matchManagers": ["nix"],
+      "matchDepNames": ["agents-workspace", "skills-catalog", "/.*-repo$/"],
+      "groupName": "@packages flake inputs",
+      "groupSlug": "packages-flake-inputs",
+      "labels": ["dependencies", "nix", "@packages", "flue-review"],
+      "automerge": false
+    },
+    {
+      "description": "Keep all other Nix flake input bumps available for normal Renovate review.",
+      "matchManagers": ["nix"],
+      "labels": ["dependencies", "nix"]
+    }
+  ]
+}
