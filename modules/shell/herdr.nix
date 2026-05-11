@@ -39,6 +39,7 @@ let
         [keys]
         prefix = "${cfg.prefix}"
         new_workspace = "w"
+        split_horizontal = "s"
 
         [[keys.command]]
         key = "p"
@@ -51,12 +52,12 @@ let
         command = "herdr-tab next"
 
         [[keys.command]]
-        key = "]"
+        key = "["
         type = "shell"
         command = "herdr-hunk"
 
         [[keys.command]]
-        key = "}"
+        key = "]"
         type = "shell"
         command = "herdr-hunk --tab"
       '';
@@ -246,6 +247,7 @@ in
           managed_keys = {
               "prefix": prefix,
               "new_workspace": "w",
+              "split_horizontal": "s",
           }
           wrote_keys = set()
 
@@ -298,12 +300,12 @@ in
               'command = "herdr-tab next"',
               "",
               "[[keys.command]]",
-              'key = "]"',
+              'key = "["',
               'type = "shell"',
               'command = "herdr-hunk"',
               "",
               "[[keys.command]]",
-              'key = "}"',
+              'key = "]"',
               'type = "shell"',
               'command = "herdr-hunk --tab"',
           ]
