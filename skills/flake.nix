@@ -82,6 +82,11 @@
       flake = false;
     };
 
+    stack-repo = {
+      url = "github:kitlangton/stack/v0.1.3";
+      flake = false;
+    };
+
     # Child flake cannot reference ../ paths once materialized in /nix/store.
     # Pull repo-local skill dirs from dotfiles source instead.
     dotfiles-repo = {
@@ -94,6 +99,7 @@
     homeManagerModules.default =
       {
         lib,
+        pkgs,
         osConfig ? null,
         ...
       }:
@@ -104,6 +110,12 @@
           "modules"
           "shell"
           "acpx"
+          "enable"
+        ];
+        gitEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "git"
           "enable"
         ];
         diffityEnabled = moduleEnabled [
@@ -132,6 +144,19 @@
           "hunk"
           "enable"
         ];
+        stackEnabled =
+          gitEnabled
+          && moduleEnabled [
+            "modules"
+            "shell"
+            "git"
+            "stack"
+            "enable"
+          ];
+        stackSkillSource = pkgs.runCommand "stack-skill-source" { } ''
+          mkdir -p $out/stack
+          cp ${inputs.stack-repo.outPath}/skills/stack/skill.md $out/stack/SKILL.md
+        '';
         jjEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -262,6 +287,13 @@
               filter.maxDepth = 1;
             };
 
+          }
+          // lib.optionalAttrs stackEnabled {
+            stack = {
+              path = stackSkillSource;
+              subdir = ".";
+              filter.maxDepth = 1;
+            };
           };
 
           # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
@@ -287,6 +319,10 @@
             // lib.optionalAttrs hunkEnabled {
               hunk-review.from = "hunk";
               hunk-review.path = "hunk-review";
+            }
+            // lib.optionalAttrs stackEnabled {
+              stack.from = "stack";
+              stack.path = "stack";
             }
             // lib.optionalAttrs herdrEnabled {
               # Herdr ships a root-level SKILL.md for agents controlling a live herdr

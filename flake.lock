@@ -1801,7 +1801,8 @@
         "pi-extension-skills": "pi-extension-skills",
         "pi-messenger-repo": "pi-messenger-repo",
         "qmd-repo": "qmd-repo",
-        "shaping-skills": "shaping-skills"
+        "shaping-skills": "shaping-skills",
+        "stack-repo": "stack-repo"
       },
       "locked": {
         "path": "./skills",
@@ -1812,6 +1813,23 @@
         "type": "path"
       },
       "parent": []
+    },
+    "stack-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778525388,
+        "narHash": "sha256-E9ATGUzY373/1uVIgUdTe2F//yF6Qchhit0NgiBpids=",
+        "owner": "kitlangton",
+        "repo": "stack",
+        "rev": "f828837b4fbbc981bc516d6d196836b73c8e5b3b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kitlangton",
+        "ref": "v0.1.3",
+        "repo": "stack",
+        "type": "github"
+      }
     },
     "stylix": {
       "inputs": {
