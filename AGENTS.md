@@ -2,6 +2,17 @@
 
 This is a nix-darwin dotfiles repo. Config files (lazygit, ghostty, etc.) are symlinked from the Nix store — they're **read-only**. Edit source files here, then rebuild.
 
+## Host Awareness
+
+Do not infer the current host from paths, prompts, repository names, or prior context. Before any host-specific action — rebuilds, deploys, systemd checks, SSH assumptions, or Darwin vs NixOS decisions — verify the execution host explicitly:
+
+```bash
+hostname
+uname -a
+```
+
+Use that result as authoritative. If already running on the target host, prefer local commands over SSH. For example, on `nuc`, use `systemctl ...` directly instead of `ssh nuc ...`.
+
 ## Rebuilding the System
 
 After changing any `.nix` file or Nix-managed config:

@@ -697,8 +697,15 @@ in
     ExecStart = lib.mkForce anneHermesGateway;
   };
 
-  systemd.services.hermes-gateway-scintillate.serviceConfig = {
-    EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+  systemd.services.hermes-gateway-scintillate = {
+    # Scintillate is an interactive Telegram gateway.  A routine NixOS
+    # auto-upgrade/switch should not SIGTERM it mid-turn and send
+    # "Gateway shutting down -- Your current task will be interrupted".
+    # Apply unit/package changes on the next explicit service restart instead.
+    restartIfChanged = false;
+    serviceConfig = {
+      EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+    };
   };
 
   systemd.services.hermes-radar-cron-tick = {
