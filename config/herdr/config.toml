@@ -7,6 +7,7 @@ delivery = "herdr"
 [keys]
 prefix = "ctrl+c"
 new_workspace = "w"
+split_horizontal = "s"
 
 [[keys.command]]
 key = "p"
@@ -19,11 +20,11 @@ type = "shell"
 command = "herdr-tab next"
 
 [[keys.command]]
-key = "]"
+key = "["
 type = "shell"
 command = "herdr-hunk"
 
 [[keys.command]]
-key = "}"
+key = "]"
 type = "shell"
 command = "herdr-hunk --tab"
