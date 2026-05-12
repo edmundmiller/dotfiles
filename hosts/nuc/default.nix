@@ -149,7 +149,7 @@ let
   millDocsVaultPath = "/home/emiller/mill-docs";
   legacyMillDocsPath = "/home/emiller/sync/mill-docs";
   millDocsDeviceName = "nuc-mill-docs";
-  obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT";
+  obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT,.mdbase,.amp,scripts,.trash,.obsidian/plugins-disabled-20260505-160148,.obsidian/plugins-disabled-20260505-162506,.obsidian/plugins-disabled-all-20260505-164607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082626,06_Attachments/YouTube,src";
   ob = "${pkgs.my.obsidian-headless}/bin/ob";
   op = "${pkgs._1password-cli}/bin/op";
   tnoteBaseRepo = "/home/emiller/src/personal/tnote";
@@ -1021,6 +1021,7 @@ in
       obsidian-sync = {
         enable = true;
         mode = "desktop"; # bidirectional — agents edit vault files on NUC
+        vaultName = "llm-wiki";
         op = obsidianOpRefs;
         healthcheck = {
           enable = true;
