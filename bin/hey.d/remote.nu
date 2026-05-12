@@ -14,7 +14,14 @@ def "main nuc" [] {
   let ctx = (context)
   print "=== Deploying to NUC ==="
   cd $ctx.flake_dir
-  ^nix run .#deploy-rs -- .#nuc --skip-checks
+  let deploy = (^nix run .#deploy-rs -- .#nuc --skip-checks | complete)
+  if $deploy.exit_code != 0 {
+    if (($deploy.stdout | str trim) | is-not-empty) { print $deploy.stdout }
+    if (($deploy.stderr | str trim) | is-not-empty) { print -e $deploy.stderr }
+    print "=== local deploy-rs failed; falling back to remote NUC rebuild ==="
+    print "=== remote rebuild uses the NUC checkout, so push/pull committed changes first ==="
+    ^ssh $NUC_HOST 'cd ~/.config/dotfiles && /run/current-system/sw/bin/git pull --ff-only && hey re'
+  }
 
   print "=== post-deploy gateway restart check on NUC ==="
   ^ssh $NUC_HOST '

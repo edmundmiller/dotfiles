@@ -84,6 +84,14 @@ let
     export XDG_CONFIG_HOME=${lib.escapeShellArg "${cfg.homeDir}/.config"}
     export PATH=${lib.escapeShellArg servicePath}
 
+    # Runtime cleanup is intentionally duplicated from activation so a stale
+    # npx/com.sigkitten daemon cannot block the managed Nix launchd job after
+    # logouts, rollbacks, or manual starts.
+    launchctl bootout "gui/$(${pkgs.coreutils}/bin/id -u)/com.sigkitten.kittylitter" 2>/dev/null || true
+    rm -f ${lib.escapeShellArg "${cfg.homeDir}/Library/LaunchAgents/com.sigkitten.kittylitter.plist"}
+    /usr/bin/pkill -u ${lib.escapeShellArg cfg.user} -f '/_npx/.*/kittylitter serve' 2>/dev/null || true
+    ${cfg.package}/bin/kittylitter stop 2>/dev/null || true
+
     exec ${cfg.package}/bin/kittylitter serve
   '';
 in
