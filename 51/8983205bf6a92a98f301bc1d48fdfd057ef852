@@ -1,0 +1,9 @@
+config/pi/settings.jsonc
+  ai_agent 160-161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "518983205bf6a92a98f301bc1d48fdfd057ef852",
+  "prompts": {}
+}
