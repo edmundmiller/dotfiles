@@ -853,7 +853,12 @@ in
     shell = {
       # bugwarrior.enable = false;  # Module removed
       amoxide.enable = true;
-      git.enable = true;
+      git = {
+        enable = true;
+        # Temporarily disabled on NUC: package build currently fails in npm deps
+        # with `node: command not found`, blocking nixos-rebuild.
+        stack.enable = false;
+      };
       tmux.enable = true;
       zsh.enable = true;
       herdr.enable = true;
