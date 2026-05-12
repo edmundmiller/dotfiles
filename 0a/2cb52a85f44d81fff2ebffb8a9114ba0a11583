@@ -1,0 +1,9 @@
+bin/herdr-workspace
+  ai_agent 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "0a2cb52a85f44d81fff2ebffb8a9114ba0a11583",
+  "prompts": {}
+}
