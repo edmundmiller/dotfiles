@@ -82,6 +82,11 @@
       flake = false;
     };
 
+    prek-repo = {
+      url = "github:j178/prek";
+      flake = false;
+    };
+
     stack-repo = {
       url = "github:kitlangton/stack/v0.1.3";
       flake = false;
@@ -287,6 +292,12 @@
               filter.maxDepth = 1;
             };
 
+            prek = {
+              path = inputs.prek-repo.outPath;
+              subdir = "skills";
+              filter.maxDepth = 1;
+            };
+
           }
           // lib.optionalAttrs stackEnabled {
             stack = {
@@ -344,6 +355,9 @@
             // {
               markit.from = "markit";
               markit.path = ".";
+
+              prek.from = "prek";
+              prek.path = "prek";
 
               grill-me = {
                 from = "mattpocock-productivity";
