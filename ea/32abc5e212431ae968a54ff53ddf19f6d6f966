@@ -1,0 +1,21 @@
+skills/flake.lock
+  ai_agent 299-314,349
+skills/flake.nix
+  s_c9bf95b6362727::t_2cf334747b50b2 85-89,295-300,359-360
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "ea32abc5e212431ae968a54ff53ddf19f6d6f966",
+  "prompts": {},
+  "sessions": {
+    "s_c9bf95b6362727": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e1a0e-d7fa-725e-a195-b47d68eab329",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
