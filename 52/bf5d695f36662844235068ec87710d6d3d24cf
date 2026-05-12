@@ -1,0 +1,22 @@
+bin/hey.d/remote.nu
+  s_8ce5d56fdc9628::t_9b7f402028d55a 17-24
+modules/services/kittylitter/default.nix
+  s_8ce5d56fdc9628::t_31805eeb3a3be5 87-91,93-94
+  s_8ce5d56fdc9628::t_96378def61935c 92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "52bf5d695f36662844235068ec87710d6d3d24cf",
+  "prompts": {},
+  "sessions": {
+    "s_8ce5d56fdc9628": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e19ad-48e6-735d-b2a4-d0038c673f9c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
