@@ -161,6 +161,17 @@ in
         "node_modules"
         "TaskNotes"
         "OLD_VAULT"
+        ".mdbase"
+        ".amp"
+        "scripts"
+        ".trash"
+        ".obsidian/plugins-disabled-20260505-160148"
+        ".obsidian/plugins-disabled-20260505-162506"
+        ".obsidian/plugins-disabled-all-20260505-164607"
+        ".obsidian/quarantine-resynced-corrupt-title-files-20260506-082607"
+        ".obsidian/quarantine-resynced-corrupt-title-files-20260506-082626"
+        "06_Attachments/YouTube"
+        "src"
       ];
       description = "Folders to exclude from sync.";
     };

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+direction="${1:-}"
+if [[ "$direction" != "previous" && "$direction" != "next" ]]; then
+  echo "usage: herdr-workspace previous|next" >&2
+  exit 64
+fi
+
+herdr_bin="${HERDR_BIN_PATH:-herdr}"
+workspace_json="$($herdr_bin workspace list)"
+workspace_id="$(python3 -c '
+import json
+import sys
+
+payload = json.loads(sys.argv[1])
+direction = sys.argv[2]
+workspaces = payload.get("result", {}).get("workspaces", [])
+workspaces.sort(key=lambda ws: ws.get("number", 0))
+if not workspaces:
+    sys.exit(1)
+
+focused_index = next((i for i, ws in enumerate(workspaces) if ws.get("focused")), None)
+if focused_index is None:
+    focused_index = 0
+
+if direction == "previous":
+    target = workspaces[(focused_index - 1) % len(workspaces)]
+else:
+    target = workspaces[(focused_index + 1) % len(workspaces)]
+
+print(target["workspace_id"])
+' "$workspace_json" "$direction")"
+
+exec "$herdr_bin" workspace focus "$workspace_id"
