@@ -157,6 +157,8 @@
     // "npm:visual-explainer",
     // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
     "npm:pi-ghostty",
+    // Pi logo display
+    "npm:pi-logo",
     // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
     "npm:pi-interactive-shell",
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
