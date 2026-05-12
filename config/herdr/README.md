@@ -36,16 +36,17 @@ ctrl+c
 
 Custom/current mappings:
 
-| Key        | Action                       |
-| ---------- | ---------------------------- |
-| `prefix+w` | New workspace                |
-| `prefix+s` | Split horizontally           |
-| `prefix+p` | Previous tab                 |
-| `prefix+n` | Next tab                     |
-| `prefix+[` | Open Hunk in a focused split |
-| `prefix+]` | Open Hunk in a new tab       |
+| Key        | Action                                    |
+| ---------- | ----------------------------------------- |
+| `prefix+w` | New workspace                             |
+| `prefix+s` | Split horizontally                        |
+| `prefix+q` | Toggle sidebar (prevents accidental quit) |
+| `prefix+p` | Previous tab                              |
+| `prefix+n` | Next tab                                  |
+| `prefix+[` | Open Hunk in a focused split              |
+| `prefix+]` | Open Hunk in a new tab                    |
 
-Herdr defaults still provide other common actions such as new tab, split vertical, close pane, fullscreen, resize mode, and sidebar toggle.
+Herdr defaults still provide other common actions such as new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+q` is deliberately bound to sidebar toggle so it intercepts Herdr's hard-coded quit/detach fallback.
 
 ## Helpers
 

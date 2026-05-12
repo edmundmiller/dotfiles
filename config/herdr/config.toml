@@ -8,6 +8,9 @@ delivery = "herdr"
 prefix = "ctrl+c"
 new_workspace = "w"
 split_horizontal = "s"
+# Herdr has a hard-coded navigate-mode q quit/detach fallback.
+# Bind q to a harmless configured action so prefix+q no longer quits.
+toggle_sidebar = "q"
 
 [[keys.command]]
 key = "p"

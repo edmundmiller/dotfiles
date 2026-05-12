@@ -24,6 +24,8 @@ Current preferred keys:
 prefix = "ctrl+c"
 new_workspace = "w"
 split_horizontal = "s"
+# Intercept hard-coded navigate q quit/detach with a harmless action.
+toggle_sidebar = "q"
 
 [[keys.command]]
 key = "p"
@@ -46,6 +48,7 @@ Meaning:
 
 - `prefix+w` creates a workspace.
 - `prefix+s` splits horizontally.
+- `prefix+q` toggles the sidebar, deliberately intercepting Herdr's hard-coded quit/detach fallback so accidental `prefix+q` does not quit.
 - `prefix+p` / `prefix+n` move to previous/next tab via `bin/herdr-tab`.
 - `prefix+[` opens Hunk in a focused split.
 - `prefix+]` opens Hunk in a new tab.
@@ -54,6 +57,7 @@ Meaning:
 
 - Do **not** use Herdr's built-in `previous_tab` / `next_tab` for `p`/`n`. Those are terminal-direct as well as navigate-mode, so plain `p`/`n` gets stolen from shells/editors.
 - Prefix-only tab navigation should remain implemented as `[[keys.command]]` entries calling `bin/herdr-tab`.
+- Keep `toggle_sidebar = "q"` unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys, so this prevents `prefix+q` from quitting.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
 - `bin/herdr-workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
