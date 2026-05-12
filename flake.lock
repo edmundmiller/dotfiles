@@ -1606,6 +1606,22 @@
         "type": "github"
       }
     },
+    "prek-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778465600,
+        "narHash": "sha256-EbYCsBAPBLgaeJnfccSh6rc51aE13Hp4sW1LwO0qbr4=",
+        "owner": "j178",
+        "repo": "prek",
+        "rev": "737b554f989f81cf605083c0cc0522c8945c0f02",
+        "type": "github"
+      },
+      "original": {
+        "owner": "j178",
+        "repo": "prek",
+        "type": "github"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -1800,6 +1816,7 @@
         "openai-skills": "openai-skills",
         "pi-extension-skills": "pi-extension-skills",
         "pi-messenger-repo": "pi-messenger-repo",
+        "prek-repo": "prek-repo",
         "qmd-repo": "qmd-repo",
         "shaping-skills": "shaping-skills",
         "stack-repo": "stack-repo"
