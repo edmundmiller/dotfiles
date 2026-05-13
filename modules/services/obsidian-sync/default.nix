@@ -1,7 +1,7 @@
 # Headless Obsidian Sync using obsidian-headless CLI (open beta)
 #
 # Setup is fully automated via 1Password when op.* options are set.
-# Manual fallback: ob login → ob sync-setup → launchctl start org.nixos.obsidian-sync
+# Manual fallback: ob login → ob sync-setup → systemctl start obsidian-sync
 #
 # Modes:
 #   server  — pull-only (default). Keeps a read-only local copy.
@@ -198,42 +198,12 @@ in
     };
   };
 
-  config = mkIf cfg.enable (mkMerge [
+  config = mkIf cfg.enable (
     {
       # Make ob available for interactive setup (ob login, ob sync-setup)
       user.packages = [ pkgs.my.obsidian-headless ];
     }
-
-    # Darwin (launchd agent)
-    (optionalAttrs isDarwin {
-      launchd.user.agents.obsidian-sync = {
-        command = "${pkgs.writeShellScript "obsidian-sync-launchd" ''
-          ${
-            if hasOp then
-              ''
-                ${autoLogin} || exit 0
-                ${autoSetup} || exit 0
-              ''
-            else
-              ''
-                # Exit cleanly if sync not configured (prevents restart loop)
-                ${checkConfigured} || exit 0
-              ''
-          }
-          ${configScript}
-          exec ${syncScript}
-        ''}";
-        serviceConfig = {
-          RunAtLoad = true;
-          KeepAlive = true;
-          StandardOutPath = "/tmp/obsidian-sync.log";
-          StandardErrorPath = "/tmp/obsidian-sync.err";
-        };
-      };
-    })
-
-    # NixOS (systemd service)
-    (optionalAttrs (!isDarwin) {
+    // optionalAttrs (!isDarwin) {
       systemd.tmpfiles.rules = [
         "d ${cfg.vaultPath} 0755 ${cfg.user} users -"
       ];
@@ -328,6 +298,6 @@ in
           RandomizedDelaySec = "10s";
         };
       };
-    })
-  ]);
+    }
+  );
 }

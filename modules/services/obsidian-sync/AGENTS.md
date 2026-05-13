@@ -4,7 +4,7 @@ Headless Obsidian Sync via `obsidian-headless` CLI. Replaces the old LinuxServer
 
 ## Key Facts
 
-- **Cross-platform** — darwin gets `ob` CLI only; NixOS gets systemd service + CLI
+- **NixOS/headless focused** — Darwin hosts should use the GUI Obsidian app instead of this service
 - **Nix-packaged** — `pkgs.my.obsidian-headless` (see `packages/obsidian-headless/`)
 - **Two modes**: `server` (pull-only, read-only copy) and `desktop` (bidirectional)
 - **One-time setup required** — `ob login` + `ob sync-setup` before service starts
@@ -22,15 +22,12 @@ Set `syncMode` to override the default derived from `mode`.
 
 ## Services
 
-**Darwin** — `launchd.user.agents.obsidian-sync`
-
-- Runs config + sync in a single script, `KeepAlive = true`
-- Logs to `/tmp/obsidian-sync.{log,err}`
-
 **NixOS** — `systemd.services.obsidian-sync`
 
 - `ExecStartPre` runs `ob sync-config` to set mode/device before each start
 - Runs as configured user, sandboxed with `ProtectHome=read-only`
+
+**Darwin** — no launchd service. Use the GUI Obsidian app on macOS hosts.
 
 ## Options
 
