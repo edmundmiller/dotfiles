@@ -18,6 +18,7 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+    darwin-login-items.url = "github:uncenter/nix-darwin-login-items";
 
     # Utils
     agenix.url = "github:ryantm/agenix";
@@ -270,6 +271,9 @@
             # Add home-manager module
             inputs.home-manager.darwinModules.home-manager
 
+            # Manage native macOS Login Items declaratively.
+            inputs.darwin-login-items.darwinModules.default
+
             # Add nix-homebrew module for proper homebrew management
             inputs.nix-homebrew.darwinModules.nix-homebrew
 
@@ -307,6 +311,9 @@
 
             # Add home-manager module
             inputs.home-manager.darwinModules.home-manager
+
+            # Manage native macOS Login Items declaratively.
+            inputs.darwin-login-items.darwinModules.default
 
             # Add nix-homebrew module for proper homebrew management
             inputs.nix-homebrew.darwinModules.nix-homebrew
