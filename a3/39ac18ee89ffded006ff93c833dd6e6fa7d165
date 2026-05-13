@@ -1,0 +1,23 @@
+packages/lazydiff/default.nix
+  s_296feee289fe41::t_86794e3517c3c8 1-51
+modules/shell/git/AGENTS.md
+  s_296feee289fe41::t_b320362a9a2845 10,14
+modules/shell/git/default.nix
+  s_296feee289fe41::t_6f4f31cdfaa8f4 19,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "a339ac18ee89ffded006ff93c833dd6e6fa7d165",
+  "prompts": {},
+  "sessions": {
+    "s_296feee289fe41": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e22fa-f160-7024-84dc-69660178133d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
