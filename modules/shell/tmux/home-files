@@ -23,6 +23,11 @@ with lib;
     source = "${configDir}/opensessions/plugins/hunk.js";
   };
 
+  # Keep tmux-palette aligned with the default tmux dark theme declaratively.
+  "tmux-palette/theme.json".text = ''
+    ${builtins.toJSON { name = "catppuccin-mocha"; }}
+  '';
+
   "tmux/open-opensessions-config.sh" = mkIf cfg.opensessions.enable {
     executable = true;
     text = ''
