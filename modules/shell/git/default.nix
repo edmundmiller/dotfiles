@@ -16,6 +16,7 @@ in
     enable = mkBoolOpt false;
     ai.enable = mkBoolOpt false;
     hunk.enable = mkBoolOpt false;
+    lazydiff.enable = mkBoolOpt true;
     diffity.enable = mkBoolOpt false;
     stack.enable = mkBoolOpt true;
   };
@@ -33,6 +34,7 @@ in
           pre-commit
           my.git-hunks
           (mkIf cfg.hunk.enable my.hunk)
+          (mkIf cfg.lazydiff.enable my.lazydiff)
           (mkIf cfg.stack.enable my.stack)
         ]
         ++ lib.optionals stdenv.hostPlatform.isDarwin (
