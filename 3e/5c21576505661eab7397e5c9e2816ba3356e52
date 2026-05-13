@@ -1,0 +1,25 @@
+flake.lock
+  ai_agent 270-284,1748
+flake.nix
+  s_30e5302f8dfb85::t_6ad2e6dd5383fd 21,274-276,315-316
+modules/desktop/apps/raycast.nix
+  s_30e5302f8dfb85::t_afcbb25bc2a753 10
+hosts/mactraitorpro/default.nix
+  s_30e5302f8dfb85::t_37d09907ff3a9a 114-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "3e5c21576505661eab7397e5c9e2816ba3356e52",
+  "prompts": {},
+  "sessions": {
+    "s_30e5302f8dfb85": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e22eb-89c3-76ef-840d-77091439c0c8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
