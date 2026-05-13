@@ -1,0 +1,43 @@
+config/tmux/config
+  s_33892db0e68f99::t_886f1ef3c9ec23 87,89
+  s_30e5302f8dfb85::t_2d3d0dfd924a7c 85-86,88,90
+packages/tmux-palette/default.nix
+  s_33892db0e68f99::t_961f9f2f15637b 6
+  s_33892db0e68f99::t_086dadc99bab85 35-52
+  s_296feee289fe41::t_05dd1a28f53454 1-5,8-34,53-62
+  s_33892db0e68f99::t_e9d3e2c2445b9e 7
+modules/shell/tmux/default.nix
+  s_30e5302f8dfb85::t_2d3d0dfd924a7c 95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "ce09a7885c8c41546c83570cb31eac3527f33d65",
+  "prompts": {},
+  "sessions": {
+    "s_296feee289fe41": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e22fa-f160-7024-84dc-69660178133d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_30e5302f8dfb85": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e22eb-89c3-76ef-840d-77091439c0c8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_33892db0e68f99": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e22fb-c4ae-701d-808e-75f3dbe8413f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
