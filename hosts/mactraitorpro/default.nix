@@ -113,24 +113,14 @@
 
     # Manage native macOS Login Items declaratively. Keep Raycast here and do not
     # also start it with a launchd.user.agent, or macOS will run two instances.
-    # Timing Tracker and Willow Voice currently report null paths from System Events,
-    # so they are not included until their backing app paths can be identified.
     environment.loginItems = {
       enable = true;
       items = [
-        "/Applications/Ice.app"
-        "/Users/emiller/Downloads/WakaTime.app"
-        "/Applications/MacWhisper.app"
-        "/Applications/OneDrive.app/Contents/OneDrive Sync Service.app"
         "/Applications/Raycast.app"
-        "/Applications/Superhuman.app"
-        "/Applications/Alcove.app"
+        "/Applications/1Password.app"
         "/Applications/CleanShot X.app"
         "/Applications/LookAway.app"
-        "/Applications/Sparkle.app"
         "/Applications/Monologue.app"
-        "/Applications/CodexBar.app"
-        "/Applications/Granola.app"
       ];
     };
 
