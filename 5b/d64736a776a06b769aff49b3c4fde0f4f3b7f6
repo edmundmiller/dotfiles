@@ -1,0 +1,22 @@
+modules/services/obsidian-sync/default.nix
+  s_30e5302f8dfb85::t_b2ae9415a5977e 201,206,301-302
+  s_30e5302f8dfb85::t_cbb81927c6e17f 4
+modules/services/obsidian-sync/AGENTS.md
+  s_30e5302f8dfb85::t_d2cc067e03f464 7,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "5bd64736a776a06b769aff49b3c4fde0f4f3b7f6",
+  "prompts": {},
+  "sessions": {
+    "s_30e5302f8dfb85": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e22eb-89c3-76ef-840d-77091439c0c8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
