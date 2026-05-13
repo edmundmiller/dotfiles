@@ -7,10 +7,11 @@ Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/l
 - `modules.shell.git.enable` — core git packages + config symlinks
 - `modules.shell.git.ai.enable` — git-ai authorship tracking; injects `pi-git-ai` into `modules.agents.pi.extraPackages` when pi is also enabled
 - `modules.shell.git.stack.enable` — install Kit Langton's squash-safe stacked PR `stack` CLI (defaults on with git)
+- `modules.shell.git.lazydiff.enable` — install LazyDiff terminal diff/PR reviewer (defaults on with git)
 
 ## Packages
 
-git-open, difftastic, sem, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (Darwin Homebrew: `kitlangton/tap/ghui`)
+git-open, difftastic, sem, lazydiff, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (Darwin Homebrew: `kitlangton/tap/ghui`)
 
 ## Config files symlinked
 
