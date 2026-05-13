@@ -7,7 +7,7 @@
 #   - Disable Spotlight hotkey so Raycast can use ⌘Space
 #   - Core preferences via defaults (vim nav, appearance, etc.)
 #   - Script commands symlinked into ~/.config/raycast/scripts/
-#   - Auto-launch via launchd
+#   - Native Login Item is managed at the host level via environment.loginItems
 #
 # NOT managed (Raycast stores these in encrypted SQLite):
 #   - Extension installs/configs
@@ -68,12 +68,6 @@ in
           raycastPreferredWindowMode = "compact";
           "raycastUI_preferredTextSize" = "large";
         };
-      };
-
-      # Auto-launch Raycast at login
-      launchd.user.agents.raycast = {
-        command = ''"/Applications/Raycast.app/Contents/MacOS/Raycast"'';
-        serviceConfig.RunAtLoad = true;
       };
 
       # Symlink script commands
