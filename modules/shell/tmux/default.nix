@@ -92,6 +92,7 @@ in
         tmux
         pkgs.my.tmux-file-picker
         pkgs.my.tmux-smooth-scroll
+        pkgs.my.tmux-palette
         pkgs.gum
       ]
       ++ optionals cfg.opensessions.enable [

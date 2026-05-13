@@ -82,6 +82,12 @@ bind v split-window -h -c "#{pane_current_path}"
 # Session menu popup
 bind a run-shell '$TMUX_HOME/smart-name.sh --menu'
 
+# Command palette
+# Use the Nix profile path because tmux server environments can keep a stale PATH.
+# C-Space is a nice Raycast-style binding when terminals pass it through.
+bind-key -n C-Space run-shell "/etc/profiles/per-user/emiller/bin/tmux-palette"
+bind m run-shell "/etc/profiles/per-user/emiller/bin/tmux-palette"
+
 # Fast current-session Pi entry
 bind A run '$TMUX_HOME/open-pi-here.sh'
 
