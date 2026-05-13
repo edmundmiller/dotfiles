@@ -1,0 +1,19 @@
+modules/shell/tmux/home-files
+  s_33892db0e68f99::t_22b751b40f581c 26-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "40074d22b77f8801b7fd63ec470d655a65213d0a",
+  "prompts": {},
+  "sessions": {
+    "s_33892db0e68f99": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e22fb-c4ae-701d-808e-75f3dbe8413f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
