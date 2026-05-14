@@ -111,12 +111,12 @@
       enableZshIntegration = false; # We handle brew in .zshenv with caching
     };
 
-    # Manage native macOS Login Items declaratively. Keep Raycast here and do not
-    # also start it with a launchd.user.agent, or macOS will run two instances.
+    # Manage native macOS Login Items declaratively. Keep Raycast Beta here and
+    # do not also start it with a launchd.user.agent, or macOS will run two instances.
     environment.loginItems = {
       enable = true;
       items = [
-        "/Applications/Raycast.app"
+        "/Applications/Raycast Beta.app"
         "/Applications/1Password.app"
         "/Applications/CleanShot X.app"
         "/Applications/LookAway.app"
