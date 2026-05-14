@@ -1,0 +1,32 @@
+{
+  "name": "pi-herdr",
+  "version": "0.1.0",
+  "description": "Pi extension tools for controlling and inspecting Herdr workspaces, tabs, and panes.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "herdr",
+    "coding-agent"
+  ],
+  "license": "MIT",
+  "author": "Edmund Miller",
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
+}
