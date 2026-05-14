@@ -213,8 +213,8 @@
     "npm:latchkey",
     // Ask tool — structured clarification before acting - https://github.com/eko24ive/pi-ask
     "npm:@eko24ive/pi-ask",
-    // Memory extension
-    "npm:@samfp/pi-memory",
+    // Complete context stack: memory, session search, and knowledge search - https://github.com/samfoy/pi-total-recall
+    "npm:pi-total-recall",
     // Native diff review window with Monaco + annotations - https://github.com/badlogic/pi-diff-review
     // "git:https://github.com/badlogic/pi-diff-review",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
