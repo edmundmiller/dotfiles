@@ -1,0 +1,22 @@
+modules/desktop/apps/raycast.nix
+  s_36551362260a15::t_6cf18e28a9490b 31-39
+  s_36551362260a15::t_4476d7a1a67812 8,15,17-19,48-50,70-72
+hosts/mactraitorpro/default.nix
+  s_36551362260a15::t_f7b2f4253de65e 114-115,119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "a67026a2f462b6d2b56bce1080366f0929922557",
+  "prompts": {},
+  "sessions": {
+    "s_36551362260a15": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e2732-b9cc-744c-bc32-0b5942714d2e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
