@@ -155,8 +155,8 @@
     "~/.config/dotfiles/pi-packages/pi-dumb-zone",
     // BUG dotfiles-n579: frontmatter warnings on CHANGELOG.md/README.md
     // "npm:visual-explainer",
-    // Ghostty title bar, spinner, progress bar - https://github.com/HazAT/pi-ghostty
-    "npm:pi-ghostty",
+    // Configurable terminal title + Ghostty OSC progress bar - https://github.com/Thinkscape/pi-status
+    "npm:@thinkscape/pi-status",
     // Pi logo display
     "npm:pi-logo",
     // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
