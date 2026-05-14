@@ -881,11 +881,11 @@
     "herdr-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1777763852,
-        "narHash": "sha256-prCGMYsVf5fLMk6iF6lfwSbMjHI+SCqJ4emjHIHXFYI=",
+        "lastModified": 1778716738,
+        "narHash": "sha256-PhCLSjDWUc/3RlcOWiZfIYv3L05V5yDH7wGFtoHyllk=",
         "owner": "ogulcancelik",
         "repo": "herdr",
-        "rev": "96d113ebe81a1368fa992c7d5830c13b800e40a7",
+        "rev": "6ccca5d688624347ced4c1758087f8c46a809bda",
         "type": "github"
       },
       "original": {
