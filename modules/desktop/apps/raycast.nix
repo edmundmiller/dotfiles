@@ -3,21 +3,20 @@
 # Raycast launcher — replaces Spotlight
 #
 # Manages:
-#   - Installation via nixpkgs (not homebrew)
 #   - Disable Spotlight hotkey so Raycast can use ⌘Space
 #   - Core preferences via defaults (vim nav, appearance, etc.)
-#   - Script commands symlinked into ~/.config/raycast/scripts/
+#   - Script commands symlinked into ~/Scripts/raycast/
 #   - Native Login Item is managed at the host level via environment.loginItems
 #
 # NOT managed (Raycast stores these in encrypted SQLite):
 #   - Extension installs/configs
 #   - Extension hotkey bindings
 #   - Cloud sync settings
+#   - Raycast Beta installation (no Homebrew cask currently; keep /Applications/Raycast Beta.app installed manually)
 #
-# Why homebrew instead of nixpkgs:
-#   - Raycast is Darwin-only, homebrew cask has auto_updates
-#   - nixpkgs lags ~1 month behind (manual PRs by volunteers)
-#   - homebrew: 1.104.5, nixpkgs: 1.104.3 (as of 2026-02)
+# Note: Raycast Beta uses bundle id com.raycast-x.macos, while stable uses
+# com.raycast.macos. Keep preferences written to both so switching channels is
+# cheap and host login items decide which app starts.
 {
   config,
   lib,
@@ -29,6 +28,15 @@ with lib.my;
 let
   cfg = config.modules.desktop.apps.raycast;
   inherit (config.dotfiles) configDir;
+  raycastPrefs = {
+    raycastGlobalHotkey = "Command-49"; # ⌘Space
+    raycastShouldFollowSystemAppearance = true;
+    navigationCommandStyleIdentifierKey = "vim";
+    onboardingCompleted = true;
+    useHyperKeyIcon = true;
+    raycastPreferredWindowMode = "compact";
+    "raycastUI_preferredTextSize" = "large";
+  };
 in
 {
   options.modules.desktop.apps.raycast = with types; {
@@ -37,8 +45,9 @@ in
 
   config = optionalAttrs isDarwin (
     mkIf cfg.enable {
-      # Install via homebrew cask (auto_updates, always current)
-      homebrew.casks = [ "raycast" ];
+      # Raycast Beta is intentionally not installed by Homebrew here: Homebrew
+      # only ships the stable `raycast` cask, and installing it would recreate
+      # /Applications/Raycast.app alongside /Applications/Raycast Beta.app.
 
       # Disable Spotlight hotkey so Raycast can claim ⌘Space
       system.defaults.CustomUserPreferences = {
@@ -58,16 +67,9 @@ in
           };
         };
 
-        # Raycast preferences
-        "com.raycast.macos" = {
-          raycastGlobalHotkey = "Command-49"; # ⌘Space
-          raycastShouldFollowSystemAppearance = true;
-          navigationCommandStyleIdentifierKey = "vim";
-          onboardingCompleted = true;
-          useHyperKeyIcon = true;
-          raycastPreferredWindowMode = "compact";
-          "raycastUI_preferredTextSize" = "large";
-        };
+        # Raycast preferences. Apply to stable and beta bundle IDs.
+        "com.raycast.macos" = raycastPrefs;
+        "com.raycast-x.macos" = raycastPrefs;
       };
 
       # Symlink script commands
