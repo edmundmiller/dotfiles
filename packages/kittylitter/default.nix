@@ -11,19 +11,19 @@ let
   alleycatSrc = fetchFromGitHub {
     owner = "dnakov";
     repo = "alleycat";
-    rev = "20af82321e1a10bc0393319ea195ab5557351145";
-    hash = "sha256-n9on4GRYk7iTUMy9XWQ7XDzkfIFeOyULgC9pTenQbxY=";
+    rev = "94e79a6d0f92838d63971a6fc01210728234a871";
+    hash = "sha256-LpxQiIAk0hOLLC8shPyixgexiXHz7QUoFK0PrTisxik=";
   };
 in
 rustPlatform.buildRustPackage rec {
   pname = "kittylitter";
-  version = "0.2.9-patched";
+  version = "0.3.0-patched";
 
   src = fetchFromGitHub {
     owner = "dnakov";
     repo = "litter";
-    rev = "v0.2.9";
-    hash = "sha256-o47orApOTTQRC7wA1Qw3E4Rqcs6OX24qljh6xPkVUZs=";
+    rev = "v0.3.0";
+    hash = "sha256-gMr1sTs/4hTr5YhYUS4sPCyFQ7wM+2pWDB+35qwHgNw=";
   };
 
   cargoRoot = "services/kittylitter";
@@ -39,7 +39,7 @@ rustPlatform.buildRustPackage rec {
                      'alleycat = { path = "../../alleycat/crates/alleycat" }'
   '';
 
-  cargoHash = "sha256-wkQ1dk3+woNxv5CrY6iVGEJy8OuDRG/QcbUShXAda/M=";
+  cargoHash = "sha256-2+X1k1RNlS/ClSok3uh6LQZSd9MsiIqB4lxg2Upyegg=";
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [
