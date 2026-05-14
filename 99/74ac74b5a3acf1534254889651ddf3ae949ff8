@@ -1,0 +1,31 @@
+packages/kittylitter/default.nix
+  s_9744e930b40e96::t_d61b0091e21ba2 20,25-26
+  s_9744e930b40e96::t_961cbe5ce8ac02 42
+  s_0dd1b2511502ab::t_4609f48d8a470c 14-15
+flake.lock
+  ai_agent 884-885,888
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "9974ac74b5a3acf1534254889651ddf3ae949ff8",
+  "prompts": {},
+  "sessions": {
+    "s_0dd1b2511502ab": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e1a56-4228-7586-8917-b85bdc53eeaf",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_9744e930b40e96": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e2484-ca24-778d-ae83-70101f9c52b9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
