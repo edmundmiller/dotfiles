@@ -104,8 +104,8 @@ else
   echo "qa-changed: no changed TypeScript files for architecture lint"
 fi
 
-if ! command -v npm >/dev/null 2>&1; then
-  echo "error: npm is required for qa-changed" >&2
+if ! command -v bun >/dev/null 2>&1; then
+  echo "error: bun is required for qa-changed" >&2
   exit 1
 fi
 
@@ -117,7 +117,7 @@ fi
 echo "qa-changed: ensuring workspace deps are installed"
 (
   cd "$ROOT_DIR/pi-packages"
-  npm install --ignore-scripts --no-audit --no-fund --package-lock=false --silent
+  bun install --frozen-lockfile --silent
 )
 
 has_script() {
@@ -135,12 +135,12 @@ for pkg in "${packages[@]}"; do
 
   if has_script "$pkg_dir" typecheck; then
     echo "qa-changed: $pkg -> typecheck"
-    npm --prefix "$pkg_dir" run --silent typecheck
+    (cd "$pkg_dir" && bun run --silent typecheck)
   fi
 
   if has_script "$pkg_dir" test; then
     echo "qa-changed: $pkg -> test"
-    npm --prefix "$pkg_dir" run --silent test
+    (cd "$pkg_dir" && bun run --silent test)
   fi
 done
 
@@ -158,7 +158,7 @@ fi
 
 if [[ $run_integration -eq 1 ]]; then
   echo "qa-changed: running pi-packages integration tests"
-  npm --prefix "$ROOT_DIR/pi-packages" run --silent test:integration
+  (cd "$ROOT_DIR/pi-packages" && bun run --silent test:integration)
 fi
 
 echo "qa-changed: done"
