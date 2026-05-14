@@ -164,7 +164,10 @@
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
     // Browser/web access tool - https://github.com/nicobailon/pi-web-access
-    "npm:pi-web-access",
+    // DISABLED: replaced by pi-smart-fetch for web_fetch
+    // "npm:pi-web-access",
+    // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
+    "npm:pi-smart-fetch",
     // Computer-use tools for screenshots, mouse, and keyboard control - https://github.com/injaneity/pi-computer-use
     "git:github.com/injaneity/pi-computer-use",
     // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
