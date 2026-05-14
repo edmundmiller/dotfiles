@@ -1,0 +1,20 @@
+bin/qa-changed
+  s_9744e930b40e96::t_c88ca5996ab2c0 107-108,120
+  s_9744e930b40e96::t_3efb20bc446b9e 138,143,161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f454a554ae49bffdc0307c1975b6bda55bd0690e",
+  "prompts": {},
+  "sessions": {
+    "s_9744e930b40e96": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e2484-ca24-778d-ae83-70101f9c52b9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
