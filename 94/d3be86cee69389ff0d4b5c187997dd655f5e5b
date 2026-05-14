@@ -1,0 +1,11 @@
+pi-packages/pi-herdr/tsconfig.json
+  ai_agent 1-12
+pi-packages/pi-herdr/package.json
+  ai_agent 1-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "94d3be86cee69389ff0d4b5c187997dd655f5e5b",
+  "prompts": {}
+}
