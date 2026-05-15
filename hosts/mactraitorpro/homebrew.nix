@@ -12,7 +12,6 @@
     "tw93/tap" # Mole
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
     "ahkohd/oyo" # oy - tmux session manager
-    "chmouel/lazyworktree" # lazyworktree - lazy git worktree switcher
   ];
 
   brews = [
@@ -170,7 +169,6 @@
     # Browsers
     "google-chrome"
     "orion"
-    "vivaldi"
     "zen"
 
     # Media
@@ -182,13 +180,7 @@
 
     # Productivity & Notes
     "obsidian"
-    "logseq"
-    "anytype"
-    "capacities"
-    "heptabase"
-    "sunsama"
     "linear" # Linear app
-    "motion"
     "granola"
 
     # AI Tools
@@ -198,21 +190,13 @@
     "lookaway"
     "voicenotes"
 
-    # Git/Development utilities
-    "chmouel/lazyworktree/lazyworktree"
-
     # Utilities
     "helium"
-    # FIXME: gitify cask has invalid 'uninstall' stanza with unsupported :on_upgrade key
-    # "gitify"
     "calibre"
     "inkscape"
     "keymapp" # ZSA keyboard firmware flasher
-    "mactex"
-    "mendeley-reference-manager"
     "neohtop"
     "helpwire-operator"
-    "bentobox"
     "flashspace"
     "aqua-voice"
 
