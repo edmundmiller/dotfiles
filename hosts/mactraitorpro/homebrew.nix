@@ -7,7 +7,6 @@
     "jnsahaj/lumen" # AI-powered CLI explanations
     "keith/formulae" # reminders-cli
     "rockorager/tap" # Prise terminal multiplexer
-    "seqeralabs/tap"
     "steipete/tap" # Codexbar
     "tw93/tap" # Mole
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
@@ -16,7 +15,6 @@
 
   brews = [
     # Development tools
-    "actionlint"
     "autoconf"
     "automake"
     "cmake"
@@ -32,7 +30,6 @@
     "llvm"
     "m4"
     "make"
-    "nim"
     "python@3.13"
 
     # Python tools
@@ -47,7 +44,6 @@
 
     # Shell and terminal tools
     "asciinema"
-    "rockorager/tap/prise" # Modern terminal multiplexer
     "bash"
     "bat"
     "bats-core"
@@ -124,59 +120,46 @@
     "mise"
     "pngpaste"
     "usage"
-    "seqeralabs/tap/wave-cli"
     "wimlib"
     "z3"
 
     # Additional tools
     "bookokrat"
-    "claude-squad"
     "mole"
-    "crush"
     "dataline"
     "eask-cli"
     "harper"
     "html2markdown"
     "jnsahaj/lumen/lumen"
     "reminders-cli"
-    "wakatime-cli"
   ];
 
   casks = [
     # Core productivity
     "1password"
     "1password-cli"
-    # "raycast"  # Managed by modules.desktop.apps.raycast
     "jordanbaird-ice"
 
     # Communication
-    "slack"
     "legcord"
-    "microsoft-teams"
-    "microsoft-auto-update"
     "zoom"
 
     # Development
     "visual-studio-code"
     "claude"
     "repo-prompt"
-    # "emacs-app-pretest"  # Conflicts with emacs-app, using Nix version instead
-    "positron"
     "warp@preview"
-    "termius@beta"
     "tuist"
 
     # Browsers
     "google-chrome"
-    "orion"
-    "zen"
+    "helium"
 
     # Media
     "spotify"
     "vlc"
     "soundsource"
     "subler"
-    "openaudible"
 
     # Productivity & Notes
     "obsidian"
@@ -188,7 +171,6 @@
     "home-assistant"
     "superset"
     "lookaway"
-    "voicenotes"
 
     # Utilities
     "helium"
@@ -197,8 +179,6 @@
     "keymapp" # ZSA keyboard firmware flasher
     "neohtop"
     "helpwire-operator"
-    "flashspace"
-    "aqua-voice"
 
     # Fonts
     "font-jetbrains-mono"
