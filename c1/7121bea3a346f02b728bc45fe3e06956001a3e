@@ -1,0 +1,21 @@
+hosts/mactraitorpro/default.nix
+  s_0d32bf20d3cd4b::t_7469d20cd6ef9e 136-140
+packages/tmux-agent-status.nix
+  s_0d32bf20d3cd4b::t_7469d20cd6ef9e 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "c17121bea3a346f02b728bc45fe3e06956001a3e",
+  "prompts": {},
+  "sessions": {
+    "s_0d32bf20d3cd4b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e2d18-803a-710a-9273-9f16ec99b9c5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
