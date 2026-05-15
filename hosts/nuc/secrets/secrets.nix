@@ -112,6 +112,10 @@ in
     edmundmiller
     nuc
   ];
+  "hermes-scintillate-api-server-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   # Bugster env file (GITHUB_TOKEN, LINEAR_TOKEN, etc.)
   "bugster-env.age".publicKeys = [
     edmundmiller

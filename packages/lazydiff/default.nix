@@ -3,6 +3,9 @@
   stdenvNoCC,
   fetchurl,
   autoPatchelfHook,
+  gcc,
+  openssl,
+  zlib,
 }:
 
 let
@@ -29,6 +32,12 @@ stdenvNoCC.mkDerivation {
       or (throw "unsupported system: ${stdenvNoCC.hostPlatform.system}");
 
   nativeBuildInputs = lib.optionals stdenvNoCC.hostPlatform.isLinux [ autoPatchelfHook ];
+
+  buildInputs = lib.optionals stdenvNoCC.hostPlatform.isLinux [
+    gcc.cc.lib
+    openssl
+    zlib
+  ];
 
   sourceRoot = ".";
 
