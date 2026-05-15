@@ -300,6 +300,15 @@ in
         chmod 600 "$ENV_FILE"
 
         printf 'HERMES_HONCHO_HOST=%s\n' "scintillate" >> "$ENV_FILE"
+        printf 'API_SERVER_ENABLED=%s\n' "true" >> "$ENV_FILE"
+        printf 'API_SERVER_HOST=%s\n' "0.0.0.0" >> "$ENV_FILE"
+        printf 'API_SERVER_PORT=%s\n' "8642" >> "$ENV_FILE"
+        printf 'API_SERVER_CORS_ORIGINS=%s\n' "app://hermes-desktop,http://localhost:3000,http://127.0.0.1:3000" >> "$ENV_FILE"
+        if [ -f ${lib.escapeShellArg (toString config.age.secrets.hermes-scintillate-api-server-key.path)} ]; then
+          api_server_key="$(< ${lib.escapeShellArg (toString config.age.secrets.hermes-scintillate-api-server-key.path)})"
+          printf 'API_SERVER_KEY=%s\n' "$api_server_key" >> "$ENV_FILE"
+          unset api_server_key
+        fi
 
         ${lib.concatMapStringsSep "\n" (secret: ''
           if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
@@ -705,6 +714,7 @@ in
     restartIfChanged = false;
     serviceConfig = {
       EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+      ExecStart = lib.mkForce "${hermesAgentBase}/bin/hermes gateway run";
     };
   };
 
