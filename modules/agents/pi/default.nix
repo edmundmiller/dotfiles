@@ -330,6 +330,8 @@ in
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
     # PI_SKIP_VERSION_CHECK already set by llm-agents wrapper, but keep for bun-installed tools
     env.PI_SKIP_VERSION_CHECK = "1";
+    # Keep Pi runtime state writable (locks/sessions), separate from nix-managed ~/.pi/agent files.
+    env.PI_CODING_AGENT_DIR = "$HOME/.local/state/pi/agent";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
     # pi-github-tools PAT (from gh CLI)
