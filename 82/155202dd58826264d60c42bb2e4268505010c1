@@ -1,0 +1,21 @@
+flake.lock
+  ai_agent 200-201,204,209,257-258,261,594-595,598,1125-1126,1129,1251-1252,1255,1270-1271,1274,1426-1427,1430,1849
+flake.nix
+  s_0d32bf20d3cd4b::t_91b43a46d33000 207-208,210,216-217,219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "82155202dd58826264d60c42bb2e4268505010c1",
+  "prompts": {},
+  "sessions": {
+    "s_0d32bf20d3cd4b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e2d18-803a-710a-9273-9f16ec99b9c5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
