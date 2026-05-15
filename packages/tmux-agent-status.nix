@@ -13,7 +13,7 @@ stdenvNoCC.mkDerivation {
     owner = "samleeney";
     repo = "tmux-agent-status";
     rev = "main";
-    hash = "sha256-HsDoMjEsXpzPSB77hYhrA0kMV0M35DgqbSTTIaHwDvA=";
+    hash = "sha256-Su7Vhugm72lKVcWvTLeXrH/mZpN2pAXHsmyPYQvhnX8=";
   };
 
   patches = [

@@ -133,6 +133,11 @@
         autoUpdate = false; # Don't auto-update during activation
         cleanup = "none"; # Don't remove anything for now
         upgrade = false; # Don't upgrade formulae during activation
+        extraEnv = {
+          # Work around Homebrew API cask JSON bugs by using local tap files
+          # during nix-darwin activation. Supported directly by newer nix-darwin.
+          HOMEBREW_NO_INSTALL_FROM_API = "1";
+        };
         extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };
     }
