@@ -1,0 +1,19 @@
+modules/agents/pi/default.nix
+  s_c1671013553a94::t_a947d60f0424b2 333-334
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "5da08f1ef000110c4a8c1f5d32799d2dd7d36002",
+  "prompts": {},
+  "sessions": {
+    "s_c1671013553a94": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e2d28-33cc-7cd2-b1d0-c8b1a85be2f1",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
