@@ -77,11 +77,6 @@
 
     google-workspace-cli.url = "github:googleworkspace/cli";
 
-    herdr-repo = {
-      url = "github:ogulcancelik/herdr";
-      flake = false;
-    };
-
     # Expose Hermes as a first-class root input so infra can override the
     # upstream package directly when agents-workspace's wrapper module needs
     # a local patch before upstream merges.
@@ -209,13 +204,19 @@
           let
             callPackageWithInputs = lib.callPackageWith (pkgs // { inherit inputs; });
           in
-          mapModules ./packages (p: callPackageWithInputs p { });
+          mapModules ./packages (p: callPackageWithInputs p { })
+          // {
+            inherit (inputs.llm-agents.packages.${linuxSystem}) herdr;
+          };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
         packages."${darwinSystem}" =
           let
             callPackageWithInputs = lib.callPackageWith (darwinPkgs // { inherit inputs; });
           in
-          mapModules ./packages (p: callPackageWithInputs p { });
+          mapModules ./packages (p: callPackageWithInputs p { })
+          // {
+            inherit (inputs.llm-agents.packages.${darwinSystem}) herdr;
+          };
 
         nixosModules = {
           dotfiles = import ./.;
