@@ -1,43 +1,49 @@
 {
   lib,
-  buildNpmPackage,
-  fetchurl,
+  stdenv,
+  fetchFromGitHub,
   makeWrapper,
   nodejs,
+  inputs,
 }:
 
-buildNpmPackage rec {
+let
+  bun2nix = inputs.bun2nix.packages.${stdenv.hostPlatform.system}.default;
+in
+stdenv.mkDerivation rec {
   pname = "stack";
   version = "0.1.3";
 
-  src = fetchurl {
-    url = "https://registry.npmjs.org/@kitlangton/stack/-/stack-${version}.tgz";
-    hash = "sha256-4bYSsictBYKA+GMr2gT8YCkOADaLtAbVpK97hzhBI+c=";
+  src = fetchFromGitHub {
+    owner = "kitlangton";
+    repo = "stack";
+    rev = "v${version}";
+    hash = "sha256-E9ATGUzY373/1uVIgUdTe2F//yF6Qchhit0NgiBpids=";
   };
 
-  postPatch = ''
-    cp ${./package-lock.json} package-lock.json
-    node -e 'const fs = require("fs"); const pkg = JSON.parse(fs.readFileSync("package.json", "utf8")); delete pkg.devDependencies; fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));'
-  '';
-
-  npmDepsHash = "sha256-bJO3+X7471dba72CoOlA21g6gclsgKFKhTZLssQ9fDM=";
-  npmDepsFetcherVersion = 2;
-  npmFlags = [
-    "--omit=dev"
-    "--legacy-peer-deps"
+  nativeBuildInputs = [
+    bun2nix.hook
+    makeWrapper
   ];
-  dontNpmBuild = true;
 
-  nativeBuildInputs = [ makeWrapper ];
+  bunDeps = bun2nix.fetchBunDeps {
+    bunNix = ./bun.nix;
+  };
+
+  buildPhase = ''
+    runHook preBuild
+    bun run build
+    runHook postBuild
+  '';
 
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/lib/node_modules/@kitlangton/stack $out/bin
-    cp -R . $out/lib/node_modules/@kitlangton/stack
+    mkdir -p $out/lib/stack $out/bin
+    cp -R dist skills README.md LICENSE package.json $out/lib/stack/
 
     makeWrapper ${nodejs}/bin/node $out/bin/stack \
-      --add-flags $out/lib/node_modules/@kitlangton/stack/dist/cli.js
+      --add-flags $out/lib/stack/dist/cli.js
 
     runHook postInstall
   '';
