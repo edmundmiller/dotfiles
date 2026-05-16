@@ -49,6 +49,12 @@
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
+    tnote = {
+      url = "git+ssh://git@github.com/edmundmiller/tnote?ref=main";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.bun2nix.follows = "bun2nix";
+      inputs.systems.follows = "systems";
+    };
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -207,6 +213,7 @@
           mapModules ./packages (p: callPackageWithInputs p { })
           // {
             inherit (inputs.llm-agents.packages.${linuxSystem}) herdr;
+            tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
         packages."${darwinSystem}" =
@@ -216,6 +223,7 @@
           mapModules ./packages (p: callPackageWithInputs p { })
           // {
             inherit (inputs.llm-agents.packages.${darwinSystem}) herdr;
+            tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 
         nixosModules = {
