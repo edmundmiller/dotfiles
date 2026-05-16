@@ -65,8 +65,8 @@
     "npm:pi-context",
     // Repo-local QMD workflow (/qmd, /qp) and qmd-cli-first guidance
     "~/.config/dotfiles/pi-packages/pi-qmd",
-    // Secure web fetch – HTML→markdown via mdream, secret scanning, injection detection
-    "~/.config/dotfiles/pi-packages/pi-scurl",
+    // Secure web fetch – replaced by pi-smart-fetch.
+    // "~/.config/dotfiles/pi-packages/pi-scurl",
     // Auto-load direnv env at session start
     "~/.config/dotfiles/pi-packages/pi-direnv",
     // Force non-interactive bash defaults + block interactive hang patterns
@@ -172,8 +172,7 @@
     // DISABLED: replaced by pi-smart-fetch for web_fetch
     // "npm:pi-web-access",
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
-    // DISABLED: conflicts with local pi-scurl on web_fetch; keep pi-scurl as the secure fetch implementation.
-    // "npm:pi-smart-fetch",
+    "npm:pi-smart-fetch",
     // Computer-use tools for screenshots, mouse, and keyboard control - https://github.com/injaneity/pi-computer-use
     "git:github.com/injaneity/pi-computer-use",
     // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
