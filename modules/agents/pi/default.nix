@@ -65,7 +65,7 @@ let
   piRequiredSecretKeysJson = pkgs.writeText "pi-required-secret-keys.json" (
     builtins.toJSON piRequiredSecretKeys
   );
-  piSecretPreflight = pkgs.writeShellScript "pi-secret-preflight" ''
+  piSecretPreflightScript = pkgs.writeShellScript "pi-secret-preflight" ''
     set -euo pipefail
 
     dotenv_path="$HOME/.pi/agent/.env"
@@ -119,8 +119,8 @@ let
         raise SystemExit(42)
     PY
   '';
-  piPackageWithSecretPreflight = pkgs.stdenvNoCC.mkDerivation {
-    pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-secret-preflight";
+  piPackageWithRuntimeWrapper = pkgs.stdenvNoCC.mkDerivation {
+    pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-runtime-wrapper";
     version = pkgs.llm-agents.pi.version or "wrapped";
     dontUnpack = true;
     nativeBuildInputs = [ pkgs.makeWrapper ];
@@ -132,17 +132,7 @@ let
 
       if [ -x "$out/bin/pi" ]; then
         wrapProgram "$out/bin/pi" \
-          --run ${escapeShellArg "${piSecretPreflight}"} \
-          --run ${escapeShellArg ''
-            # The nix-managed pi executable lives in /nix/store, so upstream
-            # self-update cannot work. Keep `pi update` useful by making the
-            # default update target extensions-only; explicit `pi update pi`,
-            # `pi update self`, or `pi update --self` still exercise upstream
-            # behavior and show the normal Nix-managed-install error.
-            if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then
-              set -- update --extensions
-            fi
-          ''} \
+          --run ${escapeShellArg "${piSecretPreflightScript}"} \
           --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
           --unset SDKROOT
       fi
@@ -163,19 +153,25 @@ let
   readRule = file: builtins.readFile "${rulesDir}/${file}";
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
 
-  # Dynamically discover prompt templates from config/pi/prompts/
-  promptsDir = "${configDir}/pi/prompts";
-  promptFiles =
-    if builtins.pathExists promptsDir then
-      builtins.filter (f: lib.hasSuffix ".md" f) (builtins.attrNames (builtins.readDir promptsDir))
+  markdownFilesIn =
+    dir:
+    if builtins.pathExists dir then
+      builtins.filter (lib.hasSuffix ".md") (builtins.attrNames (builtins.readDir dir))
     else
       [ ];
-  promptLinks = lib.listToAttrs (
-    map (f: {
-      name = ".pi/agent/prompts/${f}";
-      value.source = "${promptsDir}/${f}";
-    }) promptFiles
-  );
+
+  mkPiAgentLinks =
+    targetDir: sourceDir: files:
+    lib.listToAttrs (
+      map (file: {
+        name = ".pi/agent/${targetDir}/${file}";
+        value.source = "${sourceDir}/${file}";
+      }) files
+    );
+
+  # Dynamically discover prompt templates from config/pi/prompts/
+  promptsDir = "${configDir}/pi/prompts";
+  promptLinks = mkPiAgentLinks "prompts" promptsDir (markdownFilesIn promptsDir);
 
   # Note: config/agents/skills/ are managed by agent-skills-nix (skills/flake.nix)
   # and installed to ~/.agents/skills/. Pi discovers that location natively,
@@ -184,17 +180,7 @@ let
   # Dynamically discover subagent definitions from config/pi/agents/
   # Supports both .md (agents) and .chain.md (chains) for pi-subagents
   agentsDir = "${configDir}/pi/agents";
-  agentFiles =
-    if builtins.pathExists agentsDir then
-      builtins.filter (f: lib.hasSuffix ".md" f) (builtins.attrNames (builtins.readDir agentsDir))
-    else
-      [ ];
-  agentLinks = lib.listToAttrs (
-    map (f: {
-      name = ".pi/agent/agents/${f}";
-      value.source = "${agentsDir}/${f}";
-    }) agentFiles
-  );
+  agentLinks = mkPiAgentLinks "agents" agentsDir (markdownFilesIn agentsDir);
 
   # Parse JSONC settings (strips comments and trailing commas via lib.my.readJsonc)
   piSettingsParsedResult = readJsonc "${configDir}/pi/settings.jsonc";
@@ -328,7 +314,7 @@ in
     ]);
 
     user.packages = [
-      piPackageWithSecretPreflight
+      piPackageWithRuntimeWrapper
       pkgs.llm-agents."beads-rust"
       pkgs.llm-agents.rtk
       pkgs.llm-agents.toon
