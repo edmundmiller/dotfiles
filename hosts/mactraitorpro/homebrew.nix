@@ -20,8 +20,6 @@
     "cmake"
     "gcc"
     "git"
-    "git-lfs"
-    "gh"
     "go"
     "difi"
     "gitu"
@@ -30,14 +28,9 @@
     "llvm"
     "m4"
     "make"
-    "python@3.13"
 
     # Python tools
-    "pipx"
-    "ruff"
     "uv"
-    "numpy"
-    "openblas"
 
     # JavaScript/Node tools
     "fnm"
@@ -45,29 +38,14 @@
     # Shell and terminal tools
     "asciinema"
     "bash"
-    "bat"
     "bats-core"
-    "btop"
-    "coreutils"
-    "difftastic"
-    "direnv"
-    "eza"
-    "fd"
     "fish"
-    "fzf"
-    "glow"
-    "lazygit"
-    "neovim"
-    "ripgrep"
-    "sd"
     "shellcheck"
     "shfmt"
-    "tealdeer"
     "terminal-notifier"
     "thefuck"
     # "tmux"  # Using Nix-managed tmux for custom config
     "tree"
-    "tree-sitter"
     "wget"
     "joshmedeski/sesh/sesh"
     "ahkohd/oyo/oy"
@@ -104,7 +82,6 @@
     "yt-dlp"
 
     # Networking and communication
-    "curl"
     "rsync"
     "rclone"
 
@@ -153,7 +130,6 @@
 
     # Browsers
     "google-chrome"
-    "helium"
 
     # Media
     "spotify"

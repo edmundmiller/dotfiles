@@ -12,10 +12,6 @@
     # Development tools
     "duckdb"
     "dvc"
-    "gh"
-    "fzf"
-    "neovim"
-    "ruff"
     "uv"
     "tealdeer"
     "joshmedeski/sesh/sesh"
@@ -24,13 +20,6 @@
     "pulumi/tap/pulumi"
     "awscli"
     "wakatime-cli"
-
-    # Doom dependencies
-    "git"
-    "ripgrep"
-    "coreutils"
-    "fd"
-    "tree-sitter"
   ];
 
   casks = [
