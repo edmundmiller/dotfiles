@@ -1796,6 +1796,7 @@
         "skills-catalog": "skills-catalog",
         "stylix": "stylix",
         "systems": "systems_11",
+        "tnote": "tnote",
         "treefmt-nix": "treefmt-nix_5",
         "try": "try",
         "wezterm": "wezterm",
@@ -2169,6 +2170,33 @@
         "owner": "tinted-theming",
         "repo": "base16-zed",
         "type": "github"
+      }
+    },
+    "tnote": {
+      "inputs": {
+        "bun2nix": [
+          "bun2nix"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "systems": [
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1778970967,
+        "narHash": "sha256-LDxH23AL6b1nUlRN59g0K8l/fyqXwd4rzk7cZn9K7WI=",
+        "ref": "main",
+        "rev": "da69dfa01bb8947ba47c7367d45bd6ef809146f5",
+        "revCount": 364,
+        "type": "git",
+        "url": "ssh://git@github.com/edmundmiller/tnote"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "ssh://git@github.com/edmundmiller/tnote"
       }
     },
     "treefmt-nix": {

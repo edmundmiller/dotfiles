@@ -544,52 +544,13 @@ in
         install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/bin"
         install -d -o emiller -g users -m 0750 "$BETTY_HOME/home/emiller"
 
-        ln -sfn /home/emiller/.local/bin/tnote "$BETTY_HOME/.local/bin/tnote"
+        ln -sfn ${pkgs.my.tnote}/bin/tnote "$BETTY_HOME/.local/bin/tnote"
         ln -sfn /home/emiller/obsidian-vault "$BETTY_HOME/obsidian-vault"
         ln -sfn ${millDocsVaultPath} "$BETTY_HOME/home/emiller/mill-docs"
 
         chown -h emiller:users "$BETTY_HOME/.local/bin/tnote"
         chown -h emiller:users "$BETTY_HOME/obsidian-vault"
         chown -h emiller:users "$BETTY_HOME/home/emiller/mill-docs"
-      '';
-    };
-
-    tnoteWrapper = {
-      deps = [ "users" ];
-      text = ''
-        BASE_REPO=${lib.escapeShellArg tnoteBaseRepo}
-
-        install -d -o emiller -g users -m 0750 /home/emiller/.local/bin
-
-        cat > /home/emiller/.local/bin/tnote <<'EOF'
-        #!/usr/bin/env bash
-        set -euo pipefail
-
-        REPO="$HOME/src/personal/tnote"
-        DEFAULT_VAULT="$HOME/obsidian-vault"
-
-        export TN_VAULT_PATH="''${TN_VAULT_PATH:-$DEFAULT_VAULT}"
-        quoted_args="$(printf '%q ' "$@")"
-
-        if [ ! -f "$REPO/packages/tn/index.ts" ]; then
-          echo "tnote repo missing expected entrypoint: $REPO/packages/tn/index.ts" >&2
-          exit 1
-        fi
-
-        cd "$REPO"
-        exec nix-shell -p bun --run "TN_VAULT_PATH=$(printf '%q' "$TN_VAULT_PATH") bun run packages/tn/index.ts ''${quoted_args}"
-        EOF
-        chown emiller:users /home/emiller/.local/bin/tnote
-        chmod 0755 /home/emiller/.local/bin/tnote
-
-        if [ ! -d "$BASE_REPO/.git" ]; then
-          echo "Skipping tnote dependency install; base repo missing at $BASE_REPO" >&2
-          exit 0
-        fi
-
-        ${pkgs.util-linux}/bin/runuser -u emiller -- \
-          ${pkgs.coreutils}/bin/env HOME=/home/emiller \
-          ${pkgs.bun}/bin/bun install --cwd "$BASE_REPO" --ignore-scripts
       '';
     };
 
@@ -662,6 +623,7 @@ in
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
+    my.tnote # packaged TaskNotes CLI; no boot-time mutable checkout/bun install
   ];
   imports = [
     ../_server.nix
