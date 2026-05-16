@@ -1,7 +1,8 @@
 {
   // Global Pi permission floor. This file is loaded by pi-permission-system
   // via PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR and is intended to prevent agents
-  // from bypassing deploy-rs safety rails for NixOS hosts.
+  // from bypassing `hey` safety rails for rebuilds, deploys, package management,
+  // and host lifecycle operations.
   "defaultPolicy": {
     "tools": "allow",
     "bash": "allow",
@@ -32,7 +33,14 @@
     "*nixos-rebuild boot*": "deny",
     "*switch-to-configuration switch*": "deny",
     "*switch-to-configuration boot*": "deny",
+    "*ssh*nuc*nixos-rebuild*": "deny",
+    "*ssh*nuc*switch-to-configuration*": "deny",
+    "*home-manager switch*": "deny",
     "*NIXOS_NO_CHECK*": "deny",
+
+    // Deploys should go through `hey`, not direct deploy-rs invocations.
+    "*deploy-rs*": "deny",
+    "*nix run .#deploy-rs*": "deny",
 
     // Keep hook/signing enforcement in the same command policy system.
     "*--no-verify*": "deny",
@@ -59,13 +67,44 @@
     "*poweroff*": "deny",
     "*systemctl reboot*": "deny",
     "*systemctl poweroff*": "deny",
+    "*ssh*nuc*reboot*": "deny",
+    "*ssh*nuc*shutdown*": "deny",
+    "*ssh*nuc*poweroff*": "deny",
+    "*ssh*nuc*systemctl reboot*": "deny",
+    "*ssh*nuc*systemctl poweroff*": "deny",
+
+    // Do not let agents paper over Nix failures by deleting stores, registries,
+    // or caches. Add/improve a `hey` command when cleanup is legitimate.
+    "*sudo nix-store --delete*": "deny",
+    "*nix-store --delete*": "deny",
+    "*sudo rm -rf /nix/store*": "deny",
+    "*sudo rm -rf /var/lib/nix*": "deny",
+    "*rm -rf ~/.cache/nix*": "deny",
+    "*flake-registry.json*": "deny",
+    "*nix registry pin*": "deny",
+    "*ssh*nuc*nix-collect-garbage*": "deny",
+    "*ssh*nuc*nix store gc*": "deny",
+
+    // Repo-managed Homebrew changes belong in Nix/darwin config and `hey re`.
+    "*brew bundle*": "deny",
+    "*brew link --overwrite*": "deny",
+    "*brew unlink*": "deny",
+    "*brew install*": "deny",
+    "*brew uninstall*": "deny",
+
+    // Use the skills wrapper so parent/child flake locks stay in sync.
+    "*nix flake update skills-catalog*": "deny",
+    "*nix flake lock --update-input skills-catalog*": "deny",
 
     // Explicitly preserve the intended guarded paths.
     "hey re*": "allow",
     "hey rebuild*": "allow",
-    "*deploy-rs*": "allow",
     "hey nuc": "allow",
-    "hey deploy *": "allow"
+    "hey deploy *": "allow",
+    "hey deploy-dry *": "allow",
+    "hey skills-update*": "allow",
+    "hey skills-sync*": "allow",
+    "hey gc*": "allow"
   },
 
   "special": {
