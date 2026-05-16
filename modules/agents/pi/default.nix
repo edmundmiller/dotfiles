@@ -370,8 +370,6 @@ in
             };
             ".pi/agent/extensions/enforce-commit-signing.ts".source =
               "${configDir}/pi/extensions/enforce-commit-signing.ts";
-            # Keep guardrails.json writable for @aliou/pi-guardrails (it opens the file with write access)
-            # so we do not manage it as a read-only Nix store symlink.
             ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
             ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
             ".pi/agent/extensions/commit-review.ts".source = "${configDir}/pi/extensions/commit-review.ts";
@@ -426,14 +424,9 @@ in
           rm -rf "$HOME/.cache/npm/lib/node_modules/@howaboua/pi-codex-conversion"
           rmdir "$HOME/.cache/npm/lib/node_modules/@howaboua" 2>/dev/null || true
 
-          # @aliou/pi-guardrails needs this file writable at runtime, so keep
-          # it as a normal file rather than a Home Manager store symlink.
-          guardrails="$ext_dir/guardrails.json"
-          tmp="$guardrails.tmp"
-          cp ${escapeShellArg (configDir + "/pi/extensions/guardrails.json")} "$tmp"
-          rm -f "$guardrails"
-          mv "$tmp" "$guardrails"
-          chmod 0644 "$guardrails"
+          rm -f "$ext_dir/guardrails.json"
+          rm -rf "$HOME/.cache/npm/lib/node_modules/@aliou/pi-guardrails"
+          rmdir "$HOME/.cache/npm/lib/node_modules/@aliou" 2>/dev/null || true
         '';
 
         home.activation.pi-legacy-skill-dir-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

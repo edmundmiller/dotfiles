@@ -34,8 +34,7 @@
     "*switch-to-configuration boot*": "deny",
     "*NIXOS_NO_CHECK*": "deny",
 
-    // Keep hook/signing enforcement in the same command policy system so
-    // guardrails does not also have to gate shell execution.
+    // Keep hook/signing enforcement in the same command policy system.
     "*--no-verify*": "deny",
     "*--no-gpg-sign*": "deny",
     "*commit.gpgsign=false*": "deny",
