@@ -1,0 +1,19 @@
+.beads/issues.jsonl
+  s_0dc792b9f0273b::t_209ee477d934c6 562-564
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "1ddd8a94a9055ff3dc8173deaffa9d1c9844301d",
+  "prompts": {},
+  "sessions": {
+    "s_0dc792b9f0273b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3287-cdf6-774e-bcf1-32b35c648f60",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
