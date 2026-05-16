@@ -2,7 +2,7 @@
   "enabled": true,
   "features": {
     "policies": true,
-    "permissionGate": true
+    "permissionGate": false
   },
   "policies": {
     "rules": [
@@ -33,33 +33,5 @@
         "onlyIfExists": true
       }
     ]
-  },
-  "permissionGate": {
-    "requireConfirmation": true,
-    "customPatterns": [],
-    "allowedPatterns": [
-      { "pattern": "nix ", "description": "nix commands (routine in dotfiles)" },
-      { "pattern": "hey ", "description": "guarded dotfiles workflows" }
-    ],
-    "autoDenyPatterns": [
-      { "pattern": "--no-verify", "description": "hook bypass blocked" },
-      { "pattern": "--no-gpg-sign", "description": "signing bypass blocked" },
-      { "pattern": "commit.gpgsign=false", "description": "signing disable blocked" },
-      {
-        "pattern": "darwin-rebuild*switch",
-        "description": "use hey re / hey rebuild instead of direct darwin-rebuild switch"
-      },
-      { "pattern": "core.hooksPath", "description": "hooks path manipulation blocked" },
-      { "pattern": "git commit*--author", "description": "author spoofing blocked" },
-      { "pattern": "-c user.email=", "description": "identity override blocked" },
-      { "pattern": "-c user.name=", "description": "identity override blocked" },
-      { "pattern": "GIT_AUTHOR_NAME=", "description": "author env override blocked" },
-      { "pattern": "GIT_AUTHOR_EMAIL=", "description": "author env override blocked" },
-      { "pattern": "GIT_COMMITTER_NAME=", "description": "committer env override blocked" },
-      { "pattern": "GIT_COMMITTER_EMAIL=", "description": "committer env override blocked" },
-      { "pattern": "HUSKY=0", "description": "husky bypass blocked" },
-      { "pattern": "PRE_COMMIT_ALLOW_NO_CONFIG=", "description": "pre-commit bypass blocked" }
-    ],
-    "explainCommands": false
   }
 }

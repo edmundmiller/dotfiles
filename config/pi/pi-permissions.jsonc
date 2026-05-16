@@ -34,6 +34,22 @@
     "*switch-to-configuration boot*": "deny",
     "*NIXOS_NO_CHECK*": "deny",
 
+    // Keep hook/signing enforcement in the same command policy system so
+    // guardrails does not also have to gate shell execution.
+    "*--no-verify*": "deny",
+    "*--no-gpg-sign*": "deny",
+    "*commit.gpgsign=false*": "deny",
+    "*core.hooksPath*": "deny",
+    "*git commit*--author*": "deny",
+    "*-c user.email=*": "deny",
+    "*-c user.name=*": "deny",
+    "*GIT_AUTHOR_NAME=*": "deny",
+    "*GIT_AUTHOR_EMAIL=*": "deny",
+    "*GIT_COMMITTER_NAME=*": "deny",
+    "*GIT_COMMITTER_EMAIL=*": "deny",
+    "*HUSKY=0*": "deny",
+    "*PRE_COMMIT_ALLOW_NO_CONFIG=*": "deny",
+
     // Never let an agent reboot/power off a host directly. Require the human to do it
     // or use a guarded deployment workflow that owns rollback semantics.
     "*sudo reboot*": "deny",

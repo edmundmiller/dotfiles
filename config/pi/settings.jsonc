@@ -35,9 +35,10 @@
   // Skills as commands - also registers skills as /skill:name slash commands
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
   "enableSkillCommands": true,
-  // Security guardrails - file policies + permission gate + hook/signing enforcement
-  // Config: ~/.pi/agent/extensions/guardrails.json (nix-managed)
-  // Docs: https://github.com/aliou/pi-guardrails
+  // Security split:
+  // - pi-permission-system owns command/tool permission policy (including rebuild + signing bypass blocks).
+  // - pi-guardrails is kept for file access policies only; its permission gate is disabled.
+  // Configs: ~/.pi/agent/pi-permissions.jsonc and ~/.pi/agent/extensions/guardrails.json
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   "packages": [
     {
@@ -99,10 +100,10 @@
       ],
       "skills": [],
     },
-    // Permission policy gate for tools/bash/MCP/skills.
+    // Authoritative permission gate for tools/bash/MCP/skills.
     // Policy: config/pi/pi-permissions.jsonc -> ~/.pi/agent/pi-permissions.jsonc
     "npm:pi-permission-system",
-    // Security guardrails - https://github.com/aliou/pi-guardrails
+    // File access guardrails only; command permission gate is disabled in guardrails.json.
     "npm:@aliou/pi-guardrails",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
