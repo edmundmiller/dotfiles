@@ -133,6 +133,16 @@ let
       if [ -x "$out/bin/pi" ]; then
         wrapProgram "$out/bin/pi" \
           --run ${escapeShellArg "${piSecretPreflight}"} \
+          --run ${escapeShellArg ''
+            # The nix-managed pi executable lives in /nix/store, so upstream
+            # self-update cannot work. Keep `pi update` useful by making the
+            # default update target extensions-only; explicit `pi update pi`,
+            # `pi update self`, or `pi update --self` still exercise upstream
+            # behavior and show the normal Nix-managed-install error.
+            if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then
+              set -- update --extensions
+            fi
+          ''} \
           --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
           --unset SDKROOT
       fi
