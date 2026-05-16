@@ -426,16 +426,14 @@ in
           rm -rf "$HOME/.cache/npm/lib/node_modules/@howaboua/pi-codex-conversion"
           rmdir "$HOME/.cache/npm/lib/node_modules/@howaboua" 2>/dev/null || true
 
-          # @aliou/pi-guardrails needs this file writable at runtime.
-          # If HM wrote a symlink into /nix/store, replace it with a local writable copy.
+          # @aliou/pi-guardrails needs this file writable at runtime, so keep
+          # it as a normal file rather than a Home Manager store symlink.
           guardrails="$ext_dir/guardrails.json"
-          if [ -L "$guardrails" ]; then
-            tmp="$guardrails.tmp"
-            cp -L "$guardrails" "$tmp"
-            rm -f "$guardrails"
-            mv "$tmp" "$guardrails"
-            chmod 0644 "$guardrails"
-          fi
+          tmp="$guardrails.tmp"
+          cp ${escapeShellArg (configDir + "/pi/extensions/guardrails.json")} "$tmp"
+          rm -f "$guardrails"
+          mv "$tmp" "$guardrails"
+          chmod 0644 "$guardrails"
         '';
 
         home.activation.pi-legacy-skill-dir-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
