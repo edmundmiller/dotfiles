@@ -253,6 +253,9 @@ EOF
   "$pi_bin" "$@" "$review_prompt"
 }
 
+# pi package/update shortcuts
+alias piu='pi update --extensions'
+
 # pi-overwatch shortcuts
 alias ow='pi-overwatch'
 alias owf='PI_OVERWATCH_REFRESH_MS=500 PI_OVERWATCH_STALE_MS=12000 pi-overwatch'
