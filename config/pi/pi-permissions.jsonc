@@ -109,6 +109,8 @@
 
   "special": {
     "doom_loop": "deny",
-    "external_directory": "ask"
+    // Allow agents to inspect read-only Nix store paths (for example via the
+    // `read` tool). Destructive Nix/store operations remain denied above.
+    "external_directory": "allow"
   }
 }
