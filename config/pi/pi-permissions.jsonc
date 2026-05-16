@@ -1,0 +1,56 @@
+{
+  // Global Pi permission floor. This file is loaded by pi-permission-system
+  // via PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR and is intended to prevent agents
+  // from bypassing deploy-rs safety rails for NixOS hosts.
+  "defaultPolicy": {
+    "tools": "allow",
+    "bash": "allow",
+    "mcp": "ask",
+    "skills": "allow",
+    "special": "ask"
+  },
+
+  "tools": {
+    "*": "allow",
+    // Shell/process-capable tools that pi-permission-system cannot parse as
+    // canonical bash commands require human approval before execution.
+    "bash": "allow",
+    "process": "ask",
+    "interactive_shell": "ask",
+    "herdr_run_in_pane": "ask",
+    "agent-start": "ask",
+    "agent-send": "ask"
+  },
+
+  "bash": {
+    "*": "allow",
+
+    // Never bypass deploy-rs rollback/health guards for the NUC or other NixOS hosts.
+    "*nixos-rebuild switch*": "deny",
+    "*nixos-rebuild boot*": "deny",
+    "*switch-to-configuration switch*": "deny",
+    "*switch-to-configuration boot*": "deny",
+    "*NIXOS_NO_CHECK*": "deny",
+
+    // Never let an agent reboot/power off a host directly. Require the human to do it
+    // or use a guarded deployment workflow that owns rollback semantics.
+    "*sudo reboot*": "deny",
+    "* reboot*": "deny",
+    "reboot*": "deny",
+    "*shutdown -r*": "deny",
+    "*shutdown now*": "deny",
+    "*poweroff*": "deny",
+    "*systemctl reboot*": "deny",
+    "*systemctl poweroff*": "deny",
+
+    // Explicitly preserve the intended guarded path.
+    "*deploy-rs*": "allow",
+    "hey nuc": "allow",
+    "hey deploy *": "allow"
+  },
+
+  "special": {
+    "doom_loop": "deny",
+    "external_directory": "ask"
+  }
+}
