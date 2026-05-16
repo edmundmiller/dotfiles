@@ -39,13 +39,16 @@
     "customPatterns": [],
     "allowedPatterns": [
       { "pattern": "nix ", "description": "nix commands (routine in dotfiles)" },
-      { "pattern": "darwin-rebuild ", "description": "darwin-rebuild (routine)" },
-      { "pattern": "hey ", "description": "hey commands (routine)" }
+      { "pattern": "hey ", "description": "guarded dotfiles workflows" }
     ],
     "autoDenyPatterns": [
       { "pattern": "--no-verify", "description": "hook bypass blocked" },
       { "pattern": "--no-gpg-sign", "description": "signing bypass blocked" },
       { "pattern": "commit.gpgsign=false", "description": "signing disable blocked" },
+      {
+        "pattern": "darwin-rebuild*switch",
+        "description": "use hey re / hey rebuild instead of direct darwin-rebuild switch"
+      },
       { "pattern": "core.hooksPath", "description": "hooks path manipulation blocked" },
       { "pattern": "git commit*--author", "description": "author spoofing blocked" },
       { "pattern": "-c user.email=", "description": "identity override blocked" },

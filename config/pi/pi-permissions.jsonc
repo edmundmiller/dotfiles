@@ -25,7 +25,9 @@
   "bash": {
     "*": "allow",
 
-    // Never bypass deploy-rs rollback/health guards for the NUC or other NixOS hosts.
+    // Never bypass guarded Nix workflows. Agents should use `hey` and improve
+    // it instead of invoking platform rebuild tools directly.
+    "*darwin-rebuild*switch*": "deny",
     "*nixos-rebuild switch*": "deny",
     "*nixos-rebuild boot*": "deny",
     "*switch-to-configuration switch*": "deny",
@@ -43,7 +45,9 @@
     "*systemctl reboot*": "deny",
     "*systemctl poweroff*": "deny",
 
-    // Explicitly preserve the intended guarded path.
+    // Explicitly preserve the intended guarded paths.
+    "hey re*": "allow",
+    "hey rebuild*": "allow",
     "*deploy-rs*": "allow",
     "hey nuc": "allow",
     "hey deploy *": "allow"
