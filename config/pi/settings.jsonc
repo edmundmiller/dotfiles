@@ -101,6 +101,9 @@
       ],
       "skills": [],
     },
+    // Permission policy gate for tools/bash/MCP/skills.
+    // Policy: config/pi/pi-permissions.jsonc -> ~/.pi/agent/pi-permissions.jsonc
+    "npm:pi-permission-system",
     // Security guardrails - https://github.com/aliou/pi-guardrails
     "npm:@aliou/pi-guardrails",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike

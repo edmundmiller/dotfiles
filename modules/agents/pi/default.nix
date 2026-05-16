@@ -332,6 +332,9 @@ in
     env.PI_SKIP_VERSION_CHECK = "1";
     # Keep Pi runtime state writable (locks/sessions), separate from nix-managed ~/.pi/agent files.
     env.PI_CODING_AGENT_DIR = "$HOME/.local/state/pi/agent";
+    # Keep permission policy lookup on the nix-managed agent root even though runtime state is separate.
+    env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = "$HOME/.pi/agent";
+    env.PI_PERMISSION_SYSTEM_CONFIG_PATH = "$HOME/.pi/agent/extensions/pi-permission-system/config.json";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
     # pi-github-tools PAT (from gh CLI)
@@ -357,6 +360,12 @@ in
           // {
             ".pi/agent/AGENTS.md".text = concatenatedRules;
             ".pi/agent/settings.json".text = piSettingsValidated;
+            ".pi/agent/pi-permissions.jsonc".source = "${configDir}/pi/pi-permissions.jsonc";
+            ".pi/agent/extensions/pi-permission-system/config.json".text = builtins.toJSON {
+              debugLog = false;
+              permissionReviewLog = true;
+              yoloMode = false;
+            };
             ".pi/agent/extensions/enforce-commit-signing.ts".source =
               "${configDir}/pi/extensions/enforce-commit-signing.ts";
             # Keep guardrails.json writable for @aliou/pi-guardrails (it opens the file with write access)
