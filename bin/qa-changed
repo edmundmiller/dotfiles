@@ -93,7 +93,7 @@ echo "qa-changed: checking packages: ${packages[*]}"
 
 arch_files=()
 for file in "${changed_files[@]}"; do
-  if [[ "$file" =~ ^pi-packages/pi-[^/]+/.*\.tsx?$ ]]; then
+  if [[ -f "$ROOT_DIR/$file" && "$file" =~ ^pi-packages/pi-[^/]+/.*\.tsx?$ ]]; then
     arch_files+=("$file")
   fi
 done
@@ -114,7 +114,61 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+existing_packages=()
+removed_packages=()
+for pkg in "${packages[@]}"; do
+  if [[ -f "$ROOT_DIR/pi-packages/$pkg/package.json" ]]; then
+    existing_packages+=("$pkg")
+  else
+    removed_packages+=("$pkg")
+  fi
+done
+
+if [[ ${#removed_packages[@]} -gt 0 ]]; then
+  echo "qa-changed: skipping removed packages: ${removed_packages[*]}"
+fi
+packages=("${existing_packages[@]}")
+
+run_integration=0
+if [[ $run_all -eq 1 ]]; then
+  run_integration=1
+else
+  for file in "${changed_files[@]}"; do
+    if [[ "$file" == pi-packages/tests/* || "$file" == pi-packages/package.json ]]; then
+      run_integration=1
+      break
+    fi
+    if [[ "$file" == pi-packages/bun.lock && ${#packages[@]} -gt 0 ]]; then
+      run_integration=1
+      break
+    fi
+  done
+fi
+
+if [[ ${#packages[@]} -eq 0 && $run_integration -eq 0 ]]; then
+  echo "qa-changed: no remaining packages or integration tests to check"
+  exit 0
+fi
+
 echo "qa-changed: ensuring workspace deps are installed"
+symlinked_node_modules=()
+while IFS= read -r -d '' link_path; do
+  link_target="$(readlink "$link_path")"
+  symlinked_node_modules+=("$link_path=$link_target")
+  rm -f "$link_path"
+done < <(find "$ROOT_DIR/pi-packages" -mindepth 2 -maxdepth 2 -type l -name node_modules -print0)
+
+restore_symlinked_node_modules() {
+  local record link_path link_target
+  for record in "${symlinked_node_modules[@]}"; do
+    link_path="${record%%=*}"
+    link_target="${record#*=}"
+    rm -rf "$link_path"
+    ln -s "$link_target" "$link_path"
+  done
+}
+trap restore_symlinked_node_modules EXIT
+
 (
   cd "$ROOT_DIR/pi-packages"
   bun install --frozen-lockfile --silent
@@ -128,10 +182,6 @@ has_script() {
 
 for pkg in "${packages[@]}"; do
   pkg_dir="$ROOT_DIR/pi-packages/$pkg"
-  if [[ ! -f "$pkg_dir/package.json" ]]; then
-    echo "error: package not found: $pkg" >&2
-    exit 1
-  fi
 
   if has_script "$pkg_dir" typecheck; then
     echo "qa-changed: $pkg -> typecheck"
@@ -143,18 +193,6 @@ for pkg in "${packages[@]}"; do
     (cd "$pkg_dir" && bun run --silent test)
   fi
 done
-
-run_integration=0
-if [[ $run_all -eq 1 ]]; then
-  run_integration=1
-else
-  for file in "${changed_files[@]}"; do
-    if [[ "$file" == pi-packages/tests/* || "$file" == pi-packages/package.json || "$file" == pi-packages/bun.lock ]]; then
-      run_integration=1
-      break
-    fi
-  done
-fi
 
 if [[ $run_integration -eq 1 ]]; then
   echo "qa-changed: running pi-packages integration tests"
