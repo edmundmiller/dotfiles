@@ -52,8 +52,4 @@ in
     npmDepsHash = "sha256-ECxDBj37SREHyZLdAdrwft5DOQSqJOzzICaC4Mi2KN0=";
   };
 
-  pi-scurl = mkNodeModules {
-    name = "pi-scurl";
-    npmDepsHash = "sha256-g5j8Mi/MNVnWOVFDV/p2geQYc5OTnz4m/LmArnsQdME=";
-  };
 }
