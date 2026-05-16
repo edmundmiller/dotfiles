@@ -417,7 +417,6 @@ in
             ".config/dotfiles/pi-packages/pi-agentmap/node_modules".source =
               "${piPkgDeps.pi-agentmap}/node_modules";
             ".config/dotfiles/pi-packages/pi-dcp/node_modules".source = "${piPkgDeps.pi-dcp}/node_modules";
-            ".config/dotfiles/pi-packages/pi-scurl/node_modules".source = "${piPkgDeps.pi-scurl}/node_modules";
           };
 
         # Clean stale local extensions that conflict with package-provided ones
