@@ -300,7 +300,11 @@ in
           # Lovelace: YAML-managed dashboard
           lovelace = {
             resource_mode = "yaml";
-            dashboards.lovelace-yaml = {
+            # nixpkgs' Home Assistant module declares dashboards.nixos-lovelace
+            # with a null default unless services.home-assistant.lovelaceConfig
+            # is used. Home Assistant rejects null dashboard entries, so provide
+            # our YAML dashboard at that key instead of adding a second key.
+            dashboards.nixos-lovelace = {
               mode = "yaml";
               filename = "ui-lovelace.yaml";
               title = "Home";
