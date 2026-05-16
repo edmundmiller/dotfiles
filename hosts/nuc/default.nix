@@ -840,6 +840,11 @@ in
     };
   };
 
+  # Keep NUC on an LTS kernel for ZFS. nixos-unstable's default
+  # linuxPackages currently tracks 7.0.x, where zfs-kernel-2.4.1 is marked
+  # broken and blocks evaluation before deploy activation.
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_12;
+
   ## Modules
   modules = {
     editors = {
