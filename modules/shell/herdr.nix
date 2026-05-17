@@ -65,28 +65,87 @@ let
   # Pi's auto-selected dark theme can be too low-contrast in the Herdr/Ghostty
   # popup (especially muted prompt text). Ship and select a small Catppuccin-ish
   # theme with brighter foregrounds so the input box remains readable.
-  piThemeName = "dotfiles-herdr";
+  #
+  # `piThemeVariant` swaps the underlying palette so hosts with a non-Catppuccin
+  # terminal background (e.g. Seqera dark purple #201637) can use a palette
+  # tuned for that background instead of letting the default dim/muted slots
+  # collapse into the background.
+  piThemePalettes = {
+    default = {
+      base = "#1e1e2e";
+      surface0 = "#313244";
+      surface1 = "#45475a";
+      surface2 = "#585b70";
+      text = "#cdd6f4";
+      subtext1 = "#bac2de";
+      subtext0 = "#a6adc8";
+      overlay1 = "#7f849c";
+      mauve = "#cba6f7";
+      blue = "#89b4fa";
+      sapphire = "#74c7ec";
+      teal = "#94e2d5";
+      green = "#a6e3a1";
+      yellow = "#f9e2af";
+      peach = "#fab387";
+      red = "#f38ba8";
+      toolPendingBg = "#242438";
+      toolSuccessBg = "#243826";
+      toolErrorBg = "#3a2430";
+    };
+    # Tuned for Seqera ghostty themes (background #201637 dark purple).
+    # `subtext0`/`overlay1` are pushed brighter so the pi-sub-bar and other
+    # `dim`/`muted` slots remain legible on the lower-contrast background.
+    seqera = {
+      base = "#201637";
+      surface0 = "#2e2244";
+      surface1 = "#3d2f5a";
+      surface2 = "#4c3d70";
+      text = "#e2f7f3";
+      subtext1 = "#c8d9d6";
+      subtext0 = "#b6c7c4";
+      overlay1 = "#9aa9ad";
+      mauve = "#cba6f7";
+      blue = "#88baff";
+      sapphire = "#5ea0ff";
+      teal = "#31c9ac";
+      green = "#95bf2f";
+      yellow = "#f4e19a";
+      peach = "#fab387";
+      red = "#f38ba8";
+      toolPendingBg = "#2a1f48";
+      toolSuccessBg = "#1f3a30";
+      toolErrorBg = "#3a1f30";
+    };
+  };
+
+  piThemeBaseName = "dotfiles-herdr";
+  piThemeName =
+    if cfg.piThemeVariant == "default" then
+      piThemeBaseName
+    else
+      "${piThemeBaseName}-${cfg.piThemeVariant}";
+  piThemeVars = piThemePalettes.${cfg.piThemeVariant};
   piThemeFile = pkgs.writeText "${piThemeName}.json" ''
     {
       "$schema": "https://raw.githubusercontent.com/badlogic/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
       "name": "${piThemeName}",
       "vars": {
-        "base": "#1e1e2e",
-        "surface0": "#313244",
-        "surface1": "#45475a",
-        "surface2": "#585b70",
-        "text": "#cdd6f4",
-        "subtext1": "#bac2de",
-        "subtext0": "#a6adc8",
-        "overlay1": "#7f849c",
-        "mauve": "#cba6f7",
-        "blue": "#89b4fa",
-        "sapphire": "#74c7ec",
-        "teal": "#94e2d5",
-        "green": "#a6e3a1",
-        "yellow": "#f9e2af",
-        "peach": "#fab387",
-        "red": "#f38ba8"
+        "base": "${piThemeVars.base}",
+        "surface0": "${piThemeVars.surface0}",
+        "surface1": "${piThemeVars.surface1}",
+        "surface2": "${piThemeVars.surface2}",
+        "text": "${piThemeVars.text}",
+        "subtext1": "${piThemeVars.subtext1}",
+        "subtext0": "${piThemeVars.subtext0}",
+        "overlay1": "${piThemeVars.overlay1}",
+        "mauve": "${piThemeVars.mauve}",
+        "blue": "${piThemeVars.blue}",
+        "sapphire": "${piThemeVars.sapphire}",
+        "teal": "${piThemeVars.teal}",
+        "green": "${piThemeVars.green}",
+        "yellow": "${piThemeVars.yellow}",
+        "peach": "${piThemeVars.peach}",
+        "red": "${piThemeVars.red}"
       },
       "colors": {
         "accent": "teal",
@@ -106,9 +165,9 @@ let
         "customMessageBg": "surface0",
         "customMessageText": "text",
         "customMessageLabel": "mauve",
-        "toolPendingBg": "#242438",
-        "toolSuccessBg": "#243826",
-        "toolErrorBg": "#3a2430",
+        "toolPendingBg": "${piThemeVars.toolPendingBg}",
+        "toolSuccessBg": "${piThemeVars.toolSuccessBg}",
+        "toolErrorBg": "${piThemeVars.toolErrorBg}",
         "toolTitle": "sapphire",
         "toolOutput": "text",
         "mdHeading": "mauve",
@@ -154,6 +213,21 @@ in
     key = mkOpt str "H";
     popupWidth = mkOpt int 90;
     popupHeight = mkOpt int 90;
+    piThemeVariant = mkOption {
+      type = enum (attrNames piThemePalettes);
+      default = "default";
+      description = ''
+        Which palette variant to ship as the Pi `dotfiles-herdr` theme.
+        Use `seqera` on hosts whose ghostty background is the Seqera dark
+        purple (`#201637`) so dim/muted slots stay legible.
+      '';
+    };
+    piThemeName = mkOption {
+      type = str;
+      readOnly = true;
+      default = piThemeName;
+      description = "Active Pi theme name shipped by the herdr module.";
+    };
   };
 
   config = mkIf cfg.enable {
