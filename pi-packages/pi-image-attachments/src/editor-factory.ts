@@ -153,10 +153,7 @@ export function createImageAttachmentEditor(deps: AttachmentEditorDeps) {
         return;
       }
 
-      const editorKeybindings = this.getEditorKeybindings();
-      const isSubmit =
-        editorKeybindings.matches(data, "tui.input.submit") &&
-        !(this.isShowingAutocomplete?.() ?? false);
+      const isSubmit = this.isSubmitInput(data) && !(this.isShowingAutocomplete?.() ?? false);
       if (isSubmit && this.attachments.length > 0) {
         const fullText = (this.getExpandedText?.() ?? this.getText()).trim();
         const usedAttachments = sortByPlaceholderNumber(
@@ -267,6 +264,14 @@ export function createImageAttachmentEditor(deps: AttachmentEditorDeps) {
 
     private getEditorKeybindings(): EditorKeybindings {
       return resolveEditorKeybindings(deps.getEditorKeybindings);
+    }
+
+    private isSubmitInput(data: string): boolean {
+      try {
+        return this.getEditorKeybindings().matches(data, "tui.input.submit");
+      } catch {
+        return resolveSubmitKeyMatcher()(data);
+      }
     }
 
     private publishDraft(): void {

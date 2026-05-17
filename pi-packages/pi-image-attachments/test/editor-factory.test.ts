@@ -135,6 +135,27 @@ test("accepts a pre-resolved keybinding object", () => {
   expect(harness.pendingSubmission?.images).toHaveLength(1);
 });
 
+test("falls back when keybinding matcher throws during typing", () => {
+  const { dir, imagePath } = createTempImagePath();
+  cleanupDirs.push(dir);
+
+  const harness = createHarness({
+    imagePath,
+    getEditorKeybindings: {
+      matches() {
+        throw new Error("incompatible keybinding matcher");
+      },
+    },
+  });
+
+  harness.editor.insertTextAtCursor(imagePath);
+  harness.editor.insertTextAtCursor("hello");
+
+  expect(() => harness.editor.handleInput("\r")).not.toThrow();
+  expect(harness.pendingSubmission?.transformedText).toBe("hello");
+  expect(harness.pendingSubmission?.images).toHaveLength(1);
+});
+
 test("the extension module imports without eagerly loading Pi runtime packages", async () => {
   const mod = await import("../index.ts");
   expect(typeof mod.default).toBe("function");
