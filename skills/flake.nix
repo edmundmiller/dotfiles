@@ -216,7 +216,10 @@
             anthropic = {
               path = inputs.anthropic-skills.outPath;
               subdir = "skills";
-              filter.maxDepth = 2;
+              filter = {
+                maxDepth = 2;
+                nameRegex = "^skill-creator$";
+              };
             };
 
             agent-tail = {
@@ -293,8 +296,8 @@
 
             marimo-pair = {
               path = inputs.marimo-pair-repo.outPath;
-              subdir = ".";
-              filter.maxDepth = 1;
+              subdir = "skills";
+              filter.maxDepth = 2;
             };
 
             marimo-skills = {
@@ -419,7 +422,7 @@
             }
             // {
               marimo-pair.from = "marimo-pair";
-              marimo-pair.path = ".";
+              marimo-pair.path = "marimo-pair";
 
               # Curated marimo subset: keep the broad, reusable notebook authoring
               # and migration skills; omit niche publishing helpers and overlapping
