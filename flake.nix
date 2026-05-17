@@ -50,7 +50,7 @@
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
-      url = "git+ssh://git@github.com/edmundmiller/tnote?ref=main";
+      url = "git+ssh://git@github.com/edmundmiller/tnote?ref=refs/tags/v0.3.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
       inputs.systems.follows = "systems";
