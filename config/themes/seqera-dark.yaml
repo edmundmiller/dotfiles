@@ -1,0 +1,27 @@
+# Custom base16 scheme derived from the Seqera dark brand palette.
+# Matches config/ghostty/themes/SeqeraDark so stylix-driven targets
+# (ghostty, vim, bat, btop, ...) all converge on the same colors.
+#
+# base00..07: monochrome (bg -> fg gradient).
+# base08..0F: accent colors (red, orange, yellow, green, cyan, blue, purple, brown).
+system: "base16"
+name: "Seqera Dark"
+author: "Edmund Miller"
+variant: "dark"
+palette:
+  base00: "201637" # Default Background  (Seqera deep purple)
+  base01: "2e2244" # Lighter Background (status bar)
+  base02: "3d2f5a" # Selection Background
+  base03: "6a6580" # Comments, Invisibles
+  base04: "9aa9ad" # Dark Foreground (subtle UI)
+  base05: "e2f7f3" # Default Foreground
+  base06: "f0fbf8" # Lighter Foreground
+  base07: "ffffff" # Light Foreground (rare)
+  base08: "f38ba8" # Red — variables, errors, deletions
+  base09: "fab387" # Orange — integers, booleans, constants
+  base0A: "e6d06c" # Yellow — classes, search highlights
+  base0B: "95bf2f" # Green (Seqera brand) — strings, additions
+  base0C: "31c9ac" # Teal/Cyan (Seqera brand) — escape chars, regex
+  base0D: "5ea0ff" # Blue — functions, methods
+  base0E: "b38bff" # Purple — keywords, storage
+  base0F: "cfb3ff" # Light Purple — deprecated, special

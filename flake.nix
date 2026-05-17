@@ -291,6 +291,9 @@
             # Add opnix for 1Password secrets integration
             inputs.opnix.darwinModules.default
 
+            # Stylix for unified system + home theming (auto-wires HM module).
+            inputs.stylix.darwinModules.stylix
+
             # Import the module system (provides user.packages, home.configFile, etc.)
             ./.
 
@@ -300,7 +303,8 @@
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "emiller"; }
 
-            # Add openclaw to home-manager modules
+            # Add openclaw to home-manager modules. Stylix's darwin module
+            # auto-imports its Home Manager module when `stylix.enable = true`.
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
@@ -332,6 +336,9 @@
             # Add opnix for 1Password secrets integration
             inputs.opnix.darwinModules.default
 
+            # Stylix for unified system + home theming (auto-wires HM module).
+            inputs.stylix.darwinModules.stylix
+
             # Import the module system (provides user.packages, home.configFile, etc.)
             ./.
 
@@ -341,7 +348,8 @@
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = "edmundmiller"; }
 
-            # Add openclaw to home-manager modules
+            # Add openclaw to home-manager modules. Stylix's darwin module
+            # auto-imports its Home Manager module when `stylix.enable = true`.
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
