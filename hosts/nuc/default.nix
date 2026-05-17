@@ -837,6 +837,7 @@ in
         stack.enable = false;
       };
       tmux.enable = true;
+      moshi.enable = true;
       zsh.enable = true;
       herdr.enable = true;
 
