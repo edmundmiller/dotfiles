@@ -105,13 +105,31 @@
         apps.handy.enable = true;
         term.ghostty = {
           enable = true;
-          # Host-specific Seqera brand themes (auto-switch with system appearance)
-          # plus host-local font override.
+          # Stylix drives ghostty colors from the Seqera Dark base16 scheme
+          # (see modules.theme.stylix below); we no longer set `theme =`
+          # here, otherwise ghostty would race with the stylix-generated
+          # palette. Host-local font override stays put.
           configInit = ''
             font-family = JetBrains Mono
             font-size = 14
-            theme = dark:SeqeraDark,light:SeqeraLight
           '';
+        };
+      };
+
+      # Stylix: drive the whole theme from the Seqera brand palette so
+      # ghostty, vim/bat/btop/etc. all match the existing SeqeraDark
+      # configuration. Scheme yaml is mirrored from
+      # config/ghostty/themes/SeqeraDark.
+      theme.stylix = {
+        enable = true;
+        polarity = "dark";
+        base16Scheme = "${config.dotfiles.configDir}/themes/seqera-dark.yaml";
+        # Use the module's generated solid-color placeholder instead of a
+        # machine-local Downloads path, so evaluation is reproducible.
+        fallbackImageColor = "201637"; # Seqera deep purple (base00)
+        fonts.monospace = {
+          package = pkgs.jetbrains-mono;
+          name = "JetBrains Mono";
         };
       };
     };
