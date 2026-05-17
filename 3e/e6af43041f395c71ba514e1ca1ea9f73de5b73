@@ -1,0 +1,19 @@
+.agents/skills/nixos-usb-recovery/SKILL.md
+  s_bfa6824f4bfc32::t_6febd15f9f06f7 1-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "3ee6af43041f395c71ba514e1ca1ea9f73de5b73",
+  "prompts": {},
+  "sessions": {
+    "s_bfa6824f4bfc32": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e32f2-3e3b-733c-9357-4aee22c33c75",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
