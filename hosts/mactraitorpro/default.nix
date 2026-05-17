@@ -99,6 +99,16 @@
         apps.handy.enable = true;
         term.ghostty.enable = true;
       };
+
+      # Stylix: Catppuccin Mocha matches the existing Pi/Herdr theme on this host.
+      # No real wallpaper here yet — the module mints a solid-color placeholder
+      # PNG (base00) so stylix is happy without committing a binary asset.
+      theme.stylix = {
+        enable = true;
+        polarity = "dark";
+        schemeName = "catppuccin-mocha";
+        fallbackImageColor = "1e1e2e"; # catppuccin mocha base00
+      };
     };
 
     # Configure nix-homebrew for proper privilege management
