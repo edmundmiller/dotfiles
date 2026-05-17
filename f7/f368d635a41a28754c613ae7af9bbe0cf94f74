@@ -1,0 +1,25 @@
+modules/themes/stylix/default.nix
+  s_373694fd82c16e::t_7c75167c7bea32 145-162,190
+  s_373694fd82c16e::t_aee7a405127cc2 184-187
+  s_373694fd82c16e::t_f99a1388bd9f20 50,174-181
+flake.nix
+  s_373694fd82c16e::t_9c14913061ba5f 306-307,339-341,351-352
+hosts/seqeratop/default.nix
+  s_373694fd82c16e::t_6f2211e43b9d5c 127-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f7f368d635a41a28754c613ae7af9bbe0cf94f74",
+  "prompts": {},
+  "sessions": {
+    "s_373694fd82c16e": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3408-365f-76e8-9c41-9bf0f01b3cb8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
