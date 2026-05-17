@@ -2202,16 +2202,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1778970967,
-        "narHash": "sha256-LDxH23AL6b1nUlRN59g0K8l/fyqXwd4rzk7cZn9K7WI=",
-        "ref": "main",
-        "rev": "da69dfa01bb8947ba47c7367d45bd6ef809146f5",
-        "revCount": 364,
+        "lastModified": 1778981531,
+        "narHash": "sha256-n/1dECQoqj7+daULRHImOMlJYnHFiqgyNQFX//FotqU=",
+        "ref": "refs/tags/v0.3.0",
+        "rev": "32b9fbc2d6b04acdabab47c7b6155691aea8aa8c",
+        "revCount": 366,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/tnote"
       },
       "original": {
-        "ref": "main",
+        "ref": "refs/tags/v0.3.0",
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/tnote"
       }
