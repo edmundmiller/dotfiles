@@ -365,6 +365,7 @@ in
           // {
             ".pi/agent/AGENTS.md".text = concatenatedRules;
             ".pi/agent/settings.json".text = piSettingsValidated;
+            ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
             ".pi/agent/pi-permissions.jsonc".source = "${configDir}/pi/pi-permissions.jsonc";
             ".pi/agent/extensions/pi-permission-system/config.json".text = builtins.toJSON {
               debugLog = false;
