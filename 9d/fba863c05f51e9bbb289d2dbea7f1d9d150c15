@@ -1,0 +1,39 @@
+config/claude/AGENTS.md
+  s_efaa23006b6f43::t_4675d34ed4a6e5 16
+skills/AGENTS.md
+  s_efaa23006b6f43::t_4675d34ed4a6e5 17,85,117
+skills/catalog/skill-quality/TROUBLESHOOTING.md
+  s_efaa23006b6f43::t_4675d34ed4a6e5 43-44,84,87,182
+skills/flake.nix
+  s_efaa23006b6f43::t_ecd0782c5b88d7 307
+  s_efaa23006b6f43::t_9d329c6fdfa3a1 178-184,306
+config/agents/AGENTS.md
+  s_efaa23006b6f43::t_4675d34ed4a6e5 7,24
+modules/agents/pi/default.nix
+  s_efaa23006b6f43::t_4675d34ed4a6e5 9,176,354
+config/agents/rules/09-nix-managed-config.md
+  s_efaa23006b6f43::t_4675d34ed4a6e5 15
+flake.nix
+  s_efaa23006b6f43::t_ecd0782c5b88d7 313-316,321,370-373,378
+  s_efaa23006b6f43::t_4675d34ed4a6e5 563,583
+config/agents/README.md
+  s_efaa23006b6f43::t_4675d34ed4a6e5 31,91,94
+config/agents/rules/07-skill-locations.md
+  s_efaa23006b6f43::t_4675d34ed4a6e5 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "9dfba863c05f51e9bbb289d2dbea7f1d9d150c15",
+  "prompts": {},
+  "sessions": {
+    "s_efaa23006b6f43": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3883-2625-7425-8d8e-8e6efc3336eb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
