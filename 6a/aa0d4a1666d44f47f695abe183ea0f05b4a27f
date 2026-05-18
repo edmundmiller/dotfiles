@@ -1,0 +1,19 @@
+modules/services/hass/_domains/reolink.nix
+  s_efaa23006b6f43::t_1b0092e283e706 4-5,15,40,43,48,53-63,72,80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "6aaa0d4a1666d44f47f695abe183ea0f05b4a27f",
+  "prompts": {},
+  "sessions": {
+    "s_efaa23006b6f43": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3883-2625-7425-8d8e-8e6efc3336eb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
