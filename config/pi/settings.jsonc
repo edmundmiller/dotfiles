@@ -102,6 +102,8 @@
     // Authoritative permission gate for tools/bash/MCP/skills.
     // Policy: config/pi/pi-permissions.jsonc -> ~/.pi/agent/pi-permissions.jsonc
     "npm:pi-permission-system",
+    // Applies bash command policy to command-bearing extension tools like process.start.
+    "~/.config/dotfiles/pi-packages/pi-command-policy-bridge",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
       "source": "https://github.com/pasky/pi-amplike",

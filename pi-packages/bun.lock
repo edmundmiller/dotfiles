@@ -44,6 +44,13 @@
         "@mariozechner/pi-tui": "*",
       },
     },
+    "pi-command-policy-bridge": {
+      "name": "pi-command-policy-bridge",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@mariozechner/pi-coding-agent": ">=0.72.0",
+      },
+    },
     "pi-context-repo": {
       "name": "pi-context-repo",
       "version": "0.2.0",
@@ -901,6 +908,8 @@
     "pi-bash-live-view": ["pi-bash-live-view@workspace:pi-bash-live-view"],
 
     "pi-beads": ["pi-beads@workspace:pi-beads"],
+
+    "pi-command-policy-bridge": ["pi-command-policy-bridge@workspace:pi-command-policy-bridge"],
 
     "pi-context-repo": ["pi-context-repo@workspace:pi-context-repo"],
 

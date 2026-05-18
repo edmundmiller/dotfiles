@@ -1,0 +1,30 @@
+{
+  "name": "pi-command-policy-bridge",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Apply bash-style Pi permission policy to command-bearing extension tools like process.start.",
+  "main": "./index.ts",
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "permissions",
+    "policy",
+    "pi-package"
+  ],
+  "license": "MIT",
+  "files": [
+    "index.ts",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": ">=0.72.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

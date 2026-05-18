@@ -16,7 +16,8 @@
     // Shell/process-capable tools that pi-permission-system cannot parse as
     // canonical bash commands require human approval before execution.
     "bash": "allow",
-    "process": "ask",
+    // process.start commands are checked against bash policy by pi-command-policy-bridge.
+    "process": "allow",
     "interactive_shell": "ask",
     "herdr_run_in_pane": "ask",
     "agent-start": "ask",
