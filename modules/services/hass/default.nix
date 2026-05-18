@@ -270,26 +270,12 @@ in
           homekit = {
             advertise_ip = [ homeAssistantHost ];
             filter.include_entities = [
-              "script.get_ready_for_bed"
               "script.goodnight"
-              "script.in_bed"
-              "script.sleep"
               "script.good_morning"
-              "script.mid_morning"
-              "script.sundown"
-              "script.leave_home"
-              "script.arrive_home"
             ];
             entity_config = {
-              "script.get_ready_for_bed".name = "HA Get Ready For Bed";
               "script.goodnight".name = "HA Good Night";
-              "script.in_bed".name = "HA In Bed";
-              "script.sleep".name = "HA Sleep";
               "script.good_morning".name = "HA Good Morning";
-              "script.mid_morning".name = "HA Mid-morning";
-              "script.sundown".name = "HA Sundown";
-              "script.leave_home".name = "HA Leave Home";
-              "script.arrive_home".name = "HA Arrive Home";
             };
           };
 
