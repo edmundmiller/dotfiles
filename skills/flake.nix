@@ -161,12 +161,6 @@
           mkdir -p $out/stack
           cp ${inputs.stack-repo.outPath}/skills/stack/skill.md $out/stack/SKILL.md
         '';
-        jjEnabled = moduleEnabled [
-          "modules"
-          "shell"
-          "jj"
-          "enable"
-        ];
         tmuxEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -181,6 +175,13 @@
           enable = true;
 
           sources = {
+            # Checkout-owned global skills.
+            catalog = {
+              path = ./catalog;
+              subdir = ".";
+              filter.maxDepth = 1;
+            };
+
             # Remote skill repos (hash-pinned via this flake's lock)
             pi-extensions = {
               path = inputs.pi-extension-skills.outPath;
@@ -302,8 +303,8 @@
             };
           };
 
-          # Enable all local skills, but avoid path-prefix conflicts in remote catalogs.
-          skills.enableAll = [ "local" ] ++ lib.optional jjEnabled "jut";
+          # Enable all checkout-owned skills, but avoid path-prefix conflicts in remote catalogs.
+          skills.enableAll = [ "catalog" ];
           skills.explicit =
             lib.optionalAttrs piEnabled {
               extending-pi.from = "pi-extensions";

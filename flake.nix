@@ -310,20 +310,15 @@
               home-manager.sharedModules = [
                 inputs.skills-catalog.homeManagerModules.default
                 {
-                  # Keep repo-local skills tied to this checkout instead of pinning
-                  # the dotfiles GitHub repo inside skills/flake.lock.
-                  programs.agent-skills.sources = {
-                    local = {
-                      path = ./config/agents/skills;
-                      subdir = ".";
-                      filter.maxDepth = 1;
-                    };
-
-                    jut = {
+                  # Package-owned skill: keep source next to the jut implementation,
+                  # but install it through the shared agent-skills catalog.
+                  programs.agent-skills = {
+                    sources.jut = {
                       path = ./packages/jut/skill;
                       subdir = ".";
                       filter.maxDepth = 1;
                     };
+                    skills.enableAll = [ "jut" ];
                   };
                 }
               ];
@@ -372,20 +367,15 @@
               home-manager.sharedModules = [
                 inputs.skills-catalog.homeManagerModules.default
                 {
-                  # Keep repo-local skills tied to this checkout instead of pinning
-                  # the dotfiles GitHub repo inside skills/flake.lock.
-                  programs.agent-skills.sources = {
-                    local = {
-                      path = ./config/agents/skills;
-                      subdir = ".";
-                      filter.maxDepth = 1;
-                    };
-
-                    jut = {
+                  # Package-owned skill: keep source next to the jut implementation,
+                  # but install it through the shared agent-skills catalog.
+                  programs.agent-skills = {
+                    sources.jut = {
                       path = ./packages/jut/skill;
                       subdir = ".";
                       filter.maxDepth = 1;
                     };
+                    skills.enableAll = [ "jut" ];
                   };
                 }
               ];
@@ -570,7 +560,7 @@
                                                           range="$upstream...HEAD"
                                                           changed_files=$(git diff --name-only "$range")
 
-                                                          if ! echo "$changed_files" | grep -q '^config/agents/skills/'; then
+                                                          if ! echo "$changed_files" | grep -q '^skills/catalog/'; then
                                                             exit 0
                                                           fi
 
@@ -590,7 +580,7 @@
                                                           fi
 
                                                           cat >&2 <<'EOF'
-                                        ERROR: config/agents/skills changes detected without synced lock files.
+                                        ERROR: skills/catalog changes detected without synced lock files.
 
                                         Run:
                                           hey skills-sync

@@ -14,7 +14,7 @@ Manages shared global skills via `agent-skills-nix`.
 
 ## Adding a Local Skill
 
-Drop a directory with `SKILL.md` into `config/agents/skills/<name>/`. Auto-enabled via `skills.enableAll = ["local"]`.
+Drop a directory with `SKILL.md` into `skills/catalog/<name>/`. Auto-enabled via `skills.enableAll = ["local"]`.
 
 ## Adding a Remote Skill
 
@@ -82,7 +82,7 @@ Then `hey rebuild`.
 
    ```bash
    cp .claude/skills/<generated-name>/SKILL.md \
-     config/agents/skills/<package>/SKILL.md
+     skills/catalog/<package>/SKILL.md
    ```
 
    Skip the `.skilld/` symlinks — they point to runtime caches. The SKILL.md itself tells agents to use `npx -y skilld search` for lookups.
@@ -114,4 +114,4 @@ Rule of thumb: prefer broad, reusable skills with low overlap. Avoid installing 
 
 ## Discovering Current Sources
 
-List inputs: `nix flake metadata skills/ --json | jq -r '.locks.nodes.root.inputs | keys[]'`. Skill source/mapping config lives in `skills/flake.nix` (`sources` and `skills.explicit` blocks). Local skills are auto-discovered from `config/agents/skills/`.
+List inputs: `nix flake metadata skills/ --json | jq -r '.locks.nodes.root.inputs | keys[]'`. Skill source/mapping config lives in `skills/flake.nix` (`sources` and `skills.explicit` blocks). Local skills are auto-discovered from `skills/catalog/`.
