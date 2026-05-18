@@ -201,7 +201,12 @@ let
   millDocsGitPullScript = pkgs.writeShellScript "mill-docs-git-pull" ''
     set -euo pipefail
 
-    export PATH=${lib.makeBinPath [ pkgs.openssh ]}:$PATH
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.git-lfs
+        pkgs.openssh
+      ]
+    }:$PATH
 
     log_file="$(${pkgs.coreutils}/bin/mktemp)"
     exec > >(${pkgs.coreutils}/bin/tee -a "$log_file") 2>&1
