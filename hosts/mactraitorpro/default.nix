@@ -105,7 +105,7 @@
       # PNG (base00) so stylix is happy without committing a binary asset.
       theme.stylix = {
         enable = true;
-        polarity = "dark";
+        polarity = "auto";
         schemeName = "catppuccin-mocha";
         fallbackImageColor = "1e1e2e"; # catppuccin mocha base00
       };

@@ -122,7 +122,7 @@
       # config/ghostty/themes/SeqeraDark.
       theme.stylix = {
         enable = true;
-        polarity = "dark";
+        polarity = "auto";
         base16Scheme = "${config.dotfiles.configDir}/themes/seqera-dark.yaml";
         # Use the module's generated solid-color placeholder instead of a
         # machine-local Downloads path, so evaluation is reproducible.
