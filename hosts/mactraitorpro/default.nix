@@ -89,7 +89,13 @@
         docker.enable = true;
         tailscale.enable = true;
         ssh.enable = true;
-        kittylitter.enable = true;
+        kittylitter = {
+          enable = true;
+          enabledAgents = [
+            "pi"
+            "amp"
+          ];
+        };
       };
 
       desktop.macos.enable = true;

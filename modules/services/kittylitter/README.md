@@ -2,6 +2,15 @@
 
 Service module for the patched `pkgs.my.kittylitter` Alleycat bridge daemon.
 
+The managed `host.toml` now includes Hermes and can enable agents per host. By default it leaves all known bridges enabled, matching upstream's "use it if installed" behavior. To reduce picker noise on a specific host, override `enabledAgents`:
+
+```nix
+modules.services.kittylitter = {
+  enable = true;
+  enabledAgents = [ "pi" "hermes" "claude" ];
+};
+```
+
 Enable it on a host with:
 
 ```nix
