@@ -440,22 +440,6 @@
         "type": "github"
       }
     },
-    "dotfiles-repo": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1778971059,
-        "narHash": "sha256-olKYMjBBss/Af8KvPYk0iLwdLOxqL1zN7npWpJljC3Y=",
-        "owner": "edmundmiller",
-        "repo": "dotfiles",
-        "rev": "1ddd8a94a9055ff3dc8173deaffa9d1c9844301d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "edmundmiller",
-        "repo": "dotfiles",
-        "type": "github"
-      }
-    },
     "emacs-overlay": {
       "inputs": {
         "nixpkgs": "nixpkgs",
@@ -1863,7 +1847,6 @@
         "agent-tail-repo": "agent-tail-repo",
         "anthropic-skills": "anthropic-skills",
         "diffity-repo": "diffity-repo",
-        "dotfiles-repo": "dotfiles-repo",
         "herdr-repo": "herdr-repo",
         "hunk-repo": "hunk-repo",
         "marimo-pair-repo": "marimo-pair-repo",

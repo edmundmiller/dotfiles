@@ -97,12 +97,6 @@
       flake = false;
     };
 
-    # Child flake cannot reference ../ paths once materialized in /nix/store.
-    # Pull repo-local skill dirs from dotfiles source instead.
-    dotfiles-repo = {
-      url = "github:edmundmiller/dotfiles";
-      flake = false;
-    };
   };
 
   outputs = inputs: {
@@ -187,19 +181,6 @@
           enable = true;
 
           sources = {
-            # Local skills from dotfiles repo
-            local = {
-              path = inputs.dotfiles-repo.outPath;
-              subdir = "config/agents/skills";
-              filter.maxDepth = 1;
-            };
-
-            jut = {
-              path = inputs.dotfiles-repo.outPath;
-              subdir = "packages/jut/skill";
-              filter.maxDepth = 1;
-            };
-
             # Remote skill repos (hash-pinned via this flake's lock)
             pi-extensions = {
               path = inputs.pi-extension-skills.outPath;
