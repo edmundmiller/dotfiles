@@ -196,8 +196,7 @@
     // OpenAI compaction controls - https://www.npmjs.com/package/@jordyvd/pi-openai-compaction
     // "npm:@jordyvd/pi-openai-compaction",
     // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
-    // DISABLED: conflicts with pi-web-access on web_search tool
-    // "npm:@howaboua/pi-codex-conversion",
+    "npm:@howaboua/pi-codex-conversion",
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
     // Enables provider id: kilo (e.g., model: kilocode/auto)
     "git:github.com/mrexodia/kilo-pi-provider",
