@@ -152,7 +152,9 @@ in
       };
 
       system.activationScripts.disableLegacyKittylitter = ''
-        ${pkgs.systemd}/bin/systemctl disable --now kittylitter.service || true
+        if ${pkgs.systemd}/bin/systemctl list-unit-files --no-legend kittylitter.service | ${pkgs.gnugrep}/bin/grep -q .; then
+          ${pkgs.systemd}/bin/systemctl disable --now kittylitter.service || true
+        fi
         if id ${lib.escapeShellArg cfg.user} >/dev/null 2>&1; then
           ${pkgs.procps}/bin/pkill -u ${lib.escapeShellArg cfg.user} -f '/_npx/.*/kittylitter serve' || true
           legacy_unit=${lib.escapeShellArg "${cfg.homeDir}/.config/systemd/user/kittylitter.service"}
