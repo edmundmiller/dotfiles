@@ -1,0 +1,9 @@
+.beads/issues.jsonl
+  ai_agent 211,400-402
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "e5672c1cb317ae6192c896c8e634d1f0dce2448c",
+  "prompts": {}
+}
