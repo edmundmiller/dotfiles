@@ -1,0 +1,19 @@
+flake.nix
+  s_1d99d6e2228852::t_2e97c3e2c4443c 312-328,374-390
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "0b93fa45134e3fcd61eafd8414aa88a184b9a90b",
+  "prompts": {},
+  "sessions": {
+    "s_1d99d6e2228852": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3882-1ebb-744a-b3a8-302136309898",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
