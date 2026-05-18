@@ -3,9 +3,9 @@
   stdenvNoCC,
   fetchurl,
   autoPatchelfHook,
-  gcc,
   openssl,
   zlib,
+  gcc,
 }:
 
 let
@@ -48,7 +48,7 @@ stdenvNoCC.mkDerivation {
   '';
 
   meta = with lib; {
-    description = "Fast terminal UI for reviewing Git diffs and GitHub pull requests";
+    description = "Terminal UI for exploring git diffs";
     homepage = "https://github.com/Ataraxy-Labs/lazydiff";
     license = licenses.mit;
     mainProgram = "lazydiff";

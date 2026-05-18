@@ -38,6 +38,7 @@
         git.enable = true;
         git.ai.enable = true;
         git.hunk.enable = true;
+        git.lazydiff.enable = true;
         jj.enable = true;
         tmux.enable = true;
         acpx.enable = true;

@@ -16,7 +16,7 @@ in
     enable = mkBoolOpt false;
     ai.enable = mkBoolOpt false;
     hunk.enable = mkBoolOpt false;
-    lazydiff.enable = mkBoolOpt true;
+    lazydiff.enable = mkBoolOpt false;
     diffity.enable = mkBoolOpt false;
     stack.enable = mkBoolOpt true;
   };
