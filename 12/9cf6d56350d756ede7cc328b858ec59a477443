@@ -1,0 +1,19 @@
+config/pi/pi-permissions.jsonc
+  s_efaa23006b6f43::t_97369b35f92c1c 99-101,103,105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "129cf6d56350d756ede7cc328b858ec59a477443",
+  "prompts": {},
+  "sessions": {
+    "s_efaa23006b6f43": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3883-2625-7425-8d8e-8e6efc3336eb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
