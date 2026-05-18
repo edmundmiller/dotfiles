@@ -71,6 +71,13 @@ let
 
   tmux-agent-status = pkgs.my."tmux-agent-status";
 
+  tmux-palette = pkgs.fetchFromGitHub {
+    owner = "eduwass";
+    repo = "tmux-palette";
+    rev = "d9af81e48eb3f16ac6d0b76126995b20ce8bdd77";
+    hash = "sha256-bhY4Nm55EFY3m1oh3AbsHRO/F/XUa7R3UnvWdrohGT8=";
+  };
+
   tmux = pkgs.writeScriptBin "tmux" ''
     #!${pkgs.stdenv.shell}
     export TMUX_HOME="''${TMUX_HOME:-$HOME/.config/tmux}"
@@ -94,9 +101,9 @@ in
         pkgs.my.tmux-smooth-scroll
         pkgs.my.tmux-palette
         pkgs.gum
+        pkgs.bun
       ]
       ++ optionals cfg.opensessions.enable [
-        pkgs.bun
         pkgs.curl
         pkgs.unstable.fzf
       ];
@@ -133,6 +140,7 @@ in
             tmux-dark-notify
             tmux-session-dots
             tmux-agent-status
+            tmux-palette
             ;
         })
         // {
