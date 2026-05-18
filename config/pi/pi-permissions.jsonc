@@ -96,9 +96,13 @@
     "*nix flake update skills-catalog*": "deny",
     "*nix flake lock --update-input skills-catalog*": "deny",
 
-    // Explicitly preserve the intended guarded paths.
+    // Explicitly preserve the intended guarded paths. Include wrapped forms
+    // like `cd /path/to/dotfiles && hey re` because agents often run from a
+    // known checkout instead of relying on the current working directory.
     "hey re*": "allow",
+    "*&& hey re*": "allow",
     "hey rebuild*": "allow",
+    "*&& hey rebuild*": "allow",
     "hey nuc": "allow",
     "hey deploy *": "allow",
     "hey deploy-dry *": "allow",
