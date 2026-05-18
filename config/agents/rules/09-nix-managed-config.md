@@ -12,7 +12,7 @@ Agent config files (`~/.pi/agent/`, `~/.claude/`, `~/.config/opencode/`) are **r
 
 | Runtime path                | Source                                    |
 | --------------------------- | ----------------------------------------- |
-| `~/.agents/skills/*`        | `config/agents/skills/`                   |
+| `~/.agents/skills/*`        | `skills/catalog/`                         |
 | `~/.pi/agent/settings.json` | `config/pi/settings.jsonc`                |
 | `~/.pi/agent/AGENTS.md`     | `config/agents/rules/*.md` (concatenated) |
 | `~/.pi/agent/extensions/*`  | `config/pi/extensions/*`                  |
