@@ -52,4 +52,4 @@ On macOS:
 
 ## Behavior
 
-The module preserves existing `host.toml` tokens and only ensures Pi is enabled. It also removes older manually-installed `npx kittylitter`/`com.sigkitten.kittylitter` service definitions so the managed Nix service owns the daemon.
+The module preserves existing `host.toml` tokens while converging managed agent sections to `modules.services.kittylitter.enabledAgents`. Default is all known bridges (`codex`, `pi`, `hermes`, `amp`, `opencode`, `claude`, `droid`, `devin`, `grok`); hosts can narrow this list to keep the client picker focused. It also removes older manually-installed `npx kittylitter`/`com.sigkitten.kittylitter` service definitions so the managed Nix service owns the daemon.

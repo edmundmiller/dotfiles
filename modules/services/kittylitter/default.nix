@@ -11,38 +11,71 @@ with lib.my;
 let
   cfg = config.modules.services.kittylitter;
 
-  defaultHostConfig = pkgs.writeText "kittylitter-host.toml" ''
-    [agents.codex]
-    enabled = true
-    bin = "codex"
-    host = "127.0.0.1"
-    port = 8390
+  agentNames = [
+    "codex"
+    "pi"
+    "hermes"
+    "amp"
+    "opencode"
+    "claude"
+    "droid"
+    "devin"
+    "grok"
+  ];
 
-    [agents.pi]
-    enabled = true
-    bin = "pi"
+  agentDefaults = {
+    codex = {
+      bin = "codex";
+      host = "127.0.0.1";
+      port = 8390;
+    };
+    pi.bin = "pi";
+    hermes = {
+      bin = "hermes";
+      api_base = "http://127.0.0.1:8642";
+    };
+    amp = {
+      bin = "amp";
+      api_key_env = "AMP_API_KEY";
+      dangerously_allow_all = true;
+    };
+    opencode.bin = "opencode";
+    claude = {
+      bin = "claude";
+      bypass_permissions = true;
+    };
+    droid = {
+      bin = "droid";
+      api_key_env = "FACTORY_API_KEY";
+    };
+    devin.bin = "devin";
+    grok = {
+      bin = "grok";
+      no_leader = true;
+      always_approve = false;
+      reasoning_effort = "medium";
+    };
+  };
 
-    [agents.opencode]
-    enabled = true
-    bin = "opencode"
+  managedAgents = lib.genAttrs agentNames (
+    name: agentDefaults.${name} // { enabled = lib.elem name cfg.enabledAgents; }
+  );
 
-    [agents.claude]
-    enabled = true
-    bin = "claude"
-    bypass_permissions = true
+  managedAgentsConfig = pkgs.writeText "kittylitter-managed-agents.toml" (
+    lib.generators.toTOML { } { agents = managedAgents; }
+  );
 
-    [session]
-    replay_max_msgs = 2048
-    replay_max_bytes = 16777216
-    idle_ttl_secs = 600
-    pending_grace_secs = 60
-  '';
-
-  piAgentConfig = pkgs.writeText "kittylitter-pi-agent.toml" ''
-    [agents.pi]
-    enabled = true
-    bin = "pi"
-  '';
+  defaultHostConfig = pkgs.writeText "kittylitter-host.toml" (
+    lib.generators.toTOML { } {
+      agents = managedAgents;
+      session = {
+        replay_max_msgs = 2048;
+        replay_max_bytes = 16777216;
+        idle_ttl_secs = 600;
+        pending_grace_secs = 60;
+      };
+    }
+  );
 
   agentPath = lib.makeBinPath [
     cfg.package
@@ -67,12 +100,19 @@ let
       exit 0
     fi
 
-    ${pkgs.perl}/bin/perl -0pi -e 's/(\[agents\.pi\]\n(?:(?!\n\[).)*?enabled\s*=\s*)false/$1true/s' "$config_file"
-
-    if ! ${pkgs.gnugrep}/bin/grep -q '^\[agents\.pi\]' "$config_file"; then
-      printf '\n' >> "$config_file"
-      cat ${piAgentConfig} >> "$config_file"
-    fi
+    # Preserve pairing tokens/session settings, but converge managed agent
+    # sections to this host's Nix configuration.
+    tmp="$(${pkgs.coreutils}/bin/mktemp)"
+    ${pkgs.gawk}/bin/awk '
+      BEGIN { skip = 0 }
+      /^\[agents\.(codex|pi|hermes|amp|opencode|claude|droid|devin|grok)\]$/ { skip = 1; next }
+      /^\[/ { skip = 0 }
+      !skip { print }
+    ' "$config_file" > "$tmp"
+    cat "$tmp" > "$config_file"
+    rm -f "$tmp"
+    printf '\n' >> "$config_file"
+    cat ${managedAgentsConfig} >> "$config_file"
   '';
 
   launchdRunner = pkgs.writeShellScript "kittylitter-launchd" ''
@@ -102,6 +142,7 @@ in
     user = mkOpt types.str config.user.name;
     homeDir = mkOpt types.str config.user.home;
     configDir = mkOpt types.str "${cfg.homeDir}/.config/kittylitter";
+    enabledAgents = mkOpt (types.listOf (types.enum agentNames)) agentNames;
   };
 
   config = mkIf cfg.enable (mkMerge [
