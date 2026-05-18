@@ -309,6 +309,23 @@
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
                 inputs.skills-catalog.homeManagerModules.default
+                {
+                  # Keep repo-local skills tied to this checkout instead of pinning
+                  # the dotfiles GitHub repo inside skills/flake.lock.
+                  programs.agent-skills.sources = {
+                    local = {
+                      path = ./config/agents/skills;
+                      subdir = ".";
+                      filter.maxDepth = 1;
+                    };
+
+                    jut = {
+                      path = ./packages/jut/skill;
+                      subdir = ".";
+                      filter.maxDepth = 1;
+                    };
+                  };
+                }
               ];
             }
           ];
@@ -354,6 +371,23 @@
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [
                 inputs.skills-catalog.homeManagerModules.default
+                {
+                  # Keep repo-local skills tied to this checkout instead of pinning
+                  # the dotfiles GitHub repo inside skills/flake.lock.
+                  programs.agent-skills.sources = {
+                    local = {
+                      path = ./config/agents/skills;
+                      subdir = ".";
+                      filter.maxDepth = 1;
+                    };
+
+                    jut = {
+                      path = ./packages/jut/skill;
+                      subdir = ".";
+                      filter.maxDepth = 1;
+                    };
+                  };
+                }
               ];
             }
           ];
