@@ -48,6 +48,7 @@ let
     '';
 
   resolvedImage = if cfg.image != null then cfg.image else mkSolidImage cfg.fallbackImageColor;
+  resolvedPolarity = if cfg.polarity == "auto" then "either" else cfg.polarity;
 in
 {
   options.modules.theme.stylix = with types; {
@@ -55,12 +56,16 @@ in
 
     polarity = mkOption {
       type = enum [
+        "auto"
         "either"
         "dark"
         "light"
       ];
-      default = "dark";
-      description = "Stylix polarity (forwarded to stylix.polarity).";
+      default = "auto";
+      description = ''
+        Stylix polarity. `auto` is a friendly alias for Stylix's `either`,
+        which lets Stylix choose the best light/dark polarity from the scheme.
+      '';
     };
 
     schemeName = mkOption {
@@ -162,7 +167,7 @@ in
     (mkIf (cfg.enable && resolvedScheme != null) {
       stylix = {
         enable = true;
-        inherit (cfg) polarity;
+        polarity = resolvedPolarity;
         base16Scheme = resolvedScheme;
         image = resolvedImage;
 
