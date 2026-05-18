@@ -108,7 +108,9 @@
     "hey deploy-dry *": "allow",
     "hey skills-update*": "allow",
     "hey skills-sync*": "allow",
-    "hey gc*": "allow"
+    "hey gc*": "allow",
+    "pi update*": "allow",
+    "*&& pi update*": "allow"
   },
 
   "special": {
