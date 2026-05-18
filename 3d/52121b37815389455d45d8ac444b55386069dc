@@ -1,0 +1,24 @@
+modules/services/hass/docs/README.md
+  s_cd648dc1d15eb2::t_25d5e3c15ede5e 1-9
+modules/services/hass/docs/homekit-bridge.md
+  s_cd648dc1d15eb2::t_c004f0b4b847d1 23,26-27
+  s_cd648dc1d15eb2::t_5ece0b70c2e00c 1-9,11-22,24-25,28-73
+modules/services/hass/HOMEKIT_BRIDGE.md
+  s_cd648dc1d15eb2::t_1af4f7e2928a1e 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "3d52121b37815389455d45d8ac444b55386069dc",
+  "prompts": {},
+  "sessions": {
+    "s_cd648dc1d15eb2": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3883-9456-742d-959e-40a9b01b2e23",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
