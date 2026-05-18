@@ -186,6 +186,36 @@
         home.activation.removeLegacyZele = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/zele" "$HOME/.cache/npm/bin/zele"
         '';
+
+        # Keep the Seqera work wallpaper in a stable location and apply it to the desktop.
+        # macOS wallpaper automation reliably accepts the PNG export; the SVG sibling
+        # does not consistently stick as a desktop picture when scripted.
+        # After setting the image, force Sonoma/Sequoia wallpaper placement to Centered
+        # so the icon stays small and doesn't stretch.
+        home.activation.setSeqeraWallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          wallpaper_src="$HOME/Downloads/seqera 6/seqera_no_margin/pngs/Seqera Icon Light Green.png"
+          wallpaper_dst="$HOME/Pictures/Wallpapers/Seqera Icon Light Green.png"
+          wallpaper_store="$HOME/Library/Application Support/com.apple.wallpaper/Store/Index.plist"
+
+          mkdir -p "$(dirname "$wallpaper_dst")"
+          if [ -f "$wallpaper_src" ]; then
+            cp -f "$wallpaper_src" "$wallpaper_dst"
+          fi
+
+          if [ -f "$wallpaper_dst" ] && [ -x /usr/bin/osascript ]; then
+            wallpaper_escaped=$(printf '%s' "$wallpaper_dst" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            /usr/bin/osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$wallpaper_escaped\"" >/dev/null 2>&1 || true
+          fi
+
+          if [ -f "$wallpaper_store" ]; then
+            "${pkgs.python3}/bin/python3" \
+              "${config.dotfiles.binDir}/macos-wallpaper-placement.py" \
+              "$wallpaper_store" \
+              Centered \
+              201637
+            killall WallpaperAgent >/dev/null 2>&1 || true
+          fi
+        '';
       };
 
     # TODO(dotfiles-lbea): Remove this shim cleanup block after a few rebuild cycles once

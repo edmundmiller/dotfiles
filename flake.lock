@@ -1866,6 +1866,8 @@
         "stack-repo": "stack-repo"
       },
       "locked": {
+        "lastModified": 1779110985,
+        "narHash": "sha256-XkmNTAROistjcFdAPqf6IgqjL9TWvhMT6jvLnHqbMMk=",
         "path": "./skills",
         "type": "path"
       },
