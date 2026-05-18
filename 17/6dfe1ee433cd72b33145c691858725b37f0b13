@@ -1,0 +1,19 @@
+config/agents/skills/tdd/SKILL.md
+  s_efaa23006b6f43::t_74a74de44f9731 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "176dfe1ee433cd72b33145c691858725b37f0b13",
+  "prompts": {},
+  "sessions": {
+    "s_efaa23006b6f43": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3883-2625-7425-8d8e-8e6efc3336eb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
