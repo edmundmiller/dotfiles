@@ -61,21 +61,21 @@ let
     name: agentDefaults.${name} // { enabled = lib.elem name cfg.enabledAgents; }
   );
 
-  managedAgentsConfig = pkgs.writeText "kittylitter-managed-agents.toml" (
-    lib.generators.toTOML { } { agents = managedAgents; }
-  );
+  tomlFormat = pkgs.formats.toml { };
 
-  defaultHostConfig = pkgs.writeText "kittylitter-host.toml" (
-    lib.generators.toTOML { } {
-      agents = managedAgents;
-      session = {
-        replay_max_msgs = 2048;
-        replay_max_bytes = 16777216;
-        idle_ttl_secs = 600;
-        pending_grace_secs = 60;
-      };
-    }
-  );
+  managedAgentsConfig = tomlFormat.generate "kittylitter-managed-agents.toml" {
+    agents = managedAgents;
+  };
+
+  defaultHostConfig = tomlFormat.generate "kittylitter-host.toml" {
+    agents = managedAgents;
+    session = {
+      replay_max_msgs = 2048;
+      replay_max_bytes = 16777216;
+      idle_ttl_secs = 600;
+      pending_grace_secs = 60;
+    };
+  };
 
   agentPath = lib.makeBinPath [
     cfg.package
