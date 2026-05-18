@@ -33,6 +33,7 @@ let
   '';
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
+  millDocsGitPullHealthcheckPingUrl = "https://hc-ping.com/1a661f7e-cf0c-4a67-9343-64635347c50d";
   # Telegram routing topology for this host:
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
   # - "split"  => prepared future split; the shared bot keeps family/group traffic,
@@ -199,6 +200,19 @@ let
 
   millDocsGitPullScript = pkgs.writeShellScript "mill-docs-git-pull" ''
     set -euo pipefail
+
+    export PATH=${lib.makeBinPath [ pkgs.openssh ]}:$PATH
+
+    log_file="$(${pkgs.coreutils}/bin/mktemp)"
+    exec > >(${pkgs.coreutils}/bin/tee -a "$log_file") 2>&1
+
+    ping_healthcheck() {
+      local url="$1"
+      ${pkgs.curl}/bin/curl -fsS -m 10 --retry 5 --data-binary "@$log_file" "$url" >/dev/null || true
+    }
+
+    ${pkgs.curl}/bin/curl -fsS -m 10 --retry 5 '${millDocsGitPullHealthcheckPingUrl}/start' >/dev/null || true
+    trap 'status=$?; if [ "$status" -eq 0 ]; then ping_healthcheck "${millDocsGitPullHealthcheckPingUrl}"; else ping_healthcheck "${millDocsGitPullHealthcheckPingUrl}/fail"; fi; rm -f "$log_file"; exit "$status"' EXIT
 
     cd '${millDocsVaultPath}'
 
