@@ -616,6 +616,10 @@ in
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
+
+    # NUC is headless; adopt Home Manager's GTK4 default explicitly to silence
+    # the legacy gtk.gtk4.theme warning for pre-26.05 home.stateVersion.
+    gtk.gtk4.theme = null;
   };
 
   environment.systemPackages = with pkgs; [
