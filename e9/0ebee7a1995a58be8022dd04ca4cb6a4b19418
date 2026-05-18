@@ -1,0 +1,22 @@
+modules/shell/tmux/AGENTS.md
+  efcb077f1351691a 38-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "e90ebee7a1995a58be8022dd04ca4cb6a4b19418",
+  "prompts": {
+    "efcb077f1351691a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "54cd304c-4ecd-4e53-9909-e2474fdf9390",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Edmund Miller",
+      "total_additions": 4,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
