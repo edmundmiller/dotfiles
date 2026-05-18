@@ -826,6 +826,10 @@ in
   # broken and blocks evaluation before deploy activation.
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_12;
 
+  # NUC root pool imports cleanly by default; make the upstream default explicit
+  # to silence the NixOS ZFS force-import warning.
+  boot.zfs.forceImportRoot = false;
+
   ## Modules
   modules = {
     editors = {
