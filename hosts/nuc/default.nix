@@ -1044,7 +1044,14 @@ in
         # snipdApiKeyFile = config.age.secrets.snipd-api-key.path;
       };
       opencode.enable = true;
-      kittylitter.enable = true;
+      kittylitter = {
+        enable = true;
+        enabledAgents = [
+          "pi"
+          "hermes"
+          "droid"
+        ];
+      };
 
       open-wearables = {
         enable = true;

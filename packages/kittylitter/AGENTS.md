@@ -16,7 +16,7 @@ The patch also switches `extension_ui_request` method decoding to camelCase so P
 
 ## Files
 
-- `default.nix` — builds `dnakov/litter` `v0.2.9` and vendors a pinned `dnakov/alleycat` source.
+- `default.nix` — builds `dnakov/litter` `v0.3.0` and vendors a pinned `dnakov/alleycat` source.
 - `patches/0001-pi-bridge-local-hydration-and-ui-camelcase.patch` — local Alleycat compatibility patch.
 
 ## Common commands
