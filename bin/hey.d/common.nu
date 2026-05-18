@@ -86,6 +86,13 @@ export def system-rebuild [action: string, ...args: string] {
   let agent_rebuild_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
   let agent_nix_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
 
+  # Pre-fetch flake inputs as the user before sudo. sudo strips access to
+  # the 1Password SSH agent socket (it lives under the user's home), so
+  # private inputs like agents-workspace fail to fetch from root. Archiving
+  # here puts every locked input into /nix/store using the user's SSH agent,
+  # after which the root-side eval doesn't need network.
+  ^bash -lc $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-write-lock-file >/dev/null"
+
   if $ctx.os_name == "macos" {
     let has_darwin_rebuild = ((^bash -lc $"[[ -x '($ctx.darwin_rebuild)' ]]" | complete).exit_code == 0)
 
