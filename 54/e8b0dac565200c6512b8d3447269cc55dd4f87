@@ -1,0 +1,19 @@
+modules/services/kittylitter/default.nix
+  s_aebd8626aa5064::t_1b382e622832aa 155-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "54e8b0dac565200c6512b8d3447269cc55dd4f87",
+  "prompts": {},
+  "sessions": {
+    "s_aebd8626aa5064": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e393a-0297-7530-b6a9-8640ecb71a56",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
