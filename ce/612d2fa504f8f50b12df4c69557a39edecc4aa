@@ -1,0 +1,40 @@
+pi-packages/pi-command-policy-bridge/package.json
+  s_ba1b234f9119fa::t_7accfe0e4cbd6f 1-30
+pi-packages/pi-command-policy-bridge/tsconfig.json
+  s_ba1b234f9119fa::t_7d7c73151c82fc 1-8
+pi-packages/pi-command-policy-bridge/README.md
+  s_ba1b234f9119fa::t_0c2c875c056c87 1-20
+config/pi/pi-permissions.jsonc
+  s_ba1b234f9119fa::t_957683bc158ef6 19-20
+pi-packages/tests/non-interactive.test.ts
+  s_2e743e0ff512ad::t_6356de077db481 14,127-128,130-132
+config/pi/settings.jsonc
+  s_ba1b234f9119fa::t_1447c636c9148a 105-106
+pi-packages/pi-command-policy-bridge/index.ts
+  s_ba1b234f9119fa::t_1a20f6d34a9990 24-31,35
+  s_ba1b234f9119fa::t_a3eadf44ad2bee 1-23,32-34,36-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "ce612d2fa504f8f50b12df4c69557a39edecc4aa",
+  "prompts": {},
+  "sessions": {
+    "s_2e743e0ff512ad": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3949-4a3f-7caf-8862-0d286cc6ad51",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    },
+    "s_ba1b234f9119fa": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3883-677d-7779-93fa-436dfb8994cc",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
