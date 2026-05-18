@@ -11,6 +11,7 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import { createTestSession, when, calls, type TestSession } from "@marcfargas/pi-test-harness";
 import * as path from "node:path";
+import { shouldBlockInteractiveCommand } from "../pi-non-interactive/command-guard";
 
 const EXTENSION = path.resolve(import.meta.dir, "../pi-non-interactive/index.ts");
 
@@ -123,17 +124,12 @@ describe("pi-non-interactive", () => {
     expect(text).toContain("PAGER=cat");
   });
 
-  it("blocks known interactive git commands", async () => {
-    t = await createTestSession({
-      extensions: [EXTENSION],
-    });
+  it("blocks known interactive git commands", () => {
+    const result = shouldBlockInteractiveCommand("git rebase -i HEAD~2");
 
-    await t.run(when("interactive rebase", [calls("bash", { command: "git rebase -i HEAD~2" })]));
-
-    const result = t.events.toolResultsFor("bash")[0];
-    expect(result.isError).toBe(true);
-    expect(result.text).toContain("Blocked interactive command");
-    expect(result.text).toContain("Use instead");
+    expect(result?.block).toBe(true);
+    expect(result?.reason).toContain("Blocked interactive command");
+    expect(result?.reason).toContain("Use instead");
   });
 
   it("does not block normal non-interactive command", async () => {
