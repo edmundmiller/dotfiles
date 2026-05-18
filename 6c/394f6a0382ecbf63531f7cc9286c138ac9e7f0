@@ -1,0 +1,19 @@
+bin/hey.d/remote.nu
+  s_1d99d6e2228852::t_399b63ab80a82f 13-18,23-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "6c394f6a0382ecbf63531f7cc9286c138ac9e7f0",
+  "prompts": {},
+  "sessions": {
+    "s_1d99d6e2228852": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3882-1ebb-744a-b3a8-302136309898",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
