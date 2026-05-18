@@ -1,0 +1,9 @@
+hosts/nuc/default.nix
+  ai_agent 204-209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "7959e062a643398c83f24911940a0d7825b9be9e",
+  "prompts": {}
+}
