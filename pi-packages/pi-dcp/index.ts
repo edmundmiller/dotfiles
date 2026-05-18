@@ -80,6 +80,7 @@ export default async function (pi: ExtensionAPI) {
   const config = await loadConfig(pi);
 
   const logger = getLogger({
+    logDir: config.logDir,
     minLevel: config.debug ? LogLevel.DEBUG : LogLevel.INFO,
     enableConsole: false,
   });
