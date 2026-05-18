@@ -10,17 +10,23 @@ def "main deploy" [host: string] {
   ^nix run .#deploy-rs -- $".#($host)"
 }
 
+def remote-nuc-rebuild [] {
+  print "=== remote NUC rebuild ==="
+  print "=== remote rebuild uses the NUC checkout, so push/pull committed changes first ==="
+  ^ssh $NUC_HOST 'cd ~/.config/dotfiles && /run/current-system/sw/bin/git pull --ff-only && hey re'
+}
+
 def "main nuc" [] {
   let ctx = (context)
   print "=== Deploying to NUC ==="
   cd $ctx.flake_dir
-  let deploy = (^nix run .#deploy-rs -- .#nuc --skip-checks | complete)
-  if $deploy.exit_code != 0 {
-    if (($deploy.stdout | str trim) | is-not-empty) { print $deploy.stdout }
-    if (($deploy.stderr | str trim) | is-not-empty) { print -e $deploy.stderr }
-    print "=== local deploy-rs failed; falling back to remote NUC rebuild ==="
-    print "=== remote rebuild uses the NUC checkout, so push/pull committed changes first ==="
-    ^ssh $NUC_HOST 'cd ~/.config/dotfiles && /run/current-system/sw/bin/git pull --ff-only && hey re'
+
+  let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
+  if $local_system != "x86_64-linux" {
+    print $"=== local system is ($local_system); using remote NUC rebuild ==="
+    remote-nuc-rebuild
+  } else {
+    ^nix run .#deploy-rs -- .#nuc --skip-checks
   }
 
   print "=== post-deploy gateway restart check on NUC ==="
