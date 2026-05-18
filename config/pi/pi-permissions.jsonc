@@ -109,8 +109,13 @@
     "hey skills-update*": "allow",
     "hey skills-sync*": "allow",
     "hey gc*": "allow",
-    "pi update*": "allow",
-    "*&& pi update*": "allow"
+
+    // Pi itself is Nix-managed/read-only; prevent accidental self-update.
+    // Extension-only updates are safe and still allowed below (last match wins).
+    "pi update*": "deny",
+    "*&& pi update*": "deny",
+    "pi update --extensions*": "allow",
+    "*&& pi update --extensions*": "allow"
   },
 
   "special": {
