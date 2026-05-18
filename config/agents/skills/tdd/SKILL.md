@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: Hybrid TDD workflow: behavior-first tests, vertical slices, deep-module thinking, and two-commit regression discipline.
+description: "Write behavior-first tests in small vertical slices, with separate regression-test and fix commits for bugs."
 ---
 
 # Hybrid TDD
