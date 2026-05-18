@@ -13,7 +13,7 @@ This directory now holds only the Claude-specific pieces that are still worth ke
 
 ## Shared elsewhere
 
-- Skills: `config/agents/skills/`
+- Skills: `skills/catalog/`
 - Modes/agents: `config/agents/modes/`
 - Rules/instructions: `config/agents/rules/`
 

@@ -28,7 +28,7 @@ Hermes also loads external skills from `~/.agents/skills/` via `config/hermes/co
 
 Use two lanes only:
 
-- `config/agents/skills/` — global/shared skills installed into `~/.agents/skills/`
+- `skills/catalog/` — global/shared skills installed into `~/.agents/skills/`
 - `.agents/skills/` — project-local skills checked into a repo
 
 OpenClaw keeps its own skills in `~/.openclaw/skills/`.
@@ -88,10 +88,10 @@ Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGEN
 
 ### Global/shared skill
 
-1. Create a directory in `config/agents/skills/`:
+1. Create a directory in `skills/catalog/`:
 
    ```bash
-   mkdir config/agents/skills/my-skill
+   mkdir skills/catalog/my-skill
    ```
 
 2. Create `SKILL.md` with frontmatter:

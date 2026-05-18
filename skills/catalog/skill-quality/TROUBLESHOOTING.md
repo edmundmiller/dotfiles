@@ -40,8 +40,8 @@ Check these areas:
 3. **Wrong file location**
 
    ```
-   config/agents/skills/my-skill/README.md  # ❌ Wrong
-   config/agents/skills/my-skill/SKILL.md   # ✅ Correct
+   skills/catalog/my-skill/README.md  # ❌ Wrong
+   skills/catalog/my-skill/SKILL.md   # ✅ Correct
    ```
 
 4. **Missing or malformed frontmatter**
@@ -81,10 +81,10 @@ priority: 7
 
 ```bash
 # Check file exists at correct location
-ls -la config/agents/skills/my-skill/SKILL.md
+ls -la skills/catalog/my-skill/SKILL.md
 
 # Check frontmatter format
-head -n 5 config/agents/skills/my-skill/SKILL.md
+head -n 5 skills/catalog/my-skill/SKILL.md
 # Should show:
 # ---
 # description: "..."
@@ -179,7 +179,7 @@ python-typing.md # type hints and mypy
 2. **Create directory structure:**
 
    ```bash
-   mkdir -p config/agents/skills/{python-scripts,python-testing,python-async}
+   mkdir -p skills/catalog/{python-scripts,python-testing,python-async}
    ```
 
 3. **Move content:**

@@ -6,7 +6,7 @@
 # Pi is a terminal-based AI coding assistant. This module:
 # - Configures Ghostty keybindings when Ghostty is enabled
 # - Auto-discovers prompt templates from config/pi/prompts/
-# - Auto-discovers cross-agent shared skills from config/agents/skills/
+# - Auto-discovers cross-agent shared skills from skills/catalog/
 # - Project-local skills should live in .agents/skills/
 # Note: Pi also natively discovers ~/.agents/skills/ (for manually installed global skills)
 # - Auto-discovers subagent definitions from config/pi/agents/
@@ -173,7 +173,7 @@ let
   promptsDir = "${configDir}/pi/prompts";
   promptLinks = mkPiAgentLinks "prompts" promptsDir (markdownFilesIn promptsDir);
 
-  # Note: config/agents/skills/ are managed by agent-skills-nix (skills/flake.nix)
+  # Note: skills/catalog/ are managed by agent-skills-nix (skills/flake.nix)
   # and installed to ~/.agents/skills/. Pi discovers that location natively,
   # so do NOT add separate HM skill links under ~/.pi/agent/skills/.
 
@@ -351,7 +351,7 @@ in
     env.PI_OVERWATCH_STALE_MS = "20000";
 
     # Pi configuration via home-manager
-    # - config/agents/skills/ → ~/.agents/skills/
+    # - skills/catalog/ → ~/.agents/skills/
     # - project-local skills should live in .agents/skills/
     # - ~/.agents/skills/ auto-discovered by Pi natively
     # - AGENTS.md built dynamically from config/agents/rules/*.md
