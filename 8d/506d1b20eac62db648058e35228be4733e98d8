@@ -1,0 +1,19 @@
+docs/runbooks/lookaway-busylight.md
+  s_7876861d47ca4d::t_3f6fdd395057af 38,41,44-45,48-52,54-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "8d506d1b20eac62db648058e35228be4733e98d8",
+  "prompts": {},
+  "sessions": {
+    "s_7876861d47ca4d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4110-a964-7526-86f8-085d76e71ed1",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
