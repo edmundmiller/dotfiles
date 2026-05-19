@@ -77,12 +77,17 @@ let
     };
   };
 
+  droidCli = pkgs.writeShellScriptBin "droid" ''
+    exec ${pkgs.bun}/bin/bunx --bun droid "$@"
+  '';
+
   agentPath = lib.makeBinPath [
     cfg.package
     pkgs.codex
     pkgs.claude-code
     pkgs.bun
     pkgs.nodejs
+    droidCli
   ];
 
   servicePath = "${agentPath}:${cfg.homeDir}/.bun/bin:${cfg.homeDir}/.local/bin:${cfg.homeDir}/.cache/npm/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin";

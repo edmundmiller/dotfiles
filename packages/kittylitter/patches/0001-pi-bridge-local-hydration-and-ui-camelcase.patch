@@ -39,3 +39,47 @@ index 33f9e13..8a69a54 100644
  pub enum ExtensionUiRequest {
      Select {
          id: String,
+diff --git i/crates/alleycat/src/agent_manifest.rs w/crates/alleycat/src/agent_manifest.rs
+--- i/crates/alleycat/src/agent_manifest.rs
++++ w/crates/alleycat/src/agent_manifest.rs
+@@ -98,7 +98,7 @@ pub const MANIFESTS: &[AgentManifest] = &[
+         aliases: &["ampcode", "amp-code", "amp_code", "amp code"],
+         locks_reasoning_effort_after_activity: true,
+         visible_modes: Some(&["smart", "rush", "deep"]),
+-        supports_ssh_bridge: false,
++        supports_ssh_bridge: true,
+         uses_direct_codex_port: false,
+         supports_thread_permission_overrides: false,
+         reports_effective_thread_permissions: false,
+@@ -146,7 +146,7 @@ pub const MANIFESTS: &[AgentManifest] = &[
+         aliases: &["factory", "factory-droid", "factory_droid", "factory droid"],
+         locks_reasoning_effort_after_activity: false,
+         visible_modes: None,
+-        supports_ssh_bridge: false,
++        supports_ssh_bridge: true,
+         uses_direct_codex_port: false,
+         supports_thread_permission_overrides: false,
+         reports_effective_thread_permissions: false,
+@@ -162,7 +162,7 @@ pub const MANIFESTS: &[AgentManifest] = &[
+         aliases: &[],
+         locks_reasoning_effort_after_activity: false,
+         visible_modes: None,
+-        supports_ssh_bridge: false,
++        supports_ssh_bridge: true,
+         uses_direct_codex_port: false,
+         supports_thread_permission_overrides: false,
+         reports_effective_thread_permissions: false,
+diff --git i/crates/alleycat/src/agents.rs w/crates/alleycat/src/agents.rs
+--- i/crates/alleycat/src/agents.rs
++++ w/crates/alleycat/src/agents.rs
+@@ -914,10 +914,7 @@ impl AgentManager {
+ 
+     fn droid_available(&self) -> bool {
+         let cfg = self.config.load();
+-        cfg.agents.droid.enabled
+-            && which::which(&cfg.agents.droid.bin).is_ok()
+-            && has_factory_auth(&cfg.agents.droid.api_key_env)
++        cfg.agents.droid.enabled && which::which(&cfg.agents.droid.bin).is_ok()
+     }
+ 
+     fn devin_available(&self) -> bool {
