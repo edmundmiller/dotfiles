@@ -35,13 +35,28 @@ On start it launches:
 busylight-status.py meeting
 ```
 
-On end it terminates the meeting keep-alive process and runs:
+On end it terminates the meeting keep-alive process and runs the configured post-meeting status. By default this is:
 
 ```sh
-busylight-status.py offline
+busylight-status.py available
 ```
 
+Set `BUSYLIGHT_MEETING_END_STATUS=offline` in the launchd agent environment if the desired post-meeting behavior is to turn the light off instead.
+
 The actual light control lives in `bin/busylight-status.py`. It prefers the current `JnyJny/busylight` Python API (`busylight_core`), with fallbacks for the older Python API and the `busylight` CLI.
+
+### Device behavior: Luxafor Flag vs Busylight Omega
+
+The two tested devices have different persistence behavior:
+
+| Device                            | Observed behavior                                                                                                           | Script behavior needed                                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Luxafor Flag                      | Holds its color after a one-shot command.                                                                                   | Setting `available` once can be enough.                        |
+| Busylight Omega / Kuando / Plenom | Turns itself off shortly after the controlling process exits. Upstream `busylight_core` models this as a keep-alive device. | Any lit state must keep a process alive and refresh the color. |
+
+Because the Omega needs keep-alives, `bin/busylight-status.py` treats every non-`offline` status as a keep-alive status. This is harmless for the Luxafor Flag and required for the Omega. The monitor also defaults meeting end to `available` and keeps that `available` process running, so the Omega stays green after a meeting instead of turning off.
+
+Operational implication: do not start a manual `busylight-status.py available` process and leave it running while testing meeting transitions; it can hold exclusive access to the USB device and make the daemon report `No busylight devices found!`. Kill stale manual processes before testing the daemon.
 
 ### Useful commands
 
