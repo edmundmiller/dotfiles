@@ -499,7 +499,16 @@
               br-sync = {
                 enable = true;
                 name = "br-sync";
-                entry = "br sync --flush-only";
+                entry = toString (
+                  pkgs.writeShellScript "br-sync" ''
+                    if ! command -v br >/dev/null 2>&1; then
+                      echo "br-sync: br not found; skipping beads sync" >&2
+                      exit 0
+                    fi
+
+                    br sync --flush-only
+                  ''
+                );
                 language = "system";
                 pass_filenames = false;
                 stages = [ "pre-push" ];
