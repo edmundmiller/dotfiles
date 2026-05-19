@@ -1,0 +1,24 @@
+packages/kittylitter/patches/0001-pi-bridge-local-hydration-and-ui-camelcase.patch
+  s_bc4c3562ff900e::t_85f92156dae0c8 42-71
+  s_bc4c3562ff900e::t_551269951151a4 72-85
+modules/services/kittylitter/default.nix
+  s_bc4c3562ff900e::t_e59577364e3d53 80-83,90
+packages/kittylitter/AGENTS.md
+  s_bc4c3562ff900e::t_3f9d6dd7352dbd 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "0449028fb4b7bf02cb1d59fa56a3c0ffbe42403e",
+  "prompts": {},
+  "sessions": {
+    "s_bc4c3562ff900e": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3c35-4f2e-751e-9fb0-a9b4b5c80b02",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
