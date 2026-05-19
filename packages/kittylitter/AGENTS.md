@@ -12,7 +12,7 @@ Upstream Alleycat currently tries to hydrate Pi sessions by calling a speculativ
 
 Released Pi builds, including `@earendil-works/pi-coding-agent@0.74.0`, return `Unknown command: list_sessions`. For local kittylitter daemon usage, Alleycat can read `~/.pi/agent/sessions` directly, so this package patches local mode to use filesystem hydration instead of spawning Pi for `list_sessions` during startup.
 
-The patch also switches `extension_ui_request` method decoding to camelCase so Pi status/widget frames like `setWidget`, `setStatus`, and `setTitle` do not spam parse warnings.
+The patch also switches `extension_ui_request` method decoding to camelCase so Pi status/widget frames like `setWidget`, `setStatus`, and `setTitle` do not spam parse warnings. It marks Amp/Droid/Hermes as SSH-bridge-capable for remote clients and reports Droid availability based on the CLI being present rather than requiring auth preflight.
 
 ## Files
 
