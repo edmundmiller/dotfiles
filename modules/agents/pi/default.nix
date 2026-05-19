@@ -350,6 +350,10 @@ in
     env.PI_OVERWATCH_REFRESH_MS = "1000";
     env.PI_OVERWATCH_STALE_MS = "20000";
 
+    environment.shellAliases = {
+      nbt = "pi -nbt";
+    };
+
     # Pi configuration via home-manager
     # - skills/catalog/ → ~/.agents/skills/
     # - project-local skills should live in .agents/skills/
