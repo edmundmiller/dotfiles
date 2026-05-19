@@ -1,0 +1,41 @@
+hosts/mactraitorpro/default.nix
+  s_e9403ae25e1ef0::t_56205cd2f657ea 131-151
+docs/runbooks/lookaway-busylight.md
+  s_7876861d47ca4d::t_21744fa361d831 1-109
+bin/lookaway-busylight-monitor.py
+  s_7876861d47ca4d::t_7fe5db22b1116e 1-26,28-87,89-93,99-155
+  s_7876861d47ca4d::t_1626e4a43658f8 88
+  s_7876861d47ca4d::t_18c77a92fc390e 27,94-98
+bin/busylight-status.py
+  s_7876861d47ca4d::t_510f2c76d110f0 56-59
+  s_7876861d47ca4d::t_e628a08b79a390 8,84,118-122,165,169,191
+  s_7876861d47ca4d::t_6ecc72df315ff2 9,11,20-24
+  s_7876861d47ca4d::t_b48e357a4fd178 1,10,14,31-55,60-63,85-87,92,97,99,103-117,190,192,194-202,206-208,211-212,222-225,240
+  s_7876861d47ca4d::t_2a72c44dbc6327 2,4-7,15-19,91,93,96,123-164,166-168,170-189,193,203-205,209-210,214,227,230-235
+docs/runbooks/README.md
+  s_7876861d47ca4d::t_7a08d2df845ea3 3-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "ccd1a875e5689f0085b1f6f5dd5258621a345b5e",
+  "prompts": {},
+  "sessions": {
+    "s_7876861d47ca4d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4110-a964-7526-86f8-085d76e71ed1",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    },
+    "s_e9403ae25e1ef0": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e410c-b77a-7995-8dc8-16fd366803cd",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
