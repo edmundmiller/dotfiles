@@ -11,6 +11,8 @@
 {
   boot.kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
 
+  modules.services.mosh.enable = lib.mkDefault true;
+
   nix.gc = {
     automatic = true;
     dates = "weekly";
