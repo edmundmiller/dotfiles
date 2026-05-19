@@ -1,0 +1,19 @@
+packages/kittylitter/patches/0001-pi-bridge-local-hydration-and-ui-camelcase.patch
+  s_bc4c3562ff900e::t_ffbc2180d691ff 75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "111a1f7691414c60633be5e97f1af36040a502e2",
+  "prompts": {},
+  "sessions": {
+    "s_bc4c3562ff900e": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3c35-4f2e-751e-9fb0-a9b4b5c80b02",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
