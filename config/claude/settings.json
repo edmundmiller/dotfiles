@@ -177,6 +177,8 @@
     ],
     "deny": [
       "mcp__git__*",
+      "Bash(bd:*)",
+      "Bash(bd *:*)",
       "Bash(br close *:*)",
       "Bash(br close:*)",
       "Bash(*--no-gpg-sign*:*)",
