@@ -21,6 +21,11 @@ in
     {
       # mosh client available everywhere
       user.packages = [ pkgs.mosh ];
+
+      # Moshi's host-side helpers are useful on every machine where mosh is
+      # enabled: mosh keeps the connection alive, Moshi attaches users to the
+      # durable tmux workspace when tmux is enabled on that host.
+      modules.shell.moshi.enable = mkDefault true;
     }
 
     # NixOS: mosh server + firewall (UDP 60000-61000)
