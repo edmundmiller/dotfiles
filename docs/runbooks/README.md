@@ -1,5 +1,7 @@
 # Runbooks
 
+- [LookAway Busylight / Luxafor integration](./lookaway-busylight.md)
+
 Operational runbooks for the dotfiles infrastructure.
 
 ## Index

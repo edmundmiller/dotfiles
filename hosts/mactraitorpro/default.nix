@@ -128,6 +128,27 @@
       enableZshIntegration = false; # We handle brew in .zshenv with caching
     };
 
+    # Mirror LookAway's meeting detection to the USB busylight. LookAway's built-in
+    # automations only cover break start/end, so this tails its debug log for
+    # meeting start/end transitions and calls bin/busylight-status.py.
+    launchd.user.agents.lookaway-busylight =
+      let
+        busylightPython = pkgs.python3.withPackages (ps: [ ps.busylight-for-humans ]);
+      in
+      {
+        command = "${busylightPython}/bin/python ${config.dotfiles.binDir}/lookaway-busylight-monitor.py";
+        serviceConfig = {
+          RunAtLoad = true;
+          KeepAlive = true;
+          StandardOutPath = "/tmp/lookaway-busylight.log";
+          StandardErrorPath = "/tmp/lookaway-busylight.err";
+          EnvironmentVariables = {
+            BUSYLIGHT_STATUS_SCRIPT = "${config.dotfiles.binDir}/busylight-status.py";
+            BUSYLIGHT_PYTHON = "${busylightPython}/bin/python";
+          };
+        };
+      };
+
     # Manage native macOS Login Items declaratively. Keep Raycast Beta here and
     # do not also start it with a launchd.user.agent, or macOS will run two instances.
     environment.loginItems = {
