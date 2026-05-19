@@ -451,16 +451,7 @@
               git
               jujutsu
               gh
-              beads
-              (writeShellScriptBin "br" ''
-                if [ "''${1:-}" = sync ]; then
-                  # Compatibility shim for the existing hook. nixpkgs provides
-                  # beads as `bd`; this repo's hook historically invokes `br`.
-                  exit 0
-                fi
-
-                exec ${beads}/bin/bd "$@"
-              '')
+              inputs.llm-agents.packages.${system}.beads-rust
 
               # Shell essentials
               zsh
@@ -730,16 +721,7 @@
                 statix
                 deploy-rs.packages.${system}.default
                 nushell
-                beads
-                (writeShellScriptBin "br" ''
-                  if [ "''${1:-}" = sync ]; then
-                    # Compatibility shim for the existing hook. nixpkgs provides
-                    # beads as `bd`; this repo's hook historically invokes `br`.
-                    exit 0
-                  fi
-
-                  exec ${beads}/bin/bd "$@"
-                '')
+                inputs.llm-agents.packages.${system}.beads-rust
               ]
               ++ config.pre-commit.settings.enabledPackages;
             shellHook = config.pre-commit.shellHook + ''
