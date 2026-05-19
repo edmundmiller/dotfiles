@@ -72,8 +72,7 @@ diff --git i/crates/alleycat/src/agent_manifest.rs w/crates/alleycat/src/agent_m
 diff --git i/crates/alleycat/src/agents.rs w/crates/alleycat/src/agents.rs
 --- i/crates/alleycat/src/agents.rs
 +++ w/crates/alleycat/src/agents.rs
-@@ -914,10 +914,7 @@ impl AgentManager {
- 
+@@ -915,9 +915,7 @@ impl AgentManager {
      fn droid_available(&self) -> bool {
          let cfg = self.config.load();
 -        cfg.agents.droid.enabled
