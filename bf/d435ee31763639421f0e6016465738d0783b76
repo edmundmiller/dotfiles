@@ -1,0 +1,22 @@
+config/pi/prompts/implement-with-notes.md
+  s_fade4c56f11858::t_6a476735f179b8 3,8
+  s_fade4c56f11858::t_7e36f74d874ca7 1-2,4-7,9-18
+skills/catalog/implementation-notes/SKILL.md
+  s_fade4c56f11858::t_7e36f74d874ca7 1-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "bfd435ee31763639421f0e6016465738d0783b76",
+  "prompts": {},
+  "sessions": {
+    "s_fade4c56f11858": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e40f1-fc19-7d76-9e15-1ce96e84c21f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
