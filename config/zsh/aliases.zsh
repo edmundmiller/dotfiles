@@ -105,9 +105,6 @@ alias tb="nc termbin.com 9999"
 # Global issue search
 alias brf='br-find-all'          # Search from current dir (fallback to ~)
 alias brfa='br-find-all --all'   # Search from home dir
-# Compatibility aliases for the older bd-* helper names.
-alias bdf='br-find-all'
-alias bdfa='br-find-all --all'
 
 # Agent launch helpers: avoid bare git worktree hubs as cwd
 _agent_safe_cwd() {

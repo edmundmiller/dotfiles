@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# Compatibility shim: tmux/shell entry moved to br-find-all.
-exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/br-find-all" "$@"
