@@ -136,4 +136,4 @@ Compared against [letta-code](https://github.com/letta-ai/letta-code), [pi-memor
 
 ### Roadmap
 
-Tracked in beads epic `dotfiles-4jfl`. Run `bd show dotfiles-4jfl` for full details.
+Tracked in beads epic `dotfiles-4jfl`. Run `br show dotfiles-4jfl` for full details.

@@ -4,20 +4,19 @@ Jujutsu (jj) configuration managed via nix-darwin.
 
 ## Merge Tools
 
-| Tool            | Command                         | Use Case                                 |
-| --------------- | ------------------------------- | ---------------------------------------- |
-| `diffconflicts` | `jj resolve`                    | Default - nvim-based conflict resolution |
-| `beads-merge`   | `jj resolve --tool=beads-merge` | For `.beads/` files only                 |
+| Tool            | Command      | Use Case                                                  |
+| --------------- | ------------ | --------------------------------------------------------- |
+| `diffconflicts` | `jj resolve` | Default - nvim-based conflict resolution                  |
+| `diffconflicts` | `jj resolve` | Use for `.beads/` files too; legacy `bd merge` is retired |
 
-### Beads Merge Tool
+### Beads conflicts
 
-For conflicts in `.beads/issues.jsonl`, use:
+The legacy `bd` CLI and its `bd merge` flow are retired. For conflicts in `.beads/issues.jsonl`, use normal `jj resolve` / `diffconflicts`, then validate with:
 
 ```bash
-jj resolve --tool=beads-merge
+br sync --import-only
+br sync --status
 ```
-
-This uses `bd merge` which performs field-level 3-way merging instead of line-based, preserving concurrent updates to different fields of the same issue.
 
 ## Shell Aliases (aliases.zsh)
 
