@@ -1,0 +1,11 @@
+flake.lock
+  ai_agent 928-929,932,1125-1126,1129
+skills/flake.lock
+  ai_agent 89-90,93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "a7e0aec4a5305b392bfc72e8dda4cede29aaeeae",
+  "prompts": {}
+}
