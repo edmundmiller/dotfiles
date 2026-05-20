@@ -471,28 +471,8 @@ ghmr() {
 # Lazygit
 alias lzg="lazygit"
 
-# bd init safety: protect existing AGENTS.md; write minimal onboard stub for new ones
+# Retired legacy beads CLI guard. Use `br` for issue tracking.
 function bd() {
-  if [[ "$1" == "init" ]]; then
-    if [[ -f AGENTS.md ]]; then
-      local _backup
-      _backup=$(cat AGENTS.md)
-      command bd "$@"
-      local _rc=$?
-      printf '%s\n' "$_backup" > AGENTS.md
-      echo "  ↩  kept existing AGENTS.md (discarded bd's version)"
-      return $_rc
-    else
-      command bd "$@"
-      local _rc=$?
-      if [[ $_rc -eq 0 && -f AGENTS.md ]]; then
-        command bd onboard 2>/dev/null \
-          | awk '/BEGIN AGENTS.MD CONTENT/{p=1;next} /END AGENTS.MD CONTENT/{p=0} p' \
-          > AGENTS.md
-        echo "  ✓  wrote minimal AGENTS.md stub (bd prime for full context)"
-      fi
-      return $_rc
-    fi
-  fi
-  command bd "$@"
+  echo "bd is retired in this dotfiles setup; use br instead (for example: br list, br show <id>, br create)." >&2
+  return 127
 }
