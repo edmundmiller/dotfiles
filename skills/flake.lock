@@ -86,11 +86,11 @@
     "herdr-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1778980229,
-        "narHash": "sha256-rKL6LH+7o8OLGT5qkGDRPS+HamrlnbNRL1BCl6znlHU=",
+        "lastModified": 1779197924,
+        "narHash": "sha256-aDhVtm7q0gpm0NtxOxA7Hc8Wkf+SK1bwtro1fBpMWQU=",
         "owner": "ogulcancelik",
         "repo": "herdr",
-        "rev": "84a573b4ddadb18eff02a037de8226e7eee7602b",
+        "rev": "1bef56406a8602b73d3d5d8e71186dddb6804c80",
         "type": "github"
       },
       "original": {
