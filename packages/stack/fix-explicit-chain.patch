@@ -1,0 +1,50 @@
+diff --git i/src/stackGraph.ts w/src/stackGraph.ts
+index bcb859f..90f9f8c 100644
+--- i/src/stackGraph.ts
++++ w/src/stackGraph.ts
+@@ -172,30 +172,24 @@ export const make = (input: StackGraphInput): StackGraph => {
+   const tree = treeFromStatus(report);
+ 
+   const explicitChainFor = (branch: string) => {
+-    let root = branch;
+-    const seenRoots = new Set<string>();
++    const chain = new Array<string>();
++    const seen = new Set<string>();
++    let current: string | null = branch;
++
+     for (;;) {
+-      if (seenRoots.has(root)) break;
+-      seenRoots.add(root);
+-      const link = links.get(root);
+-      if (!link || trunks.has(String(link.parent))) break;
+-      root = String(link.parent);
++      if (!current || seen.has(current)) break;
++      seen.add(current);
++      chain.push(current);
++
++      const link = links.get(current);
++      if (!link) break;
++
++      const parent = String(link.parent);
++      if (trunks.has(parent)) break;
++      current = parent;
+     }
+ 
+-    const chain = [root];
+-    const seenChain = new Set(chain);
+-    for (;;) {
+-      const next = input.state.links.find(
+-        (link) => String(link.parent) === chain[chain.length - 1],
+-      );
+-      if (!next) break;
+-      const name = String(next.branch);
+-      if (seenChain.has(name)) break;
+-      seenChain.add(name);
+-      chain.push(name);
+-    }
+-
+-    return chain;
++    return chain.reverse();
+   };
+ 
+   const rank = (branch: string, seen = new Set<string>()): number => {
