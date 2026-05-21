@@ -1,0 +1,21 @@
+skills/flake.nix
+  s_9ef65ce5bdda4b::t_f8d186ffc300ae 96
+packages/stack/default.nix
+  s_9ef65ce5bdda4b::t_13d113e714ef5e 15,21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "df1ea97421e0cdbf22f04bb1c9885f599ba63bca",
+  "prompts": {},
+  "sessions": {
+    "s_9ef65ce5bdda4b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e47d3-431f-7933-ab0e-d9f2d31f6a72",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
