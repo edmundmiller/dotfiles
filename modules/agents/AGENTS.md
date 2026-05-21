@@ -2,6 +2,7 @@
 
 This directory contains Nix modules for AI agents:
 
+- `agentsview/` - agentsview TUI from numtide/llm-agents.nix
 - `claude/` - Claude Code CLI (Anthropic)
 - `codex/` - Codex CLI (OpenAI)
 - `hermes/` - Hermes agent CLI (local development)
@@ -14,6 +15,7 @@ All modules live under `modules.agents.*`:
 
 ```nix
 modules.agents = {
+  agentsview.enable = true;
   claude.enable = true;
   codex.enable = true;
   hermes = {
