@@ -79,6 +79,7 @@
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };
         };
+        agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
         opencode.enable = true;

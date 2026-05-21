@@ -87,6 +87,7 @@
           };
           memoryRemote = "git@github.com:edmundmiller/pi-memory";
         };
+        agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
         opencode.enable = true;
