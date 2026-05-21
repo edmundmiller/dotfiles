@@ -7,7 +7,9 @@
   },
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 6am on monday"]
+    "schedule": ["before 6am on monday"],
+    "automerge": true,
+    "automergeType": "branch"
   },
   "postUpgradeTasks": {
     "commands": ["nix run .#renovate-update-nix-hashes"],
@@ -36,12 +38,59 @@
       "groupName": "@packages flake inputs",
       "groupSlug": "packages-flake-inputs",
       "labels": ["dependencies", "nix", "@packages", "flue-review"],
-      "automerge": false
+      "automerge": true,
+      "automergeType": "branch"
     },
     {
       "description": "Keep all other Nix flake input bumps available for normal Renovate review.",
       "matchManagers": ["nix"],
       "labels": ["dependencies", "nix"]
+    },
+    {
+      "description": "Group JavaScript dependency bumps across package workspaces to reduce Dependabot-style PR noise.",
+      "matchManagers": ["npm", "bun"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "JavaScript package dependencies",
+      "groupSlug": "javascript-package-dependencies",
+      "labels": ["dependencies", "javascript"]
+    },
+    {
+      "groupSlug": "low-risk-non-major",
+      "description": "Automerge low-risk non-major updates after the stability window and CI pass.",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "groupSlug": "manual-major",
+      "description": "Keep major updates visible for manual review.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "groupSlug": "nix-flake-inputs",
+      "description": "Group all remaining Nix flake input bumps to reduce PR noise.",
+      "matchManagers": ["nix"],
+      "groupName": "Nix flake inputs"
+    },
+    {
+      "groupSlug": "repo-local-nix-packages",
+      "description": "Group repo-local Nix package source bumps to reduce PR noise.",
+      "matchManagers": ["custom.regex"],
+      "groupName": "repo-local Nix packages",
+      "labels": ["dependencies", "nix", "packages"]
     }
-  ]
+  ],
+  "osvVulnerabilityAlerts": true,
+  "dependencyDashboard": true,
+  "timezone": "America/Chicago",
+  "prCreation": "not-pending",
+  "internalChecksFilter": "strict",
+  "minimumReleaseAge": "3 days",
+  "automerge": true,
+  "automergeType": "branch",
+  "platformAutomerge": true,
+  "rebaseWhen": "conflicted",
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5
 }
