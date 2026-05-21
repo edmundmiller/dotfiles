@@ -1,0 +1,21 @@
+skills/catalog/acpx-claude/SKILL.md
+  s_f9a5feb0f4932f::t_9d24e83dab2729 1-52
+config/pi/pi-permissions.jsonc
+  s_f9a5feb0f4932f::t_eedb5f091edf7a 100-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "92fc5153569a3d966a939bdaf431e0bf1dbc127a",
+  "prompts": {},
+  "sessions": {
+    "s_f9a5feb0f4932f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4cb6-4fad-74f4-9a3e-30075955961c",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    }
+  }
+}
