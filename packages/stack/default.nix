@@ -21,6 +21,10 @@ stdenv.mkDerivation rec {
     hash = "sha256-E9ATGUzY373/1uVIgUdTe2F//yF6Qchhit0NgiBpids=";
   };
 
+  patches = [
+    ./fix-explicit-chain.patch
+  ];
+
   nativeBuildInputs = [
     bun2nix.hook
     makeWrapper
