@@ -8,11 +8,17 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  telegramPythonModule = pkgs.runCommand "python-telegram-bot-module" { } ''
-    mkdir -p "$out/${pkgs.python312.sitePackages}"
-    cp -R "${pkgs.python312Packages.python-telegram-bot.overridePythonAttrs (_: { doCheck = false; pythonRuntimeDepsCheck = false; })}/${pkgs.python312.sitePackages}/telegram" \
-      "$out/${pkgs.python312.sitePackages}/telegram"
-  '';
+  telegramPythonModule = pkgs.python312Packages.buildPythonPackage {
+    pname = "python-telegram-bot-module";
+    version = "22.7";
+    format = "other";
+    dontUnpack = true;
+    installPhase = ''
+      mkdir -p "$out/${pkgs.python312.sitePackages}"
+      cp -R "${pkgs.python312Packages.python-telegram-bot.overridePythonAttrs (_: { doCheck = false; pythonRuntimeDepsCheck = false; })}/${pkgs.python312.sitePackages}/telegram" \
+        "$out/${pkgs.python312.sitePackages}/telegram"
+    '';
+  };
   hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default.override {
     extraPythonPackages = [ telegramPythonModule ];
   };
