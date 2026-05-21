@@ -10,7 +10,11 @@ let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default.override {
     extraPythonPackages = [
-      (pkgs.python312Packages.python-telegram-bot.overridePythonAttrs (_: { doCheck = false; }))
+      (pkgs.python312Packages.python-telegram-bot.overridePythonAttrs (old: {
+        doCheck = false;
+        dependencies = builtins.filter (pkg: (pkg.pname or "") != "httpx") (old.dependencies or [ ]);
+        propagatedBuildInputs = builtins.filter (pkg: (pkg.pname or "") != "httpx") (old.propagatedBuildInputs or [ ]);
+      }))
     ];
   };
   anneHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.anne-hermes;
