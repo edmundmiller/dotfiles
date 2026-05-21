@@ -93,7 +93,7 @@
     };
 
     stack-repo = {
-      url = "github:kitlangton/stack/v0.1.3";
+      url = "github:kitlangton/stack/v0.1.5";
       flake = false;
     };
 
