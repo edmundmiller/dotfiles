@@ -1,0 +1,21 @@
+packages/stack/fix-explicit-chain.patch
+  s_9ef65ce5bdda4b::t_300d153f1531bd 8-50
+packages/stack/default.nix
+  s_9ef65ce5bdda4b::t_d663ba60b4162f 24-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "94e01ab4a5cde4c69f59b5fe8b9ce5885226fb2d",
+  "prompts": {},
+  "sessions": {
+    "s_9ef65ce5bdda4b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e47d3-431f-7933-ab0e-d9f2d31f6a72",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
