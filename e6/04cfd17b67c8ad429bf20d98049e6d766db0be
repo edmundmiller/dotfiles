@@ -1,0 +1,27 @@
+flake.nix
+  s_053bec5d3d0186::t_c374ab9179e7af 215,225
+hosts/seqeratop/default.nix
+  s_053bec5d3d0186::t_afa6880e494e73 90
+modules/agents/agentsview/default.nix
+  s_053bec5d3d0186::t_3688cb6ede5015 1-22
+modules/agents/AGENTS.md
+  s_053bec5d3d0186::t_ca49d84c3fe46e 5,18
+hosts/mactraitorpro/default.nix
+  s_053bec5d3d0186::t_dc9b27575ba6e0 82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "e604cfd17b67c8ad429bf20d98049e6d766db0be",
+  "prompts": {},
+  "sessions": {
+    "s_053bec5d3d0186": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4cb9-0bc1-786c-b158-9bb980f39331",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
