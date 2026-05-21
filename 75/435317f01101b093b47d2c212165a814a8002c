@@ -1,0 +1,21 @@
+bin/hey.d/common.nu
+  s_19b4563f6c1ac9::t_cf92fd1b37b672 46-54,109,122,126
+bin/hey.d/rebuild.nu
+  s_19b4563f6c1ac9::t_072cb71fe6d7c9 20,22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "75435317f01101b093b47d2c212165a814a8002c",
+  "prompts": {},
+  "sessions": {
+    "s_19b4563f6c1ac9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4b27-2e79-766c-b6e0-376eba920e41",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    }
+  }
+}
