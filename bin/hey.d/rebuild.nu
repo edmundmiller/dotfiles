@@ -17,8 +17,8 @@ def "main test" [...args: string] {
 def "main rollback" [] {
   let ctx = (context)
   if (is-darwin) {
-    ^sudo $ctx.darwin_rebuild --rollback
+    with-sudo-path { ^sudo $ctx.darwin_rebuild --rollback }
   } else {
-    ^nixos-rebuild --sudo --rollback switch
+    with-sudo-path { ^nixos-rebuild --sudo --rollback switch }
   }
 }
