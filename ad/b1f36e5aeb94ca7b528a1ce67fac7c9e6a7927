@@ -1,0 +1,9 @@
+.github/workflows/renovate.yml
+  ai_agent 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "adb1f36e5aeb94ca7b528a1ce67fac7c9e6a7927",
+  "prompts": {}
+}
