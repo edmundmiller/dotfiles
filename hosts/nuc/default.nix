@@ -8,7 +8,9 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default;
+  hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default.override {
+    extraPythonPackages = [ pkgs.python312Packages.python-telegram-bot ];
+  };
   anneHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.anne-hermes;
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
