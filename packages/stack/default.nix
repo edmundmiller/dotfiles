@@ -12,13 +12,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "stack";
-  version = "0.1.3";
+  version = "0.1.5";
 
   src = fetchFromGitHub {
     owner = "kitlangton";
     repo = "stack";
     rev = "v${version}";
-    hash = "sha256-E9ATGUzY373/1uVIgUdTe2F//yF6Qchhit0NgiBpids=";
+    hash = "sha256-GvuRRLnzJdPvvKF4nzcVjoqJAmMs0WemXBtXYSWJoes=";
   };
 
   patches = [
