@@ -26,7 +26,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v20
 
       - name: Enable Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v14
+        uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Run Renovate
         env:
