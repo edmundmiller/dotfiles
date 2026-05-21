@@ -97,6 +97,11 @@
     "*nix flake update skills-catalog*": "deny",
     "*nix flake lock --update-input skills-catalog*": "deny",
 
+    // Explicitly allow Claude delegation through acpx. The nested agent is
+    // still expected to preserve the guarded workflows denied above.
+    "acpx claude*": "allow",
+    "*&& acpx claude*": "allow",
+
     // Explicitly preserve the intended guarded paths. Include wrapped forms
     // like `cd /path/to/dotfiles && hey re` because agents often run from a
     // known checkout instead of relying on the current working directory.
