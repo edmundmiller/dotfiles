@@ -9,7 +9,9 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default.override {
-    extraPythonPackages = [ pkgs.python312Packages.python-telegram-bot ];
+    extraPythonPackages = [
+      (pkgs.python312Packages.python-telegram-bot.overridePythonAttrs (_: { doCheck = false; }))
+    ];
   };
   anneHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.anne-hermes;
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
