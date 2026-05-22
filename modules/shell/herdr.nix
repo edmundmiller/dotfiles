@@ -10,8 +10,6 @@ let
   cfg = config.modules.shell.herdr;
   tmuxEnabled = config.modules.shell.tmux.enable;
 
-  herdrBin = if cfg.package != null then "${cfg.package}/bin/${cfg.command}" else cfg.command;
-
   launchPath = concatStringsSep ":" [
     "${config.user.home}/.pi/agent/bin"
     "${config.user.home}/.bun/bin"
@@ -255,7 +253,10 @@ in
           # Start from home so herdr doesn't land in '/' when Ghostty launches from Finder.
           cd "$HOME"
 
-          herdr_cmd='${herdrBin}'
+          # Resolve herdr at launch time instead of baking a Nix store path into
+          # this wrapper. Herdr can self-update into ~/.local/bin, and stale
+          # wrappers otherwise keep relaunching an old server after detach.
+          herdr_cmd="''${HERDR_BIN_PATH:-${cfg.command}}"
           export HERDR_BIN_PATH="$herdr_cmd"
 
           if command -v "$herdr_cmd" >/dev/null 2>&1; then
