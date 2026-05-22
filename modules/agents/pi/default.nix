@@ -192,10 +192,57 @@ let
 
   honchoPackage = "npm:@agney/pi-honcho-memory";
 
-  piPackagesExtra = cfg.extraPackages ++ lib.optionals cfg.honcho.enable [ honchoPackage ];
+  packageSource =
+    pkg:
+    if builtins.isString pkg then
+      pkg
+    else if builtins.isAttrs pkg && pkg ? source then
+      pkg.source
+    else
+      "";
+
+  # Keep module-specific Pi packages tied to the Nix modules that provide the
+  # matching runtime. This prevents stale tools/skills from showing up on hosts
+  # that do not run that shell integration, and avoids redundant interactive
+  # shell prompts when tmux/herdr are the preferred persistent workspace layer.
+  moduleManagedPackageSources = [
+    "~/.config/dotfiles/pi-packages/pi-herdr"
+    "npm:pi-tmux-window-name"
+    "git:github.com/ogulcancelik/pi-extensions"
+    "https://github.com/pasky/pi-side-agents"
+    "npm:pi-interactive-shell"
+  ];
+
+  dropModuleManagedPackages =
+    packages:
+    builtins.filter (pkg: !(builtins.elem (packageSource pkg) moduleManagedPackageSources)) packages;
+
+  moduleManagedPackages =
+    lib.optionals config.modules.shell.herdr.enable [
+      "~/.config/dotfiles/pi-packages/pi-herdr"
+    ]
+    ++ lib.optionals config.modules.shell.tmux.enable [
+      # Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
+      "npm:pi-tmux-window-name"
+      # We're experimenting with tmux pane control for now (bash, capture, send, kill, spawn agents) - https://github.com/ogulcancelik/pi-extensions
+      {
+        source = "git:github.com/ogulcancelik/pi-extensions";
+        extensions = [ "packages/pi-tmux/index.ts" ];
+        skills = [ ];
+      }
+      # Side agents in tmux windows + git worktrees - https://github.com/pasky/pi-side-agents
+      "https://github.com/pasky/pi-side-agents"
+    ]
+    ++ lib.optionals (!(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)) [
+      # Interactive shell overlay fallback for hosts without tmux/herdr.
+      "npm:pi-interactive-shell"
+    ];
+
+  piPackagesExtra =
+    cfg.extraPackages ++ moduleManagedPackages ++ lib.optionals cfg.honcho.enable [ honchoPackage ];
 
   piSettingsBase =
-    piSettingsParsed
+    (piSettingsParsed // { packages = dropModuleManagedPackages piSettingsParsed.packages; })
     // lib.optionalAttrs config.modules.shell.herdr.enable (
       let
         herdrThemeName = config.modules.shell.herdr.piThemeName;
@@ -217,15 +264,7 @@ let
     else
       piSettingsBase // { packages = piSettingsBase.packages ++ piPackagesExtra; };
 
-  piSettingsPackageSources = map (
-    pkg:
-    if builtins.isString pkg then
-      pkg
-    else if builtins.isAttrs pkg && pkg ? source then
-      pkg.source
-    else
-      ""
-  ) piSettingsWithExtras.packages;
+  piSettingsPackageSources = map packageSource piSettingsWithExtras.packages;
 
   hasPiPackage = source: builtins.elem source piSettingsPackageSources;
 
