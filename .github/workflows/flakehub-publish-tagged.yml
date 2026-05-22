@@ -16,12 +16,14 @@ jobs:
       id-token: "write"
       contents: "read"
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v6"
         with:
+          persist-credentials: false
           ref: "${{ (inputs.tag != null) && format('refs/tags/{0}', inputs.tag) || '' }}"
-      - uses: "DeterminateSystems/nix-installer-action@main"
+      - uses: "DeterminateSystems/determinate-nix-action@v3"
       - uses: "DeterminateSystems/flakehub-push@main"
         with:
           visibility: "public"
-          name: "Emiller88/dotfiles"
+          name: "edmundmiller/dotfiles"
           tag: "${{ inputs.tag }}"
+          include-output-paths: true
