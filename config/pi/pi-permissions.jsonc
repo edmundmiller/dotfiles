@@ -18,8 +18,10 @@
     "bash": "allow",
     // process.start commands are checked against bash policy by pi-command-policy-bridge.
     "process": "allow",
-    "interactive_shell": "ask",
-    "herdr_run_in_pane": "ask",
+    // Command-bearing tools are allowed at the tool layer; pi-command-policy-bridge
+    // evaluates their embedded shell commands against the bash policy below.
+    "interactive_shell": "allow",
+    "herdr_run_in_pane": "allow",
     "agent-start": "ask",
     "agent-send": "ask"
   },
@@ -78,20 +80,35 @@
     // or caches. Add/improve a `hey` command when cleanup is legitimate.
     "*sudo nix-store --delete*": "deny",
     "*nix-store --delete*": "deny",
+    "*nix store delete*": "deny",
     "*sudo rm -rf /nix/store*": "deny",
     "*sudo rm -rf /var/lib/nix*": "deny",
     "*rm -rf ~/.cache/nix*": "deny",
     "*flake-registry.json*": "deny",
     "*nix registry pin*": "deny",
+    "*nix-collect-garbage*": "deny",
+    "*nix store gc*": "deny",
     "*ssh*nuc*nix-collect-garbage*": "deny",
     "*ssh*nuc*nix store gc*": "deny",
 
-    // Repo-managed Homebrew changes belong in Nix/darwin config and `hey re`.
+    // Repo-managed package/tool installs belong in Nix/darwin config and `hey re`.
     "*brew bundle*": "deny",
     "*brew link --overwrite*": "deny",
     "*brew unlink*": "deny",
     "*brew install*": "deny",
     "*brew uninstall*": "deny",
+    "*nix profile install*": "deny",
+    "*nix profile upgrade*": "deny",
+    "*nix profile remove*": "deny",
+    "*nix-env -i*": "deny",
+    "*nix-env --install*": "deny",
+    "*npm install -g*": "deny",
+    "*npm i -g*": "deny",
+    "*pnpm add -g*": "deny",
+    "*yarn global add*": "deny",
+    "*pip install*": "deny",
+    "*pipx install*": "deny",
+    "*cargo install*": "deny",
 
     // Use the skills wrapper so parent/child flake locks stay in sync.
     "*nix flake update skills-catalog*": "deny",
@@ -115,6 +132,11 @@
     "hey skills-update*": "allow",
     "hey skills-sync*": "allow",
     "hey gc*": "allow",
+
+    // Allow normal Beads issue/task management even when descriptions mention
+    // examples of denied commands; `br` only mutates repo issue metadata.
+    "br *": "allow",
+    "*&& br *": "allow",
 
     // Pi itself is Nix-managed/read-only; prevent accidental self-update.
     // Extension-only updates are safe and still allowed below (last match wins).
