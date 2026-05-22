@@ -142,16 +142,7 @@
       "extensions": ["extensions/semaphore-locks.ts"],
       "skills": [],
     },
-    // Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
-    "npm:pi-tmux-window-name",
-    // We're experimenting with tmux pane control for now (bash, capture, send, kill, spawn agents) - https://github.com/ogulcancelik/pi-extensions
-    {
-      "source": "git:github.com/ogulcancelik/pi-extensions",
-      "extensions": ["packages/pi-tmux/index.ts"],
-      "skills": [],
-    },
-    // Side agents in tmux windows + git worktrees - https://github.com/pasky/pi-side-agents
-    "https://github.com/pasky/pi-side-agents",
+    // tmux-specific packages are injected by modules/agents/pi when modules.shell.tmux.enable = true.
     // Parallel side conversations with /btw - https://github.com/dbachelder/pi-btw
     "npm:pi-btw",
     // Dumb zone - context degradation warning (forked from @aliou/pi-extensions)
@@ -163,8 +154,7 @@
     "git:github.com/Thinkscape/pi-status",
     // Pi logo display (git source avoids npm --before cutoff for package published after current Pi release)
     "git:github.com/FredySandoval/pi-logo",
-    // Interactive shell tool - https://github.com/nicobailon/pi-interactive-shell
-    "npm:pi-interactive-shell",
+    // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
     // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
     "npm:pi-mcp-adapter",
     // Browser/web access tool - https://github.com/nicobailon/pi-web-access

@@ -167,6 +167,13 @@
           "tmux"
           "enable"
         ];
+        # Keep host-specific local skills out of the always-on catalog source so
+        # they can be toggled by the matching Nix module below.
+        localCatalogSource = pkgs.runCommand "dotfiles-skills-catalog" { } ''
+          mkdir -p $out
+          cp -R ${./catalog}/. $out/
+          rm -rf $out/herdr-pi-workspace
+        '';
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -177,9 +184,18 @@
           sources = {
             # Checkout-owned global skills.
             catalog = {
-              path = ./catalog;
+              path = localCatalogSource;
               subdir = ".";
               filter.maxDepth = 1;
+            };
+
+            herdr-pi-workspace = {
+              path = ./catalog;
+              subdir = ".";
+              filter = {
+                maxDepth = 1;
+                nameRegex = "^herdr-pi-workspace$";
+              };
             };
 
             # Remote skill repos (hash-pinned via this flake's lock)
@@ -340,6 +356,9 @@
               # module is actually turned on.
               herdr.from = "herdr";
               herdr.path = ".";
+
+              herdr-pi-workspace.from = "herdr-pi-workspace";
+              herdr-pi-workspace.path = "herdr-pi-workspace";
             }
             // lib.optionalAttrs diffityEnabled {
               diffity-diff.from = "diffity";
