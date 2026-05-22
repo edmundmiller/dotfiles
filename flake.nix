@@ -73,7 +73,6 @@
     # reusable OpenClaw defaults.
     agents-workspace = {
       url = "git+ssh://git@github.com/edmundmiller/agents-workspace?ref=main";
-      inputs.hermesAgent.follows = "hermesAgent";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
@@ -82,14 +81,6 @@
     nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
 
     google-workspace-cli.url = "github:googleworkspace/cli";
-
-    # Expose Hermes as a first-class root input so infra can override the
-    # upstream package directly when agents-workspace's wrapper module needs
-    # a local patch before upstream merges.
-    hermesAgent = {
-      url = "github:NousResearch/hermes-agent";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
     skills-catalog = {
@@ -212,7 +203,7 @@
           in
           mapModules ./packages (p: callPackageWithInputs p { })
           // {
-            inherit (inputs.llm-agents.packages.${linuxSystem}) agentsview herdr;
+            inherit (inputs.llm-agents.packages.${linuxSystem}) agentsview herdr hunk;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -222,7 +213,7 @@
           in
           mapModules ./packages (p: callPackageWithInputs p { })
           // {
-            inherit (inputs.llm-agents.packages.${darwinSystem}) agentsview herdr;
+            inherit (inputs.llm-agents.packages.${darwinSystem}) agentsview herdr hunk;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 
