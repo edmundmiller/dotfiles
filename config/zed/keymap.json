@@ -1,0 +1,84 @@
+[
+  {
+    "context": "Editor && vim_mode == normal && vim_operator == none && !menu",
+    "bindings": {
+      "space space": "file_finder::Toggle",
+      "space .": "file_finder::Toggle",
+
+      "space o p": "project_panel::ToggleFocus",
+      "space o t": "terminal_panel::ToggleFocus",
+      "space o T": "workspace::NewCenterTerminal",
+      "space o g": "git_panel::ToggleFocus",
+
+      "space p p": "projects::OpenRecent",
+      "space p f": "file_finder::Toggle",
+      "space p e": "project_panel::ToggleFocus",
+      "space p t": "workspace::NewTerminal",
+      "space p w": "git::Worktree",
+
+      "space f f": "file_finder::Toggle",
+      "space f r": "projects::OpenRecent",
+      "space f e": "project_panel::ToggleFocus",
+      "space f y": "workspace::CopyPath",
+      "space f Y": "workspace::CopyRelativePath",
+
+      "space g g": "git_panel::ToggleFocus",
+      "space g s": "git_panel::ToggleFocus",
+      "space g l": "git_graph::Open",
+      "space g L": "git::FileHistory",
+      "space g c": "git::Commit",
+      "space g C": "git::ViewCommit",
+      "space g d": "git::Diff",
+      "space g D": "git::BranchDiff",
+      "space g b": "git::Branch",
+      "space g B": "git::Blame",
+      "space g S": "git::StageAll",
+      "space g u": "git::UnstageFile",
+      "space g U": "git::UnstageAll",
+      "space g p": "git::Push",
+      "space g P": "git::Pull",
+      "space g f": "git::Fetch",
+      "space g t": "git_panel::ToggleTreeView",
+
+      "space w t": "workspace::NewTerminal",
+      "space w T": "workspace::NewCenterTerminal",
+      "space w w": "git::Worktree"
+    }
+  },
+  {
+    "context": "EmptyPane || SharedScreen",
+    "bindings": {
+      "space space": "file_finder::Toggle",
+      "space .": "file_finder::Toggle",
+      "space o p": "project_panel::ToggleFocus",
+      "space o t": "terminal_panel::ToggleFocus",
+      "space g g": "git_panel::ToggleFocus",
+      "space g l": "git_graph::Open",
+      "space p w": "git::Worktree"
+    }
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "space space": "file_finder::Toggle",
+      "space .": "file_finder::Toggle",
+      "space o p": "project_panel::ToggleFocus",
+      "space o t": "workspace::OpenInTerminal",
+      "space o r": "project_panel::RevealInFileManager",
+      "space f f": "file_finder::Toggle",
+      "space f r": "project_panel::RevealInFileManager",
+      "space g g": "git_panel::ToggleFocus",
+      "space g l": "git_graph::Open",
+      "space g L": "git::FileHistory",
+      "space p w": "git::Worktree"
+    }
+  },
+  {
+    "context": "GitGraph",
+    "bindings": {
+      "enter": "git_graph::OpenCommitView",
+      "space g c": "git_graph::OpenCommitView",
+      "space g y": "git_graph::CopyCommitSha"
+    }
+  }
+]
