@@ -1,0 +1,13 @@
+skills/flake.lock
+  ai_agent 126-127,130,135
+packages/hunk/default.nix
+  ai_agent 1-49
+skills/flake.nix
+  ai_agent 51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "3f0f459e0d54375e35d411bc725bddc1b9ccab8c",
+  "prompts": {}
+}
