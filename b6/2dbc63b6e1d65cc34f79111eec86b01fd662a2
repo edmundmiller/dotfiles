@@ -1,0 +1,21 @@
+modules/shell/herdr.nix
+  s_e7ed15c611a995::t_d957947c484684 256-259
+flake.lock
+  ai_agent 1124-1125,1128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "b62dbc63b6e1d65cc34f79111eec86b01fd662a2",
+  "prompts": {},
+  "sessions": {
+    "s_e7ed15c611a995": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4cb0-edfc-7f5c-b3ac-20f13a212a89",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
