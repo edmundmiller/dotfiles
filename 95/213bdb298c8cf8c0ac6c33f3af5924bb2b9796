@@ -1,0 +1,31 @@
+.github/workflows/flakehub-publish-tagged.yml
+  s_ddc0fae6859f1d::t_324bb216462d6b 19,21,23,27,29
+skills/flake.nix
+  s_8e371aca04b00d::t_bca95c7c823d7e 51
+skills/flake.lock
+  ai_agent 126-127,130,135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "95213bdb298c8cf8c0ac6c33f3af5924bb2b9796",
+  "prompts": {},
+  "sessions": {
+    "s_8e371aca04b00d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4cae-5c14-700b-8ba5-5f83cc7ac675",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_ddc0fae6859f1d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4b24-794e-76e2-9582-20cc211c3d3a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
