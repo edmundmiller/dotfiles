@@ -1,0 +1,33 @@
+flake.nix
+  s_f9a5feb0f4932f::t_3103d1fc58e4c2 206,216
+modules/agents/hermes/README.md
+  s_8e371aca04b00d::t_96ebde4074bc0c 8
+hosts/nuc/default.nix
+  s_f9a5feb0f4932f::t_3103d1fc58e4c2 11
+modules/agents/hermes/default.nix
+  s_8e371aca04b00d::t_f5a00127bdcf70 13,55,57-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "5d49c85cdaf69c777fa79fb6252739791c432df3",
+  "prompts": {},
+  "sessions": {
+    "s_8e371aca04b00d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4cae-5c14-700b-8ba5-5f83cc7ac675",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_f9a5feb0f4932f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e4cb6-4fad-74f4-9a3e-30075955961c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
