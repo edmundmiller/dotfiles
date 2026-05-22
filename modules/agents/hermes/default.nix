@@ -10,7 +10,7 @@ let
   cfg = config.modules.agents.hermes;
   inherit (config.dotfiles) configDir;
 
-  hermesPackage = pkgs.llm-agents."hermes-agent";
+  hermesPackageWithAcp = pkgs.my."hermes-agent-with-acp";
 
   yamlFormat = pkgs.formats.yaml { };
   yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
@@ -18,6 +18,10 @@ let
   secretRefsJson = pkgs.writeText "hermes-secret-references.json" (
     builtins.toJSON cfg.secretReferences
   );
+  hermesRequiredSecretKeys = lib.unique (
+    cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
+  );
+  hermesRequiredSecretKeysEnv = lib.concatStringsSep "," hermesRequiredSecretKeys;
   opBin =
     let
       resolved = builtins.tryEval (lib.getExe pkgs._1password-cli);
@@ -52,10 +56,10 @@ in
 
     package = mkOption {
       type = package;
-      default = hermesPackage;
+      default = hermesPackageWithAcp;
       description = ''
-        Hermes package to install. The default uses llm-agents.nix's
-        hermes-agent package directly.
+        Hermes package to install. The default uses the overlay-managed
+        Hermes wrapper package with ACP editor integration assets.
       '';
     };
 
@@ -122,17 +126,31 @@ in
       '';
     };
 
+    requiredSecretKeys = mkOption {
+      type = listOf str;
+      default = [ ];
+      example = [ "HONCHO_API_KEY" ];
+      description = ''
+        Additional Hermes secrets that must be present at runtime startup.
+        Missing required keys fail Hermes startup in a wrapper preflight, but
+        activation/rebuild remains non-fatal.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
     user.packages = [ cfg.package ];
     env.HERMES_HOME = cfg.homeDir;
     # env.HERMES_TUI = "1";
+    env.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
+
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
         home.sessionVariables.HERMES_HOME = cfg.homeDir;
         # home.sessionVariables.HERMES_TUI = "1";
+        home.sessionVariables.HERMES_REQUIRED_SECRET_KEYS = hermesRequiredSecretKeysEnv;
+
         home.activation.hermes-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
                     hermes_home=${escapeShellArg cfg.homeDir}
                     config_target="$hermes_home/config.yaml"

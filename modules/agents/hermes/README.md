@@ -5,7 +5,8 @@ Hermes CLI setup for laptop-first, editor-style use.
 ## What it does
 
 - installs `hermes` from `llm-agents.nix`
-- uses the upstream package directly; local defaults are handled by the module
+- wraps the default package with the ACP Python dependency so `hermes acp` works without ad-hoc `pip install -e '.[acp]'`
+- patches the upstream packaged `tools/mcp_oauth.py` so MCP OAuth client metadata serializes correctly on laptop installs
 - exports `HERMES_HOME` (default: `$XDG_CONFIG_HOME/hermes`)
 - seeds `$HERMES_HOME/SOUL.md` from `config/hermes/SOUL.md`
 - seeds the base config from `config/hermes/config.yml`
