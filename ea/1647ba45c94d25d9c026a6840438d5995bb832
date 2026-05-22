@@ -1,0 +1,17 @@
+flake.lock
+  ai_agent 79-81,232,528,533-534,537,548,551-552,555,566-569,572-573,576,942,952-953,956,1053-1054,1057,1062,1779,1783
+hosts/nuc/default.nix
+  ai_agent 11-29
+modules/agents/hermes/README.md
+  ai_agent 8-9
+packages/hermes-agent-with-acp/default.nix
+  ai_agent 1-185
+modules/agents/hermes/default.nix
+  ai_agent 13,21-24,59,61-62,129-138,145-146,152-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "ea1647ba45c94d25d9c026a6840438d5995bb832",
+  "prompts": {}
+}
