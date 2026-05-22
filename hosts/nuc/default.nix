@@ -862,6 +862,10 @@ in
       };
       hermes = {
         enable = true;
+        # Containers use host networking, so prefer the deployment-local HA
+        # endpoint over mDNS names such as homeassistant.local from inside
+        # Hermes gateway processes.
+        homeAssistantUrl = "http://127.0.0.1:8123";
         agents = {
           scintillate = {
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
