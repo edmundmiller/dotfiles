@@ -44,9 +44,10 @@ export def is-darwin [] {
 }
 
 export def with-sudo-path [body: closure] {
-  let sudo_dir = "/run/wrappers/bin"
-  if ($sudo_dir | path exists) {
-    with-env { PATH: $"($sudo_dir):($env.PATH)" } { do $body }
+  let path_prefixes = (["/run/wrappers/bin" "/run/current-system/sw/bin"] | where {|dir| $dir | path exists })
+  let path_prefix = ($path_prefixes | str join ":")
+  if $path_prefix != "" {
+    with-env { PATH: $"($path_prefix):($env.PATH)" } { do $body }
   } else {
     do $body
   }
