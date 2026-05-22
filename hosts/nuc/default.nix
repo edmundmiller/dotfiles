@@ -8,25 +8,7 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  telegramPythonModule = pkgs.python312Packages.buildPythonPackage {
-    pname = "python-telegram-bot-module";
-    version = "22.7";
-    format = "other";
-    dontUnpack = true;
-    installPhase = ''
-      mkdir -p "$out/${pkgs.python312.sitePackages}"
-      cp -R "${
-        pkgs.python312Packages.python-telegram-bot.overridePythonAttrs (_: {
-          doCheck = false;
-          pythonRuntimeDepsCheck = false;
-        })
-      }/${pkgs.python312.sitePackages}/telegram" \
-        "$out/${pkgs.python312.sitePackages}/telegram"
-    '';
-  };
-  hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default.override {
-    extraPythonPackages = [ telegramPythonModule ];
-  };
+  hermesAgentBase = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
   anneHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.anne-hermes;
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
