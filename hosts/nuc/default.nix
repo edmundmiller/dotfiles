@@ -9,28 +9,11 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
-  anneHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.anne-hermes;
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
   anneDiscordBindings = (discordBindings.agents or { }).anne or { };
-  anneHermesGateway = pkgs.writeShellScript "hermes-anne-discord-gateway" ''
-    export PATH=${
-      lib.escapeShellArg (
-        lib.makeBinPath [
-          anneHermesLauncher
-          hermesAgentBase
-          pkgs.bashInteractive
-          pkgs.coreutils
-          pkgs.findutils
-          pkgs.git
-          pkgs.python3
-        ]
-      )
-    }:$PATH
-    exec ${anneHermesLauncher}/bin/anne-hermes gateway run --replace
-  '';
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
   millDocsGitPullHealthcheckPingUrl = "https://hc-ping.com/1a661f7e-cf0c-4a67-9343-64635347c50d";
@@ -665,30 +648,32 @@ in
       anne = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
+        environmentFiles = [ "/run/hermes-anne-env/secrets.env" ];
       };
       betty = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
+        environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
         workingDirectory = "/home/emiller/mill-docs";
       };
       scintillate = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
+        environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
       };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
+        environmentFiles = [ "/run/hermes-amosburton-env/secrets.env" ];
       };
     };
   };
 
   systemd.services.hermes-gateway-anne.serviceConfig = {
-    EnvironmentFile = [ "/run/hermes-anne-env/secrets.env" ];
     ExecStartPre = [
       "${pkgs.coreutils}/bin/test -f /home/emiller/.codex/auth.json"
       "${pkgs.coreutils}/bin/test -f /var/lib/hermes-anne/.codex/auth.json"
     ];
-    ExecStart = lib.mkForce anneHermesGateway;
   };
 
   systemd.services.hermes-gateway-scintillate = {
@@ -697,10 +682,6 @@ in
     # "Gateway shutting down -- Your current task will be interrupted".
     # Apply unit/package changes on the next explicit service restart instead.
     restartIfChanged = false;
-    serviceConfig = {
-      EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
-      ExecStart = lib.mkForce "${hermesAgentBase}/bin/hermes gateway run";
-    };
   };
 
   systemd.services.hermes-radar-cron-tick = {
