@@ -88,12 +88,10 @@ let
       inherit (config.age.secrets.scintillate-firecrawl-api) path;
     }
   ];
-  hermesBettySecrets = hermesProviderSecrets ++ [
-    {
-      envVar = "TELEGRAM_BOT_TOKEN";
-      path = hermesScintillateTelegramBotTokenFile;
-    }
-  ];
+  # Betty does not currently own a Telegram surface. Do not inject
+  # Scintillate's bot token here: two Hermes gateways polling the same
+  # Telegram bot produce getUpdates conflicts and make Scintillate flaky.
+  hermesBettySecrets = hermesProviderSecrets;
   hermesAnneSecrets = hermesProviderSecrets ++ [
     {
       envVar = "DISCORD_BOT_TOKEN";
