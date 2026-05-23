@@ -1,0 +1,112 @@
+modules/desktop/apps/neovide.nix
+  s_40e4e242618977::t_1aa6a79db363bb 1-17,19-20,22-24
+  s_ab66ad343733b0::t_2bbba8aeb4e381 21
+  s_b0c8d08cfd6b67::t_a70748492abcfa 18
+config/nvim/lua/custom/plugins/obsidian.lua
+  s_b207bf29e8e268::t_a1502c9b118d6d 1-3,8-16,18-43,46-47,54-55,62,70,76,84-106,110-111,118,120,127-128,133,142,144-147
+  s_9e41b64dcc8abb::t_676fce05577f4d 72-74
+  s_5f25f79cb7e923::t_f15b8330168e73 107
+  s_430b81c399a3a7::t_d944660952f6e3 116
+  s_99626c4f0ef238::t_5f8dbf950bf819 129-132,134-141
+config/nvim/lua/kickstart/plugins/which-key.lua
+  s_259dd9beace9e4::t_c1377fdef4b6aa 65
+config/neovide/config.toml
+  s_cefaa42ceb9e34::t_00c25e7a5b1cf3 7-13,16-17,19,29
+  s_71f444605233dd::t_13b74a2407fcaf 1-6,14-15,18,20-28,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "237f2cb559cfe516a0eb55d9b28bbbc557600111",
+  "prompts": {},
+  "sessions": {
+    "s_259dd9beace9e4": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LjQgfWEn0wz5X8QsOCV",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_40e4e242618977": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033Lk53dYrLJRAQHjqbRbj",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_430b81c399a3a7": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LjTpNMGuyv0ltDDO5QW",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_5f25f79cb7e923": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LjToj63N5C2YzePwMk1",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_71f444605233dd": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033Lk4ycCyAAoeSpuplDRU",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_99626c4f0ef238": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LjTpfaLbkJFtVO0KrYn",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_9e41b64dcc8abb": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LjThPEN6tLvZJWWWQak",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_ab66ad343733b0": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LkGr7t5Uc1nEK656RyE",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_b0c8d08cfd6b67": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033Lk5gOXgB0RvfDqKkmDL",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_b207bf29e8e268": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LjQ8pqMm11FVM9zFkML",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_cefaa42ceb9e34": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LkDnEQxUlOeChih4TEQ",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
