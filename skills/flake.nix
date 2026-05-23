@@ -92,6 +92,11 @@
       flake = false;
     };
 
+    gitbutler-repo = {
+      url = "github:gitbutlerapp/gitbutler";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -122,6 +127,13 @@
           "shell"
           "git"
           "diffity"
+          "enable"
+        ];
+        gitbutlerEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "git"
+          "gitbutler"
           "enable"
         ];
         piEnabled = moduleEnabled [
@@ -192,6 +204,18 @@
                 maxDepth = 1;
                 nameRegex = "^herdr-pi-workspace$";
               };
+            };
+
+            gitbutler-but = {
+              path = inputs.gitbutler-repo.outPath;
+              subdir = "crates/but/skill";
+              filter.maxDepth = 2;
+            };
+
+            gitbutler-agentlog = {
+              path = inputs.gitbutler-repo.outPath;
+              subdir = "crates/but-agentlog/skill";
+              filter.maxDepth = 1;
             };
 
             # Remote skill repos (hash-pinned via this flake's lock)
@@ -329,6 +353,13 @@
             // lib.optionalAttrs hunkEnabled {
               hunk-review.from = "hunk";
               hunk-review.path = "hunk-review";
+            }
+            // lib.optionalAttrs gitbutlerEnabled {
+              but.from = "gitbutler-but";
+              but.path = ".";
+
+              but-agentlog.from = "gitbutler-agentlog";
+              but-agentlog.path = ".";
             }
             // lib.optionalAttrs stackEnabled {
               stack.from = "stack";
