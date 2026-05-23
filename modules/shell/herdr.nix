@@ -36,6 +36,8 @@ let
         # Seeded by nix. Herdr keeps this file writable after bootstrap.
         [keys]
         prefix = "${cfg.prefix}"
+        new_workspace = "prefix+w"
+        workspace_picker = "prefix+O"
         split_horizontal = "prefix+-"
         toggle_sidebar = "prefix+b"
         previous_tab = "prefix+p"
@@ -351,6 +353,8 @@ in
           saw_keys = False
           managed_keys = {
               "prefix": prefix,
+              "new_workspace": "prefix+w",
+              "workspace_picker": "prefix+O",
               "split_horizontal": "prefix+-",
               "toggle_sidebar": "prefix+b",
               "previous_tab": "prefix+p",
