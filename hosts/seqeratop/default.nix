@@ -82,6 +82,12 @@
       agents = {
         pi = {
           enable = true;
+          enabledModels = [
+            "gpt-5.5"
+            "cursor/composer-2.5"
+            "gpt-5.4-mini"
+          ];
+          cursorSdk.enable = true;
           secretReferences = {
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };

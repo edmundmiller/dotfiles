@@ -235,7 +235,7 @@ let
       "npm:pi-context"
       "npm:pi-total-recall"
     ];
-    modelProviders = [
+    cursorSdk = [
       # Cursor SDK provider: exposes Cursor models as `cursor/...` in Pi's native model picker.
       # https://github.com/fitchmultz/pi-cursor-sdk
       "npm:pi-cursor-sdk"
@@ -244,10 +244,7 @@ let
 
   moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
 
-  moduleManagedEnabledModels = [
-    # Cursor SDK model exposed by pi-cursor-sdk.
-    "cursor/composer-2.5"
-  ];
+  moduleManagedEnabledModels = [ ];
 
   dropModuleManagedPackages =
     packages:
@@ -275,7 +272,7 @@ let
     ++ lib.optionals cfg.gitTools.enable moduleManagedPackageGroups.gitTools
     ++ lib.optionals cfg.statusUi.enable moduleManagedPackageGroups.statusUi
     ++ lib.optionals cfg.contextMemory.enable moduleManagedPackageGroups.contextMemory
-    ++ moduleManagedPackageGroups.modelProviders;
+    ++ lib.optionals cfg.cursorSdk.enable moduleManagedPackageGroups.cursorSdk;
 
   piPackagesExtra =
     cfg.extraPackages ++ moduleManagedPackages ++ lib.optionals cfg.honcho.enable [ honchoPackage ];
@@ -285,7 +282,9 @@ let
       piSettingsParsed
       // {
         packages = dropModuleManagedPackages piSettingsParsed.packages;
-        enabledModels = lib.unique (moduleManagedEnabledModels ++ (piSettingsParsed.enabledModels or [ ]));
+        enabledModels = lib.unique (
+          cfg.enabledModels ++ cfg.extraEnabledModels ++ moduleManagedEnabledModels
+        );
       }
     )
     // lib.optionalAttrs config.modules.shell.herdr.enable (
@@ -341,6 +340,16 @@ in
       default = "";
       description = "Git remote URL for pi global memory (~/.pi/memory)";
     };
+    enabledModels = mkOption {
+      type = types.listOf types.str;
+      default = piSettingsParsed.enabledModels or [ ];
+      description = "Base Pi models enabled for model cycling. Defaults to config/pi/settings.jsonc.";
+    };
+    extraEnabledModels = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Host-specific Pi models appended to enabledModels.";
+    };
     mcp.enable = mkOption {
       type = types.bool;
       default = true;
@@ -365,6 +374,11 @@ in
       type = types.bool;
       default = true;
       description = "Enable Pi context and total-recall memory/search packages. Honcho has its own toggle.";
+    };
+    cursorSdk.enable = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Enable the Cursor SDK provider for Pi. Add Cursor models with modules.agents.pi.extraEnabledModels or enabledModels.";
     };
     honcho = {
       enable = mkBoolOpt false;
