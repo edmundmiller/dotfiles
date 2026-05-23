@@ -1,0 +1,54 @@
+#!/usr/bin/env zunit
+
+@setup {
+  export ORIG_PWD=$PWD
+  export TEST_DIR=$(mktemp -d)
+  export SCRIPT="$ORIG_PWD/bin/obsidian-neovide"
+  export FAKE_NEOVIDE="$TEST_DIR/neovide"
+  export NEOVIDE_ARGS_OUT="$TEST_DIR/neovide-args"
+  cat > "$FAKE_NEOVIDE" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "$NEOVIDE_ARGS_OUT"
+EOF
+  chmod +x "$FAKE_NEOVIDE"
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'passes repo name from remote origin to ObsidianProject command' {
+  local repo="$TEST_DIR/stimulus-feature-worktree"
+  mkdir -p "$repo"
+  git -C "$repo" init --quiet
+  git -C "$repo" remote add origin git@github.com:seqeralabs/stimulus.git
+
+  run env NEOVIDE_BIN="$FAKE_NEOVIDE" NEOVIDE_ARGS_OUT="$NEOVIDE_ARGS_OUT" "$SCRIPT" "$repo"
+
+  assert $state equals 0
+  assert "$(cat "$NEOVIDE_ARGS_OUT")" contains "+ObsidianProject stimulus"
+  assert "$(cat "$NEOVIDE_ARGS_OUT")" contains "--chdir"
+}
+
+@test 'falls back to directory name when no remote origin exists' {
+  local repo="$TEST_DIR/local-tool"
+  mkdir -p "$repo"
+  git -C "$repo" init --quiet
+
+  run env NEOVIDE_BIN="$FAKE_NEOVIDE" NEOVIDE_ARGS_OUT="$NEOVIDE_ARGS_OUT" "$SCRIPT" "$repo"
+
+  assert $state equals 0
+  assert "$(cat "$NEOVIDE_ARGS_OUT")" contains "+ObsidianProject local-tool"
+}
+
+@test 'uses Herdr active pane cwd by default' {
+  local repo="$TEST_DIR/herdr-repo"
+  mkdir -p "$repo"
+  git -C "$repo" init --quiet
+
+  run env NEOVIDE_BIN="$FAKE_NEOVIDE" NEOVIDE_ARGS_OUT="$NEOVIDE_ARGS_OUT" HERDR_ACTIVE_PANE_CWD="$repo" "$SCRIPT"
+
+  assert $state equals 0
+  assert "$(cat "$NEOVIDE_ARGS_OUT")" contains "+ObsidianProject herdr-repo"
+}

@@ -52,6 +52,11 @@ let
         key = "prefix+]"
         type = "shell"
         command = "herdr-hunk --tab"
+
+        [[keys.command]]
+        key = "prefix+V"
+        type = "shell"
+        command = "obsidian-neovide"
       '';
 
   # Pi's auto-selected dark theme can be too low-contrast in the Herdr/Ghostty
@@ -316,6 +321,7 @@ in
               "herdr-tab next",
               "herdr-hunk",
               "herdr-hunk --tab",
+              "obsidian-neovide",
           }
 
           # Drop old/managed command blocks before appending the canonical ones.
@@ -409,6 +415,11 @@ in
               'key = "prefix+]"',
               'type = "shell"',
               'command = "herdr-hunk --tab"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+V"',
+              'type = "shell"',
+              'command = "obsidian-neovide"',
           ]
 
           if out and out[-1].strip():
