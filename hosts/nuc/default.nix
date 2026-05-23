@@ -680,6 +680,24 @@ in
     # "Gateway shutting down -- Your current task will be interrupted".
     # Apply unit/package changes on the next explicit service restart instead.
     restartIfChanged = false;
+    serviceConfig.ExecStartPre = lib.mkAfter [
+      (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
+        set -eu
+        env_file=/var/lib/hermes-scintillate/.hermes/.env
+        secrets_file=/run/hermes-scintillate-env/secrets.env
+        tmp_file="$env_file.tmp.$$"
+
+        install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
+        touch "$env_file"
+        chown emiller:users "$env_file"
+        chmod 0600 "$env_file"
+
+        grep -v '^TELEGRAM_' "$env_file" > "$tmp_file"
+        grep '^TELEGRAM_' "$secrets_file" >> "$tmp_file"
+        install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
+        rm -f "$tmp_file"
+      '')
+    ];
   };
 
   systemd.services.hermes-radar-cron-tick = {
