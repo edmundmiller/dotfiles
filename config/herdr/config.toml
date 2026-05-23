@@ -6,28 +6,20 @@ delivery = "herdr"
 
 [keys]
 prefix = "ctrl+c"
-new_workspace = "w"
-split_horizontal = "s"
+split_horizontal = "prefix+-"
 # Herdr has a hard-coded navigate-mode q quit/detach fallback.
 # Bind q to a harmless configured action so prefix+q no longer quits.
-toggle_sidebar = "q"
+toggle_sidebar = "prefix+b"
+
+previous_tab = "prefix+p"
+next_tab = "prefix+n"
 
 [[keys.command]]
-key = "p"
-type = "shell"
-command = "herdr-tab previous"
-
-[[keys.command]]
-key = "n"
-type = "shell"
-command = "herdr-tab next"
-
-[[keys.command]]
-key = "["
+key = "prefix+["
 type = "shell"
 command = "herdr-hunk"
 
 [[keys.command]]
-key = "]"
+key = "prefix+]"
 type = "shell"
 command = "herdr-hunk --tab"
