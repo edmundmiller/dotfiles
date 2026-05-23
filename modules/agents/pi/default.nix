@@ -235,9 +235,19 @@ let
       "npm:pi-context"
       "npm:pi-total-recall"
     ];
+    modelProviders = [
+      # Cursor SDK provider: exposes Cursor models as `cursor/...` in Pi's native model picker.
+      # https://github.com/fitchmultz/pi-cursor-sdk
+      "npm:pi-cursor-sdk"
+    ];
   };
 
   moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
+
+  moduleManagedEnabledModels = [
+    # Cursor SDK model exposed by pi-cursor-sdk.
+    "cursor/composer-2.5"
+  ];
 
   dropModuleManagedPackages =
     packages:
@@ -264,13 +274,20 @@ let
     ++ lib.optionals cfg.computerUse.enable moduleManagedPackageGroups.computerUse
     ++ lib.optionals cfg.gitTools.enable moduleManagedPackageGroups.gitTools
     ++ lib.optionals cfg.statusUi.enable moduleManagedPackageGroups.statusUi
-    ++ lib.optionals cfg.contextMemory.enable moduleManagedPackageGroups.contextMemory;
+    ++ lib.optionals cfg.contextMemory.enable moduleManagedPackageGroups.contextMemory
+    ++ moduleManagedPackageGroups.modelProviders;
 
   piPackagesExtra =
     cfg.extraPackages ++ moduleManagedPackages ++ lib.optionals cfg.honcho.enable [ honchoPackage ];
 
   piSettingsBase =
-    (piSettingsParsed // { packages = dropModuleManagedPackages piSettingsParsed.packages; })
+    (
+      piSettingsParsed
+      // {
+        packages = dropModuleManagedPackages piSettingsParsed.packages;
+        enabledModels = lib.unique (moduleManagedEnabledModels ++ (piSettingsParsed.enabledModels or [ ]));
+      }
+    )
     // lib.optionalAttrs config.modules.shell.herdr.enable (
       let
         herdrThemeName = config.modules.shell.herdr.piThemeName;
