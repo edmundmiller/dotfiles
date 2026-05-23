@@ -680,6 +680,7 @@ in
       };
       scintillate = {
         authFile = "/home/emiller/.codex/auth.json";
+        workingDirectory = "/home/emiller/obsidian-vault";
         environment = {
           CODEX_HOME = "/home/emiller/.codex";
           PYTHONPATH = hermesTelegramPythonPath;
