@@ -9,6 +9,7 @@ waiver_path: .agents/waivers/AGENT-06.md
 # Development Preferences
 
 - Don't stop tasks early due to token limits. Be persistent and finish the task.
+- Be persistent, but do not silently make assumptions; ask or surface tradeoffs when unclear.
 - First make it work, then make it right, then make it fast.
 - Prefer Justfiles over Makefiles.
 
