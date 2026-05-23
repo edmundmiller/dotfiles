@@ -207,34 +207,44 @@ let
   # matching runtime. This prevents stale tools/skills from showing up on hosts
   # that do not run that shell integration, and avoids redundant interactive
   # shell prompts when tmux/herdr are the preferred persistent workspace layer.
-  moduleManagedPackageSources = [
-    "~/.config/dotfiles/pi-packages/pi-herdr"
-    "npm:pi-tmux-window-name"
-    "git:github.com/ogulcancelik/pi-extensions"
-    "https://github.com/pasky/pi-side-agents"
-    "npm:pi-interactive-shell"
-    "npm:pi-mcp-adapter"
-    "npm:pi-mcporter"
-    "git:github.com/injaneity/pi-computer-use"
-    "npm:@prinova/pi-github-tools"
-    "npm:pi-gitnexus"
-    "git:github.com/MattDevy/pi-extensions"
-    "npm:@marckrenn/pi-sub-bar"
-    "~/.pi/agent/extensions/sub-limits.ts"
-    "git:github.com/Thinkscape/pi-status"
-    "npm:pi-wakatime"
-    "npm:pi-context"
-    "npm:pi-total-recall"
-  ];
+  moduleManagedPackageGroups = {
+    herdr = [ "~/.config/dotfiles/pi-packages/pi-herdr" ];
+    tmux = [
+      "npm:pi-tmux-window-name"
+      "git:github.com/ogulcancelik/pi-extensions"
+      "https://github.com/pasky/pi-side-agents"
+    ];
+    interactiveShell = [ "npm:pi-interactive-shell" ];
+    mcp = [
+      "npm:pi-mcp-adapter"
+      "npm:pi-mcporter"
+    ];
+    computerUse = [ "git:github.com/injaneity/pi-computer-use" ];
+    gitTools = [
+      "npm:@prinova/pi-github-tools"
+      "npm:pi-gitnexus"
+      "git:github.com/MattDevy/pi-extensions"
+    ];
+    statusUi = [
+      "npm:@marckrenn/pi-sub-bar"
+      "~/.pi/agent/extensions/sub-limits.ts"
+      "git:github.com/Thinkscape/pi-status"
+      "npm:pi-wakatime"
+    ];
+    contextMemory = [
+      "npm:pi-context"
+      "npm:pi-total-recall"
+    ];
+  };
+
+  moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
 
   dropModuleManagedPackages =
     packages:
     builtins.filter (pkg: !(builtins.elem (packageSource pkg) moduleManagedPackageSources)) packages;
 
   moduleManagedPackages =
-    lib.optionals config.modules.shell.herdr.enable [
-      "~/.config/dotfiles/pi-packages/pi-herdr"
-    ]
+    lib.optionals config.modules.shell.herdr.enable moduleManagedPackageGroups.herdr
     ++ lib.optionals config.modules.shell.tmux.enable [
       # Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
       "npm:pi-tmux-window-name"
@@ -247,37 +257,14 @@ let
       # Side agents in tmux windows + git worktrees - https://github.com/pasky/pi-side-agents
       "https://github.com/pasky/pi-side-agents"
     ]
-    ++ lib.optionals (!(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)) [
-      # Interactive shell overlay fallback for hosts without tmux/herdr.
-      "npm:pi-interactive-shell"
-    ]
-    ++ lib.optionals cfg.mcp.enable [
-      # Lazy MCP server adapter + MCPorter orchestration.
-      "npm:pi-mcp-adapter"
-      "npm:pi-mcporter"
-    ]
-    ++ lib.optionals cfg.computerUse.enable [
-      # GUI/browser computer-use tools for screenshots, mouse, and keyboard control.
-      "git:github.com/injaneity/pi-computer-use"
-    ]
-    ++ lib.optionals cfg.gitTools.enable [
-      # GitHub repo tools, GitNexus graph tools, and changed-file simplification review.
-      "npm:@prinova/pi-github-tools"
-      "npm:pi-gitnexus"
-      "git:github.com/MattDevy/pi-extensions"
-    ]
-    ++ lib.optionals cfg.statusUi.enable [
-      # Desktop/interactive status, quota, and coding metrics UI.
-      "npm:@marckrenn/pi-sub-bar"
-      "~/.pi/agent/extensions/sub-limits.ts"
-      "git:github.com/Thinkscape/pi-status"
-      "npm:pi-wakatime"
-    ]
-    ++ lib.optionals cfg.contextMemory.enable [
-      # Context/memory stack. Honcho remains separately gated by cfg.honcho.enable.
-      "npm:pi-context"
-      "npm:pi-total-recall"
-    ];
+    ++ lib.optionals (
+      !(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)
+    ) moduleManagedPackageGroups.interactiveShell
+    ++ lib.optionals cfg.mcp.enable moduleManagedPackageGroups.mcp
+    ++ lib.optionals cfg.computerUse.enable moduleManagedPackageGroups.computerUse
+    ++ lib.optionals cfg.gitTools.enable moduleManagedPackageGroups.gitTools
+    ++ lib.optionals cfg.statusUi.enable moduleManagedPackageGroups.statusUi
+    ++ lib.optionals cfg.contextMemory.enable moduleManagedPackageGroups.contextMemory;
 
   piPackagesExtra =
     cfg.extraPackages ++ moduleManagedPackages ++ lib.optionals cfg.honcho.enable [ honchoPackage ];
