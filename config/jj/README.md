@@ -2,6 +2,12 @@
 
 Jujutsu (jj) configuration managed via nix-darwin.
 
+## UI / Diff Tools
+
+- Pager: `hunk pager`
+- Diff formatter: `:git` so Hunk receives git-style diffs
+- Use `jj diff --tool difft` when you want semantic difft output instead of the interactive Hunk pager.
+
 ## Merge Tools
 
 | Tool            | Command      | Use Case                                                  |

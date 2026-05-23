@@ -22,12 +22,14 @@ email = "git@edmundmiller.dev"
 
 [ui]
 default-command = "log"
-pager = "less -FRX"
+pager = ["hunk", "pager"]
 paginate = "auto"
 allow-filesets = true
 
 # Diff and editing
-diff-formatter = ["difft", "--color=always", "$left", "$right"]
+# Hunk's jj pager expects git-style diff input; use `jj diff --tool difft` when you
+# want semantic difft output instead of the interactive Hunk pager.
+diff-formatter = ":git"
 diff-editor = ["nvim", "-c", "DiffEditor $left $right $output"]
 merge-editor = "diffconflicts"
 editor = "nvim"
