@@ -103,6 +103,9 @@ in
         pkgs.gum
         pkgs.bun
       ]
+      ++ optionals cfg.workmux.enable [
+        pkgs.llm-agents.workmux
+      ]
       ++ optionals cfg.opensessions.enable [
         pkgs.curl
         pkgs.unstable.fzf
