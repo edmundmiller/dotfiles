@@ -38,6 +38,8 @@ Custom/current mappings:
 
 | Key        | Action                       |
 | ---------- | ---------------------------- |
+| `prefix+w` | New workspace                |
+| `prefix+O` | Workspace picker             |
 | `prefix+-` | Split horizontally           |
 | `prefix+b` | Toggle sidebar               |
 | `prefix+p` | Previous tab                 |
@@ -45,7 +47,7 @@ Custom/current mappings:
 | `prefix+[` | Open Hunk in a focused split |
 | `prefix+]` | Open Hunk in a new tab       |
 
-Herdr defaults still provide other common actions such as workspace picker, rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. Avoid overriding defaults with duplicate key sequences; Herdr 0.6 treats duplicate bindings as partial config reloads.
+Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean.
 
 ## Helpers
 
