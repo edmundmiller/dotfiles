@@ -1,0 +1,21 @@
+hosts/mactraitorpro/homebrew.nix
+  s_71d268d2700297::t_d11548b6500f0a 130
+hosts/mactraitorpro/default.nix
+  s_71d268d2700297::t_d11548b6500f0a 108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "2092b35f1b8753ea71845ae1b2bb7d2057e7fcae",
+  "prompts": {},
+  "sessions": {
+    "s_71d268d2700297": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LkHgUxDP1cPlVYhC82H",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
