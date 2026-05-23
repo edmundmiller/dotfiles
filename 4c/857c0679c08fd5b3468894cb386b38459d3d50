@@ -1,0 +1,26 @@
+hosts/seqeratop/default.nix
+  s_498821abb1d007::t_30d90ba4a4e9f1 85-89
+  s_498821abb1d007::t_85a3b55444e459 90
+config/pi/settings.jsonc
+  s_498821abb1d007::t_f403f3358e4bbf 9
+modules/agents/pi/default.nix
+  s_498821abb1d007::t_acebbe9448a282 285-287
+  s_498821abb1d007::t_959c3c4be0373d 238,275,378-380
+  s_498821abb1d007::t_e5d870efd86f7f 247,343-351,381
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "4c857c0679c08fd5b3468894cb386b38459d3d50",
+  "prompts": {},
+  "sessions": {
+    "s_498821abb1d007": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e52c6-d9e9-70b0-94f7-8a768083324d",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    }
+  }
+}
