@@ -1,0 +1,26 @@
+modules/shell/amoxide.nix
+  ai_agent 19-21
+packages/amoxide/default.nix
+  s_381463627071fb::t_cbbd624189e686 23
+  s_381463627071fb::t_414b5907eae53b 20
+  ai_agent 28-29
+  s_381463627071fb::t_f4b553b99c6db1 6-14,27,30-31,38
+packages/amoxide/AGENTS.md
+  s_381463627071fb::t_5cecb84bd0643e 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "6bf32add7b2644a52a68f0eb8cc2021f169f0a68",
+  "prompts": {},
+  "sessions": {
+    "s_381463627071fb": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e55f4-3855-7300-95d3-3f633725eaa5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
