@@ -36,26 +36,17 @@ let
         # Seeded by nix. Herdr keeps this file writable after bootstrap.
         [keys]
         prefix = "${cfg.prefix}"
-        new_workspace = "w"
-        split_horizontal = "s"
+        split_horizontal = "prefix+-"
+        previous_tab = "prefix+p"
+        next_tab = "prefix+n"
 
         [[keys.command]]
-        key = "p"
-        type = "shell"
-        command = "herdr-tab previous"
-
-        [[keys.command]]
-        key = "n"
-        type = "shell"
-        command = "herdr-tab next"
-
-        [[keys.command]]
-        key = "["
+        key = "prefix+["
         type = "shell"
         command = "herdr-hunk"
 
         [[keys.command]]
-        key = "]"
+        key = "prefix+]"
         type = "shell"
         command = "herdr-hunk --tab"
       '';
@@ -322,8 +313,9 @@ in
           saw_keys = False
           managed_keys = {
               "prefix": prefix,
-              "new_workspace": "w",
-              "split_horizontal": "s",
+              "split_horizontal": "prefix+-",
+              "previous_tab": "prefix+p",
+              "next_tab": "prefix+n",
           }
           wrote_keys = set()
 
@@ -366,22 +358,12 @@ in
           command_block = [
               "",
               "[[keys.command]]",
-              'key = "p"',
-              'type = "shell"',
-              'command = "herdr-tab previous"',
-              "",
-              "[[keys.command]]",
-              'key = "n"',
-              'type = "shell"',
-              'command = "herdr-tab next"',
-              "",
-              "[[keys.command]]",
-              'key = "["',
+              'key = "prefix+["',
               'type = "shell"',
               'command = "herdr-hunk"',
               "",
               "[[keys.command]]",
-              'key = "]"',
+              'key = "prefix+]"',
               'type = "shell"',
               'command = "herdr-hunk --tab"',
           ]
