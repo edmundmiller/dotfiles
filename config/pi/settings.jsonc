@@ -6,7 +6,7 @@
   "defaultModel": "gpt-5.5",
   "defaultThinkingLevel": "low",
   // Model cycling - Ctrl+P to toggle between these
-  "enabledModels": ["gpt-5.5", "cursor/composer-2.5", "gpt-5.4-mini"],
+  "enabledModels": ["gpt-5.5", "gpt-5.4-mini"],
   // UI preferences
   "theme": "terminal",
   "quietStartup": true,
