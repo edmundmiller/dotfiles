@@ -172,6 +172,7 @@
         localCatalogSource = pkgs.runCommand "dotfiles-skills-catalog" { } ''
           mkdir -p $out
           cp -R ${./catalog}/. $out/
+          chmod -R u+w $out/herdr-pi-workspace 2>/dev/null || true
           rm -rf $out/herdr-pi-workspace
         '';
       in
