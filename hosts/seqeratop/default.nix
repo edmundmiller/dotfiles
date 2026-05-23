@@ -31,6 +31,7 @@
         direnv.enable = true;
         git.enable = true;
         git.ai.enable = true;
+        git.hunk.enable = true;
         jj.enable = true;
         tmux.enable = true;
         acpx.enable = true;
