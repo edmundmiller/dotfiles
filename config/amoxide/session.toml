@@ -1,0 +1,2 @@
+# Active profiles, low-to-high precedence. Managed by dotfiles.
+active_profiles = ["git", "jj", "nix"]
