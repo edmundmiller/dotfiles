@@ -23,11 +23,6 @@ in
 
   config = optionalAttrs isDarwin (
     mkIf cfg.enable {
-      homebrew.casks = [
-        "agentsview"
-        "screen-studio"
-      ];
-
       # ref: https://github.com/yannbertrand/macos-defaults
       system.defaults = {
         # minimal dock
