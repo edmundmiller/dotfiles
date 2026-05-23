@@ -116,7 +116,6 @@ in
         home.file = {
           ".config/ghostty/macos.conf".source = "${configDir}/ghostty/macos.conf";
           ".config/ghostty/ui.conf".source = "${configDir}/ghostty/ui.conf";
-
         };
 
         home.activation.ghostty-remove-legacy-macos-config = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
