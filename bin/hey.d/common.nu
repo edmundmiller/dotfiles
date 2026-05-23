@@ -107,7 +107,7 @@ export def system-rebuild [action: string, ...args: string] {
     let has_darwin_rebuild = ((^bash -c $"[[ -x '($ctx.darwin_rebuild)' ]]" | complete).exit_code == 0)
 
     if $has_darwin_rebuild {
-      with-sudo-path { ^sudo $ctx.darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
+      with-sudo-path { ^/usr/bin/sudo $ctx.darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
     } else {
       print $"darwin-rebuild not found at ($ctx.darwin_rebuild), building via nix..."
       ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix build '.#darwinConfigurations.($ctx.flake_host).system' ($agent_nix_args | str join ' ')"
@@ -120,7 +120,7 @@ export def system-rebuild [action: string, ...args: string] {
 
       let old_pwd = (pwd)
       cd $ctx.flake_dir
-      with-sudo-path { ^sudo ./result/sw/bin/darwin-rebuild --flake $".#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
+      with-sudo-path { ^/usr/bin/sudo ./result/sw/bin/darwin-rebuild --flake $".#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
       cd $old_pwd
     }
   } else {
