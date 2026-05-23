@@ -36,24 +36,24 @@ ctrl+c
 
 Custom/current mappings:
 
-| Key        | Action                                    |
-| ---------- | ----------------------------------------- |
-| `prefix+w` | New workspace                             |
-| `prefix+s` | Split horizontally                        |
-| `prefix+q` | Toggle sidebar (prevents accidental quit) |
-| `prefix+p` | Previous tab                              |
-| `prefix+n` | Next tab                                  |
-| `prefix+[` | Open Hunk in a focused split              |
-| `prefix+]` | Open Hunk in a new tab                    |
+| Key        | Action                       |
+| ---------- | ---------------------------- |
+| `prefix+-` | Split horizontally           |
+| `prefix+b` | Toggle sidebar               |
+| `prefix+p` | Previous tab                 |
+| `prefix+n` | Next tab                     |
+| `prefix+[` | Open Hunk in a focused split |
+| `prefix+]` | Open Hunk in a new tab       |
 
-Herdr defaults still provide other common actions such as new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+q` is deliberately bound to sidebar toggle so it intercepts Herdr's hard-coded quit/detach fallback.
+Herdr defaults still provide other common actions such as workspace picker, rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. Avoid overriding defaults with duplicate key sequences; Herdr 0.6 treats duplicate bindings as partial config reloads.
 
 ## Helpers
 
-Two repo scripts back the custom command bindings:
+One repo script backs the custom Hunk command bindings:
 
-- `bin/herdr-tab` — implements prefix-only previous/next tab movement using Herdr's socket API.
 - `bin/herdr-hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
+
+`bin/herdr-tab` remains available for experiments, but active tab movement now uses Herdr's built-in `previous_tab` / `next_tab` bindings.
 
 ## Reloading after edits
 
@@ -67,4 +67,4 @@ A successful reload returns `status: applied`.
 
 ## Notes
 
-Do not bind Herdr's built-in `previous_tab` / `next_tab` to plain `p` / `n`; those are terminal-direct and will steal normal typing. Use the `[[keys.command]]` bindings with `herdr-tab` instead.
+Do not bind actions to plain printable keys such as `w`, `s`, `p`, or `n`; Herdr 0.6 disables those unsafe direct bindings because they intercept normal typing. Use `prefix+...` bindings, and avoid key sequences already claimed by Herdr defaults unless you intentionally want to replace them.
