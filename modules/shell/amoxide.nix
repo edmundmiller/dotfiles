@@ -16,9 +16,9 @@ in
 
   config = mkIf cfg.enable {
     # Installation guide installs both binaries.
-    user.packages = with pkgs.my; [
-      amoxide
-      amoxide-tui
+    user.packages = [
+      pkgs.my.amoxide
+      pkgs.my.amoxide.tui
     ];
 
     modules.shell.zsh.rcInit = ''
