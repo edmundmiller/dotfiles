@@ -23,6 +23,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -191,6 +192,7 @@ let
       piSettingsParsedResult.value;
 
   honchoPackage = "npm:@agney/pi-honcho-memory";
+  desktopPiHost = ghosttyCfg.enable || config.modules.desktop.macos.enable || isDarwin;
 
   packageSource =
     pkg:
@@ -211,6 +213,18 @@ let
     "git:github.com/ogulcancelik/pi-extensions"
     "https://github.com/pasky/pi-side-agents"
     "npm:pi-interactive-shell"
+    "npm:pi-mcp-adapter"
+    "npm:pi-mcporter"
+    "git:github.com/injaneity/pi-computer-use"
+    "npm:@prinova/pi-github-tools"
+    "npm:pi-gitnexus"
+    "git:github.com/MattDevy/pi-extensions"
+    "npm:@marckrenn/pi-sub-bar"
+    "~/.pi/agent/extensions/sub-limits.ts"
+    "git:github.com/Thinkscape/pi-status"
+    "npm:pi-wakatime"
+    "npm:pi-context"
+    "npm:pi-total-recall"
   ];
 
   dropModuleManagedPackages =
@@ -236,6 +250,33 @@ let
     ++ lib.optionals (!(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)) [
       # Interactive shell overlay fallback for hosts without tmux/herdr.
       "npm:pi-interactive-shell"
+    ]
+    ++ lib.optionals cfg.mcp.enable [
+      # Lazy MCP server adapter + MCPorter orchestration.
+      "npm:pi-mcp-adapter"
+      "npm:pi-mcporter"
+    ]
+    ++ lib.optionals cfg.computerUse.enable [
+      # GUI/browser computer-use tools for screenshots, mouse, and keyboard control.
+      "git:github.com/injaneity/pi-computer-use"
+    ]
+    ++ lib.optionals cfg.gitTools.enable [
+      # GitHub repo tools, GitNexus graph tools, and changed-file simplification review.
+      "npm:@prinova/pi-github-tools"
+      "npm:pi-gitnexus"
+      "git:github.com/MattDevy/pi-extensions"
+    ]
+    ++ lib.optionals cfg.statusUi.enable [
+      # Desktop/interactive status, quota, and coding metrics UI.
+      "npm:@marckrenn/pi-sub-bar"
+      "~/.pi/agent/extensions/sub-limits.ts"
+      "git:github.com/Thinkscape/pi-status"
+      "npm:pi-wakatime"
+    ]
+    ++ lib.optionals cfg.contextMemory.enable [
+      # Context/memory stack. Honcho remains separately gated by cfg.honcho.enable.
+      "npm:pi-context"
+      "npm:pi-total-recall"
     ];
 
   piPackagesExtra =
@@ -295,6 +336,31 @@ in
       type = types.str;
       default = "";
       description = "Git remote URL for pi global memory (~/.pi/memory)";
+    };
+    mcp.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable Pi MCP adapter and MCPorter packages.";
+    };
+    computerUse.enable = mkOption {
+      type = types.bool;
+      default = desktopPiHost;
+      description = "Enable Pi GUI/browser computer-use tools on desktop-capable hosts.";
+    };
+    gitTools.enable = mkOption {
+      type = types.bool;
+      default = config.modules.shell.git.enable;
+      description = "Enable Pi GitHub/GitNexus/git-review packages when shell git tooling is enabled.";
+    };
+    statusUi.enable = mkOption {
+      type = types.bool;
+      default = desktopPiHost;
+      description = "Enable Pi status, usage quota, and WakaTime UI packages on interactive desktop hosts.";
+    };
+    contextMemory.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable Pi context and total-recall memory/search packages. Honcho has its own toggle.";
     };
     honcho = {
       enable = mkBoolOpt false;

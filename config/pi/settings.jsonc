@@ -39,6 +39,9 @@
   // including rebuild and signing bypass blocks.
   // Config: ~/.pi/agent/pi-permissions.jsonc
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
+  // Host/module-specific packages are injected by modules/agents/pi/default.nix
+  // (tmux/herdr, MCP, computer-use, git tooling, status UI, and context/memory).
+  // Keep this list for packages that should be broad Pi defaults on every enabled host.
   "packages": [
     {
       "source": "shitty-extensions",
@@ -61,8 +64,6 @@
     // "~/.config/dotfiles/pi-packages/pi-context-repo",
     // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
     "~/.config/dotfiles/pi-packages/pi-dcp",
-    // Agentic context management (/acm, /context, context_* tools) - https://github.com/ttttmr/pi-context
-    "npm:pi-context",
     // Repo-local QMD workflow (/qmd, /qp) and qmd-cli-first guidance
     "~/.config/dotfiles/pi-packages/pi-qmd",
     // Auto-load direnv env at session start
@@ -112,8 +113,6 @@
     },
     // Branch-aware session context rollback + /checkpoint - https://github.com/uriafranko/pi-rollback
     "https://github.com/uriafranko/pi-rollback",
-    // GitHub repo tools (read/search/explore) - https://github.com/PriNova/pi-github-tools
-    "npm:@prinova/pi-github-tools",
     // Read tool structural maps for large files - https://github.com/Whamp/pi-read-map
     "npm:pi-read-map",
     // Read mode for focused/large-file reading workflows
@@ -125,11 +124,6 @@
     // Legacy tasks package intentionally disabled to keep task tools out of session
     // "~/.config/dotfiles/pi-packages/pi-beads",
 
-    // Usage quota widget (bundles sub-core) - https://github.com/marckrenn/pi-sub
-    "npm:@marckrenn/pi-sub-bar",
-    // /limits command - provider usage bars via sub-core
-    // https://gist.github.com/airtonix/25b4aee6f4a6a775aff028adfdb9936f
-    "~/.pi/agent/extensions/sub-limits.ts",
     // Multi-edit extension (edits[]) from gist (SSH git source)
     {
       "source": "git:git@gist.github.com:30c35e985b5ca59f8e6f69a66520d487.git",
@@ -142,41 +136,28 @@
       "extensions": ["extensions/semaphore-locks.ts"],
       "skills": [],
     },
-    // tmux-specific packages are injected by modules/agents/pi when modules.shell.tmux.enable = true.
+    // tmux/herdr shell-integration packages are injected by modules/agents/pi.
     // Parallel side conversations with /btw - https://github.com/dbachelder/pi-btw
     "npm:pi-btw",
     // Dumb zone - context degradation warning (forked from @aliou/pi-extensions)
     "~/.config/dotfiles/pi-packages/pi-dumb-zone",
     // BUG dotfiles-n579: frontmatter warnings on CHANGELOG.md/README.md
     // "npm:visual-explainer",
-    // Configurable terminal title + Ghostty OSC progress bar - https://github.com/Thinkscape/pi-status
-    // Git source avoids npm --before cutoff for package published after current Pi release.
-    "git:github.com/Thinkscape/pi-status",
     // Pi logo display (git source avoids npm --before cutoff for package published after current Pi release)
     "git:github.com/FredySandoval/pi-logo",
     // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
-    // MCP adapter - lazy-load MCP servers without burning context - https://github.com/nicobailon/pi-mcp-adapter
-    "npm:pi-mcp-adapter",
+    // pi-smart-fetch stays broad; GUI/browser computer-use tools are module-gated.
     // Browser/web access tool - https://github.com/nicobailon/pi-web-access
     // DISABLED: replaced by pi-smart-fetch for web_fetch
     // "npm:pi-web-access",
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
     "npm:pi-smart-fetch",
-    // Computer-use tools for screenshots, mouse, and keyboard control - https://github.com/injaneity/pi-computer-use
-    "git:github.com/injaneity/pi-computer-use",
-    // MCPorter bridge - composable MCP server orchestration - https://github.com/mavam/pi-mcporter
-    "npm:pi-mcporter",
-    // GitNexus knowledge graph - auto-enriches reads/searches with call chains - https://github.com/tintinweb/pi-gitnexus
-    "npm:pi-gitnexus",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
     // Verbosity controls for concise/detailed responses - npm package
     "npm:pi-verbosity-control",
     // RTK token reduction via tool hooks - ~30-40% upload token savings - https://github.com/mcowger/pi-rtk
     "npm:pi-rtk",
-    // Code simplification review for changed files - https://github.com/MattDevy/pi-extensions
-    // Git source avoids Pi's npm --before cutoff selecting 0.2.0 with old @mariozechner peers.
-    "git:github.com/MattDevy/pi-extensions",
     // Process inspection/management tools - https://github.com/aliou/pi-processes
     "npm:@aliou/pi-processes",
     // Web research — clean fetch, pluggable search, scout subagent - https://github.com/iaptsiauri/pi-surf
@@ -205,14 +186,10 @@
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
     // FIXME MAKE IT STOP https://github.com/davebcn87/pi-autoresearch/issues/6
     // "https://github.com/davebcn87/pi-autoresearch",
-    // WakaTime heartbeats + AI coding metrics - https://www.npmjs.com/package/pi-wakatime
-    "npm:pi-wakatime",
     // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
     "npm:latchkey",
     // Ask tool — structured clarification before acting - https://github.com/eko24ive/pi-ask
     "npm:@eko24ive/pi-ask",
-    // Complete context stack: memory, session search, and knowledge search - https://github.com/samfoy/pi-total-recall
-    "npm:pi-total-recall",
     // Native diff review window with Monaco + annotations - https://github.com/badlogic/pi-diff-review
     // "git:https://github.com/badlogic/pi-diff-review",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
