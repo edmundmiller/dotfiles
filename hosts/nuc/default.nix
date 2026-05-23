@@ -122,6 +122,20 @@ let
         path = "/var/lib/opnix/secrets/radarAgentmailCredential";
       }
     ];
+  hermesSecretSets = {
+    anne = hermesAnneSecrets;
+    betty = hermesBettySecrets;
+    radar = hermesRadarSecrets;
+    scintillate = hermesScintillateSecrets;
+  };
+  hermesSecretEnvOwners =
+    envVar:
+    builtins.attrNames (
+      lib.filterAttrs (
+        _profile: secrets: builtins.any (secret: secret.envVar == envVar) secrets
+      ) hermesSecretSets
+    );
+  hermesTelegramBotTokenOwners = hermesSecretEnvOwners "TELEGRAM_BOT_TOKEN";
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
@@ -223,7 +237,16 @@ let
 
 in
 {
-  inherit (telegramBindings) assertions;
+  assertions = telegramBindings.assertions ++ [
+    {
+      assertion = hermesTelegramBotTokenOwners == [ "scintillate" ];
+      message = ''
+        Scintillate must be the only NUC Hermes profile receiving TELEGRAM_BOT_TOKEN.
+        Current owners: ${lib.concatStringsSep ", " hermesTelegramBotTokenOwners}
+        Do not share one Telegram bot token across Hermes profiles; duplicate getUpdates polling breaks Telegram delivery.
+      '';
+    }
+  ];
 
   system.activationScripts = {
     # Workaround for nix-openclaw/linux-sandbox using hardcoded /bin paths.
