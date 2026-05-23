@@ -1,0 +1,41 @@
+bin/tests/obsidian-neovide.zunit
+  s_e0182d3dbf3096::t_97c74cb87019a6 1-54
+config/nvim/lua/custom/plugins/obsidian.lua
+  s_e0182d3dbf3096::t_91cae854c6490a 4
+config/nvim/tests/obsidian_project.zunit
+  s_e0182d3dbf3096::t_6fbcc7ac2acfba 7,37,43,49
+  s_e0182d3dbf3096::t_f103fd0535f3ee 1-6,8-36,38-42,44-48,50-52
+config/nvim/lua/custom/obsidian_project.lua
+  s_e0182d3dbf3096::t_b18db58b43c15e 1-179
+config/nvim/tests/obsidian_project_test.lua
+  s_e0182d3dbf3096::t_742d286e06f1e7 1-84
+modules/shell/herdr.nix
+  s_e0182d3dbf3096::t_169cc2ddf444a0 55-59,324,418-422
+config/tmux/config
+  s_e0182d3dbf3096::t_6947e36208cac9 94,96
+  s_e0182d3dbf3096::t_7abd2b5fd1a5f1 95
+config/nvim/lua/custom/private/obsidian-project-aliases.lua.example
+  s_e0182d3dbf3096::t_708e28244902d4 1-5
+bin/obsidian-neovide
+  s_e0182d3dbf3096::t_036ebb2c18e619 43-52,68
+  s_e0182d3dbf3096::t_93c6099c496937 53-55
+  s_e0182d3dbf3096::t_d921a6f8ca68c3 1-42,56-67
+.gitignore
+  s_e0182d3dbf3096::t_708e28244902d4 65-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "07713b3a73e213c1878446789cb0ca338ad3cd4e",
+  "prompts": {},
+  "sessions": {
+    "s_e0182d3dbf3096": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e55df-ac11-7538-8b8b-e02cd6342658",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
