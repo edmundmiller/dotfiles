@@ -904,6 +904,10 @@ in
         enable = true;
         tailscaleService.enable = true;
       };
+      agentsview = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       hermes = {
         enable = true;
         # Containers use host networking, so prefer the deployment-local HA
