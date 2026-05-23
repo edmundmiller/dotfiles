@@ -8,7 +8,8 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesCliPackage = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
+  hermesAgentBase = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
+  hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
@@ -638,6 +639,7 @@ in
   ];
 
   services.hermes-agent = {
+    package = hermesAgentBase;
     user = "emiller";
     group = "users";
     createUser = false;
@@ -655,7 +657,10 @@ in
       };
       scintillate = {
         authFile = "/home/emiller/.codex/auth.json";
-        environment.CODEX_HOME = "/home/emiller/.codex";
+        environment = {
+          CODEX_HOME = "/home/emiller/.codex";
+          PYTHONPATH = hermesTelegramPythonPath;
+        };
         environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
       };
       amosburton = {
@@ -705,7 +710,7 @@ in
     wants = [ "network-online.target" ];
     path = [
       radarHermesLauncher
-      hermesCliPackage
+      hermesAgentBase
       pkgs.bashInteractive
       pkgs.coreutils
       pkgs.findutils
