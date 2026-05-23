@@ -1,0 +1,12 @@
+# Amoxide global config. Managed by dotfiles; edit this file then rebuild.
+
+[aliases]
+# Keep globals sparse. Prefer profiles for tool-specific aliases.
+reload = "exec $SHELL -l"
+
+[logging]
+project_loading = "short"
+project_unloading = "short"
+
+[update]
+check = false

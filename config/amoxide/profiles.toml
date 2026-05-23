@@ -1,0 +1,69 @@
+# Amoxide profiles. Managed by dotfiles; edit this file then rebuild.
+
+[[profiles]]
+name = "git"
+
+[profiles.aliases]
+g = "git status --short ."
+ga = "git add"
+gap = "git add --patch"
+gb = "git branch"
+gc = "git commit"
+gcm = "git commit -m"
+gca = "git commit --amend"
+gco = "git checkout"
+gd = "git diff"
+gds = "git diff --staged"
+gl = "git log --oneline --decorate --graph -20"
+gp = "git pull"
+gps = "git push"
+gs = "git status --short"
+gst = "git status"
+
+[[profiles]]
+name = "jj"
+
+[profiles.aliases]
+j = "jj"
+ja = "jj abandon"
+jd = "jj diff"
+jds = "jj describe"
+jl = "jj log"
+js = "jj status"
+jn = "jj new"
+jsq = "jj squash"
+
+[[profiles]]
+name = "nix"
+
+[profiles.aliases]
+nb = "nix build"
+nd = "nix develop"
+nfl = "nix flake lock"
+nfu = "nix flake update"
+nr = "nix run"
+ns = "nix shell"
+
+[[profiles]]
+name = "rust"
+
+[profiles.aliases]
+cb = "cargo build"
+cc = "cargo check"
+cf = "cargo fmt"
+cl = "cargo clippy --all-targets --all-features -- -D warnings"
+cr = "cargo run"
+ct = "cargo test"
+
+[[profiles]]
+name = "node"
+
+[profiles.aliases]
+ni = "npm install"
+nrd = "npm run dev"
+nrb = "npm run build"
+nrt = "npm run test"
+bi = "bun install"
+bd = "bun run dev"
+bb = "bun run build"
+bt = "bun test"
