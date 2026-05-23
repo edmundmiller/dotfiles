@@ -1,0 +1,27 @@
+bin/hey.d/common.nu
+  s_498821abb1d007::t_827010ff6dc74d 110,123
+modules/agents/pi/default.nix
+  s_498821abb1d007::t_95419ecffa6bf7 247,249-251,286-287,289-290
+  s_498821abb1d007::t_b5125fe45ae3b5 288
+  s_498821abb1d007::t_b8bbae1800f36f 284-285
+  s_498821abb1d007::t_73406501b991f1 238-242,277-278
+  s_498821abb1d007::t_f711479fff1d2f 248
+config/pi/settings.jsonc
+  s_498821abb1d007::t_b6821b7b67a0c8 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "b1a2961735bcba5734e8d7231fc99bfcc347ff6e",
+  "prompts": {},
+  "sessions": {
+    "s_498821abb1d007": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e52c6-d9e9-70b0-94f7-8a768083324d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
