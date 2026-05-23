@@ -1,5 +1,10 @@
 # Overlay Notes
 
+References:
+
+- <https://wiki.nixos.org/wiki/Overlays>
+- <https://nixcademy.com/posts/mastering-nixpkgs-overlays-techniques-and-best-practice/>
+
 - Prefer small overlays that modify the upstream derivation with `overrideAttrs` instead of re-declaring the whole package. Keep upstream install hooks, wrappers, metadata, and future fixes unless there is a specific reason to replace them.
 - Use the normal overlay shape: `final: prev: { ... }`. Read dependencies from `final` when you want the post-overlay package set, and from `prev` when you want the upstream package being overridden.
 - When overriding nested package sets, preserve the rest of the set:
