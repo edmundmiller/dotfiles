@@ -63,4 +63,8 @@ with types;
       preview_command = mkOpt (nullOr str) null;
     };
   };
+
+  workmux = {
+    enable = mkBoolOpt false;
+  };
 }

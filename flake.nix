@@ -210,7 +210,19 @@
           in
           mapModules ./packages (p: callPackageWithInputs p { })
           // {
-            inherit (inputs.llm-agents.packages.${linuxSystem}) agentsview herdr hunk;
+            inherit (inputs.llm-agents.packages.${linuxSystem})
+              agent-browser
+              agentsview
+              but
+              gitbutler
+              gitnexus
+              gnhf
+              herdr
+              hunk
+              mcporter
+              rtk
+              workmux
+              ;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -220,7 +232,19 @@
           in
           mapModules ./packages (p: callPackageWithInputs p { })
           // {
-            inherit (inputs.llm-agents.packages.${darwinSystem}) agentsview herdr hunk;
+            inherit (inputs.llm-agents.packages.${darwinSystem})
+              agent-browser
+              agentsview
+              but
+              gitbutler
+              gitnexus
+              gnhf
+              herdr
+              hunk
+              mcporter
+              rtk
+              workmux
+              ;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 

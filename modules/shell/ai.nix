@@ -14,6 +14,8 @@ in
     enable = mkBoolOpt false;
     enableClaude = mkBoolOpt false;
     enableCodex = mkBoolOpt false;
+    mcporter.enable = mkBoolOpt false;
+    rtk.enable = mkBoolOpt false;
   };
 
   config = mkIf cfg.enable {
@@ -24,6 +26,8 @@ in
       # ])
       unstable.chatblade
       unstable.aichat
+      (mkIf cfg.mcporter.enable llm-agents.mcporter)
+      (mkIf cfg.rtk.enable llm-agents.rtk)
     ];
 
     # Install Claude CLI via npm if enabled

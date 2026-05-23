@@ -6,6 +6,7 @@
 {
   config,
   lib,
+  pkgs,
   isDarwin,
   ...
 }:
@@ -80,6 +81,8 @@ in
     mkMerge (
       [
         {
+          user.packages = [ pkgs.llm-agents.agent-browser ];
+
           home-manager.users.${config.user.name}.home.file.".agent-browser/config.json".text =
             builtins.toJSON finalConfig;
         }

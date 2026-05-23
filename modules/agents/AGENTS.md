@@ -7,6 +7,7 @@ This directory contains Nix modules for AI agents:
 - `codex/` - Codex CLI (OpenAI)
 - `hermes/` - Hermes agent CLI (local development)
 - `opencode/` - OpenCode CLI
+- `packages.nix` - Simple agent-adjacent package toggles such as `gnhf`
 - `pi/` - Pi coding agent + shell helpers (worktree management, PR review)
 
 ## Option Namespace
@@ -18,6 +19,7 @@ modules.agents = {
   agentsview.enable = true;
   claude.enable = true;
   codex.enable = true;
+  gnhf.enable = true;
   hermes = {
     enable = true;
     secretReferences = { ... };

@@ -8,6 +8,8 @@ Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/l
 - `modules.shell.git.ai.enable` — git-ai authorship tracking; injects `pi-git-ai` into `modules.agents.pi.extraPackages` when pi is also enabled
 - `modules.shell.git.stack.enable` — install Kit Langton's squash-safe stacked PR `stack` CLI (defaults on with git)
 - `modules.shell.git.lazydiff.enable` — install LazyDiff terminal diff/PR reviewer (defaults on with git)
+- `modules.shell.git.gitbutler.enable` — install llm-agents GitButler CLIs (`gitbutler` and `but`)
+- `modules.shell.git.gitnexus.enable` — install llm-agents `gitnexus`
 
 ## Packages
 
