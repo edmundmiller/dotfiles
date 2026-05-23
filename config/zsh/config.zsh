@@ -15,7 +15,7 @@ if [[ $TERM == dumb || -n $INSIDE_EMACS ]]; then
 fi
 
 # Quick hack: Add cargo to PATH
-export PATH="$HOME/.cargo/bin:$PATH"
+path+=("$HOME/.cargo/bin")
 
 ## Plugins
 # zsh-vi-mode

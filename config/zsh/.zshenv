@@ -27,14 +27,25 @@ export TERMINFO_DIRS="$HOME/.nix-profile/share/terminfo:/etc/profiles/per-user/$
 # Set default TERM if empty (prevents TUI crashes in non-interactive SSH)
 [[ -z "$TERM" ]] && export TERM=xterm-256color
 
-# Add ~/.local/bin to PATH if it exists
-[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
-
-# Add dotfiles bin directory to PATH
-[[ -d "$XDG_CONFIG_HOME/dotfiles/bin" ]] && export PATH="$XDG_CONFIG_HOME/dotfiles/bin:$PATH"
-
-# Source nix-darwin generated environment (envFiles from modules)
+# Source nix-darwin generated environment (envFiles from modules).
 [[ -f "$ZDOTDIR/extra.zshenv" ]] && source "$ZDOTDIR/extra.zshenv"
+
+# Canonical PATH order: managed Nix profiles first, then user/tool bins.
+# This prevents stale self-installed tools in ~/.local/bin, ~/.bun/bin, etc.
+# from shadowing declarative packages such as Herdr.
+typeset -U path PATH
+path=(
+  /etc/profiles/per-user/$USER/bin
+  /run/current-system/sw/bin
+  $HOME/.nix-profile/bin
+  $XDG_CONFIG_HOME/dotfiles/bin
+  $HOME/.pi/agent/bin
+  $HOME/.bun/bin
+  $HOME/.local/bin
+  $HOME/.pixi/bin
+  $HOME/.cargo/bin
+  $path
+)
 
 # nix-homebrew exposes both ARM (/opt/homebrew) and Rosetta (/usr/local) brew entrypoints.
 # In native ARM shells, macOS/path_helper can still leave /usr/local ahead of /opt/homebrew,
