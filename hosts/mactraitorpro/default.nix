@@ -31,16 +31,24 @@
 
       shell = {
         "1password".enable = true;
-        ai.enable = true;
+        ai = {
+          enable = true;
+          mcporter.enable = true;
+        };
         amoxide.enable = true;
         agentBrowser.enable = true;
         direnv.enable = true;
-        git.enable = true;
-        git.ai.enable = true;
-        git.hunk.enable = true;
-        git.lazydiff.enable = true;
+        git = {
+          enable = true;
+          ai.enable = true;
+          gitbutler.enable = false;
+          gitnexus.enable = true;
+          hunk.enable = true;
+          lazydiff.enable = true;
+        };
         jj.enable = true;
         tmux.enable = true;
+        tmux.workmux.enable = true;
         acpx.enable = true;
         herdr.enable = true;
         tmux.jmux.enable = true;
@@ -82,6 +90,7 @@
         agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
+        gnhf.enable = true;
         opencode.enable = true;
       };
 

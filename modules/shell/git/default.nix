@@ -16,6 +16,8 @@ in
     enable = mkBoolOpt false;
     ai.enable = mkBoolOpt false;
     hunk.enable = mkBoolOpt false;
+    gitbutler.enable = mkBoolOpt false;
+    gitnexus.enable = mkBoolOpt false;
     lazydiff.enable = mkBoolOpt false;
     diffity.enable = mkBoolOpt false;
     stack.enable = mkBoolOpt true;
@@ -33,6 +35,9 @@ in
           git-lfs
           pre-commit
           my.git-hunks
+          (mkIf cfg.gitbutler.enable llm-agents.but)
+          (mkIf cfg.gitbutler.enable llm-agents.gitbutler)
+          (mkIf cfg.gitnexus.enable llm-agents.gitnexus)
           (mkIf cfg.hunk.enable my.hunk)
           (mkIf cfg.lazydiff.enable my.lazydiff)
           (mkIf cfg.stack.enable my.stack)
