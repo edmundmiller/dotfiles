@@ -830,6 +830,22 @@
         "type": "github"
       }
     },
+    "gitbutler-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779555420,
+        "narHash": "sha256-24otpgWd+StmrChm72LC5SmOfxhIY9BziG6LpfBTyTw=",
+        "owner": "gitbutlerapp",
+        "repo": "gitbutler",
+        "rev": "2f4611bfb65f0a634be0075ab7ae175133d982f6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gitbutlerapp",
+        "repo": "gitbutler",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -1833,6 +1849,7 @@
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
         "diffity-repo": "diffity-repo",
+        "gitbutler-repo": "gitbutler-repo",
         "herdr-repo": "herdr-repo",
         "hunk-repo": "hunk-repo",
         "marimo-pair-repo": "marimo-pair-repo",
