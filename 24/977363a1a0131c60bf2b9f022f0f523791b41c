@@ -1,0 +1,19 @@
+modules/desktop/macos/default.nix
+  s_3ede01dbddfc33::t_d9cb0b90309237 26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "24977363a1a0131c60bf2b9f022f0f523791b41c",
+  "prompts": {},
+  "sessions": {
+    "s_3ede01dbddfc33": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e5673-521c-7976-8caf-77742374d3b9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
