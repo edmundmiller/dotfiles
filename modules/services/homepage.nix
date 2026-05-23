@@ -238,6 +238,13 @@ in
               };
             }
             {
+              "AgentsView" = {
+                href = "https://agentsview.${tailnet}";
+                description = "Shared agent session viewer";
+                icon = "mdi-account-eye-outline";
+              };
+            }
+            {
               "Open Wearables" = {
                 href = "${nucBase}:${toString config.modules.services.open-wearables.backendPort}/docs";
                 description = "Wearable health API (Apple XML import)";

@@ -171,6 +171,15 @@ let
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }
+          ]
+          ++ optionals config.modules.services.agentsview.enable [
+            {
+              name = "AgentsView";
+              group = "Infrastructure";
+              url = "http://127.0.0.1:${toString config.modules.services.agentsview.port}";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
           ];
       }
       // optionalAttrs (alertingConfig != { }) {
