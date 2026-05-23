@@ -1,2 +1,3 @@
 # Active profiles, low-to-high precedence. Managed by dotfiles.
-active_profiles = ["git", "jj", "nix"]
+# Keep git/jj inactive by default: zsh aliases/functions are authoritative for those names.
+active_profiles = ["nix"]
