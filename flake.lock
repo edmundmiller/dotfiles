@@ -99,22 +99,6 @@
         "url": "ssh://git@github.com/edmundmiller/agents-workspace"
       }
     },
-    "anthropic-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1778286877,
-        "narHash": "sha256-jKNYFom6R+Qw7LQ8vFPBe51JpqIP0tTSY8LM4aPlnT4=",
-        "owner": "anthropics",
-        "repo": "skills",
-        "rev": "f458cee31a7577a47ba0c9a101976fa599385174",
-        "type": "github"
-      },
-      "original": {
-        "owner": "anthropics",
-        "repo": "skills",
-        "type": "github"
-      }
-    },
     "base16": {
       "inputs": {
         "fromYaml": "fromYaml"
@@ -1848,7 +1832,6 @@
         "acpx-repo": "acpx-repo",
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
-        "anthropic-skills": "anthropic-skills",
         "diffity-repo": "diffity-repo",
         "herdr-repo": "herdr-repo",
         "hunk-repo": "hunk-repo",
