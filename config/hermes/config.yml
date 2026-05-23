@@ -28,23 +28,23 @@ mcp_servers:
 # Primary inference: OpenAI Codex
 model:
   provider: openai-codex
-  default: gpt-5.4
-  thinking: high
+  default: gpt-5.5
+  thinking: low
 
-# Primary-model fallback: if Codex returns repeated invalid responses or hard
-# provider errors, fail over to a real Anthropic model ID.
+# Primary-model fallback: Anthropic is intentionally not configured on this
+# laptop. Use DeepSeek V4 through OpenRouter as the strong non-Codex fallback.
 fallback_model:
-  provider: anthropic
-  model: claude-opus-4-6
+  provider: openrouter
+  model: deepseek/deepseek-v4-pro
 
-# Fallback chain: OpenCode GLM-5.1, Nous MTP, KiloCode, then OpenRouter
+# Fallback chain: prefer a strong non-Codex model, then a fast OpenCode option,
+# then OpenRouter auto as the broad last resort. Keep this aligned with the
+# credentials actually materialized into ~/.hermes/.env on the laptop.
 fallback_providers:
+  - provider: openrouter
+    model: deepseek/deepseek-v4-pro
   - provider: opencode
     model: GLM-5.1
-  - provider: nous
-    model: z-ai/glm-5.1
-  - provider: kilo
-    model: kilo/frontier
   - provider: openrouter
     model: auto
 
@@ -98,8 +98,8 @@ smart_model_routing:
   max_simple_chars: 160
   max_simple_words: 28
   cheap_model:
-    provider: nous
-    model: minimax/minimax-m2.7
+    provider: opencode
+    model: GLM-5.1
     thinking: auto
 
 # Auxiliary services
