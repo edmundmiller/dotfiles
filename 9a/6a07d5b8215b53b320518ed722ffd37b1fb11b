@@ -1,0 +1,29 @@
+config/agents/rules/15-agent-behavior.md
+  s_56325d6ff3b74b::t_56b892c05448d4 1-20
+config/agents/rules/06-development-preferences.md
+  s_f85b7330b42148::t_ec4be828828108 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "9a6a07d5b8215b53b320518ed722ffd37b1fb11b",
+  "prompts": {},
+  "sessions": {
+    "s_56325d6ff3b74b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e5529-36ad-7bbd-bbf5-83e9598db73a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_f85b7330b42148": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LkI1Q7UAcQEEpc1ygbT",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
