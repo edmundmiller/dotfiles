@@ -1,0 +1,21 @@
+config/jj/README.md
+  s_c163c204bba13f::t_91aff37af4acd1 5-10
+config/jj/config.toml
+  s_c163c204bba13f::t_2ea932aeba427e 25,30-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "c11582acd2abac20e11a77618c9a854b64bed29b",
+  "prompts": {},
+  "sessions": {
+    "s_c163c204bba13f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e554e-fa52-7d43-a595-393ea608e7c9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
