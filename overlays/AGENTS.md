@@ -20,7 +20,7 @@ References:
   }
   ```
 
-- This repo's `mapModules ./overlays import` supports either `overlays/foo.nix` or `overlays/foo/default.nix`. Use a directory overlay when the override needs supporting files such as a lockfile, patch, or generated data.
+- This repo's `mapModules ./overlays import` supports either `overlays/foo.nix` or `overlays/foo/default.nix`. Prefer the `overlays/foo/default.nix` directory pattern when the overlay may need supporting files such as a lockfile, patch, generated data, or overlay-specific `AGENTS.md` guidance.
 - For `buildNpmPackage` overrides that change `src` and `package-lock.json`, update both `npmDepsHash` and `npmDeps`. Otherwise `overrideAttrs` may keep the upstream fixed-output npm deps derivation even though the new source has a different lockfile.
 - If a source tarball includes `npm-shrinkwrap.json` but the override uses a repo-local `package-lock.json`, remove the shrinkwrap in the prepared source so npm uses the intended lockfile.
 - Avoid adding temporary package copies under `packages/` just to override a flake input package. Keep the override and its support files local to `overlays/<name>/` unless the package is intended to become a first-class local package.
