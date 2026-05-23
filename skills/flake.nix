@@ -17,11 +17,6 @@
       flake = false;
     };
 
-    anthropic-skills = {
-      url = "github:anthropics/skills";
-      flake = false;
-    };
-
     agent-tail-repo = {
       url = "github:gillkyle/agent-tail";
       flake = false;
@@ -212,15 +207,6 @@
               filter.maxDepth = 2;
             };
 
-            anthropic = {
-              path = inputs.anthropic-skills.outPath;
-              subdir = "skills";
-              filter = {
-                maxDepth = 2;
-                nameRegex = "^skill-creator$";
-              };
-            };
-
             agent-tail = {
               path = inputs.agent-tail-repo.outPath;
               subdir = "skills";
@@ -330,9 +316,6 @@
             // {
               gh-fix-ci.from = "openai";
               gh-fix-ci.path = "gh-fix-ci";
-
-              skill-creator.from = "anthropic";
-              skill-creator.path = "skill-creator";
 
               agent-tail.from = "agent-tail";
               agent-tail.path = "agent-tail";
