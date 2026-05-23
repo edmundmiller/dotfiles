@@ -2,7 +2,9 @@
 
 End-to-end flow for adding a self-hosted service to the NUC.
 
-## 1. Module (`modules/services/<name>.nix`)
+## 1. Module (`modules/services/<name>.nix` or `<name>/default.nix`)
+
+Use a single file for small services, or a directory with `default.nix` + `AGENTS.md`/README for services with operational details. Both are auto-discovered.
 
 Wrap the upstream NixOS module. Follow the audiobookshelf/lubelogger pattern:
 
@@ -149,26 +151,58 @@ systemd.services.myservice-tailscale-serve = mkIf cfg.tailscaleService.enable {
 # Direct: http://<tailscale-ip>:8080
 #
 # Setup (one-time):
-# 1. Tailscale admin → Services → Create service
-# 2. Name: "myservice", endpoint: tcp:443, tag: tag:server
-# 3. Deploy: hey nuc
-# 4. Approve host in admin console
+# 1. Create/update svc:myservice in ~/src/personal/tailnet via Tailscale API
+# 2. Add svc:myservice to tailscale/policy.hujson explicit service grant
+# 3. Apply tailnet ACL with OpenTofu
+# 4. Deploy: hey nuc
 ```
 
 ## Examples
 
+- `modules/services/agentsview/default.nix`
 - `modules/services/opencode/default.nix`
-- `modules/services/hass.nix`
+- `modules/services/hass/default.nix`
 
-## Manual Setup After Deploy
+## Tailscale Service Setup Source of Truth
 
-1. **Define service**: https://login.tailscale.com/admin/services
-   - Name matches `serviceName` option
-   - Endpoint: `tcp:443`
-   - Add tag (e.g., `tag:server`)
+Do **not** rely on manual admin-console approval. Tailscale service definitions and ACL grants live in `~/src/personal/tailnet`.
 
-2. **Deploy**: `hey nuc`
+1. Add `svc:<name>` to `~/src/personal/tailnet/tailscale/policy.hujson` explicit service grant list.
+2. Create/update the VIP service with the Tailscale API from that repo's direnv shell:
 
-3. **Approve**: Admin console → Services → Approve pending host
+   ```bash
+   cd ~/src/personal/tailnet/tailscale
+   direnv exec . bash -lc '
+     KEY="$TF_VAR_tailscale_api_key"
+     curl -fsS -X PUT -u "$KEY:" \
+       -H "Content-Type: application/json" \
+       -d "{\"name\":\"svc:myservice\",\"comment\":\"My Service\",\"ports\":[\"tcp:443\"],\"tags\":[\"tag:server\"]}" \
+       "https://api.tailscale.com/api/v2/tailnet/-/vip-services/svc:myservice"
+   '
+   ```
 
-4. **Access**: `https://<servicename>.<tailnet>.ts.net`
+   If updating an existing service, include its existing two `addrs` values in the PUT body; otherwise the API returns `400`.
+
+3. Apply ACL:
+
+   ```bash
+   cd ~/src/personal/tailnet/tailscale
+   direnv exec . tofu apply -auto-approve
+   ```
+
+4. Verify:
+
+   ```bash
+   curl -fsS -u "$TF_VAR_tailscale_api_key:" \
+     https://api.tailscale.com/api/v2/tailnet/-/vip-services/svc:myservice/devices | jq .
+   ```
+
+   Expected: `approvalLevel` is `approved:auto` and `configured` is `ready`.
+
+5. Deploy service wiring:
+
+   ```bash
+   git push && hey nuc
+   ```
+
+6. Access: `https://<servicename>.<tailnet>.ts.net`
