@@ -1,0 +1,23 @@
+config/pi/settings.jsonc
+  s_498821abb1d007::t_f403f3358e4bbf 9
+hosts/seqeratop/default.nix
+  s_498821abb1d007::t_85a3b55444e459 85
+modules/agents/pi/default.nix
+  s_498821abb1d007::t_959c3c4be0373d 238,247,278,369-372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "6b2a94e29cc6607dbb4efc9e777be3bf586dd3e6",
+  "prompts": {},
+  "sessions": {
+    "s_498821abb1d007": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e52c6-d9e9-70b0-94f7-8a768083324d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
