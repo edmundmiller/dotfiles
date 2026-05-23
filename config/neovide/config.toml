@@ -1,0 +1,30 @@
+# Neovide config — https://neovide.dev/config-file.html
+# Managed by Nix (modules/desktop/apps/neovide.nix), read-only at runtime.
+
+# Default window size on launch. `size` is pixels; mutually exclusive with
+# `grid` (cell-based) and `maximized`. 1600x1000 sits comfortably on a
+# 14" MacBook Pro and a 27" external alike.
+#
+# Tweakable knobs (all live-reload from this file on Neovide 0.16+):
+#   - size      = "1600x1000"   # pixels — current setting
+#   - grid      = "120x40"      # alternative: cell-based sizing (cols x rows)
+#   - maximized = true          # alternative: start near-fullscreen
+#   The three above are mutually exclusive. Drop all three to let Neovide
+#   restore the last-known window geometry instead.
+size = "1600x1000"
+
+# Window chrome. Try "buttonless" or "transparent" on macOS for a more
+# minimal look; "full" gives the standard titlebar + traffic-light buttons.
+frame = "full"
+
+idle = true
+tabs = true
+title-hidden = false
+
+# macOS-native hotkeys keep parity with other Mac apps.
+system-native-tabs = false
+
+[font]
+normal = ["JetBrainsMono Nerd Font"]
+# Bump size to taste — measured in points.
+size = 15.0
