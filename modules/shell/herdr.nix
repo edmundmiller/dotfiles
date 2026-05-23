@@ -37,6 +37,7 @@ let
         [keys]
         prefix = "${cfg.prefix}"
         split_horizontal = "prefix+-"
+        toggle_sidebar = "prefix+b"
         previous_tab = "prefix+p"
         next_tab = "prefix+n"
 
@@ -351,6 +352,7 @@ in
           managed_keys = {
               "prefix": prefix,
               "split_horizontal": "prefix+-",
+              "toggle_sidebar": "prefix+b",
               "previous_tab": "prefix+p",
               "next_tab": "prefix+n",
           }
