@@ -254,7 +254,24 @@ EOF
 }
 
 # pi package/update shortcuts
-alias piu='pi update --extensions'
+# Default to extension/package updates because the pi binary itself is Nix-managed.
+# Pass a package source to update one package, e.g. `piu npm:@howaboua/pi-markdown-workflows`.
+piu() {
+  local pi_bin
+  pi_bin=$(_pi_resolve_bin "${PI_BIN:-pi}" \
+    "/etc/profiles/per-user/$USER/bin/pi" \
+    "/run/current-system/sw/bin/pi" \
+    "$HOME/.nix-profile/bin/pi") || {
+      print -u2 'error: pi not found'
+      return 1
+    }
+
+  if (( $# )); then
+    "$pi_bin" update "$@"
+  else
+    "$pi_bin" update --extensions
+  fi
+}
 
 # pi-overwatch shortcuts
 alias ow='pi-overwatch'
