@@ -36,15 +36,15 @@ let
   # Ghostty's `command` runs before shell profile loading, so launchers like
   # bun-installed `jmux` must be discoverable here too.
   nixPath = concatStringsSep ":" [
+    "/etc/profiles/per-user/${config.user.name}/bin"
+    "/run/current-system/sw/bin"
+    "${config.user.home}/.nix-profile/bin"
+    config.dotfiles.binDir
     "${config.user.home}/.pi/agent/bin"
     "${config.user.home}/.bun/bin"
     "${config.user.home}/.local/bin"
     "${config.user.home}/.pixi/bin"
     "${config.user.home}/.cargo/bin"
-    config.dotfiles.binDir
-    "${config.user.home}/.nix-profile/bin"
-    "/etc/profiles/per-user/${config.user.name}/bin"
-    "/run/current-system/sw/bin"
     "/nix/var/nix/profiles/default/bin"
     "/usr/local/bin"
     "/usr/bin"

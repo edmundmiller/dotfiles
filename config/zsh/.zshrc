@@ -143,12 +143,11 @@ if [[ $TERM != dumb ]]; then
   } &!
 fi
 
-export PATH="/Users/emiller/.pixi/bin:$PATH"
-export PATH="$HOME/.local/bin:$PATH"
+path+=("$HOME/.pixi/bin" "$HOME/.local/bin")
 
 # bun - lazy load completions
 export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+path+=("$BUN_INSTALL/bin")
 if [[ -s "$BUN_INSTALL/_bun" ]]; then
   function bun {
     unfunction bun bunx
@@ -188,4 +187,4 @@ alias oz="oz-preview"
 [ -s "/Users/edmundmiller/.bun/_bun" ] && source "/Users/edmundmiller/.bun/_bun"
 
 # Added by git-ai installer on Fri May  8 22:06:10 CDT 2026
-export PATH="/Users/emiller/.git-ai/bin:$PATH"
+path+=("$HOME/.git-ai/bin")
