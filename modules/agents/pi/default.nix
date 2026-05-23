@@ -244,8 +244,6 @@ let
 
   moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
 
-  moduleManagedEnabledModels = [ ];
-
   dropModuleManagedPackages =
     packages:
     builtins.filter (pkg: !(builtins.elem (packageSource pkg) moduleManagedPackageSources)) packages;
@@ -282,9 +280,7 @@ let
       piSettingsParsed
       // {
         packages = dropModuleManagedPackages piSettingsParsed.packages;
-        enabledModels = lib.unique (
-          cfg.enabledModels ++ cfg.extraEnabledModels ++ moduleManagedEnabledModels
-        );
+        enabledModels = lib.unique cfg.enabledModels;
       }
     )
     // lib.optionalAttrs config.modules.shell.herdr.enable (
@@ -345,11 +341,6 @@ in
       default = piSettingsParsed.enabledModels or [ ];
       description = "Base Pi models enabled for model cycling. Defaults to config/pi/settings.jsonc.";
     };
-    extraEnabledModels = mkOption {
-      type = types.listOf types.str;
-      default = [ ];
-      description = "Host-specific Pi models appended to enabledModels.";
-    };
     mcp.enable = mkOption {
       type = types.bool;
       default = true;
@@ -378,7 +369,7 @@ in
     cursorSdk.enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable the Cursor SDK provider for Pi. Add Cursor models with modules.agents.pi.extraEnabledModels or enabledModels.";
+      description = "Enable the Cursor SDK provider for Pi. Add Cursor models with modules.agents.pi.enabledModels.";
     };
     honcho = {
       enable = mkBoolOpt false;
