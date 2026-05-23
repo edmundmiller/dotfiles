@@ -1,0 +1,28 @@
+config/nvim/lua/keymaps.lua
+  s_db66c6a7b2b890::t_0ece56faa24c0e 32-33,39
+  s_a7825b035309d4::t_a7d20fc5fdba21 31,34-38,40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "fab85969b2ad89ce6a0dbbba860e81430f58a74d",
+  "prompts": {},
+  "sessions": {
+    "s_a7825b035309d4": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LoI0gTZ1VMAVhfrY6IN",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_db66c6a7b2b890": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "TU-033LoKFbupvhuAsSbVhVz0",
+        "model": "unknown"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
