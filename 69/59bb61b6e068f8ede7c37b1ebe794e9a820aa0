@@ -1,0 +1,19 @@
+hosts/nuc/default.nix
+  s_4d7dae2a10e015::t_3c28442baa888d 11-17,24-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "6959bb61b6e068f8ede7c37b1ebe794e9a820aa0",
+  "prompts": {},
+  "sessions": {
+    "s_4d7dae2a10e015": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e52bd-da80-775f-ab6a-bc562ca997ce",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
