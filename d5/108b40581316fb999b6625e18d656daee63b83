@@ -1,0 +1,19 @@
+skills/flake.nix
+  s_4d7dae2a10e015::t_49c4549f744efe 175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "d5108b40581316fb999b6625e18d656daee63b83",
+  "prompts": {},
+  "sessions": {
+    "s_4d7dae2a10e015": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e52bd-da80-775f-ab6a-bc562ca997ce",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
