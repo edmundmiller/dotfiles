@@ -127,6 +127,7 @@
     "repo-prompt"
     "warp@preview"
     "tuist"
+    "neovide-app" # GUI for Neovim — used by Raycast quake/toggle scripts
 
     # Browsers
     "google-chrome"
