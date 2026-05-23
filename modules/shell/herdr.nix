@@ -11,15 +11,15 @@ let
   tmuxEnabled = config.modules.shell.tmux.enable;
 
   launchPath = concatStringsSep ":" [
+    "/etc/profiles/per-user/${config.user.name}/bin"
+    "/run/current-system/sw/bin"
+    "${config.user.home}/.nix-profile/bin"
     "${config.user.home}/.pi/agent/bin"
     "${config.user.home}/.bun/bin"
     "${config.user.home}/.local/bin"
     "${config.user.home}/.pixi/bin"
     "${config.user.home}/.cargo/bin"
     config.dotfiles.binDir
-    "${config.user.home}/.nix-profile/bin"
-    "/etc/profiles/per-user/${config.user.name}/bin"
-    "/run/current-system/sw/bin"
     "/nix/var/nix/profiles/default/bin"
     "/usr/local/bin"
     "/usr/bin"
@@ -247,9 +247,9 @@ in
           # Start from home so herdr doesn't land in '/' when Ghostty launches from Finder.
           cd "$HOME"
 
-          # Resolve herdr at launch time instead of baking a Nix store path into
-          # this wrapper. Herdr can self-update into ~/.local/bin, and stale
-          # wrappers otherwise keep relaunching an old server after detach.
+          # Resolve herdr from the managed profile first. User-level bins stay
+          # on PATH for helper commands, but should not shadow the Nix-managed
+          # Herdr package used to launch the server.
           herdr_cmd="''${HERDR_BIN_PATH:-${cfg.command}}"
           export HERDR_BIN_PATH="$herdr_cmd"
 
