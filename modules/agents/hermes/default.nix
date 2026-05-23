@@ -38,6 +38,105 @@ let
   renderedConfig = yamlFormat.generate "hermes-settings.yaml" renderedSettings;
   soulFile = "${configDir}/hermes/SOUL.md";
   hermesPluginsDir = "${configDir}/hermes/plugins";
+  codexAuthSync = pkgs.writeText "hermes-codex-auth-sync.py" ''
+    import base64
+    import json
+    import pathlib
+    import sys
+    import time
+    from datetime import datetime, timezone
+
+
+    def read_json(path: pathlib.Path) -> dict:
+        try:
+            return json.loads(path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            return {}
+
+
+    def jwt_exp(token: str) -> int:
+        try:
+            payload = token.split(".")[1]
+            payload += "=" * ((4 - len(payload) % 4) % 4)
+            return int(json.loads(base64.urlsafe_b64decode(payload)).get("exp") or 0)
+        except Exception:
+            return 0
+
+
+    codex_auth = pathlib.Path(sys.argv[1]).expanduser()
+    hermes_auth = pathlib.Path(sys.argv[2]).expanduser()
+    if not codex_auth.is_file():
+        raise SystemExit(0)
+
+    codex_data = read_json(codex_auth)
+    codex_tokens = codex_data.get("tokens")
+    if not isinstance(codex_tokens, dict) or not codex_tokens.get("access_token"):
+        raise SystemExit(0)
+
+    codex_exp = jwt_exp(codex_tokens.get("access_token", ""))
+    # Only import currently usable Codex CLI tokens.  Hermes can still do a
+    # dedicated `hermes auth add openai-codex` login later; this bootstrap keeps
+    # laptop Hermes from getting stuck on an old consumed refresh token while the
+    # canonical Codex CLI login is healthy.
+    if codex_exp and codex_exp <= int(time.time()) + 60:
+        raise SystemExit(0)
+
+    data = read_json(hermes_auth)
+    hermes_tokens = (
+        data.get("providers", {})
+        .get("openai-codex", {})
+        .get("tokens", {})
+    )
+    hermes_exp = jwt_exp(hermes_tokens.get("access_token", "")) if isinstance(hermes_tokens, dict) else 0
+    if hermes_exp and hermes_exp >= codex_exp:
+        raise SystemExit(0)
+
+    now = datetime.now(timezone.utc).isoformat()
+    if not isinstance(data, dict) or "providers" not in data:
+        data = {"version": 1, "providers": {}}
+
+    provider_payload = {
+        "tokens": codex_tokens,
+        "last_refresh": codex_data.get("last_refresh") or now,
+        "auth_mode": codex_data.get("auth_mode") or "chatgpt",
+    }
+    data.setdefault("version", 1)
+    data.setdefault("providers", {})["openai-codex"] = provider_payload
+    data["active_provider"] = "openai-codex"
+    data["updated_at"] = now
+
+    pool_entry = {
+        "auth_type": "oauth",
+        "source": "device_code",
+        "label": "Codex CLI shared login",
+        "access_token": codex_tokens.get("access_token"),
+        "refresh_token": codex_tokens.get("refresh_token"),
+        "id_token": codex_tokens.get("id_token"),
+        "account_id": codex_tokens.get("account_id"),
+        "last_refresh": provider_payload["last_refresh"],
+    }
+    pool_entry = {key: value for key, value in pool_entry.items() if value}
+    pool = data.setdefault("credential_pool", {})
+    existing = pool.setdefault("openai-codex", [])
+    pool["openai-codex"] = [
+        pool_entry,
+        *[
+            entry
+            for entry in existing
+            if not (
+                isinstance(entry, dict)
+                and entry.get("source") in {"device_code", "manual:device_code"}
+            )
+        ],
+    ]
+
+    hermes_auth.parent.mkdir(parents=True, exist_ok=True)
+    tmp = hermes_auth.with_suffix(hermes_auth.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(hermes_auth)
+    hermes_auth.chmod(0o600)
+    print(f"Synced Hermes OpenAI Codex auth from {codex_auth}", file=sys.stderr)
+  '';
   inherit (cfg) configFile skinsDir hooksDir;
 in
 {
@@ -319,6 +418,8 @@ in
               encoding="utf-8",
           )
           PY
+
+                    ${pkgs.python3}/bin/python3 ${codexAuthSync} "${config.user.home}/.codex/auth.json" "$hermes_home/auth.json" || true
 
                     dotenv_target="$hermes_home/.env"
                     if [ -s ${escapeShellArg secretRefsJson} ]; then
