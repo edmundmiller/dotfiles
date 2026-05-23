@@ -8,25 +8,7 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesTelegramPythonModule = pkgs.python313Packages.buildPythonPackage {
-    pname = "python-telegram-bot-module";
-    version = "22.7";
-    format = "other";
-    dontUnpack = true;
-    installPhase = ''
-      mkdir -p "$out/${pkgs.python313.sitePackages}"
-      cp -R "${
-        pkgs.python313Packages.python-telegram-bot.overridePythonAttrs (_: {
-          doCheck = false;
-          pythonRuntimeDepsCheck = false;
-        })
-      }/${pkgs.python313.sitePackages}/telegram" \
-        "$out/${pkgs.python313.sitePackages}/telegram"
-    '';
-  };
-  hermesAgentBase = inputs.llm-agents.packages.${hostSystem}."hermes-agent".override {
-    extraPythonPackages = [ hermesTelegramPythonModule ];
-  };
+  hermesCliPackage = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
@@ -656,7 +638,6 @@ in
   ];
 
   services.hermes-agent = {
-    package = hermesAgentBase;
     user = "emiller";
     group = "users";
     createUser = false;
@@ -724,7 +705,7 @@ in
     wants = [ "network-online.target" ];
     path = [
       radarHermesLauncher
-      hermesAgentBase
+      hermesCliPackage
       pkgs.bashInteractive
       pkgs.coreutils
       pkgs.findutils
