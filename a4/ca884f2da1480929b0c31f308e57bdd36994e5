@@ -1,0 +1,19 @@
+config/amoxide/profiles.toml
+  s_381463627071fb::t_4b2db28af15151 31-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "a4ca884f2da1480929b0c31f308e57bdd36994e5",
+  "prompts": {},
+  "sessions": {
+    "s_381463627071fb": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e55f4-3855-7300-95d3-3f633725eaa5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
