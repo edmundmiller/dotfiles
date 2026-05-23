@@ -1,0 +1,27 @@
+config/herdr/config.toml
+  s_5646a9a6c46225::t_1444d795ed3e3d 9,12,14-15,18,23
+modules/desktop/term/ghostty/README.md
+  s_5646a9a6c46225::t_1444d795ed3e3d 13-14,20-21,25-32,107,109,111-114
+config/herdr/README.md
+  s_5646a9a6c46225::t_1444d795ed3e3d 41-48,52,56-57,70
+modules/shell/herdr.nix
+  s_5646a9a6c46225::t_1444d795ed3e3d 39-41,44,49,316-318,361,366
+modules/desktop/term/ghostty/default.nix
+  s_5646a9a6c46225::t_1444d795ed3e3d 65-72,117-128,133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "9c7bca025dc811864759c281c8693cdd2acd751c",
+  "prompts": {},
+  "sessions": {
+    "s_5646a9a6c46225": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e5217-6663-7100-831a-4422298de911",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
