@@ -1,0 +1,19 @@
+modules/agents/hermes/default.nix
+  s_6011216ce039f9::t_2ceaa1196eaf33 41-139,422
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "709a643db2ff7117c4cd2e8eff8b3973381deaab",
+  "prompts": {},
+  "sessions": {
+    "s_6011216ce039f9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e5675-911d-7011-99d6-2075cd754edb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
