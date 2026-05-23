@@ -308,6 +308,43 @@ in
           path = pathlib.Path(sys.argv[1])
           prefix = sys.argv[2]
           lines = path.read_text().splitlines()
+          managed_commands = {
+              "herdr-tab previous",
+              "herdr-tab next",
+              "herdr-hunk",
+              "herdr-hunk --tab",
+          }
+
+          # Drop old/managed command blocks before appending the canonical ones.
+          # This keeps activation idempotent and cleans up stale direct-key
+          # bindings from older configs.
+          filtered = []
+          i = 0
+          while i < len(lines):
+              if lines[i].strip() == "[[keys.command]]":
+                  block = [lines[i]]
+                  i += 1
+                  while i < len(lines) and not lines[i].strip().startswith("["):
+                      block.append(lines[i])
+                      i += 1
+
+                  command = None
+                  for block_line in block:
+                      stripped = block_line.strip()
+                      if stripped.startswith("command") and "=" in stripped:
+                          command = stripped.split("=", 1)[1].strip().strip('"')
+                          break
+
+                  if command in managed_commands:
+                      continue
+
+                  filtered.extend(block)
+                  continue
+
+              filtered.append(lines[i])
+              i += 1
+
+          lines = filtered
           out = []
           in_keys = False
           saw_keys = False
@@ -368,11 +405,9 @@ in
               'command = "herdr-hunk --tab"',
           ]
 
-          content = "\n".join(out)
-          if "herdr-tab previous" not in content or "herdr-tab next" not in content or "herdr-hunk" not in content:
-              if out and out[-1].strip():
-                  out.append("")
-              out.extend(command_block[1:])
+          if out and out[-1].strip():
+              out.append("")
+          out.extend(command_block[1:])
 
           path.write_text("\n".join(out) + "\n")
           PY
