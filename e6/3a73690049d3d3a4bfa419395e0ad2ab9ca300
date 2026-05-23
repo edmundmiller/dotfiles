@@ -1,0 +1,9 @@
+flake.nix
+  ai_agent 12-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "e63a73690049d3d3a4bfa419395e0ad2ab9ca300",
+  "prompts": {}
+}
