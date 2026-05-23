@@ -28,6 +28,16 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 -- Split/pane navigation is handled by vim-tmux-navigator in
 -- `lua/custom/plugins/tmux-navigator.lua`.
 
+-- Hunk TUI (https://github.com/modem-dev/hunk) — open in a new tab terminal.
+-- Named `:Hdiff` to avoid confusion with julienvincent/hunk.nvim (`:DiffEditor`).
+vim.api.nvim_create_user_command('Hdiff', function(opts)
+  local args = opts.args ~= '' and opts.args or 'diff'
+  vim.cmd('tabnew | terminal hunk ' .. args)
+  vim.cmd('startinsert')
+end, { nargs = '*', desc = 'Open hunk TUI (default: hunk diff)' })
+
+vim.keymap.set('n', '<leader>gh', '<cmd>Hdiff<CR>', { desc = '[G]it [H]unk TUI' })
+
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
