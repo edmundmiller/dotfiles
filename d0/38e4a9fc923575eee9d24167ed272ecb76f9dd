@@ -1,0 +1,22 @@
+.beads/issues.jsonl
+  ai_agent 381
+modules/services/agentsview.nix
+  s_6011216ce039f9::t_3edf3747ea87b6 1-45,64-73,75-81,85,88-90,108-119,123,162,179,182
+  s_6011216ce039f9::t_41f36451edb6f4 46-56,58-59,62-63,82-84,86-87,91-107,120,124-135,138-161,163-178,180-181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "d038e4a9fc923575eee9d24167ed272ecb76f9dd",
+  "prompts": {},
+  "sessions": {
+    "s_6011216ce039f9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e5675-911d-7011-99d6-2075cd754edb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
