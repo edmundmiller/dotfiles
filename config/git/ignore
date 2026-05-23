@@ -83,3 +83,6 @@ CLAUDE.local.md
 **/.beads/dolt/
 **/.beads/dolt-access.lock
 **/.beads/dolt-server.*
+
+# Amoxide project aliases (local/trusted per machine)
+.aliases
