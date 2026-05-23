@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Open the current project in Neovide and jump to its Obsidian project note.
+# Works from a shell, tmux binding, or Herdr command binding.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: obsidian-neovide [PATH]
+
+Open Neovide rooted at PATH (default: Herdr active pane cwd, tmux pane cwd, or $PWD)
+and run :ObsidianProject to open/create the matching vault project note.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+start_cwd="${1:-${HERDR_ACTIVE_PANE_CWD:-${TMUX_PANE_CURRENT_PATH:-$PWD}}}"
+
+if [[ ! -d "$start_cwd" ]]; then
+  echo "obsidian-neovide: not a directory: $start_cwd" >&2
+  exit 1
+fi
+
+resolver="${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/git-worktree-cwd"
+if [[ -x "$resolver" ]]; then
+  project_cwd=$("$resolver" "$start_cwd") || {
+    echo "obsidian-neovide: could not resolve project cwd from: $start_cwd" >&2
+    exit 1
+  }
+else
+  project_cwd=$(cd "$start_cwd" && pwd -P)
+fi
+
+if [[ ! -d "$project_cwd" ]]; then
+  echo "obsidian-neovide: resolved cwd is not a directory: $project_cwd" >&2
+  exit 1
+fi
+
+project_name="$(basename "$project_cwd")"
+if git -C "$project_cwd" rev-parse --git-dir >/dev/null 2>&1; then
+  remote_url="$(git -C "$project_cwd" config --get remote.origin.url || true)"
+  if [[ -n "$remote_url" ]]; then
+    remote_name="${remote_url##*/}"
+    remote_name="${remote_name%.git}"
+    [[ -n "$remote_name" ]] && project_name="$remote_name"
+  fi
+fi
+
+if [[ -n "${NEOVIDE_BIN:-}" ]]; then
+  neovide_cmd=("$NEOVIDE_BIN")
+elif [[ -x /Applications/Neovide.app/Contents/MacOS/neovide ]]; then
+  neovide_cmd=(/Applications/Neovide.app/Contents/MacOS/neovide)
+elif command -v neovide >/dev/null 2>&1; then
+  neovide_cmd=(neovide)
+else
+  echo "obsidian-neovide: neovide not found" >&2
+  exit 1
+fi
+
+exec "${neovide_cmd[@]}" \
+  --reuse-instance \
+  --new-window \
+  --chdir "$project_cwd" \
+  "+ObsidianProject $project_name"

@@ -1,6 +1,10 @@
 -- obsidian.nvim — vault: ~/obsidian-vault
 -- UI rendering delegated to render-markdown.nvim (see render-markdown.lua)
 -- to avoid double-rendering / flicker in Neovide.
+
+local obsidian_project = require 'custom.obsidian_project'
+obsidian_project.setup()
+
 return {
   {
     'obsidian-nvim/obsidian.nvim',
@@ -39,6 +43,7 @@ return {
       { '<leader>oh', function()
           vim.cmd('edit ' .. vim.fn.expand '~/obsidian-vault/README.md')
         end, desc = 'Obsidian: vault home' },
+      { '<leader>op', obsidian_project.open_current_project_note, desc = 'Obsidian: current project note' },
       { '<leader>oo', '<cmd>Obsidian open<cr>',          desc = 'Obsidian: open in app (graph etc.)' },
       { '<leader>oP', '<cmd>Obsidian paste_img<cr>',     desc = 'Obsidian: paste image' },
     },

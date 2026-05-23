@@ -62,3 +62,6 @@ qmk_firmware/
 
 # jscpd duplicate code detection reports
 .jscpd-report/
+
+# Private Neovim project aliases
+config/nvim/lua/custom/private/obsidian-project-aliases.lua

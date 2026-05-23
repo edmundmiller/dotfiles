@@ -1,0 +1,5 @@
+-- Private repo-name -> Obsidian project-folder aliases.
+-- Copy to obsidian-project-aliases.lua and keep that file untracked.
+return {
+  -- stimulus = 'Gradient',
+}

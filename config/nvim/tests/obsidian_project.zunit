@@ -1,0 +1,52 @@
+#!/usr/bin/env zunit
+
+@setup {
+  export ORIG_PWD=$PWD
+  export TEST_DIR=$(mktemp -d)
+  export VAULT_DIR="$TEST_DIR/obsidian-vault"
+  export LUA_TEST="$ORIG_PWD/config/nvim/tests/obsidian_project_test.lua"
+  mkdir -p "$VAULT_DIR/02_Projects/Gradient" "$VAULT_DIR/02_Projects/Dotfiles"
+  cat > "$VAULT_DIR/02_Projects/Gradient/README.md" <<'EOF'
+---
+type: project
+title: Gradient
+aliases:
+  - stimulus
+  - "stimulus-api"
+---
+
+# Gradient
+EOF
+  cat > "$VAULT_DIR/02_Projects/Dotfiles/README.md" <<'EOF'
+---
+type: project
+title: Dotfiles
+aliases: [dotfiles, dotfiles-agent]
+---
+
+# Dotfiles
+EOF
+}
+
+@teardown {
+  cd "$ORIG_PWD"
+  rm -rf "$TEST_DIR"
+}
+
+@test 'reads Obsidian aliases from project frontmatter' {
+  run lua "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" read_aliases
+
+  assert $state equals 0
+}
+
+@test 'resolves repo names through Obsidian aliases' {
+  run lua "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" resolve_aliases
+
+  assert $state equals 0
+}
+
+@test 'strips agent worktree suffixes' {
+  run lua "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" worktree_suffix
+
+  assert $state equals 0
+}

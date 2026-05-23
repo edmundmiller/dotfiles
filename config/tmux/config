@@ -91,6 +91,9 @@ bind m run-shell "/etc/profiles/per-user/emiller/bin/tmux-palette"
 # Fast current-session Pi entry
 bind A run '$TMUX_HOME/open-pi-here.sh'
 
+# Open current project note in Neovide/Obsidian workflow.
+bind V run-shell 'TMUX_PANE_CURRENT_PATH="#{pane_current_path}" "${DOTFILES_BIN:-$HOME/.config/dotfiles/bin}/obsidian-neovide" "#{pane_current_path}"'
+
 # Toggle tml layout (AI + lazygit + shell)
 bind T run '$TMUX_HOME/toggle-tml.sh'
 
