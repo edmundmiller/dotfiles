@@ -1,0 +1,25 @@
+modules/services/AGENTS.md
+  s_6011216ce039f9::t_731fbf968df6b4 5-7,154-157,162,164-193,195-198,200,202,204-206,208
+modules/services/agentsview/AGENTS.md
+  s_6011216ce039f9::t_b1c9d8f6cc13b9 1-30,32-114
+modules/services/gatus/AGENTS.md
+  s_6011216ce039f9::t_08b0dbe197253b 66
+modules/services/agentsview/default.nix
+  s_6011216ce039f9::t_a0dbb5a5c79ce3 6-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "68c2a7defba68985454e5c6bc54ef8af1b0ebab8",
+  "prompts": {},
+  "sessions": {
+    "s_6011216ce039f9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e5675-911d-7011-99d6-2075cd754edb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
