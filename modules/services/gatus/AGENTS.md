@@ -63,6 +63,7 @@ This means healthchecks.io alerts if:
 | Radarr           | Media          | localhost:7878/ping              | HTTP               |
 | Prowlarr         | Media          | localhost:9696/ping              | HTTP               |
 | PostgreSQL       | Infrastructure | localhost:5432                   | TCP                |
+| AgentsView       | Infrastructure | localhost:8087                   | HTTP (conditional) |
 | Tailscale        | Infrastructure | localhost:41112/healthz          | HTTP               |
 | OpenClaw Gateway | Infrastructure | localhost:18789                  | HTTP (conditional) |
 | OpenClaw svc VIP | Infrastructure | openclaw.cinnamon-rooster.ts.net | HTTP (conditional) |

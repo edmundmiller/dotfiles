@@ -3,10 +3,10 @@
 # Direct: http://<tailscale-ip>:8087
 #
 # Setup (one-time):
-# 1. Tailscale admin → Services → Create service
-# 2. Name: "agentsview", endpoint: tcp:443, tag: tag:server
-# 3. Deploy: hey nuc
-# 4. Approve host in admin console
+# 1. Create/update svc:agentsview in ~/src/personal/tailnet via Tailscale API
+# 2. Add svc:agentsview to tailscale/policy.hujson explicit service grant
+# 3. Apply tailnet ACL with OpenTofu
+# 4. Deploy: hey nuc
 #
 # PostgreSQL sync is one-way: local SQLite → PostgreSQL. Each machine that
 # creates sessions must run `agentsview pg push`; this service only serves the
