@@ -35,9 +35,6 @@
   // Skills as commands - also registers skills as /skill:name slash commands
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
   "enableSkillCommands": true,
-  // Security: pi-permission-system owns command/tool permission policy,
-  // including rebuild and signing bypass blocks.
-  // Config: ~/.pi/agent/pi-permissions.jsonc
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   // Host/module-specific packages are injected by modules/agents/pi/default.nix
   // (tmux/herdr, MCP, computer-use, git tooling, status UI, and context/memory).
@@ -100,9 +97,6 @@
       ],
       "skills": [],
     },
-    // Authoritative permission gate for tools/bash/MCP/skills.
-    // Policy: config/pi/pi-permissions.jsonc -> ~/.pi/agent/pi-permissions.jsonc
-    "npm:pi-permission-system",
     // Applies bash command policy to command-bearing extension tools like process.start.
     "~/.config/dotfiles/pi-packages/pi-command-policy-bridge",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
@@ -168,7 +162,7 @@
     "git:github.com/mjakl/pi-interlude",
     // Token burden visualization/management - https://github.com/Whamp/pi-token-burden
     // Pinned before 0.6.5 until Pi's npm install cutoff allows yaml@^2.9.0.
-    "git:github.com/Whamp/pi-token-burden#35ba2c1",
+    "git:github.com/Whamp/pi-token-burden#v0.6.4",
     // OpenAI compaction controls - https://www.npmjs.com/package/@jordyvd/pi-openai-compaction
     // "npm:@jordyvd/pi-openai-compaction",
     // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
