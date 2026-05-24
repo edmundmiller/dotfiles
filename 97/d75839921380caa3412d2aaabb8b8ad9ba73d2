@@ -1,0 +1,9 @@
+modules/shell/herdr/AGENTS.md
+  ai_agent 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "97d75839921380caa3412d2aaabb8b8ad9ba73d2",
+  "prompts": {}
+}
