@@ -31,18 +31,14 @@ model:
   default: gpt-5.5
   thinking: low
 
-# Primary-model fallback: Anthropic is intentionally not configured on this
-# laptop. Use DeepSeek V4 through OpenRouter as the strong non-Codex fallback.
+# Primary-model fallback: use OpenCode first, then OpenRouter as the broad
+# last resort. Keep this aligned with the credentials materialized into
+# ~/.hermes/.env on the laptop.
 fallback_model:
-  provider: openrouter
-  model: deepseek/deepseek-v4-pro
+  provider: opencode
+  model: GLM-5.1
 
-# Fallback chain: prefer a strong non-Codex model, then a fast OpenCode option,
-# then OpenRouter auto as the broad last resort. Keep this aligned with the
-# credentials actually materialized into ~/.hermes/.env on the laptop.
 fallback_providers:
-  - provider: openrouter
-    model: deepseek/deepseek-v4-pro
   - provider: opencode
     model: GLM-5.1
   - provider: openrouter
@@ -98,8 +94,8 @@ smart_model_routing:
   max_simple_chars: 160
   max_simple_words: 28
   cheap_model:
-    provider: opencode
-    model: GLM-5.1
+    provider: openrouter
+    model: deepseek/deepseek-v4-pro
     thinking: auto
 
 # Auxiliary services
