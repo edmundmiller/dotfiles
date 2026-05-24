@@ -208,7 +208,7 @@ let
   # that do not run that shell integration, and avoids redundant interactive
   # shell prompts when tmux/herdr are the preferred persistent workspace layer.
   moduleManagedPackageGroups = {
-    herdr = [ "~/.config/dotfiles/pi-packages/pi-herdr" ];
+    herdr = [ "npm:@ogulcancelik/pi-herdr" ];
     tmux = [
       "npm:pi-tmux-window-name"
       "git:github.com/ogulcancelik/pi-extensions"
