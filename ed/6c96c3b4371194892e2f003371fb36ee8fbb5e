@@ -1,0 +1,9 @@
+config/hermes/config.yml
+  ai_agent 34-36,38-39,97-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "ed6c96c3b4371194892e2f003371fb36ee8fbb5e",
+  "prompts": {}
+}
