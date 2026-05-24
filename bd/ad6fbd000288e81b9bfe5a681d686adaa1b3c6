@@ -1,0 +1,9 @@
+modules/agents/pi/default.nix
+  ai_agent 211
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "bdad6fbd000288e81b9bfe5a681d686adaa1b3c6",
+  "prompts": {}
+}
