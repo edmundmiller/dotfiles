@@ -12,7 +12,7 @@
 
 ## Area Affected
 
-<!-- e.g., shell, editor, services, packages, pi-packages, host config -->
+<!-- e.g., shell, editor, services, packages, packages/pi-packages, host config -->
 
 ## Testing Done
 

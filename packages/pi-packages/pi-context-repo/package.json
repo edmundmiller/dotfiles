@@ -1,28 +1,30 @@
 {
-  "name": "pi-xurl",
-  "version": "0.1.0",
+  "name": "pi-context-repo",
+  "version": "0.2.0",
   "type": "module",
-  "description": "Cross-agent thread reader — resolve agents:// URIs for Amp, Codex, Claude, Gemini, Pi, OpenCode",
+  "description": "Git-backed persistent memory filesystem for pi agents, inspired by Letta Code's Context Repositories",
   "main": "./index.ts",
   "keywords": [
     "pi",
     "pi-extension",
     "pi-package",
-    "xurl",
-    "agent-threads",
-    "codex",
-    "claude"
+    "memory",
+    "context-repository",
+    "agent-memory",
+    "git-memory"
   ],
   "author": "Edmund Miller <edmundmiller@hey.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "pi-packages/pi-xurl"
+    "directory": "packages/pi-packages/pi-context-repo"
   },
   "files": [
     "index.ts",
-    "README.md"
+    "README.md",
+    "docs",
+    "skills"
   ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*",
