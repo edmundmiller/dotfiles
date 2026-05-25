@@ -181,11 +181,6 @@ rename_pane() {
     "$herdr_cmd" pane rename "$pane_id" "$label" >/dev/null 2>&1 || true
 }
 
-rename_pane "$root_pane" "shell"
-if [[ -n "$root_tab" ]]; then
-    "$herdr_cmd" tab rename "$root_tab" "shell" >/dev/null 2>&1 || true
-fi
-
 extract_pane_id() {
     python3 -c '
 import json, sys
@@ -237,7 +232,7 @@ if [[ "$open_pi" -eq 1 ]]; then
         rename_pane "$pi_pane" "pi"
         "$herdr_cmd" pane run "$pi_pane" "cd $(quote_for_shell "$worktree_path") && pi"
     else
-        echo "herdr-worktree-layout: pi is not available on PATH; skipping Pi pane" >&2
+        echo "herdr-worktree-layout: pi is not available on PATH; skipping Pi tab" >&2
     fi
 fi
 
@@ -265,9 +260,15 @@ if [[ "$open_nvim" -eq 1 ]]; then
     "$herdr_cmd" pane run "$nvim_pane" "cd $(quote_for_shell "$worktree_path") && nvim ."
 fi
 
+shell_pane=$(create_tab "shell" true)
+rename_pane "$shell_pane" "shell"
+
+if [[ -n "$root_tab" ]]; then
+    "$herdr_cmd" tab close "$root_tab" >/dev/null 2>&1 || true
+else
+    "$herdr_cmd" pane close "$root_pane" >/dev/null 2>&1 || true
+fi
+
 if [[ -n "$new_workspace" ]]; then
     "$herdr_cmd" workspace focus "$new_workspace" >/dev/null 2>&1 || true
-fi
-if [[ -n "$root_tab" ]]; then
-    "$herdr_cmd" tab focus "$root_tab" >/dev/null 2>&1 || true
 fi
