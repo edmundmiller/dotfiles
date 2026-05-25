@@ -40,7 +40,7 @@ Custom/current mappings:
 | -------------- | ----------------------------------------- |
 | `prefix+w`     | New workspace                             |
 | `prefix+g`     | New worktree                              |
-| `prefix+alt+g` / `prefix+ctrl+g` | New worktree with Pi + Hunk + Neovim tabs |
+| `prefix+g`     | Native new worktree prompt, then Pi + Hunk + Neovim + shell tabs |
 | `prefix+G`     | Open existing worktree                    |
 | `prefix+O`     | Workspace picker                          |
 | `prefix+-`     | Split horizontally                        |
@@ -50,7 +50,7 @@ Custom/current mappings:
 | `prefix+[`     | Open Hunk in a focused split              |
 | `prefix+]`     | Open Hunk in a new tab                    |
 
-Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` keeps the native worktree flow; `prefix+alt+g` / `prefix+ctrl+g` creates a native worktree through the socket API and then opens Pi, Hunk, and Neovim tabs; `prefix+G` opens existing worktrees.
+Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` keeps Herdr's native worktree prompt; after creation, the patched `worktrees.post_create_command` runs `herdr-worktree-layout` to open Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
 
 ## Helpers
 
@@ -74,3 +74,17 @@ A successful reload returns `status: applied`.
 ## Notes
 
 Do not bind actions to plain printable keys such as `w`, `s`, `p`, or `n`; Herdr 0.6 disables those unsafe direct bindings because they intercept normal typing. Use `prefix+...` bindings, and avoid key sequences already claimed by Herdr defaults unless you intentionally want to replace them.
+
+## Worktree layout hook
+
+The local Herdr overlay patches native worktree creation with:
+
+```toml
+[worktrees]
+post_create_command = "herdr-worktree-layout"
+```
+
+After the native `prefix+g` prompt creates a worktree, Herdr runs the hook with
+`HERDR_CREATED_WORKSPACE_ID`, `HERDR_CREATED_ROOT_TAB_ID`,
+`HERDR_CREATED_ROOT_PANE_ID`, and `HERDR_CREATED_WORKTREE_PATH`. The helper uses
+those IDs to replace the initial tab with `pi`, `hunk`, `nvim`, and `shell` tabs.
