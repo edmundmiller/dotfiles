@@ -29,6 +29,7 @@
         amoxide.enable = true;
         skillkit.enable = true;
         direnv.enable = true;
+        mise.enable = true;
         git.enable = true;
         git.ai.enable = true;
         git.hunk.enable = true;

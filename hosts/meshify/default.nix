@@ -70,6 +70,7 @@
       "1password".enable = true;
       age.enable = true;
       direnv.enable = true;
+      mise.enable = true;
       git.enable = true;
       gnupg.enable = true;
       pass.enable = true;

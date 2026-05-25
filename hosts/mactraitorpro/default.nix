@@ -38,6 +38,7 @@
         amoxide.enable = true;
         agentBrowser.enable = true;
         direnv.enable = true;
+        mise.enable = true;
         git = {
           enable = true;
           ai.enable = true;
