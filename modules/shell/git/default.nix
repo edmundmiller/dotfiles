@@ -24,6 +24,12 @@ in
   };
 
   config = mkIf cfg.enable (mkMerge [
+    (mkIf cfg.ai.enable {
+      modules.agents.pi.extraPackages = mkIf config.modules.agents.pi.enable [
+        "~/.config/dotfiles/pi-packages/pi-git-ai"
+      ];
+    })
+
     {
       user.packages =
         with pkgs;
@@ -35,6 +41,7 @@ in
           git-lfs
           pre-commit
           my.git-hunks
+          (mkIf cfg.ai.enable my.git-ai)
           (mkIf cfg.gitbutler.enable llm-agents.but)
           (mkIf cfg.gitbutler.enable llm-agents.gitbutler)
           (mkIf cfg.gitnexus.enable llm-agents.gitnexus)
