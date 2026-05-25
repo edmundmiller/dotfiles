@@ -33,5 +33,10 @@ key = "prefix+alt+g"
 type = "shell"
 command = "herdr-worktree-layout"
 
+[[keys.command]]
+key = "prefix+ctrl+g"
+type = "shell"
+command = "herdr-worktree-layout"
+
 [worktrees]
 directory = "~/.local/share/herdr/worktrees"
