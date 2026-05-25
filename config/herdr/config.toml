@@ -7,6 +7,8 @@ delivery = "herdr"
 [keys]
 prefix = "ctrl+c"
 new_workspace = "prefix+w"
+new_worktree = "prefix+g"
+open_worktree = "prefix+G"
 workspace_picker = "prefix+O"
 split_horizontal = "prefix+-"
 # Herdr has a hard-coded navigate-mode q quit/detach fallback.
