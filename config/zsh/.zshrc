@@ -181,10 +181,8 @@ if (( $+commands[entire] )); then
   _cache entire completion zsh
 fi
 alias oz="oz-preview"
-alias oz="oz-preview"
 
 # bun completions
 [ -s "/Users/edmundmiller/.bun/_bun" ] && source "/Users/edmundmiller/.bun/_bun"
 
-# Added by git-ai installer on Fri May  8 22:06:10 CDT 2026
-path+=("$HOME/.git-ai/bin")
+
