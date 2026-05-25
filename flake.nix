@@ -733,8 +733,24 @@
             '';
           };
 
-          # Development shell
-          devShells.default = pkgs.mkShell {
+          # Lightweight default shell for direnv and routine agent work.
+          # Use `nix develop .#full` when you need deploy tooling or hook installation.
+          devShells.default = pkgs.mkShellNoCC {
+            packages =
+              self.packages.${system}.agent-env.paths
+              ++ (with pkgs; [
+                deadnix
+                nixfmt
+                nushell
+                statix
+              ]);
+            shellHook = ''
+              echo "dotfiles lightweight shell (use: nix develop .#full)"
+            '';
+          };
+
+          # Full development shell: deploy tooling plus git hook installation.
+          devShells.full = pkgs.mkShell {
             packages =
               with pkgs;
               [
@@ -747,7 +763,7 @@
               ]
               ++ config.pre-commit.settings.enabledPackages;
             shellHook = config.pre-commit.shellHook + ''
-              echo "dotfiles development shell"
+              echo "dotfiles full development shell"
             '';
           };
 
