@@ -44,6 +44,8 @@ let
         [keys]
         prefix = "${cfg.prefix}"
         new_workspace = "prefix+w"
+        new_worktree = "prefix+g"
+        open_worktree = "prefix+G"
         workspace_picker = "prefix+O"
         split_horizontal = "prefix+-"
         toggle_sidebar = "prefix+b"
@@ -376,6 +378,7 @@ in
               "herdr-hunk",
               "herdr-hunk --tab",
               "obsidian-neovide",
+              "herdr-worktree-layout",
           }
 
           # Drop old/managed command blocks before appending the canonical ones.
@@ -414,6 +417,8 @@ in
           managed_keys = {
               "prefix": prefix,
               "new_workspace": "prefix+w",
+              "new_worktree": "prefix+g",
+              "open_worktree": "prefix+G",
               "workspace_picker": "prefix+O",
               "split_horizontal": "prefix+-",
               "toggle_sidebar": "prefix+b",
@@ -469,6 +474,11 @@ in
               'key = "prefix+]"',
               'type = "shell"',
               'command = "herdr-hunk --tab"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+alt+g"',
+              'type = "shell"',
+              'command = "herdr-worktree-layout"',
               "",
               "[[keys.command]]",
               'key = "prefix+V"',
