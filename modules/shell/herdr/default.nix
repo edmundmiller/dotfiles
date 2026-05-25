@@ -465,7 +465,8 @@ in
               ''
                 echo "herdr: installing Hermes Agent integration for profile ${name}"
                 if [ -d ${escapeShellArg hermesHome} ]; then
-                  HOME=${escapeShellArg profile.stateDir} \
+                  PATH=${escapeShellArg launchPath}:$PATH \
+                    HOME=${escapeShellArg profile.stateDir} \
                     HERMES_HOME=${escapeShellArg hermesHome} \
                     ${cfg.command} integration install hermes >/dev/null
 
