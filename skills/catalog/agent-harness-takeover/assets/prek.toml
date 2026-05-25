@@ -1,0 +1,60 @@
+# Starter prek.toml for an agent-friendly codebase harness.
+# Copy to the target repo root, then uncomment/adapt language-specific hooks.
+# Validate with: prek validate-config prek.toml
+#:schema https://www.schemastore.org/prek.json
+
+[[repos]]
+repo = "builtin"
+hooks = [
+    { id = "trailing-whitespace" },
+    { id = "end-of-file-fixer" },
+    { id = "check-yaml" },
+    { id = "check-added-large-files" },
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+    # Keep a root agent instruction file present and visible.
+    { id = "agents-md-present", name = "AGENTS.md present", entry = "bash -c 'test -f AGENTS.md || { echo \"ERROR: missing root AGENTS.md\" >&2; exit 1; }'", language = "system", pass_filenames = false, always_run = true },
+
+    # Validate local skill directory shape when .agents/skills exists.
+    { id = "agent-skills-shape", name = "agent skills have SKILL.md", entry = "python -c 'from pathlib import Path; import sys; root=Path(\".agents/skills\"); missing=[] if not root.exists() else [str(p) for p in root.iterdir() if p.is_dir() and not (p/\"SKILL.md\").exists()]; print(\"ERROR: skill dirs missing SKILL.md: \" + \", \".join(missing), file=sys.stderr) if missing else None; sys.exit(1 if missing else 0)'", language = "system", pass_filenames = false, always_run = true },
+]
+
+# Optional: add a repo-specific skills lock drift check.
+# Prefer a checked-in script over a long inline command once the policy is real.
+# [[repos]]
+# repo = "local"
+# hooks = [
+#     { id = "skills-lock-sync", name = "skills lock sync", entry = "./scripts/check-skills-lock", language = "system", pass_filenames = false, always_run = true },
+# ]
+
+# Optional Python hooks. Use when the repo uses uv/pyproject and has these dev deps.
+# [[repos]]
+# repo = "local"
+# hooks = [
+#     { id = "ruff-format", name = "ruff format", entry = "env AGENT=1 uv run ruff format --check", language = "system", types_or = ["python"] },
+#     { id = "ruff-check", name = "ruff check", entry = "env AGENT=1 uv run ruff check", language = "system", types_or = ["python"] },
+#     { id = "ty-check", name = "ty check", entry = "env AGENT=1 uv run ty check", language = "system", pass_filenames = false, stages = ["pre-push"] },
+# ]
+
+# Optional JS/TS hooks. Prefer package scripts if the repo already has them.
+# For pnpm repos:
+# [[repos]]
+# repo = "local"
+# hooks = [
+#     { id = "oxlint", name = "oxlint", entry = "env AGENT=1 pnpm exec oxlint", language = "system", types_or = ["javascript", "jsx", "ts", "tsx"] },
+#     { id = "oxfmt", name = "oxfmt", entry = "env AGENT=1 pnpm exec oxfmt --check", language = "system", types_or = ["javascript", "jsx", "ts", "tsx", "json"] },
+# ]
+#
+# For Bun repos, swap entries to `bunx oxlint` / `bunx oxfmt --check`, or call
+# checked-in package scripts such as `bun run lint` and `bun run format:check`.
+
+# Optional Nix/polyglot hooks. Use only when already configured or explicitly wanted.
+# [[repos]]
+# repo = "local"
+# hooks = [
+#     { id = "treefmt", name = "treefmt", entry = "treefmt --fail-on-change", language = "system", pass_filenames = false },
+#     { id = "nix-flake-check", name = "nix flake check", entry = "nix flake check", language = "system", pass_filenames = false, stages = ["pre-push"] },
+# ]
