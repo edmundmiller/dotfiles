@@ -8,4 +8,4 @@
 /hosts/nuc/ @edmundmiller
 
 # Pi extensions (TypeScript)
-/pi-packages/ @edmundmiller
+/packages/pi-packages/ @edmundmiller

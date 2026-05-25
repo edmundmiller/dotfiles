@@ -1,0 +1,34 @@
+{
+  "name": "pi-hunk",
+  "version": "0.1.0",
+  "description": "Pi extension tools for opening and inspecting Hunk review sessions.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "hunk",
+    "diff",
+    "review"
+  ],
+  "license": "MIT",
+  "author": "Edmund Miller",
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
+}

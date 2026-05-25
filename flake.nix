@@ -658,7 +658,7 @@
               pi-packages-qa-changed = {
                 enable = true;
                 name = "pi-packages-qa-changed";
-                description = "Run changed-scope pi-packages typecheck/tests before push";
+                description = "Run changed-scope packages/pi-packages typecheck/tests before push";
                 entry = toString (
                   pkgs.writeShellScript "pi-packages-qa-changed" ''
                     set -euo pipefail
