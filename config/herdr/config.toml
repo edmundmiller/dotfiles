@@ -28,6 +28,16 @@ key = "prefix+]"
 type = "shell"
 command = "herdr-hunk --tab"
 
+[[keys.command]]
+key = "prefix+alt+g"
+type = "shell"
+command = "herdr-worktree-layout"
+
+# Keep this fallback: prefix+alt+g may be swallowed by terminal/tmux on macOS.
+[[keys.command]]
+key = "prefix+ctrl+g"
+type = "shell"
+command = "herdr-worktree-layout"
+
 [worktrees]
 directory = "~/.local/share/herdr/worktrees"
-post_create_command = "herdr-worktree-layout"
