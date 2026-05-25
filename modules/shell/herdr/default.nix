@@ -1,7 +1,9 @@
 {
   config,
+  options,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -9,6 +11,11 @@ with lib.my;
 let
   cfg = config.modules.shell.herdr;
   tmuxEnabled = config.modules.shell.tmux.enable;
+  hasHermesAgentOption =
+    !isDarwin
+    && options ? services
+    && options.services ? "hermes-agent"
+    && options.services."hermes-agent" ? profiles;
 
   launchPath = concatStringsSep ":" [
     "/etc/profiles/per-user/${config.user.name}/bin"
@@ -225,6 +232,14 @@ in
       default = piThemeName;
       description = "Active Pi theme name shipped by the herdr module.";
     };
+    integrations.hermes.enable = mkOption {
+      type = bool;
+      default = true;
+      description = ''
+        Install Herdr's Hermes Agent integration into every declared
+        `services.hermes-agent.profiles` profile during NixOS activation.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -430,6 +445,40 @@ in
           PY
         '';
       };
+
+    system.activationScripts.herdr-hermes-agent-integrations =
+      mkIf
+        (
+          hasHermesAgentOption
+          && cfg.integrations.hermes.enable
+          && (config.services.hermes-agent.enable or false)
+          && config.services.hermes-agent.profiles != { }
+        )
+        {
+          deps = [ "hermes-profiles-setup" ];
+          text = concatStringsSep "\n" (
+            mapAttrsToList (
+              name: profile:
+              let
+                hermesHome = "${profile.stateDir}/.hermes";
+              in
+              ''
+                echo "herdr: installing Hermes Agent integration for profile ${name}"
+                if [ -d ${escapeShellArg hermesHome} ]; then
+                  HOME=${escapeShellArg profile.stateDir} \
+                    HERMES_HOME=${escapeShellArg hermesHome} \
+                    ${cfg.command} integration install hermes >/dev/null
+
+                  chown -R ${config.services.hermes-agent.user}:${config.services.hermes-agent.group} \
+                    ${escapeShellArg "${hermesHome}/plugins/herdr-agent-state"} \
+                    ${escapeShellArg "${hermesHome}/config.yaml"} 2>/dev/null || true
+                  chmod -R u+rwX,go-rwx \
+                    ${escapeShellArg "${hermesHome}/plugins/herdr-agent-state"} 2>/dev/null || true
+                fi
+              ''
+            ) config.services.hermes-agent.profiles
+          );
+        };
 
     modules.shell.tmux.rcFiles = mkIf tmuxEnabled (mkAfter [
       "${config.user.home}/.config/tmux/herdr.conf"
