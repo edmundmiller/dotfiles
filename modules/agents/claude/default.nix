@@ -28,6 +28,7 @@ in
   config = mkIf cfg.enable {
     user.packages = [
       pkgs.llm-agents.claude-code
+      pkgs.my.codegraph
     ];
 
     home.file = {
@@ -56,6 +57,33 @@ in
           mkdir -p "$HOME/.claude"
           rm -rf "$HOME/.claude/skills"
           ln -sfn "$HOME/.agents/skills" "$HOME/.claude/skills"
+        '';
+
+        home.activation.claude-codegraph-mcp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                    ${pkgs.python3}/bin/python3 - "$HOME/.claude.json" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          try:
+              data = json.loads(path.read_text(encoding="utf-8"))
+          except Exception:
+              data = {}
+
+          if not isinstance(data, dict):
+              data = {}
+
+          server = {
+              "type": "stdio",
+              "command": "codegraph",
+              "args": ["serve", "--mcp"],
+          }
+          servers = data.setdefault("mcpServers", {})
+          if servers.get("codegraph") != server:
+              servers["codegraph"] = server
+              path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
         '';
       };
   };

@@ -13,7 +13,9 @@ let
   # Dynamically concatenate all rule files from config/agents/rules/
   rulesDir = "${configDir}/agents/rules";
   ruleFiles = builtins.sort builtins.lessThan (
-    builtins.filter (f: lib.hasSuffix ".md" f && f != "AGENTS.md") (builtins.attrNames (builtins.readDir rulesDir))
+    builtins.filter (f: lib.hasSuffix ".md" f && f != "AGENTS.md") (
+      builtins.attrNames (builtins.readDir rulesDir)
+    )
   );
   readRule = file: builtins.readFile "${rulesDir}/${file}";
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
@@ -24,7 +26,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = [ pkgs.llm-agents.codex ];
+    user.packages = [
+      pkgs.llm-agents.codex
+      pkgs.my.codegraph
+    ];
 
     home.file = {
       # AGENTS.md built from shared agent rules (same source as Claude/OpenCode)
@@ -35,48 +40,67 @@ in
       { lib, ... }:
       {
         home.activation.codex-config-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          codex_dir="$HOME/.codex"
-          rules_dir="$codex_dir/rules"
-          rules_template_dir="${configDir}/codex/rules"
-          target="$codex_dir/config.toml"
-          template="${configDir}/codex/config.toml"
+                    codex_dir="$HOME/.codex"
+                    rules_dir="$codex_dir/rules"
+                    rules_template_dir="${configDir}/codex/rules"
+                    target="$codex_dir/config.toml"
+                    template="${configDir}/codex/config.toml"
 
-          ${pkgs.coreutils}/bin/mkdir -p "$codex_dir"
+                    ${pkgs.coreutils}/bin/mkdir -p "$codex_dir"
 
-          # Bootstrap sandbox allow-rules as local writable files so Codex can
-          # amend them in place (e.g. execpolicy updates).
-          ${pkgs.coreutils}/bin/mkdir -p "$rules_dir"
-          for src in "$rules_template_dir"/*; do
-            [ -e "$src" ] || continue
+                    # Bootstrap sandbox allow-rules as local writable files so Codex can
+                    # amend them in place (e.g. execpolicy updates).
+                    ${pkgs.coreutils}/bin/mkdir -p "$rules_dir"
+                    for src in "$rules_template_dir"/*; do
+                      [ -e "$src" ] || continue
 
-            name="$(${pkgs.coreutils}/bin/basename "$src")"
-            dest="$rules_dir/$name"
+                      name="$(${pkgs.coreutils}/bin/basename "$src")"
+                      dest="$rules_dir/$name"
 
-            # Preserve any existing local edits; only replace old HM symlinks
-            # and bootstrap files that are still missing.
-            if [ -L "$dest" ]; then
-              ${pkgs.coreutils}/bin/rm -f "$dest"
-            fi
+                      # Preserve any existing local edits; only replace old HM symlinks
+                      # and bootstrap files that are still missing.
+                      if [ -L "$dest" ]; then
+                        ${pkgs.coreutils}/bin/rm -f "$dest"
+                      fi
 
-            if [ ! -e "$dest" ]; then
-              ${pkgs.coreutils}/bin/cp "$src" "$dest"
-            fi
+                      if [ ! -e "$dest" ]; then
+                        ${pkgs.coreutils}/bin/cp "$src" "$dest"
+                      fi
 
-            ${pkgs.coreutils}/bin/chmod u+w "$dest" 2>/dev/null || true
-          done
+                      ${pkgs.coreutils}/bin/chmod u+w "$dest" 2>/dev/null || true
+                    done
 
-          # Codex mutates config.toml (plugins, approvals, model switching).
-          # Keep a writable local file and only bootstrap from template when needed.
-          if [ -L "$target" ]; then
-            tmp="$(${pkgs.coreutils}/bin/mktemp)"
-            ${pkgs.coreutils}/bin/cp "$target" "$tmp" 2>/dev/null || ${pkgs.coreutils}/bin/cp "$template" "$tmp"
-            ${pkgs.coreutils}/bin/rm -f "$target"
-            ${pkgs.coreutils}/bin/mv "$tmp" "$target"
-          elif [ ! -e "$target" ]; then
-            ${pkgs.coreutils}/bin/cp "$template" "$target"
-          fi
+                    # Codex mutates config.toml (plugins, approvals, model switching).
+                    # Keep a writable local file and only bootstrap from template when needed.
+                    if [ -L "$target" ]; then
+                      tmp="$(${pkgs.coreutils}/bin/mktemp)"
+                      ${pkgs.coreutils}/bin/cp "$target" "$tmp" 2>/dev/null || ${pkgs.coreutils}/bin/cp "$template" "$tmp"
+                      ${pkgs.coreutils}/bin/rm -f "$target"
+                      ${pkgs.coreutils}/bin/mv "$tmp" "$target"
+                    elif [ ! -e "$target" ]; then
+                      ${pkgs.coreutils}/bin/cp "$template" "$target"
+                    fi
 
-          ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
+                    ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
+
+                    # Keep CodeGraph MCP configured even though config.toml is writable
+                    # and only bootstrapped from the repo template on first activation.
+                    ${pkgs.python3}/bin/python3 - "$target" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          content = path.read_text(encoding="utf-8") if path.exists() else ""
+          block = '[mcp_servers.codegraph]\ncommand = "codegraph"\nargs = ["serve", "--mcp"]\n'
+          pattern = re.compile(r'(?ms)^\[mcp_servers\.codegraph\]\n.*?(?=^\[|\Z)')
+          if pattern.search(content):
+              next_content = pattern.sub(block + "\n", content).rstrip() + "\n"
+          else:
+              next_content = content.rstrip() + "\n\n" + block if content.strip() else block
+          if next_content != content:
+              path.write_text(next_content, encoding="utf-8")
+          PY
         '';
       };
   };
