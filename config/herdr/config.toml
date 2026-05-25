@@ -33,6 +33,7 @@ key = "prefix+alt+g"
 type = "shell"
 command = "herdr-worktree-layout"
 
+# Keep this fallback: prefix+alt+g may be swallowed by terminal/tmux on macOS.
 [[keys.command]]
 key = "prefix+ctrl+g"
 type = "shell"
