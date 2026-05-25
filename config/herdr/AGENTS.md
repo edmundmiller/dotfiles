@@ -68,6 +68,7 @@ Meaning:
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
 - Keep `prefix+ctrl+g` as a fallback for `herdr-worktree-layout`: `prefix+alt+g` was present in config but did nothing after reload, likely because Alt was swallowed by the macOS terminal/tmux stack.
+- Use `type = "pane"` for `herdr-worktree-layout`, not `type = "shell"`: the script prompts for a branch name, and shell commands run detached with no interactive stdin so they appear to do nothing.
 - `bin/herdr-workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
