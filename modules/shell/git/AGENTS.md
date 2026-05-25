@@ -13,7 +13,7 @@ Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/l
 
 ## Packages
 
-git-open, difftastic, sem, lazydiff, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (Darwin Homebrew: `kitlangton/tap/ghui`)
+git-open, difftastic, git-ai (when `ai.enable`), sem, lazydiff, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (Darwin Homebrew: `kitlangton/tap/ghui`)
 
 ## Config files symlinked
 
