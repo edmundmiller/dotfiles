@@ -37,6 +37,10 @@ key = "prefix+alt+g"
 command = "herdr-worktree-layout"
 
 [[keys.command]]
+key = "prefix+ctrl+g"
+command = "herdr-worktree-layout"
+
+[[keys.command]]
 key = "prefix+["
 command = "herdr-hunk"
 
@@ -49,7 +53,7 @@ Meaning:
 
 - `prefix+w` creates a workspace.
 - `prefix+g` creates a worktree with Herdr's native prompt.
-- `prefix+alt+g` creates a native worktree via socket API and opens Pi + Hunk + Neovim tabs.
+- `prefix+alt+g` / `prefix+ctrl+g` creates a native worktree via socket API and opens Pi + Hunk + Neovim tabs.
 - `prefix+G` opens an existing worktree.
 - `prefix+-` splits horizontally.
 - `prefix+b` toggles the sidebar.
