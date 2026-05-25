@@ -499,7 +499,7 @@
           };
 
           treefmt = {
-            projectRootFile = ".git/config";
+            projectRootFile = ".git";
             programs = {
               deadnix.enable = true;
               nixfmt.enable = true;
