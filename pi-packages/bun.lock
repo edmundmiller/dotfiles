@@ -109,6 +109,20 @@
         "@sinclair/typebox": "*",
       },
     },
+    "pi-hunk": {
+      "name": "pi-hunk",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@mariozechner/pi-coding-agent": "*",
+        "@sinclair/typebox": "*",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.0.0",
+      },
+      "peerDependencies": {
+        "@mariozechner/pi-coding-agent": "*",
+        "@sinclair/typebox": "*",
+      },
+    },
     "pi-image-attachments": {
       "name": "@jordyvd/pi-image-attachments",
       "version": "0.1.1",
@@ -922,6 +936,8 @@
     "pi-git-ai": ["pi-git-ai@workspace:pi-git-ai"],
 
     "pi-herdr": ["pi-herdr@workspace:pi-herdr"],
+
+    "pi-hunk": ["pi-hunk@workspace:pi-hunk"],
 
     "pi-non-interactive": ["pi-non-interactive@workspace:pi-non-interactive"],
 
