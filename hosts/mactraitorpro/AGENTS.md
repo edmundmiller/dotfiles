@@ -30,7 +30,7 @@ Primary personal development machine running nix-darwin.
 
 ## Secrets
 
-No agenix secrets on this host (credentials in 1Password).
+No agenix secrets on this host (credentials in 1Password). Hermes secrets should be added under `modules.agents.hermes.secretReferences` in `hosts/mactraitorpro/default.nix`; activation materializes them into `$HERMES_HOME/.env`. For MCP servers, keep committed config in `config/hermes/config.yml` using `${VAR}` interpolation and put the corresponding 1Password ref here.
 
 ## Gotchas
 

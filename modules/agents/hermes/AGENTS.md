@@ -20,6 +20,28 @@ The home-manager activation step:
 5. merges declarative config overlays into a writable `config.yaml`
 6. materializes managed secrets into `$HERMES_HOME/.env`
 
+
+## MCP servers and secrets
+
+Hermes MCP server definitions that are safe to commit belong in `config/hermes/config.yml` under `mcp_servers`. Keep them frictionless by declaring the server once in the repo-managed base config and using Hermes env interpolation for secrets, e.g. `${GITHUB_TOKEN}`. Hermes loads `$HERMES_HOME/.env` and interpolates those variables before starting stdio MCP servers.
+
+Do **not** commit literal tokens in `config/hermes/config.yml` or write secrets into `$HERMES_HOME/config.yaml`. Put host-specific secret materialization in the host's `modules.agents.hermes.secretReferences` so activation writes `$HERMES_HOME/.env` from 1Password. Example pattern for GitHub MCP:
+
+```nix
+modules.agents.hermes.secretReferences = {
+  GITHUB_TOKEN = "op://Private/GitHub Personal Access Token/credential";
+};
+```
+
+```yaml
+mcp_servers:
+  github:
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "${GITHUB_TOKEN}"
+```
+
+Use the MCP server's expected environment variable name on the left and the Hermes `.env` variable on the right. Prefer generic `.env` names like `GITHUB_TOKEN` unless the upstream docs require otherwise.
+
 ## Validation
 
 After changing this module, prefer validating with a Nix eval/build of the Hermes package or the host config using `hey re` for Darwin hosts.
