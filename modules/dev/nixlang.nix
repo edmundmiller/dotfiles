@@ -16,7 +16,7 @@ in
 
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
-      nixfmt-rfc-style
+      nixfmt
       unstable.manix
       unstable.nixd
       nix-update
