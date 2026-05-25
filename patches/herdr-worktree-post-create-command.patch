@@ -1,0 +1,138 @@
+--- a/src/config/model.rs
++++ b/src/config/model.rs
+@@ -247,6 +247,8 @@
+ pub struct WorktreesConfig {
+     /// Root directory under which Herdr creates <repo>/<branch-slug> checkouts.
+     pub directory: String,
++    /// Optional shell command run after the native worktree prompt creates and opens a worktree.
++    pub post_create_command: String,
+ }
+
+ #[derive(Debug, Deserialize)]
+@@ -407,6 +409,7 @@
+     fn default() -> Self {
+         Self {
+             directory: "~/.herdr/worktrees".into(),
++            post_create_command: String::new(),
+         }
+     }
+ }
+--- a/src/app/state.rs
++++ b/src/app/state.rs
+@@ -1068,6 +1068,7 @@
+     pub worktree_open: Option<WorktreeOpenState>,
+     pub worktree_remove: Option<WorktreeRemoveState>,
+     pub worktree_directory: std::path::PathBuf,
++    pub worktree_post_create_command: String,
+     pub collapsed_space_keys: std::collections::HashSet<String>,
+     pub request_complete_onboarding: bool,
+     pub name_input: String,
+@@ -1361,6 +1362,7 @@
+             worktree_open: None,
+             worktree_remove: None,
+             worktree_directory: std::path::PathBuf::from("/tmp/herdr-worktrees"),
++            worktree_post_create_command: String::new(),
+             collapsed_space_keys: std::collections::HashSet::new(),
+             request_complete_onboarding: false,
+             name_input: String::new(),
+--- a/src/app/mod.rs
++++ b/src/app/mod.rs
+@@ -395,6 +395,7 @@
+             worktree_open: None,
+             worktree_remove: None,
+             worktree_directory,
++            worktree_post_create_command: config.worktrees.post_create_command.clone(),
+             collapsed_space_keys,
+             request_complete_onboarding: false,
+             name_input: String::new(),
+@@ -1110,6 +1111,7 @@
+         if !invalid_section("worktrees") {
+             self.state.worktree_directory =
+                 crate::worktree::expand_tilde_absolute_path(&config.worktrees.directory);
++            self.state.worktree_post_create_command = config.worktrees.post_create_command.clone();
+         }
+
+         if !invalid_section("theme") {
+--- a/src/app/worktrees.rs
++++ b/src/app/worktrees.rs
+@@ -579,10 +579,12 @@
+                                 key: repo_key,
+                                 label: repo_name,
+                                 repo_root: source_repo_root,
+-                                checkout_path: path,
++                                checkout_path: path.clone(),
+                                 is_linked_worktree: true,
+                             });
+                         }
++                        let root_pane = self.state.workspaces[ws_idx].tabs[0].root_pane;
++                        self.spawn_worktree_post_create_command(ws_idx, root_pane, &path);
+                         self.state.mark_session_dirty();
+                     }
+                     Err(err) => {
+@@ -604,6 +606,51 @@
+             }
+         }
+     }
++    fn spawn_worktree_post_create_command(
++        &self,
++        ws_idx: usize,
++        root_pane: crate::layout::PaneId,
++        path: &std::path::Path,
++    ) {
++        let command_text = self.state.worktree_post_create_command.trim();
++        if command_text.is_empty() {
++            return;
++        }
++
++        let mut command = std::process::Command::new("/bin/sh");
++        command
++            .arg("-lc")
++            .arg(command_text)
++            .stdin(std::process::Stdio::null())
++            .stdout(std::process::Stdio::null())
++            .stderr(std::process::Stdio::null())
++            .current_dir(path);
++
++        command.env(crate::api::SOCKET_PATH_ENV_VAR, crate::api::socket_path());
++        if let Ok(current_exe) = std::env::current_exe() {
++            command.env("HERDR_BIN_PATH", current_exe);
++        }
++        command.env(
++            "HERDR_ACTIVE_WORKSPACE_ID",
++            self.public_workspace_id(ws_idx),
++        );
++        command.env(
++            "HERDR_CREATED_WORKSPACE_ID",
++            self.public_workspace_id(ws_idx),
++        );
++        command.env("HERDR_CREATED_WORKTREE_PATH", path);
++        if let Some(tab_id) = self.public_tab_id(ws_idx, 0) {
++            command.env("HERDR_CREATED_ROOT_TAB_ID", tab_id);
++        }
++        if let Some(pane_id) = self.public_pane_id(ws_idx, root_pane) {
++            command.env("HERDR_CREATED_ROOT_PANE_ID", pane_id);
++        }
++
++        if let Err(err) = command.spawn() {
++            tracing::warn!(error = %err, "failed to spawn worktree post-create command");
++        }
++    }
++
+     pub(crate) fn handle_worktree_remove_finished(&mut self, result: WorktreeRemoveResult) {
+         let Some(remove) = &mut self.state.worktree_remove else {
+             return;
+--- a/vendor/libghostty-vt/build.zig
++++ b/vendor/libghostty-vt/build.zig
+@@ -100,8 +100,10 @@
+     if (config.emit_webdata) webdata.install();
+
+     // Ghostty bench tools
+-    const bench = try buildpkg.GhosttyBench.init(b, &deps);
+-    if (config.emit_bench) bench.install();
++    if (config.emit_bench) {
++        const bench = try buildpkg.GhosttyBench.init(b, &deps);
++        bench.install();
++    }
+
+     // Ghostty dist tarball
+     const dist = try buildpkg.GhosttyDist.init(b, &config);
