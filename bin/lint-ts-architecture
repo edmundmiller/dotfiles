@@ -36,9 +36,9 @@ for file in "$@"; do
     fi
   fi
 
-  # Rule 2: enforce package boundaries in pi-packages via import paths
+  # Rule 2: enforce package boundaries in packages/pi-packages via import paths
   # Disallow relative imports that jump into another pi-* package directly.
-  if [[ "$rel" =~ ^pi-packages/(pi-[^/]+)/ ]]; then
+  if [[ "$rel" =~ ^packages/pi-packages/(pi-[^/]+)/ ]]; then
     if rg --line-number --color never "['\"]\.\.(/\.\.)*/pi-[^'\"]+['\"]" "$abs" >/tmp/lint-ts-architecture-boundary.out 2>/dev/null; then
       echo "TS architecture lint: cross-package relative import detected: $rel" >&2
       cat /tmp/lint-ts-architecture-boundary.out >&2

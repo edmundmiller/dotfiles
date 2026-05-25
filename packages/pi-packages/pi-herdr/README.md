@@ -17,7 +17,7 @@ Pi package that adds Herdr tools for inspecting and controlling a running Herdr 
 ## Install locally
 
 ```bash
-pi install /Users/emiller/.config/dotfiles/pi-packages/pi-herdr
+pi install /Users/emiller/.config/dotfiles/packages/pi-packages/pi-herdr
 ```
 
 Or add the package path to Pi settings.

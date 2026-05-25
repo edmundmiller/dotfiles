@@ -102,7 +102,7 @@ graph TB
   %% ── Packages ──────────────────────────────────────────────────
   subgraph Packages["Custom Packages"]
     nix_packages["packages/<br/>(Nix derivations:<br/>dagster · zele · jut<br/>dmux · zunit · …)"]
-    ts_packages["pi-packages/<br/>(TypeScript monorepo:<br/>pi-dcp · pi-qmd<br/>pi-scurl · pi-beads · …)"]
+    ts_packages["packages/pi-packages/<br/>(TypeScript monorepo:<br/>pi-dcp · pi-qmd<br/>pi-scurl · pi-beads · …)"]
   end
 
   flake_nix --> nix_packages

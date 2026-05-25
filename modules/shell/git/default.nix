@@ -26,7 +26,7 @@ in
   config = mkIf cfg.enable (mkMerge [
     (mkIf cfg.ai.enable {
       modules.agents.pi.extraPackages = mkIf config.modules.agents.pi.enable [
-        "~/.config/dotfiles/pi-packages/pi-git-ai"
+        "~/.config/dotfiles/packages/pi-packages/pi-git-ai"
       ];
     })
 

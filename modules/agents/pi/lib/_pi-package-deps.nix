@@ -1,9 +1,9 @@
-# Build node_modules for pi-packages that have npm dependencies.
-# These are symlinked into the mutable pi-packages/ dirs by home-manager
+# Build node_modules for packages/pi-packages that have npm dependencies.
+# These are symlinked into the mutable packages/pi-packages/ dirs by home-manager
 # so that deps are always present without runtime install steps.
 #
 # To update after changing a package's dependencies:
-#   1. cd pi-packages/<pkg> && npm install --package-lock-only --ignore-scripts
+#   1. cd packages/pi-packages/<pkg> && npm install --package-lock-only --ignore-scripts
 #   2. prefetch-npm-deps package-lock.json /tmp/x && nix hash path /tmp/x
 #   3. Update the hash below
 #   4. hey re

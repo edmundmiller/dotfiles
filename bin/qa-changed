@@ -7,7 +7,7 @@ usage() {
   cat <<'EOF'
 Usage: bin/qa-changed [options]
 
-Run pi-packages quality checks (typecheck + package tests) on changed packages.
+Run packages/pi-packages quality checks (typecheck + package tests) on changed packages.
 
 Options:
   --base-ref <ref>     Base git ref for changed-file detection
@@ -67,23 +67,23 @@ if [[ ${#packages[@]} -eq 0 && $run_all -eq 0 ]]; then
   fi
 
   range="$base_ref...$head_ref"
-  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "$range" -- 'pi-packages/**')
+  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "$range" -- 'packages/pi-packages/**')
 
   for file in "${changed_files[@]}"; do
-    if [[ "$file" =~ ^pi-packages/(pi-[^/]+)/ ]]; then
+    if [[ "$file" =~ ^packages/pi-packages/(pi-[^/]+)/ ]]; then
       packages+=("${BASH_REMATCH[1]}")
     fi
   done
 else
-  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "${base_ref:-HEAD~1}...$head_ref" -- 'pi-packages/**' 2>/dev/null || true)
+  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "${base_ref:-HEAD~1}...$head_ref" -- 'packages/pi-packages/**' 2>/dev/null || true)
 fi
 
 if [[ $run_all -eq 1 ]]; then
-  mapfile -t packages < <(find "$ROOT_DIR/pi-packages" -mindepth 1 -maxdepth 1 -type d -name 'pi-*' -exec basename {} \; | sort)
+  mapfile -t packages < <(find "$ROOT_DIR/packages/pi-packages" -mindepth 1 -maxdepth 1 -type d -name 'pi-*' -exec basename {} \; | sort)
 fi
 
 if [[ ${#packages[@]} -eq 0 ]]; then
-  echo "qa-changed: no pi-packages changes detected"
+  echo "qa-changed: no packages/pi-packages changes detected"
   exit 0
 fi
 
@@ -93,7 +93,7 @@ echo "qa-changed: checking packages: ${packages[*]}"
 
 arch_files=()
 for file in "${changed_files[@]}"; do
-  if [[ -f "$ROOT_DIR/$file" && "$file" =~ ^pi-packages/pi-[^/]+/.*\.tsx?$ ]]; then
+  if [[ -f "$ROOT_DIR/$file" && "$file" =~ ^packages/pi-packages/pi-[^/]+/.*\.tsx?$ ]]; then
     arch_files+=("$file")
   fi
 done
@@ -117,7 +117,7 @@ fi
 existing_packages=()
 removed_packages=()
 for pkg in "${packages[@]}"; do
-  if [[ -f "$ROOT_DIR/pi-packages/$pkg/package.json" ]]; then
+  if [[ -f "$ROOT_DIR/packages/pi-packages/$pkg/package.json" ]]; then
     existing_packages+=("$pkg")
   else
     removed_packages+=("$pkg")
@@ -134,11 +134,11 @@ if [[ $run_all -eq 1 ]]; then
   run_integration=1
 else
   for file in "${changed_files[@]}"; do
-    if [[ "$file" == pi-packages/tests/* || "$file" == pi-packages/package.json ]]; then
+    if [[ "$file" == packages/pi-packages/tests/* || "$file" == packages/pi-packages/package.json ]]; then
       run_integration=1
       break
     fi
-    if [[ "$file" == pi-packages/bun.lock && ${#packages[@]} -gt 0 ]]; then
+    if [[ "$file" == packages/pi-packages/bun.lock && ${#packages[@]} -gt 0 ]]; then
       run_integration=1
       break
     fi
@@ -156,7 +156,7 @@ while IFS= read -r -d '' link_path; do
   link_target="$(readlink "$link_path")"
   symlinked_node_modules+=("$link_path=$link_target")
   rm -f "$link_path"
-done < <(find "$ROOT_DIR/pi-packages" -mindepth 2 -maxdepth 2 -type l -name node_modules -print0)
+done < <(find "$ROOT_DIR/packages/pi-packages" -mindepth 2 -maxdepth 2 -type l -name node_modules -print0)
 
 restore_symlinked_node_modules() {
   local record link_path link_target
@@ -170,7 +170,7 @@ restore_symlinked_node_modules() {
 trap restore_symlinked_node_modules EXIT
 
 (
-  cd "$ROOT_DIR/pi-packages"
+  cd "$ROOT_DIR/packages/pi-packages"
   bun install --frozen-lockfile --silent
 )
 
@@ -181,7 +181,7 @@ has_script() {
 }
 
 for pkg in "${packages[@]}"; do
-  pkg_dir="$ROOT_DIR/pi-packages/$pkg"
+  pkg_dir="$ROOT_DIR/packages/pi-packages/$pkg"
 
   if has_script "$pkg_dir" typecheck; then
     echo "qa-changed: $pkg -> typecheck"
@@ -195,8 +195,8 @@ for pkg in "${packages[@]}"; do
 done
 
 if [[ $run_integration -eq 1 ]]; then
-  echo "qa-changed: running pi-packages integration tests"
-  (cd "$ROOT_DIR/pi-packages" && bun run --silent test:integration)
+  echo "qa-changed: running packages/pi-packages integration tests"
+  (cd "$ROOT_DIR/packages/pi-packages" && bun run --silent test:integration)
 fi
 
 echo "qa-changed: done"
