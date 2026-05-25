@@ -154,6 +154,7 @@ with lib.my;
     bind
     cached-nix-shell
     coreutils
+    findutils
     git
     vim
     visidata

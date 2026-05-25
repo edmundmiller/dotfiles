@@ -496,7 +496,10 @@ in
               "hermes-bootstrap"
             ]
             ''
-              export PATH=${escapeShellArg launchPath}:$PATH
+              # Preserve Home Manager's activation PATH first: it contains GNU
+              # find. Putting /usr/bin before it makes HM's own cleanup step
+              # call BSD find, which lacks -printf.
+              export PATH=$PATH:${escapeShellArg launchPath}
               herdr_cmd=${escapeShellArg cfg.command}
 
               install_integration() {
