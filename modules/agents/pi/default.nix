@@ -33,10 +33,10 @@ let
   ghosttyCfg = config.modules.desktop.term.ghostty;
   inherit (config.dotfiles) configDir;
 
-  # Pre-built node_modules for pi-packages with npm dependencies
+  # Pre-built node_modules for packages/pi-packages with npm dependencies
   piPkgDeps = import ./lib/_pi-package-deps.nix {
     inherit pkgs;
-    piPkgsDir = ../../../pi-packages;
+    piPkgsDir = ../../../packages/pi-packages;
   };
 
   secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
@@ -313,13 +313,13 @@ let
   piConflictAssertions = [
     {
       assertion =
-        !(hasPiPackage "~/.config/dotfiles/pi-packages/pi-beads" && hasPiPackage "npm:@tintinweb/pi-tasks");
+        !(hasPiPackage "~/.config/dotfiles/packages/pi-packages/pi-beads" && hasPiPackage "npm:@tintinweb/pi-tasks");
       message = "Pi package conflict: both pi-beads and @tintinweb/pi-tasks register /tasks. Keep exactly one authoritative /tasks provider.";
     }
     {
       assertion =
         !(
-          hasPiPackage "~/.config/dotfiles/pi-packages/pi-non-interactive"
+          hasPiPackage "~/.config/dotfiles/packages/pi-packages/pi-non-interactive"
           && hasPiPackage "git:github.com/lucasmeijer/pi-bash-live-view"
         );
       message = "Pi package conflict: both pi-non-interactive and pi-bash-live-view register tool 'bash'. Keep exactly one authoritative bash provider.";
@@ -532,11 +532,11 @@ in
               }
             '';
 
-            # Nix-built node_modules for pi-packages with npm dependencies
-            # Source stays mutable in pi-packages/, only deps are store-managed
-            ".config/dotfiles/pi-packages/pi-agentmap/node_modules".source =
+            # Nix-built node_modules for packages/pi-packages with npm dependencies
+            # Source stays mutable in packages/pi-packages/, only deps are store-managed
+            ".config/dotfiles/packages/pi-packages/pi-agentmap/node_modules".source =
               "${piPkgDeps.pi-agentmap}/node_modules";
-            ".config/dotfiles/pi-packages/pi-dcp/node_modules".source = "${piPkgDeps.pi-dcp}/node_modules";
+            ".config/dotfiles/packages/pi-packages/pi-dcp/node_modules".source = "${piPkgDeps.pi-dcp}/node_modules";
           };
 
         # Clean stale local extensions that conflict with package-provided ones
@@ -691,7 +691,7 @@ in
         # its local package deps in the mutable repo instead of a Nix-store
         # node_modules symlink.
         home.activation.pi-qmd-deps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          pkg_dir="$HOME/.config/dotfiles/pi-packages/pi-qmd"
+          pkg_dir="$HOME/.config/dotfiles/packages/pi-packages/pi-qmd"
           lock_file="$pkg_dir/package-lock.json"
           stamp_file="$pkg_dir/.node-modules-lock-sha256"
           npm_bin="${pkgs.nodejs}/bin/npm"

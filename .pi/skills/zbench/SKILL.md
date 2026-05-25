@@ -84,6 +84,29 @@ hey zbench                    # Shows comparison vs baseline
 hey zbench-save
 ```
 
+
+## Autoresearch Optimization Prompt
+
+For a multi-iteration optimization loop, use `pi-autoresearch` to drive small
+zsh config experiments and `zsh-bench` to measure whether each experiment helped.
+Do not use autoresearch instead of zsh-bench; use it as the edit → benchmark →
+keep/revert loop around zsh-bench.
+
+Run the local prompt template with `pi-autoresearch`:
+
+```bash
+pi -e npm:pi-autoresearch "$(cat .pi/prompts/zbench-autoresearch.md)"
+```
+
+If you prefer to install the extension persistently first:
+
+```bash
+pi install npm:pi-autoresearch
+cat .pi/prompts/zbench-autoresearch.md
+```
+
+Canonical prompt file: `.pi/prompts/zbench-autoresearch.md`.
+
 ## Debugging Slow Startup
 
 ### Phase Timing Script

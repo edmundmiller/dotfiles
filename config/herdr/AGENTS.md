@@ -1,6 +1,6 @@
 # Herdr Config
 
-Tracked Herdr runtime config lives here and is wired in by `modules/shell/herdr.nix`.
+Tracked Herdr runtime config lives here and is wired in by `modules/shell/herdr/default.nix`.
 
 ## Source of truth
 
@@ -22,49 +22,47 @@ Current preferred keys:
 ```toml
 [keys]
 prefix = "ctrl+c"
-new_workspace = "w"
-split_horizontal = "s"
+new_workspace = "prefix+w"
+new_worktree = "prefix+g"
+open_worktree = "prefix+G"
+workspace_picker = "prefix+O"
+split_horizontal = "prefix+-"
 # Intercept hard-coded navigate q quit/detach with a harmless action.
-toggle_sidebar = "q"
+toggle_sidebar = "prefix+b"
+previous_tab = "prefix+p"
+next_tab = "prefix+n"
 
 [[keys.command]]
-key = "p"
-command = "herdr-tab previous"
-
-[[keys.command]]
-key = "n"
-command = "herdr-tab next"
-
-[[keys.command]]
-key = "["
+key = "prefix+["
 command = "herdr-hunk"
 
 [[keys.command]]
-key = "]"
+key = "prefix+]"
 command = "herdr-hunk --tab"
 ```
 
 Meaning:
 
 - `prefix+w` creates a workspace.
-- `prefix+s` splits horizontally.
-- `prefix+q` toggles the sidebar, deliberately intercepting Herdr's hard-coded quit/detach fallback so accidental `prefix+q` does not quit.
-- `prefix+p` / `prefix+n` move to previous/next tab via `bin/herdr-tab`.
+- `prefix+g` creates a worktree.
+- `prefix+G` opens an existing worktree.
+- `prefix+-` splits horizontally.
+- `prefix+b` toggles the sidebar.
+- `prefix+p` / `prefix+n` move to previous/next tab via Herdr built-ins.
 - `prefix+[` opens Hunk in a focused split.
 - `prefix+]` opens Hunk in a new tab.
 
 ## Important gotchas
 
-- Do **not** use Herdr's built-in `previous_tab` / `next_tab` for `p`/`n`. Those are terminal-direct as well as navigate-mode, so plain `p`/`n` gets stolen from shells/editors.
-- Prefix-only tab navigation should remain implemented as `[[keys.command]]` entries calling `bin/herdr-tab`.
-- Keep `toggle_sidebar = "q"` unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys, so this prevents `prefix+q` from quitting.
+- Use explicit `prefix+...` bindings. Plain printable direct bindings steal input from shells/editors.
+- Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
 - `bin/herdr-workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
 
-- `modules/shell/herdr.nix` bootstraps and upserts selected live config keys.
-- `bin/herdr-tab` implements prefix-only tab previous/next.
+- `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
+- `bin/herdr-tab` remains available for experiments; active tab movement uses Herdr built-ins.
 - `bin/herdr-hunk` implements Hunk split/tab launch behavior.
 - `packages/herdr/AGENTS.md` covers Nix packaging of the upstream Herdr binary, not runtime keybindings.

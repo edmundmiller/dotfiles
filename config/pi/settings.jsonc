@@ -58,24 +58,24 @@
     },
     // Legacy git-backed memory filesystem disabled in favor of pi-honcho-memory.
     // pi-honcho-memory is injected by modules/agents/pi when honcho.enable = true.
-    // "~/.config/dotfiles/pi-packages/pi-context-repo",
+    // "~/.config/dotfiles/packages/pi-packages/pi-context-repo",
     // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
-    "~/.config/dotfiles/pi-packages/pi-dcp",
+    "~/.config/dotfiles/packages/pi-packages/pi-dcp",
     // Repo-local QMD workflow (/qmd, /qp) and qmd-cli-first guidance
-    "~/.config/dotfiles/pi-packages/pi-qmd",
+    "~/.config/dotfiles/packages/pi-packages/pi-qmd",
     // Auto-load direnv env at session start
-    "~/.config/dotfiles/pi-packages/pi-direnv",
+    "~/.config/dotfiles/packages/pi-packages/pi-direnv",
     // Force non-interactive bash defaults + block interactive hang patterns
-    "~/.config/dotfiles/pi-packages/pi-non-interactive",
+    "~/.config/dotfiles/packages/pi-packages/pi-non-interactive",
     // Agentmap codebase tree in system prompt - https://github.com/remorses/agentmap
-    "~/.config/dotfiles/pi-packages/pi-agentmap",
+    "~/.config/dotfiles/packages/pi-packages/pi-agentmap",
 
     // Prompt construction toolkit
     "npm:pi-promptsmith",
     // FFF package
     "npm:@ff-labs/pi-fff",
     // Cross-agent thread reader (agents:// URIs)
-    "~/.config/dotfiles/pi-packages/pi-xurl",
+    "~/.config/dotfiles/packages/pi-packages/pi-xurl",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
@@ -98,7 +98,7 @@
       "skills": [],
     },
     // Applies bash command policy to command-bearing extension tools like process.start.
-    "~/.config/dotfiles/pi-packages/pi-command-policy-bridge",
+    "~/.config/dotfiles/packages/pi-packages/pi-command-policy-bridge",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
       "source": "https://github.com/pasky/pi-amplike",
@@ -116,7 +116,7 @@
     // Codex-style persistent goal tracking and continuation - https://github.com/fitchmultz/pi-codex-goal
     "npm:pi-codex-goal",
     // Legacy tasks package intentionally disabled to keep task tools out of session
-    // "~/.config/dotfiles/pi-packages/pi-beads",
+    // "~/.config/dotfiles/packages/pi-packages/pi-beads",
 
     // Multi-edit extension (edits[]) from gist (SSH git source)
     {
@@ -134,7 +134,7 @@
     // Parallel side conversations with /btw - https://github.com/dbachelder/pi-btw
     "npm:pi-btw",
     // Dumb zone - context degradation warning (forked from @aliou/pi-extensions)
-    "~/.config/dotfiles/pi-packages/pi-dumb-zone",
+    "~/.config/dotfiles/packages/pi-packages/pi-dumb-zone",
     // BUG dotfiles-n579: frontmatter warnings on CHANGELOG.md/README.md
     // "npm:visual-explainer",
     // Pi logo display (git source avoids npm --before cutoff for package published after current Pi release)
@@ -172,9 +172,9 @@
     "git:github.com/mrexodia/kilo-pi-provider",
     // Live bash output view enhancements - vendored local copy
     // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view
-    // "~/.config/dotfiles/pi-packages/pi-bash-live-view",
+    // "~/.config/dotfiles/packages/pi-packages/pi-bash-live-view",
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
-    "~/.config/dotfiles/pi-packages/pi-image-attachments",
+    "~/.config/dotfiles/packages/pi-packages/pi-image-attachments",
     // Automatic model switching workflows (e.g. Kimi ↔ Codex handoff)
     "npm:pi-model-switch",
     // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)

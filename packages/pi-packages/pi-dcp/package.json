@@ -16,7 +16,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "pi-packages/pi-dcp"
+    "directory": "packages/pi-packages/pi-dcp"
   },
   "files": [
     "index.ts",
