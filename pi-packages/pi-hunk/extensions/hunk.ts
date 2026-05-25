@@ -27,11 +27,14 @@ async function runCommand(
   args: string[],
   options: { cwd?: string; timeout?: number; stdin?: string } = {}
 ) {
-  const result = await pi.exec(command, args, {
+  const execOptions = {
     cwd: options.cwd ?? process.cwd(),
     timeout: options.timeout ?? HUNK_TIMEOUT_MS,
     input: options.stdin,
-  } as any);
+  };
+  const result = await pi.exec(command, args, {
+    ...execOptions,
+  });
 
   const stdout = result.stdout?.trim() ?? "";
   const stderr = result.stderr?.trim() ?? "";
