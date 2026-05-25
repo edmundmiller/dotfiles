@@ -36,28 +36,27 @@ ctrl+c
 
 Custom/current mappings:
 
-| Key            | Action                                    |
-| -------------- | ----------------------------------------- |
-| `prefix+w`     | New workspace                             |
-| `prefix+g`     | New worktree                              |
-| `prefix+alt+g` / `prefix+ctrl+g` | New worktree with Pi + Hunk + Neovim tabs |
-| `prefix+G`     | Open existing worktree                    |
-| `prefix+O`     | Workspace picker                          |
-| `prefix+-`     | Split horizontally                        |
-| `prefix+b`     | Toggle sidebar                            |
-| `prefix+p`     | Previous tab                              |
-| `prefix+n`     | Next tab                                  |
-| `prefix+[`     | Open Hunk in a focused split              |
-| `prefix+]`     | Open Hunk in a new tab                    |
+| Key        | Action                       |
+| ---------- | ---------------------------- |
+| `prefix+w` | New workspace                |
+| `prefix+g` | New worktree                 |
+| `prefix+G` | Open existing worktree       |
+| `prefix+O` | Workspace picker             |
+| `prefix+-` | Split horizontally           |
+| `prefix+b` | Toggle sidebar               |
+| `prefix+p` | Previous tab                 |
+| `prefix+n` | Next tab                     |
+| `prefix+[` | Open Hunk in a focused split |
+| `prefix+]` | Open Hunk in a new tab       |
 
-Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` keeps the native worktree flow; `prefix+alt+g` / `prefix+ctrl+g` creates a native worktree through the socket API and then opens Pi, Hunk, and Neovim tabs; `prefix+G` opens existing worktrees.
+Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` uses Herdr's native worktree prompt; after creation, Herdr runs `worktrees.post_create_command` to seed Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
 
 ## Helpers
 
 One repo script backs the custom Hunk command bindings:
 
 - `bin/herdr-hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
-- `bin/herdr-worktree-layout` — creates a native Herdr worktree and seeds Pi/Hunk/Neovim tabs.
+- `bin/herdr-worktree-layout` — seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context.
 
 `bin/herdr-tab` remains available for experiments, but active tab movement now uses Herdr's built-in `previous_tab` / `next_tab` bindings.
 
