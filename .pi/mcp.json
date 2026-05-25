@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "nixos": {
+      "command": "nix",
+      "args": ["run", "nixpkgs#mcp-nixos", "--"],
+      "lifecycle": "lazy",
+      "idleTimeout": 10
+    }
+  }
+}
