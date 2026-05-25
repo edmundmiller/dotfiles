@@ -577,6 +577,41 @@ in
                     HERMES_HOME=${escapeShellArg hermesHome} \
                     ${cfg.command} integration install hermes >/dev/null
 
+                  # Herdr's Hermes integration installer can leave existing
+                  # plugins.enabled entries at the wrong indentation, producing
+                  # invalid YAML like:
+                  #   plugins:
+                  #     enabled:
+                  #       - herdr-agent-state
+                  #     - evo
+                  # Repair that known shape immediately so later activation
+                  # snippets and Hermes itself can parse config.yaml.
+                  ${pkgs.python3}/bin/python3 - ${escapeShellArg "${hermesHome}/config.yaml"} <<'HERDR_HERMES_YAML_FIX'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+if path.exists():
+    lines = path.read_text(encoding="utf-8").splitlines()
+    fixed = []
+    in_plugins = False
+    in_enabled = False
+    changed = False
+    for line in lines:
+        stripped = line.strip()
+        if line and not line.startswith(" ") and stripped.endswith(":"):
+            in_plugins = stripped == "plugins:"
+            in_enabled = False
+        elif in_plugins and line.startswith("  ") and not line.startswith("    ") and stripped.endswith(":"):
+            in_enabled = stripped == "enabled:"
+        elif in_plugins and in_enabled and line.startswith("  - "):
+            line = "  " + line
+            changed = True
+        fixed.append(line)
+    if changed:
+        path.write_text("\n".join(fixed) + "\n", encoding="utf-8")
+HERDR_HERMES_YAML_FIX
+
                   chown -R ${config.services.hermes-agent.user}:${config.services.hermes-agent.group} \
                     ${escapeShellArg "${hermesHome}/plugins/herdr-agent-state"} \
                     ${escapeShellArg "${hermesHome}/config.yaml"} 2>/dev/null || true
