@@ -260,7 +260,7 @@
               subdir = "skills/engineering";
               filter = {
                 maxDepth = 1;
-                nameRegex = "^(improve-codebase-architecture|to-prd|to-issues)$";
+                nameRegex = "^(improve-codebase-architecture|to-prd|to-issues|grill-with-docs)$";
               };
             };
 
@@ -431,6 +431,9 @@
 
               improve-codebase-architecture.from = "mattpocock-engineering";
               improve-codebase-architecture.path = "improve-codebase-architecture";
+
+              grill-with-docs.from = "mattpocock-engineering";
+              grill-with-docs.path = "grill-with-docs";
             }
             // lib.optionalAttrs acpxEnabled {
               acpx.from = "acpx";
