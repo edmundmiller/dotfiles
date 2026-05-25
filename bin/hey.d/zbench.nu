@@ -23,19 +23,19 @@ def zbench-run [mode: string, ...args: string] {
   $raw | ^$zbench_report --mode $mode --host $ctx.flake_host --dir $zbench_dir --git-rev $git_rev
 }
 
-def "main zbench" [...args: string] {
+def --wrapped "main zbench" [...args] {
   zbench-run "run" ...$args
 }
 
-def "main zbench-save" [...args: string] {
+def --wrapped "main zbench-save" [...args] {
   zbench-run "save" ...$args
 }
 
-def "main zbench-compare" [...args: string] {
+def --wrapped "main zbench-compare" [...args] {
   zbench-run "compare" ...$args
 }
 
-def "main zbench-check" [...args: string] {
+def --wrapped "main zbench-check" [...args] {
   zbench-run "check" ...$args
 }
 
