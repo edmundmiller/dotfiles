@@ -24,6 +24,19 @@ mcp_servers:
   beanquery:
     command: ~/src/personal/finances/scripts/run-beanquery-mcp.sh
     enabled: true
+  codegraph:
+    command: codegraph
+    args:
+      - serve
+      - --mcp
+    timeout: 120
+    connect_timeout: 60
+    enabled: true
+
+platform_toolsets:
+  cli:
+    - hermes-cli
+    - mcp-codegraph
 
 # Primary inference: OpenAI Codex
 model:
