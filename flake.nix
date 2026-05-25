@@ -725,46 +725,48 @@
             };
           };
 
-          # Headless agent dev shell (nix develop .#agent)
-          devShells.agent = pkgs.mkShell {
-            packages = self.packages.${system}.agent-env.paths;
-            shellHook = ''
-              echo "dotfiles agent shell (headless)"
-            '';
-          };
+          devShells = {
+            # Headless agent dev shell (nix develop .#agent)
+            agent = pkgs.mkShell {
+              packages = self.packages.${system}.agent-env.paths;
+              shellHook = ''
+                echo "dotfiles agent shell (headless)"
+              '';
+            };
 
-          # Lightweight default shell for direnv and routine agent work.
-          # Use `nix develop .#full` when you need deploy tooling or hook installation.
-          devShells.default = pkgs.mkShellNoCC {
-            packages =
-              self.packages.${system}.agent-env.paths
-              ++ (with pkgs; [
-                deadnix
-                nixfmt
-                nushell
-                statix
-              ]);
-            shellHook = ''
-              echo "dotfiles lightweight shell (use: nix develop .#full)"
-            '';
-          };
+            # Lightweight default shell for direnv and routine agent work.
+            # Use `nix develop .#full` when you need deploy tooling or hook installation.
+            default = pkgs.mkShellNoCC {
+              packages =
+                self.packages.${system}.agent-env.paths
+                ++ (with pkgs; [
+                  deadnix
+                  nixfmt
+                  nushell
+                  statix
+                ]);
+              shellHook = ''
+                echo "dotfiles lightweight shell (use: nix develop .#full)"
+              '';
+            };
 
-          # Full development shell: deploy tooling plus git hook installation.
-          devShells.full = pkgs.mkShell {
-            packages =
-              with pkgs;
-              [
-                nixfmt
-                deadnix
-                statix
-                deploy-rs.packages.${system}.default
-                nushell
-                inputs.llm-agents.packages.${system}.beads-rust
-              ]
-              ++ config.pre-commit.settings.enabledPackages;
-            shellHook = config.pre-commit.shellHook + ''
-              echo "dotfiles full development shell"
-            '';
+            # Full development shell: deploy tooling plus git hook installation.
+            full = pkgs.mkShell {
+              packages =
+                with pkgs;
+                [
+                  nixfmt
+                  deadnix
+                  statix
+                  deploy-rs.packages.${system}.default
+                  nushell
+                  inputs.llm-agents.packages.${system}.beads-rust
+                ]
+                ++ config.pre-commit.settings.enabledPackages;
+              shellHook = config.pre-commit.shellHook + ''
+                echo "dotfiles full development shell"
+              '';
+            };
           };
 
           # Add checks for deployment, plugins, and shell tests
