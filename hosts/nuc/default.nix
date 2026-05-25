@@ -9,6 +9,31 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
+  honchoAi = pkgs.python313Packages.buildPythonPackage rec {
+    pname = "honcho-ai";
+    version = "2.1.2";
+    format = "wheel";
+    src = pkgs.fetchurl {
+      url = "https://files.pythonhosted.org/packages/py3/h/honcho-ai/honcho_ai-${version}-py3-none-any.whl";
+      hash = "sha256-oiIg8Bpj9qPB1GJarvChQld7g5gcQty2EXdjGGP7qk8=";
+    };
+    dependencies = with pkgs.python313Packages; [
+      httpx
+      pydantic
+    ];
+    doCheck = false;
+  };
+  hermesAgentWithHoncho = pkgs.symlinkJoin {
+    name = "${hermesAgentBase.name}-honcho";
+    paths = [ hermesAgentBase ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      for exe in hermes hermes-agent hermes-acp; do
+        wrapProgram "$out/bin/$exe" \
+          --prefix PYTHONPATH : "${honchoAi}/${pkgs.python313.sitePackages}"
+      done
+    '';
+  };
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
@@ -62,6 +87,10 @@ let
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
   };
+  mkOpnixAgentSecret = envVar: secretName: {
+    inherit envVar;
+    path = "/var/lib/opnix/secrets/${secretName}";
+  };
   hermesProviderSecrets = [
     (mkAgentSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
     (mkAgentSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
@@ -76,6 +105,7 @@ let
     (mkAgentSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
   ];
   hermesScintillateSecrets = hermesProviderSecrets ++ [
+    (mkOpnixAgentSecret "HONCHO_API_KEY" "scintillateHermesHonchoApiKey")
     {
       envVar = "TELEGRAM_BOT_TOKEN";
       path = hermesScintillateTelegramBotTokenFile;
@@ -92,8 +122,11 @@ let
   # Betty does not currently own a Telegram surface. Do not inject
   # Scintillate's bot token here: two Hermes gateways polling the same
   # Telegram bot produce getUpdates conflicts and make Scintillate flaky.
-  hermesBettySecrets = hermesProviderSecrets;
+  hermesBettySecrets = hermesProviderSecrets ++ [
+    (mkOpnixAgentSecret "HONCHO_API_KEY" "bettyHermesHonchoApiKey")
+  ];
   hermesAnneSecrets = hermesProviderSecrets ++ [
+    (mkOpnixAgentSecret "HONCHO_API_KEY" "anneHermesHonchoApiKey")
     {
       envVar = "DISCORD_BOT_TOKEN";
       inherit (config.age.secrets.discord-bot-token-anne) path;
@@ -113,6 +146,7 @@ let
       ])
     ) hermesProviderSecrets)
     ++ [
+      (mkOpnixAgentSecret "HONCHO_API_KEY" "radarFlueHonchoApiKey")
       {
         envVar = "AGENTMAIL_API_KEY";
         path = "/var/lib/opnix/secrets/radarAgentmailCredential";
@@ -662,7 +696,7 @@ in
   ];
 
   services.hermes-agent = {
-    package = hermesAgentBase;
+    package = hermesAgentWithHoncho;
     user = "emiller";
     group = "users";
     createUser = false;
@@ -1318,6 +1352,12 @@ in
     secrets = {
       anneHermesHonchoApiKey = {
         reference = "op://Agents/Anne Honcho Key/credential";
+      };
+      bettyHermesHonchoApiKey = {
+        reference = "op://Agents/Betty Honcho/credential";
+      };
+      radarFlueHonchoApiKey = {
+        reference = "op://Agents/Radar Flue Honcho/credential";
       };
       scintillateHermesHonchoApiKey = {
         reference = "op://Agents/scintillate Honcho Key/credential";
