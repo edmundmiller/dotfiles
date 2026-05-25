@@ -17,6 +17,8 @@ let
     && options.services ? "hermes-agent"
     && options.services."hermes-agent" ? profiles;
 
+  yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
+
   launchPath = concatStringsSep ":" [
     "/etc/profiles/per-user/${config.user.name}/bin"
     "/run/current-system/sw/bin"
@@ -577,6 +579,7 @@ in
                     HERMES_HOME=${escapeShellArg hermesHome} \
                     ${cfg.command} integration install hermes >/dev/null
 
+                  # Validate the whole Hermes config file after Herdr mutates it.
                   # Herdr's Hermes integration installer can leave existing
                   # plugins.enabled entries at the wrong indentation, producing
                   # invalid YAML like:
@@ -584,11 +587,14 @@ in
                   #     enabled:
                   #       - herdr-agent-state
                   #     - evo
-                  # Repair that known shape immediately so later activation
-                  # snippets and Hermes itself can parse config.yaml.
-                  ${pkgs.python3}/bin/python3 - ${escapeShellArg "${hermesHome}/config.yaml"} <<'HERDR_HERMES_YAML_FIX'
+                  # Repair that known shape immediately, then parse the entire
+                  # file (check-yaml style) so any remaining YAML error fails
+                  # activation with a precise parser message instead of leaving
+                  # a broken runtime config behind.
+                  ${yamlPython}/bin/python3 - ${escapeShellArg "${hermesHome}/config.yaml"} <<'HERDR_HERMES_YAML_FIX'
 import pathlib
 import sys
+import yaml
 
 path = pathlib.Path(sys.argv[1])
 if path.exists():
@@ -610,6 +616,8 @@ if path.exists():
         fixed.append(line)
     if changed:
         path.write_text("\n".join(fixed) + "\n", encoding="utf-8")
+    with path.open(encoding="utf-8") as f:
+        yaml.safe_load(f)
 HERDR_HERMES_YAML_FIX
 
                   chown -R ${config.services.hermes-agent.user}:${config.services.hermes-agent.group} \
