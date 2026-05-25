@@ -224,7 +224,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    user.packages = [ cfg.package ];
+    user.packages = [
+      cfg.package
+      pkgs.my.codegraph
+    ];
     env.HERMES_HOME = cfg.homeDir;
     # env.HERMES_TUI = "1";
 
