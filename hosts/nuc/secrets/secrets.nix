@@ -116,6 +116,22 @@ in
     edmundmiller
     nuc
   ];
+  "hermes-anne-honcho-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "hermes-betty-honcho-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "hermes-radar-honcho-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "hermes-scintillate-honcho-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   # Bugster env file (GITHUB_TOKEN, LINEAR_TOKEN, etc.)
   "bugster-env.age".publicKeys = [
     edmundmiller

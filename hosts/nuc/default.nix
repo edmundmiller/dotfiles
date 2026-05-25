@@ -87,10 +87,6 @@ let
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
   };
-  mkOpnixAgentSecret = envVar: secretName: {
-    inherit envVar;
-    path = "/var/lib/opnix/secrets/${secretName}";
-  };
   hermesProviderSecrets = [
     (mkAgentSecret "AGENTMAIL_API_KEY" "agentmail-api-key")
     (mkAgentSecret "ANTHROPIC_API_KEY" "anthropic-api-key")
@@ -105,7 +101,7 @@ let
     (mkAgentSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
   ];
   hermesScintillateSecrets = hermesProviderSecrets ++ [
-    (mkOpnixAgentSecret "HONCHO_API_KEY" "scintillateHermesHonchoApiKey")
+    (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
     {
       envVar = "TELEGRAM_BOT_TOKEN";
       path = hermesScintillateTelegramBotTokenFile;
@@ -123,10 +119,10 @@ let
   # Scintillate's bot token here: two Hermes gateways polling the same
   # Telegram bot produce getUpdates conflicts and make Scintillate flaky.
   hermesBettySecrets = hermesProviderSecrets ++ [
-    (mkOpnixAgentSecret "HONCHO_API_KEY" "bettyHermesHonchoApiKey")
+    (mkAgentSecret "HONCHO_API_KEY" "hermes-betty-honcho-api-key")
   ];
   hermesAnneSecrets = hermesProviderSecrets ++ [
-    (mkOpnixAgentSecret "HONCHO_API_KEY" "anneHermesHonchoApiKey")
+    (mkAgentSecret "HONCHO_API_KEY" "hermes-anne-honcho-api-key")
     {
       envVar = "DISCORD_BOT_TOKEN";
       inherit (config.age.secrets.discord-bot-token-anne) path;
@@ -146,7 +142,7 @@ let
       ])
     ) hermesProviderSecrets)
     ++ [
-      (mkOpnixAgentSecret "HONCHO_API_KEY" "radarFlueHonchoApiKey")
+      (mkAgentSecret "HONCHO_API_KEY" "hermes-radar-honcho-api-key")
       {
         envVar = "AGENTMAIL_API_KEY";
         path = "/var/lib/opnix/secrets/radarAgentmailCredential";
@@ -1350,18 +1346,6 @@ in
   services.onepassword-secrets = {
     enable = true;
     secrets = {
-      anneHermesHonchoApiKey = {
-        reference = "op://Agents/Anne Honcho Key/credential";
-      };
-      bettyHermesHonchoApiKey = {
-        reference = "op://Agents/Betty Honcho/credential";
-      };
-      radarFlueHonchoApiKey = {
-        reference = "op://Agents/Radar Flue Honcho/credential";
-      };
-      scintillateHermesHonchoApiKey = {
-        reference = "op://Agents/scintillate Honcho Key/credential";
-      };
       radarAgentmailCredential = {
         reference = "op://Agents/Radar Agentmail/credential";
       };
