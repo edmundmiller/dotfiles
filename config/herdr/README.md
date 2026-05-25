@@ -39,6 +39,8 @@ Custom/current mappings:
 | Key        | Action                       |
 | ---------- | ---------------------------- |
 | `prefix+w` | New workspace                |
+| `prefix+g` | New worktree                 |
+| `prefix+G` | Open existing worktree       |
 | `prefix+O` | Workspace picker             |
 | `prefix+-` | Split horizontally           |
 | `prefix+b` | Toggle sidebar               |
@@ -47,7 +49,7 @@ Custom/current mappings:
 | `prefix+[` | Open Hunk in a focused split |
 | `prefix+]` | Open Hunk in a new tab       |
 
-Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean.
+Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` makes worktree creation one key after prefix; `prefix+G` opens existing worktrees.
 
 ## Helpers
 
