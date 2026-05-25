@@ -30,9 +30,9 @@ in
 
     modules.shell.zsh.rcInit = ''
       # amoxide shell integration
-      # Equivalent to what `am setup zsh` wires in mutable dotfiles.
+      # Equivalent to what `am setup zsh` wires in mutable dotfiles. Avoid `-f`: it unloads unrelated zsh functions such as compdef, _source, and _cache during startup.
       if (( $+commands[am] )); then
-        eval "$(am init -f zsh)"
+        eval "$(am init zsh)"
       fi
     '';
   };
