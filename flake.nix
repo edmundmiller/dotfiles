@@ -204,6 +204,9 @@
           };
         };
 
+        # TODO(dotfiles): Consider a small lib.my helper for package output composition if this
+        # llm-agents re-export list keeps growing. Keep explicit entries for packages like
+        # Herdr that intentionally come from overlaid pkgs/darwinPkgs instead of the input.
         packages."${linuxSystem}" =
           let
             callPackageWithInputs = lib.callPackageWith (pkgs // { inherit inputs; });
