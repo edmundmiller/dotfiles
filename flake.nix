@@ -735,7 +735,9 @@
             };
 
             # Lightweight default shell for direnv and routine agent work.
-            # Use `nix develop .#full` when you need deploy tooling or hook installation.
+            # Also refreshes generated git hooks so .pre-commit-config.yaml stays
+            # in sync with treefmt/pre-commit settings during normal direnv use.
+            # Use `nix develop .#full` when you need deploy tooling.
             default = pkgs.mkShellNoCC {
               packages =
                 self.packages.${system}.agent-env.paths
@@ -744,8 +746,9 @@
                   nixfmt
                   nushell
                   statix
-                ]);
-              shellHook = ''
+                ])
+                ++ config.pre-commit.settings.enabledPackages;
+              shellHook = config.pre-commit.shellHook + ''
                 echo "dotfiles lightweight shell (use: nix develop .#full)"
               '';
             };
