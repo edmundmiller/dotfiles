@@ -19,7 +19,7 @@ pi install npm:pi-bash-live-view
 
 ## Local vendor notes (dotfiles)
 
-This copy is vendored in `~/.config/dotfiles/pi-packages/pi-bash-live-view` until upstream catches up.
+This copy is vendored in `~/.config/dotfiles/packages/pi-packages/pi-bash-live-view` until upstream catches up.
 
 Local patches applied:
 

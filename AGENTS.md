@@ -131,7 +131,7 @@ Deadnix runs as part of `treefmt` both in the dev shell and via the `treefmt` pr
 
 **statix** is enabled in treefmt (`treefmt.programs.statix.enable = true`) and lints all Nix files for antipatterns, redundant constructs, and complexity issues (e.g., unnecessary `let` bindings, eta-reducible functions, manual `inherit` misuse). It serves as the primary complexity and code-quality checker for Nix code.
 
-For TypeScript code in `pi-packages/` and `packages/`, complexity analysis is aspirational — consider adding ESLint complexity rules as the TS codebase grows.
+For TypeScript code in `packages/pi-packages/` and `packages/`, complexity analysis is aspirational — consider adding ESLint complexity rules as the TS codebase grows.
 
 ### Log Scrubbing
 
