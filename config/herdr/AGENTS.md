@@ -67,6 +67,7 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
+- Keep `prefix+ctrl+g` as a fallback for `herdr-worktree-layout`: `prefix+alt+g` was present in config but did nothing after reload, likely because Alt was swallowed by the macOS terminal/tmux stack.
 - `bin/herdr-workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files

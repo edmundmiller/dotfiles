@@ -480,6 +480,7 @@ in
               'type = "shell"',
               'command = "herdr-worktree-layout"',
               "",
+              "# Fallback for terminals/tmux stacks that swallow prefix+alt+g.",
               "[[keys.command]]",
               'key = "prefix+ctrl+g"',
               'type = "shell"',
