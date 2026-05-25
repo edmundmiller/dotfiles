@@ -18,6 +18,15 @@
 # Because the dotfiles module merges the writable Hermes config on top of this
 # file, local auth details survive rebuilds without being committed here.
 mcp_servers:
+  github:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-github"]
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "${GITHUB_TOKEN}"
+    tools:
+      include: [list_issues, create_issue, update_issue]
+      prompts: false
+      resources: false
   linear:
     url: https://mcp.linear.app/mcp
     enabled: true
