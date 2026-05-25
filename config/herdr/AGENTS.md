@@ -33,6 +33,10 @@ previous_tab = "prefix+p"
 next_tab = "prefix+n"
 
 [[keys.command]]
+key = "prefix+alt+g"
+command = "herdr-worktree-layout"
+
+[[keys.command]]
 key = "prefix+["
 command = "herdr-hunk"
 
@@ -44,7 +48,8 @@ command = "herdr-hunk --tab"
 Meaning:
 
 - `prefix+w` creates a workspace.
-- `prefix+g` creates a worktree.
+- `prefix+g` creates a worktree with Herdr's native prompt.
+- `prefix+alt+g` creates a native worktree via socket API and opens Pi + Hunk + Neovim tabs.
 - `prefix+G` opens an existing worktree.
 - `prefix+-` splits horizontally.
 - `prefix+b` toggles the sidebar.
@@ -65,4 +70,5 @@ Meaning:
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
 - `bin/herdr-tab` remains available for experiments; active tab movement uses Herdr built-ins.
 - `bin/herdr-hunk` implements Hunk split/tab launch behavior.
+- `bin/herdr-worktree-layout` implements the layout-seeded native worktree flow.
 - `packages/herdr/AGENTS.md` covers Nix packaging of the upstream Herdr binary, not runtime keybindings.

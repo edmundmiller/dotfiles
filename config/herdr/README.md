@@ -40,6 +40,7 @@ Custom/current mappings:
 | ---------- | ---------------------------- |
 | `prefix+w` | New workspace                |
 | `prefix+g` | New worktree                 |
+| `prefix+alt+g` | New worktree with Pi + Hunk + Neovim tabs |
 | `prefix+G` | Open existing worktree       |
 | `prefix+O` | Workspace picker             |
 | `prefix+-` | Split horizontally           |
@@ -49,13 +50,14 @@ Custom/current mappings:
 | `prefix+[` | Open Hunk in a focused split |
 | `prefix+]` | Open Hunk in a new tab       |
 
-Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` makes worktree creation one key after prefix; `prefix+G` opens existing worktrees.
+Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` keeps the native worktree flow; `prefix+alt+g` creates a native worktree through the socket API and then opens Pi, Hunk, and Neovim tabs; `prefix+G` opens existing worktrees.
 
 ## Helpers
 
 One repo script backs the custom Hunk command bindings:
 
 - `bin/herdr-hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
+- `bin/herdr-worktree-layout` — creates a native Herdr worktree and seeds Pi/Hunk/Neovim tabs.
 
 `bin/herdr-tab` remains available for experiments, but active tab movement now uses Herdr's built-in `previous_tab` / `next_tab` bindings.
 

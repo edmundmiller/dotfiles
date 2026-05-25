@@ -1,0 +1,273 @@
+#!/usr/bin/env bash
+
+# Create a native Herdr Git worktree via the raw socket API, then seed the new
+# workspace with agent/review/editor tabs.
+
+set -euo pipefail
+
+usage() {
+    cat <<'USAGE'
+Usage: herdr-worktree-layout [--no-pi] [--no-hunk] [--no-nvim] [BRANCH]
+
+Create a Herdr-managed worktree from the active workspace. If BRANCH is omitted,
+prompt for one. After creation, open Pi, Hunk, and Neovim tabs in the new worktree.
+
+Options:
+  --no-pi     Do not open a Pi session tab
+  --no-hunk   Do not open a Hunk tab
+  --no-nvim   Do not open a Neovim tab
+  -h, --help  Show this help
+USAGE
+}
+
+herdr_cmd="${HERDR_BIN_PATH:-herdr}"
+open_pi=1
+open_hunk=1
+open_nvim=1
+branch=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --no-pi)
+            open_pi=0
+            shift
+            ;;
+        --no-hunk)
+            open_hunk=0
+            shift
+            ;;
+        --no-nvim)
+            open_nvim=0
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --)
+            shift
+            if [[ $# -gt 0 ]]; then
+                branch="$1"
+            fi
+            break
+            ;;
+        *)
+            if [[ -n "$branch" ]]; then
+                echo "herdr-worktree-layout: unexpected extra argument: $1" >&2
+                usage >&2
+                exit 2
+            fi
+            branch="$1"
+            shift
+            ;;
+    esac
+done
+
+if [[ -z "$branch" ]]; then
+    printf 'New worktree branch: ' >&2
+    IFS= read -r branch
+fi
+
+if [[ -z "$branch" ]]; then
+    echo "herdr-worktree-layout: branch is required" >&2
+    exit 2
+fi
+
+quote_for_shell() {
+    printf '%q' "$1"
+}
+
+herdr_socket_request() {
+    local method="$1"
+    local params_json="$2"
+
+    python3 - "$method" "$params_json" <<'PY'
+import json
+import os
+import pathlib
+import socket
+import sys
+
+method = sys.argv[1]
+params = json.loads(sys.argv[2])
+socket_path = os.environ.get("HERDR_SOCKET_PATH")
+if not socket_path:
+    session = os.environ.get("HERDR_SESSION")
+    config_home = pathlib.Path(os.environ.get("XDG_CONFIG_HOME", pathlib.Path.home() / ".config"))
+    if session and session != "default":
+        socket_path = str(config_home / "herdr" / "sessions" / session / "herdr.sock")
+    else:
+        socket_path = str(config_home / "herdr" / "herdr.sock")
+
+request = {"id": f"herdr-worktree-layout:{method}", "method": method, "params": params}
+with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+    client.connect(socket_path)
+    client.sendall((json.dumps(request) + "\n").encode())
+    chunks = []
+    while True:
+        chunk = client.recv(4096)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        if b"\n" in chunk:
+            break
+
+response = b"".join(chunks).split(b"\n", 1)[0].decode()
+payload = json.loads(response)
+if "error" in payload:
+    error = payload["error"]
+    raise SystemExit(f"{error.get('code', 'error')}: {error.get('message', error)}")
+print(json.dumps(payload))
+PY
+}
+
+active_workspace="${HERDR_ACTIVE_WORKSPACE_ID:-}"
+if [[ -z "$active_workspace" ]]; then
+    active_workspace=$("$herdr_cmd" workspace list | python3 -c '
+import json, sys
+payload = json.load(sys.stdin)
+workspaces = payload.get("result", {}).get("workspaces", [])
+focused = next((workspace for workspace in workspaces if workspace.get("focused")), None)
+if not focused:
+    raise SystemExit("no focused Herdr workspace found")
+print(focused.get("workspace_id", ""))
+')
+fi
+
+if [[ -z "$active_workspace" ]]; then
+    echo "herdr-worktree-layout: could not determine active Herdr workspace" >&2
+    exit 1
+fi
+
+create_params=$(python3 - "$active_workspace" "$branch" <<'PY'
+import json, sys
+print(json.dumps({"workspace_id": sys.argv[1], "branch": sys.argv[2], "focus": True}))
+PY
+)
+
+create_json=$(herdr_socket_request worktree.create "$create_params")
+
+worktree_context=$(printf '%s' "$create_json" | python3 -c '
+import json, sys
+payload = json.load(sys.stdin)
+result = payload.get("result", {})
+root = result.get("root_pane") or result.get("pane") or {}
+worktree = result.get("worktree") or {}
+workspace = result.get("workspace") or {}
+
+pane_id = root.get("pane_id")
+path = worktree.get("path") or worktree.get("cwd") or root.get("cwd") or workspace.get("cwd")
+workspace_id = workspace.get("workspace_id") or root.get("workspace_id")
+tab_id = root.get("tab_id") or (result.get("tab") or {}).get("tab_id")
+
+if not pane_id:
+    raise SystemExit("worktree.create response did not include root_pane.pane_id")
+if not path:
+    raise SystemExit("worktree.create response did not include worktree path")
+print(pane_id)
+print(path)
+print(workspace_id or "")
+print(tab_id or "")
+')
+
+root_pane=$(printf '%s\n' "$worktree_context" | sed -n '1p')
+worktree_path=$(printf '%s\n' "$worktree_context" | sed -n '2p')
+new_workspace=$(printf '%s\n' "$worktree_context" | sed -n '3p')
+root_tab=$(printf '%s\n' "$worktree_context" | sed -n '4p')
+
+rename_pane() {
+    local pane_id="$1"
+    local label="$2"
+    "$herdr_cmd" pane rename "$pane_id" "$label" >/dev/null 2>&1 || true
+}
+
+rename_pane "$root_pane" "shell"
+if [[ -n "$root_tab" ]]; then
+    "$herdr_cmd" tab rename "$root_tab" "shell" >/dev/null 2>&1 || true
+fi
+
+extract_pane_id() {
+    python3 -c '
+import json, sys
+payload = json.load(sys.stdin)
+
+def walk(value):
+    if isinstance(value, dict):
+        pane_id = value.get("pane_id")
+        if isinstance(pane_id, str):
+            return pane_id
+        for child in value.values():
+            found = walk(child)
+            if found:
+                return found
+    elif isinstance(value, list):
+        for child in value:
+            found = walk(child)
+            if found:
+                return found
+    return None
+
+pane_id = walk(payload)
+if not pane_id:
+    raise SystemExit("no pane_id in herdr response")
+print(pane_id)
+'
+}
+
+create_tab() {
+    local label="$1"
+    local focus="$2"
+    local params
+    params=$(python3 - "$new_workspace" "$worktree_path" "$label" "$focus" <<'PY'
+import json, sys
+workspace_id, cwd, label, focus = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+params = {"cwd": cwd, "label": label, "focus": focus == "true"}
+if workspace_id:
+    params["workspace_id"] = workspace_id
+print(json.dumps(params))
+PY
+)
+    herdr_socket_request tab.create "$params" | extract_pane_id
+}
+
+
+if [[ "$open_pi" -eq 1 ]]; then
+    if command -v pi >/dev/null 2>&1; then
+        pi_pane=$(create_tab "pi" true)
+        rename_pane "$pi_pane" "pi"
+        "$herdr_cmd" pane run "$pi_pane" "cd $(quote_for_shell "$worktree_path") && pi"
+    else
+        echo "herdr-worktree-layout: pi is not available on PATH; skipping Pi pane" >&2
+    fi
+fi
+
+if [[ "$open_hunk" -eq 1 ]]; then
+    hunk_cmd=""
+    if command -v hunk >/dev/null 2>&1; then
+        hunk_cmd="hunk"
+    elif command -v bunx >/dev/null 2>&1; then
+        hunk_cmd="bunx hunkdiff"
+    else
+        echo "herdr-worktree-layout: neither hunk nor bunx is available; skipping Hunk tab" >&2
+        hunk_cmd=""
+    fi
+
+    if [[ -n "$hunk_cmd" ]]; then
+        hunk_pane=$(create_tab "hunk" true)
+        rename_pane "$hunk_pane" "hunk"
+        "$herdr_cmd" pane run "$hunk_pane" "cd $(quote_for_shell "$worktree_path") && $hunk_cmd diff"
+    fi
+fi
+
+if [[ "$open_nvim" -eq 1 ]]; then
+    nvim_pane=$(create_tab "nvim" true)
+    rename_pane "$nvim_pane" "nvim"
+    "$herdr_cmd" pane run "$nvim_pane" "cd $(quote_for_shell "$worktree_path") && nvim ."
+fi
+
+if [[ -n "$new_workspace" ]]; then
+    "$herdr_cmd" workspace focus "$new_workspace" >/dev/null 2>&1 || true
+fi
+if [[ -n "$root_tab" ]]; then
+    "$herdr_cmd" tab focus "$root_tab" >/dev/null 2>&1 || true
+fi
