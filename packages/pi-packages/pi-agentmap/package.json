@@ -1,30 +1,32 @@
 {
-  "name": "pi-direnv",
+  "name": "pi-agentmap",
   "version": "0.1.0",
   "type": "module",
-  "description": "Auto-load direnv environment at session start — ensures bash commands have project-specific env vars from .envrc",
+  "description": "Inject agentmap codebase tree into pi system prompt at session start",
   "main": "./index.ts",
   "keywords": [
     "pi",
     "pi-extension",
-    "pi-package",
-    "direnv",
-    "nix",
-    "envrc"
+    "agentmap",
+    "codebase-map"
   ],
   "author": "Edmund Miller <edmundmiller@hey.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "pi-packages/pi-direnv"
+    "directory": "packages/pi-packages/pi-agentmap"
   },
   "files": [
     "index.ts",
+    "src",
     "README.md"
   ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*"
+  },
+  "dependencies": {
+    "agentmap": "^0.8.0"
   },
   "pi": {
     "extensions": [

@@ -1,21 +1,23 @@
 {
-  "name": "pi-agentmap",
+  "name": "pi-prompt-stash",
   "version": "0.1.0",
   "type": "module",
-  "description": "Inject agentmap codebase tree into pi system prompt at session start",
+  "description": "Git-stash for your train of thought — save prompt drafts with ctrl+s, restore with ctrl+shift+s",
   "main": "./index.ts",
   "keywords": [
     "pi",
     "pi-extension",
-    "agentmap",
-    "codebase-map"
+    "pi-package",
+    "prompt-stash",
+    "stash",
+    "drafts"
   ],
   "author": "Edmund Miller <edmundmiller@hey.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "pi-packages/pi-agentmap"
+    "directory": "packages/pi-packages/pi-prompt-stash"
   },
   "files": [
     "index.ts",
@@ -24,9 +26,6 @@
   ],
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*"
-  },
-  "dependencies": {
-    "agentmap": "^0.8.0"
   },
   "pi": {
     "extensions": [

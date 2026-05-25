@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Run changed pi-packages QA
+      - name: Run changed packages/pi-packages QA
         shell: bash
         run: |
           set -euo pipefail
@@ -69,7 +69,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Run changed pi-packages QA
+      - name: Run changed packages/pi-packages QA
         shell: bash
         run: |
           set -euo pipefail
