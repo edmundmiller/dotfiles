@@ -1,0 +1,1 @@
+{"type":"config","name":"Optimize zsh startup with zsh-bench","metricName":"first_prompt_lag_ms","metricUnit":"ms","bestDirection":"lower"}
