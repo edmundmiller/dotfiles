@@ -33,14 +33,6 @@ previous_tab = "prefix+p"
 next_tab = "prefix+n"
 
 [[keys.command]]
-key = "prefix+alt+g"
-command = "herdr-worktree-layout"
-
-[[keys.command]]
-key = "prefix+ctrl+g"
-command = "herdr-worktree-layout"
-
-[[keys.command]]
 key = "prefix+["
 command = "herdr-hunk"
 
@@ -52,8 +44,7 @@ command = "herdr-hunk --tab"
 Meaning:
 
 - `prefix+w` creates a workspace.
-- `prefix+g` creates a worktree with Herdr's native prompt.
-- `prefix+alt+g` / `prefix+ctrl+g` creates a native worktree via socket API and opens Pi + Hunk + Neovim tabs.
+- `prefix+g` creates a worktree with Herdr's native prompt, then `worktrees.post_create_command` opens Pi + Hunk + Neovim + shell tabs.
 - `prefix+G` opens an existing worktree.
 - `prefix+-` splits horizontally.
 - `prefix+b` toggles the sidebar.
@@ -67,8 +58,7 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
-- Keep `prefix+ctrl+g` as a fallback for `herdr-worktree-layout`: `prefix+alt+g` was present in config but did nothing after reload, likely because Alt was swallowed by the macOS terminal/tmux stack.
-- Use `type = "shell"` for `herdr-worktree-layout`: the script handles non-interactive keybinding launches with a macOS dialog, while `type = "pane"` opens an obtrusive full-tab command pane.
+- `herdr-worktree-layout` should normally run from Herdr's native `worktrees.post_create_command` hook, not a custom keybinding; this avoids AppleScript prompts and obtrusive pane prompts.
 - `bin/herdr-workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
@@ -76,5 +66,5 @@ Meaning:
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
 - `bin/herdr-tab` remains available for experiments; active tab movement uses Herdr built-ins.
 - `bin/herdr-hunk` implements Hunk split/tab launch behavior.
-- `bin/herdr-worktree-layout` implements the layout-seeded native worktree flow.
+- `bin/herdr-worktree-layout` seeds tabs after the patched native worktree post-create hook.
 - `packages/herdr/AGENTS.md` covers Nix packaging of the upstream Herdr binary, not runtime keybindings.

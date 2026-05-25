@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Create a native Herdr Git worktree via the raw socket API, then seed the new
-# workspace with agent/review/editor tabs.
+# Seed Herdr worktree workspaces after native creation. With an explicit branch,
+# keep the old socket-create path for manual use.
 
 set -euo pipefail
 
@@ -9,8 +9,9 @@ usage() {
     cat <<'USAGE'
 Usage: herdr-worktree-layout [--no-pi] [--no-hunk] [--no-nvim] [BRANCH]
 
-Create a Herdr-managed worktree from the active workspace. If BRANCH is omitted,
-prompt for one. After creation, open Pi, Hunk, and Neovim tabs in the new worktree.
+Seed a Herdr worktree workspace with Pi, Hunk, Neovim, and shell tabs. When run
+from Herdr's worktree post-create hook, uses HERDR_CREATED_* context. With BRANCH,
+creates the worktree through the socket API first.
 
 Options:
   --no-pi     Do not open a Pi session tab
@@ -70,46 +71,10 @@ quote_for_shell() {
     printf '%q' "$1"
 }
 
-is_interactive_stdin() {
-    [[ -t 0 ]]
-}
-
-prompt_branch() {
-    if is_interactive_stdin; then
-        printf 'New worktree branch: ' >&2
-        IFS= read -r branch
-        return
-    fi
-
-    if command -v osascript >/dev/null 2>&1; then
-        branch=$(osascript <<'APPLESCRIPT'
-set dialogResult to display dialog "New worktree branch:" default answer "" with title "Herdr Worktree Layout" buttons {"Cancel", "Create"} default button "Create" cancel button "Cancel"
-text returned of dialogResult
-APPLESCRIPT
-) || branch=""
-        return
-    fi
-
-    echo "herdr-worktree-layout: branch is required when stdin is not interactive" >&2
-    exit 2
-}
-
 notify_error() {
     local message="$1"
     echo "herdr-worktree-layout: $message" >&2
-    if ! is_interactive_stdin && command -v osascript >/dev/null 2>&1; then
-        osascript -e 'display notification '"$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$message")"' with title "Herdr Worktree Layout"' >/dev/null 2>&1 || true
-    fi
 }
-
-if [[ -z "$branch" ]]; then
-    prompt_branch
-fi
-
-if [[ -z "$branch" ]]; then
-    notify_error "branch is required"
-    exit 2
-fi
 
 herdr_socket_request() {
     local method="$1"
@@ -155,9 +120,20 @@ print(json.dumps(payload))
 PY
 }
 
-active_workspace="${HERDR_ACTIVE_WORKSPACE_ID:-}"
-if [[ -z "$active_workspace" ]]; then
-    active_workspace=$("$herdr_cmd" workspace list | python3 -c '
+worktree_path="${HERDR_CREATED_WORKTREE_PATH:-}"
+new_workspace="${HERDR_CREATED_WORKSPACE_ID:-${HERDR_ACTIVE_WORKSPACE_ID:-}}"
+root_pane="${HERDR_CREATED_ROOT_PANE_ID:-}"
+root_tab="${HERDR_CREATED_ROOT_TAB_ID:-}"
+
+if [[ -z "$worktree_path" ]]; then
+    if [[ -z "$branch" ]]; then
+        notify_error "branch is required outside Herdr's native worktree post-create hook"
+        exit 2
+    fi
+
+    active_workspace="${HERDR_ACTIVE_WORKSPACE_ID:-}"
+    if [[ -z "$active_workspace" ]]; then
+        active_workspace=$("$herdr_cmd" workspace list | python3 -c '
 import json, sys
 payload = json.load(sys.stdin)
 workspaces = payload.get("result", {}).get("workspaces", [])
@@ -166,25 +142,25 @@ if not focused:
     raise SystemExit("no focused Herdr workspace found")
 print(focused.get("workspace_id", ""))
 ')
-fi
+    fi
 
-if [[ -z "$active_workspace" ]]; then
-    echo "herdr-worktree-layout: could not determine active Herdr workspace" >&2
-    exit 1
-fi
+    if [[ -z "$active_workspace" ]]; then
+        echo "herdr-worktree-layout: could not determine active Herdr workspace" >&2
+        exit 1
+    fi
 
-create_params=$(python3 - "$active_workspace" "$branch" <<'PY'
+    create_params=$(python3 - "$active_workspace" "$branch" <<'PYE'
 import json, sys
 print(json.dumps({"workspace_id": sys.argv[1], "branch": sys.argv[2], "focus": True}))
-PY
+PYE
 )
 
-if ! create_json=$(herdr_socket_request worktree.create "$create_params" 2>&1); then
-    notify_error "failed to create worktree for branch ${branch}: ${create_json}"
-    exit 1
-fi
+    if ! create_json=$(herdr_socket_request worktree.create "$create_params" 2>&1); then
+        notify_error "failed to create worktree for branch ${branch}: ${create_json}"
+        exit 1
+    fi
 
-worktree_context=$(printf '%s' "$create_json" | python3 -c '
+    worktree_context=$(printf '%s' "$create_json" | python3 -c '
 import json, sys
 payload = json.load(sys.stdin)
 result = payload.get("result", {})
@@ -207,10 +183,15 @@ print(workspace_id or "")
 print(tab_id or "")
 ')
 
-root_pane=$(printf '%s\n' "$worktree_context" | sed -n '1p')
-worktree_path=$(printf '%s\n' "$worktree_context" | sed -n '2p')
-new_workspace=$(printf '%s\n' "$worktree_context" | sed -n '3p')
-root_tab=$(printf '%s\n' "$worktree_context" | sed -n '4p')
+    root_pane=$(printf '%s
+' "$worktree_context" | sed -n '1p')
+    worktree_path=$(printf '%s
+' "$worktree_context" | sed -n '2p')
+    new_workspace=$(printf '%s
+' "$worktree_context" | sed -n '3p')
+    root_tab=$(printf '%s
+' "$worktree_context" | sed -n '4p')
+fi
 
 rename_pane() {
     local pane_id="$1"
