@@ -56,7 +56,7 @@ Herdr defaults still provide other common actions such as rename workspace, new 
 One repo script backs the custom Hunk command bindings:
 
 - `bin/herdr-hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
-- `bin/herdr-worktree-layout` — seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context.
+- `bin/herdr-worktree-layout` — uv/stdlib Python script that seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context, with an explicit-branch socket fallback for manual use.
 
 `bin/herdr-tab` remains available for experiments, but active tab movement now uses Herdr's built-in `previous_tab` / `next_tab` bindings.
 
