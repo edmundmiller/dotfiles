@@ -19,6 +19,7 @@ This directory owns the `modules.shell.herdr` Nix module.
 
 - `modules.shell.tmux.rcFiles` sources the generated `tmux/herdr.conf` only when tmux is enabled.
 - `modules.agents.pi` conditionally installs `npm:@ogulcancelik/pi-herdr` when `modules.shell.herdr.enable` is true.
+- On NixOS, this module installs Herdr's Hermes Agent integration into every declared `services.hermes-agent.profiles` profile during activation.
 - `config/herdr/config.toml` is the default template configured by this module.
 
 ## Editing Guidelines
