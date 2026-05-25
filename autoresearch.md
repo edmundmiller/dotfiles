@@ -511,3 +511,114 @@ direnv allow .
 ## Recommendation
 
 Keep full mode as default. For routine agent/research worktrees, opt into light mode with ignored `.envrc.local`. This avoids the ~18-20s uncached flake reload path while preserving Pi/beads/worktree variables and avoiding surprise behavior changes for normal interactive development.
+
+
+---
+
+# Autoresearch: dotfiles-jgd1 direnv prompt overhead
+
+Bead: `dotfiles-jgd1`
+
+Goal: measure whether direnv's zsh hook materially contributes to `command_lag_ms`, then identify behavior-preserving fixes.
+
+## Initial state
+
+- `git status --short`: clean
+- Runtime `~/.config/zsh/extra.zshrc` is a Nix store symlink; inspected only.
+- `extra.zshrc` currently installs direnv with `_cache direnv hook zsh`.
+
+## Baseline
+
+Command: `./bin/hey zbench --iters 4`
+
+| metric | ms |
+| --- | ---: |
+| first_prompt_lag_ms | 39.7 |
+| first_command_lag_ms | 857.1 |
+| command_lag_ms | 194.9 |
+| input_lag_ms | 5.5 |
+
+
+## Hook shape
+
+Command: `direnv hook zsh`
+
+- Installs `_direnv_hook` at the front of both `precmd_functions` and `chpwd_functions`.
+- `_direnv_hook` runs `direnv export zsh` every prompt and directory change.
+- Current module source: `modules/shell/direnv.nix` appends `_cache direnv hook zsh` to generated `extra.zshrc`.
+- `_cache` only caches hook installation text. It does **not** cache `direnv export zsh` per prompt.
+
+## Direct hook timing
+
+Command: timed `_direnv_hook` in zsh after `eval "$(direnv hook zsh)"`.
+
+| cwd | n | avg | min | max |
+| --- | ---: | ---: | ---: | ---: |
+| dotfiles worktree | 12 | 5.66ms | 5.26ms | 7.09ms |
+| `/tmp` | 12 | 5.52ms | 4.87ms | 5.96ms |
+| `$HOME` | 12 | 5.56ms | 5.01ms | 5.93ms |
+
+Interpretation: direnv costs ~5-7ms on each prompt even when cache-hot. This is material against the 10ms `command_lag_ms` perception threshold, but far smaller than the observed ~195ms lag.
+
+## Full precmd attribution
+
+Command: source repo zsh config, install direnv hook if missing, time each `precmd_functions` entry.
+
+Observed functions:
+
+```text
+_direnv_hook _p9k_do_nothing _p9k_precmd_first _p9k_precmd precmd_vcs_info
+```
+
+Representative per-call costs:
+
+| function | cost |
+| --- | ---: |
+| `_direnv_hook` | ~6-9ms |
+| `_p9k_do_nothing` | ~0.02ms |
+| `_p9k_precmd_first` | ~0.05ms after first call |
+| `_p9k_precmd` | ~45ms after first call |
+| `precmd_vcs_info` | ~90-120ms after first call |
+
+Interpretation: `precmd_vcs_info` dominates prompt loop cost. It appears to come from the `rkh/zsh-jj` plugin in `config/zsh/.zsh_plugins.txt`, not from direnv.
+
+## Controlled zbench experiments
+
+### Baseline
+
+`./bin/hey zbench --iters 4`
+
+- `command_lag_ms`: 194.9ms
+
+Raw follow-up showed high variance and first-iteration warmup:
+
+```text
+command_lag_ms=( 209.482 213.684 202.839 38.397 )
+```
+
+### Diagnostic-only: remove direnv hook line
+
+Temporary `ZDOTDIR` copy with `direnv hook zsh` removed from generated `extra.zshrc`.
+
+- `command_lag_ms`: 198.2ms
+
+No improvement. This experiment disables direnv functionality and is diagnostic-only.
+
+### Diagnostic-only: stub direnv hook
+
+Temporary `ZDOTDIR` copy with `_direnv_hook() { :; }` installed in the same hook arrays.
+
+- `command_lag_ms`: 18.0ms
+
+This result is not accepted as a kept change: it disables environment updates and the run differed in other zbench capabilities. It does show the benchmark harness is sensitive to prompt hook changes, but direct timing is the more reliable direnv-specific measurement.
+
+## Recommendation
+
+- Do **not** disable direnv.
+- Do **not** throttle/cache `direnv export zsh` unless correctness can be proven for `.envrc`, watch files, and directory changes. The safe behavior is to run it on prompt and `chpwd` as upstream installs it.
+- Direnv is a real ~5-7ms per-prompt cost, but it does not explain the current ~195ms `command_lag_ms`.
+- Next behavior-preserving optimization target should be `precmd_vcs_info` from `rkh/zsh-jj`; either remove that plugin if Powerlevel10k's async `jj` segment fully replaces it, or change it so it does not run synchronous `vcs_info` every prompt.
+
+## Kept changes
+
+No shell behavior changes kept. Only this research log was written.
