@@ -25,3 +25,6 @@ command = "herdr-hunk"
 key = "prefix+]"
 type = "shell"
 command = "herdr-hunk --tab"
+
+[worktrees]
+directory = "~/.local/share/herdr/worktrees"
