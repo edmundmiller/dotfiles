@@ -23,7 +23,7 @@ hey zbench-baseline     # Show saved baseline (no run)
 hey zbench-history      # Show TSV history
 ```
 
-All commands accept extra zsh-bench args: `hey zbench --iters 4` for quick runs.
+All commands accept extra zsh-bench args: `hey zbench --iters 4` for quick runs. When editing the repo-local harness before rebuilding, validate with `./bin/hey zbench --iters 4`; the installed `hey` on `PATH` may still point at the previous generation. In Nushell, zbench subcommands must use `def --wrapped ... [...args]` so flags such as `--iters` pass through to `zsh-bench`.
 
 ## Metrics & Thresholds
 
@@ -61,7 +61,7 @@ benchmarks/zsh-bench/
 └── history/
     └── <Host>.tsv           # Append-only history (timestamp, git_rev, metrics)
 packages/zsh-bench.nix       # Nix package (romkatv/zsh-bench with internal/ helpers)
-bin/hey.d/zbench.just         # Hey recipes
+bin/hey.d/zbench.nu           # Nushell hey subcommands
 bin/zbench-report             # Python — parse, compare, format results
 ```
 
@@ -161,7 +161,7 @@ Invalidates when the binary changes (`$commands[$1]` mtime check). Delete `~/.ca
 
 ### Replay Mode
 
-Use `zsh-bench --iters 1 --scratch-dir /tmp/zbench-debug` then `dbg/replay --scratch-dir /tmp/zbench-debug` to watch what zsh-bench actually sees.
+Use `zsh-bench --iters 1 --scratch-dir /tmp/zbench-debug` then `dbg/replay --scratch-dir /tmp/zbench-debug` to watch what zsh-bench actually sees. For worktree experiments that should read the repo copy of `config/zsh`, run with `ZDOTDIR=$PWD/config/zsh ZSH_CACHE=$HOME/.cache/zsh`; otherwise zsh-bench may exercise the currently installed Home Manager generation.
 
 ## Key Design Decisions
 
