@@ -42,6 +42,10 @@ Agents (claude, codex, opencode) share a single source of truth in `config/agent
 
 Global skills live in `~/.agents/skills/` and are discovered natively.
 
+## Herdr Integration
+
+When `modules.shell.herdr.enable = true`, the Herdr shell module automatically installs Herdr integrations for enabled agent modules during activation. Agent modules should create/bootstrap their runtime config directories before Herdr's activation step, but they do not need to call `herdr integration install` themselves.
+
 ## Module Boundaries
 
 These modules are for AI coding agents only. Do NOT put:
