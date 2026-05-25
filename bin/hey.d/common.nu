@@ -44,12 +44,25 @@ export def is-darwin [] {
 }
 
 export def with-sudo-path [body: closure] {
-  let path_prefixes = (["/run/wrappers/bin" "/run/current-system/sw/bin"] | where {|dir| $dir | path exists })
-  let path_prefix = ($path_prefixes | str join ":")
-  if $path_prefix != "" {
-    with-env { PATH: $"($path_prefix):($env.PATH)" } { do $body }
+  let path = (sudo-path)
+  if $path != "" {
+    with-env { PATH: $path } { do $body }
   } else {
     do $body
+  }
+}
+
+export def sudo-path [] {
+  let path_prefixes = ([
+    "/run/wrappers/bin"
+    "/run/current-system/sw/bin"
+    "/nix/var/nix/profiles/default/bin"
+  ] | where {|dir| $dir | path exists })
+  let path_prefix = ($path_prefixes | str join ":")
+  if $path_prefix != "" {
+    $"($path_prefix):($env.PATH)"
+  } else {
+    ""
   }
 }
 
@@ -92,8 +105,12 @@ export def check-flake-lock [] {
 
 export def system-rebuild [action: string, ...args: string] {
   let ctx = (context)
-  let agent_mode = (($env.AGENT? | default "") == "1")
-  let agent_rebuild_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
+  let agent_mode = (
+    (($env.AGENT? | default "") == "1")
+    or (($env.PI_CODING_AGENT? | default "") == "true")
+    or (($env.CLAUDECODE? | default "") == "1")
+  )
+  let agent_rebuild_args = if $agent_mode { ["--show-trace"] } else { [] }
   let agent_nix_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
 
   # Pre-fetch flake inputs as the user before sudo. sudo strips access to
@@ -101,7 +118,13 @@ export def system-rebuild [action: string, ...args: string] {
   # private inputs like agents-workspace fail to fetch from root. Archiving
   # here puts every locked input into /nix/store using the user's SSH agent,
   # after which the root-side eval doesn't need network.
+  if $agent_mode {
+    print $"hey re: archiving flake inputs for ($ctx.flake_host)..."
+  }
   ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-write-lock-file >/dev/null"
+  if $agent_mode {
+    print $"hey re: rebuilding ($ctx.flake_host) ($action)..."
+  }
 
   if $ctx.os_name == "macos" {
     let has_darwin_rebuild = ((^bash -c $"[[ -x '($ctx.darwin_rebuild)' ]]" | complete).exit_code == 0)
