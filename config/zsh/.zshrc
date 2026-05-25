@@ -66,6 +66,7 @@ function _load_antidote {
 
 function _antidote_static_is_healthy {
   [[ -f "$ANTIDOTE_STATIC_FILE" ]] || return 1
+  [[ "$ZDOTDIR/.zsh_plugins.txt" -nt "$ANTIDOTE_STATIC_FILE" ]] && return 1
 
   local expected_antidote_home="${ANTIDOTE_HOME/#\~/$HOME}"
   local line source_path
