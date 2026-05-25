@@ -24,7 +24,7 @@ graph TB
   flake --> darwin["Darwin hosts<br/>mactraitorpro · seqeratop"]
   flake --> nixos["NixOS hosts<br/>nuc · unas · gandi"]
   flake --> modules["modules/"]
-  flake --> packages["packages/ · pi-packages/"]
+  flake --> packages["packages/ · packages/pi-packages/"]
   flake --> deploy["deploy-rs"]
 
   modules --> shell["shell/"]
@@ -173,14 +173,14 @@ Custom derivations available as `pkgs.my.*` via the default overlay. ~40 package
 - **zunit** — Zsh unit test framework
 - **tmux plugins** — smart-name, smooth-scroll, opencode-integrated
 
-### TypeScript Packages (`pi-packages/`)
+### TypeScript Packages (`packages/pi-packages/`)
 
 Bun workspace monorepo with Pi agent extensions:
 
 - **pi-dcp**, **pi-qmd**, **pi-scurl** — agent tool extensions
 - **pi-beads**, **pi-context-repo** — context and issue tracking
 - **pi-bash-live-view**, **pi-non-interactive** — terminal interaction
-- Shared `tsconfig.base.json`, tested via `pi-packages/tests/`
+- Shared `tsconfig.base.json`, tested via `packages/pi-packages/tests/`
 
 ### Skills Catalog (`skills/`)
 

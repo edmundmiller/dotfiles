@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/edmundmiller/dotfiles.git",
-    "directory": "pi-packages/pi-beads"
+    "directory": "packages/pi-packages/pi-beads"
   },
   "scripts": {
     "test": "bun test",
