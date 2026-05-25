@@ -232,13 +232,52 @@ in
       default = piThemeName;
       description = "Active Pi theme name shipped by the herdr module.";
     };
-    integrations.hermes.enable = mkOption {
-      type = bool;
-      default = true;
-      description = ''
-        Install Herdr's Hermes Agent integration into every declared
-        `services.hermes-agent.profiles` profile during NixOS activation.
-      '';
+    integrations = {
+      pi.enable = mkOption {
+        type = bool;
+        default = true;
+        description = ''
+          Automatically install Herdr's Pi integration when
+          `modules.agents.pi.enable` is true.
+        '';
+      };
+
+      claude.enable = mkOption {
+        type = bool;
+        default = true;
+        description = ''
+          Automatically install Herdr's Claude Code integration when
+          `modules.agents.claude.enable` is true.
+        '';
+      };
+
+      codex.enable = mkOption {
+        type = bool;
+        default = true;
+        description = ''
+          Automatically install Herdr's Codex integration when
+          `modules.agents.codex.enable` is true.
+        '';
+      };
+
+      opencode.enable = mkOption {
+        type = bool;
+        default = true;
+        description = ''
+          Automatically install Herdr's OpenCode integration when
+          `modules.agents.opencode.enable` is true.
+        '';
+      };
+
+      hermes.enable = mkOption {
+        type = bool;
+        default = true;
+        description = ''
+          Automatically install Herdr's Hermes integration when Hermes is
+          enabled, including the interactive `modules.agents.hermes` profile
+          and every declared `services.hermes-agent.profiles` NixOS profile.
+        '';
+      };
     };
   };
 
@@ -444,6 +483,55 @@ in
           path.write_text("\n".join(out) + "\n")
           PY
         '';
+
+        home.activation.herdr-agent-integrations =
+          lib.hm.dag.entryAfter
+            [
+              "writeBoundary"
+              "pi-extension-conflict-cleanup"
+              "claude-settings-bootstrap"
+              "claude-skills-bridge"
+              "codex-config-bootstrap"
+              "opencode-setup"
+              "hermes-bootstrap"
+            ]
+            ''
+              export PATH=${escapeShellArg launchPath}:$PATH
+              herdr_cmd=${escapeShellArg cfg.command}
+
+              install_integration() {
+                target="$1"
+                echo "herdr: installing $target integration"
+                "$herdr_cmd" integration install "$target" >/dev/null
+              }
+
+              ${optionalString (cfg.integrations.pi.enable && config.modules.agents.pi.enable) ''
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.pi/agent/extensions"
+                PI_CODING_AGENT_DIR="$HOME/.pi/agent" install_integration pi
+              ''}
+
+              ${optionalString (cfg.integrations.claude.enable && config.modules.agents.claude.enable) ''
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.claude"
+                install_integration claude
+              ''}
+
+              ${optionalString (cfg.integrations.codex.enable && config.modules.agents.codex.enable) ''
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.codex"
+                install_integration codex
+              ''}
+
+              ${optionalString (cfg.integrations.opencode.enable && config.modules.agents.opencode.enable) ''
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode"
+                XDG_CONFIG_HOME="$HOME/.config" install_integration opencode
+              ''}
+
+              ${optionalString (cfg.integrations.hermes.enable && config.modules.agents.hermes.enable) ''
+                ${pkgs.coreutils}/bin/mkdir -p ${escapeShellArg config.modules.agents.hermes.homeDir}
+                HOME=${escapeShellArg config.user.home} \
+                  HERMES_HOME=${escapeShellArg config.modules.agents.hermes.homeDir} \
+                  install_integration hermes
+              ''}
+            '';
       };
 
     system.activationScripts.herdr-hermes-agent-integrations =
