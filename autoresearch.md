@@ -226,3 +226,143 @@ is gone.
 - `DIRENV_LOG_FORMAT='%s' /usr/bin/time -p direnv exec . true`
 - `find .direnv -maxdepth 4 -ls`
 - `nix-store --query --roots "$(readlink .direnv/flake-profile-*)"`
+
+
+---
+
+# Zsh startup autoresearch
+
+## Baseline
+
+The installed `hey zbench --iters 4` failed before running zsh-bench because Nushell treated `--iters` as a flag for the `hey zbench` custom command. For exploratory shell-performance runs I used direct `zsh-bench --iters 4` until fixing the repo-local harness.
+
+Direct baseline (`zsh-bench --iters 4`):
+
+| metric | ms |
+| --- | ---: |
+| first_prompt_lag_ms | 27.894 |
+| first_command_lag_ms | 689.543 |
+| command_lag_ms | 175.074 |
+| input_lag_ms | 4.986 |
+| exit_time_ms | 334.448 |
+
+Repo-local harness after fix (`./bin/hey zbench --iters 4`, confirmation run):
+
+| metric | ms |
+| --- | ---: |
+| first_prompt_lag_ms | 28.6 |
+| first_command_lag_ms | 681.0 |
+| command_lag_ms | 168.5 |
+| input_lag_ms | 5.2 |
+| exit_time_ms | 325.7 |
+
+The repo-local harness numbers are effectively the same performance band as the direct baseline; the kept change is a harness correctness fix, not a zsh startup optimization.
+
+## Kept changes
+
+1. `bin/hey.d/zbench.nu`: mark zbench subcommands `def --wrapped ... [...args]` so flags like `--iters 4` are forwarded to zsh-bench instead of rejected by Nushell command parsing.
+   - Validated with `./bin/hey zbench --iters 4`.
+   - Note: the already-installed `hey` on `PATH` still points at the previous generation until rebuild, so repo-local `./bin/hey` was used for validation.
+
+## Rejected experiments
+
+1. Simplify Antidote static-bundle health checking and remove duplicate bun completion source.
+   - Result: first_prompt/first_command did not improve; discarded.
+2. Remove duplicate unconditional bun completion source only.
+   - Result: no meaningful improvement; discarded.
+3. Simplify `_cache` to avoid command mtime checks for cached command-generated snippets.
+   - Result: no meaningful improvement; discarded.
+4. Defer fzf shell integration via `kind:defer`.
+   - Result: some secondary metrics improved slightly, but first prompt lag regressed and fzf keybindings may become delayed; discarded.
+
+## Commands run
+
+- `zsh-bench --iters 4`
+- `ZDOTDIR=$PWD/config/zsh ZSH_CACHE=$HOME/.cache/zsh zsh-bench --iters 4`
+- `./bin/hey zbench --iters 4`
+- `nix develop --command nu --commands 'source bin/hey.d/common.nu; source bin/hey.d/zbench.nu; print ok'`
+- Several experiment-specific bundle regenerations with `antidote bundle < config/zsh/.zsh_plugins.txt >| ~/.cache/zsh/.zsh_plugins.zsh`; the bundle was regenerated from the final checked-in plugin file after discarded experiments.
+
+# Devshell split autoresearch — dotfiles-gaq3
+
+## Goal
+
+Investigate whether dotfiles direnv startup improves if the default devshell is lightweight and heavy development tooling moves to `.#full`.
+
+## Baseline measurements
+
+Repo/worktree: `/Users/emiller/.local/share/herdr/worktrees/dotfiles/worktree-gaq3-devshell`.
+Branch: `worktree/gaq3-devshell`.
+
+Initial `git status --short` was clean.
+
+Baseline default shell contents:
+
+- direct packages: `nixfmt`, `deadnix`, `statix`, `deploy`, `nushell`, `br`
+- plus `config.pre-commit.settings.enabledPackages`
+- shell hook ran `config.pre-commit.shellHook`, which installs/updates git hooks
+
+Warm/cache-ish timings before changes:
+
+| command | run 1 | run 2 | run 3 |
+| --- | ---: | ---: | ---: |
+| `direnv export json` with valid existing cache | 0.01s | 0.01s | 0.00s |
+| `nix develop --command true` | 8.34s | 1.47s | 0.89s |
+
+Notes:
+
+- `nix develop` run 1 printed `git-hooks.nix: updating ... repo`, so hook installation dominated that run.
+- A later apples-to-apples cached baseline after restoring the original flake measured `nix develop --command true` at 0.70s, 0.85s, 1.09s.
+
+## Prototype kept
+
+Changed `devShells.default` to a lightweight `pkgs.mkShellNoCC` with:
+
+- `self.packages.${system}.agent-env.paths` for routine agent/shell work (`git`, `jj`, `gh`, `br`, `direnv`, `just`, search tools, etc.)
+- Nix edit basics: `deadnix`, `nixfmt`, `nushell`, `statix`
+- no `config.pre-commit.shellHook`
+- no deploy package
+
+Added `devShells.full` preserving the previous default shell behavior:
+
+```bash
+nix develop .#full
+```
+
+Use full shell when hook installation or deploy tooling is needed.
+
+## Prototype measurements
+
+After split, with dirty-tree warning present due to the prototype itself:
+
+| command | run 1 | run 2 | run 3 |
+| --- | ---: | ---: | ---: |
+| `nix develop --command true` default | 0.70s | 0.61s | 0.55s |
+| `nix develop .#full --command true` | 0.72s | 0.60s | 0.66s |
+| `direnv export json` after cache invalidation | 13.35s | 0.14s | 0.14s |
+
+A separate `mkShellNoCC` rebuild run measured default at 8.90s, 1.17s, 0.64s; first run included building the changed shell derivation. Cached performance matters more for normal direnv use.
+
+## Validation
+
+- `nix develop --command bash -lc 'for c in br git gh jj direnv nixfmt deadnix statix nu just; do command -v "$c"; done'` — all present in default shell.
+- `nix develop .#full --command bash -lc 'command -v pre-commit; command -v deploy'` — full shell has hook tooling and deploy-rs binary (`deploy`).
+- `nix flake check --no-build` evaluated devshells but failed later at existing cross-platform skills-catalog issue: `Cannot build ... dotfiles-skills-catalog.drv. Required system: x86_64-linux Current system: aarch64-darwin`.
+
+## Tradeoffs
+
+Pros:
+
+- Default direnv no longer installs/updates pre-commit hooks.
+- Routine agent commands remain available.
+- Full previous workflow preserved at `nix develop .#full`.
+
+Cons:
+
+- Hook installation no longer happens automatically on every direnv load. Developers must enter `.#full` when they need hooks refreshed.
+- Initial cache invalidation still costs several seconds; split mostly helps when hook installation or heavy shell closure changes are the bottleneck.
+- Cached `direnv export json` was already very fast with nix-direnv; improvement in steady-state direnv is small.
+
+## Recommendation
+
+Keep the split. It is low-risk, preserves normal agent commands, and moves hook/deploy behavior to an explicit full shell. Expected benefit is avoiding surprising hook work during routine direnv loads, not eliminating Nix evaluation cost.
