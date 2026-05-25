@@ -21,6 +21,9 @@ USAGE
 }
 
 herdr_cmd="${HERDR_BIN_PATH:-herdr}"
+if ! command -v "$herdr_cmd" >/dev/null 2>&1; then
+    herdr_cmd="herdr"
+fi
 open_pi=1
 open_hunk=1
 open_nvim=1
@@ -63,19 +66,50 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z "$branch" ]]; then
-    printf 'New worktree branch: ' >&2
-    IFS= read -r branch
-fi
-
-if [[ -z "$branch" ]]; then
-    echo "herdr-worktree-layout: branch is required" >&2
-    exit 2
-fi
-
 quote_for_shell() {
     printf '%q' "$1"
 }
+
+is_interactive_stdin() {
+    [[ -t 0 ]]
+}
+
+prompt_branch() {
+    if is_interactive_stdin; then
+        printf 'New worktree branch: ' >&2
+        IFS= read -r branch
+        return
+    fi
+
+    if command -v osascript >/dev/null 2>&1; then
+        branch=$(osascript <<'APPLESCRIPT'
+set dialogResult to display dialog "New worktree branch:" default answer "" with title "Herdr Worktree Layout" buttons {"Cancel", "Create"} default button "Create" cancel button "Cancel"
+text returned of dialogResult
+APPLESCRIPT
+) || branch=""
+        return
+    fi
+
+    echo "herdr-worktree-layout: branch is required when stdin is not interactive" >&2
+    exit 2
+}
+
+notify_error() {
+    local message="$1"
+    echo "herdr-worktree-layout: $message" >&2
+    if ! is_interactive_stdin && command -v osascript >/dev/null 2>&1; then
+        osascript -e 'display notification '"$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$message")"' with title "Herdr Worktree Layout"' >/dev/null 2>&1 || true
+    fi
+}
+
+if [[ -z "$branch" ]]; then
+    prompt_branch
+fi
+
+if [[ -z "$branch" ]]; then
+    notify_error "branch is required"
+    exit 2
+fi
 
 herdr_socket_request() {
     local method="$1"
@@ -145,7 +179,10 @@ print(json.dumps({"workspace_id": sys.argv[1], "branch": sys.argv[2], "focus": T
 PY
 )
 
-create_json=$(herdr_socket_request worktree.create "$create_params")
+if ! create_json=$(herdr_socket_request worktree.create "$create_params" 2>&1); then
+    notify_error "failed to create worktree for branch ${branch}: ${create_json}"
+    exit 1
+fi
 
 worktree_context=$(printf '%s' "$create_json" | python3 -c '
 import json, sys
