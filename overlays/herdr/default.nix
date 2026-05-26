@@ -10,8 +10,10 @@ let
       hash = "sha256-pC/FFMWRK+VdOsUZlmKWADnbezdoy9ecEqZsSy9CJvw=";
     };
     patches = [
-      ../../patches/herdr-worktree-post-create-command.patch
-      ../../patches/herdr-dotfiles-commands.patch
+      ./patches/0001-worktree-post-create-command.patch
+      ./patches/0002-add-dotfiles-cli-helpers.patch
+      ./patches/0003-add-worktree-layout-subcommand.patch
+      ./patches/0004-add-hunk-subcommand.patch
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
