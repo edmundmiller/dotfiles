@@ -47,12 +47,12 @@ let
         [[keys.command]]
         key = "prefix+["
         type = "shell"
-        command = "herdr-hunk"
+        command = "herdr hunk"
 
         [[keys.command]]
         key = "prefix+]"
         type = "shell"
-        command = "herdr-hunk --tab"
+        command = "herdr hunk --tab"
 
         [[keys.command]]
         key = "prefix+V"
@@ -370,6 +370,9 @@ in
               "herdr-hunk",
               "herdr-hunk --tab",
               "herdr-worktree-layout",
+              "herdr hunk",
+              "herdr hunk --tab",
+              "herdr worktree layout",
               "obsidian-neovide",
           }
 
@@ -460,12 +463,12 @@ in
               "[[keys.command]]",
               'key = "prefix+["',
               'type = "shell"',
-              'command = "herdr-hunk"',
+              'command = "herdr hunk"',
               "",
               "[[keys.command]]",
               'key = "prefix+]"',
               'type = "shell"',
-              'command = "herdr-hunk --tab"',
+              'command = "herdr hunk --tab"',
               "",
               "[[keys.command]]",
               'key = "prefix+V"',
@@ -491,7 +494,7 @@ in
                           if not wrote_directory:
                               out.append('directory = "~/.local/share/herdr/worktrees"')
                           if not wrote_command:
-                              out.append('post_create_command = "herdr-worktree-layout"')
+                              out.append('post_create_command = "herdr worktree layout"')
                       in_worktrees = stripped == "[worktrees]"
                       saw_worktrees = saw_worktrees or in_worktrees
                       out.append(line)
@@ -506,7 +509,7 @@ in
                           continue
                       if key == "post_create_command":
                           if not wrote_command:
-                              out.append('post_create_command = "herdr-worktree-layout"')
+                              out.append('post_create_command = "herdr worktree layout"')
                               wrote_command = True
                           continue
 
@@ -516,14 +519,14 @@ in
                   if not wrote_directory:
                       out.append('directory = "~/.local/share/herdr/worktrees"')
                   if not wrote_command:
-                      out.append('post_create_command = "herdr-worktree-layout"')
+                      out.append('post_create_command = "herdr worktree layout"')
               elif not saw_worktrees:
                   if out and out[-1].strip():
                       out.append("")
                   out.extend([
                       "[worktrees]",
                       'directory = "~/.local/share/herdr/worktrees"',
-                      'post_create_command = "herdr-worktree-layout"',
+                      'post_create_command = "herdr worktree layout"',
                   ])
 
               return out
