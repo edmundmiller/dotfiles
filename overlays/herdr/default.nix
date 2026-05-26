@@ -15,6 +15,8 @@ let
       ./patches/0002-add-dotfiles-cli-helpers.patch
       ./patches/0003-add-worktree-layout-subcommand.patch
       ./patches/0004-add-hunk-subcommand.patch
+      ./patches/0005-fix-hermes-detection.patch
+      ./patches/0006-detect-hermes-from-screen-chrome.patch
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
