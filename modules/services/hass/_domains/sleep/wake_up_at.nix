@@ -8,8 +8,16 @@ let
   inherit (import ../../_lib.nix) ensureEnabled;
 
   edmund = {
+    # iPhone next alarm datetime from the Home Assistant companion app. This is
+    # the schedule source for the ADR: wake time -> sleep target -> bedtime phases.
     nextAlarm = "sensor.edmunds_iphone_next_alarm";
+
+    # Person presence entity; the homeostasis automation only runs when Edmund
+    # is home so travel/away alarms do not drive apartment lighting.
     presence = "person.edmund_miller";
+
+    # Edmund's phone notification service. Monica is intentionally future-only
+    # until the fallback alarm/presence path is added.
     notify = "notify.mobile_app_edmunds_iphone";
   };
 in

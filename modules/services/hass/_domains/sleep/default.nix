@@ -36,16 +36,30 @@ let
   edmund = {
     name = "Edmund";
     id = "edmund";
-    # Use composite template sensor — see template.binary_sensor below
+
+    # Reliable composite helper owned by this module; true when 8Sleep still
+    # indicates bed activity even if raw cloud presence drops out.
     bedPresence = "binary_sensor.edmund_bed_presence_reliable";
+
+    # Raw Eight Sleep entities. Presence is flaky after cloud sessions end;
+    # bed_state_type and heart_rate are used to keep bed-presence tracking sane.
     rawBedPresence = "binary_sensor.edmund_s_eight_sleep_side_bed_presence";
     bedStateType = "sensor.edmund_s_eight_sleep_side_bed_state_type";
     heartRate = "sensor.edmund_s_eight_sleep_side_heart_rate";
+
+    # iPhone companion app entities. Focus is generic: on means any Focus mode,
+    # not specifically Sleep Focus. updateTrigger helps distinguish manual/Siri
+    # updates from background updates in wake-detection heuristics.
     focus = "binary_sensor.edmunds_iphone_focus";
     battery = "sensor.edmunds_iphone_battery_state";
     activity = "sensor.edmunds_iphone_activity";
     updateTrigger = "sensor.edmunds_iphone_last_update_trigger";
+
+    # Sleep-domain helper tracking whether wake heuristics saw Edmund awake.
     awake = "input_boolean.edmund_awake";
+
+    # Eight Sleep alarm/service entities. sleepStage is the service target for
+    # eight_sleep.set_one_off_alarm / dismiss_alarm / side_off calls.
     alarmSwitch = "switch.edmund_s_eight_sleep_next_alarm";
     sleepStage = "sensor.edmund_s_eight_sleep_side_sleep_stage";
   };
@@ -53,15 +67,25 @@ let
   monica = {
     name = "Monica";
     id = "monica";
+
+    # Reliable composite helper owned by this module; same semantics as Edmund.
     bedPresence = "binary_sensor.monica_bed_presence_reliable";
+
+    # Raw Eight Sleep entities.
     rawBedPresence = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
     bedStateType = "sensor.monica_s_eight_sleep_side_bed_state_type";
     heartRate = "sensor.monica_s_eight_sleep_side_heart_rate";
+
+    # iPhone companion app entities; focus is generic, not Sleep-specific.
     focus = "binary_sensor.monicas_iphone_focus";
     battery = "sensor.monicas_iphone_battery_state";
     activity = "sensor.monicas_iphone_activity";
     updateTrigger = "sensor.monicas_iphone_last_update_trigger";
+
+    # Sleep-domain helper tracking whether wake heuristics saw Monica awake.
     awake = "input_boolean.monica_awake";
+
+    # Eight Sleep alarm/service entities.
     alarmSwitch = "switch.monica_s_eight_sleep_next_alarm";
     sleepStage = "sensor.monica_s_eight_sleep_side_sleep_stage";
   };
