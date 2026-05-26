@@ -5,7 +5,7 @@
 #   - input_boolean.edmund_awake / monica_awake (wake detection)
 #   - Circadian phase helpers (applied once per alarm schedule)
 #   - Scenes: Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning
-#   - Automations: circadian homeostasis, 8Sleep sync, wake detection
+#   - Automations: circadian homeostasis, 8Sleep focus-off dismissal, wake detection
 #
 # Alarm-driven flow (see modules/services/hass/docs/adr/0001-*):
 #   Winding Down      ← Sleep - 60 minutes (soft circadian cueing)
@@ -16,14 +16,14 @@
 # Homeostasis checks run every 5 minutes between 8 PM and midnight when
 # Edmund is home. Each phase is applied once per next-alarm schedule.
 #
-# Apple integration (iPhone ↔ 8Sleep):
-#   iPhone alarm sensor  → set_one_off_alarm on 8Sleep (keeps them in sync)
+# Apple / 8Sleep integration:
+#   iOS next-alarm sensor sync is declaratively disabled; no passive iPhone alarm entity exists.
 #   Sleep Focus off 6–9am → dismiss 8Sleep alarm + side_off (manual wake = skip alarm)
 #
 # Entity name notes (verify in HA dev tools > States if IDs change):
 #   8Sleep service target: sensor.edmund_s_eight_sleep_side_sleep_stage
-#   8Sleep next alarm switch: switch.edmund_s_eight_sleep_next_alarm
-#   iPhone next alarm: sensor.edmunds_iphone_next_alarm (datetime)
+#   8Sleep next alarm: sensor.edmund_s_eight_sleep_side_next_alarm (timestamp)
+#   8Sleep next alarm switch: switch.edmund_s_eight_sleep_side_next_alarm
 #   iPhone focus: binary_sensor.edmunds_iphone_focus (on = any focus active)
 #
 # NOTE: Wake detection is retained, but auto Good Morning is intentionally removed.
@@ -555,16 +555,18 @@ in
         ];
       }
 
-      # ── Apple ↔ 8Sleep integration ─────────────────────────────────────
+      # ── Apple / 8Sleep integration ─────────────────────────────────────
 
-      # Sync Edmund's iPhone next alarm → 8Sleep one-off alarm
-      # iPhone sensor is a datetime; extract local time for set_one_off_alarm.
-      # Conditions filter out unavailable state and non-morning alarms (≥11am
-      # = not a wake alarm, skip it).
+      # Kept declaratively disabled while we investigate whether there is a
+      # usable iOS alarm bridge. iOS HA Companion does not currently expose the
+      # Android-style `sensor.<phone>_next_alarm`; `sensor.edmunds_iphone_next_alarm`
+      # is absent in this HA instance. If a Shortcut/helper bridge is added,
+      # flip initial_state back to true and update the trigger/source entity.
       {
         alias = "Sync iPhone Alarm to 8Sleep";
         id = "sync_iphone_alarm_8sleep";
-        description = "iPhone next alarm changes → set matching one-off alarm on 8Sleep";
+        initial_state = false;
+        description = "Disabled: no passive iOS next-alarm entity currently exists";
         trigger = {
           platform = "state";
           entity_id = "sensor.edmunds_iphone_next_alarm";
@@ -576,13 +578,12 @@ in
           }
           {
             condition = "template";
-            # Ignore alarms set for 11am or later — those aren't sleep alarms
+            # Ignore alarms set for 11am or later — those aren't sleep alarms.
             value_template = "{{ (states('sensor.edmunds_iphone_next_alarm') | as_datetime | as_local).hour < 11 }}";
           }
         ];
         action = [
           {
-            # Verify entity in HA dev-tools → States: filter eight_sleep / sensor
             action = "eight_sleep.set_one_off_alarm";
             target.entity_id = "sensor.edmund_s_eight_sleep_side_sleep_stage";
             data = {
