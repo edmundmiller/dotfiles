@@ -220,12 +220,11 @@
               gitbutler
               gitnexus
               gnhf
-              hunk
               mcporter
               rtk
               workmux
               ;
-            inherit (pkgs) herdr;
+            inherit (pkgs) herdr hunk;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -242,12 +241,11 @@
               gitbutler
               gitnexus
               gnhf
-              hunk
               mcporter
               rtk
               workmux
               ;
-            inherit (darwinPkgs) herdr;
+            inherit (darwinPkgs) herdr hunk;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 
