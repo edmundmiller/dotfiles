@@ -59,7 +59,7 @@ let
     in
     if resolved.success then resolved.value else "op";
   opReadTimeoutSeconds = 15;
-  sessionSearchFiles = import ./session-search.nix { inherit lib; };
+  sessionSearchFiles = import ./lib/_session-search-files.nix { inherit lib; };
   dotenvPython = pkgs.python3;
   piRequiredSecretKeys = lib.unique (
     cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
@@ -127,19 +127,29 @@ let
     dontUnpack = true;
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
-      runHook preInstall
+            runHook preInstall
 
-      cp -a ${pkgs.llm-agents.pi} "$out"
-      chmod -R u+w "$out"
+            cp -a ${pkgs.llm-agents.pi} "$out"
+            chmod -R u+w "$out"
 
-      if [ -x "$out/bin/pi" ]; then
-        wrapProgram "$out/bin/pi" \
-          --run ${escapeShellArg "${piSecretPreflightScript}"} \
-          --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
-          --unset SDKROOT
+            if [ -x "$out/bin/pi" ]; then
+              wrapProgram "$out/bin/pi" \
+                --run ${escapeShellArg "${piSecretPreflightScript}"} \
+                --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
+                --unset SDKROOT
+
+              # The pi executable is Nix-managed and cannot self-update in-place.
+              # Make the common `pi update` shortcut update only user packages/extensions;
+              # explicit self-update requests like `pi update pi` still pass through and fail loudly.
+              substituteInPlace "$out/bin/pi" \
+                --replace-fail 'exec -a "$0" ' \
+                  'if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then
+        set -- update --extensions
       fi
+      exec -a "$0" '
+            fi
 
-      runHook postInstall
+            runHook postInstall
     '';
     inherit (pkgs.llm-agents.pi) meta;
   };
