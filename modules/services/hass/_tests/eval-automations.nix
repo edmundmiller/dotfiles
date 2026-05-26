@@ -40,12 +40,6 @@ let
   hasTimeTrigger =
     triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
 
-  hasStateTrigger =
-    triggers: entityId: toState:
-    any (
-      t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == toState
-    ) triggers;
-
   hasActionCall =
     actions: actionName:
     any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
@@ -80,8 +74,9 @@ let
   # Must exist
   edmundAwake = findAutomation "edmund_awake_detection";
   monicaAwake = findAutomation "monica_awake_detection";
-  windingDown = findAutomation "winding_down";
-  bedPresenceInBed = findAutomation "bed_presence_in_bed";
+  circadianSleepHomeostasis = findAutomation "circadian_sleep_homeostasis";
+  voiceWebhookSleep = findAutomation "voice_webhook_sleep";
+  voiceWebhookInBed = findAutomation "voice_webhook_in_bed";
   bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
@@ -94,6 +89,9 @@ let
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
   windingDownScene = findScene "Winding Down";
+  getReadyForBedScene = findScene "Get Ready for Bed";
+  goodNightScene = findScene "Good Night";
+  inBedScene = findScene "In Bed";
   sleepScene = findScene "Sleep";
   goodMorningScene = findScene "Good Morning";
   midMorningScene = findScene "Mid-morning";
@@ -131,12 +129,16 @@ let
     }
 
     {
-      test = windingDown != null;
-      msg = "automation 'winding_down' missing";
+      test = circadianSleepHomeostasis != null;
+      msg = "automation 'circadian_sleep_homeostasis' missing";
     }
     {
-      test = bedPresenceInBed != null;
-      msg = "automation 'bed_presence_in_bed' missing";
+      test = voiceWebhookSleep == null;
+      msg = "voice-facing Sleep webhook should be removed";
+    }
+    {
+      test = voiceWebhookInBed == null;
+      msg = "voice-facing In Bed webhook should be removed";
     }
     {
       test = bedtimeNudgeWebhook != null;
@@ -172,6 +174,18 @@ let
       msg = "scene 'Winding Down' missing";
     }
     {
+      test = getReadyForBedScene != null;
+      msg = "scene 'Get Ready for Bed' missing";
+    }
+    {
+      test = goodNightScene != null;
+      msg = "scene 'Good Night' missing";
+    }
+    {
+      test = inBedScene == null;
+      msg = "scene 'In Bed' should be removed";
+    }
+    {
       test = sleepScene != null;
       msg = "scene 'Sleep' missing";
     }
@@ -189,18 +203,26 @@ let
     }
 
     {
-      test = hasTimeTrigger (toList (windingDown.trigger or [ ])) "22:00:00";
-      msg = "winding_down must trigger at 22:00:00";
+      test =
+        let
+          trigger = circadianSleepHomeostasis.trigger or { };
+        in
+        (trigger.platform or null) == "time_pattern" && (trigger.minutes or null) == "/5";
+      msg = "circadian_sleep_homeostasis must trigger every 5 minutes";
+    }
+    {
+      test = hasTimeGuard (toList (circadianSleepHomeostasis.condition or [ ])) "20:00:00";
+      msg = "circadian_sleep_homeostasis missing 8 PM time guard";
+    }
+    {
+      test = hasStateCondition (toList (
+        circadianSleepHomeostasis.condition or [ ]
+      )) "person.edmund_miller" "home";
+      msg = "circadian_sleep_homeostasis missing Edmund home guard";
     }
     {
       test = hasTimeTrigger (toList (alSleepModeOn.trigger or [ ])) "22:00:00";
       msg = "al_sleep_mode_on must trigger at 22:00:00";
-    }
-    {
-      test = hasStateTrigger (toList (
-        bedPresenceInBed.trigger or [ ]
-      )) "binary_sensor.monica_s_eight_sleep_side_bed_presence" "on";
-      msg = "bed_presence_in_bed must trigger from Monica bed presence = on";
     }
     {
       test = hasHomeAssistantStartTrigger (toList (alDaytimeSleepCorrection.trigger or [ ]));
@@ -237,6 +259,10 @@ let
     {
       test = (goodMorningScene.entities."input_boolean.monica_awake" or null) == "off";
       msg = "Good Morning scene doesn't reset monica_awake to off";
+    }
+    {
+      test = (goodMorningScene.entities."input_text.sleep_schedule_key" or null) == "";
+      msg = "Good Morning scene doesn't reset sleep_schedule_key";
     }
     {
       test = (goodMorningScene.entities."input_boolean.goodnight" or null) == "off";

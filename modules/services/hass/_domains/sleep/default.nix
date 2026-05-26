@@ -48,6 +48,9 @@ let
     awake = "input_boolean.edmund_awake";
     alarmSwitch = "switch.edmund_s_eight_sleep_next_alarm";
     sleepStage = "sensor.edmund_s_eight_sleep_side_sleep_stage";
+    nextAlarm = "sensor.edmunds_iphone_next_alarm";
+    presence = "person.edmund_miller";
+    notify = "notify.mobile_app_edmunds_iphone";
   };
 
   monica = {
@@ -211,6 +214,11 @@ in
     ];
 
     # ── Input helpers (sleep/wake lifecycle) ──────────────────────────────
+    input_text.sleep_schedule_key = {
+      name = "Sleep Schedule Key";
+      icon = "mdi:calendar-clock";
+    };
+
     input_boolean = {
       goodnight = {
         name = "Goodnight";
@@ -224,17 +232,32 @@ in
         name = "Monica Awake";
         icon = "mdi:sleep-off";
       };
+      winding_down_done = {
+        name = "Winding Down Done";
+        icon = "mdi:weather-night";
+      };
+      get_ready_for_bed_done = {
+        name = "Get Ready For Bed Done";
+        icon = "mdi:bed-clock";
+      };
+      goodnight_done = {
+        name = "Good Night Done";
+        icon = "mdi:bed";
+      };
+      sleep_done = {
+        name = "Sleep Done";
+        icon = "mdi:sleep";
+      };
     };
 
     # ── Scenes ───────────────────────────────────────────────────────────
     scene = lib.mkAfter [
-      # Stage 1: Get ready for bed
+      # Passive circadian prelude. Internal only; not exposed to HomeKit.
       {
         name = "Winding Down";
         icon = "mdi:weather-night";
         entities = {
-          "input_boolean.goodnight" = "on";
-          "input_boolean.edmund_awake" = "off"; # reset wake tracking
+          "input_boolean.edmund_awake" = "off";
           "input_boolean.monica_awake" = "off";
           "cover.smartwings_window_covering" = "closed";
           "media_player.tv" = "off";
@@ -248,33 +271,59 @@ in
           "light.essentials_a19_a60_5" = "on"; # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" = "on"; # Couch Lamp
           "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
+          "light.smart_night_light_w" = "on"; # Night light: navigate to bed
+        };
+      }
 
-          # Night light stays on — navigate to bed
+      # First active bedtime prep phase. Voice/HomeKit-facing.
+      {
+        name = "Get Ready for Bed";
+        icon = "mdi:bed-clock";
+        entities = {
+          "input_boolean.goodnight" = "on";
+          "input_boolean.edmund_awake" = "off";
+          "input_boolean.monica_awake" = "off";
+          "cover.smartwings_window_covering" = "closed";
+          "media_player.tv" = "off";
+          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
+          "light.essentials_a19_a60" = "off";
+          "light.essentials_a19_a60_2" = "off";
+          "light.essentials_a19_a60_3" = "on";
+          "light.essentials_a19_a60_4" = "on";
+          "light.essentials_a19_a60_5" = "on";
+          "light.nanoleaf_multicolor_floor_lamp" = "on";
+          "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "on";
         };
       }
-      # Stage 2: In bed, audiobook time
+
+      # In-bed settling phase. Retires old In Bed/Ignite naming.
       {
-        name = "In Bed";
+        name = "Good Night";
         icon = "mdi:bed";
         entities = {
+          "input_boolean.goodnight" = "on";
+          "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise
-
-          # Lights out once in bed
-          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
-          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "off"; # Couch Lamp
-          "light.smart_night_light_w" = "off"; # No longer needed
+          "cover.smartwings_window_covering" = "closed";
+          "media_player.tv" = "off";
+          "light.essentials_a19_a60" = "off";
+          "light.essentials_a19_a60_2" = "off";
+          "light.essentials_a19_a60_3" = "off";
+          "light.essentials_a19_a60_4" = "off";
+          "light.essentials_a19_a60_5" = "off";
+          "light.nanoleaf_multicolor_floor_lamp" = "off";
+          "light.nanoleaf_multicolor_hd_ls" = "off";
+          "light.smart_night_light_w" = "off";
         };
       }
-      # Stage 3: Audiobook done, sleeping
+
+      # Final asleep state. Internal only; not exposed to HomeKit/webhooks.
       {
         name = "Sleep";
         icon = "mdi:sleep";
         entities = {
-          # Confirm sealed state — whitenoise stays, everything else off
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
@@ -285,82 +334,75 @@ in
           "media_player.tv" = "off";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
-          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
-          "light.essentials_a19_a60_5" = "off"; # Wall Lamp
+          "light.essentials_a19_a60_3" = "off";
+          "light.essentials_a19_a60_4" = "off";
+          "light.essentials_a19_a60_5" = "off";
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
         };
       }
-      # Wake — end of sleep cycle
-      # Turns off night mode, opens blinds, lights on for overcast mornings.
-      # Mid-morning (ambient.nix) follows up at sunrise+2h to kill lights
-      # once natural light is sufficient.
+
+      # Wake — end of sleep cycle. Resets schedule helpers for the next night.
       {
         name = "Good Morning";
         icon = "mdi:weather-sunny";
         entities = {
           "input_boolean.goodnight" = "off";
-          "input_boolean.edmund_awake" = "off"; # reset for next night
+          "input_boolean.edmund_awake" = "off";
           "input_boolean.monica_awake" = "off";
+          "input_boolean.winding_down_done" = "off";
+          "input_boolean.get_ready_for_bed_done" = "off";
+          "input_boolean.goodnight_done" = "off";
+          "input_boolean.sleep_done" = "off";
+          "input_text.sleep_schedule_key" = "";
           "select.master_suite_current_mode" = "home";
-          # Cover scenes require state string + current_position attribute.
-          # position= is ignored in scene reproduction for this cover.
           "cover.smartwings_window_covering" = {
             state = "open";
             current_position = 20;
           };
-          "switch.eve_energy_20ebu4101" = "off"; # whitenoise machine
+          "switch.eve_energy_20ebu4101" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
           "switch.desk_monitor" = "on";
           "switch.desk_pop" = "on";
-
-          # Lights on — AL handles color temp/brightness for time of day.
-          # Mid-morning scene (sunrise+2h) turns these off when natural
-          # light is enough.
-          "light.essentials_a19_a60" = "on"; # Kitchen (Trashcan)
-          "light.essentials_a19_a60_2" = "on"; # Kitchen (Dishwasher)
-          "light.essentials_a19_a60_5" = "on"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "on"; # Couch Lamp
-          "light.nanoleaf_multicolor_hd_ls" = "on"; # Edmund Desk
+          "light.essentials_a19_a60" = "on";
+          "light.essentials_a19_a60_2" = "on";
+          "light.essentials_a19_a60_5" = "on";
+          "light.nanoleaf_multicolor_floor_lamp" = "on";
+          "light.nanoleaf_multicolor_hd_ls" = "on";
         };
       }
     ];
 
     # ── Scripts ──────────────────────────────────────────────────────────
     script = lib.mkAfter {
-      # Siri/Shortcuts entrypoints. Prefer HA Companion App Shortcuts
-      # (authenticated HA actions) over Apple Home/HomeKit voice routing.
-      goodnight = {
-        alias = "Goodnight";
-        icon = "mdi:weather-night";
-        sequence = [
-          {
-            action = "scene.turn_on";
-            target.entity_id = "scene.winding_down";
-          }
-        ];
-      };
-
+      # Siri/HomeKit entrypoints. Sleep remains internal only.
       get_ready_for_bed = {
         alias = "Get Ready For Bed";
         icon = "mdi:bed-clock";
         sequence = [
           {
             action = "scene.turn_on";
-            target.entity_id = "scene.winding_down";
+            target.entity_id = "scene.get_ready_for_bed";
+          }
+          {
+            action = "input_boolean.turn_on";
+            target.entity_id = "input_boolean.get_ready_for_bed_done";
           }
         ];
       };
 
-      in_bed = {
-        alias = "In Bed";
+      goodnight = {
+        alias = "Good Night";
         icon = "mdi:bed";
         sequence = [
           {
             action = "scene.turn_on";
-            target.entity_id = "scene.in_bed";
+            target.entity_id = "scene.good_night";
+          }
+          {
+            action = "input_boolean.turn_on";
+            target.entity_id = "input_boolean.goodnight_done";
           }
         ];
       };
@@ -373,6 +415,10 @@ in
             action = "scene.turn_on";
             target.entity_id = "scene.sleep";
           }
+          {
+            action = "input_boolean.turn_on";
+            target.entity_id = "input_boolean.sleep_done";
+          }
         ];
       };
 
@@ -383,6 +429,20 @@ in
           {
             action = "scene.turn_on";
             target.entity_id = "scene.good_morning";
+          }
+          {
+            action = "input_boolean.turn_off";
+            target.entity_id = [
+              "input_boolean.winding_down_done"
+              "input_boolean.get_ready_for_bed_done"
+              "input_boolean.goodnight_done"
+              "input_boolean.sleep_done"
+            ];
+          }
+          {
+            action = "input_text.set_value";
+            target.entity_id = "input_text.sleep_schedule_key";
+            data.value = "";
           }
         ];
       };
@@ -405,8 +465,23 @@ in
 
     # ── Automations ──────────────────────────────────────────────────────
     automation = lib.mkAfter (ensureEnabled [
-      # Siri Shortcut webhooks. These provide a no-Apple-Home path for fixed
-      # routines: Siri Shortcut → HA webhook → HA script/scene.
+      # Siri Shortcut webhooks. Sleep is deliberately not voice-facing.
+      {
+        alias = "Voice Webhook - Get Ready for Bed";
+        id = "voice_webhook_get_ready_for_bed";
+        trigger = {
+          platform = "webhook";
+          webhook_id = "ha_voice_00671127fbfa48e8afa9fe24bbf32b3e";
+          allowed_methods = [ "POST" ];
+          local_only = false;
+        };
+        action = [
+          {
+            action = "script.turn_on";
+            target.entity_id = "script.get_ready_for_bed";
+          }
+        ];
+      }
       {
         alias = "Voice Webhook - Goodnight";
         id = "voice_webhook_goodnight";
@@ -420,38 +495,6 @@ in
           {
             action = "script.turn_on";
             target.entity_id = "script.goodnight";
-          }
-        ];
-      }
-      {
-        alias = "Voice Webhook - In Bed";
-        id = "voice_webhook_in_bed";
-        trigger = {
-          platform = "webhook";
-          webhook_id = "ha_voice_00671127fbfa48e8afa9fe24bbf32b3e";
-          allowed_methods = [ "POST" ];
-          local_only = false;
-        };
-        action = [
-          {
-            action = "script.turn_on";
-            target.entity_id = "script.in_bed";
-          }
-        ];
-      }
-      {
-        alias = "Voice Webhook - Sleep";
-        id = "voice_webhook_sleep";
-        trigger = {
-          platform = "webhook";
-          webhook_id = "ha_voice_8868f3d983d3422b89a1429415682f99";
-          allowed_methods = [ "POST" ];
-          local_only = false;
-        };
-        action = [
-          {
-            action = "script.turn_on";
-            target.entity_id = "script.sleep";
           }
         ];
       }
@@ -472,54 +515,153 @@ in
         ];
       }
 
-      # Stage 1: 10 PM → Winding Down
+      # Alarm-relative sleep lifecycle. Checks every 5 minutes 8 PM–midnight.
       {
-        alias = "Winding Down";
-        id = "winding_down";
-        description = "10 PM — lights off (night light stays), blinds closed, TV off";
+        alias = "Circadian Sleep Homeostasis";
+        id = "circadian_sleep_homeostasis";
+        description = "Alarm-driven Winding Down → Get Ready for Bed → Good Night → Sleep lifecycle";
+        mode = "single";
         trigger = {
-          platform = "time";
-          at = "22:00:00";
+          platform = "time_pattern";
+          minutes = "/5";
         };
-        action = [
-          {
-            action = "scene.turn_on";
-            target.entity_id = "scene.winding_down";
-          }
-        ];
-      }
-
-      # Goodnight is a scene transition, not a persistent lock on these lamps.
-
-      # Stage 2: Bed presence → In Bed
-      {
-        alias = "In Bed";
-        id = "bed_presence_in_bed";
-        description = "Monica in bed 2 min → whitenoise on, night light off";
-        trigger = {
-          platform = "state";
-          entity_id = "binary_sensor.monica_s_eight_sleep_side_bed_presence";
-          to = "on";
-          "for".minutes = 2;
-        };
-        # Guardrails: only allow this bedtime stage at night while in goodnight mode.
-        # Prevents morning re-triggers when bed presence briefly flips back to "on".
         condition = [
           {
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "on";
+            condition = "time";
+            after = "20:00:00";
+            before = "00:00:00";
           }
           {
-            condition = "time";
-            after = "21:00:00";
-            before = "06:00:00";
+            condition = "state";
+            entity_id = edmund.presence;
+            state = "home";
+          }
+          {
+            condition = "template";
+            value_template = "{{ states('${edmund.nextAlarm}') not in ['unknown', 'unavailable', 'none', ''] }}";
           }
         ];
+        variables = {
+          # Keep these as timestamps to avoid HA/Jinja native datetime edge cases.
+          alarm_ts = "{{ as_timestamp(states('${edmund.nextAlarm}')) }}";
+          schedule_key = "{{ states('${edmund.nextAlarm}') }}";
+          now_ts = "{{ now().timestamp() }}";
+          sleep_ts = "{{ alarm_ts | float - 9 * 60 * 60 }}";
+          winding_down_ts = "{{ sleep_ts | float - 60 * 60 }}";
+          goodnight_ts = "{{ sleep_ts | float - 15 * 60 }}";
+          get_ready_ts = "{{ goodnight_ts | float - 10 * 60 }}";
+          get_ready_done_ts = "{{ states.input_boolean.get_ready_for_bed_done.last_changed.timestamp() }}";
+          goodnight_done_ts = "{{ states.input_boolean.goodnight_done.last_changed.timestamp() }}";
+          active_key = "{{ states('input_text.sleep_schedule_key') }}";
+          is_new_schedule = "{{ active_key != schedule_key }}";
+        };
         action = [
           {
-            action = "scene.turn_on";
-            target.entity_id = "scene.in_bed";
+            "if" = [
+              {
+                condition = "template";
+                value_template = "{{ is_new_schedule }}";
+              }
+            ];
+            "then" = [
+              {
+                action = "input_text.set_value";
+                target.entity_id = "input_text.sleep_schedule_key";
+                data.value = "{{ schedule_key }}";
+              }
+              {
+                action = "input_boolean.turn_off";
+                target.entity_id = [
+                  "input_boolean.winding_down_done"
+                  "input_boolean.get_ready_for_bed_done"
+                  "input_boolean.goodnight_done"
+                  "input_boolean.sleep_done"
+                ];
+              }
+            ];
+          }
+          {
+            choose = [
+              {
+                # Never skip Get Ready for Bed. If we are late, this fires first
+                # and later phases key off helper last_changed to preserve spacing.
+                conditions = [
+                  {
+                    condition = "template";
+                    value_template = "{{ now_ts | float >= get_ready_ts | float and is_state('input_boolean.get_ready_for_bed_done', 'off') }}";
+                  }
+                ];
+                sequence = [
+                  {
+                    action = "script.turn_on";
+                    target.entity_id = "script.get_ready_for_bed";
+                  }
+                  {
+                    action = "${edmund.notify}";
+                    data = {
+                      title = "🛏️ Get Ready for Bed";
+                      message = "Start bedtime prep. Good Night target is {{ goodnight_ts | timestamp_custom('%-I:%M %p', true) }}.";
+                    };
+                  }
+                ];
+              }
+              {
+                conditions = [
+                  {
+                    condition = "template";
+                    value_template = "{{ is_state('input_boolean.get_ready_for_bed_done', 'on') and now_ts | float >= goodnight_ts | float and now_ts | float >= get_ready_done_ts | float + 600 and is_state('input_boolean.goodnight_done', 'off') }}";
+                  }
+                ];
+                sequence = [
+                  {
+                    action = "script.turn_on";
+                    target.entity_id = "script.goodnight";
+                  }
+                  {
+                    action = "${edmund.notify}";
+                    data = {
+                      title = "🛏️ Good Night";
+                      message = "Time to get in bed. Sleep target is {{ sleep_ts | timestamp_custom('%-I:%M %p', true) }} for {{ alarm_ts | timestamp_custom('%-I:%M %p', true) }} alarm.";
+                    };
+                  }
+                  # Future: also notify Monica when her alarm/presence path is added.
+                  # { action = "notify.mobile_app_monicas_iphone"; data = { title = "🛏️ Good Night"; message = "Time to get in bed."; }; }
+                ];
+              }
+              {
+                conditions = [
+                  {
+                    condition = "template";
+                    value_template = "{{ is_state('input_boolean.goodnight_done', 'on') and now_ts | float >= sleep_ts | float and now_ts | float >= goodnight_done_ts | float + 900 and is_state('input_boolean.sleep_done', 'off') }}";
+                  }
+                ];
+                sequence = [
+                  {
+                    action = "script.turn_on";
+                    target.entity_id = "script.sleep";
+                  }
+                ];
+              }
+              {
+                # Skip Winding Down if we are already at/past Get Ready.
+                conditions = [
+                  {
+                    condition = "template";
+                    value_template = "{{ now_ts | float >= winding_down_ts | float and now_ts | float < get_ready_ts | float and is_state('input_boolean.winding_down_done', 'off') }}";
+                  }
+                ];
+                sequence = [
+                  {
+                    action = "scene.turn_on";
+                    target.entity_id = "scene.winding_down";
+                  }
+                  {
+                    action = "input_boolean.turn_on";
+                    target.entity_id = "input_boolean.winding_down_done";
+                  }
+                ];
+              }
+            ];
           }
         ];
       }
