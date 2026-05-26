@@ -17,6 +17,7 @@ let
       ./patches/0004-add-hunk-subcommand.patch
       ./patches/0005-fix-hermes-detection.patch
       ./patches/0006-detect-hermes-from-screen-chrome.patch
+      ./patches/0007-test-hermes-screen-override.patch
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };

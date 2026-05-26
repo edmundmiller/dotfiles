@@ -1,0 +1,117 @@
+diff --git i/src/pane.rs w/src/pane.rs
+index 531cce8..312b863 100644
+--- i/src/pane.rs
++++ w/src/pane.rs
+@@ -153,6 +153,28 @@ struct DetectionPublishState {
+     visible_working: bool,
+ }
+
++
++fn apply_screen_agent_override(
++    agent_presence: &mut AgentDetectionPresence,
++    agent: &mut Option<Agent>,
++    agent_changed: &mut bool,
++    screen_content: &str,
++) -> Option<(Option<Agent>, Option<Agent>)> {
++    let screen_agent = crate::detect::identify_agent_from_screen(screen_content)?;
++    if Some(screen_agent) == *agent {
++        return None;
++    }
++
++    let previous_agent = *agent;
++    if agent_presence.observe_process_probe(Some(screen_agent)) {
++        *agent = agent_presence.current_agent();
++        *agent_changed = true;
++        return Some((previous_agent, *agent));
++    }
++
++    None
++}
++
+ fn should_publish_detection_update(
+     previous: DetectionPublishState,
+     next: DetectionPublishState,
+@@ -890,20 +912,18 @@ impl PaneRuntime {
+                     }
+
+                     let content = terminal.detection_text();
+-                    if let Some(screen_agent) = detect::identify_agent_from_screen(&content) {
+-                        if Some(screen_agent) != agent {
+-                            let previous_agent = agent;
+-                            if agent_presence.observe_process_probe(Some(screen_agent)) {
+-                                agent = agent_presence.current_agent();
+-                                agent_changed = true;
+-                                info!(
+-                                    pane = pane_id.raw(),
+-                                    previous_agent = ?previous_agent,
+-                                    ?agent,
+-                                    "agent changed from screen chrome"
+-                                );
+-                            }
+-                        }
++                    if let Some((previous_agent, current_agent)) = apply_screen_agent_override(
++                        &mut agent_presence,
++                        &mut agent,
++                        &mut agent_changed,
++                        &content,
++                    ) {
++                        info!(
++                            pane = pane_id.raw(),
++                            previous_agent = ?previous_agent,
++                            agent = ?current_agent,
++                            "agent changed from screen chrome"
++                        );
+                     }
+                     let process_exited = pending_foreground_shell_clear
+                         && agent.is_some()
+@@ -1563,6 +1583,47 @@ mod tests {
+         );
+     }
+
++    // Regression for https://github.com/ogulcancelik/herdr/issues/258:
++    // Hermes can use Codex as an implementation backend, but Herdr should
++    // still label the visible user-facing Hermes TUI as Hermes.
++    #[test]
++    fn screen_chrome_overrides_codex_backend_to_hermes() {
++        let mut presence = AgentDetectionPresence::from_agent(Some(Agent::Codex));
++        let mut agent = presence.current_agent();
++        let mut agent_changed = false;
++        let screen = " ─  Hermes  ──────────────────────────────────────────────────────────────
++ ⚕ gpt-5.5 │ 0/272K │ [░░░░░░░░░░] 0% │ 11m │ ⏲ 40s
++─────────────────────────────────────────────────────────────────────────
++❯";
++
++        let transition = apply_screen_agent_override(
++            &mut presence,
++            &mut agent,
++            &mut agent_changed,
++            screen,
++        );
++
++        assert_eq!(transition, Some((Some(Agent::Codex), Some(Agent::Hermes))));
++        assert!(agent_changed);
++        assert_eq!(agent, Some(Agent::Hermes));
++        assert_eq!(presence.current_agent(), Some(Agent::Hermes));
++    }
++
++    #[test]
++    fn plain_screen_does_not_override_process_agent() {
++        let mut presence = AgentDetectionPresence::from_agent(Some(Agent::Codex));
++        let mut agent = presence.current_agent();
++        let mut agent_changed = false;
++
++        let transition = apply_screen_agent_override(
++            &mut presence,
++            &mut agent,
++            &mut agent_changed,
++            "plain codex prompt",
++        );
++
++        assert_eq!(transition, None);
++        assert!(!agent_changed);
++        assert_eq!(agent, Some(Agent::Codex));
++    }
++
+     #[test]
+     fn foreground_shell_without_agent_is_immediate_clear_signal() {
+         assert!(should_clear_agent_for_foreground_shell(
