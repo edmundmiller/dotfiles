@@ -53,15 +53,10 @@ Herdr defaults still provide other common actions such as rename workspace, new 
 
 ## Helpers
 
-Herdr helper scripts are stdlib Python launched with `uv run --script` shebangs, so Herdr's launch environment must include `uv`:
+Herdr dotfiles-specific helper behavior is patched into the overlaid `herdr` binary:
 
-- `bin/herdr-hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
-- `bin/herdr-worktree-layout` — seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context, with an explicit-branch socket fallback for manual use.
-- `bin/herdr-tab` — cycles tabs for experiments; active tab movement now uses Herdr's built-in `previous_tab` / `next_tab` bindings.
-- `bin/herdr-workspace` — experimental workspace cycling helper; not part of the active keymap unless deliberately reintroduced.
-- `bin/herdr-self-test` — runs embedded pytest checks for the Herdr helper scripts via `uv run --with pytest --script ... --self-test`.
-
-Each Python helper also accepts `--self-test` directly, but the wrapper is the agent-friendly entrypoint because it supplies pytest without making normal helper startup depend on pytest.
+- `herdr hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
+- `herdr worktree layout` — seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context, with an explicit-branch socket fallback for manual use.
 
 ## Reloading after edits
 
