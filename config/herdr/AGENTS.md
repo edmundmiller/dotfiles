@@ -64,7 +64,8 @@ Meaning:
 ## Related files
 
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
-- `bin/herdr-tab` remains available for experiments; active tab movement uses Herdr built-ins.
 - `bin/herdr-hunk` implements Hunk split/tab launch behavior.
 - `bin/herdr-worktree-layout` implements post-create tab seeding for the native worktree flow.
+- `bin/herdr-tab` remains available for experiments; active tab movement uses Herdr built-ins.
+- `bin/herdr-workspace` remains experimental and is not part of the active keymap.
 - `packages/herdr/AGENTS.md` covers Nix packaging of the upstream Herdr binary, not runtime keybindings.

@@ -1,35 +1,71 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Cycle Herdr workspaces."""
 
-direction="${1:-}"
-if [[ "$direction" != "previous" && "$direction" != "next" ]]; then
-  echo "usage: herdr-workspace previous|next" >&2
-  exit 64
-fi
+from __future__ import annotations
 
-herdr_bin="${HERDR_BIN_PATH:-herdr}"
-workspace_json="$($herdr_bin workspace list)"
-workspace_id="$(python3 -c '
+import argparse
 import json
+import os
+import shutil
+import subprocess
 import sys
+from typing import Any, NoReturn
 
-payload = json.loads(sys.argv[1])
-direction = sys.argv[2]
-workspaces = payload.get("result", {}).get("workspaces", [])
-workspaces.sort(key=lambda ws: ws.get("number", 0))
-if not workspaces:
-    sys.exit(1)
+PROG = "herdr-workspace"
 
-focused_index = next((i for i, ws in enumerate(workspaces) if ws.get("focused")), None)
-if focused_index is None:
-    focused_index = 0
 
-if direction == "previous":
-    target = workspaces[(focused_index - 1) % len(workspaces)]
-else:
-    target = workspaces[(focused_index + 1) % len(workspaces)]
+def die(message: str, code: int = 1) -> NoReturn:
+    print(f"{PROG}: {message}", file=sys.stderr)
+    raise SystemExit(code)
 
-print(target["workspace_id"])
-' "$workspace_json" "$direction")"
 
-exec "$herdr_bin" workspace focus "$workspace_id"
+def herdr_bin() -> str:
+    configured = os.environ.get("HERDR_BIN_PATH", "herdr")
+    return configured if shutil.which(configured) else "herdr"
+
+
+def run_json(herdr: str, *args: str) -> dict[str, Any]:
+    try:
+        result = subprocess.run(
+            [herdr, *args], check=True, text=True, stdout=subprocess.PIPE
+        )
+    except FileNotFoundError:
+        die(f"Herdr binary not found: {herdr}", 127)
+    except subprocess.CalledProcessError as exc:
+        raise SystemExit(exc.returncode)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        die(f"invalid JSON from `{' '.join([herdr, *args])}`: {exc}")
+
+
+def target_workspace_id(payload: dict[str, Any], direction: str) -> str:
+    workspaces = payload.get("result", {}).get("workspaces", [])
+    workspaces.sort(key=lambda ws: ws.get("number", 0))
+    if not workspaces:
+        die("no workspaces found")
+    focused_index = next((i for i, ws in enumerate(workspaces) if ws.get("focused")), 0)
+    offset = -1 if direction == "previous" else 1
+    return str(workspaces[(focused_index + offset) % len(workspaces)]["workspace_id"])
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=PROG, usage="%(prog)s previous|next")
+    parser.add_argument("direction", choices=("previous", "next"))
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    herdr = herdr_bin()
+    workspace_id = target_workspace_id(
+        run_json(herdr, "workspace", "list"), args.direction
+    )
+    os.execvp(herdr, [herdr, "workspace", "focus", workspace_id])
+
+
+if __name__ == "__main__":
+    main()
