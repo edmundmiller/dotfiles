@@ -1,6 +1,6 @@
 # Alarm-relative wake/sleep scheduler for the sleep domain.
 #
-# Calculates bedtime phases from Edmund's next iPhone alarm when Edmund is home.
+# Calculates bedtime phases from Edmund's next Eight Sleep alarm when Edmund is home.
 # Imported by ./default.nix so the main sleep domain file can keep scenes/scripts
 # separate from the schedule/homeostasis logic.
 { lib, ... }:
@@ -8,9 +8,10 @@ let
   inherit (import ../../_lib.nix) ensureEnabled;
 
   edmund = {
-    # iPhone next alarm datetime from the Home Assistant companion app. This is
-    # the schedule source for the ADR: wake time -> sleep target -> bedtime phases.
-    nextAlarm = "sensor.edmunds_iphone_next_alarm";
+    # Eight Sleep next alarm timestamp. iOS Home Assistant Companion does not
+    # expose a passive next-alarm sensor, so use the existing Eight Sleep alarm as
+    # tonight's schedule source: wake time -> sleep target -> bedtime phases.
+    nextAlarm = "sensor.edmund_s_eight_sleep_side_next_alarm";
 
     # Person presence entity; the homeostasis automation only runs when Edmund
     # is home so travel/away alarms do not drive apartment lighting.
@@ -44,15 +45,33 @@ in
           entity_id = edmund.presence;
           state = "home";
         }
-        {
-          condition = "template";
-          value_template = "{{ states('${edmund.nextAlarm}') not in ['unknown', 'unavailable', 'none', ''] }}";
-        }
       ];
       variables = {
-        # Keep these as timestamps to avoid HA/Jinja native datetime edge cases.
-        alarm_ts = "{{ as_timestamp(states('${edmund.nextAlarm}')) }}";
-        schedule_key = "{{ states('${edmund.nextAlarm}') }}";
+        raw_alarm = "{{ states('${edmund.nextAlarm}') }}";
+        # Default wake time if Eight Sleep has no readable next alarm: 7:30 AM
+        # for Monday-Friday wake days, 8:00 AM for Saturday/Sunday wake days.
+        default_alarm_ts = ''
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {{ as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) }}
+        '';
+        # Prefer Eight Sleep's bed alarm when the integration exposes it; fall
+        # back to the declarative weekday/weekend default so the circadian rhythm
+        # still runs when the cloud alarm is temporarily unknown/unavailable.
+        alarm_ts = ''
+          {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
+            {{ as_timestamp(raw_alarm, default_alarm_ts | float) }}
+          {%- else -%}
+            {{ default_alarm_ts }}
+          {%- endif -%}
+        '';
+        schedule_key = ''
+          {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
+            {{ raw_alarm }}
+          {%- else -%}
+            default:{{ default_alarm_ts | float | timestamp_custom('%Y-%m-%dT%H:%M:%S%z', true) }}
+          {%- endif -%}
+        '';
         now_ts = "{{ now().timestamp() }}";
         sleep_ts = "{{ alarm_ts | float - 9 * 60 * 60 }}";
         winding_down_ts = "{{ sleep_ts | float - 60 * 60 }}";

@@ -69,7 +69,11 @@ let
     else
       [ ];
 
-  missingInitialState = filter (a: !(a.initial_state or null)) automations;
+  allowedDisabledAutomations = [ "sync_iphone_alarm_8sleep" ];
+
+  missingInitialState = filter (
+    a: !(a.initial_state or null) && !(builtins.elem (a.id or "") allowedDisabledAutomations)
+  ) automations;
 
   initialStateAssertions = map (a: {
     test = false;
@@ -134,8 +138,8 @@ let
       msg = "automation 'bed_presence_in_bed' missing";
     }
     {
-      test = syncIphoneAlarm8sleep != null;
-      msg = "automation 'sync_iphone_alarm_8sleep' missing";
+      test = syncIphoneAlarm8sleep != null && (syncIphoneAlarm8sleep.initial_state or null) == false;
+      msg = "automation 'sync_iphone_alarm_8sleep' should remain present but declaratively disabled until an iOS alarm source exists";
     }
     {
       test = sleepFocusOffEdmund != null;
