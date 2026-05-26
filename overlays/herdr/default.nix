@@ -1,6 +1,7 @@
 final: prev:
 let
   inherit (prev) lib;
+  isDarwin = final.stdenv.hostPlatform.isDarwin;
   sdk = "${final.apple-sdk_15}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk";
   src = final.applyPatches {
     src = final.fetchFromGitHub {
@@ -17,10 +18,10 @@ let
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
-  herdr = herdrFromSource.overrideAttrs (old: {
+  patchedHerdr = herdrFromSource.overrideAttrs (old: {
     postPatch =
       (old.postPatch or "")
-      + lib.optionalString final.stdenv.hostPlatform.isDarwin ''
+      + lib.optionalString isDarwin ''
                 substituteInPlace build.rs \
                   --replace-fail '.arg("build")' '.arg("build")
                       .arg("-Dcpu=baseline")' \
@@ -41,17 +42,18 @@ let
       '';
     nativeBuildInputs =
       (old.nativeBuildInputs or [ ])
-      ++ lib.optionals final.stdenv.hostPlatform.isDarwin [
+      ++ lib.optionals isDarwin [
         final.apple-sdk_15
         final.cctools
       ];
     env =
       (old.env or { })
-      // lib.optionalAttrs final.stdenv.hostPlatform.isDarwin {
+      // lib.optionalAttrs isDarwin {
         LIBGHOSTTY_VT_OPTIMIZE = "ReleaseSafe";
         SDKROOT = sdk;
       };
   });
+  herdr = if isDarwin then patchedHerdr else prev.llm-agents.herdr;
 in
 {
   llm-agents = (prev.llm-agents or { }) // {
