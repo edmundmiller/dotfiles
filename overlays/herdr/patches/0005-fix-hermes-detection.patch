@@ -1,0 +1,100 @@
+diff --git i/src/detect.rs w/src/detect.rs
+index 38ec562..385713a 100644
+--- i/src/detect.rs
++++ w/src/detect.rs
+@@ -76,6 +76,9 @@ pub fn agent_label(agent: Agent) -> &'static str {
+
+ pub fn parse_agent_label(agent: &str) -> Option<Agent> {
+     let name = agent.trim().to_lowercase();
++    if name.starts_with("hermes") {
++        return Some(Agent::Hermes);
++    }
+     match name.as_str() {
+         "pi" => Some(Agent::Pi),
+         "claude" | "claude-code" => Some(Agent::Claude),
+@@ -91,7 +94,6 @@ pub fn parse_agent_label(agent: &str) -> Option<Agent> {
+         "droid" => Some(Agent::Droid),
+         "amp" | "amp-local" => Some(Agent::Amp),
+         "grok" | "grok-build" => Some(Agent::Grok),
+-        "hermes" | "hermes-agent" => Some(Agent::Hermes),
+         _ => None,
+     }
+ }
+@@ -100,6 +102,9 @@ pub fn parse_agent_label(agent: &str) -> Option<Agent> {
+ /// Returns `None` for plain shells or unrecognized programs.
+ pub fn identify_agent(process_name: &str) -> Option<Agent> {
+     let name = process_name.to_lowercase();
++    if name.starts_with("hermes") {
++        return Some(Agent::Hermes);
++    }
+     // Match against known binary names
+     match name.as_str() {
+         "pi" => Some(Agent::Pi),
+@@ -116,7 +121,6 @@ pub fn identify_agent(process_name: &str) -> Option<Agent> {
+         "droid" => Some(Agent::Droid),
+         "amp" | "amp-local" => Some(Agent::Amp),
+         "grok" | "grok-build" => Some(Agent::Grok),
+-        "hermes" | "hermes-agent" => Some(Agent::Hermes),
+         _ => None,
+     }
+ }
+@@ -596,6 +600,18 @@ fn detect_hermes(content: &str) -> AgentState {
+         return AgentState::Working;
+     }
+
++    // Active running-timer (U+23F1 STOPWATCH) means a timer is currently
++    // running. Distinct from U+23F2 TIMER CLOCK which is waiting/paused.
++    if content.contains('⏱') {
++        return AgentState::Working;
++    }
++
++    // Hermes shows these while orchestrating sub-tasks, sometimes without
++    // other gutter/status markers.
++    if lower.contains("brainstorming...") || lower.contains("pondering...") {
++        return AgentState::Working;
++    }
++
+     AgentState::Idle
+ }
+
+@@ -2469,6 +2485,10 @@ mod tests {
+     fn hermes_identified_by_process_name() {
+         assert_eq!(identify_agent("hermes"), Some(Agent::Hermes));
+         assert_eq!(identify_agent("hermes-agent"), Some(Agent::Hermes));
++        assert_eq!(identify_agent("hermes-codex"), Some(Agent::Hermes));
++        assert_eq!(identify_agent("hermes-codex-spark"), Some(Agent::Hermes));
++        assert_eq!(parse_agent_label("hermes-x"), Some(Agent::Hermes));
++        assert_eq!(parse_agent_label("hermes-ds4-pro"), Some(Agent::Hermes));
+     }
+
+     #[test]
+@@ -2480,6 +2500,29 @@ mod tests {
+         );
+     }
+
++    #[test]
++    fn hermes_working_on_stopwatch_timer() {
++        let screen = "⚕ gpt-5.5 │ 15.5K/272K │ [█░░░░░░░░░] 6% │ 2m │ ⏱ 2m 14s
++─────────────────────────────────────────────────────────────────────────────────────────
++❯";
++        assert_eq!(
++            detect_state(Some(Agent::Hermes), screen),
++            AgentState::Working
++        );
++    }
++
++    #[test]
++    fn hermes_working_on_subtask_orchestration_text() {
++        assert_eq!(
++            detect_state(Some(Agent::Hermes), "brainstorming..."),
++            AgentState::Working
++        );
++        assert_eq!(
++            detect_state(Some(Agent::Hermes), "pondering..."),
++            AgentState::Working
++        );
++    }
++
+     #[test]
+     fn hermes_idle_ignores_stale_initializing_agent_text() {
+         let screen = "● say exactly READY and stop\nInitializing agent...\n\n╭─ ⚕ Hermes ────────────────────────────────────────────────────────────────────────────╮\n    READY\n╰───────────────────────────────────────────────────────────────────────────────────────╯\n ⚕ gpt-5.5 │ 15.5K/272K │ [█░░░░░░░░░] 6% │ 15s │ ⏲ 2s\n─────────────────────────────────────────────────────────────────────────────────────────\n❯";
