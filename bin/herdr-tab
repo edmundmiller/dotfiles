@@ -1,56 +1,89 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Cycle Herdr tabs within the active workspace."""
 
-direction="${1:-}"
-if [[ "$direction" != "previous" && "$direction" != "next" ]]; then
-  echo "usage: herdr-tab previous|next" >&2
-  exit 64
-fi
+from __future__ import annotations
 
-herdr_bin="${HERDR_BIN_PATH:-herdr}"
-workspace_id="${HERDR_ACTIVE_WORKSPACE_ID:-}"
-
-if [[ -z "$workspace_id" ]]; then
-  workspace_json="$($herdr_bin workspace list)"
-  workspace_id="$(python3 -c '
-import json, sys
-payload = json.loads(sys.argv[1])
-workspaces = payload.get("result", {}).get("workspaces", [])
-for ws in workspaces:
-    if ws.get("focused"):
-        print(ws.get("workspace_id", ""))
-        break
-' "$workspace_json")"
-fi
-
-if [[ -z "$workspace_id" ]]; then
-  echo "herdr-tab: could not determine active workspace" >&2
-  exit 1
-fi
-
-tab_json="$($herdr_bin tab list)"
-next_tab_id="$(python3 -c '
+import argparse
 import json
+import os
+import shutil
+import subprocess
 import sys
+from typing import Any, NoReturn
 
-payload = json.loads(sys.argv[1])
-workspace_id = sys.argv[2]
-direction = sys.argv[3]
-tabs = [t for t in payload.get("result", {}).get("tabs", []) if t.get("workspace_id") == workspace_id]
-tabs.sort(key=lambda t: t.get("number", 0))
-if not tabs:
-    sys.exit(1)
+PROG = "herdr-tab"
 
-focused_index = next((i for i, tab in enumerate(tabs) if tab.get("focused")), None)
-if focused_index is None:
-    focused_index = 0
 
-if direction == "previous":
-    target = tabs[(focused_index - 1) % len(tabs)]
-else:
-    target = tabs[(focused_index + 1) % len(tabs)]
+def die(message: str, code: int = 1) -> NoReturn:
+    print(f"{PROG}: {message}", file=sys.stderr)
+    raise SystemExit(code)
 
-print(target["tab_id"])
-' "$tab_json" "$workspace_id" "$direction")"
 
-exec "$herdr_bin" tab focus "$next_tab_id"
+def herdr_bin() -> str:
+    configured = os.environ.get("HERDR_BIN_PATH", "herdr")
+    return configured if shutil.which(configured) else "herdr"
+
+
+def run_json(herdr: str, *args: str) -> dict[str, Any]:
+    try:
+        result = subprocess.run(
+            [herdr, *args],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+        )
+    except FileNotFoundError:
+        die(f"Herdr binary not found: {herdr}", 127)
+    except subprocess.CalledProcessError as exc:
+        raise SystemExit(exc.returncode)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        die(f"invalid JSON from `{' '.join([herdr, *args])}`: {exc}")
+
+
+def focused_workspace_id(herdr: str) -> str:
+    env_workspace = os.environ.get("HERDR_ACTIVE_WORKSPACE_ID", "")
+    if env_workspace:
+        return env_workspace
+    payload = run_json(herdr, "workspace", "list")
+    workspaces = payload.get("result", {}).get("workspaces", [])
+    focused = next((ws for ws in workspaces if ws.get("focused")), None)
+    return str(focused.get("workspace_id", "")) if focused else ""
+
+
+def target_tab_id(payload: dict[str, Any], workspace_id: str, direction: str) -> str:
+    tabs = [
+        tab
+        for tab in payload.get("result", {}).get("tabs", [])
+        if tab.get("workspace_id") == workspace_id
+    ]
+    tabs.sort(key=lambda tab: tab.get("number", 0))
+    if not tabs:
+        die("no tabs found in active workspace")
+    focused_index = next((i for i, tab in enumerate(tabs) if tab.get("focused")), 0)
+    offset = -1 if direction == "previous" else 1
+    return str(tabs[(focused_index + offset) % len(tabs)]["tab_id"])
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=PROG, usage="%(prog)s previous|next")
+    parser.add_argument("direction", choices=("previous", "next"))
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    herdr = herdr_bin()
+    workspace_id = focused_workspace_id(herdr)
+    if not workspace_id:
+        die("could not determine active workspace")
+    tab_id = target_tab_id(run_json(herdr, "tab", "list"), workspace_id, args.direction)
+    os.execvp(herdr, [herdr, "tab", "focus", tab_id])
+
+
+if __name__ == "__main__":
+    main()

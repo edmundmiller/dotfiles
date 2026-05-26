@@ -6,9 +6,9 @@ Accepted
 
 ## Context
 
-`bin/herdr-worktree-layout` runs as Herdr's `worktrees.post_create_command`. It is a lifecycle hook, not an interactive shell command, so its interpreter and dependencies must be available from the Herdr server environment.
+`bin/herdr-worktree-layout` runs as Herdr's `worktrees.post_create_command`. It is a lifecycle hook, not an interactive shell command, so its interpreter and dependencies must be available from the Herdr server environment. Other `bin/herdr-*` helpers also run from Herdr keybindings or agent tooling, so using the same launcher keeps behavior consistent across helpers.
 
-The script is currently stdlib-only, but it performs enough JSON, socket, process, and argument orchestration that Python is much more maintainable than Bash. We considered several Python script launcher options:
+The scripts are currently stdlib-only, but they perform enough JSON, socket, process, and argument orchestration that Python is much more maintainable than Bash. We considered several Python script launcher options:
 
 - direct Python shebangs such as `#!/usr/bin/env python3`;
 - Nix `nix-shell` shebangs such as `#!/usr/bin/env nix-shell` with `#! nix-shell -i python3 -p python3`;
@@ -39,7 +39,7 @@ The key reason to prefer `uv` is not just speed: `uv` script metadata gives chec
 
 ## Decision
 
-For checked-in Herdr hook scripts that benefit from Python and may need lightweight Python package dependencies, prefer a `uv run --script` shebang with inline script metadata.
+For checked-in Herdr helper scripts that benefit from Python and may need lightweight Python package dependencies, prefer a `uv run --script` shebang with inline script metadata.
 
 Example:
 
@@ -57,7 +57,7 @@ The Herdr module/package wiring must ensure `uv` is available in the environment
 
 ## Consequences
 
-- Herdr hook scripts start fast enough for interactive lifecycle hooks while remaining easy to extend with Python dependencies.
+- Herdr helper scripts start fast enough for interactive lifecycle hooks and keybindings while remaining easy to extend with Python dependencies.
 - Hook scripts depend on `uv` being available to the Herdr server/hook environment; this must be handled declaratively by the module/profile rather than relying on an interactive shell.
 - `nix-shell` shebangs remain appropriate when Nix-provided runtime purity matters more than startup latency or inline Python dependency ergonomics.
 - `cached-nix-shell` remains a possible manual optimization, but it is not the default for this repo's Herdr hook scripts.

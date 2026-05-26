@@ -53,12 +53,12 @@ Herdr defaults still provide other common actions such as rename workspace, new 
 
 ## Helpers
 
-One repo script backs the custom Hunk command bindings:
+Herdr helper scripts are stdlib Python launched with `uv run --script` shebangs, so Herdr's launch environment must include `uv`:
 
 - `bin/herdr-hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
-- `bin/herdr-worktree-layout` — uv/stdlib Python script that seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context, with an explicit-branch socket fallback for manual use.
-
-`bin/herdr-tab` remains available for experiments, but active tab movement now uses Herdr's built-in `previous_tab` / `next_tab` bindings.
+- `bin/herdr-worktree-layout` — seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context, with an explicit-branch socket fallback for manual use.
+- `bin/herdr-tab` — cycles tabs for experiments; active tab movement now uses Herdr's built-in `previous_tab` / `next_tab` bindings.
+- `bin/herdr-workspace` — experimental workspace cycling helper; not part of the active keymap unless deliberately reintroduced.
 
 ## Reloading after edits
 
