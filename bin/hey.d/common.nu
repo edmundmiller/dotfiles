@@ -143,6 +143,17 @@ export def check-local-skill-leaks [] {
   }
 }
 
+
+export def wait-homebrew-idle [] {
+  if not (is-darwin) {
+    return
+  }
+
+  let ctx = (context)
+  ^bash ($ctx.flake_dir | path join "bin" "hey.d" "wait-homebrew-idle.sh")
+}
+
+
 export def system-rebuild [action: string, ...args: string] {
   let ctx = (context)
   let agent_mode = (
@@ -162,6 +173,10 @@ export def system-rebuild [action: string, ...args: string] {
     print $"hey re: archiving flake inputs for ($ctx.flake_host)..."
   }
   ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-write-lock-file >/dev/null"
+  if $ctx.os_name == "macos" {
+    wait-homebrew-idle
+  }
+
   if $agent_mode {
     print $"hey re: rebuilding ($ctx.flake_host) ($action)..."
   }
