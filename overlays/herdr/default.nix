@@ -1,5 +1,14 @@
-final: _prev:
+final: prev:
 let
+  inherit (prev) lib;
+  helperScripts = final.runCommand "herdr-helper-scripts" { } ''
+    mkdir -p $out/bin
+    for script in ${./bin}/*; do
+      install -m 0755 "$script" "$out/bin/$(basename "$script")"
+      substituteInPlace "$out/bin/$(basename "$script")" \
+        --replace-fail "#!/usr/bin/env -S uv run --script" "#!${final.python3}/bin/python3"
+    done
+  '';
   sdk = "${final.apple-sdk_15}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk";
   src = final.applyPatches {
     src = final.fetchFromGitHub {
@@ -13,10 +22,10 @@ let
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
 in
 {
-  herdr = herdrFromSource.overrideAttrs (old: {
+  herdr-unwrapped = herdrFromSource.overrideAttrs (old: {
     postPatch =
       (old.postPatch or "")
-      + final.lib.optionalString final.stdenv.hostPlatform.isDarwin ''
+      + lib.optionalString final.stdenv.hostPlatform.isDarwin ''
                 substituteInPlace build.rs \
                   --replace-fail '.arg("build")' '.arg("build")
                       .arg("-Dcpu=baseline")' \
@@ -37,15 +46,24 @@ in
       '';
     nativeBuildInputs =
       (old.nativeBuildInputs or [ ])
-      ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [
+      ++ lib.optionals final.stdenv.hostPlatform.isDarwin [
         final.apple-sdk_15
         final.cctools
       ];
     env =
       (old.env or { })
-      // final.lib.optionalAttrs final.stdenv.hostPlatform.isDarwin {
+      // lib.optionalAttrs final.stdenv.hostPlatform.isDarwin {
         LIBGHOSTTY_VT_OPTIMIZE = "ReleaseSafe";
         SDKROOT = sdk;
       };
   });
+
+  herdr = final.symlinkJoin {
+    name = "herdr-${final.herdr-unwrapped.version or "custom"}";
+    paths = [
+      final.herdr-unwrapped
+      helperScripts
+    ];
+    meta = final.herdr-unwrapped.meta or { };
+  };
 }
