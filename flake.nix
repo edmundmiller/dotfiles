@@ -545,6 +545,16 @@
                 files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";
                 stages = [ "pre-commit" ];
               };
+              oxlint = {
+                enable = true;
+                name = "oxlint";
+                description = "Lint JavaScript and TypeScript with oxlint";
+                entry = "${pkgs.oxlint}/bin/oxlint --quiet";
+                package = pkgs.oxlint;
+                language = "system";
+                files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";
+                stages = [ "pre-commit" ];
+              };
               br-sync = {
                 enable = true;
                 name = "br-sync";
