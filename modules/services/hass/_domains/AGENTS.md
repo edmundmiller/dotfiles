@@ -42,7 +42,7 @@ These automations have inline actions by design — do not refactor them into sc
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
 - `modes.nix` — DND, guest mode, everything_off script
 - `pura.nix` — Pura diffuser routines (arrive-home freshen script + automation)
-- `sleep/` — Sleep lifecycle: goodnight toggle, awake helper booleans, circadian phases (Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning), Apple↔8Sleep sync, wake detection tracking. Auto-Good-Morning flow intentionally removed.
+- `sleep/` — Sleep lifecycle: goodnight toggle, awake helper booleans, circadian phases (Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning), 8Sleep wake scheduling, focus-off alarm dismissal, wake detection tracking. Auto-Good-Morning flow intentionally removed.
 - `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 

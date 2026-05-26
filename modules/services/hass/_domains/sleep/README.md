@@ -1,6 +1,6 @@
 # Sleep Domain
 
-Alarm-driven circadian sleep lifecycle + Apple↔8Sleep sync + wake detection, with **manual/voice Good Morning**.
+Alarm-driven circadian sleep lifecycle + 8Sleep wake scheduling + wake detection, with **manual/voice Good Morning**.
 
 Owns: `input_boolean.goodnight`, `input_boolean.edmund_awake`, `input_boolean.monica_awake`
 
@@ -8,7 +8,7 @@ Decision record: [`../../docs/adr/0001-alarm-driven-circadian-sleep-lifecycle.md
 
 ## Alarm-Driven Circadian Flow
 
-The sleep lifecycle is driven by Edmund's next iPhone alarm when Edmund is home. A five-minute homeostasis check runs between 8 PM and midnight, targets six 90-minute sleep cycles by default, and applies each phase once per night.
+The sleep lifecycle is currently driven by Edmund's next Eight Sleep alarm when Edmund is home. A five-minute homeostasis check runs between 8 PM and midnight, targets six 90-minute sleep cycles by default, and applies each phase once per night.
 
 For a 7:30 AM wake time with the default 9h target:
 
@@ -63,15 +63,11 @@ These booleans are tracking-only now (for observability/manual use).
 `scene.good_morning` is intentionally **not auto-triggered** by wake detection anymore.
 Use voice/manual activation instead (e.g., Assist intent or Home app scene/script).
 
-## Apple ↔ 8Sleep Sync
+## Apple / 8Sleep Integration
 
-Two automations keep iPhone alarms and 8Sleep alarms in sync:
+The iPhone → 8Sleep alarm sync path is intentionally declaratively disabled in Nix. iOS Home Assistant Companion does not expose a passive `sensor.<iphone>_next_alarm` entity like Android does, and `sensor.edmunds_iphone_next_alarm` does not exist in this HA instance.
 
-**iPhone → 8Sleep alarm sync:**
-
-- Triggers when `sensor.edmunds_iphone_next_alarm` changes
-- Calls `eight_sleep.set_one_off_alarm` on 8Sleep
-- Skips alarms at 11am or later
+Current active integration:
 
 **Sleep Focus off → dismiss 8Sleep alarm:**
 
@@ -83,22 +79,21 @@ Two automations keep iPhone alarms and 8Sleep alarms in sync:
 
 ### 8Sleep
 
-| Entity                                                 | Notes                          |
-| ------------------------------------------------------ | ------------------------------ |
-| `sensor.edmund_s_eight_sleep_side_sleep_stage`         | Service target for alarm calls |
-| `switch.edmund_s_eight_sleep_next_alarm`               | Alarm switch                   |
-| `binary_sensor.edmund_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)      |
-| `binary_sensor.monica_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)      |
+| Entity                                                 | Notes                               |
+| ------------------------------------------------------ | ----------------------------------- |
+| `sensor.edmund_s_eight_sleep_side_sleep_stage`         | Service target for alarm calls      |
+| `sensor.edmund_s_eight_sleep_side_next_alarm`          | Current wake schedule source        |
+| `switch.edmund_s_eight_sleep_side_next_alarm`          | Alarm switch, currently unavailable |
+| `binary_sensor.edmund_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)           |
+| `binary_sensor.monica_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)           |
 
 ### iPhone Sensors
 
-| Entity                                      | Notes                                                                      |
-| ------------------------------------------- | -------------------------------------------------------------------------- |
-| `sensor.edmunds_iphone_next_alarm`          | Next alarm datetime; primary source for circadian flow when Edmund is home |
-| `sensor.monicas_iphone_next_alarm`          | Future fallback source when Edmund is away and Monica is home              |
-| `binary_sensor.edmunds_iphone_focus`        | Any focus active (Sleep, DND, Work)                                        |
-| `sensor.edmunds_iphone_battery_state`       | Charging / Not Charging                                                    |
-| `sensor.edmunds_iphone_activity`            | Stationary / Walking / Unknown                                             |
-| `sensor.edmunds_iphone_last_update_trigger` | Launch / Siri / Manual / Background Fetch                                  |
+| Entity                                      | Notes                                     |
+| ------------------------------------------- | ----------------------------------------- |
+| `binary_sensor.edmunds_iphone_focus`        | Any focus active (Sleep, DND, Work)       |
+| `sensor.edmunds_iphone_battery_state`       | Charging / Not Charging                   |
+| `sensor.edmunds_iphone_activity`            | Stationary / Walking / Unknown            |
+| `sensor.edmunds_iphone_last_update_trigger` | Launch / Siri / Manual / Background Fetch |
 
 (Monica equivalents: replace `edmunds` with `monicas`)
