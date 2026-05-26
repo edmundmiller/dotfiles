@@ -224,6 +224,8 @@
               rtk
               workmux
               ;
+            # Herdr and Hunk are customized as llm-agents overlays, then
+            # re-exported as flake packages so modules consume pkgs.my.*.
             inherit (pkgs.llm-agents) herdr hunk;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
@@ -245,6 +247,8 @@
               rtk
               workmux
               ;
+            # Herdr and Hunk are customized as llm-agents overlays, then
+            # re-exported as flake packages so modules consume pkgs.my.*.
             inherit (darwinPkgs.llm-agents) herdr hunk;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
