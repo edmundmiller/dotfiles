@@ -270,10 +270,12 @@ in
           homekit = {
             advertise_ip = [ homeAssistantHost ];
             filter.include_entities = [
+              "script.get_ready_for_bed"
               "script.goodnight"
               "script.good_morning"
             ];
             entity_config = {
+              "script.get_ready_for_bed".name = "HA Get Ready for Bed";
               "script.goodnight".name = "HA Good Night";
               "script.good_morning".name = "HA Good Morning";
             };
