@@ -4,7 +4,8 @@ Owns the full sleep/wake lifecycle. See `README.md` for flow diagrams and `../..
 
 ## Files
 
-- `default.nix` — All Nix config (input_booleans, scenes, automations, scripts)
+- `default.nix` — Core sleep domain config (helpers, scenes, scripts, 8Sleep sync, wake tracking)
+- `wake_up_at.nix` — Alarm-relative bedtime scheduler/homeostasis automation
 - `README.md` — Human docs (flow diagrams, troubleshooting)
 
 ## Key Facts
