@@ -72,6 +72,8 @@ index 38ec562..385713a 100644
          );
      }
 
++    // Regression for https://github.com/ogulcancelik/herdr/issues/259:
++    // active Hermes TUI turns show the running stopwatch and should not be idle.
 +    #[test]
 +    fn hermes_working_on_stopwatch_timer() {
 +        let screen = "⚕ gpt-5.5 │ 15.5K/272K │ [█░░░░░░░░░] 6% │ 2m │ ⏱ 2m 14s
@@ -83,6 +85,8 @@ index 38ec562..385713a 100644
 +        );
 +    }
 +
++    // Regression for https://github.com/ogulcancelik/herdr/issues/259:
++    // Hermes sub-task orchestration text should also count as working.
 +    #[test]
 +    fn hermes_working_on_subtask_orchestration_text() {
 +        assert_eq!(

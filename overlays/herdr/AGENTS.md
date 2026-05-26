@@ -23,3 +23,26 @@ Keep source changes in `patches/*.patch`, applied in order from
 `default.nix`. Prefer small single-purpose patches. If adding command behavior,
 keep the command implementation and its CLI wiring together unless there is a
 shared implementation Module that clearly earns its locality.
+
+## Testing patched Herdr sources
+
+To test a patch against the pinned upstream source, materialize the patched tree
+outside the dotfiles repo and run Cargo there. Example for detector/pane tests:
+
+```sh
+set -euo pipefail
+workdir=$(mktemp -d)
+git clone https://github.com/ogulcancelik/herdr "$workdir/herdr"
+cd "$workdir/herdr"
+git checkout 420925d141c8805e610eb0d62d49d8b9b483d961
+git apply /Users/emiller/.config/dotfiles/overlays/herdr/patches/*.patch
+cargo test \
+  detect::tests::hermes \
+  pane::tests::screen_chrome_overrides_codex_backend_to_hermes \
+  pane::tests::plain_screen_does_not_override_process_agent
+```
+
+On macOS outside the Nix build, `cargo test` may fail before tests run while the
+vendored `libghostty-vt` Zig build links against the SDK. In that case, at least
+verify patch application with `git apply --check .../patches/*.patch`, or run the
+tests through the Nix Herdr build environment.
