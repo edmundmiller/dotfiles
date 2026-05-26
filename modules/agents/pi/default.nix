@@ -59,6 +59,7 @@ let
     in
     if resolved.success then resolved.value else "op";
   opReadTimeoutSeconds = 15;
+  sessionSearchFiles = import ./session-search.nix { inherit lib; };
   dotenvPython = pkgs.python3;
   piRequiredSecretKeys = lib.unique (
     cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
@@ -313,7 +314,10 @@ let
   piConflictAssertions = [
     {
       assertion =
-        !(hasPiPackage "~/.config/dotfiles/packages/pi-packages/pi-beads" && hasPiPackage "npm:@tintinweb/pi-tasks");
+        !(
+          hasPiPackage "~/.config/dotfiles/packages/pi-packages/pi-beads"
+          && hasPiPackage "npm:@tintinweb/pi-tasks"
+        );
       message = "Pi package conflict: both pi-beads and @tintinweb/pi-tasks register /tasks. Keep exactly one authoritative /tasks provider.";
     }
     {
@@ -485,6 +489,9 @@ in
             ".pi/agent/settings.json".text = piSettingsValidated;
             ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
             ".pi/agent/pi-permissions.jsonc".source = "${configDir}/pi/pi-permissions.jsonc";
+          }
+          // sessionSearchFiles
+          // {
             ".pi/agent/extensions/pi-permission-system/config.json".text = builtins.toJSON {
               debugLog = false;
               permissionReviewLog = true;
@@ -536,7 +543,8 @@ in
             # Source stays mutable in packages/pi-packages/, only deps are store-managed
             ".config/dotfiles/packages/pi-packages/pi-agentmap/node_modules".source =
               "${piPkgDeps.pi-agentmap}/node_modules";
-            ".config/dotfiles/packages/pi-packages/pi-dcp/node_modules".source = "${piPkgDeps.pi-dcp}/node_modules";
+            ".config/dotfiles/packages/pi-packages/pi-dcp/node_modules".source =
+              "${piPkgDeps.pi-dcp}/node_modules";
           };
 
         # Clean stale local extensions that conflict with package-provided ones
