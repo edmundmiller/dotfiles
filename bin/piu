@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Update Pi user packages/extensions by default. The Pi binary itself is
+# Nix-managed in this dotfiles setup, so plain `pi update` self-update fails.
+pi_bin="${PI_BIN:-pi}"
+
+if [ "$#" -eq 0 ]; then
+  exec "$pi_bin" update --extensions
+fi
+
+exec "$pi_bin" update "$@"
