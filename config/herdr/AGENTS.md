@@ -34,11 +34,11 @@ next_tab = "prefix+n"
 
 [[keys.command]]
 key = "prefix+["
-command = "herdr-hunk"
+command = "herdr hunk"
 
 [[keys.command]]
 key = "prefix+]"
-command = "herdr-hunk --tab"
+command = "herdr hunk --tab"
 ```
 
 Meaning:
@@ -59,14 +59,11 @@ Meaning:
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
 - Keep worktree layout seeding on `[worktrees].post_create_command`; do not reintroduce custom prompt keybindings or AppleScript dialogs.
-- `bin/herdr-workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
+- `herdr workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
 
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
-- `bin/herdr-hunk` implements Hunk split/tab launch behavior.
-- `bin/herdr-worktree-layout` implements post-create tab seeding for the native worktree flow.
-- `bin/herdr-tab` remains available for experiments; active tab movement uses Herdr built-ins.
-- `bin/herdr-workspace` remains experimental and is not part of the active keymap.
-- `bin/herdr-self-test` is the preferred agent entrypoint for helper-script tests.
-- `packages/herdr/AGENTS.md` covers Nix packaging of the upstream Herdr binary, not runtime keybindings.
+- `herdr hunk` implements Hunk split/tab launch behavior.
+- `herdr worktree layout` implements post-create tab seeding for the native worktree flow.
+- `overlays/herdr/default.nix` patches upstream Herdr; local helper behavior lives inside the Herdr binary.
