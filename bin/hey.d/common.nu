@@ -103,6 +103,46 @@ export def check-flake-lock [] {
   }
 }
 
+
+export def local-skill-leaks [] {
+  let ctx = (context)
+  let local_dir = ($ctx.flake_dir | path join ".agents" "skills")
+  let global_dir = ($env.HOME | path join ".agents" "skills")
+
+  if not ($local_dir | path exists) {
+    return []
+  }
+
+  ls $local_dir
+  | where type == dir
+  | each {|entry|
+      let name = ($entry.name | path basename)
+      let local_skill = ($entry.name | path join "SKILL.md")
+      let global_skill = ($global_dir | path join $name "SKILL.md")
+      if (($local_skill | path exists) and ($global_skill | path exists)) {
+        $name
+      } else {
+        null
+      }
+    }
+  | compact
+  | sort
+}
+
+export def check-local-skill-leaks [] {
+  let leaks = (local-skill-leaks)
+  if not ($leaks | is-empty) {
+    print -e "error: dotfiles project-local skills leaked into ~/.agents/skills:"
+    for leak in $leaks {
+      print -e $"  - ($leak)"
+    }
+    print -e ""
+    print -e "These skills come from .agents/skills/ and must remain project-local to this repo."
+    print -e "Run `hey skills-cleanup-local-leaks`, then retry `hey re`."
+    error make {msg: "project-local skills leaked into global skills target"}
+  }
+}
+
 export def system-rebuild [action: string, ...args: string] {
   let ctx = (context)
   let agent_mode = (
