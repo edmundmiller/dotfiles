@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
@@ -85,5 +86,64 @@ def main() -> None:
     os.execvp(herdr, [herdr, "tab", "focus", tab_id])
 
 
+def _sample_tab_payload() -> dict[str, Any]:
+    return {
+        "result": {
+            "tabs": [
+                {"tab_id": "t1", "workspace_id": "w1", "number": 1, "focused": False},
+                {"tab_id": "t2", "workspace_id": "w1", "number": 2, "focused": True},
+                {"tab_id": "t3", "workspace_id": "w1", "number": 3, "focused": False},
+                {"tab_id": "other", "workspace_id": "w2", "number": 1, "focused": True},
+            ]
+        }
+    }
+
+
+def test_target_tab_id_cycles_next() -> None:
+    assert target_tab_id(_sample_tab_payload(), "w1", "next") == "t3"
+
+
+def test_target_tab_id_cycles_previous() -> None:
+    assert target_tab_id(_sample_tab_payload(), "w1", "previous") == "t1"
+
+
+def test_target_tab_id_wraps() -> None:
+    payload = _sample_tab_payload()
+    for tab in payload["result"]["tabs"]:
+        tab["focused"] = tab["tab_id"] == "t3"
+    assert target_tab_id(payload, "w1", "next") == "t1"
+
+
+def test_focused_workspace_prefers_environment(monkeypatch) -> None:
+    monkeypatch.setenv("HERDR_ACTIVE_WORKSPACE_ID", "from-env")
+    assert focused_workspace_id("missing-herdr") == "from-env"
+
+
+def run_self_test() -> int:
+    import shutil
+    import tempfile
+
+    try:
+        import pytest
+    except ImportError:
+        eprint = getattr(sys.modules[__name__], "eprint", None)
+        message = (
+            f"{PROG}: pytest is required for --self-test; run via "
+            f"`uv run --with pytest --script {Path(__file__).name} --self-test`"
+        )
+        if eprint:
+            eprint(message.removeprefix(f"{PROG}: "))
+        else:
+            print(message, file=sys.stderr)
+        return 1
+
+    with tempfile.TemporaryDirectory(prefix=f"{PROG}-self-test-") as tempdir:
+        test_file = Path(tempdir) / f"{PROG}.py"
+        shutil.copy2(__file__, test_file)
+        return pytest.main([str(test_file)])
+
+
 if __name__ == "__main__":
+    if "--self-test" in sys.argv[1:]:
+        raise SystemExit(run_self_test())
     main()

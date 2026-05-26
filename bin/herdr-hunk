@@ -288,5 +288,71 @@ def main() -> None:
     subprocess.run([herdr, "pane", "run", target_pane, command], check=True)
 
 
+def test_parse_args_keeps_pass_through(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "argv", [PROG, "--staged", "--", "--stat", "src"])
+    args = parse_args()
+    assert args.mode == "staged"
+    assert args.tab is False
+    assert args.hunk_args == ["--stat", "src"]
+
+
+def test_parse_args_allows_unknown_hunk_flags(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "argv", [PROG, "--tab", "--name-only"])
+    args = parse_args()
+    assert args.tab is True
+    assert args.mode == "worktree"
+    assert args.hunk_args == ["--name-only"]
+
+
+def test_find_pane_id_walks_nested_response() -> None:
+    payload = {"result": {"tab": {"root": {"pane_id": "pane-123"}}}}
+    assert find_pane_id(payload) == "pane-123"
+
+
+def test_shell_command_quotes_paths_and_args(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("PATH", os.environ.get("PATH", ""))
+    fake_hunk = tmp_path / "hunk"
+    fake_hunk.write_text("#!/usr/bin/env bash\nexit 0\n")
+    fake_hunk.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ.get('PATH', '')}")
+    root = tmp_path / "repo with spaces"
+    root.mkdir()
+    command = shell_command(root, ["diff", "--staged", "path with spaces"])
+    assert (
+        command
+        == f"cd {shlex.quote(str(root))} && hunk diff --staged 'path with spaces'"
+    )
+
+
+def test_review_args_staged_keeps_passthrough(tmp_path) -> None:
+    assert review_args("staged", ["--stat"], tmp_path) == ["diff", "--staged", "--stat"]
+
+
+def run_self_test() -> int:
+    import shutil
+    import tempfile
+
+    try:
+        import pytest
+    except ImportError:
+        eprint = getattr(sys.modules[__name__], "eprint", None)
+        message = (
+            f"{PROG}: pytest is required for --self-test; run via "
+            f"`uv run --with pytest --script {Path(__file__).name} --self-test`"
+        )
+        if eprint:
+            eprint(message.removeprefix(f"{PROG}: "))
+        else:
+            print(message, file=sys.stderr)
+        return 1
+
+    with tempfile.TemporaryDirectory(prefix=f"{PROG}-self-test-") as tempdir:
+        test_file = Path(tempdir) / f"{PROG}.py"
+        shutil.copy2(__file__, test_file)
+        return pytest.main([str(test_file)])
+
+
 if __name__ == "__main__":
+    if "--self-test" in sys.argv[1:]:
+        raise SystemExit(run_self_test())
     main()
