@@ -135,6 +135,8 @@ let
             if [ -x "$out/bin/pi" ]; then
               wrapProgram "$out/bin/pi" \
                 --run ${escapeShellArg "${piSecretPreflightScript}"} \
+                --set AGENT "1" \
+                --set PI_CODING_AGENT "true" \
                 --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
                 --unset SDKROOT
 
