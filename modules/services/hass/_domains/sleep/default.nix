@@ -1,20 +1,20 @@
-# Sleep domain — bedtime progression, bed presence, wake detection (manual Good Morning)
+# Sleep domain — alarm-driven circadian sleep lifecycle, wake detection, manual Good Morning
 #
 # Owns the full sleep/wake lifecycle:
 #   - input_boolean.goodnight (night mode toggle)
 #   - input_boolean.edmund_awake / monica_awake (wake detection)
-#   - Scenes: Winding Down → In Bed → Sleep → Good Morning
-#   - Automations: bedtime, 8Sleep sync, wake detection
+#   - Circadian phase helpers (applied once per alarm schedule)
+#   - Scenes: Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning
+#   - Automations: circadian homeostasis, 8Sleep sync, wake detection
 #
-# Three-stage bedtime flow:
-#   1. Winding Down  — get ready for bed (night light stays on for navigation)
-#   2. In Bed        — settled in, audiobook time (whitenoise on, lights off)
-#   3. Sleep         — done with audiobook, out cold (whitenoise stays)
+# Alarm-driven flow (see modules/services/hass/docs/adr/0001-*):
+#   Winding Down      ← Sleep - 60 minutes (soft circadian cueing)
+#   Get Ready for Bed ← Good Night - 10 minutes
+#   Good Night        ← Sleep - 15 minutes (fall-asleep buffer)
+#   Sleep             ← next Edmund iPhone alarm - 6 × 90-minute cycles
 #
-# Triggers:
-#   Winding Down  ← 10:00 PM daily
-#   In Bed        ← bed presence (Monica, 2 min)
-#   Sleep         ← manual or future: audiobook stops / sleep focus activates
+# Homeostasis checks run every 5 minutes between 8 PM and midnight when
+# Edmund is home. Each phase is applied once per next-alarm schedule.
 #
 # Apple integration (iPhone ↔ 8Sleep):
 #   iPhone alarm sensor  → set_one_off_alarm on 8Sleep (keeps them in sync)

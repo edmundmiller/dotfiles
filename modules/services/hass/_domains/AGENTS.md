@@ -42,7 +42,7 @@ These automations have inline actions by design — do not refactor them into sc
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
 - `modes.nix` — DND, guest mode, everything_off script
 - `pura.nix` — Pura diffuser routines (arrive-home freshen script + automation)
-- `sleep/` — Sleep lifecycle: goodnight toggle, awake helper booleans, scenes (Winding Down → In Bed → Sleep → Good Morning), Apple↔8Sleep sync, wake detection tracking. Auto-Good-Morning flow intentionally removed.
+- `sleep/` — Sleep lifecycle: goodnight toggle, awake helper booleans, circadian phases (Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning), Apple↔8Sleep sync, wake detection tracking. Auto-Good-Morning flow intentionally removed.
 - `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 
@@ -52,7 +52,7 @@ These automations have inline actions by design — do not refactor them into sc
 sleep/ (input_boolean.goodnight, input_boolean.*_awake)
   ├── ambient.nix reads goodnight for presence scene conditions
   ├── modes.nix everything_off delegates to Winding Down scene
-  ├── lighting.nix AL sleep mode: time-based triggers; scenes handle the goodnight path
+  ├── lighting.nix AL sleep mode: currently time-based triggers; sleep lifecycle may move these toward alarm-relative circadian timing
   ├── conversation.nix GoodMorning voice intent calls scene.good_morning directly
   └── tv.nix reads goodnight for idle auto-off condition
 vacation.nix (input_boolean.vacation_mode)
@@ -98,8 +98,8 @@ Configured in `lighting.nix`. One "Living Space" switch covers all color-temp li
 - Brightness: 20% min → 100% max
 - Sleep mode: 10% brightness, 1000K (deep warm red, melatonin-friendly)
 - `take_over_control: true` — manual adjustments pause AL for that light
-- Sleep mode schedule: **on at 10:00 PM**, **off at 7:00 AM** (hard cutoff) — time-based automations in `lighting.nix`
-- Sleep mode also embedded in scenes: Winding Down/In Bed/Sleep → on, Good Morning → off
+- Sleep mode schedule: currently **on at 10:00 PM**, **off at 7:00 AM** (hard cutoff) via time-based automations in `lighting.nix`; new sleep lifecycle work should move bedtime behavior toward alarm-relative circadian timing
+- Sleep mode also embedded in scenes: bedtime phases → on, Good Morning → off
 
 ### HA entities
 
