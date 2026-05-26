@@ -10,6 +10,4 @@ in
   llm-agents = (prev.llm-agents or { }) // {
     inherit hunk;
   };
-
-  inherit hunk;
 }

@@ -224,7 +224,7 @@
               rtk
               workmux
               ;
-            inherit (pkgs) herdr hunk;
+            inherit (pkgs.llm-agents) herdr hunk;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -245,7 +245,7 @@
               rtk
               workmux
               ;
-            inherit (darwinPkgs) herdr hunk;
+            inherit (darwinPkgs.llm-agents) herdr hunk;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 

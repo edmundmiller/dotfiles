@@ -17,8 +17,6 @@ let
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
-in
-{
   herdr = herdrFromSource.overrideAttrs (old: {
     postPatch =
       (old.postPatch or "")
@@ -54,4 +52,9 @@ in
         SDKROOT = sdk;
       };
   });
+in
+{
+  llm-agents = (prev.llm-agents or { }) // {
+    inherit herdr;
+  };
 }
