@@ -699,14 +699,29 @@ in
     profiles = {
       anne = {
         authFile = "/home/emiller/.codex/auth.json";
-        environment.CODEX_HOME = "/home/emiller/.codex";
+        environment = {
+          CODEX_HOME = "/home/emiller/.codex";
+          WIKI_PATH = "/repos/mill-docs";
+        };
+        hostPathMounts = lib.mkForce {
+          "/home/emiller/mill-docs" = "/repos/mill-docs";
+          "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
+        };
         environmentFiles = [ "/run/hermes-anne-env/secrets.env" ];
       };
       betty = {
         authFile = "/home/emiller/.codex/auth.json";
-        environment.CODEX_HOME = "/home/emiller/.codex";
+        workingDirectory = "/repos/mill-docs";
+        environment = {
+          CODEX_HOME = "/home/emiller/.codex";
+          WIKI_PATH = "/repos/mill-docs";
+        };
+        hostPathMounts = lib.mkForce {
+          "/home/emiller/mill-docs" = "/repos/mill-docs";
+          "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
+          "${tnoteBaseRepo}" = "/repos/tnote";
+        };
         environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
-        workingDirectory = "/home/emiller/mill-docs";
       };
       scintillate = {
         authFile = "/home/emiller/.codex/auth.json";
@@ -715,34 +730,74 @@ in
         # path so default/legacy lookups and explicit config agree.
         workingDirectory = "/home/hermes/repos/obsidian-vault";
         settings = {
-          skills.config.wiki.path = lib.mkForce "/home/hermes/repos/obsidian-vault";
-          terminal.cwd = lib.mkForce "/home/hermes/repos/obsidian-vault";
+          skills.config.wiki.path = "/home/hermes/repos/obsidian-vault";
+          terminal.cwd = "/home/hermes/repos/obsidian-vault";
         };
         environment = {
           CODEX_HOME = "/home/emiller/.codex";
           PYTHONPATH = hermesTelegramPythonPath;
-          WIKI_PATH = "/home/hermes/repos/obsidian-vault";
+          WIKI_PATH = "/repos/obsidian-vault";
           TN_VAULT_PATH = "/home/hermes/repos/obsidian-vault";
         };
         hostPathMounts = lib.mkForce {
-          "/home/emiller/obsidian-vault" = "/home/hermes/repos/obsidian-vault";
+          "/home/emiller/mill-docs" = "/repos/mill-docs";
+          "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
+          "${tnoteBaseRepo}" = "/repos/tnote";
         };
         environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
       };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
         environment.CODEX_HOME = "/home/emiller/.codex";
+        hostPathMounts = lib.mkForce {
+          "/home/emiller/.config/dotfiles" = "/repos/dotfiles";
+          "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
+          "/home/emiller/src/personal/agents-workspace" = "/repos/agents-workspace";
+          "/home/emiller/src/personal/finances" = "/repos/finances";
+          "/home/emiller/src/personal/tailnet" = "/repos/tailnet";
+        };
         environmentFiles = [ "/run/hermes-amosburton-env/secrets.env" ];
       };
     };
   };
 
   systemd.services.hermes-gateway-anne.serviceConfig = {
-    ExecStartPre = [
+    ExecStartPre = lib.mkBefore [
+      (pkgs.writeShellScript "hermes-anne-repo-compat-links" ''
+        set -eu
+        install -d -o emiller -g users -m 0750 /var/lib/hermes-anne/home/repos
+        ln -sfn /repos/mill-docs /var/lib/hermes-anne/home/repos/mill-docs
+        ln -sfn /repos/obsidian-vault /var/lib/hermes-anne/home/repos/obsidian-vault
+        chown -h emiller:users /var/lib/hermes-anne/home/repos/mill-docs /var/lib/hermes-anne/home/repos/obsidian-vault
+      '')
       "${pkgs.coreutils}/bin/test -f /home/emiller/.codex/auth.json"
       "${pkgs.coreutils}/bin/test -f /var/lib/hermes-anne/.codex/auth.json"
     ];
   };
+
+  systemd.services.hermes-gateway-betty.serviceConfig.ExecStartPre = lib.mkBefore [
+    (pkgs.writeShellScript "hermes-betty-repo-compat-links" ''
+      set -eu
+      install -d -o emiller -g users -m 0750 /var/lib/hermes-betty/home/repos
+      ln -sfn /repos/mill-docs /var/lib/hermes-betty/home/repos/mill-docs
+      ln -sfn /repos/obsidian-vault /var/lib/hermes-betty/home/repos/obsidian-vault
+      ln -sfn /repos/tnote /var/lib/hermes-betty/home/repos/tnote
+      chown -h emiller:users /var/lib/hermes-betty/home/repos/mill-docs /var/lib/hermes-betty/home/repos/obsidian-vault /var/lib/hermes-betty/home/repos/tnote
+    '')
+  ];
+
+  systemd.services.hermes-gateway-amosburton.serviceConfig.ExecStartPre = lib.mkBefore [
+    (pkgs.writeShellScript "hermes-amosburton-repo-compat-links" ''
+      set -eu
+      install -d -o emiller -g users -m 0750 /var/lib/hermes-amosburton/home/repos
+      ln -sfn /repos/agents-workspace /var/lib/hermes-amosburton/home/repos/agents-workspace
+      ln -sfn /repos/dotfiles /var/lib/hermes-amosburton/home/repos/dotfiles
+      ln -sfn /repos/finances /var/lib/hermes-amosburton/home/repos/finances
+      ln -sfn /repos/obsidian-vault /var/lib/hermes-amosburton/home/repos/obsidian-vault
+      ln -sfn /repos/tailnet /var/lib/hermes-amosburton/home/repos/tailnet
+      chown -h emiller:users /var/lib/hermes-amosburton/home/repos/*
+    '')
+  ];
 
   systemd.services.hermes-gateway-scintillate = {
     # Scintillate is an interactive Telegram gateway.  A routine NixOS
@@ -750,23 +805,35 @@ in
     # "Gateway shutting down -- Your current task will be interrupted".
     # Apply unit/package changes on the next explicit service restart instead.
     restartIfChanged = false;
-    serviceConfig.ExecStartPre = lib.mkAfter [
-      (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
-        set -eu
-        env_file=/var/lib/hermes-scintillate/.hermes/.env
-        secrets_file=/run/hermes-scintillate-env/secrets.env
-        tmp_file="$env_file.tmp.$$"
+    serviceConfig.ExecStartPre = lib.mkMerge [
+      (lib.mkBefore [
+        (pkgs.writeShellScript "hermes-scintillate-repo-compat-links" ''
+          set -eu
+          install -d -o emiller -g users -m 0750 /var/lib/hermes-scintillate/home/repos
+          ln -sfn /repos/mill-docs /var/lib/hermes-scintillate/home/repos/mill-docs
+          ln -sfn /repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/obsidian-vault
+          ln -sfn /repos/tnote /var/lib/hermes-scintillate/home/repos/tnote
+          chown -h emiller:users /var/lib/hermes-scintillate/home/repos/mill-docs /var/lib/hermes-scintillate/home/repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/tnote
+        '')
+      ])
+      (lib.mkAfter [
+        (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
+          set -eu
+          env_file=/var/lib/hermes-scintillate/.hermes/.env
+          secrets_file=/run/hermes-scintillate-env/secrets.env
+          tmp_file="$env_file.tmp.$$"
 
-        install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
-        touch "$env_file"
-        chown emiller:users "$env_file"
-        chmod 0600 "$env_file"
+          install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
+          touch "$env_file"
+          chown emiller:users "$env_file"
+          chmod 0600 "$env_file"
 
-        grep -v '^TELEGRAM_' "$env_file" > "$tmp_file"
-        grep '^TELEGRAM_' "$secrets_file" >> "$tmp_file"
-        install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
-        rm -f "$tmp_file"
-      '')
+          grep -v '^TELEGRAM_' "$env_file" > "$tmp_file"
+          grep '^TELEGRAM_' "$secrets_file" >> "$tmp_file"
+          install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
+          rm -f "$tmp_file"
+        '')
+      ])
     ];
   };
 
