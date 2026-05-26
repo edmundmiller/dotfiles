@@ -22,13 +22,13 @@ next_tab = "prefix+n"
 [[keys.command]]
 key = "prefix+["
 type = "shell"
-command = "herdr-hunk"
+command = "herdr hunk"
 
 [[keys.command]]
 key = "prefix+]"
 type = "shell"
-command = "herdr-hunk --tab"
+command = "herdr hunk --tab"
 
 [worktrees]
 directory = "~/.local/share/herdr/worktrees"
-post_create_command = "herdr-worktree-layout"
+post_create_command = "herdr worktree layout"
