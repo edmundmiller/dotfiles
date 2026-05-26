@@ -1,0 +1,18 @@
+--- a/src/cli.rs	2026-05-25 22:30:20.267940044 -0500
++++ b/src/cli.rs	2026-05-25 22:29:13.089946197 -0500
+@@ -9,6 +9,7 @@
+ };
+
+ mod agent;
++mod dotfiles;
+ mod integration;
+ mod pane;
+ mod server;
+@@ -44,6 +45,7 @@
+         "pane" => pane::run_pane_command(&args[2..])?,
+         "wait" => run_wait_command(&args[2..])?,
+         "integration" => integration::run_integration_command(&args[2..])?,
++        "hunk" => dotfiles::run_hunk_command(&args[2..])?,
+         "session" => run_session_command(&args[2..])?,
+         _ => return Ok(CommandOutcome::NotCli),
+     };

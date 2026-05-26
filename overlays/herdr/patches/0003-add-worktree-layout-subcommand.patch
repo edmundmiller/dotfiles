@@ -1,0 +1,18 @@
+--- a/src/cli/worktree.rs	2026-05-25 22:30:20.267847586 -0500
++++ b/src/cli/worktree.rs	2026-05-25 22:29:13.090104447 -0500
+@@ -14,6 +14,7 @@
+         "create" => worktree_create(&args[1..]),
+         "open" => worktree_open(&args[1..]),
+         "remove" => worktree_remove(&args[1..]),
++        "layout" => super::dotfiles::run_worktree_layout_command(&args[1..]),
+         "help" | "--help" | "-h" => {
+             print_worktree_help();
+             Ok(0)
+@@ -305,6 +306,7 @@
+         "  herdr worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
+     );
+     eprintln!("  herdr worktree remove --workspace ID [--force] [--json]");
++    eprintln!("  herdr worktree layout [--no-pi] [--no-hunk] [--no-nvim] [branch]");
+ }
+
+ fn normalize_path_arg(value: &str) -> std::io::Result<String> {

@@ -411,39 +411,3 @@
 +fn print_worktree_layout_help() {
 +    eprintln!("usage: herdr worktree layout [--no-pi] [--no-hunk] [--no-nvim] [branch]");
 +}
---- a/src/cli/worktree.rs	2026-05-25 22:30:20.267847586 -0500
-+++ b/src/cli/worktree.rs	2026-05-25 22:29:13.090104447 -0500
-@@ -14,6 +14,7 @@
-         "create" => worktree_create(&args[1..]),
-         "open" => worktree_open(&args[1..]),
-         "remove" => worktree_remove(&args[1..]),
-+        "layout" => super::dotfiles::run_worktree_layout_command(&args[1..]),
-         "help" | "--help" | "-h" => {
-             print_worktree_help();
-             Ok(0)
-@@ -305,6 +306,7 @@
-         "  herdr worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
-     );
-     eprintln!("  herdr worktree remove --workspace ID [--force] [--json]");
-+    eprintln!("  herdr worktree layout [--no-pi] [--no-hunk] [--no-nvim] [branch]");
- }
-
- fn normalize_path_arg(value: &str) -> std::io::Result<String> {
---- a/src/cli.rs	2026-05-25 22:30:20.267940044 -0500
-+++ b/src/cli.rs	2026-05-25 22:29:13.089946197 -0500
-@@ -9,6 +9,7 @@
- };
-
- mod agent;
-+mod dotfiles;
- mod integration;
- mod pane;
- mod server;
-@@ -44,6 +45,7 @@
-         "pane" => pane::run_pane_command(&args[2..])?,
-         "wait" => run_wait_command(&args[2..])?,
-         "integration" => integration::run_integration_command(&args[2..])?,
-+        "hunk" => dotfiles::run_hunk_command(&args[2..])?,
-         "session" => run_session_command(&args[2..])?,
-         _ => return Ok(CommandOutcome::NotCli),
-     };
