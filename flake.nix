@@ -565,6 +565,36 @@
                 pass_filenames = false;
                 stages = [ "pre-push" ];
               };
+              br-sync-merge = {
+                enable = true;
+                name = "br-sync-merge";
+                entry = toString (
+                  pkgs.writeShellScript "br-sync-merge" ''
+                    set -eu
+
+                    if ! git rev-parse --verify ORIG_HEAD >/dev/null 2>&1; then
+                      echo "br-sync-merge: ORIG_HEAD unavailable; skipping" >&2
+                      exit 0
+                    fi
+
+                    changed_paths=$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD -- .beads 2>/dev/null || true)
+                    if [ -z "$changed_paths" ]; then
+                      echo "br-sync-merge: no .beads changes in rewrite/merge; skipping"
+                      exit 0
+                    fi
+
+                    echo "br-sync-merge: .beads changed; running br sync --merge --force"
+                    br sync --merge --force
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                always_run = true;
+                stages = [
+                  "post-merge"
+                  "post-rewrite"
+                ];
+              };
               ha-automation-assertions = {
                 enable = true;
                 name = "ha-automation-assertions";
