@@ -29,7 +29,7 @@ Hermes also loads external skills from `~/.agents/skills/` via `config/hermes/co
 Use two lanes only:
 
 - `skills/catalog/` — global/shared skills installed into `~/.agents/skills/`
-- `.agents/skills/` — project-local skills checked into a repo
+- `.agents/skills/` — project-local skills checked into this repo; never install these into `~/.agents/skills/`
 
 OpenClaw keeps its own skills in `~/.openclaw/skills/`.
 

@@ -1,6 +1,6 @@
 # Skills Catalog (Child Flake)
 
-Manages shared global skills via `agent-skills-nix`.
+Manages shared global skills via `agent-skills-nix`. Dotfiles project-local skills belong in `.agents/skills/`, not here, and must not be deployed globally.
 
 ## How It Works
 
@@ -12,9 +12,9 @@ Manages shared global skills via `agent-skills-nix`.
 
 **Hermes note:** Hermes builtin skills do not include these dotfiles shared skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.agents/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
 
-## Adding a Local Skill
+## Adding a Global Skill
 
-Drop a directory with `SKILL.md` into `skills/catalog/<name>/`. Auto-enabled via `skills.enableAll = ["local"]`.
+Drop a directory with `SKILL.md` into `skills/catalog/<name>/`. Use this only for skills that should be available across projects. Auto-enabled via `skills.enableAll = ["catalog"]`.
 
 ## Adding a Remote Skill
 

@@ -8,11 +8,13 @@ waiver_path: .agents/waivers/AGENT-07.md
 
 # Skill File Locations
 
-| Scope              | Path                                 | Notes                                          |
-| ------------------ | ------------------------------------ | ---------------------------------------------- |
-| Project            | `.agents/skills/<name>/SKILL.md`     | Cross-agent compatible (preferred)             |
-| Global (dotfiles)  | `skills/catalog/<name>/SKILL.md`     | Installed to `~/.agents/skills/` via Nix       |
-| Global (skills.sh) | `~/.agents/skills/`                  | Managed by `npx skills add`                    |
-| OpenClaw           | `~/.openclaw/skills/<name>/SKILL.md` | OpenClaw-specific; keep separate from dotfiles |
+| Scope              | Path                                 | Notes                                                   |
+| ------------------ | ------------------------------------ | ------------------------------------------------------- |
+| Project (dotfiles) | `.agents/skills/<name>/SKILL.md`     | Dotfiles project-local only; never install globally     |
+| Global (dotfiles)  | `skills/catalog/<name>/SKILL.md`     | Cross-project; installed to `~/.agents/skills/` via Nix |
+| Global (skills.sh) | `~/.agents/skills/`                  | Managed by `npx skills add`                             |
+| OpenClaw           | `~/.openclaw/skills/<name>/SKILL.md` | OpenClaw-specific; keep separate from dotfiles          |
 
 Each skill: `SKILL.md` with YAML frontmatter + optional `references/` dir.
+
+Dotfiles project-local skills must not appear in `~/.agents/skills/`. If `hey re` reports a leak, run `hey skills-cleanup-local-leaks` before rebuilding.

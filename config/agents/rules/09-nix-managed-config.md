@@ -10,13 +10,13 @@ waiver_path: .agents/waivers/AGENT-09.md
 
 Agent config files (`~/.pi/agent/`, `~/.claude/`, `~/.config/opencode/`) are **read-only Nix store symlinks**. Don't edit them directly — edit sources in this repo then `hey re`.
 
-| Runtime path                | Source                                    |
-| --------------------------- | ----------------------------------------- |
-| `~/.agents/skills/*`        | `skills/catalog/`                         |
-| `~/.pi/agent/settings.json` | `config/pi/settings.jsonc`                |
-| `~/.pi/agent/AGENTS.md`     | `config/agents/rules/*.md` (concatenated) |
-| `~/.pi/agent/extensions/*`  | `config/pi/extensions/*`                  |
-| `~/.claude/skills`          | symlink bridge to `~/.agents/skills`      |
-| `~/.claude/CLAUDE.md`       | `config/agents/rules/*.md` (concatenated) |
+| Runtime path                | Source                                                                                          |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| `~/.agents/skills/*`        | Global skills from `skills/catalog/` plus allowed manual global skills; never `.agents/skills/` |
+| `~/.pi/agent/settings.json` | `config/pi/settings.jsonc`                                                                      |
+| `~/.pi/agent/AGENTS.md`     | `config/agents/rules/*.md` (concatenated)                                                       |
+| `~/.pi/agent/extensions/*`  | `config/pi/extensions/*`                                                                        |
+| `~/.claude/skills`          | symlink bridge to `~/.agents/skills`                                                            |
+| `~/.claude/CLAUDE.md`       | `config/agents/rules/*.md` (concatenated)                                                       |
 
 Pi's "Could not save settings file" warning is expected and harmless.

@@ -7,7 +7,7 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 - **Global shared skills**: `skills/catalog/` → `~/.agents/skills`
 - **Skills sync workflow**: see `skills/AGENTS.md` (commit+push skill edits first, then run `hey skills-sync`, then commit+push lockfile updates)
 - **Claude compatibility bridge**: `~/.claude/skills` → `~/.agents/skills`
-- **Project-local skills**: `.agents/skills/`
+- **Project-local skills**: `.agents/skills/` (dotfiles-only; never global)
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`, `~/.config/opencode/agent`
 - **Rules**: `config/agents/rules/` → Concatenated into `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`, symlinked to `~/.config/opencode/rules`
 
@@ -23,7 +23,7 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 
 For global/shared skills, create `skills/catalog/<name>/SKILL.md`.
 
-For project-local skills, create `.agents/skills/<name>/SKILL.md`.
+For project-local skills that are only relevant to this dotfiles repo, create `.agents/skills/<name>/SKILL.md`; do not wire these into the global bundle.
 
 Example frontmatter:
 
