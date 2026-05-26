@@ -710,10 +710,22 @@ in
       };
       scintillate = {
         authFile = "/home/emiller/.codex/auth.json";
-        workingDirectory = "/home/emiller/obsidian-vault";
+        # Scintillate/Hermes tools have historically looked for repos under
+        # /home/hermes/repos. Mount the host vault directly at that container
+        # path so default/legacy lookups and explicit config agree.
+        workingDirectory = "/home/hermes/repos/obsidian-vault";
+        settings = {
+          skills.config.wiki.path = lib.mkForce "/home/hermes/repos/obsidian-vault";
+          terminal.cwd = lib.mkForce "/home/hermes/repos/obsidian-vault";
+        };
         environment = {
           CODEX_HOME = "/home/emiller/.codex";
           PYTHONPATH = hermesTelegramPythonPath;
+          WIKI_PATH = "/home/hermes/repos/obsidian-vault";
+          TN_VAULT_PATH = "/home/hermes/repos/obsidian-vault";
+        };
+        hostPathMounts = lib.mkForce {
+          "/home/emiller/obsidian-vault" = "/home/hermes/repos/obsidian-vault";
         };
         environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
       };
