@@ -523,6 +523,18 @@
                 enable = true;
                 package = config.treefmt.build.wrapper;
               };
+              check-merge-conflicts = {
+                enable = true;
+                stages = [ "pre-commit" ];
+              };
+              forbid-new-submodules = {
+                enable = true;
+                stages = [ "pre-push" ];
+              };
+              convco = {
+                enable = true;
+                stages = [ "commit-msg" ];
+              };
               br-sync = {
                 enable = true;
                 name = "br-sync";
