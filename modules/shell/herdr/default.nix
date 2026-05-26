@@ -19,6 +19,7 @@ let
     "${config.user.home}/.pixi/bin"
     "${config.user.home}/.cargo/bin"
     config.dotfiles.binDir
+    "${pkgs.uv}/bin"
     "/nix/var/nix/profiles/default/bin"
     "/usr/local/bin"
     "/usr/bin"
