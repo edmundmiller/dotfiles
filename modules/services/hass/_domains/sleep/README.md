@@ -1,31 +1,53 @@
 # Sleep Domain
 
-Bedtime progression + Apple↔8Sleep sync + wake detection, with **manual/voice Good Morning**.
+Alarm-driven circadian sleep lifecycle + Apple↔8Sleep sync + wake detection, with **manual/voice Good Morning**.
 
 Owns: `input_boolean.goodnight`, `input_boolean.edmund_awake`, `input_boolean.monica_awake`
 
-## Three-Stage Bedtime Flow
+Decision record: [`../../docs/adr/0001-alarm-driven-circadian-sleep-lifecycle.md`](../../docs/adr/0001-alarm-driven-circadian-sleep-lifecycle.md)
+
+## Alarm-Driven Circadian Flow
+
+The sleep lifecycle is driven by Edmund's next iPhone alarm when Edmund is home. A five-minute homeostasis check runs between 8 PM and midnight, targets six 90-minute sleep cycles by default, and applies each phase once per night.
+
+For a 7:30 AM wake time with the default 9h target:
 
 ```
-Winding Down  →  In Bed  →  Sleep
-(10:00 PM)       (bed presence)  (manual/future: audiobook stops)
+Winding Down  →  Get Ready for Bed  →  Good Night  →  Sleep  →  Wake
+(9:30 PM)        (10:05 PM)             (10:15 PM)     (10:30 PM) (7:30 AM)
 ```
+
+Timing rules:
+
+- **Sleep:** next alarm minus six 90-minute cycles (9h)
+- **Good Night:** Sleep minus 15 minutes (fall-asleep buffer)
+- **Get Ready for Bed:** Good Night minus 10 minutes (prep buffer)
+- **Winding Down:** Sleep minus 60 minutes (circadian prelude)
 
 ### 1. Winding Down
 
-- **Trigger:** 10:00 PM daily
-- **Actions:** Goodnight toggle on, house mode → Night, blinds close, night light stays on for navigation
-- **Scene:** Sets whitenoise off, AL sleep mode on
+- **Trigger:** Relative to calculated Sleep time, not fixed clock time
+- **Intent:** Passive circadian cueing
+- **Actions:** Soft dimming/warming only for now; no hard bedtime commitment
 
-### 2. In Bed
+### 2. Get Ready for Bed
 
-- **Trigger:** Monica's bed presence on for 2 minutes
-- **Actions:** All lights off, whitenoise on (audiobook time)
+- **Trigger:** Relative to calculated Good Night time
+- **Intent:** Active preparation before getting into bed
+- **Actions:** House/person prep for bed
 
-### 3. Sleep
+### 3. Good Night
 
-- **Trigger:** Manual (future: audiobook stops or Sleep Focus activates)
-- **Actions:** Deep sleep mode — everything quiet
+- **Trigger:** Relative to calculated Sleep time, or manual/voice activation
+- **Intent:** In-bed settling phase
+- **Actions:** Bedroom-focused settling; turn off bedroom lights; leave non-bedroom state alone unless explicitly part of the scene
+- **Alias note:** Historical/voice phrases such as “Ignite”, “Launch Sequence”, and the old **In Bed** path are retired; the canonical domain term is **Good Night**.
+
+### 4. Sleep
+
+- **Trigger:** Calculated Sleep time after the fall-asleep buffer
+- **Intent:** Final asleep state
+- **Actions:** Deep sleep mode — everything quiet/off as appropriate
 
 ## Wake Detection (Tracking Only)
 
@@ -70,12 +92,13 @@ Two automations keep iPhone alarms and 8Sleep alarms in sync:
 
 ### iPhone Sensors
 
-| Entity                                      | Notes                                     |
-| ------------------------------------------- | ----------------------------------------- |
-| `sensor.edmunds_iphone_next_alarm`          | Next alarm datetime                       |
-| `binary_sensor.edmunds_iphone_focus`        | Any focus active (Sleep, DND, Work)       |
-| `sensor.edmunds_iphone_battery_state`       | Charging / Not Charging                   |
-| `sensor.edmunds_iphone_activity`            | Stationary / Walking / Unknown            |
-| `sensor.edmunds_iphone_last_update_trigger` | Launch / Siri / Manual / Background Fetch |
+| Entity                                      | Notes                                                                      |
+| ------------------------------------------- | -------------------------------------------------------------------------- |
+| `sensor.edmunds_iphone_next_alarm`          | Next alarm datetime; primary source for circadian flow when Edmund is home |
+| `sensor.monicas_iphone_next_alarm`          | Future fallback source when Edmund is away and Monica is home              |
+| `binary_sensor.edmunds_iphone_focus`        | Any focus active (Sleep, DND, Work)                                        |
+| `sensor.edmunds_iphone_battery_state`       | Charging / Not Charging                                                    |
+| `sensor.edmunds_iphone_activity`            | Stationary / Walking / Unknown                                             |
+| `sensor.edmunds_iphone_last_update_trigger` | Launch / Siri / Manual / Background Fetch                                  |
 
 (Monica equivalents: replace `edmunds` with `monicas`)
