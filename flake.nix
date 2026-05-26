@@ -535,6 +535,16 @@
                 enable = true;
                 stages = [ "commit-msg" ];
               };
+              oxfmt = {
+                enable = true;
+                name = "oxfmt";
+                description = "Check JavaScript and TypeScript formatting with oxfmt";
+                entry = "${pkgs.oxfmt}/bin/oxfmt --check";
+                package = pkgs.oxfmt;
+                language = "system";
+                files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";
+                stages = [ "pre-commit" ];
+              };
               br-sync = {
                 enable = true;
                 name = "br-sync";
