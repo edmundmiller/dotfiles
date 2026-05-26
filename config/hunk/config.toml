@@ -1,4 +1,4 @@
-theme = "graphite"
+theme = "catppuccin-mocha"
 mode = "auto"
 exclude_untracked = false
 line_numbers = true

@@ -76,6 +76,12 @@
     llm-agents.inputs.nixpkgs.follows = "nixpkgs";
     llm-agents.inputs.systems.follows = "systems";
 
+    hunk = {
+      url = "github:modem-dev/hunk/v0.14.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.bun2nix.follows = "bun2nix";
+    };
+
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults.
     agents-workspace = {
@@ -194,6 +200,7 @@
         lib = lib.my;
 
         overlays = mapModules ./overlays import // {
+          hunk = import ./overlays/hunk { inherit inputs; };
           default = final: _prev: {
             unstable =
               if final.stdenv.isDarwin then

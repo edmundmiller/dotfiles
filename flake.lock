@@ -1047,6 +1047,30 @@
         "type": "github"
       }
     },
+    "hunk": {
+      "inputs": {
+        "bun2nix": [
+          "bun2nix"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779813365,
+        "narHash": "sha256-QNZ9IE3tsKDA6pic9gp6zsZCGpLROD9CcnIfYf2Mv0Y=",
+        "owner": "modem-dev",
+        "repo": "hunk",
+        "rev": "aab17a8f1a70f7d39412d9fd46c446b3ef1dc550",
+        "type": "github"
+      },
+      "original": {
+        "owner": "modem-dev",
+        "ref": "v0.14.0",
+        "repo": "hunk",
+        "type": "github"
+      }
+    },
     "hunk-repo": {
       "flake": false,
       "locked": {
@@ -1786,6 +1810,7 @@
         "git-hooks": "git-hooks",
         "google-workspace-cli": "google-workspace-cli",
         "home-manager": "home-manager_3",
+        "hunk": "hunk",
         "llm-agents": "llm-agents",
         "llm-prompt": "llm-prompt",
         "nix-darwin": "nix-darwin",
