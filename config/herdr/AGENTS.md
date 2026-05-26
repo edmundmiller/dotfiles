@@ -68,4 +68,5 @@ Meaning:
 - `bin/herdr-worktree-layout` implements post-create tab seeding for the native worktree flow.
 - `bin/herdr-tab` remains available for experiments; active tab movement uses Herdr built-ins.
 - `bin/herdr-workspace` remains experimental and is not part of the active keymap.
+- `bin/herdr-self-test` is the preferred agent entrypoint for helper-script tests.
 - `packages/herdr/AGENTS.md` covers Nix packaging of the upstream Herdr binary, not runtime keybindings.
