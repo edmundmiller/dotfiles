@@ -1,0 +1,41 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Run self-tests for Herdr helper scripts."""
+
+from __future__ import annotations
+
+from pathlib import Path
+import subprocess
+import sys
+
+
+SCRIPTS = (
+    "herdr-hunk",
+    "herdr-tab",
+    "herdr-workspace",
+)
+
+
+def main() -> int:
+    root = Path(__file__).resolve().parent
+    failures: list[str] = []
+    for script in SCRIPTS:
+        path = root / script
+        print(f"==> {script} --self-test", flush=True)
+        result = subprocess.run(
+            ["uv", "run", "--with", "pytest", "--script", str(path), "--self-test"],
+            check=False,
+        )
+        if result.returncode != 0:
+            failures.append(script)
+    if failures:
+        print(f"herdr-self-test: failed: {', '.join(failures)}", file=sys.stderr)
+        return 1
+    print("herdr-self-test: all checks passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
