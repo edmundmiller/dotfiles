@@ -2,6 +2,7 @@ use ./common.nu *
 
 def "main rebuild" [action: string = "switch", ...args: string] {
   check-flake-lock
+  check-local-skill-leaks
   system-rebuild $action ...$args
   post-rebuild
 }

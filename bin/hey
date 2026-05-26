@@ -32,7 +32,7 @@ def hey-help [] {
   print "  ergodox-build, ergodox-flash, ergodox-build-flash, ergodox-edit, ergodox-draw, ergodox-info"
   print ""
   print "Skills"
-  print "  skills-update, skills-sync, skills-bump, skillkit-sync"
+  print "  skills-update, skills-sync, skills-bump, skills-cleanup-local-leaks, skillkit-sync"
   print ""
   print "Benchmark/Test"
   print "  ztest"

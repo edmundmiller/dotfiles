@@ -338,26 +338,12 @@
                   # Package-owned skill: keep source next to the jut implementation,
                   # but install it through the shared agent-skills catalog.
                   programs.agent-skills = {
-                    sources = {
-                      jut = {
-                        path = ./packages/jut/skill;
-                        subdir = ".";
-                        filter.maxDepth = 1;
-                      };
-
-                      # Repo-local cross-agent skills. These should be part of
-                      # the normal Home Manager agent-skills activation, so
-                      # `hey re` deploys updates to ~/.agents/skills.
-                      repo-agents = {
-                        path = ./.agents/skills;
-                        subdir = ".";
-                        filter.maxDepth = 1;
-                      };
+                    sources.jut = {
+                      path = ./packages/jut/skill;
+                      subdir = ".";
+                      filter.maxDepth = 1;
                     };
-                    skills.enableAll = [
-                      "jut"
-                      "repo-agents"
-                    ];
+                    skills.enableAll = [ "jut" ];
                   };
                 }
               ];
@@ -409,26 +395,12 @@
                   # Package-owned skill: keep source next to the jut implementation,
                   # but install it through the shared agent-skills catalog.
                   programs.agent-skills = {
-                    sources = {
-                      jut = {
-                        path = ./packages/jut/skill;
-                        subdir = ".";
-                        filter.maxDepth = 1;
-                      };
-
-                      # Repo-local cross-agent skills. These should be part of
-                      # the normal Home Manager agent-skills activation, so
-                      # `hey re` deploys updates to ~/.agents/skills.
-                      repo-agents = {
-                        path = ./.agents/skills;
-                        subdir = ".";
-                        filter.maxDepth = 1;
-                      };
+                    sources.jut = {
+                      path = ./packages/jut/skill;
+                      subdir = ".";
+                      filter.maxDepth = 1;
                     };
-                    skills.enableAll = [
-                      "jut"
-                      "repo-agents"
-                    ];
+                    skills.enableAll = [ "jut" ];
                   };
                 }
               ];
