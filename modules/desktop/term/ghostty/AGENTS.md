@@ -26,7 +26,7 @@ config/ghostty/
 - **macOS:** Installed via Homebrew cask, not nixpkgs
 - **Linux:** Uses `inputs.ghostty.packages.x86_64-linux.default`
 - **Generated files:** config, keybindings.conf, behavior.conf (others symlinked)
-- **PATH injection:** behavior.conf gets nix paths appended for tmux discovery
+- **PATH injection:** behavior.conf gets nix paths appended for startup command discovery
 
 ## Extension Pattern
 
@@ -56,9 +56,15 @@ modules.desktop.term.ghostty.configInit = ''
 | `keybindingsInit` | lines        | Inline keybindings appended           |
 | `configInit`      | lines        | Inline config appended to main config |
 
+## Startup Ownership
+
+Ghostty should have exactly one workspace owner. When `modules.shell.herdr.enable = true`, Ghostty starts `~/.config/tmux/open-herdr.sh` and Herdr owns the terminal. Do not add a tmux fallback to the Herdr launcher or route Ghostty through tmux in this mode; that recreates the bad `Ghostty -> Herdr helper -> tmux -> Herdr` nesting loop.
+
+When Herdr is disabled, tmux/jmux should own startup directly. Precedence is: Herdr when enabled; otherwise jmux if enabled; otherwise plain tmux. Do not make one owner fall back into another.
+
 ## Common Issues
 
-**tmux not found** → PATH injection in behavior.conf should fix; verify after rebuild
+**Startup command not found** → PATH injection in behavior.conf should fix; verify after rebuild
 
 **Keybinding conflicts** → Later files/init override earlier (pi's shift+enter vs OpenCode's)
 

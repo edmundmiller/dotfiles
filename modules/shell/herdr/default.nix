@@ -308,17 +308,10 @@ in
           export HERDR_BIN_PATH="$herdr_cmd"
 
           if command -v "$herdr_cmd" >/dev/null 2>&1; then
-            if "$herdr_cmd"; then
-              exit 0
-            fi
+            exec "$herdr_cmd"
           fi
 
-          # Safety fallback: if herdr is unavailable or fails, prefer tmux when present,
-          # otherwise drop into the user's login shell.
-          if command -v tmux >/dev/null 2>&1; then
-            exec tmux new-session -A -s home
-          fi
-
+          echo "open-herdr.sh: herdr command not found: $herdr_cmd" >&2
           exec "''${SHELL:-${pkgs.bashInteractive}/bin/bash}" -l
         '';
       };
