@@ -15,6 +15,14 @@ After edits, update the live config if needed and reload:
 herdr server reload-config
 ```
 
+To inspect upstream/default keybindings for the currently installed Herdr:
+
+```bash
+herdr --default-config
+# Or just the keys section:
+herdr --default-config | sed -n '/^\[keys\]/,/^\[/p'
+```
+
 ## Current keybinding conventions
 
 Current preferred keys:
@@ -24,6 +32,7 @@ Current preferred keys:
 prefix = "ctrl+c"
 new_workspace = "prefix+w"
 new_worktree = "prefix+g"
+goto = "prefix+f"
 open_worktree = "prefix+G"
 workspace_picker = "prefix+O"
 split_horizontal = "prefix+-"
@@ -46,6 +55,7 @@ Meaning:
 - `prefix+w` creates a workspace.
 - `prefix+g` creates a worktree with Herdr's native prompt, then `worktrees.post_create_command` opens Pi + Hunk + Neovim + shell tabs.
 - `prefix+G` opens an existing worktree.
+- `prefix+f` opens Herdr goto/navigation.
 - `prefix+-` splits horizontally.
 - `prefix+b` toggles the sidebar.
 - `prefix+p` / `prefix+n` move to previous/next tab via Herdr built-ins.
