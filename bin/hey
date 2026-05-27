@@ -24,7 +24,7 @@ def hey-help [] {
   print ""
   print "Remote"
   print "  deploy, deploy-dry, deploy-check"
-  print "  nuc, rebuild-nuc, nuc-test, nuc-ssh, nuc-status, nuc-service, nuc-logs, nuc-rollback, nuc-generations"
+  print "  nuc, rebuild-nuc, nuc-test, nuc-worktree/nuc-wt [mode], nuc-ssh, nuc-status, nuc-service, nuc-logs, nuc-rollback, nuc-generations"
   print "  unas, unas-ssh"
   print "  agents-rollout"
   print ""
