@@ -37,6 +37,7 @@ let
         prefix = "${cfg.prefix}"
         new_workspace = "prefix+w"
         new_worktree = "prefix+g"
+        goto = ""
         open_worktree = "prefix+G"
         workspace_picker = "prefix+O"
         split_horizontal = "prefix+-"
@@ -413,6 +414,7 @@ in
               "prefix": prefix,
               "new_workspace": "prefix+w",
               "new_worktree": "prefix+g",
+              "goto": "",
               "open_worktree": "prefix+G",
               "workspace_picker": "prefix+O",
               "split_horizontal": "prefix+-",
