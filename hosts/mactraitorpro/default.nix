@@ -99,6 +99,7 @@
       services = {
         obsidian-sync.enable = false;
         docker.enable = true;
+        mosh.enable = true;
         tailscale.enable = true;
         ssh.enable = true;
         kittylitter = {
