@@ -4,6 +4,13 @@ name = "catppuccin"
 [ui.toast]
 delivery = "herdr"
 
+
+[session]
+resume_agents_on_restore = true
+
+[experimental]
+pane_history = true
+
 [keys]
 # Show upstream defaults with: herdr --default-config
 # Upstream Herdr defaults use ctrl+b as the prefix, prefix+g for goto,
