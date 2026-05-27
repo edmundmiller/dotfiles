@@ -1,0 +1,39 @@
+packages/stack/package-lock.json
+  ai_agent 1-503
+packages/stack/default.nix
+  s_ed2c8f7608bac9::t_9f26361a3145a9 1-4,7-14,16-17,24,29,44-51
+  s_ed2c8f7608bac9::t_b9c5c4844920e4 5-6,30-43
+  s_ed2c8f7608bac9::t_0f6ea9c7e64d64 15
+  s_ed2c8f7608bac9::t_ad1b4c72b376d7 18-19,21-22
+  s_ed2c8f7608bac9::t_91a5dfef5498fe 20
+  s_ed2c8f7608bac9::t_eeece614a4b406 23
+  s_ed2c8f7608bac9::t_e69f6d9970706e 25-28
+skills/flake.lock
+  ai_agent 334-335,353-367
+modules/shell/git/AGENTS.md
+  s_ed2c8f7608bac9::t_4096b7c7ddbbad 9
+skills/flake.nix
+  s_ed2c8f7608bac9::t_1d3a6a897debc4 85-89,102,156-159,292-296,323-325
+  s_ed2c8f7608bac9::t_747b0caafab62d 115-120,147-155,290-291
+flake.lock
+  ai_agent 1804-1805,1817-1832
+modules/shell/git/default.nix
+  s_ed2c8f7608bac9::t_3a9315ddc46429 20
+  s_ed2c8f7608bac9::t_60e633aee4fdc5 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "33929439ef9f8f24ac2887ad62b8dd47fbf98846",
+  "prompts": {},
+  "sessions": {
+    "s_ed2c8f7608bac9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e18bf-945b-7068-9019-4ea88f533093",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
