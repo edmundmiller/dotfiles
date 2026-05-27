@@ -93,10 +93,17 @@ modules.desktop.term.ghostty.keybindingsInit = mkIf ghosttyCfg.enable ''
 
 Use `mkBefore` to prepend or `mkAfter` to append relative to other modules.
 
+## Startup Ownership
+
+Ghostty should have exactly one workspace owner:
+
+- If Herdr is enabled, Ghostty starts `~/.config/tmux/open-herdr.sh` and Herdr owns the terminal. The Herdr launcher must not fall back to tmux; otherwise a failed/exited Herdr launch can attach tmux and allow Herdr to be started inside tmux, creating `Ghostty -> Herdr helper -> tmux -> Herdr`.
+- If Herdr is disabled, tmux/jmux should own startup directly. Precedence is: Herdr when enabled; otherwise jmux if enabled; otherwise plain tmux. Do not make one owner fall back into another.
+
 ## PATH Injection
 
 Ghostty's `command` directive runs before shell profiles load (`--noprofile --norc`).
-This module injects PATH into `behavior.conf` so nix-managed commands like `tmux` are found:
+This module injects PATH into `behavior.conf` so nix-managed startup commands are found:
 
 ```
 env=PATH=/Users/<user>/.nix-profile/bin:/etc/profiles/per-user/<user>/bin:...
