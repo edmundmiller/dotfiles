@@ -16,6 +16,8 @@ let
     concatStringsSep
     ;
 
+  inherit (pkgs.lib) hasInfix;
+
   haConfig = nixosConfig.config.services.home-assistant.config;
   automations = haConfig.automation;
   scenes = haConfig.scene;
@@ -140,6 +142,14 @@ let
     {
       test = refreshEightSleepWakeSchedule != null;
       msg = "automation 'refresh_eight_sleep_wake_schedule' missing";
+    }
+    {
+      test = hasInfix "latest_wake - 30 * 60" (circadianSleepHomeostasis.variables.ideal_wake_ts or "");
+      msg = "circadian_sleep_homeostasis must compute ideal wake as latest wake minus 30-minute smart window";
+    }
+    {
+      test = hasInfix "ideal_wake - 6 * 90 * 60" (circadianSleepHomeostasis.variables.sleep_ts or "");
+      msg = "circadian_sleep_homeostasis must target six 90-minute cycles before ideal wake";
     }
     {
       test = voiceWebhookSleep == null;
