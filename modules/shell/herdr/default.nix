@@ -314,6 +314,22 @@ in
           export HERDR_BIN_PATH="$herdr_cmd"
 
           if command -v "$herdr_cmd" >/dev/null 2>&1; then
+            state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/herdr"
+            version_stamp="$state_dir/launcher-version"
+            current_version="$($herdr_cmd --version 2>/dev/null || true)"
+
+            # Herdr client/server protocol changes require a server restart. Herdr
+            # does not currently expose the protocol version separately, so use the
+            # managed binary version as a cheap compatibility stamp before attach.
+            if [[ -n "$current_version" ]]; then
+              mkdir -p "$state_dir"
+              previous_version="$(cat "$version_stamp" 2>/dev/null || true)"
+              if [[ -n "$previous_version" && "$previous_version" != "$current_version" ]]; then
+                "$herdr_cmd" session stop >/dev/null 2>&1 || true
+              fi
+              printf '%s\n' "$current_version" > "$version_stamp"
+            fi
+
             exec "$herdr_cmd"
           fi
 
