@@ -7,8 +7,8 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "420925d141c8805e610eb0d62d49d8b9b483d961";
-      hash = "sha256-pC/FFMWRK+VdOsUZlmKWADnbezdoy9ecEqZsSy9CJvw=";
+      rev = "8180d76b30ca4281bdf2b43ff0316406f284413e";
+      hash = "sha256-bf1sVfGgfqpQYTRU2m0K/o2HEq5DV3R7nW5Lgll3+wI=";
     };
     patches = [
       ./patches/0001-worktree-post-create-command.patch
@@ -16,8 +16,7 @@ let
       ./patches/0003-add-worktree-layout-subcommand.patch
       ./patches/0004-add-hunk-subcommand.patch
       ./patches/0005-fix-hermes-detection.patch
-      ./patches/0006-detect-hermes-from-screen-chrome.patch
-      ./patches/0007-test-hermes-screen-override.patch
+      ./patches/0006-update-cargo-hash.patch
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
@@ -29,11 +28,11 @@ let
                   --replace-fail '.arg("build")' '.arg("build")
                       .arg("-Dcpu=baseline")' \
                   --replace-fail '.arg(format!("-Dtarget={zig_target}"))' "" \
-                  --replace-fail '.arg(format!("-Dversion-string={version_string}"));' '.arg(format!("-Dversion-string={version_string}"))
+                  --replace-fail '.arg(format!("-Dversion-string={version_string}"))' '.arg(format!("-Dversion-string={version_string}"))
                       .arg("--sysroot")
                       .arg("${sdk}")
                       .arg("--libc")
-                      .arg("darwin-libc.txt");'
+                      .arg("darwin-libc.txt")'
                 cat > vendor/libghostty-vt/darwin-libc.txt <<LIBC
         include_dir=${sdk}/usr/include
         sys_include_dir=${sdk}/usr/include
