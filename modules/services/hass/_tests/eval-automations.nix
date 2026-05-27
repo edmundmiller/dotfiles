@@ -42,6 +42,12 @@ let
   hasTimeTrigger =
     triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
 
+  hasEventTrigger =
+    automation: eventType:
+    any (t: (t.platform or null) == "event" && (t.event_type or null) == eventType) (
+      toList (automation.trigger or [ ])
+    );
+
   hasActionCall =
     actions: actionName:
     any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
@@ -49,6 +55,20 @@ let
   hasTimeGuard =
     conditions: target:
     any (c: (c.condition or null) == "time" && (c.after or null) == target) conditions;
+
+  hasTimeGuardDeep =
+    conditions: target:
+    any (
+      c:
+      ((c.condition or null) == "time" && (c.after or null) == target)
+      || (if c ? conditions then hasTimeGuardDeep (toList c.conditions) target else false)
+    ) conditions;
+
+  hasTimePatternTrigger =
+    automation: minutes:
+    any (t: (t.platform or null) == "time_pattern" && (t.minutes or null) == minutes) (
+      toList (automation.trigger or [ ])
+    );
 
   hasStateCondition =
     conditions: entityId: state:
@@ -152,6 +172,10 @@ let
       msg = "circadian_sleep_homeostasis must target six 90-minute cycles before ideal wake";
     }
     {
+      test = hasEventTrigger circadianSleepHomeostasis "sleep_homeostasis_test_tick";
+      msg = "circadian_sleep_homeostasis missing hidden sleep_homeostasis_test_tick debug trigger";
+    }
+    {
       test = voiceWebhookSleep == null;
       msg = "voice-facing Sleep webhook should be removed";
     }
@@ -222,15 +246,11 @@ let
     }
 
     {
-      test =
-        let
-          trigger = circadianSleepHomeostasis.trigger or { };
-        in
-        (trigger.platform or null) == "time_pattern" && (trigger.minutes or null) == "/5";
+      test = hasTimePatternTrigger circadianSleepHomeostasis "/5";
       msg = "circadian_sleep_homeostasis must trigger every 5 minutes";
     }
     {
-      test = hasTimeGuard (toList (circadianSleepHomeostasis.condition or [ ])) "20:00:00";
+      test = hasTimeGuardDeep (toList (circadianSleepHomeostasis.condition or [ ])) "20:00:00";
       msg = "circadian_sleep_homeostasis missing 8 PM time guard";
     }
     {

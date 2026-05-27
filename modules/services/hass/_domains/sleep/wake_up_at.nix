@@ -60,25 +60,44 @@ in
     }
 
     # Alarm-relative sleep lifecycle. Checks every 5 minutes 8 PM–midnight.
+    # Hidden debug hook: fire event `sleep_homeostasis_test_tick` with `{ now: ISO8601 }`
+    # to exercise the phase logic without changing the system clock.
     {
       alias = "Circadian Sleep Homeostasis";
       id = "circadian_sleep_homeostasis";
       description = "Alarm-driven Winding Down → Get Ready for Bed → Good Night → Sleep lifecycle";
       mode = "single";
-      trigger = {
-        platform = "time_pattern";
-        minutes = "/5";
-      };
-      condition = [
+      trigger = [
         {
-          condition = "time";
-          after = "20:00:00";
-          before = "00:00:00";
+          platform = "time_pattern";
+          minutes = "/5";
+          id = "schedule_tick";
         }
+        {
+          platform = "event";
+          event_type = "sleep_homeostasis_test_tick";
+          id = "test_tick";
+        }
+      ];
+      condition = [
         {
           condition = "state";
           entity_id = edmund.presence;
           state = "home";
+        }
+        {
+          condition = "or";
+          conditions = [
+            {
+              condition = "trigger";
+              id = "test_tick";
+            }
+            {
+              condition = "time";
+              after = "20:00:00";
+              before = "00:00:00";
+            }
+          ];
         }
       ];
       variables = {
@@ -93,7 +112,9 @@ in
         # to sibling variables such as `default_alarm_ts` or `alarm_ts`.
         alarm_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
@@ -104,7 +125,9 @@ in
         '';
         schedule_key = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
@@ -113,10 +136,16 @@ in
             default:{{ fallback | timestamp_custom('%Y-%m-%dT%H:%M:%S%z', true) }}
           {%- endif -%}
         '';
-        now_ts = "{{ now().timestamp() }}";
+        now_ts = ''
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {{ as_timestamp(base_now) }}
+        '';
         ideal_wake_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
@@ -124,7 +153,9 @@ in
         '';
         sleep_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
@@ -133,7 +164,9 @@ in
         '';
         winding_down_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
@@ -142,7 +175,9 @@ in
         '';
         goodnight_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
@@ -151,22 +186,58 @@ in
         '';
         get_ready_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
           {%- set ideal_wake = latest_wake - 30 * 60 -%}
           {{ ideal_wake - 6 * 90 * 60 - 25 * 60 }}
         '';
-        get_ready_done_ts = "{{ states.input_boolean.get_ready_for_bed_done.last_changed.timestamp() }}";
-        goodnight_done_ts = "{{ states.input_boolean.goodnight_done.last_changed.timestamp() }}";
+        # In normal operation, preserve real elapsed spacing from helper state changes.
+        # In hidden test ticks, use the phase target timestamps so replaying 21:50 →
+        # 22:00 → 22:15 immediately exercises the same lifecycle order without
+        # waiting real minutes between debug events.
+        get_ready_done_ts = ''
+          {%- if trigger.id == 'test_tick' -%}
+            {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+            {%- set test_now = trigger.event.data.now if trigger.event.data.now is defined else none -%}
+            {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+            {%- set wake = base_now + timedelta(days=1) -%}
+            {%- set weekend = wake.isoweekday() in [6, 7] -%}
+            {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+            {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+            {%- set ideal_wake = latest_wake - 30 * 60 -%}
+            {{ ideal_wake - 6 * 90 * 60 - 25 * 60 }}
+          {%- else -%}
+            {{ states.input_boolean.get_ready_for_bed_done.last_changed.timestamp() }}
+          {%- endif -%}
+        '';
+        goodnight_done_ts = ''
+          {%- if trigger.id == 'test_tick' -%}
+            {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+            {%- set test_now = trigger.event.data.now if trigger.event.data.now is defined else none -%}
+            {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+            {%- set wake = base_now + timedelta(days=1) -%}
+            {%- set weekend = wake.isoweekday() in [6, 7] -%}
+            {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+            {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+            {%- set ideal_wake = latest_wake - 30 * 60 -%}
+            {{ ideal_wake - 6 * 90 * 60 - 15 * 60 }}
+          {%- else -%}
+            {{ states.input_boolean.goodnight_done.last_changed.timestamp() }}
+          {%- endif -%}
+        '';
         active_key = "{{ states('input_text.sleep_schedule_key') }}";
         # Do not reference sibling `schedule_key` here: HA renders automation
         # variables independently. If this accidentally evaluates truthy on
         # every 5-minute tick, the helper booleans reset and notifications repeat.
         is_new_schedule = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
-          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {%- set wake = base_now + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
