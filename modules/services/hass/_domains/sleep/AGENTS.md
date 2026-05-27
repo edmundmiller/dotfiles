@@ -12,8 +12,8 @@ Owns the full sleep/wake lifecycle. See `README.md` for flow diagrams and `../..
 
 - Owns: `input_boolean.goodnight`, `input_boolean.edmund_awake`, `input_boolean.monica_awake`
 - Canonical bedtime lifecycle: Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning
-- Circadian driver: Edmund's next Eight Sleep alarm when Edmund is home; iOS next-alarm sync is declaratively disabled until we add an HA helper or Shortcut bridge
-- Timing model: 6 × 90-minute cycles by default; Winding Down = Sleep - 60m, Get Ready for Bed = Good Night - 10m, Good Night = Sleep - 15m
+- Circadian driver: Edmund's next Eight Sleep smart alarm when Edmund is home; iOS next-alarm sync is declaratively disabled until we add an HA helper or Shortcut bridge
+- Timing model: latest wake = Eight Sleep alarm, ideal wake = latest wake - 30m smart window, Sleep = ideal wake - 6 × 90-minute cycles; Winding Down = Sleep - 60m, Get Ready for Bed = Good Night - 10m, Good Night = Sleep - 15m
 - Homeostasis check: every 5 minutes between 8 PM and midnight; apply each phase once per night using helpers
 - Winding Down is soft circadian cueing only; do not set `input_boolean.goodnight` or hard-shutdown the house there
 - Good Night is the in-bed settling phase; historical/voice aliases like “Ignite” and the old In Bed path are retired, not canonical terms

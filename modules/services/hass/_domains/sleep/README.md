@@ -8,18 +8,20 @@ Decision record: [`../../docs/adr/0001-alarm-driven-circadian-sleep-lifecycle.md
 
 ## Alarm-Driven Circadian Flow
 
-The sleep lifecycle is currently driven by Edmund's next Eight Sleep alarm when Edmund is home. A five-minute homeostasis check runs between 8 PM and midnight, targets six 90-minute sleep cycles by default, and applies each phase once per night.
+The sleep lifecycle is currently driven by Edmund's next Eight Sleep smart alarm when Edmund is home. A five-minute homeostasis check runs between 8 PM and midnight, targets six 90-minute sleep cycles ending at the **start** of the smart-wake window, and applies each phase once per night.
 
-For a 7:45 AM wake time with the default 9h target:
+For a 7:45 AM latest wake time with the default 30-minute smart-alarm window:
 
 ```
-Winding Down  →  Get Ready for Bed  →  Good Night  →  Sleep  →  Wake
-(9:45 PM)        (10:20 PM)             (10:30 PM)     (10:45 PM) (7:45 AM)
+Winding Down  →  Get Ready for Bed  →  Good Night  →  Sleep  →  Smart Wake Window
+(9:15 PM)        (9:50 PM)              (10:00 PM)    (10:15 PM) (7:15–7:45 AM)
 ```
 
 Timing rules:
 
-- **Sleep:** next alarm minus six 90-minute cycles (9h)
+- **Latest Wake:** Eight Sleep alarm timestamp, or fallback latest wake time (7:45 AM weekdays / 8:00 AM weekends)
+- **Ideal Wake:** Latest Wake minus 30 minutes (start of smart-alarm window)
+- **Sleep:** Ideal Wake minus six 90-minute cycles (9h)
 - **Good Night:** Sleep minus 15 minutes (fall-asleep buffer)
 - **Get Ready for Bed:** Good Night minus 10 minutes (prep buffer)
 - **Winding Down:** Sleep minus 60 minutes (circadian prelude)
@@ -85,13 +87,13 @@ Current active integrations:
 
 ### 8Sleep
 
-| Entity                                                 | Notes                               |
-| ------------------------------------------------------ | ----------------------------------- |
-| `sensor.edmund_s_eight_sleep_side_sleep_stage`         | Service target for alarm calls      |
-| `sensor.edmund_s_eight_sleep_side_next_alarm`          | Current wake schedule source        |
-| `switch.edmund_s_eight_sleep_side_next_alarm`          | Alarm switch, currently unavailable |
-| `binary_sensor.edmund_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)           |
-| `binary_sensor.monica_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)           |
+| Entity                                                 | Notes                                |
+| ------------------------------------------------------ | ------------------------------------ |
+| `sensor.edmund_s_eight_sleep_side_sleep_stage`         | Service target for alarm calls       |
+| `sensor.edmund_s_eight_sleep_side_next_alarm`          | Latest wake / smart-alarm window end |
+| `switch.edmund_s_eight_sleep_side_next_alarm`          | Alarm switch, currently unavailable  |
+| `binary_sensor.edmund_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)            |
+| `binary_sensor.monica_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)            |
 
 ### iPhone Sensors
 
