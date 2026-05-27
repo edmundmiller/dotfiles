@@ -50,37 +50,65 @@ in
         raw_alarm = "{{ states('${edmund.nextAlarm}') }}";
         # Default wake time if Eight Sleep has no readable next alarm: 7:30 AM
         # for Monday-Friday wake days, 8:00 AM for Saturday/Sunday wake days.
-        default_alarm_ts = ''
+        #
+        # HA renders automation variables independently, so derived timestamps
+        # intentionally duplicate the wake-time expression instead of referring
+        # to sibling variables such as `default_alarm_ts` or `alarm_ts`.
+        alarm_ts = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {{ as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) }}
-        '';
-        # Prefer Eight Sleep's bed alarm when the integration exposes it; fall
-        # back to the declarative weekday/weekend default so the circadian rhythm
-        # still runs when the cloud alarm is temporarily unknown/unavailable.
-        alarm_ts = ''
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
-            {{ as_timestamp(raw_alarm, default_alarm_ts | float) }}
+            {{ as_timestamp(raw_alarm, fallback) }}
           {%- else -%}
-            {{ default_alarm_ts }}
+            {{ fallback }}
           {%- endif -%}
         '';
         schedule_key = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
             {{ raw_alarm }}
           {%- else -%}
-            default:{{ default_alarm_ts | float | timestamp_custom('%Y-%m-%dT%H:%M:%S%z', true) }}
+            default:{{ fallback | timestamp_custom('%Y-%m-%dT%H:%M:%S%z', true) }}
           {%- endif -%}
         '';
         now_ts = "{{ now().timestamp() }}";
-        sleep_ts = "{{ alarm_ts | float - 9 * 60 * 60 }}";
-        winding_down_ts = "{{ sleep_ts | float - 60 * 60 }}";
-        goodnight_ts = "{{ sleep_ts | float - 15 * 60 }}";
-        get_ready_ts = "{{ goodnight_ts | float - 10 * 60 }}";
+        sleep_ts = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 }}
+        '';
+        winding_down_ts = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 10 * 60 * 60 }}
+        '';
+        goodnight_ts = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 - 15 * 60 }}
+        '';
+        get_ready_ts = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 - 25 * 60 }}
+        '';
         get_ready_done_ts = "{{ states.input_boolean.get_ready_for_bed_done.last_changed.timestamp() }}";
         goodnight_done_ts = "{{ states.input_boolean.goodnight_done.last_changed.timestamp() }}";
         active_key = "{{ states('input_text.sleep_schedule_key') }}";
-        is_new_schedule = "{{ active_key != schedule_key }}";
+        is_new_schedule = "{{ states('input_text.sleep_schedule_key') != schedule_key }}";
       };
       action = [
         {
