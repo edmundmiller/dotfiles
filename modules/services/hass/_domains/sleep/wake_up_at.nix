@@ -108,7 +108,20 @@ in
         get_ready_done_ts = "{{ states.input_boolean.get_ready_for_bed_done.last_changed.timestamp() }}";
         goodnight_done_ts = "{{ states.input_boolean.goodnight_done.last_changed.timestamp() }}";
         active_key = "{{ states('input_text.sleep_schedule_key') }}";
-        is_new_schedule = "{{ states('input_text.sleep_schedule_key') != schedule_key }}";
+        # Do not reference sibling `schedule_key` here: HA renders automation
+        # variables independently. If this accidentally evaluates truthy on
+        # every 5-minute tick, the helper booleans reset and notifications repeat.
+        is_new_schedule = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
+            {{ states('input_text.sleep_schedule_key') != raw_alarm }}
+          {%- else -%}
+            {{ states('input_text.sleep_schedule_key') != ('default:' ~ (fallback | timestamp_custom('%Y-%m-%dT%H:%M:%S%z', true))) }}
+          {%- endif -%}
+        '';
       };
       action = [
         {
@@ -151,11 +164,25 @@ in
                   action = "script.turn_on";
                   target.entity_id = "script.get_ready_for_bed";
                 }
+                # Set the phase helper explicitly before notifying so the
+                # 5-minute homeostasis loop cannot send repeated nudges if the
+                # script is still running or fails before updating the helper.
+                {
+                  action = "input_boolean.turn_on";
+                  target.entity_id = "input_boolean.get_ready_for_bed_done";
+                }
                 {
                   action = "${edmund.notify}";
                   data = {
                     title = "🛏️ Get Ready for Bed";
                     message = "Start bedtime prep. Good Night target is {{ goodnight_ts | timestamp_custom('%-I:%M %p', true) }}.";
+                    data = {
+                      tag = "sleep_get_ready_for_bed";
+                      push = {
+                        "interruption-level" = "time-sensitive";
+                        sound = "default";
+                      };
+                    };
                   };
                 }
               ];
