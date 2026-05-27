@@ -26,6 +26,18 @@ Timing rules:
 - **Get Ready for Bed:** Good Night minus 10 minutes (prep buffer)
 - **Winding Down:** Sleep minus 60 minutes (circadian prelude)
 
+### Hidden debug tick
+
+For deterministic testing without changing the NUC system clock, the homeostasis automation also listens for the hidden event `sleep_homeostasis_test_tick`. Fire it with an ISO8601 `now` value to exercise the same phase logic outside the real 5-minute time-pattern tick:
+
+```yaml
+event_type: sleep_homeostasis_test_tick
+event_data:
+  now: "2026-05-27T21:15:00-05:00"
+```
+
+The test tick still requires Edmund to be home, but bypasses the normal 8 PM–midnight wall-clock guard and uses `event_data.now` for all scheduler timestamp math.
+
 ### 1. Winding Down
 
 - **Trigger:** Relative to calculated Sleep time, not fixed clock time
