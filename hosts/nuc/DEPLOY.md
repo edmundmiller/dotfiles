@@ -70,6 +70,23 @@ hey deploy-check
 hey nuc
 ```
 
+### Testing From a Git Worktree
+
+When working in a secondary Git worktree (for example a Herdr worktree for the Goodnight ADR), use `hey nuc-worktree` instead of `hey nuc`. It rsyncs the current worktree to `/tmp/dotfiles-worktree-$USER` on the NUC and runs `nixos-rebuild` there, so uncommitted worktree changes are tested without pushing or changing the canonical NUC checkout.
+
+```bash
+# Safe default: build and show activation dry-run, but do not activate
+hey nuc-worktree          # alias: hey nuc-wt
+
+# Other modes
+hey nuc-wt build          # build only
+hey nuc-wt test           # activate until next reboot, but do not set boot generation
+hey nuc-wt switch         # actually switch the NUC to this worktree config
+hey nuc-wt vm             # build the NUC VM derivation on the NUC
+```
+
+Use `test` or `switch` only for changes you are comfortable activating on the real NUC. For isolated tests, start with `dry-activate`, `build`, or `vm`.
+
 ### Rollback
 
 deploy-rs has **magic rollback**: if SSH becomes unreachable after activation, it automatically reverts to the previous generation.
