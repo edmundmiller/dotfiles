@@ -172,6 +172,27 @@ ssh nuc "sudo nixos-rebuild switch --refresh --flake github:edmundmiller/dotfile
 
 Config: `hosts/_server.nix` — `system.autoUpgrade.flake = "github:edmundmiller/dotfiles#${hostname}"`.
 
+### Worktree Testing
+
+When testing uncommitted NUC changes from a secondary Git worktree (Herdr/side-agent/etc.), prefer the worktree deploy helper instead of `hey nuc`:
+
+```bash
+hey nuc-wt build          # safest first check: remote build only
+hey nuc-wt                # default: dry-activate from the synced worktree
+hey nuc-wt test           # activate until next reboot, but do not set boot generation
+hey nuc-wt switch         # real deploy from this worktree
+hey nuc-wt vm             # build the NUC VM derivation on the NUC
+```
+
+`hey nuc-wt` rsyncs the current local worktree to `/tmp/dotfiles-worktree-$USER` on the NUC and runs `nixos-rebuild` there. This lets agents test uncommitted worktree changes without pushing or modifying the canonical checkout used by normal deployment.
+
+The rsync intentionally excludes local-only/heavy directories like `.git/`, `.pi/`, `node_modules/`, `result`, and caches. If a worktree deploy seems slow or stuck, check for unexpected large local directories before changing deployment logic:
+
+```bash
+du -sh . ./* ./.??* 2>/dev/null | sort -h | tail
+du -sh .pi/side-agents/runtime/* 2>/dev/null | sort -h | tail
+```
+
 ## Gotchas
 
 - **Deploy builds remotely**: `hey nuc` evaluates locally but builds on NUC. Large rebuilds (home-assistant, etc.) take time.
