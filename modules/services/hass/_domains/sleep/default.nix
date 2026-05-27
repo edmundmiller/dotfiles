@@ -11,7 +11,7 @@
 #   Winding Down      ← Sleep - 60 minutes (soft circadian cueing)
 #   Get Ready for Bed ← Good Night - 10 minutes
 #   Good Night        ← Sleep - 15 minutes (fall-asleep buffer)
-#   Sleep             ← next Edmund iPhone alarm - 6 × 90-minute cycles
+#   Sleep             ← Eight Sleep ideal wake - 6 × 90-minute cycles
 #
 # Homeostasis checks run every 5 minutes between 8 PM and midnight when
 # Edmund is home. Each phase is applied once per next-alarm schedule.
