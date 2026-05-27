@@ -371,6 +371,7 @@ in
           fi
         '') hermesScintillateSecrets}
         printf 'TELEGRAM_ALLOWED_USERS=%s\n' '8357890648' >> "$ENV_FILE"
+        printf 'TELEGRAM_HOME_CHANNEL=%s\n' '8357890648' >> "$ENV_FILE"
 
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
         import json
