@@ -1,6 +1,6 @@
 # Alarm-relative wake/sleep scheduler for the sleep domain.
 #
-# Calculates bedtime phases from Edmund's next Eight Sleep alarm when Edmund is home.
+# Calculates bedtime phases from Edmund's Eight Sleep smart alarm when Edmund is home.
 # Imported by ./default.nix so the main sleep domain file can keep scenes/scripts
 # separate from the schedule/homeostasis logic.
 { lib, ... }:
@@ -10,7 +10,8 @@ let
   edmund = {
     # Eight Sleep next alarm timestamp. iOS Home Assistant Companion does not
     # expose a passive next-alarm sensor, so use the existing Eight Sleep alarm as
-    # tonight's schedule source: wake time -> sleep target -> bedtime phases.
+    # tonight's schedule source: latest wake time -> ideal smart-window wake
+    # target -> sleep target -> bedtime phases.
     nextAlarm = "sensor.edmund_s_eight_sleep_side_next_alarm";
 
     # Person presence entity; the homeostasis automation only runs when Edmund
@@ -82,8 +83,10 @@ in
       ];
       variables = {
         raw_alarm = "{{ states('${edmund.nextAlarm}') }}";
-        # Default wake time if Eight Sleep has no readable next alarm: 7:45 AM
-        # for Monday-Friday wake days, 8:00 AM for Saturday/Sunday wake days.
+        # Default latest wake time if Eight Sleep has no readable next alarm:
+        # 7:45 AM for Monday-Friday wake days, 8:00 AM for Saturday/Sunday wake
+        # days. The ideal wake target is 30 minutes earlier, at the start of the
+        # Eight Sleep smart-alarm window.
         #
         # HA renders automation variables independently, so derived timestamps
         # intentionally duplicate the wake-time expression instead of referring
@@ -111,33 +114,49 @@ in
           {%- endif -%}
         '';
         now_ts = "{{ now().timestamp() }}";
+        ideal_wake_ts = ''
+          {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+          {%- set wake = now() + timedelta(days=1) -%}
+          {%- set weekend = wake.isoweekday() in [6, 7] -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+          {{ latest_wake - 30 * 60 }}
+        '';
         sleep_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
-          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 }}
+          {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+          {%- set ideal_wake = latest_wake - 30 * 60 -%}
+          {{ ideal_wake - 6 * 90 * 60 }}
         '';
         winding_down_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
-          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 10 * 60 * 60 }}
+          {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+          {%- set ideal_wake = latest_wake - 30 * 60 -%}
+          {{ ideal_wake - 6 * 90 * 60 - 60 * 60 }}
         '';
         goodnight_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
-          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 - 15 * 60 }}
+          {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+          {%- set ideal_wake = latest_wake - 30 * 60 -%}
+          {{ ideal_wake - 6 * 90 * 60 - 15 * 60 }}
         '';
         get_ready_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
           {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
-          {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 - 25 * 60 }}
+          {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+          {%- set ideal_wake = latest_wake - 30 * 60 -%}
+          {{ ideal_wake - 6 * 90 * 60 - 25 * 60 }}
         '';
         get_ready_done_ts = "{{ states.input_boolean.get_ready_for_bed_done.last_changed.timestamp() }}";
         goodnight_done_ts = "{{ states.input_boolean.goodnight_done.last_changed.timestamp() }}";
@@ -238,7 +257,7 @@ in
                   action = "${edmund.notify}";
                   data = {
                     title = "🛏️ Good Night";
-                    message = "Time to get in bed. Sleep target is {{ sleep_ts | timestamp_custom('%-I:%M %p', true) }} for {{ alarm_ts | timestamp_custom('%-I:%M %p', true) }} alarm.";
+                    message = "Time to get in bed. Sleep target is {{ sleep_ts | timestamp_custom('%-I:%M %p', true) }} for {{ ideal_wake_ts | timestamp_custom('%-I:%M %p', true) }}–{{ alarm_ts | timestamp_custom('%-I:%M %p', true) }} smart wake window.";
                   };
                 }
                 # Future: also notify Monica when her alarm/presence path is added.
