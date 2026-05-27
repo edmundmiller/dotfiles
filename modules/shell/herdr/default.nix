@@ -33,6 +33,12 @@ let
     else
       pkgs.writeText "herdr-config.toml" ''
         # Seeded by nix. Herdr keeps this file writable after bootstrap.
+        [session]
+        resume_agents_on_restore = true
+
+        [experimental]
+        pane_history = true
+
         [keys]
         prefix = "${cfg.prefix}"
         new_workspace = "prefix+w"
@@ -526,7 +532,53 @@ in
 
               return out
 
+          def upsert_simple_section(lines, section, managed_values):
+              out = []
+              in_section = False
+              saw_section = False
+              wrote = set()
+
+              header = f"[{section}]"
+              for line in lines:
+                  stripped = line.strip()
+                  if stripped.startswith("[") and stripped.endswith("]"):
+                      if in_section:
+                          for key, value in managed_values.items():
+                              if key not in wrote:
+                                  out.append(f"{key} = {value}")
+                                  wrote.add(key)
+                      in_section = stripped == header
+                      saw_section = saw_section or in_section
+                      out.append(line)
+                      continue
+
+                  if in_section and "=" in stripped:
+                      key = stripped.split("=", 1)[0].strip()
+                      if key in managed_values:
+                          if key not in wrote:
+                              out.append(f"{key} = {managed_values[key]}")
+                              wrote.add(key)
+                          continue
+
+                  out.append(line)
+
+              if saw_section and in_section:
+                  for key, value in managed_values.items():
+                      if key not in wrote:
+                          out.append(f"{key} = {value}")
+                          wrote.add(key)
+              elif not saw_section:
+                  if out and out[-1].strip():
+                      out.append("")
+                  out.append(header)
+                  for key, value in managed_values.items():
+                      out.append(f"{key} = {value}")
+
+              return out
+
           out = upsert_worktree_post_create(out)
+          out = upsert_simple_section(out, "session", {"resume_agents_on_restore": "true"})
+          out = upsert_simple_section(out, "experimental", {"pane_history": "true"})
 
           path.write_text("\n".join(out) + "\n")
           PY

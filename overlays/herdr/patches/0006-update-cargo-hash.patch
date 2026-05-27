@@ -1,0 +1,13 @@
+diff --git i/nix/package.nix w/nix/package.nix
+index 2d7f8bb..2a7a0c7 100644
+--- i/nix/package.nix
++++ w/nix/package.nix
+@@ -42,7 +42,7 @@ rustPlatform.buildRustPackage {
+     );
+   };
+ 
+-  cargoHash = "sha256-5WvdZUD0Axr6xQ9Nm1XV1eJ0w4xUl8BQDnNs7pv6C8o=";
++  cargoHash = "sha256-yRT31RnfjSQy5bxFXVvM9zRM59WAPrBozu3S2tag6s8=";
+ 
+   nativeBuildInputs = [
+     git
