@@ -42,6 +42,42 @@ def "main nuc" [] {
   '
 }
 
+
+def validate-nuc-worktree-mode [mode: string] {
+  let allowed = ["dry-activate" "test" "switch" "build" "vm"]
+  if not ($mode in $allowed) {
+    print -e $"error: mode must be one of: ($allowed | str join ', ')"
+    error make {msg: "invalid nuc worktree deploy mode"}
+  }
+}
+
+def "main nuc-worktree" [mode: string = "dry-activate"] {
+  validate-nuc-worktree-mode $mode
+  let ctx = (context)
+  let remote_dir = $"/tmp/dotfiles-worktree-($env.USER? | default 'user')"
+
+  print $"=== Syncing current worktree to NUC: ($ctx.flake_dir) -> ($NUC_HOST):($remote_dir) ==="
+  ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
+  ^rsync -az --delete --delete-excluded --exclude .git/ --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $"($ctx.flake_dir)/" $"($NUC_HOST):($remote_dir)/"
+
+  if $mode == "vm" {
+    print "=== Building NUC VM from synced worktree on NUC ==="
+    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && nix build .#nixosConfigurations.nuc.config.system.build.vm --show-trace"
+    return
+  }
+
+  print $"=== Running nixos-rebuild ($mode) from synced worktree on NUC ==="
+  if $mode == "build" {
+    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && nixos-rebuild build --flake .#nuc --show-trace"
+  } else {
+    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && sudo nixos-rebuild ($mode) --flake .#nuc --show-trace"
+  }
+}
+
+def "main nuc-wt" [mode: string = "dry-activate"] {
+  main nuc-worktree $mode
+}
+
 def "main unas" [] {
   let ctx = (context)
   print "=== Deploying to UNAS ==="
