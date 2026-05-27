@@ -24,6 +24,40 @@ let
 in
 {
   services.home-assistant.config.automation = lib.mkAfter (ensureEnabled [
+
+    # Keep the Eight Sleep alarm fresh only during the evening decision window.
+    # The integration can lag after changing the smart alarm in the app; forcing
+    # an entity update every couple of minutes here keeps the scheduler aligned
+    # without polling the cloud all day.
+    {
+      alias = "Refresh Eight Sleep Wake Schedule";
+      id = "refresh_eight_sleep_wake_schedule";
+      description = "Refresh Eight Sleep alarm during the bedtime planning window";
+      mode = "single";
+      trigger = {
+        platform = "time_pattern";
+        minutes = "/2";
+      };
+      condition = [
+        {
+          condition = "time";
+          after = "19:30:00";
+          before = "23:00:00";
+        }
+        {
+          condition = "state";
+          entity_id = edmund.presence;
+          state = "home";
+        }
+      ];
+      action = [
+        {
+          action = "homeassistant.update_entity";
+          target.entity_id = edmund.nextAlarm;
+        }
+      ];
+    }
+
     # Alarm-relative sleep lifecycle. Checks every 5 minutes 8 PM–midnight.
     {
       alias = "Circadian Sleep Homeostasis";
@@ -48,7 +82,7 @@ in
       ];
       variables = {
         raw_alarm = "{{ states('${edmund.nextAlarm}') }}";
-        # Default wake time if Eight Sleep has no readable next alarm: 7:30 AM
+        # Default wake time if Eight Sleep has no readable next alarm: 7:45 AM
         # for Monday-Friday wake days, 8:00 AM for Saturday/Sunday wake days.
         #
         # HA renders automation variables independently, so derived timestamps
@@ -58,7 +92,7 @@ in
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
             {{ as_timestamp(raw_alarm, fallback) }}
           {%- else -%}
@@ -69,7 +103,7 @@ in
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
             {{ raw_alarm }}
           {%- else -%}
@@ -81,28 +115,28 @@ in
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 }}
         '';
         winding_down_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 10 * 60 * 60 }}
         '';
         goodnight_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 - 15 * 60 }}
         '';
         get_ready_ts = ''
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {{ (as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback) - 9 * 60 * 60 - 25 * 60 }}
         '';
         get_ready_done_ts = "{{ states.input_boolean.get_ready_for_bed_done.last_changed.timestamp() }}";
@@ -115,7 +149,7 @@ in
           {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
           {%- set wake = now() + timedelta(days=1) -%}
           {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 30), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
             {{ states('input_text.sleep_schedule_key') != raw_alarm }}
           {%- else -%}
@@ -151,12 +185,13 @@ in
         {
           choose = [
             {
-              # Never skip Get Ready for Bed. If we are late, this fires first
-              # and later phases key off helper last_changed to preserve spacing.
+              # Never skip Get Ready for Bed while the house is not already in
+              # Good Night. If someone is already in bed, do not re-run prep
+              # scenes that can bring living-space lights back up.
               conditions = [
                 {
                   condition = "template";
-                  value_template = "{{ now_ts | float >= get_ready_ts | float and is_state('input_boolean.get_ready_for_bed_done', 'off') }}";
+                  value_template = "{{ is_state('input_boolean.goodnight', 'off') and now_ts | float >= get_ready_ts | float and is_state('input_boolean.get_ready_for_bed_done', 'off') }}";
                 }
               ];
               sequence = [
@@ -225,11 +260,12 @@ in
               ];
             }
             {
-              # Skip Winding Down if we are already at/past Get Ready.
+              # Skip Winding Down if we are already at/past Get Ready, or if
+              # Good Night is already active from a manual/in-bed path.
               conditions = [
                 {
                   condition = "template";
-                  value_template = "{{ now_ts | float >= winding_down_ts | float and now_ts | float < get_ready_ts | float and is_state('input_boolean.winding_down_done', 'off') }}";
+                  value_template = "{{ is_state('input_boolean.goodnight', 'off') and now_ts | float >= winding_down_ts | float and now_ts | float < get_ready_ts | float and is_state('input_boolean.winding_down_done', 'off') }}";
                 }
               ];
               sequence = [

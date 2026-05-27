@@ -79,6 +79,7 @@ let
   edmundAwake = findAutomation "edmund_awake_detection";
   monicaAwake = findAutomation "monica_awake_detection";
   circadianSleepHomeostasis = findAutomation "circadian_sleep_homeostasis";
+  refreshEightSleepWakeSchedule = findAutomation "refresh_eight_sleep_wake_schedule";
   voiceWebhookSleep = findAutomation "voice_webhook_sleep";
   voiceWebhookInBed = findAutomation "voice_webhook_in_bed";
   bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
@@ -135,6 +136,10 @@ let
     {
       test = circadianSleepHomeostasis != null;
       msg = "automation 'circadian_sleep_homeostasis' missing";
+    }
+    {
+      test = refreshEightSleepWakeSchedule != null;
+      msg = "automation 'refresh_eight_sleep_wake_schedule' missing";
     }
     {
       test = voiceWebhookSleep == null;

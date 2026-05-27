@@ -10,11 +10,11 @@ Decision record: [`../../docs/adr/0001-alarm-driven-circadian-sleep-lifecycle.md
 
 The sleep lifecycle is currently driven by Edmund's next Eight Sleep alarm when Edmund is home. A five-minute homeostasis check runs between 8 PM and midnight, targets six 90-minute sleep cycles by default, and applies each phase once per night.
 
-For a 7:30 AM wake time with the default 9h target:
+For a 7:45 AM wake time with the default 9h target:
 
 ```
 Winding Down  →  Get Ready for Bed  →  Good Night  →  Sleep  →  Wake
-(9:30 PM)        (10:05 PM)             (10:15 PM)     (10:30 PM) (7:30 AM)
+(9:45 PM)        (10:20 PM)             (10:30 PM)     (10:45 PM) (7:45 AM)
 ```
 
 Timing rules:
@@ -67,7 +67,13 @@ Use voice/manual activation instead (e.g., Assist intent or Home app scene/scrip
 
 The iPhone → 8Sleep alarm sync path is intentionally declaratively disabled in Nix. iOS Home Assistant Companion does not expose a passive `sensor.<iphone>_next_alarm` entity like Android does, and `sensor.edmunds_iphone_next_alarm` does not exist in this HA instance.
 
-Current active integration:
+Current active integrations:
+
+**Evening Eight Sleep alarm refresh:**
+
+- Runs every 2 minutes from 7:30–11pm while Edmund is home
+- Calls `homeassistant.update_entity` for `sensor.edmund_s_eight_sleep_side_next_alarm`
+- Keeps smart-alarm edits fresh during the bedtime decision window without polling all day
 
 **Sleep Focus off → dismiss 8Sleep alarm:**
 
