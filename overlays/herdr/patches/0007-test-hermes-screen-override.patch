@@ -64,7 +64,7 @@ index 531cce8..312b863 100644
                      }
                      let process_exited = pending_foreground_shell_clear
                          && agent.is_some()
-@@ -1563,6 +1583,47 @@ mod tests {
+@@ -1563,6 +1583,50 @@ mod tests {
          );
      }
 
