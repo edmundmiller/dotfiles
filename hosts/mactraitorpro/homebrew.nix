@@ -6,6 +6,7 @@
     # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
     "jnsahaj/lumen" # AI-powered CLI explanations
     "keith/formulae" # reminders-cli
+    "rjyo/moshi" # moshi-hook + moshi CLI for mobile agent events
     "rockorager/tap" # Prise terminal multiplexer
     "steipete/tap" # Codexbar
     "tw93/tap" # Mole
@@ -28,6 +29,10 @@
     "llvm"
     "m4"
     "make"
+    {
+      name = "rjyo/moshi/moshi-hook";
+      start_service = true;
+    }
 
     # Python tools
     "uv"

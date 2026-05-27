@@ -7,6 +7,11 @@ moshi() {
   emulate -L zsh
   setopt local_options no_unset
 
+  if whence -p moshi >/dev/null 2>&1; then
+    command moshi "$@"
+    return $?
+  fi
+
   local dir="${1:-.}"
   local session="${2:-}"
 
