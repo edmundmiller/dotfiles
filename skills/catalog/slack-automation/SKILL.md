@@ -1,11 +1,13 @@
 ---
 name: slack-automation
 description: >
-  Automate Slack sidebar housekeeping (mute, leave, move-to-section, reach hidden
-  channels, inventory) via agent-browser browser automation. Use when the user
-  wants to "clean up my Slack", mute noisy channels, leave channels, reorganize
-  sidebar sections, or bulk-triage channels. Builds on the base agent-browser
-  `slack` skill — load that first for connect/snapshot/click basics.
+  Automate Slack via agent-browser: (a) sidebar housekeeping — mute, leave,
+  move-to-section, reach hidden channels, inventory; (b) read & digest the
+  Activity inbox to catch up on mentions/threads/unreads. Use when the user wants
+  to "clean up my Slack", mute/leave channels, reorganize sections, OR to "catch
+  up on Slack", "process my activity inbox", "summarize my unreads / mentions",
+  "what needs my reply in Slack". Builds on the base agent-browser `slack` skill —
+  load that first for connect/snapshot/click basics.
 license: MIT
 ---
 
@@ -66,6 +68,53 @@ sl_inventory                      # {section: [channels]} JSON
 
 Pass the **bare** channel name; the helpers strip Slack's trailing unread badge
 (`genephylo1`, `request-review9+`).
+
+## Reading: digest the Activity inbox ("catch me up on Slack")
+
+For "what did I miss / what needs my reply", do NOT scroll all unread channels —
+that's high-noise and _opening a channel marks it read_. Use Slack's **Activity**
+view (`app.slack.com/client/<TEAM>/activity-inbox`): the curated feed of things
+addressed to you (mentions, @channel/@group broadcasts, thread replies, reactions,
+invites). Viewing it does NOT mark channel messages read, so unreads stay intact.
+
+The driver `scripts/activity-scrape.sh` is the harness — it connects, navigates to
+the Activity view, scrolls the (virtualized) feed top→bottom, and writes one TSV
+row per item. **Read-only**: it only scrolls + reads the DOM. It produces the data;
+_you_ write the digest from the TSV.
+
+```bash
+# Helium must be up with --remote-debugging-port=9222 and logged into the workspace,
+# with Slack open in a tab (see "Connecting" above). Then:
+scripts/activity-scrape.sh /tmp/slack_activity.txt
+# -> "Wrote 290 items to /tmp/slack_activity.txt (team=TE6CZUZPH)" + a by-type count
+```
+
+Output TSV columns: `type  channel  sender  timestamp  body` where
+`type ∈ mention | channel-mention | group-mention | thread | reaction | invite | other`.
+Then read the file and synthesize a digest grouped as: **⚡ needs your reply**
+(direct @-you questions / review requests) → **broadcasts/FYI** (@channel, @group)
+→ **threads** you're in → **invites/misc**.
+
+**Run it from a sub-agent.** The raw feed is hundreds of rows; dispatch the
+scrape+synthesize to a sub-agent and have it return only the digest, so the noise
+never enters the main context window. agent-browser drives ONE shared browser, so
+do NOT run multiple Slack sub-agents concurrently — they fight over the active tab.
+One sub-agent, sequential.
+
+Gotchas specific to reading:
+
+- **Return an array from `eval`, parse with `jq -r '.[] | @tsv'`.** If the eval
+  returns a joined string, agent-browser JSON-escapes the `\n`/`\t` into _literal_
+  backslash sequences and every record collapses onto one physical line. Returning
+  a real array → valid JSON → clean tab-split. (The driver already does this.)
+- **Navigating renumbers the tab.** After `agent-browser tab <url>`, the `[tNN]`
+  label changes; re-find it by URL (`grep activity-inbox`) before scrolling. Driver
+  handles it.
+- **"N new items" ≠ feed length.** The badge counts unread activity; the feed
+  scrolls back through history (often hundreds). Filter by recency when digesting.
+- **Body heuristic = longest `.c-truncate` per item** (channel names are short,
+  previews long); the driver strips a duplicated leading channel-name prefix.
+- See `scripts/activity-view.png` for what the scraped surface looks like.
 
 ## Tidbits learned the hard way
 
