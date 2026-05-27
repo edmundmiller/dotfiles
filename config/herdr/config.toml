@@ -5,10 +5,14 @@ name = "catppuccin"
 delivery = "herdr"
 
 [keys]
+# Show upstream defaults with: herdr --default-config
+# Upstream Herdr defaults use ctrl+b as the prefix, prefix+g for goto,
+# and prefix+shift+g for new_worktree. This repo keeps ctrl+c as the
+# tmux-style prefix and reserves prefix+g for the native worktree flow.
 prefix = "ctrl+c"
 new_workspace = "prefix+w"
 new_worktree = "prefix+g"
-goto = ""
+goto = "prefix+f"
 open_worktree = "prefix+G"
 workspace_picker = "prefix+O"
 split_horizontal = "prefix+-"
