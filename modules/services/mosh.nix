@@ -19,7 +19,11 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      # mosh client available everywhere
+      # Keep mosh-server on the system profile so Moshi's non-interactive SSH
+      # bootstrap can find it without relying on login shell PATH setup.
+      environment.systemPackages = [ pkgs.mosh ];
+
+      # mosh client available in the user profile too.
       user.packages = [ pkgs.mosh ];
 
       # Moshi's host-side helpers are useful on every machine where mosh is
