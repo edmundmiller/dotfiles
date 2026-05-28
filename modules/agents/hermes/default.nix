@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -11,7 +10,7 @@ let
   cfg = config.modules.agents.hermes;
   inherit (config.dotfiles) configDir;
 
-  hermesPackage = inputs.hermesAgent.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  hermesPackage = pkgs.llm-agents."hermes-agent";
 
   yamlFormat = pkgs.formats.yaml { };
   yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
@@ -154,8 +153,8 @@ in
       type = package;
       default = hermesPackage;
       description = ''
-        Hermes package to install. The default uses the pinned upstream
-        Hermes Agent flake package directly.
+        Hermes package to install. The default uses llm-agents.nix's
+        hermes-agent package directly.
       '';
     };
 

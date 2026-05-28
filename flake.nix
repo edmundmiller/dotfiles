@@ -76,11 +76,6 @@
     llm-agents.inputs.nixpkgs.follows = "nixpkgs";
     llm-agents.inputs.systems.follows = "systems";
 
-    hermesAgent = {
-      url = "github:NousResearch/hermes-agent";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     hunk = {
       url = "github:modem-dev/hunk/v0.14.0";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -93,7 +88,6 @@
       url = "git+ssh://git@github.com/edmundmiller/agents-workspace?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
-      inputs.hermesAgent.follows = "hermesAgent";
     };
 
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
