@@ -1,8 +1,19 @@
 diff --git i/nix/package.nix w/nix/package.nix
-index 2d7f8bb..2a7a0c7 100644
+index ab23e31..eb0a177 100644
 --- i/nix/package.nix
 +++ w/nix/package.nix
-@@ -42,7 +42,7 @@ rustPlatform.buildRustPackage {
+@@ -32,7 +32,10 @@ rustPlatform.buildRustPackage {
+     fileset = lib.fileset.intersection (lib.fileset.fromSource (lib.sources.cleanSource ./..)) (
+       lib.fileset.unions [
+         ../assets
++        ../CHANGELOG.md
+         ../src
++        ../tests/fixtures
++        ../website/latest.json
+         ../vendor/libghostty-vt
+         ../vendor/libghostty-vt.vendor.json
+         ../build.rs
+@@ -42,7 +45,7 @@ rustPlatform.buildRustPackage {
      );
    };
  
@@ -11,3 +22,25 @@ index 2d7f8bb..2a7a0c7 100644
  
    nativeBuildInputs = [
      git
+@@ -61,10 +64,17 @@ rustPlatform.buildRustPackage {
+     export ZIG_LOCAL_CACHE_DIR="$TMPDIR/zig-local-cache"
+   '';
+ 
+-  # Rust tests are covered by the normal CI workflow. The Nix check is
+-  # intentionally build-only so it validates packaging inputs without
+-  # duplicating the full Rust test suite.
+-  doCheck = false;
++  doCheck = true;
++
++  checkFlags = [
++    # Several tests mutate process-global config/env. Run the Nix check suite
++    # serially so enabling doCheck does not introduce cross-test poisoning.
++    "--test-threads=1"
++    # This test relies on observing a just-spawned child via host `ps`, which is
++    # flaky in the Nix Darwin sandbox. Keep the rest of the suite enabled.
++    "--skip"
++    "pane::tests::spawn_agent_restore_uses_restore_command_as_pane_child"
++  ];
+ 
+   meta = {
+     description = "Terminal workspace manager for AI coding agents";
