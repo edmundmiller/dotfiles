@@ -39,7 +39,7 @@ git apply /Users/emiller/.config/dotfiles/overlays/herdr/patches/*.patch
 cargo test \
   detect::tests::hermes \
   pane::tests::screen_chrome_overrides_codex_backend_to_hermes \
-  pane::tests::plain_screen_does_not_override_process_agent
+  pane::tests::screen_chrome_does_not_override_pi_process_agent
 ```
 
 On macOS outside the Nix build, `cargo test` may fail before tests run while the
