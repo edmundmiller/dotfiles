@@ -1,0 +1,19 @@
+bin/hey.d/common.nu
+  s_39ea9509397582::t_c5b8739cb98941 48,94,97,103,126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "e0ff84d3667994397005b9d7b4d70702e32e9b34",
+  "prompts": {},
+  "sessions": {
+    "s_39ea9509397582": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e410c-b397-7546-971e-79b13de00e5c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}

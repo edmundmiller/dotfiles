@@ -1,0 +1,19 @@
+modules/desktop/gnome/gtk.nix
+  s_e9403ae25e1ef0::t_161a1c3ebb23a3 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "a9c371e8c43371ccd220a8dc72ad619737de892b",
+  "prompts": {},
+  "sessions": {
+    "s_e9403ae25e1ef0": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e410c-b77a-7995-8dc8-16fd366803cd",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
