@@ -63,8 +63,6 @@ fallback_model:
 fallback_providers:
   - provider: opencode
     model: GLM-5.1
-  - provider: openrouter
-    model: auto
 
 # Agent settings
 agent:
@@ -116,8 +114,8 @@ smart_model_routing:
   max_simple_chars: 160
   max_simple_words: 28
   cheap_model:
-    provider: openrouter
-    model: deepseek/deepseek-v4-pro
+    provider: opencode
+    model: GLM-5.1
     thinking: auto
 
 # Auxiliary services
