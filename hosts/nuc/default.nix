@@ -701,7 +701,7 @@ in
       anne = {
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
-          CODEX_HOME = "/home/emiller/.codex";
+          CODEX_HOME = "/data/.codex";
           WIKI_PATH = "/repos/mill-docs";
         };
         hostPathMounts = lib.mkForce {
@@ -714,7 +714,7 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         workingDirectory = "/repos/mill-docs";
         environment = {
-          CODEX_HOME = "/home/emiller/.codex";
+          CODEX_HOME = "/data/.codex";
           WIKI_PATH = "/repos/mill-docs";
         };
         hostPathMounts = lib.mkForce {
@@ -735,7 +735,7 @@ in
           terminal.cwd = "/home/hermes/repos/obsidian-vault";
         };
         environment = {
-          CODEX_HOME = "/home/emiller/.codex";
+          CODEX_HOME = "/data/.codex";
           PYTHONPATH = hermesTelegramPythonPath;
           WIKI_PATH = "/repos/obsidian-vault";
           TN_VAULT_PATH = "/home/hermes/repos/obsidian-vault";
@@ -749,7 +749,7 @@ in
       };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
-        environment.CODEX_HOME = "/home/emiller/.codex";
+        environment.CODEX_HOME = "/data/.codex";
         hostPathMounts = lib.mkForce {
           "/home/emiller/.config/dotfiles" = "/repos/dotfiles";
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
@@ -862,7 +862,7 @@ in
         "HERMES_HOME=/var/lib/hermes-radar/.hermes"
         "HERMES_PROFILE=radar"
         "MESSAGING_CWD=/var/lib/hermes-radar/.hermes/workspace"
-        "CODEX_HOME=/home/emiller/.codex"
+        "CODEX_HOME=/data/.codex"
         "EMAIL_ADDRESS=norbot@agentmail.to"
         "EMAIL_IMAP_HOST=imap.agentmail.to"
         "EMAIL_IMAP_PORT=993"
