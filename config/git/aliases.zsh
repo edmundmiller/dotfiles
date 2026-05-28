@@ -360,9 +360,9 @@ _git_prepare_pr_review_checkout() {
 		gh pr checkout "$target" "${gh_repo_args[@]}" --detach --force >/dev/null
 	) || return 1
 
-	git -C "$worktree_path" fetch --quiet origin "$base_branch:$base_branch" 2>/dev/null || \
+	git -C "$worktree_path" fetch --quiet origin "+refs/heads/${base_branch}:refs/remotes/origin/${base_branch}" 2>/dev/null || \
 		git -C "$worktree_path" fetch --quiet origin "$base_branch" 2>/dev/null || true
-	git -C "$worktree_path" fetch --quiet upstream "$base_branch:$base_branch" 2>/dev/null || \
+	git -C "$worktree_path" fetch --quiet upstream "+refs/heads/${base_branch}:refs/remotes/upstream/${base_branch}" 2>/dev/null || \
 		git -C "$worktree_path" fetch --quiet upstream "$base_branch" 2>/dev/null || true
 	base_ref=$(cd "$worktree_path" && _git_resolve_branch_ref "$base_branch") || return 1
 	_GIT_REVIEW_PR_WORKTREE="$worktree_path"
@@ -461,17 +461,41 @@ hunkpr() {
 	_git_review_helper hunk hunk "$@"
 }
 
-# Review a GitHub PR with Hunk. Accepts either a PR number/branch in the
-# current repo or a full GitHub PR URL. The helper resolves the PR merge target,
-# checks the PR out into a reusable .pi/worktrees checkout with `gh pr checkout`,
-# then runs `hunk diff <merge-target>` from that checkout.
+# Review a GitHub PR with Hunk or Critique. Accepts either a PR number/branch in
+# the current repo or a full GitHub PR URL. The helper resolves the PR merge
+# target, checks the PR out into a reusable .pi/worktrees checkout with
+# `gh pr checkout`, then runs the requested review tool against the merge target.
 prr() {
-	hunkpr "$@"
-}
+	local tool="${1:-}"
 
-# Same PR checkout/base-resolution flow, but opens the Critique diff viewer.
-prrc() {
-	critpr "$@"
+	case "$tool" in
+		hunk)
+			shift
+			hunkpr "$@"
+			;;
+		critique|crit|c)
+			shift
+			critpr "$@"
+			;;
+		-h|--help|"")
+			cat <<'EOF'
+Usage: prr <hunk|critique|crit|c> [pr-number|branch|url] [-- tool args...]
+
+Examples:
+  prr hunk 4306
+  prr hunk https://github.com/nf-core/tools/pull/4306
+  prr critique 4306
+  prr crit 4306
+  prr c 4306
+EOF
+			[[ -n "$tool" ]]
+			;;
+		*)
+			print -u2 -- "error: unknown prr review tool: ${tool}"
+			print -u2 -- "usage: prr <hunk|critique|crit|c> [pr-number|branch|url] [-- tool args...]"
+			return 1
+			;;
+	esac
 }
 
 crpr() {
