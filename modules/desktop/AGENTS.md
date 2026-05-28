@@ -6,7 +6,7 @@ GUI applications, terminals, window managers, and desktop environment config. Mo
 
 | Directory   | Purpose                                      | Platform |
 | ----------- | -------------------------------------------- | -------- |
-| `apps/`     | Desktop applications (openclaw client, etc.) | Mixed    |
+| `apps/`     | Desktop applications                         | Mixed    |
 | `browsers/` | Firefox, qutebrowser                         | Linux    |
 | `gaming/`   | Game-related packages                        | Linux    |
 | `gnome/`    | GNOME desktop tweaks                         | Linux    |
@@ -23,6 +23,5 @@ GUI applications, terminals, window managers, and desktop environment config. Mo
 
 ## Subdirectories with Their Own AGENTS.md
 
-- `apps/openclaw/` — OpenClaw Mac remote client
 - `macos/` — macOS desktop settings
 - `term/ghostty/` — Ghostty terminal emulator

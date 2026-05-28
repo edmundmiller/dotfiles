@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Uptime monitoring dashboard for NUC services. Checks HTTP/TCP endpoints every 60-120s, stores results in SQLite, serves web UI. Alerts via Telegram and OpenClaw webhook when services go down. Pings healthchecks.io as a dead man's switch.
+Uptime monitoring dashboard for NUC services. Checks HTTP/TCP endpoints every 60-120s, stores results in SQLite, serves web UI. Alerts via Telegram when services go down. Pings healthchecks.io as a dead man's switch.
 
 ## Module Structure
 
@@ -24,13 +24,11 @@ modules/services/gatus/
 
 ## Secret Injection
 
-The config template contains `__TELEGRAM_TOKEN__` and `__OPENCLAW_HOOKS_TOKEN__` placeholders. `ExecStartPre` copies the template to `/run/gatus/` and uses `sed` to replace placeholders with values read from agenix secret files. This keeps secrets out of the nix store.
+The config template contains a `__TELEGRAM_TOKEN__` placeholder when Telegram alerting is enabled. `ExecStartPre` copies the template to `/run/gatus/` and uses `sed` to replace placeholders with values read from agenix secret files. This keeps secrets out of the nix store.
 
 ## Alerting
 
 - **Telegram:** Sends alerts to a chat when endpoints fail 3x in a row, and on recovery
-- **OpenClaw webhook:** POSTs to `/hooks/wake` on localhost to trigger OpenClaw investigation of downtime
-
 ## Dead Man's Switch (healthchecks.io)
 
 Three-phase systemd timer using the [healthchecks.io systemd pattern](https://healthchecks.io/docs/monitoring_systemd_tasks/):
@@ -65,8 +63,7 @@ This means healthchecks.io alerts if:
 | PostgreSQL       | Infrastructure | localhost:5432                   | TCP                |
 | AgentsView       | Infrastructure | localhost:8087                   | HTTP (conditional) |
 | Tailscale        | Infrastructure | localhost:41112/healthz          | HTTP               |
-| OpenClaw Gateway | Infrastructure | localhost:18789                  | HTTP (conditional) |
-| OpenClaw svc VIP | Infrastructure | openclaw.cinnamon-rooster.ts.net | HTTP (conditional) |
+| Hermes Web UI    | Infrastructure | 127.0.0.1:8642                   | HTTP (conditional) |
 | Audiobookshelf   | Media          | localhost:13378/healthcheck      | HTTP (conditional) |
 
 ## Adding New Endpoints
