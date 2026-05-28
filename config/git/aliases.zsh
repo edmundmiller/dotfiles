@@ -298,13 +298,38 @@ _git_prepare_pr_review_checkout() {
 	local target="$1"
 	local checkout_root shared_root worktrees_dir metadata pr_number pr_title base_branch head_branch pr_url pr_author
 	local slug worktree_path base_ref
+	local target_repo current_repo repo_checkout repo_slug gh_repo_args
 
 	if ! command -v gh >/dev/null 2>&1; then
 		print -u2 'error: gh not found; PR review helpers require GitHub CLI'
 		return 1
 	fi
 
-	metadata=$(gh pr view "$target" \
+	if [[ "$target" =~ '^https://github\.com/([^/]+/[^/]+)/pull/[0-9]+' ]]; then
+		target_repo="${match[1]}"
+	fi
+
+	checkout_root=$(git rev-parse --show-toplevel) || return 1
+	shared_root=$(_git_shared_checkout_root "$checkout_root") || return 1
+
+	if [[ -n "$target_repo" ]]; then
+		current_repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null) || current_repo=""
+		if [[ "$current_repo" != "$target_repo" ]]; then
+			repo_slug=$(_git_sanitize_component "$target_repo")
+			repo_checkout="$shared_root/.pi/pr-repos/$repo_slug"
+			if [[ ! -d "$repo_checkout/.git" ]]; then
+				mkdir -p "${repo_checkout:h}" || return 1
+				gh repo clone "$target_repo" "$repo_checkout" || return 1
+			fi
+			checkout_root="$repo_checkout"
+			shared_root=$(_git_shared_checkout_root "$checkout_root") || return 1
+		fi
+		gh_repo_args=(-R "$target_repo")
+	else
+		gh_repo_args=()
+	fi
+
+	metadata=$(gh pr view "$target" "${gh_repo_args[@]}" \
 		--json number,title,baseRefName,headRefName,url,author \
 		--jq '[.number, .title, .baseRefName, .headRefName, .url, .author.login] | @tsv') || return 1
 	IFS=$'\t' read -r pr_number pr_title base_branch head_branch pr_url pr_author <<<"$metadata"
@@ -314,8 +339,6 @@ _git_prepare_pr_review_checkout() {
 	print -u2 -- "url: ${pr_url}"
 	print -u2 -- "author: ${pr_author}"
 
-	checkout_root=$(git rev-parse --show-toplevel) || return 1
-	shared_root=$(_git_shared_checkout_root "$checkout_root") || return 1
 	worktrees_dir="$shared_root/.pi/worktrees"
 	mkdir -p "$worktrees_dir" || return 1
 
@@ -334,10 +357,14 @@ _git_prepare_pr_review_checkout() {
 
 	(
 		cd "$worktree_path" || exit 1
-		gh pr checkout "$target" --detach --force >/dev/null
+		gh pr checkout "$target" "${gh_repo_args[@]}" --detach --force >/dev/null
 	) || return 1
 
-	base_ref=$(_git_resolve_branch_ref "$base_branch") || return 1
+	git -C "$worktree_path" fetch --quiet origin "$base_branch:$base_branch" 2>/dev/null || \
+		git -C "$worktree_path" fetch --quiet origin "$base_branch" 2>/dev/null || true
+	git -C "$worktree_path" fetch --quiet upstream "$base_branch:$base_branch" 2>/dev/null || \
+		git -C "$worktree_path" fetch --quiet upstream "$base_branch" 2>/dev/null || true
+	base_ref=$(cd "$worktree_path" && _git_resolve_branch_ref "$base_branch") || return 1
 	_GIT_REVIEW_PR_WORKTREE="$worktree_path"
 	_GIT_REVIEW_PR_BASE_REF="$base_ref"
 
@@ -432,6 +459,19 @@ critpr() {
 
 hunkpr() {
 	_git_review_helper hunk hunk "$@"
+}
+
+# Review a GitHub PR with Hunk. Accepts either a PR number/branch in the
+# current repo or a full GitHub PR URL. The helper resolves the PR merge target,
+# checks the PR out into a reusable .pi/worktrees checkout with `gh pr checkout`,
+# then runs `hunk diff <merge-target>` from that checkout.
+prr() {
+	hunkpr "$@"
+}
+
+# Same PR checkout/base-resolution flow, but opens the Critique diff viewer.
+prrc() {
+	critpr "$@"
 }
 
 crpr() {
