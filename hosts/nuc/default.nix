@@ -279,15 +279,6 @@ in
   ];
 
   system.activationScripts = {
-    # Workaround for nix-openclaw/linux-sandbox using hardcoded /bin paths.
-    # TODO: report upstream so this compatibility shim can be removed.
-    binCompat = ''
-      mkdir -p /bin
-      for cmd in cat ln ls mkdir rm; do
-        ln -sf ${pkgs.coreutils}/bin/$cmd /bin/$cmd
-      done
-    '';
-
     removeLegacyZele = ''
       rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
     '';
@@ -1117,49 +1108,6 @@ in
       speedtest-tracker = {
         enable = true;
         environmentFile = config.age.secrets.speedtest-tracker-env.path;
-      };
-      mission-control = {
-        enable = true;
-        tailscaleService.enable = true;
-        environmentFile = config.age.secrets.mission-control-env.path;
-        registeredAgents = [
-          {
-            name = "scintillate";
-            role = "assistant";
-            framework = "hermes";
-            capabilities = [
-              "memory"
-              "notes"
-              "planning"
-              "writing"
-            ];
-          }
-          {
-            name = "anne";
-            role = "assistant";
-            framework = "hermes";
-            capabilities = [
-              "memory"
-              "notes"
-              "planning"
-              "writing"
-            ];
-          }
-          {
-            name = "betty";
-            role = "assistant";
-            framework = "hermes";
-            capabilities = [
-              "browser"
-              "calendar"
-              "mail"
-              "memory"
-              "notes"
-              "planning"
-              "writing"
-            ];
-          }
-        ];
       };
       prowlarr.enable = true;
       qb.enable = false;
