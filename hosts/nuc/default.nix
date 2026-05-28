@@ -8,7 +8,7 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesAgentBase = inputs.hermesAgent.packages.${hostSystem}.default;
+  hermesAgentBase = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
   honchoAi = pkgs.python313Packages.buildPythonPackage rec {
     pname = "honcho-ai";
     version = "2.1.2";
