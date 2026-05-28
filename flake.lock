@@ -76,7 +76,9 @@
     },
     "agents-workspace": {
       "inputs": {
-        "hermesAgent": "hermesAgent",
+        "hermesAgent": [
+          "hermesAgent"
+        ],
         "llm-agents": [
           "llm-agents"
         ],
@@ -211,7 +213,7 @@
     },
     "bun2nix": {
       "inputs": {
-        "flake-parts": "flake-parts_2",
+        "flake-parts": "flake-parts",
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -507,28 +509,6 @@
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
-          "agents-workspace",
-          "hermesAgent",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1772408722,
-        "narHash": "sha256-rHuJtdcOjK7rAHpHphUb1iCvgkU3GpfvicLMwwnfMT0=",
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "rev": "f20dc5d9b8027381c474144ecabc9034d6a839a3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "type": "github"
-      }
-    },
-    "flake-parts_2": {
-      "inputs": {
-        "nixpkgs-lib": [
           "bun2nix",
           "nixpkgs"
         ]
@@ -547,7 +527,7 @@
         "type": "github"
       }
     },
-    "flake-parts_3": {
+    "flake-parts_2": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
       },
@@ -557,6 +537,27 @@
         "owner": "hercules-ci",
         "repo": "flake-parts",
         "rev": "3107b77cd68437b9a76194f0f7f9c55f2329ca5b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_3": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "hermesAgent",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1772408722,
+        "narHash": "sha256-rHuJtdcOjK7rAHpHphUb1iCvgkU3GpfvicLMwwnfMT0=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "f20dc5d9b8027381c474144ecabc9034d6a839a3",
         "type": "github"
       },
       "original": {
@@ -938,9 +939,8 @@
     },
     "hermesAgent": {
       "inputs": {
-        "flake-parts": "flake-parts",
+        "flake-parts": "flake-parts_3",
         "nixpkgs": [
-          "agents-workspace",
           "nixpkgs"
         ],
         "npm-lockfile-fix": "npm-lockfile-fix",
@@ -949,11 +949,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1778888112,
-        "narHash": "sha256-w2qFVbzf2XIgStYSWSEvp1KFinKyQ6ZTi3s2ORyoGW8=",
+        "lastModified": 1779999478,
+        "narHash": "sha256-OqWblDF0UsHMQddIQ1cSMD/9zgL+4kKmIchO9aO043Q=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "31ba2b0cbcac310f7aa2db3c8885e37f2e2e37fb",
+        "rev": "ea5a6c216b99319353bddc99b2a1a0c1b2241b6d",
         "type": "github"
       },
       "original": {
@@ -1145,11 +1145,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1779670813,
-        "narHash": "sha256-/6jXYt9J71w+6gL4ZaEhy6r+pqJrlfO8bplx4HS3hd8=",
+        "lastModified": 1779996558,
+        "narHash": "sha256-97+sQrHMlAm605Knx9zceiXYW9N8BYvotQiGcIcoCXU=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "94e16a395c1f208acd3672892cf0d6466f129b76",
+        "rev": "fbdfb26f43f9c74543ff3ddfa80c954355c0b6ac",
         "type": "github"
       },
       "original": {
@@ -1542,7 +1542,6 @@
     "npm-lockfile-fix": {
       "inputs": {
         "nixpkgs": [
-          "agents-workspace",
           "hermesAgent",
           "nixpkgs"
         ]
@@ -1691,7 +1690,6 @@
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
-          "agents-workspace",
           "hermesAgent",
           "nixpkgs"
         ],
@@ -1715,7 +1713,6 @@
     "pyproject-nix": {
       "inputs": {
         "nixpkgs": [
-          "agents-workspace",
           "hermesAgent",
           "pyproject-build-systems",
           "nixpkgs"
@@ -1738,7 +1735,6 @@
     "pyproject-nix_2": {
       "inputs": {
         "nixpkgs": [
-          "agents-workspace",
           "hermesAgent",
           "nixpkgs"
         ]
@@ -1760,7 +1756,6 @@
     "pyproject-nix_3": {
       "inputs": {
         "nixpkgs": [
-          "agents-workspace",
           "hermesAgent",
           "uv2nix",
           "nixpkgs"
@@ -1805,10 +1800,11 @@
         "deploy-rs": "deploy-rs",
         "disko": "disko",
         "emacs-overlay": "emacs-overlay",
-        "flake-parts": "flake-parts_3",
+        "flake-parts": "flake-parts_2",
         "ghostty": "ghostty",
         "git-hooks": "git-hooks",
         "google-workspace-cli": "google-workspace-cli",
+        "hermesAgent": "hermesAgent",
         "home-manager": "home-manager_3",
         "hunk": "hunk",
         "llm-agents": "llm-agents",
@@ -2372,13 +2368,11 @@
     "uv2nix": {
       "inputs": {
         "nixpkgs": [
-          "agents-workspace",
           "hermesAgent",
           "pyproject-build-systems",
           "nixpkgs"
         ],
         "pyproject-nix": [
-          "agents-workspace",
           "hermesAgent",
           "pyproject-build-systems",
           "pyproject-nix"
@@ -2401,7 +2395,6 @@
     "uv2nix_2": {
       "inputs": {
         "nixpkgs": [
-          "agents-workspace",
           "hermesAgent",
           "nixpkgs"
         ],
