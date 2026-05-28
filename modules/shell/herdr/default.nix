@@ -307,6 +307,13 @@ in
           # Start from home so herdr doesn't land in '/' when Ghostty launches from Finder.
           cd "$HOME"
 
+          # pi-computer-use's macOS TCC workaround is auto-enabled for SSH
+          # sessions, but Herdr's persistent server can also be launched outside
+          # the normal GUI-responsible process chain. Force the helper through
+          # the user's GUI launchd domain so Accessibility/Screen Recording
+          # grants are checked in the same context as a local GUI terminal.
+          export PI_COMPUTER_USE_GUI_SESSION_LAUNCH="''${PI_COMPUTER_USE_GUI_SESSION_LAUNCH:-1}"
+
           # Resolve herdr from the managed profile first. User-level bins stay
           # on PATH for helper commands, but should not shadow the Nix-managed
           # Herdr package used to launch the server.
