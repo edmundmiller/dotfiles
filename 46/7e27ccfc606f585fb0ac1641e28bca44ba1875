@@ -1,0 +1,19 @@
+hosts/seqeratop/default.nix
+  s_373694fd82c16e::t_ccbe711721641d 125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "467e27ccfc606f585fb0ac1641e28bca44ba1875",
+  "prompts": {},
+  "sessions": {
+    "s_373694fd82c16e": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e3408-365f-76e8-9c41-9bf0f01b3cb8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
