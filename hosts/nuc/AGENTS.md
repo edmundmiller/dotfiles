@@ -1,6 +1,6 @@
 # NUC Host
 
-Intel NUC home server running NixOS. Primary role: openclaw gateway, media services, home automation.
+Intel NUC home server running NixOS. Primary role: Hermes agents, media services, home automation.
 
 ## Key Info
 
@@ -14,27 +14,26 @@ Intel NUC home server running NixOS. Primary role: openclaw gateway, media servi
 
 - **`sandbox = "relaxed"`** — Required for packages needing network during build (e.g. qmd's bun install). Allows `__noChroot = true` derivations.
 - **`programs.nix-ld.enable = true`** — Required for generic linux binaries (e.g. sag from nix-steipete-tools). Libraries: `alsa-lib` (libasound.so.2 for sag audio).
-- **`/bin` compat symlinks** — `cat`, `ln`, `ls`, `mkdir`, `rm` symlinked for nix-openclaw/linux-sandbox compatibility.
 
 ## System Packages (non-module)
 
 | Package                  | Purpose                                               |
 | ------------------------ | ----------------------------------------------------- |
-| chromium                 | Openclaw browser control                              |
-| nodejs                   | Openclaw plugins, npm                                 |
+| chromium                 | Agent browser control                              |
+| nodejs                   | Agent plugins, npm                                 |
 | python3                  | node-gyp (native module compilation)                  |
 | gcc, gnumake, cmake      | Native compilation (node-gyp, node-llama-cpp)         |
-| claude-code, codex       | Openclaw CLI backends                                 |
+| claude-code, codex       | Agent CLI backends                                 |
 | bun                      | Pi CLI backend (`bunx @mariozechner/pi-coding-agent`) |
-| qmd                      | llm-agents.nix QMD package for Openclaw memory        |
+| qmd                      | llm-agents.nix QMD package                         |
 | zele                     | Packaged upstream+patches zele CLI                    |
-| sag (nix-steipete-tools) | TTS for openclaw via ElevenLabs                       |
+| sag (nix-steipete-tools) | TTS utility via ElevenLabs                         |
 | sqlite                   | General utility                                       |
 | taskwarrior3             | Task management                                       |
 
 ## QMD (llm-agents.nix)
 
-- **qmd** (thin local wrapper around `pkgs.llm-agents.qmd`) — Openclaw memory backend. The real package comes from `numtide/llm-agents.nix`, which upstream QMD contributors explicitly pointed Nix users to in https://github.com/tobi/qmd/pull/285#issuecomment-4012495904.
+- **qmd** (thin local wrapper around `pkgs.llm-agents.qmd`) — Hermes memory backend. The real package comes from `numtide/llm-agents.nix`, which upstream QMD contributors explicitly pointed Nix users to in https://github.com/tobi/qmd/pull/285#issuecomment-4012495904.
 - Package source: `numtide/llm-agents.nix/packages/qmd/`.
 - It uses bun2nix + targeted node-llama-cpp patches instead of our local runtime-bootstrap wrapper.
 - Cache/models still live under `~/.cache/qmd/`; patched node-llama-cpp writable state goes under `~/.cache/node-llama-cpp/`; config lives under `~/.config/qmd/`.
@@ -43,14 +42,9 @@ Intel NUC home server running NixOS. Primary role: openclaw gateway, media servi
 
 ## Services
 
-### Openclaw Gateway
+### Hermes Agents
 
-See `modules/services/openclaw/AGENTS.md` for full details.
-
-- Gateway mode: local + tailscale serve
-- Memory: qmd backend
-- CLI backends: pi, claude, codex
-- Telegram bot + ElevenLabs TTS (sag)
+Hermes is the active system-managed agent runtime. Check `systemctl status hermes-agent.service` and profile-specific `hermes-gateway-*` units when debugging.
 
 ### Media Stack
 
@@ -68,9 +62,9 @@ See `modules/services/openclaw/AGENTS.md` for full details.
 
 - **Gatus** — Uptime monitoring for all NUC services. See `modules/services/gatus/AGENTS.md`.
   - **Dashboard:** `https://gatus.cinnamon-rooster.ts.net` (Tailscale serve on port 8084)
-  - **Alerting:** Telegram (chat 8357890648) + OpenClaw webhook (`/hooks/wake`)
+  - **Alerting:** Telegram (chat 8357890648)
   - **Dead man's switch:** systemd timer checks Gatus health, reports to healthchecks.io every 2 min. Alerts if Gatus OR NUC goes down.
-  - **Monitored:** HA, Homebridge, Matter, Jellyfin, Sonarr, Radarr, Prowlarr, PostgreSQL, Tailscale, OpenClaw, Audiobookshelf
+  - **Monitored:** HA, Homebridge, Matter, Jellyfin, Sonarr, Radarr, Prowlarr, PostgreSQL, Tailscale, Hermes Web UI, AgentsView, Audiobookshelf
 
 ### Other
 
@@ -211,6 +205,5 @@ du -sh .pi/side-agents/runtime/* 2>/dev/null | sort -h | tail
 - `hosts/nuc/disko.nix` — Disk partitioning
 - `hosts/nuc/backups.nix` — Backup configuration
 - `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
-- `modules/services/openclaw/` — Gateway module + AGENTS.md
 - `modules/services/gatus/` — Uptime monitoring module + AGENTS.md
 - `hosts/nuc/DEPLOY.md` — Deployment documentation

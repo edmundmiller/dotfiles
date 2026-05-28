@@ -163,11 +163,11 @@ let
               conditions = [ "[STATUS] == 200" ];
             }
           ]
-          ++ optionals config.modules.services.mission-control.enable [
+          ++ optionals config.modules.services.hermes.enable [
             {
-              name = "Mission Control";
+              name = "Hermes Web UI";
               group = "Infrastructure";
-              url = "http://127.0.0.1:${toString config.modules.services.mission-control.port}/login";
+              url = "http://127.0.0.1:8642";
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }

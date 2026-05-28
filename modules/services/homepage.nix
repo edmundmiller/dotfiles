@@ -224,20 +224,6 @@ in
               };
             }
             {
-              "OpenClaw" = {
-                href = "https://openclaw.${tailnet}";
-                description = "AI gateway";
-                icon = "https://openclaw.cinnamon-rooster.ts.net/favicon.svg";
-              };
-            }
-            {
-              "Mission Control" = {
-                href = "https://mission-control.${tailnet}";
-                description = "AI agent dashboard";
-                icon = "mdi-view-dashboard-outline";
-              };
-            }
-            {
               "AgentsView" = {
                 href = "https://agentsview.${tailnet}";
                 description = "Shared agent session viewer";

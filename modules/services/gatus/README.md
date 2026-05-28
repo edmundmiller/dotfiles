@@ -89,8 +89,8 @@ A systemd timer pings the healthchecks.io URL every 2 minutes. If the NUC goes d
 
 - **PostgreSQL** — `tcp://localhost:5432`
 - **Tailscale** — `http://localhost:41112/healthz`
-- **OpenClaw Gateway** — `http://localhost:18789` (conditional)
-- **OpenClaw Tailscale Service** — `https://openclaw.cinnamon-rooster.ts.net` (conditional)
+- **Hermes Web UI** — `http://127.0.0.1:8642` (conditional)
+- **AgentsView** — `http://127.0.0.1:<agentsview-port>` (conditional)
 
 ## Adding Endpoints
 
