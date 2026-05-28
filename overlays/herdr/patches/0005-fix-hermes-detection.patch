@@ -1,6 +1,6 @@
-diff --git i/src/detect.rs w/src/detect.rs
-index a38251c..e79a1e1 100644
---- i/src/detect.rs
+diff --git c/src/detect.rs w/src/detect.rs
+index a38251c..2216577 100644
+--- c/src/detect.rs
 +++ w/src/detect.rs
 @@ -78,6 +78,9 @@ pub fn agent_label(agent: Agent) -> &'static str {
  
@@ -30,7 +30,7 @@ index a38251c..e79a1e1 100644
      // Match against known binary names
      match name.as_str() {
          "pi" => Some(Agent::Pi),
-@@ -119,12 +124,30 @@ pub fn identify_agent(process_name: &str) -> Option<Agent> {
+@@ -119,12 +124,40 @@ pub fn identify_agent(process_name: &str) -> Option<Agent> {
          "droid" => Some(Agent::Droid),
          "amp" | "amp-local" => Some(Agent::Amp),
          "grok" | "grok-build" => Some(Agent::Grok),
@@ -48,11 +48,21 @@ index a38251c..e79a1e1 100644
 +pub fn identify_agent_from_screen(screen_content: &str) -> Option<Agent> {
 +    let lower = screen_content.to_lowercase();
 +
-+    if screen_content.contains("⚕")
-+        || lower.contains(" hermes ")
-+        || lower.contains("─  hermes  ─")
-+        || lower.contains("msg=interrupt")
-+    {
++    // Keep this intentionally narrow: Herdr often captures source files, docs,
++    // and shell output in panes. A random mention of "hermes" (for example in
++    // a Python file or this dotfiles Herdr workspace) must not reclassify the
++    // pane. Only accept distinctive live Hermes chrome/status lines.
++    let has_hermes_title = lower.lines().any(|line| {
++        let trimmed = line.trim();
++        trimmed.contains("─  hermes  ─")
++            || (trimmed.starts_with('─') && trimmed.contains(" hermes "))
++    });
++    let has_hermes_status = screen_content.lines().any(|line| {
++        line.contains('⚕')
++            && (line.contains('│') || line.contains("⏲") || line.contains("⏱"))
++    });
++
++    if has_hermes_title || has_hermes_status {
 +        return Some(Agent::Hermes);
 +    }
 +
@@ -62,7 +72,7 @@ index a38251c..e79a1e1 100644
  pub fn identify_agent_in_job(job: &crate::platform::ForegroundJob) -> Option<(Agent, String)> {
      if let Some(process) = job
          .processes
-@@ -601,6 +624,18 @@ fn detect_hermes(content: &str) -> AgentState {
+@@ -601,6 +634,18 @@ fn detect_hermes(content: &str) -> AgentState {
          return AgentState::Working;
      }
  
@@ -81,7 +91,7 @@ index a38251c..e79a1e1 100644
      AgentState::Idle
  }
  
-@@ -2605,10 +2640,47 @@ mod tests {
+@@ -2605,10 +2650,64 @@ mod tests {
  
      // ---- Hermes ----
  
@@ -93,6 +103,23 @@ index a38251c..e79a1e1 100644
 +❯";
 +        assert_eq!(identify_agent_from_screen(screen), Some(Agent::Hermes));
 +        assert_eq!(identify_agent_from_screen("plain codex prompt"), None);
++    }
++
++    #[test]
++    fn hermes_screen_detection_ignores_source_and_workspace_text() {
++        assert_eq!(
++            identify_agent_from_screen("open overlays/herdr/patches/0005-fix-hermes-detection.patch"),
++            None
++        );
++        assert_eq!(
++            identify_agent_from_screen("# Python file mentioning hermes integration checks"),
++            None
++        );
++        assert_eq!(
++            identify_agent_from_screen("Hermes integration check in @overlays/herdr/"),
++            None
++        );
++        assert_eq!(identify_agent_from_screen("msg=interrupt"), None);
 +    }
 +
      #[test]
@@ -129,9 +156,9 @@ index a38251c..e79a1e1 100644
      }
  
      #[test]
-diff --git i/src/pane.rs w/src/pane.rs
+diff --git c/src/pane.rs w/src/pane.rs
 index 77249de..a82433d 100644
---- i/src/pane.rs
+--- c/src/pane.rs
 +++ w/src/pane.rs
 @@ -252,6 +252,27 @@ struct DetectionPublishState {
      visible_working: bool,
