@@ -86,6 +86,20 @@ in
       env.NPM_CONFIG_PREFIX = "$XDG_CACHE_HOME/npm";
       env.NODE_REPL_HISTORY = "$XDG_CACHE_HOME/node/repl_history";
 
+      # Keep npm's supply-chain time cutoff rolling instead of persisting a
+      # stale absolute `before=` timestamp that later blocks fresh Pi extension
+      # dependency installs. macOS `date` uses `-v`; GNU date uses `-d`.
+      modules.shell.zsh.envInit = ''
+        if command -v date >/dev/null 2>&1; then
+          if npm_before="$(${pkgs.coreutils}/bin/date -u -d '3 days ago' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null)"; then
+            export NPM_CONFIG_BEFORE="$npm_before"
+          elif npm_before="$(/bin/date -u -v-3d '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null)"; then
+            export NPM_CONFIG_BEFORE="$npm_before"
+          fi
+          unset npm_before
+        fi
+      '';
+
       # Add npm global bin to PATH
       env.PATH = [ "$XDG_CACHE_HOME/npm/bin" ];
 
