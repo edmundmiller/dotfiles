@@ -78,6 +78,7 @@ CLAUDE.local.md
 # Pi local runtime files #
 ##########################
 **/.pi/tasks/
+**/.pi/side-agents/
 
 # Beads / Dolt state
 **/.beads/dolt/
