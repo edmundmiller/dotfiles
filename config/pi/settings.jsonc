@@ -72,8 +72,8 @@
 
     // Prompt construction toolkit
     "npm:pi-promptsmith",
-    // FFF package
-    "npm:@ff-labs/pi-fff",
+    // FFF package disabled: crashes/high CPU in libfff_c.dylib on large vaults
+    // "npm:@ff-labs/pi-fff",
     // Cross-agent thread reader (agents:// URIs)
     "~/.config/dotfiles/packages/pi-packages/pi-xurl",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
