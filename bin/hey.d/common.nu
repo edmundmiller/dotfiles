@@ -1,17 +1,40 @@
 export const DARWIN_REBUILD = "/run/current-system/sw/bin/darwin-rebuild"
 
+export def find-flake-up [start: path] {
+  mut dir = ($start | path expand)
+  loop {
+    if (($dir | path join "flake.nix") | path exists) {
+      return $dir
+    }
+
+    let parent = ($dir | path dirname)
+    if $parent == $dir {
+      break
+    }
+    $dir = $parent
+  }
+
+  null
+}
+
 export def context [] {
   let file_pwd = ($env.FILE_PWD? | default (pwd) | path expand)
   let cwd = (pwd | path expand)
   let flake_dir = (
     [
-      $file_pwd
-      ($file_pwd | path join ".." | path expand)
-      ($file_pwd | path join ".." ".." | path expand)
-      $cwd
+      ($env.FLAKE_DIR? | default null)
+      (find-flake-up $cwd)
+      ($env.HOME | path join ".config" "dotfiles")
+      (find-flake-up $file_pwd)
+      ($env.DOTFILES? | default null)
+      (if (($env.DOTFILES_BIN? | default "") | is-empty) { null } else { $env.DOTFILES_BIN | path dirname })
     ]
+    | compact
+    | each {|dir| $dir | path expand}
     | where {|dir| (($dir | path join "flake.nix") | path exists)}
     | first
+    | default (find-flake-up $file_pwd)
+    | default (find-flake-up $cwd)
     | default ($file_pwd | path join ".." | path expand)
   )
 
