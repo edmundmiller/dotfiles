@@ -7,11 +7,11 @@
 
 buildNpmPackage rec {
   pname = "obsidian-headless";
-  version = "0.0.5";
+  version = "0.0.8";
 
   src = fetchzip {
     url = "https://registry.npmjs.org/obsidian-headless/-/obsidian-headless-${version}.tgz";
-    hash = "sha256-t+8Vx39ETqtbxDHJcMjLrYefONCRLcpYhJMfYmranNo=";
+    hash = "sha256-W2qOOh43plQ3WJQBK5csjPwito+3tKmWfqjd9gCpd4M=";
   };
 
   postPatch = ''
@@ -22,7 +22,7 @@ buildNpmPackage rec {
   # python3 needed by node-gyp as fallback if prebuild not available
   nativeBuildInputs = [ python3 ];
 
-  npmDepsHash = "sha256-wj0ezlDa7bKob96iuNPt9vtYO5HpRjqSLuo382jCGp8=";
+  npmDepsHash = "sha256-/nkkFTvsLwzNPOlsiijw7fiA2w6BxKm/u5pdMYxYzWQ=";
 
   dontNpmBuild = true;
 
