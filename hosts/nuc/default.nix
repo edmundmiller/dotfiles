@@ -733,6 +733,15 @@ in
           WIKI_PATH = "/repos/obsidian-vault";
           TN_VAULT_PATH = "/home/hermes/repos/obsidian-vault";
         };
+        # Keep the live gateway's tool surface declarative.  In particular,
+        # Scintillate must be able to create TaskNotes from Telegram without
+        # relying on mutable /home/emiller dotfiles inside the container.
+        extraPackages = [
+          pkgs.my.tnote
+          # The Hermes container entrypoint uses setpriv when available to drop
+          # from Docker root to HERMES_UID/HERMES_GID before launching Hermes.
+          pkgs.util-linux
+        ];
         hostPathMounts = lib.mkForce {
           "/home/emiller/.codex" = "/home/emiller/.codex";
           "/home/emiller/mill-docs" = "/repos/mill-docs";
@@ -806,10 +815,13 @@ in
         (pkgs.writeShellScript "hermes-scintillate-repo-compat-links" ''
           set -eu
           install -d -o emiller -g users -m 0750 /var/lib/hermes-scintillate/home/repos
+          install -d -o emiller -g users -m 0755 /var/lib/hermes-scintillate/home/.local/bin
           ln -sfn /repos/mill-docs /var/lib/hermes-scintillate/home/repos/mill-docs
           ln -sfn /repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/obsidian-vault
           ln -sfn /repos/tnote /var/lib/hermes-scintillate/home/repos/tnote
+          ln -sfn ${pkgs.my.tnote}/bin/tnote /var/lib/hermes-scintillate/home/.local/bin/tnote
           chown -h emiller:users /var/lib/hermes-scintillate/home/repos/mill-docs /var/lib/hermes-scintillate/home/repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/tnote
+          chown -h emiller:users /var/lib/hermes-scintillate/home/.local/bin/tnote
         '')
       ])
       (lib.mkAfter [
