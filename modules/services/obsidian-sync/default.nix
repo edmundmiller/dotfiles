@@ -253,13 +253,18 @@ in
           # Load OP_SERVICE_ACCOUNT_TOKEN when tokenFile is configured
           EnvironmentFile = mkIf (cfg.op.tokenFile != null) "/run/obsidian-sync-op.env";
 
-          # op CLI needs a writable dir for ~/.config/op session data.
-          # PrivateTmp=true gives an isolated /tmp; redirect XDG_CONFIG_HOME there.
-          Environment = mkIf (cfg.op.tokenFile != null) "XDG_CONFIG_HOME=/tmp";
+          # op CLI and obsidian-headless both use XDG config under the
+          # service user's home. Keep those persistent; putting
+          # XDG_CONFIG_HOME in PrivateTmp makes ob forget login/vault setup on
+          # every restart.
 
           # Hardening
           ProtectHome = "read-only";
-          ReadWritePaths = [ cfg.vaultPath ];
+          ReadWritePaths = [
+            cfg.vaultPath
+            "${config.users.users.${cfg.user}.home}/.config/op"
+            "${config.users.users.${cfg.user}.home}/.config/obsidian-headless"
+          ];
           NoNewPrivileges = true;
           PrivateTmp = true;
         };
