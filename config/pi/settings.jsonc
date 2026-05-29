@@ -101,6 +101,10 @@
     "npm:pi-permission-system",
     // Applies bash command policy to command-bearing extension tools like process.start.
     "~/.config/dotfiles/packages/pi-packages/pi-command-policy-bridge",
+    // JJ baseline guardrail: stop editing described dirty changes without explicit intent.
+    "npm:pi-jj-auto",
+    // JJ publish alignment pilot for colocated repos (`jj_vcs status` / `align_push`).
+    "npm:pi-jj-git-align",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
       "source": "https://github.com/pasky/pi-amplike",

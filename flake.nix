@@ -958,6 +958,13 @@
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
               };
+
+              # Pure Nix eval: assert Scintillate keeps vault write access and
+              # packaged tnote access in its NUC Hermes runtime.
+              nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
               # NixOS VM test: boot HA with our domain modules, verify config + API.

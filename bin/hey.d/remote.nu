@@ -70,7 +70,7 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
   if $mode == "build" {
     ^ssh -t $NUC_HOST $"cd '($remote_dir)' && nixos-rebuild build --flake .#nuc --show-trace"
   } else {
-    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && sudo nixos-rebuild ($mode) --flake .#nuc --show-trace"
+    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nixos-rebuild ($mode) --flake .#nuc --show-trace"
   }
 }
 
