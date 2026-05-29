@@ -713,6 +713,14 @@
                       exit 0
                     fi
 
+                    # npm refuses to combine the supply-chain safety knobs
+                    # `before` and `min-release-age`. Our interactive shell sets
+                    # NPM_CONFIG_BEFORE as a rolling cutoff, while ~/.config/npm/config
+                    # sets min-release-age. This hook pins jscpd to an old version, so
+                    # dropping the rolling cutoff here is safe and avoids npx aborting
+                    # before jscpd can run.
+                    unset NPM_CONFIG_BEFORE npm_config_before
+
                     # Run jscpd and capture output
                     echo "Running duplicate code detection..."
                     if npx -y jscpd@4.0.5 . --config .jscpd.json; then
