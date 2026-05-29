@@ -1252,8 +1252,6 @@ in
       "obsidian-sync.service"
     ];
     wantedBy = [ "multi-user.target" ];
-    unitConfig.JoinsNamespaceOf = "obsidian-sync.service";
-
     serviceConfig = {
       Type = "simple";
       User = "emiller";
@@ -1267,9 +1265,12 @@ in
       Restart = "on-failure";
       RestartSec = "30s";
       EnvironmentFile = "/run/obsidian-sync-op.env";
-      Environment = "XDG_CONFIG_HOME=/tmp";
       ProtectHome = "read-only";
-      ReadWritePaths = [ millDocsVaultPath ];
+      ReadWritePaths = [
+        millDocsVaultPath
+        "/home/emiller/.config/op"
+        "/home/emiller/.config/obsidian-headless"
+      ];
       NoNewPrivileges = true;
       PrivateTmp = true;
     };
