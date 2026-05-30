@@ -1,0 +1,24 @@
+packages/pi-packages/pi-command-policy-bridge/README.md
+  s_d969caf8ed9d5e::t_77dd1bc2cf5394 20-25
+config/pi/pi-permissions.jsonc
+  s_d969caf8ed9d5e::t_19ec99010f8922 73-76
+  s_d969caf8ed9d5e::t_99a974298b1b12 48-52,68-72,77-82
+packages/pi-packages/pi-command-policy-bridge/index.test.ts
+  s_d969caf8ed9d5e::t_5e7141e94cf57a 92-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "e1169fb89fb6c704063ed6c242255bc55c878e36",
+  "prompts": {},
+  "sessions": {
+    "s_d969caf8ed9d5e": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e760c-cb15-7cab-873f-72309042e8b7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
