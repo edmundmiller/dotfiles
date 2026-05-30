@@ -1,0 +1,135 @@
+--- a/agent/title_generator.py
++++ b/agent/title_generator.py
+@@ -6,7 +6,7 @@
+ 
+ import logging
+ import threading
+-from typing import Callable, Optional
++from typing import Any, Callable, Optional
+ 
+ from agent.auxiliary_client import call_llm
+ 
+@@ -26,9 +26,40 @@
+ )
+ 
+ 
++def _title_text(value: Any) -> str:
++    """Return compact text for title prompts from string or multimodal content."""
++    if value is None:
++        return ""
++    if isinstance(value, str):
++        return value
++    if isinstance(value, list):
++        parts = []
++        for item in value:
++            if isinstance(item, str):
++                parts.append(item)
++            elif isinstance(item, dict):
++                text = (
++                    item.get("text")
++                    or item.get("summary")
++                    or item.get("text_summary")
++                )
++                if text is not None:
++                    parts.append(str(text))
++        return "\n".join(part for part in parts if part)
++    if isinstance(value, dict):
++        text = (
++            value.get("text")
++            or value.get("summary")
++            or value.get("text_summary")
++        )
++        if text is not None:
++            return str(text)
++    return str(value)
++
++
+ def generate_title(
+-    user_message: str,
+-    assistant_response: str,
++    user_message: Any,
++    assistant_response: Any,
+     timeout: float = 30.0,
+     failure_callback: Optional[FailureCallback] = None,
+     main_runtime: dict = None,
+@@ -45,8 +76,8 @@
+     of silently accumulating untitled sessions.
+     """
+     # Truncate long messages to keep the request small
+-    user_snippet = user_message[:500] if user_message else ""
+-    assistant_snippet = assistant_response[:500] if assistant_response else ""
++    user_snippet = _title_text(user_message)[:500]
++    assistant_snippet = _title_text(assistant_response)[:500]
+ 
+     messages = [
+         {"role": "system", "content": _TITLE_PROMPT},
+@@ -87,8 +118,8 @@
+ def auto_title_session(
+     session_db,
+     session_id: str,
+-    user_message: str,
+-    assistant_response: str,
++    user_message: Any,
++    assistant_response: Any,
+     failure_callback: Optional[FailureCallback] = None,
+     main_runtime: dict = None,
+     title_callback: Optional[TitleCallback] = None,
+@@ -133,8 +164,8 @@
+ def maybe_auto_title(
+     session_db,
+     session_id: str,
+-    user_message: str,
+-    assistant_response: str,
++    user_message: Any,
++    assistant_response: Any,
+     conversation_history: list,
+     failure_callback: Optional[FailureCallback] = None,
+     main_runtime: dict = None,
+@@ -146,7 +177,12 @@
+     - This appears to be the first user→assistant exchange
+     - No title is already set
+     """
+-    if not session_db or not session_id or not user_message or not assistant_response:
++    if (
++        not session_db
++        or not session_id
++        or not _title_text(user_message)
++        or not _title_text(assistant_response)
++    ):
+         return
+ 
+     # Count user messages in history to detect first exchange.
+--- a/tests/agent/test_title_generator.py
++++ b/tests/agent/test_title_generator.py
+@@ -113,6 +113,31 @@
+         user_content = captured_kwargs["messages"][1]["content"]
+         assert len(user_content) < 1100  # 500 + 500 + formatting
+ 
++    def test_normalizes_none_and_multimodal_messages(self):
++        # Regression: https://github.com/NousResearch/hermes-agent/issues/32883
++        # Regression: https://github.com/NousResearch/hermes-agent/issues/33041
++        captured_kwargs = {}
++
++        def mock_call_llm(**kwargs):
++            captured_kwargs.update(kwargs)
++            resp = MagicMock()
++            resp.choices = [MagicMock()]
++            resp.choices[0].message.content = "Multimodal Title"
++            return resp
++
++        user_message = [
++            {"type": "text", "text": "Summarize this screenshot"},
++            {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}},
++        ]
++
++        with patch("agent.title_generator.call_llm", side_effect=mock_call_llm):
++            title = generate_title(user_message, None)
++
++        assert title == "Multimodal Title"
++        user_content = captured_kwargs["messages"][1]["content"]
++        assert "Summarize this screenshot" in user_content
++        assert "Assistant: " in user_content
++
+ 
+ class TestAutoTitleSession:
+     """Tests for auto_title_session() — the sync worker function."""
