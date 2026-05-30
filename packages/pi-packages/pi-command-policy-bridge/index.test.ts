@@ -89,4 +89,29 @@ describe("pi-command-policy-bridge", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it("treats foot-gun rules as explicit denies, not prompts", () => {
+    const dir = mkdtempSync(join(tmpdir(), "pi-footgun-policy-test-"));
+    const previous = process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
+    process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = dir;
+    writeFileSync(
+      join(dir, "pi-permissions.jsonc"),
+      '{ "bash": { "*": "allow", "*git rebase -i*": "deny" } }'
+    );
+
+    try {
+      const decision = evaluateToolGuard({
+        toolName: "bash",
+        input: { command: "git rebase -i HEAD~3" },
+      });
+      expect(decision.kind).toBe("deny");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
+      } else {
+        process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = previous;
+      }
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
