@@ -63,6 +63,9 @@
     "*GIT_COMMITTER_NAME=*": "deny",
     "*GIT_COMMITTER_EMAIL=*": "deny",
     "*HUSKY=0*": "deny",
+    "*SKIP=*": "deny",
+    "*SKIP_PREPARE_COMMIT_MSG=*": "deny",
+    "*SKIP_PRE_COMMIT=*": "deny",
     "*PRE_COMMIT_ALLOW_NO_CONFIG=*": "deny",
 
     // VCS foot-guns: these commonly open an editor or require an interactive
@@ -70,6 +73,12 @@
     // `git commit -m`, explicit sequence-editor/editor env) or ask in chat.
     "*git rebase -i*": "deny",
     "*git rebase --interactive*": "deny",
+    "*git add -p*": "deny",
+    "*git add --patch*": "deny",
+    "*git mergetool*": "deny",
+    "*git difftool*": "deny",
+    "*git gui*": "deny",
+    "*git citool*": "deny",
     "*git -c sequence.editor=: rebase -i*": "allow",
     "*git -c sequence.editor=true rebase -i*": "allow",
     "*GIT_SEQUENCE_EDITOR=:*git rebase -i*": "allow",
@@ -80,6 +89,8 @@
     "*GIT_SEQUENCE_EDITOR=nvim*git rebase*": "deny",
     "git commit": "deny",
     "*&& git commit": "deny",
+    "*git commit -n*": "deny",
+    "*git commit * -n*": "deny",
 
     // Never let an agent reboot/power off a host directly. Require the human to do it
     // or use a guarded deployment workflow that owns rollback semantics.
@@ -153,6 +164,19 @@
     "hey skills-update*": "allow",
     "hey skills-sync*": "allow",
     "hey gc*": "allow",
+
+    // Avoid legacy Beads aliases and accidental issue closes. Use `br`, and
+    // require an explicit close reason so issue state changes stay auditable.
+    "bd": "deny",
+    "bd *": "deny",
+    "*&& bd *": "deny",
+    "br close": "deny",
+    "br close *": "deny",
+    "*&& br close *": "deny",
+    "br close * --reason *": "allow",
+    "br close * --reason=*": "allow",
+    "*&& br close * --reason *": "allow",
+    "*&& br close * --reason=*": "allow",
 
     // Allow normal Beads issue/task management even when descriptions mention
     // examples of denied commands; `br` only mutates repo issue metadata.
