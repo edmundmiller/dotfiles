@@ -45,6 +45,11 @@
     "*deploy-rs*": "deny",
     "*nix run .#deploy-rs*": "deny",
 
+    // Dangerous commands are hard blocks: they bypass safety rails, mutate host
+    // state, or weaken repo integrity in ways an agent should not choose.
+    // Foot-guns are also hard blocks, but for a different reason: they are
+    // likely to hang, open an interactive editor, or leave the session wedged.
+
     // Keep hook/signing enforcement in the same command policy system.
     "*--no-verify*": "deny",
     "*--no-gpg-sign*": "deny",
@@ -59,6 +64,22 @@
     "*GIT_COMMITTER_EMAIL=*": "deny",
     "*HUSKY=0*": "deny",
     "*PRE_COMMIT_ALLOW_NO_CONFIG=*": "deny",
+
+    // VCS foot-guns: these commonly open an editor or require an interactive
+    // terminal. Agents should use non-interactive forms (`jj describe -m`,
+    // `git commit -m`, explicit sequence-editor/editor env) or ask in chat.
+    "*git rebase -i*": "deny",
+    "*git rebase --interactive*": "deny",
+    "*git -c sequence.editor=: rebase -i*": "allow",
+    "*git -c sequence.editor=true rebase -i*": "allow",
+    "*GIT_SEQUENCE_EDITOR=:*git rebase -i*": "allow",
+    "*GIT_SEQUENCE_EDITOR=true*git rebase -i*": "allow",
+    "*GIT_EDITOR=vim*git rebase*": "deny",
+    "*GIT_EDITOR=nvim*git rebase*": "deny",
+    "*GIT_SEQUENCE_EDITOR=vim*git rebase*": "deny",
+    "*GIT_SEQUENCE_EDITOR=nvim*git rebase*": "deny",
+    "git commit": "deny",
+    "*&& git commit": "deny",
 
     // Never let an agent reboot/power off a host directly. Require the human to do it
     // or use a guarded deployment workflow that owns rollback semantics.

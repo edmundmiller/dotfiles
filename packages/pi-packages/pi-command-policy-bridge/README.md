@@ -17,4 +17,9 @@ For supported tool calls, the extension extracts the embedded command and evalua
 - `allow` lets the tool call proceed
 - no matching rule allows the tool call
 
-This package is intentionally a deny-list guardrail, not an approval system or LLM danger classifier.
+This package is intentionally a deny-list guardrail, not an approval system or LLM danger classifier. If a command is not explicitly denied, it runs without prompting.
+
+The deny list can include both:
+
+- dangerous commands: bypass safety rails, mutate host state, or weaken repo integrity
+- foot-guns: likely to hang, open an interactive editor, or wedge the agent session
