@@ -1,0 +1,35 @@
+overlays/hermes-agent/default.nix
+  s_519d17b4dd4f7f::t_064a44dcf53a45 2-11
+patches/hermes-agent/0002-normalize-auto-title-inputs.patch
+  s_519d17b4dd4f7f::t_3a073da49f1af2 102-135
+  s_519d17b4dd4f7f::t_0f387505169e51 1-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "cca5d416b5915092f945645bbd3af8cf789d105b",
+  "prompts": {
+    "519d17b4dd4f7f01": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e754c-36b8-7071-b006-c3d5d62f4558",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>",
+      "total_additions": 151,
+      "total_deletions": 104,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_519d17b4dd4f7f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e754c-36b8-7071-b006-c3d5d62f4558",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
