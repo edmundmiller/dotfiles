@@ -52,12 +52,12 @@ let
         next_tab = "prefix+n"
 
         [[keys.command]]
-        key = "prefix+["
+        key = "prefix+u"
         type = "shell"
         command = "herdr hunk"
 
         [[keys.command]]
-        key = "prefix+]"
+        key = "prefix+U"
         type = "shell"
         command = "herdr hunk --tab"
 
@@ -485,12 +485,12 @@ in
           command_block = [
               "",
               "[[keys.command]]",
-              'key = "prefix+["',
+              'key = "prefix+u"',
               'type = "shell"',
               'command = "herdr hunk"',
               "",
               "[[keys.command]]",
-              'key = "prefix+]"',
+              'key = "prefix+U"',
               'type = "shell"',
               'command = "herdr hunk --tab"',
               "",

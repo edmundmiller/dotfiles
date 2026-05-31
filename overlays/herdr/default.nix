@@ -7,8 +7,8 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "8180d76b30ca4281bdf2b43ff0316406f284413e";
-      hash = "sha256-bf1sVfGgfqpQYTRU2m0K/o2HEq5DV3R7nW5Lgll3+wI=";
+      rev = "4219aec638cdd81efae6460c6fba28418925c37c";
+      hash = "sha256-Y/cZeBqYvSxo/cWyvEJP1opG2diG2LUUFPRy/0yMSKk=";
     };
     patches = [
       ./patches/0001-worktree-post-create-command.patch
