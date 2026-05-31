@@ -39,8 +39,11 @@
         tmux.jmux.enable = false;
         herdr.enable = true;
         # Seqera ghostty theme uses a dark purple background (#201637); use
-        # the matching Pi theme palette so dim/muted text stays legible.
+        # the matching Pi theme palette so dim/muted text stays legible, and
+        # apply the Seqera-branded Herdr UI theme on top of the terminal
+        # palette.
         herdr.piThemeVariant = "seqera";
+        herdr.themeVariant = "seqera";
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         dmux.enable = false;
