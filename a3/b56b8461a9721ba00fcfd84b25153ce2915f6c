@@ -1,0 +1,13 @@
+skills/flake.nix
+  ai_agent 178-193
+flake.lock
+  ai_agent 89-90,92-93
+hosts/nuc/default.nix
+  ai_agent 987-989
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a3b56b8461a9721ba00fcfd84b25153ce2915f6c",
+  "prompts": {}
+}
