@@ -1,0 +1,30 @@
+hosts/nuc/_tests/scintillate-runtime-access.nix
+  s_0dff4f3c41d7e1::t_fbaf6f06d3e003 18,32,80
+  s_0dff4f3c41d7e1::t_315a0b3656c438 1-2,4-5,9,11,14,20,24,27-31,33-38,41-45,48-49,53,61,65-77,81,84-85,88-89,92-93
+hosts/nuc/default.nix
+  s_34ab58e228195f::t_a198ce6f523c31 722,785-801,993-999
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ea51308ab2d7dfcc1bd1360449927db18adfd9be",
+  "prompts": {},
+  "sessions": {
+    "s_0dff4f3c41d7e1": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e749b-fff3-7492-93c3-bb1ddb292444",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_34ab58e228195f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e7b1e-339d-7673-b233-3d039ef62d92",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
