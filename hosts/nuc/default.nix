@@ -719,35 +719,7 @@ in
       };
       scintillate = {
         authFile = "/home/emiller/.codex/auth.json";
-        # Scintillate/Hermes tools have historically looked for repos under
-        # /home/hermes/repos. Mount the host vault directly at that container
-        # path so default/legacy lookups and explicit config agree.
-        workingDirectory = "/home/hermes/repos/obsidian-vault";
-        settings = {
-          skills.config.wiki.path = "/home/hermes/repos/obsidian-vault";
-          terminal.cwd = "/home/hermes/repos/obsidian-vault";
-        };
-        environment = {
-          CODEX_HOME = lib.mkForce "/home/emiller/.codex";
-          PYTHONPATH = hermesTelegramPythonPath;
-          WIKI_PATH = "/repos/obsidian-vault";
-          TN_VAULT_PATH = "/home/hermes/repos/obsidian-vault";
-        };
-        # Keep the live gateway's tool surface declarative.  In particular,
-        # Scintillate must be able to create TaskNotes from Telegram without
-        # relying on mutable /home/emiller dotfiles inside the container.
-        extraPackages = [
-          pkgs.my.tnote
-          # The Hermes container entrypoint uses setpriv when available to drop
-          # from Docker root to HERMES_UID/HERMES_GID before launching Hermes.
-          pkgs.util-linux
-        ];
-        hostPathMounts = lib.mkForce {
-          "/home/emiller/.codex" = "/home/emiller/.codex";
-          "/home/emiller/mill-docs" = "/repos/mill-docs";
-          "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
-          "${tnoteBaseRepo}" = "/repos/tnote";
-        };
+        environment.PYTHONPATH = hermesTelegramPythonPath;
         environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
       };
       amosburton = {
@@ -810,38 +782,23 @@ in
     # "Gateway shutting down -- Your current task will be interrupted".
     # Apply unit/package changes on the next explicit service restart instead.
     restartIfChanged = false;
-    serviceConfig.ExecStartPre = lib.mkMerge [
-      (lib.mkBefore [
-        (pkgs.writeShellScript "hermes-scintillate-repo-compat-links" ''
-          set -eu
-          install -d -o emiller -g users -m 0750 /var/lib/hermes-scintillate/home/repos
-          install -d -o emiller -g users -m 0755 /var/lib/hermes-scintillate/home/.local/bin
-          ln -sfn /repos/mill-docs /var/lib/hermes-scintillate/home/repos/mill-docs
-          ln -sfn /repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/obsidian-vault
-          ln -sfn /repos/tnote /var/lib/hermes-scintillate/home/repos/tnote
-          ln -sfn ${pkgs.my.tnote}/bin/tnote /var/lib/hermes-scintillate/home/.local/bin/tnote
-          chown -h emiller:users /var/lib/hermes-scintillate/home/repos/mill-docs /var/lib/hermes-scintillate/home/repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/tnote
-          chown -h emiller:users /var/lib/hermes-scintillate/home/.local/bin/tnote
-        '')
-      ])
-      (lib.mkAfter [
-        (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
-          set -eu
-          env_file=/var/lib/hermes-scintillate/.hermes/.env
-          secrets_file=/run/hermes-scintillate-env/secrets.env
-          tmp_file="$env_file.tmp.$$"
+    serviceConfig.ExecStartPre = lib.mkAfter [
+      (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
+        set -eu
+        env_file=/var/lib/hermes-scintillate/.hermes/.env
+        secrets_file=/run/hermes-scintillate-env/secrets.env
+        tmp_file="$env_file.tmp.$$"
 
-          install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
-          touch "$env_file"
-          chown emiller:users "$env_file"
-          chmod 0600 "$env_file"
+        install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
+        touch "$env_file"
+        chown emiller:users "$env_file"
+        chmod 0600 "$env_file"
 
-          grep -v '^TELEGRAM_' "$env_file" > "$tmp_file"
-          grep '^TELEGRAM_' "$secrets_file" >> "$tmp_file"
-          install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
-          rm -f "$tmp_file"
-        '')
-      ])
+        grep -v '^TELEGRAM_' "$env_file" > "$tmp_file"
+        grep '^TELEGRAM_' "$secrets_file" >> "$tmp_file"
+        install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
+        rm -f "$tmp_file"
+      '')
     ];
   };
 
@@ -1033,8 +990,13 @@ in
         homeAssistantUrl = "http://127.0.0.1:8123";
         agents = {
           scintillate = {
-            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
-            workspaceLinks."repos/tnote" = tnoteBaseRepo;
+            providers = {
+              obsidianVault.hostPath = "/home/emiller/obsidian-vault";
+              tnote = {
+                package = pkgs.my.tnote;
+                repoPath = tnoteBaseRepo;
+              };
+            };
             mcpBearerTokenPaths.linear = config.age.secrets.scintillate-linear-mcp-token.path;
           };
 
