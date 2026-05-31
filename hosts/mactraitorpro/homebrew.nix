@@ -151,7 +151,9 @@
     # AI Tools
     "codexbar"
     "home-assistant"
-    "superset"
+    # Temporarily disabled: upstream GitHub release download returns HTTP 502.
+    # Re-enable when https://github.com/superset-sh/superset/releases is healthy.
+    # "superset"
     "lookaway"
 
     # Utilities
