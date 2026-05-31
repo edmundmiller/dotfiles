@@ -1,0 +1,33 @@
+hosts/nuc/default.nix
+  s_bbb6269d69779a::t_b6f3951b11d505 11
+  s_bbb6269d69779a::t_f4f4d45b021a0a 662
+overlays/hermes-agent/default.nix
+  s_bbb6269d69779a::t_96a319213ead6a 1,3-38,41
+overlays/gnhf/default.nix
+  s_cc2cc8c10cfa9d::t_4dc470e94b89b2 2-9
+  s_cc2cc8c10cfa9d::t_e9d06687c92c95 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "773db38a39e3de147c36439ea9fb5d66646e052e",
+  "prompts": {},
+  "sessions": {
+    "s_bbb6269d69779a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e7e59-b389-7de5-9cf7-431313f41cf1",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_cc2cc8c10cfa9d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7e6a-df97-7320-9152-6b26a0d7bf53",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
