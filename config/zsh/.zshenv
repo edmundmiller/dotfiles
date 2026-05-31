@@ -22,8 +22,20 @@ fi
 unset _brew_cache
 
 # Set up terminfo early (before nix-darwin extra.zshenv is sourced).
-# Use full Nix search paths so TERM=ghostty resolves correctly on macOS too.
-export TERMINFO_DIRS="$HOME/.nix-profile/share/terminfo:/etc/profiles/per-user/$USER/share/terminfo:/run/current-system/sw/share/terminfo:/nix/var/nix/profiles/default/share/terminfo:/usr/share/terminfo${TERMINFO_DIRS:+:$TERMINFO_DIRS}"
+# Prefer ~/.terminfo because this repo provides compatibility symlinks using
+# the canonical first-letter layout expected by tools like `codex doctor`.
+_terminfo_dirs=(
+  "$HOME/.terminfo"
+  "$HOME/.nix-profile/share/terminfo"
+  "/etc/profiles/per-user/$USER/share/terminfo"
+  "/run/current-system/sw/share/terminfo"
+  "/nix/var/nix/profiles/default/share/terminfo"
+  "/usr/share/terminfo"
+  ${(s.:.)TERMINFO_DIRS}
+)
+typeset -U _terminfo_dirs
+export TERMINFO_DIRS="${(j.:.)_terminfo_dirs}"
+unset _terminfo_dirs
 # Set default TERM if empty (prevents TUI crashes in non-interactive SSH)
 [[ -z "$TERM" ]] && export TERM=xterm-256color
 

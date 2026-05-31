@@ -200,6 +200,16 @@ in
         "mole/whitelist".source = "${configDir}/mole/whitelist";
 
       };
+
+      # Some tooling (notably `codex doctor`) looks for terminfo entries in
+      # the canonical first-letter layout (for example `x/xterm-256color`).
+      # macOS and Nix both commonly expose hashed entries (`78/xterm-256color`),
+      # which ncurses can read but Codex's doctor currently reports as
+      # unreadable. Provide a tiny compatibility terminfo tree in $HOME.
+      home.file = {
+        ".terminfo/x/xterm-256color".source = "${pkgs.ncurses}/share/terminfo/78/xterm-256color";
+        ".terminfo/g/ghostty".source = "${pkgs.ncurses}/share/terminfo/67/ghostty";
+      };
     }
   ]);
 }
