@@ -1,66 +1,126 @@
 #!/usr/bin/env bash
-# Test that pi settings.jsonc converts to valid JSON after nix-darwin rebuild.
-# Run: bash modules/shell/pi/test-settings-json.sh
-#
-# This catches:
-# - Inline // comments not stripped
-# - Trailing commas not removed
-# - Any other JSONC→JSON conversion failures
+# Validate Pi settings source JSONC against the local JSON schema.
+# Run: bash modules/agents/pi/test-settings-json.sh
 set -euo pipefail
 
-settings="$HOME/.pi/agent/settings.json"
-failures=0
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+settings="$repo_root/config/pi/settings.jsonc"
+schema="$repo_root/config/pi/settings-schema.json"
+python_bin="${PI_SETTINGS_JSON_PYTHON:-python3}"
 
-if [ ! -f "$settings" ]; then
-  echo "SKIP: $settings not found (pi module not enabled?)"
-  exit 0
-fi
+"$python_bin" - "$settings" "$schema" <<'PY'
+import json
+import pathlib
+import sys
 
-# Validate JSON
-if python3 -m json.tool "$settings" > /dev/null 2>&1; then
-  echo "PASS: valid JSON"
-else
-  echo "FAIL: invalid JSON"
-  python3 -m json.tool "$settings" 2>&1 || true
-  failures=$((failures + 1))
-fi
+try:
+    import jsonschema
+except ModuleNotFoundError as exc:
+    raise SystemExit(
+        "FAIL: missing python module 'jsonschema'; run through the prek hook or set PI_SETTINGS_JSON_PYTHON"
+    ) from exc
 
-# Check no full-line // comments leaked through
-if grep -E '^\s*//' "$settings" > /dev/null 2>&1; then
-  echo "FAIL: full-line // comments found"
-  grep -nE '^\s*//' "$settings"
-  failures=$((failures + 1))
-else
-  echo "PASS: no full-line comments"
-fi
 
-# Check no inline comments after JSON values
-# Matches lines with // outside of quoted strings (heuristic)
-if grep -E ',\s*//' "$settings" > /dev/null 2>&1; then
-  echo "FAIL: inline // comments found"
-  grep -nE ',\s*//' "$settings"
-  failures=$((failures + 1))
-else
-  echo "PASS: no inline comments"
-fi
+def strip_jsonc(text: str) -> str:
+    out = []
+    in_string = False
+    escaped = False
+    i = 0
 
-# Check no trailing commas before ] or }
-if python3 -c "
-import re, sys
-text = open('$settings').read()
-# trailing comma before closing bracket/brace (ignoring whitespace/newlines)
-if re.search(r',\s*[\]\}]', text):
-    print('trailing comma detected')
-    sys.exit(1)
-" 2>&1; then
-  echo "PASS: no trailing commas"
-else
-  echo "FAIL: trailing commas found"
-  failures=$((failures + 1))
-fi
+    while i < len(text):
+        char = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
 
-if [ "$failures" -gt 0 ]; then
-  echo "--- $failures check(s) failed ---"
-  exit 1
-fi
-echo "--- all checks passed ---"
+        if in_string:
+            out.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            i += 1
+            continue
+
+        if char == '"':
+            in_string = True
+            out.append(char)
+            i += 1
+            continue
+
+        if char == "/" and nxt == "/":
+            out.extend("  ")
+            i += 2
+            while i < len(text) and text[i] not in "\r\n":
+                out.append(" ")
+                i += 1
+            continue
+
+        if char == "/" and nxt == "*":
+            out.extend("  ")
+            i += 2
+            while i < len(text):
+                if text[i] == "*" and i + 1 < len(text) and text[i + 1] == "/":
+                    out.extend("  ")
+                    i += 2
+                    break
+                out.append("\n" if text[i] in "\r\n" else " ")
+                i += 1
+            continue
+
+        out.append(char)
+        i += 1
+
+    return "".join(out)
+
+
+def remove_trailing_commas(text: str) -> str:
+    out = []
+    in_string = False
+    escaped = False
+    i = 0
+
+    while i < len(text):
+        char = text[i]
+
+        if in_string:
+            out.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            i += 1
+            continue
+
+        if char == '"':
+            in_string = True
+            out.append(char)
+            i += 1
+            continue
+
+        if char == ",":
+            j = i + 1
+            while j < len(text) and text[j].isspace():
+                j += 1
+            if j < len(text) and text[j] in "]}":
+                i += 1
+                continue
+
+        out.append(char)
+        i += 1
+
+    return "".join(out)
+
+
+settings_path = pathlib.Path(sys.argv[1])
+schema_path = pathlib.Path(sys.argv[2])
+
+settings = json.loads(remove_trailing_commas(strip_jsonc(settings_path.read_text(encoding="utf-8"))))
+schema = json.loads(schema_path.read_text(encoding="utf-8"))
+jsonschema.Draft7Validator.check_schema(schema)
+jsonschema.validate(settings, schema)
+
+print("PASS: config/pi/settings.jsonc matches config/pi/settings-schema.json")
+PY

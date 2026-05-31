@@ -754,6 +754,21 @@
                 pass_filenames = false;
                 stages = [ "pre-push" ];
               };
+              pi-settings-json = {
+                enable = true;
+                name = "pi-settings-json";
+                description = "Validate Pi settings JSONC against the schema";
+                entry = toString (
+                  pkgs.writeShellScript "pi-settings-json" ''
+                    PI_SETTINGS_JSON_PYTHON=${pkgs.python3.withPackages (ps: [ ps.jsonschema ])}/bin/python3 \
+                      bash modules/agents/pi/test-settings-json.sh
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "^(config/pi/settings\\.jsonc|modules/agents/pi/)";
+                stages = [ "pre-commit" ];
+              };
               large-file-detection = {
                 enable = true;
                 name = "large-file-detection";
