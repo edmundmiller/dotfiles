@@ -130,6 +130,31 @@ let
     else
       "${piThemeBaseName}-${cfg.piThemeVariant}";
   piThemeVars = piThemePalettes.${cfg.piThemeVariant};
+
+  # Herdr UI theme (separate from the Pi popup theme above). Each variant
+  # is rendered into `[theme]` / `[theme.custom]` blocks by the bootstrap
+  # activation. The `default` variant matches the upstream Catppuccin look;
+  # `seqera` follows the host terminal palette and accents with Seqera
+  # brand colors (background #201637, brand teal #31c9ac, brand green
+  # #95bf2f).
+  herdrThemePalettes = {
+    default = {
+      name = "catppuccin";
+      custom = { };
+    };
+    seqera = {
+      name = "terminal";
+      custom = {
+        panel_bg = "reset";
+        accent = "#31c9ac";
+        green = "#95bf2f";
+        blue = "#5ea0ff";
+        red = "#f38ba8";
+        yellow = "#e6d06c";
+      };
+    };
+  };
+  herdrTheme = herdrThemePalettes.${cfg.themeVariant};
   piThemeFile = pkgs.writeText "${piThemeName}.json" ''
     {
       "$schema": "https://raw.githubusercontent.com/badlogic/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
@@ -225,6 +250,16 @@ in
         Which palette variant to ship as the Pi `dotfiles-herdr` theme.
         Use `seqera` on hosts whose ghostty background is the Seqera dark
         purple (`#201637`) so dim/muted slots stay legible.
+      '';
+    };
+    themeVariant = mkOption {
+      type = enum (attrNames herdrThemePalettes);
+      default = "default";
+      description = ''
+        Which Herdr UI theme variant to apply via `[theme]` / `[theme.custom]`
+        in the bootstrapped Herdr config. `default` keeps the shared Catppuccin
+        look; `seqera` follows the host terminal palette and accents with
+        Seqera brand colors for the Seqera Dark ghostty background.
       '';
     };
     piThemeName = mkOption {
@@ -380,12 +415,15 @@ in
           # Keep the managed prefix in sync even after the initial bootstrap.
           # Herdr's config stays writable for onboarding/settings, so existing
           # files need an explicit upsert rather than only copying the template.
-          ${pkgs.python3}/bin/python3 - "$target" ${escapeShellArg cfg.prefix} <<'PY'
+          ${pkgs.python3}/bin/python3 - "$target" ${escapeShellArg cfg.prefix} ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
+          import json
           import pathlib
           import sys
 
           path = pathlib.Path(sys.argv[1])
           prefix = sys.argv[2]
+          theme_name = sys.argv[3]
+          theme_custom = json.loads(sys.argv[4])
           lines = path.read_text().splitlines()
           managed_commands = {
               "herdr-tab previous",
@@ -599,9 +637,40 @@ in
 
               return out
 
+          def replace_section(lines, header, body_lines):
+              # Remove any existing block whose header matches exactly, then
+              # append the new block at the end. Exact-match keeps sub-tables
+              # such as `[theme.custom]` independent of `[theme]`.
+              out = []
+              in_target = False
+              for line in lines:
+                  stripped = line.strip()
+                  if stripped.startswith("[") and stripped.endswith("]"):
+                      in_target = stripped == header
+                      if in_target:
+                          continue
+                      out.append(line)
+                      continue
+                  if in_target:
+                      continue
+                  out.append(line)
+
+              if body_lines:
+                  if out and out[-1].strip():
+                      out.append("")
+                  out.append(header)
+                  out.extend(body_lines)
+              return out
+
           out = upsert_worktree_post_create(out)
           out = upsert_simple_section(out, "session", {"resume_agents_on_restore": "true"})
           out = upsert_simple_section(out, "experimental", {"pane_history": "true"})
+          out = replace_section(out, "[theme]", [f'name = "{theme_name}"'])
+          out = replace_section(
+              out,
+              "[theme.custom]",
+              [f'{k} = "{v}"' for k, v in theme_custom.items()],
+          )
 
           path.write_text("\n".join(out) + "\n")
           PY
