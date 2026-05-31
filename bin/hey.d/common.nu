@@ -231,6 +231,23 @@ export def system-rebuild [action: string, ...args: string] {
 
 export def post-rebuild [] {
   if (is-darwin) {
+    ^bash -c '
+      set -euo pipefail
+      pi_bin="$(command -v pi || true)"
+      if [ -z "$pi_bin" ] && [ -x "/etc/profiles/per-user/$USER/bin/pi" ]; then
+        pi_bin="/etc/profiles/per-user/$USER/bin/pi"
+      fi
+
+      if [ -z "$pi_bin" ]; then
+        echo "warning: pi not found; skipping pi package update" >&2
+        exit 0
+      fi
+
+      echo "=== pi: update extensions ==="
+      if ! "$pi_bin" update --extensions; then
+        echo "warning: pi package update failed; rebuild already completed" >&2
+      fi
+    '
     return
   }
 
