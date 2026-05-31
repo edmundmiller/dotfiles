@@ -5,7 +5,7 @@
 }:
 let
   pname = "nf-core";
-  version = "2.12";
+  version = "2.14.1";
 in
 python3.pkgs.buildPythonApplication rec {
   inherit pname version;

@@ -9,7 +9,7 @@
 
 stdenv.mkDerivation {
   pname = "worktree-manager";
-  version = "1.3.0-unstable-2026-04-22";
+  version = "v1.3.0";
 
   src = fetchFromGitHub {
     owner = "jarredkenny";

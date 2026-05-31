@@ -5,14 +5,14 @@
 }:
 python3.pkgs.buildPythonApplication rec {
   pname = "git-sim";
-  version = "0.3.3";
+  version = "0.3.5";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "initialcommit-com";
     repo = "git-sim";
     rev = "v${version}";
-    hash = "sha256-F8A29ZWL2lPTlqwOV6bbbuL/0MZvitxi9GJWrdu69zI=";
+    hash = "sha256-4jHkAlF2SAzHjBi8pmAJ0TKkcLxw+6EdGsXnHZUMILw=";
   };
 
   nativeBuildInputs = [

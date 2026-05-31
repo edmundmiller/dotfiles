@@ -10,7 +10,7 @@
 }:
 stdenv.mkDerivation rec {
   pname = "gw";
-  version = "1.0.0";
+  version = "1.2.6";
 
   src = fetchFromGitHub {
     owner = "kcleal";

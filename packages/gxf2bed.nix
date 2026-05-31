@@ -5,7 +5,7 @@
 }:
 rustPlatform.buildRustPackage rec {
   pname = "gxf2bed";
-  version = "0.2.0";
+  version = "0.3.2";
 
   src = fetchFromGitHub {
     owner = "alejandrogzi";

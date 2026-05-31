@@ -9,7 +9,7 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "sem";
-  version = "0.5.0";
+  version = "0.6.1";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";

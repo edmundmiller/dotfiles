@@ -6,7 +6,7 @@
 
 rustPlatform.buildRustPackage {
   pname = "jj-vine";
-  version = "0.3.6";
+  version = "0.5.0";
 
   src = fetchFromGitHub {
     owner = "abrenneke";
