@@ -1,0 +1,19 @@
+modules/dev/node.nix
+  s_d969caf8ed9d5e::t_9c5d73517d5f3c 89-90,92,101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "21174f9308687bfaf22aa840c5676468de43533c",
+  "prompts": {},
+  "sessions": {
+    "s_d969caf8ed9d5e": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e760c-cb15-7cab-873f-72309042e8b7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
