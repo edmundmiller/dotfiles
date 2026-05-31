@@ -31,12 +31,12 @@ previous_tab = "prefix+p"
 next_tab = "prefix+n"
 
 [[keys.command]]
-key = "prefix+["
+key = "prefix+u"
 type = "shell"
 command = "herdr hunk"
 
 [[keys.command]]
-key = "prefix+]"
+key = "prefix+U"
 type = "shell"
 command = "herdr hunk --tab"
 

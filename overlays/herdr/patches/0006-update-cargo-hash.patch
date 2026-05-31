@@ -1,5 +1,5 @@
 diff --git i/nix/package.nix w/nix/package.nix
-index ab23e31..eb0a177 100644
+index 0688714..1cd21e5 100644
 --- i/nix/package.nix
 +++ w/nix/package.nix
 @@ -32,7 +32,10 @@ rustPlatform.buildRustPackage {
@@ -13,16 +13,7 @@ index ab23e31..eb0a177 100644
          ../vendor/libghostty-vt
          ../vendor/libghostty-vt.vendor.json
          ../build.rs
-@@ -42,7 +45,7 @@ rustPlatform.buildRustPackage {
-     );
-   };
- 
--  cargoHash = "sha256-5WvdZUD0Axr6xQ9Nm1XV1eJ0w4xUl8BQDnNs7pv6C8o=";
-+  cargoHash = "sha256-yRT31RnfjSQy5bxFXVvM9zRM59WAPrBozu3S2tag6s8=";
- 
-   nativeBuildInputs = [
-     git
-@@ -61,10 +64,17 @@ rustPlatform.buildRustPackage {
+@@ -62,10 +65,17 @@ rustPlatform.buildRustPackage {
      export ZIG_LOCAL_CACHE_DIR="$TMPDIR/zig-local-cache"
    '';
  
