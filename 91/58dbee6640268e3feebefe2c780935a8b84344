@@ -1,0 +1,9 @@
+modules/desktop/term/ghostty/default.nix
+  s_0aa58f9a75973d::t_c8111d663111a7 56-64,171
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "9158dbee6640268e3feebefe2c780935a8b84344",
+  "prompts": {}
+}
