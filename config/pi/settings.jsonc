@@ -61,6 +61,10 @@
     // "~/.config/dotfiles/packages/pi-packages/pi-context-repo",
     // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
     "~/.config/dotfiles/packages/pi-packages/pi-dcp",
+    // Context pruning, usage, and cache graph tools
+    "npm:pi-context-prune",
+    "npm:pi-context-usage",
+    "npm:pi-cache-graph",
     // Repo-local QMD workflow (/qmd, /qp) and qmd-cli-first guidance
     "~/.config/dotfiles/packages/pi-packages/pi-qmd",
     // Auto-load direnv env at session start
