@@ -38,6 +38,22 @@ in
         enable = true;
         openFirewall = true;
       };
+
+      home-manager.users.${config.user.name}.systemd.user.services.moshi-hook = {
+        Unit = {
+          Description = "Moshi hook daemon";
+          Documentation = [ "https://getmoshi.app" ];
+          ConditionFileIsExecutable = "%h/.local/bin/moshi-hook";
+        };
+
+        Service = {
+          ExecStart = "%h/.local/bin/moshi-hook serve";
+          Restart = "always";
+          RestartSec = 10;
+        };
+
+        Install.WantedBy = [ "default.target" ];
+      };
     })
   ]);
 }
