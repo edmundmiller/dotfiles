@@ -1,44 +1,56 @@
-# Pure Nix eval test: assert Scintillate has the live runtime access it needs.
+# Pure Nix eval test: assert the NUC satisfies Scintillate's agent-owned
+# TaskNotes runtime contract with host-specific providers.
 #
-# This catches regressions where the Telegram gateway can see the Obsidian
-# vault but cannot use the TaskNotes CLI, or where the container receives a
-# stale/mutable tnote symlink instead of the packaged CLI.
+# The policy/defaults live in agents-workspace. This host check should verify
+# concrete NUC provider satisfaction, not re-author Scintillate's runtime wiring.
 { nixosConfig, pkgs }:
 let
   cfg = nixosConfig.config;
+  hermesAgent = cfg.modules.services.hermes.agents.scintillate;
   profile = cfg.services.hermes-agent.profiles.scintillate;
+  activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   nucHostSource = builtins.readFile ../default.nix;
 
-  inherit (builtins)
-    any
-    concatStringsSep
-    elem
-    toString
-    ;
+  inherit (builtins) any concatStringsSep toString;
   inherit (pkgs.lib) hasInfix mapAttrsToList;
 
-  # Use the exact package from the evaluated NUC config, not the local host's
-  # package set.  This keeps the check valid when evaluated from macOS.
   stripContext = builtins.unsafeDiscardStringContext;
-  tnotePkg = builtins.elemAt profile.extraPackages 0;
+  tnotePkg = hermesAgent.providers.tnote.package;
   tnotePkgString = stripContext (toString tnotePkg);
-  extraPackageStrings = map (pkg: stripContext (toString pkg)) profile.extraPackages;
+  packageStrings = map (pkg: stripContext (toString pkg)) profile.extraPackages;
 
   hostMounts = mapAttrsToList (source: target: { inherit source target; }) profile.hostPathMounts;
   hasMount = source: target: any (mount: mount.source == source && mount.target == target) hostMounts;
+  hasPackageNamed = name: any (pkg: hasInfix name pkg) packageStrings;
 
   assertions = [
     {
-      test = profile.workingDirectory == "/home/hermes/repos/obsidian-vault";
-      msg = "Scintillate workingDirectory must be the Hermes-visible Obsidian vault path.";
+      test = hermesAgent.providers.obsidianVault.hostPath == "/home/emiller/obsidian-vault";
+      msg = "NUC must provide Scintillate's Obsidian vault provider.";
     }
     {
-      test = profile.settings.skills.config.wiki.path == "/repos/obsidian-vault";
-      msg = "Scintillate wiki skill path must point at the container vault bind mount.";
+      test = hasInfix "tnote" tnotePkgString;
+      msg = "NUC must provide Scintillate's tnote package provider.";
+    }
+    {
+      test = hermesAgent.providers.tnote.repoPath == "/home/emiller/src/personal/tnote";
+      msg = "NUC must provide Scintillate's tnote repo provider.";
+    }
+    {
+      test = profile.workingDirectory == "/home/hermes/repos/obsidian-vault";
+      msg = "Scintillate workingDirectory must come from the agent-owned TaskNotes runtime default.";
+    }
+    {
+      test = profile.settings.skills.config.wiki.path == "/home/hermes/repos/obsidian-vault";
+      msg = "Scintillate wiki skill path must come from the agent-owned TaskNotes runtime default.";
+    }
+    {
+      test = profile.settings.terminal.cwd == "/home/hermes/repos/obsidian-vault";
+      msg = "Scintillate terminal cwd must come from the agent-owned TaskNotes runtime default.";
     }
     {
       test = profile.environment.TN_VAULT_PATH == "/home/hermes/repos/obsidian-vault";
-      msg = "Scintillate TN_VAULT_PATH must point at the Hermes-visible Obsidian vault.";
+      msg = "Scintillate TN_VAULT_PATH must come from the agent-owned TaskNotes runtime default.";
     }
     {
       test = profile.environment.WIKI_PATH == "/repos/obsidian-vault";
@@ -46,29 +58,39 @@ let
     }
     {
       test = hasMount "/home/emiller/obsidian-vault" "/repos/obsidian-vault";
-      msg = "Scintillate must bind-mount /home/emiller/obsidian-vault at /repos/obsidian-vault.";
+      msg = "Scintillate must bind-mount the provided Obsidian vault at /repos/obsidian-vault.";
     }
     {
       test = hasMount "/home/emiller/src/personal/tnote" "/repos/tnote";
-      msg = "Scintillate must bind-mount the tnote repo for reference/debugging.";
+      msg = "Scintillate must bind-mount the provided tnote repo at /repos/tnote.";
     }
     {
-      test = elem tnotePkgString extraPackageStrings;
-      msg = "Scintillate extraPackages must include the packaged TaskNotes CLI (pkgs.my.tnote).";
+      test = hasPackageNamed "tnote";
+      msg = "Scintillate profile extraPackages must include the provided tnote package.";
     }
     {
-      test = any (pkg: hasInfix "util-linux" (toString pkg)) extraPackageStrings;
-      msg = "Scintillate extraPackages must include util-linux so the container entrypoint can setpriv to HERMES_UID/GID.";
+      test = hasPackageNamed "util-linux";
+      msg = "Scintillate profile extraPackages must include util-linux so the container entrypoint can setpriv to HERMES_UID/GID.";
     }
     {
-      test = hasInfix (
-        "ln -sfn " + "$" + "{pkgs.my.tnote}/bin/tnote /var/lib/hermes-scintillate/home/.local/bin/tnote"
-      ) nucHostSource;
-      msg = "Scintillate ExecStartPre must link ~/.local/bin/tnote to the packaged tnote binary.";
+      test = hasInfix "ln -sfn /repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/obsidian-vault" activation;
+      msg = "Agent-owned activation must create Scintillate's vault compatibility link.";
     }
     {
-      test = !(hasInfix "/home/emiller/.local/bin/tnote" nucHostSource);
-      msg = "Scintillate host config must not recreate a container-broken /home/emiller/.local/bin/tnote symlink.";
+      test = hasInfix "ln -sfn ${tnotePkgString}/bin/tnote /var/lib/hermes-scintillate/home/.local/bin/tnote" activation;
+      msg = "Agent-owned activation must link ~/.local/bin/tnote to the provided tnote package.";
+    }
+    {
+      test = !(hasInfix "skills.config.wiki.path = \"/home/hermes/repos/obsidian-vault\"" nucHostSource);
+      msg = "NUC host config must not re-author Scintillate's wiki runtime default.";
+    }
+    {
+      test = !(hasInfix "extraPackages = [\n          pkgs.my.tnote" nucHostSource);
+      msg = "NUC host config must not inject Scintillate's ordinary tnote runtime package directly.";
+    }
+    {
+      test = !(hasInfix "hermes-scintillate-repo-compat-links" nucHostSource);
+      msg = "NUC host config must not carry Scintillate's ordinary repo/tnote compatibility link script.";
     }
   ];
 
