@@ -1,0 +1,19 @@
+bin/hey.d/common.nu
+  s_98f51efdc19475::t_b5d1b378ec106b 234-250
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ad1fcabd0362fd96cf29496d9d31df47272d70b6",
+  "prompts": {},
+  "sessions": {
+    "s_98f51efdc19475": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7df4-3ec8-72b0-8201-f8946b3fcc3f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}

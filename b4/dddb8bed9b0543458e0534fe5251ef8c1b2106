@@ -1,0 +1,19 @@
+config/zsh/.zshenv
+  s_2503803080b47b::t_4755eba01340ad 27,36-39,42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "b4dddb8bed9b0543458e0534fe5251ef8c1b2106",
+  "prompts": {},
+  "sessions": {
+    "s_2503803080b47b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e7be7-5a1c-7d73-9b8d-5f3baf823b16",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
