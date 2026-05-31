@@ -1,0 +1,23 @@
+modules/agents/pi/AGENTS.md
+  s_98f51efdc19475::t_c271d04f81b7f0 1-24
+overlays/pi/AGENTS.md
+  s_98f51efdc19475::t_c271d04f81b7f0 1-16
+config/pi/AGENTS.md
+  s_98f51efdc19475::t_c271d04f81b7f0 1,3,5-7,9-12,14-16,18,20-21,24-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a47c80c1f8ceee8f160d8fb1f0473b0d0a759822",
+  "prompts": {},
+  "sessions": {
+    "s_98f51efdc19475": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7df4-3ec8-72b0-8201-f8946b3fcc3f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
