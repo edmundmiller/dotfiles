@@ -175,13 +175,22 @@
           "enable"
         ];
         # Keep host-specific local skills out of the always-on catalog source so
-        # they can be toggled by the matching Nix module below.
-        localCatalogSource = pkgs.runCommand "dotfiles-skills-catalog" { } ''
-          mkdir -p $out
-          cp -R ${./catalog}/. $out/
-          chmod -R u+w $out/herdr-pi-workspace 2>/dev/null || true
-          rm -rf $out/herdr-pi-workspace
-        '';
+        # they can be toggled by the matching Nix module below. Use a filtered
+        # source path instead of a derivation so other NixOS configs can refer
+        # to programs.agent-skills.bundlePath during evaluation on a different
+        # build platform.
+        localCatalogSource = builtins.path {
+          name = "dotfiles-skills-catalog";
+          path = ./catalog;
+          filter =
+            path: _type:
+            let
+              root = toString ./catalog;
+              rel = lib.removePrefix "${root}/" (toString path);
+              top = builtins.head (lib.splitString "/" rel);
+            in
+            rel == toString path || top != "herdr-pi-workspace";
+        };
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];

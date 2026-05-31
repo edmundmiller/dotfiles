@@ -984,6 +984,9 @@ in
       };
       hermes = {
         enable = true;
+        agentSkillBundles = [
+          config.home-manager.users.${config.user.name}.programs.agent-skills.bundlePath
+        ];
         # Containers use host networking, so prefer the deployment-local HA
         # endpoint over mDNS names such as homeassistant.local from inside
         # Hermes gateway processes.
