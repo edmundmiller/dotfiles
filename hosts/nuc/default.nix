@@ -8,32 +8,7 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesAgentBase = inputs.llm-agents.packages.${hostSystem}."hermes-agent";
-  honchoAi = pkgs.python313Packages.buildPythonPackage rec {
-    pname = "honcho-ai";
-    version = "2.1.2";
-    format = "wheel";
-    src = pkgs.fetchurl {
-      url = "https://files.pythonhosted.org/packages/py3/h/honcho-ai/honcho_ai-${version}-py3-none-any.whl";
-      hash = "sha256-oiIg8Bpj9qPB1GJarvChQld7g5gcQty2EXdjGGP7qk8=";
-    };
-    dependencies = with pkgs.python313Packages; [
-      httpx
-      pydantic
-    ];
-    doCheck = false;
-  };
-  hermesAgentWithHoncho = pkgs.symlinkJoin {
-    name = "${hermesAgentBase.name}-honcho";
-    paths = [ hermesAgentBase ];
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    postBuild = ''
-      for exe in hermes hermes-agent hermes-acp; do
-        wrapProgram "$out/bin/$exe" \
-          --prefix PYTHONPATH : "${honchoAi}/${pkgs.python313.sitePackages}"
-      done
-    '';
-  };
+  hermesAgentBase = pkgs.llm-agents."hermes-agent";
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
@@ -684,7 +659,7 @@ in
   ];
 
   services.hermes-agent = {
-    package = hermesAgentWithHoncho;
+    package = hermesAgentBase;
     user = "emiller";
     group = "users";
     createUser = false;
