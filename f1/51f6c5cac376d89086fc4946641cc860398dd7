@@ -1,0 +1,25 @@
+modules/agents/pi/lib/_activation.nix
+  s_cc2cc8c10cfa9d::t_18cab26ccf336b 1-29,91,100,141-210
+  s_cc2cc8c10cfa9d::t_08157f61f8d149 30-90,92-99,101-140
+modules/agents/pi/default.nix
+  s_cc2cc8c10cfa9d::t_91c88da447213d 504-515
+  s_cc2cc8c10cfa9d::t_0ee0203ae3b3d7 517-529
+modules/agents/pi/lib/_home-files.nix
+  s_cc2cc8c10cfa9d::t_18cab26ccf336b 1-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "f151f6c5cac376d89086fc4946641cc860398dd7",
+  "prompts": {},
+  "sessions": {
+    "s_cc2cc8c10cfa9d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7e6a-df97-7320-9152-6b26a0d7bf53",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
