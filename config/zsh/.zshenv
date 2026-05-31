@@ -24,7 +24,7 @@ unset _brew_cache
 # Set up terminfo early (before nix-darwin extra.zshenv is sourced).
 # Prefer ~/.terminfo because this repo provides compatibility symlinks using
 # the canonical first-letter layout expected by tools like `codex doctor`.
-_terminfo_dirs=(
+_terminfo_candidates=(
   "$HOME/.terminfo"
   "$HOME/.nix-profile/share/terminfo"
   "/etc/profiles/per-user/$USER/share/terminfo"
@@ -33,9 +33,13 @@ _terminfo_dirs=(
   "/usr/share/terminfo"
   ${(s.:.)TERMINFO_DIRS}
 )
+_terminfo_dirs=()
+for _terminfo_dir in $_terminfo_candidates; do
+  [[ -r "$_terminfo_dir" ]] && _terminfo_dirs+=("$_terminfo_dir")
+done
 typeset -U _terminfo_dirs
 export TERMINFO_DIRS="${(j.:.)_terminfo_dirs}"
-unset _terminfo_dirs
+unset _terminfo_candidates _terminfo_dirs _terminfo_dir
 # Set default TERM if empty (prevents TUI crashes in non-interactive SSH)
 [[ -z "$TERM" ]] && export TERM=xterm-256color
 
