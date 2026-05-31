@@ -17,7 +17,7 @@ let
 in
 rustPlatform.buildRustPackage rec {
   pname = "kittylitter";
-  version = "0.3.0-patched";
+  version = "v0.3.4";
 
   src = fetchFromGitHub {
     owner = "dnakov";

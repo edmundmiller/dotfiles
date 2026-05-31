@@ -8,7 +8,7 @@
 
 buildNpmPackage rec {
   pname = "codegraph";
-  version = "0.9.4";
+  version = "0.9.6";
 
   src = fetchFromGitHub {
     owner = "colbymchenry";

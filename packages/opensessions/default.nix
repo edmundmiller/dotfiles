@@ -6,7 +6,7 @@
 
 stdenvNoCC.mkDerivation (_finalAttrs: {
   pname = "opensessions";
-  version = "0.2.0-alpha.5";
+  version = "0.2.0-alpha.6";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";

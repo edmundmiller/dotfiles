@@ -5,7 +5,7 @@
 }:
 python3.pkgs.buildPythonApplication rec {
   pname = "snakefmt";
-  version = "0.10.2";
+  version = "0.11.5";
   pyproject = true;
 
   src = fetchFromGitHub {
