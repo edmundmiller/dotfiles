@@ -42,11 +42,11 @@ previous_tab = "prefix+p"
 next_tab = "prefix+n"
 
 [[keys.command]]
-key = "prefix+["
+key = "prefix+u"
 command = "herdr hunk"
 
 [[keys.command]]
-key = "prefix+]"
+key = "prefix+U"
 command = "herdr hunk --tab"
 ```
 
@@ -59,8 +59,8 @@ Meaning:
 - `prefix+-` splits horizontally.
 - `prefix+b` toggles the sidebar.
 - `prefix+p` / `prefix+n` move to previous/next tab via Herdr built-ins.
-- `prefix+[` opens Hunk in a focused split.
-- `prefix+]` opens Hunk in a new tab.
+- `prefix+u` opens Hunk in a focused split.
+- `prefix+U` opens Hunk in a new tab.
 
 ## Important gotchas
 
