@@ -1,45 +1,25 @@
-# Pi Coding Agent Configuration
+# Pi Config
 
-This directory contains pi coding agent settings managed via nix.
+This directory owns Pi runtime configuration sources.
 
-## Documentation
+Use `settings.jsonc` for broad Pi package defaults and Pi settings. The Nix
+module strips JSONC and renders it to `~/.pi/agent/settings.json`; never edit
+the runtime symlink directly.
 
-- [Settings](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md) - All config options
-- [Packages](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md) - Install/manage extensions via npm/git
-- [Skills](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md) - Agent skills system
-- [Prompt Templates](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/prompt-templates.md) - Reusable prompts
-- [Extensions](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md) - Custom tools, commands, event hooks
+Use this directory for Pi extensions, prompt templates, subagents/chains,
+keybindings, permission policy, and shell aliases. Keep module-dependent package
+injection in `modules/agents/pi/`. Keep Pi binary version/package-lock overrides
+in `overlays/pi/`.
 
-## Files
+Skills are not installed through Pi package `skills` entries here. Shared skills
+come from the agent skills catalog; package `skills` arrays should usually be
+empty unless the package needs a Pi-native skill resource.
 
-- `aliases.zsh` — Shell helpers like `piw` and `pir`
-- `settings.jsonc` — Source config (JSONC with comments + trailing commas)
-- `settings-schema.json` — JSON Schema derived from pi's `Settings` TypeScript interface
-- Nix strips comments and trailing commas → `~/.pi/agent/settings.json`
+After changing settings or package entries, run:
 
-## Validating Settings
-
-```bash
-# Validate settings.jsonc against the schema (requires jsonschema: pip install jsonschema)
-cd config/pi
-python3 -c "
-import json, re
-from jsonschema import validate
-schema = json.load(open('settings-schema.json'))
-raw = open('settings.jsonc').read()
-lines = [l for l in raw.split('\n') if not l.strip().startswith('//')]
-clean = re.sub(r',(\s*[}\]])', r'\1', '\n'.join(lines))
-validate(json.loads(clean), schema)
-print('✓ Valid')
-"
+```sh
+bash modules/agents/pi/test-settings-json.sh
 ```
 
-## Updating the Schema
-
-Schema was generated from `settings-manager.d.ts` in the pi package:
-
-```
-~/.bun/install/global/node_modules/@mariozechner/pi-coding-agent/dist/core/settings-manager.d.ts
-```
-
-If pi adds new settings, update `settings-schema.json` to match the `Settings` interface.
+After changing local TypeScript extensions, run their focused tests when present
+and avoid broad workspace checks unless the change crosses package boundaries.
