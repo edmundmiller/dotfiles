@@ -1,0 +1,31 @@
+overlays/herdr/AGENTS.md
+  s_0aa58f9a75973d::t_272766d3185b4e 37
+overlays/herdr/default.nix
+  s_0aa58f9a75973d::t_d53a4c457a2633 10-11
+config/herdr/config.toml
+  s_0aa58f9a75973d::t_d53a4c457a2633 34,39
+config/herdr/AGENTS.md
+  s_0aa58f9a75973d::t_d53a4c457a2633 45,49,62-63
+overlays/herdr/patches/0006-update-cargo-hash.patch
+  s_0aa58f9a75973d::t_dfdb11755a748a 2,16
+modules/shell/herdr/default.nix
+  s_0aa58f9a75973d::t_d53a4c457a2633 55,60,488,493
+config/herdr/README.md
+  s_0aa58f9a75973d::t_dfdb11755a748a 49-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "6ddbf7c1b7f6dc907507e09ecf6e5e34f922c94f",
+  "prompts": {},
+  "sessions": {
+    "s_0aa58f9a75973d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e7def-83dc-7af7-8c51-c82dbfa823e0",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
