@@ -8,8 +8,11 @@ if-shell '[ -z "${TMUX_HOME:-}" ]' 'set-environment -g TMUX_HOME "$HOME/.config/
 if-shell '[ -z "${DOTFILES:-}" ]' 'set-environment -g DOTFILES "$HOME/.config/dotfiles"'
 if-shell '[ -z "${DOTFILES_BIN:-}" ]' 'set-environment -g DOTFILES_BIN "$HOME/.config/dotfiles/bin"'
 
-# Propagate Moshi client signal into tmux when sessions are started via Moshi.
-set-option -ga update-environment " MOSHI_CLIENT"
+# Keep tmux from turning local shells into "remote" shells after an SSH/mosh
+# attach. The tmux default includes SSH_CONNECTION, which leaks into new panes
+# and makes tools like nix-darwin/Home Manager think activation is over SSH.
+# Preserve useful GUI/auth vars and explicitly add Moshi's local client signal.
+set-option -g update-environment "DISPLAY KRB5CCNAME MSYSTEM SSH_ASKPASS SSH_AUTH_SOCK SSH_AGENT_PID WINDOWID XAUTHORITY MOSHI_CLIENT"
 
 # Pass zoxide's DB location to all popup shells (Nix sets _ZO_DATA_DIR=$XDG_CACHE_HOME)
 # run-shell ensures $HOME is expanded by the shell, not tmux's config parser
