@@ -847,6 +847,11 @@
                 ])
                 ++ config.pre-commit.settings.enabledPackages;
               shellHook = config.pre-commit.shellHook + ''
+                # prek install (called above) moves existing hooks to *.legacy when the
+                # config changes; remove them so prek doesn't re-run the old shim.
+                for h in commit-msg post-merge post-rewrite pre-commit pre-push; do
+                  rm -f ".git/hooks/$h.legacy"
+                done
                 echo "dotfiles lightweight shell (use: nix develop .#full)"
               '';
             };
@@ -865,6 +870,9 @@
                 ]
                 ++ config.pre-commit.settings.enabledPackages;
               shellHook = config.pre-commit.shellHook + ''
+                for h in commit-msg post-merge post-rewrite pre-commit pre-push; do
+                  rm -f ".git/hooks/$h.legacy"
+                done
                 echo "dotfiles full development shell"
               '';
             };
