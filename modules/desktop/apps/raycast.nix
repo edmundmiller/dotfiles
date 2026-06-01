@@ -17,6 +17,31 @@
 # Note: Raycast Beta uses bundle id com.raycast-x.macos, while stable uses
 # com.raycast.macos. Keep preferences written to both so switching channels is
 # cheap and host login items decide which app starts.
+#
+# Hyper Key (NOT Nix-manageable — one-time manual grant):
+#   The Hyper Key needs both Input Monitoring (kTCCServiceListenEvent) AND
+#   Accessibility (kTCCServiceAccessibility). These live in SIP-protected
+#   TCC.db, not a `defaults` domain, so system.defaults/Nix cannot set them.
+#   Only an MDM-delivered PPPC profile can grant Accessibility/ListenEvent;
+#   a locally-installed profile is ignored for those two services. On a
+#   personal (non-MDM) Mac it stays a manual grant in System Settings →
+#   Privacy & Security.
+#
+#   Symptom: Hyper Key diagnostics show "Event Tap: No" / "Run Loop Source:
+#   No" even though System Settings lists the permission as granted, so the
+#   modifier key just acts as its normal self (e.g. right-command stays ⌘).
+#   Cause: a Beta self-update changes the binary's code signature, but the
+#   TCC grant is still bound to the OLD signature — macOS reports "allowed"
+#   yet the event tap silently fails to install.
+#
+#   Fix (clears the stale grant, forces a fresh re-prompt):
+#     tccutil reset ListenEvent com.raycast-x.macos
+#     tccutil reset Accessibility com.raycast-x.macos
+#   then quit + relaunch Raycast Beta and approve BOTH prompts. The new
+#   grants bind to the current signature. Verify via Hyper Key diagnostics
+#   (Event Tap / Run Loop Source flip to "Yes"). Note: toggle-off/on in
+#   System Settings often reuses the stale binding — remove + re-add (or the
+#   tccutil reset above) is what actually refreshes it.
 {
   config,
   lib,
