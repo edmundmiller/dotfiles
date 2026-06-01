@@ -68,3 +68,5 @@ qmk_firmware/
 
 # Private Neovim project aliases
 config/nvim/lua/custom/private/obsidian-project-aliases.lua
+# br doctor per-run artifacts
+.doctor/
