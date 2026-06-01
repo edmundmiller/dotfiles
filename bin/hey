@@ -20,7 +20,7 @@ def hey-help [] {
   print "System"
   print "  rebuild, re, test, rollback"
   print "  update, u, upgrade, check, show"
-  print "  gc, repl, search, shell"
+  print "  gc, repl, search, shell, setup-caches"
   print ""
   print "Remote"
   print "  deploy, deploy-dry, deploy-check"
