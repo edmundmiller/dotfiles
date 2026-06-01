@@ -94,6 +94,17 @@ export def run-in-flake [cmd: string] {
   ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; ($cmd)"
 }
 
+export def maybe-suggest-cache-bootstrap [stderr: string] {
+  if ($stderr | str contains "--accept-flake-config") {
+    print -e ""
+    print -e "Nix is ignoring this flake's binary cache configuration."
+    print -e "To trust only the dotfiles-approved caches without enabling accept-flake-config globally, run:"
+    print -e ""
+    print -e "  hey setup-caches --apply"
+    print -e ""
+  }
+}
+
 export def check-flake-lock [] {
   let ctx = (context)
   let lock = ($ctx.flake_dir | path join "flake.lock")
@@ -195,7 +206,17 @@ export def system-rebuild [action: string, ...args: string] {
   if $agent_mode {
     print $"hey re: archiving flake inputs for ($ctx.flake_host)..."
   }
-  ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-write-lock-file >/dev/null"
+  let archive_result = (^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-write-lock-file >/dev/null" | complete)
+  maybe-suggest-cache-bootstrap $archive_result.stderr
+  if (($archive_result.stdout | str trim) | is-not-empty) {
+    print $archive_result.stdout
+  }
+  if (($archive_result.stderr | str trim) | is-not-empty) {
+    print -e $archive_result.stderr
+  }
+  if $archive_result.exit_code != 0 {
+    error make {msg: "nix flake archive failed"}
+  }
   if $ctx.os_name == "macos" {
     wait-homebrew-idle
   }
