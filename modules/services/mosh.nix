@@ -86,11 +86,15 @@ in
         Unit = {
           Description = "Moshi hook daemon";
           Documentation = [ "https://getmoshi.app" ];
-          ConditionFileNotEmpty = "%h/.local/state/moshi/secrets.json";
+          ConditionFileNotEmpty = config.age.secrets.moshi-hook-secrets-json.path;
         };
 
         Service = {
-          ExecStartPre = "-${moshiHook}/bin/moshi-hook install";
+          ExecStartPre = [
+            "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/moshi"
+            "${pkgs.coreutils}/bin/install -m 600 ${config.age.secrets.moshi-hook-secrets-json.path} %h/.local/state/moshi/secrets.json"
+            "-${moshiHook}/bin/moshi-hook install"
+          ];
           ExecStart = "${moshiHook}/bin/moshi-hook serve";
           Restart = "always";
           RestartSec = 10;
