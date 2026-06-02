@@ -18,6 +18,93 @@ let
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
   millDocsGitPullHealthcheckPingUrl = "https://hc-ping.com/1a661f7e-cf0c-4a67-9343-64635347c50d";
+  scintillateCodexAuthSync = pkgs.writeText "hermes-scintillate-codex-auth-sync.py" ''
+    import base64
+    import json
+    import pathlib
+    from datetime import datetime, timezone
+
+    codex_auth = pathlib.Path("/home/emiller/.codex/auth.json")
+    hermes_auth = pathlib.Path("/var/lib/hermes-scintillate/.hermes/auth.json")
+    if not codex_auth.is_file():
+        raise SystemExit(0)
+
+    def read_json(path: pathlib.Path) -> dict:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    def jwt_exp(token: str) -> int:
+        try:
+            payload = token.split(".")[1]
+            payload += "=" * ((4 - len(payload) % 4) % 4)
+            return int(json.loads(base64.urlsafe_b64decode(payload)).get("exp") or 0)
+        except Exception:
+            return 0
+
+    codex_data = read_json(codex_auth)
+    codex_tokens = codex_data.get("tokens")
+    if not isinstance(codex_tokens, dict) or not codex_tokens.get("refresh_token"):
+        raise SystemExit(0)
+
+    data = read_json(hermes_auth)
+    hermes_tokens = (
+        data.get("providers", {})
+        .get("openai-codex", {})
+        .get("tokens", {})
+    )
+    codex_exp = jwt_exp(codex_tokens.get("access_token", ""))
+    hermes_exp = jwt_exp(hermes_tokens.get("access_token", "")) if isinstance(hermes_tokens, dict) else 0
+    hermes_has_refresh = isinstance(hermes_tokens, dict) and bool(hermes_tokens.get("refresh_token"))
+    if hermes_has_refresh and hermes_exp and codex_exp and hermes_exp >= codex_exp:
+        raise SystemExit(0)
+
+    now = datetime.now(timezone.utc).isoformat()
+    if not isinstance(data, dict):
+        data = {}
+    provider_payload = {
+        "tokens": codex_tokens,
+        "last_refresh": codex_data.get("last_refresh") or now,
+        "auth_mode": codex_data.get("auth_mode") or "chatgpt",
+    }
+    data.setdefault("version", 1)
+    data.setdefault("providers", {})["openai-codex"] = provider_payload
+    data["active_provider"] = "openai-codex"
+    data["updated_at"] = now
+
+    pool_entry = {
+        "auth_type": "oauth",
+        "source": "device_code",
+        "label": "Codex CLI shared login",
+        "access_token": codex_tokens.get("access_token"),
+        "refresh_token": codex_tokens.get("refresh_token"),
+        "id_token": codex_tokens.get("id_token"),
+        "account_id": codex_tokens.get("account_id"),
+        "last_refresh": provider_payload["last_refresh"],
+    }
+    pool_entry = {key: value for key, value in pool_entry.items() if value}
+    pool = data.setdefault("credential_pool", {})
+    existing = pool.setdefault("openai-codex", [])
+    pool["openai-codex"] = [
+        pool_entry,
+        *[
+            entry
+            for entry in existing
+            if not (
+                isinstance(entry, dict)
+                and entry.get("source") in {"device_code", "manual:device_code"}
+            )
+        ],
+    ]
+
+    hermes_auth.parent.mkdir(parents=True, exist_ok=True)
+    tmp = hermes_auth.with_suffix(hermes_auth.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(hermes_auth)
+    hermes_auth.chmod(0o600)
+  '';
   # Telegram routing topology for this host:
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
   # - "split"  => prepared future split; the shared bot keeps family/group traffic,
@@ -758,6 +845,11 @@ in
     # Apply unit/package changes on the next explicit service restart instead.
     restartIfChanged = false;
     serviceConfig.ExecStartPre = lib.mkAfter [
+      (pkgs.writeShellScript "hermes-scintillate-codex-auth-sync" ''
+        set -eu
+        ${pkgs.python3}/bin/python ${scintillateCodexAuthSync}
+        chown emiller:users /var/lib/hermes-scintillate/.hermes/auth.json
+      '')
       (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
         set -eu
         env_file=/var/lib/hermes-scintillate/.hermes/.env
