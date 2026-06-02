@@ -74,11 +74,11 @@ let
         raise SystemExit(0)
 
     codex_exp = jwt_exp(codex_tokens.get("access_token", ""))
-    # Only import currently usable Codex CLI tokens.  Hermes can still do a
-    # dedicated `hermes auth add openai-codex` login later; this bootstrap keeps
-    # laptop Hermes from getting stuck on an old consumed refresh token while the
-    # canonical Codex CLI login is healthy.
-    if codex_exp and codex_exp <= int(time.time()) + 60:
+    # Prefer currently usable Codex CLI access tokens, but still import an
+    # expired access token when the shared login has a refresh token. Hermes can
+    # refresh that OAuth credential; skipping it here can leave an older Hermes
+    # auth.json with no access_token at all.
+    if codex_exp and codex_exp <= int(time.time()) + 60 and not codex_tokens.get("refresh_token"):
         raise SystemExit(0)
 
     data = read_json(hermes_auth)
