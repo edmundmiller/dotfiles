@@ -10,6 +10,67 @@ let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentBase = pkgs.llm-agents."hermes-agent";
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
+  hermesCodexAuthImport = pkgs.writeText "hermes-codex-auth-import.py" ''
+    import json
+    import pathlib
+    import sys
+    from datetime import datetime, timezone
+
+    codex_auth = pathlib.Path(sys.argv[1])
+    hermes_auth = pathlib.Path(sys.argv[2])
+    if not codex_auth.is_file():
+        raise SystemExit(0)
+
+    codex_data = json.loads(codex_auth.read_text(encoding="utf-8"))
+    codex_tokens = codex_data.get("tokens")
+    if not isinstance(codex_tokens, dict):
+        raise SystemExit(0)
+    if not codex_tokens.get("access_token") or not codex_tokens.get("refresh_token"):
+        raise SystemExit(0)
+
+    if hermes_auth.is_file():
+        try:
+            data = json.loads(hermes_auth.read_text(encoding="utf-8"))
+        except Exception:
+            data = {}
+    else:
+        data = {}
+
+    if not isinstance(data, dict):
+        data = {}
+
+    now = datetime.now(timezone.utc).isoformat()
+    last_refresh = codex_data.get("last_refresh") or now
+    provider_payload = {
+        "tokens": codex_tokens,
+        "last_refresh": last_refresh,
+        "auth_mode": codex_data.get("auth_mode") or "chatgpt",
+    }
+    data.setdefault("version", 1)
+    data.setdefault("providers", {})["openai-codex"] = provider_payload
+    data["active_provider"] = "openai-codex"
+    data["updated_at"] = now
+
+    pool_entry = {
+        "auth_type": "oauth",
+        "source": "device_code",
+        "label": "Codex CLI shared login",
+        "access_token": codex_tokens.get("access_token"),
+        "refresh_token": codex_tokens.get("refresh_token"),
+        "id_token": codex_tokens.get("id_token"),
+        "account_id": codex_tokens.get("account_id"),
+        "last_refresh": last_refresh,
+    }
+    data.setdefault("credential_pool", {})["openai-codex"] = [
+        {key: value for key, value in pool_entry.items() if value}
+    ]
+
+    hermes_auth.parent.mkdir(parents=True, exist_ok=True)
+    tmp = hermes_auth.with_suffix(hermes_auth.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(hermes_auth)
+    hermes_auth.chmod(0o600)
+  '';
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
@@ -865,6 +926,13 @@ in
         grep '^TELEGRAM_' "$secrets_file" >> "$tmp_file"
         install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
         rm -f "$tmp_file"
+      '')
+      (pkgs.writeShellScript "hermes-scintillate-codex-auth-import" ''
+        set -eu
+        ${pkgs.python3}/bin/python3 ${hermesCodexAuthImport} \
+          /home/emiller/.codex/auth.json \
+          /var/lib/hermes-scintillate/.hermes/auth.json
+        chown emiller:users /var/lib/hermes-scintillate/.hermes/auth.json
       '')
     ];
   };
