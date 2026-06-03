@@ -8,6 +8,7 @@ let
   cfg = nixosConfig.config;
   hermesAgent = cfg.modules.services.hermes.agents.scintillate;
   profile = cfg.services.hermes-agent.profiles.scintillate;
+  gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   nucHostSource = builtins.readFile ../default.nix;
 
@@ -79,6 +80,12 @@ let
     {
       test = hasInfix "ln -sfn ${tnotePkgString}/bin/tnote /var/lib/hermes-scintillate/home/.local/bin/tnote" activation;
       msg = "Agent-owned activation must link ~/.local/bin/tnote to the provided tnote package.";
+    }
+    {
+      test = any (
+        preStart: hasInfix "hermes-scintillate-codex-auth-import" (toString preStart)
+      ) gatewayService.serviceConfig.ExecStartPre;
+      msg = "Scintillate must import Codex CLI OAuth tokens into Hermes auth before gateway start.";
     }
     {
       test = !(hasInfix "skills.config.wiki.path = \"/home/hermes/repos/obsidian-vault\"" nucHostSource);
