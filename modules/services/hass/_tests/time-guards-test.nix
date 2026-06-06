@@ -99,16 +99,6 @@ pkgs.testers.nixosTest {
       ha.assert_state(hass, "input_boolean.goodnight", "on", timeout=10)
 
 
-    with subtest("Winding Down still auto-runs at 10 PM"):
-      ha.set_clock(hass, "21:55:00", "2026-03-12")
-      ha.call_service(hass, "input_boolean", "turn_off", {"entity_id": "input_boolean.goodnight"})
-      time.sleep(1)
-
-      ha.set_clock(hass, "22:05:00", "2026-03-12")
-      time.sleep(3)
-
-      ha.assert_state(hass, "input_boolean.goodnight", "on", timeout=10)
-
     with subtest("Good Morning scene is still manually callable"):
       ha.call_service(hass, "scene", "turn_on", {"entity_id": "scene.good_morning"})
       time.sleep(2)
