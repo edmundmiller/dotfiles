@@ -1,4 +1,3 @@
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import type { AssistantMessage, TextContent } from "@mariozechner/pi-ai";
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { CONTEXT_THRESHOLDS, DUMB_ZONE_PATTERNS, POST_COMPACTION_MULTIPLIER } from "./constants";
@@ -78,8 +77,15 @@ export function getContextUtilization(ctx: ExtensionContext): number {
 /**
  * Type guard for assistant messages.
  */
-export function isAssistantMessage(message: AgentMessage): message is AssistantMessage {
-  return message.role === "assistant" && Array.isArray(message.content);
+export function isAssistantMessage(message: unknown): message is AssistantMessage {
+  return (
+    typeof message === "object" &&
+    message !== null &&
+    "role" in message &&
+    message.role === "assistant" &&
+    "content" in message &&
+    Array.isArray(message.content)
+  );
 }
 
 /**
@@ -104,10 +110,7 @@ export function matchesDumbZonePatterns(text: string): boolean {
  * Combines quantitative (context usage) and qualitative (phrase patterns) checks.
  * Triggers at WARNING threshold so persistent indicators appear early.
  */
-export function checkDumbZone(
-  ctx: ExtensionContext,
-  messages: AgentMessage[]
-): DumbZoneCheckResult {
+export function checkDumbZone(ctx: ExtensionContext, messages: unknown[]): DumbZoneCheckResult {
   const utilization = getContextUtilization(ctx);
   const compacted = hasCompacted(ctx);
   const warningThreshold = getEffectiveThreshold(CONTEXT_THRESHOLDS.WARNING, compacted);
