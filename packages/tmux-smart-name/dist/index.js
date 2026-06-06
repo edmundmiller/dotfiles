@@ -7,10 +7,12 @@ function tmuxCmd(...args) {
     const out = execFileSync("tmux", args, {
       encoding: "utf8",
       timeout: 5000,
-      stdio: ["pipe", "pipe", "ignore"]
+      stdio: ["pipe", "pipe", "ignore"],
     });
-    return out.split(`
-`).filter((l) => l.length > 0);
+    return out
+      .split(`
+`)
+      .filter((l) => l.length > 0);
   } catch {
     return [];
   }
@@ -29,14 +31,13 @@ function listAllPanes() {
     "#{pane_current_command}",
     "#{pane_current_path}",
     "#{pane_title}",
-    "#{pane_active}"
+    "#{pane_active}",
   ].join("\t");
   const lines = tmuxCmd("list-panes", "-a", "-F", fmt);
-  const byWindow = new Map;
+  const byWindow = new Map();
   for (const line of lines) {
     const parts = line.split("\t", 10);
-    if (parts.length < 10)
-      continue;
+    if (parts.length < 10) continue;
     const pane = {
       sessionName: parts[0],
       windowId: parts[1],
@@ -47,7 +48,7 @@ function listAllPanes() {
       command: parts[6],
       path: parts[7],
       paneTitle: parts[8],
-      active: parts[9] === "1"
+      active: parts[9] === "1",
     };
     const key = parts[1];
     const arr = byWindow.get(key);
@@ -99,7 +100,7 @@ var AGENT_PROGRAMS = [
   "gpt-pilot",
   "plandex",
   "devon",
-  "roo"
+  "roo",
 ];
 var DIR_PROGRAMS = ["nvim", "vim", "vi", "git", "jjui", ...AGENT_PROGRAMS];
 var AGENT_ALIASES = {
@@ -108,7 +109,7 @@ var AGENT_ALIASES = {
   "hermes-agent": "hermes",
   "codex-cli": "codex",
   "gpt-engineer": "gpt-engineer",
-  "gpt-pilot": "gpt-pilot"
+  "gpt-pilot": "gpt-pilot",
 };
 var allNames = [...new Set([...AGENT_PROGRAMS, ...Object.keys(AGENT_ALIASES)])];
 var sorted = allNames.sort((a, b) => b.length - a.length);
@@ -122,19 +123,17 @@ function loadProcessTable() {
     const output = execFileSync2("ps", ["-a", "-opid=,ppid=,command="], {
       encoding: "utf8",
       timeout: 3000,
-      stdio: ["pipe", "pipe", "ignore"]
+      stdio: ["pipe", "pipe", "ignore"],
     }).trim();
     psCache = [];
     for (const raw of output.split(`
 `)) {
       const parts = raw.trim().split(/\s+/);
-      if (parts.length < 3)
-        continue;
+      if (parts.length < 3) continue;
       const pid = parts[0];
       const ppid = parts[1];
       const cmdline = parts.slice(2).join(" ");
-      if (!pid || !ppid)
-        continue;
+      if (!pid || !ppid) continue;
       psCache.push({ pid, ppid, cmdline });
     }
   } catch {
@@ -145,30 +144,22 @@ function clearProcessTable() {
   psCache = null;
 }
 function getChildCmdline(panePid) {
-  if (!panePid)
-    return "";
-  if (!psCache)
-    loadProcessTable();
+  if (!panePid) return "";
+  if (!psCache) loadProcessTable();
   for (const entry of psCache) {
-    if (entry.ppid !== panePid)
-      continue;
-    if (entry.cmdline.includes("smart-name"))
-      continue;
+    if (entry.ppid !== panePid) continue;
+    if (entry.cmdline.includes("smart-name")) continue;
     const cmd = entry.cmdline.split(/\s+/)[0];
-    if (cmd.startsWith("-"))
-      continue;
+    if (cmd.startsWith("-")) continue;
     return entry.cmdline;
   }
   return "";
 }
 function getProcessCmdline(pid) {
-  if (!pid)
-    return "";
-  if (!psCache)
-    loadProcessTable();
+  if (!pid) return "";
+  if (!psCache) loadProcessTable();
   for (const entry of psCache) {
-    if (entry.pid === pid)
-      return entry.cmdline;
+    if (entry.pid === pid) return entry.cmdline;
   }
   return "";
 }
@@ -186,11 +177,10 @@ var EDITOR_FLAGS_WITH_ARGS = new Set([
   "--server-name",
   "--listen",
   "--remote-send",
-  "--remote-expr"
+  "--remote-expr",
 ]);
 function extractFilenameFromArgs(cmdline) {
-  if (!cmdline)
-    return "";
+  if (!cmdline) return "";
   const tokens = cmdline.trim().split(/\s+/).slice(1);
   let skipNext = false;
   for (const token of tokens) {
@@ -199,51 +189,40 @@ function extractFilenameFromArgs(cmdline) {
       continue;
     }
     if (!token || token.startsWith("-") || token.startsWith("+")) {
-      if (EDITOR_FLAGS_WITH_ARGS.has(token))
-        skipNext = true;
+      if (EDITOR_FLAGS_WITH_ARGS.has(token)) skipNext = true;
       continue;
     }
     const base = basename(token);
-    if (!base || base === "." || base === "..")
-      continue;
+    if (!base || base === "." || base === "..") continue;
     return base;
   }
   return "";
 }
 function normalizeProgram(cmdline) {
-  if (!cmdline)
-    return "";
+  if (!cmdline) return "";
   const agent = detectAgentFromCmdline(cmdline);
-  if (agent)
-    return agent;
+  if (agent) return agent;
   const firstToken = cmdline.trim().split(/\s+/)[0];
-  if (!firstToken)
-    return "";
+  if (!firstToken) return "";
   let name = basename(firstToken);
-  if (name.startsWith("-"))
-    name = name.slice(1);
+  if (name.startsWith("-")) name = name.slice(1);
   const direct = normalizeAgentName(name);
-  if (direct)
-    return direct;
+  if (direct) return direct;
   return name;
 }
 function normalizeAgentName(name) {
   const lowered = name.toLowerCase();
-  if (AGENT_ALIASES[lowered])
-    return AGENT_ALIASES[lowered];
-  if (AGENT_PROGRAMS.includes(lowered))
-    return lowered;
+  if (AGENT_ALIASES[lowered]) return AGENT_ALIASES[lowered];
+  if (AGENT_PROGRAMS.includes(lowered)) return lowered;
   return null;
 }
 function detectAgentFromCmdline(cmdline) {
   const tokens = cmdline.trim().split(/\s+/);
   for (const token of tokens) {
-    if (!token || /^[A-Za-z_][A-Za-z0-9_]*=.*/.test(token))
-      continue;
+    if (!token || /^[A-Za-z_][A-Za-z0-9_]*=.*/.test(token)) continue;
     for (const candidate of extractCandidates(token)) {
       const normalized = normalizeAgentName(candidate);
-      if (normalized)
-        return normalized;
+      if (normalized) return normalized;
     }
   }
   const match = cmdline.match(AGENT_RE);
@@ -254,34 +233,32 @@ function detectAgentFromCmdline(cmdline) {
 }
 function extractCandidates(token) {
   const cleaned = token.replace(/^['"]+|['"]+$/g, "");
-  if (!cleaned)
-    return [];
-  const values = new Set;
+  if (!cleaned) return [];
+  const values = new Set();
   function add(raw) {
-    if (!raw)
-      return;
-    let value = raw.replace(/^['"]+|['"]+$/g, "").replace(/^[^A-Za-z0-9@]+|[^A-Za-z0-9-]+$/g, "").toLowerCase();
-    if (!value)
-      return;
-    if (value.startsWith("-"))
-      value = value.slice(1);
-    if (!value)
-      return;
+    if (!raw) return;
+    let value = raw
+      .replace(/^['"]+|['"]+$/g, "")
+      .replace(/^[^A-Za-z0-9@]+|[^A-Za-z0-9-]+$/g, "")
+      .toLowerCase();
+    if (!value) return;
+    if (value.startsWith("-")) value = value.slice(1);
+    if (!value) return;
     values.add(value);
     values.add(value.replace(/\.(?:mjs|cjs|js|ts|jsx|tsx)$/i, ""));
   }
   add(cleaned);
   add(basename(cleaned));
-  for (const segment of cleaned.split("/"))
-    add(segment);
+  for (const segment of cleaned.split("/")) add(segment);
   return [...values].filter(Boolean);
 }
 function getPaneProgram(paneCmd, panePid) {
-  if (AGENT_PROGRAMS.includes(paneCmd))
-    return paneCmd;
-  if (AGENT_ALIASES[paneCmd])
-    return AGENT_ALIASES[paneCmd];
-  const isWrapper = WRAPPERS.includes(paneCmd) || /^python3(?:\.\d+)?$/.test(paneCmd) || /^python(?:\.\d+)?$/.test(paneCmd);
+  if (AGENT_PROGRAMS.includes(paneCmd)) return paneCmd;
+  if (AGENT_ALIASES[paneCmd]) return AGENT_ALIASES[paneCmd];
+  const isWrapper =
+    WRAPPERS.includes(paneCmd) ||
+    /^python3(?:\.\d+)?$/.test(paneCmd) ||
+    /^python(?:\.\d+)?$/.test(paneCmd);
   if (panePid && (SHELLS.includes(paneCmd) || isWrapper)) {
     const childCmd = getChildCmdline(panePid);
     if (childCmd) {
@@ -303,7 +280,7 @@ var ICON_COLORS = {
   "●": "#[fg=cyan]●#[default]",
   "■": "#[fg=yellow]■#[default]",
   "▲": "#[fg=red]▲#[default]",
-  "◇": "#[fg=magenta]◇#[default]"
+  "◇": "#[fg=magenta]◇#[default]",
 };
 function colorize(icon) {
   return ICON_COLORS[icon] ?? icon;
@@ -320,7 +297,7 @@ var SHARED_ERROR = [
   /UnhandledPromiseRejection/i,
   /FATAL ERROR/i,
   /panic:/,
-  /Error: .*(API|rate limit|connection|timeout)/i
+  /Error: .*(API|rate limit|connection|timeout)/i,
 ];
 var SHARED_WAITING = [
   /Allow (?:once|always)\?/i,
@@ -329,7 +306,7 @@ var SHARED_WAITING = [
   /Press enter to continue/i,
   /Waiting for (?:input|approval|confirmation)/i,
   /Permission required/i,
-  /(?:yes|no|skip)\s*›/i
+  /(?:yes|no|skip)\s*›/i,
 ];
 var SHARED_BUSY = [
   /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/,
@@ -340,7 +317,7 @@ var SHARED_BUSY = [
   /Reading (?:file|files)/i,
   /Writing (?:to|file)/i,
   /Searching/i,
-  /Calling tool/i
+  /Calling tool/i,
 ];
 var PI_BUSY_STRONG = [
   /Working\.\.\./i,
@@ -350,12 +327,9 @@ var PI_BUSY_STRONG = [
   /Summarizing branch\.\.\./i,
   /Steering:/i,
   /Follow-up:/i,
-  /to edit all queued/i
+  /to edit all queued/i,
 ];
-var PI_BUSY_WEAK = [
-  /earlier lines,/i,
-  /more lines,/i
-];
+var PI_BUSY_WEAK = [/earlier lines,/i, /more lines,/i];
 var PI_IDLE = [
   /\(anthropic\)\s+\S+/i,
   /\(openai[^)]*\)\s+\S+/i,
@@ -364,38 +338,18 @@ var PI_IDLE = [
   /\$\d+\.\d{3}/i,
   /\d+\.\d+%\/\d+k?\s+\(auto\)/,
   /\bLSP\b/,
-  /\bMCP:/
+  /\bMCP:/,
 ];
-var CLAUDE_BUSY = [
-  /⎿/,
-  /Esc to cancel/i
-];
-var CLAUDE_IDLE = [
-  />\s*$/m,
-  /What would you like/i,
-  /How can I help/i,
-  /\d+% of \d+k/
-];
-var AMP_BUSY = [
-  /≋/,
-  /■■■/,
-  /esc interrupt/i,
-  /Running tools/i
-];
-var AMP_IDLE = [
-  /ctrl\+p commands/i,
-  /ctrl\+t variants/i
-];
-var OPENCODE_BUSY = [
-  /Tool:/i
-];
-var OPENCODE_IDLE = [
-  /OpenCode \d+\.\d+\.\d+/
-];
+var CLAUDE_BUSY = [/⎿/, /Esc to cancel/i];
+var CLAUDE_IDLE = [/>\s*$/m, /What would you like/i, /How can I help/i, /\d+% of \d+k/];
+var AMP_BUSY = [/≋/, /■■■/, /esc interrupt/i, /Running tools/i];
+var AMP_IDLE = [/ctrl\+p commands/i, /ctrl\+t variants/i];
+var OPENCODE_BUSY = [/Tool:/i];
+var OPENCODE_IDLE = [/OpenCode \d+\.\d+\.\d+/];
 var CODEX_WAITING = [
   /Allow Codex to (?:apply proposed code changes|run|execute)/i,
   /patch-approval/i,
-  /exec-approval/i
+  /exec-approval/i,
 ];
 var CODEX_BUSY = [/esc to interrupt/i, /Running (?:tools|commands?)/i];
 var CODEX_IDLE = [/tab to add notes/i, /Compose new task/i, /no message yet/i];
@@ -404,26 +358,26 @@ var AGENT_PATTERNS = {
     error: SHARED_ERROR,
     waiting: SHARED_WAITING,
     busy: [...CLAUDE_BUSY, ...SHARED_BUSY],
-    idle: CLAUDE_IDLE
+    idle: CLAUDE_IDLE,
   },
   amp: {
     error: SHARED_ERROR,
     waiting: SHARED_WAITING,
     busy: [...AMP_BUSY, ...SHARED_BUSY],
-    idle: AMP_IDLE
+    idle: AMP_IDLE,
   },
   opencode: {
     error: SHARED_ERROR,
     waiting: SHARED_WAITING,
     busy: [...OPENCODE_BUSY, ...SHARED_BUSY],
-    idle: OPENCODE_IDLE
+    idle: OPENCODE_IDLE,
   },
   codex: {
     error: SHARED_ERROR,
     waiting: [...CODEX_WAITING, ...SHARED_WAITING],
     busy: [...CODEX_BUSY, ...SHARED_BUSY],
-    idle: CODEX_IDLE
-  }
+    idle: CODEX_IDLE,
+  },
 };
 var DEFAULT_PATTERNS = {
   error: SHARED_ERROR,
@@ -434,7 +388,7 @@ var DEFAULT_PATTERNS = {
     ...CLAUDE_BUSY,
     ...AMP_BUSY,
     ...OPENCODE_BUSY,
-    ...CODEX_BUSY
+    ...CODEX_BUSY,
   ],
   idle: [
     ...PI_IDLE,
@@ -447,37 +401,29 @@ var DEFAULT_PATTERNS = {
     /Session went idle/i,
     /Finished\s*$/im,
     /│\s*$/m,
-    /❯\s*$/m
-  ]
+    /❯\s*$/m,
+  ],
 };
 function matchesAny(content, patterns) {
   return patterns.some((p) => p.test(content));
 }
 function detectStatus(content, agent) {
-  if (!content?.trim())
-    return ICON_UNKNOWN;
+  if (!content?.trim()) return ICON_UNKNOWN;
   const clean = stripAnsi(content);
-  const patterns = agent && AGENT_PATTERNS[agent] || DEFAULT_PATTERNS;
-  if (matchesAny(clean, patterns.error))
-    return ICON_ERROR;
-  if (matchesAny(clean, patterns.waiting))
-    return ICON_WAITING;
+  const patterns = (agent && AGENT_PATTERNS[agent]) || DEFAULT_PATTERNS;
+  if (matchesAny(clean, patterns.error)) return ICON_ERROR;
+  if (matchesAny(clean, patterns.waiting)) return ICON_WAITING;
   if (agent === "pi") {
     const hasStrongBusy = matchesAny(clean, [...PI_BUSY_STRONG, ...SHARED_BUSY]);
     const hasWeakBusy = matchesAny(clean, PI_BUSY_WEAK);
     const hasIdle = matchesAny(clean, PI_IDLE);
-    if (hasStrongBusy)
-      return ICON_BUSY;
-    if (hasIdle)
-      return ICON_IDLE;
-    if (hasWeakBusy)
-      return ICON_BUSY;
+    if (hasStrongBusy) return ICON_BUSY;
+    if (hasIdle) return ICON_IDLE;
+    if (hasWeakBusy) return ICON_BUSY;
     return ICON_UNKNOWN;
   }
-  if (matchesAny(clean, patterns.busy))
-    return ICON_BUSY;
-  if (matchesAny(clean, patterns.idle))
-    return ICON_IDLE;
+  if (matchesAny(clean, patterns.busy)) return ICON_BUSY;
+  if (matchesAny(clean, patterns.idle)) return ICON_IDLE;
   return ICON_UNKNOWN;
 }
 var PRIORITY = {
@@ -485,27 +431,25 @@ var PRIORITY = {
   "■": 1,
   "●": 2,
   "◇": 3,
-  "□": 4
+  "□": 4,
 };
 function prioritize(statuses) {
-  if (statuses.length === 0)
-    return ICON_IDLE;
-  return statuses.reduce((best, s) => PRIORITY[s] < PRIORITY[best] ? s : best);
+  if (statuses.length === 0) return ICON_IDLE;
+  return statuses.reduce((best, s) => (PRIORITY[s] < PRIORITY[best] ? s : best));
 }
 var STATUS_DIR = "/tmp/pi-tmux-status";
 var STATUS_FILE_MAX_AGE = 30000;
 var STATUS_MAP = {
   busy: ICON_BUSY,
   idle: ICON_IDLE,
-  waiting: ICON_WAITING
+  waiting: ICON_WAITING,
 };
 function readPiStatusFile(paneId) {
   const safePane = paneId.replace(/[^a-zA-Z0-9_-]/g, "");
   const path = `${STATUS_DIR}/${safePane}.json`;
   try {
     const stat = statSync(path);
-    if (Date.now() - stat.mtimeMs > STATUS_FILE_MAX_AGE)
-      return null;
+    if (Date.now() - stat.mtimeMs > STATUS_FILE_MAX_AGE) return null;
     const raw = readFileSync(path, "utf8");
     const data = JSON.parse(raw);
     return STATUS_MAP[data.status] ?? null;
@@ -519,8 +463,7 @@ import { execFileSync as execFileSync3 } from "node:child_process";
 import { homedir } from "node:os";
 var MAX_NAME_LEN = 24;
 function formatPath(path) {
-  if (!path)
-    return "";
+  if (!path) return "";
   const home = homedir();
   if (home && path.startsWith(home)) {
     return "~" + path.slice(home.length);
@@ -528,8 +471,7 @@ function formatPath(path) {
   return path;
 }
 function shortenPath(path) {
-  if (!path)
-    return "";
+  if (!path) return "";
   let prefix = "";
   let rest = path;
   if (rest.startsWith("~/")) {
@@ -540,11 +482,9 @@ function shortenPath(path) {
     rest = rest.slice(1);
   }
   const parts = rest.split("/").filter(Boolean);
-  if (parts.length <= 1)
-    return path;
+  if (parts.length <= 1) return path;
   const shortened = parts.slice(0, -1).map((p) => {
-    if (p.startsWith(".") && p.length > 1)
-      return "." + p[1];
+    if (p.startsWith(".") && p.length > 1) return "." + p[1];
     return p[0];
   });
   return prefix + [...shortened, parts[parts.length - 1]].join("/");
@@ -553,8 +493,7 @@ function visibleLength(name) {
   return name.replace(/#\[[^\]]*\]/g, "").length;
 }
 function trimName(name, maxLen = MAX_NAME_LEN) {
-  if (maxLen <= 0 || visibleLength(name) <= maxLen)
-    return name;
+  if (maxLen <= 0 || visibleLength(name) <= maxLen) return name;
   let visible = 0;
   let i = 0;
   const target = maxLen <= 3 ? maxLen : maxLen - 3;
@@ -582,11 +521,10 @@ function trimName(name, maxLen = MAX_NAME_LEN) {
 }
 function parsePiFooter(content) {
   const ctx = {};
-  if (!content)
-    return ctx;
+  if (!content) return ctx;
   const lines = content.split(`
 `);
-  for (let i = 0;i < lines.length; i++) {
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     const next = lines[i + 1]?.trim() ?? "";
     if (/\(.*\)/.test(line) && /^↑/.test(next)) {
@@ -612,36 +550,35 @@ function parseHermesSession(content, paneTitle = "") {
   const match = content.match(HERMES_SESSION_RE);
   if (match?.[1]) {
     const title = lookupHermesSessionTitle(match[1]);
-    if (title)
-      ctx.sessionName = title;
+    if (title) ctx.sessionName = title;
   }
   if (!ctx.sessionName) {
     const launchTitle = parseHermesLaunchTitle(paneTitle);
-    if (launchTitle)
-      ctx.sessionName = launchTitle;
+    if (launchTitle) ctx.sessionName = launchTitle;
   }
   return ctx;
 }
 function parseHermesLaunchTitle(paneTitle) {
-  if (!paneTitle)
-    return "";
+  if (!paneTitle) return "";
   const quoted = paneTitle.match(/\bhermes\b.*\s-c\s+"([^"]+)"/i);
-  if (quoted?.[1])
-    return quoted[1].trim();
+  if (quoted?.[1]) return quoted[1].trim();
   const bare = paneTitle.match(/\bhermes\b.*\s-c\s+(.+)$/i);
-  if (bare?.[1])
-    return bare[1].trim();
+  if (bare?.[1]) return bare[1].trim();
   return "";
 }
 function lookupHermesSessionTitle(sessionId) {
   const dbPath = `${homedir()}/.config/hermes/state.db`;
   const safeSessionId = sessionId.replace(/'/g, "''");
   try {
-    const out = execFileSync3("sqlite3", [dbPath, `SELECT title FROM sessions WHERE id = '${safeSessionId}' LIMIT 1;`], {
-      encoding: "utf8",
-      timeout: 1500,
-      stdio: ["pipe", "pipe", "ignore"]
-    }).trim();
+    const out = execFileSync3(
+      "sqlite3",
+      [dbPath, `SELECT title FROM sessions WHERE id = '${safeSessionId}' LIMIT 1;`],
+      {
+        encoding: "utf8",
+        timeout: 1500,
+        stdio: ["pipe", "pipe", "ignore"],
+      }
+    ).trim();
     return out;
   } catch {
     return "";
@@ -658,13 +595,11 @@ var DISPLAY_NAMES = {
   codex: "\uDB94\uDC00",
   opencode: "\uDB94\uDC02",
   aider: "",
-  amp: "\uDB94\uDC01"
+  amp: "\uDB94\uDC01",
 };
 function buildBaseName(program, path, context) {
-  if (!program)
-    return path ? shortenPath(path) : "";
-  if (SHELLS.includes(program))
-    return path ? shortenPath(path) : program;
+  if (!program) return path ? shortenPath(path) : "";
+  if (SHELLS.includes(program)) return path ? shortenPath(path) : program;
   if (DIR_PROGRAMS.includes(program)) {
     const icon = DISPLAY_NAMES[program] ?? program;
     if (context?.sessionName) {
@@ -705,8 +640,11 @@ function getAllAgentsInfo() {
         windowName: pane.windowName ?? "",
         paneId: pane.paneId,
         program,
-        status: program === "pi" ? readPiStatusFile(pane.paneId) ?? detectStatus(capturePane(pane.paneId), program) : detectStatus(capturePane(pane.paneId), program),
-        path: formatPath(pane.path)
+        status:
+          program === "pi"
+            ? (readPiStatusFile(pane.paneId) ?? detectStatus(capturePane(pane.paneId), program))
+            : detectStatus(capturePane(pane.paneId), program),
+        path: formatPath(pane.path),
       });
     }
   }
@@ -718,29 +656,36 @@ var STATUS_PRIORITY = {
   "◇": 1,
   "■": 2,
   "●": 3,
-  "□": 4
+  "□": 4,
 };
 function generateMenuCommand(agents) {
-  if (agents.length === 0)
-    return null;
-  const sorted2 = [...agents].sort((a, b) => (STATUS_PRIORITY[a.status] ?? 5) - (STATUS_PRIORITY[b.status] ?? 5) || a.session.localeCompare(b.session) || a.windowIndex.localeCompare(b.windowIndex));
+  if (agents.length === 0) return null;
+  const sorted2 = [...agents].sort(
+    (a, b) =>
+      (STATUS_PRIORITY[a.status] ?? 5) - (STATUS_PRIORITY[b.status] ?? 5) ||
+      a.session.localeCompare(b.session) ||
+      a.windowIndex.localeCompare(b.windowIndex)
+  );
   const statuses = agents.map((a) => a.status);
   const aggregate = prioritize(statuses);
   const attentionCount = statuses.filter((s) => ATTENTION.has(s)).length;
   const items = [];
-  const header = attentionCount > 0 ? `${aggregate} ${agents.length} agents (${attentionCount} need attention)` : `${aggregate} ${agents.length} agents`;
+  const header =
+    attentionCount > 0
+      ? `${aggregate} ${agents.length} agents (${attentionCount} need attention)`
+      : `${aggregate} ${agents.length} agents`;
   items.push(`"${header}" "" ""`);
   items.push('"-" "" ""');
-  for (let i = 0;i < sorted2.length; i++) {
+  for (let i = 0; i < sorted2.length; i++) {
     const a = sorted2[i];
     let path = a.path;
-    if (path && path.length > 20)
-      path = "..." + path.slice(-17);
+    if (path && path.length > 20) path = "..." + path.slice(-17);
     let label = `${a.status} ${a.program} ${a.session}:${a.windowIndex}`;
-    if (path)
-      label += ` ${path}`;
+    if (path) label += ` ${path}`;
     const key = i < 9 ? String(i + 1) : "";
-    const action = a.paneId ? `switch-client -t ${a.session}:${a.windowIndex} ; select-pane -t ${a.paneId}` : `switch-client -t ${a.session}:${a.windowIndex}`;
+    const action = a.paneId
+      ? `switch-client -t ${a.session}:${a.windowIndex} ; select-pane -t ${a.paneId}`
+      : `switch-client -t ${a.session}:${a.windowIndex}`;
     items.push(`"${label}" "${key}" "${action}"`);
   }
   items.push('"-" "" ""');
@@ -759,24 +704,32 @@ function runMenu() {
       execFileSync4("tmux", ["display-message", "No AI agents running"]);
       return;
     }
-    const sorted2 = [...agents].sort((a, b) => (STATUS_PRIORITY[a.status] ?? 5) - (STATUS_PRIORITY[b.status] ?? 5) || a.session.localeCompare(b.session) || a.windowIndex.localeCompare(b.windowIndex));
+    const sorted2 = [...agents].sort(
+      (a, b) =>
+        (STATUS_PRIORITY[a.status] ?? 5) - (STATUS_PRIORITY[b.status] ?? 5) ||
+        a.session.localeCompare(b.session) ||
+        a.windowIndex.localeCompare(b.windowIndex)
+    );
     const menuArgs = ["-T", "Agent Management", "-x", "C", "-y", "C", "-C", "1"];
     const statuses = agents.map((a) => a.status);
     const aggregate = prioritize(statuses);
     const attentionCount = statuses.filter((s) => ATTENTION.has(s)).length;
-    const header = attentionCount > 0 ? `${colorize(aggregate)} ${agents.length} agents (${attentionCount} need attention)` : `${colorize(aggregate)} ${agents.length} agents`;
+    const header =
+      attentionCount > 0
+        ? `${colorize(aggregate)} ${agents.length} agents (${attentionCount} need attention)`
+        : `${colorize(aggregate)} ${agents.length} agents`;
     menuArgs.push(header, "", "");
     menuArgs.push("", "", "");
-    for (let i = 0;i < sorted2.length; i++) {
+    for (let i = 0; i < sorted2.length; i++) {
       const a = sorted2[i];
       let path = a.path;
-      if (path && path.length > 20)
-        path = "..." + path.slice(-17);
+      if (path && path.length > 20) path = "..." + path.slice(-17);
       let label = `${colorize(a.status)} ${a.program} ${a.session}:${a.windowIndex}`;
-      if (path)
-        label += ` ${path}`;
+      if (path) label += ` ${path}`;
       const key = i < 9 ? String(i + 1) : "";
-      const action = a.paneId ? `switch-client -t ${a.session}:${a.windowIndex} ; select-pane -t ${a.paneId}` : `switch-client -t ${a.session}:${a.windowIndex}`;
+      const action = a.paneId
+        ? `switch-client -t ${a.session}:${a.windowIndex} ; select-pane -t ${a.paneId}`
+        : `switch-client -t ${a.session}:${a.windowIndex}`;
       menuArgs.push(label, key, action);
       if (a.paneId && a.status === ICON_BUSY) {
         menuArgs.push("  ⏹ Interrupt", "", `send-keys -t ${a.paneId} Escape`);
@@ -789,7 +742,7 @@ function runMenu() {
     try {
       execFileSync4("tmux", [
         "display-message",
-        `Error: ${e instanceof Error ? e.message : "unknown"}`
+        `Error: ${e instanceof Error ? e.message : "unknown"}`,
       ]);
     } catch {}
   }
@@ -798,15 +751,13 @@ function runMenu() {
 // src/index.ts
 import { execFileSync as execFileSync5 } from "node:child_process";
 function renameAll() {
-  if (!hasSessions())
-    return;
+  if (!hasSessions()) return;
   try {
     loadProcessTable();
     const allPanes = listAllPanes();
     for (const [windowId, panes] of allPanes) {
       try {
-        if (panes.length === 0)
-          continue;
+        if (panes.length === 0) continue;
         const active = panes.find((p) => p.active) ?? panes[0];
         const program = getPaneProgram(active.command, active.pid);
         const path = formatPath(active.path);
@@ -829,21 +780,19 @@ function renameAll() {
         } else if (program === "nvim" || program === "vim" || program === "vi") {
           const cmdline = getChildCmdline(active.pid) || getProcessCmdline(active.pid);
           const filename = extractFilenameFromArgs(cmdline);
-          if (filename)
-            context = { filename };
+          if (filename) context = { filename };
         }
         const baseName = buildBaseName(program, path, context);
-        if (!baseName && !program)
-          continue;
+        if (!baseName && !program) continue;
         let newName;
         if (agentPanes.length > 0) {
           const statuses = agentPanes.map((a) => {
             if (a.agent === "pi") {
               const fileStatus = readPiStatusFile(a.paneId);
-              if (fileStatus)
-                return fileStatus;
+              if (fileStatus) return fileStatus;
             }
-            const content = a.paneId === active.paneId && activeContent ? activeContent : capturePane(a.paneId);
+            const content =
+              a.paneId === active.paneId && activeContent ? activeContent : capturePane(a.paneId);
             return detectStatus(content, a.agent);
           });
           const agentStatus = prioritize(statuses);
@@ -869,19 +818,18 @@ function renameAll() {
         continue;
       }
     }
-  } catch {} finally {
+  } catch {
+  } finally {
     clearProcessTable();
   }
 }
 function printGlobalStatus() {
   try {
-    if (!hasSessions())
-      return;
+    if (!hasSessions()) return;
     loadProcessTable();
     const agents = getAllAgentsInfo();
     clearProcessTable();
-    if (agents.length === 0)
-      return;
+    if (agents.length === 0) return;
     const statuses = agents.map((a) => a.status);
     const top = prioritize(statuses);
     console.log(`${top} ${agents.length}`);
@@ -889,19 +837,22 @@ function printGlobalStatus() {
 }
 function checkAttention() {
   try {
-    if (!hasSessions())
-      return;
+    if (!hasSessions()) return;
     loadProcessTable();
     const agents = getAllAgentsInfo();
     clearProcessTable();
-    const attention = agents.filter((a) => a.status === "▲" || a.status === "■" || a.status === "◇");
+    const attention = agents.filter(
+      (a) => a.status === "▲" || a.status === "■" || a.status === "◇"
+    );
     if (attention.length > 0) {
       let lastCount = 0;
       try {
         const out = execFileSync5("tmux", ["show-environment", "-g", "TMUX_AGENT_LAST_ATTENTION"], {
           encoding: "utf8",
-          stdio: ["pipe", "pipe", "ignore"]
-        }).trim().split("=")[1];
+          stdio: ["pipe", "pipe", "ignore"],
+        })
+          .trim()
+          .split("=")[1];
         lastCount = parseInt(out, 10) || 0;
       } catch {}
       if (attention.length > lastCount) {
@@ -910,7 +861,7 @@ function checkAttention() {
           "set-environment",
           "-g",
           "TMUX_AGENT_LAST_ATTENTION",
-          String(attention.length)
+          String(attention.length),
         ]);
       }
     } else {
