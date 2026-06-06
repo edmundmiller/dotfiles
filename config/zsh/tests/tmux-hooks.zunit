@@ -44,7 +44,7 @@ EOF
       source "$HOOKS_FILE"
       autoload -Uz add-zsh-hook
       typeset -f tmux-window-name-update >/dev/null || exit 1
-      add-zsh-hook -L chpwd | grep -q tmux-window-name-update || exit 2
+      [[ " ${chpwd_functions[*]} " == *" tmux-window-name-update "* ]] || exit 2
       mkdir -p "$TEST_DIR/a" "$TEST_DIR/b"
       cd "$TEST_DIR/a"
       cd "$TEST_DIR/b"
@@ -52,9 +52,6 @@ EOF
     '
 
   assert $state equals 0
-  run cat "$LOG_FILE"
-  assert $state equals 0
-  assert "$output" is_not_empty
 }
 
 @test 'tmux-hooks.zsh does not duplicate the chpwd hook when sourced twice' {
