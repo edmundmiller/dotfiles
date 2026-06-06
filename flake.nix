@@ -288,7 +288,7 @@
         apps."${linuxSystem}" = {
           default = {
             type = "app";
-            program = ./bin/hey;
+            program = "${./bin/hey}";
           };
           renovate-update-nix-hashes = {
             type = "app";
@@ -299,7 +299,7 @@
         apps."${darwinSystem}" = {
           default = {
             type = "app";
-            program = ./bin/hey;
+            program = "${./bin/hey}";
           };
           renovate-update-nix-hashes = {
             type = "app";
