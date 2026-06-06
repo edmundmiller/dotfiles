@@ -933,6 +933,8 @@
                     echo "All zunit tests passed" > $out/result
                   '';
 
+              kittylitter-smoke = self.packages.${system}.kittylitter.passthru.tests.smoke;
+
               dagster-package =
                 pkgs.runCommand "dagster-package-check"
                   {
@@ -990,6 +992,13 @@
               # Uses clock manipulation + HA API to test end-to-end.
               hass-time-guards = import ./modules/services/hass/_tests/time-guards-test.nix {
                 inherit pkgs;
+              };
+
+              # NixOS VM test: verify kittylitter home-manager user service,
+              # generated host config, daemon startup, and local status CLI.
+              kittylitter-vm-test = import ./modules/services/kittylitter/_tests/vm-test.nix {
+                inherit pkgs inputs;
+                kittylitterPackage = self.packages.${system}.kittylitter;
               };
 
               validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" { } ''

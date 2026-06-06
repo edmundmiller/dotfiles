@@ -5,6 +5,7 @@
   pkg-config,
   openssl,
   zlib,
+  runCommand,
 }:
 
 let
@@ -15,7 +16,7 @@ let
     hash = "sha256-jV8apGihLHN1My2zLM9BCWoWGXWdruZoRaL6+Jf9Ypw=";
   };
 in
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "kittylitter";
   version = "0.3.4-patched";
 
@@ -49,6 +50,16 @@ rustPlatform.buildRustPackage rec {
 
   doCheck = false;
 
+  passthru.tests.smoke = runCommand "${finalAttrs.pname}-${finalAttrs.version}-smoke" { } ''
+    ${finalAttrs.finalPackage}/bin/kittylitter --version
+    ${finalAttrs.finalPackage}/bin/kittylitter --help >/dev/null
+    ${finalAttrs.finalPackage}/bin/kittylitter status --help >/dev/null
+    ${finalAttrs.finalPackage}/bin/kittylitter agents list --help >/dev/null
+
+    mkdir -p $out
+    echo "kittylitter smoke test passed" > $out/result
+  '';
+
   meta = with lib; {
     description = "Patched kittylitter/alleycat daemon with Pi local session hydration compatibility";
     homepage = "https://github.com/dnakov/litter";
@@ -56,4 +67,4 @@ rustPlatform.buildRustPackage rec {
     platforms = platforms.unix;
     mainProgram = "kittylitter";
   };
-}
+})
