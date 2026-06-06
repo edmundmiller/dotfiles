@@ -84,7 +84,6 @@ hey zbench                    # Shows comparison vs baseline
 hey zbench-save
 ```
 
-
 ## Autoresearch Optimization Prompt
 
 For a multi-iteration optimization loop, use `pi-autoresearch` to drive small

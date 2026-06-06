@@ -20,7 +20,6 @@ The home-manager activation step:
 5. merges declarative config overlays into a writable `config.yaml`
 6. materializes managed secrets into `$HERMES_HOME/.env`
 
-
 ## MCP servers and secrets
 
 Hermes MCP server definitions that are safe to commit belong in `config/hermes/config.yml` under `mcp_servers`. Keep them frictionless by declaring the server once in the repo-managed base config and using Hermes env interpolation for secrets, e.g. `${GITHUB_TOKEN}`. Hermes loads `$HERMES_HOME/.env` and interpolates those variables before starting stdio MCP servers.

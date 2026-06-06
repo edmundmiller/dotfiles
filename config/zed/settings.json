@@ -45,10 +45,7 @@
         "mode": "auto"
       },
       "favorite_config_option_values": {
-        "mode": [
-          "bypassPermissions",
-          "auto"
-        ]
+        "mode": ["bypassPermissions", "auto"]
       },
       "type": "registry"
     },
@@ -57,25 +54,18 @@
     },
     "codex-acp": {
       "favorite_config_option_values": {
-        "mode": [
-          "full-access"
-        ]
+        "mode": ["full-access"]
       },
       "type": "registry"
     },
     "pi-acp": {
-      "favorite_models": [
-        "openai-codex/gpt-5.4",
-        "openai-codex/gpt-5.4-mini"
-      ],
+      "favorite_models": ["openai-codex/gpt-5.4", "openai-codex/gpt-5.4-mini"],
       "type": "registry"
     },
     "hermes-agent": {
       "type": "custom",
       "command": "hermes",
-      "args": [
-        "acp"
-      ]
+      "args": ["acp"]
     }
   },
   "redact_private_values": true,
@@ -115,11 +105,7 @@
     },
     "linear": {
       "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://mcp.linear.app/mcp"
-      ],
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"],
       "env": {}
     },
     "posthog": {
