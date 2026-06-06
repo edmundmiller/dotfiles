@@ -993,8 +993,8 @@
 
                 echo "Validating Claude Code plugin layout..."
                 for plugin in ${./config/claude/plugins}/*; do
-                  if [ -d "$plugin" ] && [ ! -f "$plugin/README.md" ]; then
-                    echo "Missing README.md in $plugin" >&2
+                  if [ -d "$plugin" ] && [ ! -f "$plugin/.claude-plugin/plugin.json" ]; then
+                    echo "Missing .claude-plugin/plugin.json in $plugin" >&2
                     exit 1
                   fi
                 done
