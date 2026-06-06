@@ -166,7 +166,7 @@
           ];
         stackSkillSource = pkgs.runCommand "stack-skill-source" { } ''
           mkdir -p $out/stack
-          cp ${inputs.stack-repo.outPath}/skills/stack/skill.md $out/stack/SKILL.md
+          cp ${inputs.stack-repo.outPath}/skills/stack/SKILL.md $out/stack/SKILL.md
         '';
         tmuxEnabled = moduleEnabled [
           "modules"
