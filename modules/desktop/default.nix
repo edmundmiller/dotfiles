@@ -47,7 +47,7 @@ in
       fontDir.enable = true;
       enableGhostscriptFonts = true;
       packages = with pkgs; [
-        ubuntu_font_family
+        ubuntu-classic
         dejavu_fonts
         fira
         jetbrains-mono
@@ -56,7 +56,7 @@ in
         monaspace
         unstable.nerd-fonts.monaspace
         noto-fonts
-        noto-fonts-cjk
+        noto-fonts-cjk-sans
       ];
     };
 
