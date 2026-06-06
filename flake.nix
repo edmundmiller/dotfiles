@@ -880,6 +880,7 @@
                       pkgs.git
                       pkgs.gnused
                       pkgs.bash
+                      pkgs.lua
                       pkgs.sesh
                       pkgs.fzf
                       pkgs.zoxide
