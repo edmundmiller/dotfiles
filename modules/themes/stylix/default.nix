@@ -29,15 +29,16 @@ with lib.my;
 let
   cfg = config.modules.theme.stylix;
 
+  hasScheme = cfg.base16Scheme != null || cfg.schemeName != null;
+
   # Resolve base16Scheme from a friendly name (e.g. "catppuccin-mocha")
-  # to a yaml file inside pkgs.base16-schemes.
+  # to a yaml file inside pkgs.base16-schemes. Keep this out of mkIf
+  # conditions so nix-darwin can settle nixpkgs.pkgs without recursing.
   resolvedScheme =
     if cfg.base16Scheme != null then
       cfg.base16Scheme
-    else if cfg.schemeName != null then
-      "${pkgs.base16-schemes}/share/themes/${cfg.schemeName}.yaml"
     else
-      null;
+      "${pkgs.base16-schemes}/share/themes/${cfg.schemeName}.yaml";
 
   # Mint a 1920x1080 solid-color PNG from a hex string (no leading '#').
   # Used as the stylix.image fallback so hosts don't need a real wallpaper.
@@ -155,7 +156,7 @@ in
       stylix.overlays.enable = false;
     }
 
-    (mkIf (cfg.enable && resolvedScheme == null) {
+    (mkIf (cfg.enable && !hasScheme) {
       assertions = [
         {
           assertion = false;
@@ -164,7 +165,7 @@ in
       ];
     })
 
-    (mkIf (cfg.enable && resolvedScheme != null) {
+    (mkIf (cfg.enable && hasScheme) {
       stylix = {
         enable = true;
         polarity = resolvedPolarity;
