@@ -50,27 +50,44 @@ function clampPercent(percent: number): number {
   return percent;
 }
 
-function getZoneLabel(utilization: number, warningThreshold: number, dangerThreshold: number): string {
+function getZoneLabel(
+  utilization: number,
+  warningThreshold: number,
+  dangerThreshold: number
+): string {
   if (utilization < warningThreshold) return "smart";
   if (utilization < dangerThreshold) return "warm";
   return "dumb";
 }
 
-function getZoneCeiling(utilization: number, warningThreshold: number, dangerThreshold: number): number {
+function getZoneCeiling(
+  utilization: number,
+  warningThreshold: number,
+  dangerThreshold: number
+): number {
   if (utilization < warningThreshold) return warningThreshold;
   if (utilization < dangerThreshold) return dangerThreshold;
   return 100;
 }
 
-function buildProgressBar(utilization: number, warningThreshold: number, dangerThreshold: number): string {
-  const filled = Math.max(0, Math.min(STATUS_BAR_LEN, Math.round((utilization / 100) * STATUS_BAR_LEN)));
+function buildProgressBar(
+  utilization: number,
+  warningThreshold: number,
+  dangerThreshold: number
+): string {
+  const filled = Math.max(
+    0,
+    Math.min(STATUS_BAR_LEN, Math.round((utilization / 100) * STATUS_BAR_LEN))
+  );
   const warningPos = Math.round((warningThreshold / 100) * STATUS_BAR_LEN);
   const dangerPos = Math.round((dangerThreshold / 100) * STATUS_BAR_LEN);
 
   let bar = "";
   for (let i = 0; i < STATUS_BAR_LEN; i++) {
-    if ((i === warningPos && warningPos > 0 && warningPos < STATUS_BAR_LEN) ||
-      (i === dangerPos && dangerPos > 0 && dangerPos < STATUS_BAR_LEN)) {
+    if (
+      (i === warningPos && warningPos > 0 && warningPos < STATUS_BAR_LEN) ||
+      (i === dangerPos && dangerPos > 0 && dangerPos < STATUS_BAR_LEN)
+    ) {
       bar += "|";
       continue;
     }
