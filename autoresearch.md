@@ -6,23 +6,23 @@ The installed `hey zbench --iters 4` failed before running zsh-bench because Nus
 
 Direct baseline (`zsh-bench --iters 4`):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 27.894 |
+| metric               |      ms |
+| -------------------- | ------: |
+| first_prompt_lag_ms  |  27.894 |
 | first_command_lag_ms | 689.543 |
-| command_lag_ms | 175.074 |
-| input_lag_ms | 4.986 |
-| exit_time_ms | 334.448 |
+| command_lag_ms       | 175.074 |
+| input_lag_ms         |   4.986 |
+| exit_time_ms         | 334.448 |
 
 Repo-local harness after fix (`./bin/hey zbench --iters 4`, confirmation run):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 28.6 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  28.6 |
 | first_command_lag_ms | 681.0 |
-| command_lag_ms | 168.5 |
-| input_lag_ms | 5.2 |
-| exit_time_ms | 325.7 |
+| command_lag_ms       | 168.5 |
+| input_lag_ms         |   5.2 |
+| exit_time_ms         | 325.7 |
 
 The repo-local harness numbers are effectively the same performance band as the direct baseline; the kept change is a harness correctness fix, not a zsh startup optimization.
 
@@ -55,13 +55,13 @@ The repo-local harness numbers are effectively the same performance band as the 
 
 Baseline rerun (`./bin/hey zbench --iters 4`):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 35.7 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  35.7 |
 | first_command_lag_ms | 895.4 |
-| command_lag_ms | 204.4 |
-| input_lag_ms | 5.3 |
-| exit_time_ms | 424.2 |
+| command_lag_ms       | 204.4 |
+| input_lag_ms         |   5.3 |
+| exit_time_ms         | 424.2 |
 
 Hook inventory (`ZDOTDIR=$PWD/config/zsh ZSH_CACHE=$HOME/.cache/zsh zsh -lic 'print -l ...'`):
 
@@ -71,17 +71,17 @@ Hook inventory (`ZDOTDIR=$PWD/config/zsh ZSH_CACHE=$HOME/.cache/zsh zsh -lic 'pr
 
 Manual timing showed the dominant per-prompt cost was `precmd_vcs_info` from `rkh/zsh-jj`:
 
-| hook/command | observed cost |
-| --- | ---: |
-| `precmd_vcs_info` | first run 563.85 ms, then ~130 ms |
-| direct `vcs_info` | ~201.15 ms avg |
+| hook/command                         |                           observed cost |
+| ------------------------------------ | --------------------------------------: |
+| `precmd_vcs_info`                    |       first run 563.85 ms, then ~130 ms |
+| direct `vcs_info`                    |                          ~201.15 ms avg |
 | `_direnv_hook` / `direnv export zsh` | ~6-11 ms steady, one cold 73 ms outlier |
-| `_mise_hook_precmd` | ~10-18 ms |
-| `_ghostty_deferred_init` | ~16-22 ms after setup |
-| `_p9k_precmd` | ~1.5-2.4 ms after first run |
-| `jj` quick prompt call | ~27.45 ms |
-| `__zoxide_hook` direct add | ~13.95 ms |
-| `__am_hook` direct sync | ~4.46 ms |
+| `_mise_hook_precmd`                  |                               ~10-18 ms |
+| `_ghostty_deferred_init`             |                   ~16-22 ms after setup |
+| `_p9k_precmd`                        |             ~1.5-2.4 ms after first run |
+| `jj` quick prompt call               |                               ~27.45 ms |
+| `__zoxide_hook` direct add           |                               ~13.95 ms |
+| `__am_hook` direct sync              |                                ~4.46 ms |
 
 Kept experiment: remove `rkh/zsh-jj` from `config/zsh/.zsh_plugins.txt`. The active prompt already has its own async `jj` segment in `config/zsh/prompt.zsh`, so `zsh-jj` only adds an unused `vcs_info` precmd hook in this setup.
 
@@ -89,23 +89,23 @@ After regenerating `~/.cache/zsh/.zsh_plugins.zsh` from the edited plugin file w
 
 Confirmation benchmark (`./bin/hey zbench --iters 4`):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 38.8 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  38.8 |
 | first_command_lag_ms | 533.6 |
-| command_lag_ms | 51.4 |
-| input_lag_ms | 5.7 |
-| exit_time_ms | 440.7 |
+| command_lag_ms       |  51.4 |
+| input_lag_ms         |   5.7 |
+| exit_time_ms         | 440.7 |
 
 Best confirmation run for same change:
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 37.3 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  37.3 |
 | first_command_lag_ms | 515.6 |
-| command_lag_ms | 39.7 |
-| input_lag_ms | 5.7 |
-| exit_time_ms | 401.4 |
+| command_lag_ms       |  39.7 |
+| input_lag_ms         |   5.7 |
+| exit_time_ms         | 401.4 |
 
 Result: command lag improved from ~204.4 ms to 39.7-51.4 ms. This does not reach the 10 ms imperceptible threshold, but removes the largest confirmed prompt-loop cost without dropping the active async jj prompt.
 
@@ -113,14 +113,13 @@ Additional kept hardening: `_antidote_static_is_healthy` now invalidates the gen
 
 Validation after cache invalidation change (`./bin/hey zbench --iters 4`):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 37.9 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  37.9 |
 | first_command_lag_ms | 532.4 |
-| command_lag_ms | 54.1 |
-| input_lag_ms | 5.4 |
-| exit_time_ms | 429.6 |
-
+| command_lag_ms       |  54.1 |
+| input_lag_ms         |   5.4 |
+| exit_time_ms         | 429.6 |
 
 ---
 
@@ -132,23 +131,23 @@ The installed `hey zbench --iters 4` failed before running zsh-bench because Nus
 
 Direct baseline (`zsh-bench --iters 4`):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 27.894 |
+| metric               |      ms |
+| -------------------- | ------: |
+| first_prompt_lag_ms  |  27.894 |
 | first_command_lag_ms | 689.543 |
-| command_lag_ms | 175.074 |
-| input_lag_ms | 4.986 |
-| exit_time_ms | 334.448 |
+| command_lag_ms       | 175.074 |
+| input_lag_ms         |   4.986 |
+| exit_time_ms         | 334.448 |
 
 Repo-local harness after fix (`./bin/hey zbench --iters 4`, confirmation run):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 28.6 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  28.6 |
 | first_command_lag_ms | 681.0 |
-| command_lag_ms | 168.5 |
-| input_lag_ms | 5.2 |
-| exit_time_ms | 325.7 |
+| command_lag_ms       | 168.5 |
+| input_lag_ms         |   5.2 |
+| exit_time_ms         | 325.7 |
 
 The repo-local harness numbers are effectively the same performance band as the direct baseline; the kept change is a harness correctness fix, not a zsh startup optimization.
 
@@ -227,7 +226,6 @@ is gone.
 - `find .direnv -maxdepth 4 -ls`
 - `nix-store --query --roots "$(readlink .direnv/flake-profile-*)"`
 
-
 ---
 
 # Zsh startup autoresearch
@@ -238,23 +236,23 @@ The installed `hey zbench --iters 4` failed before running zsh-bench because Nus
 
 Direct baseline (`zsh-bench --iters 4`):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 27.894 |
+| metric               |      ms |
+| -------------------- | ------: |
+| first_prompt_lag_ms  |  27.894 |
 | first_command_lag_ms | 689.543 |
-| command_lag_ms | 175.074 |
-| input_lag_ms | 4.986 |
-| exit_time_ms | 334.448 |
+| command_lag_ms       | 175.074 |
+| input_lag_ms         |   4.986 |
+| exit_time_ms         | 334.448 |
 
 Repo-local harness after fix (`./bin/hey zbench --iters 4`, confirmation run):
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 28.6 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  28.6 |
 | first_command_lag_ms | 681.0 |
-| command_lag_ms | 168.5 |
-| input_lag_ms | 5.2 |
-| exit_time_ms | 325.7 |
+| command_lag_ms       | 168.5 |
+| input_lag_ms         |   5.2 |
+| exit_time_ms         | 325.7 |
 
 The repo-local harness numbers are effectively the same performance band as the direct baseline; the kept change is a harness correctness fix, not a zsh startup optimization.
 
@@ -304,10 +302,10 @@ Baseline default shell contents:
 
 Warm/cache-ish timings before changes:
 
-| command | run 1 | run 2 | run 3 |
-| --- | ---: | ---: | ---: |
+| command                                        | run 1 | run 2 | run 3 |
+| ---------------------------------------------- | ----: | ----: | ----: |
 | `direnv export json` with valid existing cache | 0.01s | 0.01s | 0.00s |
-| `nix develop --command true` | 8.34s | 1.47s | 0.89s |
+| `nix develop --command true`                   | 8.34s | 1.47s | 0.89s |
 
 Notes:
 
@@ -335,10 +333,10 @@ Use full shell when hook installation or deploy tooling is needed.
 
 After split, with dirty-tree warning present due to the prototype itself:
 
-| command | run 1 | run 2 | run 3 |
-| --- | ---: | ---: | ---: |
-| `nix develop --command true` default | 0.70s | 0.61s | 0.55s |
-| `nix develop .#full --command true` | 0.72s | 0.60s | 0.66s |
+| command                                       |  run 1 | run 2 | run 3 |
+| --------------------------------------------- | -----: | ----: | ----: |
+| `nix develop --command true` default          |  0.70s | 0.61s | 0.55s |
+| `nix develop .#full --command true`           |  0.72s | 0.60s | 0.66s |
 | `direnv export json` after cache invalidation | 13.35s | 0.14s | 0.14s |
 
 A separate `mkShellNoCC` rebuild run measured default at 8.90s, 1.17s, 0.64s; first run included building the changed shell derivation. Cached performance matters more for normal direnv use.
@@ -366,7 +364,6 @@ Cons:
 ## Recommendation
 
 Keep the split. It is low-risk, preserves normal agent commands, and moves hook/deploy behavior to an explicit full shell. Expected benefit is avoiding surprising hook work during routine direnv loads, not eliminating Nix evaluation cost.
-
 
 ---
 
@@ -512,7 +509,6 @@ direnv allow .
 
 Keep full mode as default. For routine agent/research worktrees, opt into light mode with ignored `.envrc.local`. This avoids the ~18-20s uncached flake reload path while preserving Pi/beads/worktree variables and avoiding surprise behavior changes for normal interactive development.
 
-
 ---
 
 # Autoresearch: dotfiles-jgd1 direnv prompt overhead
@@ -531,13 +527,12 @@ Goal: measure whether direnv's zsh hook materially contributes to `command_lag_m
 
 Command: `./bin/hey zbench --iters 4`
 
-| metric | ms |
-| --- | ---: |
-| first_prompt_lag_ms | 39.7 |
+| metric               |    ms |
+| -------------------- | ----: |
+| first_prompt_lag_ms  |  39.7 |
 | first_command_lag_ms | 857.1 |
-| command_lag_ms | 194.9 |
-| input_lag_ms | 5.5 |
-
+| command_lag_ms       | 194.9 |
+| input_lag_ms         |   5.5 |
 
 ## Hook shape
 
@@ -552,11 +547,11 @@ Command: `direnv hook zsh`
 
 Command: timed `_direnv_hook` in zsh after `eval "$(direnv hook zsh)"`.
 
-| cwd | n | avg | min | max |
-| --- | ---: | ---: | ---: | ---: |
-| dotfiles worktree | 12 | 5.66ms | 5.26ms | 7.09ms |
-| `/tmp` | 12 | 5.52ms | 4.87ms | 5.96ms |
-| `$HOME` | 12 | 5.56ms | 5.01ms | 5.93ms |
+| cwd               |   n |    avg |    min |    max |
+| ----------------- | --: | -----: | -----: | -----: |
+| dotfiles worktree |  12 | 5.66ms | 5.26ms | 7.09ms |
+| `/tmp`            |  12 | 5.52ms | 4.87ms | 5.96ms |
+| `$HOME`           |  12 | 5.56ms | 5.01ms | 5.93ms |
 
 Interpretation: direnv costs ~5-7ms on each prompt even when cache-hot. This is material against the 10ms `command_lag_ms` perception threshold, but far smaller than the observed ~195ms lag.
 
@@ -572,13 +567,13 @@ _direnv_hook _p9k_do_nothing _p9k_precmd_first _p9k_precmd precmd_vcs_info
 
 Representative per-call costs:
 
-| function | cost |
-| --- | ---: |
-| `_direnv_hook` | ~6-9ms |
-| `_p9k_do_nothing` | ~0.02ms |
-| `_p9k_precmd_first` | ~0.05ms after first call |
-| `_p9k_precmd` | ~45ms after first call |
-| `precmd_vcs_info` | ~90-120ms after first call |
+| function            |                       cost |
+| ------------------- | -------------------------: |
+| `_direnv_hook`      |                     ~6-9ms |
+| `_p9k_do_nothing`   |                    ~0.02ms |
+| `_p9k_precmd_first` |   ~0.05ms after first call |
+| `_p9k_precmd`       |     ~45ms after first call |
+| `precmd_vcs_info`   | ~90-120ms after first call |
 
 Interpretation: `precmd_vcs_info` dominates prompt loop cost. It appears to come from the `rkh/zsh-jj` plugin in `config/zsh/.zsh_plugins.txt`, not from direnv.
 

@@ -17,19 +17,10 @@
       "author": {
         "name": "edmundmiller"
       },
-      "keywords": [
-        "json",
-        "toon",
-        "token-optimization",
-        "compression"
-      ],
+      "keywords": ["json", "toon", "token-optimization", "compression"],
       "license": "MIT",
       "category": "development-utilities",
-      "tags": [
-        "optimization",
-        "tokens",
-        "automation"
-      ]
+      "tags": ["optimization", "tokens", "automation"]
     }
   ]
 }

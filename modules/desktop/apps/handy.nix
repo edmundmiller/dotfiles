@@ -13,24 +13,29 @@ let
   handyBundleId = "com.pais.handy";
   handySettingsRelativePath = "Library/Application Support/${handyBundleId}/settings_store.json";
 
-  seededSettings = recursiveUpdate {
-    settings = {
-      # Keys confirmed from Handy's shipped default_settings.json.
-      push_to_talk = false;
-      selected_language = "auto";
+  seededSettings =
+    recursiveUpdate
+      {
+        settings = {
+          # Keys confirmed from Handy's shipped default_settings.json.
+          push_to_talk = false;
+          selected_language = "auto";
 
-      # Keys confirmed from the app's persisted settings_store.json schema.
-      app_language = "en-US";
-      autostart_enabled = true;
-      mute_while_recording = true;
-      show_tray_icon = true;
-      start_hidden = true;
-    };
-  } {
-    settings = cfg.extraSettings;
-  };
+          # Keys confirmed from the app's persisted settings_store.json schema.
+          app_language = "en-US";
+          autostart_enabled = true;
+          mute_while_recording = true;
+          show_tray_icon = true;
+          start_hidden = true;
+        };
+      }
+      {
+        settings = cfg.extraSettings;
+      };
 
-  seededSettingsFile = pkgs.writeText "handy-settings-store-seed.json" (builtins.toJSON seededSettings);
+  seededSettingsFile = pkgs.writeText "handy-settings-store-seed.json" (
+    builtins.toJSON seededSettings
+  );
 in
 {
   options.modules.desktop.apps.handy = {

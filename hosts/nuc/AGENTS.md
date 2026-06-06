@@ -19,15 +19,15 @@ Intel NUC home server running NixOS. Primary role: Hermes agents, media services
 
 | Package                  | Purpose                                               |
 | ------------------------ | ----------------------------------------------------- |
-| chromium                 | Agent browser control                              |
-| nodejs                   | Agent plugins, npm                                 |
+| chromium                 | Agent browser control                                 |
+| nodejs                   | Agent plugins, npm                                    |
 | python3                  | node-gyp (native module compilation)                  |
 | gcc, gnumake, cmake      | Native compilation (node-gyp, node-llama-cpp)         |
-| claude-code, codex       | Agent CLI backends                                 |
+| claude-code, codex       | Agent CLI backends                                    |
 | bun                      | Pi CLI backend (`bunx @mariozechner/pi-coding-agent`) |
-| qmd                      | llm-agents.nix QMD package                         |
+| qmd                      | llm-agents.nix QMD package                            |
 | zele                     | Packaged upstream+patches zele CLI                    |
-| sag (nix-steipete-tools) | TTS utility via ElevenLabs                         |
+| sag (nix-steipete-tools) | TTS utility via ElevenLabs                            |
 | sqlite                   | General utility                                       |
 | taskwarrior3             | Task management                                       |
 

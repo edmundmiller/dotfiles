@@ -60,7 +60,6 @@ The module also seeds a writable `~/.config/opensessions/config.json` (if missin
 
 opensessions keeps its native `prefix o` command table (`s` to focus, `t` to toggle, `1-9` to jump). For discoverability, tmux-which-key also exposes an `opensessions` submenu on `prefix Space o`.
 
-
 ### Jmux (optional)
 
 Enable optional jmux integration with:
@@ -170,19 +169,19 @@ Open tmux-which-key with `prefix Space`, then:
 
 ### Panes
 
-| Key       | Action                                            |
-| --------- | ------------------------------------------------- |
-| `v`       | Split horizontal                                  |
-| `s / V`   | Split vertical (`V` when opensessions is enabled) |
-| `h/j/k/l` | Navigate panes                                    |
-| `H/J/K/L` | Swap panes                                        |
-| `Space p m` | Swap to master                                  |
-| `o`       | Zoom pane                                         |
-| `< / >`   | Resize left/right (10)                            |
-| `+ / -`   | Resize down/up (5)                                |
-| `=`       | Break pane to new window                          |
-| `_`       | Join pane                                         |
-| `C-w`     | Last pane                                         |
+| Key         | Action                                            |
+| ----------- | ------------------------------------------------- |
+| `v`         | Split horizontal                                  |
+| `s / V`     | Split vertical (`V` when opensessions is enabled) |
+| `h/j/k/l`   | Navigate panes                                    |
+| `H/J/K/L`   | Swap panes                                        |
+| `Space p m` | Swap to master                                    |
+| `o`         | Zoom pane                                         |
+| `< / >`     | Resize left/right (10)                            |
+| `+ / -`     | Resize down/up (5)                                |
+| `=`         | Break pane to new window                          |
+| `_`         | Join pane                                         |
+| `C-w`       | Last pane                                         |
 
 ### Splits & Tools
 
@@ -219,18 +218,18 @@ Open tmux-which-key with `prefix Space`, then:
 
 ### Copy Mode & Misc
 
-| Key       | Action                      |
-| --------- | --------------------------- |
-| `Enter`   | Enter copy mode             |
-| `b`       | List paste buffers          |
-| `B`       | Choose paste buffer         |
-| `P`       | Paste from system clipboard |
-| `i`       | Beads capture popup         |
-| `m`       | Task note capture popup     |
-| `Space n n` | Daily note popup          |
-| `e`       | Beads explore (cwd) popup   |
-| `E`       | Beads explore (home) popup  |
-| `r`       | Reload config               |
+| Key         | Action                      |
+| ----------- | --------------------------- |
+| `Enter`     | Enter copy mode             |
+| `b`         | List paste buffers          |
+| `B`         | Choose paste buffer         |
+| `P`         | Paste from system clipboard |
+| `i`         | Beads capture popup         |
+| `m`         | Task note capture popup     |
+| `Space n n` | Daily note popup            |
+| `e`         | Beads explore (cwd) popup   |
+| `E`         | Beads explore (home) popup  |
+| `r`         | Reload config               |
 
 ### Vim-aware Navigation (no prefix)
 
