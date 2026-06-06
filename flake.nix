@@ -268,7 +268,10 @@
         }
         // mapModulesRec ./modules import;
 
-        nixosConfigurations = mapHosts ./hosts { };
+        nixosConfigurations = builtins.removeAttrs (mapHosts ./hosts { }) [
+          "mactraitorpro"
+          "seqeratop"
+        ];
 
         templates = {
           full = {
