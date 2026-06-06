@@ -139,7 +139,7 @@ pkgs.testers.nixosTest {
 
     with subtest("configuration.yaml contains expected scenes"):
         config = hass.succeed("cat /var/lib/hass/configuration.yaml")
-        for scene_name in ["Winding Down", "In Bed", "Sleep", "Good Morning"]:
+        for scene_name in ["Winding Down", "Get Ready for Bed", "Good Night", "Sleep", "Good Morning"]:
             assert scene_name in config, f"scene '{scene_name}' missing from config"
 
     with subtest("configuration.yaml contains input_booleans"):
