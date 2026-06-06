@@ -444,26 +444,6 @@
             profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.unas;
           };
 
-          # Darwin hosts - local deployment only (no magic rollback on macOS)
-          MacTraitor-Pro = {
-            hostname = "localhost";
-            profiles.system = {
-              user = "emiller";
-              path =
-                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."MacTraitor-Pro".system
-                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacTraitor-Pro";
-            };
-          };
-
-          Seqeratop = {
-            hostname = "localhost";
-            profiles.system = {
-              user = "edmundmiller";
-              path =
-                deploy-rs.lib.aarch64-darwin.activate.custom self.darwinConfigurations."Seqeratop".system
-                  "sudo ./result/sw/bin/darwin-rebuild switch --flake .#Seqeratop";
-            };
-          };
         };
       };
       systems = lib.mkForce [
