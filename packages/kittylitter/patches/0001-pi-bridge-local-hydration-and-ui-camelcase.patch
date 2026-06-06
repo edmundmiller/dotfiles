@@ -72,13 +72,13 @@ diff --git i/crates/alleycat/src/agent_manifest.rs w/crates/alleycat/src/agent_m
 diff --git i/crates/alleycat/src/agents.rs w/crates/alleycat/src/agents.rs
 --- i/crates/alleycat/src/agents.rs
 +++ w/crates/alleycat/src/agents.rs
-@@ -915,9 +915,7 @@ impl AgentManager {
-     fn droid_available(&self) -> bool {
+@@ -967,9 +967,7 @@ impl AgentManager {
+     fn droid_available(&self, env: &LaunchEnvironment) -> bool {
          let cfg = self.config.load();
 -        cfg.agents.droid.enabled
--            && which::which(&cfg.agents.droid.bin).is_ok()
--            && has_factory_auth(&cfg.agents.droid.api_key_env)
-+        cfg.agents.droid.enabled && which::which(&cfg.agents.droid.bin).is_ok()
+-            && program_available(env, &cfg.agents.droid.bin)
+-            && has_factory_auth(&cfg.agents.droid.api_key_env, env)
++        cfg.agents.droid.enabled && program_available(env, &cfg.agents.droid.bin)
      }
  
-     fn devin_available(&self) -> bool {
+     fn devin_available(&self, env: &LaunchEnvironment) -> bool {
