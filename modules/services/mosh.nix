@@ -52,6 +52,10 @@ in
 {
   options.modules.services.mosh = {
     enable = mkBoolOpt false;
+    hookSecretsFile = mkOpt' (types.nullOr types.path) null ''
+      Optional secrets.json file for the moshi-hook daemon. When null, only
+      mosh server/client packages are installed and no hook daemon is enabled.
+    '';
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -81,27 +85,32 @@ in
         enable = true;
         openFirewall = true;
       };
-
-      home-manager.users.${config.user.name}.systemd.user.services.moshi-hook = {
-        Unit = {
-          Description = "Moshi hook daemon";
-          Documentation = [ "https://getmoshi.app" ];
-          ConditionFileNotEmpty = config.age.secrets.moshi-hook-secrets-json.path;
-        };
-
-        Service = {
-          ExecStartPre = [
-            "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/moshi"
-            "${pkgs.coreutils}/bin/install -m 600 ${config.age.secrets.moshi-hook-secrets-json.path} %h/.local/state/moshi/secrets.json"
-            "-${moshiHook}/bin/moshi-hook install"
-          ];
-          ExecStart = "${moshiHook}/bin/moshi-hook serve";
-          Restart = "always";
-          RestartSec = 10;
-        };
-
-        Install.WantedBy = [ "default.target" ];
-      };
     })
+
+    # Hosts with Moshi pairing secrets: user daemon + agent hook installation.
+    (optionalAttrs (!isDarwin) (
+      mkIf (cfg.hookSecretsFile != null) {
+        home-manager.users.${config.user.name}.systemd.user.services.moshi-hook = {
+          Unit = {
+            Description = "Moshi hook daemon";
+            Documentation = [ "https://getmoshi.app" ];
+            ConditionFileNotEmpty = cfg.hookSecretsFile;
+          };
+
+          Service = {
+            ExecStartPre = [
+              "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/moshi"
+              "${pkgs.coreutils}/bin/install -m 600 ${cfg.hookSecretsFile} %h/.local/state/moshi/secrets.json"
+              "-${moshiHook}/bin/moshi-hook install"
+            ];
+            ExecStart = "${moshiHook}/bin/moshi-hook serve";
+            Restart = "always";
+            RestartSec = 10;
+          };
+
+          Install.WantedBy = [ "default.target" ];
+        };
+      }
+    ))
   ]);
 }
