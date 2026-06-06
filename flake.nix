@@ -218,7 +218,10 @@
           let
             callPackageWithInputs = lib.callPackageWith (pkgs // { inherit inputs; });
           in
-          mapModules ./packages (p: callPackageWithInputs p { })
+          builtins.removeAttrs (mapModules ./packages (p: callPackageWithInputs p { })) [
+            "audio-priority-bar"
+            "ergodox-firmware"
+          ]
           // {
             inherit (inputs.llm-agents.packages.${linuxSystem})
               agent-browser
