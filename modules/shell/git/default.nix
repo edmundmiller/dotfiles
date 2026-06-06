@@ -20,7 +20,7 @@ in
     gitnexus.enable = mkBoolOpt false;
     lazydiff.enable = mkBoolOpt false;
     diffity.enable = mkBoolOpt false;
-    stack.enable = mkBoolOpt true;
+    stack.enable = mkBoolOpt false;
   };
 
   config = mkIf cfg.enable (mkMerge [

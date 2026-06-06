@@ -221,6 +221,7 @@
           builtins.removeAttrs (mapModules ./packages (p: callPackageWithInputs p { })) [
             "audio-priority-bar"
             "ergodox-firmware"
+            "stack"
           ]
           // {
             inherit (inputs.llm-agents.packages.${linuxSystem})
@@ -244,7 +245,9 @@
           let
             callPackageWithInputs = lib.callPackageWith (darwinPkgs // { inherit inputs; });
           in
-          mapModules ./packages (p: callPackageWithInputs p { })
+          builtins.removeAttrs (mapModules ./packages (p: callPackageWithInputs p { })) [
+            "stack"
+          ]
           // {
             inherit (inputs.llm-agents.packages.${darwinSystem})
               agent-browser
