@@ -14,11 +14,11 @@ let
   # Catppuccin theme files
   catppuccinMocha = pkgs.fetchurl {
     url = "https://raw.githubusercontent.com/catppuccin/kitty/main/themes/mocha.conf";
-    hash = "sha256:094mj07fi3gq5j3gxgxh6aa7cxw8p3s6mfx4pczj8r1yqc0xvz4j";
+    hash = "sha256-cWrJfNVCuuT/NbU8qYCq5PAB4MS8WcT74AMBm+IO+c0=";
   };
   catppuccinLatte = pkgs.fetchurl {
     url = "https://raw.githubusercontent.com/catppuccin/kitty/main/themes/latte.conf";
-    hash = "sha256:137yfzqz09mnc8xis0cdxlz93jirgbh4j4cfcxzq1g8fg0n1v0jj";
+    hash = "sha256-1w0NlzEzI60CbKi4hzgIVvx1syN8oHAgQZJ7CNnxnWo=";
   };
 in
 {
