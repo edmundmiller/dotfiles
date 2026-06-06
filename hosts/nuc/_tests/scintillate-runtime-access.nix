@@ -10,6 +10,7 @@ let
   profile = cfg.services.hermes-agent.profiles.scintillate;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
+  activationFile = pkgs.writeText "canonical-hermes-profiles-materialize.sh" activation;
   nucHostSource = builtins.readFile ../default.nix;
 
   inherit (builtins) any concatStringsSep toString;
@@ -74,14 +75,6 @@ let
       msg = "Scintillate profile extraPackages must include util-linux so the container entrypoint can setpriv to HERMES_UID/GID.";
     }
     {
-      test = hasInfix "ln -sfn /repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/obsidian-vault" activation;
-      msg = "Agent-owned activation must create Scintillate's vault compatibility link.";
-    }
-    {
-      test = hasInfix "ln -sfn ${tnotePkgString}/bin/tnote /var/lib/hermes-scintillate/home/.local/bin/tnote" activation;
-      msg = "Agent-owned activation must link ~/.local/bin/tnote to the provided tnote package.";
-    }
-    {
       test = any (
         preStart: hasInfix "hermes-scintillate-codex-auth-import" (toString preStart)
       ) gatewayService.serviceConfig.ExecStartPre;
@@ -111,6 +104,16 @@ pkgs.runCommand "nuc-scintillate-runtime-access" { } ''
   EOF
       exit 1
     fi
+
+    grep -Fq "ln -sfn /repos/obsidian-vault /var/lib/hermes-scintillate/home/repos/obsidian-vault" ${activationFile} || {
+      echo "Agent-owned activation must create Scintillate's vault compatibility link." >&2
+      exit 1
+    }
+
+    grep -Fq "ln -sfn ${tnotePkgString}/bin/tnote /var/lib/hermes-scintillate/home/.local/bin/tnote" ${activationFile} || {
+      echo "Agent-owned activation must link ~/.local/bin/tnote to the provided tnote package." >&2
+      exit 1
+    }
 
     mkdir -p "$out"
     echo "Scintillate runtime access assertions passed" > "$out/result"
