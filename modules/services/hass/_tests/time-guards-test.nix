@@ -47,6 +47,25 @@ pkgs.testers.nixosTest {
           default_config = { };
           frontend = { };
           logger.default = "info";
+          input_boolean.test_adaptive_lighting_sleep_mode = {
+            name = "Test Adaptive Lighting Sleep Mode";
+          };
+          switch = [
+            {
+              platform = "template";
+              switches.adaptive_lighting_sleep_mode_living_space = {
+                value_template = "{{ is_state('input_boolean.test_adaptive_lighting_sleep_mode', 'on') }}";
+                turn_on = {
+                  service = "input_boolean.turn_on";
+                  target.entity_id = "input_boolean.test_adaptive_lighting_sleep_mode";
+                };
+                turn_off = {
+                  service = "input_boolean.turn_off";
+                  target.entity_id = "input_boolean.test_adaptive_lighting_sleep_mode";
+                };
+              };
+            }
+          ];
           automation = [ ];
         };
       };
@@ -111,7 +130,7 @@ pkgs.testers.nixosTest {
       time.sleep(1)
       ha.assert_state(hass, "switch.adaptive_lighting_sleep_mode_living_space", "on", timeout=5)
 
-      ha.fire_event(hass, "homeassistant_start")
+      ha.trigger_automation(hass, "al_daytime_sleep_correction")
       time.sleep(2)
 
       ha.assert_state(hass, "switch.adaptive_lighting_sleep_mode_living_space", "off", timeout=10)
