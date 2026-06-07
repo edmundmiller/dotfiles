@@ -86,11 +86,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780855381,
-        "narHash": "sha256-h13Fme4Np/jK/0PJrYxmMAz0GvomelGbspccGPlm1X4=",
+        "lastModified": 1780864211,
+        "narHash": "sha256-97+0GlQVQ9GG7oGh263KBgxTmmBlYjXt4GTDtCWZpzc=",
         "ref": "main",
-        "rev": "da8a8314710eebe6bea73b2c3d9548094b812d05",
-        "revCount": 495,
+        "rev": "68c3fc7153977b8335123f1649e78687933fbbe6",
+        "revCount": 496,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/agents-workspace"
       },
