@@ -75,10 +75,15 @@ let
       msg = "Scintillate profile extraPackages must include util-linux so the container entrypoint can setpriv to HERMES_UID/GID.";
     }
     {
-      test = any (
-        preStart: hasInfix "hermes-scintillate-codex-auth-import" (toString preStart)
-      ) gatewayService.serviceConfig.ExecStartPre;
-      msg = "Scintillate must import Codex CLI OAuth tokens into Hermes auth before gateway start.";
+      test =
+        !(any (
+          preStart: hasInfix "hermes-scintillate-codex-auth-import" (toString preStart)
+        ) gatewayService.serviceConfig.ExecStartPre);
+      msg = "Scintillate must not import Codex CLI OAuth tokens; refresh tokens are single-use and Hermes owns its own Codex auth store.";
+    }
+    {
+      test = profile.authFile == null;
+      msg = "Scintillate must not seed Hermes auth from ~/.codex/auth.json.";
     }
     {
       test = !(hasInfix "skills.config.wiki.path = \"/home/hermes/repos/obsidian-vault\"" nucHostSource);
