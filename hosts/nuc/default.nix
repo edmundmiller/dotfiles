@@ -18,7 +18,7 @@ let
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
   hermesScintillateApiServerPort = 8642;
-  hermesScintillateTailscaleServiceName = "openclaw";
+  hermesScintillateTailscaleServiceName = "hermes";
   tailnet = "cinnamon-rooster.ts.net";
   scintillateTelegramAlertChatId = toString telegramBindings.dmTopics.scintillate.chatId;
   scintillateTelegramAlertScript = pkgs.writeText "hermes-scintillate-telegram-alert.py" ''
