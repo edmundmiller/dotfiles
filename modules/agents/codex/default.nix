@@ -27,7 +27,7 @@ in
 
   config = mkIf cfg.enable {
     user.packages = [
-      pkgs.llm-agents.codex
+      (lib.hiPrio pkgs.llm-agents.codex)
       pkgs.my.codegraph
     ];
 

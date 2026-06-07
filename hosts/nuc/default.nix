@@ -772,6 +772,8 @@ in
     gtk.gtk4.theme = null;
   };
 
+  modules.agents.codex.enable = true;
+
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
@@ -789,7 +791,6 @@ in
     gnumake # For node-gyp native compilation
     cmake # For node-llama-cpp (qmd dependency)
     claude-code # CLI backend for local agents
-    codex # CLI backend for local agents
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
