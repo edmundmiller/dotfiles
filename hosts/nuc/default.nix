@@ -17,6 +17,9 @@ let
   anneDiscordBindings = (discordBindings.agents or { }).anne or { };
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
+  hermesScintillateApiServerPort = 8642;
+  hermesScintillateTailscaleServiceName = "openclaw";
+  tailnet = "cinnamon-rooster.ts.net";
   scintillateTelegramAlertChatId = toString telegramBindings.dmTopics.scintillate.chatId;
   scintillateTelegramAlertScript = pkgs.writeText "hermes-scintillate-telegram-alert.py" ''
     import os
@@ -342,8 +345,8 @@ in
         printf 'HERMES_HONCHO_HOST=%s\n' "scintillate" >> "$ENV_FILE"
         printf 'API_SERVER_ENABLED=%s\n' "true" >> "$ENV_FILE"
         printf 'API_SERVER_HOST=%s\n' "0.0.0.0" >> "$ENV_FILE"
-        printf 'API_SERVER_PORT=%s\n' "8642" >> "$ENV_FILE"
-        printf 'API_SERVER_CORS_ORIGINS=%s\n' "app://hermes-desktop,http://localhost:3000,http://127.0.0.1:3000" >> "$ENV_FILE"
+        printf 'API_SERVER_PORT=%s\n' "${toString hermesScintillateApiServerPort}" >> "$ENV_FILE"
+        printf 'API_SERVER_CORS_ORIGINS=%s\n' "app://hermes-desktop,http://localhost:3000,http://127.0.0.1:3000,https://${hermesScintillateTailscaleServiceName}.${tailnet}" >> "$ENV_FILE"
         if [ -f ${lib.escapeShellArg (toString config.age.secrets.hermes-scintillate-api-server-key.path)} ]; then
           api_server_key="$(< ${lib.escapeShellArg (toString config.age.secrets.hermes-scintillate-api-server-key.path)})"
           printf 'API_SERVER_KEY=%s\n' "$api_server_key" >> "$ENV_FILE"
@@ -798,6 +801,27 @@ in
         rm -f "$tmp_file"
       '')
     ];
+  };
+
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ hermesScintillateApiServerPort ];
+
+  systemd.services.hermes-scintillate-tailscale-serve = {
+    description = "Expose Scintillate Hermes API gateway via Tailscale Service";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "hermes-gateway-scintillate.service"
+      "tailscaled.service"
+    ];
+    wants = [
+      "hermes-gateway-scintillate.service"
+      "tailscaled.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${hermesScintillateTailscaleServiceName} --https=443 http://127.0.0.1:${toString hermesScintillateApiServerPort} && exit 0; sleep 1; done; exit 1\"'";
+      ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${hermesScintillateTailscaleServiceName} || true'";
+    };
   };
 
   systemd.services.hermes-radar-cron-tick = {
