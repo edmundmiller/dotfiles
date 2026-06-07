@@ -83,7 +83,7 @@ let
 
   agentPath = lib.makeBinPath [
     cfg.package
-    (pkgs.llm-agents.codex or pkgs.codex)
+    pkgs.llm-agents.codex
     pkgs.claude-code
     pkgs.bun
     pkgs.nodejs
