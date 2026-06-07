@@ -133,7 +133,7 @@ docker exec -it hermes-agent-scintillate hermes auth add openai-codex --no-brows
 
 echo ""
 echo "=== Verifying direct openai-codex invocation ==="
-docker exec hermes-agent-scintillate bash -lc '\''timeout 180 hermes --provider openai-codex -m gpt-5.5 -z "Reply with exactly: OK"'\''
+docker exec hermes-agent-scintillate bash -lc 'timeout 180 hermes --provider openai-codex -m gpt-5.5 -z "Reply with exactly: OK"'
 
 echo ""
 echo "=== Re-running managed smoke check ==="
