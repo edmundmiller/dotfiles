@@ -120,6 +120,42 @@ def "main nuc-ssh" [] {
   ^ssh -t $NUC_HOST
 }
 
+def scintillate-login-script [] {
+  r#'
+set -euo pipefail
+
+echo "=== Scintillate Codex login ==="
+echo "This stores Codex OAuth in /var/lib/hermes-scintillate/.hermes/auth.json."
+echo "It does not copy or reuse ~/.codex/auth.json."
+echo ""
+
+docker exec -it hermes-agent-scintillate hermes auth add openai-codex --no-browser
+
+echo ""
+echo "=== Verifying direct openai-codex invocation ==="
+docker exec hermes-agent-scintillate bash -lc '\''timeout 180 hermes --provider openai-codex -m gpt-5.5 -z "Reply with exactly: OK"'\''
+
+echo ""
+echo "=== Re-running managed smoke check ==="
+/run/wrappers/bin/sudo systemctl reset-failed hermes-scintillate-codex-smoke.service || true
+/run/wrappers/bin/sudo systemctl start hermes-scintillate-codex-smoke.service
+systemctl status hermes-scintillate-codex-smoke.service --no-pager -l | tail -30
+'#
+}
+
+def "main login-scintillate" [] {
+  let script = (scintillate-login-script)
+  let local_hostname = (^hostname -s | str trim)
+
+  if $local_hostname == $NUC_HOST {
+    ^bash -lc $script
+  } else {
+    print $"=== Connecting to ($NUC_HOST) for Scintillate Codex login ==="
+    ^ssh -t $NUC_HOST $script
+  }
+}
+
+
 def "main nuc-status" [] {
   print "=== NUC System Status ==="
   ^ssh $NUC_HOST '
