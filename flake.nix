@@ -76,6 +76,11 @@
     llm-agents.inputs.nixpkgs.follows = "nixpkgs";
     llm-agents.inputs.systems.follows = "systems";
 
+    # Keep Codex on the latest llm-agents build without forcing the whole
+    # llm-agents overlay to follow our older nixpkgs (newer packages may need
+    # newer package-set entries such as pnpm_11).
+    llm-agents-codex.url = "github:numtide/llm-agents.nix/04df876de28f0684a0d7110444d7f64da5c14d17";
+
     hunk = {
       url = "github:modem-dev/hunk/v0.14.0";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -200,6 +205,7 @@
         lib = lib.my;
 
         overlays = mapModules ./overlays import // {
+          codex = import ./overlays/codex { inherit inputs; };
           hunk = import ./overlays/hunk { inherit inputs; };
           default = final: _prev: {
             unstable =
