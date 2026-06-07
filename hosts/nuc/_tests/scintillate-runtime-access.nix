@@ -9,6 +9,8 @@ let
   hermesAgent = cfg.modules.services.hermes.agents.scintillate;
   profile = cfg.services.hermes-agent.profiles.scintillate;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
+  codexSmokeService = cfg.systemd.services.hermes-scintillate-codex-smoke;
+  codexSmokeTimer = cfg.systemd.timers.hermes-scintillate-codex-smoke;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   activationFile = pkgs.writeText "canonical-hermes-profiles-materialize.sh" activation;
   nucHostSource = builtins.readFile ../default.nix;
@@ -84,6 +86,23 @@ let
     {
       test = profile.authFile == null;
       msg = "Scintillate must not seed Hermes auth from ~/.codex/auth.json.";
+    }
+    {
+      test =
+        codexSmokeService.serviceConfig.EnvironmentFile == [ "/run/hermes-scintillate-env/secrets.env" ];
+      msg = "Scintillate Codex smoke test must read Telegram token from the existing secrets env file.";
+    }
+    {
+      test = hasInfix "--provider openai-codex -m gpt-5.5" nucHostSource;
+      msg = "Scintillate Codex smoke test must exercise openai-codex/gpt-5.5 directly.";
+    }
+    {
+      test = hasInfix "[REDACTED]" nucHostSource;
+      msg = "Scintillate Codex smoke test must scrub token-like output before alerting.";
+    }
+    {
+      test = codexSmokeTimer.timerConfig.OnUnitActiveSec == "6h";
+      msg = "Scintillate Codex smoke test must run on a dedicated six-hour timer.";
     }
     {
       test = !(hasInfix "skills.config.wiki.path = \"/home/hermes/repos/obsidian-vault\"" nucHostSource);
