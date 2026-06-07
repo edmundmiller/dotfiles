@@ -40,7 +40,10 @@ nixosTesting.runTest {
         ../default.nix
       ];
 
-      nixpkgs.config.allowUnfree = true;
+      nixpkgs = {
+        config.allowUnfree = true;
+        overlays = [ inputs.llm-agents.overlays.default ];
+      };
 
       users.users.alice = {
         isNormalUser = true;
