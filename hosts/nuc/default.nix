@@ -861,7 +861,7 @@ in
       ExecStart = pkgs.writeShellScript "hermes-scintillate-webui-start" ''
         set -eu
         export HERMES_WEBUI_GATEWAY_API_KEY="$API_SERVER_KEY"
-        export HERMES_WEBUI_PASSWORD="$API_SERVER_KEY"
+        export HERMES_WEBUI_PASSWORD="$(printf %s "$API_SERVER_KEY" | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -c1-32)"
         exec ${hermesWebuiPython}/bin/python ${hermesWebuiSource}/server.py
       '';
       NoNewPrivileges = true;
