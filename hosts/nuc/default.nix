@@ -20,12 +20,52 @@ let
   hermesScintillateApiServerPort = 8642;
   hermesScintillateWebuiPort = 8787;
   hermesScintillateTailscaleServiceName = "hermes";
-  hermesWebuiSource = pkgs.fetchFromGitHub {
+  hermesSharedStateDir = "/var/lib/hermes";
+  hermesSharedHome = "${hermesSharedStateDir}/.hermes";
+  hermesSharedProfileNames = [
+    "amosburton"
+    "anne"
+    "betty"
+    "radar"
+    "scintillate"
+  ];
+  hermesWebuiSourceUnpatched = pkgs.fetchFromGitHub {
     owner = "nesquena";
     repo = "hermes-webui";
     rev = "396d0d0abd5c25ac7d1de8a73f240abb68c7f200";
     hash = "sha256-4EK0aF1zE45iDAJJooqkAy68kGlGitEhCy6q8/XC8RQ=";
   };
+  hermesWebuiSource = pkgs.runCommand "hermes-webui-source-patched" { } ''
+    cp -R ${hermesWebuiSourceUnpatched} $out
+    chmod -R u+w $out
+    OUT=$out ${pkgs.python3}/bin/python - <<'PY'
+    import os
+    from pathlib import Path
+
+    path = Path(os.environ['OUT']) / 'api/profiles.py'
+    text = path.read_text(encoding='utf-8')
+    import re
+
+    new = '\n'.join([
+        '    # The NUC deployment aggregates independently managed Hermes roots into',
+        '    # this WebUI via symlinks under $HERMES_BASE_HOME/profiles. The profile',
+        '    # name is already strictly validated above, so avoid resolving the final',
+        '    # symlink target before the containment check; otherwise legitimate',
+        '    # symlinked profiles are rejected for living outside the base directory.',
+        '    return profiles_root / name',
+    ])
+    text, count = re.subn(
+        r"(?m)^    candidate = \(profiles_root / name\)\.resolve\(\)\n^    candidate\.relative_to\(profiles_root\)\n^    return candidate",
+        new,
+        text,
+        count=1,
+    )
+    if count != 1:
+        raise SystemExit('expected profile symlink containment block not found')
+    path.write_text(text, encoding='utf-8')
+    PY
+  '';
+
   hermesWebuiPython = pkgs.python313.withPackages (ps: [
     ps.cryptography
     ps.httpx
@@ -341,6 +381,46 @@ in
         "agenixInstall"
         "agenixChown"
       ];
+    };
+
+    hermesSharedProfilesAggregate = {
+      deps = [ "canonical-hermes-profiles-materialize" ];
+      text = ''
+        SHARED_HOME=${lib.escapeShellArg hermesSharedHome}
+        install -d -o emiller -g users -m 0750 "$SHARED_HOME" "$SHARED_HOME/profiles"
+
+        if [ ! -f "$SHARED_HOME/profile.yaml" ]; then
+          printf '%s\n' \
+            'name: default' \
+            'visible: false' \
+            'role: shared-base' \
+            > "$SHARED_HOME/profile.yaml"
+          chown emiller:users "$SHARED_HOME/profile.yaml"
+          chmod 0640 "$SHARED_HOME/profile.yaml"
+        fi
+
+        ${lib.concatMapStringsSep "\n" (profile: ''
+          profile_home=${lib.escapeShellArg "/var/lib/hermes-${profile}/.hermes"}
+          aggregate_link="$SHARED_HOME/profiles/${profile}"
+          if [ -d "$profile_home" ] && [ ! -e "$aggregate_link" ]; then
+            ln -s "$profile_home" "$aggregate_link"
+            chown -h emiller:users "$aggregate_link"
+          fi
+          if [ -d "$profile_home" ] && [ ! -f "$profile_home/profile.yaml" ]; then
+            printf '%s\n' \
+              'name: ${profile}' \
+              'visible: true' \
+              'aggregated_into: /var/lib/hermes/.hermes/profiles/${profile}' \
+              > "$profile_home/profile.yaml"
+            chown emiller:users "$profile_home/profile.yaml"
+            chmod 0640 "$profile_home/profile.yaml"
+          fi
+        '') hermesSharedProfileNames}
+
+        if ls "$SHARED_HOME"/kanban.db* >/dev/null 2>&1; then
+          chown emiller:users "$SHARED_HOME"/kanban.db* || true
+        fi
+      '';
     };
 
     hermesScintillateSecretsMaterialize = {
@@ -708,9 +788,11 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_HOME = hermesSharedHome;
           WIKI_PATH = "/repos/mill-docs";
         };
         hostPathMounts = lib.mkForce {
+          "${hermesSharedHome}" = hermesSharedHome;
           "/home/emiller/.codex" = "/home/emiller/.codex";
           "/home/emiller/mill-docs" = "/repos/mill-docs";
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
@@ -722,9 +804,11 @@ in
         workingDirectory = "/repos/mill-docs";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_HOME = hermesSharedHome;
           WIKI_PATH = "/repos/mill-docs";
         };
         hostPathMounts = lib.mkForce {
+          "${hermesSharedHome}" = hermesSharedHome;
           "/home/emiller/.codex" = "/home/emiller/.codex";
           "/home/emiller/mill-docs" = "/repos/mill-docs";
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
@@ -736,13 +820,23 @@ in
         # Codex OAuth refresh tokens are single-use. Do not seed Hermes from
         # ~/.codex/auth.json or share Codex CLI credentials; Scintillate owns
         # its Codex login in /var/lib/hermes-scintillate/.hermes/auth.json.
-        environment.PYTHONPATH = hermesTelegramPythonPath;
+        environment = {
+          HERMES_KANBAN_HOME = hermesSharedHome;
+          PYTHONPATH = hermesTelegramPythonPath;
+        };
+        hostPathMounts = {
+          "${hermesSharedHome}" = hermesSharedHome;
+        };
         environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
       };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
-        environment.CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+        environment = {
+          CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_HOME = hermesSharedHome;
+        };
         hostPathMounts = lib.mkForce {
+          "${hermesSharedHome}" = hermesSharedHome;
           "/home/emiller/.codex" = "/home/emiller/.codex";
           "/home/emiller/.config/dotfiles" = "/repos/dotfiles";
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
@@ -840,15 +934,16 @@ in
       pkgs.git
     ];
     environment = {
-      HOME = "/var/lib/hermes-scintillate";
-      HERMES_HOME = "/var/lib/hermes-scintillate/.hermes";
-      HERMES_PROFILE = "scintillate";
+      HOME = hermesSharedStateDir;
+      HERMES_BASE_HOME = hermesSharedHome;
+      HERMES_HOME = hermesSharedHome;
+      HERMES_KANBAN_HOME = hermesSharedHome;
       HERMES_WEBUI_AGENT_DIR = hermesPythonSitePackages;
       HERMES_WEBUI_CHAT_BACKEND = "gateway";
       HERMES_WEBUI_GATEWAY_BASE_URL = "http://127.0.0.1:${toString hermesScintillateApiServerPort}";
       HERMES_WEBUI_HOST = "127.0.0.1";
       HERMES_WEBUI_PORT = toString hermesScintillateWebuiPort;
-      HERMES_WEBUI_STATE_DIR = "/var/lib/hermes-scintillate/.hermes/webui";
+      HERMES_WEBUI_STATE_DIR = "${hermesSharedHome}/webui";
       PYTHONPATH = "${hermesPythonSitePackages}:${hermesWebuiSource}";
     };
     serviceConfig = {
@@ -868,7 +963,14 @@ in
       ProtectHome = false;
       ProtectSystem = "strict";
       PrivateTmp = true;
-      ReadWritePaths = [ "/var/lib/hermes-scintillate" ];
+      ReadWritePaths = [
+        hermesSharedStateDir
+        "/var/lib/hermes-amosburton"
+        "/var/lib/hermes-anne"
+        "/var/lib/hermes-betty"
+        "/var/lib/hermes-radar"
+        "/var/lib/hermes-scintillate"
+      ];
     };
   };
 
@@ -913,6 +1015,7 @@ in
       Environment = [
         "HOME=/var/lib/hermes-radar"
         "HERMES_HOME=/var/lib/hermes-radar/.hermes"
+        "HERMES_KANBAN_HOME=${hermesSharedHome}"
         "HERMES_PROFILE=radar"
         "MESSAGING_CWD=/var/lib/hermes-radar/.hermes/workspace"
         "CODEX_HOME=/home/emiller/.codex"
@@ -928,7 +1031,10 @@ in
       PrivateTmp = true;
       ProtectHome = false;
       ProtectSystem = "strict";
-      ReadWritePaths = [ "/var/lib/hermes-radar" ];
+      ReadWritePaths = [
+        hermesSharedStateDir
+        "/var/lib/hermes-radar"
+      ];
     };
   };
 
