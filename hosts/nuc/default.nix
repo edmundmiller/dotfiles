@@ -18,7 +18,23 @@ let
   anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
   hermesScintillateApiServerPort = 8642;
+  hermesScintillateWebuiPort = 8787;
   hermesScintillateTailscaleServiceName = "hermes";
+  hermesWebuiSource = pkgs.fetchFromGitHub {
+    owner = "nesquena";
+    repo = "hermes-webui";
+    rev = "396d0d0abd5c25ac7d1de8a73f240abb68c7f200";
+    hash = "sha256-4EK0aF1zE45iDAJJooqkAy68kGlGitEhCy6q8/XC8RQ=";
+  };
+  hermesWebuiPython = pkgs.python313.withPackages (ps: [
+    ps.cryptography
+    ps.httpx
+    ps.python-dotenv
+    ps.pyyaml
+    ps.requests
+    ps.websockets
+  ]);
+  hermesPythonSitePackages = "${hermesAgentBase}/${pkgs.python313.sitePackages}";
   tailnet = "cinnamon-rooster.ts.net";
   scintillateTelegramAlertChatId = toString telegramBindings.dmTopics.scintillate.chatId;
   scintillateTelegramAlertScript = pkgs.writeText "hermes-scintillate-telegram-alert.py" ''
@@ -803,23 +819,74 @@ in
     ];
   };
 
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ hermesScintillateApiServerPort ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ hermesScintillateWebuiPort ];
 
-  systemd.services.hermes-scintillate-tailscale-serve = {
-    description = "Expose Scintillate Hermes API gateway via Tailscale Service";
+  systemd.services.hermes-scintillate-webui = {
+    description = "Hermes WebUI for Scintillate";
     wantedBy = [ "multi-user.target" ];
     after = [
       "hermes-gateway-scintillate.service"
-      "tailscaled.service"
+      "network-online.target"
     ];
     wants = [
       "hermes-gateway-scintillate.service"
+      "network-online.target"
+    ];
+    path = [
+      hermesAgentBase
+      hermesWebuiPython
+      pkgs.bash
+      pkgs.coreutils
+      pkgs.git
+    ];
+    environment = {
+      HOME = "/var/lib/hermes-scintillate";
+      HERMES_HOME = "/var/lib/hermes-scintillate/.hermes";
+      HERMES_PROFILE = "scintillate";
+      HERMES_WEBUI_AGENT_DIR = hermesPythonSitePackages;
+      HERMES_WEBUI_CHAT_BACKEND = "gateway";
+      HERMES_WEBUI_GATEWAY_BASE_URL = "http://127.0.0.1:${toString hermesScintillateApiServerPort}";
+      HERMES_WEBUI_HOST = "127.0.0.1";
+      HERMES_WEBUI_PORT = toString hermesScintillateWebuiPort;
+      HERMES_WEBUI_STATE_DIR = "/var/lib/hermes-scintillate/.hermes/webui";
+      PYTHONPATH = "${hermesPythonSitePackages}:${hermesWebuiSource}";
+    };
+    serviceConfig = {
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = hermesWebuiSource;
+      Restart = "always";
+      RestartSec = 5;
+      EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+      ExecStart = pkgs.writeShellScript "hermes-scintillate-webui-start" ''
+        set -eu
+        export HERMES_WEBUI_GATEWAY_API_KEY="$API_SERVER_KEY"
+        export HERMES_WEBUI_PASSWORD="$API_SERVER_KEY"
+        exec ${hermesWebuiPython}/bin/python ${hermesWebuiSource}/server.py
+      '';
+      NoNewPrivileges = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      PrivateTmp = true;
+      ReadWritePaths = [ "/var/lib/hermes-scintillate" ];
+    };
+  };
+
+  systemd.services.hermes-scintillate-tailscale-serve = {
+    description = "Expose Scintillate Hermes WebUI via Tailscale Service";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "hermes-scintillate-webui.service"
+      "tailscaled.service"
+    ];
+    wants = [
+      "hermes-scintillate-webui.service"
       "tailscaled.service"
     ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${hermesScintillateTailscaleServiceName} --https=443 http://127.0.0.1:${toString hermesScintillateApiServerPort} && exit 0; sleep 1; done; exit 1\"'";
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${hermesScintillateTailscaleServiceName} --https=443 http://127.0.0.1:${toString hermesScintillateWebuiPort} && exit 0; sleep 1; done; exit 1\"'";
       ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${hermesScintillateTailscaleServiceName} || true'";
     };
   };
