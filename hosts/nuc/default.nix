@@ -1241,6 +1241,9 @@ in
       };
 
     };
+    agents = {
+      pi.enable = true;
+    };
     services = {
       audiobookshelf = {
         enable = true;
