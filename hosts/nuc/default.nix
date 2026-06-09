@@ -595,17 +595,26 @@ in
         install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
         install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
         install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace/repos"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/.codex"
         install -d -o emiller -g users -m 0750 "$BETTY_HOME/.codex"
         install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local"
         install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/state"
         install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/state/hermes"
         install -d -o emiller -g users -m 0750 "$BETTY_HOME/.local/state/hermes/gateway-locks"
 
-        ln -sfn /home/emiller/.codex/auth.json "$BETTY_HOME/.codex/auth.json"
-        chown -h emiller:users "$BETTY_HOME/.codex/auth.json"
-        ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
-        chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
+        if [ -L "$BETTY_HOME/.codex/auth.json" ] && [ "$(readlink "$BETTY_HOME/.codex/auth.json")" = /home/emiller/.codex/auth.json ]; then
+          rm -f "$BETTY_HOME/.codex/auth.json"
+        fi
+        if [ -f "$BETTY_HOME/.codex/auth.json" ] && [ -f /home/emiller/.codex/auth.json ] && ${pkgs.diffutils}/bin/cmp -s "$BETTY_HOME/.codex/auth.json" /home/emiller/.codex/auth.json; then
+          mv "$BETTY_HOME/.codex/auth.json" "$BETTY_HOME/.codex/auth.json.shared-seed-disabled"
+        fi
+        if [ -f "$HERMES_ENV_HOME/auth.json" ] && [ -f /home/emiller/.codex/auth.json ] && ${pkgs.diffutils}/bin/cmp -s "$HERMES_ENV_HOME/auth.json" /home/emiller/.codex/auth.json; then
+          mv "$HERMES_ENV_HOME/auth.json" "$HERMES_ENV_HOME/auth.json.shared-seed-disabled"
+        fi
+        if [ -e "$HERMES_ENV_HOME/.codex" ] || [ -L "$HERMES_ENV_HOME/.codex" ]; then
+          rm -rf "$HERMES_ENV_HOME/.codex"
+        fi
+        ln -s "$BETTY_HOME/.codex" "$HERMES_ENV_HOME/.codex"
+        chown -h emiller:users "$HERMES_ENV_HOME/.codex"
         ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
         chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
         ln -sfn /home/emiller/obsidian-vault "$BETTY_HOME/obsidian-vault"
@@ -800,16 +809,17 @@ in
         environmentFiles = [ "/run/hermes-anne-env/secrets.env" ];
       };
       betty = {
-        authFile = "/home/emiller/.codex/auth.json";
+        # Betty is Codex-backed, but must own her mutable OAuth state. Do not
+        # seed or mount /home/emiller/.codex/auth.json; bootstrap Betty's
+        # profile-owned login under /var/lib/hermes-betty instead.
         workingDirectory = "/repos/mill-docs";
         environment = {
-          CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          CODEX_HOME = lib.mkForce "/data/.codex";
           HERMES_KANBAN_HOME = hermesSharedHome;
           WIKI_PATH = "/repos/mill-docs";
         };
         hostPathMounts = lib.mkForce {
           "${hermesSharedHome}" = hermesSharedHome;
-          "/home/emiller/.codex" = "/home/emiller/.codex";
           "/home/emiller/mill-docs" = "/repos/mill-docs";
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
           "${tnoteBaseRepo}" = "/repos/tnote";
