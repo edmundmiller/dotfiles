@@ -1,13 +1,13 @@
 final: prev:
 let
-  version = "0.78.1";
+  version = "0.79.1";
 
   srcWithLock = final.runCommand "pi-src-with-lock-${version}" { } ''
     mkdir -p $out
     tar -xzf ${
       final.fetchurl {
         url = "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-${version}.tgz";
-        hash = "sha256-72mCHDg9kv0n59mtvcseN2IUQelMUjSOR6KQHqnX3Qw=";
+        hash = "sha256-qWu/LA+o0oheschhRNkkZTOAZTiRzLjmv0D2YTf1l90=";
       }
     } -C $out --strip-components=1
     rm -f $out/npm-shrinkwrap.json
@@ -22,11 +22,11 @@ in
     pi = prev.llm-agents.pi.overrideAttrs (_old: {
       inherit version;
       src = srcWithLock;
-      npmDepsHash = "sha256-D+qsBPRAoEB5L0vSgsjNhAswybeQ0kBtXO/Hj/edpuo=";
+      npmDepsHash = "sha256-2QgzX5MDJNZqqZ3RVH/8KgSIt4sSrnhsFXP5FCzbTNw=";
       npmDeps = final.fetchNpmDeps {
         src = srcWithLock;
         name = "pi-${version}-npm-deps";
-        hash = "sha256-D+qsBPRAoEB5L0vSgsjNhAswybeQ0kBtXO/Hj/edpuo=";
+        hash = "sha256-2QgzX5MDJNZqqZ3RVH/8KgSIt4sSrnhsFXP5FCzbTNw=";
         fetcherVersion = 2;
       };
     });
