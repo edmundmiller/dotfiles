@@ -170,10 +170,12 @@ echo "  /var/lib/hermes-betty/.codex"
 echo "  /var/lib/hermes-betty/.hermes/auth.json"
 echo "It does not copy or reuse /home/emiller/.codex/auth.json."
 echo ""
-echo "Follow the printed login URL, then paste the final callback URL here."
+echo "Follow the printed OpenAI device-login URL and enter the one-time code."
+echo "If OpenAI says the session is invalid, press Ctrl+C here and rerun hey login-betty;"
+echo "then open the new URL/code in a private/incognito browser window."
 echo ""
 
-$sudo docker exec -it hermes-agent-betty bash -lc 'hermes auth add openai-codex --type oauth --no-browser --manual-paste'
+$sudo docker exec -it hermes-agent-betty bash -lc 'hermes auth add openai-codex --type oauth'
 
 echo ""
 echo "=== Verifying Betty openai-codex invocation ==="
