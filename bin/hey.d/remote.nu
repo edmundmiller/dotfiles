@@ -155,6 +155,52 @@ def "main login-scintillate" [] {
   }
 }
 
+def betty-login-script [] {
+  r#'
+set -euo pipefail
+
+sudo=/run/wrappers/bin/sudo
+if [ ! -x "$sudo" ]; then
+  sudo=sudo
+fi
+
+echo "=== Betty Codex login ==="
+echo "This stores Codex OAuth in Betty-owned state:"
+echo "  /var/lib/hermes-betty/.codex"
+echo "  /var/lib/hermes-betty/.hermes/auth.json"
+echo "It does not copy or reuse /home/emiller/.codex/auth.json."
+echo ""
+echo "Follow the printed login URL, then paste the final callback URL here."
+echo ""
+
+$sudo docker exec -it hermes-agent-betty bash -lc 'hermes auth add openai-codex --type oauth --no-browser --manual-paste'
+
+echo ""
+echo "=== Verifying Betty openai-codex invocation ==="
+$sudo docker exec hermes-agent-betty bash -lc 'hermes auth status openai-codex && timeout 180 hermes --provider openai-codex -m gpt-5.4-mini -z "Reply with exactly: OK"'
+
+echo ""
+echo "=== Verifying Scintillate still has independent Codex auth ==="
+$sudo docker exec hermes-agent-scintillate bash -lc 'timeout 180 hermes --provider openai-codex -m gpt-5.5 -z "Reply with exactly: OK"'
+
+echo ""
+echo "=== Auth paths ==="
+$sudo find /var/lib/hermes-betty -maxdepth 3 \( -path '*/.codex*' -o -name 'auth.json*' \) -printf '%M %u:%g %p -> %l\n' | sort
+'#
+}
+
+def "main login-betty" [] {
+  let script = (betty-login-script)
+  let local_hostname = (^hostname -s | str trim)
+
+  if $local_hostname == $NUC_HOST {
+    ^bash -lc $script
+  } else {
+    print $"=== Connecting to ($NUC_HOST) for Betty Codex login ==="
+    ^ssh -t $NUC_HOST $script
+  }
+}
+
 
 def "main nuc-status" [] {
   print "=== NUC System Status ==="
