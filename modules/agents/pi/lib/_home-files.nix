@@ -7,6 +7,7 @@
   promptLinks,
   agentLinks,
   sessionSearchFiles,
+  isDarwin,
 }:
 
 promptLinks
@@ -18,14 +19,21 @@ promptLinks
   ".pi/agent/pi-permissions.jsonc".source = "${configDir}/pi/pi-permissions.jsonc";
 }
 // sessionSearchFiles
+// (
+  if isDarwin then
+    {
+      ".pi/agent/extensions/enforce-commit-signing.ts".source =
+        "${configDir}/pi/extensions/enforce-commit-signing.ts";
+    }
+  else
+    { }
+)
 // {
   ".pi/agent/extensions/pi-permission-system/config.json".text = builtins.toJSON {
     debugLog = false;
     permissionReviewLog = true;
     yoloMode = false;
   };
-  ".pi/agent/extensions/enforce-commit-signing.ts".source =
-    "${configDir}/pi/extensions/enforce-commit-signing.ts";
   ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
   ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
   ".pi/agent/extensions/commit-review.ts".source = "${configDir}/pi/extensions/commit-review.ts";

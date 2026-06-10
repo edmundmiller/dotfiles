@@ -4,7 +4,7 @@
   // Model configuration
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
-  "defaultThinkingLevel": "low",
+  "defaultThinkingLevel": "medium",
   // Model cycling - Ctrl+P to toggle between these
   "enabledModels": ["gpt-5.5", "gpt-5.4-mini"],
   // UI preferences
