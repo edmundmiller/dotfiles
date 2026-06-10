@@ -11,35 +11,54 @@ def "main deploy" [host: string] {
 }
 
 def remote-nuc-rebuild [] {
-  print "=== remote NUC rebuild ==="
+  print "=== NUC deploy mode: remote over SSH ==="
   print "=== remote rebuild uses the NUC checkout, so push/pull committed changes first ==="
   ^ssh $NUC_HOST 'cd ~/.config/dotfiles && /run/current-system/sw/bin/git pull --ff-only && hey re'
 }
 
-def "main nuc" [] {
-  let ctx = (context)
-  print "=== Deploying to NUC ==="
-  cd $ctx.flake_dir
-
-  let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
-  if $local_system != "x86_64-linux" {
-    print $"=== local system is ($local_system); using remote NUC rebuild ==="
-    remote-nuc-rebuild
-  } else {
-    ^nix run .#deploy-rs -- .#nuc --skip-checks
-  }
-
-  print "=== post-deploy gateway restart check on NUC ==="
-  ^ssh $NUC_HOST '
+def nuc-post-deploy-check [local: bool] {
+  let script = '
+    set -euo pipefail
+    echo "=== post-deploy Hermes/gateway status ==="
     if systemctl list-unit-files hermes-agent.service >/dev/null 2>&1; then
-      echo "hermes-agent.service is system-managed; no extra restart needed"
+      echo "hermes-agent.service is system-managed"
+      systemctl is-active hermes-agent.service || true
     elif systemctl --user list-unit-files openclaw-gateway.service >/dev/null 2>&1; then
       echo "legacy openclaw-gateway.service detected; try-restarting"
       systemctl --user try-restart openclaw-gateway.service
     else
       echo "no gateway restart hook needed"
     fi
+    systemctl --no-pager --plain list-units "hermes*.service" || true
   '
+  if $local {
+    ^bash -lc $script
+  } else {
+    ^ssh $NUC_HOST $script
+  }
+}
+
+def "main nuc" [] {
+  let ctx = (context)
+  cd $ctx.flake_dir
+
+  let local_hostname = (^hostname -s | str trim)
+  let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
+
+  if $local_hostname == $NUC_HOST {
+    print $"=== NUC deploy mode: local on ($local_hostname) (($local_system)) ==="
+    print "=== running local nixos-rebuild switch from this checkout ==="
+    with-sudo-path { ^nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --sudo --show-trace switch }
+    nuc-post-deploy-check true
+  } else if $local_system != "x86_64-linux" {
+    print $"=== local host ($local_hostname) is ($local_system); deploying on NUC remotely ==="
+    remote-nuc-rebuild
+    nuc-post-deploy-check false
+  } else {
+    print $"=== NUC deploy mode: deploy-rs from ($local_hostname) (($local_system)) ==="
+    ^nix run .#deploy-rs -- .#nuc --skip-checks
+    nuc-post-deploy-check false
+  }
 }
 
 
