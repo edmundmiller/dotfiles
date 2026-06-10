@@ -831,12 +831,21 @@ in
         # Codex OAuth refresh tokens are single-use. Do not seed Hermes from
         # ~/.codex/auth.json or share Codex CLI credentials; Scintillate owns
         # its Codex login in /var/lib/hermes-scintillate/.hermes/auth.json.
+        extraPackages = with pkgs; [
+          bun
+          nix
+          nodejs
+          openssh
+          pnpm
+          prek
+        ];
         environment = {
           HERMES_KANBAN_HOME = hermesSharedHome;
           PYTHONPATH = hermesTelegramPythonPath;
         };
         hostPathMounts = {
           "${hermesSharedHome}" = hermesSharedHome;
+          "/home/emiller/.ssh" = "/home/ubuntu/.ssh";
         };
         environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
       };
