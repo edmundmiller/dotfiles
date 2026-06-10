@@ -5,7 +5,8 @@ This directory contains Nix modules for AI agents:
 - `agentsview/` - agentsview TUI from numtide/llm-agents.nix
 - `claude/` - Claude Code CLI (Anthropic)
 - `codex/` - Codex CLI (OpenAI)
-- `hermes/` - Hermes agent CLI (local development)
+- `hermes/` - retired stub; do not enable
+- `hermes-desktop/` - interactive user/desktop Hermes setup
 - `opencode/` - OpenCode CLI
 - `packages.nix` - Simple agent-adjacent package toggles such as `gnhf`
 - `pi/` - Pi coding agent + shell helpers (worktree management, PR review)
@@ -20,7 +21,7 @@ modules.agents = {
   claude.enable = true;
   codex.enable = true;
   gnhf.enable = true;
-  hermes = {
+  hermes-desktop = {
     enable = true;
     secretReferences = { ... };
   };
@@ -47,7 +48,7 @@ Global skills live in `~/.agents/skills/` and are discovered natively.
 Warning-only prek `pre-push` hooks check mutable runtime state for agent drift:
 
 - `pi-runtime-drift` checks `~/.pi/agent` for dirty git extension caches and obvious Pi binary/settings drift.
-- `hermes-runtime-drift` checks `$HERMES_HOME` for stale repo-managed Hermes config, SOUL, skins, hooks, and plugins.
+- `hermes-runtime-drift` checks desktop `$HERMES_HOME` for stale repo-managed Hermes config, SOUL, skins, hooks, and plugins.
 
 These hooks must never mutate runtime state or block pushes for drift. Fix warnings with the appropriate rebuild/update command, usually `hey re` and, for Pi extensions, `pi update --extensions`.
 
@@ -56,6 +57,12 @@ These hooks must never mutate runtime state or block pushes for drift. Fix warni
 When `modules.shell.herdr.enable = true`, the Herdr shell module automatically installs Herdr integrations for enabled agent modules during activation. Agent modules should create/bootstrap their runtime config directories before Herdr's activation step, but they do not need to call `herdr integration install` themselves.
 
 ## Module Boundaries
+
+Hermes split:
+
+- Desktop/user Hermes belongs in `modules.agents.hermes-desktop`.
+- NUC gateway profiles belong under `services.hermes` / upstream `services.hermes-agent` service configuration.
+- `modules.agents.hermes` is a retired stub to prevent new ambiguous usage.
 
 These modules are for AI coding agents only. Do NOT put:
 

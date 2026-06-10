@@ -63,7 +63,7 @@
       };
 
       agents = {
-        hermes = {
+        hermes-desktop = {
           enable = true;
           honcho.enable = true;
           secretReferences = {

@@ -309,8 +309,8 @@ in
         type = bool;
         default = true;
         description = ''
-          Automatically install Herdr's Hermes integration when Hermes is
-          enabled, including the interactive `modules.agents.hermes` profile
+          Automatically install Herdr's Hermes integration when Hermes Desktop is
+          enabled, including the interactive `modules.agents.hermes-desktop` profile
           and every declared `services.hermes-agent.profiles` NixOS profile.
         '';
       };
@@ -720,12 +720,14 @@ in
                 XDG_CONFIG_HOME="$HOME/.config" install_integration opencode
               ''}
 
-              ${optionalString (cfg.integrations.hermes.enable && config.modules.agents.hermes.enable) ''
-                ${pkgs.coreutils}/bin/mkdir -p ${escapeShellArg config.modules.agents.hermes.homeDir}
-                HOME=${escapeShellArg config.user.home} \
-                  HERMES_HOME=${escapeShellArg config.modules.agents.hermes.homeDir} \
-                  install_integration hermes
-              ''}
+              ${optionalString (cfg.integrations.hermes.enable && config.modules.agents."hermes-desktop".enable)
+                ''
+                  ${pkgs.coreutils}/bin/mkdir -p ${escapeShellArg config.modules.agents."hermes-desktop".homeDir}
+                  HOME=${escapeShellArg config.user.home} \
+                    HERMES_HOME=${escapeShellArg config.modules.agents."hermes-desktop".homeDir} \
+                    install_integration hermes
+                ''
+              }
             '';
       };
 
