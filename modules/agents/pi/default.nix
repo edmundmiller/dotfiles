@@ -513,6 +513,7 @@ in
             promptLinks
             agentLinks
             sessionSearchFiles
+            isDarwin
             ;
         };
 

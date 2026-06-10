@@ -62,6 +62,20 @@ in
       home-manager.users.${config.user.name} = {
         xdg.configFile = {
           "git/config".source = "${configDir}/git/config";
+          "git/config-signing" =
+            if isDarwin then
+              {
+                source = "${configDir}/git/config-signing";
+              }
+            else
+              {
+                text = ''
+                  [commit]
+                      gpgsign = false
+                  [tag]
+                      gpgSign = false
+                '';
+              };
           "git/config-seqera".source = "${configDir}/git/config-seqera";
           "git/config-nfcore".source = "${configDir}/git/config-nfcore";
           "git/ignore".source = "${configDir}/git/ignore";
