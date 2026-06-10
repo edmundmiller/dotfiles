@@ -52,6 +52,7 @@ unset _terminfo_candidates _terminfo_dirs _terminfo_dir
 typeset -U path PATH
 path=(
   /etc/profiles/per-user/$USER/bin
+  /run/wrappers/bin
   /run/current-system/sw/bin
   $HOME/.nix-profile/bin
   $XDG_CONFIG_HOME/dotfiles/bin

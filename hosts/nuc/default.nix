@@ -772,6 +772,7 @@ in
     cmake # For node-llama-cpp (qmd dependency)
     claude-code # CLI backend for local agents
     bun # For pi CLI backend (npm: @mariozechner/pi-coding-agent)
+    prek # Agent quality-gate runner used by vault/repo AGENTS instructions
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
