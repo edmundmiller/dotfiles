@@ -69,11 +69,6 @@ def "main nuc" [mode: string = "deploy-rs"] {
   nuc-post-deploy-check $post_check_local
 }
 
-def "main nuc-local" [] {
-  nuc-local-rebuild
-}
-
-
 def validate-nuc-worktree-mode [mode: string] {
   let allowed = ["dry-activate" "test" "switch" "build" "vm"]
   if not ($mode in $allowed) {
