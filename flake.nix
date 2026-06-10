@@ -757,6 +757,26 @@
                 files = "^(config/pi/settings\\.jsonc|modules/agents/pi/)";
                 stages = [ "pre-commit" ];
               };
+              pi-runtime-drift = {
+                enable = true;
+                name = "pi-runtime-drift";
+                description = "Warn when mutable Pi runtime state appears out of sync";
+                entry = "bash modules/agents/pi/check-runtime-drift.sh";
+                language = "system";
+                pass_filenames = false;
+                always_run = true;
+                stages = [ "pre-push" ];
+              };
+              hermes-runtime-drift = {
+                enable = true;
+                name = "hermes-runtime-drift";
+                description = "Warn when mutable Hermes runtime state appears out of sync";
+                entry = "PYTHON_BIN=${pkgs.python3}/bin/python3 bash modules/agents/hermes/check-runtime-drift.sh";
+                language = "system";
+                pass_filenames = false;
+                always_run = true;
+                stages = [ "pre-push" ];
+              };
               large-file-detection = {
                 enable = true;
                 name = "large-file-detection";

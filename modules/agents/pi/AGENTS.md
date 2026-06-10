@@ -22,3 +22,5 @@ After changing settings generation or module-managed packages, run:
 bash modules/agents/pi/test-settings-json.sh
 ./bin/hey help
 ```
+
+A warning-only `pi-runtime-drift` prek pre-push hook checks mutable `~/.pi/agent` state for dirty git extension caches and obvious binary/settings drift. It must never mutate runtime state; fix drift with `hey re` or `pi update --extensions`.

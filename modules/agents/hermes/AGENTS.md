@@ -45,6 +45,8 @@ Use the MCP server's expected environment variable name on the left and the Herm
 
 After changing this module, prefer validating with a Nix eval/build of the Hermes package or the host config using `hey re` for Darwin hosts.
 
+A warning-only `hermes-runtime-drift` prek pre-push hook checks whether mutable `$HERMES_HOME` looks out of sync with repo-managed config, SOUL, skins, hooks, or plugins. It must never mutate `$HERMES_HOME`; fix drift with `hey re`.
+
 ## Provider Validation
 
 Run `hermes doctor` to validate the inference fallback chain and API connectivity.
