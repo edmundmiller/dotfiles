@@ -10,10 +10,8 @@ def "main deploy" [host: string] {
   ^nix run .#deploy-rs -- $".#($host)"
 }
 
-def remote-nuc-rebuild [] {
-  print "=== NUC deploy mode: remote over SSH ==="
-  print "=== remote rebuild uses the NUC checkout, so push/pull committed changes first ==="
-  ^ssh $NUC_HOST 'cd ~/.config/dotfiles && /run/current-system/sw/bin/git pull --ff-only && hey re'
+def nuc-deploy-mode [hostname: string] {
+  if $hostname == $NUC_HOST { "deploy-rs-local" } else { "deploy-rs-remote" }
 }
 
 def nuc-post-deploy-check [local: bool] {
@@ -44,21 +42,22 @@ def "main nuc" [] {
 
   let local_hostname = (^hostname -s | str trim)
   let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
+  let mode = (nuc-deploy-mode $local_hostname)
+  let post_check_local = ($mode == "deploy-rs-local")
 
-  if $local_hostname == $NUC_HOST {
-    print $"=== NUC deploy mode: local on ($local_hostname) (($local_system)) ==="
-    print "=== running local nixos-rebuild switch from this checkout ==="
-    with-sudo-path { ^nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --sudo --show-trace switch }
-    nuc-post-deploy-check true
-  } else if $local_system != "x86_64-linux" {
-    print $"=== local host ($local_hostname) is ($local_system); deploying on NUC remotely ==="
-    remote-nuc-rebuild
-    nuc-post-deploy-check false
-  } else {
-    print $"=== NUC deploy mode: deploy-rs from ($local_hostname) (($local_system)) ==="
-    ^nix run .#deploy-rs -- .#nuc --skip-checks
-    nuc-post-deploy-check false
-  }
+  print $"=== NUC deploy mode: ($mode) from ($local_hostname) (($local_system)) ==="
+  print "=== deploy-rs remoteBuild=true builds the x86_64-linux system on the target ==="
+  ^nix run .#deploy-rs -- .#nuc --skip-checks
+  nuc-post-deploy-check $post_check_local
+}
+
+def "main nuc-local" [] {
+  let ctx = (context)
+  cd $ctx.flake_dir
+
+  print "=== NUC deploy mode: explicit local nixos-rebuild ==="
+  with-sudo-path { ^nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --sudo --show-trace switch }
+  nuc-post-deploy-check true
 }
 
 
