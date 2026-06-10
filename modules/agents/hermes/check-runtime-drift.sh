@@ -80,6 +80,18 @@ if ! command -v hermes >/dev/null 2>&1; then
   warn "hermes not found on PATH."
 fi
 
+if command -v systemctl >/dev/null 2>&1; then
+  while IFS= read -r unit; do
+    [ -n "$unit" ] || continue
+    state="$(systemctl is-active "$unit" 2>/dev/null || true)"
+    case "$state" in
+      active|activating|inactive) ;;
+      failed) warn "Hermes service unit is failed: $unit" ;;
+      *) warn "Hermes service unit has unexpected state '$state': $unit" ;;
+    esac
+  done < <(systemctl list-unit-files 'hermes*.service' --no-legend --no-pager 2>/dev/null | awk '{print $1}' || true)
+fi
+
 if [ "$warned" -ne 0 ]; then
   cat >&2 <<'EOF'
 Hermes runtime drift detected. Suggested fix:
