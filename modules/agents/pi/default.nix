@@ -138,6 +138,8 @@ let
                 --set AGENT "1" \
                 --set PI_CODING_AGENT "true" \
                 --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
+                --set NPM_CONFIG_PACKAGE_LOCK "false" \
+                --set NPM_CONFIG_SAVE "false" \
                 --unset SDKROOT
 
               # The pi executable is Nix-managed and cannot self-update in-place.
