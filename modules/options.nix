@@ -146,6 +146,7 @@ with lib.my;
     env.PATH = [
       "$DOTFILES_BIN"
       "$XDG_BIN_HOME"
+      "/run/wrappers/bin"
       "$PATH"
     ];
 
