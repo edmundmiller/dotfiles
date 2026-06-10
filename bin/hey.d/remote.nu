@@ -36,28 +36,41 @@ def nuc-post-deploy-check [local: bool] {
   }
 }
 
-def "main nuc" [] {
-  let ctx = (context)
-  cd $ctx.flake_dir
-
-  let local_hostname = (^hostname -s | str trim)
-  let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
-  let mode = (nuc-deploy-mode $local_hostname)
-  let post_check_local = ($mode == "deploy-rs-local")
-
-  print $"=== NUC deploy mode: ($mode) from ($local_hostname) (($local_system)) ==="
-  print "=== deploy-rs remoteBuild=true builds the x86_64-linux system on the target ==="
-  ^nix run .#deploy-rs -- .#nuc --skip-checks
-  nuc-post-deploy-check $post_check_local
-}
-
-def "main nuc-local" [] {
+def nuc-local-rebuild [] {
   let ctx = (context)
   cd $ctx.flake_dir
 
   print "=== NUC deploy mode: explicit local nixos-rebuild ==="
   with-sudo-path { ^nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --sudo --show-trace switch }
   nuc-post-deploy-check true
+}
+
+def "main nuc" [mode: string = "deploy-rs"] {
+  let ctx = (context)
+  cd $ctx.flake_dir
+
+  if $mode == "local" {
+    nuc-local-rebuild
+    return
+  }
+  if $mode != "deploy-rs" {
+    print -e "error: hey nuc mode must be 'deploy-rs' or 'local'"
+    error make {msg: "invalid hey nuc mode"}
+  }
+
+  let local_hostname = (^hostname -s | str trim)
+  let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
+  let deploy_mode = (nuc-deploy-mode $local_hostname)
+  let post_check_local = ($deploy_mode == "deploy-rs-local")
+
+  print $"=== NUC deploy mode: ($deploy_mode) from ($local_hostname) (($local_system)) ==="
+  print "=== deploy-rs remoteBuild=true builds the x86_64-linux system on the target ==="
+  ^nix run .#deploy-rs -- .#nuc --skip-checks
+  nuc-post-deploy-check $post_check_local
+}
+
+def "main nuc-local" [] {
+  nuc-local-rebuild
 }
 
 
