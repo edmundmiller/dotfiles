@@ -771,7 +771,7 @@
                 enable = true;
                 name = "hermes-runtime-drift";
                 description = "Warn when mutable Hermes runtime state appears out of sync";
-                entry = "env PYTHON_BIN=${pkgs.python3}/bin/python3 bash modules/agents/hermes-desktop/check-runtime-drift.sh";
+                entry = "env PYTHON_BIN=${pkgs.python3}/bin/python3 bash modules/agents/hermes/check-runtime-drift.sh";
                 language = "system";
                 pass_filenames = false;
                 always_run = true;

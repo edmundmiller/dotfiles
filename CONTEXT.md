@@ -34,6 +34,36 @@ An agent skill intended only for work inside one repository. In this dotfiles re
 
 The user-level skills directory `~/.agents/skills`. It may contain globally useful skills installed by this repo and manually installed or created global skills. It must not contain this dotfiles repo's project-local skills from `.agents/skills/`.
 
+### Hermes Runtime Root
+
+The host-level Hermes state root, usually `~/.hermes`, shared by Interactive Hermes frontends and Hermes Gateway processes on that host.
+_Avoid_: Hermes Profile
+
+### Hermes Profile
+
+A named Hermes state directory under a Hermes Runtime Root, such as `~/.hermes/profiles/scintillate`, with its own config, environment, sessions, memory, skills, cron jobs, and gateway state.
+_Avoid_: workspace, sandbox
+
+### Interactive Hermes
+
+A per-user Hermes runtime for a person interactively using Hermes on a specific machine. It may expose CLI, TUI, or Desktop frontends, and its purpose can vary by host. Interactive Hermes uses the host's Hermes Runtime Root and may target one of its Hermes Profiles.
+_Avoid_: Hermes Desktop, Hermes Coding Agent
+
+### Hermes Gateway
+
+A long-running Hermes background process for messaging, web, or remote access. A Hermes Gateway may run on a server or desktop. It shares the host's Hermes Runtime Root, while each gateway identity should be represented as a Hermes Profile under that root.
+_Avoid_: Hermes Service
+
+### Hermes Runtime Preset
+
+A reusable Hermes configuration/persona bundle owned outside host wiring, typically by `agents-workspace`. Dotfiles may select a preset for a host but should not define reusable Hermes personas.
+_Avoid_: host-specific wiring
+
+### Host Hermes Wiring
+
+Dotfiles-owned configuration that installs Hermes frontends, chooses a runtime preset, sets the host's `HERMES_HOME`, wires host-specific secrets, and bootstraps mutable runtime files for one machine.
+_Avoid_: Hermes Runtime Preset
+
 ## Relationships
 
 - **Winding Down** precedes **Get Ready for Bed** in the Home Assistant sleep lifecycle.

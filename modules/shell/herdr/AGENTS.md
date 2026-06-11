@@ -20,7 +20,7 @@ This directory owns the `modules.shell.herdr` Nix module.
 
 - `modules.shell.tmux.rcFiles` sources the generated `tmux/herdr.conf` only when tmux is enabled. This is optional popup integration; it must not make tmux own Ghostty startup while Herdr or another higher-priority workspace owner is enabled.
 - `modules.agents.pi` conditionally installs `npm:@ogulcancelik/pi-herdr` when `modules.shell.herdr.enable` is true.
-- When Herdr is enabled, this module automatically installs Herdr integrations for enabled agent modules (`pi`, `claude`, `codex`, `opencode`, and desktop `hermes-desktop`) during Home Manager activation.
+- When Herdr is enabled, this module automatically installs Herdr integrations for enabled agent modules (`pi`, `claude`, `codex`, `opencode`, and local `hermes`) during Home Manager activation.
 - On NixOS, this module also installs Herdr's Hermes Agent integration into every declared `services.hermes-agent.profiles` profile during system activation when `services.hermes-agent` is enabled.
 - `config/herdr/config.toml` is the default template configured by this module.
 
