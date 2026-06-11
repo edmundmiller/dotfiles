@@ -309,9 +309,9 @@ in
         type = bool;
         default = true;
         description = ''
-          Automatically install Herdr's Hermes integration when Hermes Desktop is
-          enabled, including the interactive `modules.agents.hermes` profile
-          and every declared `services.hermes-agent.profiles` NixOS profile.
+          Automatically install Herdr's Hermes integration for the managed
+          `modules.agents.hermes` runtime and every declared
+          `services.hermes-agent.profiles` NixOS profile.
         '';
       };
     };
