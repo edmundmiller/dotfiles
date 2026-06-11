@@ -5,8 +5,7 @@ This directory contains Nix modules for AI agents:
 - `agentsview/` - agentsview TUI from numtide/llm-agents.nix
 - `claude/` - Claude Code CLI (Anthropic)
 - `codex/` - Codex CLI (OpenAI)
-- `hermes/` - retired stub; do not enable
-- `hermes-desktop/` - interactive user/desktop Hermes setup
+- `hermes/` - NixOS-only Hermes Gateway/runtime host wiring
 - `opencode/` - OpenCode CLI
 - `packages.nix` - Simple agent-adjacent package toggles such as `gnhf`
 - `pi/` - Pi coding agent + shell helpers (worktree management, PR review)
@@ -21,7 +20,7 @@ modules.agents = {
   claude.enable = true;
   codex.enable = true;
   gnhf.enable = true;
-  hermes-desktop = {
+  hermes = {
     enable = true;
     secretReferences = { ... };
   };
@@ -48,7 +47,7 @@ Global skills live in `~/.agents/skills/` and are discovered natively.
 Warning-only prek `pre-push` hooks check mutable runtime state for agent drift:
 
 - `pi-runtime-drift` checks `~/.pi/agent` for dirty git extension caches and obvious Pi binary/settings drift.
-- `hermes-runtime-drift` checks desktop `$HERMES_HOME` for stale repo-managed Hermes config, SOUL, skins, hooks, and plugins.
+- `hermes-runtime-drift` checks managed `$HERMES_HOME` for stale repo-managed Hermes config, SOUL, skins, hooks, and plugins.
 
 These hooks must never mutate runtime state or block pushes for drift. Fix warnings with the appropriate rebuild/update command, usually `hey re` and, for Pi extensions, `pi update --extensions`.
 
@@ -58,13 +57,13 @@ When `modules.shell.herdr.enable = true`, the Herdr shell module automatically i
 
 ## Module Boundaries
 
-Hermes split:
+Hermes boundary:
 
-- Desktop/user Hermes belongs in `modules.agents.hermes-desktop`.
-- NUC gateway profiles belong under `services.hermes` / upstream `services.hermes-agent` service configuration.
-- `modules.agents.hermes` is a retired stub to prevent new ambiguous usage.
+- `modules.agents.hermes` is NixOS-only host wiring for declarative Hermes Gateway/runtime setup.
+- macOS Hermes Desktop installs are intentionally outside this repo module for now.
+- Reusable Hermes profile/preset logic belongs in `agents-workspace`; dotfiles selects and wires host-specific deployment choices.
 
-These modules are for AI coding agents only. Do NOT put:
+These modules are for AI coding agents and managed agent runtimes only. Do NOT put:
 
 - Shell tools here (see `modules/shell/`)
 - System services here (see `modules/services/`)
