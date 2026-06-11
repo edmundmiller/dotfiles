@@ -2,7 +2,7 @@
   "hosts": {
     "hermes": {
       "enabled": true,
-      "aiPeer": "mactraitorpro",
+      "aiPeer": "hermes",
       "peerName": "Edmund",
       "workspace": "hermes",
       "recallMode": "hybrid",
