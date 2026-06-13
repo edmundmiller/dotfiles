@@ -1,0 +1,59 @@
+skills/flake.lock
+  s_f5d4601a9b7957::t_86e1c5329404f5 54-69,352
+flake.nix
+  s_f5d4601a9b7957::t_471e140b01073b 644,648,650-652,655-659,662,667,673-674
+hosts/nuc/default.nix
+  s_6837b72ce500ef::t_2a52df2ea61830 1399
+skills/flake.nix
+  s_6837b72ce500ef::t_e0045edce5e8f0 341
+  s_f5d4601a9b7957::t_43781bdfa400c4 100-104,338-339,416-417
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "3a3669a352c03bd9db501aa015709c55814e35f6",
+  "prompts": {
+    "aa99a485afde5982": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec0eb-cbe8-7df1-a313-26aa69c77ef5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>",
+      "total_additions": 3,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "f5d4601a9b7957ae": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec1de-9e4d-721d-80f1-efc0719e2dc2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>",
+      "total_additions": 42,
+      "total_deletions": 11,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_6837b72ce500ef": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec1e5-d9a2-7d0f-856f-b0412fef92f3",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_f5d4601a9b7957": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec1de-9e4d-721d-80f1-efc0719e2dc2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
