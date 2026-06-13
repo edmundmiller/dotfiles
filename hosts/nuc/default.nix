@@ -705,6 +705,7 @@ in
 
         install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME"
         install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/.codex"
         install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
         install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace/repos"
         install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME/.codex"
