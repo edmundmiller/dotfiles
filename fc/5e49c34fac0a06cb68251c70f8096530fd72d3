@@ -1,0 +1,22 @@
+hosts/mactraitorpro/default.nix
+  s_f5d4601a9b7957::t_b734de1b7ab7f8 180-184
+bin/hey.d/common.nu
+  s_f5d4601a9b7957::t_7a8201b46edd39 269
+  s_f5d4601a9b7957::t_886b0c0e967c93 267-268,270-273
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "fc5e49c34fac0a06cb68251c70f8096530fd72d3",
+  "prompts": {},
+  "sessions": {
+    "s_f5d4601a9b7957": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec1de-9e4d-721d-80f1-efc0719e2dc2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
