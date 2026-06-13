@@ -238,6 +238,57 @@ let
     export NODE_LLAMA_CPP_GPU=off
     exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
   '';
+  himalayaFastmailSetupScript = pkgs.writeShellScript "hermes-scintillate-himalaya-fastmail-setup" ''
+    set -eu
+
+    op_token_file=/etc/opnix-token
+    fastmail_item_ref=op://modfd4uzewmj55sff7jl6ihlzi/bvzeosvsl3jw2pinm3pq4ykpym
+    config_dir=/var/lib/hermes-scintillate/home/.config/himalaya
+    config_file="$config_dir/config.toml"
+    password_dest="$config_dir/fastmail-app-password"
+
+    test -s "$op_token_file"
+
+    install -d -o emiller -g users -m 0700 "$config_dir"
+
+    export HOME=/var/lib/hermes-scintillate/home
+    export XDG_CONFIG_HOME=/var/lib/hermes-scintillate/home/.config
+    export OP_SERVICE_ACCOUNT_TOKEN="$(cat "$op_token_file")"
+    email="$(${op} read "$fastmail_item_ref/username" | ${pkgs.coreutils}/bin/tr -d '\r\n')"
+    password="$(${op} read "$fastmail_item_ref/password")"
+
+    printf '%s' "$password" | install -o emiller -g users -m 0600 /dev/stdin "$password_dest"
+    unset password OP_SERVICE_ACCOUNT_TOKEN
+    tmp_file="$config_file.tmp.$$"
+    cat > "$tmp_file" <<EOF
+    [accounts.fastmail]
+    default = true
+    email = "$email"
+
+    folder.aliases.inbox = "INBOX"
+    folder.aliases.sent = "Sent"
+    folder.aliases.drafts = "Drafts"
+    folder.aliases.trash = "Trash"
+    folder.aliases.archive = "Archive"
+
+    backend.type = "imap"
+    backend.host = "imap.fastmail.com"
+    backend.port = 993
+    backend.login = "$email"
+    backend.auth.type = "password"
+    backend.auth.cmd = "cat /home/hermes/.config/himalaya/fastmail-app-password"
+
+    message.send.backend.type = "smtp"
+    message.send.backend.host = "smtp.fastmail.com"
+    message.send.backend.port = 465
+    message.send.backend.login = "$email"
+    message.send.backend.auth.type = "password"
+    message.send.backend.auth.cmd = "cat /home/hermes/.config/himalaya/fastmail-app-password"
+    EOF
+
+    install -o emiller -g users -m 0600 "$tmp_file" "$config_file"
+    rm -f "$tmp_file"
+  '';
   millDocsObsidianLoginScript = pkgs.writeShellScript "obsidian-sync-mill-docs-login" ''
     set -euo pipefail
     if ${ob} login 2>&1 | grep -q "Logged in"; then
@@ -775,6 +826,7 @@ in
     prek # Agent quality-gate runner used by vault/repo AGENTS instructions
     uv # For vault sync scripts (PEP 723 inline deps)
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
+    himalaya # IMAP/SMTP CLI for Fastmail triage by Scintillate/agents
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
@@ -838,6 +890,7 @@ in
           openssh
           pnpm
           prek
+          himalaya
         ];
         environment = {
           HERMES_KANBAN_HOME = hermesSharedHome;
@@ -913,7 +966,10 @@ in
     # "Gateway shutting down -- Your current task will be interrupted".
     # Apply unit/package changes on the next explicit service restart instead.
     restartIfChanged = false;
+    after = [ "opnix-secrets.service" ];
+    wants = [ "opnix-secrets.service" ];
     serviceConfig.ExecStartPre = lib.mkAfter [
+      himalayaFastmailSetupScript
       (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
         set -eu
         env_file=/var/lib/hermes-scintillate/.hermes/.env
