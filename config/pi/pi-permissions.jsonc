@@ -142,8 +142,9 @@
     "*pipx install*": "deny",
     "*cargo install*": "deny",
 
-    // Use the skills wrapper so parent/child flake locks stay in sync.
-    "*nix flake update skills-catalog*": "deny",
+    // Prefer the skills wrapper so parent/child flake locks stay in sync, but allow
+    // the documented parent-catalog sync when the child lock was already updated.
+    "*nix flake update skills-catalog*": "allow",
     "*nix flake lock --update-input skills-catalog*": "deny",
 
     // Explicitly allow Claude delegation through acpx. The nested agent is
