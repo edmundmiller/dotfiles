@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   isDarwin,
   ...
 }:
@@ -10,6 +11,7 @@ with lib.my;
 let
   cfg = config.modules.shell.git;
   inherit (config.dotfiles) configDir;
+  hunkPackage = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
   options.modules.shell.git = {
@@ -45,7 +47,7 @@ in
           (mkIf cfg.gitbutler.enable llm-agents.but)
           (mkIf cfg.gitbutler.enable llm-agents.gitbutler)
           (mkIf cfg.gitnexus.enable llm-agents.gitnexus)
-          (mkIf cfg.hunk.enable my.hunk)
+          (mkIf cfg.hunk.enable hunkPackage)
           (mkIf cfg.lazydiff.enable my.lazydiff)
           (mkIf cfg.stack.enable my.stack)
         ]
