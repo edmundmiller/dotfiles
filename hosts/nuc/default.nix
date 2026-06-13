@@ -26,6 +26,7 @@ let
     "amosburton"
     "anne"
     "betty"
+    "orchestrator"
     "radar"
     "scintillate"
   ];
@@ -186,6 +187,9 @@ let
       inherit (config.age.secrets.anne-firecrawl-api) path;
     }
   ];
+  hermesOrchestratorSecrets = hermesProviderSecrets ++ [
+    (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
+  ];
   hermesRadarSecrets =
     (builtins.filter (
       secret:
@@ -209,6 +213,7 @@ let
   hermesSecretSets = {
     anne = hermesAnneSecrets;
     betty = hermesBettySecrets;
+    orchestrator = hermesOrchestratorSecrets;
     radar = hermesRadarSecrets;
     scintillate = hermesScintillateSecrets;
   };
@@ -687,6 +692,55 @@ in
       '';
     };
 
+    hermesOrchestratorSecretsMaterialize = {
+      deps = [
+        "agenixInstall"
+        "agenixChown"
+      ];
+      text = ''
+        ORCHESTRATOR_HOME="/var/lib/hermes-orchestrator"
+        ENV_DIR="/run/hermes-orchestrator-env"
+        ENV_FILE="$ENV_DIR/secrets.env"
+        HERMES_ENV_HOME="$ORCHESTRATOR_HOME/.hermes"
+
+        install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace/repos"
+        install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME/.codex"
+        install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME/.local"
+        install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME/.local/bin"
+        install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME/.local/state"
+        install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME/.local/state/hermes"
+        install -d -o emiller -g users -m 0750 "$ORCHESTRATOR_HOME/.local/state/hermes/gateway-locks"
+
+        ln -sfn /home/emiller/.codex/auth.json "$ORCHESTRATOR_HOME/.codex/auth.json"
+        chown -h emiller:users "$ORCHESTRATOR_HOME/.codex/auth.json"
+        ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
+        chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
+        ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+        chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+        ln -sfn ${tnoteBaseRepo} "$HERMES_ENV_HOME/workspace/repos/tnote"
+        chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/tnote"
+        ln -sfn ${pkgs.my.tnote}/bin/tnote "$ORCHESTRATOR_HOME/.local/bin/tnote"
+        chown -h emiller:users "$ORCHESTRATOR_HOME/.local/bin/tnote"
+
+        mkdir -p "$ENV_DIR"
+        : > "$ENV_FILE"
+        chmod 600 "$ENV_FILE"
+        chown emiller:users "$ENV_FILE"
+
+        printf 'HERMES_HONCHO_HOST=%s\n' "orchestrator" >> "$ENV_FILE"
+
+        ${lib.concatMapStringsSep "\n" (secret: ''
+          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+            secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+          fi
+        '') hermesOrchestratorSecrets}
+      '';
+    };
+
     hermesRadarSecretsMaterialize = {
       deps = [
         "agenixInstall"
@@ -918,6 +972,20 @@ in
           "/home/emiller/src/personal/tailnet" = "/repos/tailnet";
         };
         environmentFiles = [ "/run/hermes-amosburton-env/secrets.env" ];
+      };
+      orchestrator = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment = {
+          CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_HOME = hermesSharedHome;
+        };
+        hostPathMounts = lib.mkForce {
+          "${hermesSharedHome}" = hermesSharedHome;
+          "/home/emiller/.codex" = "/home/emiller/.codex";
+          "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
+          "${tnoteBaseRepo}" = "/repos/tnote";
+        };
+        environmentFiles = [ "/run/hermes-orchestrator-env/secrets.env" ];
       };
     };
   };
