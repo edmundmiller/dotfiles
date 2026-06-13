@@ -858,8 +858,6 @@ in
     gtk.gtk4.theme = null;
   };
 
-  modules.agents.codex.enable = true;
-
   environment.systemPackages = with pkgs; [
     taskwarrior3
     sqlite
@@ -1398,6 +1396,7 @@ in
 
     };
     agents = {
+      codex.enable = true;
       pi.enable = true;
     };
     services = {

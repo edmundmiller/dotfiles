@@ -641,34 +641,37 @@
                                                           range="$upstream...HEAD"
                                                           changed_files=$(git diff --name-only "$range")
 
-                                                          if ! echo "$changed_files" | grep -q '^skills/catalog/'; then
+                                                          if ! echo "$changed_files" | grep -Eq '^skills/(catalog/|flake\.nix$|flake\.lock$)'; then
                                                             exit 0
                                                           fi
 
-                                                          has_parent_lock=0
-                                                          has_child_lock=0
+                                                          missing=0
 
-                                                          if echo "$changed_files" | grep -q '^flake.lock$'; then
-                                                            has_parent_lock=1
+                                                          if ! echo "$changed_files" | grep -q '^flake.lock$'; then
+                                                            echo "  missing: flake.lock (parent skills-catalog sync)" >&2
+                                                            missing=1
                                                           fi
 
-                                                          if echo "$changed_files" | grep -q '^skills/flake.lock$'; then
-                                                            has_child_lock=1
+                                                          if echo "$changed_files" | grep -Eq '^skills/(flake\.nix$|catalog/)'; then
+                                                            if ! echo "$changed_files" | grep -q '^skills/flake.lock$'; then
+                                                              echo "  missing: skills/flake.lock (child skills catalog lock)" >&2
+                                                              missing=1
+                                                            fi
                                                           fi
 
-                                                          if [ "$has_parent_lock" -eq 1 ] && [ "$has_child_lock" -eq 1 ]; then
+                                                          if [ "$missing" -eq 0 ]; then
                                                             exit 0
                                                           fi
 
                                                           cat >&2 <<'EOF'
-                                        ERROR: skills/catalog changes detected without synced lock files.
+                                        ERROR: skills catalog changes detected without synced lock files.
 
                                         Run:
                                           hey skills-sync
 
                                         This updates:
-                                          - skills/flake.lock (dotfiles-repo pin)
-                                          - flake.lock (skills-catalog sync)
+                                          - skills/flake.lock (child skills catalog lock)
+                                          - flake.lock (parent skills-catalog sync)
                     and rebuilds so shared skills are refreshed everywhere.
                                         EOF
                                                           exit 1
