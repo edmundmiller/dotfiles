@@ -11,7 +11,17 @@ with lib.my;
 let
   cfg = config.modules.shell.git;
   inherit (config.dotfiles) configDir;
-  hunkPackage = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  hunkPackageBase = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  hunkPackage =
+    if pkgs.stdenv.hostPlatform.isDarwin then
+      hunkPackageBase.overrideAttrs (old: {
+        postInstall = (old.postInstall or "") + ''
+          chmod u+w $out/bin/hunk
+          /usr/bin/codesign -f -s - $out/bin/hunk
+        '';
+      })
+    else
+      hunkPackageBase;
 in
 {
   options.modules.shell.git = {
