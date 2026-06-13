@@ -264,6 +264,13 @@ export def post-rebuild [] {
         exit 0
       fi
 
+      # node-gyp 8 (pulled by some Pi extensions) still imports distutils.
+      # Homebrew python on macOS 27 is 3.14 and no longer ships it, while
+      # Apple /usr/bin/python3 is 3.9 and still works for these native rebuilds.
+      if [ -x /usr/bin/python3 ]; then
+        export PYTHON=/usr/bin/python3
+      fi
+
       echo "=== pi: update extensions ==="
       if ! "$pi_bin" update --extensions; then
         echo "warning: pi package update failed; rebuild already completed" >&2
