@@ -993,6 +993,25 @@ in
     };
   };
 
+  systemd.services.hermes-gateway-orchestrator.serviceConfig.ExecStartPre = lib.mkBefore [
+    (pkgs.writeShellScript "hermes-orchestrator-profile-list-mirror" ''
+      set -eu
+      profiles_dir=/var/lib/hermes-orchestrator/.hermes/profiles
+      rm -rf "$profiles_dir"
+      install -d -o emiller -g users -m 0750 "$profiles_dir"
+
+      for profile in amosburton anne betty orchestrator scintillate; do
+        src=/var/lib/hermes-$profile/.hermes
+        dst=$profiles_dir/$profile
+        if [ -d "$src" ]; then
+          install -d -o emiller -g users -m 0750 "$dst"
+          [ -f "$src/config.yaml" ] && install -o emiller -g users -m 0640 "$src/config.yaml" "$dst/config.yaml"
+          [ -f "$src/profile.yaml" ] && install -o emiller -g users -m 0640 "$src/profile.yaml" "$dst/profile.yaml"
+        fi
+      done
+    '')
+  ];
+
   systemd.services.hermes-gateway-anne.serviceConfig = {
     ExecStartPre = lib.mkBefore [
       (pkgs.writeShellScript "hermes-anne-repo-compat-links" ''
