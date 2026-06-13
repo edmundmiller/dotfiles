@@ -1,0 +1,30 @@
+overlays/gnhf/default.nix
+  s_59ab6c94df63f4::t_91c5e8ff141540 7-15,17-19
+  s_2da5b5672c8c89::t_f49d6f162f1f34 1
+  s_59ab6c94df63f4::t_a14edefb358dd3 16,20
+  s_59ab6c94df63f4::t_5c965985a4980e 4-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "09775bd0867ac7be85a5dbd4454877a75158659f",
+  "prompts": {},
+  "sessions": {
+    "s_2da5b5672c8c89": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ebe8a-eb2b-7dad-ad65-374bba66e1b5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_59ab6c94df63f4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ebe86-7639-7cdd-b66f-bccac2fe67e2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
