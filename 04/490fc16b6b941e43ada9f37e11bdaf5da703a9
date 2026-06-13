@@ -1,0 +1,19 @@
+flake.lock
+  s_f5d4601a9b7957::t_cc70a0e8504b1f 89-90,92-93,171-186,1006-1007,1010,1960,1982-1989
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "04490fc16b6b941e43ada9f37e11bdaf5da703a9",
+  "prompts": {},
+  "sessions": {
+    "s_f5d4601a9b7957": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec1de-9e4d-721d-80f1-efc0719e2dc2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
