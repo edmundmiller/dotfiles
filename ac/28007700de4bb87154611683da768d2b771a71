@@ -1,0 +1,29 @@
+overlays/herdr/patches/0006-update-cargo-hash.patch
+  s_0c47a860a4f9e4::t_097e56b641a1bf 2
+flake.nix
+  s_0c47a860a4f9e4::t_e8a4363e2080f5 79
+overlays/herdr/patches/0002-add-dotfiles-cli-helpers.patch
+  s_0c47a860a4f9e4::t_de9d1180b6c237 3
+  s_0c47a860a4f9e4::t_4002a65e82d7bb 66,68
+  s_0c47a860a4f9e4::t_e9d2fb44501385 415
+overlays/herdr/patches/0004-add-hunk-subcommand.patch
+  s_0c47a860a4f9e4::t_64ebb77149e5b0 1-5,7,11,13
+overlays/herdr/default.nix
+  s_0c47a860a4f9e4::t_ad9c04460919f3 10-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "ac28007700de4bb87154611683da768d2b771a71",
+  "prompts": {},
+  "sessions": {
+    "s_0c47a860a4f9e4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec2f5-d09f-71b3-8e26-1694b040a32a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
