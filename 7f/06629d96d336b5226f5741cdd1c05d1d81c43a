@@ -1,0 +1,19 @@
+config/herdr/aliases.zsh
+  s_2da5b5672c8c89::t_85a8d94ae2b39b 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "7f06629d96d336b5226f5741cdd1c05d1d81c43a",
+  "prompts": {},
+  "sessions": {
+    "s_2da5b5672c8c89": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ebe8a-eb2b-7dad-ad65-374bba66e1b5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
