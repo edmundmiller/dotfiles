@@ -7,15 +7,14 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "4219aec638cdd81efae6460c6fba28418925c37c";
-      hash = "sha256-Y/cZeBqYvSxo/cWyvEJP1opG2diG2LUUFPRy/0yMSKk=";
+      rev = "8b99847619235359f4aa87215feac60ac2784499";
+      hash = "sha256-QqjC/6vy6X7LAYn3YGmBJJTICeu4cj5qSX/DBaSlIfA=";
     };
     patches = [
       ./patches/0001-worktree-post-create-command.patch
       ./patches/0002-add-dotfiles-cli-helpers.patch
       ./patches/0003-add-worktree-layout-subcommand.patch
       ./patches/0004-add-hunk-subcommand.patch
-      ./patches/0005-fix-hermes-detection.patch
       ./patches/0006-update-cargo-hash.patch
     ];
   };
