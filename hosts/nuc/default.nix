@@ -8,7 +8,7 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesAgentBase = pkgs.llm-agents."hermes-agent";
+  hermesAgentBase = inputs.hermes-agent.packages.${hostSystem}.default;
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
@@ -19,6 +19,7 @@ let
   scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
   hermesScintillateApiServerPort = 8642;
   hermesScintillateWebuiPort = 8787;
+  hermesScintillateDesktopDashboardPort = 9121;
   hermesScintillateTailscaleServiceName = "hermes";
   hermesSharedStateDir = "/var/lib/hermes";
   hermesSharedHome = "${hermesSharedStateDir}/.hermes";
@@ -75,7 +76,7 @@ let
     ps.requests
     ps.websockets
   ]);
-  hermesPythonSitePackages = "${hermesAgentBase}/${pkgs.python313.sitePackages}";
+  hermesPythonSitePackages = "${hermesAgentBase.passthru.hermesVenv}/${pkgs.python312.sitePackages}";
   tailnet = "cinnamon-rooster.ts.net";
   scintillateTelegramAlertChatId = toString telegramBindings.dmTopics.scintillate.chatId;
   scintillateTelegramAlertScript = pkgs.writeText "hermes-scintillate-telegram-alert.py" ''
@@ -1077,7 +1078,67 @@ in
     ];
   };
 
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ hermesScintillateWebuiPort ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+    hermesScintillateWebuiPort
+    hermesScintillateDesktopDashboardPort
+  ];
+
+  systemd.services.hermes-scintillate-desktop-dashboard = {
+    description = "Hermes Desktop-compatible dashboard for Scintillate";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "hermes-gateway-scintillate.service"
+      "network-online.target"
+    ];
+    wants = [
+      "hermes-gateway-scintillate.service"
+      "network-online.target"
+    ];
+    path = [
+      hermesAgentBase
+      pkgs.bash
+      pkgs.coreutils
+    ];
+    environment = {
+      HOME = hermesSharedStateDir;
+      HERMES_BASE_HOME = hermesSharedHome;
+      HERMES_HOME = hermesSharedHome;
+      # The shared Hermes home is container-aware for the host CLI. This service
+      # intentionally runs the host dashboard process directly so Hermes Desktop
+      # can use the dashboard JSON-RPC/WebSocket API from macOS.
+      HERMES_DEV = "1";
+    };
+    serviceConfig = {
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = hermesSharedStateDir;
+      Restart = "always";
+      RestartSec = 5;
+      EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+      ExecStart = pkgs.writeShellScript "hermes-scintillate-desktop-dashboard-start" ''
+        set -eu
+        export HERMES_DASHBOARD_SESSION_TOKEN="$API_SERVER_KEY"
+        exec ${hermesAgentBase}/bin/hermes dashboard \
+          --host 0.0.0.0 \
+          --port ${toString hermesScintillateDesktopDashboardPort} \
+          --no-open \
+          --skip-build \
+          --insecure
+      '';
+      NoNewPrivileges = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      PrivateTmp = true;
+      ReadWritePaths = [
+        hermesSharedStateDir
+        "/var/lib/hermes-amosburton"
+        "/var/lib/hermes-anne"
+        "/var/lib/hermes-betty"
+        "/var/lib/hermes-radar"
+        "/var/lib/hermes-scintillate"
+      ];
+    };
+  };
 
   systemd.services.hermes-scintillate-webui = {
     description = "Hermes WebUI for Scintillate";
