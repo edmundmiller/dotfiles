@@ -97,6 +97,11 @@
       flake = false;
     };
 
+    bholmesdev-skills = {
+      url = "github:bholmesdev/skills";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -330,6 +335,13 @@
               filter.maxDepth = 1;
             };
 
+            bholmesdev = {
+              path = inputs.bholmesdev-skills.outPath;
+              subdir = "skills";
+              idPrefix = "bholmesdev";
+              filter.maxDepth = 1;
+            };
+
           }
           // lib.optionalAttrs stackEnabled {
             stack = {
@@ -400,6 +412,9 @@
 
               prek.from = "prek";
               prek.path = "prek";
+
+              done.from = "bholmesdev";
+              done.path = "done";
 
               grill-me = {
                 from = "mattpocock-productivity";

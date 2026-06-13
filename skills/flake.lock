@@ -51,6 +51,22 @@
         "type": "github"
       }
     },
+    "bholmesdev-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780698390,
+        "narHash": "sha256-LP5zN2WeZb0hO03uHo1yApA3rC9p2uEmXDI1A+GG7l4=",
+        "owner": "bholmesdev",
+        "repo": "skills",
+        "rev": "6f2e59d4fb45dc0393c9df1fded8e549fffc2490",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bholmesdev",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "diffity-repo": {
       "flake": false,
       "locked": {
@@ -333,6 +349,7 @@
         "acpx-repo": "acpx-repo",
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "bholmesdev-skills": "bholmesdev-skills",
         "diffity-repo": "diffity-repo",
         "gitbutler-repo": "gitbutler-repo",
         "herdr-repo": "herdr-repo",
