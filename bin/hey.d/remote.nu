@@ -61,12 +61,16 @@ def "main nuc" [mode: string = "deploy-rs"] {
   let local_hostname = (^hostname -s | str trim)
   let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
   let deploy_mode = (nuc-deploy-mode $local_hostname)
-  let post_check_local = ($deploy_mode == "deploy-rs-local")
 
   print $"=== NUC deploy mode: ($deploy_mode) from ($local_hostname) (($local_system)) ==="
+  if $deploy_mode == "deploy-rs-local" {
+    nuc-local-rebuild
+    return
+  }
+
   print "=== deploy-rs remoteBuild=true builds the x86_64-linux system on the target ==="
   ^nix run .#deploy-rs -- .#nuc --skip-checks
-  nuc-post-deploy-check $post_check_local
+  nuc-post-deploy-check false
 }
 
 def validate-nuc-worktree-mode [mode: string] {
