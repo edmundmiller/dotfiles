@@ -1,14 +1,16 @@
---- a/src/cli.rs	2026-05-25 22:30:20.267940044 -0500
-+++ b/src/cli.rs	2026-05-25 22:29:13.089946197 -0500
-@@ -9,6 +9,7 @@
+diff --git i/src/cli.rs w/src/cli.rs
+index 276462b..aaed2d7 100644
+--- i/src/cli.rs
++++ w/src/cli.rs
+@@ -9,6 +9,7 @@ use crate::api::schema::{
  };
-
+ 
  mod agent;
 +mod dotfiles;
  mod integration;
+ mod notification;
  mod pane;
- mod server;
-@@ -44,6 +45,7 @@
+@@ -47,6 +48,7 @@ pub fn maybe_run(args: &[String]) -> std::io::Result<CommandOutcome> {
          "pane" => pane::run_pane_command(&args[2..])?,
          "wait" => run_wait_command(&args[2..])?,
          "integration" => integration::run_integration_command(&args[2..])?,

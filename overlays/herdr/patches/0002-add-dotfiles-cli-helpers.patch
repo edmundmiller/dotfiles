@@ -1,6 +1,6 @@
 --- a/src/cli/dotfiles.rs	1969-12-31 18:00:00.000000000 -0600
 +++ b/src/cli/dotfiles.rs	2026-05-25 22:29:36.281017798 -0500
-@@ -0,0 +1,410 @@
+@@ -0,0 +1,412 @@
 +use std::path::{Path, PathBuf};
 +
 +use crate::api::schema::{
@@ -63,8 +63,9 @@
 +            id: "cli:hunk:pane:split".into(),
 +            method: Method::PaneSplit(PaneSplitParams {
 +                workspace_id: Some(context.workspace_id),
-+                target_pane_id: context.pane_id,
++                target_pane_id: Some(context.pane_id),
 +                direction: SplitDirection::Right,
++                ratio: None,
 +                cwd: Some(context.cwd.display().to_string()),
 +                focus: true,
 +            }),
@@ -411,3 +412,4 @@
 +fn print_worktree_layout_help() {
 +    eprintln!("usage: herdr worktree layout [--no-pi] [--no-hunk] [--no-nvim] [branch]");
 +}
++
