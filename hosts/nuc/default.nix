@@ -1415,6 +1415,15 @@ in
             workspaceLinks."repos/tnote" = tnoteBaseRepo;
           };
           anne = { };
+          orchestrator = {
+            providers = {
+              obsidianVault.hostPath = "/home/emiller/obsidian-vault";
+              tnote = {
+                package = pkgs.my.tnote;
+                repoPath = tnoteBaseRepo;
+              };
+            };
+          };
           # Radar intentionally disabled on NUC until its HA endpoint/runtime is fixed.
           amosburton = {
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
