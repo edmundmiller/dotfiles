@@ -43,7 +43,7 @@
     };
 
     hunk-repo = {
-      url = "github:modem-dev/hunk/v0.13.1";
+      url = "github:modem-dev/hunk/v0.15.3";
       flake = false;
     };
 
