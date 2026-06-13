@@ -86,11 +86,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781020296,
-        "narHash": "sha256-eyOE3zMNMYPEOp4E4SWfPgI7EZLv5EBrgdVVENx8FPQ=",
+        "lastModified": 1781312606,
+        "narHash": "sha256-Rspx76gEygI8Q56Z8SjOxV29uR0+VGBZouIgki06Zh4=",
         "ref": "main",
-        "rev": "4f557d5da581889f0b85d49b3b5dfb504949b2df",
-        "revCount": 500,
+        "rev": "97a1afd05b3933e6edc9be5e5b386e473fd6eb22",
+        "revCount": 510,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/agents-workspace"
       },
@@ -987,11 +987,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1781041519,
-        "narHash": "sha256-s+Vt6MlzjECxpZk4i0XuRrVSNgTqDnvpLqtNfksZOVI=",
+        "lastModified": 1781308540,
+        "narHash": "sha256-0Zd+wEIoVNEsL6DdgamY3EvuT9I7U1C5w75coSfZd+E=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "57c67149956b8476e9516b2e1764fb4fb0222434",
+        "rev": "9688c1a94f7df94043c1fe457e7cdc4b307d9969",
         "type": "github"
       },
       "original": {
