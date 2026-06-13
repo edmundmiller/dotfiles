@@ -1174,16 +1174,16 @@
     "hunk-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1779221294,
-        "narHash": "sha256-n8JdbCwBiD7Y+VuFMJUoooFiIMctdX5xNq5MnAHd+xg=",
+        "lastModified": 1781375001,
+        "narHash": "sha256-B5EU97XPMxxjfkadXXc2zc+PiWHqywnVdWHgFZ92XZ8=",
         "owner": "modem-dev",
         "repo": "hunk",
-        "rev": "77d4c8ababf41432f646d17bd564cb4e0863b74c",
+        "rev": "3a2ba1c4c0580f0056bf67b031fb25f2186f35a3",
         "type": "github"
       },
       "original": {
         "owner": "modem-dev",
-        "ref": "v0.13.1",
+        "ref": "v0.15.3",
         "repo": "hunk",
         "type": "github"
       }
@@ -2135,14 +2135,8 @@
         "stack-repo": "stack-repo"
       },
       "locked": {
-        "dir": "skills",
-        "lastModified": 1781371634,
-        "narHash": "sha256-NDT/Jld0A+Qzp/MAMgyZaeq/eQKKm1vtjMbm0gq21nM=",
-        "ref": "refs/heads/main",
-        "rev": "3fc342fd3c5ffffaf1ba522304209a3046704c58",
-        "revCount": 5357,
-        "type": "git",
-        "url": "file:///Users/emiller/.config/dotfiles?dir=skills"
+        "path": "./skills",
+        "type": "path"
       },
       "original": {
         "path": "./skills",
