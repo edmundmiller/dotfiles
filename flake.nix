@@ -199,7 +199,6 @@
         lib = lib.my;
 
         overlays = mapModules ./overlays import // {
-          hunk = import ./overlays/hunk { inherit inputs; };
           default = final: _prev: {
             unstable =
               if final.stdenv.isDarwin then
@@ -234,9 +233,7 @@
               rtk
               workmux
               ;
-            # Herdr and Hunk are customized as llm-agents overlays, then
-            # re-exported as flake packages so modules consume pkgs.my.*.
-            inherit (pkgs.llm-agents) herdr hunk;
+            inherit (pkgs.llm-agents) herdr;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -259,9 +256,7 @@
               rtk
               workmux
               ;
-            # Herdr and Hunk are customized as llm-agents overlays, then
-            # re-exported as flake packages so modules consume pkgs.my.*.
-            inherit (darwinPkgs.llm-agents) herdr hunk;
+            inherit (darwinPkgs.llm-agents) herdr;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 
