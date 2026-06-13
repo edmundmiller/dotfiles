@@ -86,11 +86,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781312606,
-        "narHash": "sha256-Rspx76gEygI8Q56Z8SjOxV29uR0+VGBZouIgki06Zh4=",
+        "lastModified": 1781369835,
+        "narHash": "sha256-i7UWwILbsiwX0tzDSJ+Nys4/9VmvZ1kZN//SUciFh8Q=",
         "ref": "main",
-        "rev": "97a1afd05b3933e6edc9be5e5b386e473fd6eb22",
-        "revCount": 510,
+        "rev": "154c06f963fb4176924de618ae363fc0d2c1cdc3",
+        "revCount": 512,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/agents-workspace"
       },
@@ -165,6 +165,22 @@
         "owner": "tinted-theming",
         "repo": "base16-vim",
         "rev": "577fe8125d74ff456cf942c733a85d769afe58b7",
+        "type": "github"
+      }
+    },
+    "bholmesdev-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780698390,
+        "narHash": "sha256-LP5zN2WeZb0hO03uHo1yApA3rC9p2uEmXDI1A+GG7l4=",
+        "owner": "bholmesdev",
+        "repo": "skills",
+        "rev": "6f2e59d4fb45dc0393c9df1fded8e549fffc2490",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bholmesdev",
+        "repo": "skills",
         "type": "github"
       }
     },
@@ -987,11 +1003,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1781308540,
-        "narHash": "sha256-0Zd+wEIoVNEsL6DdgamY3EvuT9I7U1C5w75coSfZd+E=",
+        "lastModified": 1781361238,
+        "narHash": "sha256-BcosUFspfB2aCZ6FyeURiwjR28uaPeOv6oaz+aEkBS8=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "9688c1a94f7df94043c1fe457e7cdc4b307d9969",
+        "rev": "cc14b74718aaab8f3dc69c004b4dccf67077a1e1",
         "type": "github"
       },
       "original": {
@@ -1941,6 +1957,7 @@
         "acpx-repo": "acpx-repo",
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "bholmesdev-skills": "bholmesdev-skills",
         "diffity-repo": "diffity-repo",
         "gitbutler-repo": "gitbutler-repo",
         "herdr-repo": "herdr-repo",
@@ -1962,8 +1979,14 @@
         "stack-repo": "stack-repo"
       },
       "locked": {
-        "path": "./skills",
-        "type": "path"
+        "dir": "skills",
+        "lastModified": 1781370373,
+        "narHash": "sha256-YVMDjT7OEOx65JL841k/8BIvwhWOmDgR7buI/2U7x00=",
+        "ref": "refs/heads/main",
+        "rev": "3a3669a352c03bd9db501aa015709c55814e35f6",
+        "revCount": 5354,
+        "type": "git",
+        "url": "file:///Users/emiller/.config/dotfiles?dir=skills"
       },
       "original": {
         "path": "./skills",
