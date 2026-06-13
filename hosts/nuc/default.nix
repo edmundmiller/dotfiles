@@ -975,6 +975,8 @@ in
         environmentFiles = [ "/run/hermes-amosburton-env/secrets.env" ];
       };
       orchestrator = {
+        stateDir = "/var/lib/hermes-orchestrator";
+        workingDirectory = "/var/lib/hermes-orchestrator/workspace";
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
