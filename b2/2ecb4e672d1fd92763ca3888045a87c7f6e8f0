@@ -1,0 +1,23 @@
+modules/shell/git/default.nix
+  s_aa99a485afde59::t_86989952f0d531 5,14,50
+flake.nix
+  s_aa99a485afde59::t_30152358233619 236,259
+modules/shell/git/AGENTS.md
+  s_aa99a485afde59::t_197bbca42b4dc1 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b22ecb4e672d1fd92763ca3888045a87c7f6e8f0",
+  "prompts": {},
+  "sessions": {
+    "s_aa99a485afde59": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec0eb-cbe8-7df1-a313-26aa69c77ef5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
