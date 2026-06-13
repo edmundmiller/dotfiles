@@ -37,7 +37,7 @@ fi
 
 if command -v pi >/dev/null 2>&1; then
   current_version="$(pi --version 2>/dev/null || true)"
-  pinned_version="$(nix eval --raw "$repo_root#nixosConfigurations.$(hostname).pkgs.llm-agents.pi.version" 2>/dev/null || true)"
+  pinned_version="$(nix eval --no-write-lock-file --raw "$repo_root#nixosConfigurations.$(hostname).pkgs.llm-agents.pi.version" 2>/dev/null || true)"
   if [ -n "$current_version" ] && [ -n "$pinned_version" ] && [ "$current_version" != "$pinned_version" ]; then
     warn "Pi binary version $current_version differs from repo-pinned $pinned_version; run hey re."
   fi
