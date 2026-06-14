@@ -14,9 +14,6 @@ if [[ $TERM == dumb || -n $INSIDE_EMACS ]]; then
   PS1='$ '
 fi
 
-# Quick hack: Add cargo to PATH
-path+=("$HOME/.cargo/bin")
-
 ## Plugins
 # zsh-vi-mode
 export ZVM_INIT_MODE=sourcing

@@ -57,7 +57,7 @@ path=(
   $HOME/.nix-profile/bin
   $XDG_CONFIG_HOME/dotfiles/bin
   $HOME/.pi/agent/bin
-  $HOME/.bun/bin
+  ${BUN_INSTALL:-$HOME/.bun}/bin
   $HOME/.local/bin
   $HOME/.pixi/bin
   $HOME/.cargo/bin
