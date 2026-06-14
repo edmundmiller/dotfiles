@@ -1,0 +1,20 @@
+skills/flake.nix
+  s_908f683e69859f::t_00c4307d244282 346-347,385
+  s_908f683e69859f::t_1b3d7baa032213 292-295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8762e07349413ef4a82429a52f555d0d1b0e078e",
+  "prompts": {},
+  "sessions": {
+    "s_908f683e69859f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec35b-07c9-7a7a-8450-ad6cb1e65e4a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
