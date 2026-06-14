@@ -13,6 +13,47 @@ def run(args: list[str]) -> None:
     subprocess.run(args, text=True, check=True)
 
 
+def wait_for_pi_ready(pane_id: str, *, ready_timeout_ms: int, idle_timeout_ms: int) -> None:
+    """Best-effort wait until Pi is ready for a handoff prompt."""
+
+    subprocess.run(
+        [
+            "herdr",
+            "wait",
+            "output",
+            pane_id,
+            "--match",
+            "Pi can explain its own features",
+            "--source",
+            "recent",
+            "--lines",
+            "120",
+            "--timeout",
+            str(ready_timeout_ms),
+        ],
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    subprocess.run(
+        [
+            "herdr",
+            "wait",
+            "agent-status",
+            pane_id,
+            "--status",
+            "idle",
+            "--timeout",
+            str(idle_timeout_ms),
+        ],
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Submit a handoff prompt to an existing Herdr pane.")
     parser.add_argument("--pane", required=True, help="Herdr pane id, e.g. wabc-1 or 1-2")
@@ -21,6 +62,12 @@ def main() -> int:
         "--start-pi",
         action="store_true",
         help="Run `pi` in the pane before sending the prompt",
+    )
+    parser.add_argument(
+        "--ready-timeout-ms",
+        type=int,
+        default=30_000,
+        help="How long to wait for Pi startup output if --start-pi is used",
     )
     parser.add_argument(
         "--idle-timeout-ms",
@@ -41,21 +88,10 @@ def main() -> int:
 
     if args.start_pi:
         run(["herdr", "pane", "run", args.pane, "pi"])
-        subprocess.run(
-            [
-                "herdr",
-                "wait",
-                "agent-status",
-                args.pane,
-                "--status",
-                "idle",
-                "--timeout",
-                str(args.idle_timeout_ms),
-            ],
-            text=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
+        wait_for_pi_ready(
+            args.pane,
+            ready_timeout_ms=args.ready_timeout_ms,
+            idle_timeout_ms=args.idle_timeout_ms,
         )
 
     run(["herdr", "pane", "send-text", args.pane, prompt])
