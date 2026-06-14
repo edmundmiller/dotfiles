@@ -1591,7 +1591,8 @@ in
       radarr.enable = true;
       sonarr.enable = true;
       deploy-rs.enable = true;
-      mosh = {
+      mosh.enable = true;
+      moshi = {
         enable = true;
         hookSecretsFile = config.age.secrets.moshi-hook-secrets-json.path;
       };
