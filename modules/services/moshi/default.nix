@@ -147,6 +147,8 @@ in
             ExecStartPre = [
               "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/moshi"
               "${pkgs.coreutils}/bin/install -m 600 ${cfg.hookSecretsFile} %h/.local/state/moshi/secrets.json"
+            ]
+            ++ optionals (cfg.hooks.enable && hookTargets != [ ]) [
               "-${moshiHook}/bin/moshi-hook install ${hookTargetsArgs}"
             ];
             ExecStart = "${moshiHook}/bin/moshi-hook serve";
