@@ -1,0 +1,22 @@
+bin/hey.d/remote.nu
+  s_9c1cabca035201::t_6a549e2d5084f8 48,68
+  s_9c1cabca035201::t_a1f4691d06d7ff 66
+bin/hey
+  s_9c1cabca035201::t_be81113797521c 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b376bb3e5845596948684efa34315864158ab79f",
+  "prompts": {},
+  "sessions": {
+    "s_9c1cabca035201": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec3bb-4571-7d0b-ac52-71eea81d4104",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
