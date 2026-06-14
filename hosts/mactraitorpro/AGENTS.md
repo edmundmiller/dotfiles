@@ -10,13 +10,7 @@ Primary personal development machine running nix-darwin.
 
 ## Enabled Modules
 
-| Category | Modules                                                                                                                     |
-| -------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Editors  | emacs, vim (default: nvim)                                                                                                  |
-| Dev      | node (fnm + bun globals: hunkdiff, critique; packaged Nix zele), R, python (DISABLED — openclaw conflict, see dotfiles-c11) |
-| Shell    | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, zsh                                                      |
-| Services | docker, ssh (openclaw disabled)                                                                                             |
-| Desktop  | macos defaults, raycast, openclaw, ghostty                                                                                  |
+Read `default.nix` for the current module set, and check `../AGENTS.md` for cross-host rules before changing host modules.
 
 ## Host-Specific Config
 
