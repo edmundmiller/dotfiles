@@ -48,7 +48,6 @@ promptLinks
   ".pi/agent/extensions/generate-commit-message.ts".source =
     "${configDir}/pi/extensions/generate-commit-message.ts";
   ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
-  ".pi/agent/extensions/moshi.ts".source = "${configDir}/pi/extensions/moshi.ts";
   ".pi/agent/extensions/sub-limits.ts".source = "${configDir}/pi/extensions/sub-limits.ts";
   ".pi/agent/extensions/pi-tool-display/config.json".text = builtins.toJSON {
     registerReadToolOverride = false;
