@@ -300,7 +300,7 @@ security:
 
 # Cron settings
 cron:
-  wrap_response: false
+  wrap_response: true
 
 # Config version
 _config_version: 18
