@@ -48,16 +48,18 @@
           lazydiff.enable = true;
         };
         jj.enable = true;
-        tmux.enable = true;
-        tmux.workmux.enable = true;
+        # Disable tmux on this host so Pi does not inject tmux-oriented
+        # shell tools/extensions; Herdr remains the preferred pane/workspace layer.
+        tmux.enable = false;
+        tmux.workmux.enable = false;
         acpx.enable = true;
         herdr.enable = true;
-        tmux.jmux.enable = true;
+        tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
-        tmux.opensessions.enable = true;
-        tmux.experimental.sessionDots.enable = true;
-        tmux.experimental.agentStatus.enable = true;
+        tmux.opensessions.enable = false;
+        tmux.experimental.sessionDots.enable = false;
+        tmux.experimental.agentStatus.enable = false;
         dmux.enable = false;
         zsh.enable = true;
       };
