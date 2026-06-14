@@ -108,7 +108,6 @@
     homeManagerModules.default =
       {
         lib,
-        pkgs,
         osConfig ? null,
         ...
       }:
@@ -169,14 +168,6 @@
             "stack"
             "enable"
           ];
-        stackSkillSource = pkgs.runCommand "stack-skill-source" { } ''
-          mkdir -p $out/stack
-          cp ${inputs.stack-repo.outPath}/skills/stack/SKILL.md $out/stack/SKILL.md
-        '';
-        herdrSkillSource = pkgs.runCommand "herdr-skill-source" { } ''
-          mkdir -p $out/herdr
-          cp ${inputs.herdr-repo.outPath}/SKILL.md $out/herdr/SKILL.md
-        '';
         tmuxEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -298,10 +289,10 @@
             };
 
             herdr = {
-              # Herdr exposes a single root-level SKILL.md. Wrap it as a normal
-              # child skill directory so agent-skills-nix does not recurse into
-              # the rest of the repository checkout.
-              path = herdrSkillSource;
+              # Herdr exposes a single root-level SKILL.md upstream. Keep a
+              # checkout-owned wrapper directory so cross-system evaluation does
+              # not need a host-platform wrapper derivation.
+              path = ./conditional/herdr;
               subdir = ".";
               filter.maxDepth = 1;
             };
@@ -352,8 +343,8 @@
           }
           // lib.optionalAttrs stackEnabled {
             stack = {
-              path = stackSkillSource;
-              subdir = ".";
+              path = inputs.stack-repo.outPath;
+              subdir = "skills/stack";
               filter.maxDepth = 1;
             };
           };
@@ -391,7 +382,7 @@
             }
             // lib.optionalAttrs stackEnabled {
               stack.from = "stack";
-              stack.path = "stack";
+              stack.path = ".";
             }
             // lib.optionalAttrs herdrEnabled {
               # Herdr ships a root-level SKILL.md for agents controlling a live herdr
