@@ -1,7 +1,4 @@
 #!/usr/bin/env zsh
-# Obsidian CLI
-export PATH="$PATH:/Applications/Obsidian.app/Contents/MacOS"
-
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -143,47 +140,4 @@ if [[ $TERM != dumb ]]; then
     fi
   } &!
 fi
-
-path+=("$HOME/.pixi/bin" "$HOME/.local/bin")
-
-# bun - lazy load completions
-export BUN_INSTALL="$HOME/.bun"
-path+=("$BUN_INSTALL/bin")
-if [[ -s "$BUN_INSTALL/_bun" ]]; then
-  function bun {
-    unfunction bun bunx
-    source "$BUN_INSTALL/_bun"
-    command bun "$@"
-  }
-  function bunx { bun; command bunx "$@"; }
-fi
-
-# todo.sh intentionally owns the short t/ta commands; tmux project entry is tmproj/tp.
-alias t="todo.sh"
-alias ta="t add"
-alias td="t do"
-alias ttoday="t today"
-
-# SDKMAN - lazy load (~100ms savings)
-export SDKMAN_DIR="$HOME/.sdkman"
-if [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
-  function sdk {
-    unfunction sdk java gradle kotlin groovy maven
-    source "$SDKMAN_DIR/bin/sdkman-init.sh"
-    sdk "$@"
-  }
-  for cmd in java gradle kotlin groovy maven; do
-    eval "function $cmd { sdk; command $cmd \"\$@\"; }"
-  done
-fi
-
-# Entire CLI shell completion (use _cache to avoid slow subshell on every start)
-if (( $+commands[entire] )); then
-  _cache entire completion zsh
-fi
-alias oz="oz-preview"
-
-# bun completions
-[ -s "/Users/edmundmiller/.bun/_bun" ] && source "/Users/edmundmiller/.bun/_bun"
-
 

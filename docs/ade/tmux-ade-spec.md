@@ -205,8 +205,8 @@ This now provides a minimal, clearer command layer around tmux entry:
   `tvault` or `tmproj`
 - `tl` and the other raw tmux helpers remain available
 
-`config/zsh/.zshrc` intentionally keeps `t` and `ta` for `todo.sh`, so tmux no
-longer competes for those short names.
+`config/todo/aliases.zsh` intentionally keeps `t` and `ta` for `todo.sh`, via
+the zsh `rcFiles` seam, so tmux no longer competes for those short names.
 
 ### Dynamic layout management
 
