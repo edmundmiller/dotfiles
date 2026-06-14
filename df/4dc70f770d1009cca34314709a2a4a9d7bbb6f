@@ -1,0 +1,19 @@
+config/zsh/AGENTS.md
+  s_1167ad8be53268::t_8e3df8dbdac55a 1-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "df4dc70f770d1009cca34314709a2a4a9d7bbb6f",
+  "prompts": {},
+  "sessions": {
+    "s_1167ad8be53268": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec35c-68a8-7b63-9c13-43e09d908ba5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
