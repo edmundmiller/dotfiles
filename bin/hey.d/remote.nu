@@ -45,23 +45,31 @@ def nuc-local-rebuild [] {
   nuc-post-deploy-check true
 }
 
-def "main nuc" [mode: string = "deploy-rs"] {
+def "main nuc" [mode: string = "deploy-rs", worktree_mode: string = "switch"] {
   let ctx = (context)
   cd $ctx.flake_dir
 
+  let local_hostname = (^hostname -s | str trim)
+  let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
+
   if $mode == "local" {
+    print $"=== NUC deploy mode: local from ($local_hostname) (($local_system)) ==="
     nuc-local-rebuild
     return
   }
+
+  if ($mode == "wt") or ($mode == "worktree") {
+    print $"=== NUC deploy mode: worktree ($worktree_mode) from ($local_hostname) (($local_system)) ==="
+    main nuc-worktree $worktree_mode
+    return
+  }
+
   if $mode != "deploy-rs" {
-    print -e "error: hey nuc mode must be 'deploy-rs' or 'local'"
+    print -e "error: hey nuc mode must be one of: deploy-rs, local, wt, worktree"
     error make {msg: "invalid hey nuc mode"}
   }
 
-  let local_hostname = (^hostname -s | str trim)
-  let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
   let deploy_mode = (nuc-deploy-mode $local_hostname)
-
   print $"=== NUC deploy mode: ($deploy_mode) from ($local_hostname) (($local_system)) ==="
   if $deploy_mode == "deploy-rs-local" {
     nuc-local-rebuild
@@ -88,7 +96,7 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
 
   print $"=== Syncing current worktree to NUC: ($ctx.flake_dir) -> ($NUC_HOST):($remote_dir) ==="
   ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
-  ^rsync -az --delete --delete-excluded --exclude .git/ --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $"($ctx.flake_dir)/" $"($NUC_HOST):($remote_dir)/"
+  ^rsync -az --delete --delete-excluded --exclude .git/ --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $"($ctx.flake_dir)/" $"($NUC_HOST):($remote_dir)/"
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="
@@ -101,6 +109,9 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
     ^ssh -t $NUC_HOST $"cd '($remote_dir)' && nixos-rebuild build --flake .#nuc --show-trace"
   } else {
     ^ssh -t $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nixos-rebuild ($mode) --flake .#nuc --show-trace"
+    if ($mode == "switch") or ($mode == "test") {
+      nuc-post-deploy-check false
+    }
   }
 }
 
