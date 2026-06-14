@@ -11,23 +11,23 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.mosh;
-  moshiHookVersion = "0.2.22";
+  moshiHookVersion = "0.2.26";
   moshiHookAssets = {
     aarch64-darwin = {
       asset = "moshi-hook_Darwin_arm64.tar.gz";
-      hash = "sha256-Yk8b0Xy6D4MFV9MR9eyqXHJaOABeFyoM1HBgrBwP0gM=";
+      hash = "sha256-Ur0DIdGTYy8ArrPm0saBqDwZ7O1WtQrDNzsE7NyWSqI=";
     };
     aarch64-linux = {
       asset = "moshi-hook_Linux_arm64.tar.gz";
-      hash = "sha256-gNSDuPzYY1s0iGIsabbG0ok8HXTunwAKO5LwFrTxmRM=";
+      hash = "sha256-RmsSF8URIrQEdG7FwdXoW0VyqQ7Sk88AKTRbNSZU2Ww=";
     };
     x86_64-darwin = {
       asset = "moshi-hook_Darwin_x86_64.tar.gz";
-      hash = "sha256-rae86UXMvk7EiRtXG70HYNrdUaVeHT1Cj4WyTwyMwJA=";
+      hash = "sha256-OWbRFPsJwf6h2tAd3Ivs1SQCneSrS7a0uH83GZ1FCSA=";
     };
     x86_64-linux = {
       asset = "moshi-hook_Linux_x86_64.tar.gz";
-      hash = "sha256-x7ung32Aqib9V9dY4vbtWXsmxTILKMIv9QZiEQccxak=";
+      hash = "sha256-kl3aazpQ1o05k/MoJFugv7CcGJG4vUTArpMQcbzbvgM=";
     };
   };
   moshiHookAsset = moshiHookAssets.${pkgs.stdenv.hostPlatform.system};
@@ -58,38 +58,41 @@ in
     '';
   };
 
-  config = mkIf cfg.enable (mkMerge [
-    {
+  config = mkMerge [
+    # The Moshi hook helper is needed for native Pi hook installation on Darwin
+    # hosts even when they do not otherwise enable mosh transport/server support.
+    (mkIf (cfg.enable || (isDarwin && config.modules.agents.pi.enable)) {
+      environment.systemPackages = [ moshiHook ];
+      user.packages = [ moshiHook ];
+
+      # Moshi's shell module owns agent hook installation. It auto-links hooks
+      # for agent modules enabled on this host, while this service module only
+      # ensures the moshi-hook binary is present when Moshi/Pi needs it.
+      modules.shell.moshi.enable = mkDefault true;
+    })
+
+    (mkIf cfg.enable {
       # Keep mosh-server on the system profile so Moshi's non-interactive SSH
       # bootstrap can find it without relying on login shell PATH setup.
-      environment.systemPackages = [
-        pkgs.mosh
-        moshiHook
-      ];
+      environment.systemPackages = [ pkgs.mosh ];
 
-      # mosh client and Moshi helpers available in the user profile too.
-      user.packages = [
-        pkgs.mosh
-        moshiHook
-      ];
-
-      # Moshi's host-side helpers are useful on every machine where mosh is
-      # enabled: mosh keeps the connection alive, Moshi attaches users to the
-      # durable tmux workspace when tmux is enabled on that host.
-      modules.shell.moshi.enable = mkDefault true;
-    }
+      # mosh client available in the user profile too.
+      user.packages = [ pkgs.mosh ];
+    })
 
     # NixOS: mosh server + firewall (UDP 60000-61000)
-    (optionalAttrs (!isDarwin) {
-      programs.mosh = {
-        enable = true;
-        openFirewall = true;
-      };
-    })
+    (optionalAttrs (!isDarwin) (
+      mkIf cfg.enable {
+        programs.mosh = {
+          enable = true;
+          openFirewall = true;
+        };
+      }
+    ))
 
     # Hosts with Moshi pairing secrets: user daemon + agent hook installation.
     (optionalAttrs (!isDarwin) (
-      mkIf (cfg.hookSecretsFile != null) {
+      mkIf (cfg.enable && cfg.hookSecretsFile != null) {
         home-manager.users.${config.user.name}.systemd.user.services.moshi-hook = {
           Unit = {
             Description = "Moshi hook daemon";
@@ -112,5 +115,5 @@ in
         };
       }
     ))
-  ]);
+  ];
 }
