@@ -773,6 +773,9 @@ in
         chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
         ln -sfn /home/emiller/obsidian-vault "$RADAR_HOME/obsidian-vault"
         chown -h emiller:users "$RADAR_HOME/obsidian-vault"
+        install -d -o root -g root -m 0755 /repos
+        ln -sfn /home/emiller/obsidian-vault /repos/obsidian-vault
+        chown -h emiller:users /repos/obsidian-vault
 
         mkdir -p "$ENV_DIR"
         : > "$ENV_FILE"
