@@ -173,6 +173,10 @@
           mkdir -p $out/stack
           cp ${inputs.stack-repo.outPath}/skills/stack/SKILL.md $out/stack/SKILL.md
         '';
+        herdrSkillSource = pkgs.runCommand "herdr-skill-source" { } ''
+          mkdir -p $out/herdr
+          cp ${inputs.herdr-repo.outPath}/SKILL.md $out/herdr/SKILL.md
+        '';
         tmuxEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -294,7 +298,10 @@
             };
 
             herdr = {
-              path = inputs.herdr-repo.outPath;
+              # Herdr exposes a single root-level SKILL.md. Wrap it as a normal
+              # child skill directory so agent-skills-nix does not recurse into
+              # the rest of the repository checkout.
+              path = herdrSkillSource;
               subdir = ".";
               filter.maxDepth = 1;
             };
@@ -391,7 +398,7 @@
               # session via its local socket. Only enable it on hosts where the herdr
               # module is actually turned on.
               herdr.from = "herdr";
-              herdr.path = ".";
+              herdr.path = "herdr";
 
               herdr-pi-workspace.from = "herdr-pi-workspace";
               herdr-pi-workspace.path = "herdr-pi-workspace";
