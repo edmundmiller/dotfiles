@@ -788,6 +788,15 @@ in
           fi
         '') hermesRadarSecrets}
 
+        if [ -f /etc/opnix-token ]; then
+          OP_SERVICE_ACCOUNT_TOKEN="$(cat /etc/opnix-token)"
+          export OP_SERVICE_ACCOUNT_TOKEN
+          if radar_openrouter_key="$(${pkgs._1password-cli}/bin/op read 'op://Agents/Radar Flue Openrouter/credential' 2>/dev/null)" && [ -n "$radar_openrouter_key" ]; then
+            printf 'OPENROUTER_API_KEY=%s\n' "$radar_openrouter_key" >> "$ENV_FILE"
+          fi
+          unset radar_openrouter_key OP_SERVICE_ACCOUNT_TOKEN
+        fi
+
         printf 'TELEGRAM_ALLOWED_USERS=%s\n' '8357890648' >> "$ENV_FILE"
       '';
     };
