@@ -1,0 +1,19 @@
+config/hermes/config.yml
+  s_f4dcc46db7ad65::t_2968231da9bb44 303
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "1a98cecf37f04b81565914931be649b325cb30e6",
+  "prompts": {},
+  "sessions": {
+    "s_f4dcc46db7ad65": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec40d-4978-750e-8f3c-13528012ba4c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
