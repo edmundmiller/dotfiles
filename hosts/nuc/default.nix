@@ -1248,7 +1248,7 @@ in
         "EMAIL_IMAP_HOST=imap.agentmail.to"
         "EMAIL_IMAP_PORT=993"
         "EMAIL_SMTP_HOST=smtp.agentmail.to"
-        "EMAIL_SMTP_PORT=465"
+        "EMAIL_SMTP_PORT=587"
         "EMAIL_HOME_ADDRESS=emiller@edmundmiller.dev"
       ];
       ExecStart = "${radarHermesLauncher}/bin/radar-hermes cron tick";
