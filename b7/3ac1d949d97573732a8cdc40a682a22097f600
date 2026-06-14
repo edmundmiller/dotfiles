@@ -1,0 +1,42 @@
+modules/shell/moshi.nix
+  s_9c1cabca035201::t_0c7b3f5438c4af 12-31,37-40,42-45,50,52-79
+  s_9c1cabca035201::t_456d5f76257302 41
+  s_a0cb1fd166a8c5::t_c0a570ab2e2bad 4,51
+modules/services/mosh.nix
+  s_9c1cabca035201::t_9aa3cde832989e 67-71
+  s_9c1cabca035201::t_e3fcb5ebb5c266 77
+  s_efbf12b14677a6::t_e0212ae8ae0fd9 14,18,22,26,30,61,65-66,72-74,79-81,84-91,95,118
+  s_a0cb1fd166a8c5::t_fcb4c12dc175b6 62-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b73ac1d949d97573732a8cdc40a682a22097f600",
+  "prompts": {},
+  "sessions": {
+    "s_9c1cabca035201": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec3bb-4571-7d0b-ac52-71eea81d4104",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_a0cb1fd166a8c5": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec38c-ccd5-7d12-a25b-5bc7fd191607",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_efbf12b14677a6": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec375-86e1-7fe9-9430-2d67ffe3787e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
