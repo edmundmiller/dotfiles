@@ -1,0 +1,30 @@
+skills/catalog/herdr-pi-workspace/scripts/start_pi_workspace.py
+  s_908f683e69859f::t_cdebb36a880ac7 2
+  s_a713f1ceef3842::t_c51978e2acafa6 29-76,89-94,135-138
+skills/catalog/herdr-pi-workspace/scripts/send_prompt_to_pane.py
+  s_a713f1ceef3842::t_d6d043cb5be9c3 16-56,66-71,91-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "e9e779a5ca8159b9f60a5000ef1dd6765285f95d",
+  "prompts": {},
+  "sessions": {
+    "s_908f683e69859f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec35b-07c9-7a7a-8450-ad6cb1e65e4a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    },
+    "s_a713f1ceef3842": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec373-4343-7039-8f8d-e323ff9d93ca",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
