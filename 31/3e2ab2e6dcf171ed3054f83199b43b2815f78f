@@ -1,0 +1,19 @@
+modules/services/moshi/default.nix
+  s_9c1cabca035201::t_cc0f411e4521b1 150-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "313e2ab2e6dcf171ed3054f83199b43b2815f78f",
+  "prompts": {},
+  "sessions": {
+    "s_9c1cabca035201": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec3bb-4571-7d0b-ac52-71eea81d4104",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
