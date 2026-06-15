@@ -9,6 +9,12 @@ local function read_lines(path)
   return lines
 end
 
+local project_dirs = { 'Dotfiles', 'Gradient' }
+local project_dir_set = {}
+for _, name in ipairs(project_dirs) do
+  project_dir_set[vault .. '/02_Projects/' .. name] = true
+end
+
 vim = {
   trim = function(s)
     return (s:gsub('^%s+', ''):gsub('%s+$', ''))
@@ -29,8 +35,7 @@ vim = {
       return read_lines(path)
     end,
     isdirectory = function(path)
-      local ok = os.execute('[ -d ' .. string.format('%q', path) .. ' ] >/dev/null 2>&1')
-      return ok == true and 1 or 0
+      return project_dir_set[path] and 1 or 0
     end,
     getcwd = function()
       return repo
@@ -52,11 +57,14 @@ vim = {
       return repo
     end,
     dir = function(path)
-      local p = io.popen('find ' .. string.format('%q', path) .. ' -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | sort')
+      local i = 0
       return function()
-        local name = p:read('*l')
-        if not name then
-          p:close()
+        if path ~= vault .. '/02_Projects' then
+          return nil
+        end
+        i = i + 1
+        local name = project_dirs[i]
+        if name == nil then
           return nil
         end
         return name, 'directory'
