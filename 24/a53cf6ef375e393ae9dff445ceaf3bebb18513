@@ -1,0 +1,34 @@
+config/pi/prompts/goalize.md
+  s_fabcdeb741c5a4::t_9d808babe50da5 1-24
+config/pi/prompts/goal-obsidian.md
+  s_fabcdeb741c5a4::t_21ed121dbfc73e 1-22
+config/pi/prompts/goal-continue-audit.md
+  s_fabcdeb741c5a4::t_aa2a662280171a 1-21
+docs/pi-goal-patterns.md
+  s_fabcdeb741c5a4::t_713c72fcbd79fd 1-57,65-96
+  s_fabcdeb741c5a4::t_03e7436c24722b 58-64
+config/agents/rules/16-autonomous-goal-progress.md
+  s_fabcdeb741c5a4::t_9d5abfc226bde1 15
+config/pi/prompts/goal-dotfiles.md
+  s_fabcdeb741c5a4::t_be5f5e8471bd69 1-23
+config/pi/prompts/goal-manuscript.md
+  s_fabcdeb741c5a4::t_cd11dffa6bfca5 1-22
+skills/catalog/autonomous-agent-loop/SKILL.md
+  s_fabcdeb741c5a4::t_1f83ef299fe423 15-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "24a53cf6ef375e393ae9dff445ceaf3bebb18513",
+  "prompts": {},
+  "sessions": {
+    "s_fabcdeb741c5a4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec938-c365-7bb8-af8d-02bef4478c2f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
