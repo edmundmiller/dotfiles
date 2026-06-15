@@ -53,13 +53,15 @@ let
 
         [[keys.command]]
         key = "prefix+u"
-        type = "shell"
-        command = "herdr hunk"
+        type = "plugin_action"
+        command = "dotfiles.dev-layout.hunk-split"
+        description = "open hunk diff in a side pane"
 
         [[keys.command]]
         key = "prefix+U"
-        type = "shell"
-        command = "herdr hunk --tab"
+        type = "plugin_action"
+        command = "dotfiles.dev-layout.hunk-tab"
+        description = "open hunk diff in a tab"
 
         [[keys.command]]
         key = "prefix+V"
@@ -434,6 +436,8 @@ in
               "herdr hunk",
               "herdr hunk --tab",
               "herdr worktree layout",
+              "dotfiles.dev-layout.hunk-split",
+              "dotfiles.dev-layout.hunk-tab",
               "obsidian-neovide",
           }
 
@@ -524,13 +528,15 @@ in
               "",
               "[[keys.command]]",
               'key = "prefix+u"',
-              'type = "shell"',
-              'command = "herdr hunk"',
+              'type = "plugin_action"',
+              'command = "dotfiles.dev-layout.hunk-split"',
+              'description = "open hunk diff in a side pane"',
               "",
               "[[keys.command]]",
               'key = "prefix+U"',
-              'type = "shell"',
-              'command = "herdr hunk --tab"',
+              'type = "plugin_action"',
+              'command = "dotfiles.dev-layout.hunk-tab"',
+              'description = "open hunk diff in a tab"',
               "",
               "[[keys.command]]",
               'key = "prefix+V"',
@@ -542,21 +548,17 @@ in
               out.append("")
           out.extend(command_block[1:])
 
-          def upsert_worktree_post_create(lines):
+          def upsert_worktree_directory(lines):
               out = []
               in_worktrees = False
               saw_worktrees = False
-              wrote_command = False
               wrote_directory = False
 
               for line in lines:
                   stripped = line.strip()
                   if stripped.startswith("[") and stripped.endswith("]"):
-                      if in_worktrees:
-                          if not wrote_directory:
-                              out.append('directory = "~/.local/share/herdr/worktrees"')
-                          if not wrote_command:
-                              out.append('post_create_command = "herdr worktree layout"')
+                      if in_worktrees and not wrote_directory:
+                          out.append('directory = "~/.local/share/herdr/worktrees"')
                       in_worktrees = stripped == "[worktrees]"
                       saw_worktrees = saw_worktrees or in_worktrees
                       out.append(line)
@@ -570,25 +572,20 @@ in
                               wrote_directory = True
                           continue
                       if key == "post_create_command":
-                          if not wrote_command:
-                              out.append('post_create_command = "herdr worktree layout"')
-                              wrote_command = True
+                          # Herdr 0.7 plugin events replace the old dotfiles-only
+                          # post-create shell hook.
                           continue
 
                   out.append(line)
 
-              if saw_worktrees and in_worktrees:
-                  if not wrote_directory:
-                      out.append('directory = "~/.local/share/herdr/worktrees"')
-                  if not wrote_command:
-                      out.append('post_create_command = "herdr worktree layout"')
+              if saw_worktrees and in_worktrees and not wrote_directory:
+                  out.append('directory = "~/.local/share/herdr/worktrees"')
               elif not saw_worktrees:
                   if out and out[-1].strip():
                       out.append("")
                   out.extend([
                       "[worktrees]",
                       'directory = "~/.local/share/herdr/worktrees"',
-                      'post_create_command = "herdr worktree layout"',
                   ])
 
               return out
@@ -662,7 +659,7 @@ in
                   out.extend(body_lines)
               return out
 
-          out = upsert_worktree_post_create(out)
+          out = upsert_worktree_directory(out)
           out = upsert_simple_section(out, "session", {"resume_agents_on_restore": "true"})
           out = upsert_simple_section(out, "experimental", {"pane_history": "true"})
           out = replace_section(out, "[theme]", [f'name = "{theme_name}"'])
@@ -673,6 +670,74 @@ in
           )
 
           path.write_text("\n".join(out) + "\n")
+          PY
+        '';
+
+        home.activation.herdr-plugin-registry = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          plugins_root=${escapeShellArg "${config.dotfiles.configDir}/herdr/plugins"}
+          registry="$HOME/.config/herdr/plugins.json"
+          ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$registry")"
+
+          ${pkgs.python3}/bin/python3 - "$registry" "$plugins_root" <<'PY'
+          import json
+          import pathlib
+          import sys
+          import tomllib
+
+          registry = pathlib.Path(sys.argv[1])
+          plugins_root = pathlib.Path(sys.argv[2])
+          managed_roots = [
+              plugins_root / "dotfiles-dev-layout",
+              plugins_root / "dotfiles-github-link-preview",
+          ]
+
+          def load_existing():
+              if not registry.exists():
+                  return []
+              try:
+                  data = json.loads(registry.read_text())
+                  return data if isinstance(data, list) else []
+              except Exception:
+                  return []
+
+          def manifest_entry(root):
+              manifest_path = root / "herdr-plugin.toml"
+              manifest = tomllib.loads(manifest_path.read_text())
+              plugin_id = manifest["id"]
+              source = {
+                  "kind": "local",
+                  "owner": None,
+                  "repo": None,
+                  "subdir": None,
+                  "requested_ref": None,
+                  "resolved_commit": None,
+                  "managed_path": None,
+                  "installed_unix_ms": None,
+              }
+              return {
+                  "plugin_id": plugin_id,
+                  "name": manifest["name"],
+                  "version": manifest["version"],
+                  "min_herdr_version": manifest["min_herdr_version"],
+                  "description": manifest.get("description"),
+                  "manifest_path": str(manifest_path),
+                  "plugin_root": str(root),
+                  "enabled": True,
+                  "platforms": manifest.get("platforms"),
+                  "build": manifest.get("build", []),
+                  "actions": manifest.get("actions", []),
+                  "events": manifest.get("events", []),
+                  "panes": manifest.get("panes", []),
+                  "link_handlers": manifest.get("link_handlers", []),
+                  "source": source,
+                  "warnings": [],
+              }
+
+          existing = load_existing()
+          managed = {entry["plugin_id"]: entry for entry in map(manifest_entry, managed_roots)}
+          merged = [entry for entry in existing if entry.get("plugin_id") not in managed]
+          merged.extend(managed[plugin_id] for plugin_id in sorted(managed))
+          registry.write_text(json.dumps(merged, indent=2) + "\n")
           PY
         '';
 

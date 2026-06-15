@@ -34,12 +34,15 @@ set -euo pipefail
 workdir=$(mktemp -d)
 git clone https://github.com/ogulcancelik/herdr "$workdir/herdr"
 cd "$workdir/herdr"
-git checkout 4219aec638cdd81efae6460c6fba28418925c37c
+git checkout dbad2e54bb9e36138275fecad8d4978752fc4426
 git apply /Users/emiller/.config/dotfiles/overlays/herdr/patches/*.patch
 cargo test \
   detect::tests::hermes \
   pane::tests::screen_chrome_overrides_codex_backend_to_hermes \
   pane::tests::screen_chrome_does_not_override_pi_process_agent
+
+For plugin migrations, prefer local Herdr plugins under `config/herdr/plugins/`
+over dotfiles-only patches to Herdr CLI/config behavior.
 ```
 
 On macOS outside the Nix build, `cargo test` may fail before tests run while the

@@ -1,0 +1,18 @@
+id = "dotfiles.github-link-preview"
+name = "Dotfiles GitHub Link Preview"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Preview GitHub issue and pull request links in a Herdr side pane using gh."
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "preview"
+title = "Preview GitHub issue or pull request"
+contexts = ["pane"]
+command = ["python3", "github_link_preview.py"]
+
+[[link_handlers]]
+id = "github-issue-or-pr"
+title = "Preview GitHub issue or pull request"
+pattern = "^https://github\\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+(?:[#?].*)?$"
+action = "preview"

@@ -32,14 +32,15 @@ next_tab = "prefix+n"
 
 [[keys.command]]
 key = "prefix+u"
-type = "shell"
-command = "herdr hunk"
+type = "plugin_action"
+command = "dotfiles.dev-layout.hunk-split"
+description = "open hunk diff in a side pane"
 
 [[keys.command]]
 key = "prefix+U"
-type = "shell"
-command = "herdr hunk --tab"
+type = "plugin_action"
+command = "dotfiles.dev-layout.hunk-tab"
+description = "open hunk diff in a tab"
 
 [worktrees]
 directory = "~/.local/share/herdr/worktrees"
-post_create_command = "herdr worktree layout"

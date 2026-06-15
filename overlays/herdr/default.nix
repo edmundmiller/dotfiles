@@ -7,14 +7,11 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "8b99847619235359f4aa87215feac60ac2784499";
-      hash = "sha256-QqjC/6vy6X7LAYn3YGmBJJTICeu4cj5qSX/DBaSlIfA=";
+      rev = "dbad2e54bb9e36138275fecad8d4978752fc4426";
+      hash = "sha256-DjCSwhRMBRE9lSvjpX6m8IpoEgUbOP1jcmeXMlQlSQY=";
     };
     patches = [
-      ./patches/0001-worktree-post-create-command.patch
-      ./patches/0002-add-dotfiles-cli-helpers.patch
-      ./patches/0003-add-worktree-layout-subcommand.patch
-      ./patches/0004-add-hunk-subcommand.patch
+      ./patches/0001-libghostty-bench-gated.patch
       ./patches/0006-update-cargo-hash.patch
     ];
   };
