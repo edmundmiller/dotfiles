@@ -43,17 +43,19 @@ next_tab = "prefix+n"
 
 [[keys.command]]
 key = "prefix+u"
-command = "herdr hunk"
+type = "plugin_action"
+command = "dotfiles.dev-layout.hunk-split"
 
 [[keys.command]]
 key = "prefix+U"
-command = "herdr hunk --tab"
+type = "plugin_action"
+command = "dotfiles.dev-layout.hunk-tab"
 ```
 
 Meaning:
 
 - `prefix+w` creates a workspace.
-- `prefix+g` creates a worktree with Herdr's native prompt, then `worktrees.post_create_command` opens Pi + Hunk + Neovim + shell tabs.
+- `prefix+g` creates a worktree with Herdr's native prompt; the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event and opens Pi + Hunk + Neovim + shell tabs.
 - `prefix+G` opens an existing worktree.
 - `prefix+f` opens Herdr goto/navigation.
 - `prefix+-` splits horizontally.
@@ -68,12 +70,12 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
-- Keep worktree layout seeding on `[worktrees].post_create_command`; do not reintroduce custom prompt keybindings or AppleScript dialogs.
+- Keep worktree layout seeding in the local `dotfiles.dev-layout` plugin's `worktree.created` event hook; do not reintroduce custom prompt keybindings, AppleScript dialogs, or dotfiles-only Herdr CLI patches for this flow.
 - `herdr workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
 
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
-- `herdr hunk` implements Hunk split/tab launch behavior.
-- `herdr worktree layout` implements post-create tab seeding for the native worktree flow.
-- `overlays/herdr/default.nix` patches upstream Herdr; local helper behavior lives inside the Herdr binary.
+- `config/herdr/plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and native worktree post-create tab seeding as a Herdr plugin.
+- `config/herdr/plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews as a Herdr link-handler plugin.
+- `overlays/herdr/default.nix` patches only packaging/build issues; local helper behavior should live in Herdr plugins, not inside the Herdr binary.

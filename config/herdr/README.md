@@ -49,14 +49,14 @@ Custom/current mappings:
 | `prefix+u` | Open Hunk in a focused split |
 | `prefix+U` | Open Hunk in a new tab       |
 
-Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` uses Herdr's native worktree prompt; after creation, Herdr runs `worktrees.post_create_command` to seed Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
+Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` uses Herdr's native worktree prompt; after creation, the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event to seed Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
 
-## Helpers
+## Plugins
 
-Herdr dotfiles-specific helper behavior is patched into the overlaid `herdr` binary:
+Dotfiles-specific helper behavior lives in local Herdr plugins under `config/herdr/plugins/` and is registered by `modules/shell/herdr/default.nix`:
 
-- `herdr hunk` — opens Hunk from the active Herdr context, either in a focused split or a new tab.
-- `herdr worktree layout` — seeds Pi/Hunk/Neovim/shell tabs from Herdr native worktree post-create context, with an explicit-branch socket fallback for manual use.
+- `dotfiles.dev-layout` — provides `prefix+u`/`prefix+U` Hunk actions plus the `worktree.created` dev-layout bootstrap action.
+- `dotfiles.github-link-preview` — registers a GitHub issue/PR link handler that opens `gh issue view` or `gh pr view` in a Herdr side pane.
 
 ## Reloading after edits
 

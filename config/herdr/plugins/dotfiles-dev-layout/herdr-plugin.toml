@@ -1,0 +1,28 @@
+id = "dotfiles.dev-layout"
+name = "Dotfiles Dev Layout"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Open the dotfiles-standard Pi, Hunk, Neovim, and shell tabs for the current workspace or a newly-created worktree."
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "bootstrap"
+title = "Bootstrap dev layout"
+contexts = ["workspace"]
+command = ["python3", "dev_layout.py"]
+
+[[actions]]
+id = "hunk-split"
+title = "Open Hunk diff in side pane"
+contexts = ["pane", "workspace"]
+command = ["python3", "dev_layout.py", "hunk", "--split"]
+
+[[actions]]
+id = "hunk-tab"
+title = "Open Hunk diff in tab"
+contexts = ["pane", "workspace"]
+command = ["python3", "dev_layout.py", "hunk", "--tab"]
+
+[[events]]
+on = "worktree.created"
+command = ["python3", "dev_layout.py", "--event"]
