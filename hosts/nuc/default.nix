@@ -1721,11 +1721,6 @@ in
   systemd.tmpfiles.rules = [
     "d ${millDocsVaultPath} 0755 emiller users -"
 
-    # Audiobookshelf web uploads run as the audiobookshelf user/group and need
-    # to create author/book directories inside the library folders. Keep the
-    # setgid bit so files added over SSH also inherit the audiobookshelf group.
-    "d /audiobooks/main 2775 emiller audiobookshelf -"
-    "d /audiobooks/private 2775 emiller audiobookshelf -"
   ];
 
   systemd.services.obsidian-sync-mill-docs = {

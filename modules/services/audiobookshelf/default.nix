@@ -23,6 +23,10 @@ in
   options.modules.services.audiobookshelf = {
     enable = mkBoolOpt false;
     port = mkOpt types.port 13378;
+    libraryDirs = mkOpt (types.listOf types.str) [
+      "/audiobooks/main"
+      "/audiobooks/private"
+    ];
 
     tailscaleService = {
       enable = mkBoolOpt false;
@@ -42,6 +46,11 @@ in
 
       user.extraGroups = [ "audiobookshelf" ];
       networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
+
+      # Audiobookshelf web uploads run as the audiobookshelf user/group and need
+      # to create author/book directories inside the library folders. Keep the
+      # setgid bit so files added over SSH also inherit the audiobookshelf group.
+      systemd.tmpfiles.rules = map (dir: "d ${dir} 2775 emiller audiobookshelf -") cfg.libraryDirs;
 
       systemd.services.audiobookshelf-tailscale-serve = mkIf cfg.tailscaleService.enable {
         description = "Tailscale Service proxy for Audiobookshelf";
