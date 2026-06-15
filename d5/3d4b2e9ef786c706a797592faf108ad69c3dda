@@ -1,0 +1,19 @@
+modules/services/audiobookshelf/AGENTS.md
+  s_661a4ff9325f9a::t_be5e8643e27020 1-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d53d4b2e9ef786c706a797592faf108ad69c3dda",
+  "prompts": {},
+  "sessions": {
+    "s_661a4ff9325f9a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec838-7e74-7014-a825-9ed011ab7ca0",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
