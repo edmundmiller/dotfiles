@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by the Herdr 0.7 plugin migration for `worktree.created` handling. Historical guidance remains relevant for standalone helper scripts, but the worktree layout flow now lives in `config/herdr/plugins/dotfiles-dev-layout/` instead of `[worktrees].post_create_command`.
 
 ## Context
 
