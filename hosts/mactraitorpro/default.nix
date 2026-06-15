@@ -41,7 +41,6 @@
         mise.enable = true;
         git = {
           enable = true;
-          ai.enable = true;
           gitbutler.enable = false;
           gitnexus.enable = true;
           hunk.enable = true;
