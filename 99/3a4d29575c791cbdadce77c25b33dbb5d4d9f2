@@ -1,0 +1,30 @@
+config/agents/rules/16-autonomous-goal-progress.md
+  s_fabcdeb741c5a4::t_37d8003eb6dbc4 15
+config/pi/prompts/goalize.md
+  s_fabcdeb741c5a4::t_9d808babe50da5 1-24
+skills/catalog/autonomous-agent-loop/SKILL.md
+  s_fabcdeb741c5a4::t_1f83ef299fe423 16
+  s_fabcdeb741c5a4::t_ef26033a06dd6d 15
+docs/pi-goal-patterns.md
+  s_fabcdeb741c5a4::t_873951cd908648 3,6,75,80,86,92
+  s_fabcdeb741c5a4::t_713c72fcbd79fd 1-2,4-5,7-57,62-74,76-79,81-85,87-91,93
+  s_fabcdeb741c5a4::t_fa63be8d28e35e 58-61
+config/pi/prompts/goal-continue-audit.md
+  s_fabcdeb741c5a4::t_aa2a662280171a 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "993a4d29575c791cbdadce77c25b33dbb5d4d9f2",
+  "prompts": {},
+  "sessions": {
+    "s_fabcdeb741c5a4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec938-c365-7bb8-af8d-02bef4478c2f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
