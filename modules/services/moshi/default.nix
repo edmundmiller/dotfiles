@@ -12,23 +12,23 @@ let
   cfg = config.modules.services.moshi;
   inherit (config.dotfiles) configDir;
 
-  moshiHookVersion = "0.2.26";
+  moshiHookVersion = "0.2.27";
   moshiHookAssets = {
     aarch64-darwin = {
       asset = "moshi-hook_Darwin_arm64.tar.gz";
-      hash = "sha256-Ur0DIdGTYy8ArrPm0saBqDwZ7O1WtQrDNzsE7NyWSqI=";
+      hash = "sha256-VVqR/33nZjHw2Ky4GzUhKz7nGSBoRkLBDR+8RGO5QrA=";
     };
     aarch64-linux = {
       asset = "moshi-hook_Linux_arm64.tar.gz";
-      hash = "sha256-RmsSF8URIrQEdG7FwdXoW0VyqQ7Sk88AKTRbNSZU2Ww=";
+      hash = "sha256-ZcaTdJau2wlnWkywqS3mRd9tXgpg//IJgVzNYsaZO4U=";
     };
     x86_64-darwin = {
       asset = "moshi-hook_Darwin_x86_64.tar.gz";
-      hash = "sha256-OWbRFPsJwf6h2tAd3Ivs1SQCneSrS7a0uH83GZ1FCSA=";
+      hash = "sha256-06PsJteEcmTk4wbbRUFJ/2geRUwhpO1Ti5tWJwugwN0=";
     };
     x86_64-linux = {
       asset = "moshi-hook_Linux_x86_64.tar.gz";
-      hash = "sha256-kl3aazpQ1o05k/MoJFugv7CcGJG4vUTArpMQcbzbvgM=";
+      hash = "sha256-mAN64DJP9F64+g2doYiFsveA3b4MziUmSrj+QLxD5+0=";
     };
   };
   moshiHookAsset = moshiHookAssets.${pkgs.stdenv.hostPlatform.system};
@@ -96,8 +96,10 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      environment.systemPackages = [ moshiHook ];
-      user.packages = [ moshiHook ];
+      # On Darwin the daemon is Homebrew-managed so launchd, upgrades, and the
+      # helper path stay consistent. Linux still uses the Nix-built hook.
+      environment.systemPackages = optionals (!isDarwin) [ moshiHook ];
+      user.packages = optionals (!isDarwin) [ moshiHook ];
 
       modules.shell.zsh.rcFiles = mkIf cfg.shell.enable (
         mkIf cfg.shell.tmuxHelper.enable [ "${configDir}/moshi/aliases.zsh" ]
@@ -109,10 +111,10 @@ in
           home.activation.moshi-agent-hook-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             moshi_hook=""
             for candidate in \
+              "/opt/homebrew/bin/moshi-hook" \
               "$HOME/.nix-profile/bin/moshi-hook" \
               "/etc/profiles/per-user/$USER/bin/moshi-hook" \
-              "/run/current-system/sw/bin/moshi-hook" \
-              "/opt/homebrew/bin/moshi-hook"
+              "/run/current-system/sw/bin/moshi-hook"
             do
               if [ -x "$candidate" ]; then
                 moshi_hook="$candidate"
