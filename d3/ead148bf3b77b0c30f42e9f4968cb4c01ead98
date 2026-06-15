@@ -1,0 +1,24 @@
+skills/catalog/autonomous-agent-loop/SKILL.md
+  s_fabcdeb741c5a4::t_4e73bbc471a748 1-54
+config/agents/rules/16-autonomous-goal-progress.md
+  s_fabcdeb741c5a4::t_2009a5df65227c 1-18
+docs/pi-session-autonomy-audit.md
+  s_fabcdeb741c5a4::t_1a354c3f05b9f2 25-30
+  s_fabcdeb741c5a4::t_7d792729f1a215 1-24,31-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d3ead148bf3b77b0c30f42e9f4968cb4c01ead98",
+  "prompts": {},
+  "sessions": {
+    "s_fabcdeb741c5a4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec938-c365-7bb8-af8d-02bef4478c2f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
