@@ -1,0 +1,25 @@
+flake.nix
+  s_fabcdeb741c5a4::t_2f9dc0dbafea13 927
+config/nvim/tests/obsidian_project_test.lua
+  s_fabcdeb741c5a4::t_62fa1954034aa2 12-17
+  s_fabcdeb741c5a4::t_95da8485a6b93c 60,62-67
+  s_fabcdeb741c5a4::t_3815672f604d56 38
+config/nvim/tests/obsidian_project.zunit
+  s_fabcdeb741c5a4::t_754a7327efcb9d 8,38,44,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "5a10b6245519b4a64f9d00a7baee0067ad5c2a68",
+  "prompts": {},
+  "sessions": {
+    "s_fabcdeb741c5a4": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019ec938-c365-7bb8-af8d-02bef4478c2f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Edmund Miller <git@edmundmiller.dev>"
+    }
+  }
+}
