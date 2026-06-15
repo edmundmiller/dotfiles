@@ -5,6 +5,7 @@
   export TEST_DIR=$(mktemp -d)
   export VAULT_DIR="$TEST_DIR/obsidian-vault"
   export LUA_TEST="$ORIG_PWD/config/nvim/tests/obsidian_project_test.lua"
+  export LUA_BIN="${LUA_BIN:-lua}"
   mkdir -p "$VAULT_DIR/02_Projects/Gradient" "$VAULT_DIR/02_Projects/Dotfiles"
   cat > "$VAULT_DIR/02_Projects/Gradient/README.md" <<'EOF'
 ---
@@ -34,19 +35,19 @@ EOF
 }
 
 @test 'reads Obsidian aliases from project frontmatter' {
-  run lua "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" read_aliases
+  run "$LUA_BIN" "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" read_aliases
 
   assert $state equals 0
 }
 
 @test 'resolves repo names through Obsidian aliases' {
-  run lua "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" resolve_aliases
+  run "$LUA_BIN" "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" resolve_aliases
 
   assert $state equals 0
 }
 
 @test 'strips agent worktree suffixes' {
-  run lua "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" worktree_suffix
+  run "$LUA_BIN" "$LUA_TEST" "$ORIG_PWD" "$VAULT_DIR" worktree_suffix
 
   assert $state equals 0
 }
