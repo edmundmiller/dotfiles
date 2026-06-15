@@ -924,6 +924,7 @@
                     tmux new-session -d -s ci-session 2>/dev/null || true
                     # Mark as headless so popup test stays skipped
                     export ZUNIT_HEADLESS=1
+                    export LUA_BIN=${pkgs.lua}/bin/lua
 
                     # Seed zoxide database in writable temp storage
                     export _ZO_DATA_DIR=$TMPDIR/zoxide-data
