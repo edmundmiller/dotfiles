@@ -31,6 +31,10 @@ let
     "radar"
     "scintillate"
   ];
+  scintillateWhisperModel = pkgs.fetchurl {
+    url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin";
+    hash = "sha256-oDd5yG3zMjB19eeWyyzlAp8A7Ihp7uP9+4l6/jbG0AI=";
+  };
   hermesWebuiSourceUnpatched = pkgs.fetchFromGitHub {
     owner = "nesquena";
     repo = "hermes-webui";
@@ -957,9 +961,14 @@ in
           pnpm
           prek
           himalaya
+          whisper-cpp
         ];
+        settings = {
+          stt.provider = "local_command";
+        };
         environment = {
           HERMES_KANBAN_HOME = hermesSharedHome;
+          HERMES_LOCAL_STT_COMMAND = "${pkgs.whisper-cpp}/bin/whisper-cli -m ${scintillateWhisperModel} -f {input_path} --language {language} --output-txt --output-file {output_dir}/transcript --no-timestamps --no-prints";
           PYTHONPATH = hermesTelegramPythonPath;
         };
         hostPathMounts = {
