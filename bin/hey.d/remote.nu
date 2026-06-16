@@ -11,7 +11,7 @@ def "main deploy" [host: string] {
 }
 
 def nuc-deploy-mode [hostname: string] {
-  if $hostname == $NUC_HOST { "deploy-rs-local" } else { "deploy-rs-remote" }
+  if $hostname == $NUC_HOST { "local" } else { "worktree-remote" }
 }
 
 def nuc-post-deploy-check [local: bool] {
@@ -41,16 +41,18 @@ def nuc-local-rebuild [] {
   cd $ctx.flake_dir
 
   print "=== NUC deploy mode: explicit local nixos-rebuild ==="
-  with-sudo-path { ^nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --sudo --show-trace switch }
+  with-sudo-path { ^nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --sudo --show-trace --accept-flake-config --max-jobs 1 switch }
   nuc-post-deploy-check true
 }
 
-def "main nuc" [mode: string = "deploy-rs", worktree_mode: string = "switch"] {
+def "main nuc" [mode: string = "auto", worktree_mode: string = "switch"] {
   let ctx = (context)
   cd $ctx.flake_dir
 
   let local_hostname = (^hostname -s | str trim)
   let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
+  let worktree_modes = ["dry-activate" "test" "switch" "build" "vm"]
+  let allowed_modes = ["auto" "dry-activate" "test" "switch" "build" "vm"]
 
   if $mode == "local" {
     print $"=== NUC deploy mode: local from ($local_hostname) (($local_system)) ==="
@@ -64,21 +66,26 @@ def "main nuc" [mode: string = "deploy-rs", worktree_mode: string = "switch"] {
     return
   }
 
-  if $mode != "deploy-rs" {
-    print -e "error: hey nuc mode must be one of: deploy-rs, local, wt, worktree"
+  if not ($mode in $allowed_modes) {
+    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm"
     error make {msg: "invalid hey nuc mode"}
+  }
+
+  if $mode in $worktree_modes {
+    print $"=== NUC deploy mode: worktree ($mode) from ($local_hostname) (($local_system)) ==="
+    main nuc-worktree $mode
+    return
   }
 
   let deploy_mode = (nuc-deploy-mode $local_hostname)
   print $"=== NUC deploy mode: ($deploy_mode) from ($local_hostname) (($local_system)) ==="
-  if $deploy_mode == "deploy-rs-local" {
+  if $deploy_mode == "local" {
     nuc-local-rebuild
     return
   }
 
-  print "=== deploy-rs remoteBuild=true builds the x86_64-linux system on the target ==="
-  ^nix run .#deploy-rs -- .#nuc --skip-checks
-  nuc-post-deploy-check false
+  print "=== evaluating and building on the NUC from a synced worktree ==="
+  main nuc-worktree $worktree_mode
 }
 
 def validate-nuc-worktree-mode [mode: string] {
@@ -100,15 +107,15 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="
-    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && nix build .#nixosConfigurations.nuc.config.system.build.vm --show-trace"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && nix build .#nixosConfigurations.nuc.config.system.build.vm --show-trace --accept-flake-config --max-jobs 1"
     return
   }
 
   print $"=== Running nixos-rebuild ($mode) from synced worktree on NUC ==="
   if $mode == "build" {
-    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && nixos-rebuild build --flake .#nuc --show-trace"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && nixos-rebuild build --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
   } else {
-    ^ssh -t $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nixos-rebuild ($mode) --flake .#nuc --show-trace"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nixos-rebuild ($mode) --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
     if ($mode == "switch") or ($mode == "test") {
       nuc-post-deploy-check false
     }
@@ -136,6 +143,11 @@ def "main rebuild-nuc" [] {
 }
 
 def "main deploy-dry" [host: string] {
+  if $host == $NUC_HOST {
+    main nuc dry-activate
+    return
+  }
+
   let ctx = (context)
   print $"=== Dry-run deploy to ($host) ==="
   cd $ctx.flake_dir
@@ -143,17 +155,12 @@ def "main deploy-dry" [host: string] {
 }
 
 def "main nuc-test" [] {
-  let ctx = (context)
-  print "=== Testing NUC Configuration (dry-run) ==="
-  cd $ctx.flake_dir
-  ^nix run .#deploy-rs -- .#nuc --dry-activate --skip-checks
+  main nuc dry-activate
 }
 
 def "main deploy-check" [] {
-  let ctx = (context)
-  print "=== Checking all deploy configurations ==="
-  cd $ctx.flake_dir
-  ^nix flake check
+  print "=== Checking NUC deploy path with remote dry-activate ==="
+  main nuc dry-activate
 }
 
 def "main nuc-ssh" [] {
