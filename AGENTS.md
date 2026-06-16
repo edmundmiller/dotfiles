@@ -159,10 +159,10 @@ A pre-commit hook scans for `TODO`, `FIXME`, and `HACK` comments and reports the
 
 ## Deployment
 
-Deployment is via **deploy-rs** (see `flake.nix` `deploy.nodes`). There is no CI-driven deployment — all deploys are triggered locally.
+Deployment is triggered locally. Darwin hosts use the local rebuild commands; NUC deploys use NUC-side `nixos-rebuild` from a synced worktree to avoid local cross-platform evaluation. Other deploy-rs targets remain in `flake.nix` for non-NUC hosts.
 
-- **Deploy to NUC:** `hey nuc` (runs `nix run .#deploy-rs -- .#nuc --skip-checks`)
-- **Deploy dry-run:** `hey deploy-dry nuc`
+- **Deploy to NUC:** `hey nuc` (syncs the current worktree to the NUC, then runs `nixos-rebuild switch --flake .#nuc` there)
+- **Deploy dry-run:** `hey nuc dry-activate`, `hey deploy-dry nuc`, or `hey deploy-check`
 - **After deploy to NUC:** verify via `ssh nuc "systemctl status home-assistant"` for HA, check NUC dashboard with `hey nuc-status`
 - **After macOS rebuild:** verify via `nix flake check` (runs all flake checks locally)
 - **Rollback:** `hey rollback` or `nix-env --rollback` for previous generation; on NUC: `hey nuc-rollback`

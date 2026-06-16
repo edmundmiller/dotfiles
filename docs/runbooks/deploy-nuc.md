@@ -2,7 +2,7 @@
 
 ## Overview
 
-The NUC is a NixOS server managed via **deploy-rs**. Deployment is triggered locally from the dotfiles repo — there is no CI-driven deployment.
+The NUC is a NixOS server managed from this dotfiles repo — there is no CI-driven deployment. `hey nuc` evaluates and builds on the NUC for consistent cross-platform behavior: when run off-NUC it syncs the current worktree to `nuc:/tmp/dotfiles-worktree-$USER` and runs `nixos-rebuild` there; when run on the NUC it runs a local `nixos-rebuild`. NUC rebuilds pass `--max-jobs 1` to keep builds stable on the small host.
 
 ## Prerequisites
 
@@ -16,17 +16,17 @@ The NUC is a NixOS server managed via **deploy-rs**. Deployment is triggered loc
 # Standard deployment
 hey nuc
 
-# Or explicitly via deploy-rs
-cd ~/.config/dotfiles
-nix run .#deploy-rs -- .#nuc --skip-checks
+# Preview from the same remote-evaluation path
+hey nuc dry-activate
 ```
 
 ## Dry Run (Preview Changes)
 
 ```bash
+hey nuc dry-activate
+# Equivalent compatibility aliases:
 hey deploy-dry nuc
-# Or
-nix run .#deploy-rs -- .#nuc --dry-activate --skip-checks
+hey deploy-check
 ```
 
 ## Verify Deployment
@@ -68,14 +68,6 @@ ssh nuc "sudo nixos-rebuild --rollback switch"
 
 - Check Tailscale: `tailscale status | grep nuc`
 - The NUC may be rebooting after a kernel update
-
-### Deploy-rs magic rollback triggered
-
-Deploy-rs has automatic rollback if the new configuration fails health checks. Check:
-
-```bash
-ssh nuc "sudo journalctl -u deploy-rs-activate -n 50"
-```
 
 ### Service failed to start after deploy
 
