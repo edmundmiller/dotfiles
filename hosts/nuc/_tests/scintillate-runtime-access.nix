@@ -8,6 +8,8 @@ let
   cfg = nixosConfig.config;
   hermesAgent = cfg.modules.services.hermes.agents.scintillate;
   profile = cfg.services.hermes-agent.profiles.scintillate;
+  bettyProfile = cfg.services.hermes-agent.profiles.betty;
+  anneProfile = cfg.services.hermes-agent.profiles.anne;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
   codexSmokeService = cfg.systemd.services.hermes-scintillate-codex-smoke;
   codexSmokeTimer = cfg.systemd.timers.hermes-scintillate-codex-smoke;
@@ -57,8 +59,16 @@ let
       msg = "Scintillate TN_VAULT_PATH must come from the agent-owned TaskNotes runtime default.";
     }
     {
-      test = profile.environment.WIKI_PATH == "/repos/obsidian-vault";
-      msg = "Scintillate WIKI_PATH must point at the container vault bind mount.";
+      test = profile.environment.WIKI_PATH == "/repos/obsidian-vault/03_Areas/Personal";
+      msg = "Scintillate WIKI_PATH must point at its canonical llm-wiki home while the full vault remains mounted separately.";
+    }
+    {
+      test = bettyProfile.environment.WIKI_PATH == "/repos/mill-docs/02_Areas/Home";
+      msg = "Betty WIKI_PATH must point at its canonical llm-wiki home while the full mill-docs tree remains mounted separately.";
+    }
+    {
+      test = anneProfile.environment.WIKI_PATH == "/repos/mill-docs/02_Areas/Relationship";
+      msg = "Anne WIKI_PATH must point at its canonical llm-wiki home while the full mill-docs tree remains mounted separately.";
     }
     {
       test = hasMount "/home/emiller/obsidian-vault" "/repos/obsidian-vault";

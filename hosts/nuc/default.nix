@@ -921,7 +921,6 @@ in
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
           HERMES_KANBAN_HOME = hermesSharedHome;
-          WIKI_PATH = "/repos/mill-docs";
         };
         hostPathMounts = lib.mkForce {
           "${hermesSharedHome}" = hermesSharedHome;
@@ -939,7 +938,6 @@ in
         environment = {
           CODEX_HOME = lib.mkForce "/data/.codex";
           HERMES_KANBAN_HOME = hermesSharedHome;
-          WIKI_PATH = "/repos/mill-docs";
         };
         hostPathMounts = lib.mkForce {
           "${hermesSharedHome}" = hermesSharedHome;
