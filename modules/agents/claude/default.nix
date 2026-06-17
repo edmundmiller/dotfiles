@@ -79,6 +79,38 @@ in
           if isinstance(existing, dict) and existing.get("hooks"):
               data["hooks"] = existing["hooks"]
 
+          stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
+          hooks = data.get("hooks")
+          if isinstance(hooks, dict):
+              for event, entries in list(hooks.items()):
+                  if not isinstance(entries, list):
+                      continue
+                  next_entries = []
+                  for entry in entries:
+                      if not isinstance(entry, dict):
+                          next_entries.append(entry)
+                          continue
+                      hook_list = entry.get("hooks")
+                      if not isinstance(hook_list, list):
+                          next_entries.append(entry)
+                          continue
+                      filtered_hooks = [
+                          hook
+                          for hook in hook_list
+                          if not (
+                              isinstance(hook, dict)
+                              and hook.get("command") == stale_git_ai
+                          )
+                      ]
+                      if filtered_hooks:
+                          entry = dict(entry)
+                          entry["hooks"] = filtered_hooks
+                          next_entries.append(entry)
+                  if next_entries:
+                      hooks[event] = next_entries
+                  else:
+                      hooks.pop(event, None)
+
           if target.is_symlink() or not target.exists() or existing != data:
               tmp = target.with_suffix(target.suffix + ".tmp")
               tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -94,6 +126,59 @@ in
           mkdir -p "$HOME/.claude"
           rm -rf "$HOME/.claude/skills"
           ln -sfn "$HOME/.agents/skills" "$HOME/.claude/skills"
+        '';
+
+        home.activation.claude-stale-hook-cleanup = lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
+          ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          try:
+              data = json.loads(path.read_text(encoding="utf-8"))
+          except Exception:
+              raise SystemExit(0)
+
+          stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
+          hooks = data.get("hooks")
+          changed = False
+          if isinstance(hooks, dict):
+              for event, entries in list(hooks.items()):
+                  if not isinstance(entries, list):
+                      continue
+                  next_entries = []
+                  for entry in entries:
+                      if not isinstance(entry, dict):
+                          next_entries.append(entry)
+                          continue
+                      hook_list = entry.get("hooks")
+                      if not isinstance(hook_list, list):
+                          next_entries.append(entry)
+                          continue
+                      filtered_hooks = [
+                          hook
+                          for hook in hook_list
+                          if not (
+                              isinstance(hook, dict)
+                              and hook.get("command") == stale_git_ai
+                          )
+                      ]
+                      if filtered_hooks != hook_list:
+                          changed = True
+                      if filtered_hooks:
+                          entry = dict(entry)
+                          entry["hooks"] = filtered_hooks
+                          next_entries.append(entry)
+                  if next_entries:
+                      hooks[event] = next_entries
+                  else:
+                      hooks.pop(event, None)
+                      changed = True
+
+          if changed:
+              path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
         '';
 
         home.activation.claude-codegraph-mcp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

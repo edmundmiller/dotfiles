@@ -92,13 +92,28 @@ in
 
           path = pathlib.Path(sys.argv[1])
           content = path.read_text(encoding="utf-8") if path.exists() else ""
+          original_content = content
+          content = re.sub(
+              r'(?ms)^\[\[hooks\.(?:PostToolUse|PreToolUse|Stop)\]\]\n\n'
+              r'\[\[hooks\.(?:PostToolUse|PreToolUse|Stop)\.hooks\]\]\n'
+              r'command = "/Users/emiller/\.git-ai/bin/git-ai checkpoint codex --hook-input stdin"\n'
+              r'type = "command"\n\n?',
+              "",
+              content,
+          )
+          content = re.sub(
+              r'(?ms)^\[hooks\.state\."/Users/emiller/\.codex/config\.toml:'
+              r'(?:post_tool_use|pre_tool_use|stop):0:0"\]\n.*?(?=^\[|\Z)',
+              "",
+              content,
+          )
           block = '[mcp_servers.codegraph]\ncommand = "codegraph"\nargs = ["serve", "--mcp"]\n'
           pattern = re.compile(r'(?ms)^\[mcp_servers\.codegraph\]\n.*?(?=^\[|\Z)')
           if pattern.search(content):
               next_content = pattern.sub(block + "\n", content).rstrip() + "\n"
           else:
               next_content = content.rstrip() + "\n\n" + block if content.strip() else block
-          if next_content != content:
+          if next_content != original_content:
               path.write_text(next_content, encoding="utf-8")
           PY
         '';
