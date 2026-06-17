@@ -108,30 +108,38 @@ in
       home-manager.users.${config.user.name} = mkIf (isDarwin && cfg.hooks.enable && hookTargets != [ ]) (
         { lib, ... }:
         {
-          home.activation.moshi-agent-hook-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            moshi_hook=""
-            for candidate in \
-              "/opt/homebrew/bin/moshi-hook" \
-              "$HOME/.nix-profile/bin/moshi-hook" \
-              "/etc/profiles/per-user/$USER/bin/moshi-hook" \
-              "/run/current-system/sw/bin/moshi-hook"
-            do
-              if [ -x "$candidate" ]; then
-                moshi_hook="$candidate"
-                break
-              fi
-            done
+          home.activation.moshi-agent-hook-install =
+            lib.hm.dag.entryAfter
+              [
+                "writeBoundary"
+                "claude-settings-bootstrap"
+                "codex-config-bootstrap"
+                "herdr-agent-integrations"
+              ]
+              ''
+                moshi_hook=""
+                for candidate in \
+                  "/opt/homebrew/bin/moshi-hook" \
+                  "$HOME/.nix-profile/bin/moshi-hook" \
+                  "/etc/profiles/per-user/$USER/bin/moshi-hook" \
+                  "/run/current-system/sw/bin/moshi-hook"
+                do
+                  if [ -x "$candidate" ]; then
+                    moshi_hook="$candidate"
+                    break
+                  fi
+                done
 
-            if [ -z "$moshi_hook" ] && command -v moshi-hook >/dev/null 2>&1; then
-              moshi_hook="$(command -v moshi-hook)"
-            fi
+                if [ -z "$moshi_hook" ] && command -v moshi-hook >/dev/null 2>&1; then
+                  moshi_hook="$(command -v moshi-hook)"
+                fi
 
-            if [ -z "$moshi_hook" ]; then
-              echo "warning: moshi-hook not found; skipping Moshi agent hook install" >&2
-            elif ! "$moshi_hook" install ${hookTargetsArgs}; then
-              echo "warning: moshi-hook install failed for targets: ${concatStringsSep ", " hookTargets}" >&2
-            fi
-          '';
+                if [ -z "$moshi_hook" ]; then
+                  echo "warning: moshi-hook not found; skipping Moshi agent hook install" >&2
+                elif ! "$moshi_hook" install ${hookTargetsArgs}; then
+                  echo "warning: moshi-hook install failed for targets: ${concatStringsSep ", " hookTargets}" >&2
+                fi
+              '';
         }
       );
     }
