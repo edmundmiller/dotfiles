@@ -760,6 +760,16 @@
                 files = "^(config/pi/settings\\.jsonc|modules/agents/pi/)";
                 stages = [ "pre-commit" ];
               };
+              pi-runtime-wrapper = {
+                enable = true;
+                name = "pi-runtime-wrapper";
+                description = "Validate Pi runtime wrapper toolchain guards";
+                entry = "bash modules/agents/pi/test-runtime-wrapper.sh";
+                language = "system";
+                pass_filenames = false;
+                files = "^modules/agents/pi/(lib/_runtime-wrapper\\.nix|test-runtime-wrapper\\.sh)$";
+                stages = [ "pre-commit" ];
+              };
               pi-runtime-drift = {
                 enable = true;
                 name = "pi-runtime-drift";
