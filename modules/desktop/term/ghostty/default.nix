@@ -30,7 +30,11 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.desktop.term.ghostty;
+  stylixCfg = config.modules.theme.stylix;
+  stylixColors = config.lib.stylix.colors;
   inherit (config.dotfiles) configDir;
+
+  appleScriptString = value: replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] value;
 
   # Build PATH with user-level bins plus nix-managed directories.
   # Ghostty's `command` runs before shell profile loading, so launchers like
@@ -95,6 +99,8 @@ in
       Ghostty config lines to be appended to the main config.
       Other modules can add configuration here.
     '';
+
+    macosTerminalProfileName = mkOpt str "Ghostty Match";
   };
 
   config = mkIf cfg.enable {
@@ -136,6 +142,48 @@ in
             rm -f "$legacy_config"
           fi
         '';
+
+        home.activation.ghostty-set-terminal-profile = mkIf (isDarwin && stylixCfg.enable) (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            # Keep Terminal.app visually aligned with the Ghostty/Stylix font and palette.
+            if [ -x /usr/bin/osascript ]; then
+              to_rgb16() {
+                hex=$1
+                hex=''${hex#\#}
+                r=''${hex:0:2}
+                g=''${hex:2:2}
+                b=''${hex:4:2}
+                printf '{%d, %d, %d}' "$((16#$r * 257))" "$((16#$g * 257))" "$((16#$b * 257))"
+              }
+
+              background=$(to_rgb16 '${stylixColors.base00}')
+              foreground=$(to_rgb16 '${stylixColors.base05}')
+              bold=$(to_rgb16 '${stylixColors.base07}')
+              cursor=$(to_rgb16 '${stylixColors.base0D}')
+              /usr/bin/osascript \
+                -e 'tell application "Terminal"' \
+                -e 'try' \
+                -e 'make new settings set with properties {name:"${appleScriptString cfg.macosTerminalProfileName}"}' \
+                -e 'end try' \
+                -e 'set font name of settings set "${appleScriptString cfg.macosTerminalProfileName}" to "${appleScriptString stylixCfg.fonts.monospace.name}"' \
+                -e 'set font size of settings set "${appleScriptString cfg.macosTerminalProfileName}" to ${toString stylixCfg.fonts.sizes.terminal}' \
+                -e "set background color of settings set \"${appleScriptString cfg.macosTerminalProfileName}\" to $background" \
+                -e "set normal text color of settings set \"${appleScriptString cfg.macosTerminalProfileName}\" to $foreground" \
+                -e "set bold text color of settings set \"${appleScriptString cfg.macosTerminalProfileName}\" to $bold" \
+                -e "set cursor color of settings set \"${appleScriptString cfg.macosTerminalProfileName}\" to $cursor" \
+                -e 'set default settings to settings set "${appleScriptString cfg.macosTerminalProfileName}"' \
+                -e 'set startup settings to settings set "${appleScriptString cfg.macosTerminalProfileName}"' \
+                -e 'if (count of windows) > 0 then' \
+                -e 'repeat with w in windows' \
+                -e 'repeat with t in tabs of w' \
+                -e 'set current settings of t to settings set "${appleScriptString cfg.macosTerminalProfileName}"' \
+                -e 'end repeat' \
+                -e 'end repeat' \
+                -e 'end if' \
+                -e 'end tell' >/dev/null 2>&1 || true
+            fi
+          ''
+        );
 
         xdg.configFile = {
           # Generate main config from base file + any configInit from other modules

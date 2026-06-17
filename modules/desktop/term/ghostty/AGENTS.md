@@ -26,6 +26,7 @@ config/ghostty/
 - **macOS:** Installed via Homebrew cask, not nixpkgs
 - **Linux:** Uses `inputs.ghostty.packages.x86_64-linux.default`
 - **Generated files:** config, keybindings.conf, behavior.conf (others symlinked)
+- **Terminal.app:** Darwin activation creates a Stylix-backed `Ghostty Match` profile and makes it default/startup
 - **PATH injection:** behavior.conf gets nix paths appended for startup command discovery
 
 ## Extension Pattern
@@ -49,12 +50,13 @@ modules.desktop.term.ghostty.configInit = ''
 
 ## Options
 
-| Option            | Type         | Description                           |
-| ----------------- | ------------ | ------------------------------------- |
-| `enable`          | bool         | Enable module                         |
-| `keybindingFiles` | list of path | Files concatenated into keybindings   |
-| `keybindingsInit` | lines        | Inline keybindings appended           |
-| `configInit`      | lines        | Inline config appended to main config |
+| Option                     | Type         | Description                           |
+| -------------------------- | ------------ | ------------------------------------- |
+| `enable`                   | bool         | Enable module                         |
+| `keybindingFiles`          | list of path | Files concatenated into keybindings   |
+| `keybindingsInit`          | lines        | Inline keybindings appended           |
+| `configInit`               | lines        | Inline config appended to main config |
+| `macosTerminalProfileName` | str          | Generated Terminal.app profile name   |
 
 ## Startup Ownership
 
