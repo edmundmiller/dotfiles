@@ -67,6 +67,11 @@ let
   piRequiredSecretKeysJson = pkgs.writeText "pi-required-secret-keys.json" (
     builtins.toJSON piRequiredSecretKeys
   );
+  piNodeGypPython = pkgs.python311.withPackages (ps: [ ps.setuptools ]);
+  piRuntimePath = lib.makeBinPath [
+    pkgs.nodejs
+    piNodeGypPython
+  ];
   piSecretPreflightScript = pkgs.writeShellScript "pi-secret-preflight" ''
     set -euo pipefail
 
@@ -135,11 +140,13 @@ let
             if [ -x "$out/bin/pi" ]; then
               wrapProgram "$out/bin/pi" \
                 --run ${escapeShellArg "${piSecretPreflightScript}"} \
+                --prefix PATH : ${escapeShellArg piRuntimePath} \
                 --set AGENT "1" \
                 --set PI_CODING_AGENT "true" \
-                --set DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer" \
+                --set DEVELOPER_DIR "/Library/Developer/CommandLineTools" \
                 --set NPM_CONFIG_PACKAGE_LOCK "false" \
                 --set NPM_CONFIG_SAVE "false" \
+                --set PYTHON ${escapeShellArg "${piNodeGypPython}/bin/python3"} \
                 --unset SDKROOT
 
               # The pi executable is Nix-managed and cannot self-update in-place.
