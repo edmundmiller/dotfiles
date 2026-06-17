@@ -67,11 +67,6 @@ let
   piRequiredSecretKeysJson = pkgs.writeText "pi-required-secret-keys.json" (
     builtins.toJSON piRequiredSecretKeys
   );
-  piNodeGypPython = pkgs.python311.withPackages (ps: [ ps.setuptools ]);
-  piRuntimePath = lib.makeBinPath [
-    pkgs.nodejs
-    piNodeGypPython
-  ];
   piSecretPreflightScript = pkgs.writeShellScript "pi-secret-preflight" ''
     set -euo pipefail
 
@@ -126,43 +121,8 @@ let
         raise SystemExit(42)
     PY
   '';
-  piPackageWithRuntimeWrapper = pkgs.stdenvNoCC.mkDerivation {
-    pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-runtime-wrapper";
-    version = pkgs.llm-agents.pi.version or "wrapped";
-    dontUnpack = true;
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    installPhase = ''
-            runHook preInstall
-
-            cp -a ${pkgs.llm-agents.pi} "$out"
-            chmod -R u+w "$out"
-
-            if [ -x "$out/bin/pi" ]; then
-              wrapProgram "$out/bin/pi" \
-                --run ${escapeShellArg "${piSecretPreflightScript}"} \
-                --prefix PATH : ${escapeShellArg piRuntimePath} \
-                --set AGENT "1" \
-                --set PI_CODING_AGENT "true" \
-                --set DEVELOPER_DIR "/Library/Developer/CommandLineTools" \
-                --set NPM_CONFIG_PACKAGE_LOCK "false" \
-                --set NPM_CONFIG_SAVE "false" \
-                --set PYTHON ${escapeShellArg "${piNodeGypPython}/bin/python3"} \
-                --unset SDKROOT
-
-              # The pi executable is Nix-managed and cannot self-update in-place.
-              # Make the common `pi update` shortcut update only user packages/extensions;
-              # explicit self-update requests like `pi update pi` still pass through and fail loudly.
-              substituteInPlace "$out/bin/pi" \
-                --replace-fail 'exec -a "$0" ' \
-                  'if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then
-        set -- update --extensions
-      fi
-      exec -a "$0" '
-            fi
-
-            runHook postInstall
-    '';
-    inherit (pkgs.llm-agents.pi) meta;
+  piPackageWithRuntimeWrapper = import ./lib/_runtime-wrapper.nix {
+    inherit lib pkgs piSecretPreflightScript;
   };
 
   # Dynamically concatenate all rule files from config/agents/rules/
