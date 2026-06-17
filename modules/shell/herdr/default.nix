@@ -362,14 +362,13 @@ in
             version_stamp="$state_dir/launcher-version"
             current_version="$($herdr_cmd --version 2>/dev/null || true)"
 
-            # Herdr client/server protocol changes require a server restart. Herdr
-            # does not currently expose the protocol version separately, so use the
-            # managed binary version as a cheap compatibility stamp before attach.
+            # Never stop Herdr from a Ghostty launch. If a protocol bump requires
+            # a restart, surface it and let the user choose when to close panes.
             if [[ -n "$current_version" ]]; then
               mkdir -p "$state_dir"
               previous_version="$(cat "$version_stamp" 2>/dev/null || true)"
               if [[ -n "$previous_version" && "$previous_version" != "$current_version" ]]; then
-                "$herdr_cmd" session stop >/dev/null 2>&1 || true
+                echo "open-herdr.sh: Herdr version changed; restart manually if attach fails." >&2
               fi
               printf '%s\n' "$current_version" > "$version_stamp"
             fi
