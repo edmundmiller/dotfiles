@@ -73,7 +73,9 @@ let
     import sys
 
 
-    required_keys_path = pathlib.Path(${builtins.toJSON piRequiredSecretKeysJson})
+    required_keys_path = pathlib.Path(
+        ${builtins.toJSON piRequiredSecretKeysJson}
+    )
     required = [
         key
         for key in json.loads(required_keys_path.read_text(encoding="utf-8"))
