@@ -116,6 +116,7 @@
         apps.handy.enable = true;
         term.ghostty = {
           enable = true;
+          macosTerminalProfileName = "Seqera";
           # Stylix drives ghostty colors from the Seqera Dark base16 scheme
           # (see modules.theme.stylix below); we no longer set `theme =`
           # here, otherwise ghostty would race with the stylix-generated
@@ -189,37 +190,6 @@
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
-        '';
-
-        # Keep macOS Terminal.app aligned with host-specific font and Seqera colors.
-        # Creates/updates a "Seqera" profile and sets it as startup/default profile.
-        home.activation.setTerminalSeqeraProfile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          if [ -x /usr/bin/osascript ]; then
-            /usr/bin/osascript \
-              -e 'tell application "Terminal"' \
-              -e 'try' \
-              -e 'make new settings set with properties {name:"Seqera"}' \
-              -e 'end try' \
-              -e 'set font name of settings set "Seqera" to "JetBrainsMono-Regular"' \
-              -e 'set font size of settings set "Seqera" to 14' \
-              -e 'set background color of settings set "Seqera" to {8224, 5654, 14135}' \
-              -e 'set normal text color of settings set "Seqera" to {58082, 63479, 62451}' \
-              -e 'set bold text color of settings set "Seqera" to {65535, 65535, 65535}' \
-              -e 'set cursor color of settings set "Seqera" to {12593, 51657, 44204}' \
-              -e 'try' \
-              -e 'set selection color of settings set "Seqera" to {1542, 22102, 18247}' \
-              -e 'end try' \
-              -e 'set default settings to settings set "Seqera"' \
-              -e 'set startup settings to settings set "Seqera"' \
-              -e 'if (count of windows) > 0 then' \
-              -e 'repeat with w in windows' \
-              -e 'repeat with t in tabs of w' \
-              -e 'set current settings of t to settings set "Seqera"' \
-              -e 'end repeat' \
-              -e 'end repeat' \
-              -e 'end if' \
-              -e 'end tell' >/dev/null 2>&1 || true
-          fi
         '';
       };
 
