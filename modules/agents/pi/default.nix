@@ -60,30 +60,29 @@ let
     if resolved.success then resolved.value else "op";
   opReadTimeoutSeconds = 15;
   sessionSearchFiles = import ./lib/_session-search-files.nix { inherit lib; };
-  dotenvPython = pkgs.python3;
   piRequiredSecretKeys = lib.unique (
     cfg.requiredSecretKeys ++ lib.optionals cfg.honcho.enable [ "HONCHO_API_KEY" ]
   );
   piRequiredSecretKeysJson = pkgs.writeText "pi-required-secret-keys.json" (
     builtins.toJSON piRequiredSecretKeys
   );
-  piSecretPreflightScript = pkgs.writeShellScript "pi-secret-preflight" ''
-    set -euo pipefail
-
-    dotenv_path="$HOME/.pi/agent/.env"
-
-    ${pkgs.python3}/bin/python3 - ${escapeShellArg piRequiredSecretKeysJson} "$dotenv_path" <<'PY'
+  piSecretPreflightScript = pkgs.writers.writePython3 "pi-secret-preflight" { } ''
     import json
     import os
     import pathlib
     import sys
 
 
-    required = [key for key in json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")) if key]
+    required_keys_path = pathlib.Path(${builtins.toJSON piRequiredSecretKeysJson})
+    required = [
+        key
+        for key in json.loads(required_keys_path.read_text(encoding="utf-8"))
+        if key
+    ]
     if not required:
         raise SystemExit(0)
 
-    dotenv_path = pathlib.Path(sys.argv[2])
+    dotenv_path = pathlib.Path.home() / ".pi" / "agent" / ".env"
     dotenv_values = {}
     if dotenv_path.exists():
         for raw_line in dotenv_path.read_text(encoding="utf-8").splitlines():
@@ -107,7 +106,8 @@ let
 
     if missing:
         print(
-            f"error: pi startup blocked; missing required secret env var(s): {', '.join(missing)}",
+            "error: pi startup blocked; missing required secret env var(s): "
+            f"{', '.join(missing)}",
             file=sys.stderr,
         )
         print(
@@ -115,11 +115,11 @@ let
             file=sys.stderr,
         )
         print(
-            "error: unlock 1Password and run `hey re`, or export these env vars before starting pi.",
+            "error: unlock 1Password and run `hey re`, or export these env "
+            "vars before starting pi.",
             file=sys.stderr,
         )
         raise SystemExit(42)
-    PY
   '';
   piPackageWithRuntimeWrapper = import ./lib/_runtime-wrapper.nix {
     inherit lib pkgs piSecretPreflightScript;
@@ -362,7 +362,6 @@ in
             honchoEnvJson
             opBin
             opReadTimeoutSeconds
-            dotenvPython
             escapeShellArg
             ;
           hmLib = lib;

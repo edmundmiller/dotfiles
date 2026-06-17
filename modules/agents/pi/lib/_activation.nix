@@ -7,37 +7,9 @@
   honchoEnvJson,
   opBin,
   opReadTimeoutSeconds,
-  dotenvPython,
 }:
-
-{
-  pi-extension-conflict-cleanup = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    ext_dir="$HOME/.pi/agent/extensions"
-    rm -f "$ext_dir/context.ts" "$ext_dir/context.js"
-    rm -rf "$HOME/.cache/npm/lib/node_modules/@howaboua/pi-codex-conversion"
-    rmdir "$HOME/.cache/npm/lib/node_modules/@howaboua" 2>/dev/null || true
-
-    rm -f "$ext_dir/guardrails.json"
-    rm -rf "$HOME/.cache/npm/lib/node_modules/@aliou/pi-guardrails"
-    rmdir "$HOME/.cache/npm/lib/node_modules/@aliou" 2>/dev/null || true
-  '';
-
-  pi-legacy-skill-dir-cleanup = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    rm -rf "$HOME/.pi/agent/skills"
-  '';
-
-  pi-dotenv-secrets = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    dotenv_target="$HOME/.pi/agent/.env"
-
-    if [ ! -s ${escapeShellArg secretRefsJson} ]; then
-      :
-    elif ! command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
-      echo "warning: 1Password CLI unavailable; skipping pi dotenv materialization" >&2
-    elif ! ${pkgs.coreutils}/bin/timeout 5 ${opBin} vault list >/dev/null 2>&1; then
-      echo "warning: 1Password unavailable (locked or closed); preserving existing pi secrets" >&2
-    else
-      tmp="$(${pkgs.coreutils}/bin/mktemp)"
-      ${dotenvPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} ${escapeShellArg honchoEnvJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
+let
+  dotenvMaterializer = pkgs.writers.writePython3 "pi-dotenv-materialize" { } ''
     import json
     import os
     import pathlib
@@ -50,6 +22,7 @@
     plain_path = pathlib.Path(sys.argv[3])
     dotenv_path = pathlib.Path(sys.argv[4])
     op_bin = sys.argv[5]
+    op_read_timeout_seconds = int(sys.argv[6])
 
     refs = json.loads(refs_path.read_text(encoding="utf-8"))
     plain = json.loads(plain_path.read_text(encoding="utf-8"))
@@ -82,7 +55,7 @@
                 [op_bin, "read", ref],
                 text=True,
                 stderr=subprocess.DEVNULL,
-                timeout=${toString opReadTimeoutSeconds},
+                timeout=op_read_timeout_seconds,
             ).rstrip("\n")
         except Exception:
             fallback = existing_values.get(key, "")
@@ -106,25 +79,43 @@
 
     if failed_keys:
         sample = ", ".join(failed_keys[:5])
-        extra = "" if len(failed_keys) <= 5 else f" (+{len(failed_keys) - 5} more)"
+        extra = (
+            ""
+            if len(failed_keys) <= 5
+            else f" (+{len(failed_keys) - 5} more)"
+        )
         print(
-            f"warning: failed to read {len(failed_keys)} pi secret(s) from 1Password: {sample}{extra}",
+            "warning: failed to read "
+            f"{len(failed_keys)} pi secret(s) from 1Password: "
+            f"{sample}{extra}",
             file=sys.stderr,
         )
 
     if empty_keys:
         sample = ", ".join(empty_keys[:5])
-        extra = "" if len(empty_keys) <= 5 else f" (+{len(empty_keys) - 5} more)"
+        extra = (
+            ""
+            if len(empty_keys) <= 5
+            else f" (+{len(empty_keys) - 5} more)"
+        )
         print(
-            f"warning: {len(empty_keys)} pi secret(s) resolved empty from 1Password: {sample}{extra}",
+            f"warning: {len(empty_keys)} pi secret(s) resolved empty "
+            f"from 1Password: {sample}{extra}",
             file=sys.stderr,
         )
 
     if preserved_keys:
         sample = ", ".join(preserved_keys[:5])
-        extra = "" if len(preserved_keys) <= 5 else f" (+{len(preserved_keys) - 5} more)"
+        extra = (
+            ""
+            if len(preserved_keys) <= 5
+            else f" (+{len(preserved_keys) - 5} more)"
+        )
         print(
-            f"warning: preserving {len(preserved_keys)} existing pi secret(s) because 1Password did not return a fresh value: {sample}{extra}",
+            "warning: preserving "
+            f"{len(preserved_keys)} existing pi secret(s) because "
+            "1Password did not return a fresh value: "
+            f"{sample}{extra}",
             file=sys.stderr,
         )
 
@@ -134,7 +125,36 @@
 
     target.write_text(content, encoding="utf-8")
     os.chmod(target, 0o600)
-    PY
+  '';
+in
+{
+  pi-extension-conflict-cleanup = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    ext_dir="$HOME/.pi/agent/extensions"
+    rm -f "$ext_dir/context.ts" "$ext_dir/context.js"
+    rm -rf "$HOME/.cache/npm/lib/node_modules/@howaboua/pi-codex-conversion"
+    rmdir "$HOME/.cache/npm/lib/node_modules/@howaboua" 2>/dev/null || true
+
+    rm -f "$ext_dir/guardrails.json"
+    rm -rf "$HOME/.cache/npm/lib/node_modules/@aliou/pi-guardrails"
+    rmdir "$HOME/.cache/npm/lib/node_modules/@aliou" 2>/dev/null || true
+  '';
+
+  pi-legacy-skill-dir-cleanup = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    rm -rf "$HOME/.pi/agent/skills"
+  '';
+
+  pi-dotenv-secrets = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    dotenv_target="$HOME/.pi/agent/.env"
+
+    if [ ! -s ${escapeShellArg secretRefsJson} ]; then
+      :
+    elif ! command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
+      echo "warning: 1Password CLI unavailable; skipping pi dotenv materialization" >&2
+    elif ! ${pkgs.coreutils}/bin/timeout 5 ${opBin} vault list >/dev/null 2>&1; then
+      echo "warning: 1Password unavailable (locked or closed); preserving existing pi secrets" >&2
+    else
+      tmp="$(${pkgs.coreutils}/bin/mktemp)"
+      ${dotenvMaterializer} "$tmp" ${escapeShellArg secretRefsJson} ${escapeShellArg honchoEnvJson} "$dotenv_target" ${escapeShellArg opBin} ${toString opReadTimeoutSeconds}
       ${pkgs.coreutils}/bin/install -m 0600 "$tmp" "$dotenv_target"
       ${pkgs.coreutils}/bin/rm -f "$tmp"
     fi
