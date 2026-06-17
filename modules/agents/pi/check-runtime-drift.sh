@@ -10,6 +10,8 @@ warn() {
 
 pi_home="${PI_HOME:-$HOME/.pi/agent}"
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+host_name="$(hostname -s 2>/dev/null || hostname)"
+host_name="${host_name%%.*}"
 
 if [ ! -d "$pi_home" ]; then
   warn "Pi home not found at $pi_home; run hey re before using pi."
@@ -37,7 +39,19 @@ fi
 
 if command -v pi >/dev/null 2>&1; then
   current_version="$(pi --version 2>/dev/null || true)"
-  pinned_version="$(nix eval --no-write-lock-file --raw "$repo_root#nixosConfigurations.$(hostname).pkgs.llm-agents.pi.version" 2>/dev/null || true)"
+  pinned_version=""
+  for flake_attr in \
+    "darwinConfigurations.$host_name.pkgs.llm-agents.pi.version" \
+    "nixosConfigurations.$host_name.pkgs.llm-agents.pi.version"
+  do
+    pinned_version="$(nix eval --no-write-lock-file --raw "$repo_root#$flake_attr" 2>/dev/null || true)"
+    [ -n "$pinned_version" ] && break
+  done
+
+  if [ -n "$current_version" ] && [ -z "$pinned_version" ]; then
+    warn "Could not resolve repo-pinned Pi version for host '$host_name'."
+  fi
+
   if [ -n "$current_version" ] && [ -n "$pinned_version" ] && [ "$current_version" != "$pinned_version" ]; then
     warn "Pi binary version $current_version differs from repo-pinned $pinned_version; run hey re."
   fi
