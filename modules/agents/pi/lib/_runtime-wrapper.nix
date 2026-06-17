@@ -9,12 +9,12 @@ let
     pkgs.nodejs
     nodeGypPython
   ];
-  updateExtensionsShim = ''
-    if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then
-      set -- update --extensions
-    fi
-    exec -a "$0"${" "}
-  '';
+  updateExtensionsShim = lib.concatStringsSep "\n" [
+    ''if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then''
+    "  set -- update --extensions"
+    "fi"
+    ''exec -a "$0" ''
+  ];
 in
 pkgs.stdenvNoCC.mkDerivation {
   pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-runtime-wrapper";
