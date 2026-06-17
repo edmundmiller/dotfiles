@@ -27,14 +27,17 @@
   '';
 
   pi-dotenv-secrets = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        dotenv_target="$HOME/.pi/agent/.env"
-        if [ -s ${escapeShellArg secretRefsJson} ]; then
-          if command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
-            tmp="$(${pkgs.coreutils}/bin/mktemp)"
-            if ! ${pkgs.coreutils}/bin/timeout 5 ${opBin} vault list >/dev/null 2>&1; then
-              echo "warning: 1Password unavailable (locked or closed); preserving existing pi secrets" >&2
-            else
-            ${dotenvPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} ${escapeShellArg honchoEnvJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
+    dotenv_target="$HOME/.pi/agent/.env"
+
+    if [ ! -s ${escapeShellArg secretRefsJson} ]; then
+      :
+    elif ! command -v ${escapeShellArg opBin} >/dev/null 2>&1; then
+      echo "warning: 1Password CLI unavailable; skipping pi dotenv materialization" >&2
+    elif ! ${pkgs.coreutils}/bin/timeout 5 ${opBin} vault list >/dev/null 2>&1; then
+      echo "warning: 1Password unavailable (locked or closed); preserving existing pi secrets" >&2
+    else
+      tmp="$(${pkgs.coreutils}/bin/mktemp)"
+      ${dotenvPython}/bin/python3 - "$tmp" ${escapeShellArg secretRefsJson} ${escapeShellArg honchoEnvJson} "$dotenv_target" ${escapeShellArg opBin} <<'PY'
     import json
     import os
     import pathlib
@@ -132,13 +135,9 @@
     target.write_text(content, encoding="utf-8")
     os.chmod(target, 0o600)
     PY
-            ${pkgs.coreutils}/bin/install -m 0600 "$tmp" "$dotenv_target"
-            ${pkgs.coreutils}/bin/rm -f "$tmp"
-            fi
-          else
-            echo "warning: 1Password CLI unavailable; skipping pi dotenv materialization" >&2
-          fi
-        fi
+      ${pkgs.coreutils}/bin/install -m 0600 "$tmp" "$dotenv_target"
+      ${pkgs.coreutils}/bin/rm -f "$tmp"
+    fi
   '';
 
   pi-memory-remote = hmLib.mkIf (cfg.memoryRemote != "") (
