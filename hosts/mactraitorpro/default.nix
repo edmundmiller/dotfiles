@@ -60,7 +60,16 @@
         tmux.experimental.sessionDots.enable = false;
         tmux.experimental.agentStatus.enable = false;
         dmux.enable = false;
-        zsh.enable = true;
+        zsh = {
+          enable = true;
+          envInit = ''
+            # Homebrew 5.1.11 on macOS 27 requires Xcode 27, even when the
+            # installed CLT is already 27-compatible. Keep interactive `brew`
+            # commands usable until Homebrew/Xcode catches up by matching the
+            # activation-time workaround below.
+            export HOMEBREW_FAKE_MACOS=26.0
+          '';
+        };
       };
 
       agents = {
@@ -184,6 +193,11 @@
           # becomes :dunno and brew bundle crashes while resolving dependencies.
           # Pretend to be the newest Homebrew-supported macOS until brew adds 27.
           HOMEBREW_FAKE_MACOS = "26.0";
+
+          # Xcode is huge, MAS-backed, and currently prompts/hangs under
+          # nix-darwin activation. Keep it declared in masApps for inventory,
+          # but do not let routine rebuilds install it interactively.
+          HOMEBREW_BUNDLE_MAS_SKIP = "Xcode";
         };
         extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };
