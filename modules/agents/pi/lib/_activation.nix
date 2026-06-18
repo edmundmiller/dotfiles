@@ -139,13 +139,6 @@ in
     rmdir "$HOME/.cache/npm/lib/node_modules/@aliou" 2>/dev/null || true
   '';
 
-  pi-legacy-skill-dir-cleanup = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ -d "$HOME/.pi/agent/skills" ] && [ ! -L "$HOME/.pi/agent/skills" ]; then
-      chmod -R u+w "$HOME/.pi/agent/skills"
-    fi
-    rm -rf "$HOME/.pi/agent/skills"
-  '';
-
   pi-dotenv-secrets = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
     dotenv_target="$HOME/.pi/agent/.env"
 

@@ -122,15 +122,6 @@ in
           PY
         '';
 
-        home.activation.claude-skills-bridge = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          mkdir -p "$HOME/.claude"
-          if [ -d "$HOME/.claude/skills" ] && [ ! -L "$HOME/.claude/skills" ]; then
-            chmod -R u+w "$HOME/.claude/skills"
-          fi
-          rm -rf "$HOME/.claude/skills"
-          ln -sfn "$HOME/.agents/skills" "$HOME/.claude/skills"
-        '';
-
         home.activation.claude-stale-hook-cleanup = lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
           ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" <<'PY'
           import json
