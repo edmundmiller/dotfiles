@@ -11,6 +11,7 @@ Manages global agent skills via `agent-skills-nix`. Dotfiles project-local skill
 3. **Targets** — where skills are installed (`~/.agents/skills`, `~/.codex/skills`, `~/.pi/agent/skills`, `~/.claude/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`)
 
 Default skills go to every target. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `claude`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-claude`, `dot-opencode`, `dot-hermes`).
+Bundles are generated for every target, but activation syncs only targets whose local agent module is enabled. Hermes also syncs when `services.hermes-agent.enable = true`. The `agents` target is synced when any local agent is enabled.
 
 **Hermes note:** Hermes builtin skills do not include these dotfiles skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.hermes/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
 
