@@ -140,6 +140,9 @@ in
   '';
 
   pi-legacy-skill-dir-cleanup = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ -d "$HOME/.pi/agent/skills" ] && [ ! -L "$HOME/.pi/agent/skills" ]; then
+      chmod -R u+w "$HOME/.pi/agent/skills"
+    fi
     rm -rf "$HOME/.pi/agent/skills"
   '';
 
