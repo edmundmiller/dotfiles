@@ -124,6 +124,9 @@ in
 
         home.activation.claude-skills-bridge = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           mkdir -p "$HOME/.claude"
+          if [ -d "$HOME/.claude/skills" ] && [ ! -L "$HOME/.claude/skills" ]; then
+            chmod -R u+w "$HOME/.claude/skills"
+          fi
           rm -rf "$HOME/.claude/skills"
           ln -sfn "$HOME/.agents/skills" "$HOME/.claude/skills"
         '';

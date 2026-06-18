@@ -63,6 +63,11 @@ in
           ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/tool"
 
           # Shared global skills now live in ~/.agents/skills and are discovered natively.
+          for stale_skill_dir in "${opencodeConfigDir}/skill" "${opencodeConfigDir}/skills"; do
+            if [ -d "$stale_skill_dir" ] && [ ! -L "$stale_skill_dir" ]; then
+              ${pkgs.coreutils}/bin/chmod -R u+w "$stale_skill_dir"
+            fi
+          done
           rm -rf "${opencodeConfigDir}/skill" "${opencodeConfigDir}/skills"
 
           # Copy package.json (can't symlink - bun install modifies lockfile location)
