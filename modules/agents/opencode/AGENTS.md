@@ -22,7 +22,7 @@ config/opencode/
 ├── plugin/           # Local plugin development (NOT deployed)
 └── package.json      # Dependencies for tools
 
-Global shared skills live in `~/.agents/skills/` and are discovered natively by OpenCode.
+Global OpenCode skills are generated into `~/.config/opencode/skills/`.
 ```
 
 ## Key Facts

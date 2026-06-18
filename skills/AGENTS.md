@@ -1,6 +1,6 @@
 # Skills Catalog (Child Flake)
 
-Manages shared global skills via `agent-skills-nix`. Dotfiles project-local skills belong in `.agents/skills/`, not here, and must not be deployed globally.
+Manages global agent skills via `agent-skills-nix`. Dotfiles project-local skills belong in `.agents/skills/`, not here, and must not be deployed globally.
 
 ## How It Works
 
@@ -8,13 +8,25 @@ Manages shared global skills via `agent-skills-nix`. Dotfiles project-local skil
 
 1. **Sources** — where skills come from (local dir or remote repos)
 2. **Skill selection** — which skills to enable
-3. **Targets** — where skills are installed (symlink-tree into `~/.agents/skills/`; Codex, Pi, OpenCode, and Hermes read there directly; Claude gets a compatibility bridge via `~/.claude/skills/`)
+3. **Targets** — where skills are installed (`~/.agents/skills`, `~/.codex/skills`, `~/.pi/agent/skills`, `~/.claude/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`)
 
-**Hermes note:** Hermes builtin skills do not include these dotfiles shared skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.agents/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
+Default skills go to every target. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `claude`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-claude`, `dot-opencode`, `dot-hermes`).
+
+**Hermes note:** Hermes builtin skills do not include these dotfiles skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.hermes/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
 
 ## Adding a Global Skill
 
 Drop a directory with `SKILL.md` into `skills/catalog/<name>/`. Use this only for skills that should be available across projects. Auto-enabled via `skills.enableAll = ["catalog"]`.
+
+For target-specific explicit skills, set metadata in `skills/flake.nix`:
+
+```nix
+programs.dotfiles-agent-skills.targetedExplicit.my-skill = {
+  from = "my-source";
+  path = "my-skill";
+  meta.targets = [ "codex" "claude" ];
+};
+```
 
 ## Adding a Remote Skill
 

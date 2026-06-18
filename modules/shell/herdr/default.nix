@@ -746,7 +746,6 @@ in
               "writeBoundary"
               "pi-extension-conflict-cleanup"
               "claude-settings-bootstrap"
-              "claude-skills-bridge"
               "codex-config-bootstrap"
               "opencode-setup"
               "hermes-bootstrap"

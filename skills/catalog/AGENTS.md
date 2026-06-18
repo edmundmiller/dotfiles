@@ -1,6 +1,6 @@
 # Shared Agent Skills
 
-This directory contains global/shared skills in skills.sh format. Each skill lives in its own directory:
+This directory contains global skills in skills.sh format. Each skill lives in its own directory:
 
 ```text
 skill-name/

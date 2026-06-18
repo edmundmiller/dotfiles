@@ -1491,7 +1491,7 @@ in
       hermes = {
         enable = true;
         agentSkillBundles = [
-          config.home-manager.users.${config.user.name}.programs.agent-skills.bundlePath
+          config.home-manager.users.${config.user.name}.programs.dotfiles-agent-skills.bundles.hermes
         ];
         # Containers use host networking, so prefer the deployment-local HA
         # endpoint over mDNS names such as homeassistant.local from inside

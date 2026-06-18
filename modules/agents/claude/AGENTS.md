@@ -15,7 +15,7 @@ Minimal Nix module for Claude Code. It keeps Claude pointed at the shared rules,
 ## Facts
 
 - Enable with `modules.agents.claude.enable = true`
-- `~/.claude/skills` is a bridge to `~/.agents/skills`
+- `~/.claude/skills` is managed as Claude's own skill target; do not bridge it to `~/.agents/skills`.
 - `~/.claude/settings.json` is bootstrapped as a writable local file, not a Home Manager symlink, so runtime integrations such as Herdr can mutate Claude hooks.
 - Plugins are user-installed; this repo only keeps source trees and settings
 - WakaTime config is Darwin-only and depends on `wakatime-api-key`

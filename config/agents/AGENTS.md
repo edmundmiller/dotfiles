@@ -4,9 +4,10 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 
 ## Quick Reference
 
-- **Global shared skills**: `skills/catalog/` → `~/.agents/skills`
+- **Generated skills**: `skills/catalog/` → per-agent targets
 - **Skills sync workflow**: see `skills/AGENTS.md` (commit+push skill edits first, then run `hey skills-sync`, then commit+push lockfile updates)
-- **Claude compatibility bridge**: `~/.claude/skills` → `~/.agents/skills`
+- **Dot-agents target**: `~/.agents/skills`
+- **Agent targets**: `~/.codex/skills`, `~/.pi/agent/skills`, `~/.claude/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`
 - **Project-local skills**: `.agents/skills/` (dotfiles-only; never global)
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`, `~/.config/opencode/agent`
 - **Rules**: `config/agents/rules/` → Concatenated into `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`, symlinked to `~/.config/opencode/rules`
@@ -15,13 +16,13 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 
 - Skills use skills.sh format (YAML frontmatter + markdown)
 - Rules are numbered (01-, 02-, etc.) for ordered concatenation
-- Shared skills live in `~/.agents/skills/` for Codex, Pi, OpenCode, and Hermes
-- Claude uses `~/.claude/skills/`, bridged to `~/.agents/skills/`
+- Skills default to every generated target.
+- Target-specific skills set `meta.targets` in `programs.dotfiles-agent-skills.targetedExplicit`.
 - OpenClaw skills live separately in `~/.openclaw/skills/`
 
 ## Adding Skills
 
-For global/shared skills, create `skills/catalog/<name>/SKILL.md`.
+For global skills, create `skills/catalog/<name>/SKILL.md`.
 
 For project-local skills that are only relevant to this dotfiles repo, create `.agents/skills/<name>/SKILL.md`; do not wire these into the global bundle.
 

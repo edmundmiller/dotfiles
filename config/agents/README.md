@@ -1,6 +1,6 @@
 # Agents Configuration
 
-Unified configuration for AI coding agents. This directory contains shared global skills, rules, and modes that are symlinked to each agent's configuration directory.
+Unified configuration for AI coding agents. This directory contains global skills, rules, and modes that are generated or symlinked to each agent's configuration directory.
 
 ## Directory Structure
 
@@ -13,22 +13,24 @@ config/agents/
 
 ## Supported Agents
 
-This configuration is shared across four agents, with Hermes also reading the same shared skills directory:
+This configuration is shared across five agents with separate generated skill targets:
 
-| Agent    | Skills Location                                     | Modes Location              | Rules                       |
-| -------- | --------------------------------------------------- | --------------------------- | --------------------------- |
-| Claude   | `~/.claude/skills/` → bridge to `~/.agents/skills/` | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`       |
-| Codex    | `~/.agents/skills/`                                 | N/A                         | `~/.codex/AGENTS.md`        |
-| OpenCode | `~/.agents/skills/`                                 | `~/.config/opencode/agent/` | `~/.config/opencode/rules/` |
-| Pi       | `~/.agents/skills/`                                 | N/A                         | `~/.pi/agent/AGENTS.md`     |
+| Agent      | Skills Location              | Modes Location              | Rules                       |
+| ---------- | ---------------------------- | --------------------------- | --------------------------- |
+| dot-agents | `~/.agents/skills/`          | N/A                         | N/A                         |
+| Claude     | `~/.claude/skills/`          | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`       |
+| Codex      | `~/.codex/skills/`           | N/A                         | `~/.codex/AGENTS.md`        |
+| OpenCode   | `~/.config/opencode/skills/` | `~/.config/opencode/agent/` | `~/.config/opencode/rules/` |
+| Pi         | `~/.pi/agent/skills/`        | N/A                         | `~/.pi/agent/AGENTS.md`     |
+| Hermes     | `~/.hermes/skills/`          | N/A                         | `~/.hermes/SOUL.md`         |
 
-Hermes also loads external skills from `~/.agents/skills/` via `config/hermes/config.yml`.
+Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
 
 ## Skills
 
 Use two lanes only:
 
-- `skills/catalog/` — global/shared skills installed into `~/.agents/skills/`
+- `skills/catalog/` — global skills installed into generated target dirs
 - `.agents/skills/` — project-local skills checked into this repo; never install these into `~/.agents/skills/`
 
 OpenClaw keeps its own skills in `~/.openclaw/skills/`.
