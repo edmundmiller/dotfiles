@@ -244,10 +244,10 @@ memory:
 prefill_messages_file: ""
 
 # Skills external directories
-# Keep Hermes pointed at the shared cross-agent skills dir used by Codex/Pi/OpenCode.
+# Keep Hermes pointed at its generated target-specific skills dir.
 skills:
   external_dirs:
-    - ~/.agents/skills
+    - ~/.hermes/skills
   config:
     wiki:
       path: ~/obsidian-vault/

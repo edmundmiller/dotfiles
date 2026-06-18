@@ -13,7 +13,7 @@ This directory contains OpenCode configuration for the dotfiles repository.
 - `command/` - Slash commands
 - `agent/` - Custom agent definitions
 
-Global shared skills are discovered from `~/.agents/skills/`.
+Global OpenCode skills are generated into `~/.config/opencode/skills/`.
 
 ### Managed by Nix (via activation script)
 
