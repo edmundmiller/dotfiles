@@ -14,7 +14,7 @@ modules.agents.claude.enable = true;
 - `~/.claude/settings.json` from `config/claude/settings.json`
 - `~/.claude/CLAUDE.md` built from `config/agents/rules/*.md`
 - `~/.claude/agents/` from `config/agents/modes/`
-- `~/.claude/skills` → `~/.agents/skills`
+- `~/.claude/skills/` generated from the skills catalog
 - Darwin-only `~/.wakatime.cfg`
 
 ## Repo-local Claude plugin sources
@@ -28,5 +28,6 @@ These stay in the repo for development/reference, but installed plugins still li
 ## Notes
 
 - Shared skills and modes live under `config/agents/`
+- Claude-specific generated skills sync only when `modules.agents.claude.enable = true`
 - Project-local skills belong in `.agents/skills/`
 - If Claude reports settings schema errors, check `config/claude/settings.json`

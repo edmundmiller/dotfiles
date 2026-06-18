@@ -187,6 +187,12 @@
           "diffity"
           "enable"
         ];
+        codexEnabled = moduleEnabled [
+          "modules"
+          "agents"
+          "codex"
+          "enable"
+        ];
         gitbutlerEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -200,6 +206,39 @@
           "pi"
           "enable"
         ];
+        claudeEnabled = moduleEnabled [
+          "modules"
+          "agents"
+          "claude"
+          "enable"
+        ];
+        opencodeEnabled = moduleEnabled [
+          "modules"
+          "agents"
+          "opencode"
+          "enable"
+        ];
+        hermesEnabled =
+          moduleEnabled [
+            "modules"
+            "agents"
+            "hermes"
+            "enable"
+          ]
+          || moduleEnabled [
+            "services"
+            "hermes-agent"
+            "enable"
+          ];
+        targetEnabled = {
+          agents = codexEnabled || piEnabled || claudeEnabled || opencodeEnabled || hermesEnabled;
+          codex = codexEnabled;
+          pi = piEnabled;
+          claude = claudeEnabled;
+          opencode = opencodeEnabled;
+          hermes = hermesEnabled;
+        };
+        activeSkillTargets = lib.filter (target: targetEnabled.${target}) allSkillTargets;
         herdrEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -313,23 +352,16 @@
             programs.dotfiles-agent-skills.bundles = bundles;
 
             home.activation.dotfiles-agent-skills = lib.hm.dag.entryAfter [ "agent-skills" ] (
-              ''
-                for dest in \
-                  "$HOME/.agents/skills" \
-                  "$HOME/.codex/skills" \
-                  "$HOME/.pi/agent/skills" \
-                  "$HOME/.claude/skills" \
-                  "$HOME/.config/opencode/skills" \
-                  "$HOME/.hermes/skills"
-                do
+              lib.concatMapStringsSep "\n" (target: ''
+                dest="${targetDefs.${target}.dest}"
                   if [ -L "$dest" ]; then
                     rm -f "$dest"
                   elif [ -e "$dest" ]; then
                     chmod -R u+w "$dest" 2>/dev/null || true
                   fi
-                done
-              ''
-              + lib.concatStringsSep "\n" (map (target: syncScripts.${target}) allSkillTargets)
+              '') activeSkillTargets
+              + "\n"
+              + lib.concatStringsSep "\n" (map (target: syncScripts.${target}) activeSkillTargets)
             );
 
             programs.agent-skills = {

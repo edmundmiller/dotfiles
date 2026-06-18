@@ -25,6 +25,7 @@ This configuration is shared across five agents with separate generated skill ta
 | Hermes     | `~/.hermes/skills/`          | N/A                         | `~/.hermes/SOUL.md`         |
 
 Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
+Generated bundles exist for every target, but activation only syncs targets whose local agent module is enabled. The `dot-agents` shared target is synced when any local agent module is enabled.
 
 ## Skills
 
