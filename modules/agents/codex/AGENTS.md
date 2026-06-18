@@ -16,5 +16,5 @@ Manages `~/.codex/` config via nix-darwin.
 
 ## Skills
 
-Codex should use the shared cross-agent skills directory at `~/.agents/skills/`.
-Do not rely on `~/.codex/skills/`; Codex does not consistently pick it up.
+Codex-specific generated skills sync to `~/.codex/skills/` when `modules.agents.codex.enable = true`.
+Cross-agent generated skills also sync to `~/.agents/skills/` when any local agent module is enabled.
