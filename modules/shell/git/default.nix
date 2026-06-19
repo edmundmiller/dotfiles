@@ -71,42 +71,51 @@ in
         );
 
       # Use home-manager's xdg.configFile directly for proper activation
-      home-manager.users.${config.user.name} = {
-        xdg.configFile = {
-          "git/config".source = "${configDir}/git/config";
-          "git/config-signing" =
-            if isDarwin then
-              {
-                source = "${configDir}/git/config-signing";
-              }
-            else
-              {
-                text = ''
-                  [commit]
-                      gpgsign = false
-                  [tag]
-                      gpgSign = false
-                '';
-              };
-          "git/config-seqera".source = "${configDir}/git/config-seqera";
-          "git/config-nfcore".source = "${configDir}/git/config-nfcore";
-          "git/ignore".source = "${configDir}/git/ignore";
-          "git/allowed_signers".source = "${configDir}/git/allowed_signers";
-          # GitHub CLI config (hosts.yml intentionally NOT managed — gh writes
-          # token/scope metadata to it after auth; Nix store symlink would block that)
-          "gh/config.yml".source = "${configDir}/gh/config.yml";
-          # GitHub Dashboard config
-          "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
-          # Lazygit config
-          "lazygit/config.yml" = {
-            text = builtins.readFile "${configDir}/lazygit/config.yml";
-            force = true;
+      home-manager.users.${config.user.name} =
+        { lib, ... }:
+        {
+          home.activation.git-ai-trace-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            if ${pkgs.git}/bin/git config --global --get trace2.eventTarget 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q '\.git-ai'; then
+              ${pkgs.git}/bin/git config --global --unset-all trace2.eventTarget || true
+              ${pkgs.git}/bin/git config --global --unset-all trace2.eventNesting || true
+            fi
+          '';
+
+          xdg.configFile = {
+            "git/config".source = "${configDir}/git/config";
+            "git/config-signing" =
+              if isDarwin then
+                {
+                  source = "${configDir}/git/config-signing";
+                }
+              else
+                {
+                  text = ''
+                    [commit]
+                        gpgsign = false
+                    [tag]
+                        gpgSign = false
+                  '';
+                };
+            "git/config-seqera".source = "${configDir}/git/config-seqera";
+            "git/config-nfcore".source = "${configDir}/git/config-nfcore";
+            "git/ignore".source = "${configDir}/git/ignore";
+            "git/allowed_signers".source = "${configDir}/git/allowed_signers";
+            # GitHub CLI config (hosts.yml intentionally NOT managed — gh writes
+            # token/scope metadata to it after auth; Nix store symlink would block that)
+            "gh/config.yml".source = "${configDir}/gh/config.yml";
+            # GitHub Dashboard config
+            "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
+            # Lazygit config
+            "lazygit/config.yml" = {
+              text = builtins.readFile "${configDir}/lazygit/config.yml";
+              force = true;
+            };
+          }
+          // optionalAttrs cfg.hunk.enable {
+            "hunk/config.toml".source = "${configDir}/hunk/config.toml";
           };
-        }
-        // optionalAttrs cfg.hunk.enable {
-          "hunk/config.toml".source = "${configDir}/hunk/config.toml";
         };
-      };
 
       modules.shell.zsh.rcFiles = [ "${configDir}/git/aliases.zsh" ];
 
