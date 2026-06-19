@@ -134,7 +134,14 @@
           dot-hermes = "hermes";
         };
         normalizeTarget = target: targetAliases.${target} or target;
-        targetsForSkill = skill: map normalizeTarget (skill.meta.targets or allSkillTargets);
+        # Pi, Codex, OpenCode, and Hermes read ~/.agents/skills in addition to
+        # their own target dirs, so default skills go only to ~/.agents/skills.
+        # Claude is the exception and needs its own default copy.
+        defaultSkillTargets = [
+          "agents"
+          "claude"
+        ];
+        targetsForSkill = skill: map normalizeTarget (skill.meta.targets or defaultSkillTargets);
         targetDefs = {
           agents = {
             enable = true;
@@ -231,7 +238,7 @@
             "enable"
           ];
         targetEnabled = {
-          agents = codexEnabled || piEnabled || claudeEnabled || opencodeEnabled || hermesEnabled;
+          agents = codexEnabled || piEnabled || opencodeEnabled || hermesEnabled;
           codex = codexEnabled;
           pi = piEnabled;
           claude = claudeEnabled;
