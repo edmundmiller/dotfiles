@@ -29,6 +29,8 @@ let
     "radar"
     "scintillate"
   ];
+  hermesGatewayUnits = map (name: "hermes-gateway-${name}.service") hermesSharedProfileNames;
+  hermesRuntimeSmoke = inputs.agents-workspace.packages.${hostSystem}.hermes-runtime-smoke;
   scintillateWhisperModel = pkgs.fetchurl {
     url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin";
     hash = "sha256-oDd5yG3zMjB19eeWyyzlAp8A7Ihp7uP9+4l6/jbG0AI=";
@@ -876,7 +878,7 @@ in
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     himalaya # IMAP/SMTP CLI for Fastmail triage by Scintillate/agents
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
-    inputs.agents-workspace.packages.${hostSystem}.hermes-runtime-smoke
+    hermesRuntimeSmoke
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
     my.tnote # packaged TaskNotes CLI; no boot-time mutable checkout/bun install
@@ -1278,6 +1280,17 @@ in
     "/var/lib/hermes-betty"
     "/home/emiller/mill-docs"
   ];
+
+  systemd.services.hermes-runtime-smoke = {
+    description = "Run read-only Hermes runtime smoke checks";
+    after = [ "docker.service" ] ++ hermesGatewayUnits;
+    wants = [ "docker.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      TimeoutStartSec = "15min";
+      ExecStart = "${hermesRuntimeSmoke}/bin/hermes-runtime-smoke";
+    };
+  };
 
   # Keep NUC on an LTS kernel for ZFS. nixos-unstable's default
   # linuxPackages currently tracks 7.0.x, where zfs-kernel-2.4.1 is marked

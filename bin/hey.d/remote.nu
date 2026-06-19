@@ -30,7 +30,9 @@ def nuc-post-deploy-check [local: bool] {
     systemctl --no-pager --plain list-units "hermes*.service" || true
     echo ""
     echo "=== post-deploy Hermes runtime smoke ==="
-    hermes-runtime-smoke
+    /run/wrappers/bin/sudo systemctl start hermes-runtime-smoke.service || true
+    systemctl status hermes-runtime-smoke.service --no-pager -l || true
+    journalctl -u hermes-runtime-smoke.service -n 80 --no-pager || true
   '
   if $local {
     ^bash -lc $script
@@ -41,7 +43,7 @@ def nuc-post-deploy-check [local: bool] {
 
 def "main nuc-hermes-smoke" [] {
   print "=== NUC Hermes runtime smoke ==="
-  ^ssh $NUC_HOST "hermes-runtime-smoke"
+  ^ssh $NUC_HOST "/run/wrappers/bin/sudo systemctl start hermes-runtime-smoke.service || true; systemctl status hermes-runtime-smoke.service --no-pager -l || true; journalctl -u hermes-runtime-smoke.service -n 80 --no-pager || true"
 }
 
 def nuc-local-rebuild [] {
