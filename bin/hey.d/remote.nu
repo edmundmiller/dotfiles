@@ -28,12 +28,20 @@ def nuc-post-deploy-check [local: bool] {
       echo "no gateway restart hook needed"
     fi
     systemctl --no-pager --plain list-units "hermes*.service" || true
+    echo ""
+    echo "=== post-deploy Hermes runtime smoke ==="
+    hermes-runtime-smoke
   '
   if $local {
     ^bash -lc $script
   } else {
     ^ssh $NUC_HOST $script
   }
+}
+
+def "main nuc-hermes-smoke" [] {
+  print "=== NUC Hermes runtime smoke ==="
+  ^ssh $NUC_HOST "hermes-runtime-smoke"
 }
 
 def nuc-local-rebuild [] {
@@ -184,10 +192,8 @@ echo "=== Verifying direct openai-codex invocation ==="
 docker exec hermes-agent-scintillate bash -lc 'timeout 180 hermes --provider openai-codex -m gpt-5.5 -z "Reply with exactly: OK"'
 
 echo ""
-echo "=== Re-running managed smoke check ==="
-/run/wrappers/bin/sudo systemctl reset-failed hermes-scintillate-codex-smoke.service || true
-/run/wrappers/bin/sudo systemctl start hermes-scintillate-codex-smoke.service
-systemctl status hermes-scintillate-codex-smoke.service --no-pager -l | tail -30
+echo "=== Re-running runtime smoke check ==="
+hermes-runtime-smoke scintillate
 '#
 }
 

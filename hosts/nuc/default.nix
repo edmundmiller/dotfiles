@@ -15,8 +15,6 @@ let
     inherit lib;
   };
   anneDiscordBindings = (discordBindings.agents or { }).anne or { };
-  anneDiscordHealthcheckPingUrl = "https://hc-ping.com/ca6df6ed-46f4-4c33-ae98-fb210e0dd617";
-  scintillateHealthcheckPingUrl = "https://hc-ping.com/c2f20a37-1ac6-4184-bb4c-b35ac983ca61";
   hermesScintillateApiServerPort = 8642;
   hermesScintillateWebuiPort = 8787;
   hermesScintillateDesktopDashboardPort = 9121;
@@ -82,26 +80,6 @@ let
   ]);
   hermesPythonSitePackages = "${hermesAgentBase}/${pkgs.python313.sitePackages}";
   tailnet = "cinnamon-rooster.ts.net";
-  scintillateTelegramAlertChatId = toString telegramBindings.dmTopics.scintillate.chatId;
-  scintillateTelegramAlertScript = pkgs.writeText "hermes-scintillate-telegram-alert.py" ''
-    import os
-    import urllib.parse
-    import urllib.request
-
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    message = os.environ.get("ALERT_MESSAGE", "")
-    if token and message:
-        data = urllib.parse.urlencode({
-            "chat_id": "${scintillateTelegramAlertChatId}",
-            "text": message,
-        }).encode()
-        req = urllib.request.Request(
-            f"https://api.telegram.org/bot{token}/sendMessage",
-            data=data,
-            method="POST",
-        )
-        urllib.request.urlopen(req, timeout=10).read()
-  '';
   millDocsGitPullHealthcheckPingUrl = "https://hc-ping.com/1a661f7e-cf0c-4a67-9343-64635347c50d";
   # Telegram routing topology for this host:
   # - "hermes" => current/live mode; Hermes owns all Telegram on the current bot token
@@ -898,6 +876,7 @@ in
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     himalaya # IMAP/SMTP CLI for Fastmail triage by Scintillate/agents
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
+    inputs.agents-workspace.packages.${hostSystem}.hermes-runtime-smoke
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
     my.tnote # packaged TaskNotes CLI; no boot-time mutable checkout/bun install
@@ -1299,132 +1278,6 @@ in
     "/var/lib/hermes-betty"
     "/home/emiller/mill-docs"
   ];
-
-  systemd.services.hermes-agent-anne-healthcheck-ping = {
-    description = "Check Anne Discord gateway health and ping healthchecks.io";
-    after = [ "hermes-gateway-anne.service" ];
-    wants = [ "hermes-gateway-anne.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      DynamicUser = true;
-      TimeoutStartSec = 90;
-      ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/start";
-      ExecStart = pkgs.writeShellScript "hermes-agent-anne-healthcheck-ping" ''
-        for _ in $(seq 1 90); do
-          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-anne.service; then
-            exit 0
-          fi
-          sleep 1
-        done
-        exit 1
-      '';
-      ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${anneDiscordHealthcheckPingUrl}/\${EXIT_STATUS}";
-    };
-  };
-
-  systemd.timers.hermes-agent-anne-healthcheck-ping = {
-    description = "Ping healthchecks.io for Anne Discord gateway";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "2min";
-      OnUnitActiveSec = "2min";
-      RandomizedDelaySec = "10s";
-    };
-  };
-
-  systemd.services.hermes-scintillate-healthcheck-ping = {
-    description = "Check Scintillate gateway health and ping healthchecks.io";
-    after = [ "hermes-gateway-scintillate.service" ];
-    wants = [ "hermes-gateway-scintillate.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      DynamicUser = true;
-      ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${scintillateHealthcheckPingUrl}/start";
-      ExecStart = pkgs.writeShellScript "hermes-scintillate-healthcheck-ping" ''
-        for _ in $(seq 1 30); do
-          if ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-scintillate.service; then
-            exit 0
-          fi
-          sleep 1
-        done
-        exit 1
-      '';
-      ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${scintillateHealthcheckPingUrl}/\${EXIT_STATUS}";
-    };
-  };
-
-  systemd.timers.hermes-scintillate-healthcheck-ping = {
-    description = "Ping healthchecks.io for Scintillate gateway";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "1min";
-      OnUnitActiveSec = "2min";
-      RandomizedDelaySec = "10s";
-    };
-  };
-
-  systemd.services.hermes-scintillate-codex-smoke = {
-    description = "Smoke-test Scintillate Codex auth and alert on failure";
-    after = [ "hermes-gateway-scintillate.service" ];
-    wants = [ "hermes-gateway-scintillate.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
-      TimeoutStartSec = 240;
-      ExecStart = pkgs.writeShellScript "hermes-scintillate-codex-smoke" ''
-                set -eu
-                set +x
-
-                log_file="$(${pkgs.coreutils}/bin/mktemp)"
-                cleanup() { rm -f "$log_file"; }
-                trap cleanup EXIT
-
-                alert() {
-                  reason="$1"
-                  scrubbed="$(${pkgs.gnused}/bin/sed -E \
-                    -e 's/(Authorization: Bearer )[A-Za-z0-9._-]+/\1[REDACTED]/g' \
-                    -e 's/[A-Za-z0-9_-]{80,}/[REDACTED]/g' \
-                    "$log_file" | ${pkgs.coreutils}/bin/head -c 3000)"
-                  message="⚠️ Scintillate Codex auth smoke failed on nuc: $reason"
-                  if [ -n "$scrubbed" ]; then
-                    message="$message
-
-        Scrubbed output:
-        $scrubbed"
-                  fi
-                  ALERT_MESSAGE="$message" ${pkgs.python3}/bin/python3 ${scintillateTelegramAlertScript} || true
-                }
-
-                if ! ${pkgs.systemd}/bin/systemctl is-active --quiet hermes-gateway-scintillate.service; then
-                  echo "hermes-gateway-scintillate.service is not active" > "$log_file"
-                  alert "gateway inactive"
-                  exit 1
-                fi
-
-                if ! ${pkgs.docker}/bin/docker exec hermes-agent-scintillate bash -lc \
-                  'timeout 180 hermes --provider openai-codex -m gpt-5.5 -z "Reply with exactly: OK"' \
-                  >"$log_file" 2>&1; then
-                  alert "openai-codex invocation failed"
-                  exit 1
-                fi
-
-                if ! ${pkgs.gnugrep}/bin/grep -qx 'OK' "$log_file"; then
-                  alert "unexpected smoke-test response"
-                  exit 1
-                fi
-      '';
-    };
-  };
-
-  systemd.timers.hermes-scintillate-codex-smoke = {
-    description = "Run Scintillate Codex auth smoke test";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "10min";
-      OnUnitActiveSec = "6h";
-      RandomizedDelaySec = "5min";
-    };
-  };
 
   # Keep NUC on an LTS kernel for ZFS. nixos-unstable's default
   # linuxPackages currently tracks 7.0.x, where zfs-kernel-2.4.1 is marked
