@@ -53,7 +53,7 @@ Use the included helpers when available. They handle workspace creation, pane-id
 
 ```bash
 PROMPT_FILE=$(mktemp -t pi-handoff.XXXXXX.md)
-python3 ~/.agents/skills/herdr-pi-workspace/scripts/write_handoff_prompt.py \
+python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/write_handoff_prompt.py \
   --cwd /path/to/repo \
   --goal "Implement/investigate ..." \
   --context "Known fact ..." \
@@ -64,7 +64,7 @@ python3 ~/.agents/skills/herdr-pi-workspace/scripts/write_handoff_prompt.py \
   --dirty-worktree-warning \
   --output "$PROMPT_FILE"
 
-LAUNCH_JSON=$(python3 ~/.agents/skills/herdr-pi-workspace/scripts/start_pi_workspace.py \
+LAUNCH_JSON=$(python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/start_pi_workspace.py \
   --cwd /path/to/repo \
   --label "Short task label" \
   --prompt-file "$PROMPT_FILE")
@@ -77,7 +77,7 @@ PANE_ID=$(printf '%s' "$LAUNCH_JSON" | python3 -c 'import sys,json; print(json.l
 To send a prompt to an already-open pane, or to a pane you created with `herdr pane split`:
 
 ```bash
-python3 ~/.agents/skills/herdr-pi-workspace/scripts/send_prompt_to_pane.py \
+python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/send_prompt_to_pane.py \
   --pane "$PANE_ID" \
   --start-pi \
   --prompt-file "$PROMPT_FILE"
@@ -86,7 +86,7 @@ python3 ~/.agents/skills/herdr-pi-workspace/scripts/send_prompt_to_pane.py \
 To monitor the child session:
 
 ```bash
-python3 ~/.agents/skills/herdr-pi-workspace/scripts/monitor_pane.py \
+python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/monitor_pane.py \
   --pane "$PANE_ID" \
   --wait-status done \
   --lines 100
@@ -99,7 +99,7 @@ If `agent-start` fails with `Failed to determine current tmux session`, do **not
 ```bash
 # 1. Preserve the failed task as a handoff prompt.
 PROMPT_FILE=$(mktemp -t pi-handoff.XXXXXX.md)
-python3 ~/.agents/skills/herdr-pi-workspace/scripts/write_handoff_prompt.py \
+python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/write_handoff_prompt.py \
   --cwd "$PWD" \
   --goal "<same task you would have given agent-start>" \
   --context "tmux side-agent launch failed: Failed to determine current tmux session." \
@@ -108,7 +108,7 @@ python3 ~/.agents/skills/herdr-pi-workspace/scripts/write_handoff_prompt.py \
   --output "$PROMPT_FILE"
 
 # 2. Launch the child in Herdr instead.
-python3 ~/.agents/skills/herdr-pi-workspace/scripts/start_pi_workspace.py \
+python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/start_pi_workspace.py \
   --cwd "$PWD" \
   --label "fallback subagent" \
   --prompt-file "$PROMPT_FILE"
@@ -141,8 +141,8 @@ Use this when you are already in a Herdr workspace and want a sibling pane inste
 
 ```bash
 SPLIT_JSON=$(herdr pane split --current --direction right --cwd /path/to/repo --focus)
-PANE_ID=$(printf '%s' "$SPLIT_JSON" | python3 ~/.agents/skills/herdr-pi-workspace/scripts/extract_ids.py pane)
-python3 ~/.agents/skills/herdr-pi-workspace/scripts/send_prompt_to_pane.py \
+PANE_ID=$(printf '%s' "$SPLIT_JSON" | python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/extract_ids.py pane)
+python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/send_prompt_to_pane.py \
   --pane "$PANE_ID" \
   --start-pi \
   --prompt-file "$PROMPT_FILE"
@@ -175,7 +175,7 @@ Reply with the marker made by joining HERDR_PI_SMOKE and RECEIVED with one under
 Then summarize the current directory and stop.
 PROMPT
 
-LAUNCH_JSON=$(python3 ~/.agents/skills/herdr-pi-workspace/scripts/start_pi_workspace.py \
+LAUNCH_JSON=$(python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/start_pi_workspace.py \
   --cwd "$TMP_REPO" \
   --label "pi smoke" \
   --prompt-file "$PROMPT_FILE")
