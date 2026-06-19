@@ -9,6 +9,17 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentUpstream = inputs.hermes-agent.packages.${hostSystem}.messaging;
+  hermesPhotonSidecar = pkgs.buildNpmPackage {
+    pname = "hermes-photon-sidecar";
+    version = hermesAgentUpstream.version or "0.17.0";
+    src = "${hermesAgentUpstream}/share/hermes-agent/plugins/platforms/photon/sidecar";
+    npmDepsHash = "sha256-yIhbY6Do0pEHyo8Z7XqSIftdq2chBA85h4jlFvYlz2g=";
+    dontNpmBuild = true;
+    installPhase = ''
+      mkdir -p $out
+      cp -R . $out/
+    '';
+  };
   honchoAi = pkgs.python313Packages.buildPythonPackage rec {
     pname = "honcho-ai";
     version = "2.1.2";
@@ -26,11 +37,44 @@ let
   hermesAgentBase = pkgs.symlinkJoin {
     name = "${hermesAgentUpstream.name}-honcho";
     paths = [ hermesAgentUpstream ];
-    nativeBuildInputs = [ pkgs.makeWrapper ];
+    nativeBuildInputs = [
+      pkgs.makeWrapper
+      pkgs.python3
+    ];
     postBuild = ''
+      photon_plugin="$out/share/hermes-agent/plugins/platforms/photon"
+      photon_sidecar="$photon_plugin/sidecar"
+      rm -rf "$photon_plugin"
+      mkdir -p "$(dirname "$photon_plugin")"
+      cp -R ${hermesAgentUpstream}/share/hermes-agent/plugins/platforms/photon "$photon_plugin"
+      chmod -R u+w "$photon_plugin"
+      rm -rf "$photon_sidecar"
+      cp -R ${hermesPhotonSidecar} "$photon_sidecar"
+      python - <<PY
+      from pathlib import Path
+
+      path = Path("$photon_plugin") / "cli.py"
+      text = path.read_text()
+      needle = "    # spectrum-ts is pinned exactly in package.json/package-lock.json because\\n"
+      replacement = (
+          "    if (_SIDECAR_DIR / \"node_modules\").exists():\\n"
+          "        print(\"  sidecar deps already installed\")\\n"
+          "        return 0\\n"
+          + needle
+      )
+      if needle not in text:
+          raise SystemExit("Photon sidecar install marker not found")
+      path.write_text(text.replace(needle, replacement, 1))
+      PY
+
       for exe in hermes hermes-agent hermes-acp; do
+        rm -f "$out/bin/$exe"
+        cp ${hermesAgentUpstream}/bin/$exe "$out/bin/$exe"
+        chmod u+w "$out/bin/$exe"
         wrapProgram "$out/bin/$exe" \
           --prefix PYTHONPATH : "${honchoAi}/${pkgs.python313.sitePackages}"
+        substituteInPlace "$out/bin/.$exe-wrapped" \
+          --replace-fail "${hermesAgentUpstream}/share/hermes-agent/plugins" "$out/share/hermes-agent/plugins"
       done
     '';
     inherit (hermesAgentUpstream) meta;
