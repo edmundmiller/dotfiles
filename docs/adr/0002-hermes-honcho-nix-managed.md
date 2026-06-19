@@ -28,7 +28,8 @@ On the NUC, Honcho is a declarative service dependency, not a runtime repair ste
 
 - Any Hermes profile that uses Honcho receives `HONCHO_API_KEY` through a root-managed secret file and the profile's `environmentFiles` path.
 - Honcho keys are sourced from 1Password through OpNix materialization under `/var/lib/opnix/secrets/*`; plaintext keys are never committed to Nix or git.
-- The NUC Hermes service package is wrapped to add the Nix-built `honcho-ai` wheel to `PYTHONPATH`. If/when the active Hermes package supports upstream `extraDependencyGroups`, this should become `services.hermes-agent.extraDependencyGroups = [ "honcho" ];` instead.
+- The NUC Hermes service package is `pkgs.llm-agents."hermes-agent"` with repo-local overlay adjustments under `overlays/hermes-agent/`. Prefer the llm-agents package because its Nix expression is maintained as a package boundary; upstream Hermes app development has outpaced its own flake/Nix packaging.
+- The repo overlay wraps the llm-agents Hermes package to add the Nix-built `honcho-ai` wheel to `PYTHONPATH`. If/when the active package supports upstream `extraDependencyGroups`, this should become `services.hermes-agent.extraDependencyGroups = [ "honcho" ];` instead.
 - Manual container `pip install`, manual `$HERMES_HOME/.env` editing, and `hermes config set memory.provider ...` are not accepted fixes for Nix-managed profiles.
 
 ## Consequences
