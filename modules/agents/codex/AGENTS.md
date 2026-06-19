@@ -16,5 +16,5 @@ Manages `~/.codex/` config via nix-darwin.
 
 ## Skills
 
-Codex-specific generated skills sync to `~/.codex/skills/` when `modules.agents.codex.enable = true`.
-Cross-agent generated skills also sync to `~/.agents/skills/` when any local agent module is enabled.
+Codex reads shared generated skills from `~/.agents/skills/`.
+`~/.codex/skills/` is only for Codex-specific skills with `meta.targets = [ "codex" ]`.

@@ -25,13 +25,13 @@ This configuration is shared across five agents with separate generated skill ta
 | Hermes     | `~/.hermes/skills/`          | N/A                         | `~/.hermes/SOUL.md`         |
 
 Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
-Generated bundles exist for every target, but activation only syncs targets whose local agent module is enabled. The `dot-agents` shared target is synced when any local agent module is enabled.
+Generated bundles exist for every target, but activation only syncs targets whose local agent module is enabled. Defaults live in `dot-agents` plus Claude; other agent dirs carry target-specific skills only.
 
 ## Skills
 
 Use two lanes only:
 
-- `skills/catalog/` — global skills installed into generated target dirs
+- `skills/catalog/` — global skills installed into `~/.agents/skills` and `~/.claude/skills`
 - `.agents/skills/` — project-local skills checked into this repo; never install these into `~/.agents/skills/`
 
 OpenClaw keeps its own skills in `~/.openclaw/skills/`.
