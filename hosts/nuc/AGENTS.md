@@ -46,6 +46,10 @@ Intel NUC home server running NixOS. Primary role: Hermes agents, media services
 
 Hermes is the active system-managed agent runtime. Check `systemctl status hermes-agent.service` and profile-specific `hermes-gateway-*` units when debugging.
 
+Hermes packaging for this host comes from `pkgs.llm-agents."hermes-agent"`, not directly from `inputs.hermes-agent.packages.*`. Upstream Hermes still exposes a flake, but its Nix packaging has lagged normal app development; the 2026-06 update reached a current Hermes commit while shipping a stale fixed-output npm hash. Use `llm-agents.nix` as the maintained Nix packaging seam, and put local Hermes package adjustments in `overlays/hermes-agent/` so version/hash bumps stay package-level instead of leaking into `hosts/nuc/default.nix`.
+
+The repo overlay wraps the llm-agents Hermes package with the Nix-built Honcho SDK. Keep that as a declarative package dependency; do not repair Nix-managed Hermes profiles with container-local `pip install` or mutable package edits.
+
 ### Media Stack
 
 - **Jellyfin** — Media server
