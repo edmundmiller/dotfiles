@@ -11,8 +11,7 @@ let
   bettyProfile = cfg.services.hermes-agent.profiles.betty;
   anneProfile = cfg.services.hermes-agent.profiles.anne;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
-  codexSmokeService = cfg.systemd.services.hermes-scintillate-codex-smoke;
-  codexSmokeTimer = cfg.systemd.timers.hermes-scintillate-codex-smoke;
+  runtimeSmokeService = cfg.systemd.services.hermes-runtime-smoke;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   activationFile = pkgs.writeText "canonical-hermes-profiles-materialize.sh" activation;
   nucHostSource = builtins.readFile ../default.nix;
@@ -24,10 +23,12 @@ let
   tnotePkg = hermesAgent.providers.tnote.package;
   tnotePkgString = stripContext (toString tnotePkg);
   packageStrings = map (pkg: stripContext (toString pkg)) profile.extraPackages;
+  systemPackageStrings = map (pkg: stripContext (toString pkg)) cfg.environment.systemPackages;
 
   hostMounts = mapAttrsToList (source: target: { inherit source target; }) profile.hostPathMounts;
   hasMount = source: target: any (mount: mount.source == source && mount.target == target) hostMounts;
   hasPackageNamed = name: any (pkg: hasInfix name pkg) packageStrings;
+  hasSystemPackageNamed = name: any (pkg: hasInfix name pkg) systemPackageStrings;
 
   assertions = [
     {
@@ -98,21 +99,32 @@ let
       msg = "Scintillate must not seed Hermes auth from ~/.codex/auth.json.";
     }
     {
-      test =
-        codexSmokeService.serviceConfig.EnvironmentFile == [ "/run/hermes-scintillate-env/secrets.env" ];
-      msg = "Scintillate Codex smoke test must read Telegram token from the existing secrets env file.";
+      test = hasSystemPackageNamed "hermes-runtime-smoke";
+      msg = "NUC system packages must include the reusable Hermes runtime smoke tool.";
     }
     {
-      test = hasInfix "--provider openai-codex -m gpt-5.5" nucHostSource;
-      msg = "Scintillate Codex smoke test must exercise openai-codex/gpt-5.5 directly.";
+      test = runtimeSmokeService.serviceConfig.Type == "oneshot";
+      msg = "Hermes runtime smoke must be a NixOS oneshot service.";
     }
     {
-      test = hasInfix "[REDACTED]" nucHostSource;
-      msg = "Scintillate Codex smoke test must scrub token-like output before alerting.";
+      test = hasInfix "docker.service" (concatStringsSep " " runtimeSmokeService.after);
+      msg = "Hermes runtime smoke must run after Docker is available.";
     }
     {
-      test = codexSmokeTimer.timerConfig.OnUnitActiveSec == "6h";
-      msg = "Scintillate Codex smoke test must run on a dedicated six-hour timer.";
+      test = !(builtins.hasAttr "hermes-runtime-smoke" cfg.systemd.timers);
+      msg = "Hermes runtime smoke must not run on a recurring timer.";
+    }
+    {
+      test = !(builtins.hasAttr "hermes-scintillate-codex-smoke" cfg.systemd.timers);
+      msg = "Old chat-generating Scintillate Codex smoke timer must remain removed.";
+    }
+    {
+      test = !(builtins.hasAttr "hermes-scintillate-healthcheck-ping" cfg.systemd.timers);
+      msg = "Old Scintillate gateway ping timer must remain removed.";
+    }
+    {
+      test = !(builtins.hasAttr "hermes-agent-anne-healthcheck-ping" cfg.systemd.timers);
+      msg = "Old Anne gateway ping timer must remain removed.";
     }
     {
       test = !(hasInfix "skills.config.wiki.path = \"/home/hermes/repos/obsidian-vault\"" nucHostSource);
