@@ -8,7 +8,7 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesAgentBase = import ./hermes-agent-package.nix { inherit inputs lib pkgs; };
+  hermesAgentBase = pkgs.llm-agents."hermes-agent";
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
@@ -80,7 +80,7 @@ let
     ps.requests
     ps.websockets
   ]);
-  hermesPythonSitePackages = "${hermesAgentBase.passthru.hermesVenv}/${pkgs.python312.sitePackages}";
+  hermesPythonSitePackages = "${hermesAgentBase}/${pkgs.python313.sitePackages}";
   tailnet = "cinnamon-rooster.ts.net";
   scintillateTelegramAlertChatId = toString telegramBindings.dmTopics.scintillate.chatId;
   scintillateTelegramAlertScript = pkgs.writeText "hermes-scintillate-telegram-alert.py" ''
