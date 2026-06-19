@@ -139,6 +139,33 @@ in
     rmdir "$HOME/.cache/npm/lib/node_modules/@aliou" 2>/dev/null || true
   '';
 
+  pi-codex-conversion-shortcuts = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    ${pkgs.python3}/bin/python3 - "$HOME/.pi/agent/pi-codex-conversion.json" <<'PY'
+    import json
+    import pathlib
+    import sys
+
+    path = pathlib.Path(sys.argv[1])
+    try:
+        data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except Exception:
+        data = {}
+
+    if not isinstance(data, dict):
+        data = {}
+
+    ui = data.get("ui")
+    if not isinstance(ui, dict):
+        ui = {}
+        data["ui"] = ui
+
+    ui["backgroundShellCloseShortcut"] = "alt+c"
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    PY
+  '';
+
   pi-dotenv-secrets = hmLib.hm.dag.entryAfter [ "writeBoundary" ] ''
     dotenv_target="$HOME/.pi/agent/.env"
 
