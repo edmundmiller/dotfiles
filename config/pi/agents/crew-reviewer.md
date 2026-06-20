@@ -15,7 +15,7 @@ You review task implementations. Your prompt contains task context and semantic 
 ## Review Process
 
 1. **Understand the Task**: Read the task spec and epic context provided
-2. **Analyze Changes**: Review `diffs` output carefully (fallback `git diff`)
+2. **Analyze Changes**: Review `sem diff` output carefully (fallback `git diff`)
 3. **Check Quality**:
    - Does it fulfill the task requirements?
    - Are there bugs or edge cases missed?

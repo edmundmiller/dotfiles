@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-# Route common `git diff` calls to diffs. Set GIT_DIFF_NATIVE=1 to bypass.
+# Route common `git diff` calls to sem. Set GIT_DIFF_NATIVE=1 to bypass.
 git() {
   if [[ "$1" != "diff" || -n "${GIT_DIFF_NATIVE:-}" ]]; then
     command git "$@"
@@ -10,39 +10,39 @@ git() {
   shift
   local args=("$@")
 
-  if ! command -v diffs >/dev/null 2>&1; then
+  if ! command -v sem >/dev/null 2>&1; then
     command git diff "${args[@]}"
     return
   fi
 
   case "${#args[@]}" in
     0)
-      diffs
+      sem diff
       return
       ;;
     1)
       case "${args[1]}" in
         --cached|--staged)
-          diffs --staged
+          sem diff --staged
           return
           ;;
         *..*)
           if [[ "${args[1]}" != *"..."* ]]; then
-            diffs --from "${args[1]%%..*}" --to "${args[1]##*..}"
+            sem diff --from "${args[1]%%..*}" --to "${args[1]##*..}"
             return
           fi
           ;;
         -*)
           ;;
         *)
-          diffs --commit "${args[1]}"
+          sem diff --commit "${args[1]}"
           return
           ;;
       esac
       ;;
     2)
       if [[ "${args[1]}" != -* && "${args[2]}" != -* ]]; then
-        diffs --from "${args[1]}" --to "${args[2]}"
+        sem diff --from "${args[1]}" --to "${args[2]}"
         return
       fi
       ;;

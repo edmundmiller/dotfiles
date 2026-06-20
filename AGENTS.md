@@ -86,8 +86,8 @@ This is a **Nix-managed repository** — the environment is declarative, not `.e
 
 ## Diff Policy
 
-- Prefer `diffs` over `git diff` for reviews and change analysis.
-- Use native `git diff` only if diffs can't express required flags/output.
+- Prefer `sem diff` over `git diff` for reviews and change analysis.
+- Use native `git diff` only if sem can't express required flags/output.
 
 ## File Search
 

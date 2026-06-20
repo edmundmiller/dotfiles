@@ -10,7 +10,7 @@ waiver_path: .agents/waivers/AGENT-03.md
 
 ## Preferences
 
-- **Diff policy:** prefer `diffs` over `git diff` (entity-level changes, better for agent review). Use native `git diff` only when `diffs` lacks needed flags/output.
+- **Diff policy:** prefer `sem diff` over `git diff` (entity-level changes, better for agent review). Use native `git diff` only when sem lacks needed flags/output.
 - **Selective staging:** use `git hunks list` / `git hunks add <hunk-id>` — non-interactive, deterministic hunk IDs.
 - **Dotfiles exception**: sibling layout (`../dotfiles.branch`) via `.envrc` override
 
@@ -30,8 +30,8 @@ waiver_path: .agents/waivers/AGENT-03.md
 ## Quick Reference
 
 ```bash
-diffs                       # Semantic diff (default)
-diffs --staged              # Semantic staged diff
+sem diff                    # Semantic diff (default)
+sem diff --staged           # Semantic staged diff
 git hunks list              # List hunks with stable IDs
 git hunks add <hunk-id>     # Stage specific hunk
 ```
