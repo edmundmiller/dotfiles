@@ -239,7 +239,7 @@ async function readStagedStat(pi: ExtensionAPI, cwd: string): Promise<string> {
 }
 
 async function readStagedDiff(pi: ExtensionAPI, cwd: string): Promise<string> {
-  const semantic = await pi.exec("diffs", ["--staged"], { cwd, timeout: 20_000 });
+  const semantic = await pi.exec("sem", ["diff", "--staged"], { cwd, timeout: 20_000 });
   if (semantic.code === 0 && semantic.stdout.trim()) {
     return semantic.stdout.trim();
   }
