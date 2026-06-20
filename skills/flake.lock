@@ -139,16 +139,16 @@
     "hunk-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1781375001,
-        "narHash": "sha256-B5EU97XPMxxjfkadXXc2zc+PiWHqywnVdWHgFZ92XZ8=",
+        "lastModified": 1781895871,
+        "narHash": "sha256-UCuRKnUuDWJ7kcEHCYRV+p/LT7lYkCRzYrz9udm1vC0=",
         "owner": "modem-dev",
         "repo": "hunk",
-        "rev": "3a2ba1c4c0580f0056bf67b031fb25f2186f35a3",
+        "rev": "c05558cd8dbdf61a8e11bfc8378d9d619e4c0d8d",
         "type": "github"
       },
       "original": {
         "owner": "modem-dev",
-        "ref": "v0.15.3",
+        "ref": "v0.16.0",
         "repo": "hunk",
         "type": "github"
       }
