@@ -191,8 +191,7 @@ _: {
         speech.text = "Turning off the TV.";
         action = [
           {
-            action = "media_player.turn_off";
-            target.entity_id = "media_player.tv";
+            action = "script.tv_off_if_on";
           }
         ];
       };

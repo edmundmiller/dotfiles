@@ -5,7 +5,7 @@
 #
 # What vacation mode controls:
 #   8Sleep:  away_mode_start (both sides) — suspends alarms, reduces heating
-#   Ecobee:  away preset — energy-saving setpoints for the duration
+#   Thermostats: energy-saving cooling setpoints for the duration
 #   Lights:  all off
 #   Blinds:  closed
 #   TV/media: off
@@ -27,6 +27,9 @@ let
       action = "scene.turn_on";
       target.entity_id = "scene.vacation";
     }
+    {
+      action = "script.tv_off_if_on";
+    }
     # Service calls that scenes can't express:
     # 8Sleep — away mode both sides
     {
@@ -37,12 +40,17 @@ let
       action = "eight_sleep.away_mode_start";
       target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
     }
-    # Ecobee — switch to away preset (energy-saving setpoints)
-    # TODO: verify entity_id; use ecobee.resume_program on return
+    # Thermostats — energy-saving cooling setpoints
     {
-      action = "climate.set_preset_mode";
-      target.entity_id = "climate.ecobee"; # TODO: verify
-      data.preset_mode = "away";
+      action = "climate.set_temperature";
+      target.entity_id = [
+        "climate.main_floor"
+        "climate.master_suite"
+      ];
+      data = {
+        hvac_mode = "cool";
+        temperature = 78;
+      };
     }
   ];
 
@@ -60,11 +68,8 @@ let
       action = "eight_sleep.away_mode_stop";
       target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
     }
-    # Ecobee — resume normal schedule
     {
-      action = "ecobee.resume_program";
-      target.entity_id = "climate.ecobee"; # TODO: verify
-      data.resume_all = true;
+      action = "script.cool_down";
     }
     # Welcome home scene handles lights + mode
     {
@@ -94,7 +99,6 @@ in
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
-          "media_player.tv" = "off";
           "switch.eve_energy_20ebu4101" = "off";
         };
       }
@@ -105,7 +109,7 @@ in
       {
         alias = "Vacation Start";
         id = "vacation_start";
-        description = "vacation_mode on: 8Sleep away, Ecobee away, everything off";
+        description = "vacation_mode on: 8Sleep away, thermostat away setpoints, everything off";
         trigger = {
           platform = "state";
           entity_id = "input_boolean.vacation_mode";
@@ -118,7 +122,7 @@ in
       {
         alias = "Vacation End - Person Arrives";
         id = "vacation_end_presence";
-        description = "First person home during vacation → restore 8Sleep, Ecobee, Welcome Home";
+        description = "First person home during vacation -> restore 8Sleep, cool down, Welcome Home";
         trigger = [
           {
             platform = "state";

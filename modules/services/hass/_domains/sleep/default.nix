@@ -283,7 +283,6 @@ in
           "input_boolean.edmund_awake" = "off";
           "input_boolean.monica_awake" = "off";
           "cover.smartwings_window_covering" = "closed";
-          "media_player.tv" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
 
           # Keep a low-light ambience while winding down; AL sleep mode makes these warm/dim.
@@ -307,7 +306,6 @@ in
           "input_boolean.edmund_awake" = "off";
           "input_boolean.monica_awake" = "off";
           "cover.smartwings_window_covering" = "closed";
-          "media_player.tv" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
@@ -330,7 +328,6 @@ in
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.eve_energy_20ebu4101" = "on"; # Whitenoise
           "cover.smartwings_window_covering" = "closed";
-          "media_player.tv" = "off";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
           "light.essentials_a19_a60_3" = "off";
@@ -354,7 +351,6 @@ in
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
-          "media_player.tv" = "off";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
           "light.essentials_a19_a60_3" = "off";
@@ -409,6 +405,9 @@ in
             target.entity_id = "scene.get_ready_for_bed";
           }
           {
+            action = "script.tv_off_if_on";
+          }
+          {
             action = "input_boolean.turn_on";
             target.entity_id = "input_boolean.get_ready_for_bed_done";
           }
@@ -424,6 +423,9 @@ in
             target.entity_id = "scene.good_night";
           }
           {
+            action = "script.tv_off_if_on";
+          }
+          {
             action = "input_boolean.turn_on";
             target.entity_id = "input_boolean.goodnight_done";
           }
@@ -437,6 +439,9 @@ in
           {
             action = "scene.turn_on";
             target.entity_id = "scene.sleep";
+          }
+          {
+            action = "script.tv_off_if_on";
           }
           {
             action = "input_boolean.turn_on";

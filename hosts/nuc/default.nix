@@ -1497,6 +1497,7 @@ in
           "reolink" # Reolink cameras/NVR/Home Hub (config-flow: set up via UI)
           "samsungtv" # Samsung TV integration
           "cast" # Chromecast/Google Cast
+          "nanoleaf" # Nanoleaf lights used by HA scenes
           "mobile_app" # HA Companion app (iOS/Android)
           "bluetooth" # BLE device discovery
           "spotify" # Spotify playback control (config-flow: add via UI after deploy)
