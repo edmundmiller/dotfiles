@@ -106,7 +106,7 @@ let
         # not need to mutate the read-only Home Manager settings symlink.
         # The theme name varies by host (`piThemeVariant`), so read it from
         # the herdr module instead of hardcoding the default name here.
-        theme = herdrThemeName;
+        theme = "light/${herdrThemeName}";
         themes = [ "${config.user.home}/.pi/agent/themes/${herdrThemeName}.json" ];
       }
     );
