@@ -3,6 +3,21 @@ name = "terminal"
 
 [theme.custom]
 panel_bg = "reset"
+surface0 = "#ccd0da"
+surface1 = "#bcc0cc"
+surface_dim = "#dce0e8"
+overlay0 = "#8c8fa1"
+overlay1 = "#7c7f93"
+text = "#4c4f69"
+subtext0 = "#6c6f85"
+accent = "#1e66f5"
+blue = "#1e66f5"
+green = "#40a02b"
+yellow = "#df8e1d"
+red = "#d20f39"
+teal = "#179299"
+peach = "#fe640b"
+mauve = "#8839ef"
 
 [ui.toast]
 delivery = "herdr"
