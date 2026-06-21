@@ -2,7 +2,7 @@
  * enforce-commit-signing Extension
  *
  * Blocks git commit commands when SSH signing would fail.
- * Prevents unsigned commits by verifying op-ssh-sign is available
+ * Prevents unsigned commits by verifying the disk SSH signing key is available
  * before allowing any git commit to proceed.
  */
 
@@ -15,8 +15,7 @@ export default function (pi: ExtensionAPI) {
 
   function isSigningAvailable(): boolean {
     try {
-      // op-ssh-sign doesn't support --version; --help is stable and exits 0 when present.
-      execSync("/Applications/1Password.app/Contents/MacOS/op-ssh-sign --help", {
+      execSync("printf signing-probe | ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n git", {
         stdio: "pipe",
         timeout: 5000,
       });
@@ -57,8 +56,8 @@ export default function (pi: ExtensionAPI) {
       return {
         block: true,
         reason:
-          "1Password SSH signing (op-ssh-sign) is not available. " +
-          "Ensure 1Password is running and unlocked before committing.",
+          "Disk SSH signing key is not available. " +
+          "Ensure ~/.ssh/id_ed25519 exists and can sign before committing.",
       };
     }
 
@@ -76,7 +75,7 @@ export default function (pi: ExtensionAPI) {
     } else {
       const issues = [];
       if (!gpgSign) issues.push("commit.gpgsign not enabled");
-      if (!signingOk) issues.push("op-ssh-sign not available");
+      if (!signingOk) issues.push("disk SSH key not available");
       ctx.ui.notify(`🔐 Commit signing: ⚠️ ${issues.join(", ")}`, "warning");
     }
   });
