@@ -1,6 +1,9 @@
 [theme]
 name = "terminal"
 
+[theme.custom]
+panel_bg = "reset"
+
 [ui.toast]
 delivery = "herdr"
 
