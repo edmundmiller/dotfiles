@@ -51,6 +51,12 @@ alias jsync='jj sync'  # Fetch all remotes
 alias jevolve='jj evolve'  # Rebase onto trunk
 alias jpullup='jj pullup'  # Pull all mutable commits onto trunk
 
+# Stacked PR/MR management via jj-vine
+alias jpr='jj pr'                  # Run jj-vine as jj pr
+alias jprs='jj pr submit --tracked' # Submit all tracked bookmarks
+alias jprst='jj pr status --tracked' # Status for tracked bookmarks
+alias jvine='jj vine'              # Run jj-vine as jj vine
+
 # Open diff in neovim (PR preview) - wraps jj nd
 jnd() {
     jj nd "$@"
