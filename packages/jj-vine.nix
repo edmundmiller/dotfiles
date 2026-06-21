@@ -1,21 +1,19 @@
 {
   lib,
   rustPlatform,
-  fetchFromGitHub,
+  fetchurl,
 }:
 
 rustPlatform.buildRustPackage {
   pname = "jj-vine";
-  version = "0.3.6";
+  version = "0.5.3";
 
-  src = fetchFromGitHub {
-    owner = "abrenneke";
-    repo = "jj-vine";
-    rev = "v0.3.6";
-    hash = "sha256-vvNbeQvP205snAGiql/i8yFGyMw23YkSU4/uxOSnycY=";
+  src = fetchurl {
+    url = "https://codeberg.org/abrenneke/jj-vine/archive/v0.5.3.tar.gz";
+    hash = "sha256-r1HwSWOf/AqalrY6NGKU2/0W6Y21L3gNfEQjdO+kzWY=";
   };
 
-  cargoHash = "sha256-vcpaKlNeORnDpVqXxu0TrXWaWNfaK9QPVJOrty9WmcQ=";
+  cargoHash = "sha256-nuj0cugeK5oc+sZmm1f5dvGEjML0qkle5uO66e54VIY=";
 
   # Integration tests need network/forge access
   doCheck = false;
