@@ -69,9 +69,9 @@ let
         command = "obsidian-neovide"
       '';
 
-  # Pi's auto-selected dark theme can be too low-contrast in the Herdr/Ghostty
-  # popup (especially muted prompt text). Ship and select a small Catppuccin-ish
-  # theme with brighter foregrounds so the input box remains readable.
+  # Pi's built-in theme can be too low-contrast in the Herdr/Ghostty popup
+  # (especially muted prompt text). Ship and select a small Catppuccin-ish
+  # light theme so it matches Ghostty's `light/...` palette choice.
   #
   # `piThemeVariant` swaps the underlying palette so hosts with a non-Catppuccin
   # terminal background (e.g. Seqera dark purple #201637) can use a palette
@@ -79,25 +79,25 @@ let
   # collapse into the background.
   piThemePalettes = {
     default = {
-      base = "#1e1e2e";
-      surface0 = "#313244";
-      surface1 = "#45475a";
-      surface2 = "#585b70";
-      text = "#cdd6f4";
-      subtext1 = "#bac2de";
-      subtext0 = "#a6adc8";
-      overlay1 = "#7f849c";
-      mauve = "#cba6f7";
-      blue = "#89b4fa";
-      sapphire = "#74c7ec";
-      teal = "#94e2d5";
-      green = "#a6e3a1";
-      yellow = "#f9e2af";
-      peach = "#fab387";
-      red = "#f38ba8";
-      toolPendingBg = "#242438";
-      toolSuccessBg = "#243826";
-      toolErrorBg = "#3a2430";
+      base = "#eff1f5";
+      surface0 = "#ccd0da";
+      surface1 = "#bcc0cc";
+      surface2 = "#acb0be";
+      text = "#4c4f69";
+      subtext1 = "#5c5f77";
+      subtext0 = "#6c6f85";
+      overlay1 = "#7c7f93";
+      mauve = "#8839ef";
+      blue = "#1e66f5";
+      sapphire = "#209fb5";
+      teal = "#179299";
+      green = "#40a02b";
+      yellow = "#df8e1d";
+      peach = "#fe640b";
+      red = "#d20f39";
+      toolPendingBg = "#e6e9ef";
+      toolSuccessBg = "#dcead8";
+      toolErrorBg = "#f2d5dc";
     };
     # Tuned for Seqera ghostty themes (background #201637 dark purple).
     # `subtext0`/`overlay1` are pushed brighter so the pi-sub-bar and other
@@ -141,6 +141,21 @@ let
       name = "terminal";
       custom = {
         panel_bg = "reset";
+        surface0 = "#ccd0da";
+        surface1 = "#bcc0cc";
+        surface_dim = "#dce0e8";
+        overlay0 = "#8c8fa1";
+        overlay1 = "#7c7f93";
+        text = "#4c4f69";
+        subtext0 = "#6c6f85";
+        accent = "#1e66f5";
+        blue = "#1e66f5";
+        green = "#40a02b";
+        yellow = "#df8e1d";
+        red = "#d20f39";
+        teal = "#179299";
+        peach = "#fe640b";
+        mauve = "#8839ef";
       };
     };
     seqera = {
@@ -249,8 +264,8 @@ in
       default = "default";
       description = ''
         Which palette variant to ship as the Pi `dotfiles-herdr` theme.
-        Use `seqera` on hosts whose ghostty background is the Seqera dark
-        purple (`#201637`) so dim/muted slots stay legible.
+        `default` is tuned for the Ghostty light theme; use `seqera` on hosts
+        whose ghostty background is the Seqera dark purple (`#201637`).
       '';
     };
     themeVariant = mkOption {
