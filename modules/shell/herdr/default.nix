@@ -135,14 +135,13 @@ let
 
   # Herdr UI theme (separate from the Pi popup theme above). Each variant
   # is rendered into `[theme]` / `[theme.custom]` blocks by the bootstrap
-  # activation. The `default` variant matches the upstream Catppuccin look;
-  # `seqera` follows the host terminal palette and accents with Seqera
-  # brand colors (background #201637, brand teal #31c9ac, brand green
-  # #95bf2f).
+  # activation.
   herdrThemePalettes = {
     default = {
       name = "terminal";
-      custom = { };
+      custom = {
+        panel_bg = "reset";
+      };
     };
     seqera = {
       name = "terminal";
@@ -259,9 +258,8 @@ in
       default = "default";
       description = ''
         Which Herdr UI theme variant to apply via `[theme]` / `[theme.custom]`
-        in the bootstrapped Herdr config. `default` keeps the shared Catppuccin
-        look; `seqera` follows the host terminal palette and accents with
-        Seqera brand colors for the Seqera Dark ghostty background.
+        in the bootstrapped Herdr config. `default` follows the host terminal
+        palette; `seqera` adds Seqera brand accents.
       '';
     };
     piThemeName = mkOption {
