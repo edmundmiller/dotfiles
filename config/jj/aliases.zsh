@@ -56,6 +56,7 @@ alias jpr='jj pr'                  # Run jj-vine as jj pr
 alias jprs='jj pr submit --tracked' # Submit all tracked bookmarks
 alias jprst='jj pr status --tracked' # Status for tracked bookmarks
 alias jvine='jj vine'              # Run jj-vine as jj vine
+alias jvi='jj vine init'           # Initialize jj-vine for this repo
 
 # Open diff in neovim (PR preview) - wraps jj nd
 jnd() {
