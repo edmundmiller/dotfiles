@@ -1,7 +1,7 @@
 # Reolink camera privacy policy
 #
 # Phoebe Cam's recording availability is controlled by privacy mode: privacy is
-# on when Edmund or Monica is home, except when the suite is actually in sleep mode.
+# on when Edmund or Monica is home, except when Goodnight mode is active.
 # Otherwise privacy is off so recording is available.
 { lib, ... }:
 let
@@ -12,7 +12,7 @@ in
     {
       alias = "Phoebe Cam Privacy Policy";
       id = "phoebe_cam_privacy_policy";
-      description = "Enable privacy mode when Edmund or Monica is home, except while the suite is in sleep mode; disable it otherwise.";
+      description = "Enable privacy mode when Edmund or Monica is home, except while Goodnight is active; disable it otherwise.";
       trigger = [
         {
           platform = "homeassistant";
@@ -28,7 +28,7 @@ in
         }
         {
           platform = "state";
-          entity_id = "select.master_suite_current_mode";
+          entity_id = "input_boolean.goodnight";
         }
       ];
       action = [
@@ -59,8 +59,8 @@ in
                       conditions = [
                         {
                           condition = "state";
-                          entity_id = "select.master_suite_current_mode";
-                          state = "sleep";
+                          entity_id = "input_boolean.goodnight";
+                          state = "on";
                         }
                       ];
                     }

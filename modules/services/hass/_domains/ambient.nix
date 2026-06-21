@@ -74,7 +74,6 @@ in
           "light.nanoleaf_multicolor_floor_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
-          "media_player.tv" = "off";
           "switch.eve_energy_20ebu4101" = "off";
           # Indicators stay on
           "light.essentials_a19_a60" = "on";
@@ -344,6 +343,9 @@ in
           {
             action = "scene.turn_on";
             target.entity_id = "scene.leave_home";
+          }
+          {
+            action = "script.tv_off_if_on";
           }
         ];
       }

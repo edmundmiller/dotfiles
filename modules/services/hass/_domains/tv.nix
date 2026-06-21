@@ -46,6 +46,17 @@ in
         icon = "mdi:television-off";
         sequence = [ tvOff ];
       };
+      tv_off_if_on = {
+        alias = "Turn off TV if on";
+        icon = "mdi:television-off";
+        sequence = [
+          {
+            condition = "template";
+            value_template = "{{ states('media_player.tv') not in ['off', 'unavailable', 'unknown'] }}";
+          }
+          tvOff
+        ];
+      };
     };
 
     automation = lib.mkAfter (ensureEnabled [
