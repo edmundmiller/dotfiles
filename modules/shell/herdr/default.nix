@@ -141,7 +141,7 @@ let
   # #95bf2f).
   herdrThemePalettes = {
     default = {
-      name = "catppuccin";
+      name = "terminal";
       custom = { };
     };
     seqera = {

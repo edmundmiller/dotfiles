@@ -1,5 +1,5 @@
 [theme]
-name = "catppuccin"
+name = "terminal"
 
 [ui.toast]
 delivery = "herdr"
