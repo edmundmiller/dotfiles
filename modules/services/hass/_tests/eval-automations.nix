@@ -111,6 +111,7 @@ let
   alSleepModeOn = findAutomation "al_sleep_mode_on";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
+  arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
 
   # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
@@ -210,6 +211,18 @@ let
     {
       test = entranceOccupancyNightLight != null;
       msg = "automation 'entrance_occupancy_night_light' missing";
+    }
+    {
+      test = arrivalFlashWallLamp != null;
+      msg = "automation 'arrival_flash_wall_lamp' missing";
+    }
+    {
+      test = hasActionCall (toList (arrivalFlashWallLamp.action or [ ])) "scene.create";
+      msg = "arrival_flash_wall_lamp must snapshot wall lamp state before flashing";
+    }
+    {
+      test = hasActionCall (toList (arrivalFlashWallLamp.action or [ ])) "scene.turn_on";
+      msg = "arrival_flash_wall_lamp must restore wall lamp state after flashing";
     }
 
     {
