@@ -1,0 +1,1600 @@
+diff --git i/src/ui/App.tsx w/src/ui/App.tsx
+index 2734e4f..c8f7389 100644
+--- i/src/ui/App.tsx
++++ w/src/ui/App.tsx
+@@ -49,6 +49,9 @@ const LazyHelpDialog = lazy(async () => ({
+ const LazyMenuDropdown = lazy(async () => ({
+   default: (await import("./components/chrome/MenuDropdown")).MenuDropdown,
+ }));
++const LazyWhichKeyDock = lazy(async () => ({
++  default: (await import("./components/chrome/WhichKeyDock")).WhichKeyDock,
++}));
+ const LazyThemeSelectorDialog = lazy(async () => ({
+   default: (await import("./components/chrome/ThemeSelectorDialog")).ThemeSelectorDialog,
+ }));
+@@ -822,7 +825,7 @@ export function App({
+     toggleMenu,
+   } = useMenuController(menus);
+ 
+-  useAppKeyboardShortcuts({
++  const whichKeyState = useAppKeyboardShortcuts({
+     activeMenuId,
+     activateCurrentMenuItem,
+     activateMenuItemByHint,
+@@ -844,12 +847,14 @@ export function App({
+     openThemeSelector,
+     pagerMode,
+     requestQuit,
++    reviewSourceItems,
+     scrollCodeHorizontally,
+     saveDraftNote,
+     scrollDiff,
+     selectLayoutMode,
+     showHelp,
+     startUserNote: () => startUserNote(),
++    switchReviewSource,
+     switchMenu,
+     themeSelectorOpen,
+     toggleAgentNotes,
+@@ -1093,6 +1098,16 @@ export function App({
+         </Suspense>
+       ) : null}
+ 
++      {!pagerMode && whichKeyState.visible ? (
++        <Suspense fallback={null}>
++          <LazyWhichKeyDock
++            state={whichKeyState}
++            terminalWidth={terminal.width}
++            theme={baseTheme}
++          />
++        </Suspense>
++      ) : null}
++
+       {!pagerMode && showHelp ? (
+         <Suspense fallback={null}>
+           <LazyHelpDialog
+diff --git i/src/ui/AppHost.interactions.test.tsx w/src/ui/AppHost.interactions.test.tsx
+index 700485d..72e71cf 100644
+--- i/src/ui/AppHost.interactions.test.tsx
++++ w/src/ui/AppHost.interactions.test.tsx
+@@ -1386,6 +1386,10 @@ describe("App interactions", () => {
+       expect(frame).toContain("Reload");
+       expect(frame).toContain("Quit");
+ 
++      await act(async () => {
++        await setup.mockInput.pressArrow("right");
++      });
++      await flush(setup);
+       await act(async () => {
+         await setup.mockInput.pressArrow("right");
+       });
+@@ -2072,7 +2076,7 @@ describe("App interactions", () => {
+     }
+   });
+ 
+-  test("Space scrolls down by viewport", async () => {
++  test("second Space scrolls down by viewport after which-key opens", async () => {
+     // Create a file with many lines so Space has room to scroll
+     const before =
+       Array.from(
+@@ -2112,6 +2116,12 @@ describe("App interactions", () => {
+       await flush(setup);
+       setup.captureCharFrame();
+ 
++      await act(async () => {
++        await setup.mockInput.pressKey(" ");
++      });
++      await flush(setup);
++      expect(setup.captureCharFrame()).toContain("Leader");
++
+       await act(async () => {
+         await setup.mockInput.pressKey(" ");
+       });
+@@ -2119,6 +2129,62 @@ describe("App interactions", () => {
+ 
+       const frame = setup.captureCharFrame();
+       expect(frame).toContain("export const line");
++      expect(frame).not.toContain("Leader");
++    } finally {
++      await act(async () => {
++        setup.renderer.destroy();
++      });
++    }
++  });
++
++  test("which-key leader timeout closes the pending panel", async () => {
++    const setup = await testRender(<AppHost bootstrap={createBootstrap()} />, {
++      width: 160,
++      height: 20,
++    });
++
++    try {
++      await flush(setup);
++
++      await act(async () => {
++        await setup.mockInput.pressKey(" ");
++      });
++      await flush(setup);
++      expect(setup.captureCharFrame()).toContain("Leader: SPC");
++
++      await act(async () => {
++        await Bun.sleep(4100);
++      });
++      await flush(setup);
++      expect(setup.captureCharFrame()).not.toContain("Leader: SPC");
++    } finally {
++      await act(async () => {
++        setup.renderer.destroy();
++      });
++    }
++  });
++
++  test("Ctrl+Alt+K toggles pinned which-key", async () => {
++    const setup = await testRender(<AppHost bootstrap={createBootstrap()} />, {
++      width: 160,
++      height: 20,
++    });
++
++    try {
++      await flush(setup);
++
++      await act(async () => {
++        await setup.mockInput.pressKeys(["\u001b\u000b"]);
++      });
++      await flush(setup);
++      expect(setup.captureCharFrame()).toContain("Active keys");
++      expect(setup.captureCharFrame()).toContain("pinned");
++
++      await act(async () => {
++        await setup.mockInput.pressKeys(["\u001b\u000b"]);
++      });
++      await flush(setup);
++      expect(setup.captureCharFrame()).not.toContain("Active keys");
+     } finally {
+       await act(async () => {
+         setup.renderer.destroy();
+diff --git i/src/ui/AppHost.reload.test.tsx w/src/ui/AppHost.reload.test.tsx
+index 309f11c..12e39e6 100644
+--- i/src/ui/AppHost.reload.test.tsx
++++ w/src/ui/AppHost.reload.test.tsx
+@@ -199,4 +199,94 @@ describe("reload stale highlight cache", () => {
+       rmSync(dir, { force: true, recursive: true });
+     }
+   });
++
++  test("Space which-key source prefix switches sources", async () => {
++    const dir = mkdtempSync(join(tmpdir(), "hunk-which-key-source-git-"));
++    const file = join(dir, "test.txt");
++
++    execSync("git init && git config user.email test@test && git config user.name test", {
++      cwd: dir,
++      stdio: "ignore",
++    });
++    writeFileSync(file, "base\n");
++    execSync("git add . && git commit -m init", { cwd: dir, stdio: "ignore" });
++
++    writeFileSync(file, "base\nstaged change\n");
++    execSync("git add .", { cwd: dir, stdio: "ignore" });
++    writeFileSync(file, "base\nstaged change\nunstaged change\n");
++
++    const bootstrap = await loadAppBootstrap(
++      { kind: "vcs", staged: false, options: { mode: "stack", excludeUntracked: true } },
++      { cwd: dir },
++    );
++
++    const setup = await testRender(<AppHost bootstrap={bootstrap} />, {
++      width: 140,
++      height: 22,
++    });
++
++    try {
++      await settleHighlights(setup);
++      expect(setup.captureCharFrame()).toContain("unstaged change");
++
++      await act(async () => {
++        await setup.mockInput.pressKey(" ");
++      });
++      await flush(setup);
++      expect(setup.captureCharFrame()).toContain("Leader");
++      expect(setup.captureCharFrame()).toContain("source");
++
++      await act(async () => {
++        await setup.mockInput.typeText("s");
++      });
++      await flush(setup);
++      expect(setup.captureCharFrame()).toContain("Source");
++      expect(setup.captureCharFrame()).toContain("Staged");
++
++      await act(async () => {
++        await setup.mockInput.typeText("s");
++      });
++
++      let switched = false;
++      for (let attempt = 0; attempt < 30; attempt++) {
++        await flush(setup);
++        const frame = setup.captureCharFrame();
++        if (frame.includes("staged change") && !frame.includes("unstaged change")) {
++          switched = true;
++          break;
++        }
++        await Bun.sleep(50);
++      }
++      expect(switched).toBe(true);
++
++      await act(async () => {
++        await setup.mockInput.pressKey(" ");
++      });
++      await flush(setup);
++      await act(async () => {
++        await setup.mockInput.typeText("s");
++      });
++      await flush(setup);
++      await act(async () => {
++        await setup.mockInput.typeText("u");
++      });
++
++      let returned = false;
++      for (let attempt = 0; attempt < 30; attempt++) {
++        await flush(setup);
++        const frame = setup.captureCharFrame();
++        if (frame.includes("unstaged change")) {
++          returned = true;
++          break;
++        }
++        await Bun.sleep(50);
++      }
++      expect(returned).toBe(true);
++    } finally {
++      await act(async () => {
++        setup.renderer.destroy();
++      });
++      rmSync(dir, { force: true, recursive: true });
++    }
++  });
+ });
+diff --git i/src/ui/components/chrome/HelpDialog.tsx w/src/ui/components/chrome/HelpDialog.tsx
+index e3ff490..5d9805a 100644
+--- i/src/ui/components/chrome/HelpDialog.tsx
++++ w/src/ui/components/chrome/HelpDialog.tsx
+@@ -57,6 +57,8 @@ export function HelpDialog({
+         ["/", "focus file filter"],
+         ["c", "create review note"],
+         ["Tab", "toggle files/filter focus"],
++        ["Space", "which-key leader"],
++        ["Ctrl+Alt+K", "toggle which-key"],
+         ["F9", "open source menu"],
+         ["F10", "open menus"],
+         [canRefresh ? "r / q" : "q", canRefresh ? "reload / quit" : "quit"],
+diff --git i/src/ui/components/chrome/WhichKeyDock.tsx w/src/ui/components/chrome/WhichKeyDock.tsx
+new file mode 100644
+index 0000000..42f6e48
+--- /dev/null
++++ w/src/ui/components/chrome/WhichKeyDock.tsx
+@@ -0,0 +1,95 @@
++import type { AppTheme } from "../../themes";
++import { fitText, padText } from "../../lib/text";
++
++export interface WhichKeyEntry {
++  key: string;
++  label: string;
++  group: string;
++  prefix?: boolean;
++}
++
++export interface WhichKeyViewState {
++  entries: WhichKeyEntry[];
++  pinned: boolean;
++  sequence: string[];
++  title: string;
++  visible: boolean;
++}
++
++function groupedEntries(entries: WhichKeyEntry[]) {
++  const groups: Array<{ group: string; entries: WhichKeyEntry[] }> = [];
++  for (const entry of entries) {
++    const existing = groups.find((item) => item.group === entry.group);
++    if (existing) {
++      existing.entries.push(entry);
++    } else {
++      groups.push({ group: entry.group, entries: [entry] });
++    }
++  }
++  return groups;
++}
++
++/** Render the active leader/keybinding choices as a bottom dock. */
++export function WhichKeyDock({
++  state,
++  terminalWidth,
++  theme,
++}: {
++  state: WhichKeyViewState;
++  terminalWidth: number;
++  theme: AppTheme;
++}) {
++  if (!state.visible || state.entries.length === 0) {
++    return null;
++  }
++
++  const contentWidth = Math.max(20, terminalWidth - 4);
++  const groups = groupedEntries(state.entries);
++  const columnWidth = Math.max(24, Math.min(36, Math.floor(contentWidth / 3)));
++  const title =
++    state.sequence.length > 0 ? `${state.title}: ${state.sequence.join(" ")}` : state.title;
++
++  return (
++    <box
++      style={{
++        width: "100%",
++        border: true,
++        borderColor: theme.border,
++        backgroundColor: theme.panel,
++        flexDirection: "column",
++        paddingLeft: 1,
++        paddingRight: 1,
++        zIndex: 35,
++      }}
++    >
++      <box style={{ width: "100%", height: 1, flexDirection: "row" }}>
++        <text fg={theme.badgeNeutral}>{fitText(title, Math.max(1, terminalWidth - 20))}</text>
++        {state.pinned ? <text fg={theme.muted}> pinned</text> : null}
++      </box>
++      <box style={{ width: "100%", flexDirection: "row", flexWrap: "wrap" }}>
++        {groups.map((group) => (
++          <box
++            key={group.group}
++            style={{ width: columnWidth, flexDirection: "column", paddingRight: 2 }}
++          >
++            <text fg={theme.accent}>{fitText(group.group, columnWidth)}</text>
++            {group.entries.map((entry) => {
++              const key = entry.prefix ? `${entry.key} +` : entry.key;
++              const left = padText(fitText(key, 8), 8);
++              const label = fitText(entry.label, Math.max(1, columnWidth - 8));
++              return (
++                <box
++                  key={`${group.group}:${entry.key}:${entry.label}`}
++                  style={{ width: "100%", height: 1, flexDirection: "row" }}
++                >
++                  <text fg={theme.badgeNeutral}>{left}</text>
++                  <text fg={theme.text}>{label}</text>
++                </box>
++              );
++            })}
++          </box>
++        ))}
++      </box>
++    </box>
++  );
++}
+diff --git i/src/ui/components/ui-components.test.tsx w/src/ui/components/ui-components.test.tsx
+index b708061..369dddd 100644
+--- i/src/ui/components/ui-components.test.tsx
++++ w/src/ui/components/ui-components.test.tsx
+@@ -23,6 +23,7 @@ const { AgentCard } = await import("./panes/AgentCard");
+ const { AgentInlineNote } = await import("./panes/AgentInlineNote");
+ const { DiffPane } = await import("./panes/DiffPane");
+ const { MenuDropdown } = await import("./chrome/MenuDropdown");
++const { WhichKeyDock } = await import("./chrome/WhichKeyDock");
+ const { StatusBar } = await import("./chrome/StatusBar");
+ const { DiffFileHeaderRow } = await import("./panes/DiffFileHeaderRow");
+ const { PierreDiffView } = await import("../diff/PierreDiffView");
+@@ -2229,6 +2230,34 @@ describe("UI components", () => {
+     expect(frame).toContain("┘");
+   });
+ 
++  test("WhichKeyDock renders grouped leader entries", async () => {
++    const theme = resolveTheme("github-dark-default", null);
++    const frame = await captureFrame(
++      <WhichKeyDock
++        state={{
++          entries: [
++            { group: "Leader", key: "s", label: "source", prefix: true },
++            { group: "Leader", key: "v", label: "view", prefix: true },
++            { group: "Source", key: "u", label: "Unstaged" },
++          ],
++          pinned: false,
++          sequence: ["SPC"],
++          title: "Leader",
++          visible: true,
++        }}
++        terminalWidth={80}
++        theme={theme}
++      />,
++      80,
++      8,
++    );
++
++    expect(frame).toContain("Leader: SPC");
++    expect(frame).toContain("s +");
++    expect(frame).toContain("source");
++    expect(frame).toContain("Unstaged");
++  });
++
+   test("StatusBar renders filter mode affordance", async () => {
+     const theme = resolveTheme("github-dark-default", null);
+     const frame = await captureFrame(
+@@ -2317,13 +2346,13 @@ describe("UI components", () => {
+     const frame = await captureFrame(
+       <HelpDialog
+         canRefresh={true}
+-        terminalHeight={39}
++        terminalHeight={42}
+         terminalWidth={76}
+         theme={theme}
+         onClose={() => {}}
+       />,
+       76,
+-      39,
++      42,
+     );
+ 
+     const expectedRows = [
+@@ -2355,6 +2384,9 @@ describe("UI components", () => {
+       "/               focus file filter",
+       "c               create review note",
+       "Tab             toggle files/filter focus",
++      "Space           which-key leader",
++      "Ctrl+Alt+K      toggle which-key",
++      "F9              open source menu",
+       "F10             open menus",
+       "r / q           reload / quit",
+     ] as const;
+diff --git i/src/ui/hooks/useAppKeyboardShortcuts.ts w/src/ui/hooks/useAppKeyboardShortcuts.ts
+index ff6246d..a37e766 100644
+--- i/src/ui/hooks/useAppKeyboardShortcuts.ts
++++ w/src/ui/hooks/useAppKeyboardShortcuts.ts
+@@ -1,10 +1,10 @@
+ import type { KeyEvent } from "@opentui/core";
+ import { useKeyboard } from "@opentui/react";
+-import { useRef } from "react";
++import { useEffect, useMemo, useRef, useState } from "react";
+ import type { LayoutMode } from "../../core/types";
+ import type { MenuId } from "../components/chrome/menu";
++import type { WhichKeyViewState } from "../components/chrome/WhichKeyDock";
+ import {
+-  isCreateReviewNoteKey,
+   isEscapeKey,
+   isHalfPageDownKey,
+   isHalfPageUpKey,
+@@ -12,17 +12,35 @@ import {
+   isPageUpKey,
+   isSaveDraftNoteKey,
+   isShiftSpacePageUpKey,
++  isSpaceKey,
+   isStepDownKey,
+   isStepUpKey,
+ } from "../lib/keyboard";
++import {
++  directWhichKeyEntries,
++  findActionForSequence,
++  type KeybindingRegistryAction,
++  whichKeyEntriesForSequence,
++} from "../lib/keybindingRegistry";
++import type { ReviewSourceId, ReviewSourceItem } from "../lib/sourceSwitch";
+ 
+ type FocusArea = "files" | "filter" | "note";
+ type ScrollUnit = "step" | "viewport" | "content" | "half";
+ 
+ const FAST_CODE_HORIZONTAL_SCROLL_COLUMNS = 8;
++const KEY_LEADER_TIMEOUT_MS = 4000;
++const CTRL_ALT_K = "\u001b\u000b";
+ 
+ type JumpShortcut = "top" | "bottom";
+ 
++const HIDDEN_WHICH_KEY: WhichKeyViewState = {
++  entries: [],
++  pinned: false,
++  sequence: [],
++  title: "Which-key",
++  visible: false,
++};
++
+ /** Detect an unmodified lowercase g keypress. */
+ function isLowercaseGKey(key: KeyEvent) {
+   return (
+@@ -42,6 +60,59 @@ function isUppercaseGKey(key: KeyEvent) {
+   );
+ }
+ 
++function isPlainSpaceKey(key: KeyEvent) {
++  return isSpaceKey(key) && !key.ctrl && !key.meta && !key.option && !key.shift;
++}
++
++function isWhichKeyToggle(key: KeyEvent) {
++  const name = key.name?.toLowerCase();
++  const sequence = key.sequence?.toLowerCase();
++  const alt = key.option || (key as { alt?: boolean }).alt;
++  return (
++    key.sequence === CTRL_ALT_K ||
++    key.raw === CTRL_ALT_K ||
++    ((name === "k" || sequence === "k") && key.ctrl && alt && !key.meta)
++  );
++}
++
++function keyTokens(key: KeyEvent) {
++  const tokens = new Set<string>();
++  const name = key.name?.toLowerCase();
++  const sequence = key.sequence;
++
++  if (isPlainSpaceKey(key)) tokens.add("SPC");
++  if (isEscapeKey(key)) tokens.add("Esc");
++  if (name === "tab") tokens.add("Tab");
++  if (name === "f9") tokens.add("F9");
++  if (name === "home") tokens.add("Home");
++  if (name === "end") tokens.add("End");
++  if (name === "left") tokens.add("Left");
++  if (name === "right") tokens.add("Right");
++  if (isPageDownKey(key) && !isPlainSpaceKey(key)) tokens.add("PageDown");
++  if (isPageUpKey(key) || isShiftSpacePageUpKey(key)) tokens.add("PageUp");
++  if (isHalfPageDownKey(key)) tokens.add("HalfPageDown");
++  if (isHalfPageUpKey(key)) tokens.add("HalfPageUp");
++  if (isStepDownKey(key)) tokens.add("StepDown");
++  if (isStepUpKey(key)) tokens.add("StepUp");
++  if (isLowercaseGKey(key)) tokens.add("g");
++  if (isUppercaseGKey(key)) tokens.add("G");
++  if (sequence) tokens.add(sequence);
++  if (key.name) tokens.add(key.name);
++
++  return [...tokens];
++}
++
++function whichKeyTitle(sequence: string[]) {
++  const prefix = sequence[1];
++  if (prefix === "a") return "Agent";
++  if (prefix === "f") return "File";
++  if (prefix === "h") return "Help";
++  if (prefix === "n") return "Navigate";
++  if (prefix === "s") return "Source";
++  if (prefix === "v") return "View";
++  return "Leader";
++}
++
+ export interface UseAppKeyboardShortcutsOptions {
+   activeMenuId: MenuId | null;
+   activateCurrentMenuItem: () => void;
+@@ -64,12 +135,14 @@ export interface UseAppKeyboardShortcutsOptions {
+   openThemeSelector: () => void;
+   pagerMode: boolean;
+   requestQuit: () => void;
++  reviewSourceItems: ReviewSourceItem[];
+   scrollCodeHorizontally: (delta: number) => void;
+   scrollDiff: (delta: number, unit: ScrollUnit) => void;
+   saveDraftNote: () => void;
+   selectLayoutMode: (mode: LayoutMode) => void;
+   showHelp: boolean;
+   startUserNote: () => void;
++  switchReviewSource: (sourceId: ReviewSourceId) => void;
+   switchMenu: (delta: number) => void;
+   toggleAgentNotes: () => void;
+   toggleFocusArea: () => void;
+@@ -107,12 +180,14 @@ export function useAppKeyboardShortcuts({
+   openThemeSelector,
+   pagerMode,
+   requestQuit,
++  reviewSourceItems,
+   scrollCodeHorizontally,
+   saveDraftNote,
+   scrollDiff,
+   selectLayoutMode,
+   showHelp,
+   startUserNote,
++  switchReviewSource,
+   switchMenu,
+   toggleAgentNotes,
+   toggleFocusArea,
+@@ -128,9 +203,13 @@ export function useAppKeyboardShortcuts({
+ }: UseAppKeyboardShortcutsOptions) {
+   const activeMenuIdRef = useRef(activeMenuId);
+   const focusAreaRef = useRef(focusArea);
++  const leaderSequenceRef = useRef<string[] | null>(null);
++  const leaderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++  const leaderExpiredRef = useRef(false);
+   const pagerModeRef = useRef(pagerMode);
+   const showHelpRef = useRef(showHelp);
+   const themeSelectorOpenRef = useRef(themeSelectorOpen);
++  const [whichKeyState, setWhichKeyState] = useState<WhichKeyViewState>(HIDDEN_WHICH_KEY);
+ 
+   activeMenuIdRef.current = activeMenuId;
+   focusAreaRef.current = focusArea;
+@@ -138,6 +217,370 @@ export function useAppKeyboardShortcuts({
+   showHelpRef.current = showHelp;
+   themeSelectorOpenRef.current = themeSelectorOpen;
+ 
++  const runAndCloseMenu = (action: () => void) => {
++    action();
++    closeMenu();
++  };
++
++  const consumeKey = (key: KeyEvent) => {
++    key.preventDefault();
++    key.stopPropagation();
++  };
++
++  const keybindingRegistry = useMemo<KeybindingRegistryAction[]>(
++    () => [
++      {
++        id: "leader.pageDown",
++        label: "page down",
++        group: "Navigate",
++        bindings: [{ keys: ["SPC", "SPC"] }],
++        enabled: true,
++        run: () => scrollDiff(1, "viewport"),
++      },
++      {
++        id: "file.focusCycle",
++        label: "toggle files/filter focus",
++        group: "File",
++        bindings: [{ keys: ["Tab"] }, { keys: ["SPC", "f", "Tab"] }],
++        enabled: true,
++        run: toggleFocusArea,
++      },
++      {
++        id: "file.filter",
++        label: "focus filter",
++        group: "File",
++        bindings: [{ keys: ["/"] }, { keys: ["SPC", "f", "/"] }],
++        enabled: true,
++        run: focusFilter,
++      },
++      {
++        id: "file.edit",
++        label: "open file in editor",
++        group: "File",
++        bindings: [{ keys: ["e"] }, { keys: ["SPC", "f", "e"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(triggerEditSelectedFile),
++      },
++      {
++        id: "file.reload",
++        label: "reload",
++        group: "File",
++        bindings: [{ keys: ["r"] }, { keys: ["SPC", "f", "r"] }],
++        enabled: canRefreshCurrentInput,
++        run: () => runAndCloseMenu(triggerRefreshCurrentInput),
++      },
++      {
++        id: "file.quit",
++        label: "quit",
++        group: "File",
++        bindings: [{ keys: ["q"] }, { keys: ["Esc"] }, { keys: ["SPC", "f", "q"] }],
++        enabled: true,
++        run: requestQuit,
++      },
++      {
++        id: "source.open",
++        label: "open source menu",
++        group: "Source",
++        bindings: [{ keys: ["F9"] }, { keys: ["SPC", "h", "s"] }],
++        enabled: true,
++        run: openSourceSelector,
++      },
++      ...reviewSourceItems.map<KeybindingRegistryAction>((item) => ({
++        id: `source.${item.id}`,
++        label: item.label,
++        group: "Source",
++        bindings: [{ keys: ["SPC", "s", item.hint] }],
++        enabled: true,
++        run: () => switchReviewSource(item.id),
++      })),
++      {
++        id: "view.split",
++        label: "split view",
++        group: "View",
++        bindings: [{ keys: ["1"] }, { keys: ["SPC", "v", "1"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => selectLayoutMode("split")),
++      },
++      {
++        id: "view.stack",
++        label: "stack view",
++        group: "View",
++        bindings: [{ keys: ["2"] }, { keys: ["SPC", "v", "2"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => selectLayoutMode("stack")),
++      },
++      {
++        id: "view.auto",
++        label: "auto view",
++        group: "View",
++        bindings: [{ keys: ["0"] }, { keys: ["SPC", "v", "0"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => selectLayoutMode("auto")),
++      },
++      {
++        id: "view.sidebar",
++        label: "sidebar",
++        group: "View",
++        bindings: [{ keys: ["s"] }, { keys: ["SPC", "v", "s"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(toggleSidebar),
++      },
++      {
++        id: "view.theme",
++        label: "theme selector",
++        group: "View",
++        bindings: [{ keys: ["t"] }, { keys: ["SPC", "v", "t"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(openThemeSelector),
++      },
++      {
++        id: "view.agentNotes",
++        label: "agent notes",
++        group: "View",
++        bindings: [{ keys: ["a"] }, { keys: ["SPC", "v", "a"] }, { keys: ["SPC", "a", "a"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(toggleAgentNotes),
++      },
++      {
++        id: "view.lineNumbers",
++        label: "line numbers",
++        group: "View",
++        bindings: [{ keys: ["l"] }, { keys: ["SPC", "v", "l"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(toggleLineNumbers),
++      },
++      {
++        id: "view.lineWrap",
++        label: "line wrap",
++        group: "View",
++        bindings: [{ keys: ["w"] }, { keys: ["SPC", "v", "w"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(toggleLineWrap),
++      },
++      {
++        id: "view.hunkHeaders",
++        label: "hunk metadata",
++        group: "View",
++        bindings: [{ keys: ["m"] }, { keys: ["SPC", "v", "m"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(toggleHunkHeaders),
++      },
++      {
++        id: "view.context",
++        label: "toggle context",
++        group: "View",
++        bindings: [{ keys: ["z"] }, { keys: ["SPC", "v", "z"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(toggleGapForSelectedHunk),
++      },
++      {
++        id: "navigate.top",
++        label: "top",
++        group: "Navigate",
++        bindings: [{ keys: ["g"] }],
++        enabled: true,
++        run: () => scrollDiff(-1, "content"),
++      },
++      {
++        id: "navigate.bottom",
++        label: "bottom",
++        group: "Navigate",
++        bindings: [{ keys: ["G"] }],
++        enabled: true,
++        run: () => scrollDiff(1, "content"),
++      },
++      {
++        id: "navigate.pageDown",
++        label: "page down",
++        group: "Navigate",
++        bindings: [{ keys: ["PageDown"] }],
++        enabled: true,
++        run: () => scrollDiff(1, "viewport"),
++      },
++      {
++        id: "navigate.pageUp",
++        label: "page up",
++        group: "Navigate",
++        bindings: [{ keys: ["PageUp"] }],
++        enabled: true,
++        run: () => scrollDiff(-1, "viewport"),
++      },
++      {
++        id: "navigate.halfPageDown",
++        label: "half page down",
++        group: "Navigate",
++        bindings: [{ keys: ["HalfPageDown"] }],
++        enabled: true,
++        run: () => scrollDiff(1, "half"),
++      },
++      {
++        id: "navigate.halfPageUp",
++        label: "half page up",
++        group: "Navigate",
++        bindings: [{ keys: ["HalfPageUp"] }],
++        enabled: true,
++        run: () => scrollDiff(-1, "half"),
++      },
++      {
++        id: "navigate.stepDown",
++        label: "step down",
++        group: "Navigate",
++        bindings: [{ keys: ["StepDown"] }],
++        enabled: true,
++        run: () => scrollDiff(1, "step"),
++      },
++      {
++        id: "navigate.stepUp",
++        label: "step up",
++        group: "Navigate",
++        bindings: [{ keys: ["StepUp"] }],
++        enabled: true,
++        run: () => scrollDiff(-1, "step"),
++      },
++      {
++        id: "navigate.scrollLeft",
++        label: "scroll left",
++        group: "Navigate",
++        bindings: [{ keys: ["Left"] }],
++        enabled: true,
++        run: (key) =>
++          scrollCodeHorizontally(key?.shift ? -FAST_CODE_HORIZONTAL_SCROLL_COLUMNS : -1),
++      },
++      {
++        id: "navigate.scrollRight",
++        label: "scroll right",
++        group: "Navigate",
++        bindings: [{ keys: ["Right"] }],
++        enabled: true,
++        run: (key) => scrollCodeHorizontally(key?.shift ? FAST_CODE_HORIZONTAL_SCROLL_COLUMNS : 1),
++      },
++      {
++        id: "navigate.home",
++        label: "top",
++        group: "Navigate",
++        bindings: [{ keys: ["Home"] }],
++        enabled: true,
++        run: () => scrollDiff(-1, "content"),
++      },
++      {
++        id: "navigate.end",
++        label: "bottom",
++        group: "Navigate",
++        bindings: [{ keys: ["End"] }],
++        enabled: true,
++        run: () => scrollDiff(1, "content"),
++      },
++      {
++        id: "navigate.previousHunk",
++        label: "previous hunk",
++        group: "Navigate",
++        bindings: [{ keys: ["["] }, { keys: ["SPC", "n", "["] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => moveToHunk(-1)),
++      },
++      {
++        id: "navigate.nextHunk",
++        label: "next hunk",
++        group: "Navigate",
++        bindings: [{ keys: ["]"] }, { keys: ["SPC", "n", "]"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => moveToHunk(1)),
++      },
++      {
++        id: "navigate.previousFile",
++        label: "previous file",
++        group: "Navigate",
++        bindings: [{ keys: [","] }, { keys: ["SPC", "n", ","] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => moveToFile(-1)),
++      },
++      {
++        id: "navigate.nextFile",
++        label: "next file",
++        group: "Navigate",
++        bindings: [{ keys: ["."] }, { keys: ["SPC", "n", "."] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => moveToFile(1)),
++      },
++      {
++        id: "agent.previousComment",
++        label: "previous comment",
++        group: "Agent",
++        bindings: [{ keys: ["{"] }, { keys: ["SPC", "a", "{"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => moveToAnnotatedHunk(-1)),
++      },
++      {
++        id: "agent.nextComment",
++        label: "next comment",
++        group: "Agent",
++        bindings: [{ keys: ["}"] }, { keys: ["SPC", "a", "}"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(() => moveToAnnotatedHunk(1)),
++      },
++      {
++        id: "review.createNote",
++        label: "create note",
++        group: "Review",
++        bindings: [{ keys: ["c"] }],
++        enabled: true,
++        run: () => runAndCloseMenu(startUserNote),
++      },
++      {
++        id: "help.controls",
++        label: "controls help",
++        group: "Help",
++        bindings: [{ keys: ["?"] }, { keys: ["SPC", "h", "?"] }],
++        enabled: true,
++        run: () => {
++          toggleHelp();
++          closeMenu();
++        },
++      },
++    ],
++    [
++      canRefreshCurrentInput,
++      closeMenu,
++      focusFilter,
++      moveToAnnotatedHunk,
++      moveToFile,
++      moveToHunk,
++      openSourceSelector,
++      openThemeSelector,
++      requestQuit,
++      reviewSourceItems,
++      scrollCodeHorizontally,
++      scrollDiff,
++      selectLayoutMode,
++      startUserNote,
++      switchReviewSource,
++      toggleAgentNotes,
++      toggleFocusArea,
++      toggleGapForSelectedHunk,
++      toggleHelp,
++      toggleHunkHeaders,
++      toggleLineNumbers,
++      toggleLineWrap,
++      toggleSidebar,
++      triggerEditSelectedFile,
++      triggerRefreshCurrentInput,
++    ],
++  );
++
++  const directEntries = useMemo(
++    () => directWhichKeyEntries(keybindingRegistry),
++    [keybindingRegistry],
++  );
++
++  useEffect(
++    () => () => {
++      if (leaderTimeoutRef.current) {
++        clearTimeout(leaderTimeoutRef.current);
++      }
++    },
++    [],
++  );
++
+   const resolveJumpShortcut = (key: KeyEvent): JumpShortcut | null => {
+     if (isUppercaseGKey(key)) {
+       return "bottom";
+@@ -150,14 +593,60 @@ export function useAppKeyboardShortcuts({
+     return null;
+   };
+ 
+-  const runAndCloseMenu = (action: () => void) => {
+-    action();
+-    closeMenu();
++  const showWhichKey = (sequence: string[], title: string, pinned = whichKeyState.pinned) => {
++    const entries =
++      sequence.length === 0
++        ? directEntries
++        : whichKeyEntriesForSequence(keybindingRegistry, sequence);
++    setWhichKeyState({ entries, pinned, sequence, title, visible: entries.length > 0 });
+   };
+ 
+-  const consumeKey = (key: KeyEvent) => {
+-    key.preventDefault();
+-    key.stopPropagation();
++  const clearLeader = (keepPinned = true) => {
++    leaderSequenceRef.current = null;
++    leaderExpiredRef.current = false;
++    if (leaderTimeoutRef.current) {
++      clearTimeout(leaderTimeoutRef.current);
++      leaderTimeoutRef.current = null;
++    }
++    if (keepPinned && whichKeyState.pinned) {
++      showWhichKey([], "Active keys", true);
++    } else {
++      setWhichKeyState((state) => ({ ...HIDDEN_WHICH_KEY, pinned: state.pinned }));
++    }
++  };
++
++  const armLeader = (sequence: string[]) => {
++    if (leaderTimeoutRef.current) {
++      clearTimeout(leaderTimeoutRef.current);
++    }
++    leaderSequenceRef.current = sequence;
++    leaderExpiredRef.current = false;
++    showWhichKey(sequence, whichKeyTitle(sequence));
++    leaderTimeoutRef.current = setTimeout(() => {
++      leaderSequenceRef.current = null;
++      leaderExpiredRef.current = true;
++      leaderTimeoutRef.current = null;
++      if (whichKeyState.pinned) {
++        showWhichKey([], "Active keys", true);
++      } else {
++        setWhichKeyState((state) => ({ ...HIDDEN_WHICH_KEY, pinned: state.pinned }));
++      }
++    }, KEY_LEADER_TIMEOUT_MS);
++  };
++
++  const togglePinnedWhichKey = () => {
++    setWhichKeyState((state) => {
++      const nextPinned = !state.pinned;
++      return nextPinned
++        ? {
++            entries: directEntries,
++            pinned: true,
++            sequence: [],
++            title: "Active keys",
++            visible: true,
++          }
++        : HIDDEN_WHICH_KEY;
++    });
+   };
+ 
+   const handleMenuToggleShortcut = (key: KeyEvent) => {
+@@ -344,6 +833,42 @@ export function useAppKeyboardShortcuts({
+     return false;
+   };
+ 
++  const handleLeaderShortcut = (key: KeyEvent) => {
++    const pendingSequence = leaderSequenceRef.current;
++    if (!pendingSequence) {
++      return false;
++    }
++
++    if (isEscapeKey(key)) {
++      clearLeader();
++      return true;
++    }
++
++    if (isPlainSpaceKey(key)) {
++      clearLeader();
++      scrollDiff(1, "viewport");
++      return true;
++    }
++
++    for (const token of keyTokens(key)) {
++      const sequence = [...pendingSequence, token];
++      const action = findActionForSequence(keybindingRegistry, sequence);
++      if (action) {
++        action.run();
++        clearLeader();
++        return true;
++      }
++
++      if (whichKeyEntriesForSequence(keybindingRegistry, sequence).length > 0) {
++        armLeader(sequence);
++        return true;
++      }
++    }
++
++    clearLeader();
++    return false;
++  };
++
+   const handleFocusedInputShortcut = (key: KeyEvent) => {
+     if (focusAreaRef.current === "filter") {
+       if (key.name === "tab") {
+@@ -376,190 +901,32 @@ export function useAppKeyboardShortcuts({
+   };
+ 
+   const handleAppShortcut = (key: KeyEvent) => {
+-    const jumpShortcut = resolveJumpShortcut(key);
+-    if (jumpShortcut === "top") {
+-      scrollDiff(-1, "content");
++    if (isWhichKeyToggle(key)) {
++      togglePinnedWhichKey();
+       return;
+     }
+ 
+-    if (jumpShortcut === "bottom") {
+-      scrollDiff(1, "content");
++    if (leaderExpiredRef.current && !isPlainSpaceKey(key)) {
++      leaderExpiredRef.current = false;
++    }
++
++    if (isPlainSpaceKey(key)) {
++      if (leaderExpiredRef.current) {
++        leaderExpiredRef.current = false;
++        scrollDiff(1, "viewport");
++        return;
++      }
++
++      armLeader(["SPC"]);
+       return;
+     }
+ 
+-    if (key.name === "q") {
+-      requestQuit();
+-      return;
+-    }
+-
+-    if (key.name === "?" || key.sequence === "?") {
+-      toggleHelp();
+-      closeMenu();
+-      return;
+-    }
+-
+-    if (key.name?.toLowerCase() === "f9") {
+-      openSourceSelector();
+-      return;
+-    }
+-
+-    if (isEscapeKey(key)) {
+-      requestQuit();
+-      return;
+-    }
+-
+-    if (key.name === "tab") {
+-      toggleFocusArea();
+-      return;
+-    }
+-
+-    if (key.name === "/") {
+-      focusFilter();
+-      return;
+-    }
+-
+-    if (isCreateReviewNoteKey(key)) {
+-      runAndCloseMenu(startUserNote);
+-      return;
+-    }
+-
+-    if (isPageDownKey(key)) {
+-      scrollDiff(1, "viewport");
+-      return;
+-    }
+-
+-    if (isPageUpKey(key) || isShiftSpacePageUpKey(key)) {
+-      scrollDiff(-1, "viewport");
+-      return;
+-    }
+-
+-    if (isHalfPageDownKey(key)) {
+-      scrollDiff(1, "half");
+-      return;
+-    }
+-
+-    if (isHalfPageUpKey(key)) {
+-      scrollDiff(-1, "half");
+-      return;
+-    }
+-
+-    if (key.name === "home") {
+-      scrollDiff(-1, "content");
+-      return;
+-    }
+-
+-    if (key.name === "end") {
+-      scrollDiff(1, "content");
+-      return;
+-    }
+-
+-    if (isStepUpKey(key)) {
+-      scrollDiff(-1, "step");
+-      return;
+-    }
+-
+-    if (isStepDownKey(key)) {
+-      scrollDiff(1, "step");
+-      return;
+-    }
+-
+-    if (key.name === "left") {
+-      scrollCodeHorizontally(key.shift ? -FAST_CODE_HORIZONTAL_SCROLL_COLUMNS : -1);
+-      return;
+-    }
+-
+-    if (key.name === "right") {
+-      scrollCodeHorizontally(key.shift ? FAST_CODE_HORIZONTAL_SCROLL_COLUMNS : 1);
+-      return;
+-    }
+-
+-    if (key.name === "1") {
+-      runAndCloseMenu(() => selectLayoutMode("split"));
+-      return;
+-    }
+-
+-    if (key.name === "2") {
+-      runAndCloseMenu(() => selectLayoutMode("stack"));
+-      return;
+-    }
+-
+-    if (key.name === "0") {
+-      runAndCloseMenu(() => selectLayoutMode("auto"));
+-      return;
+-    }
+-
+-    if (key.name === "s") {
+-      runAndCloseMenu(toggleSidebar);
+-      return;
+-    }
+-
+-    if ((key.name === "r" || key.sequence === "r") && canRefreshCurrentInput) {
+-      runAndCloseMenu(triggerRefreshCurrentInput);
+-      return;
+-    }
+-
+-    if (key.name === "t") {
+-      runAndCloseMenu(openThemeSelector);
+-      return;
+-    }
+-
+-    if (key.name === "a") {
+-      runAndCloseMenu(toggleAgentNotes);
+-      return;
+-    }
+-
+-    if (key.name === "l" || key.sequence === "l") {
+-      runAndCloseMenu(toggleLineNumbers);
+-      return;
+-    }
+-
+-    if (key.name === "w" || key.sequence === "w") {
+-      runAndCloseMenu(toggleLineWrap);
+-      return;
+-    }
+-
+-    if (key.name === "m" || key.sequence === "m") {
+-      runAndCloseMenu(toggleHunkHeaders);
+-      return;
+-    }
+-
+-    if (key.name === "z" || key.sequence === "z") {
+-      runAndCloseMenu(toggleGapForSelectedHunk);
+-      return;
+-    }
+-
+-    if (key.name === "e" || key.sequence === "e") {
+-      runAndCloseMenu(triggerEditSelectedFile);
+-      return;
+-    }
+-
+-    if (key.name === "[") {
+-      runAndCloseMenu(() => moveToHunk(-1));
+-      return;
+-    }
+-
+-    if (key.name === "]") {
+-      runAndCloseMenu(() => moveToHunk(1));
+-      return;
+-    }
+-
+-    if (key.name === "," || key.sequence === ",") {
+-      runAndCloseMenu(() => moveToFile(-1));
+-      return;
+-    }
+-
+-    if (key.name === "." || key.sequence === ".") {
+-      runAndCloseMenu(() => moveToFile(1));
+-      return;
+-    }
+-
+-    if (key.sequence === "{") {
+-      runAndCloseMenu(() => moveToAnnotatedHunk(-1));
+-      return;
+-    }
+-
+-    if (key.sequence === "}") {
+-      runAndCloseMenu(() => moveToAnnotatedHunk(1));
++    for (const token of keyTokens(key)) {
++      const action = findActionForSequence(keybindingRegistry, [token]);
++      if (action) {
++        action.run(key);
++        return;
++      }
+     }
+   };
+ 
+@@ -581,6 +948,10 @@ export function useAppKeyboardShortcuts({
+       return;
+     }
+ 
++    if (handleLeaderShortcut(key)) {
++      return;
++    }
++
+     if (handleMenuShortcut(key)) {
+       return;
+     }
+@@ -591,4 +962,6 @@ export function useAppKeyboardShortcuts({
+ 
+     handleAppShortcut(key);
+   });
++
++  return whichKeyState;
+ }
+diff --git i/src/ui/lib/keybindingRegistry.ts w/src/ui/lib/keybindingRegistry.ts
+new file mode 100644
+index 0000000..74907f4
+--- /dev/null
++++ w/src/ui/lib/keybindingRegistry.ts
+@@ -0,0 +1,98 @@
++import type { KeyEvent } from "@opentui/core";
++import type { WhichKeyEntry } from "../components/chrome/WhichKeyDock";
++
++export interface KeyBindingSpec {
++  keys: string[];
++}
++
++export interface KeybindingRegistryAction {
++  id: string;
++  label: string;
++  group: string;
++  bindings: KeyBindingSpec[];
++  enabled: boolean;
++  run: (key?: KeyEvent) => void;
++}
++
++const LEADER_PREFIX_LABELS: Record<string, string> = {
++  a: "agent",
++  f: "file",
++  h: "help",
++  n: "navigate",
++  s: "source",
++  v: "view",
++};
++
++function sequenceStartsWith(sequence: string[], prefix: string[]) {
++  return prefix.every((key, index) => sequence[index] === key);
++}
++
++function addEntry(entries: WhichKeyEntry[], entry: WhichKeyEntry) {
++  if (
++    entries.some(
++      (existing) =>
++        existing.group === entry.group &&
++        existing.key === entry.key &&
++        existing.label === entry.label &&
++        existing.prefix === entry.prefix,
++    )
++  ) {
++    return;
++  }
++  entries.push(entry);
++}
++
++export function findActionForSequence(actions: KeybindingRegistryAction[], sequence: string[]) {
++  return actions.find(
++    (action) =>
++      action.enabled &&
++      action.bindings.some(
++        (binding) =>
++          binding.keys.length === sequence.length && sequenceStartsWith(binding.keys, sequence),
++      ),
++  );
++}
++
++export function directWhichKeyEntries(actions: KeybindingRegistryAction[]) {
++  const entries: WhichKeyEntry[] = [];
++  for (const action of actions) {
++    if (!action.enabled) continue;
++    for (const binding of action.bindings) {
++      const key = binding.keys[0];
++      if (binding.keys.length !== 1 || !key || key === "SPC") continue;
++      addEntry(entries, {
++        group: action.group,
++        key,
++        label: action.label,
++      });
++    }
++  }
++  return entries;
++}
++
++export function whichKeyEntriesForSequence(
++  actions: KeybindingRegistryAction[],
++  sequence: string[],
++) {
++  const entries: WhichKeyEntry[] = [];
++  for (const action of actions) {
++    if (!action.enabled) continue;
++    for (const binding of action.bindings) {
++      if (binding.keys.length <= sequence.length || !sequenceStartsWith(binding.keys, sequence)) {
++        continue;
++      }
++      const nextKey = binding.keys[sequence.length];
++      if (!nextKey) continue;
++      const prefix = binding.keys.length > sequence.length + 1;
++      addEntry(entries, {
++        group: prefix ? "Leader" : action.group,
++        key: nextKey,
++        label: prefix
++          ? (LEADER_PREFIX_LABELS[nextKey] ?? action.group.toLowerCase())
++          : action.label,
++        prefix,
++      });
++    }
++  }
++  return entries;
++}
+diff --git i/src/ui/lib/keyboard.ts w/src/ui/lib/keyboard.ts
+index d16c396..b30ecf8 100644
+--- i/src/ui/lib/keyboard.ts
++++ w/src/ui/lib/keyboard.ts
+@@ -3,7 +3,7 @@ import type { KeyEvent } from "@opentui/core";
+ const CTRL_S = "\u0013";
+ const CTRL_S_CSI_U = "\u001b[115;5u";
+ 
+-function isSpaceKey(key: KeyEvent) {
++export function isSpaceKey(key: KeyEvent) {
+   return key.name === "space" || key.name === " " || key.sequence === " ";
+ }
+ 
+diff --git i/src/ui/lib/ui-lib.test.ts w/src/ui/lib/ui-lib.test.ts
+index 31e86ea..6286787 100644
+--- i/src/ui/lib/ui-lib.test.ts
++++ w/src/ui/lib/ui-lib.test.ts
+@@ -23,6 +23,12 @@ import {
+   isStepDownKey,
+   isStepUpKey,
+ } from "./keyboard";
++import {
++  directWhichKeyEntries,
++  findActionForSequence,
++  type KeybindingRegistryAction,
++  whichKeyEntriesForSequence,
++} from "./keybindingRegistry";
+ import { fitText, measureTextWidth, padText, sliceTextByWidth } from "./text";
+ import { computeHunkRevealScrollTop } from "./hunkScroll";
+ import {
+@@ -222,6 +228,86 @@ describe("ui helpers", () => {
+     expect(isShiftSpacePageUpKey(createKeyEvent({ name: "space", shift: false }))).toBe(false);
+   });
+ 
++  test("keybinding registry builds direct action entries", () => {
++    const registry: KeybindingRegistryAction[] = [
++      {
++        id: "view.sidebar",
++        label: "sidebar",
++        group: "View",
++        bindings: [{ keys: ["s"] }, { keys: ["SPC", "v", "s"] }],
++        enabled: true,
++        run: () => {},
++      },
++      {
++        id: "file.reload",
++        label: "reload",
++        group: "File",
++        bindings: [{ keys: ["r"] }],
++        enabled: false,
++        run: () => {},
++      },
++    ];
++
++    expect(directWhichKeyEntries(registry)).toEqual([
++      { group: "View", key: "s", label: "sidebar" },
++    ]);
++  });
++
++  test("keybinding registry filters reachable pending sequences", () => {
++    const registry: KeybindingRegistryAction[] = [
++      {
++        id: "source.unstaged",
++        label: "Unstaged",
++        group: "Source",
++        bindings: [{ keys: ["SPC", "s", "u"] }],
++        enabled: true,
++        run: () => {},
++      },
++      {
++        id: "view.sidebar",
++        label: "sidebar",
++        group: "View",
++        bindings: [{ keys: ["SPC", "v", "s"] }],
++        enabled: true,
++        run: () => {},
++      },
++    ];
++
++    expect(whichKeyEntriesForSequence(registry, ["SPC"])).toEqual([
++      { group: "Leader", key: "s", label: "source", prefix: true },
++      { group: "Leader", key: "v", label: "view", prefix: true },
++    ]);
++    expect(whichKeyEntriesForSequence(registry, ["SPC", "s"])).toEqual([
++      { group: "Source", key: "u", label: "Unstaged", prefix: false },
++    ]);
++  });
++
++  test("keybinding registry finds exact enabled sequences only", () => {
++    const run = () => {};
++    const registry: KeybindingRegistryAction[] = [
++      {
++        id: "source.staged",
++        label: "Staged",
++        group: "Source",
++        bindings: [{ keys: ["SPC", "s", "s"] }],
++        enabled: true,
++        run,
++      },
++      {
++        id: "source.commit",
++        label: "Commit",
++        group: "Source",
++        bindings: [{ keys: ["SPC", "s", "c"] }],
++        enabled: false,
++        run: () => {},
++      },
++    ];
++
++    expect(findActionForSequence(registry, ["SPC", "s", "s"])?.id).toBe("source.staged");
++    expect(findActionForSequence(registry, ["SPC", "s", "c"])).toBeUndefined();
++    expect(findActionForSequence(registry, ["SPC", "s"])).toBeUndefined();
++  });
++
+   test("review note shortcut only matches unmodified c", () => {
+     expect(isCreateReviewNoteKey(createKeyEvent({ name: "c" }))).toBe(true);
+     expect(isCreateReviewNoteKey(createKeyEvent({ sequence: "c" }))).toBe(true);
+diff --git i/test/pty/chrome.test.ts w/test/pty/chrome.test.ts
+index b506e09..016fa7e 100644
+--- i/test/pty/chrome.test.ts
++++ w/test/pty/chrome.test.ts
+@@ -1,3 +1,6 @@
++import { execSync } from "node:child_process";
++import { writeFileSync } from "node:fs";
++import { join } from "node:path";
+ import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
+ import { createPtyHarness } from "./harness";
+ 
+@@ -250,6 +253,7 @@ describe("PTY chrome", () => {
+ 
+       expect(fileMenu).toContain("Reload");
+ 
++      await session.press("right");
+       await session.press("right");
+       const viewMenu = await harness.waitForSnapshot(
+         session,
+@@ -273,4 +277,51 @@ describe("PTY chrome", () => {
+       session.close();
+     }
+   });
++
++  test("which-key leader switches sources in a real PTY", async () => {
++    const fixture = harness.createTwoFileRepoFixture();
++    const alpha = join(fixture.dir, "alpha.ts");
++
++    writeFileSync(alpha, "export const alpha = 2;\nexport const stagedOnly = true;\n");
++    execSync("git add alpha.ts", { cwd: fixture.dir, stdio: "ignore" });
++    writeFileSync(
++      alpha,
++      "export const alpha = 2;\nexport const stagedOnly = true;\nexport const unstagedOnly = true;\n",
++    );
++
++    const session = await harness.launchHunk({
++      args: ["diff", "--mode", "split"],
++      cwd: fixture.dir,
++      cols: 220,
++      rows: 24,
++    });
++
++    try {
++      await session.waitForText(/unstagedOnly/, { timeout: 15_000 });
++
++      await session.press("space");
++      await session.waitForText(/Leader: SPC/, { timeout: 5_000 });
++      await session.press("s");
++      await session.waitForText(/Source: SPC s/, { timeout: 5_000 });
++      await session.press("s");
++      const staged = await harness.waitForSnapshot(
++        session,
++        (text) => text.includes("stagedOnly") && !text.includes("unstagedOnly"),
++        5_000,
++      );
++      expect(staged).toContain("Staged");
++
++      await session.press("space");
++      await session.press("s");
++      await session.press("u");
++      const unstaged = await harness.waitForSnapshot(
++        session,
++        (text) => text.includes("unstagedOnly"),
++        5_000,
++      );
++      expect(unstaged).toContain("Unstaged");
++    } finally {
++      session.close();
++    }
++  });
+ });
