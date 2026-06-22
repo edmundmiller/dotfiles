@@ -15,6 +15,7 @@ let
   hunkPackagePatched = hunkPackageBase.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [
       ../../../patches/hunk/0001-add-source-switch-menu.patch
+      ../../../patches/hunk/0002-add-which-key.patch
     ];
   });
   hunkPackage =
