@@ -1,5 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join } from "node:path";
 
 const HUNK_TIMEOUT_MS = 30_000;
 
@@ -52,6 +54,37 @@ function repoArg(repo?: string): string {
   return repo || process.cwd();
 }
 
+async function gitPath(pi: ExtensionAPI, repo: string, path: string): Promise<string> {
+  const result = await runCommand(pi, "git", ["rev-parse", "--git-path", path], { cwd: repo });
+  return isAbsolute(result.stdout) ? result.stdout : join(repo, result.stdout);
+}
+
+async function writePiLastTurnMarker(
+  pi: ExtensionAPI,
+  repo: string,
+  input: { range?: string; staged?: boolean; pathspecs?: string[] }
+) {
+  const markerPath = await gitPath(pi, repo, "hunk/last-pi-turn.json");
+  await mkdir(dirname(markerPath), { recursive: true });
+  await writeFile(
+    markerPath,
+    `${JSON.stringify(
+      {
+        version: 1,
+        source: "pi-hunk",
+        createdAt: new Date().toISOString(),
+        kind: "vcs",
+        range: input.range,
+        staged: input.staged === true,
+        pathspecs: input.pathspecs,
+      },
+      null,
+      2
+    )}\n`
+  );
+  return markerPath;
+}
+
 export default function hunkExtension(pi: ExtensionAPI) {
   pi.registerTool({
     name: "hunk_diff",
@@ -92,10 +125,17 @@ export default function hunkExtension(pi: ExtensionAPI) {
         cwd: repoArg(params.repo),
         timeout: 10_000,
       });
+      const repo = repoArg(params.repo);
+      const markerPath = await writePiLastTurnMarker(pi, repo, {
+        range: params.target,
+        staged: params.staged,
+        pathspecs: params.pathspecs,
+      });
       return textResult(result.stdout || "Opened Hunk diff review in Herdr.", {
         action: "diff",
         command: "herdr-hunk",
         args,
+        markerPath,
         ...result,
       });
     },
@@ -124,10 +164,18 @@ export default function hunkExtension(pi: ExtensionAPI) {
       if (params.target) args.push(params.target);
       if (params.pathspecs?.length) args.push("--", ...params.pathspecs);
       const result = await runCommand(pi, "hunk", args, { cwd: repo });
+      const markerPath =
+        source === "diff"
+          ? await writePiLastTurnMarker(pi, repo, {
+              range: params.target,
+              pathspecs: params.pathspecs,
+            })
+          : undefined;
       const parsed = parseJson(result.stdout);
       return textResult(stringify(parsed) || "Reloaded Hunk session.", {
         action: "reload",
         args,
+        markerPath,
         parsed,
         ...result,
       });
@@ -224,6 +272,53 @@ export default function hunkExtension(pi: ExtensionAPI) {
         args,
         parsed,
         ...result,
+      });
+    },
+  });
+
+  pi.registerTool({
+    name: "hunk_commit",
+    label: "Hunk Commit",
+    description:
+      "Create a local Git commit for a Hunk-reviewed changeset, optionally staging unstaged changes and pushing after commit.",
+    parameters: Type.Object({
+      repo: Type.Optional(
+        Type.String({ description: "Repository path. Defaults to Pi's current working directory." })
+      ),
+      message: Type.String({ description: "Required git commit message." }),
+      includeUnstaged: Type.Optional(
+        Type.Boolean({ description: "Run `git add -A` before committing." })
+      ),
+      push: Type.Optional(
+        Type.Boolean({ description: "Run `git push` after a successful commit." })
+      ),
+    }),
+    async execute(_id, params) {
+      const repo = repoArg(params.repo);
+      const message = params.message.trim();
+      if (!message) throw new Error("message is required for hunk_commit");
+
+      const commands: Array<{ command: string; args: string[]; stdout: string; stderr: string }> =
+        [];
+
+      if (params.includeUnstaged) {
+        const staged = await runCommand(pi, "git", ["add", "-A"], { cwd: repo });
+        commands.push({ command: "git", args: ["add", "-A"], ...staged });
+      }
+
+      const committed = await runCommand(pi, "git", ["commit", "-m", message], { cwd: repo });
+      commands.push({ command: "git", args: ["commit", "-m", message], ...committed });
+
+      if (params.push) {
+        const pushed = await runCommand(pi, "git", ["push"], { cwd: repo });
+        commands.push({ command: "git", args: ["push"], ...pushed });
+      }
+
+      return textResult(committed.stdout || committed.stderr || "Committed changes.", {
+        action: "commit",
+        repo,
+        pushed: params.push === true,
+        commands,
       });
     },
   });

@@ -12,16 +12,21 @@ let
   cfg = config.modules.shell.git;
   inherit (config.dotfiles) configDir;
   hunkPackageBase = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  hunkPackagePatched = hunkPackageBase.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [
+      ../../../patches/hunk/0001-add-source-switch-menu.patch
+    ];
+  });
   hunkPackage =
     if pkgs.stdenv.hostPlatform.isDarwin then
-      hunkPackageBase.overrideAttrs (old: {
+      hunkPackagePatched.overrideAttrs (old: {
         postInstall = (old.postInstall or "") + ''
           chmod u+w $out/bin/hunk
           /usr/bin/codesign -f -s - $out/bin/hunk
         '';
       })
     else
-      hunkPackageBase;
+      hunkPackagePatched;
 in
 {
   options.modules.shell.git = {
