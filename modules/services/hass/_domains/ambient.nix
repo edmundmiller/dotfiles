@@ -274,6 +274,102 @@ in
 
       # --- Presence ---
       {
+        alias = "Arrival flash wall lamp";
+        id = "arrival_flash_wall_lamp";
+        description = "Flash Wall Lamp blue for Edmund, yellow for Monica, then restore previous state";
+        mode = "queued";
+        max = 4;
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "person.edmund_miller";
+            to = "home";
+          }
+          {
+            platform = "state";
+            entity_id = "person.moni";
+            to = "home";
+          }
+        ];
+        action = [
+          {
+            action = "scene.create";
+            data = {
+              scene_id = "arrival_wall_lamp_previous";
+              snapshot_entities = [ "light.essentials_a19_a60_5" ];
+            };
+          }
+          {
+            choose = [
+              {
+                conditions = [
+                  {
+                    condition = "template";
+                    value_template = "{{ trigger.entity_id == 'person.edmund_miller' }}";
+                  }
+                ];
+                sequence = [
+                  {
+                    repeat = {
+                      count = 3;
+                      sequence = [
+                        {
+                          action = "light.turn_on";
+                          target.entity_id = "light.essentials_a19_a60_5";
+                          data = {
+                            brightness = 255;
+                            hs_color = [
+                              240
+                              100
+                            ];
+                          };
+                        }
+                        { delay.milliseconds = 400; }
+                        {
+                          action = "light.turn_off";
+                          target.entity_id = "light.essentials_a19_a60_5";
+                        }
+                        { delay.milliseconds = 400; }
+                      ];
+                    };
+                  }
+                ];
+              }
+            ];
+            default = [
+              {
+                repeat = {
+                  count = 3;
+                  sequence = [
+                    {
+                      action = "light.turn_on";
+                      target.entity_id = "light.essentials_a19_a60_5";
+                      data = {
+                        brightness = 255;
+                        hs_color = [
+                          60
+                          100
+                        ];
+                      };
+                    }
+                    { delay.milliseconds = 400; }
+                    {
+                      action = "light.turn_off";
+                      target.entity_id = "light.essentials_a19_a60_5";
+                    }
+                    { delay.milliseconds = 400; }
+                  ];
+                };
+              }
+            ];
+          }
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.arrival_wall_lamp_previous";
+          }
+        ];
+      }
+      {
         alias = "First person arrives home";
         id = "first_person_arrives";
         description = "Welcome home — lights on, house mode Home";
