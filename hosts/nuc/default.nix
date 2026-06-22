@@ -1289,6 +1289,23 @@ in
     };
   };
 
+  systemd.services.mill-docs-agents-tailscale-serve = {
+    description = "Expose Mill docs agents via Tailscale Service";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "tailscaled.service"
+    ];
+    wants = [
+      "tailscaled.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:mill-docs-agents --https=443 http://127.0.0.1:8788 && exit 0; sleep 1; done; exit 1\"'";
+      ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:mill-docs-agents || true'";
+    };
+  };
+
   systemd.services.hermes-radar-cron-tick = {
     description = "Run Radar cron jobs without an interactive gateway";
     after = [ "network-online.target" ];
