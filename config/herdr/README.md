@@ -48,6 +48,9 @@ Custom/current mappings:
 | `prefix+n` | Next tab                     |
 | `prefix+u` | Open Hunk in a focused split |
 | `prefix+U` | Open Hunk in a new tab       |
+| `prefix+a` | New jj workspace             |
+| `prefix+A` | New jj workspace in tab      |
+| `prefix+d` | Remove jj workspace          |
 
 Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` uses Herdr's native worktree prompt; after creation, the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event to seed Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
 
@@ -57,6 +60,7 @@ Dotfiles-specific helper behavior lives in local Herdr plugins under `config/her
 
 - `dotfiles.dev-layout` — provides `prefix+u`/`prefix+U` Hunk actions plus the `worktree.created` dev-layout bootstrap action.
 - `dotfiles.github-link-preview` — registers a GitHub issue/PR link handler that opens `gh issue view` or `gh pr view` in a Herdr side pane.
+- `nathanflurry.jj-workspace` — installed from the Herdr marketplace/GitHub by activation when missing; provides jj workspace create/remove actions.
 
 ## Reloading after edits
 
