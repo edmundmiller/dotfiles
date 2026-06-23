@@ -231,6 +231,13 @@ in
               };
             }
             {
+              "Mill Docs Agents" = {
+                href = "https://mill-docs-agents.${tailnet}";
+                description = "Agent docs";
+                icon = "mdi-file-document-outline";
+              };
+            }
+            {
               "Open Wearables" = {
                 href = "${nucBase}:${toString config.modules.services.open-wearables.backendPort}/docs";
                 description = "Wearable health API (Apple XML import)";
