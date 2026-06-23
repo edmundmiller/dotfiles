@@ -811,12 +811,35 @@ in
               export PATH=$PATH:${escapeShellArg launchPath}
               herdr_cmd=${escapeShellArg cfg.command}
 
-              if "$herdr_cmd" plugin list --json --plugin nathanflurry.jj-workspace | ${pkgs.gnugrep}/bin/grep -q '"plugin_id"[[:space:]]*:[[:space:]]*"nathanflurry.jj-workspace"'; then
-                echo "herdr: nathanflurry.jj-workspace plugin already installed"
-              else
-                echo "herdr: installing nathanflurry.jj-workspace plugin"
-                "$herdr_cmd" plugin install NathanFlurry/herdr-plugin-jj-workspace --yes
-              fi
+              install_plugin() {
+                owner="$1"
+                repo="$2"
+                subdir="''${3:-}"
+                spec="$owner/$repo"
+                if [ -n "$subdir" ]; then
+                  spec="$spec/$subdir"
+                fi
+
+                if "$herdr_cmd" plugin list --json | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
+                  echo "herdr: $spec plugin already installed"
+                else
+                  echo "herdr: installing $spec plugin"
+                  "$herdr_cmd" plugin install "$spec" --yes
+                fi
+              }
+
+              install_plugin NathanFlurry herdr-plugin-jj-workspace
+              install_plugin smarzban herdr-file-viewer
+              install_plugin dutifuldev ghzinga plugins/herdr
+              install_plugin dcolinmorgan herdr-remote relay
+              install_plugin razajamil herdr-plugin-workspace-manager
+              install_plugin paulbkim-dev vim-herdr-navigation
+              install_plugin ogulcancelik herdr-plugin-github-start
+              install_plugin rjyo herdr-window-title-sync
+              install_plugin wyattjoh herdr-plugin-gh-pr
+              install_plugin kkckkc herdr-plugin-gh-workflow
+              install_plugin alon-z herdr-command-palette
+              install_plugin 0x5c0f herdr-insight
             '';
 
         home.activation.herdr-agent-integrations =
