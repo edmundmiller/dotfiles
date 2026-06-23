@@ -74,7 +74,7 @@ in
       );
 
       settings = {
-        title = "NUC";
+        title = "Home Ops";
         favicon = "https://nixos.org/favicon.png";
         theme = "dark";
         color = "slate";
@@ -115,12 +115,7 @@ in
         {
           "Admin" = [
             {
-              "Tailscale" = [
-                {
-                  icon = "tailscale.svg";
-                  href = "https://login.tailscale.com/admin/services/svc:homepage";
-                  description = "Services admin";
-                }
+              "Tools" = [
                 {
                   href = "https://trmnl.com/dashboard";
                   description = "TRMNL dashboard";
@@ -268,28 +263,10 @@ in
               };
             }
             {
-              "Tailscale" = {
-                href = "https://login.tailscale.com/admin";
-                description = "VPN mesh";
-                icon = "tailscale.svg";
-                widget = {
-                  type = "tailscale";
-                  deviceid = "{{HOMEPAGE_VAR_TAILSCALE_DEVICE_ID}}";
-                  key = "{{HOMEPAGE_VAR_TAILSCALE_API_KEY}}";
-                };
-              };
-            }
-            {
               "Speedtest Tracker" = {
                 href = "${nucBase}:8765";
                 description = "Network speed history";
-                icon = "speedtest-tracker.svg";
-                widget = {
-                  type = "speedtest";
-                  url = "http://localhost:8765";
-                  version = 2;
-                  key = "{{HOMEPAGE_VAR_SPEEDTEST_API_KEY}}";
-                };
+                icon = "mdi-speedometer";
               };
             }
           ];
@@ -317,6 +294,13 @@ in
                   url = "https://healthchecks.io";
                   key = "{{HOMEPAGE_VAR_HEALTHCHECKS_API_KEY}}";
                 };
+              };
+            }
+            {
+              "Grafana Cloud" = {
+                href = "https://fearlesslorry169.grafana.net/";
+                description = "Metrics dashboards";
+                icon = "grafana.svg";
               };
             }
           ];
