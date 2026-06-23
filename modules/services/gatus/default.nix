@@ -125,6 +125,13 @@ let
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }
+            {
+              name = "Grafana Cloud";
+              group = "Monitoring";
+              url = "https://fearlesslorry169.grafana.net/api/health";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
             # TODO: Tailscale local API doesn't expose healthz on 41112
             # {
             #   name = "Tailscale";
