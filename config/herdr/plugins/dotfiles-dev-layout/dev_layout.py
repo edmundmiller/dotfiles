@@ -64,6 +64,41 @@ def default_base_ref(cwd: str) -> str | None:
     return None
 
 
+def macos_dark_mode() -> bool | None:
+    if sys.platform != "darwin":
+        return None
+    result = subprocess.run(
+        [
+            "osascript",
+            "-e",
+            'tell application "System Events" to tell appearance preferences to get dark mode',
+        ],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        return None
+    value = result.stdout.strip().lower()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    return None
+
+
+def hunk_theme_args() -> list[str]:
+    args = ["--no-transparent-bg"]
+    if os.environ.get("HUNK_THEME"):
+        return ["--theme", os.environ["HUNK_THEME"], *args]
+    dark_mode = macos_dark_mode()
+    if dark_mode is True:
+        return ["--theme", "catppuccin-mocha", *args]
+    if dark_mode is False:
+        return ["--theme", "catppuccin-latte", *args]
+    return args
+
+
 def hunk_command(cwd: str, mode: str = "worktree", passthrough: list[str] | None = None) -> str:
     executable = "hunk" if command_exists("hunk") else "bunx hunkdiff"
     passthrough = passthrough or []
@@ -76,6 +111,7 @@ def hunk_command(cwd: str, mode: str = "worktree", passthrough: list[str] | None
         args = ["diff", f"{upstream}..{branch}"]
     else:
         args = ["diff"]
+    args.extend(hunk_theme_args())
     args.extend(passthrough)
     return " ".join([executable, *(shlex.quote(arg) for arg in args)])
 

@@ -69,9 +69,9 @@ let
         command = "obsidian-neovide"
       '';
 
-  # Pi's built-in theme can be too low-contrast in the Herdr/Ghostty popup
-  # (especially muted prompt text). Ship and select a small Catppuccin-ish
-  # light theme so it matches Ghostty's `light/...` palette choice.
+  # Pi's built-in theme can be too low-contrast in some Herdr/Ghostty stacks
+  # (especially muted prompt text). Ship an optional high-contrast theme for
+  # hosts that want Pi managed with Herdr.
   #
   # `piThemeVariant` swaps the underlying palette so hosts with a non-Catppuccin
   # terminal background (e.g. Seqera dark purple #201637) can use a palette
@@ -156,6 +156,12 @@ let
         teal = "#179299";
         peach = "#fe640b";
         mauve = "#8839ef";
+      };
+    };
+    catppuccin-auto = {
+      name = "terminal";
+      custom = {
+        panel_bg = "reset";
       };
     };
     seqera = {
@@ -259,6 +265,7 @@ in
     key = mkOpt str "H";
     popupWidth = mkOpt int 90;
     popupHeight = mkOpt int 90;
+    managePiTheme = mkBoolOpt true;
     piThemeVariant = mkOption {
       type = enum (attrNames piThemePalettes);
       default = "default";
@@ -272,9 +279,9 @@ in
       type = enum (attrNames herdrThemePalettes);
       default = "default";
       description = ''
-        Which Herdr UI theme variant to apply via `[theme]` / `[theme.custom]`
-        in the bootstrapped Herdr config. `default` follows the host terminal
-        palette; `seqera` adds Seqera brand accents.
+        Which Herdr UI theme variant to apply via `[theme]` / `[theme.custom]`.
+        `catppuccin-auto` leaves Catppuccin polarity to Ghostty and terminal
+        defaults; `seqera` adds Seqera brand accents.
       '';
     };
     piThemeName = mkOption {

@@ -28,6 +28,43 @@ let
       })
     else
       hunkPackagePatched;
+  hunkPackageWrapped = pkgs.writeShellApplication {
+    name = "hunk";
+    text = ''
+      real_hunk=${hunkPackage}/bin/hunk
+
+      if [[ "''${1:-}" == "diff" ]]; then
+        has_theme=false
+        has_background=false
+        for arg in "$@"; do
+          case "$arg" in
+            --theme|--theme=*) has_theme=true ;;
+            --transparent-bg|--no-transparent-bg) has_background=true ;;
+          esac
+        done
+
+        extra=()
+        if [[ "$has_theme" == false ]]; then
+          if [[ "$(${pkgs.coreutils}/bin/uname -s)" == "Darwin" ]]; then
+            dark_mode=$(/usr/bin/osascript -e 'tell application "System Events" to tell appearance preferences to get dark mode' 2>/dev/null || true)
+            if [[ "$dark_mode" == "true" ]]; then
+              extra+=(--theme catppuccin-mocha)
+            elif [[ "$dark_mode" == "false" ]]; then
+              extra+=(--theme catppuccin-latte)
+            fi
+          fi
+        fi
+        if [[ "$has_background" == false ]]; then
+          extra+=(--no-transparent-bg)
+        fi
+
+        shift
+        exec "$real_hunk" diff "''${extra[@]}" "$@"
+      fi
+
+      exec "$real_hunk" "$@"
+    '';
+  };
 in
 {
   options.modules.shell.git = {
@@ -63,7 +100,7 @@ in
           (mkIf cfg.gitbutler.enable llm-agents.but)
           (mkIf cfg.gitbutler.enable llm-agents.gitbutler)
           (mkIf cfg.gitnexus.enable llm-agents.gitnexus)
-          (mkIf cfg.hunk.enable hunkPackage)
+          (mkIf cfg.hunk.enable hunkPackageWrapped)
           (mkIf cfg.lazydiff.enable my.lazydiff)
           (mkIf cfg.stack.enable my.stack)
         ]
