@@ -53,6 +53,8 @@
         tmux.workmux.enable = false;
         acpx.enable = true;
         herdr.enable = true;
+        herdr.managePiTheme = false;
+        herdr.themeVariant = "catppuccin-auto";
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
@@ -120,7 +122,7 @@
         term.ghostty.enable = true;
       };
 
-      # Stylix: Catppuccin Mocha matches the existing Pi/Herdr theme on this host.
+      # Stylix: Catppuccin Mocha is the dark side of the terminal theme stack.
       # No real wallpaper here yet — the module mints a solid-color placeholder
       # PNG (base00) so stylix is happy without committing a binary asset.
       theme.stylix = {
