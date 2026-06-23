@@ -1,0 +1,45 @@
+{
+  "name": "pi-ast-grep",
+  "version": "0.1.0",
+  "description": "Pi tools for ast-grep structural search and outline context.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "ast-grep",
+    "code-search",
+    "outline"
+  ],
+  "license": "MIT",
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "scripts": {
+    "check": "bun --check extensions/pi-ast-grep.ts",
+    "smoke": "./node_modules/.bin/ast-grep --version && ./node_modules/.bin/ast-grep outline extensions/pi-ast-grep.ts --view names --color never"
+  },
+  "dependencies": {
+    "@ast-grep/cli": "https://registry.npmjs.org/@ast-grep/cli/-/cli-0.44.0.tgz",
+    "typebox": "1.2.18"
+  },
+  "optionalDependencies": {
+    "@ast-grep/cli-darwin-arm64": "https://registry.npmjs.org/@ast-grep/cli-darwin-arm64/-/cli-darwin-arm64-0.44.0.tgz"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.2"
+  }
+}

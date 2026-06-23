@@ -73,6 +73,8 @@
     "~/.config/dotfiles/packages/pi-packages/pi-non-interactive",
     // Agentmap codebase tree in system prompt - https://github.com/remorses/agentmap
     "~/.config/dotfiles/packages/pi-packages/pi-agentmap",
+    // ast-grep outline/search/rewrite/scan tools - vendored from https://github.com/joelhooks/pi-ast-grep
+    "~/.config/dotfiles/packages/pi-packages/pi-ast-grep",
 
     // Prompt construction toolkit
     "npm:pi-promptsmith",

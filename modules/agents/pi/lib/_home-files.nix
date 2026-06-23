@@ -74,6 +74,8 @@ promptLinks
 
   ".config/dotfiles/packages/pi-packages/pi-agentmap/node_modules".source =
     "${piPkgDeps.pi-agentmap}/node_modules";
+  ".config/dotfiles/packages/pi-packages/pi-ast-grep/node_modules".source =
+    "${piPkgDeps.pi-ast-grep}/node_modules";
   ".config/dotfiles/packages/pi-packages/pi-dcp/node_modules".source =
     "${piPkgDeps.pi-dcp}/node_modules";
 }
