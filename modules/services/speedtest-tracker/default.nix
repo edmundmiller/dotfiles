@@ -60,7 +60,7 @@ in
       };
 
       systemd.tmpfiles.rules = [
-        "d ${dataDir} 0750 root root -"
+        "d ${dataDir} 0750 1000 100 -"
       ];
 
       networking.firewall.allowedTCPPorts = [ port ];
