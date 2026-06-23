@@ -224,6 +224,16 @@ let
       test = hasActionCall (toList (arrivalFlashWallLamp.action or [ ])) "scene.turn_on";
       msg = "arrival_flash_wall_lamp must restore wall lamp state after flashing";
     }
+    {
+      test = hasActionCall (toList (
+        arrivalFlashWallLamp.action or [ ]
+      )) "adaptive_lighting.set_manual_control";
+      msg = "arrival_flash_wall_lamp must release Adaptive Lighting manual control after flashing";
+    }
+    {
+      test = hasActionCall (toList (arrivalFlashWallLamp.action or [ ])) "adaptive_lighting.apply";
+      msg = "arrival_flash_wall_lamp must re-apply Adaptive Lighting after flashing";
+    }
 
     {
       test = windingDownScene != null;
