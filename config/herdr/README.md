@@ -60,7 +60,21 @@ Dotfiles-specific helper behavior lives in local Herdr plugins under `config/her
 
 - `dotfiles.dev-layout` — provides `prefix+u`/`prefix+U` Hunk actions plus the `worktree.created` dev-layout bootstrap action.
 - `dotfiles.github-link-preview` — registers a GitHub issue/PR link handler that opens `gh issue view` or `gh pr view` in a Herdr side pane.
-- `nathanflurry.jj-workspace` — installed from the Herdr marketplace/GitHub by activation when missing; provides jj workspace create/remove actions.
+
+Marketplace/GitHub plugins are installed by activation when missing:
+
+- `NathanFlurry/herdr-plugin-jj-workspace`
+- `smarzban/herdr-file-viewer`
+- `dutifuldev/ghzinga/plugins/herdr`
+- `dcolinmorgan/herdr-remote/relay`
+- `razajamil/herdr-plugin-workspace-manager`
+- `paulbkim-dev/vim-herdr-navigation`
+- `ogulcancelik/herdr-plugin-github-start`
+- `rjyo/herdr-window-title-sync`
+- `wyattjoh/herdr-plugin-gh-pr`
+- `kkckkc/herdr-plugin-gh-workflow`
+- `alon-z/herdr-command-palette`
+- `0x5c0f/herdr-insight`
 
 ## Reloading after edits
 

@@ -85,6 +85,7 @@ Meaning:
 ## Important gotchas
 
 - Use explicit `prefix+...` bindings. Plain printable direct bindings steal input from shells/editors.
+- Marketplace/GitHub plugins are installed by `modules/shell/herdr/default.nix`; do not add keybindings for new marketplace plugins until their installed action IDs have been verified with `herdr plugin action list`.
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
@@ -96,4 +97,5 @@ Meaning:
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
 - `config/herdr/plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and native worktree post-create tab seeding as a Herdr plugin.
 - `config/herdr/plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews as a Herdr link-handler plugin.
+- Marketplace/GitHub plugins installed by activation: `NathanFlurry/herdr-plugin-jj-workspace`, `smarzban/herdr-file-viewer`, `dutifuldev/ghzinga/plugins/herdr`, `dcolinmorgan/herdr-remote/relay`, `razajamil/herdr-plugin-workspace-manager`, `paulbkim-dev/vim-herdr-navigation`, `ogulcancelik/herdr-plugin-github-start`, `rjyo/herdr-window-title-sync`, `wyattjoh/herdr-plugin-gh-pr`, `kkckkc/herdr-plugin-gh-workflow`, `alon-z/herdr-command-palette`, and `0x5c0f/herdr-insight`.
 - `overlays/herdr/default.nix` patches only packaging/build issues; local helper behavior should live in Herdr plugins, not inside the Herdr binary.
