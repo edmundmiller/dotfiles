@@ -64,6 +64,24 @@ let
         description = "open hunk diff in a tab"
 
         [[keys.command]]
+        key = "prefix+a"
+        type = "plugin_action"
+        command = "nathanflurry.jj-workspace.new"
+        description = "new jj workspace"
+
+        [[keys.command]]
+        key = "prefix+A"
+        type = "plugin_action"
+        command = "nathanflurry.jj-workspace.new-tab"
+        description = "new jj workspace in a tab"
+
+        [[keys.command]]
+        key = "prefix+d"
+        type = "plugin_action"
+        command = "nathanflurry.jj-workspace.remove"
+        description = "remove jj workspace"
+
+        [[keys.command]]
         key = "prefix+V"
         type = "shell"
         command = "obsidian-neovide"
@@ -457,6 +475,9 @@ in
               "herdr worktree layout",
               "dotfiles.dev-layout.hunk-split",
               "dotfiles.dev-layout.hunk-tab",
+              "nathanflurry.jj-workspace.new",
+              "nathanflurry.jj-workspace.new-tab",
+              "nathanflurry.jj-workspace.remove",
               "obsidian-neovide",
           }
 
@@ -556,6 +577,24 @@ in
               'type = "plugin_action"',
               'command = "dotfiles.dev-layout.hunk-tab"',
               'description = "open hunk diff in a tab"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+a"',
+              'type = "plugin_action"',
+              'command = "nathanflurry.jj-workspace.new"',
+              'description = "new jj workspace"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+A"',
+              'type = "plugin_action"',
+              'command = "nathanflurry.jj-workspace.new-tab"',
+              'description = "new jj workspace in a tab"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+d"',
+              'type = "plugin_action"',
+              'command = "nathanflurry.jj-workspace.remove"',
+              'description = "remove jj workspace"',
               "",
               "[[keys.command]]",
               'key = "prefix+V"',
@@ -759,6 +798,24 @@ in
           registry.write_text(json.dumps(merged, indent=2) + "\n")
           PY
         '';
+
+        home.activation.herdr-marketplace-plugins =
+          lib.hm.dag.entryAfter
+            [
+              "writeBoundary"
+              "herdr-plugin-registry"
+            ]
+            ''
+              export PATH=$PATH:${escapeShellArg launchPath}
+              herdr_cmd=${escapeShellArg cfg.command}
+
+              if "$herdr_cmd" plugin list --json --plugin nathanflurry.jj-workspace | ${pkgs.gnugrep}/bin/grep -q '"plugin_id"[[:space:]]*:[[:space:]]*"nathanflurry.jj-workspace"'; then
+                echo "herdr: nathanflurry.jj-workspace plugin already installed"
+              else
+                echo "herdr: installing nathanflurry.jj-workspace plugin"
+                "$herdr_cmd" plugin install NathanFlurry/herdr-plugin-jj-workspace --yes
+              fi
+            '';
 
         home.activation.herdr-agent-integrations =
           lib.hm.dag.entryAfter

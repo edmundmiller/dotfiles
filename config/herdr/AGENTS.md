@@ -50,6 +50,21 @@ command = "dotfiles.dev-layout.hunk-split"
 key = "prefix+U"
 type = "plugin_action"
 command = "dotfiles.dev-layout.hunk-tab"
+
+[[keys.command]]
+key = "prefix+a"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.new"
+
+[[keys.command]]
+key = "prefix+A"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.new-tab"
+
+[[keys.command]]
+key = "prefix+d"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.remove"
 ```
 
 Meaning:
@@ -63,6 +78,9 @@ Meaning:
 - `prefix+p` / `prefix+n` move to previous/next tab via Herdr built-ins.
 - `prefix+u` opens Hunk in a focused split.
 - `prefix+U` opens Hunk in a new tab.
+- `prefix+a` creates a jj workspace as a new Herdr workspace.
+- `prefix+A` creates a jj workspace as a tab.
+- `prefix+d` removes the current jj workspace.
 
 ## Important gotchas
 
