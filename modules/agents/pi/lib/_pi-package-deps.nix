@@ -47,6 +47,11 @@ in
     npmDepsHash = "sha256-c5pgY8YERPwnMAuO9LOS5dlgnouSRFv7WDxcvkqNDV8=";
   };
 
+  pi-ast-grep = mkNodeModules {
+    name = "pi-ast-grep";
+    npmDepsHash = "sha256-vlK22ae+Cah9NjH9rZhmgmhYgzNnz/6bGEYVgzVgSiY=";
+  };
+
   pi-dcp = mkNodeModules {
     name = "pi-dcp";
     npmDepsHash = "sha256-ECxDBj37SREHyZLdAdrwft5DOQSqJOzzICaC4Mi2KN0=";
