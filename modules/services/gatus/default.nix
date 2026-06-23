@@ -118,6 +118,13 @@ let
               interval = "60s";
               conditions = [ "[CONNECTED] == true" ];
             }
+            {
+              name = "Mill Docs Agents";
+              group = "Infrastructure";
+              url = "https://mill-docs-agents.cinnamon-rooster.ts.net/";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
             # TODO: Tailscale local API doesn't expose healthz on 41112
             # {
             #   name = "Tailscale";
