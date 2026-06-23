@@ -19,6 +19,11 @@ with lib.my;
 let
   cfg = config.modules.services.gatus;
   gatusPort = cfg.port;
+  obsidianSyncHealthcheckId =
+    if config.modules.services.obsidian-sync.healthcheck.pingUrl != "" then
+      last (splitString "/" config.modules.services.obsidian-sync.healthcheck.pingUrl)
+    else
+      "";
 
   # Alerting config — only include enabled providers
   alertingConfig =
@@ -150,6 +155,38 @@ let
               conditions = [ "[STATUS] < 500" ];
             }
           ]
+          ++ optionals config.modules.services.homepage.enable [
+            {
+              name = "Homepage";
+              group = "Monitoring";
+              url = "http://localhost:8082";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            }
+          ]
+          ++
+            optionals
+              (
+                config.modules.services.obsidian-sync.enable
+                && config.modules.services.obsidian-sync.healthcheck.enable
+                && cfg.healthchecks.readonlyApiKeyFile != ""
+                && obsidianSyncHealthcheckId != ""
+              )
+              [
+                {
+                  name = "Obsidian Sync";
+                  group = "Sync";
+                  url = "https://healthchecks.io/api/v2/checks/${obsidianSyncHealthcheckId}";
+                  headers = {
+                    X-Api-Key = "__HEALTHCHECKS_API_KEY__";
+                  };
+                  interval = "60s";
+                  conditions = [
+                    "[STATUS] == 200"
+                    "[BODY].status == up"
+                  ];
+                }
+              ]
           ++ optionals config.modules.services.speedtest-tracker.enable [
             {
               name = "Speedtest Tracker";
@@ -173,15 +210,6 @@ let
               name = "Audiobookshelf";
               group = "Media";
               url = "http://localhost:${toString config.modules.services.audiobookshelf.port}";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-          ]
-          ++ optionals config.modules.services.hermes.enable [
-            {
-              name = "Hermes Web UI";
-              group = "Infrastructure";
-              url = "http://127.0.0.1:8642";
               interval = "60s";
               conditions = [ "[STATUS] == 200" ];
             }
@@ -223,6 +251,8 @@ in
       pingUrl = mkOpt types.str "";
       interval = mkOpt types.str "2min";
     };
+
+    healthchecks.readonlyApiKeyFile = mkOpt types.str "";
   };
 
   # NixOS-only service
@@ -251,6 +281,10 @@ in
               + optionalString cfg.alerting.telegram.enable ''
                 TELEGRAM_TOKEN=$(cat ${cfg.alerting.telegram.botTokenFile})
                 ${pkgs.gnused}/bin/sed -i "s|__TELEGRAM_TOKEN__|$TELEGRAM_TOKEN|g" /run/gatus/config.yaml
+              ''
+              + optionalString (cfg.healthchecks.readonlyApiKeyFile != "") ''
+                HEALTHCHECKS_API_KEY=$(cat ${cfg.healthchecks.readonlyApiKeyFile})
+                ${pkgs.gnused}/bin/sed -i "s|__HEALTHCHECKS_API_KEY__|$HEALTHCHECKS_API_KEY|g" /run/gatus/config.yaml
               ''
               + ''
                 # RuntimeDirectory is owned by DynamicUser; match ownership
