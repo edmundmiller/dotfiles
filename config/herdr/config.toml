@@ -60,5 +60,23 @@ type = "plugin_action"
 command = "dotfiles.dev-layout.hunk-tab"
 description = "open hunk diff in a tab"
 
+[[keys.command]]
+key = "prefix+a"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.new"
+description = "new jj workspace"
+
+[[keys.command]]
+key = "prefix+A"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.new-tab"
+description = "new jj workspace in a tab"
+
+[[keys.command]]
+key = "prefix+d"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.remove"
+description = "remove jj workspace"
+
 [worktrees]
 directory = "~/.local/share/herdr/worktrees"
