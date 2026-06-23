@@ -1081,6 +1081,7 @@ in
       done
     '')
   ];
+  systemd.services.hermes-gateway-orchestrator.enable = false;
 
   systemd.services.hermes-gateway-anne.serviceConfig = {
     ExecStartPre = lib.mkBefore [
@@ -1095,6 +1096,7 @@ in
       "${pkgs.coreutils}/bin/test -f /var/lib/hermes-anne/.codex/auth.json"
     ];
   };
+  systemd.services.hermes-gateway-anne.enable = false;
 
   systemd.services.hermes-gateway-betty.serviceConfig.ExecStartPre = lib.mkBefore [
     (pkgs.writeShellScript "hermes-betty-repo-compat-links" ''
@@ -1106,6 +1108,7 @@ in
       chown -h emiller:users /var/lib/hermes-betty/home/repos/mill-docs /var/lib/hermes-betty/home/repos/obsidian-vault /var/lib/hermes-betty/home/repos/tnote
     '')
   ];
+  systemd.services.hermes-gateway-betty.enable = false;
 
   systemd.services.hermes-gateway-amosburton.serviceConfig.ExecStartPre = lib.mkBefore [
     (pkgs.writeShellScript "hermes-amosburton-repo-compat-links" ''
@@ -1119,8 +1122,10 @@ in
       chown -h emiller:users /var/lib/hermes-amosburton/home/repos/*
     '')
   ];
+  systemd.services.hermes-gateway-amosburton.enable = false;
 
   systemd.services.hermes-gateway-scintillate = {
+    enable = false;
     # Scintillate is an interactive Telegram gateway.  A routine NixOS
     # auto-upgrade/switch should not SIGTERM it mid-turn and send
     # "Gateway shutting down -- Your current task will be interrupted".
@@ -1155,6 +1160,7 @@ in
   ];
 
   systemd.services.hermes-scintillate-desktop-dashboard = {
+    enable = false;
     description = "Hermes Desktop-compatible dashboard for Scintillate";
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -1212,6 +1218,7 @@ in
   };
 
   systemd.services.hermes-scintillate-webui = {
+    enable = false;
     description = "Hermes WebUI for Scintillate";
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -1271,6 +1278,7 @@ in
   };
 
   systemd.services.hermes-scintillate-tailscale-serve = {
+    enable = false;
     description = "Expose Scintillate Hermes WebUI via Tailscale Service";
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -1370,6 +1378,7 @@ in
   ];
 
   systemd.services.hermes-runtime-smoke = {
+    enable = false;
     description = "Run read-only Hermes runtime smoke checks";
     after = [ "docker.service" ] ++ hermesGatewayUnits;
     wants = [ "docker.service" ];
@@ -1536,6 +1545,7 @@ in
           enable = true;
           pingUrl = "https://hc-ping.com/a6bbb4df-b118-4262-9881-9939f3ac7e76";
         };
+        healthchecks.readonlyApiKeyFile = config.age.secrets.healthchecks-api-key-readonly.path;
       };
       homepage = {
         enable = true;
@@ -1588,7 +1598,7 @@ in
         # cuboxApiKeyFile = config.age.secrets.cubox-api-key.path;
         # snipdApiKeyFile = config.age.secrets.snipd-api-key.path;
       };
-      opencode.enable = true;
+      opencode.enable = false;
       kittylitter = {
         enable = true;
         enabledAgents = [
