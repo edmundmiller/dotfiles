@@ -96,7 +96,7 @@ let
         enabledModels = lib.unique cfg.enabledModels;
       }
     )
-    // lib.optionalAttrs config.modules.shell.herdr.enable (
+    // lib.optionalAttrs (config.modules.shell.herdr.enable && config.modules.shell.herdr.managePiTheme) (
       let
         herdrThemeName = config.modules.shell.herdr.piThemeName;
       in

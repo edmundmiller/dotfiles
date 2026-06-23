@@ -1,5 +1,6 @@
 theme = "auto"
 mode = "auto"
+transparent_background = false
 exclude_untracked = false
 line_numbers = true
 wrap_lines = false
