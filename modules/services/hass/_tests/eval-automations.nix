@@ -58,6 +58,30 @@ let
     actions: actionName:
     any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
 
+  hasActionCallDeep =
+    actions: actionName:
+    any (
+      a:
+      (a.action or null) == actionName
+      || (a.service or null) == actionName
+      || (
+        if a ? choose then
+          any (c: hasActionCallDeep (toList (c.sequence or [ ])) actionName) a.choose
+        else
+          false
+      )
+      || (if a ? default then hasActionCallDeep (toList a.default) actionName else false)
+      || (
+        if a ? repeat && a.repeat ? sequence then
+          hasActionCallDeep (toList a.repeat.sequence) actionName
+        else
+          false
+      )
+    ) actions;
+
+  hasActionVariable =
+    actions: variableName: any (a: a ? variables && builtins.hasAttr variableName a.variables) actions;
+
   hasTimeGuard =
     conditions: target:
     any (c: (c.condition or null) == "time" && (c.after or null) == target) conditions;
@@ -239,17 +263,23 @@ let
       msg = "arrival_flash_wall_lamp must snapshot wall lamp state before flashing";
     }
     {
+      test = hasActionVariable (toList (
+        arrivalFlashWallLamp.action or [ ]
+      )) "arrival_wall_lamp_previous_state";
+      msg = "arrival_flash_wall_lamp must capture previous wall lamp state before flashing";
+    }
+    {
       test = hasActionCall (toList (arrivalFlashWallLamp.action or [ ])) "scene.turn_on";
       msg = "arrival_flash_wall_lamp must restore wall lamp state after flashing";
     }
     {
-      test = hasActionCall (toList (
+      test = hasActionCallDeep (toList (
         arrivalFlashWallLamp.action or [ ]
       )) "adaptive_lighting.set_manual_control";
       msg = "arrival_flash_wall_lamp must release Adaptive Lighting manual control after flashing";
     }
     {
-      test = hasActionCall (toList (arrivalFlashWallLamp.action or [ ])) "adaptive_lighting.apply";
+      test = hasActionCallDeep (toList (arrivalFlashWallLamp.action or [ ])) "adaptive_lighting.apply";
       msg = "arrival_flash_wall_lamp must re-apply Adaptive Lighting after flashing";
     }
     {
