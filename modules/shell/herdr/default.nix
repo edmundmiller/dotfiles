@@ -43,27 +43,80 @@ let
 
         [keys]
         prefix = "${cfg.prefix}"
-        new_workspace = "prefix+w"
+        settings = "prefix+comma"
+        reload_config = "prefix+ctrl+r"
+        workspace_picker = "prefix+w"
+        new_workspace = "prefix+N"
         new_worktree = "prefix+g"
-        goto = "prefix+f"
+        goto = "prefix+/"
         open_worktree = "prefix+G"
-        workspace_picker = "prefix+O"
-        split_horizontal = "prefix+-"
-        toggle_sidebar = "prefix+b"
+        new_tab = "prefix+c"
+        rename_tab = "prefix+alt+t"
+        switch_tab = "prefix+1..9"
         previous_tab = "prefix+p"
         next_tab = "prefix+n"
+        focus_pane_left = "prefix+h"
+        focus_pane_down = "prefix+j"
+        focus_pane_up = "prefix+k"
+        focus_pane_right = "prefix+l"
+        last_pane = "prefix+ctrl+w"
+        cycle_pane_next = "prefix+tab"
+        cycle_pane_previous = "prefix+shift+tab"
+        split_horizontal = "prefix+s"
+        split_vertical = "prefix+v"
+        close_pane = "prefix+x"
+        zoom = "prefix+z"
+        resize_mode = "prefix+r"
+        edit_scrollback = "prefix+enter"
+        toggle_sidebar = "prefix+b"
+
+        [[keys.command]]
+        key = "prefix+m"
+        type = "plugin_action"
+        command = "alonz.command-palette.open"
+        description = "open command palette"
+
+        [[keys.command]]
+        key = "prefix+f"
+        type = "plugin_action"
+        command = "herdr-file-viewer.open-file-viewer"
+        description = "open file viewer in a split"
+
+        [[keys.command]]
+        key = "prefix+F"
+        type = "plugin_action"
+        command = "herdr-file-viewer.open-file-viewer-tab"
+        description = "open file viewer in a tab"
+
+        [[keys.command]]
+        key = "prefix+]"
+        type = "plugin_action"
+        command = "hunk.diff.worktree-split"
+        description = "open worktree Hunk diff in a split"
+
+        [[keys.command]]
+        key = "prefix+}"
+        type = "plugin_action"
+        command = "hunk.diff.staged-split"
+        description = "open staged Hunk diff in a split"
+
+        [[keys.command]]
+        key = "prefix+{"
+        type = "plugin_action"
+        command = "hunk.diff.branch-split"
+        description = "open branch Hunk diff in a split"
 
         [[keys.command]]
         key = "prefix+u"
         type = "plugin_action"
         command = "dotfiles.dev-layout.hunk-split"
-        description = "open hunk diff in a side pane"
+        description = "open dotfiles Hunk diff in a side pane"
 
         [[keys.command]]
         key = "prefix+U"
         type = "plugin_action"
         command = "dotfiles.dev-layout.hunk-tab"
-        description = "open hunk diff in a tab"
+        description = "open dotfiles Hunk diff in a tab"
 
         [[keys.command]]
         key = "prefix+a"
@@ -82,6 +135,30 @@ let
         type = "plugin_action"
         command = "nathanflurry.jj-workspace.remove"
         description = "remove jj workspace"
+
+        [[keys.command]]
+        key = "prefix+T"
+        type = "plugin_action"
+        command = "herdr-insight.open-timeline-right"
+        description = "open agent timeline"
+
+        [[keys.command]]
+        key = "prefix+R"
+        type = "plugin_action"
+        command = "gh-pr.refresh"
+        description = "refresh GitHub PR status"
+
+        [[keys.command]]
+        key = "prefix+I"
+        type = "plugin_action"
+        command = "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop"
+        description = "start GitHub issue workflow"
+
+        [[keys.command]]
+        key = "prefix+O"
+        type = "plugin_action"
+        command = "ogulcancelik.github-start.open"
+        description = "start from GitHub item"
 
         [[keys.command]]
         key = "prefix+V"
@@ -475,11 +552,21 @@ in
               "herdr hunk",
               "herdr hunk --tab",
               "herdr worktree layout",
+              "alonz.command-palette.open",
               "dotfiles.dev-layout.hunk-split",
               "dotfiles.dev-layout.hunk-tab",
+              "herdr-file-viewer.open-file-viewer",
+              "herdr-file-viewer.open-file-viewer-tab",
+              "hunk.diff.worktree-split",
+              "hunk.diff.staged-split",
+              "hunk.diff.branch-split",
               "nathanflurry.jj-workspace.new",
               "nathanflurry.jj-workspace.new-tab",
               "nathanflurry.jj-workspace.remove",
+              "herdr-insight.open-timeline-right",
+              "gh-pr.refresh",
+              "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop",
+              "ogulcancelik.github-start.open",
               "obsidian-neovide",
           }
 
@@ -518,15 +605,32 @@ in
           saw_keys = False
           managed_keys = {
               "prefix": prefix,
-              "new_workspace": "prefix+w",
+              "settings": "prefix+comma",
+              "reload_config": "prefix+ctrl+r",
+              "workspace_picker": "prefix+w",
+              "new_workspace": "prefix+N",
               "new_worktree": "prefix+g",
-              "goto": "prefix+f",
+              "goto": "prefix+/",
               "open_worktree": "prefix+G",
-              "workspace_picker": "prefix+O",
-              "split_horizontal": "prefix+-",
-              "toggle_sidebar": "prefix+b",
+              "new_tab": "prefix+c",
+              "rename_tab": "prefix+alt+t",
+              "switch_tab": "prefix+1..9",
               "previous_tab": "prefix+p",
               "next_tab": "prefix+n",
+              "focus_pane_left": "prefix+h",
+              "focus_pane_down": "prefix+j",
+              "focus_pane_up": "prefix+k",
+              "focus_pane_right": "prefix+l",
+              "last_pane": "prefix+ctrl+w",
+              "cycle_pane_next": "prefix+tab",
+              "cycle_pane_previous": "prefix+shift+tab",
+              "split_horizontal": "prefix+s",
+              "split_vertical": "prefix+v",
+              "close_pane": "prefix+x",
+              "zoom": "prefix+z",
+              "resize_mode": "prefix+r",
+              "edit_scrollback": "prefix+enter",
+              "toggle_sidebar": "prefix+b",
           }
           wrote_keys = set()
 
@@ -569,16 +673,52 @@ in
           command_block = [
               "",
               "[[keys.command]]",
+              'key = "prefix+m"',
+              'type = "plugin_action"',
+              'command = "alonz.command-palette.open"',
+              'description = "open command palette"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+f"',
+              'type = "plugin_action"',
+              'command = "herdr-file-viewer.open-file-viewer"',
+              'description = "open file viewer in a split"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+F"',
+              'type = "plugin_action"',
+              'command = "herdr-file-viewer.open-file-viewer-tab"',
+              'description = "open file viewer in a tab"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+]"',
+              'type = "plugin_action"',
+              'command = "hunk.diff.worktree-split"',
+              'description = "open worktree Hunk diff in a split"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+}"',
+              'type = "plugin_action"',
+              'command = "hunk.diff.staged-split"',
+              'description = "open staged Hunk diff in a split"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+{"',
+              'type = "plugin_action"',
+              'command = "hunk.diff.branch-split"',
+              'description = "open branch Hunk diff in a split"',
+              "",
+              "[[keys.command]]",
               'key = "prefix+u"',
               'type = "plugin_action"',
               'command = "dotfiles.dev-layout.hunk-split"',
-              'description = "open hunk diff in a side pane"',
+              'description = "open dotfiles Hunk diff in a side pane"',
               "",
               "[[keys.command]]",
               'key = "prefix+U"',
               'type = "plugin_action"',
               'command = "dotfiles.dev-layout.hunk-tab"',
-              'description = "open hunk diff in a tab"',
+              'description = "open dotfiles Hunk diff in a tab"',
               "",
               "[[keys.command]]",
               'key = "prefix+a"',
@@ -597,6 +737,30 @@ in
               'type = "plugin_action"',
               'command = "nathanflurry.jj-workspace.remove"',
               'description = "remove jj workspace"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+T"',
+              'type = "plugin_action"',
+              'command = "herdr-insight.open-timeline-right"',
+              'description = "open agent timeline"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+R"',
+              'type = "plugin_action"',
+              'command = "gh-pr.refresh"',
+              'description = "refresh GitHub PR status"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+I"',
+              'type = "plugin_action"',
+              'command = "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop"',
+              'description = "start GitHub issue workflow"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+O"',
+              'type = "plugin_action"',
+              'command = "ogulcancelik.github-start.open"',
+              'description = "start from GitHub item"',
               "",
               "[[keys.command]]",
               'key = "prefix+V"',
