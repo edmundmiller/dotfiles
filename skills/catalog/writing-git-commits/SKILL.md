@@ -1,16 +1,17 @@
 ---
 name: writing-git-commits
-description: Write clean, atomic conventional commits from staged or uncommitted changes. Use when asked to commit, generate commit messages, or clean up git history.
+description: Split staged or uncommitted changes into conventional commits. Use when asked to commit, generate commit messages, split commits, squash commits, or reorder history.
 ---
 
 # Writing Git Commits
 
 ## Workflow
 
-1. **Inspect** — `diffs --staged` (staged) and `diffs` (unstaged); fallback to `git diff --stat` when raw line stats required2. **Group** — cluster related changes into atomic commits (one logical change per commit)
-2. **Order** — commit foundational changes first (deps, config, types), then features, then tests
-3. **Write** — craft each message per the format below
-4. **Stage & commit** — `git add -p` or `git add <paths>` then `git commit -m "..."`
+1. **Inspect** — `diffs --staged` (staged) and `diffs` (unstaged); fallback to `git diff --stat` when raw line stats required
+2. **Group** — cluster related changes by intent
+3. **Order** — commit foundational changes first (deps, config, types), then features, then tests
+4. **Write** — use the message format below
+5. **Stage & commit** — `git hunks list`, `git hunks add <hunk-id>` (or `git add <paths>` for whole files), then `git commit -m "..."`
 
 ## Message Format
 
