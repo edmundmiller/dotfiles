@@ -303,6 +303,9 @@ in
         ];
         action = [
           {
+            variables.arrival_wall_lamp_previous_state = "{{ states('light.essentials_a19_a60_5') }}";
+          }
+          {
             action = "scene.create";
             data = {
               scene_id = "arrival_wall_lamp_previous";
@@ -378,22 +381,51 @@ in
             target.entity_id = "scene.arrival_wall_lamp_previous";
           }
           {
-            action = "adaptive_lighting.set_manual_control";
-            data = {
-              entity_id = "switch.adaptive_lighting_living_space";
-              lights = [ "light.essentials_a19_a60_5" ];
-              manual_control = false;
-            };
-          }
-          {
-            action = "adaptive_lighting.apply";
-            data = {
-              entity_id = "switch.adaptive_lighting_living_space";
-              lights = [ "light.essentials_a19_a60_5" ];
-              adapt_color = true;
-              adapt_brightness = true;
-              turn_on_lights = false;
-            };
+            choose = [
+              {
+                conditions = [
+                  {
+                    condition = "template";
+                    value_template = "{{ arrival_wall_lamp_previous_state == 'off' }}";
+                  }
+                ];
+                sequence = [
+                  { delay.seconds = 2; }
+                  {
+                    action = "light.turn_off";
+                    target.entity_id = "light.essentials_a19_a60_5";
+                  }
+                  {
+                    action = "adaptive_lighting.set_manual_control";
+                    data = {
+                      entity_id = "switch.adaptive_lighting_living_space";
+                      lights = [ "light.essentials_a19_a60_5" ];
+                      manual_control = false;
+                    };
+                  }
+                ];
+              }
+            ];
+            default = [
+              {
+                action = "adaptive_lighting.set_manual_control";
+                data = {
+                  entity_id = "switch.adaptive_lighting_living_space";
+                  lights = [ "light.essentials_a19_a60_5" ];
+                  manual_control = false;
+                };
+              }
+              {
+                action = "adaptive_lighting.apply";
+                data = {
+                  entity_id = "switch.adaptive_lighting_living_space";
+                  lights = [ "light.essentials_a19_a60_5" ];
+                  adapt_color = true;
+                  adapt_brightness = true;
+                  turn_on_lights = false;
+                };
+              }
+            ];
           }
         ];
       }
