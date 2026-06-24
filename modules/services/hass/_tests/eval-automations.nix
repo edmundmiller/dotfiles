@@ -21,6 +21,7 @@ let
   haConfig = nixosConfig.config.services.home-assistant.config;
   automations = haConfig.automation;
   scenes = haConfig.scene;
+  scripts = haConfig.script;
 
   findAutomation =
     id:
@@ -82,6 +83,8 @@ let
   hasActionVariable =
     actions: variableName: any (a: a ? variables && builtins.hasAttr variableName a.variables) actions;
 
+  hasTargetEntity = actions: entityId: any (a: (a.target.entity_id or null) == entityId) actions;
+
   hasTimeGuard =
     conditions: target:
     any (c: (c.condition or null) == "time" && (c.after or null) == target) conditions;
@@ -142,6 +145,7 @@ let
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
+  tvOnScript = scripts.tv_on or null;
 
   # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
@@ -221,6 +225,14 @@ let
     {
       test = syncIphoneAlarm8sleep != null && (syncIphoneAlarm8sleep.initial_state or null) == false;
       msg = "automation 'sync_iphone_alarm_8sleep' should remain present but declaratively disabled until an iOS alarm source exists";
+    }
+    {
+      test =
+        tvOnScript != null
+        && hasActionCall (toList (tvOnScript.sequence or [ ])) "media_player.turn_on"
+        && hasTargetEntity (toList (tvOnScript.sequence or [ ])) "media_player.living_room"
+        && !(hasTargetEntity (toList (tvOnScript.sequence or [ ])) "media_player.tv");
+      msg = "script.tv_on must target Living Room Apple TV, not Cast media_player.tv";
     }
     {
       test = sleepFocusOffEdmund != null;

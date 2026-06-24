@@ -3,10 +3,12 @@
 let
   inherit (import ../_lib.nix) ensureEnabled;
 
+  tvEntity = "media_player.living_room";
+
   # --- Helper functions ---
   tvAction = action: {
     inherit action;
-    target.entity_id = "media_player.tv";
+    target.entity_id = tvEntity;
   };
 
   tvOn = tvAction "media_player.turn_on";
@@ -66,7 +68,7 @@ in
         id = "tv_idle_auto_off";
         trigger = {
           platform = "state";
-          entity_id = "media_player.tv";
+          entity_id = tvEntity;
           to = "idle";
           "for".hours = 2;
         };
@@ -136,7 +138,7 @@ in
         id = "count_tv_sessions";
         trigger = {
           platform = "state";
-          entity_id = "media_player.tv";
+          entity_id = tvEntity;
           to = "playing";
         };
         action = [
