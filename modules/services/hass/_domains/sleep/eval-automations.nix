@@ -150,6 +150,18 @@ let
       msg = "automation 'sleep_focus_off_stop_monica' missing";
     }
     {
+      test =
+        sleepFocusOffEdmund != null
+        && !(hasActionCall (toList (sleepFocusOffEdmund.action or [ ])) "eight_sleep.alarm_dismiss");
+      msg = "sleep_focus_off_stop_edmund must not call unavailable eight_sleep.alarm_dismiss";
+    }
+    {
+      test =
+        sleepFocusOffMonica != null
+        && !(hasActionCall (toList (sleepFocusOffMonica.action or [ ])) "eight_sleep.alarm_dismiss");
+      msg = "sleep_focus_off_stop_monica must not call unavailable eight_sleep.alarm_dismiss";
+    }
+    {
       test = bedtimeNudgeWebhook != null;
       msg = "automation 'bedtime_nudge_webhook' missing";
     }

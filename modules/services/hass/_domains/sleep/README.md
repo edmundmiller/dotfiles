@@ -89,10 +89,10 @@ Current active integrations:
 - Calls `homeassistant.update_entity` for `sensor.edmund_s_eight_sleep_side_next_alarm`
 - Keeps smart-alarm edits fresh during the bedtime decision window without polling all day
 
-**Sleep Focus off → dismiss 8Sleep alarm:**
+**Sleep Focus off → stop 8Sleep side:**
 
 - Triggers when iPhone focus turns off (6–9am)
-- Calls 8Sleep `dismiss_alarm` + `side_off`
+- Turns off the alarm switch and calls 8Sleep `side_off`
 - Separate automations for Edmund and Monica
 
 ## Entity Reference
