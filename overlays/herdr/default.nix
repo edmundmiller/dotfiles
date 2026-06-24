@@ -7,8 +7,8 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "dbad2e54bb9e36138275fecad8d4978752fc4426";
-      hash = "sha256-DjCSwhRMBRE9lSvjpX6m8IpoEgUbOP1jcmeXMlQlSQY=";
+      rev = "fe30dd9a0fcf55cf07fe8dfedc99abdfc801e42d";
+      hash = "sha256-/WnsUO1DuSmBfVo8LCFaDJEZvSrYnJZPyRNqASbPzV8=";
     };
     patches = [
       ./patches/0001-libghostty-bench-gated.patch
