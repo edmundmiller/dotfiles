@@ -110,8 +110,7 @@ let
 
   # ── Automation generators ──────────────────────────────────────────────
 
-  # Sleep Focus off 6–9am → cancel + dismiss 8Sleep alarm, turn off side
-  # Covers two cases: alarm hasn't fired yet (switch off) and actively ringing (dismiss).
+  # Sleep Focus off 6–9am → cancel 8Sleep alarm, turn off side
   mkSleepFocusOff = p: {
     alias = "Sleep Focus Off - Stop ${p.name} 8Sleep";
     id = "sleep_focus_off_stop_${p.id}";
@@ -138,11 +137,6 @@ let
       {
         action = "switch.turn_off";
         target.entity_id = p.alarmSwitch;
-      }
-      # Dismiss if actively ringing
-      {
-        action = "eight_sleep.alarm_dismiss";
-        target.entity_id = p.sleepStage;
       }
       # Stop heating/cooling
       {
