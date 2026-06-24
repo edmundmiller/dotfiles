@@ -458,6 +458,15 @@
                   };
                 };
 
+                mattpocock-in-progress = {
+                  path = inputs.mattpocock-skills.outPath;
+                  subdir = "skills/in-progress";
+                  filter = {
+                    maxDepth = 1;
+                    nameRegex = "^loop-me$";
+                  };
+                };
+
                 hunk = {
                   path = inputs.hunk-repo.outPath;
                   subdir = "skills";
@@ -629,6 +638,9 @@
 
                   grill-with-docs.from = "mattpocock-engineering";
                   grill-with-docs.path = "grill-with-docs";
+
+                  loop-me.from = "mattpocock-in-progress";
+                  loop-me.path = "loop-me";
                 }
                 // lib.optionalAttrs acpxEnabled {
                   acpx.from = "acpx";
