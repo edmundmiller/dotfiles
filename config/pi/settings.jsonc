@@ -201,6 +201,8 @@
     "npm:@eko24ive/pi-ask",
     // Markdown workflows/skills + nested AGENTS.md loader - https://github.com/IgorWarzocha/pi-markdown-workflows
     "npm:@howaboua/pi-markdown-workflows",
+    // Dynamic multi-agent workflows: /workflows, /deep-research, /adversarial-review
+    "npm:@quintinshaw/pi-dynamic-workflows",
     // Native diff review window with Monaco + annotations - https://github.com/badlogic/pi-diff-review
     // "git:https://github.com/badlogic/pi-diff-review",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
