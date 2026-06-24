@@ -30,16 +30,63 @@ Current preferred keys:
 ```toml
 [keys]
 prefix = "ctrl+c"
-new_workspace = "prefix+w"
+settings = "prefix+comma"
+reload_config = "prefix+ctrl+r"
+workspace_picker = "prefix+w"
+new_workspace = "prefix+N"
 new_worktree = "prefix+g"
-goto = "prefix+f"
+goto = "prefix+/"
 open_worktree = "prefix+G"
-workspace_picker = "prefix+O"
-split_horizontal = "prefix+-"
-# Intercept hard-coded navigate q quit/detach with a harmless action.
-toggle_sidebar = "prefix+b"
+new_tab = "prefix+c"
+rename_tab = "prefix+alt+t"
+switch_tab = "prefix+1..9"
 previous_tab = "prefix+p"
 next_tab = "prefix+n"
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+last_pane = "prefix+ctrl+w"
+cycle_pane_next = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
+split_horizontal = "prefix+s"
+split_vertical = "prefix+v"
+close_pane = "prefix+x"
+zoom = "prefix+z"
+resize_mode = "prefix+r"
+edit_scrollback = "prefix+enter"
+# Intercept hard-coded navigate q quit/detach with a harmless action.
+toggle_sidebar = "prefix+b"
+
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "alonz.command-palette.open"
+
+[[keys.command]]
+key = "prefix+f"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer"
+
+[[keys.command]]
+key = "prefix+F"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer-tab"
+
+[[keys.command]]
+key = "prefix+]"
+type = "plugin_action"
+command = "hunk.diff.worktree-split"
+
+[[keys.command]]
+key = "prefix+}"
+type = "plugin_action"
+command = "hunk.diff.staged-split"
+
+[[keys.command]]
+key = "prefix+{"
+type = "plugin_action"
+command = "hunk.diff.branch-split"
 
 [[keys.command]]
 key = "prefix+u"
@@ -65,22 +112,58 @@ command = "nathanflurry.jj-workspace.new-tab"
 key = "prefix+d"
 type = "plugin_action"
 command = "nathanflurry.jj-workspace.remove"
+
+[[keys.command]]
+key = "prefix+T"
+type = "plugin_action"
+command = "herdr-insight.open-timeline-right"
+
+[[keys.command]]
+key = "prefix+R"
+type = "plugin_action"
+command = "gh-pr.refresh"
+
+[[keys.command]]
+key = "prefix+I"
+type = "plugin_action"
+command = "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop"
+
+[[keys.command]]
+key = "prefix+O"
+type = "plugin_action"
+command = "ogulcancelik.github-start.open"
 ```
 
 Meaning:
 
-- `prefix+w` creates a workspace.
+- `prefix+w` opens the workspace picker.
+- `prefix+N` creates a workspace.
 - `prefix+g` creates a worktree with Herdr's native prompt; the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event and opens Pi + Hunk + Neovim + shell tabs.
 - `prefix+G` opens an existing worktree.
-- `prefix+f` opens Herdr goto/navigation.
-- `prefix+-` splits horizontally.
+- `prefix+/` opens Herdr goto/navigation.
+- `prefix+c` creates a tab.
+- `prefix+alt+t` renames a tab.
+- `prefix+1..9` switches tabs.
+- `prefix+h/j/k/l` moves focus between panes.
+- `prefix+s` / `prefix+v` split panes.
+- `prefix+x` closes a pane.
+- `prefix+z` zooms a pane.
+- `prefix+r` enters resize mode.
+- `prefix+comma` opens settings.
+- `prefix+ctrl+r` reloads config.
 - `prefix+b` toggles the sidebar.
 - `prefix+p` / `prefix+n` move to previous/next tab via Herdr built-ins.
-- `prefix+u` opens Hunk in a focused split.
-- `prefix+U` opens Hunk in a new tab.
+- `prefix+m` opens the command palette.
+- `prefix+f` / `prefix+F` open the file viewer in a split/tab.
+- `prefix+]` / `prefix+}` / `prefix+{` open Hunk worktree/staged/branch diffs.
+- `prefix+u` / `prefix+U` keep the dotfiles dev-layout Hunk split/tab actions.
 - `prefix+a` creates a jj workspace as a new Herdr workspace.
 - `prefix+A` creates a jj workspace as a tab.
 - `prefix+d` removes the current jj workspace.
+- `prefix+T` opens the agent timeline.
+- `prefix+R` refreshes GitHub PR status.
+- `prefix+I` starts the GitHub issue workflow.
+- `prefix+O` starts from a GitHub item.
 
 ## Important gotchas
 
