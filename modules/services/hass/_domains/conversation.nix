@@ -182,8 +182,7 @@ _: {
         speech.text = "Turning on the TV.";
         action = [
           {
-            action = "media_player.turn_on";
-            target.entity_id = "media_player.tv";
+            action = "script.tv_on";
           }
         ];
       };
