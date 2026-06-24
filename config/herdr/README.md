@@ -36,23 +36,47 @@ ctrl+c
 
 Custom/current mappings:
 
-| Key        | Action                       |
-| ---------- | ---------------------------- |
-| `prefix+w` | New workspace                |
-| `prefix+g` | New worktree                 |
-| `prefix+G` | Open existing worktree       |
-| `prefix+O` | Workspace picker             |
-| `prefix+-` | Split horizontally           |
-| `prefix+b` | Toggle sidebar               |
-| `prefix+p` | Previous tab                 |
-| `prefix+n` | Next tab                     |
-| `prefix+u` | Open Hunk in a focused split |
-| `prefix+U` | Open Hunk in a new tab       |
-| `prefix+a` | New jj workspace             |
-| `prefix+A` | New jj workspace in tab      |
-| `prefix+d` | Remove jj workspace          |
+| Key                               | Action                      |
+| --------------------------------- | --------------------------- |
+| `prefix+comma`                    | Settings                    |
+| `prefix+ctrl+r`                   | Reload config               |
+| `prefix+w`                        | Workspace picker            |
+| `prefix+N`                        | New workspace               |
+| `prefix+g`                        | New worktree                |
+| `prefix+G`                        | Open existing worktree      |
+| `prefix+/`                        | Goto/navigation             |
+| `prefix+c`                        | New tab                     |
+| `prefix+alt+t`                    | Rename tab                  |
+| `prefix+1..9`                     | Switch tab                  |
+| `prefix+h/j/k/l`                  | Focus pane                  |
+| `prefix+ctrl+w`                   | Last pane                   |
+| `prefix+tab` / `prefix+shift+tab` | Cycle panes                 |
+| `prefix+s`                        | Split horizontally          |
+| `prefix+v`                        | Split vertically            |
+| `prefix+x`                        | Close pane                  |
+| `prefix+z`                        | Zoom pane                   |
+| `prefix+r`                        | Resize mode                 |
+| `prefix+enter`                    | Edit scrollback             |
+| `prefix+b`                        | Toggle sidebar              |
+| `prefix+p`                        | Previous tab                |
+| `prefix+n`                        | Next tab                    |
+| `prefix+m`                        | Command palette             |
+| `prefix+f`                        | File viewer in a split      |
+| `prefix+F`                        | File viewer in a tab        |
+| `prefix+]`                        | Hunk worktree diff          |
+| `prefix+}`                        | Hunk staged diff            |
+| `prefix+{`                        | Hunk branch diff            |
+| `prefix+u`                        | Dotfiles Hunk split         |
+| `prefix+U`                        | Dotfiles Hunk tab           |
+| `prefix+a`                        | New jj workspace            |
+| `prefix+A`                        | New jj workspace in tab     |
+| `prefix+d`                        | Remove jj workspace         |
+| `prefix+T`                        | Agent timeline              |
+| `prefix+R`                        | Refresh GitHub PR status    |
+| `prefix+I`                        | Start GitHub issue workflow |
+| `prefix+O`                        | Start from GitHub item      |
 
-Herdr defaults still provide other common actions such as rename workspace, new tab, split vertical, close pane, fullscreen, and resize mode. `prefix+w` intentionally overrides Herdr's default workspace picker binding; the picker is moved to `prefix+O` to keep reloads clean. `prefix+g` uses Herdr's native worktree prompt; after creation, the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event to seed Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
+Herdr defaults still provide other common actions such as rename workspace, rename tab, close tab, and close workspace. `prefix+g` uses Herdr's native worktree prompt; after creation, the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event to seed Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
 
 ## Plugins
 
