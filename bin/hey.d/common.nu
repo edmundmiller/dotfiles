@@ -195,7 +195,7 @@ export def system-rebuild [action: string, ...args: string] {
     or (($env.PI_CODING_AGENT? | default "") == "true")
     or (($env.CLAUDECODE? | default "") == "1")
   )
-  let agent_rebuild_args = if $agent_mode { ["--show-trace"] } else { [] }
+  let agent_rebuild_args = if $agent_mode { ["--no-write-lock-file" "--show-trace"] } else { ["--no-write-lock-file"] }
   let agent_nix_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
 
   # Pre-fetch flake inputs as the user before sudo. sudo strips access to
@@ -215,7 +215,11 @@ export def system-rebuild [action: string, ...args: string] {
     print -e $archive_result.stderr
   }
   if $archive_result.exit_code != 0 {
-    error make {msg: "nix flake archive failed"}
+    if ($archive_result.stderr | str contains "lock file contains unlocked input") {
+      print -e "hey re: continuing despite nix flake archive unlocked local path input"
+    } else {
+      error make {msg: "nix flake archive failed"}
+    }
   }
   if $ctx.os_name == "macos" {
     wait-homebrew-idle
