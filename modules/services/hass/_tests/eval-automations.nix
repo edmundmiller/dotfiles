@@ -42,6 +42,12 @@ let
   hasTimeTrigger =
     triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
 
+  hasStateTrigger =
+    automation: entityId: state:
+    any (
+      t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == state
+    ) (toList (automation.trigger or [ ]));
+
   hasEventTrigger =
     automation: eventType:
     any (t: (t.platform or null) == "event" && (t.event_type or null) == eventType) (
@@ -233,6 +239,14 @@ let
     {
       test = hasActionCall (toList (arrivalFlashWallLamp.action or [ ])) "adaptive_lighting.apply";
       msg = "arrival_flash_wall_lamp must re-apply Adaptive Lighting after flashing";
+    }
+    {
+      test = hasStateTrigger arrivalFlashWallLamp "person.edmund_miller" "Parking Lot";
+      msg = "arrival_flash_wall_lamp must flash when Edmund enters Parking Lot";
+    }
+    {
+      test = hasStateTrigger arrivalFlashWallLamp "person.moni" "Parking Lot";
+      msg = "arrival_flash_wall_lamp must flash when Monica enters Parking Lot";
     }
 
     {

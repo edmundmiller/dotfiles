@@ -287,8 +287,18 @@ in
           }
           {
             platform = "state";
+            entity_id = "person.edmund_miller";
+            to = "Parking Lot";
+          }
+          {
+            platform = "state";
             entity_id = "person.moni";
             to = "home";
+          }
+          {
+            platform = "state";
+            entity_id = "person.moni";
+            to = "Parking Lot";
           }
         ];
         action = [
