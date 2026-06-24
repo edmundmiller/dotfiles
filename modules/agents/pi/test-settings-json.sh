@@ -122,5 +122,20 @@ schema = json.loads(schema_path.read_text(encoding="utf-8"))
 jsonschema.Draft7Validator.check_schema(schema)
 jsonschema.validate(settings, schema)
 
+
+def package_source(pkg):
+    if isinstance(pkg, str):
+        return pkg
+    if isinstance(pkg, dict):
+        return pkg.get("source", "")
+    return ""
+
+
+package_sources = {package_source(pkg) for pkg in settings.get("packages", [])}
+if settings.get("theme") == "terminal" and "npm:pi-terminal-theme" not in package_sources:
+    raise SystemExit(
+        "FAIL: theme 'terminal' requires package 'npm:pi-terminal-theme' in config/pi/settings.jsonc"
+    )
+
 print("PASS: config/pi/settings.jsonc matches config/pi/settings-schema.json")
 PY

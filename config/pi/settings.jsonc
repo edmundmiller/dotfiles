@@ -159,6 +159,8 @@
     // "npm:pi-web-access",
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
     "npm:pi-smart-fetch",
+    // Terminal-native ANSI theme (provides theme: "terminal") - https://github.com/mavam/pi-terminal-theme
+    "npm:pi-terminal-theme",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
     // Verbosity controls for concise/detailed responses - npm package
