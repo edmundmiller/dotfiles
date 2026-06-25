@@ -17,11 +17,13 @@ type ToolCallEventLike = {
   input?: unknown;
 };
 
-const POLICY_AGENT_DIR_ENV_KEY = "PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR";
+const CONFIG_PATH_ENV_KEY = "PI_PERMISSION_SYSTEM_CONFIG_PATH";
 
 function policyPath(): string {
-  const agentDir = process.env[POLICY_AGENT_DIR_ENV_KEY]?.trim() || getAgentDir();
-  return join(resolve(agentDir), "pi-permissions.jsonc");
+  const configured = process.env[CONFIG_PATH_ENV_KEY]?.trim();
+  return configured
+    ? resolve(configured)
+    : join(resolve(getAgentDir()), "extensions", "pi-permission-system", "config.json");
 }
 
 function parseJsoncObject(raw: string): unknown {
@@ -35,11 +37,15 @@ function parseJsoncObject(raw: string): unknown {
 function loadBashPolicy(): BashPolicy {
   try {
     const raw = readFileSync(policyPath(), "utf8");
-    const parsed = parseJsoncObject(raw) as { bash?: unknown };
-    if (!parsed.bash || typeof parsed.bash !== "object") return {};
+    const parsed = parseJsoncObject(raw) as { bash?: unknown; permission?: unknown };
+    const permission =
+      parsed.permission && typeof parsed.permission === "object"
+        ? (parsed.permission as { bash?: unknown })
+        : parsed;
+    if (!permission.bash || typeof permission.bash !== "object") return {};
 
     const policy: BashPolicy = {};
-    for (const [pattern, state] of Object.entries(parsed.bash as Record<string, unknown>)) {
+    for (const [pattern, state] of Object.entries(permission.bash as Record<string, unknown>)) {
       if (state === "allow" || state === "ask" || state === "deny") {
         policy[pattern] = state;
       }
