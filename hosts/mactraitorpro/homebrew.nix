@@ -157,6 +157,7 @@
     "lookaway"
 
     # Utilities
+    "elgato-stream-deck"
     "helium"
     "calibre"
     "inkscape"

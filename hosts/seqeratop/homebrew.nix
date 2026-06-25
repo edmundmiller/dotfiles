@@ -36,6 +36,7 @@
 
     # Media
     "helium"
+    "elgato-stream-deck"
     "spotify"
     "soundsource"
 
