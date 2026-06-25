@@ -206,7 +206,7 @@ export def system-rebuild [action: string, ...args: string] {
   if $agent_mode {
     print $"hey re: archiving flake inputs for ($ctx.flake_host)..."
   }
-  let archive_result = (^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-write-lock-file >/dev/null" | complete)
+  let archive_result = (^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-update-lock-file >/dev/null" | complete)
   maybe-suggest-cache-bootstrap $archive_result.stderr
   if (($archive_result.stdout | str trim) | is-not-empty) {
     print $archive_result.stdout
@@ -214,9 +214,10 @@ export def system-rebuild [action: string, ...args: string] {
   if (($archive_result.stderr | str trim) | is-not-empty) {
     print -e $archive_result.stderr
   }
+  let unlocked_input = ($archive_result.stderr | str contains "lock file contains unlocked input")
   if $archive_result.exit_code != 0 {
-    if ($archive_result.stderr | str contains "lock file contains unlocked input") {
-      print -e "hey re: continuing despite nix flake archive unlocked local path input"
+    if $unlocked_input {
+      print -e "hey re: continuing despite unlocked local input during pre-archive"
     } else {
       error make {msg: "nix flake archive failed"}
     }
