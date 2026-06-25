@@ -15,6 +15,10 @@ in
     edmundmiller
     nuc
   ];
+  "restic/nuc-r2-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "emiller_password.age".publicKeys = [ nuc ];
   "anthropic-api-key.age".publicKeys = [
     edmundmiller

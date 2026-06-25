@@ -19,14 +19,13 @@ let
     ];
   };
 
-  borgBaseBackup = commonBackupOptions // {
-    repositoryFile = config.age.secrets."restic/repo".path;
-    passwordFile = config.age.secrets."restic/password".path;
+  nucR2Backup = commonBackupOptions // {
+    environmentFile = config.age.secrets."restic/nuc-r2-env".path;
   };
 in
 {
   services.restic.backups = {
-    daily = borgBaseBackup // {
+    daily = nucR2Backup // {
       paths = [
         "${config.users.users.emiller.home}/sync"
         "${config.users.users.emiller.home}/obsidian-vault"
@@ -41,7 +40,7 @@ in
     # Audiobookshelf application state is small once transient metadata/tmp files
     # are excluded: config, SQLite DB, library metadata, covers, and cache that is
     # useful for disaster recovery without duplicating in-progress temp imports.
-    audiobookshelf-state = borgBaseBackup // {
+    audiobookshelf-state = nucR2Backup // {
       paths = [ "/var/lib/audiobookshelf" ];
       exclude = commonBackupOptions.exclude ++ [
         "/var/lib/audiobookshelf/metadata/tmp"
