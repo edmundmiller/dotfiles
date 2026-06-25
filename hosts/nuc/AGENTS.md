@@ -58,9 +58,9 @@ The repo overlay wraps the llm-agents Hermes package with the Nix-built Honcho S
 
 ### Backups
 
-- NUC's current default restic repository is BorgBase and is quota-limited to **10 GB**. Do not add large media paths there.
-- Audiobookshelf state/config/metadata (`/var/lib/audiobookshelf`, excluding `metadata/tmp`) is small and may go to the default BorgBase restic backup.
-- Audiobook media (`/audiobooks`, currently tens of GB) should be backed up only to a dedicated R2/restic repository, not BorgBase. Prefer a single `/audiobooks` media backup job rather than separate `main`/`private` jobs unless there is a restore/retention reason to split them.
+- The old BorgBase restic repository is quota-limited to **10 GB**. Do not add large media paths there; prefer R2 for new backup repositories.
+- General NUC backups use a dedicated Cloudflare R2 restic repository (`nuc-restic`).
+- Audiobook media (`/audiobooks`, currently tens of GB) uses a separate dedicated R2/restic repository (`audiobooks-restic`). Prefer a single `/audiobooks` media backup job rather than separate `main`/`private` jobs unless there is a restore/retention reason to split them.
 - Restic can talk to Cloudflare R2 directly through its S3 backend; no rclone is required. Use an agenix EnvironmentFile-style secret with `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESTIC_PASSWORD`, and `RESTIC_REPOSITORY=s3:https://<account id>.r2.cloudflarestorage.com/<bucket name>`.
 
 ### Home Automation
