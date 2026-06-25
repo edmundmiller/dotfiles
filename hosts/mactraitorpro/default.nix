@@ -233,6 +233,9 @@
           rm -f "$HOME/.bun/bin/zele" "$HOME/.cache/npm/bin/zele"
         '';
 
+        home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
+          "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
+
         # Keep the Seqera work wallpaper in a stable location and apply it to the desktop.
         # macOS wallpaper automation reliably accepts the PNG export; the SVG sibling
         # does not consistently stick as a desktop picture when scripted.

@@ -188,6 +188,9 @@
         xdg.configFile."ghostty/themes/SeqeraLight".source =
           "${config.dotfiles.configDir}/ghostty/themes/SeqeraLight";
 
+        home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
+          "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
+
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
         '';
