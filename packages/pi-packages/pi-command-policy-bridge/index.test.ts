@@ -24,8 +24,8 @@ describe("pi-command-policy-bridge", () => {
 
   it("allows commands with no readable bash policy", () => {
     const dir = mkdtempSync(join(tmpdir(), "pi-missing-policy-test-"));
-    const previous = process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
-    process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = dir;
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = join(dir, "missing.jsonc");
 
     try {
       const decision = evaluateToolGuard({
@@ -35,9 +35,9 @@ describe("pi-command-policy-bridge", () => {
       expect(decision.kind).toBe("allow");
     } finally {
       if (previous === undefined) {
-        delete process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
+        delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
       } else {
-        process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = previous;
+        process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
       }
       rmSync(dir, { recursive: true, force: true });
     }
@@ -45,9 +45,10 @@ describe("pi-command-policy-bridge", () => {
 
   it("allows bash policy ask rules without prompting", () => {
     const dir = mkdtempSync(join(tmpdir(), "pi-policy-test-"));
-    const previous = process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
-    process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = dir;
-    writeFileSync(join(dir, "pi-permissions.jsonc"), '{ "bash": { "*": "ask" } }');
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    const configPath = join(dir, "config.jsonc");
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = configPath;
+    writeFileSync(configPath, '{ "permission": { "bash": { "*": "ask" } } }');
 
     try {
       const decision = evaluateToolGuard({
@@ -57,9 +58,9 @@ describe("pi-command-policy-bridge", () => {
       expect(decision.kind).toBe("allow");
     } finally {
       if (previous === undefined) {
-        delete process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
+        delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
       } else {
-        process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = previous;
+        process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
       }
       rmSync(dir, { recursive: true, force: true });
     }
@@ -67,11 +68,12 @@ describe("pi-command-policy-bridge", () => {
 
   it("denies explicit bash policy deny rules", () => {
     const dir = mkdtempSync(join(tmpdir(), "pi-deny-policy-test-"));
-    const previous = process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
-    process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = dir;
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    const configPath = join(dir, "config.jsonc");
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = configPath;
     writeFileSync(
-      join(dir, "pi-permissions.jsonc"),
-      '{ "bash": { "*": "allow", "*brew install*": "deny" } }'
+      configPath,
+      '{ "permission": { "bash": { "*": "allow", "*brew install*": "deny" } } }'
     );
 
     try {
@@ -82,9 +84,9 @@ describe("pi-command-policy-bridge", () => {
       expect(decision.kind).toBe("deny");
     } finally {
       if (previous === undefined) {
-        delete process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
+        delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
       } else {
-        process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = previous;
+        process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
       }
       rmSync(dir, { recursive: true, force: true });
     }
@@ -92,11 +94,12 @@ describe("pi-command-policy-bridge", () => {
 
   it("treats foot-gun rules as explicit denies, not prompts", () => {
     const dir = mkdtempSync(join(tmpdir(), "pi-footgun-policy-test-"));
-    const previous = process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
-    process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = dir;
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    const configPath = join(dir, "config.jsonc");
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = configPath;
     writeFileSync(
-      join(dir, "pi-permissions.jsonc"),
-      '{ "bash": { "*": "allow", "*git rebase -i*": "deny" } }'
+      configPath,
+      '{ "permission": { "bash": { "*": "allow", "*git rebase -i*": "deny" } } }'
     );
 
     try {
@@ -107,9 +110,9 @@ describe("pi-command-policy-bridge", () => {
       expect(decision.kind).toBe("deny");
     } finally {
       if (previous === undefined) {
-        delete process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR;
+        delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
       } else {
-        process.env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = previous;
+        process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
       }
       rmSync(dir, { recursive: true, force: true });
     }

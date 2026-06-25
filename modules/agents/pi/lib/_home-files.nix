@@ -16,7 +16,8 @@ promptLinks
   ".pi/agent/AGENTS.md".text = concatenatedRules;
   ".pi/agent/settings.json".text = piSettingsValidated;
   ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
-  ".pi/agent/pi-permissions.jsonc".source = "${configDir}/pi/pi-permissions.jsonc";
+  ".pi/agent/extensions/pi-permission-system/config.json".source =
+    "${configDir}/pi/pi-permission-system.jsonc";
 }
 // sessionSearchFiles
 // (
@@ -29,11 +30,6 @@ promptLinks
     { }
 )
 // {
-  ".pi/agent/extensions/pi-permission-system/config.json".text = builtins.toJSON {
-    debugLog = false;
-    permissionReviewLog = true;
-    yoloMode = false;
-  };
   ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
   ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
   ".pi/agent/extensions/commit-review.ts".source = "${configDir}/pi/extensions/commit-review.ts";

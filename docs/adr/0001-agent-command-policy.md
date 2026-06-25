@@ -22,7 +22,7 @@ Agents must use or improve `hey` instead of invoking lower-level tools directly 
 - Skills catalog updates: use `hey skills-update` / `hey skills-sync`.
 - Homebrew changes: edit Nix/darwin config and run `hey re`.
 
-The Pi permission policy enforces this by denying common bypass patterns in `config/pi/pi-permissions.jsonc`.
+The Pi permission policy enforces this by denying common bypass patterns in `config/pi/pi-permission-system.jsonc`.
 
 ## Consequences
 

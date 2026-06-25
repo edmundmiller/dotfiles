@@ -103,8 +103,8 @@
       ],
       "skills": [],
     },
-    // Deterministic allow/deny/ask gate backed by config/pi/pi-permissions.jsonc.
-    "npm:pi-permission-system",
+    // Deterministic allow/deny gate backed by config/pi/pi-permission-system.jsonc.
+    "npm:@gotgenes/pi-permission-system",
     // Applies bash command policy to command-bearing extension tools like process.start.
     "~/.config/dotfiles/packages/pi-packages/pi-command-policy-bridge",
     // JJ baseline guardrail: stop editing described dirty changes without explicit intent.

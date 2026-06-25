@@ -279,6 +279,17 @@ export def post-rebuild [] {
       if ! "$pi_bin" update --extensions; then
         echo "warning: pi package update failed; rebuild already completed" >&2
       fi
+
+      # Pi 0.79.x can prune scoped packages from the mutable npm project during
+      # update. Reinstall this one after updates because config depends on its
+      # flat permission schema.
+      if grep -q "npm:@gotgenes/pi-permission-system" "$HOME/.pi/agent/settings.json" 2>/dev/null \
+        && [ ! -f "$HOME/.pi/agent/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts" ]; then
+        echo "=== pi: reconcile @gotgenes/pi-permission-system ==="
+        PYTHON="''${PYTHON:-/usr/bin/python3}" npm install @gotgenes/pi-permission-system@latest \
+          --prefix "$HOME/.pi/agent/npm" --legacy-peer-deps \
+          || echo "warning: failed to install @gotgenes/pi-permission-system" >&2
+      fi
     '
     return
   }
