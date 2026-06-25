@@ -80,6 +80,27 @@ let
       )
     ) actions;
 
+  hasActionDataDeep =
+    actions: actionName: key: value:
+    any (
+      a:
+      ((a.action or null) == actionName || (a.service or null) == actionName)
+      && (a.data.${key} or null) == value
+      || (
+        if a ? choose then
+          any (c: hasActionDataDeep (toList (c.sequence or [ ])) actionName key value) a.choose
+        else
+          false
+      )
+      || (if a ? default then hasActionDataDeep (toList a.default) actionName key value else false)
+      || (
+        if a ? repeat && a.repeat ? sequence then
+          hasActionDataDeep (toList a.repeat.sequence) actionName key value
+        else
+          false
+      )
+    ) actions;
+
   hasActionVariable =
     actions: variableName: any (a: a ? variables && builtins.hasAttr variableName a.variables) actions;
 
@@ -118,6 +139,8 @@ let
       [ v ]
     else
       [ ];
+
+  last = list: builtins.elemAt list ((length list) - 1);
 
   allowedDisabledAutomations = [ "sync_iphone_alarm_8sleep" ];
 
@@ -293,6 +316,17 @@ let
     {
       test = hasActionCallDeep (toList (arrivalFlashWallLamp.action or [ ])) "adaptive_lighting.apply";
       msg = "arrival_flash_wall_lamp must re-apply Adaptive Lighting after flashing";
+    }
+    {
+      test = hasActionDataDeep (toList (
+        arrivalFlashWallLamp.action or [ ]
+      )) "adaptive_lighting.apply" "turn_on_lights" false;
+      msg = "arrival_flash_wall_lamp must re-apply Adaptive Lighting without turning on an off lamp";
+    }
+    {
+      test =
+        (last (toList (arrivalFlashWallLamp.action or [ ]))).action or null == "adaptive_lighting.apply";
+      msg = "arrival_flash_wall_lamp must finish by re-applying Adaptive Lighting";
     }
     {
       test = hasStateTrigger arrivalFlashWallLamp "person.edmund_miller" "Parking Lot";
