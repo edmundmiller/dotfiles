@@ -309,7 +309,6 @@ in
     # Individual writable files (sessions, auth, cache) live alongside the
     # managed symlinks under ~/.pi/agent.
     env.PI_CODING_AGENT_DIR = "$HOME/.pi/agent";
-    env.PI_PERMISSION_SYSTEM_POLICY_AGENT_DIR = "$HOME/.pi/agent";
     env.PI_PERMISSION_SYSTEM_CONFIG_PATH = "$HOME/.pi/agent/extensions/pi-permission-system/config.json";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";

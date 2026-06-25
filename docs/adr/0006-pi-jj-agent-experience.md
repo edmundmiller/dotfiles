@@ -21,7 +21,7 @@ Jujutsu. If jj is simply enabled and agents are told to remember a different
 workflow, they will eventually bypass it.
 
 This also intersects with `packages/pi-packages/pi-command-policy-bridge`, which
-currently applies the existing `pi-permissions.jsonc` bash policy to tools that
+currently applies the existing `pi-permission-system` bash policy to tools that
 embed shell commands. jj support should use the same deterministic policy layer
 rather than relying on prompt instructions alone.
 

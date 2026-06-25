@@ -20,5 +20,5 @@ silently come back later.
 
 ## Maintenance Rule
 
-When changing the package or `config/pi/pi-permissions.jsonc`, update these tests
-as the executable documentation of the intended behavior.
+When changing the package or `config/pi/pi-permission-system.jsonc`, update
+these tests as executable documentation of the intended behavior.
