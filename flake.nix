@@ -21,6 +21,7 @@
     # Two inputs so I can track them separately at different rates.
     nixpkgs.url = "nixpkgs/nixos-unstable"; # Using unstable for 25.05 compatibility
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
+    nixpkgs-node.url = "nixpkgs/nixos-25.11"; # newer Node 24 LTS while nixos-unstable catches up
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
@@ -210,6 +211,7 @@
                 mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
               else
                 pkgs';
+            node-lts = (mkPkgs inputs.nixpkgs-node [ ] final.stdenv.hostPlatform.system).nodejs_24;
             my = self.packages.${final.stdenv.hostPlatform.system} or { };
           };
         };

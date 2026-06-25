@@ -12,7 +12,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.dev.node;
-  node = pkgs.nodejs_22; # LTS — avoids EPIPE crashes in Node 25+ (affects pi, etc.)
+  node = pkgs.node-lts; # Node 24 LTS; newer than nixos-unstable while Node 25+ still has EPIPE issues.
 in
 {
   options.modules.dev.node = {
