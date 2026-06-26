@@ -23,6 +23,13 @@ stdenv.mkDerivation {
     # because Stream Deck launches plugins with a sparse GUI environment.
     substituteInPlace src/os/terminal.ts \
       --replace 'export const DEFAULT_TERMINAL_APP = "iTerm";' 'export const DEFAULT_TERMINAL_APP = "Ghostty";'
+
+    # Stream Deck starts plugins from launchd, not an interactive shell, so the
+    # upstream Homebrew-only PATH does not find Nix-installed `herdr` on these
+    # hosts. Include the usual nix-darwin system and per-user profiles.
+    substituteInPlace src/herdr/client.ts \
+      --replace 'const PATH_EXTRA = "/opt/homebrew/bin:/usr/local/bin";' \
+        'const PATH_EXTRA = "/run/current-system/sw/bin:/etc/profiles/per-user/edmundmiller/bin:/etc/profiles/per-user/emiller/bin:/nix/var/nix/profiles/default/bin:/opt/homebrew/bin:/usr/local/bin";'
   '';
 
   buildPhase = ''
