@@ -45,6 +45,6 @@ Recommended 6-key Mini layout from upstream:
 
 ## Gotchas
 
-- The plugin shells out to `herdr`, so Herdr must be installed and usable by the GUI-launched plugin process. Upstream prepends `/opt/homebrew/bin:/usr/local/bin` to `PATH`; if Herdr ever stops being found, prefer fixing the plugin/package environment deliberately rather than relying on interactive shell startup files.
+- The plugin shells out to `herdr`, so Herdr must be installed and usable by the GUI-launched plugin process. The package patches upstream's Homebrew-only PATH to include nix-darwin system/per-user profiles (`/run/current-system/sw/bin`, `/etc/profiles/per-user/{edmundmiller,emiller}/bin`, `/nix/var/nix/profiles/default/bin`). If Herdr ever stops being found, prefer fixing this package environment deliberately rather than relying on interactive shell startup files.
 - `HERDR_DECK_TERMINAL_APP` can override the terminal app upstream, but this package bakes in `Ghostty` as the default. Only change that patch if the host terminal strategy changes.
 - Do not vendor upstream source into this repo unless local patches become too large for simple Nix patching.
