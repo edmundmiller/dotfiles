@@ -1,0 +1,101 @@
+{
+  "skill_name": "home-assistant-best-practices",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "vacuum-last-clean",
+      "prompt": "create a sensor that shows my vacuum's last clean time in a human-readable format",
+      "expected_output": "Recommends creating a Template Helper (via UI or config flow/MCP), NOT writing a template: block in configuration.yaml",
+      "assertions": [
+        {
+          "id": "recommends_template_helper",
+          "description": "Response recommends Template Helper (UI or API/MCP) rather than YAML template: block"
+        },
+        {
+          "id": "no_yaml_template_first",
+          "description": "Response does NOT lead with or exclusively suggest writing template: YAML in configuration.yaml"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "media-player-song",
+      "prompt": "I want a sensor showing my media player's current song title",
+      "expected_output": "Recommends creating a Template Helper (via UI or config flow/MCP) for attribute extraction, not YAML",
+      "assertions": [
+        {
+          "id": "recommends_template_helper",
+          "description": "Response recommends Template Helper (UI or API/MCP) rather than YAML template: block"
+        },
+        {
+          "id": "no_yaml_template_first",
+          "description": "Response does NOT lead with or exclusively suggest writing template: YAML in configuration.yaml"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "eval_name": "avg-temperature",
+      "prompt": "create a sensor that averages my 3 room temperature sensors",
+      "expected_output": "Recommends min_max helper (built-in integration), NOT Template Helper or YAML template",
+      "assertions": [
+        {
+          "id": "recommends_min_max",
+          "description": "Response recommends the min_max integration helper with type: mean"
+        },
+        {
+          "id": "no_template_needed",
+          "description": "Response does NOT recommend a template sensor (YAML or UI helper) as the primary solution"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "eval_name": "arrive-home-automation",
+      "prompt": "create an automation that turns on the lights when I get home",
+      "expected_output": "Uses state trigger with to: home on a person entity. Does NOT use the removed entered_home device trigger type.",
+      "assertions": [
+        {
+          "id": "uses_state_trigger",
+          "description": "Response uses a state trigger (trigger: state) on a person or device_tracker entity, to: home"
+        },
+        {
+          "id": "no_entered_home_trigger",
+          "description": "Response does NOT use the entered_home device trigger type (removed in 2026.5)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "eval_name": "timer-finished-automation",
+      "prompt": "make an automation that announces on my speaker when my kitchen timer finishes",
+      "expected_output": "Uses timer.finished event trigger. Does NOT use a polling template or state trigger workaround.",
+      "assertions": [
+        {
+          "id": "uses_timer_finished_event",
+          "description": "Response uses event trigger with event_type: timer.finished (or purpose-specific timer trigger)"
+        },
+        {
+          "id": "no_polling_workaround",
+          "description": "Response does NOT suggest polling or a wait_template workaround for detecting timer completion"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "eval_name": "assist-shortcut-card",
+      "prompt": "add a card to my dashboard to quickly launch Assist",
+      "expected_output": "Recommends the shortcut card (new in 2026.5) for launching Assist from a dashboard.",
+      "assertions": [
+        {
+          "id": "recommends_shortcut_card",
+          "description": "Response recommends the shortcut card type for launching Assist"
+        },
+        {
+          "id": "not_just_button_card",
+          "description": "Response does not exclusively recommend a button card with tap_action when shortcut is more appropriate"
+        }
+      ]
+    }
+  ]
+}
