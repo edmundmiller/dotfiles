@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "home-assistant-best-practices": {
+      "source": "homeassistant-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/home-assistant-best-practices/SKILL.md",
+      "computedHash": "358402fbda01f9cbd4bb8ffbd49f0bf91fc6060560f2c04bc90c7faca879489a"
+    },
     "honcho-integration": {
       "source": "plastic-labs/honcho",
       "sourceType": "github",
