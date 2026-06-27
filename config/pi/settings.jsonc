@@ -199,10 +199,6 @@
     "npm:latchkey",
     // Ask tool — structured clarification before acting - https://github.com/eko24ive/pi-ask
     "npm:@eko24ive/pi-ask",
-    // Ask-user-question tool variant - install equivalent: pi install npm:@juicesharp/rpiv-ask-user-question
-    "npm:@juicesharp/rpiv-ask-user-question",
-    // Hermes memory integration - install equivalent: pi install npm:pi-hermes-memory
-    "npm:pi-hermes-memory",
     // Markdown workflows/skills + nested AGENTS.md loader - https://github.com/IgorWarzocha/pi-markdown-workflows
     "npm:@howaboua/pi-markdown-workflows",
     // Dynamic multi-agent workflows: /workflows, /deep-research, /adversarial-review
