@@ -481,7 +481,6 @@ let
       test =
         livingSpaceAdaptiveLighting != null
         && builtins.elem "light.essentials_a19_a60_5" (livingSpaceAdaptiveLighting.lights or [ ]);
-      expectedFailure = true;
       msg = "Living Space Adaptive Lighting must include wall lamp to avoid stale flash colors";
     }
     {
