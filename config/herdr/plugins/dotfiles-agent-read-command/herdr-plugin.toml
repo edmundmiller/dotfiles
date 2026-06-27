@@ -1,0 +1,18 @@
+id = "dotfiles.agent-read-command"
+name = "Dotfiles Agent Read Command"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Copy a herdr agent read command for a clicked pane or tab."
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "copy-pane"
+title = "Copy agent read command"
+contexts = ["pane"]
+command = ["python3", "agent_read_command.py", "pane"]
+
+[[actions]]
+id = "copy-tab"
+title = "Copy agent read command"
+contexts = ["tab"]
+command = ["python3", "agent_read_command.py", "tab"]

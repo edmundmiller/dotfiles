@@ -911,6 +911,7 @@ in
           registry = pathlib.Path(sys.argv[1])
           plugins_root = pathlib.Path(sys.argv[2])
           managed_roots = [
+              plugins_root / "dotfiles-agent-read-command",
               plugins_root / "dotfiles-dev-layout",
               plugins_root / "dotfiles-github-link-preview",
           ]
