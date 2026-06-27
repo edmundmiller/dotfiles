@@ -82,6 +82,7 @@ Herdr defaults still provide other common actions such as rename workspace, rena
 
 Dotfiles-specific helper behavior lives in local Herdr plugins under `config/herdr/plugins/` and is registered by `modules/shell/herdr/default.nix`:
 
+- `dotfiles.agent-read-command` — copies a `herdr agent read ...` command from pane/tab context menus.
 - `dotfiles.dev-layout` — provides `prefix+u`/`prefix+U` Hunk actions plus the `worktree.created` dev-layout bootstrap action.
 - `dotfiles.github-link-preview` — registers a GitHub issue/PR link handler that opens `gh issue view` or `gh pr view` in a Herdr side pane.
 
