@@ -19,6 +19,7 @@ let
   inherit (pkgs.lib) hasInfix;
 
   haConfig = nixosConfig.config.services.home-assistant.config;
+  adaptiveLighting = haConfig.adaptive_lighting or [ ];
   automations = haConfig.automation;
   scenes = haConfig.scene;
   scripts = haConfig.script;
@@ -34,6 +35,13 @@ let
     name:
     let
       matches = filter (s: (s.name or null) == name) scenes;
+    in
+    if matches == [ ] then null else head matches;
+
+  findAdaptiveLighting =
+    name:
+    let
+      matches = filter (c: (c.name or null) == name) adaptiveLighting;
     in
     if matches == [ ] then null else head matches;
 
@@ -181,6 +189,7 @@ let
   goodMorningScene = findScene "Good Morning";
   midMorningScene = findScene "Mid-morning";
   sundownScene = findScene "Sundown";
+  livingSpaceAdaptiveLighting = findAdaptiveLighting "Living Space";
 
   assertions = initialStateAssertions ++ [
     {
@@ -470,6 +479,13 @@ let
     }
     {
       test =
+        livingSpaceAdaptiveLighting != null
+        && builtins.elem "light.essentials_a19_a60_5" (livingSpaceAdaptiveLighting.lights or [ ]);
+      expectedFailure = true;
+      msg = "Living Space Adaptive Lighting must include wall lamp to avoid stale flash colors";
+    }
+    {
+      test =
         let
           cfg = sundownScene.entities."light.essentials_a19_a60_3" or null;
         in
@@ -486,8 +502,12 @@ let
     }
   ];
 
-  failures = filter (a: !a.test) assertions;
-  failureMessages = map (a: "  FAIL: ${a.msg}") failures;
+  failures = filter (
+    a: (!a.test && !(a.expectedFailure or false)) || (a.test && (a.expectedFailure or false))
+  ) assertions;
+  failureMessages = map (
+    a: if a.expectedFailure or false then "  XPASS: ${a.msg}" else "  FAIL: ${a.msg}"
+  ) failures;
 
   resultText =
     if failures == [ ] then
