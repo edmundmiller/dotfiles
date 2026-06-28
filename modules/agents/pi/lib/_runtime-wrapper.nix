@@ -35,8 +35,6 @@ pkgs.stdenvNoCC.mkDerivation {
         --set AGENT "1" \
         --set PI_CODING_AGENT "true" \
         --set DEVELOPER_DIR "/Library/Developer/CommandLineTools" \
-        --set NPM_CONFIG_PACKAGE_LOCK "false" \
-        --set NPM_CONFIG_SAVE "false" \
         --set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"} \
         --unset SDKROOT
 
