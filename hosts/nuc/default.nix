@@ -1566,6 +1566,10 @@ in
         enable = true;
         environmentFile = config.age.secrets.lubelogger-env.path;
       };
+      latitude = {
+        enable = true;
+        environmentFile = config.age.secrets.latitude-env.path;
+      };
       speedtest-tracker = {
         enable = true;
         environmentFile = config.age.secrets.speedtest-tracker-env.path;
