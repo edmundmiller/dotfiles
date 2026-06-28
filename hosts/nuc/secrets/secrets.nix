@@ -104,6 +104,10 @@ in
     edmundmiller
     nuc
   ];
+  "latitude-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "speedtest-tracker-env.age".publicKeys = [
     edmundmiller
     nuc
