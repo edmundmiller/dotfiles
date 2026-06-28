@@ -44,7 +44,11 @@ let
     ];
     contextMemory = [
       "npm:pi-context"
-      "npm:pi-total-recall"
+      # pi-total-recall bundles @samfp/pi-memory and pi-session-search, which
+      # register memory_search/session_search. pi-hermes-memory is the
+      # authoritative provider for those tools in config/pi/settings.jsonc.
+      # Loading both causes Pi startup extension conflicts.
+      # "npm:pi-total-recall"
     ];
     cursorSdk = [
       # Cursor SDK provider: exposes Cursor models as `cursor/...` in Pi's native model picker.
