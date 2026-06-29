@@ -235,7 +235,6 @@
               but
               gitbutler
               gitnexus
-              gnhf
               mcporter
               rtk
               workmux
@@ -258,7 +257,6 @@
               but
               gitbutler
               gitnexus
-              gnhf
               mcporter
               rtk
               workmux

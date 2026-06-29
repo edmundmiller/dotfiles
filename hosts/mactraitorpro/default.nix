@@ -92,7 +92,6 @@
         agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
-        gnhf.enable = true;
         opencode.enable = true;
       };
 
