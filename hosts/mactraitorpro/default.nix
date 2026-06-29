@@ -187,10 +187,6 @@
         cleanup = "none"; # Don't remove anything for now
         upgrade = false; # Don't upgrade formulae during activation
         extraEnv = {
-          # Work around Homebrew API cask JSON bugs by using local tap files
-          # during nix-darwin activation. Supported directly by newer nix-darwin.
-          HOMEBREW_NO_INSTALL_FROM_API = "1";
-
           # Homebrew 5.1.11 does not know macOS 27 yet; OS::Mac.version.to_sym
           # becomes :dunno and brew bundle crashes while resolving dependencies.
           # Pretend to be the newest Homebrew-supported macOS until brew adds 27.
