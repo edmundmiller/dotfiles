@@ -77,6 +77,12 @@ let
         description = "open command palette"
 
         [[keys.command]]
+        key = "prefix+space"
+        type = "plugin_action"
+        command = "edmundmiller.which-key.open"
+        description = "which-key"
+
+        [[keys.command]]
         key = "prefix+f"
         type = "plugin_action"
         command = "herdr-file-viewer.open-file-viewer"
@@ -553,6 +559,7 @@ in
               "herdr hunk --tab",
               "herdr worktree layout",
               "alonz.command-palette.open",
+              "edmundmiller.which-key.open",
               "dotfiles.dev-layout.hunk-split",
               "dotfiles.dev-layout.hunk-tab",
               "herdr-file-viewer.open-file-viewer",
@@ -677,6 +684,12 @@ in
               'type = "plugin_action"',
               'command = "alonz.command-palette.open"',
               'description = "open command palette"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+space"',
+              'type = "plugin_action"',
+              'command = "edmundmiller.which-key.open"',
+              'description = "which-key"',
               "",
               "[[keys.command]]",
               'key = "prefix+f"',
@@ -1005,6 +1018,7 @@ in
               install_plugin kkckkc herdr-plugin-gh-workflow
               install_plugin alon-z herdr-command-palette
               install_plugin 0x5c0f herdr-insight
+              install_plugin edmundmiller herdr-which-key
             '';
 
         home.activation.herdr-agent-integrations =

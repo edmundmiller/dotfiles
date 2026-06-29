@@ -70,6 +70,12 @@ command = "alonz.command-palette.open"
 description = "open command palette"
 
 [[keys.command]]
+key = "prefix+space"
+type = "plugin_action"
+command = "edmundmiller.which-key.open"
+description = "which-key"
+
+[[keys.command]]
 key = "prefix+f"
 type = "plugin_action"
 command = "herdr-file-viewer.open-file-viewer"
