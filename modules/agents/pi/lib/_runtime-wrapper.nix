@@ -4,9 +4,10 @@
   piSecretPreflightScript,
 }:
 let
+  piRuntimeNode = pkgs.nodejs_25 or pkgs.nodejs;
   nodeGypPython = pkgs.python311.withPackages (ps: [ ps.setuptools ]);
   runtimePath = lib.makeBinPath [
-    pkgs.nodejs
+    piRuntimeNode
     nodeGypPython
   ];
   updateExtensionsShim = lib.concatStringsSep "\n" [
