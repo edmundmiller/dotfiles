@@ -445,7 +445,7 @@
                   subdir = "skills/engineering";
                   filter = {
                     maxDepth = 1;
-                    nameRegex = "^(improve-codebase-architecture|to-prd|to-issues|grill-with-docs)$";
+                    nameRegex = "^(codebase-design|domain-modeling|improve-codebase-architecture|setup-matt-pocock-skills|to-prd|to-issues|grill-with-docs)$";
                   };
                 };
 
@@ -454,7 +454,7 @@
                   subdir = "skills/productivity";
                   filter = {
                     maxDepth = 1;
-                    nameRegex = "^grill-me$";
+                    nameRegex = "^(grill-me|grilling)$";
                   };
                 };
 
@@ -633,11 +633,23 @@
                   to-issues.from = "mattpocock-engineering";
                   to-issues.path = "to-issues";
 
+                  codebase-design.from = "mattpocock-engineering";
+                  codebase-design.path = "codebase-design";
+
+                  domain-modeling.from = "mattpocock-engineering";
+                  domain-modeling.path = "domain-modeling";
+
                   improve-codebase-architecture.from = "mattpocock-engineering";
                   improve-codebase-architecture.path = "improve-codebase-architecture";
 
                   grill-with-docs.from = "mattpocock-engineering";
                   grill-with-docs.path = "grill-with-docs";
+
+                  grilling.from = "mattpocock-productivity";
+                  grilling.path = "grilling";
+
+                  setup-matt-pocock-skills.from = "mattpocock-engineering";
+                  setup-matt-pocock-skills.path = "setup-matt-pocock-skills";
 
                   loop-me.from = "mattpocock-in-progress";
                   loop-me.path = "loop-me";
