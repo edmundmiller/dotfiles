@@ -36,6 +36,8 @@
     }
 
     # Python tools
+    "gdbm"
+    "python@3.10" # label-studio runtime dependency
     "uv"
 
     # JavaScript/Node tools
