@@ -64,6 +64,11 @@ type = "plugin_action"
 command = "alonz.command-palette.open"
 
 [[keys.command]]
+key = "prefix+space"
+type = "plugin_action"
+command = "edmundmiller.which-key.open"
+
+[[keys.command]]
 key = "prefix+f"
 type = "plugin_action"
 command = "herdr-file-viewer.open-file-viewer"
@@ -154,6 +159,7 @@ Meaning:
 - `prefix+b` toggles the sidebar.
 - `prefix+p` / `prefix+n` move to previous/next tab via Herdr built-ins.
 - `prefix+m` opens the command palette.
+- `prefix+space` opens which-key.
 - `prefix+f` / `prefix+F` open the file viewer in a split/tab.
 - `prefix+]` / `prefix+}` / `prefix+{` open Hunk worktree/staged/branch diffs.
 - `prefix+u` / `prefix+U` keep the dotfiles dev-layout Hunk split/tab actions.
@@ -180,5 +186,5 @@ Meaning:
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
 - `config/herdr/plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and native worktree post-create tab seeding as a Herdr plugin.
 - `config/herdr/plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews as a Herdr link-handler plugin.
-- Marketplace/GitHub plugins installed by activation: `NathanFlurry/herdr-plugin-jj-workspace`, `smarzban/herdr-file-viewer`, `dutifuldev/ghzinga/plugins/herdr`, `dcolinmorgan/herdr-remote/relay`, `razajamil/herdr-plugin-workspace-manager`, `paulbkim-dev/vim-herdr-navigation`, `ogulcancelik/herdr-plugin-github-start`, `rjyo/herdr-window-title-sync`, `wyattjoh/herdr-plugin-gh-pr`, `kkckkc/herdr-plugin-gh-workflow`, `alon-z/herdr-command-palette`, and `0x5c0f/herdr-insight`.
+- Marketplace/GitHub plugins installed by activation: `NathanFlurry/herdr-plugin-jj-workspace`, `smarzban/herdr-file-viewer`, `dutifuldev/ghzinga/plugins/herdr`, `dcolinmorgan/herdr-remote/relay`, `razajamil/herdr-plugin-workspace-manager`, `paulbkim-dev/vim-herdr-navigation`, `ogulcancelik/herdr-plugin-github-start`, `rjyo/herdr-window-title-sync`, `wyattjoh/herdr-plugin-gh-pr`, `kkckkc/herdr-plugin-gh-workflow`, `alon-z/herdr-command-palette`, `0x5c0f/herdr-insight`, and `edmundmiller/herdr-which-key`.
 - `overlays/herdr/default.nix` patches only packaging/build issues; local helper behavior should live in Herdr plugins, not inside the Herdr binary.
