@@ -39,19 +39,6 @@ trust_level = "trusted"
 [mcp_servers.seqera]
 url = "https://mcp.seqera.io/mcp"
 
-[mcp_servers.x-docs]
-url = "https://docs.x.com/mcp"
-enabled = true
-
-[mcp_servers.xapi]
-command = "/bin/zsh"
-args = [
-  "-lc",
-  "CLIENT_ID=\"$(op read 'op://Agents/X MCP/username')\" CLIENT_SECRET=\"$(op read 'op://Agents/X MCP/credential')\" exec xurl mcp https://api.x.com/mcp",
-]
-enabled = true
-startup_timeout_sec = 300
-
 [mcp_servers.fff]
 command = "fff-mcp"
 
