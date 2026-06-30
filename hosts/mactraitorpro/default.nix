@@ -55,6 +55,7 @@
         herdr.enable = true;
         herdr.managePiTheme = false;
         herdr.themeVariant = "catppuccin-auto";
+        herald.enable = true;
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
