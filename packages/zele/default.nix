@@ -28,6 +28,7 @@ buildNpmPackage {
     ./patches/0002-suppress-browser-opener-spawn-errors.patch
     ./patches/0003-resolve-oauth-client-by-key-name.patch
     ./patches/0004-configure-google-access-level.patch
+    ./patches/0005-document-shared-calendar-syncselect.patch
   ];
 
   postPatch = ''
