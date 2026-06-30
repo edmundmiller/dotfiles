@@ -200,6 +200,7 @@
     environment.systemPackages = with pkgs; [
       llm-agents.qmd
       my.zele
+      my.work-calendar-busy
       my.worktree-manager
     ];
 

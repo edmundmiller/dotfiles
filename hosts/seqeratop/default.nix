@@ -171,6 +171,7 @@
     environment.systemPackages = with pkgs; [
       llm-agents.qmd
       my.zele
+      my.work-calendar-busy
     ];
 
     home-manager.users.${config.user.name} =
