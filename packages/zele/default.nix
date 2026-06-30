@@ -14,13 +14,13 @@
 
 buildNpmPackage {
   pname = "zele";
-  version = "0.3.13-unstable-2026-02-15";
+  version = "0.4.0-unstable-2026-06-25";
 
   src = fetchFromGitHub {
     owner = "remorses";
     repo = "zele";
-    rev = "0892b8452e7b640d656b73d71f8402e93421ecc1";
-    hash = "sha256-yB809F1n6qrTIeAR32Nmcra1Ci0KHI0J3Hz/gqbHG3U=";
+    rev = "dada039a773d16bf0d76310308d9e38753cb7331";
+    hash = "sha256-CnYz81wmLQb+h8dpPK3R0Zuko6V84LLCwVehm5E4kN0=";
   };
 
   patches = [
@@ -28,7 +28,7 @@ buildNpmPackage {
     ./patches/0002-suppress-browser-opener-spawn-errors.patch
     ./patches/0003-resolve-oauth-client-by-key-name.patch
     ./patches/0004-configure-google-access-level.patch
-    ./patches/0005-document-shared-calendar-syncselect.patch
+    ./patches/0005-pin-google-auth-library.patch
   ];
 
   postPatch = ''
@@ -46,7 +46,7 @@ buildNpmPackage {
   PRISMA_MIGRATION_ENGINE_BINARY = "${prisma-engines}/bin/migration-engine";
   PRISMA_FMT_BINARY = "${prisma-engines}/bin/prisma-fmt";
 
-  npmDepsHash = "sha256-it4KNnG4jjaYkQXvzKUyqBElfPq7JahdTgcK8P5x3Sg=";
+  npmDepsHash = "sha256-JfV31hhNemTXSkx/JS13O774F/pVEHuy1SZl3KOBtVM=";
 
   npmBuildScript = "build";
 
