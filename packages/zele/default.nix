@@ -27,6 +27,7 @@ buildNpmPackage {
     ./patches/0001-add-nix-flake-and-development-guide.patch
     ./patches/0002-suppress-browser-opener-spawn-errors.patch
     ./patches/0003-resolve-oauth-client-by-key-name.patch
+    ./patches/0004-configure-google-access-level.patch
   ];
 
   postPatch = ''
