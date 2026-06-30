@@ -1,0 +1,7 @@
+diff --git i/package.json w/package.json
+index bf0be86..750e95d 100644
+--- i/package.json
++++ w/package.json
+@@ -40 +40 @@
+-    "google-auth-library": "^10.5.0",
++    "google-auth-library": "10.5.0",
