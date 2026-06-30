@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""Read Google Calendar busy blocks without event details."""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import os
+import subprocess
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+
+
+SCOPE = "https://www.googleapis.com/auth/calendar.freebusy"
+SERVICE = "work-calendar-busy"
+
+
+def run_security(args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["security", *args],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def read_secret(account: str) -> str | None:
+    result = run_security(["find-generic-password", "-s", SERVICE, "-a", account, "-w"])
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
+def write_secret(account: str, value: str) -> None:
+    result = run_security(
+        [
+            "add-generic-password",
+            "-U",
+            "-s",
+            SERVICE,
+            "-a",
+            account,
+            "-w",
+            value,
+        ]
+    )
+    if result.returncode != 0:
+        raise SystemExit(result.stderr.strip() or "failed to write token to Keychain")
+
+
+def delete_secret(account: str) -> None:
+    run_security(["delete-generic-password", "-s", SERVICE, "-a", account])
+
+
+def parse_when(value: str) -> dt.datetime:
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    parsed = dt.datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.astimezone()
+    return parsed
+
+
+def format_blocks(blocks: list[dict[str, str]]) -> str:
+    lines = []
+    for block in blocks:
+        start = parse_when(block["start"]).strftime("%-I:%M")
+        end = parse_when(block["end"]).strftime("%-I:%M")
+        lines.append(f"busy {start}-{end}")
+    return "\n".join(lines)
+
+
+def load_credentials(account: str) -> Credentials | None:
+    raw = read_secret(account)
+    if not raw:
+        return None
+    return Credentials.from_authorized_user_info(json.loads(raw), scopes=[SCOPE])
+
+
+def save_credentials(account: str, creds: Credentials) -> None:
+    write_secret(account, creds.to_json())
+
+
+def get_credentials(account: str, client_secret: str | None) -> Credentials:
+    creds = load_credentials(account)
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        save_credentials(account, creds)
+    if creds and creds.valid:
+        return creds
+    if not client_secret:
+        raise SystemExit("run auth first or pass --client-secret")
+    flow = InstalledAppFlow.from_client_secrets_file(client_secret, scopes=[SCOPE])
+    creds = flow.run_local_server(port=0)
+    save_credentials(account, creds)
+    return creds
+
+
+def freebusy(creds: Credentials, calendars: list[str], start: dt.datetime, end: dt.datetime) -> list[dict[str, str]]:
+    service = build("calendar", "v3", credentials=creds, cache_discovery=False)
+    body = {
+        "timeMin": start.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+        "timeMax": end.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+        "items": [{"id": calendar} for calendar in calendars],
+    }
+    response = service.freebusy().query(body=body).execute()
+    blocks: list[dict[str, str]] = []
+    for calendar in response.get("calendars", {}).values():
+        blocks.extend(calendar.get("busy", []))
+    return sorted(blocks, key=lambda block: block["start"])
+
+
+def default_window() -> tuple[dt.datetime, dt.datetime]:
+    now = dt.datetime.now().astimezone()
+    return now, now + dt.timedelta(hours=12)
+
+
+def cmd_auth(args: argparse.Namespace) -> None:
+    if not args.client_secret:
+        raise SystemExit("--client-secret required")
+    get_credentials(args.account, args.client_secret)
+    print(f"authorized {args.account}")
+
+
+def cmd_busy(args: argparse.Namespace) -> None:
+    start, end = default_window()
+    if args.start:
+        start = parse_when(args.start)
+    if args.end:
+        end = parse_when(args.end)
+    creds = get_credentials(args.account, args.client_secret)
+    calendars = args.calendar or ["primary"]
+    blocks = freebusy(creds, calendars, start, end)
+    if args.json:
+        print(json.dumps({"busy": blocks}, indent=2))
+    else:
+        print(format_blocks(blocks))
+
+
+def cmd_logout(args: argparse.Namespace) -> None:
+    delete_secret(args.account)
+    print(f"deleted {args.account}")
+
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Google Calendar busy-only CLI")
+    p.add_argument("--account", default=os.environ.get("WORK_CALENDAR_BUSY_ACCOUNT", "seqera"))
+    p.add_argument("--client-secret", default=os.environ.get("WORK_CALENDAR_BUSY_CLIENT_SECRET"))
+    sub = p.add_subparsers(dest="command", required=True)
+
+    auth = sub.add_parser("auth")
+    auth.set_defaults(func=cmd_auth)
+
+    busy = sub.add_parser("busy")
+    busy.add_argument("--calendar", action="append")
+    busy.add_argument("--start")
+    busy.add_argument("--end")
+    busy.add_argument("--json", action="store_true")
+    busy.set_defaults(func=cmd_busy)
+
+    logout = sub.add_parser("logout")
+    logout.set_defaults(func=cmd_logout)
+    return p
+
+
+def main() -> None:
+    args = parser().parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
