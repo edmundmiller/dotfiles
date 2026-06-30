@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 with lib;
@@ -25,6 +26,7 @@ in
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       jujutsu
+      inputs.oyui.packages.${pkgs.stdenv.hostPlatform.system}.default
       my.jut
       my.jj-vine
       my.jw
