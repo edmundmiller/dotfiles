@@ -1,0 +1,135 @@
+diff --git i/src/auth.ts w/src/auth.ts
+index d71c098..f3e4f78 100644
+--- i/src/auth.ts
++++ w/src/auth.ts
+@@ -61 +61,4 @@ const CLIENT_SECRET =
+-const SCOPES = [
++export type AccessLevel = 'full' | 'readonly' | 'busy'
++
++const ACCESS_SCOPES: Record<AccessLevel, string[]> = {
++  full: [
+@@ -65 +68,16 @@ const SCOPES = [
+-]
++  ],
++  readonly: [
++    'https://www.googleapis.com/auth/calendar.readonly',
++    'https://www.googleapis.com/auth/userinfo.email',
++  ],
++  busy: [
++    'https://www.googleapis.com/auth/calendar.freebusy',
++    'https://www.googleapis.com/auth/userinfo.email',
++  ],
++}
++
++export function resolveAccessLevel(access?: string): AccessLevel {
++  if (!access) return 'full'
++  if (access === 'full' || access === 'readonly' || access === 'busy') return access
++  throw new Error(`Unknown access level "${access}". Use full, readonly, or busy.`)
++}
+@@ -153,0 +172 @@ interface BrowserAuthOptions {
++  access?: AccessLevel
+@@ -357 +376 @@ async function getAuthCodeFromBrowser(
+-    scope: SCOPES,
++    scope: ACCESS_SCOPES[options?.access ?? 'full'],
+@@ -507,0 +527 @@ export async function login(
++  const access = resolveAccessLevel(options?.access)
+@@ -511 +531 @@ export async function login(
+-  const code = await getAuthCodeFromBrowser(oauth2Client, resolved.redirectPort, options)
++  const code = await getAuthCodeFromBrowser(oauth2Client, resolved.redirectPort, { ...options, access })
+@@ -527,5 +547,9 @@ export async function login(
+-  // Discover email
+-  const client = new GmailClient({ auth: oauth2Client })
+-  const profile = await client.getProfile()
+-  if (profile instanceof Error) return profile
+-  const email = profile.emailAddress
++  const userInfo = await errore.tryAsync({
++    try: () => oauth2Client.request<{ email?: string }>({
++      url: 'https://www.googleapis.com/oauth2/v2/userinfo',
++    }),
++    catch: (err) => new Error('Failed to discover account email', { cause: err }),
++  })
++  if (userInfo instanceof Error) return userInfo
++  const email = userInfo.data.email
++  if (!email) return new Error('Failed to discover account email')
+@@ -553 +577 @@ export async function login(
+-  return { email, appId: resolved.clientId, client }
++  return { email, appId: resolved.clientId, client: new GmailClient({ auth: oauth2Client }) }
+@@ -720,0 +745,27 @@ export async function getCalendarClient(
++export async function getCalendarAuthClient(
++  accounts?: string[],
++): Promise<{ email: string; appId: string; auth: OAuth2Client }> {
++  const allAccounts = await listAccounts()
++  if (allAccounts.length === 0) {
++    throw new Error('No accounts registered. Run: zele login')
++  }
++
++  const filtered = accounts && accounts.length > 0
++    ? allAccounts.filter((a) => accounts.includes(a.email))
++    : allAccounts
++
++  if (filtered.length === 0) {
++    const available = allAccounts.map((a) => a.email).join(', ')
++    throw new Error(`No matching accounts. Available: ${available}`)
++  }
++
++  if (filtered.length > 1) {
++    const emails = filtered.map((a) => a.email).join('\n  ')
++    throw new Error(`Multiple accounts matched. Specify --account:\n  ${emails}`)
++  }
++
++  const account = filtered[0]!
++  const auth = await authenticateAccount(account)
++  return { email: account.email, appId: account.appId, auth }
++}
++
+diff --git i/src/commands/auth-cmd.ts w/src/commands/auth-cmd.ts
+index 7baf896..e7d93af 100644
+--- i/src/commands/auth-cmd.ts
++++ w/src/commands/auth-cmd.ts
+@@ -6 +6,2 @@ import type { Goke } from 'goke'
+-import { login, logout, listAccounts, getAuthStatuses } from '../auth.js'
++import { z } from 'zod'
++import { login, logout, listAccounts, getAuthStatuses, resolveAccessLevel } from '../auth.js'
+@@ -14,2 +15,4 @@ export function registerAuthCommands(cli: Goke) {
+-    .action(async () => {
+-      const result = await login()
++    .option('--access <access>', z.enum(['full', 'readonly', 'busy']).describe('Access level'))
++    .action(async (options) => {
++      const access = resolveAccessLevel(options.access)
++      const result = await login(undefined, { access })
+diff --git i/src/commands/calendar.ts w/src/commands/calendar.ts
+index ce767f8..80e0afd 100644
+--- i/src/commands/calendar.ts
++++ w/src/commands/calendar.ts
+@@ -9 +9 @@ import readline from 'node:readline'
+-import { getCalendarClients, getCalendarClient } from '../auth.js'
++import { getCalendarClients, getCalendarClient, getCalendarAuthClient } from '../auth.js'
+@@ -499,3 +499,3 @@ export function registerCalendarCommands(cli: Goke) {
+-      const { client } = await getCalendarClient(options.account)
+-      const tz = await client.getTimezone()
+-      if (tz instanceof Error) handleCommandError(tz)
++      const { auth } = await getCalendarAuthClient(options.account)
++      const timeMin = parseTimeExpression(options.from, Intl.DateTimeFormat().resolvedOptions().timeZone)
++      const timeMax = parseTimeExpression(options.to, Intl.DateTimeFormat().resolvedOptions().timeZone)
+@@ -503,7 +503,8 @@ export function registerCalendarCommands(cli: Goke) {
+-      const timeMin = parseTimeExpression(options.from, tz)
+-      const timeMax = parseTimeExpression(options.to, tz)
+-
+-      const results = await client.getFreeBusy({
+-        calendarIds,
+-        timeMin,
+-        timeMax,
++      const response = await auth.request<{ calendars?: Record<string, { busy?: Array<{ start: string; end: string }> }> }>({
++        url: 'https://www.googleapis.com/calendar/v3/freeBusy',
++        method: 'POST',
++        data: {
++          timeMin,
++          timeMax,
++          items: calendarIds.map((id: string) => ({ id })),
++        },
+@@ -511,0 +513,5 @@ export function registerCalendarCommands(cli: Goke) {
++      const results = calendarIds.map((id: string) => ({
++        calendar: id,
++        busy: response.data.calendars?.[id]?.busy ?? [],
++      }))
++
