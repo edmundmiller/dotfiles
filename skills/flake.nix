@@ -445,7 +445,7 @@
                   subdir = "skills/engineering";
                   filter = {
                     maxDepth = 1;
-                    nameRegex = "^(codebase-design|domain-modeling|improve-codebase-architecture|setup-matt-pocock-skills|to-prd|to-issues|grill-with-docs)$";
+                    nameRegex = "^(ask-matt|codebase-design|diagnosing-bugs|domain-modeling|grill-with-docs|implement|improve-codebase-architecture|prototype|resolving-merge-conflicts|setup-matt-pocock-skills|to-issues|to-prd|triage)$";
                   };
                 };
 
@@ -454,7 +454,7 @@
                   subdir = "skills/productivity";
                   filter = {
                     maxDepth = 1;
-                    nameRegex = "^(grill-me|grilling)$";
+                    nameRegex = "^(grill-me|grilling|handoff|teach|writing-great-skills)$";
                   };
                 };
 
@@ -645,8 +645,35 @@
                   grill-with-docs.from = "mattpocock-engineering";
                   grill-with-docs.path = "grill-with-docs";
 
+                  ask-matt.from = "mattpocock-engineering";
+                  ask-matt.path = "ask-matt";
+
+                  diagnosing-bugs.from = "mattpocock-engineering";
+                  diagnosing-bugs.path = "diagnosing-bugs";
+
+                  implement.from = "mattpocock-engineering";
+                  implement.path = "implement";
+
+                  prototype.from = "mattpocock-engineering";
+                  prototype.path = "prototype";
+
+                  resolving-merge-conflicts.from = "mattpocock-engineering";
+                  resolving-merge-conflicts.path = "resolving-merge-conflicts";
+
+                  triage.from = "mattpocock-engineering";
+                  triage.path = "triage";
+
                   grilling.from = "mattpocock-productivity";
                   grilling.path = "grilling";
+
+                  handoff.from = "mattpocock-productivity";
+                  handoff.path = "handoff";
+
+                  teach.from = "mattpocock-productivity";
+                  teach.path = "teach";
+
+                  writing-great-skills.from = "mattpocock-productivity";
+                  writing-great-skills.path = "writing-great-skills";
 
                   setup-matt-pocock-skills.from = "mattpocock-engineering";
                   setup-matt-pocock-skills.path = "setup-matt-pocock-skills";
