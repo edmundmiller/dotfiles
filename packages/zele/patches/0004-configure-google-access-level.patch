@@ -1,15 +1,20 @@
 diff --git i/src/auth.ts w/src/auth.ts
-index d71c098..f3e4f78 100644
+index 5d3ed1f..3a6fa07 100644
 --- i/src/auth.ts
 +++ w/src/auth.ts
-@@ -61 +61,4 @@ const CLIENT_SECRET =
+@@ -105,5 +105,27 @@ const CLIENT_SECRET =
 -const SCOPES = [
+-  'https://mail.google.com/',                       // Gmail (full — covers settings, filters, etc.)
+-  'https://www.googleapis.com/auth/calendar',       // Calendar (full)
+-  'https://www.googleapis.com/auth/userinfo.email', // Email identity
+-]
 +export type AccessLevel = 'full' | 'readonly' | 'busy'
 +
 +const ACCESS_SCOPES: Record<AccessLevel, string[]> = {
 +  full: [
-@@ -65 +68,16 @@ const SCOPES = [
--]
++    'https://mail.google.com/',                       // Gmail (full — covers settings, filters, etc.)
++    'https://www.googleapis.com/auth/calendar',       // Calendar (full)
++    'https://www.googleapis.com/auth/userinfo.email', // Email identity
 +  ],
 +  readonly: [
 +    'https://www.googleapis.com/auth/calendar.readonly',
@@ -26,17 +31,21 @@ index d71c098..f3e4f78 100644
 +  if (access === 'full' || access === 'readonly' || access === 'busy') return access
 +  throw new Error(`Unknown access level "${access}". Use full, readonly, or busy.`)
 +}
-@@ -153,0 +172 @@ interface BrowserAuthOptions {
++
++function capabilitiesForAccess(access: AccessLevel): string {
++  return access === 'full' ? 'gmail,calendar,smtp' : 'calendar'
++}
+@@ -199,0 +222 @@ interface BrowserAuthOptions {
 +  access?: AccessLevel
-@@ -357 +376 @@ async function getAuthCodeFromBrowser(
+@@ -403 +426 @@ async function getAuthCodeFromBrowser(
 -    scope: SCOPES,
 +    scope: ACCESS_SCOPES[options?.access ?? 'full'],
-@@ -507,0 +527 @@ export async function login(
+@@ -553,0 +577 @@ export async function login(
 +  const access = resolveAccessLevel(options?.access)
-@@ -511 +531 @@ export async function login(
+@@ -557 +581 @@ export async function login(
 -  const code = await getAuthCodeFromBrowser(oauth2Client, resolved.redirectPort, options)
 +  const code = await getAuthCodeFromBrowser(oauth2Client, resolved.redirectPort, { ...options, access })
-@@ -527,5 +547,9 @@ export async function login(
+@@ -573,5 +597,9 @@ export async function login(
 -  // Discover email
 -  const client = new GmailClient({ auth: oauth2Client })
 -  const profile = await client.getProfile()
@@ -51,10 +60,13 @@ index d71c098..f3e4f78 100644
 +  if (userInfo instanceof Error) return userInfo
 +  const email = userInfo.data.email
 +  if (!email) return new Error('Failed to discover account email')
-@@ -553 +577 @@ export async function login(
+@@ -581 +609 @@ export async function login(
+-  const googleCapabilities = 'gmail,calendar,smtp'
++  const googleCapabilities = capabilitiesForAccess(access)
+@@ -602 +630 @@ export async function login(
 -  return { email, appId: resolved.clientId, client }
 +  return { email, appId: resolved.clientId, client: new GmailClient({ auth: oauth2Client }) }
-@@ -720,0 +745,27 @@ export async function getCalendarClient(
+@@ -973,0 +1002,36 @@ export async function getCalendarClient(
 +export async function getCalendarAuthClient(
 +  accounts?: string[],
 +): Promise<{ email: string; appId: string; auth: OAuth2Client }> {
@@ -72,49 +84,52 @@ index d71c098..f3e4f78 100644
 +    throw new Error(`No matching accounts. Available: ${available}`)
 +  }
 +
-+  if (filtered.length > 1) {
-+    const emails = filtered.map((a) => a.email).join('\n  ')
++  const googleAccounts = filtered.filter((a) => a.accountType === 'google')
++  if (googleAccounts.length === 0) {
++    throw new UnsupportedError({
++      feature: 'Calendar',
++      accountType: 'IMAP/SMTP',
++      hint: 'Calendar requires a Google account.',
++    })
++  }
++
++  if (googleAccounts.length > 1) {
++    const emails = googleAccounts.map((a) => a.email).join('\n  ')
 +    throw new Error(`Multiple accounts matched. Specify --account:\n  ${emails}`)
 +  }
 +
-+  const account = filtered[0]!
++  const account = googleAccounts[0]!
 +  const auth = await authenticateAccount(account)
 +  return { email: account.email, appId: account.appId, auth }
 +}
 +
 diff --git i/src/commands/auth-cmd.ts w/src/commands/auth-cmd.ts
-index 7baf896..e7d93af 100644
+index b8499dd..bae68e2 100644
 --- i/src/commands/auth-cmd.ts
 +++ w/src/commands/auth-cmd.ts
-@@ -6 +6,2 @@ import type { Goke } from 'goke'
--import { login, logout, listAccounts, getAuthStatuses } from '../auth.js'
-+import { z } from 'zod'
-+import { login, logout, listAccounts, getAuthStatuses, resolveAccessLevel } from '../auth.js'
-@@ -14,2 +15,4 @@ export function registerAuthCommands(cli: Goke) {
--    .action(async () => {
+@@ -9 +9 @@ import * as clack from '@clack/prompts'
+-import { login, loginImap, logout, listAccounts, getAuthStatuses } from '../auth.js'
++import { login, loginImap, logout, listAccounts, getAuthStatuses, resolveAccessLevel } from '../auth.js'
+@@ -20,0 +21 @@ export function registerAuthCommands(cli: ZeleCli) {
++    .option('--access <access>', z.enum(['full', 'readonly', 'busy']).optional().describe('Google access level'))
+@@ -65 +66,2 @@ export function registerAuthCommands(cli: ZeleCli) {
 -      const result = await login()
-+    .option('--access <access>', z.enum(['full', 'readonly', 'busy']).describe('Access level'))
-+    .action(async (options) => {
 +      const access = resolveAccessLevel(options.access)
 +      const result = await login(undefined, { access })
 diff --git i/src/commands/calendar.ts w/src/commands/calendar.ts
-index ce767f8..80e0afd 100644
+index 69c39f3..55d3c85 100644
 --- i/src/commands/calendar.ts
 +++ w/src/commands/calendar.ts
-@@ -9 +9 @@ import readline from 'node:readline'
+@@ -10 +10 @@ import * as clack from '@clack/prompts'
 -import { getCalendarClients, getCalendarClient } from '../auth.js'
 +import { getCalendarClients, getCalendarClient, getCalendarAuthClient } from '../auth.js'
-@@ -499,3 +499,3 @@ export function registerCalendarCommands(cli: Goke) {
+@@ -516,3 +516,2 @@ export function registerCalendarCommands(cli: ZeleCli) {
 -      const { client } = await getCalendarClient(options.account)
 -      const tz = await client.getTimezone()
 -      if (tz instanceof Error) handleCommandError(tz)
 +      const { auth } = await getCalendarAuthClient(options.account)
-+      const timeMin = parseTimeExpression(options.from, Intl.DateTimeFormat().resolvedOptions().timeZone)
-+      const timeMax = parseTimeExpression(options.to, Intl.DateTimeFormat().resolvedOptions().timeZone)
-@@ -503,7 +503,8 @@ export function registerCalendarCommands(cli: Goke) {
--      const timeMin = parseTimeExpression(options.from, tz)
--      const timeMax = parseTimeExpression(options.to, tz)
--
++      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+@@ -523,4 +522,8 @@ export function registerCalendarCommands(cli: ZeleCli) {
 -      const results = await client.getFreeBusy({
 -        calendarIds,
 -        timeMin,
@@ -127,7 +142,7 @@ index ce767f8..80e0afd 100644
 +          timeMax,
 +          items: calendarIds.map((id: string) => ({ id })),
 +        },
-@@ -511,0 +513,5 @@ export function registerCalendarCommands(cli: Goke) {
+@@ -528,0 +532,5 @@ export function registerCalendarCommands(cli: ZeleCli) {
 +      const results = calendarIds.map((id: string) => ({
 +        calendar: id,
 +        busy: response.data.calendars?.[id]?.busy ?? [],
