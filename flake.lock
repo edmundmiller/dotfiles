@@ -2148,7 +2148,8 @@
         "prek-repo": "prek-repo",
         "qmd-repo": "qmd-repo",
         "shaping-skills": "shaping-skills",
-        "stack-repo": "stack-repo"
+        "stack-repo": "stack-repo",
+        "zele-repo": "zele-repo"
       },
       "locked": {
         "path": "./skills",
@@ -2767,6 +2768,22 @@
         "dir": "nix",
         "owner": "wez",
         "repo": "wezterm",
+        "type": "github"
+      }
+    },
+    "zele-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782383517,
+        "narHash": "sha256-CnYz81wmLQb+h8dpPK3R0Zuko6V84LLCwVehm5E4kN0=",
+        "owner": "remorses",
+        "repo": "zele",
+        "rev": "dada039a773d16bf0d76310308d9e38753cb7331",
+        "type": "github"
+      },
+      "original": {
+        "owner": "remorses",
+        "repo": "zele",
         "type": "github"
       }
     },

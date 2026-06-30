@@ -102,6 +102,11 @@
       flake = false;
     };
 
+    zele-repo = {
+      url = "github:remorses/zele";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -525,6 +530,12 @@
                   filter.maxDepth = 1;
                 };
 
+                zele = {
+                  path = inputs.zele-repo.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 1;
+                };
+
               }
               // lib.optionalAttrs stackEnabled {
                 stack = {
@@ -592,6 +603,9 @@
 
                   prek.from = "prek";
                   prek.path = "prek";
+
+                  zele.from = "zele";
+                  zele.path = "zele";
 
                   done.from = "bholmesdev";
                   done.path = "done";
