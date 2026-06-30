@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   pkgs,
   ...
 }:
@@ -199,6 +200,7 @@
 
     # Add desktop helpers + qmd CLI
     environment.systemPackages = with pkgs; [
+      inputs.clin.packages.${pkgs.stdenv.hostPlatform.system}.default
       llm-agents.qmd
       my.zele
       my.work-calendar-busy

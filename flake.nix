@@ -55,6 +55,7 @@
     llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    clin.url = "github:reekta92/clin-rs";
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
