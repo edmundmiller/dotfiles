@@ -124,6 +124,64 @@ in
             fi
           '';
 
+          home.activation.git-ai-agent-hook-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${pkgs.python3}/bin/python3 - "$HOME/.factory/settings.json" <<'PY'
+            import json
+            import pathlib
+            import sys
+
+            path = pathlib.Path(sys.argv[1])
+            if not path.exists():
+                raise SystemExit(0)
+
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                raise SystemExit(0)
+
+            stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint droid --hook-input stdin"
+            hooks = data.get("hooks")
+            changed = False
+            if isinstance(hooks, dict):
+                for event, entries in list(hooks.items()):
+                    if not isinstance(entries, list):
+                        continue
+
+                    next_entries = []
+                    for entry in entries:
+                        if not isinstance(entry, dict):
+                            next_entries.append(entry)
+                            continue
+
+                        hook_list = entry.get("hooks")
+                        if not isinstance(hook_list, list):
+                            next_entries.append(entry)
+                            continue
+
+                        filtered_hooks = [
+                            hook
+                            for hook in hook_list
+                            if not (
+                                isinstance(hook, dict)
+                                and hook.get("command") == stale_git_ai
+                            )
+                        ]
+                        if filtered_hooks != hook_list:
+                            changed = True
+                        if filtered_hooks:
+                            next_entry = dict(entry)
+                            next_entry["hooks"] = filtered_hooks
+                            next_entries.append(next_entry)
+
+                    if next_entries != entries:
+                        changed = True
+                    hooks[event] = next_entries
+
+            if changed:
+                path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            PY
+          '';
+
           xdg.configFile = {
             "git/config".source = "${configDir}/git/config";
             "git/config-signing" =
