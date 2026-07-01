@@ -7,12 +7,13 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "fe30dd9a0fcf55cf07fe8dfedc99abdfc801e42d";
-      hash = "sha256-/WnsUO1DuSmBfVo8LCFaDJEZvSrYnJZPyRNqASbPzV8=";
+      rev = "659c3f51ece42b7b761084bca0152fe4db56ebf6";
+      hash = "sha256-nVcW9Tc3zNHPZ8G/pikbE4gSHg2Dwhi4LCePV/OuuQw=";
     };
     patches = [
       ./patches/0001-libghostty-bench-gated.patch
       ./patches/0006-update-cargo-hash.patch
+      ./patches/0007-worktree-actions-use-focused-pane-cwd.patch
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
