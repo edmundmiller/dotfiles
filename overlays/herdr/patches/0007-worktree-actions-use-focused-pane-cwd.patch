@@ -1,0 +1,17 @@
+--- i/src/app/worktrees.rs
++++ w/src/app/worktrees.rs
+@@ -38,6 +38,13 @@
+         }
+
+         let git_space = ws.git_space().cloned().or_else(|| {
++            ws.focused_pane_id()
++                .and_then(|pane_id| ws.active_tab().and_then(|tab| {
++                    tab.cwd_for_pane(pane_id, &self.state.terminals, &self.terminal_runtimes)
++                }))
++                .as_deref()
++                .and_then(crate::workspace::git_space_metadata)
++        }).or_else(|| {
+             ws.resolved_identity_cwd_from(&self.state.terminals, &self.terminal_runtimes)
+                 .as_deref()
+                 .and_then(crate::workspace::git_space_metadata)
+         });
