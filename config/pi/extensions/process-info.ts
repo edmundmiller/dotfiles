@@ -28,7 +28,18 @@ type SessionSwitchEntry = {
   targetSessionFile: string | null;
 };
 
-let extensionApi: ExtensionAPI | null = null;
+const isStaleContextError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  return error.message.includes("ctx is stale");
+};
+
+const appendEntry = <T>(pi: ExtensionAPI, customType: string, data: T): void => {
+  try {
+    pi.appendEntry(customType, data);
+  } catch (error) {
+    if (!isStaleContextError(error)) throw error;
+  }
+};
 
 const resolveTmuxSession = async (
   pi: ExtensionAPI,
@@ -80,43 +91,55 @@ const buildSessionSwitchEntry = (event: SessionBeforeSwitchEvent): SessionSwitch
   targetSessionFile: event.targetSessionFile ?? null,
 });
 
-const recordSessionSwitch = (event: SessionBeforeSwitchEvent): void => {
-  if (!extensionApi) return;
-  const entry = buildSessionSwitchEntry(event);
-  extensionApi.appendEntry("session-switch", entry);
+const recordSessionSwitch = (pi: ExtensionAPI, event: SessionBeforeSwitchEvent): void => {
+  try {
+    const entry = buildSessionSwitchEntry(event);
+    appendEntry(pi, "session-switch", entry);
+  } catch (error) {
+    if (!isStaleContextError(error)) throw error;
+  }
 };
 
-const recordProcessInfo = async (ctx: ExtensionContext): Promise<void> => {
-  if (!extensionApi) return;
-  const info = await buildProcessInfo(extensionApi, ctx);
-  extensionApi.appendEntry("process-info", info);
+const recordProcessInfo = async (pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> => {
+  try {
+    const info = await buildProcessInfo(pi, ctx);
+    appendEntry(pi, "process-info", info);
+  } catch (error) {
+    if (!isStaleContextError(error)) throw error;
+  }
 };
 
-const recordStatus = (ctx: ExtensionContext, status: StatusEntry["status"]): void => {
-  if (!extensionApi) return;
-  const entry = buildStatusEntry(ctx, status);
-  extensionApi.appendEntry("status", entry);
+const recordStatus = (
+  pi: ExtensionAPI,
+  ctx: ExtensionContext,
+  status: StatusEntry["status"]
+): void => {
+  try {
+    const entry = buildStatusEntry(ctx, status);
+    appendEntry(pi, "status", entry);
+  } catch (error) {
+    if (!isStaleContextError(error)) throw error;
+  }
 };
 
 const processInfoExtension = (pi: ExtensionAPI) => {
-  extensionApi = pi;
   pi.on("session_start", async (_event, ctx) => {
-    await recordProcessInfo(ctx);
+    await recordProcessInfo(pi, ctx);
   });
   pi.on("session_before_switch", (event) => {
-    recordSessionSwitch(event);
+    recordSessionSwitch(pi, event);
   });
   pi.on("session_switch", async (_event, ctx) => {
-    await recordProcessInfo(ctx);
+    await recordProcessInfo(pi, ctx);
   });
   pi.on("session_fork", async (_event, ctx) => {
-    await recordProcessInfo(ctx);
+    await recordProcessInfo(pi, ctx);
   });
   pi.on("agent_start", (_event, ctx) => {
-    recordStatus(ctx, "running");
+    recordStatus(pi, ctx, "running");
   });
   pi.on("agent_end", (_event, ctx) => {
-    recordStatus(ctx, "stopped");
+    recordStatus(pi, ctx, "stopped");
   });
 };
 
