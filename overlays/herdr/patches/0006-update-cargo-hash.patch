@@ -1,15 +1,15 @@
-diff --git i/nix/package.nix w/nix/package.nix
-index 0688714..8cba14d 100644
 --- i/nix/package.nix
 +++ w/nix/package.nix
-@@ -32,7 +32,10 @@ rustPlatform.buildRustPackage {
+@@ -56,8 +56,11 @@ rustPlatform.buildRustPackage {
      fileset = lib.fileset.intersection (lib.fileset.fromSource (lib.sources.cleanSource ./..)) (
        lib.fileset.unions [
          ../assets
+         ../docs/next/api/herdr-api.schema.json
 +        ../CHANGELOG.md
          ../src
 +        ../tests/fixtures
 +        ../website/latest.json
          ../vendor/libghostty-vt
          ../vendor/libghostty-vt.vendor.json
+         ../vendor/portable-pty
          ../build.rs
