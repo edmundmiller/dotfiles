@@ -74,6 +74,9 @@ in
       force = true;
     };
 
+    home.file.".omp/agent/extensions/permission-policy-guard".source =
+      "${configDir}/omp/extensions/permission-policy-guard";
+
     home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
       "${configDir}/pi/pi-permission-system.jsonc";
   };
