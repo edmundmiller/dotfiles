@@ -120,14 +120,12 @@ describe("pi-command-policy-bridge", () => {
     }
   });
 
-  it("repo policy denies local NUC eval commands", () => {
+  it("repo policy denies explicit local NUC eval commands", () => {
     const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
     process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = repoPolicyPath;
 
     try {
       const blocked = [
-        "nix flake check",
-        "nix flake check --show-trace",
         "nix eval .#nixosConfigurations.nuc.config.system.build.toplevel",
         "nix build .#nixosConfigurations.nuc.config.system.build.toplevel",
         "nixos-rebuild build --flake .#nuc",
@@ -145,7 +143,7 @@ describe("pi-command-policy-bridge", () => {
         toolName: "process",
         input: {
           action: "start",
-          command: "nix flake check",
+          command: "nix build .#nixosConfigurations.nuc.config.system.build.toplevel",
         },
       });
       expect(processDecision.kind).toBe("deny");
@@ -163,7 +161,12 @@ describe("pi-command-policy-bridge", () => {
     process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = repoPolicyPath;
 
     try {
-      const allowed = ["hey nuc-wt build", "hey nuc dry-activate", "hey deploy-check"];
+      const allowed = [
+        "nix flake check",
+        "hey nuc-wt build",
+        "hey nuc dry-activate",
+        "hey deploy-check",
+      ];
 
       for (const command of allowed) {
         const decision = evaluateToolGuard({

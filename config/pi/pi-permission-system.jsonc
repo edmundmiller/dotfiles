@@ -27,8 +27,6 @@
       "*NIXOS_NO_CHECK*": "deny",
       "*deploy-rs*": "deny",
       "*nix run .#deploy-rs*": "deny",
-      "nix flake check": "deny",
-      "*nix flake check*": "deny",
       "*nix*#nixosConfigurations.nuc*": "deny",
       "*nixos-rebuild*--flake*#nuc*": "deny",
       "*--no-verify*": "deny",
