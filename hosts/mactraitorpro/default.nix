@@ -86,7 +86,10 @@
         agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
-        omp.enable = true;
+        omp = {
+          enable = true;
+          smolModel = "xai-oauth/grok-composer-2.5-fast";
+        };
         opencode.enable = true;
       };
 

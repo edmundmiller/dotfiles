@@ -22,6 +22,16 @@ Enable with:
 modules.agents.omp.enable = true;
 ```
 
+## Per-host model roles
+
+`modules.agents.omp.smolModel` sets `PI_SMOL_MODEL` in the wrapper for a
+declarative per-host smol/fast model (also drives commit, which falls back to
+smol). This is the _only_ role exposed via Nix: OMP has no env override for
+default/commit, and `--config` overlays crash the `config` subcommands, so the
+env var is the clean lever. default/slow/plan stay in the mutable
+`config.yml` and are identical across hosts. Precedence: `--smol` flag >
+`PI_SMOL_MODEL` > `config.yml`.
+
 ## Docs
 
 - [message-queue.md](./message-queue.md) — the three message-queue knobs

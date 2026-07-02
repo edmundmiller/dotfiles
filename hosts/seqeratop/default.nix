@@ -100,7 +100,13 @@
         agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
-        omp.enable = true;
+        omp = {
+          enable = true;
+          # TODO: set once Seqera's omp logins are known (this machine only has
+          # xai-oauth; Seqera's pi uses cursor/composer-2.5 via cursorSdk).
+          # null = use modelRoles.smol from the mutable ~/.omp/agent/config.yml.
+          smolModel = null;
+        };
         opencode.enable = true;
       };
 
