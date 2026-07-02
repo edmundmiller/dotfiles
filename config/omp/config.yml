@@ -15,6 +15,11 @@ personality: pragmatic
 steeringMode: all
 followUpMode: all
 interruptMode: wait
+hooks:
+  enabled: true
+  timeoutMs: 10000
+extensions:
+  - ~/.omp/agent/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js
 memory:
   backend: mnemopi
 mnemopi:
