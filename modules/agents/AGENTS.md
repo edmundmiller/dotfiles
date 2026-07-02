@@ -6,6 +6,7 @@ This directory contains Nix modules for AI agents:
 - `claude/` - Claude Code CLI (Anthropic)
 - `codex/` - Codex CLI (OpenAI)
 - `hermes/` - NixOS-only Hermes Gateway/runtime host wiring
+- `omp/` - Oh My Pi CLI, isolated from Pi's `~/.pi/agent`
 - `opencode/` - OpenCode CLI
 - `pi/` - Pi coding agent + shell helpers (worktree management, PR review)
 
@@ -23,6 +24,7 @@ modules.agents = {
     secretReferences = { ... };
   };
   opencode.enable = true;
+  omp.enable = true;
   pi = {
     enable = true;
     honcho.enable = true;
