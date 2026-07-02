@@ -82,6 +82,13 @@ in
             fi
           fi
         '';
+
+        home.activation.opencode-stale-git-ai-plugin-cleanup = lib.hm.dag.entryAfter [ "opencode-setup" ] ''
+          plugin="${opencodeConfigDir}/plugins/git-ai.ts"
+          if [ -f "$plugin" ] && ${pkgs.gnugrep}/bin/grep -q '/Users/emiller/.git-ai/bin/git-ai' "$plugin"; then
+            ${pkgs.coreutils}/bin/rm -f "$plugin"
+          fi
+        '';
       };
   };
 }
