@@ -69,6 +69,11 @@ in
       (lib.hiPrio ompPackage)
     ];
 
+    home.file.".omp/agent/config.yml" = {
+      source = "${configDir}/omp/config.yml";
+      force = true;
+    };
+
     home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
       "${configDir}/pi/pi-permission-system.jsonc";
   };
