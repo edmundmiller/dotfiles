@@ -55,7 +55,6 @@ terminal (ghostty) runs Catppuccin Latte in light mode, so the palettes were
 also mismatched.
 
 **Fix:** `theme.light = light-catppuccin` (matches ghostty's Latte background).
-`theme.dark = titanium` left unchanged — bug only reproduced in light mode.
 
 **Fallback if labels still wash out:** set `tui.renderMermaid: false` — the raw
 ` ```mermaid ` fenced block then prints in normal prose color (always
@@ -80,7 +79,15 @@ omp ships ~40 light themes (set `theme.light` to any of these ids):
 the neutral `light`. (`omp config set theme.light <id>` — no validation, so
 spelling matters.)
 
-### TODO
+### Herdr alignment (done 2026-07-02)
 
-- **Align Herdr theme with OMP.** OMP is now `theme.dark: titanium` /
-  `theme.light: light-catppuccin`; revisit Herdr's palette to match.
+OMP now matches Herdr and ghostty on Catppuccin, both modes:
+
+- `theme.dark = dark-catppuccin` (Mocha — `base #1e1e2e` / `text #cdd6f4`).
+  Matches Herdr's hunk plugin (`catppuccin-mocha`) and ghostty dark.
+- `theme.light = light-catppuccin` (Latte). Matches Herdr's `catppuccin-latte`
+  and ghostty light.
+
+Herdr's own UI theme is `name = "terminal"` (inherits the terminal palette),
+and its dev-layout maps macOS dark→mocha / light→latte
+(`config/herdr/plugins/dotfiles-dev-layout/`).
