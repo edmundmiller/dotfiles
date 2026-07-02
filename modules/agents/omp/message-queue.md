@@ -40,6 +40,27 @@ graph TD
 interrupt a running tool, but once delivery is safe, take everything queued at
 once. Coherent batch-style config.
 
+## Model roles (2026-07-02)
+
+```
+default openai-codex/gpt-5.5:medium    # newest general Codex, balanced
+smol    openai-codex/gpt-5.4-mini      # cheapest *usable* Codex
+slow    kilo/anthropic/claude-opus-4.8 # hardest reasoning, no direct equiv
+plan    openai-codex/gpt-5.5:high      # same model, high thinking
+commit  openai-codex/gpt-5.4-mini      # cheap/fast commit messages
+```
+
+Direct-login providers (Codex on ChatGPT sub, xai-oauth) beat kilo credits for
+the same model. Claude has no direct login here, so `slow` stays on kilo.
+
+**Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
+**ChatGPT-account** Codex login only permits the current generation. Every
+older id (`gpt-5.3-codex`, `gpt-5.4-nano`, anything ≤5.2) returns _"not
+supported when using Codex with a ChatGPT account."_ Verified-usable set:
+`gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex-spark`. Always smoke-test
+(`omp -p --model <id> --no-tools --no-session "say ok"`) before trusting a
+catalog id.
+
 ---
 
 ## Theme notes
