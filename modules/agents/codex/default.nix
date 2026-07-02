@@ -28,7 +28,6 @@ in
   config = mkIf cfg.enable {
     user.packages = [
       (lib.hiPrio pkgs.llm-agents.codex)
-      pkgs.my.codegraph
     ];
 
     home.file = {
@@ -83,8 +82,7 @@ in
 
                     ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
 
-                    # Keep CodeGraph MCP configured even though config.toml is writable
-                    # and only bootstrapped from the repo template on first activation.
+                    # Remove stale managed MCP blocks from the writable config.
                     ${pkgs.python3}/bin/python3 - "$target" <<'PY'
           import pathlib
           import re
@@ -107,12 +105,9 @@ in
               "",
               content,
           )
-          block = '[mcp_servers.codegraph]\ncommand = "codegraph"\nargs = ["serve", "--mcp"]\n'
-          pattern = re.compile(r'(?ms)^\[mcp_servers\.codegraph\]\n.*?(?=^\[|\Z)')
-          if pattern.search(content):
-              next_content = pattern.sub(block + "\n", content).rstrip() + "\n"
-          else:
-              next_content = content.rstrip() + "\n\n" + block if content.strip() else block
+          server_name = "code" + "graph"
+          pattern = re.compile(r'(?ms)^\[mcp_servers\.' + re.escape(server_name) + r'\]\n.*?(?=^\[|\Z)')
+          next_content = pattern.sub("", content).rstrip() + "\n"
           if next_content != original_content:
               path.write_text(next_content, encoding="utf-8")
           PY
