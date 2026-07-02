@@ -3,6 +3,30 @@ import path from "node:path";
 const SOURCE_POLICY_PATH = "config/pi/pi-permission-system.jsonc";
 const OMP_POLICY_PATH = ".omp/agent/extensions/pi-permission-system/config.json";
 
+const GUIDANCE_LINES = [
+  [
+    "Why: config/pi/pi-permission-system.jsonc is the shared Pi/OMP permission policy,",
+    "so an OMP agent must not inspect or rewrite its own guardrails opportunistically.",
+  ].join(" "),
+  "Use instead:",
+  [
+    "- For OMP-only safety behavior, edit",
+    "config/omp/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js.",
+  ].join(" "),
+  [
+    "- For OMP module wiring, edit modules/agents/omp/default.nix",
+    "and config/omp/config.yml.",
+  ].join(" "),
+  [
+    "- For shared Pi permission-policy changes, stop and ask for an explicit",
+    "dotfiles policy change.",
+  ].join(" "),
+];
+
+export function buildBlockReason(match) {
+  return [`OMP policy guard blocked a tool call touching ${match}.`, ...GUIDANCE_LINES].join("\n");
+}
+
 function normalized(value) {
   return value.replaceAll("\\", "/");
 }
@@ -48,12 +72,12 @@ export default function permissionPolicyGuard(pi) {
     if (!match) return undefined;
 
     if (ctx.hasUI) {
-      ctx.ui.notify(`Blocked tool call touching protected permission policy: ${match}`, "warning");
+      ctx.ui.notify(`Blocked protected permission policy access: ${match}`, "warning");
     }
 
     return {
       block: true,
-      reason: `OMP policy guard blocks tool calls touching ${SOURCE_POLICY_PATH}`,
+      reason: buildBlockReason(match),
     };
   });
 }
