@@ -28,7 +28,6 @@ in
   config = mkIf cfg.enable {
     user.packages = [
       pkgs.llm-agents.claude-code
-      pkgs.my.codegraph
     ];
 
     home.file = {
@@ -175,7 +174,7 @@ in
           PY
         '';
 
-        home.activation.claude-codegraph-mcp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        home.activation.claude-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
                     ${pkgs.python3}/bin/python3 - "$HOME/.claude.json" <<'PY'
           import json
           import pathlib
@@ -188,16 +187,12 @@ in
               data = {}
 
           if not isinstance(data, dict):
-              data = {}
+              raise SystemExit(0)
 
-          server = {
-              "type": "stdio",
-              "command": "codegraph",
-              "args": ["serve", "--mcp"],
-          }
-          servers = data.setdefault("mcpServers", {})
-          if servers.get("codegraph") != server:
-              servers["codegraph"] = server
+          server_name = "code" + "graph"
+          servers = data.get("mcpServers")
+          if isinstance(servers, dict) and server_name in servers:
+              servers.pop(server_name, None)
               path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
           PY
         '';

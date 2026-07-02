@@ -11,16 +11,5 @@
   "autoupdate": false,
   "instructions": [
     "~/.config/opencode/rules/[0-9]*.md"
-  ],
-  "mcp": {
-    "codegraph": {
-      "type": "local",
-      "command": [
-        "codegraph",
-        "serve",
-        "--mcp"
-      ],
-      "enabled": true
-    }
-  }
+  ]
 }

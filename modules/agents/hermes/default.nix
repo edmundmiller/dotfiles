@@ -234,7 +234,6 @@ in
 
     user.packages = [
       cfg.package
-      pkgs.my.codegraph
     ];
     env.HERMES_HOME = cfg.homeDir;
     # env.HERMES_TUI = "1";
@@ -421,6 +420,18 @@ in
           base_config = load_yaml(base)
           overlay_config = load_yaml(overlay)
           existing_config = load_yaml(target)
+          stale_mcp = "code" + "graph"
+          stale_toolset = "mcp-" + stale_mcp
+          existing_mcp_servers = existing_config.get("mcp_servers")
+          if isinstance(existing_mcp_servers, dict):
+              existing_mcp_servers.pop(stale_mcp, None)
+          platform_toolsets = existing_config.get("platform_toolsets")
+          if isinstance(platform_toolsets, dict):
+              cli_toolset = platform_toolsets.get("cli")
+              if isinstance(cli_toolset, list):
+                  platform_toolsets["cli"] = [
+                      item for item in cli_toolset if item != stale_toolset
+                  ]
           declarative_config = merge(base_config, overlay_config)
           merged_config = merge(existing_config, declarative_config)
 

@@ -47,7 +47,3 @@ rmcp_client = true
 
 [notice.model_migrations]
 "gpt-5.2-codex" = "gpt-5.3-codex"
-
-[mcp_servers.codegraph]
-command = "codegraph"
-args = ["serve", "--mcp"]

@@ -23,7 +23,6 @@ in
     ];
     user.packages = [
       pkgs.llm-agents.opencode
-      pkgs.my.codegraph
     ];
 
     home-manager.users.${config.user.name} =
