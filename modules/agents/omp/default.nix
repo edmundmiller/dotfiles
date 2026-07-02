@@ -30,7 +30,11 @@ let
         --set PI_SKIP_VERSION_CHECK 1 \
         --set PI_CONFIG_DIR ${lib.escapeShellArg ompConfigDir} \
         --set PI_CODING_AGENT_DIR ${lib.escapeShellArg ompAgentDir} \
-        --set PI_PERMISSION_SYSTEM_CONFIG_PATH ${lib.escapeShellArg "${ompAgentDir}/extensions/pi-permission-system/config.json"}
+        --set PI_PERMISSION_SYSTEM_CONFIG_PATH ${lib.escapeShellArg "${ompAgentDir}/extensions/pi-permission-system/config.json"}${
+          lib.optionalString (
+            cfg.smolModel != null
+          ) " --set PI_SMOL_MODEL ${lib.escapeShellArg cfg.smolModel}"
+        }
 
       runHook postInstall
     '';
@@ -44,6 +48,19 @@ in
       type = types.package;
       default = pkgs.llm-agents.omp;
       description = "OMP package to install.";
+    };
+    smolModel = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "xai-oauth/grok-composer-2.5-fast";
+      description = ''
+        Per-host override for the smol/fast model role, injected as
+        PI_SMOL_MODEL. Also drives the commit role, which falls back to smol
+        when modelRoles.commit is unset. Null keeps whatever modelRoles.smol is
+        set in the mutable ~/.omp/agent/config.yml. default/slow/plan are
+        intentionally not exposed here — they live in the mutable config and
+        stay identical across hosts.
+      '';
     };
   };
 
