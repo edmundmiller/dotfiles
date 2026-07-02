@@ -1440,6 +1440,7 @@ in
     };
     agents = {
       codex.enable = true;
+      omp.enable = true;
       pi.enable = true;
     };
     services = {
