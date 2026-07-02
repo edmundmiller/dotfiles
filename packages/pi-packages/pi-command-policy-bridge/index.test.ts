@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { evaluateToolGuard } from "./index";
 
+const repoPolicyPath = join(import.meta.dir, "../../../config/pi/pi-permission-system.jsonc");
+
 describe("pi-command-policy-bridge", () => {
   it("does not block git commands", () => {
     const decision = evaluateToolGuard({
@@ -115,6 +117,67 @@ describe("pi-command-policy-bridge", () => {
         process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
       }
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("repo policy denies local NUC eval commands", () => {
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = repoPolicyPath;
+
+    try {
+      const blocked = [
+        "nix flake check",
+        "nix flake check --show-trace",
+        "nix eval .#nixosConfigurations.nuc.config.system.build.toplevel",
+        "nix build .#nixosConfigurations.nuc.config.system.build.toplevel",
+        "nixos-rebuild build --flake .#nuc",
+      ];
+
+      for (const command of blocked) {
+        const decision = evaluateToolGuard({
+          toolName: "bash",
+          input: { command },
+        });
+        expect(decision.kind).toBe("deny");
+      }
+
+      const processDecision = evaluateToolGuard({
+        toolName: "process",
+        input: {
+          action: "start",
+          command: "nix flake check",
+        },
+      });
+      expect(processDecision.kind).toBe("deny");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+      } else {
+        process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
+      }
+    }
+  });
+
+  it("repo policy allows blessed NUC validation commands", () => {
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = repoPolicyPath;
+
+    try {
+      const allowed = ["hey nuc-wt build", "hey nuc dry-activate", "hey deploy-check"];
+
+      for (const command of allowed) {
+        const decision = evaluateToolGuard({
+          toolName: "bash",
+          input: { command },
+        });
+        expect(decision.kind).toBe("allow");
+      }
+    } finally {
+      if (previous === undefined) {
+        delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+      } else {
+        process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
+      }
     }
   });
 });
