@@ -430,6 +430,24 @@ in
         '';
       };
 
+      omp.enable = mkOption {
+        type = bool;
+        default = true;
+        description = ''
+          Automatically install Herdr's OMP integration when
+          `modules.agents.omp.enable` is true.
+        '';
+      };
+
+      droid.enable = mkOption {
+        type = bool;
+        default = true;
+        description = ''
+          Automatically install Herdr's Droid integration when the
+          `modules.services.kittylitter` Droid bridge is enabled.
+        '';
+      };
+
       hermes.enable = mkOption {
         type = bool;
         default = true;
@@ -1063,6 +1081,23 @@ in
                 ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode"
                 XDG_CONFIG_HOME="$HOME/.config" install_integration opencode
               ''}
+
+              ${optionalString (cfg.integrations.omp.enable && config.modules.agents.omp.enable) ''
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.omp/agent/extensions"
+                PI_CODING_AGENT_DIR="$HOME/.omp/agent" install_integration omp
+              ''}
+
+              ${optionalString
+                (
+                  cfg.integrations.droid.enable
+                  && config.modules.services.kittylitter.enable
+                  && elem "droid" config.modules.services.kittylitter.enabledAgents
+                )
+                ''
+                  ${pkgs.coreutils}/bin/mkdir -p "$HOME/.factory"
+                  install_integration droid
+                ''
+              }
 
               ${optionalString (cfg.integrations.hermes.enable && config.modules.agents.hermes.enable) ''
                 ${pkgs.coreutils}/bin/mkdir -p ${escapeShellArg config.modules.agents.hermes.homeDir}
