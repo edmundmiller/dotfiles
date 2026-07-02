@@ -56,6 +56,22 @@ the same model. kilo/Claude is kept only as a fallback. There is no separate
 is kept off the roles (a bad plan poisons the whole task, so `plan` stays on the
 proven gpt-5.5); reach for it ad hoc via `--plan grok-4.3` or Ctrl+P cycling.
 
+### Per-host overrides
+
+`config.yml` is machine-local mutable state, so default/slow/plan (and the base
+smol/commit) already differ freely per box. To make the split _declarative_,
+`modules.agents.omp.smolModel` injects `PI_SMOL_MODEL` in the Nix wrapper — it
+overrides `modelRoles.smol` and (via the `["tiny","commit","smol"]` fallback)
+the commit role too. Only smol/commit are exposed; default/slow/plan live in
+the mutable config and stay identical across hosts. Precedence:
+`--smol` flag > `PI_SMOL_MODEL` env > `config.yml`. There is **no** env override
+for default or commit (only smol/slow/plan exist), and `--config` overlays are
+launch-only (they crash `config get/set`), so the env var is the clean lever.
+
+- **mactraitorpro**: `smolModel = "xai-oauth/grok-composer-2.5-fast"`.
+- **seqeratop**: `null` (TODO — set once its omp logins are known; its `pi`
+  uses `cursor/composer-2.5`, not necessarily an omp login).
+
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
 **ChatGPT-account** Codex login only permits the current generation. Every
 older id (`gpt-5.3-codex`, `gpt-5.4-nano`, anything ≤5.2) returns _"not
