@@ -1,0 +1,28 @@
+providers:
+  webSearch: auto
+symbolPreset: nerd
+theme:
+  dark: dark-catppuccin
+  light: light-catppuccin
+setupVersion: 1
+modelRoles:
+  default: openai-codex/gpt-5.5:medium
+  smol: xai-oauth/grok-composer-2.5-fast
+  slow: openai-codex/gpt-5.5:xhigh
+  plan: openai-codex/gpt-5.5:high
+textVerbosity: low
+personality: pragmatic
+steeringMode: all
+followUpMode: all
+interruptMode: wait
+memory:
+  backend: mnemopi
+mnemopi:
+  scoping: per-project-tagged
+  noEmbeddings: false
+advisor:
+  enabled: true
+  subagents: true
+  syncBacklog: "3"
+tier:
+  advisor: inherit

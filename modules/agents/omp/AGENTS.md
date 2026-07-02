@@ -13,8 +13,9 @@ PI_CODING_AGENT_DIR=$HOME/.omp/agent
 PI_PERMISSION_SYSTEM_CONFIG_PATH=$HOME/.omp/agent/extensions/pi-permission-system/config.json
 ```
 
-Only symlink deterministic guardrail files under `~/.omp/agent`. Treat the rest
-as OMP-owned mutable runtime state.
+`~/.omp/agent/config.yml` is tracked from `config/omp/config.yml`; edit the
+repo source, not the runtime symlink. Other OMP runtime state remains mutable
+and OMP-owned.
 
 Enable with:
 
