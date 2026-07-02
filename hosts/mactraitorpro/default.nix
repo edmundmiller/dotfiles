@@ -86,6 +86,7 @@
         agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
+        omp.enable = true;
         opencode.enable = true;
       };
 
