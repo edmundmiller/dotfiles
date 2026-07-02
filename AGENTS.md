@@ -13,6 +13,14 @@ uname -a
 
 Use that result as authoritative. If already running on the target host, prefer local commands over SSH. For example, on `nuc`, use `systemctl ...` directly instead of `ssh nuc ...`.
 
+## NUC Eval Guard
+
+From Darwin/macOS, do **not** run local Nix commands that evaluate `nixosConfigurations.nuc`, including generic `nix flake check`, `nix eval .#nixosConfigurations.nuc...`, or `nix build .#nixosConfigurations.nuc...`.
+
+This hits the known `agent-skills` platform mismatch: NUC wants `x86_64-linux`, while the Mac host is `aarch64-darwin`. It is noise, not a useful validation gate.
+
+Use NUC-side validation instead: `hey nuc-wt build`, `hey nuc dry-activate`, `hey nuc`, or `ssh nuc "sudo nixos-rebuild build --flake github:edmundmiller/dotfiles#nuc --refresh"`.
+
 ## Rebuilding the System
 
 After changing any `.nix` file or Nix-managed config:
@@ -147,7 +155,7 @@ This repo manages secrets via **agenix** (encrypted `.age` files) and **opnix** 
 
 **deadnix** detects unused Nix bindings (variables, function arguments, `let` bindings) and runs automatically via treefmt. See [Dead Code Detection](#dead-code-detection) above.
 
-Additionally, **`nix flake check`** validates the flake and all its dependencies, ensuring no broken or missing inputs. The CI runs `nix build .#checks.*` which exercises these checks on every push and PR.
+Additionally, **`hey check`** validates the current Darwin host without evaluating the NUC. Do not run generic `nix flake check` from macOS; it evaluates NUC outputs and hits the known cross-system `agent-skills` mismatch.
 
 ### Large File Detection
 
@@ -164,7 +172,7 @@ Deployment is triggered locally. Darwin hosts use the local rebuild commands; NU
 - **Deploy to NUC:** `hey nuc` (syncs the current worktree to the NUC, then runs `nixos-rebuild switch --flake .#nuc` there)
 - **Deploy dry-run:** `hey nuc dry-activate`, `hey deploy-dry nuc`, or `hey deploy-check`
 - **After deploy to NUC:** verify via `ssh nuc "systemctl status home-assistant"` for HA, check NUC dashboard with `hey nuc-status`
-- **After macOS rebuild:** verify via `nix flake check` (runs all flake checks locally)
+- **After macOS rebuild:** verify via `hey check`; avoid generic `nix flake check` from macOS
 - **Rollback:** `hey rollback` or `nix-env --rollback` for previous generation; on NUC: `hey nuc-rollback`
 
 See [docs/runbooks/deploy-nuc.md](docs/runbooks/deploy-nuc.md) for the full deployment runbook.
