@@ -14,8 +14,10 @@ PI_PERMISSION_SYSTEM_CONFIG_PATH=$HOME/.omp/agent/extensions/pi-permission-syste
 ```
 
 `~/.omp/agent/config.yml` is tracked from `config/omp/config.yml`; edit the
-repo source, not the runtime symlink. Other OMP runtime state remains mutable
-and OMP-owned.
+repo source, not the runtime symlink. The `permission-policy-guard` extension
+package is linked from `config/omp/` and explicitly listed in `config.yml`; it
+blocks OMP tool calls that target `config/pi/pi-permission-system.jsonc`.
+Other OMP runtime state remains mutable and OMP-owned.
 
 Enable with:
 
