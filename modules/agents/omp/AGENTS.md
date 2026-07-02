@@ -27,6 +27,19 @@ Enable with:
 modules.agents.omp.enable = true;
 ```
 
+## Permission policy guard
+
+The guard blocks OMP tool calls that mention the shared Pi/OMP policy file or
+OMP's runtime symlink to it. Its block reason should explain:
+
+- what was blocked
+- why OMP must not inspect or rewrite its own guardrails casually
+- what to edit instead for OMP-only behavior, OMP module wiring, or an explicit
+  shared policy change
+
+Keep those alternatives in the hook's `GUIDANCE_LINES`; the reason is shown
+back to the model as the failed tool result.
+
 ## Per-host model roles
 
 `modules.agents.omp.smolModel` sets `PI_SMOL_MODEL` in the wrapper for a
