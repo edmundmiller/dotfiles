@@ -8,6 +8,7 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.agents.omp;
+  inherit (config.dotfiles) configDir;
   ompConfigDir = "${config.user.home}/.omp";
   ompAgentDir = "${ompConfigDir}/agent";
   ompPackage = pkgs.stdenvNoCC.mkDerivation {
@@ -50,5 +51,8 @@ in
     user.packages = [
       (lib.hiPrio ompPackage)
     ];
+
+    home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
+      "${configDir}/pi/pi-permission-system.jsonc";
   };
 }
