@@ -78,6 +78,7 @@ let
   };
 
   droidCli = pkgs.writeShellScriptBin "droid" ''
+    export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:''${PATH:-}"
     exec ${pkgs.bun}/bin/bunx --bun droid "$@"
   '';
 
@@ -90,7 +91,7 @@ let
     droidCli
   ];
 
-  servicePath = "${agentPath}:${cfg.homeDir}/.bun/bin:${cfg.homeDir}/.local/bin:${cfg.homeDir}/.cache/npm/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin";
+  servicePath = "${agentPath}:${cfg.homeDir}/.bun/bin:${cfg.homeDir}/.local/bin:${cfg.homeDir}/.cache/npm/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
 
   configPrep = pkgs.writeShellScript "kittylitter-config-prep" ''
     set -euo pipefail
