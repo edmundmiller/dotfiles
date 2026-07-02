@@ -21,3 +21,9 @@ Enable with:
 ```nix
 modules.agents.omp.enable = true;
 ```
+
+## Docs
+
+- [message-queue.md](./message-queue.md) — the three message-queue knobs
+  (`interruptMode` / `steeringMode` / `followUpMode`) with a flow diagram.
+  Also tracks the pending OMP + Herdr theme fix.
