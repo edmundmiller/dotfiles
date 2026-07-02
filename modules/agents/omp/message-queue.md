@@ -43,16 +43,18 @@ once. Coherent batch-style config.
 ## Model roles (2026-07-02)
 
 ```
-default openai-codex/gpt-5.5:medium    # newest general Codex, balanced
-smol    openai-codex/gpt-5.4-mini      # cheapest *usable* Codex
-slow    openai-codex/gpt-5.5:xhigh     # deepest thinking, direct sub
-plan    openai-codex/gpt-5.5:high      # same model, high thinking
-commit  openai-codex/gpt-5.4-mini      # cheap/fast commit messages
+default openai-codex/gpt-5.5:medium        # newest general Codex, balanced
+smol    xai-oauth/grok-composer-2.5-fast   # fast coding model (Cursor Composer)
+slow    openai-codex/gpt-5.5:xhigh         # deepest thinking, direct sub
+plan    xai-oauth/grok-4.3:xhigh           # 1M ctx + different family for design
+commit  xai-oauth/grok-composer-2.5-fast   # fast/mechanical commit messages
 ```
 
 Direct-login providers (Codex on ChatGPT sub, xai-oauth) beat kilo credits for
-the same model. All roles now route through the direct Codex login; kilo/Claude
-is kept only as a fallback.
+the same model. kilo/Claude is kept only as a fallback. There is no separate
+"fast" role — `smol` is the fast slot; Composer covers smol + commit. Grok 4.3
+on `plan` intentionally uses a different model family to catch design issues the
+gpt-5.5 default/slow miss.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
 **ChatGPT-account** Codex login only permits the current generation. Every
