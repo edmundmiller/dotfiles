@@ -7,7 +7,7 @@ Intel NUC home server running NixOS. Primary role: Hermes agents, media services
 - **Hostname**: nuc
 - **Timezone**: America/Chicago
 - **SSH**: `ssh nuc` (192.168.1.222 via tailscale, 1Password SSH agent forwarding)
-- **Deploy**: `hey nuc` from dotfiles repo (uses deploy-rs, builds remotely on NUC)
+- **Deploy**: `hey nuc` from dotfiles repo (syncs worktree, evaluates/builds on NUC)
 - **User**: emiller (password from agenix)
 
 ## Nix Settings
@@ -162,12 +162,12 @@ Located in `hosts/nuc/secrets/`:
 
 ## Deployment
 
-Two mechanisms, both pull from GitHub:
+Two mechanisms:
 
-| Method                | Trigger            | Source                                              |
-| --------------------- | ------------------ | --------------------------------------------------- |
-| `hey nuc`             | Manual (deploy-rs) | Local flake eval → remote build on NUC              |
-| `nixos-upgrade.timer` | Daily 04:40        | `github:edmundmiller/dotfiles#nuc` with `--refresh` |
+| Method                | Trigger     | Source                                              |
+| --------------------- | ----------- | --------------------------------------------------- |
+| `hey nuc`             | Manual      | Synced worktree eval/build on NUC                   |
+| `nixos-upgrade.timer` | Daily 04:40 | `github:edmundmiller/dotfiles#nuc` with `--refresh` |
 
 **Manual rebuild on NUC** (no local clone needed):
 
@@ -200,7 +200,8 @@ du -sh .pi/side-agents/runtime/* 2>/dev/null | sort -h | tail
 
 ## Gotchas
 
-- **Deploy builds remotely**: `hey nuc` evaluates locally but builds on NUC. Large rebuilds (home-assistant, etc.) take time.
+- **No local NUC eval from macOS**: Do not run `nix flake check`, `nix eval .#nixosConfigurations.nuc...`, or `nix build .#nixosConfigurations.nuc...` from Darwin. It hits the known `agent-skills` `x86_64-linux` vs `aarch64-darwin` mismatch. Use `hey nuc-wt build`, `hey nuc dry-activate`, or run `nixos-rebuild` on the NUC.
+- **Deploy builds remotely**: `hey nuc` evaluates and builds on the NUC. Large rebuilds (home-assistant, etc.) take time.
 - **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
 - **`tnote` path is canonicalized**: `~/.local/bin/tnote` points at `~/src/personal/tnote`. No legacy `tn-monorepo` fallback is kept; fix the canonical repo path directly if `tnote` is stale or missing.
 - **Scintillate vault path nuance**: declarative config points Hermes/Scintillate at `/home/hermes/repos/obsidian-vault`, but Docker may show the bind mount as `/home/emiller/obsidian-vault -> /home/emiller/obsidian-vault`. That is expected as long as `docker exec hermes-agent-scintillate realpath /home/hermes/repos/obsidian-vault` resolves to `/home/emiller/obsidian-vault` and `.git` exists there.
