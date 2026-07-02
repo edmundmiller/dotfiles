@@ -45,13 +45,14 @@ once. Coherent batch-style config.
 ```
 default openai-codex/gpt-5.5:medium    # newest general Codex, balanced
 smol    openai-codex/gpt-5.4-mini      # cheapest *usable* Codex
-slow    kilo/anthropic/claude-opus-4.8 # hardest reasoning, no direct equiv
+slow    openai-codex/gpt-5.5:xhigh     # deepest thinking, direct sub
 plan    openai-codex/gpt-5.5:high      # same model, high thinking
 commit  openai-codex/gpt-5.4-mini      # cheap/fast commit messages
 ```
 
 Direct-login providers (Codex on ChatGPT sub, xai-oauth) beat kilo credits for
-the same model. Claude has no direct login here, so `slow` stays on kilo.
+the same model. All roles now route through the direct Codex login; kilo/Claude
+is kept only as a fallback.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
 **ChatGPT-account** Codex login only permits the current generation. Every
