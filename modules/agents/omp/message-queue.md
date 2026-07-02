@@ -42,7 +42,45 @@ once. Coherent batch-style config.
 
 ---
 
-## TODO
+## Theme notes
 
-- **Fix OMP + Herdr theme.** OMP is currently on `theme.dark: titanium` /
-  `theme.light: light`; revisit the palette and align it with Herdr's theme.
+### Light-mode mermaid label bug (fixed 2026-07-02)
+
+**Symptom:** In light mode, mermaid diagram node/edge labels rendered
+near-invisible (light-gray on light background); prose + arrows stayed readable.
+
+**Cause:** `theme.light` was the generic `light` theme, whose node-label color
+resolves to `lightGray #b0b0b0` — washed out on the light card background. The
+terminal (ghostty) runs Catppuccin Latte in light mode, so the palettes were
+also mismatched.
+
+**Fix:** `theme.light = light-catppuccin` (matches ghostty's Latte background).
+`theme.dark = titanium` left unchanged — bug only reproduced in light mode.
+
+**Fallback if labels still wash out:** set `tui.renderMermaid: false` — the raw
+` ```mermaid ` fenced block then prints in normal prose color (always
+readable, no box-art).
+
+**Upstream:** the default `light` theme shipping invisible mermaid labels
+(`#b0b0b0`) is an accessibility bug worth reporting to `can1357`
+(github.com/can1357/oh-my-pi).
+
+### Light theme catalog
+
+omp ships ~40 light themes (set `theme.light` to any of these ids):
+`light-arctic`, `light-aurora-day`, `light-canyon`, `light-catppuccin`,
+`light-cirrus`, `light-coral`, `light-cyberpunk`, `light-dawn`, `light-dunes`,
+`light-eucalyptus`, `light-forest`, `light-frost`, `light-github`,
+`light-glacier`, `light-gruvbox`, `light-haze`, `light-honeycomb`,
+`light-lagoon`, `light-lavender`, `light-meadow`, `light-mint`,
+`light-monochrome`, `light-ocean`, `light-one`, `light-opal`, `light-orchard`,
+`light-paper`, `light-poimandres`, `light-prism`, `light-retro`, `light-sand`,
+`light-savanna`, `light-solarized`, `light-soleil`, `light-sunset`,
+`light-synthwave`, `light-tokyo-night`, `light-wetland`, `light-zenith`, plus
+the neutral `light`. (`omp config set theme.light <id>` — no validation, so
+spelling matters.)
+
+### TODO
+
+- **Align Herdr theme with OMP.** OMP is now `theme.dark: titanium` /
+  `theme.light: light-catppuccin`; revisit Herdr's palette to match.
