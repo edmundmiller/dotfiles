@@ -16,7 +16,7 @@ steeringMode: all
 followUpMode: all
 interruptMode: wait
 tools:
-  discoveryMode: all
+  discoveryMode: mcp-only
 hooks:
   enabled: true
   timeoutMs: 10000
