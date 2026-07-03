@@ -19,6 +19,7 @@
         };
       };
       dev = {
+        nixlang.enable = true;
         node.enable = true;
         node.useFnm = true;
         node.bunGlobalPackages = [
