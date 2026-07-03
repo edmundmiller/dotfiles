@@ -36,10 +36,6 @@ trust_level = "trusted"
 [projects."/Users/edmundmiller/src/seqera/ai/portal-but"]
 trust_level = "trusted"
 
-[mcp_servers.seqera]
-url = "https://mcp.seqera.io/mcp"
-enabled = false
-
 [mcp_servers.fff]
 command = "fff-mcp"
 
