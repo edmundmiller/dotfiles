@@ -5,12 +5,6 @@
     },
     "rocketlane": {
       "enabled": false
-    },
-    "x-docs": {
-      "enabled": false
-    },
-    "xapi": {
-      "enabled": false
     }
   }
 }
