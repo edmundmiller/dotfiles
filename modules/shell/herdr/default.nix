@@ -1011,16 +1011,29 @@ in
                 owner="$1"
                 repo="$2"
                 subdir="''${3:-}"
+                mode="''${4:-required}"
                 spec="$owner/$repo"
                 if [ -n "$subdir" ]; then
                   spec="$spec/$subdir"
                 fi
 
-                if "$herdr_cmd" plugin list --json | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
+                if ! installed_json=$("$herdr_cmd" plugin list --json); then
+                  echo "herdr: error: failed to list plugins before installing $spec" >&2
+                  return 1
+                fi
+
+                if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
                   echo "herdr: $spec plugin already installed"
                 else
                   echo "herdr: installing $spec plugin"
-                  "$herdr_cmd" plugin install "$spec" --yes
+                  if ! install_output=$("$herdr_cmd" plugin install "$spec" --yes 2>&1); then
+                    printf '%s\n' "$install_output" >&2
+                    if [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication"; then
+                      echo "herdr: warning: optional $spec plugin unavailable; continuing" >&2
+                    else
+                      return 1
+                    fi
+                  fi
                 fi
               }
 
@@ -1036,7 +1049,7 @@ in
               install_plugin kkckkc herdr-plugin-gh-workflow
               install_plugin alon-z herdr-command-palette
               install_plugin 0x5c0f herdr-insight
-              install_plugin edmundmiller herdr-which-key
+              install_plugin edmundmiller herdr-which-key "" optional
             '';
 
         home.activation.herdr-agent-integrations =
