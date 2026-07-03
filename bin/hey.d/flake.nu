@@ -24,7 +24,53 @@ def "main upgrade" [] {
   main rebuild
 }
 
-def "main check" [] {
+def path-in-check-scope [file: string, scopes: list<string>] {
+  let normalized_scopes = ($scopes | each {|scope| $scope | str trim | str trim --right --char "/" } | where {|scope| $scope != "" })
+
+  if ($normalized_scopes | is-empty) {
+    true
+  } else {
+    $normalized_scopes | any {|scope| $file == $scope or ($file | str starts-with $"($scope)/") }
+  }
+}
+
+def changed-check-files [
+  --worktree # Include staged, unstaged, and untracked files.
+  ...scopes: string
+] {
+  let ctx = (context)
+  mut files = []
+
+  let upstream_result = (^git -C $ctx.flake_dir rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' | complete)
+  let base_ref = if $upstream_result.exit_code == 0 {
+    $upstream_result.stdout | str trim
+  } else {
+    let origin_main = (^git -C $ctx.flake_dir rev-parse --verify origin/main | complete)
+    if $origin_main.exit_code == 0 { "origin/main" } else { "" }
+  }
+
+  if ($base_ref | is-not-empty) {
+    $files = ($files | append (^git -C $ctx.flake_dir diff --name-only $"($base_ref)...HEAD" | lines))
+  }
+
+  if $worktree {
+    $files = ($files | append (^git -C $ctx.flake_dir diff --name-only --cached | lines))
+    $files = ($files | append (^git -C $ctx.flake_dir diff --name-only | lines))
+    $files = ($files | append (^git -C $ctx.flake_dir ls-files --others --exclude-standard | lines))
+  }
+
+  $files | flatten | where {|file| ($file | str trim) != "" } | uniq | sort | where {|file| path-in-check-scope $file $scopes }
+}
+
+def check-scope-label [scopes: list<string>] {
+  if ($scopes | is-empty) { "changed files" } else { $scopes | str join ", " }
+}
+
+def "main check" [
+  --worktree # Include staged, unstaged, and untracked files in formatting/pre-commit checks.
+  ...paths: string # Optional path scopes for formatting and pre-commit checks.
+] {
+
   let ctx = (context)
   cd $ctx.flake_dir
 
@@ -60,30 +106,48 @@ def "main check" [] {
       $failed = true
     }
 
+    let check_files = (changed-check-files --worktree=$worktree ...$paths)
+    let check_scope = (check-scope-label $paths)
+    let check_files_label = if ($check_files | is-empty) { $"no changed files under ($check_scope)" } else { $"($check_files | length) changed files under ($check_scope)" }
+
     print ""
-    print "==> Running treefmt formatting check..."
-    let treefmt_check = (^nix build $".#checks.($ctx.nix_system).treefmt" --no-link | complete)
-    if $treefmt_check.exit_code == 0 {
-      print "✓ Formatting OK"
+    print $"==> Running treefmt formatting check \(($check_files_label)\)..."
+    if ($check_files | is-empty) {
+      print "✓ Formatting OK (no changed files)"
     } else {
-      print "✗ Formatting check FAILED (run 'nix fmt' to fix)"
-      if (($treefmt_check.stderr | str trim) | is-not-empty) {
-        print -e $treefmt_check.stderr
+      let treefmt_check = (^prek run treefmt --files ...$check_files --no-progress | complete)
+      if $treefmt_check.exit_code == 0 {
+        print "✓ Formatting OK"
+      } else {
+        print "✗ Formatting check FAILED (run 'nix fmt' to fix)"
+        if (($treefmt_check.stdout | str trim) | is-not-empty) {
+          print $treefmt_check.stdout
+        }
+        if (($treefmt_check.stderr | str trim) | is-not-empty) {
+          print -e $treefmt_check.stderr
+        }
+        $failed = true
       }
-      $failed = true
     }
 
     print ""
-    print "==> Running pre-commit hooks check..."
-    let precommit_check = (^nix build $".#checks.($ctx.nix_system).pre-commit" --no-link | complete)
-    if $precommit_check.exit_code == 0 {
-      print "✓ Pre-commit hooks OK"
+    print $"==> Running pre-commit hooks check \(($check_files_label)\)..."
+    if ($check_files | is-empty) {
+      print "✓ Pre-commit hooks OK (no changed files)"
     } else {
-      print "✗ Pre-commit check FAILED"
-      if (($precommit_check.stderr | str trim) | is-not-empty) {
-        print -e $precommit_check.stderr
+      let precommit_check = (^prek run --stage pre-commit --skip treefmt --files ...$check_files --no-progress | complete)
+      if $precommit_check.exit_code == 0 {
+        print "✓ Pre-commit hooks OK"
+      } else {
+        print "✗ Pre-commit check FAILED"
+        if (($precommit_check.stdout | str trim) | is-not-empty) {
+          print $precommit_check.stdout
+        }
+        if (($precommit_check.stderr | str trim) | is-not-empty) {
+          print -e $precommit_check.stderr
+        }
+        $failed = true
       }
-      $failed = true
     }
 
     print ""
