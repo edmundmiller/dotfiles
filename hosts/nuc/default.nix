@@ -1533,6 +1533,7 @@ in
           "thread" # Thread border router via ZBT-2 dongle
           "otbr" # OpenThread Border Router (ZBT-2 Thread radio)
           "xiaomi_miio" # Xiaomi air purifier (zhimi.airpurifier.mb3 x2)
+          "mcp_server" # MCP server (config-flow: add via UI after deploy)
           # Devices set up via local token (manual mode, no cloud).
           # Tokens stored at op://Agents/Xiaomi/{couch,bedroom}_purifier_{ip,token,mac,model}
           # Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor
