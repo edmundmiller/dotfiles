@@ -12,6 +12,28 @@ let
   ompConfigDir = "${config.user.home}/.omp";
   ompAgentDir = "${ompConfigDir}/agent";
   lsp = import ./_lsp.nix { inherit pkgs; };
+  hassMcpAuthHeader = pkgs.writeShellScriptBin "omp-ha-mcp-auth-header" ''
+    set -euo pipefail
+
+    token_path=/run/agenix/ha-hermes-token
+
+    if [ -r "$token_path" ]; then
+      token=$(${pkgs.coreutils}/bin/cat "$token_path")
+    elif [ -e "$token_path" ] && command -v sudo >/dev/null 2>&1; then
+      # The NUC grants passwordless sudo for this root-owned agenix token.
+      token=$(sudo ${pkgs.coreutils}/bin/cat "$token_path")
+    else
+      token=$(
+        ${pkgs.openssh}/bin/ssh \
+          -o BatchMode=yes \
+          -o ConnectTimeout=5 \
+          nuc \
+          "sudo cat /run/agenix/ha-hermes-token"
+      )
+    fi
+
+    printf 'Bearer %s\n' "$token"
+  '';
   ompPackage = pkgs.stdenvNoCC.mkDerivation {
     name = "${cfg.package.pname or "omp"}-isolated";
     dontUnpack = true;
@@ -68,6 +90,7 @@ in
   config = mkIf cfg.enable {
     user.packages = [
       (lib.hiPrio ompPackage)
+      hassMcpAuthHeader
     ];
 
     home.file.".omp/agent/config.yml" = {
