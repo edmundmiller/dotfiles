@@ -1,10 +1,18 @@
 {
+  "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json",
   "mcpServers": {
     "docs-langchain": {
       "enabled": false
     },
     "rocketlane": {
       "enabled": false
+    },
+    "hass": {
+      "type": "http",
+      "url": "https://homeassistant.cinnamon-rooster.ts.net/api/mcp",
+      "headers": {
+        "Authorization": "!omp-ha-mcp-auth-header"
+      }
     }
   }
 }
