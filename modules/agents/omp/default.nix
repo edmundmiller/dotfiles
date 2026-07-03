@@ -85,5 +85,29 @@ in
 
     home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
       "${configDir}/pi/pi-permission-system.jsonc";
+
+    home-manager.users.${config.user.name} =
+      { lib, ... }:
+      {
+        home.activation.omp-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${pkgs.python3}/bin/python3 <<'PY'
+          import pathlib
+          import sqlite3
+
+          db_path = pathlib.Path.home() / ".omp" / "agent" / "agent.db"
+          if db_path.exists():
+              try:
+                  conn = sqlite3.connect(db_path)
+                  try:
+                      conn.execute("delete from cache where key like 'mcp_tools:%'")
+                      conn.commit()
+                  finally:
+                      conn.close()
+              except Exception:
+                  pass
+
+          PY
+        '';
+      };
   };
 }
