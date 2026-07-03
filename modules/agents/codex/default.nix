@@ -105,9 +105,12 @@ in
               "",
               content,
           )
-          server_name = "code" + "graph"
-          pattern = re.compile(r'(?ms)^\[mcp_servers\.' + re.escape(server_name) + r'\]\n.*?(?=^\[|\Z)')
-          next_content = pattern.sub("", content).rstrip() + "\n"
+          stale_mcp_servers = ["code" + "graph", "seqera", "node_repl"]
+          next_content = content
+          for server_name in stale_mcp_servers:
+              pattern = re.compile(r'(?ms)^\[mcp_servers\.' + re.escape(server_name) + r'(?:\.[^\]]+)?\]\n.*?(?=^\[(?!mcp_servers\.' + re.escape(server_name) + r'(?:\.|\]))|\Z)')
+              next_content = pattern.sub("", next_content)
+          next_content = next_content.rstrip() + "\n"
           if next_content != original_content:
               path.write_text(next_content, encoding="utf-8")
           PY

@@ -21,6 +21,9 @@ is linked from `config/omp/` and explicitly listed in `config.yml`; it
 blocks OMP tool calls that target `config/pi/pi-permission-system.jsonc`.
 Other OMP runtime state remains mutable and OMP-owned.
 
+The module clears OMP's cached MCP tool metadata during activation so removed
+servers do not reappear from `agent.db`.
+
 Enable with:
 
 ```nix
