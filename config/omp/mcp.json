@@ -8,11 +8,8 @@
       "enabled": false
     },
     "hass": {
-      "type": "http",
-      "url": "https://homeassistant.cinnamon-rooster.ts.net/api/mcp",
-      "headers": {
-        "Authorization": "!omp-ha-mcp-auth-header"
-      }
+      "command": "omp-ha-mcp-server",
+      "timeout": 60000
     }
   }
 }

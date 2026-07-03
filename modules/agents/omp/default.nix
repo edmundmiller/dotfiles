@@ -12,7 +12,7 @@ let
   ompConfigDir = "${config.user.home}/.omp";
   ompAgentDir = "${ompConfigDir}/agent";
   lsp = import ./_lsp.nix { inherit pkgs; };
-  hassMcpAuthHeader = pkgs.writeShellScriptBin "omp-ha-mcp-auth-header" ''
+  hassMcpServer = pkgs.writeShellScriptBin "omp-ha-mcp-server" ''
     set -euo pipefail
 
     token_path=/run/agenix/ha-hermes-token
@@ -32,7 +32,33 @@ let
       )
     fi
 
-    printf 'Bearer %s\n' "$token"
+    tmp_dir=$(mktemp -d)
+    trap 'rm -rf "$tmp_dir"' EXIT
+
+    umask 077
+    config_path="$tmp_dir/mcporter.json"
+    token_file="$tmp_dir/ha-token"
+    printf '%s' "$token" > "$token_file"
+    ${pkgs.jq}/bin/jq -n \
+      --rawfile token "$token_file" \
+      '{
+        mcpServers: {
+          hass: {
+            type: "http",
+            url: "https://homeassistant.cinnamon-rooster.ts.net/api/mcp",
+            headers: {
+              Authorization: ("Bearer " + ($token | sub("\n$"; "")))
+            }
+          }
+        }
+      }' > "$config_path"
+    rm -f "$token_file"
+
+    ${pkgs.llm-agents.mcporter}/bin/mcporter \
+      --config "$config_path" \
+      serve \
+      --servers hass \
+      --stdio
   '';
   ompPackage = pkgs.stdenvNoCC.mkDerivation {
     name = "${cfg.package.pname or "omp"}-isolated";
@@ -90,7 +116,7 @@ in
   config = mkIf cfg.enable {
     user.packages = [
       (lib.hiPrio ompPackage)
-      hassMcpAuthHeader
+      hassMcpServer
     ];
 
     home.file.".omp/agent/config.yml" = {
