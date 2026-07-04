@@ -9,8 +9,13 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.ssh;
-  # onePassPath = "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
-  onePassPath = "~/.1password/agent.sock";
+  # macOS: 1Password only exposes the agent under Group Containers (spaces
+  # require quoting). Linux: ~/.1password/agent.sock is the 1P convention.
+  onePassPath =
+    if isDarwin then
+      ''"~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"''
+    else
+      "~/.1password/agent.sock";
   authorizedKeys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC edmundmiller" # New Key
     "no-touch-required sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIDvVosAjBisOM6GMdSjkxDUQpaf0LX8bmT+T/c7NX2AdAAAACnNzaDpnaXRodWI= edmundmiller"
