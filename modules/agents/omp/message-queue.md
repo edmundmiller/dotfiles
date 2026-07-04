@@ -84,25 +84,18 @@ catalog id.
 
 ## Theme notes
 
-### Light-mode mermaid label bug (fixed 2026-07-02)
+### Light-mode contrast fixes
 
-**Symptom:** In light mode, mermaid diagram node/edge labels rendered
-near-invisible (light-gray on light background); prose + arrows stayed readable.
+**Mermaid labels (fixed 2026-07-02):** the generic `light` theme used
+`lightGray #b0b0b0` for node labels, washed out on light cards. Use a
+Catppuccin-based light theme instead; keep `tui.renderMermaid` enabled.
 
-**Cause:** `theme.light` was the generic `light` theme, whose node-label color
-resolves to `lightGray #b0b0b0` — washed out on the light card background. The
-terminal (ghostty) runs Catppuccin Latte in light mode, so the palettes were
-also mismatched.
-
-**Fix:** `theme.light = light-catppuccin` (matches ghostty's Latte background).
-
-**Fallback if labels still wash out:** set `tui.renderMermaid: false` — the raw
-` ```mermaid ` fenced block then prints in normal prose color (always
-readable, no box-art).
-
-**Upstream:** the default `light` theme shipping invisible mermaid labels
-(`#b0b0b0`) is an accessibility bug worth reporting to `can1357`
-(github.com/can1357/oh-my-pi).
+**Markdown/status text (fixed 2026-07-04):** upstream `light-catppuccin`
+keeps several decorative tokens too pale on Ghostty Latte (inline code,
+link URLs, list bullets, dim/tool output, and some status-line accents).
+Dotfiles installs a custom `light-catppuccin-readable` theme under
+`~/.omp/agent/themes/` and sets `theme.light` to that id. It preserves the
+Latte base/background while darkening low-contrast foreground tokens.
 
 ### Light theme catalog
 
@@ -125,8 +118,8 @@ OMP now matches Herdr and ghostty on Catppuccin, both modes:
 
 - `theme.dark = dark-catppuccin` (Mocha — `base #1e1e2e` / `text #cdd6f4`).
   Matches Herdr's hunk plugin (`catppuccin-mocha`) and ghostty dark.
-- `theme.light = light-catppuccin` (Latte). Matches Herdr's `catppuccin-latte`
-  and ghostty light.
+- `theme.light = light-catppuccin-readable` (custom Latte variant). Matches
+  Ghostty/Herdr Latte backgrounds while raising light-mode text contrast.
 
 Herdr's own UI theme is `name = "terminal"` (inherits the terminal palette),
 and its dev-layout maps macOS dark→mocha / light→latte
