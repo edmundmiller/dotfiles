@@ -129,6 +129,11 @@ in
       force = true;
     };
 
+    home.file.".omp/agent/themes/light-catppuccin-readable.json" = {
+      source = "${configDir}/omp/themes/light-catppuccin-readable.json";
+      force = true;
+    };
+
     home.file.".omp/agent/extensions/permission-policy-guard".source =
       "${configDir}/omp/extensions/permission-policy-guard";
 
