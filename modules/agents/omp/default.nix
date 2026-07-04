@@ -124,11 +124,6 @@ in
       force = true;
     };
 
-    home.file.".omp/agent/mcp.json" = {
-      source = "${configDir}/omp/mcp.json";
-      force = true;
-    };
-
     home.file.".omp/agent/lsp.json" = {
       source = lsp.configFile;
       force = true;
