@@ -3,9 +3,7 @@ providers:
 symbolPreset: nerd
 theme:
   dark: dark-catppuccin
-  light: light-catppuccin
-tui:
-  renderMermaid: false
+  light: light-catppuccin-readable
 setupVersion: 1
 modelRoles:
   default: openai-codex/gpt-5.5:medium
