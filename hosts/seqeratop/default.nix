@@ -108,6 +108,7 @@
           smolModel = null;
         };
         opencode.enable = true;
+        hermes.enable = false; # Managed manually
       };
 
       services = {
