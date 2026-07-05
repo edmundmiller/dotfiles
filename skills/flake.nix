@@ -230,6 +230,12 @@
           "opencode"
           "enable"
         ];
+        ompEnabled = moduleEnabled [
+          "modules"
+          "agents"
+          "omp"
+          "enable"
+        ];
         hermesEnabled =
           moduleEnabled [
             "modules"
@@ -243,7 +249,7 @@
             "enable"
           ];
         targetEnabled = {
-          agents = codexEnabled || piEnabled || opencodeEnabled || hermesEnabled;
+          agents = codexEnabled || piEnabled || opencodeEnabled || hermesEnabled || ompEnabled;
           codex = codexEnabled;
           pi = piEnabled;
           claude = claudeEnabled;
