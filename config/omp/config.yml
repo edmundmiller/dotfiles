@@ -6,6 +6,15 @@ theme:
   light: light-catppuccin-readable
 statusLine:
   preset: minimal
+compaction:
+  strategy: snapcompact
+  supersedeReads: true
+  dropUseless: true
+  keepRecentTokens: 20000
+  autoContinue: true
+snapcompact:
+  systemPrompt: none
+  toolResults: false
 setupVersion: 1
 modelRoles:
   default: openai-codex/gpt-5.5:medium
