@@ -91,6 +91,7 @@
           enable = true;
           smolModel = "xai-oauth/grok-composer-2.5-fast";
           dailyIntrospection.enable = true;
+          dailyIntrospection.commit.enable = true;
         };
         opencode.enable = true;
       };
