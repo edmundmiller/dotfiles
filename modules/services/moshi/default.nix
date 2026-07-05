@@ -50,6 +50,17 @@ let
     '';
   };
 
+  # Moshi hooks have two paths:
+  #
+  # - Upstream targets below are installed by `moshi-hook install --target ...`.
+  #   autoTargets keeps enabled local agent modules wired without repeating
+  #   host-specific target lists.
+  # - Custom targets live here when the upstream installer has no target for
+  #   that agent yet. Keep those idempotent and merge into mutable user config
+  #   instead of overwriting agent-owned settings.
+  #
+  # Darwin runs the Homebrew-managed moshi-hook; Linux installs the pinned Nix
+  # moshiHook package and runs it from the user systemd daemon.
   supportedHookTargets = [
     "claude"
     "codex"
@@ -66,9 +77,9 @@ let
     ++ optionals config.modules.agents.pi.enable [ "pi" ]
   );
 
-  # Droid is not an upstream `moshi-hook install --target` value. It uses
-  # Factory's Claude-style hooks, so install it by merging Moshi commands into
-  # Droid's mutable hook config when the Kittylitter Droid bridge is enabled.
+  # Droid is custom because `moshi-hook install --target` does not expose a
+  # Droid target. Droid accepts Claude-style hooks, so merge Moshi commands into
+  # Factory's hook config when the Kittylitter Droid bridge is enabled.
   droidHookEnabled =
     config.modules.services.kittylitter.enable
     && elem "droid" config.modules.services.kittylitter.enabledAgents;
