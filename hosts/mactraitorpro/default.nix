@@ -93,6 +93,8 @@
           dailyIntrospection.enable = true;
           dailyIntrospection.commit.enable = true;
           skilloptSleep.enable = true;
+          skilloptSleep.maxSessions = 5;
+          skilloptSleep.maxTasks = 1;
         };
         opencode.enable = true;
       };
