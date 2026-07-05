@@ -917,6 +917,7 @@ in
           out = upsert_worktree_directory(out)
           out = upsert_simple_section(out, "session", {"resume_agents_on_restore": "true"})
           out = upsert_simple_section(out, "experimental", {"pane_history": "true"})
+          out = upsert_simple_section(out, "ui", {"agent_panel_sort": '"priority"'})
           out = replace_section(out, "[theme]", [f'name = "{theme_name}"'])
           out = replace_section(
               out,
