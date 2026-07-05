@@ -164,20 +164,38 @@ let
 
     start = day.timestamp()
     end = (day + timedelta(days=1)).timestamp()
-    root = Path.home() / ".omp" / "agent" / "sessions"
+    home = Path.home()
+    sources = [
+        ("omp", "jsonl", home / ".omp" / "agent" / "sessions", ("*.jsonl",)),
+        ("codex", "jsonl", home / ".codex" / "sessions", ("*.jsonl",)),
+        ("codex-archived", "jsonl", home / ".codex" / "archived_sessions", ("*.jsonl",)),
+        ("claude", "jsonl", home / ".claude" / "sessions", ("*.jsonl",)),
+        ("claude-projects", "jsonl", home / ".claude" / "projects", ("*.jsonl",)),
+        ("pi", "jsonl", home / ".pi" / "agent" / "sessions", ("*.jsonl",)),
+        ("amp", "json", home / ".codex" / "amp-bridge", ("amp-threads.json", "amp-transcripts/*.json")),
+        ("amp", "jsonl", home / ".codex" / "amp-bridge", ("amp-transcripts/*.jsonl",)),
+        ("droid", "jsonl", home / ".droid" / "sessions", ("*.jsonl",)),
+        ("droid", "jsonl", home / ".config" / "droid" / "sessions", ("*.jsonl",)),
+    ]
 
     sessions = []
-    if root.exists():
-        for path in root.rglob("*.jsonl"):
-            stat = path.stat()
-            if start <= stat.st_mtime < end:
-                sessions.append({
-                    "path": str(path),
-                    "bytes": stat.st_size,
-                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                })
-
-    sessions.sort(key=lambda item: item["path"])
+    for client, file_format, root, patterns in sources:
+        if not root.exists():
+            continue
+        for pattern in patterns:
+            for path in root.rglob(pattern):
+                if not path.is_file():
+                    continue
+                stat = path.stat()
+                if start <= stat.st_mtime < end:
+                    sessions.append({
+                        "client": client,
+                        "format": file_format,
+                        "path": str(path),
+                        "bytes": stat.st_size,
+                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    })
+    sessions.sort(key=lambda item: (item["client"], item["path"]))
     template = Path(template_path).read_text(encoding="utf-8")
     prompt = template.replace("{{DATE}}", day.strftime("%Y-%m-%d"))
     prompt += "\n\n## Session manifest\n\n"

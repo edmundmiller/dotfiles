@@ -1,12 +1,14 @@
-# OMP Thread Introspection
+# Agent Thread Introspection
 
-Analyze OMP/Codex sessions for `{{DATE}}` and improve the agent system only where the evidence supports it.
+Analyze OMP, Codex, Claude Code, Pi, Amp, Droid, and other agent sessions for `{{DATE}}`; improve the shared agent system only where the evidence supports it.
 
 ## Inputs
 
 The script appends a JSON session manifest after this prompt. Each item has:
 
-- `path`: OMP session JSONL path
+- `client`: source agent/runtime, such as `omp`, `codex`, `claude`, `pi`, `amp`, or `droid`
+- `format`: underlying file format, such as `jsonl` or `json`
+- `path`: session/transcript path
 - `bytes`: file size
 - `modified`: local modification timestamp
 
@@ -15,7 +17,7 @@ Read only the sessions needed to establish patterns. Filter at the source: prefe
 ## Goals
 
 1. Extract durable user preferences and project decisions.
-2. Find where OMP/Codex struggled, looped, repeated work, ignored available tools, overbuilt, under-verified, or violated repo conventions.
+2. Find where agents struggled, looped, repeated work, ignored available tools, overbuilt, under-verified, or violated repo conventions.
 3. Update skills, rules, or prompts only when a change would prevent recurrence.
 4. Keep changes small, concrete, and tied to observed failures.
 5. Prefer existing files over new files.
