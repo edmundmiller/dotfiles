@@ -92,6 +92,7 @@
           smolModel = "xai-oauth/grok-composer-2.5-fast";
           dailyIntrospection.enable = true;
           dailyIntrospection.commit.enable = true;
+          skilloptSleep.enable = true;
         };
         opencode.enable = true;
       };

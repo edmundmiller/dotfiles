@@ -67,6 +67,12 @@ let
     hash = "sha256-k7Bh17ULoYnlT13u5z3Kvm/iRK7AA0YzJK4ZGNcY+LY=";
   };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
+  skilloptSleepSource = pkgs.fetchFromGitHub {
+    owner = "microsoft";
+    repo = "SkillOpt";
+    rev = "e4ea6a6771e797ef820cdd8bfea64c57e0481065";
+    hash = "sha256-WVvnOO5B0pUvqmp1GNz3KpFoMkm8z/MPKevZz0jMleQ=";
+  };
   ompPackage = pkgs.stdenvNoCC.mkDerivation {
     name = "${cfg.package.pname or "omp"}-isolated";
     dontUnpack = true;
@@ -96,6 +102,26 @@ let
     '';
     meta = cfg.package.meta or { };
   };
+  skilloptSleepArgs = [
+    "run"
+    "--backend"
+    cfg.skilloptSleep.backend
+    "--max-sessions"
+    (toString cfg.skilloptSleep.maxSessions)
+    "--max-tasks"
+    (toString cfg.skilloptSleep.maxTasks)
+    "--progress"
+  ]
+  ++ cfg.skilloptSleep.extraArgs;
+  skilloptSleepNightly = pkgs.writeShellScriptBin "omp-skillopt-sleep-nightly" ''
+    set -euo pipefail
+
+    export HOME=${lib.escapeShellArg config.user.home}
+    export SKILLOPT_SLEEP_REPO=${lib.escapeShellArg "${skilloptSleepSource}"}
+
+    cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
+    ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-omp.py"} ${lib.escapeShellArgs skilloptSleepArgs}
+  '';
   threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
   threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
     set -euo pipefail
@@ -344,6 +370,15 @@ in
       };
       push.enable = mkBoolOpt false;
     };
+    skilloptSleep = {
+      enable = mkBoolOpt false;
+      backend = mkOpt types.str "codex";
+      hour = mkOpt types.int 5;
+      minute = mkOpt types.int 15;
+      maxSessions = mkOpt types.int 20;
+      maxTasks = mkOpt types.int 5;
+      extraArgs = mkOpt (types.listOf types.str) [ ];
+    };
   };
 
   config = mkIf cfg.enable {
@@ -351,7 +386,8 @@ in
       (lib.hiPrio ompPackage)
       hassMcpServer
     ]
-    ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection;
+    ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection
+    ++ lib.optional cfg.skilloptSleep.enable skilloptSleepNightly;
 
     home.file.".omp/agent/config.yml" = {
       source = "${configDir}/omp/config.yml";
@@ -373,22 +409,41 @@ in
     home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
       "${configDir}/pi/pi-permission-system.jsonc";
 
-    launchd.user.agents = optionalAttrs (isDarwin && cfg.dailyIntrospection.enable) {
-      omp-thread-introspection = {
-        command = "${threadIntrospection}/bin/omp-thread-introspection";
-        serviceConfig = {
-          StartCalendarInterval = {
-            Hour = cfg.dailyIntrospection.hour;
-            Minute = cfg.dailyIntrospection.minute;
+    launchd.user.agents =
+      optionalAttrs (isDarwin && cfg.dailyIntrospection.enable) {
+        omp-thread-introspection = {
+          command = "${threadIntrospection}/bin/omp-thread-introspection";
+          serviceConfig = {
+            StartCalendarInterval = {
+              Hour = cfg.dailyIntrospection.hour;
+              Minute = cfg.dailyIntrospection.minute;
+            };
+            StandardOutPath = "${config.user.home}/Library/Logs/omp-thread-introspection.log";
+            StandardErrorPath = "${config.user.home}/Library/Logs/omp-thread-introspection.err.log";
+            EnvironmentVariables = {
+              HOME = config.user.home;
+            };
           };
-          StandardOutPath = "${config.user.home}/Library/Logs/omp-thread-introspection.log";
-          StandardErrorPath = "${config.user.home}/Library/Logs/omp-thread-introspection.err.log";
-          EnvironmentVariables = {
-            HOME = config.user.home;
+        };
+      }
+      // optionalAttrs (isDarwin && cfg.skilloptSleep.enable) {
+        omp-skillopt-sleep = {
+          command = "${skilloptSleepNightly}/bin/omp-skillopt-sleep-nightly";
+          serviceConfig = {
+            StartCalendarInterval = {
+              Hour = cfg.skilloptSleep.hour;
+              Minute = cfg.skilloptSleep.minute;
+            };
+            StandardOutPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep.log";
+            StandardErrorPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep.err.log";
+            EnvironmentVariables = {
+              HOME = config.user.home;
+              PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+              SKILLOPT_SLEEP_REPO = "${skilloptSleepSource}";
+            };
           };
         };
       };
-    };
 
     home-manager.users.${config.user.name} =
       { lib, ... }:
