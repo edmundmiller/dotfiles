@@ -22,7 +22,6 @@ hooks:
   timeoutMs: 10000
 extensions:
   - ~/.omp/agent/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js
-  - ~/.omp/agent/extensions/pi-herdr/extensions/herdr.ts
 memory:
   backend: mnemopi
 mnemopi:
