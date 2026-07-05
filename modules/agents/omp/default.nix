@@ -172,6 +172,7 @@ let
         ("claude", "jsonl", home / ".claude" / "sessions", ("*.jsonl",)),
         ("claude-projects", "jsonl", home / ".claude" / "projects", ("*.jsonl",)),
         ("pi", "jsonl", home / ".pi" / "agent" / "sessions", ("*.jsonl",)),
+        ("opencode", "sqlite", home / ".local" / "share" / "opencode", ("opencode.db",)),
         ("amp", "json", home / ".codex" / "amp-bridge", ("amp-threads.json", "amp-transcripts/*.json")),
         ("amp", "jsonl", home / ".codex" / "amp-bridge", ("amp-transcripts/*.jsonl",)),
         ("droid", "jsonl", home / ".droid" / "sessions", ("*.jsonl",)),

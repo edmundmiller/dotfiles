@@ -1,13 +1,13 @@
 # Agent Thread Introspection
 
-Analyze OMP, Codex, Claude Code, Pi, Amp, Droid, and other agent sessions for `{{DATE}}`; improve the shared agent system only where the evidence supports it.
+Analyze OMP, Codex, Claude Code, Pi, OpenCode, Amp, Droid, and other agent sessions for `{{DATE}}`; improve the shared agent system only where the evidence supports it.
 
 ## Inputs
 
 The script appends a JSON session manifest after this prompt. Each item has:
 
-- `client`: source agent/runtime, such as `omp`, `codex`, `claude`, `pi`, `amp`, or `droid`
-- `format`: underlying file format, such as `jsonl` or `json`
+- `client`: source agent/runtime, such as `omp`, `codex`, `claude`, `pi`, `opencode`, `amp`, or `droid`
+- `format`: underlying file format, such as `jsonl`, `json`, or `sqlite`
 - `path`: session/transcript path
 - `bytes`: file size
 - `modified`: local modification timestamp
