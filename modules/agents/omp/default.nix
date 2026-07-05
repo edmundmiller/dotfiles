@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -89,6 +90,60 @@ let
     '';
     meta = cfg.package.meta or { };
   };
+  threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
+  threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
+    set -euo pipefail
+    cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
+
+    date_arg="''${1:-}"
+    prompt_file="$(${pkgs.coreutils}/bin/mktemp)"
+    trap 'rm -f "$prompt_file"' EXIT
+
+    ${pkgs.python3}/bin/python3 - "$date_arg" ${lib.escapeShellArg threadIntrospectionPrompt} "$prompt_file" <<'PY'
+    from datetime import datetime, timedelta
+    from pathlib import Path
+    import json
+    import sys
+
+    date_arg, template_path, prompt_path = sys.argv[1:4]
+    if date_arg:
+        day = datetime.strptime(date_arg, "%Y-%m-%d")
+    else:
+        day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+
+    start = day.timestamp()
+    end = (day + timedelta(days=1)).timestamp()
+    root = Path.home() / ".omp" / "agent" / "sessions"
+
+    sessions = []
+    if root.exists():
+        for path in root.rglob("*.jsonl"):
+            stat = path.stat()
+            if start <= stat.st_mtime < end:
+                sessions.append({
+                    "path": str(path),
+                    "bytes": stat.st_size,
+                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                })
+
+    sessions.sort(key=lambda item: item["path"])
+    template = Path(template_path).read_text(encoding="utf-8")
+    prompt = template.replace("{{DATE}}", day.strftime("%Y-%m-%d"))
+    prompt += "\n\n## Session manifest\n\n"
+    prompt += json.dumps(sessions, indent=2, sort_keys=True)
+    prompt += "\n"
+    Path(prompt_path).write_text(prompt, encoding="utf-8")
+    PY
+
+    prompt="$(${pkgs.coreutils}/bin/cat "$prompt_file")"
+    exec ${ompPackage}/bin/omp \
+      --model ${lib.escapeShellArg cfg.dailyIntrospection.model} \
+      --no-session \
+      --max-time ${toString cfg.dailyIntrospection.maxTimeSeconds} \
+      --tools=read,grep,glob,edit,write \
+      --approval-mode yolo \
+      -p "$prompt"
+  '';
 in
 {
   options.modules.agents.omp = {
@@ -111,13 +166,21 @@ in
         stay identical across hosts.
       '';
     };
+    dailyIntrospection = {
+      enable = mkBoolOpt false;
+      model = mkOpt types.str "openai-codex/gpt-5.5:high";
+      hour = mkOpt types.int 4;
+      minute = mkOpt types.int 30;
+      maxTimeSeconds = mkOpt types.int 900;
+    };
   };
 
   config = mkIf cfg.enable {
     user.packages = [
       (lib.hiPrio ompPackage)
       hassMcpServer
-    ];
+    ]
+    ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection;
 
     home.file.".omp/agent/config.yml" = {
       source = "${configDir}/omp/config.yml";
@@ -141,6 +204,23 @@ in
 
     home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
       "${configDir}/pi/pi-permission-system.jsonc";
+
+    launchd.user.agents = optionalAttrs (isDarwin && cfg.dailyIntrospection.enable) {
+      omp-thread-introspection = {
+        command = "${threadIntrospection}/bin/omp-thread-introspection";
+        serviceConfig = {
+          StartCalendarInterval = {
+            Hour = cfg.dailyIntrospection.hour;
+            Minute = cfg.dailyIntrospection.minute;
+          };
+          StandardOutPath = "${config.user.home}/Library/Logs/omp-thread-introspection.log";
+          StandardErrorPath = "${config.user.home}/Library/Logs/omp-thread-introspection.err.log";
+          EnvironmentVariables = {
+            HOME = config.user.home;
+          };
+        };
+      };
+    };
 
     home-manager.users.${config.user.name} =
       { lib, ... }:
