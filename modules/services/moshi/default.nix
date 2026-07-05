@@ -66,6 +66,9 @@ let
     ++ optionals config.modules.agents.pi.enable [ "pi" ]
   );
 
+  # Droid is not an upstream `moshi-hook install --target` value. It uses
+  # Factory's Claude-style hooks, so install it by merging Moshi commands into
+  # Droid's mutable hook config when the Kittylitter Droid bridge is enabled.
   droidHookEnabled =
     config.modules.services.kittylitter.enable
     && elem "droid" config.modules.services.kittylitter.enabledAgents;
@@ -94,8 +97,10 @@ in
       enable = mkBoolOpt true;
       autoTargets.enable = mkBoolOpt true;
       extraTargets = mkOpt' (types.listOf (types.enum supportedHookTargets)) [ ] ''
-        Additional moshi-hook targets to install on this host. Enabled agent
-        modules are discovered automatically when autoTargets is enabled.
+        Additional upstream moshi-hook install targets to install on this host.
+        Enabled agent modules are discovered automatically when autoTargets is
+        enabled. Droid is handled separately because moshi-hook does not expose
+        it as an install target.
       '';
     };
 
