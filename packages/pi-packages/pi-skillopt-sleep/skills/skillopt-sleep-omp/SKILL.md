@@ -49,25 +49,25 @@ Run from the project whose memory/skills should evolve:
 
 ```bash
 # Safe smoke check, no proposal staged
-python skills/catalog/skillopt-sleep-omp/scripts/skillopt-sleep-omp.py dry-run \
+/skillopt-sleep dry-run \
   --backend mock --max-sessions 5 --max-tasks 3 --progress
 
 # Full cycle; stages a proposal only
-python skills/catalog/skillopt-sleep-omp/scripts/skillopt-sleep-omp.py run \
+/skillopt-sleep run \
   --backend codex --max-sessions 10 --max-tasks 5 --progress
 
 # Inspect staged proposals and history
-python skills/catalog/skillopt-sleep-omp/scripts/skillopt-sleep-omp.py status
+/skillopt-sleep status
 
 # Adopt only after explicit review/approval
-python skills/catalog/skillopt-sleep-omp/scripts/skillopt-sleep-omp.py adopt
+/skillopt-sleep adopt
 
 # Nightly wrapper schedule; this installs cron for the OMP wrapper, not the
 # upstream bare `python -m skillopt_sleep run`.
-python skills/catalog/skillopt-sleep-omp/scripts/skillopt-sleep-omp.py schedule \
+/skillopt-sleep schedule \
   --hour 3 --minute 17 --backend codex --max-sessions 10 --max-tasks 5
 
-python skills/catalog/skillopt-sleep-omp/scripts/skillopt-sleep-omp.py unschedule
+/skillopt-sleep unschedule
 ```
 
 Actions are `status`, `harvest`, `dry-run`, `run`, `adopt`, `schedule`, and
@@ -78,6 +78,8 @@ Other actions pass through to upstream `python -m skillopt_sleep` with
 such as `--target-skill-path`, `--tasks-file`, `--backend`, `--model`,
 `--edit-budget`, `--lookback-hours`, `--max-sessions`, `--max-tasks`,
 `--progress`, and `--json` pass through unchanged.
+
+Slash command usage is `/skillopt-sleep <action> [flags...]`; the extension also exposes the `skillopt_sleep_omp` tool for structured calls.
 
 Wrapper-only flags:
 

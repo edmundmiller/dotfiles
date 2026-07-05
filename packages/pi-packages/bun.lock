@@ -181,6 +181,20 @@
         "@sinclair/typebox": "*",
       },
     },
+    "pi-skillopt-sleep": {
+      "name": "pi-skillopt-sleep",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@mariozechner/pi-coding-agent": "*",
+        "@sinclair/typebox": "*",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.0.0",
+      },
+      "peerDependencies": {
+        "@mariozechner/pi-coding-agent": "*",
+        "@sinclair/typebox": "*",
+      },
+    },
     "pi-xurl": {
       "name": "pi-xurl",
       "version": "0.1.0",
@@ -984,6 +998,8 @@
     "pi-prompt-stash": ["pi-prompt-stash@workspace:pi-prompt-stash"],
 
     "pi-qmd": ["pi-qmd@workspace:pi-qmd"],
+
+    "pi-skillopt-sleep": ["pi-skillopt-sleep@workspace:pi-skillopt-sleep"],
 
     "pi-xurl": ["pi-xurl@workspace:pi-xurl"],
 
