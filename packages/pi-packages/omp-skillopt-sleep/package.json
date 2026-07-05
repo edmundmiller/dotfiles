@@ -1,5 +1,5 @@
 {
-  "name": "pi-skillopt-sleep",
+  "name": "omp-skillopt-sleep",
   "version": "0.1.0",
   "description": "OMP extension for running Microsoft SkillOpt-Sleep over local OMP sessions.",
   "type": "module",
