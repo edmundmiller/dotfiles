@@ -20,6 +20,18 @@ Read only the sessions needed to establish patterns. Filter at the source: prefe
 4. Keep changes small, concrete, and tied to observed failures.
 5. Prefer existing files over new files.
 
+## Memory and skill boundary
+
+Keep memories and skills separate.
+
+- Memories store user-specific facts, preferences, names, paths, hosts, secrets, accounts, and project history.
+- Skills store reusable procedures that should remain useful without private context.
+- Do not copy session text, memory extracts, personal identifiers, machine names, account names, secret paths, home paths, private URLs, or one-off user preferences into skills.
+- Convert a repeated failure into a generic procedure. Example: write "verify the host before host-specific commands", not "on HOSTNAME...".
+- If a durable preference belongs in memory, report it; do not encode it in a skill unless it is a general workflow rule.
+
+Before and after editing any skill, scan the changed skill text for personal data. Report only counts, file paths, rule names, and line numbers; do not quote matched values.
+
 ## Edit policy
 
 Allowed targets:
