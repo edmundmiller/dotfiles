@@ -19,6 +19,9 @@ teal = "#179299"
 peach = "#fe640b"
 mauve = "#8839ef"
 
+[ui]
+agent_panel_sort = "priority"
+
 [ui.toast]
 delivery = "herdr"
 
