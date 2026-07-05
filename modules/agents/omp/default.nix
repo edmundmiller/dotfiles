@@ -136,6 +136,8 @@ in
 
     home.file.".omp/agent/extensions/permission-policy-guard".source =
       "${configDir}/omp/extensions/permission-policy-guard";
+    home.file.".omp/agent/extensions/pi-herdr".source =
+      "${config.dotfiles.dir}/packages/pi-packages/pi-herdr";
 
     home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
       "${configDir}/pi/pi-permission-system.jsonc";
