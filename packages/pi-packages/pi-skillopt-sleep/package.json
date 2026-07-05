@@ -1,0 +1,39 @@
+{
+  "name": "pi-skillopt-sleep",
+  "version": "0.1.0",
+  "description": "OMP extension for running Microsoft SkillOpt-Sleep over local OMP sessions.",
+  "type": "module",
+  "keywords": [
+    "omp-extension",
+    "pi-extension",
+    "skillopt",
+    "sleep",
+    "coding-agent"
+  ],
+  "license": "MIT",
+  "author": "Edmund Miller",
+  "omp": {
+    "extensions": [
+      "./extensions/skillopt-sleep.ts"
+    ]
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/skillopt-sleep.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
+}
