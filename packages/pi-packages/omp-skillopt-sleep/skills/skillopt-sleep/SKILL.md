@@ -1,5 +1,5 @@
 ---
-name: skillopt-sleep-omp
+name: skillopt-sleep
 description: Use when the user wants OMP to run Microsoft SkillOpt-Sleep, learn from past OMP sessions, review or adopt staged skill improvements, or schedule an offline sleep/dream self-improvement cycle.
 ---
 
