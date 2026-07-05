@@ -66,7 +66,7 @@ let
     url = "https://registry.npmjs.org/@ogulcancelik/pi-herdr/-/pi-herdr-0.2.5.tgz";
     hash = "sha256-k7Bh17ULoYnlT13u5z3Kvm/iRK7AA0YzJK4ZGNcY+LY=";
   };
-  skilloptSleepPlugin = ../../../packages/pi-packages/pi-skillopt-sleep;
+  skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
   ompPackage = pkgs.stdenvNoCC.mkDerivation {
     name = "${cfg.package.pname or "omp"}-isolated";
     dontUnpack = true;
@@ -398,6 +398,7 @@ in
         '';
 
         home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${ompPackage}/bin/omp plugin uninstall pi-skillopt-sleep --json >/dev/null 2>&1 || true
           ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${skilloptSleepPlugin}"} --force --json >/dev/null
         '';
 
