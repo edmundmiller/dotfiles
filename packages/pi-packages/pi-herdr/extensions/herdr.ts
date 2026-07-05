@@ -1,70 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import type { TSchema } from "@sinclair/typebox";
+import { Type } from "@sinclair/typebox";
 
 const HERDR_TIMEOUT_MS = 10_000;
-
-type ToolSchema<T> = TSchema & { static: T };
-
-type JsonSchema = {
-  type?: string;
-  description?: string;
-  properties?: Record<string, JsonSchema>;
-  required?: string[];
-  anyOf?: JsonSchema[];
-  const?: string;
-};
-
-type OptionalSchema = JsonSchema & { optional: true };
-
-type HerdrListParams = { resource: "workspaces" | "tabs" | "panes"; workspaceId?: string };
-type HerdrReadPaneParams = {
-  paneId: string;
-  source?: "visible" | "recent" | "recent-unwrapped";
-  lines?: number;
-  ansi?: boolean;
-};
-type HerdrRunInPaneParams = { paneId: string; command: string };
-type HerdrWaitParams = {
-  kind: "output" | "agent-status";
-  paneId: string;
-  match?: string;
-  regex?: boolean;
-  status?: "idle" | "working" | "blocked" | "done" | "unknown";
-  timeoutMs?: number;
-  lines?: number;
-};
-
-const toToolSchema = <T>(schema: JsonSchema): ToolSchema<T> => schema as unknown as ToolSchema<T>;
-
-const isOptionalSchema = (schema: JsonSchema | OptionalSchema): schema is OptionalSchema =>
-  "optional" in schema;
-
-const stripOptional = (schema: JsonSchema | OptionalSchema): JsonSchema => {
-  if (!isOptionalSchema(schema)) return schema;
-  const { optional: _optional, ...jsonSchema } = schema;
-  return jsonSchema;
-};
-
-const objectSchema = <T>(properties: Record<string, JsonSchema | OptionalSchema>): ToolSchema<T> =>
-  toToolSchema({
-    type: "object",
-    properties: Object.fromEntries(
-      Object.entries(properties).map(([name, schema]) => [name, stripOptional(schema)])
-    ),
-    required: Object.entries(properties)
-      .filter(([_, schema]) => !isOptionalSchema(schema))
-      .map(([name]) => name),
-  });
-
-const stringSchema = (description?: string): JsonSchema => ({ type: "string", description });
-const numberSchema = (description?: string): JsonSchema => ({ type: "number", description });
-const booleanSchema = (description?: string): JsonSchema => ({ type: "boolean", description });
-const literalSchema = (value: string): JsonSchema => ({ const: value });
-const unionSchema = (schemas: JsonSchema[], description?: string): JsonSchema => ({
-  anyOf: schemas,
-  description,
-});
-const optionalSchema = (schema: JsonSchema): OptionalSchema => ({ ...schema, optional: true });
 
 const stringify = (value: unknown): string =>
   typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -112,7 +49,7 @@ export default function herdrExtension(pi: ExtensionAPI) {
     name: "herdr_status",
     label: "Herdr Status",
     description: "Check the local herdr client/server status and socket compatibility.",
-    parameters: objectSchema<Record<string, never>>({}),
+    parameters: Type.Object({}),
     async execute(_toolCallId, _params, _signal, _onUpdate, _ctx) {
       const result = await runHerdr(pi, ["status"]);
       return textResult(result.stdout || "herdr status returned no output", result);
@@ -123,12 +60,14 @@ export default function herdrExtension(pi: ExtensionAPI) {
     name: "herdr_list",
     label: "Herdr List",
     description: "List herdr workspaces, tabs, or panes using the running herdr server.",
-    parameters: objectSchema<HerdrListParams>({
-      resource: unionSchema(
-        [literalSchema("workspaces"), literalSchema("tabs"), literalSchema("panes")],
-        "Which herdr resource to list."
+    parameters: Type.Object({
+      resource: Type.Union(
+        [Type.Literal("workspaces"), Type.Literal("tabs"), Type.Literal("panes")],
+        { description: "Which herdr resource to list." }
       ),
-      workspaceId: optionalSchema(stringSchema("Optional workspace id filter for tabs or panes.")),
+      workspaceId: Type.Optional(
+        Type.String({ description: "Optional workspace id filter for tabs or panes." })
+      ),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
       const args =
@@ -152,18 +91,18 @@ export default function herdrExtension(pi: ExtensionAPI) {
     name: "herdr_read_pane",
     label: "Herdr Read Pane",
     description: "Read visible or recent output from a herdr pane.",
-    parameters: objectSchema<HerdrReadPaneParams>({
-      paneId: stringSchema("Stable herdr pane id, e.g. w...-1 or positional 1-1."),
-      source: optionalSchema(
-        unionSchema(
-          [literalSchema("visible"), literalSchema("recent"), literalSchema("recent-unwrapped")],
-          "Output source. Defaults to recent."
+    parameters: Type.Object({
+      paneId: Type.String({ description: "Stable herdr pane id, e.g. w...-1 or positional 1-1." }),
+      source: Type.Optional(
+        Type.Union(
+          [Type.Literal("visible"), Type.Literal("recent"), Type.Literal("recent-unwrapped")],
+          { description: "Output source. Defaults to recent." }
         )
       ),
-      lines: optionalSchema(
-        numberSchema("Number of lines to read. Defaults to 80; herdr caps at 1000.")
+      lines: Type.Optional(
+        Type.Number({ description: "Number of lines to read. Defaults to 80; herdr caps at 1000." })
       ),
-      ansi: optionalSchema(booleanSchema("Preserve ANSI formatting.")),
+      ansi: Type.Optional(Type.Boolean({ description: "Preserve ANSI formatting." })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
       const args = ["pane", "read", params.paneId, "--source", params.source ?? "recent"];
@@ -178,9 +117,9 @@ export default function herdrExtension(pi: ExtensionAPI) {
     name: "herdr_run_in_pane",
     label: "Herdr Run In Pane",
     description: "Send a command to a herdr pane and press Enter via `herdr pane run`.",
-    parameters: objectSchema<HerdrRunInPaneParams>({
-      paneId: stringSchema("Target herdr pane id."),
-      command: stringSchema("Command text to send to the pane."),
+    parameters: Type.Object({
+      paneId: Type.String({ description: "Target herdr pane id." }),
+      command: Type.String({ description: "Command text to send to the pane." }),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
       const result = await runHerdr(pi, ["pane", "run", params.paneId, params.command]);
@@ -192,25 +131,31 @@ export default function herdrExtension(pi: ExtensionAPI) {
     name: "herdr_wait",
     label: "Herdr Wait",
     description: "Wait for pane output to match text/regex or for an agent status transition.",
-    parameters: objectSchema<HerdrWaitParams>({
-      kind: unionSchema([literalSchema("output"), literalSchema("agent-status")]),
-      paneId: stringSchema("Target herdr pane id."),
-      match: optionalSchema(stringSchema("Text or regex to match when kind is output.")),
-      regex: optionalSchema(booleanSchema("Treat match as a regex for output waits.")),
-      status: optionalSchema(
-        unionSchema(
+    parameters: Type.Object({
+      kind: Type.Union([Type.Literal("output"), Type.Literal("agent-status")]),
+      paneId: Type.String({ description: "Target herdr pane id." }),
+      match: Type.Optional(
+        Type.String({ description: "Text or regex to match when kind is output." })
+      ),
+      regex: Type.Optional(
+        Type.Boolean({ description: "Treat match as a regex for output waits." })
+      ),
+      status: Type.Optional(
+        Type.Union(
           [
-            literalSchema("idle"),
-            literalSchema("working"),
-            literalSchema("blocked"),
-            literalSchema("done"),
-            literalSchema("unknown"),
+            Type.Literal("idle"),
+            Type.Literal("working"),
+            Type.Literal("blocked"),
+            Type.Literal("done"),
+            Type.Literal("unknown"),
           ],
-          "Agent status when kind is agent-status."
+          { description: "Agent status when kind is agent-status." }
         )
       ),
-      timeoutMs: optionalSchema(numberSchema("Timeout in milliseconds. Defaults to 60000.")),
-      lines: optionalSchema(numberSchema("Lines to scan for output waits.")),
+      timeoutMs: Type.Optional(
+        Type.Number({ description: "Timeout in milliseconds. Defaults to 60000." })
+      ),
+      lines: Type.Optional(Type.Number({ description: "Lines to scan for output waits." })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
       const timeout = String(params.timeoutMs ?? 60_000);
