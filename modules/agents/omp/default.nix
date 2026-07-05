@@ -98,11 +98,57 @@ let
   threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
   threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
     set -euo pipefail
-    cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
+
+    repo=${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
+    git=${pkgs.git}/bin/git
+    commit_enabled=${if cfg.dailyIntrospection.commit.enable then "1" else "0"}
+    push_enabled=${if cfg.dailyIntrospection.push.enable then "1" else "0"}
+
+    cd "$repo"
 
     date_arg="''${1:-}"
-    prompt_file="$(${pkgs.coreutils}/bin/mktemp)"
-    trap 'rm -f "$prompt_file"' EXIT
+    tmp_dir="$(${pkgs.coreutils}/bin/mktemp -d)"
+    prompt_file="$tmp_dir/prompt"
+    privacy_before="$tmp_dir/privacy-before.json"
+    changed_paths="$tmp_dir/changed-paths"
+    trap 'rm -rf "$tmp_dir"' EXIT
+
+    if [ "$commit_enabled" = 1 ]; then
+      if [ -n "$("$git" status --porcelain --untracked-files=all)" ]; then
+        echo "Skipping OMP thread introspection: repository is dirty before run."
+        exit 0
+      fi
+
+      ${pkgs.python3}/bin/python3 - "$privacy_before" <<'PY'
+    from pathlib import Path
+    import json
+    import re
+    import sys
+
+    patterns = {
+        "email": re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"),
+        "person_name_or_user": re.compile(r"(?i)\b(edmund|emiller|edmundmiller|edmund\.a\.miller)\b"),
+        "home_path": re.compile(r"/Users/[^\s`\"']+"),
+        "secret_ref": re.compile(r"op://[^\s`\"']+|/run/(agenix|secrets)/[^\s`\"']+"),
+        "private_host_or_tailnet": re.compile(r"(?i)\b(MacTraitor-Pro|Seqeratop|cinnamon-rooster|\.ts\.net|\bnuc\b)\b"),
+        "memory_artifact": re.compile(r"(?i)\b(mnemopi|coding-agent-transcript|conversation transcript|turn=|profile p[0-9a-f-]{8,}|/chatmem)\b"),
+    }
+    roots = [Path("skills/catalog"), Path(".agents/skills")]
+    counts = {}
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in {".md", ".txt", ".json", ".yml", ".yaml"}:
+                continue
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            for name, pattern in patterns.items():
+                hits = sum(1 for line in text.splitlines() if pattern.search(line))
+                if hits:
+                    counts[f"{path}|{name}"] = hits
+    Path(sys.argv[1]).write_text(json.dumps(counts, sort_keys=True), encoding="utf-8")
+    PY
+    fi
 
     ${pkgs.python3}/bin/python3 - "$date_arg" ${lib.escapeShellArg threadIntrospectionPrompt} "$prompt_file" <<'PY'
     from datetime import datetime, timedelta
@@ -141,13 +187,108 @@ let
     PY
 
     prompt="$(${pkgs.coreutils}/bin/cat "$prompt_file")"
-    exec ${ompPackage}/bin/omp \
+    ${ompPackage}/bin/omp \
       --model ${lib.escapeShellArg cfg.dailyIntrospection.model} \
       --no-session \
       --max-time ${toString cfg.dailyIntrospection.maxTimeSeconds} \
       --tools=read,grep,glob,edit,write \
       --approval-mode yolo \
       -p "$prompt"
+
+    if [ "$commit_enabled" = 1 ]; then
+      ${pkgs.python3}/bin/python3 - "$git" "$privacy_before" "$changed_paths" <<'PY'
+    from pathlib import Path
+    import json
+    import re
+    import subprocess
+    import sys
+
+    git, before_path, changed_path = sys.argv[1:4]
+    status = subprocess.check_output(
+        [git, "status", "--porcelain", "--untracked-files=all"],
+        text=True,
+    )
+
+    def parse_path(line: str) -> str:
+        path = line[3:]
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        return path
+
+    paths = [parse_path(line) for line in status.splitlines() if line.strip()]
+
+    def allowed(path: str) -> bool:
+        return (
+            (path.startswith("config/agents/rules/") and path.endswith(".md"))
+            or (path.startswith("config/omp/prompts/") and path.endswith(".md"))
+            or path.startswith("skills/catalog/")
+            or path.startswith(".agents/skills/")
+        )
+
+    blocked = [path for path in paths if not allowed(path)]
+    if blocked:
+        print("Refusing to auto-commit unexpected paths:")
+        for path in blocked:
+            print(f"- {path}")
+        raise SystemExit(1)
+
+    patterns = {
+        "email": re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"),
+        "person_name_or_user": re.compile(r"(?i)\b(edmund|emiller|edmundmiller|edmund\.a\.miller)\b"),
+        "home_path": re.compile(r"/Users/[^\s`\"']+"),
+        "secret_ref": re.compile(r"op://[^\s`\"']+|/run/(agenix|secrets)/[^\s`\"']+"),
+        "private_host_or_tailnet": re.compile(r"(?i)\b(MacTraitor-Pro|Seqeratop|cinnamon-rooster|\.ts\.net|\bnuc\b)\b"),
+        "memory_artifact": re.compile(r"(?i)\b(mnemopi|coding-agent-transcript|conversation transcript|turn=|profile p[0-9a-f-]{8,}|/chatmem)\b"),
+    }
+    before = json.loads(Path(before_path).read_text(encoding="utf-8"))
+    after = {}
+    for path in paths:
+        file_path = Path(path)
+        if not (path.startswith("skills/catalog/") or path.startswith(".agents/skills/")):
+            continue
+        if not file_path.exists() or file_path.suffix.lower() not in {".md", ".txt", ".json", ".yml", ".yaml"}:
+            continue
+        text = file_path.read_text(encoding="utf-8", errors="ignore")
+        for name, pattern in patterns.items():
+            hits = sum(1 for line in text.splitlines() if pattern.search(line))
+            if hits:
+                after[f"{path}|{name}"] = hits
+
+    increases = []
+    for key, count in after.items():
+        if count > before.get(key, 0):
+            increases.append((key, before.get(key, 0), count))
+    if increases:
+        print("Refusing to auto-commit increased privacy findings:")
+        for key, old, new in increases:
+            path, rule = key.rsplit("|", 1)
+            print(f"- {path}: {rule} {old}->{new}")
+        raise SystemExit(1)
+
+    Path(changed_path).write_text("\n".join(paths) + ("\n" if paths else ""), encoding="utf-8")
+    PY
+
+      if [ ! -s "$changed_paths" ]; then
+        echo "OMP thread introspection made no changes."
+        exit 0
+      fi
+
+      ${pkgs.python3}/bin/python3 - "$git" "$changed_paths" <<'PY'
+    from pathlib import Path
+    import subprocess
+    import sys
+
+    git, changed_path = sys.argv[1:3]
+    paths = [line for line in Path(changed_path).read_text(encoding="utf-8").splitlines() if line]
+    subprocess.run([git, "add", "--", *paths], check=True)
+    PY
+      ./bin/hey check
+      "$git" commit -m ${lib.escapeShellArg cfg.dailyIntrospection.commit.message}
+
+      if [ "$push_enabled" = 1 ]; then
+        "$git" push
+      fi
+    fi
   '';
 in
 {
@@ -177,6 +318,11 @@ in
       hour = mkOpt types.int 4;
       minute = mkOpt types.int 30;
       maxTimeSeconds = mkOpt types.int 900;
+      commit = {
+        enable = mkBoolOpt false;
+        message = mkOpt types.str "chore(agents): apply daily introspection notes";
+      };
+      push.enable = mkBoolOpt false;
     };
   };
 
