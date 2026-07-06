@@ -1,0 +1,37 @@
+# omp custom model catalog — installed to ~/.omp/agent/models.yml.
+#
+# Registers VibeProxy (https://github.com/automazeio/vibeproxy) as an omp
+# provider. VibeProxy is a macOS menu-bar app (built on CLIProxyAPIPlus) that
+# fronts your Claude Code / ChatGPT / Gemini / Copilot / GLM *subscriptions* as
+# a local OpenAI- and Anthropic-compatible server on port 8317 — no API keys.
+#
+# Scope: Claude models only. omp already reaches GPT-5.x via the direct Codex
+# login (openai-codex) and grok via xai-oauth, so VibeProxy's job here is just
+# the Claude subscription models omp otherwise only gets via the kilo fallback.
+#
+# omp has no auto-discovery for custom providers, so the model list is explicit.
+# The ids below are a curated subset of `curl localhost:8317/v1/models`; add
+# more from that list as you connect providers in the VibeProxy app. Whether a
+# given id works depends on which subscriptions you've authed in the app.
+#
+# `auth: none` because the local proxy needs no key. Reached over the
+# OpenAI-compatible surface (/v1), which serves the Claude models too. Select
+# with `--model vibeproxy/<id>` or Ctrl+P; modelRoles are left on the direct
+# Codex/xai logins (config.yml) so this is purely additive.
+providers:
+  vibeproxy:
+    baseUrl: http://localhost:8317/v1
+    api: openai-completions
+    auth: none
+    models:
+      - id: claude-opus-4-8
+        name: VibeProxy Claude Opus 4.8
+        contextWindow: 200000
+        reasoning: true
+      - id: claude-sonnet-5
+        name: VibeProxy Claude Sonnet 5
+        contextWindow: 200000
+        reasoning: true
+      - id: claude-haiku-4-5-20251001
+        name: VibeProxy Claude Haiku 4.5
+        contextWindow: 200000
