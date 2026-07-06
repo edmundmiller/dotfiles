@@ -362,6 +362,7 @@ in
   options.modules.shell.herdr = with types; {
     enable = mkBoolOpt false;
     package = mkOpt (nullOr package) null;
+    localPluginsPackage = mkOpt package pkgs.my.herdr-plugins;
     command = mkOpt str "herdr";
     configFile = mkOpt (nullOr (either str path)) null;
     prefix = mkOpt str "ctrl+c";
@@ -930,7 +931,7 @@ in
         '';
 
         home.activation.herdr-plugin-registry = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          plugins_root=${escapeShellArg "${config.dotfiles.configDir}/herdr/plugins"}
+          plugins_root=${escapeShellArg "${cfg.localPluginsPackage}/share/herdr/plugins"}
           registry="$HOME/.config/herdr/plugins.json"
           ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$registry")"
 
@@ -942,11 +943,10 @@ in
 
           registry = pathlib.Path(sys.argv[1])
           plugins_root = pathlib.Path(sys.argv[2])
-          managed_roots = [
-              plugins_root / "dotfiles-agent-read-command",
-              plugins_root / "dotfiles-dev-layout",
-              plugins_root / "dotfiles-github-link-preview",
-          ]
+          managed_roots = sorted(
+              root for root in plugins_root.iterdir()
+              if root.is_dir() and (root / "herdr-plugin.toml").exists()
+          )
 
           def load_existing():
               if not registry.exists():
