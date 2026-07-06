@@ -142,3 +142,33 @@ or flag, so `modules.agents.omp.themeDark` / `themeLight` overlay just the
 mactraitorpro keeps the shared Catppuccin default. Precedence for the theme id
 mirrors any config key: the build-time overlay wins because it rewrites the
 sourced file.
+
+---
+
+## VibeProxy provider (added 2026-07-06, seqeratop)
+
+[VibeProxy](https://github.com/automazeio/vibeproxy) is a macOS menu-bar app
+(built on CLIProxyAPIPlus) that fronts your Claude Code / ChatGPT / Gemini /
+Copilot / GLM **subscriptions** as a local OpenAI- and Anthropic-compatible
+server on **port 8317** — no API keys, OAuth handled in the app's GUI.
+
+`modules.agents.omp.vibeproxy.enable` installs `config/omp/models.yml` to
+`~/.omp/agent/models.yml`, registering a `vibeproxy` provider
+(`baseUrl: http://localhost:8317/v1`, `api: openai-completions`, `auth: none`).
+The app itself is the `vibeproxy` homebrew cask on the host. Only seqeratop
+enables it.
+
+**Gotchas.**
+
+- **No auto-discovery for custom providers** — `models.yml` must list ids
+  explicitly (unlike built-in providers, `omp models refresh` won't populate
+  them). Curated subset of `curl localhost:8317/v1/models`; add more there.
+- **Purely additive** — `modelRoles` stay on the direct Codex/xai logins.
+  Select proxied models with `--model vibeproxy/<id>` or Ctrl+P cycling; to make
+  one a role, e.g. `omp config set modelRoles.default vibeproxy/claude-opus-4-8`.
+- **The app must be running** (menu bar → Running) and the relevant provider
+  authed, or `vibeproxy/*` calls hit a dead port. Verified round-trip:
+  `omp -p --no-session --no-tools --model vibeproxy/claude-opus-4-8 "say ok"`.
+- **Cask vs. manual install** — if the app is already in `/Applications` from a
+  manual download, `brew`/`hey re` may refuse to overwrite it; run
+  `brew install --cask vibeproxy --adopt` once so homebrew adopts it.

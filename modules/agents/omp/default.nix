@@ -391,6 +391,16 @@ in
       example = "light-seqera";
       description = "Per-host override for theme.light. See themeDark.";
     };
+    vibeproxy.enable = mkBoolOpt false // {
+      description = ''
+        Register VibeProxy (github.com/automazeio/vibeproxy) as an omp provider
+        by installing config/omp/models.yml to ~/.omp/agent/models.yml.
+        VibeProxy is a macOS menu-bar app fronting your Claude/ChatGPT/etc.
+        subscriptions as a local server on :8317 with no API keys. Install the
+        app itself via the homebrew cask on the host; this only wires omp to it.
+        Additive — leaves modelRoles on the direct Codex/xai logins.
+      '';
+    };
     dailyIntrospection = {
       enable = mkBoolOpt false;
       model = mkOpt types.str "openai-codex/gpt-5.5:high";
@@ -429,6 +439,11 @@ in
 
     home.file.".omp/agent/lsp.json" = {
       source = lsp.configFile;
+      force = true;
+    };
+
+    home.file.".omp/agent/models.yml" = mkIf cfg.vibeproxy.enable {
+      source = "${configDir}/omp/models.yml";
       force = true;
     };
 

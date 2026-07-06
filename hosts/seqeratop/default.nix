@@ -111,6 +111,10 @@
           # keeps the shared Catppuccin default.
           themeDark = "dark-seqera";
           themeLight = "light-seqera";
+          # Wire omp to the VibeProxy menu-bar app (installed via the vibeproxy
+          # homebrew cask). Exposes Claude/GPT subscription models on :8317 as
+          # vibeproxy/* selectors; see config/omp/models.yml.
+          vibeproxy.enable = true;
         };
         opencode.enable = true;
         hermes.enable = false; # Managed manually
