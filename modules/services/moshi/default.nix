@@ -12,23 +12,23 @@ let
   cfg = config.modules.services.moshi;
   inherit (config.dotfiles) configDir;
 
-  moshiHookVersion = "0.2.37";
+  moshiHookVersion = "0.2.39";
   moshiHookAssets = {
     aarch64-darwin = {
       asset = "moshi-hook_Darwin_arm64.tar.gz";
-      hash = "sha256-K/yAHYJQG9Vgq1975rRGq3A4fO6t0IaOBmFE1mf/El8=";
+      hash = "sha256-ChQ34uBF5yquZemsvpZMxz4ZXYsl89VvA37RXAvnmeg=";
     };
     aarch64-linux = {
       asset = "moshi-hook_Linux_arm64.tar.gz";
-      hash = "sha256-ASFeLcNSsJ0dsT7pkMSrNq3qpF/63xw7xWisbb+QYRE=";
+      hash = "sha256-jE4559ZM6QJw209GAZYg+Th1JKM+mNvEPlTPJ6Kmi7c=";
     };
     x86_64-darwin = {
       asset = "moshi-hook_Darwin_x86_64.tar.gz";
-      hash = "sha256-hltTnjdB5TeWh6pneTKKvOdn6Qp7a5fU1pkN13LZrSE=";
+      hash = "sha256-JXO1pPKlBfiYhCGrvVPT33sDEOOn/i1SemoYdPrMiPs=";
     };
     x86_64-linux = {
       asset = "moshi-hook_Linux_x86_64.tar.gz";
-      hash = "sha256-ORqmgT8EFmgxa36cCOSe7a5xSy3EJ4k6dr5LjxekLjg=";
+      hash = "sha256-CAd+x0Bb4+b9z832Sv2UGMtWDs43xXaD4DUjuVMotKQ=";
     };
   };
   moshiHookAsset = moshiHookAssets.${pkgs.stdenv.hostPlatform.system};
@@ -59,8 +59,8 @@ let
   #   that agent yet. Keep those idempotent and merge into mutable user config
   #   instead of overwriting agent-owned settings.
   #
-  # Darwin runs the Homebrew-managed moshi-hook; Linux installs the pinned Nix
-  # moshiHook package and runs it from the user systemd daemon.
+  # All platforms use the pinned Nix moshiHook package. Darwin runs it via
+  # launchd; Linux runs it from the user systemd daemon.
   supportedHookTargets = [
     "claude"
     "codex"
@@ -85,7 +85,7 @@ let
     && elem "droid" config.modules.services.kittylitter.enabledAgents;
   droidHookCommand =
     if isDarwin then
-      "'/opt/homebrew/bin/moshi-hook' claude-hook"
+      "'/run/current-system/sw/bin/moshi-hook' claude-hook"
     else
       "'/run/current-system/sw/bin/moshi-hook' claude-hook";
 
@@ -93,6 +93,7 @@ let
     (optionals cfg.hooks.autoTargets.enable autoHookTargets) ++ cfg.hooks.extraTargets
   );
 
+  hookTargetsArgs = concatMapStringsSep " " (target: "--target ${escapeShellArg target}") hookTargets;
   upstreamHookTargets = filter (target: target != "omp") hookTargets;
   upstreamHookTargetsArgs = concatMapStringsSep " " (
     target: "--target ${escapeShellArg target}"
@@ -127,10 +128,10 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      # On Darwin the daemon is Homebrew-managed so launchd, upgrades, and the
-      # helper path stay consistent. Linux still uses the Nix-built hook.
-      environment.systemPackages = optionals (!isDarwin) [ moshiHook ];
-      user.packages = optionals (!isDarwin) [ moshiHook ];
+      # Keep moshi-hook on the system profile so agent hooks and non-login
+      # shells resolve the pinned Nix-managed helper.
+      environment.systemPackages = [ moshiHook ];
+      user.packages = [ moshiHook ];
 
       modules.shell.zsh.rcFiles = mkIf cfg.shell.enable (
         mkIf cfg.shell.tmuxHelper.enable [ "${configDir}/moshi/aliases.zsh" ]
@@ -140,52 +141,62 @@ in
         { lib, ... }:
         {
           home.activation = mkMerge [
-            (mkIf (isDarwin && cfg.hooks.enable && (upstreamHookTargets != [ ] || ompHookEnabled)) {
-              moshi-agent-hook-install =
-                lib.hm.dag.entryAfter
-                  [
-                    "writeBoundary"
-                    "claude-settings-bootstrap"
-                    "codex-config-bootstrap"
-                    "herdr-agent-integrations"
-                  ]
-                  ''
-                    moshi_hook=""
-                    for candidate in \
-                      "/opt/homebrew/bin/moshi-hook" \
-                      "$HOME/.nix-profile/bin/moshi-hook" \
-                      "/etc/profiles/per-user/$USER/bin/moshi-hook" \
-                      "/run/current-system/sw/bin/moshi-hook"
-                    do
-                      if [ -x "$candidate" ]; then
-                        moshi_hook="$candidate"
-                        break
-                      fi
-                    done
-
-                    if [ -z "$moshi_hook" ] && command -v moshi-hook >/dev/null 2>&1; then
-                      moshi_hook="$(command -v moshi-hook)"
-                    fi
-
-                    if [ -z "$moshi_hook" ]; then
-                      echo "warning: moshi-hook not found; skipping Moshi agent hook install" >&2
-                    else
-                      ${optionalString (upstreamHookTargets != [ ]) ''
-                        if ! "$moshi_hook" install ${upstreamHookTargetsArgs}; then
-                          echo "warning: moshi-hook install failed for targets: ${concatStringsSep ", " upstreamHookTargets}" >&2
-                        fi
-                      ''}
-
-                      ${optionalString ompHookEnabled ''
-                        if ! PI_CONFIG_DIR="$HOME/.omp" PI_CODING_AGENT_DIR="$HOME/.omp/agent" "$moshi_hook" install --target omp; then
-                          echo "warning: moshi-hook install failed for target: omp" >&2
-                        fi
-
-                        rm -f "$HOME/.pi/agent/hooks/post/moshi-hooks.ts"
-                      ''}
-                    fi
-                  '';
+            (optionalAttrs isDarwin {
+              moshi-homebrew-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                launchctl bootout "gui/$(${pkgs.coreutils}/bin/id -u)/homebrew.mxcl.moshi-hook" 2>/dev/null || true
+                rm -f "$HOME/Library/LaunchAgents/homebrew.mxcl.moshi-hook.plist"
+                /usr/bin/pkill -u "$USER" -f '/opt/homebrew/.*/moshi-hook serve|/opt/homebrew/bin/moshi-hook serve' 2>/dev/null || true
+              '';
             })
+
+            (optionalAttrs isDarwin (
+              mkIf (cfg.hooks.enable && (upstreamHookTargets != [ ] || ompHookEnabled)) {
+                moshi-agent-hook-install =
+                  lib.hm.dag.entryAfter
+                    [
+                      "writeBoundary"
+                      "claude-settings-bootstrap"
+                      "codex-config-bootstrap"
+                      "herdr-agent-integrations"
+                    ]
+                    ''
+                      moshi_hook=""
+                      for candidate in \
+                        "/run/current-system/sw/bin/moshi-hook" \
+                        "/etc/profiles/per-user/$USER/bin/moshi-hook" \
+                        "$HOME/.nix-profile/bin/moshi-hook" \
+                        "/opt/homebrew/bin/moshi-hook"
+                      do
+                        if [ -x "$candidate" ]; then
+                          moshi_hook="$candidate"
+                          break
+                        fi
+                      done
+
+                      if [ -z "$moshi_hook" ] && command -v moshi-hook >/dev/null 2>&1; then
+                        moshi_hook="$(command -v moshi-hook)"
+                      fi
+
+                      if [ -z "$moshi_hook" ]; then
+                        echo "warning: moshi-hook not found; skipping Moshi agent hook install" >&2
+                      else
+                        ${optionalString (upstreamHookTargets != [ ]) ''
+                          if ! "$moshi_hook" install ${upstreamHookTargetsArgs}; then
+                            echo "warning: moshi-hook install failed for targets: ${concatStringsSep ", " upstreamHookTargets}" >&2
+                          fi
+                        ''}
+
+                        ${optionalString ompHookEnabled ''
+                          if ! PI_CONFIG_DIR="$HOME/.omp" PI_CODING_AGENT_DIR="$HOME/.omp/agent" "$moshi_hook" install --target omp; then
+                            echo "warning: moshi-hook install failed for target: omp" >&2
+                          fi
+
+                          rm -f "$HOME/.pi/agent/hooks/post/moshi-hooks.ts"
+                        ''}
+                      fi
+                    '';
+              }
+            ))
 
             (mkIf (cfg.hooks.enable && droidHookEnabled) {
               moshi-droid-hook-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -271,6 +282,22 @@ in
           ];
         };
     }
+
+    (optionalAttrs isDarwin {
+      launchd.user.agents.moshi-hook = {
+        command = "${moshiHook}/bin/moshi-hook serve";
+        serviceConfig = {
+          RunAtLoad = true;
+          KeepAlive = true;
+          StandardOutPath = "${config.user.home}/Library/Logs/moshi-hook.log";
+          StandardErrorPath = "${config.user.home}/Library/Logs/moshi-hook.err.log";
+          EnvironmentVariables = {
+            HOME = config.user.home;
+            PATH = "/run/current-system/sw/bin:/etc/profiles/per-user/${config.user.name}/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          };
+        };
+      };
+    })
 
     (optionalAttrs (!isDarwin) (
       mkIf (cfg.hookSecretsFile != null) {

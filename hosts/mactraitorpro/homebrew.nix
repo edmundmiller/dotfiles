@@ -7,7 +7,6 @@
     "jnsahaj/lumen" # AI-powered CLI explanations
     "keith/formulae" # reminders-cli
     "openclaw/tap" # Discrawl Discord export CLI
-    "rjyo/moshi" # moshi-hook + moshi CLI for mobile agent events
     "rockorager/tap" # Prise terminal multiplexer
     "steipete/tap" # Codexbar
     "tw93/tap" # Mole
@@ -30,10 +29,6 @@
     "llvm"
     "m4"
     "make"
-    {
-      name = "rjyo/moshi/moshi-hook";
-      start_service = true;
-    }
 
     # Python tools
     "gdbm"
