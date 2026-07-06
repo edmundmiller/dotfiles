@@ -106,6 +106,11 @@
           # xai-oauth; Seqera's pi uses cursor/composer-2.5 via cursorSdk).
           # null = use modelRoles.smol from the mutable ~/.omp/agent/config.yml.
           smolModel = null;
+          # Match the rest of this host's Seqera branding (stylix seqera-dark,
+          # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
+          # keeps the shared Catppuccin default.
+          themeDark = "dark-seqera";
+          themeLight = "light-seqera";
         };
         opencode.enable = true;
         hermes.enable = false; # Managed manually
