@@ -60,17 +60,25 @@ proven gpt-5.5); reach for it ad hoc via `--plan grok-4.3` or Ctrl+P cycling.
 
 `config.yml` is machine-local mutable state, so default/slow/plan (and the base
 smol/commit) already differ freely per box. To make the split _declarative_,
-`modules.agents.omp.smolModel` injects `PI_SMOL_MODEL` in the Nix wrapper — it
-overrides `modelRoles.smol` and (via the `["tiny","commit","smol"]` fallback)
-the commit role too. Only smol/commit are exposed; default/slow/plan live in
-the mutable config and stay identical across hosts. Precedence:
-`--smol` flag > `PI_SMOL_MODEL` env > `config.yml`. There is **no** env override
-for default or commit (only smol/slow/plan exist), and `--config` overlays are
-launch-only (they crash `config get/set`), so the env var is the clean lever.
+two Nix levers write per-host roles at build time:
 
-- **mactraitorpro**: `smolModel = "xai-oauth/grok-composer-2.5-fast"`.
-- **seqeratop**: `null` (TODO — set once its omp logins are known; its `pi`
-  uses `cursor/composer-2.5`, not necessarily an omp login).
+- `modules.agents.omp.smolModel` injects `PI_SMOL_MODEL` in the Nix wrapper — it
+  overrides `modelRoles.smol` and (via the `["tiny","commit","smol"]` fallback)
+  the commit role too. Precedence: `--smol` flag > `PI_SMOL_MODEL` env >
+  `config.yml`. Only smol/slow/plan have a `PI_*_MODEL` env var; there is none
+  for default or commit.
+- `modules.agents.omp.modelRoles` (attrset of `role -> provider/model-id`) is
+  overlaid onto the shared `config.yml` with yq at build time (same mechanism as
+  the theme keys). This is the only declarative lever for a per-host `default`
+  or `advisor`, since neither has an env var and `--config` overlays are
+  launch-only (they crash `config get/set`). Prefer `smolModel` for smol — its
+  env var wins over whatever this overlay writes.
+
+- **mactraitorpro**: `smolModel = "xai-oauth/grok-composer-2.5-fast"`; other
+  roles stay on the shared `config.yml`.
+- **seqeratop** (logged into cursor + openai-codex): `smolModel =
+  "cursor/composer-2.5"`, plus `modelRoles` pinning default=`cursor/glm-5.2-high`,
+  plan=`cursor/claude-opus-4-8-high`, advisor=`openai-codex/gpt-5.5:high`.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
 **ChatGPT-account** Codex login only permits the current generation. Every

@@ -102,10 +102,22 @@
         codex.enable = true;
         omp = {
           enable = true;
-          # TODO: set once Seqera's omp logins are known (this machine only has
-          # xai-oauth; Seqera's pi uses cursor/composer-2.5 via cursorSdk).
-          # null = use modelRoles.smol from the mutable ~/.omp/agent/config.yml.
-          smolModel = null;
+          # Model roles for this box. seqeratop is logged into cursor +
+          # openai-codex (verified in ~/.omp/agent/agent.db) and runs the
+          # keyless VibeProxy app on :8317 (vibeproxy.enable below). smol uses
+          # the PI_SMOL_MODEL env lever (wins over config.yml); the rest are
+          # overlaid onto the shared config.yml at build time, leaving
+          # mactraitorpro on the shared defaults.
+          smolModel = "cursor/composer-2.5"; # Cursor Composer 2.5, fast/cheap
+          modelRoles = {
+            default = "cursor/glm-5.2-high"; # GLM 5.2 via Cursor
+            plan = "cursor/claude-opus-4-8-high"; # Opus 4.8 for planning (metered, reliable)
+            # Advisor on VibeProxy Opus 4.8 — flat-rate Claude sub instead of a
+            # metered API. Advisor is non-critical (read-only reviewer, already
+            # optional), so it's the safe place for a role that hard-fails when
+            # the VibeProxy app on :8317 is down (retry.modelFallback: false).
+            advisor = "vibeproxy/claude-opus-4-8:high";
+          };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
           # keeps the shared Catppuccin default.

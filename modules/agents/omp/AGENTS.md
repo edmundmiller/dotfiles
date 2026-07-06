@@ -45,13 +45,25 @@ back to the model as the failed tool result.
 
 ## Per-host model roles
 
-`modules.agents.omp.smolModel` sets `PI_SMOL_MODEL` in the wrapper for a
-declarative per-host smol/fast model (also drives commit, which falls back to
-smol). This is the _only_ role exposed via Nix: OMP has no env override for
-default/commit, and `--config` overlays crash the `config` subcommands, so the
-env var is the clean lever. default/slow/plan stay in the mutable
-`config.yml` and are identical across hosts. Precedence: `--smol` flag >
-`PI_SMOL_MODEL` > `config.yml`.
+`config.yml` is shared across all omp hosts and force-installed, so per-host
+role divergence goes through one of two levers:
+
+- `modules.agents.omp.smolModel` sets `PI_SMOL_MODEL` in the wrapper for the
+  smol/fast role (also drives commit, which falls back to smol). Precedence:
+  `--smol` flag > `PI_SMOL_MODEL` > `config.yml`. Only smol/slow/plan have a
+  `PI_*_MODEL` env var; there is none for default/advisor/commit.
+- `modules.agents.omp.modelRoles` (attrset of `role -> provider/model-id`) is
+  overlaid onto the shared `config.yml` at build time with yq — the same
+  mechanism as `themeDark`/`themeLight`. This is the only way to set a per-host
+  `default` or `advisor` role, since neither has an env lever and `--config`
+  overlays crash the `config` subcommands. Prefer `smolModel` for smol: its env
+  var wins over any `config.yml` value this overlay writes.
+
+Roles left unset by both levers keep the shared `config.yml` values, which stay
+identical across hosts. Example — seqeratop (logged into cursor + openai-codex)
+pins default=`cursor/glm-5.2-high`, smol=`cursor/composer-2.5`,
+slow=`openai-codex/gpt-5.5:xhigh`, plan=`cursor/claude-opus-4-8-high`,
+advisor=`openai-codex/gpt-5.5:high`.
 
 ## Docs
 

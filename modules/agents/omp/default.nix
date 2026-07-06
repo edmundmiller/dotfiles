@@ -122,21 +122,32 @@ let
     cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
     ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-omp.py"} ${lib.escapeShellArgs skilloptSleepArgs}
   '';
-  # config.yml is shared across all omp hosts. Theme is the one setting that
-  # legitimately differs per host (this repo brands seqeratop with Seqera and
-  # mactraitorpro with Catppuccin), and omp has no theme env/flag lever, so
-  # overlay just the theme keys onto the shared file at build time when a host
-  # sets an override. Null keeps whatever config.yml ships.
+  # config.yml is shared across all omp hosts, installed read-only. A few
+  # settings legitimately differ per host: theme (seqeratop=Seqera,
+  # mactraitorpro=Catppuccin) and model roles (per-box logins differ). OMP
+  # exposes no env/flag lever for the theme, default, or advisor roles (only
+  # smol/slow/plan have PI_*_MODEL), so overlay those keys onto the shared file
+  # at build time with yq when a host sets an override. Empty keeps what
+  # config.yml ships.
   baseConfig = "${configDir}/omp/config.yml";
   themeOverrides =
     lib.optional (cfg.themeDark != null) ''.theme.dark = "${cfg.themeDark}"''
     ++ lib.optional (cfg.themeLight != null) ''.theme.light = "${cfg.themeLight}"'';
+  # Each key maps 1:1 to a modelRoles.<key> entry. Use explicit provider/model
+  # ids so selection is deterministic and does not depend on which providers
+  # are authed on the box. smol has its own smolModel/PI_SMOL_MODEL lever (which
+  # wins over config.yml), so prefer that for smol; a smol key set here is still
+  # valid but the env var overrides it.
+  modelRoleOverrides = lib.mapAttrsToList (
+    role: model: ''.modelRoles.${role} = "${model}"''
+  ) cfg.modelRoles;
+  configOverrides = themeOverrides ++ modelRoleOverrides;
   ompConfigFile =
-    if themeOverrides == [ ] then
+    if configOverrides == [ ] then
       baseConfig
     else
       pkgs.runCommand "omp-config.yml" { nativeBuildInputs = [ pkgs.yq-go ]; } ''
-        yq eval ${lib.escapeShellArg (concatStringsSep " | " themeOverrides)} ${baseConfig} > "$out"
+        yq eval ${lib.escapeShellArg (concatStringsSep " | " configOverrides)} ${baseConfig} > "$out"
       '';
   threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
   threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
@@ -390,6 +401,28 @@ in
       default = null;
       example = "light-seqera";
       description = "Per-host override for theme.light. See themeDark.";
+    };
+    modelRoles = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
+      example = literalExpression ''
+        {
+          default = "cursor/glm-5.2-high";
+          plan = "cursor/claude-opus-4-8-high";
+          advisor = "openai-codex/gpt-5.5:high";
+        }
+      '';
+      description = ''
+        Per-host modelRoles overrides, overlaid onto the shared config.yml at
+        build time (same yq mechanism as themeDark/themeLight). Each attr key is
+        a role (default/slow/plan/advisor/vision/commit/task/tiny/...) and the
+        value an explicit provider/model-id selector (with optional :thinking
+        suffix). config.yml is shared and force-installed, and OMP has no env
+        lever for the default/advisor roles, so this build-time overlay is the
+        only way to diverge them per box. Empty keeps the shared config.yml
+        values. Prefer smolModel for the smol role: PI_SMOL_MODEL wins over
+        config.yml, so a smol key set here would be shadowed by that env var.
+      '';
     };
     vibeproxy.enable = mkBoolOpt false // {
       description = ''
