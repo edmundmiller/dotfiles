@@ -43,9 +43,8 @@ model:
   default: gpt-5.5
   thinking: low
 
-# Primary-model fallback: use OpenCode only. OpenRouter credentials may exist for
-# explicit/manual provider use, but are intentionally not part of automatic
-# fallback routing.
+# OpenRouter/Kilo-style providers may be authenticated and manually selected for
+# specific models. Automatic fallback stays narrow: OpenCode only.
 fallback_model:
   provider: opencode
   model: GLM-5.1
