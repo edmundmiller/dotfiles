@@ -6,6 +6,8 @@
   "defaultModel": "gpt-5.5",
   "defaultThinkingLevel": "medium",
   // Model cycling - Ctrl+P to toggle between these
+  // OpenRouter/Kilo stays installed for explicit one-off model selection only;
+  // keep automatic defaults/cycling on Codex plus the named OpenCode fallback.
   "enabledModels": ["openai-codex/gpt-5.5", "openai-codex/gpt-5.4-mini", "opencode-go/glm-5.2"],
   // UI preferences
   "theme": "terminal",
@@ -181,8 +183,8 @@
     // "npm:@jordyvd/pi-openai-compaction",
     // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
     "npm:@howaboua/pi-codex-conversion",
-    // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
-    // Enables provider id: kilo (e.g., model: kilocode/auto)
+    // Kilo provider (OpenRouter-compatible) is available for explicit manual use,
+    // not automatic model cycling or subagent routing.
     "git:github.com/mrexodia/kilo-pi-provider",
     // Live bash output view enhancements - vendored local copy
     // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view

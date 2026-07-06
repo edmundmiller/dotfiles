@@ -43,9 +43,9 @@ model:
   default: gpt-5.5
   thinking: low
 
-# Primary-model fallback: use OpenCode first, then OpenRouter as the broad
-# last resort. Keep this aligned with the credentials materialized into
-# ~/.hermes/.env on the laptop.
+# Primary-model fallback: use OpenCode only. OpenRouter credentials may exist for
+# explicit/manual provider use, but are intentionally not part of automatic
+# fallback routing.
 fallback_model:
   provider: opencode
   model: GLM-5.1
