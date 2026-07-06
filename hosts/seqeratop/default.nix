@@ -110,13 +110,21 @@
           # mactraitorpro on the shared defaults.
           smolModel = "cursor/composer-2.5"; # Cursor Composer 2.5, fast/cheap
           modelRoles = {
-            default = "cursor/glm-5.2-high"; # GLM 5.2 via Cursor
-            plan = "cursor/claude-opus-4-8-high"; # Opus 4.8 for planning (metered, reliable)
-            # Advisor on VibeProxy Opus 4.8 — flat-rate Claude sub instead of a
-            # metered API. Advisor is non-critical (read-only reviewer, already
-            # optional), so it's the safe place for a role that hard-fails when
-            # the VibeProxy app on :8317 is down (retry.modelFallback: false).
-            advisor = "vibeproxy/claude-opus-4-8:high";
+            default = "openai-codex/gpt-5.5:medium"; # GPT-5.5 everyday driver
+            # Opus 4.8 for planning via VibeProxy — same model as
+            # cursor/claude-opus-4-8-high but on the flat-rate Claude sub, not
+            # metered Cursor API. Runs free on the sub while the :8317 app is up;
+            # falls back to metered Cursor Opus if it's down (see below).
+            plan = "vibeproxy/claude-opus-4-8:high";
+            advisor = "openai-codex/gpt-5.5:high"; # watchdog reviewer (reliable)
+          };
+          # plan runs on VibeProxy (needs the :8317 app up). Give that one role
+          # a fallback to the same Opus 4.8 on metered Cursor, so planning keeps
+          # working when the app is down instead of hard-failing. This flips
+          # retry.modelFallback on for this host only; no other role gets a
+          # chain, so they stay pinned per the shared config's no-fallback rule.
+          modelFallbackChains = {
+            plan = [ "cursor/claude-opus-4-8-high" ];
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro

@@ -143,7 +143,23 @@ let
   modelRoleOverrides = lib.mapAttrsToList (
     role: model: ''.modelRoles.${role} = "${model}"''
   ) cfg.modelRoles;
-  configOverrides = themeOverrides ++ modelRoleOverrides;
+  # Per-host retry fallback. config.yml ships retry.modelFallback: false (no
+  # silent cross-provider retries). A host that puts a role on a flaky backend
+  # (e.g. a VibeProxy model needing the :8317 app up) can opt that ONE role into
+  # a fallback chain here: a non-empty attrset emits retry.modelFallback = true
+  # (raw bool, not a string) plus a per-role retry.fallbackChains.<role> flow
+  # array. Roles without an entry stay pinned - omp's #x3() adds no implicit
+  # default chain - so the shared no-fallback default is preserved for every
+  # other role. Never key a `default` chain: omp back-fills all roles from it,
+  # re-enabling the broad fallback the config.yml comment forbids.
+  fallbackChainOverrides = lib.optionals (cfg.modelFallbackChains != { }) (
+    [ ".retry.modelFallback = true" ]
+    ++ lib.mapAttrsToList (
+      role: chain:
+      ".retry.fallbackChains.${role} = [${concatStringsSep ", " (map (m: "\"${m}\"") chain)}]"
+    ) cfg.modelFallbackChains
+  );
+  configOverrides = themeOverrides ++ modelRoleOverrides ++ fallbackChainOverrides;
   ompConfigFile =
     if configOverrides == [ ] then
       baseConfig
@@ -424,6 +440,26 @@ in
         only way to diverge them per box. Empty keeps the shared config.yml
         values. Prefer smolModel for the smol role: PI_SMOL_MODEL wins over
         config.yml, so a smol key set here would be shadowed by that env var.
+      '';
+    };
+    modelFallbackChains = mkOption {
+      type = types.attrsOf (types.listOf types.str);
+      default = { };
+      example = literalExpression ''
+        {
+          plan = [ "cursor/claude-opus-4-8-high" ];
+        }
+      '';
+      description = ''
+        Per-host retry fallback chains, keyed by role name. A non-empty value
+        flips retry.modelFallback on (in this host's generated config.yml only)
+        and emits retry.fallbackChains.<role> for each entry, so a role on a
+        flaky backend (e.g. a VibeProxy model that needs the :8317 app running)
+        falls back to a reliable equivalent instead of hard-failing. Roles
+        without an entry keep no fallback (they stay pinned), preserving the
+        shared config.yml's retry.modelFallback: false behavior for every other
+        role. Do not add a `default` key: omp back-fills every role from it,
+        re-enabling the broad cross-provider fallback the shared config forbids.
       '';
     };
     vibeproxy.enable = mkBoolOpt false // {

@@ -22,7 +22,11 @@ modelRoles:
   slow: openai-codex/gpt-5.5:xhigh
   plan: openai-codex/gpt-5.5:high
 # Keep OpenRouter/Kilo/etc. discoverable for explicit `--model` use, but do not
-# silently route retries through alternate model providers.
+# silently route retries through alternate model providers by default. A host
+# can opt one role into a fallback via modules.agents.omp.modelFallbackChains
+# (per-host overlay flips modelFallback on + adds retry.fallbackChains for that
+# role only); e.g. seqeratop routes its VibeProxy plan role to metered Cursor
+# Opus when the :8317 app is down.
 retry:
   modelFallback: false
 textVerbosity: low
