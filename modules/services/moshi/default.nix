@@ -93,7 +93,11 @@ let
     (optionals cfg.hooks.autoTargets.enable autoHookTargets) ++ cfg.hooks.extraTargets
   );
 
-  hookTargetsArgs = concatMapStringsSep " " (target: "--target ${escapeShellArg target}") hookTargets;
+  upstreamHookTargets = filter (target: target != "omp") hookTargets;
+  upstreamHookTargetsArgs = concatMapStringsSep " " (
+    target: "--target ${escapeShellArg target}"
+  ) upstreamHookTargets;
+  ompHookEnabled = elem "omp" hookTargets;
 in
 {
   options.modules.services.moshi = {
@@ -136,7 +140,7 @@ in
         { lib, ... }:
         {
           home.activation = mkMerge [
-            (mkIf (isDarwin && cfg.hooks.enable && hookTargets != [ ]) {
+            (mkIf (isDarwin && cfg.hooks.enable && (upstreamHookTargets != [ ] || ompHookEnabled)) {
               moshi-agent-hook-install =
                 lib.hm.dag.entryAfter
                   [
@@ -165,8 +169,20 @@ in
 
                     if [ -z "$moshi_hook" ]; then
                       echo "warning: moshi-hook not found; skipping Moshi agent hook install" >&2
-                    elif ! "$moshi_hook" install ${hookTargetsArgs}; then
-                      echo "warning: moshi-hook install failed for targets: ${concatStringsSep ", " hookTargets}" >&2
+                    else
+                      ${optionalString (upstreamHookTargets != [ ]) ''
+                        if ! "$moshi_hook" install ${upstreamHookTargetsArgs}; then
+                          echo "warning: moshi-hook install failed for targets: ${concatStringsSep ", " upstreamHookTargets}" >&2
+                        fi
+                      ''}
+
+                      ${optionalString ompHookEnabled ''
+                        if ! PI_CONFIG_DIR="$HOME/.omp" PI_CODING_AGENT_DIR="$HOME/.omp/agent" "$moshi_hook" install --target omp; then
+                          echo "warning: moshi-hook install failed for target: omp" >&2
+                        fi
+
+                        rm -f "$HOME/.pi/agent/hooks/post/moshi-hooks.ts"
+                      ''}
                     fi
                   '';
             })
