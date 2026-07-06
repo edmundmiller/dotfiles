@@ -66,6 +66,11 @@ let
     url = "https://registry.npmjs.org/@ogulcancelik/pi-herdr/-/pi-herdr-0.2.5.tgz";
     hash = "sha256-k7Bh17ULoYnlT13u5z3Kvm/iRK7AA0YzJK4ZGNcY+LY=";
   };
+  ponytailPlugin = pkgs.fetchzip {
+    name = "ponytail-4.8.4";
+    url = "https://registry.npmjs.org/@dietrichgebert/ponytail/-/ponytail-4.8.4.tgz";
+    hash = "sha256-9E9qa+rdFsyUcE1N2QiMeOeG0NpDuqu5SaeabbcScaI=";
+  };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
   skilloptSleepSource = pkgs.fetchFromGitHub {
     owner = "microsoft";
@@ -92,6 +97,7 @@ let
         --set PI_SKIP_VERSION_CHECK 1 \
         --set PI_CONFIG_DIR ${lib.escapeShellArg ompConfigDir} \
         --set PI_CODING_AGENT_DIR ${lib.escapeShellArg ompAgentDir} \
+        --set PONYTAIL_DEFAULT_MODE full \
         --set PI_PERMISSION_SYSTEM_CONFIG_PATH ${lib.escapeShellArg "${ompAgentDir}/extensions/pi-permission-system/config.json"}${
           lib.optionalString (
             cfg.smolModel != null
@@ -513,6 +519,10 @@ in
         home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ${ompPackage}/bin/omp plugin uninstall pi-skillopt-sleep --json >/dev/null 2>&1 || true
           ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${skilloptSleepPlugin}"} --force --json >/dev/null
+        '';
+
+        home.activation.omp-ponytail-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${ponytailPlugin}"} --force --json >/dev/null
         '';
 
         home.activation.omp-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
