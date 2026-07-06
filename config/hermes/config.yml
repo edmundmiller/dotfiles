@@ -43,8 +43,9 @@ model:
   default: gpt-5.5
   thinking: low
 
-# OpenRouter/Kilo-style providers may be authenticated and manually selected for
-# specific models. Automatic fallback stays narrow: OpenCode only.
+# Primary-model fallback: use OpenCode first, then OpenRouter as the broad
+# last resort. Keep this aligned with the credentials materialized into
+# ~/.hermes/.env on the laptop.
 fallback_model:
   provider: opencode
   model: GLM-5.1
