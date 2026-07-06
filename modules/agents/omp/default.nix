@@ -67,6 +67,7 @@ let
     hash = "sha256-k7Bh17ULoYnlT13u5z3Kvm/iRK7AA0YzJK4ZGNcY+LY=";
   };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
+  ponytailPackage = "git:github.com/DietrichGebert/ponytail";
   skilloptSleepSource = pkgs.fetchFromGitHub {
     owner = "microsoft";
     repo = "SkillOpt";
@@ -90,6 +91,7 @@ let
       rm -f "$out/bin/omp"
       makeWrapper "$out/lib/omp/omp" "$out/bin/omp" \
         --set PI_SKIP_VERSION_CHECK 1 \
+        --set PONYTAIL_DEFAULT_MODE "lite" \
         --set PI_CONFIG_DIR ${lib.escapeShellArg ompConfigDir} \
         --set PI_CODING_AGENT_DIR ${lib.escapeShellArg ompAgentDir} \
         --set PI_PERMISSION_SYSTEM_CONFIG_PATH ${lib.escapeShellArg "${ompAgentDir}/extensions/pi-permission-system/config.json"}${
@@ -546,6 +548,10 @@ in
         home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ${ompPackage}/bin/omp plugin uninstall pi-skillopt-sleep --json >/dev/null 2>&1 || true
           ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${skilloptSleepPlugin}"} --force --json >/dev/null
+        '';
+
+        home.activation.omp-ponytail-package = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${ompPackage}/bin/omp install ${lib.escapeShellArg ponytailPackage} --force --json >/dev/null
         '';
 
         home.activation.omp-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

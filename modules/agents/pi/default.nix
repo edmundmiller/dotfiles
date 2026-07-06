@@ -304,6 +304,8 @@ in
     env.PATH = mkAfter [ "$HOME/.bun/bin" ];
     # PI_SKIP_VERSION_CHECK already set by llm-agents wrapper, but keep for bun-installed tools
     env.PI_SKIP_VERSION_CHECK = "1";
+    # Gentler Ponytail default: suggest the lazy path without enforcing it.
+    env.PONYTAIL_DEFAULT_MODE = "lite";
     # Keep Pi pointed at the nix-managed agent root so package discovery,
     # settings.json, and permission policy files are loaded consistently.
     # Individual writable files (sessions, auth, cache) live alongside the

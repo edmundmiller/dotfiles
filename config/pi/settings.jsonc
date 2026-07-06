@@ -127,6 +127,8 @@
     // Codex-style persistent goal tracking and continuation.
     // Fork carries token_budget guidance until upstream release includes it.
     "git:github.com/edmundmiller/pi-codex-goal",
+    // Ponytail prompting/skill package - https://ponytail.dev/
+    "git:github.com/DietrichGebert/ponytail",
     // Legacy tasks package intentionally disabled to keep task tools out of session
     // "~/.config/dotfiles/packages/pi-packages/pi-beads",
 
