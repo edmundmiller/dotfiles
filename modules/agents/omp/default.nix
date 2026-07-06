@@ -122,6 +122,22 @@ let
     cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
     ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-omp.py"} ${lib.escapeShellArgs skilloptSleepArgs}
   '';
+  # config.yml is shared across all omp hosts. Theme is the one setting that
+  # legitimately differs per host (this repo brands seqeratop with Seqera and
+  # mactraitorpro with Catppuccin), and omp has no theme env/flag lever, so
+  # overlay just the theme keys onto the shared file at build time when a host
+  # sets an override. Null keeps whatever config.yml ships.
+  baseConfig = "${configDir}/omp/config.yml";
+  themeOverrides =
+    lib.optional (cfg.themeDark != null) ''.theme.dark = "${cfg.themeDark}"''
+    ++ lib.optional (cfg.themeLight != null) ''.theme.light = "${cfg.themeLight}"'';
+  ompConfigFile =
+    if themeOverrides == [ ] then
+      baseConfig
+    else
+      pkgs.runCommand "omp-config.yml" { nativeBuildInputs = [ pkgs.yq-go ]; } ''
+        yq eval ${lib.escapeShellArg (concatStringsSep " | " themeOverrides)} ${baseConfig} > "$out"
+      '';
   threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
   threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
     set -euo pipefail
@@ -358,6 +374,23 @@ in
         stay identical across hosts.
       '';
     };
+    themeDark = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "dark-seqera";
+      description = ''
+        Per-host override for theme.dark, overlaid onto the shared config.yml
+        at build time. Null keeps the id shipped in config/omp/config.yml.
+        The seqera themes are installed on every omp host; only activation
+        differs per box.
+      '';
+    };
+    themeLight = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "light-seqera";
+      description = "Per-host override for theme.light. See themeDark.";
+    };
     dailyIntrospection = {
       enable = mkBoolOpt false;
       model = mkOpt types.str "openai-codex/gpt-5.5:high";
@@ -390,7 +423,7 @@ in
     ++ lib.optional cfg.skilloptSleep.enable skilloptSleepNightly;
 
     home.file.".omp/agent/config.yml" = {
-      source = "${configDir}/omp/config.yml";
+      source = ompConfigFile;
       force = true;
     };
 
@@ -401,6 +434,16 @@ in
 
     home.file.".omp/agent/themes/light-catppuccin-readable.json" = {
       source = "${configDir}/omp/themes/light-catppuccin-readable.json";
+      force = true;
+    };
+
+    home.file.".omp/agent/themes/dark-seqera.json" = {
+      source = "${configDir}/omp/themes/dark-seqera.json";
+      force = true;
+    };
+
+    home.file.".omp/agent/themes/light-seqera.json" = {
+      source = "${configDir}/omp/themes/light-seqera.json";
       force = true;
     };
 

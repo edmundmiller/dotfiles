@@ -124,3 +124,21 @@ OMP now matches Herdr and ghostty on Catppuccin, both modes:
 Herdr's own UI theme is `name = "terminal"` (inherits the terminal palette),
 and its dev-layout maps macOS dark→mocha / light→latte
 (`config/herdr/plugins/dotfiles-dev-layout/`).
+
+### Seqera brand themes (added 2026-07-04)
+
+`config/omp/themes/{dark,light}-seqera.json` map the Seqera brand palette
+(same source as `config/themes/seqera-dark.yaml` and the `SeqeraDark`/
+`SeqeraLight` ghostty themes) onto omp's 67 theme fields. Signature accent is
+Seqera teal `#31c9ac`; dark bg is the deep purple `#201637`. Light-mode brand
+accents are darkened for contrast on white, mirroring `light-catppuccin-readable`.
+
+All three themes install to `~/.omp/agent/themes/` on every omp host — only
+activation is per-host. `config.yml` is shared, and omp has **no** theme env var
+or flag, so `modules.agents.omp.themeDark` / `themeLight` overlay just the
+`theme.dark` / `theme.light` keys onto the shared file at build time via `yq`
+(null = keep the id shipped in `config.yml`). seqeratop sets `dark-seqera` /
+`light-seqera` to match its stylix + ghostty + herdr Seqera branding;
+mactraitorpro keeps the shared Catppuccin default. Precedence for the theme id
+mirrors any config key: the build-time overlay wins because it rewrites the
+sourced file.
