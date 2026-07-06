@@ -5,26 +5,29 @@
          let cell_width_px = cell_width_px.max(1);
          let cell_height_px = cell_height_px.max(1);
 +
-+        // libghostty's PageList resize path asserts that dimensions are non-zero
-+        // and aborts the host process on transient zero-sized terminal areas. macOS
-+        // can produce those during wake/display reconfiguration, so treat them as
-+        // no-op resize events at the FFI boundary instead of entering Zig.
-+        if cols == 0 || rows == 0 {
++        // libghostty's PageList resize path can abort the host process on
++        // transient tiny terminal areas. macOS wake/display reconfiguration and
++        // narrow remote clients can briefly produce those for split panes, so
++        // treat them as no-op resize events at the FFI boundary.
++        if cols < 4 || rows < 2 {
 +            return Ok(());
 +        }
 +
          // SAFETY: self.raw is valid and sizes are plain values.
          unsafe {
              ffi::ghostty_terminal_resize(self.raw, cols, rows, cell_width_px, cell_height_px)
-@@ -3053,6 +3062,16 @@
+@@ -3053,6 +3062,19 @@
      }
  
      #[test]
-+    fn terminal_resize_ignores_zero_dimensions() {
++    fn terminal_resize_ignores_unsafe_tiny_dimensions() {
 +        let mut terminal = Terminal::new(8, 3, 100).unwrap();
 +
 +        assert!(terminal.resize(0, 3, 8, 16).is_ok());
++        assert!(terminal.resize(1, 3, 8, 16).is_ok());
++        assert!(terminal.resize(3, 3, 8, 16).is_ok());
 +        assert!(terminal.resize(8, 0, 8, 16).is_ok());
++        assert!(terminal.resize(8, 1, 8, 16).is_ok());
 +        assert_eq!(terminal.cols().unwrap(), 8);
 +        assert_eq!(terminal.rows().unwrap(), 3);
 +    }
