@@ -1050,6 +1050,7 @@ in
               install_plugin kkckkc herdr-plugin-gh-workflow
               install_plugin alon-z herdr-command-palette
               install_plugin 0x5c0f herdr-insight
+              install_plugin persiyanov herdr-reviewr
               install_plugin edmundmiller herdr-which-key "" optional
             '';
 
