@@ -35,7 +35,9 @@ in
         function fnm {
           unfunction fnm node npm npx pnpm yarn
           eval "$(command fnm env --use-on-cd)"
-          command fnm "$@"
+          # Stubs call `fnm` with no args just to init; only invoke the real
+          # binary when a subcommand was actually passed (bare `fnm` errors).
+          (( $# )) && command fnm "$@"
         }
         # Create stub functions for node/npm that trigger fnm init
         for cmd in node npm npx pnpm yarn; do
