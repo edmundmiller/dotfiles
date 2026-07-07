@@ -345,6 +345,10 @@ def main(argv: list[str] | None = None) -> int:
 
     sessions_dir = Path(known.omp_sessions).expanduser()
     mirror_home = Path(known.omp_mirror_home).expanduser()
+    os.environ.setdefault(
+        "SKILLOPT_SLEEP_STAGING_ROOT",
+        str(Path.home() / ".skillopt-sleep" / "omp" / "staging"),
+    )
     if not sessions_dir.is_dir():
         print(f"[skillopt-omp] ERROR: OMP sessions dir not found: {sessions_dir}", file=sys.stderr)
         return 1
