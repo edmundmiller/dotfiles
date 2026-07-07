@@ -430,120 +430,123 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    user.packages = [
-      (lib.hiPrio ompPackage)
-      hassMcpServer
-    ]
-    ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection
-    ++ lib.optional cfg.skilloptSleep.enable skilloptSleepNightly;
+  config = mkIf cfg.enable (
+    {
+      user.packages = [
+        (lib.hiPrio ompPackage)
+        hassMcpServer
+      ]
+      ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection
+      ++ lib.optional cfg.skilloptSleep.enable skilloptSleepNightly;
 
-    home.file.".omp/agent/config.yml" = {
-      source = ompConfigFile;
-      force = true;
-    };
+      home.file.".omp/agent/config.yml" = {
+        source = ompConfigFile;
+        force = true;
+      };
 
-    home.file.".omp/agent/lsp.json" = {
-      source = lsp.configFile;
-      force = true;
-    };
+      home.file.".omp/agent/lsp.json" = {
+        source = lsp.configFile;
+        force = true;
+      };
 
-    home.file.".omp/agent/models.yml" = mkIf cfg.vibeproxy.enable {
-      source = "${configDir}/omp/models.yml";
-      force = true;
-    };
+      home.file.".omp/agent/models.yml" = mkIf cfg.vibeproxy.enable {
+        source = "${configDir}/omp/models.yml";
+        force = true;
+      };
 
-    home.file.".omp/agent/themes/light-catppuccin-readable.json" = {
-      source = "${configDir}/omp/themes/light-catppuccin-readable.json";
-      force = true;
-    };
+      home.file.".omp/agent/themes/light-catppuccin-readable.json" = {
+        source = "${configDir}/omp/themes/light-catppuccin-readable.json";
+        force = true;
+      };
 
-    home.file.".omp/agent/themes/dark-seqera.json" = {
-      source = "${configDir}/omp/themes/dark-seqera.json";
-      force = true;
-    };
+      home.file.".omp/agent/themes/dark-seqera.json" = {
+        source = "${configDir}/omp/themes/dark-seqera.json";
+        force = true;
+      };
 
-    home.file.".omp/agent/themes/light-seqera.json" = {
-      source = "${configDir}/omp/themes/light-seqera.json";
-      force = true;
-    };
+      home.file.".omp/agent/themes/light-seqera.json" = {
+        source = "${configDir}/omp/themes/light-seqera.json";
+        force = true;
+      };
 
-    home.file.".omp/agent/extensions/permission-policy-guard".source =
-      "${configDir}/omp/extensions/permission-policy-guard";
-    home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
-      "${configDir}/pi/pi-permission-system.jsonc";
+      home.file.".omp/agent/extensions/permission-policy-guard".source =
+        "${configDir}/omp/extensions/permission-policy-guard";
+      home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
+        "${configDir}/pi/pi-permission-system.jsonc";
 
-    launchd.user.agents =
-      optionalAttrs (isDarwin && cfg.dailyIntrospection.enable) {
-        omp-thread-introspection = {
-          command = "${threadIntrospection}/bin/omp-thread-introspection";
-          serviceConfig = {
-            StartCalendarInterval = {
-              Hour = cfg.dailyIntrospection.hour;
-              Minute = cfg.dailyIntrospection.minute;
+      home-manager.users.${config.user.name} =
+        { lib, ... }:
+        {
+          home.activation.omp-herdr-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${herdrPlugin}"} --force --json >/dev/null
+          '';
+
+          home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${ompPackage}/bin/omp plugin uninstall pi-skillopt-sleep --json >/dev/null 2>&1 || true
+            ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${skilloptSleepPlugin}"} --force --json >/dev/null
+          '';
+
+          home.activation.omp-ponytail-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${ponytailPlugin}"} --force --json >/dev/null
+          '';
+
+          home.activation.omp-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${pkgs.python3}/bin/python3 <<'PY'
+            import pathlib
+            import sqlite3
+
+            db_path = pathlib.Path.home() / ".omp" / "agent" / "agent.db"
+            if db_path.exists():
+                try:
+                    conn = sqlite3.connect(db_path)
+                    try:
+                        conn.execute("delete from cache where key like 'mcp_tools:%'")
+                        conn.commit()
+                    finally:
+                        conn.close()
+                except Exception:
+                    pass
+
+            PY
+          '';
+        };
+    }
+    // optionalAttrs isDarwin {
+      launchd.user.agents =
+        optionalAttrs cfg.dailyIntrospection.enable {
+          omp-thread-introspection = {
+            command = "${threadIntrospection}/bin/omp-thread-introspection";
+            serviceConfig = {
+              StartCalendarInterval = {
+                Hour = cfg.dailyIntrospection.hour;
+                Minute = cfg.dailyIntrospection.minute;
+              };
+              StandardOutPath = "${config.user.home}/Library/Logs/omp-thread-introspection.log";
+              StandardErrorPath = "${config.user.home}/Library/Logs/omp-thread-introspection.err.log";
+              EnvironmentVariables = {
+                HOME = config.user.home;
+              };
             };
-            StandardOutPath = "${config.user.home}/Library/Logs/omp-thread-introspection.log";
-            StandardErrorPath = "${config.user.home}/Library/Logs/omp-thread-introspection.err.log";
-            EnvironmentVariables = {
-              HOME = config.user.home;
+          };
+        }
+        // optionalAttrs cfg.skilloptSleep.enable {
+          omp-skillopt-sleep = {
+            command = "${skilloptSleepNightly}/bin/omp-skillopt-sleep-nightly";
+            serviceConfig = {
+              StartCalendarInterval = {
+                Hour = cfg.skilloptSleep.hour;
+                Minute = cfg.skilloptSleep.minute;
+              };
+              StandardOutPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep.log";
+              StandardErrorPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep.err.log";
+              EnvironmentVariables = {
+                HOME = config.user.home;
+                PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+                SKILLOPT_SLEEP_REPO = "${skilloptSleepSource}";
+              };
             };
           };
         };
-      }
-      // optionalAttrs (isDarwin && cfg.skilloptSleep.enable) {
-        omp-skillopt-sleep = {
-          command = "${skilloptSleepNightly}/bin/omp-skillopt-sleep-nightly";
-          serviceConfig = {
-            StartCalendarInterval = {
-              Hour = cfg.skilloptSleep.hour;
-              Minute = cfg.skilloptSleep.minute;
-            };
-            StandardOutPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep.log";
-            StandardErrorPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep.err.log";
-            EnvironmentVariables = {
-              HOME = config.user.home;
-              PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
-              SKILLOPT_SLEEP_REPO = "${skilloptSleepSource}";
-            };
-          };
-        };
-      };
-
-    home-manager.users.${config.user.name} =
-      { lib, ... }:
-      {
-        home.activation.omp-herdr-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${herdrPlugin}"} --force --json >/dev/null
-        '';
-
-        home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${ompPackage}/bin/omp plugin uninstall pi-skillopt-sleep --json >/dev/null 2>&1 || true
-          ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${skilloptSleepPlugin}"} --force --json >/dev/null
-        '';
-
-        home.activation.omp-ponytail-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${ponytailPlugin}"} --force --json >/dev/null
-        '';
-
-        home.activation.omp-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${pkgs.python3}/bin/python3 <<'PY'
-          import pathlib
-          import sqlite3
-
-          db_path = pathlib.Path.home() / ".omp" / "agent" / "agent.db"
-          if db_path.exists():
-              try:
-                  conn = sqlite3.connect(db_path)
-                  try:
-                      conn.execute("delete from cache where key like 'mcp_tools:%'")
-                      conn.commit()
-                  finally:
-                      conn.close()
-              except Exception:
-                  pass
-
-          PY
-        '';
-      };
-  };
+    }
+  );
 }
