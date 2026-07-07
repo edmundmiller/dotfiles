@@ -77,7 +77,7 @@ two Nix levers write per-host roles at build time:
 - **mactraitorpro**: `smolModel = "xai-oauth/grok-composer-2.5-fast"`; other
   roles stay on the shared `config.yml`.
 - **seqeratop** (logged into cursor + openai-codex): `smolModel =
-  "cursor/composer-2.5"`, plus `modelRoles` pinning default=`cursor/glm-5.2-high`,
+"cursor/composer-2.5"`, plus `modelRoles` pinning default=`cursor/glm-5.2-high`,
   plan=`cursor/claude-opus-4-8-high`, advisor=`openai-codex/gpt-5.5:high`.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
