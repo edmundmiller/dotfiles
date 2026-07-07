@@ -98,19 +98,16 @@
           retry.modelFallback = true;
           retry.fallbackChains = {
             default = [
-              "xai-oauth/grok-build-0.1"
-              "opencode-go/qwen3.7-max"
-              "openai-codex/gpt-5.4"
+              "opencode-go/glm-5.2"
+              "xai-oauth/grok-composer-2.5-fast"
             ];
             plan = [
               "xai-oauth/grok-4.3"
-              "opencode-go/qwen3.7-max"
-              "openai-codex/gpt-5.4"
+              "opencode-go/glm-5.2"
             ];
             slow = [
               "xai-oauth/grok-4.3"
-              "opencode-go/qwen3.7-max"
-              "openai-codex/gpt-5.4"
+              "opencode-go/glm-5.2"
             ];
             smol = [
               "openai-codex/gpt-5.4-mini"
