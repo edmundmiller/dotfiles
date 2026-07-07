@@ -44,3 +44,9 @@ rmcp_client = true
 
 [notice.model_migrations]
 "gpt-5.2-codex" = "gpt-5.3-codex"
+
+[profiles.triage]
+model_reasoning_effort = "low"
+
+[profiles.review]
+model_reasoning_effort = "high"
