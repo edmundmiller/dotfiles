@@ -97,3 +97,10 @@ config {
 - Specific file: `nf-test test modules/nf-core/fastp/tests/main.nf.test`.
 - Isolated work dir: `NFT_WORKDIR=$(mktemp -d) nf-test test path/to/main.nf.test`.
 - Snapshot update only after review: use the repo's documented nf-test snapshot update command.
+
+## Additional Resources
+
+- `references/checklist.md` — target, inputs, assertions, and command checklist.
+- `templates/process.nf.test` — copyable process-test skeleton.
+- `evals/scenarios.md` — simple, edge, and complex prompts for skill testing.
+- Optional script: `sh scripts/run-targeted-nf-test.sh path/to/main.nf.test`.

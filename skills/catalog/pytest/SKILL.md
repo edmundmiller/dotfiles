@@ -82,3 +82,10 @@ def test_malformed_json_preserves_raw():
 - Specific case: `uv run pytest tests/test_name.py::test_case -q`.
 - Existing project command wins when `pyproject.toml`, README, or CI defines one.
 - Use `-vv` only when assertion detail is needed; default to quiet output for quick loops.
+
+## Additional Resources
+
+- `references/checklist.md` — contract, state, assertions, and command checklist.
+- `templates/test_behavior.py` — copyable behavior-test skeleton with `tmp_path` and parametrization.
+- `evals/scenarios.md` — simple, edge, and complex prompts for skill testing.
+- Optional script: `python3 scripts/run-targeted-pytest.py tests/test_name.py`.

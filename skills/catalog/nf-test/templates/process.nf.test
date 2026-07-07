@@ -1,0 +1,30 @@
+nextflow_process {
+
+    name "Test Process TOOL"
+    script "../main.nf"
+    process "TOOL"
+    tag "modules"
+    tag "tool"
+
+    test("test_tool_single_end") {
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id:'test', single_end:true ],
+                    [ file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true) ]
+                ])
+                input[1] = []
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.log.get(0).get(1)).getText().contains("expected text") },
+                { assert snapshot(process.out.results, process.out.versions).match() }
+            )
+        }
+    }
+}

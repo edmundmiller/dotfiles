@@ -88,3 +88,10 @@ function createMockRuntime() {
 - Package script: `npm test -- <file>`, `pnpm test <file>`, or `bun test <file>` only if the repo already uses it.
 - Direct Vitest: `vitest run path/to/file.test.ts`.
 - Watch mode is for humans; agents should use non-watch `run`.
+
+## Additional Resources
+
+- `references/checklist.md` — seam, doubles, assertions, and command checklist.
+- `templates/behavior.test.ts` — copyable behavior-test skeleton with captured `fetch`.
+- `evals/scenarios.md` — simple, edge, and complex prompts for skill testing.
+- Optional script: `node scripts/run-targeted-vitest.mjs path/to/file.test.ts`.
