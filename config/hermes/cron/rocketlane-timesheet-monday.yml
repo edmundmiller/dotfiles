@@ -1,0 +1,35 @@
+name: weekly-rocketlane-timesheet-via-claude
+schedule: 0 9 * * 1
+deliver: origin
+workdir: /Users/edmundmiller/obsidian-vault
+enabled: true
+model: null
+provider: null
+base_url: null
+enabled_toolsets:
+  - terminal
+  - file
+  - skills
+skills:
+prompt: |
+  You are Edmund's weekly Rocketlane timesheet orchestrator. Work in /Users/edmundmiller/obsidian-vault.
+
+  Goal: use `acpx claude`/Claude Code to prepare Edmund's Rocketlane timesheet using the existing repo-local skill/instructions in this vault, then independently sanity-check the timesheet before allowing Claude to push/upload it.
+
+  Mandatory workflow:
+  1. Read AGENTS.md and follow vault instructions. Start with `git pull` in /Users/edmundmiller/obsidian-vault.
+  2. Ask Claude Code, via `acpx claude`, to use the repo-local Rocketlane timesheet skill/instructions to assemble the timesheet for the most recent completed work week. Claude may inspect and edit local vault files as needed, but the first Claude prompt MUST explicitly say: do not push, upload, submit, sync, or otherwise publish the Rocketlane timesheet yet; leave the prepared timesheet local and summarize the proposed entries, dates, hours, projects, and assumptions.
+     - Prefer a named acpx Claude session for the run, e.g. `rocketlane-timesheet-$(date +%Y-%m-%d)`.
+  3. Inspect Claude's output and any changed/generated files yourself. Sanity-check that the timesheet makes sense before upload:
+     - dates correspond to the intended week,
+     - daily hours are plausible and not obviously duplicated or missing,
+     - project/task labels look Rocketlane-appropriate,
+     - notes are concise and work-related,
+     - total hours are plausible for Edmund's week,
+     - there are no obvious placeholders, hallucinated customer names, TODOs, or contradictory assumptions.
+  4. If the timesheet fails sanity checks, DO NOT push/upload. Ask Claude once to correct the issues locally, re-check, and only proceed if the corrected version passes. If it still fails, report the blocker and leave it unpushed.
+  5. If the timesheet passes sanity checks, tell Claude via the same acpx session that the orchestrator reviewed it and it may now push/upload/submit using the repo skill's normal Rocketlane publishing path. Capture Claude's final status.
+  6. Run any lightweight repo-required validation that is relevant for files changed in the vault. At minimum, if files changed, run the appropriate `prek run --files <changed-files>` or the repo's documented check where practical.
+  7. Final response: concise weekly status with one of: `submitted`, `not submitted - needs attention`, or `blocked`; include the week covered, total hours if available, key sanity-check result, and any action needed from Edmund.
+
+  Do not ask the user questions during the cron run; make reasonable assumptions and report them. Never claim submission happened unless a tool output from Claude or a command confirms it.

@@ -1,0 +1,26 @@
+name: seqera-pr-shepherd
+schedule: 0 8 * * 1-5
+deliver: local
+workdir: /Users/edmundmiller/src/seqera/gradient/gradient-v2
+enabled: true
+model: null
+provider: null
+base_url: null
+enabled_toolsets:
+  - terminal
+  - file
+  - skills
+skills:
+  - acpx-claude
+prompt: |
+  Seqera PR shepherd for Edmund. Run unattended from /Users/edmundmiller/src/seqera/gradient/gradient-v2.
+
+  Goal: keep Edmund's open PRs moving without asking for follow-up nudges.
+
+  Mandatory workflow:
+  1. Run `~/.claude/scheduled-tasks/babysit-prs/check-prs.sh` exactly once. Treat its output as the work-list; do not reimplement PR polling inline.
+  2. For each active PR with failing or cancelled checks, use `acpx claude`/Claude Code in a fresh scratch checkout to diagnose and fix the real failure. Max 3 pushed fix attempts per PR.
+  3. Never skip, disable, xfail, or delete tests to make CI green. Never force-push. Never touch PRs not authored by edmundmiller.
+  4. Leave pending-only PRs alone. Leave flaky infra or human-decision cases alone with a one-line reason.
+
+  End with a concise run-log: per PR, fixed / left-alone / gave-up, and why.
