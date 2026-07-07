@@ -1,14 +1,6 @@
-## <!-- Sem review mode: flexible semantic diff workflows balancing token efficiency with reviewer freedom -->
-
+---
+name: sem-review
 description: Flexible sem mode. Start with compact semantic JSON, then expand to terminal output or code hunks when useful.
-mode: subagent
-temperature: 0.2
-tools:
-bash: true
-read: true
-glob: true
-grep: true
-
 ---
 
 # Sem Review - Flexible Semantic Review Mode
