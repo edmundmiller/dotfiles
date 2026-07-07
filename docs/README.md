@@ -11,7 +11,14 @@ system works, what is intentional, and where changes should land.
 
 - [architecture.md](./architecture.md) — repo structure, module layout, hosts,
   packages, and deployment topology
-- [install.md](./install.md) — install/bootstrap guidance
+- [install.md](./install.md) — bootstrap notes plus upstream nix-darwin,
+  Lix, and Nix command references
+
+### Agent references
+
+- [../.agents/skills/nix-darwin-reference/SKILL.md](../.agents/skills/nix-darwin-reference/SKILL.md)
+  — agent-facing nix-darwin reference workflow for Darwin/macOS Nix work;
+  keep this out of global agent prompts
 
 ### ADE / workflows
 
