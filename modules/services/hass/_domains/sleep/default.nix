@@ -341,7 +341,7 @@ in
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
-          "switch.eve_energy_20ebu4101" = "off"; # Whitenoise waits for sleep_done + both bed-presence signals
+          "switch.eve_energy_20ebu4101" = "off"; # Whitenoise waits for sleep_done + bedroom audiobook
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
@@ -554,12 +554,12 @@ in
         ];
       }
 
-      # White noise starts only after the final Sleep phase and fresh human
-      # heart-rate readings from both 8Sleep sides. Bed presence alone is
-      # contaminated by the dog lying on a cool side of the bed.
+      # White noise starts after the final Sleep phase once either bedroom
+      # nightstand speaker starts playing. HA currently exposes no audiobook
+      # metadata for these HomePods, so playing-on-bedroom-speaker is the signal.
       {
-        alias = "White noise after both in bed";
-        id = "white_noise_after_both_in_bed";
+        alias = "White noise with bedtime audiobook";
+        id = "white_noise_with_bedtime_audiobook";
         mode = "single";
         trigger = [
           {
@@ -569,11 +569,13 @@ in
           }
           {
             platform = "state";
-            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
+            entity_id = "media_player.bathroom_nightstand";
+            to = "playing";
           }
           {
             platform = "state";
-            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
+            entity_id = "media_player.window_nightstand";
+            to = "playing";
           }
         ];
         condition = [
@@ -588,20 +590,19 @@ in
             state = "on";
           }
           {
-            condition = "template";
-            value_template = ''
-              {% set s = states.sensor.edmund_s_eight_sleep_side_heart_rate %}
-              {% set hr = s.state | float(0) %}
-              {{ hr >= 35 and hr <= 130 and (now() - s.last_updated).total_seconds() <= 300 }}
-            '';
-          }
-          {
-            condition = "template";
-            value_template = ''
-              {% set s = states.sensor.monica_s_eight_sleep_side_heart_rate %}
-              {% set hr = s.state | float(0) %}
-              {{ hr >= 35 and hr <= 130 and (now() - s.last_updated).total_seconds() <= 300 }}
-            '';
+            condition = "or";
+            conditions = [
+              {
+                condition = "state";
+                entity_id = "media_player.bathroom_nightstand";
+                state = "playing";
+              }
+              {
+                condition = "state";
+                entity_id = "media_player.window_nightstand";
+                state = "playing";
+              }
+            ];
           }
           {
             condition = "state";
