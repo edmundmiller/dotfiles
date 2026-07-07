@@ -546,10 +546,10 @@ index 00cc1f2..03a69d0 100644
          kind: "item",
 diff --git i/src/ui/lib/sourceSwitch.test.ts w/src/ui/lib/sourceSwitch.test.ts
 new file mode 100644
-index 0000000..ecafbcf
+index 0000000..bc015e2
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.test.ts
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,217 @@
 +import { execFileSync } from "node:child_process";
 +import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 +import { tmpdir } from "node:os";
@@ -594,6 +594,7 @@ index 0000000..ecafbcf
 +      "commit",
 +      "branch",
 +      "pi-last-turn",
++      "omp-last-turn",
 +    ]);
 +    expect(items.find((item) => item.id === "staged")?.active).toBe(true);
 +    expect(activeReviewSource(input)).toBe("staged");
@@ -679,10 +680,46 @@ index 0000000..ecafbcf
 +        "Last Pi turn",
 +      );
 +      expect(repoPathForInput({ kind: "patch", file: patchPath, options: {} }, "")).toBe(repo);
++      expect(activeReviewSource({ kind: "patch", file: patchPath, options: {} })).toBe(
++        "pi-last-turn",
++      );
 +      expect(JSON.parse(readFileSync(markerPath, "utf8"))).toMatchObject({
 +        kind: "patch",
 +        file: patchPath,
 +      });
++    } finally {
++      rmSync(repo, { force: true, recursive: true });
++    }
++  });
++
++  test("OMP marker resolves through same last-turn source seam", () => {
++    const repo = createRepo();
++    try {
++      const markerPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-omp-turn.json"]),
++      );
++      const patchPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-omp-turn.patch"]),
++      );
++      mkdirSync(dirname(markerPath), { recursive: true });
++      writeFileSync(patchPath, "diff --git a/file.txt b/file.txt\n");
++      writeFileSync(markerPath, JSON.stringify({ version: 1, kind: "patch", file: patchPath }));
++
++      const result = resolveReviewSourceInput("omp-last-turn", repo, { mode: "split" });
++      expect(result).toMatchObject({
++        kind: "input",
++        input: { kind: "patch", file: patchPath, options: { mode: "split" } },
++        label: "Last OMP turn",
++      });
++      expect(sourceIndicatorLabel({ kind: "patch", file: patchPath, options: {} }, "")).toBe(
++        "Last OMP turn",
++      );
++      expect(activeReviewSource({ kind: "patch", file: patchPath, options: {} })).toBe(
++        "omp-last-turn",
++      );
++      expect(repoPathForInput({ kind: "patch", file: patchPath, options: {} }, "")).toBe(repo);
 +    } finally {
 +      rmSync(repo, { force: true, recursive: true });
 +    }
@@ -732,16 +769,18 @@ index 0000000..ecafbcf
 +});
 diff --git i/src/ui/lib/sourceSwitch.ts w/src/ui/lib/sourceSwitch.ts
 new file mode 100644
-index 0000000..171ad62
+index 0000000..faf5aff
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.ts
-@@ -0,0 +1,385 @@
+@@ -0,0 +1,432 @@
 +import { execFileSync } from "node:child_process";
 +import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 +import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 +import type { CliInput, CommonOptions } from "../../core/types";
 +
-+export type BuiltInReviewSourceId = "unstaged" | "staged" | "commit" | "branch" | "pi-last-turn";
++export type BaseReviewSourceId = "unstaged" | "staged" | "commit" | "branch";
++export type LastTurnReviewSourceId = "pi-last-turn" | "omp-last-turn";
++export type BuiltInReviewSourceId = BaseReviewSourceId | LastTurnReviewSourceId;
 +export type PullRequestReviewSourceId = `pr:${number}`;
 +export type ReviewSourceId = BuiltInReviewSourceId | PullRequestReviewSourceId;
 +
@@ -762,28 +801,38 @@ index 0000000..171ad62
 +  title: string;
 +}
 +
-+const SOURCE_LABELS: Record<BuiltInReviewSourceId, string> = {
++interface LastTurnSource {
++  id: LastTurnReviewSourceId;
++  label: string;
++  hint: string;
++  markerBasename: string;
++}
++
++const BASE_SOURCE_LABELS: Record<BaseReviewSourceId, string> = {
 +  unstaged: "Unstaged",
 +  staged: "Staged",
 +  commit: "Commit",
 +  branch: "Branch",
-+  "pi-last-turn": "Last Pi turn",
 +};
 +
-+const SOURCE_HINTS: Record<BuiltInReviewSourceId, string> = {
++const BASE_SOURCE_HINTS: Record<BaseReviewSourceId, string> = {
 +  unstaged: "u",
 +  staged: "s",
 +  commit: "c",
 +  branch: "b",
-+  "pi-last-turn": "p",
 +};
++
++const LAST_TURN_SOURCES: LastTurnSource[] = [
++  { id: "pi-last-turn", label: "Last Pi turn", hint: "p", markerBasename: "last-pi-turn" },
++  { id: "omp-last-turn", label: "Last OMP turn", hint: "o", markerBasename: "last-omp-turn" },
++];
 +
 +export const REVIEW_SOURCE_ORDER: BuiltInReviewSourceId[] = [
 +  "unstaged",
 +  "staged",
 +  "commit",
 +  "branch",
-+  "pi-last-turn",
++  ...LAST_TURN_SOURCES.map((source) => source.id),
 +];
 +
 +function run(repo: string, command: string, args: string[], timeout?: number) {
@@ -804,7 +853,24 @@ index 0000000..171ad62
 +  return run(repo, "gh", args, timeout);
 +}
 +
-+function parsePullRequestId(id: ReviewSourceId): number | null {
++function lastTurnSource(id: string) {
++  return LAST_TURN_SOURCES.find((source) => source.id === id);
++}
++
++function lastTurnSourceByPatch(path: string) {
++  const patchBasename = basename(path).replace(/\.patch$/, "");
++  return LAST_TURN_SOURCES.find((source) => source.markerBasename === patchBasename);
++}
++
++function sourceLabel(id: BuiltInReviewSourceId) {
++  return BASE_SOURCE_LABELS[id as BaseReviewSourceId] ?? lastTurnSource(id)?.label ?? id;
++}
++
++function sourceHint(id: BuiltInReviewSourceId) {
++  return BASE_SOURCE_HINTS[id as BaseReviewSourceId] ?? lastTurnSource(id)?.hint ?? "";
++}
++
++function parsePullRequestId(id: string): number | null {
 +  const match = id.match(/^pr:(\d+)$/);
 +  return match ? Number(match[1]) : null;
 +}
@@ -819,14 +885,18 @@ index 0000000..171ad62
 +  return match ? `PR #${match[1]}` : null;
 +}
 +
-+function isBuiltInReviewSourceId(id: ReviewSourceId): id is BuiltInReviewSourceId {
++function isBuiltInReviewSourceId(id: string): id is BuiltInReviewSourceId {
 +  return (
 +    id === "unstaged" ||
 +    id === "staged" ||
 +    id === "commit" ||
 +    id === "branch" ||
-+    id === "pi-last-turn"
++    Boolean(lastTurnSource(id))
 +  );
++}
++
++function isReviewSourceId(id: string): id is ReviewSourceId {
++  return isBuiltInReviewSourceId(id) || parsePullRequestId(id) !== null;
 +}
 +
 +function sourceMetadataPath(patchFile: string) {
@@ -837,6 +907,7 @@ index 0000000..171ad62
 +  if (!patchFile) return null;
 +
 +  const metadataFile = sourceMetadataPath(patchFile);
++
 +  if (!existsSync(metadataFile)) return null;
 +
 +  try {
@@ -912,13 +983,20 @@ index 0000000..171ad62
 +export function reviewSourceLabel(id: ReviewSourceId) {
 +  const prNumber = parsePullRequestId(id);
 +  if (prNumber !== null) return `PR #${prNumber}`;
-+  if (isBuiltInReviewSourceId(id)) return SOURCE_LABELS[id];
++  if (isBuiltInReviewSourceId(id)) return sourceLabel(id);
 +  return id;
 +}
 +
 +export function activeReviewSource(input: CliInput): ReviewSourceId | null {
 +  if (input.kind === "show") return "commit";
 +  if (input.kind === "patch" && input.file) {
++    const metadata = sourceMetadataForPatch(input.file);
++    if (typeof metadata?.sourceId === "string" && isReviewSourceId(metadata.sourceId)) {
++      return metadata.sourceId;
++    }
++    const lastTurn = lastTurnSourceByPatch(input.file);
++    if (lastTurn) return lastTurn.id;
++
 +    const label = pullRequestLabelFromPath(input.file);
 +    return label ? (`pr:${label.slice(4)}` as PullRequestReviewSourceId) : null;
 +  }
@@ -936,8 +1014,7 @@ index 0000000..171ad62
 +  const patchFile = input.file ?? sourceLabel;
 +  const metadata = sourceMetadataForPatch(patchFile);
 +  if (typeof metadata?.label === "string") return metadata.label;
-+  if (basename(patchFile) === "last-pi-turn.patch") return SOURCE_LABELS["pi-last-turn"];
-+  return pullRequestLabelFromPath(patchFile);
++  return lastTurnSourceByPatch(patchFile)?.label ?? pullRequestLabelFromPath(patchFile);
 +}
 +
 +export function buildReviewSourceItems(input: CliInput, repo?: string): ReviewSourceItem[] {
@@ -946,8 +1023,8 @@ index 0000000..171ad62
 +  return [
 +    ...REVIEW_SOURCE_ORDER.map((id) => ({
 +      id,
-+      label: SOURCE_LABELS[id],
-+      hint: SOURCE_HINTS[id],
++      label: sourceLabel(id),
++      hint: sourceHint(id),
 +      active: active === id,
 +      enabled: true,
 +    })),
@@ -993,12 +1070,13 @@ index 0000000..171ad62
 +  }
 +}
 +
-+function piLastTurnMarker(repo: string) {
++function lastTurnMarker(repo: string, source: LastTurnSource) {
++  const markerName = `hunk/${source.markerBasename}.json`;
 +  try {
-+    const marker = runGit(repo, ["rev-parse", "--git-path", "hunk/last-pi-turn.json"]);
++    const marker = runGit(repo, ["rev-parse", "--git-path", markerName]);
 +    return isAbsolute(marker) ? marker : resolve(repo, marker);
 +  } catch {
-+    return join(repo, ".git", "hunk", "last-pi-turn.json");
++    return join(repo, ".git", markerName);
 +  }
 +}
 +
@@ -1007,39 +1085,43 @@ index 0000000..171ad62
 +  return isAbsolute(value) ? value : resolve(repo, value);
 +}
 +
-+function piLastTurnInput(repo: string, options: CommonOptions): ReviewSourceSwitchResult {
-+  const markerPath = piLastTurnMarker(repo);
++function lastTurnInput(
++  source: LastTurnSource,
++  repo: string,
++  options: CommonOptions,
++): ReviewSourceSwitchResult {
++  const markerPath = lastTurnMarker(repo, source);
 +  if (!existsSync(markerPath)) {
-+    return { kind: "notice", message: "No Last Pi turn source for this repo." };
++    return { kind: "notice", message: `No ${source.label} source for this repo.` };
 +  }
 +
 +  let marker: unknown;
 +  try {
 +    marker = JSON.parse(readFileSync(markerPath, "utf8"));
 +  } catch {
-+    return { kind: "notice", message: "Last Pi turn marker is unreadable." };
++    return { kind: "notice", message: `${source.label} marker is unreadable.` };
 +  }
 +
 +  if (!marker || typeof marker !== "object") {
-+    return { kind: "notice", message: "Last Pi turn marker is invalid." };
++    return { kind: "notice", message: `${source.label} marker is invalid.` };
 +  }
 +
 +  const record = marker as Record<string, unknown>;
 +  if (record.kind === "patch") {
 +    const file = resolveMarkerPath(repo, record.file);
 +    if (!file || !existsSync(file)) {
-+      return { kind: "notice", message: "Last Pi turn patch is missing." };
++      return { kind: "notice", message: `${source.label} patch is missing.` };
 +    }
-+    persistSourceMetadata(file, { repo, label: SOURCE_LABELS["pi-last-turn"] });
++    persistSourceMetadata(file, { repo, label: source.label, sourceId: source.id });
 +    return {
 +      kind: "input",
 +      input: { kind: "patch", file, options },
 +      sourcePath: repo,
-+      label: SOURCE_LABELS["pi-last-turn"],
++      label: source.label,
 +    };
 +  }
 +
-+  return { kind: "notice", message: "Last Pi turn marker has no supported source." };
++  return { kind: "notice", message: `${source.label} marker has no supported source.` };
 +}
 +
 +function pullRequestInput(
@@ -1061,7 +1143,7 @@ index 0000000..171ad62
 +  const file = pullRequestPatchPath(repo, number);
 +  mkdirSync(dirname(file), { recursive: true });
 +  writeFileSync(file, `${patchText}\n`);
-+  persistSourceMetadata(file, { repo, label: `PR #${number}` });
++  persistSourceMetadata(file, { repo, label: `PR #${number}`, sourceId: `pr:${number}` });
 +  return {
 +    kind: "input",
 +    input: { kind: "patch", file, options },
@@ -1082,27 +1164,30 @@ index 0000000..171ad62
 +  const prNumber = parsePullRequestId(sourceId);
 +  if (prNumber !== null) return pullRequestInput(repo, prNumber, options);
 +
++  const lastTurn = lastTurnSource(sourceId);
++  if (lastTurn) return lastTurnInput(lastTurn, repo, options);
++
 +  switch (sourceId) {
 +    case "unstaged":
 +      return {
 +        kind: "input",
 +        input: { kind: "vcs", staged: false, options },
 +        sourcePath: repo,
-+        label: SOURCE_LABELS.unstaged,
++        label: BASE_SOURCE_LABELS.unstaged,
 +      };
 +    case "staged":
 +      return {
 +        kind: "input",
 +        input: { kind: "vcs", staged: true, options },
 +        sourcePath: repo,
-+        label: SOURCE_LABELS.staged,
++        label: BASE_SOURCE_LABELS.staged,
 +      };
 +    case "commit":
 +      return {
 +        kind: "input",
 +        input: { kind: "show", ref: "HEAD", options },
 +        sourcePath: repo,
-+        label: SOURCE_LABELS.commit,
++        label: BASE_SOURCE_LABELS.commit,
 +      };
 +    case "branch": {
 +      const range = defaultBranchRange(repo);
@@ -1113,12 +1198,11 @@ index 0000000..171ad62
 +        kind: "input",
 +        input: { kind: "vcs", range, staged: false, options },
 +        sourcePath: repo,
-+        label: SOURCE_LABELS.branch,
++        label: BASE_SOURCE_LABELS.branch,
 +      };
 +    }
-+    case "pi-last-turn":
-+      return piLastTurnInput(repo, options);
 +  }
++
 +  return { kind: "notice", message: "Unsupported source." };
 +}
 diff --git i/src/ui/lib/ui-lib.test.ts w/src/ui/lib/ui-lib.test.ts
