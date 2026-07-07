@@ -37,6 +37,12 @@ in
       # CLAUDE.md is built dynamically from config/agents/rules/*.md
       ".claude/CLAUDE.md".text = concatenatedRules;
 
+      # PostToolUse lint gate referenced by config/claude/settings.json hooks
+      ".claude/hooks/quality-gate.sh" = {
+        source = "${configDir}/claude/hooks/quality-gate.sh";
+        executable = true;
+      };
+
       # WakaTime configuration (reads agenix secret from current user's HOME)
       # NOTE: api_key_vault_cmd is argv-split by wakatime-cli (not shell-parsed),
       # so avoid sh -c with single quotes or it breaks with unmatched-quote errors.
@@ -75,8 +81,30 @@ in
           # Herdr's Claude installer mutates settings.json to register hooks.
           # Keep those runtime hooks while refreshing the rest from the repo
           # template, and replace old Home Manager symlinks with a writable file.
+          # Then union template entries back in (matched by command set) so new
+          # repo hooks still reach machines whose hooks were runtime-mutated.
+          template_hooks = data.get("hooks") if isinstance(data, dict) else None
           if isinstance(existing, dict) and existing.get("hooks"):
               data["hooks"] = existing["hooks"]
+              if isinstance(template_hooks, dict) and isinstance(data["hooks"], dict):
+                  def entry_commands(entry):
+                      if not isinstance(entry, dict):
+                          return ()
+                      return tuple(sorted(
+                          h.get("command", "")
+                          for h in entry.get("hooks", [])
+                          if isinstance(h, dict)
+                      ))
+                  for event, entries in template_hooks.items():
+                      if not isinstance(entries, list):
+                          continue
+                      have = data["hooks"].setdefault(event, [])
+                      if not isinstance(have, list):
+                          continue
+                      seen = {entry_commands(e) for e in have}
+                      for e in entries:
+                          if entry_commands(e) not in seen:
+                              have.append(e)
 
           stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
           hooks = data.get("hooks")

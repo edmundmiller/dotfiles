@@ -205,6 +205,20 @@
       "Bash(git rebase --continue:*)"
     ]
   },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/edmundmiller/.claude/hooks/quality-gate.sh'",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "wt list statusline --claude-code",
