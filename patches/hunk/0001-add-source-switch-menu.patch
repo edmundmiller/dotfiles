@@ -546,10 +546,10 @@ index 00cc1f2..03a69d0 100644
          kind: "item",
 diff --git i/src/ui/lib/sourceSwitch.test.ts w/src/ui/lib/sourceSwitch.test.ts
 new file mode 100644
-index 0000000..89daa83
+index 0000000..9c31ac4
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.test.ts
-@@ -0,0 +1,264 @@
+@@ -0,0 +1,282 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  chmodSync,
@@ -751,22 +751,40 @@ index 0000000..89daa83
 +        repo,
 +        git(repo, ["rev-parse", "--git-path", "hunk/last-omp-turn.patch"]),
 +      );
++      const codexMarkerPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-codex-turn.json"]),
++      );
++      const codexPatchPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-codex-turn.patch"]),
++      );
 +      mkdirSync(dirname(piMarkerPath), { recursive: true });
 +      writeFileSync(piPatchPath, "diff --git a/file.txt b/file.txt\n");
 +      writeFileSync(ompPatchPath, "diff --git a/file.txt b/file.txt\n");
++      writeFileSync(codexPatchPath, "diff --git a/file.txt b/file.txt\n");
 +      writeFileSync(piMarkerPath, JSON.stringify({ version: 1, kind: "patch", file: piPatchPath }));
 +      writeFileSync(
 +        ompMarkerPath,
 +        JSON.stringify({ version: 1, kind: "patch", file: ompPatchPath }),
 +      );
++      writeFileSync(
++        codexMarkerPath,
++        JSON.stringify({ version: 1, kind: "patch", file: codexPatchPath }),
++      );
 +      utimesSync(piMarkerPath, new Date("2026-01-01T00:00:00Z"), new Date("2026-01-01T00:00:00Z"));
 +      utimesSync(ompMarkerPath, new Date("2026-01-02T00:00:00Z"), new Date("2026-01-02T00:00:00Z"));
++      utimesSync(
++        codexMarkerPath,
++        new Date("2026-01-03T00:00:00Z"),
++        new Date("2026-01-03T00:00:00Z"),
++      );
 +
 +      const result = resolveReviewSourceInput("last-agent-turn", repo, {});
 +      expect(result).toMatchObject({
 +        kind: "input",
-+        input: { kind: "patch", file: ompPatchPath },
-+        label: "Last OMP turn",
++        input: { kind: "patch", file: codexPatchPath },
++        label: "Last Codex turn",
 +      });
 +    } finally {
 +      rmSync(repo, { force: true, recursive: true });
@@ -816,10 +834,10 @@ index 0000000..89daa83
 +});
 diff --git i/src/ui/lib/sourceSwitch.ts w/src/ui/lib/sourceSwitch.ts
 new file mode 100644
-index 0000000..0681aa0
+index 0000000..e438844
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.ts
-@@ -0,0 +1,446 @@
+@@ -0,0 +1,447 @@
 +import { execFileSync } from "node:child_process";
 +import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 +import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
@@ -876,6 +894,7 @@ index 0000000..0681aa0
 +const AGENT_LAST_TURN_SOURCES: AgentLastTurnSource[] = [
 +  { label: "Last Pi turn", markerBasename: "last-pi-turn" },
 +  { label: "Last OMP turn", markerBasename: "last-omp-turn" },
++  { label: "Last Codex turn", markerBasename: "last-codex-turn" },
 +];
 +
 +export const REVIEW_SOURCE_ORDER: BuiltInReviewSourceId[] = [
