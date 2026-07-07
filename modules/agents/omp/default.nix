@@ -128,21 +128,28 @@ let
     cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
     ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-omp.py"} ${lib.escapeShellArgs skilloptSleepArgs}
   '';
-  # config.yml is shared across all omp hosts. Theme is the one setting that
-  # legitimately differs per host (this repo brands seqeratop with Seqera and
-  # mactraitorpro with Catppuccin), and omp has no theme env/flag lever, so
-  # overlay just the theme keys onto the shared file at build time when a host
-  # sets an override. Null keeps whatever config.yml ships.
-  baseConfig = "${configDir}/omp/config.yml";
-  themeOverrides =
+  # config.yml is shared across all omp hosts. Keep machine-specific settings as
+  # build-time overlays so Seqeratop and MacTraitorPro can diverge without
+  # copying the whole config.
+  baseConfig = ../../../config/omp/config.yml;
+  configOverrides =
     lib.optional (cfg.themeDark != null) ''.theme.dark = "${cfg.themeDark}"''
-    ++ lib.optional (cfg.themeLight != null) ''.theme.light = "${cfg.themeLight}"'';
+    ++ lib.optional (cfg.themeLight != null) ''.theme.light = "${cfg.themeLight}"''
+    ++ lib.optional (
+      cfg.modelProviderOrder != [ ]
+    ) ".modelProviderOrder = ${builtins.toJSON cfg.modelProviderOrder}"
+    ++
+      lib.optional (cfg.retry.modelFallback != null)
+        ".retry.modelFallback = ${if cfg.retry.modelFallback then "true" else "false"}"
+    ++ lib.optional (
+      cfg.retry.fallbackChains != { }
+    ) ".retry.fallbackChains = ${builtins.toJSON cfg.retry.fallbackChains}";
   ompConfigFile =
-    if themeOverrides == [ ] then
+    if configOverrides == [ ] then
       baseConfig
     else
       pkgs.runCommand "omp-config.yml" { nativeBuildInputs = [ pkgs.yq-go ]; } ''
-        yq eval ${lib.escapeShellArg (concatStringsSep " | " themeOverrides)} ${baseConfig} > "$out"
+        yq eval ${lib.escapeShellArg (concatStringsSep " | " configOverrides)} ${baseConfig} > "$out"
       '';
   threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
   threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
@@ -396,6 +403,25 @@ in
       default = null;
       example = "light-seqera";
       description = "Per-host override for theme.light. See themeDark.";
+    };
+    modelProviderOrder = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Preferred provider order for resolving ambiguous canonical model ids.";
+    };
+    retry = {
+      modelFallback = mkOption {
+        type = types.nullOr types.bool;
+        default = null;
+        description = ''
+          Per-host retry.modelFallback overlay. Null keeps config/omp/config.yml.
+        '';
+      };
+      fallbackChains = mkOption {
+        type = types.attrsOf (types.listOf types.str);
+        default = { };
+        description = "Per-role fallback chains used when retry.modelFallback is enabled.";
+      };
     };
     vibeproxy.enable = mkBoolOpt false // {
       description = ''

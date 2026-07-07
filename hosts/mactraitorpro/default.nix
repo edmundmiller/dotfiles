@@ -90,6 +90,33 @@
         omp = {
           enable = true;
           smolModel = "xai-oauth/grok-composer-2.5-fast";
+          modelProviderOrder = [
+            "openai-codex"
+            "xai-oauth"
+            "opencode-go"
+          ];
+          retry.modelFallback = true;
+          retry.fallbackChains = {
+            default = [
+              "xai-oauth/grok-build-0.1"
+              "opencode-go/qwen3.7-max"
+              "openai-codex/gpt-5.4"
+            ];
+            plan = [
+              "xai-oauth/grok-4.3"
+              "opencode-go/qwen3.7-max"
+              "openai-codex/gpt-5.4"
+            ];
+            slow = [
+              "xai-oauth/grok-4.3"
+              "opencode-go/qwen3.7-max"
+              "openai-codex/gpt-5.4"
+            ];
+            smol = [
+              "openai-codex/gpt-5.4-mini"
+              "opencode-go/deepseek-v4-flash"
+            ];
+          };
           dailyIntrospection.enable = true;
           dailyIntrospection.commit.enable = true;
           skilloptSleep.enable = true;
