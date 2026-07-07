@@ -1,0 +1,7 @@
+[ui]
+theme = "default"
+symbols = "ascii"
+spacing = "compact"
+width_mode = "full"
+fixed_width = 118
+scrollbar = "on-scroll"

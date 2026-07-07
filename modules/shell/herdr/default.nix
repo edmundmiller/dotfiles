@@ -471,6 +471,8 @@ in
     home.file.".pi/agent/themes/${piThemeName}.json".source = piThemeFile;
 
     home.configFile = {
+      "ghzinga/config.toml".source = "${config.dotfiles.configDir}/ghzinga/config.toml";
+
       "tmux/open-herdr.sh" = {
         executable = true;
         text = ''
