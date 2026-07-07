@@ -28,8 +28,8 @@ runs `python -m skillopt_sleep` with `--source claude --claude-home <mirror>`.
 
 - Source sessions: `~/.omp/agent/sessions/**/*.jsonl`
 - Mirror state: `~/.skillopt-sleep/omp/claude-home`
-- SkillOpt state/staging: managed by SkillOpt-Sleep, normally under
-  `~/.skillopt-sleep/`
+- SkillOpt state/staging: `~/.skillopt-sleep/omp/.skillopt-sleep/state.json`
+  and `~/.skillopt-sleep/omp/staging/`
 - Live changes: none until `adopt`; every adoption is backed up by the engine
 
 Tool outputs are not mirrored. The wrapper keeps user/assistant text and
