@@ -650,6 +650,9 @@ in
               "new_tab": "prefix+c",
               "rename_tab": "prefix+alt+t",
               "switch_tab": "prefix+1..9",
+              "focus_agent": "prefix+alt+1..9",
+              "next_agent": "prefix+J",
+              "previous_agent": "prefix+K",
               "previous_tab": "prefix+p",
               "next_tab": "prefix+n",
               "focus_pane_left": "prefix+h",
@@ -933,7 +936,15 @@ in
           out = upsert_worktree_directory(out)
           out = upsert_simple_section(out, "session", {"resume_agents_on_restore": "true"})
           out = upsert_simple_section(out, "experimental", {"pane_history": "true"})
-          out = upsert_simple_section(out, "ui", {"agent_panel_sort": '"priority"'})
+          out = upsert_simple_section(
+              out,
+              "ui",
+              {
+                  "agent_panel_sort": '"priority"',
+                  "hide_tab_bar_when_single_tab": "true",
+                  "prompt_new_tab_name": "false",
+              },
+          )
           out = replace_section(out, "[theme]", [f'name = "{theme_name}"'])
           out = replace_section(
               out,
