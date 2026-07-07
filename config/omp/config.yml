@@ -21,8 +21,8 @@ modelRoles:
   smol: xai-oauth/grok-composer-2.5-fast
   slow: openai-codex/gpt-5.5:xhigh
   plan: openai-codex/gpt-5.5:high
-# Keep OpenRouter/Kilo/etc. discoverable for explicit `--model` use, but do not
-# silently route retries through alternate model providers.
+# Shared default: keep OpenRouter/Kilo/etc. discoverable for explicit `--model`
+# use, but do not silently route retries unless a host overlay opts in.
 retry:
   modelFallback: false
 textVerbosity: low
