@@ -214,21 +214,28 @@
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
-        # Seqera public key (op://Employee/Seqera Key) on disk. The matching
-        # private key is ~/.ssh/id_ed25519 on this host.
-        home.file.".ssh/seqera.pub".text =
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty Seqera Key\n";
-
-        # Shared config-seqera pins signingkey to the literal pubkey, which
-        # routes ssh-keygen through the 1Password SSH agent (-U) and blocks
-        # headless agents on auth prompts. Sign with the on-disk key instead.
+        # Seqeratop agents need signing and pushes to work without the
+        # 1Password SSH agent being unlocked.
         xdg.configFile."git/config-seqera".source = lib.mkForce (
           pkgs.writeText "config-seqera" ''
             [user]
                 email = edmund.miller@seqera.io
-                signingkey = "~/.ssh/id_ed25519"
+                signingkey = "~/.ssh/seqera_ed25519"
+            [core]
+                sshCommand = ssh -i ~/.ssh/seqera_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=none
           ''
         );
+
+        xdg.configFile."jj/conf.d/seqera.toml".text = lib.mkForce ''
+          # Seqera/Nextflow work repositories
+          --when.repositories = ["~/src/seqera", "~/src/nextflow"]
+
+          [user]
+          email = "edmund.miller@seqera.io"
+
+          [signing]
+          key = "~/.ssh/seqera_ed25519"
+        '';
 
         home.sessionVariables = {
           PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.4";
