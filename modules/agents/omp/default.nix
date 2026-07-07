@@ -72,12 +72,20 @@ let
     hash = "sha256-9E9qa+rdFsyUcE1N2QiMeOeG0NpDuqu5SaeabbcScaI=";
   };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
-  skilloptSleepSource = pkgs.fetchFromGitHub {
+  skilloptSleepUpstream = pkgs.fetchFromGitHub {
     owner = "microsoft";
     repo = "SkillOpt";
     rev = "e4ea6a6771e797ef820cdd8bfea64c57e0481065";
     hash = "sha256-WVvnOO5B0pUvqmp1GNz3KpFoMkm8z/MPKevZz0jMleQ=";
   };
+  skilloptSleepSource = pkgs.runCommand "skillopt-sleep-source-omp-staging" { } ''
+    cp -R ${skilloptSleepUpstream} "$out"
+    chmod -R u+w "$out"
+    substituteInPlace "$out/skillopt_sleep/staging.py" \
+      --replace-fail \
+        'return os.path.join(project, ".skillopt-sleep", "staging")' \
+        'return os.environ.get("SKILLOPT_SLEEP_STAGING_ROOT") or os.path.join(project, ".skillopt-sleep", "staging")'
+  '';
   ompPackage = pkgs.stdenvNoCC.mkDerivation {
     name = "${cfg.package.pname or "omp"}-isolated";
     dontUnpack = true;
@@ -98,6 +106,8 @@ let
         --set PI_CONFIG_DIR ${lib.escapeShellArg ompConfigDir} \
         --set PI_CODING_AGENT_DIR ${lib.escapeShellArg ompAgentDir} \
         --set PONYTAIL_DEFAULT_MODE full \
+        --set SKILLOPT_SLEEP_REPO ${lib.escapeShellArg "${skilloptSleepSource}"} \
+        --set SKILLOPT_SLEEP_STAGING_ROOT ${lib.escapeShellArg "${config.user.home}/.skillopt-sleep/omp/staging"} \
         --set PI_PERMISSION_SYSTEM_CONFIG_PATH ${lib.escapeShellArg "${ompAgentDir}/extensions/pi-permission-system/config.json"}${
           lib.optionalString (
             cfg.smolModel != null
@@ -124,6 +134,7 @@ let
 
     export HOME=${lib.escapeShellArg config.user.home}
     export SKILLOPT_SLEEP_REPO=${lib.escapeShellArg "${skilloptSleepSource}"}
+    export SKILLOPT_SLEEP_STAGING_ROOT=${lib.escapeShellArg "${config.user.home}/.skillopt-sleep/omp/staging"}
 
     cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
     ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-omp.py"} ${lib.escapeShellArgs skilloptSleepArgs}
@@ -569,6 +580,7 @@ in
                 HOME = config.user.home;
                 PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
                 SKILLOPT_SLEEP_REPO = "${skilloptSleepSource}";
+                SKILLOPT_SLEEP_STAGING_ROOT = "${config.user.home}/.skillopt-sleep/omp/staging";
               };
             };
           };
