@@ -1,0 +1,40 @@
+name: Weekly Rocketlane timesheet via acpx Claude
+schedule: 0 16 * * 5
+deliver: origin
+workdir: /Users/edmundmiller/obsidian-vault
+enabled: true
+model: null
+provider: null
+base_url: null
+enabled_toolsets:
+  - terminal
+  - file
+skills:
+  - acpx-claude
+  - obsidian-timesheet-reconstruction
+prompt: |
+  Weekly Rocketlane timesheet orchestration for Edmund.
+
+  Run every Friday at 4pm Central from /Users/edmundmiller/obsidian-vault. Goal: use acpx Claude Code plus the repo-local Claude skill `.claude/skills/fillout-rocketlane-timesheet/SKILL.md` to prepare and, only after Hermes sanity-checks it, push the current week's Rocketlane timesheet.
+
+  Hard requirements:
+  - Workdir/repo: /Users/edmundmiller/obsidian-vault.
+  - Use `acpx claude` (Claude Code through ACPX), not direct manual reconstruction unless acpx is unavailable.
+  - Start by syncing and preflighting the vault: `git pull` and `scripts/agent-preflight.sh` if available.
+  - Read/observe the repo-local instructions, especially AGENTS.md and `.claude/skills/fillout-rocketlane-timesheet/SKILL.md`.
+  - Target week: the Mon-Sun week containing the Friday on which this job runs, unless the repo-local skill says a more appropriate interpretation for “this week”. Always include weekend dates in any checks.
+  - First Claude turn is draft-only: explicitly forbid push/submit/upload/commit and any external Rocketlane write. Ask Claude to gather sources, pull live RL state if the skill requires it, build/update local tasknotes/timesheet draft as appropriate, run dry-run checks, and return a structured summary with: week start/end, per-day entries, per-project/category totals, sources used, changed files, dry-run output, assumptions, and unresolved questions.
+  - Hermes/orchestrator sanity check before authorization: independently inspect Claude’s output and any local timesheet/tasknote files it created/changed. Check dates match the intended week; no personal/dotfiles repos are billed; no “Non-project activity”; Engineering/Product entries have categories; no duplicate obvious calendar/dev entries; day and week totals are plausible; notes are work-related and not placeholders/TODOs; dry-run output does not show errors; changed files match the vault workflow.
+  - If the sanity check fails, send exactly one focused correction prompt to the same named acpx session. Re-check afterward. If it still fails or has unresolved questions requiring Edmund, do NOT push; final status `not submitted - needs attention` or `blocked`.
+  - If checks pass, send a second prompt to the same named acpx session authorizing the repo-specific normal push/submit path from the skill (for example `bash scripts/rocketlane/rl-sync.sh <start> <end> --exec`, weekly note submitted flags, and commit if the skill requires it). Capture verifiable confirmation from command output and/or changed files before claiming success.
+  - Do not use dead Rocketlane ELB curl paths. Prefer repo scripts/rl CLI exactly as the skill instructs.
+
+  Suggested session name: `rocketlane-timesheet-$(date +%Y-%m-%d)`.
+
+  Final response format:
+  Status: submitted | not submitted - needs attention | blocked
+  Week: <YYYY-MM-DD> to <YYYY-MM-DD>
+  Total hours: <if known>
+  Sanity check: pass/fail with 2-4 concise bullets
+  Pushed/submitted evidence: <command output summary, entry IDs, git commit, or explicit reason absent>
+  Action needed from Edmund: <none or specific question/blocker>

@@ -1,0 +1,27 @@
+name: freshdesk-triage
+schedule: 15 9 * * 1-5
+deliver: local
+workdir: /Users/edmundmiller/.config/dotfiles
+enabled: true
+model: null
+provider: null
+base_url: null
+enabled_toolsets:
+  - terminal
+  - file
+  - skills
+skills:
+  - acpx-claude
+prompt: |
+  Seqera Freshdesk triage for Edmund. Run unattended.
+
+  Goal: triage Freshdesk/Slack items that need Edmund's attention, using the already configured Hermes MCP/tooling and Claude Code through ACPX for judgment-heavy work.
+
+  Mandatory workflow:
+  1. Inspect new or updated Freshdesk tickets assigned to Edmund or his team since the previous business day.
+  2. Cross-check relevant Slack context when a ticket mentions a customer, incident, thread, or handoff.
+  3. Classify each item: urgent action, waiting on Edmund, waiting on someone else, FYI/no action, or unclear.
+  4. Draft only safe internal notes or reply suggestions. Do not send customer replies, mutate ticket state, or post Slack messages unless an explicit tool confirmation is required and available.
+  5. Surface blockers: missing auth, unavailable MCP tools, ambiguous ownership, or any ticket needing human judgment.
+
+  End with a concise triage report grouped by classification, with ticket links/IDs and the next action.

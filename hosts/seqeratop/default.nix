@@ -257,6 +257,19 @@
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
         '';
+
+        home.activation.hermesCronSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          hermes_bin="$HOME/.local/bin/hermes"
+          cron_sync=${config.dotfiles.configDir}/hermes/cron/sync.py
+
+          if [ ! -x "$hermes_bin" ]; then
+            echo "warning: Hermes cron sync skipped: $hermes_bin is not executable" >&2
+          elif ! ${
+            pkgs.python3.withPackages (ps: [ ps.pyyaml ])
+          }/bin/python3 "$cron_sync" --hermes "$hermes_bin"; then
+            echo "warning: Hermes cron sync failed; run 'hermes cron status', 'hermes auth', and then 'hermes-cron-sync'" >&2
+          fi
+        '';
       };
 
   };
