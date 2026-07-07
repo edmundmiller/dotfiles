@@ -1,11 +1,17 @@
 ---
 name: pytest
-description: Use when writing or changing pytest tests, Python regression tests, fixtures, monkeypatching, parametrization, `xfail`, or `pytest` commands.
+description: Use when writing pytest tests, fixtures, monkeypatch, xfail, or pytest runs.
 ---
 
 # Pytest
 
 Pytest work should be **contract-first**: exercise the public behavior, keep fixtures boring, and run the smallest command that proves the change.
+
+## When to Use
+
+- Writing or changing Python tests that use pytest.
+- Choosing fixtures, `tmp_path`, `monkeypatch`, parametrization, or strict `xfail`.
+- Selecting the narrowest `pytest` command for a red/green loop.
 
 ## Loop
 

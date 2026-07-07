@@ -1,11 +1,17 @@
 ---
 name: nf-test
-description: Use when writing or changing nf-test tests, Nextflow process/workflow tests, nf-core module tests, snapshots, `nf-test test`, or `.nf.test` files.
+description: Use when writing nf-test Nextflow tests, snapshots, or nf-test runs.
 ---
 
 # nf-test
 
 nf-test work should be **pipeline-real**: run the smallest Nextflow process or workflow that proves the data contract, then snapshot only stable artifacts.
+
+## When to Use
+
+- Writing or changing `.nf.test` files for Nextflow processes or workflows.
+- Testing nf-core modules with tiny real inputs, configs, plugins, and snapshots.
+- Choosing targeted `nf-test test` commands and reviewing snapshot updates.
 
 ## Loop
 

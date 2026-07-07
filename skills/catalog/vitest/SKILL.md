@@ -1,11 +1,17 @@
 ---
 name: vitest
-description: Use when writing or changing Vitest tests, TypeScript/JavaScript unit tests, test doubles, fake timers, module mocks, or `vitest` commands.
+description: Use when writing Vitest tests, fake timers, vi mocks, or vitest runs.
 ---
 
 # Vitest
 
 Vitest work should stay **behavior-first**: one observable contract, one red test, one small implementation step, one targeted verification command.
+
+## When to Use
+
+- Writing or changing `*.test.ts`, `*.test.tsx`, or `*.spec.ts` files that use Vitest.
+- Testing TypeScript/JavaScript behavior with `describe`, `it`, `expect`, `vi`, fake timers, globals, or module mocks.
+- Choosing the smallest `vitest run` command for a red/green loop.
 
 ## Loop
 
@@ -53,7 +59,7 @@ function installFetch(): Captured[] {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }),
+    })
   );
   return captured;
 }
