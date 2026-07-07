@@ -102,5 +102,5 @@ config {
 
 - `references/checklist.md` — target, inputs, assertions, and command checklist.
 - `templates/process.nf.test` — copyable process-test skeleton.
-- `evals/scenarios.md` — simple, edge, and complex prompts for skill testing.
+- `evals/skill.eval.ts`, `evals/README.md`, and `evals/scenarios.md` — Vitest Evals + Pi harness template, setup notes, and prompts.
 - Optional script: `sh scripts/run-targeted-nf-test.sh path/to/main.nf.test`.

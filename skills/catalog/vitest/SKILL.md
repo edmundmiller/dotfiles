@@ -93,5 +93,5 @@ function createMockRuntime() {
 
 - `references/checklist.md` — seam, doubles, assertions, and command checklist.
 - `templates/behavior.test.ts` — copyable behavior-test skeleton with captured `fetch`.
-- `evals/scenarios.md` — simple, edge, and complex prompts for skill testing.
+- `evals/skill.eval.ts`, `evals/README.md`, and `evals/scenarios.md` — Vitest Evals + Pi harness template, setup notes, and prompts.
 - Optional script: `node scripts/run-targeted-vitest.mjs path/to/file.test.ts`.

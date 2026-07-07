@@ -87,5 +87,5 @@ def test_malformed_json_preserves_raw():
 
 - `references/checklist.md` — contract, state, assertions, and command checklist.
 - `templates/test_behavior.py` — copyable behavior-test skeleton with `tmp_path` and parametrization.
-- `evals/scenarios.md` — simple, edge, and complex prompts for skill testing.
+- `evals/skill.eval.ts`, `evals/README.md`, and `evals/scenarios.md` — Vitest Evals + Pi harness template, setup notes, and prompts.
 - Optional script: `python3 scripts/run-targeted-pytest.py tests/test_name.py`.
