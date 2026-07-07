@@ -188,6 +188,18 @@ export def wait-homebrew-idle [] {
 }
 
 
+export def moshi-client-active [] {
+  (($env.MOSHI_CLIENT? | default "") | str downcase) in ["1" "true" "yes"]
+}
+
+export def fail-if-moshi-client-rebuild [ctx: record, action: string] {
+  let activates_darwin_apps = ($ctx.os_name == "macos") and ($action in ["switch" "test"])
+
+  if $activates_darwin_apps and (moshi-client-active) {
+    error make {msg: "hey re: refusing macOS activation from Moshi/mosh (MOSHI_CLIENT=1). This Herdr session was spawned through mosh, so darwin-rebuild sees launchctl managername=Background and cannot update /Applications/Nix Apps. Exit the Moshi/mosh session, restart Herdr from Ghostty/Finder so launchctl managername is Aqua, then rerun hey re."}
+  }
+}
+
 export def system-rebuild [action: string, ...args: string] {
   let ctx = (context)
   let agent_mode = (
