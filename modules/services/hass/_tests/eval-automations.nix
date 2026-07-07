@@ -169,6 +169,7 @@ let
   voiceWebhookSleep = findAutomation "voice_webhook_sleep";
   voiceWebhookInBed = findAutomation "voice_webhook_in_bed";
   bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
+  whiteNoiseAfterBothInBed = findAutomation "white_noise_after_both_in_bed";
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
@@ -253,6 +254,44 @@ let
     {
       test = bedtimeNudgeWebhook != null;
       msg = "automation 'bedtime_nudge_webhook' missing";
+    }
+    {
+      test = whiteNoiseAfterBothInBed != null;
+      msg = "automation 'white_noise_after_both_in_bed' missing";
+    }
+    {
+      test = hasStateTrigger whiteNoiseAfterBothInBed "input_boolean.sleep_done" "on";
+      msg = "white_noise_after_both_in_bed must trigger when sleep_done turns on";
+    }
+    {
+      test = hasStateTrigger whiteNoiseAfterBothInBed "binary_sensor.edmund_bed_presence_reliable" "on";
+      msg = "white_noise_after_both_in_bed must trigger when Edmund reliable bed presence turns on";
+    }
+    {
+      test = hasStateTrigger whiteNoiseAfterBothInBed "binary_sensor.monica_bed_presence_reliable" "on";
+      msg = "white_noise_after_both_in_bed must trigger when Monica reliable bed presence turns on";
+    }
+    {
+      test =
+        hasStateCondition (toList (
+          whiteNoiseAfterBothInBed.condition or [ ]
+        )) "input_boolean.goodnight" "on"
+        && hasStateCondition (toList (
+          whiteNoiseAfterBothInBed.condition or [ ]
+        )) "input_boolean.sleep_done" "on"
+        && hasStateCondition (toList (
+          whiteNoiseAfterBothInBed.condition or [ ]
+        )) "binary_sensor.edmund_bed_presence_reliable" "on"
+        && hasStateCondition (toList (
+          whiteNoiseAfterBothInBed.condition or [ ]
+        )) "binary_sensor.monica_bed_presence_reliable" "on";
+      msg = "white_noise_after_both_in_bed must require goodnight, sleep_done, and both reliable bed-presence sensors";
+    }
+    {
+      test =
+        hasActionCall (toList (whiteNoiseAfterBothInBed.action or [ ])) "switch.turn_on"
+        && hasTargetEntity (toList (whiteNoiseAfterBothInBed.action or [ ])) "switch.eve_energy_20ebu4101";
+      msg = "white_noise_after_both_in_bed must turn on the whitenoise machine";
     }
     {
       test = syncIphoneAlarm8sleep != null && (syncIphoneAlarm8sleep.initial_state or null) == false;
@@ -444,6 +483,14 @@ let
     {
       test = (goodMorningScene.entities."switch.eve_energy_20ebu4101" or null) == "off";
       msg = "Good Morning scene doesn't turn off whitenoise";
+    }
+    {
+      test = (goodNightScene.entities."switch.eve_energy_20ebu4101" or null) == "off";
+      msg = "Good Night scene must leave whitenoise off until bed-presence gate";
+    }
+    {
+      test = (sleepScene.entities."switch.eve_energy_20ebu4101" or null) == "off";
+      msg = "Sleep scene must leave whitenoise off until bed-presence gate";
     }
     {
       test = (sleepScene.entities."switch.desk_monitor" or null) == "off";

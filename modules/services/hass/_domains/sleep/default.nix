@@ -320,7 +320,7 @@ in
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
-          "switch.eve_energy_20ebu4101" = "on"; # Whitenoise
+          "switch.eve_energy_20ebu4101" = "off"; # Whitenoise waits for final Sleep phase
           "cover.smartwings_window_covering" = "closed";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
@@ -341,7 +341,7 @@ in
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
-          "switch.eve_energy_20ebu4101" = "on"; # Whitenoise stays
+          "switch.eve_energy_20ebu4101" = "off"; # Whitenoise waits for sleep_done + both bed-presence signals
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
@@ -550,6 +550,65 @@ in
         action = [
           {
             action = "script.bedtime_nudge";
+          }
+        ];
+      }
+
+      # White noise starts only after the final Sleep phase and both 8Sleep sides
+      # report reliable bed presence. This avoids turning it on while one person
+      # is still up, even if the alarm-relative schedule reaches Sleep time.
+      {
+        alias = "White noise after both in bed";
+        id = "white_noise_after_both_in_bed";
+        mode = "single";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "input_boolean.sleep_done";
+            to = "on";
+          }
+          {
+            platform = "state";
+            entity_id = "binary_sensor.edmund_bed_presence_reliable";
+            to = "on";
+          }
+          {
+            platform = "state";
+            entity_id = "binary_sensor.monica_bed_presence_reliable";
+            to = "on";
+          }
+        ];
+        condition = [
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.sleep_done";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "binary_sensor.edmund_bed_presence_reliable";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "binary_sensor.monica_bed_presence_reliable";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "switch.eve_energy_20ebu4101";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "switch.turn_on";
+            target.entity_id = "switch.eve_energy_20ebu4101";
           }
         ];
       }
