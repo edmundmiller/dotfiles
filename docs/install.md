@@ -15,10 +15,14 @@ linkable instead of copying them into always-loaded agent context.
 - Lix installer for new or existing Linux/macOS installs:
   <https://lix.systems/install/#on-any-other-linuxmacos-system>
 
-The nix-darwin README recommends the Lix installer for new macOS installs
-because the official Nix installer has no automated uninstaller and manual
-macOS removal is complex. nix-darwin can still manage the Nix implementation
-later; set `nix.package = pkgs.lix` to keep Lix.
+The nix-darwin README recommends the Lix installer because the official Nix
+installer does not include an automated uninstaller, and manual uninstallation
+on macOS is complex. The Lix installer supports both flake-based and
+channel-based setups.
+
+The installer does not decide which Nix interpreter the system uses later:
+nix-darwin manages the Nix installation by default and defaults to upstream
+Nix. To keep Lix, set `nix.package = pkgs.lix` in configuration.
 
 ## Nix command references
 
