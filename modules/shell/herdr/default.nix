@@ -155,6 +155,12 @@ let
         description = "refresh GitHub PR status"
 
         [[keys.command]]
+        key = "prefix+P"
+        type = "plugin_action"
+        command = "dutifuldev.ghzinga.open"
+        description = "open issue or PR in ghzinga"
+
+        [[keys.command]]
         key = "prefix+I"
         type = "plugin_action"
         command = "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop"
@@ -593,6 +599,7 @@ in
               "nathanflurry.jj-workspace.remove",
               "herdr-insight.open-timeline-right",
               "gh-pr.refresh",
+              "dutifuldev.ghzinga.open",
               "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop",
               "ogulcancelik.github-start.open",
               "obsidian-neovide",
@@ -783,6 +790,12 @@ in
               'type = "plugin_action"',
               'command = "gh-pr.refresh"',
               'description = "refresh GitHub PR status"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+P"',
+              'type = "plugin_action"',
+              'command = "dutifuldev.ghzinga.open"',
+              'description = "open issue or PR in ghzinga"',
               "",
               "[[keys.command]]",
               'key = "prefix+I"',
