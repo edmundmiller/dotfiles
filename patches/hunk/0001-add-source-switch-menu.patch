@@ -546,12 +546,20 @@ index 00cc1f2..03a69d0 100644
          kind: "item",
 diff --git i/src/ui/lib/sourceSwitch.test.ts w/src/ui/lib/sourceSwitch.test.ts
 new file mode 100644
-index 0000000..bc015e2
+index 0000000..89daa83
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.test.ts
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,264 @@
 +import { execFileSync } from "node:child_process";
-+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import {
++  chmodSync,
++  mkdirSync,
++  mkdtempSync,
++  readFileSync,
++  rmSync,
++  utimesSync,
++  writeFileSync,
++} from "node:fs";
 +import { tmpdir } from "node:os";
 +import { dirname, join } from "node:path";
 +import { describe, expect, test } from "bun:test";
@@ -593,8 +601,7 @@ index 0000000..bc015e2
 +      "staged",
 +      "commit",
 +      "branch",
-+      "pi-last-turn",
-+      "omp-last-turn",
++      "last-agent-turn",
 +    ]);
 +    expect(items.find((item) => item.id === "staged")?.active).toBe(true);
 +    expect(activeReviewSource(input)).toBe("staged");
@@ -645,12 +652,12 @@ index 0000000..bc015e2
 +    }
 +  });
 +
-+  test("missing Pi marker returns a notice", () => {
++  test("missing last-agent marker returns a notice", () => {
 +    const repo = createRepo();
 +    try {
-+      expect(resolveReviewSourceInput("pi-last-turn", repo, {})).toEqual({
++      expect(resolveReviewSourceInput("last-agent-turn", repo, {})).toEqual({
 +        kind: "notice",
-+        message: "No Last Pi turn source for this repo.",
++        message: "No Last agent turn source for this repo.",
 +      });
 +    } finally {
 +      rmSync(repo, { force: true, recursive: true });
@@ -672,7 +679,7 @@ index 0000000..bc015e2
 +      writeFileSync(patchPath, "diff --git a/file.txt b/file.txt\n");
 +      writeFileSync(markerPath, JSON.stringify({ version: 1, kind: "patch", file: patchPath }));
 +
-+      expect(resolveReviewSourceInput("pi-last-turn", repo, { mode: "split" })).toMatchObject({
++      expect(resolveReviewSourceInput("last-agent-turn", repo, { mode: "split" })).toMatchObject({
 +        kind: "input",
 +        input: { kind: "patch", file: patchPath, options: { mode: "split" } },
 +      });
@@ -681,7 +688,7 @@ index 0000000..bc015e2
 +      );
 +      expect(repoPathForInput({ kind: "patch", file: patchPath, options: {} }, "")).toBe(repo);
 +      expect(activeReviewSource({ kind: "patch", file: patchPath, options: {} })).toBe(
-+        "pi-last-turn",
++        "last-agent-turn",
 +      );
 +      expect(JSON.parse(readFileSync(markerPath, "utf8"))).toMatchObject({
 +        kind: "patch",
@@ -707,7 +714,7 @@ index 0000000..bc015e2
 +      writeFileSync(patchPath, "diff --git a/file.txt b/file.txt\n");
 +      writeFileSync(markerPath, JSON.stringify({ version: 1, kind: "patch", file: patchPath }));
 +
-+      const result = resolveReviewSourceInput("omp-last-turn", repo, { mode: "split" });
++      const result = resolveReviewSourceInput("last-agent-turn", repo, { mode: "split" });
 +      expect(result).toMatchObject({
 +        kind: "input",
 +        input: { kind: "patch", file: patchPath, options: { mode: "split" } },
@@ -717,7 +724,7 @@ index 0000000..bc015e2
 +        "Last OMP turn",
 +      );
 +      expect(activeReviewSource({ kind: "patch", file: patchPath, options: {} })).toBe(
-+        "omp-last-turn",
++        "last-agent-turn",
 +      );
 +      expect(repoPathForInput({ kind: "patch", file: patchPath, options: {} }, "")).toBe(repo);
 +    } finally {
@@ -725,6 +732,46 @@ index 0000000..bc015e2
 +    }
 +  });
 +
++  test("last-agent source uses the newest agent marker", () => {
++    const repo = createRepo();
++    try {
++      const piMarkerPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-pi-turn.json"]),
++      );
++      const piPatchPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-pi-turn.patch"]),
++      );
++      const ompMarkerPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-omp-turn.json"]),
++      );
++      const ompPatchPath = join(
++        repo,
++        git(repo, ["rev-parse", "--git-path", "hunk/last-omp-turn.patch"]),
++      );
++      mkdirSync(dirname(piMarkerPath), { recursive: true });
++      writeFileSync(piPatchPath, "diff --git a/file.txt b/file.txt\n");
++      writeFileSync(ompPatchPath, "diff --git a/file.txt b/file.txt\n");
++      writeFileSync(piMarkerPath, JSON.stringify({ version: 1, kind: "patch", file: piPatchPath }));
++      writeFileSync(
++        ompMarkerPath,
++        JSON.stringify({ version: 1, kind: "patch", file: ompPatchPath }),
++      );
++      utimesSync(piMarkerPath, new Date("2026-01-01T00:00:00Z"), new Date("2026-01-01T00:00:00Z"));
++      utimesSync(ompMarkerPath, new Date("2026-01-02T00:00:00Z"), new Date("2026-01-02T00:00:00Z"));
++
++      const result = resolveReviewSourceInput("last-agent-turn", repo, {});
++      expect(result).toMatchObject({
++        kind: "input",
++        input: { kind: "patch", file: ompPatchPath },
++        label: "Last OMP turn",
++      });
++    } finally {
++      rmSync(repo, { force: true, recursive: true });
++    }
++  });
 +  test("adds open PRs for the current branch and resolves PR diffs", () => {
 +    const repo = createRepo();
 +    const bin = mkdtempSync(join(tmpdir(), "hunk-source-gh-"));
@@ -769,18 +816,18 @@ index 0000000..bc015e2
 +});
 diff --git i/src/ui/lib/sourceSwitch.ts w/src/ui/lib/sourceSwitch.ts
 new file mode 100644
-index 0000000..faf5aff
+index 0000000..0681aa0
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.ts
-@@ -0,0 +1,432 @@
+@@ -0,0 +1,446 @@
 +import { execFileSync } from "node:child_process";
-+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
++import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 +import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 +import type { CliInput, CommonOptions } from "../../core/types";
 +
 +export type BaseReviewSourceId = "unstaged" | "staged" | "commit" | "branch";
-+export type LastTurnReviewSourceId = "pi-last-turn" | "omp-last-turn";
-+export type BuiltInReviewSourceId = BaseReviewSourceId | LastTurnReviewSourceId;
++export type LastAgentTurnReviewSourceId = "last-agent-turn";
++export type BuiltInReviewSourceId = BaseReviewSourceId | LastAgentTurnReviewSourceId;
 +export type PullRequestReviewSourceId = `pr:${number}`;
 +export type ReviewSourceId = BuiltInReviewSourceId | PullRequestReviewSourceId;
 +
@@ -801,10 +848,8 @@ index 0000000..faf5aff
 +  title: string;
 +}
 +
-+interface LastTurnSource {
-+  id: LastTurnReviewSourceId;
++interface AgentLastTurnSource {
 +  label: string;
-+  hint: string;
 +  markerBasename: string;
 +}
 +
@@ -822,9 +867,15 @@ index 0000000..faf5aff
 +  branch: "b",
 +};
 +
-+const LAST_TURN_SOURCES: LastTurnSource[] = [
-+  { id: "pi-last-turn", label: "Last Pi turn", hint: "p", markerBasename: "last-pi-turn" },
-+  { id: "omp-last-turn", label: "Last OMP turn", hint: "o", markerBasename: "last-omp-turn" },
++const LAST_AGENT_TURN_SOURCE = {
++  id: "last-agent-turn",
++  label: "Last agent turn",
++  hint: "a",
++} as const;
++
++const AGENT_LAST_TURN_SOURCES: AgentLastTurnSource[] = [
++  { label: "Last Pi turn", markerBasename: "last-pi-turn" },
++  { label: "Last OMP turn", markerBasename: "last-omp-turn" },
 +];
 +
 +export const REVIEW_SOURCE_ORDER: BuiltInReviewSourceId[] = [
@@ -832,7 +883,7 @@ index 0000000..faf5aff
 +  "staged",
 +  "commit",
 +  "branch",
-+  ...LAST_TURN_SOURCES.map((source) => source.id),
++  LAST_AGENT_TURN_SOURCE.id,
 +];
 +
 +function run(repo: string, command: string, args: string[], timeout?: number) {
@@ -853,21 +904,19 @@ index 0000000..faf5aff
 +  return run(repo, "gh", args, timeout);
 +}
 +
-+function lastTurnSource(id: string) {
-+  return LAST_TURN_SOURCES.find((source) => source.id === id);
-+}
-+
-+function lastTurnSourceByPatch(path: string) {
++function agentLastTurnSourceByPatch(path: string) {
 +  const patchBasename = basename(path).replace(/\.patch$/, "");
-+  return LAST_TURN_SOURCES.find((source) => source.markerBasename === patchBasename);
++  return AGENT_LAST_TURN_SOURCES.find((source) => source.markerBasename === patchBasename);
 +}
 +
 +function sourceLabel(id: BuiltInReviewSourceId) {
-+  return BASE_SOURCE_LABELS[id as BaseReviewSourceId] ?? lastTurnSource(id)?.label ?? id;
++  if (id === LAST_AGENT_TURN_SOURCE.id) return LAST_AGENT_TURN_SOURCE.label;
++  return BASE_SOURCE_LABELS[id];
 +}
 +
 +function sourceHint(id: BuiltInReviewSourceId) {
-+  return BASE_SOURCE_HINTS[id as BaseReviewSourceId] ?? lastTurnSource(id)?.hint ?? "";
++  if (id === LAST_AGENT_TURN_SOURCE.id) return LAST_AGENT_TURN_SOURCE.hint;
++  return BASE_SOURCE_HINTS[id];
 +}
 +
 +function parsePullRequestId(id: string): number | null {
@@ -891,7 +940,7 @@ index 0000000..faf5aff
 +    id === "staged" ||
 +    id === "commit" ||
 +    id === "branch" ||
-+    Boolean(lastTurnSource(id))
++    id === LAST_AGENT_TURN_SOURCE.id
 +  );
 +}
 +
@@ -994,8 +1043,8 @@ index 0000000..faf5aff
 +    if (typeof metadata?.sourceId === "string" && isReviewSourceId(metadata.sourceId)) {
 +      return metadata.sourceId;
 +    }
-+    const lastTurn = lastTurnSourceByPatch(input.file);
-+    if (lastTurn) return lastTurn.id;
++    const lastTurn = agentLastTurnSourceByPatch(input.file);
++    if (lastTurn) return LAST_AGENT_TURN_SOURCE.id;
 +
 +    const label = pullRequestLabelFromPath(input.file);
 +    return label ? (`pr:${label.slice(4)}` as PullRequestReviewSourceId) : null;
@@ -1007,14 +1056,15 @@ index 0000000..faf5aff
 +}
 +
 +export function sourceIndicatorLabel(input: CliInput, sourceLabel: string): string | null {
-+  const active = activeReviewSource(input);
-+  if (active) return reviewSourceLabel(active);
-+  if (input.kind !== "patch") return null;
++  if (input.kind === "patch") {
++    const patchFile = input.file ?? sourceLabel;
++    const metadata = sourceMetadataForPatch(patchFile);
++    if (typeof metadata?.label === "string") return metadata.label;
++    return agentLastTurnSourceByPatch(patchFile)?.label ?? pullRequestLabelFromPath(patchFile);
++  }
 +
-+  const patchFile = input.file ?? sourceLabel;
-+  const metadata = sourceMetadataForPatch(patchFile);
-+  if (typeof metadata?.label === "string") return metadata.label;
-+  return lastTurnSourceByPatch(patchFile)?.label ?? pullRequestLabelFromPath(patchFile);
++  const active = activeReviewSource(input);
++  return active ? reviewSourceLabel(active) : null;
 +}
 +
 +export function buildReviewSourceItems(input: CliInput, repo?: string): ReviewSourceItem[] {
@@ -1070,7 +1120,7 @@ index 0000000..faf5aff
 +  }
 +}
 +
-+function lastTurnMarker(repo: string, source: LastTurnSource) {
++function lastTurnMarker(repo: string, source: AgentLastTurnSource) {
 +  const markerName = `hunk/${source.markerBasename}.json`;
 +  try {
 +    const marker = runGit(repo, ["rev-parse", "--git-path", markerName]);
@@ -1080,20 +1130,28 @@ index 0000000..faf5aff
 +  }
 +}
 +
++function newestLastAgentTurnMarker(repo: string) {
++  return AGENT_LAST_TURN_SOURCES.map((source) => ({
++    source,
++    markerPath: lastTurnMarker(repo, source),
++  }))
++    .filter(({ markerPath }) => existsSync(markerPath))
++    .sort((left, right) => statSync(right.markerPath).mtimeMs - statSync(left.markerPath).mtimeMs)
++    .at(0);
++}
++
 +function resolveMarkerPath(repo: string, value: unknown) {
 +  if (typeof value !== "string" || value.trim() === "") return null;
 +  return isAbsolute(value) ? value : resolve(repo, value);
 +}
 +
-+function lastTurnInput(
-+  source: LastTurnSource,
-+  repo: string,
-+  options: CommonOptions,
-+): ReviewSourceSwitchResult {
-+  const markerPath = lastTurnMarker(repo, source);
-+  if (!existsSync(markerPath)) {
-+    return { kind: "notice", message: `No ${source.label} source for this repo.` };
++function lastAgentTurnInput(repo: string, options: CommonOptions): ReviewSourceSwitchResult {
++  const markerSource = newestLastAgentTurnMarker(repo);
++  if (!markerSource) {
++    return { kind: "notice", message: "No Last agent turn source for this repo." };
 +  }
++
++  const { source, markerPath } = markerSource;
 +
 +  let marker: unknown;
 +  try {
@@ -1112,7 +1170,11 @@ index 0000000..faf5aff
 +    if (!file || !existsSync(file)) {
 +      return { kind: "notice", message: `${source.label} patch is missing.` };
 +    }
-+    persistSourceMetadata(file, { repo, label: source.label, sourceId: source.id });
++    persistSourceMetadata(file, {
++      repo,
++      label: source.label,
++      sourceId: LAST_AGENT_TURN_SOURCE.id,
++    });
 +    return {
 +      kind: "input",
 +      input: { kind: "patch", file, options },
@@ -1164,8 +1226,7 @@ index 0000000..faf5aff
 +  const prNumber = parsePullRequestId(sourceId);
 +  if (prNumber !== null) return pullRequestInput(repo, prNumber, options);
 +
-+  const lastTurn = lastTurnSource(sourceId);
-+  if (lastTurn) return lastTurnInput(lastTurn, repo, options);
++  if (sourceId === LAST_AGENT_TURN_SOURCE.id) return lastAgentTurnInput(repo, options);
 +
 +  switch (sourceId) {
 +    case "unstaged":
