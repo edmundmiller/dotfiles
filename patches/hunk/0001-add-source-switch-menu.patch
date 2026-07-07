@@ -1,5 +1,5 @@
 diff --git i/src/ui/App.tsx w/src/ui/App.tsx
-index d254c9c..2734e4f 100644
+index d254c9c..0e3f012 100644
 --- i/src/ui/App.tsx
 +++ w/src/ui/App.tsx
 @@ -28,6 +28,14 @@ import { fileRowId } from "./lib/ids";
@@ -7,24 +7,31 @@ index d254c9c..2734e4f 100644
  import { resolveResponsiveLayout } from "./lib/responsive";
  import { resizeSidebarWidth } from "./lib/sidebar";
 +import {
-+  activeReviewSource,
 +  buildReviewSourceItems,
 +  repoPathForInput,
 +  resolveReviewSourceInput,
 +  reviewSourceLabel,
++  sourceIndicatorLabel,
 +  type ReviewSourceId,
 +} from "./lib/sourceSwitch";
  import { availableThemes, resolveTheme, withTransparentBackground } from "./themes";
  
  type FocusArea = "files" | "filter" | "note";
-@@ -497,6 +505,23 @@ export function App({
+@@ -497,6 +505,30 @@ export function App({
  
    const canRefreshCurrentInput = canReloadInput(bootstrap.input);
    const watchEnabled = Boolean(bootstrap.input.options.watch && canRefreshCurrentInput);
-+  const repoPath = repoPathForInput(bootstrap.input, bootstrap.changeset.sourceLabel);
++  const gitBackedRepoPath = repoPathForInput(bootstrap.input, bootstrap.changeset.sourceLabel);
++  const [reviewSourceRepoPath, setReviewSourceRepoPath] = useState(gitBackedRepoPath);
++  const repoPath = gitBackedRepoPath ?? reviewSourceRepoPath;
++  const computedSourceLabel = sourceIndicatorLabel(
++    bootstrap.input,
++    bootstrap.changeset.sourceLabel,
++  );
++  const [selectedSourceLabel, setSelectedSourceLabel] = useState(computedSourceLabel);
 +  const reviewSourceItems = useMemo(
-+    () => buildReviewSourceItems(bootstrap.input),
-+    [bootstrap.input],
++    () => buildReviewSourceItems(bootstrap.input, repoPath),
++    [bootstrap.input, repoPath],
 +  );
 +
 +  const currentViewOptions = useMemo(
@@ -41,7 +48,7 @@ index d254c9c..2734e4f 100644
  
    /** Rebuild the current diff source while preserving the active app view options. */
    const refreshCurrentInput = useCallback(async () => {
-@@ -504,14 +529,7 @@ export function App({
+@@ -504,14 +536,7 @@ export function App({
        return;
      }
  
@@ -57,7 +64,7 @@ index d254c9c..2734e4f 100644
  
      await onReloadSession(nextInput, {
        resetApp: false,
-@@ -526,13 +544,8 @@ export function App({
+@@ -526,13 +551,8 @@ export function App({
      bootstrap.changeset.sourceLabel,
      bootstrap.input,
      canRefreshCurrentInput,
@@ -72,7 +79,7 @@ index d254c9c..2734e4f 100644
    ]);
  
    const triggerRefreshCurrentInput = useCallback(() => {
-@@ -574,6 +587,40 @@ export function App({
+@@ -574,6 +594,46 @@ export function App({
      triggerRefreshCurrentInput,
    ]);
  
@@ -88,12 +95,16 @@ index d254c9c..2734e4f 100644
 +        return;
 +      }
 +
++      if (result.sourcePath) {
++        setReviewSourceRepoPath(result.sourcePath);
++      }
 +      void onReloadSession(result.input, {
 +        resetApp: true,
 +        sourcePath: result.sourcePath,
 +      })
 +        .then(() => {
-+          showTransientNotice(`Source: ${reviewSourceLabel(sourceId)}`);
++          setSelectedSourceLabel(result.label);
++          showTransientNotice(`Source: ${result.label}`);
 +        })
 +        .catch((error) => {
 +          console.error("Failed to switch Hunk source.", error);
@@ -106,6 +117,8 @@ index d254c9c..2734e4f 100644
 +      onReloadSession,
 +      repoPath,
 +      showSessionNotice,
++      setReviewSourceRepoPath,
++      setSelectedSourceLabel,
 +      showTransientNotice,
 +    ],
 +  );
@@ -113,7 +126,7 @@ index d254c9c..2734e4f 100644
    useEffect(() => {
      if (!watchEnabled) {
        return;
-@@ -705,7 +752,9 @@ export function App({
+@@ -705,7 +765,9 @@ export function App({
          moveToHunk: review.moveToHunk,
          refreshCurrentInput: triggerRefreshCurrentInput,
          requestQuit,
@@ -123,7 +136,7 @@ index d254c9c..2734e4f 100644
          openThemeSelector,
          copyDecorations,
          showAgentNotes,
-@@ -732,8 +781,10 @@ export function App({
+@@ -732,8 +794,10 @@ export function App({
        moveToAnnotatedFile,
        moveToAnnotatedHunk,
        requestQuit,
@@ -134,7 +147,7 @@ index d254c9c..2734e4f 100644
        openThemeSelector,
        triggerRefreshCurrentInput,
        toggleCopyDecorations,
-@@ -761,6 +812,7 @@ export function App({
+@@ -761,6 +825,7 @@ export function App({
      activeMenuSpec,
      activeMenuWidth,
      activateCurrentMenuItem,
@@ -142,7 +155,7 @@ index d254c9c..2734e4f 100644
      closeMenu,
      menuSpecs,
      moveMenuItem,
-@@ -773,6 +825,7 @@ export function App({
+@@ -773,6 +838,7 @@ export function App({
    useAppKeyboardShortcuts({
      activeMenuId,
      activateCurrentMenuItem,
@@ -150,7 +163,7 @@ index d254c9c..2734e4f 100644
      canRefreshCurrentInput,
      closeHelp,
      closeMenu,
-@@ -787,6 +840,7 @@ export function App({
+@@ -787,6 +853,7 @@ export function App({
      moveMenuItem,
      moveThemeSelector,
      openMenu,
@@ -158,13 +171,13 @@ index d254c9c..2734e4f 100644
      openThemeSelector,
      pagerMode,
      requestQuit,
-@@ -862,7 +916,10 @@ export function App({
+@@ -862,7 +929,10 @@ export function App({
      (sum, file) => sum + file.stats.deletions,
      0,
    );
 -  const topTitle = `${bootstrap.changeset.title}  +${totalAdditions}  -${totalDeletions}`;
-+  const activeSourceId = activeReviewSource(bootstrap.input);
-+  const topTitle = `${activeSourceId ? `${reviewSourceLabel(activeSourceId)} · ` : ""}${
++  const sourceLabel = computedSourceLabel ?? selectedSourceLabel;
++  const topTitle = `${sourceLabel ? `${sourceLabel} · ` : ""}${
 +    bootstrap.changeset.title
 +  }  +${totalAdditions}  -${totalDeletions}`;
    const sidebarTextWidth = Math.max(8, clampedSidebarWidth - 2);
@@ -533,12 +546,12 @@ index 00cc1f2..03a69d0 100644
          kind: "item",
 diff --git i/src/ui/lib/sourceSwitch.test.ts w/src/ui/lib/sourceSwitch.test.ts
 new file mode 100644
-index 0000000..60c3306
+index 0000000..ecafbcf
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.test.ts
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,180 @@
 +import { execFileSync } from "node:child_process";
-+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
++import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 +import { tmpdir } from "node:os";
 +import { dirname, join } from "node:path";
 +import { describe, expect, test } from "bun:test";
@@ -546,6 +559,8 @@ index 0000000..60c3306
 +  activeReviewSource,
 +  buildReviewSourceItems,
 +  resolveReviewSourceInput,
++  repoPathForInput,
++  sourceIndicatorLabel,
 +} from "./sourceSwitch";
 +import type { CliInput } from "../../core/types";
 +
@@ -660,23 +675,75 @@ index 0000000..60c3306
 +        kind: "input",
 +        input: { kind: "patch", file: patchPath, options: { mode: "split" } },
 +      });
++      expect(sourceIndicatorLabel({ kind: "patch", file: patchPath, options: {} }, "")).toBe(
++        "Last Pi turn",
++      );
++      expect(repoPathForInput({ kind: "patch", file: patchPath, options: {} }, "")).toBe(repo);
++      expect(JSON.parse(readFileSync(markerPath, "utf8"))).toMatchObject({
++        kind: "patch",
++        file: patchPath,
++      });
 +    } finally {
 +      rmSync(repo, { force: true, recursive: true });
++    }
++  });
++
++  test("adds open PRs for the current branch and resolves PR diffs", () => {
++    const repo = createRepo();
++    const bin = mkdtempSync(join(tmpdir(), "hunk-source-gh-"));
++    const gh = join(bin, "gh");
++    const originalPath = process.env.PATH;
++
++    try {
++      git(repo, ["checkout", "-b", "feature"]);
++      writeFileSync(
++        gh,
++        `#!/bin/sh
++if [ "$2" = "diff" ]; then
++  printf 'diff --git a/file.txt b/file.txt\n--- a/file.txt\n+++ b/file.txt\n@@ -1 +1,2 @@\n base\n+pr change\n'
++else
++  printf '[{"number":123,"title":"Add source switch"}]'
++fi
++`,
++      );
++      chmodSync(gh, 0o755);
++      process.env.PATH = `${bin}:${originalPath ?? ""}`;
++
++      const items = buildReviewSourceItems({ kind: "vcs", staged: false, options: {} }, repo);
++      expect(items.find((item) => item.id === "pr:123")).toMatchObject({
++        label: "PR #123 Add source switch",
++        hint: "1",
++      });
++
++      const result = resolveReviewSourceInput("pr:123", repo, { mode: "stack" });
++      expect(result.kind).toBe("input");
++      if (result.kind === "input") {
++        expect(result).toMatchObject({ label: "PR #123", sourcePath: repo });
++        expect(result.input).toMatchObject({ kind: "patch", options: { mode: "stack" } });
++        expect(sourceIndicatorLabel(result.input, "")).toBe("PR #123");
++        expect(repoPathForInput(result.input, "")).toBe(repo);
++      }
++    } finally {
++      process.env.PATH = originalPath;
++      rmSync(repo, { force: true, recursive: true });
++      rmSync(bin, { force: true, recursive: true });
 +    }
 +  });
 +});
 diff --git i/src/ui/lib/sourceSwitch.ts w/src/ui/lib/sourceSwitch.ts
 new file mode 100644
-index 0000000..7d65a8e
+index 0000000..171ad62
 --- /dev/null
 +++ w/src/ui/lib/sourceSwitch.ts
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,385 @@
 +import { execFileSync } from "node:child_process";
-+import { existsSync, readFileSync } from "node:fs";
-+import { isAbsolute, join, resolve } from "node:path";
++import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
++import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 +import type { CliInput, CommonOptions } from "../../core/types";
 +
-+export type ReviewSourceId = "unstaged" | "staged" | "commit" | "branch" | "pi-last-turn";
++export type BuiltInReviewSourceId = "unstaged" | "staged" | "commit" | "branch" | "pi-last-turn";
++export type PullRequestReviewSourceId = `pr:${number}`;
++export type ReviewSourceId = BuiltInReviewSourceId | PullRequestReviewSourceId;
 +
 +export interface ReviewSourceItem {
 +  id: ReviewSourceId;
@@ -687,10 +754,15 @@ index 0000000..7d65a8e
 +}
 +
 +export type ReviewSourceSwitchResult =
-+  | { kind: "input"; input: CliInput; sourcePath?: string }
++  | { kind: "input"; input: CliInput; sourcePath?: string; label: string }
 +  | { kind: "notice"; message: string };
 +
-+const SOURCE_LABELS: Record<ReviewSourceId, string> = {
++interface BranchPullRequest {
++  number: number;
++  title: string;
++}
++
++const SOURCE_LABELS: Record<BuiltInReviewSourceId, string> = {
 +  unstaged: "Unstaged",
 +  staged: "Staged",
 +  commit: "Commit",
@@ -698,7 +770,7 @@ index 0000000..7d65a8e
 +  "pi-last-turn": "Last Pi turn",
 +};
 +
-+const SOURCE_HINTS: Record<ReviewSourceId, string> = {
++const SOURCE_HINTS: Record<BuiltInReviewSourceId, string> = {
 +  unstaged: "u",
 +  staged: "s",
 +  commit: "c",
@@ -706,7 +778,7 @@ index 0000000..7d65a8e
 +  "pi-last-turn": "p",
 +};
 +
-+export const REVIEW_SOURCE_ORDER: ReviewSourceId[] = [
++export const REVIEW_SOURCE_ORDER: BuiltInReviewSourceId[] = [
 +  "unstaged",
 +  "staged",
 +  "commit",
@@ -714,42 +786,185 @@ index 0000000..7d65a8e
 +  "pi-last-turn",
 +];
 +
-+function runGit(repo: string, args: string[]) {
-+  return execFileSync("git", args, {
++function run(repo: string, command: string, args: string[], timeout?: number) {
++  return execFileSync(command, args, {
 +    cwd: repo,
++    env: process.env,
 +    encoding: "utf8",
 +    stdio: ["ignore", "pipe", "ignore"],
++    timeout,
 +  }).trim();
 +}
 +
++function runGit(repo: string, args: string[]) {
++  return run(repo, "git", args);
++}
++
++function runGh(repo: string, args: string[], timeout = 30_000) {
++  return run(repo, "gh", args, timeout);
++}
++
++function parsePullRequestId(id: ReviewSourceId): number | null {
++  const match = id.match(/^pr:(\d+)$/);
++  return match ? Number(match[1]) : null;
++}
++
++function pullRequestPatchPath(repo: string, number: number) {
++  const gitPath = runGit(repo, ["rev-parse", "--git-path", `hunk/pr-${number}.patch`]);
++  return isAbsolute(gitPath) ? gitPath : resolve(repo, gitPath);
++}
++
++function pullRequestLabelFromPath(path: string) {
++  const match = basename(path).match(/^pr-(\d+)\.patch$/);
++  return match ? `PR #${match[1]}` : null;
++}
++
++function isBuiltInReviewSourceId(id: ReviewSourceId): id is BuiltInReviewSourceId {
++  return (
++    id === "unstaged" ||
++    id === "staged" ||
++    id === "commit" ||
++    id === "branch" ||
++    id === "pi-last-turn"
++  );
++}
++
++function sourceMetadataPath(patchFile: string) {
++  return `${patchFile}.source.json`;
++}
++
++function sourceMetadataForPatch(patchFile: string | undefined) {
++  if (!patchFile) return null;
++
++  const metadataFile = sourceMetadataPath(patchFile);
++  if (!existsSync(metadataFile)) return null;
++
++  try {
++    const metadata: unknown = JSON.parse(readFileSync(metadataFile, "utf8"));
++    return metadata && typeof metadata === "object" ? (metadata as Record<string, unknown>) : null;
++  } catch {
++    return null;
++  }
++}
++
++function persistSourceMetadata(patchFile: string, metadata: Record<string, string>) {
++  try {
++    writeFileSync(sourceMetadataPath(patchFile), JSON.stringify(metadata));
++  } catch {
++    // Sidecar metadata should never prevent reviewing a readable patch.
++  }
++}
++
++function repoPathFromGitHunkPath(patchFile: string) {
++  const marker = `${sep}.git${sep}hunk${sep}`;
++  const markerIndex = patchFile.indexOf(marker);
++  return markerIndex === -1 ? undefined : patchFile.slice(0, markerIndex);
++}
++
++function currentBranch(repo: string) {
++  try {
++    return runGit(repo, ["branch", "--show-current"]);
++  } catch {
++    return "";
++  }
++}
++
++function openPullRequestsForBranch(repo: string): BranchPullRequest[] {
++  const branch = currentBranch(repo);
++  if (!branch) return [];
++
++  try {
++    const output = runGh(
++      repo,
++      ["pr", "list", "--state", "open", "--head", branch, "--json", "number,title"],
++      2_000,
++    );
++    const parsed: unknown = JSON.parse(output || "[]");
++    if (!Array.isArray(parsed)) return [];
++
++    return parsed.flatMap((item) => {
++      if (!item || typeof item !== "object") return [];
++      const record = item as Record<string, unknown>;
++      return typeof record.number === "number" && typeof record.title === "string"
++        ? [{ number: record.number, title: record.title }]
++        : [];
++    });
++  } catch {
++    return [];
++  }
++}
++
++function pullRequestSourceItems(repo: string | undefined, activeLabel: string | null) {
++  if (!repo) return [];
++
++  return openPullRequestsForBranch(repo).map((pr, index): ReviewSourceItem => {
++    const label = `PR #${pr.number} ${pr.title}`;
++    return {
++      id: `pr:${pr.number}`,
++      label,
++      hint: String(index + 1),
++      active: activeLabel === `PR #${pr.number}`,
++      enabled: true,
++    };
++  });
++}
++
 +export function reviewSourceLabel(id: ReviewSourceId) {
-+  return SOURCE_LABELS[id];
++  const prNumber = parsePullRequestId(id);
++  if (prNumber !== null) return `PR #${prNumber}`;
++  if (isBuiltInReviewSourceId(id)) return SOURCE_LABELS[id];
++  return id;
 +}
 +
 +export function activeReviewSource(input: CliInput): ReviewSourceId | null {
 +  if (input.kind === "show") return "commit";
++  if (input.kind === "patch" && input.file) {
++    const label = pullRequestLabelFromPath(input.file);
++    return label ? (`pr:${label.slice(4)}` as PullRequestReviewSourceId) : null;
++  }
 +  if (input.kind !== "vcs") return null;
 +  if (input.staged) return "staged";
 +  if (input.range) return "branch";
 +  return "unstaged";
 +}
 +
-+export function buildReviewSourceItems(input: CliInput): ReviewSourceItem[] {
++export function sourceIndicatorLabel(input: CliInput, sourceLabel: string): string | null {
 +  const active = activeReviewSource(input);
-+  return REVIEW_SOURCE_ORDER.map((id) => ({
-+    id,
-+    label: SOURCE_LABELS[id],
-+    hint: SOURCE_HINTS[id],
-+    active: active === id,
-+    enabled: true,
-+  }));
++  if (active) return reviewSourceLabel(active);
++  if (input.kind !== "patch") return null;
++
++  const patchFile = input.file ?? sourceLabel;
++  const metadata = sourceMetadataForPatch(patchFile);
++  if (typeof metadata?.label === "string") return metadata.label;
++  if (basename(patchFile) === "last-pi-turn.patch") return SOURCE_LABELS["pi-last-turn"];
++  return pullRequestLabelFromPath(patchFile);
++}
++
++export function buildReviewSourceItems(input: CliInput, repo?: string): ReviewSourceItem[] {
++  const active = activeReviewSource(input);
++  const activeLabel = sourceIndicatorLabel(input, "");
++  return [
++    ...REVIEW_SOURCE_ORDER.map((id) => ({
++      id,
++      label: SOURCE_LABELS[id],
++      hint: SOURCE_HINTS[id],
++      active: active === id,
++      enabled: true,
++    })),
++    ...pullRequestSourceItems(repo, activeLabel),
++  ];
 +}
 +
 +export function repoPathForInput(input: CliInput, sourceLabel: string): string | undefined {
 +  if (input.kind === "vcs" || input.kind === "show" || input.kind === "stash-show") {
 +    return sourceLabel;
 +  }
-+  return undefined;
++  if (input.kind !== "patch") return undefined;
++
++  const patchFile = input.file ?? sourceLabel;
++  const metadata = sourceMetadataForPatch(patchFile);
++  if (typeof metadata?.repo === "string") return metadata.repo;
++  return repoPathFromGitHunkPath(patchFile);
 +}
 +
 +function defaultBranchRange(repo: string): string | null {
@@ -815,26 +1030,44 @@ index 0000000..7d65a8e
 +    if (!file || !existsSync(file)) {
 +      return { kind: "notice", message: "Last Pi turn patch is missing." };
 +    }
-+    return { kind: "input", input: { kind: "patch", file, options } };
-+  }
-+
-+  if (record.kind === "vcs") {
++    persistSourceMetadata(file, { repo, label: SOURCE_LABELS["pi-last-turn"] });
 +    return {
 +      kind: "input",
-+      input: {
-+        kind: "vcs",
-+        range: typeof record.range === "string" ? record.range : undefined,
-+        staged: record.staged === true,
-+        pathspecs: Array.isArray(record.pathspecs)
-+          ? record.pathspecs.filter((item): item is string => typeof item === "string")
-+          : undefined,
-+        options,
-+      },
++      input: { kind: "patch", file, options },
 +      sourcePath: repo,
++      label: SOURCE_LABELS["pi-last-turn"],
 +    };
 +  }
 +
 +  return { kind: "notice", message: "Last Pi turn marker has no supported source." };
++}
++
++function pullRequestInput(
++  repo: string,
++  number: number,
++  options: CommonOptions,
++): ReviewSourceSwitchResult {
++  let patchText = "";
++  try {
++    patchText = runGh(repo, ["pr", "diff", String(number), "--patch"]);
++  } catch {
++    return { kind: "notice", message: `Could not load PR #${number}.` };
++  }
++
++  if (!patchText) {
++    return { kind: "notice", message: `PR #${number} has no diff.` };
++  }
++
++  const file = pullRequestPatchPath(repo, number);
++  mkdirSync(dirname(file), { recursive: true });
++  writeFileSync(file, `${patchText}\n`);
++  persistSourceMetadata(file, { repo, label: `PR #${number}` });
++  return {
++    kind: "input",
++    input: { kind: "patch", file, options },
++    sourcePath: repo,
++    label: `PR #${number}`,
++  };
 +}
 +
 +export function resolveReviewSourceInput(
@@ -846,13 +1079,31 @@ index 0000000..7d65a8e
 +    return { kind: "notice", message: "Source switching requires a Git-backed Hunk session." };
 +  }
 +
++  const prNumber = parsePullRequestId(sourceId);
++  if (prNumber !== null) return pullRequestInput(repo, prNumber, options);
++
 +  switch (sourceId) {
 +    case "unstaged":
-+      return { kind: "input", input: { kind: "vcs", staged: false, options }, sourcePath: repo };
++      return {
++        kind: "input",
++        input: { kind: "vcs", staged: false, options },
++        sourcePath: repo,
++        label: SOURCE_LABELS.unstaged,
++      };
 +    case "staged":
-+      return { kind: "input", input: { kind: "vcs", staged: true, options }, sourcePath: repo };
++      return {
++        kind: "input",
++        input: { kind: "vcs", staged: true, options },
++        sourcePath: repo,
++        label: SOURCE_LABELS.staged,
++      };
 +    case "commit":
-+      return { kind: "input", input: { kind: "show", ref: "HEAD", options }, sourcePath: repo };
++      return {
++        kind: "input",
++        input: { kind: "show", ref: "HEAD", options },
++        sourcePath: repo,
++        label: SOURCE_LABELS.commit,
++      };
 +    case "branch": {
 +      const range = defaultBranchRange(repo);
 +      if (!range) {
@@ -862,11 +1113,13 @@ index 0000000..7d65a8e
 +        kind: "input",
 +        input: { kind: "vcs", range, staged: false, options },
 +        sourcePath: repo,
++        label: SOURCE_LABELS.branch,
 +      };
 +    }
 +    case "pi-last-turn":
 +      return piLastTurnInput(repo, options);
 +  }
++  return { kind: "notice", message: "Unsupported source." };
 +}
 diff --git i/src/ui/lib/ui-lib.test.ts w/src/ui/lib/ui-lib.test.ts
 index bce1ee7..31e86ea 100644
