@@ -38,8 +38,8 @@ Use the narrowest reference that answers the question:
 ## Install notes
 
 - nix-darwin requires a Nix implementation; Nix and Lix are both supported.
-- The nix-darwin README recommends the Lix installer for new macOS installs because the official Nix installer has no automated macOS uninstaller and manual removal is complex.
-- nix-darwin can later manage the Nix package used by the system. To keep Lix, set `nix.package = pkgs.lix` in configuration.
+- The nix-darwin README recommends the Lix installer because the official Nix installer has no automated uninstaller, manual macOS uninstallation is complex, and Lix supports both flake-based and channel-based setups.
+- The installer does not decide which Nix interpreter the system uses later: nix-darwin manages the Nix installation by default and defaults to upstream Nix. To keep Lix, set `nix.package = pkgs.lix` in configuration.
 - Flake-based nix-darwin installs use `darwin-rebuild switch`; before `darwin-rebuild` is installed, bootstrap with `sudo nix run nix-darwin/<branch>#darwin-rebuild -- switch`.
 
 ## `nix-build` notes
