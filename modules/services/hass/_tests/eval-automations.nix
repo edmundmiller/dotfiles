@@ -57,6 +57,12 @@ let
       t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == state
     ) (toList (automation.trigger or [ ]));
 
+  hasStateTriggerAny =
+    automation: entityId:
+    any (t: (t.platform or null) == "state" && (t.entity_id or null) == entityId) (
+      toList (automation.trigger or [ ])
+    );
+
   hasEventTrigger =
     automation: eventType:
     any (t: (t.platform or null) == "event" && (t.event_type or null) == eventType) (
@@ -264,28 +270,30 @@ let
       msg = "white_noise_after_both_in_bed must trigger when sleep_done turns on";
     }
     {
-      test = hasStateTrigger whiteNoiseAfterBothInBed "binary_sensor.edmund_bed_presence_reliable" "on";
-      msg = "white_noise_after_both_in_bed must trigger when Edmund reliable bed presence turns on";
+      test = hasStateTriggerAny whiteNoiseAfterBothInBed "sensor.edmund_s_eight_sleep_side_heart_rate";
+      msg = "white_noise_after_both_in_bed must trigger when Edmund heart rate updates";
     }
     {
-      test = hasStateTrigger whiteNoiseAfterBothInBed "binary_sensor.monica_bed_presence_reliable" "on";
-      msg = "white_noise_after_both_in_bed must trigger when Monica reliable bed presence turns on";
+      test = hasStateTriggerAny whiteNoiseAfterBothInBed "sensor.monica_s_eight_sleep_side_heart_rate";
+      msg = "white_noise_after_both_in_bed must trigger when Monica heart rate updates";
     }
     {
       test =
-        hasStateCondition (toList (
-          whiteNoiseAfterBothInBed.condition or [ ]
-        )) "input_boolean.goodnight" "on"
-        && hasStateCondition (toList (
-          whiteNoiseAfterBothInBed.condition or [ ]
-        )) "input_boolean.sleep_done" "on"
-        && hasStateCondition (toList (
-          whiteNoiseAfterBothInBed.condition or [ ]
-        )) "binary_sensor.edmund_bed_presence_reliable" "on"
-        && hasStateCondition (toList (
-          whiteNoiseAfterBothInBed.condition or [ ]
-        )) "binary_sensor.monica_bed_presence_reliable" "on";
-      msg = "white_noise_after_both_in_bed must require goodnight, sleep_done, and both reliable bed-presence sensors";
+        let
+          conditions = toList (whiteNoiseAfterBothInBed.condition or [ ]);
+          templates = map (c: c.value_template or "") conditions;
+          hasTemplate = needle: any (t: hasInfix needle t) templates;
+        in
+        hasStateCondition conditions "input_boolean.goodnight" "on"
+        && hasStateCondition conditions "input_boolean.sleep_done" "on"
+        && hasTemplate "sensor.edmund_s_eight_sleep_side_heart_rate"
+        && hasTemplate "sensor.monica_s_eight_sleep_side_heart_rate"
+        && hasTemplate "last_updated"
+        && hasTemplate "hr >= 35"
+        && hasTemplate "hr <= 130"
+        && !(hasStateCondition conditions "binary_sensor.edmund_bed_presence_reliable" "on")
+        && !(hasStateCondition conditions "binary_sensor.monica_bed_presence_reliable" "on");
+      msg = "white_noise_after_both_in_bed must require goodnight, sleep_done, and fresh human heart-rate signals instead of bed presence";
     }
     {
       test =

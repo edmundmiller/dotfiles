@@ -554,9 +554,9 @@ in
         ];
       }
 
-      # White noise starts only after the final Sleep phase and both 8Sleep sides
-      # report reliable bed presence. This avoids turning it on while one person
-      # is still up, even if the alarm-relative schedule reaches Sleep time.
+      # White noise starts only after the final Sleep phase and fresh human
+      # heart-rate readings from both 8Sleep sides. Bed presence alone is
+      # contaminated by the dog lying on a cool side of the bed.
       {
         alias = "White noise after both in bed";
         id = "white_noise_after_both_in_bed";
@@ -569,13 +569,11 @@ in
           }
           {
             platform = "state";
-            entity_id = "binary_sensor.edmund_bed_presence_reliable";
-            to = "on";
+            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
           }
           {
             platform = "state";
-            entity_id = "binary_sensor.monica_bed_presence_reliable";
-            to = "on";
+            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
           }
         ];
         condition = [
@@ -590,14 +588,20 @@ in
             state = "on";
           }
           {
-            condition = "state";
-            entity_id = "binary_sensor.edmund_bed_presence_reliable";
-            state = "on";
+            condition = "template";
+            value_template = ''
+              {% set s = states.sensor.edmund_s_eight_sleep_side_heart_rate %}
+              {% set hr = s.state | float(0) %}
+              {{ hr >= 35 and hr <= 130 and (now() - s.last_updated).total_seconds() <= 300 }}
+            '';
           }
           {
-            condition = "state";
-            entity_id = "binary_sensor.monica_bed_presence_reliable";
-            state = "on";
+            condition = "template";
+            value_template = ''
+              {% set s = states.sensor.monica_s_eight_sleep_side_heart_rate %}
+              {% set hr = s.state | float(0) %}
+              {{ hr >= 35 and hr <= 130 and (now() - s.last_updated).total_seconds() <= 300 }}
+            '';
           }
           {
             condition = "state";
