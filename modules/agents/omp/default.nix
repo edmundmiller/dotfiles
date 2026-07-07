@@ -176,6 +176,15 @@ let
     commit_enabled=${if cfg.dailyIntrospection.commit.enable then "1" else "0"}
     push_enabled=${if cfg.dailyIntrospection.push.enable then "1" else "0"}
 
+    # Every exit path (skip and success) records a one-line JSON status here so
+    # silent skips (e.g. dirty repo) are visible after the fact.
+    state_file="$HOME/.local/state/omp-introspection/last-run.json"
+    write_status() {
+      ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$state_file")"
+      printf '{"at": "%s", "status": "%s"}\n' \
+        "$(${pkgs.coreutils}/bin/date -Iseconds)" "$1" > "$state_file"
+    }
+
     cd "$repo"
 
     date_arg="''${1:-}"
@@ -183,11 +192,14 @@ let
     prompt_file="$tmp_dir/prompt"
     privacy_before="$tmp_dir/privacy-before.json"
     changed_paths="$tmp_dir/changed-paths"
-    trap 'rm -rf "$tmp_dir"' EXIT
+    # set -euo pipefail: mid-run failures exit without reaching a write_status
+    # call, so record them from the trap (rc=0 paths already wrote theirs).
+    trap 'rc=$?; rm -rf "$tmp_dir"; if [ "$rc" -ne 0 ]; then write_status failed; fi' EXIT
 
     if [ "$commit_enabled" = 1 ]; then
       if [ -n "$("$git" status --porcelain --untracked-files=all)" ]; then
         echo "Skipping OMP thread introspection: repository is dirty before run."
+        write_status skipped-dirty
         exit 0
       fi
 
@@ -361,6 +373,7 @@ let
 
       if [ ! -s "$changed_paths" ]; then
         echo "OMP thread introspection made no changes."
+        write_status ok
         exit 0
       fi
 
@@ -380,6 +393,8 @@ let
         "$git" push
       fi
     fi
+
+    write_status ok
   '';
 in
 {
@@ -510,6 +525,18 @@ in
 
     home.file.".omp/agent/lsp.json" = {
       source = lsp.configFile;
+      force = true;
+    };
+
+    # Goal-loop prompt templates, shared with pi (single source of truth in
+    # config/pi/prompts/). See AGENT-16.
+    home.file.".omp/agent/prompts/goalize.md" = {
+      source = "${configDir}/pi/prompts/goalize.md";
+      force = true;
+    };
+
+    home.file.".omp/agent/prompts/goal-continue-audit.md" = {
+      source = "${configDir}/pi/prompts/goal-continue-audit.md";
       force = true;
     };
 

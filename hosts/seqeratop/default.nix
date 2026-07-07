@@ -135,6 +135,8 @@
           # homebrew cask). Exposes Claude/GPT subscription models on :8317 as
           # vibeproxy/* selectors; see config/omp/models.yml.
           vibeproxy.enable = true;
+          dailyIntrospection.enable = true;
+          dailyIntrospection.commit.enable = true;
         };
         opencode.enable = true;
         hermes.enable = false; # Managed manually
