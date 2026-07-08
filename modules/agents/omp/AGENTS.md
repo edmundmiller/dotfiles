@@ -53,6 +53,10 @@ env var is the clean lever. default/slow/plan stay in the mutable
 `config.yml` and are identical across hosts. Precedence: `--smol` flag >
 `PI_SMOL_MODEL` > `config.yml`.
 
+Current split: MacTraitor-Pro uses `xai-oauth/grok-composer-2.5-fast`;
+Seqeratop uses `cursor/composer-2.5`. Keep future host-specific smol changes in
+the host's `modules.agents.omp.smolModel`, not shared `config.yml`.
+
 ## Docs
 
 - [message-queue.md](./message-queue.md) — the three message-queue knobs
