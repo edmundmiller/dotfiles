@@ -284,6 +284,10 @@ let
       msg = "white_noise_with_bedtime_audiobook must trigger when window nightstand starts playing";
     }
     {
+      test = !(hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "media_player.bathroom");
+      msg = "white_noise_with_bedtime_audiobook must not trigger from bathroom shower audio";
+    }
+    {
       test =
         let
           conditions = toList (whiteNoiseWithBedtimeAudiobook.condition or [ ]);
@@ -297,11 +301,12 @@ let
         hasStateCondition conditions "input_boolean.goodnight" "on"
         && hasStateCondition conditions "input_boolean.sleep_done" "on"
         && hasBedroomSpeakerOr
+        && !(hasStateConditionDeep conditions "media_player.bathroom" "playing")
         && !(hasStateConditionDeep conditions "binary_sensor.edmund_bed_presence_reliable" "on")
         && !(hasStateConditionDeep conditions "binary_sensor.monica_bed_presence_reliable" "on")
         && !(hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.edmund_s_eight_sleep_side_heart_rate")
         && !(hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.monica_s_eight_sleep_side_heart_rate");
-      msg = "white_noise_with_bedtime_audiobook must require goodnight, sleep_done, and either bedroom speaker playing without bed-presence or HR gates";
+      msg = "white_noise_with_bedtime_audiobook must require goodnight, sleep_done, and either bedroom nightstand playing without bathroom, bed-presence, or HR gates";
     }
     {
       test =
