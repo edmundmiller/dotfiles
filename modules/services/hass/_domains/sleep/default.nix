@@ -569,11 +569,11 @@ in
         ];
       }
 
-      # White noise starts after the final Sleep phase once both Eight Sleep
-      # sides report fresh human heart-rate data. Bed presence alone is dog-
-      # contaminated, and HomePod state is not a reliable audiobook signal.
+      # White noise starts after the final Sleep phase once either bedroom
+      # nightstand HomePod starts playing. Exclude media_player.bathroom:
+      # that playback is usually shower-time, not bedtime.
       {
-        alias = "White noise with fresh Eight Sleep HR";
+        alias = "White noise with bedtime nightstand audio";
         id = "white_noise_with_bedtime_audiobook";
         mode = "single";
         trigger = [
@@ -584,11 +584,13 @@ in
           }
           {
             platform = "state";
-            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
+            entity_id = "media_player.bathroom_nightstand";
+            to = "playing";
           }
           {
             platform = "state";
-            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
+            entity_id = "media_player.window_nightstand";
+            to = "playing";
           }
         ];
         condition = [
@@ -603,23 +605,19 @@ in
             state = "on";
           }
           {
-            condition = "numeric_state";
-            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
-            above = 35;
-            below = 130;
-          }
-          {
-            condition = "numeric_state";
-            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
-            above = 35;
-            below = 130;
-          }
-          {
-            condition = "template";
-            value_template = ''
-              {{ (now() - states.sensor.edmund_s_eight_sleep_side_heart_rate.last_updated).total_seconds() < 300
-                 and (now() - states.sensor.monica_s_eight_sleep_side_heart_rate.last_updated).total_seconds() < 300 }}
-            '';
+            condition = "or";
+            conditions = [
+              {
+                condition = "state";
+                entity_id = "media_player.bathroom_nightstand";
+                state = "playing";
+              }
+              {
+                condition = "state";
+                entity_id = "media_player.window_nightstand";
+                state = "playing";
+              }
+            ];
           }
           {
             condition = "state";
