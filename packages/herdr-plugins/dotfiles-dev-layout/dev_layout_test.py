@@ -15,6 +15,60 @@ class Completed:
         self.stdout = stdout
 
 
+class BootstrapAgentSelectionTest(unittest.TestCase):
+    def run_bootstrap(self, env: dict[str, str] | None = None, commands: set[str] | None = None):
+        created: list[tuple[str, str]] = []
+        renamed: list[tuple[str, str]] = []
+        ran: list[tuple[str, str]] = []
+
+        def fake_tab_create(workspace_id: str, cwd: str, label: str) -> str:
+            self.assertEqual(workspace_id, "workspace-1")
+            self.assertEqual(cwd, "/repo")
+            pane = f"pane-{len(created) + 1}"
+            created.append((label, pane))
+            return pane
+
+        with patch.dict(os.environ, env or {}, clear=True), patch.object(
+            dev_layout,
+            "context",
+            return_value={"workspace_id": "workspace-1", "workspace_cwd": "/repo"},
+        ), patch.object(dev_layout, "command_exists", side_effect=(commands or set()).__contains__), patch.object(
+            dev_layout, "tab_create", side_effect=fake_tab_create
+        ), patch.object(
+            dev_layout, "pane_rename", side_effect=lambda pane, label: renamed.append((pane, label))
+        ), patch.object(
+            dev_layout, "pane_run", side_effect=lambda pane, command: ran.append((pane, command))
+        ), patch.object(
+            dev_layout, "hunk_command", return_value="hunk --worktree"
+        ), patch.object(
+            dev_layout, "run_json"
+        ):
+            dev_layout.bootstrap()
+
+        return created, renamed, ran
+
+    def test_bootstrap_uses_pi_when_no_main_agent_is_selected(self) -> None:
+        created, renamed, ran = self.run_bootstrap(commands={"pi"})
+
+        self.assertEqual([label for label, _ in created], ["pi", "hunk", "shell"])
+        self.assertEqual(renamed[0], ("pane-1", "pi"))
+        self.assertEqual(ran[0], ("pane-1", "pi"))
+
+    def test_bootstrap_uses_omp_when_selected(self) -> None:
+        created, renamed, ran = self.run_bootstrap(env={"HERDR_MAIN_CODING_AGENT": "omp"}, commands={"pi", "omp"})
+
+        self.assertEqual([label for label, _ in created], ["omp", "hunk", "shell"])
+        self.assertEqual(renamed[0], ("pane-1", "omp"))
+        self.assertEqual(ran[0], ("pane-1", "omp"))
+
+    def test_bootstrap_skips_selected_agent_when_command_is_missing(self) -> None:
+        created, renamed, ran = self.run_bootstrap(env={"HERDR_MAIN_CODING_AGENT": "omp"}, commands={"pi"})
+
+        self.assertEqual([label for label, _ in created], ["hunk", "shell"])
+        self.assertNotIn(("pane-1", "pi"), renamed)
+        self.assertNotIn(("pane-1", "pi"), ran)
+
+
 class HunkThemeArgsTest(unittest.TestCase):
     def test_env_override_wins(self) -> None:
         with patch.dict(os.environ, {"HUNK_THEME": "catppuccin-frappe"}):

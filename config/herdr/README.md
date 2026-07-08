@@ -76,7 +76,7 @@ Custom/current mappings:
 | `prefix+I`                        | Start GitHub issue workflow |
 | `prefix+O`                        | Start from GitHub item      |
 
-Herdr defaults still provide other common actions such as rename workspace, rename tab, close tab, and close workspace. `prefix+g` uses Herdr's native worktree prompt; after creation, the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event to seed Pi, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
+Herdr defaults still provide other common actions such as rename workspace, rename tab, close tab, and close workspace. `prefix+g` uses Herdr's native worktree prompt; after creation, the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event to seed the configured coding agent, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
 
 ## Plugins
 

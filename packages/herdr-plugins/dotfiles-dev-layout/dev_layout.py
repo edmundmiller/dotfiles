@@ -49,6 +49,13 @@ def command_exists(command: str) -> bool:
     return shutil.which(command) is not None
 
 
+def main_coding_agent() -> str:
+    agent = (os.environ.get("HERDR_MAIN_CODING_AGENT") or "pi").strip() or "pi"
+    if not all(ch.isalnum() or ch in "._-" for ch in agent):
+        raise SystemExit(f"invalid HERDR_MAIN_CODING_AGENT: {agent!r}")
+    return agent
+
+
 def git_output(cwd: str, args: list[str]) -> str | None:
     result = subprocess.run(["git", *args], cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     if result.returncode != 0:
@@ -161,11 +168,11 @@ def bootstrap() -> None:
     if not workspace_id:
         raise SystemExit("missing Herdr workspace id in plugin context")
 
-    if command_exists("pi"):
-        pane = tab_create(workspace_id, cwd, "pi")
-        pane_rename(pane, "pi")
-        pane_run(pane, "pi")
-
+    agent = main_coding_agent()
+    if command_exists(agent):
+        pane = tab_create(workspace_id, cwd, agent)
+        pane_rename(pane, agent)
+        pane_run(pane, agent)
     pane = tab_create(workspace_id, cwd, "hunk")
     pane_rename(pane, "hunk")
     pane_run(pane, hunk_command(cwd))
