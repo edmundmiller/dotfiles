@@ -16,8 +16,8 @@
 #
 # `auth: none` because the local proxy needs no key. Reached over the
 # OpenAI-compatible surface (/v1), which serves the Claude models too. Select
-# with `--model vibeproxy/<id>` or Ctrl+P; modelRoles are left on the direct
-# Codex/xai logins (config.yml) so this is purely additive.
+# with `--model vibeproxy/<id>` or Ctrl+P; `plan` uses Claude Opus 4.8 from
+# here while default/smol/slow stay on direct Codex/xai logins (config.yml).
 providers:
   vibeproxy:
     baseUrl: http://localhost:8317/v1
