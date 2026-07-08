@@ -373,6 +373,13 @@ in
     configFile = mkOpt (nullOr (either str path)) null;
     prefix = mkOpt str "ctrl+c";
     key = mkOpt str "H";
+    mainCodingAgent = mkOpt (enum [
+      "pi"
+      "omp"
+      "claude"
+      "codex"
+      "opencode"
+    ]) "pi";
     popupWidth = mkOpt int 90;
     popupHeight = mkOpt int 90;
     managePiTheme = mkBoolOpt true;
@@ -473,6 +480,7 @@ in
 
     user.packages = optional (cfg.package != null) cfg.package;
     environment.systemPackages = optional (cfg.package != null) cfg.package;
+    env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
 
     home.file.".pi/agent/themes/${piThemeName}.json".source = piThemeFile;
 
@@ -500,6 +508,7 @@ in
           # the user's GUI launchd domain so Accessibility/Screen Recording
           # grants are checked in the same context as a local GUI terminal.
           export PI_COMPUTER_USE_GUI_SESSION_LAUNCH="''${PI_COMPUTER_USE_GUI_SESSION_LAUNCH:-1}"
+          export HERDR_MAIN_CODING_AGENT=${escapeShellArg cfg.mainCodingAgent}
 
           # Resolve herdr from the managed profile first. User-level bins stay
           # on PATH for helper commands, but should not shadow the Nix-managed

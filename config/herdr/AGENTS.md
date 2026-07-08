@@ -143,7 +143,7 @@ Meaning:
 
 - `prefix+w` opens the workspace picker.
 - `prefix+N` creates a workspace.
-- `prefix+g` creates a worktree with Herdr's native prompt; the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event and opens Pi + Hunk + Neovim + shell tabs.
+- `prefix+g` creates a worktree with Herdr's native prompt; the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event and opens the configured coding agent + Hunk + Neovim + shell tabs.
 - `prefix+G` opens an existing worktree.
 - `prefix+/` opens Herdr goto/navigation.
 - `prefix+c` creates a tab.

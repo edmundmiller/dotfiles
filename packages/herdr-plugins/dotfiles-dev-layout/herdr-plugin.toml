@@ -2,7 +2,7 @@ id = "dotfiles.dev-layout"
 name = "Dotfiles Dev Layout"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
-description = "Open the dotfiles-standard Pi, Hunk, Neovim, and shell tabs for the current workspace or a newly-created worktree."
+description = "Open the dotfiles-standard agent, Hunk, Neovim, and shell tabs for the current workspace or a newly-created worktree."
 platforms = ["linux", "macos"]
 
 [[actions]]
