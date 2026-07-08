@@ -4,14 +4,50 @@ symbolPreset: nerd
 theme:
   dark: dark-catppuccin
   light: light-catppuccin-readable
+colorBlindMode: false
 statusLine:
   preset: compact
+  separator: powerline-thin
+  sessionAccent: true
+  transparent: false
+  compactThinkingLevel: false
+  showHookStatus: true
+
+terminal:
+  showProgress: true
+
+tui:
+  renderMermaid: true
+  hyperlinks: auto
+  tight: true
+
+display:
+  shimmer: kitt
+  smoothStreaming: true
+  cacheMissMarker: true
+showHardwareCursor: true
+defaultThinkingLevel: high
+hideThinkingBlock: true
+proseOnlyThinking: true
+omitThinking: false
+
+model:
+  loopGuard:
+    enabled: true
+    checkAssistantContent: true
+    toolCallReminder: true
+  toolCallLoopGuard:
+    enabled: true
 compaction:
-  strategy: snapcompact
+  strategy: context-full
+  thresholdPercent: 70
   supersedeReads: true
   dropUseless: true
-  keepRecentTokens: 20000
   autoContinue: true
+  keepRecentTokens: 20000
+  idleEnabled: true
+  idleThresholdTokens: 200000
+  idleTimeoutSeconds: 300
 snapcompact:
   systemPrompt: none
   toolResults: false
@@ -24,10 +60,42 @@ modelRoles:
 textVerbosity: low
 personality: pragmatic
 steeringMode: all
-followUpMode: all
+followUpMode: one-at-a-time
 interruptMode: wait
+
+loop:
+  mode: compact
+doubleEscapeAction: tree
+treeFilterMode: no-tools
+autocompleteMaxVisible: 7
+emojiAutocomplete: true
+
+completion:
+  notify: on
+
+ask:
+  timeout: 60
+  notify: on
+
+recap:
+  enabled: true
+  idleSeconds: 240
 tools:
   discoveryMode: mcp-only
+  artifactSpillThreshold: 50
+  artifactTailBytes: 20
+  grepContextBefore: 1
+  grepContextAfter: 3
+
+task:
+  isolation:
+    commits: ai
+
+features:
+  unexpectedStopDetection: true
+
+secrets:
+  enabled: true
 hooks:
   enabled: true
   timeoutMs: 10000
@@ -38,9 +106,24 @@ memory:
 mnemopi:
   scoping: per-project-tagged
   noEmbeddings: false
+  polyphonicRecall: true
+  enhancedRecall: true
+  proactiveLinking: true
+
+autolearn:
+  enabled: true
+  autoContinue: true
+
+branchSummary:
+  enabled: true
 advisor:
   enabled: true
   subagents: true
   syncBacklog: "3"
 tier:
   advisor: inherit
+
+retry:
+  maxRetries: 10
+  modelFallback: true
+  fallbackRevertPolicy: cooldown-expiry
