@@ -119,6 +119,7 @@
           skilloptSleep.enable = true;
           skilloptSleep.maxSessions = 5;
           skilloptSleep.maxTasks = 1;
+          skilloptSleep.autoCommit.enable = true;
         };
         opencode.enable = true;
       };
