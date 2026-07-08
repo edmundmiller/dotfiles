@@ -569,11 +569,11 @@ in
         ];
       }
 
-      # White noise starts after the final Sleep phase once either bedroom
-      # nightstand speaker starts playing. HA currently exposes no audiobook
-      # metadata for these HomePods, so playing-on-bedroom-speaker is the signal.
+      # White noise starts after the final Sleep phase once both Eight Sleep
+      # sides report fresh human heart-rate data. Bed presence alone is dog-
+      # contaminated, and HomePod state is not a reliable audiobook signal.
       {
-        alias = "White noise with bedtime audiobook";
+        alias = "White noise with fresh Eight Sleep HR";
         id = "white_noise_with_bedtime_audiobook";
         mode = "single";
         trigger = [
@@ -584,13 +584,11 @@ in
           }
           {
             platform = "state";
-            entity_id = "media_player.bathroom_nightstand";
-            to = "playing";
+            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
           }
           {
             platform = "state";
-            entity_id = "media_player.window_nightstand";
-            to = "playing";
+            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
           }
         ];
         condition = [
@@ -605,19 +603,23 @@ in
             state = "on";
           }
           {
-            condition = "or";
-            conditions = [
-              {
-                condition = "state";
-                entity_id = "media_player.bathroom_nightstand";
-                state = "playing";
-              }
-              {
-                condition = "state";
-                entity_id = "media_player.window_nightstand";
-                state = "playing";
-              }
-            ];
+            condition = "numeric_state";
+            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
+            above = 35;
+            below = 130;
+          }
+          {
+            condition = "numeric_state";
+            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
+            above = 35;
+            below = 130;
+          }
+          {
+            condition = "template";
+            value_template = ''
+              {{ (now() - states.sensor.edmund_s_eight_sleep_side_heart_rate.last_updated).total_seconds() < 300
+                 and (now() - states.sensor.monica_s_eight_sleep_side_heart_rate.last_updated).total_seconds() < 300 }}
+            '';
           }
           {
             condition = "state";

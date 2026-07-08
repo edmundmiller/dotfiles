@@ -60,6 +60,20 @@ let
       toList (automation.trigger or [ ])
     );
 
+  hasNumericStateCondition =
+    conditions: entityId: above: below:
+    any (
+      c:
+      (c.condition or null) == "numeric_state"
+      && (c.entity_id or null) == entityId
+      && (c.above or null) == above
+      && (c.below or null) == below
+    ) conditions;
+
+  hasTemplateConditionContaining =
+    conditions: text:
+    any (c: (c.condition or null) == "template" && hasInfix text (c.value_template or "")) conditions;
+
   hasEventTrigger =
     automation: eventType:
     any (t: (t.platform or null) == "event" && (t.event_type or null) == eventType) (
@@ -276,32 +290,29 @@ let
       msg = "white_noise_with_bedtime_audiobook must trigger when sleep_done turns on";
     }
     {
-      test = hasStateTrigger whiteNoiseWithBedtimeAudiobook "media_player.bathroom_nightstand" "playing";
-      msg = "white_noise_with_bedtime_audiobook must trigger when bathroom nightstand starts playing";
+      test = hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.edmund_s_eight_sleep_side_heart_rate";
+      msg = "white_noise_with_bedtime_audiobook must re-check when Edmund Eight Sleep HR updates";
     }
     {
-      test = hasStateTrigger whiteNoiseWithBedtimeAudiobook "media_player.window_nightstand" "playing";
-      msg = "white_noise_with_bedtime_audiobook must trigger when window nightstand starts playing";
+      test = hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.monica_s_eight_sleep_side_heart_rate";
+      msg = "white_noise_with_bedtime_audiobook must re-check when Monica Eight Sleep HR updates";
     }
     {
       test =
         let
           conditions = toList (whiteNoiseWithBedtimeAudiobook.condition or [ ]);
-          hasBedroomSpeakerOr = any (
-            c:
-            (c.condition or null) == "or"
-            && hasStateCondition (toList (c.conditions or [ ])) "media_player.bathroom_nightstand" "playing"
-            && hasStateCondition (toList (c.conditions or [ ])) "media_player.window_nightstand" "playing"
-          ) conditions;
         in
         hasStateCondition conditions "input_boolean.goodnight" "on"
         && hasStateCondition conditions "input_boolean.sleep_done" "on"
-        && hasBedroomSpeakerOr
+        && hasNumericStateCondition conditions "sensor.edmund_s_eight_sleep_side_heart_rate" 35 130
+        && hasNumericStateCondition conditions "sensor.monica_s_eight_sleep_side_heart_rate" 35 130
+        && hasTemplateConditionContaining conditions "edmund_s_eight_sleep_side_heart_rate.last_updated"
+        && hasTemplateConditionContaining conditions "monica_s_eight_sleep_side_heart_rate.last_updated"
         && !(hasStateConditionDeep conditions "binary_sensor.edmund_bed_presence_reliable" "on")
         && !(hasStateConditionDeep conditions "binary_sensor.monica_bed_presence_reliable" "on")
-        && !(hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.edmund_s_eight_sleep_side_heart_rate")
-        && !(hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.monica_s_eight_sleep_side_heart_rate");
-      msg = "white_noise_with_bedtime_audiobook must require goodnight, sleep_done, and either bedroom speaker playing without bed-presence or HR gates";
+        && !(hasStateConditionDeep conditions "media_player.bathroom_nightstand" "playing")
+        && !(hasStateConditionDeep conditions "media_player.window_nightstand" "playing");
+      msg = "white_noise_with_bedtime_audiobook must require goodnight, sleep_done, and fresh HR without bed-presence or speaker gates";
     }
     {
       test =
