@@ -139,6 +139,14 @@ let
     cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
     ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-omp.py"} ${lib.escapeShellArgs skilloptSleepArgs}
   '';
+  skilloptSleepAutocommit = pkgs.writeShellScriptBin "omp-skillopt-sleep-autocommit" ''
+    set -euo pipefail
+
+    export HOME=${lib.escapeShellArg config.user.home}
+    export PATH=${lib.escapeShellArg "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"}
+    cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
+    ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-autocommit.py"}
+  '';
   # config.yml is shared across all omp hosts. Keep machine-specific settings as
   # build-time overlays so Seqeratop and MacTraitorPro can diverge without
   # copying the whole config.
@@ -464,6 +472,11 @@ in
       maxSessions = mkOpt types.int 20;
       maxTasks = mkOpt types.int 5;
       extraArgs = mkOpt (types.listOf types.str) [ ];
+      autoCommit = {
+        enable = mkBoolOpt false;
+        hour = mkOpt types.int 5;
+        minute = mkOpt types.int 30;
+      };
     };
   };
 
@@ -474,7 +487,8 @@ in
         hassMcpServer
       ]
       ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection
-      ++ lib.optional cfg.skilloptSleep.enable skilloptSleepNightly;
+      ++ lib.optional cfg.skilloptSleep.enable skilloptSleepNightly
+      ++ lib.optional cfg.skilloptSleep.autoCommit.enable skilloptSleepAutocommit;
 
       home.file.".omp/agent/config.yml" = {
         source = ompConfigFile;
@@ -581,6 +595,23 @@ in
                 PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
                 SKILLOPT_SLEEP_REPO = "${skilloptSleepSource}";
                 SKILLOPT_SLEEP_STAGING_ROOT = "${config.user.home}/.skillopt-sleep/omp/staging";
+              };
+            };
+          };
+        }
+        // optionalAttrs (cfg.skilloptSleep.enable && cfg.skilloptSleep.autoCommit.enable) {
+          omp-skillopt-sleep-autocommit = {
+            command = "${skilloptSleepAutocommit}/bin/omp-skillopt-sleep-autocommit";
+            serviceConfig = {
+              StartCalendarInterval = {
+                Hour = cfg.skilloptSleep.autoCommit.hour;
+                Minute = cfg.skilloptSleep.autoCommit.minute;
+              };
+              StandardOutPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep-autocommit.log";
+              StandardErrorPath = "${config.user.home}/Library/Logs/omp-skillopt-sleep-autocommit.err.log";
+              EnvironmentVariables = {
+                HOME = config.user.home;
+                PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
               };
             };
           };
