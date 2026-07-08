@@ -90,6 +90,37 @@ let
     sleepStage = "sensor.monica_s_eight_sleep_side_sleep_stage";
   };
 
+  windingDownLights = {
+    "light.essentials_a19_a60" = "off"; # Trashcan
+    "light.essentials_a19_a60_2" = "off"; # Dishwasher
+    "light.essentials_a19_a60_3" = {
+      state = "on";
+      brightness = 90;
+      color_temp_kelvin = 2700;
+    }; # Bathroom Nightstand
+    "light.essentials_a19_a60_4" = {
+      state = "on";
+      brightness = 90;
+      color_temp_kelvin = 2700;
+    }; # Window Nightstand
+    "light.essentials_a19_a60_5" = {
+      state = "on";
+      brightness = 115;
+      color_temp_kelvin = 2700;
+    }; # Wall Lamp
+    "light.nanoleaf_multicolor_floor_lamp" = {
+      state = "on";
+      brightness = 115;
+      color_temp_kelvin = 2700;
+    }; # Couch Lamp
+    "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
+    "light.smart_night_light_w" = {
+      state = "on";
+      brightness = 80;
+      color_temp_kelvin = 2700;
+    }; # Night light: navigate to bed
+  };
+
   # Reliable bed presence: bed_state_type active OR (raw presence ON AND HR available)
   # Survives cloud session ending early because bed_state_type persists.
   mkReliableBedPresence = p: {
@@ -277,18 +308,9 @@ in
           "input_boolean.edmund_awake" = "off";
           "input_boolean.monica_awake" = "off";
           "cover.smartwings_window_covering" = "closed";
-          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
-
-          # Keep a low-light ambience while winding down; AL sleep mode makes these warm/dim.
-          "light.essentials_a19_a60" = "off"; # Trashcan
-          "light.essentials_a19_a60_2" = "off"; # Dishwasher
-          "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "on"; # Window Nightstand
-          "light.essentials_a19_a60_5" = "on"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "on"; # Couch Lamp
-          "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
-          "light.smart_night_light_w" = "on"; # Night light: navigate to bed
-        };
+          "switch.adaptive_lighting_sleep_mode_living_space" = "off";
+        }
+        // windingDownLights;
       }
 
       # First active bedtime prep phase. Voice/HomeKit-facing.
@@ -300,16 +322,9 @@ in
           "input_boolean.edmund_awake" = "off";
           "input_boolean.monica_awake" = "off";
           "cover.smartwings_window_covering" = "closed";
-          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
-          "light.essentials_a19_a60" = "off";
-          "light.essentials_a19_a60_2" = "off";
-          "light.essentials_a19_a60_3" = "on";
-          "light.essentials_a19_a60_4" = "on";
-          "light.essentials_a19_a60_5" = "on";
-          "light.nanoleaf_multicolor_floor_lamp" = "on";
-          "light.nanoleaf_multicolor_hd_ls" = "off";
-          "light.smart_night_light_w" = "on";
-        };
+          "switch.adaptive_lighting_sleep_mode_living_space" = "off";
+        }
+        // windingDownLights;
       }
 
       # In-bed settling phase. Retires old In Bed/Ignite naming.
