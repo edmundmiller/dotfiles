@@ -1,69 +1,58 @@
 ---
 name: agent-friendly-cli
-description: Run test/build tools in AI-agent-friendly modes by setting AGENT=1, CLAUDECODE=1, and related environment flags when available.
+description: Design and implement CLIs that work well for both humans and AI coding agents, with progressive disclosure, structured output, actionable errors, stdout/stderr separation, and explicit non-interactive modes.
 ---
 
-# Agent-Friendly CLI Output
+# Agent-Friendly CLI Design
 
-Use this skill when running tests, builds, linters, or long-running project commands from an AI coding agent. Do not use it for quick VCS/state inspection commands such as `git status`, `git branch`, `git log`, `sem diff`, or `jj status`.
+Use this skill when building, reviewing, or redesigning a command-line tool meant to be used by both humans and coding agents. Do not use it merely to decide whether to prefix an arbitrary command with environment variables.
 
-## Principle
+## Design principles
 
-Prefer tool output modes designed for non-human/agent consumers: concise progress, structured failures, stable text, and no interactive UI.
+Model the CLI after Notion's `ntn`: one tool that is pleasant for humans, scriptable for shells, and predictable for agents.
 
-## Environment flags
+1. **Progressive disclosure** — make the common path short, with deeper help/docs/spec output behind flags or subcommands.
+2. **Actionable errors** — say what failed, why it likely failed, and the exact next command or flag to try.
+3. **Separate data from messages** — write machine-readable data to stdout; write progress, warnings, prompts, and diagnostics to stderr.
+4. **Interactive and non-interactive modes** — prompts are fine for humans, but every prompt must have a flag/env/stdin equivalent for agents and CI.
 
-When invoking tests, builds, linters, or long-running tools, add these environment variables when appropriate:
+## Output contract
 
-```bash
-AGENT=1
-CLAUDECODE=1
-```
+- Provide `--json` for structured output on list/get/status commands.
+- Provide plain stable output when JSON is too heavy, e.g. TSV with `--plain`.
+- Keep stdout parseable: no spinners, colors, banners, or prose in data mode.
+- Put progress and diagnostics on stderr.
+- Redact secrets in logs by default; make unsafe verbose modes explicit and scary.
 
-Use `AGENT=1` as the generic signal. Use `CLAUDECODE=1` for tools that specifically key off Claude Code-compatible behavior.
+## Command shape
 
-## Bun test
+- Prefer predictable nouns and verbs: `tool workers list`, `tool pages get <id>`.
+- Support `--help` at every level.
+- Add `doctor` for auth/config/network checks.
+- Add `--verbose` for source chains and request/response metadata.
+- Add `--yes` for destructive confirmations in non-interactive runs.
+- Add `--no-watch`, `--no-browser`, `--no-install`, or equivalent escape hatches for commands that would otherwise block.
 
-Bun has explicit AI agent integration. Prefer:
+## Input contract
 
-```bash
-AGENT=1 bun test
-```
+- Accept stdin for large JSON/Markdown payloads.
+- Accept `--data` or `--file` for scriptable payloads.
+- Accept env vars for CI/auth overrides, but keep flags higher clarity for one-off commands.
+- Avoid requiring TTY-only flows for setup; provide a polling, token, or copied-code path.
 
-If running under Claude Code-compatible tooling or a wrapper that detects Claude Code, use:
+## Agent affordances
 
-```bash
-CLAUDECODE=1 bun test
-```
-
-These modes make Bun's test output friendlier for agents: less noisy, easier to parse, and better suited to automated diagnosis.
-
-## General command pattern
-
-For nested scripts and checks that support agent-friendly output:
-
-```bash
-AGENT=1 CLAUDECODE=1 npm test
-AGENT=1 CLAUDECODE=1 bun test
-AGENT=1 CLAUDECODE=1 hey re
-```
-
-Do not wrap cheap inspection commands with these flags. Prefer the plain command so transcripts stay readable:
-
-```bash
-git status --short --branch
-git log --oneline -5
-sem diff
-jj status
-```
-
-## When not to use
-
-Do not set these flags for quick VCS/status/read-only inspection commands, or when the user is explicitly asking to inspect the exact human-facing output, colors, progress bars, or interactive UI behavior.
+- Document examples agents can paste directly.
+- Provide live reference commands where possible: `api ls`, `--spec`, `--docs`, `--json`.
+- Make errors self-recovering: include missing config paths, required flags, and safe retry commands.
+- Keep command output deterministic unless watch/stream mode is explicitly requested.
 
 ## Checklist
 
-- [ ] Set `AGENT=1` for tests/builds where supported.
-- [ ] Set `CLAUDECODE=1` only when Claude Code-compatible output is useful for that test/build/check.
-- [ ] Prefer non-watch, non-interactive command variants.
-- [ ] Prefer concise failure output over full verbose logs unless debugging requires logs.
+- [ ] Common human path is one short command.
+- [ ] Every interactive prompt has a non-interactive equivalent.
+- [ ] Data mode writes only data to stdout.
+- [ ] Logs/progress/errors go to stderr.
+- [ ] `--json` exists for agent parsing.
+- [ ] Errors include the next concrete fix.
+- [ ] Secrets are redacted by default.
