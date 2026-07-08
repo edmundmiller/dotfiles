@@ -5,7 +5,7 @@ theme:
   dark: dark-catppuccin
   light: light-catppuccin-readable
 statusLine:
-  preset: minimal
+  preset: compact
 compaction:
   strategy: snapcompact
   supersedeReads: true
