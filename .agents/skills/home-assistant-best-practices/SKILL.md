@@ -22,7 +22,7 @@ description: >
   - Agent edits .storage, writes YAML, or generates YAML snippets
   - Agent tells user to edit configuration.yaml for UI integrations
 metadata:
-  version: 11
+  version: 12
 ---
 
 # Home Assistant Best Practices
@@ -33,7 +33,11 @@ metadata:
 
 Follow this sequence when creating any automation:
 
-### 0. Gate: modifying existing config?
+### 0a. Gate: live state before config
+
+Before proposing or editing automations, scripts, scenes, or dashboards, read repo-local HA guidance and query live state through configured integrations or approved helpers. Filter at source to relevant `entity_id`, `state`, and `friendly_name`; never dump all states or print token/secret contents. If live state is unreachable, report the blocker instead of guessing.
+
+### 0b. Gate: modifying existing config?
 
 If your change affects entity IDs or cross-component references — renaming entities, replacing template sensors with helpers, converting device triggers, or restructuring automations — read `references/safe-refactoring.md` first. That reference covers impact analysis, device-sibling discovery, and post-change verification. Complete its workflow before proceeding.
 
