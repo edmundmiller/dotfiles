@@ -48,9 +48,6 @@ let
   hasHomeAssistantStartTrigger =
     triggers: any (t: (t.platform or null) == "homeassistant" && (t.event or null) == "start") triggers;
 
-  hasTimeTrigger =
-    triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
-
   hasStateTrigger =
     automation: entityId: state:
     any (
@@ -189,7 +186,6 @@ let
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
-  alSleepModeOn = findAutomation "al_sleep_mode_on";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
@@ -348,10 +344,6 @@ let
       msg = "sleep_focus_off_stop_monica must not call unavailable eight_sleep.alarm_dismiss";
     }
     {
-      test = alSleepModeOn != null;
-      msg = "automation 'al_sleep_mode_on' missing";
-    }
-    {
       test = alDaytimeSleepCorrection != null;
       msg = "automation 'al_daytime_sleep_correction' missing";
     }
@@ -455,10 +447,6 @@ let
       msg = "circadian_sleep_homeostasis missing Edmund home guard";
     }
     {
-      test = hasTimeTrigger (toList (alSleepModeOn.trigger or [ ])) "22:00:00";
-      msg = "al_sleep_mode_on must trigger at 22:00:00";
-    }
-    {
       test = hasHomeAssistantStartTrigger (toList (alDaytimeSleepCorrection.trigger or [ ]));
       msg = "al_daytime_sleep_correction missing homeassistant start trigger";
     }
@@ -531,8 +519,15 @@ let
       msg = "Good Morning scene doesn't turn on switch.desk_pop";
     }
     {
-      test = (windingDownScene.entities."light.essentials_a19_a60_5" or null) == "on";
-      msg = "Winding Down scene doesn't leave wall lamp on for low-light ambience";
+      test =
+        let
+          cfg = windingDownScene.entities."light.essentials_a19_a60_5" or null;
+        in
+        builtins.isAttrs cfg
+        && (cfg.state or null) == "on"
+        && (cfg.brightness or null) == 115
+        && (cfg.color_temp_kelvin or null) == 2700;
+      msg = "Winding Down scene doesn't set wall lamp to reasonable low-light ambience";
     }
     {
       test = (sleepScene.entities."light.essentials_a19_a60_5" or null) == "off";

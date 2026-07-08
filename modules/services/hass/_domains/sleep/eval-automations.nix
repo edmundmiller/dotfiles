@@ -36,9 +36,6 @@ let
   hasHomeAssistantStartTrigger =
     triggers: any (t: (t.platform or null) == "homeassistant" && (t.event or null) == "start") triggers;
 
-  hasTimeTrigger =
-    triggers: atTime: any (t: (t.platform or null) == "time" && (t.at or null) == atTime) triggers;
-
   hasStateTrigger =
     triggers: entityId: toState:
     any (
@@ -83,7 +80,6 @@ let
   # Must exist
   edmundAwake = findAutomation "edmund_awake_detection";
   monicaAwake = findAutomation "monica_awake_detection";
-  windingDown = findAutomation "winding_down";
   bedPresenceInBed = findAutomation "bed_presence_in_bed";
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
@@ -96,6 +92,9 @@ let
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
   windingDownScene = findScene "Winding Down";
+  getReadyForBedScene = findScene "Get Ready for Bed";
+  goodNightScene = findScene "Good Night";
+  sleepScene = findScene "Sleep";
   goodMorningScene = findScene "Good Morning";
 
   assertions = initialStateAssertions ++ [
@@ -129,10 +128,6 @@ let
       msg = "monica_awake_detection missing condition: goodnight == on";
     }
 
-    {
-      test = windingDown != null;
-      msg = "automation 'winding_down' missing";
-    }
     {
       test = bedPresenceInBed != null;
       msg = "automation 'bed_presence_in_bed' missing";
@@ -175,10 +170,6 @@ let
     }
 
     {
-      test = hasTimeTrigger (toList (windingDown.trigger or [ ])) "22:00:00";
-      msg = "winding_down must trigger at 22:00:00";
-    }
-    {
       test = hasStateTrigger (toList (
         bedPresenceInBed.trigger or [ ]
       )) "binary_sensor.monica_s_eight_sleep_side_bed_presence" "on";
@@ -188,6 +179,18 @@ let
     {
       test = windingDownScene != null;
       msg = "scene 'Winding Down' missing";
+    }
+    {
+      test = getReadyForBedScene != null;
+      msg = "scene 'Get Ready for Bed' missing";
+    }
+    {
+      test = goodNightScene != null;
+      msg = "scene 'Good Night' missing";
+    }
+    {
+      test = sleepScene != null;
+      msg = "scene 'Sleep' missing";
     }
     {
       test = goodMorningScene != null;
@@ -222,6 +225,24 @@ let
     {
       test = (windingDownScene.entities."input_boolean.monica_awake" or null) == "off";
       msg = "Winding Down scene doesn't reset monica_awake to off";
+    }
+    {
+      test =
+        (windingDownScene.entities."switch.adaptive_lighting_sleep_mode_living_space" or null) == "off";
+      msg = "Winding Down scene must keep AL sleep mode off";
+    }
+    {
+      test =
+        (getReadyForBedScene.entities."switch.adaptive_lighting_sleep_mode_living_space" or null) == "off";
+      msg = "Get Ready for Bed scene must keep AL sleep mode off";
+    }
+    {
+      test = (goodNightScene.entities."switch.adaptive_lighting_sleep_mode_living_space" or null) == "on";
+      msg = "Good Night scene must enable AL sleep mode";
+    }
+    {
+      test = (sleepScene.entities."switch.adaptive_lighting_sleep_mode_living_space" or null) == "on";
+      msg = "Sleep scene must enable AL sleep mode";
     }
     {
       test = (goodMorningScene.entities."input_boolean.goodnight" or null) == "off";

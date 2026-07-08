@@ -124,7 +124,6 @@ pkgs.testers.nixosTest {
 
         # Cross-domain lighting safety automations
         for automation_id in [
-            "al_sleep_mode_on",
             "al_daytime_sleep_correction",
             "entrance_occupancy_night_light",
         ]:
