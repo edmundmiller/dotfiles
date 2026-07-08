@@ -55,6 +55,7 @@
         tmux.workmux.enable = false;
         acpx.enable = true;
         herdr.enable = true;
+        herdr.mainCodingAgent = "omp";
         herdr.managePiTheme = false;
         herdr.themeVariant = "catppuccin-auto";
         herald.enable = true;
