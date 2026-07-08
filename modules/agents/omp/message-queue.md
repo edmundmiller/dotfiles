@@ -34,27 +34,27 @@ graph TD
   I -->|all| K[next turn takes all]
 ```
 
-## Current config (2026-07-02)
+## Current config (2026-07-08)
 
 `interruptMode: wait` + `steeringMode: all` + `followUpMode: all` — never
 interrupt a running tool, but once delivery is safe, take everything queued at
 once. Coherent batch-style config.
 
-## Model roles (2026-07-02)
+## Model roles (2026-07-08)
 
 ```
-default openai-codex/gpt-5.5:medium        # newest general Codex, balanced
-smol    xai-oauth/grok-composer-2.5-fast   # fast coding model (Cursor Composer)
-slow    openai-codex/gpt-5.5:xhigh         # deepest thinking, direct sub
-plan    openai-codex/gpt-5.5:high          # proven reasoner, same family as default/slow
-commit  xai-oauth/grok-composer-2.5-fast   # fast/mechanical commit messages
+default xai-oauth/grok-composer-2.5-fast       # fast Cursor Composer default
+smol    xai-oauth/grok-composer-2.5-fast       # same fast/mechanical slot
+slow    openai-codex/gpt-5.5:high              # heavier direct-sub reasoning
+plan    vibeproxy/claude-opus-4-8:high         # strong planning via VibeProxy
+commit  xai-oauth/grok-composer-2.5-fast       # fast/mechanical commit messages
 ```
 
 Direct-login providers (Codex on ChatGPT sub, xai-oauth) beat kilo credits for
-the same model. kilo/Claude is kept only as a fallback. There is no separate
-"fast" role — `smol` is the fast slot; Composer covers smol + commit. Grok 4.3
-is kept off the roles (a bad plan poisons the whole task, so `plan` stays on the
-proven gpt-5.5); reach for it ad hoc via `--plan grok-4.3` or Ctrl+P cycling.
+the same model. VibeProxy is used where it adds a distinct role (`plan` on
+Claude Opus 4.8); kilo/Claude remains only a fallback. There is no separate
+"fast" role — `smol` is the fast slot; Composer covers default, smol, and
+commit.
 
 ### Per-host overrides
 
@@ -163,9 +163,9 @@ enables it.
 - **No auto-discovery for custom providers** — `models.yml` must list ids
   explicitly (unlike built-in providers, `omp models refresh` won't populate
   them). Curated subset of `curl localhost:8317/v1/models`; add more there.
-- **Purely additive** — `modelRoles` stay on the direct Codex/xai logins.
-  Select proxied models with `--model vibeproxy/<id>` or Ctrl+P cycling; to make
-  one a role, e.g. `omp config set modelRoles.default vibeproxy/claude-opus-4-8`.
+- **Mostly additive** — direct Codex/xai logins carry default/smol/slow, while
+  `plan` uses `vibeproxy/claude-opus-4-8:high`. Select other proxied models
+  with `--model vibeproxy/<id>` or Ctrl+P cycling.
 - **The app must be running** (menu bar → Running) and the relevant provider
   authed, or `vibeproxy/*` calls hit a dead port. Verified round-trip:
   `omp -p --no-session --no-tools --model vibeproxy/claude-opus-4-8 "say ok"`.

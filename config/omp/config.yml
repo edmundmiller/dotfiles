@@ -17,10 +17,10 @@ snapcompact:
   toolResults: false
 setupVersion: 1
 modelRoles:
-  default: openai-codex/gpt-5.5:medium
+  default: xai-oauth/grok-composer-2.5-fast
   smol: xai-oauth/grok-composer-2.5-fast
-  slow: openai-codex/gpt-5.5:xhigh
-  plan: openai-codex/gpt-5.5:high
+  slow: openai-codex/gpt-5.5:high
+  plan: vibeproxy/claude-opus-4-8:high
 textVerbosity: low
 personality: pragmatic
 steeringMode: all
