@@ -1,10 +1,9 @@
 /**
- * xurl Extension — resolve AI agent thread URIs from Pi
+ * xurl Extension — resolve local and agent URIs from Pi
  *
- * Wraps Xuanwo/xurl (https://github.com/Xuanwo/xurl) as a Pi tool.
- * Resolves agents:// URIs for Amp, Codex, Claude, Gemini, Pi, and OpenCode threads.
+ * Wraps Xuanwo/xurl for agent thread URIs and handles local Herdr/Hunk resources.
  *
- * Tool: xurl — resolve and read agent thread content by URI
+ * Tool: xurl — resolve and read URI content
  * Command: /xurl <uri> [--raw] [--list]
  */
 
@@ -19,28 +18,196 @@ import { Type } from "@sinclair/typebox";
 
 const XURL_CMD = "npx";
 const XURL_ARGS = ["@xuanwo/xurl"];
-const XURL_LIST_UNSUPPORTED = /unexpected argument '--list'/i;
+
+type XurlParams = {
+  uri: string;
+  raw?: boolean;
+  list?: boolean;
+};
+
+type ResolverCommand = {
+  command: string;
+  args: string[];
+  label: string;
+};
+
+type ResolverResult = {
+  content: Array<{ type: "text"; text: string }>;
+  details: Record<string, unknown>;
+  isError?: boolean;
+};
+
+const TRUTHY: Record<string, true> = {
+  "": true,
+  "1": true,
+  true: true,
+  yes: true,
+  on: true,
+};
+
+function boolParam(params: URLSearchParams, name: string): boolean {
+  const value = params.get(name);
+  return value !== null && TRUTHY[value.toLowerCase()] === true;
+}
+
+function positiveIntParam(params: URLSearchParams, name: string): string | undefined {
+  const value = params.get(name);
+  if (!value) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0)
+    throw new Error(`${name} must be a positive integer`);
+  return String(parsed);
+}
+
+function pathId(url: URL, label: string): string {
+  const id = decodeURIComponent(url.pathname.replace(/^\/+/, ""));
+  if (!id) throw new Error(`${label} id is required`);
+  return id;
+}
+
+function buildHerdrCommand(url: URL): ResolverCommand {
+  switch (url.hostname) {
+    case "snapshot":
+      return { command: "herdr", args: ["api", "snapshot", "--json"], label: "herdr" };
+    case "pane": {
+      const args = [
+        "pane",
+        "read",
+        pathId(url, "pane"),
+        "--source",
+        url.searchParams.get("source") ?? "recent",
+      ];
+      const lines = positiveIntParam(url.searchParams, "lines");
+      if (lines) args.push("--lines", lines);
+      if (boolParam(url.searchParams, "ansi")) args.push("--ansi");
+      return { command: "herdr", args, label: "herdr" };
+    }
+    default:
+      throw new Error(`unsupported herdr URI: ${url.href}`);
+  }
+}
+
+function buildHunkCommand(url: URL, cwd: string): ResolverCommand {
+  const repo = url.searchParams.get("repo") ?? cwd;
+  switch (url.hostname) {
+    case "review": {
+      const args = ["session", "review", "--repo", repo];
+      if (boolParam(url.searchParams, "includePatch")) args.push("--include-patch");
+      if (boolParam(url.searchParams, "includeNotes")) args.push("--include-notes");
+      return { command: "hunk", args, label: "hunk" };
+    }
+    case "comments": {
+      const args = ["session", "comment", "list", "--repo", repo];
+      const type = url.searchParams.get("type");
+      if (type) args.push("--type", type);
+      return { command: "hunk", args, label: "hunk" };
+    }
+    default:
+      throw new Error(`unsupported hunk URI: ${url.href}`);
+  }
+}
+
+function buildCommand(params: XurlParams, cwd = process.cwd()): ResolverCommand {
+  if (params.uri.startsWith("herdr://")) return buildHerdrCommand(new URL(params.uri));
+  if (params.uri.startsWith("hunk://")) return buildHunkCommand(new URL(params.uri), cwd);
+
+  const args = [...XURL_ARGS, params.uri];
+  if (params.raw) args.push("--raw");
+  if (params.list) args.push("--list");
+  return { command: XURL_CMD, args, label: "xurl" };
+}
+
+function truncateOutput(output: string): { text: string; truncated: boolean } {
+  const truncation = truncateHead(output, {
+    maxLines: DEFAULT_MAX_LINES,
+    maxBytes: DEFAULT_MAX_BYTES,
+  });
+
+  let text = truncation.content;
+  if (truncation.truncated) {
+    text += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
+    text += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)})]`;
+  }
+
+  return { text, truncated: truncation.truncated };
+}
+
+async function resolveUri(
+  pi: ExtensionAPI,
+  params: XurlParams,
+  signal?: AbortSignal,
+  cwd?: string
+): Promise<ResolverResult> {
+  let resolver: ResolverCommand;
+  try {
+    resolver = buildCommand(params, cwd);
+  } catch (error) {
+    const text = error instanceof Error ? error.message : String(error);
+    return {
+      content: [{ type: "text", text }],
+      details: { uri: params.uri, error: text },
+      isError: true,
+    };
+  }
+
+  const result = await pi.exec(resolver.command, resolver.args, {
+    signal,
+    timeout: 30_000,
+  });
+
+  if (result.code !== 0) {
+    const stderr = result.stderr?.trim() || "unknown error";
+    return {
+      content: [
+        { type: "text", text: `${resolver.label} failed (exit ${result.code}): ${stderr}` },
+      ],
+      details: {
+        uri: params.uri,
+        command: resolver.command,
+        args: resolver.args,
+        exitCode: result.code,
+        error: stderr,
+      },
+      isError: true,
+    };
+  }
+
+  const output = result.stdout ?? "";
+  const truncation = truncateOutput(output);
+  return {
+    content: [{ type: "text", text: truncation.text }],
+    details: {
+      uri: params.uri,
+      command: resolver.command,
+      args: resolver.args,
+      raw: params.raw ?? false,
+      list: params.list ?? false,
+      truncated: truncation.truncated,
+    },
+  };
+}
 
 export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "xurl",
     label: "xurl",
-    description: `Resolve and read AI agent thread content by URI.
+    description: `Resolve and read URI content.
 
-Supports unified agents:// URIs and legacy provider URIs for: Amp, Codex, Claude, Gemini, Pi, OpenCode.
+Supports local resources:
+  herdr://snapshot
+  herdr://pane/<pane-id>?source=recent-unwrapped&lines=80
+  hunk://review?repo=/path/to/repo&includePatch=1&includeNotes=1
+  hunk://comments?repo=/path/to/repo&type=user
 
-URI format: agents://<provider>/<thread_path>
-Legacy: codex://<id>, claude://<id>, pi://<id>, amp://<id>, gemini://<id>, opencode://<id>
+Supports cross-agent thread URIs through xurl:
+  agents://codex/<id>
+  agents://claude/<id>
+  pi://<id>
 
-Examples:
-  agents://codex/019c871c-b1f9-7f60-9c4f-87ed09f13592
-  agents://claude/2823d1df-720a-4c31-ac55-ae8ba726721f
-  agents://pi/12cb4c19-2774-4de4-a0d0-9fa32fbae29f
-
-Use raw=true for JSON output. Use list=true to discover subagents/entries before drilling down.`,
+Use raw=true/list=true for xurl-backed agent thread URIs.`,
     parameters: Type.Object({
       uri: Type.String({
-        description: "Thread URI (e.g. agents://codex/<id>, agents://claude/<id>, pi://<id>)",
+        description: "URI (e.g. herdr://snapshot, hunk://review?repo=/repo, agents://codex/<id>)",
       }),
       raw: Type.Optional(
         Type.Boolean({
@@ -55,54 +222,19 @@ Use raw=true for JSON output. Use list=true to discover subagents/entries before
       ),
     }),
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async execute(_toolCallId, params, signal): Promise<any> {
-      const args = [...XURL_ARGS, params.uri];
-      if (params.raw) args.push("--raw");
-      if (params.list) args.push("--list");
-
-      const result = await pi.exec(XURL_CMD, args, {
-        signal,
-        timeout: 30_000,
-      });
-
-      if (result.code !== 0) {
-        const stderr = result.stderr?.trim() || "unknown error";
-        return {
-          content: [
-            { type: "text" as const, text: `xurl failed (exit ${result.code}): ${stderr}` },
-          ],
-          details: { exitCode: result.code, error: stderr },
-          isError: true,
-        };
-      }
-
-      const output = result.stdout;
-      const truncation = truncateHead(output, {
-        maxLines: DEFAULT_MAX_LINES,
-        maxBytes: DEFAULT_MAX_BYTES,
-      });
-
-      let text = truncation.content;
-      if (truncation.truncated) {
-        text += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
-        text += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)})]`;
-      }
-
-      return {
-        content: [{ type: "text" as const, text }],
-        details: {
-          uri: params.uri,
-          raw: params.raw ?? false,
-          list: params.list ?? false,
-          truncated: truncation.truncated,
-        },
-      };
+    async execute(
+      _toolCallId: string,
+      params: XurlParams,
+      signal?: AbortSignal,
+      _onUpdate?: unknown,
+      ctx?: { cwd?: string }
+    ): Promise<ResolverResult> {
+      return resolveUri(pi, params, signal, ctx?.cwd);
     },
   });
 
   pi.registerCommand("xurl", {
-    description: "Resolve an agent thread URI (usage: /xurl <uri> [--raw] [--list])",
+    description: "Resolve a URI (usage: /xurl <uri> [--raw] [--list])",
     handler: async (argsStr, ctx) => {
       if (!argsStr?.trim()) {
         ctx.ui.notify("Usage: /xurl <uri> [--raw] [--list]", "warning");
@@ -119,18 +251,14 @@ Use raw=true for JSON output. Use list=true to discover subagents/entries before
         return;
       }
 
-      const args = [...XURL_ARGS, uri];
-      if (raw) args.push("--raw");
-      if (list) args.push("--list");
+      const result = await resolveUri(pi, { uri, raw, list }, undefined, ctx.cwd);
 
-      const result = await pi.exec(XURL_CMD, args, { timeout: 30_000 });
-
-      if (result.code !== 0) {
-        ctx.ui.notify(`xurl failed: ${result.stderr?.trim() || "unknown error"}`, "error");
+      if (result.isError) {
+        ctx.ui.notify(result.content[0]?.text ?? "xurl failed", "error");
         return;
       }
 
-      const output = result.stdout.trim();
+      const output = result.content[0]?.text.trim() ?? "";
       const lines = output.split("\n");
       if (lines.length <= 10) {
         ctx.ui.notify(output, "info");

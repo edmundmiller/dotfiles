@@ -1,6 +1,6 @@
 # pi-xurl
 
-Cross-agent thread reader. Resolve `agents://` URIs for Amp, Codex, Claude, Gemini, Pi, and OpenCode.
+Resolve local `herdr://`/`hunk://` resources and cross-agent thread URIs.
 
 ## Install
 
@@ -8,11 +8,22 @@ Cross-agent thread reader. Resolve `agents://` URIs for Amp, Codex, Claude, Gemi
 pi install npm:pi-xurl
 ```
 
-Requires [`@xuanwo/xurl`](https://github.com/Xuanwo/xurl) (invoked via `npx`).
+Requires [`@xuanwo/xurl`](https://github.com/Xuanwo/xurl) for agent thread URIs (invoked via `npx`).
 
 ## Tool: `xurl`
 
-Resolve and read AI agent thread content by URI.
+Resolve and read URI content.
+
+Local resources:
+
+```
+herdr://snapshot
+herdr://pane/w1-2?source=recent-unwrapped&lines=80
+hunk://review?repo=/tmp/repo&includePatch=1&includeNotes=1
+hunk://comments?repo=/tmp/repo&type=user
+```
+
+Agent threads:
 
 ```
 agents://codex/019c871c-b1f9-7f60-9c4f-87ed09f13592
