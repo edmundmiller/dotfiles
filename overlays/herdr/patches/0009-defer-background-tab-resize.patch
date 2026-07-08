@@ -1,0 +1,283 @@
+--- i/src/ui.rs
++++ w/src/ui.rs
+@@ -144,57 +144,24 @@
+     terminal_runtimes: &TerminalRuntimeRegistry,
+     area: Rect,
+ ) {
+     compute_view_internal(
+         app,
+         terminal_runtimes,
+         area,
+         false,
+         crate::kitty_graphics::HostCellSize::default(),
+     );
+ }
+ 
+-fn resize_background_tab_panes_to_area(
+-    app: &AppState,
+-    terminal_runtimes: &TerminalRuntimeRegistry,
+-    terminal_area: Rect,
+-    cell_size: crate::kitty_graphics::HostCellSize,
+-) {
+-    for (ws_idx, ws) in app.workspaces.iter().enumerate() {
+-        for (tab_idx, tab) in ws.tabs.iter().enumerate() {
+-            if app.active == Some(ws_idx) && tab_idx == ws.active_tab_index() {
+-                continue;
+-            }
+-            resize_tab_panes(app, terminal_runtimes, tab, terminal_area, cell_size);
+-        }
+-    }
+-}
+-
+-fn resize_background_tab_panes_for_desktop(
+-    app: &AppState,
+-    terminal_runtimes: &TerminalRuntimeRegistry,
+-    main_area: Rect,
+-    cell_size: crate::kitty_graphics::HostCellSize,
+-) {
+-    for (ws_idx, ws) in app.workspaces.iter().enumerate() {
+-        let (_, terminal_area) = desktop_tab_bar_and_terminal_area(app, ws, main_area);
+-        for (tab_idx, tab) in ws.tabs.iter().enumerate() {
+-            if app.active == Some(ws_idx) && tab_idx == ws.active_tab_index() {
+-                continue;
+-            }
+-            resize_tab_panes(app, terminal_runtimes, tab, terminal_area, cell_size);
+-        }
+-    }
+-}
+-
+ fn desktop_tab_bar_and_terminal_area(
+     app: &AppState,
+     ws: &crate::workspace::Workspace,
+     main_area: Rect,
+ ) -> (Rect, Rect) {
+     let hide_single_tab_bar = app.hide_tab_bar_when_single_tab && ws.tabs.len() == 1;
+     if !hide_single_tab_bar && main_area.height > 1 {
+         let [tab_bar_rect, terminal_area] =
+             Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).areas(main_area);
+         (tab_bar_rect, terminal_area)
+     } else {
+         (Rect::default(), main_area)
+@@ -275,27 +242,27 @@
+                 ws.layout.splits(terminal_area)
+             }
+         })
+         .unwrap_or_default();
+ 
+     let pane_infos = compute_pane_infos(
+         app,
+         terminal_runtimes,
+         terminal_area,
+         resize_panes,
+         cell_size,
+     );
+-    if resize_panes {
+-        resize_background_tab_panes_for_desktop(app, terminal_runtimes, main_area, cell_size);
+-    }
++    // Only resize the visible tab. Background tabs are resized when focused; eagerly
++    // resizing every hidden terminal on each client resize multiplies libghostty
++    // reflow crash surface without affecting the current frame.
+ 
+     let toast_hit_area = app
+         .toast
+         .as_ref()
+         .map(|toast| {
+             toast_notification_rect(
+                 area,
+                 toast,
+                 app.config_diagnostic.is_some(),
+                 toast.position.unwrap_or(app.toast_config.herdr.position),
+             )
+         })
+@@ -351,27 +318,27 @@
+                 ws.layout.splits(terminal_area)
+             }
+         })
+         .unwrap_or_default();
+ 
+     let pane_infos = compute_pane_infos(
+         app,
+         terminal_runtimes,
+         terminal_area,
+         resize_panes,
+         cell_size,
+     );
+-    if resize_panes {
+-        resize_background_tab_panes_to_area(app, terminal_runtimes, terminal_area, cell_size);
+-    }
++    // Only resize the visible tab. Background tabs are resized when focused; eagerly
++    // resizing every hidden terminal on each client resize multiplies libghostty
++    // reflow crash surface without affecting the current frame.
+     let header_hits = compute_mobile_header_hit_areas(app, header_rect);
+ 
+     let toast_hit_area = app
+         .toast
+         .as_ref()
+         .map(|_| mobile_toast_banner_rect(area, app.config_diagnostic.is_some()))
+         .unwrap_or_default();
+ 
+     app.view = crate::app::ViewState {
+         layout: ViewLayout::Mobile,
+         sidebar_rect: Rect::default(),
+         workspace_card_areas: Vec::new(),
+@@ -769,25 +736,25 @@
+         assert!(app.view.new_tab_hit_area.width > 0);
+ 
+         assert!(app.workspaces[0].close_tab(1));
+         compute_view(&mut app, Rect::new(0, 0, 80, 20));
+ 
+         assert_eq!(app.view.terminal_area, single_tab_terminal_area);
+         assert_eq!(app.view.tab_bar_rect, Rect::default());
+         assert!(app.view.tab_hit_areas.is_empty());
+         assert_eq!(app.view.new_tab_hit_area, Rect::default());
+     }
+ 
+     #[tokio::test]
+-    async fn hide_tab_bar_when_single_tab_resizes_background_tabs_per_workspace() {
++    async fn hide_tab_bar_when_single_tab_defers_background_tab_resize_until_focused() {
+         let mut app = crate::app::state::AppState::test_new();
+         app.hide_tab_bar_when_single_tab = true;
+ 
+         let mut one_tab_workspace = Workspace::test_new("one");
+         let one_tab_pane = one_tab_workspace.tabs[0].root_pane;
+         let one_tab_runtime = crate::terminal::TerminalRuntime::test_with_screen_bytes(10, 5, b"");
+         one_tab_workspace.tabs[0]
+             .runtimes
+             .insert(one_tab_pane, one_tab_runtime);
+ 
+         let mut two_tab_workspace = Workspace::test_new("two");
+         let background_tab = two_tab_workspace.test_add_tab(Some("logs"));
+@@ -799,48 +766,65 @@
+ 
+         app.workspaces = vec![one_tab_workspace, two_tab_workspace];
+         app.active = Some(0);
+         app.selected = 0;
+         app.mode = Mode::Terminal;
+ 
+         compute_view(&mut app, Rect::new(0, 0, 80, 20));
+ 
+         let one_tab_size = app.workspaces[0].tabs[0].runtimes[&one_tab_pane].current_size();
+         let two_tab_size =
+             app.workspaces[1].tabs[background_tab].runtimes[&two_tab_pane].current_size();
+         assert_eq!(one_tab_size, (20, 53));
++        assert_eq!(two_tab_size, (5, 10));
++
++        app.active = Some(1);
++        app.selected = 1;
++        app.workspaces[1].switch_tab(background_tab);
++        compute_view(&mut app, Rect::new(0, 0, 80, 20));
++
++        let two_tab_size =
++            app.workspaces[1].tabs[background_tab].runtimes[&two_tab_pane].current_size();
+         assert_eq!(two_tab_size, (19, 53));
+     }
+ 
+     #[tokio::test]
+-    async fn mobile_background_tabs_use_mobile_terminal_area() {
++    async fn mobile_background_tabs_resize_when_focused() {
+         let mut app = crate::app::state::AppState::test_new();
+ 
+         let mut workspace = Workspace::test_new("mobile");
+         let background_tab = workspace.test_add_tab(Some("logs"));
+         let background_pane = workspace.tabs[background_tab].root_pane;
+         let runtime = crate::terminal::TerminalRuntime::test_with_screen_bytes(10, 5, b"");
+         workspace.tabs[background_tab]
+             .runtimes
+             .insert(background_pane, runtime);
+ 
+         app.workspaces = vec![workspace];
+         app.active = Some(0);
+         app.selected = 0;
+         app.mode = Mode::Terminal;
+ 
+         compute_view(&mut app, Rect::new(0, 0, 44, 20));
+ 
+         assert_eq!(app.view.layout, ViewLayout::Mobile);
+         assert_eq!(app.view.terminal_area, Rect::new(0, 2, 44, 18));
++        assert_eq!(
++            app.workspaces[0].tabs[background_tab].runtimes[&background_pane].current_size(),
++            (5, 10)
++        );
++
++        app.workspaces[0].switch_tab(background_tab);
++        compute_view(&mut app, Rect::new(0, 0, 44, 20));
++
+         assert_eq!(
+             app.workspaces[0].tabs[background_tab].runtimes[&background_pane].current_size(),
+             (18, 43)
+         );
+     }
+ 
+     #[test]
+     fn product_announcement_renders_above_config_diagnostic() {
+         let mut app = crate::app::state::AppState::test_new();
+         app.workspaces = vec![Workspace::test_new("one")];
+         app.active = Some(0);
+         app.selected = 0;
+--- i/src/server/headless.rs
++++ w/src/server/headless.rs
+@@ -6640,25 +6640,25 @@
+         server.resize_shared_runtime_to_effective_size();
+ 
+         server.render_and_stream();
+ 
+         let desktop_frame = read_server_frame(desktop_rx.recv().expect("desktop frame"));
+         let phone_frame = read_server_frame(phone_rx.recv().expect("phone frame"));
+ 
+         assert_eq!((desktop_frame.width, desktop_frame.height), (120, 40));
+         assert_eq!((phone_frame.width, phone_frame.height), (80, 24));
+     }
+ 
+     #[tokio::test]
+-    async fn resize_shared_runtime_resizes_background_tabs() {
++    async fn resize_shared_runtime_defers_background_tabs_until_focused() {
+         let mut server = test_headless_server();
+         let mut workspace = crate::workspace::Workspace::test_new("test");
+         let background_tab = workspace.test_add_tab(Some("background"));
+         let active_pane = workspace.tabs[0].root_pane;
+         let background_pane = workspace.tabs[background_tab].root_pane;
+         workspace.tabs[0].runtimes.insert(
+             active_pane,
+             crate::terminal::TerminalRuntime::test_with_screen_bytes(80, 24, b""),
+         );
+         workspace.tabs[background_tab].runtimes.insert(
+             background_pane,
+             crate::terminal::TerminalRuntime::test_with_screen_bytes(80, 24, b""),
+@@ -6686,24 +6686,37 @@
+ 
+         let terminal_area = server.app.state.view.terminal_area;
+         let expected = (terminal_area.height, terminal_area.width.saturating_sub(1));
+         assert_eq!(
+             server
+                 .app
+                 .state
+                 .runtime_for_pane(&server.app.terminal_runtimes, active_pane)
+                 .unwrap()
+                 .current_size(),
+             expected
+         );
++        assert_eq!(
++            server
++                .app
++                .state
++                .runtime_for_pane(&server.app.terminal_runtimes, background_pane)
++                .unwrap()
++                .current_size(),
++            (24, 80)
++        );
++
++        server.app.state.workspaces[0].switch_tab(background_tab);
++        server.resize_shared_runtime_to_effective_size();
++
+         assert_eq!(
+             server
+                 .app
+                 .state
+                 .runtime_for_pane(&server.app.terminal_runtimes, background_pane)
+                 .unwrap()
+                 .current_size(),
+             expected
+         );
+     }
+ 
+     #[test]
