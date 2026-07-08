@@ -2,7 +2,7 @@
   "name": "pi-xurl",
   "version": "0.1.0",
   "type": "module",
-  "description": "Cross-agent thread reader — resolve agents:// URIs for Amp, Codex, Claude, Gemini, Pi, OpenCode",
+  "description": "Resolve local herdr:// and hunk:// resources plus cross-agent thread URIs",
   "main": "./index.ts",
   "keywords": [
     "pi",
