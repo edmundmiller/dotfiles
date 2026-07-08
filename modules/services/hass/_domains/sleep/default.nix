@@ -570,10 +570,10 @@ in
       }
 
       # White noise starts after the final Sleep phase once either bedroom
-      # nightstand speaker starts playing. HA currently exposes no audiobook
-      # metadata for these HomePods, so playing-on-bedroom-speaker is the signal.
+      # nightstand HomePod starts playing. Exclude media_player.bathroom:
+      # that playback is usually shower-time, not bedtime.
       {
-        alias = "White noise with bedtime audiobook";
+        alias = "White noise with bedtime nightstand audio";
         id = "white_noise_with_bedtime_audiobook";
         mode = "single";
         trigger = [
