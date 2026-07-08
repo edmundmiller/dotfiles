@@ -63,6 +63,7 @@ let
   '';
   herdrPlugin = ../../../packages/pi-packages/pi-herdr;
   hunkPlugin = ../../../packages/pi-packages/pi-hunk;
+  xurlPlugin = ../../../packages/pi-packages/pi-xurl;
   ponytailPlugin = pkgs.fetchzip {
     name = "ponytail-4.8.4";
     url = "https://registry.npmjs.org/@dietrichgebert/ponytail/-/ponytail-4.8.4.tgz";
@@ -540,6 +541,10 @@ in
 
           home.activation.omp-hunk-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${hunkPlugin}"} --force --json >/dev/null
+          '';
+
+          home.activation.omp-xurl-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${xurlPlugin}"} --force --json >/dev/null
           '';
 
           home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
