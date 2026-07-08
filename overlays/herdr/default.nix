@@ -15,6 +15,7 @@ let
       ./patches/0006-update-cargo-hash.patch
       ./patches/0007-worktree-actions-use-focused-pane-cwd.patch
       ./patches/0008-ignore-zero-terminal-resize.patch
+      ./patches/0009-defer-background-tab-resize.patch
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
