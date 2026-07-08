@@ -61,11 +61,8 @@ let
       --servers hass \
       --stdio
   '';
-  herdrPlugin = pkgs.fetchzip {
-    name = "omp-pi-herdr-0.2.5";
-    url = "https://registry.npmjs.org/@ogulcancelik/pi-herdr/-/pi-herdr-0.2.5.tgz";
-    hash = "sha256-k7Bh17ULoYnlT13u5z3Kvm/iRK7AA0YzJK4ZGNcY+LY=";
-  };
+  herdrPlugin = ../../../packages/pi-packages/pi-herdr;
+  hunkPlugin = ../../../packages/pi-packages/pi-hunk;
   ponytailPlugin = pkgs.fetchzip {
     name = "ponytail-4.8.4";
     url = "https://registry.npmjs.org/@dietrichgebert/ponytail/-/ponytail-4.8.4.tgz";
@@ -515,7 +512,12 @@ in
         { lib, ... }:
         {
           home.activation.omp-herdr-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${ompPackage}/bin/omp plugin uninstall @ogulcancelik/pi-herdr --json >/dev/null 2>&1 || true
             ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${herdrPlugin}"} --force --json >/dev/null
+          '';
+
+          home.activation.omp-hunk-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${hunkPlugin}"} --force --json >/dev/null
           '';
 
           home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
