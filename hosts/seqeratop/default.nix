@@ -102,10 +102,9 @@
         codex.enable = true;
         omp = {
           enable = true;
-          # TODO: set once Seqera's omp logins are known (this machine only has
-          # xai-oauth; Seqera's pi uses cursor/composer-2.5 via cursorSdk).
-          # null = use modelRoles.smol from the mutable ~/.omp/agent/config.yml.
-          smolModel = null;
+          # Seqeratop has Cursor SDK wired through Pi, so use Cursor Composer
+          # for OMP's per-host smol/commit role.
+          smolModel = "cursor/composer-2.5";
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
           # keeps the shared Catppuccin default.

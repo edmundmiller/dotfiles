@@ -69,8 +69,7 @@ for default or commit (only smol/slow/plan exist), and `--config` overlays are
 launch-only (they crash `config get/set`), so the env var is the clean lever.
 
 - **mactraitorpro**: `smolModel = "xai-oauth/grok-composer-2.5-fast"`.
-- **seqeratop**: `null` (TODO — set once its omp logins are known; its `pi`
-  uses `cursor/composer-2.5`, not necessarily an omp login).
+- **seqeratop**: `smolModel = "cursor/composer-2.5"` via Cursor SDK.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
 **ChatGPT-account** Codex login only permits the current generation. Every
