@@ -1,11 +1,11 @@
 ---
-name: agent-friendly-cli
-description: Design and implement CLIs that work well for both humans and AI coding agents, with progressive disclosure, structured output, actionable errors, stdout/stderr separation, and explicit non-interactive modes.
+name: writing-agent-friendly-clis
+description: Write, design, or review agent-friendly CLIs and agentic interfaces for humans, scripts, and coding agents, with progressive disclosure, structured output, actionable errors, stdout/stderr separation, and explicit non-interactive modes.
 ---
 
-# Agent-Friendly CLI Design
+# Writing Agent-Friendly CLIs
 
-Use this skill when building, reviewing, or redesigning a command-line tool meant to be used by both humans and coding agents. Do not use it merely to decide whether to prefix an arbitrary command with environment variables.
+Use this skill when building, reviewing, or redesigning a CLI or agentic interface meant to serve both humans and coding agents. Do not use it merely to decide whether to prefix an arbitrary command with environment variables.
 
 ## Design principles
 
