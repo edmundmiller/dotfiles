@@ -202,7 +202,7 @@ export def fail-if-moshi-client-rebuild [ctx: record, action: string] {
     print -e "AGENT_ACTION: stop; do not retry here; do not change Nix config to bypass this guard."
     print -e "HUMAN_FIX: open Ghostty/Finder-launched terminal (Aqua session), then rerun the same `hey ...` command."
     print -e "VERIFY: after success, re-read the affected Nix-managed file/service (for example `readlink ~/.omp/agent/config.yml`)."
-    error make {msg: $"BLOCKED hey ($action): Moshi/mosh session cannot activate macOS apps; no activation happened"}
+    error make --unspanned {msg: $"BLOCKED hey ($action): Moshi/mosh cannot activate macOS apps; no activation happened", code: "hey::macos_activation_from_mosh", help: "Open an Aqua session (Ghostty/Finder), rerun the same hey command, then verify the affected Nix-managed file/service."}
   }
 }
 
