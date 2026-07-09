@@ -64,7 +64,7 @@ for the smol/commit fast path. Precedence: `--smol` flag > `PI_SMOL_MODEL` env >
 rendered `config.yml`.
 
 - **mactraitorpro**: smol via `xai-oauth/grok-composer-2.5-fast`.
-- **seqeratop**: smol `cursor/composer-2.5-fast`; default `cursor/composer-2.5`.
+- **seqeratop**: smol `cursor/composer-2.5`; default `openai-codex/gpt-5.5:low`.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
 **ChatGPT-account** Codex login only permits the current generation. Every

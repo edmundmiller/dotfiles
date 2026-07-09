@@ -54,9 +54,9 @@ differences; keep shared defaults in `config/omp/config.yml`. Precedence:
 `--smol` flag > `PI_SMOL_MODEL` > rendered `config.yml`.
 
 Current split: MacTraitor-Pro uses `xai-oauth/grok-composer-2.5-fast`;
-Seqeratop renders `cursor/composer-2.5-fast` for smol and
-`cursor/composer-2.5` for default. Keep future host-specific role changes in
-the host `modules.agents.omp` block, not shared `config.yml`.
+Seqeratop renders `cursor/composer-2.5` for smol and
+`openai-codex/gpt-5.5:low` for default. Keep future host-specific role changes
+in the host `modules.agents.omp` block, not shared `config.yml`.
 
 ## Docs
 
