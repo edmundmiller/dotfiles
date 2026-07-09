@@ -196,7 +196,13 @@ export def fail-if-moshi-client-rebuild [ctx: record, action: string] {
   let activates_darwin_apps = ($ctx.os_name == "macos") and ($action in ["switch" "test"])
 
   if $activates_darwin_apps and (moshi-client-active) {
-    error make {msg: "hey re: refusing macOS activation from Moshi/mosh (MOSHI_CLIENT=1). This Herdr session was spawned through mosh, so darwin-rebuild sees launchctl managername=Background and cannot update /Applications/Nix Apps. Exit the Moshi/mosh session, restart Herdr from Ghostty/Finder so launchctl managername is Aqua, then rerun hey re."}
+    print -e $"hey ($action) blocked: activation was NOT applied."
+    print -e "Consequence: Nix-managed symlinks/runtime configs are unchanged (for example ~/.omp/agent/config.yml stays old)."
+    print -e "Cause: this session is Moshi/mosh (MOSHI_CLIENT=1), so darwin-rebuild runs under launchctl managername=Background and cannot update /Applications/Nix Apps."
+    print -e "Agent action: stop retrying here; do not change Nix config to bypass this guard."
+    print -e "Human fix: open a Ghostty/Finder-launched terminal (Aqua session), then rerun the same `hey ...` command."
+    print -e "Verify after success: re-read the affected Nix-managed file/service (for example `readlink ~/.omp/agent/config.yml` for OMP config)."
+    error make {msg: $"hey ($action) blocked by Moshi/mosh; activation not applied"}
   }
 }
 
