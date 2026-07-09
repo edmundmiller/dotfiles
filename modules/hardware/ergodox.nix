@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -19,7 +20,7 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkNixOSOnlyConfig isDarwin "modules.hardware.ergodox" cfg.enable {
     user.packages = with pkgs; [
       teensy-loader-cli
       # QMK build environment for local firmware compilation
