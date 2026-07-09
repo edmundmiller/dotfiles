@@ -49,24 +49,21 @@ macOS appearance
 
 ```text
 hosts/<host>/default.nix
-  -> modules/desktop/term/ghostty/default.nix
-    -> config/ghostty/config + ui.conf + themes/*
-
-hosts/<host>/default.nix
-  -> modules/shell/herdr/default.nix
-    -> config/herdr/config.toml
-    -> ~/.config/herdr/config.toml
-    -> ~/.pi/agent/themes/<dotfiles-herdr*.json>
+  -> modules/desktop/term/theme-stack/default.nix
+    -> modules/desktop/term/ghostty.configInit
+      -> active Ghostty theme line
+    -> modules/shell/herdr.{themeVariant,piThemeVariant,managePiTheme}
+      -> config/herdr/config.toml
+      -> ~/.config/herdr/config.toml
+      -> ~/.pi/agent/themes/<dotfiles-herdr*.json>
+    -> modules/shell/git.hunk.theme
+      -> generated ~/.config/hunk/config.toml fallback theme
+      -> HUNK_THEME_DARK / HUNK_THEME_LIGHT for launchers
 
 modules/agents/pi/lib/_settings.nix
   -> ~/.pi/agent/settings.json
-    -> theme = light/<herdrThemeName>
+    -> theme = light/<herdrThemeName> when managePiTheme is enabled
     -> themes = [ ~/.pi/agent/themes/<herdrThemeName>.json ]
-
-modules/shell/git/default.nix
-  -> config/hunk/config.toml
-    -> theme = "auto"
-    -> mode = "auto"
 
 config/nvim/lua/kickstart/plugins/tokyonight.lua
   -> vim.cmd.colorscheme "tokyonight-night"
@@ -76,27 +73,29 @@ config/nvim/lua/kickstart/plugins/tokyonight.lua
 
 MacTraitor-Pro target:
 
-- `hosts/mactraitorpro/default.nix` enables Ghostty, Herdr, Pi, Hunk, and Neovim.
-- Ghostty and Stylix use Catppuccin (`Latte`/`Mocha` at the terminal boundary,
-  `catppuccin-mocha` for the host Stylix base).
+- `modules.desktop.term.themeStack.variant = "catppuccin"` is the host-level
+  owner for the terminal stack.
+- The stack writes Ghostty's active `theme = light:Catppuccin
+  Latte,dark:Catppuccin Mocha` line; `config/ghostty/ui.conf` only owns
+  non-theme UI settings.
 - Herdr uses terminal-derived chrome instead of hard-coded Latte colors.
 - Pi keeps the source `theme = "terminal"` instead of being forced to
   `light/dotfiles-herdr`.
-- Ghostty uses `theme = light:Catppuccin Latte,dark:Catppuccin Mocha`.
-- Hunk config keeps `theme = "auto"` as a generic fallback, but the Herdr
-  launcher overrides it because Hunk `auto` chooses GitHub light/dark themes,
-  not Catppuccin.
-- Hunk must paint its own themed background; transparent backgrounds let a
-  lighter terminal surface show through inside dark Herdr/Ghostty chrome.
-- Herdr-launched Hunk sessions pass `--theme catppuccin-mocha` or
-  `--theme catppuccin-latte` from macOS appearance, plus `--no-transparent-bg`.
+- Hunk's generated config no longer uses `theme = "auto"` on stack-managed
+  hosts. The stack sets `catppuccin-mocha` as the config fallback, exports
+  `HUNK_THEME_DARK=catppuccin-mocha` and `HUNK_THEME_LIGHT=catppuccin-latte`,
+  and the wrappers pass `--no-transparent-bg`.
 - Neovim loads `tokyonight-night`.
 
 Seqeratop:
 
-- `hosts/seqeratop/default.nix` opts Herdr/Pi into the `seqera` variants.
+- `modules.desktop.term.themeStack.variant = "seqera"` is the host-level owner
+  for the terminal stack.
+- The stack writes Ghostty's active `theme = light:SeqeraLight,dark:SeqeraDark`
+  line and links those custom theme files into `~/.config/ghostty/themes`.
+- The stack opts Herdr/Pi into the `seqera` variants and keeps Hunk polarity
+  explicit with Catppuccin Hunk palettes because Hunk has no Seqera palette.
 - Stylix drives terminal/editor colors from `themes/seqera-dark.yaml`.
-- Seqera Ghostty theme files are linked into `~/.config/ghostty/themes`.
 
 Shared gotcha:
 
@@ -133,11 +132,11 @@ Pi is a child full-screen TUI.
 Hunk is a child full-screen review TUI.
 
 - It is a review-first terminal diff viewer built on OpenTUI and Pierre diffs.
-- This repo sets Hunk to `theme = "auto"` and `transparent_background = false`
-  as the baseline, but does not rely on `auto` for Catppuccin.
-- The Herdr dev-layout launcher makes the review pane explicit:
-  `catppuccin-mocha` in macOS dark mode and `catppuccin-latte` otherwise, with
-  Hunk painting its own background.
+- Stack-managed hosts generate Hunk config with an explicit fallback theme
+  instead of `theme = "auto"`.
+- The `hunk` wrapper and Herdr dev-layout launcher select the stack-provided
+  dark/light Hunk themes from macOS appearance, with Hunk painting its own
+  background.
 - Hunk is the highest-priority mismatch because it paints large code review
   regions.
 
@@ -170,11 +169,12 @@ upstream docs and observed behavior prove that path works.
 
 ## Recommended next changes
 
-1. Link `config/ghostty/themes/*` for any host that may name those themes.
+1. Keep new terminal hosts on `modules.desktop.term.themeStack` instead of
+   setting Ghostty, Herdr, Pi, and Hunk themes separately.
 2. Keep MacTraitor-Pro on Pi's terminal-oriented theme; do not force
    `light/dotfiles-herdr`.
-3. Keep Herdr's Hunk launcher explicit; do not rely on Hunk's generic `auto`
-   theme for Catppuccin.
+3. Keep Hunk explicit; do not rely on Hunk's generic `auto` theme for
+   Catppuccin.
 4. Keep Neovim as a control: `tokyonight-night` should remain visually dark
    regardless of Ghostty/Herdr.
 5. Add a small visual smoke checklist after rebuilds:

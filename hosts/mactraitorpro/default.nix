@@ -56,8 +56,6 @@
         acpx.enable = true;
         herdr.enable = true;
         herdr.mainCodingAgent = "omp";
-        herdr.managePiTheme = false;
-        herdr.themeVariant = "catppuccin-auto";
         herald.enable = true;
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
@@ -148,7 +146,13 @@
         apps.audioPriorityBar.enable = true;
         apps.handy.enable = true;
         apps.neovide.enable = true;
-        term.ghostty.enable = true;
+        term = {
+          ghostty.enable = true;
+          themeStack = {
+            enable = true;
+            variant = "catppuccin";
+          };
+        };
       };
 
       # Stylix: Catppuccin Mocha is the dark side of the terminal theme stack.

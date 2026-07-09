@@ -37,12 +37,6 @@
         acpx.enable = true;
         tmux.jmux.enable = false;
         herdr.enable = true;
-        # Seqera ghostty theme uses a dark purple background (#201637); use
-        # the matching Pi theme palette so dim/muted text stays legible, and
-        # apply the Seqera-branded Herdr UI theme on top of the terminal
-        # palette.
-        herdr.piThemeVariant = "seqera";
-        herdr.themeVariant = "seqera";
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         dmux.enable = false;
@@ -130,17 +124,22 @@
       desktop = {
         apps.audioPriorityBar.enable = true;
         apps.handy.enable = true;
-        term.ghostty = {
-          enable = true;
-          macosTerminalProfileName = "Seqera";
-          # Stylix drives ghostty colors from the Seqera Dark base16 scheme
-          # (see modules.theme.stylix below); we no longer set `theme =`
-          # here, otherwise ghostty would race with the stylix-generated
-          # palette. Host-local font override stays put.
-          configInit = ''
-            font-family = JetBrains Mono
-            font-size = 14
-          '';
+        term = {
+          ghostty = {
+            enable = true;
+            macosTerminalProfileName = "Seqera";
+            # Stylix drives ghostty colors from the Seqera Dark base16 scheme
+            # (see modules.theme.stylix below); the theme stack owns the matching
+            # Herdr/Pi/Hunk adapters and links named Seqera Ghostty themes.
+            configInit = ''
+              font-family = JetBrains Mono
+              font-size = 14
+            '';
+          };
+          themeStack = {
+            enable = true;
+            variant = "seqera";
+          };
         };
       };
 
@@ -214,12 +213,6 @@
           PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.3-codex";
           PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.4";
         };
-
-        # Host-local Ghostty themes in Seqera brand colors.
-        xdg.configFile."ghostty/themes/SeqeraDark".source =
-          "${config.dotfiles.configDir}/ghostty/themes/SeqeraDark";
-        xdg.configFile."ghostty/themes/SeqeraLight".source =
-          "${config.dotfiles.configDir}/ghostty/themes/SeqeraLight";
 
         home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
           "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
