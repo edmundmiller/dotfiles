@@ -28,6 +28,16 @@ let
       })
     else
       hunkPackagePatched;
+  hunkThemeDark = if cfg.hunk.theme.dark == null then "" else cfg.hunk.theme.dark;
+  hunkThemeLight = if cfg.hunk.theme.light == null then "" else cfg.hunk.theme.light;
+  hunkThemeConfig = if cfg.hunk.theme.config == null then hunkThemeDark else cfg.hunk.theme.config;
+  hunkConfigText =
+    if hunkThemeConfig == "" then
+      builtins.readFile "${configDir}/hunk/config.toml"
+    else
+      replaceStrings [ ''theme = "auto"'' ] [ ''theme = "${hunkThemeConfig}"'' ] (
+        builtins.readFile "${configDir}/hunk/config.toml"
+      );
   hunkPackageWrapped = pkgs.writeShellApplication {
     name = "hunk";
     text = ''
@@ -45,17 +55,23 @@ let
 
         extra=()
         if [[ "$has_theme" == false ]]; then
+          dark_theme=${escapeShellArg hunkThemeDark}
+          light_theme=${escapeShellArg hunkThemeLight}
           if [[ "$(${pkgs.coreutils}/bin/uname -s)" == "Darwin" ]]; then
             dark_mode=$(/usr/bin/osascript -e 'tell application "System Events" to tell appearance preferences to get dark mode' 2>/dev/null || true)
-            if [[ "$dark_mode" == "true" ]]; then
-              extra+=(--theme catppuccin-mocha)
-            elif [[ "$dark_mode" == "false" ]]; then
-              extra+=(--theme catppuccin-latte)
+            if [[ "$dark_mode" == "true" && -n "$dark_theme" ]]; then
+              extra+=(--theme "$dark_theme")
+            elif [[ "$dark_mode" == "false" && -n "$light_theme" ]]; then
+              extra+=(--theme "$light_theme")
             fi
+          elif [[ -n "$dark_theme" ]]; then
+            extra+=(--theme "$dark_theme")
           fi
         fi
         if [[ "$has_background" == false ]]; then
-          extra+=(--no-transparent-bg)
+          extra+=(${
+            if cfg.hunk.theme.transparentBackground then "--transparent-bg" else "--no-transparent-bg"
+          })
         fi
 
         shift
@@ -71,6 +87,12 @@ in
     enable = mkBoolOpt false;
     ai.enable = mkBoolOpt false;
     hunk.enable = mkBoolOpt false;
+    hunk.theme = {
+      dark = mkOpt (types.nullOr types.str) null;
+      light = mkOpt (types.nullOr types.str) null;
+      config = mkOpt (types.nullOr types.str) null;
+      transparentBackground = mkBoolOpt false;
+    };
     gitbutler.enable = mkBoolOpt false;
     gitnexus.enable = mkBoolOpt false;
     lazydiff.enable = mkBoolOpt false;
@@ -214,7 +236,7 @@ in
             };
           }
           // optionalAttrs cfg.hunk.enable {
-            "hunk/config.toml".source = "${configDir}/hunk/config.toml";
+            "hunk/config.toml".text = hunkConfigText;
           };
         };
 

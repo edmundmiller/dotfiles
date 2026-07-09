@@ -509,6 +509,12 @@ in
           # grants are checked in the same context as a local GUI terminal.
           export PI_COMPUTER_USE_GUI_SESSION_LAUNCH="''${PI_COMPUTER_USE_GUI_SESSION_LAUNCH:-1}"
           export HERDR_MAIN_CODING_AGENT=${escapeShellArg cfg.mainCodingAgent}
+          ${optionalString (config.modules.shell.git.hunk.theme.dark != null) ''
+            export HUNK_THEME_DARK=${escapeShellArg config.modules.shell.git.hunk.theme.dark}
+          ''}
+          ${optionalString (config.modules.shell.git.hunk.theme.light != null) ''
+            export HUNK_THEME_LIGHT=${escapeShellArg config.modules.shell.git.hunk.theme.light}
+          ''}
 
           # Resolve herdr from the managed profile first. User-level bins stay
           # on PATH for helper commands, but should not shadow the Nix-managed

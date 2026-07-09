@@ -70,27 +70,37 @@ class BootstrapAgentSelectionTest(unittest.TestCase):
 
 
 class HunkThemeArgsTest(unittest.TestCase):
-    def test_env_override_wins(self) -> None:
-        with patch.dict(os.environ, {"HUNK_THEME": "catppuccin-frappe"}):
+    def test_hunk_theme_override_wins_over_stack_theme(self) -> None:
+        with patch.object(sys, "platform", "darwin"), patch.dict(
+            os.environ,
+            {
+                "HUNK_THEME": "catppuccin-frappe",
+                "HUNK_THEME_DARK": "stack-dark",
+                "HUNK_THEME_LIGHT": "stack-light",
+            },
+            clear=True,
+        ), patch("dev_layout.subprocess.run", return_value=Completed(0, "true\n")):
             self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "catppuccin-frappe", "--no-transparent-bg"])
 
-    def test_macos_dark_uses_catppuccin_mocha(self) -> None:
-        with patch.object(sys, "platform", "darwin"), patch.dict(os.environ, {}, clear=True), patch(
-            "subprocess.run",
-            return_value=Completed(0, "true\n"),
-        ):
-            self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "catppuccin-mocha", "--no-transparent-bg"])
+    def test_macos_dark_uses_stack_dark_theme(self) -> None:
+        with patch.object(sys, "platform", "darwin"), patch.dict(
+            os.environ,
+            {"HUNK_THEME_DARK": "stack-dark", "HUNK_THEME_LIGHT": "stack-light"},
+            clear=True,
+        ), patch("dev_layout.subprocess.run", return_value=Completed(0, "true\n")):
+            self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "stack-dark", "--no-transparent-bg"])
 
-    def test_macos_light_uses_catppuccin_latte_when_system_events_says_false(self) -> None:
-        with patch.object(sys, "platform", "darwin"), patch.dict(os.environ, {}, clear=True), patch(
-            "subprocess.run",
-            return_value=Completed(0, "false\n"),
-        ):
-            self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "catppuccin-latte", "--no-transparent-bg"])
+    def test_macos_light_uses_stack_light_theme(self) -> None:
+        with patch.object(sys, "platform", "darwin"), patch.dict(
+            os.environ,
+            {"HUNK_THEME_DARK": "stack-dark", "HUNK_THEME_LIGHT": "stack-light"},
+            clear=True,
+        ), patch("dev_layout.subprocess.run", return_value=Completed(0, "false\n")):
+            self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "stack-light", "--no-transparent-bg"])
 
-    def test_macos_unknown_only_sets_background_policy(self) -> None:
+    def test_no_theme_when_stack_theme_and_detection_are_missing(self) -> None:
         with patch.object(sys, "platform", "darwin"), patch.dict(os.environ, {}, clear=True), patch(
-            "subprocess.run",
+            "dev_layout.subprocess.run",
             return_value=Completed(1),
         ):
             self.assertEqual(dev_layout.hunk_theme_args(), ["--no-transparent-bg"])
