@@ -2,8 +2,9 @@
 name: context-efficiency
 description: >
   Filter data at the source before it enters context. Use when querying APIs,
-  CLIs, or databases where the full output would be large. Prefer structured
-  output + jq/python filtering over dumping and scanning. Trigger phrases:
+  CLIs, or databases where full output would be large. Prefer jg filtering over
+  dumping and scanning; use jq/python only when jg cannot express the needed
+  transformation. Trigger phrases:
   "find the entity for", "get the ID of", "which service handles", "what's the
   value of", or any time you'd otherwise dump a large dataset to find one thing.
 license: MIT
@@ -18,11 +19,13 @@ of reasoning. Spend a few tokens on a precise query; save many on the backend.
 
 ```
 Does the tool support structured output? (--json, -o json, --format json)
-├─ Yes → use it, then pipe to jq or python3 -c
-└─ No → use grep/awk to pre-filter, or hit the raw API with query params
+├─ Yes → use it, then filter with jg; use jq/python only for transformations jg cannot express
+└─ No → use grep to pre-filter, or hit the raw API with query params
 ```
 
-## jq patterns
+## jq/python fallback patterns
+
+Use these only when `jg` cannot express the needed transformation.
 
 ```bash
 # Get one field from an array of objects
@@ -55,6 +58,27 @@ tool -o json | python3 -c "
 import json, sys; d = json.load(sys.stdin)
 print(next(x['entity_id'] for x in d if 'couch' in x['attributes'].get('friendly_name','').lower()))
 "
+```
+
+## Oversized tool results
+
+If a read, MCP call, or CLI returns "output too large" or saves overflow to a
+file, do not retry the same broad request. Recover with a narrower query:
+
+1. Re-run the source tool with tighter fields, date ranges, IDs, channel/project
+   filters, or lower limits.
+2. If the tool saved an overflow artifact, search or read only the relevant
+   ranges from that saved file.
+3. Prefer summaries or metadata endpoints before transcripts, full logs, Slack
+   exports, calendar event lists, or issue dumps.
+
+```bash
+# ❌ broad transcript/log dump
+tool get-transcript --id "$id"
+
+# ✅ metadata or filtered content first
+tool get-notes --id "$id"
+tool search --query '"exact error" after:2026-01-01' --limit 5
 ```
 
 ## Tool-specific examples
