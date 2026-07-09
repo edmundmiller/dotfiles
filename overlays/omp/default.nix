@@ -1,22 +1,22 @@
 final: prev:
 let
-  version = "16.3.11";
+  version = "16.3.12";
   assets = {
     aarch64-darwin = {
       name = "omp-darwin-arm64";
-      hash = "sha256-oRz4w623Msk/4ka6oHwjQIfE5x2SX3psYgTz2JU7Md4=";
+      hash = "sha256-l7x4f75QMjWQKc7fw7lspCh9FoXJXguElLZLeXmkZvc=";
     };
     x86_64-darwin = {
       name = "omp-darwin-x64";
-      hash = "sha256-8fWcQdJnJJd5Ul7AGWc5i5ngnxLLpznsffjaMY5limA=";
+      hash = "sha256-WDmI3I/rnBloIz9cD9+9oIfhjkg8pJZrKw1k2cS448I=";
     };
     aarch64-linux = {
       name = "omp-linux-arm64";
-      hash = "sha256-Dqq4ldYkM/AJVUTodS4UPfu673c//BaL28fhU1oo4vM=";
+      hash = "sha256-96AcQhttqbKFqhO2xtjl84c0e7QbBH6LnCzxrM4gsJg=";
     };
     x86_64-linux = {
       name = "omp-linux-x64";
-      hash = "sha256-jZXU3jrhds1UtgMP3fM+KEdENzzdt4C4tP7Woa1j840=";
+      hash = "sha256-x8sBV2xpbZa5bCHWkegpRRGb87u3MW4+ifxbF+IH27c=";
     };
   };
   asset =
