@@ -102,6 +102,11 @@
       flake = false;
     };
 
+    emilkowalski-skills = {
+      url = "github:emilkowalski/skills";
+      flake = false;
+    };
+
     zele-repo = {
       url = "github:remorses/zele";
       flake = false;
@@ -530,6 +535,12 @@
                   filter.maxDepth = 1;
                 };
 
+                emilkowalski = {
+                  path = inputs.emilkowalski-skills.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 2;
+                };
+
                 zele = {
                   path = inputs.zele-repo.outPath;
                   subdir = "skills";
@@ -606,6 +617,18 @@
 
                   zele.from = "zele";
                   zele.path = "zele";
+
+                  animation-vocabulary.from = "emilkowalski";
+                  animation-vocabulary.path = "animation-vocabulary";
+
+                  apple-design.from = "emilkowalski";
+                  apple-design.path = "apple-design";
+
+                  emil-design-eng.from = "emilkowalski";
+                  emil-design-eng.path = "emil-design-eng";
+
+                  review-animations.from = "emilkowalski";
+                  review-animations.path = "review-animations";
 
                   done.from = "bholmesdev";
                   done.path = "done";

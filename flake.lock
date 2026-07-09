@@ -476,6 +476,22 @@
         "type": "github"
       }
     },
+    "emilkowalski-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783609970,
+        "narHash": "sha256-owHP2aq/hig8/PKE39s5giSMWmVM+zofbANJPRx8Smo=",
+        "owner": "emilkowalski",
+        "repo": "skills",
+        "rev": "f76beceb7d3fc8c43309cefad5a095a206103a4e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "emilkowalski",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "firefox-gnome-theme": {
       "flake": false,
       "locked": {
@@ -2167,6 +2183,7 @@
         "agent-tail-repo": "agent-tail-repo",
         "bholmesdev-skills": "bholmesdev-skills",
         "diffity-repo": "diffity-repo",
+        "emilkowalski-skills": "emilkowalski-skills",
         "gitbutler-repo": "gitbutler-repo",
         "herdr-repo": "herdr-repo",
         "hunk-repo": "hunk-repo",
