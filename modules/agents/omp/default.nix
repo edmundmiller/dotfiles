@@ -148,21 +148,24 @@ let
   # build-time overlays so Seqeratop and MacTraitorPro can diverge without
   # copying the whole config.
   baseConfig = ../../../config/omp/config.yml;
-  configOverrides =
-    lib.optional (cfg.themeDark != null) ''.theme.dark = "${cfg.themeDark}"''
-    ++ lib.optional (cfg.themeLight != null) ''.theme.light = "${cfg.themeLight}"''
-    ++ mapAttrsToList (
-      name: value: ".modelRoles[${builtins.toJSON name}] = ${builtins.toJSON value}"
-    ) cfg.modelRoles
-    ++ lib.optional (
-      cfg.modelProviderOrder != [ ]
-    ) ".modelProviderOrder = ${builtins.toJSON cfg.modelProviderOrder}"
-    ++
-      lib.optional (cfg.retry.modelFallback != null)
-        ".retry.modelFallback = ${if cfg.retry.modelFallback then "true" else "false"}"
-    ++ lib.optional (
-      cfg.retry.fallbackChains != { }
-    ) ".retry.fallbackChains = ${builtins.toJSON cfg.retry.fallbackChains}";
+  configOverrides = [
+    ".internalUrls.herdr = ${if config.modules.shell.herdr.enable then "true" else "false"}"
+    ".internalUrls.hunk = ${if config.modules.shell.git.hunk.enable then "true" else "false"}"
+  ]
+  ++ lib.optional (cfg.themeDark != null) ''.theme.dark = "${cfg.themeDark}"''
+  ++ lib.optional (cfg.themeLight != null) ''.theme.light = "${cfg.themeLight}"''
+  ++ mapAttrsToList (
+    name: value: ".modelRoles[${builtins.toJSON name}] = ${builtins.toJSON value}"
+  ) cfg.modelRoles
+  ++ lib.optional (
+    cfg.modelProviderOrder != [ ]
+  ) ".modelProviderOrder = ${builtins.toJSON cfg.modelProviderOrder}"
+  ++
+    lib.optional (cfg.retry.modelFallback != null)
+      ".retry.modelFallback = ${if cfg.retry.modelFallback then "true" else "false"}"
+  ++ lib.optional (
+    cfg.retry.fallbackChains != { }
+  ) ".retry.fallbackChains = ${builtins.toJSON cfg.retry.fallbackChains}";
   ompConfigFile =
     if configOverrides == [ ] then
       baseConfig
