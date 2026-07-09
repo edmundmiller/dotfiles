@@ -102,9 +102,13 @@
         codex.enable = true;
         omp = {
           enable = true;
-          # Seqeratop has Cursor SDK wired through Pi, so use Cursor Composer
-          # for OMP's per-host smol/commit role.
-          smolModel = "cursor/composer-2.5";
+          # Seqeratop has Cursor SDK wired through Pi, so use cheap Cursor
+          # Composer for OMP's smol/default roles.
+          smolModel = "cursor/composer-2.5-fast";
+          modelRoles = {
+            smol = "cursor/composer-2.5-fast";
+            default = "cursor/composer-2.5";
+          };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
           # keeps the shared Catppuccin default.

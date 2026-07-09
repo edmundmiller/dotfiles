@@ -48,15 +48,15 @@ back to the model as the failed tool result.
 
 `modules.agents.omp.smolModel` sets `PI_SMOL_MODEL` in the wrapper for a
 declarative per-host smol/fast model (also drives commit, which falls back to
-smol). This is the _only_ role exposed via Nix: OMP has no env override for
-default/commit, and `--config` overlays crash the `config` subcommands, so the
-env var is the clean lever. default/slow/plan stay in the mutable
-`config.yml` and are identical across hosts. Precedence: `--smol` flag >
-`PI_SMOL_MODEL` > `config.yml`.
+smol). `modules.agents.omp.modelRoles` overlays host-specific role selectors
+into the rendered `config.yml`. Use it only for real host auth or quota
+differences; keep shared defaults in `config/omp/config.yml`. Precedence:
+`--smol` flag > `PI_SMOL_MODEL` > rendered `config.yml`.
 
 Current split: MacTraitor-Pro uses `xai-oauth/grok-composer-2.5-fast`;
-Seqeratop uses `cursor/composer-2.5`. Keep future host-specific smol changes in
-the host's `modules.agents.omp.smolModel`, not shared `config.yml`.
+Seqeratop renders `cursor/composer-2.5-fast` for smol and
+`cursor/composer-2.5` for default. Keep future host-specific role changes in
+the host `modules.agents.omp` block, not shared `config.yml`.
 
 ## Docs
 
