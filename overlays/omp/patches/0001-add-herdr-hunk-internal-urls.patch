@@ -1,0 +1,1064 @@
+diff --git c/docs/tools/read.md i/docs/tools/read.md
+index 390517a6c..a8cc62055 100644
+--- c/docs/tools/read.md
++++ i/docs/tools/read.md
+@@ -10,7 +10,7 @@
+   - `packages/coding-agent/src/utils/zip.ts` — the unified ZIP/tar wrapper: detect `archive.ext:inner/path`, index archives, list/read entries.
+   - `packages/coding-agent/src/tools/sqlite-reader.ts` — detect SQLite targets, parse selectors, render tables.
+   - `packages/coding-agent/src/tools/fetch.ts` — URL parsing, fetch/render pipeline, URL cache/artifacts.
+-  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, and `vault://`.
++  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`.
+   - `packages/coding-agent/src/edit/notebook.ts` — convert `.ipynb` to editable `# %% [...] cell:N` text.
+   - `packages/coding-agent/src/utils/file-display-mode.ts` — decide hashline vs line-number vs raw display.
+   - `packages/coding-agent/src/workspace-tree.ts` — render directory trees.
+@@ -196,7 +196,7 @@ URL selectors are parsed separately in `packages/coding-agent/src/tools/fetch.ts
+ 
+ ### Internal URLs
+ - `read` does not resolve these itself; it delegates to `InternalUrlRouter.instance().resolve()`.
+-- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, and `vault://`.
++- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`.
+ - `#handleInternalUrl()` behavior:
+   - parses the URL with `parseInternalUrl()` so colons inside the host segment are legal
+   - for `agent://`, treats non-root path extraction or `?q=` extraction as a special no-pagination mode
+@@ -205,6 +205,9 @@ URL selectors are parsed separately in `packages/coding-agent/src/tools/fetch.ts
+   - sets `ignoreResultLimits: true` for `skill://` so the full skill text is paginated only by explicit selectors, not by the normal default line limit
+ - `issue://<N>` / `pr://<N>` (and the long form `issue://<owner>/<repo>/<N>` / `pr://<owner>/<repo>/<N>`) route through the same SQLite cache the `github` tool writes to; `?comments=0` selects the no-comments rendering. Bare `issue://` / `pr://` (and `issue://<owner>/<repo>` / `pr://<owner>/<repo>`) issue a live `gh issue list` / `gh pr list` for browsing, accepting `?state=`, `?limit=`, `?author=`, `?label=`. PR diffs share the same cache through `pr://<N>/diff` (numbered file listing with per-file hints), `pr://<N>/diff/<i>` (single file slice; 1-indexed), and `pr://<N>/diff/all` (verbatim unified diff); the listing and per-file slices are reconstructed from the cached unified-diff payload, so all three variants share one `gh pr diff` invocation per PR. Diff content is served as `text/plain`. Soft TTL `github.cache.softTtlSec` (default 5 minutes), hard TTL `github.cache.hardTtlSec` (default 7 days). Stale-hit returns the cached row and schedules a background refresh.
+ 
++- `herdr://status`, `herdr://snapshot`, `herdr://workspaces`, `herdr://tabs?workspace=<id>`, `herdr://panes?workspace=<id>`, and `herdr://pane/<id>?source=recent&lines=80` shell through the local Herdr CLI and materialize immutable output for searching.
++- `hunk://review?repo=<path>&includePatch=1&includeNotes=1`, `hunk://context?repo=<path>`, and `hunk://comments?repo=<path>&type=user` shell through `hunk session ...` and default `repo` to the caller cwd.
++
+ ### Web URLs
+ - `parseReadUrlTarget()` accepts `http://`, `https://`, or `www.` targets.
+ - Plain URL reads call `executeReadUrl()` in `packages/coding-agent/src/tools/fetch.ts`.
+diff --git c/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts i/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts
+new file mode 100644
+index 000000000..b15d541ab
+--- /dev/null
++++ i/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts
+@@ -0,0 +1,168 @@
++import { describe, expect, it } from "bun:test";
++import * as os from "node:os";
++import * as path from "node:path";
++import { HerdrProtocolHandler, HunkProtocolHandler, type LocalCommandRunner } from "../herdr-hunk-protocol";
++import { parseInternalUrl } from "../parse";
++
++type CommandCall = {
++	command: string;
++	args: string[];
++	options?: Parameters<LocalCommandRunner>[2];
++};
++
++type CommandOutput =
++	| Record<string, string>
++	| ((command: string, args: readonly string[], options?: Parameters<LocalCommandRunner>[2]) => string | undefined);
++
++function commandKey(command: string, args: readonly string[]): string {
++	return [command, ...args].join("\0");
++}
++
++function mockRunCommand(outputs: CommandOutput): { runner: LocalCommandRunner; calls: CommandCall[] } {
++	const calls: CommandCall[] = [];
++	const runner: LocalCommandRunner = async (command, args, options) => {
++		calls.push({ command, args: [...args], options });
++		const stdout =
++			typeof outputs === "function" ? outputs(command, args, options) : outputs[commandKey(command, args)];
++		if (stdout === undefined) throw new Error(`Unexpected command: ${command} ${args.join(" ")}`);
++		return { stdout, stderr: "", exitCode: 0 };
++	};
++	return { runner, calls };
++}
++
++describe("Herdr and Hunk internal URL schemes", () => {
++	it("resolves herdr://snapshot through `herdr api snapshot`", async () => {
++		const { runner, calls } = mockRunCommand({ [commandKey("herdr", ["api", "snapshot"])]: '{"workspaces":[]}\n' });
++		const handler = new HerdrProtocolHandler(runner);
++
++		const resource = await handler.resolve(parseInternalUrl("herdr://snapshot"));
++
++		expect(resource.content).toBe('{"workspaces":[]}\n');
++		expect(resource.contentType).toBe("application/json");
++		expect(handler.immutable).toBe(true);
++		expect(calls[0]?.command).toBe("herdr");
++		expect(calls[0]?.args).toEqual(["api", "snapshot"]);
++	});
++
++	for (const [url, prefix, workspace] of [
++		["herdr://workspaces", ["workspace", "list"], undefined],
++		["herdr://tabs?workspace=ws-1", ["tab", "list"], "ws-1"],
++		["herdr://panes?workspace=ws-1", ["pane", "list"], "ws-1"],
++	] as const) {
++		it(`resolves ${url} through the matching herdr list command`, async () => {
++			const { runner, calls } = mockRunCommand((command, args) =>
++				command === "herdr" && prefix.every((arg, index) => args[index] === arg) ? "[]\n" : undefined,
++			);
++			const handler = new HerdrProtocolHandler(runner);
++
++			const resource = await handler.resolve(parseInternalUrl(url));
++
++			expect(resource.content).toBe("[]\n");
++			expect(handler.immutable).toBe(true);
++			expect(calls[0]?.args).toEqual(expect.arrayContaining(prefix));
++			if (workspace) expect(calls[0]?.args).toEqual(expect.arrayContaining([workspace]));
++		});
++	}
++
++	it("resolves herdr://pane/<id> through `herdr pane read` with source and line options", async () => {
++		const args = ["pane", "read", "pane-1", "--source", "recent-unwrapped", "--lines", "25"];
++		const { runner, calls } = mockRunCommand({ [commandKey("herdr", args)]: "pane text\n" });
++		const handler = new HerdrProtocolHandler(runner);
++
++		const resource = await handler.resolve(parseInternalUrl("herdr://pane/pane-1?source=recent-unwrapped&lines=25"));
++
++		expect(resource.content).toBe("pane text\n");
++		expect(resource.contentType).toBe("text/plain");
++		expect(handler.immutable).toBe(true);
++		expect(calls[0]?.args).toEqual(args);
++	});
++
++	it("rejects unsupported herdr pane read sources before running a command", async () => {
++		const { runner, calls } = mockRunCommand({});
++		const handler = new HerdrProtocolHandler(runner);
++
++		await expect(handler.resolve(parseInternalUrl("herdr://pane/pane-1?source=tail"))).rejects.toThrow(
++			/source.*visible.*recent.*recent-unwrapped/i,
++		);
++		expect(calls).toHaveLength(0);
++	});
++
++	it("resolves hunk://context using ResolveContext.cwd as the default repo", async () => {
++		const cwd = path.join(os.tmpdir(), "omp-hunk-context");
++		const args = ["session", "context", "--repo", cwd];
++		const { runner, calls } = mockRunCommand({ [commandKey("hunk", args)]: "context text\n" });
++		const handler = new HunkProtocolHandler(runner);
++
++		const resource = await handler.resolve(parseInternalUrl("hunk://context"), { cwd });
++
++		expect(resource.content).toBe("context text\n");
++		expect(resource.contentType).toBe("text/plain");
++		expect(handler.immutable).toBe(true);
++		expect(calls[0]?.args).toEqual(args);
++	});
++
++	it("runs explicit relative hunk repos from ResolveContext.cwd", async () => {
++		const cwd = path.join(os.tmpdir(), "omp-hunk-parent");
++		const repo = "relative-repo";
++		const args = ["session", "context", "--repo", repo];
++		const { runner, calls } = mockRunCommand({ [commandKey("hunk", args)]: "context text\n" });
++		const handler = new HunkProtocolHandler(runner);
++
++		await handler.resolve(parseInternalUrl(`hunk://context?repo=${repo}`), { cwd });
++
++		expect(calls[0]?.args).toEqual(args);
++		expect(calls[0]?.options?.cwd).toBe(cwd);
++	});
++
++	it("accepts 1/true/yes/on booleans for hunk review includePatch", async () => {
++		const repo = "/tmp/repo";
++		const { runner, calls } = mockRunCommand((command, args) =>
++			command === "hunk" &&
++			args[0] === "session" &&
++			args[1] === "review" &&
++			args.includes("--repo") &&
++			args.includes(repo) &&
++			args.includes("--include-patch")
++				? "{}\n"
++				: undefined,
++		);
++		const handler = new HunkProtocolHandler(runner);
++
++		for (const value of ["1", "true", "yes", "on"]) {
++			await handler.resolve(parseInternalUrl(`hunk://review?repo=/tmp/repo&includePatch=${value}`));
++		}
++
++		expect(calls).toHaveLength(4);
++		for (const call of calls) {
++			expect(call.command).toBe("hunk");
++			expect(call.args).toEqual(expect.arrayContaining(["session", "review", "--repo", repo, "--include-patch"]));
++		}
++	});
++
++	it("resolves hunk review and comments endpoints through hunk session commands", async () => {
++		const repo = "/tmp/repo";
++		const { runner, calls } = mockRunCommand((command, args) => {
++			if (command !== "hunk" || args[0] !== "session" || !args.includes("--repo") || !args.includes(repo))
++				return undefined;
++			if (args[1] === "review" && args.includes("--include-patch") && args.includes("--include-notes"))
++				return "review text\n";
++			if (args[1] === "comment" && args[2] === "list" && args.includes("user")) return "[]\n";
++			return undefined;
++		});
++		const handler = new HunkProtocolHandler(runner);
++
++		const review = await handler.resolve(
++			parseInternalUrl("hunk://review?repo=/tmp/repo&includePatch=1&includeNotes=on"),
++		);
++		const comments = await handler.resolve(parseInternalUrl("hunk://comments?repo=/tmp/repo&type=user"));
++
++		expect(review.content).toBe("review text\n");
++		expect(comments.content).toBe("[]\n");
++		expect(calls.map(call => [call.command, call.args[0], call.args[1], call.args[2]])).toEqual([
++			["hunk", "session", "review", "--repo"],
++			["hunk", "session", "comment", "list"],
++		]);
++		expect(calls[0]?.args).toEqual(expect.arrayContaining(["--include-patch", "--include-notes"]));
++		expect(calls[1]?.args).toEqual(expect.arrayContaining(["user"]));
++	});
++});
+diff --git c/packages/coding-agent/src/internal-urls/herdr-hunk-protocol.ts i/packages/coding-agent/src/internal-urls/herdr-hunk-protocol.ts
+new file mode 100644
+index 000000000..834ccf779
+--- /dev/null
++++ i/packages/coding-agent/src/internal-urls/herdr-hunk-protocol.ts
+@@ -0,0 +1,304 @@
++/**
++ * Protocol handlers for local Herdr and Hunk resources.
++ *
++ * URL forms:
++ * - herdr://status
++ * - herdr://snapshot
++ * - herdr://workspaces
++ * - herdr://tabs?workspace=<id>
++ * - herdr://panes?workspace=<id>
++ * - herdr://pane/<id>?source=recent&lines=80
++ * - hunk://review?repo=<path>&includePatch=1&includeNotes=1
++ * - hunk://context?repo=<path>
++ * - hunk://comments?repo=<path>&type=user
++ */
++import * as childProcess from "node:child_process";
++import { randomUUID } from "node:crypto";
++import * as fs from "node:fs/promises";
++import * as os from "node:os";
++import * as path from "node:path";
++import type { InternalResource, InternalUrl, ProtocolHandler, ResolveContext } from "./types";
++
++const DEFAULT_HERDR_TIMEOUT_MS = 10_000;
++const DEFAULT_HUNK_TIMEOUT_MS = 30_000;
++const HERDR_PANE_SOURCES = new Set(["visible", "recent", "recent-unwrapped"]);
++const HUNK_COMMENT_TYPES = new Set(["live", "all", "ai", "agent", "user"]);
++
++type ContentType = InternalResource["contentType"];
++
++export interface LocalCommandOptions {
++	cwd?: string;
++	signal?: AbortSignal;
++	timeoutMs?: number;
++}
++
++export interface LocalCommandResult {
++	stdout: string;
++	stderr: string;
++	exitCode: number;
++}
++
++export type LocalCommandRunner = (
++	command: string,
++	args: string[],
++	options?: LocalCommandOptions,
++) => Promise<LocalCommandResult>;
++
++function commandLine(command: string, args: readonly string[]): string {
++	return [command, ...args].join(" ");
++}
++
++function abortError(command: string): Error {
++	return new Error(`${command} command cancelled`);
++}
++
++function textOutput(value: string | Buffer): string {
++	return typeof value === "string" ? value : value.toString("utf-8");
++}
++
++export async function runLocalCommand(
++	command: string,
++	args: string[],
++	options: LocalCommandOptions = {},
++): Promise<LocalCommandResult> {
++	if (options.signal?.aborted) throw abortError(command);
++	return await new Promise<LocalCommandResult>((resolve, reject) => {
++		childProcess.execFile(
++			command,
++			args,
++			{
++				cwd: options.cwd,
++				signal: options.signal,
++				timeout: options.timeoutMs ?? DEFAULT_HERDR_TIMEOUT_MS,
++				maxBuffer: 64 * 1024 * 1024,
++			},
++			(error, stdout, stderr) => {
++				const result = {
++					stdout: textOutput(stdout),
++					stderr: textOutput(stderr),
++					exitCode: typeof error?.code === "number" ? error.code : 0,
++				};
++				if (error && typeof error.code !== "number") {
++					reject(new Error(`${commandLine(command, args)} failed: ${error.message}`));
++					return;
++				}
++				resolve(result);
++			},
++		);
++	});
++}
++
++function assertSuccess(label: string, result: LocalCommandResult): void {
++	if (result.exitCode === 0) return;
++	throw new Error(
++		[`${label} failed with exit code ${result.exitCode}`, result.stdout.trim(), result.stderr.trim()]
++			.filter(Boolean)
++			.join("\n\n"),
++	);
++}
++
++function decodeSegment(segment: string, scheme: string): string {
++	try {
++		return decodeURIComponent(segment);
++	} catch {
++		throw new Error(`Invalid ${scheme}:// URL encoding`);
++	}
++}
++
++function pathSegments(url: InternalUrl, scheme: string): string[] {
++	const raw = url.rawPathname ?? url.pathname;
++	const stripped = raw.startsWith("/") ? raw.slice(1) : raw;
++	if (!stripped) return [];
++	return stripped.split("/").map(segment => {
++		const decoded = decodeSegment(segment, scheme);
++		if (!decoded || decoded === "." || decoded === ".." || decoded.includes("/") || decoded.includes("\\")) {
++			throw new Error(`Invalid ${scheme}:// URL path segment`);
++		}
++		return decoded;
++	});
++}
++
++function parseBooleanParam(params: URLSearchParams, name: string): boolean {
++	const raw = params.get(name);
++	if (raw === null || raw === "") return false;
++	return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
++}
++
++function parsePositiveIntParam(params: URLSearchParams, name: string, fallback: number, scheme: string): number {
++	const raw = params.get(name);
++	if (raw === null || raw === "") return fallback;
++	const parsed = Number(raw);
++	if (!Number.isInteger(parsed) || parsed < 1) {
++		throw new Error(`Invalid ${scheme}:// ${name} '${raw}'. Expected a positive integer.`);
++	}
++	return parsed;
++}
++
++function renderCliContent(
++	stdout: string,
++	fallbackFileName: string,
++): { content: string; contentType: ContentType; fileName: string } {
++	const trimmed = stdout.trim();
++	if (!trimmed) return { content: stdout, contentType: "text/plain", fileName: fallbackFileName };
++	try {
++		JSON.parse(trimmed);
++		return { content: stdout, contentType: "application/json", fileName: "output.json" };
++	} catch {
++		return { content: stdout, contentType: "text/plain", fileName: fallbackFileName };
++	}
++}
++
++function cacheKey(url: string): string {
++	return Bun.hash(url).toString(36);
++}
++
++async function materialize(
++	scheme: string,
++	url: string,
++	fileName: string,
++	content: string,
++): Promise<{ sourcePath: string; sourceDisplayUrl: string }> {
++	const parent = path.join(os.tmpdir(), "omp-internal-urls", scheme);
++	const targetDir = path.join(parent, cacheKey(url));
++	const tempDir = path.join(parent, `${cacheKey(url)}.${process.pid}.${randomUUID()}.tmp`);
++	await fs.mkdir(parent, { recursive: true });
++	await fs.mkdir(tempDir, { recursive: true });
++	try {
++		await fs.writeFile(path.join(tempDir, fileName), content);
++		await fs.rm(targetDir, { recursive: true, force: true });
++		await fs.rename(tempDir, targetDir);
++	} catch (error) {
++		await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
++		throw error;
++	}
++	return { sourcePath: path.join(targetDir, fileName), sourceDisplayUrl: url };
++}
++
++function buildResource(
++	url: InternalUrl,
++	scheme: string,
++	payload: { content: string; contentType: ContentType; fileName: string },
++): Promise<InternalResource> {
++	return materialize(scheme, url.href, payload.fileName, payload.content).then(materialized => ({
++		url: url.href,
++		content: payload.content,
++		contentType: payload.contentType,
++		size: Buffer.byteLength(payload.content, "utf-8"),
++		sourcePath: materialized.sourcePath,
++		sourceDisplayUrl: materialized.sourceDisplayUrl,
++	}));
++}
++
++export class HerdrProtocolHandler implements ProtocolHandler {
++	readonly scheme = "herdr";
++	readonly immutable = true;
++
++	constructor(private readonly runCommand: LocalCommandRunner = runLocalCommand) {}
++
++	async resolve(url: InternalUrl, context?: ResolveContext): Promise<InternalResource> {
++		const action = (url.rawHost || url.hostname).toLowerCase();
++		const segments = pathSegments(url, "herdr");
++		const args = this.#argsFor(action, segments, url.searchParams);
++		const result = await this.runCommand("herdr", args, {
++			cwd: context?.cwd,
++			signal: context?.signal,
++			timeoutMs: DEFAULT_HERDR_TIMEOUT_MS,
++		});
++		assertSuccess(`herdr ${args.join(" ")}`, result);
++		const payload = renderCliContent(result.stdout, `${action || "herdr"}.txt`);
++		return buildResource(url, this.scheme, payload);
++	}
++
++	#argsFor(action: string, segments: string[], params: URLSearchParams): string[] {
++		switch (action) {
++			case "status":
++				if (segments.length > 0) throw new Error("herdr://status does not accept path segments");
++				return ["status"];
++			case "snapshot":
++				if (segments.length > 0) throw new Error("herdr://snapshot does not accept path segments");
++				return ["api", "snapshot"];
++			case "workspaces":
++				if (segments.length > 0) throw new Error("herdr://workspaces does not accept path segments");
++				return ["workspace", "list"];
++			case "tabs":
++				if (segments.length > 0) throw new Error("herdr://tabs does not accept path segments");
++				return this.#listArgs("tab", params);
++			case "panes":
++				if (segments.length > 0) throw new Error("herdr://panes does not accept path segments");
++				return this.#listArgs("pane", params);
++			case "pane":
++				return this.#paneArgs(segments, params);
++			default:
++				throw new Error(
++					"Unsupported herdr:// resource. Expected status, snapshot, workspaces, tabs, panes, or pane/<id>.",
++				);
++		}
++	}
++
++	#listArgs(kind: "tab" | "pane", params: URLSearchParams): string[] {
++		const args = [kind, "list"];
++		const workspace = params.get("workspace");
++		if (workspace) args.push("--workspace", workspace);
++		return args;
++	}
++
++	#paneArgs(segments: string[], params: URLSearchParams): string[] {
++		const [paneId, ...extra] = segments;
++		if (!paneId || extra.length > 0) throw new Error("herdr://pane requires exactly one pane id path segment");
++		const source = params.get("source") ?? "recent";
++		if (!HERDR_PANE_SOURCES.has(source)) {
++			throw new Error("Invalid herdr:// pane source. Expected visible, recent, or recent-unwrapped.");
++		}
++		const lines = parsePositiveIntParam(params, "lines", 80, "herdr");
++		return ["pane", "read", paneId, "--source", source, "--lines", String(lines)];
++	}
++}
++
++export class HunkProtocolHandler implements ProtocolHandler {
++	readonly scheme = "hunk";
++	readonly immutable = true;
++
++	constructor(private readonly runCommand: LocalCommandRunner = runLocalCommand) {}
++
++	async resolve(url: InternalUrl, context?: ResolveContext): Promise<InternalResource> {
++		const action = (url.rawHost || url.hostname).toLowerCase();
++		const segments = pathSegments(url, "hunk");
++		if (segments.length > 0) throw new Error(`hunk://${action} does not accept path segments`);
++		const repo = url.searchParams.get("repo") || context?.cwd || process.cwd();
++		const args = this.#argsFor(action, repo, url.searchParams);
++		const result = await this.runCommand("hunk", args, {
++			cwd: context?.cwd || process.cwd(),
++			signal: context?.signal,
++			timeoutMs: DEFAULT_HUNK_TIMEOUT_MS,
++		});
++		assertSuccess(`hunk ${args.join(" ")}`, result);
++		const payload = renderCliContent(result.stdout, `${action || "hunk"}.txt`);
++		return buildResource(url, this.scheme, payload);
++	}
++
++	#argsFor(action: string, repo: string, params: URLSearchParams): string[] {
++		switch (action) {
++			case "review": {
++				const args = ["session", "review", "--repo", repo];
++				if (parseBooleanParam(params, "includePatch")) args.push("--include-patch");
++				if (parseBooleanParam(params, "includeNotes")) args.push("--include-notes");
++				return args;
++			}
++			case "context":
++				return ["session", "context", "--repo", repo];
++			case "comments": {
++				const args = ["session", "comment", "list", "--repo", repo];
++				const type = params.get("type");
++				if (type) {
++					if (!HUNK_COMMENT_TYPES.has(type)) {
++						throw new Error("Invalid hunk://comments type. Expected live, all, ai, agent, or user.");
++					}
++					args.push("--type", type);
++				}
++				return args;
++			}
++			default:
++				throw new Error("Unsupported hunk:// resource. Expected review, context, or comments.");
++		}
++	}
++}
+diff --git c/packages/coding-agent/src/internal-urls/index.ts i/packages/coding-agent/src/internal-urls/index.ts
+index f91616f2e..94066d57c 100644
+--- c/packages/coding-agent/src/internal-urls/index.ts
++++ i/packages/coding-agent/src/internal-urls/index.ts
+@@ -10,6 +10,7 @@
+ 
+ export * from "./agent-protocol";
+ export * from "./artifact-protocol";
++export * from "./herdr-hunk-protocol";
+ export * from "./history-protocol";
+ export * from "./issue-pr-protocol";
+ export * from "./json-query";
+diff --git c/packages/coding-agent/src/internal-urls/router.ts i/packages/coding-agent/src/internal-urls/router.ts
+index 935f63be7..1e30b7179 100644
+--- c/packages/coding-agent/src/internal-urls/router.ts
++++ i/packages/coding-agent/src/internal-urls/router.ts
+@@ -1,5 +1,5 @@
+ /**
+- * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`).
++ * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`).
+  *
+  * One process-global router with one handler per scheme. Access via
+  * `InternalUrlRouter.instance()`. Handlers are stateless; per-session and
+@@ -7,6 +7,7 @@
+  */
+ import { AgentProtocolHandler } from "./agent-protocol";
+ import { ArtifactProtocolHandler } from "./artifact-protocol";
++import { HerdrProtocolHandler, HunkProtocolHandler } from "./herdr-hunk-protocol";
+ import { HistoryProtocolHandler } from "./history-protocol";
+ import { IssueProtocolHandler, PrProtocolHandler } from "./issue-pr-protocol";
+ import { LocalProtocolHandler } from "./local-protocol";
+@@ -39,6 +40,8 @@ export class InternalUrlRouter {
+ 		this.register(new PrProtocolHandler());
+ 		this.register(new HistoryProtocolHandler());
+ 		this.register(new SshProtocolHandler());
++		this.register(new HerdrProtocolHandler());
++		this.register(new HunkProtocolHandler());
+ 	}
+ 
+ 	/** Process-global router instance. */
+diff --git c/packages/coding-agent/src/internal-urls/types.ts i/packages/coding-agent/src/internal-urls/types.ts
+index 59bcb311d..40cf8c1fa 100644
+--- c/packages/coding-agent/src/internal-urls/types.ts
++++ i/packages/coding-agent/src/internal-urls/types.ts
+@@ -1,7 +1,7 @@
+ /**
+  * Types for the internal URL routing system.
+  *
+- * Internal URLs (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`) are resolved by tools like read,
++ * Internal URLs (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`) are resolved by tools like read,
+  * providing access to agent outputs and server resources without exposing filesystem paths.
+  */
+ 
+@@ -24,6 +24,11 @@ export interface InternalResource {
+ 	size?: number;
+ 	/** Underlying filesystem path (for debugging, not exposed to agent) */
+ 	sourcePath?: string;
++	/**
++	 * URL to display for matches found under `sourcePath`. Search/find use this
++	 * to avoid leaking materialized cache paths for immutable virtual resources.
++	 */
++	sourceDisplayUrl?: string;
+ 	/** Additional notes about resolution */
+ 	notes?: string[];
+ 	/**
+diff --git c/packages/coding-agent/src/prompts/system/system-prompt.md i/packages/coding-agent/src/prompts/system/system-prompt.md
+index e852b653a..8213f6473 100644
+--- c/packages/coding-agent/src/prompts/system/system-prompt.md
++++ i/packages/coding-agent/src/prompts/system/system-prompt.md
+@@ -63,6 +63,9 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
+ - `vault://<vault>/<path>`: Obsidian vault (read/edit). `vault://` lists vaults; `vault://_/…` targets the active vault. File ops `?op=outline|backlinks|links|tags|properties|tasks|base|…`; vault ops `?op=search&q=…|daily|tasks|orphans|unresolved|bases|…`.
+ {{/if}}
+ - `mcp://<uri>`: MCP resource
++- `ssh://host/<path>`: configured SSH host files/directories.
++- `herdr://status|snapshot|workspaces|tabs|panes|pane/<id>`: local Herdr resources via the CLI/socket wrappers.
++- `hunk://review|context|comments`: active Hunk review session data for a repo.
+ - `issue://<N>` (or `issue://<owner>/<repo>/<N>`): GitHub issue, disk-cached. Bare lists recent issues; `?state=open|closed|all&limit=&author=&label=`.
+ - `pr://<N>` (or `pr://<owner>/<repo>/<N>`): GitHub PR, same cache; `?comments=0` drops comments. Bare lists recent PRs; `?state=open|closed|merged|all&limit=&author=&label=`.
+ - `omp://`: harness docs; AVOID unless the user asks about the harness itself.
+diff --git c/packages/coding-agent/src/prompts/tools/read.md i/packages/coding-agent/src/prompts/tools/read.md
+index 554dc4cab..dc892fc4a 100644
+--- c/packages/coding-agent/src/prompts/tools/read.md
++++ i/packages/coding-agent/src/prompts/tools/read.md
+@@ -7,7 +7,7 @@ Read files, directories, archives, SQLite, images, documents, internal resources
+ 
+ ## Parameters
+ 
+-- `path` — required. Local path, internal URI (`skill://`, `agent://`, `artifact://`, `memory://`, `rule://`, `local://`, `vault://`, `mcp://`, `omp://`, `issue://`, `pr://`, `ssh://`), or URL. Append `:<sel>` for ranges/modes (e.g. `src/foo.ts:50-200`, `src/foo.ts:raw`, `db.sqlite:users:42`).
++- `path` — required. Local path, internal URI (`skill://`, `agent://`, `artifact://`, `memory://`, `rule://`, `local://`, `vault://`, `mcp://`, `herdr://`, `hunk://`, `omp://`, `issue://`, `pr://`, `ssh://`), or URL. Append `:<sel>` for ranges/modes (e.g. `src/foo.ts:50-200`, `src/foo.ts:raw`, `db.sqlite:users:42`).
+ 
+ ## Selectors
+ 
+@@ -69,6 +69,8 @@ For `.sqlite`, `.sqlite3`, `.db`, `.db3`:
+ 
+ All URI schemes take the same line selectors. `artifact://<id>` recovers spilled output; large artifacts block unbounded `:raw`, so page with `artifact://<id>:N-M` / `artifact://<id>:raw:N-M` and use the reported artifact file path for search/copy workflows.
+ 
++`herdr://` reads local Herdr state (`status`, `snapshot`, `workspaces`, `tabs?workspace=...`, `panes?workspace=...`, `pane/<id>?source=recent&lines=80`). `hunk://` reads Hunk review data (`review`, `context`, `comments`) for `?repo=...` or the session cwd.
++
+ `ssh://host/<absolute-path>` reads a remote text file (UTF-8, ≤1 MiB) or lists a directory one level deep, on a pre-configured SSH host or `~/.ssh/config` alias; `ssh://host/` lists the remote root and bare `ssh://` lists the configured hosts. Files are also writable via `write` and searchable via `search`; a directory only lists (`search` refuses a directory, `write` refuses to overwrite one). A literal `:`, `?`, or `#` in the remote path must be percent-encoded (`%3A`/`%3F`/`%23`) — a trailing `:sel` is read as a line selector, and `?`/`#` start a URL query/fragment. Requires a POSIX login shell (`sh`/`bash`/`zsh`); a Windows host or a non-POSIX shell (fish, csh/tcsh) is rejected — use the `ssh` tool there.
+ 
+ <critical>
+diff --git c/packages/coding-agent/src/tools/glob.ts i/packages/coding-agent/src/tools/glob.ts
+index 79176c459..75dee579d 100644
+--- c/packages/coding-agent/src/tools/glob.ts
++++ i/packages/coding-agent/src/tools/glob.ts
+@@ -18,8 +18,9 @@ import { applyListLimit } from "./list-limit";
+ import { formatFullOutputReference, type OutputMeta } from "./output-meta";
+ import {
+ 	expandDelimitedPathEntries,
++	formatInternalSourceDisplayPath,
+ 	formatPathRelativeToCwd,
+-	hasGlobPathChars,
++	hasInternalUrlGlobPathChars,
+ 	isSshUrl,
+ 	normalizePathLikeInput,
+ 	parseFindPattern,
+@@ -165,6 +166,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 			}
+ 			const internalRouter = InternalUrlRouter.instance();
+ 			const normalizedPatterns: string[] = [];
++			const sourceDisplayUrls = new Map<string, string>();
+ 			for (const rawPattern of aliasResolvedPatterns) {
+ 				if (!internalRouter.canHandle(rawPattern)) {
+ 					normalizedPatterns.push(rawPattern);
+@@ -175,7 +177,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 						`find cannot operate on a remote ssh:// path: ${rawPattern}. ssh:// has no local file to glob; use \`read ${rawPattern}\` to list or inspect the remote path.`,
+ 					);
+ 				}
+-				if (hasGlobPathChars(rawPattern)) {
++				if (hasInternalUrlGlobPathChars(rawPattern)) {
+ 					throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPattern}`);
+ 				}
+ 				const resource = await internalRouter.resolve(rawPattern, {
+@@ -184,10 +186,14 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 					signal,
+ 					localProtocolOptions: this.session.localProtocolOptions,
+ 					skills: this.session.skills,
++					pathOnly: true,
+ 				});
+ 				if (!resource.sourcePath) {
+ 					throw new ToolError(`Cannot find internal URL without a backing file: ${rawPattern}`);
+ 				}
++				if (resource.sourceDisplayUrl) {
++					sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
++				}
+ 				normalizedPatterns.push(resource.sourcePath);
+ 			}
+ 			if (normalizedPatterns.some(pattern => pattern.length === 0)) {
+@@ -227,7 +233,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 							};
+ 						})(),
+ 					];
+-			const scopePath = multiPattern?.scopePath ?? formatScopePath(targets[0].searchPath);
++			let scopePath = multiPattern?.scopePath ?? formatScopePath(targets[0].searchPath);
++			const displayScopePath = formatInternalSourceDisplayPath(targets[0].searchPath, sourceDisplayUrls);
++			if (displayScopePath) scopePath = displayScopePath;
+ 
+ 			for (const target of targets) {
+ 				if (target.searchPath === "/") {
+@@ -248,6 +256,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 			const formatMatchPath = (matchPath: string, base: string, fileType?: natives.FileType): string => {
+ 				const hadTrailingSlash = matchPath.endsWith("/") || matchPath.endsWith("\\");
+ 				const absolutePath = path.isAbsolute(matchPath) ? matchPath : path.resolve(base, matchPath);
++				const internalDisplay = formatInternalSourceDisplayPath(absolutePath, sourceDisplayUrls);
++				if (internalDisplay) return internalDisplay;
+ 				return formatPathRelativeToCwd(absolutePath, this.session.cwd, {
+ 					trailingSlash: fileType === natives.FileType.Dir || hadTrailingSlash,
+ 				});
+@@ -392,7 +402,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 					throw err;
+ 				}
+ 				if (!target.hasGlob && stat.isFile()) {
+-					return [{ path: formatScopePath(target.searchPath), mtime: stat.mtimeMs }];
++					const displayPath = formatInternalSourceDisplayPath(target.searchPath, sourceDisplayUrls);
++					return [{ path: displayPath ?? formatScopePath(target.searchPath), mtime: stat.mtimeMs }];
+ 				}
+ 				if (!stat.isDirectory()) {
+ 					if (isSingle) throw new ToolError(`Path is not a directory: ${target.searchPath}`);
+diff --git c/packages/coding-agent/src/tools/grep.ts i/packages/coding-agent/src/tools/grep.ts
+index dbc5f3371..74aea5911 100644
+--- c/packages/coding-agent/src/tools/grep.ts
++++ i/packages/coding-agent/src/tools/grep.ts
+@@ -43,7 +43,9 @@ import { formatMatchLine } from "./match-line-format";
+ import type { OutputMeta } from "./output-meta";
+ import {
+ 	expandDelimitedPathEntries,
++	formatInternalSourceDisplayPath,
+ 	hasGlobPathChars,
++	hasInternalUrlGlobPathChars,
+ 	isLineInRanges,
+ 	type LineRange,
+ 	parseLineRanges,
+@@ -309,6 +311,7 @@ interface InternalSearchInputResolution {
+ 	virtualPathSet: Set<string>;
+ 	virtualInputIndexes: Set<number>;
+ 	immutableSourcePaths: Set<string>;
++	sourceDisplayUrls: Map<string, string>;
+ 	virtualScopePath?: string;
+ }
+ 
+@@ -742,6 +745,7 @@ async function resolveInternalSearchInputs(opts: {
+ 	const virtualPathSet = new Set<string>();
+ 	const virtualInputIndexes = new Set<number>();
+ 	const immutableSourcePaths = new Set<string>();
++	const sourceDisplayUrls = new Map<string, string>();
+ 	let virtualScopePath: string | undefined;
+ 	const context: ResolveContext = {
+ 		cwd: opts.cwd,
+@@ -762,11 +766,7 @@ async function resolveInternalSearchInputs(opts: {
+ 		if (!rawPath || opts.archiveDisplayMap.has(rawPath) || !internalRouter.canHandle(rawPath)) {
+ 			continue;
+ 		}
+-		// `ssh://[::1]/path` carries `[`/`]` in the IPv6 authority — glob metacharacters
+-		// — so check only the path portion for ssh:// (the SSH handler reads a single
+-		// remote file; there is no glob expansion). A glob in the remote path still trips.
+-		const globTarget = /^ssh:\/\//i.test(rawPath) ? rawPath.replace(/^ssh:\/\/[^/]*/i, "") : rawPath;
+-		if (hasGlobPathChars(globTarget)) {
++		if (hasInternalUrlGlobPathChars(rawPath)) {
+ 			throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPath}`);
+ 		}
+ 		let resource = await internalRouter.resolve(rawPath, context);
+@@ -783,6 +783,9 @@ async function resolveInternalSearchInputs(opts: {
+ 			if (resource.immutable) {
+ 				immutableSourcePaths.add(path.resolve(resource.sourcePath));
+ 			}
++			if (resource.sourceDisplayUrl) {
++				sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
++			}
+ 			continue;
+ 		}
+ 
+@@ -815,6 +818,7 @@ async function resolveInternalSearchInputs(opts: {
+ 		virtualPathSet,
+ 		virtualInputIndexes,
+ 		immutableSourcePaths,
++		sourceDisplayUrls,
+ 		virtualScopePath,
+ 	};
+ }
+@@ -961,6 +965,7 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 				let exactFilePaths: string[] | undefined;
+ 				let missingPaths: string[];
+ 				const immutableSourcePaths = new Set(internalResolution.immutableSourcePaths);
++				const sourceDisplayUrls = new Map(internalResolution.sourceDisplayUrls);
+ 				if (searchablePaths.length > 0) {
+ 					const scope = await resolveToolSearchScope({
+ 						rawPaths: searchablePaths,
+@@ -985,6 +990,9 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 					for (const immutablePath of scope.immutableSourcePaths) {
+ 						immutableSourcePaths.add(immutablePath);
+ 					}
++					for (const [sourcePath, displayUrl] of scope.sourceDisplayUrls) {
++						sourceDisplayUrls.set(sourcePath, displayUrl);
++					}
+ 					// Build the per-file line-range filter after URL materialization has run:
+ 					// archive entries are keyed by scratch path, URL entries by read-cache
+ 					// content path, and ordinary files by their resolved filesystem path.
+@@ -1018,10 +1026,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 					}
+ 					// When the only input was an archive selector, surface that selector instead
+ 					// of the temp scratch path the resolver substituted in.
++					const internalScopePath = formatInternalSourceDisplayPath(searchPath, sourceDisplayUrls);
+ 					const physicalScopePath =
+-						searchablePaths.length === 1 && archiveDisplayMap.get(searchPath)
++						internalScopePath ??
++						(searchablePaths.length === 1 && archiveDisplayMap.get(searchPath)
+ 							? (archiveDisplayMap.get(searchPath) as string)
+-							: scope.scopePath;
++							: scope.scopePath);
+ 					scopePath = internalResolution.virtualScopePath
+ 						? `${physicalScopePath}, ${internalResolution.virtualScopePath}`
+ 						: physicalScopePath;
+@@ -1220,9 +1230,20 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 						if (display) match.path = display;
+ 					}
+ 				}
++				const internalDisplaySet = new Set<string>();
++				if (sourceDisplayUrls.size > 0) {
++					for (const match of result.matches) {
++						const abs = matchAbsolutePath(match.path, searchPath);
++						const display = formatInternalSourceDisplayPath(abs, sourceDisplayUrls);
++						if (display) {
++							match.path = display;
++							internalDisplaySet.add(display);
++						}
++					}
++				}
+ 
+ 				const formatPath = (filePath: string): string =>
+-					archiveDisplaySet.has(filePath) || virtualPathSet.has(filePath)
++					archiveDisplaySet.has(filePath) || virtualPathSet.has(filePath) || internalDisplaySet.has(filePath)
+ 						? filePath
+ 						: formatResultPath(filePath, isDirectory, searchPath, this.session.cwd);
+ 
+@@ -1360,7 +1381,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 				const hashContexts = new Map<string, { tag: string }>();
+ 				if (baseDisplayMode.hashLines) {
+ 					for (const relativePath of fileList) {
+-						if (archiveDisplaySet.has(relativePath) || virtualPathSet.has(relativePath)) continue;
++						if (
++							archiveDisplaySet.has(relativePath) ||
++							virtualPathSet.has(relativePath) ||
++							internalDisplaySet.has(relativePath)
++						)
++							continue;
+ 						const absoluteFilePath = path.resolve(this.session.cwd, relativePath);
+ 						if (isImmutableSourcePath(absoluteFilePath, immutableSourcePaths)) continue;
+ 						// Mint a whole-file content tag so any anchor validates while the
+diff --git c/packages/coding-agent/src/tools/path-utils.ts i/packages/coding-agent/src/tools/path-utils.ts
+index b0e51eb3a..083947b79 100644
+--- c/packages/coding-agent/src/tools/path-utils.ts
++++ i/packages/coding-agent/src/tools/path-utils.ts
+@@ -34,6 +34,8 @@ const INTERNAL_URL_SELECTOR_PART_RE = new RegExp(
+ const INTERNAL_SCHEMES_WITH_SELECTORS: Record<string, true> = {
+ 	agent: true,
+ 	artifact: true,
++	herdr: true,
++	hunk: true,
+ 	issue: true,
+ 	local: true,
+ 	memory: true,
+@@ -56,6 +58,8 @@ const NARROW_NO_BREAK_SPACE = "\u202F";
+ const TOP_LEVEL_INTERNAL_URL_PREFIXES = [
+ 	"agent://",
+ 	"artifact://",
++	"herdr://",
++	"hunk://",
+ 	"skill://",
+ 	"rule://",
+ 	"local://",
+@@ -113,6 +117,8 @@ function normalizeAtPrefix(filePath: string): string {
+ 		// Internal URL shorthands
+ 		withoutAt.startsWith("agent://") ||
+ 		withoutAt.startsWith("artifact://") ||
++		withoutAt.startsWith("herdr://") ||
++		withoutAt.startsWith("hunk://") ||
+ 		withoutAt.startsWith("skill://") ||
+ 		withoutAt.startsWith("rule://") ||
+ 		withoutAt.startsWith("local:") ||
+@@ -549,6 +555,56 @@ export function hasGlobPathChars(filePath: string): boolean {
+ 	return GLOB_PATH_CHARS.some(char => filePath.includes(char));
+ }
+ 
++export function hasInternalUrlGlobPathChars(filePath: string): boolean {
++	const schemeMatch = filePath.match(INTERNAL_URL_SCHEME_RE);
++	if (!schemeMatch) return hasGlobPathChars(filePath);
++	const schemeEnd = schemeMatch[0].length;
++	const rest = filePath.slice(schemeEnd);
++	const firstDelimiter = rest.search(/[/?#]/);
++	if (firstDelimiter === -1 || rest[firstDelimiter] !== "/") return false;
++	const pathAndSuffix = rest.slice(firstDelimiter);
++	const queryOrHash = pathAndSuffix.search(/[?#]/);
++	const pathname = queryOrHash === -1 ? pathAndSuffix : pathAndSuffix.slice(0, queryOrHash);
++	return hasGlobPathChars(pathname);
++}
++
++function appendDisplayUrlPath(baseUrl: string, relativePath: string): string {
++	const hashIndex = baseUrl.indexOf("#");
++	const hash = hashIndex === -1 ? "" : baseUrl.slice(hashIndex);
++	const withoutHash = hashIndex === -1 ? baseUrl : baseUrl.slice(0, hashIndex);
++	const queryIndex = withoutHash.indexOf("?");
++	const query = queryIndex === -1 ? "" : withoutHash.slice(queryIndex);
++	const head = queryIndex === -1 ? withoutHash : withoutHash.slice(0, queryIndex);
++	const encoded = relativePath
++		.split(/[\\/]+/)
++		.filter(Boolean)
++		.map(encodeURIComponent)
++		.join("/");
++	return `${head.replace(/\/+$/, "")}/${encoded}${query}${hash}`;
++}
++
++export function formatInternalSourceDisplayPath(
++	filePath: string,
++	sourceDisplayUrls: ReadonlyMap<string, string>,
++): string | undefined {
++	const absolutePath = path.resolve(filePath);
++	let bestRoot = "";
++	let bestUrl: string | undefined;
++	for (const [rootPath, displayUrl] of sourceDisplayUrls) {
++		const absoluteRoot = path.resolve(rootPath);
++		if (
++			absolutePath === absoluteRoot ||
++			(absoluteRoot.length > bestRoot.length && absolutePath.startsWith(`${absoluteRoot}${path.sep}`))
++		) {
++			bestRoot = absoluteRoot;
++			bestUrl = displayUrl;
++		}
++	}
++	if (!bestUrl) return undefined;
++	if (absolutePath === bestRoot) return bestUrl;
++	return appendDisplayUrlPath(bestUrl, path.relative(bestRoot, absolutePath));
++}
++
+ type PathEntrySplitter = (item: string) => { basePath: string };
+ 
+ const TOP_LEVEL_WHITESPACE_RE = /\s/;
+@@ -1125,6 +1181,7 @@ export interface ToolScopeResolution {
+ 	exactFilePaths?: string[];
+ 	missingPaths: string[];
+ 	immutableSourcePaths: Set<string>;
++	sourceDisplayUrls: Map<string, string>;
+ }
+ 
+ /**
+@@ -1152,6 +1209,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 	const internalRouter = InternalUrlRouter.instance();
+ 	const resolvedPathInputs: string[] = [];
+ 	const immutableSourcePaths = new Set<string>();
++	const sourceDisplayUrls = new Map<string, string>();
+ 	for (const rawPath of rawPaths) {
+ 		let externalUrl = strictExternalUrlRe.test(rawPath);
+ 		if (!externalUrl && isReadableUrlPath(rawPath) && !hasGlobPathChars(rawPath)) {
+@@ -1192,7 +1250,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 				`Cannot ${internalUrlAction} a remote ssh:// path (no local file): ${rawPath}. Use \`read ${rawPath}\` to view it, or the \`search\` tool to grep remote files.`,
+ 			);
+ 		}
+-		if (hasGlobPathChars(rawPath)) {
++		if (hasInternalUrlGlobPathChars(rawPath)) {
+ 			throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPath}`);
+ 		}
+ 		const resource = await internalRouter.resolve(rawPath, {
+@@ -1212,6 +1270,9 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 		if (opts.trackImmutableSources && resource.immutable) {
+ 			immutableSourcePaths.add(path.resolve(resource.sourcePath));
+ 		}
++		if (resource.sourceDisplayUrl) {
++			sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
++		}
+ 		resolvedPathInputs.push(resource.sourcePath);
+ 	}
+ 
+@@ -1265,15 +1326,17 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 		const hint = opts.multipathStatHint && rawPaths.length > 1 ? opts.multipathStatHint : "";
+ 		throw new ToolError(`Path not found: ${scopePath}${hint}`);
+ 	}
++	const displayScopePath = formatInternalSourceDisplayPath(searchPath, sourceDisplayUrls) ?? scopePath;
+ 
+ 	return {
+ 		searchPath,
+-		scopePath,
++		scopePath: displayScopePath,
+ 		globFilter,
+ 		isDirectory,
+ 		multiTargets,
+ 		exactFilePaths,
+ 		missingPaths,
+ 		immutableSourcePaths,
++		sourceDisplayUrls,
+ 	};
+ }
+diff --git c/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts i/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts
+index f92eba9b2..04b3944d2 100644
+--- c/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts
++++ i/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts
+@@ -1,4 +1,6 @@
+-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
++import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
++import type { ChildProcess } from "node:child_process";
++import * as childProcess from "node:child_process";
+ import * as fs from "node:fs/promises";
+ import * as os from "node:os";
+ import * as path from "node:path";
+@@ -11,6 +13,37 @@ import {
+ import { InternalUrlRouter } from "@oh-my-pi/pi-coding-agent/internal-urls/router";
+ import { resolveToolSearchScope } from "@oh-my-pi/pi-coding-agent/tools/path-utils";
+ 
++function mockExecFile(outputs: Record<string, string>) {
++	return vi.spyOn(childProcess, "execFile").mockImplementation(((
++		file: string,
++		args?: readonly string[] | childProcess.ExecFileOptions | null,
++		optionsOrCallback?: unknown,
++		maybeCallback?: unknown,
++	) => {
++		const argv = Array.isArray(args) ? args : [];
++		const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : maybeCallback;
++		const stdout = outputs[[file, ...argv].join("\0")];
++		if (stdout === undefined) throw new Error(`Unexpected command: ${file} ${argv.join(" ")}`);
++		queueMicrotask(() => {
++			if (typeof callback === "function") callback(null, stdout, "");
++		});
++		return {} as ChildProcess;
++	}) as typeof childProcess.execFile);
++}
++
++describe("InternalUrlRouter registrations", () => {
++	afterEach(() => {
++		InternalUrlRouter.resetForTests();
++	});
++
++	it("handles herdr and hunk URLs", () => {
++		const router = InternalUrlRouter.instance();
++
++		expect(router.canHandle("herdr://status")).toBe(true);
++		expect(router.canHandle("hunk://context")).toBe(true);
++	});
++});
++
+ /**
+  * Path-only callers (search/grep, bash URL expansion) only need the artifact's
+  * filesystem path. Blocking them for large artifacts would break `search`
+@@ -106,3 +139,47 @@ describe("resolveToolSearchScope handles large artifacts via pathOnly", () => {
+ 		expect(scope.searchPath).toBe(path.join(artifactDir, "0.mcp.log"));
+ 	});
+ });
++
++describe("resolveToolSearchScope handles herdr:// scope URLs", () => {
++	afterEach(() => {
++		InternalUrlRouter.resetForTests();
++		vi.restoreAllMocks();
++	});
++
++	it("materializes a searchable sourcePath and display URL for herdr pane reads", async () => {
++		const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "omp-herdr-scope-"));
++		const url = "herdr://pane/pane-1?source=recent&lines=80";
++		const args = ["pane", "read", "pane-1", "--source", "recent", "--lines", "80"];
++		mockExecFile({ [["herdr", ...args].join("\0")]: "needle\n" });
++		try {
++			const scope = await resolveToolSearchScope({
++				rawPaths: [url],
++				cwd,
++				internalUrlAction: "search",
++				trackImmutableSources: true,
++				surfaceExactFilePaths: true,
++			});
++
++			const resolvedPath = path.resolve(scope.searchPath);
++			expect(await Bun.file(scope.searchPath).text()).toBe("needle\n");
++			expect(scope.immutableSourcePaths.has(resolvedPath)).toBe(true);
++			expect(scope.sourceDisplayUrls.get(resolvedPath)).toBe(url);
++			expect(scope.scopePath).toBe(url);
++		} finally {
++			await fs.rm(cwd, { recursive: true, force: true });
++		}
++	});
++
++	it("rejects herdr internal URL globs before filesystem glob handling", async () => {
++		const spy = mockExecFile({});
++
++		await expect(
++			resolveToolSearchScope({
++				rawPaths: ["herdr://pane/*.ts"],
++				cwd: os.tmpdir(),
++				internalUrlAction: "search",
++			}),
++		).rejects.toThrow(/Glob patterns are not supported for internal URLs: herdr:\/\/pane\/\*\.ts/);
++		expect(spy).not.toHaveBeenCalled();
++	});
++});
