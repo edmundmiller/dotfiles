@@ -2,8 +2,8 @@
 
 Three independent knobs govern what happens to messages you type while OMP is
 working. They answer _different_ questions about the same queue, so they don't
-collapse into one setting. Set via `omp config set <key> <value>` (OMP-owned
-mutable state in `~/.omp/agent/config.yml`; not Nix-managed).
+collapse into one setting. Set in `config/omp/config.yml`; the OMP module renders the Nix-managed
+`~/.omp/agent/config.yml` from that source plus host overlays.
 
 ## The three knobs
 
@@ -36,40 +36,35 @@ graph TD
 
 ## Current config (2026-07-08)
 
-`interruptMode: wait` + `steeringMode: all` + `followUpMode: all` — never
-interrupt a running tool, but once delivery is safe, take everything queued at
-once. Coherent batch-style config.
+`interruptMode: wait` + `steeringMode: all` + `followUpMode: one-at-a-time` —
+never interrupt a running tool; drain steering in batches once safe, then handle
+post-turn follow-ups one at a time.
 
 ## Model roles (2026-07-08)
 
 ```
-default xai-oauth/grok-composer-2.5-fast       # fast Cursor Composer default
-smol    xai-oauth/grok-composer-2.5-fast       # same fast/mechanical slot
+default xai-oauth/grok-composer-2.5-fast       # shared default; hosts may override
+smol    xai-oauth/grok-composer-2.5-fast       # shared fast/mechanical slot
 slow    openai-codex/gpt-5.5:high              # heavier direct-sub reasoning
 plan    vibeproxy/claude-opus-4-8:high         # strong planning via VibeProxy
-commit  xai-oauth/grok-composer-2.5-fast       # fast/mechanical commit messages
+commit  xai-oauth/grok-composer-2.5-fast       # falls back through smol
 ```
 
 Direct-login providers (Codex on ChatGPT sub, xai-oauth) beat kilo credits for
 the same model. VibeProxy is used where it adds a distinct role (`plan` on
 Claude Opus 4.8); kilo/Claude remains only a fallback. There is no separate
-"fast" role — `smol` is the fast slot; Composer covers default, smol, and
-commit.
+"fast" role — `smol` is the fast slot.
 
 ### Per-host overrides
 
-`config.yml` is machine-local mutable state, so default/slow/plan (and the base
-smol/commit) already differ freely per box. To make the split _declarative_,
-`modules.agents.omp.smolModel` injects `PI_SMOL_MODEL` in the Nix wrapper — it
-overrides `modelRoles.smol` and (via the `["tiny","commit","smol"]` fallback)
-the commit role too. Only smol/commit are exposed; default/slow/plan live in
-the mutable config and stay identical across hosts. Precedence:
-`--smol` flag > `PI_SMOL_MODEL` env > `config.yml`. There is **no** env override
-for default or commit (only smol/slow/plan exist), and `--config` overlays are
-launch-only (they crash `config get/set`), so the env var is the clean lever.
+Shared role defaults live in `config/omp/config.yml`. Host auth/quota differences
+belong in `modules.agents.omp.modelRoles`, which is rendered into the Nix-managed
+config at activation. `modules.agents.omp.smolModel` also injects `PI_SMOL_MODEL`
+for the smol/commit fast path. Precedence: `--smol` flag > `PI_SMOL_MODEL` env >
+rendered `config.yml`.
 
-- **mactraitorpro**: `smolModel = "xai-oauth/grok-composer-2.5-fast"`.
-- **seqeratop**: `smolModel = "cursor/composer-2.5"` via Cursor SDK.
+- **mactraitorpro**: smol via `xai-oauth/grok-composer-2.5-fast`.
+- **seqeratop**: smol `cursor/composer-2.5-fast`; default `cursor/composer-2.5`.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
 **ChatGPT-account** Codex login only permits the current generation. Every
@@ -162,7 +157,7 @@ enables it.
 - **No auto-discovery for custom providers** — `models.yml` must list ids
   explicitly (unlike built-in providers, `omp models refresh` won't populate
   them). Curated subset of `curl localhost:8317/v1/models`; add more there.
-- **Mostly additive** — direct Codex/xai logins carry default/smol/slow, while
+- **Mostly additive** — direct Codex/xai/Cursor logins carry default/smol/slow, while
   `plan` uses `vibeproxy/claude-opus-4-8:high`. Select other proxied models
   with `--model vibeproxy/<id>` or Ctrl+P cycling.
 - **The app must be running** (menu bar → Running) and the relevant provider
