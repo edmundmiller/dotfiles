@@ -151,6 +151,9 @@ let
   configOverrides =
     lib.optional (cfg.themeDark != null) ''.theme.dark = "${cfg.themeDark}"''
     ++ lib.optional (cfg.themeLight != null) ''.theme.light = "${cfg.themeLight}"''
+    ++ mapAttrsToList (
+      name: value: ".modelRoles[${builtins.toJSON name}] = ${builtins.toJSON value}"
+    ) cfg.modelRoles
     ++ lib.optional (
       cfg.modelProviderOrder != [ ]
     ) ".modelProviderOrder = ${builtins.toJSON cfg.modelProviderOrder}"
@@ -395,12 +398,11 @@ in
       default = null;
       example = "xai-oauth/grok-composer-2.5-fast";
       description = ''
-        Per-host override for the smol/fast model role, injected as
+        Per-host environment override for the smol/fast model role, injected as
         PI_SMOL_MODEL. Also drives the commit role, which falls back to smol
-        when modelRoles.commit is unset. Null keeps whatever modelRoles.smol is
-        set in the mutable ~/.omp/agent/config.yml. default/slow/plan are
-        intentionally not exposed here — they live in the mutable config and
-        stay identical across hosts.
+        when modelRoles.commit is unset. Null keeps the rendered
+        modelRoles.smol value from config/omp/config.yml plus any host
+        modelRoles overlay.
       '';
     };
     themeDark = mkOption {
@@ -424,6 +426,12 @@ in
       type = types.listOf types.str;
       default = [ ];
       description = "Preferred provider order for resolving ambiguous canonical model ids.";
+    };
+    modelRoles = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
+      example.default = "cursor/composer-2.5";
+      description = "Per-host modelRoles overrides overlaid onto config/omp/config.yml.";
     };
     retry = {
       modelFallback = mkOption {
