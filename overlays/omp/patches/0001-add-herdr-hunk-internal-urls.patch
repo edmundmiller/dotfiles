@@ -30,6 +30,21 @@ index 390517a6c..a8cc62055 100644
  ### Web URLs
  - `parseReadUrlTarget()` accepts `http://`, `https://`, or `www.` targets.
  - Plain URL reads call `executeReadUrl()` in `packages/coding-agent/src/tools/fetch.ts`.
+diff --git c/packages/coding-agent/src/config/settings-schema.ts i/packages/coding-agent/src/config/settings-schema.ts
+index 00af4ed69..e60f14a94 100644
+--- c/packages/coding-agent/src/config/settings-schema.ts
++++ i/packages/coding-agent/src/config/settings-schema.ts
+@@ -4933,6 +4933,10 @@ export const SETTINGS_SCHEMA = {
+ 		default: "unset" as const,
+ 	},
+ 
++	"internalUrls.herdr": { type: "boolean", default: false },
++
++	"internalUrls.hunk": { type: "boolean", default: false },
++
+ 	"gc.blobs": { type: "boolean", default: true },
+ 
+ 	"gc.archive": { type: "boolean", default: true },
 diff --git c/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts i/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts
 new file mode 100644
 index 000000000..b15d541ab
@@ -527,25 +542,26 @@ index f91616f2e..94066d57c 100644
  export * from "./issue-pr-protocol";
  export * from "./json-query";
 diff --git c/packages/coding-agent/src/internal-urls/router.ts i/packages/coding-agent/src/internal-urls/router.ts
-index 935f63be7..1e30b7179 100644
+index 935f63be7..d336b83fc 100644
 --- c/packages/coding-agent/src/internal-urls/router.ts
 +++ i/packages/coding-agent/src/internal-urls/router.ts
-@@ -1,5 +1,5 @@
+@@ -1,12 +1,14 @@
  /**
 - * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`).
 + * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`).
   *
   * One process-global router with one handler per scheme. Access via
   * `InternalUrlRouter.instance()`. Handlers are stateless; per-session and
-@@ -7,6 +7,7 @@
+  * shared state lives in `./state.ts`.
   */
++import { isSettingsInitialized, settings } from "../config/settings";
  import { AgentProtocolHandler } from "./agent-protocol";
  import { ArtifactProtocolHandler } from "./artifact-protocol";
 +import { HerdrProtocolHandler, HunkProtocolHandler } from "./herdr-hunk-protocol";
  import { HistoryProtocolHandler } from "./history-protocol";
  import { IssueProtocolHandler, PrProtocolHandler } from "./issue-pr-protocol";
  import { LocalProtocolHandler } from "./local-protocol";
-@@ -39,6 +40,8 @@ export class InternalUrlRouter {
+@@ -39,6 +41,8 @@ export class InternalUrlRouter {
  		this.register(new PrProtocolHandler());
  		this.register(new HistoryProtocolHandler());
  		this.register(new SshProtocolHandler());
@@ -554,6 +570,68 @@ index 935f63be7..1e30b7179 100644
  	}
  
  	/** Process-global router instance. */
+@@ -52,6 +56,12 @@ export class InternalUrlRouter {
+ 		InternalUrlRouter.#instance = undefined;
+ 	}
+ 
++	static #enabled(scheme: string): boolean {
++		if (scheme === "herdr") return isSettingsInitialized() && settings.get("internalUrls.herdr") === true;
++		if (scheme === "hunk") return isSettingsInitialized() && settings.get("internalUrls.hunk") === true;
++		return true;
++	}
++
+ 	register(handler: ProtocolHandler): void {
+ 		this.#handlers.set(handler.scheme.toLowerCase(), handler);
+ 	}
+@@ -61,20 +71,23 @@ export class InternalUrlRouter {
+ 	}
+ 
+ 	getHandler(scheme: string): ProtocolHandler | undefined {
+-		return this.#handlers.get(scheme.toLowerCase());
++		const normalized = scheme.toLowerCase();
++		if (!InternalUrlRouter.#enabled(normalized)) return undefined;
++		return this.#handlers.get(normalized);
+ 	}
+ 
+ 	canHandle(input: string): boolean {
+ 		const match = input.match(/^([a-z][a-z0-9+.-]*):\/\//i);
+ 		if (!match) return false;
+-		return this.#handlers.has(match[1].toLowerCase());
++		const scheme = match[1].toLowerCase();
++		return InternalUrlRouter.#enabled(scheme) && this.#handlers.has(scheme);
+ 	}
+ 
+ 	/** Schemes whose handler supports host/path autocomplete. */
+ 	completionSchemes(): string[] {
+ 		const schemes: string[] = [];
+ 		for (const [scheme, handler] of this.#handlers) {
+-			if (handler.complete) schemes.push(scheme);
++			if (InternalUrlRouter.#enabled(scheme) && handler.complete) schemes.push(scheme);
+ 		}
+ 		return schemes;
+ 	}
+@@ -84,7 +97,9 @@ export class InternalUrlRouter {
+ 	 * Returns `null` when the scheme is unknown or does not support completion.
+ 	 */
+ 	async complete(scheme: string, query: string, context?: ResolveContext): Promise<UrlCompletion[] | null> {
+-		const handler = this.#handlers.get(scheme.toLowerCase());
++		const normalized = scheme.toLowerCase();
++		if (!InternalUrlRouter.#enabled(normalized)) return null;
++		const handler = this.#handlers.get(normalized);
+ 		if (!handler?.complete) return null;
+ 		return handler.complete(query, context);
+ 	}
+@@ -94,8 +109,9 @@ export class InternalUrlRouter {
+ 		const scheme = parsed.protocol.replace(/:$/, "").toLowerCase();
+ 		const handler = this.#handlers.get(scheme);
+ 
+-		if (!handler) {
++		if (!handler || !InternalUrlRouter.#enabled(scheme)) {
+ 			const available = Array.from(this.#handlers.keys())
++				.filter(s => InternalUrlRouter.#enabled(s))
+ 				.map(s => `${s}://`)
+ 				.join(", ");
+ 			throw new Error(`Unknown protocol: ${scheme}://\nSupported: ${available || "none"}`);
 diff --git c/packages/coding-agent/src/internal-urls/types.ts i/packages/coding-agent/src/internal-urls/types.ts
 index 59bcb311d..40cf8c1fa 100644
 --- c/packages/coding-agent/src/internal-urls/types.ts
@@ -580,21 +658,25 @@ index 59bcb311d..40cf8c1fa 100644
  	notes?: string[];
  	/**
 diff --git c/packages/coding-agent/src/prompts/system/system-prompt.md i/packages/coding-agent/src/prompts/system/system-prompt.md
-index e852b653a..8213f6473 100644
+index e852b653a..886cb8fc6 100644
 --- c/packages/coding-agent/src/prompts/system/system-prompt.md
 +++ i/packages/coding-agent/src/prompts/system/system-prompt.md
-@@ -63,6 +63,9 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
+@@ -63,6 +63,13 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
  - `vault://<vault>/<path>`: Obsidian vault (read/edit). `vault://` lists vaults; `vault://_/…` targets the active vault. File ops `?op=outline|backlinks|links|tags|properties|tasks|base|…`; vault ops `?op=search&q=…|daily|tasks|orphans|unresolved|bases|…`.
  {{/if}}
  - `mcp://<uri>`: MCP resource
 +- `ssh://host/<path>`: configured SSH host files/directories.
++{{#if hasHerdrInternalUrls}}
 +- `herdr://status|snapshot|workspaces|tabs|panes|pane/<id>`: local Herdr resources via the CLI/socket wrappers.
++{{/if}}
++{{#if hasHunkInternalUrls}}
 +- `hunk://review|context|comments`: active Hunk review session data for a repo.
++{{/if}}
  - `issue://<N>` (or `issue://<owner>/<repo>/<N>`): GitHub issue, disk-cached. Bare lists recent issues; `?state=open|closed|all&limit=&author=&label=`.
  - `pr://<N>` (or `pr://<owner>/<repo>/<N>`): GitHub PR, same cache; `?comments=0` drops comments. Bare lists recent PRs; `?state=open|closed|merged|all&limit=&author=&label=`.
  - `omp://`: harness docs; AVOID unless the user asks about the harness itself.
 diff --git c/packages/coding-agent/src/prompts/tools/read.md i/packages/coding-agent/src/prompts/tools/read.md
-index 554dc4cab..dc892fc4a 100644
+index 554dc4cab..732102503 100644
 --- c/packages/coding-agent/src/prompts/tools/read.md
 +++ i/packages/coding-agent/src/prompts/tools/read.md
 @@ -7,7 +7,7 @@ Read files, directories, archives, SQLite, images, documents, internal resources
@@ -602,19 +684,57 @@ index 554dc4cab..dc892fc4a 100644
  ## Parameters
  
 -- `path` — required. Local path, internal URI (`skill://`, `agent://`, `artifact://`, `memory://`, `rule://`, `local://`, `vault://`, `mcp://`, `omp://`, `issue://`, `pr://`, `ssh://`), or URL. Append `:<sel>` for ranges/modes (e.g. `src/foo.ts:50-200`, `src/foo.ts:raw`, `db.sqlite:users:42`).
-+- `path` — required. Local path, internal URI (`skill://`, `agent://`, `artifact://`, `memory://`, `rule://`, `local://`, `vault://`, `mcp://`, `herdr://`, `hunk://`, `omp://`, `issue://`, `pr://`, `ssh://`), or URL. Append `:<sel>` for ranges/modes (e.g. `src/foo.ts:50-200`, `src/foo.ts:raw`, `db.sqlite:users:42`).
++- `path` — required. Local path, internal URI (`skill://`, `agent://`, `artifact://`, `memory://`, `rule://`, `local://`, `vault://`, `mcp://`{{#if HERDR_INTERNAL_URLS_ENABLED}}, `herdr://`{{/if}}{{#if HUNK_INTERNAL_URLS_ENABLED}}, `hunk://`{{/if}}, `omp://`, `issue://`, `pr://`, `ssh://`), or URL. Append `:<sel>` for ranges/modes (e.g. `src/foo.ts:50-200`, `src/foo.ts:raw`, `db.sqlite:users:42`).
  
  ## Selectors
  
-@@ -69,6 +69,8 @@ For `.sqlite`, `.sqlite3`, `.db`, `.db3`:
+@@ -69,6 +69,13 @@ For `.sqlite`, `.sqlite3`, `.db`, `.db3`:
  
  All URI schemes take the same line selectors. `artifact://<id>` recovers spilled output; large artifacts block unbounded `:raw`, so page with `artifact://<id>:N-M` / `artifact://<id>:raw:N-M` and use the reported artifact file path for search/copy workflows.
  
-+`herdr://` reads local Herdr state (`status`, `snapshot`, `workspaces`, `tabs?workspace=...`, `panes?workspace=...`, `pane/<id>?source=recent&lines=80`). `hunk://` reads Hunk review data (`review`, `context`, `comments`) for `?repo=...` or the session cwd.
++{{#if HERDR_INTERNAL_URLS_ENABLED}}
++`herdr://` reads local Herdr state (`status`, `snapshot`, `workspaces`, `tabs?workspace=...`, `panes?workspace=...`, `pane/<id>?source=recent&lines=80`).
++{{/if}}
++{{#if HUNK_INTERNAL_URLS_ENABLED}}
++`hunk://` reads Hunk review data (`review`, `context`, `comments`) for `?repo=...` or the session cwd.
++{{/if}}
 +
  `ssh://host/<absolute-path>` reads a remote text file (UTF-8, ≤1 MiB) or lists a directory one level deep, on a pre-configured SSH host or `~/.ssh/config` alias; `ssh://host/` lists the remote root and bare `ssh://` lists the configured hosts. Files are also writable via `write` and searchable via `search`; a directory only lists (`search` refuses a directory, `write` refuses to overwrite one). A literal `:`, `?`, or `#` in the remote path must be percent-encoded (`%3A`/`%3F`/`%23`) — a trailing `:sel` is read as a line selector, and `?`/`#` start a URL query/fragment. Requires a POSIX login shell (`sh`/`bash`/`zsh`); a Windows host or a non-POSIX shell (fish, csh/tcsh) is rejected — use the `ssh` tool there.
  
  <critical>
+diff --git c/packages/coding-agent/src/system-prompt.ts i/packages/coding-agent/src/system-prompt.ts
+index e64a98587..f27f2c3bc 100644
+--- c/packages/coding-agent/src/system-prompt.ts
++++ i/packages/coding-agent/src/system-prompt.ts
+@@ -10,7 +10,7 @@ import { $env, getGpuCachePath, getProjectDir, hasFsCode, isEnoent, logger, prom
+ import { contextFileCapability } from "./capability/context-file";
+ import { systemPromptCapability } from "./capability/system-prompt";
+ import { findConfigFile } from "./config";
+-import type { Personality, SkillsSettings } from "./config/settings";
++import { isSettingsInitialized, type Personality, type SkillsSettings, settings } from "./config/settings";
+ import { type ContextFile, loadCapability, type SystemPrompt as SystemPromptFile } from "./discovery";
+ import { expandAtImports } from "./discovery/at-imports";
+ import { loadSkills, type Skill } from "./extensibility/skills";
+@@ -34,6 +34,10 @@ const PERSONALITY_SPECS: Record<Exclude<Personality, "none">, string> = {
+ 	pragmatic: pragmaticPersonality,
+ };
+ 
++function internalUrlPromptEnabled(path: "internalUrls.herdr" | "internalUrls.hunk"): boolean {
++	return isSettingsInitialized() && settings.get(path) === true;
++}
++
+ interface AlwaysApplyRule {
+ 	name: string;
+ 	content: string;
+@@ -782,6 +786,8 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
+ 		secretsEnabled,
+ 		hasMemoryRoot: memoryRootEnabled,
+ 		hasObsidian: hasObsidian(),
++		hasHerdrInternalUrls: internalUrlPromptEnabled("internalUrls.herdr"),
++		hasHunkInternalUrls: internalUrlPromptEnabled("internalUrls.hunk"),
+ 		includeWorkspaceTree,
+ 		renderMermaid,
+ 	};
 diff --git c/packages/coding-agent/src/tools/glob.ts i/packages/coding-agent/src/tools/glob.ts
 index 79176c459..75dee579d 100644
 --- c/packages/coding-agent/src/tools/glob.ts
@@ -964,101 +1084,16 @@ index b0e51eb3a..083947b79 100644
 +		sourceDisplayUrls,
  	};
  }
-diff --git c/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts i/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts
-index f92eba9b2..04b3944d2 100644
---- c/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts
-+++ i/packages/coding-agent/test/internal-urls/artifact-path-only.test.ts
-@@ -1,4 +1,6 @@
--import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
-+import type { ChildProcess } from "node:child_process";
-+import * as childProcess from "node:child_process";
- import * as fs from "node:fs/promises";
- import * as os from "node:os";
- import * as path from "node:path";
-@@ -11,6 +13,37 @@ import {
- import { InternalUrlRouter } from "@oh-my-pi/pi-coding-agent/internal-urls/router";
- import { resolveToolSearchScope } from "@oh-my-pi/pi-coding-agent/tools/path-utils";
+diff --git c/packages/coding-agent/src/tools/read.ts i/packages/coding-agent/src/tools/read.ts
+index cd838ca42..bf2397b93 100644
+--- c/packages/coding-agent/src/tools/read.ts
++++ i/packages/coding-agent/src/tools/read.ts
+@@ -913,6 +913,8 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
+ 			IS_HL_MODE: displayMode.hashLines,
+ 			IS_LINE_NUMBER_MODE: !displayMode.hashLines && displayMode.lineNumbers,
+ 			INSPECT_IMAGE_ENABLED: this.#inspectImageEnabled,
++			HERDR_INTERNAL_URLS_ENABLED: session.settings.get("internalUrls.herdr"),
++			HUNK_INTERNAL_URLS_ENABLED: session.settings.get("internalUrls.hunk"),
+ 		});
+ 	}
  
-+function mockExecFile(outputs: Record<string, string>) {
-+	return vi.spyOn(childProcess, "execFile").mockImplementation(((
-+		file: string,
-+		args?: readonly string[] | childProcess.ExecFileOptions | null,
-+		optionsOrCallback?: unknown,
-+		maybeCallback?: unknown,
-+	) => {
-+		const argv = Array.isArray(args) ? args : [];
-+		const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : maybeCallback;
-+		const stdout = outputs[[file, ...argv].join("\0")];
-+		if (stdout === undefined) throw new Error(`Unexpected command: ${file} ${argv.join(" ")}`);
-+		queueMicrotask(() => {
-+			if (typeof callback === "function") callback(null, stdout, "");
-+		});
-+		return {} as ChildProcess;
-+	}) as typeof childProcess.execFile);
-+}
-+
-+describe("InternalUrlRouter registrations", () => {
-+	afterEach(() => {
-+		InternalUrlRouter.resetForTests();
-+	});
-+
-+	it("handles herdr and hunk URLs", () => {
-+		const router = InternalUrlRouter.instance();
-+
-+		expect(router.canHandle("herdr://status")).toBe(true);
-+		expect(router.canHandle("hunk://context")).toBe(true);
-+	});
-+});
-+
- /**
-  * Path-only callers (search/grep, bash URL expansion) only need the artifact's
-  * filesystem path. Blocking them for large artifacts would break `search`
-@@ -106,3 +139,47 @@ describe("resolveToolSearchScope handles large artifacts via pathOnly", () => {
- 		expect(scope.searchPath).toBe(path.join(artifactDir, "0.mcp.log"));
- 	});
- });
-+
-+describe("resolveToolSearchScope handles herdr:// scope URLs", () => {
-+	afterEach(() => {
-+		InternalUrlRouter.resetForTests();
-+		vi.restoreAllMocks();
-+	});
-+
-+	it("materializes a searchable sourcePath and display URL for herdr pane reads", async () => {
-+		const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "omp-herdr-scope-"));
-+		const url = "herdr://pane/pane-1?source=recent&lines=80";
-+		const args = ["pane", "read", "pane-1", "--source", "recent", "--lines", "80"];
-+		mockExecFile({ [["herdr", ...args].join("\0")]: "needle\n" });
-+		try {
-+			const scope = await resolveToolSearchScope({
-+				rawPaths: [url],
-+				cwd,
-+				internalUrlAction: "search",
-+				trackImmutableSources: true,
-+				surfaceExactFilePaths: true,
-+			});
-+
-+			const resolvedPath = path.resolve(scope.searchPath);
-+			expect(await Bun.file(scope.searchPath).text()).toBe("needle\n");
-+			expect(scope.immutableSourcePaths.has(resolvedPath)).toBe(true);
-+			expect(scope.sourceDisplayUrls.get(resolvedPath)).toBe(url);
-+			expect(scope.scopePath).toBe(url);
-+		} finally {
-+			await fs.rm(cwd, { recursive: true, force: true });
-+		}
-+	});
-+
-+	it("rejects herdr internal URL globs before filesystem glob handling", async () => {
-+		const spy = mockExecFile({});
-+
-+		await expect(
-+			resolveToolSearchScope({
-+				rawPaths: ["herdr://pane/*.ts"],
-+				cwd: os.tmpdir(),
-+				internalUrlAction: "search",
-+			}),
-+		).rejects.toThrow(/Glob patterns are not supported for internal URLs: herdr:\/\/pane\/\*\.ts/);
-+		expect(spy).not.toHaveBeenCalled();
-+	});
-+});
