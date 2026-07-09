@@ -18,8 +18,6 @@ with lib.my;
       let
         modulesPath = toString ./modules;
         allModulePaths = mapModulesRec' modulesPath id;
-        # Filter out NixOS-only directories on Darwin
-        nixosOnlyDirs = [ "hardware" ];
         # NixOS-only subdirectories within desktop (allow desktop/term for ghostty)
         nixosOnlyDesktopDirs = [
           "desktop/browsers"
@@ -48,7 +46,7 @@ with lib.my;
           "desktop/gnome.nix" # GNOME desktop environment
           "desktop/kde.nix" # KDE desktop environment
           "desktop/bspwm.nix" # BSPWM window manager
-          # NixOS-only hardware/shell modules
+          # NixOS-only shell modules
           "nushell.nix"
           "yubikey.nix"
           # NixOS-only services
@@ -81,7 +79,7 @@ with lib.my;
             lib.hasInfix "/modules/${dir}/" pathStr
             # Files inside directory
             || lib.hasSuffix "/modules/${dir}" pathStr # Directory itself
-          ) (nixosOnlyDirs ++ nixosOnlyDesktopDirs)
+          ) nixosOnlyDesktopDirs
           || lib.any (
             file:
             lib.hasSuffix file pathStr

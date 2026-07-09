@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -13,7 +14,7 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
+  config = mkNixOSOnlyConfig isDarwin "modules.hardware.wacom" cfg.enable {
     # For my intuos4 pro. Doesn't work for cintiqs.
     services.xserver.wacom.enable = true;
     # TODO Move this to udev

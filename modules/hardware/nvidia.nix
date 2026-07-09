@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,7 +15,7 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
+  config = mkNixOSOnlyConfig isDarwin "modules.hardware.nvidia" cfg.enable {
     hardware.graphics.enable = true;
 
     services.xserver.videoDrivers = [ "nvidia" ];

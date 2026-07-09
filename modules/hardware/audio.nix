@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -15,7 +16,7 @@ in
     easyeffects.enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable (mkMerge [
+  config = mkNixOSOnlyConfig isDarwin "modules.hardware.audio" cfg.enable (mkMerge [
     {
       services.pipewire = {
         enable = true;
