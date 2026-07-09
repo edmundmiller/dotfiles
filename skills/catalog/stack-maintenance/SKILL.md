@@ -12,6 +12,7 @@ Use this skill for PR chains, dependent branches, branch retargeting, merge queu
 ## Rules From Prior Stacked PR Incidents
 
 - Trust fresh GitHub metadata, not memory. Fetch `baseRefName`, `headRefName`, `mergeStateStatus`, `mergeable`, `reviewDecision`, checks, and auto-merge state before acting.
+- For evidence, compare against the PR head from GitHub (`headRefOid` or `origin/<headRefName>` after fetch), not just a local branch; local branches can be stale.
 - Stacked PRs usually merge bottom-up. A child can become conflicted after its parent merges; expect to rebase or retarget it before merging.
 - `gh pr merge --auto --squash` can merge immediately for intermediate stack branches. Re-read the PR afterward; do not infer from command text.
 - Main may use a merge queue. If GitHub says the merge strategy is controlled by the queue, retry without an explicit strategy, then re-read `state`, `mergedAt`, and `mergeCommit`.
@@ -107,7 +108,7 @@ pr=123
 base_branch=parent-branch
 head_branch=child-branch
 git fetch origin "$base_branch" "$head_branch"
-tmp=$(mktemp -d "/tmp/gradient-pr${pr}.XXXXXX")
+tmp=$(mktemp -d "/tmp/pr${pr}.XXXXXX")
 git worktree add -B "fix-pr${pr}" "$tmp" "origin/$head_branch"
 cd "$tmp"
 git rebase "origin/$base_branch"
