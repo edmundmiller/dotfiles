@@ -98,11 +98,13 @@ def hunk_theme_args() -> list[str]:
     args = ["--no-transparent-bg"]
     if os.environ.get("HUNK_THEME"):
         return ["--theme", os.environ["HUNK_THEME"], *args]
+    dark_theme = os.environ.get("HUNK_THEME_DARK", "catppuccin-mocha")
+    light_theme = os.environ.get("HUNK_THEME_LIGHT", "catppuccin-latte")
     dark_mode = macos_dark_mode()
-    if dark_mode is True:
-        return ["--theme", "catppuccin-mocha", *args]
-    if dark_mode is False:
-        return ["--theme", "catppuccin-latte", *args]
+    if dark_mode is True and dark_theme:
+        return ["--theme", dark_theme, *args]
+    if dark_mode is False and light_theme:
+        return ["--theme", light_theme, *args]
     return args
 
 
