@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -14,5 +15,7 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable { user.packages = [ pkgs.lm_sensors ]; };
+  config = mkNixOSOnlyConfig isDarwin "modules.hardware.sensors" cfg.enable {
+    user.packages = [ pkgs.lm_sensors ];
+  };
 }

@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -16,7 +17,7 @@ in
     audio.enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable (mkMerge [
+  config = mkNixOSOnlyConfig isDarwin "modules.hardware.bluetooth" cfg.enable (mkMerge [
     { hardware.bluetooth.enable = true; }
 
     (mkIf cfg.audio.enable {

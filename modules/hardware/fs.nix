@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isDarwin,
   ...
 }:
 with lib;
@@ -17,7 +18,7 @@ in
     # TODO automount.enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable (mkMerge [
+  config = mkNixOSOnlyConfig isDarwin "modules.hardware.fs" cfg.enable (mkMerge [
     {
       programs.udevil.enable = true;
 
