@@ -53,6 +53,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+changed_files=()
 if [[ ${#packages[@]} -eq 0 && $run_all -eq 0 ]]; then
   if [[ -z "$base_ref" ]]; then
     if upstream_ref=$(git -C "$ROOT_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
@@ -67,19 +68,27 @@ if [[ ${#packages[@]} -eq 0 && $run_all -eq 0 ]]; then
   fi
 
   range="$base_ref...$head_ref"
-  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "$range" -- 'packages/pi-packages/**')
+  while IFS= read -r file; do
+    changed_files+=("$file")
+  done < <(git -C "$ROOT_DIR" diff --name-only "$range" -- 'packages/pi-packages/**')
 
-  for file in "${changed_files[@]}"; do
-    if [[ "$file" =~ ^packages/pi-packages/(pi-[^/]+)/ ]]; then
-      packages+=("${BASH_REMATCH[1]}")
-    fi
-  done
+  if [[ ${#changed_files[@]} -gt 0 ]]; then
+    for file in "${changed_files[@]}"; do
+      if [[ "$file" =~ ^packages/pi-packages/(pi-[^/]+)/ ]]; then
+        packages+=("${BASH_REMATCH[1]}")
+      fi
+    done
+  fi
 else
-  mapfile -t changed_files < <(git -C "$ROOT_DIR" diff --name-only "${base_ref:-HEAD~1}...$head_ref" -- 'packages/pi-packages/**' 2>/dev/null || true)
+  while IFS= read -r file; do
+    changed_files+=("$file")
+  done < <(git -C "$ROOT_DIR" diff --name-only "${base_ref:-HEAD~1}...$head_ref" -- 'packages/pi-packages/**' 2>/dev/null || true)
 fi
 
 if [[ $run_all -eq 1 ]]; then
-  mapfile -t packages < <(find "$ROOT_DIR/packages/pi-packages" -mindepth 1 -maxdepth 1 -type d -name 'pi-*' -exec basename {} \; | sort)
+  while IFS= read -r package; do
+    packages+=("$package")
+  done < <(find "$ROOT_DIR/packages/pi-packages" -mindepth 1 -maxdepth 1 -type d -name 'pi-*' -exec basename {} \; | sort)
 fi
 
 if [[ ${#packages[@]} -eq 0 ]]; then
@@ -87,16 +96,31 @@ if [[ ${#packages[@]} -eq 0 ]]; then
   exit 0
 fi
 
-mapfile -t packages < <(printf '%s\n' "${packages[@]}" | sed '/^$/d' | sort -u)
+unique_packages=()
+while IFS= read -r package; do
+  unique_packages+=("$package")
+done < <(
+  if [[ ${#packages[@]} -gt 0 ]]; then
+    printf '%s\n' "${packages[@]}" | sed '/^$/d' | sort -u
+  fi
+)
+packages=()
+if [[ ${#unique_packages[@]} -gt 0 ]]; then
+  for package in "${unique_packages[@]}"; do
+    packages+=("$package")
+  done
+fi
 
 echo "qa-changed: checking packages: ${packages[*]}"
 
 arch_files=()
-for file in "${changed_files[@]}"; do
-  if [[ -f "$ROOT_DIR/$file" && "$file" =~ ^packages/pi-packages/pi-[^/]+/.*\.tsx?$ ]]; then
-    arch_files+=("$file")
-  fi
-done
+if [[ ${#changed_files[@]} -gt 0 ]]; then
+  for file in "${changed_files[@]}"; do
+    if [[ -f "$ROOT_DIR/$file" && "$file" =~ ^packages/pi-packages/pi-[^/]+/.*\.tsx?$ ]]; then
+      arch_files+=("$file")
+    fi
+  done
+fi
 
 if [[ ${#arch_files[@]} -gt 0 ]]; then
   ./bin/lint-ts-architecture "${arch_files[@]}"
@@ -116,33 +140,42 @@ fi
 
 existing_packages=()
 removed_packages=()
-for pkg in "${packages[@]}"; do
-  if [[ -f "$ROOT_DIR/packages/pi-packages/$pkg/package.json" ]]; then
-    existing_packages+=("$pkg")
-  else
-    removed_packages+=("$pkg")
-  fi
-done
+if [[ ${#packages[@]} -gt 0 ]]; then
+  for pkg in "${packages[@]}"; do
+    if [[ -f "$ROOT_DIR/packages/pi-packages/$pkg/package.json" ]]; then
+      existing_packages+=("$pkg")
+    else
+      removed_packages+=("$pkg")
+    fi
+  done
+fi
 
 if [[ ${#removed_packages[@]} -gt 0 ]]; then
   echo "qa-changed: skipping removed packages: ${removed_packages[*]}"
 fi
-packages=("${existing_packages[@]}")
+packages=()
+if [[ ${#existing_packages[@]} -gt 0 ]]; then
+  for pkg in "${existing_packages[@]}"; do
+    packages+=("$pkg")
+  done
+fi
 
 run_integration=0
 if [[ $run_all -eq 1 ]]; then
   run_integration=1
 else
-  for file in "${changed_files[@]}"; do
-    if [[ "$file" == packages/pi-packages/tests/* || "$file" == packages/pi-packages/package.json ]]; then
-      run_integration=1
-      break
-    fi
-    if [[ "$file" == packages/pi-packages/bun.lock && ${#packages[@]} -gt 0 ]]; then
-      run_integration=1
-      break
-    fi
-  done
+  if [[ ${#changed_files[@]} -gt 0 ]]; then
+    for file in "${changed_files[@]}"; do
+      if [[ "$file" == packages/pi-packages/tests/* || "$file" == packages/pi-packages/package.json ]]; then
+        run_integration=1
+        break
+      fi
+      if [[ "$file" == packages/pi-packages/bun.lock && ${#packages[@]} -gt 0 ]]; then
+        run_integration=1
+        break
+      fi
+    done
+  fi
 fi
 
 if [[ ${#packages[@]} -eq 0 && $run_integration -eq 0 ]]; then
@@ -160,12 +193,14 @@ done < <(find "$ROOT_DIR/packages/pi-packages" -mindepth 2 -maxdepth 2 -type l -
 
 restore_symlinked_node_modules() {
   local record link_path link_target
-  for record in "${symlinked_node_modules[@]}"; do
-    link_path="${record%%=*}"
-    link_target="${record#*=}"
-    rm -rf "$link_path"
-    ln -s "$link_target" "$link_path"
-  done
+  if [[ ${#symlinked_node_modules[@]} -gt 0 ]]; then
+    for record in "${symlinked_node_modules[@]}"; do
+      link_path="${record%%=*}"
+      link_target="${record#*=}"
+      rm -rf "$link_path"
+      ln -s "$link_target" "$link_path"
+    done
+  fi
 }
 trap restore_symlinked_node_modules EXIT
 
@@ -180,19 +215,22 @@ has_script() {
   jq -e --arg script_name "$script_name" '.scripts[$script_name] != null' "$pkg_json" >/dev/null
 }
 
-for pkg in "${packages[@]}"; do
-  pkg_dir="$ROOT_DIR/packages/pi-packages/$pkg"
+if [[ ${#packages[@]} -gt 0 ]]; then
+  for pkg in "${packages[@]}"; do
+    pkg_dir="$ROOT_DIR/packages/pi-packages/$pkg"
 
-  if has_script "$pkg_dir" typecheck; then
-    echo "qa-changed: $pkg -> typecheck"
-    (cd "$pkg_dir" && bun run --silent typecheck)
-  fi
+    if has_script "$pkg_dir" typecheck; then
+      echo "qa-changed: $pkg -> typecheck"
+      (cd "$pkg_dir" && bun run --silent typecheck)
+    fi
 
-  if has_script "$pkg_dir" test; then
-    echo "qa-changed: $pkg -> test"
-    (cd "$pkg_dir" && bun run --silent test)
-  fi
-done
+    if has_script "$pkg_dir" test; then
+      echo "qa-changed: $pkg -> test"
+      (cd "$pkg_dir" && bun run --silent test)
+    fi
+  done
+fi
+
 
 if [[ $run_integration -eq 1 ]]; then
   echo "qa-changed: running packages/pi-packages integration tests"
