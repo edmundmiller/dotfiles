@@ -425,6 +425,7 @@
             }
           ];
         };
+        darwinConfigurations."L19W56QXR4" = self.darwinConfigurations."Seqeratop";
 
         # deploy-rs configuration
         deploy.nodes = {
