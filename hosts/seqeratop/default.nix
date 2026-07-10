@@ -81,7 +81,9 @@
         pi = {
           enable = true;
           enabledModels = [
-            "gpt-5.5"
+            "gpt-5.6-sol"
+            "gpt-5.6-terra"
+            "gpt-5.6-luna"
             "cursor/composer-2.5"
             "gpt-5.4-mini"
           ];
@@ -101,7 +103,7 @@
           smolModel = "cursor/composer-2.5";
           modelRoles = {
             smol = "cursor/composer-2.5";
-            default = "openai-codex/gpt-5.5:low";
+            default = "openai-codex/gpt-5.6-sol:low";
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
