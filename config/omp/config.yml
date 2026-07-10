@@ -55,7 +55,7 @@ setupVersion: 1
 modelRoles:
   default: xai-oauth/grok-composer-2.5-fast
   smol: xai-oauth/grok-composer-2.5-fast
-  slow: openai-codex/gpt-5.5:high
+  slow: openai-codex/gpt-5.6-sol:high
   plan: vibeproxy/claude-opus-4-8:high
 textVerbosity: low
 personality: pragmatic
