@@ -105,6 +105,18 @@
             smol = "cursor/composer-2.5";
             default = "openai-codex/gpt-5.6-sol:low";
           };
+          retry.fallbackChains = {
+            default = [
+              "openai-codex/gpt-5.6-terra:low"
+              "openai-codex/gpt-5.6-luna:low"
+              "cursor/grok-4.5-high"
+            ];
+            slow = [
+              "openai-codex/gpt-5.6-terra:high"
+              "openai-codex/gpt-5.6-luna:high"
+              "cursor/grok-4.5-high"
+            ];
+          };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
           # keeps the shared Catppuccin default.

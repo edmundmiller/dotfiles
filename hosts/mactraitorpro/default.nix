@@ -92,6 +92,7 @@
           modelProviderOrder = [
             "openai-codex"
             "xai-oauth"
+            "cursor"
             "opencode-go"
           ];
           retry.modelFallback = true;
@@ -101,11 +102,13 @@
               "xai-oauth/grok-composer-2.5-fast"
             ];
             plan = [
-              "xai-oauth/grok-4.3"
+              "cursor/grok-4.5-high"
               "opencode-go/glm-5.2"
             ];
             slow = [
-              "xai-oauth/grok-4.3"
+              "openai-codex/gpt-5.6-terra:high"
+              "openai-codex/gpt-5.6-luna:high"
+              "cursor/grok-4.5-high"
               "opencode-go/glm-5.2"
             ];
             smol = [
