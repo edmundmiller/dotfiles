@@ -2,9 +2,9 @@
 name: context-efficiency
 description: >
   Filter data at the source before it enters context. Use when querying APIs,
-  CLIs, or databases where full output would be large. Prefer jg filtering over
-  dumping and scanning; use jq/python only when jg cannot express the needed
-  transformation. Trigger phrases:
+  CLIs, or databases where the full output would be large. Prefer structured
+  output + jg when available, or python/tool-native selectors when not. Use jq
+  only when jg cannot express the needed transformation. Trigger phrases:
   "find the entity for", "get the ID of", "which service handles", "what's the
   value of", or any time you'd otherwise dump a large dataset to find one thing.
 license: MIT
@@ -19,8 +19,24 @@ of reasoning. Spend a few tokens on a precise query; save many on the backend.
 
 ```
 Does the tool support structured output? (--json, -o json, --format json)
-├─ Yes → use it, then filter with jg; use jq/python only for transformations jg cannot express
-└─ No → use grep to pre-filter, or hit the raw API with query params
+├─ Yes → select fields with jg when available; if `command -v jg` fails, use tool-native selectors, python3 -c, or jq instead of retrying
+└─ No → pre-filter with path scopes, grep, head, API params, or SQL LIMIT
+```
+
+## Structured-output patterns
+
+```bash
+
+# Select one field or path
+tool -o json | jg 'precise.selector'
+
+
+# Filter to the few fields needed
+tool -o json | jg 'items matching condition -> id,name,status'
+
+
+# Transform when selection is not enough
+tool -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["field"])'
 ```
 
 ## jq/python fallback patterns
@@ -28,25 +44,7 @@ Does the tool support structured output? (--json, -o json, --format json)
 Use these only when `jg` cannot express the needed transformation.
 
 ```bash
-# Get one field from an array of objects
-tool -o json | jq -r '.[0].field'
-
-# Filter array by condition
-tool -o json | jq '[.[] | select(.state == "on")]'
-
-# Case-insensitive name search
-tool -o json | jq -r '.[] | select(.attributes.friendly_name | test("couch"; "i")) | .entity_id'
-
-# Count by group
-tool -o json | jq 'group_by(.state) | map({state: .[0].state, count: length})'
-
-# Pluck two fields
-tool -o json | jq -r '.[] | [.entity_id, .state] | @tsv'
-```
-
-## python3 -c patterns
-
-```bash
+# python3 -c patterns
 # Count by state
 tool -o json | python3 -c "
 import json, sys; d = json.load(sys.stdin)
@@ -59,6 +57,14 @@ import json, sys; d = json.load(sys.stdin)
 print(next(x['entity_id'] for x in d if 'couch' in x['attributes'].get('friendly_name','').lower()))
 "
 ```
+
+## Bounded command output
+
+Before running commands that can dump a tree, log, search result, build output,
+or API collection, add a path scope, `--limit`, `head`, structured selector, or
+SQL `LIMIT`. Do not raise output-token caps to compensate for an unbounded
+command. If output truncates, rerun a narrower command instead of scanning the
+dump.
 
 ## Oversized tool results
 
@@ -86,23 +92,23 @@ tool search --query '"exact error" after:2026-01-01' --limit 5
 ### Home Assistant (hass-cli)
 
 ```bash
-hass-cli -o json state list 'light.*' | jq -r '.[] | select(.state=="on") | .entity_id'
-hass-cli -o json area list | jq -r '.[] | [.area_id, .name] | @tsv'
-hass-cli -o json device list | jq '[.[] | select(.area_id == "kitchen")]'
+hass-cli -o json state list 'light.*' | jg 'entity_id,state,attributes.friendly_name'
+hass-cli -o json area list | jg 'area_id,name'
+hass-cli -o json device list | jg 'devices in kitchen -> id,name,area_id'
 ```
 
 ### GitHub CLI
 
 ```bash
-gh pr checks 42 --json name,state | jq -r '.[] | select(.state=="FAILURE") | .name'
-gh issue list --json number,title,labels | jq '[.[] | select(.labels[].name == "bug")]'
+gh pr checks 42 --json name,state | jg 'failed check names'
+gh issue list --json number,title,labels --limit 30 | jg 'issues with bug label'
 gh api repos/:owner/:repo/pulls --jq '.[].head.ref'
 ```
 
 ### Nix
 
 ```bash
-nix eval .#nixosConfigurations.nuc.config.environment.systemPackages --json | jq -r '.[].name' | grep hass
+nix eval .#packages --json | jg 'package names'
 ```
 
 ### Database
@@ -119,11 +125,11 @@ SELECT entity_id, state FROM states WHERE domain = 'light' ORDER BY last_changed
 hass-cli state list
 
 # ✅ returns exactly what you need
-hass-cli -o json state list 'light.*' | jq -r '.[] | select(.attributes.friendly_name | test("desk"; "i")) | .entity_id'
+hass-cli -o json state list 'light.*' | jg 'entity_id,state,attributes.friendly_name matching desk'
 
 # ❌ loads full PR list into context
 gh pr list
 
 # ✅ targeted
-gh pr list --json number,title --jq '.[] | select(.title | test("fix"; "i"))'
+gh pr list --json number,title --limit 30 | jg 'titles matching fix'
 ```
