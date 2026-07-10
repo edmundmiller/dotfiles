@@ -462,7 +462,7 @@ in
     };
     dailyIntrospection = {
       enable = mkBoolOpt false;
-      model = mkOpt types.str "openai-codex/gpt-5.5:high";
+      model = mkOpt types.str "openai-codex/gpt-5.6-sol:high";
       hour = mkOpt types.int 4;
       minute = mkOpt types.int 30;
       maxTimeSeconds = mkOpt types.int 900;

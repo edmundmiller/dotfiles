@@ -40,12 +40,12 @@ graph TD
 never interrupt a running tool; drain steering in batches once safe, then handle
 post-turn follow-ups one at a time.
 
-## Model roles (2026-07-08)
+## Model roles (2026-07-10)
 
 ```
 default xai-oauth/grok-composer-2.5-fast       # shared default; hosts may override
 smol    xai-oauth/grok-composer-2.5-fast       # shared fast/mechanical slot
-slow    openai-codex/gpt-5.5:high              # heavier direct-sub reasoning
+slow    openai-codex/gpt-5.6-sol:high          # heavier direct-sub reasoning
 plan    vibeproxy/claude-opus-4-8:high         # strong planning via VibeProxy
 commit  xai-oauth/grok-composer-2.5-fast       # falls back through smol
 ```
@@ -64,15 +64,11 @@ for the smol/commit fast path. Precedence: `--smol` flag > `PI_SMOL_MODEL` env >
 rendered `config.yml`.
 
 - **mactraitorpro**: smol via `xai-oauth/grok-composer-2.5-fast`.
-- **seqeratop**: smol `cursor/composer-2.5`; default `openai-codex/gpt-5.5:low`.
+- **seqeratop**: smol `cursor/composer-2.5`; default `openai-codex/gpt-5.6-sol:low`.
 
-**Gotcha — Codex catalog lies.** `omp models openai-codex` lists 16 ids, but a
-**ChatGPT-account** Codex login only permits the current generation. Every
-older id (`gpt-5.3-codex`, `gpt-5.4-nano`, anything ≤5.2) returns _"not
-supported when using Codex with a ChatGPT account."_ Verified-usable set:
-`gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex-spark`. Always smoke-test
-(`omp -p --model <id> --no-tools --no-session "say ok"`) before trusting a
-catalog id.
+**Gotcha — Codex catalog lies.** `omp models openai-codex` can list unsupported
+ids; smoke-test every new id before trusting it. Verified GPT-5.6 ids:
+`gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`.
 
 ---
 
