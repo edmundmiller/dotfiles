@@ -88,7 +88,11 @@
         codex.enable = true;
         omp = {
           enable = true;
-          smolModel = "xai-oauth/grok-composer-2.5-fast";
+          smolModel = "cursor/composer-2.5";
+          modelRoles = {
+            smol = "cursor/composer-2.5";
+            default = "xai-oauth/grok-4.5";
+          };
           modelProviderOrder = [
             "openai-codex"
             "xai-oauth"
@@ -99,7 +103,6 @@
           retry.fallbackChains = {
             default = [
               "opencode-go/glm-5.2"
-              "xai-oauth/grok-composer-2.5-fast"
             ];
             plan = [
               "cursor/grok-4.5-high"

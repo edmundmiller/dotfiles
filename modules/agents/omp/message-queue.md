@@ -63,11 +63,11 @@ config at activation. `modules.agents.omp.smolModel` also injects `PI_SMOL_MODEL
 for the smol/commit fast path. Precedence: `--smol` flag > `PI_SMOL_MODEL` env >
 rendered `config.yml`.
 
-- **mactraitorpro**: smol via `xai-oauth/grok-composer-2.5-fast`.
+- **mactraitorpro**: default `xai-oauth/grok-4.5`; smol `cursor/composer-2.5`.
 - **seqeratop**: smol `cursor/composer-2.5`; default `openai-codex/gpt-5.6-sol:low`.
 - **fallbacks**: shared `slow` falls back Sol → Terra → Luna; mactraitorpro
-  then falls back to `cursor/grok-4.5-high` → GLM, while Seqeratop falls back
-  to `cursor/grok-4.5-high` after Terra/Luna for `default` and `slow`.
+  default falls back to GLM only, while its `plan`/`slow` paths include
+  `cursor/grok-4.5-high` before GLM.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` can list unsupported
 ids; smoke-test every new id before trusting it. Verified GPT-5.6 ids:
