@@ -52,7 +52,7 @@ No agenix secrets on this host (credentials in 1Password / work SSO).
   ```
   tmux-bash name=rebuild command="cd ~/.config/dotfiles && sudo darwin-rebuild switch --flake ."
   ```
-- **Hostname is `L19W56QXR4`** — flake attribute is `Seqeratop` (capitalized), but the actual hostname differs. `darwin-rebuild switch --flake .` auto-resolves by hostname and fails. Use `--flake .#Seqeratop` explicitly.
+- **Hostname is `L19W56QXR4`** — `darwinConfigurations.L19W56QXR4` aliases `Seqeratop`, so bare `--flake .` resolves correctly.
 
 ## Related Files
 
