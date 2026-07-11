@@ -100,23 +100,53 @@
           enable = true;
           # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic).
           # No xai-oauth here — do not pin xai-oauth/* fallbacks.
-          # Seqeratop has Cursor SDK wired through Pi, so use Cursor Composer
-          # for smol and low-thinking Codex for the default role.
-          smolModel = "cursor/composer-2.5";
+          # Anthropic-first: every role runs on the VibeProxy Claude subscription,
+          # falling back to openai-codex (GPT), then cursor/composer-2.5 last.
+          # Opus is the workhorse; sonnet handles vision + fan-out subtasks (cost
+          # guard); haiku covers smol/commit/tiny. Fallbacks cover both VibeProxy
+          # being down (:8317 proxy not running) and hitting the Anthropic plan
+          # usage cap: the role cools down and fails over to the next chain entry,
+          # reverting when the cap window resets (retry.fallbackRevertPolicy:
+          # cooldown-expiry in config.yml). Never cursor/* Claude — the cursor tier
+          # is composer-2.5 only; vision falls to codex (GPT models support images).
+          smolModel = "vibeproxy/claude-haiku-4-5-20251001";
           modelRoles = {
-            smol = "cursor/composer-2.5";
-            default = "openai-codex/gpt-5.6-sol:low";
+            default = "vibeproxy/claude-opus-4-8";
+            smol = "vibeproxy/claude-haiku-4-5-20251001";
+            slow = "vibeproxy/claude-opus-4-8:high";
+            plan = "vibeproxy/claude-opus-4-8:high";
+            vision = "vibeproxy/claude-sonnet-5";
+            designer = "vibeproxy/claude-opus-4-8";
+            commit = "vibeproxy/claude-haiku-4-5-20251001";
+            tiny = "vibeproxy/claude-haiku-4-5-20251001";
+            task = "vibeproxy/claude-sonnet-5";
+            advisor = "vibeproxy/claude-opus-4-8:high";
           };
           retry.fallbackChains = {
             default = [
-              "openai-codex/gpt-5.6-terra:low"
-              "openai-codex/gpt-5.6-luna:low"
+              "openai-codex/gpt-5.6-sol:high"
+              "openai-codex/gpt-5.6-terra:high"
+              "cursor/composer-2.5"
+            ];
+            smol = [
               "cursor/composer-2.5"
             ];
             slow = [
+              "openai-codex/gpt-5.6-sol:high"
               "openai-codex/gpt-5.6-terra:high"
-              "openai-codex/gpt-5.6-luna:high"
-              "vibeproxy/claude-opus-4-8:high"
+            ];
+            plan = [
+              "openai-codex/gpt-5.6-sol:high"
+            ];
+            task = [
+              "openai-codex/gpt-5.6-sol:low"
+              "cursor/composer-2.5"
+            ];
+            advisor = [
+              "openai-codex/gpt-5.6-sol:high"
+            ];
+            vision = [
+              "openai-codex/gpt-5.6-sol:high"
             ];
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
