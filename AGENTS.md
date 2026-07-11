@@ -2,6 +2,8 @@
 
 This is a nix-darwin dotfiles repo. Config files (lazygit, ghostty, etc.) are symlinked from the Nix store — they're **read-only**. Edit source files here, then rebuild.
 
+For broad, autonomous, high-risk, or multi-session work, follow `AGENT_WORKFLOW.md` and keep a task worklog under `.agents/worklogs/`. Small changes do not require a worklog or Git tag.
+
 ## Host Awareness
 
 Do not infer the current host from paths, prompts, repository names, or prior context. Before any host-specific action — rebuilds, deploys, systemd checks, SSH assumptions, or Darwin vs NixOS decisions — verify the execution host explicitly:
