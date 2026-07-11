@@ -94,11 +94,12 @@ let
   );
 
   hookTargetsArgs = concatMapStringsSep " " (target: "--target ${escapeShellArg target}") hookTargets;
-  upstreamHookTargets = filter (target: target != "omp") hookTargets;
+  upstreamHookTargets = filter (target: target != "omp" && target != "opencode") hookTargets;
   upstreamHookTargetsArgs = concatMapStringsSep " " (
     target: "--target ${escapeShellArg target}"
   ) upstreamHookTargets;
   ompHookEnabled = elem "omp" hookTargets;
+  opencodeHookEnabled = elem "opencode" hookTargets;
 in
 {
   options.modules.services.moshi = {
@@ -150,7 +151,7 @@ in
             })
 
             (optionalAttrs isDarwin (
-              mkIf (cfg.hooks.enable && (upstreamHookTargets != [ ] || ompHookEnabled)) {
+              mkIf (cfg.hooks.enable && (upstreamHookTargets != [ ] || ompHookEnabled || opencodeHookEnabled)) {
                 moshi-agent-hook-install =
                   lib.hm.dag.entryAfter
                     [
@@ -192,6 +193,12 @@ in
                           fi
 
                           rm -f "$HOME/.pi/agent/hooks/post/moshi-hooks.ts"
+                        ''}
+
+                        ${optionalString opencodeHookEnabled ''
+                          if ! XDG_CONFIG_HOME="$HOME/.config/opencode2" "$moshi_hook" install --target opencode; then
+                            echo "warning: moshi-hook install failed for target: opencode" >&2
+                          fi
                         ''}
                       fi
                     '';
