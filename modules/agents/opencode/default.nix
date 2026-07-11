@@ -22,7 +22,7 @@ in
       "${configDir}/ghostty/opencode-keybindings.conf"
     ];
     user.packages = [
-      pkgs.my.opencode2
+      pkgs.llm-agents.opencode
     ];
 
     home-manager.users.${config.user.name} =
@@ -34,6 +34,9 @@ in
         # V2 gets an isolated XDG root so incompatible V1 plugins are never loaded.
         xdg.configFile = {
           "opencode2/opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
+
+          # TODO(opencode-v2): Restore DCP after its plugin supports the V2 API.
+          # TODO(opencode-v2): Restore smart-title after its plugin supports the V2 API.
 
           "opencode2/opencode/rules" = {
             source = "${configDir}/agents/rules";
