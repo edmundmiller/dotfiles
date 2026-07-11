@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   fetchurl,
+  makeWrapper,
 }:
 
 stdenvNoCC.mkDerivation rec {
@@ -15,12 +16,15 @@ stdenvNoCC.mkDerivation rec {
 
   sourceRoot = "package";
   dontBuild = true;
+  nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/bin" "$out/lib/opencode2"
     cp -R bin/. "$out/lib/opencode2/"
-    ln -s "$out/lib/opencode2/opencode2" "$out/bin/opencode2"
+    makeWrapper "$out/lib/opencode2/opencode2" "$out/bin/opencode" \
+      --run 'export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config/opencode2}"'
+    ln -s opencode "$out/bin/opencode2"
     runHook postInstall
   '';
 
@@ -28,7 +32,7 @@ stdenvNoCC.mkDerivation rec {
     description = "OpenCode 2.0 beta CLI";
     homepage = "https://v2.opencode.ai/";
     license = lib.licenses.mit;
-    mainProgram = "opencode2";
+    mainProgram = "opencode";
     platforms = [ "aarch64-darwin" ];
   };
 }
