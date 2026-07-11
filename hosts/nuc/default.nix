@@ -1441,6 +1441,7 @@ in
     agents = {
       codex.enable = true;
       omp.enable = true;
+      opencode.enable = true;
       pi.enable = true;
     };
     services = {
