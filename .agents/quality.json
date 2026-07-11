@@ -1,0 +1,42 @@
+{
+  "checks": [
+    {
+      "id": "repo-quality",
+      "kind": "full-validation",
+      "command": "./bin/hey check --worktree",
+      "description": "Darwin evaluation, formatting, hooks, and shell tests"
+    },
+    {
+      "id": "agent-quality-tests",
+      "kind": "test",
+      "command": "python3 -m unittest tests/test_agent_quality.py",
+      "description": "Agent workflow engine behavior"
+    },
+    {
+      "id": "test-confidence",
+      "kind": "test-audit",
+      "command": "python3 bin/agent-quality audit-tests tests bin/agent_fleet packages/pi-packages",
+      "description": "Vacuous and skipped test heuristics"
+    },
+    {
+      "id": "inventory-drift",
+      "kind": "documentation",
+      "command": "python3 bin/agent-quality inventory --check",
+      "description": "Generated capability inventory matches its manifest"
+    },
+    {
+      "id": "visual-regression",
+      "kind": "visual",
+      "command": "python3 bin/agent-quality visual-compare tests/visual/baseline tests/visual/current",
+      "paths": ["packages/*/screenshots/**", "tests/visual/**"],
+      "description": "Screenshot baseline comparison for declared UI surfaces"
+    },
+    {
+      "id": "zsh-performance",
+      "kind": "performance",
+      "command": "./bin/hey zbench-check",
+      "paths": ["config/zsh/**", "modules/shell/zsh/**", "bin/zbench*"],
+      "description": "Zsh startup performance regression threshold"
+    }
+  ]
+}
