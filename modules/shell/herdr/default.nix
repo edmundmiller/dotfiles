@@ -1102,7 +1102,7 @@ in
               "pi-extension-conflict-cleanup"
               "claude-settings-bootstrap"
               "codex-config-bootstrap"
-              "opencode-setup"
+              "opencode-v1-cleanup"
               "hermes-bootstrap"
             ]
             ''
@@ -1134,8 +1134,9 @@ in
               ''}
 
               ${optionalString (cfg.integrations.opencode.enable && config.modules.agents.opencode.enable) ''
-                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode"
-                XDG_CONFIG_HOME="$HOME/.config" install_integration opencode
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode2/opencode"
+                ${pkgs.coreutils}/bin/ln -sfn "$HOME/.config/opencode2/opencode" "$HOME/.config/opencode"
+                install_integration opencode
               ''}
 
               ${optionalString (cfg.integrations.omp.enable && config.modules.agents.omp.enable) ''
