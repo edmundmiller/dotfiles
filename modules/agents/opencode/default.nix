@@ -23,6 +23,7 @@ in
     ];
     user.packages = [
       pkgs.llm-agents.opencode
+      pkgs.my.opencode2
     ];
 
     home-manager.users.${config.user.name} =
