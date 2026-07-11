@@ -514,12 +514,12 @@ let
       msg = "Good Morning scene doesn't turn off whitenoise";
     }
     {
-      test = (goodNightScene.entities."switch.eve_energy_20ebu4101" or null) == "off";
-      msg = "Good Night scene must leave whitenoise off until audiobook speaker gate";
+      test = !(goodNightScene.entities ? "switch.eve_energy_20ebu4101");
+      msg = "Good Night scene must not force whitenoise off (manual/automation owns it)";
     }
     {
-      test = (sleepScene.entities."switch.eve_energy_20ebu4101" or null) == "off";
-      msg = "Sleep scene must leave whitenoise off until audiobook speaker gate";
+      test = !(sleepScene.entities ? "switch.eve_energy_20ebu4101");
+      msg = "Sleep scene must not force whitenoise off (manual/automation owns it)";
     }
     {
       test = (sleepScene.entities."switch.desk_monitor" or null) == "off";

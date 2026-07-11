@@ -335,7 +335,6 @@ in
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
-          "switch.eve_energy_20ebu4101" = "off"; # Whitenoise waits for final Sleep phase
           "cover.smartwings_window_covering" = "closed";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
@@ -356,7 +355,6 @@ in
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
-          "switch.eve_energy_20ebu4101" = "off"; # Whitenoise waits for sleep_done + bedroom audiobook
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
