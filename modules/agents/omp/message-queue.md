@@ -67,7 +67,7 @@ rendered `config.yml`.
 - **seqeratop**: smol `cursor/composer-2.5`; default `openai-codex/gpt-5.6-sol:low`.
 - **fallbacks**: shared `slow` falls back Sol → Terra → Luna; mactraitorpro
   default falls back to GLM only, while its `plan`/`slow` paths include
-  `cursor/grok-4.5-high` before GLM.
+  `xai-oauth/grok-4.5:high` before GLM.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` can list unsupported
 ids; smoke-test every new id before trusting it. Verified GPT-5.6 ids:

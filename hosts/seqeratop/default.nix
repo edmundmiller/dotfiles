@@ -109,12 +109,12 @@
             default = [
               "openai-codex/gpt-5.6-terra:low"
               "openai-codex/gpt-5.6-luna:low"
-              "cursor/grok-4.5-high"
+              "xai-oauth/grok-4.5:high"
             ];
             slow = [
               "openai-codex/gpt-5.6-terra:high"
               "openai-codex/gpt-5.6-luna:high"
-              "cursor/grok-4.5-high"
+              "xai-oauth/grok-4.5:high"
             ];
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,

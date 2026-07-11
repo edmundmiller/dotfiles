@@ -105,13 +105,13 @@
               "opencode-go/glm-5.2"
             ];
             plan = [
-              "cursor/grok-4.5-high"
+              "xai-oauth/grok-4.5:high"
               "opencode-go/glm-5.2"
             ];
             slow = [
               "openai-codex/gpt-5.6-terra:high"
               "openai-codex/gpt-5.6-luna:high"
-              "cursor/grok-4.5-high"
+              "xai-oauth/grok-4.5:high"
               "opencode-go/glm-5.2"
             ];
             smol = [
