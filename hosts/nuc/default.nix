@@ -34,6 +34,17 @@ let
     ];
     doCheck = false;
   };
+  rtkHermes = pkgs.python313Packages.buildPythonPackage rec {
+    pname = "rtk-hermes";
+    version = "1.2.3";
+    pyproject = true;
+    src = pkgs.fetchPypi {
+      pname = "rtk_hermes";
+      inherit version;
+      hash = "sha256-tOljjbIXSZIdbuNfkb4AkHtZw3EKjEavq7BCs4/vFK8=";
+    };
+    build-system = with pkgs.python313Packages; [ setuptools ];
+  };
   hermesAgentBase = pkgs.symlinkJoin {
     name = "${hermesAgentUpstream.name}-honcho";
     paths = [ hermesAgentUpstream ];
@@ -72,7 +83,7 @@ let
         cp ${hermesAgentUpstream}/bin/$exe "$out/bin/$exe"
         chmod u+w "$out/bin/$exe"
         wrapProgram "$out/bin/$exe" \
-          --prefix PYTHONPATH : "${honchoAi}/${pkgs.python313.sitePackages}"
+          --prefix PYTHONPATH : "${honchoAi}/${pkgs.python313.sitePackages}:${rtkHermes}/${pkgs.python313.sitePackages}"
         substituteInPlace "$out/bin/.$exe-wrapped" \
           --replace-fail "${hermesAgentUpstream}/share/hermes-agent/plugins" "$out/share/hermes-agent/plugins"
       done
@@ -1012,6 +1023,7 @@ in
           prek
           himalaya
           whisper-cpp
+          rtk
         ];
         settings = {
           stt.provider = "local_command";
