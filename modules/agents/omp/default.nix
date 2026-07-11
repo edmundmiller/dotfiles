@@ -98,9 +98,14 @@ let
       fi
 
       rm -f "$out/bin/omp"
+      # PI_CONFIG_DIR is a leaf dir NAME (default ".omp"), which omp's
+      # DirResolver joins onto os.homedir() — it is NOT an absolute path.
+      # Passing an absolute path yields path.join(HOME, "/abs") = a doubled
+      # ~/Users/<user>/.omp tree for plugins/cache/logs/stats.db. Pass the
+      # basename only. PI_CODING_AGENT_DIR below IS an absolute override.
       makeWrapper "$out/lib/omp/omp" "$out/bin/omp" \
         --set PI_SKIP_VERSION_CHECK 1 \
-        --set PI_CONFIG_DIR ${lib.escapeShellArg ompConfigDir} \
+        --set PI_CONFIG_DIR ${lib.escapeShellArg (builtins.baseNameOf ompConfigDir)} \
         --set PI_CODING_AGENT_DIR ${lib.escapeShellArg ompAgentDir} \
         --set PONYTAIL_DEFAULT_MODE full \
         --set SKILLOPT_SLEEP_REPO ${lib.escapeShellArg "${skilloptSleepSource}"} \
