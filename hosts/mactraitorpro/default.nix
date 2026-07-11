@@ -88,15 +88,19 @@
         codex.enable = true;
         omp = {
           enable = true;
-          smolModel = "cursor/composer-2.5";
+          # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex.
+          # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
+          smolModel = "xai-oauth/grok-composer-2.5-fast";
           modelRoles = {
-            smol = "cursor/composer-2.5";
+            smol = "xai-oauth/grok-composer-2.5-fast";
             default = "xai-oauth/grok-4.5";
+            # Shared plan defaults to vibeproxy; override to a local provider.
+            plan = "xai-oauth/grok-4.5:high";
           };
           modelProviderOrder = [
             "openai-codex"
             "xai-oauth"
-            "cursor"
+            "openrouter"
             "opencode-go"
           ];
           retry.modelFallback = true;
@@ -105,7 +109,7 @@
               "opencode-go/glm-5.2"
             ];
             plan = [
-              "xai-oauth/grok-4.5:high"
+              "openai-codex/gpt-5.6-sol:high"
               "opencode-go/glm-5.2"
             ];
             slow = [

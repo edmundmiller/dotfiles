@@ -58,16 +58,14 @@ Claude Opus 4.8); kilo/Claude remains only a fallback. There is no separate
 ### Per-host overrides
 
 Shared role defaults live in `config/omp/config.yml`. Host auth/quota differences
-belong in `modules.agents.omp.modelRoles`, which is rendered into the Nix-managed
-config at activation. `modules.agents.omp.smolModel` also injects `PI_SMOL_MODEL`
-for the smol/commit fast path. Precedence: `--smol` flag > `PI_SMOL_MODEL` env >
-rendered `config.yml`.
+belong in `modules.agents.omp.modelRoles` / `retry.fallbackChains` on each host.
+`modules.agents.omp.smolModel` also injects `PI_SMOL_MODEL` for the smol/commit
+fast path. Precedence: `--smol` flag > `PI_SMOL_MODEL` env > rendered `config.yml`.
 
-- **mactraitorpro**: default `xai-oauth/grok-4.5`; smol `cursor/composer-2.5`.
-- **seqeratop**: smol `cursor/composer-2.5`; default `openai-codex/gpt-5.6-sol:low`.
-- **fallbacks**: shared `slow` falls back Sol → Terra → Luna; mactraitorpro
-  default falls back to GLM only, while its `plan`/`slow` paths include
-  `xai-oauth/grok-4.5:high` before GLM.
+Providers differ by machine — personal vs work do not share Cursor/xai/VibeProxy.
+Read the host `omp` block comments in `hosts/*/default.nix` before changing
+fallbacks. Shared `slow` is Sol → Terra → Luna; host chains may only use that
+host's real providers. Smoke-test every new id with `omp models` on-target.
 
 **Gotcha — Codex catalog lies.** `omp models openai-codex` can list unsupported
 ids; smoke-test every new id before trusting it. Verified GPT-5.6 ids:

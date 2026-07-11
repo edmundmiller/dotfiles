@@ -44,7 +44,7 @@ OMP's runtime symlink to it. Its block reason should explain:
 Keep those alternatives in the hook's `GUIDANCE_LINES`; the reason is shown
 back to the model as the failed tool result.
 
-## Per-host model roles
+## Per-host model roles and providers
 
 `modules.agents.omp.smolModel` sets `PI_SMOL_MODEL` in the wrapper for a
 declarative per-host smol/fast model (also drives commit, which falls back to
@@ -53,11 +53,11 @@ into the rendered `config.yml`. Use it only for real host auth or quota
 differences; keep shared defaults in `config/omp/config.yml`. Precedence:
 `--smol` flag > `PI_SMOL_MODEL` > rendered `config.yml`.
 
-Current split: MacTraitor-Pro uses `xai-oauth/grok-4.5` for default
-and `cursor/composer-2.5` for smol; Seqeratop renders `cursor/composer-2.5`
-for smol and `openai-codex/gpt-5.6-sol:low` for default. Keep future
-host-specific role changes in the host `modules.agents.omp` block, not shared
-`config.yml`.
+**Providers are host-specific.** Do not cross-wire prefixes across laptops.
+Source of truth: the `modules.agents.omp` block comments + pins in each
+`hosts/*/default.nix`. Validate new ids with `omp models <provider>` on that
+host before adding roles/fallbacks. Never invent hybrid ids like
+`cursor/grok-*`.
 
 ## Docs
 

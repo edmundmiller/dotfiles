@@ -98,6 +98,8 @@
         codex.enable = true;
         omp = {
           enable = true;
+          # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic).
+          # No xai-oauth here — do not pin xai-oauth/* fallbacks.
           # Seqeratop has Cursor SDK wired through Pi, so use Cursor Composer
           # for smol and low-thinking Codex for the default role.
           smolModel = "cursor/composer-2.5";
@@ -109,12 +111,12 @@
             default = [
               "openai-codex/gpt-5.6-terra:low"
               "openai-codex/gpt-5.6-luna:low"
-              "xai-oauth/grok-4.5:high"
+              "cursor/composer-2.5"
             ];
             slow = [
               "openai-codex/gpt-5.6-terra:high"
               "openai-codex/gpt-5.6-luna:high"
-              "xai-oauth/grok-4.5:high"
+              "vibeproxy/claude-opus-4-8:high"
             ];
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
