@@ -22,72 +22,38 @@ in
       "${configDir}/ghostty/opencode-keybindings.conf"
     ];
     user.packages = [
-      pkgs.llm-agents.opencode
       pkgs.my.opencode2
     ];
 
     home-manager.users.${config.user.name} =
       { config, lib, ... }:
       let
-        opencodeConfigDir = "${config.home.homeDirectory}/.config/opencode";
+        opencodeV1ConfigDir = "${config.home.homeDirectory}/.config/opencode";
       in
       {
-        # Symlink config files to ~/.config/opencode/
+        # V2 gets an isolated XDG root so incompatible V1 plugins are never loaded.
         xdg.configFile = {
-          "opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
-          "opencode/smart-title.jsonc".source = "${configDir}/opencode/smart-title.jsonc";
-          "opencode/dcp.jsonc".source = "${configDir}/opencode/dcp.jsonc";
+          "opencode2/opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
 
-          # Rules and modes shared across all agents (Claude, OpenCode, Pi)
-          # Single source of truth in config/agents/
-          "opencode/rules" = {
+          "opencode2/opencode/rules" = {
             source = "${configDir}/agents/rules";
             recursive = true;
           };
-          "opencode/agent" = {
+          "opencode2/opencode/agent" = {
             source = "${configDir}/agents/modes";
             recursive = true;
           };
-          "opencode/command" = {
+          "opencode2/opencode/command" = {
             source = "${configDir}/opencode/command";
             recursive = true;
           };
-          # Note: tool/ is copied via activation script (not symlinked)
-          # because TypeScript tools need to resolve node_modules from ~/.config/opencode/
-
         };
 
-        home.activation.opencode-setup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          # Ensure plugin directory exists (user-managed plugins go here too)
-          ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/plugin"
-          ${pkgs.coreutils}/bin/mkdir -p "${opencodeConfigDir}/tool"
-
-          # Skills are generated into ~/.config/opencode/skills by the skills catalog.
-          rm -rf "${opencodeConfigDir}/skill"
-
-          # Copy package.json (can't symlink - bun install modifies lockfile location)
-          ${pkgs.coreutils}/bin/cp -f "${configDir}/opencode/package.json" "${opencodeConfigDir}/package.json"
-
-          # Copy tool/ directory (can't symlink - TypeScript needs to resolve node_modules)
-          ${pkgs.rsync}/bin/rsync -a --delete "${configDir}/opencode/tool/" "${opencodeConfigDir}/tool/"
-
-          # Install dependencies if bun is available
-          if command -v bun &> /dev/null; then
-            cd "${opencodeConfigDir}"
-
-            # Only run if dependencies likely changed
-            if [ ! -d node_modules ] || [ ! -f bun.lockb ]; then
-              echo "Running bun install for OpenCode dependencies..."
-              bun install --silent || echo "Warning: bun install failed; OpenCode plugins may be incomplete."
-            fi
+        home.activation.opencode-v1-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          if [ -d "${opencodeV1ConfigDir}" ]; then
+            ${pkgs.coreutils}/bin/chmod -R u+w "${opencodeV1ConfigDir}"
           fi
-        '';
-
-        home.activation.opencode-stale-git-ai-plugin-cleanup = lib.hm.dag.entryAfter [ "opencode-setup" ] ''
-          plugin="${opencodeConfigDir}/plugins/git-ai.ts"
-          if [ -f "$plugin" ] && ${pkgs.gnugrep}/bin/grep -q '/Users/emiller/.git-ai/bin/git-ai' "$plugin"; then
-            ${pkgs.coreutils}/bin/rm -f "$plugin"
-          fi
+          ${pkgs.coreutils}/bin/rm -rf "${opencodeV1ConfigDir}"
         '';
       };
   };
