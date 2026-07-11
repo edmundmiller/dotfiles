@@ -76,8 +76,10 @@
     },
     "agents-workspace": {
       "inputs": {
+        "cronalytics": "cronalytics",
         "googleWorkspaceCli": "googleWorkspaceCli",
         "hermesAgent": "hermesAgent",
+        "hermesEval": "hermesEval",
         "llm-agents": [
           "llm-agents"
         ],
@@ -86,11 +88,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783807696,
-        "narHash": "sha256-ixjmjG+2xgQeNkXvx/sQgPT9dFzdWM7kjmKXO9l1Jjg=",
+        "lastModified": 1783810583,
+        "narHash": "sha256-m4Bwjq+rfd5wTlzDcOJc831WYVz5z5F3WgQZZMLXZfo=",
         "ref": "main",
-        "rev": "76276d5cf3e4528cf13cbc6be22f359f7e959df8",
-        "revCount": 588,
+        "rev": "b454332d8a80d41fdf834435790f771e23c7c6d1",
+        "revCount": 589,
         "type": "git",
         "url": "ssh://git@github.com/edmundmiller/agents-workspace"
       },
@@ -298,6 +300,23 @@
       "original": {
         "owner": "reekta92",
         "repo": "clin-rs",
+        "type": "github"
+      }
+    },
+    "cronalytics": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779771049,
+        "narHash": "sha256-KsKdMr4PKexQKLNQbIBGn03nE76UJVoCavJUj850nZs=",
+        "owner": "8bit64k",
+        "repo": "cronalytics",
+        "rev": "7735418a48231e26a8a88578f75c70bcaf12195e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "8bit64k",
+        "ref": "v1.1.0",
+        "repo": "cronalytics",
         "type": "github"
       }
     },
@@ -1095,6 +1114,22 @@
         "owner": "NousResearch",
         "ref": "v2026.6.19",
         "repo": "hermes-agent",
+        "type": "github"
+      }
+    },
+    "hermesEval": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778958868,
+        "narHash": "sha256-3epbEGts3/JrTNyXTa3MofD5kl/F/2Ev19Epg+cR1N4=",
+        "owner": "Saurav0989",
+        "repo": "hermes-eval",
+        "rev": "5812c539a55a7a3497fc47ab2f0a7b9569b5e236",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Saurav0989",
+        "repo": "hermes-eval",
         "type": "github"
       }
     },
