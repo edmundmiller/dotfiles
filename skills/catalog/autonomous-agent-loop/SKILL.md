@@ -12,7 +12,7 @@ Use this skill when the task should finish without repeated user nudges.
 1. Restate the requested end state as an outcome, not a task list.
 2. Define concrete verification evidence before editing: commands, diffs, rendered output, smoke checks, logs, or artifact paths.
 3. If a durable goal tool exists and no active goal covers the work, create one. Do not invent a token budget.
-4. For common Edmund workflows, prefer the prompt templates in `~/.pi/agent/prompts/`: `goalize.md` to start durable work and `goal-continue-audit.md` to recover from early stops. Keep project-specific details in the goal text or repo docs instead of creating many templates.
+4. Prefer existing `goalize` and `goal-continue-audit` prompt templates for common start/recovery loops. Keep project-specific details in the goal text or repo docs instead of creating many templates.
 5. Inspect repo/session state before changing files; preserve unrelated user changes.
 
 ## Work loop
@@ -24,6 +24,7 @@ Repeat until done or blocked:
 3. Inspect fresh evidence.
 4. Update the plan based on what happened.
 5. Continue without waiting for the user unless a decision/access blocker is real.
+6. For background jobs, use a blocking or longest bounded wait when available. After an unchanged status, increase the interval; never poll again immediately unless the status changed or a real deadline is near.
 
 Do not stop at:
 

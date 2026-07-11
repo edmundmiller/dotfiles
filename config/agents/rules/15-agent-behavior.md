@@ -18,5 +18,6 @@ Before changing code:
 - For external state changes, a successful command/API response is not verification. Re-read the authoritative state or user-visible artifact that should change before claiming success.
 - Do not clean up unrelated code; mention it separately.
 - Define success criteria for non-trivial tasks, then verify them.
+- A skipped or no-op check (`no files to check`, zero tests collected, missing validator) is not verification. Run a check that exercises the changed artifact, and never report the no-op as passed.
 
 Every changed line should trace directly to the user request.

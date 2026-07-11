@@ -13,6 +13,7 @@ waiver_path: .agents/waivers/AGENT-03.md
 - **Diff policy:** prefer `sem diff` over `git diff` (entity-level changes, better for agent review). Use native `git diff` only when sem lacks needed flags/output.
 - **Selective staging:** use `git hunks list` / `git hunks add <hunk-id>` — non-interactive, deterministic hunk IDs.
 - **Dotfiles exception**: sibling layout (`../dotfiles.branch`) via `.envrc` override
+- **Commit scope:** before committing, compare staged paths with the current request. “Commit/push” authorizes only those paths; if they are already landed and only unrelated paths remain, report that state instead of touching them.
 
 ## Non-interactive defaults (agents)
 
