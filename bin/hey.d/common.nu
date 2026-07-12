@@ -215,16 +215,33 @@ export def system-rebuild [action: string, ...args: string] {
   )
   let agent_rebuild_args = if $agent_mode { ["--no-write-lock-file" "--show-trace"] } else { ["--no-write-lock-file"] }
   let agent_nix_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
+  let github_token = if $ctx.os_name == "macos" { ^gh auth token | str trim } else { "" }
+  let existing_nix_config = ($env.NIX_CONFIG? | default "")
+  let authenticated_nix_config = if ($github_token | is-empty) {
+    $existing_nix_config
+  } else if ($existing_nix_config | is-empty) {
+    $"access-tokens = github.com=($github_token)"
+  } else {
+    $"($existing_nix_config)\naccess-tokens = github.com=($github_token)"
+  }
 
-  # Pre-fetch flake inputs as the user before sudo. sudo strips access to
-  # the 1Password SSH agent socket (it lives under the user's home), so
-  # private inputs like agents-workspace fail to fetch from root. Archiving
-  # here puts every locked input into /nix/store using the user's SSH agent,
-  # after which the root-side eval doesn't need network.
+  # Pre-fetch every locked input before rebuilding. Darwin uses its gh token;
+  # the NUC wrapper reads the root-only opnix token.
   if $agent_mode {
     print $"hey re: archiving flake inputs for ($ctx.flake_host)..."
   }
-  let archive_result = (^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-update-lock-file >/dev/null" | complete)
+  let archive_result = if $ctx.os_name == "macos" {
+    with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-update-lock-file >/dev/null" | complete
+    }
+  } else {
+    let private_github = "/run/current-system/sw/bin/nix-private-github"
+    if ($private_github | path exists) {
+      ^sudo $private_github nix flake archive --no-update-lock-file $ctx.flake_dir | complete
+    } else {
+      ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix flake archive --no-update-lock-file >/dev/null" | complete
+    }
+  }
   maybe-suggest-cache-bootstrap $archive_result.stderr
   if (($archive_result.stdout | str trim) | is-not-empty) {
     print $archive_result.stdout
@@ -251,25 +268,32 @@ export def system-rebuild [action: string, ...args: string] {
   if $ctx.os_name == "macos" {
     let has_darwin_rebuild = ((^bash -c $"[[ -x '($ctx.darwin_rebuild)' ]]" | complete).exit_code == 0)
 
-    if $has_darwin_rebuild {
-      with-sudo-path { ^/usr/bin/sudo $ctx.darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
-    } else {
-      print $"darwin-rebuild not found at ($ctx.darwin_rebuild), building via nix..."
-      ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix build '.#darwinConfigurations.($ctx.flake_host).system' ($agent_nix_args | str join ' ')"
+    with-env { NIX_CONFIG: $authenticated_nix_config } {
+      if $has_darwin_rebuild {
+        with-sudo-path { ^/usr/bin/sudo $ctx.darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
+      } else {
+        print $"darwin-rebuild not found at ($ctx.darwin_rebuild), building via nix..."
+        ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; nix build '.#darwinConfigurations.($ctx.flake_host).system' ($agent_nix_args | str join ' ')"
 
-      let fallback = ($ctx.flake_dir | path join "result" "sw" "bin" "darwin-rebuild")
-      if not ($fallback | path exists) {
-        print -e "Error: darwin-rebuild not found in build result"
-        error make {msg: "darwin-rebuild fallback missing in ./result"}
+        let fallback = ($ctx.flake_dir | path join "result" "sw" "bin" "darwin-rebuild")
+        if not ($fallback | path exists) {
+          print -e "Error: darwin-rebuild not found in build result"
+          error make {msg: "darwin-rebuild fallback missing in ./result"}
+        }
+
+        let old_pwd = (pwd)
+        cd $ctx.flake_dir
+        with-sudo-path { ^/usr/bin/sudo ./result/sw/bin/darwin-rebuild --flake $".#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
+        cd $old_pwd
       }
-
-      let old_pwd = (pwd)
-      cd $ctx.flake_dir
-      with-sudo-path { ^/usr/bin/sudo ./result/sw/bin/darwin-rebuild --flake $".#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
-      cd $old_pwd
     }
   } else {
-    with-sudo-path { ^nixos-rebuild --flake $ctx.flake_dir --sudo ...$agent_rebuild_args $action ...$args }
+    let private_github = "/run/current-system/sw/bin/nix-private-github"
+    if ($private_github | path exists) {
+      with-sudo-path { ^sudo $private_github nixos-rebuild --flake $ctx.flake_dir ...$agent_rebuild_args $action ...$args }
+    } else {
+      with-sudo-path { ^nixos-rebuild --flake $ctx.flake_dir --sudo ...$agent_rebuild_args $action ...$args }
+    }
   }
 }
 

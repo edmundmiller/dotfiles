@@ -51,7 +51,7 @@ def nuc-local-rebuild [] {
   cd $ctx.flake_dir
 
   print "=== NUC deploy mode: explicit local nixos-rebuild ==="
-  with-sudo-path { ^nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --sudo --show-trace --accept-flake-config --max-jobs 1 switch }
+  with-sudo-path { ^sudo nix-private-github nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --show-trace --accept-flake-config --max-jobs 1 switch }
   nuc-post-deploy-check true
 }
 
@@ -117,15 +117,15 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="
-    ^ssh $NUC_HOST $"cd '($remote_dir)' && nix build .#nixosConfigurations.nuc.config.system.build.vm --show-trace --accept-flake-config --max-jobs 1"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nix build .#nixosConfigurations.nuc.config.system.build.vm --show-trace --accept-flake-config --max-jobs 1"
     return
   }
 
   print $"=== Running nixos-rebuild ($mode) from synced worktree on NUC ==="
   if $mode == "build" {
-    ^ssh $NUC_HOST $"cd '($remote_dir)' && nixos-rebuild build --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nixos-rebuild build --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
   } else {
-    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nixos-rebuild ($mode) --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nixos-rebuild ($mode) --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
     if ($mode == "switch") or ($mode == "test") {
       nuc-post-deploy-check false
     }
