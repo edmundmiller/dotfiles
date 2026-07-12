@@ -921,6 +921,7 @@
                 pkgs.runCommand "package-harness-tests"
                   {
                     nativeBuildInputs = [
+                      pkgs.bash
                       pkgs.python3
                       pkgs.git
                     ];
