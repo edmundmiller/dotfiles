@@ -14,8 +14,8 @@ let
   hunkPackageBase = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default;
   hunkPackagePatched = hunkPackageBase.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [
-      ../../../patches/hunk/0001-add-source-switch-menu.patch
-      ../../../patches/hunk/0002-add-which-key.patch
+      ../../../overlays/hunk/patches/0001-add-source-switch-menu.patch
+      ../../../overlays/hunk/patches/0002-add-which-key.patch
     ];
   });
   hunkPackage =

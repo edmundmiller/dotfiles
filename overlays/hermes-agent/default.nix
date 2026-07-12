@@ -3,7 +3,7 @@ final: prev:
 let
   patchedHermesAgent = prev.llm-agents."hermes-agent".overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [
-      ../../patches/hermes-agent/0002-normalize-auto-title-inputs.patch
+      ./patches/0002-normalize-auto-title-inputs.patch
     ];
   });
 

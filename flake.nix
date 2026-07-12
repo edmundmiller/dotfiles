@@ -527,6 +527,14 @@
                 enable = true;
                 stages = [ "pre-commit" ];
               };
+              forbid-root-patches = {
+                enable = true;
+                name = "forbid root patches directory";
+                entry = "${pkgs.coreutils}/bin/false";
+                language = "system";
+                files = "^patches/";
+                stages = [ "pre-commit" ];
+              };
               forbid-new-submodules = {
                 enable = true;
                 stages = [ "pre-push" ];
