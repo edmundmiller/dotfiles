@@ -1874,9 +1874,7 @@ in
     script = lib.mkForce ''
       exec ${nixPrivateGithub}/bin/nix-private-github \
         ${config.system.build.nixos-rebuild}/bin/nixos-rebuild \
-        ${lib.escapeShellArgs (
-          [ config.system.autoUpgrade.operation ] ++ config.system.autoUpgrade.flags
-        )}
+        ${config.system.autoUpgrade.operation} ${toString config.system.autoUpgrade.flags}
     '';
   };
 
