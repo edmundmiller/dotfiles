@@ -197,6 +197,44 @@ class HarnessTest(unittest.TestCase):
         self.assertEqual(metadata["source"], f"https://github.com/{original['owner']}/{original['repo']}.git")
         self.assertEqual(metadata["ref"], original["ref"])
 
+    def test_patch_locality_guard(self):
+        root_value = os.environ.get("PACKAGE_HARNESS_REPO_ROOT")
+        self.assertIsNotNone(root_value, "PACKAGE_HARNESS_REPO_ROOT is required")
+        script = Path(root_value) / "bin/check-patch-locality"
+
+        allowed = subprocess.run(
+            [
+                "bash",
+                script,
+                "packages/stack/patches/fix.patch",
+                "overlays/hunk/patches/fix.patch",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        invalid_cases = [
+            (["patches/fix.patch"], "patches/fix.patch"),
+            (["misc/fix.patch"], "misc/fix.patch"),
+            (["packages/group/tool/patches/fix.patch"], "packages/group/tool/patches/fix.patch"),
+            (
+                [
+                    "packages/stack/patches/fix.patch",
+                    "misc/fix.patch",
+                    "overlays/hunk/patches/fix.patch",
+                ],
+                "misc/fix.patch",
+            ),
+        ]
+        for paths, offending_path in invalid_cases:
+            with self.subTest(paths=paths):
+                rejected = subprocess.run(["bash", script, *paths], capture_output=True, text=True)
+                self.assertEqual(rejected.returncode, 1)
+                self.assertIn(
+                    "Patch must live at packages/<name>/patches/*.patch or overlays/<name>/patches/*.patch",
+                    rejected.stderr,
+                )
+                self.assertIn(offending_path, rejected.stderr)
 
 if __name__ == "__main__":
     unittest.main()
