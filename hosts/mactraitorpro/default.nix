@@ -256,7 +256,6 @@
       llm-agents.qmd
       my.zele
       my.work-calendar-busy
-      my.worktree-manager
     ];
 
     home-manager.users.${config.user.name} =
