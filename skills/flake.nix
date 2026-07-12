@@ -107,6 +107,11 @@
       flake = false;
     };
 
+    shadcn-improve = {
+      url = "github:shadcn/improve";
+      flake = false;
+    };
+
     zele-repo = {
       url = "github:remorses/zele";
       flake = false;
@@ -541,6 +546,12 @@
                   filter.maxDepth = 2;
                 };
 
+                shadcn-improve = {
+                  path = inputs.shadcn-improve.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 2;
+                };
+
                 zele = {
                   path = inputs.zele-repo.outPath;
                   subdir = "skills";
@@ -629,6 +640,9 @@
 
                   review-animations.from = "emilkowalski";
                   review-animations.path = "review-animations";
+
+                  improve.from = "shadcn-improve";
+                  improve.path = "improve";
 
                   done.from = "bholmesdev";
                   done.path = "done";
