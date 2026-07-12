@@ -293,7 +293,7 @@ let
       --model ${lib.escapeShellArg cfg.dailyIntrospection.model} \
       --no-session \
       --max-time ${toString cfg.dailyIntrospection.maxTimeSeconds} \
-      --tools=read,grep,glob,edit,write \
+      --tools=read,grep,glob,edit,write,task \
       --approval-mode yolo \
       -p "$prompt"
 
@@ -505,6 +505,11 @@ in
 
       home.file.".omp/agent/config.yml" = {
         source = ompConfigFile;
+        force = true;
+      };
+
+      home.file.".omp/agent/commands/go.md" = {
+        source = "${configDir}/omp/commands/go.md";
         force = true;
       };
 
