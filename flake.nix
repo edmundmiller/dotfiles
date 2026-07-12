@@ -139,14 +139,14 @@
       # Linux packages
       pkgs = mkPkgs nixpkgs [
         self.overlays.default
-        inputs.llm-agents.overlays.default
+        (_final: _prev: { llm-agents = inputs.llm-agents.packages.${linuxSystem}; })
       ] linuxSystem;
       pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
 
       # Darwin packages
       darwinPkgs = mkPkgs nixpkgs [
         self.overlays.default
-        inputs.llm-agents.overlays.default
+        (_final: _prev: { llm-agents = inputs.llm-agents.packages.${darwinSystem}; })
       ] darwinSystem;
 
       mkRenovateUpdateNixHashes =
