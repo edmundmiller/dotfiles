@@ -18,7 +18,7 @@ Read only the sessions needed to establish patterns. Filter at the source: prefe
 
 - With zero or one manifest entry, inspect it directly and do not spawn a worker.
 - With two or more entries, group entries by `client`, then greedily balance each client group by `bytes` into no more than eight disjoint shards. Launch every shard in one Task batch with read-only `scout` agents.
-- Give each worker only its shard’s manifest entries. Require these headings: `Sessions inspected`, `Repeated failures or preferences`, `Evidence locations`, and `Smallest durable prevention surface`. Workers never edit files.
+- Give each worker only its shard’s manifest entries. Require the worker’s `summary` field itself to contain these headings: `Sessions inspected`, `Repeated failures or preferences`, `Evidence locations`, and `Smallest durable prevention surface`. Under `Sessions inspected`, list every assigned path verbatim exactly once; do not rely on a separate files field. Workers never edit files.
 - Before synthesis, require one successful result per shard and exact set equality between manifest paths and the union of paths under `Sessions inspected`. A path must appear in exactly one shard.
 - Retry a failed shard once. If it still fails, inspect that shard directly in the main process. If any manifest path remains missing or duplicated, make no edit or commit; report the failed shard and path set and leave related work open.
 - Only the main process writes. Apply a durable change only after complete path coverage and when the existing evidence threshold below is met. Weak findings are report-only.
