@@ -76,6 +76,19 @@ def load_metadata(unit: Unit) -> dict[str, object]:
         raise HarnessError(f"invalid metadata {unit.metadata_path}: source and ref must be non-empty strings")
     if not isinstance(data["patches"], list) or not all(isinstance(item, str) and item for item in data["patches"]):
         raise HarnessError(f"invalid metadata {unit.metadata_path}: patches must be a list of paths")
+    patch_root = unit.path if unit.path.is_dir() else unit.path.parent
+    resolved_root = patch_root.resolve()
+    for patch in data["patches"]:
+        patch_path = Path(patch)
+        if patch_path.is_absolute() or ".." in patch_path.parts:
+            raise HarnessError(f"invalid metadata {unit.metadata_path}: invalid patch path {patch!r}")
+        resolved = (patch_root / patch_path).resolve()
+        try:
+            resolved.relative_to(resolved_root)
+        except ValueError:
+            raise HarnessError(f"invalid metadata {unit.metadata_path}: patch escapes unit {patch!r}") from None
+        if not resolved.is_file():
+            raise HarnessError(f"invalid metadata {unit.metadata_path}: patch is not a file {patch!r}")
     checks = data["checks"]
     if not isinstance(checks, list) or not checks or not all(
         isinstance(command, list) and command and all(isinstance(arg, str) and arg for arg in command)
@@ -107,7 +120,13 @@ def check(unit: Unit) -> None:
         for index, command in enumerate(commands):
             cwd = checkout if index >= 2 + len(metadata["patches"]) else None
             print("+", " ".join(command), flush=True)
-            subprocess.run(command, cwd=cwd, check=True)
+            try:
+                subprocess.run(command, cwd=cwd, check=True)
+            except OSError as error:
+                effective_cwd = cwd if cwd is not None else Path.cwd()
+                raise HarnessError(
+                    f"failed to launch {' '.join(command)} in {effective_cwd}: {error}"
+                ) from error
 
 
 def list_units(root: Path) -> None:
