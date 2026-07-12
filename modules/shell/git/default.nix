@@ -135,6 +135,8 @@ in
           ++ lib.optional cfg.diffity.enable my.diffity # GitHub-style diff viewer/code review
         );
 
+      environment.systemPackages = lib.optional isDarwin pkgs.my.lgtm;
+
       # Use home-manager's xdg.configFile directly for proper activation
       home-manager.users.${config.user.name} =
         { lib, ... }:
