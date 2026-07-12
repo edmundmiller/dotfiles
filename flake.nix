@@ -804,7 +804,7 @@
                     for file in "$@"; do
                       # Skip lock files and known large files
                       case "$file" in
-                        *.lock|flake.lock|*package-lock.json|yarn.lock|pnpm-lock.yaml|config/qutebrowser/css/github.com|.beads/issues.jsonl) continue ;;
+                        *.lock|flake.lock|*package-lock.json|yarn.lock|pnpm-lock.yaml|config/qutebrowser/css/github.com|*.beads/issues.jsonl) continue ;;
                         *.png|*.jpg|*.jpeg|*.gif|*.ico|*.svg) continue ;;
                       esac
                       if [ -f "$file" ]; then
