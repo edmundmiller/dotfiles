@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+token_file="${GITHUB_NIX_TOKEN_FILE:-/var/lib/opnix/secrets/githubNixToken}"
+
+if [[ ! -s "$token_file" ]]; then
+  echo "GitHub token file is missing or empty: $token_file" >&2
+  exit 1
+fi
+
+token="$(<"$token_file")"
+export NIX_CONFIG="${NIX_CONFIG:+${NIX_CONFIG}
+}access-tokens = github.com=$token"
+
+exec "$@"

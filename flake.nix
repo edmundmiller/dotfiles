@@ -992,6 +992,17 @@
                     echo "All dagster checks passed" > $out/result
                   '';
 
+              nix-private-github =
+                pkgs.runCommand "nix-private-github-check"
+                  {
+                    nativeBuildInputs = [ pkgs.bash ];
+                  }
+                  ''
+                    NIX_PRIVATE_GITHUB=${./bin/nix-private-github} \
+                      bash ${./bin/tests/nix-private-github.bash}
+                    touch $out
+                  '';
+
               # HA config validation is now done at build time on the NUC via
               # validate-config.nix (uses HA's own check_config). The JSON schema
               # in schemas/adaptive-lighting.json is kept as agent reference only.
