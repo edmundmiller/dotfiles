@@ -310,6 +310,10 @@ let
     export NODE_LLAMA_CPP_GPU=off
     exec ${pkgs.llm-agents.qmd}/bin/qmd "$@"
   '';
+  nixPrivateGithub = pkgs.writeShellApplication {
+    name = "nix-private-github";
+    text = builtins.readFile ../../bin/nix-private-github;
+  };
   himalayaFastmailSetupScript = pkgs.writeShellScript "hermes-scintillate-himalaya-fastmail-setup" ''
     set -eu
 
@@ -938,6 +942,7 @@ in
   };
 
   environment.systemPackages = with pkgs; [
+    nixPrivateGithub
     taskwarrior3
     sqlite
     jq # For agent skills that parse JSON (e.g. homeassistant)
@@ -1854,10 +1859,25 @@ in
   services.onepassword-secrets = {
     enable = true;
     secrets = {
+      githubNixToken = {
+        reference = "op://Agents/GH PA dotfiles flake/credential";
+      };
       radarAgentmailCredential = {
         reference = "op://Agents/Radar Agentmail/credential";
       };
     };
+  };
+
+  systemd.services.nixos-upgrade = {
+    after = [ "opnix-secrets.service" ];
+    requires = [ "opnix-secrets.service" ];
+    script = lib.mkForce ''
+      exec ${nixPrivateGithub}/bin/nix-private-github \
+        ${config.system.build.nixos-rebuild}/bin/nixos-rebuild \
+        ${lib.escapeShellArgs (
+          [ config.system.autoUpgrade.operation ] ++ config.system.autoUpgrade.flags
+        )}
+    '';
   };
 
   age = {
