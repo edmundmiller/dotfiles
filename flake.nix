@@ -1026,6 +1026,11 @@
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
               };
+
+              nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
               # NixOS VM test: boot HA with our domain modules, verify config + API.
