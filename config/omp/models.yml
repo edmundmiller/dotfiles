@@ -35,3 +35,7 @@ providers:
       - id: claude-haiku-4-5-20251001
         name: VibeProxy Claude Haiku 4.5
         contextWindow: 200000
+      - id: claude-fable-5
+        name: VibeProxy Claude Fable 5
+        contextWindow: 200000
+        reasoning: true
