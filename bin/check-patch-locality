@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+invalid=0
+for path in "$@"; do
+  if [[ ! "$path" =~ ^(packages|overlays)/[^/]+/patches/[^/]+\.patch$ ]]; then
+    echo "Patch must live at packages/<name>/patches/*.patch or overlays/<name>/patches/*.patch: $path" >&2
+    invalid=1
+  fi
+done
+exit "$invalid"
