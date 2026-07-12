@@ -1,0 +1,22 @@
+{
+  "source": "https://github.com/modem-dev/hunk.git",
+  "ref": "v0.17.0",
+  "patches": [
+    "patches/0001-add-source-switch-menu.patch",
+    "patches/0002-add-which-key.patch",
+    "patches/0003-persist-resumable-review.patch"
+  ],
+  "checks": [
+    ["bun", "install", "--frozen-lockfile", "--ignore-scripts"],
+    ["bun", "run", "typecheck"],
+    ["bun", "test", "src/core/cli.test.ts"],
+    ["bun", "test", "src/core/resumableReview.test.ts"],
+    ["bun", "test", "src/ui/AppHost.interactions.test.tsx"],
+    ["bun", "test", "src/ui/AppHost.reload.test.tsx"],
+    ["bun", "test", "src/ui/AppHost.responsive.test.tsx"],
+    ["bun", "test", "src/ui/components/ui-components.test.tsx"],
+    ["bun", "test", "src/ui/lib/appMenus.test.ts"],
+    ["bun", "test", "src/ui/lib/sourceSwitch.test.ts"],
+    ["bun", "test", "src/ui/lib/ui-lib.test.ts"]
+  ]
+}

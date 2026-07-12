@@ -858,7 +858,7 @@
           devShells = {
             # Headless agent dev shell (nix develop .#agent)
             agent = pkgs.mkShell {
-              packages = self.packages.${system}.agent-env.paths;
+              packages = self.packages.${system}.agent-env.paths ++ [ self.packages.${system}.package-harness ];
               shellHook = ''
                 echo "dotfiles agent shell (headless)"
               '';
@@ -871,6 +871,7 @@
             default = pkgs.mkShellNoCC {
               packages =
                 self.packages.${system}.agent-env.paths
+                ++ [ self.packages.${system}.package-harness ]
                 ++ (with pkgs; [
                   deadnix
                   nixfmt
@@ -899,6 +900,7 @@
                   deploy-rs.packages.${system}.default
                   nushell
                   inputs.llm-agents.packages.${system}.beads-rust
+                  self.packages.${system}.package-harness
                 ]
                 ++ config.pre-commit.settings.enabledPackages;
               shellHook = config.pre-commit.shellHook + ''
@@ -915,6 +917,13 @@
             # deploy-rs checks - validates deployment configurations (merge attrset)
             (deploy-rs.lib.${system}.deployChecks self.deploy)
             // {
+              package-harness-tests =
+                pkgs.runCommand "package-harness-tests" { nativeBuildInputs = [ pkgs.python3 ]; }
+                  ''
+                    cd ${./packages/package-harness}
+                    PYTHONDONTWRITEBYTECODE=1 python3 test_package_harness.py
+                    touch $out
+                  '';
 
               # zunit shell function tests
               zunit-tests =
