@@ -151,14 +151,27 @@ def "main check" [
     }
 
     print ""
-    print "==> Running zunit shell tests..."
-    let zunit_check = (^nix build $".#checks.($ctx.nix_system).zunit-tests" --no-link | complete)
-    if $zunit_check.exit_code == 0 {
-      print "✓ Shell tests OK"
+    print "==> Running tmux tests..."
+    let tmux_check = (^nix build $".#checks.($ctx.nix_system).zunit-tests" --no-link | complete)
+    if $tmux_check.exit_code == 0 {
+      print "✓ Tmux tests OK"
     } else {
-      print "✗ Shell tests FAILED"
-      if (($zunit_check.stderr | str trim) | is-not-empty) {
-        print -e $zunit_check.stderr
+      print "✗ Tmux tests FAILED"
+      if (($tmux_check.stderr | str trim) | is-not-empty) {
+        print -e $tmux_check.stderr
+      }
+      $failed = true
+    }
+
+    print ""
+    print "==> Running package harness tests..."
+    let package_harness_check = (^nix build $".#checks.($ctx.nix_system).package-harness-tests" --no-link | complete)
+    if $package_harness_check.exit_code == 0 {
+      print "✓ Package harness tests OK"
+    } else {
+      print "✗ Package harness tests FAILED"
+      if (($package_harness_check.stderr | str trim) | is-not-empty) {
+        print -e $package_harness_check.stderr
       }
       $failed = true
     }

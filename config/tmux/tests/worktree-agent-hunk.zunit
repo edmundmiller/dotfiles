@@ -1,6 +1,8 @@
 #!/usr/bin/env zunit
 
 @setup {
+  export ORIGINAL_PATH=$PATH
+  export BASH_BIN=$(command -v bash)
   export ROOT=$PWD
   export REAL_BASE64=$(command -v base64)
   export TEST_DIR=$(mktemp -d /tmp/agent-hunk.zunit.XXXXXX)
@@ -72,7 +74,7 @@ EOF
   export RUN_LAUNCHER="$TEST_DIR/run-launcher"
   cat > "$RUN_LAUNCHER" <<'EOF'
 #!/usr/bin/env bash
-exec env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX=1 TMUX_BIN="$MOCK_BIN/tmux" DOTFILES_BIN="$MOCK_HELPERS" TMUX_HOME="$ROOT/config/tmux" OPENSESSIONS_DIR="$TEST_DIR/no-opensessions" TEST_DIR="$TEST_DIR" WORKTREE="$WORKTREE" TMUX_LOG="$TMUX_LOG" "$LAUNCHER" "$@"
+exec env PATH="$MOCK_BIN:$ORIGINAL_PATH" TMUX=1 TMUX_BIN="$MOCK_BIN/tmux" DOTFILES_BIN="$MOCK_HELPERS" TMUX_HOME="$ROOT/config/tmux" OPENSESSIONS_DIR="$TEST_DIR/no-opensessions" TEST_DIR="$TEST_DIR" WORKTREE="$WORKTREE" TMUX_LOG="$TMUX_LOG" "$LAUNCHER" "$@"
 EOF
   chmod +x "$RUN_LAUNCHER"
   export MOCK_TMUX_HOME="$TEST_DIR/tmux-home"
@@ -231,7 +233,7 @@ EOF
 }
 
 @test 'picker prepends runtimes, cancels without dispatch, and decodes exact selections' {
-  local picker_env=(env HOME="$TEST_DIR/home" PI_CODING_AGENT_DIR="$TEST_DIR/home/.pi/agent" PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN=/bin/bash BUN_BIN="$MOCK_BIN/bun" FZF_TMUX_BIN="$MOCK_BIN/fzf-tmux" BASE64_BIN="$REAL_BASE64" OPENCODE_BIN="$MOCK_BIN/opencode" DOTFILES_BIN="$MOCK_HELPERS" TMUX_HOME="$MOCK_TMUX_HOME" MOCK_CANONICAL=/repo WORKTREE="$WORKTREE" TMUX_LOG="$TMUX_LOG" PICKER_INPUT="$PICKER_INPUT" DISPATCH_LOG="$DISPATCH_LOG" BUN_ARGS="$BUN_ARGS")
+  local picker_env=(env HOME="$TEST_DIR/home" PI_CODING_AGENT_DIR="$TEST_DIR/home/.pi/agent" PATH="$MOCK_BIN:$ORIGINAL_PATH" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN="$BASH_BIN" BUN_BIN="$MOCK_BIN/bun" FZF_TMUX_BIN="$MOCK_BIN/fzf-tmux" BASE64_BIN="$REAL_BASE64" OPENCODE_BIN="$MOCK_BIN/opencode" DOTFILES_BIN="$MOCK_HELPERS" TMUX_HOME="$MOCK_TMUX_HOME" MOCK_CANONICAL=/repo WORKTREE="$WORKTREE" TMUX_LOG="$TMUX_LOG" PICKER_INPUT="$PICKER_INPUT" DISPATCH_LOG="$DISPATCH_LOG" BUN_ARGS="$BUN_ARGS")
 
   run "${picker_env[@]}" FZF_MODE=cancel "$PICKER"
   assert $state equals 0
@@ -268,7 +270,7 @@ EOF
 }
 
 @test 'prompt passes hostile names through popup stdin without command substitution' {
-  run env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN=/bin/bash TMUX_HOME="$ROOT/config/tmux" TMUX_LOG="$TMUX_LOG" "$PROMPT" pi
+  run env PATH="$MOCK_BIN:$ORIGINAL_PATH" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN="$BASH_BIN" TMUX_HOME="$ROOT/config/tmux" TMUX_LOG="$TMUX_LOG" "$PROMPT" pi
   assert $state equals 0
   local log=$(cat "$TMUX_LOG")
   assert "$log" contains 'display-popup'
@@ -277,7 +279,7 @@ EOF
 
   local name expected actual
   for name in 'space name' "single'quote" 'double"quote' '$(touch /tmp/nope)' '`touch /tmp/nope`' '-leading'; do
-    run env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN=/bin/bash TMUX_HOME="$MOCK_TMUX_HOME" TMUX_LOG="$TMUX_LOG" PROMPT="$PROMPT" PROMPT_ARGV="$PROMPT_ARGV" PROMPT_VALUE="$name" bash -c 'printf "%s\n" "$PROMPT_VALUE" | "$PROMPT" --read pi'
+    run env PATH="$MOCK_BIN:$ORIGINAL_PATH" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN="$BASH_BIN" TMUX_HOME="$MOCK_TMUX_HOME" TMUX_LOG="$TMUX_LOG" PROMPT="$PROMPT" PROMPT_ARGV="$PROMPT_ARGV" PROMPT_VALUE="$name" "$BASH_BIN" -c 'printf "%s\n" "$PROMPT_VALUE" | "$PROMPT" --read pi'
     assert $state equals 0
     expected=$(printf '%s' "$name" | "$REAL_BASE64" | tr -d '\n')
     actual=$(sed -n '4p' "$PROMPT_ARGV")
@@ -287,7 +289,7 @@ EOF
   [[ ! -e /tmp/nope ]]
 
   : > "$TMUX_LOG"
-  run env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" TMUX_HOME="$ROOT/config/tmux" TMUX_LOG="$TMUX_LOG" "$PROMPT" invalid
+  run env PATH="$MOCK_BIN:$ORIGINAL_PATH" TMUX_BIN="$MOCK_BIN/tmux" TMUX_HOME="$ROOT/config/tmux" TMUX_LOG="$TMUX_LOG" "$PROMPT" invalid
   assert $state equals 1
   assert "$(cat "$TMUX_LOG")" is_empty
 }
@@ -310,10 +312,9 @@ exit 0
 EOF
   chmod +x "$MOCK_BIN/git" "$MOCK_BIN/hunk"
   export HUNK_LOG="$TEST_DIR/hunk.log" REPO="$repo"
-  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:/usr/bin:/bin" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" HUNK_LOG="$HUNK_LOG" REPO="$REPO" HUNK_LAUNCHER="$HUNK_LAUNCHER" bash -c 'exec bash "$HUNK_LAUNCHER" --resume </dev/null'
+  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:$ORIGINAL_PATH" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" HUNK_LOG="$HUNK_LOG" REPO="$REPO" HUNK_LAUNCHER="$HUNK_LAUNCHER" "$BASH_BIN" -c 'exec "$BASH_BIN" "$HUNK_LAUNCHER" --resume </dev/null'
   assert $state equals 0
-  assert "$(cat "$HUNK_LOG")" contains 'resume --help'
-  assert "$(cat "$HUNK_LOG")" contains 'resume'
+  [[ "$(cat "$HUNK_LOG")" == $'resume --help\nresume' ]]
 }
 
 @test 'open-hunk resume falls back while existing modes remain unchanged' {
@@ -328,6 +329,7 @@ esac
 EOF
   cat > "$MOCK_BIN/hunk" <<'EOF'
 #!/usr/bin/env bash
+printf '%s\n' "$*" >> "$HUNK_LOG"
 [[ "$*" == 'resume --help' ]] && exit 1
 exit 99
 EOF
@@ -336,12 +338,13 @@ EOF
 printf '%s\n' "$*" >> "$BUNX_LOG"
 EOF
   chmod +x "$MOCK_BIN/git" "$MOCK_BIN/hunk" "$MOCK_BIN/bunx"
-  export BUNX_LOG="$TEST_DIR/bunx.log" REPO="$repo"
-  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:/usr/bin:/bin" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" BUNX_LOG="$BUNX_LOG" REPO="$REPO" bash "$HUNK_LAUNCHER" --resume
+  export BUNX_LOG="$TEST_DIR/bunx.log" HUNK_LOG="$TEST_DIR/hunk.log" REPO="$repo"
+  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:$ORIGINAL_PATH" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" BUNX_LOG="$BUNX_LOG" HUNK_LOG="$HUNK_LOG" REPO="$REPO" "$BASH_BIN" "$HUNK_LAUNCHER" --resume
   assert $state equals 0
   assert "$(cat "$BUNX_LOG")" contains 'hunkdiff diff'
 
   : > "$BUNX_LOG"
-  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:/usr/bin:/bin" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" BUNX_LOG="$BUNX_LOG" REPO="$REPO" bash "$HUNK_LAUNCHER" --staged
+  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:$ORIGINAL_PATH" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" BUNX_LOG="$BUNX_LOG" HUNK_LOG="$HUNK_LOG" REPO="$REPO" "$BASH_BIN" "$HUNK_LAUNCHER" --staged
   assert $state equals 99
+  [[ "$(tail -n 1 "$HUNK_LOG")" == 'diff --staged' ]]
 }

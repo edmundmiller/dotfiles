@@ -12,12 +12,10 @@ let
   cfg = config.modules.shell.git;
   inherit (config.dotfiles) configDir;
   hunkPackageBase = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  hunkMetadata = builtins.fromJSON (builtins.readFile ../../../overlays/hunk/package-harness.json);
+  hunkPatches = map (patch: ../../../overlays/hunk + "/${patch}") hunkMetadata.patches;
   hunkPackagePatched = hunkPackageBase.overrideAttrs (old: {
-    patches = (old.patches or [ ]) ++ [
-      ../../../overlays/hunk/patches/0001-add-source-switch-menu.patch
-      ../../../overlays/hunk/patches/0002-add-which-key.patch
-      ../../../overlays/hunk/patches/0003-persist-resumable-review.patch
-    ];
+    patches = (old.patches or [ ]) ++ hunkPatches;
   });
   hunkPackage =
     if pkgs.stdenv.hostPlatform.isDarwin then
