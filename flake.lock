@@ -90,16 +90,16 @@
       "locked": {
         "lastModified": 1783810583,
         "narHash": "sha256-m4Bwjq+rfd5wTlzDcOJc831WYVz5z5F3WgQZZMLXZfo=",
-        "ref": "main",
+        "owner": "edmundmiller",
+        "repo": "agents-workspace",
         "rev": "b454332d8a80d41fdf834435790f771e23c7c6d1",
-        "revCount": 589,
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/agents-workspace"
+        "type": "github"
       },
       "original": {
+        "owner": "edmundmiller",
         "ref": "main",
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/agents-workspace"
+        "repo": "agents-workspace",
+        "type": "github"
       }
     },
     "base16": {
@@ -2611,16 +2611,16 @@
       "locked": {
         "lastModified": 1778981531,
         "narHash": "sha256-n/1dECQoqj7+daULRHImOMlJYnHFiqgyNQFX//FotqU=",
-        "ref": "refs/tags/v0.3.0",
+        "owner": "edmundmiller",
+        "repo": "tnote",
         "rev": "32b9fbc2d6b04acdabab47c7b6155691aea8aa8c",
-        "revCount": 366,
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/tnote"
+        "type": "github"
       },
       "original": {
-        "ref": "refs/tags/v0.3.0",
-        "type": "git",
-        "url": "ssh://git@github.com/edmundmiller/tnote"
+        "owner": "edmundmiller",
+        "ref": "v0.3.0",
+        "repo": "tnote",
+        "type": "github"
       }
     },
     "treefmt-nix": {

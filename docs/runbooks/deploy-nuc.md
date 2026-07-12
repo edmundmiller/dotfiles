@@ -1,3 +1,11 @@
+---
+purpose: Deploy and verify the NUC from the dotfiles worktree.
+applies_to: NUC builds, switches, rollbacks, and deployment recovery.
+entrypoint: Run `hey nuc dry-activate`, then `hey nuc`.
+verification: Confirm the generation and relevant systemd services on the NUC.
+update_when: NUC authentication, build location, commands, or verification changes.
+---
+
 # Runbook: Deploy to NUC
 
 ## Overview
@@ -8,7 +16,13 @@ The NUC is a NixOS server managed from this dotfiles repo — there is no CI-dri
 
 - SSH access to `nuc` (configured in `~/.ssh/config` via home-manager)
 - Tailscale connected (the NUC is on the tailnet)
+- `/var/lib/opnix/secrets/githubNixToken` materialized by `opnix-secrets.service`
 - Clean working tree recommended (`git stash` uncommitted work)
+
+Private `github:` flake inputs use `nix-private-github`. It reads the root-only
+opnix credential and supplies Nix `access-tokens` without logging the token.
+`hey nuc`, local NUC `hey re`, and `nixos-upgrade.service` use this wrapper.
+Darwin `hey re` obtains the same narrow credential from the local `gh` keyring.
 
 ## Deploy
 
@@ -76,6 +90,20 @@ ssh nuc "sudo nixos-rebuild --rollback switch"
 ssh nuc "sudo journalctl -u <service-name> --since '5 minutes ago'"
 # Roll back while investigating
 hey nuc-rollback
+```
+
+### Private flake authentication fails
+
+```bash
+ssh nuc "sudo test -s /var/lib/opnix/secrets/githubNixToken"
+ssh nuc "sudo systemctl restart opnix-secrets.service"
+```
+
+The source reference is `op://Agents/GH PA dotfiles flake/credential`. Never
+print the materialized value. Verify access through the wrapper:
+
+```bash
+ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-workspace/main"
 ```
 
 ### Gateway restart behavior after deploy
