@@ -1,10 +1,6 @@
 ---
 name: simplify
-description: >
-  Review changed code for reuse, quality, and efficiency, then fix issues found.
-  Use when asked to "simplify", "review changes", "clean up my diff", or after
-  completing a feature to polish before commit. Launches 3 parallel review agents
-  covering code reuse, code quality, and efficiency.
+description: Review changed code for reuse, quality, and efficiency, then fix worthwhile issues.
 ---
 
 # Simplify: Code Review and Cleanup
