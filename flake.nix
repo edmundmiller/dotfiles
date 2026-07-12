@@ -227,6 +227,7 @@
           builtins.removeAttrs (mapModules ./packages (p: callPackageWithInputs p { })) [
             "audio-priority-bar"
             "ergodox-firmware"
+            "lgtm"
             "stack"
           ]
           // {
