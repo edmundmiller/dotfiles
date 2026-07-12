@@ -1,9 +1,12 @@
+---
+purpose: Index canonical repository documentation for humans and agents.
+applies_to: Any task that needs architecture, workflow, or recovery context.
+entrypoint: Read only the index section matching the task.
+verification: Follow the linked canonical doc and run its named check.
+update_when: A canonical doc is added, moved, or changes ownership.
+---
+
 # Docs
-
-Living documentation for this dotfiles repo.
-
-The goal of this directory is to keep **humans and agents aligned** on how the
-system works, what is intentional, and where changes should land.
 
 ## Index
 
@@ -16,9 +19,11 @@ system works, what is intentional, and where changes should land.
 
 ### Agent references
 
+- Root `AGENTS.md` routes tasks; the nearest nested `AGENTS.md` adds subsystem rules.
+- [../AGENT_WORKFLOW.md](../AGENT_WORKFLOW.md) — canonical risk-gated workflow
+- [agent-quality.md](./agent-quality.md) — generated quality capability inventory
 - [../.agents/skills/nix-darwin-reference/SKILL.md](../.agents/skills/nix-darwin-reference/SKILL.md)
-  — agent-facing nix-darwin reference workflow for Darwin/macOS Nix work;
-  keep this out of global agent prompts
+  — Darwin/macOS Nix workflow; keep it out of global agent prompts
 
 ### ADE / workflows
 
@@ -34,11 +39,4 @@ system works, what is intentional, and where changes should land.
 
 ## Conventions
 
-- Prefer **small, linkable docs** over giant notes dumps.
-- Prefer docs that answer one of these questions:
-  - What exists?
-  - Why does it exist?
-  - How should it evolve?
-  - How do we recover when it breaks?
-- When a workflow becomes important enough to preserve across sessions, give it
-  a doc here instead of leaving it in chat history.
+Follow the documentation contract in root `AGENTS.md`. Keep each doc small, linkable, and focused on one question: what exists, why it exists, how it should evolve, or how to recover.

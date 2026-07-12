@@ -8,9 +8,9 @@ waiver_path: .agents/waivers/AGENT-14.md
 
 # AGENTS.md Style
 
-When writing AGENTS.md files, document **conventions, patterns, and gotchas** — not file inventories.
+Use `AGENTS.md` as a router for conventions, patterns, and gotchas—not as a file inventory.
 
-- Don't list files the agent can discover by listing the directory
-- Don't maintain tables that go stale — provide a command to query live state instead
-- Prefer "teach to fish": `nix flake metadata foo/ --json | jg '...'` over a static table of inputs
-- Put metadata in the files themselves (e.g. YAML frontmatter `purpose:`) then query: `head -5 *.md | grep 'purpose:'`
+- Route to the nearest authoritative skill, doc, or tool.
+- Replace discoverable file lists and stale tables with a command that queries live state.
+- Give every new or touched canonical doc a short YAML summary closed by line 7: `purpose`, `applies_to`, `entrypoint`, `verification`, and `update_when`.
+- Update canonical docs with the behavior they describe. When drift repeats, strengthen the smallest existing enforcement instead of adding prose.
