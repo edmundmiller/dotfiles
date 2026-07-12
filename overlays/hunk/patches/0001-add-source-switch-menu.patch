@@ -336,10 +336,23 @@ index 22c52d2..309f11c 100644
 +  });
  });
 diff --git i/src/ui/AppHost.responsive.test.tsx w/src/ui/AppHost.responsive.test.tsx
-index adf0dfd..6bc8334 100644
+index adf0dfd..62316e2 100644
 --- i/src/ui/AppHost.responsive.test.tsx
 +++ w/src/ui/AppHost.responsive.test.tsx
-@@ -192,12 +192,12 @@ describe("responsive app", () => {
+@@ -134,6 +134,12 @@ describe("responsive app", () => {
+       await act(async () => {
+         await setup.renderOnce();
+       });
++      await act(async () => {
++        await setup.mockInput.pressArrow("right");
++      });
++      await act(async () => {
++        await setup.renderOnce();
++      });
+ 
+       const menuFrame = setup.captureCharFrame();
+       expect(menuFrame).toContain("[ ] Sidebar");
+@@ -192,12 +198,12 @@ describe("responsive app", () => {
      const wide = await captureFrameForBootstrap(createBootstrap("auto", true), 220);
      const narrow = await captureFrameForBootstrap(createBootstrap("auto", true), 150);
  
