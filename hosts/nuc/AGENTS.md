@@ -1,3 +1,11 @@
+---
+purpose: Route NUC host changes to its deployment and subsystem conventions.
+applies_to: Changes under `hosts/nuc` and live NUC verification.
+entrypoint: Read the matching section, then use `hey nuc-wt build`.
+verification: Evaluate on the NUC and inspect the changed live service or state.
+update_when: NUC ownership, deployment, authentication, or service behavior changes.
+---
+
 # NUC Host
 
 Intel NUC home server running NixOS. Primary role: Hermes agents, media services, home automation.
@@ -164,18 +172,20 @@ Located in `hosts/nuc/secrets/`:
 
 Two mechanisms:
 
-| Method                | Trigger     | Source                                              |
-| --------------------- | ----------- | --------------------------------------------------- |
-| `hey nuc`             | Manual      | Synced worktree eval/build on NUC                   |
-| `nixos-upgrade.timer` | Daily 04:40 | `github:edmundmiller/dotfiles#nuc` with `--refresh` |
+| Method                | Trigger     | Source                                                            |
+| --------------------- | ----------- | ----------------------------------------------------------------- |
+| `hey nuc`             | Manual      | Synced worktree eval/build on NUC                                 |
+| `nixos-upgrade.timer` | Daily 04:40 | Authenticated `github:edmundmiller/dotfiles#nuc` with `--refresh` |
 
 **Manual rebuild on NUC** (no local clone needed):
 
 ```bash
-ssh nuc "sudo nixos-rebuild switch --refresh --flake github:edmundmiller/dotfiles#nuc"
+ssh nuc "sudo nix-private-github nixos-rebuild switch --refresh --flake github:edmundmiller/dotfiles#nuc"
 ```
 
 Config: `hosts/_server.nix` — `system.autoUpgrade.flake = "github:edmundmiller/dotfiles#${hostname}"`.
+Private inputs use the root-only opnix secret at
+`/var/lib/opnix/secrets/githubNixToken`; never print its contents.
 
 ### Worktree Testing
 
