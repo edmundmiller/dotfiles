@@ -14,17 +14,18 @@ This repo manages read-only Nix store symlinks. Edit their source here, then reb
 
 Read only the rows that match the task. The nearest nested `AGENTS.md` adds local rules.
 
-| Task                                                  | Read or use                                                                                                     |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Broad, autonomous, high-risk, or multi-session change | Load `dotfiles-agent-workflow`, then follow `AGENT_WORKFLOW.md`                                                 |
-| Find system documentation                             | Search `purpose:`, `applies_to:`, or `update_when:` in the first seven lines under `docs/`, then read the match |
-| Change a subsystem                                    | Its nearest nested `AGENTS.md`; use `fff` to find it                                                            |
-| Change agent rules, modes, or runtime config          | `config/agents/AGENTS.md`                                                                                       |
-| Add or update skills                                  | `skills/AGENTS.md`; load `skill-development` or `skill-quality`                                                 |
-| Darwin or Nix work                                    | Load `nix-darwin-reference`; use `hey`, not raw Nix when a wrapper exists                                       |
-| NUC deployment                                        | `docs/runbooks/deploy-nuc.md`; validate on the NUC                                                              |
-| Agent quality gates                                   | `docs/agent-quality.md`; use `hey agent-*` commands                                                             |
-| OpenClaw/Hermes runtime behavior                      | Work in `agents-workspace`; this repo owns host deployment wiring only                                          |
+| Task                                                  | Read or use                                                                                                            |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Broad, autonomous, high-risk, or multi-session change | Load `dotfiles-agent-workflow`, then follow `AGENT_WORKFLOW.md`                                                        |
+| Find system documentation                             | Search `purpose:`, `applies_to:`, or `update_when:` in the first seven lines under `docs/`, then read the match        |
+| Change a subsystem                                    | Its nearest nested `AGENTS.md`; use `fff` to find it                                                                   |
+| Change agent rules, modes, or runtime config          | `config/agents/AGENTS.md`                                                                                              |
+| Add or update skills                                  | `skills/AGENTS.md`; load `skill-development` or `skill-quality`                                                        |
+| Maintain a package or overlay                         | Its nearest nested `AGENTS.md`; use `pkg-list` and `pkg-check <unit>` for package validation, `hey` for host lifecycle |
+| Darwin or Nix work                                    | Load `nix-darwin-reference`; use `hey`, not raw Nix when a wrapper exists                                              |
+| NUC deployment                                        | `docs/runbooks/deploy-nuc.md`; validate on the NUC                                                                     |
+| Agent quality gates                                   | `docs/agent-quality.md`; use `hey agent-*` commands                                                                    |
+| OpenClaw/Hermes runtime behavior                      | Work in `agents-workspace`; this repo owns host deployment wiring only                                                 |
 
 For skills, load any matching `skill://<name>` before acting. For files, use `fff` search tools. Prefer `sem diff`; use `git hunks` for selective staging.
 
