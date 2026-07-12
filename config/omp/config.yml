@@ -80,6 +80,35 @@ ask:
 recap:
   enabled: true
   idleSeconds: 240
+todo:
+  enabled: true
+glob:
+  enabled: true
+grep:
+  enabled: true
+astGrep:
+  enabled: true
+astEdit:
+  enabled: true
+debug:
+  enabled: true
+speechgen:
+  enabled: true
+inspect_image:
+  enabled: true
+checkpoint:
+  enabled: true
+fetch:
+  enabled: true
+vault:
+  enabled: true
+github:
+  enabled: true
+web_search:
+  enabled: true
+browser:
+  enabled: true
+
 tools:
   discoveryMode: mcp-only
   artifactSpillThreshold: 50
