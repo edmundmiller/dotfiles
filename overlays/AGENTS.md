@@ -1,4 +1,18 @@
+---
+purpose: Define override and patch-maintenance conventions for overlays.
+applies_to: Changes under overlays/.
+entrypoint: Use pkg-list, then read the target overlay and metadata.
+verification: Run pkg-check for declared units and build the affected consumer.
+update_when: Overlay structure, patch policy, or maintainer tooling changes.
+---
+
 # Overlay Notes
+
+## Maintainer checks
+
+- Run `pkg-list` to find units with optional adjacent `package-harness.json` metadata.
+- Run `pkg-check <unit>` for read-only validation against a fresh upstream checkout.
+- Use `hey` for deployment and host lifecycle, not package source validation.
 
 References:
 
