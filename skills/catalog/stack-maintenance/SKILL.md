@@ -14,6 +14,8 @@ Use this skill for PR chains, dependent branches, branch retargeting, merge queu
 - Trust fresh GitHub metadata, not memory. Fetch `baseRefName`, `headRefName`, `mergeStateStatus`, `mergeable`, `reviewDecision`, checks, and auto-merge state before acting.
 - For evidence, compare against the PR head from GitHub (`headRefOid` or `origin/<headRefName>` after fetch), not just a local branch; local branches can be stale.
 - Stacked PRs usually merge bottom-up. A child can become conflicted after its parent merges; expect to rebase or retarget it before merging.
+- `mergeable` and `CLEAN` mean mergeable into the current `baseRefName`, not necessarily into `main`. Report the base explicitly in triage.
+- Do not recommend `gh pr merge` for a PR whose base is another stack branch unless the intent is to merge into that parent branch; otherwise retarget or wait for the parent to land first.
 - `gh pr merge --auto --squash` can merge immediately for intermediate stack branches. Re-read the PR afterward; do not infer from command text.
 - Main may use a merge queue. If GitHub says the merge strategy is controlled by the queue, retry without an explicit strategy, then re-read `state`, `mergedAt`, and `mergeCommit`.
 - Do not approve a PR before reviewing its diff and running the relevant local check. "Clean" only means mergeable, not reviewed.
