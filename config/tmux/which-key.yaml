@@ -201,9 +201,9 @@ items:
       - name: New worktree
         key: w
         command: "run-shell $TMUX_HOME/project-session-prompt.sh create"
-      - name: New Hermes + Hunk work window
+      - name: Agent + Hunk sessions
         key: h
-        command: "run-shell bash $TMUX_HOME/worktree-hermes-hunk-prompt.sh"
+        command: "run-shell bash $TMUX_HOME/worktree-agent-hunk-picker.sh"
       - name: Remove worktree
         key: x
         command: "run-shell $TMUX_HOME/project-session-prompt.sh remove"

@@ -100,8 +100,8 @@ bind V run-shell 'TMUX_PANE_CURRENT_PATH="#{pane_current_path}" "${DOTFILES_BIN:
 # Toggle tml layout (AI + lazygit + shell)
 bind T run '$TMUX_HOME/toggle-tml.sh'
 
-# New sibling work window (opensessions + Hermes + Hunk)
-bind Z run-shell "bash $TMUX_HOME/worktree-hermes-hunk-prompt.sh"
+# Cross-runtime Agent + Hunk session picker
+bind Z run-shell "bash $TMUX_HOME/worktree-agent-hunk-picker.sh"
 
 # Git/review popups
 bind g display-popup -E -w 80% -h 80% -d "#{pane_current_path}" "$TMUX_HOME/open-git-tui.sh"

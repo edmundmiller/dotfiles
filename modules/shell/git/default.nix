@@ -16,6 +16,7 @@ let
     patches = (old.patches or [ ]) ++ [
       ../../../overlays/hunk/patches/0001-add-source-switch-menu.patch
       ../../../overlays/hunk/patches/0002-add-which-key.patch
+      ../../../overlays/hunk/patches/0003-persist-resumable-review.patch
     ];
   });
   hunkPackage =

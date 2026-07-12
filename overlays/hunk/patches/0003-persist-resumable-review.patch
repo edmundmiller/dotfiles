@@ -1,0 +1,527 @@
+diff --git i/src/core/cli.test.ts w/src/core/cli.test.ts
+index 45bdbb4..fda3a46 100644
+--- i/src/core/cli.test.ts
++++ w/src/core/cli.test.ts
+@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSyn
+ import { tmpdir } from "node:os";
+ import { join, resolve } from "node:path";
+ import { parseCli } from "./cli";
++import { persistResumableReview } from "./resumableReview";
+ import { resolveCliVersion } from "./version";
+ 
+ const tempDirs: string[] = [];
+@@ -13,6 +14,21 @@ function createTempDir(prefix: string) {
+   return dir;
+ }
+ 
++function git(cwd: string, ...args: string[]) {
++  const result = Bun.spawnSync(["git", ...args], { cwd, stderr: "pipe", stdout: "pipe" });
++  if (result.exitCode !== 0) throw new Error(result.stderr.toString());
++}
++
++async function withCwd<T>(cwd: string, fn: () => Promise<T>) {
++  const previous = process.cwd();
++  process.chdir(cwd);
++  try {
++    return await fn();
++  } finally {
++    process.chdir(previous);
++  }
++}
++
+ /** Run `fn` with Bun.stdin.stream replaced by a one-shot reader of `text`. */
+ async function withStdin<T>(text: string, fn: () => Promise<T>): Promise<T> {
+   const originalStdin = Bun.stdin.stream;
+@@ -64,6 +80,48 @@ describe("parseCli", () => {
+     expect(parsed.text).not.toContain("Config:");
+     expect(parsed.text).not.toContain("Examples:");
+   });
++  test("lists and parses resumable review mode", async () => {
++    const repo = createTempDir("hunk-cli-resume-");
++    git(repo, "init");
++    persistResumableReview(
++      { kind: "vcs", range: "HEAD~1", staged: true, pathspecs: ["src"], options: { mode: "stack" } },
++      repo,
++    );
++
++    const parsed = await withCwd(repo, () => parseCli(["bun", "hunk", "resume"]));
++    expect(parsed).toEqual({
++      kind: "vcs",
++      range: "HEAD~1",
++      staged: true,
++      pathspecs: ["src"],
++      options: { mode: "stack" },
++    });
++
++    const help = await parseCli(["bun", "hunk"]);
++    expect(help.kind === "help" ? help.text : "").toContain("hunk resume");
++    const resumeHelp = await parseCli(["bun", "hunk", "resume", "--help"]);
++    expect(resumeHelp.kind === "help" ? resumeHelp.text : "").toContain("Reopen");
++  });
++
++  test("resume warns once and safely falls back when no valid marker exists", async () => {
++    const repo = createTempDir("hunk-cli-resume-missing-");
++    git(repo, "init");
++    const messages: string[] = [];
++    const originalWrite = process.stderr.write;
++    process.stderr.write = ((message: string) => {
++      messages.push(message);
++      return true;
++    }) as typeof process.stderr.write;
++    try {
++      const parsed = await withCwd(repo, () => parseCli(["bun", "hunk", "resume"]));
++      expect(parsed).toEqual({ kind: "vcs", staged: false, options: {} });
++      expect(messages).toHaveLength(1);
++      expect(messages[0]).toContain("no resumable review");
++    } finally {
++      process.stderr.write = originalWrite;
++    }
++  });
++
+ 
+   test("prints the same top-level help for --help", async () => {
+     const bare = await parseCli(["bun", "hunk"]);
+diff --git i/src/core/cli.ts w/src/core/cli.ts
+index 043ed26..4c5780a 100644
+--- i/src/core/cli.ts
++++ w/src/core/cli.ts
+@@ -12,6 +12,7 @@ import type {
+   SessionCommentApplyItemInput,
+ } from "./types";
+ import { resolveBundledHunkReviewSkillPath } from "./paths";
++import { loadResumableReview } from "./resumableReview";
+ import { detectVcs } from "./vcs";
+ import { resolveCliVersion } from "./version";
+ 
+@@ -124,6 +125,26 @@ function renderSkillHelp() {
+   ].join("\n");
+ }
+ 
++/** Resolve `hunk resume` to the worktree's last reloadable review input. */
++function parseResumeCommand(tokens: string[]): CliInput | HelpCommandInput {
++  if (tokens.length === 1 && (tokens[0] === "--help" || tokens[0] === "-h")) {
++    return {
++      kind: "help",
++      text: "Usage: hunk resume\n\nReopen the last reloadable review source for this Git worktree.\n",
++    };
++  }
++  if (tokens.length > 0) {
++    throw new Error("`hunk resume` does not accept additional arguments.");
++  }
++
++  const input = loadResumableReview(process.cwd());
++  if (input) return input;
++  process.stderr.write(
++    "Warning: no resumable review found for this worktree; opening working tree changes.\n",
++  );
++  return { kind: "vcs", staged: false, options: {} };
++}
++
+ /** Build the top-level help text shown by bare `hunk` and `hunk --help`. */
+ function renderCliHelp() {
+   return [
+@@ -138,6 +159,7 @@ function renderCliHelp() {
+     "  hunk show [target] [-- <pathspec...>]   review the last commit or a given target",
+     "  hunk stash show [ref]                   review a stash entry (git only)",
+     "  hunk patch [file]                       review a patch file or stdin",
++    "  hunk resume                             reopen this worktree's last review source",
+     "  hunk pager                              general Git pager wrapper with diff detection",
+     "  hunk difftool <left> <right> [path]     review Git difftool file pairs",
+     "  hunk session <subcommand>               inspect or control a live Hunk session",
+@@ -1350,6 +1372,8 @@ export async function parseCli(argv: string[]): Promise<ParsedCliInput> {
+   }
+ 
+   switch (commandName) {
++    case "resume":
++      return parseResumeCommand(rest);
+     case "diff":
+       return parseDiffCommand(rest, argv);
+     case "show":
+diff --git i/src/core/resumableReview.test.ts w/src/core/resumableReview.test.ts
+new file mode 100644
+index 0000000..7cbc3b3
+--- /dev/null
++++ w/src/core/resumableReview.test.ts
+@@ -0,0 +1,106 @@
++import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { dirname, join } from "node:path";
++import { afterEach, describe, expect, test } from "bun:test";
++import type { CliInput } from "./types";
++import { loadResumableReview, persistResumableReview } from "./resumableReview";
++
++const tempDirs: string[] = [];
++
++function tempDir(name: string) {
++  const dir = mkdtempSync(join(tmpdir(), name));
++  tempDirs.push(dir);
++  return dir;
++}
++
++function git(cwd: string, ...args: string[]) {
++  const result = Bun.spawnSync(["git", ...args], { cwd, stderr: "pipe", stdout: "pipe" });
++  if (result.exitCode !== 0) throw new Error(result.stderr.toString());
++  return result.stdout.toString().trim();
++}
++
++function createRepo() {
++  const repo = tempDir("hunk-resume-");
++  git(repo, "init");
++  git(repo, "config", "user.email", "test@example.com");
++  git(repo, "config", "user.name", "Test");
++  writeFileSync(join(repo, "tracked.txt"), "base\n");
++  git(repo, "add", "tracked.txt");
++  git(repo, "commit", "-m", "base");
++  return repo;
++}
++
++function markerPath(repo: string) {
++  return join(git(repo, "rev-parse", "--absolute-git-dir"), "hunk", "resume.json");
++}
++
++afterEach(() => {
++  for (const dir of tempDirs.splice(0)) rmSync(dir, { force: true, recursive: true });
++});
++
++describe("resumable review markers", () => {
++  test("persists and reloads every reopenable input shape without dropping source options", () => {
++    const repo = createRepo();
++    const inputs: CliInput[] = [
++      { kind: "vcs", range: "HEAD~1..HEAD", staged: true, pathspecs: ["src"], options: { menuBar: false, mode: "split", watch: true } },
++      { kind: "show", ref: "HEAD", pathspecs: ["tracked.txt"], options: { theme: "dark" } },
++      { kind: "stash-show", ref: "stash@{1}", options: { lineNumbers: false } },
++      { kind: "diff", left: "before", right: "after", options: { wrapLines: true } },
++      { kind: "patch", file: "changes.patch", options: { pager: true } },
++      { kind: "difftool", left: "old", right: "new", path: "tracked.txt", options: { colorMoved: false } },
++    ];
++
++    for (const input of inputs) {
++      persistResumableReview(input, repo);
++      expect(loadResumableReview(repo)).toEqual(input);
++      const marker = JSON.parse(readFileSync(markerPath(repo), "utf8"));
++      expect(marker).toMatchObject({ version: 1, input });
++      expect(new Date(marker.updatedAt).toISOString()).toBe(marker.updatedAt);
++    }
++  });
++
++  test("stores distinct markers for linked worktrees", () => {
++    const repo = createRepo();
++    const linked = tempDir("hunk-resume-linked-");
++    rmSync(linked, { recursive: true });
++    git(repo, "worktree", "add", "-b", "linked", linked);
++
++    persistResumableReview({ kind: "vcs", staged: false, options: {} }, repo);
++    persistResumableReview({ kind: "show", ref: "HEAD", options: {} }, linked);
++
++    expect(markerPath(linked)).not.toBe(markerPath(repo));
++    expect(loadResumableReview(repo)?.kind).toBe("vcs");
++    expect(loadResumableReview(linked)?.kind).toBe("show");
++  });
++
++  test("returns null for missing, malformed, unsupported, or invalid markers", () => {
++    const repo = createRepo();
++    expect(loadResumableReview(repo)).toBeNull();
++
++    const marker = markerPath(repo);
++    mkdirSync(dirname(marker), { recursive: true });
++    for (const contents of [
++      "not json",
++      JSON.stringify({ version: 2, updatedAt: new Date().toISOString(), input: { kind: "vcs", staged: false, options: {} } }),
++      JSON.stringify({ version: 1, updatedAt: "invalid", input: { kind: "vcs", staged: "no", options: {} } }),
++      JSON.stringify({ version: 1, updatedAt: new Date().toISOString(), input: { kind: "patch", text: "diff", options: {} } }),
++    ]) {
++      writeFileSync(marker, contents);
++      expect(loadResumableReview(repo)).toBeNull();
++    }
++  });
++
++  test("stdin-backed inputs remove an existing marker", () => {
++    const repo = createRepo();
++    for (const input of [
++      { kind: "patch", text: "diff --git a/a b/a\n", options: {} },
++      { kind: "vcs", staged: false, options: { agentContext: "-" } },
++    ] satisfies CliInput[]) {
++      persistResumableReview({ kind: "vcs", staged: true, options: {} }, repo);
++      expect(existsSync(markerPath(repo))).toBe(true);
++      persistResumableReview(input, repo);
++      expect(existsSync(markerPath(repo))).toBe(false);
++      expect(loadResumableReview(repo)).toBeNull();
++    }
++  });
++});
+diff --git i/src/core/resumableReview.ts w/src/core/resumableReview.ts
+new file mode 100644
+index 0000000..e61a1ed
+--- /dev/null
++++ w/src/core/resumableReview.ts
+@@ -0,0 +1,176 @@
++import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
++import { dirname, join } from "node:path";
++import type { CliInput, CommonOptions } from "./types";
++import { canReloadInput } from "./watch";
++
++const MARKER_VERSION = 1;
++
++function isRecord(value: unknown): value is Record<string, unknown> {
++  return typeof value === "object" && value !== null && !Array.isArray(value);
++}
++
++function readCommonOptions(value: unknown): CommonOptions | null {
++  if (!isRecord(value)) return null;
++
++  const options: CommonOptions = {};
++  if (value.mode !== undefined) {
++    if (value.mode !== "auto" && value.mode !== "split" && value.mode !== "stack") return null;
++    options.mode = value.mode;
++  }
++  for (const key of ["vcs", "theme", "agentContext"] as const) {
++    const option = value[key];
++    if (option !== undefined) {
++      if (typeof option !== "string") return null;
++      options[key] = option;
++    }
++  }
++  for (const key of [
++    "pager",
++    "menuBar",
++    "watch",
++    "excludeUntracked",
++    "lineNumbers",
++    "wrapLines",
++    "hunkHeaders",
++    "agentNotes",
++    "copyDecorations",
++    "transparentBackground",
++    "colorMoved",
++  ] as const) {
++    const option = value[key];
++    if (option !== undefined) {
++      if (typeof option !== "boolean") return null;
++      options[key] = option;
++    }
++  }
++  return options;
++}
++
++function readOptionalString(value: unknown) {
++  return value === undefined || typeof value === "string" ? value : null;
++}
++
++function readOptionalStrings(value: unknown) {
++  if (value === undefined) return undefined;
++  return Array.isArray(value) && value.every((item) => typeof item === "string")
++    ? value
++    : null;
++}
++
++function readCliInput(value: unknown): CliInput | null {
++  if (!isRecord(value) || typeof value.kind !== "string") return null;
++  const options = readCommonOptions(value.options);
++  if (!options) return null;
++
++  switch (value.kind) {
++    case "vcs": {
++      const range = readOptionalString(value.range);
++      const pathspecs = readOptionalStrings(value.pathspecs);
++      if (typeof value.staged !== "boolean" || range === null || pathspecs === null) return null;
++      return {
++        kind: "vcs",
++        ...(range === undefined ? {} : { range }),
++        staged: value.staged,
++        ...(pathspecs === undefined ? {} : { pathspecs }),
++        options,
++      };
++    }
++    case "show": {
++      const ref = readOptionalString(value.ref);
++      const pathspecs = readOptionalStrings(value.pathspecs);
++      if (ref === null || pathspecs === null) return null;
++      return {
++        kind: "show",
++        ...(ref === undefined ? {} : { ref }),
++        ...(pathspecs === undefined ? {} : { pathspecs }),
++        options,
++      };
++    }
++    case "stash-show": {
++      const ref = readOptionalString(value.ref);
++      if (ref === null) return null;
++      return { kind: "stash-show", ...(ref === undefined ? {} : { ref }), options };
++    }
++    case "diff":
++      return typeof value.left === "string" && typeof value.right === "string"
++        ? { kind: "diff", left: value.left, right: value.right, options }
++        : null;
++    case "patch":
++      return typeof value.file === "string" && value.text === undefined
++        ? { kind: "patch", file: value.file, options }
++        : null;
++    case "difftool": {
++      const path = readOptionalString(value.path);
++      if (typeof value.left !== "string" || typeof value.right !== "string" || path === null) {
++        return null;
++      }
++      return {
++        kind: "difftool",
++        left: value.left,
++        right: value.right,
++        ...(path === undefined ? {} : { path }),
++        options,
++      };
++    }
++    default:
++      return null;
++  }
++}
++
++function markerPath(cwd: string) {
++  const result = Bun.spawnSync(["git", "rev-parse", "--absolute-git-dir"], {
++    cwd,
++    stdin: "ignore",
++    stdout: "pipe",
++    stderr: "pipe",
++  });
++  if (result.exitCode !== 0) throw new Error(result.stderr.toString().trim() || "not a Git worktree");
++  return join(result.stdout.toString().trim(), "hunk", "resume.json");
++}
++
++function warn(message: string) {
++  process.stderr.write(`Warning: ${message}\n`);
++}
++
++/** Persist the latest reloadable review source for one Git worktree. */
++export function persistResumableReview(input: CliInput, cwd = process.cwd()): void {
++  let path: string;
++  try {
++    path = markerPath(cwd);
++    const normalized = canReloadInput(input) ? readCliInput(input) : null;
++    if (!normalized) {
++      rmSync(path, { force: true });
++      return;
++    }
++
++    mkdirSync(dirname(path), { recursive: true });
++    const temporaryPath = `${path}.${process.pid}.${crypto.randomUUID()}.tmp`;
++    try {
++      writeFileSync(
++        temporaryPath,
++        `${JSON.stringify({ version: MARKER_VERSION, updatedAt: new Date().toISOString(), input: normalized }, null, 2)}\n`,
++        { flag: "wx" },
++      );
++      renameSync(temporaryPath, path);
++    } finally {
++      rmSync(temporaryPath, { force: true });
++    }
++  } catch (error) {
++    warn(`could not persist resumable review: ${error instanceof Error ? error.message : String(error)}`);
++  }
++}
++
++/** Load the latest validated reloadable review source for one Git worktree. */
++export function loadResumableReview(cwd = process.cwd()): CliInput | null {
++  try {
++    const marker: unknown = JSON.parse(readFileSync(markerPath(cwd), "utf8"));
++    if (!isRecord(marker) || marker.version !== MARKER_VERSION) return null;
++    if (typeof marker.updatedAt !== "string" || new Date(marker.updatedAt).toISOString() !== marker.updatedAt) {
++      return null;
++    }
++    const input = readCliInput(marker.input);
++    return input && canReloadInput(input) ? input : null;
++  } catch {
++    return null;
++  }
++}
+diff --git i/src/main.tsx w/src/main.tsx
+index 7d1fcce..1eaf9cf 100644
+--- i/src/main.tsx
++++ w/src/main.tsx
+@@ -10,6 +10,7 @@ import {
+   type JobControlSuspendSupport,
+ } from "./core/jobControl";
+ import { pagePlainText } from "./core/pager";
++import { persistResumableReview } from "./core/resumableReview";
+ import { sanitizeTerminalText } from "./lib/terminalText";
+ import { shutdownSession } from "./core/shutdown";
+ import { renderStaticDiffPager } from "./ui/staticDiffPager";
+@@ -75,6 +76,7 @@ async function main() {
+   }
+ 
+   const { bootstrap, controllingTerminal } = startupPlan;
++  persistResumableReview(bootstrap.input);
+   const hostClient = new SessionBrokerClient<
+     HunkSessionInfo,
+     HunkSessionState,
+diff --git i/src/ui/AppHost.interactions.test.tsx w/src/ui/AppHost.interactions.test.tsx
+index f0ae25d..f7cc6f1 100644
+--- i/src/ui/AppHost.interactions.test.tsx
++++ w/src/ui/AppHost.interactions.test.tsx
+@@ -12,6 +12,7 @@ import type {
+   HunkSessionSnapshot,
+ } from "../hunk-session/types";
+ import type { AppBootstrap, LayoutMode } from "../core/types";
++import { loadResumableReview } from "../core/resumableReview";
+ import { createTestVcsAppBootstrap } from "../../test/helpers/app-bootstrap";
+ import { capturedTestColorToHex } from "../../test/helpers/test-color-helpers";
+ import { createTestDiffFile as buildTestDiffFile, lines } from "../../test/helpers/diff-helpers";
+@@ -1542,6 +1543,8 @@ describe("App interactions", () => {
+   test("session reload preserves live comments while refreshing the file diff", async () => {
+     const dir = mkdtempSync(join(process.cwd(), ".hunk-session-reload-"));
+     const left = join(dir, "before.ts");
++    const git = Bun.spawnSync(["git", "init"], { cwd: dir, stderr: "pipe", stdout: "pipe" });
++    if (git.exitCode !== 0) throw new Error(git.stderr.toString());
+     const right = join(dir, "after.ts");
+     const reviewNote = "Keep this daemon review note";
+ 
+@@ -1556,7 +1559,7 @@ describe("App interactions", () => {
+         mode: "split",
+       },
+     });
+-    const { dispatchCommand, hostClient } = createMockHostClient();
++    const { dispatchCommand, hostClient } = createMockHostClient({ cwd: dir, repoRoot: dir });
+ 
+     const setup = await testRender(<AppHost bootstrap={bootstrap} hostClient={hostClient} />, {
+       width: 220,
+@@ -1614,6 +1617,14 @@ describe("App interactions", () => {
+ 
+       expect(frame).toContain("export const added = true;");
+       expect(frame).toContain(reviewNote);
++      expect(loadResumableReview(dir)).toMatchObject({
++        kind: "diff",
++        left,
++        right,
++        options: {
++          mode: "split",
++        },
++      });
+     } finally {
+       await act(async () => {
+         setup.renderer.destroy();
+@@ -1819,7 +1830,7 @@ describe("App interactions", () => {
+       });
+       await waitForFrame(setup, (frame) => frame.includes("Toggle files/filter focus"), 12);
+ 
+-      for (let index = 0; index < 3; index += 1) {
++      for (let index = 0; index < 4; index += 1) {
+         await act(async () => {
+           await setup.mockInput.pressArrow("right");
+         });
+diff --git i/src/ui/AppHost.tsx w/src/ui/AppHost.tsx
+index c415a0b..b4dca81 100644
+--- i/src/ui/AppHost.tsx
++++ w/src/ui/AppHost.tsx
+@@ -1,6 +1,7 @@
+ import { useCallback, useState } from "react";
+ import { resolveConfiguredCliInput } from "../core/config";
+ import { loadAppBootstrap } from "../core/loaders";
++import { persistResumableReview } from "../core/resumableReview";
+ import { resolveRuntimeCliInput } from "../core/terminal";
+ import type { AppBootstrap, CliInput } from "../core/types";
+ import type { UpdateNotice } from "../core/updateNotice";
+@@ -55,6 +56,7 @@ export function AppHost({
+         cwd,
+         customTheme: configured.customTheme,
+       });
++      persistResumableReview(nextBootstrap.input, cwd);
+       const nextSnapshot = createInitialSessionSnapshot(nextBootstrap);
+ 
+       let sessionId = "local-session";

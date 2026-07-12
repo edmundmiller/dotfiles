@@ -41,6 +41,10 @@ pass_through=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --resume)
+            mode="resume"
+            shift
+            ;;
         --staged|--cached)
             mode="staged"
             shift
@@ -87,6 +91,13 @@ case "$mode" in
         fi
         ;;
 esac
+
+if [[ "$mode" == "resume" ]]; then
+    if command -v hunk >/dev/null 2>&1 && hunk resume --help >/dev/null 2>&1; then
+        exec hunk resume
+    fi
+    exec bunx hunkdiff diff
+fi
 
 if [[ ${#pass_through[@]} -gt 0 ]]; then
     review_args+=("${pass_through[@]}")
