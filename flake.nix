@@ -918,7 +918,14 @@
             (deploy-rs.lib.${system}.deployChecks self.deploy)
             // {
               package-harness-tests =
-                pkgs.runCommand "package-harness-tests" { nativeBuildInputs = [ pkgs.python3 ]; }
+                pkgs.runCommand "package-harness-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.python3
+                      pkgs.git
+                    ];
+                    PACKAGE_HARNESS_REPO_ROOT = toString ./.;
+                  }
                   ''
                     cd ${./packages/package-harness}
                     PYTHONDONTWRITEBYTECODE=1 python3 test_package_harness.py
@@ -931,6 +938,7 @@
                   {
                     nativeBuildInputs = [
                       self.packages.${system}.zunit
+                      pkgs.bun
                       pkgs.zsh
                       pkgs.git
                       pkgs.gnused
@@ -977,13 +985,15 @@
                       fi
                     done
 
+                    bun test ./config/tmux/tests/agent-hunk-sessions.test.ts
+
                     # Cleanup
                     tmux -L default kill-server 2>/dev/null || true
                     rm -rf $ZOXIDE_TEST_DIRS 2>/dev/null || true
 
                     # Create success marker
                     mkdir -p $out
-                    echo "All zunit tests passed" > $out/result
+                    echo "All tmux tests passed" > $out/result
                   '';
 
               kittylitter-smoke = self.packages.${system}.kittylitter.passthru.tests.smoke;

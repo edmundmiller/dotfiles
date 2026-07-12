@@ -9,14 +9,14 @@
   "checks": [
     ["bun", "install", "--frozen-lockfile", "--ignore-scripts"],
     ["bun", "run", "typecheck"],
-    ["bun", "test", "src/core/cli.test.ts"],
-    ["bun", "test", "src/core/resumableReview.test.ts"],
-    ["bun", "test", "src/ui/AppHost.interactions.test.tsx"],
-    ["bun", "test", "src/ui/AppHost.reload.test.tsx"],
-    ["bun", "test", "src/ui/AppHost.responsive.test.tsx"],
-    ["bun", "test", "src/ui/components/ui-components.test.tsx"],
-    ["bun", "test", "src/ui/lib/appMenus.test.ts"],
-    ["bun", "test", "src/ui/lib/sourceSwitch.test.ts"],
-    ["bun", "test", "src/ui/lib/ui-lib.test.ts"]
+    ["bun", "test", "./src/core/cli.test.ts"],
+    ["bun", "test", "./src/core/resumableReview.test.ts"],
+    ["bun", "test", "./src/ui/AppHost.interactions.test.tsx"],
+    ["bun", "test", "./src/ui/AppHost.reload.test.tsx"],
+    ["bun", "test", "./src/ui/AppHost.responsive.test.tsx"],
+    ["bun", "test", "./src/ui/components/ui-components.test.tsx"],
+    ["bun", "test", "./src/ui/lib/appMenus.test.ts"],
+    ["bun", "test", "./src/ui/lib/sourceSwitch.test.ts"],
+    ["bun", "test", "./src/ui/lib/ui-lib.test.ts"]
   ]
 }
