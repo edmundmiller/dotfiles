@@ -1,3 +1,11 @@
+---
+purpose: Document the managed tmux workflow, bindings, and integrations.
+applies_to: Configuring or troubleshooting this repository's tmux module.
+entrypoint: modules/shell/tmux/default.nix and config/tmux/config.
+verification: Run hey check and exercise the documented binding.
+update_when: Tmux behavior, bindings, integrations, or recovery steps change.
+---
+
 # Tmux Module
 
 Terminal multiplexer with custom XDG path support, plugin management, and Catppuccin theme.
@@ -158,14 +166,29 @@ Prefix is **`C-c`** (Ctrl+c), not `C-b`.
 
 Open tmux-which-key with `prefix Space`, then:
 
-| Key path | Action                                                      |
-| -------- | ----------------------------------------------------------- |
-| `P p`    | Attach/create current project session                       |
-| `P w`    | Create sibling worktree via `tw`                            |
-| `P h`    | Prompt + create Hermes/Hunk work window on sibling worktree |
-| `P x`    | Remove sibling worktree via `twd`                           |
-| `a`      | Open Pi sessions picker                                     |
-| `A`      | Start a new Pi window in current pane path                  |
+| Key path | Action                                     |
+| -------- | ------------------------------------------ |
+| `P p`    | Attach/create current project session      |
+| `P w`    | Create sibling worktree via `tw`           |
+| `P h`    | Open Agent + Hunk sessions                 |
+| `P x`    | Remove sibling worktree via `twd`          |
+| `I`      | Open the fast live Pi sessions picker      |
+| `A`      | Start a new Pi window in current pane path |
+
+#### Agent + Hunk session recovery
+
+`prefix Z` and `prefix Space P h` open the same picker:
+
+| Runtime  | New session command | Native resume ownership                     |
+| -------- | ------------------- | ------------------------------------------- |
+| OMP      | `omp`               | OMP JSONL via `omp --cwd … --resume …`      |
+| Pi       | `pi`                | Pi JSONL via `pi --session …`               |
+| Hermes   | `hermes`            | Hermes database via `hermes --resume …`     |
+| OpenCode | `opencode`          | OpenCode service via `opencode --session …` |
+
+The picker lists new sessions, resumable native session history, and live Active windows across repository worktrees. Conversation transcripts remain owned by each runtime; Hunk persists only the latest reloadable review source for each worktree.
+
+Choosing Active focuses the matching window, preserves its live agent pane, and recreates a missing or dead Hunk pane from that worktree's saved review source. Choosing history after the whole window was lost resumes the selected runtime conversation and reopens Hunk on the same saved source. If the installed Hunk lacks resume support, recovery falls back to a normal worktree diff.
 
 ### Panes
 
@@ -190,7 +213,7 @@ Open tmux-which-key with `prefix Space`, then:
 | `u`   | Split vertical + jjui                                                 |
 | `U`   | Split horizontal + jjui                                               |
 | `C`   | Prompt: run command in new split                                      |
-| `Z`   | Prompt: new sibling work window (opensessions + Hermes + Hunk)        |
+| `Z`   | Open Agent + Hunk sessions                                            |
 | `g`   | Git TUI popup                                                         |
 | `G`   | Critique (diff review) popup                                          |
 | `R`   | Critique (staged diff) popup                                          |

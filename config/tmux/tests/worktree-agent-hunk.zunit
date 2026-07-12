@@ -1,0 +1,347 @@
+#!/usr/bin/env zunit
+
+@setup {
+  export ROOT=$PWD
+  export REAL_BASE64=$(command -v base64)
+  export TEST_DIR=$(mktemp -d /tmp/agent-hunk.zunit.XXXXXX)
+  export MOCK_BIN="$TEST_DIR/bin"
+  export MOCK_HELPERS="$TEST_DIR/helpers"
+  export TMUX_LOG="$TEST_DIR/tmux.log"
+  export WORKTREE="$TEST_DIR/work tree"
+  mkdir -p "$MOCK_BIN" "$MOCK_HELPERS" "$WORKTREE"
+  : > "$TMUX_LOG"
+
+  cat > "$MOCK_BIN/tmux" <<'EOF'
+#!/usr/bin/env bash
+printf '%q ' "$@" >> "$TMUX_LOG"; printf '\n' >> "$TMUX_LOG"
+case "$1" in
+  new-window|new-session|split-window|respawn-pane)
+    last="${!#}"
+    printf 'CMD:%s\n' "$last" >> "$TMUX_LOG"
+    ;;
+esac
+case "$1" in
+  display-message)
+    case " $* " in
+      *" #{pane_current_path} "*) printf '%s\n' "${MOCK_CURRENT_PATH:-$WORKTREE}" ;;
+      *" #{session_id} "*) printf '%s\n' "${MOCK_SESSION_ID:-\$7}" ;;
+      *" #{pane_id} "*) printf '%s\n' '%1' ;;
+    esac ;;
+  show-environment) printf '%s=%s\n' "$3" "${PROMPT_VALUE:-}" ;;
+  list-windows) printf '%b' "${MOCK_WINDOWS:-}" ;;
+  list-panes) printf '%b' "${MOCK_PANES:-}" ;;
+  new-window|new-session) printf '%s\n' '@99' ;;
+  split-window) printf '%s\n' '%9' ;;
+  has-session) exit "${MOCK_HAS_SESSION:-0}" ;;
+esac
+EOF
+  chmod +x "$MOCK_BIN/tmux"
+
+  cat > "$MOCK_HELPERS/git-worktree-cwd" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "${MOCK_CANONICAL:-$1}"
+EOF
+  cat > "$MOCK_HELPERS/tmux-project-root" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "${MOCK_PROJECT_ROOT:-$1}"
+EOF
+  cat > "$MOCK_HELPERS/tmux-project-name" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' project
+EOF
+  chmod +x "$MOCK_HELPERS"/*
+
+  cat > "$MOCK_HELPERS/tmux-lib.sh" <<'EOF'
+sanitize_component() { printf '%s\n' "${1// /-}"; }
+create_sibling_worktree() { printf '%s\n' "$TEST_DIR/new-$2"; }
+EOF
+
+  for runtime in omp pi hermes opencode; do
+    cat > "$MOCK_BIN/$runtime" <<'EOF'
+#!/usr/bin/env bash
+[[ "$(basename "$0")" != opencode ]] || exit "${OPENCODE_STATUS:-0}"
+exit 0
+EOF
+    chmod +x "$MOCK_BIN/$runtime"
+  done
+
+  export LAUNCHER="$ROOT/config/tmux/worktree-agent-hunk.sh"
+  export PICKER="$ROOT/config/tmux/worktree-agent-hunk-picker.sh"
+  export PROMPT="$ROOT/config/tmux/worktree-agent-hunk-prompt.sh"
+  export HUNK_LAUNCHER="$ROOT/config/tmux/open-hunk.sh"
+  export RUN_LAUNCHER="$TEST_DIR/run-launcher"
+  cat > "$RUN_LAUNCHER" <<'EOF'
+#!/usr/bin/env bash
+exec env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX=1 TMUX_BIN="$MOCK_BIN/tmux" DOTFILES_BIN="$MOCK_HELPERS" TMUX_HOME="$ROOT/config/tmux" OPENSESSIONS_DIR="$TEST_DIR/no-opensessions" TEST_DIR="$TEST_DIR" WORKTREE="$WORKTREE" TMUX_LOG="$TMUX_LOG" "$LAUNCHER" "$@"
+EOF
+  chmod +x "$RUN_LAUNCHER"
+  export MOCK_TMUX_HOME="$TEST_DIR/tmux-home"
+  export PICKER_INPUT="$TEST_DIR/picker.tsv"
+  export DISPATCH_LOG="$TEST_DIR/dispatch.log"
+  export BUN_ARGS="$TEST_DIR/bun.args"
+  export PROMPT_ARGV="$TEST_DIR/prompt.argv"
+  mkdir -p "$MOCK_TMUX_HOME"
+  : > "$DISPATCH_LOG"
+  cat > "$MOCK_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+printf 'worktree /repo\0'
+EOF
+  cat > "$MOCK_BIN/bun" <<'EOF'
+#!/usr/bin/env bash
+printf '%q ' "$@" > "$BUN_ARGS"
+token=$(printf '%s' 'session token' | base64 | tr -d '\n')
+path=$(printf '%s' '/repo' | base64 | tr -d '\n')
+printf '2026-01-01T00:00:00.000Z\tHistory title\trepo\tPi\tresume\tpi\t%s\t%s\n' "$token" "$path"
+EOF
+  cat > "$MOCK_BIN/fzf-tmux" <<'EOF'
+#!/usr/bin/env bash
+cat > "$PICKER_INPUT"
+case "${FZF_MODE:-cancel}" in
+  new) grep 'New Pi' "$PICKER_INPUT" ;;
+  active) grep 'Active paired' "$PICKER_INPUT" ;;
+  resume) grep 'History title' "$PICKER_INPUT" ;;
+  cancel) exit 0 ;;
+esac
+EOF
+  cat > "$MOCK_TMUX_HOME/worktree-agent-hunk-prompt.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'prompt:%s\n' "$*" >> "$DISPATCH_LOG"
+EOF
+  cat > "$MOCK_TMUX_HOME/worktree-agent-hunk.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'launcher:%s\n' "$*" >> "$DISPATCH_LOG"
+{
+  printf 'argc=%s\n' "$#"
+  for arg in "$@"; do
+    printf '%s' "$arg" | base64 | tr -d '\n'
+    printf '\n'
+  done
+} > "$PROMPT_ARGV"
+EOF
+  chmod +x "$MOCK_BIN/git" "$MOCK_BIN/bun" "$MOCK_BIN/fzf-tmux" "$MOCK_TMUX_HOME"/*
+}
+
+@teardown {
+  rm -rf "$TEST_DIR"
+}
+
+
+@test 'new dispatches every runtime in a tagged paired window' {
+  local runtime
+  for runtime in omp pi hermes opencode; do
+    : > "$TMUX_LOG"
+    run "$RUN_LAUNCHER" new "$runtime" 'task name'
+    assert $state equals 0
+    assert "$(cat "$TMUX_LOG")" contains "new-window"
+    assert "$(cat "$TMUX_LOG")" contains "$MOCK_BIN/$runtime"
+    assert "$(cat "$TMUX_LOG")" contains "@paired_agent_runtime"
+    assert "$(cat "$TMUX_LOG")" contains "@paired_worktree_path"
+    assert "$(cat "$TMUX_LOG")" contains "@paired_role"
+  done
+}
+
+@test 'resume emits exact native argv and Pi never forks' {
+  local runtime token expected log
+  for runtime in omp pi hermes opencode; do
+    : > "$TMUX_LOG"
+    token=$([[ "$runtime" == pi || "$runtime" == omp ]] && printf '%s' "$TEST_DIR/session file.jsonl" || printf '%s' 'session-id')
+    case "$runtime" in
+      omp) printf -v expected '%q --cwd %q --resume %q' "$MOCK_BIN/omp" "$WORKTREE" "$token" ;;
+      pi) printf -v expected '%q --session %q' "$MOCK_BIN/pi" "$token" ;;
+      hermes) printf -v expected '%q --resume %q' "$MOCK_BIN/hermes" "$token" ;;
+      opencode) printf -v expected '%q --session %q %q' "$MOCK_BIN/opencode" "$token" "$WORKTREE" ;;
+    esac
+    run env MOCK_HAS_SESSION=1 MOCK_CANONICAL="$WORKTREE" "$RUN_LAUNCHER" resume "$runtime" "$token" "$WORKTREE"
+    assert $state equals 0
+    log=$(cat "$TMUX_LOG")
+    assert "$log" contains "CMD:$expected"
+    [[ "$runtime" != pi ]] || [[ "$log" != *'--fork'* && "$log" != *'--fork-session'* ]]
+  done
+}
+
+@test 'active focuses across tmux sessions and repairs only Hunk' {
+  export MOCK_WINDOWS='@5|/repo|omp|token\n'
+  export MOCK_PANES='%1|agent|0|omp|/repo\n%2|hunk|1|hunk|/repo\n'
+  run env MOCK_CANONICAL=/repo MOCK_SESSION_ID='$42' "$RUN_LAUNCHER" active @5 /repo
+  assert $state equals 0
+  local log=$(cat "$TMUX_LOG")
+  assert "$log" contains 'switch-client -t \$42'
+  assert "$log" contains 'select-window -t @5'
+  assert "$log" contains 'respawn-pane'
+  assert "$log" contains '--resume'
+  [[ "$log" != *'respawn-pane -k -c /repo -t %1'* ]]
+}
+
+@test 'active adopts one legacy Hermes window and stamps generic identity' {
+  export MOCK_PANES='%1||0|hermes|/repo\n'
+  run env MOCK_CANONICAL=/repo MOCK_SESSION_ID='$12' "$RUN_LAUNCHER" active @8 /repo
+  assert $state equals 0
+  local log=$(cat "$TMUX_LOG")
+  assert "$log" contains '@paired_agent_runtime hermes'
+  assert "$log" contains '@paired_worktree_path /repo'
+  assert "$log" contains '@paired_role agent'
+  assert "$log" contains 'select-window -t @8'
+}
+
+@test 'resume reuses exact match but preserves mismatched live session' {
+  export MOCK_WINDOWS='@5|/repo|pi|other\n@6|/repo|pi|wanted\n'
+  export MOCK_PANES='%1|agent|0|pi|/repo\n%2|hunk|0|hunk|/repo\n'
+  run env MOCK_CANONICAL=/repo MOCK_SESSION_ID='$9' "$RUN_LAUNCHER" resume pi wanted /repo
+  assert $state equals 0
+  local log=$(cat "$TMUX_LOG")
+  assert "$log" contains 'select-window -t @6'
+  [[ "$log" != *'select-window -t @5'* ]]
+  [[ "$log" != *'new-window'* ]]
+}
+
+@test 'resume replaces dead agent pane and missing Hunk pane' {
+  export MOCK_WINDOWS='@6|/repo|hermes|wanted\n'
+  export MOCK_PANES='%1|agent|1|hermes|/repo\n'
+  run env MOCK_CANONICAL=/repo MOCK_SESSION_ID='$9' "$RUN_LAUNCHER" resume hermes wanted /repo
+  assert $state equals 0
+  local log=$(cat "$TMUX_LOG")
+  assert "$log" contains 'respawn-pane'
+  assert "$log" contains '--resume wanted'
+  assert "$log" contains 'split-window'
+  assert "$log" contains 'open-hunk.sh --resume'
+}
+
+@test 'resume collision creates a deterministic suffixed window without killing existing panes' {
+  export MOCK_WINDOWS='@5|/repo|pi|other\n'
+  export MOCK_PANES='%1|agent|0|pi|/repo\n%2|hunk|0|hunk|/repo\n'
+  cat > "$MOCK_BIN/sha256sum" <<'EOF'
+#!/usr/bin/env bash
+cat >/dev/null
+printf '0123456789abcdef  -\n'
+EOF
+  chmod +x "$MOCK_BIN/sha256sum"
+  run env MOCK_CANONICAL=/repo SHA256SUM_BIN="$MOCK_BIN/sha256sum" "$RUN_LAUNCHER" resume pi wanted /repo
+  assert $state equals 0
+  local log=$(cat "$TMUX_LOG")
+  assert "$log" contains 'pi-01234567'
+  [[ "$log" != *'kill-pane'* && "$log" != *'respawn-pane'* ]]
+}
+
+@test 'invalid action and runtime fail without tmux mutation' {
+  run "$RUN_LAUNCHER" new ruby nope
+  assert $state equals 1
+  assert "$(cat "$TMUX_LOG")" is_empty
+  run "$RUN_LAUNCHER" bogus omp nope
+  assert $state equals 1
+}
+
+@test 'picker prepends runtimes, cancels without dispatch, and decodes exact selections' {
+  local picker_env=(env HOME="$TEST_DIR/home" PI_CODING_AGENT_DIR="$TEST_DIR/home/.pi/agent" PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN=/bin/bash BUN_BIN="$MOCK_BIN/bun" FZF_TMUX_BIN="$MOCK_BIN/fzf-tmux" BASE64_BIN="$REAL_BASE64" OPENCODE_BIN="$MOCK_BIN/opencode" DOTFILES_BIN="$MOCK_HELPERS" TMUX_HOME="$MOCK_TMUX_HOME" MOCK_CANONICAL=/repo WORKTREE="$WORKTREE" TMUX_LOG="$TMUX_LOG" PICKER_INPUT="$PICKER_INPUT" DISPATCH_LOG="$DISPATCH_LOG" BUN_ARGS="$BUN_ARGS")
+
+  run "${picker_env[@]}" FZF_MODE=cancel "$PICKER"
+  assert $state equals 0
+  assert "$(cat "$DISPATCH_LOG")" is_empty
+  local rows=$(cat "$PICKER_INPUT")
+  assert "$rows" contains 'New OMP + Hunk'
+  assert "$rows" contains 'New Pi + Hunk'
+  assert "$rows" contains 'New Hermes + Hunk'
+  assert "$rows" contains 'New OpenCode + Hunk'
+  local collector_argv=$(cat "$BUN_ARGS")
+  assert "$collector_argv" contains "--pi-agent-dir $TEST_DIR/home/.pi/agent"
+  assert "$collector_argv" contains "--omp-agent-dir $TEST_DIR/home/.omp/agent"
+  [[ "$collector_argv" != *'.pi/agent/sessions'* && "$collector_argv" != *'.omp/agent/sessions'* ]]
+
+  run "${picker_env[@]}" OPENCODE_STATUS=1 FZF_MODE=cancel "$PICKER"
+  assert $state equals 0
+  [[ "$(cat "$PICKER_INPUT")" != *'New OpenCode + Hunk'* ]]
+
+  run "${picker_env[@]}" FZF_MODE=new "$PICKER"
+  assert $state equals 0
+  assert "$(cat "$DISPATCH_LOG")" contains 'prompt:pi'
+
+  : > "$DISPATCH_LOG"
+  run "${picker_env[@]}" FZF_MODE=resume "$PICKER"
+  assert $state equals 0
+  assert "$(cat "$DISPATCH_LOG")" contains 'launcher:resume pi session token /repo'
+
+  : > "$DISPATCH_LOG"
+  export MOCK_WINDOWS='@5|paired|/repo|omp|opaque\n'
+  export MOCK_PANES='agent|0|omp|/repo\n'
+  run "${picker_env[@]}" MOCK_WINDOWS="$MOCK_WINDOWS" MOCK_PANES="$MOCK_PANES" FZF_MODE=active "$PICKER"
+  assert $state equals 0
+  assert "$(cat "$DISPATCH_LOG")" contains 'launcher:active @5 /repo'
+}
+
+@test 'prompt passes hostile names through popup stdin without command substitution' {
+  run env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN=/bin/bash TMUX_HOME="$ROOT/config/tmux" TMUX_LOG="$TMUX_LOG" "$PROMPT" pi
+  assert $state equals 0
+  local log=$(cat "$TMUX_LOG")
+  assert "$log" contains 'display-popup'
+  assert "$log" contains '--read'
+  [[ "$log" != *'%%'* ]]
+
+  local name expected actual
+  for name in 'space name' "single'quote" 'double"quote' '$(touch /tmp/nope)' '`touch /tmp/nope`' '-leading'; do
+    run env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN=/bin/bash TMUX_HOME="$MOCK_TMUX_HOME" TMUX_LOG="$TMUX_LOG" PROMPT="$PROMPT" PROMPT_ARGV="$PROMPT_ARGV" PROMPT_VALUE="$name" bash -c 'printf "%s\n" "$PROMPT_VALUE" | "$PROMPT" --read pi'
+    assert $state equals 0
+    expected=$(printf '%s' "$name" | "$REAL_BASE64" | tr -d '\n')
+    actual=$(sed -n '4p' "$PROMPT_ARGV")
+    [[ "$(sed -n '1p' "$PROMPT_ARGV")" == 'argc=3' ]]
+    [[ "$actual" == "$expected" ]]
+  done
+  [[ ! -e /tmp/nope ]]
+
+  : > "$TMUX_LOG"
+  run env PATH="$MOCK_BIN:/usr/bin:/bin" TMUX_BIN="$MOCK_BIN/tmux" TMUX_HOME="$ROOT/config/tmux" TMUX_LOG="$TMUX_LOG" "$PROMPT" invalid
+  assert $state equals 1
+  assert "$(cat "$TMUX_LOG")" is_empty
+}
+
+@test 'open-hunk resume uses capability when available' {
+  local repo="$TEST_DIR/repo"
+  mkdir -p "$repo/.git"
+  cat > "$MOCK_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  *rev-parse*--show-toplevel*) printf '%s\n' "$REPO" ;;
+  *rev-parse*) exit 0 ;;
+esac
+EOF
+  cat > "$MOCK_BIN/hunk" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$HUNK_LOG"
+[[ "$*" == 'resume --help' ]] && exit "${HUNK_RESUME_STATUS:-0}"
+exit 0
+EOF
+  chmod +x "$MOCK_BIN/git" "$MOCK_BIN/hunk"
+  export HUNK_LOG="$TEST_DIR/hunk.log" REPO="$repo"
+  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:/usr/bin:/bin" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" HUNK_LOG="$HUNK_LOG" REPO="$REPO" HUNK_LAUNCHER="$HUNK_LAUNCHER" bash -c 'exec bash "$HUNK_LAUNCHER" --resume </dev/null'
+  assert $state equals 0
+  assert "$(cat "$HUNK_LOG")" contains 'resume --help'
+  assert "$(cat "$HUNK_LOG")" contains 'resume'
+}
+
+@test 'open-hunk resume falls back while existing modes remain unchanged' {
+  local repo="$TEST_DIR/repo"
+  mkdir -p "$repo/.git"
+  cat > "$MOCK_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  *rev-parse*--show-toplevel*) printf '%s\n' "$REPO" ;;
+  *rev-parse*) exit 0 ;;
+esac
+EOF
+  cat > "$MOCK_BIN/hunk" <<'EOF'
+#!/usr/bin/env bash
+[[ "$*" == 'resume --help' ]] && exit 1
+exit 99
+EOF
+  cat > "$MOCK_BIN/bunx" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$BUNX_LOG"
+EOF
+  chmod +x "$MOCK_BIN/git" "$MOCK_BIN/hunk" "$MOCK_BIN/bunx"
+  export BUNX_LOG="$TEST_DIR/bunx.log" REPO="$repo"
+  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:/usr/bin:/bin" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" BUNX_LOG="$BUNX_LOG" REPO="$REPO" bash "$HUNK_LAUNCHER" --resume
+  assert $state equals 0
+  assert "$(cat "$BUNX_LOG")" contains 'hunkdiff diff'
+
+  : > "$BUNX_LOG"
+  run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:/usr/bin:/bin" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" BUNX_LOG="$BUNX_LOG" REPO="$REPO" bash "$HUNK_LAUNCHER" --staged
+  assert $state equals 99
+}
