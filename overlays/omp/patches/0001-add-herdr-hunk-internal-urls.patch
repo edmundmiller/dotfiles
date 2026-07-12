@@ -768,12 +768,7 @@ index 79176c459..75dee579d 100644
  					throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPattern}`);
  				}
  				const resource = await internalRouter.resolve(rawPattern, {
-@@ -184,10 +186,14 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
- 					signal,
- 					localProtocolOptions: this.session.localProtocolOptions,
- 					skills: this.session.skills,
-+					pathOnly: true,
- 				});
+@@ -195,6 +197,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
  				if (!resource.sourcePath) {
  					throw new ToolError(`Cannot find internal URL without a backing file: ${rawPattern}`);
  				}
