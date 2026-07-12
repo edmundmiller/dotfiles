@@ -2196,6 +2196,22 @@
         "type": "github"
       }
     },
+    "shadcn-improve": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781504319,
+        "narHash": "sha256-m0a1n8xguDI2nooJ856sWPofh+tZI5VvIrVZrQH6XgY=",
+        "owner": "shadcn",
+        "repo": "improve",
+        "rev": "03369ee6d7cafbfcecc4346539b05b3dc0a603bb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "shadcn",
+        "repo": "improve",
+        "type": "github"
+      }
+    },
     "shaping-skills": {
       "flake": false,
       "locked": {
@@ -2236,13 +2252,14 @@
         "pi-messenger-repo": "pi-messenger-repo",
         "prek-repo": "prek-repo",
         "qmd-repo": "qmd-repo",
+        "shadcn-improve": "shadcn-improve",
         "shaping-skills": "shaping-skills",
         "stack-repo": "stack-repo",
         "zele-repo": "zele-repo"
       },
       "locked": {
-        "lastModified": 1783718258,
-        "narHash": "sha256-iFRkyEVzZoy/OB5Qg2Y716WfmSYDwUCmgRoIatIJ4Sg=",
+        "lastModified": 1783815144,
+        "narHash": "sha256-m6D+nWeeU1qbet4nWXZYDD4NAeP0O4W2JSJxiXFfvlM=",
         "path": "./skills",
         "type": "path"
       },
