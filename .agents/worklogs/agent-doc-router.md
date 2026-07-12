@@ -43,7 +43,8 @@ None.
 
 ## Commits
 
-- `c7539e0bb feat(agents): add self-healing documentation router`
-- `c052c6065 fix(agent-quality): ignore dependency test trees`
-- `45abf7fc9 fix(hooks): allow absolute beads ledger paths`
-- Final worklog and beads sync commits follow.
+- `0e01933a4 feat(agents): add self-healing documentation router`
+- `ebedcfea8 fix(agent-quality): ignore dependency test trees`
+- `5cc1e7a96 fix(hooks): allow absolute beads ledger paths`
+- `3c8a16af1 docs(agents): record router implementation evidence`
+- `a85cbc131 chore(beads): track ACP review auth repair`
