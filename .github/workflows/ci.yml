@@ -44,15 +44,34 @@ jobs:
           echo "::group::pre-commit" && time nix build .#checks.x86_64-linux.pre-commit --no-link && echo "::endgroup::"
           echo "::group::zunit-tests" && time nix build .#checks.x86_64-linux.zunit-tests --no-link && echo "::endgroup::"
 
-      - name: Validate AGENTS.md references
+      - name: Validate agent documentation contract
+        shell: bash
         run: |
-          echo "Checking AGENTS.md key paths exist..."
-          # Verify key paths mentioned in AGENTS.md
-          test -f hosts/mactraitorpro/default.nix || { echo "FAIL: hosts/mactraitorpro/default.nix missing"; exit 1; }
-          test -d modules/ || { echo "FAIL: modules/ missing"; exit 1; }
-          test -d config/ || { echo "FAIL: config/ missing"; exit 1; }
-          test -f skills/flake.nix || { echo "FAIL: skills/flake.nix missing"; exit 1; }
-          echo "All AGENTS.md references valid"
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+          fi
+          if [[ "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          docs=(AGENTS.md AGENT_WORKFLOW.md docs/README.md)
+          while IFS= read -r doc; do
+            case "$doc" in
+              docs/agent-quality.md) ;;
+              docs/*.md | */AGENTS.md) docs+=("$doc") ;;
+            esac
+          done < <(git diff --name-only --diff-filter=ACMR "$base_sha" "${{ github.sha }}" -- '*.md')
+
+          for doc in "${docs[@]}"; do
+            summary="$(head -n 7 "$doc")"
+            for key in purpose applies_to entrypoint verification update_when; do
+              grep -q "^${key}:" <<<"$summary" || { echo "FAIL: $doc missing $key in first 7 lines"; exit 1; }
+            done
+            test "$(sed -n '7p' "$doc")" = "---" || { echo "FAIL: $doc summary must close on line 7"; exit 1; }
+          done
 
       - name: Skip NixOS config eval
         run: |
