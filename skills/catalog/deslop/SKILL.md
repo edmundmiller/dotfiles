@@ -1,9 +1,6 @@
 ---
 name: deslop
-description: >
-  Run a multi-agent review-readiness pass on a nearly finished change before
-  commit; fan out parallel review agents across rule conformance, type safety,
-  and overengineering, then synthesize and apply the worthwhile fixes.
+description: Run a final review-readiness pass for rule conformance, type safety, and overengineering.
 ---
 
 # Deslop

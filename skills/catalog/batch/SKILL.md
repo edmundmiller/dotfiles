@@ -1,11 +1,6 @@
 ---
 name: batch
-description: >
-  Research and plan a large-scale change, then execute it in parallel across
-  5–30 isolated worktree agents that each open a PR. Use when the user wants
-  to make a sweeping, mechanical change across many files (migrations,
-  refactors, bulk renames) that can be decomposed into independent parallel
-  units. Trigger: "batch", "parallel migration", "bulk refactor".
+description: Coordinate a sweeping mechanical change across independent work units and pull requests.
 ---
 
 # Batch: Parallel Work Orchestration
