@@ -17,4 +17,5 @@ For broad, multi-step, or cross-session work:
 - Treat repeated auth, quota, or provider-limit failures as blockers after one retry: switch to an available fallback model/provider or stop with the exact blocker; do not loop on the same failing route.
 - Do not stop at research, a plan, or “next steps” while implementation/verification remains.
 - If tools, access, or decisions block completion, say exactly what was tried, what evidence says, and what unblocks it.
+- Keep blocked checkpoint items open. Do not mark or delete them as complete to silence reminders; close them only after the blocking action finishes and fresh evidence verifies the result.
 - Before final “done,” map requirements to fresh evidence: diffs, commands, tests, builds, smoke checks, logs, screenshots, or artifacts.
