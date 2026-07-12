@@ -22,7 +22,7 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    ./fix-explicit-chain.patch
+    ./patches/fix-explicit-chain.patch
   ];
 
   nativeBuildInputs = [
