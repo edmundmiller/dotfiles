@@ -527,12 +527,23 @@
                 enable = true;
                 stages = [ "pre-commit" ];
               };
-              forbid-root-patches = {
+              forbid-misplaced-patches = {
                 enable = true;
-                name = "forbid root patches directory";
-                entry = "${pkgs.coreutils}/bin/false";
+                name = "require package-local patch directories";
+                entry = toString (
+                  pkgs.writeShellScript "forbid-misplaced-patches" ''
+                    invalid=0
+                    for path in "$@"; do
+                      if [[ ! "$path" =~ ^(packages|overlays)/[^/]+/patches/[^/]+\.patch$ ]]; then
+                        echo "Patch must live at packages/<name>/patches/*.patch or overlays/<name>/patches/*.patch: $path" >&2
+                        invalid=1
+                      fi
+                    done
+                    exit "$invalid"
+                  ''
+                );
                 language = "system";
-                files = "^patches/";
+                files = "\\.patch$";
                 stages = [ "pre-commit" ];
               };
               forbid-new-submodules = {
