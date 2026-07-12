@@ -110,7 +110,7 @@ def test_files(paths: list[str]) -> list[Path]:
         elif path.is_dir():
             for pattern in ("test_*.py", "*_test.py", "*.test.ts", "*.test.mjs", "*.test.js"):
                 found.update(path.rglob(pattern))
-    return sorted(found)
+    return sorted(path for path in found if "node_modules" not in path.parts)
 
 
 def audit_tests(args: argparse.Namespace) -> int:

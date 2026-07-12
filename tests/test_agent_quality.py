@@ -66,6 +66,21 @@ class AgentQualityTests(unittest.TestCase):
             result = self.run_cli("audit-tests", str(root))
             self.assertEqual(result.returncode, 0, result.stdout)
 
+    def test_test_audit_ignores_dependency_tests(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dependency = root / "node_modules" / "package"
+            dependency.mkdir(parents=True)
+            (dependency / "broken.test.ts").write_text(
+                "test('x', () => expect(" + "true));\n"
+            )
+            (root / "behavior.test.ts").write_text(
+                "test('works', () => { expect(value()).toEqual(1); });\n"
+            )
+            result = self.run_cli("audit-tests", str(root))
+            self.assertEqual(result.returncode, 0, result.stdout)
+
+
     def test_finish_reports_inapplicable_checks_without_calling_them_passed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
