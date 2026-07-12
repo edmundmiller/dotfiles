@@ -460,7 +460,7 @@
                   subdir = "skills/engineering";
                   filter = {
                     maxDepth = 1;
-                    nameRegex = "^(ask-matt|codebase-design|diagnosing-bugs|domain-modeling|grill-with-docs|implement|improve-codebase-architecture|prototype|resolving-merge-conflicts|setup-matt-pocock-skills|to-issues|to-prd|triage)$";
+                    nameRegex = "^(ask-matt|codebase-design|diagnosing-bugs|domain-modeling|grill-with-docs|implement|improve-codebase-architecture|prototype|resolving-merge-conflicts|setup-matt-pocock-skills|to-issues|to-prd|triage|wayfinder)$";
                   };
                 };
 
@@ -713,6 +713,9 @@
 
                   triage.from = "mattpocock-engineering";
                   triage.path = "triage";
+
+                  wayfinder.from = "mattpocock-engineering";
+                  wayfinder.path = "wayfinder";
 
                   grilling.from = "mattpocock-productivity";
                   grilling.path = "grilling";
