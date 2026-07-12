@@ -1,6 +1,6 @@
 ---
 name: acpx-claude
-description: Delegate work to Claude through acpx claude / Agent Client Protocol when a second agent perspective or Claude-specific coding pass is useful.
+description: Hand off a bounded implementation or review pass to Claude through ACPX.
 ---
 
 # ACPX Claude Delegation
