@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+jq_bin="${JQ_BIN:-jq}"
+invalid=0
+
+if (( $# == 0 )); then
+  set -- flake.nix flake.lock skills/flake.nix skills/flake.lock
+fi
+
+for path in "$@"; do
+  [[ -f "$path" ]] || continue
+
+  case "$path" in
+    *.lock)
+      offenders="$($jq_bin -r '
+        .nodes
+        | to_entries[]
+        | select(
+            ((.value.locked.type // "") == "git"
+              and ((.value.locked.url // "") | startswith("file:///")))
+            or ((.value.original.type // "") == "git"
+              and ((.value.original.url // "") | startswith("file:///")))
+            or ((.value.locked.type // "") == "path"
+              and ((.value.locked.path // "") | startswith("/")))
+            or ((.value.original.type // "") == "path"
+              and ((.value.original.path // "") | startswith("/")))
+          )
+        | .key
+      ' "$path")"
+
+      if [[ -n "$offenders" ]]; then
+        invalid=1
+        echo "$path: absolute local flake input(s):" >&2
+        while IFS= read -r offender; do
+          echo "  - $offender" >&2
+        done <<< "$offenders"
+      fi
+      ;;
+    *.nix)
+      matches="$(grep -nE 'url[[:space:]]*=[[:space:]]*"(git\+file:///|file:///|path:/|/)' "$path" || true)"
+      if [[ -n "$matches" ]]; then
+        invalid=1
+        echo "$path: absolute local flake input URL(s):" >&2
+        echo "$matches" >&2
+      fi
+      ;;
+  esac
+done
+
+if (( invalid != 0 )); then
+  cat >&2 <<'EOF'
+
+Absolute local flake inputs bind the repo to one host. Use a relative input,
+for example `url = "./skills"`, then update its lock entry.
+EOF
+fi
+
+exit "$invalid"
