@@ -1,3 +1,11 @@
+---
+purpose: Route MacTraitor-Pro changes to host-specific commands and ownership.
+applies_to: Changes under hosts/mactraitorpro or laptop-only services.
+entrypoint: Read default.nix, then use the matching host command below.
+verification: Run the focused command, then hey check.
+update_when: Host ownership, modules, commands, or gotchas change.
+---
+
 # MacTraitor-Pro (Personal Mac)
 
 Primary personal development machine running nix-darwin.
@@ -21,10 +29,11 @@ Read `default.nix` for the current module set, and check `../AGENTS.md` for cros
 - **duti file associations**: Zed as default text editor for all source/text files, Gapplin for SVGs
 - **TouchID sudo**: `security.pam.services.sudo_local.touchIdAuth = true`
 - **Passwordless darwin-rebuild**: `emiller` can `sudo darwin-rebuild` without password (agent-friendly)
+- **Hermes CLI**: Nix-managed with canonical local profiles through `modules.agents.hermes-local`; run `hey hermes-local` to rebuild and prove profile, login, gateway, and dispatcher health. NUC deployment remains separately owned.
 
 ## Secrets
 
-No agenix secrets on this host (credentials in 1Password). Hermes Desktop is installed/managed manually on Macs for now; do not enable `modules.agents.hermes` here because that module is NixOS-only.
+No agenix secrets on this host (credentials in 1Password). The laptop Hermes CLI is Nix-managed by `modules.agents.hermes-local`; the NixOS-only `modules.agents.hermes` remains reserved for NUC deployment.
 
 ## Gotchas
 

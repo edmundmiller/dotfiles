@@ -4,6 +4,7 @@
 source ./hey.d/common.nu
 source ./hey.d/opencode.nu
 source ./hey.d/rebuild.nu
+source ./hey.d/hermes.nu
 source ./hey.d/flake.nu
 source ./hey.d/nix.nu
 source ./hey.d/remote.nu
@@ -19,7 +20,7 @@ def hey-help [] {
   print "Usage: hey <command> [args...]"
   print ""
   print "System"
-  print "  rebuild, re, test, rollback"
+  print "  rebuild, re, test, rollback, hermes-local"
   print "  update, u, upgrade, check [--worktree] [paths...], show"
   print "  gc, repl, search, shell, setup-caches"
   print ""
