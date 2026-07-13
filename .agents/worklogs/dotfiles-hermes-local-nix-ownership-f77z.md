@@ -22,6 +22,7 @@ Make laptop Hermes Nix-owned and prove canonical configuration is active through
 - Apply: `./bin/hey hermes-local` completed nix-darwin rebuild and activation, then isolated one smoke assertion that read only Codex stdout.
 - Smoke: `./bin/hey hermes-local --smoke-only` passed binary provenance, launcher provenance, all three profile renders, profile inventory, Codex ChatGPT login, live orchestrator gateway, and Kanban dispatcher dry-run.
 - Final gates: post-format `./bin/hey hermes-local --smoke-only`, `./bin/hey check`, `hey agent-audit-tests tests`, and `nix develop .#full --command ./bin/hey agent-finish --worklog ...` passed.
+- Landing: feature and metadata commits pushed to `origin/feat/hermes-local`; annotated agent-work tag pushed.
 
 ## Reviews
 
@@ -35,9 +36,10 @@ Current workflow permits canonical config edits without proving they reached the
 
 ## Remaining work
 
-Push and verify upstream.
+None.
 
 ## Commits
 
 - `b87fe7ede feat(hermes): manage laptop runtime with nix`
-- Tag after landing: `agent-work/dotfiles-hermes-local-nix-ownership-f77z`.
+- `394983904 chore(agents): record Hermes rollout`
+- Tag: `agent-work/dotfiles-hermes-local-nix-ownership-f77z`.
