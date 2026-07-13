@@ -26,7 +26,7 @@ function run(args: string[]) {
   });
 }
 
-test.failing("blocks outbound mail but preserves reads and drafts", () => {
+test("blocks outbound mail but preserves reads and drafts", () => {
   const blocked = [
     [],
     ["mail", "send", "--to", "nobody@example.invalid"],
