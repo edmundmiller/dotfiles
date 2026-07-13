@@ -701,6 +701,50 @@
                   "pre-push"
                 ];
               };
+              flake-lock-no-path-inputs = {
+                enable = true;
+                name = "flake-lock-no-path-inputs";
+                description = "Reject relative path: inputs in flake.lock (unlockable, break eval on pinned revs)";
+                entry = toString (
+                  pkgs.writeShellScript "flake-lock-no-path-inputs" ''
+                    set -euo pipefail
+
+                    status=0
+                    for lock in flake.lock skills/flake.lock; do
+                      [ -f "$lock" ] || continue
+                      offenders=$(${pkgs.jq}/bin/jq -r \
+                        '.nodes | to_entries[] | select(.value.locked.type == "path") | .key' \
+                        "$lock")
+                      if [ -n "$offenders" ]; then
+                        status=1
+                        echo "ERROR: $lock contains unlockable path: input(s):" >&2
+                        echo "$offenders" | sed 's/^/  - /' >&2
+                      fi
+                    done
+
+                    if [ "$status" -ne 0 ]; then
+                      cat >&2 <<'EOF'
+
+A relative `path:` input never gets a narHash, so `nix flake lock` cannot lock it
+and every eval on a pinned git rev fails with:
+  error: lock file contains unlocked input '{"path":"./...","type":"path"}'
+
+Fix: use a lockable subdir git ref instead, e.g.
+  url = "git+file:///path/to/repo?dir=subdir";
+then relock. See the skills-catalog input for a working example.
+EOF
+                    fi
+                    exit "$status"
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                always_run = true;
+                stages = [
+                  "pre-commit"
+                  "pre-push"
+                ];
+              };
               jscpd = {
                 enable = true;
                 name = "jscpd";
