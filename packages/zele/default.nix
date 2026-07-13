@@ -67,13 +67,17 @@ buildNpmPackage {
     find node_modules/.bin -xtype l -delete 2>/dev/null || true
 
     appDir=$out/lib/zele
-    mkdir -p "$appDir/src" "$out/bin"
+    mkdir -p "$appDir/src" "$out/bin" "$out/libexec"
 
     cp -r dist node_modules package.json "$appDir"/
     cp src/schema.sql "$appDir/src/"
 
-    makeWrapper ${bun}/bin/bun $out/bin/zele \
+    makeWrapper ${bun}/bin/bun $out/libexec/zele-real \
       --add-flags "$appDir/dist/cli.js"
+
+    substitute ${./readonly-wrapper.sh} $out/bin/zele \
+      --replace-fail '@ZELE_REAL@' "$out/libexec/zele-real"
+    chmod +x $out/bin/zele
 
     runHook postInstall
   '';
