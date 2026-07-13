@@ -2,13 +2,13 @@
 purpose: Track the Zele outbound-mail safety guard.
 applies_to: The local Zele Nix package and live account capabilities.
 entrypoint: packages/zele/readonly-wrapper.sh
-verification: Run wrapper tests, pkg-check zele, rebuild, then inspect live Zele capabilities and blocked commands.
+verification: Run wrapper tests, nix build .#zele, rebuild, then inspect live Zele capabilities and blocked commands.
 update_when: Zele command routing or outbound-mail policy changes.
 ---
 
 # Worklog: zele-readonly-guard
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -32,20 +32,24 @@ Zele can read mail and create drafts but cannot send, reply, forward, unsubscrib
 - `darwin-rebuild switch` with the same override: passed; live Zele now resolves to `/nix/store/dsy0f8j20sxiz403qsyhc1dg6z2q2c1d-zele-0.4.0-unstable-2026-06-25/bin/zele`.
 - Live `mail send`, direct `mail reply`, `mail forward`, `draft send`, and TUI smoke checks each exit 78 before reaching Zele; `mail list --limit 1` still succeeds.
 - `hey check --worktree packages/zele` remains blocked by the pre-existing `/Users/edmundmiller/.config/dotfiles` flake input and missing prek config. The focused build, formatter, test, shellcheck, rebuild, and runtime checks exercised this change.
+- `hey agent-audit-tests`: `PASS test-confidence`.
+- `hey agent-finish`: worklog and agent-quality checks passed; aggregate `repo-quality` remained blocked by the same flake input and missing prek config.
 
 ## Reviews
 
 - Plan review blocked: default reviewer returned `Authentication required`; `--reviewer gemini` closed the ACP connection. The user explicitly requested the guard; proceed with reversible, test-first implementation and retain the exact blocker.
-- Landing review: pending.
+- Landing review blocked: default and Gemini reviewers both returned `Authentication required`.
 
 ## Feedback
 
 - Email preparation requests need a draft-first technical guard, not prompt interpretation alone.
+- Root routing names `pkg-check`, but that command is absent from the live profile; focused package validation used `nix build .#zele`.
 
 ## Remaining work
 
-- Landing review, commit, push, upstream verification, tag.
+- None for the requested guard. Heterogeneous review and aggregate repo-quality remain unavailable for the blockers recorded above.
 
 ## Commits
 
-- Pending.
+- `c2aa1ec` — regression test with strict expected-failure marker.
+- `1039803cf` — read-only wrapper, package wiring, documentation, and live-guard worklog.
