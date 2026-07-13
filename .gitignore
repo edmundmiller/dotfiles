@@ -23,6 +23,7 @@ worktrees/
 # Node.js dependencies (including Nix store symlinks)
 **/node_modules
 **/node_modules.bkup
+/.opencode/package-lock.json
 
 # Nextflow
 .nextflow/
