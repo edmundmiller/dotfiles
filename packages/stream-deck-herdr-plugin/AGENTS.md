@@ -12,7 +12,7 @@ Nix package for upstream [timvdhoorn/stream-deck-herdr-plugin](https://github.co
 
 ## Host deployment
 
-This package is installed on both managed macOS hosts via recursive Home Manager file links, leaving the plugin root writable for the SDK log directory:
+This package is installed on both managed macOS hosts via Home Manager file links:
 
 - `hosts/seqeratop/default.nix`
 - `hosts/mactraitorpro/default.nix`
@@ -24,6 +24,7 @@ The Stream Deck desktop app itself is installed as the Homebrew cask `elgato-str
 - Upstream source is fetched from GitHub and built with Bun using the checked-in `bun.lock`.
 - Build output is the upstream `dev.timvdhoorn.herdr-agents.sdPlugin` directory copied into the Nix store.
 - The Rollup bundle leaves `ws` external, so the package copies that runtime dependency beside the plugin.
+- The package redirects SDK logs to `~/Library/Logs/ElgatoStreamDeck/` because the plugin runs from the read-only Nix store.
 - The package intentionally patches the plugin's default terminal activator from `iTerm` to `Ghostty`, because both hosts run Herdr in Ghostty and Stream Deck launches plugins with a sparse GUI environment where shell env vars may not be present.
 - Keep this as a directory package (`packages/stream-deck-herdr-plugin/default.nix`) so future patches/docs can live alongside it.
 
@@ -55,6 +56,5 @@ Recommended 6-key Mini layout from upstream:
 ## Gotchas
 
 - The plugin shells out to `herdr`, so Herdr must be installed and usable by the GUI-launched plugin process. The package patches upstream's Homebrew-only PATH to include nix-darwin system/per-user profiles (`/run/current-system/sw/bin`, `/etc/profiles/per-user/{edmundmiller,emiller}/bin`, `/nix/var/nix/profiles/default/bin`). If Herdr ever stops being found, prefer fixing this package environment deliberately rather than relying on interactive shell startup files.
-- Keep the host `home.file` declarations recursive. A single directory symlink resolves into the read-only Nix store, where the Stream Deck SDK cannot create its `logs/` directory.
 - `HERDR_DECK_TERMINAL_APP` can override the terminal app upstream, but this package bakes in `Ghostty` as the default. Only change that patch if the host terminal strategy changes.
 - Do not vendor upstream source into this repo unless local patches become too large for simple Nix patching.

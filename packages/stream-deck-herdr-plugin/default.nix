@@ -37,6 +37,9 @@ stdenv.mkDerivation {
 
     export HOME=$(mktemp -d)
     bun install --frozen-lockfile
+    substituteInPlace node_modules/@elgato/streamdeck/dist/plugin/logging/index.js \
+      --replace-fail 'dest: path.join(cwd(), "logs"),' \
+        'dest: path.join(process.env.HOME ?? "/tmp", "Library", "Logs", "ElgatoStreamDeck", getPluginUUID()),'
     bun run build
 
     runHook postBuild
