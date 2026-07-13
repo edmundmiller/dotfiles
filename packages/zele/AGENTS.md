@@ -47,6 +47,7 @@ If future fork changes need rename semantics or binary patches, switch to a `git
 ## Build/package notes
 
 - zele is built with the upstream `build` script, which runs Prisma generation and TypeScript compilation through Bun.
+- `readonly-wrapper.sh` is the installed entrypoint. It blocks sending, direct replies/forwards, draft sends, live unsubscribe, and the send-capable TUI. Reads, draft creation, and unsubscribe dry-runs remain available.
 - `sqlite` is included in `nativeBuildInputs` because zele’s build regenerates `src/schema.sql` via `sqlite3`.
 - The schema-generation patch must preserve `CREATE TABLE IF NOT EXISTS`; newer `sqlite3 .schema` output omits it, but zele reapplies the generated schema on every startup.
 - `prisma-engines` binaries are injected explicitly so Prisma generation works inside the Nix build sandbox.
@@ -68,3 +69,11 @@ If future fork changes need rename semantics or binary patches, switch to a `git
    nix build .#zele
    ./result/bin/zele --help
    ```
+
+---
+purpose: Explain how the local Zele package is built and guarded.
+applies_to: Changes under packages/zele.
+entrypoint: default.nix
+verification: Run the wrapper regression test, pkg-check zele, and live CLI smoke checks.
+update_when: The upstream pin, patch stack, package layout, or outbound-mail policy changes.
+---
