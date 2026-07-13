@@ -86,6 +86,14 @@
         agentsview.enable = true;
         claude.enable = true;
         codex.enable = true;
+        hermes-local = {
+          enable = true;
+          profiles = [
+            "amosburton"
+            "orchestrator"
+            "workouts"
+          ];
+        };
         omp = {
           enable = true;
           # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex.
