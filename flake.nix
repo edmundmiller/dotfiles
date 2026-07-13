@@ -527,6 +527,18 @@
                 enable = true;
                 stages = [ "pre-commit" ];
               };
+              check-flake-portability = {
+                enable = true;
+                name = "reject absolute local flake inputs";
+                entry = "env JQ_BIN=${pkgs.jq}/bin/jq ${pkgs.bash}/bin/bash ${./bin/check-flake-portability}";
+                language = "system";
+                pass_filenames = false;
+                always_run = true;
+                stages = [
+                  "pre-commit"
+                  "pre-push"
+                ];
+              };
               forbid-misplaced-patches = {
                 enable = true;
                 name = "require package-local patch directories";
