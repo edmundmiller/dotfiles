@@ -26,7 +26,7 @@ display:
   smoothStreaming: true
   cacheMissMarker: true
 showHardwareCursor: true
-defaultThinkingLevel: high
+defaultThinkingLevel: low
 hideThinkingBlock: true
 proseOnlyThinking: true
 omitThinking: false

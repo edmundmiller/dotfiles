@@ -111,21 +111,21 @@
           # is composer-2.5 only; vision falls to codex (GPT models support images).
           smolModel = "vibeproxy/claude-haiku-4-5-20251001";
           modelRoles = {
-            default = "vibeproxy/claude-opus-4-8";
+            default = "vibeproxy/claude-opus-4-8:low";
             smol = "vibeproxy/claude-haiku-4-5-20251001";
             slow = "vibeproxy/claude-opus-4-8:high";
             plan = "vibeproxy/claude-opus-4-8:high";
-            vision = "vibeproxy/claude-sonnet-5";
-            designer = "vibeproxy/claude-opus-4-8";
+            vision = "vibeproxy/claude-sonnet-5:medium";
+            designer = "vibeproxy/claude-opus-4-8:medium";
             commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "vibeproxy/claude-haiku-4-5-20251001";
-            task = "vibeproxy/claude-sonnet-5";
+            task = "vibeproxy/claude-sonnet-5:low";
             advisor = "vibeproxy/claude-opus-4-8:high";
           };
           retry.fallbackChains = {
             default = [
-              "openai-codex/gpt-5.6-sol:high"
-              "openai-codex/gpt-5.6-terra:high"
+              "openai-codex/gpt-5.6-sol:low"
+              "openai-codex/gpt-5.6-terra:low"
               "cursor/composer-2.5"
             ];
             smol = [
