@@ -2232,12 +2232,19 @@
         "zele-repo": "zele-repo"
       },
       "locked": {
-        "path": "./skills",
-        "type": "path"
+        "dir": "skills",
+        "lastModified": 1783944790,
+        "narHash": "sha256-DTPaY5pE8EEAUmlCY728C7mmhmuTC6amUHlfO93fy88=",
+        "ref": "refs/heads/main",
+        "revCount": 5753,
+        "rev": "bfbdefd3e8560d958bc4b93cc22fcd61f625e44f",
+        "type": "git",
+        "url": "file:///Users/edmundmiller/.config/dotfiles?dir=skills"
       },
       "original": {
-        "path": "./skills",
-        "type": "path"
+        "dir": "skills",
+        "type": "git",
+        "url": "file:///Users/edmundmiller/.config/dotfiles"
       },
       "parent": []
     },
