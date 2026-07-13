@@ -47,6 +47,8 @@ stdenv.mkDerivation {
 
     mkdir -p "$out"
     cp -R dev.timvdhoorn.herdr-agents.sdPlugin "$out/"
+    mkdir -p "$out/dev.timvdhoorn.herdr-agents.sdPlugin/node_modules"
+    cp -R node_modules/ws "$out/dev.timvdhoorn.herdr-agents.sdPlugin/node_modules/"
 
     runHook postInstall
   '';
