@@ -2,7 +2,7 @@
 purpose: Explain how the local Zele package is built and guarded.
 applies_to: Changes under packages/zele.
 entrypoint: default.nix
-verification: Run the wrapper regression test, pkg-check zele, and live CLI smoke checks.
+verification: Run the wrapper regression test, nix build .#zele, and live CLI smoke checks.
 update_when: The upstream pin, patch stack, package layout, or outbound-mail policy changes.
 ---
 
