@@ -1,3 +1,11 @@
+---
+purpose: Route Home Assistant domain changes to the correct patterns and safety contracts.
+applies_to: Declarative scenes, scripts, helpers, and automations under this directory.
+entrypoint: Read the relevant domain file and its cross-domain dependencies.
+verification: Run the HA eval assertions remotely, then the NUC build and runtime checks.
+update_when: Domain ownership, entity contracts, or verification commands change.
+---
+
 # HA Domains
 
 Each file is a logical grouping of HA config (scenes, automations, scripts, input helpers). Imported explicitly from `../default.nix`. Use `lib.mkAfter` for automations/scenes to append to base lists.
@@ -43,7 +51,7 @@ These automations have inline actions by design — do not refactor them into sc
 - `modes.nix` — DND, guest mode, everything_off script
 - `pura.nix` — Pura diffuser routines (arrive-home freshen script + automation)
 - `sleep/` — Sleep lifecycle: goodnight toggle, awake helper booleans, circadian phases (Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning), 8Sleep wake scheduling, focus-off alarm dismissal, wake detection tracking. Auto-Good-Morning flow intentionally removed.
-- `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, Ecobee away preset, lights/blinds/TV off; presence-triggered return
+- `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, HA climate policy, lights/blinds/TV off; presence-triggered return
 - `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
 
 ## Cross-domain dependencies
@@ -57,6 +65,28 @@ sleep/ (input_boolean.goodnight, input_boolean.*_awake)
   └── tv.nix reads goodnight for idle auto-off condition
 vacation.nix (input_boolean.vacation_mode)
   └── ambient.nix skips last-person-leaves during vacation
+```
+
+## Climate ownership
+
+`climate.nix` is the sole Home Assistant thermostat policy:
+
+- HA owns awake occupied, away, vacation, humidity, door-open, and fresh ERCOT grid adjustments.
+- Ecobee/HomeKit owns equipment protection and the fallback schedule. Sleep or invalid core state must clear both thermostat holds.
+- Every HA hold uses `timer.climate_policy_hold`; the watchdog clears and re-evaluates it after 45 minutes.
+- ERCOT comes from `daily-prc.json`. Grid adjustments require `lastUpdated` within 15 minutes; stale/unavailable grid data is ignored.
+- Smart Meter Texas and Electricity Maps are config-flow integrations. Nix enables their components, but credentials/API keys stay outside the repo.
+- Front-door pause uses `binary_sensor.eve_door_20ebn9901_door`; close must reapply policy.
+- Vacation end clears both holds before calling `script.apply_climate_policy`.
+
+Verify with:
+
+```bash
+hey nuc-wt build
+ssh nuc "cd /tmp/dotfiles-worktree-emiller && nix build '.#checks.x86_64-linux.ha-automation-assertions' --no-link"
+hey nuc dry-activate
+hey nuc
+hey nuc-status
 ```
 
 ## Lights

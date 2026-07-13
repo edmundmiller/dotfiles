@@ -200,6 +200,10 @@ in
           "ecobee"
           "met"
           "radio_browser"
+          # Config-flow energy inputs used by the climate policy.
+          "smart_meter_texas"
+          "co2signal"
+          "rest"
           # Voice intents (hassil dependency for conversation config)
           "conversation"
           # Fast zlib compression

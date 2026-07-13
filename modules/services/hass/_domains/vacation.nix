@@ -13,10 +13,9 @@
 # What it does NOT override:
 #   Last-person-leaves automation (patched in ambient.nix to skip during Vacation)
 #
-# Entity TODOs (verify in HA dev-tools → States):
-#   Ecobee climate: climate.ecobee  (or whatever the thermostat is named)
-#   8Sleep sensors: sensor.edmund_s_eight_sleep_side_sleep_stage
-#                   sensor.monica_s_eight_sleep_side_sleep_stage
+# Climate policy owns `climate.main_floor`, `climate.master_suite`, and both clear-hold buttons.
+# 8Sleep sensors: sensor.edmund_s_eight_sleep_side_sleep_stage
+#                     sensor.monica_s_eight_sleep_side_sleep_stage
 { lib, ... }:
 let
   inherit (import ../_lib.nix) ensureEnabled;
@@ -40,17 +39,9 @@ let
       action = "eight_sleep.away_mode_start";
       target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
     }
-    # Thermostats — energy-saving cooling setpoints
+    # Thermostats — apply the HA-owned 78°F vacation target with hold watchdog
     {
-      action = "climate.set_temperature";
-      target.entity_id = [
-        "climate.main_floor"
-        "climate.master_suite"
-      ];
-      data = {
-        hvac_mode = "cool";
-        temperature = 78;
-      };
+      action = "script.apply_climate_policy";
     }
   ];
 
@@ -68,8 +59,16 @@ let
       action = "eight_sleep.away_mode_stop";
       target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
     }
+    # Release the vacation hold before recalculating occupied policy.
     {
-      action = "script.cool_down";
+      action = "button.press";
+      target.entity_id = [
+        "button.main_floor_clear_hold"
+        "button.master_suite_clear_hold"
+      ];
+    }
+    {
+      action = "script.apply_climate_policy";
     }
     # Welcome home scene handles lights + mode
     {
@@ -122,7 +121,7 @@ in
       {
         alias = "Vacation End - Person Arrives";
         id = "vacation_end_presence";
-        description = "First person home during vacation -> restore 8Sleep, cool down, Welcome Home";
+        description = "First person home during vacation -> restore 8Sleep, resume HA climate policy, Welcome Home";
         trigger = [
           {
             platform = "state";

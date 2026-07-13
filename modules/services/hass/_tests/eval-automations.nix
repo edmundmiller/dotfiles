@@ -84,6 +84,35 @@ let
     actions: actionName:
     any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
 
+  hasActionTarget =
+    actions: actionName: entityIds:
+    any (
+      a:
+      (
+        ((a.action or null) == actionName || (a.service or null) == actionName)
+        && (a.target.entity_id or null) == entityIds
+      )
+      || (
+        if a ? choose then
+          any (c: hasActionTarget (toList (c.sequence or [ ])) actionName entityIds) a.choose
+        else
+          false
+      )
+      || (if a ? default then hasActionTarget (toList a.default) actionName entityIds else false)
+      || (
+        if builtins.hasAttr "then" a then hasActionTarget (toList a."then") actionName entityIds else false
+      )
+      || (
+        if builtins.hasAttr "else" a then hasActionTarget (toList a."else") actionName entityIds else false
+      )
+      || (
+        if a ? repeat && a.repeat ? sequence then
+          hasActionTarget (toList a.repeat.sequence) actionName entityIds
+        else
+          false
+      )
+    ) actions;
+
   hasActionCallDeep =
     actions: actionName:
     any (
@@ -97,6 +126,8 @@ let
           false
       )
       || (if a ? default then hasActionCallDeep (toList a.default) actionName else false)
+      || (if builtins.hasAttr "then" a then hasActionCallDeep (toList a."then") actionName else false)
+      || (if builtins.hasAttr "else" a then hasActionCallDeep (toList a."else") actionName else false)
       || (
         if a ? repeat && a.repeat ? sequence then
           hasActionCallDeep (toList a.repeat.sequence) actionName
@@ -204,6 +235,17 @@ let
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
   tvOnScript = scripts.tv_on or null;
+  climatePolicy = findAutomation "climate_policy";
+  climateDoorOpen = findAutomation "climate_pause_front_door_open";
+  climateDoorClosed = findAutomation "climate_resume_front_door_closed";
+  climateHoldWatchdog = findAutomation "climate_hold_watchdog";
+  applyClimatePolicy = scripts.apply_climate_policy or null;
+  vacationEndPresence = findAutomation "vacation_end_presence";
+  vacationEndPresenceActions =
+    if vacationEndPresence == null then [ ] else toList (vacationEndPresence.action or [ ]);
+  extraComponents = nixosConfig.config.services.home-assistant.extraComponents;
+  restConfig = haConfig.rest or [ ];
+  timers = haConfig.timer or { };
 
   # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
@@ -581,6 +623,89 @@ let
         in
         builtins.isAttrs cfg && (cfg.state or null) == "on" && (cfg.brightness or null) == 64;
       msg = "Sundown scene must set window nightstand to 25% brightness";
+    }
+    {
+      test = climatePolicy != null;
+      msg = "automation 'climate_policy' missing";
+    }
+    {
+      test = hasTimePatternTrigger climatePolicy "/15";
+      msg = "climate_policy must re-evaluate every 15 minutes";
+    }
+    {
+      test = applyClimatePolicy != null;
+      msg = "script 'apply_climate_policy' missing";
+    }
+    {
+      test = hasInfix "lastUpdated" (builtins.toJSON applyClimatePolicy);
+      msg = "apply_climate_policy must guard ERCOT decisions with source freshness";
+    }
+    {
+      test = hasActionCallDeep (toList (applyClimatePolicy.sequence or [ ])) "climate.set_temperature";
+      msg = "apply_climate_policy must apply bounded thermostat targets";
+    }
+    {
+      test = hasActionTarget (toList (applyClimatePolicy.sequence or [ ])) "button.press" [
+        "button.main_floor_clear_hold"
+        "button.master_suite_clear_hold"
+      ];
+      msg = "apply_climate_policy must clear both holds on fallback";
+    }
+    {
+      test = (timers.climate_policy_hold.duration or null) == "00:45:00";
+      msg = "timer.climate_policy_hold must bound HA thermostat holds to 45 minutes";
+    }
+    {
+      test =
+        climateHoldWatchdog != null
+        && hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
+          "button.main_floor_clear_hold"
+          "button.master_suite_clear_hold"
+        ];
+      msg = "climate hold watchdog must clear both thermostat holds";
+    }
+    {
+      test = climateDoorOpen != null && climateDoorClosed != null;
+      msg = "front-door climate pause/resume automations missing";
+    }
+    {
+      test = hasStateTrigger climateDoorOpen "binary_sensor.eve_door_20ebn9901_door" "on";
+      msg = "front-door pause must trigger when the door opens";
+    }
+    {
+      test = hasStateTrigger climateDoorClosed "binary_sensor.eve_door_20ebn9901_door" "off";
+      msg = "front-door resume must trigger when the door closes";
+    }
+    {
+      test = vacationEndPresence != null;
+      msg = "automation 'vacation_end_presence' missing";
+    }
+    {
+      test = hasActionTarget vacationEndPresenceActions "button.press" [
+        "button.main_floor_clear_hold"
+        "button.master_suite_clear_hold"
+      ];
+      msg = "vacation end must clear both Ecobee holds";
+    }
+    {
+      test = hasActionCall vacationEndPresenceActions "script.apply_climate_policy";
+      msg = "vacation end must reapply the Home Assistant climate policy";
+    }
+    {
+      test = (scripts.cool_down or null) == null;
+      msg = "legacy script.cool_down must stay removed";
+    }
+    {
+      test = builtins.elem "smart_meter_texas" extraComponents;
+      msg = "Smart Meter Texas component must be available for config-flow setup";
+    }
+    {
+      test = builtins.elem "co2signal" extraComponents;
+      msg = "Electricity Maps component must be available for config-flow setup";
+    }
+    {
+      test = hasInfix "daily-prc.json" (builtins.toJSON restConfig);
+      msg = "ERCOT grid status REST sensor missing";
     }
   ];
 
