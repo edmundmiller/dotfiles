@@ -110,7 +110,6 @@ hooks:
   timeoutMs: 10000
 extensions:
   - ~/.omp/agent/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js
-  - ~/.omp/agent/extensions/completion-gate/index.js
 memory:
   backend: mnemopi
 mnemopi:
