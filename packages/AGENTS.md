@@ -15,6 +15,7 @@ Prefer the `packages/<name>/default.nix` directory pattern when a package may ne
 ## Maintainer checks
 
 - Run `pkg-list` to find units with optional adjacent `package-harness.json` metadata.
+- Run `ast-grep scan packages/` for fast structural checks.
 - Run `pkg-check <unit>` for read-only validation against a fresh upstream checkout.
 - Use `hey` for deployment and host lifecycle, not package source validation.
 

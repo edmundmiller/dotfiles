@@ -177,6 +177,19 @@ def "main check" [
     }
 
     print ""
+    print "==> Running ast-grep tests..."
+    let ast_grep_check = (^nix build $".#checks.($ctx.nix_system).ast-grep-tests" --no-link | complete)
+    if $ast_grep_check.exit_code == 0 {
+      print "✓ ast-grep tests OK"
+    } else {
+      print "✗ ast-grep tests FAILED"
+      if (($ast_grep_check.stderr | str trim) | is-not-empty) {
+        print -e $ast_grep_check.stderr
+      }
+      $failed = true
+    }
+
+    print ""
     if not $failed {
       print "✓ All Darwin checks passed!"
     } else {
