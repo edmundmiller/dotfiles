@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root" || exit 1
+
+python=${COMPLETION_CHECK_PYTHON:-python3}
+hey=${COMPLETION_CHECK_HEY:-hey}
+
+"$python" -m unittest discover -s tests -p 'test_*.py' >&2 || {
+  printf '%s\n' 'Dotfiles regression tests failed; fix them before stopping.'
+  exit 1
+}
+
+"$hey" check >&2 || {
+  printf '%s\n' 'hey check failed; fix it before stopping.'
+  exit 1
+}
