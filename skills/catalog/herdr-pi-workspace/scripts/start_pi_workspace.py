@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python3
 """Create a Herdr workspace and start Pi with a handoff prompt.
 
 This script is intentionally small and dependency-free so agents can copy or run it
@@ -26,41 +25,14 @@ def run(args: list[str], *, input_text: str | None = None, capture: bool = False
     )
 
 
-def wait_for_pi_ready(pane_id: str, *, ready_timeout_ms: int, idle_timeout_ms: int) -> None:
-    """Best-effort wait until Pi has painted its TUI and reported idle.
-
-    `herdr pane run` returns as soon as the shell command is submitted. If we paste a
-    long handoff before Pi owns the terminal, the prompt can leak into the shell or
-    land in the TUI before it is ready to submit. Waiting for a stable startup line
-    first makes the following send-text + Enter handoff much more reliable.
-    """
+def wait_for_pi_ready(pane_id: str, *, idle_timeout_ms: int) -> None:
+    """Best-effort wait for Herdr's semantic Pi idle state."""
 
     subprocess.run(
         [
             "herdr",
+            "agent",
             "wait",
-            "output",
-            pane_id,
-            "--match",
-            "Pi can explain its own features",
-            "--source",
-            "recent",
-            "--lines",
-            "120",
-            "--timeout",
-            str(ready_timeout_ms),
-        ],
-        text=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-
-    subprocess.run(
-        [
-            "herdr",
-            "wait",
-            "agent-status",
             pane_id,
             "--status",
             "idle",
@@ -85,12 +57,6 @@ def main() -> int:
         "--no-focus",
         action="store_true",
         help="Create the workspace without focusing it",
-    )
-    parser.add_argument(
-        "--ready-timeout-ms",
-        type=int,
-        default=30_000,
-        help="How long to wait for Pi startup output before sending the prompt",
     )
     parser.add_argument(
         "--idle-timeout-ms",
@@ -132,11 +98,7 @@ def main() -> int:
     workspace_id = result["workspace"]["workspace_id"]
 
     run(["herdr", "pane", "run", pane_id, "pi"])
-    wait_for_pi_ready(
-        pane_id,
-        ready_timeout_ms=args.ready_timeout_ms,
-        idle_timeout_ms=args.idle_timeout_ms,
-    )
+    wait_for_pi_ready(pane_id, idle_timeout_ms=args.idle_timeout_ms)
 
     run(["herdr", "pane", "send-text", pane_id, prompt])
     run(["herdr", "pane", "send-keys", pane_id, "Enter"])
