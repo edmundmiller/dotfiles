@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+payload=$(cat)
+cwd=$(printf '%s' "$payload" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd", ""))' 2>/dev/null) || cwd=
+test -n "$cwd" || cwd=$PWD
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+repo=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
+test "$repo" = "$root" || exit 0
+cd "$root" || exit 0
+
+python=${CODEX_STOP_PYTHON:-python3}
+hey=${CODEX_STOP_HEY:-hey}
+
+block() {
+  python3 -c 'import json,sys; print(json.dumps({"decision":"block","reason":sys.argv[1]}))' "$1"
+  exit 0
+}
+
+"$python" -m unittest discover -s tests -p 'test_*.py' >&2 ||
+  block "Dotfiles regression tests failed; fix them before stopping."
+"$hey" check >&2 || block "hey check failed; fix it before stopping."
