@@ -1,3 +1,11 @@
+---
+purpose: Manage the shared Nix-backed agent skills catalog.
+applies_to: Adding, updating, selecting, or deploying global skills.
+entrypoint: Edit skills/flake.nix or skills/catalog, then use the matching workflow.
+verification: Rebuild the host and verify the expected target directories.
+update_when: Skill sources, targets, selection, or sync workflows change.
+---
+
 # Skills Catalog (Child Flake)
 
 Manages global agent skills via `agent-skills-nix`. Dotfiles project-local skills belong in `.agents/skills/`, not here, and must not be deployed globally.
@@ -8,10 +16,9 @@ Manages global agent skills via `agent-skills-nix`. Dotfiles project-local skill
 
 1. **Sources** — where skills come from (local dir or remote repos)
 2. **Skill selection** — which skills to enable
-3. **Targets** — where skills are installed (`~/.agents/skills`, `~/.codex/skills`, `~/.pi/agent/skills`, `~/.claude/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`)
+3. **Targets** — where skills are installed (`~/.agents/skills`, `~/.codex/skills`, `~/.pi/agent/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`)
 
-Default skills go to `agents` and `claude`. Pi, Codex, OpenCode, and Hermes read `~/.agents/skills`; their own dirs are for target-specific skills only. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `claude`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-claude`, `dot-opencode`, `dot-hermes`).
-Bundles are generated for every target, but activation syncs only targets whose local agent module is enabled. Hermes also syncs when `services.hermes-agent.enable = true`. The `agents` target is synced when any non-Claude local agent is enabled.
+Default skills go only to `agents`. Pi, Codex, OpenCode, and Hermes read `~/.agents/skills`; their own dirs are for target-specific skills only. Claude skill deployment is intentionally disabled because OMP also scans `~/.claude/skills`, which would load duplicate skills. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-opencode`, `dot-hermes`).
 
 **Hermes note:** Hermes builtin skills do not include these dotfiles skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.hermes/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
 
@@ -25,7 +32,7 @@ For target-specific explicit skills, set metadata in `skills/flake.nix`:
 programs.dotfiles-agent-skills.targetedExplicit.my-skill = {
   from = "my-source";
   path = "my-skill";
-  meta.targets = [ "codex" "claude" ];
+  meta.targets = [ "codex" "pi" ];
 };
 ```
 

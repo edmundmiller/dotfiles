@@ -31,8 +31,7 @@ in
     ];
 
     home.file = {
-      # Skills and agents are shared across all agents (Claude, OpenCode, Pi)
-      # Single source of truth in config/agents/
+      # Shared agent modes come from config/agents/.
       ".claude/agents".source = "${configDir}/agents/modes";
       # CLAUDE.md is built dynamically from config/agents/rules/*.md
       ".claude/CLAUDE.md".text = concatenatedRules;
