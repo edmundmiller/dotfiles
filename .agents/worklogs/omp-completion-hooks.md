@@ -6,12 +6,12 @@ Status: complete
 
 Codex and OMP main sessions use one completion checker, and OMP continues unverified stop attempts through its documented eight-continuation budget.
 
-Stopping condition: focused contracts, shared checker, Darwin rebuild, installed-extension inspection, and subdirectory continuation smoke test pass on the final rebased tree; requested files are committed, pushed, current upstream, and tagged.
+Stopping condition: focused contracts, shared checker, repository-root discovery smoke, Darwin removal of the global link, and final upstream/tag verification pass.
 
 ## Decisions
 
 - Use one shared shell checker for Codex and OMP.
-- Install the OMP extension globally but gate activation to this repository using tracked marker files.
+- Keep the OMP extension repository-local at `.omp/extensions/completion-gate.js`; do not install it through Nix or user-wide OMP configuration.
 - Verification is a one-shot content snapshot consumed by the next stop attempt.
 - Do not patch OMP core; use the public `ExtensionAPI.session_stop` continuation budget.
 - Preserve `features.unexpectedStopDetection: true`; do not add another semantic classifier.
@@ -25,9 +25,9 @@ Stopping condition: focused contracts, shared checker, Darwin rebuild, installed
 - `scripts/completion-check`: 23 repository tests passed, then Darwin `hey check` passed; direct execution succeeded with checker output confined to stderr.
 - `hey agent-audit-tests tests/test_completion_hooks.py tests/omp_completion_gate.test.js`: `PASS test-confidence`.
 - `hey agent-finish --worklog .agents/worklogs/omp-completion-hooks.md`: all applicable workflow checks passed after `nix develop -c true` refreshed the generated prek manifest.
-- `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .`: activated successfully on `MacTraitor-Pro.local` (`Darwin 27.0.0`, arm64).
-- `omp --no-session --mode json -p '/extensions'`: loaded `completion_check`, emitted a `session-stop-continuation`, called the tool, and reported no extension load error.
-- Subdirectory runtime smoke with checker commands stubbed settled as exact `GATE_OK`, not `PRECHECK`.
+- Corrective Darwin rebuild removed the global completion-gate link; `~/.omp/agent/extensions` contains no completion gate.
+- Fresh repository-root smoke settled as exact `GATE_OK`, proving `.omp/extensions/completion-gate.js` discovery and continuation.
+- Fresh `omp --cwd config` smoke settled as exact `PRECHECK`, proving the gate is inactive outside the repository-root discovery scope.
 
 ## Reviews
 
