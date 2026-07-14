@@ -1,0 +1,61 @@
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  fetchPnpmDeps,
+  makeWrapper,
+  nodejs,
+  pnpm_10,
+  pnpmConfigHook,
+}:
+
+stdenv.mkDerivation (finalAttrs: {
+  pname = "openwiki";
+  version = "0.1.2-unstable-2026-07-13";
+
+  src = fetchFromGitHub {
+    owner = "langchain-ai";
+    repo = "openwiki";
+    rev = "7c084f9f6f8032243fd3dfd544969c279416b5cb";
+    hash = "sha256-sMxxn3PDA+0qJK26VguVbZAY+jUaAwA+m+OZGPMESJ0=";
+  };
+
+  pnpmDeps = fetchPnpmDeps {
+    inherit (finalAttrs) pname version src;
+    pnpm = pnpm_10;
+    fetcherVersion = 2;
+    hash = "sha256-xN/OKHGzXoW8GKwLbLKq5PGabWEa+Y1aZtS5L3SxH/g=";
+  };
+
+  nativeBuildInputs = [
+    makeWrapper
+    nodejs
+    pnpm_10
+    pnpmConfigHook
+  ];
+
+  buildPhase = ''
+    runHook preBuild
+    pnpm build
+    runHook postBuild
+  '';
+
+  installPhase = ''
+    runHook preInstall
+
+    mkdir -p "$out/lib/openwiki" "$out/bin"
+    cp -r dist node_modules package.json "$out/lib/openwiki/"
+    makeWrapper ${lib.getExe nodejs} "$out/bin/openwiki" \
+      --add-flags "$out/lib/openwiki/dist/cli.js"
+
+    runHook postInstall
+  '';
+
+  meta = {
+    description = "Agent-generated documentation wiki for codebases";
+    homepage = "https://github.com/langchain-ai/openwiki";
+    license = lib.licenses.mit;
+    mainProgram = "openwiki";
+    platforms = lib.platforms.unix;
+  };
+})
