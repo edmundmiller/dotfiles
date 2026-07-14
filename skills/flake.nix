@@ -268,23 +268,6 @@
           "tmux"
           "enable"
         ];
-        # Keep host-specific local skills out of the always-on catalog source so
-        # they can be toggled by the matching Nix module below. Use a filtered
-        # source path instead of a derivation so other NixOS configs can refer
-        # to programs.agent-skills.bundlePath during evaluation on a different
-        # build platform.
-        localCatalogSource = builtins.path {
-          name = "dotfiles-skills-catalog";
-          path = ./catalog;
-          filter =
-            path: _type:
-            let
-              root = toString ./catalog;
-              rel = lib.removePrefix "${root}/" (toString path);
-              top = builtins.head (lib.splitString "/" rel);
-            in
-            rel == toString path || top != "herdr-pi-workspace";
-        };
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -379,18 +362,9 @@
               sources = {
                 # Checkout-owned global skills.
                 catalog = {
-                  path = localCatalogSource;
-                  subdir = ".";
-                  filter.maxDepth = 1;
-                };
-
-                herdr-pi-workspace = {
                   path = ./catalog;
                   subdir = ".";
-                  filter = {
-                    maxDepth = 3;
-                    nameRegex = "^herdr-pi-workspace$";
-                  };
+                  filter.maxDepth = 1;
                 };
 
                 gitbutler-but = {
@@ -770,13 +744,6 @@
               };
             };
 
-            programs.dotfiles-agent-skills.targetedExplicit = lib.optionalAttrs piEnabled {
-              herdr-pi-workspace = {
-                from = "herdr-pi-workspace";
-                path = "herdr-pi-workspace";
-                meta.targets = [ "pi" ];
-              };
-            };
           };
       };
   };

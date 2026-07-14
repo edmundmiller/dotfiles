@@ -1,6 +1,6 @@
 ---
 name: herdr
-description: Control live Herdr workspaces, tabs, panes, agents, worktrees, layouts, plugins, and waits. Use when running inside Herdr (`HERDR_ENV=1`) to inspect sibling agents, delegate work, run services, debug agent detection, or coordinate terminal state.
+description: Control live Herdr workspaces, tabs, panes, agents, worktrees, layouts, plugins, and waits. Use when running inside Herdr (`HERDR_ENV=1`) to inspect sibling agents, delegate work—including dedicated Pi workspaces—run services, debug agent detection, or coordinate terminal state.
 ---
 
 # Herdr
@@ -120,4 +120,9 @@ herdr pane layout --current
 
 - `references/cli-map.md` — high-level command selection and response rules.
 - `references/recipes.md` — delegation, service, layout, and failure-recovery recipes.
+- `references/pi-workspace.md` — dedicated Pi workspace delegation and handoff workflow.
+- `scripts/start_pi_workspace.py` — create a workspace, launch Pi, and submit a prompt file.
+- `scripts/send_prompt_to_pane.py` — submit a prompt file to an existing pane.
+- `scripts/write_handoff_prompt.py` — generate a structured child-agent prompt.
+- `scripts/monitor_pane.py` and `scripts/extract_ids.py` — inspect delegated work and parse live IDs.
 - `scripts/agent_context.py` — bounded JSON snapshot of one agent's metadata, recent output, and detection explanation.
