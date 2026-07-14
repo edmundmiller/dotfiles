@@ -72,7 +72,7 @@ LAUNCH_JSON=$(python3 ~/.pi/agent/skills/herdr-pi-workspace/scripts/start_pi_wor
 PANE_ID=$(printf '%s' "$LAUNCH_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pane_id"])')
 ```
 
-`start_pi_workspace.py` waits for Pi startup output and idle status before sending the prompt, then prints JSON with `workspace_id` and `pane_id`. Use `--ready-timeout-ms` or `--idle-timeout-ms` to tune those waits if startup is slow.
+`start_pi_workspace.py` waits for Herdr's semantic Pi `idle` status before sending the prompt, then prints JSON with `workspace_id` and `pane_id`. Use `--idle-timeout-ms` if startup is slow.
 
 To send a prompt to an already-open pane, or to a pane you created with `herdr pane split`:
 
