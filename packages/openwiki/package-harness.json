@@ -1,0 +1,17 @@
+{
+  "source": "https://github.com/langchain-ai/openwiki.git",
+  "ref": "7c084f9f6f8032243fd3dfd544969c279416b5cb",
+  "patches": ["patches/0001-configurable-personal-wiki-directory.patch"],
+  "checks": [
+    ["pnpm", "install", "--frozen-lockfile"],
+    ["pnpm", "typecheck"],
+    [
+      "pnpm",
+      "test",
+      "test/openwiki-home.test.ts",
+      "test/prompt.test.ts",
+      "test/commands.test.ts",
+      "test/credentials.test.ts"
+    ]
+  ]
+}

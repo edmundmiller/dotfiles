@@ -20,6 +20,10 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-sMxxn3PDA+0qJK26VguVbZAY+jUaAwA+m+OZGPMESJ0=";
   };
 
+  patches = [
+    ./patches/0001-configurable-personal-wiki-directory.patch
+  ];
+
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_10;
