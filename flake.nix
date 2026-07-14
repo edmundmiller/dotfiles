@@ -870,7 +870,10 @@
           devShells = {
             # Headless agent dev shell (nix develop .#agent)
             agent = pkgs.mkShell {
-              packages = self.packages.${system}.agent-env.paths ++ [ self.packages.${system}.package-harness ];
+              packages = self.packages.${system}.agent-env.paths ++ [
+                self.packages.${system}.ast-grep
+                self.packages.${system}.package-harness
+              ];
               shellHook = ''
                 echo "dotfiles agent shell (headless)"
               '';
@@ -883,6 +886,7 @@
             default = pkgs.mkShellNoCC {
               packages =
                 self.packages.${system}.agent-env.paths
+                ++ [ self.packages.${system}.ast-grep ]
                 ++ [ self.packages.${system}.package-harness ]
                 ++ (with pkgs; [
                   deadnix
@@ -912,6 +916,7 @@
                   deploy-rs.packages.${system}.default
                   nushell
                   inputs.llm-agents.packages.${system}.beads-rust
+                  self.packages.${system}.ast-grep
                   self.packages.${system}.package-harness
                 ]
                 ++ config.pre-commit.settings.enabledPackages;
@@ -942,6 +947,23 @@
                   ''
                     cd ${./packages/package-harness}
                     PYTHONDONTWRITEBYTECODE=1 python3 test_package_harness.py
+                    touch $out
+                  '';
+
+              ast-grep-tests =
+                pkgs.runCommand "ast-grep-tests"
+                  {
+                    nativeBuildInputs = [ self.packages.${system}.ast-grep ];
+                  }
+                  ''
+                    cp -R ${./.} source
+                    chmod -R u+w source
+                    cd source
+                    test "$(ast-grep --version)" = "ast-grep 0.44.1"
+                    ast-grep run --lang nix --pattern 'writeShellApplication' packages/package-harness/default.nix
+                    ast-grep run --lang markdown --pattern '# Agent workflow' AGENT_WORKFLOW.md
+                    ast-grep test --skip-snapshot-tests
+                    ast-grep scan
                     touch $out
                   '';
 

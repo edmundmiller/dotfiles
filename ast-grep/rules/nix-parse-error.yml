@@ -1,0 +1,9 @@
+id: nix-parse-error
+language: nix
+severity: error
+files:
+  - packages/*.nix
+  - packages/**/*.nix
+message: Nix package syntax does not parse cleanly.
+rule:
+  kind: ERROR
