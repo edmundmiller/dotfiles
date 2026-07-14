@@ -90,13 +90,13 @@
           enable = true;
           # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex.
           # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
-          # Roles: GPT-5.5 executor; Sol advisor/slow/plan; composer smol.
+          # Roles: Sol executor/advisor/slow/plan; composer smol.
           smolModel = "xai-oauth/grok-composer-2.5-fast";
           modelRoles = {
             smol = "xai-oauth/grok-composer-2.5-fast";
-            default = "openai-codex/gpt-5.5:low";
+            default = "openai-codex/gpt-5.6-sol:medium";
             advisor = "openai-codex/gpt-5.6-sol:high";
-            slow = "openai-codex/gpt-5.6-sol:high";
+            slow = "openai-codex/gpt-5.6-sol:xhigh";
             # Shared plan defaults to vibeproxy; override to sol.
             plan = "openai-codex/gpt-5.6-sol:high";
           };
