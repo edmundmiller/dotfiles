@@ -115,22 +115,6 @@
         "type": "github"
       }
     },
-    "herdr-repo": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1782767976,
-        "narHash": "sha256-yiTnyVzV9GXVel8oCR06gPTvQabND22a13tog173BtM=",
-        "owner": "ogulcancelik",
-        "repo": "herdr",
-        "rev": "8b1d77acf6059e6688fb6a875c3176c95602b6c4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ogulcancelik",
-        "repo": "herdr",
-        "type": "github"
-      }
-    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -149,23 +133,6 @@
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "hunk-repo": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1783412244,
-        "narHash": "sha256-FlwCtcu2JRECyKC1balItY/DmQyb+obh+97wo7+06DU=",
-        "owner": "modem-dev",
-        "repo": "hunk",
-        "rev": "f809983781b7eac9edf676600cfe3033430cfa11",
-        "type": "github"
-      },
-      "original": {
-        "owner": "modem-dev",
-        "ref": "v0.17.0",
-        "repo": "hunk",
         "type": "github"
       }
     },
@@ -368,8 +335,6 @@
         "diffity-repo": "diffity-repo",
         "emilkowalski-skills": "emilkowalski-skills",
         "gitbutler-repo": "gitbutler-repo",
-        "herdr-repo": "herdr-repo",
-        "hunk-repo": "hunk-repo",
         "marimo-pair-repo": "marimo-pair-repo",
         "marimo-skills-repo": "marimo-skills-repo",
         "markit-repo": "markit-repo",

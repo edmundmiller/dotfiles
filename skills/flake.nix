@@ -42,16 +42,6 @@
       flake = false;
     };
 
-    hunk-repo = {
-      url = "github:modem-dev/hunk/v0.17.0";
-      flake = false;
-    };
-
-    herdr-repo = {
-      url = "github:ogulcancelik/herdr";
-      flake = false;
-    };
-
     diffity-repo = {
       url = "github:kamranahmedse/diffity";
       flake = false;
@@ -398,7 +388,7 @@
                   path = ./catalog;
                   subdir = ".";
                   filter = {
-                    maxDepth = 1;
+                    maxDepth = 3;
                     nameRegex = "^herdr-pi-workspace$";
                   };
                 };
@@ -480,18 +470,17 @@
                 };
 
                 hunk = {
-                  path = inputs.hunk-repo.outPath;
-                  subdir = "skills";
-                  filter.maxDepth = 2;
+                  path = ./conditional/hunk;
+                  subdir = ".";
+                  filter.maxDepth = 3;
                 };
 
                 herdr = {
-                  # Herdr exposes a single root-level SKILL.md upstream. Keep a
-                  # checkout-owned wrapper directory so cross-system evaluation does
-                  # not need a host-platform wrapper derivation.
+                  # Checkout-owned package extends upstream guidance with current
+                  # agent CLI workflows, references, and deterministic helpers.
                   path = ./conditional/herdr;
                   subdir = ".";
-                  filter.maxDepth = 1;
+                  filter.maxDepth = 3;
                 };
 
                 diffity = {
