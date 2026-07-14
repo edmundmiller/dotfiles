@@ -462,6 +462,9 @@
           system,
           ...
         }:
+        let
+          unstable = mkPkgs nixpkgs-unstable [ ] system;
+        in
         {
           # Expose deploy-rs CLI for `nix run .#deploy-rs`
           packages.deploy-rs = deploy-rs.packages.${system}.default;
@@ -871,7 +874,7 @@
             # Headless agent dev shell (nix develop .#agent)
             agent = pkgs.mkShell {
               packages = self.packages.${system}.agent-env.paths ++ [
-                self.packages.${system}.ast-grep
+                unstable.ast-grep
                 self.packages.${system}.package-harness
               ];
               shellHook = ''
@@ -886,7 +889,7 @@
             default = pkgs.mkShellNoCC {
               packages =
                 self.packages.${system}.agent-env.paths
-                ++ [ self.packages.${system}.ast-grep ]
+                ++ [ unstable.ast-grep ]
                 ++ [ self.packages.${system}.package-harness ]
                 ++ (with pkgs; [
                   deadnix
@@ -916,7 +919,7 @@
                   deploy-rs.packages.${system}.default
                   nushell
                   inputs.llm-agents.packages.${system}.beads-rust
-                  self.packages.${system}.ast-grep
+                  unstable.ast-grep
                   self.packages.${system}.package-harness
                 ]
                 ++ config.pre-commit.settings.enabledPackages;
@@ -953,13 +956,13 @@
               ast-grep-tests =
                 pkgs.runCommand "ast-grep-tests"
                   {
-                    nativeBuildInputs = [ self.packages.${system}.ast-grep ];
+                    nativeBuildInputs = [ unstable.ast-grep ];
                   }
                   ''
                     cp -R ${./.} source
                     chmod -R u+w source
                     cd source
-                    test "$(ast-grep --version)" = "ast-grep 0.44.1"
+                    test "$(ast-grep --version)" = "ast-grep ${unstable.ast-grep.version}"
                     ast-grep run --lang nix --pattern 'writeShellApplication' packages/package-harness/default.nix
                     ast-grep run --lang markdown --pattern '# Agent workflow' AGENT_WORKFLOW.md
                     ast-grep test --skip-snapshot-tests
