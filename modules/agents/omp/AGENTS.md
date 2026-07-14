@@ -1,3 +1,11 @@
+---
+purpose: Define OMP module ownership, runtime isolation, and completion enforcement.
+applies_to: Changes under config/omp or modules/agents/omp.
+entrypoint: Edit repository sources, then rebuild the Darwin configuration.
+verification: Run focused OMP tests, rebuild, inspect extensions, and smoke test completion.
+update_when: OMP wiring, extension behavior, providers, or verification commands change.
+---
+
 # OMP Module
 
 Thin wrapper module for Oh My Pi (`omp`).
@@ -29,6 +37,32 @@ Enable with:
 
 ```nix
 modules.agents.omp.enable = true;
+```
+
+## Completion gate
+
+`scripts/completion-check` is the shared source of truth for Codex and OMP
+completion checks. OMP loads
+`config/omp/extensions/completion-gate/index.js` through the Nix-managed
+`~/.omp/agent/extensions/completion-gate/index.js` link. The globally installed
+extension activates only when Git tracks both `.codex/hooks.json` and
+`scripts/codex-validate-stop` in the current worktree.
+
+The model-callable `completion_check` tool records a one-shot content snapshot.
+The next main-session stop must match it or OMP continues the session. OMP core
+limits `session_stop` to eight consecutive continuations. Keep
+`features.unexpectedStopDetection: true` for semantic incomplete-stop detection;
+do not add another classifier. `hooks.timeoutMs` controls legacy hooks, not
+`ExtensionAPI.session_stop`.
+
+Verify changes with:
+
+```sh
+bun test tests/omp_completion_gate.test.js
+python3 -m unittest tests/test_completion_hooks.py
+scripts/completion-check
+sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .
+omp -p '/extensions'
 ```
 
 ## Permission policy guard
