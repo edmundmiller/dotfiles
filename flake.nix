@@ -941,15 +941,27 @@
                 pkgs.runCommand "package-harness-tests"
                   {
                     nativeBuildInputs = [
-                      pkgs.bash
                       pkgs.python3
                       pkgs.git
                     ];
-                    PACKAGE_HARNESS_REPO_ROOT = toString ./.;
                   }
                   ''
                     cd ${./packages/package-harness}
                     PYTHONDONTWRITEBYTECODE=1 python3 test_package_harness.py
+                    touch $out
+                  '';
+
+              package-policy-tests =
+                pkgs.runCommand "package-policy-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.python3
+                    ];
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_package_policy.py
                     touch $out
                   '';
 
