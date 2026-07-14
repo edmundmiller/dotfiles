@@ -7,7 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class OmpModelRoutingTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_mactraitorpro_default_is_sol_low(self) -> None:
         result = subprocess.run(
             [
