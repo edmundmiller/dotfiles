@@ -1,5 +1,6 @@
 personality = "pragmatic"
 model = "gpt-5.3-codex"
+model_verbosity = "low"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 approval_policy = "on-request"
