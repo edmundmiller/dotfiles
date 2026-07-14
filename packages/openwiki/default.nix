@@ -3,10 +3,15 @@
   stdenv,
   fetchFromGitHub,
   fetchPnpmDeps,
+  cctools,
   makeWrapper,
+  node-gyp,
   nodejs,
   pnpm_10,
   pnpmConfigHook,
+  python3,
+  removeReferencesTo,
+  srcOnly,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -34,12 +39,24 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     makeWrapper
     nodejs
+    node-gyp
     pnpm_10
     pnpmConfigHook
+    python3
+    removeReferencesTo
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    cctools.libtool
   ];
 
   buildPhase = ''
     runHook preBuild
+    pushd node_modules/.pnpm/better-sqlite3@12.11.1/node_modules/better-sqlite3
+    npm run build-release --offline "--nodedir=${srcOnly nodejs}"
+    find build -type f -exec ${removeReferencesTo}/bin/remove-references-to -t "${srcOnly nodejs}" {} \;
+    popd
+
+    pnpm rebuild esbuild
     pnpm build
     runHook postBuild
   '';
