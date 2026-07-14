@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const EXTENSION = path.resolve("config/omp/extensions/completion-gate/index.js");
+const EXTENSION = path.resolve(".omp/extensions/completion-gate.js");
 const temporaries = [];
 
 function run(command, args, options = {}) {
