@@ -246,6 +246,20 @@ let
   extraComponents = nixosConfig.config.services.home-assistant.extraComponents;
   restConfig = haConfig.rest or [ ];
   timers = haConfig.timer or { };
+  applyClimatePolicySequence =
+    if applyClimatePolicy == null then [ ] else toList (applyClimatePolicy.sequence or [ ]);
+  activeClimatePolicyActions =
+    if builtins.length applyClimatePolicySequence < 2 then
+      [ ]
+    else
+      let
+        policyChoice = builtins.elemAt applyClimatePolicySequence 1;
+      in
+      if !(policyChoice ? choose) || policyChoice.choose == [ ] then
+        [ ]
+      else
+        toList ((builtins.elemAt policyChoice.choose 0).sequence or [ ]);
+  climateDoorOpenActions = if climateDoorOpen == null then [ ] else toList (climateDoorOpen.action or [ ]);
 
   # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
@@ -657,6 +671,12 @@ let
     }
     {
       test =
+        !hasActionCall activeClimatePolicyActions "timer.start"
+        && hasActionCallDeep activeClimatePolicyActions "timer.start";
+      msg = "apply_climate_policy must start the watchdog only when creating a thermostat hold";
+    }
+    {
+      test =
         climateHoldWatchdog != null
         && hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
           "button.main_floor_clear_hold"
@@ -671,6 +691,12 @@ let
     {
       test = hasStateTrigger climateDoorOpen "binary_sensor.eve_door_20ebn9901_door" "on";
       msg = "front-door pause must trigger when the door opens";
+    }
+    {
+      test =
+        hasActionCall climateDoorOpenActions "timer.start"
+        && !hasActionCall climateDoorOpenActions "timer.cancel";
+      msg = "front-door pause must keep a bounded watchdog for HVAC-off state";
     }
     {
       test = hasStateTrigger climateDoorClosed "binary_sensor.eve_door_20ebn9901_door" "off";
