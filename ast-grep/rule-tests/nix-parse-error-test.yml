@@ -1,0 +1,5 @@
+id: nix-parse-error
+valid:
+  - '{ a = "foo"; c = {}; }'
+invalid:
+  - '{ a = "foo"; typing c = {}; }'
