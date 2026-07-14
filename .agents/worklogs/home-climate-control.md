@@ -1,6 +1,6 @@
 # Worklog: home-climate-control
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -12,7 +12,7 @@ Make Home Assistant the explicit thermostat policy engine with safe Ecobee fallb
 - Sleep and invalid core state clear holds so the Ecobee schedule is the fail-safe.
 - ERCOT uses the current unauthenticated JSON endpoint with timestamp freshness checks; stale data is ignored.
 - Smart Meter Texas and Electricity Maps remain config-flow integrations. Enable their components and document prerequisites; never fake credentials in Nix.
-- Use the existing front-door contact sensor for Pause When Open. Every pause has a close-triggered policy reapply.
+- Use the existing front-door contact sensor for Pause When Open. The pause starts the same 45-minute watchdog and close re-applies policy.
 
 ## Evidence
 
@@ -22,6 +22,7 @@ Make Home Assistant the explicit thermostat policy engine with safe Ecobee fallb
 - `hey nuc-wt build`, `hey nuc dry-activate`, and `hey nuc` passed.
 - Live HA verified the policy script, watchdog timer, fresh ERCOT sensor, sleep fallback, and restored Ecobee schedule after a temporary hold.
 - `darwin-rebuild switch --flake .` and `hey check` passed locally.
+- Follow-up regression assertions prove each thermostat-changing branch starts the watchdog without periodic resets, and the door pause retains a bounded fallback.
 
 ## Reviews
 
@@ -37,9 +38,10 @@ Make Home Assistant the explicit thermostat policy engine with safe Ecobee fallb
 
 ## Remaining work
 
-- Run landing gates, commit, pull/rebase, push, and verify upstream.
+- None for the declarative implementation.
 - Complete Smart Meter Texas and Electricity Maps config flows when credentials/API key are available.
 
 ## Commits
 
-None.
+- `ee9310afc` — `feat(hass): add grid-aware climate policy`
+- Follow-up review fixes: bound hold creation and door pause, clarify optional energy inputs, and finalize this record.

@@ -118,6 +118,10 @@ in
                       target.entity_id = thermostats;
                       data.hvac_mode = "cool";
                     }
+                    {
+                      action = "timer.start";
+                      target.entity_id = "timer.climate_policy_hold";
+                    }
                   ];
                 }
                 {
@@ -138,11 +142,11 @@ in
                       target.entity_id = thermostats;
                       data.temperature = "{{ target_temperature | float }}";
                     }
+                    {
+                      action = "timer.start";
+                      target.entity_id = "timer.climate_policy_hold";
+                    }
                   ];
-                }
-                {
-                  action = "timer.start";
-                  target.entity_id = "timer.climate_policy_hold";
                 }
               ];
             }
@@ -243,10 +247,6 @@ in
         };
         action = [
           {
-            action = "timer.cancel";
-            target.entity_id = "timer.climate_policy_hold";
-          }
-          {
             action = "button.press";
             target.entity_id = clearHoldButtons;
           }
@@ -254,6 +254,10 @@ in
             action = "climate.set_hvac_mode";
             target.entity_id = thermostats;
             data.hvac_mode = "off";
+          }
+          {
+            action = "timer.start";
+            target.entity_id = "timer.climate_policy_hold";
           }
         ];
       }
