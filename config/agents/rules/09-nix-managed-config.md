@@ -16,7 +16,6 @@ Agent config files (`~/.pi/agent/`, `~/.claude/`, `~/.config/opencode/`) are **r
 | `~/.pi/agent/settings.json` | `config/pi/settings.jsonc`                                                                      |
 | `~/.pi/agent/AGENTS.md`     | `config/agents/rules/*.md` (concatenated)                                                       |
 | `~/.pi/agent/extensions/*`  | `config/pi/extensions/*`                                                                        |
-| `~/.claude/skills`          | Claude-specific generated skills from `skills/flake.nix`                                        |
 | `~/.claude/CLAUDE.md`       | `config/agents/rules/*.md` (concatenated)                                                       |
 
 Pi's "Could not save settings file" warning is expected and harmless.

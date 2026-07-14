@@ -1,3 +1,11 @@
+---
+purpose: Explain the Claude CLI module and its managed files.
+applies_to: Enabling or maintaining Claude Code in this dotfiles repo.
+entrypoint: Set modules.agents.claude.enable and rebuild.
+verification: Confirm the managed Claude files after rebuilding.
+update_when: Claude module behavior or managed paths change.
+---
+
 # Claude CLI Module
 
 Minimal nix-darwin wiring for Claude Code. This mainly exists so native Claude Code and `acpx claude` can share the same baseline Claude runtime config.
@@ -14,7 +22,6 @@ modules.agents.claude.enable = true;
 - `~/.claude/settings.json` from `config/claude/settings.json`
 - `~/.claude/CLAUDE.md` built from `config/agents/rules/*.md`
 - `~/.claude/agents/` from `config/agents/modes/`
-- `~/.claude/skills/` generated from the skills catalog
 - Darwin-only `~/.wakatime.cfg`
 
 ## Repo-local Claude plugin sources
@@ -27,7 +34,6 @@ These stay in the repo for development/reference, but installed plugins still li
 
 ## Notes
 
-- Shared skills and modes live under `config/agents/`
-- Claude-specific generated skills sync only when `modules.agents.claude.enable = true`
+- Shared skills live in `~/.agents/skills`; this repo intentionally removes `~/.claude/skills` so OMP does not discover duplicate copies
 - Project-local skills belong in `.agents/skills/`
 - If Claude reports settings schema errors, check `config/claude/settings.json`

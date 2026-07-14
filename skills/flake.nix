@@ -136,7 +136,6 @@
           "agents"
           "codex"
           "pi"
-          "claude"
           "opencode"
           "hermes"
         ];
@@ -144,18 +143,13 @@
           dot-agents = "agents";
           dot-codex = "codex";
           dot-pi = "pi";
-          dot-claude = "claude";
           dot-opencode = "opencode";
           dot-hermes = "hermes";
         };
         normalizeTarget = target: targetAliases.${target} or target;
-        # Pi, Codex, OpenCode, and Hermes read ~/.agents/skills in addition to
-        # their own target dirs, so default skills go only to ~/.agents/skills.
-        # Claude is the exception and needs its own default copy.
-        defaultSkillTargets = [
-          "agents"
-          "claude"
-        ];
+        # Deploy shared skills only to ~/.agents/skills. Claude deployment is
+        # intentionally disabled so OMP cannot discover duplicate copies.
+        defaultSkillTargets = [ "agents" ];
         targetsForSkill = skill: map normalizeTarget (skill.meta.targets or defaultSkillTargets);
         targetDefs = {
           agents = {
@@ -171,11 +165,6 @@
           pi = {
             enable = true;
             dest = "$HOME/.pi/agent/skills";
-            structure = "copy-tree";
-          };
-          claude = {
-            enable = true;
-            dest = "$HOME/.claude/skills";
             structure = "copy-tree";
           };
           opencode = {
@@ -373,6 +362,14 @@
           {
             programs.dotfiles-agent-skills.bundles = bundles;
 
+            home.activation.remove-legacy-claude-skills = lib.hm.dag.entryAfter [ "agent-skills" ] ''
+              if [ -L "$HOME/.claude/skills" ]; then
+                rm -f "$HOME/.claude/skills"
+              elif [ -e "$HOME/.claude/skills" ]; then
+                chmod -R u+w "$HOME/.claude/skills" 2>/dev/null || true
+                rm -rf "$HOME/.claude/skills"
+              fi
+            '';
             home.activation.dotfiles-agent-skills = lib.hm.dag.entryAfter [ "agent-skills" ] (
               lib.concatMapStringsSep "\n" (target: ''
                 dest="${targetDefs.${target}.dest}"
