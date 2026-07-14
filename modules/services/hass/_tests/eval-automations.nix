@@ -259,7 +259,18 @@ let
         [ ]
       else
         toList ((builtins.elemAt policyChoice.choose 0).sequence or [ ]);
-  climateDoorOpenActions = if climateDoorOpen == null then [ ] else toList (climateDoorOpen.action or [ ]);
+  climateHvacModeThenActions =
+    if builtins.length activeClimatePolicyActions < 1 then
+      [ ]
+    else
+      toList ((builtins.elemAt activeClimatePolicyActions 0)."then" or [ ]);
+  climateTemperatureThenActions =
+    if builtins.length activeClimatePolicyActions < 2 then
+      [ ]
+    else
+      toList ((builtins.elemAt activeClimatePolicyActions 1)."then" or [ ]);
+  climateDoorOpenActions =
+    if climateDoorOpen == null then [ ] else toList (climateDoorOpen.action or [ ]);
 
   # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
@@ -672,8 +683,9 @@ let
     {
       test =
         !hasActionCall activeClimatePolicyActions "timer.start"
-        && hasActionCallDeep activeClimatePolicyActions "timer.start";
-      msg = "apply_climate_policy must start the watchdog only when creating a thermostat hold";
+        && hasActionCall climateHvacModeThenActions "timer.start"
+        && hasActionCall climateTemperatureThenActions "timer.start";
+      msg = "apply_climate_policy must start the watchdog for each action that creates a thermostat hold";
     }
     {
       test =

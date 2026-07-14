@@ -200,7 +200,7 @@ in
           "ecobee"
           "met"
           "radio_browser"
-          # Config-flow energy inputs used by the climate policy.
+          # Optional config-flow energy inputs; credentials and policy wiring are pending.
           "smart_meter_texas"
           "co2signal"
           "rest"
