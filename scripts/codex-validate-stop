@@ -13,6 +13,11 @@ cd "$root" || exit 0
 python=${CODEX_STOP_PYTHON:-python3}
 hey=${CODEX_STOP_HEY:-hey}
 
+# Future improvements:
+# - Move orchestration behind one canonical `hey codex-check` command.
+# - Cache successful checks by HEAD plus a working-tree fingerprint.
+# - Buffer successful command output and print diagnostics only on failure.
+# - Keep hook checks non-mutating; keep rebuild and live verification explicit.
 block() {
   python3 -c 'import json,sys; print(json.dumps({"decision":"block","reason":sys.argv[1]}))' "$1"
   exit 0
