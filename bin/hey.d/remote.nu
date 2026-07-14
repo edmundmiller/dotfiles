@@ -106,6 +106,10 @@ def validate-nuc-worktree-mode [mode: string] {
   }
 }
 
+def nuc-worktree-rsync [source: string, destination: string] {
+  ^rsync -az --delete --delete-excluded --exclude .git --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $source $destination
+}
+
 def "main nuc-worktree" [mode: string = "dry-activate"] {
   validate-nuc-worktree-mode $mode
   let ctx = (context)
@@ -113,7 +117,7 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
 
   print $"=== Syncing current worktree to NUC: ($ctx.flake_dir) -> ($NUC_HOST):($remote_dir) ==="
   ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
-  ^rsync -az --delete --delete-excluded --exclude .git/ --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $"($ctx.flake_dir)/" $"($NUC_HOST):($remote_dir)/"
+  nuc-worktree-rsync $"($ctx.flake_dir)/" $"($NUC_HOST):($remote_dir)/"
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="
