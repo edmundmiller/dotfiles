@@ -1,3 +1,11 @@
+---
+purpose: Explain OMP message queues, model roles, and theme behavior.
+applies_to: OMP queue, routing, or display configuration changes.
+entrypoint: Edit config/omp/config.yml and relevant host overlays.
+verification: Run OMP routing tests and verify the rendered runtime config.
+update_when: OMP queue semantics, role routing, or theme behavior changes.
+---
+
 # OMP Message Queue Behavior
 
 Three independent knobs govern what happens to messages you type while OMP is
@@ -40,12 +48,12 @@ graph TD
 never interrupt a running tool; drain steering in batches once safe, then handle
 post-turn follow-ups one at a time.
 
-## Model roles (2026-07-10)
+## Model roles (2026-07-14)
 
 ```
-default xai-oauth/grok-composer-2.5-fast       # shared default; hosts may override
+default openai-codex/gpt-5.6-sol:medium        # shared executor; hosts may override
 smol    xai-oauth/grok-composer-2.5-fast       # shared fast/mechanical slot
-slow    openai-codex/gpt-5.6-sol:high          # heavier direct-sub reasoning
+slow    openai-codex/gpt-5.6-sol:xhigh         # heavier direct-sub reasoning
 plan    vibeproxy/claude-opus-4-8:high         # strong planning via VibeProxy
 commit  xai-oauth/grok-composer-2.5-fast       # falls back through smol
 ```
