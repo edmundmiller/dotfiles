@@ -1,9 +1,9 @@
 ---
 purpose: Define OMP module ownership, runtime isolation, and completion enforcement.
 applies_to: Changes under .omp, config/omp, or modules/agents/omp.
-entrypoint: Edit the repository-local extension or the matching module source.
-verification: Run focused OMP tests and smoke test project-local discovery.
-update_when: OMP wiring, extension behavior, providers, or verification commands change.
+entrypoint: Edit the repository-local hook or the matching module source.
+verification: Run focused OMP tests and smoke test project-hook discovery.
+update_when: OMP wiring, hook behavior, providers, or verification commands change.
 ---
 
 # OMP Module
@@ -42,10 +42,11 @@ modules.agents.omp.enable = true;
 ## Completion gate
 
 `scripts/completion-check` is the shared source of truth for Codex and OMP
-completion checks. OMP discovers `.omp/extensions/completion-gate.js` only when
+completion checks. OMP discovers `.omp/hooks/post/completion-gate.ts` only when
 launched from this repository root; it is not installed in the user-wide OMP
-configuration. The extension also requires Git to track both
-`.codex/hooks.json` and `scripts/codex-validate-stop` in the current worktree.
+configuration. Project hook factories are loaded through OMP's extension runner,
+so this hook can register `session_stop` as well as ordinary tool events. It also
+requires Git to track `.codex/hooks.json` and `scripts/codex-validate-stop`.
 
 The model-callable `completion_check` tool records a one-shot content snapshot.
 The next main-session stop must match it or OMP continues the session. OMP core
