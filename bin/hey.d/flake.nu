@@ -177,6 +177,19 @@ def "main check" [
     }
 
     print ""
+    print "==> Running package policy tests..."
+    let package_policy_check = (^nix build $".#checks.($ctx.nix_system).package-policy-tests" --no-link | complete)
+    if $package_policy_check.exit_code == 0 {
+      print "✓ Package policy tests OK"
+    } else {
+      print "✗ Package policy tests FAILED"
+      if (($package_policy_check.stderr | str trim) | is-not-empty) {
+        print -e $package_policy_check.stderr
+      }
+      $failed = true
+    }
+
+    print ""
     print "==> Running ast-grep tests..."
     let ast_grep_check = (^nix build $".#checks.($ctx.nix_system).ast-grep-tests" --no-link | complete)
     if $ast_grep_check.exit_code == 0 {
