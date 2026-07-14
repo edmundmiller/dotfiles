@@ -254,6 +254,7 @@
     environment.systemPackages = with pkgs; [
       inputs.clin.packages.${pkgs.stdenv.hostPlatform.system}.default
       llm-agents.qmd
+      my.openwiki
       my.zele
       my.work-calendar-busy
     ];
@@ -273,6 +274,10 @@
 
         home.activation.removeLegacyZele = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/zele" "$HOME/.cache/npm/bin/zele"
+        '';
+
+        home.activation.removeLegacyOpenWiki = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          rm -f "$HOME/.cache/npm/bin/openwiki"
         '';
 
         home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
