@@ -9,13 +9,13 @@
 
 stdenvNoCC.mkDerivation {
   pname = "tmux-palette";
-  version = "0.1.1";
+  version = "0-unstable-2026-06-24";
 
   src = fetchFromGitHub {
     owner = "eduwass";
     repo = "tmux-palette";
-    rev = "ecc9e23da4f772ff3c2f4e91613d8fd25241d6d0";
-    hash = "sha256-JAbGD99M7TrYFmLhNB6GgkNwwAEBNq/7AGu17vNjKu4=";
+    rev = "7caa11e845e0aa0515d013158df85613f3ec507f";
+    hash = "sha256-Wrfo6G9Uuko0FYM9azwGNmyEYszSi/Tnwb71XY89QxI=";
   };
 
   nativeCheckInputs = [ bun ];

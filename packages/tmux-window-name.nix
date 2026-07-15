@@ -11,13 +11,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "tmux-window-name";
-  version = "unstable-2025-01-05";
+  version = "0-unstable-2026-04-20";
 
   src = fetchFromGitHub {
     owner = "ofirgall";
     repo = "tmux-window-name";
-    rev = "master";
-    hash = "sha256-klS3MoGQnEiUa9RldKGn7D9yxw/9OXbfww43Wi1lV/w=";
+    rev = "e98189f9a9487d2cdaa2d207b06780d1f5f58a41";
+    hash = "sha256-YI2s/OtywKJQAPpb07dCbWA/6+sWAl+DB+QQbvZOG5k=";
   };
 
   nativeBuildInputs = [ makeWrapper ];

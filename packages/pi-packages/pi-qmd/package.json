@@ -48,5 +48,8 @@
   "dependencies": {
     "@tobilu/qmd": "^2.0.1",
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.10"
   }
 }

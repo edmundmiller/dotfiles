@@ -73,10 +73,10 @@ with lib.my;
       {
         inherit name description;
         home = "${homeBase}/${name}";
-        uid = 1000;
       }
       # NixOS-specific user options
       // optionalAttrs (!isDarwin) {
+        uid = 1000;
         extraGroups = [ "wheel" ];
         isNormalUser = true;
         group = "users";

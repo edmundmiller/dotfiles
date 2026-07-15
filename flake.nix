@@ -146,7 +146,11 @@
       # Darwin packages
       darwinPkgs = mkPkgs nixpkgs [
         self.overlays.default
-        (_final: _prev: { llm-agents = inputs.llm-agents.packages.${darwinSystem}; })
+        (_final: prev: {
+          llm-agents = inputs.llm-agents.packages.${darwinSystem} // {
+            inherit (prev) gitbutler;
+          };
+        })
       ] darwinSystem;
 
       mkRenovateUpdateNixHashes =
@@ -257,13 +261,12 @@
               agent-browser
               agentsview
               but
-              gitbutler
               gitnexus
               mcporter
               rtk
               workmux
               ;
-            inherit (darwinPkgs.llm-agents) herdr;
+            inherit (darwinPkgs.llm-agents) gitbutler herdr;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 

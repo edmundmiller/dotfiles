@@ -42,7 +42,6 @@ with lib;
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
-      users.${config.user.name}.gtk.gtk4.theme = null;
     };
 
     # Fix nixbld group ID mismatch (common Darwin issue)
