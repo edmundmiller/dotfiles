@@ -1,3 +1,11 @@
+---
+purpose: Define Herdr overlay ownership, patch policy, and validation.
+applies_to: Changes under overlays/herdr/.
+entrypoint: Read default.nix and the relevant patch.
+verification: Build .#herdr and smoke-test the resulting binary.
+update_when: The Herdr pin, overlay API, patch stack, or test workflow changes.
+---
+
 # Herdr Overlay
 
 This overlay owns the repo-local Herdr package customization.
@@ -34,7 +42,7 @@ set -euo pipefail
 workdir=$(mktemp -d)
 git clone https://github.com/ogulcancelik/herdr "$workdir/herdr"
 cd "$workdir/herdr"
-git checkout 4ca6cac445a6aa45eb3b8462f66cd595d0c01364
+git checkout 50aaa2ec046ee26ff407c20f49de496f522512a8
 git apply /Users/emiller/.config/dotfiles/overlays/herdr/patches/*.patch
 cargo test \
   detect::tests::hermes \
