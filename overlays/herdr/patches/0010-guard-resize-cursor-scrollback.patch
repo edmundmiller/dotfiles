@@ -2,13 +2,26 @@ diff --git i/vendor/libghostty-vt/src/terminal/PageList.zig w/vendor/libghostty-
 index 6315596..f265c80 100644
 --- i/vendor/libghostty-vt/src/terminal/PageList.zig
 +++ w/vendor/libghostty-vt/src/terminal/PageList.zig
-@@ -10859,6 +10859,46 @@ test "PageList resize less rows and cols cursor at bottom" {
+@@ -1047,6 +1047,14 @@ fn resizeCols(
+         const wrapped = wrapped: {
+             var wrapped: usize = 0;
+ 
++            // If shrinking rows pushed the cursor pin above the new active
++            // area, iterating left-up toward the active-area top would be a
++            // reversed range. The preserved-cursor block below already
++            // ignores cursors outside the active area, so count zero wraps.
++            if (active_pin) |ap| {
++                if (p.before(ap)) break :wrapped 0;
++            }
++
+             var row_it = p.rowIterator(.left_up, active_pin);
+             while (row_it.next()) |next| {
+                 const row = next.rowAndCell().row;
+@@ -10859,6 +10867,44 @@ test "PageList resize less rows and cols cursor at bottom" {
      } }, s.pointFromPin(.active, cursor_pin.*).?);
  }
  
 +test "PageList resize less rows and cols cursor near top pushed to scrollback" {
-+    if (true) return error.SkipZigTest;
-+
 +    const testing = std.testing;
 +    const alloc = testing.allocator;
 +
