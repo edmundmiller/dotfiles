@@ -12,23 +12,23 @@ let
   cfg = config.modules.services.moshi;
   inherit (config.dotfiles) configDir;
 
-  moshiHookVersion = "0.2.39";
+  moshiHookVersion = "0.2.44";
   moshiHookAssets = {
     aarch64-darwin = {
       asset = "moshi-hook_Darwin_arm64.tar.gz";
-      hash = "sha256-ChQ34uBF5yquZemsvpZMxz4ZXYsl89VvA37RXAvnmeg=";
+      hash = "sha256-XmL6wMW2rH6bCJNpBNU5VJKUbQJvxnSUZeegbikdqCY=";
     };
     aarch64-linux = {
       asset = "moshi-hook_Linux_arm64.tar.gz";
-      hash = "sha256-jE4559ZM6QJw209GAZYg+Th1JKM+mNvEPlTPJ6Kmi7c=";
+      hash = "sha256-M539UDHmL0NdzyU/c8YpIgYE1rVscPUN6cW87wInTPs=";
     };
     x86_64-darwin = {
       asset = "moshi-hook_Darwin_x86_64.tar.gz";
-      hash = "sha256-JXO1pPKlBfiYhCGrvVPT33sDEOOn/i1SemoYdPrMiPs=";
+      hash = "sha256-aa4iDdTKN7r8idHzA8bsf81/IU9EG3jo45JTX0AxsYA=";
     };
     x86_64-linux = {
       asset = "moshi-hook_Linux_x86_64.tar.gz";
-      hash = "sha256-CAd+x0Bb4+b9z832Sv2UGMtWDs43xXaD4DUjuVMotKQ=";
+      hash = "sha256-4WEmjK4K9j6/SKdL/OwT+Id8reX0xAXLpuQ2/OGIs6k=";
     };
   };
   moshiHookAsset = moshiHookAssets.${pkgs.stdenv.hostPlatform.system};
