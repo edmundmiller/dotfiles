@@ -19,6 +19,13 @@ Prefer the `packages/<name>/default.nix` directory pattern when a package may ne
 - Run `pkg-check <unit>` for read-only validation against a fresh upstream checkout.
 - Use `hey check` for repository-wide package policy and host validation, not fresh upstream checks.
 
+## Check placement
+
+- Put Nix syntax and AST-shape rules under `ast-grep/rules/`, with cases under `ast-grep/rule-tests/`.
+- Put repository path and cross-file package policies in the root test suite and expose them as a dedicated flake check selected by `hey check`.
+- Keep clone, checkout, patch-application, and upstream test behavior in `package-harness`; declare it beside the package and run `pkg-check <unit>`.
+- Keep implementation tests beside the tool they exercise.
+
 ## Patch policy
 
 - Prefer patch files in `packages/<name>/patches/*.patch` for upstream source changes.
