@@ -14,6 +14,7 @@
       "test/openwiki-home.test.ts",
       "test/imessage-connector.test.ts",
       "test/ingestion.test.ts",
+      "test/onboarding.test.ts",
       "test/prompt.test.ts",
       "test/commands.test.ts",
       "test/credentials.test.ts"
