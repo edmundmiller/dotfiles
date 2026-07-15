@@ -20,13 +20,14 @@ Stopping condition: focused upstream tests/typecheck, package harness, Linux eva
 
 - Host: `MacTraitor-Pro.local`, Darwin arm64, verified with `hostname` and `uname -a`.
 - Upstream RED: nine expected failures (missing connector, command target misclassified, zero-file synthesis invoked, weak `.gitignore`).
-- Upstream GREEN: focused Vitest suite passed 57 tests; `pnpm typecheck` passed.
-- Fresh `pkg-check openwiki` applied `0001` then `0002`, passed typecheck, and passed 63 tests.
+- Upstream GREEN: focused Vitest suite passed 65 tests; `pnpm typecheck` passed.
+- Fresh `pkg-check openwiki` applied `0001` then `0002`, passed typecheck, and passed 71 tests.
 - Linux evaluation printed `openwiki`. Darwin package built; recursive closure contains `/nix/store/4zaazwcscfsl78d9xgihxblnryq9s9fh-imsg-0.13.0`.
 - Live onboarding inspection reported zero iMessage instances, no legacy iMessage source, and zero approved chat IDs without printing any source values.
 - `hey check`, `hey agent-audit-tests`, and `hey agent-finish` passed. Darwin rebuild activated successfully.
 - Activated `openwiki --help` passed; `/run/current-system/sw/bin/openwiki` closure contains `imsg-0.13.0`.
 - Existing all-source schedule is loaded at 02:00 under `com.openwiki.ingestion`; kickstart is deferred with live iMessage configuration because no approved chat ID exists.
+- Onboarding now preserves saved iMessage instances. An isolated activated-package smoke found `imessage-1`, rejected its empty scope before any `imsg` access, exited nonzero, and left both raw and log directories empty.
 
 ## Reviews
 
@@ -45,3 +46,5 @@ Blocked only on live Messages verification: no user-approved numeric chat ID is 
 ## Commits
 
 - `feat(openwiki): add private iMessage connector`
+- `test(openwiki): capture iMessage onboarding regression`
+- `fix(openwiki): preserve iMessage onboarding sources`
