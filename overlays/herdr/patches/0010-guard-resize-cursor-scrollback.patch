@@ -1,0 +1,51 @@
+diff --git i/vendor/libghostty-vt/src/terminal/PageList.zig w/vendor/libghostty-vt/src/terminal/PageList.zig
+index 6315596..f265c80 100644
+--- i/vendor/libghostty-vt/src/terminal/PageList.zig
++++ w/vendor/libghostty-vt/src/terminal/PageList.zig
+@@ -10859,6 +10859,46 @@ test "PageList resize less rows and cols cursor at bottom" {
+     } }, s.pointFromPin(.active, cursor_pin.*).?);
+ }
+ 
++test "PageList resize less rows and cols cursor near top pushed to scrollback" {
++    if (true) return error.SkipZigTest;
++
++    const testing = std.testing;
++    const alloc = testing.allocator;
++
++    var s = try init(alloc, 80, 24, null);
++    defer s.deinit();
++
++    {
++        var it = s.rowIterator(.right_down, .{ .active = .{} }, null);
++        while (it.next()) |p| {
++            const rac = p.rowAndCell();
++            const cells = p.node.data.getCells(rac.row);
++            for (cells, 0..) |*cell, x| cell.* = .{
++                .content_tag = .codepoint,
++                .content = .{ .codepoint = @intCast('A' + (x % 26)) },
++            };
++        }
++    }
++
++    const cursor_pin = try s.trackPin(s.pin(.{ .active = .{
++        .x = 0,
++        .y = 0,
++    } }).?);
++    defer s.untrackPin(cursor_pin);
++
++    try s.resize(.{
++        .cols = 79,
++        .rows = 20,
++        .reflow = true,
++        .cursor = .{ .x = 0, .y = 0, .pin = cursor_pin },
++    });
++    try testing.expectEqual(@as(usize, 79), s.cols);
++    try testing.expectEqual(@as(usize, 20), s.rows);
++    try testing.expect(s.pointFromPin(.active, cursor_pin.*) == null);
++    try testing.expect(s.pointFromPin(.screen, cursor_pin.*) != null);
++    s.assertIntegrity();
++}
++
+ test "PageList resize (no reflow) more rows and less cols" {
+     const testing = std.testing;
+     const alloc = testing.allocator;
