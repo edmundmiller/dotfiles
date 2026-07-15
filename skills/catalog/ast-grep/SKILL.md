@@ -230,15 +230,6 @@ Prove the complete setup:
 5. Exercise both commands through the normal project check.
 6. Update the repository's agent/router documentation so AST rules route to ast-grep and non-AST policy remains with its owning tool.
 
-## Custom languages and Nextflow
-
-Configure custom parsers and `expandoChar` in `sgconfig.yml` before writing rules. For Nextflow, use `_VAR`/`___` metavariables as configured by the custom language instead of `$VAR`/`$$$VAR`.
-
-Read:
-
-- `references/nextflow.md` for parser setup and Nextflow patterns
-- `references/nextflow-pipeline-overview.md` for pipeline AST context
-
 ## Avoid failure modes
 
 - Do not create a lint rule without at least one valid and one invalid case.
