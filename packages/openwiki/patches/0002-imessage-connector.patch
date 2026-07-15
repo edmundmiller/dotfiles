@@ -1011,6 +1011,18 @@ index 49160519323c29ee3428c2547f4a281ba41a574f..7a2f7496c3d6940b79fb1e31316647d8
      case "notion":
        return `
  - Prefer Notion pages edited in the ingestion window, pages where the user is mentioned/tagged/assigned, pages where the user appears in people properties, and pages whose title/body indicate decisions, follow-ups, open questions, blockers, owners, customers, meetings, or plans.
+diff --git c/src/onboarding.ts i/src/onboarding.ts
+index 7844cf64c8fe6dabd239be6274060ef8428c6b83..a94888769d804cbefbc479ff53949fdc5de1c5cd 100644
+--- c/src/onboarding.ts
++++ i/src/onboarding.ts
+@@ -458,6 +458,7 @@ function isKnownConnectorId(value: string): value is ConnectorId {
+     value === "git-repo" ||
+     value === "google" ||
+     value === "hackernews" ||
++    value === "imessage" ||
+     value === "notion" ||
+     value === "slack" ||
+     value === "web-search" ||
 diff --git c/src/openwiki-home.ts i/src/openwiki-home.ts
 index c541005fe02d54bee1d2ae2b6b4b6bd05de65c11..4d2361263254d328a4070ce3a88ff2308b609cde 100644
 --- c/src/openwiki-home.ts
@@ -1519,10 +1531,10 @@ index 0000000000000000000000000000000000000000..0e56fa7ea07980936822e429fec53aad
 +});
 diff --git c/test/ingestion.test.ts i/test/ingestion.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..809bc737a551ea9a13caea36d716cb8661a68c2a
+index 0000000000000000000000000000000000000000..eb91158f760ffd73ee41ee30e3effc9bcd240738
 --- /dev/null
 +++ i/test/ingestion.test.ts
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,149 @@
 +import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 +import os from "node:os";
 +import path from "node:path";
@@ -1625,103 +1637,97 @@ index 0000000000000000000000000000000000000000..809bc737a551ea9a13caea36d716cb86
 +    ]);
 +    expect(runOpenWikiAgent).not.toHaveBeenCalled();
 +  });
-+  test.fails(
-+    "a saved iMessage source remains ingestible after onboarding reload",
-+    async () => {
-+      await writeFile(
-+        path.join(home, ".openwiki", "onboarding.json"),
-+        `${JSON.stringify({
-+          sourceInstances: [
-+            {
-+              connectedAt: "2026-07-15T12:00:00.000Z",
-+              connectorConfig: { chatIds: [123] },
-+              connectorId: "imessage",
-+              id: "imessage-1",
-+            },
-+          ],
-+          sources: {},
-+          version: 1,
-+        })}\n`,
-+      );
-+      ingest.mockResolvedValue({
-+        connectorId: "imessage",
-+        message: "No new iMessage messages in the configured scope.",
-+        rawFiles: [],
-+        runId: "run-2",
-+        statePath: "~/.openwiki/connectors/imessage/state.json",
-+        status: "skipped",
-+        warnings: [],
-+      });
-+      // HOME-derived module constants require a fresh module graph in this test.
-+      vi.resetModules();
-+      const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
-+
-+      const result = await runOpenWikiIngestion(home, { target: "imessage" });
-+
-+      expect(result.results).toEqual([
-+        expect.objectContaining({
-+          connectorId: "imessage",
-+          sourceInstanceId: "imessage-1",
-+          status: "skipped",
-+        }),
-+      ]);
-+      expect(ingest).toHaveBeenCalledWith(
-+        expect.objectContaining({
-+          connectorConfig: { chatIds: [123] },
-+          instanceId: "imessage-1",
-+        }),
-+      );
-+      expect(runOpenWikiAgent).not.toHaveBeenCalled();
-+    },
-+  );
-+});
-diff --git c/test/onboarding.test.ts i/test/onboarding.test.ts
-index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..2cd3133e8848030029087814a4fd4be162b455df 100644
---- c/test/onboarding.test.ts
-+++ i/test/onboarding.test.ts
-@@ -65,6 +65,46 @@ describe("OpenWiki onboarding instructions", () => {
-     );
-   });
- 
-+  test.fails(
-+    "preserves iMessage source instances and legacy config",
-+    async () => {
-+      const home = await createTempHome();
-+      const onboarding = await loadOnboardingModule(home);
-+      const connectorConfig = {
-+        enabled: true,
-+        chatIds: [123],
-+        maxMessagesPerChat: 500,
-+        windowHours: 24,
-+      };
-+
-+      await onboarding.saveOpenWikiOnboardingConfig({
++  test("a saved iMessage source remains ingestible after onboarding reload", async () => {
++    await writeFile(
++      path.join(home, ".openwiki", "onboarding.json"),
++      `${JSON.stringify({
 +        sourceInstances: [
 +          {
 +            connectedAt: "2026-07-15T12:00:00.000Z",
-+            connectorConfig,
++            connectorConfig: { chatIds: [123] },
 +            connectorId: "imessage",
 +            id: "imessage-1",
 +          },
 +        ],
-+        sources: { imessage: { connectorConfig } },
++        sources: {},
 +        version: 1,
-+      });
++      })}\n`,
++    );
++    ingest.mockResolvedValue({
++      connectorId: "imessage",
++      message: "No new iMessage messages in the configured scope.",
++      rawFiles: [],
++      runId: "run-2",
++      statePath: "~/.openwiki/connectors/imessage/state.json",
++      status: "skipped",
++      warnings: [],
++    });
++    // HOME-derived module constants require a fresh module graph in this test.
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
 +
-+      await expect(
-+        onboarding.readOpenWikiOnboardingConfig(),
-+      ).resolves.toMatchObject({
-+        sourceInstances: [
-+          {
-+            connectorConfig,
-+            connectorId: "imessage",
-+            id: "imessage-1",
-+          },
-+        ],
-+        sources: { imessage: { connectorConfig } },
-+      });
-+    },
-+  );
++    const result = await runOpenWikiIngestion(home, { target: "imessage" });
++
++    expect(result.results).toEqual([
++      expect.objectContaining({
++        connectorId: "imessage",
++        sourceInstanceId: "imessage-1",
++        status: "skipped",
++      }),
++    ]);
++    expect(ingest).toHaveBeenCalledWith(
++      expect.objectContaining({
++        connectorConfig: { chatIds: [123] },
++        instanceId: "imessage-1",
++      }),
++    );
++    expect(runOpenWikiAgent).not.toHaveBeenCalled();
++  });
++});
+diff --git c/test/onboarding.test.ts i/test/onboarding.test.ts
+index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..65a316290841473d097d985e9743c6e305deaee5 100644
+--- c/test/onboarding.test.ts
++++ i/test/onboarding.test.ts
+@@ -65,6 +65,43 @@ describe("OpenWiki onboarding instructions", () => {
+     );
+   });
+ 
++  test("preserves iMessage source instances and legacy config", async () => {
++    const home = await createTempHome();
++    const onboarding = await loadOnboardingModule(home);
++    const connectorConfig = {
++      enabled: true,
++      chatIds: [123],
++      maxMessagesPerChat: 500,
++      windowHours: 24,
++    };
++
++    await onboarding.saveOpenWikiOnboardingConfig({
++      sourceInstances: [
++        {
++          connectedAt: "2026-07-15T12:00:00.000Z",
++          connectorConfig,
++          connectorId: "imessage",
++          id: "imessage-1",
++        },
++      ],
++      sources: { imessage: { connectorConfig } },
++      version: 1,
++    });
++
++    await expect(
++      onboarding.readOpenWikiOnboardingConfig(),
++    ).resolves.toMatchObject({
++      sourceInstances: [
++        {
++          connectorConfig,
++          connectorId: "imessage",
++          id: "imessage-1",
++        },
++      ],
++      sources: { imessage: { connectorConfig } },
++    });
++  });
 +
    test("reads wiki instructions only from INSTRUCTIONS.md", async () => {
      const home = await createTempHome();
