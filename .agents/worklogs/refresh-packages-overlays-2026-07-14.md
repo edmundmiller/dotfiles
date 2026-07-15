@@ -35,7 +35,7 @@ Update every repository-managed package and overlay source that has a supported 
 - Routine headless activation keeps MAS apps declared as inventory but skips Xcode, Keynote, and Numbers.
 - Home Manager now uses the Darwin account's real UID while retaining UID 1000 for Linux.
 - `obsidian-headless` 0.0.13 builds on Darwin with its regenerated npm dependency hash.
-- OMP's Nextflow scanner archive is linked whole on Linux; `hey nuc-wt build` completed as `/nix/store/rfh7ld31lp7spnsg03iiakk83cyix2q3-nixos-system-nuc-26.11.20260714.18b9261`.
+- OMP's Nextflow scanner archive is linked whole on Linux; the final post-harness-fix `hey nuc-wt build` completed as `/nix/store/rpyxd1jv05frk9azi3nfq7gbry857vc4-nixos-system-nuc-26.11.20260714.18b9261`.
 - Temporary 24 GiB NUC zram prevented the prior OOM and was removed after validation; `free` and `swapon` confirmed 0 B swap.
 - A final `darwin-rebuild switch --flake .` completed, including Homebrew and Home Manager activation.
 
@@ -55,3 +55,4 @@ None.
 ## Commits
 
 - `3fe33cdea chore(deps): refresh packages and overlays`
+- `1faf739fc fix(pi-packages): retain compatible test harness`
