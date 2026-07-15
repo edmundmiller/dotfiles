@@ -1,5 +1,5 @@
 diff --git a/src/review/acp-client.ts b/src/review/acp-client.ts
-index e45f80f..8b6c347 100644
+index de75cc3..ddd0903 100644
 --- a/src/review/acp-client.ts
 +++ b/src/review/acp-client.ts
 @@ -34,6 +34,7 @@ export class AcpClient {

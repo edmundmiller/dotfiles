@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/langchain-ai/openwiki.git",
-  "ref": "7c084f9f6f8032243fd3dfd544969c279416b5cb",
+  "ref": "0c0639eece971acc75ccc36dad8d6b99a9b906f5",
   "patches": ["patches/0001-configurable-personal-wiki-directory.patch"],
   "checks": [
     ["pnpm", "install", "--frozen-lockfile"],

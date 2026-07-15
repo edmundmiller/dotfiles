@@ -18,13 +18,13 @@ let
 in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "kittylitter";
-  version = "0.3.4-patched";
+  version = "0-unstable-2026-05-30";
 
   src = fetchFromGitHub {
     owner = "dnakov";
     repo = "litter";
-    rev = "v0.3.4";
-    hash = "sha256-T8Jjf9DUmqCthty1WaTRC/igFloCOpqUbKrk3diSR+w=";
+    rev = "abee3ace684204a3cbc4ea1e0e903b9f31518dac";
+    hash = "sha256-ARbMoc2rW3J935sslAedyU0hw2tgcZZAQwUnqESl8B8=";
   };
 
   cargoRoot = "services/kittylitter";

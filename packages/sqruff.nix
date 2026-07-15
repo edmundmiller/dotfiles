@@ -8,16 +8,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "sqruff";
-  version = "0.38.0";
+  version = "0.39.0";
 
   src = fetchFromGitHub {
     owner = "quarylabs";
     repo = "sqruff";
     rev = "v${version}";
-    hash = "sha256-khIP3CtrWcMWIuLcKwDOhwfnJ2FfpffQNqphNpWtzOs=";
+    hash = "sha256-1ynG6A5sGHnCfAfw6MjSTghLPmicRvWPFWnL2Gtns7Y=";
   };
 
-  cargoHash = "sha256-9u8U7rWm6jOlxky8+y4ptPRnBBEBWWcg4QO0jbLAk5E=";
+  cargoHash = "sha256-HAeF831rPODaT5nzzq+Li8xEmT78IJiRppaKUSlPXXg=";
 
   # depends on rust nightly features
   RUSTC_BOOTSTRAP = 1;

@@ -459,6 +459,20 @@ in
     }
   ];
 
+  nixpkgs.overlays = [
+    (_final: prev: {
+      pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+        (_pythonFinal: pythonPrev: {
+          inline-snapshot = pythonPrev.inline-snapshot.overridePythonAttrs (old: {
+            # Nixpkgs' Black version changes the generated documentation snippets.
+            # Keep the package's 1,400+ behavioral tests while skipping those fixtures.
+            disabledTests = (old.disabledTests or [ ]) ++ [ "test_docs" ];
+          });
+        })
+      ];
+    })
+  ];
+
   system.activationScripts = {
     removeLegacyZele = ''
       rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
@@ -935,10 +949,6 @@ in
   home-manager.users.${config.user.name} = {
     # Disable dconf on headless server - no dbus session available
     dconf.enable = false;
-
-    # NUC is headless; adopt Home Manager's GTK4 default explicitly to silence
-    # the legacy gtk.gtk4.theme warning for pre-26.05 home.stateVersion.
-    gtk.gtk4.theme = null;
   };
 
   environment.systemPackages = with pkgs; [

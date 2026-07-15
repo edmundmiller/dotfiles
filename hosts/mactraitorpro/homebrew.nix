@@ -60,7 +60,7 @@
     "cf-terraforming"
     "cloudflare-wrangler"
     "flyctl"
-    "gitpod"
+    "gitpod-io/tap/gitpod"
 
     # Data tools
     "aria2"
@@ -68,11 +68,11 @@
     "dvc"
     "graphviz"
     "harlequin"
-    "label-studio"
+    "humansignal/tap/label-studio"
     "pandoc"
     "postgresql@14"
     "sqlite"
-    "sqruff"
+    "quarylabs/quary/sqruff"
 
     # Media tools
     "ffmpeg"
@@ -106,13 +106,13 @@
 
     # Additional tools
     "bookokrat"
-    "mole"
-    "dataline"
+    "tw93/tap/mole"
+    "ramiawar/dataline/dataline"
     "eask-cli"
     "harper"
-    "html2markdown"
+    "johanneskaufmann/tap/html2markdown"
     "jnsahaj/lumen/lumen"
-    "reminders-cli"
+    "keith/formulae/reminders-cli"
   ];
 
   casks = [
@@ -148,7 +148,7 @@
     "granola"
 
     # AI Tools
-    "codexbar"
+    "steipete/tap/codexbar"
     "home-assistant"
     # Temporarily disabled: upstream GitHub release download returns HTTP 502.
     # Re-enable when https://github.com/superset-sh/superset/releases is healthy.

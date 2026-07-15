@@ -5,8 +5,8 @@
 }:
 python3.pkgs.buildPythonApplication rec {
   pname = "oauth2ms";
-  version = "unstable-2021-07-10";
-  pyproject = true;
+  version = "0-unstable-2021-07-10";
+  format = "other";
 
   src = fetchFromGitHub {
     owner = "harishkrupo";
@@ -15,14 +15,14 @@ python3.pkgs.buildPythonApplication rec {
     hash = "sha256-xPSWlHJAXhhj5I6UMjUtH1EZqCZWHJMFWTu3a4k1ETc=";
   };
 
-  build-system = [
-    python3.pkgs.setuptools
-    python3.pkgs.wheel
-  ];
+  dontBuild = true;
 
-  nativeBuildInputs = [
-    python3.pkgs.importlib-metadata
-  ];
+  installPhase = ''
+    runHook preInstall
+    install -Dm755 oauth2ms "$out/bin/oauth2ms"
+    patchShebangs "$out/bin/oauth2ms"
+    runHook postInstall
+  '';
 
   propagatedBuildInputs = with python3.pkgs; [
     pyxdg

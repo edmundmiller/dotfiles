@@ -238,10 +238,9 @@
           # Pretend to be the newest Homebrew-supported macOS until brew adds 27.
           HOMEBREW_FAKE_MACOS = "26.0";
 
-          # Xcode is huge, MAS-backed, and currently prompts/hangs under
-          # nix-darwin activation. Keep it declared in masApps for inventory,
-          # but do not let routine rebuilds install it interactively.
-          HOMEBREW_BUNDLE_MAS_SKIP = "Xcode";
+          # MAS installs are unreliable during headless activation. Keep the apps
+          # declared for inventory, but do not install them during routine rebuilds.
+          HOMEBREW_BUNDLE_MAS_SKIP = "Xcode Keynote Numbers";
         };
         extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };

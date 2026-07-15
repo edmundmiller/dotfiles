@@ -18,11 +18,12 @@
   pkgsCross,
   gnumake,
   python3,
+  python313,
   git,
   qmk,
   # ZSA QMK firmware version - update these when upgrading
-  zsaRev ? "a07f8e6c7d62b814c495dfd16694a389a3855e08", # firmware25 branch
-  zsaHash ? "sha256-6vU7nt6bYcdx958bgcb6gEiCHmn4Cv0OAPAnvt9yhWI=",
+  zsaRev ? "717745325af7e8c92a1ec78faaa9abf8db321d5e", # firmware25 branch
+  zsaHash ? "sha256-csv0RjCygHzmfRAGFsp0fK324iN1YgdjKpY9BQAfJ4Y=",
 }:
 
 let
@@ -39,7 +40,7 @@ let
 in
 stdenv.mkDerivation {
   pname = "ergodox-ergo-drifter-firmware";
-  version = "unstable-2025-01-21";
+  version = "0.17.0-unstable-2026-07-02";
 
   src = zsaQmkFirmware;
 
@@ -47,7 +48,7 @@ stdenv.mkDerivation {
     gnumake
     python3
     git
-    qmk
+    (qmk.override { python3 = python313; })
     avrPkgs.buildPackages.gcc
     avrPkgs.buildPackages.binutils
   ];

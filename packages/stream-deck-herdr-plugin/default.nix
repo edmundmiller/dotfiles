@@ -7,7 +7,7 @@
 
 stdenv.mkDerivation {
   pname = "stream-deck-herdr-plugin";
-  version = "0.1.0-unstable-2026-06-25";
+  version = "0-unstable-2026-06-19";
 
   src = fetchFromGitHub {
     owner = "timvdhoorn";

@@ -3,11 +3,11 @@ let
   platformArtifacts = {
     aarch64-darwin = {
       package = "cli-darwin-arm64";
-      hash = "sha512-Q0g/Prm3FxTS70voyOEcrbNGX+TMVqQldoFmkYoYqq7eaVbIPNT1Wo/6YAqK2dvvnD0AGKq3ukZAzL//7D1riA==";
+      hash = "sha512-K9djPxU2mTX0ecbTYkVkmdhUegC47maCQFsrHZ82Tucg4Wl3OcspjpcyLa+Xqt0Ge8mGoW2cHv1PulJ6O4n9LQ==";
     };
     x86_64-linux = {
       package = "cli-linux-x64-baseline";
-      hash = "sha512-QZcNjA7oLjU7Ad6JSBDiiA0ct/Df7nXJrz2DFOap1KSt/nUH6YtOyBlUW8yE5pnDPayRb04uI2KMdTsewgYLHA==";
+      hash = "sha512-6b9/qo+B7+VSc/JuCDEnc/29YHnxY4yMcrK/phUAE8km9rmNnngoS5kXZa1Dnzw00JmMpwRkC/ylNbkKU7kPZA==";
     };
   };
   platform = final.stdenv.hostPlatform.system;
@@ -17,7 +17,7 @@ let
   }";
   opencode = final.stdenv.mkDerivation rec {
     pname = "opencode";
-    version = "0.0.0-next-15330";
+    version = "0.0.0-next-15586";
 
     src = final.fetchurl {
       url = "https://registry.npmjs.org/@opencode-ai/${artifact.package}/-/${artifact.package}-${version}.tgz";

@@ -18,7 +18,7 @@ in
     optionalAttrs isDarwin {
       homebrew = {
         taps = [ "herald-email/herald" ];
-        brews = [ "herald" ];
+        brews = [ "herald-email/herald/herald" ];
       };
     }
   );

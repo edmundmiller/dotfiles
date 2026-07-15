@@ -1,8 +1,8 @@
 diff --git a/src/cli.tsx b/src/cli.tsx
-index b795458..7448352 100755
+index cf18571..bd03847 100755
 --- a/src/cli.tsx
 +++ b/src/cli.tsx
-@@ -472,10 +472,11 @@ async function runReviewMode(
+@@ -479,10 +479,11 @@ async function runReviewMode(
  
          for (const sessionInfo of sessionsToLoad) {
            try {
@@ -18,7 +18,7 @@ index b795458..7448352 100755
          }
          sessionsContext = sessionsToContextXml(compressedSessions);
 diff --git a/src/review/acp-client.ts b/src/review/acp-client.ts
-index 8b6c347..542df8a 100644
+index ddd0903..0c5bbff 100644
 --- a/src/review/acp-client.ts
 +++ b/src/review/acp-client.ts
 @@ -36,6 +36,8 @@ export class AcpClient {

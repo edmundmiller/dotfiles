@@ -10,13 +10,13 @@
 
 stdenv.mkDerivation {
   pname = "jmux";
-  version = "0.15.0";
+  version = "0.21.1";
 
   src = fetchFromGitHub {
     owner = "jarredkenny";
     repo = "jmux";
-    rev = "v0.15.0";
-    hash = "sha256-QLytzMzDUKdJddQ9Qao2xSO0C7jDfQIwOeJNNZy6pA4=";
+    rev = "v0.21.1";
+    hash = "sha256-pZq2cVc9ENy/k6ECWzeMzUFc6IgHycIKpA8bN5bMh04=";
   };
 
   patches = [

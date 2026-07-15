@@ -6,13 +6,13 @@
 
 stdenvNoCC.mkDerivation {
   pname = "zsh-bench";
-  version = "unstable-2024-12-17";
+  version = "0-unstable-2026-04-27";
 
   src = fetchFromGitHub {
     owner = "romkatv";
     repo = "zsh-bench";
-    rev = "a3c48d65b9078ee1f8bbd4da8631a8fbc885c52a";
-    hash = "sha256-GDYFkObLPTaj+qPVf2sXXqNKkPdD31hfO1bbM5j4lCc=";
+    rev = "28b1b1bc888159f0a2cf50f9d29381758341aba1";
+    hash = "sha256-dsHGpDTweDqJdLhO/9th2kDt56crfjqkTKBilEi9RaY=";
   };
 
   dontBuild = true;

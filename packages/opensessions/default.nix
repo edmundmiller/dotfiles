@@ -6,13 +6,13 @@
 
 stdenvNoCC.mkDerivation (_finalAttrs: {
   pname = "opensessions";
-  version = "0.2.0-alpha.5";
+  version = "0.2.0-alpha.12";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "opensessions";
     rev = "v${_finalAttrs.version}";
-    hash = "sha256-OBSp4/fy87BschygMcmOIddchO6CygV70W4brgovitY=";
+    hash = "sha256-1Xr4OaWGPO2wt6IS05LhwOXp+7LYSk8XG8e3mH6UPog=";
   };
 
   # Local patch stack dropped: upstream now includes window-details toggle,

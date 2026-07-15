@@ -9,24 +9,24 @@
 }:
 
 let
-  version = "1.2.1";
+  version = "1.6.14";
 
   sources = {
     "x86_64-linux" = fetchurl {
       url = "https://usegitai.com/worker/releases/download/v${version}/git-ai-linux-x64";
-      hash = "sha256-h52Cod6X/zsUshu0+4fBgL7GDnlO9mFhvkhoH7eekXc=";
+      hash = "sha256-ybTQ+bYn5NqXAEcn7/Voh2WLHVZfogvKz0C98GmqPIs=";
     };
     "aarch64-linux" = fetchurl {
       url = "https://usegitai.com/worker/releases/download/v${version}/git-ai-linux-arm64";
-      hash = "sha256-WlelMMS9jUMC8JMgjplNT0BdgTFT8gfRvPdfsumCD2o=";
+      hash = "sha256-CterRjh9wlbi6sEpt+Dh4N+TyNSBtJxhdac0rtSEYiE=";
     };
     "x86_64-darwin" = fetchurl {
       url = "https://usegitai.com/worker/releases/download/v${version}/git-ai-macos-x64";
-      hash = "sha256-BchUpxAyPE2huTZdEuTyRE71MSxmlOBiDtid7sbtGj4=";
+      hash = "sha256-ioM7E9tELovjfDBB3IGE9V54ZOJwKBCLJkd+PVCXpAk=";
     };
     "aarch64-darwin" = fetchurl {
       url = "https://usegitai.com/worker/releases/download/v${version}/git-ai-macos-arm64";
-      hash = "sha256-CHFNh4oIQAa+VA/jANqYGjhm+NC45oKduFAbHyWduKo=";
+      hash = "sha256-GfkaEAnPx1V7dP7HNGAlifRbQSdHihJ54BT0eF1siwg=";
     };
   };
 

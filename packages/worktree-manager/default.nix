@@ -9,13 +9,13 @@
 
 stdenv.mkDerivation {
   pname = "worktree-manager";
-  version = "1.3.0-unstable-2026-04-22";
+  version = "0-unstable-2026-05-28";
 
   src = fetchFromGitHub {
     owner = "jarredkenny";
     repo = "worktree-manager";
-    rev = "6b0b65f53e867abcf99c836cc78a6f101a1a65f2";
-    hash = "sha256-3ziOhhrD0ExZnJykT7gptF8q+o1XolnyO9ywhWDob6Q=";
+    rev = "0192f041a80cfc47e94d37c63a0f35e7c3c085d8";
+    hash = "sha256-S3RX7EaNB3Lvt7+S4kYwQkNoqlKuDwNIRgAMZa+qFP0=";
   };
 
   nativeBuildInputs = [

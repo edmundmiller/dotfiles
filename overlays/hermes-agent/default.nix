@@ -9,11 +9,11 @@ let
 
   honchoAi = final.python313Packages.buildPythonPackage rec {
     pname = "honcho-ai";
-    version = "2.1.2";
+    version = "2.2.0";
     format = "wheel";
     src = final.fetchurl {
       url = "https://files.pythonhosted.org/packages/py3/h/honcho-ai/honcho_ai-${version}-py3-none-any.whl";
-      hash = "sha256-oiIg8Bpj9qPB1GJarvChQld7g5gcQty2EXdjGGP7qk8=";
+      hash = "sha256-MvCYpMi8/kKI8JlN2rC8UqaNyHBp0PLOLIdY7ioXYfI=";
     };
     dependencies = with final.python313Packages; [
       httpx

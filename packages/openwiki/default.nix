@@ -6,23 +6,23 @@
   cctools,
   makeWrapper,
   node-gyp,
-  nodejs,
+  nodejs_22,
   pnpm_10,
   pnpmConfigHook,
-  python3,
+  python313,
   removeReferencesTo,
   srcOnly,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "openwiki";
-  version = "0.1.2-unstable-2026-07-13";
+  version = "0.1.2-unstable-2026-07-14";
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "openwiki";
-    rev = "7c084f9f6f8032243fd3dfd544969c279416b5cb";
-    hash = "sha256-sMxxn3PDA+0qJK26VguVbZAY+jUaAwA+m+OZGPMESJ0=";
+    rev = "0c0639eece971acc75ccc36dad8d6b99a9b906f5";
+    hash = "sha256-og/xDgW1f8/R7yTTjTTFidFgdBnXn85y+9HUwawfENY=";
   };
 
   patches = [
@@ -32,17 +32,17 @@ stdenv.mkDerivation (finalAttrs: {
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_10;
-    fetcherVersion = 2;
-    hash = "sha256-xN/OKHGzXoW8GKwLbLKq5PGabWEa+Y1aZtS5L3SxH/g=";
+    fetcherVersion = 3;
+    hash = "sha256-94ubDscIEItwkHzVbM4kUqTJpWFu5jpYJBUrhnyDJcA=";
   };
 
   nativeBuildInputs = [
     makeWrapper
-    nodejs
+    nodejs_22
     node-gyp
     pnpm_10
     pnpmConfigHook
-    python3
+    python313
     removeReferencesTo
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
@@ -52,8 +52,8 @@ stdenv.mkDerivation (finalAttrs: {
   buildPhase = ''
     runHook preBuild
     pushd node_modules/.pnpm/better-sqlite3@12.11.1/node_modules/better-sqlite3
-    npm run build-release --offline "--nodedir=${srcOnly nodejs}"
-    find build -type f -exec ${removeReferencesTo}/bin/remove-references-to -t "${srcOnly nodejs}" {} \;
+    npm run build-release --offline "--nodedir=${srcOnly nodejs_22}"
+    find build -type f -exec ${removeReferencesTo}/bin/remove-references-to -t "${srcOnly nodejs_22}" {} \;
     popd
 
     pnpm rebuild esbuild
@@ -66,7 +66,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     mkdir -p "$out/lib/openwiki" "$out/bin"
     cp -r dist node_modules package.json "$out/lib/openwiki/"
-    makeWrapper ${lib.getExe nodejs} "$out/bin/openwiki" \
+    makeWrapper ${lib.getExe nodejs_22} "$out/bin/openwiki" \
       --add-flags "$out/lib/openwiki/dist/cli.js"
 
     runHook postInstall

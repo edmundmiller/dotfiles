@@ -9,7 +9,7 @@ buildNpmPackage {
   version = "1.0.0";
 
   src = fetchFromGitHub {
-    owner = "atalovesyou";
+    owner = "joesobo";
     repo = "claude-max-api-proxy";
     rev = "eae54779fc21a8b3224c192c14e6b63490fd56d8";
     hash = "sha256-ypzeNoVIGTWhWng7vHWTBgL4/DTzBFX+4ljJ+dDipyA=";

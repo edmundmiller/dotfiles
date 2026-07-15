@@ -10,7 +10,7 @@ rustPlatform.buildRustPackage {
 
   src = fetchurl {
     url = "https://codeberg.org/abrenneke/jj-vine/archive/v0.5.3.tar.gz";
-    hash = "sha256-r1HwSWOf/AqalrY6NGKU2/0W6Y21L3gNfEQjdO+kzWY=";
+    hash = "sha256-F/EiFouWvEiynPsHm8zKy6EGHOlJoIcihnRLdSmgT9E=";
   };
 
   cargoHash = "sha256-nuj0cugeK5oc+sZmm1f5dvGEjML0qkle5uO66e54VIY=";

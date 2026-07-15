@@ -13,13 +13,13 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "tmux-file-picker";
-  version = "unstable-2025-12-21";
+  version = "0-unstable-2026-06-12";
 
   src = fetchFromGitHub {
     owner = "raine";
     repo = "tmux-file-picker";
-    rev = "0473f7abe87b95bc008e1cbfd16578e9cee93565";
-    hash = "sha256-Uz+88f3RG7dBangOg0RLQxuE9f49TpMOcQkTtauzPQU=";
+    rev = "d1561a75aebfb50e5ad38facac684252014a44a0";
+    hash = "sha256-JFtLsQBtoCXPFb+xa1/Edi6snUJPe05Io8qGpaX5cxw=";
   };
 
   nativeBuildInputs = [ makeWrapper ];

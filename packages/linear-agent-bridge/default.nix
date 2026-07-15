@@ -18,7 +18,7 @@
 
 buildNpmPackage rec {
   pname = "linear-agent-bridge";
-  version = "0.1.3";
+  version = "0-unstable-2026-02-26";
 
   src = fetchFromGitHub {
     owner = "edmundmiller";

@@ -9,12 +9,12 @@
 }:
 
 let
-  version = "0.1.0-alpha.4";
+  version = "0.1.0-alpha.17";
 
   sources = {
     "aarch64-darwin" = fetchurl {
       url = "https://github.com/Ataraxy-Labs/lazydiff/releases/download/v${version}/lazydiff-macos-arm64.tar.gz";
-      hash = "sha256-M/9G/DEha1HAn1WKElK9zcF79YtvHxIevzCgIBjc96k=";
+      hash = "sha256-J3lvSEvyxgUcCOrqUYXWfQ2w3BMnjxoVrz7XCH2YEls=";
     };
     "x86_64-linux" = fetchurl {
       url = "https://github.com/Ataraxy-Labs/lazydiff/releases/download/v${version}/lazydiff-linux-x86_64.tar.gz";

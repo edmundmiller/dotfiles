@@ -7,13 +7,13 @@
 
 stdenvNoCC.mkDerivation {
   pname = "tmux-agent-status";
-  version = "main-unstable";
+  version = "037af053aeb15219fd6b7dd2d6a0d76c83f46001-unstable";
 
   src = fetchFromGitHub {
     owner = "samleeney";
     repo = "tmux-agent-status";
-    rev = "main";
-    hash = "sha256-Su7Vhugm72lKVcWvTLeXrH/mZpN2pAXHsmyPYQvhnX8=";
+    rev = "037af053aeb15219fd6b7dd2d6a0d76c83f46001";
+    hash = "sha256-NZcTzrpgYR1SZtPF6u3AuCjbOot5IjL5lgnipmPr/0Q=";
   };
 
   patches = [

@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index e0480ae..86ec2c6 100644
+index fa6fb52..fe69ea6 100644
 --- a/package.json
 +++ b/package.json
 @@ -14,6 +14,7 @@
@@ -7,6 +7,6 @@ index e0480ae..86ec2c6 100644
      "cli": "bun src/cli.tsx",
      "cli:watch": "bun --watch src/cli.tsx",
 +    "typecheck": "tsc --noEmit",
-     "prepublishonly": "tsc",
+     "build": "rm -rf dist && tsc",
+     "prepublishOnly": "bun run build",
      "example": "bun --watch src/example.tsx",
-     "worker:dev": "wrangler dev",
