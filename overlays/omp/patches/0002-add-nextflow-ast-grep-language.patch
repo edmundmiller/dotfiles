@@ -1,0 +1,700 @@
+diff --git i/Cargo.lock w/Cargo.lock
+index b61f524..6c43eab 100644
+--- i/Cargo.lock
++++ w/Cargo.lock
+@@ -3268,6 +3268,7 @@ version = "16.5.2"
+ dependencies = [
+  "anyhow",
+  "ast-grep-core",
++ "cc",
+  "globset",
+  "ignore",
+  "phf 0.13.1",
+@@ -3303,6 +3304,7 @@ dependencies = [
+  "tree-sitter-lua",
+  "tree-sitter-make",
+  "tree-sitter-md",
++ "tree-sitter-nextflow",
+  "tree-sitter-nix",
+  "tree-sitter-objc",
+  "tree-sitter-ocaml",
+@@ -4927,6 +4929,15 @@ dependencies = [
+  "tree-sitter-language",
+ ]
+ 
++[[package]]
++name = "tree-sitter-nextflow"
++version = "0.1.0"
++source = "git+https://github.com/nextflow-io/tree-sitter-nextflow.git?rev=172d3fef409aa1220fa9c10bc674e7dc675710e3#172d3fef409aa1220fa9c10bc674e7dc675710e3"
++dependencies = [
++ "cc",
++ "tree-sitter-language",
++]
++
+ [[package]]
+ name = "tree-sitter-nix"
+ version = "0.3.0"
+diff --git i/Cargo.toml w/Cargo.toml
+index 23ac6f7..1a3aeea 100644
+--- i/Cargo.toml
++++ w/Cargo.toml
+@@ -349,6 +349,7 @@ tree-sitter-kotlin = { version = "0.4", package = "tree-sitter-kotlin-sg" }
+ tree-sitter-lua = "0.5"
+ tree-sitter-make = "1.1"
+ tree-sitter-md = "0.5"
++tree-sitter-nextflow = { git = "https://github.com/nextflow-io/tree-sitter-nextflow.git", rev = "172d3fef409aa1220fa9c10bc674e7dc675710e3" }
+ tree-sitter-nix = "0.3"
+ tree-sitter-objc = "3.0"
+ tree-sitter-ocaml = "0.24.2"
+diff --git i/crates/pi-ast/Cargo.toml w/crates/pi-ast/Cargo.toml
+index 34c7c36..51c0149 100644
+--- i/crates/pi-ast/Cargo.toml
++++ w/crates/pi-ast/Cargo.toml
+@@ -47,6 +47,7 @@ tree-sitter-kotlin.workspace = true
+ tree-sitter-lua.workspace = true
+ tree-sitter-make.workspace = true
+ tree-sitter-md.workspace = true
++tree-sitter-nextflow.workspace = true
+ tree-sitter-nix.workspace = true
+ tree-sitter-objc.workspace = true
+ tree-sitter-ocaml.workspace = true
+@@ -73,3 +74,6 @@ tree-sitter-vue.workspace = true
+ tree-sitter-xml.workspace = true
+ tree-sitter-yaml.workspace = true
+ tree-sitter-zig.workspace = true
++
++[build-dependencies]
++cc = "1"
+diff --git i/crates/pi-ast/build.rs w/crates/pi-ast/build.rs
+new file mode 100644
+index 0000000..d8a8a02
+--- /dev/null
++++ w/crates/pi-ast/build.rs
+@@ -0,0 +1,9 @@
++fn main() {
++	let scanner = "src/language/nextflow_scanner.c";
++	cc::Build::new()
++		.std("c11")
++		.include("src/language")
++		.file(scanner)
++		.compile("tree-sitter-nextflow-scanner");
++	println!("cargo:rerun-if-changed={scanner}");
++}
+diff --git i/crates/pi-ast/src/language/mod.rs w/crates/pi-ast/src/language/mod.rs
+index 5201fd2..1b4edee 100644
+--- i/crates/pi-ast/src/language/mod.rs
++++ w/crates/pi-ast/src/language/mod.rs
+@@ -120,6 +120,7 @@ impl_lang_expando!(Hcl, language_hcl, 'µ');
+ impl_lang_expando!(Ini, language_ini, 'µ');
+ impl_lang_expando!(Just, language_just, 'µ');
+ impl_lang_expando!(Kotlin, language_kotlin, 'µ');
++impl_lang_expando!(Nextflow, language_nextflow, '_');
+ impl_lang_expando!(Nix, language_nix, '_');
+ impl_lang_expando!(Ocaml, language_ocaml, 'µ');
+ impl_lang_expando!(Php, language_php, 'µ');
+@@ -298,6 +299,7 @@ pub enum SupportLang {
+ 	Lua,
+ 	Make,
+ 	Markdown,
++	Nextflow,
+ 	Nix,
+ 	ObjC,
+ 	Ocaml,
+@@ -339,7 +341,7 @@ impl SupportLang {
+ 		&[
+ 			Astro, Bash, C, Cmake, Cpp, CSharp, Dart, Clojure, Css, Diff, Dockerfile, EmacsLisp,
+ 			Elixir, Erlang, Fortran, Go, Graphql, Haskell, Hcl, Html, Ini, Java, JavaScript, Json,
+-			Just, Julia, Kotlin, Lua, Make, Markdown, Nix, ObjC, Ocaml, Odin, Php, Powershell, Proto,
++			Just, Julia, Kotlin, Lua, Make, Markdown, Nextflow, Nix, ObjC, Ocaml, Odin, Php, Powershell, Proto,
+ 			Python, R, Regex, Ruby, Rust, Scala, Solidity, Sql, Starlark, Svelte, Swift, Toml,
+ 			Tlaplus, Tsx, TypeScript, Verilog, Vue, Xml, Yaml, Zig,
+ 		]
+@@ -379,6 +381,7 @@ impl SupportLang {
+ 			Self::Lua => "lua",
+ 			Self::Make => "make",
+ 			Self::Markdown => "markdown",
++			Self::Nextflow => "nextflow",
+ 			Self::Nix => "nix",
+ 			Self::ObjC => "objc",
+ 			Self::Ocaml => "ocaml",
+@@ -465,6 +468,7 @@ macro_rules! execute_lang_method {
+ 			S::Lua => Lua.$method($($pname,)*),
+ 			S::Make => Make.$method($($pname,)*),
+ 			S::Markdown => Markdown.$method($($pname,)*),
++			S::Nextflow => Nextflow.$method($($pname,)*),
+ 			S::Nix => Nix.$method($($pname,)*),
+ 			S::ObjC => ObjC.$method($($pname,)*),
+ 			S::Ocaml => Ocaml.$method($($pname,)*),
+@@ -580,6 +584,7 @@ const fn extensions(lang: SupportLang) -> &'static [&'static str] {
+ 		Lua => &["lua"],
+ 		Make => &["mk", "mak"],
+ 		Markdown => &["md", "markdown", "mdx"],
++		Nextflow => &["nf"],
+ 		Nix => &["nix"],
+ 		ObjC => &["m"],
+ 		Ocaml => &["ml"],
+@@ -619,6 +624,9 @@ fn from_extension(path: &Path) -> Option<SupportLang> {
+ 	if name == "Justfile" || name == "justfile" {
+ 		return Some(SupportLang::Just);
+ 	}
++	if name == "nextflow.config" {
++		return Some(SupportLang::Nextflow);
++	}
+ 	if name == "CMakeLists.txt" {
+ 		return Some(SupportLang::Cmake);
+ 	}
+@@ -758,6 +766,8 @@ static LANG_ALIASES: phf::Map<&'static str, SupportLang> = phf_map! {
+ "markdown"       => SupportLang::Markdown,
+ "md"             => SupportLang::Markdown,
+ "mdx"            => SupportLang::Markdown,
++"nextflow"       => SupportLang::Nextflow,
++"nf"             => SupportLang::Nextflow,
+ "nix"            => SupportLang::Nix,
+ "objc"           => SupportLang::ObjC,
+ "obj-c"          => SupportLang::ObjC,
+diff --git i/crates/pi-ast/src/language/nextflow_scanner.c w/crates/pi-ast/src/language/nextflow_scanner.c
+new file mode 100644
+index 0000000..7d6bbdb
+--- /dev/null
++++ w/crates/pi-ast/src/language/nextflow_scanner.c
+@@ -0,0 +1,146 @@
++#include "tree_sitter/parser.h"
++
++// External scanner for newline-sensitive statement termination.
++//
++// The parser only asks for TERMINATOR when its current state accepts one
++// (valid_symbols[TERMINATOR]), so newlines inside (...)/[...]/function args
++// and mid-expression are never terminators — they fall through to `extras`
++// as ordinary whitespace, giving line continuations for free.
++//
++// The one case valid_symbols cannot resolve is a *complete* expression whose
++// statement could either end or continue onto the next line (multi-line
++// ternaries, Elvis, method chains):
++//
++//     extension = args.contains("x")
++//         ? "sam"
++//         : "bam"
++//
++// Here TERMINATOR is valid after `args.contains("x")`, but the statement
++// actually continues. We disambiguate with a one-character lookahead: if the
++// next non-whitespace character begins a continuation (`.`, `?`, `:`, `,`,
++// or a closing bracket), we do NOT emit a terminator. Trailing-operator
++// continuations (`a +` \n `b`) need no handling here — the parser is still
++// mid-expression there, so TERMINATOR is not valid and we are never called.
++
++enum TokenType {
++  TERMINATOR,
++};
++
++void *tree_sitter_nextflow_external_scanner_create(void) { return NULL; }
++void tree_sitter_nextflow_external_scanner_destroy(void *payload) {}
++unsigned tree_sitter_nextflow_external_scanner_serialize(void *payload, char *buffer) { return 0; }
++void tree_sitter_nextflow_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {}
++
++static bool is_continuation(int32_t c) {
++  // A next line beginning with one of these continues the current statement.
++  // '|' covers multi-line channel pipes: ch \n | combine(x) \n | map { }.
++  return c == '.' || c == '?' || c == ':' || c == ',' ||
++         c == ')' || c == ']' || c == '}' || c == '|';
++}
++
++bool tree_sitter_nextflow_external_scanner_scan(void *payload, TSLexer *lexer,
++                                                const bool *valid_symbols) {
++  if (!valid_symbols[TERMINATOR]) {
++    return false;
++  }
++
++  // Skip inline whitespace before the terminator (not part of the token).
++  while (lexer->lookahead == ' ' || lexer->lookahead == '\t' ||
++         lexer->lookahead == '\r' || lexer->lookahead == '\f') {
++    lexer->advance(lexer, true);
++  }
++
++  // A terminator must start with a newline or ';'.
++  if (lexer->lookahead != '\n' && lexer->lookahead != ';') {
++    return false;
++  }
++
++  // Consume the run of newlines/';'/whitespace as the token extent. Comments
++  // are NOT folded in — they must survive as nodes for comment-based tooling
++  // (e.g. TODO linting). A comment between two statements therefore yields two
++  // terminators around it; the grammar's `_terminators` rule (repeat1) absorbs
++  // the pair so it still reads as a single separator.
++  bool saw_semicolon = false;
++  while (lexer->lookahead == '\n' || lexer->lookahead == ';' ||
++         lexer->lookahead == ' ' || lexer->lookahead == '\t' ||
++         lexer->lookahead == '\r' || lexer->lookahead == '\f') {
++    if (lexer->lookahead == ';') saw_semicolon = true;
++    lexer->advance(lexer, false);
++  }
++  lexer->mark_end(lexer);
++
++  // After an explicit ';', fold a trailing comment (and following blank
++  // lines) into the terminator's extent. A comment left as a separate extra
++  // at a `stmt; /* c */`-style boundary would attach to the enclosing node and
++  // reduce a script prelude early. The ';' already made the intent explicit,
++  // so consuming the comment here does not affect statement separation.
++  if (saw_semicolon && lexer->lookahead == '/') {
++    if (lexer->lookahead == '/') {
++      lexer->advance(lexer, false);
++      if (lexer->lookahead == '/') {              // // line comment → to EOL
++        while (lexer->lookahead != '\n' && lexer->lookahead != 0) lexer->advance(lexer, false);
++      } else if (lexer->lookahead == '*') {       // /* block */ → to */
++        lexer->advance(lexer, false);
++        int32_t prev = 0;
++        while (lexer->lookahead != 0 && !(prev == '*' && lexer->lookahead == '/')) {
++          prev = lexer->lookahead;
++          lexer->advance(lexer, false);
++        }
++        if (lexer->lookahead == '/') lexer->advance(lexer, false);
++      }
++      // consume trailing blank space/newlines after the folded comment
++      while (lexer->lookahead == '\n' || lexer->lookahead == ' ' ||
++             lexer->lookahead == '\t' || lexer->lookahead == '\r' ||
++             lexer->lookahead == '\f') {
++        lexer->advance(lexer, false);
++      }
++      lexer->mark_end(lexer);
++    }
++  }
++
++  // If a comment follows the newline run, do not emit a terminator here: let
++  // the comment be lexed as an ordinary extra and emit the terminator on the
++  // next line instead. This keeps comment nodes in the tree (needed for
++  // comment-based tooling like TODO linting) while still yielding exactly one
++  // terminator between two statements separated by a comment.
++  if (!saw_semicolon && lexer->lookahead == '/') {
++    lexer->advance(lexer, false);
++    if (lexer->lookahead == '/' || lexer->lookahead == '*') {
++      return false;
++    }
++    // A lone '/' at a statement boundary cannot start a valid token; treating
++    // the run as a terminator is safe. Fall through.
++  }
++
++  // Lookahead: if the next real character continues the statement, suppress
++  // the terminator so the expression parses across the line break. An explicit
++  // ';' always terminates, though — even before a '}' (return x ? a : b ; }).
++  if (!saw_semicolon && is_continuation(lexer->lookahead)) {
++    return false;
++  }
++
++  // A line beginning with `else`/`catch`/`finally` continues the preceding
++  // if/try across the line break (`} \n else ...`, `} \n catch (e) {`).
++  // Match a keyword then a non-word boundary. Characters consumed on a
++  // non-match are still covered by the terminator token whose end we marked.
++  int32_t first = lexer->lookahead;
++  if (first == 'e' || first == 'c' || first == 'f') {
++    const char *kw = first == 'e' ? "else" : (first == 'c' ? "catch" : "finally");
++    int i = 0;
++    while (kw[i] != '\0' && lexer->lookahead == (int32_t)kw[i]) {
++      lexer->advance(lexer, false);
++      i++;
++    }
++    if (kw[i] == '\0') {
++      int32_t after = lexer->lookahead;
++      bool is_word = (after >= 'a' && after <= 'z') || (after >= 'A' && after <= 'Z') ||
++                     (after >= '0' && after <= '9') || after == '_';
++      if (!is_word) {
++        return false;  // keyword continues the statement
++      }
++    }
++  }
++
++  lexer->result_symbol = TERMINATOR;
++  return true;
++}
+diff --git i/crates/pi-ast/src/language/parsers.rs w/crates/pi-ast/src/language/parsers.rs
+index faaaa1e..0489771 100644
+--- i/crates/pi-ast/src/language/parsers.rs
++++ w/crates/pi-ast/src/language/parsers.rs
+@@ -92,6 +92,9 @@ pub fn language_make() -> TSLanguage {
+ pub fn language_markdown() -> TSLanguage {
+ 	tree_sitter_md::LANGUAGE.into()
+ }
++pub fn language_nextflow() -> TSLanguage {
++	tree_sitter_nextflow::LANGUAGE.into()
++}
+ pub fn language_nix() -> TSLanguage {
+ 	tree_sitter_nix::LANGUAGE.into()
+ }
+diff --git i/crates/pi-ast/src/language/tree_sitter/parser.h w/crates/pi-ast/src/language/tree_sitter/parser.h
+new file mode 100644
+index 0000000..858107d
+--- /dev/null
++++ w/crates/pi-ast/src/language/tree_sitter/parser.h
+@@ -0,0 +1,286 @@
++#ifndef TREE_SITTER_PARSER_H_
++#define TREE_SITTER_PARSER_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdlib.h>
++
++#define ts_builtin_sym_error ((TSSymbol)-1)
++#define ts_builtin_sym_end 0
++#define TREE_SITTER_SERIALIZATION_BUFFER_SIZE 1024
++
++#ifndef TREE_SITTER_API_H_
++typedef uint16_t TSStateId;
++typedef uint16_t TSSymbol;
++typedef uint16_t TSFieldId;
++typedef struct TSLanguage TSLanguage;
++typedef struct TSLanguageMetadata {
++  uint8_t major_version;
++  uint8_t minor_version;
++  uint8_t patch_version;
++} TSLanguageMetadata;
++#endif
++
++typedef struct {
++  TSFieldId field_id;
++  uint8_t child_index;
++  bool inherited;
++} TSFieldMapEntry;
++
++// Used to index the field and supertype maps.
++typedef struct {
++  uint16_t index;
++  uint16_t length;
++} TSMapSlice;
++
++typedef struct {
++  bool visible;
++  bool named;
++  bool supertype;
++} TSSymbolMetadata;
++
++typedef struct TSLexer TSLexer;
++
++struct TSLexer {
++  int32_t lookahead;
++  TSSymbol result_symbol;
++  void (*advance)(TSLexer *, bool);
++  void (*mark_end)(TSLexer *);
++  uint32_t (*get_column)(TSLexer *);
++  bool (*is_at_included_range_start)(const TSLexer *);
++  bool (*eof)(const TSLexer *);
++  void (*log)(const TSLexer *, const char *, ...);
++};
++
++typedef enum {
++  TSParseActionTypeShift,
++  TSParseActionTypeReduce,
++  TSParseActionTypeAccept,
++  TSParseActionTypeRecover,
++} TSParseActionType;
++
++typedef union {
++  struct {
++    uint8_t type;
++    TSStateId state;
++    bool extra;
++    bool repetition;
++  } shift;
++  struct {
++    uint8_t type;
++    uint8_t child_count;
++    TSSymbol symbol;
++    int16_t dynamic_precedence;
++    uint16_t production_id;
++  } reduce;
++  uint8_t type;
++} TSParseAction;
++
++typedef struct {
++  uint16_t lex_state;
++  uint16_t external_lex_state;
++} TSLexMode;
++
++typedef struct {
++  uint16_t lex_state;
++  uint16_t external_lex_state;
++  uint16_t reserved_word_set_id;
++} TSLexerMode;
++
++typedef union {
++  TSParseAction action;
++  struct {
++    uint8_t count;
++    bool reusable;
++  } entry;
++} TSParseActionEntry;
++
++typedef struct {
++  int32_t start;
++  int32_t end;
++} TSCharacterRange;
++
++struct TSLanguage {
++  uint32_t abi_version;
++  uint32_t symbol_count;
++  uint32_t alias_count;
++  uint32_t token_count;
++  uint32_t external_token_count;
++  uint32_t state_count;
++  uint32_t large_state_count;
++  uint32_t production_id_count;
++  uint32_t field_count;
++  uint16_t max_alias_sequence_length;
++  const uint16_t *parse_table;
++  const uint16_t *small_parse_table;
++  const uint32_t *small_parse_table_map;
++  const TSParseActionEntry *parse_actions;
++  const char * const *symbol_names;
++  const char * const *field_names;
++  const TSMapSlice *field_map_slices;
++  const TSFieldMapEntry *field_map_entries;
++  const TSSymbolMetadata *symbol_metadata;
++  const TSSymbol *public_symbol_map;
++  const uint16_t *alias_map;
++  const TSSymbol *alias_sequences;
++  const TSLexerMode *lex_modes;
++  bool (*lex_fn)(TSLexer *, TSStateId);
++  bool (*keyword_lex_fn)(TSLexer *, TSStateId);
++  TSSymbol keyword_capture_token;
++  struct {
++    const bool *states;
++    const TSSymbol *symbol_map;
++    void *(*create)(void);
++    void (*destroy)(void *);
++    bool (*scan)(void *, TSLexer *, const bool *symbol_whitelist);
++    unsigned (*serialize)(void *, char *);
++    void (*deserialize)(void *, const char *, unsigned);
++  } external_scanner;
++  const TSStateId *primary_state_ids;
++  const char *name;
++  const TSSymbol *reserved_words;
++  uint16_t max_reserved_word_set_size;
++  uint32_t supertype_count;
++  const TSSymbol *supertype_symbols;
++  const TSMapSlice *supertype_map_slices;
++  const TSSymbol *supertype_map_entries;
++  TSLanguageMetadata metadata;
++};
++
++static inline bool set_contains(const TSCharacterRange *ranges, uint32_t len, int32_t lookahead) {
++  uint32_t index = 0;
++  uint32_t size = len - index;
++  while (size > 1) {
++    uint32_t half_size = size / 2;
++    uint32_t mid_index = index + half_size;
++    const TSCharacterRange *range = &ranges[mid_index];
++    if (lookahead >= range->start && lookahead <= range->end) {
++      return true;
++    } else if (lookahead > range->end) {
++      index = mid_index;
++    }
++    size -= half_size;
++  }
++  const TSCharacterRange *range = &ranges[index];
++  return (lookahead >= range->start && lookahead <= range->end);
++}
++
++/*
++ *  Lexer Macros
++ */
++
++#ifdef _MSC_VER
++#define UNUSED __pragma(warning(suppress : 4101))
++#else
++#define UNUSED __attribute__((unused))
++#endif
++
++#define START_LEXER()           \
++  bool result = false;          \
++  bool skip = false;            \
++  UNUSED                        \
++  bool eof = false;             \
++  int32_t lookahead;            \
++  goto start;                   \
++  next_state:                   \
++  lexer->advance(lexer, skip);  \
++  start:                        \
++  skip = false;                 \
++  lookahead = lexer->lookahead;
++
++#define ADVANCE(state_value) \
++  {                          \
++    state = state_value;     \
++    goto next_state;         \
++  }
++
++#define ADVANCE_MAP(...)                                              \
++  {                                                                   \
++    static const uint16_t map[] = { __VA_ARGS__ };                    \
++    for (uint32_t i = 0; i < sizeof(map) / sizeof(map[0]); i += 2) {  \
++      if (map[i] == lookahead) {                                      \
++        state = map[i + 1];                                           \
++        goto next_state;                                              \
++      }                                                               \
++    }                                                                 \
++  }
++
++#define SKIP(state_value) \
++  {                       \
++    skip = true;          \
++    state = state_value;  \
++    goto next_state;      \
++  }
++
++#define ACCEPT_TOKEN(symbol_value)     \
++  result = true;                       \
++  lexer->result_symbol = symbol_value; \
++  lexer->mark_end(lexer);
++
++#define END_STATE() return result;
++
++/*
++ *  Parse Table Macros
++ */
++
++#define SMALL_STATE(id) ((id) - LARGE_STATE_COUNT)
++
++#define STATE(id) id
++
++#define ACTIONS(id) id
++
++#define SHIFT(state_value)            \
++  {{                                  \
++    .shift = {                        \
++      .type = TSParseActionTypeShift, \
++      .state = (state_value)          \
++    }                                 \
++  }}
++
++#define SHIFT_REPEAT(state_value)     \
++  {{                                  \
++    .shift = {                        \
++      .type = TSParseActionTypeShift, \
++      .state = (state_value),         \
++      .repetition = true              \
++    }                                 \
++  }}
++
++#define SHIFT_EXTRA()                 \
++  {{                                  \
++    .shift = {                        \
++      .type = TSParseActionTypeShift, \
++      .extra = true                   \
++    }                                 \
++  }}
++
++#define REDUCE(symbol_name, children, precedence, prod_id) \
++  {{                                                       \
++    .reduce = {                                            \
++      .type = TSParseActionTypeReduce,                     \
++      .symbol = symbol_name,                               \
++      .child_count = children,                             \
++      .dynamic_precedence = precedence,                    \
++      .production_id = prod_id                             \
++    },                                                     \
++  }}
++
++#define RECOVER()                    \
++  {{                                 \
++    .type = TSParseActionTypeRecover \
++  }}
++
++#define ACCEPT_INPUT()              \
++  {{                                \
++    .type = TSParseActionTypeAccept \
++  }}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif  // TREE_SITTER_PARSER_H_
+diff --git i/crates/pi-ast/src/summary.rs w/crates/pi-ast/src/summary.rs
+index 14b63a1..f875eb4 100644
+--- i/crates/pi-ast/src/summary.rs
++++ w/crates/pi-ast/src/summary.rs
+@@ -736,7 +736,8 @@ fn is_elidable_kind(language: SupportLang, kind: &str) -> bool {
+ 		// content IS the lines inside hunks, and the leaf-token-only Regex
+ 		// grammar. Eliding any of these deletes the only content worth
+ 		// reading.
+-		SupportLang::Yaml
++		SupportLang::Nextflow
++		| SupportLang::Yaml
+ 		| SupportLang::Toml
+ 		| SupportLang::Ini
+ 		| SupportLang::Diff
+@@ -803,6 +804,7 @@ fn is_groupable_kind(language: SupportLang, kind: &str) -> bool {
+ 		| SupportLang::Cmake
+ 		| SupportLang::Make
+ 		| SupportLang::Just
++		| SupportLang::Nextflow
+ 		| SupportLang::Yaml
+ 		| SupportLang::Toml
+ 		| SupportLang::Ini
+diff --git i/crates/pi-natives/src/ast.rs w/crates/pi-natives/src/ast.rs
+index 4eec133..2facee0 100644
+--- i/crates/pi-natives/src/ast.rs
++++ w/crates/pi-natives/src/ast.rs
+@@ -1306,6 +1306,48 @@ mod tests {
+ 			.expect_err("mixed language inference should fail");
+ 		assert!(err.to_string().contains("multiple languages"));
+ 	}
++	#[test]
++	fn nextflow_process_pattern_matches_inferred_nf_file() {
++		let language = SupportLang::from_path(Path::new("main.nf"))
++			.expect(".nf files should infer Nextflow");
++		assert_eq!(language, SupportLang::Nextflow);
++		assert_eq!(
++			SupportLang::from_path(Path::new("nextflow.config")),
++			Some(SupportLang::Nextflow),
++		);
++		assert_ne!(
++			SupportLang::from_path(Path::new("foo.config")),
++			Some(SupportLang::Nextflow),
++		);
++
++		let pattern = compile_pattern(
++			"process $NAME { $$$BODY }",
++			None,
++			&MatchStrictness::Smart,
++			language,
++		)
++		.expect("Nextflow process pattern should compile");
++		let source = r#"process GREET {
++	input:
++	path samplesheet
++
++	output:
++	path 'hello.txt'
++
++	script:
++	"""
++	echo hello > hello.txt
++	"""
++}
++"#;
++		let ast = language.ast_grep(source);
++		assert!(
++			!ast.root().dfs().any(|node| node.is_error()),
++			"fixture should parse without error nodes",
++		);
++		assert_eq!(ast.root().find_all(pattern).count(), 1);
++	}
++
+ 	#[test]
+ 	fn resolves_supported_language_aliases() {
+ 		assert_eq!(resolve_supported_lang("ts").ok(), Some(SupportLang::TypeScript));
+diff --git i/docs/tools/ast-grep.md w/docs/tools/ast-grep.md
+index 7eac9e3..935b593 100644
+--- i/docs/tools/ast-grep.md
++++ w/docs/tools/ast-grep.md
+@@ -30,7 +30,7 @@ Pattern grammar and language support exposed to the model:
+ - Metavariable names must be uppercase and must stand for whole AST nodes, not partial tokens or string fragments.
+ - Reusing the same metavariable requires identical code at each occurrence.
+ - Patterns must parse as one valid AST node for the inferred target language.
+-- Supported canonical languages come from `SupportLang::all_langs()` in `crates/pi-ast/src/language/mod.rs`: `astro`, `bash`, `c`, `cmake`, `cpp`, `csharp`, `dart`, `clojure`, `css`, `diff`, `dockerfile`, `emacs-lisp`, `elixir`, `erlang`, `go`, `graphql`, `haskell`, `hcl`, `html`, `ini`, `java`, `javascript`, `json`, `just`, `julia`, `kotlin`, `lua`, `make`, `markdown`, `nix`, `objc`, `ocaml`, `odin`, `perl`, `php`, `powershell`, `protobuf`, `python`, `r`, `regex`, `ruby`, `rust`, `scala`, `solidity`, `sql`, `starlark`, `svelte`, `swift`, `toml`, `tlaplus`, `tsx`, `typescript`, `verilog`, `vue`, `xml`, `yaml`, `zig`.
++- Supported canonical languages come from `SupportLang::all_langs()` in `crates/pi-ast/src/language/mod.rs`: `astro`, `bash`, `c`, `cmake`, `cpp`, `csharp`, `dart`, `clojure`, `css`, `diff`, `dockerfile`, `emacs-lisp`, `elixir`, `erlang`, `go`, `graphql`, `haskell`, `hcl`, `html`, `ini`, `java`, `javascript`, `json`, `just`, `julia`, `kotlin`, `lua`, `make`, `markdown`, `nextflow`, `nix`, `objc`, `ocaml`, `odin`, `perl`, `php`, `powershell`, `protobuf`, `python`, `r`, `regex`, `ruby`, `rust`, `scala`, `solidity`, `sql`, `starlark`, `svelte`, `swift`, `toml`, `tlaplus`, `tsx`, `typescript`, `verilog`, `vue`, `xml`, `yaml`, `zig`.
+ 
+ ## Outputs
+ - Single-shot tool result.

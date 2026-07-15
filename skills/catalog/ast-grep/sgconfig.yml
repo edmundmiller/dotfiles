@@ -16,7 +16,6 @@ customLanguages:
     # File extensions for Nextflow files
     extensions: [nf, config]
 
-    # expandoChar: Replace $ with _ in patterns
-    # Since Nextflow uses $ for string interpolation ($var, ${expr}),
-    # use _ in ast-grep patterns instead (e.g., _VAR instead of $VAR)
+    # Internally substitutes _ while parsing patterns because Nextflow uses $
+    # for interpolation. Users still write standard $NAME / $$$ metavariables.
     expandoChar: _
