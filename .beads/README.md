@@ -1,3 +1,11 @@
+---
+purpose: Explain the repository Beads tracker and downstream patch records.
+applies_to: Creating, updating, or closing repository issues.
+entrypoint: Use br from the repository root.
+verification: Run br show with the issue ID.
+update_when: Tracker commands or downstream patch policy changes.
+---
+
 # Beads issue tracker
 
 This repository tracks issues with `br` from
@@ -16,3 +24,10 @@ br create "Title" --type task --priority 2
 br sync --import-only
 br sync --flush-only
 ```
+
+## Downstream patches
+
+Every downstream patch entry in its source manifest must reference an open
+bead. The bead records the patch path, origin commit, why it remains necessary,
+and the condition for removing it. Close the bead only after removing the patch
+and verifying the affected package without it.
