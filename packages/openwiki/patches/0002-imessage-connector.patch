@@ -1,0 +1,1619 @@
+diff --git c/README.md i/README.md
+index 9871b88afbbcd24bbd142961c9b64308cea8d605..b58cdb75acb37b65594b3a20da7dcf84d69a38e8 100644
+--- c/README.md
++++ i/README.md
+@@ -36,8 +36,8 @@ openwiki --init
+ OpenWiki has two modes:
+ 
+ - **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` by
+-  default from configured sources like local repositories, Gmail, Notion, Web
+-  Search, Hacker News, and X/Twitter.
++  default from configured sources like local repositories, Gmail, iMessage,
++  Notion, Web Search, Hacker News, and X/Twitter.
+ - **Code mode** builds repository documentation in `openwiki/` for the current
+   codebase.
+ 
+@@ -171,7 +171,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
+ 
+ ## Local Connectors
+ 
+-OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
++OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, iMessage, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
+ 
+ You can configure the same connector more than once. For example, add one Web
+ Search source for AI research and another for NBA news; OpenWiki stores them as
+@@ -184,9 +184,67 @@ instances with `openwiki ingest all`, all instances for one connector with
+ - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
+ - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
+ - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
++- `imessage` runs the fixed local `imsg` command against explicitly approved Messages chats on macOS.
+ - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
+ - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
+ 
++### iMessage
++
++iMessage ingestion requires macOS, `imsg` v0.13 or newer, and at least one
++explicit scope in `~/.openwiki/connectors/imessage/config.json`:
++
++```json
++{
++  "enabled": true,
++  "chatIds": [123],
++  "participants": ["person@example.com"],
++  "windowHours": 24,
++  "maxMessagesPerChat": 500
++}
++```
++
++`chatIds` contains positive numeric IDs from
++`imsg chats --limit 100 --json`. `participants` is an advanced,
++case-insensitive scope. When both fields are present, a chat must satisfy both
++(AND), so no conversation is selected implicitly. `windowHours` is bounded to
++1–168 and defaults to 24; `maxMessagesPerChat` is bounded to 1–5000 and
++defaults to 500. Run a configured source with:
++
++```sh
++OPENWIKI_WIKI_DIR=/absolute/path/to/wiki openwiki ingest imessage --print
++```
++
++The connector keeps an exclusive Messages rowid cursor per chat and
++deduplicates by stable message GUID. It writes allowlisted normalized JSON only
++under `~/.openwiki/connectors/imessage/raw/<runId>/`; attachment binaries,
++absolute paths, contact-resolved names, routing diagnostics, read state,
++previews, polls, and reactions are not copied. Attachment entries contain
++metadata only. Connector directories are mode `0700`, files are mode `0600`,
++and every connector directory has `*\n!.gitignore\n`; raw messages never belong
++in the wiki or Git. Only compact synthesized pages are written under
++`OPENWIKI_WIKI_DIR`.
++
++Manual ingestion needs Full Disk Access for the terminal or parent process
++running OpenWiki. Contacts access is optional; Automation, SIP changes, and
++Messages send permissions are not required. Scheduled ingestion runs under
++launchd, so inspect the responsible executable rather than granting access only
++to the terminal:
++
++```sh
++/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' \
++  ~/Library/LaunchAgents/com.openwiki.ingestion.plist
++launchctl kickstart -k "gui/$(id -u)/com.openwiki.ingestion"
++```
++
++Grant Full Disk Access to that first `ProgramArguments` executable when needed,
++then require the `launchctl kickstart` smoke to succeed.
++
++To remove iMessage ingestion, run `openwiki cron delete imessage`, remove every
++iMessage entry from `sourceInstances` and legacy `sources.imessage` in
++`~/.openwiki/onboarding.json`, then review and delete
++`~/.openwiki/connectors/imessage/`. Review synthesized wiki pages separately;
++preserving or deleting them is an independent choice.
++
+ Connector secrets are referenced by env var name and stored in `~/.openwiki/.env`; connector config files should never contain raw secret values.
+ 
+ `openwiki auth <provider>` runs a local browser OAuth flow, saves returned tokens into `~/.openwiki/.env`, creates connector config when possible, and discovers MCP tools for MCP-backed providers. Slack and Gmail require app client credentials to already be set in that file; Notion uses dynamic client registration for hosted MCP; X uses OAuth 2.0 with PKCE. After `openwiki auth gmail`, the Google connector can ingest Gmail directly with no MCP transport setup.
+diff --git c/openwiki/integrations/connectors.md i/openwiki/integrations/connectors.md
+index 29b52140bb6d3ec481b16b92071e12bcdbf1445b..0c88f97ee70a40a373e47d9d412f8a7ad940cacd 100644
+--- c/openwiki/integrations/connectors.md
++++ i/openwiki/integrations/connectors.md
+@@ -1,25 +1,25 @@
+ ---
+ type: Integration
+ title: Citations
+-description: OpenWiki ships seven built-in connectors that pull external data
++description: OpenWiki ships eight built-in connectors that pull external data
+   into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the
+   documentation agent then reads and synthesizes into wiki ...
+ timestamp: 2026-07-10T21:04:04.976Z
+ ---
+ 
+-OpenWiki ships seven built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
++OpenWiki ships eight built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
+ 
+ ## Connector architecture
+ 
+ All connectors share types in `src/connectors/types.ts`:
+ 
+-- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
+-- `ConnectorBackend` — `"direct-api" | "local-git" | "mcp-http" | "mcp-stdio"`.
++- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "imessage" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
++- `ConnectorBackend` — `"direct-api" | "local-cli" | "local-git" | "mcp-http" | "mcp-stdio"`.
+ - `ConnectorDefinition` / `ConnectorRuntime` — id, display name, description, required env var names, whether the connector supports agentic discovery (letting the agent decide what to fetch) vs. deterministic ingestion, and an `ingest()` function.
+ - `ConnectorIngestResult` — `{ status: "success" | "skipped" | "error", rawFiles, warnings, runId, statePath, message }`.
+ - `ConnectorState` — per-connector cursor/dedup bookkeeping (`lastRunAt`, `latestIds`, last 20 `runs`) persisted at `~/.openwiki/connectors/<id>/state.json`.
+ 
+-`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all seven; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
++`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all eight; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
+ 
+ Shared IO helpers live in `src/connectors/io.ts`: `writeRawJson()` writes raw dumps with `0600`/`0700` permissions under `~/.openwiki/connectors/<id>/raw/<runId>/`, and `updateStateWithRun()` maintains the state file.
+ 
+@@ -29,13 +29,14 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+ 
+ `src/connectors/mcp-client.ts` is a low-level JSON-RPC MCP client (stdio or HTTP transport) implementing `listMcpTools`/`executeMcpTool`/`executeMcpReadOnlyOperations`. `src/connectors/mcp-runtime.ts` wraps it for connector use (currently only `notion`), adding a **read-only tool-call policy**: a tool call is allowed only if it's explicitly listed in `allowedTools`, the MCP server's own `readOnlyHint` annotation is `true`, or (for the hosted `mcp.notion.com/mcp` endpoint specifically) the tool name/description matches a read-only heuristic (search/retrieve/get/list/query/read/fetch/find/lookup/load/children). This is the mechanism that keeps MCP-backed connectors read-only even though the underlying server may expose write tools.
+ 
+-## The seven connectors
++## The eight connectors
+ 
+ | Connector        | Backend                        | Required env                                             | Agentic discovery | What it pulls                                                                                                                                                                                                                                                             |
+ | ---------------- | ------------------------------ | -------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+ | `git-repo`       | local-git                      | none                                                     | yes               | Local repos configured in connector config (`repos: [{id, path}]`): branch/HEAD, `git log` (last 20, name-status), `git status --short`, `git diff --name-status HEAD`. Writes `manifest.json`.                                                                           |
+ | `google` (Gmail) | direct-api                     | Gmail OAuth access/refresh token env keys                | no                | Gmail API v1 messages; default query `newer_than:1d`, configurable label/format/headers. Writes `gmail-messages.json`.                                                                                                                                                    |
+ | `hackernews`     | direct-api                     | none                                                     | no                | Public HN Firebase feeds (`top`/`new`/`best`/`show`/`ask`/`job`) plus Algolia `search_by_date` queries. Writes `hackernews-results.json`.                                                                                                                                 |
++| `imessage`       | local-cli                      | none                                                     | no                | Explicitly scoped local Messages chats through `imsg`; writes allowlisted `messages.json` plus `manifest.json`, with attachment metadata only and per-chat rowid cursors.                                                                                                 |
+ | `notion`         | mcp-stdio (label; may be HTTP) | `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`                       | yes               | Hosted Notion MCP server (or configured MCP transport); discovers tools (`mcp-tools.json`) or executes configured read-only operations (`mcp-results.json`).                                                                                                              |
+ | `slack`          | direct-api                     | Slack user-token env key                                 | no                | `auth.test` identity, `search.messages` self-message search, bounded `conversations.list`/`.history` fallback, `assistant.search.context`. Writes `identity.json`, `my-messages-search.json`, `recent-messages.json`, `my-recent-messages.json`, `assistant-search.json`. |
+ | `web-search`     | direct-api                     | `TAVILY_API_KEY` (via `OPENWIKI_TAVILY_API_KEY_ENV_KEY`) | no                | Tavily search (`@langchain/tavily`) for configured queries. Writes `web-search-results.json`.                                                                                                                                                                             |
+@@ -46,6 +47,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+ - **Slack and "latest message" questions**: `my-recent-messages.json` includes a `definitiveForLatestMessage` flag. It is `true` only when the latest message was resolved via `search.messages` (requires the `search:read` user-token scope). If that search is unavailable, the connector falls back to a bounded `conversations.history` scan, sets `definitiveForLatestMessage: false`, and warns that the result is not reliably the user's true latest Slack message. Always check this flag before answering "what did I last say on Slack" from raw Slack data.
+ - **X streams and cursors**: each stream (except `bookmarks`) tracks a `since_id` cursor in connector state so repeated ingestion runs are incremental; `list_posts` fans out per configured `listIds`.
+ - **Notion is disabled until configured**: `enabled: true` plus a transport must be set in connector config before ingestion does anything beyond tool discovery.
++- **iMessage scope and stability**: configure positive `chatIds` and/or case-insensitive `participants`; both fields use AND semantics. The default window is a bounded 24 hours, while an exclusive rowid cursor and GUID deduplication make overlapping reruns incremental. A full `maxMessagesPerChat` page containing unseen rows fails closed.
+ - **git-repo has no ingest-vs-agent distinction for read access**: it's the only connector marked `supportsAgenticDiscovery: true` alongside `notion`, since a git checkout can be explored freely rather than pulled through a bounded API.
+ 
+ ## Ingestion orchestration
+@@ -58,6 +60,37 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+ 
+ `src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](/cli/usage.md)).
+ 
++## iMessage privacy and operations
++
++Run `imsg chats --limit 100 --json` on macOS to choose approved numeric chat
++IDs, then configure `enabled`, `chatIds`, optional advanced `participants`,
++`windowHours`, and `maxMessagesPerChat`. Run
++`openwiki ingest imessage --print`; set `OPENWIKI_WIKI_DIR` to an absolute path
++when synthesized pages belong in another wiki or vault.
++
++The connector writes private `0700` directories and `0600` files under
++`~/.openwiki/connectors/imessage/`, enforces a two-line `.gitignore`
++(`*` then `!.gitignore`), and never copies attachment binaries or absolute
++paths. Raw messages never belong in the wiki or Git. Synthesis may retain
++compact durable summaries and action items, not full conversations.
++
++Manual runs require Full Disk Access for the terminal or parent process.
++Contacts access is optional; Automation, SIP changes, and Messages send
++permissions are unnecessary. The all-source schedule uses launchd label
++`com.openwiki.ingestion`; inspect the first `ProgramArguments` executable in
++`~/Library/LaunchAgents/com.openwiki.ingestion.plist`, grant that executable
++Full Disk Access if needed, and verify with:
++
++```sh
++launchctl kickstart -k "gui/$(id -u)/com.openwiki.ingestion"
++```
++
++Rollback with `openwiki cron delete imessage`; remove every iMessage
++`sourceInstances` entry and legacy `sources.imessage` entry from
++`~/.openwiki/onboarding.json`; then review/delete
++`~/.openwiki/connectors/imessage/`. Preserve or remove synthesized pages as a
++separate reviewed decision.
++
+ ## Design docs describing connectors that do not exist yet
+ 
+ Two long-form guides at the repository root describe **planned, unimplemented** connectors — do not treat them as current behavior:
+@@ -78,7 +111,7 @@ If asked to implement either, follow the guide's phased checkpoints and confirm
+ 
+ - `src/connectors/types.ts`, `src/connectors/registry.ts`, `src/connectors/io.ts`, `src/connectors/tools.ts`
+ - `src/connectors/mcp-client.ts`, `src/connectors/mcp-runtime.ts`, `src/connectors/sources/mcp.ts`
+-- `src/connectors/sources/git-repo.ts`, `src/connectors/sources/gmail.ts`, `src/connectors/sources/hackernews.ts`, `src/connectors/sources/slack.ts`, `src/connectors/sources/web-search.ts`, `src/connectors/sources/x.ts`
++- `src/connectors/sources/git-repo.ts`, `src/connectors/sources/gmail.ts`, `src/connectors/sources/hackernews.ts`, `src/connectors/sources/imessage.ts`, `src/connectors/sources/slack.ts`, `src/connectors/sources/web-search.ts`, `src/connectors/sources/x.ts`
+ - `src/ingestion.ts`, `src/onboarding.ts`, `src/schedules.ts`
+ - `LANGSMITH-CONNECTOR.md`, `CODING-AGENTS-CONNECTOR.md`
+ - `test/onboarding.test.ts`
+diff --git c/src/connectors/registry.ts i/src/connectors/registry.ts
+index 22a9de5a680b4001f55a78b2cb356b1ddf962116..0e7a5691997068ef52f3fc8313137ef6481f5e0c 100644
+--- c/src/connectors/registry.ts
++++ i/src/connectors/registry.ts
+@@ -1,6 +1,7 @@
+ import { createGitRepoConnector } from "./sources/git-repo.js";
+ import { createGmailConnector } from "./sources/gmail.js";
+ import { createHackerNewsConnector } from "./sources/hackernews.js";
++import { createIMessageConnector } from "./sources/imessage.js";
+ import { createMcpConnector } from "./sources/mcp.js";
+ import { createSlackConnector } from "./sources/slack.js";
+ import { createWebSearchConnector } from "./sources/web-search.js";
+@@ -9,6 +10,7 @@ import type { ConnectorId, ConnectorRuntime } from "./types.js";
+ 
+ export const CONNECTOR_IDS = [
+   "git-repo",
++  "imessage",
+   "notion",
+   "x",
+   "google",
+@@ -25,6 +27,7 @@ export function createConnectorRegistry(): Record<
+     "git-repo": createGitRepoConnector(),
+     google: createGmailConnector(),
+     hackernews: createHackerNewsConnector(),
++    imessage: createIMessageConnector(),
+     notion: createMcpConnector({
+       description:
+         "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
+diff --git c/src/connectors/sources/imessage.ts i/src/connectors/sources/imessage.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ba6ecfb6f26fc4b8104a05097d9292ff1f95207
+--- /dev/null
++++ i/src/connectors/sources/imessage.ts
+@@ -0,0 +1,570 @@
++import { execFile } from "node:child_process";
++import { promisify } from "node:util";
++import {
++  createRunId,
++  readConnectorConfig,
++  readConnectorState,
++  updateStateWithRun,
++  writeConnectorState,
++  writeRawJson,
++} from "../io.js";
++import type {
++  ConnectorDefinition,
++  ConnectorIngestOptions,
++  ConnectorIngestResult,
++  ConnectorRuntime,
++  ConnectorState,
++} from "../types.js";
++
++const execFileAsync = promisify(execFile);
++const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
++
++export type IMessageConfig = {
++  enabled?: boolean;
++  chatIds?: number[];
++  participants?: string[];
++  windowHours?: number;
++  maxMessagesPerChat?: number;
++};
++
++type IMessageChat = {
++  guid: string;
++  id: number;
++  identifier: string;
++  isGroup: boolean;
++  participants: string[];
++};
++
++type IMessageRow = {
++  attachments?: unknown[];
++  chat_id: number;
++  created_at: string;
++  guid: string;
++  id: number;
++  is_from_me?: boolean;
++  reply_to_guid?: string;
++  sender?: string;
++  text: string;
++  thread_originator_guid?: string;
++};
++
++type NormalizedMessage = {
++  attachments: NormalizedAttachment[];
++  createdAt: string;
++  guid: string;
++  id: number;
++  isFromMe: boolean;
++  recipients: string[];
++  replyToGuid?: string;
++  sender: string;
++  text: string;
++  thread: IMessageChat;
++  threadOriginatorGuid?: string;
++};
++
++type NormalizedAttachment = {
++  byteSize?: number;
++  filename?: string;
++  isSticker?: boolean;
++  mimeType?: string;
++  missing?: boolean;
++  transferName?: string;
++  uti?: string;
++};
++
++const definition: ConnectorDefinition = {
++  backend: "local-cli",
++  description:
++    "Reads explicitly scoped local Messages conversations through imsg.",
++  displayName: "iMessage",
++  id: "imessage",
++  requiredEnv: [],
++  supportsAgenticDiscovery: false,
++};
++
++export function createIMessageConnector(): ConnectorRuntime {
++  return { ...definition, ingest };
++}
++
++async function ingest(
++  options: ConnectorIngestOptions = {},
++): Promise<ConnectorIngestResult> {
++  const runId = createRunId();
++  const config = normalizeConfig({
++    ...(await readConnectorConfig<IMessageConfig>("imessage", {
++      enabled: true,
++      chatIds: [],
++      participants: [],
++      windowHours: options.windowHours ?? 24,
++      maxMessagesPerChat: 500,
++    })),
++    ...((options.connectorConfig ?? {}) as IMessageConfig),
++  });
++  const rawFiles: string[] = [];
++  const warnings: string[] = [];
++
++  if (!config.enabled) {
++    return result(
++      runId,
++      "skipped",
++      rawFiles,
++      warnings,
++      "iMessage connector is disabled.",
++    );
++  }
++
++  if (config.chatIds.length === 0 && config.participants.length === 0) {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      "iMessage ingestion requires at least one chatIds or participants scope in ~/.openwiki/connectors/imessage/config.json.",
++    );
++  }
++
++  const state = await readConnectorState("imessage");
++  const end = new Date();
++  const start = new Date(end.getTime() - config.windowHours * 60 * 60 * 1000);
++  let chats: IMessageChat[];
++
++  try {
++    chats = parseChats(await runImsg(["chats", "--limit", "10000", "--json"]));
++  } catch (error) {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      mapImsgError(error, "chats"),
++    );
++  }
++
++  const selectedChats = chats.filter(
++    (chat) =>
++      (config.chatIds.length === 0 || config.chatIds.includes(chat.id)) &&
++      (config.participants.length === 0 ||
++        includesAllParticipants(chat.participants, config.participants)),
++  );
++
++  if (config.chatIds.length > 0) {
++    const matchedIds = new Set(selectedChats.map((chat) => chat.id));
++    const unmatchedIds = config.chatIds.filter((id) => !matchedIds.has(id));
++    if (unmatchedIds.length > 0 && selectedChats.length > 0) {
++      warnings.push(`Unmatched iMessage chat IDs: ${unmatchedIds.join(", ")}.`);
++    }
++  }
++
++  if (selectedChats.length === 0) {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      "No iMessage chat matched the configured chatIds/participants scope.",
++    );
++  }
++
++  const rowsByChat = new Map<number, IMessageRow[]>();
++  for (const chat of selectedChats) {
++    let rows: IMessageRow[];
++    try {
++      rows = parseMessages(
++        await runImsg([
++          "history",
++          "--chat-id",
++          String(chat.id),
++          "--limit",
++          String(config.maxMessagesPerChat),
++          "--attachments",
++          "--start",
++          start.toISOString(),
++          "--end",
++          end.toISOString(),
++          "--json",
++        ]),
++      );
++    } catch (error) {
++      return result(
++        runId,
++        "error",
++        rawFiles,
++        warnings,
++        mapImsgError(error, "history", chat.id),
++      );
++    }
++
++    const cursor = readCursor(state, chat.id);
++    if (
++      rows.length === config.maxMessagesPerChat &&
++      rows.some((row) => row.id > cursor)
++    ) {
++      return result(
++        runId,
++        "error",
++        rawFiles,
++        warnings,
++        `iMessage history reached maxMessagesPerChat=${config.maxMessagesPerChat} for chat ${chat.id}; increase the limit or narrow the time window.`,
++      );
++    }
++    rowsByChat.set(
++      chat.id,
++      rows.filter((row) => row.id > cursor),
++    );
++  }
++
++  const messages = deduplicateAndSort(selectedChats, rowsByChat);
++  if (messages.length === 0) {
++    const nextState = updateStateWithRun(state, {
++      at: end.toISOString(),
++      rawFiles,
++      runId,
++      status: "skipped",
++      warnings,
++    });
++    await writeConnectorState("imessage", nextState);
++    return result(
++      runId,
++      "skipped",
++      rawFiles,
++      warnings,
++      "No new iMessage messages in the configured scope.",
++    );
++  }
++
++  const nextCursors = getNextCursors(state, selectedChats, rowsByChat);
++  const messagesPath = await writeRawJson("imessage", runId, "messages.json", {
++    schemaVersion: 1,
++    messages,
++  });
++  const manifestPath = await writeRawJson("imessage", runId, "manifest.json", {
++    schemaVersion: 1,
++    connectorId: "imessage",
++    generatedAt: end.toISOString(),
++    window: {
++      start: start.toISOString(),
++      end: end.toISOString(),
++      hours: config.windowHours,
++    },
++    scope: {
++      chatIds: config.chatIds,
++      participants: config.participants,
++    },
++    threads: selectedChats.map((chat) => ({
++      id: chat.id,
++      identifier: chat.identifier,
++      guid: chat.guid,
++      messageCount: messages.filter((message) => message.thread.id === chat.id)
++        .length,
++      cursorBefore: state.latestIds?.[`chat:${chat.id}`] ?? null,
++      cursorAfter:
++        nextCursors[`chat:${chat.id}`] ??
++        state.latestIds?.[`chat:${chat.id}`] ??
++        null,
++    })),
++    messageCount: messages.length,
++    dataFiles: ["messages.json"],
++  });
++  rawFiles.push(messagesPath, manifestPath);
++
++  const nextState = updateStateWithRun(state, {
++    at: end.toISOString(),
++    rawFiles,
++    runId,
++    status: "success",
++    warnings,
++  });
++  nextState.latestIds = { ...(state.latestIds ?? {}), ...nextCursors };
++  await writeConnectorState("imessage", nextState);
++
++  return result(
++    runId,
++    "success",
++    rawFiles,
++    warnings,
++    `Wrote ${messages.length} iMessage message(s).`,
++  );
++}
++
++function normalizeConfig(config: IMessageConfig): Required<IMessageConfig> {
++  return {
++    enabled: config.enabled !== false,
++    chatIds: uniquePositiveIntegers(config.chatIds),
++    participants: uniqueHandles(config.participants),
++    windowHours: clampInteger(config.windowHours, 1, 168, 24),
++    maxMessagesPerChat: clampInteger(config.maxMessagesPerChat, 1, 5000, 500),
++  };
++}
++
++function uniquePositiveIntegers(values: unknown): number[] {
++  if (!Array.isArray(values)) return [];
++  return [
++    ...new Set(
++      values.filter(
++        (value): value is number => Number.isInteger(value) && value > 0,
++      ),
++    ),
++  ];
++}
++
++function uniqueHandles(values: unknown): string[] {
++  if (!Array.isArray(values)) return [];
++  const handles = new Map<string, string>();
++  for (const value of values) {
++    if (typeof value !== "string" || value.trim().length === 0) continue;
++    const trimmed = value.trim();
++    const key = trimmed.toLocaleLowerCase("en-US");
++    if (!handles.has(key)) handles.set(key, trimmed);
++  }
++  return [...handles.values()];
++}
++
++function clampInteger(
++  value: number | undefined,
++  minimum: number,
++  maximum: number,
++  fallback: number,
++): number {
++  if (!Number.isFinite(value)) return fallback;
++  return Math.min(maximum, Math.max(minimum, Math.trunc(value!)));
++}
++
++async function runImsg(args: string[]): Promise<string> {
++  const { stdout } = await execFileAsync("imsg", args, {
++    maxBuffer: MAX_BUFFER_BYTES,
++  });
++  return String(stdout).trim();
++}
++
++function parseChats(output: string): IMessageChat[] {
++  return parseNdjson(output).flatMap((row) => {
++    const id = row.id;
++    if (typeof id !== "number" || !Number.isFinite(id)) return [];
++    return [
++      {
++        guid: typeof row.guid === "string" ? row.guid : "",
++        id,
++        identifier: typeof row.identifier === "string" ? row.identifier : "",
++        isGroup: row.is_group === true,
++        participants: uniqueHandles(row.participants),
++      },
++    ];
++  });
++}
++
++function parseMessages(output: string): IMessageRow[] {
++  return parseNdjson(output).map((row) => {
++    if (
++      typeof row.id !== "number" ||
++      !Number.isFinite(row.id) ||
++      typeof row.chat_id !== "number" ||
++      !Number.isFinite(row.chat_id) ||
++      typeof row.guid !== "string" ||
++      typeof row.created_at !== "string" ||
++      typeof row.text !== "string"
++    ) {
++      throw new Error("Invalid iMessage history row.");
++    }
++    return row as IMessageRow;
++  });
++}
++
++function parseNdjson(output: string): Record<string, unknown>[] {
++  if (!output) return [];
++  return output.split(/\r?\n/u).map((line) => {
++    const value: unknown = JSON.parse(line);
++    if (!value || typeof value !== "object" || Array.isArray(value)) {
++      throw new Error("Invalid iMessage NDJSON row.");
++    }
++    return value as Record<string, unknown>;
++  });
++}
++
++function includesAllParticipants(
++  chatParticipants: string[],
++  configuredParticipants: string[],
++): boolean {
++  const participants = new Set(
++    chatParticipants.map((value) => value.toLocaleLowerCase("en-US")),
++  );
++  return configuredParticipants.every((value) =>
++    participants.has(value.toLocaleLowerCase("en-US")),
++  );
++}
++
++function readCursor(state: ConnectorState, chatId: number): number {
++  const value = Number(state.latestIds?.[`chat:${chatId}`] ?? 0);
++  return Number.isSafeInteger(value) && value > 0 ? value : 0;
++}
++
++function deduplicateAndSort(
++  chats: IMessageChat[],
++  rowsByChat: Map<number, IMessageRow[]>,
++): NormalizedMessage[] {
++  const chatsById = new Map(chats.map((chat) => [chat.id, chat]));
++  const messages = new Map<string, NormalizedMessage>();
++  for (const rows of rowsByChat.values()) {
++    for (const row of rows) {
++      if (!messages.has(row.guid)) {
++        const chat = chatsById.get(row.chat_id);
++        if (!chat)
++          throw new Error(`Missing selected iMessage chat ${row.chat_id}.`);
++        messages.set(row.guid, normalizeMessage(row, chat));
++      }
++    }
++  }
++  return [...messages.values()].sort(
++    (left, right) =>
++      left.createdAt.localeCompare(right.createdAt) ||
++      left.thread.id - right.thread.id ||
++      left.id - right.id,
++  );
++}
++
++function normalizeMessage(
++  row: IMessageRow,
++  thread: IMessageChat,
++): NormalizedMessage {
++  const isFromMe = row.is_from_me === true;
++  const sender = isFromMe
++    ? "me"
++    : typeof row.sender === "string"
++      ? row.sender
++      : "";
++  const senderKey = sender.toLocaleLowerCase("en-US");
++  const recipients = isFromMe
++    ? thread.participants
++    : uniqueHandles([
++        "me",
++        ...thread.participants.filter(
++          (value) => value.toLocaleLowerCase("en-US") !== senderKey,
++        ),
++      ]);
++  return {
++    attachments: normalizeAttachments(row.attachments),
++    createdAt: row.created_at,
++    guid: row.guid,
++    id: row.id,
++    isFromMe,
++    recipients,
++    ...(typeof row.reply_to_guid === "string"
++      ? { replyToGuid: row.reply_to_guid }
++      : {}),
++    sender,
++    text: row.text,
++    thread,
++    ...(typeof row.thread_originator_guid === "string"
++      ? { threadOriginatorGuid: row.thread_originator_guid }
++      : {}),
++  };
++}
++
++function normalizeAttachments(values: unknown): NormalizedAttachment[] {
++  if (!Array.isArray(values)) return [];
++  return values.flatMap((value) => {
++    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
++    const row = value as Record<string, unknown>;
++    return [
++      withoutUndefined({
++        filename: stringValue(row.filename),
++        transferName: stringValue(row.transfer_name),
++        uti: stringValue(row.uti),
++        mimeType: stringValue(row.mime_type),
++        byteSize: numberValue(row.byte_size),
++        isSticker: booleanValue(row.is_sticker),
++        missing: booleanValue(row.missing),
++      }),
++    ];
++  });
++}
++
++function withoutUndefined<T extends object>(value: T): T {
++  return Object.fromEntries(
++    Object.entries(value).filter(([, item]) => item !== undefined),
++  ) as T;
++}
++
++function stringValue(value: unknown): string | undefined {
++  return typeof value === "string" ? value : undefined;
++}
++
++function numberValue(value: unknown): number | undefined {
++  return typeof value === "number" && Number.isFinite(value)
++    ? value
++    : undefined;
++}
++
++function booleanValue(value: unknown): boolean | undefined {
++  return typeof value === "boolean" ? value : undefined;
++}
++
++function getNextCursors(
++  state: ConnectorState,
++  chats: IMessageChat[],
++  rowsByChat: Map<number, IMessageRow[]>,
++): Record<string, string> {
++  const cursors: Record<string, string> = {};
++  for (const chat of chats) {
++    const rows = rowsByChat.get(chat.id) ?? [];
++    const highest = rows.reduce((maximum, row) => Math.max(maximum, row.id), 0);
++    if (highest > readCursor(state, chat.id)) {
++      cursors[`chat:${chat.id}`] = String(highest);
++    }
++  }
++  return cursors;
++}
++
++function mapImsgError(
++  error: unknown,
++  operation: "chats" | "history",
++  chatId?: number,
++): string {
++  if (hasErrorCode(error, "ENOENT")) {
++    return "imsg is unavailable; install it and ensure it is on PATH.";
++  }
++  const stderr = getErrorStderr(error).toLocaleLowerCase("en-US");
++  if (
++    stderr.includes("unable to open database file") ||
++    stderr.includes("authorization denied")
++  ) {
++    return "imsg cannot read ~/Library/Messages/chat.db; grant Full Disk Access to the terminal or parent agent, then retry.";
++  }
++  return operation === "chats"
++    ? "imsg chats failed."
++    : `imsg history failed for chat ${chatId}.`;
++}
++
++function hasErrorCode(error: unknown, code: string): boolean {
++  return Boolean(
++    error &&
++    typeof error === "object" &&
++    "code" in error &&
++    (error as NodeJS.ErrnoException).code === code,
++  );
++}
++
++function getErrorStderr(error: unknown): string {
++  if (!error || typeof error !== "object" || !("stderr" in error)) return "";
++  const stderr = (error as { stderr?: unknown }).stderr;
++  return typeof stderr === "string" || Buffer.isBuffer(stderr)
++    ? String(stderr)
++    : "";
++}
++
++function result(
++  runId: string,
++  status: ConnectorIngestResult["status"],
++  rawFiles: string[],
++  warnings: string[],
++  message: string,
++): ConnectorIngestResult {
++  return {
++    connectorId: "imessage",
++    message,
++    rawFiles,
++    runId,
++    statePath: "~/.openwiki/connectors/imessage/state.json",
++    status,
++    warnings,
++  };
++}
+diff --git c/src/connectors/types.ts i/src/connectors/types.ts
+index 1b1969d3ca190b2c1465da1e431a3ad6a9b6e450..b2da4b61f6548732b469bbf3e6e0a56b4a8604f6 100644
+--- c/src/connectors/types.ts
++++ i/src/connectors/types.ts
+@@ -2,13 +2,14 @@ export type ConnectorId =
+   | "git-repo"
+   | "google"
+   | "hackernews"
++  | "imessage"
+   | "notion"
+   | "slack"
+   | "web-search"
+   | "x";
+ 
+ export type ConnectorBackend =
+-  "direct-api" | "local-git" | "mcp-http" | "mcp-stdio";
++  "direct-api" | "local-cli" | "local-git" | "mcp-http" | "mcp-stdio";
+ 
+ export type ConnectorDefinition = {
+   backend: ConnectorBackend;
+diff --git c/src/credentials.tsx i/src/credentials.tsx
+index ea2f3bf3fda4130a936babd889428c90e6ca7fde..ef945cf23a6e0096e1b9c34cb13145d9129fdbe4 100644
+--- c/src/credentials.tsx
++++ i/src/credentials.tsx
+@@ -102,6 +102,7 @@ type PromptStep =
+   | "global-cron-custom"
+   | "global-cron-mode"
+   | "global-power-mode"
++  | "source-imessage-chat-ids"
+   | "source-description"
+   | "source-description-custom"
+   | "source-menu"
+@@ -186,6 +187,7 @@ const ONBOARDING_TEMPLATES = [
+     sourceIds: [
+       "git-repo",
+       "google",
++      "imessage",
+       "notion",
+       "web-search",
+       "hackernews",
+@@ -193,6 +195,7 @@ const ONBOARDING_TEMPLATES = [
+     ],
+     suggestedSources: [
+       "Gmail",
++      "iMessage",
+       "Notion",
+       "Web Search (Tavily)",
+       "Hacker News",
+@@ -278,6 +281,20 @@ const SOURCE_OPTIONS = [
+       },
+     ],
+   },
++  {
++    displayName: "iMessage",
++    examples: [
++      "Summarize durable decisions, commitments, and action items from approved conversations.",
++      "Track project context from explicitly selected iMessage threads.",
++    ],
++    id: "imessage",
++    instructions: [
++      "Requires macOS, imsg v0.13 or newer, and Full Disk Access for the terminal or parent agent used for manual ingestion.",
++      "Run imsg chats --limit 100 --json and choose only approved numeric chat IDs.",
++      "Scheduled ingestion runs under launchd, not the terminal. The responsible executable is the first ProgramArguments entry in ~/Library/LaunchAgents/com.openwiki.ingestion.plist and may need its own Full Disk Access grant.",
++    ],
++    secretInputs: [],
++  },
+   {
+     displayName: "Web Search (Tavily)",
+     examples: [
+@@ -1412,6 +1429,26 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (step === "source-imessage-chat-ids") {
++      const parsed = parseIMessageChatIds(input);
++      if ("error" in parsed) {
++        setError(parsed.error);
++        return;
++      }
++      setSourceState((state) => ({
++        ...state,
++        connectorConfig: {
++          enabled: true,
++          chatIds: parsed.chatIds,
++          windowHours: 24,
++          maxMessagesPerChat: 500,
++        },
++      }));
++      setInput("");
++      setStep("source-description");
++      return;
++    }
++
+     if (step === "source-description") {
+       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
+         setInput("");
+@@ -1743,6 +1780,12 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (source.id === "imessage") {
++      setInput("");
++      setStep("source-imessage-chat-ids");
++      return;
++    }
++
+     try {
+       if (source.id === "git-repo") {
+         setInput(getDefaultLocalGitRepoPath());
+@@ -2518,6 +2561,28 @@ function Prompt({
+     );
+   }
+ 
++  if (step === "source-imessage-chat-ids") {
++    return (
++      <Box flexDirection="column">
++        <Text>Choose approved iMessage chats.</Text>
++        {selectedSource.instructions.map((instruction, index) => (
++          <Text key={instruction}>
++            {index + 1}. {instruction}
++          </Text>
++        ))}
++        <BorderedInput
++          maxDisplayWidth={inputDisplayWidth}
++          marginTop={1}
++          prefix="chatIds="
++          value={input}
++        />
++        <Text color="gray">
++          Enter unique positive numeric chat IDs separated by commas.
++        </Text>
++      </Box>
++    );
++  }
++
+   if (step === "source-secret") {
+     const secretInput = selectedSource.secretInputs[secretInputIndex];
+     return (
+@@ -3573,6 +3638,25 @@ function getSourceDescriptionOptionCount(source: SourceSetupOption): number {
+   return source.examples.length + 1;
+ }
+ 
++function parseIMessageChatIds(
++  value: string,
++): { chatIds: number[] } | { error: string } {
++  const parts = value.split(",").map((part) => part.trim());
++  if (parts.length === 0 || parts.some((part) => !/^[1-9]\d*$/u.test(part))) {
++    return {
++      error: "Enter one or more positive numeric chat IDs separated by commas.",
++    };
++  }
++  const chatIds = parts.map(Number);
++  if (chatIds.some((id) => !Number.isSafeInteger(id))) {
++    return { error: "Every iMessage chat ID must be a positive safe integer." };
++  }
++  if (new Set(chatIds).size !== chatIds.length) {
++    return { error: "Remove duplicate iMessage chat IDs." };
++  }
++  return { chatIds };
++}
++
+ function handleCronEditorInput({
+   currentFieldIndex,
+   currentValue,
+diff --git c/src/ingestion.ts i/src/ingestion.ts
+index 49160519323c29ee3428c2547f4a281ba41a574f..7a2f7496c3d6940b79fb1e31316647d868389a92 100644
+--- c/src/ingestion.ts
++++ i/src/ingestion.ts
+@@ -145,27 +145,19 @@ async function runSourceIngestion({
+       : undefined;
+     const rawFiles = deterministicPull?.rawFiles ?? [];
+ 
+-    if (
+-      deterministicPull &&
+-      deterministicPull.status === "error" &&
+-      rawFiles.length === 0
+-    ) {
+-      emitText(
+-        emit,
+-        `${connector.displayName} deterministic pull failed: ${deterministicPull.message}\n`,
+-      );
++    emitDeterministicPullSummary(emit, deterministicPull);
++
++    if (deterministicPull && rawFiles.length === 0) {
+       return {
+         connectorId: connector.id,
+         deterministicPull,
+         displayName: getSourceDisplayName(connector, sourceConfig),
+         rawFiles,
+         sourceInstanceId: sourceConfig.id,
+-        status: "error",
++        status: deterministicPull.status === "error" ? "error" : "skipped",
+       };
+     }
+ 
+-    emitDeterministicPullSummary(emit, deterministicPull);
+-
+     const agentResult = await runOpenWikiAgent("update", cwd, {
+       isFollowup: false,
+       modelId,
+@@ -352,6 +344,10 @@ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
+ - Also assign priority high, medium, low, or ignore, and durability ephemeral, durable, or recurring. Write only high/medium durable items, action items, scheduled commitments, approvals, and recurring patterns.
+ - Keep receipts, promotions, generic newsletters, routine security/account notices, and noise out of the wiki unless actionable, recurrent, or explicitly requested.
+ - Route work action items and follow-ups to /commitments.md with Owner when inferable, personal logistics to /personal-logistics.md, recurring cross-source patterns to /themes.md, unresolved memory/wiki uncertainty to /open-questions.md, and keep /sources/google.md concise.`;
++    case "imessage":
++      return `
++- Synthesize only compact durable summaries, decisions, commitments, and action items from iMessage evidence; never copy full conversations into the wiki.
++- Omit participant handles and attachment filenames unless materially necessary. Use short quotes only when needed as evidence.`;
+     case "notion":
+       return `
+ - Prefer Notion pages edited in the ingestion window, pages where the user is mentioned/tagged/assigned, pages where the user appears in people properties, and pages whose title/body indicate decisions, follow-ups, open questions, blockers, owners, customers, meetings, or plans.
+diff --git c/src/openwiki-home.ts i/src/openwiki-home.ts
+index c541005fe02d54bee1d2ae2b6b4b6bd05de65c11..4d2361263254d328a4070ce3a88ff2308b609cde 100644
+--- c/src/openwiki-home.ts
++++ i/src/openwiki-home.ts
+@@ -1,4 +1,4 @@
+-import { chmod, mkdir } from "node:fs/promises";
++import { chmod, mkdir, writeFile } from "node:fs/promises";
+ import os from "node:os";
+ import path from "node:path";
+ 
+@@ -58,15 +58,23 @@ export async function ensureOpenWikiHome(): Promise<void> {
+ export async function ensureConnectorHome(connectorId: string): Promise<void> {
+   assertSafeConnectorId(connectorId);
+   await ensureOpenWikiHome();
+-  await mkdir(getConnectorDir(connectorId), { recursive: true, mode: 0o700 });
+-  await mkdir(getConnectorRawDir(connectorId), {
+-    recursive: true,
+-    mode: 0o700,
+-  });
+-  await mkdir(getConnectorLogsDir(connectorId), {
+-    recursive: true,
+-    mode: 0o700,
++  const connectorDir = getConnectorDir(connectorId);
++  const rawDir = getConnectorRawDir(connectorId);
++  const logsDir = getConnectorLogsDir(connectorId);
++  await mkdir(connectorDir, { recursive: true, mode: 0o700 });
++  await mkdir(rawDir, { recursive: true, mode: 0o700 });
++  await mkdir(logsDir, { recursive: true, mode: 0o700 });
++  await Promise.all([
++    chmod(connectorDir, 0o700),
++    chmod(rawDir, 0o700),
++    chmod(logsDir, 0o700),
++  ]);
++  const ignorePath = path.join(connectorDir, ".gitignore");
++  await writeFile(ignorePath, "*\n!.gitignore\n", {
++    encoding: "utf8",
++    mode: 0o600,
+   });
++  await chmod(ignorePath, 0o600);
+ }
+ 
+ export function assertSafeConnectorId(connectorId: string): void {
+diff --git c/test/commands.test.ts i/test/commands.test.ts
+index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd747c4b9d 100644
+--- c/test/commands.test.ts
++++ i/test/commands.test.ts
+@@ -409,3 +409,16 @@ describe("parseCommand — cron", () => {
+     expect(result.kind).toBe("error");
+   });
+ });
++
++describe("parseCommand — iMessage ingestion", () => {
++  test("accepts the built-in iMessage target", () => {
++    expect(parseCommand(["ingest", "imessage", "--print"])).toEqual({
++      kind: "ingest",
++      exitCode: 0,
++      modelId: null,
++      print: true,
++      scheduledOnly: false,
++      target: "imessage",
++    });
++  });
++});
+diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e56fa7ea07980936822e429fec53aad6486d689
+--- /dev/null
++++ i/test/imessage-connector.test.ts
+@@ -0,0 +1,437 @@
++import { execFileSync } from "node:child_process";
++import {
++  mkdtemp,
++  mkdir,
++  readFile,
++  readdir,
++  rm,
++  stat,
++  writeFile,
++} from "node:fs/promises";
++import os from "node:os";
++import path from "node:path";
++import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++
++const execFileAsync = vi.hoisted(() => vi.fn());
++
++vi.mock("node:child_process", async (importOriginal) => {
++  const actual = await importOriginal<typeof import("node:child_process")>();
++  const mockedExecFile = vi.fn();
++  Object.defineProperty(
++    mockedExecFile,
++    Symbol.for("nodejs.util.promisify.custom"),
++    {
++      value: execFileAsync,
++    },
++  );
++  return { ...actual, execFile: mockedExecFile };
++});
++
++const originalHome = process.env.HOME;
++let home: string;
++
++beforeEach(async () => {
++  home = await mkdtemp(path.join(os.tmpdir(), "openwiki-imessage-test-"));
++  process.env.HOME = home;
++  execFileSync("git", ["init", "-q", home]);
++  execFileAsync.mockReset();
++  vi.useFakeTimers();
++  vi.setSystemTime(new Date("2026-07-15T12:00:00.000Z"));
++  vi.resetModules();
++});
++
++afterEach(async () => {
++  vi.useRealTimers();
++  vi.restoreAllMocks();
++  if (originalHome === undefined) delete process.env.HOME;
++  else process.env.HOME = originalHome;
++  await rm(home, { recursive: true, force: true });
++});
++
++async function loadConnector() {
++  const { createIMessageConnector } =
++    await import("../src/connectors/sources/imessage.ts");
++  return createIMessageConnector();
++}
++
++function ndjson(rows: unknown[]): string {
++  return rows.map((row) => JSON.stringify(row)).join("\n");
++}
++
++function chat(
++  id: number,
++  participants: string[],
++  overrides: Record<string, unknown> = {},
++) {
++  return {
++    guid: `chat-guid-${id}`,
++    id,
++    identifier: `chat-${id}`,
++    is_group: participants.length > 1,
++    participants,
++    ...overrides,
++  };
++}
++
++function message(
++  id: number,
++  chatId: number,
++  createdAt: string,
++  overrides: Record<string, unknown> = {},
++) {
++  return {
++    attachments: [],
++    chat_id: chatId,
++    created_at: createdAt,
++    guid: `message-guid-${id}`,
++    id,
++    is_from_me: false,
++    sender: "alice@example.com",
++    text: `message ${id}`,
++    ...overrides,
++  };
++}
++
++function mockImsg(
++  chats: unknown[],
++  histories: Record<number, unknown[]>,
++): void {
++  execFileAsync.mockImplementation(
++    async (_file: string, args: string[], options: { maxBuffer: number }) => {
++      expect(options.maxBuffer).toBe(10 * 1024 * 1024);
++      if (args[0] === "chats") return { stdout: ndjson(chats), stderr: "" };
++      const chatId = Number(args[args.indexOf("--chat-id") + 1]);
++      return { stdout: ndjson(histories[chatId] ?? []), stderr: "" };
++    },
++  );
++}
++
++async function connectorState() {
++  return JSON.parse(
++    await readFile(
++      path.join(home, ".openwiki/connectors/imessage/state.json"),
++      "utf8",
++    ),
++  ) as { latestIds?: Record<string, string>; runs?: unknown[] };
++}
++
++describe("iMessage connector", () => {
++  test("requires explicit scope and disabled config performs no subprocess work", async () => {
++    const connector = await loadConnector();
++
++    await expect(connector.ingest()).resolves.toMatchObject({
++      message:
++        "iMessage ingestion requires at least one chatIds or participants scope in ~/.openwiki/connectors/imessage/config.json.",
++      rawFiles: [],
++      status: "error",
++    });
++    expect(execFileAsync).not.toHaveBeenCalled();
++
++    await expect(
++      connector.ingest({ connectorConfig: { enabled: false, chatIds: [7] } }),
++    ).resolves.toMatchObject({ rawFiles: [], status: "skipped" });
++    expect(execFileAsync).not.toHaveBeenCalled();
++  });
++
++  test("intersects chat IDs and participant scope and uses exact bounded imsg calls", async () => {
++    mockImsg(
++      [
++        chat(7, ["Alice@Example.com", "+15550001"]),
++        chat(8, ["alice@example.com", "+15550001"]),
++        chat(9, ["alice@example.com"]),
++      ],
++      { 7: [message(11, 7, "2026-07-15T11:00:00.000Z")] },
++    );
++    const connector = await loadConnector();
++
++    const result = await connector.ingest({
++      connectorConfig: {
++        chatIds: [7, 8, 20, 7, -1],
++        maxMessagesPerChat: 6000,
++        participants: [" ALICE@example.com ", "+15550001", "alice@example.com"],
++        windowHours: 200,
++      },
++    });
++
++    expect(result).toMatchObject({ status: "success" });
++    expect(result.warnings).toEqual(["Unmatched iMessage chat IDs: 20."]);
++    expect(execFileAsync).toHaveBeenNthCalledWith(
++      1,
++      "imsg",
++      ["chats", "--limit", "10000", "--json"],
++      { maxBuffer: 10 * 1024 * 1024 },
++    );
++    expect(execFileAsync).toHaveBeenNthCalledWith(
++      2,
++      "imsg",
++      [
++        "history",
++        "--chat-id",
++        "7",
++        "--limit",
++        "5000",
++        "--attachments",
++        "--start",
++        "2026-07-08T12:00:00.000Z",
++        "--end",
++        "2026-07-15T12:00:00.000Z",
++        "--json",
++      ],
++      { maxBuffer: 10 * 1024 * 1024 },
++    );
++    expect(execFileAsync).toHaveBeenNthCalledWith(
++      3,
++      "imsg",
++      [
++        "history",
++        "--chat-id",
++        "8",
++        "--limit",
++        "5000",
++        "--attachments",
++        "--start",
++        "2026-07-08T12:00:00.000Z",
++        "--end",
++        "2026-07-15T12:00:00.000Z",
++        "--json",
++      ],
++      { maxBuffer: 10 * 1024 * 1024 },
++    );
++    expect(execFileAsync).toHaveBeenCalledTimes(3);
++  });
++
++  test("writes deterministic allowlisted records and attachment metadata only", async () => {
++    mockImsg([chat(7, ["alice@example.com", "bob@example.com"])], {
++      7: [
++        message(12, 7, "2026-07-15T11:30:00.000Z", {
++          attachments: [
++            {
++              absolute_path: "/private/message.jpg",
++              byte_size: 42,
++              converted_path: "/private/converted.jpg",
++              filename: "message.jpg",
++              is_sticker: false,
++              mime_type: "image/jpeg",
++              missing: false,
++              transfer_name: "IMG_1.JPG",
++              uti: "public.jpeg",
++            },
++          ],
++          destination_caller_id: "secret-routing",
++          is_from_me: true,
++          reply_to_guid: "reply-guid",
++          sender: "ignored-outbound-sender",
++          thread_originator_guid: "thread-guid",
++          unknown_payload: { secret: true },
++        }),
++        message(10, 7, "2026-07-15T10:00:00.000Z", {
++          sender: "ALICE@example.com",
++        }),
++        message(11, 7, "2026-07-15T10:00:00.000Z", {
++          sender: "bob@example.com",
++        }),
++      ],
++    });
++    const connector = await loadConnector();
++    const result = await connector.ingest({
++      connectorConfig: { chatIds: [7] },
++    });
++    const messagesPath = result.rawFiles.find((file) =>
++      file.endsWith("messages.json"),
++    );
++    const payload = JSON.parse(await readFile(messagesPath!, "utf8"));
++
++    expect(payload.schemaVersion).toBe(1);
++    expect(payload.messages.map((item: { id: number }) => item.id)).toEqual([
++      10, 11, 12,
++    ]);
++    expect(payload.messages[0]).toMatchObject({
++      recipients: ["me", "bob@example.com"],
++      sender: "ALICE@example.com",
++    });
++    expect(payload.messages[2]).toEqual({
++      attachments: [
++        {
++          byteSize: 42,
++          filename: "message.jpg",
++          isSticker: false,
++          mimeType: "image/jpeg",
++          missing: false,
++          transferName: "IMG_1.JPG",
++          uti: "public.jpeg",
++        },
++      ],
++      createdAt: "2026-07-15T11:30:00.000Z",
++      guid: "message-guid-12",
++      id: 12,
++      isFromMe: true,
++      recipients: ["alice@example.com", "bob@example.com"],
++      replyToGuid: "reply-guid",
++      sender: "me",
++      text: "message 12",
++      thread: {
++        guid: "chat-guid-7",
++        id: 7,
++        identifier: "chat-7",
++        isGroup: true,
++        participants: ["alice@example.com", "bob@example.com"],
++      },
++      threadOriginatorGuid: "thread-guid",
++    });
++    expect(JSON.stringify(payload)).not.toContain("/private/");
++    expect(JSON.stringify(payload)).not.toContain("secret-routing");
++    expect((await stat(messagesPath!)).mode & 0o777).toBe(0o600);
++  });
++
++  test("persists exclusive rowid cursors and identical reruns create no raw files", async () => {
++    const rows = [message(10, 7, "2026-07-15T10:00:00.000Z")];
++    mockImsg([chat(7, ["alice@example.com"])], { 7: rows });
++    const connector = await loadConnector();
++
++    const first = await connector.ingest({ connectorConfig: { chatIds: [7] } });
++    const firstState = await connectorState();
++    const rawRoot = path.dirname(path.dirname(first.rawFiles[0]));
++    const firstEntries = await readdir(rawRoot, { recursive: true });
++
++    const second = await connector.ingest({
++      connectorConfig: { chatIds: [7] },
++    });
++    const secondState = await connectorState();
++    const secondEntries = await readdir(rawRoot, { recursive: true });
++
++    expect(firstState.latestIds).toEqual({ "chat:7": "10" });
++    expect(second).toMatchObject({
++      message: "No new iMessage messages in the configured scope.",
++      rawFiles: [],
++      status: "skipped",
++    });
++    expect(secondState.latestIds).toEqual(firstState.latestIds);
++    expect(secondEntries).toEqual(firstEntries);
++  });
++
++  test("manifest preserves the cursor for an unchanged selected chat", async () => {
++    const chats = [
++      chat(7, ["alice@example.com"]),
++      chat(8, ["bob@example.com"]),
++    ];
++    mockImsg(chats, {
++      7: [message(10, 7, "2026-07-15T10:00:00.000Z")],
++      8: [message(20, 8, "2026-07-15T10:00:00.000Z")],
++    });
++    const connector = await loadConnector();
++    await connector.ingest({ connectorConfig: { chatIds: [7, 8] } });
++
++    mockImsg(chats, {
++      7: [message(10, 7, "2026-07-15T10:00:00.000Z")],
++      8: [
++        message(20, 8, "2026-07-15T10:00:00.000Z"),
++        message(21, 8, "2026-07-15T11:00:00.000Z"),
++      ],
++    });
++    const result = await connector.ingest({
++      connectorConfig: { chatIds: [7, 8] },
++    });
++    const manifestPath = result.rawFiles.find((file) =>
++      file.endsWith("manifest.json"),
++    );
++    const manifest = JSON.parse(await readFile(manifestPath!, "utf8"));
++    expect(
++      manifest.threads.find((thread: { id: number }) => thread.id === 7),
++    ).toMatchObject({
++      cursorBefore: "10",
++      cursorAfter: "10",
++      messageCount: 0,
++    });
++  });
++
++  test("malformed history fails without raw files or cursor advancement", async () => {
++    execFileAsync
++      .mockResolvedValueOnce({
++        stdout: ndjson([chat(7, ["alice@example.com"])]),
++        stderr: "",
++      })
++      .mockResolvedValueOnce({
++        stdout: ndjson([{ id: 10, chat_id: 7, guid: "missing-fields" }]),
++        stderr: "",
++      });
++    const connector = await loadConnector();
++
++    await expect(
++      connector.ingest({ connectorConfig: { chatIds: [7] } }),
++    ).resolves.toMatchObject({
++      message: "imsg history failed for chat 7.",
++      rawFiles: [],
++      status: "error",
++    });
++    await expect(connectorState()).rejects.toMatchObject({ code: "ENOENT" });
++  });
++
++  test("fails closed at the per-chat limit without writing or advancing state", async () => {
++    mockImsg([chat(7, ["alice@example.com"])], {
++      7: [
++        message(10, 7, "2026-07-15T10:00:00.000Z"),
++        message(11, 7, "2026-07-15T11:00:00.000Z"),
++      ],
++    });
++    const connector = await loadConnector();
++    const result = await connector.ingest({
++      connectorConfig: { chatIds: [7], maxMessagesPerChat: 2 },
++    });
++
++    expect(result).toMatchObject({
++      message:
++        "iMessage history reached maxMessagesPerChat=2 for chat 7; increase the limit or narrow the time window.",
++      rawFiles: [],
++      status: "error",
++    });
++    await expect(connectorState()).rejects.toMatchObject({ code: "ENOENT" });
++  });
++
++  test("maps missing imsg and Full Disk Access failures without leaking stderr", async () => {
++    const connector = await loadConnector();
++    const missing = Object.assign(new Error("spawn imsg ENOENT"), {
++      code: "ENOENT",
++    });
++    execFileAsync.mockRejectedValueOnce(missing);
++    await expect(
++      connector.ingest({ connectorConfig: { chatIds: [7] } }),
++    ).resolves.toMatchObject({
++      message: "imsg is unavailable; install it and ensure it is on PATH.",
++      status: "error",
++    });
++
++    execFileAsync.mockRejectedValueOnce(
++      Object.assign(new Error("private body"), {
++        stderr: "authorization denied: private database path",
++      }),
++    );
++    await expect(
++      connector.ingest({ connectorConfig: { chatIds: [7] } }),
++    ).resolves.toMatchObject({
++      message:
++        "imsg cannot read ~/Library/Messages/chat.db; grant Full Disk Access to the terminal or parent agent, then retry.",
++      status: "error",
++    });
++  });
++
++  test("repairs the connector gitignore and ignores private raw data", async () => {
++    const connectorDir = path.join(home, ".openwiki/connectors/imessage");
++    await mkdir(connectorDir, { recursive: true });
++    await writeFile(path.join(connectorDir, ".gitignore"), "raw/\n");
++    const { ensureConnectorHome } = await import("../src/openwiki-home.ts");
++
++    await ensureConnectorHome("imessage");
++    const ignorePath = path.join(connectorDir, ".gitignore");
++    expect(await readFile(ignorePath, "utf8")).toBe("*\n!.gitignore\n");
++    expect((await stat(ignorePath)).mode & 0o777).toBe(0o600);
++
++    const rawPath = path.join(connectorDir, "raw", "run", "messages.json");
++    await mkdir(path.dirname(rawPath), { recursive: true });
++    await writeFile(rawPath, "{}\n");
++    expect(
++      execFileSync("git", ["check-ignore", "-q", rawPath], {
++        cwd: home,
++      }).toString(),
++    ).toBe("");
++  });
++});
+diff --git c/test/ingestion.test.ts i/test/ingestion.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..715b8f55d3c8a2aab2c9a231eb334d4b10348997
+--- /dev/null
++++ i/test/ingestion.test.ts
+@@ -0,0 +1,94 @@
++import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
++import os from "node:os";
++import path from "node:path";
++import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++
++const ingest = vi.hoisted(() => vi.fn());
++const runOpenWikiAgent = vi.hoisted(() => vi.fn());
++
++vi.mock("../src/connectors/registry.js", () => ({
++  CONNECTOR_IDS: ["google"],
++  createConnectorRegistry: () => ({
++    google: {
++      backend: "direct-api",
++      description: "deterministic test connector",
++      displayName: "Deterministic test connector",
++      id: "google",
++      ingest,
++      requiredEnv: [],
++      supportsAgenticDiscovery: false,
++    },
++  }),
++  isConnectorId: (value: string) => value === "google",
++}));
++
++vi.mock("../src/agent/index.js", () => ({
++  createOpenWikiThreadId: () => "test-thread",
++  runOpenWikiAgent,
++}));
++
++const originalHome = process.env.HOME;
++let home: string;
++
++beforeEach(async () => {
++  home = await mkdtemp(path.join(os.tmpdir(), "openwiki-ingestion-test-"));
++  process.env.HOME = home;
++  await mkdir(path.join(home, ".openwiki"), { recursive: true });
++  await writeFile(
++    path.join(home, ".openwiki", "onboarding.json"),
++    `${JSON.stringify({
++      sourceInstances: [
++        {
++          connectedAt: "2026-07-15T12:00:00.000Z",
++          connectorId: "google",
++          id: "deterministic-1",
++        },
++      ],
++      sources: {},
++      version: 1,
++    })}\n`,
++  );
++  ingest.mockReset();
++  runOpenWikiAgent.mockReset();
++  vi.resetModules();
++});
++
++afterEach(async () => {
++  if (originalHome === undefined) delete process.env.HOME;
++  else process.env.HOME = originalHome;
++  await rm(home, { recursive: true, force: true });
++});
++
++describe("deterministic ingestion", () => {
++  test("a skipped pull with no raw files does not invoke synthesis", async () => {
++    ingest.mockResolvedValue({
++      connectorId: "google",
++      message: "No new deterministic records.",
++      rawFiles: [],
++      runId: "run-1",
++      statePath: "~/.openwiki/connectors/google/state.json",
++      status: "skipped",
++      warnings: [],
++    });
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const result = await runOpenWikiIngestion(home, {
++      target: { kind: "source-instance", id: "deterministic-1" },
++    });
++
++    expect(result.results).toEqual([
++      {
++        connectorId: "google",
++        deterministicPull: expect.objectContaining({
++          rawFiles: [],
++          status: "skipped",
++        }),
++        displayName: "Deterministic test connector",
++        rawFiles: [],
++        sourceInstanceId: "deterministic-1",
++        status: "skipped",
++      },
++    ]);
++    expect(runOpenWikiAgent).not.toHaveBeenCalled();
++  });
++});
