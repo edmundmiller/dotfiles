@@ -7,4 +7,4 @@ note: |
   - Use Channel.of() for individual items: Channel.of(1, 2, 3)
   - Use Channel.fromList() for lists: Channel.fromList([1, 2, 3])
 rule:
-  pattern: Channel.from(___)
+  pattern: Channel.from($$$)
