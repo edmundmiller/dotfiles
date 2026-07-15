@@ -25,9 +25,9 @@ br sync --import-only
 br sync --flush-only
 ```
 
-## Downstream patches
+## Herdr downstream patches
 
-Every downstream patch entry in its source manifest must reference an open
+Every Herdr downstream patch entry in its source manifest must reference an open
 bead. The bead records the patch path, origin commit, why it remains necessary,
 and the condition for removing it. Close the bead only after removing the patch
 and verifying the affected package without it.
