@@ -9,18 +9,20 @@
   fetchFromGitHub,
   bun,
   makeWrapper,
+  nodejs,
 }:
 
 buildNpmPackage {
   pname = "critique";
-  version = "0.1.108-unstable-2026-02-18";
+  version = "0.1.141";
 
   src = fetchFromGitHub {
     owner = "remorses";
     repo = "critique";
-    rev = "1748ff4a86d8a6caf52ca5523644272622beb992";
-    hash = "sha256-S+k9Z5triMfzTnpsNZoGlAd6gLy8lZDipa0DYKnodEM=";
+    rev = "c959c484dca6ff443c24a5ffdd4a7d01218ab4cc";
+    hash = "sha256-pZTqBw1yOHEQIv/w42JpuMruBjwu3CGa6MtEhGpG6F4=";
   };
+  sourceRoot = "source/cli";
 
   patches = [
     ./patches/0001-add-agent-pi-support.patch
@@ -31,15 +33,18 @@ buildNpmPackage {
   ];
 
   postPatch = ''
+    ${lib.getExe nodejs} -e "const fs=require('fs');const path='package.json';const pkg=require('./'+path);delete pkg.devDependencies;fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n')"
     cp ${./package-lock.json} package-lock.json
   '';
+  npmInstallFlags = [ "--workspaces=false" ];
 
   nativeBuildInputs = [
     bun
     makeWrapper
   ];
 
-  npmDepsHash = "sha256-FPkaNbEtM5O0iInAbfjvj9PjR0q1sV4KXh5CuRJPzCw=";
+  npmDepsHash = "sha256-I5VU7GLcqTZwYpuLO4DfS8cWulEEEpx3rTKtRhwq65Y=";
+  npmDepsFetcherVersion = 2;
 
   dontNpmBuild = true;
 

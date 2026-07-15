@@ -1,17 +1,7 @@
-From f1030ec9978d3fc210fd9021ba6bde095a500137 Mon Sep 17 00:00:00 2001
-From: Edmund Miller <git@edmundmiller.dev>
-Date: Wed, 29 Apr 2026 12:31:34 -0400
-Subject: [PATCH] patch: show resolved prefix in all help and hunk hints
-
----
- src/diff-panel.ts |  16 ++++-
- src/main.ts       | 153 ++++++++++++++++++++--------------------------
- 2 files changed, 80 insertions(+), 89 deletions(-)
-
-diff --git a/src/diff-panel.ts b/src/diff-panel.ts
+diff --git c/src/diff-panel.ts w/src/diff-panel.ts
 index 5d4979c..3e0bb39 100644
---- a/src/diff-panel.ts
-+++ b/src/diff-panel.ts
+--- c/src/diff-panel.ts
++++ w/src/diff-panel.ts
 @@ -9,7 +9,16 @@ const HINT_KEY: CellAttrs = { fg: 2, fgMode: ColorMode.Palette };
  
  const MIN_PANEL_COLS = 20;
@@ -48,14 +38,14 @@ index 5d4979c..3e0bb39 100644
      writeString(grid, centerRow, col2, line2, HINT_FG);
      return grid;
    }
-diff --git a/src/main.ts b/src/main.ts
-index f0b0de4..2be47d1 100644
---- a/src/main.ts
-+++ b/src/main.ts
-@@ -44,6 +44,21 @@ import { homedir } from "os";
- const VERSION = "0.15.0";
- const MIN_BUN_VERSION = "1.3.8";
+diff --git c/src/main.ts w/src/main.ts
+index 8addfaa..f66ef84 100644
+--- c/src/main.ts
++++ w/src/main.ts
+@@ -67,6 +67,20 @@ import pkg from "../package.json" with { type: "json" };
  
+ const VERSION = pkg.version;
+ const MIN_BUN_VERSION = "1.3.8";
 +const resolvePrefixLabel = (): string => {
 +  const raw = process.env.JMUX_PREFIX_KEY ?? "C-a";
 +  const normalized = raw.trim().toLowerCase();
@@ -70,11 +60,10 @@ index f0b0de4..2be47d1 100644
 +const PREFIX_LABEL = resolvePrefixLabel();
 +const NEW_SESSION_KEY_LABEL = resolveNewSessionKeyLabel();
 +const prefixCombo = (key: string): string => `${PREFIX_LABEL} ${key}`;
-+
+ 
  function checkBunVersion(): void {
    // parseInt parses leading digits and stops at the first non-digit, so
-   // canary/prerelease suffixes like "1.3.8-pre.1" survive intact.
-@@ -98,15 +113,15 @@ Agent Control (JSON output):
+@@ -122,15 +136,15 @@ Agent Control (JSON output):
  
  Keybindings:
    Ctrl-Shift-Up/Down       Switch sessions
@@ -99,17 +88,18 @@ index f0b0de4..2be47d1 100644
    Click sidebar            Switch to session
  
  https://github.com/jarredkenny/jmux`;
-@@ -2201,6 +2216,47 @@ function getNewSessionProviders(preScannedDirs: string[]): NewSessionProviders {
+@@ -2731,6 +2745,48 @@ function getNewSessionProviders(preScannedDirs: string[]): NewSessionProviders {
    };
  }
  
 +function buildWelcomeLines(): StyledLine[] {
-+  const g: CellAttrs = { fg: 2, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
-+  const b: CellAttrs = { bold: true, bg: MODAL_BG, bgMode: 2 };
-+  const d: CellAttrs = { fg: 8, fgMode: 1, dim: true, bg: MODAL_BG, bgMode: 2 };
-+  const n: CellAttrs = { bg: MODAL_BG, bgMode: 2 };
-+  const c: CellAttrs = { fg: 6, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
-+  const y: CellAttrs = { fg: 3, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
++  const background = theme.surface;
++  const g: CellAttrs = { fg: 2, fgMode: 1, bg: background, bgMode: 2 };
++  const b: CellAttrs = { bold: true, bg: background, bgMode: 2 };
++  const d: CellAttrs = { ...neutralFg(8), dim: true, bg: background, bgMode: 2 };
++  const n: CellAttrs = { bg: background, bgMode: 2 };
++  const c: CellAttrs = { fg: 6, fgMode: 1, bg: background, bgMode: 2 };
++  const y: CellAttrs = { fg: 3, fgMode: 1, bg: background, bgMode: 2 };
 +
 +  const binding = (key: string): string => `${prefixCombo(key)}`.padEnd(28, " ");
 +
@@ -147,7 +137,7 @@ index f0b0de4..2be47d1 100644
  async function handlePaletteAction(result: PaletteResult): Promise<void> {
    const { commandId, sublistOptionId } = result;
  
-@@ -2379,44 +2435,7 @@ async function handlePaletteAction(result: PaletteResult): Promise<void> {
+@@ -2960,44 +3016,7 @@ async function handlePaletteAction(result: PaletteResult): Promise<void> {
        toggleSettingsScreen();
        return;
      case "show-welcome": {
@@ -193,17 +183,17 @@ index f0b0de4..2be47d1 100644
        welcomeModal.setTermRows(process.stdout.rows || 24);
        welcomeModal.open();
        openModal(welcomeModal, () => {});
-@@ -3273,45 +3292,7 @@ async function start(): Promise<void> {
+@@ -4395,45 +4414,7 @@ async function start(): Promise<void> {
  
    // First-run welcome screen
    if (configStore.ensureExists()) {
 -
--    const g: CellAttrs = { fg: 2, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
--    const b: CellAttrs = { bold: true, bg: MODAL_BG, bgMode: 2 };
--    const d: CellAttrs = { fg: 8, fgMode: 1, dim: true, bg: MODAL_BG, bgMode: 2 };
--    const n: CellAttrs = { bg: MODAL_BG, bgMode: 2 };
--    const c: CellAttrs = { fg: 6, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
--    const y: CellAttrs = { fg: 3, fgMode: 1, bg: MODAL_BG, bgMode: 2 };
+-    const g: CellAttrs = { fg: 2, fgMode: 1, bg: theme.surface, bgMode: 2 };
+-    const b: CellAttrs = { bold: true, bg: theme.surface, bgMode: 2 };
+-    const d: CellAttrs = { ...neutralFg(8), dim: true, bg: theme.surface, bgMode: 2 };
+-    const n: CellAttrs = { bg: theme.surface, bgMode: 2 };
+-    const c: CellAttrs = { fg: 6, fgMode: 1, bg: theme.surface, bgMode: 2 };
+-    const y: CellAttrs = { fg: 3, fgMode: 1, bg: theme.surface, bgMode: 2 };
 -
 -    const welcomeLines: StyledLine[] = [
 -      [{ text: "The terminal workspace for agentic development", attrs: d }],
@@ -240,5 +230,3 @@ index f0b0de4..2be47d1 100644
      welcomeModal.setTermRows(process.stdout.rows || 24);
      welcomeModal.open();
      openModal(welcomeModal, () => {});
--- 
-2.52.0

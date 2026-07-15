@@ -70,14 +70,18 @@ new file mode 100644
 index 0000000..d8a8a02
 --- /dev/null
 +++ w/crates/pi-ast/build.rs
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,13 @@
 +fn main() {
 +	let scanner = "src/language/nextflow_scanner.c";
++	let out_dir = std::env::var("OUT_DIR").unwrap();
 +	cc::Build::new()
++		.cargo_metadata(false)
 +		.std("c11")
 +		.include("src/language")
 +		.file(scanner)
 +		.compile("tree-sitter-nextflow-scanner");
++	println!("cargo:rustc-link-search=native={out_dir}");
++	println!("cargo:rustc-link-lib=static:+whole-archive=tree-sitter-nextflow-scanner");
 +	println!("cargo:rerun-if-changed={scanner}");
 +}
 diff --git i/crates/pi-ast/src/language/mod.rs w/crates/pi-ast/src/language/mod.rs

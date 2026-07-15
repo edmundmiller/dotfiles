@@ -6,15 +6,17 @@
   lib,
   buildNpmPackage,
   fetchFromGitHub,
+  nodejs_22,
+  python313,
   bun,
   makeWrapper,
   prisma-engines,
   sqlite,
 }:
 
-buildNpmPackage {
+(buildNpmPackage.override { nodejs = nodejs_22; }) {
   pname = "zele";
-  version = "0.4.0-unstable-2026-06-25";
+  version = "0-unstable-2026-06-25";
 
   src = fetchFromGitHub {
     owner = "remorses";
@@ -39,6 +41,7 @@ buildNpmPackage {
     bun
     makeWrapper
     sqlite
+    python313
   ];
 
   PRISMA_QUERY_ENGINE_BINARY = "${prisma-engines}/bin/query-engine";

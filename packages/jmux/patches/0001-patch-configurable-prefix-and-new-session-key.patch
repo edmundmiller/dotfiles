@@ -1,18 +1,9 @@
-From 8c0e85974d6f4132e39b7b3fbceaae73a41e605e Mon Sep 17 00:00:00 2001
-From: Edmund Miller <git@edmundmiller.dev>
-Date: Tue, 28 Apr 2026 16:29:12 -0400
-Subject: [PATCH 1/4] patch: configurable prefix and new-session key
-
----
- src/input-router.ts | 23 +++++++++++++++++------
- 1 file changed, 17 insertions(+), 6 deletions(-)
-
-diff --git a/src/input-router.ts b/src/input-router.ts
-index 3d382a4..75f2360 100644
---- a/src/input-router.ts
-+++ b/src/input-router.ts
-@@ -75,6 +75,16 @@ export interface InputRouterOptions {
-   onPanelRefresh?: () => void;
+diff --git i/src/input-router.ts w/src/input-router.ts
+index e9873ff..3c9bc0a 100644
+--- i/src/input-router.ts
++++ w/src/input-router.ts
+@@ -91,6 +91,16 @@ export interface InputRouterOptions {
+   onOpenLink?: (url: string) => void;
  }
  
 +const resolvePrefixByte = (): string => {
@@ -28,16 +19,16 @@ index 3d382a4..75f2360 100644
  export class InputRouter {
    private opts: InputRouterOptions;
    private sidebarVisible: boolean;
-@@ -86,6 +96,8 @@ export class InputRouter {
-   private mainCols = 0;
+@@ -104,6 +114,8 @@ export class InputRouter {
    private panelTabsActive = false;
    private panelFilterActive = false;
+   private toolbarRows = 1;
 +  private readonly prefixByte = resolvePrefixByte();
 +  private readonly newSessionKey = resolveNewSessionKey();
    constructor(opts: InputRouterOptions, sidebarVisible: boolean) {
      this.opts = opts;
      this.sidebarVisible = sidebarVisible;
-@@ -141,9 +153,8 @@ export class InputRouter {
+@@ -172,9 +184,8 @@ export class InputRouter {
        }
      }
  
@@ -49,7 +40,21 @@ index 3d382a4..75f2360 100644
      if (!this.modalOpen) {
        if (this.prefixSeen) {
          this.prefixSeen = false;
-@@ -152,7 +163,7 @@ export class InputRouter {
+@@ -193,11 +204,11 @@ export class InputRouter {
+           if (data === "]") { this.opts.onGlassTabRelative?.(1); return; }
+           if (data === "d") { this.opts.onGlassDetach?.(); return; }
+           if (data === "p") { this.opts.onModalToggle?.(); return; }
+-          if (data === "n") { this.opts.onNewSession?.(); return; }
++          if (data === this.newSessionKey) { this.opts.onNewSession?.(); return; }
+           if (data === "i") { this.opts.onSettings?.(); return; }
+           if (data === "I") { this.opts.onSettingsScreen?.(); return; }
+           // Not a jmux chord — flush the buffered prefix, then the key, to the tile.
+-          if (deferred) this.opts.onPtyData("\x01");
++          if (deferred) this.opts.onPtyData(this.prefixByte);
+           this.opts.onPtyData(data);
+           return;
+         }
+@@ -207,7 +218,7 @@ export class InputRouter {
            this.opts.onModalToggle?.();
            return;
          }
@@ -58,19 +63,12 @@ index 3d382a4..75f2360 100644
            this.opts.onNewSession?.();
            return;
          }
-@@ -181,10 +192,10 @@ export class InputRouter {
+@@ -236,7 +247,7 @@ export class InputRouter {
            return;
          }
          // Not intercepted — forward to PTY normally (tmux handles its prefix binding)
 -      } else if (data === "\x01") {
 +      } else if (data === this.prefixByte) {
          this.prefixSeen = true;
-         this.prefixTimer = setTimeout(() => { this.prefixSeen = false; this.prefixTimer = null; }, 2000);
--        // Only forward Ctrl-a to PTY when tmux is focused (not when diff panel is focused)
-+        // Only forward the configured prefix byte to PTY when tmux is focused.
-         if (!this.diffPanelFocused || this.diffPanelCols === 0) {
-           this.opts.onPtyData(data);
-         }
--- 
-2.52.0
-
+         this.prefixTimer = setTimeout(() => { this.prefixSeen = false; this.prefixTimer = null; this.glassPrefixDeferred = false; }, 2000);
+         if (this.opts.glassActive?.()) {

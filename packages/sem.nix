@@ -9,13 +9,13 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "sem";
-  version = "0.5.0";
+  version = "0.21.0";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "sem";
     rev = "v${version}";
-    hash = "sha256-UjBjkscHwyry+qbfgJp4M+ftc+WAUsJljl3MxHWCQho=";
+    hash = "sha256-3lAcIxNM/4IFSj+7rMOjXsLZiIcAC4EESJBzWYkuDK0=";
   };
 
   sourceRoot = "source/crates";
@@ -31,7 +31,7 @@ rustPlatform.buildRustPackage rec {
 
   cargoInstallFlags = cargoBuildFlags;
 
-  cargoHash = "sha256-aQ31vUJ4U2c4IfXU2aA8HRfUl/wNgbH/5YN/xzAcP7E=";
+  cargoHash = "sha256-0/nTkOrGIWDJ3b1LbcIjR4yIZ8s/e5CcbgJ4m1AfxBs=";
 
   # Upstream graph-accuracy tests expect local fixture repos/files.
   doCheck = false;

@@ -58,56 +58,29 @@
          (tab_bar_rect, terminal_area)
      } else {
          (Rect::default(), main_area)
-@@ -275,27 +242,27 @@
-                 ws.layout.splits(terminal_area)
-             }
-         })
-         .unwrap_or_default();
- 
-     let pane_infos = compute_pane_infos(
-         app,
-         terminal_runtimes,
-         terminal_area,
+@@ -288,8 +255,10 @@
          resize_panes,
          cell_size,
      );
--    if resize_panes {
+     if resize_panes {
 -        resize_background_tab_panes_for_desktop(app, terminal_runtimes, main_area, cell_size);
--    }
-+    // Only resize the visible tab. Background tabs are resized when focused; eagerly
-+    // resizing every hidden terminal on each client resize multiplies libghostty
-+    // reflow crash surface without affecting the current frame.
++        // Only resize the visible tab. Background tabs are resized when focused; eagerly
++        // resizing every hidden terminal on each client resize multiplies libghostty
++        // reflow crash surface without affecting the current frame.
+         resize_popup_pane(app, terminal_runtimes, terminal_area, cell_size);
+     }
  
-     let toast_hit_area = app
-         .toast
-         .as_ref()
-         .map(|toast| {
-             toast_notification_rect(
-                 area,
-                 toast,
-                 app.config_diagnostic.is_some(),
-                 toast.position.unwrap_or(app.toast_config.herdr.position),
-             )
-         })
-@@ -351,27 +318,27 @@
-                 ws.layout.splits(terminal_area)
-             }
-         })
-         .unwrap_or_default();
- 
-     let pane_infos = compute_pane_infos(
-         app,
-         terminal_runtimes,
-         terminal_area,
+@@ -366,8 +335,10 @@
          resize_panes,
          cell_size,
      );
--    if resize_panes {
+     if resize_panes {
 -        resize_background_tab_panes_to_area(app, terminal_runtimes, terminal_area, cell_size);
--    }
-+    // Only resize the visible tab. Background tabs are resized when focused; eagerly
-+    // resizing every hidden terminal on each client resize multiplies libghostty
-+    // reflow crash surface without affecting the current frame.
++        // Only resize the visible tab. Background tabs are resized when focused; eagerly
++        // resizing every hidden terminal on each client resize multiplies libghostty
++        // reflow crash surface without affecting the current frame.
+         resize_popup_pane(app, terminal_runtimes, terminal_area, cell_size);
+     }
      let header_hits = compute_mobile_header_hit_areas(app, header_rect);
  
      let toast_hit_area = app

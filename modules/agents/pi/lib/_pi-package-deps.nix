@@ -54,7 +54,7 @@ in
 
   pi-dcp = mkNodeModules {
     name = "pi-dcp";
-    npmDepsHash = "sha256-ECxDBj37SREHyZLdAdrwft5DOQSqJOzzICaC4Mi2KN0=";
+    npmDepsHash = "sha256-ev6ZQ566v6N72Z7W4PMV4IMUqyW7TrpPk1WiFLDN3IY=";
   };
 
 }

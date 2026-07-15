@@ -12,18 +12,14 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "stack";
-  version = "0.1.5";
+  version = "0.4.2";
 
   src = fetchFromGitHub {
     owner = "kitlangton";
     repo = "stack";
     rev = "v${version}";
-    hash = "sha256-GvuRRLnzJdPvvKF4nzcVjoqJAmMs0WemXBtXYSWJoes=";
+    hash = "sha256-kgkmSE03/6dFh1w1QqaW78ObKSwaDv9THZ+mrzbzc4k=";
   };
-
-  patches = [
-    ./patches/fix-explicit-chain.patch
-  ];
 
   nativeBuildInputs = [
     bun2nix.hook

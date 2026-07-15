@@ -1,27 +1,30 @@
 {
   lib,
   python3,
+  shfmt,
   fetchFromGitHub,
 }:
 python3.pkgs.buildPythonApplication rec {
   pname = "snakefmt";
-  version = "0.10.2";
+  version = "2.0.3";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "snakemake";
     repo = "snakefmt";
     rev = "v${version}";
-    hash = "sha256-Sp48yedUiL8NCF7WF9QdvaOGocPXIBZ5bXXj7r4RVIM=";
+    hash = "sha256-LMcsm+dAZG/eBLvv71mPmBIVuKu53nZarNScm72N5iY=";
   };
 
-  nativeBuildInputs = [ python3.pkgs.poetry-core ];
+  build-system = [ python3.pkgs.hatchling ];
+  pythonRemoveDeps = [ "shfmt-py" ];
 
   propagatedBuildInputs = with python3.pkgs; [
     black
     click
     importlib-metadata
     toml
+    shfmt
   ];
 
   pythonImportsCheck = [ "snakefmt" ];
