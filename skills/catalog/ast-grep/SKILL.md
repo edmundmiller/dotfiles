@@ -7,13 +7,15 @@ description: >
   severity, or adding ast-grep to project checks and CI.
 license: MIT
 metadata:
-  version: "2.0.0"
+  version: "2.0.1"
   author: "Edmund Miller"
 ---
 
 # ast-grep
 
 Use ast-grep for syntax-aware search, rewriting, and tested structural coding standards. Keep formatting, type checking, path-only policy, cross-file value equality, and runtime behavior with their owning tools.
+
+Use `code-search` when deciding between ast-grep and text search. After selecting ast-grep, use this skill as the source of truth for command syntax, patterns, rewrites, and repository standards.
 
 ## Choose the right mode
 

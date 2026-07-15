@@ -5,6 +5,8 @@ description: Use when searching code, refactoring, running codemods, or choosing
 
 # Code Search & Refactoring Tools
 
+Use this skill to choose the search or refactoring tool. After selecting ast-grep, load `ast-grep`; that skill owns pattern syntax, rewrites, repository rule setup, tests, severity, and CI.
+
 ## ast-grep vs ripgrep
 
 ### When to Use ast-grep
