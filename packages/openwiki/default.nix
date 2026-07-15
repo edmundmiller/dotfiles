@@ -1,4 +1,5 @@
 {
+  inputs,
   lib,
   stdenv,
   fetchFromGitHub,
@@ -14,6 +15,14 @@
   srcOnly,
 }:
 
+let
+  imsg =
+    if stdenv.hostPlatform.isDarwin then
+      inputs.nix-steipete-tools.packages.${stdenv.hostPlatform.system}.imsg
+    else
+      null;
+in
+
 stdenv.mkDerivation (finalAttrs: {
   pname = "openwiki";
   version = "0.1.2-unstable-2026-07-14";
@@ -27,6 +36,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     ./patches/0001-configurable-personal-wiki-directory.patch
+    ./patches/0002-imessage-connector.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -67,7 +77,8 @@ stdenv.mkDerivation (finalAttrs: {
     mkdir -p "$out/lib/openwiki" "$out/bin"
     cp -r dist node_modules package.json "$out/lib/openwiki/"
     makeWrapper ${lib.getExe nodejs_22} "$out/bin/openwiki" \
-      --add-flags "$out/lib/openwiki/dist/cli.js"
+      --add-flags "$out/lib/openwiki/dist/cli.js" \
+      ${lib.optionalString stdenv.hostPlatform.isDarwin "--prefix PATH : ${lib.makeBinPath [ imsg ]}"}
 
     runHook postInstall
   '';
