@@ -40,7 +40,7 @@ graph TB
     mod_editors["editors/<br/>emacs · vim · helix<br/>code · file-assoc"]
     mod_dev["dev/<br/>node · python · rust<br/>R · lua · nix · shell"]
     mod_desktop["desktop/<br/>apps · browsers · term<br/>media · macos · gnome"]
-    mod_services["services/<br/>hass · dagster · bugster<br/>jellyfin · homepage<br/>docker · tailscale<br/>deploy-rs · obsidian-sync<br/>openclaw · gatus"]
+    mod_services["services/<br/>hass · jellyfin · homepage<br/>docker · tailscale<br/>deploy-rs · obsidian-sync<br/>openclaw · gatus"]
     mod_hardware["hardware/<br/>bluetooth · fs · audio"]
     mod_themes["themes/<br/>alucard"]
   end
@@ -73,7 +73,7 @@ graph TB
       seqeratop["seqeratop<br/>Seqeratop<br/>(work Mac)"]
     end
     subgraph NixOS["NixOS (x86_64-linux)"]
-      nuc["nuc<br/>(home server:<br/>HA · Dagster · OpenClaw<br/>Jellyfin · Homepage)"]
+      nuc["nuc<br/>(home server:<br/>HA · OpenClaw<br/>Jellyfin · Homepage)"]
       unas["unas<br/>(NAS: ZFS · Syncthing<br/>Time Machine)"]
       gandi["gandi<br/>(VPS: minimal)"]
     end
@@ -101,7 +101,7 @@ graph TB
 
   %% ── Packages ──────────────────────────────────────────────────
   subgraph Packages["Custom Packages"]
-    nix_packages["packages/<br/>(Nix derivations:<br/>dagster · zele · jut<br/>dmux · zunit · …)"]
+    nix_packages["packages/<br/>(Nix derivations:<br/>zele · jut · dmux<br/>zunit · …)"]
     ts_packages["packages/pi-packages/<br/>(TypeScript monorepo:<br/>pi-dcp · pi-qmd<br/>pi-scurl · pi-beads · …)"]
   end
 

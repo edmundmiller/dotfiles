@@ -140,11 +140,6 @@ in
     edmundmiller
     nuc
   ];
-  # Bugster env file (GITHUB_TOKEN, LINEAR_TOKEN, etc.)
-  "bugster-env.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
   # Healthchecks.io keys (for automation)
   "healthchecks-ping-key.age".publicKeys = [
     edmundmiller
