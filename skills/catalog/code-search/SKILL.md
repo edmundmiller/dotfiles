@@ -1,9 +1,9 @@
 ---
 name: code-search
-description: Use when searching code, refactoring, running codemods, or choosing between search tools. Provides guidance on ast-grep vs ripgrep selection and usage patterns.
+description: Use when searching code by unknown means or choosing between text and structural search tools. Owns ast-grep vs ripgrep selection and text-search guidance.
 ---
 
-# Code Search & Refactoring Tools
+# Code Search Tool Selection
 
 Use this skill to choose the search or refactoring tool. After selecting ast-grep, load `ast-grep`; that skill owns pattern syntax, rewrites, repository rule setup, tests, severity, and CI.
 
@@ -11,14 +11,14 @@ Use this skill to choose the search or refactoring tool. After selecting ast-gre
 
 ### When to Use ast-grep
 
-**Use `ast-grep` when structure matters.** It parses code and matches AST nodes, so results ignore comments/strings, understand syntax, and can **safely rewrite** code.
+**Use `ast-grep` when structure matters.** It parses code and matches AST nodes, so results ignore comments/strings, understand syntax, and scope rewrites to matched code.
 
 **Best for:**
 
 - Refactors/codemods: rename APIs, change import forms, rewrite call sites or variable kinds
 - Policy checks: enforce patterns across a repo (`scan` with rules + `test`)
 - Editor/automation: LSP mode; `--json` output for tooling
-- Any operation where you'll **apply changes** to code
+- Syntax-structured code changes after previewing the matches
 
 ### When to Use ripgrep
 
@@ -32,42 +32,11 @@ Use this skill to choose the search or refactoring tool. After selecting ast-gre
 
 ## Rule of Thumb
 
-- Need correctness over speed, or you'll **apply changes** → start with `ast-grep`
+- Need a syntax-structured code change → start with `ast-grep`
 - Need raw speed or you're just **hunting text** → start with `rg`
 - Often combine: `rg` to shortlist files, then `ast-grep` to match/modify with precision
 
-## Usage Examples
-
-### ast-grep Examples
-
-**Find structured code** (ignores comments/strings):
-
-```bash
-ast-grep run -l TypeScript -p 'import $X from "$P"'
-```
-
-**Codemod** (only real `var` declarations become `let`):
-
-```bash
-ast-grep run -l JavaScript -p 'var $A = $B' -r 'let $A = $B' -U
-```
-
-**Find function calls with specific patterns:**
-
-```bash
-ast-grep run -l Python -p 'logger.$METHOD($$$ARGS)'
-```
-
-**Replace with transformation:**
-
-```bash
-ast-grep run -l TypeScript \
-  -p 'useQuery($ARGS)' \
-  -r 'useSuspenseQuery($ARGS)' \
-  -U
-```
-
-### ripgrep Examples
+## ripgrep examples
 
 **Quick textual hunt:**
 
@@ -93,66 +62,28 @@ rg -C 3 'error' -t log
 rg -l 'import.*React' -t tsx
 ```
 
-### Combined Approach
-
-**Speed + Precision:** Use `rg` to find candidates, then `ast-grep` for precise operations:
-
-```bash
-rg -l -t ts 'useQuery\(' | xargs ast-grep run -l TypeScript \
-  -p 'useQuery($A)' \
-  -r 'useSuspenseQuery($A)' \
-  -U
-```
-
 ## Mental Model
 
 | Aspect              | ast-grep                   | ripgrep                 |
 | ------------------- | -------------------------- | ----------------------- |
 | **Unit of match**   | AST node                   | Line                    |
 | **False positives** | Low (understands syntax)   | Depends on regex        |
-| **Rewrites**        | First-class, safe          | Requires sed/awk, risky |
+| **Rewrites**        | Syntax-scoped              | Text replacement, risky |
 | **Speed**           | Slower (parses code)       | Fastest (text only)     |
 | **Use case**        | Structural search/refactor | Text search/grep        |
 
 ## Quick Decision Tree
 
 ```
-Need to modify code?
-├─ Yes → ast-grep (safe, structural rewrites)
+Need to change syntax-structured code?
+├─ Yes → ast-grep
 └─ No
-   ├─ Searching code structure? → ast-grep (accurate)
-   └─ Just finding text? → ripgrep (fastest)
+   ├─ Searching code structure? → ast-grep
+   └─ Just finding text? → ripgrep
 ```
 
-## Common Patterns
+## Selection examples
 
-### Finding all function definitions
-
-```bash
-# ast-grep (language-aware)
-ast-grep run -l Python -p 'def $NAME($$$PARAMS): $$$BODY'
-
-# ripgrep (text-based, faster but less precise)
-rg '^def \w+\(' -t py
-```
-
-### Refactoring API calls
-
-```bash
-# ast-grep: Safe, precise
-ast-grep run -l JavaScript \
-  -p 'axios.get($URL)' \
-  -r 'fetch($URL)' \
-  -U
-
-# ripgrep: Don't use for rewrites (will match in comments/strings)
-```
-
-### Finding TODOs
-
-```bash
-# ripgrep: Perfect for this
-rg 'TODO:|FIXME:' --color=always
-
-# ast-grep: Overkill for text search
-```
+- Find function definitions by syntax → use ast-grep, then load `ast-grep`.
+- Refactor API calls → use ast-grep; do not use text replacement.
+- Find TODOs, log messages, or configuration values → use ripgrep.
