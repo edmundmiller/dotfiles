@@ -230,7 +230,7 @@ utils:
 | `$_`     | Wildcard (non-capturing)         | Any single node              |
 | `$$$`    | Multi-wildcard (non-capturing)   | Any sequence                 |
 
-**Nextflow note:** Use `_` prefix instead of `$` (e.g., `_VAR` not `$VAR`) due to `expandoChar` configuration.
+**Nextflow note:** Use the same `$` metavariables. Its `_` `expandoChar` is an internal parser substitution.
 
 ---
 

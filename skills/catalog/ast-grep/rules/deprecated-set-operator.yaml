@@ -9,4 +9,4 @@ note: |
     my_channel = channel
   Or in workflows, use the emit: block for outputs.
 rule:
-  pattern: .set { ___ }
+  pattern: .set { $$$ }

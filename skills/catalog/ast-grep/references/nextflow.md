@@ -4,7 +4,7 @@ Nextflow-specific patterns and configuration for ast-grep.
 
 ## Configuration
 
-Nextflow support requires a custom tree-sitter parser. The configuration in `config/opencode/skills/ast-grep/sgconfig.yml`:
+Nextflow support requires a custom tree-sitter parser. The skill's `sgconfig.yml` registers it:
 
 ```yaml
 customLanguages:
@@ -13,28 +13,25 @@ customLanguages:
       aarch64-apple-darwin: lib/macos-arm64/libnextflow.dylib
       x86_64-unknown-linux-gnu: lib/linux-x64/libnextflow.so
     extensions: [nf, config]
-    expandoChar: _ # Use _VAR instead of $VAR
+    # Internal parser substitution; patterns still use standard $ metavariables.
+    expandoChar: _
 ```
 
-**Important:** Because Nextflow uses `$` for string interpolation (`$variable`, `${expression}`), ast-grep patterns use `_` as the metavariable prefix instead:
-
-| Standard | Nextflow |
-| -------- | -------- |
-| `$VAR`   | `_VAR`   |
-| `$$VAR`  | `__VAR`  |
-| `$$$VAR` | `___VAR` |
+Write standard ast-grep metavariables such as `$NAME` and `$$$BODY`.
+`expandoChar` is internal: ast-grep maps `$` to `_` before the Nextflow parser
+sees the pattern, avoiding conflicts with Nextflow string interpolation.
 
 ## Quick Commands
 
 ```bash
 # Search Nextflow files
-ast-grep run --pattern 'Channel.from(___)' --lang nextflow
+ast-grep run --pattern 'Channel.from($$$)' --lang nextflow
 
 # Scan with rules
-ast-grep scan --rule config/opencode/skills/ast-grep/rules/
+ast-grep scan --rule rules/
 
 # Debug AST structure
-ast-grep run --pattern '___' --debug-query=ast workflow.nf
+ast-grep run --pattern '$$$' --debug-query=ast workflow.nf
 ```
 
 ## OpenCode MCP Tools
@@ -59,19 +56,19 @@ OpenCode provides MCP tools for Nextflow ast-grep operations:
 ```yaml
 # Find Channel.from() (deprecated)
 rule:
-  pattern: Channel.from(___)
+  pattern: Channel.from($$$)
 
 # Find Channel.of()
 rule:
-  pattern: Channel.of(___)
+  pattern: Channel.of($$$)
 
 # Find fromFilePairs
 rule:
-  pattern: Channel.fromFilePairs(___)
+  pattern: Channel.fromFilePairs($$$)
 
 # Find .set{} operator (deprecated)
 rule:
-  pattern: .set { ___ }
+  pattern: .set { $$$ }
 ```
 
 ### Process Definitions
@@ -119,11 +116,11 @@ rule:
 ```yaml
 # Find map operations
 rule:
-  pattern: .map { ___ }
+  pattern: .map { $$$ }
 
 # Find filter operations
 rule:
-  pattern: .filter { ___ }
+  pattern: .filter { $$$ }
 
 # Find closures using implicit 'it'
 rule:
@@ -152,7 +149,7 @@ note: |
   - Use Channel.of() for individual items: Channel.of(1, 2, 3)
   - Use Channel.fromList() for lists: Channel.fromList([1, 2, 3])
 rule:
-  pattern: Channel.from(___)
+  pattern: Channel.from($$$)
 ```
 
 ### Hardcoded Paths
@@ -186,7 +183,7 @@ note: |
     my_channel = channel
   Or in workflows, use the emit: block for outputs.
 rule:
-  pattern: .set { ___ }
+  pattern: .set { $$$ }
 ```
 
 ### Implicit 'it' in Closures
@@ -258,5 +255,5 @@ Common Nextflow AST node kinds for pattern matching:
 Use `--debug-query=ast` to discover more node types:
 
 ```bash
-ast-grep run --pattern '___' --debug-query=ast your_file.nf
+ast-grep run --pattern '$$$' --debug-query=ast your_file.nf
 ```
