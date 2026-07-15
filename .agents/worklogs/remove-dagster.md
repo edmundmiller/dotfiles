@@ -1,6 +1,6 @@
 # Worklog: remove-dagster
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -18,12 +18,15 @@ Remove the retired Dagster package, NixOS service modules, NUC configuration, se
 - `nix eval --raw .#packages.aarch64-darwin --apply 'ps: if builtins.hasAttr "dagster" ps then "present" else "absent"'` returned `absent`.
 - Repository grep across `flake.nix`, packages, modules, hosts, docs, and skills found no remaining Dagster or Bugster references.
 - `git diff --cached --check` passed; `sem diff --staged` confirmed the removal scope.
-- `hey nuc-wt build` was interrupted at the user's request because concurrent OMP refresh changes caused it to build a stale Linux OMP derivation. The package-refresh owner will resync the NUC after this commit.
+- Fresh post-OMP-fix `hey nuc-wt build` exited 0 and produced `/nix/store/rfh7ld31lp7spnsg03iiakk83cyix2q3-nixos-system-nuc-26.11.20260714.18b9261`; the NUC store path exists with the expected system closure.
+- `/proc/swaps` on the NUC contains only its header after temporary zram cleanup.
+- `hey agent-audit-tests` passed.
+- `hey agent-finish --worklog .agents/worklogs/remove-dagster.md` passed the worklog, Darwin configuration, formatting, hooks, tmux, package harness, package policy, ast-grep, agent-quality, test-confidence, and inventory checks.
 
 ## Reviews
 
 - Plan review attempted with `hey agent-review plan --active-model-family openai`; blocked by `RUNTIME: Authentication required`.
-- Landing review uses the same unavailable reviewer runtime and is blocked by the same authentication prerequisite.
+- Landing review attempted with `hey agent-review landing --active-model-family openai`; blocked by `RUNTIME: Authentication required`.
 
 ## Feedback
 
@@ -31,10 +34,8 @@ Remove the retired Dagster package, NixOS service modules, NUC configuration, se
 
 ## Remaining work
 
-- Commit the exact removal paths to unblock the concurrent package refresh.
-- Await a fresh `hey nuc-wt build` from the package-refresh owner after the OMP linker-fix commit.
-- After NUC evidence arrives, run remaining landing gates, synchronize, push, and tag.
+None.
 
 ## Commits
 
-None.
+- `53bc02085` — `chore(dagster): remove retired deployment`
