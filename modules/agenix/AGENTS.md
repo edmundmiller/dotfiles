@@ -72,7 +72,7 @@ script = ''
 
 Common patterns in this repo:
 
-- `EnvironmentFile` for systemd services (`openclaw`, `bugster`, `qb`)
+- `EnvironmentFile` for systemd services (`hermes-agent`, `qb`)
 - Individual `path` refs for config files (`homepage`, `hass`, `gatus`, `vault-sync`)
 - `owner` defaults to `config.user.name` (overridable per-secret)
 

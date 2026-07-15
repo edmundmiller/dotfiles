@@ -49,7 +49,7 @@ curl -s "$HC_API/checks/" -H "X-Api-Key: $HC_API_KEY" \
 
 # Find by name substring
 curl -s "$HC_API/checks/" -H "X-Api-Key: $HC_API_KEY" \
-  | jq '.checks[] | select(.name | contains("bugster")) | {name, uuid, status, ping_url}'
+  | jq '.checks[] | select(.name | contains("gatus")) | {name, uuid, status, ping_url}'
 
 # Find by tag
 curl -s "$HC_API/checks/" -H "X-Api-Key: $HC_API_KEY" \
@@ -129,8 +129,8 @@ Useful when intentionally stopping a service (prevents false alarms).
 ## Naming convention
 
 ```
-<service>: <job-name>         # bugster: github_personal_tasknotes
+<service>: <job-name>         # gatus: deadman
 <host>/<service>              # nuc/znapzend
 ```
 
-Tags: host + category (e.g. `nuc backup`, `bugster cron`).
+Tags: host + category (e.g. `nuc backup`, `gatus monitoring`).

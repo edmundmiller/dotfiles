@@ -1,3 +1,11 @@
+---
+purpose: Describe the dotfiles flake, module system, hosts, packages, and deployment topology.
+applies_to: Architecture changes or orientation across repository subsystems.
+entrypoint: Read the matching architecture section and inspect its named source path.
+verification: Run the documented live command for the affected subsystem.
+update_when: Flake outputs, modules, hosts, packages, or external dependencies change.
+---
+
 # Dotfiles Architecture
 
 > A nix-darwin / NixOS dotfiles repository using flake-parts, home-manager, deploy-rs, and agenix.
@@ -44,7 +52,7 @@ The repository is a single Nix flake (`flake.nix`) built with **flake-parts**. K
 | `darwinConfigurations` | macOS system configs (MacTraitor-Pro, Seqeratop)              |
 | `nixosConfigurations`  | NixOS system configs (nuc, unas, gandi, meshify)              |
 | `deploy.nodes`         | deploy-rs targets for remote deployment                       |
-| `packages`             | Custom Nix derivations (dagster, zele, jut, dmux, …)          |
+| `packages`             | Custom Nix derivations (zele, jut, dmux, zunit, …)            |
 | `overlays`             | `pkgs.unstable` and `pkgs.my` (custom packages)               |
 | `devShells`            | Development shells (`default` with linters, `agent` headless) |
 | `checks`               | deploy-rs validation, zunit tests, HA assertions              |
@@ -63,7 +71,7 @@ modules/
 │   ├── apps/       # raycast, openclaw, discord, mail
 │   ├── term/       # ghostty, kitty, wezterm
 │   └── macos/      # macOS-specific (homebrew, defaults)
-├── services/       # hass, dagster, bugster, jellyfin, homepage, docker, tailscale, …
+├── services/       # hass, jellyfin, homepage, docker, tailscale, openclaw, gatus, …
 ├── hardware/       # bluetooth, filesystem, audio
 ├── themes/         # alucard theme (stylix-based)
 ├── agenix/         # Secret declarations
@@ -97,12 +105,12 @@ Darwin hosts are built with `nix-darwin` and configured inline in `flake.nix` (n
 
 ### NixOS Hosts (x86_64-linux)
 
-| Host        | Machine                 | User      | Notable                                                               |
-| ----------- | ----------------------- | --------- | --------------------------------------------------------------------- |
-| **nuc**     | Intel NUC (home server) | `emiller` | Home Assistant, Dagster, OpenClaw, Jellyfin, Homepage, Bugster, Gatus |
-| **unas**    | NAS                     | `emiller` | ZFS, Syncthing, Time Machine backup, NFS exports                      |
-| **gandi**   | Gandi VPS               | `emiller` | Minimal server: SSH, Syncthing, Tailscale                             |
-| **meshify** | Desktop (inactive)      | —         | Legacy workstation config                                             |
+| Host        | Machine                 | User      | Notable                                             |
+| ----------- | ----------------------- | --------- | --------------------------------------------------- |
+| **nuc**     | Intel NUC (home server) | `emiller` | Home Assistant, OpenClaw, Jellyfin, Homepage, Gatus |
+| **unas**    | NAS                     | `emiller` | ZFS, Syncthing, Time Machine backup, NFS exports    |
+| **gandi**   | Gandi VPS               | `emiller` | Minimal server: SSH, Syncthing, Tailscale           |
+| **meshify** | Desktop (inactive)      | —         | Legacy workstation config                           |
 
 NixOS hosts are built via `lib/nixos.nix` → `mkHost`, which adds opnix, the `agents-workspace` hermes module, and skills-catalog modules.
 
@@ -119,7 +127,7 @@ Encrypted `.age` files in `hosts/nuc/secrets/`. Decrypted at activation time via
 
 - Service tokens (OpenClaw gateway, HA, Linear, Gemini API keys)
 - User passwords
-- Environment files for services (homepage, bugster, lubelogger)
+- Environment files for services (homepage, lubelogger, speedtest-tracker)
 
 ### opnix (1Password integration)
 
@@ -166,7 +174,6 @@ Darwin hosts use local `darwin-rebuild switch` (deploy-rs wraps this but rollbac
 
 Custom derivations available as `pkgs.my.*` via the default overlay. ~40 packages including:
 
-- **dagster** — Python data orchestrator with plugins
 - **zele** — CLI tool (patched upstream)
 - **jut** — Jujutsu workflow helpers
 - **dmux** — tmux session manager
@@ -190,16 +197,16 @@ Bun workspace monorepo with Pi agent extensions:
 
 ## External Service Dependencies
 
-| Service              | Purpose                                           | Used By                                |
-| -------------------- | ------------------------------------------------- | -------------------------------------- |
-| **1Password**        | Secret management (opnix service account)         | All hosts                              |
-| **GitHub**           | Source repo, deploy-rs target, agent integrations | All hosts                              |
-| **Tailscale**        | Mesh VPN connecting all machines                  | nuc, unas, gandi                       |
-| **healthchecks.io**  | Cron/service uptime monitoring                    | nuc (dagster, gatus, obsidian-sync, …) |
-| **Linear**           | Issue tracking (OpenClaw agent bridge)            | nuc                                    |
-| **Telegram**         | Bot interface for OpenClaw agents                 | nuc                                    |
-| **Obsidian Sync**    | Headless vault synchronization                    | nuc                                    |
-| **Cachix / Numtide** | Nix binary caches                                 | All hosts                              |
+| Service              | Purpose                                           | Used By                       |
+| -------------------- | ------------------------------------------------- | ----------------------------- |
+| **1Password**        | Secret management (opnix service account)         | All hosts                     |
+| **GitHub**           | Source repo, deploy-rs target, agent integrations | All hosts                     |
+| **Tailscale**        | Mesh VPN connecting all machines                  | nuc, unas, gandi              |
+| **healthchecks.io**  | Cron/service uptime monitoring                    | nuc (gatus, obsidian-sync, …) |
+| **Linear**           | Issue tracking (OpenClaw agent bridge)            | nuc                           |
+| **Telegram**         | Bot interface for OpenClaw agents                 | nuc                           |
+| **Obsidian Sync**    | Headless vault synchronization                    | nuc                           |
+| **Cachix / Numtide** | Nix binary caches                                 | All hosts                     |
 
 ## Development Workflow
 
