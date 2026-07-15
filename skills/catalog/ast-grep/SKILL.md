@@ -47,12 +47,14 @@ Use metavariables deliberately:
 
 Quote patterns with single quotes so the shell does not expand `$`.
 
-Inspect the parser when a plausible pattern misses:
+Inspect how a plausible query pattern is parsed when it misses:
 
 ```bash
-ast-grep run --lang typescript --pattern '$$$' --debug-query=ast src/example.ts
+ast-grep run --lang typescript --pattern 'console.log($$$ARGS)' --debug-query=ast src/example.ts
 ast-grep run --lang typescript --pattern 'console.log($$$ARGS)' --debug-query=pattern src/example.ts
 ```
+
+`--debug-query=ast` prints the query pattern's AST, not the source file's AST. Use the ast-grep Playground or language-specific tree-sitter tooling when the source tree itself must be inspected.
 
 For a rewrite, preview before applying:
 
