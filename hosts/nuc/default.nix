@@ -1638,73 +1638,6 @@ in
         enableFrontend = false;
       };
 
-      # dagster.webserver.port = 3001; # temporarily disabled: dagster protobuf version mismatch
-
-      finances-dagster = {
-        enable = false; # temporarily disabled: dagster protobuf version mismatch
-        opTokenFile = "/etc/opnix-token";
-        dailyHealthcheckPingUrl = "https://hc-ping.com/465b4f6c-8107-487e-bfd7-dc5e30168f32";
-      };
-
-      bugster = {
-        enable = false; # Dagster retired on NUC; moving scheduled workflows to Cloudflare Workflows
-        environmentFile = config.age.secrets.bugster-env.path;
-        healthcheckPingUrls = {
-          github_personal_tasknotes = "https://hc-ping.com/c4b0b3c8-25b4-4cf6-9252-745eaf0a6689";
-          linear_personal_tasknotes = "https://hc-ping.com/dc2b60c1-5967-48ea-883d-649ca7ae1bfa";
-          snipd_personal_contentnotes = "https://hc-ping.com/c5a1738e-d12b-46e4-bcd9-b0c8f1fa80e7";
-          travel_time_blocks = "https://hc-ping.com/5b5e8fef-8462-42ff-9562-9fe451972b1c";
-        };
-        tasknotes = {
-          vaultPath = "/home/emiller/obsidian-vault";
-          tasksDir = "01_Tasks";
-        };
-        sources = [
-          {
-            type = "github";
-            name = "personal";
-            tokenEnv = "GITHUB_TOKEN";
-            username = "edmundmiller";
-            contexts = [ "personal" ];
-          }
-          {
-            type = "linear";
-            name = "personal";
-            tokenEnv = "LINEAR_TOKEN";
-            contexts = [ "personal" ];
-          }
-          {
-            type = "snipd";
-            name = "personal";
-            tokenEnv = "SNIPD_API_KEY";
-            contexts = [ "podcasts" ];
-          }
-          {
-            type = "granola";
-            name = "personal";
-            tokenEnv = "GRANOLA_API_KEY";
-            contexts = [ "meetings" ];
-          }
-          {
-            type = "monologue";
-            name = "voice";
-            tokenEnv = "MONOLOGUE_API_KEY";
-            contexts = [ "voice" ];
-            includeTranscript = true;
-          }
-        ];
-
-        calendar = {
-          enable = true;
-          homeAddress = "7859 Clara Dr, Plano, TX 75024";
-          sourceCalendars = [
-            "primary"
-            "monicadd4@gmail.com"
-            "family06788939864322602215@group.calendar.google.com"
-          ];
-        };
-      };
-
       transmission.enable = false;
     };
 
@@ -1881,7 +1814,6 @@ in
   age = {
     secrets = {
       lubelogger-env.owner = "lubelogger";
-      bugster-env.owner = "emiller";
       speedtest-tracker-env.owner = "root";
       linear-refresh-token.owner = "emiller";
     };

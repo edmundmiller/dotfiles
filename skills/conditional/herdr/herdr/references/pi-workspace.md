@@ -204,7 +204,6 @@ Read first:
 - `docs/adr/2026-05-11-cloudflare-python-workflow-for-beancount-sync.md`
 
 Guardrails:
-- Keep Dagster/NUC as production.
 - Dry-run only; do not mutate ledger data.
 - Do not enable cron yet.
 - Inspect `git status --short`; avoid unrelated dirty files.
