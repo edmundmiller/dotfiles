@@ -17,7 +17,6 @@ Use this skill to choose the search or refactoring tool. After selecting ast-gre
 
 - Refactors/codemods: rename APIs, change import forms, rewrite call sites or variable kinds
 - Policy checks: enforce patterns across a repo (`scan` with rules + `test`)
-- Editor/automation: LSP mode; `--json` output for tooling
 - Syntax-structured code changes after previewing the matches
 
 ### When to Use ripgrep
