@@ -1,6 +1,6 @@
 # Worklog: refresh-packages-overlays-2026-07-14
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -27,14 +27,16 @@ Update every repository-managed package and overlay source that has a supported 
 - `claude-max-api-proxy` upstream is no longer publicly resolvable. Its pinned source remains fetchable; the package now builds with the refreshed Node toolchain.
 - Rebased the Herdr, Jmux, Critique, and OpenWiki patch stacks. Stack v0.4.2 upstreamed the local explicit-chain fix, so the obsolete patch was removed.
 - Every changed exported package builds on Darwin. `pkg-check hunk` passed 256 tests; `pkg-check openwiki` passed typecheck and 52 tests.
-- A clean `pi-packages` install and workspace typecheck passed. Pi QMD passed 76 tests; tmux-smart-name passed 152 tests.
-- `hey check` passed Darwin evaluation, formatting, hooks, tmux tests, package harness/policy tests, and ast-grep tests.
+- A clean `pi-packages` install and workspace typecheck passed. Pi QMD passed 76 tests; tmux-smart-name passed 152 tests. The integration suite passed 90 tests with `@marcfargas/pi-test-harness` pinned at 0.5.0 because 0.6.1 switched to the incompatible `@earendil-works/*` runtime namespace.
+- Final `hey check` passed Darwin evaluation, formatting, hooks, tmux tests, package harness/policy tests, and ast-grep tests.
 - Home Manager 26.11 made explicit `gtk.gtk4.theme = null` incompatible with its non-null GTK theme definition; removed the obsolete Darwin and NUC workarounds.
 - Node 25 reached end of life during evaluation. Pi wrappers now use Node 24, and the settings/runtime smoke tests pass.
 - Homebrew 6 rejects short names from third-party taps. Every such formula and cask now uses its fully qualified tap name.
 - Routine headless activation keeps MAS apps declared as inventory but skips Xcode, Keynote, and Numbers.
 - Home Manager now uses the Darwin account's real UID while retaining UID 1000 for Linux.
-- `obsidian-headless` 0.0.13 builds on Darwin with its regenerated npm dependency hash; the same hash is under NUC validation.
+- `obsidian-headless` 0.0.13 builds on Darwin with its regenerated npm dependency hash.
+- OMP's Nextflow scanner archive is linked whole on Linux; `hey nuc-wt build` completed as `/nix/store/rfh7ld31lp7spnsg03iiakk83cyix2q3-nixos-system-nuc-26.11.20260714.18b9261`.
+- Temporary 24 GiB NUC zram prevented the prior OOM and was removed after validation; `free` and `swapon` confirmed 0 B swap.
 - A final `darwin-rebuild switch --flake .` completed, including Homebrew and Home Manager activation.
 
 ## Reviews
@@ -48,8 +50,8 @@ Update every repository-managed package and overlay source that has a supported 
 
 ## Remaining work
 
-- Complete the cached NUC build, then land and synchronize the package refresh.
+None.
 
 ## Commits
 
-None.
+- `3fe33cdea chore(deps): refresh packages and overlays`
