@@ -7,7 +7,7 @@ description: >
   severity, or adding ast-grep to project checks and CI.
 license: MIT
 metadata:
-  version: "2.0.1"
+  version: "2.0.2"
   author: "Edmund Miller"
 ---
 
@@ -74,6 +74,24 @@ ast-grep scan --rule replace-console-log.yml --update-all src
 ```
 
 Treat `fix` as textual substitution, not parsed output. Run the project formatter, type checker, and focused tests after applying a rewrite.
+
+## Integrate editors and automation
+
+Start ast-grep's diagnostics-only language server from the project root so it discovers `sgconfig.yml`, or pass an explicit config:
+
+```bash
+ast-grep lsp
+ast-grep lsp --config path/to/sgconfig.yml
+```
+
+Use structured output for tooling:
+
+```bash
+ast-grep run --lang typescript --pattern 'console.log($$$ARGS)' --json=stream src
+ast-grep scan --json=compact .
+```
+
+Choose `pretty` for humans, `stream` for JSON Lines consumers, and `compact` for a single-line JSON array. Add `--include-metadata` to `scan` only when consumers need rule metadata.
 
 ## Set up repository standards
 
