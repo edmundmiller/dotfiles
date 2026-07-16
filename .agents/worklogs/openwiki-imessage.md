@@ -29,7 +29,7 @@ Stopping condition: focused upstream tests/typecheck, package harness, Linux eva
 - `hey check`, `hey agent-audit-tests`, and `hey agent-finish` passed. Darwin activation succeeded.
 - Onboarding preserves saved iMessage instances. An isolated activated-package smoke found `imessage-1`, rejected its empty scope before `imsg`, exited nonzero, and left raw/log directories empty.
 - An isolated activated-package smoke reproduced a 193-hour outage, exited nonzero before `imsg`, and printed the explicit 168-hour gap-reset recovery path.
-- The regenerated all-source launch agent targets stable `/run/current-system/sw/bin/openwiki`, works from `/Users/emiller/obsidian-vault`, and keeps its log `0600`. A live kickstart exited `1` and emitted the actionable Full Disk Access guidance; scheduled iMessage verification remains blocked on that grant.
+- The regenerated launch agent targets stable `/run/current-system/sw/bin/openwiki`, works from `/Users/emiller/obsidian-vault`, and keeps its log `0600`. A repeated live kickstart exited `1`. Unified TCC logs identify the wrapper's Nix-store Bash shebang executable as the denied `kTCCServiceSystemPolicyAllFiles` responsible process; runtime, onboarding, and README guidance now match that observed identity.
 
 ## Reviews
 
@@ -43,7 +43,7 @@ None.
 
 ## Remaining work
 
-Blocked only on scheduled Messages verification: interactive and direct connector ingests pass, but launchd cannot read Messages until `/run/current-system/sw/bin/openwiki` receives Full Disk Access. After that grant, rerun the loaded job, confirm exit zero, then create the annotated tag.
+Blocked only on scheduled Messages verification: interactive and direct connector ingests pass, but launchd cannot read Messages until the current OpenWiki wrapper's shebang executable (`/nix/store/5vmd3cqj6skjajg0yj9jl8dsddwp0700-bash-5.3p9/bin/bash`) receives Full Disk Access. After that grant, rerun the loaded job, confirm exit zero, then create the annotated tag.
 
 ## Commits
 
@@ -63,3 +63,5 @@ Blocked only on scheduled Messages verification: interactive and direct connecto
 - `fix(openwiki): package imsg runtime sidecars`
 - `test(openwiki): capture capped outage recovery`
 - `fix(openwiki): document capped outage recovery`
+- `test(openwiki): capture launchd interpreter denial`
+- `fix(openwiki): identify launchd interpreter for FDA`
