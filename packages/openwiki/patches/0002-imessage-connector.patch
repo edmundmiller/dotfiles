@@ -1158,10 +1158,10 @@ index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd
 +});
 diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..69286a363ad5ea4126f9087dac1727dab0534afe
+index 0000000000000000000000000000000000000000..b1cd8171448ee028a658ee6e8d2a0c3bc7ec925e
 --- /dev/null
 +++ i/test/imessage-connector.test.ts
-@@ -0,0 +1,485 @@
+@@ -0,0 +1,515 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  mkdtemp,
@@ -1502,6 +1502,36 @@ index 0000000000000000000000000000000000000000..69286a363ad5ea4126f9087dac1727da
 +    });
 +    expect(execFileAsync).not.toHaveBeenCalled();
 +  });
++
++  test.fails(
++    "documents gap reset when downtime exceeds the window cap",
++    async () => {
++      const stateDir = path.join(home, ".openwiki/connectors/imessage");
++      await mkdir(stateDir, { recursive: true });
++      await writeFile(
++        path.join(stateDir, "state.json"),
++        JSON.stringify({
++          lastRunAt: "2026-07-07T12:00:00.000Z",
++          latestIds: { "chat:7": "10" },
++          runs: [],
++          version: 1,
++        }),
++      );
++      const connector = await loadConnector();
++
++      const result = await connector.ingest({
++        connectorConfig: { chatIds: [7], windowHours: 168 },
++      });
++
++      expect(result).toMatchObject({
++        message:
++          "The previous successful iMessage ingest is 192 hours old, but windowHours is capped at 168. To recover the most recent 168 hours and deliberately accept the older gap, set windowHours=168, move ~/.openwiki/connectors/imessage/state.json aside, and rerun.",
++        rawFiles: [],
++        status: "error",
++      });
++      expect(execFileAsync).not.toHaveBeenCalled();
++    },
++  );
 +
 +  test("manifest preserves the cursor for an unchanged selected chat", async () => {
 +    const chats = [
