@@ -1765,11 +1765,11 @@ index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..65a316290841473d097d985e9743c6e3
      const onboarding = await loadOnboardingModule(home);
 diff --git c/test/schedules.test.ts i/test/schedules.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..5180ccadab8ff83da54ab37ef82e5dfdffe0804d
+index 0000000000000000000000000000000000000000..8e396fe3707217b42dfeca2879eb59b9ff30abea
 --- /dev/null
 +++ i/test/schedules.test.ts
-@@ -0,0 +1,55 @@
-+import { mkdtemp, readFile, rm } from "node:fs/promises";
+@@ -0,0 +1,61 @@
++import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 +import os from "node:os";
 +import path from "node:path";
 +import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -1807,20 +1807,26 @@ index 0000000000000000000000000000000000000000..5180ccadab8ff83da54ab37ef82e5dfd
 +  await rm(home, { force: true, recursive: true });
 +});
 +
-+test.skipIf(process.platform !== "darwin")(
-+  "launchd runs the configured OpenWiki executable instead of bypassing its wrapper",
-+  async () => {
-+    const { installConnectorSchedule } = await import("../src/schedules.ts");
-+    const result = await installConnectorSchedule({
-+      connectorId: "imessage",
-+      cronExpression: "0 2 * * *",
-+      cwd: home,
-+    });
-+    const plist = await readFile(result.launchAgentPath!, "utf8");
++test
++  .skipIf(process.platform !== "darwin")
++  .fails(
++    "launchd runs the configured OpenWiki executable instead of bypassing its wrapper",
++    async () => {
++      const { installConnectorSchedule } = await import("../src/schedules.ts");
++      const result = await installConnectorSchedule({
++        connectorId: "imessage",
++        cronExpression: "0 2 * * *",
++        cwd: home,
++      });
++      const plist = await readFile(result.launchAgentPath!, "utf8");
 +
-+    expect(plist).toContain(
-+      "<string>/nix/store/openwiki/bin/openwiki</string>",
-+    );
-+    expect(plist).not.toContain(`<string>${process.execPath}</string>`);
-+  },
-+);
++      expect(plist).toContain(
++        "<string>/nix/store/openwiki/bin/openwiki</string>",
++      );
++      expect(plist).not.toContain(`<string>${process.execPath}</string>`);
++      expect(
++        (await stat(path.join(home, ".openwiki/logs/ingestion.schedule.log")))
++          .mode & 0o777,
++      ).toBe(0o600);
++    },
++  );
