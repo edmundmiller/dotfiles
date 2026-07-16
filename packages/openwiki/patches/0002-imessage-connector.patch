@@ -1,5 +1,5 @@
 diff --git c/README.md i/README.md
-index 9871b88afbbcd24bbd142961c9b64308cea8d605..16c0f31642429af8f119b4cf4a614be155fd708d 100644
+index 9871b88afbbcd24bbd142961c9b64308cea8d605..2773ca5e660021a5db5d510af9a3173947f7d952 100644
 --- c/README.md
 +++ i/README.md
 @@ -36,8 +36,8 @@ openwiki --init
@@ -22,7 +22,7 @@ index 9871b88afbbcd24bbd142961c9b64308cea8d605..16c0f31642429af8f119b4cf4a614be1
  
  You can configure the same connector more than once. For example, add one Web
  Search source for AI research and another for NBA news; OpenWiki stores them as
-@@ -184,9 +184,72 @@ instances with `openwiki ingest all`, all instances for one connector with
+@@ -184,9 +184,75 @@ instances with `openwiki ingest all`, all instances for one connector with
  - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
  - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
  - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
@@ -75,16 +75,19 @@ index 9871b88afbbcd24bbd142961c9b64308cea8d605..16c0f31642429af8f119b4cf4a614be1
 +running OpenWiki. Contacts access is optional; Automation, SIP changes, and
 +Messages send permissions are not required. Packaged launchd schedules use a
 +dedicated native launcher that can run only the fixed scheduled-ingestion
-+command. Grant Full Disk Access only to that first `ProgramArguments`
-+executable:
++command. Resolve the first `ProgramArguments` executable and grant Full Disk
++Access only to the resulting native binary:
 +
 +```sh
-+/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' \
-+  ~/Library/LaunchAgents/com.openwiki.ingestion.plist
++launcher=$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' \
++  ~/Library/LaunchAgents/com.openwiki.ingestion.plist)
++realpath "$launcher"
 +launchctl kickstart -k "gui/$(id -u)/com.openwiki.ingestion"
 +```
 +
 +Require the `launchctl kickstart` smoke to succeed.
++After an upgrade changes the resolved launcher path, resolve it again and replace
++the old Full Disk Access entry before the next scheduled run.
 +
 +To remove iMessage ingestion, run `openwiki cron delete imessage`, remove every
 +iMessage entry from `sourceInstances` and legacy `sources.imessage` in
@@ -231,7 +234,7 @@ index 22a9de5a680b4001f55a78b2cb356b1ddf962116..0e7a5691997068ef52f3fc8313137ef6
          "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
 diff --git c/src/connectors/sources/imessage.ts i/src/connectors/sources/imessage.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..d2384ddf032c27c8561a5d542446b4b9931965b5
+index 0000000000000000000000000000000000000000..c62d12733885af29c3e4328f3885a41043e2da04
 --- /dev/null
 +++ i/src/connectors/sources/imessage.ts
 @@ -0,0 +1,587 @@
@@ -781,7 +784,7 @@ index 0000000000000000000000000000000000000000..d2384ddf032c27c8561a5d542446b4b9
 +    return "imsg cannot read ~/Library/Messages/chat.db; grant Full Disk Access to the terminal or parent agent, then retry.";
 +  }
 +  if (operation === "chats" && !stderr) {
-+    return "imsg chats failed without diagnostics; if running under launchd, grant Full Disk Access to its dedicated launcher (the first ProgramArguments executable), then retry.";
++    return "imsg chats failed without diagnostics; if running under launchd, grant Full Disk Access to the resolved dedicated launcher (run realpath on the first ProgramArguments executable), then retry.";
 +  }
 +  return operation === "chats"
 +    ? "imsg chats failed."
@@ -843,7 +846,7 @@ index 1b1969d3ca190b2c1465da1e431a3ad6a9b6e450..b2da4b61f6548732b469bbf3e6e0a56b
  export type ConnectorDefinition = {
    backend: ConnectorBackend;
 diff --git c/src/credentials.tsx i/src/credentials.tsx
-index ea2f3bf3fda4130a936babd889428c90e6ca7fde..b7dccc5dc47727d0568d5cf0f3651e9d14cd79a5 100644
+index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144f0d59c27 100644
 --- c/src/credentials.tsx
 +++ i/src/credentials.tsx
 @@ -102,6 +102,7 @@ type PromptStep =
@@ -884,7 +887,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..b7dccc5dc47727d0568d5cf0f3651e9d
 +    instructions: [
 +      "Requires macOS, imsg v0.13 or newer, and Full Disk Access for the terminal or parent agent used for manual ingestion.",
 +      "Run imsg chats --limit 100 --json and choose only approved numeric chat IDs.",
-+      "Scheduled ingestion runs under launchd, not the terminal. Grant Full Disk Access only to the dedicated launcher listed first in ProgramArguments.",
++      "Scheduled ingestion runs under launchd, not the terminal. Resolve the dedicated launcher listed first in ProgramArguments with realpath, then grant Full Disk Access only to that resolved executable.",
 +    ],
 +    secretInputs: [],
 +  },
@@ -1165,10 +1168,10 @@ index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd
 +});
 diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..96fec975dd025b690942394e26853e70a8e973af
+index 0000000000000000000000000000000000000000..18c619f47888df682181c750b126dc96af030dab
 --- /dev/null
 +++ i/test/imessage-connector.test.ts
-@@ -0,0 +1,515 @@
+@@ -0,0 +1,512 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  mkdtemp,
@@ -1642,26 +1645,23 @@ index 0000000000000000000000000000000000000000..96fec975dd025b690942394e26853e70
 +    });
 +  });
 +
-+  test.fails(
-+    "maps silent launchd access failures to actionable guidance",
-+    async () => {
-+      const connector = await loadConnector();
-+      execFileAsync.mockRejectedValueOnce(
-+        Object.assign(new Error("imsg exited with status 1"), {
-+          code: 1,
-+          stderr: "",
-+        }),
-+      );
++  test("maps silent launchd access failures to actionable guidance", async () => {
++    const connector = await loadConnector();
++    execFileAsync.mockRejectedValueOnce(
++      Object.assign(new Error("imsg exited with status 1"), {
++        code: 1,
++        stderr: "",
++      }),
++    );
 +
-+      await expect(
-+        connector.ingest({ connectorConfig: { chatIds: [7] } }),
-+      ).resolves.toMatchObject({
-+        message:
-+          "imsg chats failed without diagnostics; if running under launchd, grant Full Disk Access to the resolved dedicated launcher (run realpath on the first ProgramArguments executable), then retry.",
-+        status: "error",
-+      });
-+    },
-+  );
++    await expect(
++      connector.ingest({ connectorConfig: { chatIds: [7] } }),
++    ).resolves.toMatchObject({
++      message:
++        "imsg chats failed without diagnostics; if running under launchd, grant Full Disk Access to the resolved dedicated launcher (run realpath on the first ProgramArguments executable), then retry.",
++      status: "error",
++    });
++  });
 +
 +  test("repairs the connector gitignore and ignores private raw data", async () => {
 +    const connectorDir = path.join(home, ".openwiki/connectors/imessage");
