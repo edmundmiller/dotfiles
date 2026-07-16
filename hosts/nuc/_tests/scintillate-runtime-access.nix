@@ -123,6 +123,12 @@ let
       msg = "Old Scintillate gateway ping timer must remain removed.";
     }
     {
+      # Strict expected-failure marker for workspace-rtl.3. The fix commit
+      # flips this to the required isolated cron executor contract.
+      test = !(builtins.hasAttr "hermes-scintillate-cron-tick" cfg.systemd.timers);
+      msg = "Regression fixture expected Scintillate's missing cron executor before workspace-rtl.3 is fixed.";
+    }
+    {
       test = !(builtins.hasAttr "hermes-agent-anne-healthcheck-ping" cfg.systemd.timers);
       msg = "Old Anne gateway ping timer must remain removed.";
     }
