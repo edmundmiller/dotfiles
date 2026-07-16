@@ -226,10 +226,10 @@ index 22a9de5a680b4001f55a78b2cb356b1ddf962116..0e7a5691997068ef52f3fc8313137ef6
          "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
 diff --git c/src/connectors/sources/imessage.ts i/src/connectors/sources/imessage.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..2f47a1fbdf968a267e4128a41aad6be72dd4a02a
+index 0000000000000000000000000000000000000000..6ab3ece7fc465333e7de72270450ffc4cb12fada
 --- /dev/null
 +++ i/src/connectors/sources/imessage.ts
-@@ -0,0 +1,572 @@
+@@ -0,0 +1,585 @@
 +import { execFile } from "node:child_process";
 +import { basename } from "node:path";
 +import { promisify } from "node:util";
@@ -359,6 +359,19 @@ index 0000000000000000000000000000000000000000..2f47a1fbdf968a267e4128a41aad6be7
 +  const state = await readConnectorState("imessage");
 +  const end = new Date();
 +  const start = new Date(end.getTime() - config.windowHours * 60 * 60 * 1000);
++  const previousRunAt = Date.parse(state.lastRunAt ?? "");
++  if (Number.isFinite(previousRunAt) && previousRunAt < start.getTime()) {
++    const requiredHours = Math.ceil(
++      (end.getTime() - previousRunAt) / (60 * 60 * 1000),
++    );
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      `The previous successful iMessage ingest predates windowHours=${config.windowHours}; increase windowHours to at least ${requiredHours} to catch up without gaps.`,
++    );
++  }
 +  let chats: IMessageChat[];
 +
 +  try {
@@ -1142,10 +1155,10 @@ index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd
 +});
 diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..4ff04407d0c7f2bfafbe65c0ae02f57c9002882a
+index 0000000000000000000000000000000000000000..68464da9c7b9e0c2e669f09f033402cbc09960b5
 --- /dev/null
 +++ i/test/imessage-connector.test.ts
-@@ -0,0 +1,470 @@
+@@ -0,0 +1,467 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  mkdtemp,
@@ -1457,38 +1470,35 @@ index 0000000000000000000000000000000000000000..4ff04407d0c7f2bfafbe65c0ae02f57c
 +    expect(secondEntries).toEqual(firstEntries);
 +  });
 +
-+  test.fails(
-+    "fails closed when the previous run predates the bounded window",
-+    async () => {
-+      const stateDir = path.join(home, ".openwiki/connectors/imessage");
-+      await mkdir(stateDir, { recursive: true });
-+      await writeFile(
-+        path.join(stateDir, "state.json"),
-+        JSON.stringify({
-+          lastRunAt: "2026-07-13T12:00:00.000Z",
-+          latestIds: { "chat:7": "10" },
-+          runs: [],
-+          version: 1,
-+        }),
-+      );
-+      mockImsg([chat(7, ["alice@example.com"])], {
-+        7: [message(11, 7, "2026-07-14T10:00:00.000Z")],
-+      });
-+      const connector = await loadConnector();
++  test("fails closed when the previous run predates the bounded window", async () => {
++    const stateDir = path.join(home, ".openwiki/connectors/imessage");
++    await mkdir(stateDir, { recursive: true });
++    await writeFile(
++      path.join(stateDir, "state.json"),
++      JSON.stringify({
++        lastRunAt: "2026-07-13T12:00:00.000Z",
++        latestIds: { "chat:7": "10" },
++        runs: [],
++        version: 1,
++      }),
++    );
++    mockImsg([chat(7, ["alice@example.com"])], {
++      7: [message(11, 7, "2026-07-14T10:00:00.000Z")],
++    });
++    const connector = await loadConnector();
 +
-+      const result = await connector.ingest({
-+        connectorConfig: { chatIds: [7], windowHours: 24 },
-+      });
++    const result = await connector.ingest({
++      connectorConfig: { chatIds: [7], windowHours: 24 },
++    });
 +
-+      expect(result).toMatchObject({
-+        message:
-+          "The previous successful iMessage ingest predates windowHours=24; increase windowHours to at least 48 to catch up without gaps.",
-+        rawFiles: [],
-+        status: "error",
-+      });
-+      expect(execFileAsync).not.toHaveBeenCalled();
-+    },
-+  );
++    expect(result).toMatchObject({
++      message:
++        "The previous successful iMessage ingest predates windowHours=24; increase windowHours to at least 48 to catch up without gaps.",
++      rawFiles: [],
++      status: "error",
++    });
++    expect(execFileAsync).not.toHaveBeenCalled();
++  });
 +
 +  test("manifest preserves the cursor for an unchanged selected chat", async () => {
 +    const chats = [
