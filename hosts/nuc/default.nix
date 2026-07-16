@@ -584,22 +584,8 @@ in
         "bootstrapLinearToken"
       ];
       text = ''
-        AMOS_HOME="/var/lib/hermes-amosburton"
         ENV_DIR="/run/hermes-amosburton-env"
         ENV_FILE="$ENV_DIR/secrets.env"
-        HERMES_ENV_HOME="$AMOS_HOME/.hermes"
-
-        install -d -o emiller -g users -m 0750 "$AMOS_HOME"
-        install -d -o emiller -g users -m 0700 "$HERMES_ENV_HOME"
-        install -d -o emiller -g users -m 0700 "$HERMES_ENV_HOME/cron"
-        install -d -o emiller -g users -m 0700 "$HERMES_ENV_HOME/cron/output"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
-
-        if [ -f "$HERMES_ENV_HOME/cron/jobs.json" ]; then
-          chown -R emiller:users "$HERMES_ENV_HOME/cron"
-          chown emiller:users "$HERMES_ENV_HOME/cron/jobs.json"
-          chmod 0600 "$HERMES_ENV_HOME/cron/jobs.json"
-        fi
 
         mkdir -p "$ENV_DIR"
         : > "$ENV_FILE"
