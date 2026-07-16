@@ -100,7 +100,7 @@
           enable = true;
           # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic).
           # No xai-oauth here — do not pin xai-oauth/* fallbacks.
-          # Anthropic-first: every role runs on the VibeProxy Claude subscription,
+          # Anthropic-first: primary roles run on the VibeProxy Claude subscription,
           # falling back to openai-codex (GPT), then cursor/composer-2.5 last.
           # Opus is the workhorse; sonnet handles vision + fan-out subtasks (cost
           # guard); haiku covers smol/commit/tiny. Fallbacks cover both VibeProxy
@@ -120,7 +120,6 @@
             commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "vibeproxy/claude-haiku-4-5-20251001";
             task = "vibeproxy/claude-sonnet-5:low";
-            advisor = "vibeproxy/claude-opus-4-8:high";
           };
           retry.fallbackChains = {
             default = [
@@ -141,9 +140,6 @@
             task = [
               "openai-codex/gpt-5.6-sol:low"
               "cursor/composer-2.5"
-            ];
-            advisor = [
-              "openai-codex/gpt-5.6-sol:high"
             ];
             vision = [
               "openai-codex/gpt-5.6-sol:high"
@@ -246,6 +242,17 @@
         # private key is ~/.ssh/id_ed25519 on this host.
         home.file.".ssh/seqera.pub".text =
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty Seqera Key\n";
+
+        # OMP does not apply retry.fallbackChains inside advisor runtimes.
+        # Keep a Codex reviewer active alongside Opus so Claude cooldowns do not
+        # leave the session without advisor coverage.
+        home.file.".omp/agent/WATCHDOG.yml".text = ''
+          advisors:
+            - name: Opus
+              model: vibeproxy/claude-opus-4-8:high
+            - name: Codex backup
+              model: openai-codex/gpt-5.6-sol:high
+        '';
 
         # Shared config-seqera pins signingkey to the literal pubkey, which
         # routes ssh-keygen through the 1Password SSH agent (-U) and blocks
