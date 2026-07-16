@@ -14,20 +14,21 @@ Stopping condition: focused upstream tests/typecheck, package harness, Linux eva
 - Reuse pinned `inputs.nix-steipete-tools` `imsg` v0.13.0 only on Darwin; keep Linux evaluation lazy.
 - Require explicit chat-ID or participant scope. Both scopes use intersection semantics.
 - Raw messages never enter the wiki or Git. Attachments remain metadata-only.
-- Existing unrelated working-tree changes are user work and remain outside OpenWiki commits: `.beads/issues.jsonl`, `config/agents/rules/03-version-control.md`, and `overlays/herdr/default.nix`.
+- Keep `windowHours` as a strict privacy/data-volume bound. If the previous successful run predates it, fail closed with the minimum explicit window needed to catch up.
+- Existing unrelated working-tree changes are user work and remain outside OpenWiki commits.
 
 ## Evidence
 
 - Host: `MacTraitor-Pro.local`, Darwin arm64, verified with `hostname` and `uname -a`.
-- Upstream RED: nine expected failures (missing connector, command target misclassified, zero-file synthesis invoked, weak `.gitignore`).
-- Upstream GREEN: focused Vitest suite passed 65 tests; `pnpm typecheck` passed.
-- Fresh `pkg-check openwiki` applied `0001` then `0002`, passed typecheck, and passed 71 tests.
-- Linux evaluation printed `openwiki`. Darwin package built; recursive closure contains `/nix/store/4zaazwcscfsl78d9xgihxblnryq9s9fh-imsg-0.13.0`.
-- Live onboarding inspection reported zero iMessage instances, no legacy iMessage source, and zero approved chat IDs without printing any source values.
-- `hey check`, `hey agent-audit-tests`, and `hey agent-finish` passed. Darwin rebuild activated successfully.
-- Activated `openwiki --help` passed; `/run/current-system/sw/bin/openwiki` closure contains `imsg-0.13.0`.
-- Existing all-source schedule is loaded at 02:00 under `com.openwiki.ingestion`; kickstart is deferred with live iMessage configuration because no approved chat ID exists.
-- Onboarding now preserves saved iMessage instances. An isolated activated-package smoke found `imessage-1`, rejected its empty scope before any `imsg` access, exited nonzero, and left both raw and log directories empty.
+- Upstream RED: strict expected failures verified for connector presence, command classification, empty synthesis, private ignore rules, attachment path redaction, schedule wrapper/log privacy, bounded downtime gaps, and silent launchd denial.
+- Upstream GREEN: focused Vitest passed 11 connector tests and typecheck passed. The repository package harness and `nix build .#openwiki` passed with patches `0001` then `0002`.
+- Linux evaluation printed `openwiki`. Darwin package built with `imsg` plus its helper and both resource bundles adjacent to the executable.
+- The approved scope contains 171 chats whose participant handles all match macOS Contacts: 90 direct and 81 group chats. No names or handles were printed.
+- Live ingestion succeeded and synthesized only into the vault. Two immediate direct connector reruns both skipped with zero raw files.
+- Raw run directories are `0700`; JSON/state files and the schedule log are `0600`; `.gitignore` is `*\n!.gitignore\n`. Existing attachment filenames were reduced to basenames and all raw runs now contain zero path-valued filenames.
+- `hey check`, `hey agent-audit-tests`, and `hey agent-finish` passed. Darwin activation succeeded.
+- Onboarding preserves saved iMessage instances. An isolated activated-package smoke found `imessage-1`, rejected its empty scope before `imsg`, exited nonzero, and left raw/log directories empty.
+- The regenerated all-source launch agent targets stable `/run/current-system/sw/bin/openwiki`, works from `/Users/emiller/obsidian-vault`, and keeps its log `0600`. A live kickstart exited `1` and emitted the actionable Full Disk Access guidance; scheduled iMessage verification remains blocked on that grant.
 
 ## Reviews
 
@@ -41,10 +42,21 @@ None.
 
 ## Remaining work
 
-Blocked only on live Messages verification: no user-approved numeric chat ID is available. Per the approved privacy contingency, do not create `imessage-1`, run `imsg`, ingest messages, inspect raw records, verify live first/repeat behavior, or exercise iMessage under launchd until the user supplies approved ID(s).
+Blocked only on scheduled Messages verification: interactive and direct connector ingests pass, but launchd cannot read Messages until `/run/current-system/sw/bin/openwiki` receives Full Disk Access. After that grant, rerun the loaded job, confirm exit zero, then create the annotated tag.
 
 ## Commits
 
 - `feat(openwiki): add private iMessage connector`
 - `test(openwiki): capture iMessage onboarding regression`
 - `fix(openwiki): preserve iMessage onboarding sources`
+- `test(openwiki): capture attachment path leak`
+- `fix(openwiki): redact attachment paths`
+- `test(openwiki): capture wrapper bypass in launchd`
+- `fix(openwiki): run schedules through Nix wrapper`
+- `test(openwiki): capture public schedule logs`
+- `fix(openwiki): protect scheduled ingestion logs`
+- `test(openwiki): capture bounded downtime gap`
+- `fix(openwiki): fail closed across ingestion gaps`
+- `test(openwiki): capture silent launchd denial`
+- `fix(openwiki): explain silent launchd denial`
+- `fix(openwiki): package imsg runtime sidecars`
