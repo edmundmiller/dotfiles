@@ -1,12 +1,12 @@
-# Regression sentinel for the 2026-07 Betty scheduler outage.
-#
-# Keep this first commit green while proving the observed bug. The fix commit
-# flips the sentinel to the intended executor contract.
+# Regression contract for the 2026-07 Betty scheduler outage.
 { nixosConfig, pkgs }:
 let
   cfg = nixosConfig.config;
-  hasBettyTimer = builtins.hasAttr "hermes-betty-cron-tick" cfg.systemd.timers;
+  bettyService = cfg.systemd.services.hermes-betty-cron-tick;
+  bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;
+
+  inherit (pkgs.lib) concatStringsSep hasInfix;
 
   assertions = [
     {
@@ -14,8 +14,36 @@ let
       msg = "Betty's interactive gateway must remain disabled for isolated cron execution.";
     }
     {
-      test = !hasBettyTimer;
-      msg = "Regression sentinel: Betty unexpectedly has a cron executor before the fix.";
+      test = bettyService.serviceConfig.Type == "oneshot";
+      msg = "Betty cron executor must be a oneshot service.";
+    }
+    {
+      test = bettyService.serviceConfig.User == "emiller";
+      msg = "Betty cron executor must use the profile owner.";
+    }
+    {
+      test = hasInfix "betty-hermes cron tick" (toString bettyService.serviceConfig.ExecStart);
+      msg = "Betty cron executor must sync canonical jobs through the Betty launcher before ticking.";
+    }
+    {
+      test = bettyTimer.wantedBy == [ "timers.target" ];
+      msg = "Betty cron timer must start with timers.target.";
+    }
+    {
+      test = bettyTimer.timerConfig.OnUnitActiveSec == "5min";
+      msg = "Betty cron timer must tick every five minutes.";
+    }
+    {
+      test = bettyTimer.timerConfig.Unit == "hermes-betty-cron-tick.service";
+      msg = "Betty cron timer must target its isolated executor.";
+    }
+    {
+      test = hasInfix "HERMES_HOME=/var/lib/hermes-betty/.hermes" (concatStringsSep " " bettyService.serviceConfig.Environment);
+      msg = "Betty cron executor must target Betty's isolated Hermes home.";
+    }
+    {
+      test = hasInfix "/var/lib/hermes-betty" (concatStringsSep " " bettyService.serviceConfig.ReadWritePaths);
+      msg = "Betty cron executor must be able to update Betty's cron state.";
     }
   ];
 
@@ -31,5 +59,5 @@ pkgs.runCommand "nuc-hermes-cron-executors" { } ''
   fi
 
   mkdir -p "$out"
-  echo "NUC Hermes cron executor regression reproduced" > "$out/result"
+  echo "NUC Hermes cron executor assertions passed" > "$out/result"
 ''
