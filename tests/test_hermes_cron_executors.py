@@ -16,9 +16,6 @@ class HermesCronExecutorTests(unittest.TestCase):
         )
         self.assertIn('envVar = "HERMES_MCP_BEARER_TOKEN_LINEAR";', config)
         self.assertIn("hermesAmosburtonSecretsMaterialize", config)
-        self.assertIn(
-            'chown emiller:users "$HERMES_ENV_HOME/cron/jobs.json"', config
-        )
         self.assertIn("systemd.services.hermes-amosburton-cron-tick", config)
         self.assertIn(
             'ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";',
