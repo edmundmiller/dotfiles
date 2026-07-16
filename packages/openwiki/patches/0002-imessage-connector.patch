@@ -1734,3 +1734,66 @@ index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..65a316290841473d097d985e9743c6e3
    test("reads wiki instructions only from INSTRUCTIONS.md", async () => {
      const home = await createTempHome();
      const onboarding = await loadOnboardingModule(home);
+diff --git c/test/schedules.test.ts i/test/schedules.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f1540e13249ee3ddcfdcaf0f29ad43e92470447
+--- /dev/null
++++ i/test/schedules.test.ts
+@@ -0,0 +1,57 @@
++import { mkdtemp, readFile, rm } from "node:fs/promises";
++import os from "node:os";
++import path from "node:path";
++import { afterEach, beforeEach, expect, test, vi } from "vitest";
++
++const execFileAsync = vi.hoisted(() => vi.fn());
++
++vi.mock("node:child_process", async (importOriginal) => {
++  const actual = await importOriginal<typeof import("node:child_process")>();
++  const mockedExecFile = vi.fn();
++  Object.defineProperty(
++    mockedExecFile,
++    Symbol.for("nodejs.util.promisify.custom"),
++    { value: execFileAsync },
++  );
++  return { ...actual, execFile: mockedExecFile };
++});
++
++const originalExecutable = process.env.OPENWIKI_EXECUTABLE;
++const originalHome = process.env.HOME;
++let home: string;
++
++beforeEach(async () => {
++  home = await mkdtemp(path.join(os.tmpdir(), "openwiki-schedule-test-"));
++  process.env.HOME = home;
++  process.env.OPENWIKI_EXECUTABLE = "/nix/store/openwiki/bin/openwiki";
++  execFileAsync.mockResolvedValue({ stderr: "", stdout: "" });
++  vi.resetModules();
++});
++
++afterEach(async () => {
++  if (originalExecutable === undefined) delete process.env.OPENWIKI_EXECUTABLE;
++  else process.env.OPENWIKI_EXECUTABLE = originalExecutable;
++  if (originalHome === undefined) delete process.env.HOME;
++  else process.env.HOME = originalHome;
++  await rm(home, { force: true, recursive: true });
++});
++
++test
++  .skipIf(process.platform !== "darwin")
++  .fails(
++    "launchd runs the configured OpenWiki executable instead of bypassing its wrapper",
++    async () => {
++      const { installConnectorSchedule } = await import("../src/schedules.ts");
++      const result = await installConnectorSchedule({
++        connectorId: "imessage",
++        cronExpression: "0 2 * * *",
++        cwd: home,
++      });
++      const plist = await readFile(result.launchAgentPath!, "utf8");
++
++      expect(plist).toContain(
++        "<string>/nix/store/openwiki/bin/openwiki</string>",
++      );
++      expect(plist).not.toContain(`<string>${process.execPath}</string>`);
++    },
++  );

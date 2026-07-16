@@ -15,6 +15,7 @@
       "test/imessage-connector.test.ts",
       "test/ingestion.test.ts",
       "test/onboarding.test.ts",
+      "test/schedules.test.ts",
       "test/prompt.test.ts",
       "test/commands.test.ts",
       "test/credentials.test.ts"
