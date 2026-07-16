@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fork Bead Threads"
+  short_description: "Launch dependency-aware Codex threads for Beads"
+  default_prompt: "Use $fork-bead-threads to launch isolated Codex worktree threads for these Beads."
