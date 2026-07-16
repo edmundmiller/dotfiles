@@ -1886,10 +1886,10 @@ index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..65a316290841473d097d985e9743c6e3
      const onboarding = await loadOnboardingModule(home);
 diff --git c/test/schedules.test.ts i/test/schedules.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..c81ff8edd05e058032f7aed2e2665a765a74037a
+index 0000000000000000000000000000000000000000..05a579732ac29001f40affca7e9eb39df06a5313
 --- /dev/null
 +++ i/test/schedules.test.ts
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,71 @@
 +import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 +import os from "node:os";
 +import path from "node:path";
@@ -1909,6 +1909,7 @@ index 0000000000000000000000000000000000000000..c81ff8edd05e058032f7aed2e2665a76
 +});
 +
 +const originalExecutable = process.env.OPENWIKI_EXECUTABLE;
++const originalLauncher = process.env.OPENWIKI_LAUNCHER;
 +const originalHome = process.env.HOME;
 +let home: string;
 +
@@ -1916,6 +1917,8 @@ index 0000000000000000000000000000000000000000..c81ff8edd05e058032f7aed2e2665a76
 +  home = await mkdtemp(path.join(os.tmpdir(), "openwiki-schedule-test-"));
 +  process.env.HOME = home;
 +  process.env.OPENWIKI_EXECUTABLE = "/nix/store/openwiki/bin/openwiki";
++  process.env.OPENWIKI_LAUNCHER =
++    "/nix/store/openwiki-launcher/bin/openwiki-launcher";
 +  execFileAsync.mockResolvedValue({ stderr: "", stdout: "" });
 +  vi.resetModules();
 +});
@@ -1923,29 +1926,38 @@ index 0000000000000000000000000000000000000000..c81ff8edd05e058032f7aed2e2665a76
 +afterEach(async () => {
 +  if (originalExecutable === undefined) delete process.env.OPENWIKI_EXECUTABLE;
 +  else process.env.OPENWIKI_EXECUTABLE = originalExecutable;
++  if (originalLauncher === undefined) delete process.env.OPENWIKI_LAUNCHER;
++  else process.env.OPENWIKI_LAUNCHER = originalLauncher;
 +  if (originalHome === undefined) delete process.env.HOME;
 +  else process.env.HOME = originalHome;
 +  await rm(home, { force: true, recursive: true });
 +});
 +
-+test.skipIf(process.platform !== "darwin")(
-+  "launchd runs the configured OpenWiki executable instead of bypassing its wrapper",
-+  async () => {
-+    const { installConnectorSchedule } = await import("../src/schedules.ts");
-+    const result = await installConnectorSchedule({
-+      connectorId: "imessage",
-+      cronExpression: "0 2 * * *",
-+      cwd: home,
-+    });
-+    const plist = await readFile(result.launchAgentPath!, "utf8");
++test
++  .skipIf(process.platform !== "darwin")
++  .fails(
++    "launchd uses a dedicated native identity before the OpenWiki wrapper",
++    async () => {
++      const { installConnectorSchedule } = await import("../src/schedules.ts");
++      const result = await installConnectorSchedule({
++        connectorId: "imessage",
++        cronExpression: "0 2 * * *",
++        cwd: home,
++      });
++      const plist = await readFile(result.launchAgentPath!, "utf8");
 +
-+    expect(plist).toContain(
-+      "<string>/nix/store/openwiki/bin/openwiki</string>",
-+    );
-+    expect(plist).not.toContain(`<string>${process.execPath}</string>`);
-+    expect(
-+      (await stat(path.join(home, ".openwiki/logs/ingestion.schedule.log")))
-+        .mode & 0o777,
-+    ).toBe(0o600);
-+  },
-+);
++      expect(plist).toContain(`  <array>
++    <string>/nix/store/openwiki-launcher/bin/openwiki-launcher</string>
++    <string>/nix/store/openwiki/bin/openwiki</string>
++    <string>ingest</string>
++    <string>all</string>
++    <string>--scheduled</string>
++    <string>--print</string>
++  </array>`);
++      expect(plist).not.toContain(`<string>${process.execPath}</string>`);
++      expect(
++        (await stat(path.join(home, ".openwiki/logs/ingestion.schedule.log")))
++          .mode & 0o777,
++      ).toBe(0o600);
++    },
++  );
