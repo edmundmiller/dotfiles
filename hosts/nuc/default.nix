@@ -1565,6 +1565,64 @@ in
 
   systemd.services.hermes-gateway-radar.enable = false;
 
+  systemd.services.hermes-scintillate-cron-tick = {
+    description = "Run Scintillate cron jobs without an interactive gateway";
+    after = [
+      "network-online.target"
+      "opnix-secrets.service"
+    ];
+    wants = [
+      "network-online.target"
+      "opnix-secrets.service"
+    ];
+    path = [
+      hermesAgentBase
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.python3
+    ]
+    ++ config.services.hermes-agent.profiles.scintillate.extraPackages;
+    environment = config.services.hermes-agent.profiles.scintillate.environment // {
+      HOME = "/var/lib/hermes-scintillate";
+      HERMES_HOME = "/var/lib/hermes-scintillate/.hermes";
+      HERMES_KANBAN_HOME = hermesSharedHome;
+      HERMES_PROFILE = "scintillate";
+      MESSAGING_CWD = "/home/hermes/repos/obsidian-vault";
+      CODEX_HOME = "/home/emiller/.codex";
+    };
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = "/home/hermes/repos/obsidian-vault";
+      EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+      ExecStart = "${hermesAgentBase}/bin/hermes cron tick";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      ReadWritePaths = [
+        hermesSharedStateDir
+        "/var/lib/hermes-scintillate"
+        "/home/hermes/repos/obsidian-vault"
+        "/home/emiller/obsidian-vault"
+        tnoteBaseRepo
+      ];
+    };
+  };
+
+  systemd.timers.hermes-scintillate-cron-tick = {
+    description = "Run Scintillate background cron jobs on a timer";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30s";
+      Unit = "hermes-scintillate-cron-tick.service";
+    };
+  };
+
   systemd.services.hermes-gateway-betty.serviceConfig.ReadWritePaths = [
     "/var/lib/hermes-betty"
     "/home/emiller/mill-docs"
