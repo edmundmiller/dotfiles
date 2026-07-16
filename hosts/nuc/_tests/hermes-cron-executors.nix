@@ -46,8 +46,8 @@ let
       msg = "Betty cron executor must be able to update Betty's cron state.";
     }
     {
-      test = !(hasInfix "DISCORD_HOME_CHANNEL=" (concatStringsSep " " bettyService.serviceConfig.Environment));
-      msg = "Regression sentinel: Betty unexpectedly has a cron Discord home target before the fix.";
+      test = hasInfix "DISCORD_HOME_CHANNEL=1494160879803957379" (concatStringsSep " " bettyService.serviceConfig.Environment);
+      msg = "Betty cron executor must resolve bare Discord delivery through Betty's deployment binding.";
     }
   ];
 

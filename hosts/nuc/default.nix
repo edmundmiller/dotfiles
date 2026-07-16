@@ -100,6 +100,7 @@ let
     inherit lib;
   };
   anneDiscordBindings = (discordBindings.agents or { }).anne or { };
+  bettyDiscordBindings = (discordBindings.agents or { }).betty or { };
   hermesScintillateApiServerPort = 8642;
   hermesScintillateWebuiPort = 8787;
   hermesScintillateDesktopDashboardPort = 9121;
@@ -1478,6 +1479,7 @@ in
         "HERMES_PROFILE=betty"
         "MESSAGING_CWD=/repos/mill-docs"
         "CODEX_HOME=/var/lib/hermes-betty/.codex"
+        "DISCORD_HOME_CHANNEL=${toString bettyDiscordBindings.homeChannelId}"
       ];
       ExecStart = "${bettyHermesLauncher}/bin/betty-hermes cron tick";
       NoNewPrivileges = true;
