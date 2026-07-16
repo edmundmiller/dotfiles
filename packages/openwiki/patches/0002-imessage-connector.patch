@@ -1067,6 +1067,35 @@ index c541005fe02d54bee1d2ae2b6b4b6bd05de65c11..4d2361263254d328a4070ce3a88ff230
  }
  
  export function assertSafeConnectorId(connectorId: string): void {
+diff --git c/src/schedules.ts i/src/schedules.ts
+index a2834368ce57a82c14a1b8dce1bf292c0592b977..bc2602b3608f733eb8138b7017390b6763e58244 100644
+--- c/src/schedules.ts
++++ i/src/schedules.ts
+@@ -794,15 +794,15 @@ function createLaunchAgentPlist({
+   label: string;
+   logPath: string;
+ }): string {
+-  const cliPath = process.argv[1] ? path.resolve(process.argv[1]) : "";
+-  const programArguments = [
+-    process.execPath,
+-    cliPath,
+-    "ingest",
+-    "all",
+-    "--scheduled",
+-    "--print",
+-  ];
++  const ingestArguments = ["ingest", "all", "--scheduled", "--print"];
++  const configuredExecutable = process.env.OPENWIKI_EXECUTABLE?.trim();
++  const programArguments = configuredExecutable
++    ? [configuredExecutable, ...ingestArguments]
++    : [
++        process.execPath,
++        process.argv[1] ? path.resolve(process.argv[1]) : "",
++        ...ingestArguments,
++      ];
+ 
+   return `<?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 diff --git c/test/commands.test.ts i/test/commands.test.ts
 index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd747c4b9d 100644
 --- c/test/commands.test.ts
@@ -1736,10 +1765,10 @@ index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..65a316290841473d097d985e9743c6e3
      const onboarding = await loadOnboardingModule(home);
 diff --git c/test/schedules.test.ts i/test/schedules.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f1540e13249ee3ddcfdcaf0f29ad43e92470447
+index 0000000000000000000000000000000000000000..5180ccadab8ff83da54ab37ef82e5dfdffe0804d
 --- /dev/null
 +++ i/test/schedules.test.ts
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,55 @@
 +import { mkdtemp, readFile, rm } from "node:fs/promises";
 +import os from "node:os";
 +import path from "node:path";
@@ -1778,22 +1807,20 @@ index 0000000000000000000000000000000000000000..1f1540e13249ee3ddcfdcaf0f29ad43e
 +  await rm(home, { force: true, recursive: true });
 +});
 +
-+test
-+  .skipIf(process.platform !== "darwin")
-+  .fails(
-+    "launchd runs the configured OpenWiki executable instead of bypassing its wrapper",
-+    async () => {
-+      const { installConnectorSchedule } = await import("../src/schedules.ts");
-+      const result = await installConnectorSchedule({
-+        connectorId: "imessage",
-+        cronExpression: "0 2 * * *",
-+        cwd: home,
-+      });
-+      const plist = await readFile(result.launchAgentPath!, "utf8");
++test.skipIf(process.platform !== "darwin")(
++  "launchd runs the configured OpenWiki executable instead of bypassing its wrapper",
++  async () => {
++    const { installConnectorSchedule } = await import("../src/schedules.ts");
++    const result = await installConnectorSchedule({
++      connectorId: "imessage",
++      cronExpression: "0 2 * * *",
++      cwd: home,
++    });
++    const plist = await readFile(result.launchAgentPath!, "utf8");
 +
-+      expect(plist).toContain(
-+        "<string>/nix/store/openwiki/bin/openwiki</string>",
-+      );
-+      expect(plist).not.toContain(`<string>${process.execPath}</string>`);
-+    },
-+  );
++    expect(plist).toContain(
++      "<string>/nix/store/openwiki/bin/openwiki</string>",
++    );
++    expect(plist).not.toContain(`<string>${process.execPath}</string>`);
++  },
++);
