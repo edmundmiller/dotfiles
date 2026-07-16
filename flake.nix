@@ -1086,6 +1086,11 @@
                 inherit pkgs;
               };
 
+              nuc-radar-cron-runtime = import ./hosts/nuc/_tests/radar-cron-runtime.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
