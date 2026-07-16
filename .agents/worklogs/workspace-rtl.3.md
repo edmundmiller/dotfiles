@@ -38,7 +38,7 @@ None.
 
 ## Remaining work
 
-- Commit, rebase current `origin/main`, and push source branch.
+- Push source branch and hand exact integration commits to the coordinating root.
 - Await coordinating root's serialized integration deploy.
 - After release: prove two natural ticks preserve all eight IDs; prove one naturally due run with artifact and delivery evidence; notify workspace-rtl.3.1.
 
@@ -46,3 +46,4 @@ None.
 
 - `4056d2f0e2` test(cron): capture missing Scintillate executor
 - `bbfedb693f` chore(nuc): deploy declarative Hermes cron sync
+- `a151446cbb` fix(cron): restore Scintillate executor
