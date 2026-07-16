@@ -58,6 +58,8 @@ Hermes packaging for this host comes from `pkgs.llm-agents."hermes-agent"`, not 
 
 The repo overlay wraps the llm-agents Hermes package with the Nix-built Honcho SDK. Keep that as a declarative package dependency; do not repair Nix-managed Hermes profiles with container-local `pip install` or mutable package edits.
 
+Timer-driven profiles declare their executor in `$HERMES_HOME/cron/executor.json`. `hermes cron list/status` verifies the named systemd timer; keep the marker and timer configuration together in this host module.
+
 ### Media Stack
 
 - **Jellyfin** — Media server
