@@ -30,7 +30,7 @@ Stopping condition: focused upstream tests/typecheck, package harness, Linux eva
 - `hey check`, `hey agent-audit-tests`, and `hey agent-finish` passed. Darwin activation succeeded.
 - Onboarding preserves saved iMessage instances. An isolated activated-package smoke found `imessage-1`, rejected its empty scope before `imsg`, exited nonzero, and left raw/log directories empty.
 - An isolated activated-package smoke reproduced a 193-hour outage, exited nonzero before `imsg`, and printed the explicit 168-hour gap-reset recovery path.
-- The launch agent now uses only stable `/run/current-system/sw/bin/openwiki-launchd-launcher` and preserves log mode `0600`. Strict signature verification passed with Hardened Runtime flags; hostile `NODE_OPTIONS` and `DYLD_INSERT_LIBRARIES` self-tests passed. Unified TCC logs attribute the live launchd denial to the dedicated launcher, proving isolation from Bash; the launcher still needs its own FDA grant.
+- The launch agent now uses stable `/run/current-system/sw/bin/openwiki-launchd-launcher` and preserves log mode `0600`. Strict signature verification passed with Hardened Runtime flags; hostile `NODE_OPTIONS` and `DYLD_INSERT_LIBRARIES` self-tests passed. Unified TCC logs attribute the live denial to its resolved native binary, `/nix/store/7fgrx02y3sws3mvh18a5ynlznfyjwqcl-openwiki-launchd-launcher-1/bin/openwiki-launchd-launcher`, proving isolation from Bash.
 
 ## Reviews
 
@@ -44,7 +44,7 @@ None.
 
 ## Remaining work
 
-Blocked only on scheduled Messages verification: interactive and direct connector ingests pass, but the dedicated `/run/current-system/sw/bin/openwiki-launchd-launcher` is still denied Full Disk Access. Grant only that launcher, ensure the old shared Nix Bash grant is disabled, rerun the loaded job, confirm exit zero, then create the annotated tag.
+Blocked only on scheduled Messages verification: interactive and direct connector ingests pass, but the resolved dedicated launcher is still denied Full Disk Access. Grant only `/nix/store/7fgrx02y3sws3mvh18a5ynlznfyjwqcl-openwiki-launchd-launcher-1/bin/openwiki-launchd-launcher`, ensure the old shared Nix Bash grant is disabled, rerun the loaded job, confirm exit zero, then create the annotated tag.
 
 ## Commits
 
@@ -68,3 +68,5 @@ Blocked only on scheduled Messages verification: interactive and direct connecto
 - `fix(openwiki): identify launchd interpreter for FDA`
 - `test(openwiki): capture shared launchd identity`
 - `fix(openwiki): isolate scheduled FDA identity`
+- `test(openwiki): capture resolved launcher denial`
+- `fix(openwiki): resolve launcher path for FDA`
