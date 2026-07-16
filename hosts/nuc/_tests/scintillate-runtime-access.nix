@@ -11,6 +11,8 @@ let
   bettyProfile = cfg.services.hermes-agent.profiles.betty;
   anneProfile = cfg.services.hermes-agent.profiles.anne;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
+  cronTickService = cfg.systemd.services.hermes-scintillate-cron-tick;
+  cronTickTimer = cfg.systemd.timers.hermes-scintillate-cron-tick;
   runtimeSmokeService = cfg.systemd.services.hermes-runtime-smoke;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   activationFile = pkgs.writeText "canonical-hermes-profiles-materialize.sh" activation;
@@ -24,6 +26,7 @@ let
   tnotePkgString = stripContext (toString tnotePkg);
   packageStrings = map (pkg: stripContext (toString pkg)) profile.extraPackages;
   systemPackageStrings = map (pkg: stripContext (toString pkg)) cfg.environment.systemPackages;
+  cronTickPathStrings = map (pkg: stripContext (toString pkg)) cronTickService.path;
 
   hostMounts = mapAttrsToList (source: target: { inherit source target; }) profile.hostPathMounts;
   hasMount = source: target: any (mount: mount.source == source && mount.target == target) hostMounts;
@@ -123,10 +126,36 @@ let
       msg = "Old Scintillate gateway ping timer must remain removed.";
     }
     {
-      # Strict expected-failure marker for workspace-rtl.3. The fix commit
-      # flips this to the required isolated cron executor contract.
-      test = !(builtins.hasAttr "hermes-scintillate-cron-tick" cfg.systemd.timers);
-      msg = "Regression fixture expected Scintillate's missing cron executor before workspace-rtl.3 is fixed.";
+      test = gatewayService.enable == false;
+      msg = "Scintillate's interactive gateway must remain disabled while the isolated cron executor is active.";
+    }
+    {
+      test = cronTickTimer.timerConfig.Unit == "hermes-scintillate-cron-tick.service";
+      msg = "Scintillate cron timer must target its isolated tick service.";
+    }
+    {
+      test = builtins.elem "timers.target" cronTickTimer.wantedBy;
+      msg = "Scintillate cron timer must be enabled from timers.target.";
+    }
+    {
+      test = hasInfix "hermes cron tick" (toString cronTickService.serviceConfig.ExecStart);
+      msg = "Scintillate cron service must run the packaged Hermes tick command after activation sync.";
+    }
+    {
+      test =
+        cronTickService.environment.HERMES_LOCAL_STT_COMMAND
+        == profile.environment.HERMES_LOCAL_STT_COMMAND;
+      msg = "Scintillate cron service must preserve profile environment values that require systemd escaping.";
+    }
+    {
+      test =
+        any (pkg: hasInfix "git" pkg) cronTickPathStrings
+        && any (pkg: hasInfix "bun" pkg) cronTickPathStrings;
+      msg = "Scintillate cron service PATH must include git and bun for canonical script jobs.";
+    }
+    {
+      test = builtins.elem "/home/emiller/obsidian-vault" cronTickService.serviceConfig.ReadWritePaths;
+      msg = "Scintillate cron service must be allowed to update the mounted vault.";
     }
     {
       test = !(builtins.hasAttr "hermes-agent-anne-healthcheck-ping" cfg.systemd.timers);
