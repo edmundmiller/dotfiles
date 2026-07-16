@@ -20,14 +20,15 @@ Stopping condition: focused upstream tests/typecheck, package harness, Linux eva
 ## Evidence
 
 - Host: `MacTraitor-Pro.local`, Darwin arm64, verified with `hostname` and `uname -a`.
-- Upstream RED: strict expected failures verified for connector presence, command classification, empty synthesis, private ignore rules, attachment path redaction, schedule wrapper/log privacy, bounded downtime gaps, and silent launchd denial.
-- Upstream GREEN: focused Vitest passed 11 connector tests and typecheck passed. The repository package harness and `nix build .#openwiki` passed with patches `0001` then `0002`.
+- Upstream RED: strict expected failures verified for connector presence, command classification, empty synthesis, private ignore rules, attachment paths, schedule wrapper/log privacy, bounded downtime, capped outage recovery, and silent launchd denial.
+- Upstream GREEN: focused Vitest passed 12 connector tests and typecheck passed. Fresh-source `pkg-check openwiki` applied both patches and passed typecheck plus 75 tests across eight files; `nix build .#openwiki` passed.
 - Linux evaluation printed `openwiki`. Darwin package built with `imsg` plus its helper and both resource bundles adjacent to the executable.
 - The approved scope contains 171 chats whose participant handles all match macOS Contacts: 90 direct and 81 group chats. No names or handles were printed.
 - Live ingestion succeeded and synthesized only into the vault. Two immediate direct connector reruns both skipped with zero raw files.
 - Raw run directories are `0700`; JSON/state files and the schedule log are `0600`; `.gitignore` is `*\n!.gitignore\n`. Existing attachment filenames were reduced to basenames and all raw runs now contain zero path-valued filenames.
 - `hey check`, `hey agent-audit-tests`, and `hey agent-finish` passed. Darwin activation succeeded.
 - Onboarding preserves saved iMessage instances. An isolated activated-package smoke found `imessage-1`, rejected its empty scope before `imsg`, exited nonzero, and left raw/log directories empty.
+- An isolated activated-package smoke reproduced a 193-hour outage, exited nonzero before `imsg`, and printed the explicit 168-hour gap-reset recovery path.
 - The regenerated all-source launch agent targets stable `/run/current-system/sw/bin/openwiki`, works from `/Users/emiller/obsidian-vault`, and keeps its log `0600`. A live kickstart exited `1` and emitted the actionable Full Disk Access guidance; scheduled iMessage verification remains blocked on that grant.
 
 ## Reviews
@@ -60,3 +61,5 @@ Blocked only on scheduled Messages verification: interactive and direct connecto
 - `test(openwiki): capture silent launchd denial`
 - `fix(openwiki): explain silent launchd denial`
 - `fix(openwiki): package imsg runtime sidecars`
+- `test(openwiki): capture capped outage recovery`
+- `fix(openwiki): document capped outage recovery`
