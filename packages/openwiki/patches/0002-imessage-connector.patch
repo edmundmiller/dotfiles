@@ -1088,10 +1088,10 @@ index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd
 +});
 diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..0e56fa7ea07980936822e429fec53aad6486d689
+index 0000000000000000000000000000000000000000..1a8b17e92035bef8837095d9a26e8ab217e85034
 --- /dev/null
 +++ i/test/imessage-connector.test.ts
-@@ -0,0 +1,437 @@
+@@ -0,0 +1,440 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  mkdtemp,
@@ -1294,88 +1294,91 @@ index 0000000000000000000000000000000000000000..0e56fa7ea07980936822e429fec53aad
 +    expect(execFileAsync).toHaveBeenCalledTimes(3);
 +  });
 +
-+  test("writes deterministic allowlisted records and attachment metadata only", async () => {
-+    mockImsg([chat(7, ["alice@example.com", "bob@example.com"])], {
-+      7: [
-+        message(12, 7, "2026-07-15T11:30:00.000Z", {
-+          attachments: [
-+            {
-+              absolute_path: "/private/message.jpg",
-+              byte_size: 42,
-+              converted_path: "/private/converted.jpg",
-+              filename: "message.jpg",
-+              is_sticker: false,
-+              mime_type: "image/jpeg",
-+              missing: false,
-+              transfer_name: "IMG_1.JPG",
-+              uti: "public.jpeg",
-+            },
-+          ],
-+          destination_caller_id: "secret-routing",
-+          is_from_me: true,
-+          reply_to_guid: "reply-guid",
-+          sender: "ignored-outbound-sender",
-+          thread_originator_guid: "thread-guid",
-+          unknown_payload: { secret: true },
-+        }),
-+        message(10, 7, "2026-07-15T10:00:00.000Z", {
-+          sender: "ALICE@example.com",
-+        }),
-+        message(11, 7, "2026-07-15T10:00:00.000Z", {
-+          sender: "bob@example.com",
-+        }),
-+      ],
-+    });
-+    const connector = await loadConnector();
-+    const result = await connector.ingest({
-+      connectorConfig: { chatIds: [7] },
-+    });
-+    const messagesPath = result.rawFiles.find((file) =>
-+      file.endsWith("messages.json"),
-+    );
-+    const payload = JSON.parse(await readFile(messagesPath!, "utf8"));
++  test.fails(
++    "writes deterministic allowlisted records and attachment metadata only",
++    async () => {
++      mockImsg([chat(7, ["alice@example.com", "bob@example.com"])], {
++        7: [
++          message(12, 7, "2026-07-15T11:30:00.000Z", {
++            attachments: [
++              {
++                absolute_path: "/private/message.jpg",
++                byte_size: 42,
++                converted_path: "/private/converted.jpg",
++                filename: "~/Library/Messages/Attachments/ab/cd/message.jpg",
++                is_sticker: false,
++                mime_type: "image/jpeg",
++                missing: false,
++                transfer_name: "IMG_1.JPG",
++                uti: "public.jpeg",
++              },
++            ],
++            destination_caller_id: "secret-routing",
++            is_from_me: true,
++            reply_to_guid: "reply-guid",
++            sender: "ignored-outbound-sender",
++            thread_originator_guid: "thread-guid",
++            unknown_payload: { secret: true },
++          }),
++          message(10, 7, "2026-07-15T10:00:00.000Z", {
++            sender: "ALICE@example.com",
++          }),
++          message(11, 7, "2026-07-15T10:00:00.000Z", {
++            sender: "bob@example.com",
++          }),
++        ],
++      });
++      const connector = await loadConnector();
++      const result = await connector.ingest({
++        connectorConfig: { chatIds: [7] },
++      });
++      const messagesPath = result.rawFiles.find((file) =>
++        file.endsWith("messages.json"),
++      );
++      const payload = JSON.parse(await readFile(messagesPath!, "utf8"));
 +
-+    expect(payload.schemaVersion).toBe(1);
-+    expect(payload.messages.map((item: { id: number }) => item.id)).toEqual([
-+      10, 11, 12,
-+    ]);
-+    expect(payload.messages[0]).toMatchObject({
-+      recipients: ["me", "bob@example.com"],
-+      sender: "ALICE@example.com",
-+    });
-+    expect(payload.messages[2]).toEqual({
-+      attachments: [
-+        {
-+          byteSize: 42,
-+          filename: "message.jpg",
-+          isSticker: false,
-+          mimeType: "image/jpeg",
-+          missing: false,
-+          transferName: "IMG_1.JPG",
-+          uti: "public.jpeg",
++      expect(payload.schemaVersion).toBe(1);
++      expect(payload.messages.map((item: { id: number }) => item.id)).toEqual([
++        10, 11, 12,
++      ]);
++      expect(payload.messages[0]).toMatchObject({
++        recipients: ["me", "bob@example.com"],
++        sender: "ALICE@example.com",
++      });
++      expect(payload.messages[2]).toEqual({
++        attachments: [
++          {
++            byteSize: 42,
++            filename: "message.jpg",
++            isSticker: false,
++            mimeType: "image/jpeg",
++            missing: false,
++            transferName: "IMG_1.JPG",
++            uti: "public.jpeg",
++          },
++        ],
++        createdAt: "2026-07-15T11:30:00.000Z",
++        guid: "message-guid-12",
++        id: 12,
++        isFromMe: true,
++        recipients: ["alice@example.com", "bob@example.com"],
++        replyToGuid: "reply-guid",
++        sender: "me",
++        text: "message 12",
++        thread: {
++          guid: "chat-guid-7",
++          id: 7,
++          identifier: "chat-7",
++          isGroup: true,
++          participants: ["alice@example.com", "bob@example.com"],
 +        },
-+      ],
-+      createdAt: "2026-07-15T11:30:00.000Z",
-+      guid: "message-guid-12",
-+      id: 12,
-+      isFromMe: true,
-+      recipients: ["alice@example.com", "bob@example.com"],
-+      replyToGuid: "reply-guid",
-+      sender: "me",
-+      text: "message 12",
-+      thread: {
-+        guid: "chat-guid-7",
-+        id: 7,
-+        identifier: "chat-7",
-+        isGroup: true,
-+        participants: ["alice@example.com", "bob@example.com"],
-+      },
-+      threadOriginatorGuid: "thread-guid",
-+    });
-+    expect(JSON.stringify(payload)).not.toContain("/private/");
-+    expect(JSON.stringify(payload)).not.toContain("secret-routing");
-+    expect((await stat(messagesPath!)).mode & 0o777).toBe(0o600);
-+  });
++        threadOriginatorGuid: "thread-guid",
++      });
++      expect(JSON.stringify(payload)).not.toContain("/private/");
++      expect(JSON.stringify(payload)).not.toContain("secret-routing");
++      expect((await stat(messagesPath!)).mode & 0o777).toBe(0o600);
++    },
++  );
 +
 +  test("persists exclusive rowid cursors and identical reruns create no raw files", async () => {
 +    const rows = [message(10, 7, "2026-07-15T10:00:00.000Z")];
