@@ -1142,10 +1142,10 @@ index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd
 +});
 diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..fb269ac88e325ba9ce37c05676d3b0664ea6814e
+index 0000000000000000000000000000000000000000..4ff04407d0c7f2bfafbe65c0ae02f57c9002882a
 --- /dev/null
 +++ i/test/imessage-connector.test.ts
-@@ -0,0 +1,437 @@
+@@ -0,0 +1,470 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  mkdtemp,
@@ -1456,6 +1456,39 @@ index 0000000000000000000000000000000000000000..fb269ac88e325ba9ce37c05676d3b066
 +    expect(secondState.latestIds).toEqual(firstState.latestIds);
 +    expect(secondEntries).toEqual(firstEntries);
 +  });
++
++  test.fails(
++    "fails closed when the previous run predates the bounded window",
++    async () => {
++      const stateDir = path.join(home, ".openwiki/connectors/imessage");
++      await mkdir(stateDir, { recursive: true });
++      await writeFile(
++        path.join(stateDir, "state.json"),
++        JSON.stringify({
++          lastRunAt: "2026-07-13T12:00:00.000Z",
++          latestIds: { "chat:7": "10" },
++          runs: [],
++          version: 1,
++        }),
++      );
++      mockImsg([chat(7, ["alice@example.com"])], {
++        7: [message(11, 7, "2026-07-14T10:00:00.000Z")],
++      });
++      const connector = await loadConnector();
++
++      const result = await connector.ingest({
++        connectorConfig: { chatIds: [7], windowHours: 24 },
++      });
++
++      expect(result).toMatchObject({
++        message:
++          "The previous successful iMessage ingest predates windowHours=24; increase windowHours to at least 48 to catch up without gaps.",
++        rawFiles: [],
++        status: "error",
++      });
++      expect(execFileAsync).not.toHaveBeenCalled();
++    },
++  );
 +
 +  test("manifest preserves the cursor for an unchanged selected chat", async () => {
 +    const chats = [
