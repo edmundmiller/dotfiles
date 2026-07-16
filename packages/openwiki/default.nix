@@ -78,7 +78,10 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r dist node_modules package.json "$out/lib/openwiki/"
     makeWrapper ${lib.getExe nodejs_22} "$out/bin/openwiki" \
       --add-flags "$out/lib/openwiki/dist/cli.js" \
-      ${lib.optionalString stdenv.hostPlatform.isDarwin "--prefix PATH : ${lib.makeBinPath [ imsg ]}"}
+      ${lib.optionalString stdenv.hostPlatform.isDarwin ''
+        --prefix PATH : ${lib.makeBinPath [ imsg ]} \
+        --set OPENWIKI_EXECUTABLE /run/current-system/sw/bin/openwiki
+      ''}
 
     runHook postInstall
   '';
