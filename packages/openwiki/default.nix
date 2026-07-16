@@ -18,7 +18,11 @@
 let
   imsg =
     if stdenv.hostPlatform.isDarwin then
-      inputs.nix-steipete-tools.packages.${stdenv.hostPlatform.system}.imsg
+      inputs.nix-steipete-tools.packages.${stdenv.hostPlatform.system}.imsg.overrideAttrs (old: {
+        postInstall = (old.postInstall or "") + ''
+          cp -R imsg-bridge-helper.dylib PhoneNumberKit_PhoneNumberKit.bundle SQLite.swift_SQLite.bundle "$out/bin/"
+        '';
+      })
     else
       null;
 in
