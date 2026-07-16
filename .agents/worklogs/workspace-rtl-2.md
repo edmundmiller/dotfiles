@@ -18,6 +18,9 @@ Restore Betty's NUC cron execution with exactly one isolated timer, canonical jo
 - Live job `90d60a4f77e0` is enabled but stale at `next_run=2026-06-26T10:15:00-05:00`; no run/error/delivery state.
 - `/var/lib/hermes-betty/.hermes/cron/jobs.json` is `emiller:users 0600`.
 - Live profile `.env` contains required secret/config keys; no values were read.
+- Regression sentinel build: `.#checks.x86_64-linux.nuc-hermes-cron-executors` passed before the fix and proved the timer was absent.
+- Fix build: `USER=betty-cron ./bin/hey nuc-wt build` produced `/nix/store/27zrd47c756wrhpdflvw85i4d4j9k8pp-nixos-system-nuc-26.11.20260714.18b9261`.
+- Intended executor contract: `.#checks.x86_64-linux.nuc-hermes-cron-executors` passed after the fix.
 
 ## Reviews
 
@@ -26,13 +29,13 @@ Restore Betty's NUC cron execution with exactly one isolated timer, canonical jo
 
 ## Feedback
 
-- None yet.
+- Concurrent worktrees overwrite the shared `/tmp/dotfiles-worktree-emiller`; set a unique `USER` suffix for `hey nuc-wt` during parallel agent work.
 
 ## Remaining work
 
-- Red/green host assertion.
-- Implement, deploy, and verify natural execution.
+- Commit/push and deploy.
+- Natural ticks and due-run evidence.
 
 ## Commits
 
-- None yet.
+- `7fc4f63ff` — regression sentinel and worklog.
