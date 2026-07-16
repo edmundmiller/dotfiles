@@ -226,10 +226,10 @@ index 22a9de5a680b4001f55a78b2cb356b1ddf962116..0e7a5691997068ef52f3fc8313137ef6
          "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
 diff --git c/src/connectors/sources/imessage.ts i/src/connectors/sources/imessage.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..6ab3ece7fc465333e7de72270450ffc4cb12fada
+index 0000000000000000000000000000000000000000..d861f30d54cb34a9e87eed35239b7a726f2e33ba
 --- /dev/null
 +++ i/src/connectors/sources/imessage.ts
-@@ -0,0 +1,585 @@
+@@ -0,0 +1,588 @@
 +import { execFile } from "node:child_process";
 +import { basename } from "node:path";
 +import { promisify } from "node:util";
@@ -776,6 +776,9 @@ index 0000000000000000000000000000000000000000..6ab3ece7fc465333e7de72270450ffc4
 +  ) {
 +    return "imsg cannot read ~/Library/Messages/chat.db; grant Full Disk Access to the terminal or parent agent, then retry.";
 +  }
++  if (operation === "chats" && !stderr) {
++    return "imsg chats failed without diagnostics; if running under launchd, grant Full Disk Access to its first ProgramArguments executable, then retry.";
++  }
 +  return operation === "chats"
 +    ? "imsg chats failed."
 +    : `imsg history failed for chat ${chatId}.`;
@@ -1155,10 +1158,10 @@ index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd
 +});
 diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..299b14ce3b777cfbc292c546dd576d6d811846b9
+index 0000000000000000000000000000000000000000..69286a363ad5ea4126f9087dac1727dab0534afe
 --- /dev/null
 +++ i/test/imessage-connector.test.ts
-@@ -0,0 +1,488 @@
+@@ -0,0 +1,485 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  mkdtemp,
@@ -1605,26 +1608,23 @@ index 0000000000000000000000000000000000000000..299b14ce3b777cfbc292c546dd576d6d
 +    });
 +  });
 +
-+  test.fails(
-+    "maps silent launchd access failures to actionable guidance",
-+    async () => {
-+      const connector = await loadConnector();
-+      execFileAsync.mockRejectedValueOnce(
-+        Object.assign(new Error("imsg exited with status 1"), {
-+          code: 1,
-+          stderr: "",
-+        }),
-+      );
++  test("maps silent launchd access failures to actionable guidance", async () => {
++    const connector = await loadConnector();
++    execFileAsync.mockRejectedValueOnce(
++      Object.assign(new Error("imsg exited with status 1"), {
++        code: 1,
++        stderr: "",
++      }),
++    );
 +
-+      await expect(
-+        connector.ingest({ connectorConfig: { chatIds: [7] } }),
-+      ).resolves.toMatchObject({
-+        message:
-+          "imsg chats failed without diagnostics; if running under launchd, grant Full Disk Access to its first ProgramArguments executable, then retry.",
-+        status: "error",
-+      });
-+    },
-+  );
++    await expect(
++      connector.ingest({ connectorConfig: { chatIds: [7] } }),
++    ).resolves.toMatchObject({
++      message:
++        "imsg chats failed without diagnostics; if running under launchd, grant Full Disk Access to its first ProgramArguments executable, then retry.",
++      status: "error",
++    });
++  });
 +
 +  test("repairs the connector gitignore and ignores private raw data", async () => {
 +    const connectorDir = path.join(home, ".openwiki/connectors/imessage");
