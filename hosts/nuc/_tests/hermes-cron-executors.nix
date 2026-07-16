@@ -45,6 +45,10 @@ let
       test = hasInfix "/var/lib/hermes-betty" (concatStringsSep " " bettyService.serviceConfig.ReadWritePaths);
       msg = "Betty cron executor must be able to update Betty's cron state.";
     }
+    {
+      test = !(hasInfix "DISCORD_HOME_CHANNEL=" (concatStringsSep " " bettyService.serviceConfig.Environment));
+      msg = "Regression sentinel: Betty unexpectedly has a cron Discord home target before the fix.";
+    }
   ];
 
   failures = builtins.filter (assertion: !assertion.test) assertions;
