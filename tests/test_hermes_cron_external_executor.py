@@ -109,20 +109,17 @@ class ExternalExecutorHealthTest(unittest.TestCase):
             function()
         return output.getvalue()
 
-    @unittest.expectedFailure
     def test_status_reports_active_systemd_timer(self):
         output = self._capture(self.cron.cron_status, returncode=0)
         self.assertIn("External cron executor is running", output)
         self.assertIn("hermes-radar-cron-tick.timer", output)
         self.assertNotIn("Gateway is not running", output)
 
-    @unittest.expectedFailure
     def test_list_suppresses_gateway_warning_for_active_timer(self):
         output = self._capture(self.cron.cron_list, returncode=0)
         self.assertIn("External cron executor is running", output)
         self.assertNotIn("Gateway is not running", output)
 
-    @unittest.expectedFailure
     def test_status_names_configured_but_inactive_timer(self):
         output = self._capture(self.cron.cron_status, returncode=3)
         self.assertIn("External cron executor is not running", output)
