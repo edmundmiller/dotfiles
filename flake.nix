@@ -1086,6 +1086,11 @@
                 inherit pkgs;
               };
 
+              nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
