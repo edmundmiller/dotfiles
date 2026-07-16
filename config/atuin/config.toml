@@ -24,4 +24,4 @@ common_subcommands = [
 records = true
 
 [daemon]
-enabled = true
+enabled = false
