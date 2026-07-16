@@ -92,6 +92,7 @@ let
     passthru = hermesAgentUpstream.passthru or { };
   };
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
+  amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
@@ -222,6 +223,16 @@ let
     (mkAgentSecret "OPENROUTER_API_KEY" "openrouter-api-key")
     (mkAgentSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
   ];
+  hermesAmosburtonSecrets = hermesProviderSecrets ++ [
+    {
+      envVar = "HERMES_MCP_BEARER_TOKEN_LINEAR";
+      path = linearTokenFile;
+    }
+    {
+      envVar = "LINEAR_API_KEY";
+      path = linearTokenFile;
+    }
+  ];
   hermesScintillateSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
     {
@@ -278,6 +289,7 @@ let
       }
     ];
   hermesSecretSets = {
+    amosburton = hermesAmosburtonSecrets;
     anne = hermesAnneSecrets;
     betty = hermesBettySecrets;
     orchestrator = hermesOrchestratorSecrets;
@@ -561,6 +573,46 @@ in
         if ls "$SHARED_HOME"/kanban.db* >/dev/null 2>&1; then
           chown emiller:users "$SHARED_HOME"/kanban.db* || true
         fi
+      '';
+    };
+
+    hermesAmosburtonSecretsMaterialize = {
+      deps = [
+        "agenixInstall"
+        "agenixChown"
+        "bootstrapLinearToken"
+      ];
+      text = ''
+        AMOS_HOME="/var/lib/hermes-amosburton"
+        ENV_DIR="/run/hermes-amosburton-env"
+        ENV_FILE="$ENV_DIR/secrets.env"
+        HERMES_ENV_HOME="$AMOS_HOME/.hermes"
+
+        install -d -o emiller -g users -m 0750 "$AMOS_HOME"
+        install -d -o emiller -g users -m 0700 "$HERMES_ENV_HOME"
+        install -d -o emiller -g users -m 0700 "$HERMES_ENV_HOME/cron"
+        install -d -o emiller -g users -m 0700 "$HERMES_ENV_HOME/cron/output"
+        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
+
+        if [ -f "$HERMES_ENV_HOME/cron/jobs.json" ]; then
+          chown -R emiller:users "$HERMES_ENV_HOME/cron"
+          chown emiller:users "$HERMES_ENV_HOME/cron/jobs.json"
+          chmod 0600 "$HERMES_ENV_HOME/cron/jobs.json"
+        fi
+
+        mkdir -p "$ENV_DIR"
+        : > "$ENV_FILE"
+        chmod 600 "$ENV_FILE"
+        chown emiller:users "$ENV_FILE"
+
+        printf 'HERMES_HONCHO_HOST=%s\n' "amosburton" >> "$ENV_FILE"
+
+        ${lib.concatMapStringsSep "\n" (secret: ''
+          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+            secret_value="$(< ${lib.escapeShellArg (toString secret.path)})"
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+          fi
+        '') hermesAmosburtonSecrets}
       '';
     };
 
@@ -1338,6 +1390,59 @@ in
       RemainAfterExit = true;
       ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:mill-docs-agents --https=443 http://127.0.0.1:8788 && exit 0; sleep 1; done; exit 1\"'";
       ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:mill-docs-agents || true'";
+    };
+  };
+
+  systemd.services.hermes-amosburton-cron-tick = {
+    description = "Run Amos Burton cron jobs without an interactive gateway";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    path = [
+      amosburtonHermesLauncher
+      hermesAgentBase
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.git
+      pkgs.python3
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = "/var/lib/hermes-amosburton";
+      EnvironmentFile = [ "/run/hermes-amosburton-env/secrets.env" ];
+      Environment = [
+        "HOME=/var/lib/hermes-amosburton"
+        "HERMES_HOME=/var/lib/hermes-amosburton/.hermes"
+        "HERMES_KANBAN_HOME=${hermesSharedHome}"
+        "HERMES_PROFILE=amosburton"
+        "CODEX_HOME=/home/emiller/.codex"
+      ];
+      ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      ReadWritePaths = [
+        hermesSharedStateDir
+        "/var/lib/hermes-amosburton"
+        "/home/emiller/.config/dotfiles"
+        "/home/emiller/src/personal/agents-workspace"
+        "/home/emiller/src/personal/finances"
+        "/home/emiller/src/personal/tailnet"
+      ];
+    };
+  };
+
+  systemd.timers.hermes-amosburton-cron-tick = {
+    description = "Run Amos Burton background cron jobs on a timer";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30s";
+      Unit = "hermes-amosburton-cron-tick.service";
     };
   };
 
