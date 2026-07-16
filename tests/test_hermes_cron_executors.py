@@ -7,7 +7,6 @@ NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_amos_has_one_isolated_canonical_cron_executor(self) -> None:
         config = NUC_CONFIG.read_text(encoding="utf-8")
 
