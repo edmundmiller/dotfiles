@@ -45,6 +45,18 @@ let
     };
     build-system = with pkgs.python313Packages; [ setuptools ];
   };
+  hermesCronPython =
+    pkgs.runCommand "hermes-cron-executor-health"
+      {
+        nativeBuildInputs = [ pkgs.patch ];
+      }
+      ''
+        site_packages="$out/${pkgs.python312.sitePackages}"
+        mkdir -p "$site_packages"
+        cp -R ${hermesAgentUpstream.hermesVenv}/${pkgs.python312.sitePackages}/hermes_cli "$site_packages/hermes_cli"
+        chmod -R u+w "$site_packages/hermes_cli"
+        patch -d "$site_packages" -p1 < ${../../overlays/hermes-agent/patches/0003-report-external-cron-executor.patch}
+      '';
   hermesAgentBase = pkgs.symlinkJoin {
     name = "${hermesAgentUpstream.name}-honcho";
     paths = [ hermesAgentUpstream ];
@@ -83,7 +95,7 @@ let
         cp ${hermesAgentUpstream}/bin/$exe "$out/bin/$exe"
         chmod u+w "$out/bin/$exe"
         wrapProgram "$out/bin/$exe" \
-          --prefix PYTHONPATH : "${honchoAi}/${pkgs.python313.sitePackages}:${rtkHermes}/${pkgs.python313.sitePackages}"
+          --prefix PYTHONPATH : "${hermesCronPython}/${pkgs.python312.sitePackages}:${honchoAi}/${pkgs.python313.sitePackages}:${rtkHermes}/${pkgs.python313.sitePackages}"
         substituteInPlace "$out/bin/.$exe-wrapped" \
           --replace-fail "${hermesAgentUpstream}/share/hermes-agent/plugins" "$out/share/hermes-agent/plugins"
       done
@@ -96,6 +108,9 @@ let
   bettyHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.betty-hermes;
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   radarBlogwatcherCli = inputs.agents-workspace.packages.${hostSystem}.blogwatcher-cli;
+  radarCronExecutor = pkgs.writeText "hermes-radar-cron-executor.json" ''
+    {"kind":"systemd","unit":"hermes-radar-cron-tick.timer"}
+  '';
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
@@ -492,6 +507,14 @@ in
     removeLegacyZele = ''
       rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
     '';
+
+    hermesRadarCronExecutor = {
+      deps = [ "users" ];
+      text = ''
+        ${pkgs.coreutils}/bin/install -d -o emiller -g users -m 0700 /var/lib/hermes-radar/.hermes/cron
+        ${pkgs.coreutils}/bin/install -o emiller -g users -m 0600 ${radarCronExecutor} /var/lib/hermes-radar/.hermes/cron/executor.json
+      '';
+    };
 
     # The upstream hermes-agent module declares a dep on setupSecrets
     # (sops-nix convention) but we use agenix. Provide a no-op stub.
