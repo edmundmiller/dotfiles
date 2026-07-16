@@ -1,6 +1,6 @@
 # Worklog: openwiki-imessage
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -31,7 +31,7 @@ Stopping condition: focused upstream tests/typecheck, package harness, Linux eva
 - Onboarding preserves saved iMessage instances. An isolated activated-package smoke found `imessage-1`, rejected its empty scope before `imsg`, exited nonzero, and left raw/log directories empty.
 - An isolated activated-package smoke reproduced a 193-hour outage, exited nonzero before `imsg`, and printed the explicit 168-hour gap-reset recovery path.
 - The launch agent now uses stable `/run/current-system/sw/bin/openwiki-launchd-launcher` and preserves log mode `0600`. Strict signature verification passed with Hardened Runtime flags; hostile `NODE_OPTIONS` and `DYLD_INSERT_LIBRARIES` self-tests passed. Unified TCC logs attribute the live denial to its resolved native binary, `/nix/store/7fgrx02y3sws3mvh18a5ynlznfyjwqcl-openwiki-launchd-launcher-1/bin/openwiki-launchd-launcher`, proving isolation from Bash.
-- The system TCC database currently records both the old Nix Bash identity and the resolved launcher with `auth_value = 0`: Bash is confirmed disabled, while the launcher still needs an interactive FDA grant.
+- The system TCC database records the old Nix Bash identity disabled and the resolved launcher granted. The real loaded launchd job then ingested 36 scoped messages, synthesized `sources/imessage`, exited `0`, and preserved `0700` raw-directory plus `0600` raw-file/log modes.
 
 ## Reviews
 
@@ -45,7 +45,7 @@ None.
 
 ## Remaining work
 
-Blocked only on scheduled Messages verification: interactive and direct connector ingests pass, but the resolved dedicated launcher is still denied Full Disk Access. Grant only `/nix/store/7fgrx02y3sws3mvh18a5ynlznfyjwqcl-openwiki-launchd-launcher-1/bin/openwiki-launchd-launcher`, ensure the old shared Nix Bash grant is disabled, rerun the loaded job, confirm exit zero, then create the annotated tag.
+None.
 
 ## Commits
 
