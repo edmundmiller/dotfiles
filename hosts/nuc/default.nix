@@ -92,6 +92,7 @@ let
     passthru = hermesAgentUpstream.passthru or { };
   };
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
+  bettyHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.betty-hermes;
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
@@ -1338,6 +1339,61 @@ in
       RemainAfterExit = true;
       ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:mill-docs-agents --https=443 http://127.0.0.1:8788 && exit 0; sleep 1; done; exit 1\"'";
       ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:mill-docs-agents || true'";
+    };
+  };
+
+  systemd.services.hermes-betty-cron-tick = {
+    description = "Run Betty cron jobs without an interactive gateway";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    path = [
+      bettyHermesLauncher
+      hermesAgentBase
+      inputs.agents-workspace.packages.${hostSystem}.gws
+      pkgs._1password-cli
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.git
+      pkgs.himalaya
+      pkgs.python3
+      pkgs.uv
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = "/var/lib/hermes-betty";
+      EnvironmentFile = [ "/run/hermes-betty-env/secrets.env" ];
+      Environment = [
+        "HOME=/var/lib/hermes-betty"
+        "HERMES_HOME=/var/lib/hermes-betty/.hermes"
+        "HERMES_KANBAN_HOME=${hermesSharedHome}"
+        "HERMES_PROFILE=betty"
+        "MESSAGING_CWD=/repos/mill-docs"
+        "CODEX_HOME=/var/lib/hermes-betty/.codex"
+      ];
+      ExecStart = "${bettyHermesLauncher}/bin/betty-hermes cron tick";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      ReadWritePaths = [
+        hermesSharedStateDir
+        "/var/lib/hermes-betty"
+        "/home/emiller/mill-docs"
+      ];
+    };
+  };
+
+  systemd.timers.hermes-betty-cron-tick = {
+    description = "Run Betty background cron jobs on a timer";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30s";
+      Unit = "hermes-betty-cron-tick.service";
     };
   };
 
