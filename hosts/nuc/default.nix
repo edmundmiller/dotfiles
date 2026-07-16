@@ -1518,6 +1518,7 @@ in
       pkgs.findutils
       pkgs.git
       pkgs.python3
+      pkgs.rtk
     ];
     serviceConfig = {
       Type = "oneshot";
