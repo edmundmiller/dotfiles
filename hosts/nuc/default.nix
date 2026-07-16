@@ -93,6 +93,7 @@ let
   };
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
+  radarBlogwatcherCli = inputs.agents-workspace.packages.${hostSystem}.blogwatcher-cli;
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
@@ -1347,6 +1348,7 @@ in
     wants = [ "network-online.target" ];
     path = [
       radarHermesLauncher
+      radarBlogwatcherCli
       hermesAgentBase
       pkgs.bashInteractive
       pkgs.coreutils
