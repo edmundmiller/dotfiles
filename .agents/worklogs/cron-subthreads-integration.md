@@ -43,6 +43,8 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
 - Scintillate's natural `tnote-schedule` run at 00:20:08 CDT on generation `l6xyhy9kyh2wwjbphw0b79qx5lxz6dab` completed `ok`, advanced to 01:20:08, wrote a fresh 149-byte valid silent no-op artifact, cleared `last_error`, matched none of the prior runtime/staging blockers, and left the vault staged count at zero. `workspace-rtl.3.1` and `workspace-rtl.3` closed in agents-workspace `9194d5e`.
 - At 07:44 CDT the NUC was on generation `s10lp05qnvqai4xa30pl55wal0xqs25m`, whose `nixos-version --json` configuration revision is `e0e356f7ba1b98e335f0751a70bb1fff9c8ad90d`. That revision is an ancestor of current dotfiles `origin/main`; the only later commit is heartbeat documentation. Betty's timer/gateway topology, service environment, state ownership, stable job ID, and 10:15 due time remained intact. Remaining verifiers now qualify generations by source-revision ancestry plus runtime invariants instead of brittle store-path equality.
+- Betty's natural Lift run completed `ok` at 10:22:56 CDT, advanced job `90d60a4f77e0` to 2026-07-24 10:15 CDT, and wrote a fresh artifact. It correctly returned `skipped_by_calendar` because the Family calendar contains the all-day Tuttle trip across the target Saturday. Scheduler logs prove Discord delivery; the read-only session database proves Gmail `status: sent` with message/thread ID `19f70abedeec23ee`.
+- The current `rpny08whzkd8064mzlkjrf1mix6ggj4w` generation exposes no configuration revision, but its Betty unit and package store paths are identical to the qualified `s10lp05...` generation. Timer/gateway topology, ownership, and stable job ID also remain intact. `workspace-rtl.2` closed in agents-workspace `4b2efac`; non-blocking skill-discovery/path retries are tracked separately as `workspace-lmk`.
 
 ## Reviews
 
@@ -52,11 +54,11 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Feedback
 
 - `hey agents-rollout` still targets missing `~/.openclaw/workspace`; use explicit repo paths for this integration.
-- Scintillate verifier/coordinator wakeups completed and its two tasks were archived. Codex heartbeat `BYHOUR` values are evaluated as UTC: the first Betty coordinator fired early at 05:33 CDT, before the 10:15 job. Remaining schedules were corrected and re-read active: Betty verifier/coordinator at 15:30/15:33Z (10:30/10:33 CDT), Radar verifier at 21:35Z (16:35 CDT).
+- Scintillate and Betty verifier/coordinator wakeups completed and their tasks were archived. Codex heartbeat `BYHOUR` values are evaluated as UTC: the first Betty coordinator fired early at 05:33 CDT, before the 10:15 job. Radar verifier/coordinator remain armed at 21:35/21:38Z (16:35/16:38 CDT).
 
 ## Remaining work
 
-- Verify Betty at 10:15 CDT and Radar at 16:30 CDT on 2026-07-17; close only beads whose natural-run evidence satisfies acceptance.
+- Verify Radar at 16:30 CDT on 2026-07-17; close only beads whose natural-run evidence satisfies acceptance, then close the umbrella and perform the final integration audit.
 
 ## Commits
 
