@@ -108,6 +108,11 @@ let
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;
   bettyHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.betty-hermes;
+  bettyHermesCronExecutor = pkgs.writeShellScript "hermes-betty-cron-executor" ''
+    set -eu
+    export OP_SERVICE_ACCOUNT_TOKEN="$(${pkgs.coreutils}/bin/cat /etc/opnix-token)"
+    exec ${bettyHermesLauncher}/bin/betty-hermes cron tick
+  '';
   bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit lib; };
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   radarBlogwatcherCli = inputs.agents-workspace.packages.${hostSystem}.blogwatcher-cli;
@@ -1515,6 +1520,7 @@ in
       Type = "oneshot";
       User = "emiller";
       Group = "users";
+      SupplementaryGroups = [ "onepassword-secrets" ];
       WorkingDirectory = "/var/lib/hermes-betty";
       EnvironmentFile = [ "/run/hermes-betty-env/secrets.env" ];
       Environment = [
@@ -1526,7 +1532,7 @@ in
         "CODEX_HOME=/var/lib/hermes-betty/.codex"
         "DISCORD_HOME_CHANNEL=${toString bettyDiscordBindings.homeChannelId}"
       ];
-      ExecStart = "${bettyHermesLauncher}/bin/betty-hermes cron tick";
+      ExecStart = bettyHermesCronExecutor;
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
