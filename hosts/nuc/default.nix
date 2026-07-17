@@ -53,7 +53,9 @@ let
       ''
         site_packages="$out/${pkgs.python312.sitePackages}"
         mkdir -p "$site_packages"
-        cp -R ${hermesAgentUpstream.hermesVenv}/${pkgs.python312.sitePackages}/hermes_cli "$site_packages/hermes_cli"
+        cp -RL --no-preserve=mode,ownership,timestamps \
+          ${hermesAgentUpstream.hermesVenv}/${pkgs.python312.sitePackages}/hermes_cli \
+          "$site_packages/hermes_cli"
         chmod -R u+w "$site_packages/hermes_cli"
         patch -d "$site_packages" -p1 < ${../../overlays/hermes-agent/patches/0003-report-external-cron-executor.patch}
       '';
