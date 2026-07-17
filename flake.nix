@@ -1096,6 +1096,24 @@
                 inherit pkgs;
               };
 
+              nuc-hermes-cron-external-executor =
+                pkgs.runCommand "nuc-hermes-cron-external-executor"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.patch
+                      pkgs.python3
+                    ];
+                  }
+                  ''
+                    mkdir hermes-source
+                    cp -R ${inputs.hermes-agent}/hermes_cli hermes-source/hermes_cli
+                    chmod -R u+w hermes-source
+                    patch -d hermes-source -p1 < ${./overlays/hermes-agent/patches/0003-report-external-cron-executor.patch}
+                    HERMES_SOURCE="$PWD/hermes-source" \
+                      python3 ${./tests/test_hermes_cron_external_executor.py}
+                    touch "$out"
+                  '';
+
               nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
