@@ -175,13 +175,13 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "openwiki";
-  version = "0.1.2-unstable-2026-07-14";
+  version = "0.2.0";
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "openwiki";
-    rev = "0c0639eece971acc75ccc36dad8d6b99a9b906f5";
-    hash = "sha256-og/xDgW1f8/R7yTTjTTFidFgdBnXn85y+9HUwawfENY=";
+    rev = "d4e94ab513ab13908c6b61346b23dc17bbd59b1f";
+    hash = "sha256-jble+grUAwAV8+E8EfuGZ86nDwOmwVOuzV2pogplbdY=";
   };
 
   patches = [
@@ -193,7 +193,7 @@ stdenv.mkDerivation (finalAttrs: {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_10;
     fetcherVersion = 3;
-    hash = "sha256-94ubDscIEItwkHzVbM4kUqTJpWFu5jpYJBUrhnyDJcA=";
+    hash = "sha256-4XMmWFfxD1aIYcCQ/QV763OwfjBgGvy1sOIYM7+zqQA=";
   };
 
   nativeBuildInputs = [
