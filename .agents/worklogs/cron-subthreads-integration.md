@@ -46,7 +46,7 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Reviews
 
 - Plan review: required gate attempted three ways on 2026-07-16. Claude returned `Authentication required`; Gemini's ACP adapter passed unsupported `acp`; grok-build could not spawn `grok agent stdio`. No independent reviewer was available. Continue with explicit branch, test, build, and live-runtime evidence; rerun landing review before completion.
-- Landing review: Claude gate retried after the full build and again returned `Authentication required` before producing findings.
+- Landing review: Claude gate retried after the full build and again returned `Authentication required` before producing findings. Final retry at 2026-07-16 23:43 CDT with `hey agent-review landing --active-model-family openai --worklog .agents/worklogs/cron-subthreads-integration.md` failed identically at `session/new`; no review findings were produced.
 
 ## Feedback
 
