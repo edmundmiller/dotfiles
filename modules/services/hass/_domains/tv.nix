@@ -4,15 +4,59 @@ let
   inherit (import ../_lib.nix) ensureEnabled;
 
   tvEntity = "media_player.living_room";
+  tvRemote = "remote.living_room";
 
   # --- Helper functions ---
-  tvAction = action: {
+  entityAction = entity_id: action: {
     inherit action;
-    target.entity_id = tvEntity;
+    target = { inherit entity_id; };
   };
 
-  tvOn = tvAction "media_player.turn_on";
-  tvOff = tvAction "media_player.turn_off";
+  tvPowerOn = entityAction tvEntity "media_player.turn_on";
+  tvPowerOff = entityAction tvEntity "media_player.turn_off";
+  remoteConnect = entityAction tvRemote "remote.turn_on";
+  remoteDisconnect = entityAction tvRemote "remote.turn_off";
+
+  tvOn = [
+    remoteConnect
+    {
+      choose = [
+        {
+          conditions = [
+            {
+              condition = "not";
+              conditions = [
+                {
+                  condition = "state";
+                  entity_id = tvRemote;
+                  state = "on";
+                }
+              ];
+            }
+          ];
+          sequence = [
+            {
+              wait_for_trigger = [
+                {
+                  platform = "state";
+                  entity_id = tvRemote;
+                  to = "on";
+                }
+              ];
+              timeout.seconds = 15;
+              continue_on_timeout = false;
+            }
+          ];
+        }
+      ];
+    }
+    tvPowerOn
+  ];
+
+  tvOff = [
+    tvPowerOff
+    remoteDisconnect
+  ];
 in
 {
   services.home-assistant.config = {
@@ -41,23 +85,23 @@ in
       tv_on = {
         alias = "Turn on TV";
         icon = "mdi:television";
-        sequence = [ tvOn ];
+        sequence = tvOn;
       };
       tv_off = {
         alias = "Turn off TV";
         icon = "mdi:television-off";
-        sequence = [ tvOff ];
+        sequence = tvOff;
       };
       tv_off_if_on = {
         alias = "Turn off TV if on";
         icon = "mdi:television-off";
         sequence = [
           {
-            condition = "template";
-            value_template = "{{ states('media_player.tv') not in ['off', 'unavailable', 'unknown'] }}";
+            condition = "state";
+            entity_id = tvRemote;
+            state = "on";
           }
-          tvOff
-        ];
+        ] ++ tvOff;
       };
     };
 
@@ -77,7 +121,7 @@ in
           entity_id = "input_boolean.goodnight";
           state = "on";
         };
-        action = [ tvOff ];
+        action = tvOff;
       }
 
       # --- TV sleep timer ---
@@ -108,8 +152,7 @@ in
           event_type = "timer.finished";
           event_data.entity_id = "timer.sleep";
         };
-        action = [
-          tvOff
+        action = tvOff ++ [
           {
             action = "input_number.set_value";
             target.entity_id = "input_number.tv_sleep_timer";
