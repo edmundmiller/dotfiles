@@ -90,11 +90,15 @@ in
     builtins.toJSON {
       nextflow = {
         command = "${launcher}/bin/nextflow-language-server";
-        extensionToLanguage = {
-          ".nf" = "nextflow";
-          ".config" = "nextflow-config";
-        };
-        startupTimeout = 120000;
+        fileTypes = [
+          ".nf"
+          ".config"
+        ];
+        rootMarkers = [
+          "nextflow.config"
+          "*.nf"
+        ];
+        warmupTimeoutMs = 120000;
       };
     }
   );
