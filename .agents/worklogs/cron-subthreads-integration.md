@@ -30,6 +30,9 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Amos' natural Linear sweep completed `ok` at 20:58:37 with no model 404. Its artifact exposed separate missing-skill and Linear-auth blockers tracked as `workspace-amos-cron-skill-materialization-x1c` and `workspace-amos-linear-cron-auth-3qi`; Amos executor/model beads are closed.
 - Scintillate's natural 21:06:37 run proved the quoted-path fix but exposed a mutable tnote source import failure: missing `@tn/tasknotes`. Agents-workspace commits `f6044e8` and `41ac4c4` replace that import with packaged `tnote schedule run --algorithm urgency --json`; focused Scintillate and Amos checks passed.
 - Dotfiles pin `1be3467caa` passed a full NUC build and deployed generation `jgj1nqiba9axb94xlf8qfsc7pk0zy60a` at 21:17 CDT. All four timers are enabled/active, all gateways masked/inactive, job files are `emiller:users 0600`, and Scintillate PATH contains packaged `tnote 0.3.0`. Its deployed script contains no `TNOTE_REPO` or raw package imports.
+- Scintillate's natural 22:11:45 run reached packaged tnote and commit, then failed because the vault's checkout hook could not resolve `git-lfs`. Dotfiles regression/fix commits `c31d66322` and `657fd72f2` add `git-lfs` to the isolated cron PATH. The x86_64 runtime check and full NUC build passed; generation `iw5l2mnzxyffhfffzvhiqvwy8ccbfnic` deployed with all four timers active, gateways masked, and both `git-lfs 3.7.1` and `tnote 0.3.0` in Scintillate's service PATH.
+- The failed commit left 2323 automation-staged `01_Tasks` paths. The script had verified no pre-existing staged changes; root reset only that index path, leaving zero staged paths and preserving 2331 dirty/untracked working paths. No vault content was discarded.
+- The 22:20 switch again replaced a concurrently deployed non-main generation: activation removed Homebox while restoring current linear dotfiles main. This reconfirms `workspace-x6l`; avoid further switches until deploy serialization is fixed.
 - `hey agent-audit-tests` passed for the changed executor/runtime tests.
 - `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
 - Stable generation and remaining natural-run proof are still required before closure.
@@ -46,7 +49,7 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 
 ## Remaining work
 
-- Verify Scintillate's packaged-CLI `tnote-schedule` natural run after 22:06:37 CDT; close `workspace-rtl.3.1` and `workspace-rtl.3` only if accepted.
+- Verify Scintillate's next packaged-CLI `tnote-schedule` natural run after 23:11:45 CDT; close `workspace-rtl.3.1` and `workspace-rtl.3` only if accepted.
 - Verify Betty at 10:15 CDT and Radar at 16:30 CDT on 2026-07-17; close only beads whose natural-run evidence satisfies acceptance.
 
 ## Commits
@@ -62,3 +65,4 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Dotfiles `1fc356dac4` — pin corrected Scintillate script.
 - Agents-workspace `f6044e8`, `41ac4c4` — mutable-import regression/packaged tnote fix.
 - Dotfiles `1be3467caa` — pin packaged tnote scheduler.
+- Dotfiles `c31d66322`, `657fd72f2` — missing-git-lfs regression/runtime fix.
