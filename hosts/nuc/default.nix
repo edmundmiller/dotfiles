@@ -1047,6 +1047,8 @@ in
     himalaya # IMAP/SMTP CLI for Fastmail triage by Scintillate/agents
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
     hermesRuntimeSmoke
+    radarBlogwatcherCli # Radar terminal login-shell runtime
+    rtk # Hermes terminal command rewriting after login-shell snapshot
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.zele # packaged upstream+patches zele CLI
     my.tnote # packaged TaskNotes CLI; no boot-time mutable checkout/bun install
