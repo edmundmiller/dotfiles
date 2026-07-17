@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/home-assistant-libs/python-matter-server.git",
+  "ref": "8.1.2",
+  "patches": ["patches/0002-test-skip-unparseable-paa-certs.patch"],
+  "checks": [["python3", "scripts/test_skip_unparseable_paa.py"]]
+}
