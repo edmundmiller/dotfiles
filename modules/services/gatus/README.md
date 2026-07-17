@@ -73,7 +73,7 @@ A systemd timer pings the healthchecks.io URL every 2 minutes. If the NUC goes d
 
 ### Smart Home
 
-- **Home Assistant** — `http://localhost:8123/api/`
+- **Home Assistant** — `http://localhost:8123/manifest.json` (expects 200)
 - **Homebridge** — `http://localhost:8581`
 - **Matter Server** — `tcp://localhost:5580`
 

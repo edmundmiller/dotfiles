@@ -69,9 +69,9 @@ let
             {
               name = "Home Assistant";
               group = "Smart Home";
-              url = "http://localhost:8123/api/";
+              url = "http://localhost:8123/manifest.json";
               interval = "60s";
-              conditions = [ "[STATUS] < 500" ];
+              conditions = [ "[STATUS] == 200" ];
             }
             {
               name = "Homebridge";
