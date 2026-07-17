@@ -41,7 +41,7 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Dotfiles `0d3f0dd25` pins those fixes. Full NUC build `/nix/store/l6xyhy9kyh2wwjbphw0b79qx5lxz6dab-nixos-system-nuc-26.11.20260714.18b9261` is live with all four timers active, gateways masked, Homebox active, the corrected script materialized, and zero staged vault paths.
 - `hey agent-audit-tests` passed for the changed executor/runtime tests.
 - `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
-- Stable generation and remaining natural-run proof are still required before closure.
+- Scintillate's natural `tnote-schedule` run at 00:20:08 CDT on generation `l6xyhy9kyh2wwjbphw0b79qx5lxz6dab` completed `ok`, advanced to 01:20:08, wrote a fresh 149-byte valid silent no-op artifact, cleared `last_error`, matched none of the prior runtime/staging blockers, and left the vault staged count at zero. `workspace-rtl.3.1` and `workspace-rtl.3` closed in agents-workspace `9194d5e`.
 
 ## Reviews
 
@@ -51,11 +51,10 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Feedback
 
 - `hey agents-rollout` still targets missing `~/.openclaw/workspace`; use explicit repo paths for this integration.
-- Dedicated and root Scintillate follow-up heartbeats are armed for 00:20 and 00:23 CDT. Betty and Radar retain their natural-run follow-ups.
+- Scintillate verifier/coordinator wakeups completed and its two tasks were archived. Betty retains its dedicated verifier plus the coordinator slot at 10:33 CDT; Radar retains its dedicated verifier.
 
 ## Remaining work
 
-- Verify Scintillate's next natural `tnote-schedule` run after 00:15:49 CDT; require success, advanced schedule, fresh artifact, and zero staged residue before closing `workspace-rtl.3.1` and `workspace-rtl.3`.
 - Verify Betty at 10:15 CDT and Radar at 16:30 CDT on 2026-07-17; close only beads whose natural-run evidence satisfies acceptance.
 
 ## Commits
