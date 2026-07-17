@@ -88,9 +88,10 @@ in
       # the platform temp dir (TMPDIR/TMP/TEMP) instead of exporting NPM_CONFIG_TMP.
       env.NODE_REPL_HISTORY = "$XDG_CACHE_HOME/node/repl_history";
 
-      # npm rejects combining `before` and `min-release-age`; keep only
-      # min-release-age from user config.
+      # Scrub inherited prefix overrides from long-running app processes. npm
+      # rejects combining `before` and `min-release-age`; keep only the latter.
       modules.shell.zsh.envInit = ''
+        unset NPM_CONFIG_PREFIX npm_config_prefix
         unset NPM_CONFIG_BEFORE npm_config_before
       '';
 
