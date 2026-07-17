@@ -14,6 +14,7 @@ waiver_path: .agents/waivers/AGENT-03.md
 - **Selective staging:** use `git hunks list` / `git hunks add <hunk-id>` — non-interactive, deterministic hunk IDs.
 - **Dotfiles exception**: sibling layout (`../dotfiles.branch`) via `.envrc` override
 - **Commit scope:** before committing, compare staged paths with the current request. “Commit/push” authorizes only those paths; if they are already landed and only unrelated paths remain, report that state instead of touching them.
+- **Hook validation:** do not run `prek` manually during routine validation. Let commit or push invoke its hooks; run `prek` directly only when configuring/debugging hooks or when explicitly requested.
 
 ## Non-interactive defaults (agents)
 
