@@ -42,6 +42,7 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - `hey agent-audit-tests` passed for the changed executor/runtime tests.
 - `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
 - Scintillate's natural `tnote-schedule` run at 00:20:08 CDT on generation `l6xyhy9kyh2wwjbphw0b79qx5lxz6dab` completed `ok`, advanced to 01:20:08, wrote a fresh 149-byte valid silent no-op artifact, cleared `last_error`, matched none of the prior runtime/staging blockers, and left the vault staged count at zero. `workspace-rtl.3.1` and `workspace-rtl.3` closed in agents-workspace `9194d5e`.
+- At 07:44 CDT the NUC was on generation `s10lp05qnvqai4xa30pl55wal0xqs25m`, whose `nixos-version --json` configuration revision is `e0e356f7ba1b98e335f0751a70bb1fff9c8ad90d`. That revision is an ancestor of current dotfiles `origin/main`; the only later commit is heartbeat documentation. Betty's timer/gateway topology, service environment, state ownership, stable job ID, and 10:15 due time remained intact. Remaining verifiers now qualify generations by source-revision ancestry plus runtime invariants instead of brittle store-path equality.
 
 ## Reviews
 
