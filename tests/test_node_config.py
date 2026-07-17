@@ -8,7 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NodeConfigTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_darwin_node_config_is_nvm_compatible(self) -> None:
         result = subprocess.run(
             [
