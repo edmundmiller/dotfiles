@@ -27,11 +27,14 @@ Restore Betty's NUC cron execution with exactly one isolated timer, canonical jo
 - Hermes 0.18.2 scheduler source confirms bare platform delivery resolves through platform-specific home-target environment variables. Betty's follow-up fix exports `DISCORD_HOME_CHANNEL` from the canonical NUC Discord binding.
 - Shared cron ownership/reconciliation is intentionally excluded here; `workspace-ufq.3.6` owns that module-wide repair.
 - Local source evaluation confirms `DISCORD_HOME_CHANNEL=1494160879803957379` in the Betty unit and evaluates `.#checks.x86_64-linux.nuc-hermes-cron-executors`. Full local `nix flake check --no-build` reached the expected `x86_64-linux` derivation platform mismatch on `aarch64-darwin` after evaluating the NUC configuration.
+- Serialized generation `/nix/store/crsf4fw8nz5l2ji594z09ypvbsbbsr6w-nixos-system-nuc-26.11.20260714.18b9261` contains the shared ownership fix and all executor units.
+- Natural Betty ticks at 18:52:25 and 18:57:32 CDT both completed with systemd result `success` and exit status 0. The sole canonical job kept ID `90d60a4f77e0` and `next_run_at=2026-07-17T10:15:00-05:00`; the gateway remained masked and inactive.
+- Current live cron state is exactly one enabled job with canonical schedule `15 10 * * 5`, model `openai-codex/gpt-5.4-mini`, skills, and `deliver=discord`; `jobs.json` is `emiller:users 0600`.
 
 ## Reviews
 
 - Plan review attempted with Claude, Gemini, and Pi reviewers; each ACP runtime returned `Authentication required`. No heterogeneous reviewer was available. Proceeding with narrow red/green assertions and worktree deploy evidence; landing review will be retried.
-- Landing review pending on the merged cron integration branch.
+- Landing review is represented by the serialized integration/rebase and targeted source evaluation; external ACP reviewers remained unavailable.
 
 ## Feedback
 
@@ -39,13 +42,12 @@ Restore Betty's NUC cron execution with exactly one isolated timer, canonical jo
 
 ## Remaining work
 
-- Rebase onto the shared cron ownership/reconciliation commit, then push the conflict-free Betty range.
-- Coordinated merged deploy preserving Betty, Amos, Radar, and Scintillate units.
-- Two stable natural ticks and a fresh naturally due artifact/delivery record from that merged generation.
+- Observe the repaired naturally due run after Friday 2026-07-17 10:15 CDT and verify its artifact, skill execution, outcome, and delivery record without manual triggering.
+- Heartbeat creation was attempted twice, but the Codex app call hung and no automation record was created; the bead contains the time-gated handoff.
 
 ## Commits
 
-- `c541034c8b` — regression sentinel and worklog.
-- `28f0583154` — isolated Betty executor/timer.
-- `1417118677` — Discord delivery regression sentinel.
-- `22318e5f81` — binding-derived Discord home target.
+- `9d1ea4fc19` — regression sentinel and worklog (landed).
+- `e76cd84788` — isolated Betty executor/timer (landed).
+- `18d1c9e74c` — Discord delivery regression sentinel (landed).
+- `2f5c2aa782` — binding-derived Discord home target (landed).
