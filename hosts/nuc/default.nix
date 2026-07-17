@@ -1591,6 +1591,7 @@ in
       pkgs.bashInteractive
       pkgs.coreutils
       pkgs.findutils
+      pkgs.git-lfs
       pkgs.python3
     ]
     ++ config.services.hermes-agent.profiles.scintillate.extraPackages;

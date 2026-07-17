@@ -154,8 +154,8 @@ let
       msg = "Scintillate cron service PATH must include git and bun for canonical script jobs.";
     }
     {
-      test = !(any (pkg: hasInfix "git-lfs" pkg) cronTickPathStrings);
-      msg = "Expected Scintillate's missing git-lfs regression; remove this guard with the runtime fix.";
+      test = any (pkg: hasInfix "git-lfs" pkg) cronTickPathStrings;
+      msg = "Scintillate cron service PATH must include git-lfs for vault checkout hooks.";
     }
     {
       test = builtins.elem "/home/emiller/obsidian-vault" cronTickService.serviceConfig.ReadWritePaths;
