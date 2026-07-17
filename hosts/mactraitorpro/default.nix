@@ -88,12 +88,13 @@
         codex.enable = true;
         omp = {
           enable = true;
-          # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex.
+          # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex, google-antigravity.
           # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
-          # Roles: Sol executor/advisor/slow/plan; composer smol.
+          # Roles: Sol executor/advisor/slow/plan; composer smol; Gemini vision.
           smolModel = "xai-oauth/grok-composer-2.5-fast";
           modelRoles = {
             smol = "xai-oauth/grok-composer-2.5-fast";
+            vision = "google-antigravity/gemini-3-flash";
             default = "openai-codex/gpt-5.6-sol:medium";
             advisor = "openai-codex/gpt-5.6-sol:high";
             slow = "openai-codex/gpt-5.6-sol:xhigh";
