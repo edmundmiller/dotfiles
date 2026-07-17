@@ -5,6 +5,7 @@ let
   bettyService = cfg.systemd.services.hermes-betty-cron-tick;
   bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;
+  bettySecretMaterialization = cfg.system.activationScripts.hermesBettySecretsMaterialize.text;
 
   inherit (pkgs.lib) concatStringsSep hasInfix;
 
@@ -38,16 +39,33 @@ let
       msg = "Betty cron timer must target its isolated executor.";
     }
     {
-      test = hasInfix "HERMES_HOME=/var/lib/hermes-betty/.hermes" (concatStringsSep " " bettyService.serviceConfig.Environment);
+      test = hasInfix "HERMES_HOME=/var/lib/hermes-betty/.hermes" (
+        concatStringsSep " " bettyService.serviceConfig.Environment
+      );
       msg = "Betty cron executor must target Betty's isolated Hermes home.";
     }
     {
-      test = hasInfix "/var/lib/hermes-betty" (concatStringsSep " " bettyService.serviceConfig.ReadWritePaths);
+      test = hasInfix "/var/lib/hermes-betty" (
+        concatStringsSep " " bettyService.serviceConfig.ReadWritePaths
+      );
       msg = "Betty cron executor must be able to update Betty's cron state.";
     }
     {
-      test = hasInfix "DISCORD_HOME_CHANNEL=1494160879803957379" (concatStringsSep " " bettyService.serviceConfig.Environment);
+      test = hasInfix "DISCORD_HOME_CHANNEL=1494160879803957379" (
+        concatStringsSep " " bettyService.serviceConfig.Environment
+      );
       msg = "Betty cron executor must resolve bare Discord delivery through Betty's deployment binding.";
+    }
+    {
+      test =
+        !(hasInfix "/etc/opnix-token" bettySecretMaterialization)
+        && builtins.all (envVar: !(hasInfix envVar bettySecretMaterialization)) [
+          "DISCORD_BOT_TOKEN"
+          "LIFETIME_USERNAME"
+          "LIFETIME_PASSWORD"
+          "HERMES_MCP_BEARER_TOKEN_LINEAR"
+        ];
+      msg = "Betty secret outage characterization unexpectedly passed; remove the expected-failure assertion.";
     }
   ];
 
