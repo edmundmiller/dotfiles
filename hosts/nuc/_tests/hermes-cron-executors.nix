@@ -69,6 +69,12 @@ let
       ];
       msg = "Betty's generated service environment must contain Discord, Life Time, and Linear secrets.";
     }
+    {
+      test =
+        !(builtins.elem "onepassword-secrets" (bettyService.serviceConfig.SupplementaryGroups or [ ]))
+        && hasInfix "betty-hermes cron tick" (toString bettyService.serviceConfig.ExecStart);
+      msg = "Betty token-access outage characterization unexpectedly passed; remove the expected-failure assertion.";
+    }
   ];
 
   failures = builtins.filter (assertion: !assertion.test) assertions;
