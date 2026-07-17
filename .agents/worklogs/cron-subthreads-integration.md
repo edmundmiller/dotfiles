@@ -22,7 +22,7 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - `.#checks.aarch64-darwin.nuc-hermes-cron-external-executor` executes five tests against the patched pinned Hermes source; no skip-only proof remains.
 - NUC x86_64 checks passed: executor wiring, Scintillate runtime access, Radar runtime, and external executor reporting.
 - Initial NUC check exposed immutable-store chmod from copying symlinked Hermes files. The integrated fix dereferences them into writable output; all four checks then passed.
-- Full NUC build passed after rebasing onto current dotfiles main: `/nix/store/ppa4r9kzv2g20891da4dqnw9flz8ix0d-nixos-system-nuc-26.11.20260714.18b9261`.
+- Full NUC build passed after the final rebase onto dotfiles main: `/nix/store/2gvvj6akdnx6ia75b0rg8x13nhpgbrz3-nixos-system-nuc-26.11.20260714.18b9261`.
 - `hey agent-audit-tests` passed for the changed executor/runtime tests.
 - `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
 - Current NUC switch and natural-run proof still required after landing.
@@ -45,9 +45,9 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Commits
 
 - Agents-workspace `273fa9a`, `52b5eeb` — Amos model regression/fix; FF-only on main.
-- Dotfiles `b10b8eba4` — remove duplicate Amos cron ownership repair.
-- Dotfiles `6fff91441`, `a2bcb1f55` — Scintillate executor regression/fix.
-- Dotfiles `d0586a043`, `203cd9482` — timer-aware Hermes health regression/fix.
-- Dotfiles `710b19884` — execute external-executor regression in Nix checks.
-- Dotfiles `59e828851` — pin integrated agents-workspace main.
-- Dotfiles `1247362cc` — dereference patched Hermes CLI out of the immutable store.
+- Dotfiles `4f9a37fec` — remove duplicate Amos cron ownership repair.
+- Dotfiles `8e04a6a47`, `e8db61d91` — Scintillate executor regression/fix.
+- Dotfiles `4ecbf3160`, `3c155aaf9` — timer-aware Hermes health regression/fix.
+- Dotfiles `4b2923e55` — execute external-executor regression in Nix checks.
+- Dotfiles `7692da380` — pin integrated agents-workspace main.
+- Dotfiles `e85c3568f` — dereference patched Hermes CLI out of the immutable store.
