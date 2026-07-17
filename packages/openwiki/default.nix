@@ -188,6 +188,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0001-configurable-personal-wiki-directory.patch
     ./patches/0002-imessage-connector.patch
     ./patches/0003-read-only-skills-regression.patch
+    ./patches/0004-writable-skill-replacement.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {

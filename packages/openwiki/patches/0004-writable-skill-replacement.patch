@@ -1,0 +1,105 @@
+diff --git i/src/agent/skills.ts w/src/agent/skills.ts
+index 99ff39a..8f74976 100644
+--- i/src/agent/skills.ts
++++ w/src/agent/skills.ts
+@@ -1,4 +1,4 @@
+-import { cp, readdir, rm } from "node:fs/promises";
++import { chmod, cp, lstat, readdir, rm } from "node:fs/promises";
+ import { fileURLToPath } from "node:url";
+ import path from "node:path";
+ import { ensureOpenWikiHome, openWikiSkillsDir } from "../openwiki-home.js";
+@@ -13,6 +13,36 @@ export async function syncBundledSkills(): Promise<void> {
+   await replaceSkillDirectories(bundledSkillsDir, openWikiSkillsDir);
+ }
+ 
++async function makeDirectoryTreeWritable(directory: string): Promise<void> {
++  let stats;
++  try {
++    stats = await lstat(directory);
++  } catch (error) {
++    if (
++      error instanceof Error &&
++      "code" in error &&
++      error.code === "ENOENT"
++    ) {
++      return;
++    }
++    throw error;
++  }
++
++  if (!stats.isDirectory()) {
++    return;
++  }
++
++  await chmod(directory, (stats.mode & 0o777) | 0o700);
++  const entries = await readdir(directory, { withFileTypes: true });
++  await Promise.all(
++    entries
++      .filter((entry) => entry.isDirectory())
++      .map((entry) =>
++        makeDirectoryTreeWritable(path.join(directory, entry.name)),
++      ),
++  );
++}
++
+ /** Replaces bundled skill directories without removing unrelated skills. */
+ export async function replaceSkillDirectories(
+   sourceDir: string,
+@@ -25,6 +55,7 @@ export async function replaceSkillDirectories(
+   await Promise.all(
+     skills.map(async ({ name }) => {
+       const target = path.join(targetDir, name);
++      await makeDirectoryTreeWritable(target);
+       await rm(target, { force: true, recursive: true });
+       await cp(path.join(sourceDir, name), target, { recursive: true });
+     }),
+diff --git i/test/skills.test.ts w/test/skills.test.ts
+index aa3a762..e69e185 100644
+--- i/test/skills.test.ts
++++ w/test/skills.test.ts
+@@ -5,6 +5,7 @@ import {
+   readFile,
+   rm,
+   stat,
++  symlink,
+   writeFile,
+ } from "node:fs/promises";
+ import os from "node:os";
+@@ -48,7 +49,7 @@ describe("replaceSkillDirectories", () => {
+     }
+   });
+ 
+-  test.fails("replaces skills copied from a read-only package", async () => {
++  test("replaces skills copied from a read-only package", async () => {
+     const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-"));
+     const source = path.join(root, "source");
+     const target = path.join(root, "target");
+@@ -73,4 +74,28 @@ describe("replaceSkillDirectories", () => {
+       await rm(root, { force: true, recursive: true });
+     }
+   });
++
++  test("does not follow target symlinks", async () => {
++    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-"));
++    const source = path.join(root, "source");
++    const target = path.join(root, "target");
++    const sourceSkill = path.join(source, "bundled");
++    const outside = path.join(root, "outside");
++
++    try {
++      await mkdir(sourceSkill, { recursive: true });
++      await mkdir(target);
++      await mkdir(outside);
++      await writeFile(path.join(sourceSkill, "SKILL.md"), "packaged");
++      await chmod(outside, 0o555);
++      await symlink(outside, path.join(target, "bundled"));
++
++      await replaceSkillDirectories(source, target);
++
++      expect((await stat(outside)).mode & 0o777).toBe(0o555);
++    } finally {
++      await chmod(outside, 0o755).catch(() => undefined);
++      await rm(root, { force: true, recursive: true });
++    }
++  });
+ });
