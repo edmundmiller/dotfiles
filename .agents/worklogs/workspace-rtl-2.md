@@ -30,6 +30,7 @@ Restore Betty's NUC cron execution with exactly one isolated timer, canonical jo
 - Serialized generation `/nix/store/crsf4fw8nz5l2ji594z09ypvbsbbsr6w-nixos-system-nuc-26.11.20260714.18b9261` contains the shared ownership fix and all executor units.
 - Natural Betty ticks at 18:52:25 and 18:57:32 CDT both completed with systemd result `success` and exit status 0. The sole canonical job kept ID `90d60a4f77e0` and `next_run_at=2026-07-17T10:15:00-05:00`; the gateway remained masked and inactive.
 - Current live cron state is exactly one enabled job with canonical schedule `15 10 * * 5`, model `openai-codex/gpt-5.4-mini`, skills, and `deliver=discord`; `jobs.json` is `emiller:users 0600`.
+- At 19:07 CDT, generation `j0nk9whmsm23asv9snr2wgpc2xklj3ld` had repaired `agent.log` to `emiller:users 0660`; Hermes listed `google-workspace`, `lifetime-class-booking`, and nested `email/himalaya` as enabled. A third natural tick at 19:02:36 also completed `success`/0 with stable job state.
 
 ## Reviews
 
