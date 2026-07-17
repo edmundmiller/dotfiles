@@ -1054,11 +1054,16 @@
               nix-private-github =
                 pkgs.runCommand "nix-private-github-check"
                   {
-                    nativeBuildInputs = [ pkgs.bash ];
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.python3
+                    ];
                   }
                   ''
                     NIX_PRIVATE_GITHUB=${./bin/nix-private-github} \
                       bash ${./bin/tests/nix-private-github.bash}
+                    NIX_PRIVATE_GITHUB=${./bin/nix-private-github} \
+                      python ${./bin/tests/test_nix_private_github_deploy_guard.py}
                     touch $out
                   '';
 
