@@ -14,11 +14,10 @@ pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
     exit 1
   fi
 
-  # Expected failure: Hermes builds its terminal snapshot through a login
-  # shell, so service.path alone is insufficient. Fail on unexpected pass
-  # until the host system profile provides the declared runtime too.
-  if [ "${if hasShellBlogwatcher || hasShellRtk then "1" else "0"}" -ne 0 ]; then
-    echo "Unexpected pass: move the terminal-shell assertion out of expected failure." >&2
+  # Hermes builds its terminal snapshot through a login shell, so service.path
+  # alone is insufficient. Both declared runtimes must be in the system profile.
+  if [ "${if hasShellBlogwatcher && hasShellRtk then "1" else "0"}" -ne 1 ]; then
+    echo "Radar terminal login shell must resolve blogwatcher-cli and rtk." >&2
     exit 1
   fi
   touch "$out"
