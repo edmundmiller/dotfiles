@@ -108,6 +108,7 @@ let
   hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;
   bettyHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.betty-hermes;
+  bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit lib; };
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   radarBlogwatcherCli = inputs.agents-workspace.packages.${hostSystem}.blogwatcher-cli;
   radarCronExecutor = pkgs.writeText "hermes-radar-cron-executor.json" ''
@@ -274,6 +275,14 @@ let
   hermesBettySecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-betty-honcho-api-key")
   ];
+  hermesBetty1PasswordReferences = {
+    inherit (bettyAgentSpec.hermes.dotenvReferences)
+      DISCORD_BOT_TOKEN
+      LIFETIME_PASSWORD
+      LIFETIME_USERNAME
+      ;
+    HERMES_MCP_BEARER_TOKEN_LINEAR = bettyAgentSpec.hermes.mcpBearerTokenReferences.linear;
+  };
   hermesAnneSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-anne-honcho-api-key")
     {
@@ -801,7 +810,13 @@ in
         BETTY_HOME="/var/lib/hermes-betty"
         ENV_DIR="/run/hermes-betty-env"
         ENV_FILE="$ENV_DIR/secrets.env"
+        ENV_TMP="$ENV_FILE.tmp.$$"
         HERMES_ENV_HOME="$BETTY_HOME/.hermes"
+
+        cleanup() {
+          rm -f "$ENV_TMP"
+        }
+        trap cleanup EXIT
 
         install -d -o emiller -g users -m 0750 "$BETTY_HOME"
         install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
@@ -833,18 +848,30 @@ in
         chown -h emiller:users "$BETTY_HOME/obsidian-vault"
 
         mkdir -p "$ENV_DIR"
-        : > "$ENV_FILE"
-        chmod 600 "$ENV_FILE"
-        chown emiller:users "$ENV_FILE"
+        : > "$ENV_TMP"
+        chmod 600 "$ENV_TMP"
 
-        printf 'HERMES_HONCHO_HOST=%s\n' "betty" >> "$ENV_FILE"
+        printf 'HERMES_HONCHO_HOST=%s\n' "betty" >> "$ENV_TMP"
 
         ${lib.concatMapStringsSep "\n" (secret: ''
           if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
             secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
-            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_TMP"
           fi
         '') hermesBettySecrets}
+
+        export OP_SERVICE_ACCOUNT_TOKEN="$(cat /etc/opnix-token)"
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (envVar: reference: ''
+            secret_value="$(${op} read ${lib.escapeShellArg reference})"
+            printf '%s=%s\n' ${lib.escapeShellArg envVar} "$secret_value" >> "$ENV_TMP"
+          '') hermesBetty1PasswordReferences
+        )}
+        unset secret_value OP_SERVICE_ACCOUNT_TOKEN
+
+        chown emiller:users "$ENV_TMP"
+        mv -f "$ENV_TMP" "$ENV_FILE"
+        trap - EXIT
       '';
     };
 
