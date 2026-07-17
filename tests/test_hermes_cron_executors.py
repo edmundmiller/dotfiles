@@ -7,7 +7,6 @@ NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_amos_materializes_its_linear_credential_from_1password(self) -> None:
         config = NUC_CONFIG.read_text(encoding="utf-8")
         amos_secrets = config.split("  hermesAmosburtonSecrets =", 1)[1].split(
@@ -38,7 +37,6 @@ class HermesCronExecutorTests(unittest.TestCase):
             "amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;",
             config,
         )
-        self.assertIn('envVar = "HERMES_MCP_BEARER_TOKEN_LINEAR";', config)
         self.assertIn("hermesAmosburtonSecretsMaterialize", config)
         self.assertIn("systemd.services.hermes-amosburton-cron-tick", config)
         self.assertIn(

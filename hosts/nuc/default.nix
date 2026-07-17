@@ -225,6 +225,7 @@ let
   # even while Hermes owns Telegram directly in the current deployment mode.
   # The shared family/group bot can stay separate from Scintillate's DM bot.
   hermesScintillateTelegramBotTokenFile = config.age.secrets.telegram-bot-token-scintillate.path;
+  amosLinearCredentialRef = "op://Agents/Amos Linear Bot Team/credential";
   linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
   mkAgentSecret = envVar: secretName: {
     inherit envVar;
@@ -243,16 +244,7 @@ let
     (mkAgentSecret "OPENROUTER_API_KEY" "openrouter-api-key")
     (mkAgentSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
   ];
-  hermesAmosburtonSecrets = hermesProviderSecrets ++ [
-    {
-      envVar = "HERMES_MCP_BEARER_TOKEN_LINEAR";
-      path = linearTokenFile;
-    }
-    {
-      envVar = "LINEAR_API_KEY";
-      path = linearTokenFile;
-    }
-  ];
+  hermesAmosburtonSecrets = hermesProviderSecrets;
   hermesScintillateSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
     {
@@ -632,6 +624,22 @@ in
             printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
           fi
         '') hermesAmosburtonSecrets}
+
+        if [ ! -s /etc/opnix-token ]; then
+          echo "Amos Linear credential materialization requires /etc/opnix-token" >&2
+          exit 1
+        fi
+
+        OP_SERVICE_ACCOUNT_TOKEN="$(< /etc/opnix-token)"
+        export OP_SERVICE_ACCOUNT_TOKEN
+        if ! linear_token="$(${pkgs._1password-cli}/bin/op read ${lib.escapeShellArg amosLinearCredentialRef})" || [ -z "$linear_token" ]; then
+          unset linear_token OP_SERVICE_ACCOUNT_TOKEN
+          echo "Failed to materialize Amos Linear credential from 1Password" >&2
+          exit 1
+        fi
+        printf 'HERMES_MCP_BEARER_TOKEN_LINEAR=%s\n' "$linear_token" >> "$ENV_FILE"
+        printf 'LINEAR_API_KEY=%s\n' "$linear_token" >> "$ENV_FILE"
+        unset linear_token OP_SERVICE_ACCOUNT_TOKEN
       '';
     };
 
