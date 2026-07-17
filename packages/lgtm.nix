@@ -6,11 +6,11 @@
 
 stdenvNoCC.mkDerivation {
   pname = "lgtm";
-  version = "0-unstable-2026-07-14";
+  version = "0-unstable-2026-07-15";
 
   src = fetchurl {
     url = "https://github.com/ellie/lgtm/releases/download/latest/LGTM.dmg";
-    hash = "sha256-5fxCKtL7bShFrd2a07zFOrx7eYonDVtlLaWCoexN4QE=";
+    hash = "sha256-gIXmbPstGL8TphxbSLPcd+YCP1cIJFQGAokjzuC0CWs=";
   };
 
   unpackPhase = ''
