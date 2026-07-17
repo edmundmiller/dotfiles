@@ -3,7 +3,8 @@
   "ref": "d4e94ab513ab13908c6b61346b23dc17bbd59b1f",
   "patches": [
     "patches/0001-configurable-personal-wiki-directory.patch",
-    "patches/0002-imessage-connector.patch"
+    "patches/0002-imessage-connector.patch",
+    "patches/0003-read-only-skills-regression.patch"
   ],
   "checks": [
     ["pnpm", "install", "--frozen-lockfile"],
@@ -18,6 +19,7 @@
       "test/schedules.test.ts",
       "test/prompt.test.ts",
       "test/commands.test.ts",
+      "test/skills.test.ts",
       "test/credentials.test.ts"
     ]
   ]
