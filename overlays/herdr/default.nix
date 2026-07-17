@@ -11,12 +11,12 @@ let
       hash = "sha256-dBOQYLFitJ+E3XNz44Ag3CIrBxFj16CmVPp7qil0ssg=";
     };
     patches = [
-      ./patches/0001-libghostty-bench-gated.patch
-      ./patches/0006-update-cargo-hash.patch
-      ./patches/0007-worktree-actions-use-focused-pane-cwd.patch
-      ./patches/0008-ignore-zero-terminal-resize.patch
-      ./patches/0009-defer-background-tab-resize.patch
-      ./patches/0010-guard-resize-cursor-scrollback.patch
+      ./patches/0001-libghostty-bench-gated.patch # bead: dotfiles-lq7y
+      ./patches/0006-update-cargo-hash.patch # bead: dotfiles-og2k
+      ./patches/0007-worktree-actions-use-focused-pane-cwd.patch # bead: dotfiles-y5ag
+      ./patches/0008-ignore-zero-terminal-resize.patch # bead: dotfiles-1t6d
+      ./patches/0009-defer-background-tab-resize.patch # bead: dotfiles-0qcg
+      ./patches/0010-guard-resize-cursor-scrollback.patch # bead: dotfiles-h89w
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
