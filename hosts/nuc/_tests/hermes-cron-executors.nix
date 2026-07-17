@@ -57,15 +57,17 @@ let
       msg = "Betty cron executor must resolve bare Discord delivery through Betty's deployment binding.";
     }
     {
-      test =
-        !(hasInfix "/etc/opnix-token" bettySecretMaterialization)
-        && builtins.all (envVar: !(hasInfix envVar bettySecretMaterialization)) [
-          "DISCORD_BOT_TOKEN"
-          "LIFETIME_USERNAME"
-          "LIFETIME_PASSWORD"
-          "HERMES_MCP_BEARER_TOKEN_LINEAR"
-        ];
-      msg = "Betty secret outage characterization unexpectedly passed; remove the expected-failure assertion.";
+      test = hasInfix "/etc/opnix-token" bettySecretMaterialization;
+      msg = "Betty secrets must be materialized by root with the NUC 1Password service token.";
+    }
+    {
+      test = builtins.all (envVar: hasInfix envVar bettySecretMaterialization) [
+        "DISCORD_BOT_TOKEN"
+        "LIFETIME_USERNAME"
+        "LIFETIME_PASSWORD"
+        "HERMES_MCP_BEARER_TOKEN_LINEAR"
+      ];
+      msg = "Betty's generated service environment must contain Discord, Life Time, and Linear secrets.";
     }
   ];
 
