@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/langchain-ai/openwiki.git",
-  "ref": "0c0639eece971acc75ccc36dad8d6b99a9b906f5",
+  "ref": "d4e94ab513ab13908c6b61346b23dc17bbd59b1f",
   "patches": [
     "patches/0001-configurable-personal-wiki-directory.patch",
     "patches/0002-imessage-connector.patch"
