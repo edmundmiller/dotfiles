@@ -23,10 +23,10 @@ pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
     exit 1
   fi
 
-  # Expected failure: a root-run launcher can leave generated state unreadable
-  # to the timer user. Fail on unexpected pass until startup repairs ownership.
-  if [ "${if repairsStateOwnership then "1" else "0"}" -ne 0 ]; then
-    echo "Unexpected pass: move the Radar ownership assertion out of expected failure." >&2
+  # A root-run launcher can leave generated state unreadable to the timer user.
+  # Startup must restore the profile's declared owner before materialization.
+  if [ "${if repairsStateOwnership then "1" else "0"}" -ne 1 ]; then
+    echo "Radar cron startup must repair profile state ownership." >&2
     exit 1
   fi
   touch "$out"

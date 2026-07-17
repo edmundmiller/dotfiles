@@ -1558,6 +1558,7 @@ in
         "EMAIL_SMTP_PORT=587"
         "EMAIL_HOME_ADDRESS=emiller@edmundmiller.dev"
       ];
+      ExecStartPre = [ "+${pkgs.coreutils}/bin/chown -hR emiller:users /var/lib/hermes-radar" ];
       ExecStart = "${radarHermesLauncher}/bin/radar-hermes cron tick";
       NoNewPrivileges = true;
       PrivateTmp = true;
