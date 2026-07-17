@@ -1,0 +1,21 @@
+diff --git a/matter_server/server/helpers/paa_certificates.py b/matter_server/server/helpers/paa_certificates.py
+index 1111111..2222222 100644
+--- a/matter_server/server/helpers/paa_certificates.py
++++ b/matter_server/server/helpers/paa_certificates.py
+@@ -71,7 +71,15 @@
+             # via Slack.
+             warnings.simplefilter("ignore", CryptographyDeprecationWarning)
+ 
+-        cert = x509.load_pem_x509_certificate(pem_certificate.encode())
++        try:
++            cert = x509.load_pem_x509_certificate(pem_certificate.encode())
++        except ValueError as err:
++            LOGGER.warning(
++                "Skipping unparseable PAA certificate for '%s': %s",
++                subject,
++                err,
++            )
++            return False
+ 
+     ski: x509.SubjectKeyIdentifier = cert.extensions.get_extension_for_class(
+         x509.SubjectKeyIdentifier

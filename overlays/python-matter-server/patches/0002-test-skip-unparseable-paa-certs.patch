@@ -23,7 +23,7 @@ index 0000000..f7a79fd
 +from cryptography.x509.oid import NameOID
 +
 +# Flip to False in the commit that adds 0001-skip-unparseable-paa-certs.patch.
-+XFAIL = True
++XFAIL = False
 +
 +
 +def _load_paa_module():
