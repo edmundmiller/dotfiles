@@ -1,0 +1,41 @@
+diff --git a/test/skills.test.ts b/test/skills.test.ts
+index 32af8a2..7987497 100644
+--- a/test/skills.test.ts
++++ b/test/skills.test.ts
+@@ -1,4 +1,5 @@
+ import {
++  chmod,
+   mkdir,
+   mkdtemp,
+   readFile,
+@@ -48,4 +49,30 @@ describe("replaceSkillDirectories", () => {
+       await rm(root, { force: true, recursive: true });
+     }
+   });
++
++  test.fails("replaces skills copied from a read-only package", async () => {
++    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-"));
++    const source = path.join(root, "source");
++    const target = path.join(root, "target");
++    const sourceSkill = path.join(source, "readonly");
++    const targetSkill = path.join(target, "readonly");
++
++    try {
++      await mkdir(sourceSkill, { recursive: true });
++      await writeFile(path.join(sourceSkill, "SKILL.md"), "packaged");
++      await chmod(path.join(sourceSkill, "SKILL.md"), 0o444);
++      await chmod(sourceSkill, 0o555);
++
++      await replaceSkillDirectories(source, target);
++      await replaceSkillDirectories(source, target);
++
++      await expect(
++        readFile(path.join(targetSkill, "SKILL.md"), "utf8"),
++      ).resolves.toBe("packaged");
++    } finally {
++      await chmod(sourceSkill, 0o755).catch(() => undefined);
++      await chmod(targetSkill, 0o755).catch(() => undefined);
++      await rm(root, { force: true, recursive: true });
++    }
++  });
+ });
