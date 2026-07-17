@@ -299,41 +299,6 @@ export def system-rebuild [action: string, ...args: string] {
 
 export def post-rebuild [] {
   if (is-darwin) {
-    ^bash -c '
-      set -euo pipefail
-      pi_bin="$(command -v pi || true)"
-      if [ -z "$pi_bin" ] && [ -x "/etc/profiles/per-user/$USER/bin/pi" ]; then
-        pi_bin="/etc/profiles/per-user/$USER/bin/pi"
-      fi
-
-      if [ -z "$pi_bin" ]; then
-        echo "warning: pi not found; skipping pi package update" >&2
-        exit 0
-      fi
-
-      # node-gyp 8 (pulled by some Pi extensions) still imports distutils.
-      # Homebrew python on macOS 27 is 3.14 and no longer ships it, while
-      # Apple /usr/bin/python3 is 3.9 and still works for these native rebuilds.
-      if [ -x /usr/bin/python3 ]; then
-        export PYTHON=/usr/bin/python3
-      fi
-
-      echo "=== pi: update extensions ==="
-      if ! "$pi_bin" update --extensions; then
-        echo "warning: pi package update failed; rebuild already completed" >&2
-      fi
-
-      # Pi 0.79.x can prune scoped packages from the mutable npm project during
-      # update. Reinstall this one after updates because config depends on its
-      # flat permission schema.
-      if grep -q "npm:@gotgenes/pi-permission-system" "$HOME/.pi/agent/settings.json" 2>/dev/null \
-        && [ ! -f "$HOME/.pi/agent/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts" ]; then
-        echo "=== pi: reconcile @gotgenes/pi-permission-system ==="
-        PYTHON="''${PYTHON:-/usr/bin/python3}" npm install @gotgenes/pi-permission-system@latest \
-          --prefix "$HOME/.pi/agent/npm" --legacy-peer-deps \
-          || echo "warning: failed to install @gotgenes/pi-permission-system" >&2
-      fi
-    '
     return
   }
 
