@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -24,8 +25,10 @@ class NucDeployGuardTest(unittest.TestCase):
         self.marker = self.root / "ran"
         self.ready = self.root / "ready"
         self.command = self.root / "nixos-rebuild"
+        bash = shutil.which("bash")
+        self.assertIsNotNone(bash)
         self.command.write_text(
-            "#!/usr/bin/env bash\n"
+            f"#!{bash}\n"
             "set -euo pipefail\n"
             "touch \"$COMMAND_READY\"\n"
             "if [[ \"${COMMAND_HOLD:-0}\" == 1 ]]; then\n"

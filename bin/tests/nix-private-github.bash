@@ -7,8 +7,8 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 printf '%s\n' 'test-token' >"$tmp/token"
-cat >"$tmp/capture" <<'EOF'
-#!/usr/bin/env bash
+printf '#!%s\n' "$(type -P bash)" >"$tmp/capture"
+cat >>"$tmp/capture" <<'EOF'
 set -euo pipefail
 [[ "$NIX_CONFIG" == *'access-tokens = github.com=test-token'* ]]
 [[ "$*" == 'build --flake .#nuc' ]]

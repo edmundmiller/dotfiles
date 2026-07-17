@@ -1052,6 +1052,17 @@
               kittylitter-smoke = self.packages.${system}.kittylitter.passthru.tests.smoke;
 
               nix-private-github =
+                let
+                  wrapper = pkgs.writeShellApplication {
+                    name = "nix-private-github";
+                    runtimeInputs = [
+                      pkgs.coreutils
+                      pkgs.flock
+                      pkgs.git
+                    ];
+                    text = builtins.readFile ./bin/nix-private-github;
+                  };
+                in
                 pkgs.runCommand "nix-private-github-check"
                   {
                     nativeBuildInputs = [
@@ -1062,9 +1073,9 @@
                     ];
                   }
                   ''
-                    NIX_PRIVATE_GITHUB=${./bin/nix-private-github} \
+                    NIX_PRIVATE_GITHUB=${wrapper}/bin/nix-private-github \
                       bash ${./bin/tests/nix-private-github.bash}
-                    NIX_PRIVATE_GITHUB=${./bin/nix-private-github} \
+                    NIX_PRIVATE_GITHUB=${wrapper}/bin/nix-private-github \
                       python ${./bin/tests/test_nix_private_github_deploy_guard.py}
                     touch $out
                   '';
