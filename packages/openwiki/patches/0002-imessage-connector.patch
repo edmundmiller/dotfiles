@@ -1,8 +1,8 @@
-diff --git c/README.md i/README.md
-index 9871b88afbbcd24bbd142961c9b64308cea8d605..2773ca5e660021a5db5d510af9a3173947f7d952 100644
---- c/README.md
-+++ i/README.md
-@@ -36,8 +36,8 @@ openwiki --init
+diff --git a/README.md b/README.md
+index 052619b..b33bbb1 100644
+--- a/README.md
++++ b/README.md
+@@ -40,8 +40,8 @@ openwiki --init
  OpenWiki has two modes:
  
  - **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` by
@@ -13,7 +13,7 @@ index 9871b88afbbcd24bbd142961c9b64308cea8d605..2773ca5e660021a5db5d510af9a31739
  - **Code mode** builds repository documentation in `openwiki/` for the current
    codebase.
  
-@@ -171,7 +171,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
+@@ -179,7 +179,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
  
  ## Local Connectors
  
@@ -22,7 +22,7 @@ index 9871b88afbbcd24bbd142961c9b64308cea8d605..2773ca5e660021a5db5d510af9a31739
  
  You can configure the same connector more than once. For example, add one Web
  Search source for AI research and another for NBA news; OpenWiki stores them as
-@@ -184,9 +184,75 @@ instances with `openwiki ingest all`, all instances for one connector with
+@@ -192,9 +192,75 @@ instances with `openwiki ingest all`, all instances for one connector with
  - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
  - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
  - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
@@ -98,19 +98,19 @@ index 9871b88afbbcd24bbd142961c9b64308cea8d605..2773ca5e660021a5db5d510af9a31739
  Connector secrets are referenced by env var name and stored in `~/.openwiki/.env`; connector config files should never contain raw secret values.
  
  `openwiki auth <provider>` runs a local browser OAuth flow, saves returned tokens into `~/.openwiki/.env`, creates connector config when possible, and discovers MCP tools for MCP-backed providers. Slack and Gmail require app client credentials to already be set in that file; Notion uses dynamic client registration for hosted MCP; X uses OAuth 2.0 with PKCE. After `openwiki auth gmail`, the Google connector can ingest Gmail directly with no MCP transport setup.
-diff --git c/openwiki/integrations/connectors.md i/openwiki/integrations/connectors.md
-index 29b52140bb6d3ec481b16b92071e12bcdbf1445b..0c88f97ee70a40a373e47d9d412f8a7ad940cacd 100644
---- c/openwiki/integrations/connectors.md
-+++ i/openwiki/integrations/connectors.md
-@@ -1,25 +1,25 @@
+diff --git a/openwiki/integrations/connectors.md b/openwiki/integrations/connectors.md
+index 9e38783..2366c2f 100644
+--- a/openwiki/integrations/connectors.md
++++ b/openwiki/integrations/connectors.md
+@@ -1,23 +1,25 @@
  ---
  type: Integration
- title: Citations
--description: OpenWiki ships seven built-in connectors that pull external data
+ title: OpenWiki Connectors
+-description: OpenWiki's seven built-in connectors ingest data from Git repositories, Gmail, Hacker News, Notion, Slack, web search, and X into a local raw cache for wiki synthesis. This reference documents connector architecture, read-only MCP safeguards, ingestion orchestration, and source-specific behavior.
 +description: OpenWiki ships eight built-in connectors that pull external data
-   into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the
-   documentation agent then reads and synthesizes into wiki ...
- timestamp: 2026-07-10T21:04:04.976Z
++  into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the
++  documentation agent then reads and synthesizes into wiki ...
+ tags: [connectors, integrations, ingestion, mcp]
  ---
  
 -OpenWiki ships seven built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
@@ -133,7 +133,7 @@ index 29b52140bb6d3ec481b16b92071e12bcdbf1445b..0c88f97ee70a40a373e47d9d412f8a7a
  
  Shared IO helpers live in `src/connectors/io.ts`: `writeRawJson()` writes raw dumps with `0600`/`0700` permissions under `~/.openwiki/connectors/<id>/raw/<runId>/`, and `updateStateWithRun()` maintains the state file.
  
-@@ -29,13 +29,14 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+@@ -27,13 +29,14 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
  
  `src/connectors/mcp-client.ts` is a low-level JSON-RPC MCP client (stdio or HTTP transport) implementing `listMcpTools`/`executeMcpTool`/`executeMcpReadOnlyOperations`. `src/connectors/mcp-runtime.ts` wraps it for connector use (currently only `notion`), adding a **read-only tool-call policy**: a tool call is allowed only if it's explicitly listed in `allowedTools`, the MCP server's own `readOnlyHint` annotation is `true`, or (for the hosted `mcp.notion.com/mcp` endpoint specifically) the tool name/description matches a read-only heuristic (search/retrieve/get/list/query/read/fetch/find/lookup/load/children). This is the mechanism that keeps MCP-backed connectors read-only even though the underlying server may expose write tools.
  
@@ -149,7 +149,7 @@ index 29b52140bb6d3ec481b16b92071e12bcdbf1445b..0c88f97ee70a40a373e47d9d412f8a7a
  | `notion`         | mcp-stdio (label; may be HTTP) | `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`                       | yes               | Hosted Notion MCP server (or configured MCP transport); discovers tools (`mcp-tools.json`) or executes configured read-only operations (`mcp-results.json`).                                                                                                              |
  | `slack`          | direct-api                     | Slack user-token env key                                 | no                | `auth.test` identity, `search.messages` self-message search, bounded `conversations.list`/`.history` fallback, `assistant.search.context`. Writes `identity.json`, `my-messages-search.json`, `recent-messages.json`, `my-recent-messages.json`, `assistant-search.json`. |
  | `web-search`     | direct-api                     | `TAVILY_API_KEY` (via `OPENWIKI_TAVILY_API_KEY_ENV_KEY`) | no                | Tavily search (`@langchain/tavily`) for configured queries. Writes `web-search-results.json`.                                                                                                                                                                             |
-@@ -46,6 +47,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+@@ -44,6 +47,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
  - **Slack and "latest message" questions**: `my-recent-messages.json` includes a `definitiveForLatestMessage` flag. It is `true` only when the latest message was resolved via `search.messages` (requires the `search:read` user-token scope). If that search is unavailable, the connector falls back to a bounded `conversations.history` scan, sets `definitiveForLatestMessage: false`, and warns that the result is not reliably the user's true latest Slack message. Always check this flag before answering "what did I last say on Slack" from raw Slack data.
  - **X streams and cursors**: each stream (except `bookmarks`) tracks a `since_id` cursor in connector state so repeated ingestion runs are incremental; `list_posts` fans out per configured `listIds`.
  - **Notion is disabled until configured**: `enabled: true` plus a transport must be set in connector config before ingestion does anything beyond tool discovery.
@@ -157,7 +157,7 @@ index 29b52140bb6d3ec481b16b92071e12bcdbf1445b..0c88f97ee70a40a373e47d9d412f8a7a
  - **git-repo has no ingest-vs-agent distinction for read access**: it's the only connector marked `supportsAgenticDiscovery: true` alongside `notion`, since a git checkout can be explored freely rather than pulled through a bounded API.
  
  ## Ingestion orchestration
-@@ -58,6 +60,37 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+@@ -56,6 +60,37 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
  
  `src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](/cli/usage.md)).
  
@@ -195,7 +195,7 @@ index 29b52140bb6d3ec481b16b92071e12bcdbf1445b..0c88f97ee70a40a373e47d9d412f8a7a
  ## Design docs describing connectors that do not exist yet
  
  Two long-form guides at the repository root describe **planned, unimplemented** connectors — do not treat them as current behavior:
-@@ -78,7 +111,7 @@ If asked to implement either, follow the guide's phased checkpoints and confirm
+@@ -76,7 +111,7 @@ If asked to implement either, follow the guide's phased checkpoints and confirm
  
  - `src/connectors/types.ts`, `src/connectors/registry.ts`, `src/connectors/io.ts`, `src/connectors/tools.ts`
  - `src/connectors/mcp-client.ts`, `src/connectors/mcp-runtime.ts`, `src/connectors/sources/mcp.ts`
@@ -204,10 +204,10 @@ index 29b52140bb6d3ec481b16b92071e12bcdbf1445b..0c88f97ee70a40a373e47d9d412f8a7a
  - `src/ingestion.ts`, `src/onboarding.ts`, `src/schedules.ts`
  - `LANGSMITH-CONNECTOR.md`, `CODING-AGENTS-CONNECTOR.md`
  - `test/onboarding.test.ts`
-diff --git c/src/connectors/registry.ts i/src/connectors/registry.ts
-index 22a9de5a680b4001f55a78b2cb356b1ddf962116..0e7a5691997068ef52f3fc8313137ef6481f5e0c 100644
---- c/src/connectors/registry.ts
-+++ i/src/connectors/registry.ts
+diff --git a/src/connectors/registry.ts b/src/connectors/registry.ts
+index 11271c5..8c95ac9 100644
+--- a/src/connectors/registry.ts
++++ b/src/connectors/registry.ts
 @@ -1,6 +1,7 @@
  import { createGitRepoConnector } from "./sources/git-repo.js";
  import { createGmailConnector } from "./sources/gmail.js";
@@ -232,11 +232,11 @@ index 22a9de5a680b4001f55a78b2cb356b1ddf962116..0e7a5691997068ef52f3fc8313137ef6
      notion: createMcpConnector({
        description:
          "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
-diff --git c/src/connectors/sources/imessage.ts i/src/connectors/sources/imessage.ts
+diff --git a/src/connectors/sources/imessage.ts b/src/connectors/sources/imessage.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..c62d12733885af29c3e4328f3885a41043e2da04
+index 0000000..c62d127
 --- /dev/null
-+++ i/src/connectors/sources/imessage.ts
++++ b/src/connectors/sources/imessage.ts
 @@ -0,0 +1,587 @@
 +import { execFile } from "node:child_process";
 +import { basename } from "node:path";
@@ -825,10 +825,10 @@ index 0000000000000000000000000000000000000000..c62d12733885af29c3e4328f3885a410
 +    warnings,
 +  };
 +}
-diff --git c/src/connectors/types.ts i/src/connectors/types.ts
-index 1b1969d3ca190b2c1465da1e431a3ad6a9b6e450..b2da4b61f6548732b469bbf3e6e0a56b4a8604f6 100644
---- c/src/connectors/types.ts
-+++ i/src/connectors/types.ts
+diff --git a/src/connectors/types.ts b/src/connectors/types.ts
+index 1b1969d..b2da4b6 100644
+--- a/src/connectors/types.ts
++++ b/src/connectors/types.ts
 @@ -2,13 +2,14 @@ export type ConnectorId =
    | "git-repo"
    | "google"
@@ -845,11 +845,11 @@ index 1b1969d3ca190b2c1465da1e431a3ad6a9b6e450..b2da4b61f6548732b469bbf3e6e0a56b
  
  export type ConnectorDefinition = {
    backend: ConnectorBackend;
-diff --git c/src/credentials.tsx i/src/credentials.tsx
-index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144f0d59c27 100644
---- c/src/credentials.tsx
-+++ i/src/credentials.tsx
-@@ -102,6 +102,7 @@ type PromptStep =
+diff --git a/src/credentials.tsx b/src/credentials.tsx
+index 319455a..af6d8a9 100644
+--- a/src/credentials.tsx
++++ b/src/credentials.tsx
+@@ -119,6 +119,7 @@ type PromptStep =
    | "global-cron-custom"
    | "global-cron-mode"
    | "global-power-mode"
@@ -857,7 +857,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
    | "source-description"
    | "source-description-custom"
    | "source-menu"
-@@ -186,6 +187,7 @@ const ONBOARDING_TEMPLATES = [
+@@ -203,6 +204,7 @@ const ONBOARDING_TEMPLATES = [
      sourceIds: [
        "git-repo",
        "google",
@@ -865,7 +865,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
        "notion",
        "web-search",
        "hackernews",
-@@ -193,6 +195,7 @@ const ONBOARDING_TEMPLATES = [
+@@ -210,6 +212,7 @@ const ONBOARDING_TEMPLATES = [
      ],
      suggestedSources: [
        "Gmail",
@@ -873,7 +873,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
        "Notion",
        "Web Search (Tavily)",
        "Hacker News",
-@@ -278,6 +281,20 @@ const SOURCE_OPTIONS = [
+@@ -295,6 +298,20 @@ const SOURCE_OPTIONS = [
        },
      ],
    },
@@ -894,7 +894,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
    {
      displayName: "Web Search (Tavily)",
      examples: [
-@@ -1412,6 +1429,26 @@ export function InitSetup({
+@@ -1667,6 +1684,26 @@ export function InitSetup({
        return;
      }
  
@@ -921,7 +921,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
      if (step === "source-description") {
        if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
          setInput("");
-@@ -1743,6 +1780,12 @@ export function InitSetup({
+@@ -2050,6 +2087,12 @@ export function InitSetup({
        return;
      }
  
@@ -934,7 +934,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
      try {
        if (source.id === "git-repo") {
          setInput(getDefaultLocalGitRepoPath());
-@@ -2518,6 +2561,28 @@ function Prompt({
+@@ -2966,6 +3009,28 @@ function Prompt({
      );
    }
  
@@ -963,7 +963,7 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
    if (step === "source-secret") {
      const secretInput = selectedSource.secretInputs[secretInputIndex];
      return (
-@@ -3573,6 +3638,25 @@ function getSourceDescriptionOptionCount(source: SourceSetupOption): number {
+@@ -4106,6 +4171,25 @@ function getSourceDescriptionOptionCount(source: SourceSetupOption): number {
    return source.examples.length + 1;
  }
  
@@ -989,10 +989,10 @@ index ea2f3bf3fda4130a936babd889428c90e6ca7fde..7898a4f1137a653f0d23c533fc1c2144
  function handleCronEditorInput({
    currentFieldIndex,
    currentValue,
-diff --git c/src/ingestion.ts i/src/ingestion.ts
-index 49160519323c29ee3428c2547f4a281ba41a574f..7a2f7496c3d6940b79fb1e31316647d868389a92 100644
---- c/src/ingestion.ts
-+++ i/src/ingestion.ts
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 4916051..7a2f749 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
 @@ -145,27 +145,19 @@ async function runSourceIngestion({
        : undefined;
      const rawFiles = deterministicPull?.rawFiles ?? [];
@@ -1036,10 +1036,10 @@ index 49160519323c29ee3428c2547f4a281ba41a574f..7a2f7496c3d6940b79fb1e31316647d8
      case "notion":
        return `
  - Prefer Notion pages edited in the ingestion window, pages where the user is mentioned/tagged/assigned, pages where the user appears in people properties, and pages whose title/body indicate decisions, follow-ups, open questions, blockers, owners, customers, meetings, or plans.
-diff --git c/src/onboarding.ts i/src/onboarding.ts
-index 7844cf64c8fe6dabd239be6274060ef8428c6b83..a94888769d804cbefbc479ff53949fdc5de1c5cd 100644
---- c/src/onboarding.ts
-+++ i/src/onboarding.ts
+diff --git a/src/onboarding.ts b/src/onboarding.ts
+index 7844cf6..a948887 100644
+--- a/src/onboarding.ts
++++ b/src/onboarding.ts
 @@ -458,6 +458,7 @@ function isKnownConnectorId(value: string): value is ConnectorId {
      value === "git-repo" ||
      value === "google" ||
@@ -1048,10 +1048,10 @@ index 7844cf64c8fe6dabd239be6274060ef8428c6b83..a94888769d804cbefbc479ff53949fdc
      value === "notion" ||
      value === "slack" ||
      value === "web-search" ||
-diff --git c/src/openwiki-home.ts i/src/openwiki-home.ts
-index c541005fe02d54bee1d2ae2b6b4b6bd05de65c11..4d2361263254d328a4070ce3a88ff2308b609cde 100644
---- c/src/openwiki-home.ts
-+++ i/src/openwiki-home.ts
+diff --git a/src/openwiki-home.ts b/src/openwiki-home.ts
+index c541005..4d23612 100644
+--- a/src/openwiki-home.ts
++++ b/src/openwiki-home.ts
 @@ -1,4 +1,4 @@
 -import { chmod, mkdir } from "node:fs/promises";
 +import { chmod, mkdir, writeFile } from "node:fs/promises";
@@ -1090,10 +1090,10 @@ index c541005fe02d54bee1d2ae2b6b4b6bd05de65c11..4d2361263254d328a4070ce3a88ff230
  }
  
  export function assertSafeConnectorId(connectorId: string): void {
-diff --git c/src/schedules.ts i/src/schedules.ts
-index a2834368ce57a82c14a1b8dce1bf292c0592b977..651d59848272b7f225197d5d3ee3029d8bb3cd71 100644
---- c/src/schedules.ts
-+++ i/src/schedules.ts
+diff --git a/src/schedules.ts b/src/schedules.ts
+index a283436..651d598 100644
+--- a/src/schedules.ts
++++ b/src/schedules.ts
 @@ -162,18 +162,21 @@ export async function installConnectorSchedule({
    const label = getLaunchAgentLabel();
    const launchAgentsDir = getLaunchAgentsDir();
@@ -1145,11 +1145,11 @@ index a2834368ce57a82c14a1b8dce1bf292c0592b977..651d59848272b7f225197d5d3ee3029d
  
    return `<?xml version="1.0" encoding="UTF-8"?>
  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-diff --git c/test/commands.test.ts i/test/commands.test.ts
-index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd747c4b9d 100644
---- c/test/commands.test.ts
-+++ i/test/commands.test.ts
-@@ -409,3 +409,16 @@ describe("parseCommand — cron", () => {
+diff --git a/test/commands.test.ts b/test/commands.test.ts
+index 3ff5d72..607c176 100644
+--- a/test/commands.test.ts
++++ b/test/commands.test.ts
+@@ -418,3 +418,16 @@ describe("parseCommand — cron", () => {
      expect(result.kind).toBe("error");
    });
  });
@@ -1166,11 +1166,11 @@ index bf4d73a6a3957f508888a97bce33416d787a75fb..ae9e03c6ee64f595df7e57fed696f7bd
 +    });
 +  });
 +});
-diff --git c/test/imessage-connector.test.ts i/test/imessage-connector.test.ts
+diff --git a/test/imessage-connector.test.ts b/test/imessage-connector.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..18c619f47888df682181c750b126dc96af030dab
+index 0000000..18c619f
 --- /dev/null
-+++ i/test/imessage-connector.test.ts
++++ b/test/imessage-connector.test.ts
 @@ -0,0 +1,512 @@
 +import { execFileSync } from "node:child_process";
 +import {
@@ -1684,11 +1684,11 @@ index 0000000000000000000000000000000000000000..18c619f47888df682181c750b126dc96
 +    ).toBe("");
 +  });
 +});
-diff --git c/test/ingestion.test.ts i/test/ingestion.test.ts
+diff --git a/test/ingestion.test.ts b/test/ingestion.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb91158f760ffd73ee41ee30e3effc9bcd240738
+index 0000000..eb91158
 --- /dev/null
-+++ i/test/ingestion.test.ts
++++ b/test/ingestion.test.ts
 @@ -0,0 +1,149 @@
 +import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 +import os from "node:os";
@@ -1839,10 +1839,10 @@ index 0000000000000000000000000000000000000000..eb91158f760ffd73ee41ee30e3effc9b
 +    expect(runOpenWikiAgent).not.toHaveBeenCalled();
 +  });
 +});
-diff --git c/test/onboarding.test.ts i/test/onboarding.test.ts
-index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..65a316290841473d097d985e9743c6e305deaee5 100644
---- c/test/onboarding.test.ts
-+++ i/test/onboarding.test.ts
+diff --git a/test/onboarding.test.ts b/test/onboarding.test.ts
+index ed3346e..65a3162 100644
+--- a/test/onboarding.test.ts
++++ b/test/onboarding.test.ts
 @@ -65,6 +65,43 @@ describe("OpenWiki onboarding instructions", () => {
      );
    });
@@ -1887,11 +1887,11 @@ index ed3346e23f149d91ba3d95bec0e62d8dd07adbca..65a316290841473d097d985e9743c6e3
    test("reads wiki instructions only from INSTRUCTIONS.md", async () => {
      const home = await createTempHome();
      const onboarding = await loadOnboardingModule(home);
-diff --git c/test/schedules.test.ts i/test/schedules.test.ts
+diff --git a/test/schedules.test.ts b/test/schedules.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b5cb9dcc0ee2da40e487039eb0a06720d254a6b
+index 0000000..4b5cb9d
 --- /dev/null
-+++ i/test/schedules.test.ts
++++ b/test/schedules.test.ts
 @@ -0,0 +1,67 @@
 +import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 +import os from "node:os";
