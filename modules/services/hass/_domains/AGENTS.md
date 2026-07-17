@@ -67,6 +67,14 @@ vacation.nix (input_boolean.vacation_mode)
   └── ambient.nix skips last-person-leaves during vacation
 ```
 
+## TV remote lifecycle
+
+Keep the physical Apple TV integration option `start_off` enabled. `script.tv_on`
+must connect `remote.living_room`, wait for it to become available, then power on
+`media_player.living_room`. Every power-off path must power off the media player
+before disconnecting the remote. Leaving the remote connected keeps pyatv control
+connections active and can wake the Apple TV and HDMI-CEC display.
+
 ## Climate ownership
 
 `climate.nix` is the sole Home Assistant thermostat policy:
