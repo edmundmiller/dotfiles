@@ -27,6 +27,9 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Integrated generation `jw994877ibm5wd8zfawas7f7wv49wayg` proved all four timers, masked gateways, ownership, Radar external-executor status, runtime PATHs, and repeated clean ticks. Amos' watchdog and Scintillate's corrected script remained pending.
 - A separate canonical-checkout deploy at 20:22 CDT replaced the integrated generation with `wss3x0ls2qd2s8sjw2ddvr7sz8z18prh`, temporarily removing Amos, Betty, and Scintillate. The cron verification tasks detected the drift read-only.
 - The integration branch fast-forwarded to latest linear dotfiles main `1610de4996` and restored generation `xi3j09fbsppj56h4nkwxv4nbv08sivhw` at 20:29 CDT. All four timers are enabled/active and all gateways masked. The automatic 20:29 Amos run advanced watchdog `20762267078d` to 20:59:59, status `ok`, and wrote a 1277-byte `[SILENT]` artifact with no model 404.
+- Amos' natural Linear sweep completed `ok` at 20:58:37 with no model 404. Its artifact exposed separate missing-skill and Linear-auth blockers tracked as `workspace-amos-cron-skill-materialization-x1c` and `workspace-amos-linear-cron-auth-3qi`; Amos executor/model beads are closed.
+- Scintillate's natural 21:06:37 run proved the quoted-path fix but exposed a mutable tnote source import failure: missing `@tn/tasknotes`. Agents-workspace commits `f6044e8` and `41ac4c4` replace that import with packaged `tnote schedule run --algorithm urgency --json`; focused Scintillate and Amos checks passed.
+- Dotfiles pin `1be3467caa` passed a full NUC build and deployed generation `jgj1nqiba9axb94xlf8qfsc7pk0zy60a` at 21:17 CDT. All four timers are enabled/active, all gateways masked/inactive, job files are `emiller:users 0600`, and Scintillate PATH contains packaged `tnote 0.3.0`. Its deployed script contains no `TNOTE_REPO` or raw package imports.
 - `hey agent-audit-tests` passed for the changed executor/runtime tests.
 - `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
 - Stable generation and remaining natural-run proof are still required before closure.
@@ -39,11 +42,11 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Feedback
 
 - `hey agents-rollout` still targets missing `~/.openclaw/workspace`; use explicit repo paths for this integration.
+- Codex heartbeat creation and cross-thread messaging both hung after deployment; natural Scintillate verification remains untriggered and must be resumed directly after 22:06:37 CDT.
 
 ## Remaining work
 
-- Verify the restored generation remains stable through repeated ticks.
-- Verify Amos Linear sweep at 20:52 CDT and Scintillate `tnote-schedule` at 21:05 CDT.
+- Verify Scintillate's packaged-CLI `tnote-schedule` natural run after 22:06:37 CDT; close `workspace-rtl.3.1` and `workspace-rtl.3` only if accepted.
 - Verify Betty at 10:15 CDT and Radar at 16:30 CDT on 2026-07-17; close only beads whose natural-run evidence satisfies acceptance.
 
 ## Commits
@@ -57,3 +60,5 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Dotfiles `e85c3568f` — dereference patched Hermes CLI out of the immutable store.
 - Agents-workspace `69c0fae`, `c0cbdb0` — quoted-path regression/fix.
 - Dotfiles `1fc356dac4` — pin corrected Scintillate script.
+- Agents-workspace `f6044e8`, `41ac4c4` — mutable-import regression/packaged tnote fix.
+- Dotfiles `1be3467caa` — pin packaged tnote scheduler.
