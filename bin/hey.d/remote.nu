@@ -14,6 +14,30 @@ def nuc-deploy-mode [hostname: string] {
   if $hostname == $NUC_HOST { "local" } else { "worktree-remote" }
 }
 
+def nuc-deploy-source [] {
+  let head = ((^git rev-parse HEAD | complete).stdout | str trim)
+  let base = ((^git merge-base HEAD origin/main | complete).stdout | str trim)
+  if ($head | is-empty) or ($base | is-empty) {
+    error make {msg: "could not resolve NUC deploy source against origin/main"}
+  }
+  let owner = $"($env.USER? | default 'user')@((^hostname -s | str trim))"
+  {head: $head, base: $base, owner: $owner}
+}
+
+def nuc-deploy-source-args [] {
+  let source = (nuc-deploy-source)
+  let override = if (($env.NUC_DEPLOY_ALLOW_STALE? | default "0") == "1") {
+    ["--nuc-deploy-allow-stale"]
+  } else {
+    []
+  }
+  [
+    $"--nuc-deploy-source-head=($source.head)"
+    $"--nuc-deploy-source-base=($source.base)"
+    $"--nuc-deploy-source-owner=($source.owner)"
+  ] | append $override
+}
+
 def nuc-post-deploy-check [local: bool] {
   let script = '
     set -euo pipefail
@@ -49,9 +73,10 @@ def "main nuc-hermes-smoke" [] {
 def nuc-local-rebuild [] {
   let ctx = (context)
   cd $ctx.flake_dir
+  let source_args = (nuc-deploy-source-args)
 
   print "=== NUC deploy mode: explicit local nixos-rebuild ==="
-  with-sudo-path { ^sudo nix-private-github nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --show-trace --accept-flake-config --max-jobs 1 switch }
+  with-sudo-path { ^sudo nix-private-github ...$source_args nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --show-trace --accept-flake-config --max-jobs 1 switch }
   nuc-post-deploy-check true
 }
 
@@ -129,7 +154,8 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
   if $mode == "build" {
     ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nixos-rebuild build --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
   } else {
-    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nixos-rebuild ($mode) --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
+    let source_args = ((nuc-deploy-source-args) | str join " ")
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github ($source_args) nixos-rebuild ($mode) --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
     if ($mode == "switch") or ($mode == "test") {
       nuc-post-deploy-check false
     }
@@ -290,7 +316,7 @@ def "main nuc-logs" [unit: string = "", lines: int = 50] {
 
 def "main nuc-rollback" [] {
   print "Rolling back NUC to previous generation..."
-  ^ssh -t $NUC_HOST "sudo nixos-rebuild --rollback switch"
+  ^ssh -t $NUC_HOST "sudo nix-private-github nixos-rebuild --rollback switch"
 }
 
 def "main nuc-generations" [] {

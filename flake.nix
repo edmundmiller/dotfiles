@@ -1056,6 +1056,8 @@
                   {
                     nativeBuildInputs = [
                       pkgs.bash
+                      pkgs.flock
+                      pkgs.git
                       pkgs.python3
                     ];
                   }

@@ -344,6 +344,11 @@ let
   '';
   nixPrivateGithub = pkgs.writeShellApplication {
     name = "nix-private-github";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.flock
+      pkgs.git
+    ];
     text = builtins.readFile ../../bin/nix-private-github;
   };
   himalayaFastmailSetupScript = pkgs.writeShellScript "hermes-scintillate-himalaya-fastmail-setup" ''
