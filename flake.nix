@@ -1086,6 +1086,12 @@
                 inherit pkgs;
               };
 
+              # Pure Nix eval: keep the Homebox pilot private and recoverable.
+              homebox-assertions = import ./modules/services/homebox/_tests/eval-homebox.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {

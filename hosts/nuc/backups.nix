@@ -63,5 +63,19 @@ in
         RandomizedDelaySec = "30m";
       };
     };
+    homebox-state = nucR2Backup // {
+      paths = [ "/var/lib/homebox" ];
+      extraBackupArgs = [
+        "--tag"
+        "homebox-state"
+      ];
+      pruneOpts = [ ];
+      timerConfig = {
+        OnCalendar = "*-*-* 02:00:00";
+        RandomizedDelaySec = "15m";
+      };
+      backupPrepareCommand = "${pkgs.systemd}/bin/systemctl stop homebox.service";
+      backupCleanupCommand = "${pkgs.systemd}/bin/systemctl start homebox.service";
+    };
   };
 }
