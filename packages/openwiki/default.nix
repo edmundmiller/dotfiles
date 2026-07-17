@@ -189,13 +189,14 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0002-imessage-connector.patch
     ./patches/0003-read-only-skills-regression.patch
     ./patches/0004-writable-skill-replacement.patch
+    ./patches/0005-evlog-ingestion-events.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_10;
     fetcherVersion = 3;
-    hash = "sha256-4XMmWFfxD1aIYcCQ/QV763OwfjBgGvy1sOIYM7+zqQA=";
+    hash = "sha256-QWwMrKigLjdEH4QFua6woZg2xmSmF52+GdZi8zuikJw=";
   };
 
   nativeBuildInputs = [
