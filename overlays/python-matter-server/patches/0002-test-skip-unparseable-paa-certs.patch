@@ -1,0 +1,121 @@
+diff --git a/scripts/test_skip_unparseable_paa.py b/scripts/test_skip_unparseable_paa.py
+new file mode 100644
+index 0000000..f7a79fd
+--- /dev/null
++++ b/scripts/test_skip_unparseable_paa.py
+@@ -0,0 +1,115 @@
++#!/usr/bin/env python3
++"""Regression: one bad DCL PAA must not abort certificate import."""
++
++from __future__ import annotations
++
++import asyncio
++import datetime
++import importlib.util
++import sys
++import tempfile
++import types
++from pathlib import Path
++
++from cryptography import x509
++from cryptography.hazmat.primitives import hashes, serialization
++from cryptography.hazmat.primitives.asymmetric import ec
++from cryptography.x509.oid import NameOID
++
++# Flip to False in the commit that adds 0001-skip-unparseable-paa-certs.patch.
++XFAIL = True
++
++
++def _load_paa_module():
++    root = Path(__file__).resolve().parents[1]
++    helpers_init = root / "matter_server" / "server" / "helpers" / "__init__.py"
++    helpers_ns: dict[str, object] = {}
++    exec(helpers_init.read_text(encoding="utf-8"), helpers_ns)
++    helpers_mod = types.ModuleType("matter_server.server.helpers")
++    helpers_mod.__dict__.update(
++        {k: v for k, v in helpers_ns.items() if not k.startswith("__")}
++    )
++    for name in (
++        "matter_server",
++        "matter_server.server",
++        "matter_server.server.helpers",
++    ):
++        sys.modules.setdefault(name, types.ModuleType(name))
++    sys.modules["matter_server.server.helpers"] = helpers_mod
++    sys.modules.setdefault(
++        "aiohttp",
++        types.SimpleNamespace(ClientError=Exception, ClientSession=object),
++    )
++
++    module_path = root / "matter_server" / "server" / "helpers" / "paa_certificates.py"
++    spec = importlib.util.spec_from_file_location(
++        "matter_server.server.helpers.paa_certificates", module_path
++    )
++    if spec is None or spec.loader is None:
++        raise SystemExit(f"unable to load {module_path}")
++    module = importlib.util.module_from_spec(spec)
++    sys.modules[spec.name] = module
++    spec.loader.exec_module(module)
++    return module
++
++
++def _make_valid_pem() -> str:
++    key = ec.generate_private_key(ec.SECP256R1())
++    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Regression Test PAA")])
++    now = datetime.datetime.now(datetime.timezone.utc)
++    cert = (
++        x509.CertificateBuilder()
++        .subject_name(name)
++        .issuer_name(name)
++        .public_key(key.public_key())
++        .serial_number(x509.random_serial_number())
++        .not_valid_before(now - datetime.timedelta(minutes=1))
++        .not_valid_after(now + datetime.timedelta(days=1))
++        .add_extension(
++            x509.SubjectKeyIdentifier.from_public_key(key.public_key()),
++            critical=False,
++        )
++        .sign(key, hashes.SHA256())
++    )
++    return cert.public_bytes(serialization.Encoding.PEM).decode()
++
++
++async def _run() -> None:
++    paa = _load_paa_module()
++    paa.CERT_SUBJECT_KEY_IDS.clear()
++    bad_pem = "-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"
++    good_pem = _make_valid_pem()
++
++    with tempfile.TemporaryDirectory() as tmp:
++        root = Path(tmp)
++        bad_ok = await paa.write_paa_root_cert(
++            root, "dcld_production", bad_pem, "bad-cert"
++        )
++        remaining_after_bad = list(root.iterdir())
++        good_ok = await paa.write_paa_root_cert(
++            root, "dcld_production", good_pem, "good-cert"
++        )
++        remaining_after_good = list(root.iterdir())
++
++    if bad_ok is not False:
++        raise SystemExit(f"expected bad cert to return False, got {bad_ok!r}")
++    if remaining_after_bad:
++        raise SystemExit(f"expected no files after bad cert, found {remaining_after_bad}")
++    if good_ok is not True:
++        raise SystemExit(f"expected good cert to return True, got {good_ok!r}")
++    if not remaining_after_good:
++        raise SystemExit("expected good cert to write files")
++    print("skip_unparseable_paa_ok")
++
++
++if __name__ == "__main__":
++    try:
++        asyncio.run(_run())
++    except BaseException as err:
++        if XFAIL:
++            print(f"xfail_ok {type(err).__name__}")
++            raise SystemExit(0) from None
++        raise
++    else:
++        if XFAIL:
++            raise SystemExit("unexpected pass while XFAIL=True")
