@@ -225,7 +225,7 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstall
 
     mkdir -p "$out/lib/openwiki" "$out/bin"
-    cp -r dist node_modules package.json "$out/lib/openwiki/"
+    cp -r dist node_modules package.json skills README.md LICENSE "$out/lib/openwiki/"
     ${lib.optionalString stdenv.hostPlatform.isDarwin ''
       ln -s ${lib.getExe openwikiLaunchdLauncher} "$out/bin/openwiki-launchd-launcher"
     ''}
@@ -243,11 +243,8 @@ stdenv.mkDerivation (finalAttrs: {
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck
-    if test -d "$out/lib/openwiki/skills"; then
-      echo "OpenWiki runtime skills unexpectedly packaged" >&2
-      exit 1
-    fi
-    echo "expected failure: OpenWiki runtime skills are missing" >&2
+    test -f "$out/lib/openwiki/skills/write-connector/SKILL.md"
+    test -f "$out/lib/openwiki/skills/migrate-wiki-to-okf/SKILL.md"
     runHook postInstallCheck
   '';
 
