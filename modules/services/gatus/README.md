@@ -1,3 +1,11 @@
+---
+purpose: Human docs for Gatus uptime monitoring on the NUC.
+applies_to: Operators changing Gatus endpoints, alerts, or healthcheck setup.
+entrypoint: Enable modules.services.gatus in host config; edit endpoints in default.nix.
+verification: hey nuc switch, then check Gatus UI and healthchecks.io pings.
+update_when: Endpoint URLs, conditions, alert providers, or install steps change.
+---
+
 # Gatus Uptime Monitoring
 
 Automated service health monitoring for NUC using [Gatus](https://gatus.io/). Alerts via Telegram on downtime, pings healthchecks.io as dead man's switch.
