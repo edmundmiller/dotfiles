@@ -1,0 +1,169 @@
+diff --git a/package.json b/package.json
+index 44f494c..20533ae 100644
+--- a/package.json
++++ b/package.json
+@@ -57,6 +57,7 @@
+     "cron-parser": "5.6.1",
+     "cronstrue": "3.24.0",
+     "deepagents": "^1.11.0",
++    "evlog": "^2.20.0",
+     "google-auth-library": "^10.9.0",
+     "ink": "^5.1.0",
+     "langchain": "^1.5.3",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 4f7d6a1..2e4ee72 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -53,6 +53,9 @@ importers:
+       deepagents:
+         specifier: ^1.11.0
+         version: 1.11.0(258c1430434a32ce8e1dc2c77a7040b8)
++      evlog:
++        specifier: ^2.20.0
++        version: 2.20.0(react@18.3.1)(vite@8.1.3(@types/node@22.20.0)(esbuild@0.28.1)(tsx@4.22.5)(yaml@2.9.0))
+       google-auth-library:
+         specifier: ^10.9.0
+         version: 10.9.0
+@@ -1094,6 +1097,66 @@ packages:
+     resolution: {integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==}
+     engines: {node: '>=18.0.0'}
+ 
++  evlog@2.20.0:
++    resolution: {integrity: sha512-S4r1+uHKRJg/1AH7LYHjuBAOJpe6Pdf3n9bb1lrIzeNNYzi4dvycrS+regpyriaalx69+IL6vB3OnPN7e7DVLw==}
++    engines: {node: '>=18.0.0'}
++    peerDependencies:
++      '@nestjs/common': '>=11.1.19'
++      '@nuxt/kit': ^4.4.2
++      '@orpc/server': '>=1.14.0'
++      '@tanstack/start-client-core': ^1.167.20
++      ai: '>=6.0.168 <8.0.0'
++      elysia: '>=1.4.28'
++      eve: '>=0.12.0'
++      express: '>=5.2.1'
++      fastify: '>=5.8.5'
++      h3: ^1.15.11
++      hono: '>=4.11.0'
++      next: '>=16.2.4'
++      nitro: ^3.0.260311-beta
++      nitropack: ^2.13.3
++      ofetch: ^1.5.1
++      react: '>=19.2.5'
++      react-router: '>=7.14.2'
++      vite: ^7.0.0 || ^8.0.0
++    peerDependenciesMeta:
++      '@nestjs/common':
++        optional: true
++      '@nuxt/kit':
++        optional: true
++      '@orpc/server':
++        optional: true
++      '@tanstack/start-client-core':
++        optional: true
++      ai:
++        optional: true
++      elysia:
++        optional: true
++      eve:
++        optional: true
++      express:
++        optional: true
++      fastify:
++        optional: true
++      h3:
++        optional: true
++      hono:
++        optional: true
++      next:
++        optional: true
++      nitro:
++        optional: true
++      nitropack:
++        optional: true
++      ofetch:
++        optional: true
++      react:
++        optional: true
++      react-router:
++        optional: true
++      vite:
++        optional: true
++
+   expand-template@2.0.3:
+     resolution: {integrity: sha512-XYfuKMvj4O35f/pOXLObndIRvyQ+/+6AhODh+OKWj9S9498pHHn/IMszH+gt0fBCRWMNfk1ZSp5x3AifmnI2vg==}
+     engines: {node: '>=6'}
+@@ -3035,6 +3098,11 @@ snapshots:
+ 
+   eventsource-parser@3.1.0: {}
+ 
++  evlog@2.20.0(react@18.3.1)(vite@8.1.3(@types/node@22.20.0)(esbuild@0.28.1)(tsx@4.22.5)(yaml@2.9.0)):
++    optionalDependencies:
++      react: 18.3.1
++      vite: 8.1.3(@types/node@22.20.0)(esbuild@0.28.1)(tsx@4.22.5)(yaml@2.9.0)
++
+   expand-template@2.0.3: {}
+ 
+   expect-type@1.4.0: {}
+diff --git a/src/cli.tsx b/src/cli.tsx
+index 5a6992a..edb72f5 100644
+--- a/src/cli.tsx
++++ b/src/cli.tsx
+@@ -1,7 +1,9 @@
+ #!/usr/bin/env node
++import { randomUUID } from "node:crypto";
+ import React, { useEffect, useRef, useState } from "react";
+ import { Box, render, Text, useApp, useInput } from "ink";
+ import { marked, type Token, type Tokens } from "marked";
++import { createLogger, initLogger } from "evlog";
+ import {
+   configureAuthProvider,
+   listAuthProviderTools,
+@@ -3554,6 +3556,8 @@ function Rows({ rows }: RowsProps) {
+   );
+ }
+ 
++initLogger({ env: { service: "openwiki" } });
++
+ const argv = process.argv.slice(2);
+ const parsedCommand = parseCommand(argv);
+ 
+@@ -3821,6 +3825,13 @@ function formatScheduleStatus(schedule: ConnectorScheduleStatus): string {
+ async function runIngestCommand(
+   command: Extract<CliCommand, { kind: "ingest" }>,
+ ): Promise<void> {
++  const log = createLogger({
++    jobId: randomUUID(),
++    source: command.target,
++  });
++
++  log.set({ scheduledOnly: command.scheduledOnly });
++
+   try {
+     const result = await runOpenWikiIngestion(process.cwd(), {
+       debug: isDebugMode(),
+@@ -3841,15 +3852,23 @@ async function runIngestCommand(
+       );
+     }
+ 
+-    const hadError = result.results.some(
++    const failedSourceCount = result.results.filter(
+       (sourceResult) => sourceResult.status === "error",
+-    );
++    ).length;
+ 
+-    process.exitCode = hadError ? 1 : 0;
++    log.set({
++      failedSourceCount,
++      sourceCount: result.results.length,
++      outcome: failedSourceCount > 0 ? "error" : "complete",
++    });
++    process.exitCode = failedSourceCount > 0 ? 1 : 0;
+   } catch (error) {
++    log.set({ errorMessage: getErrorMessage(error), outcome: "error" });
+     process.stderr.write(`${getErrorMessage(error)}\n`);
+     writePrintErrorDiagnostics(error);
+     process.exitCode = 1;
++  } finally {
++    log.emit();
+   }
+ }
+ 
