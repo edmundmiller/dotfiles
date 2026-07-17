@@ -27,6 +27,24 @@ class OmpModelRoutingTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, f"openai-codex/gpt-5.6-sol:{effort}")
 
+    def test_mactraitorpro_uses_gemini_3_flash_for_vision(self) -> None:
+        result = subprocess.run(
+            [
+                "nix",
+                "eval",
+                "--raw",
+                ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.modelRoles.vision",
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "google-antigravity/gemini-3-flash")
+
 
 if __name__ == "__main__":
     unittest.main()
