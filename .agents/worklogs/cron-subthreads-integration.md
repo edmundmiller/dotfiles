@@ -12,6 +12,7 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Treat agents-workspace as canonical runtime source and dotfiles as host wiring.
 - Do not land stale tracker-only closure commits before their acceptance evidence exists.
 - Batch compatible host changes into one NUC generation.
+- Serialize every mutating NUC deployment and reject snapshots not based on current dotfiles main unless explicitly overridden.
 
 ## Evidence
 
@@ -33,6 +34,11 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Scintillate's natural 22:11:45 run reached packaged tnote and commit, then failed because the vault's checkout hook could not resolve `git-lfs`. Dotfiles regression/fix commits `c31d66322` and `657fd72f2` add `git-lfs` to the isolated cron PATH. The x86_64 runtime check and full NUC build passed; generation `iw5l2mnzxyffhfffzvhiqvwy8ccbfnic` deployed with all four timers active, gateways masked, and both `git-lfs 3.7.1` and `tnote 0.3.0` in Scintillate's service PATH.
 - The failed commit left 2323 automation-staged `01_Tasks` paths. The script had verified no pre-existing staged changes; root reset only that index path, leaving zero staged paths and preserving 2331 dirty/untracked working paths. No vault content was discarded.
 - The 22:20 switch again replaced a concurrently deployed non-main generation: activation removed Homebox while restoring current linear dotfiles main. This reconfirms `workspace-x6l`; avoid further switches until deploy serialization is fixed.
+- Dotfiles regression/fix commits `d0cf0ca35` and `5f5cf7bbc` now serialize mutating NUC deployments with `/run/lock/nixos-deploy.lock`, record owner diagnostics, reject stale local snapshots, preserve parallel build mode, and forward interruption safely. Hermetic checks pass on Darwin and x86_64 Linux; `f832b90c3` fixes the Linux test package. A live stale smoke was rejected before activation with exit 65. `workspace-x6l` is closed.
+- Homebox was rebased and integrated linearly as `7e8941d38`; the combined generation preserved Homebox HTTP 200, all four Hermes timers, masked gateways, and the deploy guard.
+- Scintillate's natural 23:15:49 run cleared the Unicode, mutable-import, and git-lfs blockers, then exposed whole-tree staging: 2325 pre-existing/untracked active-task paths hit the vault status hook. Root verified every staged path was under `01_Tasks`, reset only that index, and preserved all working content.
+- Agents-workspace red/green pairs `bed173d`/`035f613` and `253664a`/`247175f` make failed commits clear only automation staging and commit only paths newly dirtied by the scheduler. Four focused tests pass, including Unicode paths, failed-hook cleanup, packaged tnote, and pre-existing untracked exclusion.
+- Dotfiles `0d3f0dd25` pins those fixes. Full NUC build `/nix/store/l6xyhy9kyh2wwjbphw0b79qx5lxz6dab-nixos-system-nuc-26.11.20260714.18b9261` is live with all four timers active, gateways masked, Homebox active, the corrected script materialized, and zero staged vault paths.
 - `hey agent-audit-tests` passed for the changed executor/runtime tests.
 - `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
 - Stable generation and remaining natural-run proof are still required before closure.
@@ -45,11 +51,11 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Feedback
 
 - `hey agents-rollout` still targets missing `~/.openclaw/workspace`; use explicit repo paths for this integration.
-- Codex heartbeat creation and cross-thread messaging both hung after deployment; natural Scintillate verification remains untriggered and must be resumed directly after 22:06:37 CDT.
+- Dedicated and root Scintillate follow-up heartbeats are armed for 00:20 and 00:23 CDT. Betty and Radar retain their natural-run follow-ups.
 
 ## Remaining work
 
-- Verify Scintillate's next packaged-CLI `tnote-schedule` natural run after 23:11:45 CDT; close `workspace-rtl.3.1` and `workspace-rtl.3` only if accepted.
+- Verify Scintillate's next natural `tnote-schedule` run after 00:15:49 CDT; require success, advanced schedule, fresh artifact, and zero staged residue before closing `workspace-rtl.3.1` and `workspace-rtl.3`.
 - Verify Betty at 10:15 CDT and Radar at 16:30 CDT on 2026-07-17; close only beads whose natural-run evidence satisfies acceptance.
 
 ## Commits
@@ -66,3 +72,8 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Agents-workspace `f6044e8`, `41ac4c4` — mutable-import regression/packaged tnote fix.
 - Dotfiles `1be3467caa` — pin packaged tnote scheduler.
 - Dotfiles `c31d66322`, `657fd72f2` — missing-git-lfs regression/runtime fix.
+- Dotfiles `d0cf0ca35`, `5f5cf7bbc`, `f832b90c3` — deploy serialization regression/fix and hermetic Linux check.
+- Dotfiles `7e8941d38` — integrate private Homebox pilot without losing cron runtime.
+- Agents-workspace `bed173d`, `035f613` — failed-hook staged-residue regression/fix.
+- Agents-workspace `253664a`, `247175f` — unrelated active-task staging regression/run-owned staging fix.
+- Dotfiles `0d3f0dd25` — pin run-owned Scintillate scheduler.
