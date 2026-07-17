@@ -1,3 +1,11 @@
+---
+purpose: Document Gatus uptime monitors and secret injection for NUC services.
+applies_to: Changes under modules/services/gatus or host Gatus endpoint config.
+entrypoint: Edit endpoints in default.nix; keep AGENTS.md and README.md in sync.
+verification: hey nuc switch, then curl localhost:8084/health and Gatus UI statuses.
+update_when: Endpoint URLs, conditions, alert providers, or secret injection change.
+---
+
 # Gatus Module - Agent Guide
 
 ## Purpose
@@ -52,20 +60,20 @@ This means healthchecks.io alerts if:
 
 ## Monitored Endpoints
 
-| Service        | Group          | URL                         | Protocol           |
-| -------------- | -------------- | --------------------------- | ------------------ |
-| Home Assistant | Smart Home     | localhost:8123/api/         | HTTP               |
-| Homebridge     | Smart Home     | localhost:8581              | HTTP               |
-| Matter Server  | Smart Home     | localhost:5580              | TCP                |
-| Jellyfin       | Media          | localhost:8096/health       | HTTP               |
-| Sonarr         | Media          | localhost:8989/ping         | HTTP               |
-| Radarr         | Media          | localhost:7878/ping         | HTTP               |
-| Prowlarr       | Media          | localhost:9696/ping         | HTTP               |
-| PostgreSQL     | Infrastructure | localhost:5432              | TCP                |
-| AgentsView     | Infrastructure | localhost:8087              | HTTP (conditional) |
-| Tailscale      | Infrastructure | localhost:41112/healthz     | HTTP               |
-| Hermes Web UI  | Infrastructure | 127.0.0.1:8642              | HTTP (conditional) |
-| Audiobookshelf | Media          | localhost:13378/healthcheck | HTTP (conditional) |
+| Service        | Group          | URL                          | Protocol           |
+| -------------- | -------------- | ---------------------------- | ------------------ |
+| Home Assistant | Smart Home     | localhost:8123/manifest.json | HTTP               |
+| Homebridge     | Smart Home     | localhost:8581               | HTTP               |
+| Matter Server  | Smart Home     | localhost:5580               | TCP                |
+| Jellyfin       | Media          | localhost:8096/health        | HTTP               |
+| Sonarr         | Media          | localhost:8989/ping          | HTTP               |
+| Radarr         | Media          | localhost:7878/ping          | HTTP               |
+| Prowlarr       | Media          | localhost:9696/ping          | HTTP               |
+| PostgreSQL     | Infrastructure | localhost:5432               | TCP                |
+| AgentsView     | Infrastructure | localhost:8087               | HTTP (conditional) |
+| Tailscale      | Infrastructure | localhost:41112/healthz      | HTTP               |
+| Hermes Web UI  | Infrastructure | 127.0.0.1:8642               | HTTP (conditional) |
+| Audiobookshelf | Media          | localhost:13378/healthcheck  | HTTP (conditional) |
 
 ## Adding New Endpoints
 
