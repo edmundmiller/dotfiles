@@ -136,6 +136,32 @@ let
       )
     ) actions;
 
+  hasWaitForStateDeep =
+    actions: entityId: state:
+    any (
+      a:
+      (
+        a ? wait_for_trigger
+        && any (
+          t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == state
+        ) (toList a.wait_for_trigger)
+        && (a.continue_on_timeout or true) == false
+      )
+      || (
+        if a ? choose then
+          any (c: hasWaitForStateDeep (toList (c.sequence or [ ])) entityId state) a.choose
+        else
+          false
+      )
+      || (if a ? default then hasWaitForStateDeep (toList a.default) entityId state else false)
+      || (
+        if builtins.hasAttr "then" a then hasWaitForStateDeep (toList a."then") entityId state else false
+      )
+      || (
+        if builtins.hasAttr "else" a then hasWaitForStateDeep (toList a."else") entityId state else false
+      )
+    ) actions;
+
   hasActionDataDeep =
     actions: actionName: key: value:
     any (
@@ -413,12 +439,20 @@ let
     }
     {
       test =
-        !(hasActionTarget (toList (tvOnScript.sequence or [ ])) "remote.turn_on" "remote.living_room")
-        && !(hasActionTarget (toList (tvOffScript.sequence or [ ])) "remote.turn_off" "remote.living_room")
-        && !(
-          hasActionTarget (toList (tvOffIfOnScript.sequence or [ ])) "remote.turn_off" "remote.living_room"
-        );
-      msg = "regression sentinel: TV scripts unexpectedly disconnect the Apple TV remote";
+        let
+          tvOnSequence = toList (tvOnScript.sequence or [ ]);
+          tvOffSequence = toList (tvOffScript.sequence or [ ]);
+          tvOffIfOnSequence = toList (tvOffIfOnScript.sequence or [ ]);
+        in
+        length tvOnSequence >= 3
+        && hasActionTarget [ (head tvOnSequence) ] "remote.turn_on" "remote.living_room"
+        && hasWaitForStateDeep tvOnSequence "remote.living_room" "on"
+        && hasActionTarget [ (last tvOnSequence) ] "media_player.turn_on" "media_player.living_room"
+        && hasActionTarget [ (head tvOffSequence) ] "media_player.turn_off" "media_player.living_room"
+        && hasActionTarget [ (last tvOffSequence) ] "remote.turn_off" "remote.living_room"
+        && hasActionTarget tvOffIfOnSequence "media_player.turn_off" "media_player.living_room"
+        && hasActionTarget [ (last tvOffIfOnSequence) ] "remote.turn_off" "remote.living_room";
+      msg = "TV scripts must reconnect before power-on and disconnect after power-off";
     }
     {
       test = sleepFocusOffEdmund != null;
