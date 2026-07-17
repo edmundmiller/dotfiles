@@ -344,11 +344,6 @@ let
   # The shared family/group bot can stay separate from Scintillate's DM bot.
   hermesScintillateTelegramBotTokenFile = config.age.secrets.telegram-bot-token-scintillate.path;
   linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
-  amosburtonCronExecutor = pkgs.writeShellScript "hermes-amosburton-cron-executor" ''
-    set -euo pipefail
-    unset HERMES_MCP_BEARER_TOKEN_LINEAR
-    exec ${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick
-  '';
   mkAgentSecret = envVar: secretName: {
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
@@ -369,6 +364,10 @@ let
   hermesAmosburtonSecrets = hermesProviderSecrets ++ [
     {
       envVar = "LINEAR_API_KEY";
+      path = "/var/lib/opnix/secrets/amosburtonLinearApiKey";
+    }
+    {
+      envVar = "HERMES_MCP_BEARER_TOKEN_LINEAR";
       path = "/var/lib/opnix/secrets/amosburtonLinearApiKey";
     }
   ];
@@ -1871,7 +1870,7 @@ in
         "MESSAGING_CWD=/var/lib/hermes-amosburton/workspace"
         "CODEX_HOME=/home/emiller/.codex"
       ];
-      ExecStart = "${amosburtonCronExecutor}";
+      ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
