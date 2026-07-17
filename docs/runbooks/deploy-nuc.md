@@ -24,6 +24,25 @@ opnix credential and supplies Nix `access-tokens` without logging the token.
 `hey nuc`, local NUC `hey re`, and `nixos-upgrade.service` use this wrapper.
 Darwin `hey re` obtains the same narrow credential from the local `gh` keyring.
 
+Mutating NUC rebuilds (`dry-activate`, `test`, `switch`, and `boot`) share the
+NUC-side lock `/run/lock/nixos-deploy.lock`. Worktree deploys also send their
+HEAD and merge-base; the wrapper compares them with live GitHub `origin/main`
+before activation. Old synced snapshots without metadata and stale worktrees
+are rejected. `build` and `vm` remain parallel and do not take the lock.
+
+If a deploy is rejected, update the worktree from `origin/main`, rebuild, then
+retry. Inspect contention without deleting lock files:
+
+```bash
+ssh nuc "sudo cat /run/lock/nixos-deploy.lock.owner"
+```
+
+The owner file includes caller, PID, time, working directory, and source
+commits. Process exit or interruption releases the kernel lock; the next owner
+overwrites stale diagnostics safely. After explicit review, bypass only the
+stale-source check with `NUC_DEPLOY_ALLOW_STALE=1 hey nuc-wt switch`; the shared
+lock still applies.
+
 ## Deploy
 
 ```bash
@@ -73,7 +92,7 @@ If the deployment causes issues:
 # Roll back to previous generation
 hey nuc-rollback
 # Or via SSH
-ssh nuc "sudo nixos-rebuild --rollback switch"
+ssh nuc "sudo nix-private-github nixos-rebuild --rollback switch"
 ```
 
 ## Common Issues

@@ -2,6 +2,39 @@
 set -euo pipefail
 
 token_file="${GITHUB_NIX_TOKEN_FILE:-/var/lib/opnix/secrets/githubNixToken}"
+deploy_source_head=""
+deploy_source_base=""
+deploy_source_owner="${SUDO_USER:-${USER:-unknown}}"
+deploy_allow_stale="${NIXOS_DEPLOY_ALLOW_STALE:-0}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --nuc-deploy-source-head=*)
+      deploy_source_head="${1#*=}"
+      shift
+      ;;
+    --nuc-deploy-source-base=*)
+      deploy_source_base="${1#*=}"
+      shift
+      ;;
+    --nuc-deploy-source-owner=*)
+      deploy_source_owner="${1#*=}"
+      shift
+      ;;
+    --nuc-deploy-allow-stale)
+      deploy_allow_stale=1
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ $# -eq 0 ]]; then
+  echo "nix-private-github: missing command" >&2
+  exit 2
+fi
 
 if [[ ! -s "$token_file" ]]; then
   echo "GitHub token file is missing or empty: $token_file" >&2
@@ -12,4 +45,113 @@ token="$(<"$token_file")"
 export NIX_CONFIG="${NIX_CONFIG:+${NIX_CONFIG}
 }access-tokens = github.com=$token"
 
-exec "$@"
+command_name="$(basename "$1")"
+deploy_mutation=0
+remote_flake=0
+if [[ "$command_name" == "nixos-rebuild" ]]; then
+  for arg in "${@:2}"; do
+    case "$arg" in
+      switch|test|dry-activate|boot)
+        deploy_mutation=1
+        ;;
+      github:*|gitlab:*|https://*|http://*|--flake=github:*|--flake=gitlab:*|--flake=https://*|--flake=http://*)
+        remote_flake=1
+        ;;
+      --rollback)
+        remote_flake=1
+        ;;
+    esac
+  done
+fi
+
+if [[ "$deploy_mutation" -eq 0 ]]; then
+  exec "$@"
+fi
+
+lock_file="${NIXOS_DEPLOY_LOCK_FILE:-/run/lock/nixos-deploy.lock}"
+owner_file="${NIXOS_DEPLOY_OWNER_FILE:-${lock_file}.owner}"
+mkdir -p "$(dirname "$lock_file")"
+exec {deploy_lock_fd}>"$lock_file"
+if ! flock -n "$deploy_lock_fd"; then
+  echo "nix-private-github: NUC deployment lock is held: $lock_file" >&2
+  if [[ -r "$owner_file" ]]; then
+    sed 's/^/  /' "$owner_file" >&2
+  fi
+  exit 75
+fi
+
+# shellcheck disable=SC2329 # Invoked by EXIT trap.
+cleanup_deploy_lock() {
+  rm -f "$owner_file"
+}
+write_deploy_owner() {
+  {
+    printf 'owner=%s\n' "$deploy_source_owner"
+    printf 'pid=%s\n' "$$"
+    printf 'started=%s\n' "$(date --iso-8601=seconds)"
+    printf 'cwd=%s\n' "$PWD"
+    printf 'source_head=%s\n' "${deploy_source_head:-unknown}"
+    printf 'source_base=%s\n' "${deploy_source_base:-unknown}"
+  } >"$owner_file"
+}
+deploy_child_pid=""
+# shellcheck disable=SC2329 # Invoked by signal traps.
+forward_deploy_signal() {
+  local signal="$1"
+  local exit_code="$2"
+  trap - HUP INT TERM
+  if [[ -n "$deploy_child_pid" ]] && kill -0 "$deploy_child_pid" 2>/dev/null; then
+    kill -s "$signal" "$deploy_child_pid" 2>/dev/null || true
+    wait "$deploy_child_pid" 2>/dev/null || true
+  fi
+  exit "$exit_code"
+}
+trap cleanup_deploy_lock EXIT
+trap 'forward_deploy_signal HUP 129' HUP
+trap 'forward_deploy_signal INT 130' INT
+trap 'forward_deploy_signal TERM 143' TERM
+write_deploy_owner
+
+if [[ -z "$deploy_source_head" || -z "$deploy_source_base" ]]; then
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    deploy_source_head="$(git rev-parse HEAD)"
+    deploy_source_base="$(git merge-base HEAD origin/main)"
+  elif [[ "$remote_flake" -eq 0 ]]; then
+    echo "nix-private-github: local NUC deployment lacks source metadata; refusing activation" >&2
+    exit 65
+  fi
+fi
+
+remote_main="${NIXOS_DEPLOY_REMOTE_MAIN:-}"
+if [[ "$remote_flake" -eq 0 ]]; then
+  if [[ -z "$remote_main" ]]; then
+    read -r remote_main _ < <(
+      git ls-remote https://github.com/edmundmiller/dotfiles.git refs/heads/main
+    )
+  fi
+  if [[ -z "$remote_main" ]]; then
+    echo "nix-private-github: could not resolve current dotfiles origin/main" >&2
+    exit 69
+  fi
+  if [[ "$deploy_source_base" != "$remote_main" && "$deploy_source_head" != "$remote_main" ]]; then
+    if [[ "$deploy_allow_stale" != "1" ]]; then
+      echo "nix-private-github: stale NUC deployment snapshot refused" >&2
+      echo "  source head: $deploy_source_head" >&2
+      echo "  source base: $deploy_source_base" >&2
+      echo "  origin/main: $remote_main" >&2
+      exit 65
+    fi
+    echo "nix-private-github: WARNING: reviewed stale override accepted" >&2
+  fi
+fi
+
+write_deploy_owner
+
+"$@" &
+deploy_child_pid=$!
+set +e
+wait "$deploy_child_pid"
+status=$?
+set -e
+deploy_child_pid=""
+exit "$status"

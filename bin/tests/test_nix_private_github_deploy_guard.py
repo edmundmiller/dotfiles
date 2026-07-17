@@ -28,6 +28,10 @@ class NucDeployGuardTest(unittest.TestCase):
             "#!/usr/bin/env bash\n"
             "set -euo pipefail\n"
             "touch \"$COMMAND_READY\"\n"
+            "if [[ \"${COMMAND_HOLD:-0}\" == 1 ]]; then\n"
+            "  trap 'exit 143' TERM\n"
+            "  while :; do sleep 0.05; done\n"
+            "fi\n"
             "sleep \"${COMMAND_SLEEP:-0}\"\n"
             "printf '%s\\n' \"$*\" >>\"$COMMAND_MARKER\"\n",
             encoding="utf-8",
@@ -77,13 +81,11 @@ class NucDeployGuardTest(unittest.TestCase):
             "--nuc-deploy-source-owner=test-owner",
         ]
 
-    @unittest.expectedFailure
     def test_current_main_snapshot_runs(self) -> None:
         result = self.run_wrapper(*self.source_args(), str(self.command), "switch")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(self.marker.exists())
 
-    @unittest.expectedFailure
     def test_stale_snapshot_is_rejected_before_activation(self) -> None:
         result = self.run_wrapper(
             *self.source_args(base="stale-sha"), str(self.command), "switch"
@@ -92,7 +94,6 @@ class NucDeployGuardTest(unittest.TestCase):
         self.assertIn("stale NUC deployment snapshot", result.stderr)
         self.assertFalse(self.marker.exists())
 
-    @unittest.expectedFailure
     def test_explicit_stale_override_runs(self) -> None:
         result = self.run_wrapper(
             *self.source_args(base="stale-sha"),
@@ -103,7 +104,6 @@ class NucDeployGuardTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("stale override", result.stderr)
 
-    @unittest.expectedFailure
     def test_concurrent_mutation_reports_lock_owner(self) -> None:
         first = subprocess.Popen(
             [str(WRAPPER), *self.source_args(), str(self.command), "switch"],
@@ -125,11 +125,10 @@ class NucDeployGuardTest(unittest.TestCase):
         self.assertIn("test-owner", second.stderr)
         first.wait(timeout=5)
 
-    @unittest.expectedFailure
     def test_interrupted_deploy_releases_lock(self) -> None:
         first = subprocess.Popen(
             [str(WRAPPER), *self.source_args(), str(self.command), "switch"],
-            env=self.env | {"COMMAND_SLEEP": "30"},
+            env=self.env | {"COMMAND_HOLD": "1"},
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -156,6 +155,10 @@ class NucDeployGuardTest(unittest.TestCase):
         result = self.run_wrapper(
             str(self.command), "switch", "--flake", "github:owner/repo#nuc"
         )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_rollback_takes_lock_without_worktree_metadata(self) -> None:
+        result = self.run_wrapper(str(self.command), "--rollback", "switch")
         self.assertEqual(result.returncode, 0, result.stderr)
 
 
