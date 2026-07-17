@@ -51,7 +51,7 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Feedback
 
 - `hey agents-rollout` still targets missing `~/.openclaw/workspace`; use explicit repo paths for this integration.
-- Scintillate verifier/coordinator wakeups completed and its two tasks were archived. Betty retains its dedicated verifier plus the coordinator slot at 10:33 CDT; Radar retains its dedicated verifier.
+- Scintillate verifier/coordinator wakeups completed and its two tasks were archived. Codex heartbeat `BYHOUR` values are evaluated as UTC: the first Betty coordinator fired early at 05:33 CDT, before the 10:15 job. Remaining schedules were corrected and re-read active: Betty verifier/coordinator at 15:30/15:33Z (10:30/10:33 CDT), Radar verifier at 21:35Z (16:35 CDT).
 
 ## Remaining work
 
