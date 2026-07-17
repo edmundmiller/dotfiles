@@ -18,6 +18,7 @@ Materialize Betty's Discord, Life Time, and Linear secrets into her root-generat
 
 - Keep `/etc/opnix-token` root-owned; root activation already owns secret materialization.
 - Derive 1Password references from the pinned Betty agent specification to avoid duplicated references.
+- Give only Betty's executor the token-file group and export the token in its wrapper because the Lift prompt itself invokes `op read`.
 - Verify only key names/booleans and non-secret authentication outcomes.
 
 ## Evidence
@@ -33,6 +34,7 @@ Materialize Betty's Discord, Life Time, and Linear secrets into her root-generat
 - Built-in `hermes-runtime-smoke.service` is masked, so it was not counted as verification.
 - Another worktree redeployed generation 1147 at 18:40, replacing the fixed generation before the 18:43 natural tick; that tick reproduced 12 auth errors. Land upstream, redeploy, and recheck.
 - `hey agent-audit-tests` passed. `hey agent-finish` passed its substantive checks but repo-quality failed because no prek config exists; direct `nixfmt --check` passed.
+- Follow-up expected-failure coverage captured missing token access; remote system build and focused Nix check passed after adding the wrapper and supplementary group.
 
 ## Reviews
 
@@ -46,10 +48,12 @@ Materialize Betty's Discord, Life Time, and Linear secrets into her root-generat
 
 ## Remaining work
 
-- Commit worklog, rebase, push, and tag.
-- Redeploy the upstream-current fix and verify another natural tick has zero 1Password errors.
+- Commit worklog, rebase, push, and verify upstream.
+- Redeploy the upstream-current token wrapper and verify another natural tick has zero 1Password errors.
 
 ## Commits
 
 - `a1e7318b99` test(nuc): capture Betty secret outage
 - `f21c84b569` fix(nuc): materialize Betty runtime secrets
+- `368bc6943` test(nuc): capture Betty token access gap
+- `60ce35994` fix(nuc): authorize Betty 1Password reads
