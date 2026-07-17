@@ -81,11 +81,11 @@ in
     })
 
     {
+      # nvm rejects npm prefix overrides from both the environment and npmrc.
       env.NPM_CONFIG_USERCONFIG = "$XDG_CONFIG_HOME/npm/config";
       env.NPM_CONFIG_CACHE = "$XDG_CACHE_HOME/npm";
       # npm 11 warns that `tmp` is no longer a supported config key. Let npm use
       # the platform temp dir (TMPDIR/TMP/TEMP) instead of exporting NPM_CONFIG_TMP.
-      env.NPM_CONFIG_PREFIX = "$XDG_CACHE_HOME/npm";
       env.NODE_REPL_HISTORY = "$XDG_CACHE_HOME/node/repl_history";
 
       # npm rejects combining `before` and `min-release-age`; keep only
@@ -99,7 +99,6 @@ in
 
       home.configFile."npm/config".text = ''
         cache=$XDG_CACHE_HOME/npm
-        prefix=$XDG_DATA_HOME/npm
         min-release-age=3
       '';
     }
