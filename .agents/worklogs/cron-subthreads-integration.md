@@ -23,12 +23,14 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - NUC x86_64 checks passed: executor wiring, Scintillate runtime access, Radar runtime, and external executor reporting.
 - Initial NUC check exposed immutable-store chmod from copying symlinked Hermes files. The integrated fix dereferences them into writable output; all four checks then passed.
 - Full NUC build passed: `/nix/store/q3fkhia2w47v9y9ic26m471xcb5499l7-nixos-system-nuc-26.11.20260714.18b9261`.
+- `hey agent-audit-tests` passed for the changed executor/runtime tests.
+- `hey agent-finish` passed test confidence, inventory, agent-quality tests, and drift checks. Its repo-quality subcheck failed because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`; formatting and hook commands stopped at that missing baseline configuration before examining task files.
 - Current NUC switch and natural-run proof still required after landing.
 
 ## Reviews
 
 - Plan review: required gate attempted three ways on 2026-07-16. Claude returned `Authentication required`; Gemini's ACP adapter passed unsupported `acp`; grok-build could not spawn `grok agent stdio`. No independent reviewer was available. Continue with explicit branch, test, build, and live-runtime evidence; rerun landing review before completion.
-- Landing review: pending.
+- Landing review: Claude gate retried after the full build and again returned `Authentication required` before producing findings.
 
 ## Feedback
 
