@@ -1,6 +1,6 @@
 # Worklog: cron-subthreads-integration
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -45,6 +45,10 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - At 07:44 CDT the NUC was on generation `s10lp05qnvqai4xa30pl55wal0xqs25m`, whose `nixos-version --json` configuration revision is `e0e356f7ba1b98e335f0751a70bb1fff9c8ad90d`. That revision is an ancestor of current dotfiles `origin/main`; the only later commit is heartbeat documentation. Betty's timer/gateway topology, service environment, state ownership, stable job ID, and 10:15 due time remained intact. Remaining verifiers now qualify generations by source-revision ancestry plus runtime invariants instead of brittle store-path equality.
 - Betty's natural Lift run completed `ok` at 10:22:56 CDT, advanced job `90d60a4f77e0` to 2026-07-24 10:15 CDT, and wrote a fresh artifact. It correctly returned `skipped_by_calendar` because the Family calendar contains the all-day Tuttle trip across the target Saturday. Scheduler logs prove Discord delivery; the read-only session database proves Gmail `status: sent` with message/thread ID `19f70abedeec23ee`.
 - The current `rpny08whzkd8064mzlkjrf1mix6ggj4w` generation exposes no configuration revision, but its Betty unit and package store paths are identical to the qualified `s10lp05...` generation. Timer/gateway topology, ownership, and stable job ID also remain intact. `workspace-rtl.2` closed in agents-workspace `4b2efac`; non-blocking skill-discovery/path retries are tracked separately as `workspace-lmk`.
+- The user explicitly authorized running Radar immediately instead of waiting for the 16:30 natural gate. The first run exposed single-provider fallback exhaustion; agents-workspace `519406e`/`4a15e72` diversified fallbacks and dotfiles `2cfa0e991` deployed them. A second run exposed `[SILENT]` quiet-day suppression; agents-workspace `2506ad1`/`217fd0a` made quiet-day email and index health mandatory, deployed by dotfiles `89de5d2c3`.
+- Live tool inspection proved Hermes' terminal login snapshot discarded the service-only package PATH. Dotfiles `467bebe5e`/`b26541a37` put Blogwatcher 0.2.1 and rtk in the NUC system profile. A root-run verification had contaminated Radar state ownership; `09a774240`/`70070cb96` added a startup ownership regression and repair. Full NUC builds and serialized switches passed.
+- Radar then exposed the live Monologue inbox at `00_Inbox/Monologue`, not the stale imported-notes path. Agents-workspace `c79c37d`/`669c181` corrected the prompt and regressions; dotfiles `9a7129acc` deployed the exact pin. Final generation `5w961dj0bqx48i3m1kwhx8h1ib0a1zzr` is live.
+- User-authorized final Radar run `ca9d557a9481`, session `cron_ca9d557a9481_20260717_161052`, completed `ok`; Blogwatcher preflight returned 0.2.1, `last_error` and delivery error are null, and scheduler logs prove email delivery. Artifact `/var/lib/hermes-radar/.hermes/cron/output/ca9d557a9481/2026-07-17_16-11-39.md` reports a useful quiet day, current Signals schema/index/log health, and no repeats of the four handled candidates. `workspace-by1`, `workspace-b9o`, and `workspace-rtl` closed in agents-workspace `64a03f9`.
 
 ## Reviews
 
@@ -54,11 +58,11 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 ## Feedback
 
 - `hey agents-rollout` still targets missing `~/.openclaw/workspace`; use explicit repo paths for this integration.
-- Scintillate and Betty verifier/coordinator wakeups completed and their tasks were archived. Codex heartbeat `BYHOUR` values are evaluated as UTC: the first Betty coordinator fired early at 05:33 CDT, before the 10:15 job. Radar verifier/coordinator remain armed at 21:35/21:38Z (16:35/16:38 CDT).
+- Scintillate and Betty verifier/coordinator wakeups completed and their tasks were archived. Codex heartbeat `BYHOUR` values are evaluated as UTC: the first Betty coordinator fired early at 05:33 CDT, before the 10:15 job. Radar verification completed early by explicit user authorization; its verifier/coordinator wakeups can be deleted.
 
 ## Remaining work
 
-- Verify Radar at 16:30 CDT on 2026-07-17; close only beads whose natural-run evidence satisfies acceptance, then close the umbrella and perform the final integration audit.
+- None for this integration. Separate Amos auth/skill and Betty skill-resolution follow-up beads remain open.
 
 ## Commits
 
@@ -79,3 +83,5 @@ Integrate every actionable Hermes cron sub-thread with no new merge commits, pro
 - Agents-workspace `bed173d`, `035f613` — failed-hook staged-residue regression/fix.
 - Agents-workspace `253664a`, `247175f` — unrelated active-task staging regression/run-owned staging fix.
 - Dotfiles `0d3f0dd25` — pin run-owned Scintillate scheduler.
+- Agents-workspace `519406e`, `4a15e72`, `2506ad1`, `217fd0a`, `c79c37d`, `669c181`, `64a03f9` — Radar fallback, quiet-day delivery, live Monologue path, and bead closure.
+- Dotfiles `2cfa0e991`, `89de5d2c3`, `467bebe5e`, `b26541a37`, `09a774240`, `70070cb96`, `9a7129acc` — Radar deploy pins, terminal PATH, and ownership repair.
