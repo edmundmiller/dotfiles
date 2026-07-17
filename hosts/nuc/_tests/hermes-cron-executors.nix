@@ -70,10 +70,12 @@ let
       msg = "Betty's generated service environment must contain Discord, Life Time, and Linear secrets.";
     }
     {
-      test =
-        !(builtins.elem "onepassword-secrets" (bettyService.serviceConfig.SupplementaryGroups or [ ]))
-        && hasInfix "betty-hermes cron tick" (toString bettyService.serviceConfig.ExecStart);
-      msg = "Betty token-access outage characterization unexpectedly passed; remove the expected-failure assertion.";
+      test = builtins.elem "onepassword-secrets" bettyService.serviceConfig.SupplementaryGroups;
+      msg = "Betty cron executor must be able to read the root-owned 1Password service token.";
+    }
+    {
+      test = hasInfix "hermes-betty-cron-executor" (toString bettyService.serviceConfig.ExecStart);
+      msg = "Betty cron executor must export the 1Password service token before launching Hermes.";
     }
   ];
 
