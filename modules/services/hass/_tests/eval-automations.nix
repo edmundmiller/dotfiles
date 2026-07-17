@@ -235,6 +235,8 @@ let
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
   tvOnScript = scripts.tv_on or null;
+  tvOffScript = scripts.tv_off or null;
+  tvOffIfOnScript = scripts.tv_off_if_on or null;
   climatePolicy = findAutomation "climate_policy";
   climateDoorOpen = findAutomation "climate_pause_front_door_open";
   climateDoorClosed = findAutomation "climate_resume_front_door_closed";
@@ -408,6 +410,15 @@ let
         && hasTargetEntity (toList (tvOnScript.sequence or [ ])) "media_player.living_room"
         && !(hasTargetEntity (toList (tvOnScript.sequence or [ ])) "media_player.tv");
       msg = "script.tv_on must target Living Room Apple TV, not Cast media_player.tv";
+    }
+    {
+      test =
+        !(hasActionTarget (toList (tvOnScript.sequence or [ ])) "remote.turn_on" "remote.living_room")
+        && !(hasActionTarget (toList (tvOffScript.sequence or [ ])) "remote.turn_off" "remote.living_room")
+        && !(
+          hasActionTarget (toList (tvOffIfOnScript.sequence or [ ])) "remote.turn_off" "remote.living_room"
+        );
+      msg = "regression sentinel: TV scripts unexpectedly disconnect the Apple TV remote";
     }
     {
       test = sleepFocusOffEdmund != null;
