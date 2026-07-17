@@ -237,6 +237,15 @@ in
                 icon = "healthchecks.svg";
               };
             }
+          ]
+          ++ optionals config.modules.services.homebox.enable [
+            {
+              "Homebox" = {
+                href = "https://homebox.cinnamon-rooster.ts.net/";
+                description = "Household inventory pilot";
+                icon = "mdi-package-variant-closed";
+              };
+            }
           ];
         }
         {

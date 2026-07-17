@@ -155,6 +155,15 @@ let
               conditions = [ "[STATUS] < 500" ];
             }
           ]
+          ++ optionals config.modules.services.homebox.enable [
+            {
+              name = "Homebox";
+              group = "Home";
+              url = "https://homebox.cinnamon-rooster.ts.net/";
+              interval = "60s";
+              conditions = [ "[STATUS] < 500" ];
+            }
+          ]
           ++ optionals config.modules.services.homepage.enable [
             {
               name = "Homepage";

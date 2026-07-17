@@ -1829,6 +1829,12 @@ in
           }
         ];
       };
+      homebox = {
+        enable = true;
+        allowRegistration = false;
+        environmentFile = config.age.secrets.homebox-env.path;
+        tailscaleService.enable = true;
+      };
       jellyfin = {
         enable = true;
         tailscaleService.enable = true;

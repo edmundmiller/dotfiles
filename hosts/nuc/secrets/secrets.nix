@@ -100,6 +100,10 @@ in
     edmundmiller
     nuc
   ];
+  "homebox-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "lubelogger-env.age".publicKeys = [
     edmundmiller
     nuc
