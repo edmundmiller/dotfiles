@@ -240,6 +240,17 @@ stdenv.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
+  doInstallCheck = true;
+  installCheckPhase = ''
+    runHook preInstallCheck
+    if test -d "$out/lib/openwiki/skills"; then
+      echo "OpenWiki runtime skills unexpectedly packaged" >&2
+      exit 1
+    fi
+    echo "expected failure: OpenWiki runtime skills are missing" >&2
+    runHook postInstallCheck
+  '';
+
   meta = {
     description = "Agent-generated documentation wiki for codebases";
     homepage = "https://github.com/langchain-ai/openwiki";
