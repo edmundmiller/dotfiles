@@ -1,6 +1,14 @@
+---
+purpose: Define NUC Headless Sync and corruption guard conventions.
+applies_to: modules.services.obsidian-sync
+entrypoint: default.nix
+verification: nix build .#checks.aarch64-darwin.obsidian-sync-safety-assertions
+update_when: Sync topology, options, exclusions, or guard behavior changes.
+---
+
 # Obsidian Sync Module
 
-Headless Obsidian Sync via `obsidian-headless` CLI. Replaces the old LinuxServer Docker container.
+Headless Obsidian Sync for the NUC. Mac intentionally uses Desktop Sync.
 
 ## Key Facts
 
@@ -9,6 +17,8 @@ Headless Obsidian Sync via `obsidian-headless` CLI. Replaces the old LinuxServer
 - **Two modes**: `server` (pull-only, read-only copy) and `desktop` (bidirectional)
 - **One-time setup required** — `ob login` + `ob sync-setup` before service starts
 - **Do NOT combine** with Obsidian desktop app sync on the same device
+- **Shared policy** — vault `07_Metadata/Validation/obsidian-sync-policy.json`
+- **Tripwire** — `ExecStartPre` plus 30-second timer; stops Headless without rewriting vault data
 
 ## Sync Modes
 
@@ -25,9 +35,11 @@ Set `syncMode` to override the default derived from `mode`.
 **NixOS** — `systemd.services.obsidian-sync`
 
 - `ExecStartPre` runs `ob sync-config` to set mode/device before each start
+- `ExecStartPre` rejects unsafe paths, missing exclusions, markers, loops, churn, and engine conflicts
 - Runs as configured user, sandboxed with `ProtectHome=read-only`
+- `obsidian-sync-guard.timer` stops the writer and fails Healthchecks.io on violations
 
-**Darwin** — no launchd service. Use the GUI Obsidian app on macOS hosts.
+**Darwin** — no Headless launchd service. The Mac host defines a Desktop safety guard.
 
 ## Options
 
@@ -38,6 +50,7 @@ Set `syncMode` to override the default derived from `mode`.
 | `vaultPath`  | `~/obsidian-vault` | Directory synced to/from remote vault                   |
 | `deviceName` | hostname           | Identifies this device in Obsidian Sync                 |
 | `continuous` | `true`             | Watch for changes vs one-shot sync                      |
+| `safety.*`   | enabled            | Checker, policy, state, interval, and sync freshness    |
 
 ## Files
 
@@ -48,4 +61,4 @@ Set `syncMode` to override the default derived from `mode`.
 
 - `packages/obsidian-headless/` — Nix package (buildNpmPackage + vendored lockfile)
 - `hosts/nuc/default.nix` — primary consumer (server mode)
-- https://help.obsidian.md/sync/headless — upstream docs
+- https://obsidian.md/help/sync/headless — upstream docs
