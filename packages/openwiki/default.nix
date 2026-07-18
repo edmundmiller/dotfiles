@@ -190,6 +190,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0003-read-only-skills-regression.patch
     ./patches/0004-writable-skill-replacement.patch
     ./patches/0005-evlog-ingestion-events.patch
+    ./patches/0006-links-connector.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
