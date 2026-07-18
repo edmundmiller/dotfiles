@@ -1701,8 +1701,10 @@ in
     environment = config.services.hermes-agent.profiles.scintillate.environment // {
       HOME = "/var/lib/hermes-scintillate";
       HERMES_HOME = "/var/lib/hermes-scintillate/.hermes";
+      HERMES_REAL_HOME = "/var/lib/hermes-scintillate";
       HERMES_KANBAN_HOME = hermesSharedHome;
       HERMES_PROFILE = "scintillate";
+      TERMINAL_HOME_MODE = "real";
       MESSAGING_CWD = "/home/hermes/repos/obsidian-vault";
       CODEX_HOME = "/home/emiller/.codex";
     };
