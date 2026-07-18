@@ -1,3 +1,11 @@
+---
+purpose: Own OMP host wiring, config deploy, and config.yml validation.
+applies_to: Changing OMP package wrapper, Home Manager links, or config/omp.
+entrypoint: config/omp/config.yml; modules/agents/omp/default.nix
+verification: bash modules/agents/omp/test-config-yml.sh
+update_when: OMP deploy path, config keys, or validation command changes.
+---
+
 # OMP Module
 
 Thin wrapper module for Oh My Pi (`omp`).
@@ -24,6 +32,16 @@ runtime state remains mutable and OMP-owned.
 
 The module clears OMP's cached MCP tool metadata during activation so removed
 servers do not reappear from `agent.db`.
+
+After changing OMP config or module wiring, run:
+
+```sh
+bash modules/agents/omp/test-config-yml.sh
+./bin/hey help
+```
+
+`test-config-yml.sh` flattens `config/omp/config.yml` and checks keys/types
+against `omp config list --json`. Legacy/renamed keys fail closed.
 
 Enable with:
 
