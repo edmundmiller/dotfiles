@@ -32,6 +32,37 @@ let
 
   excludedFoldersStr = concatStringsSep "," cfg.excludedFolders;
 
+  safetyCheck = pkgs.writeShellScript "obsidian-sync-safety-check" ''
+    set -eu
+    state_dir=${escapeShellArg (dirOf cfg.safety.statePath)}
+    mkdir -p "$state_dir"
+    events="$state_dir/events.jsonl"
+    ${pkgs.systemd}/bin/journalctl -u obsidian-sync.service --since "6 minutes ago" -o json --no-pager > "$events"
+    exec ${pkgs.bun}/bin/bun ${escapeShellArg cfg.safety.checkerPath} \
+      --vault ${escapeShellArg cfg.vaultPath} \
+      --policy ${escapeShellArg cfg.safety.policyPath} \
+      --engine headless \
+      --excluded-folders ${escapeShellArg excludedFoldersStr} \
+      --event-log "$events" \
+      --state ${escapeShellArg cfg.safety.statePath} \
+      --json
+  '';
+
+  safetyStop = pkgs.writeShellScript "obsidian-sync-safety-stop" ''
+    set -u
+    if ${pkgs.util-linux}/bin/runuser -u ${escapeShellArg cfg.user} -- ${safetyCheck}; then
+      exit 0
+    else
+      rc=$?
+    fi
+    ${pkgs.systemd}/bin/systemctl stop obsidian-sync.service || true
+    ${optionalString (cfg.healthcheck.enable && cfg.healthcheck.pingUrl != "")
+      "${pkgs.curl}/bin/curl -fsS -m 10 ${escapeShellArg "${cfg.healthcheck.pingUrl}/fail"} >/dev/null || true"
+    }
+    echo "Obsidian Sync stopped by corruption tripwire" >&2
+    exit "$rc"
+  '';
+
   configScript = pkgs.writeShellScript "obsidian-sync-config" ''
     ${ob} sync-config \
       --path ${escapeShellArg cfg.vaultPath} \
@@ -145,8 +176,11 @@ in
       default = [
         # Agent/dev dirs
         ".git"
+        ".agent"
         ".beads"
         ".claude"
+        ".codex"
+        ".flue"
         ".github"
         ".scripts"
         ".opencode"
@@ -157,7 +191,10 @@ in
         ".agents"
         ".goose"
         ".hooks"
+        ".moss"
         ".pytest_cache"
+        ".scripts"
+        ".tmp"
         "node_modules"
         "TaskNotes"
         "OLD_VAULT"
@@ -165,6 +202,14 @@ in
         ".amp"
         "scripts"
         ".trash"
+        "01_Projects"
+        "02_Areas"
+        "03_Resources"
+        "04_Archive"
+        "05_Attachments"
+        "06_Archive"
+        "06_Metadata"
+        "02_Projects/Eve-Healthcheck-Remediator-Spike/node_modules"
         ".obsidian/plugins-disabled-20260505-160148"
         ".obsidian/plugins-disabled-20260505-162506"
         ".obsidian/plugins-disabled-all-20260505-164607"
@@ -172,6 +217,13 @@ in
         ".obsidian/quarantine-resynced-corrupt-title-files-20260506-082626"
         "06_Attachments/YouTube"
         "src"
+        "dist"
+        "rule-tests"
+        "rules"
+        "test"
+        "vendor"
+        "worker"
+        "workflows"
       ];
       description = "Folders to exclude from sync.";
     };
@@ -196,6 +248,15 @@ in
       pingUrl = mkOpt types.str "";
       interval = mkOpt types.str "2min";
     };
+
+    safety = {
+      enable = mkBoolOpt true;
+      checkerPath = mkOpt types.str "${cfg.vaultPath}/scripts/obsidian-sync-safety-check.ts";
+      policyPath = mkOpt types.str "${cfg.vaultPath}/07_Metadata/Validation/obsidian-sync-policy.json";
+      statePath = mkOpt types.str "/var/lib/obsidian-sync-guard/state.json";
+      interval = mkOpt types.str "30s";
+      fullySyncedMaxAge = mkOpt types.str "3 minutes";
+    };
   };
 
   config = mkIf cfg.enable (
@@ -206,7 +267,8 @@ in
     // optionalAttrs (!isDarwin) {
       systemd.tmpfiles.rules = [
         "d ${cfg.vaultPath} 0755 ${cfg.user} users -"
-      ];
+      ]
+      ++ optional cfg.safety.enable "d ${dirOf cfg.safety.statePath} 0750 ${cfg.user} users -";
 
       # Generate /run/obsidian-sync-op.env from the raw token file so
       # systemd EnvironmentFile (which needs KEY=VALUE format) can load it.
@@ -245,7 +307,8 @@ in
               else
                 [ "${checkConfigured}" ]
             )
-            ++ [ "${configScript}" ];
+            ++ [ "${configScript}" ]
+            ++ optional cfg.safety.enable "${safetyCheck}";
           ExecStart = "${syncScript}";
           Restart = "on-failure";
           RestartSec = "30s";
@@ -270,6 +333,25 @@ in
         };
       };
 
+      systemd.services.obsidian-sync-guard = mkIf cfg.safety.enable {
+        description = "Stop Obsidian Sync when corruption tripwires fire";
+        after = [ "obsidian-sync.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${safetyStop}";
+        };
+      };
+
+      systemd.timers.obsidian-sync-guard = mkIf cfg.safety.enable {
+        description = "Run Obsidian Sync corruption tripwires";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = cfg.safety.interval;
+          OnUnitActiveSec = cfg.safety.interval;
+          AccuracySec = "1s";
+        };
+      };
+
       # Dead man's switch — verifies service is active + vault has files, pings healthchecks.io
       systemd.services.obsidian-sync-healthcheck-ping = mkIf cfg.healthcheck.enable {
         description = "Check obsidian-sync health and ping healthchecks.io";
@@ -278,6 +360,7 @@ in
           Type = "oneshot";
           ExecStartPre = "-${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${cfg.healthcheck.pingUrl}/start";
           ExecStart = pkgs.writeShellScript "obsidian-sync-healthcheck" ''
+            ${optionalString cfg.safety.enable "${pkgs.util-linux}/bin/runuser -u ${escapeShellArg cfg.user} -- ${safetyCheck}"}
             # Verify systemd service is active
             ${pkgs.systemd}/bin/systemctl is-active --quiet obsidian-sync.service || {
               echo "obsidian-sync.service is not active" >&2
@@ -288,7 +371,12 @@ in
               echo "vault directory missing or empty: ${cfg.vaultPath}" >&2
               exit 1
             fi
-            echo "healthy: service active, vault has files"
+            if ! ${pkgs.systemd}/bin/journalctl -u obsidian-sync.service --since ${escapeShellArg "${cfg.safety.fullySyncedMaxAge} ago"} --no-pager \
+              | ${pkgs.gnugrep}/bin/grep -q "Fully synced"; then
+              echo "no recent Fully synced message" >&2
+              exit 1
+            fi
+            echo "healthy: guard clean, service active, vault has files, recent Fully synced"
           '';
           ExecStopPost = "${pkgs.curl}/bin/curl -sS -m 10 --retry 5 ${cfg.healthcheck.pingUrl}/\${EXIT_STATUS}";
         };
