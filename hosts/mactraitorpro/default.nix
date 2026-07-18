@@ -97,6 +97,11 @@ in
             export HOMEBREW_FAKE_MACOS=26.0
           '';
         };
+        mo.enable = true;
+        mo.purgePaths = [
+          "~/src"
+          "~/repos"
+        ];
       };
 
       agents = {
