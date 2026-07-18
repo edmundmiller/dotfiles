@@ -19,6 +19,8 @@ let
   requiredExclusions = [
     ".git"
     ".agents"
+    ".env"
+    ".envrc"
     "OLD_VAULT"
     "01_Projects"
     "02_Areas"

@@ -180,6 +180,8 @@ in
         ".beads"
         ".claude"
         ".codex"
+        ".env"
+        ".envrc"
         ".flue"
         ".github"
         ".scripts"
