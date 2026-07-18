@@ -1,6 +1,6 @@
 # Worklog: obsidian-sync-hardening
 
-Status: active
+Status: awaiting mobile audit
 
 ## Objective
 
@@ -33,6 +33,10 @@ Harden the intentional hybrid Obsidian Sync topology: Mac Desktop only, NUC Head
 - `hey agent-audit-tests` passes.
 - Vault `pnpm check` passes; focused tripwire tests pass 7/7; the changed active TaskNote passes placement, mdbase, contract, and runtime lint.
 - Full local NUC toplevel evaluation reaches an existing x86_64-only agent-skills IFD; NUC dry activation remains the authoritative build check.
+- NUC dry activation and deployment pass. Final Headless rollout stayed clean for 10+ minutes with repeated `Fully synced`, zero anomalies, and zero rolling churn.
+- Mac deployment passes. Desktop reported `Fully synced`, idle, ready, unpaused, and error-free for 10+ minutes; launchd guard remained exit 0.
+- Cross-peer common-content manifests contain 29,502 files and match SHA-256 `c334c31c0e1203d0349ed7c6a11f4704be85d60c59c5339a7ca8c6178471e0b1`.
+- Manifesting exposed differing tracked `.env`; both writers were frozen, `.env`/`.envrc` were added to the shared policy and both clients, then guards were redeployed.
 
 ## Reviews
 
@@ -46,11 +50,14 @@ Harden the intentional hybrid Obsidian Sync topology: Mac Desktop only, NUC Head
 
 ## Remaining work
 
-- Validate, commit, land, deploy, roll out peers, audit mobile, and prove convergence.
+- Audit each mobile client, verify exclusions and canary convergence, then run the final 30-minute all-client quiet window.
 
 ## Commits
 
 - Vault `93acc16651` — regression tests.
 - Vault `0fb4cc059c` — policy, tripwires, hook, exclusions, safe path repair.
 - Vault `19a4ee9f33` — hybrid architecture and recovery runbook.
-- Dotfiles `c251784a6c` — NUC/Mac guards, exclusions, health, eval test, docs.
+- Dotfiles `9f0abf8303` — NUC/Mac guards, exclusions, health, eval test, docs.
+- Vault `daef7b5bc0`, `67d5bb3126`, `5dbe4b5155` — false-positive regressions and event-loop fix.
+- Vault `66c6441403`, `88ed38aa8c` — local environment exclusion regression and fix.
+- Dotfiles `ff39da1d12` — deploy local environment exclusions.
