@@ -1,0 +1,343 @@
+diff --git a/test/rss-connector.test.ts b/test/rss-connector.test.ts
+new file mode 100644
+index 0000000..e5dad8e
+--- /dev/null
++++ b/test/rss-connector.test.ts
+@@ -0,0 +1,337 @@
++import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
++import os from "node:os";
++import path from "node:path";
++import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++
++const RSS_MODULE_PATH = "../src/connectors/sources/rss.ts";
++const originalHome = process.env.HOME;
++const tempHomes: string[] = [];
++
++const rssFeed = `<?xml version="1.0" encoding="UTF-8"?>
++<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
++  <channel>
++    <title>Example RSS</title>
++    <item>
++      <guid isPermaLink="false">entry-2</guid>
++      <link>https://example.com/posts/2</link>
++      <title>Second post</title>
++      <dc:creator>Casey</dc:creator>
++      <pubDate>Fri, 17 Jul 2026 15:00:00 GMT</pubDate>
++      <description><![CDATA[Second summary.]]></description>
++    </item>
++    <item>
++      <guid>entry-1</guid>
++      <link>https://example.com/posts/1</link>
++      <title>First post</title>
++      <author>Alex</author>
++      <pubDate>Thu, 16 Jul 2026 15:00:00 GMT</pubDate>
++      <description>First summary.</description>
++    </item>
++  </channel>
++</rss>`;
++
++function atomFeed(secondTitle = "Second entry", includeThird = false): string {
++  return `<?xml version="1.0" encoding="utf-8"?>
++<feed xmlns="http://www.w3.org/2005/Atom">
++  <title>Example Atom</title>
++  <entry>
++    <id>tag:example.com,2026:first</id>
++    <link rel="alternate" href="https://example.com/atom/first" />
++    <title>First entry</title>
++    <author><name>Alex</name></author>
++    <published>2026-07-16T12:00:00Z</published>
++    <summary>First summary.</summary>
++  </entry>
++  <entry>
++    <id>tag:example.com,2026:second</id>
++    <link href="https://example.com/atom/second" />
++    <title>${secondTitle}</title>
++    <author><name>Casey</name></author>
++    <updated>2026-07-17T12:00:00Z</updated>
++    <content>Second body.</content>
++  </entry>
++  ${
++    includeThird
++      ? `<entry>
++    <id>tag:example.com,2026:third</id>
++    <link href="/atom/third" />
++    <title>Third entry</title>
++    <published>2026-07-18T12:00:00Z</published>
++    <summary>Third summary.</summary>
++  </entry>`
++      : ""
++  }
++</feed>`;
++}
++
++async function createHome(): Promise<string> {
++  const home = await mkdtemp(path.join(os.tmpdir(), "openwiki-rss-test-"));
++  tempHomes.push(home);
++  return home;
++}
++
++async function loadConnector(home: string) {
++  vi.resetModules();
++  process.env.HOME = home;
++  const rssModule = await import(RSS_MODULE_PATH);
++  return rssModule.createRssConnector();
++}
++
++async function readResultFile(
++  rawFiles: string[],
++  name: string,
++): Promise<Record<string, unknown>> {
++  const filePath = rawFiles.find((candidate) => candidate.endsWith(name));
++  expect(filePath).toBeDefined();
++  return JSON.parse(await readFile(filePath!, "utf8")) as Record<
++    string,
++    unknown
++  >;
++}
++
++beforeEach(() => {
++  vi.useFakeTimers();
++  vi.setSystemTime(new Date("2026-07-18T12:00:00.000Z"));
++});
++
++afterEach(async () => {
++  vi.useRealTimers();
++  vi.unstubAllGlobals();
++  vi.resetModules();
++  if (originalHome === undefined) delete process.env.HOME;
++  else process.env.HOME = originalHome;
++  await Promise.all(
++    tempHomes.splice(0).map((home) => rm(home, { force: true, recursive: true })),
++  );
++});
++
++describe("RSS/Atom connector", () => {
++  test.fails("writes bounded normalized RSS entries and provenance", async () => {
++    const home = await createHome();
++    const fetchMock = vi.fn().mockResolvedValue(
++      new Response(rssFeed, {
++        headers: {
++          etag: '"rss-v1"',
++          "last-modified": "Fri, 17 Jul 2026 15:30:00 GMT",
++        },
++      }),
++    );
++    vi.stubGlobal("fetch", fetchMock);
++    const connector = await loadConnector(home);
++
++    const result = await connector.ingest({
++      connectorConfig: {
++        enabled: true,
++        feedUrl: "https://example.com/feed.xml",
++        maxItems: 1,
++      },
++      instanceId: "rss-1",
++    });
++
++    expect(result.status).toBe("success");
++    const entries = await readResultFile(result.rawFiles, "entries-rss-1.json");
++    expect(entries).toMatchObject({
++      capturedAt: "2026-07-18T12:00:00.000Z",
++      connectorId: "rss",
++      entries: [
++        {
++          author: "Casey",
++          capturedAt: "2026-07-18T12:00:00.000Z",
++          changeType: "new",
++          content: "Second summary.",
++          entryGuid: "entry-2",
++          entryUrl: "https://example.com/posts/2",
++          feedUrl: "https://example.com/feed.xml",
++          identity: "guid:entry-2",
++          provenance: {
++            connectorId: "rss",
++            feedUrl: "https://example.com/feed.xml",
++            sourceInstanceId: "rss-1",
++          },
++          publishedAt: "2026-07-17T15:00:00.000Z",
++          title: "Second post",
++        },
++      ],
++      feedUrl: "https://example.com/feed.xml",
++      sourceInstanceId: "rss-1",
++    });
++    const manifest = await readResultFile(
++      result.rawFiles,
++      "manifest-rss-1.json",
++    );
++    expect(manifest).toMatchObject({
++      capturedAt: "2026-07-18T12:00:00.000Z",
++      changedEntries: 0,
++      emittedEntries: 1,
++      etag: '"rss-v1"',
++      feedTitle: "Example RSS",
++      feedUrl: "https://example.com/feed.xml",
++      lastModified: "Fri, 17 Jul 2026 15:30:00 GMT",
++      newEntries: 1,
++      sourceInstanceId: "rss-1",
++    });
++    await expect(stat(result.rawFiles[0])).resolves.toMatchObject({
++      mode: expect.any(Number),
++    });
++    expect((await stat(result.rawFiles[0])).mode & 0o777).toBe(0o600);
++  });
++
++  test.fails("uses validators and emits only new or changed Atom entries", async () => {
++    const home = await createHome();
++    const fetchMock = vi
++      .fn()
++      .mockResolvedValueOnce(
++        new Response(atomFeed(), {
++          headers: {
++            etag: '"atom-v1"',
++            "last-modified": "Fri, 17 Jul 2026 12:30:00 GMT",
++          },
++        }),
++      )
++      .mockResolvedValueOnce(
++        new Response(atomFeed("Second entry revised", true), {
++          headers: {
++            etag: '"atom-v2"',
++            "last-modified": "Sat, 18 Jul 2026 12:30:00 GMT",
++          },
++        }),
++      );
++    vi.stubGlobal("fetch", fetchMock);
++    const connector = await loadConnector(home);
++    const options = {
++      connectorConfig: {
++        enabled: true,
++        feedUrl: "https://example.com/atom.xml",
++      },
++      instanceId: "rss-2",
++    };
++
++    await connector.ingest(options);
++    vi.setSystemTime(new Date("2026-07-18T13:00:00.000Z"));
++    const result = await connector.ingest(options);
++
++    const secondRequest = fetchMock.mock.calls[1]?.[1] as RequestInit;
++    const headers = new Headers(secondRequest.headers);
++    expect(headers.get("if-none-match")).toBe('"atom-v1"');
++    expect(headers.get("if-modified-since")).toBe(
++      "Fri, 17 Jul 2026 12:30:00 GMT",
++    );
++    const entries = await readResultFile(result.rawFiles, "entries-rss-2.json");
++    expect(entries).toMatchObject({
++      entries: [
++        {
++          changeType: "changed",
++          entryGuid: "tag:example.com,2026:second",
++          title: "Second entry revised",
++        },
++        {
++          changeType: "new",
++          entryGuid: "tag:example.com,2026:third",
++          entryUrl: "https://example.com/atom/third",
++          title: "Third entry",
++        },
++      ],
++    });
++    const state = JSON.parse(
++      await readFile(
++        path.join(home, ".openwiki/connectors/rss/state.json"),
++        "utf8",
++      ),
++    ) as Record<string, unknown>;
++    expect(state).toMatchObject({
++      rss: {
++        instances: {
++          "rss-2": {
++            etag: '"atom-v2"',
++            feedUrl: "https://example.com/atom.xml",
++            lastModified: "Sat, 18 Jul 2026 12:30:00 GMT",
++          },
++        },
++      },
++    });
++  });
++
++  test.fails("keeps conditional state isolated by stable source instance", async () => {
++    const home = await createHome();
++    const fetchMock = vi
++      .fn()
++      .mockResolvedValueOnce(
++        new Response(rssFeed, { headers: { etag: '"feed-a"' } }),
++      )
++      .mockResolvedValueOnce(
++        new Response(atomFeed(), { headers: { etag: '"feed-b"' } }),
++      )
++      .mockResolvedValueOnce(new Response(null, { status: 304 }));
++    vi.stubGlobal("fetch", fetchMock);
++    const connector = await loadConnector(home);
++
++    await connector.ingest({
++      connectorConfig: { feedUrl: "https://example.com/a.xml" },
++      instanceId: "rss-1",
++    });
++    await connector.ingest({
++      connectorConfig: { feedUrl: "https://example.com/b.xml" },
++      instanceId: "rss-2",
++    });
++    const result = await connector.ingest({
++      connectorConfig: { feedUrl: "https://example.com/a.xml" },
++      instanceId: "rss-1",
++    });
++
++    expect(result).toMatchObject({ rawFiles: [], status: "skipped" });
++    const thirdHeaders = new Headers(
++      (fetchMock.mock.calls[2]?.[1] as RequestInit).headers,
++    );
++    expect(thirdHeaders.get("if-none-match")).toBe('"feed-a"');
++    const state = JSON.parse(
++      await readFile(
++        path.join(home, ".openwiki/connectors/rss/state.json"),
++        "utf8",
++      ),
++    );
++    expect(state.rss.instances).toMatchObject({
++      "rss-1": { etag: '"feed-a"' },
++      "rss-2": { etag: '"feed-b"' },
++    });
++  });
++
++  test.fails("fails closed when a feed exceeds the configured byte bound", async () => {
++    const home = await createHome();
++    const fetchMock = vi
++      .fn()
++      .mockResolvedValue(new Response(`<rss>${"x".repeat(512)}</rss>`));
++    vi.stubGlobal("fetch", fetchMock);
++    const connector = await loadConnector(home);
++
++    const result = await connector.ingest({
++      connectorConfig: {
++        feedUrl: "https://example.com/large.xml",
++        maxBytes: 128,
++      },
++      instanceId: "rss-1",
++    });
++
++    expect(result).toMatchObject({ rawFiles: [], status: "error" });
++    expect(result.message).toBe("RSS/Atom feed exceeded maxBytes=128.");
++  });
++
++  test.fails("rejects credential-bearing feed URLs before fetching", async () => {
++    const home = await createHome();
++    const fetchMock = vi.fn();
++    vi.stubGlobal("fetch", fetchMock);
++    const connector = await loadConnector(home);
++
++    const result = await connector.ingest({
++      connectorConfig: {
++        feedUrl: "https://example.com/private.xml?access_token=",
++      },
++      instanceId: "rss-1",
++    });
++
++    expect(result).toMatchObject({ rawFiles: [], status: "error" });
++    expect(result.message).toBe(
++      "RSS/Atom feed URLs must not contain credentials or secret query parameters.",
++    );
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++});
