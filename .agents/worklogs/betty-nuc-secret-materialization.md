@@ -8,7 +8,7 @@ update_when: Betty secret ownership, materialization, or executor identity chang
 
 # Worklog: betty-nuc-secret-materialization
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -35,6 +35,8 @@ Materialize Betty's Discord, Life Time, and Linear secrets into her root-generat
 - Another worktree redeployed generation 1147 at 18:40, replacing the fixed generation before the 18:43 natural tick; that tick reproduced 12 auth errors. Land upstream, redeploy, and recheck.
 - `hey agent-audit-tests` passed. `hey agent-finish` passed its substantive checks but repo-quality failed because no prek config exists; direct `nixfmt --check` passed.
 - Follow-up expected-failure coverage captured missing token access; remote system build and focused Nix check passed after adding the wrapper and supplementary group.
+- Natural tick at 18:59:20 finished successfully with exit 0 and zero 1Password/auth errors.
+- A subsequent upstream deploy changed the generation to `/nix/store/xmsgbpzkybbj0wcvvq8q24gi1gmwgdk9-nixos-system-nuc-26.11.20260714.18b9261`; the token group, wrapper, and four non-empty keys remained present.
 
 ## Reviews
 
@@ -48,8 +50,7 @@ Materialize Betty's Discord, Life Time, and Linear secrets into her root-generat
 
 ## Remaining work
 
-- Commit worklog, rebase, push, and verify upstream.
-- Redeploy the upstream-current token wrapper and verify another natural tick has zero 1Password errors.
+None.
 
 ## Commits
 
