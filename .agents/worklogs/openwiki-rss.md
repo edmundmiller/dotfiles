@@ -1,6 +1,6 @@
 # Worklog: openwiki-rss
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -19,12 +19,12 @@ Package a built-in OpenWiki RSS/Atom connector supporting multiple stable source
 
 - Host: `MacTraitor-Pro.local`, Darwin arm64 (`hostname`; `uname -a`).
 - Package source: `langchain-ai/openwiki` at `d4e94ab513ab13908c6b61346b23dc17bbd59b1f`, version `0.2.0`.
-- Existing four-patch stack applies cleanly in `/tmp/openwiki-rss.MJjoLj`.
-- `origin/main` at `1f0862e` has no RSS/Atom connector or tests (`git grep` scoped to connector source/tests/docs/package metadata).
+- The initial four-patch stack applied cleanly in `/tmp/openwiki-rss.MJjoLj`.
+- Initial `origin/main` at `1f0862e` had no RSS/Atom connector or tests (`git grep` scoped to connector source/tests/docs/package metadata).
 - Existing integration surfaces: connector registry/types, deterministic ingestion, persisted source instances, shared `ingest all` schedule, Ink onboarding, README, package harness.
 - Pre-rebase RED package state: fresh `pkg-check openwiki` passed typecheck and 74 tests with five strict expected failures from the RSS regression patch, now numbered `0006-rss-connector-regression.patch` after main's evlog patch.
-- GREEN upstream workbench: final `pnpm test` passed 366 tests across 36 files; `pnpm typecheck` passed; scoped ESLint passed for changed source/test files.
-- GREEN fresh source: final `nix develop -c pkg-check openwiki` cloned the pinned revision, applied the full patch stack, installed the frozen lockfile, passed typecheck, and passed focused tests.
+- GREEN upstream workbench: final `pnpm test` passed 381 tests across 38 files with Links, Discord, and RSS together; `pnpm typecheck` passed; scoped ESLint passed for changed source/test files.
+- GREEN fresh source after rebasing over landed Links and Discord changes: `nix develop -c pkg-check openwiki` cloned the pinned revision, applied all nine patches, installed the frozen lockfile, passed typecheck, and passed 100 focused tests.
 - Package: `nix build .#openwiki` passed, including the `fast-xml-parser` install check. After rebasing over main's evlog dependency, the combined patched dependency hash is `sha256-g2gxm4iBRcnKfXLwZJ326IGbEBRhcXE8iXakh3dU4cY=`.
 - Packaged CLI smoke: a temporary HOME plus local HTTP 304 endpoint exercised `./result/bin/openwiki ingest rss --print`; it selected `RSS / Atom`, skipped synthesis with zero raw files, and wrote connector state. No live OpenWiki config, schedules, credentials, or vault files were touched.
 - `nix develop -c ast-grep scan packages/` passed.
@@ -42,9 +42,10 @@ Package a built-in OpenWiki RSS/Atom connector supporting multiple stable source
 
 ## Remaining work
 
-- Run agent audit/finish and landing review.
-- Commit implementation/worklog, rebase/push, and verify upstream state.
+- None. Optional upstream follow-up: contribute the two-patch RSS/Atom feature to `langchain-ai/openwiki`, then drop these local patches after the packaged pin includes it.
 
 ## Commits
 
-- `36659e602 test(openwiki): define RSS ingestion contracts`
+- `test(openwiki): define RSS ingestion contracts`
+- `feat(openwiki): ingest RSS and Atom subscriptions`
+- `docs(openwiki): close RSS worklog`
