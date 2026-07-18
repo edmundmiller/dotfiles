@@ -2007,6 +2007,7 @@ in
   time.timeZone = "America/Chicago";
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+  services.tailscale.extraSetFlags = [ "--advertise-routes=192.168.1.0/24" ];
   systemd.tmpfiles.rules = [
     "d ${millDocsVaultPath} 0755 emiller users -"
 
