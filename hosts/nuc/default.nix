@@ -113,6 +113,12 @@ let
     export OP_SERVICE_ACCOUNT_TOKEN="$(${pkgs.coreutils}/bin/cat /etc/opnix-token)"
     exec ${bettyHermesLauncher}/bin/betty-hermes cron tick
   '';
+  bettyGoodMorningDjExecutor = pkgs.writeShellScript "betty-hermes-good-morning-dj" ''
+    set -eu
+    exec ${bettyHermesLauncher}/bin/betty-hermes --oneshot ${lib.escapeShellArg ''
+      Play the Spotify playlist named exactly "Good Morning" on the Kitchen player through Home Assistant's Music Assistant integration. Then add five complementary upbeat tracks to that Music Assistant queue. Use Spotify search for curation, but do not use Spotify Connect for playback. Fail clearly if the playlist, player, or Music Assistant is unavailable.
+    ''}
+  '';
   bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit lib; };
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   radarBlogwatcherCli = inputs.agents-workspace.packages.${hostSystem}.blogwatcher-cli;
@@ -283,6 +289,7 @@ let
   hermesBetty1PasswordReferences = {
     inherit (bettyAgentSpec.hermes.dotenvReferences)
       DISCORD_BOT_TOKEN
+      HERMES_SPOTIFY_CLIENT_ID
       LIFETIME_PASSWORD
       LIFETIME_USERNAME
       ;
@@ -1286,6 +1293,10 @@ in
     ];
   };
 
+  # Music Assistant player protocols allocate dynamic ports and require an
+  # unrestricted local interface; eno1 is the NUC's private home LAN.
+  networking.firewall.trustedInterfaces = [ "eno1" ];
+
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
     hermesScintillateWebuiPort
     hermesScintillateDesktopDashboardPort
@@ -1532,7 +1543,7 @@ in
         "CODEX_HOME=/var/lib/hermes-betty/.codex"
         "DISCORD_HOME_CHANNEL=${toString bettyDiscordBindings.homeChannelId}"
       ];
-      ExecStart = bettyHermesCronExecutor;
+      ExecStart = "${pkgs.util-linux}/bin/flock /var/lib/hermes-betty/.profile.lock ${bettyHermesCronExecutor}";
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
@@ -1544,6 +1555,57 @@ in
       ];
     };
   };
+
+  systemd.services.hermes-betty-good-morning-dj = {
+    description = "Have Betty start and curate the Good Morning playlist";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    path = [
+      bettyHermesLauncher
+      hermesAgentBase
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.home-assistant-cli
+      pkgs.python3
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      SupplementaryGroups = [ "onepassword-secrets" ];
+      WorkingDirectory = "/var/lib/hermes-betty";
+      EnvironmentFile = [ "/run/hermes-betty-env/secrets.env" ];
+      Environment = [
+        "HOME=/var/lib/hermes-betty"
+        "HERMES_HOME=/var/lib/hermes-betty/.hermes"
+        "HERMES_KANBAN_HOME=${hermesSharedHome}"
+        "HERMES_PROFILE=betty"
+        "MESSAGING_CWD=/repos/mill-docs"
+        "CODEX_HOME=/var/lib/hermes-betty/.codex"
+      ];
+      ExecStart = "${pkgs.util-linux}/bin/flock /var/lib/hermes-betty/.profile.lock ${bettyGoodMorningDjExecutor}";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = false;
+      ProtectSystem = "strict";
+      ReadWritePaths = [
+        hermesSharedStateDir
+        "/var/lib/hermes-betty"
+      ];
+    };
+  };
+
+  security.sudo.extraRules = [
+    {
+      users = [ "hass" ];
+      commands = [
+        {
+          command = "${pkgs.systemd}/bin/systemctl start --no-block hermes-betty-good-morning-dj.service";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
 
   systemd.timers.hermes-betty-cron-tick = {
     description = "Run Betty background cron jobs on a timer";
@@ -1807,6 +1869,7 @@ in
     }
     // {
       docker.enable = true;
+      music-assistant.enable = true;
       hass = {
         enable = true;
         postgres.enable = true;
@@ -1833,6 +1896,7 @@ in
           "mobile_app" # HA Companion app (iOS/Android)
           "bluetooth" # BLE device discovery
           "spotify" # Spotify playback control (config-flow: add via UI after deploy)
+          "music_assistant" # Music Assistant server/player bridge (config-flow: add via UI after deploy)
           "elevenlabs" # ElevenLabs TTS/STT (config-flow: add API key via UI)
           "zha" # Zigbee Home Automation via ZBT-2 dongle
           "thread" # Thread border router via ZBT-2 dongle

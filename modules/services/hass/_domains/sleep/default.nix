@@ -28,7 +28,7 @@
 #
 # NOTE: Wake detection is retained, but auto Good Morning is intentionally removed.
 # Good Morning remains available as a scene for manual/voice activation.
-{ lib, ... }:
+{ lib, pkgs, ... }:
 let
   inherit (import ../../_lib.nix) ensureEnabled;
 
@@ -260,6 +260,7 @@ in
         ];
       }
     ];
+    shell_command.hermes_betty_good_morning_dj = "/run/wrappers/bin/sudo -n ${pkgs.systemd}/bin/systemctl start --no-block hermes-betty-good-morning-dj.service";
 
     # ── Input helpers (sleep/wake lifecycle) ──────────────────────────────
     input_text.sleep_schedule_key = {
@@ -464,6 +465,9 @@ in
           {
             action = "scene.turn_on";
             target.entity_id = "scene.good_morning";
+          }
+          {
+            action = "shell_command.hermes_betty_good_morning_dj";
           }
           {
             action = "input_boolean.turn_off";
