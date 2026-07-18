@@ -1,6 +1,6 @@
 # Worklog: openwiki-links-input
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -29,6 +29,7 @@ Add a packaged OpenWiki links source that persists a deterministic URL queue, in
 - Built CLI: isolated HOME showed `openwiki ingest links`, skipped an empty queue without credentials, and wrote connector directory/state/gitignore at `0700`/`0600`.
 - Structural/policy: `nix develop -c ast-grep scan packages/` and `hey check` passed. `hey check` also passed Darwin evaluation, package harness/policy, and ast-grep tests.
 - Agent gates: `hey agent-audit-tests` and `hey agent-finish --worklog .agents/worklogs/openwiki-links-input.md` passed all applicable checks.
+- Landing: rebased onto `origin/main`, `br sync --flush-only` had no issue changes, and branch push hooks passed.
 - Full upstream `pnpm lint:check` remains non-green because existing iMessage/ingestion patch tests have 11 lint errors; changed production/test files passed focused ESLint, and the new ingestion assertion adds no lint error.
 
 ## Reviews
@@ -42,8 +43,9 @@ None.
 
 ## Remaining work
 
-- Commit, rebase/push, verify upstream.
+None.
 
 ## Commits
 
 - `5629aa87d9` — `feat(openwiki): add links input connector`
+- `bb5b18c683` — `docs(agent): record OpenWiki links verification`
