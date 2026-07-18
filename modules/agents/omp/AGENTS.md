@@ -16,7 +16,7 @@ with Pi state. The module installs `pkgs.llm-agents.omp` through a wrapper that
 sets:
 
 ```sh
-PI_CONFIG_DIR=$HOME/.omp
+PI_CONFIG_DIR=.omp
 PI_CODING_AGENT_DIR=$HOME/.omp/agent
 PI_PERMISSION_SYSTEM_CONFIG_PATH=$HOME/.omp/agent/extensions/pi-permission-system/config.json
 ```
