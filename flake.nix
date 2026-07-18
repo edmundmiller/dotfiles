@@ -789,29 +789,50 @@
                 files = "^(config/pi/settings\\.jsonc|modules/agents/pi/)";
                 stages = [ "pre-commit" ];
               };
-              omp-config-yml = {
-                enable = true;
-                name = "omp-config-yml";
-                description = "Validate OMP config.yml against omp config list registry";
-                entry = toString (
-                  pkgs.writeShellScript "omp-config-yml" ''
-                    export PATH=${
-                      lib.makeBinPath [
-                        pkgs.coreutils
-                        pkgs.git
-                        pkgs.python3
-                        pkgs.yq-go
-                        inputs.llm-agents.packages.${system}.omp
-                      ]
-                    }:$PATH
-                    bash modules/agents/omp/test-config-yml.sh
-                  ''
-                );
-                language = "system";
-                pass_filenames = false;
-                files = "^(config/omp/config\\.yml|modules/agents/omp/)";
-                stages = [ "pre-commit" ];
-              };
+              omp-config-yml =
+                let
+                  # Plain llm-agents omp is unsigned; Darwin kills it (SIGKILL).
+                  # Copy+codesign like modules/agents/omp isolation wrapper.
+                  ompConfigCheck = pkgs.runCommand "omp-config-check" { } ''
+                    mkdir -p "$out/bin" "$out/lib/omp"
+                    src=${inputs.llm-agents.packages.${system}.omp}
+                    cp -a "$src/lib/omp/." "$out/lib/omp/"
+                    chmod -R u+w "$out/lib/omp"
+                    ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
+                      /usr/bin/codesign -f -s - "$out/lib/omp/omp"
+                    ''}
+                    printf '%s\n' \
+                      '#!${pkgs.runtimeShell}' \
+                      'export PI_SKIP_VERSION_CHECK=1' \
+                      "exec \"$out/lib/omp/omp\" \"\$@\"" \
+                      > "$out/bin/omp"
+                    chmod +x "$out/bin/omp"
+                  '';
+                in
+                {
+                  enable = true;
+                  name = "omp-config-yml";
+                  description = "Validate OMP config.yml against omp config list registry";
+                  entry = toString (
+                    pkgs.writeShellScript "omp-config-yml" ''
+                      export PATH=${
+                        lib.makeBinPath [
+                          pkgs.coreutils
+                          pkgs.git
+                          pkgs.python3
+                          pkgs.yq-go
+                          ompConfigCheck
+                        ]
+                      }:$PATH
+                      export PI_SKIP_VERSION_CHECK=1
+                      bash modules/agents/omp/test-config-yml.sh
+                    ''
+                  );
+                  language = "system";
+                  pass_filenames = false;
+                  files = "^(config/omp/config\\.yml|modules/agents/omp/)";
+                  stages = [ "pre-commit" ];
+                };
               pi-runtime-wrapper = {
                 enable = true;
                 name = "pi-runtime-wrapper";
