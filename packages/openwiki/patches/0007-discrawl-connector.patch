@@ -1,0 +1,1134 @@
+diff --git c/README.md i/README.md
+index dea2fb2..ae46aa8 100644
+--- c/README.md
++++ i/README.md
+@@ -40,8 +40,8 @@ openwiki --init
+ OpenWiki has two modes:
+ 
+ - **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` by
+-  default from configured sources like local repositories, Gmail, iMessage,
+-  saved links, Notion, Web Search, Hacker News, and X/Twitter.
++  default from configured sources like local repositories, Discord, Gmail,
++  iMessage, saved links, Notion, Web Search, Hacker News, and X/Twitter.
+ - **Code mode** builds repository documentation in `openwiki/` for the current
+   codebase.
+ 
+@@ -179,7 +179,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
+ 
+ ## Local Connectors
+ 
+-OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, iMessage, saved links, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
++OpenWiki's first-run onboarding offers connector setup for local Git repositories, Discord, Notion, Gmail, iMessage, saved links, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
+ 
+ You can configure the same connector more than once. For example, add one Web
+ Search source for AI research and another for NBA news; OpenWiki stores them as
+@@ -192,10 +192,47 @@ instances with `openwiki ingest all`, all instances for one connector with
+ - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
+ - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
+ - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
++- `discord` runs the local `discrawl` JSON CLI against explicitly approved guilds, channels, or the local-only DM cache.
+ - `imessage` runs the fixed local `imsg` command against explicitly approved Messages chats on macOS.
+ - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
+ - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
+ 
++### Discord
++
++Discord ingestion reads a local [Discrawl](https://github.com/openclaw/discrawl)
++archive. It never accepts or scrapes a Discord user token. Configure at least
++one explicit scope in `~/.openwiki/connectors/discord/config.json`:
++
++```json
++{
++  "enabled": true,
++  "guildIds": ["123456789012345678"],
++  "channelIds": [],
++  "includeDms": false,
++  "windowHours": 24,
++  "maxMessages": 500
++}
++```
++
++`guildIds` and `channelIds` contain Discord snowflakes. When both are present,
++the selected channels must also belong to a selected guild. `includeDms` is
++off by default because Discrawl DMs come from the local desktop cache. The
++connector caps `windowHours` at 720 and `maxMessages` at 5000, fails closed on
++schedule gaps or truncated queries, keeps a cursor per channel, and writes only
++allowlisted normalized message fields.
++
++Use `discrawl --json channels list` to inspect the archive without copying a
++token into OpenWiki. To keep it current, configure Discrawl separately with a
++supported bot token and grant the bot View Channel and Read Message History in
++the selected channels. Discord may return empty message content unless the bot
++has Message Content intent. For hardened launchd runs, set the absolute CLI
++path in `~/.openwiki/.env`, then run the configured source:
++
++```sh
++OPENWIKI_DISCRAWL_EXECUTABLE=/opt/homebrew/bin/discrawl
++OPENWIKI_WIKI_DIR=/absolute/path/to/wiki openwiki ingest discord --print
++```
++
+ ### Links
+ 
+ Links are a local, credential-free input queue. Onboarding can seed the queue,
+diff --git c/src/connectors/registry.ts i/src/connectors/registry.ts
+index ca1713a..b92d583 100644
+--- c/src/connectors/registry.ts
++++ i/src/connectors/registry.ts
+@@ -1,3 +1,4 @@
++import { createDiscordConnector } from "./sources/discord.js";
+ import { createGitRepoConnector } from "./sources/git-repo.js";
+ import { createGmailConnector } from "./sources/gmail.js";
+ import { createHackerNewsConnector } from "./sources/hackernews.js";
+@@ -10,6 +11,7 @@ import { createXConnector } from "./sources/x.js";
+ import type { ConnectorId, ConnectorRuntime } from "./types.js";
+ 
+ export const CONNECTOR_IDS = [
++  "discord",
+   "git-repo",
+   "imessage",
+   "links",
+@@ -26,6 +28,7 @@ export function createConnectorRegistry(): Record<
+   ConnectorRuntime
+ > {
+   return {
++    discord: createDiscordConnector(),
+     "git-repo": createGitRepoConnector(),
+     google: createGmailConnector(),
+     hackernews: createHackerNewsConnector(),
+diff --git c/src/connectors/sources/discord.ts i/src/connectors/sources/discord.ts
+new file mode 100644
+index 0000000..6b8b36a
+--- /dev/null
++++ i/src/connectors/sources/discord.ts
+@@ -0,0 +1,482 @@
++import { execFile } from "node:child_process";
++import { promisify } from "node:util";
++import {
++  createRunId,
++  readConnectorConfig,
++  readConnectorState,
++  updateStateWithRun,
++  writeConnectorState,
++  writeRawJson,
++} from "../io.js";
++import type {
++  ConnectorDefinition,
++  ConnectorIngestOptions,
++  ConnectorIngestResult,
++  ConnectorRuntime,
++  ConnectorState,
++} from "../types.js";
++
++const execFileAsync = promisify(execFile);
++const DISCRAWL_EXECUTABLE_ENV_KEY = "OPENWIKI_DISCRAWL_EXECUTABLE";
++const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
++const MAX_WINDOW_HOURS = 720;
++
++export type DiscordConfig = {
++  channelIds?: string[];
++  enabled?: boolean;
++  guildIds?: string[];
++  includeDms?: boolean;
++  maxMessages?: number;
++  windowHours?: number;
++};
++
++type DiscrawlMessage = {
++  author_id: string;
++  author_name: string;
++  channel_id: string;
++  channel_name: string;
++  content: string;
++  created_at: string;
++  display_content: string;
++  guild_id: string;
++  guild_name: string;
++  has_attachments: boolean;
++  message_id: string;
++  pinned: boolean;
++  source: string;
++};
++
++type NormalizedDiscordMessage = {
++  authorId: string;
++  authorName: string;
++  channelId: string;
++  channelName: string;
++  content: string;
++  createdAt: string;
++  displayContent: string;
++  guildId: string;
++  guildName: string;
++  hasAttachments: boolean;
++  messageId: string;
++  pinned: boolean;
++  source: string;
++};
++
++const definition: ConnectorDefinition = {
++  backend: "local-cli",
++  description:
++    "Reads explicitly scoped Discord history from a local Discrawl archive.",
++  displayName: "Discord",
++  id: "discord",
++  requiredEnv: [],
++  supportsAgenticDiscovery: false,
++};
++
++export function createDiscordConnector(): ConnectorRuntime {
++  return { ...definition, ingest };
++}
++
++async function ingest(
++  options: ConnectorIngestOptions = {},
++): Promise<ConnectorIngestResult> {
++  const runId = createRunId();
++  const config = normalizeConfig({
++    ...(await readConnectorConfig<DiscordConfig>("discord", {
++      channelIds: [],
++      enabled: true,
++      guildIds: [],
++      includeDms: false,
++      maxMessages: 500,
++      windowHours: options.windowHours ?? 24,
++    })),
++    ...((options.connectorConfig ?? {}) as DiscordConfig),
++  });
++  const rawFiles: string[] = [];
++  const warnings: string[] = [];
++
++  if (!config.enabled) {
++    return result(
++      runId,
++      "skipped",
++      rawFiles,
++      warnings,
++      "Discord connector is disabled.",
++    );
++  }
++
++  if (
++    config.guildIds.length === 0 &&
++    config.channelIds.length === 0 &&
++    !config.includeDms
++  ) {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      "Discord ingestion requires at least one guildIds, channelIds, or includeDms scope in ~/.openwiki/connectors/discord/config.json.",
++    );
++  }
++
++  const state = await readConnectorState("discord");
++  const end = new Date();
++  const start = new Date(end.getTime() - config.windowHours * 60 * 60 * 1000);
++  const gapError = getCatchUpGapError(state, start, end, config.windowHours);
++  if (gapError) {
++    return result(runId, "error", rawFiles, warnings, gapError);
++  }
++
++  let rows: DiscrawlMessage[];
++  try {
++    rows = deduplicateMessages(await readScopedMessages(config));
++  } catch (error) {
++    return result(runId, "error", rawFiles, warnings, mapDiscrawlError(error));
++  }
++
++  const newRows = rows.filter(
++    (row) =>
++      compareSnowflakes(row.message_id, readCursor(state, row.channel_id)) > 0,
++  );
++  const nextCursors = getNextCursors(state, rows);
++
++  if (newRows.length === 0) {
++    const nextState = updateStateWithRun(state, {
++      at: end.toISOString(),
++      rawFiles,
++      runId,
++      status: "skipped",
++      warnings,
++    });
++    nextState.latestIds = { ...(state.latestIds ?? {}), ...nextCursors };
++    await writeConnectorState("discord", nextState);
++    return result(
++      runId,
++      "skipped",
++      rawFiles,
++      warnings,
++      "No new Discord messages in the configured Discrawl scope.",
++    );
++  }
++
++  const messages = newRows.map(normalizeMessage).sort(compareMessages);
++  const messagesPath = await writeRawJson("discord", runId, "messages.json", {
++    messages,
++    schemaVersion: 1,
++  });
++  const manifestPath = await writeRawJson("discord", runId, "manifest.json", {
++    connectorId: "discord",
++    dataFiles: ["messages.json"],
++    generatedAt: end.toISOString(),
++    messageCount: messages.length,
++    schemaVersion: 1,
++    scope: {
++      channelIds: config.channelIds,
++      guildIds: config.guildIds,
++      includeDms: config.includeDms,
++    },
++    channels: summarizeChannels(messages, state, nextCursors),
++    window: {
++      end: end.toISOString(),
++      hours: config.windowHours,
++      start: start.toISOString(),
++    },
++  });
++  rawFiles.push(messagesPath, manifestPath);
++
++  const nextState = updateStateWithRun(state, {
++    at: end.toISOString(),
++    rawFiles,
++    runId,
++    status: "success",
++    warnings,
++  });
++  nextState.latestIds = { ...(state.latestIds ?? {}), ...nextCursors };
++  await writeConnectorState("discord", nextState);
++
++  return result(
++    runId,
++    "success",
++    rawFiles,
++    warnings,
++    `Wrote ${messages.length} Discord message(s) from Discrawl.`,
++  );
++}
++
++function normalizeConfig(config: DiscordConfig): Required<DiscordConfig> {
++  return {
++    channelIds: uniqueSnowflakes(config.channelIds),
++    enabled: config.enabled !== false,
++    guildIds: uniqueSnowflakes(config.guildIds),
++    includeDms: config.includeDms === true,
++    maxMessages: clampInteger(config.maxMessages, 1, 5000, 500),
++    windowHours: clampInteger(config.windowHours, 1, MAX_WINDOW_HOURS, 24),
++  };
++}
++
++function uniqueSnowflakes(values: unknown): string[] {
++  if (!Array.isArray(values)) return [];
++  return [
++    ...new Set(
++      values.filter(
++        (value): value is string =>
++          typeof value === "string" && /^\d{1,20}$/u.test(value),
++      ),
++    ),
++  ];
++}
++
++function clampInteger(
++  value: number | undefined,
++  minimum: number,
++  maximum: number,
++  fallback: number,
++): number {
++  if (!Number.isFinite(value)) return fallback;
++  return Math.min(maximum, Math.max(minimum, Math.trunc(value!)));
++}
++
++async function readScopedMessages(
++  config: Required<DiscordConfig>,
++): Promise<DiscrawlMessage[]> {
++  const scopes: string[][] = [];
++  const guildArgs =
++    config.guildIds.length > 0 ? ["--guilds", config.guildIds.join(",")] : [];
++
++  if (config.channelIds.length > 0) {
++    for (const channelId of config.channelIds) {
++      scopes.push([...guildArgs, "--channel", channelId]);
++    }
++  } else if (config.guildIds.length > 0) {
++    scopes.push(guildArgs);
++  }
++
++  if (config.includeDms) scopes.push(["--dm"]);
++
++  const rows: DiscrawlMessage[] = [];
++  for (const scope of scopes) {
++    const parsed = parseDiscrawlMessages(
++      await runDiscrawl([
++        "--json",
++        "messages",
++        ...scope,
++        "--hours",
++        String(config.windowHours),
++        "--limit",
++        String(config.maxMessages),
++      ]),
++    );
++    if (parsed.length === config.maxMessages) {
++      throw new Error(
++        `Discrawl reached maxMessages=${config.maxMessages}; increase the limit or narrow the Discord scope.`,
++      );
++    }
++    rows.push(...parsed);
++  }
++  return rows;
++}
++
++async function runDiscrawl(args: string[]): Promise<string> {
++  const executable = process.env[DISCRAWL_EXECUTABLE_ENV_KEY] ?? "discrawl";
++  const { stdout } = await execFileAsync(executable, args, {
++    maxBuffer: MAX_BUFFER_BYTES,
++  });
++  return String(stdout).trim();
++}
++
++function parseDiscrawlMessages(output: string): DiscrawlMessage[] {
++  const value: unknown = output.length === 0 ? null : JSON.parse(output);
++  if (value === null) return [];
++  if (!Array.isArray(value)) {
++    throw new Error("Discrawl returned an invalid JSON message array.");
++  }
++  return value.map(parseDiscrawlMessage);
++}
++
++function parseDiscrawlMessage(value: unknown): DiscrawlMessage {
++  if (!isRecord(value)) {
++    throw new Error("Discrawl returned an invalid JSON message row.");
++  }
++  const stringKeys = [
++    "author_id",
++    "author_name",
++    "channel_id",
++    "channel_name",
++    "content",
++    "created_at",
++    "display_content",
++    "guild_id",
++    "guild_name",
++    "message_id",
++    "source",
++  ] as const;
++  for (const key of stringKeys) {
++    if (typeof value[key] !== "string") {
++      throw new Error(`Discrawl message row has invalid ${key}.`);
++    }
++  }
++  if (
++    typeof value.has_attachments !== "boolean" ||
++    typeof value.pinned !== "boolean" ||
++    !/^\d{1,20}$/u.test(value.message_id as string) ||
++    !/^\d{1,20}$/u.test(value.channel_id as string)
++  ) {
++    throw new Error("Discrawl returned an invalid JSON message row.");
++  }
++  return value as DiscrawlMessage;
++}
++
++function isRecord(value: unknown): value is Record<string, unknown> {
++  return typeof value === "object" && value !== null && !Array.isArray(value);
++}
++
++function normalizeMessage(row: DiscrawlMessage): NormalizedDiscordMessage {
++  return {
++    authorId: row.author_id,
++    authorName: row.author_name,
++    channelId: row.channel_id,
++    channelName: row.channel_name,
++    content: row.content,
++    createdAt: row.created_at,
++    displayContent: row.display_content,
++    guildId: row.guild_id,
++    guildName: row.guild_name,
++    hasAttachments: row.has_attachments,
++    messageId: row.message_id,
++    pinned: row.pinned,
++    source: row.source,
++  };
++}
++
++function deduplicateMessages(rows: DiscrawlMessage[]): DiscrawlMessage[] {
++  const byId = new Map<string, DiscrawlMessage>();
++  for (const row of rows) {
++    if (!byId.has(row.message_id)) byId.set(row.message_id, row);
++  }
++  return [...byId.values()];
++}
++
++function readCursor(state: ConnectorState, channelId: string): string {
++  const value = state.latestIds?.[`channel:${channelId}`];
++  return typeof value === "string" && /^\d{1,20}$/u.test(value) ? value : "0";
++}
++
++function getNextCursors(
++  state: ConnectorState,
++  rows: DiscrawlMessage[],
++): Record<string, string> {
++  const cursors: Record<string, string> = {};
++  for (const row of rows) {
++    const key = `channel:${row.channel_id}`;
++    const current = cursors[key] ?? readCursor(state, row.channel_id);
++    if (compareSnowflakes(row.message_id, current) > 0) {
++      cursors[key] = row.message_id;
++    }
++  }
++  return cursors;
++}
++
++function compareSnowflakes(left: string, right: string): number {
++  const leftValue = BigInt(left);
++  const rightValue = BigInt(right);
++  return leftValue < rightValue ? -1 : leftValue > rightValue ? 1 : 0;
++}
++
++function compareMessages(
++  left: NormalizedDiscordMessage,
++  right: NormalizedDiscordMessage,
++): number {
++  return (
++    left.createdAt.localeCompare(right.createdAt) ||
++    compareSnowflakes(left.messageId, right.messageId)
++  );
++}
++
++function summarizeChannels(
++  messages: NormalizedDiscordMessage[],
++  state: ConnectorState,
++  nextCursors: Record<string, string>,
++) {
++  const byChannel = new Map<
++    string,
++    {
++      channelId: string;
++      channelName: string;
++      guildId: string;
++      guildName: string;
++      messageCount: number;
++    }
++  >();
++  for (const message of messages) {
++    const summary = byChannel.get(message.channelId) ?? {
++      channelId: message.channelId,
++      channelName: message.channelName,
++      guildId: message.guildId,
++      guildName: message.guildName,
++      messageCount: 0,
++    };
++    summary.messageCount += 1;
++    byChannel.set(message.channelId, summary);
++  }
++  return [...byChannel.values()].map((summary) => ({
++    ...summary,
++    cursorAfter:
++      nextCursors[`channel:${summary.channelId}`] ??
++      readCursor(state, summary.channelId),
++    cursorBefore: readCursor(state, summary.channelId),
++  }));
++}
++
++function getCatchUpGapError(
++  state: ConnectorState,
++  start: Date,
++  end: Date,
++  windowHours: number,
++): string | undefined {
++  const previousRunAt = Date.parse(state.lastRunAt ?? "");
++  if (!Number.isFinite(previousRunAt) || previousRunAt >= start.getTime()) {
++    return undefined;
++  }
++  const requiredHours = Math.ceil(
++    (end.getTime() - previousRunAt) / (60 * 60 * 1000),
++  );
++  return requiredHours > MAX_WINDOW_HOURS
++    ? `The previous successful Discord ingest is ${requiredHours} hours old, but windowHours is capped at ${MAX_WINDOW_HOURS}. Move ~/.openwiki/connectors/discord/state.json aside only if you deliberately accept the older gap, then rerun with windowHours=${MAX_WINDOW_HOURS}.`
++    : `The previous successful Discord ingest predates windowHours=${windowHours}; increase windowHours to at least ${requiredHours} to catch up without gaps.`;
++}
++
++function mapDiscrawlError(error: unknown): string {
++  if (hasErrorCode(error, "ENOENT")) {
++    return `Discrawl is unavailable; install it or set ${DISCRAWL_EXECUTABLE_ENV_KEY} to its absolute path.`;
++  }
++  const message = error instanceof Error ? error.message : String(error);
++  if (message.includes("invalid JSON")) return message;
++  if (message.includes("maxMessages=")) return message;
++  return `Discrawl message query failed: ${message}`;
++}
++
++function hasErrorCode(error: unknown, code: string): boolean {
++  return Boolean(
++    error &&
++    typeof error === "object" &&
++    "code" in error &&
++    (error as NodeJS.ErrnoException).code === code,
++  );
++}
++
++function result(
++  runId: string,
++  status: ConnectorIngestResult["status"],
++  rawFiles: string[],
++  warnings: string[],
++  message: string,
++): ConnectorIngestResult {
++  return {
++    connectorId: "discord",
++    message,
++    rawFiles,
++    runId,
++    statePath: "~/.openwiki/connectors/discord/state.json",
++    status,
++    warnings,
++  };
++}
+diff --git c/src/connectors/tools.ts i/src/connectors/tools.ts
+index 9322190..f0b5ddc 100644
+--- c/src/connectors/tools.ts
++++ i/src/connectors/tools.ts
+@@ -94,6 +94,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
+           connectorId: {
+             type: "string",
+             enum: [
++              "discord",
+               "git-repo",
+               "google",
+               "hackernews",
+@@ -142,6 +143,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
+           connectorId: {
+             type: "string",
+             enum: [
++              "discord",
+               "git-repo",
+               "google",
+               "hackernews",
+@@ -170,6 +172,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
+           connectorId: {
+             type: "string",
+             enum: [
++              "discord",
+               "git-repo",
+               "google",
+               "hackernews",
+diff --git c/src/connectors/types.ts i/src/connectors/types.ts
+index 73a2db3..8dfc1d9 100644
+--- c/src/connectors/types.ts
++++ i/src/connectors/types.ts
+@@ -1,4 +1,5 @@
+ export type ConnectorId =
++  | "discord"
+   | "git-repo"
+   | "google"
+   | "hackernews"
+diff --git c/src/credentials.tsx i/src/credentials.tsx
+index 1d93aed..b50df22 100644
+--- c/src/credentials.tsx
++++ i/src/credentials.tsx
+@@ -119,6 +119,7 @@ type PromptStep =
+   | "global-cron-custom"
+   | "global-cron-mode"
+   | "global-power-mode"
++  | "source-discord-guild-ids"
+   | "source-imessage-chat-ids"
+   | "source-links-urls"
+   | "source-description"
+@@ -203,6 +204,7 @@ const ONBOARDING_TEMPLATES = [
+     id: "personal",
+     name: "Personal",
+     sourceIds: [
++      "discord",
+       "git-repo",
+       "google",
+       "imessage",
+@@ -213,6 +215,7 @@ const ONBOARDING_TEMPLATES = [
+       "x",
+     ],
+     suggestedSources: [
++      "Discord",
+       "Gmail",
+       "iMessage",
+       "Links",
+@@ -246,6 +249,20 @@ const RUN_MODE_OPTIONS = [
+ }[];
+ 
+ const SOURCE_OPTIONS = [
++  {
++    displayName: "Discord",
++    examples: [
++      "Summarize durable decisions, commitments, and action items from approved Discord servers.",
++      "Track project context from explicitly selected Discord guilds in my local archive.",
++    ],
++    id: "discord",
++    instructions: [
++      "Requires Discrawl and an existing local archive; OpenWiki never uses a Discord user token.",
++      "Run discrawl --json channels list and choose only approved numeric guild IDs.",
++      "Configure Discrawl's supported bot-token sync separately when you want the archive kept current.",
++    ],
++    secretInputs: [],
++  },
+   {
+     displayName: "Local Git repository",
+     examples: [
+@@ -1733,6 +1750,27 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (step === "source-discord-guild-ids") {
++      const parsed = parseDiscordGuildIds(input);
++      if ("error" in parsed) {
++        setError(parsed.error);
++        return;
++      }
++      setSourceState((state) => ({
++        ...state,
++        connectorConfig: {
++          enabled: true,
++          guildIds: parsed.guildIds,
++          includeDms: false,
++          maxMessages: 500,
++          windowHours: 24,
++        },
++      }));
++      setInput("");
++      setStep("source-description");
++      return;
++    }
++
+     if (step === "source-description") {
+       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
+         setInput("");
+@@ -2116,6 +2154,12 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (source.id === "discord") {
++      setInput("");
++      setStep("source-discord-guild-ids");
++      return;
++    }
++
+     if (source.id === "imessage") {
+       setInput("");
+       setStep("source-imessage-chat-ids");
+@@ -3104,6 +3148,28 @@ function Prompt({
+     );
+   }
+ 
++  if (step === "source-discord-guild-ids") {
++    return (
++      <Box flexDirection="column">
++        <Text>Choose approved Discord guilds.</Text>
++        {selectedSource.instructions.map((instruction, index) => (
++          <Text key={instruction}>
++            {index + 1}. {instruction}
++          </Text>
++        ))}
++        <BorderedInput
++          maxDisplayWidth={inputDisplayWidth}
++          marginTop={1}
++          prefix="guildIds="
++          value={input}
++        />
++        <Text color="gray">
++          Enter unique Discord snowflake guild IDs separated by commas.
++        </Text>
++      </Box>
++    );
++  }
++
+   if (step === "source-secret") {
+     const secretInput = selectedSource.secretInputs[secretInputIndex];
+     return (
+@@ -4263,6 +4329,24 @@ function parseIMessageChatIds(
+   return { chatIds };
+ }
+ 
++function parseDiscordGuildIds(
++  value: string,
++): { guildIds: string[] } | { error: string } {
++  const guildIds = value.split(",").map((part) => part.trim());
++  if (
++    guildIds.length === 0 ||
++    guildIds.some((guildId) => !/^\d{1,20}$/u.test(guildId))
++  ) {
++    return {
++      error: "Enter one or more numeric Discord guild IDs separated by commas.",
++    };
++  }
++  if (new Set(guildIds).size !== guildIds.length) {
++    return { error: "Remove duplicate Discord guild IDs." };
++  }
++  return { guildIds };
++}
++
+ export function parseLinksInput(
+   value: string,
+ ): { urls: string[] } | { error: string } {
+diff --git c/src/ingestion.ts i/src/ingestion.ts
+index d16bb3f..cd3b6df 100644
+--- c/src/ingestion.ts
++++ i/src/ingestion.ts
+@@ -338,6 +338,10 @@ ${createConnectorSynthesisGuidance(connectorId)}
+ 
+ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
+   switch (connectorId) {
++    case "discord":
++      return `
++- Apply the Slack-style communication policy: route direct requests, decisions, deadlines, approvals, and follow-ups to /commitments.md with Owner when inferable.
++- Keep ordinary chatter and bounded archive noise out of high-level wiki pages. Treat Discrawl data as an explicitly scoped local archive, not a complete account-wide Discord history.`;
+     case "google":
+       return `
+ - For Gmail evidence, classify each candidate item before writing: action_required, scheduled_commitment, decision_or_approval, direct_request, important_update, people_or_org_signal, project_context, security_or_account_notice, newsletter_or_digest, transaction_or_receipt, promotion_or_marketing, personal_logistics, or noise.
+diff --git c/src/onboarding.ts i/src/onboarding.ts
+index 51b004d..c88edfc 100644
+--- c/src/onboarding.ts
++++ i/src/onboarding.ts
+@@ -455,6 +455,7 @@ function normalizePowerManagementConfig(
+ 
+ function isKnownConnectorId(value: string): value is ConnectorId {
+   return (
++    value === "discord" ||
+     value === "git-repo" ||
+     value === "google" ||
+     value === "hackernews" ||
+diff --git c/test/commands.test.ts i/test/commands.test.ts
+index c431d3a..8c2ca4e 100644
+--- c/test/commands.test.ts
++++ i/test/commands.test.ts
+@@ -444,3 +444,16 @@ describe("parseCommand — links ingestion", () => {
+     });
+   });
+ });
++
++describe("parseCommand — Discord ingestion", () => {
++  test("accepts the built-in Discord target", () => {
++    expect(parseCommand(["ingest", "discord", "--print"])).toEqual({
++      kind: "ingest",
++      exitCode: 0,
++      modelId: null,
++      print: true,
++      scheduledOnly: false,
++      target: "discord",
++    });
++  });
++});
+diff --git c/test/discord-connector.test.ts i/test/discord-connector.test.ts
+new file mode 100644
+index 0000000..4baed2b
+--- /dev/null
++++ i/test/discord-connector.test.ts
+@@ -0,0 +1,264 @@
++import { execFileSync } from "node:child_process";
++import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
++import os from "node:os";
++import path from "node:path";
++import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++
++const execFileAsync = vi.hoisted(() => vi.fn());
++
++vi.mock("node:child_process", async (importOriginal) => {
++  const actual = await importOriginal<typeof import("node:child_process")>();
++  const mockedExecFile = vi.fn();
++  Object.defineProperty(
++    mockedExecFile,
++    Symbol.for("nodejs.util.promisify.custom"),
++    { value: execFileAsync },
++  );
++  return { ...actual, execFile: mockedExecFile };
++});
++
++const originalHome = process.env.HOME;
++const originalExecutable = process.env.OPENWIKI_DISCRAWL_EXECUTABLE;
++let home: string;
++
++beforeEach(async () => {
++  home = await mkdtemp(path.join(os.tmpdir(), "openwiki-discord-test-"));
++  process.env.HOME = home;
++  process.env.OPENWIKI_DISCRAWL_EXECUTABLE = "/test/discrawl";
++  execFileSync("git", ["init", "-q", home]);
++  execFileAsync.mockReset();
++  vi.useFakeTimers();
++  vi.setSystemTime(new Date("2026-07-18T12:00:00.000Z"));
++  vi.resetModules();
++});
++
++afterEach(async () => {
++  vi.useRealTimers();
++  vi.restoreAllMocks();
++  if (originalHome === undefined) delete process.env.HOME;
++  else process.env.HOME = originalHome;
++  if (originalExecutable === undefined)
++    delete process.env.OPENWIKI_DISCRAWL_EXECUTABLE;
++  else process.env.OPENWIKI_DISCRAWL_EXECUTABLE = originalExecutable;
++  await rm(home, { recursive: true, force: true });
++});
++
++async function loadConnector() {
++  const { createDiscordConnector } =
++    await import("../src/connectors/sources/discord.ts");
++  return createDiscordConnector();
++}
++
++function message(
++  id: string,
++  channelId: string,
++  createdAt: string,
++  overrides: Record<string, unknown> = {},
++) {
++  return {
++    author_id: "42",
++    author_name: "Alice",
++    channel_id: channelId,
++    channel_name: "planning",
++    content: `message ${id}`,
++    created_at: createdAt,
++    display_content: `message ${id}`,
++    guild_id: "100",
++    guild_name: "Personal",
++    has_attachments: false,
++    message_id: id,
++    pinned: false,
++    source: "discord",
++    ...overrides,
++  };
++}
++
++async function connectorState() {
++  return JSON.parse(
++    await readFile(
++      path.join(home, ".openwiki/connectors/discord/state.json"),
++      "utf8",
++    ),
++  ) as { latestIds?: Record<string, string> };
++}
++
++describe("Discord connector", () => {
++  test("requires explicit scope and disabled config performs no subprocess work", async () => {
++    const connector = await loadConnector();
++
++    const unscoped = await connector.ingest();
++    expect(unscoped).toMatchObject({ rawFiles: [], status: "error" });
++    expect(unscoped.message).toContain("guildIds, channelIds, or includeDms");
++    await expect(
++      connector.ingest({
++        connectorConfig: { enabled: false, guildIds: ["1"] },
++      }),
++    ).resolves.toMatchObject({ rawFiles: [], status: "skipped" });
++    expect(execFileAsync).not.toHaveBeenCalled();
++  });
++
++  test("uses exact bounded Discrawl JSON calls for guild, channel, and DM scope", async () => {
++    execFileAsync.mockResolvedValue({ stdout: "null\n", stderr: "" });
++    const connector = await loadConnector();
++
++    await connector.ingest({
++      connectorConfig: {
++        channelIds: ["300", "300", "301"],
++        guildIds: ["100", "101", "100"],
++        includeDms: true,
++        maxMessages: 9000,
++        windowHours: 900,
++      },
++    });
++
++    const options = { maxBuffer: 10 * 1024 * 1024 };
++    expect(execFileAsync).toHaveBeenNthCalledWith(
++      1,
++      "/test/discrawl",
++      [
++        "--json",
++        "messages",
++        "--guilds",
++        "100,101",
++        "--channel",
++        "300",
++        "--hours",
++        "720",
++        "--limit",
++        "5000",
++      ],
++      options,
++    );
++    expect(execFileAsync).toHaveBeenNthCalledWith(
++      2,
++      "/test/discrawl",
++      [
++        "--json",
++        "messages",
++        "--guilds",
++        "100,101",
++        "--channel",
++        "301",
++        "--hours",
++        "720",
++        "--limit",
++        "5000",
++      ],
++      options,
++    );
++    expect(execFileAsync).toHaveBeenNthCalledWith(
++      3,
++      "/test/discrawl",
++      ["--json", "messages", "--dm", "--hours", "720", "--limit", "5000"],
++      options,
++    );
++  });
++
++  test("writes normalized new messages and maintains per-channel snowflake cursors", async () => {
++    const oldMessage = message(
++      "1500000000000000001",
++      "300",
++      "2026-07-18T10:00:00.000Z",
++      { ignored_secret: "do not persist" },
++    );
++    const newMessage = message(
++      "1500000000000000002",
++      "300",
++      "2026-07-18T11:00:00.000Z",
++      { has_attachments: true, pinned: true },
++    );
++    execFileAsync.mockResolvedValue({
++      stdout: `${JSON.stringify([oldMessage, newMessage])}\n`,
++      stderr: "",
++    });
++    const connector = await loadConnector();
++
++    const first = await connector.ingest({
++      connectorConfig: { guildIds: ["100"], maxMessages: 50 },
++    });
++    expect(first).toMatchObject({ status: "success" });
++    const messagesPath = first.rawFiles.find((file) =>
++      file.endsWith("messages.json"),
++    )!;
++    const raw = JSON.parse(await readFile(messagesPath, "utf8")) as {
++      messages: Record<string, unknown>[];
++    };
++    expect(raw.messages).toEqual([
++      {
++        authorId: "42",
++        authorName: "Alice",
++        channelId: "300",
++        channelName: "planning",
++        content: "message 1500000000000000001",
++        createdAt: "2026-07-18T10:00:00.000Z",
++        displayContent: "message 1500000000000000001",
++        guildId: "100",
++        guildName: "Personal",
++        hasAttachments: false,
++        messageId: "1500000000000000001",
++        pinned: false,
++        source: "discord",
++      },
++      {
++        authorId: "42",
++        authorName: "Alice",
++        channelId: "300",
++        channelName: "planning",
++        content: "message 1500000000000000002",
++        createdAt: "2026-07-18T11:00:00.000Z",
++        displayContent: "message 1500000000000000002",
++        guildId: "100",
++        guildName: "Personal",
++        hasAttachments: true,
++        messageId: "1500000000000000002",
++        pinned: true,
++        source: "discord",
++      },
++    ]);
++    expect(JSON.stringify(raw)).not.toContain("ignored_secret");
++    expect(await connectorState()).toMatchObject({
++      latestIds: { "channel:300": "1500000000000000002" },
++    });
++
++    const second = await connector.ingest({
++      connectorConfig: { guildIds: ["100"], maxMessages: 50 },
++    });
++    expect(second).toMatchObject({ rawFiles: [], status: "skipped" });
++  });
++
++  test("maps missing Discrawl and rejects malformed output", async () => {
++    const connector = await loadConnector();
++    execFileAsync.mockRejectedValueOnce(
++      Object.assign(new Error("missing"), { code: "ENOENT" }),
++    );
++    const missing = await connector.ingest({
++      connectorConfig: { guildIds: ["100"] },
++    });
++    expect(missing).toMatchObject({ status: "error" });
++    expect(missing.message).toContain("Discrawl is unavailable");
++
++    execFileAsync.mockResolvedValueOnce({ stdout: "{}", stderr: "" });
++    const malformed = await connector.ingest({
++      connectorConfig: { guildIds: ["100"] },
++    });
++    expect(malformed).toMatchObject({ status: "error" });
++    expect(malformed.message).toContain("invalid JSON message array");
++  });
++
++  test("refuses a catch-up gap larger than the configured window", async () => {
++    const connector = await loadConnector();
++    const stateDir = path.join(home, ".openwiki/connectors/discord");
++    await mkdir(stateDir, { recursive: true });
++    await writeFile(
++      path.join(stateDir, "state.json"),
++      `${JSON.stringify({ lastRunAt: "2026-07-16T00:00:00.000Z", version: 1 })}\n`,
++    );
++
++    const result = await connector.ingest({
++      connectorConfig: { guildIds: ["100"], windowHours: 24 },
++    });
++    expect(result).toMatchObject({ status: "error" });
++    expect(result.message).toContain("increase windowHours to at least 60");
++    expect(execFileAsync).not.toHaveBeenCalled();
++  });
++});
+diff --git c/test/onboarding.test.ts i/test/onboarding.test.ts
+index d51945c..7432808 100644
+--- c/test/onboarding.test.ts
++++ i/test/onboarding.test.ts
+@@ -128,6 +128,44 @@ describe("OpenWiki onboarding instructions", () => {
+     });
+   });
+ 
++  test("preserves Discord source instances and explicit guild scope", async () => {
++    const home = await createTempHome();
++    const onboarding = await loadOnboardingModule(home);
++    const connectorConfig = {
++      enabled: true,
++      guildIds: ["1490191981052170402"],
++      includeDms: false,
++      maxMessages: 500,
++      windowHours: 24,
++    };
++
++    await onboarding.saveOpenWikiOnboardingConfig({
++      sourceInstances: [
++        {
++          connectedAt: "2026-07-18T12:00:00.000Z",
++          connectorConfig,
++          connectorId: "discord",
++          id: "discord-1",
++        },
++      ],
++      sources: { discord: { connectorConfig } },
++      version: 1,
++    });
++
++    await expect(
++      onboarding.readOpenWikiOnboardingConfig(),
++    ).resolves.toMatchObject({
++      sourceInstances: [
++        {
++          connectorConfig,
++          connectorId: "discord",
++          id: "discord-1",
++        },
++      ],
++      sources: { discord: { connectorConfig } },
++    });
++  });
++
+   test("reads wiki instructions only from INSTRUCTIONS.md", async () => {
+     const home = await createTempHome();
+     const onboarding = await loadOnboardingModule(home);
