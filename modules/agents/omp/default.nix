@@ -470,6 +470,12 @@ in
         Additive — leaves modelRoles on the direct Codex/xai logins.
       '';
     };
+    atlassian.enable = mkBoolOpt false // {
+      description = ''
+        Install the @pi-stef/atlassian omp plugin via a home activation script.
+        Additive; off by default.
+      '';
+    };
     dailyIntrospection = {
       enable = mkBoolOpt false;
       model = mkOpt types.str "openai-codex/gpt-5.6-sol:high";
