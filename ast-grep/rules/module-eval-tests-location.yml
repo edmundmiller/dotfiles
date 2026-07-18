@@ -4,10 +4,11 @@ severity: error
 files:
   - modules/**/*.nix
 ignores:
-  # mapModules/mapModulesRec skip any directory whose name starts with _
+  # mapModules/mapModulesRec skip any entry whose name starts with _
   - "**/_*/**"
+  - "**/_*.nix"
 message: Put module eval assertion checks under _tests/ so mapModules skips them.
-note: mapModules and mapModulesRec skip directories prefixed with _. A sibling eval-*.nix or tests/default.nix under a mapped module path is auto-imported as a NixOS module. Keep pure eval assertion helpers in modules/<path>/_tests/ (for example eval-homebox.nix) and wire them from flake checks.
+note: mapModules and mapModulesRec skip names prefixed with _ (dirs and files). A sibling eval-*.nix or tests/default.nix under a mapped module path is auto-imported as a NixOS module. Keep pure eval assertion helpers in modules/<path>/_tests/ (for example eval-homebox.nix) and wire them from flake checks.
 rule:
   any:
     - pattern: "filter ($A: $$$BODY) assertions"
