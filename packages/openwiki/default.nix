@@ -191,6 +191,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0004-writable-skill-replacement.patch
     ./patches/0005-evlog-ingestion-events.patch
     ./patches/0006-links-connector.patch
+    ./patches/0007-discrawl-connector.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
