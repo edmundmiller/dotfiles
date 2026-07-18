@@ -123,7 +123,7 @@ with lib.my;
       registryInputs = mapAttrs (_: v: { flake = v; }) filteredInputs;
     in
     {
-      package = pkgs.nixVersions.stable;
+      package = pkgs.nixVersions.latest;
       extraOptions = "experimental-features = nix-command flakes";
       nixPath = nixPathInputs ++ [
         "nixpkgs-overlays=${dotFilesDir}/overlays"
