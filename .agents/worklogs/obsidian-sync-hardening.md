@@ -1,6 +1,6 @@
 # Worklog: obsidian-sync-hardening
 
-Status: awaiting mobile audit
+Status: blocked
 
 ## Objective
 
