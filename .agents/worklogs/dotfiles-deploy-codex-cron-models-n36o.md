@@ -14,7 +14,7 @@ Deploy agents-workspace `1d27591` to the NUC. Stop only when all live model-back
 
 ## Evidence
 
-- Agents-workspace commit `1d27591` is pushed to `origin/main`.
+- Agents-workspace model commit `1d27591` and independent-auth policy follow-up `8682e89` are pushed to `origin/main`.
 - Canonical Python contract and Hermes Nix checks passed before deployment.
 - NUC SSH and passwordless sudo work; live cron state was audited before migration.
 - `hey nuc-wt build` built `/nix/store/1fmgc8lm8sp7jqh6ij0q5la5bq9z6kjw-nixos-system-nuc-26.11.20260714.18b9261`.
