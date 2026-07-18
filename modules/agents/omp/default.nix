@@ -68,6 +68,11 @@ let
     url = "https://registry.npmjs.org/@dietrichgebert/ponytail/-/ponytail-4.8.4.tgz";
     hash = "sha256-9E9qa+rdFsyUcE1N2QiMeOeG0NpDuqu5SaeabbcScaI=";
   };
+  agentBrowserPlugin = pkgs.fetchzip {
+    name = "pi-agent-browser-native-0.2.69";
+    url = "https://registry.npmjs.org/pi-agent-browser-native/-/pi-agent-browser-native-0.2.69.tgz";
+    hash = "sha256-I5aArdBYLyTMPvaxNv4z+evTBnYSclsTw+3ZBYnZTPc=";
+  };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
   skilloptSleepUpstream = pkgs.fetchFromGitHub {
     owner = "microsoft";
@@ -563,6 +568,17 @@ in
           home.activation.omp-ponytail-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${ponytailPlugin}"} --force --json >/dev/null
           '';
+
+          home.activation.omp-agent-browser-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${agentBrowserPlugin}"} --force --json >/dev/null
+          '';
+
+          home.activation.omp-atlassian-plugin = lib.mkIf cfg.atlassian.enable (
+            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              ${ompPackage}/bin/omp plugin uninstall @pi-stef/atlassian --json >/dev/null 2>&1 || true
+              ${ompPackage}/bin/omp plugin install npm:@pi-stef/atlassian@0.4.1 --json >/dev/null
+            ''
+          );
 
           home.activation.omp-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${pkgs.python3}/bin/python3 <<'PY'
