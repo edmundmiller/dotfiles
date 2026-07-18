@@ -96,11 +96,12 @@ github:
   enabled: true
 
 tools:
-  discoveryMode: mcp-only
   artifactSpillThreshold: 50
   artifactTailBytes: 20
-  grepContextBefore: 1
-  grepContextAfter: 3
+
+grep:
+  contextBefore: 1
+  contextAfter: 3
 
 task:
   isolation:
@@ -113,9 +114,6 @@ features:
 
 secrets:
   enabled: true
-hooks:
-  enabled: true
-  timeoutMs: 10000
 extensions:
   - ~/.omp/agent/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js
 memory:

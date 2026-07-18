@@ -789,6 +789,16 @@
                 files = "^(config/pi/settings\\.jsonc|modules/agents/pi/)";
                 stages = [ "pre-commit" ];
               };
+              omp-config-yml = {
+                enable = true;
+                name = "omp-config-yml";
+                description = "Validate OMP config.yml against omp config list registry";
+                entry = "bash modules/agents/omp/test-config-yml.sh";
+                language = "system";
+                pass_filenames = false;
+                files = "^(config/omp/config\\.yml|modules/agents/omp/)";
+                stages = [ "pre-commit" ];
+              };
               pi-runtime-wrapper = {
                 enable = true;
                 name = "pi-runtime-wrapper";
