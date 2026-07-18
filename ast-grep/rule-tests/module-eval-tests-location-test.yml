@@ -1,0 +1,17 @@
+id: module-eval-tests-location
+valid:
+  # Non-assertion filters and ordinary module runCommands stay quiet.
+  - "filter (x: x > 0) numbers"
+  - "builtins.filter (x: x != null) items"
+  - 'pkgs.runCommand "build-asset" { } "touch $out"'
+  - "config.systemd.services.foo.serviceConfig.ExecStart"
+invalid:
+  # Canonical eval-assertion failure fold.
+  - "filter (a: !a.test) assertions"
+  - "filter (assertion: !assertion.test) assertions"
+  - "builtins.filter (assertion: !assertion.test) assertions"
+  # Multi-line / richer predicates still count as the eval-test shape.
+  - |
+    filter (
+      a: (!a.test && !(a.expectedFailure or false)) || (a.test && (a.expectedFailure or false))
+    ) assertions
