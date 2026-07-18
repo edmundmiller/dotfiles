@@ -793,7 +793,20 @@
                 enable = true;
                 name = "omp-config-yml";
                 description = "Validate OMP config.yml against omp config list registry";
-                entry = "bash modules/agents/omp/test-config-yml.sh";
+                entry = toString (
+                  pkgs.writeShellScript "omp-config-yml" ''
+                    export PATH=${
+                      lib.makeBinPath [
+                        pkgs.coreutils
+                        pkgs.git
+                        pkgs.python3
+                        pkgs.yq-go
+                        inputs.llm-agents.packages.${system}.omp
+                      ]
+                    }:$PATH
+                    bash modules/agents/omp/test-config-yml.sh
+                  ''
+                );
                 language = "system";
                 pass_filenames = false;
                 files = "^(config/omp/config\\.yml|modules/agents/omp/)";
