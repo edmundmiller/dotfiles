@@ -1,0 +1,1335 @@
+diff --git a/README.md b/README.md
+index ae46aa8..cd66143 100644
+--- a/README.md
++++ b/README.md
+@@ -41,7 +41,7 @@ OpenWiki has two modes:
+ 
+ - **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` by
+   default from configured sources like local repositories, Discord, Gmail,
+-  iMessage, saved links, Notion, Web Search, Hacker News, and X/Twitter.
++  iMessage, saved links, Notion, RSS/Atom, Web Search, Hacker News, and X/Twitter.
+ - **Code mode** builds repository documentation in `openwiki/` for the current
+   codebase.
+ 
+@@ -179,7 +179,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
+ 
+ ## Local Connectors
+ 
+-OpenWiki's first-run onboarding offers connector setup for local Git repositories, Discord, Notion, Gmail, iMessage, saved links, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
++OpenWiki's first-run onboarding offers connector setup for local Git repositories, Discord, Notion, Gmail, iMessage, saved links, RSS/Atom, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
+ 
+ You can configure the same connector more than once. For example, add one Web
+ Search source for AI research and another for NBA news; OpenWiki stores them as
+@@ -194,6 +194,7 @@ instances with `openwiki ingest all`, all instances for one connector with
+ - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
+ - `discord` runs the local `discrawl` JSON CLI against explicitly approved guilds, channels, or the local-only DM cache.
+ - `imessage` runs the fixed local `imsg` command against explicitly approved Messages chats on macOS.
++- `rss` fetches public RSS and Atom subscriptions with bounded conditional HTTP requests and per-source entry cursors.
+ - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
+ - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
+ 
+@@ -260,6 +261,44 @@ from its canonical URL, derives a stable source ID, and writes only new or
+ changed records to `~/.openwiki/connectors/links/raw/<runId>/links.json`.
+ Repeated unchanged runs write no raw manifest and skip synthesis.
+ 
++### RSS and Atom
++
++Add each feed separately during onboarding. OpenWiki preserves each subscription
++as a stable source instance (`rss-1`, `rss-2`, and so on), so one feed's HTTP
++validators and entry cursor cannot affect another. Run every subscription with
++`openwiki ingest rss --print`, one subscription with
++`openwiki ingest rss-2 --print`, or all configured sources with
++`openwiki ingest all --print`. The shared scheduled ingestion runs all enabled
++source instances; `openwiki cron pause rss`, `resume`, and `delete` use the
++normal connector schedule controls.
++
++Advanced manual configuration uses the source instance's `connectorConfig` in
++`~/.openwiki/onboarding.json`:
++
++```json
++{
++  "enabled": true,
++  "feedUrl": "https://example.com/feed.xml",
++  "maxBytes": 2097152,
++  "maxItems": 100,
++  "timeoutMs": 15000
++}
++```
++
++Feed URLs must use HTTP or HTTPS and cannot contain userinfo or secret-like
++query parameters. Put no credentials in feed URLs or connector files. Request
++time is bounded to 100–30000 ms, response size to 128 bytes–10 MiB, and emitted
++items to 1–500; defaults are 15 seconds, 2 MiB, and 100 items.
++
++The connector sends saved `ETag` and `Last-Modified` validators and keeps a
++bounded identity/content-hash cursor per source instance. A rerun emits only new
++entries or entries whose normalized content changed. Normalized entry files and
++manifests preserve feed URL, source instance, entry URL and GUID/Atom ID, title,
++author, publication time, capture time, and provenance under
++`~/.openwiki/connectors/rss/raw/<runId>/`. Conditional and cursor state stays in
++`~/.openwiki/connectors/rss/state.json`. Connector directories and files retain
++OpenWiki's private `0700`/`0600` permissions and Git exclusion.
++
+ ### iMessage
+ 
+ iMessage ingestion requires macOS, `imsg` v0.13 or newer, and at least one
+diff --git a/package.json b/package.json
+index 20533ae..1fe71f2 100644
+--- a/package.json
++++ b/package.json
+@@ -58,6 +58,7 @@
+     "cronstrue": "3.24.0",
+     "deepagents": "^1.11.0",
+     "evlog": "^2.20.0",
++    "fast-xml-parser": "5.2.5",
+     "google-auth-library": "^10.9.0",
+     "ink": "^5.1.0",
+     "langchain": "^1.5.3",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 2e4ee72..5d3f7c2 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -56,6 +56,9 @@ importers:
+       evlog:
+         specifier: ^2.20.0
+         version: 2.20.0(react@18.3.1)(vite@8.1.3(@types/node@22.20.0)(esbuild@0.28.1)(tsx@4.22.5)(yaml@2.9.0))
++      fast-xml-parser:
++        specifier: 5.2.5
++        version: 5.2.5
+       google-auth-library:
+         specifier: ^10.9.0
+         version: 10.9.0
+@@ -871,6 +874,9 @@ packages:
+     resolution: {integrity: sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==}
+     engines: {node: '>=12'}
+ 
++  anynum@1.0.1:
++    resolution: {integrity: sha512-N6//FLET/tXYNM/F6ABca1oH6fWB+KlTt909Le28WMDBk8oaT4vY17DCrwg2MvmuqUKt3Ni4N5dGJ/EoBgcO6A==}
++
+   assertion-error@2.0.1:
+     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
+     engines: {node: '>=12'}
+@@ -1184,6 +1190,10 @@ packages:
+   fast-sha256@1.3.0:
+     resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
+ 
++  fast-xml-parser@5.2.5:
++    resolution: {integrity: sha512-pfX9uG9Ki0yekDHx2SiuRIyFdyAr1kMIMitPvb0YBo8SUfKvia7w7FIyd/l6av85pFYRhZscS75MwMnbvY+hcQ==}
++    hasBin: true
++
+   fastq@1.20.1:
+     resolution: {integrity: sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw==}
+ 
+@@ -1819,6 +1829,9 @@ packages:
+     resolution: {integrity: sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==}
+     engines: {node: '>=0.10.0'}
+ 
++  strnum@2.4.1:
++    resolution: {integrity: sha512-M9eUSMT2dCB2cTNPG7UYj6KuK7RJR2SN2+yCV/fTW3xzTCS6EaGZ5pSMgDIjB7r8zSfTGk+dvvn9rTjpVS9Mwg==}
++
+   supports-color@7.2.0:
+     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
+     engines: {node: '>=8'}
+@@ -2857,6 +2870,8 @@ snapshots:
+ 
+   ansi-styles@6.2.3: {}
+ 
++  anynum@1.0.1: {}
++
+   assertion-error@2.0.1: {}
+ 
+   ast-v8-to-istanbul@1.0.4:
+@@ -3125,6 +3140,10 @@ snapshots:
+ 
+   fast-sha256@1.3.0: {}
+ 
++  fast-xml-parser@5.2.5:
++    dependencies:
++      strnum: 2.4.1
++
+   fastq@1.20.1:
+     dependencies:
+       reusify: 1.1.0
+@@ -3717,6 +3736,10 @@ snapshots:
+ 
+   strip-json-comments@2.0.1: {}
+ 
++  strnum@2.4.1:
++    dependencies:
++      anynum: 1.0.1
++
+   supports-color@7.2.0:
+     dependencies:
+       has-flag: 4.0.0
+diff --git a/src/connectors/registry.ts b/src/connectors/registry.ts
+index b92d583..d58ddb7 100644
+--- a/src/connectors/registry.ts
++++ b/src/connectors/registry.ts
+@@ -5,6 +5,7 @@ import { createHackerNewsConnector } from "./sources/hackernews.js";
+ import { createIMessageConnector } from "./sources/imessage.js";
+ import { createLinksConnector } from "./sources/links.js";
+ import { createMcpConnector } from "./sources/mcp.js";
++import { createRssConnector } from "./sources/rss.js";
+ import { createSlackConnector } from "./sources/slack.js";
+ import { createWebSearchConnector } from "./sources/web-search.js";
+ import { createXConnector } from "./sources/x.js";
+@@ -20,6 +21,7 @@ export const CONNECTOR_IDS = [
+   "google",
+   "web-search",
+   "hackernews",
++  "rss",
+   "slack",
+ ] as const satisfies readonly ConnectorId[];
+ 
+@@ -41,6 +43,7 @@ export function createConnectorRegistry(): Record<
+       id: "notion",
+       requiredEnv: ["OPENWIKI_NOTION_MCP_ACCESS_TOKEN"],
+     }),
++    rss: createRssConnector(),
+     slack: createSlackConnector(),
+     "web-search": createWebSearchConnector(),
+     x: createXConnector(),
+diff --git a/src/connectors/sources/rss.ts b/src/connectors/sources/rss.ts
+new file mode 100644
+index 0000000..e654e26
+--- /dev/null
++++ b/src/connectors/sources/rss.ts
+@@ -0,0 +1,656 @@
++import { createHash } from "node:crypto";
++import type { ReadableStream, ReadableStreamReadResult } from "node:stream/web";
++import { XMLParser } from "fast-xml-parser";
++import {
++  createRunId,
++  readConnectorConfig,
++  readConnectorState,
++  updateStateWithRun,
++  writeConnectorState,
++  writeRawJson,
++} from "../io.js";
++import type {
++  ConnectorDefinition,
++  ConnectorIngestOptions,
++  ConnectorIngestResult,
++  ConnectorRuntime,
++  ConnectorState,
++} from "../types.js";
++
++export type RssConfig = {
++  enabled?: boolean;
++  feedUrl?: string;
++  maxBytes?: number;
++  maxItems?: number;
++  timeoutMs?: number;
++};
++
++type RssEntryCursor = {
++  contentHash: string;
++  lastSeenAt: string;
++};
++
++type RssInstanceState = {
++  entries: Record<string, RssEntryCursor>;
++  etag?: string;
++  feedUrl: string;
++  lastModified?: string;
++  lastPublishedAt?: string;
++  lastSuccessAt: string;
++};
++
++type RssConnectorState = ConnectorState & {
++  rss?: {
++    instances: Record<string, RssInstanceState>;
++  };
++};
++
++type ParsedFeed = {
++  author: string | null;
++  entries: ParsedEntry[];
++  format: "atom" | "rss";
++  title: string | null;
++};
++
++type ParsedEntry = {
++  author: string | null;
++  content: string | null;
++  entryGuid: string | null;
++  entryUrl: string | null;
++  identity: string;
++  publishedAt: string | null;
++  title: string | null;
++};
++
++type EmittedEntry = ParsedEntry & {
++  capturedAt: string;
++  changeType: "changed" | "new";
++  feedUrl: string;
++  provenance: {
++    connectorId: "rss";
++    feedUrl: string;
++    sourceInstanceId: string;
++  };
++};
++
++const DEFAULT_MAX_BYTES = 2 * 1024 * 1024;
++const DEFAULT_MAX_ITEMS = 100;
++const DEFAULT_TIMEOUT_MS = 15_000;
++const MAX_MAX_BYTES = 10 * 1024 * 1024;
++const MAX_MAX_ITEMS = 500;
++const MAX_TIMEOUT_MS = 30_000;
++const MAX_STATE_ENTRIES = 5_000;
++const MIN_MAX_BYTES = 128;
++const MIN_TIMEOUT_MS = 100;
++const SECRET_QUERY_KEY =
++  /(?:^|[-_])(?:api[-_]?key|access[-_]?token|auth|authorization|credential|password|secret|signature|sig)(?:$|[-_])/iu;
++
++const definition: ConnectorDefinition = {
++  backend: "direct-api",
++  description:
++    "Fetches configured RSS and Atom subscriptions with conditional HTTP and entry cursors.",
++  displayName: "RSS / Atom",
++  id: "rss",
++  requiredEnv: [],
++  supportsAgenticDiscovery: false,
++};
++
++export function createRssConnector(): ConnectorRuntime {
++  return { ...definition, ingest };
++}
++
++export function normalizeRssFeedUrl(value: unknown): string {
++  if (typeof value !== "string" || value.trim().length === 0) {
++    throw new Error("Enter an RSS or Atom feed URL.");
++  }
++
++  let url: URL;
++  try {
++    url = new URL(value.trim());
++  } catch {
++    throw new Error("Enter a valid RSS or Atom feed URL.");
++  }
++
++  if (url.protocol !== "https:" && url.protocol !== "http:") {
++    throw new Error("RSS/Atom feed URLs must use HTTP or HTTPS.");
++  }
++  if (
++    url.username.length > 0 ||
++    url.password.length > 0 ||
++    [...url.searchParams.keys()].some((key) => SECRET_QUERY_KEY.test(key))
++  ) {
++    throw new Error(
++      "RSS/Atom feed URLs must not contain credentials or secret query parameters.",
++    );
++  }
++
++  url.hash = "";
++  return url.toString();
++}
++
++async function ingest(
++  options: ConnectorIngestOptions = {},
++): Promise<ConnectorIngestResult> {
++  const capturedAt = new Date().toISOString();
++  const runId = createRunId();
++  const rawFiles: string[] = [];
++  const warnings: string[] = [];
++  const instanceId = normalizeInstanceId(options.instanceId);
++  const baseConfig = await readConnectorConfig<RssConfig>("rss", {
++    enabled: true,
++    maxBytes: DEFAULT_MAX_BYTES,
++    maxItems: DEFAULT_MAX_ITEMS,
++    timeoutMs: DEFAULT_TIMEOUT_MS,
++  });
++  const config = normalizeConfig({
++    ...baseConfig,
++    ...((options.connectorConfig ?? {}) as RssConfig),
++    ...(options.limit === undefined ? {} : { maxItems: options.limit }),
++  });
++
++  if (!config.enabled) {
++    return result(
++      runId,
++      "skipped",
++      rawFiles,
++      warnings,
++      "RSS/Atom connector is disabled.",
++    );
++  }
++
++  let feedUrl: string;
++  try {
++    feedUrl = normalizeRssFeedUrl(config.feedUrl);
++  } catch (error) {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      getSafeConfigurationError(error),
++    );
++  }
++
++  const state = (await readConnectorState("rss")) as RssConnectorState;
++  const instances = state.rss?.instances ?? {};
++  const previous = instances[instanceId];
++  const cursor = previous?.feedUrl === feedUrl ? previous : undefined;
++  const headers = new Headers({
++    accept:
++      "application/atom+xml, application/rss+xml, application/xml, text/xml;q=0.9",
++    "user-agent": "OpenWiki RSS connector/1",
++  });
++  if (cursor?.etag) headers.set("if-none-match", cursor.etag);
++  if (cursor?.lastModified) {
++    headers.set("if-modified-since", cursor.lastModified);
++  }
++
++  let response: Response;
++  try {
++    response = await fetch(feedUrl, {
++      headers,
++      redirect: "follow",
++      signal: AbortSignal.timeout(config.timeoutMs),
++    });
++  } catch {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      `RSS/Atom fetch failed within timeoutMs=${config.timeoutMs}.`,
++    );
++  }
++
++  if (response.status === 304) {
++    await saveState(state, instances, instanceId, cursor, {
++      at: capturedAt,
++      rawFiles,
++      runId,
++      status: "skipped",
++      warnings,
++    });
++    return result(
++      runId,
++      "skipped",
++      rawFiles,
++      warnings,
++      "RSS/Atom feed was not modified.",
++    );
++  }
++
++  if (!response.ok) {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      `RSS/Atom fetch failed with HTTP ${response.status}.`,
++    );
++  }
++
++  let xml: string;
++  try {
++    xml = await readBoundedBody(response, config.maxBytes);
++  } catch (error) {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      error instanceof FeedSizeError
++        ? `RSS/Atom feed exceeded maxBytes=${config.maxBytes}.`
++        : "RSS/Atom feed body could not be read.",
++    );
++  }
++
++  let feed: ParsedFeed;
++  try {
++    feed = parseFeed(xml, feedUrl, config.maxItems);
++  } catch {
++    return result(
++      runId,
++      "error",
++      rawFiles,
++      warnings,
++      "RSS/Atom feed could not be parsed.",
++    );
++  }
++
++  const previousEntries = cursor?.entries ?? {};
++  const nextEntries = { ...previousEntries };
++  const emittedEntries: EmittedEntry[] = [];
++  let changedEntries = 0;
++  let newEntries = 0;
++
++  for (const entry of feed.entries) {
++    const contentHash = hashEntry(entry);
++    const previousEntry = previousEntries[entry.identity];
++    const changeType = previousEntry
++      ? previousEntry.contentHash === contentHash
++        ? null
++        : "changed"
++      : "new";
++    nextEntries[entry.identity] = { contentHash, lastSeenAt: capturedAt };
++    if (changeType === null) continue;
++    if (changeType === "new") newEntries += 1;
++    else changedEntries += 1;
++    emittedEntries.push({
++      ...entry,
++      capturedAt,
++      changeType,
++      feedUrl,
++      provenance: {
++        connectorId: "rss",
++        feedUrl,
++        sourceInstanceId: instanceId,
++      },
++    });
++  }
++
++  const etag = response.headers.get("etag") ?? undefined;
++  const lastModified = response.headers.get("last-modified") ?? undefined;
++  const lastPublishedAt = getLatestPublishedAt(feed.entries);
++  const nextInstanceState: RssInstanceState = {
++    entries: trimEntryState(nextEntries),
++    ...(etag ? { etag } : {}),
++    feedUrl,
++    ...(lastModified ? { lastModified } : {}),
++    ...(lastPublishedAt ? { lastPublishedAt } : {}),
++    lastSuccessAt: capturedAt,
++  };
++
++  if (emittedEntries.length > 0) {
++    rawFiles.push(
++      await writeRawJson("rss", runId, `entries-${instanceId}.json`, {
++        capturedAt,
++        connectorId: "rss",
++        entries: emittedEntries,
++        feedUrl,
++        schemaVersion: 1,
++        sourceInstanceId: instanceId,
++      }),
++    );
++    rawFiles.push(
++      await writeRawJson("rss", runId, `manifest-${instanceId}.json`, {
++        capturedAt,
++        changedEntries,
++        connectorId: "rss",
++        emittedEntries: emittedEntries.length,
++        ...(etag ? { etag } : {}),
++        feedAuthor: feed.author,
++        feedFormat: feed.format,
++        feedTitle: feed.title,
++        feedUrl,
++        ...(lastModified ? { lastModified } : {}),
++        newEntries,
++        provenance: {
++          connectorId: "rss",
++          feedUrl,
++          sourceInstanceId: instanceId,
++        },
++        schemaVersion: 1,
++        sourceInstanceId: instanceId,
++      }),
++    );
++  }
++
++  const status = rawFiles.length > 0 ? "success" : "skipped";
++  await saveState(state, instances, instanceId, nextInstanceState, {
++    at: capturedAt,
++    rawFiles,
++    runId,
++    status,
++    warnings,
++  });
++
++  return result(
++    runId,
++    status,
++    rawFiles,
++    warnings,
++    emittedEntries.length > 0
++      ? `Captured ${emittedEntries.length} new or changed RSS/Atom entr${
++          emittedEntries.length === 1 ? "y" : "ies"
++        }.`
++      : "No new or changed RSS/Atom entries.",
++  );
++}
++
++function normalizeConfig(
++  config: RssConfig,
++): Required<
++  Pick<RssConfig, "enabled" | "maxBytes" | "maxItems" | "timeoutMs">
++> &
++  Pick<RssConfig, "feedUrl"> {
++  return {
++    enabled: config.enabled !== false,
++    feedUrl: config.feedUrl,
++    maxBytes: boundedInteger(
++      config.maxBytes,
++      DEFAULT_MAX_BYTES,
++      MIN_MAX_BYTES,
++      MAX_MAX_BYTES,
++    ),
++    maxItems: boundedInteger(
++      config.maxItems,
++      DEFAULT_MAX_ITEMS,
++      1,
++      MAX_MAX_ITEMS,
++    ),
++    timeoutMs: boundedInteger(
++      config.timeoutMs,
++      DEFAULT_TIMEOUT_MS,
++      MIN_TIMEOUT_MS,
++      MAX_TIMEOUT_MS,
++    ),
++  };
++}
++
++function boundedInteger(
++  value: number | undefined,
++  fallback: number,
++  minimum: number,
++  maximum: number,
++): number {
++  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
++  return Math.max(minimum, Math.min(maximum, Math.trunc(value)));
++}
++
++function normalizeInstanceId(value: string | undefined): string {
++  if (value === undefined) return "rss-1";
++  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/u.test(value)) {
++    throw new Error("Invalid RSS/Atom source instance ID.");
++  }
++  return value;
++}
++
++class FeedSizeError extends Error {}
++
++async function readBoundedBody(
++  response: Response,
++  maxBytes: number,
++): Promise<string> {
++  const declaredLength = Number(response.headers.get("content-length"));
++  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
++    throw new FeedSizeError();
++  }
++  if (!response.body) return "";
++
++  // Node's fetch body is the same Web stream but DOM and node:stream/web
++  // declarations are not structurally linked in every supported TS version.
++  const body = response.body as unknown as ReadableStream<Uint8Array>;
++  const reader = body.getReader();
++  const chunks: Uint8Array[] = [];
++  let totalBytes = 0;
++  while (true) {
++    const readResult: ReadableStreamReadResult<Uint8Array> =
++      await reader.read();
++    if (readResult.done) break;
++    const chunk = readResult.value;
++    totalBytes += chunk.byteLength;
++    if (totalBytes > maxBytes) {
++      await reader.cancel();
++      throw new FeedSizeError();
++    }
++    chunks.push(chunk);
++  }
++
++  const bytes = new Uint8Array(totalBytes);
++  let offset = 0;
++  for (const chunk of chunks) {
++    bytes.set(chunk, offset);
++    offset += chunk.byteLength;
++  }
++  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
++}
++
++function parseFeed(xml: string, feedUrl: string, maxItems: number): ParsedFeed {
++  const parser = new XMLParser({
++    attributeNamePrefix: "@_",
++    cdataPropName: "#cdata",
++    ignoreAttributes: false,
++    parseAttributeValue: false,
++    parseTagValue: false,
++    processEntities: false,
++    removeNSPrefix: true,
++    trimValues: true,
++  });
++  const document = parser.parse(xml) as Record<string, unknown>;
++  const atom = asRecord(document.feed);
++  const rssRoot = asRecord(document.rss);
++  const rssChannel = asRecord(rssRoot?.channel);
++  const rdf = asRecord(document.RDF);
++  const format = atom ? "atom" : "rss";
++  const feedNode = atom ?? rssChannel ?? rdf;
++  if (!feedNode) throw new Error("Missing feed root.");
++  const rawEntries = asArray(
++    format === "atom" ? feedNode.entry : (rssChannel?.item ?? rdf?.item),
++  ).slice(0, maxItems);
++
++  return {
++    author: extractAuthor(feedNode.author ?? feedNode.creator),
++    entries: rawEntries.map((rawEntry) =>
++      parseEntry(rawEntry, format, feedUrl),
++    ),
++    format,
++    title: extractText(feedNode.title),
++  };
++}
++
++function parseEntry(
++  value: unknown,
++  format: ParsedFeed["format"],
++  feedUrl: string,
++): ParsedEntry {
++  const entry = asRecord(value);
++  if (!entry) throw new Error("Invalid feed entry.");
++  const entryGuid = extractText(entry.guid ?? entry.id);
++  const entryUrl = extractEntryUrl(entry.link, format, feedUrl);
++  const title = extractText(entry.title);
++  const author = extractAuthor(entry.author ?? entry.creator);
++  const publishedAt = normalizeTimestamp(
++    extractText(
++      entry.published ?? entry.pubDate ?? entry.updated ?? entry.date,
++    ),
++  );
++  const content = extractText(
++    entry.content ?? entry.encoded ?? entry.description ?? entry.summary,
++  );
++  const identity = entryGuid
++    ? `guid:${entryGuid}`
++    : entryUrl
++      ? `url:${entryUrl}`
++      : `content:${hashValue({ author, content, publishedAt, title })}`;
++
++  return {
++    author,
++    content,
++    entryGuid,
++    entryUrl,
++    identity,
++    publishedAt,
++    title,
++  };
++}
++
++function extractEntryUrl(
++  value: unknown,
++  format: ParsedFeed["format"],
++  feedUrl: string,
++): string | null {
++  if (format === "rss") return resolveUrl(extractText(value), feedUrl);
++  const links = asArray(value);
++  const selected =
++    links.find((link) => {
++      const record = asRecord(link);
++      return record?.["@_rel"] === "alternate";
++    }) ?? links.find((link) => asRecord(link)?.["@_rel"] === undefined);
++  const record = asRecord(selected);
++  return resolveUrl(
++    extractText(record?.["@_href"] ?? record?.href ?? selected),
++    feedUrl,
++  );
++}
++
++function resolveUrl(value: string | null, feedUrl: string): string | null {
++  if (!value) return null;
++  try {
++    return new URL(value, feedUrl).toString();
++  } catch {
++    return value;
++  }
++}
++
++function extractAuthor(value: unknown): string | null {
++  const first = asArray(value)[0];
++  const record = asRecord(first);
++  return extractText(record?.name ?? first);
++}
++
++function extractText(value: unknown): string | null {
++  if (typeof value === "string" || typeof value === "number") {
++    const text = String(value).trim();
++    return text.length > 0 ? text : null;
++  }
++  if (Array.isArray(value)) {
++    for (const item of value) {
++      const text = extractText(item);
++      if (text) return text;
++    }
++    return null;
++  }
++  const record = asRecord(value);
++  if (!record) return null;
++  return extractText(record["#text"] ?? record["#cdata"]);
++}
++
++function normalizeTimestamp(value: string | null): string | null {
++  if (!value) return null;
++  const milliseconds = Date.parse(value);
++  return Number.isFinite(milliseconds)
++    ? new Date(milliseconds).toISOString()
++    : value;
++}
++
++function hashEntry(entry: ParsedEntry): string {
++  return hashValue(entry);
++}
++
++function hashValue(value: unknown): string {
++  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
++}
++
++function getLatestPublishedAt(entries: ParsedEntry[]): string | undefined {
++  return entries
++    .map((entry) => entry.publishedAt)
++    .filter((value): value is string => Boolean(value))
++    .sort()
++    .at(-1);
++}
++
++function trimEntryState(
++  entries: Record<string, RssEntryCursor>,
++): Record<string, RssEntryCursor> {
++  return Object.fromEntries(
++    Object.entries(entries)
++      .sort(
++        ([leftId, left], [rightId, right]) =>
++          right.lastSeenAt.localeCompare(left.lastSeenAt) ||
++          leftId.localeCompare(rightId),
++      )
++      .slice(0, MAX_STATE_ENTRIES),
++  );
++}
++
++async function saveState(
++  state: RssConnectorState,
++  instances: Record<string, RssInstanceState>,
++  instanceId: string,
++  instance: RssInstanceState | undefined,
++  run: NonNullable<ConnectorState["runs"]>[number],
++): Promise<void> {
++  const nextInstances = instance
++    ? { ...instances, [instanceId]: instance }
++    : instances;
++  await writeConnectorState("rss", {
++    ...updateStateWithRun(state, run),
++    rss: { instances: nextInstances },
++  } as RssConnectorState);
++}
++
++function result(
++  runId: string,
++  status: ConnectorIngestResult["status"],
++  rawFiles: string[],
++  warnings: string[],
++  message: string,
++): ConnectorIngestResult {
++  return {
++    connectorId: "rss",
++    message,
++    rawFiles,
++    runId,
++    statePath: "~/.openwiki/connectors/rss/state.json",
++    status,
++    warnings,
++  };
++}
++
++function getSafeConfigurationError(error: unknown): string {
++  const message = error instanceof Error ? error.message : "";
++  return message.startsWith("RSS/Atom") || message.startsWith("Enter an")
++    ? message
++    : "RSS/Atom feed configuration is invalid.";
++}
++
++function asRecord(value: unknown): Record<string, unknown> | null {
++  return typeof value === "object" && value !== null && !Array.isArray(value)
++    ? (value as Record<string, unknown>)
++    : null;
++}
++
++function asArray(value: unknown): unknown[] {
++  if (value === undefined || value === null) return [];
++  return Array.isArray(value) ? value : [value];
++}
+diff --git a/src/connectors/types.ts b/src/connectors/types.ts
+index 8dfc1d9..5bc2c27 100644
+--- a/src/connectors/types.ts
++++ b/src/connectors/types.ts
+@@ -6,6 +6,7 @@ export type ConnectorId =
+   | "imessage"
+   | "links"
+   | "notion"
++  | "rss"
+   | "slack"
+   | "web-search"
+   | "x";
+diff --git a/src/credentials.tsx b/src/credentials.tsx
+index b50df22..b59d5a4 100644
+--- a/src/credentials.tsx
++++ b/src/credentials.tsx
+@@ -52,6 +52,7 @@ import {
+ import type { AuthProviderId } from "./auth/types.js";
+ import type { OpenWikiRunMode } from "./commands.js";
+ import type { ConnectorId } from "./connectors/types.js";
++import { normalizeRssFeedUrl } from "./connectors/sources/rss.js";
+ import { getConnectorConfigPath } from "./openwiki-home.js";
+ import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
+ import {
+@@ -126,6 +127,7 @@ type PromptStep =
+   | "source-description-custom"
+   | "source-menu"
+   | "source-path"
++  | "source-rss-feed-url"
+   | "source-confirm-continue"
+   | "source-secret"
+   | "template"
+@@ -210,6 +212,7 @@ const ONBOARDING_TEMPLATES = [
+       "imessage",
+       "links",
+       "notion",
++      "rss",
+       "web-search",
+       "hackernews",
+       "x",
+@@ -220,6 +223,7 @@ const ONBOARDING_TEMPLATES = [
+       "iMessage",
+       "Links",
+       "Notion",
++      "RSS / Atom",
+       "Web Search (Tavily)",
+       "Hacker News",
+       "X/Twitter",
+@@ -346,6 +350,20 @@ const SOURCE_OPTIONS = [
+     ],
+     secretInputs: [],
+   },
++  {
++    displayName: "RSS / Atom",
++    examples: [
++      "Track new posts and updates from this subscription.",
++      "Capture durable research findings and announcements from this feed.",
++    ],
++    id: "rss",
++    instructions: [
++      "Enter one public RSS or Atom feed URL.",
++      "Add another RSS / Atom source to subscribe to another feed.",
++      "Feed URLs containing credentials or secret query parameters are rejected.",
++    ],
++    secretInputs: [],
++  },
+   {
+     displayName: "Web Search (Tavily)",
+     examples: [
+@@ -1771,6 +1789,26 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (step === "source-rss-feed-url") {
++      try {
++        setSourceState((state) => ({
++          ...state,
++          connectorConfig: {
++            enabled: true,
++            feedUrl: normalizeRssFeedUrl(input),
++            maxBytes: 2097152,
++            maxItems: 100,
++            timeoutMs: 15000,
++          },
++        }));
++        setInput("");
++        setStep("source-description");
++      } catch (setupError) {
++        setError(getErrorMessage(setupError));
++      }
++      return;
++    }
++
+     if (step === "source-description") {
+       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
+         setInput("");
+@@ -2172,6 +2210,12 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (source.id === "rss") {
++      setInput("");
++      setStep("source-rss-feed-url");
++      return;
++    }
++
+     try {
+       if (source.id === "git-repo") {
+         setInput(getDefaultLocalGitRepoPath());
+@@ -3170,6 +3214,26 @@ function Prompt({
+     );
+   }
+ 
++  if (step === "source-rss-feed-url") {
++    return (
++      <Box flexDirection="column">
++        <Text>Subscribe to an RSS or Atom feed.</Text>
++        {selectedSource.instructions.map((instruction, index) => (
++          <Text key={instruction}>
++            {index + 1}. {instruction}
++          </Text>
++        ))}
++        <BorderedInput
++          maxDisplayWidth={inputDisplayWidth}
++          marginTop={1}
++          prefix="feedUrl="
++          value={input}
++        />
++        <Text color="gray">Press Enter to validate this feed URL.</Text>
++      </Box>
++    );
++  }
++
+   if (step === "source-secret") {
+     const secretInput = selectedSource.secretInputs[secretInputIndex];
+     return (
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index cd3b6df..3282667 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -369,6 +369,10 @@ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
+       return `
+ - Treat low-engagement Hacker News items as watchlist by default. Promote to /themes.md only when the item recurs, matches existing topics, has strong engagement, or corroborates another source.
+ - Keep /sources/hackernews.md focused on compact evidence and avoid turning feed items into current status without stronger support. If promoted, add only a short theme row or watchlist entry.`;
++    case "rss":
++      return `
++- Treat RSS/Atom entries as source-backed subscription evidence. Preserve compact links and feed provenance in /sources/rss.md without copying full feed bodies.
++- Promote entries into canonical pages only when they are durable, actionable, recurrent, or directly relevant to the user's stated goals. Merge updates to the same entry instead of duplicating them.`;
+     case "web-search":
+       return `
+ - Treat web search results as source-backed only when the result is credible and relevant to the user's stated goals. Use watchlist for uncertain or single weak results.
+diff --git a/src/onboarding.ts b/src/onboarding.ts
+index c88edfc..9cb1f26 100644
+--- a/src/onboarding.ts
++++ b/src/onboarding.ts
+@@ -462,6 +462,7 @@ function isKnownConnectorId(value: string): value is ConnectorId {
+     value === "imessage" ||
+     value === "links" ||
+     value === "notion" ||
++    value === "rss" ||
+     value === "slack" ||
+     value === "web-search" ||
+     value === "x"
+diff --git a/test/commands.test.ts b/test/commands.test.ts
+index 8c2ca4e..ec28c5c 100644
+--- a/test/commands.test.ts
++++ b/test/commands.test.ts
+@@ -457,3 +457,24 @@ describe("parseCommand — Discord ingestion", () => {
+     });
+   });
+ });
++
++describe("parseCommand — RSS ingestion and schedules", () => {
++  test("accepts the built-in RSS target", () => {
++    expect(parseCommand(["ingest", "rss", "--print"])).toEqual({
++      kind: "ingest",
++      exitCode: 0,
++      modelId: null,
++      print: true,
++      scheduledOnly: false,
++      target: "rss",
++    });
++  });
++
++  test("accepts RSS as a connector schedule target", () => {
++    expect(parseCommand(["cron", "pause", "rss"])).toMatchObject({
++      action: "pause",
++      kind: "cron",
++      target: "rss",
++    });
++  });
++});
+diff --git a/test/ingestion.test.ts b/test/ingestion.test.ts
+index dcab12a..910f240 100644
+--- a/test/ingestion.test.ts
++++ b/test/ingestion.test.ts
+@@ -8,7 +8,7 @@ const linksIngest = vi.hoisted(() => vi.fn());
+ const runOpenWikiAgent = vi.hoisted(() => vi.fn());
+ 
+ vi.mock("../src/connectors/registry.js", () => ({
+-  CONNECTOR_IDS: ["google", "imessage", "links"],
++  CONNECTOR_IDS: ["google", "imessage", "links", "rss"],
+   createConnectorRegistry: () => ({
+     google: {
+       backend: "direct-api",
+@@ -37,9 +37,21 @@ vi.mock("../src/connectors/registry.js", () => ({
+       requiredEnv: [],
+       supportsAgenticDiscovery: false,
+     },
++    rss: {
++      backend: "direct-api",
++      description: "deterministic RSS test connector",
++      displayName: "RSS / Atom",
++      id: "rss",
++      ingest,
++      requiredEnv: [],
++      supportsAgenticDiscovery: false,
++    },
+   }),
+   isConnectorId: (value: string) =>
+-    value === "google" || value === "imessage" || value === "links",
++    value === "google" ||
++    value === "imessage" ||
++    value === "links" ||
++    value === "rss",
+ }));
+ 
+ vi.mock("../src/agent/index.js", () => ({
+@@ -229,4 +241,58 @@ describe("deterministic ingestion", () => {
+       "source update for Links (links)",
+     );
+   });
++
++  test("ingest rss runs every configured RSS source instance", async () => {
++    await writeFile(
++      path.join(home, ".openwiki", "onboarding.json"),
++      `${JSON.stringify({
++        sourceInstances: [
++          {
++            connectedAt: "2026-07-18T12:00:00.000Z",
++            connectorConfig: { feedUrl: "https://example.com/one.xml" },
++            connectorId: "rss",
++            id: "rss-1",
++          },
++          {
++            connectedAt: "2026-07-18T12:01:00.000Z",
++            connectorConfig: { feedUrl: "https://example.com/two.xml" },
++            connectorId: "rss",
++            id: "rss-2",
++          },
++        ],
++        sources: {},
++        version: 1,
++      })}\n`,
++    );
++    ingest.mockResolvedValue({
++      connectorId: "rss",
++      message: "No new or changed RSS/Atom entries.",
++      rawFiles: [],
++      runId: "run-rss",
++      statePath: "~/.openwiki/connectors/rss/state.json",
++      status: "skipped",
++      warnings: [],
++    });
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const result = await runOpenWikiIngestion(home, { target: "rss" });
++
++    expect(result.results).toHaveLength(2);
++    expect(ingest).toHaveBeenNthCalledWith(
++      1,
++      expect.objectContaining({
++        connectorConfig: { feedUrl: "https://example.com/one.xml" },
++        instanceId: "rss-1",
++      }),
++    );
++    expect(ingest).toHaveBeenNthCalledWith(
++      2,
++      expect.objectContaining({
++        connectorConfig: { feedUrl: "https://example.com/two.xml" },
++        instanceId: "rss-2",
++      }),
++    );
++    expect(runOpenWikiAgent).not.toHaveBeenCalled();
++  });
+ });
+diff --git a/test/onboarding.test.ts b/test/onboarding.test.ts
+index 7432808..2445dd9 100644
+--- a/test/onboarding.test.ts
++++ b/test/onboarding.test.ts
+@@ -166,6 +166,44 @@ describe("OpenWiki onboarding instructions", () => {
+     });
+   });
+ 
++  test("preserves multiple RSS subscriptions with stable instance IDs", async () => {
++    const home = await createTempHome();
++    const onboarding = await loadOnboardingModule(home);
++    const sourceInstances = [
++      {
++        connectedAt: "2026-07-18T12:00:00.000Z",
++        connectorConfig: { feedUrl: "https://example.com/one.xml" },
++        connectorId: "rss" as const,
++        id: "rss-1",
++        name: "RSS / Atom 1: Example one",
++      },
++      {
++        connectedAt: "2026-07-18T12:01:00.000Z",
++        connectorConfig: { feedUrl: "https://example.com/two.xml" },
++        connectorId: "rss" as const,
++        id: "rss-2",
++        name: "RSS / Atom 2: Example two",
++      },
++    ];
++
++    await onboarding.saveOpenWikiOnboardingConfig({
++      sourceInstances,
++      sources: {},
++      version: 1,
++    });
++
++    await expect(
++      onboarding.readOpenWikiOnboardingConfig(),
++    ).resolves.toMatchObject({
++      sourceInstances,
++      sources: {
++        rss: {
++          connectorConfig: { feedUrl: "https://example.com/one.xml" },
++        },
++      },
++    });
++  });
++
+   test("reads wiki instructions only from INSTRUCTIONS.md", async () => {
+     const home = await createTempHome();
+     const onboarding = await loadOnboardingModule(home);
+diff --git a/test/rss-connector.test.ts b/test/rss-connector.test.ts
+index e5dad8e..0c888c0 100644
+--- a/test/rss-connector.test.ts
++++ b/test/rss-connector.test.ts
+@@ -2,8 +2,8 @@ import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+ import os from "node:os";
+ import path from "node:path";
+ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++import type { ConnectorRuntime } from "../src/connectors/types.js";
+ 
+-const RSS_MODULE_PATH = "../src/connectors/sources/rss.ts";
+ const originalHome = process.env.HOME;
+ const tempHomes: string[] = [];
+ 
+@@ -70,10 +70,10 @@ async function createHome(): Promise<string> {
+   return home;
+ }
+ 
+-async function loadConnector(home: string) {
++async function loadConnector(home: string): Promise<ConnectorRuntime> {
+   vi.resetModules();
+   process.env.HOME = home;
+-  const rssModule = await import(RSS_MODULE_PATH);
++  const rssModule = await import("../src/connectors/sources/rss.ts");
+   return rssModule.createRssConnector();
+ }
+ 
+@@ -101,12 +101,14 @@ afterEach(async () => {
+   if (originalHome === undefined) delete process.env.HOME;
+   else process.env.HOME = originalHome;
+   await Promise.all(
+-    tempHomes.splice(0).map((home) => rm(home, { force: true, recursive: true })),
++    tempHomes
++      .splice(0)
++      .map((home) => rm(home, { force: true, recursive: true })),
+   );
+ });
+ 
+ describe("RSS/Atom connector", () => {
+-  test.fails("writes bounded normalized RSS entries and provenance", async () => {
++  test("writes bounded normalized RSS entries and provenance", async () => {
+     const home = await createHome();
+     const fetchMock = vi.fn().mockResolvedValue(
+       new Response(rssFeed, {
+@@ -170,13 +172,10 @@ describe("RSS/Atom connector", () => {
+       newEntries: 1,
+       sourceInstanceId: "rss-1",
+     });
+-    await expect(stat(result.rawFiles[0])).resolves.toMatchObject({
+-      mode: expect.any(Number),
+-    });
+     expect((await stat(result.rawFiles[0])).mode & 0o777).toBe(0o600);
+   });
+ 
+-  test.fails("uses validators and emits only new or changed Atom entries", async () => {
++  test("uses validators and emits only new or changed Atom entries", async () => {
+     const home = await createHome();
+     const fetchMock = vi
+       .fn()
+@@ -251,7 +250,7 @@ describe("RSS/Atom connector", () => {
+     });
+   });
+ 
+-  test.fails("keeps conditional state isolated by stable source instance", async () => {
++  test("keeps conditional state isolated by stable source instance", async () => {
+     const home = await createHome();
+     const fetchMock = vi
+       .fn()
+@@ -288,14 +287,16 @@ describe("RSS/Atom connector", () => {
+         path.join(home, ".openwiki/connectors/rss/state.json"),
+         "utf8",
+       ),
+-    );
++    ) as {
++      rss: { instances: Record<string, { etag?: string }> };
++    };
+     expect(state.rss.instances).toMatchObject({
+       "rss-1": { etag: '"feed-a"' },
+       "rss-2": { etag: '"feed-b"' },
+     });
+   });
+ 
+-  test.fails("fails closed when a feed exceeds the configured byte bound", async () => {
++  test("fails closed when a feed exceeds the configured byte bound", async () => {
+     const home = await createHome();
+     const fetchMock = vi
+       .fn()
+@@ -315,7 +316,34 @@ describe("RSS/Atom connector", () => {
+     expect(result.message).toBe("RSS/Atom feed exceeded maxBytes=128.");
+   });
+ 
+-  test.fails("rejects credential-bearing feed URLs before fetching", async () => {
++  test("aborts a feed request at the configured timeout bound", async () => {
++    vi.useRealTimers();
++    const home = await createHome();
++    const fetchMock = vi.fn(
++      (_url: string, init?: RequestInit) =>
++        new Promise<Response>((_resolve, reject) => {
++          init?.signal?.addEventListener("abort", () =>
++            reject(new Error("abort")),
++          );
++        }),
++    );
++    vi.stubGlobal("fetch", fetchMock);
++    const connector = await loadConnector(home);
++
++    const result = await connector.ingest({
++      connectorConfig: {
++        feedUrl: "https://example.com/slow.xml",
++        timeoutMs: 100,
++      },
++      instanceId: "rss-1",
++    });
++
++    expect(result).toMatchObject({ rawFiles: [], status: "error" });
++    expect(result.message).toBe("RSS/Atom fetch failed within timeoutMs=100.");
++    expect(fetchMock).toHaveBeenCalledOnce();
++  });
++
++  test("rejects credential-bearing feed URLs before fetching", async () => {
+     const home = await createHome();
+     const fetchMock = vi.fn();
+     vi.stubGlobal("fetch", fetchMock);
+@@ -334,4 +362,22 @@ describe("RSS/Atom connector", () => {
+     );
+     expect(fetchMock).not.toHaveBeenCalled();
+   });
++
++  test("does not expand feed-defined XML entities", async () => {
++    const home = await createHome();
++    const xml = `<!DOCTYPE rss [<!ENTITY payload "expanded">]>
++<rss><channel><item><guid>entity-entry</guid><title>&payload;</title></item></channel></rss>`;
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(xml)));
++    const connector = await loadConnector(home);
++
++    const result = await connector.ingest({
++      connectorConfig: { feedUrl: "https://example.com/entities.xml" },
++      instanceId: "rss-1",
++    });
++
++    const entries = await readResultFile(result.rawFiles, "entries-rss-1.json");
++    expect(entries).toMatchObject({
++      entries: [{ title: "&payload;" }],
++    });
++  });
+ });
