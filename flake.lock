@@ -76,6 +76,7 @@
     },
     "agents-workspace": {
       "inputs": {
+        "astGrepNixpkgs": "astGrepNixpkgs",
         "cronalytics": "cronalytics",
         "googleWorkspaceCli": "googleWorkspaceCli",
         "hermesAgent": "hermesAgent",
@@ -88,17 +89,33 @@
         ]
       },
       "locked": {
-        "lastModified": 1784384451,
-        "narHash": "sha256-6mTt7h4NbC8eXXdPvYe7Ihrr0e71W1A3QsM+6nKk19M=",
+        "lastModified": 1784393043,
+        "narHash": "sha256-mQfutACxj3Omx+Y9r/DjO6FNXVKMlIKRhYlXJ9EQcNs=",
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "68ac4d0fc85a49073d0165c3d0a2eb4c1f78130f",
+        "rev": "6335eb4b208c23436dd6ea6bece299770f7e9535",
         "type": "github"
       },
       "original": {
         "owner": "edmundmiller",
         "ref": "main",
         "repo": "agents-workspace",
+        "type": "github"
+      }
+    },
+    "astGrepNixpkgs": {
+      "locked": {
+        "lastModified": 1784356753,
+        "narHash": "sha256-12KrbMiWLcf8m7pCvAtZh1ZrgF85ZXDXvfR/fWTKy84=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "61b7c44c4073f0b827768aff0049561b5110ea5a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
         "type": "github"
       }
     },

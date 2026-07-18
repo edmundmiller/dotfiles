@@ -13,7 +13,7 @@ class NucHermesRuntimeTest(unittest.TestCase):
         service = source[start:end]
         self.assertIn("pkgs.rtk", service)
 
-    def test_amos_cron_uses_automatically_refreshed_linear_oauth(self):
+    def test_amos_cron_uses_canonical_linear_api_credential(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         service_start = source.index("systemd.services.hermes-amosburton-cron-tick")
         service_end = source.index(
@@ -21,14 +21,13 @@ class NucHermesRuntimeTest(unittest.TestCase):
         )
         service = source[service_start:service_end]
 
-        self.assertIn("systemd.services.linear-token-refresh", source)
-        self.assertIn("systemd.timers.linear-token-refresh", source)
-        self.assertIn("linear-token-refresh.service", service)
         self.assertIn("amosburtonCronExecutor", service)
         self.assertIn(
             'writeShellScript "hermes-amosburton-cron-executor"', source
         )
-        self.assertIn("HERMES_MCP_BEARER_TOKEN_LINEAR", source)
+        self.assertIn("amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY", source)
+        self.assertIn("SupplementaryGroups", service)
+        self.assertIn('"onepassword-secrets"', service)
 
 
 if __name__ == "__main__":
