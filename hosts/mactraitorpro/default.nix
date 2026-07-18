@@ -4,6 +4,29 @@
   pkgs,
   ...
 }:
+let
+  obsidianVault = "${config.user.home}/obsidian-vault";
+  obsidianGuardDir = "${config.user.home}/Library/Application Support/obsidian-sync-guard";
+  obsidianDesktopGuard = pkgs.writeShellScript "obsidian-desktop-sync-guard" ''
+    set -u
+    mkdir -p ${builtins.toJSON obsidianGuardDir}
+    output="$(${pkgs.bun}/bin/bun ${builtins.toJSON "${obsidianVault}/scripts/obsidian-sync-safety-check.ts"} \
+      --vault ${builtins.toJSON obsidianVault} \
+      --policy ${builtins.toJSON "${obsidianVault}/07_Metadata/Validation/obsidian-sync-policy.json"} \
+      --engine desktop \
+      --config ${builtins.toJSON "${obsidianVault}/.obsidian/sync.json"} \
+      --state ${builtins.toJSON "${obsidianGuardDir}/state.json"} \
+      --json 2>&1)"
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+      exit 0
+    fi
+    printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$output" >> ${builtins.toJSON "${obsidianGuardDir}/incident.log"}
+    /usr/bin/osascript -e 'tell application "Obsidian" to quit' >/dev/null 2>&1 || true
+    /usr/bin/osascript -e 'display notification "Sync stopped; inspect the incident log." with title "Obsidian Sync safety tripwire"' >/dev/null 2>&1 || true
+    exit "$rc"
+  '';
+in
 {
 
   config = {
@@ -210,6 +233,16 @@
           };
         };
       };
+
+    launchd.user.agents.obsidian-sync-guard = {
+      command = "${obsidianDesktopGuard}";
+      serviceConfig = {
+        RunAtLoad = true;
+        StartInterval = 30;
+        StandardOutPath = "/tmp/obsidian-sync-guard.log";
+        StandardErrorPath = "/tmp/obsidian-sync-guard.err";
+      };
+    };
 
     # Manage native macOS Login Items declaratively. Keep Raycast Beta here and
     # do not also start it with a launchd.user.agent, or macOS will run two instances.

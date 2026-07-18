@@ -1103,6 +1103,12 @@
                 inherit pkgs;
               };
 
+              obsidian-sync-safety-assertions = import ./modules/services/obsidian-sync/_tests/eval-safety.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {
