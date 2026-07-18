@@ -193,13 +193,19 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0006-links-connector.patch
     ./patches/0007-discrawl-connector.patch
     ./patches/0008-rss-connector-regression.patch
+    ./patches/0009-rss-connector.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
-    inherit (finalAttrs) pname version src;
+    inherit (finalAttrs)
+      patches
+      pname
+      src
+      version
+      ;
     pnpm = pnpm_10;
     fetcherVersion = 3;
-    hash = "sha256-QWwMrKigLjdEH4QFua6woZg2xmSmF52+GdZi8zuikJw=";
+    hash = "sha256-g2gxm4iBRcnKfXLwZJ326IGbEBRhcXE8iXakh3dU4cY=";
   };
 
   nativeBuildInputs = [
@@ -251,6 +257,7 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstallCheck
     test -f "$out/lib/openwiki/skills/write-connector/SKILL.md"
     test -f "$out/lib/openwiki/skills/migrate-wiki-to-okf/SKILL.md"
+    test -f "$out/lib/openwiki/node_modules/fast-xml-parser/package.json"
     runHook postInstallCheck
   '';
 

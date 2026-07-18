@@ -9,7 +9,8 @@
     "patches/0005-evlog-ingestion-events.patch",
     "patches/0006-links-connector.patch",
     "patches/0007-discrawl-connector.patch",
-    "patches/0008-rss-connector-regression.patch"
+    "patches/0008-rss-connector-regression.patch",
+    "patches/0009-rss-connector.patch"
   ],
   "checks": [
     ["pnpm", "install", "--frozen-lockfile"],
