@@ -29,7 +29,6 @@ class NucHermesRuntimeTest(unittest.TestCase):
         self.assertIn("SupplementaryGroups", service)
         self.assertIn('"onepassword-secrets"', service)
 
-    @unittest.expectedFailure
     def test_scintillate_cron_pins_profile_home_for_terminal_tools(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         service_start = source.index("systemd.services.hermes-scintillate-cron-tick")
@@ -38,12 +37,12 @@ class NucHermesRuntimeTest(unittest.TestCase):
         )
         service = source[service_start:service_end]
 
-        self.assertIn("HOME=/var/lib/hermes-scintillate", service)
+        self.assertIn('HOME = "/var/lib/hermes-scintillate"', service)
         self.assertIn(
-            "HERMES_HOME=/var/lib/hermes-scintillate/.hermes", service
+            'HERMES_HOME = "/var/lib/hermes-scintillate/.hermes"', service
         )
-        self.assertIn("HERMES_REAL_HOME=/var/lib/hermes-scintillate", service)
-        self.assertIn("TERMINAL_HOME_MODE=real", service)
+        self.assertIn('HERMES_REAL_HOME = "/var/lib/hermes-scintillate"', service)
+        self.assertIn('TERMINAL_HOME_MODE = "real"', service)
 
 
 if __name__ == "__main__":
