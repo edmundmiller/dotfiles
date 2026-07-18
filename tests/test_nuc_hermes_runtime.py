@@ -13,7 +13,6 @@ class NucHermesRuntimeTest(unittest.TestCase):
         service = source[start:end]
         self.assertIn("pkgs.rtk", service)
 
-    @unittest.expectedFailure
     def test_amos_cron_uses_automatically_refreshed_linear_oauth(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         service_start = source.index("systemd.services.hermes-amosburton-cron-tick")
@@ -25,7 +24,10 @@ class NucHermesRuntimeTest(unittest.TestCase):
         self.assertIn("systemd.services.linear-token-refresh", source)
         self.assertIn("systemd.timers.linear-token-refresh", source)
         self.assertIn("linear-token-refresh.service", service)
-        self.assertIn("hermes-amosburton-cron-executor", service)
+        self.assertIn("amosburtonCronExecutor", service)
+        self.assertIn(
+            'writeShellScript "hermes-amosburton-cron-executor"', source
+        )
         self.assertIn("HERMES_MCP_BEARER_TOKEN_LINEAR", source)
 
 
