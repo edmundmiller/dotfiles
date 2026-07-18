@@ -22,6 +22,16 @@ if [[ ! -f "$config" ]]; then
   exit 1
 fi
 
+# Keep registry dump off user Pi/OMP state (plain omp honors PI_* globals).
+# PI_CONFIG_DIR must be a leaf name under HOME, not an absolute path.
+omp_iso="$(mktemp -d "${TMPDIR:-/tmp}/omp-config-check.XXXXXX")"
+trap 'rm -rf "$omp_iso"' EXIT
+mkdir -p "$omp_iso/.omp/agent"
+export HOME="$omp_iso"
+export PI_CONFIG_DIR=".omp"
+export PI_CODING_AGENT_DIR="$omp_iso/.omp/agent"
+unset PI_PERMISSION_SYSTEM_CONFIG_PATH || true
+
 registry_json="$("$omp_bin" config list --json)"
 config_json="$("$yq_bin" -o=json "$config")"
 
