@@ -1,0 +1,1084 @@
+diff --git a/README.md b/README.md
+index b33bbb1..dea2fb2 100644
+--- a/README.md
++++ b/README.md
+@@ -41,7 +41,7 @@ OpenWiki has two modes:
+ 
+ - **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` by
+   default from configured sources like local repositories, Gmail, iMessage,
+-  Notion, Web Search, Hacker News, and X/Twitter.
++  saved links, Notion, Web Search, Hacker News, and X/Twitter.
+ - **Code mode** builds repository documentation in `openwiki/` for the current
+   codebase.
+ 
+@@ -179,7 +179,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
+ 
+ ## Local Connectors
+ 
+-OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, iMessage, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
++OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, iMessage, saved links, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
+ 
+ You can configure the same connector more than once. For example, add one Web
+ Search source for AI research and another for NBA news; OpenWiki stores them as
+@@ -196,6 +196,33 @@ instances with `openwiki ingest all`, all instances for one connector with
+ - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
+ - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
+ 
++### Links
++
++Links are a local, credential-free input queue. Onboarding can seed the queue,
++or edit `~/.openwiki/connectors/links/config.json` directly:
++
++```json
++{
++  "links": [
++    {
++      "url": "https://example.com/reference?topic=openwiki",
++      "capturedAt": "2026-07-18T12:00:00.000Z",
++      "title": "Optional title",
++      "context": "Optional reason this was saved",
++      "source": "Optional provenance label"
++    }
++  ]
++}
++```
++
++`url` and `capturedAt` are required. Do not add private, signed, or
++credential-bearing URLs. Run `openwiki ingest links --print`, or rely on
++`openwiki ingest all` and the existing all-source schedule. The connector
++preserves the original URL, removes fragments and common tracking parameters
++from its canonical URL, derives a stable source ID, and writes only new or
++changed records to `~/.openwiki/connectors/links/raw/<runId>/links.json`.
++Repeated unchanged runs write no raw manifest and skip synthesis.
++
+ ### iMessage
+ 
+ iMessage ingestion requires macOS, `imsg` v0.13 or newer, and at least one
+diff --git a/openwiki/integrations/connectors.md b/openwiki/integrations/connectors.md
+index 2366c2f..8714ee1 100644
+--- a/openwiki/integrations/connectors.md
++++ b/openwiki/integrations/connectors.md
+@@ -1,25 +1,25 @@
+ ---
+ type: Integration
+ title: OpenWiki Connectors
+-description: OpenWiki ships eight built-in connectors that pull external data
++description: OpenWiki ships nine built-in connectors that pull external data
+   into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the
+   documentation agent then reads and synthesizes into wiki ...
+ tags: [connectors, integrations, ingestion, mcp]
+ ---
+ 
+-OpenWiki ships eight built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
++OpenWiki ships nine built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
+ 
+ ## Connector architecture
+ 
+ All connectors share types in `src/connectors/types.ts`:
+ 
+-- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "imessage" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
+-- `ConnectorBackend` — `"direct-api" | "local-cli" | "local-git" | "mcp-http" | "mcp-stdio"`.
++- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "imessage" | "links" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
++- `ConnectorBackend` — `"direct-api" | "local-cli" | "local-file" | "local-git" | "mcp-http" | "mcp-stdio"`.
+ - `ConnectorDefinition` / `ConnectorRuntime` — id, display name, description, required env var names, whether the connector supports agentic discovery (letting the agent decide what to fetch) vs. deterministic ingestion, and an `ingest()` function.
+ - `ConnectorIngestResult` — `{ status: "success" | "skipped" | "error", rawFiles, warnings, runId, statePath, message }`.
+ - `ConnectorState` — per-connector cursor/dedup bookkeeping (`lastRunAt`, `latestIds`, last 20 `runs`) persisted at `~/.openwiki/connectors/<id>/state.json`.
+ 
+-`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all eight; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
++`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all nine; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
+ 
+ Shared IO helpers live in `src/connectors/io.ts`: `writeRawJson()` writes raw dumps with `0600`/`0700` permissions under `~/.openwiki/connectors/<id>/raw/<runId>/`, and `updateStateWithRun()` maintains the state file.
+ 
+@@ -29,7 +29,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+ 
+ `src/connectors/mcp-client.ts` is a low-level JSON-RPC MCP client (stdio or HTTP transport) implementing `listMcpTools`/`executeMcpTool`/`executeMcpReadOnlyOperations`. `src/connectors/mcp-runtime.ts` wraps it for connector use (currently only `notion`), adding a **read-only tool-call policy**: a tool call is allowed only if it's explicitly listed in `allowedTools`, the MCP server's own `readOnlyHint` annotation is `true`, or (for the hosted `mcp.notion.com/mcp` endpoint specifically) the tool name/description matches a read-only heuristic (search/retrieve/get/list/query/read/fetch/find/lookup/load/children). This is the mechanism that keeps MCP-backed connectors read-only even though the underlying server may expose write tools.
+ 
+-## The eight connectors
++## The nine connectors
+ 
+ | Connector        | Backend                        | Required env                                             | Agentic discovery | What it pulls                                                                                                                                                                                                                                                             |
+ | ---------------- | ------------------------------ | -------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+@@ -37,6 +37,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+ | `google` (Gmail) | direct-api                     | Gmail OAuth access/refresh token env keys                | no                | Gmail API v1 messages; default query `newer_than:1d`, configurable label/format/headers. Writes `gmail-messages.json`.                                                                                                                                                    |
+ | `hackernews`     | direct-api                     | none                                                     | no                | Public HN Firebase feeds (`top`/`new`/`best`/`show`/`ask`/`job`) plus Algolia `search_by_date` queries. Writes `hackernews-results.json`.                                                                                                                                 |
+ | `imessage`       | local-cli                      | none                                                     | no                | Explicitly scoped local Messages chats through `imsg`; writes allowlisted `messages.json` plus `manifest.json`, with attachment metadata only and per-chat rowid cursors.                                                                                                 |
++| `links`          | local-file                     | none                                                     | no                | Local captured-URL queue; writes new or changed allowlisted records with original/canonical URLs, capture timestamps, stable source IDs, and optional title/context/provenance.                                                                                           |
+ | `notion`         | mcp-stdio (label; may be HTTP) | `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`                       | yes               | Hosted Notion MCP server (or configured MCP transport); discovers tools (`mcp-tools.json`) or executes configured read-only operations (`mcp-results.json`).                                                                                                              |
+ | `slack`          | direct-api                     | Slack user-token env key                                 | no                | `auth.test` identity, `search.messages` self-message search, bounded `conversations.list`/`.history` fallback, `assistant.search.context`. Writes `identity.json`, `my-messages-search.json`, `recent-messages.json`, `my-recent-messages.json`, `assistant-search.json`. |
+ | `web-search`     | direct-api                     | `TAVILY_API_KEY` (via `OPENWIKI_TAVILY_API_KEY_ENV_KEY`) | no                | Tavily search (`@langchain/tavily`) for configured queries. Writes `web-search-results.json`.                                                                                                                                                                             |
+@@ -48,6 +49,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+ - **X streams and cursors**: each stream (except `bookmarks`) tracks a `since_id` cursor in connector state so repeated ingestion runs are incremental; `list_posts` fans out per configured `listIds`.
+ - **Notion is disabled until configured**: `enabled: true` plus a transport must be set in connector config before ingestion does anything beyond tool discovery.
+ - **iMessage scope and stability**: configure positive `chatIds` and/or case-insensitive `participants`; both fields use AND semantics. The default window is a bounded 24 hours, while an exclusive rowid cursor and GUID deduplication make overlapping reruns incremental. A full `maxMessagesPerChat` page containing unseen rows fails closed.
++- **Links are local and idempotent**: `~/.openwiki/connectors/links/config.json` is the queue. The connector canonicalizes HTTP(S) URLs, rejects credential-bearing URLs, uses a canonical-URL hash as the stable source ID, and fingerprints each allowlisted record so unchanged runs write no raw manifest or invoke synthesis.
+ - **git-repo has no ingest-vs-agent distinction for read access**: it's the only connector marked `supportsAgenticDiscovery: true` alongside `notion`, since a git checkout can be explored freely rather than pulled through a bounded API.
+ 
+ ## Ingestion orchestration
+@@ -60,6 +62,15 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
+ 
+ `src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](/cli/usage.md)).
+ 
++## Links queue
++
++Each entry in `~/.openwiki/connectors/links/config.json` requires `url` and an
++ISO capture timestamp in `capturedAt`. `title`, `context`, and `source` are
++optional provenance fields. Never place private, signed, or credential-bearing
++URLs in the queue. `openwiki ingest links --print` and `openwiki ingest all`
++write only new or changed records to `raw/<runId>/links.json`; unchanged runs
++skip synthesis. The normal all-source schedule includes configured links.
++
+ ## iMessage privacy and operations
+ 
+ Run `imsg chats --limit 100 --json` on macOS to choose approved numeric chat
+@@ -111,7 +122,7 @@ If asked to implement either, follow the guide's phased checkpoints and confirm
+ 
+ - `src/connectors/types.ts`, `src/connectors/registry.ts`, `src/connectors/io.ts`, `src/connectors/tools.ts`
+ - `src/connectors/mcp-client.ts`, `src/connectors/mcp-runtime.ts`, `src/connectors/sources/mcp.ts`
+-- `src/connectors/sources/git-repo.ts`, `src/connectors/sources/gmail.ts`, `src/connectors/sources/hackernews.ts`, `src/connectors/sources/imessage.ts`, `src/connectors/sources/slack.ts`, `src/connectors/sources/web-search.ts`, `src/connectors/sources/x.ts`
++- `src/connectors/sources/git-repo.ts`, `src/connectors/sources/gmail.ts`, `src/connectors/sources/hackernews.ts`, `src/connectors/sources/imessage.ts`, `src/connectors/sources/links.ts`, `src/connectors/sources/slack.ts`, `src/connectors/sources/web-search.ts`, `src/connectors/sources/x.ts`
+ - `src/ingestion.ts`, `src/onboarding.ts`, `src/schedules.ts`
+ - `LANGSMITH-CONNECTOR.md`, `CODING-AGENTS-CONNECTOR.md`
+ - `test/onboarding.test.ts`
+diff --git a/src/commands.ts b/src/commands.ts
+index 9773b14..999ebc4 100644
+--- a/src/commands.ts
++++ b/src/commands.ts
+@@ -756,6 +756,7 @@ export const helpContent: HelpContent = {
+     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
+     'openwiki personal --update "Refresh the wiki from configured connectors"',
+     "openwiki ingest all",
++    "openwiki ingest links",
+     "openwiki ingest web-search",
+     "openwiki ingest web-search-2",
+     "openwiki cron list",
+diff --git a/src/connectors/registry.ts b/src/connectors/registry.ts
+index 8c95ac9..ca1713a 100644
+--- a/src/connectors/registry.ts
++++ b/src/connectors/registry.ts
+@@ -2,6 +2,7 @@ import { createGitRepoConnector } from "./sources/git-repo.js";
+ import { createGmailConnector } from "./sources/gmail.js";
+ import { createHackerNewsConnector } from "./sources/hackernews.js";
+ import { createIMessageConnector } from "./sources/imessage.js";
++import { createLinksConnector } from "./sources/links.js";
+ import { createMcpConnector } from "./sources/mcp.js";
+ import { createSlackConnector } from "./sources/slack.js";
+ import { createWebSearchConnector } from "./sources/web-search.js";
+@@ -11,6 +12,7 @@ import type { ConnectorId, ConnectorRuntime } from "./types.js";
+ export const CONNECTOR_IDS = [
+   "git-repo",
+   "imessage",
++  "links",
+   "notion",
+   "x",
+   "google",
+@@ -28,6 +30,7 @@ export function createConnectorRegistry(): Record<
+     google: createGmailConnector(),
+     hackernews: createHackerNewsConnector(),
+     imessage: createIMessageConnector(),
++    links: createLinksConnector(),
+     notion: createMcpConnector({
+       description:
+         "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
+diff --git a/src/connectors/sources/links.ts b/src/connectors/sources/links.ts
+new file mode 100644
+index 0000000..7cd5f1b
+--- /dev/null
++++ b/src/connectors/sources/links.ts
+@@ -0,0 +1,260 @@
++import { createHash } from "node:crypto";
++import {
++  createRunId,
++  readConnectorConfig,
++  readConnectorState,
++  updateStateWithRun,
++  writeConnectorState,
++  writeRawJson,
++} from "../io.js";
++import type {
++  ConnectorDefinition,
++  ConnectorIngestOptions,
++  ConnectorIngestResult,
++  ConnectorRuntime,
++} from "../types.js";
++
++type LinksConfig = {
++  links?: unknown[];
++};
++
++type LinkRecord = {
++  canonicalUrl: string;
++  capturedAt: string;
++  context?: string;
++  originalUrl: string;
++  source?: string;
++  sourceId: string;
++  title?: string;
++};
++
++const definition: ConnectorDefinition = {
++  backend: "local-file",
++  description:
++    "Reads a local queue of captured URLs and writes manifests for new or changed links.",
++  displayName: "Links",
++  id: "links",
++  requiredEnv: [],
++  supportsAgenticDiscovery: false,
++};
++
++const TRACKING_PARAMETER_NAMES = new Set([
++  "dclid",
++  "fbclid",
++  "gclid",
++  "mc_cid",
++  "mc_eid",
++  "msclkid",
++]);
++const SENSITIVE_PARAMETER_NAMES = new Set([
++  "access_token",
++  "api_key",
++  "apikey",
++  "auth",
++  "credential",
++  "key",
++  "password",
++  "secret",
++  "sig",
++  "signature",
++  "token",
++]);
++
++export function createLinksConnector(): ConnectorRuntime {
++  return {
++    ...definition,
++    ingest,
++  };
++}
++
++async function ingest(
++  options: ConnectorIngestOptions = {},
++): Promise<ConnectorIngestResult> {
++  const runId = createRunId();
++  const config = await readConnectorConfig<LinksConfig>("links", { links: [] });
++  const state = await readConnectorState("links");
++  const warnings: string[] = [];
++  const fileLinks = Array.isArray(config.links) ? config.links : [];
++  if (config.links !== undefined && !Array.isArray(config.links)) {
++    warnings.push("Ignored links config: links must be an array.");
++  }
++  const configuredLinks = [
++    ...getConfiguredLinks(options.connectorConfig),
++    ...fileLinks,
++  ];
++  const records = normalizeLinks(configuredLinks, warnings);
++  const fingerprints = Object.fromEntries(
++    records.map((record) => [record.sourceId, fingerprint(record)]),
++  );
++  const changedRecords = records.filter(
++    (record) =>
++      state.latestIds?.[record.sourceId] !== fingerprints[record.sourceId],
++  );
++  const rawFiles: string[] = [];
++
++  if (changedRecords.length > 0) {
++    rawFiles.push(
++      await writeRawJson("links", runId, "links.json", {
++        capturedAt: new Date().toISOString(),
++        links: changedRecords,
++      }),
++    );
++  }
++
++  const status = changedRecords.length > 0 ? "success" : "skipped";
++  const nextState = updateStateWithRun(state, {
++    at: new Date().toISOString(),
++    rawFiles,
++    runId,
++    status,
++    warnings,
++  });
++  nextState.latestIds = {
++    ...(state.latestIds ?? {}),
++    ...fingerprints,
++  };
++  await writeConnectorState("links", nextState);
++
++  return {
++    connectorId: "links",
++    message:
++      changedRecords.length > 0
++        ? `Wrote ${changedRecords.length} new or changed link(s).`
++        : configuredLinks.length === 0
++          ? "No links configured in ~/.openwiki/connectors/links/config.json."
++          : "No new or changed links.",
++    rawFiles,
++    runId,
++    statePath: "~/.openwiki/connectors/links/state.json",
++    status,
++    warnings,
++  };
++}
++
++function getConfiguredLinks(
++  connectorConfig: Record<string, unknown> | undefined,
++): unknown[] {
++  return Array.isArray(connectorConfig?.links) ? connectorConfig.links : [];
++}
++
++function normalizeLinks(values: unknown[], warnings: string[]): LinkRecord[] {
++  const records = new Map<string, LinkRecord>();
++
++  for (const [index, value] of values.entries()) {
++    const normalized = normalizeLink(value, index, warnings);
++    if (!normalized) {
++      continue;
++    }
++
++    const existing = records.get(normalized.canonicalUrl);
++    if (
++      !existing ||
++      Date.parse(normalized.capturedAt) >= Date.parse(existing.capturedAt)
++    ) {
++      records.set(normalized.canonicalUrl, normalized);
++    }
++  }
++
++  return [...records.values()].sort((left, right) =>
++    left.sourceId.localeCompare(right.sourceId),
++  );
++}
++
++function normalizeLink(
++  value: unknown,
++  index: number,
++  warnings: string[],
++): LinkRecord | null {
++  if (!isObject(value)) {
++    warnings.push(`Skipped link ${index + 1}: entry must be an object.`);
++    return null;
++  }
++
++  const originalUrl = getRequiredString(value.url);
++  const capturedAt = getRequiredString(value.capturedAt);
++  if (!originalUrl) {
++    warnings.push(`Skipped link ${index + 1}: url is required.`);
++    return null;
++  }
++  if (!capturedAt || !Number.isFinite(Date.parse(capturedAt))) {
++    warnings.push(
++      `Skipped link ${index + 1}: capture timestamp must be a valid date.`,
++    );
++    return null;
++  }
++
++  const canonicalUrl = canonicalizeUrl(originalUrl);
++  if (!canonicalUrl) {
++    warnings.push(
++      `Skipped link ${index + 1}: URL must use HTTP(S) without embedded credentials.`,
++    );
++    return null;
++  }
++
++  return {
++    canonicalUrl,
++    capturedAt,
++    ...getOptionalStringProperty(value, "context"),
++    originalUrl,
++    ...getOptionalStringProperty(value, "source"),
++    sourceId: `link-${sha256(canonicalUrl)}`,
++    ...getOptionalStringProperty(value, "title"),
++  };
++}
++
++function canonicalizeUrl(value: string): string | null {
++  try {
++    const url = new URL(value);
++    if (
++      (url.protocol !== "http:" && url.protocol !== "https:") ||
++      url.username.length > 0 ||
++      url.password.length > 0 ||
++      [...url.searchParams.keys()].some((name) =>
++        SENSITIVE_PARAMETER_NAMES.has(name.toLowerCase()),
++      )
++    ) {
++      return null;
++    }
++
++    url.hash = "";
++    for (const name of [...url.searchParams.keys()]) {
++      const normalizedName = name.toLowerCase();
++      if (
++        normalizedName.startsWith("utm_") ||
++        TRACKING_PARAMETER_NAMES.has(normalizedName)
++      ) {
++        url.searchParams.delete(name);
++      }
++    }
++    url.searchParams.sort();
++    return url.toString();
++  } catch {
++    return null;
++  }
++}
++
++function fingerprint(record: LinkRecord): string {
++  return sha256(JSON.stringify(record));
++}
++
++function sha256(value: string): string {
++  return createHash("sha256").update(value).digest("hex");
++}
++
++function getRequiredString(value: unknown): string | null {
++  return typeof value === "string" && value.trim().length > 0
++    ? value.trim()
++    : null;
++}
++
++function getOptionalStringProperty<K extends "context" | "source" | "title">(
++  value: Record<string, unknown>,
++  key: K,
++): Partial<Record<K, string>> {
++  const normalized = getRequiredString(value[key]);
++  return normalized ? ({ [key]: normalized } as Record<K, string>) : {};
++}
++
++function isObject(value: unknown): value is Record<string, unknown> {
++  return typeof value === "object" && value !== null && !Array.isArray(value);
++}
+diff --git a/src/connectors/types.ts b/src/connectors/types.ts
+index b2da4b6..73a2db3 100644
+--- a/src/connectors/types.ts
++++ b/src/connectors/types.ts
+@@ -3,13 +3,19 @@ export type ConnectorId =
+   | "google"
+   | "hackernews"
+   | "imessage"
++  | "links"
+   | "notion"
+   | "slack"
+   | "web-search"
+   | "x";
+ 
+ export type ConnectorBackend =
+-  "direct-api" | "local-cli" | "local-git" | "mcp-http" | "mcp-stdio";
++  | "direct-api"
++  | "local-cli"
++  | "local-file"
++  | "local-git"
++  | "mcp-http"
++  | "mcp-stdio";
+ 
+ export type ConnectorDefinition = {
+   backend: ConnectorBackend;
+diff --git a/src/credentials.tsx b/src/credentials.tsx
+index af6d8a9..1d93aed 100644
+--- a/src/credentials.tsx
++++ b/src/credentials.tsx
+@@ -120,6 +120,7 @@ type PromptStep =
+   | "global-cron-mode"
+   | "global-power-mode"
+   | "source-imessage-chat-ids"
++  | "source-links-urls"
+   | "source-description"
+   | "source-description-custom"
+   | "source-menu"
+@@ -205,6 +206,7 @@ const ONBOARDING_TEMPLATES = [
+       "git-repo",
+       "google",
+       "imessage",
++      "links",
+       "notion",
+       "web-search",
+       "hackernews",
+@@ -213,6 +215,7 @@ const ONBOARDING_TEMPLATES = [
+     suggestedSources: [
+       "Gmail",
+       "iMessage",
++      "Links",
+       "Notion",
+       "Web Search (Tavily)",
+       "Hacker News",
+@@ -312,6 +315,20 @@ const SOURCE_OPTIONS = [
+     ],
+     secretInputs: [],
+   },
++  {
++    displayName: "Links",
++    examples: [
++      "Keep useful references with their capture context and provenance.",
++      "Track saved reading related to active projects and recurring themes.",
++    ],
++    id: "links",
++    instructions: [
++      "Enter one or more HTTP(S) URLs separated by whitespace.",
++      "OpenWiki stores the original URL and capture time in its local connector queue.",
++      "Optional title, context, and source provenance can be added later in the connector config file.",
++    ],
++    secretInputs: [],
++  },
+   {
+     displayName: "Web Search (Tavily)",
+     examples: [
+@@ -1704,6 +1721,18 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (step === "source-links-urls") {
++      const parsed = parseLinksInput(input);
++      if ("error" in parsed) {
++        setError(parsed.error);
++        return;
++      }
++      await configureLinks(parsed.urls);
++      setInput("");
++      setStep("source-description");
++      return;
++    }
++
+     if (step === "source-description") {
+       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
+         setInput("");
+@@ -2093,6 +2122,12 @@ export function InitSetup({
+       return;
+     }
+ 
++    if (source.id === "links") {
++      setInput("");
++      setStep("source-links-urls");
++      return;
++    }
++
+     try {
+       if (source.id === "git-repo") {
+         setInput(getDefaultLocalGitRepoPath());
+@@ -2158,6 +2193,25 @@ export function InitSetup({
+     return connectorConfig;
+   }
+ 
++  async function configureLinks(urls: string[]): Promise<void> {
++    const configPath = getConnectorConfigPath("links");
++    const capturedAt = new Date().toISOString();
++    const connectorConfig = {
++      links: urls.map((url) => ({ capturedAt, url })),
++    };
++    await import("node:fs/promises").then(
++      async ({ chmod, mkdir, writeFile }) => {
++        await mkdir(path.dirname(configPath), { recursive: true, mode: 0o700 });
++        await writeFile(
++          configPath,
++          `${JSON.stringify(connectorConfig, null, 2)}\n`,
++          { encoding: "utf8", mode: 0o600 },
++        );
++        await chmod(configPath, 0o600);
++      },
++    );
++  }
++
+   async function saveModeSchedule(cronExpression: string) {
+     setIsSaving(true);
+ 
+@@ -3031,6 +3085,25 @@ function Prompt({
+     );
+   }
+ 
++  if (step === "source-links-urls") {
++    return (
++      <Box flexDirection="column">
++        <Text>Add captured links.</Text>
++        {selectedSource.instructions.map((instruction, index) => (
++          <Text key={instruction}>
++            {index + 1}. {instruction}
++          </Text>
++        ))}
++        <BorderedMultilineInput
++          maxDisplayWidth={inputDisplayWidth}
++          marginTop={1}
++          value={input}
++        />
++        <Text color="gray">Press Enter to save the queue.</Text>
++      </Box>
++    );
++  }
++
+   if (step === "source-secret") {
+     const secretInput = selectedSource.secretInputs[secretInputIndex];
+     return (
+@@ -4190,6 +4263,50 @@ function parseIMessageChatIds(
+   return { chatIds };
+ }
+ 
++export function parseLinksInput(
++  value: string,
++): { urls: string[] } | { error: string } {
++  const urls = value.split(/\s+/u).filter(Boolean);
++  if (urls.length === 0) {
++    return { error: "Enter one or more HTTP(S) URLs." };
++  }
++  if (new Set(urls).size !== urls.length) {
++    return { error: "Remove duplicate URLs." };
++  }
++  for (const value of urls) {
++    try {
++      const url = new URL(value);
++      if (
++        (url.protocol !== "http:" && url.protocol !== "https:") ||
++        url.username.length > 0 ||
++        url.password.length > 0 ||
++        [...url.searchParams.keys()].some((name) =>
++          [
++            "access_token",
++            "api_key",
++            "apikey",
++            "auth",
++            "credential",
++            "key",
++            "password",
++            "secret",
++            "sig",
++            "signature",
++            "token",
++          ].includes(name.toLowerCase()),
++        )
++      ) {
++        return {
++          error: "Every link must use HTTP(S) without embedded credentials.",
++        };
++      }
++    } catch {
++      return { error: "Every link must be a valid HTTP(S) URL." };
++    }
++  }
++  return { urls };
++}
++
+ function handleCronEditorInput({
+   currentFieldIndex,
+   currentValue,
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 7a2f749..d16bb3f 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -348,6 +348,10 @@ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
+       return `
+ - Synthesize only compact durable summaries, decisions, commitments, and action items from iMessage evidence; never copy full conversations into the wiki.
+ - Omit participant handles and attachment filenames unless materially necessary. Use short quotes only when needed as evidence.`;
++    case "links":
++      return `
++- Treat captured links as saved-context until the title, context, provenance, or corroborating sources justify stronger confidence.
++- Preserve canonical URLs and stable source IDs in /sources/links.md so later captures update existing evidence instead of creating duplicates.`;
+     case "notion":
+       return `
+ - Prefer Notion pages edited in the ingestion window, pages where the user is mentioned/tagged/assigned, pages where the user appears in people properties, and pages whose title/body indicate decisions, follow-ups, open questions, blockers, owners, customers, meetings, or plans.
+diff --git a/src/onboarding.ts b/src/onboarding.ts
+index a948887..51b004d 100644
+--- a/src/onboarding.ts
++++ b/src/onboarding.ts
+@@ -459,6 +459,7 @@ function isKnownConnectorId(value: string): value is ConnectorId {
+     value === "google" ||
+     value === "hackernews" ||
+     value === "imessage" ||
++    value === "links" ||
+     value === "notion" ||
+     value === "slack" ||
+     value === "web-search" ||
+diff --git a/test/commands.test.ts b/test/commands.test.ts
+index 607c176..c431d3a 100644
+--- a/test/commands.test.ts
++++ b/test/commands.test.ts
+@@ -431,3 +431,16 @@ describe("parseCommand — iMessage ingestion", () => {
+     });
+   });
+ });
++
++describe("parseCommand — links ingestion", () => {
++  test("accepts the built-in links target", () => {
++    expect(parseCommand(["ingest", "links", "--print"])).toEqual({
++      kind: "ingest",
++      exitCode: 0,
++      modelId: null,
++      print: true,
++      scheduledOnly: false,
++      target: "links",
++    });
++  });
++});
+diff --git a/test/credentials.test.ts b/test/credentials.test.ts
+index d5ef68d..8d1d376 100644
+--- a/test/credentials.test.ts
++++ b/test/credentials.test.ts
+@@ -1,5 +1,5 @@
+ import { afterEach, describe, expect, test } from "vitest";
+-import { needsCredentialSetup } from "../src/credentials.tsx";
++import { needsCredentialSetup, parseLinksInput } from "../src/credentials.tsx";
+ 
+ const ENV_KEYS = [
+   "LANGSMITH_API_KEY",
+@@ -34,3 +34,26 @@ describe("needsCredentialSetup", () => {
+     expect(needsCredentialSetup()).toBe(true);
+   });
+ });
++
++describe("parseLinksInput", () => {
++  test("accepts whitespace-separated HTTP(S) URLs", () => {
++    expect(
++      parseLinksInput(
++        "https://example.com/one\nhttps://example.com/two?topic=openwiki",
++      ),
++    ).toEqual({
++      urls: [
++        "https://example.com/one",
++        "https://example.com/two?topic=openwiki",
++      ],
++    });
++  });
++
++  test("rejects credential-bearing URLs", () => {
++    expect(
++      parseLinksInput("https://example.com/private?token=placeholder"),
++    ).toEqual({
++      error: "Every link must use HTTP(S) without embedded credentials.",
++    });
++  });
++});
+diff --git a/test/ingestion.test.ts b/test/ingestion.test.ts
+index eb91158..dcab12a 100644
+--- a/test/ingestion.test.ts
++++ b/test/ingestion.test.ts
+@@ -4,10 +4,11 @@ import path from "node:path";
+ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+ 
+ const ingest = vi.hoisted(() => vi.fn());
++const linksIngest = vi.hoisted(() => vi.fn());
+ const runOpenWikiAgent = vi.hoisted(() => vi.fn());
+ 
+ vi.mock("../src/connectors/registry.js", () => ({
+-  CONNECTOR_IDS: ["google", "imessage"],
++  CONNECTOR_IDS: ["google", "imessage", "links"],
+   createConnectorRegistry: () => ({
+     google: {
+       backend: "direct-api",
+@@ -27,8 +28,18 @@ vi.mock("../src/connectors/registry.js", () => ({
+       requiredEnv: [],
+       supportsAgenticDiscovery: false,
+     },
++    links: {
++      backend: "local-file",
++      description: "deterministic links test connector",
++      displayName: "Links",
++      id: "links",
++      ingest: linksIngest,
++      requiredEnv: [],
++      supportsAgenticDiscovery: false,
++    },
+   }),
+-  isConnectorId: (value: string) => value === "google" || value === "imessage",
++  isConnectorId: (value: string) =>
++    value === "google" || value === "imessage" || value === "links",
+ }));
+ 
+ vi.mock("../src/agent/index.js", () => ({
+@@ -58,6 +69,7 @@ beforeEach(async () => {
+     })}\n`,
+   );
+   ingest.mockReset();
++  linksIngest.mockReset();
+   runOpenWikiAgent.mockReset();
+   vi.resetModules();
+ });
+@@ -146,4 +158,75 @@ describe("deterministic ingestion", () => {
+     );
+     expect(runOpenWikiAgent).not.toHaveBeenCalled();
+   });
++
++  test("scheduled all-source ingestion pulls and synthesizes saved links", async () => {
++    await writeFile(
++      path.join(home, ".openwiki", "onboarding.json"),
++      `${JSON.stringify({
++        ingestionSchedule: {
++          description: "daily",
++          expression: "0 2 * * *",
++          updatedAt: "2026-07-18T12:00:00.000Z",
++        },
++        sourceInstances: [
++          {
++            connectedAt: "2026-07-18T12:00:00.000Z",
++            connectorId: "links",
++            id: "links-1",
++          },
++        ],
++        sources: {},
++        version: 1,
++      })}\n`,
++    );
++    linksIngest.mockResolvedValue({
++      connectorId: "links",
++      message: "Wrote 1 new or changed link(s).",
++      rawFiles: ["/tmp/openwiki-links.json"],
++      runId: "run-3",
++      statePath: "~/.openwiki/connectors/links/state.json",
++      status: "success",
++      warnings: [],
++    });
++    runOpenWikiAgent.mockResolvedValue({
++      finalOutput: "updated",
++      threadId: "test-thread",
++    });
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const result = await runOpenWikiIngestion(home, {
++      scheduledOnly: true,
++      target: "all",
++    });
++
++    expect(result.results).toEqual([
++      expect.objectContaining({
++        connectorId: "links",
++        sourceInstanceId: "links-1",
++        status: "agent-updated",
++      }),
++    ]);
++    expect(linksIngest).toHaveBeenCalledWith(
++      expect.objectContaining({ instanceId: "links-1" }),
++    );
++    expect(runOpenWikiAgent).toHaveBeenCalledWith(
++      "update",
++      expect.stringContaining(".openwiki/wiki"),
++      expect.anything(),
++    );
++    const agentOptions: unknown = runOpenWikiAgent.mock.calls[0]?.[2];
++    if (
++      !agentOptions ||
++      typeof agentOptions !== "object" ||
++      !("userMessage" in agentOptions) ||
++      typeof agentOptions.userMessage !== "string"
++    ) {
++      throw new Error("Expected a source-specific agent update message.");
++    }
++    expect(agentOptions).toMatchObject({ outputMode: "local-wiki" });
++    expect(agentOptions.userMessage).toContain(
++      "source update for Links (links)",
++    );
++  });
+ });
+diff --git a/test/links-connector.test.ts b/test/links-connector.test.ts
+new file mode 100644
+index 0000000..8b61e0e
+--- /dev/null
++++ b/test/links-connector.test.ts
+@@ -0,0 +1,178 @@
++import { execFileSync } from "node:child_process";
++import {
++  mkdtemp,
++  readFile,
++  readdir,
++  rm,
++  stat,
++  writeFile,
++} from "node:fs/promises";
++import os from "node:os";
++import path from "node:path";
++import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++
++const originalHome = process.env.HOME;
++let home: string;
++
++beforeEach(async () => {
++  home = await mkdtemp(path.join(os.tmpdir(), "openwiki-links-test-"));
++  process.env.HOME = home;
++  execFileSync("git", ["init", "-q", home]);
++  vi.useFakeTimers();
++  vi.setSystemTime(new Date("2026-07-18T12:00:00.000Z"));
++  vi.resetModules();
++});
++
++afterEach(async () => {
++  vi.useRealTimers();
++  if (originalHome === undefined) delete process.env.HOME;
++  else process.env.HOME = originalHome;
++  await rm(home, { recursive: true, force: true });
++});
++
++async function loadConnector() {
++  const { createLinksConnector } =
++    await import("../src/connectors/sources/links.ts");
++  return createLinksConnector();
++}
++
++async function writeConfig(links: unknown[]): Promise<void> {
++  const connectorDir = path.join(home, ".openwiki/connectors/links");
++  await import("node:fs/promises").then(({ mkdir }) =>
++    mkdir(connectorDir, { recursive: true }),
++  );
++  await writeFile(
++    path.join(connectorDir, "config.json"),
++    `${JSON.stringify({ links }, null, 2)}\n`,
++  );
++}
++
++async function readManifest(filePath: string) {
++  return JSON.parse(await readFile(filePath, "utf8")) as {
++    capturedAt: string;
++    links: Record<string, unknown>[];
++  };
++}
++
++describe("links connector", () => {
++  test("writes a canonical, allowlisted, deterministically sorted manifest", async () => {
++    await writeConfig([
++      {
++        capturedAt: "2026-07-17T10:00:00.000Z",
++        title: "Older title",
++        url: "HTTPS://Example.COM:443/article?b=2&utm_source=inbox&a=1#section",
++      },
++      {
++        capturedAt: "2026-07-18T10:00:00.000Z",
++        context: "Useful connector design reference.",
++        source: "reading-list",
++        title: "Canonical title",
++        unexpectedField: "excluded",
++        url: "https://example.com/article?a=1&b=2",
++      },
++      {
++        capturedAt: "2026-07-18T11:00:00.000Z",
++        url: "https://example.com/other",
++      },
++    ]);
++    const connector = await loadConnector();
++
++    const result = await connector.ingest();
++
++    expect(result).toMatchObject({ status: "success", warnings: [] });
++    expect(result.rawFiles).toHaveLength(1);
++    const manifest = await readManifest(result.rawFiles[0]);
++    expect(manifest).toMatchObject({
++      capturedAt: "2026-07-18T12:00:00.000Z",
++    });
++    expect(manifest.links).toHaveLength(2);
++    expect(manifest.links.map((link) => link.sourceId)).toEqual(
++      [...manifest.links.map((link) => link.sourceId)].sort(),
++    );
++    const canonicalRecord = manifest.links.find(
++      (link) => link.canonicalUrl === "https://example.com/article?a=1&b=2",
++    );
++    expect(canonicalRecord).toEqual({
++      canonicalUrl: "https://example.com/article?a=1&b=2",
++      capturedAt: "2026-07-18T10:00:00.000Z",
++      context: "Useful connector design reference.",
++      originalUrl: "https://example.com/article?a=1&b=2",
++      source: "reading-list",
++      sourceId: canonicalRecord?.sourceId,
++      title: "Canonical title",
++    });
++    expect(canonicalRecord?.sourceId).toMatch(/^link-[a-f0-9]{64}$/u);
++    expect(JSON.stringify(manifest)).not.toContain("unexpectedField");
++
++    const connectorDir = path.join(home, ".openwiki/connectors/links");
++    expect((await stat(connectorDir)).mode & 0o777).toBe(0o700);
++    expect((await stat(result.rawFiles[0])).mode & 0o777).toBe(0o600);
++    expect(
++      (await stat(path.join(connectorDir, "state.json"))).mode & 0o777,
++    ).toBe(0o600);
++    expect(await readFile(path.join(connectorDir, ".gitignore"), "utf8")).toBe(
++      "*\n!.gitignore\n",
++    );
++  });
++
++  test("is idempotent and emits only changed links with stable source IDs", async () => {
++    const initial = {
++      capturedAt: "2026-07-18T10:00:00.000Z",
++      title: "Initial title",
++      url: "https://example.com/article?utm_medium=email&a=1",
++    };
++    await writeConfig([initial]);
++    const connector = await loadConnector();
++
++    const first = await connector.ingest();
++    const firstManifest = await readManifest(first.rawFiles[0]);
++    const sourceId = firstManifest.links[0].sourceId;
++    const repeated = await connector.ingest();
++
++    expect(repeated).toMatchObject({
++      message: "No new or changed links.",
++      rawFiles: [],
++      status: "skipped",
++    });
++    expect(
++      await readdir(path.join(home, ".openwiki/connectors/links/raw")),
++    ).toHaveLength(1);
++
++    await writeConfig([{ ...initial, title: "Revised title" }]);
++    vi.setSystemTime(new Date("2026-07-18T12:00:01.000Z"));
++    const changed = await connector.ingest();
++    const changedManifest = await readManifest(changed.rawFiles[0]);
++
++    expect(changedManifest.links).toEqual([
++      expect.objectContaining({ sourceId, title: "Revised title" }),
++    ]);
++  });
++
++  test("rejects unsafe or incomplete entries without echoing input URLs", async () => {
++    await writeConfig([
++      {
++        capturedAt: "not-a-date",
++        url: "https://example.com/bad-date",
++      },
++      {
++        capturedAt: "2026-07-18T10:00:00.000Z",
++        url: "ftp://example.com/file",
++      },
++      {
++        capturedAt: "2026-07-18T10:00:00.000Z",
++        url: "https://user@example.com/private",
++      },
++      {
++        capturedAt: "2026-07-18T10:00:00.000Z",
++        url: "https://example.com/private?access_token=placeholder",
++      },
++    ]);
++    const connector = await loadConnector();
++
++    const result = await connector.ingest();
++
++    expect(result).toMatchObject({ rawFiles: [], status: "skipped" });
++    expect(result.warnings).toHaveLength(4);
++    expect(result.warnings.join(" ")).not.toContain("example.com");
++  });
++});
+diff --git a/test/onboarding.test.ts b/test/onboarding.test.ts
+index 65a3162..d51945c 100644
+--- a/test/onboarding.test.ts
++++ b/test/onboarding.test.ts
+@@ -102,6 +102,32 @@ describe("OpenWiki onboarding instructions", () => {
+     });
+   });
+ 
++  test("preserves links source instances", async () => {
++    const home = await createTempHome();
++    const onboarding = await loadOnboardingModule(home);
++
++    await onboarding.saveOpenWikiOnboardingConfig({
++      sourceInstances: [
++        {
++          connectedAt: "2026-07-18T12:00:00.000Z",
++          connectorId: "links",
++          id: "links-1",
++        },
++      ],
++      sources: { links: { connectedAt: "2026-07-18T12:00:00.000Z" } },
++      version: 1,
++    });
++
++    await expect(
++      onboarding.readOpenWikiOnboardingConfig(),
++    ).resolves.toMatchObject({
++      sourceInstances: [{ connectorId: "links", id: "links-1" }],
++      sources: {
++        links: { connectedAt: "2026-07-18T12:00:00.000Z" },
++      },
++    });
++  });
++
+   test("reads wiki instructions only from INSTRUCTIONS.md", async () => {
+     const home = await createTempHome();
+     const onboarding = await loadOnboardingModule(home);
