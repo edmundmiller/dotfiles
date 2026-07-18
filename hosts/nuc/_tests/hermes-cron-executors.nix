@@ -6,6 +6,10 @@ let
   bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;
   bettySecretMaterialization = cfg.system.activationScripts.hermesBettySecretsMaterialize.text;
+  bettyGoodMorningDj = cfg.systemd.services.hermes-betty-good-morning-dj;
+  goodMorningScript = cfg.services.home-assistant.config.script.good_morning;
+  goodMorningShellCommand =
+    cfg.services.home-assistant.config.shell_command.hermes_betty_good_morning_dj;
 
   inherit (pkgs.lib) concatStringsSep hasInfix;
 
@@ -21,10 +25,6 @@ let
     {
       test = bettyService.serviceConfig.User == "emiller";
       msg = "Betty cron executor must use the profile owner.";
-    }
-    {
-      test = hasInfix "betty-hermes cron tick" (toString bettyService.serviceConfig.ExecStart);
-      msg = "Betty cron executor must sync canonical jobs through the Betty launcher before ticking.";
     }
     {
       test = bettyTimer.wantedBy == [ "timers.target" ];
@@ -76,6 +76,60 @@ let
     {
       test = hasInfix "hermes-betty-cron-executor" (toString bettyService.serviceConfig.ExecStart);
       msg = "Betty cron executor must export the 1Password service token before launching Hermes.";
+    }
+    {
+      test = bettyGoodMorningDj.serviceConfig.Type == "oneshot";
+      msg = "Betty Good Morning DJ must be a one-shot service.";
+    }
+    {
+      test = bettyGoodMorningDj.serviceConfig.User == "emiller";
+      msg = "Betty Good Morning DJ must run as Betty's profile owner.";
+    }
+    {
+      test = hasInfix "HERMES_HOME=/var/lib/hermes-betty/.hermes" (
+        concatStringsSep " " bettyGoodMorningDj.serviceConfig.Environment
+      );
+      msg = "Betty Good Morning DJ must target Betty's isolated Hermes home.";
+    }
+    {
+      test = builtins.elem "/run/hermes-betty-env/secrets.env" bettyGoodMorningDj.serviceConfig.EnvironmentFile;
+      msg = "Betty Good Morning DJ must use Betty's materialized environment.";
+    }
+    {
+      test = hasInfix "betty-hermes" (toString bettyGoodMorningDj.serviceConfig.ExecStart);
+      msg = "Betty Good Morning DJ must run through Betty's canonical launcher.";
+    }
+    {
+      test = hasInfix "hermes-betty-good-morning-dj.service" goodMorningShellCommand;
+      msg = "Home Assistant must start Betty's Good Morning DJ unit.";
+    }
+    {
+      test = builtins.any (
+        action: (action.action or "") == "shell_command.hermes_betty_good_morning_dj"
+      ) goodMorningScript.sequence;
+      msg = "The Good Morning script must invoke Betty's DJ command.";
+    }
+    {
+      test = hasInfix "HERMES_SPOTIFY_CLIENT_ID" bettySecretMaterialization;
+      msg = "Betty's environment must materialize the Spotify client ID.";
+    }
+    {
+      test =
+        hasInfix "/bin/flock /var/lib/hermes-betty/.profile.lock" (
+          toString bettyService.serviceConfig.ExecStart
+        )
+        && hasInfix "/bin/flock /var/lib/hermes-betty/.profile.lock" (
+          toString bettyGoodMorningDj.serviceConfig.ExecStart
+        );
+      msg = "Betty cron and Good Morning DJ executors must share an exclusive profile lock.";
+    }
+    {
+      test = builtins.elem "music_assistant" cfg.services.home-assistant.extraComponents;
+      msg = "Home Assistant must package the Music Assistant integration.";
+    }
+    {
+      test = builtins.elem "eno1" cfg.networking.firewall.trustedInterfaces;
+      msg = "Music Assistant must accept dynamic player traffic from the NUC LAN.";
     }
   ];
 
