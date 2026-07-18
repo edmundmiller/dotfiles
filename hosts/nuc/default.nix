@@ -1789,6 +1789,7 @@ in
     shell = {
       # bugwarrior.enable = false;  # Module removed
       amoxide.enable = true;
+      agentBrowser.enable = true;
       git = {
         enable = true;
         # Temporarily disabled on NUC: package build currently fails in npm deps

@@ -213,5 +213,7 @@
     // Pierre-themed inline diff rendering for edit/write tool results - https://github.com/tanvesh01/pierre-diffs
     // DISABLED: conflicts with pi-tool-display on edit/write tools
     // "git:github.com/tanvesh01/pierre-diffs",
+    // agent-browser native browser automation tool - https://github.com/fitchmultz/pi-agent-browser-native
+    "npm:pi-agent-browser-native",
   ],
 }

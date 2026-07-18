@@ -27,6 +27,7 @@
         "1password".enable = true;
         ai.enable = true;
         amoxide.enable = true;
+        agentBrowser.enable = true;
         skillkit.enable = true;
         direnv.enable = true;
         mise.enable = true;
@@ -76,6 +77,11 @@
           }
         ];
         zsh.enable = true;
+        mo.enable = true;
+        mo.purgePaths = [
+          "~/src"
+          "~/repos"
+        ];
       };
 
       agents = {
