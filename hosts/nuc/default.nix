@@ -238,6 +238,58 @@ let
   # The shared family/group bot can stay separate from Scintillate's DM bot.
   hermesScintillateTelegramBotTokenFile = config.age.secrets.telegram-bot-token-scintillate.path;
   linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
+  linearTokenRefreshScript = pkgs.writeShellScript "linear-token-refresh" ''
+    set -euo pipefail
+    umask 077
+
+    state_dir=/home/emiller/.local/state/hermes-linear
+    refresh_file="$state_dir/refresh-token"
+    seed_file=/run/agenix/linear-refresh-token
+    ${pkgs.coreutils}/bin/install -d -m 0700 "$state_dir"
+
+    if [ -s "$refresh_file" ]; then
+      refresh_token="$(< "$refresh_file")"
+    else
+      refresh_token="$(< "$seed_file")"
+    fi
+
+    response_file="$(${pkgs.coreutils}/bin/mktemp "$state_dir/refresh-response.XXXXXX")"
+    trap '${pkgs.coreutils}/bin/rm -f "$response_file"' EXIT
+    ${pkgs.curl}/bin/curl --fail --silent --show-error \
+      --request POST https://api.linear.app/oauth/token \
+      --header "Content-Type: application/x-www-form-urlencoded" \
+      --data-urlencode "grant_type=refresh_token" \
+      --data-urlencode "client_id=c64c969674a02fccc863d4aa950ec132" \
+      --data-urlencode "client_secret=72406896af1a83cb5765c6042a59cde2" \
+      --data-urlencode "refresh_token=$refresh_token" \
+      --output "$response_file"
+
+    access_token="$(${pkgs.jq}/bin/jq --exit-status --raw-output '.access_token | select(length > 0)' "$response_file")"
+    next_refresh="$(${pkgs.jq}/bin/jq --raw-output '.refresh_token // empty' "$response_file")"
+    token_tmp="$(${pkgs.coreutils}/bin/mktemp "$state_dir/token.XXXXXX")"
+    printf %s "$access_token" > "$token_tmp"
+    ${pkgs.coreutils}/bin/mv "$token_tmp" ${lib.escapeShellArg linearTokenFile}
+
+    if [ -n "$next_refresh" ]; then
+      refresh_tmp="$(${pkgs.coreutils}/bin/mktemp "$state_dir/refresh-token.XXXXXX")"
+      printf %s "$next_refresh" > "$refresh_tmp"
+      ${pkgs.coreutils}/bin/mv "$refresh_tmp" "$refresh_file"
+    fi
+
+    echo "Linear OAuth token refreshed"
+  '';
+  amosburtonCronExecutor = pkgs.writeShellScript "hermes-amosburton-cron-executor" ''
+    set -euo pipefail
+    if [ ! -s ${lib.escapeShellArg linearTokenFile} ]; then
+      echo "Linear OAuth token is unavailable" >&2
+      exit 1
+    fi
+
+    linear_token="$(< ${lib.escapeShellArg linearTokenFile})"
+    export HERMES_MCP_BEARER_TOKEN_LINEAR="$linear_token"
+    export LINEAR_API_KEY="Bearer $linear_token"
+    exec ${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick
+  '';
   mkAgentSecret = envVar: secretName: {
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
@@ -1459,8 +1511,14 @@ in
 
   systemd.services.hermes-amosburton-cron-tick = {
     description = "Run Amos Burton cron jobs without an interactive gateway";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
+    after = [
+      "linear-token-refresh.service"
+      "network-online.target"
+    ];
+    wants = [
+      "linear-token-refresh.service"
+      "network-online.target"
+    ];
     path = [
       amosburtonHermesLauncher
       hermesAgentBase
@@ -1483,7 +1541,7 @@ in
         "HERMES_PROFILE=amosburton"
         "CODEX_HOME=/home/emiller/.codex"
       ];
-      ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";
+      ExecStart = "${amosburtonCronExecutor}";
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
@@ -1496,6 +1554,31 @@ in
         "/home/emiller/src/personal/finances"
         "/home/emiller/src/personal/tailnet"
       ];
+    };
+  };
+
+  systemd.services.linear-token-refresh = {
+    description = "Refresh the Hermes Linear OAuth token";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "hermes-amosburton-cron-tick.service" ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      ExecStart = linearTokenRefreshScript;
+    };
+  };
+
+  systemd.timers.linear-token-refresh = {
+    description = "Refresh the Hermes Linear OAuth token every 12 hours";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnUnitActiveSec = "12h";
+      RandomizedDelaySec = "5min";
+      Persistent = true;
+      Unit = "linear-token-refresh.service";
     };
   };
 
