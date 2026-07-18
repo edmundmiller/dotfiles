@@ -1,6 +1,6 @@
 # Worklog: dotfiles-deploy-codex-cron-models-n36o
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -22,12 +22,15 @@ Deploy agents-workspace `1d27591` to the NUC. Stop only when all live model-back
 - Final `hey nuc` switch activated `/nix/store/jskqp0gm8hrhwwfjrk9y6gjsvgg31v4x-nixos-system-nuc-26.11.20260714.18b9261`.
 - Live audit: 15 model-backed jobs all use `openai-codex/gpt-5.6-{luna,terra,sol}`; one script-only job remains model-free; four cron timers are active and tick services report success.
 - Betty/Terra and Scintillate/Sol direct probes returned `AUTH_OK`.
-- Amos auth reports `refresh_token_reused`; Radar has no credential. Independent device-code flows were started. Radar awaits approval; Amos polling hit a TLS handshake timeout before approval.
+- Amos and Radar completed independent device-code authorization. All four profile Codex access-token fingerprints are distinct.
+- Fresh direct probes returned `AUTH_OK`: Amos/Sol, Betty/Terra, Radar/Luna, and Scintillate/Sol.
+- Final live audit: 15 model-backed jobs, one script-only job, zero model violations, and four active cron timers.
+- `hey agent-audit-tests flake.lock` and `hey agent-finish --changed flake.lock --worklog .agents/worklogs/dotfiles-deploy-codex-cron-models-n36o.md` passed.
 
 ## Reviews
 
 - Plan review: Claude and Gemini both failed at ACP `session/new` with `RUNTIME: Authentication required`; no findings were produced. This is a repeated repository tooling blocker. Proceed with the user-authorized, lockfile-only deployment and live verification; retry the landing gate.
-- Landing review: pending.
+- Landing review: retry reached ACP `session/new` and failed with `RUNTIME: Authentication required`; no findings were produced. Runtime, deployment, auth, and repository gates passed independently.
 
 ## Feedback
 
@@ -36,10 +39,10 @@ Deploy agents-workspace `1d27591` to the NUC. Stop only when all live model-back
 
 ## Remaining work
 
-- Complete independent device approval for Radar and Amos.
-- Probe Radar/Luna and Amos/Sol, then run landing gates, close issues, and tag.
+- None for this migration. Hermes CLI teardown exit 134 after a successful Scintillate response is tracked separately as `workspace-hermes-codex-probe-teardown-y51`.
 
 ## Commits
 
 - `d23b77303` - deploy Codex cron model pin.
 - `60ae9aa295` - pin independent-auth policy follow-up.
+- `4cb9c3273d` - checkpoint Codex cron auth and deployment evidence.
