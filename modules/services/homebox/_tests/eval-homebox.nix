@@ -29,8 +29,8 @@ let
       msg = "Homebox must be enabled on the NUC";
     }
     {
-      test = (homebox.package.version or "") == "0.25.0";
-      msg = "Homebox must use pinned package version 0.25.0";
+      test = (homebox.package.version or "") == "0.26.2";
+      msg = "Homebox must use pinned package version 0.26.2";
     }
     {
       test = (settings.HBOX_WEB_HOST or "") == "127.0.0.1";

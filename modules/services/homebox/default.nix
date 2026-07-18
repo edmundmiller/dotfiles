@@ -9,6 +9,37 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.services.homebox;
+  homeboxPackage = pkgs.homebox.overrideAttrs (
+    old:
+    let
+      version = "0.26.2";
+      src = pkgs.fetchFromGitHub {
+        owner = "sysadminsmedia";
+        repo = "homebox";
+        tag = "v${version}";
+        hash = "sha256-JUhRpUWbydy28Xw7j6oCKJLBmaOxcruWAdkqm+hvouY=";
+      };
+    in
+    {
+      inherit version src;
+      vendorHash = "sha256-peQaPSbxGn8MnbZPqCi5ptW+dMh9l4W1hB6HqBLTqh4=";
+      pnpmDeps = pkgs.fetchPnpmDeps {
+        inherit (old) pname;
+        inherit version;
+        src = "${src}/frontend";
+        pnpm = pkgs.pnpm_10;
+        fetcherVersion = 3;
+        hash = "sha256-oHS2uMWyuqpiK7yWznmZ2mgxPJpWsyOZL2wz6zBu0cc=";
+      };
+      ldflags = [
+        "-s"
+        "-w"
+        "-extldflags=-static"
+        "-X main.version=v${version}"
+        "-X main.commit=v${version}"
+      ];
+    }
+  );
 in
 {
   options.modules.services.homebox = {
@@ -33,6 +64,7 @@ in
 
       services.homebox = {
         enable = true;
+        package = homeboxPackage;
         settings = {
           HBOX_WEB_HOST = "127.0.0.1";
           HBOX_WEB_PORT = "7745";
