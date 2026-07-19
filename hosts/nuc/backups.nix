@@ -97,7 +97,7 @@ in
         RandomizedDelaySec = "15m";
       };
       backupPrepareCommand = "${pkgs.systemd}/bin/systemctl stop sparkyfitness.service";
-      backupCleanupCommand = "${pkgs.systemd}/bin/systemctl start sparkyfitness.service";
+      backupCleanupCommand = "${pkgs.systemd}/bin/systemctl start sparkyfitness.service sparkyfitness-tailscale-serve.service";
     };
   };
 }
