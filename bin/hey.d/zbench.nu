@@ -5,18 +5,13 @@ def zbench-run [mode: string, ...args: string] {
   let zbench_dir = ($ctx.flake_dir | path join "benchmarks" "zsh-bench")
   let zbench_report = ($ctx.flake_dir | path join "bin" "zbench-report")
 
-  let zbench = if ((^bash -lc "command -v zsh-bench >/dev/null 2>&1" | complete).exit_code == 0) {
-    "zsh-bench"
-  } else {
-    ($ctx.flake_dir | path join "zsh-bench")
+  if ((^bash -lc "command -v zsh-bench >/dev/null 2>&1" | complete).exit_code != 0) {
+    print "zsh-bench not on PATH; rebuild so modules.shell.zsh installs pkgs.my.zsh-bench"
+    exit 1
   }
 
   print "==> Running zsh-bench (16 iterations)..."
-  let raw = if $zbench == "zsh-bench" {
-    ^zsh-bench ...$args
-  } else {
-    ^$zbench ...$args
-  }
+  let raw = (^zsh-bench ...$args)
 
   let git_rev = (try { ^git -C $ctx.flake_dir rev-parse --short HEAD | str trim } catch { "unknown" })
 
