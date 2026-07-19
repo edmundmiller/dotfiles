@@ -23,11 +23,8 @@ export default function (pi: ExtensionAPI) {
     const cwd = process.cwd();
 
     // Check direnv is available
-    try {
-      await pi.exec("which", ["direnv"]);
-    } catch {
-      return; // direnv not installed, skip silently
-    }
+    const hasDirenvCmd = await pi.exec("which", ["direnv"]);
+    if (hasDirenvCmd.code !== 0) return;
 
     // Find .envrc searching upward to git root
     const gitRoot = await findGitRoot(pi);
