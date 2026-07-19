@@ -18,6 +18,7 @@ let
   serveExecStart = serve.serviceConfig.ExecStart or "";
   backup = cfg.services.restic.backups.sparkyfitness-state or { };
   firewallPorts = cfg.networking.firewall.allowedTCPPorts or [ ];
+  tmpfilesRules = cfg.systemd.tmpfiles.rules or [ ];
 
   assertions = [
     {
@@ -77,6 +78,10 @@ let
     {
       test = !elem 3004 firewallPorts;
       msg = "SparkyFitness port 3004 must not be opened in the firewall";
+    }
+    {
+      test = !elem "d /var/lib/sparkyfitness/postgresql 0750 70 70 -" tmpfilesRules;
+      msg = "Known regression: PostgreSQL bind mount is not writable by Alpine UID/GID 70";
     }
     {
       test = elem "/var/lib/sparkyfitness" (backup.paths or [ ]);
