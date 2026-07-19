@@ -59,7 +59,7 @@
       "type": "registry"
     },
     "pi-acp": {
-      "favorite_models": ["openai-codex/gpt-5.4", "openai-codex/gpt-5.4-mini"],
+      "favorite_models": ["openai-codex/gpt-5.6-terra", "openai-codex/gpt-5.6-luna"],
       "type": "registry"
     },
     "hermes-agent": {
