@@ -1,8 +1,8 @@
-diff --git i/Cargo.lock w/Cargo.lock
-index b61f524..6c43eab 100644
---- i/Cargo.lock
-+++ w/Cargo.lock
-@@ -3268,6 +3268,7 @@ version = "16.5.2"
+diff --git a/Cargo.lock b/Cargo.lock
+index 2cf8645..358ba89 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -3268,6 +3268,7 @@ version = "17.0.5"
  dependencies = [
   "anyhow",
   "ast-grep-core",
@@ -18,7 +18,7 @@ index b61f524..6c43eab 100644
   "tree-sitter-nix",
   "tree-sitter-objc",
   "tree-sitter-ocaml",
-@@ -4927,6 +4929,15 @@ dependencies = [
+@@ -4938,6 +4940,15 @@ dependencies = [
   "tree-sitter-language",
  ]
  
@@ -34,10 +34,10 @@ index b61f524..6c43eab 100644
  [[package]]
  name = "tree-sitter-nix"
  version = "0.3.0"
-diff --git i/Cargo.toml w/Cargo.toml
-index 23ac6f7..1a3aeea 100644
---- i/Cargo.toml
-+++ w/Cargo.toml
+diff --git a/Cargo.toml b/Cargo.toml
+index 9e1ac75..479b228 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
 @@ -349,6 +349,7 @@ tree-sitter-kotlin = { version = "0.4", package = "tree-sitter-kotlin-sg" }
  tree-sitter-lua = "0.5"
  tree-sitter-make = "1.1"
@@ -46,10 +46,10 @@ index 23ac6f7..1a3aeea 100644
  tree-sitter-nix = "0.3"
  tree-sitter-objc = "3.0"
  tree-sitter-ocaml = "0.24.2"
-diff --git i/crates/pi-ast/Cargo.toml w/crates/pi-ast/Cargo.toml
+diff --git a/crates/pi-ast/Cargo.toml b/crates/pi-ast/Cargo.toml
 index 34c7c36..51c0149 100644
---- i/crates/pi-ast/Cargo.toml
-+++ w/crates/pi-ast/Cargo.toml
+--- a/crates/pi-ast/Cargo.toml
++++ b/crates/pi-ast/Cargo.toml
 @@ -47,6 +47,7 @@ tree-sitter-kotlin.workspace = true
  tree-sitter-lua.workspace = true
  tree-sitter-make.workspace = true
@@ -65,11 +65,11 @@ index 34c7c36..51c0149 100644
 +
 +[build-dependencies]
 +cc = "1"
-diff --git i/crates/pi-ast/build.rs w/crates/pi-ast/build.rs
+diff --git a/crates/pi-ast/build.rs b/crates/pi-ast/build.rs
 new file mode 100644
-index 0000000..d8a8a02
+index 0000000..75322a9
 --- /dev/null
-+++ w/crates/pi-ast/build.rs
++++ b/crates/pi-ast/build.rs
 @@ -0,0 +1,13 @@
 +fn main() {
 +	let scanner = "src/language/nextflow_scanner.c";
@@ -84,10 +84,10 @@ index 0000000..d8a8a02
 +	println!("cargo:rustc-link-lib=static:+whole-archive=tree-sitter-nextflow-scanner");
 +	println!("cargo:rerun-if-changed={scanner}");
 +}
-diff --git i/crates/pi-ast/src/language/mod.rs w/crates/pi-ast/src/language/mod.rs
+diff --git a/crates/pi-ast/src/language/mod.rs b/crates/pi-ast/src/language/mod.rs
 index 5201fd2..1b4edee 100644
---- i/crates/pi-ast/src/language/mod.rs
-+++ w/crates/pi-ast/src/language/mod.rs
+--- a/crates/pi-ast/src/language/mod.rs
++++ b/crates/pi-ast/src/language/mod.rs
 @@ -120,6 +120,7 @@ impl_lang_expando!(Hcl, language_hcl, 'µ');
  impl_lang_expando!(Ini, language_ini, 'µ');
  impl_lang_expando!(Just, language_just, 'µ');
@@ -156,11 +156,11 @@ index 5201fd2..1b4edee 100644
  "nix"            => SupportLang::Nix,
  "objc"           => SupportLang::ObjC,
  "obj-c"          => SupportLang::ObjC,
-diff --git i/crates/pi-ast/src/language/nextflow_scanner.c w/crates/pi-ast/src/language/nextflow_scanner.c
+diff --git a/crates/pi-ast/src/language/nextflow_scanner.c b/crates/pi-ast/src/language/nextflow_scanner.c
 new file mode 100644
 index 0000000..7d6bbdb
 --- /dev/null
-+++ w/crates/pi-ast/src/language/nextflow_scanner.c
++++ b/crates/pi-ast/src/language/nextflow_scanner.c
 @@ -0,0 +1,146 @@
 +#include "tree_sitter/parser.h"
 +
@@ -308,10 +308,10 @@ index 0000000..7d6bbdb
 +  lexer->result_symbol = TERMINATOR;
 +  return true;
 +}
-diff --git i/crates/pi-ast/src/language/parsers.rs w/crates/pi-ast/src/language/parsers.rs
+diff --git a/crates/pi-ast/src/language/parsers.rs b/crates/pi-ast/src/language/parsers.rs
 index faaaa1e..0489771 100644
---- i/crates/pi-ast/src/language/parsers.rs
-+++ w/crates/pi-ast/src/language/parsers.rs
+--- a/crates/pi-ast/src/language/parsers.rs
++++ b/crates/pi-ast/src/language/parsers.rs
 @@ -92,6 +92,9 @@ pub fn language_make() -> TSLanguage {
  pub fn language_markdown() -> TSLanguage {
  	tree_sitter_md::LANGUAGE.into()
@@ -322,11 +322,11 @@ index faaaa1e..0489771 100644
  pub fn language_nix() -> TSLanguage {
  	tree_sitter_nix::LANGUAGE.into()
  }
-diff --git i/crates/pi-ast/src/language/tree_sitter/parser.h w/crates/pi-ast/src/language/tree_sitter/parser.h
+diff --git a/crates/pi-ast/src/language/tree_sitter/parser.h b/crates/pi-ast/src/language/tree_sitter/parser.h
 new file mode 100644
 index 0000000..858107d
 --- /dev/null
-+++ w/crates/pi-ast/src/language/tree_sitter/parser.h
++++ b/crates/pi-ast/src/language/tree_sitter/parser.h
 @@ -0,0 +1,286 @@
 +#ifndef TREE_SITTER_PARSER_H_
 +#define TREE_SITTER_PARSER_H_
@@ -614,10 +614,10 @@ index 0000000..858107d
 +#endif
 +
 +#endif  // TREE_SITTER_PARSER_H_
-diff --git i/crates/pi-ast/src/summary.rs w/crates/pi-ast/src/summary.rs
+diff --git a/crates/pi-ast/src/summary.rs b/crates/pi-ast/src/summary.rs
 index 14b63a1..f875eb4 100644
---- i/crates/pi-ast/src/summary.rs
-+++ w/crates/pi-ast/src/summary.rs
+--- a/crates/pi-ast/src/summary.rs
++++ b/crates/pi-ast/src/summary.rs
 @@ -736,7 +736,8 @@ fn is_elidable_kind(language: SupportLang, kind: &str) -> bool {
  		// content IS the lines inside hunks, and the leaf-token-only Regex
  		// grammar. Eliding any of these deletes the only content worth
@@ -636,10 +636,10 @@ index 14b63a1..f875eb4 100644
  		| SupportLang::Yaml
  		| SupportLang::Toml
  		| SupportLang::Ini
-diff --git i/crates/pi-natives/src/ast.rs w/crates/pi-natives/src/ast.rs
+diff --git a/crates/pi-natives/src/ast.rs b/crates/pi-natives/src/ast.rs
 index 4eec133..2facee0 100644
---- i/crates/pi-natives/src/ast.rs
-+++ w/crates/pi-natives/src/ast.rs
+--- a/crates/pi-natives/src/ast.rs
++++ b/crates/pi-natives/src/ast.rs
 @@ -1306,6 +1306,48 @@ mod tests {
  			.expect_err("mixed language inference should fail");
  		assert!(err.to_string().contains("multiple languages"));
@@ -689,10 +689,10 @@ index 4eec133..2facee0 100644
  	#[test]
  	fn resolves_supported_language_aliases() {
  		assert_eq!(resolve_supported_lang("ts").ok(), Some(SupportLang::TypeScript));
-diff --git i/docs/tools/ast-grep.md w/docs/tools/ast-grep.md
+diff --git a/docs/tools/ast-grep.md b/docs/tools/ast-grep.md
 index 7eac9e3..935b593 100644
---- i/docs/tools/ast-grep.md
-+++ w/docs/tools/ast-grep.md
+--- a/docs/tools/ast-grep.md
++++ b/docs/tools/ast-grep.md
 @@ -30,7 +30,7 @@ Pattern grammar and language support exposed to the model:
  - Metavariable names must be uppercase and must stand for whole AST nodes, not partial tokens or string fragments.
  - Reusing the same metavariable requires identical code at each occurrence.
