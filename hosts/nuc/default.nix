@@ -145,6 +145,12 @@ let
     ${bettyDjPython}/bin/python ${bettyGoodMorningDjHelper} verify "$receipt_path"
   '';
   bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit lib; };
+  bettyBookPlayer = pkgs.writeShellApplication {
+    name = "betty-book-player";
+    text = ''
+      exec ${bettyDjPython}/bin/python ${bettyAgentSpec.automations.bookPlayer.helper} "$@"
+    '';
+  };
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
   radarBlogwatcherCli = inputs.agents-workspace.packages.${hostSystem}.blogwatcher-cli;
   radarCronExecutor = pkgs.writeText "hermes-radar-cron-executor.json" ''
@@ -1118,6 +1124,7 @@ in
   };
 
   environment.systemPackages = with pkgs; [
+    bettyBookPlayer
     nixPrivateGithub
     taskwarrior3
     sqlite
@@ -1181,6 +1188,7 @@ in
         # seed or mount /home/emiller/.codex/auth.json; bootstrap Betty's
         # profile-owned login under /var/lib/hermes-betty instead.
         workingDirectory = "/repos/mill-docs";
+        extraPackages = [ bettyBookPlayer ];
         environment = {
           CODEX_HOME = lib.mkForce "/data/.codex";
           HERMES_KANBAN_HOME = hermesSharedHome;
@@ -1573,6 +1581,7 @@ in
     wants = [ "network-online.target" ];
     path = [
       bettyHermesLauncher
+      bettyBookPlayer
       hermesAgentBase
       inputs.agents-workspace.packages.${hostSystem}.gws
       pkgs._1password-cli
