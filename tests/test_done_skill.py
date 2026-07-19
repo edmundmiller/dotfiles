@@ -20,7 +20,6 @@ def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class DoneSkillContractTest(unittest.TestCase):
-    @unittest.expectedFailure
     def test_done_lands_and_publishes_before_cleanup(self) -> None:
         skill = SKILL.read_text()
         flake = FLAKE.read_text()
@@ -37,7 +36,6 @@ class DoneSkillContractTest(unittest.TestCase):
 
         self.assertNotIn('done.from = "bholmesdev";', flake)
 
-    @unittest.expectedFailure
     def test_verifier_requires_published_default_branch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
