@@ -1,6 +1,6 @@
 # Worklog: asset-ownership-cleanup
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -25,6 +25,8 @@ Keep the Mo shell module in dotfiles; make agents-workspace the source of truth 
 - Agents-workspace commit `7ff46d019bc59de7da044dea0d600d9bf855ceb5` landed on `main`; dotfiles now pins that exact revision.
 - `hey nuc-wt build` built the NUC system from the relocated assets; `nix build .#checks.x86_64-linux.nuc-hermes-cron-executors --no-link` passed on the NUC.
 - `hey agent-audit-tests` and `hey agent-finish --worklog .agents/worklogs/asset-ownership-cleanup.md` passed after bootstrapping the worktree's generated Prek config and accepting its focused formatter repair.
+- `hey nuc` switched the NUC to `/nix/store/w0ivnwp5anrxkvy1izb6nw2qa3nbwxyf-nixos-system-nuc-26.11.20260714.18b9261`.
+- Live `hermes-betty-good-morning-dj.service` is loaded and inactive/dead as expected for a oneshot; its wrapper references the relocated helper, whose live store SHA-256 matches the agents-workspace source (`cdc3196b92446fb9373fcb8ad8ec7eff456c6632b8063c55959c2ad64eab9ef1`). The job was not manually triggered.
 
 ## Reviews
 
@@ -37,9 +39,9 @@ Keep the Mo shell module in dotfiles; make agents-workspace the source of truth 
 
 ## Remaining work
 
-- Run dotfiles landing gates, commit/push, deploy, and verify live source/service state.
+- None.
 
 ## Commits
 
 - agents-workspace: `7ff46d019bc59de7da044dea0d600d9bf855ceb5` (`refactor(betty): own Good Morning DJ assets`).
-- dotfiles: pending.
+- dotfiles: `5388e10bc63fac6dff0f83a81009a96895c163f0` (`refactor(betty): source DJ assets from workspace`).
