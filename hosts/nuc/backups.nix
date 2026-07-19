@@ -52,6 +52,14 @@ in
       };
     };
 
+    music-assistant-state = nucR2Backup // {
+      paths = [ "/var/lib/music-assistant" ];
+      timerConfig = {
+        OnCalendar = "*-*-* 00:45:00";
+        RandomizedDelaySec = "15m";
+      };
+    };
+
     # Audiobook media is much larger than the default 10G BorgBase restic quota,
     # so it goes to a dedicated Cloudflare R2 restic repository via restic's S3
     # backend. Do not point audiobook media at BorgBase.
