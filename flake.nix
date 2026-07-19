@@ -51,8 +51,6 @@
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
     opnix.url = "github:brizzbuzz/opnix";
-    llm-prompt.url = "github:aldoborrero/llm-prompt";
-    llm-prompt.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     clin.url = "github:reekta92/clin-rs";
@@ -141,7 +139,6 @@
         self.overlays.default
         (_final: _prev: { llm-agents = inputs.llm-agents.packages.${linuxSystem}; })
       ] linuxSystem;
-      pkgs' = mkPkgs nixpkgs-unstable [ ] linuxSystem;
 
       # Darwin packages
       darwinPkgs = mkPkgs nixpkgs [
@@ -152,6 +149,70 @@
           };
         })
       ] darwinSystem;
+
+      mkDarwinHost =
+        {
+          hostName,
+          primaryUser,
+          hostPath,
+        }:
+        nix-darwin.lib.darwinSystem {
+          system = darwinSystem;
+          specialArgs = {
+            inherit inputs lib;
+            isDarwin = true;
+            inherit hostName;
+          };
+          modules = [
+            # Set nixpkgs first, before importing modules that need it
+            { nixpkgs.pkgs = darwinPkgs; }
+
+            # Add home-manager module
+            inputs.home-manager.darwinModules.home-manager
+
+            # Manage native macOS Login Items declaratively.
+            inputs.darwin-login-items.darwinModules.default
+
+            # Add nix-homebrew module for proper homebrew management
+            inputs.nix-homebrew.darwinModules.nix-homebrew
+
+            # Add opnix for 1Password secrets integration
+            inputs.opnix.darwinModules.default
+
+            # Stylix for unified system + home theming (auto-wires HM module).
+            inputs.stylix.darwinModules.stylix
+
+            # Import the module system (provides user.packages, home.configFile, etc.)
+            ./.
+
+            # Import host-specific configuration
+            hostPath
+
+            # Set primary user for nix-darwin 25.05
+            { system.primaryUser = primaryUser; }
+
+            # Add openclaw to home-manager modules. Stylix's darwin module
+            # auto-imports its Home Manager module when `stylix.enable = true`.
+            {
+              home-manager.extraSpecialArgs = { inherit inputs; };
+              home-manager.sharedModules = [
+                inputs.skills-catalog.homeManagerModules.default
+                {
+                  # Package-owned skill: keep source next to the jut implementation,
+                  # but install it through the shared agent-skills catalog.
+                  programs.agent-skills = {
+                    sources.jut = {
+                      path = ./packages/jut/skill;
+                      subdir = ".";
+                      filter.maxDepth = 1;
+                    };
+                    skills.enableAll = [ "jut" ];
+                  };
+                }
+              ];
+            }
+          ];
+        };
 
       mkRenovateUpdateNixHashes =
         pkgsFor:
@@ -211,11 +272,7 @@
 
         overlays = mapModules ./overlays import // {
           default = final: _prev: {
-            unstable =
-              if final.stdenv.isDarwin then
-                mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system
-              else
-                pkgs';
+            unstable = mkPkgs nixpkgs-unstable [ ] final.stdenv.hostPlatform.system;
             node-lts = (mkPkgs inputs.nixpkgs-node [ ] final.stdenv.hostPlatform.system).nodejs_24;
             my = self.packages.${final.stdenv.hostPlatform.system} or { };
           };
@@ -281,10 +338,6 @@
         ];
 
         templates = {
-          full = {
-            path = ./.;
-            description = "A grossly incandescent nixos config";
-          };
           minimal = {
             path = ./templates/minimal;
             description = "A grossly incandescent and minimal nixos config";
@@ -314,120 +367,15 @@
           };
         };
 
-        # Add Darwin configuration
-        darwinConfigurations."MacTraitor-Pro" = nix-darwin.lib.darwinSystem {
-          system = darwinSystem;
-          specialArgs = {
-            inherit inputs lib;
-            isDarwin = true;
-            hostName = "mactraitorpro";
-          };
-          modules = [
-            # Set nixpkgs first, before importing modules that need it
-            { nixpkgs.pkgs = darwinPkgs; }
-
-            # Add home-manager module
-            inputs.home-manager.darwinModules.home-manager
-
-            # Manage native macOS Login Items declaratively.
-            inputs.darwin-login-items.darwinModules.default
-
-            # Add nix-homebrew module for proper homebrew management
-            inputs.nix-homebrew.darwinModules.nix-homebrew
-
-            # Add opnix for 1Password secrets integration
-            inputs.opnix.darwinModules.default
-
-            # Stylix for unified system + home theming (auto-wires HM module).
-            inputs.stylix.darwinModules.stylix
-
-            # Import the module system (provides user.packages, home.configFile, etc.)
-            ./.
-
-            # Import host-specific configuration
-            ./hosts/mactraitorpro/default.nix
-
-            # Set primary user for nix-darwin 25.05
-            { system.primaryUser = "emiller"; }
-
-            # Add openclaw to home-manager modules. Stylix's darwin module
-            # auto-imports its Home Manager module when `stylix.enable = true`.
-            {
-              home-manager.extraSpecialArgs = { inherit inputs; };
-              home-manager.sharedModules = [
-                inputs.skills-catalog.homeManagerModules.default
-                {
-                  # Package-owned skill: keep source next to the jut implementation,
-                  # but install it through the shared agent-skills catalog.
-                  programs.agent-skills = {
-                    sources.jut = {
-                      path = ./packages/jut/skill;
-                      subdir = ".";
-                      filter.maxDepth = 1;
-                    };
-                    skills.enableAll = [ "jut" ];
-                  };
-                }
-              ];
-            }
-          ];
+        darwinConfigurations."MacTraitor-Pro" = mkDarwinHost {
+          hostName = "mactraitorpro";
+          primaryUser = "emiller";
+          hostPath = ./hosts/mactraitorpro/default.nix;
         };
-        darwinConfigurations."Seqeratop" = nix-darwin.lib.darwinSystem {
-          system = darwinSystem;
-          specialArgs = {
-            inherit inputs lib;
-            isDarwin = true;
-            hostName = "seqeratop";
-          };
-          modules = [
-            # Set nixpkgs first, before importing modules that need it
-            { nixpkgs.pkgs = darwinPkgs; }
-
-            # Add home-manager module
-            inputs.home-manager.darwinModules.home-manager
-
-            # Manage native macOS Login Items declaratively.
-            inputs.darwin-login-items.darwinModules.default
-
-            # Add nix-homebrew module for proper homebrew management
-            inputs.nix-homebrew.darwinModules.nix-homebrew
-
-            # Add opnix for 1Password secrets integration
-            inputs.opnix.darwinModules.default
-
-            # Stylix for unified system + home theming (auto-wires HM module).
-            inputs.stylix.darwinModules.stylix
-
-            # Import the module system (provides user.packages, home.configFile, etc.)
-            ./.
-
-            # Import host-specific configuration
-            ./hosts/seqeratop/default.nix
-
-            # Set primary user for nix-darwin 25.05
-            { system.primaryUser = "edmundmiller"; }
-
-            # Add openclaw to home-manager modules. Stylix's darwin module
-            # auto-imports its Home Manager module when `stylix.enable = true`.
-            {
-              home-manager.extraSpecialArgs = { inherit inputs; };
-              home-manager.sharedModules = [
-                inputs.skills-catalog.homeManagerModules.default
-                {
-                  # Package-owned skill: keep source next to the jut implementation,
-                  # but install it through the shared agent-skills catalog.
-                  programs.agent-skills = {
-                    sources.jut = {
-                      path = ./packages/jut/skill;
-                      subdir = ".";
-                      filter.maxDepth = 1;
-                    };
-                    skills.enableAll = [ "jut" ];
-                  };
-                }
-              ];
-            }
-          ];
+        darwinConfigurations."Seqeratop" = mkDarwinHost {
+          hostName = "seqeratop";
+          primaryUser = "edmundmiller";
+          hostPath = ./hosts/seqeratop/default.nix;
         };
         darwinConfigurations."L19W56QXR4" = self.darwinConfigurations."Seqeratop";
 
@@ -890,28 +838,6 @@
                   ''
                 );
                 language = "system";
-                stages = [ "pre-commit" ];
-              };
-              tech-debt-tracking = {
-                enable = true;
-                name = "tech-debt-tracking";
-                description = "Report TODO/FIXME/HACK comments for tech debt awareness";
-                entry = toString (
-                  pkgs.writeShellScript "tech-debt-report" ''
-                    set -uo pipefail
-                    matches=$(${pkgs.ripgrep}/bin/rg --no-heading -n 'TODO|FIXME|HACK' "$@" 2>/dev/null || true)
-                    if [ -n "$matches" ]; then
-                      echo "📋 Tech debt markers found in staged files:"
-                      echo "$matches"
-                      echo ""
-                      echo "Consider filing issues for high-priority items."
-                    fi
-                    # Always succeed — this is informational only
-                    exit 0
-                  ''
-                );
-                language = "system";
-                types = [ "text" ];
                 stages = [ "pre-commit" ];
               };
             };
