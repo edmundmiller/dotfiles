@@ -25,7 +25,6 @@
 
       shell = {
         "1password".enable = true;
-        ai.enable = true;
         amoxide.enable = true;
         agentBrowser.enable = true;
         skillkit.enable = true;

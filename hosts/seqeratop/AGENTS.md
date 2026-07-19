@@ -1,3 +1,11 @@
+---
+purpose: Route agents for the Seqeratop work nix-darwin host.
+applies_to: Changes under hosts/seqeratop or Seqeratop rebuilds.
+entrypoint: Read default.nix, then hey re from the repo root.
+verification: hey check and sudo darwin-rebuild switch --flake .
+update_when: Host modules, username, rebuild, or recovery steps change.
+---
+
 # Seqeratop (Work Mac)
 
 Work development machine running nix-darwin. Seqera corporate laptop.
@@ -10,13 +18,13 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 
 ## Enabled Modules
 
-| Category | Modules                                                                |
-| -------- | ---------------------------------------------------------------------- |
-| Editors  | emacs, vim (default: nvim)                                             |
-| Dev      | node (fnm), python + conda, R                                          |
-| Shell    | 1password, ai, claude, codex, opencode, pi, direnv, git, jj, tmux, zsh |
-| Services | docker, ssh                                                            |
-| Desktop  | macos defaults, ghostty                                                |
+| Category | Modules                                                            |
+| -------- | ------------------------------------------------------------------ |
+| Editors  | emacs, vim (default: nvim)                                         |
+| Dev      | node (fnm), python + conda, R                                      |
+| Shell    | 1password, claude, codex, opencode, pi, direnv, git, jj, tmux, zsh |
+| Services | docker, ssh                                                        |
+| Desktop  | macos defaults, ghostty                                            |
 
 ## Host-Specific Config
 
