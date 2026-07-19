@@ -1,0 +1,16 @@
+{
+  "source": "https://github.com/ellie/lgtm.git",
+  "ref": "573ffe1fb626ff86c47e8b0e99f1179f1bdc8a03",
+  "patches": ["patches/runtime-shaders.patch"],
+  "checks": [
+    [
+      "env",
+      "GIT_CONFIG_GLOBAL=/dev/null",
+      "GIT_CONFIG_SYSTEM=/dev/null",
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked"
+    ]
+  ]
+}
