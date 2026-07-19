@@ -5,6 +5,7 @@ let
     concatStringsSep
     elem
     filter
+    head
     isList
     length
     ;
@@ -18,6 +19,11 @@ let
   serveService = cfg.systemd.services.homebox-tailscale-serve or { };
   serveExecStart = serveService.serviceConfig.ExecStart or "";
   backup = cfg.services.restic.backups.homebox-state or { };
+  homepageServices = cfg.services.homepage-dashboard.services or [ ];
+  homeSection = head (filter (section: section ? Home) homepageServices);
+  homeboxEntries = filter (entry: entry ? Homebox) homeSection.Home;
+  homepageHomebox = if homeboxEntries == [ ] then { } else (head homeboxEntries).Homebox;
+  widget = homepageHomebox.widget or { };
 
   hasEnvironmentFile =
     environmentFile == "/run/agenix/homebox-env"
@@ -43,6 +49,21 @@ let
     {
       test = (settings.HBOX_OPTIONS_ALLOW_REGISTRATION or "") == "false";
       msg = "Homebox registration must be disabled after bootstrap";
+    }
+    {
+      test =
+        widget == {
+          type = "homebox";
+          url = "http://127.0.0.1:7745";
+          username = "{{HOMEPAGE_VAR_HOMEBOX_USERNAME}}";
+          password = "{{HOMEPAGE_VAR_HOMEBOX_PASSWORD}}";
+          fields = [
+            "items"
+            "locations"
+            "totalValue"
+          ];
+        };
+      msg = "Homepage must render the authenticated Homebox widget";
     }
     {
       test = hasEnvironmentFile;
