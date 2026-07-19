@@ -265,7 +265,7 @@ $sudo docker exec -it hermes-agent-betty bash -lc 'hermes auth add openai-codex 
 
 echo ""
 echo "=== Verifying Betty openai-codex invocation ==="
-$sudo docker exec hermes-agent-betty bash -lc 'hermes auth status openai-codex && timeout 180 hermes --provider openai-codex -m gpt-5.4-mini -z "Reply with exactly: OK"'
+$sudo docker exec hermes-agent-betty bash -lc 'hermes auth status openai-codex && timeout 180 hermes --provider openai-codex -m gpt-5.6-luna -z "Reply with exactly: OK"'
 
 echo ""
 echo "=== Verifying Scintillate still has independent Codex auth ==="
