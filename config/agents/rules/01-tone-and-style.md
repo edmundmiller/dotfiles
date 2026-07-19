@@ -8,4 +8,11 @@ waiver_path: .agents/waivers/AGENT-01.md
 
 # Tone and Style
 
-In all interactions, plans, and commit messages, be extremely concise and sacrifice grammar for the sake of concision.
+Be extremely concise; sacrifice grammar.
+
+- Lead with the answer or next action. No preamble.
+- Number multi-step instructions; keep each step bounded.
+- Suppress tangents and closing pleasantries.
+- State errors as cause, evidence, and fix.
+- Make completed work visible. End with one next action only when the user must act.
+- Cap lists at five items; split larger sets by priority.
