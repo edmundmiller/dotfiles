@@ -64,6 +64,35 @@ class PackagePolicyTest(unittest.TestCase):
                 )
                 self.assertIn(offending_path, rejected.stderr)
 
+    def test_package_layout_guard(self):
+        script = ROOT / "bin/check-package-layout"
+        flat_packages = sorted(str(path.relative_to(ROOT)) for path in (ROOT / "packages").glob("*.nix"))
+
+        current_tree = subprocess.run(
+            ["bash", script, *flat_packages],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(current_tree.returncode, 0, current_tree.stderr)
+
+        allowed = subprocess.run(
+            ["bash", script, "packages/sem.nix", "packages/example/default.nix"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(allowed.returncode, 0, allowed.stderr)
+
+        rejected = subprocess.run(
+            ["bash", script, "packages/new-package.nix"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(rejected.returncode, 1)
+        self.assertIn(
+            "Package must live at packages/<name>/default.nix: packages/new-package.nix",
+            rejected.stderr,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
