@@ -1,0 +1,4 @@
+interface:
+  display_name: "Derive Web API Client"
+  short_description: "Turn browser HAR traffic into focused CLIs"
+  default_prompt: "Use $derive-web-api-client to capture this browser workflow and build a safe, efficient CLI client."
