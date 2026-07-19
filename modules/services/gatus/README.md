@@ -94,6 +94,10 @@ A systemd timer pings the healthchecks.io URL every 2 minutes. If the NUC goes d
 - **Audiobookshelf** — `http://localhost:13378/healthcheck` (conditional)
 - **Music Assistant** — `http://localhost:8095` (conditional)
 
+### Health
+
+- **SparkyFitness** — `https://sparkyfitness.cinnamon-rooster.ts.net/` (conditional)
+
 ### Infrastructure
 
 - **PostgreSQL** — `tcp://localhost:5432`
