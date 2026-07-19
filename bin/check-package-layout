@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+invalid=0
+for path in "$@"; do
+  case "$path" in
+    packages/catgpt.nix | \
+    packages/claude-max-api-proxy.nix | \
+    packages/fennel.nix | \
+    packages/git-hunks.nix | \
+    packages/git-sim.nix | \
+    packages/gw.nix | \
+    packages/gxf2bed.nix | \
+    packages/hey.nix | \
+    packages/inspect.nix | \
+    packages/jj-vine.nix | \
+    packages/jsongrep.nix | \
+    packages/lgtm.nix | \
+    packages/llama-fs.nix | \
+    packages/nf-core.nix | \
+    packages/oauth2ms.nix | \
+    packages/omnivore-x.nix | \
+    packages/omnivoreql.nix | \
+    packages/revolver.nix | \
+    packages/sem.nix | \
+    packages/slop-scan.nix | \
+    packages/snakefmt.nix | \
+    packages/sqruff.nix | \
+    packages/tmux-agent-status.nix | \
+    packages/tmux-file-picker.nix | \
+    packages/tmux-window-name.nix | \
+    packages/zunit.nix)
+      ;;
+    *)
+      if [[ "$path" =~ ^packages/[^/]+\.nix$ ]]; then
+        echo "Package must live at packages/<name>/default.nix: $path" >&2
+        invalid=1
+      fi
+      ;;
+  esac
+done
+exit "$invalid"

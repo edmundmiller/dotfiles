@@ -8,9 +8,7 @@ update_when: Package discovery, patch policy, or maintainer tooling changes.
 
 # Packages
 
-Auto-discovered with `lib.my.mapModules ./packages`: use either `packages/<name>.nix` or `packages/<name>/default.nix`. Packages are exposed as `pkgs.my.*` via the overlay in `flake.nix` and built per-system (`x86_64-linux` and `aarch64-darwin`).
-
-Prefer the `packages/<name>/default.nix` directory pattern when a package may need supporting files such as patches, fixtures, lockfiles, or package-specific `AGENTS.md` guidance.
+Auto-discovered with `lib.my.mapModules ./packages`: new packages must use `packages/<name>/default.nix`. Existing `packages/<name>.nix` files are migration exceptions only. Packages are exposed as `pkgs.my.*` via the overlay in `flake.nix` and built per-system (`x86_64-linux` and `aarch64-darwin`).
 
 ## Maintainer checks
 
