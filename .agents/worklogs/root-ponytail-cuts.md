@@ -1,6 +1,6 @@
 # Worklog: root-ponytail-cuts
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -26,6 +26,7 @@ Remove every accepted, evidence-backed root ponytail-audit finding without touch
 - `hey check`: all Darwin-compatible checks passed.
 - `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .`: build and activation passed.
 - `TERM=xterm-256color zsh -lic 'whence -v piu; ...'`: fresh interactive login resolves `piu` to the retained shell function; the earlier false negative used tool-default `TERM=dumb`, which skips the interactive rc branch.
+- Post-commit Darwin rebuild passed, and a fresh interactive login resolves `piu` to `/nix/store/7vl9gxg2y9vqdhp9nsb95gjiddnzqjrp-source/config/pi/aliases.zsh`.
 
 ## Reviews
 
@@ -38,8 +39,8 @@ None.
 
 ## Remaining work
 
-Run landing gates, commit, rebase, rebuild from clean Git source, smoke `piu`, push, and verify upstream.
+None.
 
 ## Commits
 
-Pending.
+- `db4a6499e` — `chore: remove dead root utilities`
