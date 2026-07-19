@@ -1,6 +1,6 @@
 ---
 description: Keep shared Jujutsu working copies stable
-condition: "\\bjj\\s+edit\\b"
+condition: "\\b(?:jj|git)\\b"
 scope: "tool:bash"
 ---
 
