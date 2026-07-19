@@ -1938,7 +1938,10 @@ in
     }
     // {
       docker.enable = true;
-      music-assistant.enable = true;
+      music-assistant = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       hass = {
         enable = true;
         postgres.enable = true;

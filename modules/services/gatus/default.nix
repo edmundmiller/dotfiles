@@ -223,6 +223,15 @@ let
               conditions = [ "[STATUS] == 200" ];
             }
           ]
+          ++ optionals config.modules.services.music-assistant.enable [
+            (withAlerts {
+              name = "Music Assistant";
+              group = "Media";
+              url = "http://localhost:${toString config.modules.services.music-assistant.port}";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            })
+          ]
           ++ optionals config.modules.services.agentsview.enable [
             {
               name = "AgentsView";
