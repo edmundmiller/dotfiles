@@ -15,7 +15,7 @@
     {
       "id": "test-confidence",
       "kind": "test-audit",
-      "command": "python3 bin/agent-quality audit-tests tests bin/agent_fleet packages/pi-packages",
+      "command": "python3 bin/agent-quality audit-tests tests packages/pi-packages",
       "description": "Vacuous and skipped test heuristics"
     },
     {
