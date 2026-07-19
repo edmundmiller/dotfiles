@@ -1,0 +1,287 @@
+diff --git c/packages/coding-agent/CHANGELOG.md w/packages/coding-agent/CHANGELOG.md
+index 6f32dc885..2573a2f6c 100644
+--- c/packages/coding-agent/CHANGELOG.md
++++ w/packages/coding-agent/CHANGELOG.md
+@@ -2,6 +2,10 @@
+ 
+ ## [Unreleased]
+ 
++### Fixed
++
++- Fixed configured or `-e` extensions in compiled binaries failing to resolve bundled `@oh-my-pi/*` value imports through the `omp-legacy-pi-bundled:` registry, and surfaced extension load failures during interactive and `-p` session startup. ([#4954](https://github.com/can1357/oh-my-pi/issues/4954))
++
+ ## [17.0.5] - 2026-07-18
+ 
+ ### Added
+diff --git c/packages/coding-agent/src/extensibility/extensions/load-errors.ts w/packages/coding-agent/src/extensibility/extensions/load-errors.ts
+new file mode 100644
+index 000000000..5ba213d58
+--- /dev/null
++++ w/packages/coding-agent/src/extensibility/extensions/load-errors.ts
+@@ -0,0 +1,13 @@
++import { replaceTabs, shortenPath, TRUNCATE_LENGTHS, truncateToWidth } from "../../tools/render-utils";
++import type { LoadExtensionsResult } from "./types";
++
++/** Formats extension load failures for user-visible startup diagnostics. */
++export function formatExtensionLoadNotifications(errors: LoadExtensionsResult["errors"]): string[] {
++	const messages: string[] = [];
++	for (const { path, error } of errors) {
++		const displayPath = truncateToWidth(replaceTabs(shortenPath(path)), TRUNCATE_LENGTHS.CONTENT);
++		const displayError = truncateToWidth(replaceTabs(error.replace(/\s+/g, " ").trim()), TRUNCATE_LENGTHS.LONG);
++		messages.push(`Failed to load extension ${displayPath}: ${displayError}`);
++	}
++	return messages;
++}
+diff --git c/packages/coding-agent/src/extensibility/plugins/legacy-pi-compat.ts w/packages/coding-agent/src/extensibility/plugins/legacy-pi-compat.ts
+index b28b34531..40d1a7ca8 100644
+--- c/packages/coding-agent/src/extensibility/plugins/legacy-pi-compat.ts
++++ w/packages/coding-agent/src/extensibility/plugins/legacy-pi-compat.ts
+@@ -32,6 +32,16 @@ type BundledModule = Readonly<Record<string, unknown>>;
+ type BundledModules = Readonly<Record<string, BundledModule>>;
+ type BundledModuleLoaders = Readonly<Record<string, () => Promise<BundledModule>>>;
+ 
++interface LegacyPiResolveResult {
++	path: string;
++	namespace?: string;
++}
++
++interface BundledVirtualResolveResult {
++	path: string;
++	namespace: typeof BUNDLED_VIRTUAL_NAMESPACE;
++}
++
+ const loadedBundledModules: Record<string, BundledModule> = {};
+ let bundledModuleLoadersPromise: Promise<BundledModuleLoaders> | null = null;
+ 
+@@ -72,6 +82,25 @@ function isBundledVirtualSpecifier(value: string): boolean {
+ 	return value.startsWith(BUNDLED_VIRTUAL_SCHEME);
+ }
+ 
++function toLegacyPiResolveResult(resolvedPath: string): LegacyPiResolveResult {
++	if (isBundledVirtualSpecifier(resolvedPath)) {
++		const registryKey = resolvedPath.slice(BUNDLED_VIRTUAL_SCHEME.length);
++		return { path: registryKey, namespace: BUNDLED_VIRTUAL_NAMESPACE };
++	}
++	return { path: resolvedPath };
++}
++
++/** Maps a bundled virtual specifier or registry key to Bun's plugin namespace shape. */
++export function resolveBundledVirtualSpecifier(specifier: string): BundledVirtualResolveResult {
++	const registryKey = isBundledVirtualSpecifier(specifier)
++		? specifier.slice(BUNDLED_VIRTUAL_SCHEME.length)
++		: specifier;
++	if (!registryKey) {
++		throw new Error("omp:legacy-pi-shim: bundled virtual specifier has no registry key");
++	}
++	return { path: registryKey, namespace: BUNDLED_VIRTUAL_NAMESPACE };
++}
++
+ /**
+  * Build a synthetic ES module for one live bundled namespace. Every export
+  * reads through the global bridge; no bunfs path or copied package is involved.
+@@ -1611,7 +1640,7 @@ function getLoader(path: string): "js" | "jsx" | "ts" | "tsx" {
+ 	return "js";
+ }
+ 
+-function resolveLegacyPiSpecifier(args: { path: string; importer: string }): { path: string } | undefined {
++function resolveLegacyPiSpecifier(args: { path: string; importer: string }): LegacyPiResolveResult | undefined {
+ 	const remappedSpecifier = remapLegacyPiSpecifier(args.path);
+ 	if (!remappedSpecifier) {
+ 		return undefined;
+@@ -1620,7 +1649,7 @@ function resolveLegacyPiSpecifier(args: { path: string; importer: string }): { p
+ 	// Primary: resolve the canonical @oh-my-pi/* specifier from the host binary
+ 	// location. Works in dev mode and in source-link installs.
+ 	try {
+-		return { path: resolveCanonicalPiSpecifier(remappedSpecifier) };
++		return toLegacyPiResolveResult(resolveCanonicalPiSpecifier(remappedSpecifier));
+ 	} catch {
+ 		// Fallback for compiled binary mode: the bundled packages live inside
+ 		// /$bunfs/root and aren't reachable by filesystem resolution. Prefer the
+@@ -1630,10 +1659,10 @@ function resolveLegacyPiSpecifier(args: { path: string; importer: string }): { p
+ 		// @earendil-works peer deps.
+ 		const importerDir = path.dirname(args.importer);
+ 		try {
+-			return { path: Bun.resolveSync(remappedSpecifier, importerDir) };
++			return toLegacyPiResolveResult(Bun.resolveSync(remappedSpecifier, importerDir));
+ 		} catch {
+ 			try {
+-				return { path: Bun.resolveSync(args.path, importerDir) };
++				return toLegacyPiResolveResult(Bun.resolveSync(args.path, importerDir));
+ 			} catch {
+ 				return undefined;
+ 			}
+@@ -1641,8 +1670,8 @@ function resolveLegacyPiSpecifier(args: { path: string; importer: string }): { p
+ 	}
+ }
+ 
+-function resolveTypeBoxSpecifier(): { path: string } | undefined {
+-	return TYPEBOX_SHIM_PATH ? { path: TYPEBOX_SHIM_PATH } : undefined;
++function resolveTypeBoxSpecifier(): LegacyPiResolveResult | undefined {
++	return TYPEBOX_SHIM_PATH ? toLegacyPiResolveResult(TYPEBOX_SHIM_PATH) : undefined;
+ }
+ 
+ export function installLegacyPiSpecifierShim(): void {
+@@ -1656,6 +1685,12 @@ export function installLegacyPiSpecifierShim(): void {
+ 		setup(build) {
+ 			build.onResolve({ filter: LEGACY_PI_SPECIFIER_FILTER, namespace: "file" }, resolveLegacyPiSpecifier);
+ 			build.onResolve({ filter: TYPEBOX_SPECIFIER_FILTER, namespace: "file" }, resolveTypeBoxSpecifier);
++			build.onResolve({ filter: /^omp-legacy-pi-bundled:.+$/, namespace: "file" }, args =>
++				resolveBundledVirtualSpecifier(args.path),
++			);
++			build.onResolve({ filter: /.*/, namespace: BUNDLED_VIRTUAL_NAMESPACE }, args =>
++				resolveBundledVirtualSpecifier(args.path),
++			);
+ 			// Compiled mode serves `omp-legacy-pi-bundled:<key>` imports from
+ 			// live host module references. No bunfs path leaves this loader.
+ 			build.onLoad({ filter: /.*/, namespace: BUNDLED_VIRTUAL_NAMESPACE }, async args => {
+diff --git c/packages/coding-agent/src/main.ts w/packages/coding-agent/src/main.ts
+index c40784f9f..f8d230e53 100644
+--- c/packages/coding-agent/src/main.ts
++++ w/packages/coding-agent/src/main.ts
+@@ -50,6 +50,7 @@ import {
+ 	resolveActiveProjectRegistryPath,
+ } from "./discovery/helpers";
+ import { injectOmpExtensionCliRoots } from "./discovery/omp-extension-roots";
++import { formatExtensionLoadNotifications } from "./extensibility/extensions/load-errors";
+ import { ExtensionRunner } from "./extensibility/extensions/runner";
+ import type { ExtensionUIContext } from "./extensibility/extensions/types";
+ import { scheduleMarketplaceAutoUpdate } from "./extensibility/plugins/marketplace-auto-update";
+@@ -1433,6 +1434,13 @@ export async function runRootCommand(
+ 		};
+ 		const initialArgs = applyExtensionFlags(extensionFlagSink, rawArgs) ?? parsedArgs;
+ 		normalizeContinueSessionArgs(initialArgs, rawArgs);
++		for (const message of formatExtensionLoadNotifications(extensionsResult.errors)) {
++			if (isInteractive) {
++				notifs.push({ kind: "warn", message });
++			} else {
++				process.stderr.write(`${chalk.yellow(`${message}\n`)}`);
++			}
++		}
+ 		// Fail fast on stale/typo flags (e.g. `omp --list-models`) now that we
+ 		// know the real extension flag set. Without this check the unrecognized
+ 		// token gets silently consumed and any following positional leaks as the
+diff --git c/packages/coding-agent/test/extensibility/extension-load-notifications.test.ts w/packages/coding-agent/test/extensibility/extension-load-notifications.test.ts
+new file mode 100644
+index 000000000..7bbf1b377
+--- /dev/null
++++ w/packages/coding-agent/test/extensibility/extension-load-notifications.test.ts
+@@ -0,0 +1,26 @@
++import { describe, expect, it } from "bun:test";
++import * as os from "node:os";
++import * as path from "node:path";
++import { formatExtensionLoadNotifications } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/load-errors";
++
++describe("extension load startup notifications", () => {
++	it("formats load failures as sanitized single-line warnings for TUI and print startup paths", () => {
++		const homeDir = os.homedir();
++		const extensionPath = path.join(homeDir, "omp-notification-fixture", "plugin\tname", "extension.ts");
++		const tailMarker = "TAIL_MARKER_AFTER_TRUNCATION";
++		const [message] = formatExtensionLoadNotifications([
++			{
++				path: extensionPath,
++				error: `SyntaxError: Missing named export\n\tat extension loader\n${"x".repeat(200)}${tailMarker}`,
++			},
++		]);
++
++		expect(message).toBeDefined();
++		expect(message?.startsWith("Failed to load extension ~/omp-notification-fixture/plugin")).toBe(true);
++		expect(message).toContain("name/extension.ts: SyntaxError: Missing named export at extension loader");
++		expect(message).not.toContain(homeDir);
++		expect(message).not.toContain("\n");
++		expect(message).not.toContain("\t");
++		expect(message).not.toContain(tailMarker);
++	});
++});
+diff --git c/packages/coding-agent/test/extensibility/legacy-pi-bundled-virtual.test.ts w/packages/coding-agent/test/extensibility/legacy-pi-bundled-virtual.test.ts
+index 9c4057f74..d27f366e5 100644
+--- c/packages/coding-agent/test/extensibility/legacy-pi-bundled-virtual.test.ts
++++ w/packages/coding-agent/test/extensibility/legacy-pi-bundled-virtual.test.ts
+@@ -1,8 +1,12 @@
+ import { describe, expect, it } from "bun:test";
++import * as path from "node:path";
+ import {
+ 	__getLegacyPiBundledModulesGlobal,
+ 	__synthesizeLegacyPiBundledSourceWithModules,
++	resolveBundledVirtualSpecifier,
+ } from "@oh-my-pi/pi-coding-agent/extensibility/plugins/legacy-pi-compat";
++import { TempDir } from "@oh-my-pi/pi-utils";
++import type { BunPlugin } from "bun";
+ 
+ // Regression for issue #3423: Bun 1.3.14 made `--compile` extras unreachable
+ // via every filesystem-style API. The compat layer now routes canonical
+@@ -92,4 +96,75 @@ describe("legacy-pi bundled virtual module synthesizer (issue #3423)", () => {
+ 			Reflect.deleteProperty(globalThis, globalKey);
+ 		}
+ 	});
++
++	it("routes Bun plugin resolution through the bundled namespace so onLoad can serve extension imports", async () => {
++		using tempDir = TempDir.createSync("@omp-legacy-pi-bundled-virtual-");
++		const entryPath = tempDir.join("extension-entry.ts");
++		const bundlePath = tempDir.join("extension-entry.bundle.mjs");
++
++		await Bun.write(
++			entryPath,
++			[
++				'import { legacyAnswer } from "omp-legacy-pi-bundled:@oh-my-pi/pi-utils";',
++				"process.stdout.write(legacyAnswer);",
++				"",
++			].join("\n"),
++		);
++
++		expect(resolveBundledVirtualSpecifier("@oh-my-pi/pi-utils")).toEqual({
++			namespace: "omp-legacy-pi-bundled",
++			path: "@oh-my-pi/pi-utils",
++		});
++		expect(resolveBundledVirtualSpecifier("omp-legacy-pi-bundled:@oh-my-pi/pi-utils")).toEqual({
++			namespace: "omp-legacy-pi-bundled",
++			path: "@oh-my-pi/pi-utils",
++		});
++
++		const onLoadPaths: string[] = [];
++		const plugin: BunPlugin = {
++			name: "omp-legacy-pi-bundled-virtual-regression",
++			setup(build) {
++				build.onResolve({ filter: /^omp-legacy-pi-bundled:.+$/, namespace: "file" }, args =>
++					resolveBundledVirtualSpecifier(args.path),
++				);
++				build.onResolve({ filter: /.*/, namespace: "omp-legacy-pi-bundled" }, args =>
++					resolveBundledVirtualSpecifier(args.path),
++				);
++				build.onLoad({ filter: /.*/, namespace: "omp-legacy-pi-bundled" }, args => {
++					onLoadPaths.push(args.path);
++					return {
++						contents: `export const legacyAnswer = ${JSON.stringify(`served:${args.path}`)};`,
++						loader: "js",
++					};
++				});
++			},
++		};
++
++		const buildResult = await Bun.build({
++			entrypoints: [entryPath],
++			external: ["bun"],
++			format: "esm",
++			plugins: [plugin],
++			target: "bun",
++		});
++		const buildLogs = buildResult.logs.map(log => log.message).join("\n");
++		expect(buildResult.success, buildLogs).toBe(true);
++		await Bun.write(bundlePath, await buildResult.outputs[0]!.text());
++		expect(onLoadPaths).toEqual(["@oh-my-pi/pi-utils"]);
++
++		const proc = Bun.spawn([process.execPath, `./${path.basename(bundlePath)}`], {
++			cwd: path.dirname(bundlePath),
++			stderr: "pipe",
++			stdout: "pipe",
++		});
++		const [stdout, stderr, exitCode] = await Promise.all([
++			new Response(proc.stdout).text(),
++			new Response(proc.stderr).text(),
++			proc.exited,
++		]);
++
++		expect(exitCode, stderr).toBe(0);
++		expect(stderr).toBe("");
++		expect(stdout).toBe("served:@oh-my-pi/pi-utils");
++	});
+ });
