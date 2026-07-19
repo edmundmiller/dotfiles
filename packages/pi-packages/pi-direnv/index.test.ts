@@ -27,15 +27,6 @@ function loadExtension(exec: (...call: ExecCall) => Promise<ExecResult>) {
   return sessionStart;
 }
 
-function expectFailureUntilFixed(assertion: () => void, issue: string) {
-  try {
-    assertion();
-  } catch {
-    return;
-  }
-  throw new Error(`Unexpected pass for ${issue}; remove the expected-failure marker`);
-}
-
 describe("pi-direnv session_start", () => {
   const originalCwd = process.cwd();
   let projectDir: string;
@@ -101,9 +92,7 @@ describe("pi-direnv session_start", () => {
 
     await sessionStart({}, { ui: { notify: (...args) => notifications.push(args) } });
 
-    expectFailureUntilFixed(() => {
-      expect(calls).toEqual([["which", ["direnv"]]]);
-      expect(notifications).toEqual([]);
-    }, "GitHub issue #168");
+    expect(calls).toEqual([["which", ["direnv"]]]);
+    expect(notifications).toEqual([]);
   });
 });
