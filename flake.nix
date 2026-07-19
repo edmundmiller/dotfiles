@@ -501,6 +501,14 @@
                 files = "\\.patch$";
                 stages = [ "pre-commit" ];
               };
+              forbid-flat-package-files = {
+                enable = true;
+                name = "require directory package layout";
+                entry = "${pkgs.bash}/bin/bash ${./bin/check-package-layout}";
+                language = "system";
+                files = "^packages/[^/]+\\.nix$";
+                stages = [ "pre-commit" ];
+              };
               forbid-new-submodules = {
                 enable = true;
                 stages = [ "pre-push" ];
