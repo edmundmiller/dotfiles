@@ -100,8 +100,8 @@ let
       msg = "SparkyFitness backup must restart the stack after snapshotting";
     }
     {
-      test = !hasInfix "start sparkyfitness.service sparkyfitness-tailscale-serve.service" (backup.backupCleanupCommand or "");
-      msg = "Known regression: backup cleanup does not restore the SparkyFitness Tailscale ingress";
+      test = hasInfix "start sparkyfitness.service sparkyfitness-tailscale-serve.service" (backup.backupCleanupCommand or "");
+      msg = "SparkyFitness backup must restore the Tailscale ingress";
     }
   ];
 
