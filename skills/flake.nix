@@ -102,6 +102,11 @@
       flake = false;
     };
 
+    browser-control-repo = {
+      url = "github:anomalyco/browser-control";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -506,6 +511,12 @@
                   filter.maxDepth = 1;
                 };
 
+                browser-control = {
+                  path = inputs.browser-control-repo.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 1;
+                };
+
               }
               // lib.optionalAttrs stackEnabled {
                 stack = {
@@ -576,6 +587,9 @@
 
                   zele.from = "zele";
                   zele.path = "zele";
+
+                  browser-control.from = "browser-control";
+                  browser-control.path = "browser-control";
 
                   animation-vocabulary.from = "emilkowalski";
                   animation-vocabulary.path = "animation-vocabulary";

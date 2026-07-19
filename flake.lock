@@ -204,6 +204,22 @@
         "type": "github"
       }
     },
+    "browser-control-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784497560,
+        "narHash": "sha256-a6b5jUe7fLsv9AoPaiVCuw0NBcZaUTPWnEQND6kdjTc=",
+        "owner": "anomalyco",
+        "repo": "browser-control",
+        "rev": "edf33c25ad788a7e61a97de2535894b51eeddc08",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "browser-control",
+        "type": "github"
+      }
+    },
     "bun2nix": {
       "inputs": {
         "flake-parts": "flake-parts_2",
@@ -1856,6 +1872,7 @@
         "acpx-repo": "acpx-repo",
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "browser-control-repo": "browser-control-repo",
         "diffity-repo": "diffity-repo",
         "emilkowalski-skills": "emilkowalski-skills",
         "gitbutler-repo": "gitbutler-repo",
