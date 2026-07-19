@@ -244,6 +244,17 @@ in
                 href = "https://homebox.cinnamon-rooster.ts.net/";
                 description = "Household inventory pilot";
                 icon = "mdi-package-variant-closed";
+                widget = {
+                  type = "homebox";
+                  url = "http://127.0.0.1:7745";
+                  username = "{{HOMEPAGE_VAR_HOMEBOX_USERNAME}}";
+                  password = "{{HOMEPAGE_VAR_HOMEBOX_PASSWORD}}";
+                  fields = [
+                    "items"
+                    "locations"
+                    "totalValue"
+                  ];
+                };
               };
             }
           ];
