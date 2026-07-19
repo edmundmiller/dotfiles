@@ -80,8 +80,8 @@ let
       msg = "SparkyFitness port 3004 must not be opened in the firewall";
     }
     {
-      test = !elem "d /var/lib/sparkyfitness/postgresql 0750 70 70 -" tmpfilesRules;
-      msg = "Known regression: PostgreSQL bind mount is not writable by Alpine UID/GID 70";
+      test = elem "d /var/lib/sparkyfitness/postgresql 0750 70 70 -" tmpfilesRules;
+      msg = "SparkyFitness PostgreSQL state must be writable by the Alpine postgres user";
     }
     {
       test = elem "/var/lib/sparkyfitness" (backup.paths or [ ]);

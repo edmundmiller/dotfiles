@@ -120,7 +120,7 @@ in
 
       systemd.tmpfiles.rules = [
         "d ${dataDir} 0750 root root -"
-        "d ${dataDir}/postgresql 0750 root root -"
+        "d ${dataDir}/postgresql 0750 70 70 -"
         "d ${dataDir}/backup 0750 root root -"
         "d ${dataDir}/uploads 0750 root root -"
       ];
