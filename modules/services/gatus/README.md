@@ -92,6 +92,7 @@ A systemd timer pings the healthchecks.io URL every 2 minutes. If the NUC goes d
 - **Radarr** — `http://localhost:7878/ping`
 - **Prowlarr** — `http://localhost:9696/ping`
 - **Audiobookshelf** — `http://localhost:13378/healthcheck` (conditional)
+- **Music Assistant** — `http://localhost:8095` (conditional)
 
 ### Infrastructure
 
