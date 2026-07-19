@@ -85,5 +85,19 @@ in
       backupPrepareCommand = "${pkgs.systemd}/bin/systemctl stop homebox.service";
       backupCleanupCommand = "${pkgs.systemd}/bin/systemctl start homebox.service";
     };
+    sparkyfitness-state = nucR2Backup // {
+      paths = [ "/var/lib/sparkyfitness" ];
+      extraBackupArgs = [
+        "--tag"
+        "sparkyfitness-state"
+      ];
+      pruneOpts = [ ];
+      timerConfig = {
+        OnCalendar = "*-*-* 02:30:00";
+        RandomizedDelaySec = "15m";
+      };
+      backupPrepareCommand = "${pkgs.systemd}/bin/systemctl stop sparkyfitness.service";
+      backupCleanupCommand = "${pkgs.systemd}/bin/systemctl start sparkyfitness.service";
+    };
   };
 }

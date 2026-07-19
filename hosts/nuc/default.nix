@@ -2023,6 +2023,11 @@ in
         enable = true;
         environmentFile = config.age.secrets.speedtest-tracker-env.path;
       };
+      sparkyfitness = {
+        enable = true;
+        environmentFile = config.age.secrets.sparkyfitness-env.path;
+        tailscaleService.enable = true;
+      };
       prowlarr.enable = true;
       qb.enable = false;
       radarr.enable = true;
@@ -2245,6 +2250,7 @@ in
     secrets = {
       lubelogger-env.owner = "lubelogger";
       speedtest-tracker-env.owner = "root";
+      sparkyfitness-env.owner = "root";
       linear-refresh-token.owner = "emiller";
     };
   };
