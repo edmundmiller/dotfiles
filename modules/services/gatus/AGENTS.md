@@ -74,6 +74,7 @@ This means healthchecks.io alerts if:
 | Tailscale      | Infrastructure | localhost:41112/healthz      | HTTP               |
 | Hermes Web UI  | Infrastructure | 127.0.0.1:8642               | HTTP (conditional) |
 | Audiobookshelf | Media          | localhost:13378/healthcheck  | HTTP (conditional) |
+| SparkyFitness  | Health         | sparkyfitness.cinnamon-rooster.ts.net | HTTPS (conditional) |
 
 ## Adding New Endpoints
 
