@@ -1,0 +1,13 @@
+diff --git a/crates/app/Cargo.toml b/crates/app/Cargo.toml
+index 6864e4e..b944977 100644
+--- a/crates/app/Cargo.toml
++++ b/crates/app/Cargo.toml
+@@ -15,7 +15,7 @@
+ gh = { path = "../gh" }
+ git = { path = "../git" }
+ syntax = { path = "../syntax" }
+-gpui = "0.2"
++gpui = { version = "0.2", features = ["runtime_shaders"] }
+ gpui-component = "0.5"
+ gpui-component-assets = "0.5"
+ # Must match gpui-component's lsp-types so its CompletionProvider signatures line up.
