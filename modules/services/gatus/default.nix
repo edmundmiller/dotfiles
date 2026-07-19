@@ -214,6 +214,15 @@ let
               conditions = [ "[STATUS] == 200" ];
             }
           ]
+          ++ optionals config.modules.services.sparkyfitness.enable [
+            (withAlerts {
+              name = "SparkyFitness";
+              group = "Health";
+              url = "https://sparkyfitness.cinnamon-rooster.ts.net/";
+              interval = "60s";
+              conditions = [ "[STATUS] == 200" ];
+            })
+          ]
           ++ optionals config.modules.services.audiobookshelf.enable [
             {
               name = "Audiobookshelf";

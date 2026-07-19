@@ -116,6 +116,10 @@ in
     edmundmiller
     nuc
   ];
+  "sparkyfitness-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "hass-secrets.age".publicKeys = [
     edmundmiller
     nuc
