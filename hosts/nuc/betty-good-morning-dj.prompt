@@ -1,0 +1,5 @@
+Play the Spotify playlist named exactly "Good Morning" on the Kitchen player through Home Assistant's Music Assistant integration. Then add five complementary upbeat tracks to that Music Assistant queue. Use Spotify search for curation, but do not use Spotify Connect for playback. Fail clearly if the playlist, player, or Music Assistant is unavailable.
+
+After the work succeeds, your FINAL message must be exactly one JSON object (no markdown fences, no prose) with this shape:
+{"ok":true,"playlist":"Good Morning","playlist_uri":"<spotify or Music Assistant playlist uri>","added_uris":["<uri1>","<uri2>","<uri3>","<uri4>","<uri5>"]}
+playlist_uri must identify the exact playlist named "Good Morning" (never null). added_uris must be the five tracks you newly enqueued (spotify:track:... or Music Assistant spotify--...://track/... forms). If you fail, emit {"ok":false,"error":"..."}.
