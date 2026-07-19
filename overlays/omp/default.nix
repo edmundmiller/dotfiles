@@ -8,6 +8,7 @@ let
         patches = [
           ./patches/0001-add-herdr-hunk-internal-urls.patch
           ./patches/0002-add-nextflow-ast-grep-language.patch
+          ./patches/0003-fix-bundled-extension-imports.patch
         ];
       };
     in
