@@ -20,6 +20,11 @@ let
   goodMorningScript = cfg.services.home-assistant.config.script.good_morning;
   goodMorningShellCommand =
     cfg.services.home-assistant.config.shell_command.hermes_betty_good_morning_dj;
+  bettyBookPlayerHelper = builtins.readFile bettyAgentSpec.automations.bookPlayer.helper;
+  bettyProfile = cfg.services.hermes-agent.profiles.betty;
+  bookPlayerStart = cfg.services.home-assistant.config.script.book_player_start;
+  bookPlayerPause = cfg.services.home-assistant.config.script.book_player_pause;
+  bookPlayerResume = cfg.services.home-assistant.config.script.book_player_resume;
 
   inherit (pkgs.lib) concatStringsSep hasInfix;
 
@@ -176,6 +181,49 @@ let
       msg = "Betty cron and Good Morning DJ executors must share an exclusive profile lock.";
     }
     {
+      test = builtins.any (p: hasInfix "betty-book-player" (toString p)) bettyProfile.extraPackages;
+      msg = "Betty must receive the book-player CLI.";
+    }
+    {
+      test =
+        hasInfix "music/audiobooks/library_items" bettyBookPlayerHelper
+        && hasInfix "script/book_player_{action}" bettyBookPlayerHelper
+        && hasInfix "player_queues/get" bettyBookPlayerHelper
+        && hasInfix "MUSIC_ASSISTANT_TOKEN" bettyBookPlayerHelper
+        && hasInfix "dry-run" bettyBookPlayerHelper;
+      msg = "Betty book player must resolve exact MA library identity, support dry runs, and verify queue state.";
+    }
+    {
+      test =
+        bookPlayerStart.fields.book_uri.required
+        && bookPlayerStart.fields.player_entity_id.required
+        && builtins.any (
+          action:
+          (action.action or "") == "music_assistant.play_media"
+          && action.target.entity_id == "{{ player_entity_id }}"
+          && action.data.media_id == "{{ book_uri }}"
+          && action.data.media_type == "audiobook"
+          && action.data.enqueue == "replace"
+        ) bookPlayerStart.sequence;
+      msg = "Home Assistant book start must replace the selected MA player's queue with an audiobook URI.";
+    }
+    {
+      test = builtins.any (
+        action:
+        (action.action or "") == "media_player.media_pause"
+        && action.target.entity_id == "{{ player_entity_id }}"
+      ) bookPlayerPause.sequence;
+      msg = "Home Assistant book pause must target the selected MA player.";
+    }
+    {
+      test = builtins.any (
+        action:
+        (action.action or "") == "media_player.media_play"
+        && action.target.entity_id == "{{ player_entity_id }}"
+      ) bookPlayerResume.sequence;
+      msg = "Home Assistant book resume must target the selected MA player.";
+    }
+    {
       test = builtins.elem "music_assistant" cfg.services.home-assistant.extraComponents;
       msg = "Home Assistant must package the Music Assistant integration.";
     }
@@ -195,6 +243,8 @@ pkgs.runCommand "nuc-hermes-cron-executors" { } ''
   EOF
     exit 1
   fi
+
+  ${pkgs.python3}/bin/python ${bettyAgentSpec.automations.bookPlayer.helper} selfcheck
 
   mkdir -p "$out"
   echo "NUC Hermes cron executor assertions passed" > "$out/result"
