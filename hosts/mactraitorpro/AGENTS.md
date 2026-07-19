@@ -1,3 +1,11 @@
+---
+purpose: Route agents for the personal MacTraitor-Pro nix-darwin host.
+applies_to: Changes under hosts/mactraitorpro or MacTraitor-Pro rebuilds.
+entrypoint: Read default.nix, then hey re from the repo root.
+verification: hey check and sudo darwin-rebuild switch --flake .
+update_when: Host modules, username, rebuild, or recovery steps change.
+---
+
 # MacTraitor-Pro (Personal Mac)
 
 Primary personal development machine running nix-darwin.
@@ -35,6 +43,5 @@ No agenix secrets on this host (credentials in 1Password). Hermes Desktop is ins
 
 - `default.nix` — host config
 - `homebrew.nix` — casks, formulae, MAS apps
-- `notes.org` — scratchpad
 - `modules/desktop/macos/` — shared macOS defaults (dock, finder, trackpad, Siri off, etc.)
 - `hosts/AGENTS.md` — cross-host rules (usernames, secrets)

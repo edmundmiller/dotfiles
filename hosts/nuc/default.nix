@@ -1799,13 +1799,6 @@ in
       tmux.enable = true;
       zsh.enable = true;
       herdr.enable = true;
-
-      ai = {
-        enable = true;
-        enableClaude = true;
-        enableCodex = true;
-      };
-
     };
     agents = {
       codex.enable = true;
