@@ -1,5 +1,9 @@
 # Regression contract for the 2026-07 Betty scheduler outage.
-{ nixosConfig, pkgs }:
+{
+  nixosConfig,
+  pkgs,
+  bettyAgentSpec,
+}:
 let
   cfg = nixosConfig.config;
   bettyService = cfg.systemd.services.hermes-betty-cron-tick;
@@ -8,9 +12,9 @@ let
   bettySecretMaterialization = cfg.system.activationScripts.hermesBettySecretsMaterialize.text;
   bettyGoodMorningDj = cfg.systemd.services.hermes-betty-good-morning-dj;
   bettyGoodMorningDjExecStart = toString bettyGoodMorningDj.serviceConfig.ExecStart;
-  # Source-of-truth helper/prompt (not Linux store paths — cross-eval safe).
-  bettyGoodMorningDjHelper = builtins.readFile ../betty-good-morning-dj.py;
-  bettyGoodMorningDjPrompt = builtins.readFile ../betty-good-morning-dj.prompt;
+  # Canonical agent-owned helper/prompt (not Linux store paths — cross-eval safe).
+  bettyGoodMorningDjHelper = builtins.readFile bettyAgentSpec.automations.goodMorningDj.helper;
+  bettyGoodMorningDjPrompt = builtins.readFile bettyAgentSpec.automations.goodMorningDj.prompt;
   bettyGoodMorningDjAll =
     bettyGoodMorningDjHelper + "\n" + bettyGoodMorningDjPrompt + "\n" + bettyGoodMorningDjExecStart;
   goodMorningScript = cfg.services.home-assistant.config.script.good_morning;
