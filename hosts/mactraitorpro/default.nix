@@ -147,7 +147,8 @@ in
               "opencode-go/glm-5.2"
             ];
             smol = [
-              "openai-codex/gpt-5.4-mini"
+              "openai-codex/gpt-5.6-luna"
+              "openai-codex/gpt-5.6-terra"
               "opencode-go/deepseek-v4-flash"
             ];
           };
