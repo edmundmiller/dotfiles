@@ -114,16 +114,19 @@ in
           enable = true;
           # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex, google-antigravity.
           # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
-          # Roles: Sol executor/advisor/slow/plan; composer smol; Gemini vision.
-          smolModel = "xai-oauth/grok-composer-2.5-fast";
+          # Roles: Sol default/advisor/slow/plan; Terra smol/task; Luna commit/tiny; Gemini vision.
+          smolModel = "openai-codex/gpt-5.6-terra";
           modelRoles = {
-            smol = "xai-oauth/grok-composer-2.5-fast";
+            smol = "openai-codex/gpt-5.6-terra";
             vision = "google-antigravity/gemini-3-flash";
             default = "openai-codex/gpt-5.6-sol:medium";
             advisor = "openai-codex/gpt-5.6-sol:high";
             slow = "openai-codex/gpt-5.6-sol:xhigh";
             # Shared plan defaults to vibeproxy; override to sol.
             plan = "openai-codex/gpt-5.6-sol:high";
+            task = "openai-codex/gpt-5.6-terra";
+            commit = "openai-codex/gpt-5.6-luna";
+            tiny = "openai-codex/gpt-5.6-luna";
           };
           modelProviderOrder = [
             "openai-codex"
@@ -148,7 +151,6 @@ in
             ];
             smol = [
               "openai-codex/gpt-5.6-luna"
-              "openai-codex/gpt-5.6-terra"
               "opencode-go/deepseek-v4-flash"
             ];
           };
