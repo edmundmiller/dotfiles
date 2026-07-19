@@ -51,4 +51,7 @@ Remove the approved root/package complexity, preserve zsh-bench as a package-own
 
 ## Commits
 
-Pending.
+- `4624c0aea` refactor(zsh-bench): package-owned upstream with BSD script patch
+- `2a08a29e9` chore: remove agent-fleet package and quality path
+- `9aa89b48c` refactor(shell): remove unused shell.ai module
+- `9cff71faf` chore: cut dead root files and simplify flake hosts
