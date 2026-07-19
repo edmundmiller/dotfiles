@@ -87,11 +87,6 @@
       flake = false;
     };
 
-    bholmesdev-skills = {
-      url = "github:bholmesdev/skills";
-      flake = false;
-    };
-
     emilkowalski-skills = {
       url = "github:emilkowalski/skills";
       flake = false;
@@ -493,13 +488,6 @@
                   filter.maxDepth = 1;
                 };
 
-                bholmesdev = {
-                  path = inputs.bholmesdev-skills.outPath;
-                  subdir = "skills";
-                  idPrefix = "bholmesdev";
-                  filter.maxDepth = 1;
-                };
-
                 emilkowalski = {
                   path = inputs.emilkowalski-skills.outPath;
                   subdir = "skills";
@@ -603,9 +591,6 @@
 
                   improve.from = "shadcn-improve";
                   improve.path = "improve";
-
-                  done.from = "bholmesdev";
-                  done.path = "done";
 
                   grill-me = {
                     from = "mattpocock-productivity";
