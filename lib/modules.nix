@@ -33,8 +33,6 @@ rec {
         nameValuePair "" null
     ) (readDir dir);
 
-  mapModules' = dir: fn: attrValues (mapModules dir fn);
-
   mapModulesRec =
     dir: fn:
     mapFilterAttrs (n: v: v != null && !(hasPrefix "_" n)) (
