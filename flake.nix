@@ -943,6 +943,17 @@
                     touch $out
                   '';
 
+              agent-response-contract =
+                pkgs.runCommand "agent-response-contract"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_agent_response_contract.py
+                    touch $out
+                  '';
+
               ast-grep-tests =
                 pkgs.runCommand "ast-grep-tests"
                   {

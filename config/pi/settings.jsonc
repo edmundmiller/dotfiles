@@ -18,6 +18,10 @@
     "reserveTokens": 16384,
     "keepRecentTokens": 24000,
   },
+  // Keep enough output budget for useful branch summaries.
+  "branchSummary": {
+    "reserveTokens": 16384,
+  },
   // Retry configuration
   "retry": {
     "enabled": true,
