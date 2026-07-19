@@ -4,7 +4,7 @@
 
   taps = [
     # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
-    "jnsahaj/lumen" # AI-powered CLI explanations
+    "jnsahaj/lumen" # Diff viewer and code-review TUI
     "keith/formulae" # reminders-cli
     "openclaw/tap" # Discrawl Discord export CLI
     "rockorager/tap" # Prise terminal multiplexer
