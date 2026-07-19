@@ -8,7 +8,6 @@ let
   system = pkgs.stdenv.hostPlatform.system or "x86_64-linux";
   isDarwin = hasSuffix "darwin" system;
   isLinux = hasSuffix "linux" system;
-  isNixOS = isLinux; # For clarity when we specifically mean NixOS
 
   mkUnsupportedPlatformConfig =
     {
@@ -40,22 +39,13 @@ let
       unsupported = isDarwin;
     };
 
-  mkDarwinOnlyConfig =
-    isDarwin: moduleName: enabled: config:
-    mkUnsupportedPlatformConfig {
-      inherit enabled moduleName config;
-      supportedPlatform = "Darwin";
-      unsupported = !isDarwin;
-    };
 in
 {
   inherit
     isDarwin
     isLinux
-    isNixOS
     system
     mkNixOSOnlyConfig
-    mkDarwinOnlyConfig
     ;
 
   # Helper to get the correct home base directory

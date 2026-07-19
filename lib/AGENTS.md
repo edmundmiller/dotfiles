@@ -1,3 +1,11 @@
+---
+purpose: Define conventions for the auto-discovered shared Nix helper library.
+applies_to: Changes under lib/.
+entrypoint: Read the export table, then the helper file being changed.
+verification: Evaluate the affected Darwin or NixOS configuration.
+update_when: Helper exports, discovery behavior, or library conventions change.
+---
+
 # Lib — Nix Helper Library
 
 Shared utility functions exposed as `lib.my.*` throughout the flake. Auto-discovered: every `.nix` file here (except `default.nix`) is imported and merged into a single attribute set.
@@ -10,7 +18,7 @@ Shared utility functions exposed as `lib.my.*` throughout the flake. Auto-discov
 | `attrs.nix`      | `mapFilterAttrs`, `attrsToList`, `anyAttrs`, `countAttrs` | Attribute set manipulation          |
 | `modules.nix`    | `mapModules`, `mapModulesRec`, `mapModulesRec'`           | Auto-discovery of modules and hosts |
 | `nixos.nix`      | `mkHost`, `mapHosts`                                      | Building NixOS host configurations  |
-| `platform.nix`   | `isDarwin`, `isLinux`, `isNixOS`, `homeBase`              | Platform detection helpers          |
+| `platform.nix`   | `isDarwin`, `isLinux`, `homeBase`                         | Platform detection helpers          |
 | `paths.nix`      | Path manipulation utilities                               | File path helpers                   |
 | `generators.nix` | Config file generators                                    | Generating config file formats      |
 
