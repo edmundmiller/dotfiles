@@ -39,6 +39,7 @@ Deploy a pinned, x86_64-linux-compatible SparkyFitness stack on the NUC with tai
 - `hey nuc-wt build` built the NUC generation successfully, including the Compose file, Gatus config, Tailscale Serve unit, agenix secret, and Restic unit.
 - The Linux-only `sparkyfitness-assertions` check passed all 16 assertions on the NUC.
 - Initial `hey nuc dry-activate` correctly refused a stale source base: local HEAD `05eca37b` trails `origin/main` `eb72109b`. Land the implementation commit, rebase, then repeat dry activation.
+- First activation reproduced a deterministic PostgreSQL startup failure: the Alpine image runs PostgreSQL as UID/GID 70, while tmpfiles created its bind mount as root-only. The module now assigns `/var/lib/sparkyfitness/postgresql` to `70:70`, and the eval check locks that runtime requirement.
 
 ## Reviews
 
