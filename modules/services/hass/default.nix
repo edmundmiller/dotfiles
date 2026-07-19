@@ -126,6 +126,7 @@ in
     ./_domains/pura.nix
     ./_domains/reolink.nix
     ./_domains/lighting.nix
+    ./_domains/media.nix
     ./_domains/modes.nix
     ./_domains/sleep
     ./_domains/tv.nix
