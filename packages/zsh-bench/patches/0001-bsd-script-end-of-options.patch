@@ -1,0 +1,11 @@
+--- a/zsh-bench
++++ b/zsh-bench
+@@ -293,7 +293,7 @@
+   local -ir bsd_script=0
+ 
+   function script() {
+-    with-env command script -fqec "${(j: :)@:2}" "$1" >/dev/null
++    with-env command script -fqec "${(j: :)@:2}" -- "$1" >/dev/null
+   }
+ else
+   local -ir bsd_script=1

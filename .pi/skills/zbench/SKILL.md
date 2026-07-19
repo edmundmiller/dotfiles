@@ -60,7 +60,7 @@ benchmarks/zsh-bench/
 ├── <Host>.json              # Current baseline per host
 └── history/
     └── <Host>.tsv           # Append-only history (timestamp, git_rev, metrics)
-packages/zsh-bench.nix       # Nix package (romkatv/zsh-bench with internal/ helpers)
+packages/zsh-bench/           # Nix package (romkatv/zsh-bench with internal/ helpers)
 bin/hey.d/zbench.nu           # Nushell hey subcommands
 bin/zbench-report             # Python — parse, compare, format results
 ```
