@@ -25,9 +25,11 @@ in
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       jujutsu
+      my.jj-forklift
       my.jut
       my.jj-vine
       my.jw
+      my.majjit
     ];
 
     # Use home-manager's xdg.configFile with text to avoid source symlink issues
