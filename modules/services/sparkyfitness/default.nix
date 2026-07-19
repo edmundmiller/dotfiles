@@ -11,7 +11,10 @@ let
   cfg = config.modules.services.sparkyfitness;
   dataDir = "/var/lib/sparkyfitness";
   environmentFile =
-    if cfg.environmentFile == null then "/run/agenix/missing-sparkyfitness-env" else toString cfg.environmentFile;
+    if cfg.environmentFile == null then
+      "/run/agenix/missing-sparkyfitness-env"
+    else
+      toString cfg.environmentFile;
   tailnet = "cinnamon-rooster.ts.net";
   frontendUrl = "https://${cfg.tailscaleService.serviceName}.${tailnet}";
 
