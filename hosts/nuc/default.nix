@@ -115,8 +115,8 @@ let
     exec ${bettyHermesLauncher}/bin/betty-hermes cron tick
   '';
   bettyDjPython = pkgs.python3.withPackages (ps: [ ps.websockets ]);
-  bettyGoodMorningDjHelperText = builtins.readFile ./betty-good-morning-dj.py;
-  bettyGoodMorningDjPrompt = builtins.readFile ./betty-good-morning-dj.prompt;
+  bettyGoodMorningDjHelperText = builtins.readFile bettyAgentSpec.automations.goodMorningDj.helper;
+  bettyGoodMorningDjPrompt = builtins.readFile bettyAgentSpec.automations.goodMorningDj.prompt;
   bettyGoodMorningDjHelper = pkgs.writeText "betty-good-morning-dj.py" bettyGoodMorningDjHelperText;
   bettyGoodMorningDjExecutor = pkgs.writeShellScript "betty-hermes-good-morning-dj" ''
     set -eu
