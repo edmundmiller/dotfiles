@@ -13,9 +13,6 @@ rec {
     pred: f: attrs:
     filterAttrs pred (mapAttrs' f attrs);
 
-  # Generate an attribute set by mapping a function over a list of values.
-  genAttrs' = values: f: listToAttrs (map f values);
-
   # anyAttrs :: (name -> value -> bool) attrs
   anyAttrs = pred: attrs: any (attr: pred attr.name attr.value) (attrsToList attrs);
 
