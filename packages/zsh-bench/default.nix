@@ -15,6 +15,10 @@ stdenvNoCC.mkDerivation {
     hash = "sha256-dsHGpDTweDqJdLhO/9th2kDt56crfjqkTKBilEi9RaY=";
   };
 
+  patches = [
+    ./patches/0001-bsd-script-end-of-options.patch
+  ];
+
   dontBuild = true;
 
   installPhase = ''

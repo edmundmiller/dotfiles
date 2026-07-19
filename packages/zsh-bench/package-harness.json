@@ -1,0 +1,9 @@
+{
+  "source": "https://github.com/romkatv/zsh-bench.git",
+  "ref": "28b1b1bc888159f0a2cf50f9d29381758341aba1",
+  "patches": ["patches/0001-bsd-script-end-of-options.patch"],
+  "checks": [
+    ["test", "-x", "zsh-bench"],
+    ["grep", "-F", "script -fqec \"${(j: :)@:2}\" -- \"$1\"", "zsh-bench"]
+  ]
+}
