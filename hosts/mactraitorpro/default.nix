@@ -56,10 +56,6 @@ in
 
       shell = {
         "1password".enable = true;
-        ai = {
-          enable = true;
-          mcporter.enable = true;
-        };
         amoxide.enable = true;
         agentBrowser.enable = true;
         direnv.enable = true;
