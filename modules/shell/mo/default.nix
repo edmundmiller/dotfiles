@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  isDarwin,
   ...
 }:
 with lib;
@@ -20,12 +21,21 @@ in
     '';
   };
 
-  config = mkIf cfg.enable {
-    # Mole (mo) is distributed via Homebrew only.
-    homebrew.brews = [ "mole" ];
-
-    home.configFile = mkIf (cfg.purgePaths != [ ]) {
-      "mole/purge_paths".text = concatMapStringsSep "\n" (p: p) cfg.purgePaths + "\n";
-    };
-  };
+  config = mkIf cfg.enable (
+    mkMerge (
+      [
+        {
+          home.configFile = mkIf (cfg.purgePaths != [ ]) {
+            "mole/purge_paths".text = concatMapStringsSep "\n" (p: p) cfg.purgePaths + "\n";
+          };
+        }
+      ]
+      ++ optionals isDarwin [
+        {
+          # Mole (mo) is distributed via Homebrew only.
+          homebrew.brews = [ "mole" ];
+        }
+      ]
+    )
+  );
 }
