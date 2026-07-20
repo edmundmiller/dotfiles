@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/NathanFlurry/herdr-plugin-jj-workspace.git",
+  "ref": "a9f1d3bcdaa2354e336a5173da85cbe4970c0f2e",
+  "patches": ["patches/0001-make-jj-workspace-lifecycle-safe.patch"],
+  "checks": [["cargo", "test", "--locked", "--all-targets"]]
+}
