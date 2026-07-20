@@ -17,6 +17,7 @@ let
       ./patches/0008-ignore-zero-terminal-resize.patch # bead: dotfiles-1t6d
       ./patches/0009-defer-background-tab-resize.patch # bead: dotfiles-0qcg
       ./patches/0010-guard-resize-cursor-scrollback.patch # bead: dotfiles-h89w
+      ./patches/0011-grapheme-crash-diagnostics.patch # temporary crash forensics
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
