@@ -44,7 +44,6 @@ class NucHermesRuntimeTest(unittest.TestCase):
         self.assertIn('HERMES_REAL_HOME = "/var/lib/hermes-scintillate"', service)
         self.assertIn('TERMINAL_HOME_MODE = "real"', service)
 
-    @unittest.expectedFailure
     def test_scintillate_login_snapshot_restores_profile_hermes_home(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         profile_start = source.index("scintillate = {")
