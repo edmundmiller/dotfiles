@@ -462,6 +462,7 @@
               };
               check-merge-conflicts = {
                 enable = true;
+                args = [ "--assume-in-merge" ];
                 stages = [ "pre-commit" ];
               };
               check-flake-portability = {
