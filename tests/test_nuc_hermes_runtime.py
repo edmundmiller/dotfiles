@@ -44,6 +44,21 @@ class NucHermesRuntimeTest(unittest.TestCase):
         self.assertIn('HERMES_REAL_HOME = "/var/lib/hermes-scintillate"', service)
         self.assertIn('TERMINAL_HOME_MODE = "real"', service)
 
+    @unittest.expectedFailure
+    def test_scintillate_login_snapshot_restores_profile_hermes_home(self):
+        source = (ROOT / "hosts/nuc/default.nix").read_text()
+        profile_start = source.index("scintillate = {")
+        profile_end = source.index("amosburton = {", profile_start)
+        profile = source[profile_start:profile_end]
+
+        self.assertIn("scintillateTerminalInit = pkgs.writeText", source)
+        self.assertIn(
+            "export HERMES_HOME=/var/lib/hermes-scintillate/.hermes", source
+        )
+        self.assertIn(
+            'shell_init_files = [ "${scintillateTerminalInit}" ];', profile
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
