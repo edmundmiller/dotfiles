@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { evaluateToolGuard } from "./index";
@@ -7,7 +7,7 @@ import { evaluateToolGuard } from "./index";
 const repoPolicyPath = join(import.meta.dir, "../../../config/pi/pi-permission-system.jsonc");
 
 describe("pi-command-policy-bridge", () => {
-  it("does not block git commands", () => {
+  it("allows git mutations outside jj repositories", () => {
     const decision = evaluateToolGuard({
       toolName: "bash",
       input: { command: "git add ." },
@@ -15,13 +15,72 @@ describe("pi-command-policy-bridge", () => {
     expect(decision.kind).toBe("allow");
   });
 
-  it("allows jj_vcs align_push without prompting", () => {
-    const decision = evaluateToolGuard({
-      toolName: "jj_vcs",
-      input: { action: "align_push" },
-      workingDirectory: process.cwd(),
-    });
-    expect(decision.kind).toBe("allow");
+  it("blocks git mutations inside jj repositories with a jj replacement", () => {
+    const dir = mkdtempSync(join(tmpdir(), "pi-jj-policy-test-"));
+    mkdirSync(join(dir, ".jj"));
+    try {
+      for (const command of [
+        "git add .",
+        "git commit -m feature",
+        "git reset --hard HEAD~1",
+        "git checkout main",
+        "git rebase main",
+        "git merge feature",
+        "git push origin main",
+        "git pull --rebase",
+        "git restore state.txt",
+        "git clean -fd",
+        "git cherry-pick deadbeef",
+      ]) {
+        const decision = evaluateToolGuard({
+          toolName: "bash",
+          input: { command },
+          workingDirectory: dir,
+        });
+        expect(decision.kind).toBe("deny");
+        if (decision.kind === "deny") expect(decision.reason).toContain("jj");
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("allows read-only git inspection inside jj repositories", () => {
+    const dir = mkdtempSync(join(tmpdir(), "pi-jj-policy-test-"));
+    mkdirSync(join(dir, ".jj"));
+    try {
+      for (const command of ["git status", "git diff", "git log -1", "git show HEAD"]) {
+        const decision = evaluateToolGuard({
+          toolName: "bash",
+          input: { command },
+          workingDirectory: dir,
+        });
+        expect(decision.kind).toBe("allow");
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("guards jj_vcs align_push but allows status", () => {
+    const dir = mkdtempSync(join(tmpdir(), "pi-jj-policy-test-"));
+    mkdirSync(join(dir, ".jj"));
+    try {
+      const guarded = evaluateToolGuard({
+        toolName: "jj_vcs",
+        input: { action: "align_push" },
+        workingDirectory: dir,
+      });
+      expect(guarded.kind).toBe("deny");
+      const status = evaluateToolGuard({
+        toolName: "jj_vcs",
+        input: { action: "status" },
+        workingDirectory: dir,
+      });
+      expect(status.kind).toBe("allow");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("allows commands with no readable bash policy", () => {
