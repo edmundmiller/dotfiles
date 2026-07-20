@@ -131,17 +131,18 @@ type = "plugin_action"
 command = "nathanflurry.jj-workspace.new"
 description = "new jj workspace"
 
-[[keys.command]]
-key = "prefix+A"
-type = "plugin_action"
-command = "nathanflurry.jj-workspace.new-tab"
-description = "new jj workspace in a tab"
 
 [[keys.command]]
 key = "prefix+d"
 type = "plugin_action"
 command = "nathanflurry.jj-workspace.remove"
-description = "remove jj workspace"
+description = "remove clean jj workspace after PR closes"
+
+[[keys.command]]
+key = "prefix+D"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.abandon"
+description = "abandon clean jj workspace with typed confirmation"
 
 [[keys.command]]
 key = "prefix+T"

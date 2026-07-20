@@ -1,3 +1,11 @@
+---
+purpose: Explain the managed Herdr configuration and task-workspace workflow.
+applies_to: People changing or operating Herdr in these dotfiles.
+entrypoint: Start with config/herdr/config.toml.
+verification: Rebuild, reload config, and inspect plugin and tab state.
+update_when: Herdr keys, plugins, lifecycle, or runtime paths change.
+---
+
 # Herdr
 
 This directory tracks the user-facing Herdr config for these dotfiles.
@@ -14,7 +22,7 @@ In this repo, the tracked source is:
 config/herdr/config.toml
 ```
 
-`modules/shell/herdr.nix` uses that file as the template/source for the live config.
+`modules/shell/herdr/default.nix` uses that file as the template/source for the live config.
 
 ## Why the live config is writable
 
@@ -23,7 +31,7 @@ Unlike most files under `config/`, Herdr's live config is not a read-only symlin
 Because of that:
 
 - make intentional config changes in `config/herdr/config.toml`
-- keep `modules/shell/herdr.nix` in sync when adding managed keys/helpers
+- keep `modules/shell/herdr/default.nix` in sync when adding managed keys/helpers
 - do not track transient Herdr state like `onboarding = false`
 
 ## Current keybindings
@@ -69,26 +77,25 @@ Custom/current mappings:
 | `prefix+u`                        | Dotfiles Hunk split         |
 | `prefix+U`                        | Dotfiles Hunk tab           |
 | `prefix+a`                        | New jj workspace            |
-| `prefix+A`                        | New jj workspace in tab     |
-| `prefix+d`                        | Remove jj workspace         |
+| `prefix+d`                        | Remove clean closed-PR jj workspace |
+| `prefix+D`                        | Abandon clean jj workspace with typed confirmation |
 | `prefix+T`                        | Agent timeline              |
 | `prefix+R`                        | Refresh GitHub PR status    |
 | `prefix+I`                        | Start GitHub issue workflow |
 | `prefix+O`                        | Start from GitHub item      |
 
-Herdr defaults still provide other common actions such as rename workspace, rename tab, close tab, and close workspace. `prefix+g` uses Herdr's native worktree prompt; after creation, the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event to seed the configured coding agent, Hunk, Neovim, and shell tabs. `prefix+G` opens existing worktrees.
+Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin handles `workspace_created` and `worktree_created`, creating exactly OMP and Hunk tabs and focusing OMP.
 
 ## Plugins
 
-Dotfiles-specific helper behavior lives in local Herdr plugins under `config/herdr/plugins/` and is registered by `modules/shell/herdr/default.nix`:
+Dotfiles-specific helpers live under `packages/herdr-plugins/` and are registered by `modules/shell/herdr/default.nix`:
 
 - `dotfiles.agent-read-command` — copies a `herdr agent read ...` command from pane/tab context menus.
-- `dotfiles.dev-layout` — provides `prefix+u`/`prefix+U` Hunk actions plus the `worktree.created` dev-layout bootstrap action.
-- `dotfiles.github-link-preview` — registers a GitHub issue/PR link handler that opens `gh issue view` or `gh pr view` in a Herdr side pane.
+- `dotfiles.dev-layout` — provides Hunk actions plus the idempotent two-tab checkout bootstrap.
+- `dotfiles.github-link-preview` — opens GitHub issue/PR previews in a Herdr side pane.
 
-Marketplace/GitHub plugins are installed by activation when missing:
+The jj workspace plugin is pinned to `edmundmiller/herdr-plugin-jj-workspace` commit `ec8fde27e0cf4664012b585ebc2dc7cb0934ee1b` while upstream PR #4 is open. Activation installs other marketplace plugins when missing:
 
-- `NathanFlurry/herdr-plugin-jj-workspace`
 - `smarzban/herdr-file-viewer`
 - `dutifuldev/ghzinga/plugins/herdr`
 - `dcolinmorgan/herdr-remote/relay`
