@@ -1,0 +1,1314 @@
+From ec8fde27e0cf4664012b585ebc2dc7cb0934ee1b Mon Sep 17 00:00:00 2001
+From: Edmund Miller <20095261+edmundmiller@users.noreply.github.com>
+Date: Sun, 19 Jul 2026 18:41:38 -0500
+Subject: [PATCH] fix: make jj workspace lifecycle safe
+
+---
+ herdr-plugin.toml      |  13 +
+ src/main.rs            | 980 +++++++++++++++++++++++++++++++++++------
+ tests/remove_guards.rs |  79 ++++
+ 3 files changed, 944 insertions(+), 128 deletions(-)
+ create mode 100644 tests/remove_guards.rs
+
+diff --git a/herdr-plugin.toml b/herdr-plugin.toml
+index ab3b021..f4ae808 100644
+--- a/herdr-plugin.toml
++++ b/herdr-plugin.toml
+@@ -37,3 +37,16 @@ id = "remove"
+ title = "Remove jj workspace"
+ contexts = ["workspace"]
+ command = ["./target/release/jj-workspace", "remove"]
++
++# Explicitly abandon a clean workspace after typing its exact task name.
++[[actions]]
++id = "abandon"
++title = "Abandon jj workspace"
++contexts = ["workspace"]
++command = ["./target/release/jj-workspace", "open-abandon"]
++
++[[panes]]
++id = "abandon-wizard"
++title = "Abandon jj workspace"
++placement = "overlay"
++command = ["./target/release/jj-workspace", "abandon"]
+diff --git a/src/main.rs b/src/main.rs
+index 3103e97..abd7c98 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -38,9 +38,12 @@ fn main() {
+         Some("open") => cmd_open(args.get(2).map(String::as_str).unwrap_or("workspace")),
+         Some("wizard") => cmd_wizard(),
+         Some("remove") => cmd_remove(),
+-        other => {
+-            eprintln!("usage: jj-workspace <open [workspace|tab] | wizard | remove>");
+-            eprintln!("got: {other:?}");
++        Some("open-abandon") => cmd_open_abandon(),
++        Some("abandon") => cmd_abandon(),
++        _ => {
++            eprintln!(
++                "usage: jj-workspace <open [workspace|tab] | wizard | remove | open-abandon | abandon>"
++            );
+             process::exit(2);
+         }
+     }
+@@ -55,12 +58,20 @@ fn cmd_open(mode: &str) -> ! {
+         .unwrap_or_default();
+
+     let mut cmd = Command::new(herdr_bin());
+-    cmd.args(["plugin", "pane", "open", "--plugin", &plugin_id(), "--entrypoint", "wizard"])
+-        .arg("--env")
+-        .arg(format!("JJ_REPO={repo}"))
+-        .arg("--env")
+-        .arg(format!("JJ_OPEN={mode}"))
+-        .arg("--focus");
++    cmd.args([
++        "plugin",
++        "pane",
++        "open",
++        "--plugin",
++        &plugin_id(),
++        "--entrypoint",
++        "wizard",
++    ])
++    .arg("--env")
++    .arg(format!("JJ_REPO={repo}"))
++    .arg("--env")
++    .arg(format!("JJ_OPEN={mode}"))
++    .arg("--focus");
+     match cmd.status() {
+         Ok(status) => process::exit(status.code().unwrap_or(0)),
+         Err(err) => {
+@@ -94,69 +105,102 @@ fn cmd_wizard() -> ! {
+     let repo_name = basename(&repo);
+     let root = workspaces_root();
+     let default_branch = generated_name(seed());
++    let default_base = config_value("JJ_BASE_REV").unwrap_or_else(|| "trunk()".into());
+
+     // Run the ported worktree modal; None = the user pressed esc.
+-    let branch = match run_wizard(&repo_name, &root, default_branch) {
+-        Ok(Some(branch)) => branch,
++    let spec = match run_wizard(&repo_name, &root, default_branch, default_base) {
++        Ok(Some(spec)) => spec,
+         Ok(None) => process::exit(0),
+         Err(err) => fail(&format!("terminal error: {err}")),
+     };
+
+-    let slug = branch_to_path_slug(&branch);
++    if let Err(err) = create_workspace(&repo, &root, &spec.name, &spec.base, &mode) {
++        fail(&err);
++    }
++    process::exit(0);
++}
++
++fn create_workspace(
++    repo: &str,
++    root: &Path,
++    branch: &str,
++    base: &str,
++    mode: &str,
++) -> Result<(), String> {
++    if !valid_workspace_name(branch) {
++        return Err(workspace_name_error());
++    }
++    if base.trim().is_empty() {
++        return Err("base revision cannot be empty".into());
++    }
++    let repo_name = basename(repo);
++    let slug = branch_to_path_slug(branch);
+     let dest_path = root.join(&repo_name).join(&slug);
+     if dest_path.exists() {
+-        fail(&format!("checkout already exists: {}", dest_path.display()));
++        return Err(format!("checkout already exists: {}", dest_path.display()));
+     }
+     // jj workspace add does not create intermediate dirs (Herdr create_dir_all's
+     // the parent before `git worktree add` for the same reason).
+     if let Some(parent) = dest_path.parent() {
+-        if let Err(err) = fs::create_dir_all(parent) {
+-            fail(&format!("could not create {}: {err}", parent.display()));
+-        }
++        fs::create_dir_all(parent)
++            .map_err(|err| format!("could not create {}: {err}", parent.display()))?;
+     }
+     let dest = dest_path.display().to_string();
+
+-    // Fetch so the new workspace starts from the latest origin main, not
+-    // whatever the local repo last saw. Non-fatal: offline still works, the
+-    // base is just whatever trunk() already points at locally.
+-    eprintln!("+ jj git fetch");
+-    let mut fetch = Command::new("jj");
+-    fetch.current_dir(&repo).args(["git", "fetch"]);
+-    if !run(fetch) {
+-        eprintln!("warning: jj git fetch failed; basing workspace on the local trunk");
+-    }
+-
+-    // Base the new workspace's working copy on origin's main. trunk() is jj's
+-    // builtin alias for main@origin / master@origin. JJ_BASE_REV overrides.
+-    let base = config_value("JJ_BASE_REV").unwrap_or_else(|| "trunk()".into());
+-
+-    // jj allows a slash in workspace names, so keep the full `workspace/<name>`
+-    // for both the workspace and the bookmark.
++    // Use the revision selected in the wizard without changing remote-tracking
++    // state. Fetching is reserved for the explicit publish workflow.
+     eprintln!("+ jj workspace add --name {branch} -r {base} {dest}");
+     let mut add = Command::new("jj");
+-    add.current_dir(&repo)
+-        .args(["workspace", "add", "--name", &branch, "-r", &base, &dest]);
+-    run_or(add, "jj workspace add", fail);
++    add.current_dir(repo)
++        .args(["workspace", "add", "--name", branch, "-r", base, &dest]);
++    if !run(add) {
++        return Err("jj workspace add failed".into());
++    }
+
+-    // Mirror Herdr's worktree branch with a jj bookmark of the same name (non-fatal).
++    // The task bookmark is the workspace identity and must exist before the
++    // checkout is exposed through Herdr.
+     let mut bookmark = Command::new("jj");
+-    bookmark.current_dir(&dest).args(["bookmark", "create", &branch, "-r", "@"]);
++    bookmark
++        .current_dir(&dest)
++        .args(["bookmark", "create", branch, "-r", "@"]);
+     if !run(bookmark) {
+-        eprintln!("warning: could not create bookmark {branch} (workspace still created)");
++        return Err(rollback_failure_message(
++            repo,
++            &dest_path,
++            branch,
++            false,
++            "could not create the task bookmark",
++        ));
+     }
+
+     let herdr = herdr_bin();
+     let mut open = Command::new(&herdr);
+     if mode == "tab" {
+         eprintln!("+ herdr tab create --cwd {dest}");
+-        open.args(["tab", "create", "--cwd", &dest, "--label", &branch, "--focus"]);
+-        let output = match open.output() {
+-            Ok(output) => output,
+-            Err(err) => fail(&format!("herdr tab create failed to start: {err}")),
+-        };
++        open.args([
++            "tab", "create", "--cwd", &dest, "--label", branch, "--focus",
++        ]);
++        let output = open.output().map_err(|err| {
++            rollback_failure_message(
++                repo,
++                &dest_path,
++                branch,
++                true,
++                &format!("herdr tab create failed to start: {err}"),
++            )
++        })?;
+         io::stderr().write_all(&output.stderr).ok();
+         if !output.status.success() {
+-            fail(&format!("herdr tab create failed (exit {})", output.status.code().unwrap_or(-1)));
++            return Err(rollback_failure_message(
++                repo,
++                &dest_path,
++                branch,
++                true,
++                &format!(
++                    "herdr tab create failed (exit {})",
++                    output.status.code().unwrap_or(-1)
++                ),
++            ));
+         }
+         // When this wizard's overlay pane exits, herdr restores focus to the
+         // tab the overlay was opened from, clobbering --focus. Re-focus the new
+@@ -182,61 +226,326 @@ fn cmd_wizard() -> ! {
+         }
+     } else {
+         eprintln!("+ herdr workspace create --cwd {dest}");
+-        open.args(["workspace", "create", "--cwd", &dest, "--label", &branch, "--focus"]);
+-        run_or(open, "herdr workspace create", fail);
++        open.args([
++            "workspace",
++            "create",
++            "--cwd",
++            &dest,
++            "--label",
++            branch,
++            "--focus",
++        ]);
++        if !run(open) {
++            return Err(rollback_failure_message(
++                repo,
++                &dest_path,
++                branch,
++                true,
++                "herdr workspace create failed",
++            ));
++        }
+     }
+-    process::exit(0);
++    Ok(())
+ }
+
+-/// Action (headless): forget the current jj workspace, delete it, close in Herdr.
+-fn cmd_remove() -> ! {
+-    if which("jj").is_none() {
+-        die("jj not found on PATH");
++fn rollback_failure_message(
++    repo: &str,
++    destination: &Path,
++    branch: &str,
++    bookmark_exists: bool,
++    reason: &str,
++) -> String {
++    match rollback_empty_workspace(repo, destination, branch, bookmark_exists) {
++        Ok(()) => format!(
++            "{reason}; rolled back the empty workspace at {}",
++            destination.display()
++        ),
++        Err(rollback) => format!("{reason}; {rollback}"),
+     }
++}
++
++fn rollback_empty_workspace(
++    repo: &str,
++    destination: &Path,
++    branch: &str,
++    bookmark_exists: bool,
++) -> Result<(), String> {
++    if !workspace_is_empty(destination) {
++        return Err(format!(
++            "preserved non-empty workspace at {} for recovery",
++            destination.display()
++        ));
++    }
++
++    let mut forget = Command::new("jj");
++    forget
++        .current_dir(repo)
++        .args(["workspace", "forget", branch]);
++    if !run(forget) {
++        return Err(format!(
++            "could not forget empty workspace {}; preserved {}",
++            branch,
++            destination.display()
++        ));
++    }
++
++    let bookmark_error = if bookmark_exists {
++        let mut bookmark = Command::new("jj");
++        bookmark
++            .current_dir(repo)
++            .args(["bookmark", "delete", branch]);
++        (!run(bookmark)).then(|| format!("could not delete task bookmark {branch}"))
++    } else {
++        None
++    };
++    fs::remove_dir_all(destination).map_err(|err| {
++        format!(
++            "could not delete empty workspace {}: {err}",
++            destination.display()
++        )
++    })?;
++    match bookmark_error {
++        Some(error) => Err(format!(
++            "{error}; removed the empty workspace at {}",
++            destination.display()
++        )),
++        None => Ok(()),
++    }
++}
++
++fn workspace_is_empty(cwd: &Path) -> bool {
++    let output = Command::new("jj")
++        .current_dir(cwd)
++        .args(["log", "-r", "@ ~ empty()", "--no-graph", "-T", "commit_id"])
++        .output();
++    matches!(output, Ok(output) if output.status.success() && output.stdout.iter().all(u8::is_ascii_whitespace))
++}
++
++enum RemovalPolicy<'a> {
++    ClosedPullRequest,
++    Abandon { typed_name: &'a str },
++}
++
++fn removal_context() -> (String, Option<String>) {
+     let ctx = env::var("HERDR_PLUGIN_CONTEXT_JSON").unwrap_or_default();
+-    let ws = env::var("HERDR_WORKSPACE_ID")
++    let workspace_id = env::var("HERDR_WORKSPACE_ID")
+         .ok()
+-        .filter(|s| !s.is_empty())
++        .filter(|value| !value.is_empty())
+         .or_else(|| json_string_field(&ctx, "workspace_id"));
+     let cwd = json_string_field(&ctx, "workspace_cwd").unwrap_or_default();
+-    if cwd.is_empty() {
+-        die("no workspace cwd in context");
++    (cwd, workspace_id)
++}
++
++fn cmd_open_abandon() -> ! {
++    let (cwd, workspace_id) = removal_context();
++    let mut command = Command::new(herdr_bin());
++    command
++        .args([
++            "plugin",
++            "pane",
++            "open",
++            "--plugin",
++            &plugin_id(),
++            "--entrypoint",
++            "abandon-wizard",
++        ])
++        .arg("--env")
++        .arg(format!("JJ_ABANDON_CWD={cwd}"))
++        .arg("--env")
++        .arg(format!(
++            "JJ_ABANDON_WORKSPACE_ID={}",
++            workspace_id.unwrap_or_default()
++        ))
++        .arg("--focus");
++    match command.status() {
++        Ok(status) => process::exit(status.code().unwrap_or(0)),
++        Err(err) => die(&format!("failed to open abandon confirmation: {err}")),
+     }
++}
+
+-    let canon = match fs::canonicalize(&cwd) {
+-        Ok(p) => p,
+-        Err(err) => die(&format!("cannot resolve {cwd}: {err}")),
++fn cmd_abandon() -> ! {
++    let cwd = env::var("JJ_ABANDON_CWD").unwrap_or_default();
++    let workspace_id = env::var("JJ_ABANDON_WORKSPACE_ID")
++        .ok()
++        .filter(|value| !value.is_empty());
++    let typed_name = prompt("type the exact task name to abandon: ");
++    let canon = match remove_workspace(
++        &cwd,
++        workspace_id.as_deref(),
++        RemovalPolicy::Abandon {
++            typed_name: &typed_name,
++        },
++    ) {
++        Ok(canon) => canon,
++        Err(err) => fail(&err),
++    };
++    println!("abandoned jj workspace: {}", canon.display());
++    process::exit(0);
++}
++
++/// Action (headless): forget the current clean jj workspace, delete it, and close in Herdr.
++fn cmd_remove() -> ! {
++    if which("jj").is_none() {
++        die("jj not found on PATH");
++    }
++    let (cwd, workspace_id) = removal_context();
++    let canon = match remove_workspace(
++        &cwd,
++        workspace_id.as_deref(),
++        RemovalPolicy::ClosedPullRequest,
++    ) {
++        Ok(canon) => canon,
++        Err(err) => die(&err),
+     };
++    println!("removed jj workspace: {}", canon.display());
++    process::exit(0);
++}
++
++fn remove_workspace(
++    cwd: &str,
++    workspace_id: Option<&str>,
++    policy: RemovalPolicy<'_>,
++) -> Result<PathBuf, String> {
++    if cwd.is_empty() {
++        return Err("no workspace cwd in context".into());
++    }
++    let canon = fs::canonicalize(cwd).map_err(|err| format!("cannot resolve {cwd}: {err}"))?;
+     if !canon.join(".jj").exists() {
+-        die(&format!("{} is not a jj workspace", canon.display()));
++        return Err(format!("{} is not a jj workspace", canon.display()));
+     }
+-    // The MAIN workspace stores .jj/repo as a directory; a secondary workspace
+-    // stores it as a file pointer. Never remove the main workspace.
++    // The main workspace owns the jj store at .jj/repo. This structural guard
++    // remains authoritative even if that workspace is renamed.
+     if canon.join(".jj").join("repo").is_dir() {
+-        die(&format!("refusing to remove the MAIN jj workspace ({})", canon.display()));
++        return Err(format!(
++            "refusing to remove the MAIN jj workspace ({})",
++            canon.display()
++        ));
++    }
++    let name = current_workspace_name(&canon)?;
++    if name == "default" {
++        return Err(format!(
++            "refusing to remove the MAIN jj workspace ({})",
++            canon.display()
++        ));
++    }
++    let expected_slug = branch_to_path_slug(&name);
++    if !valid_branch(&name)
++        || canon.file_name().and_then(|part| part.to_str()) != Some(expected_slug.as_str())
++    {
++        return Err(format!(
++            "refusing to remove workspace with mismatched task identity ({})",
++            canon.display()
++        ));
+     }
+-    if canon == Path::new("/") || canon.parent().is_none() {
+-        die(&format!("refusing to remove unsafe path: {}", canon.display()));
++    if !workspace_is_empty(&canon) {
++        return Err(format!(
++            "refusing to remove changed workspace ({})",
++            canon.display()
++        ));
++    }
++    match policy {
++        RemovalPolicy::ClosedPullRequest if !pull_request_is_closed(&canon, &name)? => {
++            return Err(format!(
++                "refusing to remove {name}: its pull request is still open"
++            ));
++        }
++        RemovalPolicy::Abandon { typed_name } if typed_name != name => {
++            return Err(format!(
++                "refusing to abandon {name}: typed task name did not match"
++            ));
++        }
++        _ => {}
+     }
+
+     let mut forget = Command::new("jj");
+     forget.current_dir(&canon).args(["workspace", "forget"]);
+-    run_or(forget, "jj workspace forget", die);
++    if !run(forget) {
++        return Err("jj workspace forget failed".into());
++    }
++    fs::remove_dir_all(&canon)
++        .map_err(|err| format!("failed to delete {}: {err}", canon.display()))?;
++
++    if let Some(workspace_id) = workspace_id {
++        let mut close = Command::new(herdr_bin());
++        close.args(["workspace", "close", workspace_id]);
++        if !run(close) {
++            return Err(format!(
++                "herdr workspace close failed after deleting {}",
++                canon.display()
++            ));
++        }
++    } else {
++        eprintln!("warning: no workspace id in context; Herdr workspace left open");
++    }
++    Ok(canon)
++}
+
+-    if let Err(err) = fs::remove_dir_all(&canon) {
+-        die(&format!("failed to delete {}: {err}", canon.display()));
++fn pull_request_is_closed(cwd: &Path, branch: &str) -> Result<bool, String> {
++    let output = Command::new("gh")
++        .current_dir(cwd)
++        .args([
++            "pr",
++            "view",
++            branch,
++            "--json",
++            "state,mergedAt",
++            "--jq",
++            "if .mergedAt != null then \"MERGED\" else .state end",
++        ])
++        .output()
++        .map_err(|err| format!("could not verify pull request state: {err}"))?;
++    if !output.status.success() {
++        return Err(format!(
++            "could not verify a closed pull request for {branch}; use explicit abandon if no PR exists"
++        ));
+     }
++    Ok(matches!(
++        String::from_utf8_lossy(&output.stdout).trim(),
++        "CLOSED" | "MERGED"
++    ))
++}
+
+-    match ws {
+-        Some(ws) => {
+-            let mut close = Command::new(herdr_bin());
+-            close.args(["workspace", "close", &ws]);
+-            run_or(close, "herdr workspace close", die);
+-        }
+-        None => eprintln!("warning: no workspace id in context; Herdr workspace left open"),
++fn current_workspace_name(cwd: &Path) -> Result<String, String> {
++    let current = Command::new("jj")
++        .current_dir(cwd)
++        .args(["log", "-r", "@", "--no-graph", "-T", "commit_id"])
++        .output()
++        .map_err(|err| format!("could not identify jj workspace: {err}"))?;
++    if !current.status.success() {
++        return Err("could not identify jj workspace".into());
++    }
++    let current_target = String::from_utf8_lossy(&current.stdout).trim().to_string();
++    if current_target.is_empty() {
++        return Err("could not identify the current jj target".into());
++    }
++
++    let workspaces = Command::new("jj")
++        .current_dir(cwd)
++        .args([
++            "workspace",
++            "list",
++            "-T",
++            "name ++ \"\\t\" ++ target.commit_id() ++ \"\\n\"",
++        ])
++        .output()
++        .map_err(|err| format!("could not list jj workspaces: {err}"))?;
++    if !workspaces.status.success() {
++        return Err("could not list jj workspaces".into());
++    }
++    let expected_slug = cwd.file_name().and_then(|part| part.to_str());
++    let names: Vec<_> = String::from_utf8_lossy(&workspaces.stdout)
++        .lines()
++        .filter_map(|line| line.split_once('\t'))
++        .filter(|(name, target)| {
++            *target == current_target && Some(branch_to_path_slug(name).as_str()) == expected_slug
++        })
++        .map(|(name, _)| name.to_string())
++        .collect();
++    match names.as_slice() {
++        [name] => Ok(name.clone()),
++        [] => Err("could not match the current jj target to a workspace".into()),
++        _ => Err("could not identify a unique jj workspace name".into()),
+     }
+-    println!("removed jj workspace: {}", canon.display());
+-    process::exit(0);
+ }
+
+ // --- wizard TUI (ported from herdr src/ui/dialogs.rs + widgets.rs) ----------
+@@ -267,44 +576,96 @@ fn catppuccin() -> Palette {
+ }
+
+ /// Returns Some(branch) on "create and open", None on cancel (esc / ctrl-c).
+-fn run_wizard(repo_name: &str, root: &Path, initial: String) -> io::Result<Option<String>> {
++#[derive(Clone, Copy, PartialEq, Eq)]
++enum WizardField {
++    Name,
++    Base,
++}
++
++struct WorkspaceSpec {
++    name: String,
++    base: String,
++}
++
++/// Returns the requested workspace on "create and open", or None on cancel.
++fn run_wizard(
++    repo_name: &str,
++    root: &Path,
++    initial_name: String,
++    initial_base: String,
++) -> io::Result<Option<WorkspaceSpec>> {
+     enable_raw_mode()?;
+     let mut out = io::stdout();
+     execute!(out, EnterAlternateScreen)?;
+     let mut terminal = Terminal::new(CrosstermBackend::new(out))?;
+
+-    // The generated name is prefilled but acts as a placeholder: the first edit
+-    // replaces it wholesale (mirrors herdr's `name_input_replace_on_type`).
+-    let mut name = initial;
+-    let mut replace_on_type = true;
++    let mut spec = WorkspaceSpec {
++        name: initial_name,
++        base: initial_base,
++    };
++    let mut field = WizardField::Name;
++    let mut replace_name_on_type = true;
++    let mut replace_base_on_type = true;
+     let mut error: Option<String> = None;
+     let outcome = loop {
+-        let _ = terminal.draw(|frame| draw_wizard(frame, &name, repo_name, root, error.as_deref()));
++        let _ = terminal
++            .draw(|frame| draw_wizard(frame, &spec, field, repo_name, root, error.as_deref()));
+         match event::read() {
+             Ok(Event::Key(key)) if key.kind == KeyEventKind::Press => match key.code {
+                 KeyCode::Esc => break None,
+                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break None,
++                KeyCode::Tab | KeyCode::BackTab => {
++                    field = match field {
++                        WizardField::Name => WizardField::Base,
++                        WizardField::Base => WizardField::Name,
++                    };
++                    error = None;
++                }
+                 KeyCode::Enter => {
+-                    if valid_branch(&name) {
+-                        break Some(name.clone());
++                    if !valid_workspace_name(&spec.name) {
++                        error = Some(workspace_name_error());
++                    } else if spec.base.trim().is_empty() {
++                        error = Some("base revision cannot be empty".into());
++                    } else {
++                        break Some(spec);
+                     }
+-                    error = Some("branch must match [A-Za-z0-9._/-]".into());
+                 }
+                 KeyCode::Backspace => {
+-                    if replace_on_type {
+-                        name.clear();
+-                        replace_on_type = false;
+-                    } else {
+-                        name.pop();
++                    match field {
++                        WizardField::Name if replace_name_on_type => {
++                            spec.name.clear();
++                            replace_name_on_type = false;
++                        }
++                        WizardField::Name => {
++                            spec.name.pop();
++                        }
++                        WizardField::Base if replace_base_on_type => {
++                            spec.base.clear();
++                            replace_base_on_type = false;
++                        }
++                        WizardField::Base => {
++                            spec.base.pop();
++                        }
+                     }
+                     error = None;
+                 }
+                 KeyCode::Char(c) => {
+-                    if replace_on_type {
+-                        name.clear();
+-                        replace_on_type = false;
++                    match field {
++                        WizardField::Name => {
++                            if replace_name_on_type {
++                                spec.name.clear();
++                                replace_name_on_type = false;
++                            }
++                            spec.name.push(c);
++                        }
++                        WizardField::Base => {
++                            if replace_base_on_type {
++                                spec.base.clear();
++                                replace_base_on_type = false;
++                            }
++                            spec.base.push(c);
++                        }
+                     }
+-                    name.push(c);
+                     error = None;
+                 }
+                 _ => {}
+@@ -328,14 +689,21 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io
+ }
+
+ /// Mirrors herdr's `render_new_linked_worktree_overlay`.
+-fn draw_wizard(frame: &mut Frame, name: &str, repo_name: &str, root: &Path, error: Option<&str>) {
++fn draw_wizard(
++    frame: &mut Frame,
++    spec: &WorkspaceSpec,
++    field: WizardField,
++    repo_name: &str,
++    root: &Path,
++    error: Option<&str>,
++) {
+     let p = catppuccin();
+     let area = frame.area();
+     dim_background(frame, area);
+-    let Some(inner) = render_modal_shell(frame, area, 68, 10, &p) else {
++    let Some(inner) = render_modal_shell(frame, area, 68, 12, &p) else {
+         return;
+     };
+-    if inner.height < 7 {
++    if inner.height < 9 {
+         return;
+     }
+
+@@ -347,32 +715,63 @@ fn draw_wizard(frame: &mut Frame, name: &str, repo_name: &str, root: &Path, erro
+         Constraint::Length(1),
+         Constraint::Length(1),
+         Constraint::Length(1),
++        Constraint::Length(1),
++        Constraint::Length(1),
+         Constraint::Min(0),
+     ])
+-    .areas::<8>(inner);
++    .areas::<10>(inner);
+
+     render_modal_header(frame, rows[0], "new jj workspace", &p);
+
+-    frame.render_widget(Paragraph::new(" workspace").style(Style::default().fg(p.overlay0)), rows[1]);
+-    let input_rect = Rect::new(rows[2].x, rows[2].y, rows[2].width, 1);
+-    frame.render_widget(Clear, input_rect);
+     frame.render_widget(
+-        Paragraph::new(format!(" {name}█"))
++        Paragraph::new(" workspace").style(Style::default().fg(p.overlay0)),
++        rows[1],
++    );
++    let name_cursor = if field == WizardField::Name {
++        "█"
++    } else {
++        ""
++    };
++    frame.render_widget(
++        Paragraph::new(format!(" {}{name_cursor}", spec.name))
+             .style(Style::default().fg(p.text).bg(p.surface0)),
+-        input_rect,
++        rows[2],
+     );
+
+-    let checkout = root.join(repo_name).join(branch_to_path_slug(name)).display().to_string();
+-    frame.render_widget(Paragraph::new(" checkout").style(Style::default().fg(p.overlay0)), rows[3]);
+     frame.render_widget(
+-        Paragraph::new(format!(" {checkout}")).style(Style::default().fg(p.subtext0)),
++        Paragraph::new(" base revision  [tab switches fields]")
++            .style(Style::default().fg(p.overlay0)),
++        rows[3],
++    );
++    let base_cursor = if field == WizardField::Base {
++        "█"
++    } else {
++        ""
++    };
++    frame.render_widget(
++        Paragraph::new(format!(" {}{base_cursor}", spec.base))
++            .style(Style::default().fg(p.text).bg(p.surface0)),
+         rows[4],
+     );
+
++    let checkout = root
++        .join(repo_name)
++        .join(branch_to_path_slug(&spec.name))
++        .display()
++        .to_string();
++    frame.render_widget(
++        Paragraph::new(" checkout").style(Style::default().fg(p.overlay0)),
++        rows[5],
++    );
++    frame.render_widget(
++        Paragraph::new(format!(" {checkout}")).style(Style::default().fg(p.subtext0)),
++        rows[6],
++    );
++
+     if let Some(error) = error {
+         frame.render_widget(
+             Paragraph::new(format!(" {error}")).style(Style::default().fg(p.red)),
+-            rows[5],
++            rows[7],
+         );
+     }
+
+@@ -450,9 +849,17 @@ fn render_modal_header(frame: &mut Frame, area: Rect, title: &str, p: &Palette)
+     frame.render_widget(Paragraph::new(line), area);
+ }
+
+-fn render_action_button(frame: &mut Frame, rect: Rect, hint: Option<&str>, label: &str, style: Style) {
++fn render_action_button(
++    frame: &mut Frame,
++    rect: Rect,
++    hint: Option<&str>,
++    label: &str,
++    style: Style,
++) {
+     frame.render_widget(
+-        Paragraph::new(action_button_text(hint, label)).style(style).alignment(Alignment::Center),
++        Paragraph::new(action_button_text(hint, label))
++            .style(style)
++            .alignment(Alignment::Center),
+         rect,
+     );
+ }
+@@ -473,7 +880,9 @@ fn panel_contrast_fg(p: &Palette) -> Color {
+
+ /// Herdr's `new_linked_worktree_button_rects`: a centered "create / cancel" row.
+ fn button_rects(inner: Rect) -> (Rect, Rect) {
+-    let create = action_button_text(Some("↵"), "create and open").chars().count() as u16;
++    let create = action_button_text(Some("↵"), "create and open")
++        .chars()
++        .count() as u16;
+     let cancel = action_button_text(Some("esc"), "cancel").chars().count() as u16;
+     let gap = 2u16;
+     let total = create + cancel + gap;
+@@ -487,10 +896,12 @@ fn button_rects(inner: Rect) -> (Rect, Rect) {
+
+ // --- naming (mirrors src/worktree.rs in herdr) -----------------------------
+
+-const ADJECTIVES: [&str; 8] =
+-    ["brave", "calm", "clear", "green", "lucky", "quiet", "rapid", "silver"];
+-const NOUNS: [&str; 8] =
+-    ["river", "cloud", "field", "forest", "harbor", "meadow", "stone", "valley"];
++const ADJECTIVES: [&str; 8] = [
++    "brave", "calm", "clear", "green", "lucky", "quiet", "rapid", "silver",
++];
++const NOUNS: [&str; 8] = [
++    "river", "cloud", "field", "forest", "harbor", "meadow", "stone", "valley",
++];
+
+ fn generated_name(seed: u64) -> String {
+     let adjective = ADJECTIVES[(seed as usize) % ADJECTIVES.len()];
+@@ -499,6 +910,30 @@ fn generated_name(seed: u64) -> String {
+     format!("workspace/{adjective}-{noun}-{suffix:04x}")
+ }
+
++fn valid_workspace_name(name: &str) -> bool {
++    if !valid_branch(name) {
++        return false;
++    }
++    let Some(prefixes) = config_value("JJ_WORKSPACE_NAME_PREFIXES") else {
++        return true;
++    };
++    prefixes
++        .split(',')
++        .map(str::trim)
++        .filter(|prefix| !prefix.is_empty())
++        .any(|prefix| name.starts_with(prefix))
++}
++
++fn workspace_name_error() -> String {
++    match config_value("JJ_WORKSPACE_NAME_PREFIXES") {
++        Some(prefixes) => format!(
++            "workspace must match [A-Za-z0-9._/-] and start with one of: {}",
++            prefixes
++        ),
++        None => "workspace must match [A-Za-z0-9._/-]".into(),
++    }
++}
++
+ fn branch_to_path_slug(branch: &str) -> String {
+     let mut slug = String::new();
+     let mut last_was_dash = false;
+@@ -546,7 +981,10 @@ fn expand_tilde(path: &str) -> String {
+ // --- helpers ---------------------------------------------------------------
+
+ fn herdr_bin() -> String {
+-    env::var("HERDR_BIN_PATH").ok().filter(|s| !s.is_empty()).unwrap_or_else(|| "herdr".into())
++    env::var("HERDR_BIN_PATH")
++        .ok()
++        .filter(|s| !s.is_empty())
++        .unwrap_or_else(|| "herdr".into())
+ }
+
+ fn plugin_id() -> String {
+@@ -580,7 +1018,11 @@ fn repo_root(workspace: &str) -> String {
+         Err(_) => return workspace.to_string(),
+     };
+     // Pointer is relative to `.jj/`; drop `repo` then `.jj` to reach the root.
+-    let root = jj_dir.join(&pointer).parent().and_then(Path::parent).map(Path::to_path_buf);
++    let root = jj_dir
++        .join(&pointer)
++        .parent()
++        .and_then(Path::parent)
++        .map(Path::to_path_buf);
+     match root.and_then(|r| fs::canonicalize(r).ok()) {
+         Some(canon) => canon.display().to_string(),
+         None => workspace.to_string(),
+@@ -589,11 +1031,17 @@ fn repo_root(workspace: &str) -> String {
+
+ fn valid_branch(branch: &str) -> bool {
+     !branch.is_empty()
+-        && branch.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '/'))
++        && branch
++            .chars()
++            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '/'))
+ }
+
+ fn basename(path: &str) -> String {
+-    Path::new(path).file_name().and_then(|s| s.to_str()).unwrap_or("repo").to_string()
++    Path::new(path)
++        .file_name()
++        .and_then(|s| s.to_str())
++        .unwrap_or("repo")
++        .to_string()
+ }
+
+ fn config_value(key: &str) -> Option<String> {
+@@ -623,7 +1071,9 @@ fn config_value(key: &str) -> Option<String> {
+
+ fn which(cmd: &str) -> Option<()> {
+     let paths = env::var_os("PATH")?;
+-    env::split_paths(&paths).find(|dir| dir.join(cmd).is_file()).map(|_| ())
++    env::split_paths(&paths)
++        .find(|dir| dir.join(cmd).is_file())
++        .map(|_| ())
+ }
+
+ fn prompt(message: &str) -> String {
+@@ -634,15 +1084,6 @@ fn prompt(message: &str) -> String {
+     line.trim().to_string()
+ }
+
+-fn run_or(cmd: Command, what: &str, on_err: fn(&str) -> !) {
+-    let mut cmd = cmd;
+-    match cmd.status() {
+-        Ok(status) if status.success() => {}
+-        Ok(status) => on_err(&format!("{what} failed (exit {})", status.code().unwrap_or(-1))),
+-        Err(err) => on_err(&format!("{what} failed to start: {err}")),
+-    }
+-}
+-
+ fn run(mut cmd: Command) -> bool {
+     matches!(cmd.status(), Ok(status) if status.success())
+ }
+@@ -687,3 +1128,286 @@ fn json_string_field(json: &str, key: &str) -> Option<String> {
+     }
+     None
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::fs;
++    use std::os::unix::fs::PermissionsExt;
++    use std::sync::Mutex;
++    use std::time::{SystemTime, UNIX_EPOCH};
++
++    static ENV_LOCK: Mutex<()> = Mutex::new(());
++
++    struct TempDir {
++        path: PathBuf,
++    }
++
++    #[test]
++    fn bookmark_creation_failure_preserves_an_existing_bookmark_and_removes_the_empty_workspace() {
++        let _env = ENV_LOCK.lock().expect("lock environment");
++        let temp = TempDir::new("bookmark-failure");
++        let repo = temp.path.join("repo");
++        let workspace_root = temp.path.join("workspaces");
++        fs::create_dir_all(&repo).expect("create repository");
++        for args in [
++            vec!["init", "-q"],
++            vec!["config", "user.name", "Test User"],
++            vec!["config", "user.email", "test@example.invalid"],
++        ] {
++            assert!(Command::new("git")
++                .args(args)
++                .current_dir(&repo)
++                .status()
++                .expect("run git")
++                .success());
++        }
++        fs::write(repo.join("README.md"), "test\n").expect("write repository file");
++        for args in [
++            vec!["add", "README.md"],
++            vec!["commit", "-qm", "base"],
++            vec!["branch", "-M", "main"],
++        ] {
++            assert!(Command::new("git")
++                .args(args)
++                .current_dir(&repo)
++                .status()
++                .expect("run git")
++                .success());
++        }
++        assert!(Command::new("jj")
++            .args(["git", "init", "--colocate"])
++            .current_dir(&repo)
++            .status()
++            .expect("initialize jj")
++            .success());
++        assert!(Command::new("jj")
++            .args(["bookmark", "create", "task-safety", "-r", "@"])
++            .current_dir(&repo)
++            .status()
++            .expect("create existing bookmark")
++            .success());
++
++        let herdr = temp.path.join("herdr");
++        write_executable(&herdr, "#!/bin/sh\nexit 1\n");
++        let _herdr = EnvVarGuard::set("HERDR_BIN_PATH", &herdr);
++        let result = create_workspace(
++            repo.to_str().expect("utf-8 source repo"),
++            &workspace_root,
++            "task-safety",
++            "@",
++            "workspace",
++        );
++
++        assert!(result.is_err());
++        assert!(!workspace_root.join("repo").join("task-safety").exists());
++        assert!(Command::new("jj")
++            .args(["bookmark", "list", "task-safety"])
++            .current_dir(&repo)
++            .output()
++            .expect("list existing bookmark")
++            .stdout
++            .starts_with(b"task-safety:"));
++    }
++
++    #[test]
++    fn configured_prefixes_enforce_stable_task_identity() {
++        let _env = ENV_LOCK.lock().expect("lock environment");
++        let _prefixes = EnvVarGuard::set("JJ_WORKSPACE_NAME_PREFIXES", "issue-,pr-,task-");
++
++        assert!(valid_workspace_name("issue-42-fix-login"));
++        assert!(valid_workspace_name("pr-73-review"));
++        assert!(valid_workspace_name("task-docs"));
++        assert!(!valid_workspace_name("workspace/random"));
++        assert!(!valid_workspace_name("task bad"));
++    }
++
++    #[test]
++    fn remove_refuses_a_renamed_main_workspace_before_invoking_jj() {
++        let temp = TempDir::new("renamed-main");
++        let repo = temp.path.join("task-safety");
++        fs::create_dir_all(repo.join(".jj/repo")).expect("create main jj store");
++
++        let error = remove_workspace(
++            repo.to_str().expect("utf-8 repo"),
++            None,
++            RemovalPolicy::ClosedPullRequest,
++        )
++        .expect_err("renamed main workspace must be refused");
++
++        assert!(error.contains("MAIN jj workspace"));
++        assert!(repo.exists(), "refusal must preserve the repository");
++    }
++
++    #[test]
++    fn current_workspace_name_uses_task_identity_when_workspaces_share_a_target() {
++        let _env = ENV_LOCK.lock().expect("lock environment");
++        let temp = TempDir::new("shared-target");
++        let bin = temp.path.join("bin");
++        let workspace = temp.path.join("task-safety");
++        fs::create_dir_all(&bin).expect("create fake bin");
++        fs::create_dir_all(&workspace).expect("create fake workspace");
++        write_executable(
++            &bin.join("jj"),
++            "#!/bin/sh\nif [ \"$1\" = log ]; then\n  printf '%s\\n' 'target'\nelif [ \"$1\" = workspace ] && [ \"$2\" = list ]; then\n  printf 'task-safety\\ttarget\\n'\n  printf 'task-other\\ttarget\\n'\nfi\n",
++        );
++        let _path = EnvVarGuard::set("PATH", &bin);
++
++        let name = current_workspace_name(&workspace).expect("identify workspace");
++
++        assert_eq!(name, "task-safety");
++    }
++
++    #[test]
++    fn cleanup_refuses_an_open_pull_request() {
++        let _env = ENV_LOCK.lock().expect("lock environment");
++        let temp = TempDir::new("open-pr");
++        let bin = temp.path.join("bin");
++        let workspace = temp.path.join("task-safety");
++        let log = temp.path.join("commands.log");
++        fs::create_dir_all(&bin).expect("create fake bin");
++        fs::create_dir_all(workspace.join(".jj")).expect("create fake workspace");
++        fs::write(workspace.join(".jj/repo"), "../repo\n").expect("create workspace pointer");
++        write_executable(
++            &bin.join("jj"),
++            "#!/bin/sh\nprintf 'jj %s\\n' \"$*\" >> \"$TEST_LOG\"\nif [ \"$1\" = log ] && [ \"$3\" != '@ ~ empty()' ]; then\n  printf '%s\\n' 'target'\nelif [ \"$1\" = workspace ] && [ \"$2\" = list ]; then\n  printf 'task-safety\\ttarget\\n'\nfi\n",
++        );
++        write_executable(&bin.join("gh"), "#!/bin/sh\nprintf '%s\\n' 'OPEN'\n");
++        let _path = EnvVarGuard::set("PATH", &bin);
++        let _log = EnvVarGuard::set("TEST_LOG", &log);
++
++        let error = remove_workspace(
++            workspace.to_str().expect("utf-8 workspace"),
++            None,
++            RemovalPolicy::ClosedPullRequest,
++        )
++        .expect_err("open pull request must prevent cleanup");
++
++        assert!(error.contains("still open"));
++        assert!(workspace.exists());
++        assert!(!fs::read_to_string(log)
++            .expect("read command log")
++            .contains("workspace forget"));
++    }
++
++    #[test]
++    fn abandon_requires_the_exact_typed_task_name() {
++        let _env = ENV_LOCK.lock().expect("lock environment");
++        let temp = TempDir::new("typed-abandon");
++        let bin = temp.path.join("bin");
++        let workspace = temp.path.join("task-safety");
++        fs::create_dir_all(&bin).expect("create fake bin");
++        fs::create_dir_all(workspace.join(".jj")).expect("create fake workspace");
++        fs::write(workspace.join(".jj/repo"), "../repo\n").expect("create workspace pointer");
++        write_executable(
++            &bin.join("jj"),
++            "#!/bin/sh\nif [ \"$1\" = log ] && [ \"$3\" != '@ ~ empty()' ]; then\n  printf '%s\\n' 'target'\nelif [ \"$1\" = workspace ] && [ \"$2\" = list ]; then\n  printf 'task-safety\\ttarget\\n'\nfi\n",
++        );
++        let _path = EnvVarGuard::set("PATH", &bin);
++
++        let error = remove_workspace(
++            workspace.to_str().expect("utf-8 workspace"),
++            None,
++            RemovalPolicy::Abandon {
++                typed_name: "task-other",
++            },
++        )
++        .expect_err("mismatched typed task name must prevent abandon");
++
++        assert!(error.contains("did not match"));
++        assert!(workspace.exists());
++    }
++
++    impl TempDir {
++        fn new(label: &str) -> Self {
++            let nonce = SystemTime::now()
++                .duration_since(UNIX_EPOCH)
++                .expect("clock before epoch")
++                .as_nanos();
++            let path =
++                env::temp_dir().join(format!("jj-workspace-{label}-{}-{nonce}", process::id()));
++            fs::create_dir_all(&path).expect("create temporary directory");
++            Self { path }
++        }
++    }
++
++    impl Drop for TempDir {
++        fn drop(&mut self) {
++            let _ = fs::remove_dir_all(&self.path);
++        }
++    }
++
++    struct EnvVarGuard {
++        key: &'static str,
++        old: Option<std::ffi::OsString>,
++    }
++
++    impl EnvVarGuard {
++        fn set(key: &'static str, value: impl AsRef<std::ffi::OsStr>) -> Self {
++            let old = env::var_os(key);
++            env::set_var(key, value);
++            Self { key, old }
++        }
++    }
++
++    impl Drop for EnvVarGuard {
++        fn drop(&mut self) {
++            match &self.old {
++                Some(value) => env::set_var(self.key, value),
++                None => env::remove_var(self.key),
++            }
++        }
++    }
++
++    fn write_executable(path: &Path, source: &str) {
++        fs::write(path, source).expect("write executable");
++        let mut permissions = fs::metadata(path)
++            .expect("read executable metadata")
++            .permissions();
++        permissions.set_mode(0o755);
++        fs::set_permissions(path, permissions).expect("mark executable");
++    }
++
++    #[test]
++    fn herdr_create_failure_rolls_back_only_the_untouched_workspace() {
++        let _env = ENV_LOCK.lock().expect("lock environment");
++        let temp = TempDir::new("rollback");
++        let bin = temp.path.join("bin");
++        let repo = temp.path.join("source-repo");
++        let workspace_root = temp.path.join("workspaces");
++        let log = temp.path.join("commands.log");
++        fs::create_dir_all(&bin).expect("create fake bin");
++        fs::create_dir_all(&repo).expect("create source repo");
++        write_executable(
++            &bin.join("jj"),
++            "#!/bin/sh\nprintf 'jj %s\\n' \"$*\" >> \"$TEST_LOG\"\nif [ \"$1\" = workspace ] && [ \"$2\" = add ]; then\n  for destination; do :; done\n  /bin/mkdir -p \"$destination/.jj\"\n  : > \"$destination/.jj/repo\"\nfi\nif [ \"$1\" = status ]; then\n  printf '%s\\n' 'The working copy has no changes.'\nfi\nexit 0\n",
++        );
++        let herdr = bin.join("herdr");
++        write_executable(
++            &herdr,
++            "#!/bin/sh\nprintf 'herdr %s\\n' \"$*\" >> \"$TEST_LOG\"\nexit 1\n",
++        );
++
++        let _path = EnvVarGuard::set("PATH", &bin);
++        let _log = EnvVarGuard::set("TEST_LOG", &log);
++        let _herdr = EnvVarGuard::set("HERDR_BIN_PATH", &herdr);
++        let result = create_workspace(
++            repo.to_str().expect("utf-8 source repo"),
++            &workspace_root,
++            "task-safety",
++            "trunk()",
++            "workspace",
++        );
++
++        let destination = workspace_root.join("source-repo").join("task-safety");
++        assert!(result.is_err());
++        assert!(
++            !destination.exists(),
++            "untouched workspace should be removed"
++        );
++        let commands = fs::read_to_string(log).expect("read fake command log");
++        assert!(commands.contains("jj bookmark delete task-safety"));
++        assert!(commands.contains("jj workspace forget"));
++        assert!(!commands.contains("jj git fetch"));
++    }
++}
+diff --git a/tests/remove_guards.rs b/tests/remove_guards.rs
+new file mode 100644
+index 0000000..740be43
+--- /dev/null
++++ b/tests/remove_guards.rs
+@@ -0,0 +1,79 @@
++use std::env;
++use std::fs;
++use std::os::unix::fs::PermissionsExt;
++use std::path::{Path, PathBuf};
++use std::process::{self, Command};
++use std::time::{SystemTime, UNIX_EPOCH};
++
++struct TempDir {
++    path: PathBuf,
++}
++
++impl TempDir {
++    fn new(label: &str) -> Self {
++        let nonce = SystemTime::now()
++            .duration_since(UNIX_EPOCH)
++            .expect("clock before epoch")
++            .as_nanos();
++        let path = env::temp_dir().join(format!("jj-workspace-{label}-{}-{nonce}", process::id()));
++        fs::create_dir_all(&path).expect("create temporary directory");
++        Self { path }
++    }
++}
++
++impl Drop for TempDir {
++    fn drop(&mut self) {
++        let _ = fs::remove_dir_all(&self.path);
++    }
++}
++
++fn write_executable(path: &Path, source: &str) {
++    fs::write(path, source).expect("write executable");
++    let mut permissions = fs::metadata(path)
++        .expect("read executable metadata")
++        .permissions();
++    permissions.set_mode(0o755);
++    fs::set_permissions(path, permissions).expect("mark executable");
++}
++
++#[test]
++fn remove_refuses_changed_workspace_without_forgetting_or_deleting_it() {
++    let temp = TempDir::new("remove-dirty");
++    let bin = temp.path.join("bin");
++    let workspace = temp.path.join("task-safety");
++    let log = temp.path.join("commands.log");
++    fs::create_dir_all(workspace.join(".jj")).expect("create secondary workspace metadata");
++    fs::write(workspace.join(".jj/repo"), "../repo\n").expect("create jj workspace pointer");
++    fs::create_dir_all(&bin).expect("create fake bin");
++    write_executable(
++        &bin.join("jj"),
++        "#!/bin/sh\nprintf 'jj %s\\n' \"$*\" >> \"$TEST_LOG\"\nif [ \"$1\" = log ] && [ \"$3\" = '@ ~ empty()' ]; then\n  printf '%s\\n' 'deadbeef'\nelif [ \"$1\" = log ]; then\n  printf '%s\\n' 'task-safety'\nelif [ \"$1\" = workspace ] && [ \"$2\" = list ]; then\n  printf 'task-safety\\ttask-safety\\n'\nfi\nexit 0\n",
++    );
++    write_executable(
++        &bin.join("herdr"),
++        "#!/bin/sh\nprintf 'herdr %s\\n' \"$*\" >> \"$TEST_LOG\"\nexit 0\n",
++    );
++
++    let output = Command::new(env!("CARGO_BIN_EXE_jj-workspace"))
++        .arg("remove")
++        .env("PATH", &bin)
++        .env("TEST_LOG", &log)
++        .env("HERDR_BIN_PATH", bin.join("herdr"))
++        .env(
++            "HERDR_PLUGIN_CONTEXT_JSON",
++            format!(
++                r#"{{"workspace_id":"workspace-1","workspace_cwd":"{}"}}"#,
++                workspace.display()
++            ),
++        )
++        .output()
++        .expect("run plugin");
++
++    assert!(
++        !output.status.success(),
++        "changed workspaces must be refused"
++    );
++    assert!(workspace.exists(), "refusal must preserve the checkout");
++    let commands = fs::read_to_string(log).expect("read fake command log");
++    assert!(!commands.contains("jj workspace forget"));
++}

@@ -182,7 +182,7 @@ Meaning:
 ## Important gotchas
 
 - Use explicit `prefix+...` bindings. Plain printable direct bindings steal input from shells/editors.
-- Marketplace/GitHub plugins are installed by `modules/shell/herdr/default.nix`; do not add keybindings for new marketplace plugins until their installed action IDs have been verified with `herdr plugin action list`.
+- Marketplace/GitHub plugins are installed by `modules/shell/herdr/default.nix`; repo-owned patched plugins are packaged under `packages/`. Do not add keybindings until their installed action IDs have been verified with `herdr plugin action list`.
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
@@ -194,5 +194,6 @@ Meaning:
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
 - `packages/herdr-plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and the two-tab checkout bootstrap.
 - `packages/herdr-plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews.
-- The jj workspace plugin is pinned to the reviewed `edmundmiller/herdr-plugin-jj-workspace` fork until upstream PR #4 lands. Other marketplace plugins are installed by `modules/shell/herdr/default.nix`.
+- `packages/herdr-plugin-jj-workspace/` owns the pinned upstream source and local lifecycle-safety patch.
+- Other marketplace plugins are installed by `modules/shell/herdr/default.nix`.
 - `overlays/herdr/default.nix` patches only packaging/build issues; local helper behavior should live in Herdr plugins, not inside the Herdr binary.
