@@ -1,8 +1,16 @@
+---
+purpose: Define the supported jj experience and policy boundaries for coding agents.
+applies_to: Agent workspace, Pi policy, publish, and jj adoption changes.
+entrypoint: Use hey agent-start and finish with the global done skill.
+verification: Policy tests, real jj remote tests, receipts, and agent-sweep.
+update_when: Backend detection, workspace, policy, or landing behavior changes.
+---
+
 # ADR 0006: Layer jj support around git-trained Pi agents
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -117,8 +125,8 @@ The expected final shape for direct-to-branch work is:
 3. The target bookmark/branch points at `@-`.
 4. Git HEAD and `origin/<branch>` are aligned with that completed change.
 
-Publishing should remain explicit. Agents should not silently push just because a
-task is complete.
+Raw publishing remains guarded. An explicit `done` invocation authorizes the
+normal verified direct-landing path, including publication.
 
 ### 4. Defer the larger jj control planes
 
@@ -215,6 +223,14 @@ jj new --no-edit
   without committing the whole Pi environment to them.
 - `pi-command-policy-bridge` needs a VCS-aware extension point before mutating jj
   tools are broadly trusted.
+
+## Implementation
+
+- `hey agent-start` detects the live backend, creates jj workspaces, and writes versioned receipts outside repositories.
+- Codex-created Git worktrees stay on Git; the launcher refuses nested jj initialization.
+- `pi-command-policy-bridge` blocks Git mutations in jj repositories and routes publication through `done`.
+- The global `done` skill has Git and jj branches plus authoritative remote verifiers.
+- `hey agent-sweep` aggregates bounded receipt evidence instead of inferring quality from commit prose.
 
 ## Follow-up work
 
