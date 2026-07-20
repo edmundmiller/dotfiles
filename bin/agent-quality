@@ -4,19 +4,26 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timedelta, timezone
 import fnmatch
 import hashlib
 import json
+import os
 import re
 import shlex
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = ROOT / ".agents" / "quality.json"
 DEFAULT_INVENTORY = ROOT / "docs" / "agent-quality.md"
+DEFAULT_RECEIPT_ROOT = (
+    Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
+    / "dotfiles-agent-runs"
+)
 WORKLOG_SECTIONS = (
     "Objective",
     "Decisions",
@@ -241,17 +248,226 @@ def review(args: argparse.Namespace) -> int:
     return result.returncode
 
 
-def sweep(args: argparse.Namespace) -> int:
-    result = subprocess.run(
-        ["git", "log", f"-{args.commits}", "--format=%h %s", "--stat"],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
+def run_vcs(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
+
+
+def output_line(command: list[str], cwd: Path) -> str | None:
+    result = run_vcs(command, cwd)
+    value = result.stdout.strip()
+    return value if result.returncode == 0 and value else None
+
+
+def git_worktree(repo: Path) -> bool:
+    git_dir = output_line(
+        ["git", "rev-parse", "--path-format=absolute", "--git-dir"], repo
     )
-    print(result.stdout.rstrip())
-    print("\nInspect for cross-commit duplication, abandoned compatibility paths, doc drift, and missing tests.")
-    return result.returncode
+    common_dir = output_line(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], repo
+    )
+    return bool(
+        git_dir and common_dir and Path(git_dir).resolve() != Path(common_dir).resolve()
+    )
+
+
+def receipt_root(path: str | None) -> Path:
+    return Path(path).expanduser().resolve() if path else DEFAULT_RECEIPT_ROOT
+
+
+def write_receipt(receipt: dict, state_dir: Path) -> Path:
+    repository = receipt["repositoryRoot"]
+    repository_key = hashlib.sha256(repository.encode()).hexdigest()[:12]
+    destination = state_dir / repository_key / f"{receipt['runId']}.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    receipt["receiptPath"] = str(destination)
+    destination.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    return destination
+
+
+def jj_ids(workspace: Path) -> dict[str, str | None]:
+    revision = output_line(
+        [
+            "jj",
+            "log",
+            "--ignore-working-copy",
+            "-r",
+            "@",
+            "--no-graph",
+            "-T",
+            'change_id ++ "\\n" ++ commit_id ++ "\\n"',
+        ],
+        workspace,
+    )
+    parts = revision.splitlines() if revision else []
+    operation = output_line(
+        ["jj", "op", "log", "--limit", "1", "--no-graph", "-T", 'id ++ "\\n"'],
+        workspace,
+    )
+    return {
+        "changeId": parts[0] if parts else None,
+        "commitId": parts[1] if len(parts) > 1 else None,
+        "operationId": operation,
+    }
+
+
+def start(args: argparse.Namespace) -> int:
+    repo = Path(args.repo).expanduser().resolve()
+    if not repo.is_dir():
+        print(f"repository path does not exist: {repo}", file=sys.stderr)
+        return 2
+
+    jj_root = output_line(["jj", "root", "--ignore-working-copy"], repo)
+    git_root = output_line(["git", "rev-parse", "--show-toplevel"], repo)
+    if not jj_root and not git_root:
+        print(f"not a jj or Git repository: {repo}", file=sys.stderr)
+        return 2
+
+    backend = "jj" if jj_root else "git"
+    repository_root = Path(jj_root or git_root or repo).resolve()
+    workspace_root = repo
+    if args.workspace:
+        destination = Path(args.workspace).expanduser().resolve()
+        if backend != "jj":
+            boundary = "Git worktree" if git_worktree(repo) else "Git-only repository"
+            print(
+                f"{boundary}: refusing to invent nested jj metadata; initialize jj from the primary checkout, then rerun agent-start there",
+                file=sys.stderr,
+            )
+            return 2
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        command = [
+            "jj",
+            "workspace",
+            "add",
+            "-R",
+            str(repository_root),
+            "--name",
+            re.sub(r"[^a-zA-Z0-9._-]+", "-", args.task).strip("-") or "agent-run",
+            str(destination),
+        ]
+        if args.base:
+            command.extend(["-r", args.base])
+        created = run_vcs(command, repository_root)
+        if created.returncode != 0:
+            print(created.stderr.rstrip(), file=sys.stderr)
+            return created.returncode
+        workspace_root = destination
+    elif backend == "jj":
+        current_workspace = output_line(["jj", "workspace", "root"], repo)
+        if current_workspace:
+            workspace_root = Path(current_workspace).resolve()
+
+    now = datetime.now(timezone.utc)
+    receipt: dict = {
+        "schemaVersion": 1,
+        "runId": f"{now.strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:12]}",
+        "task": args.task,
+        "runtime": args.runtime,
+        "model": args.model,
+        "repositoryRoot": str(repository_root),
+        "workspaceRoot": str(workspace_root),
+        "backend": backend,
+        "status": "active",
+        "startedAt": now.isoformat().replace("+00:00", "Z"),
+        "metrics": {"retries": 0, "userCorrections": 0},
+    }
+    if backend == "jj":
+        receipt["vcs"] = jj_ids(workspace_root)
+    else:
+        receipt["vcs"] = {
+            "commitId": output_line(["git", "rev-parse", "HEAD"], repository_root),
+            "branch": output_line(["git", "branch", "--show-current"], repository_root),
+            "isWorktree": git_worktree(repo),
+        }
+    write_receipt(receipt, receipt_root(args.state_dir))
+    print(json.dumps(receipt, sort_keys=True))
+    return 0
+
+
+def complete(args: argparse.Namespace) -> int:
+    path = Path(args.receipt).expanduser().resolve()
+    try:
+        receipt = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"cannot read receipt {path}: {error}", file=sys.stderr)
+        return 2
+    if receipt.get("schemaVersion") != 1:
+        print(
+            f"unsupported receipt schema: {receipt.get('schemaVersion')}",
+            file=sys.stderr,
+        )
+        return 2
+
+    aligned = bool(
+        args.local_tip and args.remote_tip and args.local_tip == args.remote_tip
+    )
+    receipt["status"] = "complete" if aligned else "false_done"
+    receipt["completedAt"] = (
+        datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    )
+    receipt["landing"] = {
+        "revision": args.revision,
+        "localTip": args.local_tip,
+        "remoteTip": args.remote_tip,
+        "remoteAligned": aligned,
+    }
+    receipt["metrics"] = {
+        "retries": args.retries,
+        "userCorrections": args.user_corrections,
+    }
+    if args.error:
+        receipt["error"] = args.error
+    path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    print(json.dumps(receipt, sort_keys=True))
+    return 0 if aligned else 1
+
+
+def sweep(args: argparse.Namespace) -> int:
+    state_dir = receipt_root(args.state_dir)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=args.since_days)
+    candidates = sorted(
+        state_dir.rglob("*.json") if state_dir.exists() else [],
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )[: args.limit]
+    receipts: list[dict] = []
+    invalid = 0
+    for path in candidates:
+        try:
+            receipt = json.loads(path.read_text())
+            started = datetime.fromisoformat(
+                receipt["startedAt"].replace("Z", "+00:00")
+            )
+            if receipt.get("schemaVersion") == 1 and started >= cutoff:
+                receipts.append(receipt)
+        except (OSError, KeyError, ValueError, json.JSONDecodeError):
+            invalid += 1
+    summary = {
+        "schemaVersion": 1,
+        "runs": len(receipts),
+        "active": sum(item.get("status") == "active" for item in receipts),
+        "complete": sum(item.get("status") == "complete" for item in receipts),
+        "falseDone": sum(item.get("status") == "false_done" for item in receipts),
+        "retries": sum(item.get("metrics", {}).get("retries", 0) for item in receipts),
+        "userCorrections": sum(
+            item.get("metrics", {}).get("userCorrections", 0) for item in receipts
+        ),
+        "errors": sum(bool(item.get("error")) for item in receipts),
+        "invalidReceipts": invalid,
+        "stateDirectory": str(state_dir),
+    }
+    if args.json:
+        print(json.dumps(summary, sort_keys=True))
+    else:
+        print(
+            "agent sweep: "
+            f"runs={summary['runs']} complete={summary['complete']} "
+            f"active={summary['active']} false_done={summary['falseDone']} "
+            f"retries={summary['retries']} corrections={summary['userCorrections']} "
+            f"errors={summary['errors']} invalid={summary['invalidReceipts']}"
+        )
+        print(f"receipts: {state_dir}")
+    return 1 if summary["falseDone"] or summary["errors"] or invalid else 0
 
 
 def parser() -> argparse.ArgumentParser:
@@ -293,8 +509,31 @@ def parser() -> argparse.ArgumentParser:
     gate.add_argument("--dry-run", action="store_true")
     gate.set_defaults(func=review)
 
+    begin = sub.add_parser("start")
+    begin.add_argument("--repo", default=".")
+    begin.add_argument("--workspace")
+    begin.add_argument("--base")
+    begin.add_argument("--task", required=True)
+    begin.add_argument("--runtime", default="unknown")
+    begin.add_argument("--model")
+    begin.add_argument("--state-dir")
+    begin.set_defaults(func=start)
+
+    completed = sub.add_parser("complete")
+    completed.add_argument("receipt")
+    completed.add_argument("--revision")
+    completed.add_argument("--local-tip", required=True)
+    completed.add_argument("--remote-tip", required=True)
+    completed.add_argument("--retries", type=int, default=0)
+    completed.add_argument("--user-corrections", type=int, default=0)
+    completed.add_argument("--error")
+    completed.set_defaults(func=complete)
+
     recent = sub.add_parser("sweep")
-    recent.add_argument("--commits", type=int, default=20)
+    recent.add_argument("--state-dir")
+    recent.add_argument("--limit", "--commits", dest="limit", type=int, default=200)
+    recent.add_argument("--since-days", type=int, default=30)
+    recent.add_argument("--json", action="store_true")
     recent.set_defaults(func=sweep)
     return root
 
