@@ -24,9 +24,9 @@ contexts = ["pane", "workspace"]
 command = ["python3", "dev_layout.py", "hunk", "--tab"]
 
 [[events]]
-on = "workspace_created"
+on = "workspace.created"
 command = ["python3", "dev_layout.py", "--event"]
 
 [[events]]
-on = "worktree_created"
+on = "worktree.created"
 command = ["python3", "dev_layout.py", "--event"]
