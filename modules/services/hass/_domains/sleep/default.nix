@@ -416,6 +416,14 @@ in
             action = "script.tv_off_if_on";
           }
           {
+            action = "script.book_player_start";
+            continue_on_error = true;
+            data = {
+              book_uri = "library://audiobook/84";
+              player_entity_id = "media_player.bedtime";
+            };
+          }
+          {
             action = "input_boolean.turn_on";
             target.entity_id = "input_boolean.get_ready_for_bed_done";
           }
@@ -434,12 +442,22 @@ in
             action = "script.tv_off_if_on";
           }
           {
-            action = "script.book_player_start";
-            continue_on_error = true;
-            data = {
-              book_uri = "library://audiobook/84";
-              player_entity_id = "media_player.bedroom";
-            };
+            "if" = [
+              {
+                condition = "template";
+                value_template = "{{ states('media_player.bedtime') not in ['playing', 'buffering'] }}";
+              }
+            ];
+            "then" = [
+              {
+                action = "script.book_player_start";
+                continue_on_error = true;
+                data = {
+                  book_uri = "library://audiobook/84";
+                  player_entity_id = "media_player.bedtime";
+                };
+              }
+            ];
           }
           {
             action = "input_boolean.turn_on";
@@ -458,6 +476,11 @@ in
           }
           {
             action = "script.tv_off_if_on";
+          }
+          {
+            action = "media_player.media_stop";
+            continue_on_error = true;
+            target.entity_id = "media_player.bedtime";
           }
           {
             action = "input_boolean.turn_on";
