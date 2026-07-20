@@ -151,6 +151,12 @@ let
         description = "abandon clean jj workspace with typed confirmation"
 
         [[keys.command]]
+        key = "prefix+t"
+        type = "plugin_action"
+        command = "tab-smart-rename.rename-now"
+        description = "smart rename current tab"
+
+        [[keys.command]]
         key = "prefix+T"
         type = "plugin_action"
         command = "herdr-insight.open-timeline-right"
@@ -807,6 +813,12 @@ in
               'description = "abandon clean jj workspace with typed confirmation"',
               "",
               "[[keys.command]]",
+              'key = "prefix+t"',
+              'type = "plugin_action"',
+              'command = "tab-smart-rename.rename-now"',
+              'description = "smart rename current tab"',
+              "",
+              "[[keys.command]]",
               'key = "prefix+T"',
               'type = "plugin_action"',
               'command = "herdr-insight.open-timeline-right"',
@@ -1115,6 +1127,7 @@ in
           install_plugin kkckkc herdr-plugin-gh-workflow
           install_plugin alon-z herdr-command-palette
           install_plugin 0x5c0f herdr-insight
+          install_plugin iurysza herdr-tab-smart-rename
           install_plugin persiyanov herdr-reviewr
           install_plugin edmundmiller herdr-which-key "" optional
         '';

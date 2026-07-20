@@ -79,6 +79,7 @@ Custom/current mappings:
 | `prefix+a`                        | New jj workspace                                   |
 | `prefix+d`                        | Remove clean closed-PR jj workspace                |
 | `prefix+D`                        | Abandon clean jj workspace with typed confirmation |
+| `prefix+t`                        | Smart rename current Pi or OMP tab                  |
 | `prefix+T`                        | Agent timeline                                     |
 | `prefix+R`                        | Refresh GitHub PR status                           |
 | `prefix+I`                        | Start GitHub issue workflow                        |
@@ -108,6 +109,7 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `kkckkc/herdr-plugin-gh-workflow`
 - `alon-z/herdr-command-palette`
 - `0x5c0f/herdr-insight`
+- `iurysza/herdr-tab-smart-rename`
 
 ## Reloading after edits
 

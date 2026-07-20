@@ -127,6 +127,11 @@ type = "plugin_action"
 command = "nathanflurry.jj-workspace.abandon"
 
 [[keys.command]]
+key = "prefix+t"
+type = "plugin_action"
+command = "tab-smart-rename.rename-now"
+
+[[keys.command]]
 key = "prefix+T"
 type = "plugin_action"
 command = "herdr-insight.open-timeline-right"
@@ -174,6 +179,7 @@ Meaning:
 - `prefix+a` creates a stable task-named jj workspace as a new Herdr workspace.
 - `prefix+d` removes a clean jj workspace only after its PR closes or merges.
 - `prefix+D` abandons a clean jj workspace after exact typed task-name confirmation.
+- `prefix+t` smart-renames the current Pi or OMP tab from its task context.
 - `prefix+T` opens the agent timeline.
 - `prefix+R` refreshes GitHub PR status.
 - `prefix+I` starts the GitHub issue workflow.
