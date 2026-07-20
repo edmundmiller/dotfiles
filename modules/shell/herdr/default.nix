@@ -9,6 +9,13 @@ with lib.my;
 let
   cfg = config.modules.shell.herdr;
   tmuxEnabled = config.modules.shell.tmux.enable;
+  managedLocalPlugins = pkgs.symlinkJoin {
+    name = "dotfiles-managed-herdr-plugins";
+    paths = [
+      pkgs.my.herdr-plugins
+      pkgs.my.herdr-plugin-jj-workspace
+    ];
+  };
   launchPath = concatStringsSep ":" [
     "/etc/profiles/per-user/${config.user.name}/bin"
     "/run/current-system/sw/bin"
@@ -369,7 +376,7 @@ in
   options.modules.shell.herdr = with types; {
     enable = mkBoolOpt false;
     package = mkOpt (nullOr package) null;
-    localPluginsPackage = mkOpt package pkgs.my.herdr-plugins;
+    localPluginsPackage = mkOpt package managedLocalPlugins;
     command = mkOpt str "herdr";
     configFile = mkOpt (nullOr (either str path)) null;
     prefix = mkOpt str "ctrl+c";
@@ -1082,58 +1089,6 @@ in
             fi
           }
 
-          ensure_pinned_plugin() {
-            plugin_id="$1"
-            owner="$2"
-            repo="$3"
-            ref="$4"
-            spec="$owner/$repo"
-
-            if ! installed_json=$("$herdr_cmd" plugin list --plugin "$plugin_id" --json); then
-              echo "herdr: error: failed to inspect $plugin_id" >&2
-              return 1
-            fi
-            if printf '%s' "$installed_json" | ${pkgs.python3}/bin/python3 -c '
-          import json
-          import sys
-
-          expected = sys.argv[1:]
-          plugins = json.load(sys.stdin).get("result", {}).get("plugins", [])
-          matches = [
-              plugin for plugin in plugins
-              if plugin.get("plugin_id") == expected[0] or plugin.get("id") == expected[0]
-          ]
-          if len(matches) != 1:
-              raise SystemExit(1)
-          source = matches[0].get("source", {})
-          raise SystemExit(
-              0 if [source.get("owner"), source.get("repo"), source.get("resolved_commit")] == expected[1:]
-              else 1
-          )
-          ' "$plugin_id" "$owner" "$repo" "$ref"; then
-              echo "herdr: $plugin_id already pinned at $ref"
-              return 0
-            fi
-
-            if printf '%s' "$installed_json" | ${pkgs.python3}/bin/python3 -c '
-          import json
-          import sys
-
-          plugins = json.load(sys.stdin).get("result", {}).get("plugins", [])
-          raise SystemExit(0 if plugins else 1)
-          '; then
-              "$herdr_cmd" plugin uninstall "$plugin_id"
-            fi
-            echo "herdr: installing pinned $spec@$ref"
-            "$herdr_cmd" plugin install "$spec" --ref "$ref" --yes
-          }
-
-          ensure_pinned_plugin \
-            nathanflurry.jj-workspace \
-            edmundmiller \
-            herdr-plugin-jj-workspace \
-            ec8fde27e0cf4664012b585ebc2dc7cb0934ee1b
-
           jj_plugin_config=$("$herdr_cmd" plugin config-dir nathanflurry.jj-workspace)
           ${pkgs.coreutils}/bin/mkdir -p "$jj_plugin_config"
           ${pkgs.coreutils}/bin/cat > "$jj_plugin_config/.env" <<'EOF'
@@ -1141,7 +1096,7 @@ in
           JJ_WORKSPACE_NAME_PREFIXES=issue-,pr-,task-
           EOF
 
-          # jj-workspace is installed above from a reviewed, pinned fork.
+          # jj-workspace is registered from the Nix-managed local package.
           install_plugin smarzban herdr-file-viewer
           install_plugin dutifuldev ghzinga plugins/herdr
           install_plugin dcolinmorgan herdr-remote relay
