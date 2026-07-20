@@ -8,6 +8,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PackagePolicyTest(unittest.TestCase):
+    def test_pi_policy_bridge_uses_nix_managed_runtime_path(self):
+        settings = (ROOT / "config/pi/settings.jsonc").read_text()
+        home_files = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
+        runtime_path = "~/.pi/agent/packages/pi-command-policy-bridge"
+        self.assertIn(runtime_path, settings)
+        self.assertNotIn(
+            "~/.config/dotfiles/packages/pi-packages/pi-command-policy-bridge", settings
+        )
+        self.assertIn('".pi/agent/packages/pi-command-policy-bridge".source', home_files)
+
     def test_hunk_metadata_matches_locked_input(self):
         metadata = json.loads((ROOT / "overlays/hunk/package-harness.json").read_text())
         self.assertIsInstance(metadata, dict, "Hunk metadata must be an object")
