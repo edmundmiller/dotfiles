@@ -1,3 +1,11 @@
+---
+purpose: Route Herdr config, plugin, keybinding, and runtime verification changes.
+applies_to: Changes under config/herdr or modules/shell/herdr.
+entrypoint: Edit config/herdr/config.toml and the owning plugin or module source.
+verification: Run focused plugin tests, rebuild, then reload and inspect Herdr state.
+update_when: Herdr bindings, plugin ownership, lifecycle, or recovery changes.
+---
+
 # Herdr Config
 
 Tracked Herdr runtime config lives here and is wired in by `modules/shell/herdr/default.nix`.
@@ -109,14 +117,14 @@ type = "plugin_action"
 command = "nathanflurry.jj-workspace.new"
 
 [[keys.command]]
-key = "prefix+A"
-type = "plugin_action"
-command = "nathanflurry.jj-workspace.new-tab"
-
-[[keys.command]]
 key = "prefix+d"
 type = "plugin_action"
 command = "nathanflurry.jj-workspace.remove"
+
+[[keys.command]]
+key = "prefix+D"
+type = "plugin_action"
+command = "nathanflurry.jj-workspace.abandon"
 
 [[keys.command]]
 key = "prefix+T"
@@ -143,7 +151,7 @@ Meaning:
 
 - `prefix+w` opens the workspace picker.
 - `prefix+N` creates a workspace.
-- `prefix+g` creates a worktree with Herdr's native prompt; the `dotfiles.dev-layout` plugin handles Herdr's `worktree.created` event and opens the configured coding agent + Hunk + Neovim + shell tabs.
+- `prefix+g` creates a native Git worktree. Both `workspace_created` and `worktree_created` bootstrap exactly OMP and Hunk, with OMP focused.
 - `prefix+G` opens an existing worktree.
 - `prefix+/` opens Herdr goto/navigation.
 - `prefix+c` creates a tab.
@@ -163,9 +171,9 @@ Meaning:
 - `prefix+f` / `prefix+F` open the file viewer in a split/tab.
 - `prefix+]` / `prefix+}` / `prefix+{` open Hunk worktree/staged/branch diffs.
 - `prefix+u` / `prefix+U` keep the dotfiles dev-layout Hunk split/tab actions.
-- `prefix+a` creates a jj workspace as a new Herdr workspace.
-- `prefix+A` creates a jj workspace as a tab.
-- `prefix+d` removes the current jj workspace.
+- `prefix+a` creates a stable task-named jj workspace as a new Herdr workspace.
+- `prefix+d` removes a clean jj workspace only after its PR closes or merges.
+- `prefix+D` abandons a clean jj workspace after exact typed task-name confirmation.
 - `prefix+T` opens the agent timeline.
 - `prefix+R` refreshes GitHub PR status.
 - `prefix+I` starts the GitHub issue workflow.
@@ -178,13 +186,13 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
-- Keep worktree layout seeding in the local `dotfiles.dev-layout` plugin's `worktree.created` event hook; do not reintroduce custom prompt keybindings, AppleScript dialogs, or dotfiles-only Herdr CLI patches for this flow.
+- Keep checkout layout seeding in the local `dotfiles.dev-layout` plugin's `workspace_created` and `worktree_created` hooks. The bootstrap is idempotent and owns exactly the OMP and Hunk tabs.
 - `herdr workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
 
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
-- `config/herdr/plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and native worktree post-create tab seeding as a Herdr plugin.
-- `config/herdr/plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews as a Herdr link-handler plugin.
-- Marketplace/GitHub plugins installed by activation: `NathanFlurry/herdr-plugin-jj-workspace`, `smarzban/herdr-file-viewer`, `dutifuldev/ghzinga/plugins/herdr`, `dcolinmorgan/herdr-remote/relay`, `razajamil/herdr-plugin-workspace-manager`, `paulbkim-dev/vim-herdr-navigation`, `ogulcancelik/herdr-plugin-github-start`, `rjyo/herdr-window-title-sync`, `wyattjoh/herdr-plugin-gh-pr`, `kkckkc/herdr-plugin-gh-workflow`, `alon-z/herdr-command-palette`, `0x5c0f/herdr-insight`, and `edmundmiller/herdr-which-key`.
+- `packages/herdr-plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and the two-tab checkout bootstrap.
+- `packages/herdr-plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews.
+- The jj workspace plugin is pinned to the reviewed `edmundmiller/herdr-plugin-jj-workspace` fork until upstream PR #4 lands. Other marketplace plugins are installed by `modules/shell/herdr/default.nix`.
 - `overlays/herdr/default.nix` patches only packaging/build issues; local helper behavior should live in Herdr plugins, not inside the Herdr binary.
