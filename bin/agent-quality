@@ -127,7 +127,9 @@ def audit_tests(args: argparse.Namespace) -> int:
         text = path.read_text(errors="replace")
         if re.search(r"def test_[^(]+\([^)]*\):\s*(?:#.*\s*)?pass(?:\s|$)", text):
             findings.append(f"{path}: empty test body")
-        if re.search(r"\b(?:assert|expect)\s*(?:\(?\s*)?(?:True|true|1)(?:\s*\)?)", text):
+        if re.search(
+            r"\b(?:assert|expect)\b\s*(?:\(?\s*)?(?:True|true|1)(?:\s*\)?)", text
+        ):
             findings.append(f"{path}: constant truth assertion")
         if re.search(r"@pytest\.mark\.skip\b|\b(?:describe|it|test)\.skip\s*\(", text):
             findings.append(f"{path}: skipped test requires audit")
