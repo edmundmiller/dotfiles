@@ -10,6 +10,14 @@ def --wrapped "main agent-review" [stage: string, ...args: string] {
   agent-quality review $stage ...$args
 }
 
+def --wrapped "main agent-start" [...args: string] {
+  agent-quality start ...$args
+}
+
+def --wrapped "main agent-complete" [...args: string] {
+  agent-quality complete ...$args
+}
+
 def --wrapped "main agent-audit-tests" [...paths: string] {
   agent-quality audit-tests ...$paths
 }
