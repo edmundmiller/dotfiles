@@ -46,7 +46,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "google-antigravity/gemini-3-flash")
 
-    def test_mactraitorpro_uses_cross_provider_k3_fallbacks(self) -> None:
+    def test_mactraitorpro_prefers_subscription_k3_before_openrouter(self) -> None:
         result = subprocess.run(
             [
                 "nix",
@@ -66,7 +66,13 @@ class OmpModelRoutingTests(unittest.TestCase):
         for role in ("default", "plan", "slow"):
             with self.subTest(role=role):
                 self.assertNotIn("opencode-go/glm-5.2", chains[role])
-                self.assertIn("openrouter/moonshotai/kimi-k3:high", chains[role])
+                self.assertEqual(
+                    chains[role][-2:],
+                    [
+                        "opencode-go/kimi-k3:high",
+                        "openrouter/moonshotai/kimi-k3:high",
+                    ],
+                )
 
 
 if __name__ == "__main__":
