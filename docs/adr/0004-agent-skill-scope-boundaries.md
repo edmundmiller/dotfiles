@@ -1,3 +1,11 @@
+---
+purpose: Keep project-local agent skills out of the global runtime target.
+applies_to: Changes to skill ownership, installation, or Home Manager wiring.
+entrypoint: Put global skills in skills/catalog and local skills in .agents/skills.
+verification: Run hey skills-check-local-leaks.
+update_when: Skill source lanes or deployment targets change.
+---
+
 # ADR 0004: Keep dotfiles-local skills out of the global skills target
 
 ## Status
@@ -23,7 +31,7 @@ This mistake happened when `.agents/skills` was briefly wired into the Home Mana
 
 `.agents/skills/` is the source for dotfiles project-local skills. Those skills may be checked into this repository and used as local agent context while working here, but they must not be included in the global `agent-skills` bundle or copied to `~/.agents/skills`.
 
-A package-owned skill may still be installed globally when it is explicitly wired as a global skill because it is useful across projects. `packages/jut/skill` is such an exception. This exception does not apply to `.agents/skills/`.
+Cross-project skills belong in `skills/catalog/` so the shared catalog owns both their source and installation. Package-owned skills must not create a third installation lane.
 
 `hey re` must fail before rebuilding if any skill name from this repo's `.agents/skills/<name>/SKILL.md` is present at `~/.agents/skills/<name>/SKILL.md`. The check is name-based. If a same-named skill should become global, move or rename it into the global skill lane instead of keeping it in `.agents/skills`.
 

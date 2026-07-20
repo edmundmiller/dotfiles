@@ -192,21 +192,7 @@
             # auto-imports its Home Manager module when `stylix.enable = true`.
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
-              home-manager.sharedModules = [
-                inputs.skills-catalog.homeManagerModules.default
-                {
-                  # Package-owned skill: keep source next to the jut implementation,
-                  # but install it through the shared agent-skills catalog.
-                  programs.agent-skills = {
-                    sources.jut = {
-                      path = ./packages/jut/skill;
-                      subdir = ".";
-                      filter.maxDepth = 1;
-                    };
-                    skills.enableAll = [ "jut" ];
-                  };
-                }
-              ];
+              home-manager.sharedModules = [ inputs.skills-catalog.homeManagerModules.default ];
             }
           ];
         };

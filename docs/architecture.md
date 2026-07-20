@@ -52,7 +52,7 @@ The repository is a single Nix flake (`flake.nix`) built with **flake-parts**. K
 | `darwinConfigurations` | macOS system configs (MacTraitor-Pro, Seqeratop)              |
 | `nixosConfigurations`  | NixOS system configs (nuc, unas, gandi, meshify)              |
 | `deploy.nodes`         | deploy-rs targets for remote deployment                       |
-| `packages`             | Custom Nix derivations (zele, jut, dmux, zunit, …)            |
+| `packages`             | Custom Nix derivations (zele, dmux, zunit, …)                 |
 | `overlays`             | `pkgs.unstable` and `pkgs.my` (custom packages)               |
 | `devShells`            | Development shells (`default` with linters, `agent` headless) |
 | `checks`               | deploy-rs validation, zunit tests, HA assertions              |
@@ -175,7 +175,6 @@ Darwin hosts use local `darwin-rebuild switch` (deploy-rs wraps this but rollbac
 Custom derivations available as `pkgs.my.*` via the default overlay. ~40 packages including:
 
 - **zele** — CLI tool (patched upstream)
-- **jut** — Jujutsu workflow helpers
 - **dmux** — tmux session manager
 - **zunit** — Zsh unit test framework
 - **tmux plugins** — smart-name, smooth-scroll, opencode-integrated

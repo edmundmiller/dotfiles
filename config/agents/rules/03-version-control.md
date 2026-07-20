@@ -38,4 +38,4 @@ git hunks list              # List hunks with stable IDs
 git hunks add <hunk-id>     # Stage specific hunk
 ```
 
-See `but`/`jut` skills for VCS workflows.
+See `writing-git-commits` for Git commits and `herdr-jj-workflow` for task-scoped jj workspaces.
