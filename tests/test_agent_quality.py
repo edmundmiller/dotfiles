@@ -95,7 +95,6 @@ class AgentQualityTests(unittest.TestCase):
             result = self.run_cli("audit-tests", str(root))
             self.assertEqual(result.returncode, 0, result.stdout)
 
-
     def test_finish_reports_inapplicable_checks_without_calling_them_passed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -145,6 +144,160 @@ class AgentQualityTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 2)
         self.assertIn("different model family", result.stderr)
+
+    def test_start_writes_a_versioned_git_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            state = root / "state"
+            subprocess.run(["git", "init", "-b", "main", str(repo)], check=True)
+
+            result = self.run_cli(
+                "start",
+                "--repo",
+                str(repo),
+                "--task",
+                "demo-task",
+                "--runtime",
+                "codex",
+                "--model",
+                "gpt-5",
+                "--state-dir",
+                str(state),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads(result.stdout)
+            self.assertEqual(receipt["schemaVersion"], 1)
+            self.assertEqual(receipt["backend"], "git")
+            self.assertEqual(receipt["task"], "demo-task")
+            self.assertEqual(receipt["status"], "active")
+            self.assertEqual(receipt["metrics"], {"retries": 0, "userCorrections": 0})
+            self.assertTrue(Path(receipt["receiptPath"]).is_file())
+
+    def test_start_creates_an_isolated_jj_workspace_and_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            workspace = root / "workspaces" / "demo"
+            state = root / "state"
+            subprocess.run(["git", "init", "-b", "main", str(repo)], check=True)
+            subprocess.run(
+                ["jj", "git", "init", "--colocate", str(repo)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            result = self.run_cli(
+                "start",
+                "--repo",
+                str(repo),
+                "--workspace",
+                str(workspace),
+                "--task",
+                "jj-demo",
+                "--runtime",
+                "pi",
+                "--state-dir",
+                str(state),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads(result.stdout)
+            self.assertEqual(receipt["backend"], "jj")
+            self.assertEqual(Path(receipt["workspaceRoot"]), workspace.resolve())
+            self.assertTrue((workspace / ".jj").exists())
+            self.assertTrue(receipt["vcs"]["changeId"])
+            self.assertTrue(receipt["vcs"]["operationId"])
+
+    def test_start_refuses_to_invent_jj_inside_a_git_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            worktree = root / "worktree"
+            subprocess.run(["git", "init", "-b", "main", str(repo)], check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repo),
+                    "config",
+                    "user.email",
+                    "test@example.invalid",
+                ],
+                check=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(repo), "config", "user.name", "Test"], check=True
+            )
+            (repo / "base.txt").write_text("base\n")
+            subprocess.run(["git", "-C", str(repo), "add", "base.txt"], check=True)
+            subprocess.run(["git", "-C", str(repo), "commit", "-m", "base"], check=True)
+            subprocess.run(
+                ["git", "-C", str(repo), "worktree", "add", str(worktree)], check=True
+            )
+
+            result = self.run_cli(
+                "start",
+                "--repo",
+                str(worktree),
+                "--workspace",
+                str(root / "jj-workspace"),
+                "--task",
+                "boundary",
+                "--state-dir",
+                str(root / "state"),
+            )
+
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Git worktree", result.stderr)
+            self.assertIn("initialize jj from the primary checkout", result.stderr)
+
+    def test_complete_and_sweep_report_false_done_signals(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "run.json"
+            receipt.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "runId": "run-1",
+                        "task": "demo",
+                        "backend": "jj",
+                        "status": "active",
+                        "startedAt": "2026-07-19T10:00:00Z",
+                        "metrics": {"retries": 0, "userCorrections": 0},
+                    }
+                )
+            )
+
+            completed = self.run_cli(
+                "complete",
+                str(receipt),
+                "--local-tip",
+                "abc",
+                "--remote-tip",
+                "def",
+                "--retries",
+                "2",
+                "--user-corrections",
+                "1",
+            )
+            self.assertEqual(completed.returncode, 1)
+            updated = json.loads(receipt.read_text())
+            self.assertEqual(updated["status"], "false_done")
+            self.assertFalse(updated["landing"]["remoteAligned"])
+
+            swept = self.run_cli(
+                "sweep", "--state-dir", str(root), "--since-days", "36500", "--json"
+            )
+            self.assertEqual(swept.returncode, 1)
+            summary = json.loads(swept.stdout)
+            self.assertEqual(summary["runs"], 1)
+            self.assertEqual(summary["falseDone"], 1)
+            self.assertEqual(summary["retries"], 2)
+            self.assertEqual(summary["userCorrections"], 1)
 
 
 if __name__ == "__main__":
