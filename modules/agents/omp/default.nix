@@ -73,6 +73,13 @@ let
     url = "https://registry.npmjs.org/pi-agent-browser-native/-/pi-agent-browser-native-0.2.69.tgz";
     hash = "sha256-I5aArdBYLyTMPvaxNv4z+evTBnYSclsTw+3ZBYnZTPc=";
   };
+  agentQualitySweep = pkgs.writeShellApplication {
+    name = "agent-quality-sweep";
+    runtimeInputs = [ pkgs.python3 ];
+    text = ''
+      exec python3 ${../../../bin/agent-quality} sweep --json
+    '';
+  };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
   skilloptSleepUpstream = pkgs.fetchFromGitHub {
     owner = "microsoft";
@@ -662,6 +669,23 @@ in
               EnvironmentVariables = {
                 HOME = config.user.home;
                 PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+              };
+            };
+          };
+        }
+        // {
+          agent-quality-sweep = {
+            command = "${agentQualitySweep}/bin/agent-quality-sweep";
+            serviceConfig = {
+              StartCalendarInterval = {
+                Weekday = 1;
+                Hour = 9;
+                Minute = 15;
+              };
+              StandardOutPath = "${config.user.home}/Library/Logs/agent-quality-sweep.log";
+              StandardErrorPath = "${config.user.home}/Library/Logs/agent-quality-sweep.err.log";
+              EnvironmentVariables = {
+                HOME = config.user.home;
               };
             };
           };
