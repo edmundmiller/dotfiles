@@ -1050,7 +1050,14 @@ in
           herdr_cmd=${escapeShellArg cfg.command}
           for plugin_root in "$plugins_root"/*; do
             if [ -f "$plugin_root/herdr-plugin.toml" ]; then
-              "$herdr_cmd" plugin link "$plugin_root" >/dev/null
+              if ! link_output=$("$herdr_cmd" plugin link "$plugin_root" 2>&1); then
+                if printf '%s\n' "$link_output" | ${pkgs.gnugrep}/bin/grep -Fqi "Connection refused"; then
+                  echo "herdr: warning: runtime unavailable; deferring local plugin link for $plugin_root" >&2
+                else
+                  printf '%s\n' "$link_output" >&2
+                  exit 1
+                fi
+              fi
             fi
           done
         '';
