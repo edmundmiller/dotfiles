@@ -68,7 +68,6 @@ class AgentQualityTests(unittest.TestCase):
             result = self.run_cli("audit-tests", str(root))
             self.assertEqual(result.returncode, 0, result.stdout)
 
-    @unittest.expectedFailure
     def test_test_audit_accepts_unittest_assert_true_methods(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
