@@ -145,6 +145,12 @@ command = "nathanflurry.jj-workspace.abandon"
 description = "abandon clean jj workspace with typed confirmation"
 
 [[keys.command]]
+key = "prefix+t"
+type = "plugin_action"
+command = "tab-smart-rename.rename-now"
+description = "smart rename current tab"
+
+[[keys.command]]
 key = "prefix+T"
 type = "plugin_action"
 command = "herdr-insight.open-timeline-right"
