@@ -2,13 +2,17 @@
 """Dotfiles Herdr dev-layout plugin."""
 
 from __future__ import annotations
-
+import contextlib
+import fcntl
+import hashlib
 import json
 import os
 import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
+from collections.abc import Iterator
 from typing import Any
 
 
@@ -16,7 +20,7 @@ def herdr_bin() -> str:
     return os.environ.get("HERDR_BIN_PATH") or "herdr"
 
 
-def run_json(args: list[str]) -> dict[str, Any]:
+def run(args: list[str]) -> str:
     result = subprocess.run(
         [herdr_bin(), *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
@@ -24,11 +28,16 @@ def run_json(args: list[str]) -> dict[str, Any]:
         raise SystemExit(
             result.stderr or result.stdout or f"herdr {' '.join(args)} failed"
         )
+    return result.stdout
+
+
+def run_json(args: list[str]) -> dict[str, Any]:
+    output = run(args)
     try:
-        payload = json.loads(result.stdout)
+        payload = json.loads(output)
     except json.JSONDecodeError as err:
         raise SystemExit(
-            f"herdr {' '.join(args)} did not return JSON: {err}\n{result.stdout}"
+            f"herdr {' '.join(args)} did not return JSON: {err}\n{output}"
         ) from err
     if "error" in payload:
         raise SystemExit(json.dumps(payload["error"], indent=2))
@@ -156,17 +165,19 @@ def tab_create(workspace_id: str, cwd: str, label: str) -> tuple[str, str]:
     )
 
 
-def tabs_by_label(workspace_id: str) -> dict[str, str]:
+def workspace_tabs(workspace_id: str) -> tuple[dict[str, str], set[str]]:
     payload = run_json(["tab", "list", "--workspace", workspace_id])
-    return {
+    tabs = response_path(payload, "result", "tabs")
+    by_label = {
         tab["label"]: tab["tab_id"]
-        for tab in response_path(payload, "result", "tabs")
+        for tab in tabs
         if tab.get("label") and tab.get("tab_id")
     }
+    return by_label, {tab["tab_id"] for tab in tabs if tab.get("tab_id")}
 
 
 def pane_run(pane_id: str, command: str) -> None:
-    run_json(["pane", "run", pane_id, command])
+    run(["pane", "run", pane_id, command])
 
 
 def pane_rename(pane_id: str, label: str) -> None:
@@ -195,16 +206,17 @@ def hunk(
     pane_run(target_pane, hunk_command(cwd, mode, passthrough))
 
 
-def bootstrap() -> None:
-    ctx = context()
-    workspace_id = ctx.get("workspace_id") or os.environ.get("HERDR_WORKSPACE_ID")
-    cwd = ctx_worktree_path(ctx) or os.getcwd()
-    if not workspace_id:
-        raise SystemExit("missing Herdr workspace id in plugin context")
-    if not command_exists("omp"):
-        raise SystemExit("omp not found on PATH")
+@contextlib.contextmanager
+def workspace_lock(workspace_id: str) -> Iterator[None]:
+    digest = hashlib.sha256(workspace_id.encode()).hexdigest()
+    path = os.path.join(tempfile.gettempdir(), f"herdr-dev-layout-{digest}.lock")
+    with open(path, "a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
 
-    tabs = tabs_by_label(workspace_id)
+
+def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> None:
+    tabs, tab_ids = workspace_tabs(workspace_id)
     omp_tab = tabs.get("omp")
     if not omp_tab:
         omp_tab, pane = tab_create(workspace_id, cwd, "omp")
@@ -218,14 +230,27 @@ def bootstrap() -> None:
 
     event = os.environ.get("HERDR_PLUGIN_EVENT")
     initial_tab = ctx.get("tab_id") or os.environ.get("HERDR_TAB_ID")
-    if event in {"workspace_created", "worktree_created"} and initial_tab not in {
-        omp_tab,
-        tabs.get("hunk"),
-    }:
-        if initial_tab:
-            run_json(["tab", "close", initial_tab])
+    if (
+        event in {"workspace.created", "worktree.created"}
+        and initial_tab in tab_ids
+        and initial_tab not in {omp_tab, tabs.get("hunk")}
+    ):
+        run_json(["tab", "close", initial_tab])
 
     run_json(["tab", "focus", omp_tab])
+
+
+def bootstrap() -> None:
+    ctx = context()
+    workspace_id = ctx.get("workspace_id") or os.environ.get("HERDR_WORKSPACE_ID")
+    cwd = ctx_worktree_path(ctx) or os.getcwd()
+    if not workspace_id:
+        raise SystemExit("missing Herdr workspace id in plugin context")
+    if not command_exists("omp"):
+        raise SystemExit("omp not found on PATH")
+
+    with workspace_lock(workspace_id):
+        bootstrap_workspace(ctx, workspace_id, cwd)
 
 
 def main() -> None:
