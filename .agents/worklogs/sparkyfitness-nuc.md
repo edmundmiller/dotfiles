@@ -68,10 +68,10 @@ Deploy a pinned, x86_64-linux-compatible SparkyFitness stack on the NUC with tai
 
 ## Commits
 
-- `49077863f feat(nuc): deploy SparkyFitness`
-- `7ad4c6463 test(nuc): capture SparkyFitness state ownership bug`
-- `d083b2339 fix(nuc): make SparkyFitness database state writable`
-- `17dcc596a test(nuc): capture SparkyFitness backup ingress regression`
-- `b0bdbeadf fix(nuc): restore SparkyFitness ingress after backup`
-- `15af93f28 style(nuc): format SparkyFitness service docs`
-- `e54af20 docs(worklog): record SparkyFitness deployment`
+- `b20cbbfe feat(nuc): deploy SparkyFitness`
+- `b92bcf58 test(nuc): capture SparkyFitness state ownership bug`
+- `bfa2847d fix(nuc): make SparkyFitness database state writable`
+- `27edf58b test(nuc): capture SparkyFitness backup ingress regression`
+- `e29d165f fix(nuc): restore SparkyFitness ingress after backup`
+- `fdba0205 style(nuc): format SparkyFitness service docs`
+- `81ab24c0 docs(worklog): record SparkyFitness deployment`
