@@ -2,6 +2,7 @@
   lib,
   rustPlatform,
   fetchFromGitHub,
+  coreutils,
   gitMinimal,
   jujutsu,
 }:
@@ -22,6 +23,11 @@ rustPlatform.buildRustPackage {
   patches = [
     ./patches/0001-make-jj-workspace-lifecycle-safe.patch
   ];
+
+  postPatch = ''
+    substituteInPlace src/main.rs \
+      --replace-fail /bin/mkdir ${lib.getExe' coreutils "mkdir"}
+  '';
 
   cargoHash = "sha256-DhRLJs6ikN1q6TY+D7ghffvWdwCVMhw9YJL4D7TARt4=";
 
