@@ -2,6 +2,9 @@ import os
 import sys
 import unittest
 import tomllib
+import tempfile
+import threading
+import time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -23,6 +26,7 @@ class BootstrapLayoutTest(unittest.TestCase):
         env: dict[str, str] | None = None,
         context: dict[str, str] | None = None,
         existing: dict[str, str] | None = None,
+        tab_ids: set[str] | None = None,
     ):
         created: list[tuple[str, str]] = []
         ran: list[tuple[str, str]] = []
@@ -40,7 +44,14 @@ class BootstrapLayoutTest(unittest.TestCase):
             patch.dict(os.environ, env or {}, clear=True),
             patch.object(dev_layout, "context", return_value=ctx),
             patch.object(dev_layout, "command_exists", return_value=True),
-            patch.object(dev_layout, "tabs_by_label", return_value=existing or {}),
+            patch.object(
+                dev_layout,
+                "workspace_tabs",
+                return_value=(
+                    existing or {},
+                    tab_ids or set((existing or {}).values()),
+                ),
+            ),
             patch.object(dev_layout, "tab_create", side_effect=fake_tab_create),
             patch.object(dev_layout, "pane_rename"),
             patch.object(
@@ -75,14 +86,48 @@ class BootstrapLayoutTest(unittest.TestCase):
         self.assertEqual(ran, [])
         self.assertEqual(calls, [["tab", "focus", "tab-omp"]])
 
-    def test_workspace_created_closes_only_the_initial_tab(self) -> None:
+    def test_creation_event_closes_only_the_initial_tab(self) -> None:
         _, _, calls = self.run_bootstrap(
-            env={"HERDR_PLUGIN_EVENT": "workspace_created"},
+            env={"HERDR_PLUGIN_EVENT": "workspace.created"},
             context={"tab_id": "tab-initial"},
+            tab_ids={"tab-initial"},
         )
 
         self.assertIn(["tab", "close", "tab-initial"], calls)
         self.assertIn(["tab", "focus", "tab-omp"], calls)
+
+    def test_workspace_lock_serializes_concurrent_hooks(self) -> None:
+        intervals: list[tuple[float, float]] = []
+        barrier = threading.Barrier(3)
+
+        def run() -> None:
+            barrier.wait()
+            with dev_layout.workspace_lock("workspace-1"):
+                started = time.monotonic()
+                time.sleep(0.05)
+                intervals.append((started, time.monotonic()))
+
+        with tempfile.TemporaryDirectory() as lock_dir:
+            with patch.object(dev_layout.tempfile, "gettempdir", return_value=lock_dir):
+                threads = [threading.Thread(target=run) for _ in range(2)]
+                for thread in threads:
+                    thread.start()
+                barrier.wait()
+                for thread in threads:
+                    thread.join()
+
+        first, second = sorted(intervals)
+        self.assertLessEqual(first[1], second[0])
+
+
+class CommandTest(unittest.TestCase):
+    def test_pane_run_accepts_empty_success_output(self) -> None:
+        with patch("dev_layout.subprocess.run", return_value=Completed(0, "")) as run:
+            dev_layout.pane_run("pane-1", "omp")
+
+        self.assertEqual(
+            run.call_args.args[0], ["herdr", "pane", "run", "pane-1", "omp"]
+        )
 
 
 class ManifestTest(unittest.TestCase):
@@ -92,7 +137,7 @@ class ManifestTest(unittest.TestCase):
         )
 
         events = {event["on"] for event in manifest["events"]}
-        self.assertEqual(events, {"workspace_created", "worktree_created"})
+        self.assertEqual(events, {"workspace.created", "worktree.created"})
 
 
 class HunkThemeArgsTest(unittest.TestCase):
