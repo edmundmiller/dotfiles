@@ -24,7 +24,7 @@ Add a packaged OpenWiki links source that persists a deterministic URL queue, in
 - Fully patched upstream workbench: `/tmp/openwiki-links.J7M9qU`.
 - Red: focused Vitest run failed for missing `links.ts`, unrecognized `links` CLI target, and dropped onboarding source.
 - Green: upstream full suite passed, 36 test files / 363 tests; focused changed suite passed, 6 files / 63 tests; typecheck and changed-file ESLint passed.
-- Fresh source: `nix develop -c pkg-check openwiki` applied all five patches, passed typecheck, and passed 82 declared tests.
+- Fresh source: `nix develop -c pkg-check openwiki` applied the full patch stack, passed typecheck, and passed 82 declared tests.
 - Package: `nix build .#openwiki` passed for Darwin arm64.
 - Built CLI: isolated HOME showed `openwiki ingest links`, skipped an empty queue without credentials, and wrote connector directory/state/gitignore at `0700`/`0600`.
 - Structural/policy: `nix develop -c ast-grep scan packages/` and `hey check` passed. `hey check` also passed Darwin evaluation, package harness/policy, and ast-grep tests.
@@ -47,5 +47,5 @@ None.
 
 ## Commits
 
-- `5629aa87d9` — `feat(openwiki): add links input connector`
-- `bb5b18c683` — `docs(agent): record OpenWiki links verification`
+- `9caa48c0a4` — `feat(openwiki): add links input connector`
+- `5166c7dda8` — `docs(agent): record OpenWiki links verification`
