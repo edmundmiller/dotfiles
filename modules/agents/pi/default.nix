@@ -38,6 +38,7 @@ let
     inherit pkgs;
     piPkgsDir = ../../../packages/pi-packages;
   };
+  piCommandPolicyBridge = ../../../packages/pi-packages/pi-command-policy-bridge;
 
   secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
   honchoEnv = lib.optionalAttrs cfg.honcho.enable (
@@ -347,6 +348,7 @@ in
             configDir
             concatenatedRules
             piPkgDeps
+            piCommandPolicyBridge
             promptLinks
             agentLinks
             sessionSearchFiles

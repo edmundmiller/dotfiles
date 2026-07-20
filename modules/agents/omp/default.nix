@@ -73,11 +73,16 @@ let
     url = "https://registry.npmjs.org/pi-agent-browser-native/-/pi-agent-browser-native-0.2.69.tgz";
     hash = "sha256-I5aArdBYLyTMPvaxNv4z+evTBnYSclsTw+3ZBYnZTPc=";
   };
-  agentQualitySweep = pkgs.writeShellApplication {
-    name = "agent-quality-sweep";
-    runtimeInputs = [ pkgs.python3 ];
+  agentQuality = pkgs.writeShellApplication {
+    name = "agent-quality";
+    runtimeInputs = [
+      pkgs.git
+      pkgs.jj
+      pkgs.python3
+    ];
     text = ''
-      exec python3 ${../../../bin/agent-quality} sweep --json
+      export AGENT_QUALITY_ROOT=${../../..}
+      exec python3 ${../../../bin/agent-quality} "$@"
     '';
   };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
@@ -515,6 +520,7 @@ in
     {
       user.packages = [
         (lib.hiPrio ompPackage)
+        agentQuality
         hassMcpServer
       ]
       ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection
@@ -675,7 +681,7 @@ in
         }
         // {
           agent-quality-sweep = {
-            command = "${agentQualitySweep}/bin/agent-quality-sweep";
+            command = "${agentQuality}/bin/agent-quality sweep --json";
             serviceConfig = {
               StartCalendarInterval = {
                 Weekday = 1;

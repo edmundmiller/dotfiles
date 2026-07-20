@@ -1,9 +1,7 @@
 use ./common.nu *
 
 def agent-quality [...args: string] {
-  let ctx = (context)
-  cd $ctx.flake_dir
-  ^python3 bin/agent-quality ...$args
+  ^agent-quality ...$args
 }
 
 def --wrapped "main agent-review" [stage: string, ...args: string] {

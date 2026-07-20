@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "bin" / "agent-quality"
+HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-quality.nu"
 
 
 class AgentQualityTests(unittest.TestCase):
@@ -23,6 +24,11 @@ class AgentQualityTests(unittest.TestCase):
     def test_inventory_check_matches_generated_document(self) -> None:
         result = self.run_cli("inventory", "--check")
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_hey_uses_the_packaged_agent_quality_command(self) -> None:
+        wrapper = HEY_WRAPPER.read_text()
+        self.assertIn("^agent-quality ...$args", wrapper)
+        self.assertNotIn("python3 bin/agent-quality", wrapper)
 
     def test_worklog_validation_accepts_complete_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
