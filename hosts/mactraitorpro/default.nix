@@ -132,22 +132,25 @@ in
           modelProviderOrder = [
             "openai-codex"
             "xai-oauth"
-            "openrouter"
             "opencode-go"
+            "openrouter"
           ];
           retry.modelFallback = true;
           retry.fallbackChains = {
             default = [
               "xai-oauth/grok-4.5:low"
+              "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
             plan = [
+              "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
             slow = [
               "openai-codex/gpt-5.6-terra:high"
               "openai-codex/gpt-5.6-luna:high"
               "xai-oauth/grok-4.5:high"
+              "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
             smol = [
