@@ -46,7 +46,6 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "google-antigravity/gemini-3-flash")
 
-    @unittest.expectedFailure
     def test_mactraitorpro_uses_cross_provider_k3_fallbacks(self) -> None:
         result = subprocess.run(
             [
