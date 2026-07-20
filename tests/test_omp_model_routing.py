@@ -1,3 +1,4 @@
+import json
 import subprocess
 import unittest
 from pathlib import Path
@@ -44,6 +45,29 @@ class OmpModelRoutingTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "google-antigravity/gemini-3-flash")
+
+    @unittest.expectedFailure
+    def test_mactraitorpro_uses_cross_provider_k3_fallbacks(self) -> None:
+        result = subprocess.run(
+            [
+                "nix",
+                "eval",
+                "--json",
+                ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.retry.fallbackChains",
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        chains = json.loads(result.stdout)
+        for role in ("default", "plan", "slow"):
+            with self.subTest(role=role):
+                self.assertNotIn("opencode-go/glm-5.2", chains[role])
+                self.assertIn("openrouter/moonshotai/kimi-k3:high", chains[role])
 
 
 if __name__ == "__main__":
