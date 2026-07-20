@@ -18,8 +18,8 @@ Deploy a pinned, x86_64-linux-compatible SparkyFitness stack on the NUC with tai
 - Implement a dedicated `modules/services/sparkyfitness/` module with an evaluation test covering private binding, secrets, supervision, ingress, and backup wiring.
 - Let Compose create the private bridge and service DNS. Add PostgreSQL and backend health checks, gate backend on a healthy database and frontend on a healthy backend, and start the systemd unit with `docker compose up -d --wait`.
 - Store all required values in `hosts/nuc/secrets/sparkyfitness-env.age`, owned by root and loaded by the database and backend containers. Agenix is sufficient because these are stable deployment secrets, not externally rotated credentials.
-- Back up `/var/lib/sparkyfitness` only while the Compose stack is down; restart the single stack unit after Restic completes. This yields a consistent PostgreSQL data directory plus uploads and application backups without handling plaintext credentials.
-- The eval test asserts the exact environment-file path, healthy Compose startup, clean shutdown, no firewall opening, Tailscale Serve target/service, and Restic paths/stop-start hooks. Remote build and runtime checks cover the generated Compose images, health dependencies, mounts, and Gatus endpoint.
+- Back up `/var/lib/sparkyfitness` only while the Compose stack is down; restart both the stack and its dependent Tailscale Serve unit after Restic completes. This yields a consistent PostgreSQL data directory plus uploads and application backups without handling plaintext credentials.
+- The eval test asserts the exact pinned images, loopback binding, durable mounts, private service DNS, health dependencies, environment-file path, clean shutdown, no firewall opening, Tailscale Serve target/service, and Restic stop-start hooks. Remote build and runtime checks cover the generated Compose, all health checks, ingress, and backup recovery.
 - Provision `svc:sparkyfitness` and its explicit ACL grant in the authoritative `~/src/personal/tailnet` repository before deployment; verify the service reports `approved:auto` and `configured:ready`.
 - Runtime verification will exercise Compose health, frontend HTTP, backend `/api/health`, private Tailscale HTTPS, public-interface refusal, service restart persistence, Restic path coverage, and Gatus health.
 - Document secret recovery in the module guide: re-encrypt `sparkyfitness-env.age`, rebuild, and restart the stack; rotating the API encryption key invalidates encrypted integrations and rotating Better Auth invalidates sessions/2FA.
@@ -40,6 +40,12 @@ Deploy a pinned, x86_64-linux-compatible SparkyFitness stack on the NUC with tai
 - The Linux-only `sparkyfitness-assertions` check passed all 16 assertions on the NUC.
 - Initial `hey nuc dry-activate` correctly refused a stale source base: local HEAD `05eca37b` trails `origin/main` `eb72109b`. Land the implementation commit, rebase, then repeat dry activation.
 - First activation reproduced a deterministic PostgreSQL startup failure: the Alpine image runs PostgreSQL as UID/GID 70, while tmpfiles created its bind mount as root-only. The module now assigns `/var/lib/sparkyfitness/postgresql` to `70:70`, and the eval check locks that runtime requirement.
+- The deployment succeeded after the ownership correction. The PostgreSQL, backend, and frontend containers all report `healthy`; loopback frontend HTTP and backend `/api/health` return successfully; private Tailscale HTTPS returns the frontend; and `192.168.1.222:3004` refuses connections.
+- Persistence was verified with a temporary account and a 123.5 check-in across a stack restart, then the temporary account was deleted from both application and authentication tables. A subsequent login attempt returned `Invalid credentials.`
+- Restic snapshot `4feb549e` completed successfully. It exposed a dependent-unit regression: stopping `sparkyfitness.service` also stopped its `Requires=` Tailscale Serve unit, while cleanup restarted only the stack. A strict expected-failure assertion captured this; cleanup now starts both units, and the passing evaluation check covers it.
+- A fresh remote `restic-backups-sparkyfitness-state.service` run completed with `Result=success` and `ExecMainStatus=0`; both `sparkyfitness.service` and `sparkyfitness-tailscale-serve.service` were active afterward. `tailscale serve status --json` confirms `svc:sparkyfitness` proxies `sparkyfitness.cinnamon-rooster.ts.net:443` to `127.0.0.1:3004`.
+- Final remote `hey nuc-wt build` succeeded. The NUC-built `.#checks.x86_64-linux.sparkyfitness-assertions` derivation succeeded; attempting that Linux-only check locally correctly failed with platform mismatch, so it is validated only on the NUC.
+- `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .` succeeded. `hey check` reaches the Darwin evaluation successfully, then its treefmt and pre-commit phases fail before checking files because `bin/hey.d/flake.nu` invokes `prek run` but this worktree has neither `prek.toml` nor `.pre-commit-config.yaml`; this is an existing harness configuration gap, not a SparkyFitness failure.
 
 ## Reviews
 
@@ -50,16 +56,21 @@ Deploy a pinned, x86_64-linux-compatible SparkyFitness stack on the NUC with tai
 - Third OpenCode plan gate returned NOT PASS because manual OCI ordering does not wait for readiness and duplicated the established Compose stack pattern. Resolved by switching to Compose with health-gated dependencies and `up -d --wait`; the stopped-stack backup now manages one systemd unit.
 - Fourth OpenCode plan gate returned CONDITIONAL PASS. Rejected its claim that PostgreSQL 18.3 does not exist using the observed upstream Compose file and Docker official registry manifest. Resolved its remaining concerns by adding the external tailnet provisioning/verification, runtime smoke matrix, backup downtime rationale, and secret recovery contract.
 - Fifth OpenCode plan gate found no architectural rejection. Resolved its operational blockers by requiring a oneshot/RemainAfterExit unit with `ExecStop = docker compose down --timeout 60`, so systemd waits for PostgreSQL's clean SIGTERM shutdown before Restic reads state. Kept the approved user-facing Tailscale Gatus check; it intentionally covers ingress plus application availability. Homepage integration is outside the approved scope.
+- Landing gate with the explicit OpenCode reviewer returned PASS. Its only blocking worklog finding (duplicate Feedback headings) is resolved below; its Gatus status-condition and style-commit notes are non-blocking and require no change because the frontend returns 200 and the Gatus guide is part of the documented endpoint change.
 
 ## Feedback
 
-None.
+- `hey check` is not self-contained in this worktree: its formatting and pre-commit commands require an undiscoverable Prek manifest. The resulting `repo-quality` failure is unrelated to this deployment and must be repaired in the check harness separately.
 
 ## Remaining work
 
-- Implement and verify all approved plan steps.
-- Run landing gate and publish.
+- Publish the verified commits and annotated deployment tag.
 
 ## Commits
 
-None.
+- `49077863f feat(nuc): deploy SparkyFitness`
+- `7ad4c6463 test(nuc): capture SparkyFitness state ownership bug`
+- `d083b2339 fix(nuc): make SparkyFitness database state writable`
+- `17dcc596a test(nuc): capture SparkyFitness backup ingress regression`
+- `b0bdbeadf fix(nuc): restore SparkyFitness ingress after backup`
+- `15af93f28 style(nuc): format SparkyFitness service docs`
