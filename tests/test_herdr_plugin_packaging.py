@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -22,3 +24,12 @@ def test_jj_workspace_fixture_uses_packaged_mkdir() -> None:
 
     assert "substituteInPlace src/main.rs" in expression
     assert '${lib.getExe\' coreutils "mkdir"}' in expression
+
+
+@pytest.mark.xfail(strict=True, reason="regression: headless activation has no Herdr endpoint")
+def test_local_plugin_link_defers_only_connection_refusal() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    assert "link_output=" in module
+    assert "Connection refused" in module
+    assert "deferring local plugin link" in module
