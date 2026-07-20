@@ -260,6 +260,7 @@ let
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
+  goodNightScript = scripts.goodnight or null;
   tvOnScript = scripts.tv_on or null;
   tvOffScript = scripts.tv_off or null;
   tvOffIfOnScript = scripts.tv_off_if_on or null;
@@ -375,6 +376,20 @@ let
     {
       test = bedtimeNudgeWebhook != null;
       msg = "automation 'bedtime_nudge_webhook' missing";
+    }
+    {
+      test =
+        goodNightScript != null
+        && hasActionDataDeep (toList (
+          goodNightScript.sequence or [ ]
+        )) "script.book_player_start" "book_uri" "library://audiobook/84"
+        && hasActionDataDeep (toList (
+          goodNightScript.sequence or [ ]
+        )) "script.book_player_start" "player_entity_id" "media_player.bedroom"
+        && any (
+          action: (action.action or null) == "script.book_player_start" && (action.continue_on_error or false)
+        ) (toList (goodNightScript.sequence or [ ]));
+      msg = "script.goodnight must resume Chamber of Secrets on the synchronized bedroom group";
     }
     {
       test = whiteNoiseWithBedtimeAudiobook != null;
