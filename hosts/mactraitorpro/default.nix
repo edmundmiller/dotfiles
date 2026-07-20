@@ -139,16 +139,16 @@ in
           retry.fallbackChains = {
             default = [
               "xai-oauth/grok-4.5:low"
-              "opencode-go/glm-5.2"
+              "openrouter/moonshotai/kimi-k3:high"
             ];
             plan = [
-              "opencode-go/glm-5.2"
+              "openrouter/moonshotai/kimi-k3:high"
             ];
             slow = [
               "openai-codex/gpt-5.6-terra:high"
               "openai-codex/gpt-5.6-luna:high"
               "xai-oauth/grok-4.5:high"
-              "opencode-go/glm-5.2"
+              "openrouter/moonshotai/kimi-k3:high"
             ];
             smol = [
               "openai-codex/gpt-5.6-luna"
