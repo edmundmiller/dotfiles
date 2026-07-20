@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+vault_root="${PGATSS_VAULT:-${HOME}/obsidian-vault}"
+cli="${vault_root}/.agents/skills/pgatss-simulator-booking/scripts/pgatss.mjs"
+
+if [[ ! -f "${cli}" ]]; then
+  printf 'pgatss: CLI not found at %s\nSet PGATSS_VAULT to the vault root.\n' "${cli}" >&2
+  exit 1
+fi
+
+exec node "${cli}" "$@"
