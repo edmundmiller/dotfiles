@@ -1,0 +1,29 @@
+diff --git i/vendor/libghostty-vt/src/terminal/page.zig w/vendor/libghostty-vt/src/terminal/page.zig
+--- i/vendor/libghostty-vt/src/terminal/page.zig
++++ w/vendor/libghostty-vt/src/terminal/page.zig
+@@ -1503,6 +1503,25 @@ pub const Page = struct {
+             return error.GraphemeAllocOutOfMemory;
+         };
+         errdefer self.grapheme_alloc.free(self.memory, slice);
++
++        // A valid BitmapAllocator allocation always has the requested
++        // length. Capture the complete allocator state before aborting if
++        // that invariant is violated; @memcpy would otherwise panic without
++        // identifying the corrupt state.
++        if (slice.len != cps.len) {
++            log.err(
++                "grapheme allocation length mismatch requested={} allocated={} count={} map_capacity={} alloc_capacity_bytes={} alloc_used_bytes={}",
++                .{
++                    cps.len,
++                    slice.len,
++                    self.graphemeCount(),
++                    self.graphemeCapacity(),
++                    self.grapheme_alloc.capacityBytes(),
++                    self.grapheme_alloc.usedBytes(self.memory),
++                },
++            );
++            @panic("grapheme allocation length mismatch");
++        }
+         @memcpy(slice, cps);
+ 
+         map.putNoClobber(cell_offset, .{
