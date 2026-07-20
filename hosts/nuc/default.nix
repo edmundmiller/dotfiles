@@ -167,6 +167,11 @@ let
   hermesScintillateTailscaleServiceName = "hermes";
   hermesSharedStateDir = "/var/lib/hermes";
   hermesSharedHome = "${hermesSharedStateDir}/.hermes";
+  scintillateTerminalInit = pkgs.writeText "scintillate-terminal-init.sh" ''
+    export HOME=/var/lib/hermes-scintillate
+    export HERMES_HOME=/var/lib/hermes-scintillate/.hermes
+    export HERMES_REAL_HOME=/var/lib/hermes-scintillate
+  '';
   hermesSharedProfileNames = [
     "amosburton"
     "anne"
@@ -1218,6 +1223,7 @@ in
         ];
         settings = {
           stt.provider = "local_command";
+          terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
         };
         environment = {
           HERMES_KANBAN_HOME = hermesSharedHome;
