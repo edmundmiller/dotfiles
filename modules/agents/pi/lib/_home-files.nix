@@ -3,6 +3,7 @@
   configDir,
   concatenatedRules,
   piPkgDeps,
+  piCommandPolicyBridge,
   piSettingsValidated,
   promptLinks,
   agentLinks,
@@ -18,6 +19,7 @@ promptLinks
   ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
   ".pi/agent/extensions/pi-permission-system/config.json".source =
     "${configDir}/pi/pi-permission-system.jsonc";
+  ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
 }
 // sessionSearchFiles
 // (

@@ -26,6 +26,8 @@ The bridge resolves the tool call's working directory and walks parent directori
 
 `jj_vcs status` is allowed. `jj_vcs align_push` is blocked because the global `done` skill owns publication and remote-equality proof.
 
+The Pi Nix module deploys this package at `~/.pi/agent/packages/pi-command-policy-bridge`; runtime behavior never depends on the mutable dotfiles checkout.
+
 ## Verify
 
 ```bash
