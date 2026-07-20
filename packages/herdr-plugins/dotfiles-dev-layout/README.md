@@ -21,7 +21,7 @@ herdr plugin install edmundmiller/dotfiles/packages/herdr-plugins/dotfiles-dev-l
 - Action: `dotfiles.dev-layout.bootstrap`
 - Action: `dotfiles.dev-layout.hunk-split`
 - Action: `dotfiles.dev-layout.hunk-tab`
-- Events: `workspace_created` and `worktree_created`
+- Events: `workspace.created` and `worktree.created` (serialized per workspace)
 
 ## Requirements
 

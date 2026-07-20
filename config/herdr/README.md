@@ -84,7 +84,7 @@ Custom/current mappings:
 | `prefix+I`                        | Start GitHub issue workflow |
 | `prefix+O`                        | Start from GitHub item      |
 
-Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin handles `workspace_created` and `worktree_created`, creating exactly OMP and Hunk tabs and focusing OMP.
+Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin serializes the `workspace.created` and `worktree.created` hooks per workspace, creating exactly OMP and Hunk tabs and focusing OMP.
 
 ## Plugins
 
