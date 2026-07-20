@@ -32,6 +32,9 @@ Make jj the deterministic agent VCS path: start runs with backend-aware receipts
 - `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .` built and deployed. First activation hit a transient nix-daemon restart race; daemon health passed and one retry completed.
 - `launchctl print gui/502/org.nixos.agent-quality-sweep` proves the loaded Monday 09:15 trigger and packaged command.
 - `hey agent-audit-tests` and `hey agent-finish --worklog .agents/worklogs/jj-agent-flywheel.md` pass; visual and zsh checks are correctly not applicable.
+- Rebased cleanly onto `origin/main` at `cf69f19191`; focused Python/Bun tests and typecheck pass after rebase.
+- `br sync --flush-only` exported no changes. `git push --dry-run origin HEAD:main` proves a fast-forward landing.
+- Primary checkout `/Users/emiller/.config/dotfiles` contains an unrelated local commit and dirty Herdr/model-routing work. It remains untouched; authoritative `origin/main` will be landed from this clean worktree.
 
 ## Reviews
 
@@ -50,8 +53,9 @@ Make jj the deterministic agent VCS path: start runs with backend-aware receipts
 
 ## Commits
 
-- `2993b6c01` test(agents): capture assertTrue audit false positive
-- `b096382cc` fix(agents): distinguish assertTrue from vacuous assertions
-- `6fd863dc9` feat(agents): add backend-aware run receipts
-- `a199d6103` feat(pi): block Git mutations inside jj repositories
-- `7f0f401b6` feat(skills): land and verify jj workspaces
+- `483f46cf8` test(agents): capture assertTrue audit false positive
+- `934c7b547` fix(agents): distinguish assertTrue from vacuous assertions
+- `67d0b3f9e` feat(agents): add backend-aware run receipts
+- `5dacc969d` feat(pi): block Git mutations inside jj repositories
+- `bee03949f` feat(skills): land and verify jj workspaces
+- `1960897de` docs(agents): record jj flywheel evidence
