@@ -17,7 +17,7 @@ import uuid
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("AGENT_QUALITY_ROOT", Path(__file__).resolve().parents[1])).resolve()
 DEFAULT_MANIFEST = ROOT / ".agents" / "quality.json"
 DEFAULT_INVENTORY = ROOT / "docs" / "agent-quality.md"
 DEFAULT_RECEIPT_ROOT = (
