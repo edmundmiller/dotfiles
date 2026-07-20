@@ -260,7 +260,9 @@ let
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
+  getReadyForBedScript = scripts.get_ready_for_bed or null;
   goodNightScript = scripts.goodnight or null;
+  sleepScript = scripts.sleep or null;
   tvOnScript = scripts.tv_on or null;
   tvOffScript = scripts.tv_off or null;
   tvOffIfOnScript = scripts.tv_off_if_on or null;
@@ -379,17 +381,44 @@ let
     }
     {
       test =
-        goodNightScript != null
-        && hasActionDataDeep (toList (
-          goodNightScript.sequence or [ ]
-        )) "script.book_player_start" "book_uri" "library://audiobook/84"
-        && hasActionDataDeep (toList (
-          goodNightScript.sequence or [ ]
-        )) "script.book_player_start" "player_entity_id" "media_player.bedroom"
+        getReadyForBedScript != null
         && any (
-          action: (action.action or null) == "script.book_player_start" && (action.continue_on_error or false)
+          action:
+          (action.action or null) == "script.book_player_start"
+          && (action.continue_on_error or false)
+          && (action.data.book_uri or null) == "library://audiobook/84"
+          && (action.data.player_entity_id or null) == "media_player.bedtime"
+        ) (toList (getReadyForBedScript.sequence or [ ]));
+      msg = "script.get_ready_for_bed must resume Chamber of Secrets on the Bedtime group";
+    }
+    {
+      test =
+        goodNightScript != null
+        && any (
+          action:
+          builtins.hasAttr "if" action
+          && hasTemplateConditionContaining (toList action."if") "media_player.bedtime"
+          && hasTemplateConditionContaining (toList action."if") "not in ['playing', 'buffering']"
+          && any (
+            fallback:
+            (fallback.action or null) == "script.book_player_start"
+            && (fallback.continue_on_error or false)
+            && (fallback.data.book_uri or null) == "library://audiobook/84"
+            && (fallback.data.player_entity_id or null) == "media_player.bedtime"
+          ) (toList (action."then" or [ ]))
         ) (toList (goodNightScript.sequence or [ ]));
-      msg = "script.goodnight must resume Chamber of Secrets on the synchronized bedroom group";
+      msg = "script.goodnight must start Chamber of Secrets only when Bedtime is not already playing";
+    }
+    {
+      test =
+        sleepScript != null
+        && any (
+          action:
+          (action.action or null) == "media_player.media_stop"
+          && (action.continue_on_error or false)
+          && (action.target.entity_id or null) == "media_player.bedtime"
+        ) (toList (sleepScript.sequence or [ ]));
+      msg = "script.sleep must stop the Bedtime group";
     }
     {
       test = whiteNoiseWithBedtimeAudiobook != null;
