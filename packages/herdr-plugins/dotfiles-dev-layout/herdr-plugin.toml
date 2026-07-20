@@ -2,7 +2,7 @@ id = "dotfiles.dev-layout"
 name = "Dotfiles Dev Layout"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
-description = "Open the dotfiles-standard agent, Hunk, Neovim, and shell tabs for the current workspace or a newly-created worktree."
+description = "Open exactly OMP and Hunk tabs for the current workspace or a newly-created checkout."
 platforms = ["linux", "macos"]
 
 [[actions]]
@@ -24,5 +24,9 @@ contexts = ["pane", "workspace"]
 command = ["python3", "dev_layout.py", "hunk", "--tab"]
 
 [[events]]
-on = "worktree.created"
+on = "workspace_created"
+command = ["python3", "dev_layout.py", "--event"]
+
+[[events]]
+on = "worktree_created"
 command = ["python3", "dev_layout.py", "--event"]

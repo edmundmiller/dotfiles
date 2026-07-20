@@ -130,17 +130,18 @@ let
         command = "nathanflurry.jj-workspace.new"
         description = "new jj workspace"
 
-        [[keys.command]]
-        key = "prefix+A"
-        type = "plugin_action"
-        command = "nathanflurry.jj-workspace.new-tab"
-        description = "new jj workspace in a tab"
 
         [[keys.command]]
         key = "prefix+d"
         type = "plugin_action"
         command = "nathanflurry.jj-workspace.remove"
-        description = "remove jj workspace"
+        description = "remove clean jj workspace after PR closes"
+
+        [[keys.command]]
+        key = "prefix+D"
+        type = "plugin_action"
+        command = "nathanflurry.jj-workspace.abandon"
+        description = "abandon clean jj workspace with typed confirmation"
 
         [[keys.command]]
         key = "prefix+T"
@@ -612,6 +613,7 @@ in
               "nathanflurry.jj-workspace.new",
               "nathanflurry.jj-workspace.new-tab",
               "nathanflurry.jj-workspace.remove",
+              "nathanflurry.jj-workspace.abandon",
               "herdr-insight.open-timeline-right",
               "gh-pr.refresh",
               "dutifuldev.ghzinga.open",
@@ -786,16 +788,16 @@ in
               'description = "new jj workspace"',
               "",
               "[[keys.command]]",
-              'key = "prefix+A"',
-              'type = "plugin_action"',
-              'command = "nathanflurry.jj-workspace.new-tab"',
-              'description = "new jj workspace in a tab"',
-              "",
-              "[[keys.command]]",
               'key = "prefix+d"',
               'type = "plugin_action"',
               'command = "nathanflurry.jj-workspace.remove"',
-              'description = "remove jj workspace"',
+              'description = "remove clean jj workspace after PR closes"',
+              "",
+              "[[keys.command]]",
+              'key = "prefix+D"',
+              'type = "plugin_action"',
+              'command = "nathanflurry.jj-workspace.abandon"',
+              'description = "abandon clean jj workspace with typed confirmation"',
               "",
               "[[keys.command]]",
               'key = "prefix+T"',
@@ -971,7 +973,7 @@ in
           PY
         '';
 
-        home.activation.herdr-plugin-registry = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        home.activation.herdr-plugin-registry = lib.hm.dag.entryAfter [ "herdr-marketplace-plugins" ] ''
           plugins_root=${escapeShellArg "${cfg.localPluginsPackage}/share/herdr/plugins"}
           registry="$HOME/.config/herdr/plugins.json"
           ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$registry")"
@@ -1037,63 +1039,123 @@ in
           merged.extend(managed[plugin_id] for plugin_id in sorted(managed))
           registry.write_text(json.dumps(merged, indent=2) + "\n")
           PY
+          export PATH=$PATH:${escapeShellArg launchPath}
+          herdr_cmd=${escapeShellArg cfg.command}
+          for plugin_root in "$plugins_root"/*; do
+            if [ -f "$plugin_root/herdr-plugin.toml" ]; then
+              "$herdr_cmd" plugin link "$plugin_root" >/dev/null
+            fi
+          done
         '';
 
-        home.activation.herdr-marketplace-plugins =
-          lib.hm.dag.entryAfter
-            [
-              "writeBoundary"
-              "herdr-plugin-registry"
-            ]
-            ''
-              export PATH=$PATH:${escapeShellArg launchPath}
-              herdr_cmd=${escapeShellArg cfg.command}
+        home.activation.herdr-marketplace-plugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          export PATH=$PATH:${escapeShellArg launchPath}
+          herdr_cmd=${escapeShellArg cfg.command}
 
-              install_plugin() {
-                owner="$1"
-                repo="$2"
-                subdir="''${3:-}"
-                mode="''${4:-required}"
-                spec="$owner/$repo"
-                if [ -n "$subdir" ]; then
-                  spec="$spec/$subdir"
-                fi
+          install_plugin() {
+            owner="$1"
+            repo="$2"
+            subdir="''${3:-}"
+            mode="''${4:-required}"
+            spec="$owner/$repo"
+            if [ -n "$subdir" ]; then
+              spec="$spec/$subdir"
+            fi
 
-                if ! installed_json=$("$herdr_cmd" plugin list --json); then
-                  echo "herdr: error: failed to list plugins before installing $spec" >&2
+            if ! installed_json=$("$herdr_cmd" plugin list --json); then
+              echo "herdr: error: failed to list plugins before installing $spec" >&2
+              return 1
+            fi
+
+            if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
+              echo "herdr: $spec plugin already installed"
+            else
+              echo "herdr: installing $spec plugin"
+              if ! install_output=$("$herdr_cmd" plugin install "$spec" --yes 2>&1); then
+                printf '%s\n' "$install_output" >&2
+                if [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication"; then
+                  echo "herdr: warning: optional $spec plugin unavailable; continuing" >&2
+                else
                   return 1
                 fi
+              fi
+            fi
+          }
 
-                if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
-                  echo "herdr: $spec plugin already installed"
-                else
-                  echo "herdr: installing $spec plugin"
-                  if ! install_output=$("$herdr_cmd" plugin install "$spec" --yes 2>&1); then
-                    printf '%s\n' "$install_output" >&2
-                    if [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication"; then
-                      echo "herdr: warning: optional $spec plugin unavailable; continuing" >&2
-                    else
-                      return 1
-                    fi
-                  fi
-                fi
-              }
+          ensure_pinned_plugin() {
+            plugin_id="$1"
+            owner="$2"
+            repo="$3"
+            ref="$4"
+            spec="$owner/$repo"
 
-              install_plugin NathanFlurry herdr-plugin-jj-workspace
-              install_plugin smarzban herdr-file-viewer
-              install_plugin dutifuldev ghzinga plugins/herdr
-              install_plugin dcolinmorgan herdr-remote relay
-              install_plugin razajamil herdr-plugin-workspace-manager
-              install_plugin paulbkim-dev vim-herdr-navigation
-              install_plugin ogulcancelik herdr-plugin-github-start
-              install_plugin rjyo herdr-window-title-sync
-              install_plugin wyattjoh herdr-plugin-gh-pr
-              install_plugin kkckkc herdr-plugin-gh-workflow
-              install_plugin alon-z herdr-command-palette
-              install_plugin 0x5c0f herdr-insight
-              install_plugin persiyanov herdr-reviewr
-              install_plugin edmundmiller herdr-which-key "" optional
-            '';
+            if ! installed_json=$("$herdr_cmd" plugin list --plugin "$plugin_id" --json); then
+              echo "herdr: error: failed to inspect $plugin_id" >&2
+              return 1
+            fi
+            if printf '%s' "$installed_json" | ${pkgs.python3}/bin/python3 -c '
+          import json
+          import sys
+
+          expected = sys.argv[1:]
+          plugins = json.load(sys.stdin).get("result", {}).get("plugins", [])
+          matches = [
+              plugin for plugin in plugins
+              if plugin.get("plugin_id") == expected[0] or plugin.get("id") == expected[0]
+          ]
+          if len(matches) != 1:
+              raise SystemExit(1)
+          source = matches[0].get("source", {})
+          raise SystemExit(
+              0 if [source.get("owner"), source.get("repo"), source.get("resolved_commit")] == expected[1:]
+              else 1
+          )
+          ' "$plugin_id" "$owner" "$repo" "$ref"; then
+              echo "herdr: $plugin_id already pinned at $ref"
+              return 0
+            fi
+
+            if printf '%s' "$installed_json" | ${pkgs.python3}/bin/python3 -c '
+          import json
+          import sys
+
+          plugins = json.load(sys.stdin).get("result", {}).get("plugins", [])
+          raise SystemExit(0 if plugins else 1)
+          '; then
+              "$herdr_cmd" plugin uninstall "$plugin_id"
+            fi
+            echo "herdr: installing pinned $spec@$ref"
+            "$herdr_cmd" plugin install "$spec" --ref "$ref" --yes
+          }
+
+          ensure_pinned_plugin \
+            nathanflurry.jj-workspace \
+            edmundmiller \
+            herdr-plugin-jj-workspace \
+            ec8fde27e0cf4664012b585ebc2dc7cb0934ee1b
+
+          jj_plugin_config=$("$herdr_cmd" plugin config-dir nathanflurry.jj-workspace)
+          ${pkgs.coreutils}/bin/mkdir -p "$jj_plugin_config"
+          ${pkgs.coreutils}/bin/cat > "$jj_plugin_config/.env" <<'EOF'
+          JJ_BASE_REV=trunk()
+          JJ_WORKSPACE_NAME_PREFIXES=issue-,pr-,task-
+          EOF
+
+          # jj-workspace is installed above from a reviewed, pinned fork.
+          install_plugin smarzban herdr-file-viewer
+          install_plugin dutifuldev ghzinga plugins/herdr
+          install_plugin dcolinmorgan herdr-remote relay
+          install_plugin razajamil herdr-plugin-workspace-manager
+          install_plugin paulbkim-dev vim-herdr-navigation
+          install_plugin ogulcancelik herdr-plugin-github-start
+          install_plugin rjyo herdr-window-title-sync
+          install_plugin wyattjoh herdr-plugin-gh-pr
+          install_plugin kkckkc herdr-plugin-gh-workflow
+          install_plugin alon-z herdr-command-palette
+          install_plugin 0x5c0f herdr-insight
+          install_plugin persiyanov herdr-reviewr
+          install_plugin edmundmiller herdr-which-key "" optional
+        '';
 
         home.activation.herdr-agent-integrations =
           lib.hm.dag.entryAfter
