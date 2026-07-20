@@ -1,8 +1,5 @@
 from pathlib import Path
 
-import pytest
-
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -19,7 +16,6 @@ def test_jj_workspace_plugin_is_a_patched_local_package() -> None:
     assert "edmundmiller/herdr-plugin-jj-workspace" not in module
 
 
-@pytest.mark.xfail(strict=True, reason="regression: Nix sandbox has no /bin/mkdir")
 def test_jj_workspace_fixture_uses_packaged_mkdir() -> None:
     package = ROOT / "packages" / "herdr-plugin-jj-workspace"
     expression = (package / "default.nix").read_text()
