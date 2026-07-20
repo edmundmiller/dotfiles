@@ -1,6 +1,6 @@
 # Worklog: jj-agent-flywheel
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -35,6 +35,9 @@ Make jj the deterministic agent VCS path: start runs with backend-aware receipts
 - Rebased cleanly onto `origin/main` at `cf69f19191`; focused Python/Bun tests and typecheck pass after rebase.
 - `br sync --flush-only` exported no changes. `git push --dry-run origin HEAD:main` proves a fast-forward landing.
 - Primary checkout `/Users/emiller/.config/dotfiles` contains an unrelated local commit and dirty Herdr/model-routing work. It remains untouched; authoritative `origin/main` will be landed from this clean worktree.
+- Follow-up deployment fix packages `agent-quality` and the Pi policy bridge in Nix, removing runtime dependence on the occupied primary checkout.
+- Live smoke: packaged `agent-quality inventory --check` passes; `hey agent-sweep` works from `/tmp`; Pi settings and package symlink resolve under `~/.pi/agent`; launchd points at the packaged command.
+- Receipt `20260720T004955Z-e5690f5c721a` is complete with local/remote equality, one recorded deployment retry, zero corrections, and no false-done/errors in the sweep.
 
 ## Reviews
 
@@ -49,7 +52,7 @@ Make jj the deterministic agent VCS path: start runs with backend-aware receipts
 
 ## Remaining work
 
-- Reconcile with current upstream, land on `main`, rebuild from the primary checkout, verify remote equality, complete receipt, and tag.
+- None.
 
 ## Commits
 
@@ -59,3 +62,6 @@ Make jj the deterministic agent VCS path: start runs with backend-aware receipts
 - `5dacc969d` feat(pi): block Git mutations inside jj repositories
 - `bee03949f` feat(skills): land and verify jj workspaces
 - `1960897de` docs(agents): record jj flywheel evidence
+- `4ce9d89df` docs(agents): record jj landing boundary
+- `10d322f23` fix(agents): deploy jj workflow tools from Nix
+- Final worklog completion commit follows this record.
