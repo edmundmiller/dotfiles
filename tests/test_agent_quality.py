@@ -62,7 +62,23 @@ class AgentQualityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             test = root / "behavior.test.ts"
-            test.write_text('test("skips empty values", () => { expect([]).toEqual([]); });\n')
+            test.write_text(
+                'test("skips empty values", () => { expect([]).toEqual([]); });\n'
+            )
+            result = self.run_cli("audit-tests", str(root))
+            self.assertEqual(result.returncode, 0, result.stdout)
+
+    @unittest.expectedFailure
+    def test_test_audit_accepts_unittest_assert_true_methods(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            test = root / "test_behavior.py"
+            test.write_text(
+                "import unittest\n\n"
+                "class BehaviorTest(unittest.TestCase):\n"
+                "    def test_behavior(self):\n"
+                "        self.assertTrue(subject())\n"
+            )
             result = self.run_cli("audit-tests", str(root))
             self.assertEqual(result.returncode, 0, result.stdout)
 
