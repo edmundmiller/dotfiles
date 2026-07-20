@@ -1,6 +1,6 @@
 # Worklog: sparkyfitness-nuc
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -64,7 +64,7 @@ Deploy a pinned, x86_64-linux-compatible SparkyFitness stack on the NUC with tai
 
 ## Remaining work
 
-- Publish the verified commits and annotated deployment tag.
+- None.
 
 ## Commits
 
@@ -74,3 +74,4 @@ Deploy a pinned, x86_64-linux-compatible SparkyFitness stack on the NUC with tai
 - `17dcc596a test(nuc): capture SparkyFitness backup ingress regression`
 - `b0bdbeadf fix(nuc): restore SparkyFitness ingress after backup`
 - `15af93f28 style(nuc): format SparkyFitness service docs`
+- `e54af20 docs(worklog): record SparkyFitness deployment`
