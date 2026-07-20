@@ -1,6 +1,6 @@
 # Worklog: herdr-omp-hunk-jj-workflow
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -35,8 +35,9 @@ Deliver one end-to-end Herdr/OMP/Hunk workflow with jj workspaces for jj repos a
 - The live Herdr registry reports `dotfiles.dev-layout` enabled with `workspace_created` and `worktree_created`, and the jj plugin at the exact fork commit with `trunk()` plus the three stable-name prefixes.
 - Herdr remains running on 0.7.4/protocol 16 with `restart_needed: no`; no stop, restart, signal, or kill was used.
 - The global catalog deploys `herdr-jj-workflow` at `~/.agents/skills/`; the rebuilt host no longer exposes a `jut` executable.
-- Agent-quality framework tests pass (nine tests), inventory is current, and test-confidence passes.
+- Agent-quality framework tests pass (15 tests after rebase), inventory is current, and test-confidence passes.
 - `hey check --worktree` passes Darwin evaluation, child-lock sync, tmux tests, package harness/policy tests, and ast-grep tests. Its formatting and hook stages cannot run because the repository has neither `prek.toml` nor `.pre-commit-config.yaml`.
+- `worktree/calm-cloud-3009` was rebased onto `origin/main`, pushed, and verified current upstream.
 
 ## Reviews
 
@@ -54,7 +55,7 @@ Deliver one end-to-end Herdr/OMP/Hunk workflow with jj workspaces for jj repos a
 
 ## Remaining work
 
-- Push and verify the branch upstream.
+- None.
 
 ## Commits
 
