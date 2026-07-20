@@ -1,25 +1,35 @@
+---
+purpose: Explain deterministic command and jj-aware VCS enforcement in Pi.
+applies_to: pi-command-policy-bridge behavior, policy, and tests.
+entrypoint: Read index.ts and run the focused Bun tests.
+verification: bun test pi-command-policy-bridge/index.test.ts.
+update_when: Supported tools, policy states, or jj mutation rules change.
+---
+
 # pi-command-policy-bridge
 
-Applies the `pi-permission-system` bash command policy to command-bearing extension tools that spawn shell commands, currently:
+Deterministic Pi guard for command-bearing tools and jj-aware VCS mutations.
 
-- `process` with `action: "start"`
-- `interactive_shell` with `command`
-- `herdr_run_in_pane` with `command`
+## Command policy
 
-This lets those tools be allowed at the tool level while preserving deterministic bash-policy deny rules for commands you never want agents to run.
+The bridge extracts commands from `bash`, `process.start`, `interactive_shell`, and `herdr_run_in_pane`. It applies `permission.bash` rules from `PI_PERMISSION_SYSTEM_CONFIG_PATH` with last-match-wins wildcard ordering.
 
-## Behavior
+- `deny` blocks.
+- `ask`, `allow`, and no match run without prompting.
+- Unreadable policy remains fail-open for generic commands.
 
-For supported tool calls, the extension extracts the embedded command and evaluates it against `permission.bash` rules in `PI_PERMISSION_SYSTEM_CONFIG_PATH` using last-match-wins wildcard ordering:
+This is a deny-list guardrail, not an LLM classifier or approval UI.
 
-- `deny` blocks the tool call
-- `ask` is treated as `allow`
-- `allow` lets the tool call proceed
-- no matching rule allows the tool call
+## jj policy
 
-This package is intentionally a deny-list guardrail, not an approval system or LLM danger classifier. If a command is not explicitly denied, it runs without prompting.
+The bridge resolves the tool call's working directory and walks parent directories for `.jj`. Inside a jj repository it blocks Git staging, history, cleanup, patch, pull, and push mutations with a jj-native replacement. Read-only Git inspection remains allowed.
 
-The deny list can include both:
+`jj_vcs status` is allowed. `jj_vcs align_push` is blocked because the global `done` skill owns publication and remote-equality proof.
 
-- dangerous commands: bypass safety rails, mutate host state, or weaken repo integrity
-- foot-guns: likely to hang, open an interactive editor, or wedge the agent session
+## Verify
+
+```bash
+cd packages/pi-packages
+bun test pi-command-policy-bridge/index.test.ts
+bun --filter pi-command-policy-bridge typecheck
+```
