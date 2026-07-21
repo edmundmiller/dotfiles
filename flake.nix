@@ -56,7 +56,7 @@
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
-      url = "github:edmundmiller/tnote/v0.3.0";
+      url = "github:edmundmiller/tnote/f968abc0c6f65b82666485383f9086d27e04ac9a";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
       inputs.systems.follows = "systems";
