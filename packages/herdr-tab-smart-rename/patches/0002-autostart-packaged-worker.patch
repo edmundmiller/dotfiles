@@ -1,0 +1,51 @@
+diff --git a/herdr-plugin.toml b/herdr-plugin.toml
+index c6d6777..f34b7ad 100644
+--- a/herdr-plugin.toml
++++ b/herdr-plugin.toml
+@@ -5,9 +5,6 @@ min_herdr_version = "0.7.0"
+ description = "Context-aware names for Herdr workspaces and task tabs."
+ platforms = ["linux", "macos"]
+ 
+-[[build]]
+-command = ["bun", "install", "--production", "--frozen-lockfile"]
+-
+ [[actions]]
+ id = "start"
+ title = "Smart Rename: start"
+@@ -91,3 +88,11 @@ title = "Smart Rename Prompt"
+ description = "Edit the private naming prompt."
+ placement = "overlay"
+ command = ["sh", "src/run-bun.sh", "src/configure.ts", "prompt"]
++
++[[events]]
++on = "workspace.created"
++command = ["sh", "src/run-bun.sh", "src/cli.ts", "start"]
++
++[[events]]
++on = "tab.created"
++command = ["sh", "src/run-bun.sh", "src/cli.ts", "start"]
+diff --git a/test/provider.test.ts b/test/provider.test.ts
+index 840cacd..32f3003 100644
+--- a/test/provider.test.ts
++++ b/test/provider.test.ts
+@@ -246,10 +246,7 @@ test("manifest uses portable Bun runtime without Pi model coupling", async () =>
+   );
+   assert.match(manifest, /^id = "tab-smart-rename"$/m);
+   assert.match(manifest, /^version = "0\.1\.1"$/m);
+-  assert.match(
+-    manifest,
+-    /command = \["bun", "install", "--production", "--frozen-lockfile"\]/,
+-  );
++  assert.doesNotMatch(manifest, /^\[\[build\]\]$/m);
+   assert.match(
+     manifest,
+     /command = \["sh", "src\/run-bun\.sh", "src\/cli\.ts", "start"\]/,
+@@ -257,6 +254,8 @@ test("manifest uses portable Bun runtime without Pi model coupling", async () =>
+   assert.doesNotMatch(manifest, /command = \["bun", "src\//);
+   assert.match(manifest, /id = "provider-config"[\s\S]*placement = "overlay"/);
+   assert.match(manifest, /id = "prompt-config"[\s\S]*placement = "overlay"/);
++  assert.match(manifest, /on = "workspace\.created"/);
++  assert.match(manifest, /on = "tab\.created"/);
+ 
+   const src = new URL("../src/", import.meta.url);
+   const source = (
