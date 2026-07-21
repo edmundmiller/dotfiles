@@ -67,8 +67,9 @@ Claude Opus 4.8); kilo/Claude remains only a fallback. There is no separate
 
 Shared role defaults live in `config/omp/config.yml`. Host auth/quota differences
 belong in `modules.agents.omp.modelRoles` / `retry.fallbackChains` on each host.
-`modules.agents.omp.smolModel` also injects `PI_SMOL_MODEL` for the smol/commit
-fast path. Precedence: `--smol` flag > `PI_SMOL_MODEL` env > rendered `config.yml`.
+`modules.agents.omp.smolModel` injects `PI_SMOL_MODEL` for the smol fast path.
+An explicit `modelRoles.commit` wins; commit falls back to smol only when unset.
+Smol precedence: `--smol` flag > `PI_SMOL_MODEL` env > rendered `config.yml`.
 
 Providers differ by machine — personal vs work do not share Cursor/xai/VibeProxy.
 Read the host `omp` block comments in `hosts/*/default.nix` before changing
