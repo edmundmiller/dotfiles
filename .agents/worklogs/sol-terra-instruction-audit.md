@@ -30,11 +30,16 @@ Review every shared rule and locally owned skill for GPT-5.6 Sol and Terra. Stop
 - `python3 bin/agent-quality inventory --check` and `python3 bin/agent-quality audit-tests tests`: passed.
 - `nix flake check ./skills --no-build`: passed; only the existing unknown `homeManagerModules` output warning.
 - `hey check --worktree`: Darwin evaluation, formatting, pre-commit hooks, tmux, package harness, package policy, and ast-grep passed after attaching the primary checkout's ignored Nix-managed `.pre-commit-config.yaml` symlink.
+- `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .`: deployed the shared rules, skills, hook, `hey`, and packaged `agent-quality` launcher.
+- Live Codex source: `~/.codex/AGENTS.md` resolves to the new Home Manager generation, contains the clarity-preserving tone rule, and no longer contains the duplicate AGENT-12 heading.
+- Live skill source: `~/.agents/skills/skill-quality/SKILL.md` resolves to the deployed catalog and its shipped validator passes.
+- Deployed launcher proof: `agent-quality` preserves caller `AGENT_QUALITY_ROOT` and bundles Jujutsu `jj 0.43.0`, not the unrelated JSON stream editor.
+- Deployed `hey agent-finish --worklog .agents/worklogs/sol-terra-instruction-audit.md`: PASS for repository quality, 30 agent tests, instruction lint, test-confidence, and inventory drift; UI and zsh checks were not applicable.
 
 ## Reviews
 
 - Plan gate attempted with `hey agent-review plan --active-model-family openai`; ACPX reached `session/new` then failed with `RUNTIME: Authentication required`. No review findings were available; local implementation proceeded under deterministic tests and the repository workflow.
-- Landing gate pending.
+- Landing gate reproduced the same ACPX `session/new` authentication blocker. Per the provider-failure rule, it was not retried again.
 
 ## Feedback
 
@@ -44,8 +49,10 @@ Review every shared rule and locally owned skill for GPT-5.6 Sol and Terra. Stop
 ## Remaining work
 
 - Inventory and audit current rules and skills.
-- Commit instruction changes, sync skill locks, rebuild, land, push, tag, and verify upstream.
+- Push branch, record remote equality, and tag the final evidence commit.
 
 ## Commits
 
-Pending.
+- `559b3d0173` — `feat(agents): validate portable instructions`
+- `1ffa0437f3` — `test(agents): capture active-root finish regression`
+- `1a958e5c39` — `fix(agents): run finish gates in active worktree`
