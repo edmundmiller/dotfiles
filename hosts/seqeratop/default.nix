@@ -107,10 +107,10 @@
           # Prewalk hands implementation to smol, so Sonnet is the coding handoff;
           # Haiku stays on commit/tiny metadata work. Opus remains the primary and
           # slow planner. Codex models provide the first provider-diverse fallback:
-          # Sol for strongest work, Terra for routine fan-out, Luna for cheap work.
           # Cursor Grok and Composer fast variants are last-resort low-latency
           # fallbacks. VibeProxy exposes Claude only; do not invent xai-oauth ids.
-          smolModel = "vibeproxy/claude-sonnet-5:low";
+          # modelRoles only — avoid smolModel/PI_SMOL_MODEL, which overrides
+          # rendered smol and can confuse commit/tiny vs prewalk handoff.
           modelRoles = {
             default = "vibeproxy/claude-opus-4-8:low";
             smol = "vibeproxy/claude-sonnet-5:low";
