@@ -18,6 +18,7 @@ let
       ./patches/0009-defer-background-tab-resize.patch # bead: dotfiles-0qcg
       ./patches/0010-guard-resize-cursor-scrollback.patch # bead: dotfiles-h89w
       ./patches/0011-grapheme-crash-diagnostics.patch # temporary crash forensics
+      ./patches/0012-grapheme-crash-diagnostics.patch # temporary crash forensics: error-path state
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };

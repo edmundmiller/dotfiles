@@ -1,3 +1,11 @@
+---
+purpose: Explain Herdr configuration, keybindings, plugins, and reload workflow.
+applies_to: Editing or troubleshooting Herdr on managed hosts.
+entrypoint: config/herdr/config.toml and modules/shell/herdr/default.nix.
+verification: Run a Darwin rebuild, then reload the Herdr server.
+update_when: Herdr configuration ownership, plugins, or keybindings change.
+---
+
 # Herdr
 
 This directory tracks the user-facing Herdr config for these dotfiles.
@@ -86,7 +94,7 @@ Dotfiles-specific helper behavior lives in local Herdr plugins under `config/her
 - `dotfiles.dev-layout` — provides `prefix+u`/`prefix+U` Hunk actions plus the `worktree.created` dev-layout bootstrap action.
 - `dotfiles.github-link-preview` — registers a GitHub issue/PR link handler that opens `gh issue view` or `gh pr view` in a Herdr side pane.
 
-Marketplace/GitHub plugins are installed by activation when missing:
+Marketplace/GitHub plugins are installed by activation when missing. An existing local plugin with the same ID satisfies activation.
 
 - `NathanFlurry/herdr-plugin-jj-workspace`
 - `smarzban/herdr-file-viewer`

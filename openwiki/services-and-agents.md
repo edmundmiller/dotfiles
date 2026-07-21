@@ -24,6 +24,20 @@ Tailscale-served HTTP services expose only their backend port on `tailscale0`; T
 
 The current service tree includes media, home automation, dashboards/monitoring, network access, sync, and agent-adjacent services. This page deliberately maps the integration boundary rather than duplicating each service’s own module documentation.
 
+## Home automation and media on NUC
+
+Home Assistant’s sleep domain owns the alarm-driven bedtime phases and wake detection. Wake signals set per-person awake helpers but deliberately do **not** trigger Good Morning automatically; manual/voice activation remains the boundary. The current bedtime flow starts the configured *Harry Potter and the Chamber of Secrets* audiobook on the bedroom Music Assistant player through the declared `book_player_start` script. The structural evaluator at `modules/services/hass/_tests/eval-automations.nix` protects the automation and scene contract.
+
+Music Assistant runs as a NUC host-networked container with persistent data under `/var/lib/music-assistant` and can be published through a named Tailscale Service; only its backend port is allowed on `tailscale0`. Its Home Assistant scripts provide start, pause, and resume controls for Music Assistant audiobook players. Homepage conditionally surfaces the related Homebox inventory widget when that service is enabled, with credentials supplied through the dashboard’s secret-backed environment configuration described in [secrets and safety](secrets-and-safety.md).
+
+When changing either integration, evaluate the Home Assistant assertions and verify the deployed service on NUC through [operations](operations.md). Confirm user-visible automation behavior separately from a successful Nix evaluation.
+
+## OMP configuration and shared working copies
+
+`modules/agents/omp/default.nix` renders shared OMP configuration and installs a Jujutsu-specific rule from `config/omp/rules/working-with-jj.md`. The rule is scoped to shell tool calls containing `jj`; it treats the shared Jujutsu working copy as live state, requires non-mutating inspection for other branches, and directs recovery through `jj op log` and undo/restore rather than rebuilding files.
+
+MacTraitor-Pro selects host-specific role routing: Fable for `designer`, Sol for default/advisor/slow/plan roles, Terra for smol/task roles, Luna for commits, Grok Composer for tiny roles, and Gemini Flash for vision. Model fallback is enabled; `default`, `plan`, and `slow` prefer the subscription-backed OpenCode Go Kimi K3 route before the OpenRouter Kimi K3 route. `tests/test_omp_model_routing.py` evaluates these rendered values. Change the host declaration and that focused test together; role or provider changes do not belong in the generic module unless they are intended for every OMP host.
+
 ## Hermes and scheduled agents
 
 `modules/agents/` is for coding-agent configuration. The NixOS Hermes runtime is a managed deployment seam: reusable agent specs and presets come from the `agents-workspace` input, while this repository selects host deployment, profile, credentials, timers, mounts, and service accounts.
